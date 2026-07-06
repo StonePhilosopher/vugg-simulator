@@ -604,3 +604,274 @@ function _makeWulffHalfFormGeom(faces: any, attachFrac: number, cutAtNucleus?: b
   const s = 0.5 / maxAbs;   // FULL-form scale — see header comment
   return _wulffPolyToGeom(clipped, s);
 }
+
+// ------------------------------------------------------------
+// Emission tail with MATERIAL GROUPS — same fan-triangulation as
+// _wulffPolyToGeom, but partitions the output triangles into two contiguous
+// BufferGeometry groups keyed on whether each face came from a CRYSTAL plane
+// (source index < nFaces → group 0, euhedral) or a CLIP plane (index ≥ nFaces
+// → group 1, the anhedral contact/scar facet). The renderer binds a matte
+// material to group 1 so induction surfaces read as ground contacts, not
+// glossy growth faces. Euhedral faces are emitted first so each group is one
+// contiguous run. Returns { geom, contactTris } (contactTris = 0 ⇒ no clip
+// facet survived, caller may treat it as an ordinary full form).
+// ------------------------------------------------------------
+function _wulffPolyToGeomGrouped(poly: any, s: number, nFaces: number): any {
+  const eu: number[] = [], co: number[] = [];
+  for (const f of poly.faces) {
+    const dst = f.plane < nFaces ? eu : co;
+    const vs = f.verts;
+    for (let t = 1; t < vs.length - 1; t++) {
+      const a = poly.vertices[vs[0]], b = poly.vertices[vs[t]], c = poly.vertices[vs[t + 1]];
+      dst.push(a[0] * s, a[1] * s, a[2] * s, b[0] * s, b[1] * s, b[2] * s, c[0] * s, c[1] * s, c[2] * s);
+    }
+  }
+  const positions = co.length ? eu.concat(co) : eu;
+  if (positions.length < 9) return null;
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  const euVerts = eu.length / 3, coVerts = co.length / 3;
+  geom.clearGroups();
+  if (euVerts) geom.addGroup(0, euVerts, 0);
+  if (coVerts) geom.addGroup(euVerts, coVerts, 1);
+  return { geom, contactTris: coVerts / 3 };
+}
+
+// ------------------------------------------------------------
+// W-F O2 — induction surfaces (ontogeny arc, 2026-07-05). When crystals grew
+// INTO each other they share a flat CONTACT facet, not interpenetrating ideal
+// forms (Self & Hill 2003; competitive growth). O2 is the aggregate layer O0's
+// header promised: each neighbor's growth-rate-weighted meeting plane enters
+// wulffPolyhedron as ONE MORE half-space — the exact single-plane mechanism O0
+// proved, now fed NEIGHBOR planes instead of only the wall. The wall scar
+// (O0's attachment plane) and every neighbor plane are anhedral, so they all
+// land in the geom's contact group (matte material) — one clip, one emission.
+//
+// contactPlanes: [{ n:[x,y,z] unit, d }]. WITHOUT an xform they are in the
+// crystal's NATIVE face units (the tests feed these directly). WITH an xform
+// (the render path) they are in WORLD space and the kernel inverts them —
+// native→world is x = R·diag(sx,sy,sz)·s·v + t (R the c-axis rotation, the
+// mesh scale, s = 0.5/maxAbs the form-normalize), so a plane transforms by the
+// inverse-transpose: n_native ∝ Dᵀ·Rᵀ·n_w. Keeping the inversion here lets the
+// renderer stay in world space and reuses this function's own maxAbs. n·v ≤ d
+// keeps the crystal's own side; the caller orients n from this crystal toward
+// the neighbour. A plane that doesn't actually cut the body contributes no
+// face (the kernel drops it), so the caller needn't pre-test — but SHOULD
+// prune for cost, since wulffPolyhedron's vertex enumeration is O(planes³).
+//
+// occF>0 adds the O0 wall scar internally (same yCut logic as the half-form
+// builder) so a contacted half-form gets both its wall clip and its neighbour
+// clips in a single call; occF≤0 (base-at-anchor prisms) skip the wall plane.
+//
+// Steno pin: crystal-face normals are untouched — every added plane is a clip,
+// never a tilt (asserted in tests-js/o2-contact.test.ts). Returns
+// { geom, contactTris } or null on a degenerate clip (caller falls back to the
+// full form, then the primitive — the D2 robustness ladder).
+// ------------------------------------------------------------
+function _makeWulffContactGeom(faces: any, contactPlanes: any, occF?: number, cutAtNucleus?: boolean, xform?: any): any {
+  if (!faces || !faces.length) return null;
+  const full = wulffPolyhedron(faces);
+  if (!full || full.vertices.length < 4 || full.faces.length === 0) return null;
+  let maxAbs = 0, ymin = Infinity, ymax = -Infinity;
+  for (const v of full.vertices) {
+    maxAbs = Math.max(maxAbs, Math.abs(v[0]), Math.abs(v[1]), Math.abs(v[2]));
+    if (v[1] < ymin) ymin = v[1];
+    if (v[1] > ymax) ymax = v[1];
+  }
+  if (maxAbs <= 1e-9 || !(ymax > ymin)) return null;
+  const s = 0.5 / maxAbs;   // FULL-form scale — geometry stays registered with the un-clipped body
+  const nFaces = faces.length;
+  const clips: any[] = [];
+  // O0 wall scar — only when this crystal is a half-form (occF>0). Native units.
+  if (occF && occF > 0) {
+    const f = Math.max(0.05, Math.min(0.95, occF));
+    const yCut = (cutAtNucleus && ymin < 0 && ymax > 0) ? 0 : ymin + f * (ymax - ymin);
+    clips.push({ n: [0, -1, 0], d: -yCut });
+  }
+  if (contactPlanes && contactPlanes.length) {
+    for (const p of contactPlanes) {
+      if (!p || !p.n) continue;
+      clips.push(xform ? _o2WorldPlaneToNative(p.n, p.d, xform, s) : { n: p.n, d: p.d });
+    }
+  }
+  if (!clips.length) return null;   // nothing to clip → caller uses the full form
+  const clipped = wulffPolyhedron(faces.concat(clips));
+  if (!clipped || clipped.vertices.length < 4 || clipped.faces.length === 0) return null;
+  return _wulffPolyToGeomGrouped(clipped, s, nFaces);
+}
+
+// World-space plane { n_w, d_w } → the crystal's NATIVE face units, given the
+// native→world map x = R·diag(sx,sy,sz)·s·v + t. A plane transforms by the
+// inverse-transpose of the linear part: with D = diag(sx·s, sy·s, sz·s) and R
+// orthonormal, n_native ∝ Dᵀ·(Rᵀ·n_w) and the offset picks up −n_w·t, all
+// divided by the new normal's length. xform = { R:[9 row-major], sx, sy, sz,
+// tx, ty, tz }. Kept THREE-free (pure arithmetic) so the kernel has no renderer
+// dependency; the renderer builds R from the c-axis quaternion.
+function _o2WorldPlaneToNative(nw: any, dw: number, xf: any, s: number): any {
+  const R = xf.R;
+  // Rᵀ·n_w — dot n_w with the COLUMNS of the row-major R.
+  const rx = R[0] * nw[0] + R[3] * nw[1] + R[6] * nw[2];
+  const ry = R[1] * nw[0] + R[4] * nw[1] + R[7] * nw[2];
+  const rz = R[2] * nw[0] + R[5] * nw[1] + R[8] * nw[2];
+  const ax = (xf.sx * s) * rx, ay = (xf.sy * s) * ry, az = (xf.sz * s) * rz;
+  const L = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
+  const dot = nw[0] * xf.tx + nw[1] * xf.ty + nw[2] * xf.tz;
+  return { n: [ax / L, ay / L, az / L], d: (dw - dot) / L };
+}
+
+// ============================================================
+// W-F O2 — the GENERIC convex-mesh clipper (2026-07-06). The Wulff kernel above
+// clips in FACE-PLANE space and so only reaches the six Wulff tenants (~7
+// contacted crystals fleet-wide — a near-no-op). The probe (tools/
+// o2-contact-probe.mjs) found the real interpenetration — 622 contacted convex
+// crystals across the fleet — lives in the PRIMITIVE-mesh tenants. This clips
+// ANY convex emitted BufferGeometry by a set of neighbour half-spaces: for each
+// plane, Sutherland–Hodgman every triangle to the kept side and cap the cut
+// with a fresh CONTACT facet (matte material group 1). Triangle-plane clipping
+// is LINEAR in triangles (not the kernel's O(planes³)), so even a crystal boxed
+// in by dozens of neighbours is cheap. Concave forms (botryoidal / hopper /
+// twin) are out of scope — a plane cut of a concave body has no single convex
+// cap — and the renderer gates them out.
+//
+// planes: [{ n:[x,y,z] unit, d }] in the GEOMETRY's OWN local frame (the caller
+// transforms world→local via _o2WorldPlaneToNative with s=1 and the mesh
+// scale). n·v ≤ d keeps the crystal's side. Returns { geom, contactTris } (a
+// two-group geometry: euhedral 0, contact 1) or null when every plane misses
+// (no clip) or the body is clipped away (degenerate — caller keeps the full
+// form). Input group tags are preserved, so a Wulff half-form's scar stays
+// contact through the clip.
+// ============================================================
+function _clipConvexGeom(geom: any, planes: any): any {
+  if (!geom || !geom.attributes || !geom.attributes.position) return null;
+  if (!planes || !planes.length) return null;
+  // Primitive crystal geoms (BoxGeometry, …) are INDEXED; the Wulff builders
+  // are not. Expand to flat per-triangle positions so the clip reads a straight
+  // triangle soup. toNonIndexed carries groups across (index-based → range).
+  const flat = geom.index ? geom.toNonIndexed() : geom;
+  const pos = flat.attributes.position.array;
+  const nTris = (pos.length / 9) | 0;
+  if (nTris < 1) return null;
+  const tagOf = _o2GroupTagger(flat);
+  let tris: any[] = [];
+  for (let t = 0; t < nTris; t++) {
+    const o = t * 9;
+    tris.push({
+      v: [[pos[o], pos[o + 1], pos[o + 2]], [pos[o + 3], pos[o + 4], pos[o + 5]], [pos[o + 6], pos[o + 7], pos[o + 8]]],
+      tag: tagOf(t * 3),
+    });
+  }
+  const eps = 1e-6;
+  let clippedAny = false;
+  for (const pl of planes) {
+    if (!pl || !pl.n) continue;
+    const next: any[] = [];
+    const capPts: any[] = [];
+    let cutHere = false;
+    for (const tri of tris) {
+      const r = _o2ClipTriByPlane(tri, pl.n, pl.d, eps);
+      if (r.cut.length) cutHere = true;
+      for (const nt of r.tris) next.push(nt);
+      for (const cp of r.cut) capPts.push(cp);
+    }
+    if (!cutHere) continue;              // plane misses the body — leave tris untouched
+    clippedAny = true;
+    for (const ct of _o2CapPolygon(capPts, pl.n)) next.push({ v: ct, tag: 1 });
+    tris = next;
+    if (!tris.length) return null;       // clipped away → caller falls back
+  }
+  if (!clippedAny) return null;          // nothing cut → caller keeps the full form
+  const eu: any[] = [], co: any[] = [];
+  for (const tr of tris) (tr.tag === 1 ? co : eu).push(tr);
+  const ordered = eu.concat(co);
+  const out: number[] = [];
+  for (const tr of ordered) for (const p of tr.v) out.push(p[0], p[1], p[2]);
+  if (out.length < 9) return null;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3));
+  g.computeVertexNormals();
+  const euV = eu.length * 3, coV = co.length * 3;
+  g.clearGroups();
+  if (euV) g.addGroup(0, euV, 0);
+  if (coV) g.addGroup(euV, coV, 1);
+  return { geom: g, contactTris: co.length };
+}
+
+// Map a triangle's first-vertex index to its source material group (euhedral 0
+// / contact 1), so a pre-grouped input (a Wulff half-form, or an already-
+// clipped O2 geom on replay) keeps its tags. Only OUR two-group convention
+// (materialIndex ∈ {0,1}) is honoured; a primitive's arbitrary per-face split
+// (BoxGeometry ships SIX groups, materialIndex 0–5) is NOT a euhedral/contact
+// signal, so those inputs are treated as wholly euhedral.
+function _o2GroupTagger(geom: any): any {
+  const groups = geom.groups;
+  if (!groups || !groups.length || groups.length > 2) return () => 0;
+  for (const gp of groups) if ((gp.materialIndex || 0) > 1) return () => 0;
+  return (vStart: number) => {
+    for (const gp of groups) if (vStart >= gp.start && vStart < gp.start + gp.count) return gp.materialIndex || 0;
+    return 0;
+  };
+}
+
+// Sutherland–Hodgman for ONE triangle against ONE plane (keep n·v ≤ d). Returns
+// the kept sub-triangles (fan of the inside polygon, tag inherited) and the cut
+// points on the plane (its contribution to the cap polygon). A vertex on the
+// plane counts as inside AND as a cap point.
+function _o2ClipTriByPlane(tri: any, n: any, d: number, eps: number): any {
+  const v = tri.v;
+  const s = [
+    n[0] * v[0][0] + n[1] * v[0][1] + n[2] * v[0][2] - d,
+    n[0] * v[1][0] + n[1] * v[1][1] + n[2] * v[1][2] - d,
+    n[0] * v[2][0] + n[1] * v[2][1] + n[2] * v[2][2] - d,
+  ];
+  const poly: any[] = [], cut: any[] = [];
+  for (let i = 0; i < 3; i++) {
+    const j = (i + 1) % 3, si = s[i], sj = s[j], vi = v[i], vj = v[j];
+    if (si <= eps) poly.push(vi);
+    if (Math.abs(si) <= eps) cut.push(vi);                 // on-plane vertex joins the cap
+    if ((si > eps && sj < -eps) || (si < -eps && sj > eps)) {
+      const t = si / (si - sj);
+      const p = [vi[0] + t * (vj[0] - vi[0]), vi[1] + t * (vj[1] - vi[1]), vi[2] + t * (vj[2] - vi[2])];
+      poly.push(p); cut.push(p);
+    }
+  }
+  const tris: any[] = [];
+  for (let k = 1; k + 1 < poly.length; k++) tris.push({ v: [poly[0], poly[k], poly[k + 1]], tag: tri.tag });
+  return { tris, cut };
+}
+
+// The cut points of one plane → a capped convex polygon (fan-triangulated),
+// wound CCW about +n so the contact facet faces outward. Dedups coincident
+// crossings; <3 unique points ⇒ the plane only grazed an edge, no cap.
+function _o2CapPolygon(pts: any, n: any): any[] {
+  if (!pts || pts.length < 3) return [];
+  const uniq: any[] = [];
+  for (const p of pts) {
+    let dup = false;
+    for (const q of uniq) if (Math.abs(p[0] - q[0]) < 1e-5 && Math.abs(p[1] - q[1]) < 1e-5 && Math.abs(p[2] - q[2]) < 1e-5) { dup = true; break; }
+    if (!dup) uniq.push(p);
+  }
+  if (uniq.length < 3) return [];
+  const c = [0, 0, 0];
+  for (const p of uniq) { c[0] += p[0]; c[1] += p[1]; c[2] += p[2]; }
+  c[0] /= uniq.length; c[1] /= uniq.length; c[2] /= uniq.length;
+  const ref = Math.abs(n[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+  const u = _wulffNorm(_wulffCross(n, ref));
+  const w = _wulffNorm(_wulffCross(n, u));
+  const sorted = uniq.slice().sort((p, q) => {
+    const dp = [p[0] - c[0], p[1] - c[1], p[2] - c[2]], dq = [q[0] - c[0], q[1] - c[1], q[2] - c[2]];
+    return Math.atan2(_wulffDot(dp, w), _wulffDot(dp, u)) - Math.atan2(_wulffDot(dq, w), _wulffDot(dq, u));
+  });
+  // Fan from sorted[0], skipping degenerate slivers — collinear cap points
+  // (triangle-diagonal crossings that land on the same cap edge) would else
+  // emit zero-area triangles. The convexity + CCW order guarantee the survivors
+  // wind about +n.
+  const tris: any[] = [];
+  for (let k = 1; k + 1 < sorted.length; k++) {
+    const a = sorted[0], b = sorted[k], cc = sorted[k + 1];
+    const e1 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], e2 = [cc[0] - a[0], cc[1] - a[1], cc[2] - a[2]];
+    const cr = _wulffCross(e1, e2);
+    if (cr[0] * cr[0] + cr[1] * cr[1] + cr[2] * cr[2] > 1e-14) tris.push([a, b, cc]);
+  }
+  return tris;
+}
