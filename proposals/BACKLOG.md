@@ -2,7 +2,7 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🎓 SESSION (2026-07-04→05, the tutorial arc) — THE TUTORIALS CAUGHT UP TO THE GAME: ENGINE v2→v3 + FOUR TUTORIALS + shigar_pegmatite — **CURRENT HANDOFF: `HANDOFF-TUTORIALS-2026-07-05.md`**
+> ## 🎓 DETOUR (2026-07-04→05, the tutorial arc) — THE TUTORIALS CAUGHT UP TO THE GAME: ENGINE v2→v3 + FOUR TUTORIALS + shigar_pegmatite — **detour handoff: `HANDOFF-TUTORIALS-2026-07-05.md`** (a side-arc off the roadmap; for the MAIN line read the foundations handoff below)
 >
 > Boss: *"the game has expanded so much I think we really need to update it"* → then *"we
 > need a tutorial on collecting too… covers simulation mode, the library, and saving,"* on a
@@ -33,7 +33,7 @@ Living list of open work items, captured from session conversations so context s
 > surfaces should auto-generate from SCENARIOS (vugg-add-scenario §10.5 TODO). Traps in the
 > handoff (native prompt() hangs preview; v116 picker guard; fortress RNG non-determinism).
 
-> ## 🧱 SESSION (2026-07-03→04, the foundation-laying night) — THE FIRST CODE OF THE ROADMAP: V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE — **prior handoff: `HANDOFF-FOUNDATIONS-2026-07-03.md` (+ its dated third-act addendum)**
+> ## 🧱 SESSION (2026-07-03→04, the foundation-laying night) — THE FIRST CODE OF THE ROADMAP: V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE — **CURRENT HANDOFF (the main line): `HANDOFF-FOUNDATIONS-2026-07-03.md` (+ its dated third-act addendum)**
 >
 > Boss: *"we just worked on a nice foundation in the handoff, lets lay that foundation."* Two
 > code commits, both Pages-verified built==HEAD, both cold-ci stamped GREEN:
