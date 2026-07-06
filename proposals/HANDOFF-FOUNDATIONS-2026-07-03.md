@@ -371,3 +371,77 @@ Lay the stone at its honest size, name the half you deferred, and leave the cita
 the next hand can check them.
 
 — the builder, fifth hand, the σ-lever act · 2026-07-06
+
+---
+
+## KEYSTONE — the fifth hand's session, whole (2026-07-06, written before compaction)
+
+The boss asked for this stone by name. Here is the arch it closes.
+
+| commit | what |
+|---|---|
+| `eea52bc` | **O2 induction surfaces** — generic convex-mesh contact clipper, 622 crystals fleet-wide; render-only, 0/38; the probe rewrote the rung (Wulff path reached 7) |
+| `299a270` | **C0, the calcite σ lever (SIM 217, boss stone #1)** — the Ω branch by the 4a.7 recipe; ONE flip (deccan → its iconic dogtooth); elmwood dual-fenced; Ca:CO₃ half recorded-no-signal, gate pre-registered for B5 |
+| `37353c1` | **wall display toggle + matrix skins** — solid/translucent/hidden; 13 lithology fabrics; 8 note-backed matrix overrides; the DOUBLE-whitelist trap paid + pinned |
+| `efdba99` `aa4b5cf` `47682d5` | the standing-rule docs passes, same-day |
+
+Every code commit Pages-verified built==HEAD, cold-ci stamped GREEN (2196 → 2211 → 2222
+tests), three-instrument confinement proofs throughout. En route, measured and deferred
+with numbers attached: O1b neighbor-shadow (8 Wulff crystals fleet-wide — ripens as tenants
+grow). Queued by the boss: **local crystal color** (the answer to the O2 blending caveat —
+color, not satellite clipping; spec in the BACKLOG's WALL UX block).
+
+**The doctrine this session was given, now in the tree where it belongs.** Mid-session,
+closing the C0 report, the boss wrote the sentence that names how this project decides:
+
+> *"the important thing is to follow the science, sometimes the rocks need to catch up."*
+
+It refines — does not contradict — "the rock wins." A real rock still arbitrates any claim
+about nature. But today's fleet, tenant list, and catalog coverage are a SAMPLING of nature,
+not nature itself; when verified science outruns the sampling, the science ships and the
+sampling grows into it. The biasC map's steep end awaits its drinker; the r-gate awaits B5;
+O1b awaits its tenants — none of these are debts, they are cut stones waiting for the wall
+to rise. Scope limit, kept sharp: this covers right-physics-awaiting-coverage, never wrong
+targeting. **The probe decides WHERE; the science decides WHAT.**
+
+**Where the next hand starts:** the boss stones now read C0 ✅ code (its T2 acceptance pair
+open, wanting A1's dogtooth+nailhead anchor picks — specimen 1298 named) · **C1 depletion
+field NEXT** (EV check first; triply load-bearing now — it un-freezes O1a's approximation,
+activates O2's integrated-growth weights, and feeds the biasC steep end its drinkers) ·
+Depth-C colour on call, with the queued local-color item as its natural on-ramp. Open
+foundation tranches: V0 all-38 audit · V1 microtexture · O1b (deferred-with-number). Traps
+this session bought are recorded in the two act addenda above; the new one from the wall
+arc: **a scenarios.json5 wall flag crosses TWO silent whitelists** (VugWall constructor +
+the js/85 WallState mirror) — tests-js/matrix-skin.test.ts walks the chain so you don't
+have to rediscover it.
+
+### The mark — what the keystone adds
+
+**One instrument re-planned the whole session.** The same probe idiom — measure the fleet
+before believing the plan — rewrote O2 (7 → 622, wrong layer found), killed O1b's timing
+(8, deferred), and halved C0's name honestly (σ ships, r records). Three rungs, three
+reshapes, zero wasted builds. The planning document for a session is not the roadmap; it is
+the roadmap PLUS the first probe you run against it. Budget the probe before the build,
+every time — it is the cheapest architect you will ever hire.
+
+**And watch what the session did without planning it:** O2 taught crystals their NEIGHBORS.
+C0 taught calcite its WATER. The matrix skins taught the vug its COUNTRY ROCK. Piece by
+piece, the specimen is becoming SITUATED — crystal, crowd, chemistry, host — which is what a
+real specimen in a drawer already is: not a shape but a situation, frozen. The convergence
+ladder climbs by context, not just by fidelity.
+
+**The dream, keystone telling.** The prior tellings dreamed the instrument (a rock's story
+re-derived from physics) and the redundancy (every claim standing on enough independent
+science that no knob owns it). Add the direction of the arch: every arc this session pushed
+the render one rung closer to being a SITUATION — and the inverse solver, when it comes, will
+read that ladder downward. Host rock narrows the district; neighbors narrow the pocket;
+water narrows the day. The dream is that when a label-less rock finally gets its biography
+back, it won't be because one measurement matched — it will be because the whole situation
+locked, the way an arch locks: no single stone holding, all of them leaning, and the
+keystone just the place where the leaning meets.
+
+Probe first, ship the science, situate the specimen — and when the boss hands you a
+sentence that names what you were already doing, put it in the tree where the next hand
+will find it.
+
+— the builder, fifth hand, the keystone · 2026-07-06

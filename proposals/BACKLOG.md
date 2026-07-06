@@ -64,7 +64,7 @@ Living list of open work items, captured from session conversations so context s
 > surfaces should auto-generate from SCENARIOS (vugg-add-scenario §10.5 TODO). Traps in the
 > handoff (native prompt() hangs preview; v116 picker guard; fortress RNG non-determinism).
 
-> ## 🧱 SESSION (2026-07-03→06, the foundation) — V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE + **O2 INDUCTION SURFACES** + **C0 THE CALCITE σ LEVER (boss stone #1)** — **CURRENT HANDOFF (the main line): `HANDOFF-FOUNDATIONS-2026-07-03.md` (+ its dated addenda through the σ-lever act 2026-07-06)**
+> ## 🧱 SESSION (2026-07-03→06, the foundation) — V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE + **O2 INDUCTION SURFACES** + **C0 THE CALCITE σ LEVER (boss stone #1)** + WALL UX — **CURRENT HANDOFF (the main line): `HANDOFF-FOUNDATIONS-2026-07-03.md`, read through its KEYSTONE addendum (2026-07-06 — the session table, the follow-the-science doctrine, where the next hand starts)**
 >
 > **C0 UPDATE (`299a270` SIM 217, 2026-07-06, CI 157/2211):** boss stone #1 SHIPPED by the
 > 4a.7 recipe. calciteMorphForm gains the Ω branch (OMEGA_SCALENO=12, the fleet's own
