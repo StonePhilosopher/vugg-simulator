@@ -1748,6 +1748,169 @@
       ]
     },
 
+    "shigar_pegmatite": {
+      "anchor": "Shigar Valley, Skardu District, Gilgit-Baltistan, Pakistan (Dassu / Nyet-Bruk / Yuno / Alchuri pocket zone) — miarolitic aquamarine pegmatites intruding the Dassu orthogneiss dome, Karakoram Metamorphic Complex (Agheem et al. 2014). The beryl-family's anchor scenario (aquamarine's first coverage) + the stage for Tutorial 4 (collecting).",
+      "description": "Miarolitic gem pocket in a Miocene-Pliocene pegmatite dike cutting the Dassu orthogneiss dome. The classic Shigar story: wall-zone microcline + smoky quartz seal the chamber, schorl arrives on the boron budget, albitization sheets the pocket in platy cleavelandite, then beryllium finally crosses and BLUE beryl — aquamarine, Fe²⁺ in a reducing fluid — grows the showpiece prisms. A late Be-exhausted, HF-rich fluid then etches the very crystals it grew: half the character of a Shigar aqua is what the acid took back.",
+      "expects_species": ["feldspar", "quartz", "tourmaline", "albite", "aquamarine", "topaz"],
+      "duration_steps": 70,
+      "notes": [
+        "The Shigar Valley (Skardu District, Gilgit-Baltistan) hosts hundreds of miarolitic gem pegmatites — mostly sub-horizontal sills, 1-4 m thick — intruding the Dassu orthogneiss dome of the Karakoram Metamorphic Complex, sourced by partial melting of the Dassu felsic gneiss itself (Awais et al. 2022; Agheem et al. 2014, 2015). NOT the Baltoro granite, despite the widespread gem-trade conflation: the mined dikes are startlingly YOUNG — ~7-3 Ma, Pliocene, post-dating Baltoro by >10 Myr (Awais et al. 2022 U-Pb) — coeval with Dassu-dome anatexis and rapid Karakoram exhumation; the workings sit at 3,000-5,000 m in glacial terrain (Blauwet 2006; Smith, Smith & Blauwet 1997). The Dassu / Nyet-Bruk / Yuno / Alchuri cluster is the world's premier source of sharp glassy aquamarine on cleavelandite — the 2019 'King of Kashmir' plate (Goyungo cliff, Nyet-Bruk: >20 deep sky-blue crystals on a ~150 kg albite matrix with smoky quartz; Trinchillo 2020) came from exactly this pocket type, ~30 m into the cliff, in the core zone. Character: Li-poor, Be-F-rich pockets of beryl type — schorl but no elbaite/lepidolite/spodumene, low-alkali beryl (Cs2O 0.03-0.04 wt%), a strong F accessory suite (topaz, green fluorite, fluorapatite). Formal LCT/NYF family assignment is unsettled in the literature (Karim et al. 2026 reads LCT-affine; the pocket mineralogy reads beryl-subtype) — the scenario models the observed mineralogy, not the label.",
+        "Fluid framework — NO Shigar-specific fluid-inclusion microthermometry exists (stated honestly; the Shigar FI record is qualitative: 2- and 3-phase aqueous-carbonic inclusions in aquamarine, G&G 54(1) 2018). Pocket-stage numbers are ANALOG-anchored: gem-pocket crystallization 435-355°C by feldspar-solvus thermometry (London, Hunt & Duval 2020; primary pocket feldspars 431±68°C) and 380±80°C / 1.2±0.7 kbar / ~8 wt% NaCl eq at the Luumäki gem-beryl pocket, the best single analog (Michallik, Wagner & Fusswinkel 2021); miarolitic compilation mean 460±25°C (McCaffrey & Jowitt 2023). This scenario's stage-4 aquamarine event floors T at 430°C, dead inside that window; initial P 1.5 kbar and salinity 8 follow the same analogs. The stage-4 'pocket rupture' framing is literature-real, not flavor: sealed pockets build internal fluid overpressure as crystallization pumps volatiles into the cavity (ΔP up to ~+1.5 kbar modeled at the Oktyabrskaya gem pockets, Peretyazhko et al. 2004; London 2013 'bursting the bubble'), and rupture admits the fresh fluid pulse the event models.",
+        "Anchor mineral: AQUAMARINE — in no scenario's expects_species before this one (the whole beryl family was uncovered; the 76-species census, 2026-07-05). The variety dispatch is held to aquamarine by broth design: Cr+V at trace (no emerald), Mn<2 (no morganite), O2≤0.3 (heliodor's Fe³⁺ gate needs O2>0.5 AND Fe≥15), Fe≥8 at pocket stage (plain beryl/goshenite returns 0 when Fe≥8).",
+        "Cascade discipline: initial Be=8 sits BELOW the beryl family's hard Be≥10 ingredient floor — fully dormant, accumulating, until the stage-4 pocket-rupture pulse lifts it to ~16 and σ(aquamarine)≈2.4 fires at T≈455°C (dead center of the family's 350-550°C window). Initial B=5 likewise sits below tourmaline's B≥6 floor so schorl genuinely ARRIVES at stage 2 rather than pre-dating the wall zone. Fe-budget routing (the §4 walk): schorl debits Fe from stage 2 on — the stage-4 event re-floors Fe at 12 (fresh reduced fluid with the rupture) so the blue is guaranteed on Fe-hungry seeds; without it the scenario ships occasional goshenite.",
+        "The hf_etch stage is the Shigar signature — famously etched, sculpted aquamarines (structure-controlled dissolution pits and skeletal etch forms on Pakistani blue beryl: G&G 57(2) Summer 2021 Quarterly Crystal — the late fluid fell out of equilibrium with the very beryl it grew). Mechanism here: late fluid crashes Be (the big crystals took it; σ falls under 1.0) while F>30 and pH<3.0 — exactly _beryl_family_dissolution's etch branch (trigonal pits, stepped faces). grow_quartz's HF note fires on the same chemistry. Smoky quartz is free with composition 'pegmatite': the Rossman [AlO₄]⁰ γ-dose path keys off the radiogenic felsic host. Blue-not-gold: Fe²⁺ in the beryl channels is the blue chromophore (Goldman, Rossman & Parkin 1978); oxidized Fe³⁺ gives heliodor's yellow, which is why the broth pins O2 low.",
+        "Wallrock: 'pegmatite' (inert silicate proxy — pocket pH excursions are unbuffered, which the etch stage needs) + cavity_render 'sharp' + occlusion 0.30, all per the gem_pegmatite precedent (London 2008 pocket photographs: crisp euhedral cavity walls, prisms standing proud). thermal_pulses false — a sealed miarolitic chamber has no fracture-valve hot injections; the seven events ARE the thermal story (600→300°C).",
+        "Tutorial-tempo: duration_steps 70 (≈2.3 min at default narrative pace) because this scenario doubles as Tutorial 4's stage — a first-time collector watches the whole pocket story without a 200-step sit. The pocket (140 mm, size_class via explicit diameter) yields cabinet-specimen aquas worth collecting.",
+        "shape_seed 1985 — the mid-1980s Dassu production boom that put Shigar aquamarine on every dealer's table."
+      ],
+      "initial": {
+        "temperature_C": 600.0,
+        // 1.5 kbar per the miarolitic analogs: London/Hunt/Duval 2020
+        // model ~7 km; Luumäki 1.2±0.7 kbar (Michallik et al. 2021).
+        "pressure_kbar": 1.5,
+        "fluid": {
+          // Pegmatite-level silica saturation (gem_pegmatite convention).
+          "SiO2": 8000,
+          "Ca": 20,
+          "CO3": 8,
+          // Fe 40: schorl food + the aquamarine reserve. O2 0.15 keeps it
+          // ferrous (heliodor needs O2>0.5); Fe²⁺-in-channel is the blue
+          // (Goldman, Rossman & Parkin 1978). Shigar aquas run FeO
+          // 0.56-0.60 wt% (Agheem et al. 2014) — a real but modest iron
+          // budget, matching the pale-to-sky-blue Shigar color range.
+          "Fe": 40,
+          // Variety-dispatch fences: Mn<2 (morganite), Cr<0.5 + V<1 (emerald).
+          "Mn": 0.8,
+          "Cr": 0.05,
+          "V": 0.2,
+          "Mg": 4,
+          "Al": 150,
+          // Alkali story: microcline first, cleavelandite event flips K→Na.
+          "K": 80,
+          "Na": 40,
+          // Incompatibles below their hard ingredient floors — dormant,
+          // accumulating; the events lift them across (see notes).
+          "Be": 8,     // beryl-family floor is Be≥10; stage 4 lifts to ~16
+          "B": 5,      // tourmaline floor is B≥6; stage 2 lifts to ~20
+          "F": 18,     // topaz floor is F≥20; stage 5 lifts to ~38
+          "Li": 4,     // Li-poor weakly-evolved LCT (beryl-columbite type):
+                       // schorl yes, elbaite/lepidolite/spodumene never —
+                       // low-alkali beryl is the Shigar signature
+          "P": 6,
+          "Ti": 12,
+          "O2": 0.15,
+          "pH": 6.5,
+          // Luumäki analog: 8.0±2.7 wt% NaCl eq (Michallik et al. 2021).
+          "salinity": 8.0
+        },
+        "wall": {
+          "composition": "pegmatite",
+          "thickness_mm": 500.0,
+          "vug_diameter_mm": 140.0,
+          "architecture": "pocket",
+          "primary_bubbles": 3,
+          "secondary_bubbles": 5,
+          "shape_seed": 1985,
+          "thermal_pulses": false,
+          "cavity_render": "sharp",
+          "occlusion": true,
+          "occlusion_fraction": 0.30
+        }
+      },
+      "events": [
+        { "step": 5,  "type": "shigar_outer_shell",     "name": "Outer Shell",        "description": "Wall-zone microcline + smoky quartz seal the chamber" },
+        { "step": 12, "type": "shigar_first_schorl",    "name": "Schorl Arrives",     "description": "B crosses its floor — black tourmaline needles out" },
+        { "step": 22, "type": "shigar_cleavelandite",   "name": "Cleavelandite",      "description": "Albitization — platy white albite sheets the pocket" },
+        { "step": 32, "type": "shigar_aqua_saturation", "name": "Aquamarine",         "description": "Be crosses at last; Fe²⁺ in reducing fluid = BLUE beryl" },
+        { "step": 48, "type": "shigar_topaz_window",    "name": "Topaz Window",       "description": "F builds past the topaz gate as the pocket cools to 380°C" },
+        { "step": 58, "type": "shigar_hf_etch",         "name": "The Etch",           "description": "Be-exhausted HF-rich fluid sculpts the aquas — the Shigar signature" },
+        { "step": 65, "type": "shigar_final_cooling",   "name": "Final Cooling",      "description": "Meteoric flush; the pocket goes quiet at 300°C" }
+      ],
+      // TUTORIAL 4: COLLECTING — engine-v3 legends-mode script (schema in
+      // js/70a-tutorial-overlay.ts). Rides THIS scenario rather than a
+      // tutorial_* twin: the pocket is real science and the tutorial is a
+      // guest on it. mode 'legends' boots Simulation mode and presets the
+      // setup row; seed 42 makes every player's pocket match this script
+      // (21 crystals / 6 species / 4 etched aquamarines, pinned in
+      // tests-js/shigar-pegmatite.test.ts). `step: N` fires on the
+      // NARRATIVE PLAYBACK position; allowModes lets the tour walk to the
+      // Library without the mode-switch teardown ending it.
+      "tutorial": {
+        "mode": "legends",
+        "preset": { "seed": 42, "steps": 70 },
+        "unlock": [],
+        "steps": [
+          { "anchor": "#legends-controls", "side": "bottom",
+            "text": "Welcome to Simulation mode — the observatory. Creative mode hands you the verbs; here you choose a story and deep time runs it without you. This tutorial grows a real Pakistani aquamarine pocket, and teaches you how to KEEP what it makes.",
+            "hint": "press Enter or Space (or click Continue) to step through" },
+          { "anchor": "#scenario", "side": "bottom",
+            "text": "The scenario picker. Every entry is a real place with cited chemistry — mines, caves, hot springs. We've set it to the Shigar Valley, Pakistan: miarolitic pockets in the Karakoram at four thousand meters, the world's finest aquamarine." },
+          { "anchor": "#seed", "side": "bottom",
+            "text": "Seeds. The same seed always grows the same pocket — that's how you re-visit a story or share one. We've set 42, so your pocket will match this tutorial crystal for crystal." },
+          { "anchor": "#steps", "side": "bottom",
+            "text": "Time steps: 70, each ~50,000 years — about 3.5 million years of pocket life. These dikes are barely Pliocene; it's enough." },
+          { "action": { "event": "click", "selector": "#btn-grow" },
+            "anchor": "#btn-grow", "side": "bottom", "unlock": ["#btn-grow"],
+            "text": "Press Grow. The whole story computes at once, then plays back at reading pace.",
+            "hint": "click the highlighted Grow button" },
+          { "step": 6, "anchor": "#output", "side": "left",
+            "text": "The story is writing itself — no Advance button here; time flows on its own. Wall-zone feldspar and quartz are sealing the chamber. Watch the wall above as you read." },
+          { "step": 13, "anchor": "#narrative-speed-cluster", "side": "left",
+            "text": "Impatient? These set the playback pace — 2s, 1s, or 0.2s per step. The schorl — black tourmaline — is arriving now, quietly eating the iron. Remember that." },
+          { "step": 24, "anchor": "#topo-panel", "side": "top",
+            "text": "The pocket just vented and re-sheeted itself in platy white cleavelandite — the shelf every great Shigar specimen stands on." },
+          { "step": 33, "anchor": "#topo-panel", "side": "top",
+            "text": "There it is. Beryllium finally crossed and the beryl growing on that cleavelandite is BLUE — ferrous iron in a reducing fluid. Aquamarine. In an oxidized pocket the same iron would have made golden heliodor." },
+          { "step": 59, "anchor": "#output", "side": "left",
+            "text": "Now the pocket turns on its own children: the late fluid is beryllium-poor and hydrofluoric-acid-rich, and it's ETCHING the aquamarines it grew. This is why real Shigar crystals come sculpted, pitted, frosted into steps. Half their character is what the acid took back." },
+          { "step": 70, "anchor": "#legends-inventory", "side": "left",
+            "text": "The pocket is quiet. Every crystal that grew has a card in the Crystal Inventory — species, size, habit, zones. Time to go collecting." },
+          { "action": { "event": "click", "selector": ".inv-collect-btn" },
+            "anchor": "#legends-inventory", "side": "left",
+            "text": "Pick your favorite aquamarine and press 💎 Collect. You'll be asked to name it — collectors name their best pieces (the 2019 giant from this valley is called the King of Kashmir).",
+            "hint": "click a 💎 Collect button on any crystal card" },
+          { "anchor": "#legends-inventory", "side": "left",
+            "text": "That crystal is now in your permanent collection — SAVED. It survives closing the game (it lives in your browser's storage), and the collection is the game's save file: 'Load Game' on the title screen opens it. '💎 Collect all' grabs an entire pocket at once." },
+          { "action": { "event": "click", "selector": "#mode-library" },
+            "allowModes": ["library"], "spotlight": "#mode-toggle",
+            "anchor": "#mode-library", "side": "bottom",
+            "text": "Now let's visit where collections live. Click 📚 Library in the quick-nav bar.",
+            "hint": "click the highlighted Library button" },
+          { "anchor": "#library-progress", "side": "bottom",
+            "text": "The Library — the field guide to every species the simulator knows, and your collection's home. This banner is the score: species collected out of 180. It just went up." },
+          { "action": { "event": "input", "selector": "#lib-search" },
+            "anchor": "#lib-search", "side": "bottom",
+            "text": "Find your mineral — type 'aqua' in the search box.",
+            "hint": "start typing in the search field" },
+          { "anchor": "#library-grid", "side": "top",
+            "text": "The aquamarine card: chemistry, habits, temperature window, competitiveness — and at the bottom, YOUR specimen, with a 📦 count badge. ▶ Play spins it on the Record Player and reads its growth zones back as music. ✎ renames it. Every mineral card works this way." },
+          { "anchor": "#library-grid", "side": "top", "buttonLabel": "Finish tutorial",
+            "text": "That's the loop: grow, collect, catalog. 180 species are out there — scenario broths, creative experiments, random vugs. The vug remembers what you keep." }
+        ]
+      },
+      "sources": [
+        "Agheem, M.H., Shah, M.T., Khan, T., Murata, M., Arif, M. & Dars, H. 2014 — Shigar valley gemstones, their chemical composition and origin, Skardu, Gilgit-Baltistan, Pakistan. Arabian Journal of Geosciences 7(9), 3801-3814 (EPMA on Shigar beryl/schorl/topaz/fluorite/apatite; gems in vugs of the intermediate zone)",
+        "Agheem, M.H. et al. 2015 — Petrogenetic evolution of pegmatites of the Shigar Valley, Skardu, Gilgit-Baltistan, Pakistan. Arabian Journal of Geosciences 8(11), 9877-9886",
+        "London, D., Hunt, L.E. & Duval, C.L. 2020 — Temperatures and duration of crystallization within gem-bearing cavities of granitic pegmatites. Lithos 360-361, 105417 (pocket stage 435-355 C)",
+        "Michallik, R.M., Wagner, T. & Fusswinkel, T. 2021 — Late-stage fluid exsolution and fluid phase separation in the Luumaki gem beryl pegmatite, SE Finland. Lithos 380-381, 105852 (380±80 C, 1.2±0.7 kbar, ~8 wt% NaCl eq — the pocket-fluid analog)",
+        "London, D. 2008 — Pegmatites. Canadian Mineralogist Special Publication 10, 347 p. (miarolitic framework)",
+        "Kazmi, A.H. & O'Donoghue, M. 1990 — Gemstones of Pakistan: Geology and Gemmology. Gemstone Corporation of Pakistan, Peshawar, 146 pp.",
+        "Blauwet, D. 2006 — Famous mineral localities: Alchuri, Shigar Valley, Northern Areas, Pakistan. Mineralogical Record 37(6), 513-540",
+        "Smith, B., Smith, C. & Blauwet, D. 1997 — A guide to the mineral localities of the Northern Areas, Pakistan. Mineralogical Record 28(3), 183-200",
+        "Trinchillo, D. 2020 — Collecting the King of Kashmir Aquamarine. Mineralogical Record 51(6), 755-779 (the Goyungo cliff / Nyet-Bruk find; geology section by F. Pezzotta)",
+        "Awais, M., Liu, X.-C., Qasim, M. & Wu, F.-Y. 2022 — U(-Th)-Pb age and petrogenesis of Shigar leucogranites, Karakoram Metamorphic Complex, North Pakistan. Geological Journal 57, 4052-4073 (the ~7-3 Ma ages; anatexis of the Dassu gneiss)",
+        "Goldman, D.S., Rossman, G.R. & Parkin, K.M. 1978 — Channel constituents in beryl. Physics and Chemistry of Minerals 3, 225-235 (Fe2+ channel = the blue)",
+        "Hu, Y. & Lu, R. 2018 — Aquamarine from Pakistan. Gems & Gemology 54(1), Gem News International (Shigar FI observations, gemological data)",
+        "Quarterly Crystal: Heavily Etched Blue Beryl Crystals Reportedly from Pakistan. Gems & Gemology 57(2), Summer 2021 (the etch-stage ground truth)",
+        "Parrish, R.R. & Tirrul, R. 1989 — U-Pb age of the Baltoro granite, northwest Himalaya. Geology 17(12), 1076-1079 (21.0±0.5 Ma batholith context)",
+        "Cerny, P. & Ercit, T.S. 2005 — The classification of granitic pegmatites revisited. Canadian Mineralogist 43(6), 2005-2026",
+        "Laurs, B.M., Dilles, J.H., Wairrach, Y., Kausar, A.B. & Snee, L.W. 1998 — Symmetrically zoned miarolitic granitic pegmatites at Stak Nala, Nanga Parbat-Haramosh Massif. Canadian Mineralogist 36, 1-47 (the cleavelandite-as-volatile-escape + albitization-by-cooling-alkali-fluoride mechanism; NPHM analog, not Shigar proper)",
+        "Peretyazhko, I.S., Zagorsky, V.Ye., Smirnov, S.Z. & Mikhailov, M.Y. 2004 — Conditions of pocket formation in the Oktyabrskaya tourmaline-rich gem pegmatite, Transbaikalia. Chemical Geology 210, 91-111 (pocket internal overpressure ΔP ~+1.5 kbar → rupture)",
+        "London, D. 2013 — Crystal-filled cavities in granitic pegmatites: bursting the bubble. Rocks & Minerals 88(6) (pocket rupture concept)",
+        "McCaffrey, D.M. & Jowitt, S.M. 2023 — (miarolitic pegmatite compilation: mean crystallization 460±25 C). Earth-Science Reviews"
+      ]
+    },
+
     "ouro_preto": {
       "anchor": "Ouro Preto Imperial Topaz veins, Minas Gerais, Brazil (Variant B per Morteani et al. 2002).",
       "description": "Hydrothermal topaz vein in Precambrian phyllite + quartzite. Single clean cooling curve from 360°C to 50°C — the 'anti-flash-quench' of the gem-pegmatite scenarios. F-pulse gates topaz nucleation; Cr leach commits the imperial color.",
@@ -2513,12 +2676,12 @@
 
     "tutorial_first_crystal": {
       "anchor": "(tutorial scaffold — generic silica-rich broth)",
-      "description": "Tutorial 1: First Crystal. Grow a quartz, then watch what happens when conditions drift out of its growth window.",
+      "description": "Tutorial 1: The Grand Tour + First Crystal. A guided top-down walk of the whole interface, then grow a quartz and watch what happens when conditions drift out of its growth window.",
       "expects_species": ["quartz"],
       "duration_steps": 30,
       "notes": [
-        "Tutorial scenario. Designed for the guided first-time-player experience: simple silica-rich broth, quartz nucleates within a few steps at 180°C, then a scripted temperature drop at step 8 pulls T well out of quartz's growth window. The intended player learning is: (1) clicking Advance moves time, (2) crystals need conditions in the right range, (3) when the conditions drift, growth stops.",
-        "Surfaced in the New Game Menu under Tutorials. Not anchored to a real locality — it's a teaching scaffold. Sandbox-testable as a normal scenario without the callout overlay UI that ships in a follow-up.",
+        "Tutorial scenario. Designed for the guided first-time-player experience. REWORKED 2026-07-04 (the Grand Tour): the overlay script now opens with a top-down tour of the screen (title, quick-nav, Wall Profile viewers ending on the helicoid manifold, the σ nucleating/dormant readout, action panel, log, inventory) before handing off to the original arc — simple silica-rich broth, quartz nucleates within a few steps at 180°C, then a scripted temperature drop at step 8 pulls T well out of quartz's growth window. The intended player learning is: (1) what every part of the screen is, (2) clicking Advance moves time, (3) crystals need conditions in the right range, (4) when the conditions drift, growth stops.",
+        "Surfaced in the New Game Menu under Tutorials. Not anchored to a real locality — it's a teaching scaffold. Sandbox-testable as a normal scenario (the overlay only engages via startTutorial).",
         "Broth shape mirrors FLUID_PRESETS.silica (the existing 'Silica-rich' starter fluid) so the lesson generalizes to that picker entry."
       ],
       "initial": {
@@ -2552,17 +2715,122 @@
       "events": [
         { "step": 8, "type": "tutorial_temperature_drop", "name": "Temperature Drops", "description": "Conditions drift out of quartz's growth window — the crystal stops growing" }
       ],
-      // Tutorial overlay script consumed by the JS tutorial state machine
-      // (window.startTutorial). Each step fires when fortressSim.step
-      // reaches its `step` value. Authors should put one callout per
-      // sim-step trigger (later steps replace earlier ones immediately).
+      // Tutorial overlay script — ENGINE v2 (the Grand Tour rework,
+      // 2026-07-04). Consumed by the state machine in
+      // js/70a-tutorial-overlay.ts (full schema documented there).
+      // Three trigger types: `step: N` fires when fortressSim.step
+      // reaches N (one callout per trigger — bursts keep only the
+      // last); `action: {event, selector, checked?}` waits for the
+      // player to do the thing; neither = a Continue step (button /
+      // Enter / Space). `unlock` arrays grant .tutorial-allow;
+      // `spotlight` un-dims the mode-toggle bar.
+      //
+      // Structure: a top-down SCREEN TOUR (title → quick-nav → Wall
+      // Profile viewers ending on the helicoid → status bar + the
+      // nucleating/dormant σ readout → action buttons → log →
+      // inventory), then the original first-crystal NARRATIVE ARC
+      // (grow quartz, lose the growth window at step 8, read the
+      // lesson) — which is where the tour's "we'll circle back to
+      // Advance" promise lands.
       "tutorial": {
+        // Nothing whitelisted at start — the tour unlocks controls as
+        // it reaches them (Advance at the handoff step, everything at
+        // the finale).
+        "unlock": [],
         "steps": [
-          { "step": 0,  "anchor": "#f-advance",       "side": "top",   "text": "Welcome. This is your vug — an empty pocket inside rock, waiting for a crystal to grow. The broth around it is silica-rich and warm enough for quartz. Press 'Advance Step' to move time forward by ~50,000 years." },
-          { "step": 4,  "anchor": "#fortress-status", "side": "right", "text": "Quartz is forming on the wall. Each press of Advance grows it a little more. Notice the temperature sitting around 180°C — that's right in quartz's comfort window." },
-          { "step": 9,  "anchor": "#fortress-status", "side": "right", "text": "The temperature just dropped sharply. Watch what happens to growth as you keep pressing Advance — the broth got colder, and cold silica wants to stay in solution rather than crystallize out." },
-          { "step": 16, "anchor": "#fortress-log",    "side": "left",  "text": "Notice the log: 'no growth this step' is starting to appear. Your crystal is still there, beautiful, but no new layers are forming. The broth doesn't want to give up its silica anymore." },
-          { "step": 25, "anchor": "#fortress-log",    "side": "left",  "text": "That's the lesson: conditions control whether a crystal grows. Same broth, same crystal, different temperature — different outcome. Everything else in the game is just elaborations on this idea. (Press Home when ready, or keep going.)" }
+          // ---- THE TOUR: top of the screen, working down ----
+          { "anchor": "h1", "side": "bottom",
+            "text": "Welcome to Vugg Simulator — a realistic crystal growing and collecting game. You are inside a vug: a pocket in rock, flooded with hot mineral broth. Given conditions and time, crystals grow here — the same way every museum specimen grew. This tour walks the screen top to bottom.",
+            "hint": "press Enter or Space (or click Continue) to step through" },
+          { "anchor": "#mode-toggle", "side": "bottom", "spotlight": "#mode-toggle",
+            "text": "The quick-nav bar. Five doors, always at the top of the screen. Left to right: your running game, two instruments for reading finished crystals, the field guide, and Home." },
+          { "anchor": "#mode-current", "side": "bottom", "spotlight": "#mode-toggle",
+            "text": "▶ Current Game — jumps back to whatever run is live. Wander off to any other screen and this returns you to your vug, mid-story." },
+          { "anchor": "#mode-groove", "side": "bottom", "spotlight": "#mode-toggle",
+            "text": "📀 Record Player — spins a collected crystal like vinyl. Every growth zone is a groove, and the needle reads the chemistry back out of it. Crystals really are records; this just plays them." },
+          { "anchor": "#mode-stripview", "side": "bottom", "spotlight": "#mode-toggle",
+            "text": "📼 Strip View — the vug's flight recorder. Every step of a run is captured as a strip of chip readings; laid side by side they show the whole history at a glance." },
+          { "anchor": "#mode-library", "side": "bottom", "spotlight": "#mode-toggle",
+            "text": "📚 Library — the field guide. Every mineral species the simulator knows, with habits, chemistry, and the real localities they come from." },
+          { "anchor": "#mode-home", "side": "bottom", "spotlight": "#mode-toggle",
+            "text": "🏠 Home — back to the title screen. It also ends this tutorial, so save it for when you're done." },
+
+          // ---- Wall Profile: the viewer stack ----
+          { "anchor": "#topo-panel", "side": "top",
+            "text": "The Wall Profile — your window into the vug. Everything that nucleates, grows, dissolves, or gets buried happens on this wall. It has several viewers; we'll flip through them." },
+          { "anchor": "#topo-canvas-three", "side": "top",
+            "text": "The default viewer: the cavity as a 3D model. Drag to orbit it — go ahead, the tour will wait. Crystals appear on the wall as they grow, at true relative scale." },
+          { "anchor": ".topo-zoom-ctrls", "side": "right",
+            "text": "Zoom. − and + step the magnification; the label shows where you are." },
+          { "anchor": ".topo-slice-ctrls", "side": "right",
+            "text": "Slices. The cavity is read in horizontal rings — ◀ and ▶ page through them one at a time, or show all at once. Useful when a crust hides what's underneath." },
+          { "anchor": ".topo-camera-ctrls", "side": "right",
+            "text": "Camera. ↻ makes dragging orbit, ✥ makes dragging pan, ⊙ recenters everything. The last two buttons — ⬚ and ⌇ — switch viewers. Let's try them." },
+          { "action": { "event": "click", "selector": "#topo-three-btn" },
+            "anchor": "#topo-three-btn", "side": "right",
+            "text": "Click ⬚ to switch to the flat viewer.",
+            "hint": "click the highlighted ⬚ button" },
+          { "anchor": "#topo-canvas", "side": "top",
+            "text": "The unwrapped wall: the whole cavity surface peeled flat into one map. Amber is bare rock; colors are crystal classes. When a run finishes, a ▶ appears here to replay the wall's entire history like a film." },
+          { "action": { "event": "click", "selector": "#topo-three-btn" },
+            "anchor": "#topo-three-btn", "side": "right",
+            "text": "Click ⬚ again to return to the 3D model.",
+            "hint": "click the highlighted ⬚ button" },
+          { "action": { "event": "click", "selector": "#helix-overlay-btn" },
+            "anchor": "#helix-overlay-btn", "side": "right",
+            "text": "Now the strangest instrument on the panel. Click ⌇ to open the Helicoid Manifold.",
+            "hint": "click the highlighted ⌇ button" },
+          { "anchor": "#topo-canvas-three", "side": "top",
+            "text": "The Helicoid Manifold. A radar sweeps through the vug — one full rotation is one moment of time, advancing as it turns. The spiral trails it leaves are the vug's parameters traced through space: a shape you read the way you'd read an instrument, not a picture." },
+          { "anchor": "#helix-legend", "side": "bottom",
+            "text": "The banner above the vug decodes it. Each row is one parameter the radar listens to — temperature, pH, saturation — with its live value each revolution. Toggle rows on and off to choose what the trails trace. More information lives up here than anywhere else on the screen; come back to it when a run confuses you." },
+          { "action": { "event": "click", "selector": "#helix-overlay-btn" },
+            "anchor": "#helix-overlay-btn", "side": "right",
+            "text": "Click ⌇ again to put the radar away — it'll be here when you're ready for it.",
+            "hint": "click the highlighted ⌇ button" },
+
+          // ---- Status bar: vitals + the σ readout ----
+          { "anchor": "#fortress-status", "side": "bottom",
+            "text": "The status bar: the vital signs of the broth. Step counts time (~50,000 years each). Temp, Press, pH, and Flow are the conditions every mineral in the game answers to." },
+          { "anchor": "#f-sat-bar", "side": "bottom",
+            "text": "Below the vitals: every mineral this broth could grow, sorted by supersaturation (σ). σ ≥ 1 — NUCLEATING: the fluid holds more of that mineral's ingredients than it can keep dissolved, and seeds can form. σ < 1 — DORMANT: the ingredients are present but content to stay in solution. Watch this list — it's the forecast." },
+          { "action": { "event": "change", "selector": "#sat-filter-dormant", "checked": false },
+            "anchor": ".sat-filter-row", "side": "bottom",
+            "text": "These checkboxes filter the readout. Most of the list is dormant most of the time — uncheck 'dormant' to focus on what's actually live.",
+            "hint": "uncheck the dormant checkbox" },
+
+          // ---- Action panel, log, inventory ----
+          { "anchor": ".action-grid", "side": "top",
+            "text": "The instrument panel — every verb that touches the physics. Warm and cool the broth, flood and drain the water, push the pH, shake the rock. They're dimmed during the tour; all of them unlock at the end." },
+          { "anchor": "#f-advance", "side": "top",
+            "text": "⏳ Advance — the most important button in the game. One press moves time forward ~50,000 years and lets the chemistry act. We'll circle back to it in a moment." },
+          { "anchor": ".btn-finish", "side": "top",
+            "text": "📜 Finish & Narrate ends the run and writes the vug's whole story as prose. ↩️ Reset starts the pocket over. Copy to clipboard exports the log for keeping." },
+          { "anchor": "#fortress-log", "side": "left",
+            "text": "The log. Every step prints here, newest at the top: step headers, growth per crystal, ✦ nucleations, ⚡ events arriving in the broth, 🧱 changes to the wall itself. When something surprises you, the explanation is usually in here." },
+          { "anchor": "#fortress-inventory", "side": "left",
+            "text": "The Crystal Inventory. Every crystal that seeds on the wall gets a card — species, size, habit, zone count — and a 💎 Collect button for keeping the good ones. You'll tap a card shortly." },
+
+          // ---- Handoff into the narrative arc ----
+          { "anchor": "#f-advance", "side": "top", "unlock": ["#f-advance", ".act-wait"],
+            "text": "Time to grow something. This broth is 180°C and loaded with silica — quartz country. Advance is unlocked (⏩ Advance 10 too, for the impatient). Press it and watch the wall.",
+            "buttonLabel": "Begin ⏎" },
+
+          // ---- THE ARC: first crystal, and losing the window ----
+          { "step": 4,  "anchor": "#fortress-status", "side": "bottom",
+            "text": "Quartz is forming on the wall. Each press of Advance grows it a little more. Notice the temperature sitting around 180°C — that's right in quartz's comfort window." },
+          { "step": 9,  "anchor": "#f-stat-temp", "side": "bottom",
+            "text": "The temperature just dropped sharply. Watch what happens to growth as you keep pressing Advance — the broth got colder, and cold silica wants to stay in solution rather than crystallize out." },
+          { "action": { "event": "click", "selector": ".inv-crystal" },
+            "anchor": "#fortress-inventory", "side": "left",
+            "text": "Your quartz has a card in the inventory now. Tap it.",
+            "hint": "tap the quartz card (if there's no card yet, Advance a few more steps first)" },
+          { "anchor": "#zone-modal", "side": "left",
+            "text": "The zone history. Every band is one growth zone — a time-stamped record of the broth at the moment it grew: temperature, chemistry, UV response. This is how real collectors read real crystals, and everything you do to the broth is being written down in here. Close it when you've had a look." },
+          { "step": 16, "anchor": "#fortress-log", "side": "left",
+            "text": "Notice the log: 'no growth this step' is starting to appear. Your crystal is still there, beautiful, but no new layers are forming. The broth doesn't want to give up its silica anymore." },
+          { "step": 25, "anchor": "#fortress-log", "side": "left", "unlock": [".action-btn"],
+            "text": "That's the lesson: conditions control whether a crystal grows. Same broth, same crystal, different temperature — different outcome. Everything else in the game is elaborations on this idea. The whole instrument panel is now unlocked — try to warm the broth back into quartz's window, or finish up and keep the crystal." }
         ]
       },
       "sources": [

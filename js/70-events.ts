@@ -136,27 +136,30 @@ window.showCallout = showCallout;
 window.hideCallout = hideCallout;
 
 // ============================================================
-// Tutorial state machine (slice 3 of TUTORIAL-SYSTEM)
+// Tutorial state machine (slice 3 of TUTORIAL-SYSTEM — engine v2)
 // ============================================================
 // Walks the `tutorial.steps` array attached to a scenario spec in
-// data/scenarios.json5, firing the appropriate callout as the
-// fortress-mode sim step counter advances. Source of truth for
-// "current step" is fortressSim.step (only fortressStep('wait')
-// advances it; modifier actions like Heat/Cool don't).
-//
-// Schema (per step in tutorial.steps):
-//   step    — int. fortressSim.step value at which this callout fires
-//             (any step whose .step <= fortressSim.step that hasn't
-//             fired yet will fire on the next advance)
-//   anchor  — CSS selector OR HTMLElement. Where the callout points.
-//   text    — tooltip body
-//   side    — 'top' | 'bottom' | 'left' | 'right' | 'auto' (optional)
+// data/scenarios.json5. Engine v2 (2026-07-04, the Grand Tour rework)
+// supports THREE trigger types per step — sim-step (legacy `step: N`,
+// fires as fortressSim.step advances), action (`action: {event,
+// selector, checked?}` — waits for the player to do a thing), and
+// continue (neither field — Continue button / Enter / Space). Full
+// schema documentation lives at the top of 70a-tutorial-overlay.ts.
 //
 // Control-locking: when active, body has `.tutorial-active` class.
-// CSS hides all .action-btn except those marked `.tutorial-allow`
-// (currently just the Advance button) and the broth panel.
+// CSS dims + inerts all .action-btn except those marked
+// `.tutorial-allow`; steps unlock controls progressively via their
+// `unlock` arrays (tutorial-level `unlock` defaults to ['#f-advance']
+// for the legacy sim-step tutorials).
 
-let _tutorialState = null; // { steps: [...], stepIdx: 0 } | null
+let _tutorialState = null; // { steps: [...], stepIdx, renderedIdx, mode } | null (engine v2/v3 — see 70a)
+
+// ENGINE v3 — the narrative playback position for legends-mode
+// tutorials. Legends runs the whole sim synchronously up front, then
+// displayLines paces the story; `step: N` tutorial triggers in legends
+// mode fire against THIS counter (written from displayLines' per-step
+// header sync + completion), not against the sim's final step count.
+let _legendsPlaybackStep = 0;
 
 window.startTutorial = startTutorial;
 window.endTutorial = endTutorial;
@@ -369,6 +372,17 @@ const EVENT_REGISTRY = {
   grimsel_seal_2: event_grimsel_seal_2,
   grimsel_breach_2: event_grimsel_breach_2,
   grimsel_late_carbonate: event_grimsel_late_carbonate,
+  // 2026-07-05 — Shigar Valley aquamarine pegmatite (Gilgit-Baltistan,
+  // Pakistan): the beryl-family's anchor scenario + Tutorial 4's stage.
+  // Seven pocket-story beats; the hf_etch is the Shigar signature.
+  // See js/70w-shigar.ts.
+  shigar_outer_shell: event_shigar_outer_shell,
+  shigar_first_schorl: event_shigar_first_schorl,
+  shigar_cleavelandite: event_shigar_cleavelandite,
+  shigar_aqua_saturation: event_shigar_aqua_saturation,
+  shigar_topaz_window: event_shigar_topaz_window,
+  shigar_hf_etch: event_shigar_hf_etch,
+  shigar_final_cooling: event_shigar_final_cooling,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and

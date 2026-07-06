@@ -659,6 +659,15 @@ const _DRIPSTONE_ELIGIBLE_TOKENS = new Set([
   'prism', 'spike', 'rhomb', 'scalene', 'botryoidal',
 ]);
 
+// W-F O2 — the tokens whose emitted geometry is a single CONVEX body, so a
+// neighbour plane cut yields one convex contact cap (_clipConvexGeom). Concave
+// forms (botryoidal / dripstone / frostwork / the *_twin composites — none of
+// these tokens appear here) and stepped/hoppered/etched overprints opt out at
+// the clip site. Mirrors the probe's CONVEX_TOKENS (tools/o2-contact-probe.mjs).
+const _O2_CONVEX_TOKENS = new Set([
+  'cube', 'octahedron', 'rhomb', 'scalene', 'tablet', 'prism', 'spike', 'rhombic_dodec', 'dodecahedron',
+]);
+
 // PROPOSAL-HABIT-BIAS Slice 4 — choose the geometry token for a
 // crystal, honoring air-mode dripstone override. Centralizes the
 // "fluid → canonical primitive, air → dripstone (when eligible)"
@@ -3816,6 +3825,73 @@ function _topoCrystalsSignature(sim: any, replayStep?: number): string {
   return parts.join('|');
 }
 
+// W-F O2 — neighbour placement for the induction-surface clip. Returns a
+// crystal's WORLD centre + a generous (circumscribed-sphere) bounding reach,
+// using the SAME anchor→cAxis→occlusion-offset math the mesh loop applies at
+// mesh.position, so the meeting planes computed below sit consistently with
+// where each crystal actually renders. (The loop's wasFloored aspect
+// re-derivation for sub-floor crystals is skipped here — a <2 mm centre shift
+// on invisible crystals.) Returns null for the crystals the loop also skips
+// (dissolved non-perimorphs, un-anchored floaters, not-yet-nucleated in replay).
+function _o2PlaceBody(crystal: any, wall: any, replayStep: number | undefined, ringCount: number, N: number, initR: number): any {
+  if (!crystal || (crystal.dissolved && !crystal.perimorph_eligible)) return null;
+  let renderC = crystal.c_length_mm, renderA = crystal.a_width_mm;
+  if (replayStep != null) {
+    const hist = _topoHistoricalCrystalSize(crystal, replayStep);
+    if (hist) { renderC = hist.c_length_mm; renderA = hist.a_width_mm; }
+    else if (!(crystal.dissolved && crystal.perimorph_eligible)) return null;
+  }
+  const anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
+  if (!anchor) return null;
+  let ringIdx = anchor.ringIdx;
+  if (ringIdx == null || ringIdx < 0 || ringIdx >= ringCount) ringIdx = 0;
+  const cellIdx = anchor.cellIdx;
+  if (cellIdx == null) return null;
+  const ring = wall.rings[ringIdx]; if (!ring) return null;
+  const cell = ring[cellIdx]; if (!cell) return null;
+  const phi = Math.PI * (ringIdx + 0.5) / ringCount;
+  const sinPhi = Math.sin(phi), cosPhi = Math.cos(phi);
+  const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
+  const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0.0;
+  const baseR = cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
+  const radiusMm = (baseR + cell.wall_depth) * polar;
+  const theta = (2 * Math.PI * cellIdx) / N + twist;
+  const ax = radiusMm * sinPhi * Math.cos(theta);
+  const ay = -radiusMm * cosPhi;
+  const az = radiusMm * sinPhi * Math.sin(theta);
+  const len = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
+  const [cAxisX, cAxisY, cAxisZ] = _topoCAxisForCrystal(crystal, -ax / len, -ay / len, -az / len);
+  const token = _resolveCrystalGeomToken(crystal, crystal.habit);
+  const inReplay = (replayStep != null);
+  const cLen = Math.max(inReplay ? 0.0 : 2.0, renderC);
+  const aWid = Math.max(inReplay ? 0.0 : 1.5, renderA);
+  const equant = token === 'cube' || token === 'octahedron' || token === 'rhomb'
+    || token === 'scalene' || token === 'tablet' || token === 'rhombic_dodec' || token === 'dodecahedron';
+  const simOccF = (crystal._occlusion && typeof crystal._occlusion.attachedFraction === 'number') ? crystal._occlusion.attachedFraction : null;
+  const occF = simOccF != null ? simOccF : (equant && crystal.growth_environment !== 'air' ? 0.5 : 0);
+  const off = cLen * (0.5 - occF);
+  return {
+    id: crystal.crystal_id,
+    enclosed: crystal.enclosed_by != null,
+    cx: ax + cAxisX * off, cy: ay + cAxisY * off, cz: az + cAxisZ * off,
+    reach: 0.5 * Math.sqrt(2 * aWid * aWid + cLen * cLen),
+  };
+}
+
+// W-F O2 — the matte material for the anhedral contact facet (group 1): the
+// crystal's own colour, but a rough, opaque, non-metallic ground surface with
+// no euhedral gloss. Cloned from the euhedral material so the cavity clip and
+// colour carry over; the clip uniforms are re-bound to be safe.
+function _o2ContactMaterial(mat: any, state: any): any {
+  const m = mat.clone();
+  m.roughness = 0.92;
+  m.metalness = 0.0;
+  m.transparent = false;
+  m.opacity = 1.0;
+  if (typeof _applyCavityClip === 'function') _applyCavityClip(m, state.clipUniforms);
+  return m;
+}
+
 // Build (or rebuild) crystal meshes inside `state.crystals`. One mesh
 // per non-dissolved Crystal, positioned at its anchor cell's surface,
 // oriented so the c-axis points outward from the cavity center, scaled
@@ -3833,13 +3909,26 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
   // textures, so the GC handles the rest.
   while (state.crystals.children.length) {
     const child = state.crystals.children.pop();
-    if (child.material && child.material.dispose) child.material.dispose();
+    // O2-contacted crystals carry a [euhedral, contact] material array.
+    if (Array.isArray(child.material)) { for (const m of child.material) if (m && m.dispose) m.dispose(); }
+    else if (child.material && child.material.dispose) child.material.dispose();
   }
 
   if (!sim.crystals) return;
   const ringCount = wall.ring_count;
   const N = wall.cells_per_ring;
   const initR = wall.initial_radius_mm || 25;
+
+  // W-F O2 — neighbour pre-pass: every crystal's world centre + reach, so the
+  // per-crystal clip below can find who it grew into (Self & Hill competitive
+  // growth). One O(N) scan builds the map; the clip then does an O(N) overlap
+  // test per crystal (N is per-cavity, tens–low-hundreds). Enclosed guests are
+  // flagged so O2 skips them — they're O4 engulfment, not competitive contact.
+  const _o2Bodies: any[] = [];
+  for (const c of sim.crystals) {
+    const b = c ? _o2PlaceBody(c, wall, replayStep, ringCount, N, initR) : null;
+    if (b) _o2Bodies.push(b);
+  }
 
   for (const crystal of sim.crystals) {
     if (!crystal) continue;
@@ -3958,6 +4047,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       : (_o0Equant && crystal.growth_environment !== 'air' ? 0.5 : 0);
 
     let geom: any = null;
+    let _o2ConvexGeom = false;   // W-F O2: set by the convex geom paths (Wulff / system-prism / token primitive); the concave/special builders leave it false so the contact clip skips them
     let isSectorZoned = false;   // sector (hourglass) zoning → vertexColors material
     let isWulffCalcite = false;  // calcite Wulff polyhedron → isotropic scale (geom carries c-elongation)
     let isWulffWulfenite = false;  // wulfenite Wulff tabular plate → isotropic scale by plate diameter (rung 4a.3)
@@ -4090,6 +4180,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         if (isWfWulff && geom) isWulffWulfenite = true;    // signal the isotropic-by-diameter scale below
         if (isBaWulff && geom) isWulffBarite = true;       // signal the isotropic-by-diameter scale below (rung 4a.4)
         if (isTiWulff && geom) isWulffTitanite = true;     // signal the isotropic-by-diameter scale below (rung 4a.6)
+        if (geom) _o2ConvexGeom = true;   // W-F O2: Wulff polyhedra + O0 half-forms are convex (cache hit or miss)
       }
     }
     // Dendrite TREE (morphology fix-backlog, 2026-06-12): dendritic /
@@ -4274,6 +4365,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         const skey = '__sysprism_' + sys;
         geom = state.geomCache.get(skey);
         if (!geom) { geom = _makeSystemPrism(sys); state.geomCache.set(skey, geom); }
+        _o2ConvexGeom = true;   // W-F O2: square/rectangular/sheared prisms are convex
       }
     }
     if (!geom) {
@@ -4282,6 +4374,9 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         geom = _buildHabitGeom(token);
         state.geomCache.set(token, geom);
       }
+      // W-F O2: the primitive habit builders are convex for the convex tokens
+      // (the token gate at the clip site filters botryoidal/dripstone/spike-fan).
+      if (geom && _O2_CONVEX_TOKENS.has(token)) _o2ConvexGeom = true;
     }
 
     // v66 paramorph rewind — argentite → acanthite (and dehydration
@@ -4435,6 +4530,46 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // rotation AFTER the substrate orientation, so the spin happens
     // around the (now world-space) substrate normal.
     mesh.rotateY(_crystalYaw(crystal.crystal_id || 0));
+
+    // W-F O2 — induction surfaces. Clip this crystal against the neighbours it
+    // grew into and cap each cut with a matte contact facet (Self & Hill 2003;
+    // competitive growth). Convex tenants only (_o2ConvexGeom + the token gate —
+    // concave hopper/botryoidal/twin have no single convex cap); stepped/etched/
+    // e-twin/hourglass overprints and enclosed guests (O4's job) opt out. The
+    // meeting plane uses CURRENT-SIZE weights — first-order exact when the rate
+    // ratio held (Diggle); integrated-growth weights are the pre-registered
+    // upgrade for the drift population when C1/O3 land. Render-only: replaces
+    // mesh.geometry with a fresh clipped geom, leaving the cached form intact
+    // for the satellites + geomCache below.
+    if (_o2ConvexGeom && _O2_CONVEX_TOKENS.has(token)
+        && !isEtched && !isSectorZoned && !isGypsumHourglass
+        && crystal.enclosed_by == null && _o2Bodies.length > 1 && mesh.geometry) {
+      const meX = mesh.position.x, meY = mesh.position.y, meZ = mesh.position.z;
+      const myReach = 0.5 * Math.sqrt(2 * aWid * aWid + cLen * cLen);
+      const worldPlanes: any[] = [];
+      for (const b of _o2Bodies) {
+        if (b.id === crystal.crystal_id || b.enclosed) continue;
+        const dx = b.cx - meX, dy = b.cy - meY, dz = b.cz - meZ;
+        const D = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (D < 1e-3 || D >= myReach + b.reach) continue;   // no overlap → no contact
+        const inv = 1 / D, nX = dx * inv, nY = dy * inv, nZ = dz * inv;   // A→B
+        const dA = D * myReach / (myReach + b.reach);        // growth-weighted meeting point
+        worldPlanes.push({ n: [nX, nY, nZ], d: nX * meX + nY * meY + nZ * meZ + dA });   // keep A: n·x ≤ d
+      }
+      if (worldPlanes.length) {
+        const e = new THREE.Matrix4().makeRotationFromQuaternion(mesh.quaternion).elements;
+        const xf = {
+          R: [e[0], e[4], e[8], e[1], e[5], e[9], e[2], e[6], e[10]],   // row-major rotation
+          sx: mesh.scale.x, sy: mesh.scale.y, sz: mesh.scale.z, tx: meX, ty: meY, tz: meZ,
+        };
+        const local = worldPlanes.map((p) => _o2WorldPlaneToNative(p.n, p.d, xf, 1));
+        const clipped = _clipConvexGeom(mesh.geometry, local);
+        if (clipped && clipped.contactTris > 0) {
+          mesh.geometry = clipped.geom;
+          mesh.material = [mat, _o2ContactMaterial(mat, state)];
+        }
+      }
+    }
 
     // userData carries the original Crystal (and its id) so the
     // raycaster in _topoHitTestThree can resolve a hit back to a

@@ -1853,8 +1853,10 @@ function _helixUpdateCrystalVisibility(
     const u = mesh && mesh.userData;
     if (!u || u.isSatellite) continue;          // parents drive shared material
     const natural = (typeof u.naturalOpacity === 'number') ? u.naturalOpacity : 1.0;
-    const mat = mesh.material;
-    if (mat) {
+    // O2-contacted crystals carry a [euhedral, contact] material array — flip
+    // every material so the skin shader's alpha multiply reaches both.
+    const mats = Array.isArray(mesh.material) ? mesh.material : (mesh.material ? [mesh.material] : []);
+    for (const mat of mats) {
       mat.transparent = true;             // shader alpha multiply requires this
       mat.opacity = natural;              // skin shader scales this down
       mat.depthWrite = natural >= 1.0;    // perimorphs stay back-face-friendly
@@ -1880,8 +1882,8 @@ function _helixRestoreCrystalOpacity(state: any) {
     const u = mesh && mesh.userData;
     if (!u) continue;
     const natural = (typeof u.naturalOpacity === 'number') ? u.naturalOpacity : 1.0;
-    const mat = mesh.material;
-    if (mat) {
+    const mats = Array.isArray(mesh.material) ? mesh.material : (mesh.material ? [mesh.material] : []);
+    for (const mat of mats) {
       mat.opacity = natural;
       mat.transparent = natural < 1;
       mat.depthWrite = true;

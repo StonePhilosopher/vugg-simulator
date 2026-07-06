@@ -11587,5 +11587,37 @@
 //        assemblage churn — the v207 gwindel idiom). The anchor-side change is pinned by
 //        tests instead (floor_ceiling occupancy at seed 42; the baseline instrument
 //        serializes counts/sizes and is blind to anchors BY DESIGN).
-const SIM_VERSION = 215;
+//   v216 — shigar_pegmatite scenario (2026-07-05): Shigar Valley aquamarine
+//        pegmatite (Dassu / Nyet-Bruk / Yuno / Alchuri, Skardu District,
+//        Gilgit-Baltistan, Pakistan). THE BERYL-FAMILY'S ANCHOR SCENARIO —
+//        aquamarine's first expects_species coverage anywhere (the whole
+//        five-species family was uncovered per the 76-species census,
+//        2026-07-05); also the stage for Tutorial 4 (collecting,
+//        Simulation-mode). Miarolitic pocket in a ~7-3 Ma Pliocene dike
+//        (Awais et al. 2022 U-Pb — NOT Baltoro, despite the gem-trade
+//        conflation) intruding the Dassu orthogneiss dome. Seven events,
+//        70 steps (tutorial tempo): outer shell 555°C → schorl 520 →
+//        cleavelandite 490 → AQUAMARINE 430 (pocket-stage window 435-355°C
+//        per London/Hunt/Duval 2020; Luumäki analog 380±80°C, Michallik
+//        et al. 2021; rupture overpressure per Peretyazhko et al. 2004) →
+//        topaz 380 → HF ETCH 310 (pH<3 + F>30 + Be crash → the
+//        _beryl_family_dissolution etch branch; etched Pakistani blue
+//        beryl per G&G 57(2) 2021) → quiet at 265. Cascade discipline:
+//        Be=8 / B=5 / F=18 all start BELOW their hard ingredient floors
+//        (10/6/20) — genuinely dormant, lifted across by their events.
+//        Variety dispatch fenced to aquamarine: Cr .05 / V .2 / Mn .8 /
+//        O2 .15, Fe≥8 (goshenite returns 0). Fe-budget routing: stage 4
+//        re-floors Fe at 12 against schorl's appetite (v107 lesson at
+//        design time). Wall 'pegmatite' (smoky quartz free via the
+//        Rossman dose path) + 'pocket' archetype + sharp render +
+//        occlusion 0.30, thermal_pulses false (sealed chamber).
+//        SEED-42 FIRING: 21 crystals, 6 species — the EXACT declared
+//        assemblage, nothing undeclared, no aspirational entries:
+//        tourmaline 8 + aquamarine 4 (active=0 at run's end — the etch
+//        put them to sleep, which IS the Shigar story) + quartz 3 +
+//        albite 2 + feldspar 2 + topaz 2. CASCADE DRIFT: 0/37 existing
+//        scenarios — purely additive. Tests +11 pins (registration,
+//        six-species firing, variety-fence, smoky dose, etch zone,
+//        expects↔JSON5, tutorial tempo).
+const SIM_VERSION = 216;
 

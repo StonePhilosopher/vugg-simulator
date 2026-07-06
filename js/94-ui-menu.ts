@@ -303,9 +303,16 @@ function switchMode(mode) {
   if (mode !== 'groove' && groovePlaying && typeof grooveStop === 'function') {
     grooveStop();
   }
-  // Switching out of fortress while a tutorial is running tears down
-  // the overlay + restores controls. (Tutorials only live in fortress.)
-  if (mode !== 'fortress' && typeof endTutorial === 'function') endTutorial();
+  // Switching modes while a tutorial is running tears down the overlay
+  // + restores controls — UNLESS the tutorial sanctions the switch
+  // (engine v3: its home mode, or the current step's allowModes — how
+  // the collecting tour walks Simulation → Library alive). With no
+  // tutorial running this is the legacy no-op path.
+  if (typeof _tutorialAllowsMode === 'function'
+      ? !_tutorialAllowsMode(mode)
+      : (mode !== 'fortress')) {
+    if (typeof endTutorial === 'function') endTutorial();
+  }
   // HELIX-OVERLAY-FORK ADDITION (strip view v154+): leaving Fortress
   // with an attached recorder → finalize + save the dataset. Fortress
   // sessions are interactive (no fixed run end), so this is the

@@ -690,6 +690,13 @@ function displayLines(
         if (lcEl) lcEl.style.display = 'flex';
       }
       _hideNarrativeSpeedCluster();
+      // ENGINE v3 tutorial tick — playback complete. Runs AFTER the
+      // inventory repaint above so a tutorial step waiting on the final
+      // step renders with the Collect buttons live.
+      if (typeof _legendsPlaybackStep !== 'undefined' && clearOutput !== false && sim) {
+        _legendsPlaybackStep = sim.step || _legendsPlaybackStep;
+        if (typeof _maybeAdvanceTutorial === 'function') _maybeAdvanceTutorial();
+      }
       if (typeof onDone === 'function') onDone();
       return;
     }
@@ -746,6 +753,19 @@ function displayLines(
     //     visibly grow during the text that describes them.
     if (lineToStep && lineToStep[i] != null) {
       currentSimStep = lineToStep[i];
+      // ENGINE v3 tutorial tick — expose the SHOWN step as the narrative
+      // playback position and settle the tutorial machine. Legends-mode
+      // tutorials ONLY: fortress tutorials read fortressSim.step (already
+      // final during pacing), so ticking them per-line would burst their
+      // sim-step callouts at the first header instead of end-of-pacing.
+      if (typeof _legendsPlaybackStep !== 'undefined') {
+        _legendsPlaybackStep = currentSimStep;
+        if (typeof _maybeAdvanceTutorial === 'function'
+            && typeof _tutorialState !== 'undefined' && _tutorialState
+            && _tutorialState.mode === 'legends') {
+          _maybeAdvanceTutorial();
+        }
+      }
     }
     const targetCavityStep = lineToCavityStep[i];
     if (targetCavityStep != null && targetCavityStep !== lastCavityStep) {

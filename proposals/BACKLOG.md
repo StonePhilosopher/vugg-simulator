@@ -2,7 +2,38 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🧱 SESSION (2026-07-03→04, the foundation-laying night) — THE FIRST CODE OF THE ROADMAP: V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE — **CURRENT HANDOFF: `HANDOFF-FOUNDATIONS-2026-07-03.md` (+ its dated third-act addendum)**
+> ## 🎓 DETOUR (2026-07-04→05, the tutorial arc) — THE TUTORIALS CAUGHT UP TO THE GAME: ENGINE v2→v3 + FOUR TUTORIALS + shigar_pegmatite — **detour handoff: `HANDOFF-TUTORIALS-2026-07-05.md`** (a side-arc off the roadmap; for the MAIN line read the foundations handoff below)
+>
+> Boss: *"the game has expanded so much I think we really need to update it"* → then *"we
+> need a tutorial on collecting too… covers simulation mode, the library, and saving,"* on a
+> mineral with no scenario yet. Two code commits, both Pages-verified built==HEAD, both
+> cold-ci stamped GREEN:
+> **`7fd32d7`** (no SIM bump) — TUTORIAL ENGINE v2 (`js/70a`): three trigger types per step
+> — `step:N` sim-step (legacy), `action:{event,selector,checked?}` (waits for the player to
+> DO it), continue (Continue button / Enter / Space); Continue/Enter/Space + n/N progress +
+> ✕ skip; visible-but-inert control locking (opacity .25, not display:none) with progressive
+> per-step `unlock:[]` + `spotlight`; missing-anchor fallback; Finish button on any last
+> step. **Tutorial 1 reworked into the 34-step GRAND TOUR** (top-down screen walk → helicoid
+> deep-dive → dormant-uncheck action → tap-a-crystal → the quartz arc). Travertine (T3)
+> finally got a guided button (orphaned for months); picker labels de-duped.
+> **`4d8feb7` SIM 216** — ENGINE v3: `mode:'legends'` (boots Simulation + presets the setup
+> row; `step:N` fires off `_legendsPlaybackStep` from js/91's displayLines, guarded off
+> fortress); cross-mode survival via `_tutorialAllowsMode` (js/70a) consulted by switchMode
+> (js/94) — a tutorial's `allowModes` keeps it ALIVE across a mode switch; **action listeners
+> moved bubble→CAPTURE + deferred advance** (the collect button re-renders/detaches the
+> target mid-dispatch — bubble never saw it; the session's real bug). **Tutorial 4 =
+> COLLECTING** (18 steps, legends, rides `shigar_pegmatite` @ seed 42: grow→collect→localStorage
+> save→Library). **shigar_pegmatite scenario** (`js/70w-shigar.ts`) — the BERYL FAMILY'S FIRST
+> COVERAGE (aquamarine was in no scenario; 76-species census 2026-07-05); Shigar Valley
+> Pakistan, 7 pocket events incl. the HF-etch signature; seed-42 = EXACTLY 6 declared species
+> / 21 crystals, 0/37 drift; five research agents corrected the Baltoro-host myth + NYF label
+> before they reached the rock. CI 154 files / 2176 tests. **OPEN:** T2/T3 could gain v3
+> action beats · shigar aquamarine visuals eye-unverified (WebGL didn't engage in preview) ·
+> no 5th tutorial yet (Record Player / Strip View / twins are candidates) · the 3 menu
+> surfaces should auto-generate from SCENARIOS (vugg-add-scenario §10.5 TODO). Traps in the
+> handoff (native prompt() hangs preview; v116 picker guard; fortress RNG non-determinism).
+
+> ## 🧱 SESSION (2026-07-03→04, the foundation-laying night) — THE FIRST CODE OF THE ROADMAP: V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE — **CURRENT HANDOFF (the main line): `HANDOFF-FOUNDATIONS-2026-07-03.md` (+ its dated third-act addendum)**
 >
 > Boss: *"we just worked on a nice foundation in the handoff, lets lay that foundation."* Two
 > code commits, both Pages-verified built==HEAD, both cold-ci stamped GREEN:
