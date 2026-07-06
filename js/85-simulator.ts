@@ -62,6 +62,12 @@ class VugSimulator {
       // Three.js renderer reads wall_state.cavity_render. Default
       // 'smooth' preserves pre-toggle look for every existing scenario.
       cavity_render: this.conditions.wall.cavity_render,
+      // MATRIX SKIN (2026-07-06): host lithology forwarded for the wall
+      // texture (renderer resolves matrix ?? composition). Display-only —
+      // WallState physics reads neither; VugWall.composition stays the
+      // dissolution gate.
+      composition: this.conditions.wall.composition,
+      matrix: this.conditions.wall.matrix,
       // Tranche 6 of PROPOSAL-CAVITY-MESH §14: per-vertex nucleation
       // opt-in. _assignWallCell reads wall_state.per_vertex_nucleation
       // to switch into the σ-weighted joint sample. Default false
