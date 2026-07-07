@@ -439,6 +439,26 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
     }
   }
 
+  // W-K V1 (wall microtexture, 2026-07-07): the GENESIS relief — a normal map
+  // keyed on wall.architecture (dissolution scallops / cleft striations / basin
+  // rind; js/99a _wallReliefNormalMap). The matrix skin above is the host
+  // lithology as COLOUR; this is the cavity's genesis as SURFACE. Cached by
+  // architecture, reassigned only on scenario switch. Render-only, byte-identical.
+  if (target.material && typeof _wallReliefNormalMap === 'function') {
+    const arch = String((wall && wall.architecture) || 'pocket');
+    if (state._wallReliefArch !== arch) {
+      state._wallReliefArch = arch;
+      const nrm = _wallReliefNormalMap(arch);
+      target.material.normalMap = nrm || null;
+      if (nrm && target.material.normalScale && target.material.normalScale.set) {
+        target.material.normalScale.set(2.0, 2.0);   // reads as genesis relief in solid-wall mode (subtle through
+                                                       // the default 40% translucency — a fine normal map perturbs
+                                                       // lighting, which the see-through wall softens); eye-checked 2026-07-07
+      }
+      target.material.needsUpdate = true;
+    }
+  }
+
   // Tier 1 C (post-v69): toggle cavity material between smooth Phong-
   // like shading (default) and flat-faceted sphere-union polyhedron
   // shading. `wall.cavity_render === 'sharp'` surfaces the underlying
@@ -3684,7 +3704,11 @@ const LOCAL_COLOR = {
                                                        // single axis reading garish (per-axis stays subtle)
 };
 function _localCrystalColor(crystal: any, spec: any): any {
-  const base = _topoParseColor((spec && spec.class_color) || '#d2691e');
+  // D1a — the BASE hue is now the color_rules-resolved real body colour
+  // (js/12a resolveBodyColour), not the class-taxonomy class_color. Falls back
+  // to class_color for anything unresolved. The chemistry tone + legibility
+  // floor below compose OVER it, unchanged.
+  const base = _topoParseColor(resolveBodyColour(crystal, spec));
   const hsl: any = { h: 0, s: 0, l: 0 };
   base.getHSL(hsl);
   // (1) chemistry — growth-weighted chromophore trace load → tone deepening

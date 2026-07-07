@@ -512,3 +512,316 @@ oriented.
 Probe every rung, subtract the lies, and let the stone remember which way the water ran.
 
 — the builder, sixth hand, the directional-σ act · 2026-07-07
+
+---
+
+## KEYSTONE — the sixth hand's session, whole (2026-07-07, the boss asked to update it)
+
+The fifth hand's keystone said *"C1 depletion field NEXT."* I walked in through that door,
+did C1, and the boss said *"keep going."* So the session grew a second span. Here is the arch,
+both spans, whole.
+
+| commit | what |
+|---|---|
+| `e08ab3d` | **C1 — the directional-σ tranche (boss stone)** — O1a real per-crystal exposure (retiring the 0.18 fiction) + O1b neighbour shadow + O2 integrated-growth weights, one render-only commit. The pessimistic cost proved cheap; the frozen-param converse debt came back EMPTY. |
+| `86fa07e` | **local crystal colour** — chemistry tone (trace load → deepening, no hue claim) + a deterministic 3-axis legibility floor, so same-species neighbours read apart. The probe halved the naive plan: pure chemistry separates only 23% of neighbour groups. |
+| `6d3e453` `fcbe0c3` | the standing-rule docs passes, both spans |
+
+Every code commit render-only, baseline byte-identical (0/38, confirmed each time), Pages-verified
+built == HEAD, cold-ci GREEN (2222 → 2236 → 2244 tests). Two probes committed as instruments:
+`c1-depletion-ev-probe` + `c1-exposure-calibration-probe` (the tranche), `localcolor-signal-probe`
+(the colour). En route, deferred with numbers: C1's SCALAR-chemistry half (1 calcite Wulff tenant,
+awaits B5/tenants), O1a/O1b per-FACE shadow, O2 concave forms; pre-registered: B4 cell-local trace
+partitioning (chemistry that separates NEIGHBOURS), D1 per-species hue (this tone is its on-ramp).
+
+**Where the next hand starts.** The render-only ontogeny + optics layers are in good shape. The
+boss's open choices, none forced: **O3 — earned geometric selection** (roadmap Phase 3 next; the
+first SIM-bump rung of the arc — unfavourably-oriented crystals get OVERGROWN instead of the
+outcome being painted; Gray d^(−1/2) oracle) · **D1 — Depth-C body colour** (render-only, jumps
+the queue; local colour built its tone on-ramp, so the Caltech-spectra hues land clean on top) ·
+**V0/V1 — cavity genesis + wall microtexture** (the W-K side). Boss stones read: C0 ✅ · C1 ◐
+directional ✅ / scalar deferred · Depth-C on call. Traps this session bought are in the two act
+addenda above; the load-bearing new one: **RATE reads local, FORM read bulk** — when a lever looks
+dead, check whether the DATA exists but the consumer reads the wrong SOURCE (it did, twice: cell σ
+for form, zone traces for colour).
+
+### The mark — what the keystone adds
+
+**One instrument, every rung — again, and it never got old.** The fifth hand wrote that a single
+probe re-planned a whole session. This session ran FOUR probes and every one shrank a plan to its
+true size: the field is real but the form consumers are 1-tenant (C1 EV); the exposure tenants are
+all calm, so O1a symmetrizes not dramatizes (calibration); the chemistry separates only 23% of
+neighbours (colour). Not once did the plan survive first contact with measurement intact — and not
+once was that a disappointment. The probe is not the tax you pay before building; it is the cheapest
+design work there is. Budget it first, always, and let it be allowed to say "smaller than you
+thought."
+
+**Two spans, one move.** C1 and local colour look unrelated — one is crystal geometry, one is
+crystal colour. But they were the SAME repair: the render already HELD the per-crystal data (each
+crystal's own cell σ; each crystal's own zone traces), and the consumer was reading the wrong
+source (bulk σ for form; one class_color for every crystal). Neither needed new physics. Both needed
+the consumer pointed at the truth the sim already computed. When a feature looks like it needs new
+machinery, first ask what the sim already knows and isn't reading. Twice this session the answer was
+"everything — it's just plumbed to the wrong tap."
+
+**From SITUATED to INDIVIDUATED.** The fifth hand's keystone dreamed the specimen becoming a
+SITUATION — crystal, crowd, chemistry, host. This session did something narrower and, I think,
+deeper: it individuated the specimen WITHIN its crowd. O1a gave each crystal its own exposure
+(its own water-gradient); local colour gave each its own tint (its own chemistry, plus an honest
+legibility mark). A druse of thirty dolomites was one grey species this morning; tonight it is
+thirty individuals, each told apart by its own history. The situation resolved into its members.
+
+**The dream, keystone telling.** The prior dreams read a rock's biography from physics (situated)
+and from the direction its faces remember (oriented). Add the crowd: now that every crystal is an
+INDIVIDUAL — own exposure, own tint, slightly different from its neighbour on purpose — a druse is
+a POPULATION, and a population has statistics. The dream is that the inverse solver, someday, reads
+not the best-preserved crystal but the whole crowd's VARIANCE: the spread of exposures, the spread
+of tints, the size distribution — and infers the pocket's history from the population's shape, the
+way an ecologist reads a forest's past from the distribution of tree ages, not one tree. When a
+label-less plate comes back, its story is recovered not from one hero crystal but from the fact
+that its members DIFFER — because we taught each one to carry its own copy of the history, and
+difference is data. We spent today making the crystals different from each other. One day that
+difference will be the evidence.
+
+Point the consumer at the truth the sim already holds, let the probe shrink the plan, and make
+every crystal an individual — because a crowd that all looks alike has forgotten it was ever a
+population.
+
+— the builder, sixth hand, the keystone · 2026-07-07
+
+---
+
+## Addendum — D1a, THE BODY-COLOUR ACT (a new hand, off the keystone's menu · 2026-07-07)
+
+The sixth hand's keystone named three doors — O3, D1, V0/V1 — and the boss picked **D1: Depth-C
+body colour**. So the seventh hand took the render-only colour door, the one whose on-ramp the
+sixth hand had already built (local crystal colour). Shipped `2280e56`, render-only, seed-42
+baseline byte-identical (0/38), Pages-verified, CI green (16 colour pins + full lexicon coverage;
+the 7 full-suite reds were stochastic e2e nucleation flakes under 11× load — green in isolation,
+not on D1's render-time path).
+
+**The probe found the bedrock already in the tree — for the THIRD time this week.** Colour was
+`spec.class_color`, a 12-hue class wheel (galena = sphalerite = pyrite, one grey-green). I
+expected D1 to mean authoring ~180 real hexes. The probe (`tools/d1-bodycolor-probe`) said
+otherwise: `color_rules` — present for all 180 species, authored as "not flavor text" — is a full
+chemistry-cause → colour-NAME map. Calcite white, galena lead-grey, cinnabar cochineal-red,
+sphalerite pale-yellow/honey-brown/black-marmatite-by-Fe: the sourced science was already sitting
+in the data, unrendered. D1 wasn't authoring; it was RESOLVING — a name→sRGB lexicon (114 names) +
+a resolver, reseating one line in `_localCrystalColor`. The sixth hand's keystone lesson — *point
+the consumer at the truth the sim already holds* — landed a third time: C1 (form read bulk σ, not
+cell σ), local colour (zone traces unread), now D1 (color_rules unrendered). Three in a row is not
+a coincidence; it is a LAW of this codebase. **Before you build a new machine, grep for what the
+sim already knows and isn't reading.** This tree accretes truth ahead of its consumers.
+
+**The probe shrank the plan honestly, and caught a units trap the eye never would.** The 87
+machine-parseable chemistry triggers (`Fe 2-10`, `black_marmatite Fe>15`) are written in
+GEOCHEMICAL units — mol% substitution — but the sim's `trace_Fe` field is ppm-scale (fleet q90 ≈
+3.6). `Fe>15` mol% would never fire against a ppm trace; a naive evaluator would have shipped a
+chemistry axis that silently did nothing. So the tranche boundary drew itself: **D1a = the
+DEFAULTS** (unconditional, units-independent, fixes 100% of the collision), **D1b = the
+chemistry-gated variants** behind a units-reconciliation sub-probe. A stone laid at its honest
+size — the fifth hand's C0 lesson, reused.
+
+**Fidelity is sometimes restraint.** The resolved defaults leave genuinely-same-colour minerals
+genuinely the same: calcite and witherite both white, brochantite and antlerite both emerald,
+raspite and stolzite (literally the same PbWO₄) both honey. The instinct is to spread them for
+legibility — but real specimens of these ARE hard to tell apart by colour, and the shipped id-hash
+floor already separates their individuals. Over-separating would be LESS true. Defer to the rock:
+two white carbonates in one vug should read as two whites. The colour that individuates is the
+colour that's really there.
+
+**The dream, seventh telling.** The sixth hand dreamed the inverse solver reading the crowd's
+VARIANCE — the spread of exposures and tints across a druse. D1a makes that spread MEANINGFUL: a
+crowd now differs by real species-chemistry (galena grey beside sphalerite amber), not only by an
+id-hash nudge. And D1b is where colour becomes an instrument: when the Fe-axis lights up, a druse
+of sphalerites grading amber-to-black IS a readout of the iron gradient the fluid left behind —
+colour as a chemistry map you can see across the whole population. Today we gave the crowd its
+real palette. Tomorrow the palette becomes the data.
+
+Grep the tree before you build; lay the stone at its honest size; and let the rock keep the
+colours it actually has.
+
+— the builder, seventh hand, the body-colour act · 2026-07-07
+
+---
+
+## Addendum — D1b, THE CHEMISTRY AXES (same hand, second act · 2026-07-07)
+
+The boss said *"build that next segment"* — D1b, the chemistry-gated variants D1a laid the
+bedrock for. Colour as a per-crystal readout of the recorded water. Shipped `3c58a37`,
+render-only, 0/38, Pages-verified, CI green.
+
+**The pre-registered probe answered the worry I brought — and replaced it with two I didn't.**
+I deferred D1b in the D1a act behind a units sub-probe because I feared the triggers were mol%
+and the sim's `trace_Fe` was ppm, so `Fe>15` would never fire. The probe (`tools/d1b-units-probe`)
+said that fear was HALF-WRONG in the good direction: `trace_Fe` IS ppm, but the sim populates
+sphalerite Fe to ~40 ppm, so black_marmatite fires 31% of the time — the iconic Fe→amber→black
+axis was reachable all along. Then it handed me two worries I never had:
+- **A "<" trigger fires trivially on a blank field.** epidote `Fe<8`, turquoise `Fe<2` "fired"
+  at 100% — not because the crystals are pure but because the sim doesn't populate their Fe at
+  all, so 0 < 8 is trivially true. Absence reads as satisfaction for a "less-than" test. The
+  fix: fire only positive ">"/range (chromophore PRESENCE) triggers; the "<" low end is the
+  DEFAULT's job. **Before trusting a "field < X" pass, check the field is POPULATED** — a
+  threshold on an unmeasured quantity is a false reading, not a low one.
+- **The data is a ladder with a missing rung.** sphalerite's color_rules had honey_brown at
+  `Fe 2-10` and marmatite at `Fe>15` — a GAP at 10-15. The fleet had crystals there, and they
+  rendered PALER than lower-Fe honey ones (falling through both bands to the light default): a
+  higher-Fe crystal reading lighter, non-monotonic and wrong. The render must impose the
+  monotonicity the data doesn't guarantee — ranges collapse to a ≥lo threshold, so a gap value
+  rounds DOWN the ladder, never off it.
+
+That is the deeper value of measuring: a probe's job is not to confirm or deny the hypothesis
+you walked in with. It is to replace it with the hypotheses you were missing.
+
+**What shipped — the reachable set, and a consumer built to grow.** `_chemistryVariant`
+(js/12a) evaluates positive triggers over the crystal's growth-weighted zone traces +
+radiation_damage: sphalerite + wurtzite Fe→amber→black, quartz clear→smoky→morion. The 44
+missing-field variants (Cr×12, Li, Co…) and 57 unreached ones (cassiterite Fe, fluorite REE)
+are **D1c, "when the sim's chemistry catches up"** — and because the evaluator is general, they
+light up with NO code change the day the sim populates their chemistry. The colour science is
+already right; the sim's sampling grows into it (the fifth hand's rocks-catch-up doctrine,
+made structural: the cut stones are laid, waiting for the wall to reach them).
+
+**The dream, second-act telling.** D1a made the crowd differ by SPECIES — galena grey beside
+sphalerite amber. D1b makes a single species' crowd differ by its MEMBERS' chemistry: a druse
+of sphalerites now grades pale→honey→black, each crystal coloured by the Fe its own slice of
+fluid carried. The variance the sixth hand dreamed of reading is no longer just id-hash noise —
+it is a map of the iron gradient the fluid left behind, painted across the population. When the
+inverse solver reads a label-less sphalerite druse someday, the spread of ambers-to-blacks will
+tell it how the Fe changed through the pocket's life. We didn't just give each crystal a colour.
+We made the colour remember the chemistry.
+
+Let the probe replace your hypothesis, check the field is populated before you trust a "<", and
+build the consumer general enough that the science can catch up to it on its own.
+
+— the builder, seventh hand, second act · 2026-07-07
+
+---
+
+## Addendum — V1, THE WALL'S GENESIS (same hand, third act · 2026-07-07)
+
+The boss said *"lets do the quicker one"* — of the three doors (O3 SIM-bump, V0/V1, D1c
+sim-chemistry), the render-only one. V1: give the cavity WALL a genesis relief (dissolution
+scallops / cleft striations / basin rind) instead of the smooth void it was. Shipped `d6ab4c6`,
+render-only, 0/38, Pages-verified.
+
+**Wired is not the same as visible — and only the eye-check knows the difference.** I built the
+relief generator (verified: valid normal maps, correct linear colorspace, all three families with
+real height variance), wired it into the cavity material exactly like the matrix skin, confirmed
+byte-identical, typecheck clean, no console errors. Every check passed. And at the shipped
+normalScale of 0.5 the feature was **INVISIBLE** — a SILENT NO-OP. A fine normal map perturbs
+LIGHTING, and the wall is 40% translucent under soft light, so the relief washed out to nothing
+(even in solid-wall mode). The unit tests could not see it; the byte-identity could not see it;
+the console had nothing to say. The only instrument that caught it was a screenshot of the actual
+wall. I cranked normalScale to 2.5 to prove the pipeline even fires (clear scalloping appeared),
+then settled 2.0. **This is `feedback_render_upgrade_visible` proven live: a render upgrade you
+cannot SEE is a no-op no matter how correct the code beneath it.** The eye-check is not the
+ceremony after the work; on a render change it IS the work's acceptance test.
+
+**Pay the eye-check even when the tooling fights you.** This page makes it expensive: the THREE
+scene is fully module-scoped (no window handle — I could not A/B normalScale on the live material,
+so every calibration value cost a full rebuild → reload → renavigate-to-the-3D-cavity cycle), and
+WebGL screenshots are intermittent (they worked here; the memory says they often time out). The
+temptation under that friction is to ship on the passing unit checks and call the render "done."
+Don't. The friction is exactly when the no-op slips through.
+
+**The census caught my own bug, which is the point of running it.** I first probed `wall.archetype`
+and found it undefined 0/38 — a phantom "whitelist gap" that would have sent me plumbing a field
+that didn't need it. The field is `wall.architecture`, already mirrored to the render wall
+(js/85:60, 38/38). One character, and the probe was measuring a fiction. Read the field name off
+the source, not off memory — and when a census says 0/38, suspect the census before the code.
+
+**The dream, third-act telling.** The crystals have been getting their biographies all week —
+exposure, contact faces, colour, chemistry. This act gave the STAGE its biography. A scalloped
+wall was dissolved; a striated wall was pulled open along a fracture; a banded wall settled out of
+still water. The cavity now remembers how it came to be, the way its crystals remember how they
+grew. The inverse solver the prior hands dreamed reads the crystals to recover the fluid; add
+this: one day it reads the WALL too — scallop wavelength for the flow that carved it, striation
+spacing for the stress that opened it — and recovers not just the water but the ROOM the water
+filled. W-K is the cavity's own ontogeny, and tonight it got its first visible chapter.
+
+Build it, wire it, and then LOOK — because the wall that photographs smooth was never textured, no
+matter what the code says.
+
+— the builder, seventh hand, third act · 2026-07-07
+
+---
+
+## KEYSTONE — the seventh hand's session, whole (2026-07-07, the boss asked to craft it)
+
+The sixth hand's keystone named three doors — O3, D1, V0/V1 — and left them for whoever came next.
+I came next, and over one session walked through two of them (D1, then V1), each in its render-only
+tranche. Here is the arch, whole.
+
+| commit | what |
+|---|---|
+| `2280e56` | **D1a body colour** — color_rules DEFAULTS resolved into real per-species hue; the 12-hue class wheel retired as the base (galena grey ≠ sphalerite amber ≠ pyrite brass; 175/180 moved) |
+| `3c58a37` | **D1b chemistry axes** — colour as a per-crystal chemistry READOUT: sphalerite/wurtzite Fe→amber→black, quartz clear→smoky→morion |
+| `d6ab4c6` | **V1 wall microtexture** — the cavity's GENESIS as surface relief: dissolution scallops, cleft striations, basin rind |
+| `45211af` `548aaa6` `6b5e870` | the docs passes — three act addenda, roadmap rows, backlog |
+
+Every code commit render-only, seed-42 byte-identical (0/38, confirmed each time), Pages built==HEAD,
+cold-ci GREEN each time (161 files). Five instruments committed along the way: `d1-bodycolor-probe`,
+`d1b-units-probe`, `v1-wall-census`, plus the standing baseline + cold-ci. Deferred with NUMBERS, not
+hand-waved: **D1c** (44 colour variants need a trace field the sim lacks — Cr×12, Li, Co…; 57 more
+have the field but never reach threshold) and **V1b** (flow-asymmetric scallops; an AO channel that
+reads through translucency) — cut stones waiting for the wall to reach them.
+
+### The mark — what the keystone adds
+
+**Three rungs, three ways of learning you were wrong.** The sixth hand's keystone was about one
+instrument — the probe — run at every rung. This session ran three DIFFERENT instruments of knowing,
+and each caught a different species of error:
+- **the grep** (D1a): I thought colour meant authoring 180 hexes. The tree already held `color_rules`
+  — the truth was in the data, unread. *Grep before you build.*
+- **the probe** (D1b): I thought the chemistry triggers were unusable mol%. The probe found sphalerite
+  Fe reaches 40 ppm (the axis fires) AND handed me two errors I hadn't imagined — the
+  "<"-fires-on-a-blank-field trap and the darkening-ladder gap. *A probe replaces the hypothesis you
+  brought.*
+- **the eye** (V1): every unit check passed and the relief was invisible at normalScale 0.5. Only a
+  screenshot knew. *Wired is not visible; the eye-check is the acceptance test.*
+
+Grep, probe, eye — three lenses, and NOT ONE of the three plans survived first contact with its
+instrument intact. The discipline of this project was never "have a good plan." It is: own the
+instrument that proves the plan wrong, and run it before you believe yourself.
+
+**And watch what the session BUILT beneath the method: it made the specimen READABLE.** The sixth
+hand individuated the crowd — each crystal its own exposure, its own tint. This hand gave the render
+its READABLE CHANNELS: a crystal's SPECIES is now in its colour, its CHEMISTRY is in how that colour
+deepens, and the CAVITY'S OWN HISTORY is in the texture of the wall behind it. A druse this morning
+was thirty individuals of ambiguous colour on a smooth void. Tonight it is a document — you can read
+the minerals off their hues, the iron gradient off the ambers-to-blacks, the genesis off the
+scalloped or striated wall. INDIVIDUATED became LEGIBLE.
+
+**The dream, keystone telling.** Every prior hand dreamed the inverse solver reading a label-less
+rock back into its history — its water, its crowd, its direction, its variance. This session added
+the CHANNELS that reading will use, and built each one honestly limited to what the sim can truly
+drive, with the rest deferred by name. That honesty is the whole point. The day a photograph of a
+real druse and a render of the sim's druse sit side by side and cannot be told apart, it must be
+because every readable feature — the hue that names the mineral, the darkening that maps the iron,
+the scallop that remembers the flow — is driven by the SAME physics the rock obeyed, not painted to
+match. We did not make the render prettier today. We turned three of its features from decoration
+into MEASUREMENT. The bench's T2 is a specimen you cannot tell from its render on any metric you can
+afford to measure; this session moved three metrics across that line. The distance to the rock shrank
+not because we faked the rock better, but because more of the render became true.
+
+**Diagenesis — what this stood on.** Three shipped rungs in a day is not solo speed. D1a/D1b grew on
+the local-colour on-ramp the sixth hand laid the night before; V1 grew on the matrix-skin pipeline and
+the `architecture` field V0 had already mirrored to the render wall; every rung was scoped by the
+probe/census idiom from the Wulff arc and proven byte-identical by the seed-42 baseline and cold-ci
+earlier hands built. The velocity was borrowed from every hand that cut a stone I got to lean on.
+
+**Where the next hand starts.** The render-only colour and genesis layers are in good shape. The
+doors: **O3** — earned geometric selection, the first SIM-bump rung, the ontogeny arc's crown
+(unfavourably-oriented crystals OVERGROWN, not painted; Gray d^(−1/2) oracle); **D1c** — when the
+sim's chemistry catches up (Cr/Li/REE trace fields → 44 dormant colour variants light up with no
+render change, the evaluator is general); **V1b/V2** — flow-asymmetric scallops + the deeper cavity
+genesis. Boss stones read C0 ✅ · C1 ◐ · Depth-C ✅ through D1b. Traps this session bought are in the
+three act addenda above; the load-bearing one: on a render change the eye-check is not optional and
+the tooling WILL fight you (module-scoped scene, intermittent WebGL screenshots) — pay it anyway.
+
+Grep before you build, let the probe rewrite the plan, and LOOK before you call it done — because the
+truth was usually already in the tree, the plan you brought was usually wrong in a way you didn't
+expect, and the wall that photographs smooth was never textured no matter what the code says.
+
+— the builder, seventh hand, the keystone · 2026-07-07
