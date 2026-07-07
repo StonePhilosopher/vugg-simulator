@@ -14,6 +14,7 @@ import * as path from 'path';
 
 declare const resolveBodyColour: any;
 declare const _defaultColourName: any;
+declare const _chemistryVariant: any;
 declare const COLOUR_LEXICON: any;
 declare const SPECIES_BODY_COLOUR: any;
 
@@ -74,5 +75,50 @@ describe('D1a — lexicon integrity + coverage (the regression guard)', () => {
     const p = resolveBodyColour({ mineral: 'pyrite' }, SPEC.pyrite);
     expect(new Set([g, s, p]).size).toBe(3);
     expect(SPEC.galena.class_color).toBe(SPEC.sphalerite.class_color);  // they DID share the wheel hue
+  });
+});
+
+// D1b — chemistry-gated variants fired from the crystal's own growth-weighted traces.
+const sph = (fe: number) => resolveBodyColour({ mineral: 'sphalerite', zones: [{ thickness_um: 10, trace_Fe: fe }] }, SPEC.sphalerite);
+const qtz = (rad: number) => resolveBodyColour({ mineral: 'quartz', radiation_damage: rad, zones: [{ thickness_um: 10 }] }, SPEC.quartz);
+
+describe('D1b — chemistry-gated variants (the Fe / radiation axes)', () => {
+  it('sphalerite darkens MONOTONICALLY with Fe: pale → honey → marmatite (no gap fallback)', () => {
+    expect(sph(0.5)).toBe(COLOUR_LEXICON.pale_yellow);       // Fe<2 → base (default), NOT a "<" variant
+    expect(sph(5)).toBe(COLOUR_LEXICON.honey_brown);         // Fe 2-10
+    expect(sph(12)).toBe(COLOUR_LEXICON.honey_brown);        // Fe 10-15 GAP → rounds DOWN to honey, not pale
+    expect(sph(20)).toBe(COLOUR_LEXICON.black_marmatite);    // Fe>15
+    // and the ladder is non-lightening: lightness never increases as Fe rises
+    // (pale is the lightest, marmatite the darkest)
+    expect(sph(12)).not.toBe(COLOUR_LEXICON.pale_yellow);
+  });
+
+  it('quartz smoky/morion by radiation_damage; the more extreme threshold wins', () => {
+    expect(qtz(0)).toBe(COLOUR_LEXICON.clear);
+    expect(qtz(0.4)).toBe(COLOUR_LEXICON.smoky);   // >0.3
+    expect(qtz(0.7)).toBe(COLOUR_LEXICON.morion);  // >0.6 beats >0.3
+  });
+
+  it('a "<" trigger never fires (the false-positive the probe caught)', () => {
+    // sphalerite pale_yellow is "Fe < 2" — it must resolve via the DEFAULT path,
+    // never as a fired chemistry variant (else a blank field wins trivially).
+    expect(_chemistryVariant({ mineral: 'sphalerite', zones: [{ thickness_um: 10, trace_Fe: 0 }] }, SPEC.sphalerite)).toBeNull();
+  });
+
+  it('a variant needing a field the sim lacks (Cr) never fires', () => {
+    // wulfenite "red" needs Cr; the sim carries no trace_Cr → null (stays default).
+    expect(_chemistryVariant({ mineral: 'wulfenite', zones: [{ thickness_um: 10, trace_Fe: 99 }] }, SPEC.wulfenite)).toBeNull();
+  });
+
+  it('a fluorescence (_FL) variant is excluded — that is UV render, not body colour', () => {
+    // calcite orange_FL ("Mn>2 and Fe<10") must NOT recolour the body; calcite stays white.
+    const c = resolveBodyColour({ mineral: 'calcite', zones: [{ thickness_um: 10, trace_Mn: 8, trace_Fe: 1 }] }, SPEC.calcite);
+    expect(c).toBe(COLOUR_LEXICON.white);
+  });
+
+  it('is deterministic + null-safe on a bare crystal', () => {
+    expect(sph(20)).toBe(sph(20));
+    expect(() => _chemistryVariant({}, SPEC.sphalerite)).not.toThrow();
+    expect(_chemistryVariant({ zones: [] }, {})).toBeNull();
   });
 });
