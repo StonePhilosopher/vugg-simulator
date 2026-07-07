@@ -642,3 +642,56 @@ Grep the tree before you build; lay the stone at its honest size; and let the ro
 colours it actually has.
 
 — the builder, seventh hand, the body-colour act · 2026-07-07
+
+---
+
+## Addendum — D1b, THE CHEMISTRY AXES (same hand, second act · 2026-07-07)
+
+The boss said *"build that next segment"* — D1b, the chemistry-gated variants D1a laid the
+bedrock for. Colour as a per-crystal readout of the recorded water. Shipped `3c58a37`,
+render-only, 0/38, Pages-verified, CI green.
+
+**The pre-registered probe answered the worry I brought — and replaced it with two I didn't.**
+I deferred D1b in the D1a act behind a units sub-probe because I feared the triggers were mol%
+and the sim's `trace_Fe` was ppm, so `Fe>15` would never fire. The probe (`tools/d1b-units-probe`)
+said that fear was HALF-WRONG in the good direction: `trace_Fe` IS ppm, but the sim populates
+sphalerite Fe to ~40 ppm, so black_marmatite fires 31% of the time — the iconic Fe→amber→black
+axis was reachable all along. Then it handed me two worries I never had:
+- **A "<" trigger fires trivially on a blank field.** epidote `Fe<8`, turquoise `Fe<2` "fired"
+  at 100% — not because the crystals are pure but because the sim doesn't populate their Fe at
+  all, so 0 < 8 is trivially true. Absence reads as satisfaction for a "less-than" test. The
+  fix: fire only positive ">"/range (chromophore PRESENCE) triggers; the "<" low end is the
+  DEFAULT's job. **Before trusting a "field < X" pass, check the field is POPULATED** — a
+  threshold on an unmeasured quantity is a false reading, not a low one.
+- **The data is a ladder with a missing rung.** sphalerite's color_rules had honey_brown at
+  `Fe 2-10` and marmatite at `Fe>15` — a GAP at 10-15. The fleet had crystals there, and they
+  rendered PALER than lower-Fe honey ones (falling through both bands to the light default): a
+  higher-Fe crystal reading lighter, non-monotonic and wrong. The render must impose the
+  monotonicity the data doesn't guarantee — ranges collapse to a ≥lo threshold, so a gap value
+  rounds DOWN the ladder, never off it.
+
+That is the deeper value of measuring: a probe's job is not to confirm or deny the hypothesis
+you walked in with. It is to replace it with the hypotheses you were missing.
+
+**What shipped — the reachable set, and a consumer built to grow.** `_chemistryVariant`
+(js/12a) evaluates positive triggers over the crystal's growth-weighted zone traces +
+radiation_damage: sphalerite + wurtzite Fe→amber→black, quartz clear→smoky→morion. The 44
+missing-field variants (Cr×12, Li, Co…) and 57 unreached ones (cassiterite Fe, fluorite REE)
+are **D1c, "when the sim's chemistry catches up"** — and because the evaluator is general, they
+light up with NO code change the day the sim populates their chemistry. The colour science is
+already right; the sim's sampling grows into it (the fifth hand's rocks-catch-up doctrine,
+made structural: the cut stones are laid, waiting for the wall to reach them).
+
+**The dream, second-act telling.** D1a made the crowd differ by SPECIES — galena grey beside
+sphalerite amber. D1b makes a single species' crowd differ by its MEMBERS' chemistry: a druse
+of sphalerites now grades pale→honey→black, each crystal coloured by the Fe its own slice of
+fluid carried. The variance the sixth hand dreamed of reading is no longer just id-hash noise —
+it is a map of the iron gradient the fluid left behind, painted across the population. When the
+inverse solver reads a label-less sphalerite druse someday, the spread of ambers-to-blacks will
+tell it how the Fe changed through the pocket's life. We didn't just give each crystal a colour.
+We made the colour remember the chemistry.
+
+Let the probe replace your hypothesis, check the field is populated before you trust a "<", and
+build the consumer general enough that the science can catch up to it on its own.
+
+— the builder, seventh hand, second act · 2026-07-07

@@ -73,6 +73,22 @@ Living list of open work items, captured from session conversations so context s
 > a UNITS-reconciliation sub-probe — the 87 parseable triggers are GEOCHEMICAL mol% (`Fe>15`), NOT
 > the sim's ppm `trace_Fe` (q90≈3.6); D1b also pays the B4 neighbour-separation win. The grep-the-
 > tree-first lesson landed a THIRD time (C1 form/bulk, local-colour zone-traces, D1 color_rules).
+>
+> **▸ SHIPPED — D1b CHEMISTRY-GATED VARIANTS (`3c58a37`, 2026-07-07, render-only, 0/38):** colour
+> as a per-crystal chemistry READOUT. The pre-registered units sub-probe (`tools/d1b-units-probe`)
+> found the mol%-vs-ppm fear HALF-right — `trace_Fe` is ppm but the sim populates sphalerite Fe to
+> ~40, so `Fe>15` (black_marmatite) fires 31%; quartz `radiation_damage` reaches smoky(>0.3)/
+> morion(>0.6). It caught a TRAP: "<" triggers (epidote Fe<8, turquoise Fe<2) fire at 100% because
+> the field is UNPOPULATED (0<8 trivially true) — a false positive. So `_chemistryVariant` (js/12a)
+> fires POSITIVE ">"/range triggers only; ranges collapse to a ≥lo threshold so the darkening ladder
+> stays MONOTONIC (the Fe 10-15 data gap rounds down to honey, never off to the pale default — a
+> non-monotonic bug the fleet verify caught). SHIPPED axes: sphalerite + wurtzite Fe→amber→black,
+> quartz clear→smoky→morion (live-page: pale #d0ba64 → honey #835619 → marmatite #3c2c20). _FL
+> variants excluded (UV render / D4). **D1c PRE-REGISTERED = "when the sim's chemistry catches up":**
+> 44 variants need a field the sim lacks (Cr×12, Li, Co, Ag…), 57 have the field but never reach the
+> threshold (cassiterite Fe, fluorite REE) — they light up with NO code change as the sim models the
+> chemistry (rocks-catch-up). Lesson: a probe replaces the hypothesis you brought; check a field is
+> POPULATED before trusting a "<".
 
 > ## 🎓 DETOUR (2026-07-04→05, the tutorial arc) — THE TUTORIALS CAUGHT UP TO THE GAME: ENGINE v2→v3 + FOUR TUTORIALS + shigar_pegmatite — **detour handoff: `HANDOFF-TUTORIALS-2026-07-05.md`** (a side-arc off the roadmap; for the MAIN line read the foundations handoff below)
 >
@@ -105,7 +121,7 @@ Living list of open work items, captured from session conversations so context s
 > surfaces should auto-generate from SCENARIOS (vugg-add-scenario §10.5 TODO). Traps in the
 > handoff (native prompt() hangs preview; v116 picker guard; fortress RNG non-determinism).
 
-> ## 🧱 SESSION (2026-07-03→07, the foundation) — V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE + **O2 INDUCTION SURFACES** + **C0 THE CALCITE σ LEVER (boss stone #1)** + WALL UX + **C1 THE DIRECTIONAL-σ TRANCHE (boss stone: O1a-real + O1b + O2 integrated)** + **LOCAL CRYSTAL COLOUR** + **D1a BODY COLOUR (Depth-C defaults)** — **CURRENT HANDOFF (the main line): `HANDOFF-FOUNDATIONS-2026-07-03.md`, read through the KEYSTONE (sixth hand: RATE-reads-local-FORM-read-bulk, SITUATED→INDIVIDUATED) + the D1a ADDENDUM (seventh hand, 2026-07-07: grep-the-tree-before-you-build is a LAW — three consumers this week read the wrong source; next hand's doors: O3 / D1b / V0-V1)**
+> ## 🧱 SESSION (2026-07-03→07, the foundation) — V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE + **O2 INDUCTION SURFACES** + **C0 THE CALCITE σ LEVER (boss stone #1)** + WALL UX + **C1 THE DIRECTIONAL-σ TRANCHE (boss stone: O1a-real + O1b + O2 integrated)** + **LOCAL CRYSTAL COLOUR** + **D1a+D1b BODY COLOUR (Depth-C defaults + chemistry axes)** — **CURRENT HANDOFF (the main line): `HANDOFF-FOUNDATIONS-2026-07-03.md`, read through the KEYSTONE (sixth hand: RATE-reads-local-FORM-read-bulk, SITUATED→INDIVIDUATED) + the D1a/D1b ADDENDA (seventh hand, 2026-07-07: grep-the-tree-before-you-build is a LAW; a probe REPLACES the hypothesis you brought; check a field is POPULATED before trusting a "<"; next hand's doors: O3 / D1c-when-chemistry-catches-up / V0-V1)**
 >
 > **C0 UPDATE (`299a270` SIM 217, 2026-07-06, CI 157/2211):** boss stone #1 SHIPPED by the
 > 4a.7 recipe. calciteMorphForm gains the Ω branch (OMEGA_SCALENO=12, the fleet's own
