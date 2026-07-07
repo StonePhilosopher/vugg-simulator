@@ -3684,7 +3684,11 @@ const LOCAL_COLOR = {
                                                        // single axis reading garish (per-axis stays subtle)
 };
 function _localCrystalColor(crystal: any, spec: any): any {
-  const base = _topoParseColor((spec && spec.class_color) || '#d2691e');
+  // D1a — the BASE hue is now the color_rules-resolved real body colour
+  // (js/12a resolveBodyColour), not the class-taxonomy class_color. Falls back
+  // to class_color for anything unresolved. The chemistry tone + legibility
+  // floor below compose OVER it, unchanged.
+  const base = _topoParseColor(resolveBodyColour(crystal, spec));
   const hsl: any = { h: 0, s: 0, l: 0 };
   base.getHSL(hsl);
   // (1) chemistry — growth-weighted chromophore trace load → tone deepening
