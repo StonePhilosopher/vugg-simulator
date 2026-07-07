@@ -11619,5 +11619,46 @@
 //        scenarios — purely additive. Tests +11 pins (registration,
 //        six-species firing, variety-fence, smoky dose, etch zone,
 //        expects↔JSON5, tutorial tempo).
-const SIM_VERSION = 216;
+//   v217 — C0, the calcite σ lever (2026-07-06, boss stone #1):
+//        calciteMorphForm gains an Ω branch — sustained textbook-Ω >
+//        OMEGA_SCALENO (12.0, placed in the fleet's own measured gap) in
+//        SUBAQUEOUS growth → scalenohedral, independent of Mg/T (both
+//        prior branches byte-untouched, precedence first). DIRECTION:
+//        González, Carpenter & Lohmann 1992 (J. Sed. Pet. 62 — natural
+//        spar: near-equilibrium rhombs, high-σ scalenohedra);
+//        García-Carmona 2003 (J. Colloid Interf. Sci. 261); Weremeichik
+//        et al. 2024 (Sci Rep 14 — subaqueous-spar applicability, hence
+//        the air-mode gate: drip films keep the Mg/T fence). MAGNITUDE
+//        from tools/c0-calcite-form-probe.mjs (growth-weighted
+//        per-crystal Ω̄ against OWN-CELL fluid, seed 42): nailhead
+//        genres ≤5.8 (wittichen 5.0, reactivated_fluorite_vein 3.5,
+//        tutorials 4.4/5.8) · deccan 10.4 · GAP · ultramafic 22 ·
+//        elmwood 28.6 — threshold at 12: every current genre HOLDS and
+//        elmwood's giant dogtooth is σ-EARNED instead of hanging on
+//        Mg:Ca 0.165 vs the 0.15 fence (a 10% margin). The named
+//        Ca:CO₃ half of the stone is RECORDED (per-crystal molar-r in
+//        _wulffCalInt) but does NOT gate: the probe showed sim-r has NO
+//        genre signal (dogtooth 2.0–3.1 interleaved with nailhead
+//        1.6–4.5 — fluid.CO3 is a bookkeeping pool, not an activity);
+//        its gate is PRE-REGISTERED for the B5 speciation era. The
+//        classifier form hook goes formPerCrystal for calcite (zone
+//        annotations get the same subaqueous gate the habit word does).
+//        RENDER RIDER (same commit, co-evolution rule): calcite Wulff
+//        biasC = B(Ω̄) from the integral — the id-hash RETIRED for the
+//        tenant (wulfenite 4a.7's idiom; eye-checked band ends
+//        [0.15,0.26] / [1.30,2.20] HELD, Ω̄ places the body inside).
+//        Seed-42 consumer census (VERIFIED post-build): mvt is the one
+//        wulff_calcite opt-in — its dogtooth reads bulk Ω̄≈4.1 →
+//        biasC 0.248 (blunt slow spar, correct); elmwood is NOT
+//        tenant-opted (its stepped dogtooth renders via the TERRACE
+//        path, biasC-blind) and takes C0 at the WORD level: the form is
+//        now dual-fenced (Mg 0.165 AND cell-Ω̄ 28.6 > 12), so a future
+//        Mg dip no longer flips the showcase. The B-map's steep end
+//        awaits an elmwood-class tagged drinker.
+//        grow_calcite's fence call passes its in-scope σ +
+//        growth_environment; the narrator annotation names the branch
+//        that actually fired ('dog-tooth (σ-grown spar)' when neither
+//        Mg nor T did). Fence reads LIVE per-step σ (the v187
+//        trajectory contract).
+const SIM_VERSION = 217;
 

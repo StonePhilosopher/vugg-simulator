@@ -142,6 +142,10 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
     renderer, scene, camera, cavity, crystals, ambient, directional,
     cavitySig: '',
     crystalsSig: '',
+    // WALL DISPLAY (2026-07-06): 0 solid (default contract) · 1 translucent
+    // shell (druse-portrait view) · 2 hidden. Cycled by topoToggleWallDisplay;
+    // composed with insideMode in _topoApplyWallDisplay.
+    wallDisplay: 0,
     // Cache geometries per habit shape — many crystals can share the
     // same primitive geometry, only the per-mesh transform differs.
     geomCache: new Map<string, any>(),
@@ -404,6 +408,10 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
   geom.setAttribute('position', new THREE.BufferAttribute(mesh.positions.slice(), 3));
   geom.setAttribute('color', new THREE.BufferAttribute(mesh.colors.slice(), 3));
   geom.setAttribute('normal', new THREE.BufferAttribute(mesh.normals.slice(), 3));
+  // MATRIX SKIN (2026-07-06): static lat-long texture coords (js/23) so the
+  // per-lithology wall skin can map. Guarded — an old cached mesh without uvs
+  // just skips the attribute and the material renders un-mapped.
+  if (mesh.uvs) geom.setAttribute('uv', new THREE.BufferAttribute(mesh.uvs.slice(), 2));
   const indexAttr = numVerts > 65535
     ? new THREE.Uint32BufferAttribute(mesh.indices, 1)
     : new THREE.Uint16BufferAttribute(mesh.indices, 1);
@@ -415,6 +423,21 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
   const prev = target.geometry;
   target.geometry = geom;
   if (prev && prev.dispose) prev.dispose();
+
+  // MATRIX SKIN (2026-07-06, boss ask): the wall texture that tells you what
+  // kind of matrix hosts this vug. litho = wall.matrix (render-only override,
+  // js/22) ?? wall.composition (the physics field). Textures are built once
+  // per lithology + cached (js/99a _matrixSkinTexture); reassigned only when
+  // the resolved lithology actually changes (scenario switch).
+  if (target.material && typeof _matrixSkinTexture === 'function') {
+    const litho = String(wall.matrix || wall.composition || 'limestone');
+    if (state._matrixLitho !== litho) {
+      state._matrixLitho = litho;
+      const tex = _matrixSkinTexture(litho);
+      target.material.map = tex || null;
+      target.material.needsUpdate = true;
+    }
+  }
 
   // Tier 1 C (post-v69): toggle cavity material between smooth Phong-
   // like shading (default) and flat-faceted sphere-union polyhedron
@@ -4710,27 +4733,71 @@ function _topoApplyCameraFromTilt(state: any, wall: any) {
   const outside = radius > r0 * 1.05;
   if (inside && !state.insideMode) {
     state.insideMode = true;
-    if (state.cavity && state.cavity.material) {
-      state.cavity.material.side = THREE.FrontSide;
-      state.cavity.material.opacity = 1.0;
-      state.cavity.material.transparent = false;
-      state.cavity.material.needsUpdate = true;
-    }
+    _topoApplyWallDisplay(state);
     // Inside the cavity is darker — boost the ambient + warm the
     // directional so crystal faces catch a flame-side glow.
     if (state.ambient) state.ambient.intensity = 0.85;
     if (state.directional) state.directional.intensity = 1.2;
   } else if (outside && state.insideMode) {
     state.insideMode = false;
-    if (state.cavity && state.cavity.material) {
-      state.cavity.material.side = THREE.BackSide;
-      state.cavity.material.opacity = 0.40;
-      state.cavity.material.transparent = true;
-      state.cavity.material.needsUpdate = true;
-    }
+    _topoApplyWallDisplay(state);
     if (state.ambient) state.ambient.intensity = 0.55;
     if (state.directional) state.directional.intensity = 0.9;
   }
+}
+
+// WALL DISPLAY (2026-07-06, boss ask: "turn the display of the vugg wall on or
+// off"). One composition point for the cavity material: (insideMode ×
+// wallDisplay) → side/opacity/visibility. wallDisplay cycles 0 SOLID (the
+// pre-existing contract: translucent-0.40 shell outside, opaque interior
+// inside) → 1 TRANSLUCENT (0.18 see-through shell — the druse-portrait view;
+// depthWrite off so crystals behind the near wall stay readable) → 2 HIDDEN
+// (cavity mesh invisible; the matrix skin and wall both gone, bare druse).
+// The camera inside/outside transition handler above routes through here so
+// the two axes compose instead of fighting.
+function _topoApplyWallDisplay(state: any) {
+  if (!state || !state.cavity) return;
+  const mode = state.wallDisplay | 0;
+  const mat = state.cavity.material;
+  if (mode === 2) { state.cavity.visible = false; return; }
+  state.cavity.visible = true;
+  if (!mat) return;
+  if (mode === 1) {
+    mat.side = THREE.BackSide;
+    mat.opacity = 0.18;
+    mat.transparent = true;
+    mat.depthWrite = false;
+  } else if (state.insideMode) {
+    mat.side = THREE.FrontSide;
+    mat.opacity = 1.0;
+    mat.transparent = false;
+    mat.depthWrite = true;
+  } else {
+    mat.side = THREE.BackSide;
+    mat.opacity = 0.40;
+    mat.transparent = true;
+    mat.depthWrite = true;
+  }
+  mat.needsUpdate = true;
+}
+
+// The topo-wall-btn onclick (index.html camera-ctrls row). Cycles the three
+// display states; amber button color marks the non-default states (the
+// topo-three-btn convention).
+function topoToggleWallDisplay() {
+  const state = _topoThreeState;
+  if (!state) return;
+  state.wallDisplay = ((state.wallDisplay | 0) + 1) % 3;
+  _topoApplyWallDisplay(state);
+  const btn = document.getElementById('topo-wall-btn');
+  if (btn) {
+    const mode = state.wallDisplay | 0;
+    btn.style.color = mode !== 0 ? '#f0c050' : '';
+    btn.title = mode === 0 ? 'Vug wall: solid (click: translucent)'
+      : mode === 1 ? 'Vug wall: translucent (click: hidden)'
+      : 'Vug wall: hidden (click: solid)';
+  }
+  if (typeof topoRender === 'function') topoRender();
 }
 
 // One-time default-on setup. Runs the first time _topoRenderThree

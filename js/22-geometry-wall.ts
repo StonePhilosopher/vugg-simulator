@@ -98,6 +98,15 @@ class VugWall {
   [key: string]: any;
   constructor(opts: any = {}) {
     this.composition = opts.composition ?? 'limestone';
+    // MATRIX SKIN (2026-07-06, boss ask): the RENDER-ONLY lithology override.
+    // `composition` is physics-load-bearing (the dissolve() gate branches on
+    // limestone/dolomite), so scenarios whose composition is a physics PROXY
+    // (chiastolite's carbonaceous metapelite runs as inert 'pegmatite') declare
+    // their true host here for the wall texture skin; renderer reads
+    // matrix ?? composition (js/99a _matrixSkinTexture). Physics never reads
+    // this field. Like every wall opt, it must be whitelisted HERE — an
+    // unlisted flag from scenarios.json5 is silently dropped.
+    this.matrix = opts.matrix ?? null;
     this.thickness_mm = opts.thickness_mm ?? 500.0;
     // Size-class cascade: vug < pocket < cave. Each tier maps to a
     // literature-anchored vug_diameter_mm range. Explicit override
@@ -681,6 +690,15 @@ class WallState {
     // MeshStandardMaterial.flatShading on the cavity hull. Default
     // 'smooth' preserves pre-toggle appearance.
     this.cavity_render = opts.cavity_render ?? 'smooth';
+    // MATRIX SKIN (2026-07-06): host lithology, mirrored from VugWall at
+    // simulator construction (the cavity_render idiom) so the Three.js
+    // renderer can resolve the wall texture as matrix ?? composition without
+    // reaching back to conditions.wall. `composition` is the physics word,
+    // `matrix` the render-only true-host override (VugWall constructor
+    // header). Both are display-only HERE — WallState physics never reads
+    // them.
+    this.composition = opts.composition ?? 'limestone';
+    this.matrix = opts.matrix ?? null;
     // Tranche 6 of PROPOSAL-CAVITY-MESH §14: per-vertex nucleation
     // opt-in. See VugWall constructor for the full rationale. Mirrored
     // onto WallState so _assignWallCell / _assignWallRing can read it

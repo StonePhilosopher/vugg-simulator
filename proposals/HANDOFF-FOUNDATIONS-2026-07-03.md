@@ -248,3 +248,200 @@ Build true, check the diagonal, and let the rocks interrupt you — they know th
 better than the roadmap does.
 
 — the builder, third hand, fourth act · 2026-07-04
+
+---
+
+## Addendum — O2 INDUCTION SURFACES (a new hand, back on the roadmap · 2026-07-06)
+
+The boss came off the tutorial detour, read this handoff, and said *"the handoff foundations
+is the next segment… pick our next move."* We picked **O2** — the third stone of the
+render-only ontogeny core (O0 → O1a → O2). Shipped `eea52bc`, render-only, 0/38 drift,
+Pages-verified built==HEAD, full CI 156 files / 2196 tests.
+
+**What shipped.** When crystals grow into each other they share a flat CONTACT facet, not
+interpenetrating ideal forms. O2 clips each crystal at the growth-rate-weighted meeting plane
+with its neighbours and caps the cut matte. Two paths in `js/46`: `_makeWulffContactGeom` (the
+face-space clip O0's header promised — neighbour planes as more half-spaces) and, the
+fleet-wide one, `_clipConvexGeom` (Sutherland–Hodgman on any convex emitted mesh, LINEAR in
+triangles). Renderer wiring in `js/99i`: a neighbour pre-pass, a convex-token gate, the
+world→local plane inversion, a `[euhedral, matte-contact]` material array (the helix opacity
+flip in `js/99j` made array-aware). `tools/o2-contact-probe.mjs` is the instrument; re-run it
+as more minerals become convex/Wulff to re-size the reach.
+
+**OPEN, pre-registered:** concave forms (hopper/botryoidal/twin, ~174 crystals) need a later
+treatment — a plane cut of a concave body has no single convex cap. Current-size meeting-plane
+weights are the render-only approximation (Diggle first-order exact); the drift population
+upgrades to integrated-growth weights when **C1** lands (already the 4a.8 converse debt). O1b
+neighbour-shadow still open. And the legibility knob — full honest druse vs restrained — is a
+boss eye-check on the live deploy, deliberately left for the eye that owns it.
+
+### The mark — what this act adds
+
+**The probe is allowed to rewrite the rung.** I scoped O2 as an afternoon of render wiring on
+the Wulff kernel. The probe said the Wulff path reaches SEVEN crystals fleet-wide — a near-
+no-op — because the interpenetration lives in the primitive meshes, not the six Wulff tenants.
+That single measurement turned "extend the kernel" into "build a generic convex-mesh clipper,"
+a different and larger thing. Had I trusted the plan over the instrument I'd have shipped a
+change nobody could see. Measure the size of the work before you believe your estimate of it —
+and when the measurement disagrees with the plan, the measurement is the new plan.
+
+**Build the mechanism, not a picture of it** (the third hand's line, load-bearing again). The
+clipper caps its own cuts, preserves euhedral-vs-contact tags through re-clips, and works on
+Wulff geoms and BoxGeometry alike — so O4 engulfment, O5 regrowth, and every future mineral
+that becomes convex inherit contact faces for free. The smallest TRUE clipper was more work
+than the Wulff special-case and worth every line: the next rung is now cheaper, not dearer.
+
+**Three instruments, three blindnesses.** The baseline (0/38) proved render-only. The kernel
+tests proved the clip math. The end-to-end wiring test proved the pipeline FIRES — because a
+perfect clipper never reached is the exact silent no-op the third hand's strips warned about.
+No single one of them would have caught a clip that was correct but unwired, or wired but
+wrong. Verification is agreement between instruments that fail differently.
+
+**The dream.** O0 gave a crystal one side different from the other; O2 gives it the memory of
+its neighbours — the flat face where another crystal stood is a fossil of a competition that
+happened in the dark. The dream the third hand wrote was that a null-locality rock could get
+its history back from physics. Add this: that the CONTACT FACES themselves become readable —
+that the inverse solver, someday, looks at where a crystal's euhedral faces stop and its matte
+contacts begin, and reconstructs not just the fluid but the CROWD: how many neighbours, how
+big, who won the race for the wall. A druse is a frozen tournament. We just taught the sim to
+draw the brackets; one day it will read them back.
+
+Measure before you estimate, cap your own cuts, and let the crowd leave its mark on the stone.
+
+— the builder, fifth hand, the induction-surfaces act · 2026-07-06
+
+---
+
+## Addendum — C0, THE CALCITE σ LEVER (same hand, second act · 2026-07-06)
+
+The boss said *"keep going while I review"* — so the roadmap's #1 stone came next. En route,
+O1b neighbor-shadow was measured (8 Wulff crystals fleet-wide — the same near-no-op scoping
+O2's probe caught) and DEFERRED; it ripens as tenants grow. C0 shipped `299a270`, SIM 217,
+CI 157/2211, Pages-verified.
+
+**What shipped.** `calciteMorphForm` gains the Ω branch: sustained textbook-Ω > 12
+(OMEGA_SCALENO, placed in the fleet's own measured gap) in SUBAQUEOUS growth →
+scalenohedral, independent of Mg/T. Direction from González, Carpenter & Lohmann 1992 +
+García-Carmona 2003 + Weremeichik 2024 (whose subaqueous-spar applicability IS the air
+gate); magnitude from `tools/c0-calcite-form-probe.mjs` — growth-weighted per-crystal Ω̄
+against each crystal's OWN CELL fluid, never transcribed from a paper. Sweep: EXACTLY ONE
+flip — deccan's calcite becomes the iconic Deccan golden dogtooth (genre improvement,
+regression-locked); every other genre holds; the Ω≈1500 stalactites correctly don't flip.
+Render rider: calcite Wulff biasC = B(Ω̄) from a live integral (`_wulffCalInt`), the id-hash
+retired — mvt's slow-spar tooth reads blunt 0.248, verified.
+
+**The honest finding the stone is named for and doesn't do:** the Ca:CO₃ half carries NO
+signal in this sim — dogtooth r̄ 2.0–3.1 interleaved with nailhead 1.6–4.5, because
+`fluid.CO3` is a bookkeeping pool, not an activity. It is RECORDED in the integral,
+direction pinned to Kirov 1972 + Stack & Grantham 2010, and its gate is PRE-REGISTERED for
+the B5 speciation era. When B5 lands, re-probe and open the second half.
+
+**Traps paid here:** (1) elmwood is NOT the wulff_calcite tenant — mvt is; elmwood's stepped
+dogtooth renders via the TERRACE path (biasC-blind) and takes C0 at the WORD level
+(dual-fenced: Mg 0.165 AND cell-Ω̄ 28.6). I wrote the steep-tooth claim into two doc blocks
+before checking which scenario owns the flag — the post-build verify caught it; census the
+CONSUMER before writing the payoff. (2) A synthetic test broth (Ca600/CO3400/pH8) turned out
+to be Ω=157 water — the old pin was asking supersaturation-157 water for a nailhead. When a
+fence earns new physics, sweep the synthetic broths too: they encode the OLD fence's
+accidents. (3) The strips are word-blind (0/38 content) — the deccan flip lives only in the
+test suite's pins. Know which instrument can see your change BEFORE you claim confinement.
+
+### The mark — what this act adds
+
+**A boss stone can be half-buildable, and saying so IS the build.** The stone's name promises
+two levers; the probe showed the sim can only honestly power one today. Shipping σ now and
+pre-registering r for B5 — with the direction citations already in place — beats either
+waiting for B5 or gating on noise dressed up as chemistry. A stone laid honestly at half its
+named size still bears load; a full-size stone with a hollow half does not.
+
+**The recipe transfers.** Probe → law → calibrate on the sim's own scale → sweep → ship,
+proven on wulfenite 4a.7, ran here on a FENCE instead of a bias map without modification.
+Two runs make it a road: the next chemistry lever (fluorite's Y is already earned; barite's
+σ-habit fence is a candidate) should cost less than this one did.
+
+**The dream, this act's telling.** Elmwood's tooth no longer hangs on a 10% Mg margin — the
+same rock is now held up by two independent physical claims, either sufficient. That is what
+"byte-identical to nature" actually converges through: not one perfect parameter, but every
+render claim standing on ENOUGH independent physics that no single calibration owns it. The
+day a specimen disagrees with the sim, I want the argument to be about which LAW is wrong,
+not which knob drifted. Redundant truth is the only kind that survives contact with a drawer
+full of rocks.
+
+Lay the stone at its honest size, name the half you deferred, and leave the citations where
+the next hand can check them.
+
+— the builder, fifth hand, the σ-lever act · 2026-07-06
+
+---
+
+## KEYSTONE — the fifth hand's session, whole (2026-07-06, written before compaction)
+
+The boss asked for this stone by name. Here is the arch it closes.
+
+| commit | what |
+|---|---|
+| `eea52bc` | **O2 induction surfaces** — generic convex-mesh contact clipper, 622 crystals fleet-wide; render-only, 0/38; the probe rewrote the rung (Wulff path reached 7) |
+| `299a270` | **C0, the calcite σ lever (SIM 217, boss stone #1)** — the Ω branch by the 4a.7 recipe; ONE flip (deccan → its iconic dogtooth); elmwood dual-fenced; Ca:CO₃ half recorded-no-signal, gate pre-registered for B5 |
+| `37353c1` | **wall display toggle + matrix skins** — solid/translucent/hidden; 13 lithology fabrics; 8 note-backed matrix overrides; the DOUBLE-whitelist trap paid + pinned |
+| `efdba99` `aa4b5cf` `47682d5` | the standing-rule docs passes, same-day |
+
+Every code commit Pages-verified built==HEAD, cold-ci stamped GREEN (2196 → 2211 → 2222
+tests), three-instrument confinement proofs throughout. En route, measured and deferred
+with numbers attached: O1b neighbor-shadow (8 Wulff crystals fleet-wide — ripens as tenants
+grow). Queued by the boss: **local crystal color** (the answer to the O2 blending caveat —
+color, not satellite clipping; spec in the BACKLOG's WALL UX block).
+
+**The doctrine this session was given, now in the tree where it belongs.** Mid-session,
+closing the C0 report, the boss wrote the sentence that names how this project decides:
+
+> *"the important thing is to follow the science, sometimes the rocks need to catch up."*
+
+It refines — does not contradict — "the rock wins." A real rock still arbitrates any claim
+about nature. But today's fleet, tenant list, and catalog coverage are a SAMPLING of nature,
+not nature itself; when verified science outruns the sampling, the science ships and the
+sampling grows into it. The biasC map's steep end awaits its drinker; the r-gate awaits B5;
+O1b awaits its tenants — none of these are debts, they are cut stones waiting for the wall
+to rise. Scope limit, kept sharp: this covers right-physics-awaiting-coverage, never wrong
+targeting. **The probe decides WHERE; the science decides WHAT.**
+
+**Where the next hand starts:** the boss stones now read C0 ✅ code (its T2 acceptance pair
+open, wanting A1's dogtooth+nailhead anchor picks — specimen 1298 named) · **C1 depletion
+field NEXT** (EV check first; triply load-bearing now — it un-freezes O1a's approximation,
+activates O2's integrated-growth weights, and feeds the biasC steep end its drinkers) ·
+Depth-C colour on call, with the queued local-color item as its natural on-ramp. Open
+foundation tranches: V0 all-38 audit · V1 microtexture · O1b (deferred-with-number). Traps
+this session bought are recorded in the two act addenda above; the new one from the wall
+arc: **a scenarios.json5 wall flag crosses TWO silent whitelists** (VugWall constructor +
+the js/85 WallState mirror) — tests-js/matrix-skin.test.ts walks the chain so you don't
+have to rediscover it.
+
+### The mark — what the keystone adds
+
+**One instrument re-planned the whole session.** The same probe idiom — measure the fleet
+before believing the plan — rewrote O2 (7 → 622, wrong layer found), killed O1b's timing
+(8, deferred), and halved C0's name honestly (σ ships, r records). Three rungs, three
+reshapes, zero wasted builds. The planning document for a session is not the roadmap; it is
+the roadmap PLUS the first probe you run against it. Budget the probe before the build,
+every time — it is the cheapest architect you will ever hire.
+
+**And watch what the session did without planning it:** O2 taught crystals their NEIGHBORS.
+C0 taught calcite its WATER. The matrix skins taught the vug its COUNTRY ROCK. Piece by
+piece, the specimen is becoming SITUATED — crystal, crowd, chemistry, host — which is what a
+real specimen in a drawer already is: not a shape but a situation, frozen. The convergence
+ladder climbs by context, not just by fidelity.
+
+**The dream, keystone telling.** The prior tellings dreamed the instrument (a rock's story
+re-derived from physics) and the redundancy (every claim standing on enough independent
+science that no knob owns it). Add the direction of the arch: every arc this session pushed
+the render one rung closer to being a SITUATION — and the inverse solver, when it comes, will
+read that ladder downward. Host rock narrows the district; neighbors narrow the pocket;
+water narrows the day. The dream is that when a label-less rock finally gets its biography
+back, it won't be because one measurement matched — it will be because the whole situation
+locked, the way an arch locks: no single stone holding, all of them leaning, and the
+keystone just the place where the leaning meets.
+
+Probe first, ship the science, situate the specimen — and when the boss hands you a
+sentence that names what you were already doing, put it in the tree where the next hand
+will find it.
+
+— the builder, fifth hand, the keystone · 2026-07-06

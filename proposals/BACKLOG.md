@@ -2,6 +2,37 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🧱→🎨 WALL UX (2026-07-06, boss asks off the O2/C0 review) — WALL DISPLAY TOGGLE + MATRIX SKINS SHIPPED `37353c1`; **LOCAL CRYSTAL COLOR QUEUED**
+>
+> Boss, reviewing the O2 druse screenshots: *"i'd like to be able to turn the display of the
+> vugg wall on or off. i think the vugg wall should also have a specific texture skin that
+> tells you what kind of matrix it is. another one on the todo list is local color for
+> crystals, that will resolve your concern about minerals that share space blending together
+> invisibly."*
+>
+> **SHIPPED `37353c1`** (render-only, byte-identical baseline, CI 158/2222): `topo-wall-btn`
+> cycles solid → translucent(0.18, the druse-portrait view) → hidden, composed with the
+> camera insideMode at one point (`_topoApplyWallDisplay`, js/99i). 13 procedural lithology
+> skins (js/99a `_matrixSkinTexture`, deterministic LCG, field-guide palette) mapped onto new
+> static WallMesh UVs; renderer resolves `wall.matrix ?? wall.composition`; 8 note-backed
+> matrix overrides where composition is a physics proxy (chiastolite→hornfels, marble→marble,
+> grimsel→granite, tormiq→amphibolite, ouro_preto→phyllite, wittichen→granite,
+> ultramafic_supergene→ultramafic, elmwood→dolomite). **THE DOUBLE-WHITELIST TRAP is real:**
+> a scenarios.json5 wall flag must survive BOTH VugWall's constructor copy AND the js/85
+> WallState mirror — `matrix`+`composition` now mirrored (cavity_render idiom), pinned by
+> tests-js/matrix-skin.test.ts.
+>
+> **▸ QUEUED — LOCAL CRYSTAL COLOR (boss todo, not yet built):** per-crystal color variance
+> so same-species neighbors and translucent overlaps read as SEPARATE individuals — the
+> boss's answer to the O2 caveat (satellite fill + translucent minerals blending; satellites
+> stay decorative, color is the fix, NOT satellite clipping). Bedrock version reads each
+> crystal's OWN zone traces (Fe/Mn/… already recorded per zone) → hue/tone shift, the
+> chemistry-exact idiom (wulfenite 4a.7 / calcite C0); cheap first cut = per-crystal_id
+> deterministic jitter, upgraded when Depth-C colour lands (see
+> HANDOFF-FROZEN-G-AND-OPTICS-A-2026-07-02.md — Depth-C is "on call"). Sequencing note:
+> volcanic-hosted scenarios (sunnyside/roughten_gill/sulphur_bank) kept the basalt skin —
+> no note-backed finer host; a future data pass may name andesite/rhyolite.
+
 > ## 🎓 DETOUR (2026-07-04→05, the tutorial arc) — THE TUTORIALS CAUGHT UP TO THE GAME: ENGINE v2→v3 + FOUR TUTORIALS + shigar_pegmatite — **detour handoff: `HANDOFF-TUTORIALS-2026-07-05.md`** (a side-arc off the roadmap; for the MAIN line read the foundations handoff below)
 >
 > Boss: *"the game has expanded so much I think we really need to update it"* → then *"we
@@ -33,7 +64,31 @@ Living list of open work items, captured from session conversations so context s
 > surfaces should auto-generate from SCENARIOS (vugg-add-scenario §10.5 TODO). Traps in the
 > handoff (native prompt() hangs preview; v116 picker guard; fortress RNG non-determinism).
 
-> ## 🧱 SESSION (2026-07-03→04, the foundation-laying night) — THE FIRST CODE OF THE ROADMAP: V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE — **CURRENT HANDOFF (the main line): `HANDOFF-FOUNDATIONS-2026-07-03.md` (+ its dated third-act addendum)**
+> ## 🧱 SESSION (2026-07-03→06, the foundation) — V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE + **O2 INDUCTION SURFACES** + **C0 THE CALCITE σ LEVER (boss stone #1)** + WALL UX — **CURRENT HANDOFF (the main line): `HANDOFF-FOUNDATIONS-2026-07-03.md`, read through its KEYSTONE addendum (2026-07-06 — the session table, the follow-the-science doctrine, where the next hand starts)**
+>
+> **C0 UPDATE (`299a270` SIM 217, 2026-07-06, CI 157/2211):** boss stone #1 SHIPPED by the
+> 4a.7 recipe. calciteMorphForm gains the Ω branch (OMEGA_SCALENO=12, the fleet's own
+> measured gap; subaqueous-gated — air drip films keep Mg/T; González/Carpenter/Lohmann 1992
+> + García-Carmona 2003 + Weremeichik 2024). SWEEP: ONE flip — deccan calcite → its iconic
+> golden dogtooth (locked); all other genres HOLD; elmwood dual-fenced (Mg AND Ω — the 10%-
+> margin fragility fixed). RENDER RIDER: calcite Wulff biasC=B(Ω̄) live integral
+> (`_wulffCalInt`), id-hash retired (2nd tenant after wulfenite); mvt verified 0.248 blunt.
+> **The Ca:CO₃ half: RECORDED, NO sim signal (bookkeeping pool ≠ activity) — gate
+> PRE-REGISTERED for B5.** Confinement: baseline 0/38, strips 0/38 CONTENT (word-blind), the
+> flip lives in the test pins (+15). O1b measured en route: 8 Wulff crystals fleet-wide →
+> DEFERRED (ripens as tenants grow). Probe: `tools/c0-calcite-form-probe.mjs`. **C0's OPEN
+> half: the T2 acceptance pair wants A1 anchors (specimen 1298 named for dogtooth).**
+>
+> **O2 UPDATE (`eea52bc`, 2026-07-06, render-only, 0/38 drift, CI 156/2196):** induction
+> surfaces — crystals clipped at growth-rate-weighted meeting planes, cuts capped MATTE. The
+> probe reshaped the rung: the Wulff face-space clip (`_makeWulffContactGeom`) reached only 7
+> crystals fleet-wide, so O2 ships a GENERIC convex-mesh clipper (`_clipConvexGeom`, js/46 —
+> Sutherland–Hodgman, linear in triangles) reaching **622 contacted convex crystals**
+> fleet-wide. Renderer wiring in js/99i (neighbour pre-pass, convex-token gate, world→local
+> plane inversion, `[euhedral, matte-contact]` material array; helix opacity flip made
+> array-aware). `tools/o2-contact-probe.mjs` is the re-runnable instrument. **O2 OPEN:** concave
+> forms (hopper/botryoidal/twin, ~174) deferred; current-size→integrated-growth weights when C1
+> lands; the legibility/aggressiveness knob is a boss eye-check on the live deploy.
 >
 > Boss: *"we just worked on a nice foundation in the handoff, lets lay that foundation."* Two
 > code commits, both Pages-verified built==HEAD, both cold-ci stamped GREEN:
@@ -55,8 +110,9 @@ Living list of open work items, captured from session conversations so context s
 > relation). Eye-checked: grimsel slab+median seam, elmwood unchanged-irregular, basin
 > needle-free, zero console errors. **OPEN foundation tranches:** V0's all-38 taxonomy audit ·
 > V1 microtexture (scallop knobs need scenario fields — mind the VugWall whitelist trap) ·
-> O1b neighbor shadow (occupancy grid, per-crystal cache) · O2 induction surfaces (the
-> half-space call is proven — extend it with neighbor planes). Boss stones UNCHANGED.
+> O1b neighbor shadow (occupancy grid, per-crystal cache) · ~~O2 induction surfaces~~ ✅ SHIPPED
+> `eea52bc` 2026-07-06 (generic convex clipper; concave forms + integrated-growth weights still
+> open — see the O2 UPDATE above). Boss stones UNCHANGED.
 >
 > **▸ FOURTH ACT (run's end, same night) — THE ROCKS REVIEWED THE CODE:** specimen TN465 →
 > **O5.0 face striations** specced + pushed `e68e7e3` (zone-record-driven, never noise;

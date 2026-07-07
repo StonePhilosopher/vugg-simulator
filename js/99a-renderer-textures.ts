@@ -435,6 +435,184 @@ function _texture_hopper(ctx, fromX, fromY, toX, toY, thicknessMm, cellArcMm, mm
   }
 }
 
+// ============================================================
+// MATRIX SKINS (2026-07-06, boss ask: "the vugg wall should have a specific
+// texture skin that tells you what kind of matrix it is"). One procedural
+// CanvasTexture per host LITHOLOGY, applied as the cavity material's map in
+// js/99i. The renderer resolves litho = wall.matrix ?? wall.composition —
+// `composition` is the physics field (dissolution gates on it), `matrix` the
+// render-only override for scenarios whose composition is a physics proxy
+// (chiastolite's metapelite runs as inert 'pegmatite').
+//
+// Field-guide discipline: low-saturation, small features, no drama. The
+// cavity material multiplies map × vertexColors (orientation + water tints),
+// so skins are built LIGHT (base ~0.8 luminance) with restrained darker
+// features — the existing tints keep working and the skin reads as fabric,
+// not paint. Basalt/hornfels/serpentinite are honestly dark hosts and are
+// allowed to darken the wall; that IS their identity.
+//
+// Deterministic: a string-seeded LCG replaces Math.random so a given litho
+// paints the same skin every session (reproducible screenshots + no RNG
+// discipline questions — the sim's SeededRandom is never touched).
+// ============================================================
+
+function _matrixLcg(seedStr: string): () => number {
+  let s = 2166136261 >>> 0;
+  for (let i = 0; i < seedStr.length; i++) { s ^= seedStr.charCodeAt(i); s = Math.imul(s, 16777619) >>> 0; }
+  return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296);
+}
+
+// Shared painter helpers — all take the 256×256 ctx.
+function _mskBase(ctx: any, color: string) { ctx.fillStyle = color; ctx.fillRect(0, 0, 256, 256); }
+function _mskStipple(ctx: any, rnd: () => number, n: number, colors: string[], rMin: number, rMax: number, alpha = 1) {
+  ctx.globalAlpha = alpha;
+  for (let i = 0; i < n; i++) {
+    ctx.fillStyle = colors[(rnd() * colors.length) | 0];
+    const r = rMin + rnd() * (rMax - rMin);
+    ctx.beginPath(); ctx.arc(rnd() * 256, rnd() * 256, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+function _mskBands(ctx: any, rnd: () => number, n: number, color: string, alpha: number, wMin: number, wMax: number, wobble: number) {
+  ctx.globalAlpha = alpha; ctx.fillStyle = color;
+  for (let i = 0; i < n; i++) {
+    const y = rnd() * 256, h = wMin + rnd() * (wMax - wMin);
+    ctx.beginPath(); ctx.moveTo(0, y);
+    for (let x = 0; x <= 256; x += 32) ctx.lineTo(x, y + Math.sin((x / 256 + rnd()) * Math.PI * 2) * wobble);
+    for (let x = 256; x >= 0; x -= 32) ctx.lineTo(x, y + h + Math.sin((x / 256 + rnd()) * Math.PI * 2) * wobble);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+function _mskVeins(ctx: any, rnd: () => number, n: number, color: string, alpha: number, width: number) {
+  ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = width;
+  for (let i = 0; i < n; i++) {
+    let x = rnd() * 256, y = rnd() * 256;
+    ctx.beginPath(); ctx.moveTo(x, y);
+    const segs = 4 + (rnd() * 5) | 0;
+    for (let sSeg = 0; sSeg < segs; sSeg++) { x += (rnd() - 0.5) * 90; y += (rnd() - 0.5) * 90; ctx.lineTo(x, y); }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+function _mskLaths(ctx: any, rnd: () => number, n: number, colors: string[], lMin: number, lMax: number, w: number, alpha = 1) {
+  ctx.globalAlpha = alpha;
+  for (let i = 0; i < n; i++) {
+    ctx.save();
+    ctx.translate(rnd() * 256, rnd() * 256); ctx.rotate(rnd() * Math.PI);
+    ctx.fillStyle = colors[(rnd() * colors.length) | 0];
+    const L = lMin + rnd() * (lMax - lMin);
+    ctx.fillRect(-L / 2, -w / 2, L, w);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// One painter per lithology. Palettes are restrained field-guide reads of the
+// real rocks; identity comes from fabric (bedding/vesicles/speckle/banding/
+// veining), not saturation.
+const _MATRIX_SKIN_PAINTERS: Record<string, (ctx: any, rnd: () => number) => void> = {
+  limestone(ctx, rnd) {              // pale warm micrite, faint bedding + mottle
+    _mskBase(ctx, '#d8d2c4');
+    _mskBands(ctx, rnd, 5, '#c9c2b2', 0.35, 6, 18, 3);
+    _mskStipple(ctx, rnd, 240, ['#cfc8b9', '#c4bcab', '#ddd7ca'], 1, 4, 0.5);
+  },
+  dolomite(ctx, rnd) {               // buff sucrosic, fine sparkle stipple + vuggy pits
+    _mskBase(ctx, '#d9cbba');
+    _mskStipple(ctx, rnd, 700, ['#e2d6c6', '#cec0ae', '#d4c6b4'], 0.6, 2, 0.6);
+    _mskStipple(ctx, rnd, 24, ['#b9ab99'], 2, 5, 0.5);
+  },
+  basalt(ctx, rnd) {                 // dark aphanitic groundmass + vesicles
+    _mskBase(ctx, '#6b6662');
+    _mskStipple(ctx, rnd, 500, ['#5f5a57', '#75706b'], 0.5, 1.6, 0.5);
+    _mskStipple(ctx, rnd, 90, ['#4e4a47'], 1.5, 4.5, 0.8);   // vesicle pits
+    _mskStipple(ctx, rnd, 22, ['#8b857c'], 1.5, 3.5, 0.6);   // amygdule fills
+  },
+  pegmatite(ctx, rnd) {              // coarse felsic intergrowth + mica books
+    _mskBase(ctx, '#ded7cb');
+    _mskLaths(ctx, rnd, 46, ['#e8e2d8', '#d3cabb', '#e0d5c2'], 20, 52, 12, 0.75);  // feldspar laths
+    _mskStipple(ctx, rnd, 40, ['#eeeae2'], 3, 9, 0.7);        // quartz patches
+    _mskLaths(ctx, rnd, 26, ['#57524c', '#6a6157'], 4, 12, 3, 0.85);  // mica flecks
+  },
+  sandstone(ctx, rnd) {              // granular tan + bedding laminae
+    _mskBase(ctx, '#d4c19f');
+    _mskStipple(ctx, rnd, 900, ['#cdb894', '#dbc9a9', '#c5b08a'], 0.5, 1.8, 0.7);
+    _mskBands(ctx, rnd, 7, '#c2ab83', 0.4, 3, 8, 2);
+  },
+  phonolite(ctx, rnd) {              // greenish-gray aphanitic + sanidine laths
+    _mskBase(ctx, '#a9ac9c');
+    _mskStipple(ctx, rnd, 420, ['#9fa292', '#b2b5a5'], 0.5, 1.6, 0.5);
+    _mskLaths(ctx, rnd, 22, ['#c3c6b6'], 8, 20, 3, 0.7);
+  },
+  ultramafic(ctx, rnd) {             // dark serpentinite, waxy patches + pale vein net
+    _mskBase(ctx, '#525c50');
+    _mskStipple(ctx, rnd, 130, ['#5c675a', '#485245'], 3, 10, 0.5);
+    _mskVeins(ctx, rnd, 12, '#8a9884', 0.5, 1.4);             // chrysotile veinlets
+    _mskVeins(ctx, rnd, 5, '#a9b6a2', 0.35, 2.2);
+  },
+  marble(ctx, rnd) {                 // near-white recrystallized, soft gray swirls
+    _mskBase(ctx, '#e7e4de');
+    _mskBands(ctx, rnd, 4, '#d6d2ca', 0.4, 10, 26, 9);
+    _mskVeins(ctx, rnd, 6, '#c4bfb5', 0.4, 1.6);
+    _mskStipple(ctx, rnd, 300, ['#efece7', '#dedad2'], 0.6, 2, 0.4);  // sugary sparkle
+  },
+  hornfels(ctx, rnd) {               // dark spotted metapelite (the chiastolite country rock)
+    _mskBase(ctx, '#5d5954');
+    _mskStipple(ctx, rnd, 600, ['#565250', '#646059'], 0.5, 1.4, 0.5);
+    _mskStipple(ctx, rnd, 46, ['#4a4642'], 1.5, 4, 0.7);      // cordierite/graphite spots
+  },
+  granite(ctx, rnd) {                // finer felsic speckle than pegmatite
+    _mskBase(ctx, '#d7d1c6');
+    _mskStipple(ctx, rnd, 520, ['#e3ded4', '#c9c1b2', '#d0c7b8'], 1, 3.5, 0.8);
+    _mskStipple(ctx, rnd, 130, ['#5d5850', '#6d665c'], 0.8, 2.4, 0.85);  // biotite/hornblende
+  },
+  gneiss(ctx, rnd) {                 // banded ortho-gneiss — the alpine-cleft country rock
+    _mskBase(ctx, '#c9c3b7');
+    _mskBands(ctx, rnd, 6, '#7c766c', 0.55, 8, 20, 6);        // mafic bands
+    _mskBands(ctx, rnd, 4, '#dcd6cb', 0.5, 6, 14, 6);         // felsic bands
+    _mskStipple(ctx, rnd, 200, ['#b5aea1'], 0.6, 2, 0.4);
+  },
+  amphibolite(ctx, rnd) {            // tormiq's epidote-cleft host — hornblende + plagioclase speckle
+    _mskBase(ctx, '#4f554d');
+    _mskLaths(ctx, rnd, 90, ['#3d423b', '#454b43'], 4, 12, 2.5, 0.85);  // hornblende laths
+    _mskStipple(ctx, rnd, 160, ['#9aa093', '#878d81'], 0.8, 2.4, 0.7);  // plagioclase flecks
+    _mskBands(ctx, rnd, 3, '#464c44', 0.35, 8, 18, 5);        // faint foliation
+  },
+  phyllite(ctx, rnd) {               // ouro preto's imperial-topaz host — silvery sheened foliation
+    _mskBase(ctx, '#9b978e');
+    _mskBands(ctx, rnd, 9, '#8b877e', 0.5, 2, 6, 4);          // fine wavy foliation
+    _mskBands(ctx, rnd, 5, '#aca89e', 0.45, 2, 5, 4);         // sericite sheen streaks
+    _mskStipple(ctx, rnd, 150, ['#928e85'], 0.5, 1.6, 0.4);
+  },
+};
+
+// litho → cached THREE.CanvasTexture. Unknown lithologies fall back to the
+// limestone fabric (never throws mid-render); returns null when THREE or a
+// 2D canvas is unavailable (headless callers just skip the map).
+const _matrixSkinCache = new Map<string, any>();
+function _matrixSkinTexture(litho: string): any {
+  if (typeof THREE === 'undefined') return null;
+  const key = _MATRIX_SKIN_PAINTERS[litho] ? litho : 'limestone';
+  let tex = _matrixSkinCache.get(key);
+  if (tex !== undefined) return tex;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { _matrixSkinCache.set(key, null); return null; }
+    _MATRIX_SKIN_PAINTERS[key](ctx, _matrixLcg(key));
+    tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(6, 3);   // ~60°×60° per tile on the lat-long shell — small field-guide fabric
+    if ('colorSpace' in tex && typeof (THREE as any).SRGBColorSpace !== 'undefined') {
+      (tex as any).colorSpace = (THREE as any).SRGBColorSpace;
+    }
+  } catch { tex = null; }
+  _matrixSkinCache.set(key, tex);
+  return tex;
+}
+
 // Paint a centered placeholder hint into the topo canvas. Used when no
 // active sim or no ring data exists yet, so the panel reads as 'waiting'
 // rather than showing a 340px-tall void. Kept simple: one or two lines

@@ -80,6 +80,9 @@ class WallMesh {
     this.colors = null;     // Float32Array(numVerts * 3)
     this.normals = null;    // Float32Array(numVerts * 3)  (radial fallback;
                             // renderer calls computeVertexNormals to override)
+    this.uvs = null;        // Float32Array(numVerts * 2)  (STATIC lat-long
+                            // texture coords for the matrix skin — filled once
+                            // in fromWallState, never recomputed)
 
     // Cavity-state fingerprint. The renderer keys its cache off this,
     // matching the legacy _topoCavitySignature() so cache-hit semantics
@@ -162,6 +165,24 @@ class WallMesh {
     mesh.colors = new Float32Array(numVerts * 3);
     mesh.normals = new Float32Array(numVerts * 3);
     mesh.maxRadiusByRing = new Float32Array(ringCount);
+    // MATRIX SKIN (2026-07-06): static texture coordinates — the lat-long
+    // parameterization the vertex structure already is (u = theta/2π = c/N,
+    // v = phi/π = (r+0.5)/ringCount; poles at v 0/1, u centered). Immutable
+    // for the tessellation, so filled once here, never in recompute. The
+    // theta wrap (c = N−1 → 0) smears one 3°-wide column at the default 120
+    // cells — invisible under the low-contrast matrix skins by design.
+    mesh.uvs = new Float32Array(numVerts * 2);
+    for (let r = 0; r < ringCount; r++) {
+      for (let c = 0; c < N; c++) {
+        const idx = r * N + c;
+        mesh.uvs[idx * 2 + 0] = c / N;
+        mesh.uvs[idx * 2 + 1] = (r + 0.5) / ringCount;
+      }
+    }
+    mesh.uvs[mesh.southIdx * 2 + 0] = 0.5;
+    mesh.uvs[mesh.southIdx * 2 + 1] = 0.0;
+    mesh.uvs[mesh.northIdx * 2 + 0] = 0.5;
+    mesh.uvs[mesh.northIdx * 2 + 1] = 1.0;
     mesh.recompute(wall, sim);
     // PROPOSAL-CAVITY-MESH Phase 4 Tranche 4c — cells[i] is now a
     // direct REFERENCE to wall.rings[r][c] (the WallCell object).

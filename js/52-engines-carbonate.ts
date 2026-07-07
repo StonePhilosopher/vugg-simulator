@@ -39,8 +39,17 @@ function calciteMorphRegime(surfSigma: number): string {
   return morphRegime(MORPH_TH.calcite, surfSigma);
 }
 
-function calciteMorphForm(mgRatio: number, temperature: number): string {
+function calciteMorphForm(mgRatio: number, temperature: number, omega?: number, subaqueous?: boolean): string {
   if (mgRatio > CALCITE_MORPH_TH.MG_SCALENO || temperature > 200) return 'scalenohedral';
+  // C0 (SIM 217) — the σ lever: highly supersaturated SUBAQUEOUS growth makes
+  // scalenohedra even in Mg-poor, low-T water (González, Carpenter & Lohmann
+  // 1992; García-Carmona 2003; threshold rationale + full citations at
+  // MORPH_TH.calcite.OMEGA_SCALENO in js/45). omega undefined/NaN degrades to
+  // the Mg/T-only fence (callers without a σ in hand keep the old contract);
+  // subaqueous defaults true, air-mode drip films are gated out by callers.
+  if (subaqueous !== false && Number.isFinite(omega) && (omega as number) > CALCITE_MORPH_TH.OMEGA_SCALENO) {
+    return 'scalenohedral';
+  }
   return 'rhombohedral';
 }
 
@@ -167,7 +176,12 @@ function grow_calcite(crystal, conditions, step) {
   // (sabkha 3.3, searles 1.6, ultramafic 10, zoned_dripstone 0.75);
   // the MVT brines (Mg:Ca ~0.075) correctly stay rhombohedral.
   const morphMgRatio = (conditions.fluid.Mg || 0) / Math.max(1e-6, conditions.fluid.Ca || 0);
-  const morphFormT = calciteMorphForm(morphMgRatio, conditions.temperature);
+  // C0 (SIM 217): the fence gains the σ lever — sigma is this step's textbook
+  // Ω against THIS crystal's cell fluid (already in hand, line 78), and the
+  // subaqueous gate keeps air-mode drip films on the Mg/T-only fence
+  // (Weremeichik 2024's ladder is for subaqueous spar). Live per-step, same
+  // trajectory contract as the Mg branch (the v187 lesson).
+  const morphFormT = calciteMorphForm(morphMgRatio, conditions.temperature, sigma, crystal.growth_environment !== 'air');
   const morphRegime = (crystal._morphology && crystal._morphology.regime) || null;
   if (is_manganocalcite && excess < 0.4) {
     crystal.habit = 'botryoidal_manganocalcite';
@@ -197,13 +211,17 @@ function grow_calcite(crystal, conditions, step) {
     crystal.dominant_forms = ['branched dendritic calcite', 'the instability run past hopper — trunks with side arms'];
     if (is_manganocalcite) crystal._variety = 'manganocalcite';
   } else if (morphFormT === 'scalenohedral') {
-    // Smooth growth, scalenohedral form — T>200 (the original ladder)
+    // Smooth growth, scalenohedral form — T>200 (the original ladder),
     // OR Mg:Ca>0.15 (Phase 4: GCA 2015 elongation is form-level
-    // physics, regime-independent — Mg-rich smooth spar elongates too).
+    // physics, regime-independent — Mg-rich smooth spar elongates too),
+    // OR sustained Ω past the C0 σ lever (SIM 217). The annotation names
+    // the fence branch that actually fired, in precedence order.
     crystal.habit = 'scalenohedral';
     crystal.dominant_forms = conditions.temperature > 200
       ? ['v{211} scalenohedron', 'dog-tooth']
-      : ['v{211} scalenohedron', 'dog-tooth (Mg-elongated)'];
+      : (morphMgRatio > CALCITE_MORPH_TH.MG_SCALENO
+        ? ['v{211} scalenohedron', 'dog-tooth (Mg-elongated)']
+        : ['v{211} scalenohedron', 'dog-tooth (σ-grown spar)']);
     if (is_manganocalcite) crystal._variety = 'manganocalcite';
   } else if (conditions.temperature > 100) {
     crystal.habit = 'rhombohedral';

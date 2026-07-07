@@ -391,6 +391,7 @@
           "salinity": 21.0
         },
         "wall": {
+          "matrix": "dolomite",   // MATRIX SKIN (render-only, 2026-07-06): notes: "the host IS dolostone" (Knox/Mascot) — composition defaults limestone for the carbonate dissolve()
           "architecture": "irregular",
           "primary_bubbles": 2,
           "secondary_bubbles": 7,
@@ -739,6 +740,7 @@
         },
         "wall": {
           "composition": "limestone",
+          "matrix": "marble",   // MATRIX SKIN (render-only, 2026-07-06): Mogok dolomitic MARBLE host (notes) — composition stays limestone for the carbonate dissolve()
           "thickness_mm": 1200.0,
           "vug_diameter_mm": 40.0,
           "wall_Fe_ppm": 200.0,  // marble is Fe-poor — strong ruby Cr fluorescence (no Fe to quench)
@@ -808,7 +810,8 @@
           "O2": 0.05      // reducing — graphite buffer
         },
         "wall": {
-          "composition": "pegmatite",
+          "composition": "pegmatite",   // inert aluminous-silicate PROXY (physics); true host below
+          "matrix": "hornfels",         // MATRIX SKIN (render-only): carbonaceous metapelite hornfels — the chiastolite country rock (see notes)
           "thickness_mm": 800.0,
           "vug_diameter_mm": 35.0,
           "wall_Fe_ppm": 800.0,
@@ -1955,6 +1958,7 @@
         // Ouro Preto topaz vein — 2 primary + 4 secondary bubbles;
         // hydrothermal vein in quartzite reads as a small cohesive pocket.
         "wall": {
+          "matrix": "phyllite",   // MATRIX SKIN (render-only, 2026-07-06): notes: "host is quartzite + phyllite" — imperial-topaz kaolinized phyllite; composition defaults limestone (physics untouched)
           "primary_bubbles": 2,
           "secondary_bubbles": 4,
           "shape_seed": 9
@@ -2406,6 +2410,7 @@
         },
         "wall": {
           "composition": "pegmatite",
+          "matrix": "granite",   // MATRIX SKIN (render-only, 2026-07-06): Schwarzwald (Triberg) GRANITE vein host — composition pegmatite is the inert-silicate proxy
           "reactivity": 0,
           "architecture": "tabular",
           "size_class": "pocket",
@@ -2469,6 +2474,7 @@
         },
         "wall": {
           "composition": "basalt",
+          "matrix": "amphibolite",   // MATRIX SKIN (render-only, 2026-07-06): notes: "'basalt' composition as the amphibolite proxy" — the epidote cleft's true host
           "reactivity": 0,
           // W-K V0 (2026-07-03): Karakoram-Thrust cleft gets the planar-lens
           // cleft archetype (see grimsel_alpine_cleft note; bubble counts
@@ -2542,6 +2548,7 @@
         },
         "wall": {
           "composition": "pegmatite",
+          "matrix": "granite",   // MATRIX SKIN (render-only, 2026-07-06): notes: "the granite/granitoid inert-silicate proxy — the Aar granite host"
           "reactivity": 0,
           // W-K V0 (2026-07-03): the Zerrkluft finally SHAPED like one — the
           // planar-lens cleft archetype (polar_flatten 0.22, in-plane
@@ -3124,6 +3131,7 @@
           // existing wall composition).
           "architecture": "irregular",
           "composition": "basalt",
+          "matrix": "ultramafic",   // MATRIX SKIN (render-only, 2026-07-06): laterite over serpentinized peridotite — composition basalt is the inert-mafic proxy
           "thickness_mm": 300.0,
           "vug_diameter_mm": 40.0,
           "wall_Fe_ppm": 6000.0,

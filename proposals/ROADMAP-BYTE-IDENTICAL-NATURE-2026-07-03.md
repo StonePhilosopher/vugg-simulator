@@ -134,7 +134,7 @@ chemistry, depletion) reads the fluid. In-tree comments already name B1 as the k
 
 | rung | deliverable | notes | size / SIM |
 |---|---|---|---|
-| **C0 — calcite σ/Ca:CO₃ lever** | **boss stone #2, unchanged** — dogtooth↔nailhead as an earned chemistry readout (the 4a.7 wulfenite recipe: probe → law → calibrate at true g → sweep → ship) | Orme 2001 / Davis 2000 already in-tree. Bench tie-in: calcite is the catalog's deepest bench (153) — pick one dogtooth + one nailhead anchor in A1 and C0 ships with the project's FIRST T2 acceptance pair | M · render-only if it rides the classifier |
+| **C0 — calcite σ/Ca:CO₃ lever** ✅ SIM 217 (`299a270`, 2026-07-06) | SHIPPED by the 4a.7 recipe: calciteMorphForm gains the Ω branch (OMEGA_SCALENO=12, placed in the fleet's own measured gap; subaqueous-gated per Weremeichik 2024; González/Carpenter/Lohmann 1992 + García-Carmona 2003 direction). Sweep: ONE flip (deccan → its iconic golden dogtooth, locked), all other genres HOLD, elmwood dual-fenced (Mg AND Ω — the fragility fixed). Render rider: calcite Wulff biasC=B(Ω̄) integral, id-hash retired (2nd tenant after wulfenite). **The Ca:CO₃ HALF: recorded (_wulffCalInt molar-r) but NO sim signal (bookkeeping pool, not activity) — its gate PRE-REGISTERED for B5.** OPEN: the T2 acceptance pair still wants A1 anchors (specimen 1298 named); probe: tools/c0-calcite-form-probe.mjs | SIM bump (one word flip; 0/38 counts, 0/38 strip content) |
 | **C1 — local-σ depletion field** | **boss stone #3, unchanged** — σ history shapes form; mass-conservation EV check FIRST (`feedback_gamble_ev_check` generalizes: budget the solute books before trusting emergent behavior) | the voxel grid + per-cell fluid store (js/24, js/20d) is the prepared seam | L–XL · SIM bump + full rebake ritual |
 | **C2 — face-specific rate laws** | replace per-tenant habit heuristics with R(σ,T) per face family where measurable: BCF spiral / birth-and-spread regimes | Burton–Cabrera–Frank 1951; calcite step kinetics Teng–Dove–De Yoreo 2000 (GCA 64:2255) [from-memory, verify]; barite Pina et al. 1998 (Nature 395:483) [from-memory, verify]. **Paywall risk HIGHEST here — mitigation is the bench-as-calibration-set (§2)** | XL · per-tenant increments, each byte-identical-or-bump |
 | **C3 — surface microtopography** | hillocks/vicinals/striations as displacement+normal maps GENERATED from the same kinetic parameters (hillock slope = step height/spacing), not noise textures | ships per-tenant after its C2 rung so the bedrock exists; quartz m-face striations are the iconic first target (179 quartz specimens to check against) | M per tenant · render-only |
@@ -172,7 +172,7 @@ change, not kernel surgery). Rungs in brief:
 |---|---|---|
 | **O0** ✅ SIM 215 (2026-07-03) | attached crystals become HALF-FORMS clipped at the wall with a real contact scar | render-only |
 | **O1** ◐ O1a exposure tranche ✅ 2026-07-04 (render-only) | unequal face development: per-face h_i from real exposure geometry (Steno pin held: never tilt a normal); O1b neighbor-shadow (occupancy grid) OPEN | render-only, C1 upgrades the driver |
-| **O2** | induction/contact surfaces between neighbors at growth-rate-weighted meeting planes — kills mesh interpenetration, births druse texture | render-only candidate |
+| **O2** ✅ 2026-07-06 (`eea52bc`, render-only) | induction/contact surfaces: crystals clipped at growth-rate-weighted meeting planes, cuts capped MATTE. The probe (`tools/o2-contact-probe.mjs`) reshaped it — the Wulff face-space clip reached only 7 crystals, so O2 ships a GENERIC convex-mesh clipper (`_clipConvexGeom`, js/46) reaching 622 contacted convex crystals fleet-wide. Concave (hopper/botryoidal/twin, ~174) + current-size→integrated-growth weights DEFERRED. 0/38 drift | render-only |
 | **O3** | EARNED geometric selection: random nucleation tilt + competitive burial; analytic oracle = Gray's d^(−1/2) survivor law | SIM bump |
 | **O4** | engulfment made visible (the enclosure mechanic EXISTS sim-side, renderer never reads `enclosed_by`) + coats_front/embedded inclusion classes | render + adjacency fix |
 | **O5** | inclusion-perturbed regrowth: ELO phantom/sceptre earned from per-face-class masking; split-growth ladder to spherulite | SIM bump |
@@ -296,9 +296,14 @@ start; interlibrary/author-copy requests are a nice-to-have for C2, not a blocke
 
 **Phase 1 (next sessions):** C0 calcite lever (boss stone) + A1 bridge/anchors + A2 protocol.
 C0 ships with the first T2 acceptance pair; A1/A2 are cheap and unlock everything.
+**✅ C0's CODE SHIPPED SIM 217 (`299a270`, 2026-07-06 — the Ω branch + the biasC integral;
+see the C0 row above). The T2 acceptance pair remains OPEN pending A1's dogtooth + nailhead
+anchor picks (specimen 1298 already named for the dogtooth side).**
 **Phase 1.5 (the big ask's visible foundation, amended 2026-07-03):** O0 half-forms → O1
 unequal development → O2 induction surfaces — the render-only ontogeny core; each is a
-byte-identity candidate shipped by the standing ritual.
+byte-identity candidate shipped by the standing ritual. **✅ O0 (SIM 215) + O1a + O2
+(`eea52bc`) SHIPPED — the render-only core stands; OPEN within it: O1b neighbor-shadow, O2
+concave forms + integrated-growth weights.**
 **Phase 2:** A3 metrics + A4 bench (passive) + B2 PHREEQC instrument + B3 debt closure · W-K's
 visible foundation (V0 cleft truth + V1 wall microtexture; V3/V4 later share W-F O2/O3's era —
 same induction-surface and selection mathematics, one oracle).
