@@ -512,3 +512,79 @@ oriented.
 Probe every rung, subtract the lies, and let the stone remember which way the water ran.
 
 — the builder, sixth hand, the directional-σ act · 2026-07-07
+
+---
+
+## KEYSTONE — the sixth hand's session, whole (2026-07-07, the boss asked to update it)
+
+The fifth hand's keystone said *"C1 depletion field NEXT."* I walked in through that door,
+did C1, and the boss said *"keep going."* So the session grew a second span. Here is the arch,
+both spans, whole.
+
+| commit | what |
+|---|---|
+| `e08ab3d` | **C1 — the directional-σ tranche (boss stone)** — O1a real per-crystal exposure (retiring the 0.18 fiction) + O1b neighbour shadow + O2 integrated-growth weights, one render-only commit. The pessimistic cost proved cheap; the frozen-param converse debt came back EMPTY. |
+| `86fa07e` | **local crystal colour** — chemistry tone (trace load → deepening, no hue claim) + a deterministic 3-axis legibility floor, so same-species neighbours read apart. The probe halved the naive plan: pure chemistry separates only 23% of neighbour groups. |
+| `6d3e453` `fcbe0c3` | the standing-rule docs passes, both spans |
+
+Every code commit render-only, baseline byte-identical (0/38, confirmed each time), Pages-verified
+built == HEAD, cold-ci GREEN (2222 → 2236 → 2244 tests). Two probes committed as instruments:
+`c1-depletion-ev-probe` + `c1-exposure-calibration-probe` (the tranche), `localcolor-signal-probe`
+(the colour). En route, deferred with numbers: C1's SCALAR-chemistry half (1 calcite Wulff tenant,
+awaits B5/tenants), O1a/O1b per-FACE shadow, O2 concave forms; pre-registered: B4 cell-local trace
+partitioning (chemistry that separates NEIGHBOURS), D1 per-species hue (this tone is its on-ramp).
+
+**Where the next hand starts.** The render-only ontogeny + optics layers are in good shape. The
+boss's open choices, none forced: **O3 — earned geometric selection** (roadmap Phase 3 next; the
+first SIM-bump rung of the arc — unfavourably-oriented crystals get OVERGROWN instead of the
+outcome being painted; Gray d^(−1/2) oracle) · **D1 — Depth-C body colour** (render-only, jumps
+the queue; local colour built its tone on-ramp, so the Caltech-spectra hues land clean on top) ·
+**V0/V1 — cavity genesis + wall microtexture** (the W-K side). Boss stones read: C0 ✅ · C1 ◐
+directional ✅ / scalar deferred · Depth-C on call. Traps this session bought are in the two act
+addenda above; the load-bearing new one: **RATE reads local, FORM read bulk** — when a lever looks
+dead, check whether the DATA exists but the consumer reads the wrong SOURCE (it did, twice: cell σ
+for form, zone traces for colour).
+
+### The mark — what the keystone adds
+
+**One instrument, every rung — again, and it never got old.** The fifth hand wrote that a single
+probe re-planned a whole session. This session ran FOUR probes and every one shrank a plan to its
+true size: the field is real but the form consumers are 1-tenant (C1 EV); the exposure tenants are
+all calm, so O1a symmetrizes not dramatizes (calibration); the chemistry separates only 23% of
+neighbours (colour). Not once did the plan survive first contact with measurement intact — and not
+once was that a disappointment. The probe is not the tax you pay before building; it is the cheapest
+design work there is. Budget it first, always, and let it be allowed to say "smaller than you
+thought."
+
+**Two spans, one move.** C1 and local colour look unrelated — one is crystal geometry, one is
+crystal colour. But they were the SAME repair: the render already HELD the per-crystal data (each
+crystal's own cell σ; each crystal's own zone traces), and the consumer was reading the wrong
+source (bulk σ for form; one class_color for every crystal). Neither needed new physics. Both needed
+the consumer pointed at the truth the sim already computed. When a feature looks like it needs new
+machinery, first ask what the sim already knows and isn't reading. Twice this session the answer was
+"everything — it's just plumbed to the wrong tap."
+
+**From SITUATED to INDIVIDUATED.** The fifth hand's keystone dreamed the specimen becoming a
+SITUATION — crystal, crowd, chemistry, host. This session did something narrower and, I think,
+deeper: it individuated the specimen WITHIN its crowd. O1a gave each crystal its own exposure
+(its own water-gradient); local colour gave each its own tint (its own chemistry, plus an honest
+legibility mark). A druse of thirty dolomites was one grey species this morning; tonight it is
+thirty individuals, each told apart by its own history. The situation resolved into its members.
+
+**The dream, keystone telling.** The prior dreams read a rock's biography from physics (situated)
+and from the direction its faces remember (oriented). Add the crowd: now that every crystal is an
+INDIVIDUAL — own exposure, own tint, slightly different from its neighbour on purpose — a druse is
+a POPULATION, and a population has statistics. The dream is that the inverse solver, someday, reads
+not the best-preserved crystal but the whole crowd's VARIANCE: the spread of exposures, the spread
+of tints, the size distribution — and infers the pocket's history from the population's shape, the
+way an ecologist reads a forest's past from the distribution of tree ages, not one tree. When a
+label-less plate comes back, its story is recovered not from one hero crystal but from the fact
+that its members DIFFER — because we taught each one to carry its own copy of the history, and
+difference is data. We spent today making the crystals different from each other. One day that
+difference will be the evidence.
+
+Point the consumer at the truth the sim already holds, let the probe shrink the plan, and make
+every crystal an individual — because a crowd that all looks alike has forgotten it was ever a
+population.
+
+— the builder, sixth hand, the keystone · 2026-07-07
