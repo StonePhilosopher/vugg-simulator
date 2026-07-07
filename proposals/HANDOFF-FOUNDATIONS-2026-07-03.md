@@ -909,3 +909,65 @@ colour variants when the chemistry catches up) · **V2** (primer + substrate con
 knows what kind of cavity it is — and shows it.
 
 — the builder, eighth hand, the wall's genesis · 2026-07-07
+
+---
+
+## KEYSTONE — the eighth hand's session, whole (2026-07-07, the boss asked to commemorate it)
+
+| commit | what landed |
+|---|---|
+| `fe5d241` | **V1b wall depth** — the genesis relief re-baked as an albedo AO, so it reads *through* the translucent glass a normal map washes out in |
+| `db5b12a` | docs — V1b, the `_topoThreeState`-is-reachable correction |
+| `3a7cf6e` | **V1b-flow** (scallops as a Curl speedometer, `paleo_flow`) **+ V1c genesis-gated textures** (scallops 33→11; comb / druse / boxwork / botryoidal / smooth) |
+| `2482f64` | docs — the wall-follows-its-genesis continuation |
+
+Every ship byte-identical, cold-ci green, Pages-verified. Every deferral named with a number.
+
+**The seventh hand carried three instruments of knowing — grep the tree, probe the fleet, look at the
+render. This session earned a fourth: RESEARCH the world.** When the question stopped being *what does
+the code hold* and became *what kind of cavity is Naica, really* — the tree couldn't answer, the fleet
+couldn't answer, the render couldn't answer. Only the rocks could, through three cross-checked locality
+passes. The apex verification this project has always reached for — *does a real specimen agree?* — got
+its own tool. Grep / probe / eye / **read the rocks**.
+
+**The theme: the wall stopped being a backdrop and became a witness.** The seventh hand made each crystal
+an individual and the scene legible; this hand's whole work was the *wall* — the smooth void behind the
+crystals. First it became **visible** (V1b-depth: the relief reads through the glass). Then it became a
+**speedometer** (V1b-flow: the scallops record the flow that carved them). Then — and this was the real
+turn — it became **truthful**. The probe caught the wall wearing dissolution scallops on 29 cavities that
+never dissolved; V1c made it stop lying about its origin. Scallops only where water actually etched;
+veins combed, pockets drusy, gossans boxworked, sinters botryoidal. VOID → WITNESS.
+
+**And the through-line, three times over: the probe replaces the hypothesis you bring.** I walked in with
+*flow-asymmetric scallops* and the flow census handed me *flow-scaling* instead (Curl's real headline).
+I walked in expecting a broad win and the reachability probe handed me a *narrow-but-correct* signal that
+exposed a deeper inaccuracy. I walked in ready to *infer* genesis from composition and the census handed
+me *composition ≠ genesis* — forcing a declared field. Not one plan survived its probe. That isn't the
+planning failing; it's the discipline working. The plan is a hypothesis; the probe is the experiment; you
+keep the experiment's answer, not the hypothesis you were fond of.
+
+**The dream I'm handing forward:** we are not making the render *prettier* — we are turning its surfaces
+into *measurements*. The seventh hand made colour a chemistry readout. This hand made the wall a genesis
+readout — its texture now *tells you how the void was born*. One by one the render's decorations are
+becoming instruments you can read a specimen with. The next surface waiting for that conversion is the
+crystal **form** itself: when the O-series ontogeny lands, a crystal's shape will be a readout of its
+growth history, the way the wall's texture is now a readout of its birth. Keep converting decoration into
+testimony until the whole render is a document.
+
+**Diagenesis — what made this session's velocity possible, none of it mine:** V1's scallop/cleft/basin
+pipeline and the `_wallRelief*` generators; the matrix-skin mirror and its double-whitelist idiom, which
+I copied verbatim for `paleo_flow` and `genesis`; the record-only-field pattern that keeps a sim-touching
+change byte-identical; the `_topoThreeState` reachability the eighth hand's own first rung uncovered and
+then leaned on all session for live A/B; and the probe / baseline / cold-ci instruments every prior hand
+cut. I added a fourth instrument and four textures to a workshop I did not build.
+
+**Where the next hand starts:** the wall's own remainder — true flow-*direction* asymmetry (a scenario
+flow-azimuth the sim doesn't carry yet), celadonite primer *tints* on vesicle walls (a colour, not a
+relief), and the two honest NO-VOID cases (colorado roll-front pore-cement, travertine crust) riding
+smooth/botryoidal as least-wrong. Then the standing doors, unchanged: **O3** (earned geometric selection
+— the first SIM bump, and the door where *form becomes testimony*), **D1c** (44 dormant colour variants),
+**V2** (primer + substrate conditioning).
+
+The crystals were made legible. The wall was made honest. What's left is to make the *shapes* remember.
+
+— the builder, eighth hand, the keystone · 2026-07-07
