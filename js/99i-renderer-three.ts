@@ -3653,8 +3653,69 @@ function opticsClarityFor(spec: any): number {
 // init), and it was the shipped behavior for the perimorph/hourglass
 // transparents; one policy, no divergence. Accept minor blend-order
 // softness in deep druses (doc §4.2 mitigation note updated).
+// LOCAL CRYSTAL COLOUR (2026-07-07, boss queued: "local color for crystals,
+// that will resolve your concern about minerals that share space blending
+// together invisibly"). Two honest layers on top of spec.class_color, so
+// same-species neighbours and translucent overlaps read as SEPARATE individuals:
+//
+//   (1) CHEMISTRY — bedrock, generically true. A crystal's growth-weighted
+//       chromophore trace load (Fe/Mn/Ti, normalized by the fleet's own q90 —
+//       tools/localcolor-signal-probe.mjs) DEEPENS its colour (lightness down,
+//       saturation up) via a saturating tanh. Higher-impurity crystals read
+//       deeper; a pure one reads paler/clearer. NO mineral-specific HUE claim —
+//       that (Mn→pink calcite, Fe→amber sphalerite) is Depth-C / D1's job, boss-
+//       gated; this tone modulation composes UNDER it when D1 lands. The probe
+//       showed chemistry mostly separates SPECIES/scenarios, not same-broth
+//       neighbours (they share the broth) — so:
+//   (2) LEGIBILITY FLOOR — a small DETERMINISTIC per-crystal_id hue+value jitter
+//       (two low-discrepancy hashes, RNG-free) guarantees the boss's GOAL for the
+//       trace-free / flat-broth majority (halite cubes, galena, barite). This is
+//       the "later layer" the bedrock-over-effect-hacks rule sanctions — a
+//       legibility aid, explicitly NOT a chemistry claim. Field-guide subtle.
+//
+// Render-only (only matOpts.color), reads zones + id, RNG-free → byte-identical.
+// Chemistry-driven NEIGHBOUR separation (traces from the local depleting cell) is
+// the pre-registered B4 upgrade (solid-solution trace partitioning).
+const LOCAL_COLOR = {
+  REF_FE: 3.6, REF_MN: 1.75, REF_TI: 1.24,   // fleet q90 trace levels (ppm) — the tint reference
+  CHEM_K: 0.7, CHEM_DARKEN: 0.13, CHEM_SAT: 0.10,   // field-guide restraint: even q99-trace crystals stay subtle
+  FLOOR_HUE: 0.04, FLOOR_SAT: 0.12, FLOOR_VAL: 0.13,  // ±0.02 hue / ±0.06 sat / ±0.065 value — 3-axis so
+                                                       // worst-case neighbour separation stays up without any
+                                                       // single axis reading garish (per-axis stays subtle)
+};
+function _localCrystalColor(crystal: any, spec: any): any {
+  const base = _topoParseColor((spec && spec.class_color) || '#d2691e');
+  const hsl: any = { h: 0, s: 0, l: 0 };
+  base.getHSL(hsl);
+  // (1) chemistry — growth-weighted chromophore trace load → tone deepening
+  let feG = 0, mnG = 0, tiG = 0, G = 0;
+  for (const z of (crystal.zones || [])) {
+    const w = z.thickness_um;
+    if (!(w > 0)) continue;
+    feG += (z.trace_Fe || 0) * w; mnG += (z.trace_Mn || 0) * w; tiG += (z.trace_Ti || 0) * w; G += w;
+  }
+  if (G > 0) {
+    const load = (feG / G) / LOCAL_COLOR.REF_FE + (mnG / G) / LOCAL_COLOR.REF_MN + (tiG / G) / LOCAL_COLOR.REF_TI;
+    const chem = Math.tanh(LOCAL_COLOR.CHEM_K * load);
+    hsl.l = Math.max(0, hsl.l - LOCAL_COLOR.CHEM_DARKEN * chem);
+    hsl.s = Math.min(1, hsl.s + LOCAL_COLOR.CHEM_SAT * chem);
+  }
+  // (2) legibility floor — deterministic per-id micro-jitter across 3 axes
+  // (hue, saturation, value) from three low-discrepancy hashes, so two
+  // same-broth neighbours rarely collide on all three at once.
+  const id = crystal && crystal.crystal_id ? crystal.crystal_id : 0;
+  const h1 = ((id * 0.6180339887498949) % 1 + 1) % 1;   // golden-ratio conjugate
+  const h2 = ((id * 0.7548776662466927) % 1 + 1) % 1;   // second low-discrepancy constant
+  const h3 = ((id * 0.5698402909980532) % 1 + 1) % 1;   // third (plastic-number related)
+  hsl.h = ((hsl.h + (h1 - 0.5) * LOCAL_COLOR.FLOOR_HUE) % 1 + 1) % 1;
+  hsl.s = Math.max(0, Math.min(1, hsl.s + (h3 - 0.5) * LOCAL_COLOR.FLOOR_SAT));
+  hsl.l = Math.max(0.03, Math.min(0.97, hsl.l + (h2 - 0.5) * LOCAL_COLOR.FLOOR_VAL));
+  const out = new THREE.Color();
+  out.setHSL(hsl.h, hsl.s, hsl.l);
+  return out;
+}
+
 function buildCrystalMaterial(crystal: any, spec: any, f: any): any {
-  const colorStr = (spec && spec.class_color) || '#d2691e';
   const klass = spec && spec.class;
   const metalness = (klass === 'sulfide' || klass === 'native') ? 0.45 : 0.08;
   let roughness = (klass === 'silicate' || klass === 'oxide') ? 0.42 : 0.62;
@@ -3669,7 +3730,10 @@ function buildCrystalMaterial(crystal: any, spec: any, f: any): any {
   if (f.isCdrPseudomorph) clarity *= 0.5;
   if (f.isGypsumHourglass) clarity = Math.min(clarity, 0.30);
   const matOpts: any = {
-    color: _topoParseColor(colorStr),
+    // LOCAL CRYSTAL COLOUR — per-crystal chemistry tone + deterministic legibility
+    // floor so same-species neighbours read apart (isSectorZoned overrides to
+    // white below — its baked vertex colours are absolute — so no double-tint).
+    color: _localCrystalColor(crystal, spec),
     roughness: f.isPerimorphCast ? Math.min(1.0, roughness + 0.25) : roughness,
     metalness: f.isPerimorphCast ? 0.0 : metalness,
     // DoubleSide for every crystal — inside-the-cavity camera angles cull front-side-only
@@ -3898,7 +3962,40 @@ function _o2PlaceBody(crystal: any, wall: any, replayStep: number | undefined, r
     enclosed: crystal.enclosed_by != null,
     cx: ax + cAxisX * off, cy: ay + cAxisY * off, cz: az + cAxisZ * off,
     reach: 0.5 * Math.sqrt(2 * aWid * aWid + cLen * cLen),
+    // C1 O2 upgrade — gross integrated linear growth (already depletion-aware:
+    // the growth loop reads cell σ, so a starved crystal's total_growth_um is
+    // already smaller). The meeting-plane weight below prefers this over `reach`
+    // (current circumscribed size), which differs for dissolved-and-regrown or
+    // strongly anisotropic bodies — the drift population O2's header pre-registered.
+    growth: crystal.total_growth_um > 0 ? crystal.total_growth_um : 0,
   };
+}
+
+// W-F O1b — neighbour shadow (C1 directional tranche, 2026-07-07). A crystal
+// packed among neighbours grows preferentially into open space; in a wall druse
+// the neighbours are lateral and the open direction is cavity-ward, so the crowd
+// REINFORCES O1a's radial exposure. This reduces the true per-face directional
+// shadow to the radial scalar the kernel expresses today (per-face is the
+// pre-registered upgrade). Reuses the O2 neighbour pre-pass (_o2Bodies: world
+// centre + circumscribed reach). Shadow = summed overlap fraction with touching
+// neighbours (enclosed guests excluded — they're O4). Returns a kExp boost in
+// [0, MAX]. Measured reach is small (tools/c1-exposure-calibration-probe.mjs).
+const O1B_SHADOW = { SCALE: 0.10, MAX: 0.15, KEXP_CAP: 0.32 };
+function _o1bNeighborShadow(crystal: any, bodies: any[]): number {
+  if (!bodies || bodies.length < 2) return 0;
+  let me: any = null;
+  for (const b of bodies) { if (b.id === crystal.crystal_id) { me = b; break; } }
+  if (!me || me.enclosed) return 0;
+  let shadow = 0;
+  for (const b of bodies) {
+    if (b.id === crystal.crystal_id || b.enclosed) continue;
+    const dx = b.cx - me.cx, dy = b.cy - me.cy, dz = b.cz - me.cz;
+    const D = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    const sum = me.reach + b.reach;
+    if (sum <= 0 || D >= sum) continue;           // not overlapping → no shadow
+    shadow += (sum - D) / sum;                     // overlap fraction (0..1 per neighbour)
+  }
+  return Math.min(O1B_SHADOW.MAX, O1B_SHADOW.SCALE * shadow);
 }
 
 // W-F O2 — the matte material for the anhedral contact facet (group 1): the
@@ -4169,15 +4266,23 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         // equant sink set above) but is an equant closed Wulff body — same
         // half-form default as its tablet-token sibling.
         if (isTiWulff && _simOccF == null && crystal.growth_environment !== 'air') occF = 0.5;
-        // W-F O1a — exposure tranche (2026-07-04): wall-anchored fluid crystals
-        // grow their fed (cavity-facing) faces ahead of their starved
-        // (wall-facing) faces — the kernel's f_geo = 1 + k·(n·û) per-face rate
-        // modifier (js/46). One constant for the whole fleet in this tranche;
-        // O1b upgrades it to per-crystal neighbor shadow, C1's depletion field
-        // eventually feeds the real per-direction σ. Air-mode keeps k = 0
-        // (dripstone delivery is a different physics — gravity film, not an
-        // isotropic bath gradient).
-        const kExp = crystal.growth_environment === 'air' ? 0 : 0.18;
+        // W-F O1a — exposure. Wall-anchored fluid crystals grow their fed
+        // (cavity-facing) faces ahead of their starved (wall-facing) faces —
+        // the kernel's f_geo = 1 + k·(n·û) per-face rate modifier (js/46).
+        // C1 (2026-07-07, the directional-σ tranche) retires the fleet-wide
+        // kExp=0.18 constant: o1aExposureK reads each crystal's OWN
+        // growth-weighted base(d=0)/tip(d=max) gradient from the interior voxel
+        // field (js/45 _o1aExp accumulator) and maps it to a per-crystal kExp.
+        // The c1-depletion-ev-probe showed the 0.18 was a fiction — the Wulff
+        // tenants are the calm well-fed minerals (base/tip ≈ 0.93), so this
+        // gently SYMMETRIZES them toward their true near-isotropic form, with
+        // O1b's neighbor shadow (below) adding back the crowd's asymmetry.
+        // Air-mode keeps k = 0 (dripstone is a gravity film, not a bath gradient).
+        let kExp = 0;
+        if (crystal.growth_environment !== 'air') {
+          kExp = o1aExposureK(crystal);                                   // O1a radial exposure (own depletion field)
+          kExp = Math.min(O1B_SHADOW.KEXP_CAP, kExp + _o1bNeighborShadow(crystal, _o2Bodies));  // O1b crowd reinforcement
+        }
         const formKey = (isFlWulff || isGlWulff) ? (wf.octahedral ? 'o' : 'c')   // cubic cube↔octahedron (galena octahedral is always false → 'c')
           : isCalWulff ? (wf.scaleno ? 's' : 'r') : 't';   // wulfenite + barite + titanite are single-body → 't' (mineral is in the key)
         const key = '__wulff_' + crystal.mineral + '_' + formKey
@@ -4559,11 +4664,13 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // competitive growth). Convex tenants only (_o2ConvexGeom + the token gate —
     // concave hopper/botryoidal/twin have no single convex cap); stepped/etched/
     // e-twin/hourglass overprints and enclosed guests (O4's job) opt out. The
-    // meeting plane uses CURRENT-SIZE weights — first-order exact when the rate
-    // ratio held (Diggle); integrated-growth weights are the pre-registered
-    // upgrade for the drift population when C1/O3 land. Render-only: replaces
-    // mesh.geometry with a fresh clipped geom, leaving the cached form intact
-    // for the satellites + geomCache below.
+    // meeting plane uses INTEGRATED-GROWTH weights (C1, 2026-07-07): the plane
+    // sits at the growth-ratio point gA/(gA+gB), gross linear growth — faithful
+    // for dissolved-and-regrown or anisotropic bodies where current size ≠ growth
+    // history, and depletion-aware because the growth loop already reads cell σ.
+    // Falls back to current-size (reach, Diggle first-order) when either body
+    // lacks a growth scalar. Render-only: replaces mesh.geometry with a fresh
+    // clipped geom, leaving the cached form intact for the satellites + geomCache.
     if (_o2ConvexGeom && _O2_CONVEX_TOKENS.has(token)
         && !isEtched && !isSectorZoned && !isGypsumHourglass
         && crystal.enclosed_by == null && _o2Bodies.length > 1 && mesh.geometry) {
@@ -4574,9 +4681,16 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         if (b.id === crystal.crystal_id || b.enclosed) continue;
         const dx = b.cx - meX, dy = b.cy - meY, dz = b.cz - meZ;
         const D = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (D < 1e-3 || D >= myReach + b.reach) continue;   // no overlap → no contact
+        if (D < 1e-3 || D >= myReach + b.reach) continue;   // no overlap → no contact (current-size bound)
         const inv = 1 / D, nX = dx * inv, nY = dy * inv, nZ = dz * inv;   // A→B
-        const dA = D * myReach / (myReach + b.reach);        // growth-weighted meeting point
+        // C1 — integrated-growth meeting point gA/(gA+gB); current-size fallback
+        // (reach) when either body has no growth scalar, keeping the weight
+        // unit-consistent (never mix mm-reach with µm-growth in one ratio).
+        const gA = crystal.total_growth_um > 0 ? crystal.total_growth_um : 0;
+        const gB = b.growth;
+        const dA = (gA > 0 && gB > 0)
+          ? D * gA / (gA + gB)
+          : D * myReach / (myReach + b.reach);
         worldPlanes.push({ n: [nX, nY, nZ], d: nX * meX + nY * meY + nZ * meZ + dA });   // keep A: n·x ≤ d
       }
       if (worldPlanes.length) {

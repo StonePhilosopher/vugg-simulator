@@ -445,3 +445,70 @@ sentence that names what you were already doing, put it in the tree where the ne
 will find it.
 
 — the builder, fifth hand, the keystone · 2026-07-06
+
+---
+
+## Addendum — C1, THE DIRECTIONAL-σ TRANCHE (a new hand, through the keystone · 2026-07-07)
+
+The keystone said *"C1 depletion field NEXT."* A fresh context read it, and the boss said
+*"continue with the work in the handoff."* So the sixth hand walked in through the door the
+fifth hand built, and did exactly the thing written on it. Shipped `e08ab3d`, render-only,
+0/38, Pages-verified, CI 159/2236.
+
+**The EV check first (the door said so).** The pre-registered mass-conservation probe
+(`tools/c1-depletion-ev-probe`) answered the roadmap's exact question: the solute books
+BALANCE and the field is real — 34% of 1131 fluid crystals see local σ ≥10% off bulk. But
+reading the code answered a bigger one: **RATE already reads local** — `_runEngineForCrystal`
+swaps in each crystal's own `cell.fluid` before the engine runs — **only FORM read bulk.**
+That is what "bulk σ can't shape form" MEANS in this codebase: form literally reads bulk σ.
+So C1 was never "lay the pipe"; it was "wire the three FORM consumers to the field the RATE
+already drinks from." I laid that out, showed the payoff was thin and the cost (I thought)
+was a full rebake, and recommended defer. The boss chose the full directional tranche anyway
+— follow the science. Right call: the cost was not what I feared.
+
+**What shipped:** O1a real per-crystal exposure (the interior voxel field's growth-weighted
+base/tip σ gradient → kExp, retiring the fleet-wide 0.18 constant), O1b neighbour shadow
+(the crowd reinforces the radial exposure), O2 integrated-growth meeting-plane weights. One
+render-only commit, per the co-evolution rule.
+
+### The mark — what this act adds
+
+**The probe re-planned the rung THREE times in one tranche, and each time it shrank the
+claim to its true size.** EV probe: the field is real, but the calcite biasC consumer is a
+1-tenant no-op. Calibration probe: only 13 Wulff tenants exist, and they are the CALM
+well-fed minerals — the big depleters (dolomite, zeolites, sylvite) render via primitives,
+untouched. So O1a-real does not add dramatic one-sidedness; it CORRECTS the 0.18 fiction
+downward — the calm tenants symmetrize toward their true near-isotropic form (live
+kernel-truth: y-asymmetry 6–10× down). The fifth hand wrote "one instrument re-planned the
+whole session." The sixth adds: run it at every rung, not every session. Each probe cost
+minutes and saved a wrong build.
+
+**Fidelity is sometimes subtraction.** A render upgrade that makes crystals MORE symmetric
+felt, at first, like a no-op — until the probe showed the OLD shape was the lie (barite was
+never 18% asymmetric; it is 0.997 isotropic). Removing wrong asymmetry is as much a
+render-upgrade-visible win as adding right asymmetry. Don't mistake "less dramatic" for "less
+true." The kernel-truth artifact (asymmetry 0.126→0.021) is the proof the shape moved; the
+DIRECTION of the move being toward calm is the proof it moved correctly.
+
+**Estimate cost pessimistically; be glad when you're wrong.** I warned the boss C1 was "SIM
+bump + full rebake" and "an expensive frozen-param un-freeze." The build found: render-only,
+baseline byte-identical, and the converse debt EMPTY — biasC (form competition) and kExp
+(directional exposure) were always calibrated independently, so nothing was pinned at 0.18 to
+expire (`wulff-frozen-g-aspect-sweep` still green, kExp-agnostic by construction). A scary
+estimate that turns out cheap is the safe direction to be wrong in: it made the boss's "yes"
+cost-honest, and the relief is free.
+
+**The dream, sixth telling.** The keystone dreamed the arch locking — host narrows the
+district, neighbours the pocket, water the day — read downward by an inverse solver someday.
+This act carved the first of those into the crystal's OWN BODY: after O1a, a crystal's fed
+side and its starved side are legible in its asymmetry; after O1b, the shadow of its
+neighbours is in its lean; after O2, the growth history of the race is frozen in the contact
+plane's position. A lopsided crystal is a compass — it points back up its own supersaturation
+gradient. The dream now: that the solver reads not just WHERE a null-locality rock grew but
+WHICH WAY the fluid moved past it, from the shape alone, because we taught the shape to
+remember the direction of its own feeding. The specimen is not just situated now. It is
+oriented.
+
+Probe every rung, subtract the lies, and let the stone remember which way the water ran.
+
+— the builder, sixth hand, the directional-σ act · 2026-07-07

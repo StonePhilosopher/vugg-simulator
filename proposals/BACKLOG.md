@@ -2,7 +2,29 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🧱→🎨 WALL UX (2026-07-06, boss asks off the O2/C0 review) — WALL DISPLAY TOGGLE + MATRIX SKINS SHIPPED `37353c1`; **LOCAL CRYSTAL COLOR QUEUED**
+> ## 🌊 C1 — THE DIRECTIONAL-σ TRANCHE (2026-07-07, boss stone) — SHIPPED `e08ab3d` (render-only); SCALAR-CHEMISTRY HALF DEFERRED
+>
+> Boss said *"continue with the work in the handoff"* → the keystone named C1 next, EV check
+> first. **EV verdict** (`tools/c1-depletion-ev-probe`, the pre-registered mass-conservation
+> check): solute books balance, field real (34% of 1131 fluid crystals ≥10% off bulk). But the
+> code already reads local σ for RATE (`_runEngineForCrystal` swaps cell.fluid); only FORM read
+> bulk. Boss chose the **full directional tranche**. **SHIPPED render-only, 0/38, CI 159/2236:**
+> O1a real per-crystal exposure (voxel base/tip σ gradient → kExp, js/45 `_o1aExp`, retiring the
+> 0.18 fiction — the 13 Wulff tenants are the calm minerals, so they SYMMETRIZE; kernel-truth
+> y-asym 6–10× down) · O1b neighbour shadow (crowd reinforces radial exposure) · O2
+> integrated-growth meeting weights (`total_growth_um`, dissolved/anisotropic drift pop). The
+> frozen-param converse came back EMPTY (biasC/kExp always calibrated independently;
+> `wulff-frozen-g-aspect-sweep` green). Full detail: HANDOFF-FOUNDATIONS §"directional-σ act",
+> ROADMAP O1/O2/C1 rows.
+>
+> **▸ DEFERRED with numbers — the SCALAR-chemistry half:** making biasC / the calcite form gate
+> read cell σ instead of bulk is a no-op TODAY — only 1 calcite Wulff tenant fleet-wide (mvt),
+> and its local Ω sits in a flat biasC band. Re-opens when B5 sharpens σ into activities, or when
+> more chemically-levered Wulff tenants (calcite/fluorite/barite variants) join the fleet. A cut
+> stone awaiting drinkers, same class as the biasC steep end + the r-gate. Also open: O1a/O1b
+> per-FACE directional shadow (this rung is the radial-scalar reduction); O2 concave forms (~174).
+>
+> ## 🧱→🎨 WALL UX (2026-07-06, boss asks off the O2/C0 review) — WALL DISPLAY TOGGLE + MATRIX SKINS `37353c1`; **LOCAL CRYSTAL COLOR SHIPPED `86fa07e` (2026-07-07)**
 >
 > Boss, reviewing the O2 druse screenshots: *"i'd like to be able to turn the display of the
 > vugg wall on or off. i think the vugg wall should also have a specific texture skin that
@@ -22,14 +44,18 @@ Living list of open work items, captured from session conversations so context s
 > WallState mirror — `matrix`+`composition` now mirrored (cavity_render idiom), pinned by
 > tests-js/matrix-skin.test.ts.
 >
-> **▸ QUEUED — LOCAL CRYSTAL COLOR (boss todo, not yet built):** per-crystal color variance
-> so same-species neighbors and translucent overlaps read as SEPARATE individuals — the
-> boss's answer to the O2 caveat (satellite fill + translucent minerals blending; satellites
-> stay decorative, color is the fix, NOT satellite clipping). Bedrock version reads each
-> crystal's OWN zone traces (Fe/Mn/… already recorded per zone) → hue/tone shift, the
-> chemistry-exact idiom (wulfenite 4a.7 / calcite C0); cheap first cut = per-crystal_id
-> deterministic jitter, upgraded when Depth-C colour lands (see
-> HANDOFF-FROZEN-G-AND-OPTICS-A-2026-07-02.md — Depth-C is "on call"). Sequencing note:
+> **▸ SHIPPED — LOCAL CRYSTAL COLOR (`86fa07e`, 2026-07-07, render-only, 0/38, CI 160/2244):**
+> per-crystal colour variance so same-species neighbours + translucent overlaps read as SEPARATE
+> individuals — the boss's answer to the O2 caveat (colour is the fix, NOT satellite clipping).
+> `_localCrystalColor` (js/99i buildCrystalMaterial). PROBE FIRST (tools/localcolor-signal-probe):
+> the pure-bedrock "tint by own zone chemistry" only separates 23% of neighbour groups (54/238) —
+> 115 trace-free (halite/barite/sulfides), 69 flat (same broth), per-trace neighbour CV ~0. So a
+> TWO-LAYER design: (1) CHEMISTRY tone — growth-weighted chromophore load (Fe/Mn/Ti, fleet-q90
+> normalized) deepens the colour (no mineral-specific HUE — that's D1); (2) deterministic 3-axis
+> id-hash LEGIBILITY FLOOR for the trace-free/flat majority. Field-guide subtle (neighbour RGB
+> dist 64–81, drift ≤92). **Pre-registered: chemistry-driven NEIGHBOUR separation = B4 (traces
+> from the local depleting cell); mineral-specific hue = D1/Depth-C (on boss call — this tone
+> composes UNDER it).** Sequencing note:
 > volcanic-hosted scenarios (sunnyside/roughten_gill/sulphur_bank) kept the basalt skin —
 > no note-backed finer host; a future data pass may name andesite/rhyolite.
 
