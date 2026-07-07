@@ -117,6 +117,17 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
                               // the near wall. E4 polish: switch to
                               // opaque + camera-inside flythrough mode.
   });
+  // W-K V1b: shared uniform objects for the genesis-relief albedo AO (js/99i
+  // _applyWallReliefAO). The arch-change block in _topoSyncCavityMesh mutates these
+  // in place per scenario, so the swap needs no recompile. Seed with the scallops
+  // family at strength 0 (no effect) until the first cavity sync assigns the real
+  // architecture — avoids a null sampler bind on the first frame.
+  cavityMat.userData.reliefAO = {
+    uReliefAO: { value: (typeof _wallReliefAOMap === 'function' ? _wallReliefAOMap('pocket') : null) },
+    uReliefAORepeat: { value: new THREE.Vector2(5, 5) },
+    uReliefAOAmt: { value: 0 },
+  };
+  if (typeof _applyWallReliefAO === 'function') _applyWallReliefAO(cavityMat);
   const cavity = new THREE.Mesh(cavityGeom, cavityMat);
   cavity.renderOrder = 0;     // paint cavity first; crystals layer on top
   // Exclude the cavity from raycaster intersections — bare-wall
@@ -348,6 +359,53 @@ float cavityHullRadiusAt(vec3 worldPos) {
   material.needsUpdate = true;
 }
 
+// W-K V1b (wall depth THROUGH translucency, 2026-07-07): the cavity wall's genesis
+// relief as ALBEDO ambient occlusion. V1 gave the wall a normal map (js/99a
+// _wallReliefNormalMap), but a normal map only perturbs LIGHTING — washed out by the
+// wall's 0.18–0.40 translucency + the ambient-heavy rig, so the scallops/striations/
+// rind are invisible in the two views the boss actually inspects specimens in (the
+// WIRED≠VISIBLE lesson from V1). This multiplies a grayscale AO (js/99a
+// _wallReliefAOMap, the SAME height field + tiling) into diffuseColor — darker pigment
+// in the recesses, which reads through ANY opacity at ANY light angle. Sampled at RAW
+// uv (own vReliefUv varying, NOT vMapUv — the skin map's 6×3 transform must not scale
+// it) × the relief's own per-family repeat, so the shade lands exactly in the normal
+// map's pits. Shared uniform objects live on material.userData.reliefAO; the arch-change
+// block in _topoSyncCavityMesh swaps map/repeat/strength by mutating those objects, so
+// no recompile is needed. The cavity material carries no other onBeforeCompile (the
+// _applyCavityClip hull-clip is on the CRYSTAL materials), so there's no chunk-anchor
+// collision. Render-only, byte-identical.
+const WALL_RELIEF_AO_AMT = 0.6;   // recess-darkening depth (0=off, 1=recess→black); eye-checked 2026-07-07:
+                                   // 0.6 reads clearly through the 0.40 default view, hints at 0.18 druse-portrait,
+                                   // and stays tasteful (not black-pitted) at full opacity where V1's normal map
+                                   // also fires. Isolated-AO A/B (normalScale 0) confirmed it carries the relief
+                                   // through translucency on its own — the acceptance test a normal map fails.
+function _applyWallReliefAO(material: any) {
+  if (!material || !material.userData || !material.userData.reliefAO) return;
+  const u = material.userData.reliefAO;
+  material.onBeforeCompile = (shader: any) => {
+    shader.uniforms.uReliefAO = u.uReliefAO;
+    shader.uniforms.uReliefAORepeat = u.uReliefAORepeat;
+    shader.uniforms.uReliefAOAmt = u.uReliefAOAmt;
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <common>',
+      '#include <common>\nvarying vec2 vReliefUv;'
+    );
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <begin_vertex>',
+      '#include <begin_vertex>\n\tvReliefUv = uv;'   // raw uv (unconditionally declared in r163); no vMapUv transform
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <common>',
+      '#include <common>\nuniform sampler2D uReliefAO;\nuniform vec2 uReliefAORepeat;\nuniform float uReliefAOAmt;\nvarying vec2 vReliefUv;'
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <map_fragment>',
+      '#include <map_fragment>\n\tfloat _reliefAO = texture2D( uReliefAO, vReliefUv * uReliefAORepeat ).r;\n\tdiffuseColor.rgb *= ( 1.0 - uReliefAOAmt * ( 1.0 - _reliefAO ) );'
+    );
+  };
+  material.needsUpdate = true;
+}
+
 // PHASE-2-CAVITY-MESH: signature delegates to WallMesh._signature so
 // the renderer and the mesh agree on staleness. Kept as a thin
 // indirection so the renderer's call sites don't change shape.
@@ -451,9 +509,23 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
       const nrm = _wallReliefNormalMap(arch);
       target.material.normalMap = nrm || null;
       if (nrm && target.material.normalScale && target.material.normalScale.set) {
-        target.material.normalScale.set(2.0, 2.0);   // reads as genesis relief in solid-wall mode (subtle through
-                                                       // the default 40% translucency — a fine normal map perturbs
-                                                       // lighting, which the see-through wall softens); eye-checked 2026-07-07
+        target.material.normalScale.set(2.0, 2.0);   // solid-wall relief (V1). Through the 0.18–0.40 translucent
+                                                       // modes a normal map washes out — V1b's albedo AO (below)
+                                                       // carries the depth there; the two compose. Eye-checked 2026-07-07
+      }
+      // W-K V1b: swap the ALBEDO-AO map to this architecture's family + strength so the
+      // relief reads through translucency (shared uniform objects → no recompile). Repeat
+      // read off the texture so the tiling number lives only in js/99a.
+      const ru = target.material.userData && target.material.userData.reliefAO;
+      if (ru && typeof _wallReliefAOMap === 'function') {
+        const ao = _wallReliefAOMap(arch);
+        if (ao) {
+          ru.uReliefAO.value = ao;
+          ru.uReliefAORepeat.value.set(ao.repeat.x, ao.repeat.y);
+          ru.uReliefAOAmt.value = WALL_RELIEF_AO_AMT;
+        } else {
+          ru.uReliefAOAmt.value = 0;
+        }
       }
       target.material.needsUpdate = true;
     }

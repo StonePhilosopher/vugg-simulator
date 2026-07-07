@@ -9,6 +9,8 @@ import { describe, expect, it } from 'vitest';
 declare const _WALL_RELIEF_FAMILY: any;
 declare const _wallReliefHeight: any;
 declare const _wallReliefNormalMap: any;
+declare const _wallReliefRepeat: any;   // V1b: shared tiling helper
+declare const _wallReliefAOMap: any;    // V1b: albedo ambient-occlusion map
 
 function stats(fam: string) {
   let mn = 9, mx = -9;
@@ -55,4 +57,41 @@ describe('V1 — normal-map generator is null-safe', () => {
     expect(() => _wallReliefNormalMap('nonsense_arch')).not.toThrow();
     expect(() => _wallReliefNormalMap('cleft')).not.toThrow();
   });
+});
+
+// ── W-K V1b (wall depth THROUGH translucency) ────────────────────────────────
+// The genesis relief re-baked as an ALBEDO ambient-occlusion map (js/99a
+// _wallReliefAOMap), multiplied into the cavity's diffuseColor by a shader hook
+// (js/99i _applyWallReliefAO) so it reads through the 0.18–0.40 translucent wall
+// where V1's lighting-only normal map washes out. The CanvasTexture needs a real
+// 2D context (null in jsdom), so these pin the tiling contract + null-safety + the
+// height-field signal the albedo shade rides on.
+
+describe('V1b — AO map shares the normal map tiling (drift guard)', () => {
+  it('basin bands tile [1,6]; scallops/cleft tile [5,5]', () => {
+    expect(_wallReliefRepeat('basin')).toEqual([1, 6]);
+    expect(_wallReliefRepeat('scallops')).toEqual([5, 5]);
+    expect(_wallReliefRepeat('cleft')).toEqual([5, 5]);
+  });
+});
+
+describe('V1b — albedo AO generator is null-safe', () => {
+  it('every family + unknown returns without throwing (null in jsdom — no 2D ctx)', () => {
+    for (const a of ['pocket', 'cleft', 'basin', 'nonsense_arch']) {
+      expect(() => _wallReliefAOMap(a)).not.toThrow();
+    }
+  });
+});
+
+describe('V1b — AO darkening has a real recess↔rim signal per family', () => {
+  // The AO stores gray = height·255; the shader darkens by (1 − amt·(1−gray)), so a
+  // deeper recess (lower height) darkens more. Pin that each family's height field
+  // actually spans dark recess → bright rim, i.e. the shade has something to ride on.
+  for (const fam of ['scallops', 'cleft', 'basin']) {
+    it(`${fam}: a genuine dark recess and a genuine bright rim exist`, () => {
+      const s = stats(fam);
+      expect(s.mn).toBeLessThan(0.35);    // a recess dark enough to shade
+      expect(s.mx).toBeGreaterThan(0.65); // a rim left ~unshaded for contrast
+    });
+  }
 });

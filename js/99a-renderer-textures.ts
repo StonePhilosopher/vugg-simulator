@@ -669,6 +669,13 @@ function _wallReliefHeight(fam: string, xf: number, yf: number): number {
   }
   return Math.min(1, best / (0.62 / G));   // 0 at centre (deep bowl) → 1 at rim
 }
+// per-family texture tiling [repeatX, repeatY]. SHARED by the normal map (V1) and the
+// albedo AO (V1b) so the two ALWAYS align — a drift between them would slide the shade
+// out of the normal map's pits. basin bands span the shell (1 across) and stack (6 up);
+// scallops/cleft tile 5×5.
+function _wallReliefRepeat(fam: string): [number, number] {
+  return fam === 'basin' ? [1, 6] : [5, 5];
+}
 // architecture → a cached tangent-space normal map for its genesis relief
 function _wallReliefNormalMap(architecture: string): any {
   if (typeof THREE === 'undefined') return null;
@@ -699,7 +706,7 @@ function _wallReliefNormalMap(architecture: string): any {
     ctx.putImageData(img, 0, 0);
     tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(fam === 'basin' ? 1 : 5, fam === 'basin' ? 6 : 5);   // basin bands span the shell; scallops/cleft tile
+    { const rp = _wallReliefRepeat(fam); tex.repeat.set(rp[0], rp[1]); }   // basin bands span the shell; scallops/cleft tile
     // NORMAL maps are LINEAR data — must NOT be tagged sRGB (the skin map above is).
     if ('colorSpace' in tex) {
       if (typeof (THREE as any).NoColorSpace !== 'undefined') (tex as any).colorSpace = (THREE as any).NoColorSpace;
@@ -707,6 +714,52 @@ function _wallReliefNormalMap(architecture: string): any {
     }
   } catch { tex = null; }
   _wallReliefCache.set(fam, tex);
+  return tex;
+}
+
+// W-K V1b (wall depth THROUGH TRANSLUCENCY, 2026-07-07): the SAME genesis relief
+// (identical height field + tiling as _wallReliefNormalMap) baked as a grayscale
+// ALBEDO ambient-occlusion map — dark in the recesses (scallop-pit centres, cleft
+// groove bottoms, basin band troughs), bright on the rims. V1's normal map only
+// perturbs LIGHTING, which the cavity wall's 0.18–0.40 translucency + the ambient-
+// heavy rig (AmbientLight 0.55 / DirectionalLight 0.9, no env map) wash out to a
+// silent no-op in the two views the boss actually inspects specimens in. Darkening
+// the ALBEDO instead reads through ANY opacity at ANY light angle (multiplied into
+// diffuseColor by the cavity shader hook, js/99i _applyWallReliefAO). Sampled at raw
+// uv × the SAME per-family repeat as the normal map, so the shade sits exactly in the
+// normal map's pits. AO is DATA (a multiplier), not colour → LINEAR (NoColorSpace) so
+// the shader reads back the stored height verbatim. Cached per family like its sibling.
+const _wallReliefAOCache = new Map<string, any>();
+function _wallReliefAOMap(architecture: string): any {
+  if (typeof THREE === 'undefined') return null;
+  const fam = _WALL_RELIEF_FAMILY[architecture] || 'scallops';
+  const cached = _wallReliefAOCache.get(fam);
+  if (cached !== undefined) return cached;
+  let tex: any = null;
+  try {
+    const N = 128;
+    const canvas = document.createElement('canvas'); canvas.width = N; canvas.height = N;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { _wallReliefAOCache.set(fam, null); return null; }
+    const img = ctx.createImageData(N, N);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      // height 0 (deep recess) → dark, 1 (rim/flat) → bright. The shader turns this
+      // into a (1 − amt·(1−h)) albedo multiply, so only the true bottoms darken hard.
+      const h = _wallReliefHeight(fam, x / N, y / N);
+      const g = Math.round(h * 255);
+      const i = (y * N + x) * 4;
+      img.data[i] = g; img.data[i + 1] = g; img.data[i + 2] = g; img.data[i + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    { const rp = _wallReliefRepeat(fam); tex.repeat.set(rp[0], rp[1]); }   // shared helper → ALWAYS matches the normal map
+    if ('colorSpace' in tex) {
+      if (typeof (THREE as any).NoColorSpace !== 'undefined') (tex as any).colorSpace = (THREE as any).NoColorSpace;
+      else if (typeof (THREE as any).LinearSRGBColorSpace !== 'undefined') (tex as any).colorSpace = (THREE as any).LinearSRGBColorSpace;
+    }
+  } catch { tex = null; }
+  _wallReliefAOCache.set(fam, tex);
   return tex;
 }
 
