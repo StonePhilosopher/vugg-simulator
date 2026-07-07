@@ -695,3 +695,52 @@ Let the probe replace your hypothesis, check the field is populated before you t
 build the consumer general enough that the science can catch up to it on its own.
 
 — the builder, seventh hand, second act · 2026-07-07
+
+---
+
+## Addendum — V1, THE WALL'S GENESIS (same hand, third act · 2026-07-07)
+
+The boss said *"lets do the quicker one"* — of the three doors (O3 SIM-bump, V0/V1, D1c
+sim-chemistry), the render-only one. V1: give the cavity WALL a genesis relief (dissolution
+scallops / cleft striations / basin rind) instead of the smooth void it was. Shipped `d6ab4c6`,
+render-only, 0/38, Pages-verified.
+
+**Wired is not the same as visible — and only the eye-check knows the difference.** I built the
+relief generator (verified: valid normal maps, correct linear colorspace, all three families with
+real height variance), wired it into the cavity material exactly like the matrix skin, confirmed
+byte-identical, typecheck clean, no console errors. Every check passed. And at the shipped
+normalScale of 0.5 the feature was **INVISIBLE** — a SILENT NO-OP. A fine normal map perturbs
+LIGHTING, and the wall is 40% translucent under soft light, so the relief washed out to nothing
+(even in solid-wall mode). The unit tests could not see it; the byte-identity could not see it;
+the console had nothing to say. The only instrument that caught it was a screenshot of the actual
+wall. I cranked normalScale to 2.5 to prove the pipeline even fires (clear scalloping appeared),
+then settled 2.0. **This is `feedback_render_upgrade_visible` proven live: a render upgrade you
+cannot SEE is a no-op no matter how correct the code beneath it.** The eye-check is not the
+ceremony after the work; on a render change it IS the work's acceptance test.
+
+**Pay the eye-check even when the tooling fights you.** This page makes it expensive: the THREE
+scene is fully module-scoped (no window handle — I could not A/B normalScale on the live material,
+so every calibration value cost a full rebuild → reload → renavigate-to-the-3D-cavity cycle), and
+WebGL screenshots are intermittent (they worked here; the memory says they often time out). The
+temptation under that friction is to ship on the passing unit checks and call the render "done."
+Don't. The friction is exactly when the no-op slips through.
+
+**The census caught my own bug, which is the point of running it.** I first probed `wall.archetype`
+and found it undefined 0/38 — a phantom "whitelist gap" that would have sent me plumbing a field
+that didn't need it. The field is `wall.architecture`, already mirrored to the render wall
+(js/85:60, 38/38). One character, and the probe was measuring a fiction. Read the field name off
+the source, not off memory — and when a census says 0/38, suspect the census before the code.
+
+**The dream, third-act telling.** The crystals have been getting their biographies all week —
+exposure, contact faces, colour, chemistry. This act gave the STAGE its biography. A scalloped
+wall was dissolved; a striated wall was pulled open along a fracture; a banded wall settled out of
+still water. The cavity now remembers how it came to be, the way its crystals remember how they
+grew. The inverse solver the prior hands dreamed reads the crystals to recover the fluid; add
+this: one day it reads the WALL too — scallop wavelength for the flow that carved it, striation
+spacing for the stress that opened it — and recovers not just the water but the ROOM the water
+filled. W-K is the cavity's own ontogeny, and tonight it got its first visible chapter.
+
+Build it, wire it, and then LOOK — because the wall that photographs smooth was never textured, no
+matter what the code says.
+
+— the builder, seventh hand, third act · 2026-07-07
