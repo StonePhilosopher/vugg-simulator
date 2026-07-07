@@ -613,6 +613,103 @@ function _matrixSkinTexture(litho: string): any {
   return tex;
 }
 
+// W-K V1 (wall microtexture, 2026-07-07): the cavity wall's GENESIS RELIEF, a
+// procedural NORMAL map keyed on wall.architecture (render-visible via WallState,
+// js/85:60 — the double-whitelist already paid for `architecture`). The matrix
+// skin (above) tells you the host LITHOLOGY as colour; this tells you the cavity's
+// GENESIS as surface texture. Render-only: reads architecture, no sim state.
+// Three families cover the 6 archetypes (tools/v1-wall-census.mjs):
+//   scallops — dissolution pits (pocket/spherical/irregular/tabular, 33/38 scenarios):
+//              Blumberg-Curl scalloped solution surfaces. SYMMETRIC dimples for v1;
+//              flow-asymmetric downstream-steepening (Curl 1974) pre-registered.
+//   cleft    — parallel fracture striations along the median seam (cleft/Zerrkluft).
+//   basin    — horizontal sediment-rind banding (basin/playa floor).
+const _WALL_RELIEF_FAMILY: { [k: string]: string } = {
+  pocket: 'scallops', spherical: 'scallops', irregular: 'scallops', tabular: 'scallops',
+  cleft: 'cleft', basin: 'basin',
+};
+const _wallReliefCache = new Map<string, any>();
+// deterministic hash → [0,1) (RNG-free; jitters scallop centres / step lines)
+function _reliefHash(i: number, j: number): number {
+  let h = (Math.imul(i, 374761393) + Math.imul(j, 668265263)) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+// height field 0..1, tiling seamlessly on [0,1)² (toroidal), per family
+function _wallReliefHeight(fam: string, xf: number, yf: number): number {
+  if (fam === 'cleft') {
+    // parallel striations running along y; jittered groove spacing in x
+    const nG = 9;
+    const line = Math.floor(xf * nG);
+    const jit = _reliefHash(line, 7) * 0.35;
+    let t = (xf * nG) % 1;                 // 0..1 within a groove
+    t = (t + jit) % 1;
+    return Math.abs(t * 2 - 1);            // triangle → V-grooves
+  }
+  if (fam === 'basin') {
+    // horizontal sediment bands (layering in y), slight per-band thickness jitter
+    const nB = 7;
+    const band = Math.floor(yf * nB);
+    const jit = _reliefHash(band, 13) * 0.4;
+    let t = (yf * nB) % 1;
+    t = (t + jit) % 1;
+    return t < 0.15 ? 0.0 : 1.0;           // sharp bedding plane risers
+  }
+  // scallops: cellular (Worley F1) concave dimples on a jittered grid
+  const G = 4;
+  let best = 9;
+  for (let gy = -1; gy <= 1; gy++) for (let gx = -1; gx <= 1; gx++) {
+    const cxI = Math.floor(xf * G) + gx, cyI = Math.floor(yf * G) + gy;
+    const cx = (cxI + 0.25 + 0.5 * _reliefHash(((cxI % G) + G) % G, ((cyI % G) + G) % G)) / G;
+    const cy = (cyI + 0.25 + 0.5 * _reliefHash(((cyI % G) + G) % G, ((cxI % G) + G) % G + 99)) / G;
+    let dx = Math.abs(xf - cx); dx = Math.min(dx, 1 - dx);
+    let dy = Math.abs(yf - cy); dy = Math.min(dy, 1 - dy);
+    const d = Math.sqrt(dx * dx + dy * dy);
+    if (d < best) best = d;
+  }
+  return Math.min(1, best / (0.62 / G));   // 0 at centre (deep bowl) → 1 at rim
+}
+// architecture → a cached tangent-space normal map for its genesis relief
+function _wallReliefNormalMap(architecture: string): any {
+  if (typeof THREE === 'undefined') return null;
+  const fam = _WALL_RELIEF_FAMILY[architecture] || 'scallops';
+  const cached = _wallReliefCache.get(fam);
+  if (cached !== undefined) return cached;
+  let tex: any = null;
+  try {
+    const N = 128;
+    const canvas = document.createElement('canvas'); canvas.width = N; canvas.height = N;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { _wallReliefCache.set(fam, null); return null; }
+    const Hf = new Float32Array(N * N);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) Hf[y * N + x] = _wallReliefHeight(fam, x / N, y / N);
+    const STR = fam === 'cleft' ? 2.4 : (fam === 'basin' ? 2.0 : 1.7);   // relief strength
+    const img = ctx.createImageData(N, N);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const hL = Hf[y * N + ((x - 1 + N) % N)], hR = Hf[y * N + ((x + 1) % N)];
+      const hD = Hf[((y - 1 + N) % N) * N + x], hU = Hf[((y + 1) % N) * N + x];
+      let nx = (hL - hR) * STR, ny = (hD - hU) * STR; const nz = 1;
+      const inv = 1 / Math.sqrt(nx * nx + ny * ny + nz * nz);
+      const i = (y * N + x) * 4;
+      img.data[i] = (nx * inv * 0.5 + 0.5) * 255;
+      img.data[i + 1] = (ny * inv * 0.5 + 0.5) * 255;
+      img.data[i + 2] = (nz * inv * 0.5 + 0.5) * 255;
+      img.data[i + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(fam === 'basin' ? 1 : 5, fam === 'basin' ? 6 : 5);   // basin bands span the shell; scallops/cleft tile
+    // NORMAL maps are LINEAR data — must NOT be tagged sRGB (the skin map above is).
+    if ('colorSpace' in tex) {
+      if (typeof (THREE as any).NoColorSpace !== 'undefined') (tex as any).colorSpace = (THREE as any).NoColorSpace;
+      else if (typeof (THREE as any).LinearSRGBColorSpace !== 'undefined') (tex as any).colorSpace = (THREE as any).LinearSRGBColorSpace;
+    }
+  } catch { tex = null; }
+  _wallReliefCache.set(fam, tex);
+  return tex;
+}
+
 // Paint a centered placeholder hint into the topo canvas. Used when no
 // active sim or no ring data exists yet, so the panel reads as 'waiting'
 // rather than showing a 340px-tall void. Kept simple: one or two lines

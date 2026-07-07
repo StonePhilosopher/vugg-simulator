@@ -439,6 +439,26 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
     }
   }
 
+  // W-K V1 (wall microtexture, 2026-07-07): the GENESIS relief — a normal map
+  // keyed on wall.architecture (dissolution scallops / cleft striations / basin
+  // rind; js/99a _wallReliefNormalMap). The matrix skin above is the host
+  // lithology as COLOUR; this is the cavity's genesis as SURFACE. Cached by
+  // architecture, reassigned only on scenario switch. Render-only, byte-identical.
+  if (target.material && typeof _wallReliefNormalMap === 'function') {
+    const arch = String((wall && wall.architecture) || 'pocket');
+    if (state._wallReliefArch !== arch) {
+      state._wallReliefArch = arch;
+      const nrm = _wallReliefNormalMap(arch);
+      target.material.normalMap = nrm || null;
+      if (nrm && target.material.normalScale && target.material.normalScale.set) {
+        target.material.normalScale.set(2.0, 2.0);   // reads as genesis relief in solid-wall mode (subtle through
+                                                       // the default 40% translucency — a fine normal map perturbs
+                                                       // lighting, which the see-through wall softens); eye-checked 2026-07-07
+      }
+      target.material.needsUpdate = true;
+    }
+  }
+
   // Tier 1 C (post-v69): toggle cavity material between smooth Phong-
   // like shading (default) and flat-faceted sphere-union polyhedron
   // shading. `wall.cavity_render === 'sharp'` surfaces the underlying
