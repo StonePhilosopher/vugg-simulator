@@ -1012,6 +1012,69 @@ function wulffCalciteOmegaBias(omegaBar: number, scaleno: boolean): number {
   return p.NAIL_HI - t * (p.NAIL_HI - p.NAIL_LO);
 }
 
+// C1 — O1a real-exposure calibration (2026-07-07, the directional-σ tranche).
+// The W-F O1a tranche shipped a fleet-wide constant kExp=0.18: every fluid Wulff
+// crystal got the SAME 18% up-vs-down exposure asymmetry. tools/c1-depletion-ev-
+// probe.mjs measured the truth from the interior voxel field: the MEDIAN fluid
+// crystal is nearly isotropic (base/tip σ ≈ 0.98) and only ~31% carry a real
+// ≥10% base→tip gradient. So the constant over-applied asymmetry to the calm
+// majority and under-applied it to the starved few. C1 replaces it with a
+// per-crystal kExp read from each crystal's OWN growth-weighted base(d=0, wall)/
+// tip(d=max, cavity) gradient — the depletion field the constant stood in for.
+//   kExp = clamp(SCALE·(1 − base/tip), 0, MAX)
+// SCALE placed so a moderately-starved crystal (base/tip≈0.5) recovers the old
+// 0.18 and the isotropic majority collapses toward 0 (Steno still holds: the
+// modifier scales d per face, never bends n). Calibrated on the sim's own fleet
+// distribution + swept — see tools/c1-exposure-calibration-probe.mjs.
+const O1A_EXP = { KEXP_SCALE: 0.36, KEXP_MAX: 0.30, KEXP_DEFAULT: 0.0 };
+
+// Turn a crystal's accumulated base/tip integral into its exposure kExp. Absent
+// field data (headless / never grew in fluid) → KEXP_DEFAULT (neutral). Air
+// crystals never call this (js/99i keeps kExp=0 — dripstone is a gravity film,
+// not a bath gradient).
+function o1aExposureK(crystal: any): number {
+  const acc = crystal && crystal._o1aExp;
+  if (!acc || !(acc.G > 0)) return O1A_EXP.KEXP_DEFAULT;
+  const s0 = acc.s0G / acc.G;    // growth-weighted base (wall) σ
+  const sD = acc.sDG / acc.G;    // growth-weighted tip (cavity) σ
+  if (!(sD > 0)) return 0;
+  const k = O1A_EXP.KEXP_SCALE * (1 - s0 / sD);
+  return Math.max(0, Math.min(O1A_EXP.KEXP_MAX, k));
+}
+
+// C1 bedrock — the interior voxel field's base(d=0, wall)→tip(d=max, cavity)
+// supersaturation gradient for one crystal, via the same per-cell fluid swap the
+// growth loop (_runEngineForCrystal) uses. Read-only: restores conditions.fluid +
+// temperature, consumes NO RNG → baseline byte-identical. Returns null when the
+// voxel grid is absent (headless), the anchor doesn't resolve, or the two depth
+// slices alias the same object (degenerate) — callers fall back to KEXP_DEFAULT.
+function _o1aBaseTipSigma(sim: any, crystal: any): any {
+  const cond = sim && sim.conditions;
+  if (!cond) return null;
+  const fn = cond[`supersaturation_${crystal.mineral}`];
+  if (typeof fn !== 'function') return null;
+  const wall = sim.wall_state;
+  const grid = (wall && wall.voxelGridFor) ? wall.voxelGridFor(sim) : null;
+  if (!grid) return null;
+  const anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
+  if (!anchor) return null;
+  const maxD = grid.depth_count - 1;
+  if (maxD < 1) return null;
+  const f0 = grid.fluidAt(anchor.ringIdx, anchor.cellIdx, 0);
+  const fD = grid.fluidAt(anchor.ringIdx, anchor.cellIdx, maxD);
+  if (!f0 || !fD || f0 === fD) return null;
+  const rt = sim.ring_temperatures || [];
+  const temp = (anchor.ringIdx >= 0 && anchor.ringIdx < rt.length) ? rt[anchor.ringIdx] : cond.temperature;
+  const savedF = cond.fluid, savedT = cond.temperature;
+  cond.temperature = temp;
+  let s0 = NaN, sD = NaN;
+  cond.fluid = f0; try { s0 = fn.call(cond); } catch { s0 = NaN; }
+  cond.fluid = fD; try { sD = fn.call(cond); } catch { sD = NaN; }
+  cond.fluid = savedF; cond.temperature = savedT;
+  if (!Number.isFinite(s0) || !Number.isFinite(sD)) return null;
+  return { s0, sD };
+}
+
 function classifyWulffForm(sim: any) {
   const wall = sim.conditions && sim.conditions.wall;
   if (!wall) return;
@@ -1064,6 +1127,25 @@ function classifyWulffForm(sim: any) {
     const tenant = (m === 'fluorite' && fluoriteOn) || (m === 'calcite' && calciteOn)
       || (m === 'wulfenite' && wulfeniteOn) || (m === 'barite' && bariteOn) || (m === 'galena' && galenaOn)
       || (m === 'titanite' && titaniteOn);
+    // C1 — O1a directional-exposure integral (sibling of _wulffCalInt above).
+    // For every fluid tenant that grew THIS step, fold the voxel field's
+    // base/tip σ into a growth-weighted accumulator; js/99i reads it via
+    // o1aExposureK to set the per-crystal kExp (retiring the 0.18 constant).
+    // Accumulated from zone one (before the WULFF_MIN_UM/twin disqualify) so a
+    // young body's early exposure history is in the integral. Air tenants skip
+    // (no bath gradient). Read-only + RNG-free → baseline byte-identical.
+    if (tenant && c.growth_environment !== 'air') {
+      const z = c.zones && c.zones.length ? c.zones[c.zones.length - 1] : null;
+      if (z && z.step === sim.step && z.thickness_um > 0) {
+        const bt = _o1aBaseTipSigma(sim, c);
+        if (bt) {
+          const acc = c._o1aExp || (c._o1aExp = { s0G: 0, sDG: 0, G: 0 });
+          acc.s0G += bt.s0 * z.thickness_um;
+          acc.sDG += bt.sD * z.thickness_um;
+          acc.G += z.thickness_um;
+        }
+      }
+    }
     // Disqualify: not an opted tenant, a nucleation speck, or a twin (twins resolve to their own
     // geometry token, never the cube/octahedron/rhomb/scalene the Wulff path needs).
     if (!tenant || (c.total_growth_um || 0) < WULFF_MIN_UM || !!c.twinned) {

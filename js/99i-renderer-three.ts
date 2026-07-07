@@ -3898,7 +3898,40 @@ function _o2PlaceBody(crystal: any, wall: any, replayStep: number | undefined, r
     enclosed: crystal.enclosed_by != null,
     cx: ax + cAxisX * off, cy: ay + cAxisY * off, cz: az + cAxisZ * off,
     reach: 0.5 * Math.sqrt(2 * aWid * aWid + cLen * cLen),
+    // C1 O2 upgrade — gross integrated linear growth (already depletion-aware:
+    // the growth loop reads cell σ, so a starved crystal's total_growth_um is
+    // already smaller). The meeting-plane weight below prefers this over `reach`
+    // (current circumscribed size), which differs for dissolved-and-regrown or
+    // strongly anisotropic bodies — the drift population O2's header pre-registered.
+    growth: crystal.total_growth_um > 0 ? crystal.total_growth_um : 0,
   };
+}
+
+// W-F O1b — neighbour shadow (C1 directional tranche, 2026-07-07). A crystal
+// packed among neighbours grows preferentially into open space; in a wall druse
+// the neighbours are lateral and the open direction is cavity-ward, so the crowd
+// REINFORCES O1a's radial exposure. This reduces the true per-face directional
+// shadow to the radial scalar the kernel expresses today (per-face is the
+// pre-registered upgrade). Reuses the O2 neighbour pre-pass (_o2Bodies: world
+// centre + circumscribed reach). Shadow = summed overlap fraction with touching
+// neighbours (enclosed guests excluded — they're O4). Returns a kExp boost in
+// [0, MAX]. Measured reach is small (tools/c1-exposure-calibration-probe.mjs).
+const O1B_SHADOW = { SCALE: 0.10, MAX: 0.15, KEXP_CAP: 0.32 };
+function _o1bNeighborShadow(crystal: any, bodies: any[]): number {
+  if (!bodies || bodies.length < 2) return 0;
+  let me: any = null;
+  for (const b of bodies) { if (b.id === crystal.crystal_id) { me = b; break; } }
+  if (!me || me.enclosed) return 0;
+  let shadow = 0;
+  for (const b of bodies) {
+    if (b.id === crystal.crystal_id || b.enclosed) continue;
+    const dx = b.cx - me.cx, dy = b.cy - me.cy, dz = b.cz - me.cz;
+    const D = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    const sum = me.reach + b.reach;
+    if (sum <= 0 || D >= sum) continue;           // not overlapping → no shadow
+    shadow += (sum - D) / sum;                     // overlap fraction (0..1 per neighbour)
+  }
+  return Math.min(O1B_SHADOW.MAX, O1B_SHADOW.SCALE * shadow);
 }
 
 // W-F O2 — the matte material for the anhedral contact facet (group 1): the
@@ -4169,15 +4202,23 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         // equant sink set above) but is an equant closed Wulff body — same
         // half-form default as its tablet-token sibling.
         if (isTiWulff && _simOccF == null && crystal.growth_environment !== 'air') occF = 0.5;
-        // W-F O1a — exposure tranche (2026-07-04): wall-anchored fluid crystals
-        // grow their fed (cavity-facing) faces ahead of their starved
-        // (wall-facing) faces — the kernel's f_geo = 1 + k·(n·û) per-face rate
-        // modifier (js/46). One constant for the whole fleet in this tranche;
-        // O1b upgrades it to per-crystal neighbor shadow, C1's depletion field
-        // eventually feeds the real per-direction σ. Air-mode keeps k = 0
-        // (dripstone delivery is a different physics — gravity film, not an
-        // isotropic bath gradient).
-        const kExp = crystal.growth_environment === 'air' ? 0 : 0.18;
+        // W-F O1a — exposure. Wall-anchored fluid crystals grow their fed
+        // (cavity-facing) faces ahead of their starved (wall-facing) faces —
+        // the kernel's f_geo = 1 + k·(n·û) per-face rate modifier (js/46).
+        // C1 (2026-07-07, the directional-σ tranche) retires the fleet-wide
+        // kExp=0.18 constant: o1aExposureK reads each crystal's OWN
+        // growth-weighted base(d=0)/tip(d=max) gradient from the interior voxel
+        // field (js/45 _o1aExp accumulator) and maps it to a per-crystal kExp.
+        // The c1-depletion-ev-probe showed the 0.18 was a fiction — the Wulff
+        // tenants are the calm well-fed minerals (base/tip ≈ 0.93), so this
+        // gently SYMMETRIZES them toward their true near-isotropic form, with
+        // O1b's neighbor shadow (below) adding back the crowd's asymmetry.
+        // Air-mode keeps k = 0 (dripstone is a gravity film, not a bath gradient).
+        let kExp = 0;
+        if (crystal.growth_environment !== 'air') {
+          kExp = o1aExposureK(crystal);                                   // O1a radial exposure (own depletion field)
+          kExp = Math.min(O1B_SHADOW.KEXP_CAP, kExp + _o1bNeighborShadow(crystal, _o2Bodies));  // O1b crowd reinforcement
+        }
         const formKey = (isFlWulff || isGlWulff) ? (wf.octahedral ? 'o' : 'c')   // cubic cube↔octahedron (galena octahedral is always false → 'c')
           : isCalWulff ? (wf.scaleno ? 's' : 'r') : 't';   // wulfenite + barite + titanite are single-body → 't' (mineral is in the key)
         const key = '__wulff_' + crystal.mineral + '_' + formKey
@@ -4559,11 +4600,13 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // competitive growth). Convex tenants only (_o2ConvexGeom + the token gate —
     // concave hopper/botryoidal/twin have no single convex cap); stepped/etched/
     // e-twin/hourglass overprints and enclosed guests (O4's job) opt out. The
-    // meeting plane uses CURRENT-SIZE weights — first-order exact when the rate
-    // ratio held (Diggle); integrated-growth weights are the pre-registered
-    // upgrade for the drift population when C1/O3 land. Render-only: replaces
-    // mesh.geometry with a fresh clipped geom, leaving the cached form intact
-    // for the satellites + geomCache below.
+    // meeting plane uses INTEGRATED-GROWTH weights (C1, 2026-07-07): the plane
+    // sits at the growth-ratio point gA/(gA+gB), gross linear growth — faithful
+    // for dissolved-and-regrown or anisotropic bodies where current size ≠ growth
+    // history, and depletion-aware because the growth loop already reads cell σ.
+    // Falls back to current-size (reach, Diggle first-order) when either body
+    // lacks a growth scalar. Render-only: replaces mesh.geometry with a fresh
+    // clipped geom, leaving the cached form intact for the satellites + geomCache.
     if (_o2ConvexGeom && _O2_CONVEX_TOKENS.has(token)
         && !isEtched && !isSectorZoned && !isGypsumHourglass
         && crystal.enclosed_by == null && _o2Bodies.length > 1 && mesh.geometry) {
@@ -4574,9 +4617,16 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         if (b.id === crystal.crystal_id || b.enclosed) continue;
         const dx = b.cx - meX, dy = b.cy - meY, dz = b.cz - meZ;
         const D = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (D < 1e-3 || D >= myReach + b.reach) continue;   // no overlap → no contact
+        if (D < 1e-3 || D >= myReach + b.reach) continue;   // no overlap → no contact (current-size bound)
         const inv = 1 / D, nX = dx * inv, nY = dy * inv, nZ = dz * inv;   // A→B
-        const dA = D * myReach / (myReach + b.reach);        // growth-weighted meeting point
+        // C1 — integrated-growth meeting point gA/(gA+gB); current-size fallback
+        // (reach) when either body has no growth scalar, keeping the weight
+        // unit-consistent (never mix mm-reach with µm-growth in one ratio).
+        const gA = crystal.total_growth_um > 0 ? crystal.total_growth_um : 0;
+        const gB = b.growth;
+        const dA = (gA > 0 && gB > 0)
+          ? D * gA / (gA + gB)
+          : D * myReach / (myReach + b.reach);
         worldPlanes.push({ n: [nX, nY, nZ], d: nX * meX + nY * meY + nZ * meZ + dA });   // keep A: n·x ≤ d
       }
       if (worldPlanes.length) {
