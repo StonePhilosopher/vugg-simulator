@@ -628,12 +628,44 @@ const _WALL_RELIEF_FAMILY: { [k: string]: string } = {
   pocket: 'scallops', spherical: 'scallops', irregular: 'scallops', tabular: 'scallops',
   cleft: 'cleft', basin: 'basin',
 };
+// W-K V1c (genesis-gated textures, 2026-07-07): cavity GENESIS → relief family. Genesis is declared
+// per scenario (wall.genesis) because the census proved composition ≠ genesis. Scallops now fire ONLY
+// for real DISSOLUTION walls (flow-scaled); veins get comb, pegmatite pockets get druse, supergene
+// gossans get boxwork, mammillary linings get botryoidal, and vesicle / metamorphic / no-void
+// cavities go smooth. Research-verified assignment (3 locality-genesis passes; see proposals).
+const _WALL_GENESIS_FAMILY: { [k: string]: string } = {
+  dissolution: 'scallops', vein: 'comb', pocket: 'druse', supergene: 'boxwork',
+  botryoidal: 'botryoidal', vesicle: 'smooth', metamorphic: 'smooth',
+  cleft: 'cleft', evaporite: 'basin',
+};
+// genesis (preferred, per-scenario) → relief family; null/unknown genesis falls back to the legacy
+// architecture map (V1 behaviour) so nothing regresses before scenarios declare their genesis.
+function _wallReliefFamily(genesis: string | null | undefined, architecture: string): string {
+  if (genesis && _WALL_GENESIS_FAMILY[genesis]) return _WALL_GENESIS_FAMILY[genesis];
+  return _WALL_RELIEF_FAMILY[architecture] || 'scallops';
+}
 const _wallReliefCache = new Map<string, any>();
 // deterministic hash → [0,1) (RNG-free; jitters scallop centres / step lines)
 function _reliefHash(i: number, j: number): number {
   let h = (Math.imul(i, 374761393) + Math.imul(j, 668265263)) >>> 0;
   h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+// Worley F1 (nearest centre) + F2 (second-nearest) on a jittered G×G torus grid. Shared by the
+// V1c cellular families (druse / boxwork / botryoidal); V1's scallops keeps its own inline form so
+// its shipped calibration is byte-untouched. F2−F1 ≈ distance to the cell EDGE (0 at seams).
+function _worleyF12(xf: number, yf: number, G: number, jitter: number): [number, number] {
+  let best = 9, best2 = 9;
+  for (let gy = -1; gy <= 1; gy++) for (let gx = -1; gx <= 1; gx++) {
+    const cxI = Math.floor(xf * G) + gx, cyI = Math.floor(yf * G) + gy;
+    const cx = (cxI + 0.5 + jitter * (_reliefHash(((cxI % G) + G) % G, ((cyI % G) + G) % G) - 0.5)) / G;
+    const cy = (cyI + 0.5 + jitter * (_reliefHash(((cyI % G) + G) % G, ((cxI % G) + G) % G + 99) - 0.5)) / G;
+    let dx = Math.abs(xf - cx); dx = Math.min(dx, 1 - dx);
+    let dy = Math.abs(yf - cy); dy = Math.min(dy, 1 - dy);
+    const d = Math.sqrt(dx * dx + dy * dy);
+    if (d < best) { best2 = best; best = d; } else if (d < best2) { best2 = d; }
+  }
+  return [best, best2];
 }
 // height field 0..1, tiling seamlessly on [0,1)² (toroidal), per family
 function _wallReliefHeight(fam: string, xf: number, yf: number): number {
@@ -655,6 +687,41 @@ function _wallReliefHeight(fam: string, xf: number, yf: number): number {
     t = (t + jit) % 1;
     return t < 0.15 ? 0.0 : 1.0;           // sharp bedding plane risers
   }
+  if (fam === 'comb') {
+    // V1c — hydrothermal-vein crystal PALISADE: coarse RAISED parallel columns (prisms growing ⊥
+    // the fracture wall), bolder + fewer than cleft's fine incised grooves, so a comb vein reads
+    // distinct from a Zerrkluft. Crest at the column centre, seam at the edge.
+    const nC = 6;
+    const col = Math.floor(xf * nC);
+    const jit = _reliefHash(col, 5) * 0.3;
+    let t = (xf * nC) % 1; t = (t + jit) % 1;
+    return 1 - Math.abs(t * 2 - 1);
+  }
+  if (fam === 'druse') {
+    // V1c — miarolitic pocket: a mosaic of blocky euhedral crystal FACES (flat-topped), recessed
+    // at the inter-crystal seams. F2−F1 = distance to the cell edge → 0 at seam, 1 on the face.
+    const f = _worleyF12(xf, yf, 5, 1.2);
+    return Math.min(1, (f[1] - f[0]) / (0.34 / 5));
+  }
+  if (fam === 'boxwork') {
+    // V1c — supergene gossan: a reticulated honeycomb of thin RAISED blades (limonite/quartz
+    // relict after leached sulphide) enclosing hollow cells. The inverse of druse — ridge at the
+    // seam, void in the cell interior.
+    const f = _worleyF12(xf, yf, 5, 1.0);
+    return Math.max(0, 1 - ((f[1] - f[0]) / (0.30 / 5)) * 1.5);
+  }
+  if (fam === 'botryoidal') {
+    // V1c — mammillary / reniform lining (chrysoprase, hot-spring sinter, travertine crust):
+    // overlapping CONVEX hemispheres, the raised inverse of scallops' concave pits.
+    const f = _worleyF12(xf, yf, 4, 1.0);
+    const dd = Math.min(1, f[0] / (0.72 / 4));
+    return Math.sqrt(Math.max(0, 1 - dd * dd));
+  }
+  if (fam === 'smooth') {
+    // V1c — vesicle glass / metamorphic host / no-void (roll-front, travertine): essentially flat,
+    // a faint sub-grain shimmer only (so the wall reads as the matrix skin, not a dissolution surface).
+    return 0.88 + 0.06 * (_reliefHash(Math.floor(xf * 48), Math.floor(yf * 48)) - 0.5);
+  }
   // scallops: cellular (Worley F1) concave dimples on a jittered grid
   const G = 4;
   let best = 9;
@@ -673,13 +740,24 @@ function _wallReliefHeight(fam: string, xf: number, yf: number): number {
 // albedo AO (V1b) so the two ALWAYS align — a drift between them would slide the shade
 // out of the normal map's pits. basin bands span the shell (1 across) and stack (6 up);
 // scallops/cleft tile 5×5.
-function _wallReliefRepeat(fam: string): [number, number] {
-  return fam === 'basin' ? [1, 6] : [5, 5];
+// W-K V1b flow-asymmetric follow-on (SCALED, 2026-07-07): SCALLOPS ONLY tighten with paleo-flow
+// (Curl 1974 — scallop length L ∝ 1/velocity, so tiling density ∝ velocity). `flow` is the wall's
+// dissolution-rate-weighted mean flow_rate (WallState.paleo_flow); null/absent → the base V1 tiling.
+// A gentle power + clamp keeps the sim's 0.05–5.0 flow span to a LEGIBLE ~3×–10× density, not the
+// literal 100× (which would alias to noise at one end and a single blob at the other). cleft
+// (fracture) and basin (sediment) are NOT flow-dissolution textures → never scaled.
+function _wallReliefRepeat(fam: string, flow?: number | null): [number, number] {
+  const base: [number, number] = fam === 'basin' ? [1, 6] : [5, 5];
+  if (fam === 'scallops' && typeof flow === 'number' && flow > 0) {
+    const m = Math.max(0.6, Math.min(1.9, Math.pow(flow, 0.4)));   // flow 1 → 1×; 0.1 → 0.6×; 5 → 1.9×
+    return [Math.max(2, Math.round(base[0] * m)), Math.max(2, Math.round(base[1] * m))];
+  }
+  return base;
 }
-// architecture → a cached tangent-space normal map for its genesis relief
-function _wallReliefNormalMap(architecture: string): any {
+// relief FAMILY → a cached tangent-space normal map for its genesis relief. (V1c: the caller now
+// resolves genesis→family via _wallReliefFamily and passes the family directly.)
+function _wallReliefNormalMap(fam: string): any {
   if (typeof THREE === 'undefined') return null;
-  const fam = _WALL_RELIEF_FAMILY[architecture] || 'scallops';
   const cached = _wallReliefCache.get(fam);
   if (cached !== undefined) return cached;
   let tex: any = null;
@@ -690,7 +768,7 @@ function _wallReliefNormalMap(architecture: string): any {
     if (!ctx) { _wallReliefCache.set(fam, null); return null; }
     const Hf = new Float32Array(N * N);
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) Hf[y * N + x] = _wallReliefHeight(fam, x / N, y / N);
-    const STR = fam === 'cleft' ? 2.4 : (fam === 'basin' ? 2.0 : 1.7);   // relief strength
+    const STR = ({ cleft: 2.4, basin: 2.0, comb: 2.2, druse: 2.0, boxwork: 2.6, botryoidal: 1.8, smooth: 0.3 } as any)[fam] ?? 1.7;   // relief strength per family
     const img = ctx.createImageData(N, N);
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
       const hL = Hf[y * N + ((x - 1 + N) % N)], hR = Hf[y * N + ((x + 1) % N)];
@@ -730,9 +808,8 @@ function _wallReliefNormalMap(architecture: string): any {
 // normal map's pits. AO is DATA (a multiplier), not colour → LINEAR (NoColorSpace) so
 // the shader reads back the stored height verbatim. Cached per family like its sibling.
 const _wallReliefAOCache = new Map<string, any>();
-function _wallReliefAOMap(architecture: string): any {
+function _wallReliefAOMap(fam: string): any {   // V1c: caller passes the resolved family (see _wallReliefFamily)
   if (typeof THREE === 'undefined') return null;
-  const fam = _WALL_RELIEF_FAMILY[architecture] || 'scallops';
   const cached = _wallReliefAOCache.get(fam);
   if (cached !== undefined) return cached;
   let tex: any = null;

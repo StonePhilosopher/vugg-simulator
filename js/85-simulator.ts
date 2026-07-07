@@ -58,6 +58,8 @@ class VugSimulator {
       // irregular / tabular / pocket / basin). Drives bubble counts,
       // polar/twist amplitude scaling, and nucleation_bias.
       architecture: this.conditions.wall.architecture,
+      // W-K V1c (2026-07-07): cavity-genesis label → the renderer's wall relief family.
+      genesis: this.conditions.wall.genesis,
       // Tier 1 C (post-v69): cavity material rendering style. The
       // Three.js renderer reads wall_state.cavity_render. Default
       // 'smooth' preserves pre-toggle look for every existing scenario.

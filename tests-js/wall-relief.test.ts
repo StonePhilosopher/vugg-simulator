@@ -11,6 +11,7 @@ declare const _wallReliefHeight: any;
 declare const _wallReliefNormalMap: any;
 declare const _wallReliefRepeat: any;   // V1b: shared tiling helper
 declare const _wallReliefAOMap: any;    // V1b: albedo ambient-occlusion map
+declare const _wallReliefFamily: any;   // V1c: genesis → family resolver
 
 function stats(fam: string) {
   let mn = 9, mx = -9;
@@ -52,10 +53,11 @@ describe('V1 — height field is real relief (not flat) and in gamut', () => {
 });
 
 describe('V1 — normal-map generator is null-safe', () => {
-  it('unknown architecture falls back to scallops family without throwing', () => {
-    // no 2D canvas context in jsdom → returns null, but must NOT throw
-    expect(() => _wallReliefNormalMap('nonsense_arch')).not.toThrow();
-    expect(() => _wallReliefNormalMap('cleft')).not.toThrow();
+  it('every family + unknown returns without throwing (null in jsdom — no 2D ctx)', () => {
+    // V1c: the generator now takes a FAMILY (caller resolves genesis→family).
+    for (const f of ['scallops', 'cleft', 'basin', 'comb', 'druse', 'boxwork', 'botryoidal', 'smooth', 'nonsense_fam']) {
+      expect(() => _wallReliefNormalMap(f)).not.toThrow();
+    }
   });
 });
 
@@ -77,8 +79,8 @@ describe('V1b — AO map shares the normal map tiling (drift guard)', () => {
 
 describe('V1b — albedo AO generator is null-safe', () => {
   it('every family + unknown returns without throwing (null in jsdom — no 2D ctx)', () => {
-    for (const a of ['pocket', 'cleft', 'basin', 'nonsense_arch']) {
-      expect(() => _wallReliefAOMap(a)).not.toThrow();
+    for (const f of ['scallops', 'cleft', 'basin', 'comb', 'druse', 'boxwork', 'botryoidal', 'smooth', 'nonsense_fam']) {
+      expect(() => _wallReliefAOMap(f)).not.toThrow();
     }
   });
 });
@@ -94,4 +96,61 @@ describe('V1b — AO darkening has a real recess↔rim signal per family', () =>
       expect(s.mx).toBeGreaterThan(0.65); // a rim left ~unshaded for contrast
     });
   }
+});
+
+// ── W-K V1c (genesis-gated wall textures) ────────────────────────────────────
+// Scallops now fire ONLY for real dissolution walls; genesis (declared per scenario)
+// picks comb / druse / boxwork / botryoidal / smooth otherwise. These pin the resolver
+// and the four new relief patterns (+ that smooth is flat and flow-scaling stays scallop-only).
+
+describe('V1c — genesis → relief family resolution', () => {
+  it('each genesis maps to its intended family', () => {
+    expect(_wallReliefFamily('dissolution', 'pocket')).toBe('scallops');
+    expect(_wallReliefFamily('vein', 'pocket')).toBe('comb');
+    expect(_wallReliefFamily('pocket', 'irregular')).toBe('druse');
+    expect(_wallReliefFamily('supergene', 'irregular')).toBe('boxwork');
+    expect(_wallReliefFamily('botryoidal', 'irregular')).toBe('botryoidal');
+    expect(_wallReliefFamily('vesicle', 'spherical')).toBe('smooth');
+    expect(_wallReliefFamily('metamorphic', 'pocket')).toBe('smooth');
+    expect(_wallReliefFamily('cleft', 'cleft')).toBe('cleft');
+    expect(_wallReliefFamily('evaporite', 'basin')).toBe('basin');
+  });
+  it('null/unknown genesis falls back to the legacy architecture map (no V1 regression)', () => {
+    expect(_wallReliefFamily(null, 'pocket')).toBe('scallops');
+    expect(_wallReliefFamily(undefined, 'cleft')).toBe('cleft');
+    expect(_wallReliefFamily('made_up_genesis', 'basin')).toBe('basin');
+    expect(_wallReliefFamily(null, 'weird_arch')).toBe('scallops');   // ultimate default
+  });
+});
+
+describe('V1c — the four new relief patterns are real, distinct, in-gamut', () => {
+  for (const fam of ['comb', 'druse', 'boxwork', 'botryoidal']) {
+    it(`${fam}: genuine variance, stays in [0,1]`, () => {
+      const s = stats(fam);
+      expect(s.mx - s.mn).toBeGreaterThan(0.4);
+      expect(s.mn).toBeGreaterThanOrEqual(0);
+      expect(s.mx).toBeLessThanOrEqual(1);
+    });
+  }
+  it('smooth is essentially FLAT — the no-dissolution default carries no relief', () => {
+    const s = stats('smooth');
+    expect(s.mx - s.mn).toBeLessThan(0.15);
+  });
+  it('boxwork differs materially from druse (inverse relief, not the same texture)', () => {
+    let diff = 0, n = 0;
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      diff += Math.abs(_wallReliefHeight('druse', x / 16, y / 16) - _wallReliefHeight('boxwork', x / 16, y / 16));
+      n++;
+    }
+    expect(diff / n).toBeGreaterThan(0.3);
+  });
+});
+
+describe('V1c — flow-scaling stays scallop-only (V1b never leaks into the new families)', () => {
+  it('the new families are flow-invariant; scallops still scales', () => {
+    for (const fam of ['comb', 'druse', 'boxwork', 'botryoidal', 'smooth', 'cleft', 'basin']) {
+      expect(_wallReliefRepeat(fam, 5.0)).toEqual(_wallReliefRepeat(fam, 0.1));
+    }
+    expect(_wallReliefRepeat('scallops', 5.0)).not.toEqual(_wallReliefRepeat('scallops', 0.1));
+  });
 });

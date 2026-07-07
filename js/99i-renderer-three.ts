@@ -123,7 +123,7 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
   // family at strength 0 (no effect) until the first cavity sync assigns the real
   // architecture — avoids a null sampler bind on the first frame.
   cavityMat.userData.reliefAO = {
-    uReliefAO: { value: (typeof _wallReliefAOMap === 'function' ? _wallReliefAOMap('pocket') : null) },
+    uReliefAO: { value: (typeof _wallReliefAOMap === 'function' ? _wallReliefAOMap('scallops') : null) },
     uReliefAORepeat: { value: new THREE.Vector2(5, 5) },
     uReliefAOAmt: { value: 0 },
   };
@@ -497,36 +497,47 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
     }
   }
 
-  // W-K V1 (wall microtexture, 2026-07-07): the GENESIS relief — a normal map
-  // keyed on wall.architecture (dissolution scallops / cleft striations / basin
-  // rind; js/99a _wallReliefNormalMap). The matrix skin above is the host
-  // lithology as COLOUR; this is the cavity's genesis as SURFACE. Cached by
-  // architecture, reassigned only on scenario switch. Render-only, byte-identical.
+  // W-K V1 (wall microtexture) + V1b (albedo depth + FLOW-SCALED scallop length): the GENESIS
+  // relief — a normal map + albedo AO keyed on wall.architecture (dissolution scallops / cleft
+  // striations / basin rind; js/99a), with SCALLOP TILING scaled by the wall's paleo-flow (Curl
+  // 1974: scallop length ∝ 1/velocity → density ∝ velocity). The matrix skin above is the host
+  // lithology as COLOUR; this is the cavity's genesis as SURFACE. Textures cache per family and
+  // reassign only on architecture change; the flow-scaled REPEAT re-applies whenever arch OR the
+  // derived tiling changes (SAME texture, different tiling — no regen). Render-only, byte-identical.
   if (target.material && typeof _wallReliefNormalMap === 'function') {
     const arch = String((wall && wall.architecture) || 'pocket');
-    if (state._wallReliefArch !== arch) {
-      state._wallReliefArch = arch;
-      const nrm = _wallReliefNormalMap(arch);
-      target.material.normalMap = nrm || null;
-      if (nrm && target.material.normalScale && target.material.normalScale.set) {
-        target.material.normalScale.set(2.0, 2.0);   // solid-wall relief (V1). Through the 0.18–0.40 translucent
-                                                       // modes a normal map washes out — V1b's albedo AO (below)
-                                                       // carries the depth there; the two compose. Eye-checked 2026-07-07
-      }
-      // W-K V1b: swap the ALBEDO-AO map to this architecture's family + strength so the
-      // relief reads through translucency (shared uniform objects → no recompile). Repeat
-      // read off the texture so the tiling number lives only in js/99a.
+    // V1c: the relief family is driven by cavity GENESIS (scallops only for real dissolution walls;
+    // comb/druse/boxwork/botryoidal/smooth otherwise), falling back to architecture when a scenario
+    // hasn't declared genesis yet. Textures cache per FAMILY; scallop tiling still flow-scales (V1b).
+    const fam = (typeof _wallReliefFamily === 'function')
+      ? _wallReliefFamily((wall && wall.genesis), arch)
+      : ((typeof _WALL_RELIEF_FAMILY !== 'undefined' && _WALL_RELIEF_FAMILY[arch]) || 'scallops');
+    const flow = (wall && typeof wall.paleo_flow === 'number') ? wall.paleo_flow : null;
+    const rep = (typeof _wallReliefRepeat === 'function') ? _wallReliefRepeat(fam, flow) : [5, 5];
+    const key = fam + '|' + rep[0] + 'x' + rep[1];
+    if (state._wallReliefKey !== key) {
+      const famChanged = state._wallReliefFam !== fam;
+      state._wallReliefKey = key;
       const ru = target.material.userData && target.material.userData.reliefAO;
-      if (ru && typeof _wallReliefAOMap === 'function') {
-        const ao = _wallReliefAOMap(arch);
-        if (ao) {
-          ru.uReliefAO.value = ao;
-          ru.uReliefAORepeat.value.set(ao.repeat.x, ao.repeat.y);
-          ru.uReliefAOAmt.value = WALL_RELIEF_AO_AMT;
-        } else {
-          ru.uReliefAOAmt.value = 0;
+      if (famChanged) {
+        state._wallReliefFam = fam;
+        const nrm = _wallReliefNormalMap(fam);
+        target.material.normalMap = nrm || null;
+        if (nrm && target.material.normalScale && target.material.normalScale.set) {
+          target.material.normalScale.set(2.0, 2.0);   // solid-wall relief (V1); V1b AO carries it through translucency
+        }
+        if (ru && typeof _wallReliefAOMap === 'function') {
+          const ao = _wallReliefAOMap(fam);
+          if (ao) { ru.uReliefAO.value = ao; ru.uReliefAOAmt.value = WALL_RELIEF_AO_AMT; }
+          else ru.uReliefAOAmt.value = 0;
         }
       }
+      // Flow-scaled tiling (Curl speedometer): faster paleo-flow → smaller, denser scallops.
+      // Applied to BOTH the normal map's own repeat AND the AO uniform so the two stay aligned.
+      if (target.material.normalMap && target.material.normalMap.repeat && target.material.normalMap.repeat.set) {
+        target.material.normalMap.repeat.set(rep[0], rep[1]);
+      }
+      if (ru && ru.uReliefAORepeat && ru.uReliefAORepeat.value) ru.uReliefAORepeat.value.set(rep[0], rep[1]);
       target.material.needsUpdate = true;
     }
   }
