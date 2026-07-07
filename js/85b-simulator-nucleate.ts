@@ -227,6 +227,16 @@ Object.assign(VugSimulator.prototype, {
     }
   }
 
+  // W-F O3a — record this crystal's NUCLEATION ORIENTATION (rigid whole-body
+  // tilt off the substrate normal + azimuth) from the isolated orient stream.
+  // Zero shared-rng draws → byte-identical. Drawn UNCONDITIONALLY (the draw is
+  // free on an isolated stream); GEOMETRIC_SELECTION_ENABLED gates only the
+  // READERS (render lean + burial gate, O3b), so selection-off and selection-on
+  // see the SAME recorded tilt — the review's disabled-draw invariant. Defensive
+  // lazy-init covers non-constructor nucleations (preview/library/test paths).
+  const _orientRng = this._orientRng || (this._orientRng = _makeOrientRng(rng.state));
+  crystal._nucTilt = drawNucleationTilt(_orientRng);
+
   this.crystals.push(crystal);
   return crystal;
 },

@@ -33,6 +33,13 @@ class VugSimulator {
     // derives a private per-(mineral, step) stream off this, so gating one mineral
     // can't displace another's nucleation cascade. Closes LEDGER §A #12.
     this._nucSharedState = rng.state;
+    // W-F O3 (2026-07-07, PROPOSAL-ONTOGENY rung O3): the geometric-selection
+    // orientation stream. Same run-seed lineage capture (read-only — no draw
+    // consumed); drawNucleationTilt (js/44a) pulls each crystal's nucleation
+    // tilt off THIS, isolated from the shared cascade. Weather-not-geology
+    // (a stochastic per-event orientation), so seeded from the run, not the
+    // cavity. See js/44a for the scramble + staging rationale.
+    this._orientRng = _makeOrientRng(rng.state);
     this.events = (events || []).slice().sort((a, b) => a.step - b.step);
     this.crystals = [];
     this.crystal_counter = 0;
