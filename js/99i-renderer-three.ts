@@ -3832,10 +3832,16 @@ function buildCrystalMaterial(crystal: any, spec: any, f: any): any {
   if (f.isCdrPseudomorph) roughness = Math.min(1.0, roughness + 0.18);
   // Etched crystal — a corroded/dissolved surface is matte, not lustrous (face-realism arc §2).
   if (f.isEtched) roughness = Math.min(1.0, roughness + 0.30);
+  // W-F O4a — an engulfed inclusion is a solid embedded grain: slightly matte (no
+  // free euhedral face to take a polish) and OPAQUE, so it reads THROUGH the
+  // translucent host rather than blending into it. Keeps its own mineral-class
+  // colour (poikilotopic — a pyrite grain stays pyrite inside clear calcite).
+  if (f.isInclusion) roughness = Math.min(1.0, roughness + 0.22);
   let clarity = opticsClarityFor(spec);
   if (f.isEtched) clarity *= 0.35;
   if (f.isCdrPseudomorph) clarity *= 0.5;
   if (f.isGypsumHourglass) clarity = Math.min(clarity, 0.30);
+  if (f.isInclusion) clarity = 0;
   const matOpts: any = {
     // LOCAL CRYSTAL COLOUR — per-crystal chemistry tone + deterministic legibility
     // floor so same-species neighbours read apart (isSectorZoned overrides to
@@ -4097,6 +4103,44 @@ function _o2PlaceBody(crystal: any, wall: any, replayStep: number | undefined, r
 // neighbours (enclosed guests excluded — they're O4). Returns a kExp boost in
 // [0, MAX]. Measured reach is small (tools/c1-exposure-calibration-probe.mjs).
 const O1B_SHADOW = { SCALE: 0.10, MAX: 0.15, KEXP_CAP: 0.32 };
+
+// W-F O4a — engulfment made visible. Inclusions are placed in a SECOND pass off
+// the host's ACTUAL rendered bounds (bounding sphere × scale), not the sim's
+// uncapped c_length — for a capped giant blade (Naica selenite: 66 mm sim vs
+// ~13 mm rendered) the latter overshoots the visible mesh 3×, spilling guests
+// outside the host. A deterministic per-id radial fraction fills the interior.
+const O4_INCLUSION_MIN_MM = 0.4;         // visibility floor (bypass the 2 mm crystal floor)
+const O4_INCLUSION_RMIN_FRAC = 0.12;     // guests fill the host interior between these radial
+const O4_INCLUSION_RMAX_FRAC = 0.62;     //   fractions of the host's RENDERED reach
+const O4_INCLUSION_SIZE_CAP_FRAC = 0.5;  // a guest never renders bigger than this × host reach
+
+// W-F O4a — pure inclusion-placement helper (shared with tests). Given a guest's
+// own wall anchor (ax,ay,az), its host's rendered centre (hcx,hcy,hcz) + rendered
+// reach (hostR), and the guest's crystal id, return the guest's local position
+// INSIDE the host. Direction = from host centre toward the guest's anchor (the
+// side it nucleated on), with a deterministic id-based fallback when that is
+// degenerate (guest nucleated ~at the host centre). Radius = a deterministic
+// per-id fraction of hostR in [RMIN, RMAX], so guests fill the interior rather
+// than sit on one shell. INVARIANT: the result is always within RMAX·hostR (< hostR)
+// of the host centre — an inclusion never escapes its host. Pure (no THREE).
+function _o4InclusionLocalPos(
+  ax: number, ay: number, az: number,
+  hcx: number, hcy: number, hcz: number,
+  hostR: number, id: number,
+): [number, number, number] {
+  let dx = ax - hcx, dy = ay - hcy, dz = az - hcz;
+  let dl = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  if (dl < 1e-3) {
+    const a = _crystalYaw(id || 1);
+    dx = Math.cos(a); dy = 0.2; dz = Math.sin(a);
+    dl = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+  }
+  // Deterministic [0,1) from id → radial fraction (no Math.random; replay-safe).
+  const h01 = Math.abs(Math.sin((id || 1) * 12.9898)) % 1;
+  const rf = O4_INCLUSION_RMIN_FRAC + (O4_INCLUSION_RMAX_FRAC - O4_INCLUSION_RMIN_FRAC) * h01;
+  const r = hostR * rf;
+  return [hcx + (dx / dl) * r, hcy + (dy / dl) * r, hcz + (dz / dl) * r];
+}
 function _o1bNeighborShadow(crystal: any, bodies: any[]): number {
   if (!bodies || bodies.length < 2) return 0;
   let me: any = null;
@@ -4165,6 +4209,19 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     const b = c ? _o2PlaceBody(c, wall, replayStep, ringCount, N, initR) : null;
     if (b) _o2Bodies.push(b);
   }
+  // W-F O4a — engulfment made visible (2026-07-07). Host lookup so an enclosed
+  // guest can be repositioned INSIDE its host body (below) instead of rendering
+  // at its own stale wall anchor. The Sweetwater enclosure mechanic (js/85c
+  // _check_enclosure) has tagged enclosed_by / enclosed_crystals all along; the
+  // 2D topo map already dots these (js/99b:488) and O1b/O2 already flag+skip
+  // them ("they're O4"). This is the 3D face. Render-only: reads existing sim
+  // state, mutates no crystal → byte-identical, no baseline drift.
+  // W-F O4a pass-1 collectors — a guest can render before OR after its host in
+  // this loop, so inclusions are positioned in a SECOND pass (after the loop)
+  // once every host mesh exists. _hostMeshById lets a guest find its host mesh;
+  // _pendingInclusions holds the guests to place.
+  const _hostMeshById: Map<any, any> = new Map();
+  const _pendingInclusions: any[] = [];
 
   for (const crystal of sim.crystals) {
     if (!crystal) continue;
@@ -4233,6 +4290,14 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // See _topoCAxisForCrystal definition below for the full
     // contract; tests live in tests-js/habit-bias.test.ts.
     const [cAxisX, cAxisY, cAxisZ] = _topoCAxisForCrystal(crystal, nx, ny, nz);
+
+    // W-F O4a — a guest crystal (enclosed_by set) is sealed inside its host.
+    // Flag it here so its material reads as a solid opaque grain (buildCrystal-
+    // Material), it skips O2 contact-clipping + cluster satellites, and pass 2
+    // (after the loop) repositions it INSIDE the host's rendered body. The host's
+    // Depth-A translucency then reveals it (poikilotopic — pyrite grains in clear
+    // calcite); an OPAQUE host rightly hides its inclusions, which is honest.
+    const isInclusion = crystal.enclosed_by != null;
 
     // Q3a — CDR pseudomorph outline inheritance. When a crystal was
     // born via a coupled-dissolution-precipitation route (Q2a tagged
@@ -4646,7 +4711,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     const spec = (typeof MINERAL_SPEC !== 'undefined' && MINERAL_SPEC) ? MINERAL_SPEC[effectiveMineral] : null;
     const isPerimorphCast = crystal.dissolved && crystal.perimorph_eligible;
     const mat = buildCrystalMaterial(crystal, spec, {
-      isCdrPseudomorph, isEtched, isPerimorphCast, isSectorZoned, isGypsumHourglass,
+      isCdrPseudomorph, isEtched, isPerimorphCast, isSectorZoned, isGypsumHourglass, isInclusion,
     });
     _applyCavityClip(mat, state.clipUniforms);
 
@@ -4709,6 +4774,13 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
         cLen = Math.max(cLen, aWid / targetRatio);
       }
     }
+    // W-F O4a — an inclusion keeps its true (small) frozen size but bypasses the
+    // 2 mm visibility floor above (which would burst it out of the host). A final
+    // cap relative to the host's RENDERED reach is applied in pass 2 (below).
+    if (isInclusion) {
+      cLen = Math.max(renderC, O4_INCLUSION_MIN_MM);
+      aWid = Math.max(renderA, O4_INCLUSION_MIN_MM);
+    }
     if (token === 'cube' || token === 'octahedron' || token === 'rhombic_dodec' || token === 'dodecahedron' || token === 'snowball' || isWulffCalcite) {
       // isWulffCalcite (rung 4a.2): the calcite Wulff polyhedron already carries its true
       // crystallographic c-elongation (kernel builds c on Y, normalized to ±0.5), so it scales
@@ -4755,11 +4827,18 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // chain: sim-declared _occlusion.attachedFraction when present, the 0.5 half-form default
     // for equant closed forms, 0 (exact base-at-anchor float) for everything else.
     const offsetMm = cLen * (0.5 - occF);
-    mesh.position.set(
-      ax + cAxisX * offsetMm,
-      ay + cAxisY * offsetMm,
-      az + cAxisZ * offsetMm,
-    );
+    if (isInclusion) {
+      // W-F O4a — provisional spot; pass 2 (after the loop) moves it inside the
+      // host once every mesh exists. No base-projection offset (an inclusion is
+      // entombed, not projecting from a substrate).
+      mesh.position.set(ax, ay, az);
+    } else {
+      mesh.position.set(
+        ax + cAxisX * offsetMm,
+        ay + cAxisY * offsetMm,
+        az + cAxisZ * offsetMm,
+      );
+    }
 
     // Orient so the local +Y axis aligns with the c-axis direction.
     // Three.js Object3D.lookAt orients local -Z toward the target;
@@ -4851,14 +4930,49 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     };
 
     state.crystals.add(mesh);
+    // W-F O4a — register every crystal as a possible host, and defer inclusion
+    // placement to pass 2 (the host mesh may build later in this same loop).
+    _hostMeshById.set(crystal.crystal_id, mesh);
+    if (isInclusion) {
+      _pendingInclusions.push({ mesh, ax, ay, az, hostId: crystal.enclosed_by, cid: crystal.crystal_id });
+    }
 
     // Phase E5b: emit cluster satellites around this parent. Same
     // geometry + material; inherits parent userData so hit-tests
     // resolve a satellite click back to the parent crystal. The
     // geomToken selects a per-habit cluster pattern (acicular spray,
-    // tabular rosette, prismatic forest, cubic carpet, etc.).
-    _emitClusterSatellites(state, crystal, geom, mat, ax, ay, az, nx, ny, nz, cLen, aWid, token, wall, ringCount, N, initR, occF);
+    // tabular rosette, prismatic forest, cubic carpet, etc.). An engulfed
+    // inclusion has no free druse spray, so it opts out (W-F O4a).
+    if (!isInclusion) {
+      _emitClusterSatellites(state, crystal, geom, mat, ax, ay, az, nx, ny, nz, cLen, aWid, token, wall, ringCount, N, initR, occF);
+    }
   }
+
+  // === W-F O4a pass 2 — engulfment placement ==========================
+  // Each guest sits INSIDE its host, positioned off the host's ACTUAL rendered
+  // bounds (bounding sphere × scale), not the sim's uncapped c_length — for a
+  // capped giant blade (Naica selenite: 66 mm sim vs ~13 mm rendered) the latter
+  // overshoots 3×, spilling guests outside the visible host. A deterministic
+  // per-id radial fraction fills the interior; direction = the side the guest
+  // nucleated on (its own wall anchor), with an id-based fallback when that is
+  // degenerate. Guests whose host didn't render (dissolved) keep their
+  // provisional anchor spot. Render-only — mutates no crystal.
+  for (const inc of _pendingInclusions) {
+    const hm = _hostMeshById.get(inc.hostId);
+    if (!hm || !hm.geometry) continue;
+    hm.geometry.computeBoundingSphere();
+    const bs = hm.geometry.boundingSphere;
+    const hostR = (bs ? bs.radius : 1) * Math.max(hm.scale.x, hm.scale.y, hm.scale.z);
+    const hc = hm.position;
+    const [px, py, pz] = _o4InclusionLocalPos(inc.ax, inc.ay, inc.az, hc.x, hc.y, hc.z, hostR, inc.cid);
+    inc.mesh.position.set(px, py, pz);
+    // Never let a guest render bigger than half the host — keep it enclosed.
+    const cap = hostR * O4_INCLUSION_SIZE_CAP_FRAC;
+    const s = inc.mesh.scale;
+    const mx = Math.max(s.x, s.y, s.z);
+    if (cap > 0 && mx > cap) { const k = cap / mx; s.set(s.x * k, s.y * k, s.z * k); }
+  }
+  // === END W-F O4a pass 2 =============================================
 }
 
 // Cached raycaster + NDC vector — both reusable across calls,
