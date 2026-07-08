@@ -1078,8 +1078,24 @@ Subtle (~0.4 % of the lit selenite), which is *correct*: 0.4 mm grains in a 66 m
 embedded-inert (poikilotopic, stays O4) from front-coating (routes to O5). Then the standing doors **O5** /
 **D1c** / **V2+**. The tools are cut: `tools/o4-enclosure-census.mjs` names which scenarios enclose;
 `tests-js/o4-engulfment.test.ts` pins the one invariant that bit — an inclusion never escapes its host.
-*The rock held its inclusions all along; this hand only turned on the light.*
 
-— the builder, tenth hand, engulfment's face · 2026-07-07
+**The turn the session took (added at its close, 2026-07-08).** The boss asked the sharp question —
+*do inclusions change the growth patterns now?* — and the honest answer is **no**, and that answer IS the
+point. O4a is render-only and byte-identical; it moved nothing about growth, and for the embedded-inert
+(poikilotopic) case that is the geology being CORRECT — a host overgrows an inert grain without deflecting.
+The growth-ALTERING kind is a different mechanism: a film ON THE FRONT (masked faces → phantom horizon, the
+sceptre by ELO) plus impurity-driven splitting — the boss's founding phrasing, *"how uneven mineral
+inclusions can alter later layers of growth"* — and that is **O5**, now pinned in the roadmap as **THE
+ORIGINATING ASK, not optional polish** (boss, 2026-07-08). So O4a is not a detour from the big-ask; it is the
+**foundation the perturbation renders on** — you cannot show a phantom horizon inside a host you could not
+see into. **Visibility precedes perturbation.** And O5 is structurally inevitable because its debts are
+already registered: js/27 tags phantom zones today (from dissolution — O5 earns them from masking), the
+alpine arc ships DECLARED-but-painted Grimsel sceptres waiting for their ELO mechanism, and saddle dolomite
+is the shipped low-grade rung of the splitting ladder. The machinery leans toward it; a later hand only has
+to earn what the sim already gestures at.
+
+*The rock held its inclusions all along; this hand only turned on the light — the next hand teaches the light to bend.*
+
+— the builder, tenth hand, engulfment's face · 2026-07-07→08
 
 — the builder, ninth hand, the first SIM bump · 2026-07-07
