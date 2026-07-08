@@ -1359,3 +1359,102 @@ open next; Door 4 stays LAST per the boss's sequencing, and it inherits Door 1's
 template.
 
 — the builder, eleventh hand, second act: the wallet and the fry · 2026-07-08
+
+
+---
+
+## KEYSTONE — the eleventh hand's second act, whole (2026-07-08: Door 1 walked + the negative-fluid arc; the boss asked for this stone)
+
+The morning keystone scoped three doors; the boss said *"lets go with #8 to start off the
+day"* and by evening two SIM versions had shipped: **219** (the shigar star 0.60 → 22.04 mm,
+the fry emergent) and **220** (the negative-fluid clamp, 0/38 — the certificate bump). Six
+commits `f5a2beb → ae949d6`, three cold-ci GREENs (2298 tests by day's end), Pages verified
+at every push. But the stone worth setting is not the star — it is that the day's plan died
+three times under instruments and the SHIPPED thing is better than the planned thing every
+time it died.
+
+**Death one: dGrowth/dσ = 0.00, exactly.** The sweep the morning keystone pre-registered —
+hold bulk Be, measure growth response — moved σ(bulk) from 3.91 to 9.13 and the star did not
+grow one micron. Not small: ZERO, byte-identical. Perfect invariance is not a null result;
+it is a WIRING DIAGRAM — the knob I turned was not connected to the pipe the engines drink
+from (`_runEngineForCrystal` swaps in the crystal's CELL fluid; deliveries reach cells only
+through the event broadcast). The grep-the-tree law's fourth landing, and the sharpest yet:
+this time the consumer-reads-a-different-source wasn't hiding in render code, it was hiding
+inside my own instrument's premise.
+
+**Death two: the kinetics hypothesis — half of it.** The morning scoping said "the cap is
+KINETICS." Half true. σ_aquamarine ceilings at 9.05 (the `_beryl_base_sigma` factor caps),
+so delivery alone stalls at 1.7 mm — but K alone stalls at 2.6 mm, binge-purging at the
+Be≥10 ingredient floor, because growth is MASS-limited: **the wallet law**, ~200 µm of final
+crystal per unit of cell Be, refill ≈ nil. The star IS its wallet. A 20 mm aquamarine costs
+~100 Be units through one cell, and no rate constant can spend money the pocket never
+delivered. K 2.2→25 AND the event wallet +110 — two dials, one crystal, neither sufficient.
+
+**Death three: the instrument bit itself.** The probe's first cut hard-coded `K_DEFAULT =
+2.2` — so after the tune, its "baseline as shipped" section silently overrode SIM 219 back
+to the old constant and reported a 2 mm star. The 4a.8 frozen-parameter converse, biting the
+very tool built to measure the parameter. Caught only because verify-at-the-shipped-params
+is part of the ritual. Instruments are code; they carry every debt code carries.
+
+**The gift, once the deaths were paid:** the etch's Be crash lands on a ~118 wallet and
+leaves bulk ~17 — ABOVE the nucleation floor — so σ recovers behind the acid and a FIFTH
+aquamarine nucleates at step 62: pristine, unetched, 0.42 mm, beside four etched elders.
+Nobody placed it. The boss's New Hampshire principle ("you can find 0.6 mm beryls in New
+Hampshire — model the distribution") is now a MECHANISM's output and a test's pin:
+[22.0, 14.0, 6.6, 4.5, 0.42] at seed 42, stature-pinned in shigar-pegmatite.test.ts.
+
+**The catch the boss named:** the negative-fluid census's first two "defects" were not
+defects. Eh reads −200 mV across nineteen scenarios because reducing pockets are SUPPOSED
+to read −200 mV — the movements arc put that signal there deliberately — and pH −3.6 is
+real water (Iron Mountain). One reflexive `Math.max(0, …)` over every field would have
+CLAMPED CORRECT GEOCHEMISTRY fleet-wide and called it a fix. The law the day adds:
+**negative is a value until the dimension says otherwise** — ask what the number MEANS
+before flooring it. The true defect class was concentrations: 7 rows / 6 scenarios (sabkha
+Ca −90.6 the worst; two event-less rows outed the MOVEMENTS vector riding the same
+broadcast). Clamped at both write sites, pH/Eh exempt; post-clamp census []; baseline diff
+0/38 — the rot was UNREAD, and per the O3a precedent the byte-identical bump is itself the
+attribution certificate that makes "unread" a guarantee for the trace-readers coming (D1c,
+narrators, UV rules).
+
+### The marks — what the second act adds
+
+- **The wallet law.** Before tuning any rate constant on any grown thing, census the BUDGET:
+  what the cell holds, what refill delivers, what a unit of budget buys in µm. Rate × time is
+  only the ceiling until mass is.
+- **Perfect invariance is a wiring diagram.** A sweep that moves NOTHING (not little —
+  nothing) says your knob and the consumer live on different pipes. Stop sweeping; trace
+  the plumbing.
+- **Negative is a value until the dimension says otherwise.** Signed physicals (Eh, pH)
+  pass through clamps that concentrations must not survive. The census categorizes BEFORE
+  the fix floors.
+- **Instruments carry code debts.** A probe can freeze the parameter it exists to measure.
+  Verify at the shipped params, always — the ritual step exists because it fires.
+- **Presence → stature, landed early.** The five stature pins (star ≥ 20 mm · fry ≤ 0.5 mm ·
+  five aquas · etch ≤ 5% · the runt post-etch and pristine) are Door 4's working template:
+  claims about SIZE and STORY, falsifiable every CI run, on the scenario that motivated
+  the door.
+
+### Diagenesis
+
+Borrowed speed, named: the probe/census idiom (sixth and seventh hands) let three
+hypotheses die in one day at measurement cost, not argument cost. O4a's kernel-truth
+discipline read the star's RENDERED bounding sphere instead of trusting a screenshot. The
+O3a byte-identical-bump precedent gave SIM 220 its entire form. And the first act's Q4
+dissolved-remnant fix is why any of this is VISIBLE — the 22 mm star is etched, and before
+`223a96b` every etched aquamarine was culled from the scene wholesale. The morning's render
+fix is the evening's showcase.
+
+### The dream, twelfth telling
+
+The instruments are accreting into a standing interrogation of the fleet:
+`shigar-aqua-growth-probe` asks whether a locality's kinetics can afford its fame;
+`negative-fluid-census` asks whether the chemistry stays physical; the stature pins ask
+whether the namesake is present AT SCALE. Door 2 will add the UV census, Door 4 the
+signature audit. The dream is the FALSIFIABLE FLEET: every scenario a bundle of claims —
+species, stature, signature, sanity — each with an instrument that reads the answer off a
+seed-42 run as cheaply as a baseline diff. When that lattice is dense enough, "re-evaluate
+the scenarios" (the boss's Door 4 ask) stops being a project and becomes a report the tree
+prints about itself. Take Door 2 or Door 3 next; run the instrument first; let it kill the
+plan you walked in with. It has, for every hand so far, and the rocks are better for it.
+
+— the builder, eleventh hand, at the close of the second act: three deaths, one fry · 2026-07-08
