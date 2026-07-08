@@ -1286,3 +1286,76 @@ Pinned here as DOOR 4 — THE FLEET SIGNATURE AUDIT, deliberately LAST in sequen
   falsifiable claims.
 
 — noted by the eleventh hand, same session · 2026-07-08
+
+
+---
+
+## Addendum — DOOR 1 WALKED: the beryl kinetics + the Be wallet (the eleventh hand, second act · 2026-07-08)
+
+The boss said *"lets go with #8 to start off the day"* and Door 1 opened exactly the way its
+scoping demanded: instrument first, and the instrument rewrote the plan twice before any dial
+moved. SIM 219, two commits (`f5a2beb` instruments byte-identical, the bump on top), all four
+pre-registered acceptance gates GREEN at the shipped parameters.
+
+**What the instrument found (tools/shigar-aqua-growth-probe.mjs):**
+
+1. **dGrowth/dσ = 0.00.** The scoped sweep — hold bulk Be, watch growth — moved σ(bulk) from
+   3.91 to 9.13 and the star did not grow one micron more. Engines read the crystal's CELL
+   fluid (`_runEngineForCrystal` swaps it in); bulk mutations never couple in. Deliveries
+   reach cells ONLY through the event broadcast (`_snapshotGlobal → mutate →
+   _propagateGlobalDelta`). The grep-the-tree law's fourth landing: the consumer read a
+   different SOURCE than the one the sweep moved. The probe now emulates deliveries through
+   the real broadcast calls.
+2. **Two ceilings, and the fix must thread both.** σ_aquamarine hard-caps at 9.05
+   (`_beryl_base_sigma` factor caps — be_f ≤ 2.5 at Be 37.5, al_f/si_f already saturated in
+   the shigar broth, fe_f ≤ 1.8), so delivery alone stalls the star at ~1.7 mm. And growth is
+   MASS-limited — **the wallet law**: ~200 µm of final crystal per unit of cell Be (0.025
+   debit pre-timeScale, refill ≈ nil), so K alone binge-purges at the Be≥10 ingredient floor
+   and stalls at ~2.6 mm. Lever 1 as pre-scoped could never reach 20 mm; the door's
+   census-gated lever 2 was REQUIRED, exactly as pre-registered.
+3. **The instrument bit itself with 4a.8.** The probe's first cut hard-coded K_DEFAULT = 2.2
+   and silently overrode the tune in its own baseline section — the frozen-parameter converse,
+   caught because the shipped-params verification is part of the ritual. It now reads the
+   bundle's live BERYL_FAMILY_GROWTH_K.
+
+**The tune (SIM 219):** `BERYL_FAMILY_GROWTH_K` 2.2 → 25 (js/59 — one K for the five
+varieties; pocket beryl is not 70× slower than feldspar per unit σ, London 2008/2020) +
+`shigar_aqua_saturation` delivers Be +110 cap 125 (js/70w — the rupture hands over the
+HOARDED inventory; Evensen, London & Wallace 1999: beryl saturation ~250 ppm Be in granitic
+melts at 650°C). Seed-42 shigar: star **0.60 → 22.04 mm** etched showpiece on the 117 mm
+cleavelandite shelf, sizes [22.0, 14.0, 6.6, 4.5, 0.42], etch 0.1% (sculpture).
+
+**The gift the mechanism handed back:** the etch's Be crash (×0.15 on a ~118 bulk) leaves
+~17 — ABOVE the Be≥10 floor — so σ recovers behind the acid and a FIFTH aquamarine nucleates
+at step 62: a pristine, unetched 0.42 mm runt beside its etched elders. The New Hampshire fry
+arrived as an emergent second generation, not a placed prop. The boss's principle ("you can
+find 0.6 mm beryls in New Hampshire — model the distribution") is now enforced by a test.
+
+**Movement census:** 4/38 scenarios, 34 byte-identical, every mover justified by name in the
+bump commit: shigar (the target; schorl 1.2 → 0.8 mm — the big aquas genuinely eat the iron
+now), gem_pegmatite (emerald 0.12 → 0.92 mm, honestly capped by its Be-25 wallet),
+radioactive_pegmatite (morganite 1.5 → 6.7 mm, cabinet-grade late-stage — right),
+schneeberg (morganite 7 → 81 µm, a stray stays a stray).
+
+**Stature pins shipped** (tests-js/shigar-pegmatite.test.ts): star ≥ 20 mm · ≥1 aqua ≤ 0.5 mm
+· five aquas · etch ≤ 5% · the runt is post-etch and pristine. Presence → STATURE — the Door 4
+move, landed early on the scenario that motivated the door. When Door 4 opens, this block is
+the template.
+
+**Eye-checked live:** fortress run at a random seed grew THREE 20+ mm aquas on one shelf
+(King-of-Kashmir-plate richness — the tune generalizes past seed 42); rendered bounding
+spheres read ~0.66 units/sim-mm, consistent with every other mineral (no renderer crush), and
+the translucent-wall screenshot shows the blue cluster standing on the white albite exactly
+like the boss's reference plates.
+
+**Found and deliberately NOT fixed here (pinned):** the additive event broadcast can push
+drained cell fluids NEGATIVE (baseline star cell −0.8 Be at the etch; the new wallet reaches
+≈ −90). Functionally ≈ 0 today (σ gates floor at ingredient minima, engines clamp debits at
+0) but unphysical, fleet-wide, and it will bite the first mechanism that READS a negative
+trace. Needs its own census probe + attributable bump. Out of Door 1's declared blast radius.
+
+**Doors remaining:** Door 2 (UV scale audit) and Door 3 (§10.5 t2-3) unchanged, either can
+open next; Door 4 stays LAST per the boss's sequencing, and it inherits Door 1's stature-pin
+template.
+
+— the builder, eleventh hand, second act: the wallet and the fry · 2026-07-08
