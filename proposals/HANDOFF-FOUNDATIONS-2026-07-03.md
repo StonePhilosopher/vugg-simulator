@@ -1259,3 +1259,30 @@ Three doors, all approved, all scoped to numbers. Take one, run its instrument f
 let the probe rewrite whatever plan you walked in with — it has, for every hand so far.
 
 — the builder, eleventh hand, the parity pass · 2026-07-08
+
+### CODA — the fourth door, boss-sequenced (2026-07-08, same conversation)
+
+On reading the tail-law, the boss added the arc it implies: **"we should probably do a
+re-evaluation of the scenarios after we finish all the other stuff on the handoff."**
+Pinned here as DOOR 4 — THE FLEET SIGNATURE AUDIT, deliberately LAST in sequence:
+
+- **The lens:** for each of the 38 scenarios, does the run deliver the locality's
+  SIGNATURE — the thing collectors know it for — and specifically the distribution's
+  right tail? The shigar case is the archetype and the warning: every instrument read
+  green (0/37 drift, expects_species satisfied, tests passing) while the pocket's
+  namesake was functionally absent at showpiece scale. `expects_species` checks
+  PRESENCE; nothing yet checks STATURE.
+- **Why last:** Door 1 changes what beryl kinetics can express, Door 2 changes what the
+  UV channel tells the truth about, and the remaining main-line arcs (O4b/O5, V2+, D1c)
+  keep moving what a specimen can be. Auditing signatures before the expressive floor
+  settles would file bugs against yesterday's renderer.
+- **Shape when it runs:** per scenario, name the signature from literature + the catalog
+  (the image-corpus method; terminal verification = real specimens), then measure the
+  seed-42 (+ spread seeds) distribution against it — a census table (scenario ×
+  signature × delivered?) that becomes a tuning queue ordered by gap. The instrument is
+  mostly built already: the specimen bench, the strip archive, the coverage tool, and
+  the probe idiom. The new piece is the signature declarations themselves — which, like
+  `expects_species` before them, will want to live in the scenario data as
+  falsifiable claims.
+
+— noted by the eleventh hand, same session · 2026-07-08
