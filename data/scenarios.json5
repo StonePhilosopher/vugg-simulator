@@ -4102,6 +4102,76 @@
         { "step": 101, "type": "tn457_mn_ba_pulse", "name": "Pulse 49", "description": "Ba+Mn pulse 49 of 50" },
         { "step": 103, "type": "tn457_mn_ba_pulse", "name": "Pulse 50", "description": "Ba+Mn pulse 50 of 50 (terminal — coin-stack capping)" }
       ],
+      // Tutorial 5: READING A CRYSTAL (2026-07-07, the parity pass's new
+      // authoring). Engine v3.1, mode legends — rides THIS scenario the way
+      // Collecting rides shigar: the pocket is real science (the boss's own
+      // TN457 specimen lineage) and the tutorial is a guest on it. Teaches
+      // the two READING instruments the Grand Tour introduces but nothing
+      // taught: the Record Player (one crystal, read in depth) and the
+      // Strip View (the whole run, read in breadth). Beat numbers are
+      // measured facts of the seed-42 run (probe 2026-07-07): sphalerite
+      // nucleates step 1, the barite train starts step 8, the star barite
+      // (#3) writes 103 zones at 3.7 mm. Mode walks (legends → groove →
+      // stripview) ride per-step allowModes exactly like Collecting's
+      // Library walk.
+      "tutorial": {
+        "mode": "legends",
+        "preset": { "seed": 42, "steps": 110 },
+        "unlock": [],
+        "steps": [
+          { "anchor": "#legends-controls", "side": "bottom",
+            "text": "Tutorial 5: Reading a Crystal. You've grown pockets and kept the best of them. This one teaches the two instruments that READ what you keep. The stage is TN457 — pink barite on sphalerite from Cumbria, England — a real specimen whose whole biography is written in bands.",
+            "hint": "press Enter or Space (or click Continue) to step through" },
+          { "anchor": "#scenario", "side": "bottom",
+            "text": "The setup row, preset like Collecting taught you: the Cumbrian cavity, seed 42, 110 steps — five and a half million years of episodic ore brine." },
+          { "action": { "event": "click", "selector": "#btn-grow" },
+            "anchor": "#btn-grow", "side": "bottom", "unlock": ["#btn-grow"],
+            "text": "Press Grow.",
+            "hint": "click the highlighted Grow button" },
+          { "step": 6, "anchor": "#topo-panel", "side": "top",
+            "text": "Sphalerite first — zinc sulfide seeded on the limestone in the very first step, building the dark substrate everything else will stand on. Real TN457 is exactly this: pink barite STANDING ON sphalerite. Order of arrival is half the story." },
+          { "step": 14, "anchor": "#output", "side": "left",
+            "text": "⚡ Now the pulses. Every couple of steps a slug of barium-rich brine arrives, each hauling its own dose of manganese, and each writes ONE growth zone of barite with that dose recorded in it. Fifty pulses are coming. The crystals are taking dictation." },
+          { "step": 40, "anchor": "#narrative-speed-cluster", "side": "left",
+            "text": "Deep time at reading pace is a virtue with limits. These buttons set the tempo — 0.2s a step gets you through five million years before your tea cools. The story loses nothing; it's all being written down, which is rather the point of this tutorial." },
+          { "step": 110, "anchor": "#legends-inventory", "side": "left",
+            "text": "The pocket is done: sphalerite substrate, a stack of banded barites, quartz, even salt from the brine itself. The biggest barite wrote about a hundred zones — a hundred pulses and pauses, recorded in order. Reading that record back is what the next two instruments are for." },
+          { "action": { "event": "click", "selector": "#mode-groove" },
+            "allowModes": ["groove"], "spotlight": "#mode-toggle",
+            "anchor": "#mode-groove", "side": "bottom",
+            "text": "Click 📀 Record Player in the quick-nav bar.",
+            "hint": "click the highlighted Record Player button" },
+          { "anchor": "#groove-canvas", "side": "right",
+            "text": "The turntable. A crystal rendered as vinyl: every growth zone is one groove of the spiral, oldest at the center, rim at the edge. The needle reads chemistry the way a stylus reads sound — this is not a metaphor the game invented; it is what growth zoning IS." },
+          { "action": { "event": "change", "selector": "#groove-crystal-select" },
+            "anchor": "#groove-crystal-select", "side": "bottom",
+            "text": "The platter list carries whatever run is live — your Cumbrian pocket. Put a BARITE on the turntable; the one with the most zones is the star of this collection.",
+            "hint": "pick a crystal in the dropdown" },
+          { "action": { "event": "click", "selector": "#groove-play-btn" },
+            "anchor": "#groove-play-btn", "side": "bottom",
+            "text": "Drop the needle — press ▶ Play.",
+            "hint": "click the highlighted Play button" },
+          { "anchor": "#groove-detail-strip", "side": "top",
+            "text": "Listen, and watch the detail strip: the same record flattened into lanes — temperature, growth rate, iron, MANGANESE. That Mn lane wobbling from zone to zone is the pulse train you just watched arrive, and in the real specimen it is the pink banding itself (Mn²⁺ is what makes TN457 barite pink). Pause whenever you like." },
+          { "anchor": "#groove-speed", "side": "bottom",
+            "text": "Speed, amplitude, density — how fast the needle travels and how loudly the chemistry plays. These are instruments, not decoration: a spike you HEAR is a pulse you might have skimmed past in a log." },
+          { "action": { "event": "click", "selector": "#mode-stripview" },
+            "allowModes": ["stripview"], "spotlight": "#mode-toggle",
+            "anchor": "#mode-stripview", "side": "bottom",
+            "text": "One crystal read in depth. Now the whole run read in breadth — click 📼 Strip View.",
+            "hint": "click the highlighted Strip View button" },
+          { "action": { "event": "click", "selector": ".strip-view-datasetrow" },
+            "anchor": "#strip-view-body", "side": "top",
+            "text": "The flight recorder. Every run you complete records a strip dataset automatically; the five most recent are kept, and ⬇ Download preserves one forever as a file. Open the newest — your Cumbrian run.",
+            "hint": "click the top dataset row" },
+          { "anchor": "#strip-view-body", "side": "top",
+            "text": "Every chip in the vug, every step of the run, laid side by side — five million years at a glance. The pulse train reads as striping across the record. Where the Record Player reads one crystal deep, the Strip View reads the whole pocket wide; between them, nothing that happened in a run is beyond recovering." },
+          { "anchor": "#strip-view-sonify", "side": "bottom",
+            "text": "And ▶ Sonify plays the strips as music — chip drone underneath, crystal bells on top. The vug had a soundtrack all along; the instruments were just waiting to be built." },
+          { "anchor": "#strip-view-body", "side": "top",
+            "text": "That's the whole loop the five tutorials teach. GROW — Creative mode's verbs or Simulation's deep time. KEEP — 💎 Collect, the Library, your permanent catalog. READ — the Record Player for one crystal's depth, the Strip View for a run's breadth. Every specimen is a record of the water it grew from. You know how to play them now." }
+        ]
+      },
       "sources": [
         "Alderton D.H.M. & Bevins R.E. (1996) — Fluid inclusion microthermometry of Pb-Zn-Ba veins, Cumbrian orefield, England. Journal of the Geological Society 153: 91-104. Brine T 100-150°C, salinity ~20 wt% NaCl eq., post-Variscan timing.",
         "Bouch J.E., Naden J., Shepherd T.J., McKervey J.A., Young B., Benham A.J., Sloane H.J. (2006) — Direct evidence of fluid mixing in the formation of stratabound Pb-Zn-Ba-F mineralisation in the Alston Block, North Pennines orefield. Mineralogical Magazine 70: 567-588. PRIMARY REFERENCE — multi-stage fluid mixing produces the oscillatory chemistry, Mn²⁺ partitioning into barite tracks the pulse history.",
