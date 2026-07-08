@@ -266,6 +266,35 @@ function titleLoadGame() {
   switchMode('library');
 }
 
+// §10.5 tranche 1 (2026-07-07): the legends quick-play dropdown
+// AUTO-GENERATES from SCENARIOS at scenarios-load-complete (called
+// from _loadScenariosJSON5 in 70-events.ts). The hand-maintained
+// <option> list was already raw scenario ids in key order — the one
+// §10.5 surface where auto-generation loses no curation. Rules:
+// scenarios.json5 key order (so 'cooling' stays the default first
+// entry), tutorial_-prefixed ids EXCLUDED (boss directive 2026-05-20:
+// tutorials don't belong in quick play — guided versions live in the
+// Begin menu, sandbox broths in the Scenarios picker). The picker
+// panel, zen dropdown, and Begin tutorial buttons keep their CURATED
+// hand-written labels — migrating those is tranches 2-3 (BACKLOG).
+// The guard test asserts the static select stays EMPTY so a
+// hand-added option can't silently fight this populator.
+function _populateScenarioDropdowns() {
+  const sel = document.getElementById('scenario') as HTMLSelectElement | null;
+  if (!sel || typeof SCENARIOS === 'undefined') return;
+  const prev = sel.value;
+  sel.innerHTML = '';
+  for (const id of Object.keys(SCENARIOS)) {
+    if (id.startsWith('tutorial_')) continue;
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = id;
+    sel.appendChild(opt);
+  }
+  // A re-run (hot reload, future re-fetch) keeps the user's selection.
+  if (prev && SCENARIOS[prev] && !prev.startsWith('tutorial_')) sel.value = prev;
+}
+
 // The last "playable" mode the user was in. Used by the Current Game
 // nav button so it can return the player to their in-progress vugg
 // (or their just-finished narrated result) from Record Player /

@@ -545,6 +545,11 @@ async function _loadScenariosJSON5() {
       }
       _scenariosJson5Ready = true;
       console.info(`[scenarios] loaded ${entries.length} from ${p}`);
+      // §10.5 tranche 1: the legends quick-play dropdown derives from
+      // SCENARIOS — populate it now that the map is complete (the
+      // static <select> ships empty; see _populateScenarioDropdowns
+      // in 94-ui-menu.ts).
+      if (typeof _populateScenarioDropdowns === 'function') _populateScenarioDropdowns();
       return;
     } catch (e) {
       /* try next */

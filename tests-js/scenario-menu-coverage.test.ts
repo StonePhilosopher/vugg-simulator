@@ -17,6 +17,11 @@
 //   2. LEGENDS-CONTROLS DROPDOWN (#scenario, the at-top-of-page
 //      "quick play" selector). EXCLUDES tutorials — quick play is for
 //      running real scenarios, not guided introductions.
+//      §10.5 TRANCHE 1 (2026-07-07): this surface AUTO-GENERATES from
+//      SCENARIOS at load-complete (_populateScenarioDropdowns in
+//      js/94-ui-menu.ts). The static <select> must ship EMPTY; the
+//      tests below guard the single-source-of-truth invariant + the
+//      populator's existence, call site, and tutorial exclusion.
 //
 //   3. ZEN MODE DROPDOWN (#idle-scenario). EXCLUDES tutorials —
 //      zen mode is the screensaver-style infinite run; tutorials
@@ -99,32 +104,31 @@ describe('Scenario menu coverage (v116 guard test)', () => {
     expect(missing).toEqual([]);
   });
 
-  it('Legends-controls quick-play dropdown #scenario: every NON-TUTORIAL has an <option>', () => {
-    const missing = nonTutorialScenarios.filter(s => !legendsDropdown.has(s));
-    if (missing.length > 0) {
+  it('Legends-controls quick-play dropdown #scenario: ships EMPTY — options auto-generate from SCENARIOS (§10.5 tranche 1)', () => {
+    // A hand-added static option would silently fight the populator
+    // (it wipes the select at load-complete) — enforce the single
+    // source of truth instead of the old manual-sync contract.
+    const staticOptions = [...legendsDropdown];
+    if (staticOptions.length > 0) {
       const msg =
-        `DROPDOWN GAP (#scenario quick-play): ${missing.length} non-tutorial ` +
-        `scenario(s) have NO <option value="..."> entry in the <select id="scenario"> ` +
-        `dropdown in index.html (around line 2710-2745). Per vugg-add-scenario ` +
-        `skill §10.5. Missing: ` + missing.join(', ');
+        `STATIC OPTION(S) in #scenario: the quick-play dropdown auto-generates ` +
+        `from SCENARIOS at load-complete (_populateScenarioDropdowns, ` +
+        `js/94-ui-menu.ts) — hand-added <option>s are wiped at boot and mask ` +
+        `the real list during tests. Remove: ` + staticOptions.join(', ');
       throw new Error(msg);
     }
-    expect(missing).toEqual([]);
+    expect(staticOptions).toEqual([]);
   });
 
-  it('Legends-controls quick-play dropdown #scenario: tutorials are EXCLUDED', () => {
-    // Boss directive (2026-05-20): tutorials don't belong in quick-play.
-    const accidentalTutorials = tutorialScenarios.filter(s => legendsDropdown.has(s));
-    if (accidentalTutorials.length > 0) {
-      const msg =
-        `TUTORIAL LEAKAGE (#scenario quick-play): ${accidentalTutorials.length} ` +
-        `tutorial scenario(s) accidentally appear in the legends-controls #scenario ` +
-        `dropdown. Per boss directive 2026-05-20, tutorials must be EXCLUDED from ` +
-        `quick play (they live in the Scenarios picker panel only). Remove these: ` +
-        accidentalTutorials.join(', ');
-      throw new Error(msg);
-    }
-    expect(accidentalTutorials).toEqual([]);
+  it('#scenario populator: exists, excludes tutorials, and is called at scenarios-load-complete', () => {
+    // The tutorial-EXCLUSION rule (boss directive 2026-05-20: tutorials
+    // don't belong in quick play) moved from static HTML into the
+    // populator — assert it against the source that now owns it.
+    const menuSrc = fs.readFileSync(path.join(ROOT, 'js', '94-ui-menu.ts'), 'utf8');
+    const eventsSrc = fs.readFileSync(path.join(ROOT, 'js', '70-events.ts'), 'utf8');
+    expect(menuSrc).toMatch(/function _populateScenarioDropdowns\(/);
+    expect(menuSrc).toMatch(/function _populateScenarioDropdowns\([\s\S]{0,600}startsWith\('tutorial_'\)/);
+    expect(eventsSrc).toMatch(/_scenariosJson5Ready = true;[\s\S]{0,500}_populateScenarioDropdowns/);
   });
 
   it('Zen mode dropdown #idle-scenario: every NON-TUTORIAL has an <option>', () => {
