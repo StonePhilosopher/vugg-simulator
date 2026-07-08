@@ -1,0 +1,82 @@
+<svg viewBox="0 0 900 466" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="o4aTitle o4aDesc">
+  <title id="o4aTitle">O4a engulfment made visible — the mechanic</title>
+  <desc id="o4aDesc">Three stages: an enclosed guest tagged sim-side but unseen in 3-D; a two-pass placement that seats the guest inside the host using the host's rendered bounds rather than its uncapped sim size; and the result revealed through a translucent host while an opaque host correctly hides its inclusions.</desc>
+  <style>
+    text { font-family: var(--font-mono, ui-monospace, 'Cascadia Code', 'DejaVu Sans Mono', monospace); fill: var(--text-primary, #2c2a24); }
+    .t    { font-size: 21px; letter-spacing: 1.5px; }
+    .sub0 { font-size: 12px; fill: var(--text-muted, #8a8577); letter-spacing: .3px; }
+    .h    { font-size: 14px; letter-spacing: .6px; }
+    .sub  { font-size: 11px; fill: var(--text-muted, #8a8577); }
+    .cap  { font-size: 11px; fill: var(--text-secondary, #57534a); }
+    .cap2 { font-size: 11px; fill: var(--text-muted, #8a8577); }
+    .lbl  { font-size: 10px; fill: var(--text-muted, #8a8577); }
+    .acc  { fill: var(--text-accent, #9a6a2f); }
+    .arrow{ font-size: 20px; fill: var(--text-muted, #8a8577); }
+  </style>
+
+  <rect x="0" y="0" width="900" height="466" rx="10" fill="var(--surface-0, #f6f3ec)"/>
+
+  <!-- header -->
+  <text class="t" x="450" y="37" text-anchor="middle">O4a · ENGULFMENT MADE VISIBLE</text>
+  <text class="sub0" x="450" y="58" text-anchor="middle">an engulfed guest renders inside its host — render-only, byte-identical</text>
+  <line x1="24" y1="72" x2="876" y2="72" stroke="var(--border, #d3cdbb)" stroke-width="1"/>
+
+  <!-- panels -->
+  <rect x="24"  y="84" width="260" height="300" rx="8" fill="var(--surface-1, #fffdf7)" stroke="var(--border, #d3cdbb)" stroke-width="1"/>
+  <rect x="320" y="84" width="260" height="300" rx="8" fill="var(--surface-1, #fffdf7)" stroke="var(--border, #d3cdbb)" stroke-width="1"/>
+  <rect x="616" y="84" width="260" height="300" rx="8" fill="var(--surface-1, #fffdf7)" stroke="var(--border, #d3cdbb)" stroke-width="1"/>
+
+  <text class="arrow" x="300" y="246" text-anchor="middle">&#9656;</text>
+  <text class="arrow" x="598" y="246" text-anchor="middle">&#9656;</text>
+
+  <!-- ===== 1 ENGULFED ===== -->
+  <text class="h"   x="42" y="112">&#9312; ENGULFED</text>
+  <text class="sub" x="42" y="130">the sim already knows</text>
+  <polygon points="154,172 209,242 154,312 99,242" fill="var(--surface-2, #e9e3d3)" stroke="var(--border-strong, #b3ab93)" stroke-width="1.3"/>
+  <circle cx="142" cy="230" r="4.5" class="acc"/>
+  <circle cx="167" cy="254" r="5.5" class="acc"/>
+  <circle cx="150" cy="276" r="3.8" class="acc"/>
+  <text class="cap"  x="154" y="358" text-anchor="middle">enclosed_by tagged sim-side</text>
+  <text class="cap2" x="154" y="374" text-anchor="middle">— but unseen in 3-D</text>
+
+  <!-- ===== 2 SEATED ===== -->
+  <text class="h"   x="338" y="112">&#9313; SEATED</text>
+  <text class="sub" x="338" y="130">1 collect &#8594; 2 seat inside</text>
+  <!-- sim c_length: overshoot, crossed out -->
+  <circle cx="450" cy="242" r="104" fill="none" stroke="var(--border-strong, #b3ab93)" stroke-width="1.1" stroke-dasharray="6 5"/>
+  <text class="lbl" x="450" y="128" text-anchor="middle"><tspan class="acc">&#10005;</tspan> sim c_length 66 mm</text>
+  <!-- host + rendered reach -->
+  <polygon points="450,178 503,242 450,306 397,242" fill="var(--surface-2, #e9e3d3)" stroke="var(--border-strong, #b3ab93)" stroke-width="1.3"/>
+  <circle cx="450" cy="242" r="62" fill="none" stroke="var(--text-accent, #9a6a2f)" stroke-width="1.4"/>
+  <!-- seated guest + radius -->
+  <line x1="450" y1="242" x2="486" y2="267" stroke="var(--text-accent, #9a6a2f)" stroke-width="1" stroke-dasharray="3 2"/>
+  <circle cx="486" cy="267" r="5.5" class="acc"/>
+  <text class="lbl" x="470" y="255">rf&#183;R</text>
+  <text class="lbl" x="450" y="332" text-anchor="middle">R = rendered reach &#8776;13 mm</text>
+  <text class="cap"  x="450" y="358" text-anchor="middle">seat off the RENDERED reach</text>
+  <text class="cap2" x="450" y="374" text-anchor="middle">not sim c_length &#183; 66 &#8800; 13 mm</text>
+
+  <!-- ===== 3 REVEALED ===== -->
+  <text class="h"   x="634" y="112">&#9314; REVEALED</text>
+  <text class="sub" x="634" y="130">host clarity decides</text>
+  <!-- translucent host: grains shown -->
+  <polygon points="688,198 717,240 688,282 659,240" fill="var(--surface-2, #e9e3d3)" fill-opacity="0.32" stroke="var(--border-strong, #b3ab93)" stroke-width="1.2"/>
+  <circle cx="682" cy="234" r="4" class="acc"/>
+  <circle cx="693" cy="250" r="4" class="acc"/>
+  <text class="lbl" x="688" y="304" text-anchor="middle">translucent</text>
+  <text class="lbl acc" x="688" y="318" text-anchor="middle">&#8594; shown</text>
+  <!-- opaque host: grains hidden -->
+  <polygon points="802,198 831,240 802,282 773,240" fill="var(--text-secondary, #57534a)" fill-opacity="0.82" stroke="var(--border-strong, #b3ab93)" stroke-width="1.2"/>
+  <circle cx="796" cy="234" r="4" fill="none" stroke="var(--text-accent, #9a6a2f)" stroke-opacity="0.35" stroke-width="1" stroke-dasharray="2 2"/>
+  <circle cx="807" cy="250" r="4" fill="none" stroke="var(--text-accent, #9a6a2f)" stroke-opacity="0.35" stroke-width="1" stroke-dasharray="2 2"/>
+  <text class="lbl" x="802" y="304" text-anchor="middle">opaque</text>
+  <text class="lbl" x="802" y="318" text-anchor="middle">&#8594; hidden</text>
+  <text class="cap"  x="746" y="358" text-anchor="middle">poikilotopic — keeps its own colour</text>
+  <text class="cap2" x="746" y="374" text-anchor="middle">opaque host hides its guests (honest)</text>
+
+  <!-- footer -->
+  <line x1="24" y1="404" x2="876" y2="404" stroke="var(--border, #d3cdbb)" stroke-width="1"/>
+  <text class="cap2" x="24"  y="428" text-anchor="start">_o4InclusionLocalPos &#183; js/99i &#183; two-pass off rendered mesh bounds</text>
+  <text class="cap2" x="876" y="428" text-anchor="end">kernel-truth: naica 35/35 inside &#183; 569-px diff</text>
+  <text class="lbl"  x="24"  y="448" text-anchor="start">next &#8594; O4b: coats_front fork &#8594; O5 perturbed regrowth (inclusions bend later growth)</text>
+</svg>

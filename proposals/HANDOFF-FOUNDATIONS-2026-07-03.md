@@ -1040,4 +1040,62 @@ confounded by the chemical size spread (the clean oracle match lives in the tilt
 per-druse concentration, not the raw slope). All of it rests on instruments the prior hands cut, an oracle
 this hand added, and a lesson the rocks taught: *a shadowed crystal is not a dead one.*
 
+---
+
+## KEYSTONE — the tenth hand's session: O4a ENGULFMENT MADE VISIBLE, the grep-the-tree gift realized (2026-07-07)
+
+The boss asked *"whats next O4?"* and handed me the pick. O4 was pre-named a grep-the-tree gift — the
+Sweetwater enclosure mechanic has tagged `enclosed_by`/`enclosed_crystals` sim-side since forever, the 2D
+topo map already dots the guests, and the O1b/O2 pre-pass even carries the comment *"they're O4."* The 3D
+view alone never looked. **O4a** gives it a face: an engulfed guest renders as a small OPAQUE grain INSIDE
+its host (poikilotopic — it keeps its own mineral colour, a pyrite speck in clear calcite), revealed by the
+host's Depth-A translucency; an OPAQUE host rightly HIDES its inclusions, which is honest. Render-only,
+byte-identical, `5260134`. O4b — the string→geometry adjacency SIM bump — is the second commit, deferred
+(two-commit discipline: render foundation first, attributable bump second).
+
+**Two lessons the session cut, both children of WIRED≠VISIBLE:**
+
+1. **The build is part of the code.** My source edits were correct and typechecked — and INVISIBLE, because
+   I ran `node tools/build.mjs` *directly*, which (its own header warns) skips tsc and just re-splices the
+   STALE `dist/`. The bundle never saw my `.ts`. The preview kernel-truth caught it: the live function's
+   `.toString()` lacked my new symbol while the disk source had it. **`npm run build`** (tsc emit → dist →
+   splice), never the bare splice. A correct edit that doesn't reach the bundle is a silent no-op — the
+   render-upgrade-must-be-VISIBLE law reaches past the code, into the build step.
+
+2. **Place off the RENDERED body, not the sim's number.** First cut seated guests off `_o2Body.reach`
+   (derived from `c_length_mm`). For Naica's giant selenite that is **66 mm sim vs ~13 mm rendered** (the
+   blade primitive normalises small, then the cavity caps it) — so every guest spilled OUTSIDE the visible
+   host while passing a sim-space "inside" check. The fix reads the host MESH's actual bounding sphere ×
+   scale in a SECOND pass (a guest can render before its host in the loop). The sim's honest number and the
+   screen's honest number are different numbers; an inclusion lives in the second one.
+
+**The honesty note:** this page's WebGL screenshot reads back black (the drawing-buffer is not preserved),
+so the visual proof is a with/without-inclusions **framebuffer diff** — hiding the 35 guests changes 569 px.
+Subtle (~0.4 % of the lit selenite), which is *correct*: 0.4 mm grains in a 66 mm crystal SHOULD be a whisper.
+
+**Where the next hand starts:** **O4b** — swap the position-STRING adjacency in `_check_enclosure`
+(js/85c:696) for real ring/cell proximity (the attributable SIM-bump half), and add `coats_front` to split
+embedded-inert (poikilotopic, stays O4) from front-coating (routes to O5). Then the standing doors **O5** /
+**D1c** / **V2+**. The tools are cut: `tools/o4-enclosure-census.mjs` names which scenarios enclose;
+`tests-js/o4-engulfment.test.ts` pins the one invariant that bit — an inclusion never escapes its host.
+
+**The turn the session took (added at its close, 2026-07-08).** The boss asked the sharp question —
+*do inclusions change the growth patterns now?* — and the honest answer is **no**, and that answer IS the
+point. O4a is render-only and byte-identical; it moved nothing about growth, and for the embedded-inert
+(poikilotopic) case that is the geology being CORRECT — a host overgrows an inert grain without deflecting.
+The growth-ALTERING kind is a different mechanism: a film ON THE FRONT (masked faces → phantom horizon, the
+sceptre by ELO) plus impurity-driven splitting — the boss's founding phrasing, *"how uneven mineral
+inclusions can alter later layers of growth"* — and that is **O5**, now pinned in the roadmap as **THE
+ORIGINATING ASK, not optional polish** (boss, 2026-07-08). So O4a is not a detour from the big-ask; it is the
+**foundation the perturbation renders on** — you cannot show a phantom horizon inside a host you could not
+see into. **Visibility precedes perturbation.** And O5 is structurally inevitable because its debts are
+already registered: js/27 tags phantom zones today (from dissolution — O5 earns them from masking), the
+alpine arc ships DECLARED-but-painted Grimsel sceptres waiting for their ELO mechanism, and saddle dolomite
+is the shipped low-grade rung of the splitting ladder. The machinery leans toward it; a later hand only has
+to earn what the sim already gestures at.
+
+*The rock held its inclusions all along; this hand only turned on the light — the next hand teaches the light to bend.*
+
+— the builder, tenth hand, engulfment's face · 2026-07-07→08
+
 — the builder, ninth hand, the first SIM bump · 2026-07-07
