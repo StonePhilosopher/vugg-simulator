@@ -40,13 +40,15 @@ steps; a step squeezes between pinning points only if its local radius of curvat
 the critical radius, giving a **"dead zone"** — a supersaturation band in which a dusted
 face does not grow at all — whose width grows as impurity spacing shrinks (coverage rises).
 Coarse-grained for the sim: **a masked face-class stalls unless σ > σ*(φ)**, σ* monotone
-increasing in film coverage φ. HONESTY CLAUSE: the classic C–V recovery mechanism is
-contested (step-bunching and phase-field studies show real systems deviating —
-Crystal Growth & Design 2008 "Does impurity-induced step-bunching invalidate key assumptions
-of the Cabrera−Vermilyea model?"; "Crystal growth cessation revisited", the physical basis
-of step pinning), so O5 declares σ*(φ) a rendering of the dead-zone PHENOMENON (which is
-robust) rather than of the C–V microphysics (which is not), and calibrates the curve on the
-sim's own σ scale by the 4a.7 recipe (probe → law → calibrate-on-sim-scale → sweep → ship).
+increasing in film coverage φ. HONESTY CLAUSE: the classic C–V recovery MICROPHYSICS is
+contested (step-bunching and phase-field studies deviate; and for CALCITE specifically —
+the nearest measured mineral — DeYoreo, Wasylenki & Dove 2004 found BOTH C–V and
+kink-blocking fail, needing a "cooperative" adsorption model with a non-linear dead-zone
+width and a sharp step-speed drop above a threshold; §8 Q1 addendum). But the dead-zone
+PHENOMENON and its SHAPE (a threshold with a super-linear approach) are robust across all
+three models — so O5 renders the phenomenon, not any one microphysics, via σ* ∝ φ/(1−φ)
+(one calibrated constant), tuned on the sim's own σ scale by the 4a.7 recipe (probe → law
+→ calibrate-on-sim-scale → sweep → ship).
 
 **The specimen anchors already in the drawer.** The pilot-digitization shortlist names
 catalog specimens **1294 / 1295 / 1300** (alpine-type quartz): *"interrupted oscillatory
@@ -215,17 +217,52 @@ both sceptre kinds by different mechanisms) gets its cleanest possible form.
 
 ## 8. Open questions for boss / rockbot review — STATUS after first review round (2026-07-08)
 
-1. **OPEN — σ*(φ) curve shape (rockbot researching).** Seeds from the builder's pass: the
-   measured dead-zone system is KDP + Fe(III)/Al(III) (the Rashkovich school; [Theory of
-   Impurity-Induced Step Pinning and Recovery, PRL 110 055503](https://link.aps.org/accepted/10.1103/PhysRevLett.110.055503));
+1. **OPEN — σ*(φ) curve shape (rockbot researching; the builder ran a parallel pass — see
+   the addendum below, to be cross-checked against rockbot's, [[feedback_cross_check_research_disagreements]]).**
+   Seeds: the measured dead-zone system is KDP + Fe(III)/Al(III) (the Rashkovich school;
+   [Theory of Impurity-Induced Step Pinning and Recovery, PRL 110 055503](https://link.aps.org/accepted/10.1103/PhysRevLett.110.055503));
    Sangwal's [combined influence of supersaturation and impurity concentration](https://www.sciencedirect.com/science/article/abs/pii/S0022024800003390)
-   has the classic σ_d(c_i) relations. THE CATCH the dive should expect: published data is
-   almost all **dead-zone width vs solution CONCENTRATION**, not vs surface coverage — the
-   c_i→θ bridge is a (often non-equilibrium) Langmuir isotherm and measured θ can be tiny
-   (~10⁻⁶ in one dye/KDP case). Our φ is NOT that θ: it is macroscopic film coverage (a
-   chlorite blanket, not ppm adsorbates), where the natural physics is growth-through-gaps
-   and the hyperbolic σ* ∝ φ/(1−φ) (diverging at full blanket) is the honest default. If
-   the dive finds nothing sharper, declare the distinction and keep the hyperbolic form.
+   has the classic σ_d(c_i) relations. THE CATCH: published data is almost all **dead-zone
+   width vs solution CONCENTRATION**, not vs surface coverage — the c_i→θ bridge is a
+   (often non-equilibrium) Langmuir isotherm and measured θ can be tiny (~10⁻⁶ in one
+   dye/KDP case). Our φ is NOT that θ: it is macroscopic film coverage (a chlorite blanket,
+   not ppm adsorbates), where the natural physics is growth-through-gaps and the hyperbolic
+   σ* ∝ φ/(1−φ) (diverging at full blanket) is the honest default.
+
+   **▸ BUILDER'S PARALLEL RESEARCH PASS (2026-07-08) — the phenomenology settles the shape,
+   even though the microphysics stays contested.** Three models, read for the FORM they
+   give (not the microphysics they argue about):
+   - **Cabrera–Vermilyea (Gibbs–Thomson step-curvature):** dead-zone width ∝ 1/(impurity
+     separation L); near roughening ∝ 1/L². Since 2-D density n ∝ 1/L², that is σ_d ∝ √n
+     at low T → σ_d ∝ n hotter. σ* rises with coverage — SUPER-linear at the warm end.
+   - **Kubota–Mullin (kink blocking):** step speed drops LINEARLY in coverage,
+     v/v₀ = 1 − α·θ_eq, dead when α·θ ≥ 1; θ_eq from a Langmuir isotherm, so σ_d(c) is
+     non-linear via θ(c). This is the "gentle ramp then cliff at α·θ=1" alternative.
+   - **DeYoreo, Wasylenki, Dove, Wilson & Han 2004 (LLNL/Virginia Tech, ACCGE-19,
+     UCRL-CONF-204243) — CALCITE, the geologically closest measured system, in-situ AFM
+     with Sr²⁺ + Asp polypeptides:** BOTH Cabrera–Vermilyea AND kink-blocking **fail** to
+     fit measured calcite step kinetics; the data show a **non-linear dead-zone-width vs
+     impurity content AND a SHARP DROP in step speed above a threshold coverage** (their
+     "cooperative adsorption at adjacent kinks"). No closed quantitative form as of 2004.
+
+   **Reconciliation → the hyperbolic default is now EMPIRICALLY BACKED, not a guess.** All
+   three converge on the shape that matters for a coarse-grained sim: **a threshold, with a
+   steepening (super-linear / sharp) approach to it — NOT a gentle linear fade.** DeYoreo's
+   calcite result specifically kills the plain-linear (Kubota–Mullin) ramp for the mineral
+   family we care about. So σ* ∝ φ/(1−φ) (flat-ish at low φ, diverging as φ→1 = the sharp
+   cutoff) is the right coarse render; if anything the literature licenses going *sharper*
+   (a sigmoid threshold), not gentler. TWO SIM-SPECIFIC SIMPLIFICATIONS we get for free:
+   (a) our φ is set by an EVENT (an instantaneous dusting), so we sidestep the
+   adsorption-KINETICS complication (non-equilibrium θ(t), exposure time) that dominates
+   the lab literature — φ is a state, not a rate-limited accumulation; (b) barite-specific
+   AFM ([Jiménez / Ruiz-Agudo, phosphonate inhibition of barite (001)](https://www.sciencedirect.com/science/article/abs/pii/S0039602804000524);
+   [in-situ AFM SI 1.1–4.1](https://www.mdpi.com/2075-163X/6/4/117)) confirms inhibition is
+   a **kink-site** effect with a supersaturation-dependent recovery — same threshold shape,
+   and directly relevant since Sweetwater is barite. **Recommendation UNCHANGED and now
+   grounded:** hyperbolic σ*(φ), one calibrated constant (SIGMA_STAR_K), the constant
+   tuned on the sim's own σ scale by the 4a.7 recipe; if rockbot's pass surfaces a
+   published closed-form φ→σ* (unlikely — DeYoreo says none existed in 2004), adopt it, else
+   this. If the two passes DISAGREE on the shape, web-verify the disagreement before O5a.
 2. **RESOLVED — module grain** (see §4 "Module grain"): writers live with their triggers
    (the `film:` directive in the event applier; the coats_front increment at the 85c
    swallow site), the σ*(φ) gate + `masked_horizon` tagging live in js/27 add_zone beside
@@ -240,5 +277,9 @@ both sceptre kinds by different mechanisms) gets its cleanest possible form.
 - [The Quartz Page — growth forms; chlorite/adularia coatings on crystal ends](http://www.quartzpage.de/gro_text.html)
 - [Does impurity-induced step-bunching invalidate key assumptions of the Cabrera−Vermilyea model? (Cryst. Growth Des.)](https://pubs.acs.org/doi/10.1021/cg7010474)
 - [Crystal growth cessation revisited: the physical basis of step pinning](https://www.academia.edu/22050346/Crystal_Growth_Cessation_Revisited_The_Physical_Basis_of_Step_Pinning)
+- **[DeYoreo, Wasylenki, Dove, Wilson & Han 2004 — Kinetic model of impurity poisoning during growth of calcite (UCRL-CONF-204243, ACCGE-19)](https://www.osti.gov/servlets/purl/15014168)** — the geologically-nearest measured system: CV + kink-blocking both fail for calcite; non-linear dead-zone width + sharp step-speed drop above threshold coverage (read in full, the σ*(φ) shape anchor)
+- [Kinetic model of impurity poisoning (Kubota–Mullin lineage)](https://www.semanticscholar.org/paper/A-kinetic-model-for-crystal-growth-from-aqueous-in-Kubota-Mullin/a77a35eaaab71fec5dfb0bab1a5aa429c0873104) — linear v/v₀ = 1 − αθ, the "gentle ramp then cliff" alternative DeYoreo's calcite data reject
+- [Theory of Impurity-Induced Step Pinning and Recovery (PRL 110, 055503)](https://link.aps.org/accepted/10.1103/PhysRevLett.110.055503); [Sangwal — combined supersaturation × impurity](https://www.sciencedirect.com/science/article/abs/pii/S0022024800003390)
+- [Jiménez/Ruiz-Agudo — AFM + MD: phosphonate inhibition of barite (kink-site)](https://www.sciencedirect.com/science/article/abs/pii/S0039602804000524); [in-situ AFM of barite (001), SI 1.1–4.1](https://www.mdpi.com/2075-163X/6/4/117) — Sweetwater is barite; inhibition is a kink effect with σ-dependent recovery
 
 — the builder, twelfth hand, opening the door the eleventh cut the key for · 2026-07-08
