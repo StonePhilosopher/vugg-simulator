@@ -51,11 +51,18 @@ Living list of open work items, captured from session conversations so context s
 > a positive-growth phantom, new origin on the same rails), the two axes ARE the face-class
 > granularity (φ_term/φ_prism, no per-face state needed for primitives), D2's vertexColors
 > seam is the band's render home. Tranches O5a record-unread (0/38 REQUIRED) → O5b gate
-> (census-bounded movers; tormiq's fresh quartz lining is the first dusted cleft — grimsel
-> deliberately stays clean as the corrosion-route reference) → O5c band render. Splitting
-> ladder NAMED-DEFERRED (its own state class). Specimen anchors: 1294/1295/1300 chlorite
-> phantoms + 1307–1309 sceptres. **AWAITS boss/rockbot review (§8 open questions) before
-> O5a code.**
+> (census-bounded movers) → O5c band render. Splitting ladder NAMED-DEFERRED (its own
+> state class). Specimen anchors: 1294/1295/1300 chlorite phantoms + 1307–1309 sceptres.
+> **REVIEW ROUND 1 (2026-07-08): Q2 module-grain RESOLVED — writers live with their
+> triggers (`film:` directive in the event applier; coats_front increment at the 85c
+> swallow site), σ*(φ) gate + masked_horizon tag in js/27 add_zone BESIDE the existing
+> is_phantom detection (rockbot's zone instinct + the builder's trigger instinct, both
+> right — the name collision dissolved: the FIELD is enclosure bookkeeping, the FILM is
+> growth-front state) · Q3 RESOLVED — boss: "Sweetwater it is" (first content = AUTHORING
+> the snowball-barite scenario; TN-vs-MO Sweetwater disambiguation flagged for the
+> dossier; grimsel AND tormiq both stay clean corrosion references) · Q1 σ*(φ) curve OPEN
+> — rockbot researching; seeds + the concentration-vs-coverage catch in §8. O5a code
+> waits on Q1.**
 
 > ## 🔴🟢 NUCLEATION HOVER POPOVER (2026-07-08, boss ask) — SHIPPED (render-only)
 >

@@ -150,6 +150,23 @@ internal band in the film mineral's colour at the horizon's fractional height (z
 → band position), visible through Depth-A translucency; opaque hosts honestly hide it. One
 band per horizon; multiple dustings = multiple phantoms (the real Alpine stack).
 
+**Module grain (settled in review, 2026-07-08 — rockbot's placement question, the
+builder's answer).** The review asked whether "the coats_front writer" belongs in js/27
+(zones) or js/85c (enclosure) — and the question dissolves once two nouns sharing a name
+are separated. (1) `coats_front` the FIELD is enclosure bookkeeping: set at the swallow,
+cleared at liberation — its lifecycle IS the enclosure lifecycle, it stays in 85c
+(shipped, SIM 221). (2) The FILM WRITE that a front-coating enclosure triggers
+(`host._film` increment) is event-driven and fires where its event fires: one line at the
+swallow site in 85c, atomic with `enclosed_at_step` — same for the scenario `film:`
+directive, which lives in the event applier. Writers live with their triggers. (3) The
+READER/TAGGER — the σ*(φ) gate in the growth path, and the `masked_horizon` tag on the
+first resuming zone — lives in js/27 `add_zone`, DIRECTLY beside the existing `is_phantom`
+detection: add_zone already tags the dissolution phantom and notes "[phantom boundary —
+growing over dissolution surface]"; the masked horizon is its positive-growth sibling, and
+the zone module owns the crystal's biography. Rockbot's zone-module instinct is right for
+the biography half; the enclosure pipeline keeps the trigger half; the precedent for both
+already sits in the file.
+
 ## 5. Tranches (the two-commit discipline, O3a/O3b idiom)
 
 | tranche | ships | confinement |
@@ -158,12 +175,21 @@ band per horizon; multiple dustings = multiple phantoms (the real Alpine stack).
 | **O5b — the gate (SIM bump)** | flag flips; σ*(φ) live in the growth loop; classifier generalized; self-epitaxy diagonal entry; movers pre-registered by the O5a census (ONLY scenarios with film writers move — everything else must hold byte-identical, the O4b certificate pattern) | census-bounded blast radius; per-scenario justification |
 | **O5c — the band (render rider)** | masked_horizon internal band via the D2 vertexColors seam; preview kernel-truth + eye-check | render-only, byte-identical |
 
-**First content (with O5b):** ONE new dusting event on an existing cleft — tormiq's seal
-window (Karakoram chlorite-included quartz is real, and tormiq now has a real 2–3 mm
-quartz lining as of SIM 221 to dust) — pre-registered as the single content mover. Grimsel
-is deliberately NOT dusted in v1: its sceptres are the corrosion route and should stay a
-clean reference for the route DISTINCTION (a bench claim: the sim grows both sceptre kinds
-by different mechanisms, as nature does).
+**First content (with O5b) — SWEETWATER (boss decision, 2026-07-08 review: "Sweetwater it
+is").** The future-scenario slate's snowball barite becomes O5's first consumer — the
+strongest possible test, because the film mechanic is LOAD-BEARING for the scenario's
+signature texture (inclusion-dusted growth generations stacked inside one crystal), not a
+decoration on an existing look. CONSEQUENCE, priced in: the scenario does not exist yet,
+so O5b's first content commit = authoring it (vugg-add-scenario pipeline + a locality
+dossier). Disambiguation for the dossier: mindat lists TWO Sweetwaters — the [Sweetwater
+Barite Mining District, Monroe Co., **Tennessee**](https://www.mindat.org/loc-64654.html)
+(the barite one, per the boss's slate note) and [Sweetwater Mine, Reynolds Co.,
+**Missouri**](https://www.mindat.org/loc-3866.html) (Viburnum Trend Pb-Zn — the
+calcite-with-sulfide-inclusions locality the enclosure mechanic's "Sweetwater-style"
+nickname comes from); the dossier pins which snowball the boss means before the broth is
+authored. BONUS of this choice: grimsel AND tormiq both stay undusted — the corrosion
+route keeps two clean references, and the route-distinction bench claim (the sim grows
+both sceptre kinds by different mechanisms) gets its cleanest possible form.
 
 ## 6. Named, not built (deferred out of O5)
 
@@ -187,17 +213,26 @@ by different mechanisms, as nature does).
 4. Bench (when W-A capture lands): 1294/1295/1300 chlorite phantoms as T2 anchors; the
    sceptre pair 1307–1309.
 
-## 8. Open questions for boss / rockbot review
+## 8. Open questions for boss / rockbot review — STATUS after first review round (2026-07-08)
 
-1. σ*(φ) curve shape: the hyperbolic form above vs a plain linear ramp — calibration probe
-   will show whether the fleet's σ dynamic range even distinguishes them (if not: linear,
-   fewer knobs).
-2. Should the coats_front writer land in O5a (organic, uses O4b's data day one) or wait for
-   O5b (keeps O5a's diff purely additive)? Default: O5a records it, gate reads it in O5b.
-3. Tormiq as first dusted cleft vs waiting for the Sweetwater/Elmwood scenario wave — tormiq
-   is live today and its lining is fresh; Sweetwater's snowball barite is itself a
-   film-driven texture (inclusion-coated growth generations) and would be O5's second
-   consumer, not its first.
+1. **OPEN — σ*(φ) curve shape (rockbot researching).** Seeds from the builder's pass: the
+   measured dead-zone system is KDP + Fe(III)/Al(III) (the Rashkovich school; [Theory of
+   Impurity-Induced Step Pinning and Recovery, PRL 110 055503](https://link.aps.org/accepted/10.1103/PhysRevLett.110.055503));
+   Sangwal's [combined influence of supersaturation and impurity concentration](https://www.sciencedirect.com/science/article/abs/pii/S0022024800003390)
+   has the classic σ_d(c_i) relations. THE CATCH the dive should expect: published data is
+   almost all **dead-zone width vs solution CONCENTRATION**, not vs surface coverage — the
+   c_i→θ bridge is a (often non-equilibrium) Langmuir isotherm and measured θ can be tiny
+   (~10⁻⁶ in one dye/KDP case). Our φ is NOT that θ: it is macroscopic film coverage (a
+   chlorite blanket, not ppm adsorbates), where the natural physics is growth-through-gaps
+   and the hyperbolic σ* ∝ φ/(1−φ) (diverging at full blanket) is the honest default. If
+   the dive finds nothing sharper, declare the distinction and keep the hyperbolic form.
+2. **RESOLVED — module grain** (see §4 "Module grain"): writers live with their triggers
+   (the `film:` directive in the event applier; the coats_front increment at the 85c
+   swallow site), the σ*(φ) gate + `masked_horizon` tagging live in js/27 add_zone beside
+   the existing is_phantom detection. Timing (the original question): O5a records, O5b
+   reads — unchanged.
+3. **RESOLVED — Sweetwater first (boss).** See §5 "First content"; the scenario-authoring
+   consequence is priced in, and both alpine clefts stay clean corrosion references.
 
 **Sources (this session's verification):**
 - [Takahashi & Sunagawa 2004, EJM 16(6) — ELO mechanism](https://www.schweizerbart.de//papers/ejm/detail/16/56152/Epitaxial_Lateral_Overgrowth_ELO_The_mechanism_of_formation_of_scepter_skeletal_cathedral_and_related_quartz_morphologies)
