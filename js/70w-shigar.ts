@@ -69,7 +69,15 @@ function event_shigar_cleavelandite(c) {
 
 function event_shigar_aqua_saturation(c) {
   c.temperature = Math.max(430.0, c.temperature - 60.0);
-  c.fluid.Be = Math.min(45, c.fluid.Be + 8.0);
+  // Door 1 (SIM 219): the pocket-rupture pulse delivers the ACCUMULATED
+  // Be inventory, not a nudge — beryl saturation runs ~250 ppm Be in
+  // granitic melts at 650°C (Evensen, London & Wallace 1999) and the
+  // last melt fraction hoards Be for the whole crystallization history.
+  // The wallet law (tools/shigar-aqua-growth-probe.mjs): star size ≈
+  // cell Be × 200 µm/unit, so ~118 in the cells buys the 21 mm
+  // showpiece the locality is famous for. The old +8 (cap 45) grew a
+  // 0.6 mm namesake.
+  c.fluid.Be = Math.min(125, c.fluid.Be + 110.0);
   // Fresh reduced fluid with the rupture — re-floor Fe into the
   // aquamarine window (schorl has been eating it since stage 2).
   c.fluid.Fe = Math.max(12.0, c.fluid.Fe);
@@ -86,9 +94,14 @@ function event_shigar_topaz_window(c) {
 
 function event_shigar_hf_etch(c) {
   c.temperature = Math.max(310.0, c.temperature - 70.0);
-  // Late-stage HF-rich fluid: Be is exhausted (the big crystals took
-  // it), F keeps climbing, pH crashes. σ(beryl-family) < 1 + pH < 3 +
-  // F > 30 = the etch branch — trigonal pits, sculpted terminations.
+  // Late-stage HF-rich fluid: Be crashes (the ×0.15 on the bulk
+  // broadcasts as a large negative delta to the growth cells, which the
+  // big crystals had already drained — σ_cell < 1 + pH < 3 + F > 30 =
+  // the etch branch, trigonal pits, sculpted terminations). Door 1
+  // NOTE: post-crash bulk Be (~17 with the SIM 219 wallet) sits ABOVE
+  // the Be≥10 floor, so σ(bulk) recovers after the acid passes and one
+  // LATE runt nucleates ~step 62 — a pristine unetched second
+  // generation beside its etched elders. Emergent, measured, kept.
   c.fluid.Be = Math.max(2.0, c.fluid.Be * 0.15);
   c.fluid.F = Math.min(60, Math.max(35.0, c.fluid.F + 10.0));
   c.fluid.pH = Math.min(2.8, c.fluid.pH);

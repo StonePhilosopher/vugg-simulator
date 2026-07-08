@@ -43,11 +43,15 @@
 //
 import { loadSimBundle } from './_harness.mjs';
 
-const { SCENARIOS, VugSimulator, setSeed, setBerylFamilyGrowthK } =
-  await loadSimBundle({ toolName: 'shigar-aqua-growth-probe', extraExports: ['setBerylFamilyGrowthK'] });
+const { SCENARIOS, VugSimulator, setSeed, setBerylFamilyGrowthK, BERYL_FAMILY_GROWTH_K } =
+  await loadSimBundle({ toolName: 'shigar-aqua-growth-probe', extraExports: ['setBerylFamilyGrowthK', 'BERYL_FAMILY_GROWTH_K'] });
 
 const SCEN = 'shigar_pegmatite';
-const K_DEFAULT = 2.2;
+// Read the SHIPPED default — never pin it here. The first cut of this
+// probe hard-coded 2.2 and silently overrode the SIM 219 tune in its
+// own baseline section: the frozen-parameter converse (4a.8), biting
+// the instrument itself. Section A must measure the game as shipped.
+const K_DEFAULT = (typeof BERYL_FAMILY_GROWTH_K === 'number') ? BERYL_FAMILY_GROWTH_K : 2.2;
 const EVENT_STEP = 32;        // shigar_aqua_saturation fires here
 const WINDOW = { start: 33, end: 56 };   // growth window; hf_etch at 58 stays honest
 
@@ -135,13 +139,21 @@ function run(K, extraBe) {
   }
 }
 
-// ---------- A. BASELINE ----------
+// ---------- A. BASELINE (as shipped) ----------
 {
   const base = run(K_DEFAULT, 0);
-  const star = base.aquaSizes_mm[0];
+  const sizes = base.aquaSizes_mm;
+  // Door 1 acceptance, annotated honestly (passive — flags, never exit 1):
+  // star ≥ 20 mm · ≥1 aqua ≤ 0.5 mm (the NH fry) · star etch ≤ 5% · 5 aquas.
   console.log(JSON.stringify({
-    section: 'A_baseline',
-    byteIdentityCheck: { star_mm: star, expected: 0.6, ok: Math.abs(star - 0.6) < 0.005 },
+    section: 'A_baseline_as_shipped',
+    K_shipped: K_DEFAULT,
+    statureCheck: {
+      star_ge_20mm: sizes[0] >= 20,
+      fry_le_0p5mm: sizes[sizes.length - 1] <= 0.5,
+      five_aquas: base.nAquas === 5,
+      star_etch_le_5pct: (base.star_etchPct ?? 0) <= 5,
+    },
     ...base,
   }, null, 1));
 }

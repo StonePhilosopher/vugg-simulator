@@ -855,12 +855,23 @@ function grow_spodumene(crystal, conditions, step) {
 // (beryl/goshenite, emerald, aquamarine, morganite, heliodor): the five
 // varieties are the same Be₃Al₂Si₆O₁₈ lattice — chromophores differ,
 // kinetics don't. Door 1 (HANDOFF-FOUNDATIONS eleventh keystone): the
-// probe measured this K + the _beryl_base_sigma factor caps (σ ≲ 9) as
-// the joint reason no sim beryl ever passed ~0.6 mm while albite (K 4.0,
-// σ uncapped ~80) reached 100 mm in the same broth. The dev hook exists
-// for tools/shigar-aqua-growth-probe.mjs to sweep K closed-loop;
-// nothing in the sim itself calls it.
-let BERYL_FAMILY_GROWTH_K = 2.2;
+// probe measured the old K (2.2) + the _beryl_base_sigma factor caps
+// (σ ≲ 9) as the joint reason no sim beryl ever passed ~0.6 mm while
+// albite (K 4.0, σ uncapped ~80) reached 100 mm in the same broth.
+// SIM 219 sets K = 25: with σ ceilinged at ~9 the rate ceilings at
+// ~1.1 mm/step — pocket-stage beryl is NOT 70× slower than feldspar
+// per unit driving force (London 2008: pocket crystallization is
+// geologically brief; London/Hunt/Duval 2020: the whole gem stage fits
+// 435-355°C), the old K just predated beryl being anyone's anchor.
+// Growth stays MASS-limited by the cell's Be wallet (0.025 Be/µm
+// pre-timeScale debit), so K raises the spend RATE while the scenario's
+// Be budget stays the size of the crystal. Census at the bump:
+// shigar_pegmatite (the tune's target), gem_pegmatite,
+// radioactive_pegmatite, schneeberg — reviewed by name in the SIM 219
+// baseline diff. The dev hook exists for
+// tools/shigar-aqua-growth-probe.mjs to sweep K closed-loop; nothing
+// in the sim itself calls it.
+let BERYL_FAMILY_GROWTH_K = 25;
 function setBerylFamilyGrowthK(v) { BERYL_FAMILY_GROWTH_K = +v; }
 
 function _beryl_family_habit_forms(T) {

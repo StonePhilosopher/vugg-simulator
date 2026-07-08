@@ -11669,5 +11669,27 @@
 //        alone. Burial concentrates in dense druses/pockets (shigar 53%, gem-peg
 //        41%, deccan-zeolite 37%…), ~0 in sparse scenarios — selection acts only
 //        where crystals compete. Render leans every crystal at its recorded tilt.
-const SIM_VERSION = 218;
+// v219 — DOOR 1: BERYL-FAMILY KINETICS + THE SHIGAR Be WALLET (boss-approved
+//        "follow the science... make bigger crystals", 2026-07-08). Two dials,
+//        one mechanism: BERYL_FAMILY_GROWTH_K 2.2 → 25 (js/59 — pocket beryl is
+//        not 70× slower than feldspar per unit σ; London 2008/2020) and
+//        shigar_aqua_saturation delivers Be +110 cap 125 (js/70w — the pocket
+//        rupture hands over the hoarded inventory, Evensen/London/Wallace 1999
+//        ~250 ppm beryl-saturation territory). The closed-loop probe
+//        (tools/shigar-aqua-growth-probe.mjs, instrument commit f5a2beb) found
+//        the two ceilings the fix threads: σ_aquamarine caps at 9.05
+//        (_beryl_base_sigma factor caps) so delivery alone stalls at ~1.7 mm,
+//        and growth is MASS-limited (~200 µm per cell-Be unit, refill ≈ nil) so
+//        K alone binge-purges at the Be≥10 floor and stalls at ~2.6 mm. Seed-42
+//        shigar: star aqua 0.6 → ~21 mm etched showpiece on the cleavelandite
+//        shelf; aquas 4 → 5 with a PRISTINE 0.4 mm runt nucleating ~step 62
+//        AFTER the acid passes (post-crash bulk Be ~17 > the floor → σ
+//        recovers) — the New Hampshire fry as an emergent second generation,
+//        and the size DISTRIBUTION (not a floor) is the deliverable. Stature
+//        pins live in tests-js/shigar-pegmatite.test.ts (presence → STATURE,
+//        pre-figuring Door 4). Blast radius: beryl-family growers only
+//        (gem_pegmatite, radioactive_pegmatite, schneeberg reviewed by name in
+//        the baseline diff); non-beryl movement inside shigar is the shared-RNG
+//        stream shifting (fluid-inclusion rolls now pass rate>3), not chemistry.
+const SIM_VERSION = 219;
 
