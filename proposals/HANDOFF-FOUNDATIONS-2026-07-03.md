@@ -1099,3 +1099,163 @@ to earn what the sim already gestures at.
 — the builder, tenth hand, engulfment's face · 2026-07-07→08
 
 — the builder, ninth hand, the first SIM bump · 2026-07-07
+
+
+---
+
+## KEYSTONE — the eleventh hand's session, whole (2026-07-07→08, the parity pass + three doors scoped)
+
+This hand's session ran mostly in the detour handoff (`HANDOFF-TUTORIALS-2026-07-05.md`,
+CONTINUATION section — read it for the tutorial work itself: engine v3.1, T2/T3 reworked,
+Tutorial 5 authored on the boss's own TN457 lineage, §10.5 tranche 1). What belongs HERE is
+what the detour did to the main line: driving the tutorials turned out to be an instrument
+aimed at the foundations, and it found two render-truth defects the main line had lived with
+invisibly — the UV quench gate that had never once fired (broth-scale threshold against
+zone-scale traces, `223a96b`) and the Q4 dissolved-skip that had kept every partially-etched
+crystal out of the scene at every replay step (the shigar aquamarines, the scenario's own
+namesakes, had never rendered). Both fixed, both verified at kernel truth, elmwood control
+inert. Six commits, three cold-ci GREENs (2282 tests each), Pages built==HEAD at `cb9561c`.
+
+Then the boss weighed the three questions the session left on his desk, approved all three,
+and asked for them scoped — *"this is your moment to add your keystone."* Here they are,
+scoped with measured numbers, not hopes.
+
+### DOOR 1 — SHIGAR AQUAMARINE SIZE (approved: "follow the science... bigger crystals")
+
+**The boss's framing is the design law:** you can find 0.6 mm beryls in New Hampshire —
+the small ones are the COMMON case everywhere, so don't erase them. What makes Shigar
+*Shigar* is that the size distribution has a right tail. Model the DISTRIBUTION, not a floor.
+
+**Probe facts (2026-07-08, seed 42, `shigar-aqua-scope-probe`):** the etch is INNOCENT —
+it takes 15 µm of 618 grown (2–3%), pure surface sculpture, exactly what HF should do; my
+own session-close framing ("the etch leaves 0.13–0.6 mm") was the hypothesis the probe
+killed. The real cap is KINETICS: σ(aquamarine) holds a healthy 3.91 through the whole
+25-step window (Be crosses at step 32 via `shigar_aqua_saturation`, crashes at 57 with the
+etch event), yet the star aqua lays down 23.8 µm/step while quartz in the same broth lays
+142 and albite 1,661. The first-nucleator already out-grows the late ones 0.6 vs 0.13 mm —
+the distribution's SHAPE is right; the whole curve is just ~50× too small. Beryl family
+ships `growth_rate_mult: 0.25` (quartz 0.3 — the mult alone doesn't explain the gap; the
+rate law's σ-response for the beryl engine needs measuring).
+
+**Levers, in preference order:**
+1. *Scenario-local Be budget* — raise `shigar_aqua_saturation`'s delivery so σ runs higher
+   through the window. Zero blast radius outside shigar. Requires measuring dGrowth/dσ
+   first (the rate law may be sublinear — sweep 3–4 Be levels in the probe).
+2. *Global beryl-family kinetics* — `growth_rate_mult` 0.25 → up. Science-backed (London
+   2008: pocket-stage crystallization is geologically BRIEF — beryl is not 70× slower than
+   feldspar in nature) but census-gated: enumerate every beryl-family-growing scenario
+   first, review each baseline diff by name.
+3. *Window lengthening* — the weakest science (beryl IS late-pocket-stage; London 2020's
+   435–355 °C bracket). Don't reach for it.
+
+**Sequence:** instrument first (promote the scope probe to `tools/shigar-aqua-growth-probe.mjs`
+with the dGrowth/dσ sweep) → tune → full SIM-bump ritual (SIM_VERSION, gen-js-baseline,
+strip digest + archive vN, baseline-diff review, coverage stale-gate).
+**Pre-registered acceptance (seed 42):** star aqua ≥ 20 mm (a showpiece beside the 10 mm
+smoky quartz on the 100 mm cleavelandite shelf) · at least one aqua stays ≤ 0.5 mm (the
+New Hampshire fry) · etch loss stays ≤ 5% (sculpture, not consumption) · the declared
+census re-pinned deliberately in `shigar-pegmatite.test.ts` · Tutorial 4's beats re-driven
+(its narration references the pocket story) · 0/37 elsewhere unless lever 2 is used, and
+then every moved scenario justified by name.
+
+### DOOR 2 — UV FLUORESCENCE SCALE AUDIT (approved: "i love this idea")
+
+**The seed finding (`223a96b`):** calcite's quench gate read `Fe < 5.0` — a broth-scale
+number against zone-scale traces (lattice partition ~0.08× for Fe in calcite). Unreachable;
+no calcite ever quenched since the UV bar shipped. The rest of the palette is presumed
+sick the same way: ruby/corundum `Fe < 10` (zone ceiling ~1 → quench dead), emerald
+`Fe < 5`, apophyllite `Mn > 0.3`, willemite `Mn > 0.1`, fluorite `Mn > 0.5 | radDmg`;
+scheelite/adamite/autunite are always-on (scale-immune); aragonite/wulfenite honestly null.
+Sibling patient: `predict_fluorescence()` (js/27) — calcite `avg_Fe > 10` quench branch
+unreachable, sphalerite `Mn > 5 / Fe < 10`, quartz `Al > 5` — same disease, but js/27
+feeds the narrators (85a/85e) → the story archive → SIM-ADJACENT, not render-only.
+
+**Sequence (instruments-first, three commits):**
+1. `tools/uv-zone-census.mjs` (passive) — canonical seed-42 fleet, per mineral: zone-trace
+   percentile distributions (Fe/Mn/Al; Cr when D1c lands) + which rules fire today vs
+   never/always. The census IS the calibration table: each threshold gets set at the
+   zone-scale image of its literature intent, exactly the calcite move (broth-5 ≈ zone-0.4).
+2. The 98c recalibration (render-only, byte-identical) — per-rule table in the commit
+   message: old gate, literature intent, measured partition, new gate.
+   Literature pass at implementation time with cross-checked citations (subagents
+   fabricate; the v139 lesson stands): Mn²⁺/Fe²⁺ in calcite, Cr³⁺ 694 nm + Fe quench for
+   ruby (the Mogok-vs-Thai contrast is the acceptance image), Franklin willemite, fluorite
+   REE/defect centers.
+3. The js/27 pass SEPARATELY under SIM-bump discipline even though growth is untouched:
+   capture the narrator-text baseline BEFORE, then the fix, then baseline-diff review of
+   every changed fluorescence line. Recommend an attributable version bump (recorded
+   outputs move — that is the convention's line, and the boss should get to read the text
+   diffs as a paper).
+
+**Acceptance:** tutorial_mn_calcite remains the anchor (quench-then-glow renders) · no dead
+gate survives unless the literature says that mineral genuinely never fluoresces in
+sim-reachable chemistry (then null it honestly, the aragonite way) · the Mogok/Thai
+corundum contrast is expressible end-to-end.
+
+### DOOR 3 — §10.5 TRANCHES 2–3 (approved: "no harm in migrating now")
+
+**Measured census:** picker panel = 50 `startScenarioInCreative` buttons of curated prose
+under 3 scenario subheadings (Real-locality / Test / Tutorial-broth; the Starter Fluids
+section is FLUID_PRESETS, not scenarios — stays hand-written, out of scope) · zen
+`#idle-scenario` = 35 curated title-case labels, alpha-sorted, plus the special 🎲 Random
+entry (special-cased, stays) · Begin menu = 5 guided tutorial buttons, ordered T1→T5.
+~90 curated strings total.
+
+**Data shape:** per scenario `menu: { group, label, blurb }` (group ∈ locality|test|
+tutorial_broth; label = zen short name; blurb = picker prose) and, on tutorial-carrying
+scenarios, `tutorial.number` + `tutorial.menu_label` for the Begin button. Strings migrate
+VERBATIM — this is a mechanical move of curation, not a rewrite. Key order within groups
+for the picker; zen sorts alpha by label at populate time.
+
+**Mechanism:** extend tranche 1's populator into one `_populateScenarioMenus()` at
+scenarios-load-complete (zen options · picker sections with group headers · Begin tutorial
+buttons filtered on `tutorial.number`). Guard test flips to DATA-completeness (every
+scenario has group/label/blurb; tutorial numbers unique; static HTML sections EMPTY — the
+tranche-1 pattern). Extend `tutorial-lint` to the new menu strings (the `//`-in-strings
+JSONC gotcha applies to them identically).
+
+**The acceptance instrument:** a before/after DOM snapshot — capture the three menus'
+rendered innerHTML pre-migration via preview_eval, migrate, capture again, diff. The
+migration must be provably invisible to the player: byte-identical rendered menus.
+
+### The mark — what the keystone adds
+
+**Drive it; don't read it.** Every defect this session found — the never-painted
+narrations, the double-click beat skip, the uniformly-glowing UV bar, the invisible
+aquamarines, the travertine σ-story drift, and finally my own wrong etch hypothesis — was
+invisible in the source and obvious under drive. The reviewed-and-shipped tutorials had
+been wrong on screen for months while their code read clean. A tutorial, a render rule, a
+narration: each is a standing CLAIM about what the screen does, and the only instrument
+that adjudicates claims about screens is the screen.
+
+**A locality's signature is its tail, not its typical.** The boss's New Hampshire point
+generalizes and I want the next hands holding it: the median specimen of almost anything,
+almost anywhere, is small and dull — what makes a famous locality famous is that its
+distribution grew a right tail. So when a scenario under-delivers, the fix is almost never
+"make everything bigger"; it is "let the distribution express its tail" — first-nucleator
+advantage, depletion, and time already produce the shape, as the shigar probe showed. Tune
+the curve, keep the fry.
+
+**Diagenesis.** This session's speed was borrowed: the fourth hand's tutorial engine took
+v3.1 in forty lines because the state machine was already honest; the optics arc's zone
+bars gave T2 its payoff instrument ready-made; the probe/census idiom (sixth/seventh
+hands) turned every hypothesis I brought into a measurement within minutes; O4a's
+kernel-truth discipline is why the aquamarine finding took one eval instead of one
+afternoon; and the boss's own specimen shelf — TN457 — was sitting in the catalog already
+carrying the perfect Record Player lesson, because a previous hand built it as real
+science instead of a demo.
+
+**The dream, eleventh telling.** The tutorials are now the game's cheapest calibration
+instruments: five scripts that PROMISE observable numbers (σ 6.76 leads the readout; the
+bar glows only past the recharge; the star barite carries ~103 zones) and a player runs
+them every day. The drive-lint dream from the detour handoff sharpens here into the main
+line's language: promises as PINS. A nightly drive that walks each tutorial headless and
+asserts its measured claims would catch a drifted broth or a mis-scaled consumer the way
+the seed-42 baseline catches a drifted kernel — and the day the inverse solver reads a
+label-less rock, its first exam questions should be the ones these tutorials already know
+the answers to.
+
+Three doors, all approved, all scoped to numbers. Take one, run its instrument first, and
+let the probe rewrite whatever plan you walked in with — it has, for every hand so far.
+
+— the builder, eleventh hand, the parity pass · 2026-07-08
