@@ -1,5 +1,13 @@
 // tools/o4b-adjacency-census.mjs — W-F O4b instrument (pre-registration census).
 //
+// ⚠ HISTORICAL — valid against SIM ≤ 220 only. This probe's gate replica and
+// self-check pin the STRING mechanic this census existed to indict; the bump
+// (SIM 221) replaced the live gate with the geometric one, so running this
+// against v221+ fails the self-check BY DESIGN (the probe predicts string-world
+// enactment; the live world no longer enacts it). The living enclosure
+// instrument is tools/o4-enclosure-census.mjs. Kept as the pre-registration
+// record the v221 baseline movers were judged against.
+//
 // The enclosure mechanic's adjacency gate (js/85c _check_enclosure) is a STRING
 // test:   candidate.position === grower.position
 //      || candidate.position.includes(`#${grower.crystal_id}`)

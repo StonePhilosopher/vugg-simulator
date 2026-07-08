@@ -237,6 +237,12 @@ class Crystal {
     this.enclosed_crystals = [];
     this.enclosed_at_step = [];
     this.enclosed_by = null;
+    // W-F O4b — how this crystal was enclosed (null = not enclosed /
+    // unclassified pre-v221 save). true: nucleated ON its host and buried
+    // at the host's growth front (marks a zone horizon — O5's phantom
+    // datum). false: lateral wall swallow, embedded-inert (poikilotopic).
+    // Set by _check_enclosure, cleared by _check_liberation.
+    this.coats_front = null;
     // Paramorph tracking — set by applyParamorphTransitions when the crystal
     // crosses a phase-transition T (Round 8a-2: argentite → acanthite at 173°C).
     // Stores the *original* (pre-transition) mineral name so library + narrator

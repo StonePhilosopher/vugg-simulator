@@ -693,10 +693,45 @@ _check_enclosure() {
 
       const candidateSize = candidate.total_growth_um / 1000;
       const sizeRatio = growerSize / Math.max(candidateSize, 0.001);
-      const adjacent = (
-        candidate.position === grower.position
-        || candidate.position.includes(`#${grower.crystal_id}`)
-      );
+      // W-F O4b (SIM 221) — GEOMETRIC adjacency. The string test this
+      // replaces (position === position || position.includes(`#id`)) was
+      // vacuous for free-wall pairs — every free-wall crystal holds the
+      // literal 'vug wall', so any two of them "matched" across the cavity:
+      // 276 of the fleet's 342 seed-42 enclosures fired at distances the
+      // host's footprint never reaches (census: tools/o4b-adjacency-census
+      // .mjs; wittichen at 246 mm). It also blocked same-host siblings whose
+      // strings differ only by narrative qualifiers, and its substring
+      // #-match let grower #1 claim a candidate sitting on host #12.
+      // Adjacent now means what the wall already says: substrate-linked
+      // (exact-ID via parsePositionHost, either direction), or anchor
+      // great-circle distance within the two crystals' painted footprint
+      // half-arcs (paintCrystal's own law, js/22 footprintArcMm) + one
+      // cell of slack for the tessellation. Anchors are fixed at
+      // nucleation; only footprints grow — a host too small to reach a
+      // guest today re-qualifies naturally once its footprint arrives
+      // (the census's DEFERRED class, 17 fleet-wide, lags 10–111 steps).
+      const candHost = parsePositionHost(candidate.position, this.crystals);
+      const growerHost = parsePositionHost(grower.position, this.crystals);
+      const candOnGrower =
+        !!(candHost && candHost.host && candHost.host.crystal_id === grower.crystal_id);
+      const growerOnCand =
+        !!(growerHost && growerHost.host && growerHost.host.crystal_id === candidate.crystal_id);
+      let adjacent = candOnGrower || growerOnCand;
+      if (!adjacent) {
+        const aG = this.wall_state._resolveAnchor(grower);
+        const aC = this.wall_state._resolveAnchor(candidate);
+        if (aG && aC) {
+          // Per-crystal half-arcs floor at one cell — the painter's own
+          // max(1, …) minimum (a nucleated crystal claims ±1 cell even
+          // before its first zone), plus one cell of slack between the
+          // patches for the tessellation. Matches the census predicate
+          // exactly (the pre-registered blast radius depends on it).
+          const cellArc = this.wall_state.cell_arc_mm;
+          const halfG = Math.max(this.wall_state.footprintArcMm(grower) / 2, cellArc);
+          const halfC = Math.max(this.wall_state.footprintArcMm(candidate) / 2, cellArc);
+          adjacent = this.wall_state.anchorDistanceMm(aG, aC) <= halfG + halfC + cellArc;
+        }
+      }
       // Require the candidate to have actually lived a bit before it
       // can be swallowed. Without this, a just-nucleated crystal with
       // zero zones qualifies on step 1 and gets enveloped before it
@@ -711,6 +746,14 @@ _check_enclosure() {
         grower.enclosed_crystals.push(candidate.crystal_id);
         grower.enclosed_at_step.push(this.step);
         candidate.enclosed_by = grower.crystal_id;
+        // W-F O4b — coats_front: a guest that nucleated ON its swallower
+        // sits at the host's growth surface, so its burial marks the
+        // host's zone horizon at enclosed_at_step — the phantom-horizon
+        // datum O5's perturbed regrowth consumes. A lateral wall swallow
+        // (Sweetwater pyrite beside the calcite base) is embedded-inert:
+        // poikilotopic, no horizon significance. v1 is the substrate-link
+        // read; O5 sharpens it to per-face film coverage.
+        candidate.coats_front = candOnGrower;
         candidate.active = false;
         this.log.push(
           `  💎 ENCLOSURE: ${capitalize(grower.mineral)} #${grower.crystal_id} ` +
@@ -741,6 +784,9 @@ _check_liberation() {
       if (host.total_growth_um < hostSizeAtEnc * 0.7) {
         freed.push(i);
         enc.enclosed_by = null;
+        // O4b — coats_front describes HOW the crystal was enclosed; freed
+        // means it isn't, so the classification clears with the enclosure.
+        enc.coats_front = null;
         enc.active = true;
         this.log.push(
           `  🔓 LIBERATION: ${enc.mineral} #${encId} freed from ` +

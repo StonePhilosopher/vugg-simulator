@@ -1502,10 +1502,7 @@ class WallState {
     if (ringIdx == null || ringIdx < 0 || ringIdx >= this.ring_count) return;
     const centerCell = anchor.cellIdx;
     if (centerCell == null) return;
-    const FOOTPRINT_SCALE = 4.0;
-    const arcMm = (crystal.total_growth_um / 1000.0)
-                  * Math.max(crystal.wall_spread, 0.05)
-                  * FOOTPRINT_SCALE;
+    const arcMm = this.footprintArcMm(crystal);
     const halfCells = Math.max(1, Math.round(arcMm / this.cell_arc_mm / 2));
     const span = 2 * halfCells + 1;
     const volPerCell = crystal._volume_mm3 / span;
@@ -1548,6 +1545,36 @@ class WallState {
     return this.getCellLocalFill(anchor.ringIdx, anchor.cellIdx);
   }
 
+  // W-F O4b — the footprint law, hoisted so the two painters and the
+  // enclosure adjacency (js/85c _check_enclosure) read ONE expression.
+  // This is paintCrystal's own arc — see its header comment for the
+  // FOOTPRINT_SCALE rationale. Returns the FULL arc in mm; painters
+  // derive halfCells from it exactly as before (byte-identical), the
+  // enclosure gate uses arc/2 as the crystal's lateral reach.
+  footprintArcMm(crystal) {
+    const FOOTPRINT_SCALE = 4.0;
+    return (crystal.total_growth_um / 1000.0)
+           * Math.max(crystal.wall_spread, 0.05)
+           * FOOTPRINT_SCALE;
+  }
+
+  // W-F O4b — great-circle distance in mm between two resolved anchors
+  // on the sphere wall. _anchorFromRingCell's phi is COLATITUDE (0..π),
+  // so cos(Δσ) = cosφ₁cosφ₂ + sinφ₁sinφ₂cos(θ₁−θ₂). The radius derives
+  // from the live cell_arc_mm (which tracks mean wall depth), so a
+  // dissolution-grown cavity measures true. Anchors never move after
+  // nucleation — only footprints grow — which is what lets the census
+  // (tools/o4b-adjacency-census.mjs) and the enclosure gate share this
+  // metric without re-deriving positions.
+  anchorDistanceMm(a, b) {
+    const A = this._anchorFromRingCell(a.ringIdx, a.cellIdx);
+    const B = this._anchorFromRingCell(b.ringIdx, b.cellIdx);
+    const cosD = Math.cos(A.phi) * Math.cos(B.phi)
+      + Math.sin(A.phi) * Math.sin(B.phi) * Math.cos(A.theta - B.theta);
+    const R = (this.cell_arc_mm * this.cells_per_ring) / (2 * Math.PI);
+    return R * Math.acos(Math.max(-1, Math.min(1, cosD)));
+  }
+
   // Mark the cells this crystal occupies with its id / mineral / thickness.
   // Only ring[0] in v1; multi-ring paint will follow void_reach later.
   //
@@ -1573,10 +1600,7 @@ class WallState {
       ringIdx = 0;
     }
     const centerCell = anchor.cellIdx;
-    const FOOTPRINT_SCALE = 4.0;
-    const arcMm = (crystal.total_growth_um / 1000.0)
-                  * Math.max(crystal.wall_spread, 0.05)
-                  * FOOTPRINT_SCALE;
+    const arcMm = this.footprintArcMm(crystal);
     const halfCells = Math.max(1, Math.round(arcMm / this.cell_arc_mm / 2));
     const thickness = Math.max(crystal.total_growth_um, 1);  // nucleated = visible
     const ring = this.rings[ringIdx];

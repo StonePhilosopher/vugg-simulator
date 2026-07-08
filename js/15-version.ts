@@ -11707,5 +11707,49 @@
 //        geochemistry — the census's own first finding). Blast radius
 //        pre-registered by the census table: at most the 6 named
 //        scenarios move; every mover reviewed in the baseline diff.
-const SIM_VERSION = 220;
+// v221 — W-F O4b: GEOMETRIC ENCLOSURE ADJACENCY + coats_front (the second
+//        commit O4a's two-commit discipline deferred). _check_enclosure's
+//        adjacency gate was a STRING test — position === position ||
+//        position.includes(`#id`) — vacuous for free-wall pairs (every
+//        free-wall crystal holds the literal 'vug wall', so any two
+//        "matched" across the cavity) and inverted against the geology it
+//        was named for (same-host siblings with differing narrative
+//        qualifiers were BLOCKED; grower #1 could claim a candidate on
+//        host #12 by substring). Census (tools/o4b-adjacency-census.mjs,
+//        instrument commit 6967c57, self-checked 38/38 against live
+//        enactment): of 342 seed-42 enclosures, 276 (81%) were TRUE
+//        PHANTOMS — never reached by the host's footprint by run's end
+//        (median 26–100 mm; wittichen 246 mm) — 17 DEFERRED (footprint
+//        genuinely arrives 10–111 steps later), 22 real neighbors BLOCKED
+//        (incl. dist-0.0 same-host siblings), 14 substring accidents.
+//        Adjacent now = substrate-linked (exact-ID parsePositionHost,
+//        either direction) OR anchor great-circle distance ≤ the two
+//        painted footprint half-arcs + one cell (paintCrystal's own law,
+//        hoisted to WallState.footprintArcMm — painters byte-identical).
+//        coats_front rides the swallow: guest-nucleated-ON-host = front-
+//        coating (marks the host's zone horizon at enclosed_at_step —
+//        O5's phantom datum; 14 fleet-wide), else embedded-inert
+//        (poikilotopic; 74). Cleared on liberation. Blast radius
+//        pre-registered by the census table: 28 scenarios carry eligible
+//        pairs and may move; 10 have none and must hold byte-identical.
+//        Naica 35 guests → ~4 — real Naica selenite is water-clear,
+//        near-equilibrium, almost inclusion-free; the amputation is the
+//        cave being correct (García-Ruiz 2007).
+//        RIDER (exposed by the bump's honest dynamics, fixed in the same
+//        arc): tormiq's "Quartz Lining" event delivered +40 SiO2 (cap 420)
+//        — homeopathic; quartz never fired until ambient silica crept past
+//        ~750 (step ~157), and the late cold phase wiped the 0.1 mm
+//        stragglers. The declared quartz-first paragenesis was being FAKED
+//        by two dust quartz phantom-"enclosed" into a feldspar across the
+//        cavity, immune there to dissolution — the deformation arc's bent-
+//        quartz showcase stood on that accident. The lining now delivers
+//        quartz saturation at the opening beat (SiO2 +1100 cap 1500 —
+//        grimsel-class; Mullis 1994, the scenario's own source): quartz
+//        nucleates ON the beat (step 25), 3 live at 2–3 mm through the
+//        shear step, 20/20 seeds (was 11/20 marginal). Second rider:
+//        supergene's flooded-hourglass pin re-trued to strong-stain — the
+//        v220 seed-42 flood was RNG weather (v221 sweep: 5/12 seeds still
+//        flood at 0.95); the flooded variant's mechanism pins live on
+//        great_salt_plains' red-mud flood.
+const SIM_VERSION = 221;
 
