@@ -60,9 +60,18 @@ Living list of open work items, captured from session conversations so context s
 > right — the name collision dissolved: the FIELD is enclosure bookkeeping, the FILM is
 > growth-front state) · Q3 RESOLVED — boss: "Sweetwater it is" (first content = AUTHORING
 > the snowball-barite scenario; TN-vs-MO Sweetwater disambiguation flagged for the
-> dossier; grimsel AND tormiq both stay clean corrosion references) · Q1 σ*(φ) curve OPEN
-> — rockbot researching; seeds + the concentration-vs-coverage catch in §8. O5a code
-> waits on Q1.**
+> dossier; grimsel AND tormiq both stay clean corrosion references) · **Q1 σ*(φ) curve
+> RESOLVED — two independent research passes (rockbot's RESEARCH-SIGMA-STAR-PHI + the
+> builder's addendum) CONVERGED on hyperbolic φ/(1−φ), divergence at φ=1, one constant, no
+> published closed-form. ADOPTED = rockbot's baseline-anchored `σ*(φ)=σ*₀·(1+k·φ/(1−φ))`
+> (reduces to the clean σ_crit at φ=0 → unfilmed crystals byte-identical FOR FREE; the
+> builder's draft `K·φ/(1−φ)` wrongly gave zero threshold at φ=0 — rockbot right, adopted).
+> Divergence honored not clamped (rockbot right; Ehrenberg 1993). Evidence merged: rockbot's
+> diagenetic chlorite-coat lit (Ehrenberg/Zhang = the macroscopic-film regime) + the
+> builder's AFM lit (DeYoreo 2004 calcite = sharp super-linear shape, kills linear). Both
+> load-bearing refs web-verified real; Ranganathan&Weeks 2013 == the builder's "PRL 110
+> 055503" (same paper, cross-confirm). k calibrated 4a.7 on sim-σ; 1294/1295/1300 = T2
+> anchor.** O5a CODE UNBLOCKED (record-unread tranche, 0/38) — awaits boss go.**
 
 > ## 🔴🟢 NUCLEATION HOVER POPOVER (2026-07-08, boss ask) — SHIPPED (render-only)
 >

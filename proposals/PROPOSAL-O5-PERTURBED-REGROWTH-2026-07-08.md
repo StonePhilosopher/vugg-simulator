@@ -128,12 +128,23 @@ term — declared approximation). This makes O4b's 14 fleet-wide front-coatings 
 organic writers, no new scenario content required.
 
 **The gate (the bump, in the growth loop):** for a crystal with `_film`, each axis's zone
-growth is scaled by the dead-zone rule —
+growth is scaled by the dead-zone rule — **form settled by the two-pass reconciliation
+(§8 Q1); this is rockbot's baseline-anchored version, adopted:**
 
 ```
-sigma_star(phi) = SIGMA_STAR_K * phi / (1 - min(phi, 0.95))   // calibrated, 4a.7 recipe
+sigma_star(phi) = sigma_star_0 * (1 + SIGMA_STAR_K * phi / (1 - phi))   // 4a.7-calibrated K
 axis grows iff sigma_axis > sigma_star(phi_axis); else that axis's increment = 0
 ```
+
+where `sigma_star_0` is the crystal's EXISTING clean-surface threshold (the per-mineral
+`sigma_crit` the sim already carries). At φ=0 this reduces EXACTLY to `sigma_star_0` — an
+unfilmed crystal behaves bit-for-bit as today, so the census-bounded blast radius falls out
+of the arithmetic (no `if (!_film)` guard needed; only film-writing scenarios can move). At
+φ→1 the barrier diverges — a complete film fully arrests growth (Ehrenberg 1993 chlorite
+coats; the divergence is honored, NOT clamped to a modest cap — a heavy blanket is a heavy
+barrier). Numerical guard only: φ is held just below 1 (a real film always leaves gaps —
+Ehrenberg's micro-overgrowths-through-gaps — so φ=1 exactly = full burial = an inclusion,
+handled by O4 not O5).
 
 - Both axes stalled = the hiatus (the crystal is alive, unetched, waiting — distinct from
   O3 burial and from dissolution).
@@ -207,27 +218,65 @@ both sceptre kinds by different mechanisms) gets its cleanest possible form.
 ## 7. Acceptance (pre-registered)
 
 1. O5a: baseline 0/38 with the flag off; census names every would-be writer.
-2. O5b: movers == the census's writer list exactly; tormiq gains a masked_horizon quartz
-   generation; `classifyQuartzSceptre` finds BOTH routes fleet-wide (grimsel corrosion,
-   tormiq masking) and the strip/narrator names which; no dissolution anywhere in a
-   masked phantom's record (the invariant test).
+2. O5b: movers == the census's writer list exactly; the new Sweetwater scenario grows
+   masked_horizon generations (barite snowball texture); `classifyQuartzSceptre` (and its
+   family) find the masking route where a dusted-then-renewed crystal exists, distinct from
+   grimsel's corrosion sceptre (which stays untouched — the sim carries BOTH routes by
+   different mechanisms, the bench claim); no dissolution anywhere in a masked phantom's
+   record (the invariant test). If a quartz cleft is dusted later, the sceptre classifier
+   is the same-mechanism witness.
 3. O5c: band visible through a translucent host in preview kernel-truth; opaque host hides.
 4. Bench (when W-A capture lands): 1294/1295/1300 chlorite phantoms as T2 anchors; the
    sceptre pair 1307–1309.
 
 ## 8. Open questions for boss / rockbot review — STATUS after first review round (2026-07-08)
 
-1. **OPEN — σ*(φ) curve shape (rockbot researching; the builder ran a parallel pass — see
-   the addendum below, to be cross-checked against rockbot's, [[feedback_cross_check_research_disagreements]]).**
-   Seeds: the measured dead-zone system is KDP + Fe(III)/Al(III) (the Rashkovich school;
-   [Theory of Impurity-Induced Step Pinning and Recovery, PRL 110 055503](https://link.aps.org/accepted/10.1103/PhysRevLett.110.055503));
-   Sangwal's [combined influence of supersaturation and impurity concentration](https://www.sciencedirect.com/science/article/abs/pii/S0022024800003390)
-   has the classic σ_d(c_i) relations. THE CATCH: published data is almost all **dead-zone
-   width vs solution CONCENTRATION**, not vs surface coverage — the c_i→θ bridge is a
-   (often non-equilibrium) Langmuir isotherm and measured θ can be tiny (~10⁻⁶ in one
-   dye/KDP case). Our φ is NOT that θ: it is macroscopic film coverage (a chlorite blanket,
-   not ppm adsorbates), where the natural physics is growth-through-gaps and the hyperbolic
-   σ* ∝ φ/(1−φ) (diverging at full blanket) is the honest default.
+1. **RESOLVED — σ*(φ) curve shape (two independent passes reconciled 2026-07-08;
+   `RESEARCH-SIGMA-STAR-PHI-2026-07-08.md` = rockbot's, this doc's addendum = the
+   builder's). ADOPTED FORM (rockbot's, baseline-anchored):**
+   `σ*(φ) = σ*₀·(1 + k·φ/(1−φ))`, σ*₀ = the mineral's existing clean-surface threshold,
+   k the one calibrated constant. See §4 for the reduced-to-today-at-φ=0 property.
+
+   **▸ THE RECONCILIATION (boss: "pay special attention to where they disagree").**
+   *Convergence (the big one):* both passes independently landed on the **hyperbolic
+   φ/(1−φ) form, diverging at φ=1, one calibrated constant**, and both concluded **no
+   published closed-form σ*(φ) exists** (the molecular-adsorption literature is θ~10⁻⁶,
+   not macroscopic film φ). Independent convergence on the shape = the shape is settled.
+   *Cross-check on citations (the fabrication guard, [[feedback_cross_check_research_disagreements]]):*
+   the builder web-verified rockbot's two load-bearing refs — **Ehrenberg 1993** (AAPG
+   Bull., Norwegian-Shelf grain-coating chlorite inhibits quartz cementation) is REAL and
+   exact; **Ranganathan & Weeks 2013** is REAL and is *the same paper* the builder's pass
+   cited as "PRL 110 055503" (Ranganathan IIT-Kanpur + Weeks Maryland) — the two passes
+   cross-confirm rather than contradict. No fabricated citations found.
+
+   **Two real DISAGREEMENTS, both resolved in rockbot's favor:**
+   - **The baseline (rockbot right; the builder was sloppy).** The builder's draft form
+     `K·φ/(1−φ)` gives σ*(0)=0 — i.e. a clean crystal with NO threshold, which is wrong
+     (every face has its clean-surface σ_crit) and would have perturbed unfilmed crystals.
+     Rockbot's `σ*₀·(1 + k·φ/(1−φ))` correctly reduces to the clean threshold at φ=0. This
+     is not just more correct — it makes O5 byte-identical for unfilmed crystals *for free*
+     (the census-bounded blast radius becomes a property of the equation, not a guard).
+     **Adopted wholesale.**
+   - **Divergence vs clamp (rockbot right).** The builder's `min(φ,0.95)` capped the barrier
+     at ~19·K; rockbot honors the divergence (φ→1 = infinite = complete arrest). Ehrenberg
+     1993 is the decider: continuous chlorite coats do fully quench overgrowth coalescence —
+     BUT the same paper notes micro-overgrowths still nucleate through gaps, so real films
+     sit at φ<1 (always gaps) and the divergence is the correct φ→1 *limit*, not a value any
+     real film reaches. **Adopted:** keep the divergence, drop the 0.95 cap, guard φ only
+     numerically just below 1.
+
+   **Complementary evidence (merge, not conflict):** rockbot brought the DIAGENETIC /
+   reservoir macroscopic-film literature (Ehrenberg 1993, Zhang 2020 — literally
+   "chlorite coat stops quartz overgrowth," the O5 mechanism at field scale, the regime
+   closest to our φ); the builder brought the AFM step-kinetics literature (DeYoreo 2004
+   calcite — CV *and* kink-blocking both fail, the approach is sharp/super-linear not
+   linear; barite AFM for the Sweetwater tie-in). rockbot's anchor justifies the
+   *divergence and the macroscopic-film regime*; the builder's justifies the *super-linear
+   shape and the rejection of the linear alternative*. Together the recommendation is
+   over-determined. **k still calibrated on the sim's own σ scale by the 4a.7 recipe;
+   the phantom specimens (1294/1295/1300) are the T2 acceptance anchor.**
+
+   *(Original builder addendum retained below for the record.)*
 
    **▸ BUILDER'S PARALLEL RESEARCH PASS (2026-07-08) — the phenomenology settles the shape,
    even though the microphysics stays contested.** Three models, read for the FORM they
