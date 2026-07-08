@@ -2,6 +2,49 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 💎 O4b — GEOMETRIC ENCLOSURE ADJACENCY + coats_front (2026-07-08, boss: "O4b it is… you always follow the science") — SHIPPED SIM 221 (`6967c57` census + `08287eb` bump)
+>
+> The second commit O4a deferred. **The census found the string gate 81% phantom**
+> (tools/o4b-adjacency-census.mjs, self-checked 38/38 vs live enactment, now marked
+> HISTORICAL): every free-wall crystal holds the literal 'vug wall', so ANY two
+> "matched" across the cavity — 276 of 342 seed-42 enclosures fired at distances the
+> host's footprint never reaches (wittichen 246 mm); 17 more DEFERRED (footprint
+> genuinely arrives 10–111 steps later); 22 real neighbors BLOCKED (dist-0.0 same-host
+> siblings split by narrative qualifiers); 14 enacted `#1`-matches-`#12` substring
+> accidents (the exact-ID parser, parsePositionHost js/26, was in-tree all along —
+> grep-the-tree, 4th landing). Adjacent now = substrate-linked (exact-ID, either
+> direction) OR anchor great-circle distance ≤ the two painted footprint half-arcs
+> + one cell (paintCrystal's own law hoisted to `WallState.footprintArcMm`, painters
+> byte-identical; per-crystal floor = one cell, the painter's own max(1,…)).
+> **coats_front** rides the swallow: guest-nucleated-ON-host = front-coating (marks
+> the host's zone horizon at enclosed_at_step — **O5's phantom datum**; 14 fleet-wide),
+> else embedded-inert (74). Cleared on liberation. Movers: 21 scenarios, ALL census-
+> listed; the 10 no-pair scenarios verified byte-identical (shigar stature pins
+> untouched); naica 43→10 crystals (the phantom mill fed the cap recycle — real Naica
+> is few-nuclei/giant/clear, García-Ruiz 2007); 142 distinct baseline minerals at both
+> versions (zero went fleet-dead; pharmacolite/bornite are single-scenario weather).
+> CI 167/2307. Tests: o4b-adjacency.test.ts (7 — one pin per census class, distances
+> self-calibrated from the wall's own metric).
+>
+> **▸ THE RIDER THE BUMP EXPOSED — tormiq's quartz lining was a fake.** The "Quartz
+> Lining" event delivered +40 SiO2 (cap 420); quartz never fired until ~step 157, and
+> the late cold phase wiped the 0.1 mm stragglers. The deformation arc's bent-quartz
+> showcase "passed" pre-O4b because two dust quartz got phantom-swallowed into a
+> feldspar 124–137 mm away at step 174 — seven steps before their death date — and sat
+> there immune to dissolution. Fix (Mullis 1994, the scenario's own source; grimsel
+> opens at SiO2 1550): the lining beat delivers +1100 cap 1500 → quartz nucleates ON
+> the beat (step 25), 3 live at 2–3 mm through the step-188 shear, **20/20 seeds** (was
+> 11/20 marginal), all three bent in the live browser check. The declared paragenesis
+> runs in order for the first time. Second rider: supergene's flooded-hourglass pin
+> re-trued to strong-stain (>0.55) — the v220 seed-42 flood was RNG weather (v221
+> sweep: 5/12 seeds still flood at 0.95); the flooded variant's mechanism pins live on
+> great_salt_plains' red-mud flood. Tuning a scenario to chase a seed flag = pinning
+> weather.
+>
+> **▸ NEXT on this line:** O5 perturbed regrowth (THE ORIGINATING ASK — masked faces →
+> phantom horizon → sceptre by ELO; the coats_front class + enclosed_at_step horizons
+> are its prepared data), research-first per the ontogeny proposal §O5.
+
 > ## 🔴🟢 NUCLEATION HOVER POPOVER (2026-07-08, boss ask) — SHIPPED (render-only)
 >
 > Boss: *"i want to play with the hover text in creative mode for what is nucleating …
