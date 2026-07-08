@@ -161,6 +161,33 @@ earlier ones' state. Sizes: S/M/L per the roadmap convention.
 > depletion field then; (b) O1b (neighbor shadow via the occupancy grid) makes k per-crystal.
 > Steno pin held: normals bitwise-unchanged at every k.
 
+> **O3 ✅ SHIPPED SIM 218 (2026-07-07) — the arc's FIRST SIM bump, in two commits.** The heart
+> of the ontogeny arc: the comb the sim always PAINTED (c-axis forced to the wall normal) is now
+> EARNED by competition (Kolmogorov 1949 / van der Drift 1967).
+> **Instruments first, exactly as promised:** `tools/o3-selection-oracle.mjs` — a STANDALONE
+> anisotropic Johnson–Mehl MC that reproduces Gray's d^(−1/2) survivor law (k≈1.5 → p=−0.493,
+> R²=0.997; isotropic control → p=0, no selection; survivor tilt collapses 22°→3°) BEFORE any
+> engine code — the cheapest strongest verification this project has had.
+> **O3a (`1948b3b`, byte-identical):** the nucleation orientation DRAW from an ISOLATED run-seed
+> stream (js/44a `_makeOrientRng`, thermal-idiom, zero shared draws), recorded on `_nucTilt`, UNREAD.
+> The review's sharpened invariant held — seed42_v217 regenerated 0/38. Steno pin: a rigid whole-body
+> rotation, never a perturbed normal.
+> **O3b (`03f1582`, SIM bump):** the render leans the c-axis to `_nucTilt` (kernel-truth leanDeg==θ
+> exactly); a pre-growth pass (js/85b `_applyGeometricSelection`) marks crystals a more-normal
+> neighbor's front overtook. **SEALED-BUT-PRESENT arrest** (the specimen tests shaped it — hard
+> arrest culled documented accessory sulfides + a cabinet lepidolite book below their pins): a buried
+> crystal stays ACTIVE, grows throttled (0.12×) into a short leaning stub, and is shielded from
+> dissolution + double-count enclosure — one coherent "sealed by its neighbor" picture. **ELONGATE-
+> ONLY** (O3_SELECT_MIN_ASPECT 1.4): selection is a palisade phenomenon; equant/tabular/botryoidal/
+> dendritic forms don't compete (defer-to-geology, the specimen guard's call). Scale-invariant burial
+> (a RATIO lead, not an mm gap — the verify probe caught the scale bug). `tools/o3-selection-verify.mjs`
+> closes the loop: tilt-collapse survivors 20.7°/buried 32.9°, burial concentrates in elongate dense
+> druses (deccan 39%, shigar 29%, gem-peg 16%), 23/38 select, 11.4% fleet. Baseline 21/38 moved (17
+> sparse = byte-identical), ±1–6, one v192-precedented pyrite dominance re-pin. The disabled-draw
+> invariant attributes the move to selection alone. **NEXT:** a size-scaled neighbor footprint (big
+> crystals shadow wider) deepens dense-druse selection; the fleet-wide survivor slope stays confounded
+> by the chemical size spread (the clean oracle match lives in tilt-collapse + per-druse concentration).
+
 **Sequencing.** O0 → O1 → O2 is the visible foundation and stays render-only (byte-identity
 discipline holds; the probe/sweep/eye-check ritual per rung). O3 is the first SIM bump and the
 arc's scientific heart — its analytic oracle (survivor-density power law) is the cheapest

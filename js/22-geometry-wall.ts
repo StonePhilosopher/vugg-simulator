@@ -117,6 +117,15 @@ class VugWall {
     this.size_class = (opts.size_class as SizeClass) ?? null;
     this.vug_diameter_mm = _resolveVugDiameter(opts);
     this.total_dissolved_mm = opts.total_dissolved_mm ?? 0.0;
+    // W-K V1b (paleo-flow scallops): a dissolution-rate-weighted running sum of the flow_rate
+    // active WHILE the wall was dissolving. Curl 1974 — scallop length ∝ 1/velocity, and scallops
+    // re-equilibrate to the CURRENT dissolving flow — so weight each step's flow by that step's
+    // eroded mm (accumulate lives in js/85d dissolve_wall; read via paleoFlow()). RECORD-ONLY:
+    // nothing in the growth engine reads it back, so the sim stays byte-identical. paleoFlow()
+    // returns null when the wall never dissolved (inert / precipitated cavities) → the renderer
+    // falls back to default scallop sizing.
+    this.paleo_flow_accum = opts.paleo_flow_accum ?? 0.0;
+    this.paleo_flow_wt = opts.paleo_flow_wt ?? 0.0;
     this.wall_Fe_ppm = opts.wall_Fe_ppm ?? 2000.0;
     this.wall_Mn_ppm = opts.wall_Mn_ppm ?? 500.0;
     this.wall_Mg_ppm = opts.wall_Mg_ppm ?? 1000.0;
@@ -141,6 +150,14 @@ class VugWall {
     // to WallState at sim init. Scenarios opt in via wall.architecture
     // in scenarios.json5; default 'pocket' = legacy behavior.
     this.architecture = opts.architecture ?? null;
+    // W-K V1c (genesis-gated wall textures, 2026-07-07): how the cavity VOID formed —
+    // dissolution / vesicle / hydrothermal-vein / miarolitic-pocket / metamorphic / geode /
+    // supergene / ... . The census proved composition ≠ genesis (basalt hosts both a vesicle
+    // and veins; limestone hosts caves, MVT karst-fill AND veins), so genesis is DECLARED per
+    // scenario, not inferred. Mirrored to WallState (js/85) and read by the Three.js renderer to
+    // pick the wall relief family (scallops only where genesis === 'dissolution'). Display-only —
+    // physics never reads it; null → the renderer falls back to architecture (legacy V1 behaviour).
+    this.genesis = opts.genesis ?? null;
     // Player-tunable wall reactivity multiplier (Creative-mode slider).
     // 0=inert, 1=default limestone (current behavior), 2=fast-dissolving
     // fresh limestone with mild water-only dissolution. Only affects
@@ -421,6 +438,13 @@ class VugWall {
       total_dissolved: this.total_dissolved_mm,
     };
   }
+
+  // W-K V1b: the dissolution-rate-weighted mean flow_rate the scallops equilibrated to, or null
+  // if the wall never dissolved (inert / precipitated cavity → the renderer uses default sizing).
+  // Weighted by eroded mm so a brief flow spike over a thin slice doesn't outvote the bulk history.
+  paleoFlow() {
+    return this.paleo_flow_wt > 0 ? this.paleo_flow_accum / this.paleo_flow_wt : null;
+  }
 }
 
 // One cell of the topo-map wall state. Every (ring, cell) pair has one —
@@ -672,6 +696,9 @@ class WallState {
     // 'pocket' uses (3, 6) bubbles + 1.0× scaling, so scenarios that
     // don't set architecture get byte-identical legacy behavior.
     this.architecture = (opts.architecture as Archetype) ?? 'pocket';
+    // W-K V1c: cavity-genesis label mirrored from VugWall (see its constructor). The Three.js
+    // renderer reads it to pick the wall relief family; display-only, WallState physics ignores it.
+    this.genesis = opts.genesis ?? null;
     const arc = ARCHETYPE_DEFAULTS[this.architecture] ?? ARCHETYPE_DEFAULTS.pocket;
     this.nucleation_bias = arc.nucleation_bias;
     this.polar_amp_scale = arc.polar_amp_scale;
@@ -699,6 +726,13 @@ class WallState {
     // them.
     this.composition = opts.composition ?? 'limestone';
     this.matrix = opts.matrix ?? null;
+    // W-K V1b (paleo-flow scallops, 2026-07-07): the dissolution-rate-weighted mean flow_rate the
+    // wall dissolved under, PUSHED here each dissolving step by the simulator's dissolve_wall
+    // (VugWall.paleoFlow()). The Three.js renderer scales scallop tiling by it — Curl 1974:
+    // scallop length ∝ 1/velocity, so faster paleo-flow → smaller, denser scallops. Display-only
+    // (WallState physics never reads it); null until the wall first dissolves (inert / precipitated
+    // cavities stay null → the renderer uses default scallop sizing).
+    this.paleo_flow = opts.paleo_flow ?? null;
     // Tranche 6 of PROPOSAL-CAVITY-MESH §14: per-vertex nucleation
     // opt-in. See VugWall constructor for the full rationale. Mirrored
     // onto WallState so _assignWallCell / _assignWallRing can read it

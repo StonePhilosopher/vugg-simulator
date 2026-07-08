@@ -11660,5 +11660,14 @@
 //        that actually fired ('dog-tooth (σ-grown spar)' when neither
 //        Mg nor T did). Fence reads LIVE per-step σ (the v187
 //        trajectory contract).
-const SIM_VERSION = 217;
+// v218 — W-F O3b GEOMETRIC SELECTION (the ontogeny arc's FIRST SIM bump).
+//        GEOMETRIC_SELECTION_ENABLED flips true (js/44a): the burial pass
+//        (_applyGeometricSelection, js/85b) arrests crystals a more-normal
+//        neighbor's front has overtaken (Kolmogorov 1949 / van der Drift 1967,
+//        oracle-verified −1/2). Baselines move by DESIGN — the O3a disabled-draw
+//        invariant (SIM 217 byte-identical) attributes the move to selection
+//        alone. Burial concentrates in dense druses/pockets (shigar 53%, gem-peg
+//        41%, deccan-zeolite 37%…), ~0 in sparse scenarios — selection acts only
+//        where crystals compete. Render leans every crystal at its recorded tilt.
+const SIM_VERSION = 218;
 

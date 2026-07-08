@@ -227,9 +227,111 @@ Object.assign(VugSimulator.prototype, {
     }
   }
 
+  // W-F O3a — record this crystal's NUCLEATION ORIENTATION (rigid whole-body
+  // tilt off the substrate normal + azimuth) from the isolated orient stream.
+  // Zero shared-rng draws → byte-identical. Drawn UNCONDITIONALLY (the draw is
+  // free on an isolated stream); GEOMETRIC_SELECTION_ENABLED gates only the
+  // READERS (render lean + burial gate, O3b), so selection-off and selection-on
+  // see the SAME recorded tilt — the review's disabled-draw invariant. Defensive
+  // lazy-init covers non-constructor nucleations (preview/library/test paths).
+  const _orientRng = this._orientRng || (this._orientRng = _makeOrientRng(rng.state));
+  crystal._nucTilt = drawNucleationTilt(_orientRng);
+
   this.crystals.push(crystal);
   return crystal;
 },
+
+  // W-F O3b — GEOMETRIC SELECTION burial pass (Kolmogorov 1949 / van der Drift
+  // 1967). Runs ONCE per step BEFORE the growth loop (js/85 run_step), gated by
+  // GEOMETRIC_SELECTION_ENABLED (js/44a) — a no-op, byte-identical, when off.
+  //
+  // A crystal is BURIED (arrested — active=false, the same handle the world-
+  // record size cap uses) when a NEIGHBOR that is more wall-normal has grown its
+  // front more than O3_BURY_GAP_MM past this crystal's own front: the more-normal
+  // neighbor has overtaken and sealed it off. Survivors are the near-normal ones;
+  // the base of a druse keeps the short tilted losers — the palisade EARNED.
+  //
+  // DETERMINISM: every crystal's front + tilt is SNAPSHOT before any burial is
+  // marked, and the neighbor test reads only the snapshot (never live .active),
+  // so the pass is order-independent — burial is decided simultaneously on the
+  // step-start configuration. Once buried, active=false is permanent (a sealed
+  // crystal never resumes; its front freezes while neighbors advance, so the
+  // lead only widens). Exempts air-mode (gravity-oriented stalactites/-mites)
+  // and enclosed/overgrowth crystals (templated, not free-wall competitors).
+  _applyGeometricSelection() {
+    if (!GEOMETRIC_SELECTION_ENABLED) return;
+    const wall = this.wall_state;
+    if (!wall) return;
+    const N = wall.cells_per_ring | 0;
+    const R = wall.ring_count | 0;
+    if (N < 1 || R < 1) return;
+
+    // Snapshot eligible crystals + bucket by cell for O(1) neighbor lookup.
+    const byCell = new Map<number, any[]>();
+    const elig: any[] = [];
+    for (const c of this.crystals) {
+      if (!c || !c.active || c.dissolved) continue;
+      if (c.growth_environment === 'air') continue;   // gravity-oriented, not selected
+      if (c.enclosed_by != null) continue;             // templated overgrowth, not a competitor
+      const t = c._nucTilt;
+      if (!t) continue;
+      // ELONGATE only — geometric selection is a palisade phenomenon (js/44a).
+      // Equant/tabular/platy/botryoidal/dendritic forms don't compete for
+      // outward space, so they neither bury nor are buried.
+      const aw = c.a_width_mm || 0;
+      if (aw <= 0 || c.c_length_mm <= aw * O3_SELECT_MIN_ASPECT) continue;
+      const a = wall._resolveAnchor ? wall._resolveAnchor(c) : c.wall_anchor;
+      if (!a) continue;
+      const rec = {
+        c, ri: a.ringIdx | 0, ci: a.cellIdx | 0,
+        theta: t.theta, front: o3NormalFrontMm(c), nucStep: c.nucleation_step | 0,
+      };
+      elig.push(rec);
+      const key = rec.ri * N + rec.ci;
+      const bucket = byCell.get(key);
+      if (bucket) bucket.push(rec); else byCell.set(key, [rec]);
+    }
+    if (elig.length < 2) return;
+
+    const dThetaMin = O3_BURY_DTHETA_MIN_DEG * Math.PI / 180;
+    const keepFrac = 1 - O3_BURY_LEAD_FRAC;   // buried when own front < neighbor.front × keepFrac
+    const minAge = O3_BURY_GRACE_STEPS;
+
+    // Each crystal scans its cell + the 8 lat-long neighbors (ring ±1 clamped,
+    // cell ±1 wrapped). Buried by the first more-normal neighbor that has out-
+    // reached it by the lead fraction (scale-invariant ratio, not an mm gap).
+    for (const rec of elig) {
+      if (rec.c._buried) continue;                       // already sealed (sticky); still an overtaker via the bucket
+      if (this.step - rec.nucStep < minAge) continue;    // grace period (still an overtaker via the bucket)
+      let buried = false;
+      for (let dr = -1; dr <= 1 && !buried; dr++) {
+        const rr = rec.ri + dr;
+        if (rr < 0 || rr >= R) continue;
+        for (let dc = -1; dc <= 1 && !buried; dc++) {
+          const cc = (((rec.ci + dc) % N) + N) % N;   // wrap around the ring
+          const bucket = byCell.get(rr * N + cc);
+          if (!bucket) continue;
+          for (const nb of bucket) {
+            if (nb === rec) continue;
+            if (nb.theta < rec.theta - dThetaMin && rec.front < nb.front * keepFrac) {
+              buried = true;
+              break;
+            }
+          }
+        }
+      }
+      if (buried) {
+        // Throttle, don't kill — the crystal stays ACTIVE (present, counted) but
+        // its growth is scaled to O3_BURY_GROWTH_MULT in run_step, ending a short
+        // leaning stub. Sticky: _buried never unsets (once sealed, sealed).
+        rec.c._buried = true;
+        this.log.push(
+          `  ◄ ${capitalize(rec.c.mineral)} #${rec.c.crystal_id}: ` +
+          `overgrown by a more-normal neighbor — geometric selection (growth throttled)`,
+        );
+      }
+    }
+  },
 
   _rollSpontaneousTwin(crystal) {
   // Mirror of vugg.py VugSimulator._roll_spontaneous_twin.

@@ -148,6 +148,13 @@ Object.assign(VugSimulator.prototype, {
   const result = wall.dissolve(acid_strength, this.conditions.fluid);
 
   if (result.dissolved) {
+    // W-K V1b (paleo-flow scallops): weight THIS step's flow_rate by how much it eroded, so the
+    // wall's scallop length records the flow it actually dissolved under (Curl 1974, L ∝ 1/v).
+    // Record-only — read via wall.paleoFlow() by the RENDERER, never by the growth engine, so the
+    // sim stays byte-identical.
+    wall.paleo_flow_accum += this.conditions.flow_rate * result.rate_mm;
+    wall.paleo_flow_wt += result.rate_mm;
+    this.wall_state.paleo_flow = wall.paleoFlow();   // push the render-side scalar (Object.assign-copied through the snapshot)
     // Distribute the erosion per-cell. Cells shielded by acid-resistant
     // crystals don't budge, concentrating the attack elsewhere — the
     // vug grows lopsided in whatever direction the deposit left bare.

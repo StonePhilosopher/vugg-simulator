@@ -565,6 +565,12 @@ function _renderWireframeInstance(ctx, crystal, anchor, sphereRadiusPx,
     if (subNormal[2] > 0.4)       cAxis = [0, 0, 1];
     else if (subNormal[2] < -0.4) cAxis = [0, 0, -1];
     else                          cAxis = subNormal;
+  } else if (GEOMETRIC_SELECTION_ENABLED && crystal._nucTilt) {
+    // W-F O3b — the EARNED lean: the crystal's real recorded nucleation tilt
+    // (rigid whole-body rotation off the substrate normal) replaces the cosmetic
+    // hash-scatter below. Selection (the sim burial pass) makes it read right —
+    // near-normal survivors tall, tilted losers arrested short.
+    cAxis = o3TiltedAxis(subNormal, crystal._nucTilt);
   } else {
     const epitaxial = crystal.enclosed_by != null;
     const sigmaRad = (epitaxial ? 3 : 12) * Math.PI / 180;

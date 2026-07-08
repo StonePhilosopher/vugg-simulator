@@ -683,6 +683,12 @@ _check_enclosure() {
     for (const candidate of this.crystals) {
       if (candidate.crystal_id === grower.crystal_id) continue;
       if (candidate.enclosed_by != null) continue;
+      // W-F O3b — a geometrically BURIED crystal is already sealed by its
+      // overgrowing neighbor (selection); don't ALSO swallow it via the size-
+      // ratio enclosure mechanic (which frees its nucleation-cap slot and is a
+      // distinct case — the Sweetwater host-over-guest swallow). Its slow
+      // throttled growth would otherwise trip the `slowing` test below.
+      if (candidate._buried) continue;
       if (grower.enclosed_crystals.includes(candidate.crystal_id)) continue;
 
       const candidateSize = candidate.total_growth_um / 1000;

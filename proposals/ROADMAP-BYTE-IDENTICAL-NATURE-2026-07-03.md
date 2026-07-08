@@ -173,7 +173,7 @@ change, not kernel surgery). Rungs in brief:
 | **O0** ✅ SIM 215 (2026-07-03) | attached crystals become HALF-FORMS clipped at the wall with a real contact scar | render-only |
 | **O1** ✅ O1a real exposure + O1b shadow ✅ 2026-07-07 (`e08ab3d`, C1 tranche, render-only) | unequal face development: per-crystal kExp now read from the interior voxel field's growth-weighted base(d=0)/tip(d=max) σ gradient (js/45 _o1aExp), retiring the fleet-wide 0.18 constant the c1-depletion-ev-probe exposed as a fiction — the 13 Wulff tenants are the CALM well-fed minerals and symmetrize toward their true near-isotropic form (live kernel-truth: y-asymmetry 6–10× down). O1b neighbor-shadow reinforces it from the O2 pre-pass. Per-FACE directional shadow pre-registered. Steno held. | render-only, 0/38 |
 | **O2** ✅ 2026-07-06 (`eea52bc`) + integrated-growth weights ✅ 2026-07-07 (`e08ab3d`, C1) | induction/contact surfaces: crystals clipped at growth-rate-weighted meeting planes, cuts capped MATTE. The probe (`tools/o2-contact-probe.mjs`) reshaped it — the Wulff face-space clip reached only 7 crystals, so O2 ships a GENERIC convex-mesh clipper (`_clipConvexGeom`, js/46) reaching 622 contacted convex crystals fleet-wide. Meeting plane now weighted by INTEGRATED growth (total_growth_um), current-size fallback — faithful for the dissolved/anisotropic drift population. Concave (hopper/botryoidal/twin, ~174) still DEFERRED. 0/38 drift | render-only |
-| **O3** | EARNED geometric selection: random nucleation tilt + competitive burial; analytic oracle = Gray's d^(−1/2) survivor law | SIM bump |
+| **O3** ✅ SIM 218 (2026-07-07, the ontogeny arc's FIRST SIM bump) | EARNED geometric selection. **O3a** (`1948b3b`, byte-identical): every crystal records a nucleation tilt from an ISOLATED run-seed stream (js/44a, zero shared draws) — recorded, unread; the disabled-draw invariant held 0/38. **O3b** (`03f1582`): the render leans the c-axis to that tilt (Steno-safe rigid rotation; kernel-truth leanDeg==θ exactly) and a pre-growth burial pass (js/85b `_applyGeometricSelection`) marks crystals a more-normal neighbor overtook. SEALED-BUT-PRESENT arrest: buried crystals stay ACTIVE, grow throttled (0.12×) → short leaning stubs, and are shielded from dissolution + double-count enclosure (the specimen tests shaped this — hard arrest culled documented accessory sulfides). ELONGATE-ONLY (palisade phenomenon; equant/tabular/botryoidal exempt — un-culled a cabinet lepidolite book + a copper dendrite). **Instruments first:** `tools/o3-selection-oracle.mjs` reproduces Gray's d^(−1/2) (k≈1.5 → −0.493, isotropic control → 0); `tools/o3-selection-verify.mjs` confirms the fleet — tilt-collapse survivors 20.7°/buried 32.9°, burial concentrates in elongate dense druses (deccan 39%, shigar 29%), 23/38 select. Baseline 21/38 moved (17 sparse=byte-identical), ±1–6, one pyrite dominance re-pin (v192 precedent). | SIM bump |
 | **O4** | engulfment made visible (the enclosure mechanic EXISTS sim-side, renderer never reads `enclosed_by`) + coats_front/embedded inclusion classes | render + adjacency fix |
 | **O5** | inclusion-perturbed regrowth: ELO phantom/sceptre earned from per-face-class masking; split-growth ladder to spherulite | SIM bump |
 | **O6–O8** | flow one-sidedness (Sizaret) · hopper+recovery (Berg/σ*) · texture classifier + cockade substrates | mixed |
@@ -305,12 +305,17 @@ byte-identity candidate shipped by the standing ritual. **✅ O0 (SIM 215) + O1a
 (`eea52bc`) SHIPPED — the render-only core stands; OPEN within it: O1b neighbor-shadow, O2
 concave forms + integrated-growth weights.**
 **Phase 2:** A3 metrics + A4 bench (passive) + B2 PHREEQC instrument + B3 debt closure · W-K's
-visible foundation (V0 cleft truth + V1 wall microtexture; V3/V4 later share W-F O2/O3's era —
-same induction-surface and selection mathematics, one oracle).
+visible foundation (V0 cleft truth + V1 wall microtexture + V1b wall depth `fe5d241` +
+**V1b-flow + V1c genesis-gated textures ✅ `3a7cf6e` 2026-07-07** — scallops flow-scaled (Curl
+speedometer via paleo_flow) and gated on real dissolution genesis (33→11 walls), + comb/druse/
+boxwork/botryoidal/smooth per research-verified `wall.genesis`; byte-identical. Remainder = flow-
+DIRECTION asymmetry + primer tints; V3/V4 later share W-F O2/O3's era — same induction-surface and
+selection mathematics, one oracle).
 **Phase 3:** C1 depletion field — ◐ directional half ✅ 2026-07-07 (`e08ab3d`: O1a real
 exposure + O1b shadow + O2 integrated weights, render-only); the scalar-chemistry half
 (biasC reads cell σ) DEFERRED — 1 calcite Wulff tenant fleet-wide, re-opens with B5 / more
-tenants · O3 geometric selection · then B1 Pitzer against B2's table.
+tenants · **O3 geometric selection ✅ SIM 218 (`1948b3b` O3a byte-identical + `03f1582` O3b
+SIM bump) — the arc's first engine change** · then B1 Pitzer against B2's table.
 **Phase 4:** B5 speciation solver · C2 face-rate laws bench-calibrated, tenant by tenant · C4
 twins · O4 engulfment + O5 perturbed regrowth (share C1-era rebake windows).
 **Phase 5+:** C3 microtopography · C5 CSD · O6–O8 · D2/D3/D4 · E rungs interleaved.

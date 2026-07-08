@@ -396,12 +396,50 @@ function _parseJSON5(text) {
   return JSON.parse(text);
 }
 
+// W-K V1c (2026-07-07): cavity GENESIS per scenario → the Three.js renderer's wall relief family
+// (js/99a _wallReliefFamily). Research-verified (3 locality-genesis passes, cross-checked citations
+// — Keller 1983 Ouro Preto = vein; García-Ruiz 2007 Naica = dissolution-cavity; torbernite/zeunerite
+// = Schneeberg supergene; jeffrey_mine = open-cavity druse). Central here (not 38 scenarios.json5
+// edits) so the whole assignment is reviewable + tweakable in one place; a scenario's own
+// wall.genesis in json5 still wins. Values map to families: dissolution→scallops(flow-scaled),
+// vein→comb, pocket→druse, supergene→boxwork, botryoidal→botryoidal, vesicle/metamorphic→smooth,
+// cleft→cleft, evaporite→basin.
+const _WALL_GENESIS_BY_SCENARIO: { [id: string]: string } = {
+  // dissolution — karst / cave / acid-etched carbonate + MVT collapse-breccia + Naica hypogene cavity
+  reactive_wall: 'dissolution', porphyry: 'dissolution', mvt: 'dissolution', elmwood: 'dissolution',
+  naica_geothermal: 'dissolution', stalactite_demo: 'dissolution', zoned_dripstone_cave: 'dissolution',
+  cooling: 'dissolution', pulse: 'dissolution', tutorial_first_crystal: 'dissolution',
+  tutorial_mn_calcite: 'dissolution',
+  // vein — hydrothermal open-space fracture fill (comb/palisade)
+  tn457_barite_pulses: 'vein', reactivated_fluorite_vein: 'vein', sunnyside_american_tunnel: 'vein',
+  ouro_preto: 'vein', wittichen: 'vein', epithermal_telluride: 'vein', jeffrey_mine: 'vein',
+  // pocket — pegmatite miarolitic (blocky euhedral druse)
+  gem_pegmatite: 'pocket', shigar_pegmatite: 'pocket', radioactive_pegmatite: 'pocket',
+  // supergene — gossan boxwork after leached sulphide
+  bisbee: 'supergene', supergene_oxidation: 'supergene', roughten_gill: 'supergene', schneeberg: 'supergene',
+  // botryoidal — mammillary chrysoprase / hot-spring sinter / travertine crust
+  ultramafic_supergene: 'botryoidal', sulphur_bank: 'botryoidal', tutorial_travertine: 'botryoidal',
+  // vesicle — basalt gas bubble (smooth glassy)
+  deccan_zeolite: 'vesicle',
+  // metamorphic / no-open-void (smooth): skarn/porphyroblast + roll-front pore-cement
+  marble_contact_metamorphism: 'metamorphic', chiastolite_hornfels: 'metamorphic', colorado_plateau: 'metamorphic',
+  // cleft / evaporite — already architecture-driven, declared here for explicitness
+  grimsel_alpine_cleft: 'cleft', tormiq_alpine_cleft: 'cleft',
+  searles_lake: 'evaporite', sabkha_dolomitization: 'evaporite', great_salt_plains: 'evaporite',
+  sicily_solfifera: 'evaporite',
+};
+
 function _buildScenarioFromSpec(scenarioId, spec) {
   const initial = spec.initial || {};
   const temperature = Number(initial.temperature_C ?? 350);
   const pressure = Number(initial.pressure_kbar ?? 1.0);
   const fluidKwargs = { ...(initial.fluid || {}) };
   const wallKwargs = { ...(initial.wall || {}) };
+  // W-K V1c: stamp the research-verified cavity genesis (render-only; a scenario's own
+  // wall.genesis in json5 wins). Drives the wall relief family in the Three.js renderer.
+  if (wallKwargs.genesis == null && _WALL_GENESIS_BY_SCENARIO[scenarioId]) {
+    wallKwargs.genesis = _WALL_GENESIS_BY_SCENARIO[scenarioId];
+  }
   const duration = Math.floor(spec.duration_steps ?? 100);
   const eventSpecs = (spec.events || []).slice();
   for (const ev of eventSpecs) {

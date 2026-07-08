@@ -825,3 +825,219 @@ truth was usually already in the tree, the plan you brought was usually wrong in
 expect, and the wall that photographs smooth was never textured no matter what the code says.
 
 — the builder, seventh hand, the keystone · 2026-07-07
+
+---
+
+## Continuation — V1b, THE WALL'S DEPTH (a new session, "lets continue building together" · 2026-07-07)
+
+The keystone above sealed the seventh hand's arch and, twice, warned the next hand that "the tooling
+WILL fight you — the THREE scene is module-scoped, no live material A/B." The very first rung of the
+next session **disproved that premise.** `_topoThreeState` is a top-level `let` in a classic-script
+bundle — which means it is a **page global**, reachable straight from `preview_eval`. The scene was
+never unreachable; the seventh hand simply never tried the identifier. So this rung had the live A/B
+the last one wished for: mutate `st.cavity.material.userData.reliefAO.uReliefAOAmt.value`, call
+`st.renderer.render(st.scene, st.camera)`, screenshot. A hard-won lesson that turned out to rest on a
+false floor — worth more as a correction than the rung itself.
+
+**What shipped (`fe5d241`, render-only, byte-identical 0/38, +5 wall-relief pins):** V1 gave the wall
+a genesis normal map, but a normal map only tilts *lighting* — and the two views the boss inspects
+specimens in are translucent (0.40 default, 0.18 druse-portrait). Through that glass the relief washed
+out; V1 was, in practice, solid-wall-only. V1b bakes the **same** height field as a grayscale
+**albedo** ambient-occlusion (js/99a `_wallReliefAOMap`) and multiplies it into the cavity's
+`diffuseColor` through a small `onBeforeCompile` (js/99i `_applyWallReliefAO`). Albedo darkening is
+opacity- and angle-independent — a darker pit reads at *any* opacity — so the scallops/striations/rind
+finally show through the wall the boss actually looks through. (Why not three's `aoMap`: the rig is
+ambient-0.55 + directional-0.9 with no env map, so an aoMap scales indirect light only → a second
+washout at 0.18. The lighting-independent channel was the only honest one.) Sampled at **raw** uv (its
+own `vReliefUv` varying — never `vMapUv`, whose 6×3 skin transform would slide the shade off the pits)
+× a new shared `_wallReliefRepeat(fam)` that keys **both** maps so they can never drift apart. Settled
+`WALL_RELIEF_AO_AMT` at 0.6 — clear through 0.40, a hint at 0.18 (where the wall is *meant* to recede),
+tasteful at full opacity where V1's normal map also fires. Isolating the AO alone (normalScale 0 →
+clean scallops through 0.40) was the definitive read a normal map can't give.
+
+The theme carried forward from the keystone — LOOK before you call it done — held, but its companion
+lesson inverted: **look harder at the tooling too, because the wall it says you can't reach may just be
+a name you never typed.** The seventh hand's eye-check discipline was right; its resignation to blind
+rebuilds was not.
+
+**Where the next hand starts (V1b's own remainder, then the sealed doors):** flow-asymmetric scallops
+(Curl 1974 downstream-steepening — needs a scenario `flow_velocity` field, and *here* the VugWall→
+WallState whitelist trap is real, unlike `architecture` which was already paid) · vesicle-glass +
+primer-coat reliefs · then the keystone's three doors still stand: **O3** (earned geometric selection,
+the first SIM-bump) · **D1c** (44 dormant colour variants when the sim's chemistry catches up) · **V2**
+(primer + substrate conditioning). The wall has its genesis surface now, and — at last — you can see it
+through the glass.
+
+— the builder, eighth hand, the wall's depth · 2026-07-07
+
+---
+
+## Continuation — V1b-FLOW + V1c, THE WALL FOLLOWS ITS GENESIS (same session, "keep going" · 2026-07-07)
+
+The boss said *keep going*, so I stayed in the wall and reached for V1b's pre-registered remainder:
+flow-asymmetric scallops. The probe turned it into a discovery — the same shape this session keeps
+taking. **grep-the-tree** found `flow_rate` already carries rich signal (0.05–5.0, dynamic), so no new
+field was needed for **V1b-flow**: scallop *length* ∝ 1/velocity (Curl 1974's actual headline — a
+speedometer, not the asymmetry I'd promised), driven by a dissolution-rate-weighted `paleo_flow`
+accumulator that is **record-only, hence byte-identical** — the first sim-touching change of the
+session that still doesn't move a single growth history.
+
+But the flow driver only *reached* 4 of 38 walls — and that was the finding, not a failure. **Scallops
+are a dissolution texture, and V1 had painted them on 33 walls when only 4 dissolve.** I surfaced it
+rather than shipping narrow, and the boss chose the science-correct pass: **V1c gates the relief on real
+cavity genesis.** The census proved **composition ≠ genesis** (basalt hosts a vesicle *and* veins;
+limestone hosts caves, MVT karst-fill *and* veins), so `wall.genesis` is *declared* per scenario — a new
+field, plus a central research-verified map (three parallel locality-research passes, citations
+cross-checked because subagents fabricate; they were honest, flagging what they couldn't confirm). The
+resolver lights **comb** for veins, **druse** for pegmatite pockets, **boxwork** for supergene gossans
+(the research surfaced this one — I'd missed it), **botryoidal** for mammillary linings, **smooth** for
+vesicle/metamorphic/no-void. **Scallops: 33 → 11.** All five new families eye-checked live (the reachable
+`_topoThreeState` A/B again earning its keep) and end-to-end.
+
+The through-line held once more: **a probe replaces the hypothesis you brought.** Three times this
+session — flow-asymmetry became flow-scaling; the flow gap became the scallop over-application; a
+compositional guess became a genesis field. And the load-bearing lesson for the next hand: **composition
+is a wall-rock proxy, never a genesis proxy** — if you want to know why the void exists, you must ask the
+rock's history, not its mineralogy.
+
+**Where the next hand starts:** the wall's genesis remainder — true flow-*direction* asymmetry
+(downstream-steepening; needs a scenario flow-azimuth the sim doesn't carry yet) · celadonite/primer
+*tints* on vesicle walls (a colour, not a relief) · the two genuine NO-VOID cases (colorado_plateau
+roll-front pore-cement, travertine depositional crust) currently riding smooth/botryoidal as least-wrong.
+Then the standing doors: **O3** (earned geometric selection — the first SIM bump) · **D1c** (44 dormant
+colour variants when the chemistry catches up) · **V2** (primer + substrate conditioning). The wall now
+knows what kind of cavity it is — and shows it.
+
+— the builder, eighth hand, the wall's genesis · 2026-07-07
+
+---
+
+## KEYSTONE — the eighth hand's session, whole (2026-07-07, the boss asked to commemorate it)
+
+| commit | what landed |
+|---|---|
+| `fe5d241` | **V1b wall depth** — the genesis relief re-baked as an albedo AO, so it reads *through* the translucent glass a normal map washes out in |
+| `db5b12a` | docs — V1b, the `_topoThreeState`-is-reachable correction |
+| `3a7cf6e` | **V1b-flow** (scallops as a Curl speedometer, `paleo_flow`) **+ V1c genesis-gated textures** (scallops 33→11; comb / druse / boxwork / botryoidal / smooth) |
+| `2482f64` | docs — the wall-follows-its-genesis continuation |
+
+Every ship byte-identical, cold-ci green, Pages-verified. Every deferral named with a number.
+
+**The seventh hand carried three instruments of knowing — grep the tree, probe the fleet, look at the
+render. This session earned a fourth: RESEARCH the world.** When the question stopped being *what does
+the code hold* and became *what kind of cavity is Naica, really* — the tree couldn't answer, the fleet
+couldn't answer, the render couldn't answer. Only the rocks could, through three cross-checked locality
+passes. The apex verification this project has always reached for — *does a real specimen agree?* — got
+its own tool. Grep / probe / eye / **read the rocks**.
+
+**The theme: the wall stopped being a backdrop and became a witness.** The seventh hand made each crystal
+an individual and the scene legible; this hand's whole work was the *wall* — the smooth void behind the
+crystals. First it became **visible** (V1b-depth: the relief reads through the glass). Then it became a
+**speedometer** (V1b-flow: the scallops record the flow that carved them). Then — and this was the real
+turn — it became **truthful**. The probe caught the wall wearing dissolution scallops on 29 cavities that
+never dissolved; V1c made it stop lying about its origin. Scallops only where water actually etched;
+veins combed, pockets drusy, gossans boxworked, sinters botryoidal. VOID → WITNESS.
+
+**And the through-line, three times over: the probe replaces the hypothesis you bring.** I walked in with
+*flow-asymmetric scallops* and the flow census handed me *flow-scaling* instead (Curl's real headline).
+I walked in expecting a broad win and the reachability probe handed me a *narrow-but-correct* signal that
+exposed a deeper inaccuracy. I walked in ready to *infer* genesis from composition and the census handed
+me *composition ≠ genesis* — forcing a declared field. Not one plan survived its probe. That isn't the
+planning failing; it's the discipline working. The plan is a hypothesis; the probe is the experiment; you
+keep the experiment's answer, not the hypothesis you were fond of.
+
+**The dream I'm handing forward:** we are not making the render *prettier* — we are turning its surfaces
+into *measurements*. The seventh hand made colour a chemistry readout. This hand made the wall a genesis
+readout — its texture now *tells you how the void was born*. One by one the render's decorations are
+becoming instruments you can read a specimen with. The next surface waiting for that conversion is the
+crystal **form** itself: when the O-series ontogeny lands, a crystal's shape will be a readout of its
+growth history, the way the wall's texture is now a readout of its birth. Keep converting decoration into
+testimony until the whole render is a document.
+
+**Diagenesis — what made this session's velocity possible, none of it mine:** V1's scallop/cleft/basin
+pipeline and the `_wallRelief*` generators; the matrix-skin mirror and its double-whitelist idiom, which
+I copied verbatim for `paleo_flow` and `genesis`; the record-only-field pattern that keeps a sim-touching
+change byte-identical; the `_topoThreeState` reachability the eighth hand's own first rung uncovered and
+then leaned on all session for live A/B; and the probe / baseline / cold-ci instruments every prior hand
+cut. I added a fourth instrument and four textures to a workshop I did not build.
+
+**Where the next hand starts:** the wall's own remainder — true flow-*direction* asymmetry (a scenario
+flow-azimuth the sim doesn't carry yet), celadonite primer *tints* on vesicle walls (a colour, not a
+relief), and the two honest NO-VOID cases (colorado roll-front pore-cement, travertine crust) riding
+smooth/botryoidal as least-wrong. Then the standing doors, unchanged: **O3** (earned geometric selection
+— the first SIM bump, and the door where *form becomes testimony*), **D1c** (44 dormant colour variants),
+**V2** (primer + substrate conditioning).
+
+The crystals were made legible. The wall was made honest. What's left is to make the *shapes* remember.
+
+— the builder, eighth hand, the keystone · 2026-07-07
+
+---
+
+## KEYSTONE — the ninth hand's session: O3 GEOMETRIC SELECTION, the arc's first SIM bump (2026-07-07)
+
+The eighth hand's last line was a door: *make the shapes remember.* The boss opened it — *"what's the
+next layer you want to add?"* — and I picked **O3**, the ontogeny arc's scientific heart and its **first
+SIM bump**. It shipped in two commits, and the sim's comb — forced to the wall normal since v27, a
+palisade *painted*, not grown — is now **EARNED by competition** (Kolmogorov 1949 / van der Drift 1967).
+
+**What shipped.** `1948b3b` **O3a** (byte-identical): every crystal draws a nucleation tilt from an
+isolated run-seed stream (js/44a, zero shared draws), recorded on `_nucTilt`, *unread* — the review's
+disabled-draw invariant held 0/38. `03f1582` **O3b** (SIM 218): the render leans the c-axis to that tilt
+(Steno-safe rigid rotation; kernel-truth `leanDeg == θ` exactly) and a pre-growth pass buries crystals a
+more-normal neighbor overtook. Verified against a standalone oracle that reproduces Gray's d^(−1/2);
+burial concentrates in the elongate dense druses (deccan 39 %, shigar 29 %), survivor tilt collapses
+toward normal (20.7° vs buried 32.9°). The master handoff for the arc is
+**`PROPOSAL-ONTOGENY-2026-07-03.md`** (read the O3 ✅ block); the oracle and verify tools are
+`tools/o3-selection-{oracle,verify,scenario-detail}.mjs`.
+
+**Five things this session is worth remembering for:**
+
+1. **Instruments first — literally, before a line of engine code.** The proposal *told* me to build the
+   analytic oracle first, and it was the cheapest strongest verification this project has had. A standalone
+   Monte-Carlo that reproduces Gray's −1/2 (isotropic control → 0, the proof it isn't manufacturing a power
+   law) gave me an *independent law* to hold the engine to. Without it I'd have shipped something plausible;
+   with it I could *know* selection worked (the tilt-collapse) and calibrate the dial against a target.
+
+2. **The specimen tests SHAPED the mechanism — they are a design force, not just a gate.** My first arrest
+   was the obvious one: buried → `active=false`, dead. cold-ci went red, and the failures *told me the
+   physics was wrong*: a cabinet lepidolite book shrunk to a 54 µm flake, documented accessory sulfides
+   culled below their counts, a copper dendrite killed. The rocks don't do that. The mechanism that emerged
+   — **sealed but present** (buried crystals stay active, grow throttled into a short stub, shielded from
+   dissolution + double-count enclosure) — was *derived from what the specimens demand*, not chosen then
+   defended. [[feedback_terminal_verification_specimens]] as a compass, not a checkpoint.
+
+3. **WHERE a law applies is itself geology — the fifth verb.** Geometric selection is a *palisade*
+   phenomenon; it acts on elongate crystals competing for outward space, and equant/tabular/botryoidal/
+   dendritic forms simply don't compete. The elongate-only gate isn't a hack to pass tests — it's the
+   *scope of the physics*, and the scope is a geological fact. Legible → honest → remember → and now:
+   *know where your law lives.* ([[feedback_defer_to_geology]].)
+
+4. **A SIM bump is a WEB, not a wire.** The arc's first engine change rippled through
+   fill → nucleation → enclosure → cap across four files and re-pinned a fifth. What made the eventual
+   baseline move *safe* was the byte-identical O3a foundation: the disabled-draw invariant means the whole
+   v218 move is attributable to selection *alone*. **The two-commit pattern — draw byte-identical, then
+   selection as the bump — is the template for every future SIM bump here.** An *engine* upgrade must be
+   *attributable* the way [[feedback_render_upgrade_visible]] says a render upgrade must be *visible*.
+
+5. **The probe replaced the hypothesis, twice more.** An absolute-mm burial gap → a scale-invariant ratio
+   (the verify probe caught it over-selecting big-crystal scenarios). "Burial is gated by the ratio" → "no,
+   by whether a more-normal neighbor *exists*" (the sweep proved the ratio inert). The plan never survived
+   the measurement — the eighth hand's through-line held a third session.
+
+**The forward dream.** O3 made the *fabric* remember — the aggregate now records which crystals won the
+competition for the void. But the *individual* crystal's shape still doesn't confess its *own* biography:
+the hiatus that dusted it mid-life, the inclusion it grew around, the strain that split it. That's **O5**
+(perturbed regrowth — phantoms, earned sceptres, the splitting ladder to spherulite) and **O4**
+(engulfment made visible — a grep-the-tree gift: `enclosed_by` already exists sim-side, the renderer has
+never read it). The next verb after *remember* is **confess**: make each shape testify to its own history,
+not just the crowd's.
+
+**Where the next hand starts:** **O4** is the cheap satisfying next O-rung (the data's already there); or
+the standing doors **D1c** / **V2+**. O3's own remainder is named — a *size-scaled* neighbor footprint
+(big crystals shadow wider) to deepen dense-druse selection, and the fleet-wide survivor slope stays
+confounded by the chemical size spread (the clean oracle match lives in the tilt-collapse and the
+per-druse concentration, not the raw slope). All of it rests on instruments the prior hands cut, an oracle
+this hand added, and a lesson the rocks taught: *a shadowed crystal is not a dead one.*
+
+— the builder, ninth hand, the first SIM bump · 2026-07-07
