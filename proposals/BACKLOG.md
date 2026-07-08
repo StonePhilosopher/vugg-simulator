@@ -26,6 +26,13 @@ Living list of open work items, captured from session conversations so context s
 > Mn green · pH 6.8 → `pH ≥ 5` green], then 2× Shift↓pH → 2.8 flipped it red live.
 > Discovery-in-tests note: read data/minerals.json from disk, NOT the globalThis
 > MINERAL_SPEC snapshot (stale fallback — the _liveRng staleness class, 3rd sighting).
+>
+> **▸ Taught in T1 (same-day boss follow-up):** the Grand Tour gained a step right after
+> the σ-readout beat — hover-for-recipe + the replay-scrub subtlety ("the boxes grade
+> whatever conditions the panel is currently showing"), verified hoverable THROUGH the
+> tutorial dim at that step (elementFromPoint lands on the pill). The tour's Finish-button
+> step re-trued to 📜 Narrate, Collect & Save while there (drift from the save-system
+> rename). tutorial-lint 0 errors, T1 34→35 steps.
 
 > ## 💾 SAVE SYSTEM + LIFETIME SCORE (2026-07-08, boss stone) — SHIPPED (SIM-neutral, 0/38)
 >

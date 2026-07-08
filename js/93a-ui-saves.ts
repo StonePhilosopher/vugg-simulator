@@ -246,7 +246,7 @@ function _savePersistActive() {
   persistSaves(items);
 }
 
-// Finish & Narrate sealed the run. Returns display info for the log.
+// Narrate, Collect & Save sealed the run. Returns display info for the log.
 function _saveMarkFinished() {
   if (_fortressReplaying || !_saveActiveRecord) return null;
   _saveActiveRecord.status = 'finished';
