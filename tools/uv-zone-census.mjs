@@ -60,7 +60,7 @@ const RULED = [
   // (autunite blazes, torbernite family dark); none of these carry a 98c case.
   'uranophane', 'torbernite', 'metatorbernite', 'metazeunerite', 'uranospinite',
 ];
-const TRACES = ['trace_Fe', 'trace_Mn', 'trace_Al', 'trace_Cu', 'trace_Cr'];
+const TRACES = ['trace_Fe', 'trace_Mn', 'trace_Al', 'trace_Cu', 'trace_Cr', 'trace_Y', 'trace_Pb'];
 
 const pct = (sorted, p) => sorted.length
   ? sorted[Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length))]

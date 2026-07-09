@@ -160,25 +160,30 @@ function renderChemistryBar(canvas, crystal, opts: any = {}) {
 // represent fluorescence behavior under shortwave/longwave UV instead of
 // visible-light color.
 //
-// Per-mineral activator/quencher physics (NB: rules read ZONE traces,
-// which sit BELOW broth ppm by the lattice partition — calcite's rule
-// was recalibrated to zone scale 2026-07-07; the other minerals' gates
-// are still broth-scale numbers and deserve the same audit):
-//  - Calcite: Mn²⁺ activates the Franklin/Sterling-Hill red SW emission;
-//    Fe quenches (broth ≥ ~5 ppm ≈ zone ≥ 0.4 — why most calcite
-//    outside Franklin is dim)
-//  - Ruby/corundum: Cr³⁺ d-d emission at 694 nm; Fe quenches (Mogok =
-//    low Fe → bright; Thai basalt-hosted = high Fe → dim)
-//  - Fluorite: REE + radiation defects → blue/violet; rare U → green
-//  - Adamite: Cu activator → diagnostic apple-green
-//  - Scheelite: tungstate intrinsic blue-white (always fluoresces)
-//  - Aragonite: organic activators sometimes produce yellow but sim
-//    doesn't model organics → inert in this rendering
-//  - Most others: inert
+// DOOR 2 LAW (2026-07-09, the UV scale audit — tools/uv-zone-census.mjs
+// is the calibration instrument): every gate reads ZONE-scale traces and
+// MIRRORS the growth engine's own recorded classifier where one exists —
+// the bar must agree with the zone notes it renders beside. The pre-audit
+// gates were broth-scale numbers tested against zone-scale traces (the
+// lattice partition sits between them), so most were dead or always-on:
+// the census measured 1 glowing calcite zone in 1370 fleet-wide while the
+// engine's notes declared graded fluorescence the bar never showed.
 //
-// First-cut palette is intentionally narrow — the famous fluorescent
-// minerals get rules, everything else renders as "lamp on, no emission"
-// (dark) which is the honest answer.
+// Voices reconciled here (in provenance order):
+//  - js/52 calcite ladder (dark-CL / brilliant / moderate / weak — v103,
+//    Rakovan 2002) — mirrored branch-for-branch
+//  - js/59 willemite ladder (spec threshold 0.005: "even traces produce
+//    strong response") and uranyl-family notes (uranophane 💛)
+//  - js/53 fluorite: trace_Y is the recorded REE proxy and the engine's
+//    own comment names Eu²⁺ (electronic, REE-tracking) as the UV
+//    activator — the old gate read Mn, the wrong element
+//  - MINERAL_SPEC fluorescence canon: uraninite NON-fluorescent
+//    (research-uraninite.md, boss-canonical 626bb22); autunite's entry
+//    records the Cu²⁺ quench that darkens the torbernite family
+//
+// Famous fluorescent minerals get rules; everything else renders "lamp
+// on, no emission" (dark) — the honest answer. Quenched and inert both
+// render dark: no emission is no emission.
 // ─────────────────────────────────────────────────────────────────────────
 
 function zoneFluorescence(zone, mineral, crystal) {
@@ -191,80 +196,176 @@ function zoneFluorescence(zone, mineral, crystal) {
 
   switch (mineral) {
     case 'calcite':
-      // Franklin red SW: Mn²⁺ activates, Fe quenches. THRESHOLDS ARE
-      // ZONE-SCALE: zones record trace_Fe/trace_Mn AFTER lattice
-      // partition (~0.08× broth for Fe in calcite — broth 10 ppm
-      // writes ~0.8 into the zone), so the quench gate sits at 0.4,
-      // the zone-scale image of the "broth Fe ≥ ~5 ppm is why most
-      // calcite outside Franklin is dim" intent. Pre-2026-07-07 this
-      // read Fe < 5.0 — broth-calibrated, unreachable at zone scale,
-      // so NO calcite ever quenched and Tutorial 2's dim-early-zones
-      // story rendered as a uniformly glowing bar (caught driving the
-      // reworked tutorial; the calibration anchor is tutorial_mn_calcite:
-      // broth Fe 10 → zone 0.8 must QUENCH, its post-recharge Fe 1 →
-      // zone 0.04 must GLOW).
-      if (Mn > 1.0 && Fe < 0.4) return '#ff4040';
-      return null;
+      // Mirrors js/52's recorded 4-tier ladder branch-for-branch (v103
+      // graduated Mn²⁺ fluorescence, Rakovan 2002): the bar now agrees
+      // with the zone notes it renders beside. The 223a96b single gate
+      // (Mn>1 && Fe<0.4) was so tight it false-quenched the famous
+      // fluorescents — census 2026-07-09: 1 glowing zone in 1370
+      // fleet-wide; elmwood (zone Fe p50 1.27 / Mn 4.0, note "will
+      // fluoresce orange") and mvt (3.12 / 7.42) rendered dark while
+      // only deccan (Fe 24.8, note "Fe quenching — dark CL") deserved
+      // it. Anchors: elmwood/mvt GLOW (weak/moderate), deccan/grimsel/
+      // jeffrey DARK, tutorial_mn_calcite dim-early → brilliant-rim
+      // (the broth carries the quench — see the v225 tutorial retune).
+      if (Mn > 1.0 && Fe > 2.0) return null;       // Fe²⁺ quench — dark CL zone
+      if (Mn > 6.0 && Fe < 0.4) return '#ff5040';  // brilliant salmon (manganocalcite)
+      if (Mn > 2.0 && Fe < 1.0) return '#e06a30';  // moderate orange
+      if (Mn > 1.0 && Fe < 2.0) return '#a05226';  // weak orange
+      return null;                                  // no activator
 
     case 'aragonite':
-      // Some specimens fluoresce yellow from organic activators which
-      // we don't model. Honest rendering = inert.
+      // Real aragonite fluoresces VERY OFTEN (fluomin: LW strong, since
+      // Kunz & Baskerville's 13,000-specimen 1903 survey) — but the
+      // dominant activator is ORGANIC matter, a field the sim's chemistry
+      // doesn't carry yet. Dark until the biogenic-drivers stone lands
+      // (same door as selenite's 1927 Wiesloch UV hourglass — the
+      // SIM 211 sediment sectors are the recorded datum waiting for it).
       return null;
 
     case 'ruby':
     case 'corundum':
-    case 'sapphire':
-      // Cr³⁺ red SW + LW. Fe quenches strongly above ~10 ppm.
-      // Reading trace_Cr: not in the standard zone fields list, so check
-      // both the trace_Cr field (if present) and infer from notes.
+    case 'sapphire': {
+      // Cr³⁺ R-line red (694 nm) SW + LW; Fe quenches (Mogok marble-hosted
+      // low-Fe → bright vs Thai/Cambodian basalt-hosted high-Fe → dim).
+      // Fe gate at the ZONE image: the corundum writer partitions 0.008
+      // (js/57), so marble-type broths (Fe ≲ 50) write ≤ 0.4 while
+      // basalt-type (Fe ≳ 500) write ≥ 4 — the old Fe < 10 could never
+      // quench anything the engine writes. Numeric Cr arm reads trace_Cr
+      // where the record carries it (v225+); the note arm keeps pre-v225
+      // records replaying honest (the writer always printed the ppm into
+      // the note). Pink Cr-sapphire rides the same physics — weak red.
       const Cr = zone.trace_Cr || 0;
-      const noteCr = zone.note && /Cr|chromium|emerald|ruby/i.test(zone.note);
-      if ((Cr > 1.0 || (mineral === 'ruby' && noteCr)) && Fe < 10.0) {
-        return '#ff5050';
-      }
+      const noteCr = zone.note && /Cr|chromium|ruby/i.test(zone.note);
+      if ((Cr > 0.5 || noteCr) && Fe < 2.0) return '#ff5050';
       return null;
+    }
 
-    case 'fluorite':
-      // Mn or radiation defects → blue/violet emission.
-      if (Mn > 0.5 || radDmg > 0.1) return '#5588ff';
+    case 'fluorite': {
+      // Eu²⁺/REE blue-violet — electronic emission tracking REE content
+      // (js/53's own comment names the activator; spec: REE_or_defects) —
+      // or radiation defects. NOT Mn: the old Mn > 0.5 arm read the wrong
+      // element and lit exactly the wrong tenants (census: mvt/reactivated
+      // glowed — IL-KY-type fluorite is famously non-fluorescent — while
+      // sunnyside's HREE yttrofluorite only glowed by Mn accident and
+      // elmwood correctly-but-accidentally stayed dark). trace_Y is the
+      // recorded REE proxy; the note arm covers custom writers (70p
+      // sunnyside) + pre-v225 records. The Fe-green body-colour note
+      // deliberately does NOT match: "(HREE|REE)-(rich|bearing)" avoids
+      // its "different mechanism from Y-yttrofluorite green" mention.
+      const Y = zone.trace_Y || 0;
+      const noteREE = zone.note && /(HREE|REE)-(rich|bearing)/i.test(zone.note);
+      if (Y > 0.01 || noteREE || radDmg > 0.1) return '#5588ff';
       return null;
+    }
 
     case 'scheelite':
-      // Tungstate intrinsic — bright blue-white, every zone.
+      // Tungstate intrinsic (self-activated WO₄²⁻) — always-on, the
+      // WWI/WWII prospecting-lamp mineral. Verified hue ladder for the
+      // day a tenant carries Mo (Cannon 1944, US2,346,661): 0% Mo blue →
+      // 0.35-1% white → >1% yellow (saturating ~5%, the powellite end).
+      // No fleet tenant yet; the rule waits with its calibration banked.
       return '#ddddff';
 
     case 'adamite':
-      // Cu activator → apple-green; diagnostic for cuproadamite.
-      if (zone.note && zone.note.includes('cuproadamite')) return '#aaff44';
-      // Pure adamite is yellow-green under SW.
+      // The Mapimí lime-green is TRACE-URANYL activated (fluomin; Nature's
+      // Rainbows Geiger comparison: bright ~200 cpm vs dim ~80 cpm) — and
+      // Cu²⁺ QUENCHES it, the same physics that darkens torbernite against
+      // autunite. The pre-audit gate had the sense BACKWARDS (cuproadamite
+      // rendered brighter). Three verified legs (2026-07-09): fluomin
+      // "cupro- and manganoan-adamite... usually not as bright as pure
+      // adamite"; the torbernite structural pair; geology.com Cu-as-
+      // quencher. Plain adamite bright; cuprian dim.
+      if (zone.note && zone.note.includes('cuproadamite')) return '#557744';
       return '#88dd66';
 
     case 'willemite':
-      // Franklin classic — Mn²⁺ → bright green SW. (Sim doesn't ship
-      // willemite yet but reserve the rule for when it lands.)
-      if (Mn > 0.1) return '#88ff44';
-      return null;
+      // Franklin classic — Mn²⁺ in the Zn²⁺ site → bright green SW, often
+      // phosphorescent. Mirrors the engine's own ladder (js/59: > 0.05
+      // troostite / > 0.005 trace-Mn, both "UV-FLUORESCENT bright green";
+      // else "weakly fluorescent") and the spec threshold 0.005 ("even
+      // traces produce strong response"). The old Mn > 0.1 gate left
+      // 66/69 fleet zones dark against the engine's own verdict — and its
+      // "sim doesn't ship willemite yet" comment was stale (mvt + tn457).
+      if (Mn > 0.005) return '#88ff44';
+      return '#5a9944'; // engine else-tier: pale, weakly fluorescent
 
     case 'autunite':
-    case 'uraninite':
-      // Uranyl ion → diagnostic green. Uraninite's color comes from
-      // U not radiation, so always-on rather than gated.
+      // Uranyl (UO₂)²⁺ — intense apple-green, the brightest uranyl
+      // fluorescer in the simulator (spec canon: Ca²⁺ doesn't quench the
+      // way Cu²⁺ does in the torbernite family).
       return '#aaff66';
+
+    case 'uranophane':
+    case 'uranospinite':
+      // Uranyl — diagnostic bright yellow-green (spec: uranophane's
+      // intensity often exceeds autunite's; uranospinite a shade dimmer,
+      // the heavier As-anion absorbs some emission). Census 2026-07-09:
+      // both rendered dark for want of a case.
+      return mineral === 'uranophane' ? '#ccff44' : '#aaee55';
+
+    case 'metatorbernite':
+    case 'metazeunerite':
+      // Cu²⁺ QUENCHES uranyl emission — the classic field contrast with
+      // autunite (spec canon on the autunite entry). Dark is diagnostic:
+      // same uranyl chromophore, killed by the copper.
+      return null;
+
+    case 'uraninite':
+      // NON-FLUORESCENT — boss-canonical (research-uraninite.md
+      // §Fluorescence, 626bb22): UO₂ is near-metallic and U here is U⁴⁺,
+      // not uranyl. The ABSENCE of glow is the diagnostic, separating
+      // primary uraninite from its bright secondary uranyl daughters.
+      // The old always-on green faked exactly the physics the spec
+      // corrects (census: ×584 zones lit wrongly).
+      return null;
 
     case 'wulfenite':
       // Some specimens fluoresce orange under SW but most don't reliably.
       return null;
 
     case 'apophyllite':
-      // Variable — Mn-bearing zones fluoresce; clean ones don't.
-      if (Mn > 0.3) return '#ffaa66';
+      // Mostly INERT — the literature pass (2026-07-09) found no support
+      // for an Mn-orange response (fluomin/Bostwick: weak white/cream SW
+      // at Franklin, rare; locality exceptions are trace uranyl/Ce/organic
+      // accidents, not a species property). The old Mn > 0.3 arm was also
+      // structurally dead — apophyllite zones carry no trace_Mn at all.
+      return null;
+
+    case 'sphalerite':
+    case 'wurtzite':
+      // The low-Fe cleiophane classic: Mn²⁺ orange (~595 nm, fluomin),
+      // LW-dominant, with the famous triboluminescence; Fe is the hard
+      // veto (cleiophane < 0.1% Fe bright; marmatite dead — ZnS's
+      // textbook killer ion). Zone image from the engine's own mol%
+      // notes: gemmy elmwood cleiophane (zone Fe ~1.4 ≈ 0.1 mol%) glows;
+      // the honey/amber and marmatitic tenants (zone Fe ≥ 5) stay dark.
+      // The narrator's old avg_Mn > 5 gate could never fire (fleet zone
+      // Mn max 3.13) — the bar had no case at all.
+      if (Mn > 0.1 && Fe < 2.0) return '#ff9944';
+      return null;
+
+    case 'feldspar':
+      // Weak deep-red SW — Fe³⁺ substituting tetrahedral Al³⁺, emission
+      // ~700-720 nm (Bostwick: Franklin albite "FL red SW"; J. Lumin.
+      // Fe³⁺ feldspar emission). Renders DIM by design — the eye barely
+      // catches 700 nm. Gated at the fleet's own top decile (p90 0.333).
+      // Amazonite deliberately gets NO arm: its Pb²⁺ is a COLOUR CENTRE,
+      // not an activator (the literature pass found no verified amazonite
+      // glow — the narrator's yellow-green claim retires in v225).
+      if (Fe > 0.35) return '#6a2020';
       return null;
 
     // Beryl family — emerald has weak red Cr³⁺ emission; aquamarine/
     // morganite/heliodor are largely inert. Goshenite spec lists null.
     case 'emerald':
-      // Cr-bearing → weak red, much dimmer than ruby.
-      if (Fe < 5.0) return '#cc4040';  // dimmer red than ruby
+      // Cr³⁺ red, much dimmer than ruby, and usually Fe-killed: Colombian
+      // (low-Fe) emeralds glow red under UV/Chelsea filter; schist-type
+      // (Zambian/Brazilian, Fe-rich) are inert. Fe gate at the ZONE
+      // image: the beryl writer partitions 0.010 (js/59), so the old
+      // Fe < 5.0 meant broth 500 — effectively always-on. 1.0 puts the
+      // split at broth ~100: gem_pegmatite's paradox emerald (zone 0.5)
+      // keeps its weak glow; a schist-type tenant would arrive quenched.
+      if (Fe < 1.0) return '#c04040';
       return null;
 
     default:
@@ -343,10 +444,27 @@ function renderUVBar(canvas, crystal, opts: any = {}) {
 }
 // Lookup of the per-mineral expected fluorescence narrator string from
 // the spec's `fluorescence` field — used as the modal header subtitle.
+// The field is a plain string for some species (ruby, emerald) and a
+// structured {activator, color, quencher, status} object for others —
+// the object form used to template into the modal as "[object Object]"
+// (caught by the Door 2 census pass, 2026-07-09).
 function uvSummary(mineral) {
   const spec = MINERAL_SPEC[mineral];
-  if (!spec || !spec.fluorescence) return 'inert under UV';
-  return spec.fluorescence;
+  const f = spec && spec.fluorescence;
+  if (!f) return 'inert under UV';
+  if (typeof f === 'string') return f;
+  // Fields are strings when authored, but empty/absent slots arrive as
+  // objects from the JSON — only trust non-empty strings (the live check
+  // caught calcite's empty-object quencher rendering "[object quenches").
+  const str = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+  if (str(f.status) && /non-fluorescent/i.test(str(f.status))) {
+    return 'non-fluorescent — diagnostic';
+  }
+  const parts = [];
+  if (str(f.color)) parts.push(str(f.color).replace(/_/g, ' '));
+  if (str(f.activator)) parts.push(`${str(f.activator).replace(/_/g, '/')} activator`);
+  if (str(f.quencher)) parts.push(`${str(f.quencher).split(/[\s(]/)[0]} quenches`);
+  return parts.join(' · ') || 'inert under UV';
 }
 function renderZoneBarCanvas(canvas, zones, opts: any = {}) {
   if (!canvas || !zones || !zones.length) return;
