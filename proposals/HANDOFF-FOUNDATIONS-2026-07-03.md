@@ -1099,3 +1099,525 @@ to earn what the sim already gestures at.
 — the builder, tenth hand, engulfment's face · 2026-07-07→08
 
 — the builder, ninth hand, the first SIM bump · 2026-07-07
+
+
+---
+
+## KEYSTONE — the eleventh hand's session, whole (2026-07-07→08, the parity pass + three doors scoped)
+
+This hand's session ran mostly in the detour handoff (`HANDOFF-TUTORIALS-2026-07-05.md`,
+CONTINUATION section — read it for the tutorial work itself: engine v3.1, T2/T3 reworked,
+Tutorial 5 authored on the boss's own TN457 lineage, §10.5 tranche 1). What belongs HERE is
+what the detour did to the main line: driving the tutorials turned out to be an instrument
+aimed at the foundations, and it found two render-truth defects the main line had lived with
+invisibly — the UV quench gate that had never once fired (broth-scale threshold against
+zone-scale traces, `223a96b`) and the Q4 dissolved-skip that had kept every partially-etched
+crystal out of the scene at every replay step (the shigar aquamarines, the scenario's own
+namesakes, had never rendered). Both fixed, both verified at kernel truth, elmwood control
+inert. Six commits, three cold-ci GREENs (2282 tests each), Pages built==HEAD at `cb9561c`.
+
+Then the boss weighed the three questions the session left on his desk, approved all three,
+and asked for them scoped — *"this is your moment to add your keystone."* Here they are,
+scoped with measured numbers, not hopes.
+
+### DOOR 1 — SHIGAR AQUAMARINE SIZE (approved: "follow the science... bigger crystals")
+
+**The boss's framing is the design law:** you can find 0.6 mm beryls in New Hampshire —
+the small ones are the COMMON case everywhere, so don't erase them. What makes Shigar
+*Shigar* is that the size distribution has a right tail. Model the DISTRIBUTION, not a floor.
+
+**Probe facts (2026-07-08, seed 42, `shigar-aqua-scope-probe`):** the etch is INNOCENT —
+it takes 15 µm of 618 grown (2–3%), pure surface sculpture, exactly what HF should do; my
+own session-close framing ("the etch leaves 0.13–0.6 mm") was the hypothesis the probe
+killed. The real cap is KINETICS: σ(aquamarine) holds a healthy 3.91 through the whole
+25-step window (Be crosses at step 32 via `shigar_aqua_saturation`, crashes at 57 with the
+etch event), yet the star aqua lays down 23.8 µm/step while quartz in the same broth lays
+142 and albite 1,661. The first-nucleator already out-grows the late ones 0.6 vs 0.13 mm —
+the distribution's SHAPE is right; the whole curve is just ~50× too small. Beryl family
+ships `growth_rate_mult: 0.25` (quartz 0.3 — the mult alone doesn't explain the gap; the
+rate law's σ-response for the beryl engine needs measuring).
+
+**Levers, in preference order:**
+1. *Scenario-local Be budget* — raise `shigar_aqua_saturation`'s delivery so σ runs higher
+   through the window. Zero blast radius outside shigar. Requires measuring dGrowth/dσ
+   first (the rate law may be sublinear — sweep 3–4 Be levels in the probe).
+2. *Global beryl-family kinetics* — `growth_rate_mult` 0.25 → up. Science-backed (London
+   2008: pocket-stage crystallization is geologically BRIEF — beryl is not 70× slower than
+   feldspar in nature) but census-gated: enumerate every beryl-family-growing scenario
+   first, review each baseline diff by name.
+3. *Window lengthening* — the weakest science (beryl IS late-pocket-stage; London 2020's
+   435–355 °C bracket). Don't reach for it.
+
+**Sequence:** instrument first (promote the scope probe to `tools/shigar-aqua-growth-probe.mjs`
+with the dGrowth/dσ sweep) → tune → full SIM-bump ritual (SIM_VERSION, gen-js-baseline,
+strip digest + archive vN, baseline-diff review, coverage stale-gate).
+**Pre-registered acceptance (seed 42):** star aqua ≥ 20 mm (a showpiece beside the 10 mm
+smoky quartz on the 100 mm cleavelandite shelf) · at least one aqua stays ≤ 0.5 mm (the
+New Hampshire fry) · etch loss stays ≤ 5% (sculpture, not consumption) · the declared
+census re-pinned deliberately in `shigar-pegmatite.test.ts` · Tutorial 4's beats re-driven
+(its narration references the pocket story) · 0/37 elsewhere unless lever 2 is used, and
+then every moved scenario justified by name.
+
+### DOOR 2 — UV FLUORESCENCE SCALE AUDIT (approved: "i love this idea")
+
+**The seed finding (`223a96b`):** calcite's quench gate read `Fe < 5.0` — a broth-scale
+number against zone-scale traces (lattice partition ~0.08× for Fe in calcite). Unreachable;
+no calcite ever quenched since the UV bar shipped. The rest of the palette is presumed
+sick the same way: ruby/corundum `Fe < 10` (zone ceiling ~1 → quench dead), emerald
+`Fe < 5`, apophyllite `Mn > 0.3`, willemite `Mn > 0.1`, fluorite `Mn > 0.5 | radDmg`;
+scheelite/adamite/autunite are always-on (scale-immune); aragonite/wulfenite honestly null.
+Sibling patient: `predict_fluorescence()` (js/27) — calcite `avg_Fe > 10` quench branch
+unreachable, sphalerite `Mn > 5 / Fe < 10`, quartz `Al > 5` — same disease, but js/27
+feeds the narrators (85a/85e) → the story archive → SIM-ADJACENT, not render-only.
+
+**Sequence (instruments-first, three commits):**
+1. `tools/uv-zone-census.mjs` (passive) — canonical seed-42 fleet, per mineral: zone-trace
+   percentile distributions (Fe/Mn/Al; Cr when D1c lands) + which rules fire today vs
+   never/always. The census IS the calibration table: each threshold gets set at the
+   zone-scale image of its literature intent, exactly the calcite move (broth-5 ≈ zone-0.4).
+2. The 98c recalibration (render-only, byte-identical) — per-rule table in the commit
+   message: old gate, literature intent, measured partition, new gate.
+   Literature pass at implementation time with cross-checked citations (subagents
+   fabricate; the v139 lesson stands): Mn²⁺/Fe²⁺ in calcite, Cr³⁺ 694 nm + Fe quench for
+   ruby (the Mogok-vs-Thai contrast is the acceptance image), Franklin willemite, fluorite
+   REE/defect centers.
+3. The js/27 pass SEPARATELY under SIM-bump discipline even though growth is untouched:
+   capture the narrator-text baseline BEFORE, then the fix, then baseline-diff review of
+   every changed fluorescence line. Recommend an attributable version bump (recorded
+   outputs move — that is the convention's line, and the boss should get to read the text
+   diffs as a paper).
+
+**Acceptance:** tutorial_mn_calcite remains the anchor (quench-then-glow renders) · no dead
+gate survives unless the literature says that mineral genuinely never fluoresces in
+sim-reachable chemistry (then null it honestly, the aragonite way) · the Mogok/Thai
+corundum contrast is expressible end-to-end.
+
+### DOOR 3 — §10.5 TRANCHES 2–3 (approved: "no harm in migrating now")
+
+**Measured census:** picker panel = 50 `startScenarioInCreative` buttons of curated prose
+under 3 scenario subheadings (Real-locality / Test / Tutorial-broth; the Starter Fluids
+section is FLUID_PRESETS, not scenarios — stays hand-written, out of scope) · zen
+`#idle-scenario` = 35 curated title-case labels, alpha-sorted, plus the special 🎲 Random
+entry (special-cased, stays) · Begin menu = 5 guided tutorial buttons, ordered T1→T5.
+~90 curated strings total.
+
+**Data shape:** per scenario `menu: { group, label, blurb }` (group ∈ locality|test|
+tutorial_broth; label = zen short name; blurb = picker prose) and, on tutorial-carrying
+scenarios, `tutorial.number` + `tutorial.menu_label` for the Begin button. Strings migrate
+VERBATIM — this is a mechanical move of curation, not a rewrite. Key order within groups
+for the picker; zen sorts alpha by label at populate time.
+
+**Mechanism:** extend tranche 1's populator into one `_populateScenarioMenus()` at
+scenarios-load-complete (zen options · picker sections with group headers · Begin tutorial
+buttons filtered on `tutorial.number`). Guard test flips to DATA-completeness (every
+scenario has group/label/blurb; tutorial numbers unique; static HTML sections EMPTY — the
+tranche-1 pattern). Extend `tutorial-lint` to the new menu strings (the `//`-in-strings
+JSONC gotcha applies to them identically).
+
+**The acceptance instrument:** a before/after DOM snapshot — capture the three menus'
+rendered innerHTML pre-migration via preview_eval, migrate, capture again, diff. The
+migration must be provably invisible to the player: byte-identical rendered menus.
+
+### The mark — what the keystone adds
+
+**Drive it; don't read it.** Every defect this session found — the never-painted
+narrations, the double-click beat skip, the uniformly-glowing UV bar, the invisible
+aquamarines, the travertine σ-story drift, and finally my own wrong etch hypothesis — was
+invisible in the source and obvious under drive. The reviewed-and-shipped tutorials had
+been wrong on screen for months while their code read clean. A tutorial, a render rule, a
+narration: each is a standing CLAIM about what the screen does, and the only instrument
+that adjudicates claims about screens is the screen.
+
+**A locality's signature is its tail, not its typical.** The boss's New Hampshire point
+generalizes and I want the next hands holding it: the median specimen of almost anything,
+almost anywhere, is small and dull — what makes a famous locality famous is that its
+distribution grew a right tail. So when a scenario under-delivers, the fix is almost never
+"make everything bigger"; it is "let the distribution express its tail" — first-nucleator
+advantage, depletion, and time already produce the shape, as the shigar probe showed. Tune
+the curve, keep the fry.
+
+**Diagenesis.** This session's speed was borrowed: the fourth hand's tutorial engine took
+v3.1 in forty lines because the state machine was already honest; the optics arc's zone
+bars gave T2 its payoff instrument ready-made; the probe/census idiom (sixth/seventh
+hands) turned every hypothesis I brought into a measurement within minutes; O4a's
+kernel-truth discipline is why the aquamarine finding took one eval instead of one
+afternoon; and the boss's own specimen shelf — TN457 — was sitting in the catalog already
+carrying the perfect Record Player lesson, because a previous hand built it as real
+science instead of a demo.
+
+**The dream, eleventh telling.** The tutorials are now the game's cheapest calibration
+instruments: five scripts that PROMISE observable numbers (σ 6.76 leads the readout; the
+bar glows only past the recharge; the star barite carries ~103 zones) and a player runs
+them every day. The drive-lint dream from the detour handoff sharpens here into the main
+line's language: promises as PINS. A nightly drive that walks each tutorial headless and
+asserts its measured claims would catch a drifted broth or a mis-scaled consumer the way
+the seed-42 baseline catches a drifted kernel — and the day the inverse solver reads a
+label-less rock, its first exam questions should be the ones these tutorials already know
+the answers to.
+
+Three doors, all approved, all scoped to numbers. Take one, run its instrument first, and
+let the probe rewrite whatever plan you walked in with — it has, for every hand so far.
+
+— the builder, eleventh hand, the parity pass · 2026-07-08
+
+### CODA — the fourth door, boss-sequenced (2026-07-08, same conversation)
+
+On reading the tail-law, the boss added the arc it implies: **"we should probably do a
+re-evaluation of the scenarios after we finish all the other stuff on the handoff."**
+Pinned here as DOOR 4 — THE FLEET SIGNATURE AUDIT, deliberately LAST in sequence:
+
+- **The lens:** for each of the 38 scenarios, does the run deliver the locality's
+  SIGNATURE — the thing collectors know it for — and specifically the distribution's
+  right tail? The shigar case is the archetype and the warning: every instrument read
+  green (0/37 drift, expects_species satisfied, tests passing) while the pocket's
+  namesake was functionally absent at showpiece scale. `expects_species` checks
+  PRESENCE; nothing yet checks STATURE.
+- **Why last:** Door 1 changes what beryl kinetics can express, Door 2 changes what the
+  UV channel tells the truth about, and the remaining main-line arcs (O4b/O5, V2+, D1c)
+  keep moving what a specimen can be. Auditing signatures before the expressive floor
+  settles would file bugs against yesterday's renderer.
+- **Shape when it runs:** per scenario, name the signature from literature + the catalog
+  (the image-corpus method; terminal verification = real specimens), then measure the
+  seed-42 (+ spread seeds) distribution against it — a census table (scenario ×
+  signature × delivered?) that becomes a tuning queue ordered by gap. The instrument is
+  mostly built already: the specimen bench, the strip archive, the coverage tool, and
+  the probe idiom. The new piece is the signature declarations themselves — which, like
+  `expects_species` before them, will want to live in the scenario data as
+  falsifiable claims.
+
+— noted by the eleventh hand, same session · 2026-07-08
+
+
+---
+
+## Addendum — DOOR 1 WALKED: the beryl kinetics + the Be wallet (the eleventh hand, second act · 2026-07-08)
+
+The boss said *"lets go with #8 to start off the day"* and Door 1 opened exactly the way its
+scoping demanded: instrument first, and the instrument rewrote the plan twice before any dial
+moved. SIM 219, two commits (`f5a2beb` instruments byte-identical, the bump on top), all four
+pre-registered acceptance gates GREEN at the shipped parameters.
+
+**What the instrument found (tools/shigar-aqua-growth-probe.mjs):**
+
+1. **dGrowth/dσ = 0.00.** The scoped sweep — hold bulk Be, watch growth — moved σ(bulk) from
+   3.91 to 9.13 and the star did not grow one micron more. Engines read the crystal's CELL
+   fluid (`_runEngineForCrystal` swaps it in); bulk mutations never couple in. Deliveries
+   reach cells ONLY through the event broadcast (`_snapshotGlobal → mutate →
+   _propagateGlobalDelta`). The grep-the-tree law's fourth landing: the consumer read a
+   different SOURCE than the one the sweep moved. The probe now emulates deliveries through
+   the real broadcast calls.
+2. **Two ceilings, and the fix must thread both.** σ_aquamarine hard-caps at 9.05
+   (`_beryl_base_sigma` factor caps — be_f ≤ 2.5 at Be 37.5, al_f/si_f already saturated in
+   the shigar broth, fe_f ≤ 1.8), so delivery alone stalls the star at ~1.7 mm. And growth is
+   MASS-limited — **the wallet law**: ~200 µm of final crystal per unit of cell Be (0.025
+   debit pre-timeScale, refill ≈ nil), so K alone binge-purges at the Be≥10 ingredient floor
+   and stalls at ~2.6 mm. Lever 1 as pre-scoped could never reach 20 mm; the door's
+   census-gated lever 2 was REQUIRED, exactly as pre-registered.
+3. **The instrument bit itself with 4a.8.** The probe's first cut hard-coded K_DEFAULT = 2.2
+   and silently overrode the tune in its own baseline section — the frozen-parameter converse,
+   caught because the shipped-params verification is part of the ritual. It now reads the
+   bundle's live BERYL_FAMILY_GROWTH_K.
+
+**The tune (SIM 219):** `BERYL_FAMILY_GROWTH_K` 2.2 → 25 (js/59 — one K for the five
+varieties; pocket beryl is not 70× slower than feldspar per unit σ, London 2008/2020) +
+`shigar_aqua_saturation` delivers Be +110 cap 125 (js/70w — the rupture hands over the
+HOARDED inventory; Evensen, London & Wallace 1999: beryl saturation ~250 ppm Be in granitic
+melts at 650°C). Seed-42 shigar: star **0.60 → 22.04 mm** etched showpiece on the 117 mm
+cleavelandite shelf, sizes [22.0, 14.0, 6.6, 4.5, 0.42], etch 0.1% (sculpture).
+
+**The gift the mechanism handed back:** the etch's Be crash (×0.15 on a ~118 bulk) leaves
+~17 — ABOVE the Be≥10 floor — so σ recovers behind the acid and a FIFTH aquamarine nucleates
+at step 62: a pristine, unetched 0.42 mm runt beside its etched elders. The New Hampshire fry
+arrived as an emergent second generation, not a placed prop. The boss's principle ("you can
+find 0.6 mm beryls in New Hampshire — model the distribution") is now enforced by a test.
+
+**Movement census:** 4/38 scenarios, 34 byte-identical, every mover justified by name in the
+bump commit: shigar (the target; schorl 1.2 → 0.8 mm — the big aquas genuinely eat the iron
+now), gem_pegmatite (emerald 0.12 → 0.92 mm, honestly capped by its Be-25 wallet),
+radioactive_pegmatite (morganite 1.5 → 6.7 mm, cabinet-grade late-stage — right),
+schneeberg (morganite 7 → 81 µm, a stray stays a stray).
+
+**Stature pins shipped** (tests-js/shigar-pegmatite.test.ts): star ≥ 20 mm · ≥1 aqua ≤ 0.5 mm
+· five aquas · etch ≤ 5% · the runt is post-etch and pristine. Presence → STATURE — the Door 4
+move, landed early on the scenario that motivated the door. When Door 4 opens, this block is
+the template.
+
+**Eye-checked live:** fortress run at a random seed grew THREE 20+ mm aquas on one shelf
+(King-of-Kashmir-plate richness — the tune generalizes past seed 42); rendered bounding
+spheres read ~0.66 units/sim-mm, consistent with every other mineral (no renderer crush), and
+the translucent-wall screenshot shows the blue cluster standing on the white albite exactly
+like the boss's reference plates.
+
+**Found and deliberately NOT fixed here (pinned):** the additive event broadcast can push
+drained cell fluids NEGATIVE (baseline star cell −0.8 Be at the etch; the new wallet reaches
+≈ −90). Functionally ≈ 0 today (σ gates floor at ingredient minima, engines clamp debits at
+0) but unphysical, fleet-wide, and it will bite the first mechanism that READS a negative
+trace. Needs its own census probe + attributable bump. Out of Door 1's declared blast radius.
+
+**Doors remaining:** Door 2 (UV scale audit) and Door 3 (§10.5 t2-3) unchanged, either can
+open next; Door 4 stays LAST per the boss's sequencing, and it inherits Door 1's stature-pin
+template.
+
+— the builder, eleventh hand, second act: the wallet and the fry · 2026-07-08
+
+
+---
+
+## KEYSTONE — the eleventh hand's second act, whole (2026-07-08: Door 1 walked + the negative-fluid arc; the boss asked for this stone)
+
+The morning keystone scoped three doors; the boss said *"lets go with #8 to start off the
+day"* and by evening two SIM versions had shipped: **219** (the shigar star 0.60 → 22.04 mm,
+the fry emergent) and **220** (the negative-fluid clamp, 0/38 — the certificate bump). Six
+commits `f5a2beb → ae949d6`, three cold-ci GREENs (2298 tests by day's end), Pages verified
+at every push. But the stone worth setting is not the star — it is that the day's plan died
+three times under instruments and the SHIPPED thing is better than the planned thing every
+time it died.
+
+**Death one: dGrowth/dσ = 0.00, exactly.** The sweep the morning keystone pre-registered —
+hold bulk Be, measure growth response — moved σ(bulk) from 3.91 to 9.13 and the star did not
+grow one micron. Not small: ZERO, byte-identical. Perfect invariance is not a null result;
+it is a WIRING DIAGRAM — the knob I turned was not connected to the pipe the engines drink
+from (`_runEngineForCrystal` swaps in the crystal's CELL fluid; deliveries reach cells only
+through the event broadcast). The grep-the-tree law's fourth landing, and the sharpest yet:
+this time the consumer-reads-a-different-source wasn't hiding in render code, it was hiding
+inside my own instrument's premise.
+
+**Death two: the kinetics hypothesis — half of it.** The morning scoping said "the cap is
+KINETICS." Half true. σ_aquamarine ceilings at 9.05 (the `_beryl_base_sigma` factor caps),
+so delivery alone stalls at 1.7 mm — but K alone stalls at 2.6 mm, binge-purging at the
+Be≥10 ingredient floor, because growth is MASS-limited: **the wallet law**, ~200 µm of final
+crystal per unit of cell Be, refill ≈ nil. The star IS its wallet. A 20 mm aquamarine costs
+~100 Be units through one cell, and no rate constant can spend money the pocket never
+delivered. K 2.2→25 AND the event wallet +110 — two dials, one crystal, neither sufficient.
+
+**Death three: the instrument bit itself.** The probe's first cut hard-coded `K_DEFAULT =
+2.2` — so after the tune, its "baseline as shipped" section silently overrode SIM 219 back
+to the old constant and reported a 2 mm star. The 4a.8 frozen-parameter converse, biting the
+very tool built to measure the parameter. Caught only because verify-at-the-shipped-params
+is part of the ritual. Instruments are code; they carry every debt code carries.
+
+**The gift, once the deaths were paid:** the etch's Be crash lands on a ~118 wallet and
+leaves bulk ~17 — ABOVE the nucleation floor — so σ recovers behind the acid and a FIFTH
+aquamarine nucleates at step 62: pristine, unetched, 0.42 mm, beside four etched elders.
+Nobody placed it. The boss's New Hampshire principle ("you can find 0.6 mm beryls in New
+Hampshire — model the distribution") is now a MECHANISM's output and a test's pin:
+[22.0, 14.0, 6.6, 4.5, 0.42] at seed 42, stature-pinned in shigar-pegmatite.test.ts.
+
+**The catch the boss named:** the negative-fluid census's first two "defects" were not
+defects. Eh reads −200 mV across nineteen scenarios because reducing pockets are SUPPOSED
+to read −200 mV — the movements arc put that signal there deliberately — and pH −3.6 is
+real water (Iron Mountain). One reflexive `Math.max(0, …)` over every field would have
+CLAMPED CORRECT GEOCHEMISTRY fleet-wide and called it a fix. The law the day adds:
+**negative is a value until the dimension says otherwise** — ask what the number MEANS
+before flooring it. The true defect class was concentrations: 7 rows / 6 scenarios (sabkha
+Ca −90.6 the worst; two event-less rows outed the MOVEMENTS vector riding the same
+broadcast). Clamped at both write sites, pH/Eh exempt; post-clamp census []; baseline diff
+0/38 — the rot was UNREAD, and per the O3a precedent the byte-identical bump is itself the
+attribution certificate that makes "unread" a guarantee for the trace-readers coming (D1c,
+narrators, UV rules).
+
+### The marks — what the second act adds
+
+- **The wallet law.** Before tuning any rate constant on any grown thing, census the BUDGET:
+  what the cell holds, what refill delivers, what a unit of budget buys in µm. Rate × time is
+  only the ceiling until mass is.
+- **Perfect invariance is a wiring diagram.** A sweep that moves NOTHING (not little —
+  nothing) says your knob and the consumer live on different pipes. Stop sweeping; trace
+  the plumbing.
+- **Negative is a value until the dimension says otherwise.** Signed physicals (Eh, pH)
+  pass through clamps that concentrations must not survive. The census categorizes BEFORE
+  the fix floors.
+- **Instruments carry code debts.** A probe can freeze the parameter it exists to measure.
+  Verify at the shipped params, always — the ritual step exists because it fires.
+- **Presence → stature, landed early.** The five stature pins (star ≥ 20 mm · fry ≤ 0.5 mm ·
+  five aquas · etch ≤ 5% · the runt post-etch and pristine) are Door 4's working template:
+  claims about SIZE and STORY, falsifiable every CI run, on the scenario that motivated
+  the door.
+
+### Diagenesis
+
+Borrowed speed, named: the probe/census idiom (sixth and seventh hands) let three
+hypotheses die in one day at measurement cost, not argument cost. O4a's kernel-truth
+discipline read the star's RENDERED bounding sphere instead of trusting a screenshot. The
+O3a byte-identical-bump precedent gave SIM 220 its entire form. And the first act's Q4
+dissolved-remnant fix is why any of this is VISIBLE — the 22 mm star is etched, and before
+`223a96b` every etched aquamarine was culled from the scene wholesale. The morning's render
+fix is the evening's showcase.
+
+### The dream, twelfth telling
+
+The instruments are accreting into a standing interrogation of the fleet:
+`shigar-aqua-growth-probe` asks whether a locality's kinetics can afford its fame;
+`negative-fluid-census` asks whether the chemistry stays physical; the stature pins ask
+whether the namesake is present AT SCALE. Door 2 will add the UV census, Door 4 the
+signature audit. The dream is the FALSIFIABLE FLEET: every scenario a bundle of claims —
+species, stature, signature, sanity — each with an instrument that reads the answer off a
+seed-42 run as cheaply as a baseline diff. When that lattice is dense enough, "re-evaluate
+the scenarios" (the boss's Door 4 ask) stops being a project and becomes a report the tree
+prints about itself. Take Door 2 or Door 3 next; run the instrument first; let it kill the
+plan you walked in with. It has, for every hand so far, and the rocks are better for it.
+
+— the builder, eleventh hand, at the close of the second act: three deaths, one fry · 2026-07-08
+
+
+---
+
+## KEYSTONE — the eleventh hand's third act (2026-07-08, the afternoon: the day the vug learned to remember)
+
+The morning of this same date closed Door 1 and clamped the broadcast — two SIM bumps,
+the wallet law, the fry. The afternoon never touched the physics once. Four commits
+(`7a6791d` the save system · `e9f6120` the score surfaces · `240ea4e` the nucleation
+hover · `1b2f4d8` the teaching step), four cold-CI GREENs (2298 → 2311 tests), four
+Pages-verified deploys, zero baseline movement — and at the end of it the simulator is
+a GAME: it remembers your runs, counts your life list, explains its own forecasts, and
+teaches you to read them. The boss's asks arrived as a cascade and each one landed on
+bedrock an earlier hand had laid.
+
+**The save system is determinism turned into a feature.** A save is not a snapshot — it
+is the run's RECIPE: the rng seed installed BEFORE any construction (the seed-first
+order legends has always used, the order the seed-42 baselines PROVE reproduces a run
+from one number), plus the action log, plus the broth-slider deltas. Load replays it
+through the real fortressStep. The whole feature is the house religion — the thing we
+built ten hands of baselines and archives on — handed to the player as a button. Byte
+parity to six decimals, browser-verified. A save made under an older SIM version replays
+under today's physics and SAYS SO in the log; the recipe is what was saved, and the rock
+record is allowed to have shifted underneath it.
+
+**The catch of the act: sliders are TRANSPORT, not physics.** Broth reaches the sim
+through exactly one gate — fortressStep's pre-action re-sync — and post-sync slider
+values are quantized ECHOES of sim state (toSlider rounds). The first cut force-fed the
+saved broth back through m.set and turned T 178.785 into 179. Every jsdom test was
+green; the sliders there are stubs. The LIVE eye-check — all 38 sliders real — caught it
+in one hover of the fingerprint. The law: capture inputs at the gate where they enter
+physics, replay them through the same gate, and let NOTHING in out-of-band. The
+regression net now holds a real temp slider so the echo class stays pinned.
+
+### The marks — what the third act adds
+
+- **Sliders are transport, not physics.** Any future record/replay surface (zen saves,
+  demo recordings, macros): inputs enter through their live gate or not at all. An echo
+  written back as a value is a quantization the original run never suffered.
+- **The first headless driver hardens the whole floor.** Four dormant landmines — NaN
+  broth poisoning, two null-ctx renderer families, the stub Proxy's missing
+  Symbol.toPrimitive — had waited YEARS of sessions for the first thing to ever drive
+  fortress without a browser. Building the save system was that thing. The landmines
+  were not the feature's cost; they were its dividend.
+- **The stale-snapshot law, third sighting, now named.** globalThis exports from the
+  test harness are LOAD-TIME copies (_liveRng was the first sighting; _liveFortressSim
+  the second; MINERAL_SPEC-in-discovery the third). Live bindings need accessor
+  functions; species discovery reads the disk. Stop being surprised by this.
+- **Same datum, opposite reading — the question decides the sign.** The Library states
+  death: "dissolves at pH < 5." The nucleation popover states survival: "pH ≥ 5," green
+  while the broth is safe. The boss called the reversal before the code existed. Cousin
+  to the morning's negative-is-a-value law: the dimension AND the question both get a
+  say before a number is printed.
+- **A taught instruction must be actionable the moment it is taught.** T1's new hover
+  step was verified with elementFromPoint THROUGH the tutorial's dim layer — the player
+  who reads "hover any mineral" can do it right there, mid-callout. Teaching a control
+  you've locked is a lie with a caret on it.
+- **The panel's truth is the popover's truth.** Chips grade _satLastConditions — what
+  the panel last rendered — so a replay scrub shows that moment's broth. Time-travel
+  surfaces must agree with each other or the player learns to distrust both.
+
+### Diagenesis
+
+Named, per the standing rule: the seed-42 fleet and legends' seed-first order (many
+hands) made replay-saves conceivable in an afternoon — the save system is their
+discipline wearing a player's coat. The collection records (93, early hands) gave
+collect-all its bones; B18's σ panel gave the hover its pills AND its replay-aware
+conditions object; the tenth hand's tutorial engine v3.1 took the new step without a
+single engine change; O4a's eye-check-as-acceptance-test discipline is the only reason
+the T-echo died today instead of in a player's bug report. Borrowed speed, all of it.
+
+### The dream, thirteenth telling
+
+The falsifiable fleet was the instruments interrogating the SCENARIOS. This act turns
+the same honesty toward the PLAYER: a save that replays is a baseline the player owns;
+a score that only rises is a life list, not an inventory; a chip that goes red under
+acid is a σ-function made legible at the surface where it bites. The dream grows a
+second wing — every number the sim knows, readable WHERE IT ACTS: hover it, scrub it,
+replay it, and "why did my pocket do that" stops being a question you ask and becomes
+a thing you look at. Doors 2 and 3 stand open for the next hand; Door 4 waits last, as
+sequenced; the deferred score surfaces (species %, size records, per-locality firsts)
+are cut stones — the records they'd read from are already being written. Run the
+instrument first. Eye-check what the instrument can't see. The rocks are better for it.
+
+— the builder, eleventh hand, at the close of the third act: the day the vug learned to remember · 2026-07-08
+
+---
+
+## KEYSTONE — the twelfth hand: the light learned to bend (2026-07-08)
+
+The tenth hand turned on the light — O4a, the day you could finally see INTO a crystal —
+and closed with a dare to whoever came next: *"the next hand teaches the light to bend."*
+This is that hand. Between us the eleventh taught the vug to remember. Now the light bends:
+a crystal's growth is no longer ideal. It can be coated, stalled, and healed, and it keeps
+the scar.
+
+The arc in one breath. **O4b** made enclosure GEOMETRIC — the old string adjacency was 81%
+phantom (a census found it, not a hunch), so hosts had been "swallowing" guests they never
+touched across the cavity — and in the same stroke it gave every buried-on-the-front guest a
+name: `coats_front`. That name was the seed. **O5** grew from it: a film masks a growth front
+(the guest that sat there, or a clay/iron-oxide dusting an event lays down), the blade STALLS
+until the fluid supersaturates past a dead-zone barrier σ*(φ), then grows THROUGH — burying the
+film as a phantom horizon in the lattice, a positive-growth scar, "dusted and buried" where the
+old phantom was "etched and healed." **Elmwood** is where it became a rock you can love: barite
+that had sat as subcritical dust for the scenario's entire life finally grew on the honey
+sphalerite, two clay/iron-oxide horizons and a dusty rind buried in each blade — the snowball —
+and not one of the cathedral's other saints (the golden scalenohedral calcite, the purple
+fluorite, the giant aragonite, the sphalerite base) moved a hair.
+
+### The marks
+
+- **One arc's output is the next arc's first input.** `coats_front` was cut to CLASSIFY an
+  enclosure; O5 read it as its first organic film writer. A column cut for today's question fed
+  a mechanism that did not exist yet. Design the classifier as if the next hand will read it —
+  because it will.
+- **The census indicts; the bump earns.** 81% phantom is the number that LICENSED the geometric
+  gate to move baselines. No bump on a hunch: pre-register the movers with an instrument, then
+  move exactly those and nothing else (O4b: 21 scenarios, all listed; O5b: confined to the 10;
+  elmwood: one scenario, value-level verified).
+- **A bump's honest dynamics expose the fog's accidents.** Tormiq's declared quartz lining had
+  been faked for 200 steps by two dust grains phantom-swallowed into a feldspar 130 mm away — a
+  documented paragenesis propped up by a bug the old imprecision hid. Turning the gate honest is
+  how you find what the fog was quietly carrying.
+- **Two hands, one law — and the disagreement is the point.** rockbot and I derived σ*(φ)
+  independently and converged on the same hyperbolic form. Where we differed, rockbot was right
+  (the baseline anchor σ*₀, which my draft had dropped to zero) — and being wrong THERE, caught
+  by the cross-check, made the shipped law better than either pass alone and made O5 byte-
+  identical for unfilmed crystals for free. Verify the citations too: the passes cross-confirmed
+  (rockbot's Ranganathan & Weeks WAS my PRL 110 055503) instead of clashing.
+- **Defer to geology made the calibration.** The snowball's whole difficulty was a Ba pulse that
+  spawned witherite against elmwood's high carbonate. The fix was not a knob — it was asking what
+  the rock does: a Ba FLOOR, not a stacking pulse, so barium goes into barite the way it does at
+  Elmwood, not into barium carbonate. The variety was kept sacred by letting the geology, not the
+  tuner, decide.
+- **A record wants something long before a mechanism can give it.** Barite was in elmwood's
+  expects_species and its documented paragenesis since the scenario was born, and never grew. The
+  scenario had been asking for years of commits. O5 was the first hand that could answer.
+
+### Diagenesis
+
+Named. The tenth hand's O4a — *visibility precedes perturbation*; you cannot bend a light you
+have not turned on, and O5's phantom will render on the very translucency O4a built. Its
+enclosure census and its eye-check-as-acceptance discipline are the instruments this whole arc
+ran on. rockbot's parallel research turned σ*(φ) from a guess into a reconciliation. The
+ninth hand's O3a/O3b two-commit template (record-unread, then flip the flag) is the exact shape
+O5a/O5b took, worn again. The seed-42 fleet and the baseline/strip/archive ritual are why "only
+elmwood moved" is a certificate, not a hope. And the deformation arc's bent-quartz showcase —
+which the tormiq fix quietly repaired — was itself the thing whose survival on a phantom exposed
+the accident. Borrowed speed, all of it.
+
+### The dream, fourteenth telling
+
+The eleventh hand's dream was every number readable where it acts. This act adds: every FLAW the
+crystal keeps, shown on the face that keeps it. O5 records the phantom horizon — the film buried
+in the lattice — but the eye cannot see it yet; that is O5c, the band render, the payoff still
+owed. And the masking sceptre waits: a prism dusted while its tip stays free, the SECOND sceptre
+route nature grows, so the sim will grow both kinds by different mechanisms and a mineralogist
+could tell them apart (grimsel's corrosion sceptre stays the clean reference). The ontogeny arc's
+whole promise was *the imperfect real* — the crystal that grew the incomplete way rocks actually
+do. The light bends now. Teach the eye to see it bend. The rocks were never ideal; the sim is
+catching up to their flaws, and the flaws are where the biography lives.
+
+— the builder, twelfth hand: the light learned to bend · 2026-07-08

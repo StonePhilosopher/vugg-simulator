@@ -11669,5 +11669,132 @@
 //        alone. Burial concentrates in dense druses/pockets (shigar 53%, gem-peg
 //        41%, deccan-zeolite 37%…), ~0 in sparse scenarios — selection acts only
 //        where crystals compete. Render leans every crystal at its recorded tilt.
-const SIM_VERSION = 218;
+// v219 — DOOR 1: BERYL-FAMILY KINETICS + THE SHIGAR Be WALLET (boss-approved
+//        "follow the science... make bigger crystals", 2026-07-08). Two dials,
+//        one mechanism: BERYL_FAMILY_GROWTH_K 2.2 → 25 (js/59 — pocket beryl is
+//        not 70× slower than feldspar per unit σ; London 2008/2020) and
+//        shigar_aqua_saturation delivers Be +110 cap 125 (js/70w — the pocket
+//        rupture hands over the hoarded inventory, Evensen/London/Wallace 1999
+//        ~250 ppm beryl-saturation territory). The closed-loop probe
+//        (tools/shigar-aqua-growth-probe.mjs, instrument commit f5a2beb) found
+//        the two ceilings the fix threads: σ_aquamarine caps at 9.05
+//        (_beryl_base_sigma factor caps) so delivery alone stalls at ~1.7 mm,
+//        and growth is MASS-limited (~200 µm per cell-Be unit, refill ≈ nil) so
+//        K alone binge-purges at the Be≥10 floor and stalls at ~2.6 mm. Seed-42
+//        shigar: star aqua 0.6 → ~21 mm etched showpiece on the cleavelandite
+//        shelf; aquas 4 → 5 with a PRISTINE 0.4 mm runt nucleating ~step 62
+//        AFTER the acid passes (post-crash bulk Be ~17 > the floor → σ
+//        recovers) — the New Hampshire fry as an emergent second generation,
+//        and the size DISTRIBUTION (not a floor) is the deliverable. Stature
+//        pins live in tests-js/shigar-pegmatite.test.ts (presence → STATURE,
+//        pre-figuring Door 4). Blast radius: beryl-family growers only
+//        (gem_pegmatite, radioactive_pegmatite, schneeberg reviewed by name in
+//        the baseline diff); non-beryl movement inside shigar is the shared-RNG
+//        stream shifting (fluid-inclusion rolls now pass rate>3), not chemistry.
+// v220 — NEGATIVE-FLUID CLAMP (Door 1's found-in-passing defect, own arc).
+//        The additive broadcast (_propagateGlobalDelta → js/24
+//        propagateEventDelta; js/23 propagateDelta fallback) applied bulk
+//        deltas unguarded, so crash-style events/movements landing on
+//        drift-drained cells pushed CONCENTRATIONS below zero — census
+//        (tools/negative-fluid-census.mjs, instrument commit dc8b883):
+//        7 rows / 6 scenarios at SIM 219, worst sabkha Ca −90.6 (Tidal
+//        Flood #2) and shigar Be −60.0 (The Etch); the event-less rows
+//        (bisbee S, roughten_gill Fe — 6,082 voxels negative at run end)
+//        are the MOVEMENTS vector, same call path. Concentrations now
+//        floor at 0 at both write sites; a cell the crash empties is
+//        EMPTY, not indebted. pH and Eh stay signed and unclamped
+//        (Iron Mountain pH −3.6; Eh −200 mV = ordinary reducing
+//        geochemistry — the census's own first finding). Blast radius
+//        pre-registered by the census table: at most the 6 named
+//        scenarios move; every mover reviewed in the baseline diff.
+// v221 — W-F O4b: GEOMETRIC ENCLOSURE ADJACENCY + coats_front (the second
+//        commit O4a's two-commit discipline deferred). _check_enclosure's
+//        adjacency gate was a STRING test — position === position ||
+//        position.includes(`#id`) — vacuous for free-wall pairs (every
+//        free-wall crystal holds the literal 'vug wall', so any two
+//        "matched" across the cavity) and inverted against the geology it
+//        was named for (same-host siblings with differing narrative
+//        qualifiers were BLOCKED; grower #1 could claim a candidate on
+//        host #12 by substring). Census (tools/o4b-adjacency-census.mjs,
+//        instrument commit 6967c57, self-checked 38/38 against live
+//        enactment): of 342 seed-42 enclosures, 276 (81%) were TRUE
+//        PHANTOMS — never reached by the host's footprint by run's end
+//        (median 26–100 mm; wittichen 246 mm) — 17 DEFERRED (footprint
+//        genuinely arrives 10–111 steps later), 22 real neighbors BLOCKED
+//        (incl. dist-0.0 same-host siblings), 14 substring accidents.
+//        Adjacent now = substrate-linked (exact-ID parsePositionHost,
+//        either direction) OR anchor great-circle distance ≤ the two
+//        painted footprint half-arcs + one cell (paintCrystal's own law,
+//        hoisted to WallState.footprintArcMm — painters byte-identical).
+//        coats_front rides the swallow: guest-nucleated-ON-host = front-
+//        coating (marks the host's zone horizon at enclosed_at_step —
+//        O5's phantom datum; 14 fleet-wide), else embedded-inert
+//        (poikilotopic; 74). Cleared on liberation. Blast radius
+//        pre-registered by the census table: 28 scenarios carry eligible
+//        pairs and may move; 10 have none and must hold byte-identical.
+//        Naica 35 guests → ~4 — real Naica selenite is water-clear,
+//        near-equilibrium, almost inclusion-free; the amputation is the
+//        cave being correct (García-Ruiz 2007).
+//        RIDER (exposed by the bump's honest dynamics, fixed in the same
+//        arc): tormiq's "Quartz Lining" event delivered +40 SiO2 (cap 420)
+//        — homeopathic; quartz never fired until ambient silica crept past
+//        ~750 (step ~157), and the late cold phase wiped the 0.1 mm
+//        stragglers. The declared quartz-first paragenesis was being FAKED
+//        by two dust quartz phantom-"enclosed" into a feldspar across the
+//        cavity, immune there to dissolution — the deformation arc's bent-
+//        quartz showcase stood on that accident. The lining now delivers
+//        quartz saturation at the opening beat (SiO2 +1100 cap 1500 —
+//        grimsel-class; Mullis 1994, the scenario's own source): quartz
+//        nucleates ON the beat (step 25), 3 live at 2–3 mm through the
+//        shear step, 20/20 seeds (was 11/20 marginal). Second rider:
+//        supergene's flooded-hourglass pin re-trued to strong-stain — the
+//        v220 seed-42 flood was RNG weather (v221 sweep: 5/12 seeds still
+//        flood at 0.95); the flooded variant's mechanism pins live on
+//        great_salt_plains' red-mud flood.
+// v222 — W-F O5b: THE MASKING GATE GOES LIVE (perturbed regrowth, the ontogeny
+//        arc's SECOND SIM bump; O5a shipped the record-unread foundation at 221).
+//        O5_MASKING_ENABLED flips true (js/44b): a crystal carrying a foreign
+//        film (`_film`, from an event `film:` dusting or an O4b coats_front
+//        enclosure) can only grow through it when σ clears the two-pass-
+//        reconciled dead-zone barrier σ*(φ)=σ*₀·(1+k·φ/(1−φ)) (σ*₀=1 equilibrium,
+//        k=SIGMA_STAR_K=1.0). Below it the axis STALLS; above it grows THROUGH,
+//        tagging a `masked_horizon` (a POSITIVE-growth phantom — the film buried
+//        in the lattice, joined to phantom_surfaces beside the dissolution
+//        phantom, js/27) and clearing `_film`. The `_film` guard + σ*(0)=1 keep
+//        every UNfilmed crystal byte-identical: movement is confined to the O5a
+//        census's 10 film-carrying scenarios (tools/o5-masking-probe.mjs verified
+//        confinement + picked k across a 0.3–4.0 sweep — k≥2 froze the fluorite-
+//        vein showpiece and rippled reactive_wall −5 crystals; k=1.0 keeps Δcrystals
+//        0 fleet-wide). BASELINE MOVEMENT IS SMALL BY DESIGN: organic single-
+//        inclusion films are LIGHT (φ≈0.15 → σ*≈1.18, cleared instantly — a lone
+//        speck masks little, the science), so 9/10 scenarios record a horizon that
+//        breaks through with no size change; only reactive_wall (accumulated φ=0.75
+//        from 5 stacked coats_front guests) stalls and ripples ~+100 µm into a
+//        neighbor via mass redistribution. The DELIBERATE-blanket showcase (φ≈0.9,
+//        real stalls) is the Sweetwater snowball-barite scenario, the next commit —
+//        this bump ships the proven, confined mechanism it will stand on.
+// v223 — W-F O5 FIRST CONTENT: the ELMWOOD BARITE SNOWBALL. Elmwood is famous
+//        for barite on honey sphalerite (boss), and the scenario nucleated barite
+//        on the sphalerite base all along — but its barite σ peaked at 0.97 (Ba
+//        capped 18; the "Brine Meets Sulfur" event delivers the S) and never
+//        cleared the 1.0 growth floor, so barite sat as subcritical DUST. This
+//        cashes in the documented "purple fluorite + barite" stage: a new
+//        elmwood_barite_stage handler (js/70) sets a Ba FLOOR of 28 (NOT a
+//        stacking pulse — the first cut's +22/stage stacked to σ≈3.2 and spawned
+//        WITHERITE against elmwood's high CO3; a modest floor keeps barite σ≈1.5
+//        so Ba goes into barite, not barium carbonate), and clay / iron-oxide
+//        `film:` dustings (the O5a directive) between the pulses stall the blades.
+//        The stall→pulse→break cycle buries 2 masked_horizons per blade + leaves
+//        the final clay rind uncleared = the snowball's concentric banding + dusty
+//        skin (6 blades → 0.36 mm, 12 horizons; barite is a minor phase in this
+//        calcite/fluorite/aragonite-packed cavity, so it stays small — geologically
+//        right). Calibrated by tools/o5-masking-probe + a bespoke elmwood probe:
+//        the VARIETY IS PRESERVED (boss's favorite locality "for the variety of
+//        cool stuff it makes") — golden calcite 19.16 vs 19.18 mm, fluorite/
+//        aragonite/sphalerite base/smithsonite/selenite all within noise, witherite
+//        excluded. Movement is confined to elmwood (the only scenario carrying the
+//        new events): barite dust→grown + its snowball zones, plus minor dust
+//        over-nucleation (barite 6→11, sphalerite 1→3 — the sustained-Ba web, all
+//        extras 0 mm). tests-js/elmwood-snowball.test.ts (5).
+const SIM_VERSION = 223;
 

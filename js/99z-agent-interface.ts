@@ -400,15 +400,11 @@ function _agentExposeWindow(): void {
     v.startScenario = function (name: string, opts: any) {
       opts = opts || {};
       if (typeof startScenarioInCreative !== 'function') return null;
-      startScenarioInCreative(name);
-      // Override the Date.now()-seeded rng that fortressBeginFromScenario
-      // just installed. Note: wall_state construction has already run, so
-      // wall geometry uses the Date.now() seed — only growth is seeded
-      // here. For fully deterministic runs, use ?seed= URL path OR
-      // window.vugg.headlessRun() which seeds before construction.
-      if (opts.seed != null) {
-        rng = new SeededRandom(opts.seed >>> 0);
-      }
+      // Seed threads through to the seed-first begin (2026-07-08, save
+      // system): the whole run — wall geometry included — reproduces
+      // from the seed. Previously this had to re-seed AFTER begin, so
+      // wall shape stayed on the Date.now() roll.
+      startScenarioInCreative(name, opts.seed != null ? (opts.seed >>> 0) : undefined);
       v._lastRunMeta = {
         scenario: name,
         seed: opts.seed != null ? opts.seed : null,

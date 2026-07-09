@@ -3994,7 +3994,14 @@ function _topoCrystalsSignature(sim: any, replayStep?: number): string {
     // hollow cast — its outline is the geological signature. Include
     // such casts in the signature so the cache busts when one
     // appears (and so its mesh gets built in _topoSyncCrystalMeshes).
-    if (c.dissolved && !c.perimorph_eligible) continue;
+    // AMENDED 2026-07-07 (shigar eye-check): `dissolved` means the
+    // crystal LOST material, not that it's gone — the HF-etched
+    // shigar aquamarines end at 0.13-0.6 mm net and were being culled
+    // wholesale, so the scenario's titular gemstones never rendered.
+    // Only an effectively-zero remnant drops; partially-dissolved
+    // crystals stay in the scene (and get the etched-matte surface
+    // the face-realism arc already ships for them).
+    if (c.dissolved && !c.perimorph_eligible && !(c.c_length_mm > 0.05)) continue;
     // PHASE-4-CAVITY-MESH Tranche 4b — wall_anchor is the truth.
     const _a = c.wall_anchor;
     const _ringKey = _a ? _a.ringIdx : 0;
@@ -4043,13 +4050,17 @@ function _topoCrystalsSignature(sim: any, replayStep?: number): string {
 // on invisible crystals.) Returns null for the crystals the loop also skips
 // (dissolved non-perimorphs, un-anchored floaters, not-yet-nucleated in replay).
 function _o2PlaceBody(crystal: any, wall: any, replayStep: number | undefined, ringCount: number, N: number, initR: number): any {
-  if (!crystal || (crystal.dissolved && !crystal.perimorph_eligible)) return null;
+  if (!crystal) return null;
   let renderC = crystal.c_length_mm, renderA = crystal.a_width_mm;
   if (replayStep != null) {
     const hist = _topoHistoricalCrystalSize(crystal, replayStep);
     if (hist) { renderC = hist.c_length_mm; renderA = hist.a_width_mm; }
     else if (!(crystal.dissolved && crystal.perimorph_eligible)) return null;
   }
+  // Mirrors the mesh loop's amended Q4 gate (2026-07-07): partially-
+  // dissolved remnants render, so they must also occupy space in the
+  // O2 neighbour pre-pass; only effectively-gone remnants drop.
+  if (crystal.dissolved && !crystal.perimorph_eligible && !(renderC > 0.05)) return null;
   const anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
   if (!anchor) return null;
   let ringIdx = anchor.ringIdx;
@@ -4225,13 +4236,6 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
 
   for (const crystal of sim.crystals) {
     if (!crystal) continue;
-    // Q4 — dissolved crystals normally drop from the scene, BUT a
-    // dissolved crystal flagged perimorph_eligible (Q2a tagged via
-    // shape-preserving CDR route) persists as a hollow cast. The
-    // mesh body is the inherited shape; the material is translucent
-    // double-sided so the user reads the void inside the shell.
-    if (crystal.dissolved && !crystal.perimorph_eligible) continue;
-
     // v65 replay: rendered c_length / a_width come from history when a
     // replayStep is active. Skips crystals that hadn't nucleated yet
     // (or whose net size at replayStep is non-positive) so replay
@@ -4250,6 +4254,22 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       }
       // else: perimorph cast — fall through with live (= dissolution-time) size.
     }
+
+    // Q4 — dissolved crystals normally drop from the scene, BUT a
+    // dissolved crystal flagged perimorph_eligible (Q2a tagged via
+    // shape-preserving CDR route) persists as a hollow cast. The
+    // mesh body is the inherited shape; the material is translucent
+    // double-sided so the user reads the void inside the shell.
+    // AMENDED 2026-07-07 (shigar eye-check): judge on the size being
+    // rendered THIS FRAME (post-history), and only drop EFFECTIVELY-
+    // GONE remnants. Two bugs fell together: (1) partially-dissolved
+    // crystals — the HF-etched shigar aquamarines end at 0.13-0.6 mm
+    // net, "sculpted, pitted, frosted", still physically there — were
+    // culled from the live scene entirely; (2) the skip ran BEFORE the
+    // replay-history branch, so a to-be-etched crystal never appeared
+    // at ANY playback step even while alive (Tutorial 4 narrates blue
+    // beryl onto a wall that never showed one).
+    if (crystal.dissolved && !crystal.perimorph_eligible && !(renderC > 0.05)) continue;
 
     // PHASE-4-CAVITY-MESH Tranche 4b — wall_anchor is the sole
     // positional field; _resolveAnchor reads only from it.

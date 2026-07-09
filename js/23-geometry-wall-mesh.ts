@@ -400,7 +400,11 @@ class WallMesh {
       if (!fluid) continue;
       for (let d = 0; d < dirty.length; d++) {
         const fname = fieldNames[dirty[d]];
-        fluid[fname] = fluid[fname] + deltas[d];
+        const next = fluid[fname] + deltas[d];
+        // SIM 220 — concentrations floor at 0 (mirror of the canonical
+        // voxel-grid clamp in js/24 propagateEventDelta; this is the
+        // mesh-only fallback path). pH/Eh are signed — unclamped.
+        fluid[fname] = (next < 0 && fname !== 'pH' && fname !== 'Eh') ? 0 : next;
       }
     }
   }

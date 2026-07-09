@@ -114,6 +114,7 @@ function renderChemistryBar(canvas, crystal, opts: any = {}) {
   canvas.height = height;
   canvas.style.display = 'block';
   const ctx = canvas.getContext('2d');
+  if (!ctx) return []; // canvas-less env (headless drives) — nothing to draw on
   ctx.fillStyle = '#070706';
   ctx.fillRect(0, 0, width, height);
 
@@ -159,9 +160,13 @@ function renderChemistryBar(canvas, crystal, opts: any = {}) {
 // represent fluorescence behavior under shortwave/longwave UV instead of
 // visible-light color.
 //
-// Per-mineral activator/quencher physics:
+// Per-mineral activator/quencher physics (NB: rules read ZONE traces,
+// which sit BELOW broth ppm by the lattice partition — calcite's rule
+// was recalibrated to zone scale 2026-07-07; the other minerals' gates
+// are still broth-scale numbers and deserve the same audit):
 //  - Calcite: Mn²⁺ activates the Franklin/Sterling-Hill red SW emission;
-//    Fe quenches above ~5 ppm (why most calcite outside Franklin is dim)
+//    Fe quenches (broth ≥ ~5 ppm ≈ zone ≥ 0.4 — why most calcite
+//    outside Franklin is dim)
 //  - Ruby/corundum: Cr³⁺ d-d emission at 694 nm; Fe quenches (Mogok =
 //    low Fe → bright; Thai basalt-hosted = high Fe → dim)
 //  - Fluorite: REE + radiation defects → blue/violet; rare U → green
@@ -186,8 +191,19 @@ function zoneFluorescence(zone, mineral, crystal) {
 
   switch (mineral) {
     case 'calcite':
-      // Franklin red SW: Mn²⁺ activates, Fe quenches.
-      if (Mn > 1.0 && Fe < 5.0) return '#ff4040';
+      // Franklin red SW: Mn²⁺ activates, Fe quenches. THRESHOLDS ARE
+      // ZONE-SCALE: zones record trace_Fe/trace_Mn AFTER lattice
+      // partition (~0.08× broth for Fe in calcite — broth 10 ppm
+      // writes ~0.8 into the zone), so the quench gate sits at 0.4,
+      // the zone-scale image of the "broth Fe ≥ ~5 ppm is why most
+      // calcite outside Franklin is dim" intent. Pre-2026-07-07 this
+      // read Fe < 5.0 — broth-calibrated, unreachable at zone scale,
+      // so NO calcite ever quenched and Tutorial 2's dim-early-zones
+      // story rendered as a uniformly glowing bar (caught driving the
+      // reworked tutorial; the calibration anchor is tutorial_mn_calcite:
+      // broth Fe 10 → zone 0.8 must QUENCH, its post-recharge Fe 1 →
+      // zone 0.04 must GLOW).
+      if (Mn > 1.0 && Fe < 0.4) return '#ff4040';
       return null;
 
     case 'aragonite':
@@ -286,6 +302,7 @@ function renderUVBar(canvas, crystal, opts: any = {}) {
   canvas.height = height;
   canvas.style.display = 'block';
   const ctx = canvas.getContext('2d');
+  if (!ctx) return []; // canvas-less env (headless drives) — nothing to draw on
 
   // Background — deep cool gray suggesting "lamp on, dark room, no
   // emission yet". Inert segments stay this color.
@@ -351,6 +368,7 @@ function renderZoneBarCanvas(canvas, zones, opts: any = {}) {
   canvas.style.display = 'block';
 
   const ctx = canvas.getContext('2d');
+  if (!ctx) return; // canvas-less env (headless drives) — nothing to draw on
   ctx.fillStyle = '#070706';
   ctx.fillRect(0, 0, W, H);
 

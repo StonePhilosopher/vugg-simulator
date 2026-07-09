@@ -354,19 +354,27 @@ function libraryBuildCard(name, m) {
 }
 
 // Completion-as-challenge progress banner. Computed from the static
-// MINERAL_SPEC + the player's persisted collection. Two metrics:
+// MINERAL_SPEC + the player's persisted collection. Three metrics:
 //   - species seen: distinct minerals with ≥1 collected specimen,
 //     out of the full 170-species catalog
 //   - twinned variants: distinct minerals where the player has ≥1
 //     twinned specimen, out of the species whose twin_laws[] is non-
 //     empty (143 minerals post-v141; the rest have intentionally-empty
 //     twin_laws documented via _twin_laws_note)
+//   - crystals all-time: the lifetime crystals_collected counter
+//     (93a-ui-saves.ts, the boss's scoring base stat, 2026-07-08) —
+//     a life list, not an inventory: deleting a specimen doesn't
+//     shrink it.
 //
 // Quiet design — the aesthete who only grows selenites gets a single
 // line of unobtrusive text; the completionist has the numbers front
 // and center. No alerts, no popups, no celebration animation. The
 // numbers themselves do the work.
-function _libraryProgressHTML() {
+//
+// opts.numericWhenEmpty: the home screen (title card) renders the
+// zero-state as real numbers ("0 / 180 species (0%) …" — boss ask
+// 2026-07-08) instead of the Library's teaching prose.
+function _libraryProgressHTML(opts: any = {}) {
   const all = loadCrystals();
   const speciesSeen = new Set<string>();
   const twinnedSpeciesSeen = new Set<string>();
@@ -381,9 +389,15 @@ function _libraryProgressHTML() {
   for (const m of Object.values(MINERAL_SPEC) as any[]) {
     if (Array.isArray(m.twin_laws) && m.twin_laws.length > 0) twinSupporting++;
   }
+  const lifetime = (typeof loadLifetimeStats === 'function') ? loadLifetimeStats().crystals_collected : 0;
 
-  if (all.length === 0) {
-    return `<span class="progress-label">Collection</span><span class="progress-empty">Empty — grow a vugg and tap Collect to start your collection.</span>`;
+  if (all.length === 0 && !opts.numericWhenEmpty) {
+    // A wiped collection with a nonzero life list still shows the score —
+    // the specimens are gone, the finding of them isn't.
+    const lifetimeTail = lifetime > 0
+      ? `<span class="progress-sep">·</span><span class="progress-stat">${lifetime}</span><span> crystal${lifetime === 1 ? '' : 's'} all-time</span>`
+      : '';
+    return `<span class="progress-label">Collection</span><span class="progress-empty">Empty — grow a vugg and tap Collect to start your collection.</span>${lifetimeTail}`;
   }
 
   const pct = totalSpecies > 0 ? Math.round((speciesSeen.size / totalSpecies) * 100) : 0;
@@ -393,8 +407,22 @@ function _libraryProgressHTML() {
     ` <span style="color:#5a4a30;font-size:0.8em">(${pct}%)</span>` +
     `<span class="progress-sep">·</span>` +
     `<span class="progress-stat">${twinnedSpeciesSeen.size}</span><span> / ${twinSupporting} twinned variants</span>` +
-    ` <span style="color:#5a4a30;font-size:0.8em">(${twinPct}%)</span>`;
+    ` <span style="color:#5a4a30;font-size:0.8em">(${twinPct}%)</span>` +
+    `<span class="progress-sep">·</span>` +
+    `<span class="progress-stat">${lifetime}</span><span> crystal${lifetime === 1 ? '' : 's'} all-time</span>`;
 }
+
+// The same banner on the home screen (title card), numeric from zero.
+// Repainted by refreshTitleLoadButton (every collect/delete/save routes
+// through it) and once at boot when the async MINERAL_SPEC fetch lands.
+function _refreshTitleProgress() {
+  const el = document.getElementById('title-progress');
+  if (!el) return;
+  el.innerHTML = (typeof MINERAL_SPEC_READY !== 'undefined' && MINERAL_SPEC_READY)
+    ? _libraryProgressHTML({ numericWhenEmpty: true })
+    : '';
+}
+if (typeof onSpecReady === 'function') onSpecReady(() => _refreshTitleProgress());
 
 function libraryRender() {
   const grid = document.getElementById('library-grid');

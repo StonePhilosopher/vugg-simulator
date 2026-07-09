@@ -573,7 +573,17 @@ class CavityVoxelGrid {
       if (!hit) continue;
       const fluid = v.fluid;
       for (let d = 0; d < dirty.length; d++) {
-        fluid[dirty[d]] = fluid[dirty[d]] + deltas[d];
+        const fname = dirty[d];
+        const next = fluid[fname] + deltas[d];
+        // SIM 220 — concentrations floor at 0. The additive delta lands
+        // on cells that growth debits have drained BELOW bulk, so a
+        // crash-style event/movement (shigar hf_etch ×0.15, sabkha
+        // tidal flood) drove cells to −60/−90 ppm (the negative-fluid
+        // census, tools/negative-fluid-census.mjs). A cell the crash
+        // empties is EMPTY, not indebted. pH and Eh are SIGNED physical
+        // quantities (Iron Mountain pH −3.6; Eh −200 mV = ordinary
+        // reducing conditions) and pass through unclamped.
+        fluid[fname] = (next < 0 && fname !== 'pH' && fname !== 'Eh') ? 0 : next;
       }
     }
   }

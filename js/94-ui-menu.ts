@@ -50,7 +50,7 @@ function hideAllMenuAndModePanels() {
     'title-screen', 'new-game-panel', 'scenarios-panel',
     'legends-controls', 'output-container',
     'fortress-panel', 'groove-panel', 'idle-panel',
-    'library-panel', 'random-panel',
+    'library-panel', 'random-panel', 'saves-panel',
     'topo-panel',
     // HELIX-OVERLAY-FORK ADDITION (v153): strip view mode panel.
     'strip-view-mode-panel',
@@ -101,12 +101,14 @@ function menuGo(modeName) { switchMode(modeName); }
 
 // Take a SCENARIOS[name] entry and run it inside Creative/Fortress so the
 // player steps through it interactively; events fire on their scheduled
-// step numbers as the sim advances.
-function startScenarioInCreative(scenarioName) {
+// step numbers as the sim advances. Optional seed threads through to the
+// seed-first begin (2026-07-08) — callers like the agent API get fully
+// deterministic runs, wall geometry included.
+function startScenarioInCreative(scenarioName, seedOverride?) {
   const make = SCENARIOS[scenarioName];
   if (!make) { alert('Unknown scenario: ' + scenarioName); return; }
   switchMode('fortress');
-  fortressBeginFromScenario(scenarioName);
+  fortressBeginFromScenario(scenarioName, seedOverride);
 }
 
 // Take a FLUID_PRESETS[id] starter fluid and run it inside Creative as a
@@ -124,9 +126,19 @@ function startStarterFluidInCreative(presetId) {
 // rather than a full scenario. Defaults T/P/wall to mid-range generics
 // since starter fluids don't carry that metadata. Player can intervene
 // from step 1.
-function fortressBeginFromStarterFluid(presetId) {
+//
+// seedOverride (save system, 93a): replaying a save re-enters here with
+// the run's original seed. The rng is installed BEFORE construction and
+// the wall's shape_seed derives from the same seed — one number now
+// reproduces the whole run, geometry included (the seed-first order
+// legends uses; 99z's startScenario comment documents why seeding after
+// construction leaves wall geometry unreproducible).
+function fortressBeginFromStarterFluid(presetId, seedOverride?) {
   const preset = FLUID_PRESETS[presetId];
   if (!preset) return;
+
+  const seed = (seedOverride != null) ? (seedOverride >>> 0) : (Date.now() >>> 0);
+  rng = new SeededRandom(seed);
 
   const fluid = new FluidChemistry(Object.assign({}, preset.fluid));
   // Generic mid-range conditions — see Creative-mode rework backlog item
@@ -134,13 +146,12 @@ function fortressBeginFromStarterFluid(presetId) {
   const wall = new VugWall({
     composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 50,
     wall_Fe_ppm: 2000, wall_Mn_ppm: 500, wall_Mg_ppm: 1000,
-    primary_bubbles: 3, secondary_bubbles: 5, shape_seed: Date.now() & 0xff
+    primary_bubbles: 3, secondary_bubbles: 5, shape_seed: seed & 0xff
   });
   const conditions = new VugConditions({
     temperature: 200.0, pressure: 1.0, fluid, wall
   });
 
-  rng = new SeededRandom(Date.now());
   fortressSim = new VugSimulator(conditions, []);
   _attachStripRecorderToSim(fortressSim, `fortress_starter_${presetId}`, `Fortress — starter fluid: ${preset.label}`);
   fortressActive = true;
@@ -171,17 +182,31 @@ function fortressBeginFromStarterFluid(presetId) {
   updateFortressStatus();
   updateFortressInventory();
   if (typeof syncBrothSliders === 'function') syncBrothSliders();
+  // Autosave opens AFTER the slider sync (broth baseline = what the
+  // first action will see). See 93a-ui-saves.ts.
+  if (typeof _saveNoteBegin === 'function') {
+    _saveNoteBegin({ type: 'starter', presetId, seed });
+  }
 }
 
 // Parallel to fortressBegin() but uses a scenario's conditions + events
 // instead of the setup sliders. The sim is pre-wired with events so they
 // fire automatically on Wait/Heat/Cool/etc. advances.
-function fortressBeginFromScenario(scenarioName) {
+//
+// seedOverride (save system, 93a): replaying a save re-enters here with
+// the run's original seed. The rng is seeded BEFORE make() — the same
+// order legends' runSimulation uses (91:87→117), which the seed-42
+// baselines prove reproduces a run from the seed alone. Seeding after
+// make() (the pre-save-system order) left anything the factory drew
+// unreproducible.
+function fortressBeginFromScenario(scenarioName, seedOverride?) {
   const make = SCENARIOS[scenarioName];
   if (!make) return;
+
+  const seed = (seedOverride != null) ? (seedOverride >>> 0) : (Date.now() >>> 0);
+  rng = new SeededRandom(seed);
   const { conditions, events, defaultSteps } = make();
 
-  rng = new SeededRandom(Date.now());
   fortressSim = new VugSimulator(conditions, events);
   _attachStripRecorderToSim(fortressSim, `fortress_${scenarioName}`, `Fortress — scenario: ${scenarioName}`);
   fortressActive = true;
@@ -218,6 +243,11 @@ function fortressBeginFromScenario(scenarioName) {
   updateFortressStatus();
   updateFortressInventory();
   if (typeof syncBrothSliders === 'function') syncBrothSliders();
+  // Autosave opens AFTER the slider sync (broth baseline = what the
+  // first action will see). See 93a-ui-saves.ts.
+  if (typeof _saveNoteBegin === 'function') {
+    _saveNoteBegin({ type: 'scenario', scenario: scenarioName, seed });
+  }
 }
 
 // Title screen button handlers.
@@ -262,8 +292,46 @@ function titleQuickPlay() {
   }
 }
 function titleLoadGame() {
-  // Open the Library — that's where the collection lives.
+  // With the save system live (2026-07-08), Load Game means the Saves
+  // menu whenever actual game saves exist. Falls back to the Library
+  // (the collection) — the pre-save-system meaning — so a collector
+  // with no saves still lands somewhere true.
+  try {
+    if (typeof loadSaves === 'function' && loadSaves().length > 0) {
+      switchMode('saves');
+      return;
+    }
+  } catch (_e) { /* localStorage unavailable */ }
   switchMode('library');
+}
+
+// §10.5 tranche 1 (2026-07-07): the legends quick-play dropdown
+// AUTO-GENERATES from SCENARIOS at scenarios-load-complete (called
+// from _loadScenariosJSON5 in 70-events.ts). The hand-maintained
+// <option> list was already raw scenario ids in key order — the one
+// §10.5 surface where auto-generation loses no curation. Rules:
+// scenarios.json5 key order (so 'cooling' stays the default first
+// entry), tutorial_-prefixed ids EXCLUDED (boss directive 2026-05-20:
+// tutorials don't belong in quick play — guided versions live in the
+// Begin menu, sandbox broths in the Scenarios picker). The picker
+// panel, zen dropdown, and Begin tutorial buttons keep their CURATED
+// hand-written labels — migrating those is tranches 2-3 (BACKLOG).
+// The guard test asserts the static select stays EMPTY so a
+// hand-added option can't silently fight this populator.
+function _populateScenarioDropdowns() {
+  const sel = document.getElementById('scenario') as HTMLSelectElement | null;
+  if (!sel || typeof SCENARIOS === 'undefined') return;
+  const prev = sel.value;
+  sel.innerHTML = '';
+  for (const id of Object.keys(SCENARIOS)) {
+    if (id.startsWith('tutorial_')) continue;
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = id;
+    sel.appendChild(opt);
+  }
+  // A re-run (hot reload, future re-fetch) keeps the user's selection.
+  if (prev && SCENARIOS[prev] && !prev.startsWith('tutorial_')) sel.value = prev;
 }
 
 // The last "playable" mode the user was in. Used by the Current Game
@@ -292,6 +360,7 @@ function switchMode(mode) {
   const modeCurrent = document.getElementById('mode-current');
   const modeGroove = document.getElementById('mode-groove');
   const modeLibrary = document.getElementById('mode-library');
+  const modeSaves = document.getElementById('mode-saves');
   // HELIX-OVERLAY-FORK ADDITION (v153): strip view as a proper mode.
   const modeStripView = document.getElementById('mode-stripview');
   const stripViewModePanel = document.getElementById('strip-view-mode-panel');
@@ -325,6 +394,12 @@ function switchMode(mode) {
   // Zen mode (idleSim). Idempotent. Won't save empty recordings.
   if (mode !== 'idle' && typeof idleSim !== 'undefined' && idleSim) {
     _saveStripRecorderIfPresent(idleSim);
+  }
+  // Save system (93a): leaving Fortress writes the rolling autosave
+  // through one more time (catches broth-only changes made since the
+  // last action). No-op when nothing is recording.
+  if (mode !== 'fortress' && typeof _savePersistActive === 'function') {
+    _savePersistActive();
   }
 
   // Hide title screen, show mode toggle
@@ -360,8 +435,11 @@ function switchMode(mode) {
   if (modeCurrent) modeCurrent.classList.remove('active');
   if (modeGroove) modeGroove.classList.remove('active');
   if (modeLibrary) modeLibrary.classList.remove('active');
+  if (modeSaves) modeSaves.classList.remove('active');
   if (modeStripView) modeStripView.classList.remove('active');
   if (stripViewModePanel) stripViewModePanel.style.display = 'none';
+  const savesPanel = document.getElementById('saves-panel');
+  if (savesPanel) savesPanel.style.display = 'none';
 
   if (mode === 'legends') {
     legendsControls.style.display = 'flex';
@@ -383,6 +461,12 @@ function switchMode(mode) {
     if (libraryPanel) libraryPanel.style.display = 'flex';
     if (modeLibrary) modeLibrary.classList.add('active');
     libraryInit();
+  } else if (mode === 'saves') {
+    // Save menu (93a-ui-saves.ts, 2026-07-08). A shelf like the
+    // Library: manual saves + autosaves + the lifetime counters.
+    if (savesPanel) savesPanel.style.display = 'flex';
+    if (modeSaves) modeSaves.classList.add('active');
+    if (typeof savesRender === 'function') savesRender();
   } else if (mode === 'random') {
     const rp = document.getElementById('random-panel');
     if (rp) rp.style.display = 'block';

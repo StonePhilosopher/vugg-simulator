@@ -158,6 +158,15 @@ function installDomStub() {
     target.offsetLeft = 0;
     return new Proxy(target, {
       get(t, prop) {
+        // Primitive coercion (parseFloat(stub.min), `${stub}`, etc.)
+        // must yield a primitive or JS throws "Cannot convert object
+        // to primitive value" — surfaced by the fortress save-system
+        // tests driving syncBrothSliders against stub sliders. An
+        // empty string coerces to NaN under parseFloat, which the
+        // bundle's finite-parse guards then skip.
+        if (prop === Symbol.toPrimitive) return () => '';
+        if (prop === 'toString') return () => '';
+        if (prop === 'valueOf') return () => '';
         if (prop in t) return (t as any)[prop];
         // Unknown property → stub callable. The Proxy makes the
         // common patterns (chained .style.color = '...', etc.) work

@@ -128,6 +128,27 @@ Object.assign(VugSimulator.prototype, {
         const ems = e.minerals ? e.minerals.join(', ') : 'all grown crystals';
         this.log.push(`     ⚗ ETCH: ${e.style || 'rounded'} dissolution overprint on ${ems} — a returning undersaturated fluid corrodes/rounds what already grew`);
       }
+      // FILM DUSTING (W-F O5 perturbed regrowth) — an event may carry a `film`
+      // directive {mineral, prism, term, minerals?}: a foreign film (chlorite,
+      // clay) settles on the growth fronts of the crystals alive at this step,
+      // masking their FUTURE growth. applyFilmDusting (js/44b) records `_film`
+      // per-crystal (deterministic, no RNG, no fluid/T mutation). This is the
+      // O5 gate's INPUT; the gate itself (sigmaStarForCoverage in the growth
+      // path) is behind O5_MASKING_ENABLED — false in O5a — so a scenario with
+      // this directive is byte-identical until O5b flips the flag.
+      if (event.film) {
+        const f = event.film;
+        const dusted = applyFilmDusting(
+          this.crystals,
+          f.mineral || 'chlorite',
+          (typeof f.term === 'number') ? f.term : 0,
+          (typeof f.prism === 'number') ? f.prism : 0,
+          this.step,
+          f.minerals || null,
+        );
+        const fms = f.minerals ? f.minerals.join(', ') : 'all exposed crystals';
+        this.log.push(`     ▓ FILM: ${f.mineral || 'chlorite'} dusts ${fms} (${dusted} crystal${dusted === 1 ? '' : 's'}) — a foreign coat masks the growth front; growth stalls until a fresh pulse clears it`);
+      }
       this.log.push('');
     }
   }

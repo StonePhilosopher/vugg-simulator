@@ -452,6 +452,43 @@ class VugSimulator {
           // semantics match the established path. No-op when selection is off
           // (nothing is ever _buried) → byte-identical.
           if (crystal._buried) zone.thickness_um *= O3_BURY_GROWTH_MULT;
+          // W-F O5b — the MASKING GATE. A crystal carrying a foreign-matter film
+          // (`_film`, set by an event `film:` dusting or an O4b coats_front
+          // enclosure) can only grow through it when the fluid supersaturates past
+          // the dead-zone barrier σ*(φ) = σ*₀·(1 + k·φ/(1−φ)) — the two-pass-
+          // reconciled law (js/44b; σ*₀ = 1.0, the equilibrium growth floor of the
+          // ratio-convention σ this sim uses, so an UNfilmed crystal is untouched:
+          // the `_film` guard, plus σ*(0)=1, keeps the fleet byte-identical except
+          // the pre-registered film-carrying scenarios). φ is the crystal's most-
+          // masked axis (scalar v1; per-axis prism/tip asymmetry — the masking
+          // sceptre — is the follow-on). Below the barrier the axis STALLS (a
+          // hiatus: the crystal is alive and unetched, distinct from O3 burial and
+          // from dissolution) and the film persists. When a fresh pulse clears the
+          // barrier the crystal grows THROUGH: this first zone is tagged a
+          // `masked_horizon` (a POSITIVE-growth phantom — the film is buried in the
+          // lattice, the record it leaves) and `_film` clears. No RNG. Gated by
+          // O5_MASKING_ENABLED — false through O5a, flipped here for O5b.
+          if (O5_MASKING_ENABLED && crystal._film && zone.thickness_um > 0) {
+            const film = crystal._film;
+            const phi = Math.max(film.phi_term || 0, film.phi_prism || 0);
+            let sig = Infinity;   // no σ fn → don't block (can't measure = can't mask)
+            const sfn = (this.conditions as any)['supersaturation_' + crystal.mineral];
+            if (typeof sfn === 'function') {
+              try { const v = sfn.call(this.conditions); if (Number.isFinite(v)) sig = v; }
+              catch (_e) { sig = Infinity; }
+            }
+            const sigmaStar = sigmaStarForCoverage(1.0, phi);
+            if (sig <= sigmaStar) {
+              // Masked: growth stalls, the film stays. The zone becomes a hiatus.
+              zone.thickness_um = 0;
+              zone._maskedStall = true;
+            } else {
+              // Breakthrough: growth resumes through the film — a phantom horizon.
+              zone.masked_horizon = true;
+              zone.film_mineral = film.mineral;
+              crystal._film = null;
+            }
+          }
           // Proposal D (2026-05-18) part 1: per-iteration dampener
           // recomputation. Pre-D this used this._fillDampener — the step-
           // start value stashed by check_nucleation. That single-stash is

@@ -414,7 +414,13 @@
       },
       "events": [
         { "step": 15, "type": "fluid_mixing", "name": "Brine Meets Sulfur", "description": "Metal brine meets sulfur-bearing groundwater in the breccia — the honey-sphalerite era begins" },
-        { "step": 70, "type": "tectonic_shock", "name": "Fault Slip", "description": "The fault valve slips — pressure pulse through the breccia run" }
+        { "step": 28, "type": "elmwood_barite_stage", "name": "Barite Stage — Generation 1", "description": "A barium-rich brine pulse lifts barite above its growth threshold; the first generation of blades strikes out from the honey sphalerite" },
+        { "step": 40, "type": "film_coat", "name": "Clay Coat", "description": "Fine clay settles on the barite blades, masking their faces — the next barium pulse must grow through it", "film": { "mineral": "clay", "term": 0.3, "prism": 0.3, "minerals": ["barite"] } },
+        { "step": 50, "type": "elmwood_barite_stage", "name": "Barite Stage — Generation 2", "description": "A fresh barium pulse overtakes the clay film; barite grows a second generation THROUGH it, sealing the coat as an internal snowball horizon" },
+        { "step": 60, "type": "film_coat", "name": "Iron-Oxide Coat", "description": "Iron oxides tint the blade fronts a rusty film — the second masking coat", "film": { "mineral": "iron oxide", "term": 0.3, "prism": 0.3, "minerals": ["barite"] } },
+        { "step": 68, "type": "elmwood_barite_stage", "name": "Barite Stage — Generation 3", "description": "The third barium pulse breaks through the iron-oxide film — a second snowball horizon buried in the blade" },
+        { "step": 70, "type": "tectonic_shock", "name": "Fault Slip", "description": "The fault valve slips — pressure pulse through the breccia run" },
+        { "step": 78, "type": "film_coat", "name": "Final Clay Rind", "description": "A last clay film coats the outermost blades — the snowball's dusty rind, left uncleared as the barium wanes", "film": { "mineral": "clay", "term": 0.45, "prism": 0.45, "minerals": ["barite"] } }
       ],
       "movements": [
         {
@@ -1760,7 +1766,7 @@
         "The Shigar Valley (Skardu District, Gilgit-Baltistan) hosts hundreds of miarolitic gem pegmatites — mostly sub-horizontal sills, 1-4 m thick — intruding the Dassu orthogneiss dome of the Karakoram Metamorphic Complex, sourced by partial melting of the Dassu felsic gneiss itself (Awais et al. 2022; Agheem et al. 2014, 2015). NOT the Baltoro granite, despite the widespread gem-trade conflation: the mined dikes are startlingly YOUNG — ~7-3 Ma, Pliocene, post-dating Baltoro by >10 Myr (Awais et al. 2022 U-Pb) — coeval with Dassu-dome anatexis and rapid Karakoram exhumation; the workings sit at 3,000-5,000 m in glacial terrain (Blauwet 2006; Smith, Smith & Blauwet 1997). The Dassu / Nyet-Bruk / Yuno / Alchuri cluster is the world's premier source of sharp glassy aquamarine on cleavelandite — the 2019 'King of Kashmir' plate (Goyungo cliff, Nyet-Bruk: >20 deep sky-blue crystals on a ~150 kg albite matrix with smoky quartz; Trinchillo 2020) came from exactly this pocket type, ~30 m into the cliff, in the core zone. Character: Li-poor, Be-F-rich pockets of beryl type — schorl but no elbaite/lepidolite/spodumene, low-alkali beryl (Cs2O 0.03-0.04 wt%), a strong F accessory suite (topaz, green fluorite, fluorapatite). Formal LCT/NYF family assignment is unsettled in the literature (Karim et al. 2026 reads LCT-affine; the pocket mineralogy reads beryl-subtype) — the scenario models the observed mineralogy, not the label.",
         "Fluid framework — NO Shigar-specific fluid-inclusion microthermometry exists (stated honestly; the Shigar FI record is qualitative: 2- and 3-phase aqueous-carbonic inclusions in aquamarine, G&G 54(1) 2018). Pocket-stage numbers are ANALOG-anchored: gem-pocket crystallization 435-355°C by feldspar-solvus thermometry (London, Hunt & Duval 2020; primary pocket feldspars 431±68°C) and 380±80°C / 1.2±0.7 kbar / ~8 wt% NaCl eq at the Luumäki gem-beryl pocket, the best single analog (Michallik, Wagner & Fusswinkel 2021); miarolitic compilation mean 460±25°C (McCaffrey & Jowitt 2023). This scenario's stage-4 aquamarine event floors T at 430°C, dead inside that window; initial P 1.5 kbar and salinity 8 follow the same analogs. The stage-4 'pocket rupture' framing is literature-real, not flavor: sealed pockets build internal fluid overpressure as crystallization pumps volatiles into the cavity (ΔP up to ~+1.5 kbar modeled at the Oktyabrskaya gem pockets, Peretyazhko et al. 2004; London 2013 'bursting the bubble'), and rupture admits the fresh fluid pulse the event models.",
         "Anchor mineral: AQUAMARINE — in no scenario's expects_species before this one (the whole beryl family was uncovered; the 76-species census, 2026-07-05). The variety dispatch is held to aquamarine by broth design: Cr+V at trace (no emerald), Mn<2 (no morganite), O2≤0.3 (heliodor's Fe³⁺ gate needs O2>0.5 AND Fe≥15), Fe≥8 at pocket stage (plain beryl/goshenite returns 0 when Fe≥8).",
-        "Cascade discipline: initial Be=8 sits BELOW the beryl family's hard Be≥10 ingredient floor — fully dormant, accumulating, until the stage-4 pocket-rupture pulse lifts it to ~16 and σ(aquamarine)≈2.4 fires at T≈455°C (dead center of the family's 350-550°C window). Initial B=5 likewise sits below tourmaline's B≥6 floor so schorl genuinely ARRIVES at stage 2 rather than pre-dating the wall zone. Fe-budget routing (the §4 walk): schorl debits Fe from stage 2 on — the stage-4 event re-floors Fe at 12 (fresh reduced fluid with the rupture) so the blue is guaranteed on Fe-hungry seeds; without it the scenario ships occasional goshenite.",
+        "Cascade discipline: initial Be=8 sits BELOW the beryl family's hard Be≥10 ingredient floor — fully dormant, accumulating, until the stage-4 pocket-rupture pulse delivers the hoarded inventory (~118, Evensen/London/Wallace 1999 beryl-saturation territory) and σ(aquamarine) pins its ~9 ceiling at T≈430°C (inside the family's 350-550°C window). Initial B=5 likewise sits below tourmaline's B≥6 floor so schorl genuinely ARRIVES at stage 2 rather than pre-dating the wall zone. Fe-budget routing (the §4 walk): schorl debits Fe from stage 2 on — the stage-4 event re-floors Fe at 12 (fresh reduced fluid with the rupture) so the blue is guaranteed on Fe-hungry seeds; without it the scenario ships occasional goshenite.",
         "The hf_etch stage is the Shigar signature — famously etched, sculpted aquamarines (structure-controlled dissolution pits and skeletal etch forms on Pakistani blue beryl: G&G 57(2) Summer 2021 Quarterly Crystal — the late fluid fell out of equilibrium with the very beryl it grew). Mechanism here: late fluid crashes Be (the big crystals took it; σ falls under 1.0) while F>30 and pH<3.0 — exactly _beryl_family_dissolution's etch branch (trigonal pits, stepped faces). grow_quartz's HF note fires on the same chemistry. Smoky quartz is free with composition 'pegmatite': the Rossman [AlO₄]⁰ γ-dose path keys off the radiogenic felsic host. Blue-not-gold: Fe²⁺ in the beryl channels is the blue chromophore (Goldman, Rossman & Parkin 1978); oxidized Fe³⁺ gives heliodor's yellow, which is why the broth pins O2 low.",
         "Wallrock: 'pegmatite' (inert silicate proxy — pocket pH excursions are unbuffered, which the etch stage needs) + cavity_render 'sharp' + occlusion 0.30, all per the gem_pegmatite precedent (London 2008 pocket photographs: crisp euhedral cavity walls, prisms standing proud). thermal_pulses false — a sealed miarolitic chamber has no fracture-valve hot injections; the seven events ARE the thermal story (600→300°C).",
         "Tutorial-tempo: duration_steps 70 (≈2.3 min at default narrative pace) because this scenario doubles as Tutorial 4's stage — a first-time collector watches the whole pocket story without a 200-step sit. The pocket (140 mm, size_class via explicit diameter) yields cabinet-specimen aquas worth collecting.",
@@ -1793,7 +1799,10 @@
           "Na": 40,
           // Incompatibles below their hard ingredient floors — dormant,
           // accumulating; the events lift them across (see notes).
-          "Be": 8,     // beryl-family floor is Be≥10; stage 4 lifts to ~16
+          "Be": 8,     // beryl-family floor is Be≥10; stage 4 lifts to ~118
+                       // (Door 1 / SIM 219 wallet — Evensen/London/Wallace
+                       // 1999: beryl saturation ~250 ppm Be at 650°C; the
+                       // wallet IS the 21 mm star, ~200 µm per Be unit)
           "B": 5,      // tourmaline floor is B≥6; stage 2 lifts to ~20
           "F": 18,     // topaz floor is F≥20; stage 5 lifts to ~38
           "Li": 4,     // Li-poor weakly-evolved LCT (beryl-columbite type):
@@ -1834,8 +1843,9 @@
       // tutorial_* twin: the pocket is real science and the tutorial is a
       // guest on it. mode 'legends' boots Simulation mode and presets the
       // setup row; seed 42 makes every player's pocket match this script
-      // (21 crystals / 6 species / 4 etched aquamarines, pinned in
-      // tests-js/shigar-pegmatite.test.ts). `step: N` fires on the
+      // (Door 1 / SIM 219: 6 species, 5 aquamarines — a 21 mm etched
+      // star down to a pristine 0.4 mm post-etch runt — stature pinned
+      // in tests-js/shigar-pegmatite.test.ts). `step: N` fires on the
       // NARRATIVE PLAYBACK position; allowModes lets the tour walk to the
       // Library without the mode-switch teardown ending it.
       "tutorial": {
@@ -2801,6 +2811,8 @@
             "text": "The status bar: the vital signs of the broth. Step counts time (~50,000 years each). Temp, Press, pH, and Flow are the conditions every mineral in the game answers to." },
           { "anchor": "#f-sat-bar", "side": "bottom",
             "text": "Below the vitals: every mineral this broth could grow, sorted by supersaturation (σ). σ ≥ 1 — NUCLEATING: the fluid holds more of that mineral's ingredients than it can keep dissolved, and seeds can form. σ < 1 — DORMANT: the ingredients are present but content to stay in solution. Watch this list — it's the forecast." },
+          { "anchor": "#f-sat-bar", "side": "bottom",
+            "text": "Hover any mineral in that list for its recipe — temperature window, required ingredients, traces, acid tolerance — as little boxes, green where this broth qualifies and red where it falls short. One subtlety worth keeping: the boxes grade whatever conditions the panel is currently showing. Scrub back through a finished run's replay and hover again, and they judge that older moment's broth, not the present one." },
           { "action": { "event": "change", "selector": "#sat-filter-dormant", "checked": false },
             "anchor": ".sat-filter-row", "side": "bottom",
             "text": "These checkboxes filter the readout. Most of the list is dormant most of the time — uncheck 'dormant' to focus on what's actually live.",
@@ -2812,7 +2824,7 @@
           { "anchor": "#f-advance", "side": "top",
             "text": "⏳ Advance — the most important button in the game. One press moves time forward ~50,000 years and lets the chemistry act. We'll circle back to it in a moment." },
           { "anchor": ".btn-finish", "side": "top",
-            "text": "📜 Finish & Narrate ends the run and writes the vug's whole story as prose. ↩️ Reset starts the pocket over. Copy to clipboard exports the log for keeping." },
+            "text": "📜 Narrate, Collect & Save ends the run: it writes the vug's whole story as prose, sweeps every crystal into your Library, and seals the run's autosave. ↩️ Reset starts the pocket over. Copy to clipboard exports the log for keeping." },
           { "anchor": "#fortress-log", "side": "left",
             "text": "The log. Every step prints here, newest at the top: step headers, growth per crystal, ✦ nucleations, ⚡ events arriving in the broth, 🧱 changes to the wall itself. When something surprises you, the explanation is usually in here." },
           { "anchor": "#fortress-inventory", "side": "left",
@@ -2852,6 +2864,7 @@
       "duration_steps": 30,
       "notes": [
         "Tutorial scenario. Teaches how additives change a growing crystal's properties: Mn²⁺ activates orange fluorescence in calcite (threshold 2 ppm) and Fe²⁺ quenches it. The carbonate broth ships with Fe:10 already at the quencher range and Mn:8 just past the activator threshold — early calcite zones incorporate Mn but stay dim under UV. The Mn pulse at step 8 pushes Mn well past the activator threshold; the Fe drop at step 16 clears the quencher. The boundary between dim early zones and bright late zones records the moment the broth changed.",
+        "REWORKED 2026-07-07 (tutorial-parity pass): legacy 7-beat sim-step script rebuilt in the Grand Tour's engine-v2 vocabulary — continue-step framing, a Begin ⏎ handoff with progressive unlock, and an action-step payoff: the player taps their calcite card and reads the dim-vs-bright stratigraphy off the zone modal's 'Under UV' fluorescence bar instead of being told about it. Broth + events byte-identical to the original.",
         "Surfaced in the New Game Menu under Tutorials. Not anchored to a real locality — it's a teaching scaffold. The Franklin/Sterling Hill (NJ) Mn-activated calcite glow is the real-world reference for the lesson.",
         "Broth shape mirrors FLUID_PRESETS.carbonate so the lesson generalizes to that picker entry."
       ],
@@ -2887,16 +2900,56 @@
         { "step": 8,  "type": "tutorial_mn_pulse", "name": "Manganese Pulse",    "description": "Mn²⁺ injected — next calcite zones incorporate the activator" },
         { "step": 16, "type": "tutorial_fe_drop",  "name": "Iron-Poor Recharge", "description": "Fe²⁺ quencher cleared — Mn-doped zones fluoresce at full brightness" }
       ],
-      // Tutorial overlay script — see tutorial_first_crystal for schema notes.
+      // Tutorial overlay script — see tutorial_first_crystal for schema
+      // notes. Reworked 2026-07-07 to the Grand Tour's vocabulary:
+      // continue-step framing → Begin ⏎ handoff (progressive unlock) →
+      // sim-step narration riding the two scripted events → an ACTION
+      // payoff (tap the calcite card, read the zone modal's 'Under UV'
+      // fluorescence bar) → finale unlocks the whole panel.
       "tutorial": {
+        // Nothing whitelisted at start — Advance arrives at the Begin
+        // handoff, the whole panel at the finale (Grand Tour pattern).
+        "unlock": [],
         "steps": [
-          { "step": 0,  "anchor": "#f-advance",       "side": "top",   "text": "This vug holds a carbonate broth — calcium and CO₃ ions floating around, waiting to crystallize. Calcite forms here. Press 'Advance Step' to begin." },
-          { "step": 4,  "anchor": "#fortress-status", "side": "right", "text": "Calcite is forming. The broth has a little manganese in it (Mn ≈ 8 ppm) — Mn²⁺ activates orange fluorescence in calcite under longwave UV. But the broth also has iron (Fe ≈ 10 ppm), and iron quenches that glow. So the early zones of your calcite are recording Mn but staying dim." },
-          { "step": 9,  "anchor": "#fortress-log",    "side": "left",  "text": "A pulse just brought a lot more manganese into the broth. The next zones of calcite will incorporate Mn²⁺ heavily — but iron is still quenching most of the activation. Keep advancing." },
-          { "step": 14, "anchor": "#fortress-status", "side": "right", "text": "The Mn is being recorded into every growth ring from here on. But you wouldn't see it glow yet — Fe is still suppressing the fluorescence. The broth is loaded with the right ingredient and the wrong inhibitor at the same time." },
-          { "step": 17, "anchor": "#fortress-log",    "side": "left",  "text": "Iron just crashed out of the broth. The Mn-doped zones that grow next will fluoresce at full brightness. There's a boundary forming inside your crystal: dim early stripes from the iron-quenched phase, bright late stripes from now on." },
-          { "step": 25, "anchor": "#fortress-log",    "side": "left",  "text": "The crystal you grew is now a stratigraphic record of everything you put in the broth. Same crystal, written in fluorescence by every change in chemistry. This is what real Franklin / Sterling Hill calcite specimens look like under UV — bands of glow and quench, recording the deep-time fluid history of the vein." },
-          { "step": 30, "anchor": "#fortress-log",    "side": "left",  "text": "That's the lesson: additives change a growing crystal's properties. The vug remembers what you put into it. Tutorial complete. (Press Home when ready, or keep going.)" }
+          // ---- Framing: what's different about this run ----
+          { "anchor": "#fortress-status", "side": "bottom",
+            "text": "Tutorial 2. Same kind of vug, different question. The Grand Tour asked whether a crystal grows at all. This time growth comes easy — a warm carbonate broth, calcite country — and the question is what gets WRITTEN INSIDE the crystal while it grows.",
+            "hint": "press Enter or Space (or click Continue) to step through" },
+          { "anchor": "#f-sat-bar", "side": "bottom",
+            "text": "The σ readout, your forecast. Calcite leads it here, and this broth is built to keep it growing the whole run — 100°C, calcium and carbonate to spare. Growth is the given today. Chemistry is the variable." },
+          { "anchor": "#fortress-status", "side": "bottom",
+            "text": "Two trace metals ride this broth. Manganese (about 8 ppm) is a fluorescence ACTIVATOR: swap Mn²⁺ into calcite's lattice and the crystal answers longwave UV with an orange-red glow. Iron (about 10 ppm) is a QUENCHER: it silences exactly that glow. The broth carries the ingredient and the off-switch at the same time." },
+
+          // ---- Handoff ----
+          { "anchor": "#f-advance", "side": "top", "unlock": ["#f-advance", ".act-wait"],
+            "text": "Grow it. Advance is unlocked (⏩ Advance 10 too, for the impatient). Watch the log for a ✦ — calcite will seed within a few steps.",
+            "buttonLabel": "Begin ⏎" },
+
+          // ---- The arc: two events write two boundaries ----
+          { "step": 4, "anchor": "#fortress-inventory", "side": "left",
+            "text": "Calcite is on the wall. Every step it grows, it reads the broth and writes a zone — temperature, trace chemistry, all of it, in growth order. The zones forming right now record manganese WITH iron: activator plus quencher. Under a UV lamp they'd stay dark." },
+          { "step": 9, "anchor": "#fortress-log", "side": "left",
+            "text": "⚡ A manganese pulse just flooded the broth — read it in the log. From this zone outward the calcite is loading up on activator. The iron is still in there quenching, though. The record is still being written in invisible ink." },
+          { "step": 14, "anchor": "#fortress-status", "side": "right",
+            "text": "Halfway. Inside your crystal there is already a boundary: a low-Mn core, then Mn-rich bands. Nothing about it shows in ordinary light — fluorescence is chemistry that needs the right lamp to read." },
+          { "step": 17, "anchor": "#fortress-log", "side": "left",
+            "text": "⚡ There it is — an iron-poor recharge just swept the quencher out of the broth, and the manganese stayed. Every zone from here on carries the activator WITHOUT the off-switch. These bands will glow orange-red at full strength." },
+
+          // ---- The payoff: read the record back ----
+          { "step": 22, "anchor": "#fortress-inventory", "side": "left",
+            "text": "Your calcite now holds three stripes it grew in order: dim early growth, loaded-but-quenched middle, bright rim. A fluid history written radially, oldest at the core. Time to read it back." },
+          { "action": { "event": "click", "selector": ".inv-crystal" },
+            "anchor": "#fortress-inventory", "side": "left",
+            "text": "Tap your calcite's card in the inventory.",
+            "hint": "tap the calcite card (no card yet? Advance a few more steps first)" },
+          { "anchor": "#zone-modal", "side": "left",
+            "text": "The zone history. Find the bar labeled 'Under UV — fluorescence response': that is your crystal under the lamp. Dark segments at the nucleation end — the quenched early growth. Bright segments from the moment the iron left. Hover any segment and it tells you why it glows or stays inert. Close the modal when you've had a look." },
+
+          // ---- Franklin + finale ----
+          { "step": 26, "anchor": "#fortress-log", "side": "left",
+            "text": "This is what the famous Franklin and Sterling Hill calcites are: crystals whose UV stripes record every change the New Jersey ore fluids went through. Same physics as yours — theirs just ran a few million years longer." },
+          { "step": 30, "anchor": ".action-grid", "side": "top", "unlock": [".action-btn"],
+            "text": "The lesson: additives change what a crystal IS, not just whether it grows. The broth writes, the crystal remembers, UV reads it back. The whole instrument panel is now unlocked — keep going and stripe it further, or finish up and keep the specimen." }
         ]
       },
       "sources": [
@@ -2907,12 +2960,13 @@
 
     "tutorial_travertine": {
       "anchor": "Mammoth Hot Springs (Yellowstone) — travertine is the canonical CO₂-degas calcite",
-      "description": "Tutorial 3: How CO₂ Builds a Calcite Crust. CO₂-rich groundwater rises into a hot-spring pool, loses CO₂ as gas, and pH rises until calcite saturates and starts depositing on every available surface. The same mechanism that grows speleothems in caves and travertine terraces at hot springs.",
+      "description": "Tutorial 3: How CO₂ Builds a Calcite Crust. CO₂-rich groundwater rises into a hot-spring pool, loses CO₂ as gas, and every pH step multiplies calcite's supersaturation until crust plates every available surface. The same mechanism that grows speleothems in caves and travertine terraces at hot springs.",
       "expects_species": ["calcite"],
       "duration_steps": 60,
       "notes": [
-        "Tutorial scenario for PROPOSAL-GEOLOGICAL-ACCURACY Phase 3. Showcases the CO₂-degas → pH rise → calcite supersaturates cascade. Player presses Advance through three degassing pulses (steps 10, 25, 40) and watches calcite go from undersaturated to massive precipitation purely via pH change — no temperature drop, no mineral mixing, no fluid pulse adds Ca.",
-        "Initial fluid is high-DIC (CO3 = 500 ppm = ~10 mmol/kg DIC, typical of CO₂-charged hot-spring source water) at moderately acidic pH 6.5 (the pH at which most DIC sits as H₂CO₃* and HCO₃⁻; <0.1% is CO₃²⁻). Despite Ca = 200 ppm being well above seawater levels, calcite stays subsaturated — the carbonate ion isn't there.",
+        "Tutorial scenario for PROPOSAL-GEOLOGICAL-ACCURACY Phase 3. Showcases the CO₂-degas → pH rise → calcite supersaturates cascade. Player presses Advance through three degassing pulses (steps 10, 25, 40) and watches calcite go from a barely-viable trickle to massive precipitation purely via pH change — no temperature drop, no mineral mixing, no fluid pulse adds Ca.",
+        "REWORKED 2026-07-07 (tutorial-parity pass): legacy 8-beat sim-step script rebuilt in the Grand Tour's engine-v2 vocabulary — continue-step framing on the σ forecast, Begin ⏎ handoff, sim-step beats riding the pulses, then the INVERSE EXPERIMENT: the 🧪 acid verbs unlock and the player runs the cascade backwards, watching σ(calcite) fall (the cave-dissolution lesson for free). Broth + events byte-identical. TEXT RE-TRUED against the observed run: the old script's claims ('Ca 200 ppm', 'calcite isn't growing yet', 'crossed the line at step 20') predate the Ca 200→350 recalibration — measured seed run shows σ(calcite) 1.61 at t0 (one crystal creeping from step ~2) and pulse 1 multiplying σ 1.34→5.04, so the lesson is narrated as barely-viable-trickle → multiplication, which is also the truer Mammoth story (vent water arrives near saturation; degassing drives the plating downstream).",
+        "Initial fluid is high-DIC (CO3 = 500 ppm = ~10 mmol/kg DIC, typical of CO₂-charged hot-spring source water) at moderately acidic pH 6.5 (the pH at which most DIC sits as H₂CO₃* and HCO₃⁻; <0.1% is CO₃²⁻). At the current Ca = 350 ppm calibration, calcite starts MARGINAL (σ ≈ 1.6, a bare trickle of growth) rather than subsaturated — the pre-recalibration 'Ca = 200, stays subsaturated' description was stale; the pulses do the real work either way.",
         "Each `co2_degas` event removes 30% of the DIC (CO₂ leaves as gas) and raises pH by 0.5 units. The CO₃²⁻ fraction of DIC grows ~10× per pH unit (Bjerrum partition). After three degassing pulses, pH ~ 8 and calcite is wildly supersaturated; players see calcite nucleate and grow steadily through the back half of the run.",
         "Geological reference: Mammoth Hot Springs (Yellowstone, USA), Pamukkale (Turkey), Pancake Hot Springs (CA). All build travertine via this exact cascade. Cave flowstone uses the same chemistry but with cooler fluid and lower flow."
       ],
@@ -2951,16 +3005,58 @@
         { "step": 25, "type": "co2_degas_with_reheat", "name": "Second Pulse", "description": "Continued CO₂ outgassing — pH continues to rise, CO₃²⁻ fraction grows" },
         { "step": 40, "type": "co2_degas_with_reheat", "name": "Third Pulse", "description": "Final pulse — pH near 8, calcite massively supersaturated" }
       ],
+      // Tutorial overlay script — see tutorial_first_crystal for schema
+      // notes. Reworked 2026-07-07 to the Grand Tour's vocabulary:
+      // continue-step framing on the σ forecast (calcite dormant with
+      // every ingredient present) → Begin ⏎ handoff → sim-step beats
+      // riding the three degas pulses → the INVERSE EXPERIMENT (unlock
+      // the 🧪 acid verbs, the player runs the cascade backwards) →
+      // finale. The old script's step-4 text claimed Ca 200 ppm against
+      // the broth's actual 350 — fixed in passing.
       "tutorial": {
+        // Grand Tour pattern: nothing whitelisted at start; Advance at
+        // the handoff, the acid verbs at the experiment, all at the end.
+        "unlock": [],
         "steps": [
-          { "step": 0,  "anchor": "#f-advance",       "side": "top",   "text": "This vug holds high-DIC hot-spring water — lots of dissolved CO₂, calcium, and bicarbonate. The pH is 6.5, which sounds neutral, but at that pH almost none of the carbonate is in the CO₃²⁻ form needed for calcite. Press Advance to start." },
-          { "step": 4,  "anchor": "#fortress-status", "side": "right", "text": "Notice: calcite isn't growing yet. The Ca is there (200 ppm), the DIC is there (500 ppm), but pH 6.5 means CO₃²⁻ is essentially zero. The Bjerrum partition keeps almost all carbonate as H₂CO₃* and HCO₃⁻. Calcite needs the ionic form." },
-          { "step": 11, "anchor": "#fortress-log",    "side": "left",  "text": "First CO₂ degas event just fired. Read the log — 30% of the DIC just left as gas, and pH jumped from 6.5 to 7.0. The next steps will start to nucleate calcite as the CO₃²⁻ fraction climbs." },
-          { "step": 20, "anchor": "#fortress-status", "side": "right", "text": "Calcite is starting to grow. The same Ca²⁺ that's been sitting in solution the whole time is now precipitating because the carbonate ion finally exists in meaningful amounts. The fluid composition barely changed — only the pH did." },
-          { "step": 26, "anchor": "#fortress-log",    "side": "left",  "text": "Second degas pulse. pH rises again. Watch calcite growth accelerate." },
-          { "step": 41, "anchor": "#fortress-log",    "side": "left",  "text": "Third degas. pH near 8 now. Calcite is wildly supersaturated; every nucleation site available is depositing crystal." },
-          { "step": 55, "anchor": "#fortress-log",    "side": "left",  "text": "That's how travertine builds at Mammoth Hot Springs. Hot CO₂-charged water reaches the surface, CO₂ escapes as bubbles, pH rises, and calcite plates everything in white. The same fluid that ARRIVES too acidic to grow calcite ENDS UP loaded with it — only the dissolved gas changed." },
-          { "step": 60, "anchor": "#fortress-log",    "side": "left",  "text": "Tutorial complete. The lesson: pH controls carbonate-system chemistry as fundamentally as temperature. Cave flowstone, hot-spring travertine, ocean carbonate sediments — they all run on this same Bjerrum cascade. (Press Home when ready, or keep going.)" }
+          // ---- Framing: everything present, nothing growing ----
+          { "anchor": "#fortress-status", "side": "bottom",
+            "text": "Tutorial 3. This vug is hot-spring plumbing — water that came up through limestone loaded with dissolved CO₂, calcium, and bicarbonate. Everything calcite is made of, in quantity — and the pool can barely grow any. This tutorial is about the one number holding it back.",
+            "hint": "press Enter or Space (or click Continue) to step through" },
+          { "anchor": "#f-stat-ph", "side": "bottom",
+            "text": "There it is, in the vitals: pH 6.5, barely acidic. Dissolved carbonate wears three costumes — CO₂-acid, bicarbonate, and the carbonate ion CO₃²⁻ — and pH decides the wardrobe. At 6.5, essentially none of it is the CO₃²⁻ form that calcite is actually built from." },
+          { "anchor": "#f-sat-bar", "side": "bottom",
+            "text": "Now the forecast. Calcium at 350 ppm, dissolved carbonate at 500 — a rich broth — and calcite reads σ 1.6, scraping along barely past the line. That mismatch is the tell: at this pH almost none of the carbonate is wearing the CO₃²⁻ costume, so calcite is growing on fumes." },
+          { "anchor": "#f-stat-ph", "side": "bottom",
+            "text": "Here's the mechanism this pocket runs on. The water rising into the pool is fizzing — losing CO₂ to the air like an opened bottle. Every bubble that escapes drags acid out of the water, so pH rises. And per unit of pH, the CO₃²⁻ share of the dissolved carbonate grows about tenfold. Keep your eye on calcite's σ: the pulses won't add to it, they'll MULTIPLY it." },
+
+          // ---- Handoff ----
+          { "anchor": "#f-advance", "side": "top", "unlock": ["#f-advance", ".act-wait"],
+            "text": "Advance is unlocked. Three degassing pulses are coming. Watch two things each time they hit: pH in the vitals, and calcite's σ in the forecast.",
+            "buttonLabel": "Begin ⏎" },
+
+          // ---- The arc: three pulses walk σ across the line ----
+          { "step": 4, "anchor": "#f-sat-bar", "side": "bottom",
+            "text": "A calcite has seeded, and it's creeping — thin-film pace, σ drifting along in the 1.3s. The pool is barely keeping ahead of its own dissolution. Without the gas leaving, this trickle would be the entire story." },
+          { "step": 11, "anchor": "#f-sat-bar", "side": "bottom",
+            "text": "⚡ First pulse — the log says a third of the dissolved CO₂ just left as gas and pH climbed half a unit. Now look at the forecast: σ(calcite) LEAPED to around 5. Half a pH unit, several times the supersaturation. Nothing was added to this water. Something left it." },
+          { "step": 20, "anchor": "#f-sat-bar", "side": "bottom",
+            "text": "See σ easing back as the wall drinks the surplus — every new layer of crust locks carbonate away, and growth is compounding. The pool spends what the pulse loaded. Two more deliveries coming." },
+          { "step": 26, "anchor": "#f-stat-ph", "side": "bottom",
+            "text": "⚡ Second pulse. pH 7.5 and climbing — and tenfold-per-unit means the CO₃²⁻ supply is compounding. Watch the growth lines in the log pick up pace with it." },
+          { "step": 41, "anchor": "#fortress-log", "side": "left",
+            "text": "⚡ Third pulse. pH is near 8: this water arrived acidic and is leaving alkaline, and calcite is now wildly supersaturated — every surface in the pool is getting plated. This is travertine. Not a rare mineral; ordinary calcite with an extraordinary delivery mechanism." },
+          { "step": 50, "anchor": "#topo-panel", "side": "top",
+            "text": "Look at the wall — crusted. At Mammoth Hot Springs the active vents plate travertine at millimeters a DAY, geologically explosive, and the result is terraces, rimstone pools, whole petrified waterfalls. Pamukkale in Turkey is this same cascade; so is the flowstone in every limestone cave, just colder and slower." },
+
+          // ---- The inverse experiment: run the cascade backwards ----
+          { "action": { "event": "click", "selector": ".act-acid" }, "unlock": [".act-acid"],
+            "anchor": ".action-grid", "side": "top",
+            "text": "You've watched degassing run this cascade forward. Now run it backwards yourself. The 🧪 acid verbs are unlocked — Tweak ↓pH nudges pH down a third of a unit, Shift ↓pH slams it down two. Press one.",
+            "hint": "click a highlighted 🧪 acid button" },
+          { "anchor": "#f-sat-bar", "side": "bottom",
+            "text": "Watch the forecast: σ(calcite) dropped the moment the acid went in. Push far enough and it slides back under 1 and growth stops; further still and the water starts EATING the crust it built. That is how limestone caves get hollowed out in the first place — CO₂-charged rainwater running this exact cascade in reverse. Press it again if you want to see the slide; the pool will take the abuse." },
+          { "anchor": ".action-grid", "side": "top", "unlock": [".action-btn"],
+            "text": "The lesson: pH controls carbonate chemistry as decisively as temperature controls silica — and it works both directions. Nothing but gas entered or left this water all run, and it went from growing-on-fumes to plating-every-surface. Cave flowstone, spring terraces, ocean sediments: the same Bjerrum cascade at different tempos. The whole panel is unlocked — push the pool around, or finish and keep the crust." }
         ]
       },
       "sources": [
@@ -4018,6 +4114,76 @@
         { "step": 101, "type": "tn457_mn_ba_pulse", "name": "Pulse 49", "description": "Ba+Mn pulse 49 of 50" },
         { "step": 103, "type": "tn457_mn_ba_pulse", "name": "Pulse 50", "description": "Ba+Mn pulse 50 of 50 (terminal — coin-stack capping)" }
       ],
+      // Tutorial 5: READING A CRYSTAL (2026-07-07, the parity pass's new
+      // authoring). Engine v3.1, mode legends — rides THIS scenario the way
+      // Collecting rides shigar: the pocket is real science (the boss's own
+      // TN457 specimen lineage) and the tutorial is a guest on it. Teaches
+      // the two READING instruments the Grand Tour introduces but nothing
+      // taught: the Record Player (one crystal, read in depth) and the
+      // Strip View (the whole run, read in breadth). Beat numbers are
+      // measured facts of the seed-42 run (probe 2026-07-07): sphalerite
+      // nucleates step 1, the barite train starts step 8, the star barite
+      // (#3) writes 103 zones at 3.7 mm. Mode walks (legends → groove →
+      // stripview) ride per-step allowModes exactly like Collecting's
+      // Library walk.
+      "tutorial": {
+        "mode": "legends",
+        "preset": { "seed": 42, "steps": 110 },
+        "unlock": [],
+        "steps": [
+          { "anchor": "#legends-controls", "side": "bottom",
+            "text": "Tutorial 5: Reading a Crystal. You've grown pockets and kept the best of them. This one teaches the two instruments that READ what you keep. The stage is TN457 — pink barite on sphalerite from Cumbria, England — a real specimen whose whole biography is written in bands.",
+            "hint": "press Enter or Space (or click Continue) to step through" },
+          { "anchor": "#scenario", "side": "bottom",
+            "text": "The setup row, preset like Collecting taught you: the Cumbrian cavity, seed 42, 110 steps — five and a half million years of episodic ore brine." },
+          { "action": { "event": "click", "selector": "#btn-grow" },
+            "anchor": "#btn-grow", "side": "bottom", "unlock": ["#btn-grow"],
+            "text": "Press Grow.",
+            "hint": "click the highlighted Grow button" },
+          { "step": 6, "anchor": "#topo-panel", "side": "top",
+            "text": "Sphalerite first — zinc sulfide seeded on the limestone in the very first step, building the dark substrate everything else will stand on. Real TN457 is exactly this: pink barite STANDING ON sphalerite. Order of arrival is half the story." },
+          { "step": 14, "anchor": "#output", "side": "left",
+            "text": "⚡ Now the pulses. Every couple of steps a slug of barium-rich brine arrives, each hauling its own dose of manganese, and each writes ONE growth zone of barite with that dose recorded in it. Fifty pulses are coming. The crystals are taking dictation." },
+          { "step": 40, "anchor": "#narrative-speed-cluster", "side": "left",
+            "text": "Deep time at reading pace is a virtue with limits. These buttons set the tempo — 0.2s a step gets you through five million years before your tea cools. The story loses nothing; it's all being written down, which is rather the point of this tutorial." },
+          { "step": 110, "anchor": "#legends-inventory", "side": "left",
+            "text": "The pocket is done: sphalerite substrate, a stack of banded barites, quartz, even salt from the brine itself. The biggest barite wrote about a hundred zones — a hundred pulses and pauses, recorded in order. Reading that record back is what the next two instruments are for." },
+          { "action": { "event": "click", "selector": "#mode-groove" },
+            "allowModes": ["groove"], "spotlight": "#mode-toggle",
+            "anchor": "#mode-groove", "side": "bottom",
+            "text": "Click 📀 Record Player in the quick-nav bar.",
+            "hint": "click the highlighted Record Player button" },
+          { "anchor": "#groove-canvas", "side": "right",
+            "text": "The turntable. A crystal rendered as vinyl: every growth zone is one groove of the spiral, oldest at the center, rim at the edge. The needle reads chemistry the way a stylus reads sound — this is not a metaphor the game invented; it is what growth zoning IS." },
+          { "action": { "event": "change", "selector": "#groove-crystal-select" },
+            "anchor": "#groove-crystal-select", "side": "bottom",
+            "text": "The platter list carries whatever run is live — your Cumbrian pocket. Put a BARITE on the turntable; the one with the most zones is the star of this collection.",
+            "hint": "pick a crystal in the dropdown" },
+          { "action": { "event": "click", "selector": "#groove-play-btn" },
+            "anchor": "#groove-play-btn", "side": "bottom",
+            "text": "Drop the needle — press ▶ Play.",
+            "hint": "click the highlighted Play button" },
+          { "anchor": "#groove-detail-strip", "side": "top",
+            "text": "Listen, and watch the detail strip: the same record flattened into lanes — temperature, growth rate, iron, MANGANESE. That Mn lane wobbling from zone to zone is the pulse train you just watched arrive, and in the real specimen it is the pink banding itself (Mn²⁺ is what makes TN457 barite pink). Pause whenever you like." },
+          { "anchor": "#groove-speed", "side": "bottom",
+            "text": "Speed, amplitude, density — how fast the needle travels and how loudly the chemistry plays. These are instruments, not decoration: a spike you HEAR is a pulse you might have skimmed past in a log." },
+          { "action": { "event": "click", "selector": "#mode-stripview" },
+            "allowModes": ["stripview"], "spotlight": "#mode-toggle",
+            "anchor": "#mode-stripview", "side": "bottom",
+            "text": "One crystal read in depth. Now the whole run read in breadth — click 📼 Strip View.",
+            "hint": "click the highlighted Strip View button" },
+          { "action": { "event": "click", "selector": ".strip-view-datasetrow" },
+            "anchor": "#strip-view-body", "side": "top",
+            "text": "The flight recorder. Every run you complete records a strip dataset automatically; the five most recent are kept, and ⬇ Download preserves one forever as a file. Open the newest — your Cumbrian run.",
+            "hint": "click the top dataset row" },
+          { "anchor": "#strip-view-body", "side": "top",
+            "text": "Every chip in the vug, every step of the run, laid side by side — five million years at a glance. The pulse train reads as striping across the record. Where the Record Player reads one crystal deep, the Strip View reads the whole pocket wide; between them, nothing that happened in a run is beyond recovering." },
+          { "anchor": "#strip-view-sonify", "side": "bottom",
+            "text": "And ▶ Sonify plays the strips as music — chip drone underneath, crystal bells on top. The vug had a soundtrack all along; the instruments were just waiting to be built." },
+          { "anchor": "#strip-view-body", "side": "top",
+            "text": "That's the whole loop the five tutorials teach. GROW — Creative mode's verbs or Simulation's deep time. KEEP — 💎 Collect, the Library, your permanent catalog. READ — the Record Player for one crystal's depth, the Strip View for a run's breadth. Every specimen is a record of the water it grew from. You know how to play them now." }
+        ]
+      },
       "sources": [
         "Alderton D.H.M. & Bevins R.E. (1996) — Fluid inclusion microthermometry of Pb-Zn-Ba veins, Cumbrian orefield, England. Journal of the Geological Society 153: 91-104. Brine T 100-150°C, salinity ~20 wt% NaCl eq., post-Variscan timing.",
         "Bouch J.E., Naden J., Shepherd T.J., McKervey J.A., Young B., Benham A.J., Sloane H.J. (2006) — Direct evidence of fluid mixing in the formation of stratabound Pb-Zn-Ba-F mineralisation in the Alston Block, North Pennines orefield. Mineralogical Magazine 70: 567-588. PRIMARY REFERENCE — multi-stage fluid mixing produces the oscillatory chemistry, Mn²⁺ partitioning into barite tracks the pulse history.",

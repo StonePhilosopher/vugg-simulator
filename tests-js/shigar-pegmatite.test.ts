@@ -130,6 +130,62 @@ describe('Shigar Valley aquamarine pegmatite scenario (v216)', () => {
     });
   });
 
+  describe('Door 1 stature pins — the size DISTRIBUTION is the claim (SIM 219)', () => {
+    // expects_species checks PRESENCE; these check STATURE (the Door 4
+    // move, landed early on the scenario that motivated it). The Shigar
+    // signature is a right-tailed size distribution: a showpiece star on
+    // the cleavelandite shelf AND the small "New Hampshire fry" — you can
+    // find 0.6 mm beryls anywhere; what makes Shigar Shigar is the tail.
+    // Numbers from tools/shigar-aqua-growth-probe.mjs at seed 42, SIM 219
+    // (K 25 + Be wallet ~118). If a chemistry change moves these, re-run
+    // the probe and re-pin deliberately — don't fight to preserve them.
+    let sim: any;
+    let aquas: any[];
+
+    function ensureSim() {
+      if (!sim) {
+        sim = runScenario('shigar_pegmatite');
+        aquas = sim.crystals
+          .filter((c: any) => c.mineral === 'aquamarine')
+          .sort((a: any, b: any) => b.c_length_mm - a.c_length_mm);
+      }
+    }
+
+    it('grows FIVE aquamarines (four pocket-stage + one post-etch runt)', () => {
+      ensureSim();
+      expect(aquas.length).toBe(5);
+    });
+
+    it('the star is a showpiece: ≥ 20 mm on the ~100 mm cleavelandite shelf', () => {
+      ensureSim();
+      expect(aquas[0].c_length_mm).toBeGreaterThanOrEqual(20);
+    });
+
+    it('the New Hampshire fry survives: at least one aqua stays ≤ 0.5 mm', () => {
+      ensureSim();
+      expect(aquas[aquas.length - 1].c_length_mm).toBeLessThanOrEqual(0.5);
+    });
+
+    it('the etch is sculpture, not consumption: star loses ≤ 5% of grown length', () => {
+      ensureSim();
+      const star = aquas[0];
+      const grown = star.zones.filter((z: any) => z.thickness_um > 0)
+        .reduce((a: number, z: any) => a + z.thickness_um, 0);
+      const etched = star.zones.filter((z: any) => z.thickness_um < 0)
+        .reduce((a: number, z: any) => a + Math.abs(z.thickness_um), 0);
+      expect(grown).toBeGreaterThan(0);
+      expect(etched / grown).toBeLessThanOrEqual(0.05);
+    });
+
+    it('the late runt is PRISTINE — nucleated after the acid, no etch zones', () => {
+      ensureSim();
+      const runt = aquas[aquas.length - 1];
+      expect(runt.nucleation_step).toBeGreaterThan(58); // hf_etch fires at 58
+      const etchZones = runt.zones.filter((z: any) => z.thickness_um < 0);
+      expect(etchZones.length).toBe(0);
+    });
+  });
+
   describe('expects_species declaration ↔ JSON5', () => {
     it('scenarios.json5 declares the six-species assemblage', () => {
       const raw = fs.readFileSync(path.join(ROOT, 'data', 'scenarios.json5'), 'utf8');

@@ -166,3 +166,136 @@ Re-walk the tour when the screen moves, teach on real rock, and keep the mechani
 smaller than the feature it enables.
 
 — the builder, fourth hand, the tutorial arc · 2026-07-05
+
+---
+
+# CONTINUATION — the parity pass (2026-07-07, `78e2b0e` + `223a96b`)
+
+The OPEN list above, worked. Boss ask: take the Grand Tour / Collecting rework and
+apply it to the neglected tutorials. Two commits, both cold-ci gated, no SIM bump.
+
+## What closed
+
+- **Engine v3.1 — pause-not-supersede** (`js/70a`). Phase-0 reading of the machine
+  before authoring found the "don't butt" trap is worse than documented: a fired
+  sim-step whose successor is action/continue was superseded BEFORE FIRST PAINT
+  (the rAF `renderedIdx` guard), so the narration was invisible, not brief. Both
+  reworked tutorials shipped violating it — T1's step:9 temperature beat and T4's
+  step:70 pocket-is-quiet beat never displayed. Now the machine REWINDS onto the
+  fired narration (`pausedAt`) and renders it as a pseudo-continue (Continue ⏎ /
+  Enter / Space); the prompt arrives after the acknowledge. `_tutCurrentTrigger()`
+  centralizes the paused→continue reading. Authors may freely follow narration
+  with an action now — the trap section below is amended.
+- **A second engine bug found by driving, not reading:** the deliberately-lingering
+  Begin ⏎ callout (successor sim-step not yet due) kept a LIVE button — a double
+  click silently skipped the waiting beat. Consumed buttons now disable
+  (`.tutorial-callout-btn:disabled`).
+- **Tutorial 2 → 13 steps.** Framing continues → Begin ⏎ handoff (progressive
+  unlock) → the Mn-pulse/Fe-drop arc → tap-your-card action → **the zone modal's
+  "Under UV" bar as the payoff instrument** (dim quenched early zones, bright rim)
+  → Franklin beat → whole-panel finale. Broth/events byte-identical.
+- **Tutorial 3 → 14 steps.** σ-forecast framing → pulse beats re-anchored on
+  `#f-stat-ph`/`#f-sat-bar` → **the INVERSE EXPERIMENT**: the 🧪 acid verbs unlock
+  and the player runs the cascade backwards (measured in the drive: one Shift ↓pH,
+  pH 8.0→6.0, σ(calcite) 23.19→0.08 — the cave-dissolution lesson performed, not
+  narrated). Broth/events byte-identical, but the TEXT was re-trued: the old
+  script's "Ca 200 / calcite isn't growing yet" predates the Ca 200→350
+  recalibration; the measured run starts marginal (σ 1.61, a trickle by step 2)
+  and pulse 1 MULTIPLIES σ 1.34→5.04 — the narration now teaches the
+  multiplication, which is also the truer Mammoth story.
+- **tools/tutorial-lint.mjs** (passive): JSONC-faithful parse, sim-step
+  monotonicity, static-anchor existence, the `//`-inside-strings trap, checked:
+  event compatibility; prints each script's trigger sequence + pause junctions.
+- **The eye-check the OPEN list asked for ran, and it found the thing**
+  (`223a96b`): kernel truth showed ZERO aquamarine meshes in the shigar scene
+  while the inventory held all 4 declared aquas — dissolved:true (the HF etch),
+  0.13-0.6 mm net. The Q4 renderer gate treated LOST-SOME-MATERIAL as GONE, and
+  ran before the replay-history branch, so the pocket's titular gemstones never
+  rendered at any playback step. Fixed (one predicate, three sites: signature /
+  mesh loop / `_o2PlaceBody`): only effectively-gone remnants (`renderC ≤ 0.05`)
+  drop, judged on the size rendered THIS FRAME. Verified: 18 ferrous-blue
+  aquamarine meshes, enclosed guests riding the O4a inclusion path; elmwood
+  control unchanged. **Plus the sibling find:** Tutorial 2's UV payoff exposed
+  the calcite quench gate reading BROTH-scale ppm against ZONE-scale traces
+  (partition ~0.08×) — no calcite ever quenched since the bar shipped.
+  Recalibrated (`Fe < 0.4`, zone-scale); the tutorial is the calibration anchor.
+
+## Traps — amendments to the section above
+
+- ~~"Don't butt a continue/action step directly after a `step:N` step"~~ —
+  RETIRED by v3.1: the fired narration pauses as a pseudo-continue. Cost: one
+  Continue press between narration and prompt.
+- **No `//` anywhere in tutorial text/hints** — the runtime JSONC strip eats from
+  `//` to end-of-line EVEN INSIDE STRINGS. `tutorial-lint` errors on it.
+- **The fortress paces its log at narrative tempo** (~2 s/step at 1×); driving
+  tutorials headless, call `topoReplaySpeed(10)` first or every Advance click
+  after the first is swallowed by the pacing lock.
+- **Verify claims against the LIVE run, not the scenario notes** — two of the
+  three tutorials' physics narrations had drifted from their own broths (T3's
+  σ-story, T2's UV-bar story). The probe replaces the hypothesis here too.
+- **After ANY direct index.html edit, run `npm run build` even if no module
+  changed** — the edit path can leave the worktree file CRLF; `git status`
+  reads clean (autocrlf hides it) but `build:check` compares raw bytes →
+  cold-ci RED with `diff length ≈ the file's line count` (~80k). The builder
+  is also the normalizer. A diff length suspiciously close to the line count
+  = line endings, not content. (Root-cause option for a future pass:
+  .gitattributes `eol=lf` pinning — deferred, mass-renormalization noise.)
+
+## Open (updated)
+
+- **Fifth tutorial ✅ SHIPPED** (`b6f55db`) — "Reading a Crystal", 18 steps,
+  legends, rides `tn457_barite_pulses` @ seed 42 (the boss's own specimen
+  lineage as the teaching rock — the shigar move repeated). Grow → 📀 Record
+  Player walk (platter pick = the 103-zone star barite the probe measured;
+  drop the needle; the Mn lane IS the pink banding) → 📼 Strip View walk
+  (open the auto-recorded flight dataset; ▶ Sonify gets its first
+  player-facing mention) → the five-tutorial closing: GROW, KEEP, READ.
+  Beat numbers are measured facts of the probed seed-42 run.
+- **Menu auto-generation §10.5 — tranche 1 of 3 ✅ SHIPPED** (`6b6e719`):
+  the #scenario quick-play dropdown auto-generates from SCENARIOS at
+  load-complete (`_populateScenarioDropdowns`, js/94; called from
+  `_loadScenariosJSON5`, js/70-events) — the surface whose hand-written
+  options were already raw ids, so zero curation lost. Guard test flipped:
+  the static select must ship EMPTY (single source of truth) + the
+  populator's existence/exclusion/call-site are asserted against source.
+  REMAINING (tranches 2-3): the Scenarios picker buttons (50, curated
+  prose, GROUPED under Real-locality / Test / Tutorial-broth subheadings),
+  the zen #idle-scenario dropdown (curated short names like "MVT
+  (Tri-State)"), and the Begin tutorial buttons (now 6 incl. Tutorial 5,
+  curated) — all need a menu.group/menu.label data migration (~90 curated
+  strings from index.html into scenarios.json5) before they can derive.
+  Design sized 2026-07-07; do it as its own pass.
+- **NEW — UV palette scale audit** (backlog): the other zoneFluorescence gates
+  (ruby Fe<10, apophyllite, willemite, …) are still broth-scale numbers checked
+  against zone-scale traces; audit each against the partition. Sibling:
+  `predict_fluorescence()` (js/27) has the same disease (its avg_Fe>10 quench
+  branch is unreachable) but feeds narrators → baselines — SIM-adjacent,
+  instruments-first, own arc.
+- **NEW — shigar aquamarine size** (vugg-tune-scenario, pinned census → SIM
+  bump): the renderer now tells the truth — the etch leaves 0.13-0.6 mm of
+  beryl in the world's-finest-aquamarine pocket. Whether the sim should GROW
+  bigger aquas (or etch less) is a calibration question the boss should weigh.
+
+## The mark
+
+**Drive the tutorial before you trust it.** Every defect this pass found — the
+never-painted narrations, the double-click skip, the uniformly-glowing UV bar,
+the invisible aquamarines, the σ-story drift — was invisible in the source and
+obvious in the drive. A tutorial is a claim about what the screen does; the only
+verification instrument that counts is the screen doing it. The lint catches the
+structural class; the drive catches the truth class; keep both.
+
+**The tutorial is a calibration anchor, not just a lesson.** Twice this pass, the
+tutorial's designed story was the thing that exposed a mis-scaled consumer (the
+UV quench gate) or a drifted broth (the travertine σ-story). A tutorial that
+promises "you will SEE X" is a standing assertion wired to real numbers — the
+cheapest regression instrument the game has, because a player runs it every day.
+
+**The dream, continued.** The fourth hand dreamed tutorials that notice what you
+haven't done yet. This pass adds the complement: tutorials the ENGINE notices —
+scripts whose claims are machine-checkable against a measured run (σ values,
+mesh counts, UV segment boundaries), so the nightly sweep tells us when the sim
+drifts out from under a lesson before any player does. tutorial-lint checks the
+skeleton today; the dream is a drive-lint that checks the promises.
+
+— the builder, fifth hand, the parity pass · 2026-07-07

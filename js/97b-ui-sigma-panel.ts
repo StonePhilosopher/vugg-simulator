@@ -23,8 +23,16 @@ function _onSatFilterToggle() {
   }
 }
 
+// The conditions object the panel last rendered — the nucleation hover
+// popover evaluates its red/green chips against THIS, not the live sim,
+// so hovering during a topo replay scrub shows that moment's truth
+// (matching how the pills themselves rewind — v66 replay-aware).
+let _satLastConditions = null;
+
 function _renderFortressSigmaGroups(c, host) {
   if (!host) return;
+  _satLastConditions = c;
+  if (typeof _satHoverHide === 'function') _satHoverHide(); // re-render orphans any floating popover
   host.innerHTML = '';
   if (typeof MINERAL_SPEC === 'undefined') return;
   // Walk every mineral in the spec; keep those that have a
@@ -88,12 +96,13 @@ function _renderFortressSigmaGroups(c, host) {
     const pills = filtered.map(e => {
       const isSuper = e.sigma >= 1.0;
       const klass = 'sat-indicator ' + (isSuper ? 'sat-super' : 'sat-under');
-      const title = isSuper ? 'Supersaturated — will grow' : `Undersaturated (σ=${e.sigma.toFixed(2)})`;
       // data-hl-mineral lets the panel double as the legend: hover
       // a pill → highlight that mineral on the topo (replaces the
       // legacy classes-tab hover behavior, which only highlighted
-      // by class).
-      return `<span class="${klass}" data-hl-mineral="${e.name}" title="${title}">${e.displayName} σ=${e.sigma.toFixed(2)}</span>`;
+      // by class). The native title tooltip is gone (2026-07-08) —
+      // the nucleation hover popover carries the state now, and a
+      // browser tooltip would fight it.
+      return `<span class="${klass}" data-hl-mineral="${e.name}" data-sigma="${e.sigma.toFixed(2)}">${e.displayName} σ=${e.sigma.toFixed(2)}</span>`;
     }).join('');
     // All groups open by default. Filters do the visual reduction
     // now; collapsing groups was the pre-filter solution.
@@ -103,6 +112,155 @@ function _renderFortressSigmaGroups(c, host) {
   }
   // One-time wire-up of hover/click delegation on the panel.
   _wireFortressSigmaEvents(host);
+}
+
+// ============================================================
+// NUCLEATION HOVER POPOVER (boss ask 2026-07-08)
+// ============================================================
+// Hovering a mineral pill shows WHY it is (or isn't) nucleating: the
+// Library card's recipe rows rendered as red/green condition chips,
+// evaluated against the conditions the panel last rendered (live play
+// or a replay-scrub snapshot alike). Boss's actinolite sketch:
+//
+//   T window        [200–700°C (optimum 300–500)]
+//   Requires        [Ca ≥60][Mg ≥30][Fe ≥30][SiO2 ≥250]
+//   Traces          [Cr][Mn]
+//   Acid dissolution [pH ≥ 5]
+//
+// The acid chip is deliberately REVERSED from the Library's wording
+// (dissolves at pH < 5): here you're reading survival, not death —
+// the chip states the condition under which the crystal keeps its
+// faces, green when the broth is safe.
+
+// Pure builder — returns [{label, chips: [{text, met, note?}]}] so
+// tests can assert the red/green logic without any DOM. `c` needs only
+// plain-readable `temperature` and `fluid` (replay snapshots qualify).
+function _nucleationHoverGroups(name, c) {
+  const spec = (typeof MINERAL_SPEC !== 'undefined') ? MINERAL_SPEC[name] : null;
+  if (!spec || !c || !c.fluid) return [];
+  const f = c.fluid;
+  const groups = [];
+
+  // T window — one chip, green while T sits inside the growth window.
+  if (Array.isArray(spec.T_range_C)) {
+    const [lo, hi] = spec.T_range_C;
+    const opt = Array.isArray(spec.T_optimum_C) ? ` (optimum ${spec.T_optimum_C[0]}–${spec.T_optimum_C[1]})` : '';
+    groups.push({
+      label: 'T window',
+      chips: [{
+        text: `${lo}–${hi}°C${opt}`,
+        met: typeof c.temperature === 'number' && c.temperature >= lo && c.temperature <= hi,
+      }],
+    });
+  }
+
+  // Requires — one chip per ingredient floor, green when the broth
+  // carries at least that much. Non-numeric spec values (rare) chip as
+  // presence checks.
+  if (spec.required_ingredients && Object.keys(spec.required_ingredients).length) {
+    groups.push({
+      label: 'Requires',
+      chips: Object.entries(spec.required_ingredients).map(([k, v]) => (
+        (typeof v === 'number')
+          ? { text: `${k} ≥${v}`, met: (typeof f[k] === 'number' ? f[k] : 0) >= v }
+          : { text: k, met: (typeof f[k] === 'number' ? f[k] : 0) > 0 }
+      )),
+    });
+  }
+
+  // Traces — optional chromophores; green means the broth carries the
+  // trace so grown zones will pick it up. The spec's flavor text rides
+  // as a chip-level tooltip.
+  if (spec.trace_ingredients && Object.keys(spec.trace_ingredients).length) {
+    groups.push({
+      label: 'Traces',
+      chips: Object.entries(spec.trace_ingredients).map(([k, v]) => ({
+        text: k,
+        met: (typeof f[k] === 'number' ? f[k] : 0) > 0,
+        note: (typeof v === 'string') ? v : '',
+      })),
+    });
+  }
+
+  // Acid dissolution — REVERSED into survival conditions (see header).
+  // Library sources (95-ui-library acidText): acid_dissolution.pH_threshold
+  // / pH_dissolution_below = dissolves BELOW → chip `pH ≥ X`;
+  // pH_dissolution_above = dissolves ABOVE → chip `pH ≤ Y`.
+  {
+    const below = (spec.acid_dissolution && spec.acid_dissolution.pH_threshold != null)
+      ? spec.acid_dissolution.pH_threshold
+      : (spec.pH_dissolution_below != null ? spec.pH_dissolution_below : null);
+    const above = (spec.pH_dissolution_above != null) ? spec.pH_dissolution_above : null;
+    const pH = (typeof f.pH === 'number') ? f.pH : null;
+    const chips = [];
+    if (below != null) chips.push({ text: `pH ≥ ${below}`, met: pH != null && pH >= below });
+    if (above != null) chips.push({ text: `pH ≤ ${above}`, met: pH != null && pH <= above });
+    if (!chips.length && spec.acid_dissolution) {
+      // Dict present but no numeric threshold (HF-only / rehydration-
+      // only species — the Library shows 'resistant'). Always green:
+      // no broth pH endangers it.
+      chips.push({ text: 'resistant', met: true });
+    }
+    if (chips.length) groups.push({ label: 'Acid dissolution', chips });
+  }
+
+  return groups;
+}
+
+function _nucleationHoverHTML(name, c) {
+  const groups = _nucleationHoverGroups(name, c);
+  if (!groups.length) return '';
+  const displayName = (typeof _SAT_DISPLAY_NAMES !== 'undefined' && _SAT_DISPLAY_NAMES[name])
+    || (name.charAt(0).toUpperCase() + name.slice(1));
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  let html = `<div class="nuc-pop-head">${esc(displayName)}</div>`;
+  for (const g of groups) {
+    html += `<div class="nuc-pop-label">${esc(g.label)}</div>`;
+    html += `<div class="nuc-pop-chips">` + g.chips.map(ch =>
+      `<span class="nuc-chip ${ch.met ? 'met' : 'unmet'}"${ch.note ? ` title="${esc(ch.note)}"` : ''}>${esc(ch.text)}</span>`
+    ).join('') + `</div>`;
+  }
+  return html;
+}
+
+// Singleton popover element, body-mounted so panel scroll/overflow
+// can't clip it. pointer-events:none — it never steals the hover.
+function _satHoverEl() {
+  let el = document.getElementById('sat-hover-pop');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'sat-hover-pop';
+    el.className = 'sat-hover-pop';
+    el.style.display = 'none';
+    document.body.appendChild(el);
+  }
+  return el;
+}
+
+function _satHoverShowForPill(pill) {
+  const name = pill.dataset.hlMineral;
+  const c = _satLastConditions
+    || ((typeof fortressSim !== 'undefined' && fortressSim) ? fortressSim.conditions : null);
+  if (!name || !c) return;
+  const html = _nucleationHoverHTML(name, c);
+  if (!html) { _satHoverHide(); return; }
+  const el = _satHoverEl();
+  el.innerHTML = html;
+  el.style.display = 'block';
+  // Position beside the pill; flip left/up when the viewport says no.
+  const r = pill.getBoundingClientRect();
+  const pw = el.offsetWidth, ph = el.offsetHeight;
+  let x = r.right + 10;
+  if (x + pw > window.innerWidth - 8) x = Math.max(8, r.left - pw - 10);
+  let y = r.top;
+  if (y + ph > window.innerHeight - 8) y = Math.max(8, window.innerHeight - ph - 8);
+  el.style.left = `${Math.round(x)}px`;
+  el.style.top = `${Math.round(y)}px`;
+}
+
+function _satHoverHide() {
+  const el = document.getElementById('sat-hover-pop');
+  if (el) el.style.display = 'none';
 }
 
 // Idempotent — wires hover/click on the sigma panel host once. Re-
@@ -124,10 +282,19 @@ function _wireFortressSigmaEvents(host) {
   }
   host.addEventListener('mouseover', (ev) => {
     topoSetLegendHoverTarget(targetFromEvent(ev));
+    // Nucleation popover rides the same delegation: pill → show its
+    // recipe chips, anything else under the host → hide.
+    const pill = ev.target.closest('.sat-indicator[data-hl-mineral]');
+    if (pill) _satHoverShowForPill(pill);
+    else _satHoverHide();
   });
   host.addEventListener('mouseleave', () => {
     topoSetLegendHoverTarget(null);
+    _satHoverHide();
   });
+  // A scroll anywhere (panel column, page) leaves a fixed-position
+  // popover floating over the wrong pill — just drop it.
+  window.addEventListener('scroll', () => _satHoverHide(), true);
   host.addEventListener('click', (ev) => {
     const target = targetFromEvent(ev);
     // The `<details>` element handles open/close itself on a click

@@ -850,6 +850,30 @@ function grow_spodumene(crystal, conditions, step) {
   });
 }
 
+// Beryl-family growth-rate coefficient — µm/step per unit σ-excess,
+// before the ×timeScale in add_zone. ONE K for the whole variety family
+// (beryl/goshenite, emerald, aquamarine, morganite, heliodor): the five
+// varieties are the same Be₃Al₂Si₆O₁₈ lattice — chromophores differ,
+// kinetics don't. Door 1 (HANDOFF-FOUNDATIONS eleventh keystone): the
+// probe measured the old K (2.2) + the _beryl_base_sigma factor caps
+// (σ ≲ 9) as the joint reason no sim beryl ever passed ~0.6 mm while
+// albite (K 4.0, σ uncapped ~80) reached 100 mm in the same broth.
+// SIM 219 sets K = 25: with σ ceilinged at ~9 the rate ceilings at
+// ~1.1 mm/step — pocket-stage beryl is NOT 70× slower than feldspar
+// per unit driving force (London 2008: pocket crystallization is
+// geologically brief; London/Hunt/Duval 2020: the whole gem stage fits
+// 435-355°C), the old K just predated beryl being anyone's anchor.
+// Growth stays MASS-limited by the cell's Be wallet (0.025 Be/µm
+// pre-timeScale debit), so K raises the spend RATE while the scenario's
+// Be budget stays the size of the crystal. Census at the bump:
+// shigar_pegmatite (the tune's target), gem_pegmatite,
+// radioactive_pegmatite, schneeberg — reviewed by name in the SIM 219
+// baseline diff. The dev hook exists for
+// tools/shigar-aqua-growth-probe.mjs to sweep K closed-loop; nothing
+// in the sim itself calls it.
+let BERYL_FAMILY_GROWTH_K = 25;
+function setBerylFamilyGrowthK(v) { BERYL_FAMILY_GROWTH_K = +v; }
+
 function _beryl_family_habit_forms(T) {
   if (T > 500) return ['m{10̄10} hex prism', 'c{0001} basal pinacoid', 'elongated'];
   if (T > 380) return ['m{10̄10} hex prism', 'c{0001} flat pinacoid', 'classic hexagonal'];
@@ -877,7 +901,7 @@ function grow_beryl(crystal, conditions, step) {
   if (sigma < 1.0) return _beryl_family_dissolution(crystal, conditions, step);
 
   const excess = sigma - 1.0;
-  const rate = 2.2 * excess * rng.uniform(0.8, 1.2);
+  const rate = BERYL_FAMILY_GROWTH_K * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.1) return null;
 
   const f = conditions.fluid;
@@ -919,7 +943,7 @@ function grow_emerald(crystal, conditions, step) {
   const sigma = conditions.supersaturation_emerald();
   if (sigma < 1.0) return _beryl_family_dissolution(crystal, conditions, step);
   const excess = sigma - 1.0;
-  const rate = 2.2 * excess * rng.uniform(0.8, 1.2);
+  const rate = BERYL_FAMILY_GROWTH_K * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.1) return null;
 
   const f = conditions.fluid;
@@ -968,7 +992,7 @@ function grow_aquamarine(crystal, conditions, step) {
   const sigma = conditions.supersaturation_aquamarine();
   if (sigma < 1.0) return _beryl_family_dissolution(crystal, conditions, step);
   const excess = sigma - 1.0;
-  const rate = 2.2 * excess * rng.uniform(0.8, 1.2);
+  const rate = BERYL_FAMILY_GROWTH_K * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.1) return null;
 
   const f = conditions.fluid;
@@ -1014,7 +1038,7 @@ function grow_morganite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_morganite();
   if (sigma < 1.0) return _beryl_family_dissolution(crystal, conditions, step);
   const excess = sigma - 1.0;
-  const rate = 2.2 * excess * rng.uniform(0.8, 1.2);
+  const rate = BERYL_FAMILY_GROWTH_K * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.1) return null;
 
   const f = conditions.fluid;
@@ -1059,7 +1083,7 @@ function grow_heliodor(crystal, conditions, step) {
   const sigma = conditions.supersaturation_heliodor();
   if (sigma < 1.0) return _beryl_family_dissolution(crystal, conditions, step);
   const excess = sigma - 1.0;
-  const rate = 2.2 * excess * rng.uniform(0.8, 1.2);
+  const rate = BERYL_FAMILY_GROWTH_K * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.1) return null;
 
   const f = conditions.fluid;

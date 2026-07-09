@@ -2,6 +2,210 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 💎 O4b — GEOMETRIC ENCLOSURE ADJACENCY + coats_front (2026-07-08, boss: "O4b it is… you always follow the science") — SHIPPED SIM 221 (`6967c57` census + `08287eb` bump)
+>
+> The second commit O4a deferred. **The census found the string gate 81% phantom**
+> (tools/o4b-adjacency-census.mjs, self-checked 38/38 vs live enactment, now marked
+> HISTORICAL): every free-wall crystal holds the literal 'vug wall', so ANY two
+> "matched" across the cavity — 276 of 342 seed-42 enclosures fired at distances the
+> host's footprint never reaches (wittichen 246 mm); 17 more DEFERRED (footprint
+> genuinely arrives 10–111 steps later); 22 real neighbors BLOCKED (dist-0.0 same-host
+> siblings split by narrative qualifiers); 14 enacted `#1`-matches-`#12` substring
+> accidents (the exact-ID parser, parsePositionHost js/26, was in-tree all along —
+> grep-the-tree, 4th landing). Adjacent now = substrate-linked (exact-ID, either
+> direction) OR anchor great-circle distance ≤ the two painted footprint half-arcs
+> + one cell (paintCrystal's own law hoisted to `WallState.footprintArcMm`, painters
+> byte-identical; per-crystal floor = one cell, the painter's own max(1,…)).
+> **coats_front** rides the swallow: guest-nucleated-ON-host = front-coating (marks
+> the host's zone horizon at enclosed_at_step — **O5's phantom datum**; 14 fleet-wide),
+> else embedded-inert (74). Cleared on liberation. Movers: 21 scenarios, ALL census-
+> listed; the 10 no-pair scenarios verified byte-identical (shigar stature pins
+> untouched); naica 43→10 crystals (the phantom mill fed the cap recycle — real Naica
+> is few-nuclei/giant/clear, García-Ruiz 2007); 142 distinct baseline minerals at both
+> versions (zero went fleet-dead; pharmacolite/bornite are single-scenario weather).
+> CI 167/2307. Tests: o4b-adjacency.test.ts (7 — one pin per census class, distances
+> self-calibrated from the wall's own metric).
+>
+> **▸ THE RIDER THE BUMP EXPOSED — tormiq's quartz lining was a fake.** The "Quartz
+> Lining" event delivered +40 SiO2 (cap 420); quartz never fired until ~step 157, and
+> the late cold phase wiped the 0.1 mm stragglers. The deformation arc's bent-quartz
+> showcase "passed" pre-O4b because two dust quartz got phantom-swallowed into a
+> feldspar 124–137 mm away at step 174 — seven steps before their death date — and sat
+> there immune to dissolution. Fix (Mullis 1994, the scenario's own source; grimsel
+> opens at SiO2 1550): the lining beat delivers +1100 cap 1500 → quartz nucleates ON
+> the beat (step 25), 3 live at 2–3 mm through the step-188 shear, **20/20 seeds** (was
+> 11/20 marginal), all three bent in the live browser check. The declared paragenesis
+> runs in order for the first time. Second rider: supergene's flooded-hourglass pin
+> re-trued to strong-stain (>0.55) — the v220 seed-42 flood was RNG weather (v221
+> sweep: 5/12 seeds still flood at 0.95); the flooded variant's mechanism pins live on
+> great_salt_plains' red-mud flood. Tuning a scenario to chase a seed flag = pinning
+> weather.
+>
+> **▸ NEXT on this line — O5 PROPOSAL CUT (same session): `PROPOSAL-O5-PERTURBED-REGROWTH-
+> 2026-07-08.md`** — the film / the phantom / the masking sceptre. Verified science
+> (Takahashi & Sunagawa 2004 ELO — masked trunk + purer renewal, mechanism prose confirmed;
+> Cabrera–Vermilyea dead-zone σ*(φ) with the modern step-bunching caveats DECLARED);
+> census corrections: **the corrosion sceptre is already EARNED** (js/45 classifyQuartzSceptre
+> + grimsel seal/breach — the "declared-but-painted" line was stale; O5 adds the SECOND
+> natural route, not the first), phantom rails are dissolution-only today (masked_horizon =
+> a positive-growth phantom, new origin on the same rails), the two axes ARE the face-class
+> granularity (φ_term/φ_prism, no per-face state needed for primitives), D2's vertexColors
+> seam is the band's render home. Tranches O5a record-unread (0/38 REQUIRED) → O5b gate
+> (census-bounded movers) → O5c band render. Splitting ladder NAMED-DEFERRED (its own
+> state class). Specimen anchors: 1294/1295/1300 chlorite phantoms + 1307–1309 sceptres.
+> **REVIEW ROUND 1 (2026-07-08): Q2 module-grain RESOLVED — writers live with their
+> triggers (`film:` directive in the event applier; coats_front increment at the 85c
+> swallow site), σ*(φ) gate + masked_horizon tag in js/27 add_zone BESIDE the existing
+> is_phantom detection (rockbot's zone instinct + the builder's trigger instinct, both
+> right — the name collision dissolved: the FIELD is enclosure bookkeeping, the FILM is
+> growth-front state) · Q3 RESOLVED — boss: "Sweetwater it is" (first content = AUTHORING
+> the snowball-barite scenario; TN-vs-MO Sweetwater disambiguation flagged for the
+> dossier; grimsel AND tormiq both stay clean corrosion references) · **Q1 σ*(φ) curve
+> RESOLVED — two independent research passes (rockbot's RESEARCH-SIGMA-STAR-PHI + the
+> builder's addendum) CONVERGED on hyperbolic φ/(1−φ), divergence at φ=1, one constant, no
+> published closed-form. ADOPTED = rockbot's baseline-anchored `σ*(φ)=σ*₀·(1+k·φ/(1−φ))`
+> (reduces to the clean σ_crit at φ=0 → unfilmed crystals byte-identical FOR FREE; the
+> builder's draft `K·φ/(1−φ)` wrongly gave zero threshold at φ=0 — rockbot right, adopted).
+> Divergence honored not clamped (rockbot right; Ehrenberg 1993). Evidence merged: rockbot's
+> diagenetic chlorite-coat lit (Ehrenberg/Zhang = the macroscopic-film regime) + the
+> builder's AFM lit (DeYoreo 2004 calcite = sharp super-linear shape, kills linear). Both
+> load-bearing refs web-verified real; Ranganathan&Weeks 2013 == the builder's "PRL 110
+> 055503" (same paper, cross-confirm). k calibrated 4a.7 on sim-σ; 1294/1295/1300 = T2
+> anchor.**
+>
+> **▸ O5a SHIPPED (record-unread, byte-identical 0/38) — boss: "you got this".** js/44b
+> (new module, O3a template): `O5_MASKING_ENABLED=false` flag, the reconciled law
+> `sigmaStarForCoverage(σ*₀,φ)=σ*₀·(1+k·φ/(1−φ))` as a unit-tested pure function (called by
+> nothing yet), `applyFilmDusting` (writer 1 core), `SIGMA_STAR_K`/`O5_COATS_FRONT_PHI_STEP`
+> calibration dials. `_film` state on Crystal (js/27). Writer 1 = event `film:` directive
+> (js/70 thread + js/85d apply — the deformation-directive idiom; no fleet scenario uses it
+> yet). Writer 2 = O4b coats_front enclosures deposit termination-film on the host (js/85c).
+> Census `tools/o5-film-census.mjs`: 13 crystals filmed across 10 scenarios at seed 42 (all
+> via writer 2; 0 directives), φ_term 0.15–0.75 (accumulation visible — fluorite vein 0.75 =
+> 5 stacked guests). BYTE-IDENTICAL PROVEN: baseline + strip digest regenerated → zero git
+> diff (writers fire, nothing reads `_film`); no SIM bump. Tests o5-film.test.ts (11). The
+> census PRE-REGISTERS O5b's movers: only those 10 scenarios may move when the flag flips.
+> **▸ O5b SHIPPED — THE MASKING GATE LIVE (SIM 222).** `O5_MASKING_ENABLED` flipped;
+> the growth loop (js/85, beside the O3b `_buried` throttle) gates a filmed crystal on
+> σ > σ*(φ) = σ*₀·(1+k·φ/(1−φ)) (σ*₀=1 equilibrium, k=1.0). Below → the axis STALLS; above
+> → grows THROUGH, tagging a `masked_horizon` (positive-growth phantom, joined to
+> phantom_surfaces beside is_phantom in js/27 add_zone) and clearing `_film`. Calibration
+> (tools/o5-masking-probe.mjs, off/on sweep k∈{0.3…4}): movement confined to the census-10
+> at EVERY k (the `_film` guard holds); k≥2 froze the fluorite-vein showpiece (−0.897 mm)
+> and rippled reactive_wall −5 crystals → rejected; **k=1.0 keeps Δcrystals 0 fleet-wide**.
+> BASELINE MOVED: reactive_wall ONLY (value-level; its accumulated φ=0.75 from 5 stacked
+> coats_front guests stalls a crystal, ~+100 µm redistributes to a neighbor — mass
+> conservation). The other 9 record horizons that break through instantly — **organic
+> single-inclusion films are LIGHT by design (φ≈0.15 → σ*≈1.18); a lone speck masks little,
+> the science.** Tests o5-masking-gate.test.ts (4, incl. THE INVARIANT: a masked_horizon is
+> positive-thickness + not is_phantom — "dusted and buried" ≠ the etch phantom's "etched and
+> healed"). Rebake v222: baseline + strips + archive.
+>
+> **▸ O5 FIRST CONTENT SHIPPED — THE ELMWOOD BARITE SNOWBALL (SIM 223).** Boss picked the
+> locality: *"elmwood TN is famous for barite on sphalerite"* → grep-the-tree, NOT a new
+> Sweetwater — elmwood ALREADY grows barite on honey sphalerite, but its barite σ peaked at
+> 0.97 and never cleared 1.0, so it sat as subcritical DUST. New `elmwood_barite_stage`
+> handler (js/70) sets a Ba FLOOR of 28 (the documented "purple fluorite + barite" stage;
+> NOT a stacking pulse — the first cut's +22/stage stacked to σ≈3.2 and spawned WITHERITE
+> against elmwood's high CO3), and clay/iron-oxide `film:` dustings (steps 40/60/78) between
+> pulses stall the blades. The stall→pulse→break cycle buries 2 masked_horizons per blade +
+> leaves the final clay rind uncleared = the snowball's concentric banding + dusty skin
+> (6 blades → 0.36 mm, 12 horizons; barite is a minor phase in this calcite/fluorite/
+> aragonite-packed cavity, so it stays small — geologically right). **THE VARIETY IS
+> PRESERVED** (boss's favorite locality "for the variety of cool stuff it makes"): golden
+> calcite 19.16 vs 19.18 mm, fluorite/aragonite/sphalerite base/smithsonite/selenite all
+> within noise, witherite excluded. baseline-diff: elmwood ONLY (value-level confirmed);
+> crystals 20→27 (minor dust over-nucleation — barite 6→11, sphalerite 1→3, the sustained-Ba
+> web, extras 0 mm), species 13→13. Tests elmwood-snowball.test.ts (5). A `film_coat` no-op
+> handler carries the pure-dusting events (no chemistry). **NEXT on the O5 line:** the masking
+> SCEPTRE (per-axis prism/tip asymmetry + classifyQuartzSceptre generalization, grimsel
+> corrosion stays the clean reference) + O5c band render (the D2 vertexColors seam).
+
+> ## 🔴🟢 NUCLEATION HOVER POPOVER (2026-07-08, boss ask) — SHIPPED (render-only)
+>
+> Boss: *"i want to play with the hover text in creative mode for what is nucleating …
+> boxes with the specific variables for the crystal are either red or green depending on
+> whether the conditions are met … [acid dissolution] needs to be reversed for the
+> nucleation pop up since you are measuring when it doesn't dissolve, vs when it does."*
+>
+> Hovering a σ pill in the Creative saturation panel (js/97b) opens a recipe popover —
+> the Library card's rows as live condition chips: **T window** (green inside
+> T_range_C) · **Requires** (per-ingredient floors vs the broth) · **Traces** (green when
+> the broth carries the chromophore; spec flavor text rides as chip tooltips) · **Acid
+> dissolution REVERSED into survival** (`pH ≥ X` for dissolves-below, `pH ≤ Y` for
+> dissolves-above — both-sided species like wulfenite show both chips; threshold-less
+> species chip 'resistant', always green). Chips evaluate against the conditions the
+> panel LAST RENDERED (`_satLastConditions`) so a topo replay scrub shows that moment's
+> truth, matching the pills' own rewind. The pills' native `title` tooltip is gone — it
+> fought the popover. Pure builder `_nucleationHoverGroups` (testable, DOM-free) + thin
+> HTML/position layer; body-mounted, pointer-events:none, hides on leave/scroll/re-render.
+> CI: tests-js/nucleation-hover.test.ts (5 — happy/hostile broths, both reversal
+> directions, resistant class, HTML degrade). Eye-checked on cooling @ seed 424242:
+> actinolite popover [T 180 → red · Ca 80/Mg 50/SiO2 260 → green · Fe 5 → red · Cr red /
+> Mn green · pH 6.8 → `pH ≥ 5` green], then 2× Shift↓pH → 2.8 flipped it red live.
+> Discovery-in-tests note: read data/minerals.json from disk, NOT the globalThis
+> MINERAL_SPEC snapshot (stale fallback — the _liveRng staleness class, 3rd sighting).
+>
+> **▸ Taught in T1 (same-day boss follow-up):** the Grand Tour gained a step right after
+> the σ-readout beat — hover-for-recipe + the replay-scrub subtlety ("the boxes grade
+> whatever conditions the panel is currently showing"), verified hoverable THROUGH the
+> tutorial dim at that step (elementFromPoint lands on the pill). The tour's Finish-button
+> step re-trued to 📜 Narrate, Collect & Save while there (drift from the save-system
+> rename). tutorial-lint 0 errors, T1 34→35 steps.
+
+> ## 💾 SAVE SYSTEM + LIFETIME SCORE (2026-07-08, boss stone) — SHIPPED (SIM-neutral, 0/38)
+>
+> Boss: *"saving the game should be automatic. the last button should be 'narrate, collect,
+> and save.' … a save button between library and home … a save menu that has manual saves in
+> addition to the autosaves … for now a total crystals collected across all runs is a good
+> base stat that … points towards something more."*
+>
+> **SHIPPED — event-sourced saves (js/93a-ui-saves.ts).** A save is the run's RECIPE, not a
+> state dump: origin (begin path + resolved params + the rng seed installed BEFORE any
+> construction — the legends seed-first order) + the action log (every fortressStep verb with
+> broth-slider DELTAS) + collected-crystal pairs. Load = deterministic replay through the
+> REAL fortressStep with the tempo player in instant mode; browser-verified fingerprint
+> parity (step/T/pH/Fe/Ca/crystals to 6 decimals, T 178.785 preserved). The active run keeps
+> ONE rolling autosave re-persisted after every action ("automatic" = a crash costs nothing);
+> `📜 Narrate, Collect & Save` (the renamed fortress finish button) narrates, silently batch-
+> collects every grown crystal into the Library (log line, not alert), seals the autosave,
+> and ticks the lifetime counters. 💾 Saves nav button (Library ↔ Home) opens the shelf:
+> AUTO/MANUAL badges, in-progress/narrated status, Load/Rename/Delete, and the score line —
+> `vugg-stats-v1` lifetime `crystals_collected` (the boss's scoring base stat; counters only
+> go UP — deleting a specimen doesn't un-find it) + `runs_finished`. Title-screen Load Game
+> opens Saves when any exist, else Library. Cross-SIM loads replay honestly under today's
+> physics with a ⚠️ log line. CI: tests-js/fortress-saves.test.ts (7 — round-trip ×2 begin
+> paths, rolling autosave, finish-seals-once, finished-restore-no-recollect, stat
+> monotonicity, batch return shape).
+>
+> **THE LAW THE LIVE EYE-CHECK ADDED — sliders are TRANSPORT, not physics.** Broth values
+> reach the sim ONLY through fortressStep's pre-action re-sync; post-sync slider values are
+> quantized ECHOES (toSlider rounds). The first cut force-fed `broth_final` back via m.set
+> and turned T 178.785 into 179 — invisible to jsdom (stub sliders), caught in the browser
+> where all 38 sliders are real. `_saveApplyBroth` now writes sliders only; the test grew a
+> real temp slider so the echo class stays pinned.
+>
+> **Rode along — four pre-existing headless landmines** (each would corrupt/crash any
+> DOM-less fortress drive): NaN broth poisoning (re-sync now finite-guards parses), null-ctx
+> throws in topoRender + placeholder (99b) and the three 98c zone-bar painters, and the
+> tests-js stub Proxy lacking `Symbol.toPrimitive`. Plus: fortress begins now seed BEFORE
+> `make()`/construction and `startScenarioInCreative`/agent `startScenario` thread the seed —
+> agent drives are now fully deterministic INCLUDING wall geometry (resolves the old 99z
+> comment caveat).
+>
+> **▸ Score surfaces (same-day boss follow-up):** the Library's completion banner is the
+> total's home — `_libraryProgressHTML` grew a third segment (`N crystals all-time`, the
+> life list; survives a wiped shelf) and the SAME banner now renders on the title card
+> (`#title-progress`, numeric from zero: "0 / 180 species (0%) · …"), repainted on every
+> collect/delete/save via the refreshTitleLoadButton cadence + onSpecReady first paint.
+>
+> **▸ Deferred, named:** zen/legends runs don't save (fortress-only v1 — legends completes
+> instantly, zen is a screensaver; wire them when asked); repeated loads of one save re-record
+> duplicate strip datasets (user-driven, acceptable; revisit if the Strip View list silts up);
+> the scoring system beyond the base stat (boss: *"points towards something more"* — species
+> completion %, size records, per-locality firsts all read cheaply off existing records);
+> save export/import as a JSON file (cross-browser portability).
+
 > ## 🌊 C1 — THE DIRECTIONAL-σ TRANCHE (2026-07-07, boss stone) — SHIPPED `e08ab3d` (render-only); SCALAR-CHEMISTRY HALF DEFERRED
 >
 > Boss said *"continue with the work in the handoff"* → the keystone named C1 next, EV check
@@ -151,13 +355,61 @@ Living list of open work items, captured from session conversations so context s
 > COVERAGE (aquamarine was in no scenario; 76-species census 2026-07-05); Shigar Valley
 > Pakistan, 7 pocket events incl. the HF-etch signature; seed-42 = EXACTLY 6 declared species
 > / 21 crystals, 0/37 drift; five research agents corrected the Baltoro-host myth + NYF label
-> before they reached the rock. CI 154 files / 2176 tests. **OPEN:** T2/T3 could gain v3
-> action beats · shigar aquamarine visuals eye-unverified (WebGL didn't engage in preview) ·
-> no 5th tutorial yet (Record Player / Strip View / twins are candidates) · the 3 menu
-> surfaces should auto-generate from SCENARIOS (vugg-add-scenario §10.5 TODO). Traps in the
+> before they reached the rock. CI 154 files / 2176 tests. Traps in the
 > handoff (native prompt() hangs preview; v116 picker guard; fortress RNG non-determinism).
+>
+> **⤷ PARITY PASS (2026-07-07, fifth hand) — `78e2b0e` + `223a96b`, same handoff (CONTINUATION
+> section):** ENGINE v3.1 pause-not-supersede (fired sim-step narration was superseded BEFORE
+> FIRST PAINT when followed by action/continue — T1 step:9 + T4 step:70 were invisible; now a
+> pseudo-continue) + consumed-button disable (double-click on a lingering Begin ⏎ silently
+> skipped a beat). **T2 → 13 steps** (Begin ⏎ handoff, tap-your-card action, the zone modal's
+> "Under UV" bar as payoff instrument). **T3 → 14 steps** (σ-forecast beats + the INVERSE
+> EXPERIMENT: acid verbs unlock, player runs the cascade backwards — measured σ 23.19→0.08 on
+> one Shift ↓pH; text re-trued against the live run: post-Ca-350 the pocket starts marginal
+> σ 1.61 and pulses MULTIPLY it 1.34→5.04). **tools/tutorial-lint.mjs** (passive; JSONC-faithful,
+> monotonic sim-steps, anchor existence, the //-in-strings trap). **THE EYE-CHECK RAN AND FOUND
+> IT** (`223a96b` render-only): all 4 shigar aquamarines dissolved:true (HF etch) at 0.13-0.6 mm
+> → the Q4 renderer gate culled them WHOLESALE at every replay step — the pocket's titular
+> gemstones had never rendered; now only effectively-gone remnants (renderC ≤ 0.05) drop, judged
+> post-history per frame (18 ferrous-blue meshes verified; elmwood control inert). Sibling: the
+> UV bar's calcite quench gate read BROTH-scale Fe<5.0 against ZONE-scale traces (partition
+> ~0.08×) — unreachable, no calcite ever quenched; recalibrated Fe<0.4 with tutorial_mn_calcite
+> as the calibration anchor. **CLOSED SAME SESSION:** Tutorial 5 "Reading a Crystal" ✅ `b6f55db`
+> (18 steps, legends, tn457 @ seed 42 — the boss's own specimen as the teaching rock; 📀 platter
+> pick lands the measured 103-zone star barite, 📼 opens the auto-recorded flight dataset,
+> ▶ Sonify surfaced to players for the first time; both mode walks + Begin button verified) ·
+> #scenario dropdown auto-generates from SCENARIOS ✅ `6b6e719` (§10.5 TRANCHE 1: static select
+> ships EMPTY, guard flipped to single-source-of-truth + populator assertions; 35 options, cooling
+> default, zero tutorial leaks, verified live) · CRLF trap documented (any index.html edit →
+> ALWAYS npm run build after; build:check reads raw bytes; diff-length ≈ line-count = endings).
+> **ALL THREE OPEN ITEMS BOSS-APPROVED 2026-07-08 AND SCOPED TO NUMBERS — the ELEVENTH-HAND
+> KEYSTONE (end of HANDOFF-FOUNDATIONS-2026-07-03.md) is the master scoping doc:** **Door 1
+> ✅ WALKED (SIM 219, `f5a2beb` instruments + `937a879` bump, 2026-07-08 — the eleventh hand's
+> SECOND ACT in the foundations handoff): star aqua 0.60 → 22.04 mm, sizes [22.0, 14.0, 6.6,
+> 4.5, 0.42], the ≤0.5 mm fry EMERGENT (a pristine post-etch 5th aqua nucleates step 62).
+> Mechanism = BERYL_FAMILY_GROWTH_K 2.2→25 + the event's Be wallet +110/cap 125 — the probe
+> found dGrowth/dσ(bulk) = 0.00 (engines read CELL fluid; deliveries only arrive via the
+> event broadcast), σ capped at 9.05, and THE WALLET LAW (~200 µm per cell-Be unit, refill ≈
+> nil): neither dial suffices alone. 4/38 movers all justified by name; STATURE PINS now live
+> in shigar-pegmatite.test.ts (the Door 4 template). Found en route, ✅ CLOSED same day as
+> its own arc (SIM 220, `dc8b883` census + clamp): the additive broadcast pushed drained
+> cell CONCENTRATIONS negative — 7 rows / 6 scenarios (sabkha Ca −90.6 the worst; two rows
+> event-less = the MOVEMENTS vector, same call path). Concentrations now floor at 0 at both
+> write sites (js/24 propagateEventDelta + js/23 fallback); pH/Eh stay signed (Eh −200 mV is
+> ordinary reducing geochemistry — the census's own first finding; never clamp those).
+> Post-clamp census: concentration defects [] · baseline diff 0/38 — the rot was UNREAD,
+> and the clamp makes that a guarantee for the trace-reading consumers coming (D1c,
+> narrators, UV rules). tools/negative-fluid-census.mjs is re-runnable.**
+> · Door 2 UV scale audit (uv-zone-census tool first → 98c recalibration render-only →
+> js/27 separately under SIM-bump discipline, narrator text moves) · Door 3 §10.5 t2-3 (~90
+> curated strings verbatim → menu.group/label/blurb + tutorial.number/menu_label; acceptance =
+> byte-identical rendered menus via before/after DOM snapshot) · **Door 4 (boss-sequenced
+> LAST, after the handoff's other arcs): THE FLEET SIGNATURE AUDIT — re-evaluate all 38
+> scenarios through the tail-law: expects_species checks PRESENCE, nothing checks STATURE
+> (shigar read green while its namesake was absent at showpiece scale); signature
+> declarations join the scenario data as falsifiable claims (keystone CODA has the shape).**
 
-> ## 🧱 SESSION (2026-07-03→07, the foundation) — V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE + **O2 INDUCTION SURFACES** + **C0 THE CALCITE σ LEVER (boss stone #1)** + WALL UX + **C1 THE DIRECTIONAL-σ TRANCHE (boss stone: O1a-real + O1b + O2 integrated)** + **LOCAL CRYSTAL COLOUR** + **D1a+D1b BODY COLOUR (Depth-C defaults + chemistry axes)** + **V1 WALL MICROTEXTURE (genesis relief)** + **O3 GEOMETRIC SELECTION (SIM 218 — the ontogeny arc's FIRST SIM bump; the palisade EARNED)** + **O4a ENGULFMENT MADE VISIBLE (render-only `5260134` — the Sweetwater enclosed guests finally render as opaque grains INSIDE their translucent hosts; naica 35/35 kernel-truth, 569-px diff)** — **CURRENT HANDOFF (the main line): `HANDOFF-FOUNDATIONS-2026-07-03.md`, read through the LATEST KEYSTONE (**ninth hand, 2026-07-07: O3 geometric selection — INSTRUMENTS-FIRST (the standalone Gray d^(−1/2) oracle before any engine code); SEALED-BUT-PRESENT (the specimen tests SHAPED the arrest — hard-kill culled documented accessory sulfides; throttle+shield instead); the fifth verb — WHERE a law applies is itself geology (elongate-only palisade gate); a SIM bump is a WEB, not a wire (fill→nucleation→enclosure→cap rippled 4 files)**) + the eighth hand's below it (the wall VOID→WITNESS; a FOURTH instrument — READ THE ROCKS beside grep/probe/eye; the probe replaces the hypothesis, 3× a session; render decoration→measurement; composition is NEVER a genesis proxy**) + the seventh hand's below it (GREP/PROBE/EYE; INDIVIDUATED→LEGIBLE; WIRED≠VISIBLE) + the sixth hand's below that (RATE-reads-local-FORM-read-bulk, SITUATED→INDIVIDUATED) + the D1a/D1b/V1 act addenda (grep-the-tree-first is a LAW; a probe REPLACES the hypothesis you brought; check a field is POPULATED before trusting a "<"; the eye-check is a render change's acceptance test, not ceremony; **next hand's doors: D1c / V2+ / O4b (O4a ENGULFMENT RENDER ✅ `5260134` — enclosed guests render as opaque grains inside translucent hosts; O4b = adjacency string→geometry SIM bump + coats_front embedded/front-coating classes) / O3 GEOMETRIC SELECTION ✅ SIM 218 — `1948b3b` O3a byte-identical draw + `03f1582` O3b the SIM bump; V1b AO-depth ✅ `fe5d241`, V1b-flow + V1c genesis-gated textures ✅ `3a7cf6e` — remainder: flow-DIRECTION asymmetry + primer tints; O3 remainder: size-scaled neighbor footprint)**)
+> ## 🧱 SESSION (2026-07-03→07, the foundation) — V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE + **O2 INDUCTION SURFACES** + **C0 THE CALCITE σ LEVER (boss stone #1)** + WALL UX + **C1 THE DIRECTIONAL-σ TRANCHE (boss stone: O1a-real + O1b + O2 integrated)** + **LOCAL CRYSTAL COLOUR** + **D1a+D1b BODY COLOUR (Depth-C defaults + chemistry axes)** + **V1 WALL MICROTEXTURE (genesis relief)** + **O3 GEOMETRIC SELECTION (SIM 218 — the ontogeny arc's FIRST SIM bump; the palisade EARNED)** + **O4a ENGULFMENT MADE VISIBLE (render-only `5260134` — the Sweetwater enclosed guests finally render as opaque grains INSIDE their translucent hosts; naica 35/35 kernel-truth, 569-px diff)** — **CURRENT HANDOFF (the main line): `HANDOFF-FOUNDATIONS-2026-07-03.md`, read through the LATEST KEYSTONE — now **the TWELFTH hand's keystone ("the light learned to bend", 2026-07-08, the doc's last entry): the O4b→O5 arc — O4b enclosure went GEOMETRIC (SIM 221 `08287eb`, the string adjacency was 81% phantom, `coats_front` born, tormiq's phantom-faked quartz lining caught + fixed) → O5 PERTURBED REGROWTH the ORIGINATING ASK (a film masks a growth front, the blade STALLS then grows THROUGH leaving a masked_horizon = a positive-growth scar: O5a record-unread byte-identical `2ed7469`, O5b masking gate live SIM 222 `90b0a0b`, σ*(φ) reconciled with rockbot's parallel research) → O5 FIRST CONTENT the ELMWOOD BARITE SNOWBALL (SIM 223 `f79ae01` — barite that was subcritical DUST for the scenario's whole life grows on the honey sphalerite, 2 clay/Fe-oxide horizons + dusty rind per blade; the variety kept SACRED, golden calcite unmoved; Ba-FLOOR-not-pulse defeated the witherite trap) — below it **the ELEVENTH hand's THIRD-ACT keystone ("the day the vug learned to remember", 2026-07-08): the GAME layer, four render-only deploys, zero baseline movement — replay saves (a save is the run's RECIPE; the sliders-are-TRANSPORT law, the T-echo catch; four dormant headless landmines paid out as dividend) + lifetime score on Library/home banners + the nucleation hover (survival-reversal: same datum, opposite reading) + T1 taught where it's used** — below it the SECOND-ACT keystone ("three deaths, one fry", same date): Door 1 walked (SIM 219, star 0.6 → 22 mm, the WALLET LAW, the emergent fry) + the negative-fluid arc (SIM 220, 0/38 certificate bump, negative-is-a-value-until-the-dimension-says-otherwise) — below it the morning keystone (the parity pass — two render-truth fixes — plus THE THREE SCOPED DOORS, all boss-approved: shigar aqua size ✅ / UV scale audit / §10.5 t2-3; the ninth hand's O3 keystone below it** (ninth hand, 2026-07-07: O3 geometric selection — INSTRUMENTS-FIRST (the standalone Gray d^(−1/2) oracle before any engine code); SEALED-BUT-PRESENT (the specimen tests SHAPED the arrest — hard-kill culled documented accessory sulfides; throttle+shield instead); the fifth verb — WHERE a law applies is itself geology (elongate-only palisade gate); a SIM bump is a WEB, not a wire (fill→nucleation→enclosure→cap rippled 4 files)**) + the eighth hand's below it (the wall VOID→WITNESS; a FOURTH instrument — READ THE ROCKS beside grep/probe/eye; the probe replaces the hypothesis, 3× a session; render decoration→measurement; composition is NEVER a genesis proxy**) + the seventh hand's below it (GREP/PROBE/EYE; INDIVIDUATED→LEGIBLE; WIRED≠VISIBLE) + the sixth hand's below that (RATE-reads-local-FORM-read-bulk, SITUATED→INDIVIDUATED) + the D1a/D1b/V1 act addenda (grep-the-tree-first is a LAW; a probe REPLACES the hypothesis you brought; check a field is POPULATED before trusting a "<"; the eye-check is a render change's acceptance test, not ceremony; **next hand's doors: D1c / V2+ / O4b (O4a ENGULFMENT RENDER ✅ `5260134` — enclosed guests render as opaque grains inside translucent hosts; O4b = adjacency string→geometry SIM bump + coats_front embedded/front-coating classes) / O3 GEOMETRIC SELECTION ✅ SIM 218 — `1948b3b` O3a byte-identical draw + `03f1582` O3b the SIM bump; V1b AO-depth ✅ `fe5d241`, V1b-flow + V1c genesis-gated textures ✅ `3a7cf6e` — remainder: flow-DIRECTION asymmetry + primer tints; O3 remainder: size-scaled neighbor footprint)**)
 >
 > **C0 UPDATE (`299a270` SIM 217, 2026-07-06, CI 157/2211):** boss stone #1 SHIPPED by the
 > 4a.7 recipe. calciteMorphForm gains the Ω branch (OMEGA_SCALENO=12, the fleet's own

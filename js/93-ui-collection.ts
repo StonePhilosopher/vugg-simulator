@@ -177,6 +177,8 @@ function collectCrystal(crystal, meta) {
     return false;
   }
   const isNewSpecies = !already.has(rec.mineral);
+  // Lifetime counter (93a-ui-saves.ts) — the boss's base scoring stat.
+  if (typeof bumpLifetimeStats === 'function') bumpLifetimeStats({ crystals_collected: 1 });
   // Update any open Library view and the title-screen Load button.
   if (typeof libraryRender === 'function' && document.getElementById('library-panel') &&
       document.getElementById('library-panel').style.display !== 'none') {
@@ -212,13 +214,20 @@ function refreshTitleLoadButton() {
   const btn = document.getElementById('title-btn-load');
   if (!btn) return;
   try {
-    const items = loadCrystals();
-    const n = items.length;
-    btn.disabled = n === 0;
-    btn.title = n
-      ? `Open Library (${n} collected crystal${n === 1 ? '' : 's'})`
-      : 'No crystals collected yet — grow a vugg and tap Collect';
+    const n = loadCrystals().length;
+    // Game saves (93a-ui-saves.ts) also make Load Game meaningful —
+    // titleLoadGame opens the Saves menu when any exist.
+    const nSaves = (typeof loadSaves === 'function') ? loadSaves().length : 0;
+    btn.disabled = n === 0 && nSaves === 0;
+    btn.title = nSaves
+      ? `Open Saves (${nSaves} save${nSaves === 1 ? '' : 's'} · ${n} collected crystal${n === 1 ? '' : 's'})`
+      : n
+        ? `Open Library (${n} collected crystal${n === 1 ? '' : 's'})`
+        : 'No saves or collected crystals yet — grow a vugg';
   } catch (e) { /* localStorage unavailable */ }
+  // The title card's collection banner rides the same refresh cadence
+  // (every collect / delete / save funnels through here).
+  if (typeof _refreshTitleProgress === 'function') _refreshTitleProgress();
 }
 
 // Called by the per-crystal Collect button in each mode's inventory.
@@ -271,16 +280,19 @@ function collectFromRandom(crystalIdx, ev) {
 // matches the established uniqueCollectedMinerals/loadCrystals pattern
 // of "read once, mutate, write once."
 //
-// Returns the number actually collected (0 if nothing-to-do; 0 with
-// alert if persist failed).
-function collectAllCrystals(crystals, metaFn) {
-  if (!Array.isArray(crystals)) return 0;
+// Returns {count, newSpecies[]} — count 0 if nothing-to-do (0 with
+// alert if persist failed). opts.silent skips the celebration alert
+// (the Narrate, Collect & Save finish flow logs its own line instead;
+// persist-failure alerts still fire — those are errors, not theater).
+function collectAllCrystals(crystals, metaFn, opts?: { silent?: boolean }) {
+  const silent = !!(opts && opts.silent);
+  if (!Array.isArray(crystals)) return { count: 0, newSpecies: [] };
   const candidates = crystals.filter(c =>
     c
     && !c._collectedRecordId
     && ((c.total_growth_um || 0) > 0.1 || (c.zones || []).length > 0)
   );
-  if (!candidates.length) return 0;
+  if (!candidates.length) return { count: 0, newSpecies: [] };
 
   const before = uniqueCollectedMinerals();
   const items = loadCrystals();
@@ -314,11 +326,13 @@ function collectAllCrystals(crystals, metaFn) {
 
   if (!persistCrystals(items)) {
     alert('Could not save — localStorage is full or unavailable.');
-    return 0;
+    return { count: 0, newSpecies: [] };
   }
   for (const { crystal, rec } of records) {
     crystal._collectedRecordId = rec.id;
   }
+  // Lifetime counter (93a-ui-saves.ts) — bumps by what actually landed.
+  if (typeof bumpLifetimeStats === 'function') bumpLifetimeStats({ crystals_collected: records.length });
 
   // New-species delta — preserves the same "🆕 first X" surprise from
   // the per-crystal flow, just bundled. Set semantics so each new
@@ -341,11 +355,13 @@ function collectAllCrystals(crystals, metaFn) {
   }
   refreshTitleLoadButton();
 
-  const speciesNote = newSpecies.length
-    ? `\n\n🆕 ${newSpecies.length} new species unlocked: ${newSpecies.join(', ')}.`
-    : '';
-  alert(`Collected ${records.length} crystal${records.length === 1 ? '' : 's'}.${speciesNote}`);
-  return records.length;
+  if (!silent) {
+    const speciesNote = newSpecies.length
+      ? `\n\n🆕 ${newSpecies.length} new species unlocked: ${newSpecies.join(', ')}.`
+      : '';
+    alert(`Collected ${records.length} crystal${records.length === 1 ? '' : 's'}.${speciesNote}`);
+  }
+  return { count: records.length, newSpecies };
 }
 
 // Per-mode wrappers — gather the right meta (matches each mode's
@@ -357,21 +373,21 @@ function collectAllFromLegends() {
   const seedInputEl = document.getElementById('seed') as HTMLInputElement | null;
   const seed = seedInputEl?.value ? parseInt(seedInputEl.value, 10) : null;
   const meta = { mode: 'simulation', scenario, seed };
-  if (collectAllCrystals(legendsSim.crystals, () => meta) > 0) {
+  if (collectAllCrystals(legendsSim.crystals, () => meta).count > 0) {
     updateLegendsInventory(legendsSim);
   }
 }
 function collectAllFromFortress() {
   if (!fortressSim) return;
   const meta = { mode: 'creative' };
-  if (collectAllCrystals(fortressSim.crystals, () => meta) > 0) {
+  if (collectAllCrystals(fortressSim.crystals, () => meta).count > 0) {
     updateFortressInventory();
   }
 }
 function collectAllFromRandom() {
   if (!randomSim) return;
   const meta = { mode: 'random', archetype: randomSimArchetype, seed: randomSimSeed };
-  if (collectAllCrystals(randomSim.crystals, () => meta) > 0) {
+  if (collectAllCrystals(randomSim.crystals, () => meta).count > 0) {
     renderRandomInventory();
   }
 }
@@ -391,7 +407,7 @@ function collectAllFromIdle() {
   // distinction in the meta so the Library shows "Zen random" vs the
   // specific-scenario rollups separately.
   const meta = { mode: 'zen', scenario };
-  if (collectAllCrystals(idleSim.crystals, () => meta) > 0) {
+  if (collectAllCrystals(idleSim.crystals, () => meta).count > 0) {
     if (typeof idleRefreshCollectAllBtn === 'function') idleRefreshCollectAllBtn();
   }
 }

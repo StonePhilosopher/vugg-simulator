@@ -40,10 +40,24 @@
 
 function event_tormiq_quartz_lining(c) {
   c.temperature = Math.max(380, c.temperature - 40);
-  c.fluid.SiO2 = Math.min(420, c.fluid.SiO2 + 40);
+  // O4b's honest dynamics exposed this handler (2026-07-08): it delivered
+  // +40 SiO2 (cap 420) for an event NAMED "Quartz Lining" — quartz never
+  // cleared its σ gate until ambient silica crept past ~750 around step
+  // 157, and the late cold phase then wiped the 0.1 mm stragglers. The
+  // declared paragenesis (this file's header: quartz lining FIRST, ~420°C,
+  // everything else on top — and the step-188 shear bends "the early
+  // quartz lining") never actually happened; pre-O4b it was faked by two
+  // dust quartz phantom-"enclosed" into a feldspar across the cavity,
+  // where they sat immune to dissolution. The fissure fluid arrives
+  // quartz-SATURATED (Mullis 1994 GCA 58:2239 — the scenario's own cited
+  // source; the opening fracture dissolves wall silica); grimsel, the
+  // in-fleet calibrated quartz cleft, opens at SiO2 1550. Tormiq delivers
+  // the saturation at the opening beat instead of the initial broth —
+  // the cleft OPENS here.
+  c.fluid.SiO2 = Math.min(1500, c.fluid.SiO2 + 1100);
   c.fluid.O2 = Math.max(1.3, c.fluid.O2);            // hold the cleft oxidizing (Fe³⁺)
   c.flow_rate = 1.0;
-  return `A cleft opens along a Main Karakoram Thrust fracture; low-salinity, oxidized metamorphic fluid floods the fissure and lines the walls with quartz. T ${c.temperature.toFixed(0)}°C, oxidizing (O₂ ${c.fluid.O2.toFixed(1)}).`;
+  return `A cleft opens along a Main Karakoram Thrust fracture; low-salinity, oxidized metamorphic fluid floods the fissure — silica-saturated from the freshly broken rock — and lines the walls with quartz. T ${c.temperature.toFixed(0)}°C, oxidizing (O₂ ${c.fluid.O2.toFixed(1)}).`;
 }
 
 function event_tormiq_oxide_stage(c) {

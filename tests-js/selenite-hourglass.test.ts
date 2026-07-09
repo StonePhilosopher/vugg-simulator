@@ -50,12 +50,20 @@ describe('hourglass selenite (Great Salt Plains clay/Fe sector zoning)', () => {
     }
   });
 
-  it('an iron-rich oxidation setting floods the blade to solid brown (the overgrown variant)', () => {
-    // supergene_oxidation: abundant iron from sulfide oxidation saturates the stain →
-    // intensity maxes → the hourglass is buried in solid brown (flooded).
+  it('an iron-rich oxidation setting stains the blade hard (well above the amber end)', () => {
+    // supergene_oxidation: iron from sulfide oxidation drives the stain intensity
+    // high. RE-TRUED at SIM 221 (O4b): the old pin required the FLOODED variant at
+    // seed 42, but flooding here was always a coin flip on how the run's Fe pulses
+    // overlap the blades' growth (v221 sweep: 5/12 seeds flood at 0.95, the rest
+    // land 0.63–0.73) — the pre-O4b seed-42 flood was weather from the phantom-
+    // enclosure RNG stream, not a property of the setting. The genre claim this
+    // test keeps: supergene iron stains HARD. The flooded VARIANT keeps its own
+    // showcase pins below on great_salt_plains' red-mud flood (step 265), which
+    // reaches it by mechanism, not luck.
     const sim = run('supergene_oxidation', 42);
-    const flooded = hourglass(sim).filter((c: any) => c._sectorZoned.flooded);
-    expect(flooded.length).toBeGreaterThan(0);
+    const hg = hourglass(sim);
+    expect(hg.length).toBeGreaterThan(0);
+    expect(Math.max(...hg.map((c: any) => c._sectorZoned.intensity))).toBeGreaterThan(0.55);
   });
 
   it('Naica selenite stays CLEAR — the hot clean pool is below no inclusion gate (defer-to-geology)', () => {

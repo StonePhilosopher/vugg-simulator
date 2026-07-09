@@ -22,6 +22,16 @@
 //                                 callout's Continue button, Enter,
 //                                 or Space.
 //
+// v3.1 PAUSE SEMANTICS: when a fired sim-step's SUCCESSOR is an
+// action/continue step, the machine PAUSES on the fired narration as a
+// pseudo-continue (Continue ⏎ / Enter / Space) instead of letting the
+// trailing step supersede it. Pre-v3.1 the fired callout never even
+// painted (the rAF renderedIdx guard killed it before first frame) —
+// the Grand Tour's step:9 temperature beat and Collecting's step:70
+// pocket-is-quiet beat were both invisible. Authors may now freely
+// follow a `step: N` beat with an action/continue beat; the narration
+// costs one Continue press.
+//
 // Optional per-step fields:
 //   anchor, side, text          — as before (anchor falls back to
 //                                 #topo-panel then body if missing,
@@ -284,7 +294,7 @@ function startTutorial(scenarioName) {
     console.warn('startTutorial: scenario has no tutorial.steps:', scenarioName);
     return; // scenario still runs, just without overlay
   }
-  _tutorialState = { steps: tut.steps.slice(), stepIdx: 0, renderedIdx: -1, mode: tutMode };
+  _tutorialState = { steps: tut.steps.slice(), stepIdx: 0, renderedIdx: -1, pausedAt: -1, mode: tutMode };
   document.body.classList.add('tutorial-active');
 
   // Starting whitelist. Legacy tutorials (no tutorial.unlock field) keep
@@ -352,6 +362,16 @@ function _tutCurrentStep() {
   return s.steps[s.stepIdx];
 }
 
+// The current step's trigger as the machine treats it: a sim-step the
+// machine has PAUSED on (v3.1 — fired narration whose successor waits
+// on the player) behaves as a continue step for rendering + keyboard.
+function _tutCurrentTrigger() {
+  const s = _tutorialState;
+  if (!s || s.stepIdx >= s.steps.length) return null;
+  const trig = _tutStepTrigger(s.steps[s.stepIdx]);
+  return (trig === 'simstep' && s.pausedAt === s.stepIdx) ? 'continue' : trig;
+}
+
 // ---- the state machine ------------------------------------------
 
 // Advance past the current (continue/action) step: the player clicked
@@ -359,12 +379,21 @@ function _tutCurrentStep() {
 function _tutorialAdvance() {
   const s = _tutorialState;
   if (!s) return;
+  s.pausedAt = -1; // release any v3.1 narration pause
   s.stepIdx++;
   if (s.stepIdx >= s.steps.length) {
     // Explicit finish (last step was continue/action) — clean teardown.
     endTutorial();
     return;
   }
+  // The click consumed this button's purpose. If the new current step
+  // renders, showCallout replaces the chrome anyway; if it's a sim-step
+  // still waiting (the Begin ⏎ handoff pattern), the old callout
+  // deliberately LINGERS as the standing instruction — but its button
+  // must die with its step, or a second click silently skips the
+  // waiting beat (pre-v3.1 bug, caught in the 2026-07-07 parity pass).
+  const staleBtn = document.querySelector('.tutorial-callout-btn');
+  if (staleBtn) staleBtn.disabled = true;
   _maybeAdvanceTutorial();
 }
 
@@ -376,8 +405,7 @@ function _maybeAdvanceTutorial() {
   const s = _tutorialState;
   if (!s) return;
   if (s.stepIdx >= s.steps.length) return; // exhausted via sim-steps: final callout stays up (legacy)
-  const st = s.steps[s.stepIdx];
-  const trig = _tutStepTrigger(st);
+  const trig = _tutCurrentTrigger(); // paused narration reads as 'continue'
   if (trig !== 'simstep') {
     // Waiting on the player — render once (fortress ticks re-enter here;
     // renderedIdx keeps the callout from flickering on every action).
@@ -402,13 +430,19 @@ function _maybeAdvanceTutorial() {
     s.stepIdx++;
   }
   if (lastFiredIdx >= 0) {
-    _renderTutorialStep(lastFiredIdx, 'simstep');
-    // A trailing continue/action step supersedes the fired callout
-    // immediately (authors: don't butt one right against a sim-step).
-    if (s.stepIdx < s.steps.length) {
-      const nx = s.steps[s.stepIdx];
-      const nt = _tutStepTrigger(nx);
-      if (nt !== 'simstep') _renderTutorialStep(s.stepIdx, nt);
+    // v3.1: if the step after the fired burst waits on the player
+    // (action/continue), PAUSE on the fired narration as a pseudo-
+    // continue instead of letting the trailing step supersede it —
+    // pre-v3.1 the fired callout never painted (the rAF renderedIdx
+    // guard killed it before first frame) and the narration was lost.
+    const trailing = (s.stepIdx < s.steps.length)
+      ? _tutStepTrigger(s.steps[s.stepIdx]) : null;
+    if (trailing && trailing !== 'simstep') {
+      s.stepIdx = lastFiredIdx; // stand on the narration…
+      s.pausedAt = lastFiredIdx; // …as a pseudo-continue
+      _renderTutorialStep(lastFiredIdx, 'continue');
+    } else {
+      _renderTutorialStep(lastFiredIdx, 'simstep');
     }
   }
 }
@@ -463,8 +497,7 @@ function _renderTutorialStep(idx, trig) {
 // ---- player-input listeners (installed by startTutorial) ---------
 
 function _tutorialKeydown(e) {
-  const st = _tutCurrentStep();
-  if (!st || _tutStepTrigger(st) !== 'continue') return;
+  if (_tutCurrentTrigger() !== 'continue') return;
   if (e.key !== 'Enter' && e.key !== ' ' && e.code !== 'Space') return;
   const t = e.target;
   if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' ||

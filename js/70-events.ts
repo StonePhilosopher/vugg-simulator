@@ -152,7 +152,7 @@ window.hideCallout = hideCallout;
 // `unlock` arrays (tutorial-level `unlock` defaults to ['#f-advance']
 // for the legacy sim-step tutorials).
 
-let _tutorialState = null; // { steps: [...], stepIdx, renderedIdx, mode } | null (engine v2/v3 — see 70a)
+let _tutorialState = null; // { steps: [...], stepIdx, renderedIdx, pausedAt, mode } | null (engine v2/v3.1 — see 70a)
 
 // ENGINE v3 — the narrative playback position for legends-mode
 // tutorials. Legends runs the whole sim synchronously up front, then
@@ -163,6 +163,44 @@ let _legendsPlaybackStep = 0;
 
 window.startTutorial = startTutorial;
 window.endTutorial = endTutorial;
+
+// W-F O5 FIRST CONTENT (2026-07-08) — the Elmwood barite snowball. Elmwood is
+// famous for barite on honey sphalerite (boss), and the scenario already
+// nucleates barite on the sphalerite base — but at seed 42 its barite σ peaks
+// at 0.97 and never clears the 1.0 growth floor, so the barite sat as
+// subcritical dust. This handler is the documented "purple fluorite + barite"
+// stage: a Ba-rich brine pulse that lifts barite σ above the O5 masking barrier
+// σ*(φ), so the seeded barite grows one GENERATION through whatever clay/Fe-
+// oxide film currently coats it — leaving a masked_horizon (js/85 gate). Between
+// pulses σ decays (the waning system cools, Ba is consumed) below the next
+// film's σ*, the crystal stalls, and the film sits until the next pulse: the
+// stall→pulse→break cycle IS the snowball's concentric banding. Ba-only + a flow
+// bump — it touches NO Ca/CO3, so the late golden-scalenohedral calcite showcase
+// (the CO3 pulse train, steps 80+) is untouched. Mass balance debits Ba back as
+// the barite grows, so the pulse doesn't run away.
+function event_elmwood_barite_stage(conditions) {
+  // A Ba FLOOR (set, not add) refreshed each stage as barite consumes it down —
+  // NOT a stacking pulse. The first cut added +22/stage; the excess Ba stacked to
+  // σ_barite≈3.2 (capped), and against elmwood's high CO3 (180, the calcite
+  // showcase's supply) it spawned WITHERITE (BaCO3) — a species outside elmwood's
+  // documented paragenesis — and nudged the golden calcite. A modest floor keeps
+  // barite just above its growth threshold (σ≈1.3–1.5) so it grows a generation
+  // without over-delivering Ba into the carbonate system: witherite stays
+  // subcritical and the calcite crown jewel is untouched.
+  conditions.fluid.Ba = Math.max(conditions.fluid.Ba || 0, 28);
+  return `A barium-rich brine pulse floods the Knox breccia — barite grows a generation on the honey sphalerite (Ba ${conditions.fluid.Ba.toFixed(0)} ppm).`;
+}
+
+// A pure film-coat beat: the settling clay / iron-oxide film is carried by the
+// event's `film:` directive (js/85d applyFilmDusting), so the handler itself
+// touches NO chemistry — it exists only so the film-coat events have a valid
+// registry type. Between the barite pulses, barite σ decays on its own (cooling
+// + Ba consumption) below the fresh film's σ*(φ), so the blade STALLS behind the
+// coat until the next pulse breaks through: the stall is what makes the horizon
+// a real internal band rather than an instantly-overgrown light film.
+function event_film_coat(conditions) {
+  return 'A fine film settles over the growing blades, masking their faces.';
+}
 
 // ============================================================
 // EVENT REGISTRY + SCENARIO LOADER (data/scenarios.json5)
@@ -175,6 +213,8 @@ window.endTutorial = endTutorial;
 
 const EVENT_REGISTRY = {
   fluid_pulse: event_fluid_pulse,
+  elmwood_barite_stage: event_elmwood_barite_stage,
+  film_coat: event_film_coat,
   cooling_pulse: event_cooling_pulse,
   tectonic_shock: event_tectonic_shock,
   copper_injection: event_copper_injection,
@@ -515,6 +555,15 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       // Absent → no overprint → byte-identical. Chemical corrosion is post-growth, so it
       // does NOT mutate the fluid.
       etch: ev.etch,
+      // FILM DUSTING (W-F O5 perturbed regrowth) — optional directive
+      // {mineral, prism, term, minerals?}. apply_events (js/85d) sets `_film` on
+      // the active target crystals via applyFilmDusting (js/44b): a foreign film
+      // (chlorite, clay) settles on their growth fronts. UNLIKE deformation/etch
+      // this is not post-growth-inert — it masks FUTURE growth via the σ*(φ)
+      // gate — but in O5a nothing reads `_film` (gate behind O5_MASKING_ENABLED),
+      // so a scenario carrying this directive stays byte-identical until O5b. No
+      // fleet scenario uses it yet (Sweetwater, O5b's first content, is unbuilt).
+      film: ev.film,
     }));
     return { conditions, events, defaultSteps: duration };
   };
@@ -545,6 +594,11 @@ async function _loadScenariosJSON5() {
       }
       _scenariosJson5Ready = true;
       console.info(`[scenarios] loaded ${entries.length} from ${p}`);
+      // §10.5 tranche 1: the legends quick-play dropdown derives from
+      // SCENARIOS — populate it now that the map is complete (the
+      // static <select> ships empty; see _populateScenarioDropdowns
+      // in 94-ui-menu.ts).
+      if (typeof _populateScenarioDropdowns === 'function') _populateScenarioDropdowns();
       return;
     } catch (e) {
       /* try next */

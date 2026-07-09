@@ -129,6 +129,11 @@ function selectPreset(preset) {
 }
 
 function fortressBegin() {
+  // Resolution phase: read every setup control into plain params, then
+  // hand off to _fortressBeginCustomFromParams. The split exists for the
+  // save system (93a-ui-saves.ts): a save stores the RESOLVED params, and
+  // restoring one re-enters below the DOM reads — same construction path,
+  // no dependence on what the setup sliders happen to show today.
   const temp = parseFloat(document.getElementById('f-temp').value);
   const pressure = parseFloat(document.getElementById('f-pressure').value) / 10;
   const presetData = FLUID_PRESETS[selectedPreset];
@@ -147,10 +152,6 @@ function fortressBegin() {
     if (el) fluidParams[prop] = parseFloat(el.value);
   }
   fluidParams.pH = parseFloat(document.getElementById('f-ph').value) / 10;
-  // Snapshot the post-override recipe so Replenish can restore exactly
-  // what the player started with (preset + setup-slider tweaks).
-  _fortressInitialFluidParams = Object.assign({}, fluidParams);
-  const fluid = new FluidChemistry(fluidParams);
 
   // Initialize wall based on preset
   let wallOpts: any = { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 50, wall_Fe_ppm: 2000, wall_Mn_ppm: 500, wall_Mg_ppm: 1000 };
@@ -190,10 +191,31 @@ function fortressBegin() {
       wallOpts.vug_diameter_mm = mm;
     }
   }
-  const wall = new VugWall(wallOpts);
+  _fortressBeginCustomFromParams({
+    temp, pressure, fluidParams, wallOpts,
+    presetLabel: presetData.label,
+  });
+}
+
+// Construction phase of a custom Creative run. `params` is a plain
+// JSON-able bag (a save record stores it verbatim); `seedOverride` lets
+// the save system replay with the run's original seed. The rng is
+// seeded BEFORE any construction — the same seed-first order legends
+// uses (91-ui-legends.ts runSimulation), which the seed-42 baselines
+// prove reproduces a whole run from the seed alone.
+function _fortressBeginCustomFromParams(params, seedOverride?) {
+  const { temp, pressure, wallOpts } = params;
+  const fluidParams = Object.assign({}, params.fluidParams);
+  const seed = (seedOverride != null) ? (seedOverride >>> 0) : (Date.now() >>> 0);
+  rng = new SeededRandom(seed);
+
+  // Snapshot the post-override recipe so Replenish can restore exactly
+  // what the player started with (preset + setup-slider tweaks).
+  _fortressInitialFluidParams = Object.assign({}, fluidParams);
+  const fluid = new FluidChemistry(fluidParams);
+  const wall = new VugWall(Object.assign({}, wallOpts));
   const conditions = new VugConditions({ temperature: temp, pressure, fluid, wall });
 
-  rng = new SeededRandom(Date.now());
   fortressSim = new VugSimulator(conditions, []);
   // HELIX-OVERLAY-FORK ADDITION (strip view v154+): attach recorder.
   if (typeof _attachStripRecorderToSim === 'function') {
@@ -215,7 +237,7 @@ function fortressBegin() {
   const initLines = [
     `🏰 Creative Mode — Your Vug Awaits`,
     `   Temperature: ${temp.toFixed(0)}°C | Pressure: ${pressure.toFixed(1)} kbar`,
-    `   Fluid: ${presetData.label} — ${fluid.describe()}`,
+    `   Fluid: ${params.presetLabel || 'custom recipe'} — ${fluid.describe()}`,
     `═`.repeat(60),
     ``,
     `Choose an action to advance one step at a time.`,
@@ -228,6 +250,11 @@ function fortressBegin() {
   updateFortressStatus();
   updateFortressInventory();
   syncBrothSliders();
+  // Autosave opens AFTER the slider sync so the recording's broth
+  // baseline is the state the first action will actually see.
+  if (typeof _saveNoteBegin === 'function') {
+    _saveNoteBegin({ type: 'custom', params, seed });
+  }
 }
 
 // Six verbs that touch the physics. Per proposals/PROPOSAL-BROTH-CONTROL.md
@@ -334,7 +361,29 @@ function _advanceOneStep(logEl) {
 // The whole per-step pacing / cavity sync / speed cluster machinery
 // now lives ONCE in displayLines. This wrapper is ~30 lines instead
 // of the ~90 it was pre-Phase 4 (commit before this one).
+
+// When true, _fortressPaceLines appends synchronously instead of pacing.
+// Set by the save-system replay driver (93a loadSaveById) and by
+// headless test drives; closure-scoped `let` needs an explicit setter
+// (the setGraduatedPowerLawK precedent).
+let _fortressInstantLines = false;
+function setFortressInstantLines(v) { _fortressInstantLines = !!v; }
+
 function _fortressPaceLines(lines: string[], lineToStep: Record<number, number>, stepLineCounts: Record<number, number>, onDone?: () => void) {
+  // Instant path (save-system replay + headless drives): append every
+  // line synchronously — the log content is identical to the paced
+  // version, only the tempo theater is skipped — then run onDone so the
+  // post-action housekeeping happens in the same order as live play.
+  if ((typeof _fortressInstantLines !== 'undefined' && _fortressInstantLines)
+      || (typeof _fortressReplaying !== 'undefined' && _fortressReplaying)) {
+    const instantLog = document.getElementById('fortress-log') as HTMLElement | null;
+    for (const line of lines) {
+      fortressLogLines.push(line);
+      if (instantLog) appendFortressLine(instantLog, line);
+    }
+    onDone?.();
+    return;
+  }
   if (typeof running !== 'undefined' && running) { onDone?.(); return; }
   const logEl = document.getElementById('fortress-log') as HTMLElement | null;
   if (!logEl) { onDone?.(); return; }
@@ -379,12 +428,22 @@ function fortressStep(action, payload) {
   // Apply current broth slider values to sim state before processing
   // (sliders are live-bound via oninput; this is a belt-and-suspenders
   // re-sync in case any manual slider changes haven't fired yet).
+  // Finite guard: a detached/blank slider parses to NaN — never write
+  // that into the broth (headless drives run without the slider DOM).
   if (fortressSim) {
     for (const [key, m] of Object.entries(BROTH_MAP)) {
       const slider = document.getElementById('broth-' + key);
-      if (slider) m.set(m.parse(slider.value));
+      if (!slider) continue;
+      const v = (m as any).parse((slider as HTMLInputElement).value);
+      if (Number.isFinite(v)) (m as any).set(v);
     }
   }
+
+  // Save system (93a-ui-saves.ts): record the verb + any broth-slider
+  // changes since the last action into the run's rolling autosave.
+  // Sits AFTER the re-sync so the recording reads the same slider state
+  // the physics just consumed. No-ops during replay.
+  if (typeof _saveRecordAction === 'function') _saveRecordAction(action, payload);
 
   // Track whether this action advances time and how many ticks.
   let advanceSteps = 0;
@@ -834,6 +893,10 @@ const _SAT_DISPLAY_MAX = 99.99;
 
 function fortressFinish() {
   if (!fortressSim) return;
+  // Idempotence: the run seals once. A second click (or a stray caller
+  // after the run ended) must not re-narrate, re-collect, or double-
+  // bump the lifetime counters.
+  if (!fortressActive) return;
 
   const logEl = document.getElementById('fortress-log');
   const summaryLines = fortressSim.format_summary();
@@ -888,6 +951,45 @@ function fortressFinish() {
   // Disable action buttons
   fortressActive = false;
   document.querySelectorAll('.action-grid .action-btn').forEach(btn => btn.disabled = true);
+
+  // ── Narrate, Collect & Save (boss directive 2026-07-08) ─────────
+  // The finish button seals the whole run: every grown crystal goes to
+  // the Library (silent batch — the log line IS the celebration, no
+  // alert), the rolling autosave flips to 'finished', and the lifetime
+  // counters tick. All of it is replay-guarded: restoring a finished
+  // save re-runs this function for the narration, but its crystals are
+  // already collected and its save already sealed.
+  if (!(typeof _fortressReplaying !== 'undefined' && _fortressReplaying)) {
+    const endLines = [];
+    if (typeof collectAllCrystals === 'function') {
+      const res = collectAllCrystals(fortressSim.crystals, () => ({ mode: 'creative' }), { silent: true });
+      if (res && res.count > 0) {
+        const speciesNote = res.newSpecies && res.newSpecies.length
+          ? ` — ${res.newSpecies.length} new species: ${res.newSpecies.join(', ')}`
+          : '';
+        endLines.push(`💎 Collected ${res.count} crystal${res.count === 1 ? '' : 's'} into the Library${speciesNote}.`);
+      } else {
+        endLines.push('💎 Nothing new to collect — the Library already holds this run\'s crystals.');
+      }
+    }
+    let lifetime = null;
+    if (typeof bumpLifetimeStats === 'function') {
+      lifetime = bumpLifetimeStats({ runs_finished: 1 });
+    }
+    if (typeof _saveMarkFinished === 'function') {
+      const info = _saveMarkFinished();
+      if (info) {
+        endLines.push(`💾 Run saved — "${info.name}"${lifetime ? ` · lifetime collected: ${lifetime.crystals_collected}` : ''}.`);
+      }
+    }
+    for (const line of endLines) {
+      fortressLogLines.push(line);
+      appendFortressLine(logEl, line);
+    }
+    logEl.scrollTop = logEl.scrollHeight;
+    // Collect buttons in the inventory flip to their collected state.
+    if (typeof updateFortressInventory === 'function') updateFortressInventory();
+  }
 }
 
 function fortressReset() {
@@ -896,6 +998,9 @@ function fortressReset() {
   fortressLogLines = [];
   brothSnapshots = [];
   _fortressInitialFluidParams = null;
+  // Drop the save-system recording state. The persisted autosave keeps
+  // whatever was last written — an abandoned run stays loadable.
+  if (typeof _saveNoteReset === 'function') _saveNoteReset();
 
   // Reset broth panel
   const brothToggle = document.getElementById('broth-toggle');

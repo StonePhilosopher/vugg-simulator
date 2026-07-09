@@ -7,6 +7,7 @@
 
 function _topoPaintPlaceholder(canvas, text) {
   const ctx = canvas.getContext('2d');
+  if (!ctx) return; // canvas-less env (headless drives) — nothing to paint on
   const { cssW, cssH, dpr } = _topoResize(canvas);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, cssH);
@@ -259,6 +260,7 @@ function topoRender(optOverrideSnap?) {
   // and the legacy <details class="topo-legend-drop"> element is gone.
 
   const ctx = canvas.getContext('2d');
+  if (!ctx) return; // canvas-less env (headless drives) — nothing to draw on
   const { cssW, cssH, dpr } = _topoResize(canvas);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, cssH);
