@@ -312,10 +312,11 @@
         "SiO2": 0.3
       },
       "fluorescence": {
-        "activator": "Al",
-        "threshold_ppm": 5,
-        "color": "weak_blue_LW",
-        "quencher": null
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "non-fluorescent — macrocrystalline quartz is honestly inert under UV (audit 2026-07-09: the Al-defect blue is a cathodoluminescence phenomenon, not a UV-lamp response; famous 'glowing quartz' is petroleum inclusions or a uranyl-bearing hyalite/chalcedony coating). The old activator=Al threshold=5 entry was the broth-scale source js/27 copied its dead branch from."
       },
       "twin_laws": [
         {
@@ -481,12 +482,13 @@
       },
       "fluorescence": {
         "activator": "Mn",
-        "threshold_ppm": 2,
+        "threshold_ppm": 1,
         "color": "orange_red",
         "quencher": {
           "species": "Fe",
-          "threshold_ppm": 10
-        }
+          "threshold_ppm": 2
+        },
+        "status": "ZONE-scale thresholds since the 2026-07-09 UV audit (the old 2/10 were broth-scale — js/27's unreachable quench branch copied them). The engine ladder (js/52): dark Fe>2 · brilliant Mn>6,Fe<0.4 · moderate Mn>2,Fe<1 · weak Mn>1,Fe<2; bar and narrator mirror it. NAMED FOLLOW-ON: real SW response also needs a Pb SENSITIZER with the Mn (Schulman/USGS 1947 — Mn-only synthetic calcite is near-inert to UV; Pb explains 'world calcite dim, Franklin loud' better than Fe alone). Needs trace_Pb in calcite zones + a Franklin-type tenant; today's fleet calcites are MVT-adjacent where Pb rides anyway."
       },
       "twin_laws": [
         {
@@ -1251,13 +1253,13 @@
       },
       "fluorescence": {
         "activator": "Mn",
-        "threshold_ppm": 5,
-        "color": "orange_or_blue_variable",
+        "threshold_ppm": 0.1,
+        "color": "orange_LW_plus_triboluminescence",
         "quencher": {
           "species": "Fe",
-          "threshold_ppm": 10
+          "threshold_ppm": 2
         },
-        "status": "newly_added"
+        "status": "ZONE-scale thresholds since the 2026-07-09 UV audit (the old 5/10 were broth-scale and unreachable — fleet zone Mn max 3.13). Mn²⁺ orange ~595 nm, LW-dominant, with the classic yellow-orange triboluminescence (fluomin); Fe is the textbook ZnS killer ion — cleiophane (<0.1% Fe) bright, marmatite dead. Bar and narrator share the gate: any zone with Mn>0.1 and Fe<2 lights it."
       },
       "twin_laws": [
         {
@@ -1375,12 +1377,13 @@
       },
       "fluorescence": {
         "activator": "Mn",
-        "threshold_ppm": 5,
-        "color": "orange_or_blue_variable",
+        "threshold_ppm": 0.1,
+        "color": "orange_LW_plus_triboluminescence",
         "quencher": {
           "species": "Fe",
-          "threshold_ppm": 10
-        }
+          "threshold_ppm": 2
+        },
+        "status": "ZnS physics shared with sphalerite (zone-scale since the 2026-07-09 UV audit) — wurtzite tenants run Fe-rich (marmatitic) fleet-wide, so dark is the honest default."
       },
       "twin_laws": [
         {
@@ -2413,11 +2416,11 @@
         "CO3": 0.4
       },
       "fluorescence": {
-        "activator": "Mn",
-        "threshold_ppm": 2,
-        "color": "pink_LW",
+        "activator": "Mn_or_organics",
+        "threshold_ppm": 0,
+        "color": "weak_pale_yellow_rare",
         "quencher": null,
-        "status": "newly_added"
+        "status": "WEAK and RARELY observed (audit 2026-07-09, fluomin: pale yellow / violet-red, weak, rarely observed; Franklin 'fairly weak pale yellow, rare' — Bostwick 2008). The old always-on blue-green narrator overstated a rarity; the Tsumeb fiery scarlet is the famous exception, not the rule. Activator assignment genuinely muddy (fluomin's own spectroscopy caveat)."
       },
       "twin_laws": [
         {
@@ -3800,13 +3803,13 @@
         "As": 0.3
       },
       "fluorescence": {
-        "activator": "U_or_intrinsic",
+        "activator": "uranyl_trace",
         "threshold_ppm": 0,
-        "color": "green_yellow_SW_UV",
+        "color": "lime_green_SW_UV",
         "quencher": {
           "species": "Cu",
-          "threshold_ppm": 10,
-          "note": "heavy Cu turns off FL"
+          "threshold_ppm": 0.1,
+          "note": "Cu²⁺ mutes the uranyl glow — cuproadamite dim-to-inert (audit 2026-07-09: fluomin cupro-dimmer note; the torbernite-vs-autunite structural analog; Nature's Rainbows Geiger comparison ~200 vs ~80 cpm ties brightness to U content). The engine's old note ladder had Cu as the ACTIVATOR — backwards; fixed v225. Fe also dims (limonitic-matrix pieces)."
         }
       },
       "_twin_laws_note": "Mapimí Ojuela adamite specimens occasionally display heart-shaped V-pair silhouettes that the collector market labels \"heart twins,\" but no formal twin law is documented in standard mineralogical references. The authoritative Anthony Handbook v.IV adamite entry (Mineral Data Publishing 2001-2005, handbookofmineralogy.org) describes {101} as a dominant crystal form and a good cleavage direction, NOT as a twin plane. Mrose, Mayers & Wise 1948 (Amer. Mineral. 33:449-457) — the Ojuela adamite paper — documents morphology + chemistry but makes no twinning observations. The visual heart shape in collector specimens may be parallel growth, accidental juxtaposition, or possibly a true twin that hasn't been single-crystal X-ray characterized in the published literature. v142 correction: this entry shipped at v139 (commit 3edd2e7) with a fabricated 'Frondel 1948 Amer. Mineral. 33:545' citation that doesn't exist. Pulled back to empty twin_laws with this honest note. May revisit if formal documentation surfaces.",
@@ -3911,11 +3914,11 @@
         "Cl": 0.1
       },
       "fluorescence": {
-        "activator": "intrinsic",
+        "activator": null,
         "threshold_ppm": 0,
-        "color": "orange_SW_UV",
+        "color": null,
         "quencher": null,
-        "status": "newly_added"
+        "status": "usually non-fluorescent (audit 2026-07-09, fluomin: minor luminescence, relatively uncommon; the famous bright-orange 'Långban mimetite' is often hedyphane in disguise — fluomin id=539 vs id=389). The old always-on intrinsic-orange entry overstated it; rare weak SW-orange allowed as a locality exception."
       },
       "twin_laws": [
         {
@@ -4661,10 +4664,11 @@
         "SiO2": 0.3
       },
       "fluorescence": {
-        "activator": "Pb_amazonite",
-        "threshold_ppm": 5,
-        "color": "weak_yellow_green_or_white",
-        "quencher": null
+        "activator": "Fe3+_framework",
+        "threshold_ppm": 0.35,
+        "color": "weak_deep_red_SW",
+        "quencher": null,
+        "status": "The real (weak) response is Fe³⁺ substituting tetrahedral Al³⁺ — deep red ~700-720 nm SW, barely visible (Bostwick 2008: Franklin albite 'FL red SW'; J. Lumin. Fe³⁺ feldspar emission). The old Pb_amazonite entry retired (audit 2026-07-09): amazonite's Pb²⁺ is a COLOUR CENTRE, not an activator — no verified amazonite glow. threshold_ppm is ZONE-scale (fleet p90 0.333)."
       },
       "twin_laws": [
         {
@@ -16046,6 +16050,13 @@
         }
       ],
       "class": "phosphate",
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "non-fluorescent — Cu²⁺ kills the uranyl emission even as a STRUCTURAL constituent (the classic field test against autunite; NM Bureau of Geology; the autunite entry's own canon). Dark under the lamp is the diagnostic. Entry added by the 2026-07-09 UV audit."
+      },
       "description": "Cu(UO₂)₂(PO₄)₂·8H₂O — torbernite with four water molecules gone. Tetragonal uranyl phosphate; appears in the simulator only as a paramorph product of torbernite, after heat (>75°C) or sustained dry-air exposure drives the irreversible loss of 4 of the 12 structural H₂O. The emerald-green color persists but pales toward apple-green / yellow-green as the lattice collapses; specific gravity rises (3.7 vs torbernite's 3.22); crystals become slightly more friable along the {001} cleavage. Critically: in the Schneeberg / Cornwall museum collections, very few specimens are now fresh torbernite — the trip from a damp mine adit to a dry display case is exactly what triggers the transformation. Like meta-autunite, the conversion is IRREVERSIBLE: even returning a metatorbernite to 100% humidity will not re-hydrate the lattice. Sources: research/research-torbernite.md §Dehydration Transformation (boss canonical 3bfdf4a).",
       "scenarios": [
         "schneeberg"
@@ -16121,6 +16132,13 @@
         }
       ],
       "class": "arsenate",
+      "fluorescence": {
+        "activator": null,
+        "threshold_ppm": 0,
+        "color": null,
+        "quencher": null,
+        "status": "non-fluorescent — Cu²⁺ quenches the structural uranyl (this entry's own description said so all along; the structured field arrives with the 2026-07-09 UV audit so the bar and narrator can read it)."
+      },
       "description": "Cu(UO₂)₂(AsO₄)₂·8H₂O — zeunerite with four water molecules gone. Tetragonal uranyl arsenate; the As-anion analog of metatorbernite (the two are isostructural just as the parents are). Appears in the simulator only as a paramorph product of zeunerite, after heat (>75°C) or dry-air exposure drives the irreversible 12→8 H₂O collapse. Color paler than zeunerite's emerald green, trending grass-green or yellow-green; specific gravity rises (3.85 vs zeunerite's ~3.4). Same museum-storage problem as zeunerite — most cabinet specimens labeled 'zeunerite' from Schneeberg, Cornwall, or Wittichen are actually metazeunerite, dehydrated decades ago. Cu²⁺ still quenches the uranyl emission, so non-fluorescent. The Schneeberg cation+anion fork mechanic still applies at nucleation time; only the dehydration follows. Sources: research/research-zeunerite.md §Dehydration Transformation; Pinch & Wilson 1977.",
       "scenarios": [
         "schneeberg"

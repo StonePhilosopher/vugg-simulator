@@ -396,26 +396,82 @@ class Crystal {
   }
 
   predict_fluorescence() {
+    // DOOR 2 (2026-07-09): the narrator now runs the SAME zone-scale
+    // physics as the 98c UV bar — both mirror the growth engines' own
+    // recorded classifiers (the pre-audit gates here were broth-scale
+    // numbers copied from the spec's threshold_ppm fields, so the quench
+    // branches were unreachable and the two voices contradicted each
+    // other on 27 fleet crystals). Per-zone tallies, crystal-level prose.
     const n = Math.max(this.zones.length, 1);
     const avg_Mn = this.zones.reduce((s, z) => s + z.trace_Mn, 0) / n;
     const avg_Fe = this.zones.reduce((s, z) => s + z.trace_Fe, 0) / n;
 
     if (this.mineral === 'calcite') {
-      if (avg_Mn > 2 && avg_Fe < 10) return 'orange-red (Mn²⁺ activated)';
-      if (avg_Mn > 2 && avg_Fe > 10) return 'weak/quenched (Fe²⁺ quenching Mn²⁺ emission)';
-      return 'non-fluorescent';
+      // Mirrors the js/52 4-tier ladder per zone (the bar's exact gates).
+      let dark = 0, glow = 0, brilliant = 0;
+      for (const z of this.zones) {
+        const Mn = z.trace_Mn || 0, Fe = z.trace_Fe || 0;
+        if (Mn > 1.0 && Fe > 2.0) dark++;
+        else if (Mn > 6.0 && Fe < 0.4) { brilliant++; glow++; }
+        else if ((Mn > 2.0 && Fe < 1.0) || (Mn > 1.0 && Fe < 2.0)) glow++;
+      }
+      if (glow && dark) return 'banded orange-red under SW UV — Mn²⁺ zones glow, Fe-quenched zones stay dark: the growth history reads under the lamp';
+      if (brilliant) return 'brilliant salmon under SW UV (manganocalcite — Mn²⁺ activator high, Fe quencher minimal)';
+      if (glow) return 'orange-red under SW UV (Mn²⁺ activated)';
+      if (dark) return 'quenched (Fe²⁺ silencing the Mn²⁺ emission — dark CL)';
+      return 'non-fluorescent (no Mn²⁺ activator)';
     }
-    if (this.mineral === 'fluorite') return 'blue-violet (REE/defect centers)';
+    if (this.mineral === 'fluorite') {
+      // Eu²⁺/REE electronic blue-violet or radiation defects — a LOCALITY
+      // trait, not a species trait ("all fluorites are not luminescent!").
+      const ree = this.zones.some((z) =>
+        (z.trace_Y || 0) > 0.01 || /(HREE|REE)-(rich|bearing)/i.test(z.note || ''));
+      if (ree || (this.radiation_damage || 0) > 0.1) return 'blue-violet under SW + LW (Eu²⁺/REE centers)';
+      return 'non-fluorescent (this lot lacks the REE/defect centers — fluorite’s famous glow is a locality trait)';
+    }
     if (this.mineral === 'quartz') {
-      const avg_Al = this.zones.reduce((s, z) => s + z.trace_Al, 0) / n;
-      if (avg_Al > 5) return 'weak blue (Al-related defects)';
-      return 'non-fluorescent';
+      // Macrocrystalline quartz is honestly inert — the Al-defect blue is
+      // a cathodoluminescence phenomenon, not a UV-lamp response; famous
+      // "glowing quartz" is oil inclusions or a hyalite/chalcedony coating.
+      return 'non-fluorescent (macrocrystalline quartz)';
     }
     if (this.mineral === 'sphalerite' || this.mineral === 'wurtzite') {
-      // Mn activates, Fe quenches — same as calcite
-      if (avg_Mn > 5 && avg_Fe < 10) return 'orange or blue (Mn²⁺-activated; color varies by site)';
-      if (avg_Mn > 5 && avg_Fe > 10) return 'quenched (Fe²⁺ masks Mn²⁺ emission)';
+      // Mn²⁺ orange (~595 nm) LW-dominant with the classic tribo-
+      // luminescence; Fe is the textbook ZnS killer (cleiophane < 0.1%
+      // bright, marmatite dead). Same zone gate as the bar.
+      const lit = this.zones.some((z) => (z.trace_Mn || 0) > 0.1 && (z.trace_Fe || 0) < 2.0);
+      if (lit) return 'orange under LW UV (Mn²⁺ — the low-Fe cleiophane glow), with yellow-orange triboluminescence';
+      if (avg_Fe > 2.0) return 'non-fluorescent (Fe-quenched — the marmatitic signature)';
       return 'non-fluorescent';
+    }
+    if (this.mineral === 'ruby' || this.mineral === 'corundum' || this.mineral === 'sapphire') {
+      // Cr³⁺ 694 nm; Fe quench — Mogok (marble, Fe avg ~92 ppm) bright
+      // vs Thai/Cambodian (basalt, ~2000-4400 ppm) SW-dead.
+      const cr = this.zones.some((z) => (z.trace_Cr || 0) > 0.5 || /Cr|chromium|ruby/i.test(z.note || ''));
+      if (cr && avg_Fe < 2.0) return 'strong red under LW + SW UV (Cr³⁺ R-lines at 694 nm — the marble-hosted signature)';
+      if (cr) return 'weak to inert (Fe quenching the Cr³⁺ emission — the basalt-hosted signature)';
+      return 'non-fluorescent (no chromium)';
+    }
+    if (this.mineral === 'emerald') {
+      if (avg_Fe < 1.0) return 'weak red under LW UV / Chelsea filter (Cr³⁺, low-Fe — the Colombian signature)';
+      return 'inert (Fe-quenched Cr³⁺ — the schist-type signature)';
+    }
+    if (this.mineral === 'willemite') {
+      const lit = this.zones.some((z) => (z.trace_Mn || 0) > 0.005);
+      if (lit) return 'bright green under SW UV (Mn²⁺ in the Zn site — the Franklin classic), often phosphorescent';
+      return 'weakly fluorescent pale green';
+    }
+    if (this.mineral === 'autunite') {
+      return 'intense apple-green under SW UV (uranyl — the brightest lamp in the case; Ca²⁺ doesn’t quench the way Cu²⁺ does)';
+    }
+    if (this.mineral === 'uranophane') {
+      return 'bright yellow-green under SW + LW UV (uranyl vibronic emission — often outshines autunite)';
+    }
+    if (this.mineral === 'uranospinite') {
+      return 'bright yellow-green under LW UV (Ca uranyl — the heavier As-anion dims it a shade below autunite)';
+    }
+    if (this.mineral === 'metatorbernite' || this.mineral === 'metazeunerite') {
+      return 'non-fluorescent — Cu²⁺ kills the uranyl emission (the classic field test against autunite)';
     }
     if (this.mineral === 'pyrite' || this.mineral === 'marcasite' || this.mineral === 'chalcopyrite' || this.mineral === 'galena' || this.mineral === 'molybdenite' || this.mineral === 'tetrahedrite' || this.mineral === 'tennantite') {
       return 'non-fluorescent (opaque sulfide)';
@@ -433,28 +489,40 @@ class Crystal {
       return 'weak green-yellow (U) — daughter autunite/torbernite would glow brightly';
     }
     if (this.mineral === 'smithsonite') {
-      if (avg_Mn > 2) return 'pink under LW UV (Mn²⁺-activated)';
-      return 'blue-green to pale blue (SW UV)';
+      // Weak and RARELY observed (fluomin: pale yellow / violet-red,
+      // weak) — the old always-on blue-green overstated a rarity; the
+      // Tsumeb scarlet is the famous exception, not the rule.
+      return 'weakly fluorescent at best (pale yellow, rarely observed — the Tsumeb scarlet is the exception)';
     }
     if (this.mineral === 'wulfenite') {
-      return 'non-fluorescent (typical)';
+      return 'non-fluorescent (typical — the famous "green wulfenite" glow is a hyalite coating)';
     }
     if (this.mineral === 'selenite') {
-      return 'non-fluorescent (typical gypsum)';
+      // Real gypsum often glows cream/bluish-white from ORGANIC traces
+      // (fluomin: "often"; the 1927 Wiesloch UV hourglass) — a field the
+      // sim's chemistry doesn't carry yet, so growth here is organic-free.
+      return 'non-fluorescent as grown (organic-free — natural gypsum often glows cream from trapped organics)';
     }
     if (this.mineral === 'adamite') {
-      // Cu trace: low Cu → strong SW fluorescence; heavy Cu quenches
+      // Trace-URANYL activated (the Mapimí lime-green); Cu²⁺ QUENCHES —
+      // the pre-audit branches had the sense backwards (cuproadamite
+      // narrated brighter). Same physics as torbernite-vs-autunite.
       const avg_Cu = this.zones.reduce((s, z) => s + (z.trace_Cu || 0), 0) / n;
-      if (avg_Cu > 10) return 'quenched (heavy Cu turns off SW emission)';
-      if (avg_Cu > 0.5) return 'bright apple-green under SW UV (cuproadamite)';
-      return 'green-yellow under SW UV (intrinsic adamite)';
+      const cupro = avg_Cu > 0.1 || this.zones.some((z) => /cupro|cuprian/.test(z.note || ''));
+      if (cupro) return 'dim green (cuprian — Cu²⁺ mutes the uranyl glow)';
+      return 'bright lime-green under SW UV (trace-uranyl activated — the Mapimí classic)';
     }
     if (this.mineral === 'mimetite') {
-      return 'orange under SW UV (intrinsic emission)';
+      return 'usually non-fluorescent (the famous Långban orange is often hedyphane in disguise)';
     }
     if (this.mineral === 'feldspar') {
+      // Amazonite's Pb²⁺ is a COLOUR CENTRE, not an activator — the old
+      // yellow-green claim retired (audit 2026-07-09). The real response
+      // is the weak Fe³⁺ deep red (~700-720 nm, SW): Franklin albite
+      // "FL red SW" (Bostwick 2008).
+      if (avg_Fe > 0.35) return 'weak deep-red under SW UV (Fe³⁺ in the framework — barely visible at ~700 nm)';
       if (this.zones.some(z => (z.note || '').includes('amazonite'))) {
-        return 'yellow-green under LW UV (Pb²⁺ activator in amazonite)';
+        return 'non-fluorescent (the amazonite green is a Pb²⁺ colour centre, not a glow)';
       }
       return 'non-fluorescent or weak white under SW';
     }

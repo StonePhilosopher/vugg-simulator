@@ -248,6 +248,11 @@ function grow_ruby(crystal, conditions, step) {
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe, trace_Ti, trace_Al,
+    // v225: record the chromium the note has always narrated ("Cr³⁺ X
+    // ppm" = f.Cr — Cr³⁺ substitutes Al³⁺ compatibly, lattice ≈ fluid
+    // here). The UV rules' numeric arm reads this; pre-v225 records
+    // keep replaying through the note arm.
+    trace_Cr: f.Cr,
     note: parts.join(', '),
   });
 }
@@ -324,6 +329,9 @@ function grow_sapphire(crystal, conditions, step) {
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe, trace_Ti, trace_Al,
+    // v225: record Cr like ruby does — the pink-sapphire note narrates
+    // it, and pink Cr-sapphire fluoresces weak red on the same physics.
+    trace_Cr: f.Cr,
     note: parts.join(', '),
   });
 }

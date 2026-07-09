@@ -124,9 +124,14 @@ for (const name of Object.keys(SCENARIOS).sort()) {
     }
 
     // divergence: narrator says fluorescent-ish but NO zone glows, or
-    // narrator says non-fluorescent/unknown but zones DO glow.
+    // narrator says non-fluorescent/unknown but zones DO glow. HEURISTIC
+    // (prose-parsing) — post-v225 the two voices share gates by
+    // construction, so anything listed here is a wording pattern this
+    // regex doesn't know, not necessarily a physics split. Anchored at
+    // the start so "…Fe-quenched zones stay dark" mid-sentence (the
+    // banded verdict) doesn't false-flag.
     if (narrStr != null) {
-      const narrGlows = !/^non-fluorescent|^unknown|quenched|weak\/quenched/.test(narrStr);
+      const narrGlows = !/^(non-fluorescent|unknown|quenched|weak\/quenched|inert|usually non-fluorescent)/.test(narrStr);
       const barGlows = glowZones > 0;
       if (narrGlows !== barGlows) {
         a.diverge.push({ scen: name, id: c.crystal_id, narr: narrStr, glowZones, zones: c.zones.length });

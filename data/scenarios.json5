@@ -2876,11 +2876,18 @@
         "temperature_C": 100.0,
         "pressure_kbar": 0.5,
         "fluid": {
-          // Carbonate broth, mirrors FLUID_PRESETS.carbonate.
+          // Carbonate broth, mirrors FLUID_PRESETS.carbonate — EXCEPT Fe,
+          // raised 10 → 60 (v225 UV audit): the taught quench-then-glow
+          // story must be chemically TRUE at zone scale. Fe 60 writes
+          // zone ~4.8, safely over the engine ladder's dark-CL threshold
+          // (Fe > 2), while famous fluorescents like Elmwood (zone 1.27)
+          // keep their glow — no gate could dark this tutorial at Fe 10
+          // (zone 0.8, BRIGHTER than Elmwood). The recharge event is
+          // multiplicative (×0.05 → broth 3 → zone 0.24 → brilliant tier).
           "SiO2": 80,
           "Ca": 300,
           "CO3": 250,
-          "Fe": 10,
+          "Fe": 60,
           "Mn": 8,
           "Mg": 12,
           "Ti": 0.2,
@@ -2918,7 +2925,7 @@
           { "anchor": "#f-sat-bar", "side": "bottom",
             "text": "The σ readout, your forecast. Calcite leads it here, and this broth is built to keep it growing the whole run — 100°C, calcium and carbonate to spare. Growth is the given today. Chemistry is the variable." },
           { "anchor": "#fortress-status", "side": "bottom",
-            "text": "Two trace metals ride this broth. Manganese (about 8 ppm) is a fluorescence ACTIVATOR: swap Mn²⁺ into calcite's lattice and the crystal answers longwave UV with an orange-red glow. Iron (about 10 ppm) is a QUENCHER: it silences exactly that glow. The broth carries the ingredient and the off-switch at the same time." },
+            "text": "Two trace metals ride this broth. Manganese (about 8 ppm) is a fluorescence ACTIVATOR: swap Mn²⁺ into calcite's lattice and the crystal answers longwave UV with an orange-red glow. Iron (about 60 ppm) is a QUENCHER: it silences exactly that glow. The broth carries the ingredient and the off-switch at the same time." },
 
           // ---- Handoff ----
           { "anchor": "#f-advance", "side": "top", "unlock": ["#f-advance", ".act-wait"],

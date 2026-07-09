@@ -26,8 +26,9 @@ function event_tutorial_mn_pulse(c) {
 }
 
 function event_tutorial_fe_drop(c) {
-  // Crash Fe to ~5% of its current value (10 → 0.5). The quenching
-  // threshold is in the low single digits; this lands clearly under it.
+  // Crash Fe to ~5% of its current value (60 → 3 since the v225 broth
+  // retune; zone image 0.24, clearly under the engine ladder's Fe < 0.4
+  // brilliant gate — the taught "full brightness" is chemically true).
   c.fluid.Fe = Math.max(0.0, c.fluid.Fe * 0.05);
   return 'An iron-poor recharge flushes the system. Fe²⁺ — the quencher — falls below the suppression threshold. The Mn-doped zones that grow next will fluoresce at full brightness. The boundary between the dim early zones and the bright new ones records the exact moment the iron dropped out of the broth. The crystal is now a stratigraphic record of the chemistry you played with.';
 }

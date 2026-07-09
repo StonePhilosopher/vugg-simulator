@@ -402,14 +402,19 @@ function grow_adamite(crystal, conditions, step) {
     crystal.dominant_forms = ['tabular crystals'];
   }
   
+  // v225 UV audit: the old ladder had the physics BACKWARDS — it treated
+  // Cu as the ACTIVATOR ("no Cu → NON-FLUORESCENT"). Verified 2026-07-09
+  // (fluomin; Nature's Rainbows Geiger comparison): the Mapimí lime-green
+  // is TRACE-URANYL activated, and Cu²⁺ QUENCHES it — the torbernite-vs-
+  // autunite physics. Body colours keep their ladder; the UV claims flip.
   const cuInCrystal = conditions.fluid.Cu * 0.02;
   let colorNote;
-  if (cuInCrystal > 0.5) colorNote = 'vivid green (cuproadamite) — UV-FLUORESCENT 💚';
-  else if (cuInCrystal > 0.1) colorNote = 'green — weakly fluorescent';
-  else colorNote = 'yellow-green — NON-FLUORESCENT (no Cu)';
-  
+  if (cuInCrystal > 0.5) colorNote = 'vivid green (cuproadamite) — Cu²⁺ mutes the UV glow';
+  else if (cuInCrystal > 0.1) colorNote = 'green (cuprian) — dimmed under UV';
+  else colorNote = 'yellow-green — UV-FLUORESCENT lime-green 💚 (trace uranyl, the Mapimí classic)';
+
   // Phase 1d: growth debits owned by the wrapper (applyMassBalance).
-  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe: conditions.fluid.Fe * 0.01, note: `${crystal.habit}, ${colorNote}` });
+  return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe: conditions.fluid.Fe * 0.01, trace_Cu: cuInCrystal, note: `${crystal.habit}, ${colorNote}` });
 }
 
 function grow_mimetite(crystal, conditions, step) {

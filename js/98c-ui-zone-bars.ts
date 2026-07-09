@@ -274,8 +274,10 @@ function zoneFluorescence(zone, mineral, crystal) {
       // rendered brighter). Three verified legs (2026-07-09): fluomin
       // "cupro- and manganoan-adamite... usually not as bright as pure
       // adamite"; the torbernite structural pair; geology.com Cu-as-
-      // quencher. Plain adamite bright; cuprian dim.
-      if (zone.note && zone.note.includes('cuproadamite')) return '#557744';
+      // quencher. Plain adamite bright; any cuprian signal dim (the
+      // v225 writer's middle "cuprian" tier lands here too).
+      const zCu = zone.trace_Cu || 0;
+      if (zCu > 0.1 || (zone.note && /cupro|cuprian/.test(zone.note))) return '#557744';
       return '#88dd66';
 
     case 'willemite':
@@ -463,7 +465,9 @@ function uvSummary(mineral) {
   const parts = [];
   if (str(f.color)) parts.push(str(f.color).replace(/_/g, ' '));
   if (str(f.activator)) parts.push(`${str(f.activator).replace(/_/g, '/')} activator`);
-  if (str(f.quencher)) parts.push(`${str(f.quencher).split(/[\s(]/)[0]} quenches`);
+  // quencher is either a plain string or a {species, threshold_ppm} object
+  const q = str(f.quencher) || (f.quencher && str(f.quencher.species));
+  if (q) parts.push(`${q.split(/[\s(]/)[0]} quenches`);
   return parts.join(' · ') || 'inert under UV';
 }
 function renderZoneBarCanvas(canvas, zones, opts: any = {}) {

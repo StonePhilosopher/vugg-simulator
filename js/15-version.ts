@@ -11826,5 +11826,59 @@
 //        ripple guards: smoky/morion still win at heavy dose, sphalerite ladder
 //        intact). Sources: Gilg et al. 2003 (Mineral. Deposita 38:1009), Triz-quarry
 //        Geol. Mag. 144:731, Rossman 1994, Takahashi & Sunagawa 2004 (ELO).
-const SIM_VERSION = 224;
+// v225 — DOOR 2, THE UV SCALE AUDIT (SIM-adjacent half; the render half shipped
+//        7c4ded5 with SIM 224 untouched). The census (tools/uv-zone-census.mjs)
+//        found both fluorescence voices sick with broth-scale numbers tested
+//        against zone-scale traces, and the two contradicting each other on 27
+//        fleet crystals (narrator 'unknown' on 819/1098). This bump:
+//        (1) js/27 predict_fluorescence rewritten to the SAME zone-scale gates
+//        as the 98c bar — both mirror the engines' recorded classifiers (js/52
+//        calcite 4-tier ladder; js/59 willemite; spec canon). New branches:
+//        ruby/corundum/sapphire (Cr³⁺ 694 nm, Fe-quench Mogok-vs-basalt),
+//        emerald (Colombia-vs-schist), willemite (Franklin), autunite/
+//        uranophane/uranospinite (uranyl bright), metatorbernite/metazeunerite
+//        (Cu²⁺ veto — dark IS the field diagnostic). quartz's Al-blue branch
+//        RETIRED (CL phenomenon, not UV; macrocrystalline quartz honestly
+//        inert); mimetite/smithsonite/amazonite always-on claims retired to
+//        literature-verified weak/rare/none; feldspar gains the real weak Fe³⁺
+//        deep-red SW arm (Bostwick: Franklin albite "FL red SW"); adamite
+//        SENSE INVERTED — trace-uranyl activates, Cu²⁺ quenches (fluomin +
+//        torbernite analog + Geiger comparison; the old ladder had Cu as the
+//        activator). Sphalerite/wurtzite gate recalibrated (old avg_Mn>5
+//        unreachable, fleet max 3.13): Mn>0.1 && Fe<2 per zone — cleiophane
+//        orange, marmatite dead.
+//        (2) THE TUTORIAL BROTH RETUNE (the census's forced move): no gate on
+//        (Fe, Mn) can dark tutorial_mn_calcite's early stripes (zone 0.8/5.4)
+//        while glowing elmwood (1.27/4.0) — the tutorial broth was chemically
+//        BRIGHTER than Elmwood. Fe 10 → 60 (zone ~4.8 > the ladder's dark
+//        threshold 2; recharge ×0.05 → 3 → zone 0.24, brilliant tier): T2's
+//        taught dark-then-brilliant story is now chemically TRUE. Step text
+//        "about 10 ppm" → "about 60 ppm"; 70g fe_drop comment re-trued.
+//        (3) ZONE-RECORD RIDERS — the record now carries what its own notes
+//        narrate (three compute-and-drop datums the census exposed): grow_ruby
+//        + grow_sapphire record trace_Cr (the note prints "Cr³⁺ X ppm" =
+//        f.Cr); grow_emerald records trace_Cr; the feldspar writer records
+//        the trace_Pb it computed for the amazonite note; grow_adamite
+//        records trace_Cu — and its note ladder's UV claims FLIP to the
+//        verified physics (body colours unchanged).
+//        (4) SPEC SYNC (data/minerals.json): the fluorescence entries js/27
+//        originally copied its broth-scale numbers from are recalibrated to
+//        zone scale with audit provenance (calcite quench 10→2 + the NAMED
+//        Pb-sensitizer follow-on per Schulman/USGS 1947; sphalerite/wurtzite
+//        5/10→0.1/2; quartz→honest null; mimetite→usually-none; smithsonite→
+//        weak-rare; feldspar Pb_amazonite→Fe3+_framework; adamite quencher
+//        Cu at zone 0.1) and metatorbernite/metazeunerite GAIN entries (the
+//        metazeunerite description said "non-fluorescent" all along — the
+//        structured field lets the bar and narrator read it).
+//        Movement: tutorial_mn_calcite (value-level: broth Fe + zone traces +
+//        note tiers) + zone-field additions (trace_Cr/Pb/Cu) in scenarios
+//        hosting ruby/sapphire/emerald/feldspar/adamite + narrator
+//        fluorescence lines fleet-wide in the strip stories (the boss reads
+//        the text diffs as the paper). Literature: 40+ opened sources —
+//        fluomin fiches, Bostwick 2008, FOMS/Sterling Hill, Nature's
+//        Rainbows, Crystals 2023 13:1179 (ruby Fe by LA-ICP-MS), Minerals
+//        2020 10:597, Minerals 2019 9:105 + Crystals 2025 15:385 (emerald
+//        Fe populations), Minerals 2021 11:1215 (willemite), Schulman 1947
+//        (calcite Pb sensitizer), Cannon patent US2,346,661 (scheelite Mo).
+const SIM_VERSION = 225;
 

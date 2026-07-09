@@ -11,8 +11,18 @@ import { describe, expect, it } from 'vitest';
 
 declare function zoneFluorescence(zone: any, mineral: string, crystal: any): string | null;
 declare function uvSummary(mineral: string): string;
+declare const Crystal: any;
 
 const xtal = (o: any = {}) => ({ radiation_damage: 0, ...o });
+
+// A real Crystal (prototype methods live) with synthetic zones — the
+// narrator (predict_fluorescence) runs the same zone-scale gates as the
+// bar since v225; these pins hold the two voices together.
+const narr = (mineral: string, zones: any[], extra: any = {}) => {
+  const c = Object.create(Crystal.prototype);
+  Object.assign(c, { mineral, zones, radiation_damage: 0, ...extra });
+  return c.predict_fluorescence() as string;
+};
 
 describe('zoneFluorescence — calcite mirrors the js/52 ladder branch-for-branch', () => {
   it('four tiers + no-activator, exactly the engine note classes', () => {
@@ -115,10 +125,14 @@ describe('zoneFluorescence — emerald: Colombian low-Fe glows, schist-type quen
 
 describe('zoneFluorescence — adamite: uranyl-activated, Cu QUENCHES (the inverted gate)', () => {
   it('plain adamite bright lime; cuprian adamite dim — the pre-audit sense was backwards', () => {
-    const plain = "prismatic, yellow-green — UV-FLUORESCENT";
-    const cupro = "tabular, vivid green (cuproadamite) — UV-FLUORESCENT 💚";
+    const plain = "prismatic, yellow-green — UV-FLUORESCENT lime-green 💚 (trace uranyl, the Mapimí classic)";
+    const cupro = "tabular, vivid green (cuproadamite) — Cu²⁺ mutes the UV glow";
     expect(zoneFluorescence({ note: plain }, 'adamite', xtal())).toBe('#88dd66');
     expect(zoneFluorescence({ note: cupro }, 'adamite', xtal())).toBe('#557744');
+  });
+  it('the v225 numeric arm reads the recorded trace_Cu directly', () => {
+    expect(zoneFluorescence({ trace_Cu: 2.1 }, 'adamite', xtal())).toBe('#557744');
+    expect(zoneFluorescence({ trace_Cu: 0.05 }, 'adamite', xtal())).toBe('#88dd66');
   });
 });
 
@@ -157,6 +171,53 @@ describe('zoneFluorescence — the honest constants', () => {
   it('scheelite intrinsic blue-white; aragonite dark until the organics field exists', () => {
     expect(zoneFluorescence({}, 'scheelite', xtal())).toBe('#ddddff');
     expect(zoneFluorescence({}, 'aragonite', xtal())).toBeNull();
+  });
+});
+
+describe('predict_fluorescence (js/27) — the narrator shares the bar\'s gates (v225)', () => {
+  it('calcite: banded verdict when glow and quench zones coexist (the tutorial story)', () => {
+    const s = narr('calcite', [
+      { trace_Mn: 1.1, trace_Fe: 4.8 },   // dark early
+      { trace_Mn: 5.4, trace_Fe: 4.8 },   // dark middle (loaded-but-quenched)
+      { trace_Mn: 14.4, trace_Fe: 0.24 }, // brilliant rim
+    ]);
+    expect(s).toMatch(/^banded orange-red/);
+  });
+  it('calcite: pure tiers narrate their tier', () => {
+    expect(narr('calcite', [{ trace_Mn: 14, trace_Fe: 0.1 }])).toMatch(/^brilliant salmon/);
+    expect(narr('calcite', [{ trace_Mn: 4, trace_Fe: 24 }])).toMatch(/^quenched/);
+    expect(narr('calcite', [{ trace_Mn: 0.2, trace_Fe: 0.1 }])).toMatch(/^non-fluorescent/);
+  });
+  it('ruby: the Mogok signature from recorded trace_Cr; basalt-type quenches', () => {
+    expect(narr('ruby', [{ trace_Cr: 4.5, trace_Fe: 0.06 }])).toMatch(/strong red.*694/);
+    expect(narr('ruby', [{ trace_Cr: 4.5, trace_Fe: 4.0 }])).toMatch(/^weak to inert.*basalt/);
+  });
+  it('quartz: the Al-blue branch is retired — honestly inert', () => {
+    expect(narr('quartz', [{ trace_Al: 97 }])).toMatch(/^non-fluorescent \(macrocrystalline/);
+  });
+  it('adamite: uranyl-bright vs cuprian-dim (the inverted sense), off recorded trace_Cu', () => {
+    expect(narr('adamite', [{ trace_Cu: 2.1 }])).toMatch(/^dim green \(cuprian/);
+    expect(narr('adamite', [{ trace_Cu: 0.02 }])).toMatch(/^bright lime-green.*Mapimí/);
+  });
+  it('the uranyl family: bright members and the Cu²⁺ veto', () => {
+    expect(narr('uranophane', [{}])).toMatch(/^bright yellow-green.*outshines autunite/);
+    expect(narr('metatorbernite', [{}])).toMatch(/^non-fluorescent — Cu²⁺ kills/);
+  });
+  it('fluorite: a locality trait — REE lot glows, plain lot says why it does not', () => {
+    expect(narr('fluorite', [{ trace_Y: 0.03 }])).toMatch(/^blue-violet/);
+    expect(narr('fluorite', [{ trace_Mn: 3.5 }])).toMatch(/locality trait/);
+  });
+  it('sphalerite: cleiophane orange with tribo; marmatitic Fe reads quenched', () => {
+    expect(narr('sphalerite', [{ trace_Mn: 0.2, trace_Fe: 1.4 }])).toMatch(/^orange under LW.*tribo/);
+    expect(narr('sphalerite', [{ trace_Mn: 1.2, trace_Fe: 14 }])).toMatch(/marmatitic/);
+  });
+  it('willemite finally narrates (was unknown): the Franklin classic', () => {
+    expect(narr('willemite', [{ trace_Mn: 0.075 }])).toMatch(/^bright green.*Franklin/);
+  });
+  it('feldspar: weak Fe³⁺ deep red; the amazonite Pb glow claim is retired', () => {
+    expect(narr('feldspar', [{ trace_Fe: 0.5 }])).toMatch(/^weak deep-red/);
+    expect(narr('feldspar', [{ trace_Fe: 0.1, note: 'amazonite (Pb²⁺ = 0.40 ppm) — green from lead' }]))
+      .toMatch(/colour centre, not a glow/);
   });
 });
 

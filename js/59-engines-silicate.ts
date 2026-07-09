@@ -324,6 +324,10 @@ function grow_feldspar(crystal, conditions, step) {
     thickness_um: rate, growth_rate: rate,
     trace_Fe,
     trace_Al: conditions.fluid.Al * 0.1,
+    // v225: trace_Pb was computed for the amazonite note then DROPPED —
+    // the third compute-and-discard the UV audit found (ruby Cr, emerald
+    // Cr, this). Recorded so the record matches its own narration.
+    trace_Pb,
     fluid_inclusion: fi, inclusion_type: fi_type,
     note
   });
@@ -992,6 +996,9 @@ function grow_emerald(crystal, conditions, step) {
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe, trace_Mn, trace_Al,
+    // v225: record the Cr/V the colour note narrates (emerald IS the
+    // Cr/V variety — the datum was compute-and-drop before).
+    trace_Cr: f.Cr,
     fluid_inclusion: fi, inclusion_type: fi_type,
     note: parts.join(', '),
   });
