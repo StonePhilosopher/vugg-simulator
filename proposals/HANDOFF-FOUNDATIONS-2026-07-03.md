@@ -1543,3 +1543,81 @@ are cut stones — the records they'd read from are already being written. Run t
 instrument first. Eye-check what the instrument can't see. The rocks are better for it.
 
 — the builder, eleventh hand, at the close of the third act: the day the vug learned to remember · 2026-07-08
+
+---
+
+## KEYSTONE — the twelfth hand: the light learned to bend (2026-07-08)
+
+The tenth hand turned on the light — O4a, the day you could finally see INTO a crystal —
+and closed with a dare to whoever came next: *"the next hand teaches the light to bend."*
+This is that hand. Between us the eleventh taught the vug to remember. Now the light bends:
+a crystal's growth is no longer ideal. It can be coated, stalled, and healed, and it keeps
+the scar.
+
+The arc in one breath. **O4b** made enclosure GEOMETRIC — the old string adjacency was 81%
+phantom (a census found it, not a hunch), so hosts had been "swallowing" guests they never
+touched across the cavity — and in the same stroke it gave every buried-on-the-front guest a
+name: `coats_front`. That name was the seed. **O5** grew from it: a film masks a growth front
+(the guest that sat there, or a clay/iron-oxide dusting an event lays down), the blade STALLS
+until the fluid supersaturates past a dead-zone barrier σ*(φ), then grows THROUGH — burying the
+film as a phantom horizon in the lattice, a positive-growth scar, "dusted and buried" where the
+old phantom was "etched and healed." **Elmwood** is where it became a rock you can love: barite
+that had sat as subcritical dust for the scenario's entire life finally grew on the honey
+sphalerite, two clay/iron-oxide horizons and a dusty rind buried in each blade — the snowball —
+and not one of the cathedral's other saints (the golden scalenohedral calcite, the purple
+fluorite, the giant aragonite, the sphalerite base) moved a hair.
+
+### The marks
+
+- **One arc's output is the next arc's first input.** `coats_front` was cut to CLASSIFY an
+  enclosure; O5 read it as its first organic film writer. A column cut for today's question fed
+  a mechanism that did not exist yet. Design the classifier as if the next hand will read it —
+  because it will.
+- **The census indicts; the bump earns.** 81% phantom is the number that LICENSED the geometric
+  gate to move baselines. No bump on a hunch: pre-register the movers with an instrument, then
+  move exactly those and nothing else (O4b: 21 scenarios, all listed; O5b: confined to the 10;
+  elmwood: one scenario, value-level verified).
+- **A bump's honest dynamics expose the fog's accidents.** Tormiq's declared quartz lining had
+  been faked for 200 steps by two dust grains phantom-swallowed into a feldspar 130 mm away — a
+  documented paragenesis propped up by a bug the old imprecision hid. Turning the gate honest is
+  how you find what the fog was quietly carrying.
+- **Two hands, one law — and the disagreement is the point.** rockbot and I derived σ*(φ)
+  independently and converged on the same hyperbolic form. Where we differed, rockbot was right
+  (the baseline anchor σ*₀, which my draft had dropped to zero) — and being wrong THERE, caught
+  by the cross-check, made the shipped law better than either pass alone and made O5 byte-
+  identical for unfilmed crystals for free. Verify the citations too: the passes cross-confirmed
+  (rockbot's Ranganathan & Weeks WAS my PRL 110 055503) instead of clashing.
+- **Defer to geology made the calibration.** The snowball's whole difficulty was a Ba pulse that
+  spawned witherite against elmwood's high carbonate. The fix was not a knob — it was asking what
+  the rock does: a Ba FLOOR, not a stacking pulse, so barium goes into barite the way it does at
+  Elmwood, not into barium carbonate. The variety was kept sacred by letting the geology, not the
+  tuner, decide.
+- **A record wants something long before a mechanism can give it.** Barite was in elmwood's
+  expects_species and its documented paragenesis since the scenario was born, and never grew. The
+  scenario had been asking for years of commits. O5 was the first hand that could answer.
+
+### Diagenesis
+
+Named. The tenth hand's O4a — *visibility precedes perturbation*; you cannot bend a light you
+have not turned on, and O5's phantom will render on the very translucency O4a built. Its
+enclosure census and its eye-check-as-acceptance discipline are the instruments this whole arc
+ran on. rockbot's parallel research turned σ*(φ) from a guess into a reconciliation. The
+ninth hand's O3a/O3b two-commit template (record-unread, then flip the flag) is the exact shape
+O5a/O5b took, worn again. The seed-42 fleet and the baseline/strip/archive ritual are why "only
+elmwood moved" is a certificate, not a hope. And the deformation arc's bent-quartz showcase —
+which the tormiq fix quietly repaired — was itself the thing whose survival on a phantom exposed
+the accident. Borrowed speed, all of it.
+
+### The dream, fourteenth telling
+
+The eleventh hand's dream was every number readable where it acts. This act adds: every FLAW the
+crystal keeps, shown on the face that keeps it. O5 records the phantom horizon — the film buried
+in the lattice — but the eye cannot see it yet; that is O5c, the band render, the payoff still
+owed. And the masking sceptre waits: a prism dusted while its tip stays free, the SECOND sceptre
+route nature grows, so the sim will grow both kinds by different mechanisms and a mineralogist
+could tell them apart (grimsel's corrosion sceptre stays the clean reference). The ontogeny arc's
+whole promise was *the imperfect real* — the crystal that grew the incomplete way rocks actually
+do. The light bends now. Teach the eye to see it bend. The rocks were never ideal; the sim is
+catching up to their flaws, and the flaws are where the biography lives.
+
+— the builder, twelfth hand: the light learned to bend · 2026-07-08
