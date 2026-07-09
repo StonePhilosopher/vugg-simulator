@@ -4152,6 +4152,46 @@ function _o4InclusionLocalPos(
   const r = hostR * rf;
   return [hcx + (dx / dl) * r, hcy + (dy / dl) * r, hcz + (dz / dl) * r];
 }
+
+// W-F O5c — emit the masked-horizon bands for one host crystal. Reads the
+// recorded zone stack via maskedHorizonBands (js/44b, pure) and adds one thin
+// concentric shell CHILD per horizon: SAME geometry as the host (post-O2-clip,
+// finalized before add(mesh) — so the band matches the visible silhouette),
+// uniform local scale = the horizon's radial fraction, local position 0. As a
+// child it inherits the host's world transform (including a tabular blade's
+// non-uniform scale), so the shell is similar-and-concentric inside — a smaller
+// copy of the same form at the depth the film was buried. Tinted by filmBandRGB,
+// semi-opaque + double-sided + depthWrite off so it reads THROUGH the host's
+// Depth-A translucency without punching the transparent sort; an OPAQUE host
+// hides it (honest, the O4a contract). Non-raycastable — a band is an internal
+// feature, not a hit target, so hovers fall through to the host shell.
+// Render-only: no crystal mutated, no sim state touched (byte-identical).
+function _o5EmitMaskedBands(hostMesh: any, crystal: any): void {
+  if (!hostMesh || !hostMesh.geometry) return;
+  const bands = maskedHorizonBands(crystal);
+  if (!bands.length) return;
+  for (const band of bands) {
+    const f = band.frac;
+    if (!(f > 0 && f < 1)) continue;
+    const [br, bg, bb] = filmBandRGB(band.mineral);
+    const bandMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(br, bg, bb),
+      roughness: 0.9,
+      metalness: 0.0,
+      transparent: true,
+      opacity: 0.72,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const bandMesh = new THREE.Mesh(hostMesh.geometry, bandMat);
+    bandMesh.scale.setScalar(f);
+    bandMesh.renderOrder = (hostMesh.renderOrder || 0) + 1;
+    bandMesh.raycast = function () {};
+    bandMesh.userData = { o5Band: true, crystal_id: crystal.crystal_id, filmMineral: band.mineral };
+    hostMesh.add(bandMesh);
+  }
+}
+
 function _o1bNeighborShadow(crystal: any, bodies: any[]): number {
   if (!bodies || bodies.length < 2) return 0;
   let me: any = null;
@@ -4956,6 +4996,13 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     if (isInclusion) {
       _pendingInclusions.push({ mesh, ax, ay, az, hostId: crystal.enclosed_by, cid: crystal.crystal_id });
     }
+
+    // W-F O5c — the phantom band made visible. Each masked_horizon zone (a
+    // front that grew THROUGH a foreign film, js/85 gate) renders as a thin
+    // concentric shell at its recorded radial depth. Free-standing crystals
+    // only — an engulfed guest (O4a) is a tiny grain inside a host, its own
+    // internal bands invisible and not worth the meshes. Render-only.
+    if (!isInclusion) _o5EmitMaskedBands(mesh, crystal);
 
     // Phase E5b: emit cluster satellites around this parent. Same
     // geometry + material; inherits parent userData so hit-tests

@@ -117,9 +117,34 @@ Living list of open work items, captured from session conversations so context s
 > within noise, witherite excluded. baseline-diff: elmwood ONLY (value-level confirmed);
 > crystals 20→27 (minor dust over-nucleation — barite 6→11, sphalerite 1→3, the sustained-Ba
 > web, extras 0 mm), species 13→13. Tests elmwood-snowball.test.ts (5). A `film_coat` no-op
-> handler carries the pure-dusting events (no chemistry). **NEXT on the O5 line:** the masking
+> handler carries the pure-dusting events (no chemistry).
+>
+> **▸ O5c SHIPPED — THE PHANTOM BAND MADE VISIBLE (render-only, byte-identical, no SIM bump).**
+> The payoff the arc owed: O5b buries the `masked_horizon` and the elmwood snowball lays down
+> 12 of them, but the eye couldn't see them. O5c renders each horizon as a thin concentric
+> shell INSIDE the crystal at its recorded radial depth, tinted by the film mineral, revealed
+> by the host's Depth-A translucency exactly as O4a's engulfed grains are (an OPAQUE host hides
+> its bands — honest, the O4a contract). The O4a discipline: reads the recorded zone stack,
+> mutates no crystal → SIM record byte-identical (SIM_VERSION stays 223, no baseline/strip/
+> archive rebake). Two PURE helpers in js/44b, unit-tested DOM-free: `maskedHorizonBands(crystal)`
+> reconstructs each horizon's radial fraction from the zone stack (running Σthickness_um / 1000 /
+> final c_length — the same net accumulation js/27 add_zone does, so a dissolution zone shrinks
+> the depth exactly as the sim does; drops frac ≤ 0 / ≥ 1); `filmBandRGB(mineral)` a low-saturation
+> field-guide palette (clay buff, iron-oxide/hematite rust, chlorite green — the films aren't
+> catalog species, so MINERAL_SPEC has no class_color for them; substring-matched). Renderer
+> (js/99i `_o5EmitMaskedBands`): one shell CHILD per horizon SHARING the host's post-O2-clip
+> geometry (matches the visible silhouette), uniform local scale = fraction, local pos 0 → inherits
+> the host's world transform (incl. a blade's non-uniform scale) = a smaller similar shell,
+> concentric at the buried depth; opacity 0.72, depthWrite off + DoubleSide (reads through the
+> translucent host without fighting the sort), non-raycastable; free-standing crystals only.
+> VERIFIED elmwood seed 42 (preview_eval kernel-truth — screenshots time out on the WebGL page):
+> the live renderer sim carries all 12 horizons (the headless SERIALIZATION strips the zone flag
+> but the renderer reads the live add_zone objects, which retain it — a trap worth the note); scene
+> rebuild → 12 band meshes (6 clay + 6 iron-oxide) on all 6 blades, scales 0.266/0.662 matching the
+> fractions, colors d4c7b1/bf9079, barite host opacity 0.51 (translucent → bands show), console clean.
+> Tests o5-band-render.test.ts (10). **NEXT on the O5 line:** the masking
 > SCEPTRE (per-axis prism/tip asymmetry + classifyQuartzSceptre generalization, grimsel
-> corrosion stays the clean reference) + O5c band render (the D2 vertexColors seam).
+> corrosion stays the clean reference).
 
 > ## 🔴🟢 NUCLEATION HOVER POPOVER (2026-07-08, boss ask) — SHIPPED (render-only)
 >

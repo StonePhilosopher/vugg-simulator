@@ -146,3 +146,60 @@ function applyFilmDusting(
 // these. Mirrors js/44a's setGeometricSelectionEnabled / setO3* idiom.
 function setO5MaskingEnabled(v: boolean): void { O5_MASKING_ENABLED = !!v; }
 function setSigmaStarK(v: number): void { SIGMA_STAR_K = +v; }
+
+// ============================================================
+// O5c — the band render (the phantom made visible)
+// ============================================================
+// O5b tags the first zone that grew THROUGH a foreign film with `masked_horizon`
+// + `film_mineral` (js/85 gate → js/27 add_zone), joined to phantom_surfaces.
+// O5c is the render rider that makes that horizon VISIBLE: a thin concentric
+// shell inside the crystal, tinted by the film mineral, revealed by the host's
+// Depth-A translucency exactly as O4a's engulfed grains are — an OPAQUE host
+// rightly hides its internal bands (honest). Render-only: these two helpers READ
+// the recorded zone stack and mutate nothing, so the SIM record is byte-identical
+// (no bump, no baseline rebake); the Three renderer (js/99i) consumes them in a
+// purely-visual pass, the same render-only contract O4a's engulfment shipped on.
+
+// Reconstruct each masked horizon's RADIAL FRACTION from the zone stack. The
+// crystal's c_length at zone i is the running sum of zone thicknesses / 1000
+// (add_zone's own cNew_mm accumulation, js/27 — the running total is net, so a
+// dissolution zone shrinks it exactly as the sim does), so a horizon tagged at
+// zone i sits at fraction (running c_length)/(final c_length) of the growth axis
+// — the band's depth below the current surface. Pure, DOM-free, RNG-free,
+// unit-tested (tests-js/o5-band-render.test.ts). Returns [{ frac, mineral }]
+// inner→outer, dropping horizons at frac ≤ 0 or ≥ 1 (degenerate / the outer
+// surface itself, which is the live face and needs no internal shell).
+function maskedHorizonBands(crystal: any): Array<{ frac: number; mineral: string }> {
+  const out: Array<{ frac: number; mineral: string }> = [];
+  if (!crystal || !Array.isArray(crystal.zones)) return out;
+  const finalC = Number(crystal.c_length_mm) || 0;
+  if (finalC <= 0) return out;
+  let runUm = 0;
+  for (const z of crystal.zones) {
+    runUm += (z && Number(z.thickness_um)) || 0;
+    if (z && z.masked_horizon && z.thickness_um > 0) {
+      const frac = (runUm / 1000) / finalC;
+      if (frac > 0 && frac < 1) {
+        out.push({ frac, mineral: (z.film_mineral || crystal._film_mineral || 'film') });
+      }
+    }
+  }
+  return out;
+}
+
+// Low-saturation field-guide palette for a film band, keyed on the film
+// mineral's common name. The coats/dustings O5 deals in — clay, iron-oxide,
+// chlorite, sericite, manganese — are not catalog species (MINERAL_SPEC has no
+// class_color for 'clay'/'iron oxide'), and a muted diagnostic hue reads better
+// through a translucent host than a saturated one (the field-guide aesthetic).
+// Linear-ish [r,g,b] in 0..1; substring-matched so an event can name the film
+// loosely ('iron oxide', 'hematite stain', 'chlorite dusting'). Unknown → buff.
+function filmBandRGB(mineral: string): [number, number, number] {
+  const m = (mineral || '').toLowerCase();
+  if (m.includes('chlorite') || m.includes('celadon') || m.includes('green')) return [0.36, 0.46, 0.30];
+  if (m.includes('hematite') || m.includes('iron') || m.includes('rust') || m.includes('goethite') || m.includes('limonite') || m.includes('ferr')) return [0.52, 0.28, 0.19];
+  if (m.includes('mangan') || m.includes('psilomel') || m.includes('pyrolus') || m.includes('romanech')) return [0.20, 0.18, 0.20];
+  if (m.includes('sericite') || m.includes('mica') || m.includes('silver')) return [0.62, 0.62, 0.60];
+  if (m.includes('clay') || m.includes('kaolin') || m.includes('illite')) return [0.66, 0.57, 0.44];
+  return [0.60, 0.54, 0.46];   // neutral buff — an unnamed dusting
+}
