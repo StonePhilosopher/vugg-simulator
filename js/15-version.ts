@@ -11796,5 +11796,35 @@
 //        new events): barite dust→grown + its snowball zones, plus minor dust
 //        over-nucleation (barite 6→11, sphalerite 1→3 — the sustained-Ba web, all
 //        extras 0 mm). tests-js/elmwood-snowball.test.ts (5).
-const SIM_VERSION = 223;
+// v224 — W-F O5 MASKING SCEPTRE, first content: the BRAZILIAN AMETHYST GEODE (boss
+//        chose the locality; reference specimen = an ametrine sceptre with iron
+//        staining). The masking sceptre is the second natural sceptre route (7566915
+//        shipped the byte-identical classifier: classifyQuartzSceptre js/45 now reads
+//        a PRISM-dominant masked_horizon as a boundary, tagged route='masking', the
+//        mass-conserving twin of grimsel's corrosion route). This bump is the content
+//        that first fires it. New `amethyst_geode` scenario (Ametista do Sul, Serra
+//        Geral flood basalt): a prism-dominant celadonite `film:` (prism 0.45/term
+//        0.08) frosts the amethyst prism; the Silica Renewal Pulse clears σ*(φ_prism)
+//        and the tip renews a wider cap THROUGH it → 3 masking sceptres at seed 42
+//        (stem 277-888µm, cap 804-863µm; the uniform goethite stain is a buried
+//        horizon, NOT a second sceptre). AMETHYST COLOUR REVIVED: it was "authored-
+//        but-dormant" — the trigger Fe>2 needed ~600ppm fluid Fe against quartz's
+//        trace_Fe×0.005 scale, and the D1b parser had no radiation ceiling so amethyst
+//        (2 clauses) out-ranked smoky (1). Fix (render-only, baseline-neutral):
+//        recalibrated trigger `Fe > 0.2 and radiation_damage 0.1-0.3` + a range UPPER
+//        bound honoured ONLY for crystal-level fields (radiation) so amethyst is
+//        mutually exclusive with smoky (>0.3) while zone-trace Fe ladders (sphalerite
+//        2-10-15) keep their lower-bound collapse. New byte-identical engine knob
+//        `wall.gamma_host` (js/59 radHost fallback + js/22 schema): basalt gave zero
+//        γ-dose, so the Paraná flood-basalt background over ~134 Ma is declared per-
+//        scenario (0.4 → radiation_damage in the amethyst band); default 0 keeps all
+//        6 basalt scenarios byte-identical. Movement confined to amethyst_geode (new
+//        scenario; the classifier + gamma_host + colour are all fleet-neutral —
+//        census + baseline-diff verified). Instruments: tools/sceptre-mask-census.mjs
+//        (81%-phantom-style pre-registration), tools/amethyst-sceptre-probe.mjs.
+//        Tests: masking-sceptre.test.ts (7), amethyst-geode.test.ts (8, incl. the D1b
+//        ripple guards: smoky/morion still win at heavy dose, sphalerite ladder
+//        intact). Sources: Gilg et al. 2003 (Mineral. Deposita 38:1009), Triz-quarry
+//        Geol. Mag. 144:731, Rossman 1994, Takahashi & Sunagawa 2004 (ELO).
+const SIM_VERSION = 224;
 

@@ -142,9 +142,46 @@ Living list of open work items, captured from session conversations so context s
 > but the renderer reads the live add_zone objects, which retain it — a trap worth the note); scene
 > rebuild → 12 band meshes (6 clay + 6 iron-oxide) on all 6 blades, scales 0.266/0.662 matching the
 > fractions, colors d4c7b1/bf9079, barite host opacity 0.51 (translucent → bands show), console clean.
-> Tests o5-band-render.test.ts (10). **NEXT on the O5 line:** the masking
-> SCEPTRE (per-axis prism/tip asymmetry + classifyQuartzSceptre generalization, grimsel
-> corrosion stays the clean reference).
+> Tests o5-band-render.test.ts (10).
+>
+> **▸ THE MASKING SCEPTRE SHIPPED (SIM 224, two commits) — the arc's last named payoff, with the
+> boss's own rock as the reference** (photo 2026-07-09: an ametrine sceptre, frosted stem, wide
+> citrine head, amethyst phantom mid-stem, iron staining at the base — memory
+> `project_vugg_ametrine_sceptre_specimen`). **Commit 1 `7566915` (byte-identical foundation):**
+> classifyQuartzSceptre (js/45) generalized to a SECOND boundary type — a PRISM-DOMINANT
+> masked_horizon (O5b breakthrough where φ_prism > φ_term), tagged `_sceptre.route`
+> 'masking'|'corrosion'; the O5b gate records `masked_phi_prism/term` on the horizon zone (js/85).
+> **THE CENSUS EARNED ITS KEEP AGAIN** (tools/sceptre-mask-census.mjs): a naive any-horizon trigger
+> would have spuriously sceptred deccan_zeolite #2 (mesolite-filmed quartz, stem 29.8mm); the
+> prism-dominance gate is BOTH the geology (a sceptre is prism-masked, tip-renewed — Takahashi &
+> Sunagawa 2004 ELO) AND the byte-identity proof (every existing film is coats_front = termination-
+> only, φ_prism 0). Baseline regen → zero diff; grimsel corrosion untouched (route regression
+> pinned). masking-sceptre.test.ts (7). **Commit 2 (SIM 224, the content):** new `amethyst_geode`
+> scenario — Ametista do Sul, Serra Geral flood basalt (Gilg et al. 2003 Mineral. Deposita 38:1009
+> low-T camp + Triz-quarry Geol. Mag. 144:731 magmatic 152-238°C camp, both honored: warm nucleation
+> → cool finish). The geode's REAL celadonite rim is the masking film (prism 0.45 / term 0.08,
+> minerals:["quartz"]); the Silica Renewal Pulse (fluid_pulse ×1.8 SiO2) clears σ*(φ_prism) → 3
+> masking sceptres at seed 42 (stem 277-888µm, caps 804-863µm, capFrac 0.49-0.75); the goethite
+> base stain (0.3/0.3 uniform) correctly stays a buried horizon. **AMETHYST REVIVED from
+> "authored-but-dormant"** (boss: do the D1b fix now): the trigger needed ~600ppm fluid Fe against
+> quartz's trace_Fe×0.005 scale AND the clause-count priority would have out-ranked smoky → new
+> trigger `Fe > 0.2 and radiation_damage 0.1-0.3` + range UPPER bounds honored ONLY for crystal-level
+> fields (js/12a), so amethyst is mutually exclusive with smoky (>0.3) while the sphalerite Fe-ladder
+> keeps its lower-bound collapse (regression-pinned). New byte-identical knob `wall.gamma_host`
+> (js/59 + js/22 schema — basalt gave ZERO γ-dose; the Paraná ~134 Ma background is declared per-
+> scenario at 0.4; all 6 existing basalt scenarios unset → byte-identical). Narrator: route-aware
+> masking-sceptre voice (js/92i — the corrosion text would have LIED about the mechanism).
+> baseline-diff v223→v224: **amethyst_geode ONLY** (+quartz ×3). amethyst-geode.test.ts (8).
+> **▸ BOSS OBSERVATION MADE RENDER (same session): "the center point of the growth shifts
+> throughout the scepter."** Two riders: (1) O5c bands now SHARE THE BASE (nested cones, not
+> concentric shells — a wall-attached crystal only grows on free faces, so the shell centre migrates
+> tipward; `position.y = minY·(1−f)`); (2) sceptre caps are ECCENTRIC (`_makeSceptreHexPrism` cap+
+> apex displaced laterally 0.06-0.15 per-id, yaw-scattered — renewal nucleates on the best-fed side,
+> Sizaret 2006). Kernel-truth verified: band localY == minY·(1−f) exactly; apexX 0.097/0.127/0.146.
+> **NAMED, NOT BUILT:** flow-ALIGNED cap eccentricity (the wall already records `paleo_flow_accum` —
+> the V1b-flow speedometer; grep-the-tree, the data exists) + continuous axis-wander (the specimen's
+> stem wobble) — pairs with W-K's flow-DIRECTION asymmetry line. Also open: per-axis GROWTH gating
+> (stall prism/term independently) — census said not needed for v1 (capFrac is growth-timing-set).
 
 > ## 🔴🟢 NUCLEATION HOVER POPOVER (2026-07-08, boss ask) — SHIPPED (render-only)
 >

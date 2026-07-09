@@ -25,7 +25,17 @@ function grow_quartz(crystal, conditions, step) {
   // is radiation-hard; that branch is for zircon-like phases).
   {
     const wallComp = (conditions.wall && conditions.wall.composition) || '';
-    const radHost = wallComp === 'pegmatite' ? 1.0 : wallComp === 'phonolite' ? 0.5 : 0;
+    // radHost = the felsic host's γ-background intensity. pegmatite/phonolite are
+    // hardcoded (K-40 + U + Th of granitic/alkaline rock). A scenario can ALSO
+    // declare `wall.gamma_host` (0–1) for a host the table doesn't name — e.g. a
+    // flood-basalt geode, mafic and low-activity per step but irradiated over
+    // ~100+ Myr of residence (Ametista do Sul amethyst: Fe³⁺ colour centres from
+    // the Serra Geral basalt's own K-40/U/Th background over ~134 Ma; Gilg 2003,
+    // Proust & Fontan 2007). Default 0, so every existing scenario — including the
+    // 6 basalt-hosted ones that must NOT suddenly dose their quartz — is byte-
+    // identical; only a scenario that opts in by setting gamma_host accrues a dose.
+    const radHost = wallComp === 'pegmatite' ? 1.0 : wallComp === 'phonolite' ? 0.5
+      : ((conditions.wall && conditions.wall.gamma_host) || 0);
     if (radHost > 0 && conditions.fluid.Al > 1) {
       const dose = 0.006 * radHost * Math.min(conditions.fluid.Al / 10, 1.2);
       crystal.radiation_damage = Math.min((crystal.radiation_damage || 0) + dose, 0.7);

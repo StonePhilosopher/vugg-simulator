@@ -4194,6 +4194,90 @@
         "L'Heureux I. (1993) — Oscillatory zoning in crystal growth: a constitutional undercooling mechanism. Physical Review E 48: 4460-4469. Self-organization mechanism — the engine implements this implicitly through per-step rng-driven supersaturation noise.",
         "Heaney P.J. & Davis A.M. (1995) — Observation and origin of self-organized textures in agates. Science 269: 1562-1565. Adjacent literature for oscillatory chalcedony banding; cross-applies to barite tabs as a Mn-banded analog."
       ]
+    },
+
+    "amethyst_geode": {
+      "anchor": "Ametista do Sul, Rio Grande do Sul, Brazil — amethyst geodes in the Serra Geral Formation high-Ti basalt (Paraná Continental Flood Basalt Province, Lower Cretaceous ~134 Ma)",
+      "description": "A Brazilian amethyst geode. A basalt gas cavity fills inward — celadonite rim → agate → clear quartz → amethyst. Mid-growth a green celadonite film frosts the amethyst prism faces; the tip renews a wider cap THROUGH the film — a MASKING SCEPTRE (the mass-conserving twin of grimsel's corrosion sceptre). Goethite staining at the base.",
+      "expects_species": ["quartz"],
+      "duration_steps": 110,
+      "notes": [
+        "Anchor: Ametista do Sul, Rio Grande do Sul — the classic Brazilian amethyst-geode district, hosted in a ~40-50 m subhorizontal high-Ti basalt flow of the Serra Geral Formation (Paraná flood basalts, Lower Cretaceous ~134 Ma). Geode structure INWARD: celadonite rim → agate/chalcedony → colourless quartz → amethyst (Gilg et al. 2003).",
+        "Formation temperature is genuinely debated in the literature and the scenario bridges the two camps. Monophase liquid inclusions with low ice-melting depressions argue a LOW-T, low-salinity fluid (<100°C, probably <50°C — a sedimentary-brine / paleo-aquifer model; Gilg et al. 2003). Primary inclusions in the amethyst itself yield 152-238°C with a MAGMATIC silica source (Triz-quarry study, Geol. Mag. 144:731). The scenario nucleates amethyst in a warm early phase (~160°C) and finishes the cavity cool (~70°C via the declared cooling trend), with the celadonite film + goethite stain as the late low-T overprint.",
+        "AMETHYST COLOUR is Fe³⁺ substituting for Si⁴⁺, activated by a natural γ-dose (Rossman 1994). The Serra Geral basalt is mafic — low K/U/Th per unit time — but the geode has sat in it for ~134 Ma, so cumulative background dose tips the Fe centres to amethyst (NOT the granite-hosted morion of a Grimsel cleft). The sim expresses this via wall.gamma_host (js/59, added with this scenario): a modest 0.45 accrues radiation_damage into the amethyst band (>0.1) without reaching smoky (>0.3). No pegmatite/phonolite host is claimed — the scenario declares its own low, long background; every existing basalt scenario leaves gamma_host unset and is byte-identical.",
+        "THE MASKING SCEPTRE: the celadonite (green K-Fe mica-clay) that rims these geodes also settles on the growing amethyst as a film. A PRISM-dominant celadonite film (prism 0.45, term 0.08 — frosts the {10-10} prism, spares the tip) arrests the sides; the Silica Renewal Pulse then lifts σ over the dead-zone barrier σ*(φ_prism) and the tip renews a wider {10-11}-capped termination THROUGH the film — a masking-route sceptre (classifyQuartzSceptre js/45; Takahashi & Sunagawa 2004 ELO). grimsel stays the clean CORROSION-sceptre reference; this is the second natural route, the mass-conserving twin.",
+        "The late iron-oxide film is the diagnostic base staining — a termination/uniform film (prism 0.3, term 0.3), NOT a second sceptre; real Brazilian points are commonly goethite/hematite-stained at the matrix contact."
+      ],
+      "movements": [
+        {
+          // Warm amethyst nucleation (~160°C, the primary-inclusion high end) easing
+          // down to a cool finish (~70°C, toward the low-T monophase-inclusion camp).
+          "field": "temperature",
+          "startStep": 0,
+          "endStep": 110,
+          "base": 160,
+          "ops": [{ "kind": "trend", "amp": -90, "ease": true }]
+        }
+      ],
+      "initial": {
+        "temperature_C": 160.0,
+        // Shallow flood-basalt cavity, near-surface.
+        "pressure_kbar": 0.3,
+        "fluid": {
+          // SiO2=320: magmatic-sourced silica, σ(Qz) > 1 through the warm phase
+          // (Triz-quarry magmatic model); the Renewal Pulse (×1.8) then spikes it
+          // over the masked-prism barrier for the sceptre cap.
+          "SiO2": 320,
+          // Fe=35: mafic basalt leachate — the amethyst chromophore (Fe³⁺ centre,
+          // Rossman 1994). Sized so the growth-weighted quartz trace_Fe (fluid.Fe
+          // ×0.005, js/59) clears the recalibrated amethyst gate (>0.2) once the
+          // γ-dose lands radiation_damage in the amethyst band [0.1,0.3]. Kept below
+          // the level that would nucleate a free Fe-oxide phase (verified quartz-only).
+          "Fe": 35,
+          // Al=9: basalt feldspar leachate; >1 so the γ-dose accrues (js/59), and
+          // the smoky Al-centre precursor — kept modest so the colour is amethyst,
+          // not smoky, once radiation_damage lands in 0.1-0.3.
+          "Al": 9,
+          "Mn": 2,
+          // Low carbonate — a little late calcite ("skunk calcite") is documented
+          // but this scenario keeps the headline to quartz.
+          "Ca": 40,
+          "CO3": 20,
+          "Mg": 15,
+          "Na": 40,
+          "K": 30,
+          "Ti": 0.3,
+          // Near-neutral, low-salinity fluid (Gilg et al. 2003 ice-melt −4..+4).
+          "pH": 7.2,
+          "salinity": 4.0,
+          "O2": 0.4
+        },
+        "wall": {
+          "composition": "basalt",
+          // The Paraná flood-basalt γ-background over ~134 Ma (see notes). Sized so
+          // radiation_damage lands in the amethyst band [0.1,0.3] (not smoky >0.3)
+          // for the longest-lived crystal. Only this scenario sets it; default 0
+          // keeps the fleet byte-identical.
+          "gamma_host": 0.4,
+          "primary_bubbles": 1,
+          "secondary_bubbles": 2,
+          "shape_seed": 7,
+          // A cooled flood-basalt flow — no fresh magmatic reheats during geode fill.
+          "thermal_pulses": false
+        }
+      },
+      "events": [
+        { "step": 42, "type": "film_coat", "name": "Celadonite Film (prism frost)", "film": { "mineral": "celadonite", "prism": 0.45, "term": 0.08, "minerals": ["quartz"] }, "description": "Green celadonite clay frosts the amethyst prism faces — the masking film that arrests the sides while the tip stays free." },
+        { "step": 52, "type": "fluid_pulse", "name": "Silica Renewal Pulse", "description": "Fresh silica-charged fluid floods the geode — σ clears the masked prism and the tip renews a wider cap." },
+        { "step": 84, "type": "film_coat", "name": "Goethite Base Stain", "film": { "mineral": "iron oxide", "prism": 0.3, "term": 0.3, "minerals": ["quartz"] }, "description": "Goethite/hematite staining at the matrix contact — the diagnostic base stain (a uniform film, not a sceptre)." }
+      ],
+      "sources": [
+        "Gilg H.A., Morteani G., Kostitsyn Y., Preinfalk C., Gatter I., Strieder A.J. (2003) — Genesis of amethyst geodes in basaltic rocks of the Serra Geral Formation (Ametista do Sul, Rio Grande do Sul, Brazil): a fluid inclusion, REE, oxygen, carbon, and Sr isotope study on basalt, quartz, and calcite. Mineralium Deposita 38: 1009-1025. Geode structure celadonite→agate→quartz→amethyst; LOW-T (<100°C, prob <50°C) low-salinity sedimentary-brine model.",
+        "Amethyst geodes in the basaltic flow from Triz quarry at Ametista do Sul (Rio Grande do Sul, Brazil): magmatic source of silica for the amethyst crystallizations. Geological Magazine 144(4): 731. Primary amethyst fluid inclusions 152-238°C; magmatic silica source — the high-T camp the scenario's warm nucleation phase reflects.",
+        "Rossman G.R. (1994) — Colored varieties of the silica minerals. Reviews in Mineralogy 29: 433-468. Amethyst = Fe³⁺ colour centre activated by natural γ-irradiation (the same Rossman already cited by the js/59 smoky/morion Al-centre path).",
+        "Proust D. & Fontan F. (2007) — Brazilian amethyst-geode late-stage mineralogy (the same Proust & Fontan cited in minerals.json for the amethyst-pocket late euhedral / lepidocrocite-patina sequence).",
+        "Takahashi K. & Sunagawa I. (2004) — sceptre quartz by epitaxial-like overgrowth (ELO) after a masking film: the masking-sceptre mechanism, distinct from corrosion-then-regeneration."
+      ]
     }
 
   }

@@ -1179,9 +1179,22 @@ function _makeHourglassSeleniteBlade(bodyRGB: number[], sectorRGB: number[], flo
 // shoulder ring — the corrosion surface the cap overgrew, the defining sceptre
 // silhouette. Same unit box (y −0.5..+0.5) as _makeHexPrismWithPyramid so the
 // per-crystal transform scales it identically.
-function _makeSceptreHexPrism(capFrac: number): any {
+//
+// ECCENTRIC CAP (boss observation on the ametrine reference specimen, 2026-07-09:
+// "the center point of the growth shifts throughout the scepter"). A renewal cap
+// does NOT re-center on the stem axis — it nucleates where feeding is best (the
+// flow side; Sizaret 2006 growth-rate asymmetry maps paleo-flow), so real caps
+// sit visibly off-axis. `eccX` displaces the whole cap (ring + apex) laterally in
+// local +X — the per-crystal yaw then scatters the azimuth, so a druse shows caps
+// leaning every which way. Bounded ≤ rCap−rStem so the shoulder ring never turns
+// inside-out (the stem-top circle stays inside the cap footprint). v1 is a
+// deterministic per-crystal render read (the _crystalYaw idiom); the EARNED
+// version — offset along the LOCAL paleo-flow direction the wall already records
+// (wall.paleo_flow_accum, the V1b-flow speedometer) — is named in the backlog.
+function _makeSceptreHexPrism(capFrac: number, eccX?: number): any {
   const cf = Math.max(0.25, Math.min(0.7, capFrac || 0.5));
   const rStem = 0.30, rCap = 0.50;
+  const ecc = Math.max(0, Math.min(rCap - rStem, eccX || 0));   // cap-axis lateral offset
   const yBase = -0.50, yApex = 0.50;
   const yBound = yBase + (1 - cf);          // top of stem / base of cap
   const yShoulder = yBound + cf * 0.62;     // cap prism top / start of tip pyramid
@@ -1189,18 +1202,18 @@ function _makeSceptreHexPrism(capFrac: number): any {
   for (let i = 0; i < 6; i++) {
     const a0 = (i / 6) * Math.PI * 2, a1 = ((i + 1) / 6) * Math.PI * 2;
     const sx0 = Math.cos(a0) * rStem, sz0 = Math.sin(a0) * rStem, sx1 = Math.cos(a1) * rStem, sz1 = Math.sin(a1) * rStem;
-    const cx0 = Math.cos(a0) * rCap, cz0 = Math.sin(a0) * rCap, cx1 = Math.cos(a1) * rCap, cz1 = Math.sin(a1) * rCap;
+    const cx0 = ecc + Math.cos(a0) * rCap, cz0 = Math.sin(a0) * rCap, cx1 = ecc + Math.cos(a1) * rCap, cz1 = Math.sin(a1) * rCap;
     // stem side face
     _pushTri(positions, sx0, yBase, sz0, sx1, yBase, sz1, sx1, yBound, sz1);
     _pushTri(positions, sx0, yBase, sz0, sx1, yBound, sz1, sx0, yBound, sz0);
-    // shoulder ring (stem radius → cap radius) — the resorbed corrosion surface
+    // shoulder ring (stem radius → displaced cap radius) — the overgrown boundary
     _pushTri(positions, sx0, yBound, sz0, sx1, yBound, sz1, cx1, yBound, cz1);
     _pushTri(positions, sx0, yBound, sz0, cx1, yBound, cz1, cx0, yBound, cz0);
     // cap side face
     _pushTri(positions, cx0, yBound, cz0, cx1, yBound, cz1, cx1, yShoulder, cz1);
     _pushTri(positions, cx0, yBound, cz0, cx1, yShoulder, cz1, cx0, yShoulder, cz0);
-    // cap pyramid tip
-    _pushTri(positions, cx0, yShoulder, cz0, cx1, yShoulder, cz1, 0, yApex, 0);
+    // cap pyramid tip — apex follows the displaced cap axis
+    _pushTri(positions, cx0, yShoulder, cz0, cx1, yShoulder, cz1, ecc, yApex, 0);
   }
   const geom = new THREE.BufferGeometry();
   geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -4185,6 +4198,19 @@ function _o5EmitMaskedBands(hostMesh: any, crystal: any): void {
     });
     const bandMesh = new THREE.Mesh(hostMesh.geometry, bandMat);
     bandMesh.scale.setScalar(f);
+    // PHANTOMS SHARE THE BASE (boss observation on the ametrine reference
+    // specimen, 2026-07-09: "the center point of the growth shifts throughout
+    // the scepter"). A wall-attached crystal grows on its FREE faces only — the
+    // attached end is dead — so the geometric centre of each successive shell
+    // migrates tipward and the buried growth states stack like nested cones
+    // sharing the base, NOT concentric shells. Anchor the band's base to the
+    // host's base (bounding-box min.y in the host's local space): after a
+    // uniform scale f the child's base sits at minY·f, so offsetting by
+    // minY·(1−f) re-pins it to minY. The concentric first cut put the horizon
+    // floating mid-crystal — the idealization the specimen contradicts.
+    if (!hostMesh.geometry.boundingBox) hostMesh.geometry.computeBoundingBox();
+    const hbb = hostMesh.geometry.boundingBox;
+    bandMesh.position.y = (hbb ? hbb.min.y : -0.5) * (1 - f);
     bandMesh.renderOrder = (hostMesh.renderOrder || 0) + 1;
     bandMesh.raycast = function () {};
     bandMesh.userData = { o5Band: true, crystal_id: crystal.crystal_id, filmMineral: band.mineral };
@@ -4579,7 +4605,13 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     if (!geom && crystal.mineral === 'quartz' && crystal._sceptre && !crystal._gwindel && token === 'prism'
         && (replayStep == null || replayStep >= crystal._sceptre.boundaryStep)) {
       const cf = Math.round((crystal._sceptre.capFrac || 0.5) * 20) / 20;  // quantize for cache reuse
-      if (crystal._sceptreGeomCf !== cf) { crystal._sceptreGeom = _makeSceptreHexPrism(cf); crystal._sceptreGeomCf = cf; }
+      // Eccentric cap (growth-centre migration — see _makeSceptreHexPrism): a
+      // deterministic per-id lateral offset in 0.06..0.15 (never dead-coaxial —
+      // real caps aren't), azimuth-scattered by the per-crystal yaw. Pure fn of
+      // the id, so the cf-keyed per-crystal cache stays valid.
+      const eccH = Math.abs(Math.sin((crystal.crystal_id || 1) * 12.9898)) % 1;
+      const ecc = 0.06 + 0.09 * eccH;
+      if (crystal._sceptreGeomCf !== cf) { crystal._sceptreGeom = _makeSceptreHexPrism(cf, ecc); crystal._sceptreGeomCf = cf; }
       geom = crystal._sceptreGeom;
     }
     // Saddle (baroque) DOLOMITE curved-face rhombohedron (deformation arc
