@@ -508,26 +508,69 @@ function halideTerraceBands(crystal: any, uptoStep: any) {
 // growing cap and the LAST pass (the saved state) carries the final geometry.
 const QZ_SCEPTRE_STEM_MIN = 200;  // µm (timeScale-applied) — a real gen-1 stem
 const QZ_SCEPTRE_CAP_MIN = 200;   // µm — a real gen-2 cap before we call it a sceptre
+// Sum the POSITIVE zone thicknesses in [lo, hi) — the grown length of a stem or
+// cap (dissolution/hiatus zones contribute no extent). Shared by both routes.
+function _qzSumPositive(zones: any[], lo: number, hi: number): number {
+  let s = 0;
+  for (let k = lo; k < hi; k++) { const t = zones[k].thickness_um || 0; if (t > 0) s += t; }
+  return s;
+}
+// Tag a crystal as a sceptre: cap = the grown length from capStart onward, stem
+// = everything positive before the boundary. capFrac is the gen-2 share of grown
+// length — the RENDER (js/99i _makeSceptreHexPrism) widens the top by capFrac, so
+// the sim never grows a wide head; the classifier decides it. `route` records
+// which mechanism made the boundary ('corrosion' = resorbed surface, grimsel's
+// clean reference; 'masking' = a prism film frosted the sides and the tip renewed
+// wider — the ELO twin, mass-conserving).
+function _qzTagSceptre(c: any, zones: any[], capStart: number, boundaryStep: any,
+                       stem: number, cap: number, route: string): void {
+  const capFrac = cap / (stem + cap);
+  c._sceptre = { boundaryStep, stemUm: stem, capUm: cap, capFrac, route };
+  c.habit = 'scepter_overgrowth';
+  for (let k = capStart; k < zones.length; k++) if ((zones[k].thickness_um || 0) > 0) zones[k].morph_sceptre = 'cap';
+}
 function classifyQuartzSceptre(sim: any) {
   for (const c of sim.crystals) {
     if (!c || c.mineral !== 'quartz' || !c.zones || c.zones.length < 4) continue;
     const zones = c.zones;
     let i = 0;
     while (i < zones.length) {
-      if ((zones[i].thickness_um || 0) < 0) {
+      const t = zones[i].thickness_um || 0;
+      // ROUTE A — CORROSION (the original trigger, unchanged): a run of NEGATIVE
+      // zones = a resorbed surface (grimsel's SEAL; grow_quartz dissolves at σ<1).
+      // Boundary = the resorption surface; stem before, cap after the run.
+      if (t < 0) {
         const start = i;
         while (i < zones.length && (zones[i].thickness_um || 0) < 0) i++;
         const endIdx = i - 1;
-        let stem = 0; for (let k = 0; k < start; k++) { const t = zones[k].thickness_um || 0; if (t > 0) stem += t; }
-        let cap = 0; for (let k = endIdx + 1; k < zones.length; k++) { const t = zones[k].thickness_um || 0; if (t > 0) cap += t; }
+        const stem = _qzSumPositive(zones, 0, start);
+        const cap = _qzSumPositive(zones, endIdx + 1, zones.length);
         if (stem >= QZ_SCEPTRE_STEM_MIN && cap >= QZ_SCEPTRE_CAP_MIN) {
-          const capFrac = cap / (stem + cap);   // gen-2 share of grown length — render widens the top capFrac
-          c._sceptre = { boundaryStep: zones[endIdx].step, stemUm: stem, capUm: cap, capFrac };
-          c.habit = 'scepter_overgrowth';
-          for (let k = endIdx + 1; k < zones.length; k++) if ((zones[k].thickness_um || 0) > 0) zones[k].morph_sceptre = 'cap';
+          _qzTagSceptre(c, zones, endIdx + 1, zones[endIdx].step, stem, cap, 'corrosion');
           break;   // first qualifying phantom boundary defines the sceptre
         }
-      } else i++;
+        continue;  // i already past the negative run
+      }
+      // ROUTE B — MASKING (W-F O5, the second natural sceptre route): a PRISM-
+      // dominant masked_horizon (O5b breakthrough). A foreign film frosted the
+      // prism faces (phi_prism > phi_term); the arrested crystal then renewed a
+      // wider termination through the film — Takahashi & Sunagawa 2004's ELO,
+      // the mass-conserving twin of corrosion ("dusted and buried" vs "etched and
+      // healed"). The masked_horizon zone is POSITIVE growth (the first renewed
+      // layer), so it is the BASE of the cap: stem before it, cap from it onward.
+      // A termination / uniform film (phi_prism ≤ phi_term — EVERY coats_front
+      // film today, js/85c) is NOT a sceptre: it is a buried horizon (the elmwood
+      // snowball). This prism-dominance gate is what keeps the fleet byte-identical
+      // (census: no current quartz carries a prism-dominant film).
+      if (zones[i].masked_horizon && (zones[i].masked_phi_prism || 0) > (zones[i].masked_phi_term || 0)) {
+        const stem = _qzSumPositive(zones, 0, i);
+        const cap = _qzSumPositive(zones, i, zones.length);
+        if (stem >= QZ_SCEPTRE_STEM_MIN && cap >= QZ_SCEPTRE_CAP_MIN) {
+          _qzTagSceptre(c, zones, i, zones[i].step, stem, cap, 'masking');
+          break;
+        }
+      }
+      i++;
     }
   }
 }

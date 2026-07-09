@@ -486,6 +486,17 @@ class VugSimulator {
               // Breakthrough: growth resumes through the film — a phantom horizon.
               zone.masked_horizon = true;
               zone.film_mineral = film.mineral;
+              // W-F O5 masking SCEPTRE — record which AXIS the film masked. The
+              // classifier (js/45 classifyQuartzSceptre) reads this to tell a
+              // PRISM-dominant mask (sides frosted, tip renews wider = a sceptre,
+              // the Takahashi–Sunagawa ELO route) from a termination / uniform
+              // film (just a buried horizon, the elmwood snowball). O4b's
+              // coats_front films are termination-only (phi_prism stays 0; js/85c),
+              // so prism-dominance reads TRUE only for a deliberate prism `film:`
+              // directive — which is why generalizing the classifier is byte-
+              // identical for the current fleet (census: tools/sceptre-mask-census.mjs).
+              zone.masked_phi_prism = film.phi_prism || 0;
+              zone.masked_phi_term = film.phi_term || 0;
               crystal._film = null;
             }
           }
