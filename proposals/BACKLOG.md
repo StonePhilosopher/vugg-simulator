@@ -2,6 +2,38 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🧩 DOOR 3 — MENU AUTO-GENERATION (§10.5 t2-3, 2026-07-10, the eleventh hand's third door) — SHIPPED, 1 commit (`892905f`, render-only)
+>
+> Tranche 1 (2026-07-07) taught the legends quick-play dropdown to derive from SCENARIOS;
+> the picker panel, the Zen dropdown, and the Begin tutorial buttons kept hand-written
+> labels. This walks the rest: all three generate from a new **menu_layout** block in
+> data/scenarios.json5 (the js/94 populators, called at scenarios-load-complete beside
+> t1's). The static HTML now ships EMPTY containers (#scenarios-panel-groups,
+> #idle-scenario, #begin-tutorial-buttons). **The v116 chronic-bug class — three
+> hand-synced HTML surfaces that once let 15 scenarios ship INVISIBLE — is CLOSED:**
+> adding a scenario is one menu_layout edit, guard-enforced.
+>
+> **Tool-driven, provably faithful:** a one-shot extractor parsed the CURRENT menus into
+> the data (entities decoded, order preserved) — no hand-transcription. Byte-identical
+> closed from BOTH ends: `menu_layout === original index.html@HEAD` (43 panel + 37 idle +
+> 5 begin, verbatim text + exact order, re-parsed HEAD deep-compared) AND `generated DOM
+> === MENU_LAYOUT` (live browser, all 85 entries element-for-element) ⟹ generated ===
+> original. Panels render + laid out + handlers resolve + zero console errors (the
+> screenshot timed out on the WebGL canvas — verified via eval instead). **No SIM change**
+> (SIM_VERSION untouched, seed-42 fleet unmoved). CI 174 files / 2414 tests green.
+>
+> **Design:** ONE ordered menu_layout block, not per-scenario menu objects — the picker
+> order, the idle order, and the json5 key order are three DIFFERENT bespoke arrangements
+> (picker groups by interest; idle is Brazilian-amethyst-after-gem, not alphabetical; keys
+> are load order), so byte-identical needs explicit per-surface ordering in one readable
+> place (and one insertion, not 39 scattered edits). Full display strings stored (not split
+> emoji/label/blurb — verbatim is byte-identical-safe; decomposition is a cheap follow-up if
+> a bold-label/muted-blurb style ever lands). The guard test migrated HTML-parse →
+> menu_layout-validation (18 tests: coverage · tutorial policy · no-stale · render invariants
+> · populator wiring). **Follow-up:** the vugg-add-scenario skill §10.5's "three HTML
+> surfaces to sync" step should be rewritten to "add to menu_layout" — the long-term TODO it
+> named is now DONE.
+
 > ## 🔦 DOOR 2 — UV FLUORESCENCE SCALE AUDIT (2026-07-09, the eleventh hand's second door) — SHIPPED, 3 commits (`e81ce83` census · `7c4ded5` 98c render · `c954cf2` SIM 225)
 >
 > The seed finding generalized exactly as scoped — and further: BOTH voices (98c bar,
@@ -535,9 +567,10 @@ Living list of open work items, captured from session conversations so context s
 > · **Door 2 ✅ WALKED (2026-07-09, 3 commits `e81ce83`/`7c4ded5`/`c954cf2` SIM 225 — see
 > the 🔦 DOOR 2 banner at top: the two voices reconciled to the engines' recorded ladders;
 > the tutorial broth made honest; adamite + uraninite inversions; the record completed
-> itself)** · Door 3 §10.5 t2-3 (~90
-> curated strings verbatim → menu.group/label/blurb + tutorial.number/menu_label; acceptance =
-> byte-identical rendered menus via before/after DOM snapshot) · **Door 4 (boss-sequenced
+> itself)** · **Door 3 ✅ WALKED (2026-07-10, `892905f`, render-only — see the 🧩 DOOR 3
+> banner at top: the picker panel + zen dropdown + Begin tutorials all generate from a
+> menu_layout block; byte-identical proven both ends; the v116 hidden-scenario bug class
+> closed — ONLY Door 4 remains, boss-sequenced last)** · **Door 4 (boss-sequenced
 > LAST, after the handoff's other arcs): THE FLEET SIGNATURE AUDIT — re-evaluate all 38
 > scenarios through the tail-law: expects_species checks PRESENCE, nothing checks STATURE
 > (shigar read green while its namesake was absent at showpiece scale); signature
