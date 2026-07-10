@@ -592,6 +592,7 @@ async function _loadScenariosJSON5() {
       for (const [id, spec] of entries) {
         SCENARIOS[id] = _buildScenarioFromSpec(id, spec);
       }
+      MENU_LAYOUT = doc.menu_layout || null;
       _scenariosJson5Ready = true;
       console.info(`[scenarios] loaded ${entries.length} from ${p}`);
       // §10.5 tranche 1: the legends quick-play dropdown derives from
@@ -599,6 +600,15 @@ async function _loadScenariosJSON5() {
       // static <select> ships empty; see _populateScenarioDropdowns
       // in 94-ui-menu.ts).
       if (typeof _populateScenarioDropdowns === 'function') _populateScenarioDropdowns();
+      // §10.5 tranches 2-3 (Door 3, 2026-07-10): the Scenarios picker
+      // panel, the Zen-mode dropdown, and the Begin tutorial buttons
+      // generate from MENU_LAYOUT (the menu_layout block above). Their
+      // former hardcoded HTML now ships as empty containers. See the
+      // populators in 94-ui-menu.ts. Ordered/labelled verbatim from the
+      // old static menus — a byte-identical migration.
+      if (typeof _populateScenariosPanel === 'function') _populateScenariosPanel();
+      if (typeof _populateIdleScenarioDropdown === 'function') _populateIdleScenarioDropdown();
+      if (typeof _populateBeginTutorials === 'function') _populateBeginTutorials();
       return;
     } catch (e) {
       /* try next */
@@ -617,6 +627,13 @@ async function _loadScenariosJSON5() {
 // button below rather than added here (pre-existing intentional drift
 // from the Python side, where vugg.SCENARIOS["random"] = scenario_random).
 let SCENARIOS = {};
+
+// The menu_layout block from data/scenarios.json5 (Door 3 / §10.5 t2-3):
+// the Scenarios picker panel, Zen dropdown, and Begin tutorial buttons as
+// data. Populated by _loadScenariosJSON5 above; consumed by the js/94
+// populators. `null` until the fetch completes (offline boot leaves the
+// static empty containers, same failure mode as the JSON5-only scenarios).
+let MENU_LAYOUT: any = null;
 
 // Kick off the JSON5 fetch. Failure logs a warning (Phase 1 scenarios won't
 // be available this session) but doesn't break the rest of the runtime.
