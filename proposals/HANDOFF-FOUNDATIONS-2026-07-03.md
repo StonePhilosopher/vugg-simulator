@@ -1706,3 +1706,112 @@ imperfection has an address now: the biography lives not only in the flaws the c
 but in WHERE it keeps them — off-center, low, toward the feed.
 
 — the builder, thirteenth hand: the center learned to wander · 2026-07-09
+
+## KEYSTONE — the fourteenth hand: the lamp learned to tell the truth (2026-07-09)
+
+The thirteenth hand's dream named the citrine half of the boss's ametrine and prescribed it a
+cure: a heating beat the colour rules already name, sector-split from the amethyst. The boss
+read that prescription and corrected it before a line was written — *"you would need more than
+just adding citrine, you would need localized heat. right now heat is uniform through the
+vugg."* He was right, and the correction reframed the whole thing: the citrine half is not a
+colour I forgot to turn on, it is a FIELD the sim does not vary yet. So the session's first act
+was to NOT build it — to convert a dreamed colour-patch into a named foundation stone
+(`2b9cebd`, the note) — and then to spend the day where the work actually was: **Door 2, the UV scale
+audit**, the eleventh hand's second approved door. It ends where the best audits do: the sim
+had been telling the truth in one voice and lying in two, and the fix was to make the two read
+what the one already knew.
+
+The arc in one breath. The census (`e81ce83`) pointed the real `zoneFluorescence` at the seed-42
+fleet and found both UV voices — the bar and the narrator — reading broth-scale gates against
+zone-scale traces, dead or always-on, and CONTRADICTING EACH OTHER on 27 crystals (narrator
+'unknown' 819 of 1098). The calcite gate the eleventh hand "fixed" glowed one zone in 1370 and
+false-quenched Elmwood itself. **The bar** (`7c4ded5`, render-only, SIM 224 untouched) was
+rewritten to mirror the growth engines' OWN recorded ladders — js/52's four calcite tiers,
+js/59's willemite ladder, js/53's trace_Y with Eu²⁺ named in its own comment. **The narrator +
+the record** (`c954cf2`, SIM 225): predict_fluorescence rewritten to the same gates so the two
+voices agree by construction; the tutorial broth made honest (Fe 10→60 — the payoff bar now
+renders 347 px dark, one brilliant boundary zone, then the bright rim, and the taught story is
+chemically true at last); and three engines that printed a trace number into a note and threw
+the field away — ruby, sapphire, emerald's Cr, feldspar's Pb, adamite's Cu — made to record
+what they narrate. Two gates were not sick but BACKWARDS: adamite, whose activator is trace
+uranyl and whose copper QUENCHES, shipped "no Cu → NON-FLUORESCENT"; uraninite, canon-dark,
+faked uranyl green on 584 zones. The literature caught both. Movement: 1/39, the tutorial's
+honest new siderite; forty-plus opened sources; cold-CI 174 files / 2403 tests green.
+
+### The marks
+
+- **A colour can be a field in disguise.** The prior stone dreamed the citrine half as a beat
+  the colour rules "already name" — and the boss saw in one sentence that no colour trigger
+  reaches it, because heat in this sim varies in TIME (the movements move every ring in
+  lockstep) and never in SPACE. The ametrine's split is spatial; you cannot paint it, you must
+  differentiate the thermal field. Before promising the cheap revival of a dormant path, ask
+  what DIMENSION the phenomenon needs — sometimes the principal on the debt is a whole new axis,
+  not a recalibrated trigger. (And grep-the-tree still paid: the receptacles wait — per-voxel T
+  stored-unconsumed since v158, the js/20d resolvers that already deliver per-cell T, the zones
+  that already record their own growth temperature. The field is three-quarters wired; only its
+  source and its consumer are missing.)
+- **The physics was already written — in prose.** This is grep-the-tree's deepest landing: not
+  "the data exists" but "the CLASSIFICATION exists, narrated into the zone notes by hands who
+  wrote real science there, and both numeric consumers ignored it and disagreed with each
+  other." The engines knew Elmwood glows weak-orange and Deccan quenches dark; they said so, in
+  the note string, and the bar rendered every zone inert regardless. An audit is not always an
+  invention. Often it is making the loud voices read what the quiet one already wrote — three
+  voices, one physics.
+- **The calibration anchor can be the liar.** No gate on (Fe, Mn) could darken tutorial_mn_calcite's
+  early stripes while letting Elmwood glow, because the teaching broth was chemically BRIGHTER
+  than the famous locality it teaches toward. Every instinct says fix the gate; the census
+  proved the gate innocent and the broth impossible. When a taught story fights a real rock,
+  suspect the scenario's chemistry before you touch the rule — the anchor you calibrate against
+  can be the thing that is wrong.
+- **A literature pass catches what a census cannot.** The census could see a gate was dead or
+  always-on; only opening the field guides showed two were BACKWARDS. Adamite's engine note read
+  "no Cu → NON-FLUORESCENT" — precisely inverted, and shipping for months; uraninite's always-on
+  green faked the exact physics its own spec entry corrects. A census measures what the code
+  does; the science says what it SHOULD do, and the gap between them is where the inversions
+  hide. Follow the science means opening the papers — forty-plus, one capped agent for the
+  judgment, the load-bearing numbers spot-verified, because subagents fabricate citations too.
+- **The record must match its own narration.** Ruby said "Cr³⁺ 4.5 ppm" in its note and recorded
+  no chromium at all; sapphire, emerald, feldspar the same. A crystal that describes a trace it
+  does not carry is a rock lying to the instrument that will one day read it back. Grep for the
+  partition assignment right above the GrowthZone return before you declare a datum absent — the
+  compute-and-drop is the reading-the-wrong-source law wearing the writer's coat instead of the
+  reader's.
+
+### Diagenesis
+
+Named, and owed. The eleventh hand's calcite recalibration (`223a96b`) was both the template and
+the honest cautionary tale — it named the disease and fixed one gate, and that gate turned out
+so tight it false-quenched the one locality it most wanted to light. The seed found the
+sickness; this hand found it fleet-wide. The sixth and seventh hands' probe/census idiom turned
+"the gates are probably broken" into a per-crystal table in one run. `_harness.mjs`'s
+extraExports let the census pull the REAL `zoneFluorescence` out of the bundle instead of a
+replica — the replica-drift trap the amethyst probe had already taught the thirteenth hand, paid
+forward. The engine notes themselves — js/52's v103 ladder (Rakovan 2002), js/59's willemite,
+js/53's trace_Y — are prior hands writing real luminescence physics into prose where I only had
+to make the consumers read it. The fourth hand's tutorial rework gave the broth retune a
+scenario built to be driven and a UV bar built to be its payoff. The strip archive and
+baseline-diff proved the movement was 1/39 and no more. And the SIM-bump-is-two-commits law let
+the bar ship byte-identical while the narrator — whose fluorescence lines the boss reads as the
+paper — moved honestly under its own version. Borrowed, all of it.
+
+### The dream, sixteenth telling
+
+The citrine half has an ADDRESS now, and it is not a colour. It is a thermal field with three
+missing pieces the note already names: a SOURCE of spatial ΔT (a feeder-spot warmed, a wall
+one-sidedly baked, a dike contact), the differentiation of `ring_temperatures` through the
+js/20d resolvers that already stand ready, and the episode→colour split so the renewed head
+colours by the beat that grew it while the buried amethyst keeps its purple. One crystal, two
+thermal histories, divided by geometry — the thirteenth hand's "two chromophore histories" with
+the mechanism finally underneath it. Nearer doors: the calcite Pb SENSITIZER (Schulman 1947 —
+the Franklin SW glow needs lead with the manganese, and the fleet's MVT-adjacent calcites carry
+Pb already, one datum and one tenant away); and the BIOGENIC organics field, which lights
+aragonite's cream and — this is the one to want — the 1927 Wiesloch UV HOURGLASS, a fluorescing
+figure sector-zoned into clay-grown selenite that no daylight reveals, whose recording SIM 211
+already made when it carved the hourglass sediment sectors. A crystal that glows a shape only
+the lamp can read is the ontogeny arc's whole thesis in one specimen: the biography is written
+where you cannot see it without the right instrument. The eleventh hand dreamed promises as
+pins; the fluorescence bar is now one of the questions the inverse solver will ask a label-less
+rock, and it knows the answer because the crystal — its record matched to its narration at last
+— wrote it down.
+
+— the builder, fourteenth hand: the lamp learned to tell the truth · 2026-07-09
