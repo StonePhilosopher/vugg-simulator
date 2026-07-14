@@ -11880,5 +11880,21 @@
 //        2020 10:597, Minerals 2019 9:105 + Crystals 2025 15:385 (emerald
 //        Fe populations), Minerals 2021 11:1215 (willemite), Schulman 1947
 //        (calcite Pb sensitizer), Cannon patent US2,346,661 (scheelite Mo).
-const SIM_VERSION = 225;
+// v226: O5 SPLITTING — the VOLUME-NEUTRAL SIM effect (the heavy debt). A split
+//        crystal's AXIAL extent now compacts by splitGrowthMult(_split.index) at
+//        CONSTANT volume: add_zone (js/27) shortens c_length_mm and re-derives
+//        a_width_mm = sqrt(6V/(pi c)) from the UNCHANGED _volume_mm3, so a_width
+//        WIDENS to conserve material — the needle collapsing to the sphere's
+//        radius. O5_VOLNEUTRAL_ENABLED flipped true (js/44c); js/85 growth loop
+//        passes the multiplier. _volume_mm3 (→ get_vug_fill → nucleation) is
+//        untouched, so the volume→fill→nucleation cascade that flooded S-b
+//        (80 minerals) does NOT fire. c_length_mm DOES feed O3 selection +
+//        enclosure, so the measured drift is a WHISKER: 7 non-split minerals at
+//        ≤0.1% max_um in ONE competitive scenario (sunnyside) + siderite
+//        (split-able) 1→3 crystals + heulandite/rhodochrosite max_um. Pre-
+//        registered by tools/o5-volneutral-census.mjs (boss "measure first"
+//        2026-07-14); constant-volume compaction was the key that turned the
+//        keystone's feared flood into bounded ripple. Splitting now costs LENGTH
+//        (shorter c_length in render/narration/inventory/score) at constant mass.
+const SIM_VERSION = 226;
 

@@ -72,7 +72,7 @@ function setO5SplittingEnabled(v: boolean): void { O5_SPLITTING_ENABLED = !!v; }
 // (js/26), so compacting it can cascade to NON-split minerals. The sixteenth
 // keystone's "~8 sites / census-bounded" was optimism; this flag measures the
 // truth before we choose honest-physics vs a display-only decouple.
-let O5_VOLNEUTRAL_ENABLED = false;
+let O5_VOLNEUTRAL_ENABLED = true;   // v226: the heavy debt — split crystals cost LENGTH at constant volume
 function setO5VolNeutral(v: boolean): void { O5_VOLNEUTRAL_ENABLED = !!v; }
 
 // The two route gains + the B-route spherulitic onset. CALIBRATED in S-b by the
