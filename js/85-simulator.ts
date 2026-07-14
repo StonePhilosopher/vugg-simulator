@@ -620,7 +620,13 @@ class VugSimulator {
         // splitAbility 0 (quartz/feldspar) → no _split → untouched everywhere (the
         // structure-specificity invariant).
         accrueSplitIndex(crystal, this.conditions, zone.thickness_um);
-        crystal.add_zone(zone);
+        // W-K VOL-NEUTRAL (measurement): when O5_VOLNEUTRAL_ENABLED, a split
+        // crystal's axial extent is compacted by splitGrowthMult(index) at
+        // CONSTANT volume (add_zone re-derives a_width to conserve _volume_mm3).
+        // extentMult 1 for non-split OR when the flag is off → byte-identical.
+        const extentMult = (O5_VOLNEUTRAL_ENABLED && crystal._split)
+          ? splitGrowthMult(crystal._split.index) : 1;
+        crystal.add_zone(zone, extentMult);
         // Re-check fill after each crystal grows to prevent >100% overshoot
         if (zone.thickness_um > 0) {
           currentFill = openSystem ? 0 : this.get_vug_fill();

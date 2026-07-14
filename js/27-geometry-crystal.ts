@@ -296,7 +296,7 @@ class Crystal {
     this.vug_diameter_mm = opts.vug_diameter_mm ?? 0;
   }
 
-  add_zone(zone) {
+  add_zone(zone, extentMult = 1) {
     // Apply time compression — more geological time per step = thicker zones
     zone.thickness_um *= timeScale;
     zone.growth_rate *= timeScale;
@@ -347,6 +347,14 @@ class Crystal {
       this._volume_mm3 *= scale * scale * scale;
     }
     this.c_length_mm = cNew_mm;
+    // W-K VOL-NEUTRAL (measurement): compact the AXIAL extent at CONSTANT volume.
+    // js/85 passes extentMult = splitGrowthMult(_split.index) for a split crystal
+    // when O5_VOLNEUTRAL_ENABLED (else 1 → this branch is skipped, byte-identical).
+    // _volume_mm3 was integrated ABOVE at the uncompacted c, so it — and thus
+    // get_vug_fill / nucleation — is untouched; a_width_mm (derived below from the
+    // SAME _volume_mm3 and the now-shorter c) auto-WIDENS to conserve it: the
+    // needle collapsing to the sphere's radius, same material.
+    if (extentMult !== 1) this.c_length_mm *= extentMult;
     // a_width_mm: derive from the integrated _volume_mm3 so the renderer
     // sees a STABLE width matching the crystal's growth history, not the
     // latest habit's possibly-oscillating ratio. Math: V = (π/6) × a² × c

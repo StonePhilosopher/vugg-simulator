@@ -61,6 +61,20 @@
 let O5_SPLITTING_ENABLED = true;
 function setO5SplittingEnabled(v: boolean): void { O5_SPLITTING_ENABLED = !!v; }
 
+// W-K VOL-NEUTRAL (the heavy debt — MEASUREMENT phase). When true, a split
+// crystal's c_length_mm is compacted by splitGrowthMult(index) at CONSTANT
+// _volume_mm3 (add_zone re-derives a_width from the same volume, so a_width
+// auto-WIDENS to conserve it — the needle→sphere at same material). Default
+// FALSE: the js/85 growth loop passes extentMult 1 → add_zone is byte-identical,
+// the whole fleet unchanged. tools/o5-volneutral-census.mjs toggles this at
+// RUNTIME (live binding) to MEASURE the blast radius: c_length_mm feeds O3
+// geometric-selection (js/44a, js/85b) + enclosure (js/85c) + paragenesis
+// (js/26), so compacting it can cascade to NON-split minerals. The sixteenth
+// keystone's "~8 sites / census-bounded" was optimism; this flag measures the
+// truth before we choose honest-physics vs a display-only decouple.
+let O5_VOLNEUTRAL_ENABLED = false;
+function setO5VolNeutral(v: boolean): void { O5_VOLNEUTRAL_ENABLED = !!v; }
+
 // The two route gains + the B-route spherulitic onset. CALIBRATED in S-b by the
 // 4a.7 recipe (tools/o5-split-census.mjs σ-spread instrument): SPLIT_K_A/B are
 // tuned low so a realistic impurity load (A) and a far-from-equilibrium pulse (B)
