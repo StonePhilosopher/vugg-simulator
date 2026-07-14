@@ -1926,3 +1926,90 @@ and left a map for the next earning. The sim grows more like the rock each time 
 made to justify its shape.
 
 — the builder, fifteenth hand: the painted learned to earn its shape · 2026-07-10
+
+---
+
+## KEYSTONE — the sixteenth hand: the ladder learned its shape, and where a bump becomes a flood (2026-07-11)
+
+The fifteenth hand left the splitting ladder drawn but not cut — a `_split` index recorded and
+unread, its census certifying which crystals cross the impurity or far-from-equilibrium bar. This
+hand cut it: the ladder now EARNS its shape. A Deccan stilbite renders the wheat-sheaf it was only
+ever *called*; an aragonite flos-ferri closes into a radial sphere; gypsum bends into its fishtail —
+each drawn from the index the crystal accrued as it grew, not from a keyword. It shipped **render-
+only, byte-identical (0/39)** — and the reason it shipped that way is the mark that matters most.
+
+**The arc in one breath.** S-a first (`fbac070`, first light): the two-route index recorded unread,
+census + noncollision certificate, byte-identical. Then S-b, in two acts. The FIRST act was
+calibration, and the census earned its keep three times over — it caught, in order, a global-threshold
+blowup (the σ scale is per-mineral), a *science bug* (the scalar ability model let high-σ gypsum take
+the spherulite route — 18 false spherulites, when gypsum only ever autodeforms), and a growth-
+integration gap (the fibrous zeolites are radial by STRUCTURE, not by σ). Following the science
+reshaped the model into per-route abilities `{a,b}`, a per-mineral onset anchored to each mineral's
+own σ_crit with a bounded far-from-eq drive, and a growth-ramped structural-radial floor. The result
+is a ladder that reads right: curved 18 / split 51 / sheaf 30 / spherulite 12, split-able roster only,
+quartz never, certificate PASS. The SECOND act was the wall — and the lesson.
+
+### The marks
+
+1. **The census is the instrument that catches your SCIENCE, not just your counts.** The scalar
+   `splitAbility` looked fine until the rung×mineral matrix showed 18 gypsum spherulites. Gypsum
+   autodeforms; it does not spherulite. A census that only counted "who splits" would have missed it;
+   one that showed *which rung, which mineral* made the wrongness impossible to ignore. Build the
+   instrument that shows the shape of the answer, not just its size.
+
+2. **The sim's σ scale is per-MINERAL — a global threshold is a lie.** Dolomite's σ_crit is 10,
+   calcite's 1.5, and σ tails to ~1e5. The masking half already knew this (σ*₀ = per-mineral σ_crit);
+   the splitting half had to relearn it. Anchor the far-from-eq onset to each mineral's OWN threshold,
+   and BOUND the drive so an outlier saturates the term instead of pinning the index. The fleet's
+   heterogeneity is not noise to average over — it is the thing to key on.
+
+3. **Some habits are structural, not driven.** The natrolite-group zeolites are fibrous because of
+   their chain structure, at every supersaturation — they never reach the far-from-eq band in the sim,
+   yet the sheaf/sphere IS their signature. A σ-only B-route left them dark. The growth-ramped floor
+   (a matured crystal sits at its structural rung; a speck does not) is the honest fix. Not every form
+   is earned from conditions; some are owed to the lattice.
+
+4. **A SIM bump through SIZE is a FLOOD, not a wire.** The boss chose a real sim response over render-
+   only, and the faithful instinct — a splitting crystal is more compact, so throttle its axial growth
+   — was RIGHT physics and WRONG plumbing. Shrinking a split crystal shrank its volume, which shifted
+   vugFill, which moved nucleation and downstream growth: the baseline regen showed **80 NON-split
+   minerals** changed (quartz, galena, sphalerite…, one by 15 mm) and 29 count shifts. Size is coupled
+   to fill to nucleation to enclosure to dissolution — total_growth_um is load-bearing across ~8 sites.
+   A census-bounded size effect must be volume-NEUTRAL (compact extent at CONSTANT volume: the needle's
+   length collapsing to the sphere's radius, same material), which is a large, risky surgery. O3b's
+   "a SIM bump is a web, not a wire" was gentle next to this: here a wire became a flood.
+
+5. **When the evidence breaks the plan's assumption, surface it — do not silently ship the reversal
+   OR the flood.** The boss picked "SIM bump" believing it would be census-bounded. It wasn't. The
+   honest move was neither to ship the flood (violating "census-bounded") nor to quietly ship render-
+   only (reversing their choice): it was to show the 80-mineral cascade, the 15 mm artifacts, the
+   volume-neutral surgery it would take, and let them choose again with the evidence. They chose render-
+   only. A decision made on an assumption is void when the assumption falls; give it back.
+
+### Diagenesis
+
+This hand stands entirely on prepared ground. S-a's recorded index was the whole substrate — S-b only
+had to calibrate what to write into it and read it back at render time. The render-only landing is the
+O4a-engulfment / O5c-band posture, laid twice before: a render that reads a recorded scalar while the
+sim record stays byte-identical. The census tool the fifteenth hand built took two new instruments
+(the σ/index spread, the rung×mineral matrix) and became a calibration bench. And the boss's
+"follow the science as best as you can" was the compass through every calibration fork — the per-route
+split, the per-mineral anchor, the structural floor all fell out of asking what the rock actually does.
+
+### The dream, eighteenth telling
+
+The Deccan grows what it was called, and the fleet's other radial rocks with it — flos-ferri, byssolite
+sprays, saddle dolomite curving where the Mg says so. But two earnings are only named, not made. The
+first is the one this hand could not cut cleanly: the SIM should still *respond* to splitting — a
+spherulite is genuinely more compact than the needle it replaced — and the volume-neutral path (make
+total_growth_um a pure reported extent, drive fill from an uncompacted twin, thread it through the ~8
+size-reading sites) would let the baseline move for the split set ALONE, census-bounded at last. The
+second is S-c: the curved and split rungs still ride their old habit render; their curvature should be
+earned from the index too, and the sheaf's splay and the spherulite's completeness should vary
+continuously with it, not snap between two meshes. Past those, the ladder keeps climbing — O6, O7, O8 —
+and the two old doors still stand: Door 4's stature audit, and the citrine half's thermal field. The
+crystal's biography is more legible than it was: it now grows apart when the conditions say split, and
+shows it. What it does not yet do is let that splitting cost it the length it traded for breadth — the
+last honest debt of this rung, written down for the hand that will pay it.
+
+— the builder, sixteenth hand: the ladder learned its shape · 2026-07-11

@@ -338,6 +338,51 @@ max(_film φ, wall.split_trace, mineral hint)`, `_film` first; the lone mineral 
   low rung — then calibrate `SPLIT_K_A/B` + the rung band cuts, and let `rung` drive habit + render on
   the census's pre-registered movers (the deformation-saddle set untouched).
 
+## 9c. S-b SHIPPED (2026-07-11) — the ladder EARNS its shape, render-only, byte-identical
+
+The two-route index now DRIVES the render (`O5_SPLITTING_ENABLED = true`; js/99i reads `_split.rung`
+→ `_makeHemimorphiteFan` for sheaf, `_makeBotryoidalCluster` for spherulite; the curved rung keeps its
+existing habit render; `_deformation` takes precedence — the census-certified two-mechanism guard).
+**Byte-identical fleet-wide (baseline regen 0/39), no SIM_VERSION bump** — the O4a/O5c render-reads-a-
+recorded-scalar posture.
+
+**Calibration (the model as SHIPPED — following the science, the census as instrument).** The S-a
+placeholder formula was recalibrated into three mechanism-faithful pieces, each forced by a census
+finding:
+- **per-ROUTE abilities** `SPLIT_ABILITY[m] = {a, b}` — the A (impurity autodeformation) and B (high-σ /
+  structural spherulitic) mechanisms are mineral-specific, NOT interchangeable. The S-a scalar let a
+  high-σ **gypsum** take the B route → 18 false spherulites (the census's rung×mineral matrix caught it);
+  gypsum is now `{a 0.9, b 0.05}` (A-only), zeolites B-dominant. Quartz/feldspar/fluorite/cerussite/
+  malachite are explicit `{0,0}`.
+- **per-MINERAL B onset** `σ_spherulite* = SPLIT_SPHERULITE_FACTOR (2.5) × sigmaCritFor(mineral)` — the
+  sim σ scale is wildly mineral-specific (dolomite σ_crit 10, calcite 1.5, σ tails to ~1e5), so a global
+  threshold can't fire correctly; the far-from-eq drive it feeds is **bounded [0,1]** so outliers saturate
+  the B term rather than pin the index.
+- **growth-ramped STRUCTURAL-RADIAL floor** `SPLIT_RADIAL_HINT[m]`, ramped over `SPLIT_RADIAL_REF_MM`
+  (0.3 mm) — the natrolite-group chain silicates + stilbite/prehnite are fibrous by STRUCTURE, not σ; they
+  express their sheaf/sphere once matured (a speck does not). The A-route keeps its `SPLIT_IMPURITY_HINT`
+  (dolomite Mg) as the symmetric intrinsic seed.
+- Distribution at seed 42: curved 18 / split 51 / sheaf 30 / spherulite 12, split-able roster only,
+  quartz never, noncollision certificate PASS. Census gained the σ/index-spread + rung×mineral-matrix
+  instruments (the 4a.7 bench).
+
+**Why render-only, and the two follow-ons (the honest debts):**
+1. **The size SIM-bump cascades — deferred (VOLUME-NEUTRAL follow-on).** The intended sim effect (a split
+   crystal is more compact → throttle its axial growth) is right physics but wrong plumbing: shrinking a
+   split crystal shrinks its volume → shifts vugFill → moves nucleation + downstream growth. The baseline
+   regen showed **80 NON-split minerals moved** (quartz/galena/sphalerite…, up to 15 mm) + 29 count shifts
+   — NOT census-bounded, artifact-heavy. A census-bounded size effect must be **volume-neutral**: a split
+   crystal reports a compact `max_um` at CONSTANT volume (the needle's length → the sphere's radius, same
+   material). That requires making `total_growth_um` a pure REPORTED extent and driving `_volume_mm3` (→
+   fill) from an uncompacted twin accumulator, threaded through the ~8 sites that read `total_growth_um`
+   for SIZE (js/85 growth cap + the volume clamp + the direct dissolution mutation; js/85c enclosure reach
+   + liberation). The lever is already shipped, defined-but-unused: `splitGrowthMult(index)` +
+   `SPLIT_AXIAL_FLOOR` (js/44c). Boss chose render-only over this surgery (2026-07-11).
+2. **S-c — the render refinement.** The curved/split rungs still ride their old habit render; their
+   curvature should be earned from the index (the T-painted `_makeSaddleRhomb` constant, generalized), and
+   the sheaf's splay + the spherulite's radial completeness should vary CONTINUOUSLY with the index rather
+   than snapping between two fixed meshes. Render-only, byte-identical.
+
 ## Sources (builder-verified 2026-07-10; two passes cross-checked, each flag is per-citation)
 
 **Splitting / spherulite theory** — VERIFIED:
