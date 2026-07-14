@@ -267,6 +267,13 @@ class VugWall {
     // exposes this as a setup toggle (f-thermal-pulses). Read directly off
     // conditions.wall in ambient_cooling.
     this.thermal_pulses = (opts.thermal_pulses !== undefined) ? !!opts.thermal_pulses : true;
+    // gamma_host — the host rock's natural γ-background intensity (0-1), read by
+    // the silicate engine (js/59) to accrue radiation_damage into quartz. The
+    // pegmatite/phonolite cases are hardcoded there; a scenario declares this for
+    // a host the table doesn't name — a flood-basalt amethyst geode dosing its Fe
+    // colour centres over ~134 Ma (amethyst_geode; Rossman 1994, Gilg 2003).
+    // Default 0 → every existing scenario is byte-identical (no dose from this path).
+    this.gamma_host = opts.gamma_host ?? 0;
     // graphitic — the host is a carbonaceous/graphitic metapelite (crystal-face
     // realism arc 2026-06-21). Read by grow_andalusite + classifySectorZoning to
     // render the CHIASTOLITE carbon cross (carbonaceous matter swept into the

@@ -35,11 +35,21 @@ Object.assign(VugSimulator.prototype, {
     parts.push(narrative_variant('quartz', 'gwindel', { twist: c._gwindel.twistDeg.toFixed(0) })
       || `A GWINDEL — the alpine-fissure twisted column: a stack of subparallel individuals rotated ~${c._gwindel.twistDeg.toFixed(0)}° about the a-axis under the cleft's syn-growth shear. The Grimsel/Aar Zerrklüfte are the world type locality.`);
   }
-  // Sceptre — the alpine crack-seal structural signature (gen-1 stem resorbed,
-  // gen-2 cap regenerated; see js/45 classifyQuartzSceptre).
+  // Sceptre — a gen-1 stem capped by a wider gen-2 termination (js/45
+  // classifyQuartzSceptre). TWO natural routes, distinguished by _sceptre.route:
+  // CORROSION (a fissure seal resorbed the tip, a breach regenerated it — grimsel's
+  // alpine crack-seal, "etched and healed") and MASKING (a foreign film frosted the
+  // prism, the tip renewed a wider cap THROUGH it — Takahashi & Sunagawa 2004 ELO,
+  // "dusted and buried"). The masking route must NOT read as corrosion.
   if (c._sceptre && !c._gwindel) {
-    parts.push(narrative_variant('quartz', 'sceptre', { capUm: c._sceptre.capUm.toFixed(0) })
-      || `A SCEPTRE: a fissure seal corroded the gen-1 termination, then a fresh silica breach regenerated a wider second-generation cap over the resorbed tip — the alpine crack-seal habit.`);
+    if (c._sceptre.route === 'masking') {
+      const film = c._sceptre.filmMineral || (c.zones || []).find((z: any) => z.masked_horizon && z.film_mineral)?.film_mineral;
+      parts.push(narrative_variant('quartz', 'sceptre_masking', { capUm: c._sceptre.capUm.toFixed(0) })
+        || `A MASKING SCEPTRE: a ${film ? film + ' ' : ''}film frosted the prism faces mid-growth; the termination stayed free and renewed a wider second-generation cap through the film, leaving the masked horizon buried in the stem — the epitaxial-renewal habit (mass-conserving twin of the corrosion sceptre).`);
+    } else {
+      parts.push(narrative_variant('quartz', 'sceptre', { capUm: c._sceptre.capUm.toFixed(0) })
+        || `A SCEPTRE: a fissure seal corroded the gen-1 termination, then a fresh silica breach regenerated a wider second-generation cap over the resorbed tip — the alpine crack-seal habit.`);
+    }
   }
   // Bent — POST-GROWTH deformation overprint (deformation/shear arc; js/45
   // classifyDeformation). The crystal grew straight, then a later tectonic shear

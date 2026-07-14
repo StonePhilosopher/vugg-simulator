@@ -1,40 +1,25 @@
 // tests-js/scenario-menu-coverage.test.ts — guard test for the
-// chronic-bug scenario-menu coverage gap (caught at v116 retrospective).
+// scenario-picker menus (born at the v116 retrospective, when 15 scenarios
+// were invisible in the UI because the menus were hand-synced HTML).
 //
-// PROBLEM: data/scenarios.json5 holds the scenario data, but the
-// scenario PICKER menus in index.html are hardcoded with onclick handlers
-// and <option> entries. Every scenario added via vugg-add-scenario skill
-// must ALSO be added to the menus manually — and historically wasn't.
-// Before this test landed, 15 scenarios in the codebase were invisible
-// in the UI menus.
+// §10.5 tranches 2-3 (Door 3, 2026-07-10): the three CURATED menu surfaces
+// now AUTO-GENERATE from data/scenarios.json5's `menu_layout` block (the
+// js/94-ui-menu.ts populators, called at scenarios-load-complete). The
+// former hardcoded HTML ships as EMPTY containers. So this test moved from
+// parsing index.html to validating menu_layout — the single source of
+// truth the migration created. What it guards:
 //
-// THREE MENU SURFACES (each with different tutorial-policy):
-//
-//   1. SCENARIOS PICKER PANEL (scenarios-panel, Creative mode buttons).
-//      The "full picker." MUST contain every scenario including tutorials.
-//      Tutorials live in a dedicated subsection.
-//
-//   2. LEGENDS-CONTROLS DROPDOWN (#scenario, the at-top-of-page
-//      "quick play" selector). EXCLUDES tutorials — quick play is for
-//      running real scenarios, not guided introductions.
-//      §10.5 TRANCHE 1 (2026-07-07): this surface AUTO-GENERATES from
-//      SCENARIOS at load-complete (_populateScenarioDropdowns in
-//      js/94-ui-menu.ts). The static <select> must ship EMPTY; the
-//      tests below guard the single-source-of-truth invariant + the
-//      populator's existence, call site, and tutorial exclusion.
-//
-//   3. ZEN MODE DROPDOWN (#idle-scenario). EXCLUDES tutorials —
-//      zen mode is the screensaver-style infinite run; tutorials
-//      don't belong in a screensaver.
-//
-// Plus zen mode's 'random' picker in js/98a-ui-zen.ts must filter
-// tutorial_* keys (separate non-test guarantee — checked via code
-// review, not this test).
+//   1. SCENARIOS PICKER PANEL (#scenarios-panel-groups) — the FULL picker.
+//      menu_layout.panel covers every scenario (incl. tutorials), grouped;
+//      tutorials live in their own group; starter fluids are a 4th group.
+//   2. LEGENDS "quick play" dropdown (#scenario) — §10.5 TRANCHE 1: derives
+//      from SCENARIOS at load; static <select> ships EMPTY. (unchanged)
+//   3. ZEN dropdown (#idle-scenario) — curated labels, bespoke order,
+//      EXCLUDES tutorials; menu_layout.idle; static <select> ships EMPTY.
+//   4. BEGIN tutorial buttons (#begin-tutorial-buttons) — guided runs;
+//      menu_layout.begin_tutorials; static container ships EMPTY.
 //
 // TUTORIAL = scenario whose name starts with "tutorial_".
-//
-// The vugg-add-scenario skill §10.5 documents which menus need which
-// scenarios. This test guards the skill.
 
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
@@ -43,153 +28,169 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-function loadScenarioNames(): string[] {
+function loadDoc(): any {
   const raw = fs.readFileSync(path.join(ROOT, 'data', 'scenarios.json5'), 'utf8');
-  // Same JSONC-stripping the bundle uses (sufficient for spec parsing)
   const stripped = raw
     .replace(/\/\/[^\n]*/g, '')
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/,(\s*[}\]])/g, '$1');
-  const parsed = JSON.parse(stripped);
-  return Object.keys(parsed.scenarios || {}).sort();
+  return JSON.parse(stripped);
 }
-
-function loadMenuButtonScenarios(): Set<string> {
-  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  const out = new Set<string>();
-  // Allow digits in the captured group — scenario names like
-  // `tn457_barite_pulses` (v118) carry the specimen number in them.
-  const re = /startScenarioInCreative\(['"]([a-z0-9_]+)['"]\)/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(html)) !== null) out.add(m[1]);
-  return out;
+function readFile(...p: string[]): string {
+  return fs.readFileSync(path.join(ROOT, ...p), 'utf8');
 }
+const isTutorial = (name: string) => name.startsWith('tutorial_');
 
-function loadOptionsFromSelect(selectId: string): Set<string> {
-  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  const m = html.match(new RegExp(`<select[^>]+id="${selectId}"[\\s\\S]*?<\\/select>`));
-  if (!m) return new Set();
-  const block = m[0];
-  const out = new Set<string>();
-  // Allow digits — scenario names like `tn457_barite_pulses` carry numbers.
-  const re = /<option\s+value="([a-z0-9_]+)"/g;
-  let opt: RegExpExecArray | null;
-  while ((opt = re.exec(block)) !== null) out.add(opt[1]);
-  return out;
-}
+const doc = loadDoc();
+const scenarios = Object.keys(doc.scenarios || {}).sort();
+const nonTutorial = scenarios.filter(s => !isTutorial(s));
+const tutorials = scenarios.filter(isTutorial);
+const ml = doc.menu_layout;
+const html = readFile('index.html');
 
-function isTutorial(name: string): boolean {
-  return name.startsWith('tutorial_');
-}
-
-describe('Scenario menu coverage (v116 guard test)', () => {
-  const scenarios = loadScenarioNames();
-  const nonTutorialScenarios = scenarios.filter(s => !isTutorial(s));
-  const tutorialScenarios = scenarios.filter(isTutorial);
-  const menuButtons = loadMenuButtonScenarios();
-  const legendsDropdown = loadOptionsFromSelect('scenario');     // "quick play"
-  const idleDropdown = loadOptionsFromSelect('idle-scenario');   // zen mode
-
-  it('Scenarios picker panel: every scenario (INCLUDING tutorials) has a startScenarioInCreative() button', () => {
-    const missing = scenarios.filter(s => !menuButtons.has(s));
-    if (missing.length > 0) {
-      const msg =
-        `MENU GAP (scenarios-panel buttons): ${missing.length} scenario(s) in ` +
-        `data/scenarios.json5 have NO <button onclick="startScenarioInCreative('...')"> ` +
-        `entry in index.html (around line 2657-2700). The Scenarios picker panel ` +
-        `is the FULL picker and must contain every scenario including tutorials. ` +
-        `Per vugg-add-scenario skill §10.5. Missing: ` + missing.join(', ');
-      throw new Error(msg);
-    }
-    expect(missing).toEqual([]);
+describe('menu_layout: shape', () => {
+  it('has panel / idle / begin_tutorials', () => {
+    expect(ml, 'data/scenarios.json5 is missing the menu_layout block (Door 3 §10.5 t2-3)').toBeTruthy();
+    expect(Array.isArray(ml.panel)).toBe(true);
+    expect(Array.isArray(ml.idle)).toBe(true);
+    expect(Array.isArray(ml.begin_tutorials)).toBe(true);
   });
 
-  it('Legends-controls quick-play dropdown #scenario: ships EMPTY — options auto-generate from SCENARIOS (§10.5 tranche 1)', () => {
-    // A hand-added static option would silently fight the populator
-    // (it wipes the select at load-complete) — enforce the single
-    // source of truth instead of the old manual-sync contract.
-    const staticOptions = [...legendsDropdown];
-    if (staticOptions.length > 0) {
-      const msg =
-        `STATIC OPTION(S) in #scenario: the quick-play dropdown auto-generates ` +
-        `from SCENARIOS at load-complete (_populateScenarioDropdowns, ` +
-        `js/94-ui-menu.ts) — hand-added <option>s are wiped at boot and mask ` +
-        `the real list during tests. Remove: ` + staticOptions.join(', ');
-      throw new Error(msg);
-    }
-    expect(staticOptions).toEqual([]);
+  it('panel groups are the expected four keys in order', () => {
+    expect(ml.panel.map((g: any) => g.key)).toEqual(['real_locality', 'test', 'tutorial_broth', 'starter_fluids']);
+    for (const g of ml.panel) expect(typeof g.heading, `group ${g.key} needs a heading`).toBe('string');
+  });
+});
+
+describe('Scenarios picker panel (menu_layout.panel): full coverage', () => {
+  const scenarioGroups = ml.panel.filter((g: any) => g.buttons);
+  const panelIds = scenarioGroups.flatMap((g: any) => g.buttons.map((b: any) => b.scenario));
+
+  it('every scenario (INCLUDING tutorials) appears exactly once', () => {
+    const set = new Set(panelIds);
+    const missing = scenarios.filter(s => !set.has(s));
+    const dups = panelIds.filter((id: string, i: number) => panelIds.indexOf(id) !== i);
+    expect(missing, `scenarios with no picker button: ${missing.join(', ')}`).toEqual([]);
+    expect(dups, `scenarios with duplicate buttons: ${dups.join(', ')}`).toEqual([]);
+    expect(panelIds.length).toBe(scenarios.length);
   });
 
-  it('#scenario populator: exists, excludes tutorials, and is called at scenarios-load-complete', () => {
-    // The tutorial-EXCLUSION rule (boss directive 2026-05-20: tutorials
-    // don't belong in quick play) moved from static HTML into the
-    // populator — assert it against the source that now owns it.
-    const menuSrc = fs.readFileSync(path.join(ROOT, 'js', '94-ui-menu.ts'), 'utf8');
-    const eventsSrc = fs.readFileSync(path.join(ROOT, 'js', '70-events.ts'), 'utf8');
+  it('no stale buttons (every button references a real scenario)', () => {
+    const stale = panelIds.filter((id: string) => !scenarios.includes(id));
+    expect(stale, `buttons referencing missing scenarios: ${stale.join(', ')}`).toEqual([]);
+  });
+
+  it('tutorial policy: the tutorial_broth group is exactly the tutorial_* scenarios', () => {
+    const broth = ml.panel.find((g: any) => g.key === 'tutorial_broth').buttons.map((b: any) => b.scenario).sort();
+    expect(broth).toEqual(tutorials);
+    // and no tutorial leaks into the real-locality / test groups
+    for (const key of ['real_locality', 'test']) {
+      const leaked = ml.panel.find((g: any) => g.key === key).buttons.map((b: any) => b.scenario).filter(isTutorial);
+      expect(leaked, `tutorial(s) in the ${key} group: ${leaked.join(', ')}`).toEqual([]);
+    }
+  });
+
+  it('every panel button carries non-empty display text', () => {
+    const blank = scenarioGroups.flatMap((g: any) => g.buttons).filter((b: any) => !b.text || !b.text.trim());
+    expect(blank.map((b: any) => b.scenario)).toEqual([]);
+  });
+
+  it('starter_fluids group: 4 items, each preset + text', () => {
+    const fl = ml.panel.find((g: any) => g.key === 'starter_fluids');
+    expect(fl.fluids.length).toBe(4);
+    for (const f of fl.fluids) {
+      expect(typeof f.preset).toBe('string');
+      expect(f.text && f.text.trim().length, `fluid ${f.preset} needs text`).toBeTruthy();
+    }
+  });
+});
+
+describe('Zen dropdown (menu_layout.idle): non-tutorials, bespoke order', () => {
+  it('first entry is the random head option', () => {
+    expect(ml.idle[0].value).toBe('random');
+    expect(ml.idle[0].text.trim().length).toBeTruthy();
+  });
+
+  it('every NON-TUTORIAL scenario has exactly one idle entry', () => {
+    const idleIds = ml.idle.filter((o: any) => o.scenario).map((o: any) => o.scenario);
+    const set = new Set(idleIds);
+    const missing = nonTutorial.filter(s => !set.has(s));
+    const dups = idleIds.filter((id: string, i: number) => idleIds.indexOf(id) !== i);
+    expect(missing, `non-tutorial scenarios missing from zen dropdown: ${missing.join(', ')}`).toEqual([]);
+    expect(dups, `duplicate idle entries: ${dups.join(', ')}`).toEqual([]);
+  });
+
+  it('tutorials are EXCLUDED, and no stale entries', () => {
+    const idleIds = ml.idle.filter((o: any) => o.scenario).map((o: any) => o.scenario);
+    expect(idleIds.filter(isTutorial), 'tutorial(s) leaked into zen dropdown').toEqual([]);
+    expect(idleIds.filter((id: string) => !scenarios.includes(id)), 'stale idle entries').toEqual([]);
+  });
+
+  it('every idle entry carries a curated label', () => {
+    const blank = ml.idle.filter((o: any) => !o.text || !o.text.trim());
+    expect(blank).toEqual([]);
+  });
+});
+
+describe('Begin tutorial buttons (menu_layout.begin_tutorials): guided runs', () => {
+  it('each references a real scenario that has a guided tutorial (steps)', () => {
+    for (const t of ml.begin_tutorials) {
+      const spec = doc.scenarios[t.scenario];
+      expect(spec, `begin tutorial references missing scenario '${t.scenario}'`).toBeTruthy();
+      expect(spec.tutorial, `'${t.scenario}' is in Begin tutorials but has no tutorial block`).toBeTruthy();
+      expect(Array.isArray(spec.tutorial.steps) && spec.tutorial.steps.length > 0,
+        `'${t.scenario}' tutorial has no steps`).toBe(true);
+      expect(t.text && t.text.trim().length, `begin tutorial '${t.scenario}' needs text`).toBeTruthy();
+    }
+  });
+});
+
+describe('Render invariants (index.html): static surfaces ship EMPTY, generated at runtime', () => {
+  it('#scenario (quick play) ships empty — §10.5 tranche 1', () => {
+    const m = html.match(/<select[^>]+id="scenario"[\s\S]*?<\/select>/);
+    expect(m, '#scenario select not found').toBeTruthy();
+    expect(/<option\s/.test(m![0]), '#scenario must ship empty (auto-generated)').toBe(false);
+  });
+
+  it('#idle-scenario (zen) ships empty — §10.5 tranche 3', () => {
+    const m = html.match(/<select[^>]+id="idle-scenario"[\s\S]*?<\/select>/);
+    expect(m, '#idle-scenario select not found').toBeTruthy();
+    expect(/<option\s/.test(m![0]), '#idle-scenario must ship empty (auto-generated)').toBe(false);
+  });
+
+  it('#scenarios-panel-groups + #begin-tutorial-buttons ship as empty containers', () => {
+    expect(html.includes('<div id="scenarios-panel-groups"></div>'),
+      '#scenarios-panel-groups must be an empty container (panel auto-generates)').toBe(true);
+    expect(html.includes('<div class="menu-buttons" id="begin-tutorial-buttons"></div>'),
+      '#begin-tutorial-buttons must be an empty container (buttons auto-generate)').toBe(true);
+  });
+});
+
+describe('Populator wiring: the generators exist and run at load', () => {
+  const menuSrc = readFile('js', '94-ui-menu.ts');
+  const eventsSrc = readFile('js', '70-events.ts');
+
+  it('#scenario populator exists, excludes tutorials, is called at load (tranche 1)', () => {
     expect(menuSrc).toMatch(/function _populateScenarioDropdowns\(/);
     expect(menuSrc).toMatch(/function _populateScenarioDropdowns\([\s\S]{0,600}startsWith\('tutorial_'\)/);
-    expect(eventsSrc).toMatch(/_scenariosJson5Ready = true;[\s\S]{0,500}_populateScenarioDropdowns/);
+    expect(eventsSrc).toMatch(/_scenariosJson5Ready = true;[\s\S]{0,900}_populateScenarioDropdowns/);
   });
 
-  it('Zen mode dropdown #idle-scenario: every NON-TUTORIAL has an <option>', () => {
-    const missing = nonTutorialScenarios.filter(s => !idleDropdown.has(s));
-    if (missing.length > 0) {
-      const msg =
-        `DROPDOWN GAP (#idle-scenario zen mode): ${missing.length} non-tutorial ` +
-        `scenario(s) have NO <option value="..."> entry in the <select id="idle-scenario"> ` +
-        `dropdown in index.html (around line 3532). Zen mode is the screensaver-` +
-        `style infinite run; users should be able to pick from the full scenario ` +
-        `catalog (minus tutorials). Per vugg-add-scenario skill §10.5. Missing: ` +
-        missing.join(', ');
-      throw new Error(msg);
+  it('the three tranche 2-3 populators exist and read MENU_LAYOUT', () => {
+    for (const fn of ['_populateScenariosPanel', '_populateIdleScenarioDropdown', '_populateBeginTutorials']) {
+      expect(menuSrc, `${fn} missing`).toMatch(new RegExp(`function ${fn}\\(`));
+      expect(menuSrc, `${fn} should read MENU_LAYOUT`).toMatch(new RegExp(`function ${fn}\\([\\s\\S]{0,400}MENU_LAYOUT`));
     }
-    expect(missing).toEqual([]);
-  });
-
-  it('Zen mode dropdown #idle-scenario: tutorials are EXCLUDED', () => {
-    const accidentalTutorials = tutorialScenarios.filter(s => idleDropdown.has(s));
-    if (accidentalTutorials.length > 0) {
-      const msg =
-        `TUTORIAL LEAKAGE (#idle-scenario zen mode): ${accidentalTutorials.length} ` +
-        `tutorial scenario(s) accidentally appear in the zen-mode dropdown. ` +
-        `Per boss directive 2026-05-20, tutorials must be EXCLUDED from zen mode ` +
-        `(screensaver shouldn't randomly pop up tutorial intros). Remove these: ` +
-        accidentalTutorials.join(', ');
-      throw new Error(msg);
+    expect(eventsSrc, 'MENU_LAYOUT must be assigned from the parsed doc').toMatch(/MENU_LAYOUT = doc\.menu_layout/);
+    for (const fn of ['_populateScenariosPanel', '_populateIdleScenarioDropdown', '_populateBeginTutorials']) {
+      expect(eventsSrc, `${fn} not called at load`).toMatch(new RegExp(fn));
     }
-    expect(accidentalTutorials).toEqual([]);
   });
 
-  it('Zen mode random picker (js/98a-ui-zen.ts) filters tutorial_* keys', () => {
-    // The 'random' value in the #idle-scenario dropdown triggers
-    // idleCreateSim's random-pick branch. That code path must filter
-    // tutorial_* from Object.keys(SCENARIOS), otherwise tutorials
-    // can still leak in via the random pick.
-    const src = fs.readFileSync(path.join(ROOT, 'js', '98a-ui-zen.ts'), 'utf8');
+  it('zen-mode random picker (js/98a-ui-zen.ts) filters tutorial_* keys', () => {
+    const src = readFile('js', '98a-ui-zen.ts');
     const hasFilter = /Object\.keys\(SCENARIOS\)\.filter\([^)]*tutorial_/.test(src) ||
                       /startsWith\(['"]tutorial_['"]\)/.test(src);
-    if (!hasFilter) {
-      throw new Error(
-        `js/98a-ui-zen.ts idleCreateSim 'random' branch does NOT filter tutorial_* ` +
-        `from Object.keys(SCENARIOS). Per boss directive 2026-05-20, zen mode ` +
-        `random selection must skip tutorials. Add a .filter(k => !k.startsWith('tutorial_')) ` +
-        `to the random-pick branch.`
-      );
-    }
-    expect(hasFilter).toBe(true);
-  });
-
-  it('No stale menu buttons (button references a scenario that no longer exists)', () => {
-    const scenarioSet = new Set(scenarios);
-    const stale = [...menuButtons].filter(s => !scenarioSet.has(s));
-    if (stale.length > 0) {
-      const msg =
-        `STALE MENU BUTTONS: ${stale.length} startScenarioInCreative('...') ` +
-        `button(s) in index.html reference scenarios that no longer exist in ` +
-        `data/scenarios.json5. Remove the stale buttons OR add the scenarios ` +
-        `back. Stale: ` + stale.join(', ');
-      throw new Error(msg);
-    }
-    expect(stale).toEqual([]);
+    expect(hasFilter, "zen random pick must skip tutorial_* (boss directive 2026-05-20)").toBe(true);
   });
 });

@@ -160,8 +160,8 @@ function _parseBodyTrigger(raw: string): any {
     part = part.trim();
     let m = part.match(/\b([A-Za-z_]+)\s*(>=|>)\s*([\d.]+)/);
     if (m) { const f = m[1]; if (!_BODY_ZONE_TRACE[f] && !_BODY_CRYSTAL_FIELD[f]) return null; clauses.push({ field: f, lo: parseFloat(m[3]), strict: m[2] === '>' }); continue; }
-    m = part.match(/\b([A-Za-z_]+)\s+([\d.]+)\s*-\s*([\d.]+)/);   // "Fe 2-10" range → ≥2 threshold (upper bound dropped)
-    if (m) { const f = m[1]; if (!_BODY_ZONE_TRACE[f] && !_BODY_CRYSTAL_FIELD[f]) return null; clauses.push({ field: f, lo: parseFloat(m[2]), strict: false }); continue; }
+    m = part.match(/\b([A-Za-z_]+)\s+([\d.]+)\s*-\s*([\d.]+)/);   // "Fe 2-10" range
+    if (m) { const f = m[1]; if (!_BODY_ZONE_TRACE[f] && !_BODY_CRYSTAL_FIELD[f]) return null; clauses.push({ field: f, lo: parseFloat(m[2]), hi: parseFloat(m[3]), strict: false }); continue; }
     if (/<=?\s*[\d.]/.test(part)) return null;   // a "<" clause → low-end/base variant, not an override
     // else: a clause with no numeric bound → prose; ignore it
   }
@@ -183,7 +183,18 @@ function _chemistryVariant(crystal: any, spec: any): string | null {
     const p = _parseBodyTrigger(rule.trigger);
     if (!p) continue;
     let fires = true;
-    for (const cl of p.clauses) { const v = _bodyFieldVal(crystal, cl.field); if (v === null || !(cl.strict ? v > cl.lo : v >= cl.lo)) { fires = false; break; } }
+    for (const cl of p.clauses) {
+      const v = _bodyFieldVal(crystal, cl.field);
+      if (v === null || !(cl.strict ? v > cl.lo : v >= cl.lo)) { fires = false; break; }
+      // A range UPPER bound is honoured ONLY for crystal-level fields (radiation_
+      // damage): amethyst = radiation 0.1-0.3 must be MUTUALLY EXCLUSIVE with
+      // smoky (>0.3), so a heavily-dosed quartz falls through to smoky/morion, not
+      // amethyst. Zone-trace ranges (sphalerite Fe 2-10) keep the lower-bound-
+      // collapse ladder (a gap value rounds DOWN, never falls through — the
+      // _parseBodyTrigger rationale). So amethyst is the only variant an upper
+      // bound actually gates, which is exactly the quartz radiation ladder.
+      if (cl.hi != null && _BODY_CRYSTAL_FIELD[cl.field] && v > cl.hi) { fires = false; break; }
+    }
     if (!fires) continue;
     if (!best || p.nClauses > best.nClauses || (p.nClauses === best.nClauses && p.maxLo > best.maxLo)) best = { variant, nClauses: p.nClauses, maxLo: p.maxLo };
   }

@@ -65,8 +65,11 @@ function crystalColor(crystal) {
       // Smoky: radiation damage (Al color centers)
       if (radDmg > 0.6) return '#3a2a1a'; // dark smoky
       if (radDmg > 0.3) return '#6b5040'; // smoky
-      // Amethyst: Fe³⁺ + some radiation
-      if (avgFe > 3 && radDmg > 0.1) return '#9966cc'; // amethyst
+      // Amethyst: Fe³⁺ + MODERATE radiation (smoky/morion checked above win the
+      // heavily-dosed end). avgFe threshold 0.2 matches the sim's quartz trace_Fe
+      // scale (fluid.Fe × 0.005, js/59) — the old > 3 needed ~600 ppm fluid Fe and
+      // never fired ("authored-but-dormant"); revived for the amethyst_geode.
+      if (avgFe > 0.2 && radDmg > 0.1 && radDmg <= 0.3) return '#9966cc'; // amethyst
       // Milky: dense fluid inclusions from rapid growth
       if (fiRatio > 0.4) return '#e8ddd0'; // milky white
       // Citrine: Fe³⁺ (heated amethyst conditions)
@@ -275,7 +278,7 @@ function crystalDisplayName(crystal) {
     const radDmg = crystal.radiation_damage || 0;
     
     if (radDmg > 0.3) name = 'quartz (smoky)';
-    else if (avgFe > 3 && radDmg > 0.1) name = 'quartz (amethyst)';
+    else if (avgFe > 0.2 && radDmg > 0.1) name = 'quartz (amethyst)';   // trace_Fe scale (js/59 ×0.005); smoky wins above
     else if (fiRatio > 0.4) name = 'quartz (milky)';
     else if (avgFe > 5 && crystal.zones.some(z => z.temperature > 350)) name = 'quartz (citrine)';
     else name = 'quartz (rock crystal)';

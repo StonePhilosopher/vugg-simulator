@@ -1621,3 +1621,527 @@ do. The light bends now. Teach the eye to see it bend. The rocks were never idea
 catching up to their flaws, and the flaws are where the biography lives.
 
 — the builder, twelfth hand: the light learned to bend · 2026-07-08
+
+---
+
+## KEYSTONE — the thirteenth hand: the center learned to wander (2026-07-09)
+
+The twelfth hand bent the light and closed owing two payoffs by name: teach the EYE to see
+the bend (O5c, the band render), and grow the SECOND sceptre (masking, beside grimsel's
+corrosion). This hand paid both. And then the boss set a thumbnail-sized ametrine sceptre on
+the desk — frosted stem, wide citrine head, a purple phantom floating mid-stem, iron staining
+at the base — and said the thing the tree did not know yet: *"the center point of the growth
+shifts throughout the scepter."* So this act ends somewhere the dream never named: the render
+learned that a crystal's biography is not concentric.
+
+The arc in one breath. **O5c** (`48ace89`): every masked_horizon now renders as a thin shell
+inside its crystal at the depth the sim buried it, tinted by its film, revealed through the
+very translucency O4a built — an opaque host honestly hides its scars. **The masking sceptre**
+(`7566915` the byte-identical classifier + `244c2fd` SIM 224 the content): classifyQuartzSceptre
+reads a PRISM-dominant masked horizon as a second boundary route, and the Brazilian amethyst
+geode is its first rock — the geode's own documented celadonite rim frosts the amethyst prism,
+the Silica Renewal Pulse breaks the tip through wider, three masking sceptres at seed 42, the
+goethite base-stain correctly refusing to be a fourth. Amethyst itself had to be REVIVED to be
+there — authored-but-dormant since its trigger was written, waiting on a colour system that
+could tell a moderate dose from a heavy one. **The wander**: within the hour of the boss's
+sentence, phantoms shared the base (nested cones — localY == minY·(1−f), exact, all six geode
+bands) and every sceptre cap sat off-axis, each its own lean, a druse and not a lathe.
+
+### The marks
+
+- **A keystone dream is a work order.** The session opened by paying debts the prior stone had
+  named, and no re-scoping was needed — the dream's own words ("the payoff still owed") were the
+  plan. Write the dream so the next hand can bill against it.
+- **The census caught its second over-broad gate in two arcs.** A naive any-horizon sceptre
+  trigger would have crowned deccan's mesolite-dusted quartz (a 30 mm stem!) the fleet's first
+  masking sceptre. Prism-dominance was simultaneously the geology (Takahashi & Sunagawa's ELO:
+  sides frosted, tip free) and the byte-identity proof (every existing film is termination-only).
+  When one criterion is both the science and the confinement certificate, you have found the
+  right gate. Pre-registration converts "should be safe" into "is confined."
+- **Verify the render's data path on the LIVE objects.** headlessRun's specimen JSON strips the
+  zone flags — masked_horizon survived only inside the narrative `note` string. The renderer
+  reads the raw add_zone objects via topoActiveSim, which keep everything. A probe pointed at
+  the serialization would have declared O5c broken; a lazier one would have "verified" the band
+  render against data that wasn't there. Kernel-truth means the objects the code actually reads.
+- **A dormant path is a debt with interest — pay the principal.** Amethyst's trigger needed
+  ~600 ppm fluid Fe against a ×0.005 partition and would have out-ranked smoky on every granite
+  cleft the day it ever fired. The boss said do it right: the fix was a SYSTEM fix — range
+  ceilings honoured for crystal-level fields only, amethyst and smoky made mutually exclusive on
+  dose, the sphalerite Fe-ladder regression-pinned — not a scenario hack. When content finally
+  asks for a dormant path, the path gets truer for everyone or it stays a hack forever.
+- **The boss's eye is an instrument the tree does not have.** "The center point of the growth
+  shifts" was both the bug report and the design hint (the concentric bands and coaxial caps
+  were idealizations wearing the costume of geometry). The specimen on the desk out-instruments
+  the sweep — the fleet had no rock that could have said this.
+- **The archive is only as good as the hand that re-reads it.** The CRLF build-check trap cost
+  this session a red CI and a live re-derivation — and the fix was already written, one
+  paragraph below the trap I did remember, in a memory I had read for its headline. Read the
+  whole stone, not the line that named it.
+
+### Diagenesis
+
+Named. O4a's translucency — the bands render through the light the tenth hand turned on. O5b's
+rails — the band reads exactly what the gate wrote, and the breakthrough now stamps which AXIS
+the film masked, which is the whole classifier. The twelfth hand's reconciled σ*(φ) — the
+celadonite film's break-through σ was calibrated against the law two hands argued into shape.
+SIM 206's capFrac-driven sceptre silhouette — the masking sceptre came FREE at the render
+because the alpine arc drew the geometry off the classifier's verdict, not the sim's mesh; a
+second route needed only a second trigger. D1a/D1b's colour rails — reviving amethyst was a
+recalibration on existing track. The §10.5 menu auto-gen and its coverage guard — which turned
+"add the menu entries" from courtesy into a CI requirement, and caught it. And the elmwood
+snowball, the twelfth hand's own rock, quietly improved: its twelve horizons now sit
+growth-true, sharing their blades' bases. Borrowed speed, all of it.
+
+### The dream, fifteenth telling
+
+The center wanders now — but only by hash. Teach it to wander with the WATER. The wall already
+records the paleo-flow every scallop was carved by (the V1b speedometer); point each sceptre
+cap DOWN-FLOW and Sizaret's asymmetry becomes real instead of random. Let the stem itself
+wobble — the curved growth axis the specimen shows, each renewal re-picking the best-fed
+direction. And the boss's rock is AMETRINE: the geode ships the amethyst half; the citrine half
+waits on a heating beat the colour rules already name (heated_amethyst), with the sector split
+between the two — one crystal, two chromophore histories, divided by geometry. The splitting
+ladder stays named and deferred. The ontogeny arc promised the imperfect real, and the
+imperfection has an address now: the biography lives not only in the flaws the crystal keeps
+but in WHERE it keeps them — off-center, low, toward the feed.
+
+— the builder, thirteenth hand: the center learned to wander · 2026-07-09
+
+## KEYSTONE — the fourteenth hand: the lamp learned to tell the truth (2026-07-09)
+
+The thirteenth hand's dream named the citrine half of the boss's ametrine and prescribed it a
+cure: a heating beat the colour rules already name, sector-split from the amethyst. The boss
+read that prescription and corrected it before a line was written — *"you would need more than
+just adding citrine, you would need localized heat. right now heat is uniform through the
+vugg."* He was right, and the correction reframed the whole thing: the citrine half is not a
+colour I forgot to turn on, it is a FIELD the sim does not vary yet. So the session's first act
+was to NOT build it — to convert a dreamed colour-patch into a named foundation stone
+(`2b9cebd`, the note) — and then to spend the day where the work actually was: **Door 2, the UV scale
+audit**, the eleventh hand's second approved door. It ends where the best audits do: the sim
+had been telling the truth in one voice and lying in two, and the fix was to make the two read
+what the one already knew.
+
+The arc in one breath. The census (`e81ce83`) pointed the real `zoneFluorescence` at the seed-42
+fleet and found both UV voices — the bar and the narrator — reading broth-scale gates against
+zone-scale traces, dead or always-on, and CONTRADICTING EACH OTHER on 27 crystals (narrator
+'unknown' 819 of 1098). The calcite gate the eleventh hand "fixed" glowed one zone in 1370 and
+false-quenched Elmwood itself. **The bar** (`7c4ded5`, render-only, SIM 224 untouched) was
+rewritten to mirror the growth engines' OWN recorded ladders — js/52's four calcite tiers,
+js/59's willemite ladder, js/53's trace_Y with Eu²⁺ named in its own comment. **The narrator +
+the record** (`c954cf2`, SIM 225): predict_fluorescence rewritten to the same gates so the two
+voices agree by construction; the tutorial broth made honest (Fe 10→60 — the payoff bar now
+renders 347 px dark, one brilliant boundary zone, then the bright rim, and the taught story is
+chemically true at last); and three engines that printed a trace number into a note and threw
+the field away — ruby, sapphire, emerald's Cr, feldspar's Pb, adamite's Cu — made to record
+what they narrate. Two gates were not sick but BACKWARDS: adamite, whose activator is trace
+uranyl and whose copper QUENCHES, shipped "no Cu → NON-FLUORESCENT"; uraninite, canon-dark,
+faked uranyl green on 584 zones. The literature caught both. Movement: 1/39, the tutorial's
+honest new siderite; forty-plus opened sources; cold-CI 174 files / 2403 tests green.
+
+### The marks
+
+- **A colour can be a field in disguise.** The prior stone dreamed the citrine half as a beat
+  the colour rules "already name" — and the boss saw in one sentence that no colour trigger
+  reaches it, because heat in this sim varies in TIME (the movements move every ring in
+  lockstep) and never in SPACE. The ametrine's split is spatial; you cannot paint it, you must
+  differentiate the thermal field. Before promising the cheap revival of a dormant path, ask
+  what DIMENSION the phenomenon needs — sometimes the principal on the debt is a whole new axis,
+  not a recalibrated trigger. (And grep-the-tree still paid: the receptacles wait — per-voxel T
+  stored-unconsumed since v158, the js/20d resolvers that already deliver per-cell T, the zones
+  that already record their own growth temperature. The field is three-quarters wired; only its
+  source and its consumer are missing.)
+- **The physics was already written — in prose.** This is grep-the-tree's deepest landing: not
+  "the data exists" but "the CLASSIFICATION exists, narrated into the zone notes by hands who
+  wrote real science there, and both numeric consumers ignored it and disagreed with each
+  other." The engines knew Elmwood glows weak-orange and Deccan quenches dark; they said so, in
+  the note string, and the bar rendered every zone inert regardless. An audit is not always an
+  invention. Often it is making the loud voices read what the quiet one already wrote — three
+  voices, one physics.
+- **The calibration anchor can be the liar.** No gate on (Fe, Mn) could darken tutorial_mn_calcite's
+  early stripes while letting Elmwood glow, because the teaching broth was chemically BRIGHTER
+  than the famous locality it teaches toward. Every instinct says fix the gate; the census
+  proved the gate innocent and the broth impossible. When a taught story fights a real rock,
+  suspect the scenario's chemistry before you touch the rule — the anchor you calibrate against
+  can be the thing that is wrong.
+- **A literature pass catches what a census cannot.** The census could see a gate was dead or
+  always-on; only opening the field guides showed two were BACKWARDS. Adamite's engine note read
+  "no Cu → NON-FLUORESCENT" — precisely inverted, and shipping for months; uraninite's always-on
+  green faked the exact physics its own spec entry corrects. A census measures what the code
+  does; the science says what it SHOULD do, and the gap between them is where the inversions
+  hide. Follow the science means opening the papers — forty-plus, one capped agent for the
+  judgment, the load-bearing numbers spot-verified, because subagents fabricate citations too.
+- **The record must match its own narration.** Ruby said "Cr³⁺ 4.5 ppm" in its note and recorded
+  no chromium at all; sapphire, emerald, feldspar the same. A crystal that describes a trace it
+  does not carry is a rock lying to the instrument that will one day read it back. Grep for the
+  partition assignment right above the GrowthZone return before you declare a datum absent — the
+  compute-and-drop is the reading-the-wrong-source law wearing the writer's coat instead of the
+  reader's.
+
+### Diagenesis
+
+Named, and owed. The eleventh hand's calcite recalibration (`223a96b`) was both the template and
+the honest cautionary tale — it named the disease and fixed one gate, and that gate turned out
+so tight it false-quenched the one locality it most wanted to light. The seed found the
+sickness; this hand found it fleet-wide. The sixth and seventh hands' probe/census idiom turned
+"the gates are probably broken" into a per-crystal table in one run. `_harness.mjs`'s
+extraExports let the census pull the REAL `zoneFluorescence` out of the bundle instead of a
+replica — the replica-drift trap the amethyst probe had already taught the thirteenth hand, paid
+forward. The engine notes themselves — js/52's v103 ladder (Rakovan 2002), js/59's willemite,
+js/53's trace_Y — are prior hands writing real luminescence physics into prose where I only had
+to make the consumers read it. The fourth hand's tutorial rework gave the broth retune a
+scenario built to be driven and a UV bar built to be its payoff. The strip archive and
+baseline-diff proved the movement was 1/39 and no more. And the SIM-bump-is-two-commits law let
+the bar ship byte-identical while the narrator — whose fluorescence lines the boss reads as the
+paper — moved honestly under its own version. Borrowed, all of it.
+
+### The dream, sixteenth telling
+
+The citrine half has an ADDRESS now, and it is not a colour. It is a thermal field with three
+missing pieces the note already names: a SOURCE of spatial ΔT (a feeder-spot warmed, a wall
+one-sidedly baked, a dike contact), the differentiation of `ring_temperatures` through the
+js/20d resolvers that already stand ready, and the episode→colour split so the renewed head
+colours by the beat that grew it while the buried amethyst keeps its purple. One crystal, two
+thermal histories, divided by geometry — the thirteenth hand's "two chromophore histories" with
+the mechanism finally underneath it. Nearer doors: the calcite Pb SENSITIZER (Schulman 1947 —
+the Franklin SW glow needs lead with the manganese, and the fleet's MVT-adjacent calcites carry
+Pb already, one datum and one tenant away); and the BIOGENIC organics field, which lights
+aragonite's cream and — this is the one to want — the 1927 Wiesloch UV HOURGLASS, a fluorescing
+figure sector-zoned into clay-grown selenite that no daylight reveals, whose recording SIM 211
+already made when it carved the hourglass sediment sectors. A crystal that glows a shape only
+the lamp can read is the ontogeny arc's whole thesis in one specimen: the biography is written
+where you cannot see it without the right instrument. The eleventh hand dreamed promises as
+pins; the fluorescence bar is now one of the questions the inverse solver will ask a label-less
+rock, and it knows the answer because the crystal — its record matched to its narration at last
+— wrote it down.
+
+— the builder, fourteenth hand: the lamp learned to tell the truth · 2026-07-09
+
+## KEYSTONE — the fifteenth hand: the painted learned to earn its shape (2026-07-10)
+
+This hand's first act was to finish the last one — the fourteenth stone was written but not yet
+shipped, the classifier having gone dark mid-commit; it landed at first light (`2913c42`) and the
+lineage was whole again before anything new began. Then two words from the boss — *"lets keep
+going"* — and after that, *"lets do the O5 research."* The day has one thesis under both: the sim
+kept **painting** things it could **earn**. It painted its own menus by hand, three copies that
+drifted until scenarios went invisible; it paints the whole crystal-splitting ladder by keyword,
+naming saddle and sheaf and spherulite from trigger-words with no mechanism underneath. One of those
+was made to earn its shape and shipped; the other was shown the mechanism that will let it, and
+approved. Earn what you paint — the O3 lesson, walking out past the geometry into the chrome and the
+next rung.
+
+The arc in one breath. **Door 3** (`892905f`, render-only; docs `e6053f7`) closed the eleventh
+hand's third door and the v116 chronic bug behind it — the Scenarios picker, the Zen dropdown, and
+the Begin tutorials were three hand-synced HTML surfaces that had let fifteen scenarios ship
+invisible, and they now generate from ONE `menu_layout` block in scenarios.json5 (the js/94
+populators, beside tranche 1's `#scenario` populator that walked the same road in July). A one-shot
+extractor read the live menus into the data so the migration was faithful by construction, and
+byte-identity was proven from BOTH ends — `menu_layout === index.html@HEAD` (re-parsed, deep-compared)
+AND `generated DOM === MENU_LAYOUT` (live in the browser, all 85 entries element-for-element) —
+so generated === original, no user-visible change, CI 174 files / 2414 tests green; the
+vugg-add-scenario skill §10.5 rewritten from "sync three HTML surfaces" to "add one menu_layout
+entry," its own long-standing TODO marked done. Then **the O5 splitting ladder** (`731ee89`,
+research-first proposal; the ELO/masking half already shipped SIM 222–224). Two capped research
+agents plus the builder's own passes, every load-bearing citation web-verified and the two passes
+cross-checked — and the checking caught the builder's OWN slips: a saddle-dolomite title conflated
+with a different paper, a half-remembered book that does not exist, a Bi₂S₃ split attributed to the
+wrong authors. The science came back clean and ordered: one governing variable (cumulative
+misorientation) up a ladder single → curved → split → sheaf → spherulite; three mechanism classes
+that must not be confused (A impurity autodeformation, which fires at LOW σ; B high-σ spherulitic,
+Beck & Andreassen's carbonate SI≈2–3; C botryoidal aggregation, which is not splitting at all); the
+branching microphysics an open question. First content is the Deccan zeolite scenario that already
+exists. The boss reviewed all five open questions and approved S-a — keep the two routes, reuse the
+masking half's film as the first impurity source, hand-seed splitAbility with quartz a hard zero,
+let split-growth earn the saddle but keep the shear-bent saddle a separate record the census must
+prove apart.
+
+### The marks
+
+- **The O3 lesson has no natural boundary — earn what you paint, everywhere.** O3 earned the palisade
+  the sim had painted since v27. This hand found the same disease twice more, far from the crystal
+  faces: the menus were painted by hand (typed three times, drifting), and the splitting ladder is
+  painted by keyword (js/07 scores trigger-words to a habit string; `_makeSaddleRhomb`'s own comment
+  admits "no quantitative curvature law, so the scaling is mild + clamped"). A hand-copied config and
+  a keyword-scored habit are both painted palisades wearing different coats. When you find the sim
+  DESCRIBING what it could GENERATE — a duplicated list, a named-not-earned form — that is an O3 in
+  hiding.
+- **The cross-check catches your OWN forgeries, not just the subagents'.** The fourteenth hand wrote
+  that subagents fabricate citations; this hand learned the guard points inward too. From memory I
+  wrote a saddle-dolomite title that belongs to a different 1989 paper, and cited a Punin book whose
+  existence I could not confirm. Two agents and two web passes, run against each other, surfaced both
+  before they set into the proposal. Verify-before-asserting is not a rule about untrusted sources;
+  it is a rule about MEMORY, and your own is a source like any other.
+- **Render the phenomenon, not the microphysics — the σ*(φ) discipline, reused.** Why a crystal
+  splits its lattice by small angles is genuinely unsettled (Keith–Padden vs growth-front nucleation
+  vs autodeformation, still argued). The masking half already taught the answer: you do not have to
+  crown a theory to render a truth. The ladder is real and measurable; the two-route index renders
+  IT, on one cumulative-misorientation scalar, and stays silent on the mechanism the field has not
+  settled. A fidelity arc that waited for the physicists to agree would never ship.
+- **Keep the provenance attached — one shape can have three causes, and the record must tell them
+  apart.** The boss's load-bearing correction: do NOT flatten the impurity route and the
+  supersaturation route into one "more σ = more split" law, because gypsum curves HARDER at LOW σ —
+  the opposite sign. Same on the saddle: a rhombohedron bent by growth-time impurity strain and one
+  bent by post-growth shear look identical and are different rocks, so `_split.route` is required and
+  the census must PROVE the two saddle-sets never collide. The sceptre pair (corrosion vs masking)
+  was the first time the sim carried one form by two mechanisms; this is the second, and the law is
+  now general — a shared silhouette is not a shared cause.
+- **The cheapest content is the scenario you already have.** The masking half paid to author
+  Sweetwater from scratch because its texture did not yet exist. The splitting half inherits the
+  Deccan zeolite scenario free: it already runs, its species are mostly modelled, and sheaf → spray →
+  sphere are not decoration there but the locality's whole signature. Grep the tree before you author
+  a world — the strongest first content is often a stage that is already built, waiting for the
+  mechanism that makes its signature earned instead of labelled.
+
+### Diagenesis
+
+Named, and owed. Tranche 1 of §10.5 (July 7) taught the `#scenario` dropdown to generate itself and
+left the other three surfaces "for tranches 2–3" — Door 3 is those tranches, walking a road the
+earlier hand graded. The O3a/O3b and O5a/O5b two-commit discipline is the template the splitting
+proposal's S-a/S-b/S-c inherits wholesale, down to the byte-identity-falls-out-of-the-arithmetic
+trick that σ*(φ) pioneered (σ*(0)=σ*₀; here, rate=0 for the unsplit). The masking half left more than
+a template: it left the `_film` state itself, which the boss chose as the splitting index's first
+impurity source — the two O5 halves will share a state, one dusting both masking a front and seeding
+a split. The Door-2 research method — capped agents for the judgment, the load-bearing numbers
+spot-verified because subagents fabricate — ran again here and caught more, this time the builder's
+own memory. The O4b and sceptre census-certificate pattern is exactly the collision-check the boss
+promoted to an S-a acceptance gate. And Beck & Andreassen's SI≈2–3, a carbonate number for a
+carbonate-cored fleet, is the calibration anchor the way the catalog's real specimens are — borrowed
+from people who measured the rock.
+
+### The dream, seventeenth telling
+
+The splitting ladder has a mechanism now, drawn but not yet cut. S-a records a `_split` index that
+nothing reads — the record-unread rung the sim has climbed four times — and its census answers the
+one question that gates everything: which crystals cross the impurity bar or the far-from-equilibrium
+bar, and does that set ever touch the shear-bent saddles it must stay clear of. Then S-b lets the
+Deccan grow what it has only ever been called: stilbite fanning into a wheat-sheaf, scolecite bursting
+from a point, okenite closing into a cotton-ball sphere — the Category-2 ontogeny running forward in
+a vug instead of a caption. Beyond it wait the minerals the fleet does not yet hold — wavellite's
+pinwheel hemispheres out of Arkansas, okenite and gyrolite and variscite — each a bench specimen for
+a rung. And past the splitting rung the ladder itself keeps climbing: O6, O7, O8, and the whole arc's
+one promise, that a crystal's biography is written in how it grew and a good enough sim can read it
+back. Two doors from earlier hands still stand unopened — Door 4, the fleet signature audit that asks
+every scenario to declare not just what it grows but at what STATURE; and the citrine half's thermal
+field, still a foundation stone waiting for its spatial ΔT. This hand painted nothing it could earn,
+and left a map for the next earning. The sim grows more like the rock each time a painted thing is
+made to justify its shape.
+
+— the builder, fifteenth hand: the painted learned to earn its shape · 2026-07-10
+
+---
+
+## KEYSTONE — the sixteenth hand: the ladder learned its shape, and where a bump becomes a flood (2026-07-11)
+
+The fifteenth hand left the splitting ladder drawn but not cut — a `_split` index recorded and
+unread, its census certifying which crystals cross the impurity or far-from-equilibrium bar. This
+hand cut it: the ladder now EARNS its shape. A Deccan stilbite renders the wheat-sheaf it was only
+ever *called*; an aragonite flos-ferri closes into a radial sphere; gypsum bends into its fishtail —
+each drawn from the index the crystal accrued as it grew, not from a keyword. It shipped **render-
+only, byte-identical (0/39)** — and the reason it shipped that way is the mark that matters most.
+
+**The arc in one breath.** S-a first (`fbac070`, first light): the two-route index recorded unread,
+census + noncollision certificate, byte-identical. Then S-b, in two acts. The FIRST act was
+calibration, and the census earned its keep three times over — it caught, in order, a global-threshold
+blowup (the σ scale is per-mineral), a *science bug* (the scalar ability model let high-σ gypsum take
+the spherulite route — 18 false spherulites, when gypsum only ever autodeforms), and a growth-
+integration gap (the fibrous zeolites are radial by STRUCTURE, not by σ). Following the science
+reshaped the model into per-route abilities `{a,b}`, a per-mineral onset anchored to each mineral's
+own σ_crit with a bounded far-from-eq drive, and a growth-ramped structural-radial floor. The result
+is a ladder that reads right: curved 18 / split 51 / sheaf 30 / spherulite 12, split-able roster only,
+quartz never, certificate PASS. The SECOND act was the wall — and the lesson.
+
+### The marks
+
+1. **The census is the instrument that catches your SCIENCE, not just your counts.** The scalar
+   `splitAbility` looked fine until the rung×mineral matrix showed 18 gypsum spherulites. Gypsum
+   autodeforms; it does not spherulite. A census that only counted "who splits" would have missed it;
+   one that showed *which rung, which mineral* made the wrongness impossible to ignore. Build the
+   instrument that shows the shape of the answer, not just its size.
+
+2. **The sim's σ scale is per-MINERAL — a global threshold is a lie.** Dolomite's σ_crit is 10,
+   calcite's 1.5, and σ tails to ~1e5. The masking half already knew this (σ*₀ = per-mineral σ_crit);
+   the splitting half had to relearn it. Anchor the far-from-eq onset to each mineral's OWN threshold,
+   and BOUND the drive so an outlier saturates the term instead of pinning the index. The fleet's
+   heterogeneity is not noise to average over — it is the thing to key on.
+
+3. **Some habits are structural, not driven.** The natrolite-group zeolites are fibrous because of
+   their chain structure, at every supersaturation — they never reach the far-from-eq band in the sim,
+   yet the sheaf/sphere IS their signature. A σ-only B-route left them dark. The growth-ramped floor
+   (a matured crystal sits at its structural rung; a speck does not) is the honest fix. Not every form
+   is earned from conditions; some are owed to the lattice.
+
+4. **A SIM bump through SIZE is a FLOOD, not a wire.** The boss chose a real sim response over render-
+   only, and the faithful instinct — a splitting crystal is more compact, so throttle its axial growth
+   — was RIGHT physics and WRONG plumbing. Shrinking a split crystal shrank its volume, which shifted
+   vugFill, which moved nucleation and downstream growth: the baseline regen showed **80 NON-split
+   minerals** changed (quartz, galena, sphalerite…, one by 15 mm) and 29 count shifts. Size is coupled
+   to fill to nucleation to enclosure to dissolution — total_growth_um is load-bearing across ~8 sites.
+   A census-bounded size effect must be volume-NEUTRAL (compact extent at CONSTANT volume: the needle's
+   length collapsing to the sphere's radius, same material), which is a large, risky surgery. O3b's
+   "a SIM bump is a web, not a wire" was gentle next to this: here a wire became a flood.
+
+5. **When the evidence breaks the plan's assumption, surface it — do not silently ship the reversal
+   OR the flood.** The boss picked "SIM bump" believing it would be census-bounded. It wasn't. The
+   honest move was neither to ship the flood (violating "census-bounded") nor to quietly ship render-
+   only (reversing their choice): it was to show the 80-mineral cascade, the 15 mm artifacts, the
+   volume-neutral surgery it would take, and let them choose again with the evidence. They chose render-
+   only. A decision made on an assumption is void when the assumption falls; give it back.
+
+### Diagenesis
+
+This hand stands entirely on prepared ground. S-a's recorded index was the whole substrate — S-b only
+had to calibrate what to write into it and read it back at render time. The render-only landing is the
+O4a-engulfment / O5c-band posture, laid twice before: a render that reads a recorded scalar while the
+sim record stays byte-identical. The census tool the fifteenth hand built took two new instruments
+(the σ/index spread, the rung×mineral matrix) and became a calibration bench. And the boss's
+"follow the science as best as you can" was the compass through every calibration fork — the per-route
+split, the per-mineral anchor, the structural floor all fell out of asking what the rock actually does.
+
+### The dream, eighteenth telling
+
+The Deccan grows what it was called, and the fleet's other radial rocks with it — flos-ferri, byssolite
+sprays, saddle dolomite curving where the Mg says so. But two earnings are only named, not made. The
+first is the one this hand could not cut cleanly: the SIM should still *respond* to splitting — a
+spherulite is genuinely more compact than the needle it replaced — and the volume-neutral path (make
+total_growth_um a pure reported extent, drive fill from an uncompacted twin, thread it through the ~8
+size-reading sites) would let the baseline move for the split set ALONE, census-bounded at last. The
+second is S-c: the curved and split rungs still ride their old habit render; their curvature should be
+earned from the index too, and the sheaf's splay and the spherulite's completeness should vary
+continuously with it, not snap between two meshes. Past those, the ladder keeps climbing — O6, O7, O8 —
+and the two old doors still stand: Door 4's stature audit, and the citrine half's thermal field. The
+crystal's biography is more legible than it was: it now grows apart when the conditions say split, and
+shows it. What it does not yet do is let that splitting cost it the length it traded for breadth — the
+last honest debt of this rung, written down for the hand that will pay it.
+
+— the builder, sixteenth hand: the ladder learned its shape · 2026-07-11
+
+---
+
+## KEYSTONE — the seventeenth hand: the render learned its degree (2026-07-14)
+
+The sixteenth hand's dream named two unmade earnings and paid neither: the volume-neutral SIM effect
+(the ladder should COST length) and S-c (the form should vary CONTINUOUSLY with the index, not snap
+between two meshes). This hand paid the second. The sheaf no longer has one splay: a just-split crystal
+is a narrow bundle, a mature one a wide wheat-sheaf, and everything between them is a real intermediate.
+The spherulite closes by degree; the curved rhomb bows by degree. `_split.rung` chose WHICH form last
+time; `_split.index` now sets HOW FAR. It shipped **render-only, byte-identical** — only the renderer
+changed, so the seed-42 baseline could not move, and there was nothing to regenerate.
+
+### The marks
+
+1. **When the eye-check can't run, build the eye.** WebGL screenshots time out on this render (a known
+   trap), and no headless run exercises the Three renderer — so "does the form actually vary?" had no
+   cheap answer. The answer was a probe that REPLICATES the renderer's quantization formulas and applies
+   them to the real fleet: 111 split crystals → **17 distinct fan-splay buckets**, curved 3, spherulite 3,
+   PASS. That is a stronger proof than a screenshot — it counts the degrees the render can actually take,
+   not one frame of one crystal. The mirror-formula risks drift (the probe's comment says so, loudly);
+   the trade was worth it. A render you can't photograph can still be measured.
+
+2. **A continuous render must be PROVEN non-degenerate, or it's still a snap.** The whole point of S-c is
+   that the form spreads. So the acceptance gate is not "it renders" — it's "every active family spans
+   ≥2 buckets." A family that collapses to one value is a fixed mesh wearing a parameter. The probe fails
+   loudly on collapse. Continuity is a claim about a distribution; test the distribution.
+
+3. **The right gate REFUSES the wrong shape.** The curved rung earns a saddle-rhomb curvature — but only
+   for rhombohedral carbonates and saddle-habit crystals. A curved gypsum is a bent BLADE, not a bent
+   rhomb; forcing the rhomb on it would be a science regression dressed as coverage. So the gate keeps
+   gypsum/selenite/zeolites on their blades at the curved rung (they earn their split render one rung up,
+   as fans). Six selenites, two scolecites, a stilbite — all correctly left alone. Adding a form is only
+   an upgrade where the form is right; elsewhere, the honest move is to decline and write down why.
+
+### Diagenesis
+
+Almost pure standing-on: S-b recorded the `_split.index` this hand read, calibrated it to the science,
+and shipped the two-mesh snap this hand made continuous. The render-only / byte-identical landing is the
+same posture laid down four times now (O4a, O5c, S-b, here). The probe is the census-as-instrument habit
+applied to the render side — a new tool in the same shape as `o5-split-census.mjs`. Nothing here was
+invented; it was earned from a rung the last hand left one degree short.
+
+### The dream, nineteenth telling
+
+One debt remains on this rung, and it is the heavy one: the SIM should let splitting COST length —
+a spherulite is genuinely more compact than the needle it replaced, and the volume-neutral path (make
+`total_growth_um` a pure reported extent, drive fill from an uncompacted twin, thread the ~8 size-reading
+sites) would let the baseline move for the split set ALONE, census-bounded at last. The
+`splitGrowthMult`/`SPLIT_AXIAL_FLOOR` lever still ships defined-but-unused, waiting. A smaller earning
+was written down beside it: a bent-BLADE generator, so the curved gypsum this hand kept as a blade could
+bow like its rhomb cousins. Past those the ladder keeps climbing — O6, O7, O8 — and the two old doors
+still stand: Door 4's stature audit, the citrine half's thermal field. The crystal's biography grows more
+legible each hand: it splits when the conditions say split, shows WHICH way, and now shows HOW FAR. What
+it still does not do is pay for the breadth with its length — the one debt this rung has left.
+
+— the builder, seventeenth hand: the render learned its degree · 2026-07-14
+
+---
+
+## KEYSTONE — the eighteenth hand: the crystal paid for its breadth with its length (2026-07-14)
+
+The seventeenth hand ended on a named debt: "what it still does not do is pay for the breadth with its
+length." This hand paid it. A split crystal now compacts its axial extent as it grows — the aragonite
+spherulite that would have been a 27 mm needle is an 18 mm sphere, 20% wider, the SAME material — and the
+whole ladder is closed: a crystal splits when the conditions say split (S-b), shows how far along (S-c),
+and now pays length for breadth (this). It shipped as a real SIM bump (SIM 226), and the story of HOW is
+the mark that matters.
+
+### The arc in one breath
+
+The sixteenth hand's keystone deferred this debt with a plan: "make total_growth_um a pure reported extent,
+drive fill from an uncompacted twin, thread the ~8 size-reading sites — census-bounded at last." This hand
+went to execute that plan and found it **false at the first census**: total_growth_um feeds HUNDREDS of
+dissolution reads, and c_length_mm feeds O3 geometric-selection, enclosure, AND paragenesis. Crystal size
+is not an ~8-site quantity; it is woven through selection and nucleation. The plan the last hand wrote down
+in good faith did not survive contact with the code. So the honest move was to stop, surface the break to
+the boss, and — on the boss's "measure first" — build the instrument that would settle it with a number.
+
+### The marks
+
+1. **Your predecessor's map can be wrong — even when your predecessor was you.** The sixteenth hand wrote
+   "~8 sites, census-bounded" with real conviction and it was optimism; the census found hundreds of reads
+   and a deep coupling. A handoff is a lead, not a proof (the memory note says this of index lines; it is
+   true of keystones too). Re-census the ground before you build on a predecessor's estimate of it, however
+   confident the prose. The most trustworthy-sounding sentence in the last keystone was the one that was
+   wrong.
+
+2. **A measurement can dissolve a philosophy argument.** The fork looked like a values question — bedrock-
+   honest physics (let size feed selection, accept the flood) vs the census-bounded constraint (touch
+   nothing but the split set). Unwinnable in the abstract. The boss said "measure first," and the number
+   ended it: constant-volume compaction moves 7 non-split minerals by ≤0.1% in ONE scenario, not 80. The
+   honest path WAS the census-bounded path; the two horns of the fork were the same horn. When a debate is
+   about what WILL happen, the instrument outranks the argument — build it before you take a side.
+
+3. **The difference between a flood and a ripple is which quantity you hold fixed.** S-b and this hand both
+   made split crystals more compact, and both let compaction feed the size-coupled physics. S-b flooded 80
+   minerals; this rippled 7 at 0.1%. The only difference: S-b let VOLUME change (→ fill → nucleation, the
+   fleet-wide amplifier), and this held volume EXACTLY constant (a_width widens as c shrinks). Same
+   coupling, opposite blast radius. The lesson O3b's "web not a wire" and the sixteenth's "flood not a wire"
+   were circling: it is not that size-coupling is untouchable — it is that you must find the conserved
+   quantity and pin it. Pin volume, and length becomes free to move.
+
+4. **The infrastructure you need was often laid for another reason.** `a_width = √(6V/(π c))` was written on
+   2026-05-18 for habit-stability — so the renderer would see a stable width when the habit oscillated. It
+   happened to be EXACTLY the volume-conserving widen this hand needed: shrink c, and a_width grows to hold
+   V. Nothing new had to be derived; the May hand had already built the constant-volume machine without
+   knowing this rung would need it. Diagenesis runs forward in ways you cannot predict — which is the
+   argument for laying every stone true, even the ones whose future use you cannot see.
+
+### Diagenesis
+
+Almost pure inheritance. S-a's recorded index is the input to `splitGrowthMult`; S-b calibrated it; S-c
+made its render continuous. The a_width volume-conservation is the May habit-stability hand's. The
+off/on census idiom is the same instrument shape used for O3a, O5a, and S-b's calibration. And the boss's
+"measure first" was the whole hinge — it converted a philosophy fork into a two-line census verdict, and
+the honest-physics answer fell out of the number. This hand mostly connected wires other hands had already
+run to the wall.
+
+### The dream, twentieth telling
+
+This rung is DONE. The crystal's biography is legible from three sides now: it splits when the conditions
+say split, shows how far along the ladder it climbed, and pays for its breadth with its length — split,
+degree, and cost. What remains are other rungs and older doors. O6, O7, O8 up the ontogeny ladder. Door 4's
+stature audit and the citrine half's thermal field still stand open. A small note waits beside them: a
+bent-BLADE generator, so the curved gypsum and selenite that S-c's gate keeps as straight blades could bow
+like their rhomb cousins — the last unmade corner of the render. But the splitting ladder itself asks for
+nothing more. A vug crystal in this simulator now grows apart, shows its degree of apartness, and is
+smaller along its axis for the breadth it traded — the way a real spherulite is smaller than the needle it
+consumed. The debt the fifteenth hand first wrote down, four hands ago, is paid in full.
+
+— the builder, eighteenth hand: the crystal paid for its breadth with its length · 2026-07-14

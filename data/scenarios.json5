@@ -2876,11 +2876,18 @@
         "temperature_C": 100.0,
         "pressure_kbar": 0.5,
         "fluid": {
-          // Carbonate broth, mirrors FLUID_PRESETS.carbonate.
+          // Carbonate broth, mirrors FLUID_PRESETS.carbonate — EXCEPT Fe,
+          // raised 10 → 60 (v225 UV audit): the taught quench-then-glow
+          // story must be chemically TRUE at zone scale. Fe 60 writes
+          // zone ~4.8, safely over the engine ladder's dark-CL threshold
+          // (Fe > 2), while famous fluorescents like Elmwood (zone 1.27)
+          // keep their glow — no gate could dark this tutorial at Fe 10
+          // (zone 0.8, BRIGHTER than Elmwood). The recharge event is
+          // multiplicative (×0.05 → broth 3 → zone 0.24 → brilliant tier).
           "SiO2": 80,
           "Ca": 300,
           "CO3": 250,
-          "Fe": 10,
+          "Fe": 60,
           "Mn": 8,
           "Mg": 12,
           "Ti": 0.2,
@@ -2918,7 +2925,7 @@
           { "anchor": "#f-sat-bar", "side": "bottom",
             "text": "The σ readout, your forecast. Calcite leads it here, and this broth is built to keep it growing the whole run — 100°C, calcium and carbonate to spare. Growth is the given today. Chemistry is the variable." },
           { "anchor": "#fortress-status", "side": "bottom",
-            "text": "Two trace metals ride this broth. Manganese (about 8 ppm) is a fluorescence ACTIVATOR: swap Mn²⁺ into calcite's lattice and the crystal answers longwave UV with an orange-red glow. Iron (about 10 ppm) is a QUENCHER: it silences exactly that glow. The broth carries the ingredient and the off-switch at the same time." },
+            "text": "Two trace metals ride this broth. Manganese (about 8 ppm) is a fluorescence ACTIVATOR: swap Mn²⁺ into calcite's lattice and the crystal answers longwave UV with an orange-red glow. Iron (about 60 ppm) is a QUENCHER: it silences exactly that glow. The broth carries the ingredient and the off-switch at the same time." },
 
           // ---- Handoff ----
           { "anchor": "#f-advance", "side": "top", "unlock": ["#f-advance", ".act-wait"],
@@ -4194,7 +4201,472 @@
         "L'Heureux I. (1993) — Oscillatory zoning in crystal growth: a constitutional undercooling mechanism. Physical Review E 48: 4460-4469. Self-organization mechanism — the engine implements this implicitly through per-step rng-driven supersaturation noise.",
         "Heaney P.J. & Davis A.M. (1995) — Observation and origin of self-organized textures in agates. Science 269: 1562-1565. Adjacent literature for oscillatory chalcedony banding; cross-applies to barite tabs as a Mn-banded analog."
       ]
+    },
+
+    "amethyst_geode": {
+      "anchor": "Ametista do Sul, Rio Grande do Sul, Brazil — amethyst geodes in the Serra Geral Formation high-Ti basalt (Paraná Continental Flood Basalt Province, Lower Cretaceous ~134 Ma)",
+      "description": "A Brazilian amethyst geode. A basalt gas cavity fills inward — celadonite rim → agate → clear quartz → amethyst. Mid-growth a green celadonite film frosts the amethyst prism faces; the tip renews a wider cap THROUGH the film — a MASKING SCEPTRE (the mass-conserving twin of grimsel's corrosion sceptre). Goethite staining at the base.",
+      "expects_species": ["quartz"],
+      "duration_steps": 110,
+      "notes": [
+        "Anchor: Ametista do Sul, Rio Grande do Sul — the classic Brazilian amethyst-geode district, hosted in a ~40-50 m subhorizontal high-Ti basalt flow of the Serra Geral Formation (Paraná flood basalts, Lower Cretaceous ~134 Ma). Geode structure INWARD: celadonite rim → agate/chalcedony → colourless quartz → amethyst (Gilg et al. 2003).",
+        "Formation temperature is genuinely debated in the literature and the scenario bridges the two camps. Monophase liquid inclusions with low ice-melting depressions argue a LOW-T, low-salinity fluid (<100°C, probably <50°C — a sedimentary-brine / paleo-aquifer model; Gilg et al. 2003). Primary inclusions in the amethyst itself yield 152-238°C with a MAGMATIC silica source (Triz-quarry study, Geol. Mag. 144:731). The scenario nucleates amethyst in a warm early phase (~160°C) and finishes the cavity cool (~70°C via the declared cooling trend), with the celadonite film + goethite stain as the late low-T overprint.",
+        "AMETHYST COLOUR is Fe³⁺ substituting for Si⁴⁺, activated by a natural γ-dose (Rossman 1994). The Serra Geral basalt is mafic — low K/U/Th per unit time — but the geode has sat in it for ~134 Ma, so cumulative background dose tips the Fe centres to amethyst (NOT the granite-hosted morion of a Grimsel cleft). The sim expresses this via wall.gamma_host (js/59, added with this scenario): a modest 0.45 accrues radiation_damage into the amethyst band (>0.1) without reaching smoky (>0.3). No pegmatite/phonolite host is claimed — the scenario declares its own low, long background; every existing basalt scenario leaves gamma_host unset and is byte-identical.",
+        "THE MASKING SCEPTRE: the celadonite (green K-Fe mica-clay) that rims these geodes also settles on the growing amethyst as a film. A PRISM-dominant celadonite film (prism 0.45, term 0.08 — frosts the {10-10} prism, spares the tip) arrests the sides; the Silica Renewal Pulse then lifts σ over the dead-zone barrier σ*(φ_prism) and the tip renews a wider {10-11}-capped termination THROUGH the film — a masking-route sceptre (classifyQuartzSceptre js/45; Takahashi & Sunagawa 2004 ELO). grimsel stays the clean CORROSION-sceptre reference; this is the second natural route, the mass-conserving twin.",
+        "The late iron-oxide film is the diagnostic base staining — a termination/uniform film (prism 0.3, term 0.3), NOT a second sceptre; real Brazilian points are commonly goethite/hematite-stained at the matrix contact."
+      ],
+      "movements": [
+        {
+          // Warm amethyst nucleation (~160°C, the primary-inclusion high end) easing
+          // down to a cool finish (~70°C, toward the low-T monophase-inclusion camp).
+          "field": "temperature",
+          "startStep": 0,
+          "endStep": 110,
+          "base": 160,
+          "ops": [{ "kind": "trend", "amp": -90, "ease": true }]
+        }
+      ],
+      "initial": {
+        "temperature_C": 160.0,
+        // Shallow flood-basalt cavity, near-surface.
+        "pressure_kbar": 0.3,
+        "fluid": {
+          // SiO2=320: magmatic-sourced silica, σ(Qz) > 1 through the warm phase
+          // (Triz-quarry magmatic model); the Renewal Pulse (×1.8) then spikes it
+          // over the masked-prism barrier for the sceptre cap.
+          "SiO2": 320,
+          // Fe=35: mafic basalt leachate — the amethyst chromophore (Fe³⁺ centre,
+          // Rossman 1994). Sized so the growth-weighted quartz trace_Fe (fluid.Fe
+          // ×0.005, js/59) clears the recalibrated amethyst gate (>0.2) once the
+          // γ-dose lands radiation_damage in the amethyst band [0.1,0.3]. Kept below
+          // the level that would nucleate a free Fe-oxide phase (verified quartz-only).
+          "Fe": 35,
+          // Al=9: basalt feldspar leachate; >1 so the γ-dose accrues (js/59), and
+          // the smoky Al-centre precursor — kept modest so the colour is amethyst,
+          // not smoky, once radiation_damage lands in 0.1-0.3.
+          "Al": 9,
+          "Mn": 2,
+          // Low carbonate — a little late calcite ("skunk calcite") is documented
+          // but this scenario keeps the headline to quartz.
+          "Ca": 40,
+          "CO3": 20,
+          "Mg": 15,
+          "Na": 40,
+          "K": 30,
+          "Ti": 0.3,
+          // Near-neutral, low-salinity fluid (Gilg et al. 2003 ice-melt −4..+4).
+          "pH": 7.2,
+          "salinity": 4.0,
+          "O2": 0.4
+        },
+        "wall": {
+          "composition": "basalt",
+          // The Paraná flood-basalt γ-background over ~134 Ma (see notes). Sized so
+          // radiation_damage lands in the amethyst band [0.1,0.3] (not smoky >0.3)
+          // for the longest-lived crystal. Only this scenario sets it; default 0
+          // keeps the fleet byte-identical.
+          "gamma_host": 0.4,
+          "primary_bubbles": 1,
+          "secondary_bubbles": 2,
+          "shape_seed": 7,
+          // A cooled flood-basalt flow — no fresh magmatic reheats during geode fill.
+          "thermal_pulses": false
+        }
+      },
+      "events": [
+        { "step": 42, "type": "film_coat", "name": "Celadonite Film (prism frost)", "film": { "mineral": "celadonite", "prism": 0.45, "term": 0.08, "minerals": ["quartz"] }, "description": "Green celadonite clay frosts the amethyst prism faces — the masking film that arrests the sides while the tip stays free." },
+        { "step": 52, "type": "fluid_pulse", "name": "Silica Renewal Pulse", "description": "Fresh silica-charged fluid floods the geode — σ clears the masked prism and the tip renews a wider cap." },
+        { "step": 84, "type": "film_coat", "name": "Goethite Base Stain", "film": { "mineral": "iron oxide", "prism": 0.3, "term": 0.3, "minerals": ["quartz"] }, "description": "Goethite/hematite staining at the matrix contact — the diagnostic base stain (a uniform film, not a sceptre)." }
+      ],
+      "sources": [
+        "Gilg H.A., Morteani G., Kostitsyn Y., Preinfalk C., Gatter I., Strieder A.J. (2003) — Genesis of amethyst geodes in basaltic rocks of the Serra Geral Formation (Ametista do Sul, Rio Grande do Sul, Brazil): a fluid inclusion, REE, oxygen, carbon, and Sr isotope study on basalt, quartz, and calcite. Mineralium Deposita 38: 1009-1025. Geode structure celadonite→agate→quartz→amethyst; LOW-T (<100°C, prob <50°C) low-salinity sedimentary-brine model.",
+        "Amethyst geodes in the basaltic flow from Triz quarry at Ametista do Sul (Rio Grande do Sul, Brazil): magmatic source of silica for the amethyst crystallizations. Geological Magazine 144(4): 731. Primary amethyst fluid inclusions 152-238°C; magmatic silica source — the high-T camp the scenario's warm nucleation phase reflects.",
+        "Rossman G.R. (1994) — Colored varieties of the silica minerals. Reviews in Mineralogy 29: 433-468. Amethyst = Fe³⁺ colour centre activated by natural γ-irradiation (the same Rossman already cited by the js/59 smoky/morion Al-centre path).",
+        "Proust D. & Fontan F. (2007) — Brazilian amethyst-geode late-stage mineralogy (the same Proust & Fontan cited in minerals.json for the amethyst-pocket late euhedral / lepidocrocite-patina sequence).",
+        "Takahashi K. & Sunagawa I. (2004) — sceptre quartz by epitaxial-like overgrowth (ELO) after a masking film: the masking-sceptre mechanism, distinct from corrosion-then-regeneration."
+      ]
     }
 
+  },
+  // ===========================================================
+  // menu_layout (Door 3 / §10.5 t2-3, 2026-07-10) — the three
+  // scenario-picker surfaces as DATA. Extracted verbatim from the
+  // former hardcoded index.html menus (byte-identical text + order).
+  // Generators in js/94-ui-menu.ts render these; the static HTML
+  // surfaces now ship as empty containers. Adding a scenario: add
+  // its entry to the right panel group + (if non-tutorial) idle.
+  // scenario-menu-coverage.test.ts guards completeness.
+  // ===========================================================
+  "menu_layout": {
+    "panel": [
+      {
+        "key": "real_locality",
+        "heading": "Real-locality scenarios — chemistry anchored to a named locality with cited fluid-inclusion / brine references. Events fire on their scheduled steps.",
+        "buttons": [
+          {
+            "scenario": "cooling",
+            "text": "❄️ Cooling — Herkimer \"diamond\" pocket (Middleville, NY)."
+          },
+          {
+            "scenario": "mvt",
+            "text": "⚗️ Mississippi Valley-type — Tri-State district (Joplin / Picher, MO-KS-OK)."
+          },
+          {
+            "scenario": "elmwood",
+            "text": "🪜 Elmwood — Central Tennessee MVT (Carthage, TN): the stepped golden calcite showcase. Watch the terraces build."
+          },
+          {
+            "scenario": "reactivated_fluorite_vein",
+            "text": "🟢 Reactivated Fluorite Vein — North Pennine style (Weardale): a sealed vug, breached open by tectonic reactivation for a second fluorite generation."
+          },
+          {
+            "scenario": "reactive_wall",
+            "text": "🪨 Reactive Wall — Sweetwater Mine, Viburnum Trend (MO)."
+          },
+          {
+            "scenario": "porphyry",
+            "text": "🟠 Porphyry Copper — Bingham Canyon (UT)."
+          },
+          {
+            "scenario": "bisbee",
+            "text": "🔵 Bisbee Cu Oxidation Cascade — Warren District (Cochise County, AZ)."
+          },
+          {
+            "scenario": "supergene_oxidation",
+            "text": "💎 Supergene Oxidation — Tsumeb (Namibia)."
+          },
+          {
+            "scenario": "ouro_preto",
+            "text": "🟡 Imperial Topaz Veins — Ouro Preto (Minas Gerais, Brazil)."
+          },
+          {
+            "scenario": "gem_pegmatite",
+            "text": "💚 Gem Pegmatite Pocket — Cruzeiro Mine, Doce Valley (Minas Gerais, Brazil)."
+          },
+          {
+            "scenario": "amethyst_geode",
+            "text": "🟣 Brazilian Amethyst Geode — Ametista do Sul (Rio Grande do Sul, Brazil): a celadonite film frosts the prism mid-growth, then the tip breaks through wider — the masking sceptre."
+          },
+          {
+            "scenario": "shigar_pegmatite",
+            "text": "💙 Shigar Valley Aquamarine Pocket — Dassu / Nyet-Bruk (Gilgit-Baltistan, Pakistan). Blue beryl on cleavelandite, then the acid takes half back."
+          },
+          {
+            "scenario": "deccan_zeolite",
+            "text": "🔷 Deccan Apophyllite Vesicle — Nashik / Aurangabad (Maharashtra, India)."
+          },
+          {
+            "scenario": "sabkha_dolomitization",
+            "text": "🌊 Coorong Cycled Dolomite (Kim 2023) — Coorong lagoon (South Australia)."
+          },
+          {
+            "scenario": "schneeberg",
+            "text": "☢️ Schneeberg Oxidized U-Pegmatite — Erzgebirge (Saxony, Germany). Type locality for torbernite + zeunerite + uranospinite."
+          },
+          {
+            "scenario": "wittichen",
+            "text": "🌳 Wittichen Five-Element Vein — Schwarzwald (Germany). A hydrocarbon reducing shock grows dendritic native bismuth; arsenides rim the trees."
+          },
+          {
+            "scenario": "tormiq_alpine_cleft",
+            "text": "🫒 Tormiq Valley Alpine Cleft — Gilgit-Baltistan (Pakistan). An oxidized Himalayan fissure fluid grows lustrous pistachio-green epidote swords on quartz."
+          },
+          {
+            "scenario": "grimsel_alpine_cleft",
+            "text": "🔮 Grimsel Alpine Cleft — Aar massif (Switzerland). A granite Zerrkluft whose crack-seal cycle grows smoky, Tessin-habit SCEPTRE quartz, with hematite iron-roses and titanite wedges."
+          },
+          {
+            "scenario": "colorado_plateau",
+            "text": "🌵 Colorado Plateau Roll-Front — Uravan Mineral Belt (Roc Creek, Montrose Co., CO). Carnotite + tyuyamunite type chemistry."
+          },
+          {
+            "scenario": "sulphur_bank",
+            "text": "🌋 Sulphur Bank Hg Hot Spring — Clear Lake (Lake County, CA). Active hot-spring mercury-sulfur deposit per White & Roberson 1962."
+          },
+          {
+            "scenario": "sicily_solfifera",
+            "text": "🟡 Sicily Solfifera Sulfur — Cianciana / Caltanissetta (Agrigento, Italy). Messinian bacterially-mediated sedimentary sulfur."
+          },
+          {
+            "scenario": "naica_geothermal",
+            "text": "💎 Naica Selenite Mega-Cave — Chihuahua (Mexico). Cueva de los Cristales, 12-meter gypsum blades."
+          },
+          {
+            "scenario": "epithermal_telluride",
+            "text": "🪙 Cripple Creek Au-Te Bonanza — Cresson Mine (Teller Co., CO). Type district for gold tellurides (calaverite + sylvanite + krennerite)."
+          },
+          {
+            "scenario": "searles_lake",
+            "text": "🟦 Searles Lake Evaporite — San Bernardino Co., CA. Type locality for hanksite + sulfohalite + commercial borax."
+          },
+          {
+            "scenario": "great_salt_plains",
+            "text": "🏜️ Great Salt Plains — Salt Plains NWR, OK. The only place on Earth selenite grows the iron-brown hourglass (Oklahoma state crystal)."
+          },
+          {
+            "scenario": "sunnyside_american_tunnel",
+            "text": "⛰️ Sunnyside / American Tunnel — Silverton caldera (San Juan Co., CO). Rhodochrosite + REE-fluorite display specimens."
+          },
+          {
+            "scenario": "roughten_gill",
+            "text": "🔷 Roughten Gill Pb-Cu Supergene — Caldbeck Fells (Cumbria, UK). Type locality for plumbogummite (Hartley 1882); linarite + caledonite + leadhillite trio."
+          },
+          {
+            "scenario": "marble_contact_metamorphism",
+            "text": "🏛️ Marble Contact Metamorphism — Mogok Stone Tract (Mandalay, Burma). Pigeon's-blood ruby + skarn calc-silicates."
+          },
+          {
+            "scenario": "chiastolite_hornfels",
+            "text": "✚ Chiastolite Hornfels — Bimbowrie / Mt Howden (South Australia). Andalusite porphyroblasts with the dark carbon cross in a graphitic contact aureole."
+          },
+          {
+            "scenario": "ultramafic_supergene",
+            "text": "🟢 Marlborough Ultramafic Supergene — Queensland (Australia). Apple-green chrysoprase + magnesite over serpentinized peridotite."
+          },
+          {
+            "scenario": "jeffrey_mine",
+            "text": "⚙️ Jeffrey Mine Rodingite Contact — Val-des-Sources (Quebec, Canada). World-reference cyprine vesuvianite + grossular + datolite + chrysotile asbestos. Per Bernardini 1981."
+          },
+          {
+            "scenario": "tn457_barite_pulses",
+            "text": "💗 TN457 Barite Pulses — Cumbria, England (Caldbeck Fells / North Pennines). 50 episodic Ba+Mn fluid pulses over a sphalerite substrate. Tests event-driven precipitation per Putnis & Perthuisot 2001."
+          }
+        ]
+      },
+      {
+        "key": "test",
+        "heading": "Test scenarios — generic event-driven scenarios not anchored to a real locality. Use as sandboxes for chemistry experimentation.",
+        "buttons": [
+          {
+            "scenario": "pulse",
+            "text": "🧪 Fluid Pulse (cooling + mid-growth fluid pulse)."
+          },
+          {
+            "scenario": "radioactive_pegmatite",
+            "text": "☢️ Radioactive Pegmatite (high-T alkali granite + uraninite)."
+          },
+          {
+            "scenario": "stalactite_demo",
+            "text": "🥶 Stalactite Cave Demo — generic Carlsbad-style limestone dripstone cave."
+          },
+          {
+            "scenario": "zoned_dripstone_cave",
+            "text": "🦷 Zoned Dripstone Cave — composite Frasassi/Carlsbad/Reed Flute with floor/ceiling Mg/Ca zonation."
+          }
+        ]
+      },
+      {
+        "key": "tutorial_broth",
+        "heading": "Tutorial scenarios — sandbox runs of the teaching broths, WITHOUT the guided callout overlay. For the guided versions, use the Begin menu's Tutorials section.",
+        "buttons": [
+          {
+            "scenario": "tutorial_first_crystal",
+            "text": "🎓 Tutorial 1 broth: First Crystal — silica-rich, quartz then a scripted cooling (sandbox, no guide)."
+          },
+          {
+            "scenario": "tutorial_mn_calcite",
+            "text": "🎓 Tutorial 2 broth: Mn-Doped Calcite — Mn²⁺ activator vs Fe²⁺ quencher under UV (sandbox, no guide)."
+          },
+          {
+            "scenario": "tutorial_travertine",
+            "text": "🎓 Tutorial 3 broth: Travertine — CO₂ degassing raises pH until calcite crusts every surface (sandbox, no guide)."
+          }
+        ]
+      },
+      {
+        "key": "starter_fluids",
+        "heading": "Starter Fluids — generic test recipes representing what leaks naturally from the host rock. No events; perturb in-game.",
+        "fluids": [
+          {
+            "preset": "silica",
+            "text": "🔮 Silica-rich."
+          },
+          {
+            "preset": "carbonate",
+            "text": "🧪 Carbonate."
+          },
+          {
+            "preset": "clean",
+            "text": "💧 Clean / Dilute."
+          },
+          {
+            "preset": "oxidized_cu",
+            "text": "🟢 Oxidized Copper."
+          }
+        ]
+      }
+    ],
+    "idle": [
+      {
+        "value": "random",
+        "text": "🎲 Random"
+      },
+      {
+        "scenario": "bisbee",
+        "text": "Bisbee Cu Oxidation"
+      },
+      {
+        "scenario": "colorado_plateau",
+        "text": "Colorado Plateau Roll-Front"
+      },
+      {
+        "scenario": "cooling",
+        "text": "Cooling (Herkimer)"
+      },
+      {
+        "scenario": "deccan_zeolite",
+        "text": "Deccan Zeolite Amygdale"
+      },
+      {
+        "scenario": "epithermal_telluride",
+        "text": "Cripple Creek Au-Te"
+      },
+      {
+        "scenario": "gem_pegmatite",
+        "text": "Gem Pegmatite (Cruzeiro)"
+      },
+      {
+        "scenario": "amethyst_geode",
+        "text": "Brazilian Amethyst Geode (Ametista do Sul)"
+      },
+      {
+        "scenario": "jeffrey_mine",
+        "text": "Jeffrey Mine Rodingite"
+      },
+      {
+        "scenario": "marble_contact_metamorphism",
+        "text": "Marble Contact (Mogok)"
+      },
+      {
+        "scenario": "chiastolite_hornfels",
+        "text": "Chiastolite Hornfels (Bimbowrie)"
+      },
+      {
+        "scenario": "mvt",
+        "text": "MVT (Tri-State)"
+      },
+      {
+        "scenario": "elmwood",
+        "text": "Elmwood Stepped Calcite"
+      },
+      {
+        "scenario": "naica_geothermal",
+        "text": "Naica Selenite Cave"
+      },
+      {
+        "scenario": "ouro_preto",
+        "text": "Ouro Preto Topaz"
+      },
+      {
+        "scenario": "porphyry",
+        "text": "Porphyry Copper (Bingham)"
+      },
+      {
+        "scenario": "pulse",
+        "text": "Fluid Pulse"
+      },
+      {
+        "scenario": "radioactive_pegmatite",
+        "text": "Radioactive Pegmatite"
+      },
+      {
+        "scenario": "reactivated_fluorite_vein",
+        "text": "Reactivated Fluorite Vein"
+      },
+      {
+        "scenario": "reactive_wall",
+        "text": "Reactive Wall (Sweetwater)"
+      },
+      {
+        "scenario": "roughten_gill",
+        "text": "Roughten Gill Pb-Cu (Caldbeck)"
+      },
+      {
+        "scenario": "sabkha_dolomitization",
+        "text": "Coorong Sabkha Dolomite"
+      },
+      {
+        "scenario": "schneeberg",
+        "text": "Schneeberg U-Pegmatite"
+      },
+      {
+        "scenario": "shigar_pegmatite",
+        "text": "Shigar Aquamarine (Dassu)"
+      },
+      {
+        "scenario": "searles_lake",
+        "text": "Searles Lake Evaporite"
+      },
+      {
+        "scenario": "great_salt_plains",
+        "text": "Great Salt Plains Hourglass Selenite"
+      },
+      {
+        "scenario": "sicily_solfifera",
+        "text": "Sicily Solfifera Sulfur"
+      },
+      {
+        "scenario": "stalactite_demo",
+        "text": "Stalactite Cave Demo"
+      },
+      {
+        "scenario": "sulphur_bank",
+        "text": "Sulphur Bank Hg Hot Spring"
+      },
+      {
+        "scenario": "sunnyside_american_tunnel",
+        "text": "Sunnyside / American Tunnel"
+      },
+      {
+        "scenario": "supergene_oxidation",
+        "text": "Supergene Oxidation (Tsumeb)"
+      },
+      {
+        "scenario": "tn457_barite_pulses",
+        "text": "TN457 Barite Pulses (Cumbria)"
+      },
+      {
+        "scenario": "ultramafic_supergene",
+        "text": "Marlborough Ultramafic Supergene"
+      },
+      {
+        "scenario": "tormiq_alpine_cleft",
+        "text": "Tormiq Valley Alpine-Cleft Epidote"
+      },
+      {
+        "scenario": "grimsel_alpine_cleft",
+        "text": "Grimsel Smoky Sceptre Quartz"
+      },
+      {
+        "scenario": "wittichen",
+        "text": "Wittichen Five-Element Vein"
+      },
+      {
+        "scenario": "zoned_dripstone_cave",
+        "text": "Zoned Dripstone Cave"
+      }
+    ],
+    "begin_tutorials": [
+      {
+        "scenario": "tutorial_first_crystal",
+        "text": "🎓 Tutorial 1: The Grand Tour — every part of the screen, then your first crystal."
+      },
+      {
+        "scenario": "tutorial_mn_calcite",
+        "text": "🎓 Tutorial 2: A Mn-Doped Calcite — additives, quenchers, and UV glow."
+      },
+      {
+        "scenario": "tutorial_travertine",
+        "text": "🎓 Tutorial 3: How CO₂ Builds a Calcite Crust — degassing, pH, and travertine."
+      },
+      {
+        "scenario": "shigar_pegmatite",
+        "text": "🎓 Tutorial 4: Collecting — grow a Pakistani aquamarine pocket in Simulation mode, keep the best crystal, visit it in the Library."
+      },
+      {
+        "scenario": "tn457_barite_pulses",
+        "text": "🎓 Tutorial 5: Reading a Crystal — grow a Cumbrian pink-barite pocket, then play it on the Record Player and open its Strip View flight record."
+      }
+    ]
   }
 }

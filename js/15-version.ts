@@ -11796,5 +11796,105 @@
 //        new events): barite dust→grown + its snowball zones, plus minor dust
 //        over-nucleation (barite 6→11, sphalerite 1→3 — the sustained-Ba web, all
 //        extras 0 mm). tests-js/elmwood-snowball.test.ts (5).
-const SIM_VERSION = 223;
+// v224 — W-F O5 MASKING SCEPTRE, first content: the BRAZILIAN AMETHYST GEODE (boss
+//        chose the locality; reference specimen = an ametrine sceptre with iron
+//        staining). The masking sceptre is the second natural sceptre route (7566915
+//        shipped the byte-identical classifier: classifyQuartzSceptre js/45 now reads
+//        a PRISM-dominant masked_horizon as a boundary, tagged route='masking', the
+//        mass-conserving twin of grimsel's corrosion route). This bump is the content
+//        that first fires it. New `amethyst_geode` scenario (Ametista do Sul, Serra
+//        Geral flood basalt): a prism-dominant celadonite `film:` (prism 0.45/term
+//        0.08) frosts the amethyst prism; the Silica Renewal Pulse clears σ*(φ_prism)
+//        and the tip renews a wider cap THROUGH it → 3 masking sceptres at seed 42
+//        (stem 277-888µm, cap 804-863µm; the uniform goethite stain is a buried
+//        horizon, NOT a second sceptre). AMETHYST COLOUR REVIVED: it was "authored-
+//        but-dormant" — the trigger Fe>2 needed ~600ppm fluid Fe against quartz's
+//        trace_Fe×0.005 scale, and the D1b parser had no radiation ceiling so amethyst
+//        (2 clauses) out-ranked smoky (1). Fix (render-only, baseline-neutral):
+//        recalibrated trigger `Fe > 0.2 and radiation_damage 0.1-0.3` + a range UPPER
+//        bound honoured ONLY for crystal-level fields (radiation) so amethyst is
+//        mutually exclusive with smoky (>0.3) while zone-trace Fe ladders (sphalerite
+//        2-10-15) keep their lower-bound collapse. New byte-identical engine knob
+//        `wall.gamma_host` (js/59 radHost fallback + js/22 schema): basalt gave zero
+//        γ-dose, so the Paraná flood-basalt background over ~134 Ma is declared per-
+//        scenario (0.4 → radiation_damage in the amethyst band); default 0 keeps all
+//        6 basalt scenarios byte-identical. Movement confined to amethyst_geode (new
+//        scenario; the classifier + gamma_host + colour are all fleet-neutral —
+//        census + baseline-diff verified). Instruments: tools/sceptre-mask-census.mjs
+//        (81%-phantom-style pre-registration), tools/amethyst-sceptre-probe.mjs.
+//        Tests: masking-sceptre.test.ts (7), amethyst-geode.test.ts (8, incl. the D1b
+//        ripple guards: smoky/morion still win at heavy dose, sphalerite ladder
+//        intact). Sources: Gilg et al. 2003 (Mineral. Deposita 38:1009), Triz-quarry
+//        Geol. Mag. 144:731, Rossman 1994, Takahashi & Sunagawa 2004 (ELO).
+// v225 — DOOR 2, THE UV SCALE AUDIT (SIM-adjacent half; the render half shipped
+//        7c4ded5 with SIM 224 untouched). The census (tools/uv-zone-census.mjs)
+//        found both fluorescence voices sick with broth-scale numbers tested
+//        against zone-scale traces, and the two contradicting each other on 27
+//        fleet crystals (narrator 'unknown' on 819/1098). This bump:
+//        (1) js/27 predict_fluorescence rewritten to the SAME zone-scale gates
+//        as the 98c bar — both mirror the engines' recorded classifiers (js/52
+//        calcite 4-tier ladder; js/59 willemite; spec canon). New branches:
+//        ruby/corundum/sapphire (Cr³⁺ 694 nm, Fe-quench Mogok-vs-basalt),
+//        emerald (Colombia-vs-schist), willemite (Franklin), autunite/
+//        uranophane/uranospinite (uranyl bright), metatorbernite/metazeunerite
+//        (Cu²⁺ veto — dark IS the field diagnostic). quartz's Al-blue branch
+//        RETIRED (CL phenomenon, not UV; macrocrystalline quartz honestly
+//        inert); mimetite/smithsonite/amazonite always-on claims retired to
+//        literature-verified weak/rare/none; feldspar gains the real weak Fe³⁺
+//        deep-red SW arm (Bostwick: Franklin albite "FL red SW"); adamite
+//        SENSE INVERTED — trace-uranyl activates, Cu²⁺ quenches (fluomin +
+//        torbernite analog + Geiger comparison; the old ladder had Cu as the
+//        activator). Sphalerite/wurtzite gate recalibrated (old avg_Mn>5
+//        unreachable, fleet max 3.13): Mn>0.1 && Fe<2 per zone — cleiophane
+//        orange, marmatite dead.
+//        (2) THE TUTORIAL BROTH RETUNE (the census's forced move): no gate on
+//        (Fe, Mn) can dark tutorial_mn_calcite's early stripes (zone 0.8/5.4)
+//        while glowing elmwood (1.27/4.0) — the tutorial broth was chemically
+//        BRIGHTER than Elmwood. Fe 10 → 60 (zone ~4.8 > the ladder's dark
+//        threshold 2; recharge ×0.05 → 3 → zone 0.24, brilliant tier): T2's
+//        taught dark-then-brilliant story is now chemically TRUE. Step text
+//        "about 10 ppm" → "about 60 ppm"; 70g fe_drop comment re-trued.
+//        (3) ZONE-RECORD RIDERS — the record now carries what its own notes
+//        narrate (three compute-and-drop datums the census exposed): grow_ruby
+//        + grow_sapphire record trace_Cr (the note prints "Cr³⁺ X ppm" =
+//        f.Cr); grow_emerald records trace_Cr; the feldspar writer records
+//        the trace_Pb it computed for the amazonite note; grow_adamite
+//        records trace_Cu — and its note ladder's UV claims FLIP to the
+//        verified physics (body colours unchanged).
+//        (4) SPEC SYNC (data/minerals.json): the fluorescence entries js/27
+//        originally copied its broth-scale numbers from are recalibrated to
+//        zone scale with audit provenance (calcite quench 10→2 + the NAMED
+//        Pb-sensitizer follow-on per Schulman/USGS 1947; sphalerite/wurtzite
+//        5/10→0.1/2; quartz→honest null; mimetite→usually-none; smithsonite→
+//        weak-rare; feldspar Pb_amazonite→Fe3+_framework; adamite quencher
+//        Cu at zone 0.1) and metatorbernite/metazeunerite GAIN entries (the
+//        metazeunerite description said "non-fluorescent" all along — the
+//        structured field lets the bar and narrator read it).
+//        Movement: tutorial_mn_calcite (value-level: broth Fe + zone traces +
+//        note tiers) + zone-field additions (trace_Cr/Pb/Cu) in scenarios
+//        hosting ruby/sapphire/emerald/feldspar/adamite + narrator
+//        fluorescence lines fleet-wide in the strip stories (the boss reads
+//        the text diffs as the paper). Literature: 40+ opened sources —
+//        fluomin fiches, Bostwick 2008, FOMS/Sterling Hill, Nature's
+//        Rainbows, Crystals 2023 13:1179 (ruby Fe by LA-ICP-MS), Minerals
+//        2020 10:597, Minerals 2019 9:105 + Crystals 2025 15:385 (emerald
+//        Fe populations), Minerals 2021 11:1215 (willemite), Schulman 1947
+//        (calcite Pb sensitizer), Cannon patent US2,346,661 (scheelite Mo).
+// v226: O5 SPLITTING — the VOLUME-NEUTRAL SIM effect (the heavy debt). A split
+//        crystal's AXIAL extent now compacts by splitGrowthMult(_split.index) at
+//        CONSTANT volume: add_zone (js/27) shortens c_length_mm and re-derives
+//        a_width_mm = sqrt(6V/(pi c)) from the UNCHANGED _volume_mm3, so a_width
+//        WIDENS to conserve material — the needle collapsing to the sphere's
+//        radius. O5_VOLNEUTRAL_ENABLED flipped true (js/44c); js/85 growth loop
+//        passes the multiplier. _volume_mm3 (→ get_vug_fill → nucleation) is
+//        untouched, so the volume→fill→nucleation cascade that flooded S-b
+//        (80 minerals) does NOT fire. c_length_mm DOES feed O3 selection +
+//        enclosure, so the measured drift is a WHISKER: 7 non-split minerals at
+//        ≤0.1% max_um in ONE competitive scenario (sunnyside) + siderite
+//        (split-able) 1→3 crystals + heulandite/rhodochrosite max_um. Pre-
+//        registered by tools/o5-volneutral-census.mjs (boss "measure first"
+//        2026-07-14); constant-volume compaction was the key that turned the
+//        keystone's feared flood into bounded ripple. Splitting now costs LENGTH
+//        (shorter c_length in render/narration/inventory/score) at constant mass.
+const SIM_VERSION = 226;
 

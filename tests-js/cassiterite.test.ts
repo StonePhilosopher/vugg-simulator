@@ -298,11 +298,14 @@ describe('Cassiterite — SnO₂ engine (v89)', () => {
 
   describe('elbow/knee twin — the diagnostic cassiterite signature', () => {
     // Multi-seed × multi-scenario probe (5 × 2 = 10 full pegmatite runs)
-    // is naturally slow — typically 25-28s on a warm CPU. Sat right at
-    // the 30s default testTimeout for several sessions and finally tipped
-    // over in the post-v165 review batch (auto-derive added a tiny setup
-    // overhead). Per-test 60s ceiling gives comfortable headroom without
-    // hiding a real regression — anything ≥45s here is worth investigating.
+    // is naturally slow, and it grows with the SIM: ~25-28s at v165,
+    // ~30-35s solo at v224 (O3/O4b/O5 added per-step work). Under full-
+    // suite vitest worker contention the wall time roughly DOUBLES —
+    // the 60s ceiling set after the v165 tip-over failed twice in
+    // consecutive cold-ci runs at v224 (61s, no external load; the
+    // whole suite packs ~5600s of test time into ~460s wall). 120s
+    // gives contention headroom without hiding a real regression —
+    // anything ≥60s in ISOLATION is worth investigating.
     it('at least one cassiterite twin appears across multiple seeds', () => {
       let twinCount = 0;
       let totalCount = 0;
@@ -319,6 +322,6 @@ describe('Cassiterite — SnO₂ engine (v89)', () => {
       expect(twinCount,
         `expected at least 1 elbow twin across ${totalCount} cassiterite samples (p=0.30); got ${twinCount}`)
         .toBeGreaterThan(0);
-    }, 60000);
+    }, 120000);
   });
 });

@@ -486,6 +486,17 @@ class VugSimulator {
               // Breakthrough: growth resumes through the film — a phantom horizon.
               zone.masked_horizon = true;
               zone.film_mineral = film.mineral;
+              // W-F O5 masking SCEPTRE — record which AXIS the film masked. The
+              // classifier (js/45 classifyQuartzSceptre) reads this to tell a
+              // PRISM-dominant mask (sides frosted, tip renews wider = a sceptre,
+              // the Takahashi–Sunagawa ELO route) from a termination / uniform
+              // film (just a buried horizon, the elmwood snowball). O4b's
+              // coats_front films are termination-only (phi_prism stays 0; js/85c),
+              // so prism-dominance reads TRUE only for a deliberate prism `film:`
+              // directive — which is why generalizing the classifier is byte-
+              // identical for the current fleet (census: tools/sceptre-mask-census.mjs).
+              zone.masked_phi_prism = film.phi_prism || 0;
+              zone.masked_phi_term = film.phi_term || 0;
               crystal._film = null;
             }
           }
@@ -598,7 +609,24 @@ class VugSimulator {
             crystal.late_interlocking = true;
           }
         }
-        crystal.add_zone(zone);
+        // W-F O5 SPLITTING (S-b) — accrue the two-route cumulative-misorientation
+        // index (js/44c) over this zone's growth. NO RNG, no fluid/T mutation;
+        // writes only crystal._split. The SIM effect (the axial compaction that
+        // gives a split crystal a compact max extent at CONSTANT volume — so fill,
+        // and thus every other crystal, is untouched: a census-bounded bump) is
+        // applied inside crystal.add_zone, keyed to this same index. The render
+        // (js/99i) reads _split.rung for the saddle/sheaf/spherulite geometry, with
+        // the deformation-saddle set a separate cause (§9a #4, census-certified).
+        // splitAbility 0 (quartz/feldspar) → no _split → untouched everywhere (the
+        // structure-specificity invariant).
+        accrueSplitIndex(crystal, this.conditions, zone.thickness_um);
+        // W-K VOL-NEUTRAL (measurement): when O5_VOLNEUTRAL_ENABLED, a split
+        // crystal's axial extent is compacted by splitGrowthMult(index) at
+        // CONSTANT volume (add_zone re-derives a_width to conserve _volume_mm3).
+        // extentMult 1 for non-split OR when the flag is off → byte-identical.
+        const extentMult = (O5_VOLNEUTRAL_ENABLED && crystal._split)
+          ? splitGrowthMult(crystal._split.index) : 1;
+        crystal.add_zone(zone, extentMult);
         // Re-check fill after each crystal grows to prevent >100% overshoot
         if (zone.thickness_um > 0) {
           currentFill = openSystem ? 0 : this.get_vug_fill();

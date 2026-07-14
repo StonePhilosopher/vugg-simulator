@@ -334,6 +334,83 @@ function _populateScenarioDropdowns() {
   if (prev && SCENARIOS[prev] && !prev.startsWith('tutorial_')) sel.value = prev;
 }
 
+// §10.5 tranches 2-3 (Door 3, 2026-07-10): the three CURATED menu surfaces
+// that tranche 1 left hand-written — the Scenarios picker panel, the
+// Zen-mode dropdown, and the Begin tutorial buttons — now generate from
+// data/scenarios.json5's `menu_layout` (exposed as MENU_LAYOUT by
+// _loadScenariosJSON5 in 70-events.ts). The former static HTML ships as
+// empty containers (#scenarios-panel-groups, #idle-scenario,
+// #begin-tutorial-buttons). menu_layout was extracted VERBATIM from the
+// old hardcoded menus, so text + order are byte-identical; the generators
+// only move the source of truth from HTML into data. Adding a scenario now
+// means one edit to menu_layout instead of three hand-synced HTML surfaces
+// (the chronic-bug class that once hid 15 scenarios — see the v116 guard).
+// Buttons keep inline onclick strings (matching the app-wide idiom + the
+// old markup) so behaviour is identical to the hand-written buttons.
+function _mkMenuButton(onclickCall: string, text: string): HTMLButtonElement {
+  const b = document.createElement('button');
+  b.setAttribute('onclick', onclickCall);
+  b.textContent = text;
+  return b;
+}
+
+// Surface (a): the full Scenarios picker — grouped buttons (real-locality,
+// test, tutorial broths, starter fluids). Includes tutorials (the picker is
+// the FULL list). Starter fluids route to startStarterFluidInCreative.
+function _populateScenariosPanel() {
+  const host = document.getElementById('scenarios-panel-groups');
+  if (!host || typeof MENU_LAYOUT === 'undefined' || !MENU_LAYOUT || !MENU_LAYOUT.panel) return;
+  host.innerHTML = '';
+  for (const group of MENU_LAYOUT.panel) {
+    const sub = document.createElement('div');
+    sub.className = 'menu-subheading';
+    sub.textContent = group.heading;
+    host.appendChild(sub);
+    const btns = document.createElement('div');
+    btns.className = 'menu-buttons';
+    if (group.fluids) {
+      for (const f of group.fluids) {
+        btns.appendChild(_mkMenuButton(`startStarterFluidInCreative('${f.preset}')`, f.text));
+      }
+    } else {
+      for (const b of (group.buttons || [])) {
+        btns.appendChild(_mkMenuButton(`startScenarioInCreative('${b.scenario}')`, b.text));
+      }
+    }
+    host.appendChild(btns);
+  }
+}
+
+// Surface (c): the Zen-mode dropdown — curated short labels in a bespoke
+// (not alphabetical) order, EXCLUDING tutorials. The 'random' head option
+// rides in the data as {value:'random'}. Mirrors _populateScenarioDropdowns'
+// selection-preserving re-run behaviour.
+function _populateIdleScenarioDropdown() {
+  const sel = document.getElementById('idle-scenario') as HTMLSelectElement | null;
+  if (!sel || typeof MENU_LAYOUT === 'undefined' || !MENU_LAYOUT || !MENU_LAYOUT.idle) return;
+  const prev = sel.value;
+  sel.innerHTML = '';
+  for (const o of MENU_LAYOUT.idle) {
+    const opt = document.createElement('option');
+    opt.value = o.value || o.scenario;
+    opt.textContent = o.text;
+    sel.appendChild(opt);
+  }
+  if (prev && Array.from(sel.options).some(op => op.value === prev)) sel.value = prev;
+}
+
+// The Begin menu's guided-tutorial buttons (Tutorials 1–5). These route to
+// startTutorial (the overlay-driven guided run), not the sandbox broths in
+// the picker. Order + labels carry the tutorial numbering.
+function _populateBeginTutorials() {
+  const host = document.getElementById('begin-tutorial-buttons');
+  if (!host || typeof MENU_LAYOUT === 'undefined' || !MENU_LAYOUT || !MENU_LAYOUT.begin_tutorials) return;
+  host.innerHTML = '';
+  for (const t of MENU_LAYOUT.begin_tutorials) {
+    host.appendChild(_mkMenuButton(`startTutorial('${t.scenario}')`, t.text));
+  }
+}
+
 // The last "playable" mode the user was in. Used by the Current Game
 // nav button so it can return the player to their in-progress vugg
 // (or their just-finished narrated result) from Record Player /

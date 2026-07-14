@@ -2,6 +2,161 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🪨 O5 SPLITTING LADDER — **COMPLETE: S-a + S-b + S-c + VOL-NEUTRAL SHIPPED** (S-a `fbac070` record-unread · S-b `b6c0e5c` EARNS its shape · S-c `96a7d8d` EARNS its DEGREE · vol-neutral wiring `878b150` → SIM 226 bump `80149cf` costs LENGTH; proposal §9a/b/c/d/e)
+>
+> **VOL-NEUTRAL — THE HEAVY DEBT PAID (2026-07-14, SIM 226, eighteenth hand).** Splitting now costs axial
+> LENGTH at CONSTANT volume: a split crystal's `c_length_mm` compacts by `splitGrowthMult(_split.index)`;
+> `add_zone` re-derives `a_width = √(6V/(π c))` from the UNCHANGED `_volume_mm3`, so a_width auto-WIDENS —
+> the needle→sphere, same material. **The sixteenth keystone's "~8 sites" was WRONG:** `c_length_mm` feeds O3
+> selection (js/44a, js/85b) + enclosure (js/85c) + paragenesis (js/26) — size IS coupled to which crystals
+> win/enclose (that coupling, not plumbing, is why S-b flooded). RESCUE: hold VOLUME fixed — `_volume_mm3`
+> (→ fill → nucleation) is separate from `c_length_mm`, so the volume→fill amplifier stays byte-identical;
+> only the LINEAR reads of c react. **Measured first** (`tools/o5-volneutral-census.mjs`, off/on in one
+> process, flag-OFF certified == v225): blast radius **7 non-split minerals, ALL ≤0.1% max_um in ONE scenario
+> (sunnyside), zero count/species collateral** vs S-b's 80; `baseline-diff v225→v226` = 1/39 scenarios moved
+> (sunnyside 41→43 = siderite 1→3), 0 species gained/lost. Two-commit (wiring byte-identical → bump). Picture:
+> aragonite spherulite c −30% / a +20% / **vol 0.0%**, scaling with the rung. CI 175/175 green. **The ladder
+> is CLOSED: split (S-b) → degree (S-c) → cost (vol-neutral).** Remaining O5-splitting note: only the small
+> bent-BLADE generator (curved gypsum/selenite bow) — the render's last corner. Live boss eye-check on the
+> deploy still owed (screenshots time out; verified headless + numeric).
+>
+> **S-c landed (2026-07-14, render-only byte-identical — only js/99i changed):** `_split.index` now sets HOW
+> FAR along the form, continuous instead of snapping between meshes (§9d). curved → saddle curvature f(index)
+> for the rhomb-carbonate/saddle set ONLY (curved gypsum/selenite keep their blade — the gate REFUSES the
+> wrong shape, they earn the fan at the `split` rung); split+sheaf → ONE continuous fan splay f(index)
+> 0.30–1.08 rad; spherulite → botryoidal completeness f(index). Acceptance `tools/o5-split-render-probe.mjs`
+> (headless — WebGL screenshots time out): 111 split crystals → fan **17 distinct splay buckets**, curved 3,
+> spherulite 3, PASS. **Debt (2) of §9c PAID.** Debt (1) the VOLUME-NEUTRAL SIM effect — **✅ PAID `80149cf`
+> SIM 226** (see the vol-neutral banner above). Only remaining O5-splitting note: the small bent-BLADE
+> generator so curved gypsum/selenite bow like their rhomb cousins.
+> **NOTE:** live browser eye-check deferred (freestone's concurrent test loop saturated CPU + screenshots
+> time out); verified headless — recommend a boss eye on the deploy (deccan stilbite sheaves / aragonite sphere).
+>
+> **S-b landed (2026-07-11, render-only):** `_split.rung` drives js/99i → sheaf = the hemimorphite-fan mesh,
+> spherulite = the botryoidal cluster (curved keeps its habit render; `_deformation` precedence). Calibrated
+> to the science, the census the bench: per-ROUTE abilities `{a,b}` (gypsum A-only — the scalar model made 18
+> false spherulites; zeolites B-dominant), per-MINERAL onset = 2.5×σ_crit with a bounded drive (dolomite
+> σ_crit 10 vs calcite 1.5), a growth-ramped STRUCTURAL-RADIAL floor (chain silicates fibrous by structure).
+> Distribution curved 18 / split 51 / sheaf 30 / spherulite 12, quartz never, certificate PASS.
+> **TWO honest debts (§9c):** (1) the size SIM-bump was reverted — a growth throttle CASCADED (80 non-split
+> minerals moved via fill→nucleation, 15 mm swings, 29 count shifts, NOT census-bounded); a census-bounded
+> size effect needs VOLUME-NEUTRAL surgery (compact `max_um` at constant volume, ~8 sites) — deferred, the
+> `splitGrowthMult`/`SPLIT_AXIAL_FLOOR` lever ships defined-but-unused. (2) **S-c** render refinement:
+> index-driven curved/split curvature + continuous sheaf-splay / spherulite-completeness. Boss chose
+> render-only 2026-07-11.
+>
+> The SPLITTING half of O5 (`PROPOSAL-O5-SPLITTING-LADDER-2026-07-10.md`; the ELO/masking half shipped
+> SIM 222–224). Same move as O3: the sim PAINTS the whole ladder — `saddle_rhomb`/`sheaf`/`spherulitic`
+> habit words (keyword-scored js/07) + the render primitives already exist (`_makeSaddleRhomb`, the
+> hemimorphite fan, radial sprays) — but has NO splitting mechanism; O5-splitting EARNS the rung from a
+> per-crystal **cumulative-misorientation index**. Science (two passes, citation-verified + cross-checked
+> — each caught the other's slips): the ladder single → curved (saddle Rung 1) → split → sheaf/bowtie →
+> spherulite; **THREE classes kept distinct** — A impurity autodeformation (fires at LOW σ), B high-σ
+> spherulitic (Beck & Andreassen SI≈2–3, the carbonate calibration anchor), C concentric botryoidal
+> aggregation (NOT splitting — already painted). The **A/B opposite-σ fact** (gypsum curves harder at low
+> σ) → a **two-route index**, not one monotonic σ law; branching microphysics is OPEN → render the
+> phenomenon (the σ*(φ) discipline). **FIRST CONTENT = `deccan_zeolite`** (grep-the-tree: the scenario
+> ALREADY EXISTS; grade-2 stilbite sheaves + scolecite/mesolite sprays AND grade-3 okenite/prehnite/
+> gyrolite spheres in ONE paragenesis, most species modelled — EXTEND not author); saddle dolomite
+> (elmwood/mvt) = the A-route showcase, kept distinct from the deformation-shear saddle. Tranches **S-a
+> record-unread ✅ SHIPPED → S-b earn-the-ladder (census-bounded, NEXT) → S-c render.**
+> **S-a landed** (`js/44c-split-growth.ts` + accrual in js/85 + `tools/o5-split-census.mjs` + 21 pins,
+> byte-identical **0/39**, no SIM bump): the two-route index (rateA impurity·splitAbility at LOW σ +
+> rateB high-σ) accrues on every growth step, `O5_SPLITTING_ENABLED=false` (read by nothing).
+> `splitAbility` hand-seeded (quartz/feldspar/cerussite/malachite **explicit 0**); `impurity_factor =
+> max(_film φ, wall.split_trace, mineral hint)`, `_film` first. **Census (seed 42): 147 crystals accrue
+> across 30 scenarios, split-able roster only (zero quartz/feldspar); route A=0 B=142 both=5; rung
+> curved=12 split=14 sheaf=9 spherulite=58. NONCOLLISION CERTIFICATE PASS** (no saddle-rung crystal
+> carries `_deformation`). **S-b's first move (census signal):** raise `SPLIT_SIGMA_SPHERULITE` from the
+> 2.0 placeholder to the SI≈2–3 sim-σ image (4a.7) — it sits below the fleet's σ so B over-fires and A
+> never isolates; the raise thins B AND isolates low-σ dolomite as pure-A saddle. Then calibrate K_A/B +
+> band cuts and let `rung` drive habit/render on the pre-registered movers. Full record: proposal §9b +
+> the nature-roadmap memory. — the fifteenth hand
+
+> ## 🧩 DOOR 3 — MENU AUTO-GENERATION (§10.5 t2-3, 2026-07-10, the eleventh hand's third door) — SHIPPED, 1 commit (`892905f`, render-only)
+>
+> Tranche 1 (2026-07-07) taught the legends quick-play dropdown to derive from SCENARIOS;
+> the picker panel, the Zen dropdown, and the Begin tutorial buttons kept hand-written
+> labels. This walks the rest: all three generate from a new **menu_layout** block in
+> data/scenarios.json5 (the js/94 populators, called at scenarios-load-complete beside
+> t1's). The static HTML now ships EMPTY containers (#scenarios-panel-groups,
+> #idle-scenario, #begin-tutorial-buttons). **The v116 chronic-bug class — three
+> hand-synced HTML surfaces that once let 15 scenarios ship INVISIBLE — is CLOSED:**
+> adding a scenario is one menu_layout edit, guard-enforced.
+>
+> **Tool-driven, provably faithful:** a one-shot extractor parsed the CURRENT menus into
+> the data (entities decoded, order preserved) — no hand-transcription. Byte-identical
+> closed from BOTH ends: `menu_layout === original index.html@HEAD` (43 panel + 37 idle +
+> 5 begin, verbatim text + exact order, re-parsed HEAD deep-compared) AND `generated DOM
+> === MENU_LAYOUT` (live browser, all 85 entries element-for-element) ⟹ generated ===
+> original. Panels render + laid out + handlers resolve + zero console errors (the
+> screenshot timed out on the WebGL canvas — verified via eval instead). **No SIM change**
+> (SIM_VERSION untouched, seed-42 fleet unmoved). CI 174 files / 2414 tests green.
+>
+> **Design:** ONE ordered menu_layout block, not per-scenario menu objects — the picker
+> order, the idle order, and the json5 key order are three DIFFERENT bespoke arrangements
+> (picker groups by interest; idle is Brazilian-amethyst-after-gem, not alphabetical; keys
+> are load order), so byte-identical needs explicit per-surface ordering in one readable
+> place (and one insertion, not 39 scattered edits). Full display strings stored (not split
+> emoji/label/blurb — verbatim is byte-identical-safe; decomposition is a cheap follow-up if
+> a bold-label/muted-blurb style ever lands). The guard test migrated HTML-parse →
+> menu_layout-validation (18 tests: coverage · tutorial policy · no-stale · render invariants
+> · populator wiring). **Follow-up:** the vugg-add-scenario skill §10.5's "three HTML
+> surfaces to sync" step should be rewritten to "add to menu_layout" — the long-term TODO it
+> named is now DONE.
+
+> ## 🔦 DOOR 2 — UV FLUORESCENCE SCALE AUDIT (2026-07-09, the eleventh hand's second door) — SHIPPED, 3 commits (`e81ce83` census · `7c4ded5` 98c render · `c954cf2` SIM 225)
+>
+> The seed finding generalized exactly as scoped — and further: BOTH voices (98c bar,
+> js/27 narrator) were broth-scale numbers tested against zone-scale traces, AND they
+> contradicted each other on 27 fleet crystals (narrator 'unknown' on 819/1098). The
+> census (tools/uv-zone-census.mjs, --detail per-crystal mode) found **the engines had
+> been recording graded UV verdicts all along** — js/52's 4-tier calcite ladder in zone
+> notes, js/59's willemite ladder, js/53's trace_Y with Eu²⁺ named in its own comment,
+> spec canon (uraninite NON-fluorescent, boss-canonical 626bb22; the Cu²⁺ veto on the
+> autunite entry) — so Door 2 became a RECONCILIATION, not an invention: both consumers
+> now mirror the engines' recorded classifiers, gate-for-gate.
+>
+> **The catch of the arc:** calcite's 223a96b "fixed" gate was nearly dead (1 glowing
+> zone in 1370) and FALSE-QUENCHED the famous fluorescents — and no gate on (Fe, Mn)
+> could dark the tutorial's early stripes (zone 0.8/5.4) while glowing elmwood
+> (1.27/4.0): **the tutorial broth was chemically brighter than Elmwood.** The fix was
+> the BROTH (Fe 10→60, SIM 225) — T2's taught dark-then-brilliant story is now
+> chemically true (payoff bar kernel-truth: 347px dark → brilliant #ff5040 boundary →
+> 239px bright rim; honest new 0.26mm background siderite, the FeCO₃ the broth
+> deserves). Literature pass: 40+ opened sources (fluomin fiches, Bostwick 2008,
+> LA-ICP-MS Fe rails for ruby Mogok-92ppm-vs-Thai-2000+ and emerald Muzo-70-vs-Kafubu-
+> 8941, Czaja willemite, Cannon's scheelite-Mo patent). **Two confirmed inversions:**
+> adamite (trace-URANYL activates, Cu²⁺ quenches — the engine had Cu as the ACTIVATOR,
+> backwards on three verified legs; supergene's cuproadamite now honestly dim) and
+> uraninite (always-on green ×584 zones → canon-null; dark IS the diagnostic). Retired:
+> quartz Al-blue (CL, not UV), mimetite always-orange (Långban's is often hedyphane),
+> smithsonite always-blue-green (weak/rare), amazonite Pb glow (colour centre ≠
+> activator). Added: uranyl family cases (uranophane/uranospinite bright;
+> metatorbernite/metazeunerite dark by Cu²⁺ veto — schneeberg now teaches the field
+> classic in one cavity), sphalerite cleiophane-orange (Fe the ZnS killer; elmwood's
+> gemmy cleiophane glows, marmatite dead), feldspar weak Fe³⁺ deep-red (Bostwick's
+> Franklin albite). **The record completed itself:** ruby/sapphire/emerald record
+> trace_Cr, feldspar trace_Pb, adamite trace_Cu — three compute-and-drop datums whose
+> notes narrated numbers the zones never carried. uvSummary's "[object Object]"
+> modal-header bug fixed. Movement: baseline 1/39 (tutorial +siderite); strips carry
+> version stamps only (fluorescence narration feeds the LIVE surfaces — Library, zone
+> modal, agent API). Tests: uv-zone-bars.test.ts (41 — bar + narrator held together by
+> the same synthetic stacks). CI green, coverage Stale 0.
+>
+> **▸ NAMED, NOT BUILT (this door's follow-ons):** the calcite Pb SENSITIZER
+> (Schulman/USGS 1947 — Mn-only calcite is near-inert to UV; Pb explains "world calcite
+> dim, Franklin loud" better than Fe alone; needs calcite trace_Pb + a Franklin-type
+> tenant — fleet calcites are MVT-adjacent so today's Mn/Fe ladder approximates it) ·
+> the BIOGENIC-DRIVERS organics field (aragonite fluoresces VERY OFTEN via organics —
+> fluomin, surveyed since 1903; selenite's 1927 Wiesloch UV HOURGLASS = sector-zoned
+> organics in clay-grown crystals, and SIM 211's hourglass-selenite sediment sectors
+> are the recorded datum already waiting — joins the fourth-act "biogenic drivers"
+> awaiting-adoption line) · scheelite's Mo hue ladder (blue→white→yellow, verified
+> against Cannon US2,346,661 — banked for a future tenant) · apophyllite's
+> multi-activator exceptions (fluomin id=126: uranyl/Ce/Mn locality accidents; sim
+> default now honest-inert).
+
 > ## 💎 O4b — GEOMETRIC ENCLOSURE ADJACENCY + coats_front (2026-07-08, boss: "O4b it is… you always follow the science") — SHIPPED SIM 221 (`6967c57` census + `08287eb` bump)
 >
 > The second commit O4a deferred. **The census found the string gate 81% phantom**
@@ -117,9 +272,89 @@ Living list of open work items, captured from session conversations so context s
 > within noise, witherite excluded. baseline-diff: elmwood ONLY (value-level confirmed);
 > crystals 20→27 (minor dust over-nucleation — barite 6→11, sphalerite 1→3, the sustained-Ba
 > web, extras 0 mm), species 13→13. Tests elmwood-snowball.test.ts (5). A `film_coat` no-op
-> handler carries the pure-dusting events (no chemistry). **NEXT on the O5 line:** the masking
-> SCEPTRE (per-axis prism/tip asymmetry + classifyQuartzSceptre generalization, grimsel
-> corrosion stays the clean reference) + O5c band render (the D2 vertexColors seam).
+> handler carries the pure-dusting events (no chemistry).
+>
+> **▸ O5c SHIPPED — THE PHANTOM BAND MADE VISIBLE (render-only, byte-identical, no SIM bump).**
+> The payoff the arc owed: O5b buries the `masked_horizon` and the elmwood snowball lays down
+> 12 of them, but the eye couldn't see them. O5c renders each horizon as a thin concentric
+> shell INSIDE the crystal at its recorded radial depth, tinted by the film mineral, revealed
+> by the host's Depth-A translucency exactly as O4a's engulfed grains are (an OPAQUE host hides
+> its bands — honest, the O4a contract). The O4a discipline: reads the recorded zone stack,
+> mutates no crystal → SIM record byte-identical (SIM_VERSION stays 223, no baseline/strip/
+> archive rebake). Two PURE helpers in js/44b, unit-tested DOM-free: `maskedHorizonBands(crystal)`
+> reconstructs each horizon's radial fraction from the zone stack (running Σthickness_um / 1000 /
+> final c_length — the same net accumulation js/27 add_zone does, so a dissolution zone shrinks
+> the depth exactly as the sim does; drops frac ≤ 0 / ≥ 1); `filmBandRGB(mineral)` a low-saturation
+> field-guide palette (clay buff, iron-oxide/hematite rust, chlorite green — the films aren't
+> catalog species, so MINERAL_SPEC has no class_color for them; substring-matched). Renderer
+> (js/99i `_o5EmitMaskedBands`): one shell CHILD per horizon SHARING the host's post-O2-clip
+> geometry (matches the visible silhouette), uniform local scale = fraction, local pos 0 → inherits
+> the host's world transform (incl. a blade's non-uniform scale) = a smaller similar shell,
+> concentric at the buried depth; opacity 0.72, depthWrite off + DoubleSide (reads through the
+> translucent host without fighting the sort), non-raycastable; free-standing crystals only.
+> VERIFIED elmwood seed 42 (preview_eval kernel-truth — screenshots time out on the WebGL page):
+> the live renderer sim carries all 12 horizons (the headless SERIALIZATION strips the zone flag
+> but the renderer reads the live add_zone objects, which retain it — a trap worth the note); scene
+> rebuild → 12 band meshes (6 clay + 6 iron-oxide) on all 6 blades, scales 0.266/0.662 matching the
+> fractions, colors d4c7b1/bf9079, barite host opacity 0.51 (translucent → bands show), console clean.
+> Tests o5-band-render.test.ts (10).
+>
+> **▸ THE MASKING SCEPTRE SHIPPED (SIM 224, two commits) — the arc's last named payoff, with the
+> boss's own rock as the reference** (photo 2026-07-09: an ametrine sceptre, frosted stem, wide
+> citrine head, amethyst phantom mid-stem, iron staining at the base — memory
+> `project_vugg_ametrine_sceptre_specimen`). **Commit 1 `7566915` (byte-identical foundation):**
+> classifyQuartzSceptre (js/45) generalized to a SECOND boundary type — a PRISM-DOMINANT
+> masked_horizon (O5b breakthrough where φ_prism > φ_term), tagged `_sceptre.route`
+> 'masking'|'corrosion'; the O5b gate records `masked_phi_prism/term` on the horizon zone (js/85).
+> **THE CENSUS EARNED ITS KEEP AGAIN** (tools/sceptre-mask-census.mjs): a naive any-horizon trigger
+> would have spuriously sceptred deccan_zeolite #2 (mesolite-filmed quartz, stem 29.8mm); the
+> prism-dominance gate is BOTH the geology (a sceptre is prism-masked, tip-renewed — Takahashi &
+> Sunagawa 2004 ELO) AND the byte-identity proof (every existing film is coats_front = termination-
+> only, φ_prism 0). Baseline regen → zero diff; grimsel corrosion untouched (route regression
+> pinned). masking-sceptre.test.ts (7). **Commit 2 (SIM 224, the content):** new `amethyst_geode`
+> scenario — Ametista do Sul, Serra Geral flood basalt (Gilg et al. 2003 Mineral. Deposita 38:1009
+> low-T camp + Triz-quarry Geol. Mag. 144:731 magmatic 152-238°C camp, both honored: warm nucleation
+> → cool finish). The geode's REAL celadonite rim is the masking film (prism 0.45 / term 0.08,
+> minerals:["quartz"]); the Silica Renewal Pulse (fluid_pulse ×1.8 SiO2) clears σ*(φ_prism) → 3
+> masking sceptres at seed 42 (stem 277-888µm, caps 804-863µm, capFrac 0.49-0.75); the goethite
+> base stain (0.3/0.3 uniform) correctly stays a buried horizon. **AMETHYST REVIVED from
+> "authored-but-dormant"** (boss: do the D1b fix now): the trigger needed ~600ppm fluid Fe against
+> quartz's trace_Fe×0.005 scale AND the clause-count priority would have out-ranked smoky → new
+> trigger `Fe > 0.2 and radiation_damage 0.1-0.3` + range UPPER bounds honored ONLY for crystal-level
+> fields (js/12a), so amethyst is mutually exclusive with smoky (>0.3) while the sphalerite Fe-ladder
+> keeps its lower-bound collapse (regression-pinned). New byte-identical knob `wall.gamma_host`
+> (js/59 + js/22 schema — basalt gave ZERO γ-dose; the Paraná ~134 Ma background is declared per-
+> scenario at 0.4; all 6 existing basalt scenarios unset → byte-identical). Narrator: route-aware
+> masking-sceptre voice (js/92i — the corrosion text would have LIED about the mechanism).
+> baseline-diff v223→v224: **amethyst_geode ONLY** (+quartz ×3). amethyst-geode.test.ts (8).
+> **▸ BOSS OBSERVATION MADE RENDER (same session): "the center point of the growth shifts
+> throughout the scepter."** Two riders: (1) O5c bands now SHARE THE BASE (nested cones, not
+> concentric shells — a wall-attached crystal only grows on free faces, so the shell centre migrates
+> tipward; `position.y = minY·(1−f)`); (2) sceptre caps are ECCENTRIC (`_makeSceptreHexPrism` cap+
+> apex displaced laterally 0.06-0.15 per-id, yaw-scattered — renewal nucleates on the best-fed side,
+> Sizaret 2006). Kernel-truth verified: band localY == minY·(1−f) exactly; apexX 0.097/0.127/0.146.
+> **NAMED, NOT BUILT:** flow-ALIGNED cap eccentricity (the wall already records `paleo_flow_accum` —
+> the V1b-flow speedometer; grep-the-tree, the data exists) + continuous axis-wander (the specimen's
+> stem wobble) — pairs with W-K's flow-DIRECTION asymmetry line. Also open: per-axis GROWTH gating
+> (stall prism/term independently) — census said not needed for v1 (capFrac is growth-timing-set).
+> **▸ THE CITRINE HALF IS BIGGER THAN A COLOUR TRIGGER (boss, 2026-07-09):** *"you would need more
+> than just adding citrine — you would need localized heat. right now heat is uniform through the
+> vugg."* Verified correct, and the tree already holds the receptacles. Heat is uniform in SPACE by
+> construction: js/85c `_propagateGlobalDelta` moves every ring by the same ΔT in lockstep (js/85:130
+> initializes all rings to one T; the v157 note calls ring_temperatures "synced cavity-wide"), while
+> per-VOXEL temperature has existed since v158 as stored-but-unconsumed (js/24 `[FIRM] E` — "engines
+> still read ring_temperatures[]"). The LOCAL consumption plumbing already works: js/20d localization
+> resolvers deliver `ring_temperatures[cell.temperature_ring]` per cell — nothing ever DIFFERENTIATES
+> the array. And zones already record their growth T (`z.temperature` — js/12's legacy citrine gate
+> reads it), so the EPISODE datum exists too. The citrine half therefore parks behind a THERMAL-FIELD
+> stone with three pieces: (1) a SOURCE of spatial ΔT — feeder-spot heat / one-sided wall bake / dike
+> contact; (2) differentiated ring_temperatures (or waking the voxel column) flowing through the
+> EXISTING 20d resolvers; (3) episode→colour split — body colour is per-CRYSTAL today (D1b), and an
+> ametrine needs the head coloured by the episode that grew it while the buried amethyst phantom keeps
+> its purple. `citrine` itself sits authored-but-dormant (trigger `heated_amethyst`, unimplemented;
+> legacy js/12 gate `avgFe > 5` — the amethyst scale-debt's sibling). Bench anchors 1307–1309
+> (amethyst-citrine sceptres, triple Eh oscillation) wait in the pilot manifest. NOT a colour patch —
+> a foundation stone; sequenced behind the approved doors unless the boss pulls it forward.
 
 > ## 🔴🟢 NUCLEATION HOVER POPOVER (2026-07-08, boss ask) — SHIPPED (render-only)
 >
@@ -400,16 +635,19 @@ Living list of open work items, captured from session conversations so context s
 > Post-clamp census: concentration defects [] · baseline diff 0/38 — the rot was UNREAD,
 > and the clamp makes that a guarantee for the trace-reading consumers coming (D1c,
 > narrators, UV rules). tools/negative-fluid-census.mjs is re-runnable.**
-> · Door 2 UV scale audit (uv-zone-census tool first → 98c recalibration render-only →
-> js/27 separately under SIM-bump discipline, narrator text moves) · Door 3 §10.5 t2-3 (~90
-> curated strings verbatim → menu.group/label/blurb + tutorial.number/menu_label; acceptance =
-> byte-identical rendered menus via before/after DOM snapshot) · **Door 4 (boss-sequenced
+> · **Door 2 ✅ WALKED (2026-07-09, 3 commits `e81ce83`/`7c4ded5`/`c954cf2` SIM 225 — see
+> the 🔦 DOOR 2 banner at top: the two voices reconciled to the engines' recorded ladders;
+> the tutorial broth made honest; adamite + uraninite inversions; the record completed
+> itself)** · **Door 3 ✅ WALKED (2026-07-10, `892905f`, render-only — see the 🧩 DOOR 3
+> banner at top: the picker panel + zen dropdown + Begin tutorials all generate from a
+> menu_layout block; byte-identical proven both ends; the v116 hidden-scenario bug class
+> closed — ONLY Door 4 remains, boss-sequenced last)** · **Door 4 (boss-sequenced
 > LAST, after the handoff's other arcs): THE FLEET SIGNATURE AUDIT — re-evaluate all 38
 > scenarios through the tail-law: expects_species checks PRESENCE, nothing checks STATURE
 > (shigar read green while its namesake was absent at showpiece scale); signature
 > declarations join the scenario data as falsifiable claims (keystone CODA has the shape).**
 
-> ## 🧱 SESSION (2026-07-03→07, the foundation) — V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE + **O2 INDUCTION SURFACES** + **C0 THE CALCITE σ LEVER (boss stone #1)** + WALL UX + **C1 THE DIRECTIONAL-σ TRANCHE (boss stone: O1a-real + O1b + O2 integrated)** + **LOCAL CRYSTAL COLOUR** + **D1a+D1b BODY COLOUR (Depth-C defaults + chemistry axes)** + **V1 WALL MICROTEXTURE (genesis relief)** + **O3 GEOMETRIC SELECTION (SIM 218 — the ontogeny arc's FIRST SIM bump; the palisade EARNED)** + **O4a ENGULFMENT MADE VISIBLE (render-only `5260134` — the Sweetwater enclosed guests finally render as opaque grains INSIDE their translucent hosts; naica 35/35 kernel-truth, 569-px diff)** — **CURRENT HANDOFF (the main line): `HANDOFF-FOUNDATIONS-2026-07-03.md`, read through the LATEST KEYSTONE — now **the TWELFTH hand's keystone ("the light learned to bend", 2026-07-08, the doc's last entry): the O4b→O5 arc — O4b enclosure went GEOMETRIC (SIM 221 `08287eb`, the string adjacency was 81% phantom, `coats_front` born, tormiq's phantom-faked quartz lining caught + fixed) → O5 PERTURBED REGROWTH the ORIGINATING ASK (a film masks a growth front, the blade STALLS then grows THROUGH leaving a masked_horizon = a positive-growth scar: O5a record-unread byte-identical `2ed7469`, O5b masking gate live SIM 222 `90b0a0b`, σ*(φ) reconciled with rockbot's parallel research) → O5 FIRST CONTENT the ELMWOOD BARITE SNOWBALL (SIM 223 `f79ae01` — barite that was subcritical DUST for the scenario's whole life grows on the honey sphalerite, 2 clay/Fe-oxide horizons + dusty rind per blade; the variety kept SACRED, golden calcite unmoved; Ba-FLOOR-not-pulse defeated the witherite trap) — below it **the ELEVENTH hand's THIRD-ACT keystone ("the day the vug learned to remember", 2026-07-08): the GAME layer, four render-only deploys, zero baseline movement — replay saves (a save is the run's RECIPE; the sliders-are-TRANSPORT law, the T-echo catch; four dormant headless landmines paid out as dividend) + lifetime score on Library/home banners + the nucleation hover (survival-reversal: same datum, opposite reading) + T1 taught where it's used** — below it the SECOND-ACT keystone ("three deaths, one fry", same date): Door 1 walked (SIM 219, star 0.6 → 22 mm, the WALLET LAW, the emergent fry) + the negative-fluid arc (SIM 220, 0/38 certificate bump, negative-is-a-value-until-the-dimension-says-otherwise) — below it the morning keystone (the parity pass — two render-truth fixes — plus THE THREE SCOPED DOORS, all boss-approved: shigar aqua size ✅ / UV scale audit / §10.5 t2-3; the ninth hand's O3 keystone below it** (ninth hand, 2026-07-07: O3 geometric selection — INSTRUMENTS-FIRST (the standalone Gray d^(−1/2) oracle before any engine code); SEALED-BUT-PRESENT (the specimen tests SHAPED the arrest — hard-kill culled documented accessory sulfides; throttle+shield instead); the fifth verb — WHERE a law applies is itself geology (elongate-only palisade gate); a SIM bump is a WEB, not a wire (fill→nucleation→enclosure→cap rippled 4 files)**) + the eighth hand's below it (the wall VOID→WITNESS; a FOURTH instrument — READ THE ROCKS beside grep/probe/eye; the probe replaces the hypothesis, 3× a session; render decoration→measurement; composition is NEVER a genesis proxy**) + the seventh hand's below it (GREP/PROBE/EYE; INDIVIDUATED→LEGIBLE; WIRED≠VISIBLE) + the sixth hand's below that (RATE-reads-local-FORM-read-bulk, SITUATED→INDIVIDUATED) + the D1a/D1b/V1 act addenda (grep-the-tree-first is a LAW; a probe REPLACES the hypothesis you brought; check a field is POPULATED before trusting a "<"; the eye-check is a render change's acceptance test, not ceremony; **next hand's doors: D1c / V2+ / O4b (O4a ENGULFMENT RENDER ✅ `5260134` — enclosed guests render as opaque grains inside translucent hosts; O4b = adjacency string→geometry SIM bump + coats_front embedded/front-coating classes) / O3 GEOMETRIC SELECTION ✅ SIM 218 — `1948b3b` O3a byte-identical draw + `03f1582` O3b the SIM bump; V1b AO-depth ✅ `fe5d241`, V1b-flow + V1c genesis-gated textures ✅ `3a7cf6e` — remainder: flow-DIRECTION asymmetry + primer tints; O3 remainder: size-scaled neighbor footprint)**)
+> ## 🧱 SESSION (2026-07-03→07, the foundation) — V0 CLEFT-TRUTH + O0 HALF-FORMS + O1a EXPOSURE + **O2 INDUCTION SURFACES** + **C0 THE CALCITE σ LEVER (boss stone #1)** + WALL UX + **C1 THE DIRECTIONAL-σ TRANCHE (boss stone: O1a-real + O1b + O2 integrated)** + **LOCAL CRYSTAL COLOUR** + **D1a+D1b BODY COLOUR (Depth-C defaults + chemistry axes)** + **V1 WALL MICROTEXTURE (genesis relief)** + **O3 GEOMETRIC SELECTION (SIM 218 — the ontogeny arc's FIRST SIM bump; the palisade EARNED)** + **O4a ENGULFMENT MADE VISIBLE (render-only `5260134` — the Sweetwater enclosed guests finally render as opaque grains INSIDE their translucent hosts; naica 35/35 kernel-truth, 569-px diff)** — **CURRENT HANDOFF (the main line): `HANDOFF-FOUNDATIONS-2026-07-03.md`, read through the LATEST KEYSTONE — now **the SIXTEENTH hand's keystone ("the ladder learned its shape", 2026-07-11, the doc's last entry): O5-SPLITTING S-b — the ladder EARNS its shape (`b6c0e5c`, RENDER-ONLY byte-identical 0/39): `_split.rung` drives js/99i (sheaf = the hemimorphite-fan mesh, spherulite = the botryoidal cluster; curved keeps its habit render; `_deformation` precedence); calibration reshaped to the SCIENCE with the census as bench — per-ROUTE abilities `{a,b}` (fixed 18 false gypsum-spherulites; gypsum A-only, zeolites B), per-MINERAL onset = 2.5×σ_crit + bounded drive (dolomite σ_crit 10 vs calcite 1.5), a growth-ramped STRUCTURAL-RADIAL floor (chain silicates fibrous by structure); THE LOAD-BEARING MARK — a SIM-bump through SIZE is a FLOOD not a wire (a growth throttle moved 80 NON-split minerals via fill→nucleation, 15 mm swings + 29 count shifts → census-bounded needs VOLUME-NEUTRAL surgery, deferred; the `splitGrowthMult` lever ships unused; boss chose render-only 2026-07-11); TWO debts down (§9c: the volume-neutral SIM effect + S-c render refinement). S-a `fbac070` (record-unread, byte-identical) below it — below it **the FIFTEENTH hand's keystone ("the painted learned to earn its shape", 2026-07-10): TWO acts under one thesis (earn what the sim PAINTS) — **Door 3 the eleventh hand's third door WALKED** (`892905f` render-only + `e6053f7` docs): the Scenarios picker + Zen dropdown + Begin tutorials (three hand-synced HTML surfaces = the v116 bug that hid 15 scenarios) now AUTO-GENERATE from ONE `menu_layout` block in scenarios.json5; byte-identical proven BOTH ends (menu_layout === HEAD's HTML === generated DOM, 85 entries); skill §10.5 rewritten; CI 174/2414 green — and **the O5 SPLITTING LADDER proposal cut** (`731ee89` + `5b6c5f5` banner, research-first, boss-APPROVED for S-a): the sim PAINTS the ladder (saddle/sheaf/spherulite keyword-scored habit words + painted render primitives, no mechanism); O5-splitting EARNS the rung from a cumulative-misorientation index — TWO-ROUTE (A impurity/LOW-σ + B high-σ; the opposite-σ gypsum fact load-bearing), THREE classes (C botryoidal ≠ splitting), render-the-phenomenon (branching microphysics OPEN, the σ*(φ) discipline), Deccan first content (scenario EXISTS — grep-the-tree, extend-not-author); the cross-check caught the BUILDER's OWN citation slips (Radke≠Searl, Bi₂S₃=Tang&Alivisatos); boss §9 verdicts recorded (reuse the masking half's `_film` φ as first impurity source, hand-seed splitAbility with quartz=0, split-earns-saddle BUT shear-saddle separate + census must PROVE noncollision) — below it **the FOURTEENTH hand's keystone ("the lamp learned to tell the truth", 2026-07-09): the eleventh hand's Door 2 WALKED — the UV FLUORESCENCE SCALE AUDIT (`e81ce83` census + `7c4ded5` bar render-only + `c954cf2` SIM 225 + `d1e34e3` docs): the bar AND the narrator both read broth-scale gates against zone-scale traces and DISAGREED on 27 crystals; both rewritten to mirror the growth engines' OWN recorded ladders (js/52 calcite 4-tier / js/59 willemite / js/53 trace_Y-Eu²⁺) — a RECONCILIATION not an invention; the TUTORIAL BROTH was the liar (chemically brighter than Elmwood → Fe 10→60, T2's dark-then-brilliant story true at last); two gates BACKWARDS not sick (adamite Cu-QUENCHES-not-activates + uraninite canon-DARK not always-on-green — the literature pass caught what the census could not); three compute-and-drop datums recorded (ruby/sapphire/emerald Cr, feldspar Pb, adamite Cu); baseline 1/39 (tutorial +siderite). And FIRST, the boss corrected the thirteenth's citrine dream — the citrine half needs LOCALIZED HEAT (heat is uniform through the vug today), a thermal-FIELD foundation stone not a colour patch (`2b9cebd`; the receptacles already exist — per-voxel T since v158, the js/20d resolvers, zones record growth-time T) — below it **the THIRTEENTH hand's keystone ("the center learned to wander", 2026-07-09): the twelfth hand's two named debts PAID — O5c the band render (`48ace89`, masked horizons visible as base-anchored shells through O4a's translucency; the headlessRun-strips-zone-flags trap: verify on the LIVE add_zone objects) + the MASKING SCEPTRE (`7566915` byte-identical classifier: a PRISM-dominant masked_horizon is the second boundary route, census caught deccan's would-be spurious sceptre — prism-dominance is the geology AND the confinement proof; `244c2fd` SIM 224 the BRAZILIAN AMETHYST GEODE: the geode's real celadonite rim frosts the prism → 3 masking sceptres at seed 42, AMETHYST REVIVED from authored-but-dormant with the D1b range-ceiling fix + wall.gamma_host, boss's ametrine thumbnail = the reference specimen) — then the boss's mid-build observation made render (*"the center point of the growth shifts throughout the scepter"*: phantoms SHARE THE BASE, nested cones exact; sceptre caps ECCENTRIC per-id; flow-ALIGNED eccentricity named-not-built, paleo_flow_accum already recorded)** — below it **the TWELFTH hand's keystone ("the light learned to bend", 2026-07-08): the O4b→O5 arc — O4b enclosure went GEOMETRIC (SIM 221 `08287eb`, the string adjacency was 81% phantom, `coats_front` born, tormiq's phantom-faked quartz lining caught + fixed) → O5 PERTURBED REGROWTH the ORIGINATING ASK (a film masks a growth front, the blade STALLS then grows THROUGH leaving a masked_horizon = a positive-growth scar: O5a record-unread byte-identical `2ed7469`, O5b masking gate live SIM 222 `90b0a0b`, σ*(φ) reconciled with rockbot's parallel research) → O5 FIRST CONTENT the ELMWOOD BARITE SNOWBALL (SIM 223 `f79ae01` — barite that was subcritical DUST for the scenario's whole life grows on the honey sphalerite, 2 clay/Fe-oxide horizons + dusty rind per blade; the variety kept SACRED, golden calcite unmoved; Ba-FLOOR-not-pulse defeated the witherite trap) — below it **the ELEVENTH hand's THIRD-ACT keystone ("the day the vug learned to remember", 2026-07-08): the GAME layer, four render-only deploys, zero baseline movement — replay saves (a save is the run's RECIPE; the sliders-are-TRANSPORT law, the T-echo catch; four dormant headless landmines paid out as dividend) + lifetime score on Library/home banners + the nucleation hover (survival-reversal: same datum, opposite reading) + T1 taught where it's used** — below it the SECOND-ACT keystone ("three deaths, one fry", same date): Door 1 walked (SIM 219, star 0.6 → 22 mm, the WALLET LAW, the emergent fry) + the negative-fluid arc (SIM 220, 0/38 certificate bump, negative-is-a-value-until-the-dimension-says-otherwise) — below it the morning keystone (the parity pass — two render-truth fixes — plus THE THREE SCOPED DOORS, all boss-approved: shigar aqua size ✅ / UV scale audit / §10.5 t2-3; the ninth hand's O3 keystone below it** (ninth hand, 2026-07-07: O3 geometric selection — INSTRUMENTS-FIRST (the standalone Gray d^(−1/2) oracle before any engine code); SEALED-BUT-PRESENT (the specimen tests SHAPED the arrest — hard-kill culled documented accessory sulfides; throttle+shield instead); the fifth verb — WHERE a law applies is itself geology (elongate-only palisade gate); a SIM bump is a WEB, not a wire (fill→nucleation→enclosure→cap rippled 4 files)**) + the eighth hand's below it (the wall VOID→WITNESS; a FOURTH instrument — READ THE ROCKS beside grep/probe/eye; the probe replaces the hypothesis, 3× a session; render decoration→measurement; composition is NEVER a genesis proxy**) + the seventh hand's below it (GREP/PROBE/EYE; INDIVIDUATED→LEGIBLE; WIRED≠VISIBLE) + the sixth hand's below that (RATE-reads-local-FORM-read-bulk, SITUATED→INDIVIDUATED) + the D1a/D1b/V1 act addenda (grep-the-tree-first is a LAW; a probe REPLACES the hypothesis you brought; check a field is POPULATED before trusting a "<"; the eye-check is a render change's acceptance test, not ceremony; **next hand's doors: D1c / V2+ / O4b (O4a ENGULFMENT RENDER ✅ `5260134` — enclosed guests render as opaque grains inside translucent hosts; O4b = adjacency string→geometry SIM bump + coats_front embedded/front-coating classes) / O3 GEOMETRIC SELECTION ✅ SIM 218 — `1948b3b` O3a byte-identical draw + `03f1582` O3b the SIM bump; V1b AO-depth ✅ `fe5d241`, V1b-flow + V1c genesis-gated textures ✅ `3a7cf6e` — remainder: flow-DIRECTION asymmetry + primer tints; O3 remainder: size-scaled neighbor footprint)**)
 >
 > **C0 UPDATE (`299a270` SIM 217, 2026-07-06, CI 157/2211):** boss stone #1 SHIPPED by the
 > 4a.7 recipe. calciteMorphForm gains the Ω branch (OMEGA_SCALENO=12, the fleet's own

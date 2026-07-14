@@ -1179,9 +1179,22 @@ function _makeHourglassSeleniteBlade(bodyRGB: number[], sectorRGB: number[], flo
 // shoulder ring — the corrosion surface the cap overgrew, the defining sceptre
 // silhouette. Same unit box (y −0.5..+0.5) as _makeHexPrismWithPyramid so the
 // per-crystal transform scales it identically.
-function _makeSceptreHexPrism(capFrac: number): any {
+//
+// ECCENTRIC CAP (boss observation on the ametrine reference specimen, 2026-07-09:
+// "the center point of the growth shifts throughout the scepter"). A renewal cap
+// does NOT re-center on the stem axis — it nucleates where feeding is best (the
+// flow side; Sizaret 2006 growth-rate asymmetry maps paleo-flow), so real caps
+// sit visibly off-axis. `eccX` displaces the whole cap (ring + apex) laterally in
+// local +X — the per-crystal yaw then scatters the azimuth, so a druse shows caps
+// leaning every which way. Bounded ≤ rCap−rStem so the shoulder ring never turns
+// inside-out (the stem-top circle stays inside the cap footprint). v1 is a
+// deterministic per-crystal render read (the _crystalYaw idiom); the EARNED
+// version — offset along the LOCAL paleo-flow direction the wall already records
+// (wall.paleo_flow_accum, the V1b-flow speedometer) — is named in the backlog.
+function _makeSceptreHexPrism(capFrac: number, eccX?: number): any {
   const cf = Math.max(0.25, Math.min(0.7, capFrac || 0.5));
   const rStem = 0.30, rCap = 0.50;
+  const ecc = Math.max(0, Math.min(rCap - rStem, eccX || 0));   // cap-axis lateral offset
   const yBase = -0.50, yApex = 0.50;
   const yBound = yBase + (1 - cf);          // top of stem / base of cap
   const yShoulder = yBound + cf * 0.62;     // cap prism top / start of tip pyramid
@@ -1189,18 +1202,18 @@ function _makeSceptreHexPrism(capFrac: number): any {
   for (let i = 0; i < 6; i++) {
     const a0 = (i / 6) * Math.PI * 2, a1 = ((i + 1) / 6) * Math.PI * 2;
     const sx0 = Math.cos(a0) * rStem, sz0 = Math.sin(a0) * rStem, sx1 = Math.cos(a1) * rStem, sz1 = Math.sin(a1) * rStem;
-    const cx0 = Math.cos(a0) * rCap, cz0 = Math.sin(a0) * rCap, cx1 = Math.cos(a1) * rCap, cz1 = Math.sin(a1) * rCap;
+    const cx0 = ecc + Math.cos(a0) * rCap, cz0 = Math.sin(a0) * rCap, cx1 = ecc + Math.cos(a1) * rCap, cz1 = Math.sin(a1) * rCap;
     // stem side face
     _pushTri(positions, sx0, yBase, sz0, sx1, yBase, sz1, sx1, yBound, sz1);
     _pushTri(positions, sx0, yBase, sz0, sx1, yBound, sz1, sx0, yBound, sz0);
-    // shoulder ring (stem radius → cap radius) — the resorbed corrosion surface
+    // shoulder ring (stem radius → displaced cap radius) — the overgrown boundary
     _pushTri(positions, sx0, yBound, sz0, sx1, yBound, sz1, cx1, yBound, cz1);
     _pushTri(positions, sx0, yBound, sz0, cx1, yBound, cz1, cx0, yBound, cz0);
     // cap side face
     _pushTri(positions, cx0, yBound, cz0, cx1, yBound, cz1, cx1, yShoulder, cz1);
     _pushTri(positions, cx0, yBound, cz0, cx1, yShoulder, cz1, cx0, yShoulder, cz0);
-    // cap pyramid tip
-    _pushTri(positions, cx0, yShoulder, cz0, cx1, yShoulder, cz1, 0, yApex, 0);
+    // cap pyramid tip — apex follows the displaced cap axis
+    _pushTri(positions, cx0, yShoulder, cz0, cx1, yShoulder, cz1, ecc, yApex, 0);
   }
   const geom = new THREE.BufferGeometry();
   geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -1681,7 +1694,11 @@ function _makeHemimorphicPrism(): any {
 // "sheaflike or fan-shaped aggregates"; thin tabular {010} striated ∥ [001]). Replaces the WRONG
 // hexagonal _makeHemimorphicPrism for hemimorphite (greenockite/wurtzite are genuinely 6mm and
 // keep that one). Specimen-debt verification pass 2026-06-23. Deterministic (index-varied, no RNG).
-function _makeHemimorphiteFan(): any {
+function _makeHemimorphiteFan(splay: number = 0.80): any {
+  // `splay` = the half-angle (rad) from vertical of the outermost blade. The
+  // O5-splitting render (S-c) drives it continuously from `_split.index` so a
+  // just-split crystal is a narrow bundle and a mature sheaf a wide wheat-sheaf;
+  // the default 0.80 keeps the hemimorphite habit render byte-identical.
   const positions: number[] = [];
   // one thin tabular blade: base point o, unit long axis a, unit broad-face normal n; width dir
   // e = a×n. Rectangular section (hw along e, ht along n) base→shoulder, then a chisel ridge (a
@@ -1714,7 +1731,7 @@ function _makeHemimorphiteFan(): any {
   const N = 6;
   for (let k = 0; k < N; k++) {
     const f = k / (N - 1);                          // 0..1 across the fan
-    const ang = -0.80 + 1.60 * f;                   // ~ -46°..+46° from vertical, splayed in x-y
+    const ang = -splay + 2 * splay * f;             // -splay..+splay from vertical, splayed in x-y
     const a = [Math.sin(ang), Math.cos(ang), 0];    // unit long axis (fans in the x-y plane)
     const n = [0, 0, 1];                            // broad face ≈ ±z → a flat bowtie spray
     const len = 0.74 + 0.09 * Math.cos(k * 1.7);    // slight deterministic length variation
@@ -1890,12 +1907,20 @@ function _makeRhombicDodecahedron(): any {
 // than a single sphere. Each "bubble" is just a low-poly sphere
 // translated; the geometries get merged at the end so the cluster
 // is one BufferGeometry per token.
-function _makeBotryoidalCluster(): any {
+function _makeBotryoidalCluster(completeness: number = 1): any {
+  // `completeness` in [0,1] = how CLOSED the radial sphere is. The O5-splitting
+  // render (S-c) drives it from `_split.index` past the spherulite onset: a
+  // just-crossed spherulite is a tighter central mass with under-grown lobes, a
+  // full-index one closes into the round botryoidal rosette. The peripheral lobe
+  // radii scale 0.35→1.0 with completeness (central bump always full); default 1
+  // keeps the botryoidal habit render byte-identical.
+  const c = Math.max(0, Math.min(1, completeness));
+  const lobeScale = 0.35 + 0.65 * c;
   const bubbles = [
-    { r: 0.42, x: 0.00, y: 0.05, z: 0.00 },   // dominant central bump
-    { r: 0.26, x: 0.30, y: -0.10, z: 0.10 },  // small lobe
-    { r: 0.30, x: -0.18, y: 0.00, z: 0.22 },  // medium lobe
-    { r: 0.22, x: 0.12, y: -0.05, z: -0.30 }, // small lobe (back)
+    { r: 0.42,             x: 0.00, y: 0.05, z: 0.00 },   // dominant central bump
+    { r: 0.26 * lobeScale, x: 0.30, y: -0.10, z: 0.10 },  // small lobe
+    { r: 0.30 * lobeScale, x: -0.18, y: 0.00, z: 0.22 },  // medium lobe
+    { r: 0.22 * lobeScale, x: 0.12, y: -0.05, z: -0.30 }, // small lobe (back)
   ];
   // Build each sphere, translate, accumulate positions.
   const positions: number[] = [];
@@ -4152,6 +4177,59 @@ function _o4InclusionLocalPos(
   const r = hostR * rf;
   return [hcx + (dx / dl) * r, hcy + (dy / dl) * r, hcz + (dz / dl) * r];
 }
+
+// W-F O5c — emit the masked-horizon bands for one host crystal. Reads the
+// recorded zone stack via maskedHorizonBands (js/44b, pure) and adds one thin
+// concentric shell CHILD per horizon: SAME geometry as the host (post-O2-clip,
+// finalized before add(mesh) — so the band matches the visible silhouette),
+// uniform local scale = the horizon's radial fraction, local position 0. As a
+// child it inherits the host's world transform (including a tabular blade's
+// non-uniform scale), so the shell is similar-and-concentric inside — a smaller
+// copy of the same form at the depth the film was buried. Tinted by filmBandRGB,
+// semi-opaque + double-sided + depthWrite off so it reads THROUGH the host's
+// Depth-A translucency without punching the transparent sort; an OPAQUE host
+// hides it (honest, the O4a contract). Non-raycastable — a band is an internal
+// feature, not a hit target, so hovers fall through to the host shell.
+// Render-only: no crystal mutated, no sim state touched (byte-identical).
+function _o5EmitMaskedBands(hostMesh: any, crystal: any): void {
+  if (!hostMesh || !hostMesh.geometry) return;
+  const bands = maskedHorizonBands(crystal);
+  if (!bands.length) return;
+  for (const band of bands) {
+    const f = band.frac;
+    if (!(f > 0 && f < 1)) continue;
+    const [br, bg, bb] = filmBandRGB(band.mineral);
+    const bandMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(br, bg, bb),
+      roughness: 0.9,
+      metalness: 0.0,
+      transparent: true,
+      opacity: 0.72,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const bandMesh = new THREE.Mesh(hostMesh.geometry, bandMat);
+    bandMesh.scale.setScalar(f);
+    // PHANTOMS SHARE THE BASE (boss observation on the ametrine reference
+    // specimen, 2026-07-09: "the center point of the growth shifts throughout
+    // the scepter"). A wall-attached crystal grows on its FREE faces only — the
+    // attached end is dead — so the geometric centre of each successive shell
+    // migrates tipward and the buried growth states stack like nested cones
+    // sharing the base, NOT concentric shells. Anchor the band's base to the
+    // host's base (bounding-box min.y in the host's local space): after a
+    // uniform scale f the child's base sits at minY·f, so offsetting by
+    // minY·(1−f) re-pins it to minY. The concentric first cut put the horizon
+    // floating mid-crystal — the idealization the specimen contradicts.
+    if (!hostMesh.geometry.boundingBox) hostMesh.geometry.computeBoundingBox();
+    const hbb = hostMesh.geometry.boundingBox;
+    bandMesh.position.y = (hbb ? hbb.min.y : -0.5) * (1 - f);
+    bandMesh.renderOrder = (hostMesh.renderOrder || 0) + 1;
+    bandMesh.raycast = function () {};
+    bandMesh.userData = { o5Band: true, crystal_id: crystal.crystal_id, filmMineral: band.mineral };
+    hostMesh.add(bandMesh);
+  }
+}
+
 function _o1bNeighborShadow(crystal: any, bodies: any[]): number {
   if (!bodies || bodies.length < 2) return 0;
   let me: any = null;
@@ -4539,8 +4617,61 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     if (!geom && crystal.mineral === 'quartz' && crystal._sceptre && !crystal._gwindel && token === 'prism'
         && (replayStep == null || replayStep >= crystal._sceptre.boundaryStep)) {
       const cf = Math.round((crystal._sceptre.capFrac || 0.5) * 20) / 20;  // quantize for cache reuse
-      if (crystal._sceptreGeomCf !== cf) { crystal._sceptreGeom = _makeSceptreHexPrism(cf); crystal._sceptreGeomCf = cf; }
+      // Eccentric cap (growth-centre migration — see _makeSceptreHexPrism): a
+      // deterministic per-id lateral offset in 0.06..0.15 (never dead-coaxial —
+      // real caps aren't), azimuth-scattered by the per-crystal yaw. Pure fn of
+      // the id, so the cf-keyed per-crystal cache stays valid.
+      const eccH = Math.abs(Math.sin((crystal.crystal_id || 1) * 12.9898)) % 1;
+      const ecc = 0.06 + 0.09 * eccH;
+      if (crystal._sceptreGeomCf !== cf) { crystal._sceptreGeom = _makeSceptreHexPrism(cf, ecc); crystal._sceptreGeomCf = cf; }
       geom = crystal._sceptreGeom;
+    }
+    // W-F O5 SPLITTING (S-b + S-c) — a crystal that EARNED a rung on the two-route
+    // cumulative-misorientation ladder (js/44c _split) renders its divergent /
+    // radial form, and (S-c) the FORM VARIES CONTINUOUSLY with `_split.index`
+    // rather than snapping between fixed meshes:
+    //   • curved  → the saddle-rhomb curved-face render, curvature = f(index),
+    //     for the rhombohedral-carbonate / saddle set only (a curved gypsum keeps
+    //     its blade — a rhomb would be wrong-shaped). This RETIRES the T-painted
+    //     saddle constant FOR THE SPLIT-DRIVEN SET: placed before the T-driven
+    //     saddle-habit hook below so it supersedes; a rung-'none' saddle dolomite
+    //     still falls through to that hook.
+    //   • split + sheaf → ONE continuous blade fan, splay = f(index): a just-split
+    //     crystal is a narrow bundle (few subindividuals / splayed terminations),
+    //     a mature sheaf a wide wheat-sheaf. The split→sheaf boundary no longer snaps.
+    //   • spherulite → the radial botryoidal cluster, completeness = f(index): a
+    //     just-crossed spherulite is tighter/under-grown, a full-index one a closed
+    //     rosette — continuous with the widest sheaf.
+    // Mineral-agnostic for the fan/sphere (a stilbite sheaf, an aragonite flos-ferri
+    // sphere, a byssolite spray all read from the one form). SKIP when _deformation
+    // is present — the shear-bent saddle is a SEPARATE cause (§9a #4;
+    // tools/o5-split-census.mjs certifies these two sets do not collide). Gated by
+    // O5_SPLITTING_ENABLED (js/44c); splitAbility-0 minerals (quartz/feldspar) never
+    // carry _split, so their gwindel/sceptre hooks above are untouched. Params are
+    // quantized before the cache key so the geom cache stays small.
+    if (!geom && O5_SPLITTING_ENABLED && crystal._split && !crystal._deformation) {
+      const _spIdx = Math.max(0, Math.min(1, crystal._split.index || 0));
+      const _spRung = crystal._split.rung;
+      const _isSaddleHabit = typeof crystal.habit === 'string' && crystal.habit.indexOf('saddle') >= 0;
+      if (_spRung === 'curved' && (token === 'rhomb' || _isSaddleHabit)) {
+        // curved band 0.08..0.25 → curvature 0.05..0.16 (gentle bow, clamped by the mesh)
+        const curv = Math.round((0.05 + 0.11 * Math.max(0, Math.min(1, (_spIdx - 0.08) / 0.17))) * 100) / 100;
+        const key = '__split_saddle_' + curv;
+        geom = state.geomCache.get(key);
+        if (!geom) { geom = _makeSaddleRhomb(curv); state.geomCache.set(key, geom); }
+      } else if (_spRung === 'split' || _spRung === 'sheaf') {
+        // split+sheaf band 0.25..0.85 → splay 0.30..1.08 rad (narrow bundle → wide sheaf)
+        const splay = Math.round((0.30 + 0.78 * Math.max(0, Math.min(1, (_spIdx - 0.25) / 0.60))) * 20) / 20;
+        const key = '__split_fan_' + splay;
+        geom = state.geomCache.get(key);
+        if (!geom) { geom = _makeHemimorphiteFan(splay); state.geomCache.set(key, geom); }
+      } else if (_spRung === 'spherulite') {
+        // spherulite band 0.85..1.0 → completeness 0..1 (tight → closed rosette)
+        const comp = Math.round(Math.max(0, Math.min(1, (_spIdx - 0.85) / 0.15)) * 20) / 20;
+        const key = '__split_sph_' + comp;
+        geom = state.geomCache.get(key);
+        if (!geom) { geom = _makeBotryoidalCluster(comp); state.geomCache.set(key, geom); }
+      }
     }
     // Saddle (baroque) DOLOMITE curved-face rhombohedron (deformation arc
     // 2026-06-20). Gated on the habit string 'saddle_rhomb' — mineral-agnostic
@@ -4956,6 +5087,13 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     if (isInclusion) {
       _pendingInclusions.push({ mesh, ax, ay, az, hostId: crystal.enclosed_by, cid: crystal.crystal_id });
     }
+
+    // W-F O5c — the phantom band made visible. Each masked_horizon zone (a
+    // front that grew THROUGH a foreign film, js/85 gate) renders as a thin
+    // concentric shell at its recorded radial depth. Free-standing crystals
+    // only — an engulfed guest (O4a) is a tiny grain inside a host, its own
+    // internal bands invisible and not worth the meshes. Render-only.
+    if (!isInclusion) _o5EmitMaskedBands(mesh, crystal);
 
     // Phase E5b: emit cluster satellites around this parent. Same
     // geometry + material; inherits parent userData so hit-tests
