@@ -2013,3 +2013,60 @@ shows it. What it does not yet do is let that splitting cost it the length it tr
 last honest debt of this rung, written down for the hand that will pay it.
 
 — the builder, sixteenth hand: the ladder learned its shape · 2026-07-11
+
+---
+
+## KEYSTONE — the seventeenth hand: the render learned its degree (2026-07-14)
+
+The sixteenth hand's dream named two unmade earnings and paid neither: the volume-neutral SIM effect
+(the ladder should COST length) and S-c (the form should vary CONTINUOUSLY with the index, not snap
+between two meshes). This hand paid the second. The sheaf no longer has one splay: a just-split crystal
+is a narrow bundle, a mature one a wide wheat-sheaf, and everything between them is a real intermediate.
+The spherulite closes by degree; the curved rhomb bows by degree. `_split.rung` chose WHICH form last
+time; `_split.index` now sets HOW FAR. It shipped **render-only, byte-identical** — only the renderer
+changed, so the seed-42 baseline could not move, and there was nothing to regenerate.
+
+### The marks
+
+1. **When the eye-check can't run, build the eye.** WebGL screenshots time out on this render (a known
+   trap), and no headless run exercises the Three renderer — so "does the form actually vary?" had no
+   cheap answer. The answer was a probe that REPLICATES the renderer's quantization formulas and applies
+   them to the real fleet: 111 split crystals → **17 distinct fan-splay buckets**, curved 3, spherulite 3,
+   PASS. That is a stronger proof than a screenshot — it counts the degrees the render can actually take,
+   not one frame of one crystal. The mirror-formula risks drift (the probe's comment says so, loudly);
+   the trade was worth it. A render you can't photograph can still be measured.
+
+2. **A continuous render must be PROVEN non-degenerate, or it's still a snap.** The whole point of S-c is
+   that the form spreads. So the acceptance gate is not "it renders" — it's "every active family spans
+   ≥2 buckets." A family that collapses to one value is a fixed mesh wearing a parameter. The probe fails
+   loudly on collapse. Continuity is a claim about a distribution; test the distribution.
+
+3. **The right gate REFUSES the wrong shape.** The curved rung earns a saddle-rhomb curvature — but only
+   for rhombohedral carbonates and saddle-habit crystals. A curved gypsum is a bent BLADE, not a bent
+   rhomb; forcing the rhomb on it would be a science regression dressed as coverage. So the gate keeps
+   gypsum/selenite/zeolites on their blades at the curved rung (they earn their split render one rung up,
+   as fans). Six selenites, two scolecites, a stilbite — all correctly left alone. Adding a form is only
+   an upgrade where the form is right; elsewhere, the honest move is to decline and write down why.
+
+### Diagenesis
+
+Almost pure standing-on: S-b recorded the `_split.index` this hand read, calibrated it to the science,
+and shipped the two-mesh snap this hand made continuous. The render-only / byte-identical landing is the
+same posture laid down four times now (O4a, O5c, S-b, here). The probe is the census-as-instrument habit
+applied to the render side — a new tool in the same shape as `o5-split-census.mjs`. Nothing here was
+invented; it was earned from a rung the last hand left one degree short.
+
+### The dream, nineteenth telling
+
+One debt remains on this rung, and it is the heavy one: the SIM should let splitting COST length —
+a spherulite is genuinely more compact than the needle it replaced, and the volume-neutral path (make
+`total_growth_um` a pure reported extent, drive fill from an uncompacted twin, thread the ~8 size-reading
+sites) would let the baseline move for the split set ALONE, census-bounded at last. The
+`splitGrowthMult`/`SPLIT_AXIAL_FLOOR` lever still ships defined-but-unused, waiting. A smaller earning
+was written down beside it: a bent-BLADE generator, so the curved gypsum this hand kept as a blade could
+bow like its rhomb cousins. Past those the ladder keeps climbing — O6, O7, O8 — and the two old doors
+still stand: Door 4's stature audit, the citrine half's thermal field. The crystal's biography grows more
+legible each hand: it splits when the conditions say split, shows WHICH way, and now shows HOW FAR. What
+it still does not do is pay for the breadth with its length — the one debt this rung has left.
+
+— the builder, seventeenth hand: the render learned its degree · 2026-07-14

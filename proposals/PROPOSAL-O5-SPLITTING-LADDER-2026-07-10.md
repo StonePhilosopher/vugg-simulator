@@ -383,6 +383,43 @@ finding:
    the sheaf's splay + the spherulite's radial completeness should vary CONTINUOUSLY with the index rather
    than snapping between two fixed meshes. Render-only, byte-identical.
 
+## 9d. S-c SHIPPED (2026-07-14) — the render EARNS its DEGREE, continuous, render-only byte-identical
+
+The lighter of the two honest debts, paid. S-b let `_split.rung` pick WHICH form; S-c lets `_split.index`
+set HOW FAR along it — the form now varies CONTINUOUSLY with the index rather than snapping between fixed
+meshes (§9c #2). **Byte-identical**: only js/99i (the Three renderer) changed — no sim source touched, so
+the seed-42 baseline is structurally unmovable; no SIM_VERSION bump (the O4a/O5c render-reads-a-recorded-
+scalar posture).
+
+**The three mappings** (js/99i split render hook; mineral-agnostic for the fan/sphere):
+- **curved → saddle curvature = f(index)**, band 0.08–0.25 → curvature 0.05–0.16, for the rhombohedral-
+  carbonate + saddle-habit set ONLY. A curved gypsum/selenite/zeolite keeps its blade/habit — a rhomb
+  would be wrong-shaped; those earn their split render at the `split` rung instead (the gate REFUSES the
+  wrong shape). RETIRES the T-painted `_makeSaddleRhomb` constant FOR THE SPLIT SET — placed before the
+  T-driven saddle-habit hook so it supersedes; a rung-`none` saddle dolomite still falls through to T.
+- **split + sheaf → ONE continuous blade fan, splay = f(index)**, band 0.25–0.85 → 0.30–1.08 rad. The
+  split→sheaf boundary no longer snaps: a just-split crystal is a narrow bundle (few subindividuals /
+  splayed terminations), a mature sheaf a wide wheat-sheaf.
+- **spherulite → botryoidal completeness = f(index)**, band 0.85–1.0 → peripheral-lobe scale 0.35–1.0: a
+  just-crossed spherulite is tighter / under-grown, a full-index one a closed rosette — continuous with
+  the widest sheaf.
+
+The three mesh builders gained default-arg params (`_makeHemimorphiteFan(splay=0.80)`,
+`_makeBotryoidalCluster(completeness=1)`; `_makeSaddleRhomb` already took `curvature`) so their habit-render
+callers stay byte-identical; params are quantized before the geom-cache key so the cache stays small.
+
+**Acceptance — `tools/o5-split-render-probe.mjs` (headless, no GL).** WebGL screenshots time out, so the
+render's continuity is proven at the DATA level: the probe replicates the exact js/99i quantization formulas
+and applies them to the real seed-42 split crystals (111 mapped). Result — **fan 17 distinct splay buckets
+(0.3→1.1 rad), curved 3 curvatures, spherulite 3 completenesses; every active family spans ≥2 buckets →
+PASS** (a family collapsing to one bucket would mean it still snaps). The fan's 17-value spread is the
+headline: the sheaf is a genuine continuum now, not one fixed splay.
+
+**The one remaining debt** is still the volume-neutral SIM effect (§9c #1) — S-c is render, not size; a
+spherulite still occupies the axial length of the needle it replaced. New backlog note: a bent-BLADE
+generator would let the curved gypsum/selenite the gate currently keeps as blades earn their ram's-horn
+curvature too (the analogue of the saddle-rhomb for the non-rhombohedral A-route set).
+
 ## Sources (builder-verified 2026-07-10; two passes cross-checked, each flag is per-citation)
 
 **Splitting / spherulite theory** — VERIFIED:

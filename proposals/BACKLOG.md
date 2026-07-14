@@ -2,7 +2,19 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🌱 O5 SPLITTING LADDER — **S-a + S-b SHIPPED** (S-a `fbac070` record-unread · S-b `b6c0e5c` the ladder EARNS its shape, RENDER-ONLY byte-identical 0/39; proposal `731ee89` §9a/b/c)
+> ## 🌱 O5 SPLITTING LADDER — **S-a + S-b + S-c SHIPPED** (S-a `fbac070` record-unread · S-b `b6c0e5c` the ladder EARNS its shape · S-c `96a7d8d` the render EARNS its DEGREE — all RENDER-ONLY byte-identical, no SIM bump; proposal §9a/b/c/d)
+>
+> **S-c landed (2026-07-14, render-only byte-identical — only js/99i changed):** `_split.index` now sets HOW
+> FAR along the form, continuous instead of snapping between meshes (§9d). curved → saddle curvature f(index)
+> for the rhomb-carbonate/saddle set ONLY (curved gypsum/selenite keep their blade — the gate REFUSES the
+> wrong shape, they earn the fan at the `split` rung); split+sheaf → ONE continuous fan splay f(index)
+> 0.30–1.08 rad; spherulite → botryoidal completeness f(index). Acceptance `tools/o5-split-render-probe.mjs`
+> (headless — WebGL screenshots time out): 111 split crystals → fan **17 distinct splay buckets**, curved 3,
+> spherulite 3, PASS. **Debt (2) of §9c PAID.** Remaining O5-splitting debt: (1) the VOLUME-NEUTRAL SIM
+> effect (splitting should COST length — `splitGrowthMult`/`SPLIT_AXIAL_FLOOR` lever ships defined-but-unused)
+> + a new small note: a bent-BLADE generator so curved gypsum/selenite bow like their rhomb cousins.
+> **NOTE:** live browser eye-check deferred (freestone's concurrent test loop saturated CPU + screenshots
+> time out); verified headless — recommend a boss eye on the deploy (deccan stilbite sheaves / aragonite sphere).
 >
 > **S-b landed (2026-07-11, render-only):** `_split.rung` drives js/99i → sheaf = the hemimorphite-fan mesh,
 > spherulite = the botryoidal cluster (curved keeps its habit render; `_deformation` precedence). Calibrated
