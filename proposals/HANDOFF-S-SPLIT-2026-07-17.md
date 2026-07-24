@@ -116,23 +116,56 @@ commit==HEAD) → cold-ci stamp. **After any redox- or brine-adjacent change, ru
 
 Surfaced when the boss eye-checked v234-vs-v235 Elmwood renders during S1 (barite settled:
 "the barite's ok"). Reference: real Elmwood specimen **#103941** (calcite + galena +
-fluorite + celestine). Both are SEPARATE from the S-split (rendering/habit, not chemistry):
+fluorite + celestine).
 
-- **Elmwood calcite — render the scalenohedral as a real dogtooth.** The 19 mm golden
-  crown-jewel calcite is MODEL-correct (`habit: stepped_scalenohedral`, forms `v{211}
-  scalenohedron, gentle growth steps | dog-tooth`) but the RENDER doesn't read as a
-  dogtooth. It's a Wulff/wireframe GEOMETRY gap (js/45 + the calcite geometry in
-  99c/99d/99i), not a habit-assignment one — the classifier already tags dog-tooth. Boss
-  wants dogtooth OR the larger blockier dogtooth variants. Verify in-browser (elmwood
-  seed 42; the 19 mm calcite is the biggest crystal).
-- **Elmwood celestine — druzy blanketing surface-coating habit.** Renders today as tiny
-  discrete `tabular {001} plates` at **8–9 µm**. The real specimen's celestine is "fibrous
-  and white, seemingly holds the specimen together like a glue" — a large-area DRUZY
-  BLANKET / surface coating, more like chalcedony/chrysoprase than discrete crystals. Needs
-  BOTH a druzy/surface-coating habit variant (grow_celestine js/60 + morphology registry
-  js/45 — study how chalcedony/chrysoprase surface-coating is done) AND for it to actually
-  spread as a coating rather than sit at 8 µm. The bigger of the two.
+- **Elmwood calcite — ✅ FIXED 2026-07-24 (render-only, byte-identical, 2436/2436).**
+  Boss's refined finding (with reference photos of real Elmwood double-terminated golden
+  calcite): the 3D view rendered it as "two low pyramids... an even square" — should be
+  TALLER than wide, and double-terminated ones never form an even square. ROOT CAUSE
+  (measured live, seed 42): the 19 mm calcite's `a_width_mm` is the js/27 ellipsoid-VOLUME
+  measurement (`a = √(6V/πc)`, feeds vug fill — the byte-identity keystone), and a mature
+  calcite that integrated ~920 mm³ reads back **13.32 × 11.49 mm = 1.16:1 near-square**;
+  both renderers used that measurement as the display width. The declared honest aspect
+  was already in the tree (`_GEOM_TOKEN_RATIO.scalene = 0.6`) but only consulted on the
+  visibility-floor path. FIX (the botryoidal-override house pattern, mirror direction):
+  (1) js/99i scale.set 'scalene' branch — display width capped at `cLen × 0.6`, sim-side
+  dimensions untouched; (2) same cap for druzy-cluster satellites (they derived from the
+  parent's raw a_width and rendered even-square around a properly-toothed parent);
+  (3) js/99d wireframe instance — same cap for the topo-3D wireframe path; (4) js/99c
+  PRIM_SCALENOHEDRON re-cut — mid-rings 0.7/0.2 → 0.55/0.15, bottom apex −0.1 → −0.12:
+  UNEQUAL terminations (upper tooth 0.45, lower point 0.27) instead of two equal
+  0.3-pyramids. VERIFIED: parent + all 4 satellites at ratio 0.60 exactly (mesh-scale
+  probe); side-on in-browser eye-check reads as pointed elongated teeth; 2436/2436 with
+  seed42_v235 untouched. Boss eye-check of the new render still owed.
+- **Elmwood celestine — DESIGN SETTLED, EXECUTION = the S2 celestine tranche (do NOT
+  half-ship).** The boss surfaced mindat's Elmwood page: **"Barium-bearing Celestine,
+  (Sr,Ba)SO₄, habit: FIBROUS, white"** — photographic proof (fibrous white sprays/blankets
+  + cream nodular masses on sphalerite; initially misidentified as anglesite). And the sim
+  ALREADY KNOWS: both seed-42 elmwood celestines carry "Ba-substituted (barytocelestine
+  intermediate)" in their zone notes (grow_celestine's ba_ratio = Ba/Sr = 28/10 = 2.8 ≫
+  the 0.25 threshold) — the chemistry that mindat says drives the fibrous habit is already
+  computed, it just doesn't STEER the habit (fibrous is gated on the Sicilian
+  `fluid.S > 200` sulfur-vug context; elmwood's celestines fall to `tabular`, 8.3/7.6 µm,
+  σ now 0.732 dormant, nucleated steps 86/88). WHY S2 AND NOT NOW: (a) habit string
+  tabular→fibrous moves `_habitAspectRatio` 1.5→0.5 → `_volume_mm3` → vug fill →
+  chemistry = a BASELINE MOVE (SIM bump + rebake) for two 8 µm crystals; (b) celestine
+  still reads raw `fluid.S` — S2 migrates it to sulfateAvailablePpm, elmwood's reducing
+  broth then CUTS its sulfate food, and it needs a barite-style s_f re-anchor anyway. Two
+  entangled celestine retunes in separate commits violates the attributable-change
+  discipline. THE S2 CELESTINE TRANCHE (one commit, four parts): (1) migrate
+  supersaturation_celestine to sulfateAvailablePpm + measured re-anchor (censused, like
+  barite's ÷40→÷20); (2) Ba-fibrous habit gate — `ba_ratio > 0.25 → 'fibrous'` (the
+  mindat-grounded trigger), independent of the S>200 Sicilian branch (KEEP that branch —
+  it's real for sicily_solfifera); (3) elmwood celestine food census — do the barite-stage
+  Ba pulses + late Sr support an honest mm-scale fibrous mass? (real paragenesis: the
+  Ba-bearing celestine grows from the same late Ba-Sr sulfate waters as the barite stage);
+  (4) render fibrous celestine as the druzy BLANKET (the specimen's "holds it together
+  like glue") — cluster-carpet/lateral spread treatment, not discrete needles (study the
+  chalcedony botryoidal + _druzyClusterSpec machinery). Success criterion: the elmwood
+  celestine reads as a white fibrous blanket between the crystals, and sicily's fibrous
+  celestine is unregressed.
 
 *Twenty-third hand's bridge, 2026-07-17; Elmwood-diversions addendum by the twenty-fourth
-hand, 2026-07-23. The keystone for this stretch is in HANDOFF-FOUNDATIONS-2026-07-03.md
-("the rock's own units").*
+hand, 2026-07-23; S1 LANDED (SIM 235, `aeff2fb`, cold-CI GREEN) + calcite dogtooth render
+fix + celestine S2 design by the same hand, 2026-07-24. The keystone for this stretch is
+in HANDOFF-FOUNDATIONS-2026-07-03.md ("the rock's own units").*

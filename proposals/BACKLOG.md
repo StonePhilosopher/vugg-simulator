@@ -2,33 +2,33 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
-> ## 🗿 ELMWOOD DIVERSIONS (2026-07-23) — habit-rendering fidelity, from the S1 eye-check
+> ## 🗿 SESSION STATE (2026-07-24) — **S1 ✅ LANDED SIM 235 (`aeff2fb`, cold-CI GREEN) · calcite dogtooth render ✅ · celestine = the S2 tranche**
 >
-> Surfaced when the boss eye-checked Elmwood during S1 (barite settled — "the barite's ok"; the
-> honest 2-blade snowball accepted). SEPARATE from the S-split (rendering/habit, not chemistry).
-> Reference: real Elmwood specimen **#103941**. Full detail in the Elmwood-diversions addendum of
-> `HANDOFF-S-SPLIT-2026-07-17.md`.
-> - **Elmwood CALCITE dogtooth render**: the 19 mm golden calcite is model-correct
->   (stepped_scalenohedral, dog-tooth forms) but the RENDER doesn't read as a dogtooth — a
->   Wulff/wireframe GEOMETRY fix (js/45 + 99c/99d/99i calcite geometry), not habit-assignment.
-> - **Elmwood CELESTINE druzy blanket**: renders as tiny 8–9 µm discrete tabular {001} plates;
->   real Elmwood celestine is a fibrous white DRUZY BLANKET / large-area surface coating (like
->   chalcedony/chrysoprase). Needs a druzy surface-coating habit (grow_celestine js/60 + registry
->   js/45) AND to actually spread as a coating. The bigger of the two.
+> **S1 SHIPPED**: barite reads sulfateAvailablePpm; s_f ÷40→÷20 re-anchor (split branch only);
+> wittichen carve-out (`fluid.sulfateInherited`) byte-identical — NOT in the v234→v235 movers.
+> Blast 4/39, **0 species lost/gained**; elmwood-snowball pins →≥2 (honest 2-blade, mechanism
+> guarded); vitest 2425/2425 at land + 2436/2436 after; stale=1; census gates 0+0 / zero
+> sub-onset; cold-CI stamped `aeff2fb`; pushed = deployed. Full record in the commit message.
 >
-> ## 🗿 SESSION STATE (2026-07-23) — S-SPLIT **S1 (barite) WIP, uncommitted, SIM 235; BARITE SETTLED, ready to land**
+> **ELMWOOD CALCITE DOGTOOTH — ✅ FIXED (render-only, byte-identical).** Root cause: display
+> width = the js/27 ellipsoid-VOLUME measurement (19 mm hero: 13.32 × 11.49 mm = 1.16:1 near-
+> square → "two low pyramids, even square", boss). Fix = the botryoidal-override house pattern:
+> `_GEOM_TOKEN_RATIO.scalene` (0.6) applied as a display-width CAP in js/99i scale.set (parent +
+> druzy satellites) + js/99d wireframe; PRIM_SCALENOHEDRON re-cut with UNEQUAL terminations
+> (js/99c). Verified: all 5 meshes ratio 0.60 exact; side-on eye-check reads pointed elongated
+> teeth; 2436/2436, seed42_v235 untouched. Boss eye-check of the new render owed.
 >
-> S0 shipped `ab8cd92`+`18ae96c` (2026-07-22). S1 barite migration DONE + boss-approved, WIP
-> uncommitted: barite reads sulfateAvailablePpm; **honest split** (no re-anchor) starved MVT barite to
-> 0µm growth (killed the Elmwood W-F O5 snowball) → boss **RE-ANCHORED s_f ÷40→÷20 for the SPLIT
-> branch** (÷40 kept for the carve-out branch = wittichen v191-byte-identical) — "recalibration after
-> the model got less fake, not mercy". **wittichen carve-out** via `fluid.sulfateInherited` (meteoric
-> event sets it; narrow+named fill-dampener + `_wallStrangledFor` exemptions; flag broadcast to per-cell
-> mesh fluids in `_propagateGlobalDelta`) → wittichen barite 153.74µm EXACT v234 match. Blast **4/39
-> moved, 0 species lost/gained**. Elmwood snowball honest 2-blade (was 10 blades>100µm/303µm → 2/153µm),
-> boss eye-checked + accepted. **TO LAND: elmwood-snowball pins →≥2 + full vitest + strip-digest/archive
-> regen + coverage + commit ritual + push + stamp.** Then the Elmwood diversions above. Canary still
-> Windows-only (boss on Linux needs a cron/systemd installer path in vugg-canary).
+> **ELMWOOD CELESTINE — design settled, EXECUTION = S2's celestine tranche (do NOT half-ship).**
+> Boss surfaced mindat: Elmwood celestine = **Ba-bearing, (Sr,Ba)SO₄, habit FIBROUS, white** —
+> and the sim's own zone notes already say "Ba-substituted (barytocelestine intermediate)"
+> (ba_ratio 2.8 ≫ 0.25). The chemistry that drives the real fibrous habit is computed but
+> doesn't steer the habit (fibrous is gated on the Sicilian S>200 context). Habit string change
+> = baseline move (aspect 1.5→0.5 → volume → vug fill), and celestine still reads raw fluid.S —
+> S2 migrates it + re-anchors anyway. ONE S2 commit, four parts: sulfate migration + measured
+> re-anchor · Ba-fibrous gate (ba_ratio>0.25; KEEP the Sicilian branch) · elmwood Sr/Ba food
+> census · druzy-BLANKET render treatment. Full spec in HANDOFF-S-SPLIT-2026-07-17.md.
+>
+> Canary still Windows-only (boss on Linux needs a cron/systemd installer path in vugg-canary).
 >
 > ## 🗿 SESSION STATE (2026-07-22) — S-SPLIT **PHASE S0 ✅ (byte-identical, `ab8cd92`) — boss APPROVED the arc; S1 gated on boss go**
 >

@@ -3680,6 +3680,14 @@ function _emitClusterSatellites(
     const satMesh = new THREE.Mesh(geom, mat);
     if (geomToken === 'cube' || geomToken === 'octahedron' || geomToken === 'rhombic_dodec' || geomToken === 'dodecahedron' || geomToken === 'snowball') {
       satMesh.scale.set(sCLen, sCLen, sCLen);
+    } else if (geomToken === 'scalene') {
+      // Same display-width cap as the parent-mesh 'scalene' scale branch
+      // (2026-07-24): sAWid derives from the parent's volume-derived
+      // a_width_mm, which reads a≈c on mature calcite — without the cap
+      // the cluster's teeth render as even-square gems around a properly
+      // toothed parent.
+      const sATooth = Math.min(sAWid, sCLen * _GEOM_TOKEN_RATIO.scalene);
+      satMesh.scale.set(sATooth, sCLen, sATooth);
     } else {
       satMesh.scale.set(sAWid, sCLen, sAWid);
     }
@@ -4971,6 +4979,21 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       const crustLat = Math.max(aWid, cLen * 1.5);
       const crustH = Math.min(cLen, crustLat * 0.4);
       mesh.scale.set(crustLat, crustH, crustLat);
+    } else if (token === 'scalene') {
+      // Scalenohedral (dogtooth) — display width CAPPED at the family's
+      // declared aspect (_GEOM_TOKEN_RATIO.scalene = 0.6, already the table's
+      // stated truth but previously consulted only on the visibility-floor
+      // path). a_width_mm is the ellipsoid-volume MEASUREMENT (feeds vug
+      // fill — the js/27 byte-identity keystone), not a shape statement: a
+      // mature calcite that integrated ~900 mm³ reads back a≈c (the elmwood
+      // 19 mm hero measured 13.3 × 11.5 mm, ratio 1.16) and rendered as an
+      // even-square double pyramid. Boss eye-check vs Elmwood #103941
+      // (2026-07-24): dogtooth calcite is "taller than they are wide", and
+      // double-terminated ones are never an even square. Mirror-image of the
+      // botryoidal override above — sim-side dimensions untouched, the
+      // display honors the form.
+      const aTooth = Math.min(aWid, cLen * _GEOM_TOKEN_RATIO.scalene);
+      mesh.scale.set(aTooth, cLen, aTooth);
     } else {
       mesh.scale.set(aWid, cLen, aWid);
     }

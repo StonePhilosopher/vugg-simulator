@@ -75045,19 +75045,29 @@ const PRIM_SCALENOHEDRON = {
     // Calcite "dogtooth": doubly-pointed with a zigzag waist. 8 verts,
     // 12 edges. Three upper-mid vertices alternate with three lower-mid
     // around the equator, giving the characteristic facet zigzag.
+    //
+    // Proportions re-cut 2026-07-24 (boss eye-check vs real Elmwood
+    // double-terminated calcites): the old mid-rings at 0.7/0.2 gave two
+    // EQUAL 0.3-tall pyramids — an even-square gem read at a≈c. Real
+    // dogtooth terminations are UNEQUAL: the free-growing tooth is long
+    // and steep, the second termination short. Upper-mids dropped to 0.55
+    // (upper tooth 0.45 tall), lower-mids to 0.15, bottom apex at -0.12
+    // (lower point 0.27 tall — present but visibly shorter; buried anyway
+    // when substrate-attached). Pairs with the _GEOM_TOKEN_RATIO.scalene
+    // display-width cap in js/99d + js/99i.
     vertices: (() => {
         const vs = [
-            [0, 1.0, 0], // 0 top apex
-            [0, -0.1, 0], // 1 bottom apex (buried)
+            [0, 1.0, 0], // 0 top apex — the long tooth
+            [0, -0.12, 0], // 1 bottom apex — short second termination (buried when attached)
         ];
         const r = 0.45;
         for (let k = 0; k < 3; k++) {
             const a = k * 2 * Math.PI / 3;
-            vs.push([r * Math.cos(a), 0.7, r * Math.sin(a)]); // 2,3,4 upper-mid
+            vs.push([r * Math.cos(a), 0.55, r * Math.sin(a)]); // 2,3,4 upper-mid
         }
         for (let k = 0; k < 3; k++) {
             const a = k * 2 * Math.PI / 3 + Math.PI / 3;
-            vs.push([r * Math.cos(a), 0.2, r * Math.sin(a)]); // 5,6,7 lower-mid
+            vs.push([r * Math.cos(a), 0.15, r * Math.sin(a)]); // 5,6,7 lower-mid
         }
         return vs;
     })(),
@@ -76845,7 +76855,17 @@ function _renderWireframeInstance(ctx, crystal, anchor, sphereRadiusPx, mmToPx, 
     const fillAlphaMul = opts.fillAlphaMul != null ? opts.fillAlphaMul : 1.0;
     const prim = _lookupCrystalPrimitive(crystal);
     const cLengthPx = Math.max((crystal.c_length_mm || 0.5) * sizeMul * mmToPx, 3);
-    const aWidthPx = Math.max((crystal.a_width_mm || 0.5) * sizeMul * mmToPx, 3);
+    let aWidthPx = Math.max((crystal.a_width_mm || 0.5) * sizeMul * mmToPx, 3);
+    // Scalenohedral display-width cap — mirror of the js/99i scale.set
+    // 'scalene' branch (single source of truth: _GEOM_TOKEN_RATIO.scalene;
+    // safe cross-module read — this runs at render time, long after the
+    // bundle loads). The volume-derived a_width_mm reads a≈c on a mature
+    // calcite, flattening the dogtooth into an even-square double pyramid
+    // in this wireframe/topo-3D view (boss eye-check vs Elmwood #103941,
+    // 2026-07-24). Display honors the form; sim-side a_width_mm untouched.
+    if (prim === PRIM_SCALENOHEDRON) {
+        aWidthPx = Math.min(aWidthPx, cLengthPx * _GEOM_TOKEN_RATIO.scalene);
+    }
     // Substrate-perpendicular at this anchor (= inward sphere normal).
     const invR = 1 / (Math.hypot(anchor[0], anchor[1], anchor[2]) || 1);
     const subNormal = [-anchor[0] * invR, -anchor[1] * invR, -anchor[2] * invR];
@@ -82338,6 +82358,15 @@ parentOccF) {
         if (geomToken === 'cube' || geomToken === 'octahedron' || geomToken === 'rhombic_dodec' || geomToken === 'dodecahedron' || geomToken === 'snowball') {
             satMesh.scale.set(sCLen, sCLen, sCLen);
         }
+        else if (geomToken === 'scalene') {
+            // Same display-width cap as the parent-mesh 'scalene' scale branch
+            // (2026-07-24): sAWid derives from the parent's volume-derived
+            // a_width_mm, which reads a≈c on mature calcite — without the cap
+            // the cluster's teeth render as even-square gems around a properly
+            // toothed parent.
+            const sATooth = Math.min(sAWid, sCLen * _GEOM_TOKEN_RATIO.scalene);
+            satMesh.scale.set(sATooth, sCLen, sATooth);
+        }
         else {
             satMesh.scale.set(sAWid, sCLen, sAWid);
         }
@@ -83728,6 +83757,22 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
             const crustLat = Math.max(aWid, cLen * 1.5);
             const crustH = Math.min(cLen, crustLat * 0.4);
             mesh.scale.set(crustLat, crustH, crustLat);
+        }
+        else if (token === 'scalene') {
+            // Scalenohedral (dogtooth) — display width CAPPED at the family's
+            // declared aspect (_GEOM_TOKEN_RATIO.scalene = 0.6, already the table's
+            // stated truth but previously consulted only on the visibility-floor
+            // path). a_width_mm is the ellipsoid-volume MEASUREMENT (feeds vug
+            // fill — the js/27 byte-identity keystone), not a shape statement: a
+            // mature calcite that integrated ~900 mm³ reads back a≈c (the elmwood
+            // 19 mm hero measured 13.3 × 11.5 mm, ratio 1.16) and rendered as an
+            // even-square double pyramid. Boss eye-check vs Elmwood #103941
+            // (2026-07-24): dogtooth calcite is "taller than they are wide", and
+            // double-terminated ones are never an even square. Mirror-image of the
+            // botryoidal override above — sim-side dimensions untouched, the
+            // display honors the form.
+            const aTooth = Math.min(aWid, cLen * _GEOM_TOKEN_RATIO.scalene);
+            mesh.scale.set(aTooth, cLen, aTooth);
         }
         else {
             mesh.scale.set(aWid, cLen, aWid);
