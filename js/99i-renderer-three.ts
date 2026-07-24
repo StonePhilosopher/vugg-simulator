@@ -5252,9 +5252,25 @@ function _topoApplyCameraFromTilt(state: any, wall: any) {
   const camX = sy * cx * radius;
   const camY = -sx * radius;
   const camZ = cy * cx * radius;
-  state.camera.position.set(camX, camY, camZ);
+  // PAN (2026-07-24, boss report): _topoPanX/_topoPanY were 2D-canvas offsets
+  // this camera never read — the ✥ pan mode was INERT in the mesh view, and
+  // deep-zoom (where the orbit target is far from what you're looking at) is
+  // exactly where pan is needed. Map the screen-px pan to a camera-space
+  // translation of the WHOLE orbit rig (position + aim move together, so
+  // orbit-after-pan still rotates around what you're looking at). Scaled by
+  // radius so the hand-feel tracks zoom: one screen-height of drag ≈ one
+  // view-height of travel at any zoom level.
+  //   camera right (yaw frame): ( cy, 0, −sy)
+  //   camera true up (pitched): ( sy·sx, cx, cy·sx )   [right × forward]
+  const panScale = radius / 600;
+  const panPx = -_topoPanX * panScale;   // drag right → scene follows cursor
+  const panPy =  _topoPanY * panScale;   // drag down  → scene follows cursor
+  const aimX = cy * panPx + sy * sx * panPy;
+  const aimY =              cx * panPy;
+  const aimZ = -sy * panPx + cy * sx * panPy;
+  state.camera.position.set(camX + aimX, camY + aimY, camZ + aimZ);
   state.camera.up.set(0, 1, 0);
-  state.camera.lookAt(0, 0, 0);
+  state.camera.lookAt(aimX, aimY, aimZ);
   // Light sits on the camera-side of the scene so the front face
   // catches the highlight. Subtle moonlit-cavity vibe, not studio.
   if (state.directional) {

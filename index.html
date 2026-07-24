@@ -77635,24 +77635,34 @@ function topoEnsureWired() {
 // compute deltas against them.
 let _topoDragOriginTiltX = 0;
 let _topoDragOriginTiltY = 0;
+// Middle-mouse hold = TEMPORARY pan, regardless of the active drag mode
+// (boss ask 2026-07-24: "pressing and holding the scroll wheel should
+// activate the pan camera button"). True while the current drag started
+// with button 1; _topoPanMouseMove routes that drag to the pan branch
+// even in rotate mode, and pointerup clears it.
+let _topoMidPanDrag = false;
 function _topoPanMouseDown(ev) {
     // For pointer events, button=0 is the primary button (left mouse,
-    // first touch contact, primary stylus). Right-click / middle-click
+    // first touch contact, primary stylus) and button=1 is the middle
+    // button (scroll-wheel press) — held middle button pans. Right-click
     // / secondary touches are skipped.
-    if (ev.button !== 0)
+    if (ev.button !== 0 && ev.button !== 1)
         return;
     // preventDefault on the pointerdown suppresses the browser's
     // emulated mouse events (which would fire after touchend and
-    // double-trigger handlers) and any default page-scroll gesture
-    // that might still come from a misconfigured touch-action setting.
+    // double-trigger handlers), any default page-scroll gesture that
+    // might still come from a misconfigured touch-action setting, and —
+    // for the middle button — the browser's autoscroll widget.
     ev.preventDefault();
-    // In 'default' mode, clicks on a crystal go to tooltip/click, not drag.
-    // In 'rotate' or 'pan' modes, drag starts from anywhere on the canvas.
-    if (_topoDragMode === 'default') {
-        const hit = _topoHitTest(ev);
-        if (hit && hit.mineral)
-            return; // click on a crystal — let tooltip/click win
-    }
+    _topoMidPanDrag = (ev.button === 1);
+    // NOTE (2026-07-24, boss bug report — "hovering over the vugg wall or a
+    // crystal prevents the pan"): this used to veto default-mode drags that
+    // started over a crystal (`_topoHitTest → hit.mineral → return`), which
+    // made panning impossible once zoomed far enough that a crystal or the
+    // wall is always under the cursor. The veto predates the drag-threshold
+    // logic below and is redundant with it: a sub-threshold press-release
+    // still fires the browser's synthetic click (crystal lock/tooltip keep
+    // working), while a real drag now pans/rotates from ANYWHERE.
     _topoDragging = false; // becomes true once movement exceeds threshold
     _topoDragStartClientX = ev.clientX;
     _topoDragStartClientY = ev.clientY;
@@ -77683,7 +77693,7 @@ function _topoPanMouseMove(ev) {
         if (canvas)
             canvas.style.cursor = 'grabbing';
     }
-    if (_topoDragMode === 'rotate') {
+    if (_topoDragMode === 'rotate' && !_topoMidPanDrag) {
         // Vertical drag → rotateX (pitch); horizontal drag → rotateY (yaw).
         // Negative dy gives intuitive "pull up to tilt toward viewer" feel.
         // Phase B (Tier 1.5): no tilt clamp — per-vertex projection has no
@@ -77694,7 +77704,10 @@ function _topoPanMouseMove(ev) {
         topoRender();
     }
     else {
-        // 'default' or 'pan' mode — both translate pan offsets.
+        // 'default' or 'pan' mode — or a middle-button drag in ANY mode
+        // (the temporary hold-to-pan) — all translate pan offsets. The 2D
+        // path shifts the canvas content; the Three camera reads the same
+        // offsets as a rig translation (_topoApplyCameraFromTilt).
         _topoPanX = _topoDragOriginPanX + dx;
         _topoPanY = _topoDragOriginPanY + dy;
         topoRender();
@@ -77709,6 +77722,7 @@ function _topoPanMouseUp() {
     document.removeEventListener('pointermove', _topoPanMouseMove);
     document.removeEventListener('pointerup', _topoPanMouseUp);
     document.removeEventListener('pointercancel', _topoPanMouseUp);
+    _topoMidPanDrag = false; // the hold-to-pan ends with the hold
     if (_topoDragging) {
         _topoDragging = false;
         const canvas = document.getElementById('topo-canvas');
@@ -84023,9 +84037,25 @@ function _topoApplyCameraFromTilt(state, wall) {
     const camX = sy * cx * radius;
     const camY = -sx * radius;
     const camZ = cy * cx * radius;
-    state.camera.position.set(camX, camY, camZ);
+    // PAN (2026-07-24, boss report): _topoPanX/_topoPanY were 2D-canvas offsets
+    // this camera never read — the ✥ pan mode was INERT in the mesh view, and
+    // deep-zoom (where the orbit target is far from what you're looking at) is
+    // exactly where pan is needed. Map the screen-px pan to a camera-space
+    // translation of the WHOLE orbit rig (position + aim move together, so
+    // orbit-after-pan still rotates around what you're looking at). Scaled by
+    // radius so the hand-feel tracks zoom: one screen-height of drag ≈ one
+    // view-height of travel at any zoom level.
+    //   camera right (yaw frame): ( cy, 0, −sy)
+    //   camera true up (pitched): ( sy·sx, cx, cy·sx )   [right × forward]
+    const panScale = radius / 600;
+    const panPx = -_topoPanX * panScale; // drag right → scene follows cursor
+    const panPy = _topoPanY * panScale; // drag down  → scene follows cursor
+    const aimX = cy * panPx + sy * sx * panPy;
+    const aimY = cx * panPy;
+    const aimZ = -sy * panPx + cy * sx * panPy;
+    state.camera.position.set(camX + aimX, camY + aimY, camZ + aimZ);
     state.camera.up.set(0, 1, 0);
-    state.camera.lookAt(0, 0, 0);
+    state.camera.lookAt(aimX, aimY, aimZ);
     // Light sits on the camera-side of the scene so the front face
     // catches the highlight. Subtle moonlit-cavity vibe, not studio.
     if (state.directional) {

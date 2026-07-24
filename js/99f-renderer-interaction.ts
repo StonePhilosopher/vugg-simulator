@@ -189,22 +189,33 @@ function topoEnsureWired() {
 // compute deltas against them.
 let _topoDragOriginTiltX = 0;
 let _topoDragOriginTiltY = 0;
+// Middle-mouse hold = TEMPORARY pan, regardless of the active drag mode
+// (boss ask 2026-07-24: "pressing and holding the scroll wheel should
+// activate the pan camera button"). True while the current drag started
+// with button 1; _topoPanMouseMove routes that drag to the pan branch
+// even in rotate mode, and pointerup clears it.
+let _topoMidPanDrag = false;
 function _topoPanMouseDown(ev) {
   // For pointer events, button=0 is the primary button (left mouse,
-  // first touch contact, primary stylus). Right-click / middle-click
+  // first touch contact, primary stylus) and button=1 is the middle
+  // button (scroll-wheel press) — held middle button pans. Right-click
   // / secondary touches are skipped.
-  if (ev.button !== 0) return;
+  if (ev.button !== 0 && ev.button !== 1) return;
   // preventDefault on the pointerdown suppresses the browser's
   // emulated mouse events (which would fire after touchend and
-  // double-trigger handlers) and any default page-scroll gesture
-  // that might still come from a misconfigured touch-action setting.
+  // double-trigger handlers), any default page-scroll gesture that
+  // might still come from a misconfigured touch-action setting, and —
+  // for the middle button — the browser's autoscroll widget.
   ev.preventDefault();
-  // In 'default' mode, clicks on a crystal go to tooltip/click, not drag.
-  // In 'rotate' or 'pan' modes, drag starts from anywhere on the canvas.
-  if (_topoDragMode === 'default') {
-    const hit = _topoHitTest(ev);
-    if (hit && hit.mineral) return;  // click on a crystal — let tooltip/click win
-  }
+  _topoMidPanDrag = (ev.button === 1);
+  // NOTE (2026-07-24, boss bug report — "hovering over the vugg wall or a
+  // crystal prevents the pan"): this used to veto default-mode drags that
+  // started over a crystal (`_topoHitTest → hit.mineral → return`), which
+  // made panning impossible once zoomed far enough that a crystal or the
+  // wall is always under the cursor. The veto predates the drag-threshold
+  // logic below and is redundant with it: a sub-threshold press-release
+  // still fires the browser's synthetic click (crystal lock/tooltip keep
+  // working), while a real drag now pans/rotates from ANYWHERE.
   _topoDragging = false;          // becomes true once movement exceeds threshold
   _topoDragStartClientX = ev.clientX;
   _topoDragStartClientY = ev.clientY;
@@ -234,7 +245,7 @@ function _topoPanMouseMove(ev) {
     const canvas = document.getElementById('topo-canvas');
     if (canvas) canvas.style.cursor = 'grabbing';
   }
-  if (_topoDragMode === 'rotate') {
+  if (_topoDragMode === 'rotate' && !_topoMidPanDrag) {
     // Vertical drag → rotateX (pitch); horizontal drag → rotateY (yaw).
     // Negative dy gives intuitive "pull up to tilt toward viewer" feel.
     // Phase B (Tier 1.5): no tilt clamp — per-vertex projection has no
@@ -244,7 +255,10 @@ function _topoPanMouseMove(ev) {
     _topoTiltY = _topoDragOriginTiltY + dx * TOPO_DRAG_ROTATE_RAD_PER_PX;
     topoRender();
   } else {
-    // 'default' or 'pan' mode — both translate pan offsets.
+    // 'default' or 'pan' mode — or a middle-button drag in ANY mode
+    // (the temporary hold-to-pan) — all translate pan offsets. The 2D
+    // path shifts the canvas content; the Three camera reads the same
+    // offsets as a rig translation (_topoApplyCameraFromTilt).
     _topoPanX = _topoDragOriginPanX + dx;
     _topoPanY = _topoDragOriginPanY + dy;
     topoRender();
@@ -260,6 +274,7 @@ function _topoPanMouseUp() {
   document.removeEventListener('pointermove', _topoPanMouseMove);
   document.removeEventListener('pointerup', _topoPanMouseUp);
   document.removeEventListener('pointercancel', _topoPanMouseUp);
+  _topoMidPanDrag = false;   // the hold-to-pan ends with the hold
   if (_topoDragging) {
     _topoDragging = false;
     const canvas = document.getElementById('topo-canvas');
