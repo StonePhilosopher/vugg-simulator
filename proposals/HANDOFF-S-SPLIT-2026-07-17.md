@@ -152,18 +152,34 @@ fluorite + celestine).
   still reads raw `fluid.S` — S2 migrates it to sulfateAvailablePpm, elmwood's reducing
   broth then CUTS its sulfate food, and it needs a barite-style s_f re-anchor anyway. Two
   entangled celestine retunes in separate commits violates the attributable-change
-  discipline. THE S2 CELESTINE TRANCHE (one commit, four parts): (1) migrate
-  supersaturation_celestine to sulfateAvailablePpm + measured re-anchor (censused, like
-  barite's ÷40→÷20); (2) Ba-fibrous habit gate — `ba_ratio > 0.25 → 'fibrous'` (the
-  mindat-grounded trigger), independent of the S>200 Sicilian branch (KEEP that branch —
-  it's real for sicily_solfifera); (3) elmwood celestine food census — do the barite-stage
-  Ba pulses + late Sr support an honest mm-scale fibrous mass? (real paragenesis: the
-  Ba-bearing celestine grows from the same late Ba-Sr sulfate waters as the barite stage);
-  (4) render fibrous celestine as the druzy BLANKET (the specimen's "holds it together
-  like glue") — cluster-carpet/lateral spread treatment, not discrete needles (study the
-  chalcedony botryoidal + _druzyClusterSpec machinery). Success criterion: the elmwood
-  celestine reads as a white fibrous blanket between the crystals, and sicily's fibrous
-  celestine is unregressed.
+  discipline. THE S2 CELESTINE TRANCHE — **REVISED 2026-07-24 after the research +
+  census pass (boss GO: "lets start on celestine... will likely involve doing more
+  research"). Full story in `research/research-celestine-elmwood-2026-07-24.md` — READ
+  IT FIRST.** The census reframed the design (grep-the-tree, again): celestine's live
+  window is ONLY steps 74–98 (σ peaks 1.08 exactly when the cooling vein crosses 100 °C
+  — the low-T factor; geologically right-shaped, late + cool), **Sr is flat at 10 ppm
+  the whole run (sr_f 0.67; the scenario has NO Sr event — that is the real
+  starvation), and the S2 migration alone KILLS celestine (σ_split peak 0.51; sulfate
+  fraction ≈0.44)** — a bare barite-style re-anchor restores only the 8 µm dust. The
+  literature supplies the missing mechanism: **Hanor 2000 (RiMG 40:193–275)** —
+  carbonate-hosted celestine is fed by Sr EXPELLED FROM THE HOST CARBONATES
+  (aragonite→calcite recrystallization + dolomitization), textbook in exactly Elmwood's
+  Ordovician-carbonate MVT setting; mindat's 2017 "calcite ON barian celestine" pockets
+  + the specimen's glue-on-the-bottom both place celestine in the late carbonate stage.
+  FIVE parts, one commit: (1) migrate supersaturation_celestine to sulfateAvailablePpm;
+  (2) re-anchor s_f ÷40 → measured ≈÷18 (same calibrated-against-pre-split-effective-
+  sulfate framing as barite's ÷20); (3) **late Sr release event in the elmwood scenario**
+  (`elmwood_diagenetic_sr`, Sr 10 → ~30, the Hanor mechanism; NOT a sulfate pulse — the
+  no-meteoric-pulse rule untouched; **NEEDS BOSS SIGN-OFF — it's the load-bearing
+  part**, without it the tranche just preserves dust more honestly); (4) Ba-fibrous
+  habit gate — `ba_ratio > 0.25 → 'fibrous'` (mindat's Ba-bearing FIBROUS Elmwood
+  celestine + the Sunagawa/Gránásy impurity-branching mechanism: the divalent Ba²⁺
+  co-ion splits the growth front → radiating fibrous; KEEP the Sicilian S>200 branch —
+  real for sicily_solfifera); (5) druzy-BLANKET render — the "glue": cluster-carpet /
+  lateral-spread treatment via the chalcedony botryoidal + _druzyClusterSpec machinery,
+  not discrete needles. Acceptance: elmwood celestine reads as a white fibrous blanket
+  at the late stage; sicily fibrous + madagascar nodular + Lake-Erie bladed branches
+  unregressed; no other scenario births celestine (Sr stays scenario-local).
 
 *Twenty-third hand's bridge, 2026-07-17; Elmwood-diversions addendum by the twenty-fourth
 hand, 2026-07-23; S1 LANDED (SIM 235, `aeff2fb`, cold-CI GREEN) + calcite dogtooth render

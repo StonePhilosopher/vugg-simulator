@@ -18,15 +18,22 @@ Living list of open work items, captured from session conversations so context s
 > (js/99c). Verified: all 5 meshes ratio 0.60 exact; side-on eye-check reads pointed elongated
 > teeth; 2436/2436, seed42_v235 untouched. Boss eye-check of the new render owed.
 >
-> **ELMWOOD CELESTINE — design settled, EXECUTION = S2's celestine tranche (do NOT half-ship).**
-> Boss surfaced mindat: Elmwood celestine = **Ba-bearing, (Sr,Ba)SO₄, habit FIBROUS, white** —
-> and the sim's own zone notes already say "Ba-substituted (barytocelestine intermediate)"
-> (ba_ratio 2.8 ≫ 0.25). The chemistry that drives the real fibrous habit is computed but
-> doesn't steer the habit (fibrous is gated on the Sicilian S>200 context). Habit string change
-> = baseline move (aspect 1.5→0.5 → volume → vug fill), and celestine still reads raw fluid.S —
-> S2 migrates it + re-anchors anyway. ONE S2 commit, four parts: sulfate migration + measured
-> re-anchor · Ba-fibrous gate (ba_ratio>0.25; KEEP the Sicilian branch) · elmwood Sr/Ba food
-> census · druzy-BLANKET render treatment. Full spec in HANDOFF-S-SPLIT-2026-07-17.md.
+> **ELMWOOD CELESTINE — boss GO 2026-07-24; research + census DONE, the design gained its
+> load-bearing part. READ `research/research-celestine-elmwood-2026-07-24.md`.** Census: the
+> live window is only steps 74–98 (σ peak 1.08 at the 100 °C crossing); **Sr flat at 10 ppm all
+> run (NO Sr event — the real starvation); the S2 migration alone KILLS celestine (σ_split
+> 0.51)**. Literature (Hanor 2000 RiMG 40): carbonate-hosted celestine is fed by Sr expelled
+> from the HOST CARBONATES (aragonite→calcite + dolomitization) — textbook at Elmwood. FIVE
+> parts, one commit: sulfate migration · re-anchor ÷40→≈÷18 (measured, sulfate fraction 0.44) ·
+> **late `elmwood_diagenetic_sr` event Sr 10→~30 (Hanor mechanism; NOT a sulfate pulse; NEEDS
+> BOSS SIGN-OFF — load-bearing)** · Ba-fibrous gate ba_ratio>0.25 (mindat Ba-bearing FIBROUS +
+> Sunagawa impurity-branching; KEEP Sicilian S>200 branch) · druzy-BLANKET render (the "glue").
+> Full spec in HANDOFF-S-SPLIT-2026-07-17.md.
+>
+> **UI TODO (boss, 2026-07-24)**: (a) middle-mouse press-hold should activate the pan-camera
+> mode in the 3D vug view (same as the ✥ button); (b) BUG — with pan active + zoomed far in,
+> hovering the vug wall or a crystal blocks the pan drag (hover/hit-test intercepts the
+> pointer; pan mode should win). Likely js/99f-renderer-interaction.ts pointer routing.
 >
 > Canary still Windows-only (boss on Linux needs a cron/systemd installer path in vugg-canary).
 >
