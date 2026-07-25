@@ -181,7 +181,22 @@ fluorite + celestine).
   at the late stage; sicily fibrous + madagascar nodular + Lake-Erie bladed branches
   unregressed; no other scenario births celestine (Sr stays scenario-local).
 
+## S2 CELESTINE TRANCHE — ✅ SHIPPED SIM 236 (`5712f44`, 2026-07-25, cold-CI GREEN)
+
+All five parts landed exactly as specified above (plus the census instrument,
+`tools/celestine-tranche-census.mjs`, committed). Blast 5/39, 0 species lost; elmwood
+celestine 2 → 6 crystals, 8.3 µm → **2.69 mm** fibrous blankets (a > c — the coating
+proportions; mesh scale 4.04 × 1.62 verified). The boss approved the Sr event with the
+narrowness ruling recorded in the event handler's comment. One latent test assumption
+fixed en route (o2-render-wiring: THREE.BoxGeometry natively ships 6 face-groups; the
+un-contacted invariant now checks the real half-fire signature). Remaining S2: the other
+sulfate consumers (selenite — REMEMBER the S0 pre-registered casualty selenite@elmwood;
+anhydrite, mirabilite/thenardite, chalcanthite, the Cu sulfates, alunite/jarosite), each
+with its own census-measured re-anchor; then S3 re-couples the thioarsenite lock.
+
 *Twenty-third hand's bridge, 2026-07-17; Elmwood-diversions addendum by the twenty-fourth
 hand, 2026-07-23; S1 LANDED (SIM 235, `aeff2fb`, cold-CI GREEN) + calcite dogtooth render
-fix + celestine S2 design by the same hand, 2026-07-24. The keystone for this stretch is
-in HANDOFF-FOUNDATIONS-2026-07-03.md ("the rock's own units").*
+fix + celestine S2 design by the same hand, 2026-07-24; the S2 celestine tranche SHIPPED
+(SIM 236, `5712f44`) + pan-camera fix (`d6b9ae7`) by the same hand, 2026-07-25. The
+keystone for this stretch is in HANDOFF-FOUNDATIONS-2026-07-03.md ("the rock's own
+units").*

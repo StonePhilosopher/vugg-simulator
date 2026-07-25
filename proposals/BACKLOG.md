@@ -2,6 +2,25 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🗿 SESSION STATE (2026-07-25) — **S2 CELESTINE TRANCHE ✅ SIM 236 (`5712f44`, cold-CI GREEN, deployed)**
+>
+> **THE ELMWOOD BLANKET SHIPPED** — celestine 2→6 crystals, 8.3 µm → 2.69 mm laterally-spread
+> fibrous blankets (a>c). Five parts, one commit: migration to sulfateAvailablePpm ·
+> census-measured ÷18 re-anchor (tools/celestine-tranche-census.mjs, committed — migration
+> alone killed 5/8 tenants) · `elmwood_diagenetic_sr` @72 (Sr floor 10→30, Hanor 2000
+> host-carbonate mechanism, boss-approved "narrow+named, not a generic MVT rule") ·
+> Ba-fibrous gate ba_ratio>0.25 → `fibrous_blanket` FIRST in the cascade (impurity habit
+> precedes the σ-ladder; Sicilian S>200 branch kept) · botryoidal-crust render routing
+> (99a/99c/99i; _habitAspectRatio carries tabular's 1.5 = volume-continuity). Blast 5/39,
+> **0 species lost**; elmwood barite 15→49 but max EXACTLY 152.7 (dust re-deal, snowball
+> intact); sphalerite −12% max (honest S competition). One latent TEST assumption fixed
+> (o2-render-wiring: BoxGeometry ships 6 native face-groups — invariant now checks the
+> real half-fire signature). 2436/2436; gates 0+0 / zero sub-onset; stale=1. **Boss
+> eye-check owed: the blanket (elmwood seed 42, late steps) + the calcite dogtooth
+> (`7deec94`) + pan camera (`d6b9ae7` — middle-mouse hold-to-pan; pan now real in mesh
+> view).** S2 continues: selenite/anhydrite/remaining sulfate consumers next; then S3
+> (thioarsenite lock re-coupling, per the proposal's sequencing).
+>
 > ## 🗿 SESSION STATE (2026-07-24) — **S1 ✅ LANDED SIM 235 (`aeff2fb`, cold-CI GREEN) · calcite dogtooth render ✅ · celestine = the S2 tranche**
 >
 > **S1 SHIPPED**: barite reads sulfateAvailablePpm; s_f ÷40→÷20 re-anchor (split branch only);
