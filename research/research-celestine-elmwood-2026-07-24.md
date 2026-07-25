@@ -130,3 +130,42 @@ Gránásy et al. 2005 "Growth and Form of Spherulites" (growth-front nucleation/
 Sunagawa, "Crystals: Growth, Morphology and Perfection" (impurity-driven branching,
 polyhedral→spherulitic morphodrome); fibrous-vein lit (antitaxial satin spar — noted as
 the WRONG mechanism for open-surface druse).*
+
+## 7. CORRECTION (2026-07-25) — the boss's review pass vs. §2, first-hand verified
+
+The boss's expanded research (issue StonePhilosopher/vugg-simulator#1, 2026-07-24)
+cross-checked against this note per the standing disagreement protocol. Two deltas,
+both verified first-hand and both correct:
+
+1. **The "Ba²⁺ splits the growth front → fibrous" mechanism claim (§2) OVER-REACHED.**
+   Verified against **Sánchez-Pastor, Pina & Fernández-Díaz 2006** (Chem. Geol.
+   225:266–277, DOI 10.1016/j.chemgeo.2005.08.020; abstract via the UCM repository,
+   docta.ucm.es): in their 25 °C gel system, **Ba-rich compositions run TABULAR {001}
+   and Sr-rich run ELONGATED {011}** — composition steers habit, but toward tabular at
+   the Ba end, and the paper contains **no fibrous mode and no Ba-branching**. The
+   Sunagawa/Gránásy impurity-branching citations are legitimate general spherulite
+   literature but were mis-deployed here as a system-specific mechanism. CORRECTED
+   POSITION: the **locality record is the evidence** (mindat's fibrous Ba-bearing
+   celestine + the plumose gallery specimen "originally called strontianite" + Jensen
+   1996 + Handbook of Mineralogy's fibrous-among-valid-forms), and **ba_ratio is the
+   RECOGNIZER** for the Elmwood-type tenant — the barytocelestine fingerprint of the
+   late carbonate-hosted Ba-Sr brine — not the cause of the habit. Why Elmwood's
+   celestine is plumose is not settled by any source we hold. Player-facing zone note
+   and code comments rewritten accordingly; SP2006's Sr-rich→elongation finding is at
+   least CONSISTENT with fiber-tending growth at celestine-dominant compositions, but
+   that stays an observation, not a claim.
+2. **The naked ba_ratio trigger was under-guarded.** Boss ruling: "guarded by
+   MVT/carbonate/paragenetic context rather than treated as a universal Ba > threshold
+   rule." The shipped seed-42 blast happened to be clean (only the four MVT-family
+   tenants flip) but that was an empirical fact, not a structural guarantee. FIXED:
+   the branch now requires **carbonate host rock (limestone/dolomite)** alongside the
+   Ba/Sr fingerprint — keeps the same four flips (all limestone-hosted, verified by
+   live-bundle probe), structurally excludes future Ba-rich sandstone/igneous tenants
+   (GSP is the fleet's one sandstone host).
+
+Also adopted from the boss's pass: Handbook of Mineralogy (handbookofmineralogy.org/
+pdfs/celestine.pdf) as the generic-habit anchor (tabular {001}/{100} with large {210}
+is NORMAL celestine — the tabular fallback stays correct); USGS SIR 2010-5070-A (Leach
+et al.) for the MVT model context (deposition 75–200 °C, barite generally late,
+calcite common specifically in Central Tennessee); Elmwood ore ~85–130 °C (mindat) —
+the sim's blanket window (T 100→53 °C over steps 74–200) overlaps the low end.*

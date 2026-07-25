@@ -17736,7 +17736,14 @@ let timeScale = 5.0;
 //        — Sunagawa/Gránásy growth-front splitting by the divalent Ba²⁺
 //        co-ion; census: all σ-ladder tenants have ba_ratio≈0, so only
 //        elmwood/mvt/reactivated/reactive_wall flip, all previously
-//        tabular/bladed); (5) 'fibrous_blanket' renders as the botryoidal
+//        tabular/bladed) — CORRECTED 2026-07-25 (boss review, issue
+//        StonePhilosopher#1 + first-hand SP2006 re-verification): the
+//        growth-front-splitting MECHANISM claim was an over-reach —
+//        Sánchez-Pastor 2006 shows Ba-rich (Ba,Sr)SO₄ runs TABULAR {001},
+//        Sr-rich ELONGATED {011}, no fibrous mode; the LOCALITY RECORD is
+//        the evidence and ba_ratio is the RECOGNIZER, now GUARDED by
+//        carbonate host (limestone/dolomite) per the boss's
+//        no-naked-Ba-rule ruling; same four flips at seed 42; (5) 'fibrous_blanket' renders as the botryoidal
 //        lateral crust (99a/99c/99i) — the white glue that binds real
 //        Elmwood specimens (#103941; mindat Ba-bearing FIBROUS celestine;
 //        Jensen 1996 Min. Record). _habitAspectRatio carries tabular's 1.5
@@ -45217,22 +45224,40 @@ function grow_celestine(crystal, conditions, step) {
     if (rate < 0.1)
         return null;
     const sulfur_context = conditions.fluid.S > 200;
-    // S2 celestine tranche (SIM 236): the Ba-substitution habit fork, checked FIRST.
-    // Real Elmwood celestine is the Ba-bearing variety AND fibrous (mindat: "(Sr,Ba)SO₄,
-    // habit: Fibrous, white"; Jensen 1996 Min. Record; boss specimen #103941 — "holds the
-    // specimen together like a glue"). Mechanism: the divalent Ba²⁺ co-ion strains the
-    // lattice and splits the growth front → radiating fibrous/spherulitic growth (Sunagawa;
-    // Gránásy 2005 — impurity-driven growth-front branching). An IMPURITY habit operates at
-    // any σ, so it precedes the driving-force ladder below — without the precedence,
-    // elmwood's post-Sr-event σ (~3) would fall into the Madagascar 'nodular' branch (the
-    // tranche census caught this before code). The σ-ladder tenants are unaffected: every
+    // S2 celestine tranche (SIM 236) + boss-review correction (2026-07-25, issue
+    // StonePhilosopher/vugg-simulator#1): the Ba-bearing MVT habit fork, checked FIRST,
+    // GUARDED by carbonate-host context.
+    //
+    // THE EVIDENCE is the LOCALITY RECORD, not a composition→habit law: mindat's Elmwood
+    // celestine is "(Sr,Ba)SO₄, habit: Fibrous, white" (plumose aggregates, originally
+    // called strontianite); Jensen 1996 Min. Record; boss specimen #103941 ("holds the
+    // specimen together like a glue"). ba_ratio is the RECOGNIZER for that tenant — the
+    // barytocelestine composition fingerprints the late carbonate-hosted Ba-Sr brine that
+    // deposits the plumose material. It is NOT the mechanism: Sánchez-Pastor, Pina &
+    // Fernández-Díaz 2006 (Chem. Geol. 225:266, verified first-hand 2026-07-25) show
+    // composition DOES steer (Ba,Sr)SO₄ habit but in their 25 °C system Ba-rich runs
+    // TABULAR {001} and Sr-rich runs ELONGATED {011} — no fibrous mode, no Ba-branching.
+    // Why Elmwood's is plumose is not settled by any source we hold; the earlier
+    // "Ba²⁺ splits the growth front" comment over-reached (Sunagawa/Gránásy impurity
+    // branching is general spherulite literature, not system-specific) and is withdrawn.
+    //
+    // THE GUARD (boss ruling: "guarded by MVT/carbonate/paragenetic context rather than
+    // a universal Ba > threshold rule"): carbonate host rock (limestone/dolomite — the
+    // fleet's carbonate family) + the Ba/Sr fingerprint. At seed 42 this keeps exactly
+    // the four census flips (elmwood/mvt/reactivated/reactive_wall — all limestone) and
+    // structurally excludes any future Ba-rich sandstone/igneous-hosted tenant. An
+    // impurity-recognized habit precedes the σ-ladder below — without the precedence,
+    // elmwood's post-Sr-event σ (~3) would fall into the Madagascar 'nodular' branch
+    // (the tranche census caught this before code). σ-ladder tenants unaffected: every
     // nodular/Sicilian-fibrous tenant at seed 42 has ba_ratio ≈ 0 (census table).
     const ba_ratio_habit = conditions.fluid.Ba / Math.max(conditions.fluid.Sr, 0.1);
+    const wallComp = (conditions.wall && conditions.wall.composition) || '';
+    const carbonateHost = wallComp === 'limestone' || wallComp === 'dolomite';
     let habit_note;
-    if (ba_ratio_habit > 0.25) {
+    if (ba_ratio_habit > 0.25 && carbonateHost) {
         crystal.habit = 'fibrous_blanket';
-        crystal.dominant_forms = ['radiating fibrous white blanket', 'barytocelestine coating'];
-        habit_note = 'fibrous Ba-bearing celestine — Elmwood-type druzy blanket; the Ba²⁺ co-ion splits the growth front';
+        crystal.dominant_forms = ['plumose white barian celestine aggregate', 'fibrous blanket on sulfide-carbonate gangue'];
+        habit_note = 'fibrous Ba-bearing celestine — Elmwood-type plumose blanket (barytocelestine; the white glue of the carbonate-hosted druse)';
     }
     else if (excess > 1.5) {
         crystal.habit = 'nodular';

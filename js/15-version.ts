@@ -12243,7 +12243,14 @@
 //        — Sunagawa/Gránásy growth-front splitting by the divalent Ba²⁺
 //        co-ion; census: all σ-ladder tenants have ba_ratio≈0, so only
 //        elmwood/mvt/reactivated/reactive_wall flip, all previously
-//        tabular/bladed); (5) 'fibrous_blanket' renders as the botryoidal
+//        tabular/bladed) — CORRECTED 2026-07-25 (boss review, issue
+//        StonePhilosopher#1 + first-hand SP2006 re-verification): the
+//        growth-front-splitting MECHANISM claim was an over-reach —
+//        Sánchez-Pastor 2006 shows Ba-rich (Ba,Sr)SO₄ runs TABULAR {001},
+//        Sr-rich ELONGATED {011}, no fibrous mode; the LOCALITY RECORD is
+//        the evidence and ba_ratio is the RECOGNIZER, now GUARDED by
+//        carbonate host (limestone/dolomite) per the boss's
+//        no-naked-Ba-rule ruling; same four flips at seed 42; (5) 'fibrous_blanket' renders as the botryoidal
 //        lateral crust (99a/99c/99i) — the white glue that binds real
 //        Elmwood specimens (#103941; mindat Ba-bearing FIBROUS celestine;
 //        Jensen 1996 Min. Record). _habitAspectRatio carries tabular's 1.5
