@@ -80,6 +80,16 @@ sulfideAvailablePpm + the +100 ceiling retirements).
 
 ## Carried forward (don't lose these)
 
+- **BOSS ACTION (self-assigned 2026-07-25): capture the mindat valid-species list for
+  the OTHER mine scenarios**, the way it was done for elmwood (screenshot of the
+  region's filtered Mineral List → recorded as a MINDAT VALID-SPECIES REFERENCE note in
+  the scenario's `notes` array in data/scenarios.json5). The elmwood entry is the
+  template — it turns the specimen-record test into a per-scenario instrument: absences
+  license de-confabulations (elmwood: no gypsum-family = the selenite ruling;
+  siderite NOT listed = new census flag on the variety guard), presences queue
+  candidates (elmwood: marcasite/pyrite/quartz/vaterite/bitumen unfired-but-documented).
+  Natural next targets: mvt (Tri-State), bisbee, tsumeb-family, naica, searles,
+  roughten_gill, tn457's Nentsberry-Haggs, sunnyside, wittichen, schneeberg.
 - **Boss eye-checks owed in the deployed game**: the celestine blanket (2.69mm plumose,
   elmwood late stage), the calcite dogtooth (confirmed once — "looking good" — but the
   correction re-render is unseen), the pan camera feel (middle-mouse + deep-zoom), PLUS
