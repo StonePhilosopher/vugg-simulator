@@ -2,6 +2,24 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🗿 SESSION STATE (2026-07-25b) — **BOSS-REVIEW CORRECTIONS ✅ `96dacab` (byte-identical, stamped GREEN) · NEXT = S2 SELENITE (boss pre-approval IN HAND)**
+>
+> **THE WORKING BRIDGE IS NOW `HANDOFF-S2-CELESTINE-AND-THE-REVIEW-2026-07-25.md`** (the
+> S-SPLIT-2026-07-17 bridge is historical). Keystone: twenty-fourth hand, "the recognizer,
+> not the mechanism" (HANDOFF-FOUNDATIONS §keystones). The boss's research review (issue
+> StonePhilosopher/vugg-simulator#1) was cross-checked per the disagreement protocol; boss
+> RIGHT on both deltas, both first-hand verified, both fixed in `96dacab`: (1) naked
+> ba_ratio gate → carbonate-host guard (limestone/dolomite; baseline git-diff-clean);
+> (2) "Ba²⁺ splits the growth front" mechanism WITHDRAWN (SP2006 verified: Ba-rich =
+> TABULAR; locality record = evidence, ba_ratio = RECOGNIZER; research note §7).
+>
+> **NEXT: S2 selenite migration — the boss has ALREADY RULED on the elmwood death:**
+> "selenite disappearing is good, i havent seen any selenite from elmwood, so that sounds
+> like the science doing its job." Lands as de-confabulation. Census every selenite tenant
+> first (naica's giants MUST survive); drop selenite from the elmwood-snowball variety
+> guard (~line 106, `['selenite','galena','siderite']`) IN THE SAME COMMIT. Full commit
+> shape in the new bridge. Then anhydrite + remaining sulfates, then S3.
+>
 > ## 🗿 SESSION STATE (2026-07-25) — **S2 CELESTINE TRANCHE ✅ SIM 236 (`5712f44`, cold-CI GREEN, deployed)**
 >
 > **THE ELMWOOD BLANKET SHIPPED** — celestine 2→6 crystals, 8.3 µm → 2.69 mm laterally-spread

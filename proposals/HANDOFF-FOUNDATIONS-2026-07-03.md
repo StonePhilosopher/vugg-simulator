@@ -2611,3 +2611,97 @@ sim measures in convenient units — the question this stretch learned to ask fi
 rock's own?
 
 — the builder, twenty-third hand: the rock's own units · 2026-07-17
+
+## KEYSTONE — the twenty-fourth hand: the recognizer, not the mechanism (2026-07-22→25)
+
+The twenty-third hand left the S-split as an approved proposal and a warning: the migration
+must not starve the barite the deposits are known for. This stretch walked the first two
+consumers through the split — barite (SIM 235), then celestine (SIM 236) — and along the way
+the boss's eye-check opened two render diversions (the dogtooth, the blanket), the pan camera
+turned out to have been quietly inert in the mesh view since the day the mesh view shipped,
+and the stretch ended with something new in the lineage: the boss filed a research review
+against the shipped work (issue StonePhilosopher#1), the disagreement protocol ran both ways,
+and the boss was right both times.
+
+The name of this stretch is the sentence that survived that review. The celestine gate
+shipped as `ba_ratio > 0.25 → fibrous`, with a comment claiming the barium ion splits the
+growth front — a mechanism. The boss's review said no such law exists, and first-hand
+verification agreed harder than expected: Sánchez-Pastor 2006, the one paper that actually
+grows the (Ba,Sr)SO₄ series and watches its habit, runs TABULAR at the Ba end and elongated
+at the Sr end — the claimed direction, reversed. What is true is smaller and better: the
+locality record says Elmwood's Ba-bearing celestine is fibrous plumose white, and the Ba/Sr
+ratio is how the sim RECOGNIZES that tenant in its own broth. The ratio identifies; it does
+not explain. The comment now says so, the player-facing zone note says so, and the wrong
+sentence stays visible in the v236 history under its dated correction, the way the barite
+BFDH reversal has been kept since rung 4a.
+
+### What this stretch learned
+
+1. **A clean blast is an empirical fact, not a structural guard.** The naked Ba gate flipped
+   exactly four tenants at seed 42, all of them the right ones — and that cleanliness was a
+   property of today's fleet, not of the rule. The boss's objection was to the RULE. The fix
+   (carbonate host + the fingerprint) costs one condition and converts "happens to be clean"
+   into "cannot be wrong that way." Census the compositions first: fourteen limestones, one
+   dolomite, one sandstone — the guard has teeth because GSP exists.
+
+2. **Real citations do not license the claim they sit next to.** Sunagawa and Gránásy are
+   genuine spherulite literature; the over-reach was deploying them as a system-specific
+   mechanism for barium in celestine. The disagreement protocol's instruction — verify
+   first-hand exactly where the two passes disagree — found the truth in one afternoon: the
+   UCM repository holds the abstract, and the abstract says the opposite. The protocol now
+   has its first cross-repo paper trail: the boss writes issues on the canonical repo; the
+   fork answers in commits.
+
+3. **The census steers the fix shape — the third confirmation, and the strongest.** The
+   celestine diversion arrived as a RENDER task ("make it a blanket"). The per-step swap
+   census said the render was the least of it: Sr flat at 10 ppm because the scenario never
+   granted the host carbonates their diagenetic release, and the migration alone would have
+   killed the species outright. The load-bearing part of a habit fix turned out to be a
+   scenario event with a Hanor citation. Grep the tree; then grep the literature the same way.
+
+4. **A pre-registered casualty can be a ratified correction.** S0's census pre-registered
+   selenite@elmwood as unrescuable by any honest derivation. The boss's verdict, verbatim:
+   "selenite disappearing is good, i havent seen any selenite from elmwood, so that sounds
+   like the science doing its job." The terminal-verification test — does a real rock agree —
+   runs in reverse too: absence in the specimen record licenses absence in the sim. The
+   tiger's-eye family grows: confabulations die with authority when the record votes.
+
+5. **Verify the consumer, not the setter.** The pan camera updated its offsets perfectly on
+   every drag; the three camera simply never read them. Every layer of the input chain worked
+   and the feature was still inert, because the one grep that mattered — who CONSUMES
+   _topoPanX — had never been run. The boss's bug report ("hovering blocks the pan") was the
+   visible symptom of an invisible no-op two layers down.
+
+6. **The boss's geometric read is the design hint — again.** "The calcite is still shaped as
+   two low pyramids" indicted the display width in one sentence: the volume-ellipsoid
+   measurement, honest for mass, wrong for silhouette. The form's own aspect was already in
+   the registry; the renderer just wasn't asking it.
+
+### Diagenesis
+
+S1's swap-census method (re-run the engine with the split pool, measure who starves) was
+built once for barite and ran unmodified for celestine — the instrument is now the standard
+opening move for every remaining consumer. The wittichen carve-out (a declared,
+literature-cited influx the derivation cannot carry) became the template the Sr event was
+cut from within forty-eight hours. The boss's review pass converged independently on five of
+the six shipped design choices — the census-first divisor, the kept Sicilian branch, the
+blanket-not-hedgehog render, the single attributable bump, the surviving tabular fallback —
+which is what made the two real disagreements stand out sharply enough to chase. And the
+ritual ran clean through six pushes (two SIM bumps, two render fixes, two docs), every one
+stamped or provably inert, which is why the correction commit could prove itself
+byte-identical by regeneration instead of argument.
+
+### The dream, twenty-sixth telling
+
+Selenite walks next, with the boss's blessing already in hand — the elmwood death lands as
+correction, not casualty, and the variety-guard pin releases its selenite line in the same
+commit. Then anhydrite and the remaining sulfates, each with its own census; then the
+sulfides; then S3 re-couples the thioarsenite lock and the +100 ceilings begin to retire.
+The blanket, the dogtooth, and the pan await the boss's eye in the deployed game. Somewhere
+ahead: substrate-aware paragenesis plumbing, so the boss's third guard condition — near
+barite, sphalerite, calcite — can be honest instead of deferred; the Sweetwater snowball and
+the Elmwood perimorph scenarios the future file already names; and the witherite engine
+still waiting for TN457's crowdsourced verdict to seat its first tenant. The recognizer
+found its tenant this stretch. The mechanism is still out there in the rock, unclaimed.
+
+— the builder, twenty-fourth hand: the recognizer, not the mechanism · 2026-07-25
