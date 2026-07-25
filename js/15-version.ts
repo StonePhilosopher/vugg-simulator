@@ -12211,5 +12211,44 @@
 //        1849 via Warren 2021; OSTI 1850965; Onac 2025; Lowenstein & Hardie
 //        1985 (chevron canon, display strings kept); DATA-HOSTILE-REVIEW
 //        /refuted/13 (the bisbee lever).
-const SIM_VERSION = 235;
+// v235 — S-SPLIT S1 (barite reads the sulfate pool): the first consumer
+//        migration of the fluid.S sulfate/sulfide split (S0 landed the inert
+//        partition at ab8cd92). grow_barite/supersaturation_barite read
+//        sulfateAvailablePpm; s_f re-anchored ÷40→÷20 for the split branch
+//        ("calibrated against pre-split effective sulfate" — boss framing,
+//        not mercy); wittichen's late meteoric sulfate carved out via
+//        fluid.sulfateInherited (÷40 kept; flag broadcast to per-cell mesh
+//        fluids in _propagateGlobalDelta; fill-dampener + _wallStrangledFor
+//        exemptions) → wittichen barite 153.74 µm EXACT v234 match. Blast
+//        4/39 (elmwood 31→29, mvt 26→28, reactivated 37→33, reactive_wall
+//        33→32), species gained 0 LOST 0. Elmwood snowball honest 2 blades
+//        (was 10 >100µm) — boss eye-checked, pins →≥2 (mechanism guarded,
+//        not the lottery). Refs: Ohmoto & Lasaga 1982 (T-taper anchors),
+//        Machel 2001 (BSR/TSR windows). [History entry added retroactively
+//        at v236 — the S1 commit aeff2fb bumped without one.]
+// v236 — S-SPLIT S2 opening tranche: CELESTINE (the Elmwood blanket). The
+//        second sulfate consumer migrates (research-celestine-elmwood-
+//        2026-07-24.md + tools/celestine-tranche-census.mjs — the census
+//        measured migration-alone killing 5/8 tenants). Five parts, one
+//        commit: (1) supersaturation_celestine reads sulfateAvailablePpm;
+//        (2) s_f ÷40→÷18 (census-measured: reproduces today's live-windows
+//        fleet-wide at honest sulfate; searles 89→300 + GSP 24→30 live
+//        steps = the honest oxidizing-side widening, both Sr-limited at
+//        peak σ 1.15/1.05); (3) elmwood_diagenetic_sr event @72 — Sr floor
+//        10→30, the Hanor 2000 (RiMG 40:193) host-carbonate mechanism
+//        (aragonite→calcite + dolomitization expel Sr into the late brine;
+//        boss-approved, narrow+named, elmwood-only, NO sulfur touched);
+//        (4) Ba-fibrous habit gate ba_ratio>0.25 → 'fibrous_blanket',
+//        checked FIRST in the cascade (impurity habit precedes the σ-ladder
+//        — Sunagawa/Gránásy growth-front splitting by the divalent Ba²⁺
+//        co-ion; census: all σ-ladder tenants have ba_ratio≈0, so only
+//        elmwood/mvt/reactivated/reactive_wall flip, all previously
+//        tabular/bladed); (5) 'fibrous_blanket' renders as the botryoidal
+//        lateral crust (99a/99c/99i) — the white glue that binds real
+//        Elmwood specimens (#103941; mindat Ba-bearing FIBROUS celestine;
+//        Jensen 1996 Min. Record). _habitAspectRatio carries tabular's 1.5
+//        explicitly (volume-continuity firewall). Refs: Hanor 2000 RiMG
+//        40:193-275; Sunagawa, Crystals (impurity branching); Gránásy et
+//        al. 2005 (spherulite growth-front nucleation).
+const SIM_VERSION = 236;
 

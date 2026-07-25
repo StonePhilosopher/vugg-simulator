@@ -33,6 +33,12 @@
 function _habitAspectRatio(habit: string): number {
   if (habit === 'prismatic') return 0.4;
   if (habit === 'tabular') return 1.5;
+  // S2 celestine tranche (SIM 236): the Ba-fibrous blanket carries the TABULAR
+  // family's 1.5 EXPLICITLY — the elmwood/mvt celestines it renames were 'tabular'
+  // before, so the habit flip alone moves no volume (the same firewall as the
+  // stepped_/hopper_ renames below); a blanket is laterally-spread (a > c) anyway,
+  // so 1.5 is also the honest shape, not just the continuity value.
+  if (habit === 'fibrous_blanket') return 1.5;
   if (habit === 'acicular') return 0.15;
   if (habit === 'rhombohedral') return 0.8;
   if (habit === 'snowball') return 1.0;

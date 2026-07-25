@@ -206,6 +206,27 @@ function event_elmwood_barite_stage(conditions) {
   return `A barium-sulfate brine pulse floods the Knox breccia — barite grows a generation on the honey sphalerite (Ba ${conditions.fluid.Ba.toFixed(0)}, S ${conditions.fluid.S.toFixed(0)} ppm).`;
 }
 
+// S2 celestine tranche (SIM 236, 2026-07-25; boss-approved Sr 10→30 with the
+// narrowness caution "explicitly conditional on elmwood_diagenetic_sr + late MVT
+// cooling + substrate/coating topology, not a generic 'MVT celestine gets Sr 30'
+// rule" — this handler exists ONLY in elmwood's timeline, step 72, right after
+// the step-70 fault slip and just before the vein cools through 100 °C).
+//
+// THE MECHANISM (Hanor 2000, RiMG 40:193 — the canonical barite-celestine
+// review; full note in research/research-celestine-elmwood-2026-07-24.md): the
+// vug's host carbonates are Sr-rich — aragonitic limestone carries thousands of
+// ppm Sr that low-Sr calcite cannot hold, so recrystallization + dolomitization
+// EXPEL Sr into the pore brine. The late fault slip drives that Sr-charged
+// diagenetic water into the cooling vug, and the Ba-bearing (barytocelestine)
+// fibrous celestine blanket grows in the late window — the white "glue" that
+// binds real Elmwood specimens (#103941; mindat's fibrous Ba-bearing celestine).
+// A FLOOR (Math.max), not a stacking pulse — the elmwood_barite_stage lesson.
+// No sulfur is touched: the no-meteoric-pulse rule stays intact.
+function event_elmwood_diagenetic_sr(conditions) {
+  conditions.fluid.Sr = Math.max(conditions.fluid.Sr || 0, 30);
+  return `The fault slip drives Sr-charged pore water from the recrystallizing host carbonates into the cooling vug (Sr ${conditions.fluid.Sr.toFixed(0)} ppm) — the celestine stage opens; a white fibrous blanket begins to bind the druse.`;
+}
+
 // A pure film-coat beat: the settling clay / iron-oxide film is carried by the
 // event's `film:` directive (js/85d applyFilmDusting), so the handler itself
 // touches NO chemistry — it exists only so the film-coat events have a valid
@@ -229,6 +250,7 @@ function event_film_coat(conditions) {
 const EVENT_REGISTRY = {
   fluid_pulse: event_fluid_pulse,
   elmwood_barite_stage: event_elmwood_barite_stage,
+  elmwood_diagenetic_sr: event_elmwood_diagenetic_sr,
   film_coat: event_film_coat,
   cooling_pulse: event_cooling_pulse,
   tectonic_shock: event_tectonic_shock,

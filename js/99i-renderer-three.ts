@@ -700,6 +700,11 @@ function _habitGeomToken(habit: string): string {
   if (h === 'octahedral' || h === 'octahedron') return 'octahedron';
   if (h.includes('rhombohedral')) return 'rhomb';
   if (h.includes('scalenohedral')) return 'scalene';
+  // S2 celestine tranche (SIM 236): the Ba-fibrous blanket is a wall-spreading
+  // COATING (the Elmwood "glue"), not a needle spray — route to the botryoidal
+  // lateral-crust scaling. MUST precede the generic 'fibrous' → spike check
+  // below, which would otherwise catch the substring and render needles.
+  if (h === 'fibrous_blanket') return 'botryoidal';
   // Wall-spreading crusts — chalcedony, malachite (banded), agate, smithsonite
   // botryoidal, rosasite crusts. Chalcedony is the user-flagged case:
   // microcrystalline silica spreads on the wall like malachite, NOT a quartz

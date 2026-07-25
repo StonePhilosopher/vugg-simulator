@@ -17704,7 +17704,46 @@ let timeScale = 5.0;
 //        1849 via Warren 2021; OSTI 1850965; Onac 2025; Lowenstein & Hardie
 //        1985 (chevron canon, display strings kept); DATA-HOSTILE-REVIEW
 //        /refuted/13 (the bisbee lever).
-const SIM_VERSION = 235;
+// v235 — S-SPLIT S1 (barite reads the sulfate pool): the first consumer
+//        migration of the fluid.S sulfate/sulfide split (S0 landed the inert
+//        partition at ab8cd92). grow_barite/supersaturation_barite read
+//        sulfateAvailablePpm; s_f re-anchored ÷40→÷20 for the split branch
+//        ("calibrated against pre-split effective sulfate" — boss framing,
+//        not mercy); wittichen's late meteoric sulfate carved out via
+//        fluid.sulfateInherited (÷40 kept; flag broadcast to per-cell mesh
+//        fluids in _propagateGlobalDelta; fill-dampener + _wallStrangledFor
+//        exemptions) → wittichen barite 153.74 µm EXACT v234 match. Blast
+//        4/39 (elmwood 31→29, mvt 26→28, reactivated 37→33, reactive_wall
+//        33→32), species gained 0 LOST 0. Elmwood snowball honest 2 blades
+//        (was 10 >100µm) — boss eye-checked, pins →≥2 (mechanism guarded,
+//        not the lottery). Refs: Ohmoto & Lasaga 1982 (T-taper anchors),
+//        Machel 2001 (BSR/TSR windows). [History entry added retroactively
+//        at v236 — the S1 commit aeff2fb bumped without one.]
+// v236 — S-SPLIT S2 opening tranche: CELESTINE (the Elmwood blanket). The
+//        second sulfate consumer migrates (research-celestine-elmwood-
+//        2026-07-24.md + tools/celestine-tranche-census.mjs — the census
+//        measured migration-alone killing 5/8 tenants). Five parts, one
+//        commit: (1) supersaturation_celestine reads sulfateAvailablePpm;
+//        (2) s_f ÷40→÷18 (census-measured: reproduces today's live-windows
+//        fleet-wide at honest sulfate; searles 89→300 + GSP 24→30 live
+//        steps = the honest oxidizing-side widening, both Sr-limited at
+//        peak σ 1.15/1.05); (3) elmwood_diagenetic_sr event @72 — Sr floor
+//        10→30, the Hanor 2000 (RiMG 40:193) host-carbonate mechanism
+//        (aragonite→calcite + dolomitization expel Sr into the late brine;
+//        boss-approved, narrow+named, elmwood-only, NO sulfur touched);
+//        (4) Ba-fibrous habit gate ba_ratio>0.25 → 'fibrous_blanket',
+//        checked FIRST in the cascade (impurity habit precedes the σ-ladder
+//        — Sunagawa/Gránásy growth-front splitting by the divalent Ba²⁺
+//        co-ion; census: all σ-ladder tenants have ba_ratio≈0, so only
+//        elmwood/mvt/reactivated/reactive_wall flip, all previously
+//        tabular/bladed); (5) 'fibrous_blanket' renders as the botryoidal
+//        lateral crust (99a/99c/99i) — the white glue that binds real
+//        Elmwood specimens (#103941; mindat Ba-bearing FIBROUS celestine;
+//        Jensen 1996 Min. Record). _habitAspectRatio carries tabular's 1.5
+//        explicitly (volume-continuity firewall). Refs: Hanor 2000 RiMG
+//        40:193-275; Sunagawa, Crystals (impurity branching); Gránásy et
+//        al. 2005 (spherulite growth-front nucleation).
+const SIM_VERSION = 236;
 
 // ── 18-constants.js ──
 
@@ -23925,6 +23964,13 @@ function _habitAspectRatio(habit) {
     if (habit === 'prismatic')
         return 0.4;
     if (habit === 'tabular')
+        return 1.5;
+    // S2 celestine tranche (SIM 236): the Ba-fibrous blanket carries the TABULAR
+    // family's 1.5 EXPLICITLY — the elmwood/mvt celestines it renames were 'tabular'
+    // before, so the habit flip alone moves no volume (the same firewall as the
+    // stepped_/hopper_ renames below); a blanket is laterally-spread (a > c) anyway,
+    // so 1.5 is also the honest shape, not just the continuity value.
+    if (habit === 'fibrous_blanket')
         return 1.5;
     if (habit === 'acicular')
         return 0.15;
@@ -31450,10 +31496,26 @@ Object.assign(VugConditions.prototype, {
     },
     supersaturation_celestine() {
         const g = MINERAL_GATES_celestine;
-        if (this.fluid.Sr < g.fluid_min.Sr || this.fluid.S < g.fluid_min.S || !sulfateRedoxAvailable(this.fluid, g.O2_min))
+        // S2 celestine tranche (SIM 236, 2026-07-25; research-celestine-elmwood-2026-07-24.md) —
+        // the SECOND sulfate consumer to migrate off total `fluid.S` (barite S1 was the first,
+        // same shape): celestine consumes SO₄²⁻, so it reads sulfateAvailablePpm. The tranche
+        // census (tools/celestine-tranche-census.mjs) measured the migration ALONE killing 5 of
+        // the 8 seed-42 tenants (elmwood/GSP/mvt/reactivated/reactive_wall → 0 live steps).
+        const s_avail = sulfateAvailablePpm(this.fluid, this.temperature);
+        if (this.fluid.Sr < g.fluid_min.Sr || s_avail < g.fluid_min.S || !sulfateRedoxAvailable(this.fluid, g.O2_min))
             return 0;
         const sr_f = Math.min(this.fluid.Sr / 15.0, 2.0);
-        const s_f = Math.min(this.fluid.S / 40.0, 2.5);
+        // S2 re-anchor: the ÷40 was calibrated against PRE-SPLIT effective sulfate (total S).
+        // ÷18 is the census-measured constant that reproduces today's live-windows fleet-wide
+        // at the honest sulfate (elmwood 24=24, mvt 11≈12, reactivated 141=141, reactive_wall
+        // 105=105 live steps; naica/sicily unchanged). The oxidizing evaporites widen honestly
+        // (searles 89→300, GSP 24→30 — sulfate fraction ≈1 there, and both stay Sr-limited at
+        // peak σ ≈1.15/1.05). Same framing as barite's ÷20: recalibration after the model got
+        // less fake, not mercy. The inherited-sulfate carve-out branch keeps ÷40 (mirrors
+        // barite — no flagged scenario grows celestine today, but a flagged fluid reading full
+        // S through the split divisor would double-boost).
+        const s_div = this.fluid.sulfateInherited ? 40.0 : 18.0;
+        const s_f = Math.min(s_avail / s_div, 2.5);
         // O2 saturation at SO₄/H₂S boundary — same MVT-coexistence rationale.
         const o2_f = sulfateRedoxFactor(this.fluid, 0.4, 1.5);
         let sigma = sr_f * s_f * o2_f;
@@ -45155,8 +45217,24 @@ function grow_celestine(crystal, conditions, step) {
     if (rate < 0.1)
         return null;
     const sulfur_context = conditions.fluid.S > 200;
+    // S2 celestine tranche (SIM 236): the Ba-substitution habit fork, checked FIRST.
+    // Real Elmwood celestine is the Ba-bearing variety AND fibrous (mindat: "(Sr,Ba)SO₄,
+    // habit: Fibrous, white"; Jensen 1996 Min. Record; boss specimen #103941 — "holds the
+    // specimen together like a glue"). Mechanism: the divalent Ba²⁺ co-ion strains the
+    // lattice and splits the growth front → radiating fibrous/spherulitic growth (Sunagawa;
+    // Gránásy 2005 — impurity-driven growth-front branching). An IMPURITY habit operates at
+    // any σ, so it precedes the driving-force ladder below — without the precedence,
+    // elmwood's post-Sr-event σ (~3) would fall into the Madagascar 'nodular' branch (the
+    // tranche census caught this before code). The σ-ladder tenants are unaffected: every
+    // nodular/Sicilian-fibrous tenant at seed 42 has ba_ratio ≈ 0 (census table).
+    const ba_ratio_habit = conditions.fluid.Ba / Math.max(conditions.fluid.Sr, 0.1);
     let habit_note;
-    if (excess > 1.5) {
+    if (ba_ratio_habit > 0.25) {
+        crystal.habit = 'fibrous_blanket';
+        crystal.dominant_forms = ['radiating fibrous white blanket', 'barytocelestine coating'];
+        habit_note = 'fibrous Ba-bearing celestine — Elmwood-type druzy blanket; the Ba²⁺ co-ion splits the growth front';
+    }
+    else if (excess > 1.5) {
         crystal.habit = 'nodular';
         crystal.dominant_forms = ['geodal lining', 'concentric blue crust'];
         habit_note = 'nodular celestine — Madagascar geode lining';
@@ -48119,6 +48197,26 @@ function event_elmwood_barite_stage(conditions) {
     conditions.fluid.S = Math.max(conditions.fluid.S || 0, 106);
     return `A barium-sulfate brine pulse floods the Knox breccia — barite grows a generation on the honey sphalerite (Ba ${conditions.fluid.Ba.toFixed(0)}, S ${conditions.fluid.S.toFixed(0)} ppm).`;
 }
+// S2 celestine tranche (SIM 236, 2026-07-25; boss-approved Sr 10→30 with the
+// narrowness caution "explicitly conditional on elmwood_diagenetic_sr + late MVT
+// cooling + substrate/coating topology, not a generic 'MVT celestine gets Sr 30'
+// rule" — this handler exists ONLY in elmwood's timeline, step 72, right after
+// the step-70 fault slip and just before the vein cools through 100 °C).
+//
+// THE MECHANISM (Hanor 2000, RiMG 40:193 — the canonical barite-celestine
+// review; full note in research/research-celestine-elmwood-2026-07-24.md): the
+// vug's host carbonates are Sr-rich — aragonitic limestone carries thousands of
+// ppm Sr that low-Sr calcite cannot hold, so recrystallization + dolomitization
+// EXPEL Sr into the pore brine. The late fault slip drives that Sr-charged
+// diagenetic water into the cooling vug, and the Ba-bearing (barytocelestine)
+// fibrous celestine blanket grows in the late window — the white "glue" that
+// binds real Elmwood specimens (#103941; mindat's fibrous Ba-bearing celestine).
+// A FLOOR (Math.max), not a stacking pulse — the elmwood_barite_stage lesson.
+// No sulfur is touched: the no-meteoric-pulse rule stays intact.
+function event_elmwood_diagenetic_sr(conditions) {
+    conditions.fluid.Sr = Math.max(conditions.fluid.Sr || 0, 30);
+    return `The fault slip drives Sr-charged pore water from the recrystallizing host carbonates into the cooling vug (Sr ${conditions.fluid.Sr.toFixed(0)} ppm) — the celestine stage opens; a white fibrous blanket begins to bind the druse.`;
+}
 // A pure film-coat beat: the settling clay / iron-oxide film is carried by the
 // event's `film:` directive (js/85d applyFilmDusting), so the handler itself
 // touches NO chemistry — it exists only so the film-coat events have a valid
@@ -48140,6 +48238,7 @@ function event_film_coat(conditions) {
 const EVENT_REGISTRY = {
     fluid_pulse: event_fluid_pulse,
     elmwood_barite_stage: event_elmwood_barite_stage,
+    elmwood_diagenetic_sr: event_elmwood_diagenetic_sr,
     film_coat: event_film_coat,
     cooling_pulse: event_cooling_pulse,
     tectonic_shock: event_tectonic_shock,
@@ -73439,6 +73538,7 @@ const HABIT_TO_TEXTURE = {
     'framboidal': 'botryoidal', // pyrite microspheres (sweetwater style)
     'reniform_globules': 'botryoidal', // chrysocolla — bigger lobes, same family
     'botryoidal_crust': 'botryoidal', // chrysocolla
+    'fibrous_blanket': 'botryoidal', // S2 celestine (SIM 236) — Elmwood Ba-fibrous coating; scalloped-crust edge, not needles
     // Stage 4 — acicular / needle / radiating bundles.
     // PLACEHOLDER: dispatches to sawtooth with dogtooth-cloned params
     // pending its own design (true acicular wants a denser, spikier feel).
@@ -76092,6 +76192,11 @@ const HABIT_TO_PRIMITIVE = {
     'rhombohedral_or_scalenohedral': PRIM_RHOMBOHEDRON,
     'rhombohedral_or_tabular_or_botryoidal': PRIM_RHOMBOHEDRON,
     'botryoidal_or_rhombohedral': PRIM_BOTRYOIDAL,
+    // S2 celestine tranche (SIM 236): the Ba-fibrous Elmwood blanket is a
+    // wall-spreading coating — botryoidal family, NOT the acicular spray the
+    // 99d fuzzy 'fibrous' check would pick. Explicit entry = load-bearing
+    // (same reason as the hopper pair below).
+    'fibrous_blanket': PRIM_BOTRYOIDAL,
     'scalenohedral': PRIM_SCALENOHEDRON,
     'scalenohedral_or_rhombohedral': PRIM_SCALENOHEDRON,
     // Calcite-morphology arc Phase 2 (2026-06-11): σ-regime habit strings
@@ -79350,6 +79455,12 @@ function _habitGeomToken(habit) {
         return 'rhomb';
     if (h.includes('scalenohedral'))
         return 'scalene';
+    // S2 celestine tranche (SIM 236): the Ba-fibrous blanket is a wall-spreading
+    // COATING (the Elmwood "glue"), not a needle spray — route to the botryoidal
+    // lateral-crust scaling. MUST precede the generic 'fibrous' → spike check
+    // below, which would otherwise catch the substring and render needles.
+    if (h === 'fibrous_blanket')
+        return 'botryoidal';
     // Wall-spreading crusts — chalcedony, malachite (banded), agate, smithsonite
     // botryoidal, rosasite crusts. Chalcedony is the user-flagged case:
     // microcrystalline silica spreads on the wall like malachite, NOT a quartz

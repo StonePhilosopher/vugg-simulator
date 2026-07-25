@@ -82,8 +82,23 @@ function grow_celestine(crystal, conditions, step) {
   if (rate < 0.1) return null;
 
   const sulfur_context = conditions.fluid.S > 200;
+  // S2 celestine tranche (SIM 236): the Ba-substitution habit fork, checked FIRST.
+  // Real Elmwood celestine is the Ba-bearing variety AND fibrous (mindat: "(Sr,Ba)SO₄,
+  // habit: Fibrous, white"; Jensen 1996 Min. Record; boss specimen #103941 — "holds the
+  // specimen together like a glue"). Mechanism: the divalent Ba²⁺ co-ion strains the
+  // lattice and splits the growth front → radiating fibrous/spherulitic growth (Sunagawa;
+  // Gránásy 2005 — impurity-driven growth-front branching). An IMPURITY habit operates at
+  // any σ, so it precedes the driving-force ladder below — without the precedence,
+  // elmwood's post-Sr-event σ (~3) would fall into the Madagascar 'nodular' branch (the
+  // tranche census caught this before code). The σ-ladder tenants are unaffected: every
+  // nodular/Sicilian-fibrous tenant at seed 42 has ba_ratio ≈ 0 (census table).
+  const ba_ratio_habit = conditions.fluid.Ba / Math.max(conditions.fluid.Sr, 0.1);
   let habit_note;
-  if (excess > 1.5) {
+  if (ba_ratio_habit > 0.25) {
+    crystal.habit = 'fibrous_blanket';
+    crystal.dominant_forms = ['radiating fibrous white blanket', 'barytocelestine coating'];
+    habit_note = 'fibrous Ba-bearing celestine — Elmwood-type druzy blanket; the Ba²⁺ co-ion splits the growth front';
+  } else if (excess > 1.5) {
     crystal.habit = 'nodular';
     crystal.dominant_forms = ['geodal lining', 'concentric blue crust'];
     habit_note = 'nodular celestine — Madagascar geode lining';

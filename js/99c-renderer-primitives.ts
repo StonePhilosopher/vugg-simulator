@@ -1148,6 +1148,11 @@ const HABIT_TO_PRIMITIVE = {
   'rhombohedral_or_scalenohedral':  PRIM_RHOMBOHEDRON,
   'rhombohedral_or_tabular_or_botryoidal': PRIM_RHOMBOHEDRON,
   'botryoidal_or_rhombohedral':     PRIM_BOTRYOIDAL,
+  // S2 celestine tranche (SIM 236): the Ba-fibrous Elmwood blanket is a
+  // wall-spreading coating — botryoidal family, NOT the acicular spray the
+  // 99d fuzzy 'fibrous' check would pick. Explicit entry = load-bearing
+  // (same reason as the hopper pair below).
+  'fibrous_blanket':                PRIM_BOTRYOIDAL,
   'scalenohedral':                  PRIM_SCALENOHEDRON,
   'scalenohedral_or_rhombohedral':  PRIM_SCALENOHEDRON,
   // Calcite-morphology arc Phase 2 (2026-06-11): σ-regime habit strings

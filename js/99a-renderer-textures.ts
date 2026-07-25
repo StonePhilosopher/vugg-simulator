@@ -22,6 +22,7 @@ const HABIT_TO_TEXTURE = {
   'framboidal':          'botryoidal', // pyrite microspheres (sweetwater style)
   'reniform_globules':   'botryoidal', // chrysocolla — bigger lobes, same family
   'botryoidal_crust':    'botryoidal', // chrysocolla
+  'fibrous_blanket':     'botryoidal', // S2 celestine (SIM 236) — Elmwood Ba-fibrous coating; scalloped-crust edge, not needles
   // Stage 4 — acicular / needle / radiating bundles.
   // PLACEHOLDER: dispatches to sawtooth with dogtooth-cloned params
   // pending its own design (true acicular wants a denser, spikier feel).

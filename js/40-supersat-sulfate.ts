@@ -364,9 +364,25 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_celestine() {
   const g = MINERAL_GATES_celestine;
-  if (this.fluid.Sr < g.fluid_min!.Sr || this.fluid.S < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  // S2 celestine tranche (SIM 236, 2026-07-25; research-celestine-elmwood-2026-07-24.md) —
+  // the SECOND sulfate consumer to migrate off total `fluid.S` (barite S1 was the first,
+  // same shape): celestine consumes SO₄²⁻, so it reads sulfateAvailablePpm. The tranche
+  // census (tools/celestine-tranche-census.mjs) measured the migration ALONE killing 5 of
+  // the 8 seed-42 tenants (elmwood/GSP/mvt/reactivated/reactive_wall → 0 live steps).
+  const s_avail = sulfateAvailablePpm(this.fluid, this.temperature);
+  if (this.fluid.Sr < g.fluid_min!.Sr || s_avail < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   const sr_f = Math.min(this.fluid.Sr / 15.0, 2.0);
-  const s_f  = Math.min(this.fluid.S  / 40.0, 2.5);
+  // S2 re-anchor: the ÷40 was calibrated against PRE-SPLIT effective sulfate (total S).
+  // ÷18 is the census-measured constant that reproduces today's live-windows fleet-wide
+  // at the honest sulfate (elmwood 24=24, mvt 11≈12, reactivated 141=141, reactive_wall
+  // 105=105 live steps; naica/sicily unchanged). The oxidizing evaporites widen honestly
+  // (searles 89→300, GSP 24→30 — sulfate fraction ≈1 there, and both stay Sr-limited at
+  // peak σ ≈1.15/1.05). Same framing as barite's ÷20: recalibration after the model got
+  // less fake, not mercy. The inherited-sulfate carve-out branch keeps ÷40 (mirrors
+  // barite — no flagged scenario grows celestine today, but a flagged fluid reading full
+  // S through the split divisor would double-boost).
+  const s_div = this.fluid.sulfateInherited ? 40.0 : 18.0;
+  const s_f  = Math.min(s_avail / s_div, 2.5);
   // O2 saturation at SO₄/H₂S boundary — same MVT-coexistence rationale.
   const o2_f = sulfateRedoxFactor(this.fluid, 0.4, 1.5);
   let sigma = sr_f * s_f * o2_f;

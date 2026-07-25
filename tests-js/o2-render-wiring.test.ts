@@ -61,7 +61,22 @@ function tally(state: any) {
       const g1 = m.geometry.groups.find((gp: any) => gp.materialIndex === 1);
       expect(g1, 'no contact group on a 2-material mesh').toBeTruthy();
     } else {
-      expect(m.geometry.groups.length, 'un-contacted mesh should not carry a contact group').toBeLessThanOrEqual(1);
+      // v236 refinement: the old assertion (`groups.length ≤ 1`) carried a latent
+      // false assumption — THREE's native primitives ship with per-face groups
+      // (BoxGeometry = 6 groups, materialIndex 0..5), which are INERT under a
+      // single material (every group draws with the same material). The v236
+      // mvt re-deal surfaced it: fluorite #4 landed un-contacted on the raw
+      // cube path for the first time in this test's history. The invariant O2
+      // actually needs: an un-contacted mesh must not carry the CONTACT
+      // signature — exactly 2 groups indexing materials {0,1} (the js/46
+      // euhedral+contact pair) — which would mean the clipper emitted groups
+      // but the material-array plumbing was dropped (the half-fire this test
+      // exists to catch).
+      const gs = m.geometry.groups;
+      const looksLikeContactPair = gs.length === 2
+        && gs.some((gp: any) => gp.materialIndex === 0)
+        && gs.some((gp: any) => gp.materialIndex === 1);
+      expect(looksLikeContactPair, 'un-contacted mesh carries the euhedral+contact group pair without a material array — O2 half-fired').toBe(false);
     }
   }
   return { total, contacted, satellites };

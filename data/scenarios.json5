@@ -433,6 +433,12 @@
         { "step": 60, "type": "film_coat", "name": "Iron-Oxide Coat", "description": "Iron oxides tint the blade fronts a rusty film — the second masking coat", "film": { "mineral": "iron oxide", "term": 0.3, "prism": 0.3, "minerals": ["barite"] } },
         { "step": 68, "type": "elmwood_barite_stage", "name": "Barite Stage — Generation 3", "description": "The third barium pulse breaks through the iron-oxide film — a second snowball horizon buried in the blade" },
         { "step": 70, "type": "tectonic_shock", "name": "Fault Slip", "description": "The fault valve slips — pressure pulse through the breccia run" },
+        // S2 celestine tranche (SIM 236): the slip drives Sr-charged diagenetic pore water
+        // (host-carbonate recrystallization + dolomitization expel Sr — Hanor 2000, RiMG 40)
+        // into the vug just before the vein cools through 100°C; the Ba-bearing fibrous
+        // celestine blanket (the white "glue" of real Elmwood specimens) grows in the late
+        // window. Narrow + named per the boss ruling: this event exists ONLY here.
+        { "step": 72, "type": "elmwood_diagenetic_sr", "name": "Diagenetic Strontium", "description": "Sr-charged pore water from the recrystallizing host carbonates floods the cooling vug — the celestine stage opens; a white fibrous blanket begins to bind the druse" },
         { "step": 78, "type": "film_coat", "name": "Final Clay Rind", "description": "A last clay film coats the outermost blades — the snowball's dusty rind, left uncleared as the barium wanes", "film": { "mineral": "clay", "term": 0.45, "prism": 0.45, "minerals": ["barite"] } }
       ],
       "movements": [
