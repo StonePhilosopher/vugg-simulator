@@ -518,7 +518,7 @@ Object.assign(VugConditions.prototype, {
   // log(pCO2) ≈ -3.5 univariant boundary at 25°C. Azurite drops back
   // to malachite via the paramorph mechanic in grow_azurite when CO3
   // falls during a run (Bisbee step 225 ev_co2_drop).
-  // See research/research-broth-ratio-malachite-azurite.md.
+  // See research/arcs/research-broth-ratio-malachite-azurite.md.
   let sigma = (this.fluid.Cu / 25.0) * (effectiveCO3(this.fluid, this.temperature) / 100.0) * carbonateRedoxFactor(this.fluid, 1.0);
   if (this.temperature > 50) {
     sigma *= Math.exp(-0.005 * (this.temperature - 50));

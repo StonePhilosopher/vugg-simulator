@@ -213,7 +213,7 @@ function event_elmwood_barite_stage(conditions) {
 // the step-70 fault slip and just before the vein cools through 100 °C).
 //
 // THE MECHANISM (Hanor 2000, RiMG 40:193 — the canonical barite-celestine
-// review; full note in research/research-celestine-elmwood-2026-07-24.md): the
+// review; full note in research/scenarios/elmwood/research-celestine-elmwood-2026-07-24.md): the
 // vug's host carbonates are Sr-rich — aragonitic limestone carries thousands of
 // ppm Sr that low-Sr calcite cannot hold, so recrystallization + dolomitization
 // EXPEL Sr into the pore brine. The late fault slip drives that Sr-charged

@@ -1,5 +1,5 @@
 // tools/celestine-tranche-census.mjs — the S2 celestine tranche's instrument
-// (2026-07-25, research/research-celestine-elmwood-2026-07-24.md §5).
+// (2026-07-25, research/scenarios/elmwood/research-celestine-elmwood-2026-07-24.md §5).
 //
 // For every scenario that grows celestine at seed 42, walk the run per-step and
 // record, at each step where celestine is live or near-live:

@@ -12,7 +12,7 @@
     "optics": "RENDER-LAYER optical data (proposals/RESEARCH-optical-realism-2026-07-02.md). diaphaneity: category enum (transparent | transparent_to_translucent | transparent_to_opaque | translucent | translucent_to_opaque | opaque). clarity: [0,1] for a TYPICAL fine display specimen (1.0 = water-clear gem, 0 = opaque) — the Depth-A consumer (js/99i buildCrystalMaterial → opacity). lustre: term array (Depth-B consumer, recorded ahead of use). notes: face-specific lustre fame + specimen nuance. source: how the row was verified ('webmineral+HOM <date>' = two fetched sources; disagreement record in the research doc). OPTIONAL — species without it get class defaults in the builder. Lint: tests-js/mineral-optics.test.ts.",
     "nucleation_sigma": "Minimum supersaturation for nucleation.",
     "max_nucleation_count": "Maximum number of crystals of this species that can ever nucleate in a single run. Counted across the whole simulation (active + dissolved). Keeps common minerals like wulfenite from producing microcrystalline swarms that get immediately swallowed by other phases.",
-    "max_size_cm": "Hard cap on crystal size — 2x world record per research/mineral-accuracy-audit.md. Growth halts when reached; this is the fix for the 321248% bug.",
+    "max_size_cm": "Hard cap on crystal size — 2x world record per research/arcs/mineral-accuracy-audit.md. Growth halts when reached; this is the fix for the 321248% bug.",
     "growth_rate_mult": "Relative growth rate, calcite=1.0 baseline. Multiply the runtime base rate.",
     "T_range_C": "[min, max] temperature window for growth (C). null,null = unbounded.",
     "T_optimum_C": "[min, max] sweet spot within T_range.",
@@ -2172,7 +2172,7 @@
         }
       ],
       "class": "oxide",
-      "description": "UO₂, the primary uranium mineral and gatekeeper for the entire secondary U family. Pitch-black, extremely dense, radioactive. Forms under strongly reducing conditions — any oxygen converts U⁴⁺ to mobile UO₂²⁺ uranyl ion (fed back to broth in v12 oxidation block, feedstock for torbernite/zeunerite/carnotite). Notably non-fluorescent — the ABSENCE of fluorescence distinguishes uraninite from its bright-green secondaries (autunite, torbernite). Each α-decay turns a U atom into Pb; old uraninite accumulates radiogenic lead that eventually precipitates as nearby galena. Source: research/research-uraninite.md (boss canonical 626bb22, May 2026).",
+      "description": "UO₂, the primary uranium mineral and gatekeeper for the entire secondary U family. Pitch-black, extremely dense, radioactive. Forms under strongly reducing conditions — any oxygen converts U⁴⁺ to mobile UO₂²⁺ uranyl ion (fed back to broth in v12 oxidation block, feedstock for torbernite/zeunerite/carnotite). Notably non-fluorescent — the ABSENCE of fluorescence distinguishes uraninite from its bright-green secondaries (autunite, torbernite). Each α-decay turns a U atom into Pb; old uraninite accumulates radiogenic lead that eventually precipitates as nearby galena. Source: research/minerals/research-uraninite.md (boss canonical 626bb22, May 2026).",
       "scenarios": [
         "radioactive_pegmatite"
       ],
@@ -8591,7 +8591,7 @@
         }
       ],
       "class": "sulfide",
-      "description": "Ag₂S — body-centered cubic silver sulfide, the high-temperature polymorph stable only above 173°C. A ghost mineral: every argentite specimen at room temperature is actually acanthite (monoclinic) wearing argentite's cubic crystal habit, because below 173°C the lattice inverts in place while the external form stays frozen — handled by the apply_paramorph_transitions hook in vugg.py. Lead-gray to black metallic, Mohs 2-2.5, sectile. Forms in the high-T zones of epithermal and mesothermal Ag-bearing veins; classic localities include Comstock Lode (Nevada), Pachuca-Real del Monte (Mexico), and Freiberg (Saxony). Source: research/research-argentite.md (boss commit f2939da), Petruk et al. 1974.",
+      "description": "Ag₂S — body-centered cubic silver sulfide, the high-temperature polymorph stable only above 173°C. A ghost mineral: every argentite specimen at room temperature is actually acanthite (monoclinic) wearing argentite's cubic crystal habit, because below 173°C the lattice inverts in place while the external form stays frozen — handled by the apply_paramorph_transitions hook in vugg.py. Lead-gray to black metallic, Mohs 2-2.5, sectile. Forms in the high-T zones of epithermal and mesothermal Ag-bearing veins; classic localities include Comstock Lode (Nevada), Pachuca-Real del Monte (Mexico), and Freiberg (Saxony). Source: research/minerals/research-argentite.md (boss commit f2939da), Petruk et al. 1974.",
       "scenarios": [
         "radioactive_pegmatite"
       ],
@@ -8640,7 +8640,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 8a-2 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html. Hard lower-T gate at 173°C; below that, apply_paramorph_transitions hook converts the crystal in-place to acanthite while preserving habit + dominant_forms — first non-destructive polymorph mechanic in the sim, distinct from THERMAL_DECOMPOSITION which destroys the crystal. Habit variants: cubic (low-moderate σ, Comstock Lode signature), octahedral (mid σ, with {111} spinel-law penetration twins), arborescent (high σ, dendritic/wire-like). Activates dormant Ag pool only in scenarios that reach >173°C — currently radioactive_pegmatite per declared scenarios. Sources: Petruk et al. 1974 (Canadian Mineralogist 12), boss research file research/research-argentite.md.",
+      "audit_status": "Round 8a-2 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html. Hard lower-T gate at 173°C; below that, apply_paramorph_transitions hook converts the crystal in-place to acanthite while preserving habit + dominant_forms — first non-destructive polymorph mechanic in the sim, distinct from THERMAL_DECOMPOSITION which destroys the crystal. Habit variants: cubic (low-moderate σ, Comstock Lode signature), octahedral (mid σ, with {111} spinel-law penetration twins), arborescent (high σ, dendritic/wire-like). Activates dormant Ag pool only in scenarios that reach >173°C — currently radioactive_pegmatite per declared scenarios. Sources: Petruk et al. 1974 (Canadian Mineralogist 12), boss research file research/minerals/research-argentite.md.",
       "class_color": "#7feb13"
     },
     "native_silver": {
@@ -8687,7 +8687,7 @@
         }
       ],
       "class": "native",
-      "description": "Ag — elemental silver, the only native element bright enough to make you rich just by looking at it wrong. Cubic isometric (Fm3̄m), Mohs 2.5-3, specific gravity 10.5 (one of the heaviest native metals). The S-depletion mineral: native silver only forms where every sulfur atom is already claimed and the fluid is strongly reducing — the inverse of normal supersaturation logic. Famous wire-silver localities (Kongsberg Norway, Keweenaw Michigan, Cobalt Ontario) all sit in S-depleted reducing pockets. Tarnishes inevitably to a dark acanthite rind from atmospheric H₂S; freshly broken surfaces still flash with the brightest metallic luster known to mineralogy. Source: research/research-native-silver.md (boss commit f2939da), Boyle 1968 (GSA Bulletin 79), Bjørlykke 1959 (NGU 207).",
+      "description": "Ag — elemental silver, the only native element bright enough to make you rich just by looking at it wrong. Cubic isometric (Fm3̄m), Mohs 2.5-3, specific gravity 10.5 (one of the heaviest native metals). The S-depletion mineral: native silver only forms where every sulfur atom is already claimed and the fluid is strongly reducing — the inverse of normal supersaturation logic. Famous wire-silver localities (Kongsberg Norway, Keweenaw Michigan, Cobalt Ontario) all sit in S-depleted reducing pockets. Tarnishes inevitably to a dark acanthite rind from atmospheric H₂S; freshly broken surfaces still flash with the brightest metallic luster known to mineralogy. Source: research/minerals/research-native-silver.md (boss commit f2939da), Boyle 1968 (GSA Bulletin 79), Bjørlykke 1959 (NGU 207).",
       "scenarios": [
         "bisbee",
         "supergene_oxidation"
@@ -8736,7 +8736,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 8a-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The first depletion-gate engine in the sim: native silver fires only when fluid.S < 2 ppm AND fluid.O2 < 0.3 — the geological signature of every Kongsberg-type wire-silver locality. Engine includes tarnish branch (when S returns to fluid > 5 ppm, the surface skins over with acanthite as a dissolution event). Habit variants: wire (low T + high σ, Kongsberg), dendritic (mid σ, Cobalt-Ontario), massive (low σ, Keweenaw), cubic_crystal (rare hypogene primary with {111} penetration twin). Activates the dormant Ag pool at Tsumeb supergene + Bisbee oxidation cap, where dissolving acanthite/tetrahedrite releases Ag⁺ that meets a deeper reducing pocket. Tarnish-clock mechanic (per-step acanthite-rind accumulation regardless of S availability) is deferred to 8a-3b alongside the same mechanic for native_arsenic / native_tellurium / native_bismuth. Sources: Boyle 1968 (GSA Bulletin 79), Bjørlykke 1959 (NGU 207), Kissin & Mango 2014 (CIM SV 54), boss research file research/research-native-silver.md.",
+      "audit_status": "Round 8a-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The first depletion-gate engine in the sim: native silver fires only when fluid.S < 2 ppm AND fluid.O2 < 0.3 — the geological signature of every Kongsberg-type wire-silver locality. Engine includes tarnish branch (when S returns to fluid > 5 ppm, the surface skins over with acanthite as a dissolution event). Habit variants: wire (low T + high σ, Kongsberg), dendritic (mid σ, Cobalt-Ontario), massive (low σ, Keweenaw), cubic_crystal (rare hypogene primary with {111} penetration twin). Activates the dormant Ag pool at Tsumeb supergene + Bisbee oxidation cap, where dissolving acanthite/tetrahedrite releases Ag⁺ that meets a deeper reducing pocket. Tarnish-clock mechanic (per-step acanthite-rind accumulation regardless of S availability) is deferred to 8a-3b alongside the same mechanic for native_arsenic / native_tellurium / native_bismuth. Sources: Boyle 1968 (GSA Bulletin 79), Bjørlykke 1959 (NGU 207), Kissin & Mango 2014 (CIM SV 54), boss research file research/minerals/research-native-silver.md.",
       "class_color": "#eb13eb"
     },
     "native_arsenic": {
@@ -8783,7 +8783,7 @@
         }
       ],
       "class": "native",
-      "description": "As — elemental arsenic, the residual-overflow native element. Trigonal (R3̄m), Mohs 3-4, perfect basal {0001} cleavage that splits like dark mica. Tin-white to steel-gray metallic on fresh fracture, tarnishes to arsenolite (As₂O₃) within hours. Forms only when every other As-consumer in the fluid (Fe → arsenopyrite, Ni → nickeline, Co → safflorite, S → realgar/orpiment) has had its share — the leftover phase. Famous Co-Ni-Ag vein districts (Freiberg Saxony, Sainte-Marie-aux-Mines Alsace, Příbram Czech) host native arsenic as the residual after the Co/Ni/Ag captured the metals and S was already locked in. Sources: research/research-native-arsenic.md (boss commit f2939da), Schiferl 1969 (Acta Cryst. B25), Petruk 1971 (Cobalt-Ag paragenesis).",
+      "description": "As — elemental arsenic, the residual-overflow native element. Trigonal (R3̄m), Mohs 3-4, perfect basal {0001} cleavage that splits like dark mica. Tin-white to steel-gray metallic on fresh fracture, tarnishes to arsenolite (As₂O₃) within hours. Forms only when every other As-consumer in the fluid (Fe → arsenopyrite, Ni → nickeline, Co → safflorite, S → realgar/orpiment) has had its share — the leftover phase. Famous Co-Ni-Ag vein districts (Freiberg Saxony, Sainte-Marie-aux-Mines Alsace, Příbram Czech) host native arsenic as the residual after the Co/Ni/Ag captured the metals and S was already locked in. Sources: research/minerals/research-native-arsenic.md (boss commit f2939da), Schiferl 1969 (Acta Cryst. B25), Petruk 1971 (Cobalt-Ag paragenesis).",
       "scenarios": [
         "bisbee",
         "supergene_oxidation"
@@ -8824,7 +8824,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 8b-1 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The residual-overflow native element: hard gates at S>10 (overflows to realgar/orpiment/arsenopyrite), Fe>50 (overflows to arsenopyrite), O₂>0.5 (overflows to arsenate suite). Habit variants: massive_granular (Freiberg ore form), reniform (Akatani botryoidal), rhombohedral_crystal (rare high-T crystals), arsenolamprite (Bi-rich variety). Engine includes oxidative-dissolution branch when O₂>0.7 (As goes back to fluid as AsO₄³⁻, feeds the supergene arsenate cascade: scorodite/erythrite/annabergite/olivenite/mimetite). Tarnish-clock for the As₂O₃ surface bloom is deferred to 8a-3b alongside other native-element tarnish mechanics. Sources: Schiferl 1969 (Acta Cryst. B25), Petruk 1971 (Cobalt-Ag paragenesis), boss research file research/research-native-arsenic.md.",
+      "audit_status": "Round 8b-1 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The residual-overflow native element: hard gates at S>10 (overflows to realgar/orpiment/arsenopyrite), Fe>50 (overflows to arsenopyrite), O₂>0.5 (overflows to arsenate suite). Habit variants: massive_granular (Freiberg ore form), reniform (Akatani botryoidal), rhombohedral_crystal (rare high-T crystals), arsenolamprite (Bi-rich variety). Engine includes oxidative-dissolution branch when O₂>0.7 (As goes back to fluid as AsO₄³⁻, feeds the supergene arsenate cascade: scorodite/erythrite/annabergite/olivenite/mimetite). Tarnish-clock for the As₂O₃ surface bloom is deferred to 8a-3b alongside other native-element tarnish mechanics. Sources: Schiferl 1969 (Acta Cryst. B25), Petruk 1971 (Cobalt-Ag paragenesis), boss research file research/minerals/research-native-arsenic.md.",
       "class_color": "#eb13eb"
     },
     "native_sulfur": {
@@ -8864,7 +8864,7 @@
         }
       ],
       "class": "native",
-      "description": "S — elemental sulfur, the bright canary-yellow native non-metal built from crown-shaped S₈ rings. Orthorhombic α-S (room T) or monoclinic β-S (T>95.5°C, unstable below). Mohs 1.5-2.5, fragile, thermally sensitive — a warm hand can crack a cool specimen. The synproportionation mineral: native S lives on the H₂S/SO₄²⁻ redox boundary where the reaction H₂S + SO₄²⁻ → 2S⁰ + H₂O drops elemental S out of solution. Forms in volcanic fumaroles (Vulcano, El Desierto), salt-dome caprocks via Desulfovibrio bacterial sulfate reduction (Tarnobrzeg), and Sicilian sulfur-vug evaporites with celestine companions (Agrigento — type locality, crystals to 20+ cm). Sources: research/research-native-sulfur.md (boss commit f2939da), Holland 1965 (Econ. Geol. 60).",
+      "description": "S — elemental sulfur, the bright canary-yellow native non-metal built from crown-shaped S₈ rings. Orthorhombic α-S (room T) or monoclinic β-S (T>95.5°C, unstable below). Mohs 1.5-2.5, fragile, thermally sensitive — a warm hand can crack a cool specimen. The synproportionation mineral: native S lives on the H₂S/SO₄²⁻ redox boundary where the reaction H₂S + SO₄²⁻ → 2S⁰ + H₂O drops elemental S out of solution. Forms in volcanic fumaroles (Vulcano, El Desierto), salt-dome caprocks via Desulfovibrio bacterial sulfate reduction (Tarnobrzeg), and Sicilian sulfur-vug evaporites with celestine companions (Agrigento — type locality, crystals to 20+ cm). Sources: research/minerals/research-native-sulfur.md (boss commit f2939da), Holland 1965 (Econ. Geol. 60).",
       "scenarios": [
         "sabkha_dolomitization",
         "supergene_oxidation"
@@ -8913,7 +8913,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 8b-2 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The synproportionation Eh-window engine: native S fires only when 0.1<O₂<0.7 (the H₂S/SO₄²⁻ boundary), pH<5 (H₂S dominant regime), and Fe+Cu+Pb+Zn<100 (base-metal sulfide capture gate). Habit variants: bipyramidal_alpha (T<95°C, Sicilian Agrigento), prismatic_beta (95-119°C, RARE — converts to α with cracking), sublimation_crust (high σ + T>60°C, fumarole habit). Engine includes oxidative-dissolution branch (O₂>0.9 returns S to fluid as SO₄²⁻) and per-step pH acidification (synproportionation releases minor H⁺). THERMAL_DECOMPOSITION at 115°C (melting point) — outside most scenario T ranges. Sources: Holland 1965 (Econ. Geol. 60), boss research file research/research-native-sulfur.md.",
+      "audit_status": "Round 8b-2 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The synproportionation Eh-window engine: native S fires only when 0.1<O₂<0.7 (the H₂S/SO₄²⁻ boundary), pH<5 (H₂S dominant regime), and Fe+Cu+Pb+Zn<100 (base-metal sulfide capture gate). Habit variants: bipyramidal_alpha (T<95°C, Sicilian Agrigento), prismatic_beta (95-119°C, RARE — converts to α with cracking), sublimation_crust (high σ + T>60°C, fumarole habit). Engine includes oxidative-dissolution branch (O₂>0.9 returns S to fluid as SO₄²⁻) and per-step pH acidification (synproportionation releases minor H⁺). THERMAL_DECOMPOSITION at 115°C (melting point) — outside most scenario T ranges. Sources: Holland 1965 (Econ. Geol. 60), boss research file research/minerals/research-native-sulfur.md.",
       "class_color": "#eb13eb"
     },
     "native_tellurium": {
@@ -8946,7 +8946,7 @@
         }
       ],
       "class": "native",
-      "description": "Te — elemental tellurium, the rarest of the residual-overflow native trio. Trigonal (P3₁21), Mohs 2-2.5, SG 6.2, perfect {1010} prismatic cleavage. Tin-white to steel-gray metallic, tarnishes to TeO₂ within days of exposure. Tellurium is rarer than platinum in Earth's crust; native Te only crystallizes when every telluride-forming metal (Au → calaverite/sylvanite, Ag → hessite, Pb → altaite, Bi → tetradymite, Hg → coloradoite) has had its fill — a relic of excess. Type localities: Cripple Creek (Colorado), Kalgoorlie (Western Australia, the richest Au-Te deposit on Earth), Emperor Mine (Vatukoula, Fiji). Sources: research/research-native-tellurium.md (boss commit f2939da), Spry & Thieben 1996 (Mineralium Deposita 31).",
+      "description": "Te — elemental tellurium, the rarest of the residual-overflow native trio. Trigonal (P3₁21), Mohs 2-2.5, SG 6.2, perfect {1010} prismatic cleavage. Tin-white to steel-gray metallic, tarnishes to TeO₂ within days of exposure. Tellurium is rarer than platinum in Earth's crust; native Te only crystallizes when every telluride-forming metal (Au → calaverite/sylvanite, Ag → hessite, Pb → altaite, Bi → tetradymite, Hg → coloradoite) has had its fill — a relic of excess. Type localities: Cripple Creek (Colorado), Kalgoorlie (Western Australia, the richest Au-Te deposit on Earth), Emperor Mine (Vatukoula, Fiji). Sources: research/minerals/research-native-tellurium.md (boss commit f2939da), Spry & Thieben 1996 (Mineralium Deposita 31).",
       "scenarios": [
         "porphyry"
       ],
@@ -8994,7 +8994,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 8b-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The metal-telluride-overflow engine: hard gates at Au>1 (overflows to calaverite/sylvanite), Ag>5 (overflows to hessite), O₂>0.5 (overflows to tellurite/tellurate). Soft suppressors for Pb (altaite) and Bi (tetradymite). Hg not currently tracked in FluidChemistry; coloradoite (HgTe) gate deferred to a future Hg-plumbing round. Habit variants: prismatic_hex (high-T striated prisms, the Kalgoorlie museum habit), granular (Cripple Creek ore form), reticulated (low-T filiform). Engine includes oxidative-dissolution branch. THERMAL_DECOMPOSITION at 449°C melting point. Currently absent_at_seed_42: porphyry has Au=2 (above gate of >1) and Ag=8 (above gate of >5), so Te stays in solution destined for calaverite/sylvanite/hessite — those engines don't exist yet. The Au-Te coupling round (calaverite + sylvanite + hessite + altaite + tetradymite + coloradoite) is now unblocked — telluride engines are the natural Round 9 lift; once Au is locked in calaverite, residual Te will be free to fire as native. Sources: Spry & Thieben 1996 (Mineralium Deposita 31), boss research file research/research-native-tellurium.md.",
+      "audit_status": "Round 8b-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. The metal-telluride-overflow engine: hard gates at Au>1 (overflows to calaverite/sylvanite), Ag>5 (overflows to hessite), O₂>0.5 (overflows to tellurite/tellurate). Soft suppressors for Pb (altaite) and Bi (tetradymite). Hg not currently tracked in FluidChemistry; coloradoite (HgTe) gate deferred to a future Hg-plumbing round. Habit variants: prismatic_hex (high-T striated prisms, the Kalgoorlie museum habit), granular (Cripple Creek ore form), reticulated (low-T filiform). Engine includes oxidative-dissolution branch. THERMAL_DECOMPOSITION at 449°C melting point. Currently absent_at_seed_42: porphyry has Au=2 (above gate of >1) and Ag=8 (above gate of >5), so Te stays in solution destined for calaverite/sylvanite/hessite — those engines don't exist yet. The Au-Te coupling round (calaverite + sylvanite + hessite + altaite + tetradymite + coloradoite) is now unblocked — telluride engines are the natural Round 9 lift; once Au is locked in calaverite, residual Te will be free to fire as native. Sources: Spry & Thieben 1996 (Mineralium Deposita 31), boss research file research/minerals/research-native-tellurium.md.",
       "late_stage_propensity": 0.4,
       "_late_stage_note": "Proposal C (2026-05): propensity:0.4. Cripple Creek Cresson Vug bonanza pockets (Spry & Thieben 1996): native_Te grains as inclusions WITHIN hessite — residual-overflow paragenesis at the tail end of the cascade.",
       "class_color": "#eb13eb"
@@ -9036,7 +9036,7 @@
         }
       ],
       "class": "sulfide",
-      "description": "NiAs — hexagonal nickel arsenide, the namesake of the NiAs structure-type. Pale copper-red metallic on fresh fracture, the diagnostic color that fooled early miners into mistaking it for copper ore (the 'kupfernickel' = copper-devil etymology). Mohs 5-5.5, SG 7.8. Forms in high-T reducing veins where Ni and As are present together; cooler / As-poor regimes push the chemistry to millerite (NiS) or annabergite (the supergene Ni arsenate). Type-locality habit at Cobalt, Ontario; also documented at Schneeberg (Saxony), Příbram (Czech), and Tunaberg (Sweden). Sources: research/research-nickeline.md (boss commit f2939da), Petruk 1971.",
+      "description": "NiAs — hexagonal nickel arsenide, the namesake of the NiAs structure-type. Pale copper-red metallic on fresh fracture, the diagnostic color that fooled early miners into mistaking it for copper ore (the 'kupfernickel' = copper-devil etymology). Mohs 5-5.5, SG 7.8. Forms in high-T reducing veins where Ni and As are present together; cooler / As-poor regimes push the chemistry to millerite (NiS) or annabergite (the supergene Ni arsenate). Type-locality habit at Cobalt, Ontario; also documented at Schneeberg (Saxony), Příbram (Czech), and Tunaberg (Sweden). Sources: research/minerals/research-nickeline.md (boss commit f2939da), Petruk 1971.",
       "scenarios": [
         "bisbee",
         "supergene_oxidation"
@@ -9084,7 +9084,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 8c-2 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. Ni+As required + reducing (O₂<0.6) + T 200-500°C with peak 300-450. Substrate preference: arsenopyrite (the paragenetic predecessor). Engine includes oxidative-dissolution branch that releases Ni²⁺ + AsO₄³⁻ to fluid, feeding the supergene annabergite cascade. Activates with Round 8c-1 Bisbee Ni=70 + As=8 chemistry; expected to fire in seed-42 Bisbee primary stages and supergene_oxidation supergene cascade. Mutual-priority dispatcher with millerite: when As>30 + T>200, nickeline takes priority (NiAs more stable than NiS at high-T As-saturation). Sources: Petruk 1971 (Co-Ni-Ag paragenesis), boss research file research/research-nickeline.md.",
+      "audit_status": "Round 8c-2 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. Ni+As required + reducing (O₂<0.6) + T 200-500°C with peak 300-450. Substrate preference: arsenopyrite (the paragenetic predecessor). Engine includes oxidative-dissolution branch that releases Ni²⁺ + AsO₄³⁻ to fluid, feeding the supergene annabergite cascade. Activates with Round 8c-1 Bisbee Ni=70 + As=8 chemistry; expected to fire in seed-42 Bisbee primary stages and supergene_oxidation supergene cascade. Mutual-priority dispatcher with millerite: when As>30 + T>200, nickeline takes priority (NiAs more stable than NiS at high-T As-saturation). Sources: Petruk 1971 (Co-Ni-Ag paragenesis), boss research file research/minerals/research-nickeline.md.",
       "class_color": "#7feb13"
     },
     "millerite": {
@@ -9117,7 +9117,7 @@
         }
       ],
       "class": "sulfide",
-      "description": "NiS — trigonal nickel sulfide, brass-yellow to bronze-yellow metallic. Mohs 3-3.5, the rare nickel mineral that grows as hair-thin acicular needles in geode cavities. Forms in lower-T regimes than nickeline (NiAs); when As is depleted and Ni + S remain, NiS takes the field. The capillary habit is so distinctive that 'millerite' is shorthand among collectors for any radiating-needle sulfide. Showcase localities: Halls Gap (Kentucky), Sterling Hill (NJ), Glamorgan (Wales). Sources: research/research-millerite.md (boss commit f2939da), Bayliss 1969 (Geochim. Cosmochim. Acta 33).",
+      "description": "NiS — trigonal nickel sulfide, brass-yellow to bronze-yellow metallic. Mohs 3-3.5, the rare nickel mineral that grows as hair-thin acicular needles in geode cavities. Forms in lower-T regimes than nickeline (NiAs); when As is depleted and Ni + S remain, NiS takes the field. The capillary habit is so distinctive that 'millerite' is shorthand among collectors for any radiating-needle sulfide. Showcase localities: Halls Gap (Kentucky), Sterling Hill (NJ), Glamorgan (Wales). Sources: research/minerals/research-millerite.md (boss commit f2939da), Bayliss 1969 (Geochim. Cosmochim. Acta 33).",
       "scenarios": [
         "bisbee",
         "supergene_oxidation"
@@ -9165,7 +9165,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 8c-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. Ni+S required + reducing (O₂<0.6) + T 100-400°C with peak 200-350. Mutual-exclusion gate with nickeline: when As>30 AND T>200, returns 0 (nickeline takes priority — NiAs more stable than NiS at high-T As-saturation). The capillary habit (hair-fine brass-yellow needles in radiating sprays) is the diagnostic morphology — Halls Gap KY, Sterling Hill NJ, Glamorgan Wales produce showcase specimens. Substrate preference: pyrite (the geological companion). Activates with Round 8c-1 Bisbee Ni=70 chemistry; expected to fire in supergene_oxidation when As is depleted from earlier scorodite/erythrite/annabergite. Sources: Bayliss 1969 (NiS-NiAs equilibria), boss research file research/research-millerite.md.",
+      "audit_status": "Round 8c-3 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. Ni+S required + reducing (O₂<0.6) + T 100-400°C with peak 200-350. Mutual-exclusion gate with nickeline: when As>30 AND T>200, returns 0 (nickeline takes priority — NiAs more stable than NiS at high-T As-saturation). The capillary habit (hair-fine brass-yellow needles in radiating sprays) is the diagnostic morphology — Halls Gap KY, Sterling Hill NJ, Glamorgan Wales produce showcase specimens. Substrate preference: pyrite (the geological companion). Activates with Round 8c-1 Bisbee Ni=70 chemistry; expected to fire in supergene_oxidation when As is depleted from earlier scorodite/erythrite/annabergite. Sources: Bayliss 1969 (NiS-NiAs equilibria), boss research file research/minerals/research-millerite.md.",
       "class_color": "#7feb13"
     },
     "cobaltite": {
@@ -9198,7 +9198,7 @@
         }
       ],
       "class": "sulfide",
-      "description": "CoAsS — orthorhombic cobalt sulfarsenide (pseudo-cubic, pyritohedral habit). Tin-white with diagnostic pinkish blush from surface Co oxidation, Mohs 5.5. The cobalt analog of arsenopyrite. The three-element gate (Co + As + S all required simultaneously) makes this rare; the Cobalt-Ontario type locality is one of the few places it forms in well-developed crystals. Indian jewellers used powdered cobaltite ('sehta') to make blue enamel on gold ornaments — the source of the first Co ever isolated from a non-arsenide mineral. Sources: research/research-cobaltite.md (boss commit f2939da), Bayliss 1968 (Mineral. Mag. 36, on cobaltite-arsenopyrite substitution).",
+      "description": "CoAsS — orthorhombic cobalt sulfarsenide (pseudo-cubic, pyritohedral habit). Tin-white with diagnostic pinkish blush from surface Co oxidation, Mohs 5.5. The cobalt analog of arsenopyrite. The three-element gate (Co + As + S all required simultaneously) makes this rare; the Cobalt-Ontario type locality is one of the few places it forms in well-developed crystals. Indian jewellers used powdered cobaltite ('sehta') to make blue enamel on gold ornaments — the source of the first Co ever isolated from a non-arsenide mineral. Sources: research/minerals/research-cobaltite.md (boss commit f2939da), Bayliss 1968 (Mineral. Mag. 36, on cobaltite-arsenopyrite substitution).",
       "scenarios": [
         "bisbee"
       ],
@@ -9246,7 +9246,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 8c-4 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. THREE-ELEMENT GATE engine: Co + As + S all required simultaneously at minimum thresholds (Co≥50, As≥100, S≥50). First three-element gate in the sim. Reducing (O₂<0.5) + T 300-600°C with peak 400-500. Substrate preference: arsenopyrite (the paragenetic predecessor). Habit variants: massive_granular (low σ, ore form), pyritohedral (mid σ, {210} striated faces — Cobalt Ontario diagnostic), reniform (high σ, botryoidal). Glaucodot series captured in narrator: Fe>100 in fluid yields '(Co,Fe)AsS' note — the iron-rich end of the cobaltite-glaucodot solid solution (Skutterud type). Engine includes oxidative-dissolution branch: when O₂>0.7, releases Co²⁺ + AsO₄³⁻ + SO₄²⁻ to fluid, feeding the existing erythrite engine downstream — this is THE primary source for the magenta-pink 'cobalt bloom' supergene cascade. Activates with Round 8c-1 Bisbee Co=80 + As=8 + S=150 chemistry; expected to fire in seed-42 Bisbee primary stage. Sources: Bayliss 1968 (cobaltite-arsenopyrite substitution), boss research file research/research-cobaltite.md.",
+      "audit_status": "Round 8c-4 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. THREE-ELEMENT GATE engine: Co + As + S all required simultaneously at minimum thresholds (Co≥50, As≥100, S≥50). First three-element gate in the sim. Reducing (O₂<0.5) + T 300-600°C with peak 400-500. Substrate preference: arsenopyrite (the paragenetic predecessor). Habit variants: massive_granular (low σ, ore form), pyritohedral (mid σ, {210} striated faces — Cobalt Ontario diagnostic), reniform (high σ, botryoidal). Glaucodot series captured in narrator: Fe>100 in fluid yields '(Co,Fe)AsS' note — the iron-rich end of the cobaltite-glaucodot solid solution (Skutterud type). Engine includes oxidative-dissolution branch: when O₂>0.7, releases Co²⁺ + AsO₄³⁻ + SO₄²⁻ to fluid, feeding the existing erythrite engine downstream — this is THE primary source for the magenta-pink 'cobalt bloom' supergene cascade. Activates with Round 8c-1 Bisbee Co=80 + As=8 + S=150 chemistry; expected to fire in seed-42 Bisbee primary stage. Sources: Bayliss 1968 (cobaltite-arsenopyrite substitution), boss research file research/minerals/research-cobaltite.md.",
       "class_color": "#7feb13"
     },
     "descloizite": {
@@ -9279,7 +9279,7 @@
         }
       ],
       "class": "phosphate",
-      "description": "Pb(Zn,Cu)VO₄(OH) — orthorhombic Pb-Zn vanadate, the Zn end of the descloizite-mottramite series. Cherry-red to brown-red, Mohs 3-3.5; the Tsumeb display standard. Forms in supergene oxidation zones where Pb-Zn sulfide ore (galena + sphalerite) has weathered AND V is delivered by groundwater (red-bed roll-front signature). Cu/Zn ratio dispatch: when Cu > Zn, mottramite (the olive-green Cu sibling) takes priority instead. Sources: research/research-descloizite.md (boss commit f2939da), Strunz 1959 (Tsumeb monograph).",
+      "description": "Pb(Zn,Cu)VO₄(OH) — orthorhombic Pb-Zn vanadate, the Zn end of the descloizite-mottramite series. Cherry-red to brown-red, Mohs 3-3.5; the Tsumeb display standard. Forms in supergene oxidation zones where Pb-Zn sulfide ore (galena + sphalerite) has weathered AND V is delivered by groundwater (red-bed roll-front signature). Cu/Zn ratio dispatch: when Cu > Zn, mottramite (the olive-green Cu sibling) takes priority instead. Sources: research/minerals/research-descloizite.md (boss commit f2939da), Strunz 1959 (Tsumeb monograph).",
       "scenarios": [
         "supergene_oxidation"
       ],
@@ -9369,7 +9369,7 @@
         }
       ],
       "class": "phosphate",
-      "description": "Pb(Cu,Zn)VO₄(OH) — orthorhombic Pb-Cu vanadate, the Cu end of the descloizite-mottramite series. Olive-green to yellowish-green from the Cu chromophore (distinguishing it at a glance from cherry-red descloizite), Mohs 3-3.5. Type locality: Mottram St. Andrew, Cheshire (England), 1876. Tsumeb produces the museum-grade specimens. Cu/Zn ratio dispatch: when Zn ≥ Cu, descloizite takes priority. Sources: research/research-mottramite.md (boss commit f2939da).",
+      "description": "Pb(Cu,Zn)VO₄(OH) — orthorhombic Pb-Cu vanadate, the Cu end of the descloizite-mottramite series. Olive-green to yellowish-green from the Cu chromophore (distinguishing it at a glance from cherry-red descloizite), Mohs 3-3.5. Type locality: Mottram St. Andrew, Cheshire (England), 1876. Tsumeb produces the museum-grade specimens. Cu/Zn ratio dispatch: when Zn ≥ Cu, descloizite takes priority. Sources: research/minerals/research-mottramite.md (boss commit f2939da).",
       "scenarios": [
         "supergene_oxidation"
       ],
@@ -9438,7 +9438,7 @@
         }
       ],
       "class": "molybdate",
-      "description": "PbWO₄ — monoclinic lead tungstate, RARE. Same composition as stolzite but a different crystal system; stolzite (tetragonal) is favored ~90% of the time when both can form (kinetic-preference dispatcher in check_nucleation reflects natural rarity). Honey-yellow to brownish-yellow tabular crystals, Mohs 2.5-3, perfect {100} cleavage. Type locality: Broken Hill, NSW, Australia. Sources: research/research-raspite.md (boss commit f2939da).",
+      "description": "PbWO₄ — monoclinic lead tungstate, RARE. Same composition as stolzite but a different crystal system; stolzite (tetragonal) is favored ~90% of the time when both can form (kinetic-preference dispatcher in check_nucleation reflects natural rarity). Honey-yellow to brownish-yellow tabular crystals, Mohs 2.5-3, perfect {100} cleavage. Type locality: Broken Hill, NSW, Australia. Sources: research/minerals/research-raspite.md (boss commit f2939da).",
       "scenarios": [
         "supergene_oxidation",
         "bisbee"
@@ -9512,7 +9512,7 @@
         }
       ],
       "class": "molybdate",
-      "description": "PbWO₄ — tetragonal lead tungstate, the lead analog of scheelite (CaWO₄). Honey-yellow to orange-yellow Mohs 2.5-3, the more common of the two PbWO₄ polymorphs (~90% of natural occurrences vs raspite's monoclinic ~10%). Type locality: Cínovec (Czech Republic). Broken Hill (Australia) and Tsumeb (Namibia) produce the museum specimens — sharp honey-yellow dipyramids. Sources: research/research-stolzite.md (boss commit f2939da).",
+      "description": "PbWO₄ — tetragonal lead tungstate, the lead analog of scheelite (CaWO₄). Honey-yellow to orange-yellow Mohs 2.5-3, the more common of the two PbWO₄ polymorphs (~90% of natural occurrences vs raspite's monoclinic ~10%). Type locality: Cínovec (Czech Republic). Broken Hill (Australia) and Tsumeb (Namibia) produce the museum specimens — sharp honey-yellow dipyramids. Sources: research/minerals/research-stolzite.md (boss commit f2939da).",
       "scenarios": [
         "supergene_oxidation",
         "bisbee"
@@ -9593,7 +9593,7 @@
         }
       ],
       "class": "arsenate",
-      "description": "Cu₂AsO₄(OH) — orthorhombic Cu arsenate, the Cu end of the olivenite-adamite series. Olive-green to grayish-green (the Cu chromophore — olive in name and color), Mohs 3-4. Forms in Cu-rich supergene oxidation zones; Cornwall is the type locality, with Tsumeb and Bisbee producing showcase modern specimens. Cu/Zn ratio dispatch: when Zn > Cu, adamite (the Zn-end-member of the same arsenate structure) takes priority. Sources: research/research-olivenite.md (boss commit f2939da).",
+      "description": "Cu₂AsO₄(OH) — orthorhombic Cu arsenate, the Cu end of the olivenite-adamite series. Olive-green to grayish-green (the Cu chromophore — olive in name and color), Mohs 3-4. Forms in Cu-rich supergene oxidation zones; Cornwall is the type locality, with Tsumeb and Bisbee producing showcase modern specimens. Cu/Zn ratio dispatch: when Zn > Cu, adamite (the Zn-end-member of the same arsenate structure) takes priority. Sources: research/minerals/research-olivenite.md (boss commit f2939da).",
       "scenarios": [
         "supergene_oxidation",
         "bisbee"
@@ -10038,7 +10038,7 @@
         }
       ],
       "class": "sulfate",
-      "description": "CuSO₄·5H₂O — the bright sky-blue water-soluble Cu sulfate, the [Cu(H₂O)₅]²⁺ chromophore one of the most intensely-colored minerals. Triclinic (P1̄), Mohs 2.5, perfect {110} cleavage. The most water-soluble mineral in the sim — re-dissolves when fluid salinity drops below 4 OR pH rises above 5 (per-step hook in VugSimulator.run_step). Geologically authentic: every chalcanthite specimen is a temporary victory over entropy. The terminal phase of the Cu-sulfate oxidation cascade (chalcopyrite → bornite → chalcocite → covellite → cuprite → brochantite → antlerite → chalcanthite). Forms in arid strongly-oxidizing very-acidic salt-concentrated drainage: Chuquicamata mine walls (Chile), Rio Tinto AMD seeps (Spain), Atacama desert evaporite crusts. Most 'natural' specimens on the market are lab-grown. Sources: research/research-chalcanthite.md (boss commit f2939da), Bandy 1938 (Am. Mineral. 23).",
+      "description": "CuSO₄·5H₂O — the bright sky-blue water-soluble Cu sulfate, the [Cu(H₂O)₅]²⁺ chromophore one of the most intensely-colored minerals. Triclinic (P1̄), Mohs 2.5, perfect {110} cleavage. The most water-soluble mineral in the sim — re-dissolves when fluid salinity drops below 4 OR pH rises above 5 (per-step hook in VugSimulator.run_step). Geologically authentic: every chalcanthite specimen is a temporary victory over entropy. The terminal phase of the Cu-sulfate oxidation cascade (chalcopyrite → bornite → chalcocite → covellite → cuprite → brochantite → antlerite → chalcanthite). Forms in arid strongly-oxidizing very-acidic salt-concentrated drainage: Chuquicamata mine walls (Chile), Rio Tinto AMD seeps (Spain), Atacama desert evaporite crusts. Most 'natural' specimens on the market are lab-grown. Sources: research/minerals/research-chalcanthite.md (boss commit f2939da), Bandy 1938 (Am. Mineral. 23).",
       "scenarios": [
         "bisbee",
         "supergene_oxidation"
@@ -10123,7 +10123,7 @@
         }
       ],
       "class": "carbonate",
-      "description": "(Cu,Zn)₂(CO₃)(OH)₂ — monoclinic supergene carbonate, the Cu-dominant member of the rosasite-aurichalcite pair. Velvety blue-green botryoidal spheres on weathered Cu-Zn sulfide deposits; the diagnostic habit is sky-blue spherical aggregates on red limonite (Mapimi, Mexico). Forms when chalcopyrite + sphalerite weather together at the supergene front, releasing Cu²⁺ + Zn²⁺ + CO₃²⁻ into shallow groundwater that precipitates the carbonate at near-neutral pH. The Cu:Zn ratio in the parent fluid is the key control: rosasite forms when Cu/(Cu+Zn) > 0.5; aurichalcite forms when the ratio inverts — same broth, different outcome. Mohs 4, blue-green streak, splintery fracture. Type locality: Rosas Mine, Sardinia (1908). Source: Pinch & Wilson 1977 (Tsumeb monograph); research/research-rosasite.md.",
+      "description": "(Cu,Zn)₂(CO₃)(OH)₂ — monoclinic supergene carbonate, the Cu-dominant member of the rosasite-aurichalcite pair. Velvety blue-green botryoidal spheres on weathered Cu-Zn sulfide deposits; the diagnostic habit is sky-blue spherical aggregates on red limonite (Mapimi, Mexico). Forms when chalcopyrite + sphalerite weather together at the supergene front, releasing Cu²⁺ + Zn²⁺ + CO₃²⁻ into shallow groundwater that precipitates the carbonate at near-neutral pH. The Cu:Zn ratio in the parent fluid is the key control: rosasite forms when Cu/(Cu+Zn) > 0.5; aurichalcite forms when the ratio inverts — same broth, different outcome. Mohs 4, blue-green streak, splintery fracture. Type locality: Rosas Mine, Sardinia (1908). Source: Pinch & Wilson 1977 (Tsumeb monograph); research/minerals/research-rosasite.md.",
       "scenarios": [
         "supergene_oxidation",
         "bisbee"
@@ -10185,7 +10185,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 9a (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. First mineral with the broth-ratio branching mechanic: supersaturation_rosasite returns 0 when Cu/(Cu+Zn) < 0.5, locking the species to Cu-dominant fluid. Mirror of aurichalcite — same parent fluid, opposite outcome based on ratio. Habit variants: botryoidal (default, the diagnostic Mapimi habit), acicular_radiating (low T + high σ delicate sprays), encrusting (low σ thin crust). Sources: research/research-rosasite.md (boss commit 3bfdf4a); Pinch & Wilson 1977 (Tsumeb monograph).",
+      "audit_status": "Round 9a (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. First mineral with the broth-ratio branching mechanic: supersaturation_rosasite returns 0 when Cu/(Cu+Zn) < 0.5, locking the species to Cu-dominant fluid. Mirror of aurichalcite — same parent fluid, opposite outcome based on ratio. Habit variants: botryoidal (default, the diagnostic Mapimi habit), acicular_radiating (low T + high σ delicate sprays), encrusting (low σ thin crust). Sources: research/minerals/research-rosasite.md (boss commit 3bfdf4a); Pinch & Wilson 1977 (Tsumeb monograph).",
       "class_color": "#eb7f13",
       "test_cases": [
         {
@@ -10280,7 +10280,7 @@
         }
       ],
       "class": "carbonate",
-      "description": "(Zn,Cu)₅(CO₃)₂(OH)₆ — monoclinic supergene carbonate, the Zn-dominant mirror of rosasite. Delicate pale blue-green tufted divergent sprays — high birefringence makes them shimmer under cross-polarized light. Forms in the same supergene parent fluid as rosasite (Cu + Zn + CO₃ + O₂) but precipitates only when Zn/(Cu+Zn) > 0.5; the two species are typically intergrown, separated only by ratio. Mohs 2 (scratches with a fingernail), light blue streak. Named after Plato's mythical orichalcum — the lost gold-alloy of Atlantis. Type locality: Loktevskoye Mine, Western Siberia (1839); the most aesthetic specimens come from Mapimi, Mexico. Source: research/research-aurichalcite.md (boss commit 3bfdf4a).",
+      "description": "(Zn,Cu)₅(CO₃)₂(OH)₆ — monoclinic supergene carbonate, the Zn-dominant mirror of rosasite. Delicate pale blue-green tufted divergent sprays — high birefringence makes them shimmer under cross-polarized light. Forms in the same supergene parent fluid as rosasite (Cu + Zn + CO₃ + O₂) but precipitates only when Zn/(Cu+Zn) > 0.5; the two species are typically intergrown, separated only by ratio. Mohs 2 (scratches with a fingernail), light blue streak. Named after Plato's mythical orichalcum — the lost gold-alloy of Atlantis. Type locality: Loktevskoye Mine, Western Siberia (1839); the most aesthetic specimens come from Mapimi, Mexico. Source: research/minerals/research-aurichalcite.md (boss commit 3bfdf4a).",
       "scenarios": [
         "supergene_oxidation",
         "bisbee"
@@ -10342,7 +10342,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 9a (Apr 2026). Mirror of rosasite in the broth-ratio branching pair. Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. supersaturation_aurichalcite returns 0 when Zn/(Cu+Zn) < 0.5 — same parent fluid as rosasite, opposite outcome based on ratio. Habit variants: tufted_spray (default, the diagnostic delicate Mapimi habit), radiating_columnar (high σ spheres), encrusting (low σ laminar crust). Source: research/research-aurichalcite.md (boss commit 3bfdf4a); Loktevskoye type locality 1839.",
+      "audit_status": "Round 9a (Apr 2026). Mirror of rosasite in the broth-ratio branching pair. Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. supersaturation_aurichalcite returns 0 when Zn/(Cu+Zn) < 0.5 — same parent fluid as rosasite, opposite outcome based on ratio. Habit variants: tufted_spray (default, the diagnostic delicate Mapimi habit), radiating_columnar (high σ spheres), encrusting (low σ laminar crust). Source: research/minerals/research-aurichalcite.md (boss commit 3bfdf4a); Loktevskoye type locality 1839.",
       "late_stage_propensity": 0.6,
       "_late_stage_note": "Proposal C (2026-05): propensity:0.6. Cu-Zn carbonate, typical late-stage acicular crust in oxidation zones (Ojuela, Mapimi).",
       "class_color": "#eb7f13",
@@ -10446,7 +10446,7 @@
         }
       ],
       "class": "phosphate",
-      "description": "Cu(UO₂)₂(PO₄)₂·12H₂O — tetragonal uranyl phosphate, the P-branch of the autunite-group anion-competition trio (with zeunerite for AsO₄³⁻ and carnotite for VO₄³⁻ the other branches). Forms emerald-green to apple-green thin tabular plates that look like green mica; strongly radioactive (U⁶⁺ in the lattice), notably non-fluorescent (Cu²⁺ quenches uranyl emission). Forms at the supergene oxidation front when uraninite weathers to mobile U⁶⁺ and meets phosphate-bearing groundwater alongside Cu²⁺ — torbernite wins the cation race when P/(P+As) > 0.5 in the local fluid. Mohs 2-2.5, dehydrates irreversibly to metatorbernite (8 H₂O) above ~75°C. Type locality: Schneeberg, Saxony (Ore Mountains). Sources: Pinch & Wilson 1977 monographs; research/research-torbernite.md (boss commit 3bfdf4a).",
+      "description": "Cu(UO₂)₂(PO₄)₂·12H₂O — tetragonal uranyl phosphate, the P-branch of the autunite-group anion-competition trio (with zeunerite for AsO₄³⁻ and carnotite for VO₄³⁻ the other branches). Forms emerald-green to apple-green thin tabular plates that look like green mica; strongly radioactive (U⁶⁺ in the lattice), notably non-fluorescent (Cu²⁺ quenches uranyl emission). Forms at the supergene oxidation front when uraninite weathers to mobile U⁶⁺ and meets phosphate-bearing groundwater alongside Cu²⁺ — torbernite wins the cation race when P/(P+As) > 0.5 in the local fluid. Mohs 2-2.5, dehydrates irreversibly to metatorbernite (8 H₂O) above ~75°C. Type locality: Schneeberg, Saxony (Ore Mountains). Sources: Pinch & Wilson 1977 monographs; research/minerals/research-torbernite.md (boss commit 3bfdf4a).",
       "scenarios": [
         "supergene_oxidation"
       ],
@@ -10506,7 +10506,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 9b (Apr 2026), updated 9c (Apr 2026), updated 9d (May 2026): denominator widened from P+As to P+As+V so V-rich fluid now properly blocks torbernite (carnotite gets it instead). 9d added a symmetric Cu/(Cu+Ca) > 0.5 cation gate to fork against autunite (Ca-cation analog). First mineral with the anion-competition mechanic — three-way fork over the U⁶⁺ cation between PO₄³⁻ (torbernite/autunite), AsO₄³⁻ (zeunerite), and VO₄³⁻ (carnotite). supersaturation_torbernite returns 0 when P/(P+As+V) < 0.5 OR when Cu/(Cu+Ca) < 0.5. Habit variants: tabular_plates (default Schneeberg), micaceous_book (high σ stacks), encrusting (low σ powdery crust). Source: research/research-torbernite.md + research/research-uraninite.md §164-178.",
+      "audit_status": "Round 9b (Apr 2026), updated 9c (Apr 2026), updated 9d (May 2026): denominator widened from P+As to P+As+V so V-rich fluid now properly blocks torbernite (carnotite gets it instead). 9d added a symmetric Cu/(Cu+Ca) > 0.5 cation gate to fork against autunite (Ca-cation analog). First mineral with the anion-competition mechanic — three-way fork over the U⁶⁺ cation between PO₄³⁻ (torbernite/autunite), AsO₄³⁻ (zeunerite), and VO₄³⁻ (carnotite). supersaturation_torbernite returns 0 when P/(P+As+V) < 0.5 OR when Cu/(Cu+Ca) < 0.5. Habit variants: tabular_plates (default Schneeberg), micaceous_book (high σ stacks), encrusting (low σ powdery crust). Source: research/minerals/research-torbernite.md + research/minerals/research-uraninite.md §164-178.",
       "class_color": "#13eb7f",
       "test_cases": [
         {
@@ -10656,7 +10656,7 @@
         }
       ],
       "class": "phosphate",
-      "description": "Cu(UO₂)₂(AsO₄)₂·(10-16)H₂O — tetragonal uranyl arsenate, the As-branch of the autunite-group anion-competition trio. Visually almost indistinguishable from torbernite — same emerald-green color, same square tabular habit, same micaceous cleavage — distinguishable only by chemistry. The arsenic is the giveaway: zeunerite localities are almost always former mining districts with arsenic-bearing primary ores (arsenopyrite, tennantite). Forms at the supergene oxidation front when uraninite weathers alongside As-rich primary sulfides; zeunerite wins the anion race when As/(P+As) > 0.5. Mohs 2.5; dehydrates irreversibly to metazeunerite (8 H₂O) above ~75°C; non-fluorescent (Cu²⁺ quenches). Type locality: Schneeberg, Saxony (1872). Sources: Pinch & Wilson 1977; research/research-zeunerite.md.",
+      "description": "Cu(UO₂)₂(AsO₄)₂·(10-16)H₂O — tetragonal uranyl arsenate, the As-branch of the autunite-group anion-competition trio. Visually almost indistinguishable from torbernite — same emerald-green color, same square tabular habit, same micaceous cleavage — distinguishable only by chemistry. The arsenic is the giveaway: zeunerite localities are almost always former mining districts with arsenic-bearing primary ores (arsenopyrite, tennantite). Forms at the supergene oxidation front when uraninite weathers alongside As-rich primary sulfides; zeunerite wins the anion race when As/(P+As) > 0.5. Mohs 2.5; dehydrates irreversibly to metazeunerite (8 H₂O) above ~75°C; non-fluorescent (Cu²⁺ quenches). Type locality: Schneeberg, Saxony (1872). Sources: Pinch & Wilson 1977; research/minerals/research-zeunerite.md.",
       "scenarios": [
         "supergene_oxidation"
       ],
@@ -10717,7 +10717,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 9b (Apr 2026), updated 9c (Apr 2026), updated 9e (May 2026): denominator widened from P+As to P+As+V so V-rich fluid now properly blocks zeunerite (carnotite gets it instead). 9e added a Cu/(Cu+Ca) > 0.5 cation gate to fork against uranospinite (Ca-cation analog). Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. supersaturation_zeunerite returns 0 when As/(P+As+V) < 0.5 OR when Cu/(Cu+Ca) < 0.5. Isostructural with torbernite (Schneeberg pair); shares all habit-selection logic. Sources: research/research-zeunerite.md + research/research-uranospinite.md.",
+      "audit_status": "Round 9b (Apr 2026), updated 9c (Apr 2026), updated 9e (May 2026): denominator widened from P+As to P+As+V so V-rich fluid now properly blocks zeunerite (carnotite gets it instead). 9e added a Cu/(Cu+Ca) > 0.5 cation gate to fork against uranospinite (Ca-cation analog). Engine + supersaturation + nucleation + narrator complete in vugg.py + index.html. supersaturation_zeunerite returns 0 when As/(P+As+V) < 0.5 OR when Cu/(Cu+Ca) < 0.5. Isostructural with torbernite (Schneeberg pair); shares all habit-selection logic. Sources: research/minerals/research-zeunerite.md + research/minerals/research-uranospinite.md.",
       "class_color": "#13eb7f",
       "test_cases": [
         {
@@ -10867,7 +10867,7 @@
         }
       ],
       "class": "phosphate",
-      "description": "K₂(UO₂)₂(VO₄)₂·3H₂O — monoclinic uranyl vanadate, the V-branch of the autunite-group anion-competition trio (with torbernite for phosphate and zeunerite for arsenate). Bright canary-yellow earthy crusts on sandstone — the mineral that paints the desert. One percent of carnotite by weight is enough to stain an entire Jurassic outcrop the color of school buses, which is how the Colorado Plateau uranium districts were prospected before instruments. Formed where oxidizing groundwater carries U⁶⁺ + V⁵⁺ + K⁺ together at the supergene front, often concentrated around organic reducing traps (petrified wood, carbonaceous shales). Mohs ~2 (soft, earthy), strongly radioactive, non-fluorescent (vanadate matrix quenches the uranyl emission). Type locality: Roc Creek, Montrose County, Colorado (1899). Sources: research/research-carnotite.md (boss commit 3bfdf4a); Colorado Plateau uranium-vanadium roll-front geology.",
+      "description": "K₂(UO₂)₂(VO₄)₂·3H₂O — monoclinic uranyl vanadate, the V-branch of the autunite-group anion-competition trio (with torbernite for phosphate and zeunerite for arsenate). Bright canary-yellow earthy crusts on sandstone — the mineral that paints the desert. One percent of carnotite by weight is enough to stain an entire Jurassic outcrop the color of school buses, which is how the Colorado Plateau uranium districts were prospected before instruments. Formed where oxidizing groundwater carries U⁶⁺ + V⁵⁺ + K⁺ together at the supergene front, often concentrated around organic reducing traps (petrified wood, carbonaceous shales). Mohs ~2 (soft, earthy), strongly radioactive, non-fluorescent (vanadate matrix quenches the uranyl emission). Type locality: Roc Creek, Montrose County, Colorado (1899). Sources: research/minerals/research-carnotite.md (boss commit 3bfdf4a); Colorado Plateau uranium-vanadium roll-front geology.",
       "scenarios": [
         "supergene_oxidation",
         "radioactive_pegmatite"
@@ -10929,7 +10929,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 9c (Apr 2026), updated 9e (May 2026). V-branch of the uranyl anion-competition trio (with torbernite for P-branch, zeunerite for As-branch, both shipped in 9b). 9e added a K/(K+Ca) > 0.5 cation gate to fork against tyuyamunite (Ca-cation analog). Different cation (K instead of Cu), different crystal system (monoclinic instead of tetragonal), different habit (canary-yellow earthy crusts instead of emerald-green tabular plates), same anion-competition mechanic. supersaturation_carnotite returns 0 when V/(P+As+V) < 0.5 OR when K/(K+Ca) < 0.5. No shipped scenario has the K+U+V+low-T+oxidizing conjunction with K-dominant Ca, so carnotite + tyuyamunite are both content-gap minerals (same status as 9b/9d). Engine + test_cases verified. Sources: research/research-carnotite.md + research/research-tyuyamunite.md; Colorado Plateau roll-front geology; Roc Creek type locality (1899).",
+      "audit_status": "Round 9c (Apr 2026), updated 9e (May 2026). V-branch of the uranyl anion-competition trio (with torbernite for P-branch, zeunerite for As-branch, both shipped in 9b). 9e added a K/(K+Ca) > 0.5 cation gate to fork against tyuyamunite (Ca-cation analog). Different cation (K instead of Cu), different crystal system (monoclinic instead of tetragonal), different habit (canary-yellow earthy crusts instead of emerald-green tabular plates), same anion-competition mechanic. supersaturation_carnotite returns 0 when V/(P+As+V) < 0.5 OR when K/(K+Ca) < 0.5. No shipped scenario has the K+U+V+low-T+oxidizing conjunction with K-dominant Ca, so carnotite + tyuyamunite are both content-gap minerals (same status as 9b/9d). Engine + test_cases verified. Sources: research/minerals/research-carnotite.md + research/minerals/research-tyuyamunite.md; Colorado Plateau roll-front geology; Roc Creek type locality (1899).",
       "class_color": "#13eb7f",
       "test_cases": [
         {
@@ -11151,7 +11151,7 @@
         }
       ],
       "class": "phosphate",
-      "description": "Ca(UO₂)₂(PO₄)₂·11H₂O — tetragonal uranyl phosphate, the Ca-cation analog of torbernite. Bright canary-yellow tabular plates on the same {001} habit, but where torbernite's Cu²⁺ quenches the uranyl emission, autunite's Ca²⁺ does not — under longwave UV (365nm) it glows intense apple-green, one of the brightest fluorescent species known. Round 9d cation-fork mechanic: same parent fluid as torbernite (U + P + supergene-T + oxidizing), differentiated by Cu/(Cu+Ca) ratio. Ca dominates groundwater everywhere except in actively-mined Cu districts, so autunite is far more common in nature than torbernite (which gets all the museum attention). Mohs 2-2.5; dehydrates irreversibly to meta-autunite (8 H₂O) above ~80°C. Type locality: Saint-Symphorien, Autun, France (Adrien Brongniart, 1852). Sources: Pinch & Wilson 1977; research/research-uraninite.md §164-178 (paragenetic chain).",
+      "description": "Ca(UO₂)₂(PO₄)₂·11H₂O — tetragonal uranyl phosphate, the Ca-cation analog of torbernite. Bright canary-yellow tabular plates on the same {001} habit, but where torbernite's Cu²⁺ quenches the uranyl emission, autunite's Ca²⁺ does not — under longwave UV (365nm) it glows intense apple-green, one of the brightest fluorescent species known. Round 9d cation-fork mechanic: same parent fluid as torbernite (U + P + supergene-T + oxidizing), differentiated by Cu/(Cu+Ca) ratio. Ca dominates groundwater everywhere except in actively-mined Cu districts, so autunite is far more common in nature than torbernite (which gets all the museum attention). Mohs 2-2.5; dehydrates irreversibly to meta-autunite (8 H₂O) above ~80°C. Type locality: Saint-Symphorien, Autun, France (Adrien Brongniart, 1852). Sources: Pinch & Wilson 1977; research/minerals/research-uraninite.md §164-178 (paragenetic chain).",
       "scenarios": [
         "supergene_oxidation"
       ],
@@ -11231,7 +11231,7 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "Round 9d (May 2026): Ca-cation analog of torbernite, completing the cation-fork generalization on the P-branch of the uranyl-anion-competition mechanic (9b/9c was the anion fork P-vs-As-vs-V; 9d is the cation fork Cu-vs-Ca on the P-branch alone). supersaturation_autunite returns 0 when Ca/(Cu+Ca) < 0.5 OR when P/(P+As+V) < 0.5. supersaturation_torbernite gains a symmetric Cu/(Cu+Ca) > 0.5 gate (was Cu>=5 only). Autunite is the geologically-default uranyl phosphate (Ca >>> Cu in groundwater); torbernite is the special case (Cu-dominant fluid in mining districts). Habit variants mirror torbernite (tabular_plates/micaceous_book/encrusting). Source: research/research-uraninite.md §Variants for Game §4 (boss canonical 626bb22, May 2026). 2026-05-07 backfill from research-autunite.md: added 5 color rules (lemon_yellow default, greenish_yellow Cu trace, pale_green near fork, sulfur_yellow thick crystal, dull_meta dehydration), Cu trace ingredient, Fe fluorescence quencher, meta-autunite II reaction note.",
+      "audit_status": "Round 9d (May 2026): Ca-cation analog of torbernite, completing the cation-fork generalization on the P-branch of the uranyl-anion-competition mechanic (9b/9c was the anion fork P-vs-As-vs-V; 9d is the cation fork Cu-vs-Ca on the P-branch alone). supersaturation_autunite returns 0 when Ca/(Cu+Ca) < 0.5 OR when P/(P+As+V) < 0.5. supersaturation_torbernite gains a symmetric Cu/(Cu+Ca) > 0.5 gate (was Cu>=5 only). Autunite is the geologically-default uranyl phosphate (Ca >>> Cu in groundwater); torbernite is the special case (Cu-dominant fluid in mining districts). Habit variants mirror torbernite (tabular_plates/micaceous_book/encrusting). Source: research/minerals/research-uraninite.md §Variants for Game §4 (boss canonical 626bb22, May 2026). 2026-05-07 backfill from research-autunite.md: added 5 color rules (lemon_yellow default, greenish_yellow Cu trace, pale_green near fork, sulfur_yellow thick crystal, dull_meta dehydration), Cu trace ingredient, Fe fluorescence quencher, meta-autunite II reaction note.",
       "class_color": "#13eb7f",
       "test_cases": [
         {
@@ -11381,7 +11381,7 @@
         }
       ],
       "class": "phosphate",
-      "description": "Ca(UO₂)₂(VO₄)₂·5-8H₂O — orthorhombic Ca-uranyl vanadate, the cation analog of carnotite. Forms by the same mechanism (oxidizing groundwater + uraninite weathering + V-bearing fluid) but wins when Ca/(K+Ca) > 0.5 — the geological-default cation in sandstone groundwater. The two species are commonly intergrown in Colorado Plateau and Tyuya-Muyun deposits, with Britannica noting they are interconvertible by cation exchange. Canary-yellow earthy crusts staining sandstone, weakly-to-moderately fluorescent yellow-green LW UV (vanadate matrix dampens emission slightly even with Ca-cation; cleaner than carnotite's yellow but not as bright as autunite/uranospinite). Mohs 1.5-2, dehydrates readily to metatyuyamunite (·3-5H₂O) at room T in dry storage. Type locality: Tyuya-Muyun, Fergana Valley, Kyrgyzstan (Nenadkevich 1912). Source: research/research-tyuyamunite.md (implementation-grade draft, 2026-05-01); cation-fork mechanic mirrors carnotite + the Round 9d torbernite/autunite pair.",
+      "description": "Ca(UO₂)₂(VO₄)₂·5-8H₂O — orthorhombic Ca-uranyl vanadate, the cation analog of carnotite. Forms by the same mechanism (oxidizing groundwater + uraninite weathering + V-bearing fluid) but wins when Ca/(K+Ca) > 0.5 — the geological-default cation in sandstone groundwater. The two species are commonly intergrown in Colorado Plateau and Tyuya-Muyun deposits, with Britannica noting they are interconvertible by cation exchange. Canary-yellow earthy crusts staining sandstone, weakly-to-moderately fluorescent yellow-green LW UV (vanadate matrix dampens emission slightly even with Ca-cation; cleaner than carnotite's yellow but not as bright as autunite/uranospinite). Mohs 1.5-2, dehydrates readily to metatyuyamunite (·3-5H₂O) at room T in dry storage. Type locality: Tyuya-Muyun, Fergana Valley, Kyrgyzstan (Nenadkevich 1912). Source: research/minerals/research-tyuyamunite.md (implementation-grade draft, 2026-05-01); cation-fork mechanic mirrors carnotite + the Round 9d torbernite/autunite pair.",
       "scenarios": [
         "supergene_oxidation"
       ],
@@ -11420,7 +11420,7 @@
         "threshold_ppm": 0,
         "color": "yellow_green_LW_weak_to_moderate",
         "quencher": "vanadate matrix (partial)",
-        "status": "weakly to moderately fluorescent — Ca²⁺ doesn't quench like Cu²⁺ would, but the vanadate matrix damps the uranyl emission via vibrational coupling (same effect that makes carnotite weakly fluorescent). Brighter than carnotite, dimmer than autunite/uranospinite. Source: research/research-tyuyamunite.md."
+        "status": "weakly to moderately fluorescent — Ca²⁺ doesn't quench like Cu²⁺ would, but the vanadate matrix damps the uranyl emission via vibrational coupling (same effect that makes carnotite weakly fluorescent). Brighter than carnotite, dimmer than autunite/uranospinite. Source: research/minerals/research-tyuyamunite.md."
       },
       "_twin_laws_note": "Intentionally empty — tyuyamunite (Ca(UO₂)₂(VO₄)₂·5-8H₂O, orthorhombic Pnnm) habit code 'earthy_crust' signals non-euhedral aggregate. Typical occurrence is canary-yellow earthy coatings on Colorado-Plateau sandstone, not individual tabular crystals. No documented growth twinning at this habit scale. v138 phosphate batch.",
       "twin_laws": [],
@@ -11447,7 +11447,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 9e (May 2026): Ca-cation analog of carnotite, completing the cation+anion fork on the V-branch (mirror of how 9d's autunite paired with torbernite on the P-branch). supersaturation_tyuyamunite gates on Ca/(K+Ca) > 0.5 + V/(P+As+V) > 0.5; supersaturation_carnotite gains a symmetric K/(K+Ca) > 0.5 cation gate. Habit variants mirror carnotite (tabular_plates rare, earthy_crust default, powdery_disseminated low-σ). Source: research/research-tyuyamunite.md.",
+      "audit_status": "Round 9e (May 2026): Ca-cation analog of carnotite, completing the cation+anion fork on the V-branch (mirror of how 9d's autunite paired with torbernite on the P-branch). supersaturation_tyuyamunite gates on Ca/(K+Ca) > 0.5 + V/(P+As+V) > 0.5; supersaturation_carnotite gains a symmetric K/(K+Ca) > 0.5 cation gate. Habit variants mirror carnotite (tabular_plates rare, earthy_crust default, powdery_disseminated low-σ). Source: research/minerals/research-tyuyamunite.md.",
       "class_color": "#13eb7f",
       "test_cases": [
         {
@@ -11597,7 +11597,7 @@
         }
       ],
       "class": "phosphate",
-      "description": "Ca(UO₂)₂(AsO₄)₂·10H₂O — tetragonal Ca-uranyl arsenate, the autunite-group cation analog of zeunerite. Same parent fluid as zeunerite (U + As + supergene-T + oxidizing) but wins when Ca/(Cu+Ca) > 0.5 — typically when Cu has been depleted from the local fluid but As is still around. Strongly fluorescent yellow-green LW UV — Ca²⁺ doesn't quench like Cu²⁺ does in zeunerite, putting uranospinite in the same 'bright fluorescer' tier as autunite (slightly dampened by the heavier As-anion vibrational coupling). Tabular yellow plates that look like a yellow autunite, with the As content as the chemistry giveaway. Mohs 2-3, dehydrates readily to metauranospinite. Type locality: Walpurgis Flacher vein, Weisser Hirsch Mine, Schneeberg, Saxony (Weisbach 1873). Sources: research/research-uranospinite.md (implementation-grade draft, 2026-05-01); MSA Handbook of Mineralogy.",
+      "description": "Ca(UO₂)₂(AsO₄)₂·10H₂O — tetragonal Ca-uranyl arsenate, the autunite-group cation analog of zeunerite. Same parent fluid as zeunerite (U + As + supergene-T + oxidizing) but wins when Ca/(Cu+Ca) > 0.5 — typically when Cu has been depleted from the local fluid but As is still around. Strongly fluorescent yellow-green LW UV — Ca²⁺ doesn't quench like Cu²⁺ does in zeunerite, putting uranospinite in the same 'bright fluorescer' tier as autunite (slightly dampened by the heavier As-anion vibrational coupling). Tabular yellow plates that look like a yellow autunite, with the As content as the chemistry giveaway. Mohs 2-3, dehydrates readily to metauranospinite. Type locality: Walpurgis Flacher vein, Weisser Hirsch Mine, Schneeberg, Saxony (Weisbach 1873). Sources: research/minerals/research-uranospinite.md (implementation-grade draft, 2026-05-01); MSA Handbook of Mineralogy.",
       "scenarios": [
         "supergene_oxidation"
       ],
@@ -11635,7 +11635,7 @@
         "threshold_ppm": 0,
         "color": "bright_yellow_green_LW",
         "quencher": null,
-        "status": "strong fluorescence — Ca²⁺ doesn't quench uranyl emission like Cu²⁺ does in zeunerite. Slightly dimmer than autunite (the heavier As-anion absorbs some emission via vibrational coupling) but still in the 'bright' tier alongside autunite. Source: research/research-uranospinite.md."
+        "status": "strong fluorescence — Ca²⁺ doesn't quench uranyl emission like Cu²⁺ does in zeunerite. Slightly dimmer than autunite (the heavier As-anion absorbs some emission via vibrational coupling) but still in the 'bright' tier alongside autunite. Source: research/minerals/research-uranospinite.md."
       },
       "twin_laws": [
         {
@@ -11670,7 +11670,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 9e (May 2026): Ca-cation analog of zeunerite, completing the cation+anion fork on the As-branch (mirror of how 9d's autunite paired with torbernite on the P-branch). supersaturation_uranospinite gates on Ca/(Cu+Ca) > 0.5 + As/(P+As+V) > 0.5; supersaturation_zeunerite gains a symmetric Cu/(Cu+Ca) > 0.5 cation gate. Habit variants mirror autunite/zeunerite (tabular_plates default, micaceous_book high-σ, encrusting low-σ). The 9e fork pair (tyuyamunite + uranospinite) completes the cation+anion fork mechanic across all three anion branches. Source: research/research-uranospinite.md.",
+      "audit_status": "Round 9e (May 2026): Ca-cation analog of zeunerite, completing the cation+anion fork on the As-branch (mirror of how 9d's autunite paired with torbernite on the P-branch). supersaturation_uranospinite gates on Ca/(Cu+Ca) > 0.5 + As/(P+As+V) > 0.5; supersaturation_zeunerite gains a symmetric Cu/(Cu+Ca) > 0.5 cation gate. Habit variants mirror autunite/zeunerite (tabular_plates default, micaceous_book high-σ, encrusting low-σ). The 9e fork pair (tyuyamunite + uranospinite) completes the cation+anion fork mechanic across all three anion branches. Source: research/minerals/research-uranospinite.md.",
       "class_color": "#13eb7f",
       "test_cases": [
         {
@@ -15972,7 +15972,7 @@
         }
       ],
       "class": "phosphate",
-      "description": "Ca(UO₂)₂(PO₄)₂·8H₂O — autunite with three water molecules gone. Tetragonal uranyl phosphate; appears in the simulator only as a paramorph product of autunite, after heat (>80°C) or sustained dry-air exposure drives the irreversible dehydration. External crystal shape is preserved (the square tabular {001} habit, the lemon-yellow color, the field marks all inherited from the parent autunite); the lattice has lost ~27% of its structural water and partially collapsed. Specific gravity slightly higher (3.45 vs autunite's 3.14); luster duller; fluorescence weaker (still present — uranyl chromophore survives the dehydration, just dampened). MOST AUTUNITE SPECIMENS IN MUSEUMS are actually meta-autunite — fresh autunite has typically been on a shelf for years before reaching a collector. The dehydration is irreversible: once water leaves the structure, it doesn't come back, even in 100% humidity. Sources: research/research-autunite.md §Variants 1-2 (boss canonical); Roberts, Ansell, Bonardi 1980 — group structural studies. (Bonazzi et al. — autunite-group dehydration thermodynamics.)",
+      "description": "Ca(UO₂)₂(PO₄)₂·8H₂O — autunite with three water molecules gone. Tetragonal uranyl phosphate; appears in the simulator only as a paramorph product of autunite, after heat (>80°C) or sustained dry-air exposure drives the irreversible dehydration. External crystal shape is preserved (the square tabular {001} habit, the lemon-yellow color, the field marks all inherited from the parent autunite); the lattice has lost ~27% of its structural water and partially collapsed. Specific gravity slightly higher (3.45 vs autunite's 3.14); luster duller; fluorescence weaker (still present — uranyl chromophore survives the dehydration, just dampened). MOST AUTUNITE SPECIMENS IN MUSEUMS are actually meta-autunite — fresh autunite has typically been on a shelf for years before reaching a collector. The dehydration is irreversible: once water leaves the structure, it doesn't come back, even in 100% humidity. Sources: research/minerals/research-autunite.md §Variants 1-2 (boss canonical); Roberts, Ansell, Bonardi 1980 — group structural studies. (Bonazzi et al. — autunite-group dehydration thermodynamics.)",
       "scenarios": [
         "schneeberg"
       ],
@@ -16057,7 +16057,7 @@
         "quencher": null,
         "status": "non-fluorescent — Cu²⁺ kills the uranyl emission even as a STRUCTURAL constituent (the classic field test against autunite; NM Bureau of Geology; the autunite entry's own canon). Dark under the lamp is the diagnostic. Entry added by the 2026-07-09 UV audit."
       },
-      "description": "Cu(UO₂)₂(PO₄)₂·8H₂O — torbernite with four water molecules gone. Tetragonal uranyl phosphate; appears in the simulator only as a paramorph product of torbernite, after heat (>75°C) or sustained dry-air exposure drives the irreversible loss of 4 of the 12 structural H₂O. The emerald-green color persists but pales toward apple-green / yellow-green as the lattice collapses; specific gravity rises (3.7 vs torbernite's 3.22); crystals become slightly more friable along the {001} cleavage. Critically: in the Schneeberg / Cornwall museum collections, very few specimens are now fresh torbernite — the trip from a damp mine adit to a dry display case is exactly what triggers the transformation. Like meta-autunite, the conversion is IRREVERSIBLE: even returning a metatorbernite to 100% humidity will not re-hydrate the lattice. Sources: research/research-torbernite.md §Dehydration Transformation (boss canonical 3bfdf4a).",
+      "description": "Cu(UO₂)₂(PO₄)₂·8H₂O — torbernite with four water molecules gone. Tetragonal uranyl phosphate; appears in the simulator only as a paramorph product of torbernite, after heat (>75°C) or sustained dry-air exposure drives the irreversible loss of 4 of the 12 structural H₂O. The emerald-green color persists but pales toward apple-green / yellow-green as the lattice collapses; specific gravity rises (3.7 vs torbernite's 3.22); crystals become slightly more friable along the {001} cleavage. Critically: in the Schneeberg / Cornwall museum collections, very few specimens are now fresh torbernite — the trip from a damp mine adit to a dry display case is exactly what triggers the transformation. Like meta-autunite, the conversion is IRREVERSIBLE: even returning a metatorbernite to 100% humidity will not re-hydrate the lattice. Sources: research/minerals/research-torbernite.md §Dehydration Transformation (boss canonical 3bfdf4a).",
       "scenarios": [
         "schneeberg"
       ],
@@ -16139,7 +16139,7 @@
         "quencher": null,
         "status": "non-fluorescent — Cu²⁺ quenches the structural uranyl (this entry's own description said so all along; the structured field arrives with the 2026-07-09 UV audit so the bar and narrator can read it)."
       },
-      "description": "Cu(UO₂)₂(AsO₄)₂·8H₂O — zeunerite with four water molecules gone. Tetragonal uranyl arsenate; the As-anion analog of metatorbernite (the two are isostructural just as the parents are). Appears in the simulator only as a paramorph product of zeunerite, after heat (>75°C) or dry-air exposure drives the irreversible 12→8 H₂O collapse. Color paler than zeunerite's emerald green, trending grass-green or yellow-green; specific gravity rises (3.85 vs zeunerite's ~3.4). Same museum-storage problem as zeunerite — most cabinet specimens labeled 'zeunerite' from Schneeberg, Cornwall, or Wittichen are actually metazeunerite, dehydrated decades ago. Cu²⁺ still quenches the uranyl emission, so non-fluorescent. The Schneeberg cation+anion fork mechanic still applies at nucleation time; only the dehydration follows. Sources: research/research-zeunerite.md §Dehydration Transformation; Pinch & Wilson 1977.",
+      "description": "Cu(UO₂)₂(AsO₄)₂·8H₂O — zeunerite with four water molecules gone. Tetragonal uranyl arsenate; the As-anion analog of metatorbernite (the two are isostructural just as the parents are). Appears in the simulator only as a paramorph product of zeunerite, after heat (>75°C) or dry-air exposure drives the irreversible 12→8 H₂O collapse. Color paler than zeunerite's emerald green, trending grass-green or yellow-green; specific gravity rises (3.85 vs zeunerite's ~3.4). Same museum-storage problem as zeunerite — most cabinet specimens labeled 'zeunerite' from Schneeberg, Cornwall, or Wittichen are actually metazeunerite, dehydrated decades ago. Cu²⁺ still quenches the uranyl emission, so non-fluorescent. The Schneeberg cation+anion fork mechanic still applies at nucleation time; only the dehydration follows. Sources: research/minerals/research-zeunerite.md §Dehydration Transformation; Pinch & Wilson 1977.",
       "scenarios": [
         "schneeberg"
       ],

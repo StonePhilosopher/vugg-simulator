@@ -310,7 +310,7 @@ Object.assign(VugConditions.prototype, {
   // surface energetics (GCA 340:99, 2023). CITATION NOTE: the branch was
   // originally hung on "Murowchick & Barnes 1986 Am.Min. 71:1196", which
   // failed verification at re-check (2026-07-14, rung-2 research pass) —
-  // see research/research-broth-ratio-sphalerite-wurtzite.md correction
+  // see research/arcs/research-broth-ratio-sphalerite-wurtzite.md correction
   // appendix.
   if (this.fluid.Zn < 10 || this.fluid.S < 10) return 0;
   // v199: sulfide redox gate (see supersaturation_sphalerite) — the

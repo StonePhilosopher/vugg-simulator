@@ -5,9 +5,9 @@
 **Template reference:** `proposals/vugg-mineral-template.md`
 
 **Source-of-truth research files** (boss's commit `f2939da`):
-- `research/research-native-arsenic.md`
-- `research/research-native-sulfur.md`
-- `research/research-native-tellurium.md`
+- `research/minerals/research-native-arsenic.md`
+- `research/minerals/research-native-sulfur.md`
+- `research/minerals/research-native-tellurium.md`
 
 **Class:** All three are `native` — share `class_color: "#eb13eb"` (same as molybdate per the 12-class palette; native elements are rare and share the slot). Existing examples in sim: `native_copper`, `native_gold`, `native_bismuth`. Round 8b makes the native-element family larger and more diverse — three different reasons elements end up native (depletion-driven, fumarole-degassing, residue-after-tellurides).
 
@@ -197,9 +197,9 @@ Both belong in `tests/test_engine_gates.py` as additional checks beyond the stan
 ## Sources
 
 The boss's research files are the primary specification:
-- `research/research-native-arsenic.md` (canonical commit `f2939da`)
-- `research/research-native-sulfur.md`
-- `research/research-native-tellurium.md`
+- `research/minerals/research-native-arsenic.md` (canonical commit `f2939da`)
+- `research/minerals/research-native-sulfur.md`
+- `research/minerals/research-native-tellurium.md`
 
 Additional references for the implementation reviewer:
 - Mosier, D.L. & Berger, V.I. (2009). "Volcanogenic native sulfur deposits." *USGS Open-File Report* 2009-1175.

@@ -56,7 +56,7 @@ Living list of open work items, captured from session conversations so context s
 > teeth; 2436/2436, seed42_v235 untouched. Boss eye-check of the new render owed.
 >
 > **ELMWOOD CELESTINE — boss GO 2026-07-24; research + census DONE, the design gained its
-> load-bearing part. READ `research/research-celestine-elmwood-2026-07-24.md`.** Census: the
+> load-bearing part. READ `research/scenarios/elmwood/research-celestine-elmwood-2026-07-24.md`.** Census: the
 > live window is only steps 74–98 (σ peak 1.08 at the 100 °C crossing); **Sr flat at 10 ppm all
 > run (NO Sr event — the real starvation); the S2 migration alone KILLS celestine (σ_split
 > 0.51)**. Literature (Hanor 2000 RiMG 40): carbonate-hosted celestine is fed by Sr expelled
@@ -84,7 +84,7 @@ Living list of open work items, captured from session conversations so context s
 > **harden the census to per-event real substrate discounts before S1 relies on it** — both done.
 >
 > **What S0 measured** (`tools/sulfur-speciation-census.mjs`, the new instrument — full story in
-> `research/research-s-split-t-taper-2026-07-22.md`): **F_min is NOT the lever** (survival flat across
+> `research/arcs/research-s-split-t-taper-2026-07-22.md`): **F_min is NOT the lever** (survival flat across
 > F_min; it ships as a 0.10 residual clamp) — the load-bearing parameter is the frozen-regime sigmoid
 > width **wCold ≈ 250 mV** (the §4 inherited-disequilibrium flatness; minimum width preserving
 > barite@mvt ≥150 AND barite@elmwood ≥250 at their REAL position-discounted bars). **§5-B's mechanism

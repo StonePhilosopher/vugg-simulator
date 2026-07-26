@@ -26,7 +26,7 @@ recognizer, not the mechanism"** (this stretch's story + its six lessons).
 
 ## Read first (in this order)
 
-1. `research/research-celestine-elmwood-2026-07-24.md` — the celestine story INCLUDING
+1. `research/scenarios/elmwood/research-celestine-elmwood-2026-07-24.md` — the celestine story INCLUDING
    §7, the correction record (what the boss's review overturned and how it was verified).
 2. The boss's review itself: **issue StonePhilosopher/vugg-simulator#1** — the first
    cross-repo research artifact. The protocol: cross-check his research against ours;

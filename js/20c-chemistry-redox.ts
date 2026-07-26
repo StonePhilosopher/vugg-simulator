@@ -471,7 +471,7 @@ function arseniteAvailablePpm(fluid: any): number {
 // Machel 2001 (Sed. Geol. 140:143) supplies the SOURCE side: BSR (0–80 °C) + TSR
 // (100–180 °C) generate sulfide across the whole vug range, so both pools are present to
 // inherit. Anchors are the LITERATURE-tightened single curve (100/200 °C), not the
-// proposal draft's 150/250 — see research/research-s-split-t-taper-2026-07-22.md.
+// proposal draft's 150/250 — see research/arcs/research-s-split-t-taper-2026-07-22.md.
 //
 // ── the shape (measured, not assumed) ──
 // tools/sulfur-speciation-census.mjs (the S0 instrument) swept this partition against

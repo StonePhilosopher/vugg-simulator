@@ -154,7 +154,7 @@ fluorite + celestine).
   entangled celestine retunes in separate commits violates the attributable-change
   discipline. THE S2 CELESTINE TRANCHE — **REVISED 2026-07-24 after the research +
   census pass (boss GO: "lets start on celestine... will likely involve doing more
-  research"). Full story in `research/research-celestine-elmwood-2026-07-24.md` — READ
+  research"). Full story in `research/scenarios/elmwood/research-celestine-elmwood-2026-07-24.md` — READ
   IT FIRST.** The census reframed the design (grep-the-tree, again): celestine's live
   window is ONLY steps 74–98 (σ peaks 1.08 exactly when the cooling vein crosses 100 °C
   — the low-T factor; geologically right-shaped, late + cool), **Sr is flat at 10 ppm

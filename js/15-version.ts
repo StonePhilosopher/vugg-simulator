@@ -2290,7 +2290,7 @@
 //          * Roberts A.C., Ansell H.G., Bonardi M. (1980) —
 //            Pararealgar, a new polymorph of AsS, from British
 //            Columbia. Canadian Mineralogist 18:525-527.
-//          * research/research-meta-minerals-pararealgar.md
+//          * research/arcs/research-meta-minerals-pararealgar.md
 //            (canonical research-agent file, May 2026).
 //   v85 — Autunite-group meta- trio (2026-05-19). Closes the
 //        DEHYDRATION_TRANSITIONS coverage on the uranyl-phosphate /
@@ -2411,9 +2411,9 @@
 //          * Pinch W.W. & Wilson W.E. (1977) — Schneeberg/Erzgebirge
 //            monograph (the type-locality reference for all three
 //            parents).
-//          * research/research-autunite.md §Variants for Game §1.
-//          * research/research-torbernite.md §Dehydration Transformation.
-//          * research/research-zeunerite.md §Dehydration Transformation.
+//          * research/minerals/research-autunite.md §Variants for Game §1.
+//          * research/minerals/research-torbernite.md §Dehydration Transformation.
+//          * research/minerals/research-zeunerite.md §Dehydration Transformation.
 //
 //        Workflow note (continuing v83's "follow the science" directive):
 //        scope was originally proposed as cassiterite + lepidolite +
@@ -6280,10 +6280,10 @@
 //
 //          REFERENCES
 //          proposals/PROPOSAL-INITIATIVE-VARIABLE.md (rev 2)
-//          research/INITIATIVE-VARIABLE/01-geochemical-grounding.md
-//          research/INITIATIVE-VARIABLE/03-modifier-calibration.md
-//          research/INITIATIVE-VARIABLE/06-engine-gates-refactor.md
-//          research/INITIATIVE-VARIABLE/07-graduated-competition.md
+//          research/arcs/INITIATIVE-VARIABLE/01-geochemical-grounding.md
+//          research/arcs/INITIATIVE-VARIABLE/03-modifier-calibration.md
+//          research/arcs/INITIATIVE-VARIABLE/06-engine-gates-refactor.md
+//          research/arcs/INITIATIVE-VARIABLE/07-graduated-competition.md
 //
 //          FILES (this commit, the v127 finale)
 //            NEW: js/42-mineral-gates-registry.ts
@@ -6397,7 +6397,7 @@
 //          js/15-version.ts v109 — original cascade-ripple antipattern
 //          js/15-version.ts v124-v126 — empirical cascade probe arc
 //          js/15-version.ts v127 — engine gates + initiative scaffold
-//          research/INITIATIVE-VARIABLE/07-graduated-competition.md
+//          research/arcs/INITIATIVE-VARIABLE/07-graduated-competition.md
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
 //
@@ -11971,7 +11971,7 @@
 //        T_min/T_max/T_optimal entries are behavior-live beyond the σ gates.
 //        Citation hygiene: "Murowchick & Barnes 1986 Am.Min. 71:1196" and the
 //        review's "Bessinger 2000" both failed verification — see
-//        research/research-broth-ratio-sphalerite-wurtzite.md appendix.
+//        research/arcs/research-broth-ratio-sphalerite-wurtzite.md appendix.
 //        Ripple recalibrations shipped in the same bump: (1) elmwood's
 //        barite-stage pulse now carries its own SULFATE charge (S floor 106
 //        alongside Ba 28, js/70) — the honestly-stronger sphalerite drained

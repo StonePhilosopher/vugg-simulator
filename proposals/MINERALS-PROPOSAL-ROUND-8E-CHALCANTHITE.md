@@ -5,7 +5,7 @@
 **Template reference:** `proposals/vugg-mineral-template.md`
 
 **Source-of-truth research file** (boss's commit `f2939da`):
-- `research/research-chalcanthite.md`
+- `research/minerals/research-chalcanthite.md`
 
 **Class:** `sulfate` — `class_color: "#eb137f"` (same family as the Round 5 sulfates).
 
@@ -220,7 +220,7 @@ These new mechanics generalize to many future species. Round 8 is heavy on novel
 ## Sources
 
 The boss's research file is the primary specification:
-- `research/research-chalcanthite.md` (canonical commit `f2939da`)
+- `research/minerals/research-chalcanthite.md` (canonical commit `f2939da`)
 
 Additional references for the implementation reviewer:
 - Bayliss, P. (1989). "Crystal chemistry and crystallography of some minerals within the chalcocite-acanthite group." *American Mineralogist* 74: 1414–1420. [Cu sulfate hydrate stability]
