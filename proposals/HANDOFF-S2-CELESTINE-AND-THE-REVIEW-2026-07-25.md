@@ -81,8 +81,10 @@ sulfideAvailablePpm + the +100 ceiling retirements).
 ## Carried forward (don't lose these)
 
 - **BOSS ACTION (self-assigned 2026-07-25): capture the mindat valid-species list for
-  the OTHER mine scenarios** — IN PROGRESS, five recorded: elmwood `99ee0b5`, picher
-  `c00d834`, sweetwater `11e46c1`, tsumeb `656c6f1`, copper queen (this commit). Each
+  the OTHER mine scenarios** — IN PROGRESS, six recorded: elmwood `99ee0b5`, picher
+  `c00d834`, sweetwater `11e46c1`, tsumeb `656c6f1`, copper queen `a6ac7af`, naica
+  (this commit — the cleanest sheet: 3/4 licensed, thenardite dust flagged; plus the
+  Xochitl-vs-Swords provenance correction and a ready-made naica_skarn brief). Each
   lives as a MINDAT VALID-SPECIES REFERENCE note in the scenario's `notes` array;
   the elmwood entry is the template, tsumeb shows the big-list variant (sim-verdict
   table instead of full transcription). METHODOLOGY (boss): pick the ICONIC
@@ -91,11 +93,10 @@ sulfideAvailablePpm + the +100 ceiling retirements).
   have voted to kill the whole scenario — the instrument misfiring, not the sim).
   OPEN DESIGN QUESTION from copper queen: SPATIAL GRAIN — scenarios anchor to
   districts but lists are per-mine; a flag means "not at THIS mine" and the boss
-  adjudicates mine-grain vs district-grain before anything dies. Remaining targets:
-  naica (the selenite positive control), searles, roughten_gill, tn457's
+  adjudicates mine-grain vs district-grain before anything dies. Remaining targets: searles, roughten_gill, tn457's
   Nentsberry-Haggs, sunnyside, wittichen, schneeberg, + the district/region tier.
   CROSS-MINE PATTERNS accruing (for the fleet-wide census when the sweep ends):
-  selenite elmwood NO / picher YES / sweetwater NO / tsumeb YES / copper-queen YES;
+  selenite elmwood NO / picher YES / sweetwater NO / tsumeb YES / copper-queen YES / naica YES (the positive control CONFIRMED);
   discrete-Ag-species over-fire 3× (mvt-v195, sweetwater acanthite, bisbee acanthite);
   Co/Ni bloom pair (erythrite/annabergite) unlisted 2× where sim grows it;
   Fe/Mn carbonates: siderite unlisted 3× in MVT-family but LISTED at copper queen
