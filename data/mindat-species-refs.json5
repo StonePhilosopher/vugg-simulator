@@ -1,0 +1,189 @@
+// data/mindat-species-refs.json5 — THE CITATIONS REGISTRY for the per-mine mindat
+// valid-species sweep (boss capture project, begun 2026-07-25).
+//
+// WHAT THIS IS: the machine-readable central record of every mindat Mineral List the
+// boss captures for a scenario. The prose verdicts (what each list votes on vs the
+// sim's seed-42 output) live in the scenario's own `notes` array in scenarios.json5 —
+// this file is the SOURCE-OF-RECORD side: locality identity, capture provenance, and
+// the species list itself as data, so a future tools/mindat-census.mjs can run the
+// fleet-wide cross-check (sim output vs record) automatically instead of by hand.
+//
+// CITATION FORMAT, per entry:
+//   scenario        — the scenarios.json5 key this list licenses
+//   locality        — the mindat page title as captured (the boss's chosen grain)
+//   mindat_id       — mindat Locality ID when visible in the capture; null = not
+//                     captured (record it on the next visit — the ID is the stable
+//                     citation; page titles drift)
+//   url             — canonical form https://www.mindat.org/loc-<id>.html when the
+//                     id is known; null otherwise (NEVER guess an id)
+//   captured        — date of the boss's screenshot capture
+//   source          — how the data arrived (all boss-supplied screenshots so far;
+//                     screenshot-limited entries may CROP — a species missing here
+//                     is a lead, not a verdict, until checked on the live page)
+//   valid_count     — the page's own "N valid minerals" footer
+//   tl_count        — type localities among them, when the page states it
+//   species         — the VALID list (species level; varieties in parentheses in the
+//                     scenario notes are collapsed to their species here)
+//   varieties_of_note, erroneous (struck-through), questioned (italic-?) — recorded
+//                     separately; ERRONEOUS AND QUESTIONED ENTRIES NEVER LICENSE.
+//   notes_ref       — where the sim-verdict prose lives
+//
+// METHODOLOGY (boss): pick the ICONIC SUB-LOCALITY so the data is consistent — and
+// the sub-locality must be the ORE BODY, NOT THE TOWNSITE (the Warren/Bisbee page:
+// 6 species, no copper — recording it would have voted to kill the whole scenario).
+// SPATIAL GRAIN: a flag means "not at THIS locality"; the boss adjudicates
+// mine-grain vs district-grain (horizontal) and cave-stage vs ore-body (vertical)
+// before anything dies.
+
+{
+  "picher_field": {
+    "scenario": "mvt",
+    "locality": "Picher Field, Tri-State Mining District, USA (Cherokee Co. KS / Ottawa Co. OK)",
+    "mindat_id": 12395,
+    "url": "https://www.mindat.org/loc-12395.html",
+    "captured": "2026-07-25",
+    "source": "boss-supplied screenshots (incl. the locality-ID panel)",
+    "valid_count": 44,
+    "tl_count": 0,
+    "species": [
+      "albite", "allophane", "anglesite", "aragonite", "arsenopyrite", "aurichalcite",
+      "baryte", "calcite", "caledonite", "cerussite", "chalcopyrite", "chrysocolla",
+      "copiapite", "covellite", "cuprite", "diadochite", "dolomite", "enargite",
+      "epsomite", "fluorapatite", "galena", "gedrite", "goslarite", "greenockite",
+      "gypsum", "hemimorphite", "hydroniumjarosite", "hydrozincite", "kaolinite",
+      "ktenasite", "linarite", "luzonite", "malachite", "marcasite", "melanterite",
+      "native_sulphur", "plumbojarosite", "pyrite", "pyromorphite", "pyrophyllite",
+      "quartz", "smithsonite", "sphalerite", "szomolnokite", "vivianite"
+    ],
+    "varieties_of_note": ["albite var. anorthoclase", "goslarite var. cuprogoslarite", "gypsum var. SELENITE", "petroleum var. bitumen ('Calamine' + 'Petroleum' = informal entries)"],
+    "erroneous": [],
+    "questioned": [],
+    "count_note": "page footer says 44 valid; 45 names transcribed — one entry's valid-vs-informal status is unresolved (mindat variety/informal rows don't count toward the footer). Reconcile on the live page; until then the DISCREPANCY stands recorded, not smoothed.",
+    "notes_ref": "scenarios.json5 mvt notes[] — MINDAT VALID-SPECIES REFERENCE"
+  },
+
+  "elmwood_region": {
+    "scenario": "elmwood",
+    "locality": "Elmwood Mine region incl. sub-localities (Carthage, Smith County, TN)",
+    "mindat_id": null,   // not visible in the capture — record on next visit (loc-4125 is the mine page the sweep list came from a region view of; UNCONFIRMED, do not cite until checked)
+    "url": null,
+    "captured": "2026-07-25",
+    "source": "boss-supplied screenshot (filtered Mineral List, region incl. sub-localities)",
+    "valid_count": 11,
+    "tl_count": 0,
+    "species": [
+      "baryte", "calcite", "celestine", "dolomite", "fluorite", "galena",
+      "marcasite", "pyrite", "quartz", "sphalerite", "vaterite"
+    ],
+    "varieties_of_note": ["baryte var. strontium-bearing", "celestine var. barium-bearing", "petroleum var. bitumen + 'Silica' = informal entries"],
+    "erroneous": [],
+    "questioned": [],
+    "notes_ref": "scenarios.json5 elmwood notes[] — MINDAT VALID-SPECIES REFERENCE"
+  },
+
+  "sweetwater_mine": {
+    "scenario": "reactive_wall",
+    "locality": "Sweetwater Mine, Ellington, Reynolds County, Missouri (Viburnum Trend)",
+    "mindat_id": null,
+    "url": null,
+    "captured": "2026-07-25",
+    "source": "boss-supplied screenshots",
+    "valid_count": 23,
+    "tl_count": 0,
+    "species": [
+      "anilite", "bornite", "calcite", "carrollite", "chalcocite", "chalcopyrite",
+      "covellite", "dickite", "digenite", "djurleite", "dolomite", "erythrite",
+      "fletcherite", "galena", "malachite", "marcasite", "millerite", "polydymite",
+      "pyrite", "quartz", "siegenite", "sphalerite", "vaesite"
+    ],
+    "varieties_of_note": ["chalcopyrite var. blistered copper", "petroleum var. bitumen = informal"],
+    "erroneous": ["linnaeite (struck-through by mindat — erroneous literature entry)"],
+    "questioned": [],
+    "notes_ref": "scenarios.json5 reactive_wall notes[] — MINDAT VALID-SPECIES REFERENCE"
+  },
+
+  "tsumeb_mine": {
+    "scenario": "supergene_oxidation",
+    "locality": "Tsumeb Mine (Ongopolo Mine), Tsumeb, Oshikoto Region, Namibia",
+    "mindat_id": null,
+    "url": null,
+    "captured": "2026-07-25",
+    "source": "boss-supplied screenshots — SCREENSHOT-LIMITED: the list runs to hundreds of species (~70+ TL); only the sim-relevant verdicts were extracted, full species[] NOT transcribed (see species_note)",
+    "valid_count": null,   // footer not captured; hundreds
+    "tl_count": null,      // ~70+ bold (TL) entries visible
+    "species": [],         // deliberately empty — DO NOT treat as 'nothing valid'; see source
+    "species_note": "Sim-verdict subset in scenarios.json5 supergene_oxidation notes[]: 28/36 sim species confirmed present (incl. gypsum→selenite, adamite, wulfenite+chillagite, duftite TL); not-visible flags: erythrite, annabergite, haidingerite, pharmacolite, ferrimolybdite, raspite, alunite — live-page check required before any kill.",
+    "varieties_of_note": ["wulfenite var. chillagite", "olivenite var. zinc-bearing", "plumbogummite var. Ga-rich", "aragonite vars. lead-/zinc-bearing", "cuprite var. chalcotrichite (on the Tsumeb page)", "'Mineral GS1 (of Gebhard)' — unnamed phase"],
+    "erroneous": ["adamite var. cobalt-bearing (struck)", "adamite var. copper-bearing (struck) — adamite the SPECIES stays valid"],
+    "questioned": ["patrónite?", "richardsite?", "stibnite?", "idaite?", "'tetrahedrite subgroup'?"],
+    "notes_ref": "scenarios.json5 supergene_oxidation notes[] — MINDAT VALID-SPECIES REFERENCE (sim-verdict table)"
+  },
+
+  "copper_queen_mine": {
+    "scenario": "bisbee",
+    "locality": "Copper Queen Mine, Bisbee, Cochise County, Arizona",
+    "mindat_id": null,
+    "url": null,
+    "captured": "2026-07-25",
+    "source": "boss-supplied screenshots. NB the FIRST capture attempt hit the Warren TOWNSITE page (6 species, no copper) — discarded; the ore-body-not-townsite rule comes from this",
+    "valid_count": 56,
+    "tl_count": 2,
+    "species": [
+      "alabandite", "allophane", "anglesite", "antigorite", "antlerite", "aragonite",
+      "aurichalcite", "azurite", "bornite", "brochantite", "brucite", "calcite",
+      "carbonatecyanotrichite", "chalcanthite", "chalcoalumite", "chalcocite",
+      "chalcopyrite", "chrysocolla", "connellite", "copiapite", "coquimbite",
+      "cuprite", "cyanotrichite", "delafossite", "felsobanyaite", "gibbsite",
+      "goethite", "gypsum", "halloysite", "hoganite", "hydrobasaluminite",
+      "kaolinite", "kornelite", "magnetite", "malachite", "meionite", "muscovite",
+      "native_copper", "native_silver", "paramelaconite", "paratacamite", "pyrite",
+      "quartz", "rhomboclase", "romerite", "rosasite", "rozenite", "siderite",
+      "spangolite", "sphalerite", "stevensite", "tenorite", "tremolite",
+      "uraninite", "voltaite", "wollastonite"
+    ],
+    "varieties_of_note": ["gypsum var. SELENITE", "cuprite var. chalcotrichite", "muscovite var. sericite", "'Chlorite Group' + 'Clinochrysotile' + 'Limonite' = informal/group entries"],
+    "type_localities": ["chalcoalumite", "paramelaconite"],
+    "erroneous": [],
+    "questioned": [],
+    "notes_ref": "scenarios.json5 bisbee notes[] — MINDAT VALID-SPECIES REFERENCE (+ the SPATIAL-GRAIN design question)"
+  },
+
+  "naica_mine": {
+    "scenario": "naica_geothermal",
+    "locality": "Naica Mine, Naica, Saucillo Municipality, Chihuahua, Mexico",
+    "mindat_id": null,
+    "url": null,
+    "captured": "2026-07-25",
+    "source": "boss-supplied screenshots + the page's mine-information/geology text (skarn system, five gypsum caves, the Xochitl-vs-Swords provenance correction)",
+    "valid_count": 113,
+    "tl_count": 0,
+    "species": [
+      "acanthite", "actinolite", "andradite", "anglesite", "anhydrite", "antlerite",
+      "arsenopyrite", "aurichalcite", "azurite", "baryte", "bismuthinite", "blodite",
+      "bornite", "boulangerite", "bournonite", "brochantite", "bustamite", "calcite",
+      "cassiterite", "celestine", "cerussite", "chalcanthite", "chalcopyrite",
+      "chlorargyrite", "chrysocolla", "cinnabar", "conichalcite", "copiapite",
+      "cosalite", "covellite", "cuprite", "diopside", "dolomite", "emplectite",
+      "epidote", "epsomite", "fluorite", "fraipontite", "galena", "gersdorffite",
+      "goethite", "greenalite", "grossular", "guanine", "gypsum", "halite",
+      "hectorite", "hedenbergite", "hematite", "hemimorphite", "hexahydrite",
+      "hydroniumjarosite", "hydrozincite", "ilvaite", "jamesonite", "jarosite",
+      "kieserite", "kobellite", "linarite", "mackinawite", "magnetite", "malachite",
+      "marcasite", "matildite", "mimetite", "molybdenite", "montmorillonite",
+      "muscovite", "native_copper", "native_gold", "native_mercury", "native_silver",
+      "nontronite", "nordstrandite", "nuffieldite", "opal", "orientite",
+      "orthoclase", "palygorskite", "pearceite", "plumbojarosite", "polybasite",
+      "powellite", "proustite", "pyrargyrite", "pyrite", "pyrolusite", "pyrrhotite",
+      "quartz", "rhodochrosite", "rozenite", "rutile", "scheelite", "siderite",
+      "smithsonite", "sphalerite", "starkeyite", "stephanite", "szmikite",
+      "szomolnokite", "tetradymite", "tintinaite", "todorokite", "tremolite",
+      "ullmannite", "vesuvianite", "wollastonite", "woodruffite", "wulfenite",
+      "zircon", "zoisite"
+    ],
+    "varieties_of_note": ["gypsum var. SELENITE (the Cave of the Crystals)", "calcite vars. iceland spar + manganese-bearing", "quartz var. amethyst", "'K Feldspar' var. adularia + 'Apophyllite Gp' + 'Fluorapophyllite' + 'Tennantite/Tetrahedrite Subgroups' + 'Biotite'/'Chlorite Gp'/'Apatite' = informal/group entries", "GUANINE — a biomineral on the valid list"],
+    "erroneous": [],
+    "questioned": ["rhodonite?", "fowlerite?"],
+    "count_note": "page footer says 113 valid; 111 transcribed — 2 short, most likely among the quoted informal/group rows excluded here ('Fluorapophyllite', 'K Feldspar', 'Apatite', 'Apophyllite Group', subgroup rows) whose valid-species status is ambiguous in screenshot form. Reconcile on the live page; discrepancy recorded, not smoothed.",
+    "notes_ref": "scenarios.json5 naica_geothermal notes[] — MINDAT VALID-SPECIES REFERENCE (+ the naica_skarn brief + Xochitl provenance)"
+  }
+}
