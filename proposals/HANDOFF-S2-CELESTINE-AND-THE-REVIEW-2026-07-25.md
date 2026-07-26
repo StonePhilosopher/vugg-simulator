@@ -81,15 +81,25 @@ sulfideAvailablePpm + the +100 ceiling retirements).
 ## Carried forward (don't lose these)
 
 - **BOSS ACTION (self-assigned 2026-07-25): capture the mindat valid-species list for
-  the OTHER mine scenarios**, the way it was done for elmwood (screenshot of the
-  region's filtered Mineral List → recorded as a MINDAT VALID-SPECIES REFERENCE note in
-  the scenario's `notes` array in data/scenarios.json5). The elmwood entry is the
-  template — it turns the specimen-record test into a per-scenario instrument: absences
-  license de-confabulations (elmwood: no gypsum-family = the selenite ruling;
-  siderite NOT listed = new census flag on the variety guard), presences queue
-  candidates (elmwood: marcasite/pyrite/quartz/vaterite/bitumen unfired-but-documented).
-  Natural next targets: mvt (Tri-State), bisbee, tsumeb-family, naica, searles,
-  roughten_gill, tn457's Nentsberry-Haggs, sunnyside, wittichen, schneeberg.
+  the OTHER mine scenarios** — IN PROGRESS, five recorded: elmwood `99ee0b5`, picher
+  `c00d834`, sweetwater `11e46c1`, tsumeb `656c6f1`, copper queen (this commit). Each
+  lives as a MINDAT VALID-SPECIES REFERENCE note in the scenario's `notes` array;
+  the elmwood entry is the template, tsumeb shows the big-list variant (sim-verdict
+  table instead of full transcription). METHODOLOGY (boss): pick the ICONIC
+  SUB-LOCALITY so the data is consistent — and the sub-locality must be the ORE BODY,
+  NOT THE TOWNSITE (the Warren/Bisbee page = 6 species, no copper; recording it would
+  have voted to kill the whole scenario — the instrument misfiring, not the sim).
+  OPEN DESIGN QUESTION from copper queen: SPATIAL GRAIN — scenarios anchor to
+  districts but lists are per-mine; a flag means "not at THIS mine" and the boss
+  adjudicates mine-grain vs district-grain before anything dies. Remaining targets:
+  naica (the selenite positive control), searles, roughten_gill, tn457's
+  Nentsberry-Haggs, sunnyside, wittichen, schneeberg, + the district/region tier.
+  CROSS-MINE PATTERNS accruing (for the fleet-wide census when the sweep ends):
+  selenite elmwood NO / picher YES / sweetwater NO / tsumeb YES / copper-queen YES;
+  discrete-Ag-species over-fire 3× (mvt-v195, sweetwater acanthite, bisbee acanthite);
+  Co/Ni bloom pair (erythrite/annabergite) unlisted 2× where sim grows it;
+  Fe/Mn carbonates: siderite unlisted 3× in MVT-family but LISTED at copper queen
+  where sim doesn't grow it — per-locality, not a global over-fire.
 - **Boss eye-checks owed in the deployed game**: the celestine blanket (2.69mm plumose,
   elmwood late stage), the calcite dogtooth (confirmed once — "looking good" — but the
   correction re-render is unseen), the pan camera feel (middle-mouse + deep-zoom), PLUS
