@@ -2,6 +2,29 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🗿 SESSION STATE (2026-07-27) — **S2 SELENITE ✅ SIM 237 · elmwood selenite = KNOWN RESIDUE · NEXT = the Hardie ceiling (own commit)**
+>
+> **S2 selenite migration SHIPPED**: supersaturation_selenite reads sulfateAvailablePpm,
+> ÷50→÷35 census-measured re-anchor (tools/selenite-tranche-census.mjs — un-anchored ÷50
+> would have killed radioactive_pegmatite + schneeberg, both legit). Blast 8/39, 0 species
+> gained/lost; naica positive control byte-close 66 mm; honest shrinks sulphur_bank −29%,
+> schneeberg −51%, bisbee −24%, elmwood −46%. **THE S0 PRE-REGISTERED ELMWOOD DEATH DID
+> NOT MATERIALIZE** — elmwood selenite survives ~3.7 mm; BOSS RULING: ship as-is, flag as
+> KNOWN RESIDUE, variety-guard selenite entry STAYS. **NEXT = the science-shaped kill as
+> its OWN stratum: Hardie 1967 water-activity gypsum→anhydrite ceiling** (T_max ~58°C →
+> ~40–45°C with salinity; closes elmwood's hot-saline 53–80°C selenite window, spares
+> naica/searles/sabkha/sicily/GSP — all ≤~50°C or dilute at live steps). Research-first:
+> verify the Hardie curve, census the blast (reactive_wall T 70–79 will also be touched —
+> it's already dust). Then anhydrite + remaining sulfates, then S3.
+>
+> **MINDAT SWEEP +2 (2026-07-27)**: searles (`1a30f09`, cleanest sheet — 8/8 licensed,
+> sylvite absence retro-licenses rung-5) + roughton-gill (`8a68c16`, 21/27; silver LEGIT
+> here — the Tri-State counter-case; FLAGS: vanadinite 5.4mm corroborates the v109
+> 'wrong-for-Caldbeck' intent, pararealgar/orpiment→arsenate complaint, proustite=discrete-Ag
+> instance 4, turquoise, descloizite dust; expects no-shows all valid = tuning targets).
+> Selenite cross-mine tally 6-YES/2-NO. Remaining: tn457 Nentsberry-Haggs, sunnyside,
+> wittichen, schneeberg + district tier.
+
 > ## 🗿 SESSION STATE (2026-07-25b) — **BOSS-REVIEW CORRECTIONS ✅ `96dacab` (byte-identical, stamped GREEN) · NEXT = S2 SELENITE (boss pre-approval IN HAND)**
 >
 > **THE WORKING BRIDGE IS NOW `HANDOFF-S2-CELESTINE-AND-THE-REVIEW-2026-07-25.md`** (the

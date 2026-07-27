@@ -12257,5 +12257,31 @@
 //        explicitly (volume-continuity firewall). Refs: Hanor 2000 RiMG
 //        40:193-275; Sunagawa, Crystals (impurity branching); Gránásy et
 //        al. 2005 (spherulite growth-front nucleation).
-const SIM_VERSION = 236;
+// v237: S2 SELENITE MIGRATION (2026-07-27) — the third sulfate consumer off
+//       total fluid.S (barite S1 ÷40→÷20, celestine S2 ÷40→÷18, selenite
+//       ÷50→÷35): supersaturation_selenite reads sulfateAvailablePpm (gate +
+//       σ term; js/40). ÷35 is the census-measured re-anchor
+//       (tools/selenite-tranche-census.mjs) reproducing today's live windows
+//       fleet-wide at the honest sulfate — the un-anchored ÷50 would have
+//       killed radioactive_pegmatite + schneeberg outright (0 live steps,
+//       both legit gypsum settings). No sulfateInherited carve-out branch:
+//       wittichen grows no selenite. 13 tenants; naica (the mindat-licensed
+//       positive control) byte-close at 66 mm; honest shrinks at the
+//       reducing/boundary tenants (sulphur_bank −29%, schneeberg −51%,
+//       bisbee −24%, elmwood −46%). KNOWN RESIDUE (boss ruling 2026-07-27):
+//       elmwood selenite SURVIVES the migration at ~3.7 mm — the S0
+//       pre-registered casualty does not materialize in the live sim (σ live
+//       71-85 steps even at pure ÷50; no divisor kills it without
+//       collateral). The record (mindat Elmwood: no gypsum-family) still says
+//       it shouldn't be there; the kill belongs to a SEPARATE follow-up
+//       mechanism — the Hardie 1967 water-activity gypsum→anhydrite ceiling
+//       (T_max drops ~58°C → ~40-45°C with rising salinity), which closes
+//       exactly elmwood's hot-saline 53-80°C window while sparing naica's
+//       dilute thermal brine. Kept apart deliberately: the migration is a
+//       correction to inherited double-booked S; the ceiling is a new
+//       brine-thermodynamics mechanism — clean strata beat one fused
+//       boulder (boss). elmwood-snowball variety guard KEEPS selenite (it
+//       is still present; the handoff's remove-instruction was conditioned
+//       on the death that didn't happen).
+const SIM_VERSION = 237;
 

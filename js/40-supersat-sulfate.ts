@@ -461,13 +461,25 @@ Object.assign(VugConditions.prototype, {
   // softer decay starting at 60°C, while keeping JS's T<40 bonus
   // (real per Pulpí Geode formation).
   const g = MINERAL_GATES_selenite;
-  if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.S < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  // S2 selenite migration (2026-07-27) — the THIRD sulfate consumer to migrate off
+  // total `fluid.S` (barite S1 ÷40→÷20, celestine S2 ÷40→÷18, same shape): selenite
+  // consumes SO₄²⁻, so it reads sulfateAvailablePpm. The tranche census
+  // (tools/selenite-tranche-census.mjs) measured ÷35 as the re-anchor that reproduces
+  // today's live windows fleet-wide at the honest sulfate (elmwood 85=85, roughten_gill
+  // 131=131, radioactive_pegmatite 15=15, schneeberg 18=18, reactive_wall 7=7 live
+  // steps; naica — the must-survive positive control — 320/320); the un-anchored ÷50
+  // would have killed radioactive_pegmatite + schneeberg outright (0 live), both
+  // legit gypsum settings. Unlike celestine's capped s_f, selenite's S term is
+  // uncapped — the recompute is a pure ratio. No sulfateInherited carve-out branch
+  // needed: wittichen grows no selenite.
+  const s_avail = sulfateAvailablePpm(this.fluid, this.temperature);
+  if (this.fluid.Ca < g.fluid_min!.Ca || s_avail < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   // v228 (rung 2): hard nucleation ceiling from the gates (Ossorio 2014 —
   // above 80°C gypsum is no longer the sole primary CaSO4 phase and converts
   // on geological time; the sim's CaSO4 above the ceiling belongs to
   // anhydrite). Soft decay above 60°C still applies within the window.
   if (this.temperature > g.T_max!) return 0;
-  let sigma = (this.fluid.Ca / 60.0) * (this.fluid.S / 50.0) * sulfateRedoxFactor(this.fluid, 0.5);
+  let sigma = (this.fluid.Ca / 60.0) * (s_avail / 35.0) * sulfateRedoxFactor(this.fluid, 0.5);
   if (this.temperature > 60) {
     sigma *= Math.exp(-0.06 * (this.temperature - 60));
   }

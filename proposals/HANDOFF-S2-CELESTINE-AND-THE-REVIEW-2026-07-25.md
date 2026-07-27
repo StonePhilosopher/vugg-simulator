@@ -34,6 +34,22 @@ recognizer, not the mechanism"** (this stretch's story + its six lessons).
 3. `proposals/BACKLOG.md` top banner — the S2 state + what remains.
 4. Commit messages `5712f44` + `96dacab` — the field notes with per-part numbers.
 
+> **2026-07-27 UPDATE — S2 SELENITE ✅ SHIPPED SIM 237.** The migration landed
+> (÷50→÷35 census-measured, tools/selenite-tranche-census.mjs) but the S0
+> pre-registered elmwood death DID NOT MATERIALIZE in the live sim — elmwood
+> selenite survives at ~3.7 mm (σ live 71–85 steps even at pure ÷50; no divisor
+> kills it without collateral at radioactive_pegmatite/schneeberg). BOSS RULING
+> (2026-07-27, verbatim reasoning preserved in the commit): ship the migration
+> as-is, elmwood selenite = KNOWN RESIDUE, the science-shaped kill is a SEPARATE
+> follow-up — the Hardie 1967 water-activity gypsum→anhydrite ceiling (T_max
+> ~58°C → ~40–45°C with rising salinity; closes elmwood's hot-saline 53–80°C
+> window, spares naica's dilute thermal) with its own research + census —
+> "clean strata beat one big fused boulder." The variety-guard selenite entry
+> STAYS (the removal instruction below was conditioned on the death that didn't
+> happen). Mindat cross-checks landed the same day: selenite tally 6-YES/2-NO
+> (searles + roughton-gill both YES). NEXT after Hardie: anhydrite, then the
+> remaining sulfates, then S3.
+
 ## THE NEXT ACTION — S2 selenite migration (boss pre-approval IN HAND)
 
 S0's census pre-registered selenite@elmwood as a casualty of the migration (bare-wall

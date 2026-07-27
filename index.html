@@ -17750,7 +17750,33 @@ let timeScale = 5.0;
 //        explicitly (volume-continuity firewall). Refs: Hanor 2000 RiMG
 //        40:193-275; Sunagawa, Crystals (impurity branching); Gránásy et
 //        al. 2005 (spherulite growth-front nucleation).
-const SIM_VERSION = 236;
+// v237: S2 SELENITE MIGRATION (2026-07-27) — the third sulfate consumer off
+//       total fluid.S (barite S1 ÷40→÷20, celestine S2 ÷40→÷18, selenite
+//       ÷50→÷35): supersaturation_selenite reads sulfateAvailablePpm (gate +
+//       σ term; js/40). ÷35 is the census-measured re-anchor
+//       (tools/selenite-tranche-census.mjs) reproducing today's live windows
+//       fleet-wide at the honest sulfate — the un-anchored ÷50 would have
+//       killed radioactive_pegmatite + schneeberg outright (0 live steps,
+//       both legit gypsum settings). No sulfateInherited carve-out branch:
+//       wittichen grows no selenite. 13 tenants; naica (the mindat-licensed
+//       positive control) byte-close at 66 mm; honest shrinks at the
+//       reducing/boundary tenants (sulphur_bank −29%, schneeberg −51%,
+//       bisbee −24%, elmwood −46%). KNOWN RESIDUE (boss ruling 2026-07-27):
+//       elmwood selenite SURVIVES the migration at ~3.7 mm — the S0
+//       pre-registered casualty does not materialize in the live sim (σ live
+//       71-85 steps even at pure ÷50; no divisor kills it without
+//       collateral). The record (mindat Elmwood: no gypsum-family) still says
+//       it shouldn't be there; the kill belongs to a SEPARATE follow-up
+//       mechanism — the Hardie 1967 water-activity gypsum→anhydrite ceiling
+//       (T_max drops ~58°C → ~40-45°C with rising salinity), which closes
+//       exactly elmwood's hot-saline 53-80°C window while sparing naica's
+//       dilute thermal brine. Kept apart deliberately: the migration is a
+//       correction to inherited double-booked S; the ceiling is a new
+//       brine-thermodynamics mechanism — clean strata beat one fused
+//       boulder (boss). elmwood-snowball variety guard KEEPS selenite (it
+//       is still present; the handoff's remove-instruction was conditioned
+//       on the death that didn't happen).
+const SIM_VERSION = 237;
 
 // ── 18-constants.js ──
 
@@ -31622,7 +31648,19 @@ Object.assign(VugConditions.prototype, {
         // softer decay starting at 60°C, while keeping JS's T<40 bonus
         // (real per Pulpí Geode formation).
         const g = MINERAL_GATES_selenite;
-        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.S < g.fluid_min.S || !sulfateRedoxAvailable(this.fluid, g.O2_min))
+        // S2 selenite migration (2026-07-27) — the THIRD sulfate consumer to migrate off
+        // total `fluid.S` (barite S1 ÷40→÷20, celestine S2 ÷40→÷18, same shape): selenite
+        // consumes SO₄²⁻, so it reads sulfateAvailablePpm. The tranche census
+        // (tools/selenite-tranche-census.mjs) measured ÷35 as the re-anchor that reproduces
+        // today's live windows fleet-wide at the honest sulfate (elmwood 85=85, roughten_gill
+        // 131=131, radioactive_pegmatite 15=15, schneeberg 18=18, reactive_wall 7=7 live
+        // steps; naica — the must-survive positive control — 320/320); the un-anchored ÷50
+        // would have killed radioactive_pegmatite + schneeberg outright (0 live), both
+        // legit gypsum settings. Unlike celestine's capped s_f, selenite's S term is
+        // uncapped — the recompute is a pure ratio. No sulfateInherited carve-out branch
+        // needed: wittichen grows no selenite.
+        const s_avail = sulfateAvailablePpm(this.fluid, this.temperature);
+        if (this.fluid.Ca < g.fluid_min.Ca || s_avail < g.fluid_min.S || !sulfateRedoxAvailable(this.fluid, g.O2_min))
             return 0;
         // v228 (rung 2): hard nucleation ceiling from the gates (Ossorio 2014 —
         // above 80°C gypsum is no longer the sole primary CaSO4 phase and converts
@@ -31630,7 +31668,7 @@ Object.assign(VugConditions.prototype, {
         // anhydrite). Soft decay above 60°C still applies within the window.
         if (this.temperature > g.T_max)
             return 0;
-        let sigma = (this.fluid.Ca / 60.0) * (this.fluid.S / 50.0) * sulfateRedoxFactor(this.fluid, 0.5);
+        let sigma = (this.fluid.Ca / 60.0) * (s_avail / 35.0) * sulfateRedoxFactor(this.fluid, 0.5);
         if (this.temperature > 60) {
             sigma *= Math.exp(-0.06 * (this.temperature - 60));
         }
