@@ -93,15 +93,24 @@ sulfideAvailablePpm + the +100 ceiling retirements).
   have voted to kill the whole scenario — the instrument misfiring, not the sim).
   OPEN DESIGN QUESTION from copper queen: SPATIAL GRAIN — scenarios anchor to
   districts but lists are per-mine; a flag means "not at THIS mine" and the boss
-  adjudicates mine-grain vs district-grain before anything dies. Remaining targets: roughten_gill, tn457's
+  adjudicates mine-grain vs district-grain before anything dies. Remaining targets: tn457's
   Nentsberry-Haggs, sunnyside, wittichen, schneeberg, + the district/region tier.
+  ROUGHTON GILL RECORDED 2026-07-27 (eighth sheet, 68 valid; transcription in
+  research/scenarios/roughten_gill/): 21/27 sim species licensed incl. selenite
+  (gypsum valid) + the SILVER suite (the Tri-State counter-case — acanthite legit
+  here); flags = VANADINITE ×6 5.4mm (corroborates the v109 'wrong for Caldbeck'
+  intent — suppression under-delivers), pararealgar+orpiment (As belongs in
+  arsenates/sulfosalt sink, the v228/rung-4 complaint), proustite (discrete-Ag
+  pattern instance 4), turquoise, descloizite dust; expects no-shows
+  (chalcopyrite/calcite/mimetite/native_silver) all VALID = tuning targets not
+  de-confabulations.
   SEARLES RECORDED 2026-07-27 (seventh sheet; citations in
   research/scenarios/searles/citations-mindat-searles-lake-2026-07-27.md): the cleanest
   sheet in the sweep — all 8 sim species licensed, zero flags; sylvite absence
   retro-licenses the rung-5 extinction; tincalconite TL-vs-mechanism tension resolved
   honestly (locality license ≠ nucleation license).
   CROSS-MINE PATTERNS accruing (for the fleet-wide census when the sweep ends):
-  selenite elmwood NO / picher YES / sweetwater NO / tsumeb YES / copper-queen YES / naica YES (the positive control CONFIRMED) / searles YES;
+  selenite elmwood NO / picher YES / sweetwater NO / tsumeb YES / copper-queen YES / naica YES (the positive control CONFIRMED) / searles YES / roughton-gill YES;
   discrete-Ag-species over-fire 3× (mvt-v195, sweetwater acanthite, bisbee acanthite);
   Co/Ni bloom pair (erythrite/annabergite) unlisted 2× where sim grows it;
   Fe/Mn carbonates: siderite unlisted 3× in MVT-family but LISTED at copper queen
