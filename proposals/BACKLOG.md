@@ -2,6 +2,20 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🔬 THE WISE REVIEW (2026-08-05) — **second hostile review, pegmatite/mineralogy lens — `PROPOSAL-HOSTILE-REVIEW-WISE-2026-08-05.md`, fix ladder AWAITS BOSS ORDER**
+>
+> 23 findings (7 high, all hand-verified at `8d4b664`), aimed where the July review didn't
+> look: **Cruzeiro grows no beryl** (the standing Cr/V spike fences the whole family; expects
+> quietly omits it) · **"Schorl Arrives" grows green verdelite** (Li=35 from step 0) ·
+> fabricated geography "Volodarsk (Namibia)" in heliodor · **no muscovite/euclase/zircon/
+> monazite in the catalog** · **no Cs/Rb/Ta/Nb fields anywhere** (cassiterite fakes "Nb/Ta
+> indicators" off Bi/W) · pegmatite silicate T envelopes decorative (the §T leftover class,
+> named offenders) · radioactive_pegmatite's wall silently defaults LIMESTONE · stale
+> "titanite not modelled" prose vs its own census · magnetite from an O2≥1.3 fluid ·
+> Dauphiné-as-{001} + trapiche-as-twin-law data bugs. Saves conceded: cascade discipline,
+> honest flux gates, shigar as the model scenario, the data self-audit culture. Proposed
+> ladder §5 (prose → one-liners → Cruzeiro rescue → T-tranche → species debt → Cs/Ta infra).
+
 > ## 🗿 SESSION STATE (2026-07-27) — **S2 SELENITE ✅ SIM 237 · elmwood selenite = KNOWN RESIDUE · NEXT = the Hardie ceiling (own commit)**
 >
 > **S2 selenite migration SHIPPED**: supersaturation_selenite reads sulfateAvailablePpm,
