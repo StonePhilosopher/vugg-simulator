@@ -63,7 +63,11 @@ describe('Creative chemistry control contract', () => {
     );
     (globalThis as any).syncCreativeChemistryControls(changed);
     const roundTrip = (globalThis as any).readCreativeChemistryControls();
-    expect(roundTrip).toEqual(changed);
+    expect(roundTrip).toEqual({
+      ...changed,
+      sulfurPoolsExplicit: false,
+      nativeSulfurPathway: null,
+    });
   });
 
   it('uses the same complete fluid registry for setup and live editing', () => {
@@ -76,13 +80,15 @@ describe('Creative chemistry control contract', () => {
     for (const id of expectedLiveIds) {
       expect(parsed.getElementById(id), id).not.toBeNull();
     }
-    expect(Object.keys(registry)).toHaveLength(44);
+    expect(Object.keys(registry)).toHaveLength(47);
 
     const authored = new Set<string>();
     for (const makeScenario of Object.values((globalThis as any).SCENARIOS) as any[]) {
       for (const field of Object.keys(makeScenario._json5_spec.initial.fluid || {})) authored.add(field);
     }
-    expect([...authored].sort()).toEqual(Object.keys(registry).sort());
+    const authoredMetadata = new Set(['sulfateInherited', 'sulfurPoolsExplicit', 'nativeSulfurPathway']);
+    const authoredLevers = [...authored].filter(field => !authoredMetadata.has(field)).sort();
+    expect(authoredLevers).toEqual(Object.keys(registry).sort());
   });
 
   it('defines canonical physical bounds and precision for every chemistry lever', () => {
@@ -236,11 +242,15 @@ describe('Creative chemistry control contract', () => {
       expect(initial.temperature_C, `${scenarioId}.temperature_C`).toBeGreaterThanOrEqual(Number(temp.min));
       expect(initial.temperature_C, `${scenarioId}.temperature_C`).toBeLessThanOrEqual(Number(temp.max));
       const pressure = parsed.getElementById('broth-pressure') as HTMLInputElement;
-      expect(initial.pressure_kbar * 100, `${scenarioId}.pressure_kbar`).toBeGreaterThanOrEqual(Number(pressure.min));
+      expect(initial.pressure_kbar * 100, `${scenarioId}.pressure_kbar`).toBeGreaterThanOrEqual(Number(pressure.min) - 1e-9);
       expect(initial.pressure_kbar * 100, `${scenarioId}.pressure_kbar`).toBeLessThanOrEqual(Number(pressure.max) + 1e-9);
 
       for (const [field, value] of Object.entries(initial.fluid || {}) as Array<[string, number]>) {
         const control = registry[field];
+        if (!control) {
+          expect(['sulfateInherited', 'sulfurPoolsExplicit', 'nativeSulfurPathway']).toContain(field);
+          continue;
+        }
         const live = parsed.getElementById(`broth-${control.liveKey}`) as HTMLInputElement;
         const setup = parsed.getElementById(control.id) as HTMLInputElement;
         const raw = value * control.scale;

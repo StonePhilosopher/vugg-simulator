@@ -227,6 +227,11 @@ describe('fortress save system (93a) — event-sourced replay', () => {
       (globalThis as any).setBrothValue(control.liveKey, String(canonical * control.scale));
       expect(_liveFortressSim().conditions.fluid[field], `${field}.live write`).toBe(canonical);
     }
+    // In explicit mode S is a derived observer, not a fourth spendable pool.
+    // The later S(-II)/S(VI) writes intentionally replace the earlier bulk-S
+    // value, so both the saved live state and replay must expose their sum.
+    expected.S = expected.S_sulfide + expected.S_sulfate;
+    expect(_liveFortressSim().conditions.fluid.S, 'derived dissolved S before save').toBe(expected.S);
     const manual = _saveManualNamed('all chemistry replay probe');
     expect(Object.keys(manual.pending_broth)).toHaveLength(Object.keys(registry).length);
 

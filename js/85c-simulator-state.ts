@@ -84,6 +84,20 @@ _propagateGlobalDelta(snap) {
     const meshS = this.wall_state.meshFor(this);
     if (meshS && meshS.cells) for (let i = 0; i < meshS.cells.length; i++) setFlag(meshS.cells[i] && meshS.cells[i].fluid);
   }
+  // The explicit sulfur-reservoir mode is also a non-numeric latch. Initial
+  // scenario clones already carry it; this broadcast additionally covers a
+  // creative/event fluid converted to explicit pools at runtime.
+  if (this.conditions.fluid.sulfurPoolsExplicit) {
+    const copySulfurFlags = (f) => {
+      if (!f) return;
+      f.sulfurPoolsExplicit = true;
+      f.nativeSulfurPathway = this.conditions.fluid.nativeSulfurPathway;
+      syncExplicitSulfurTotal(f);
+    };
+    if (grid && grid.voxels) for (let i = 0; i < grid.voxels.length; i++) copySulfurFlags(grid.voxels[i] && grid.voxels[i].fluid);
+    const meshSulfur = this.wall_state.meshFor(this);
+    if (meshSulfur && meshSulfur.cells) for (let i = 0; i < meshSulfur.cells.length; i++) copySulfurFlags(meshSulfur.cells[i] && meshSulfur.cells[i].fluid);
+  }
   const deltaT = this.conditions.temperature - preTemp;
   if (deltaT !== 0) {
     for (let k = 0; k < this.ring_temperatures.length; k++) {

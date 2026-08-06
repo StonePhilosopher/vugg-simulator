@@ -24,11 +24,11 @@ const MINERAL_GATES_quartz: MineralGates = {
   // barrier (β-quartz grows, inverts on cooling). Pre-v228 the declared 600
   // was both unenforced AND wrong: gem_pegmatite grew geologically-correct
   // quartz at 617-650°C in violation of its own metadata.
-  T_min: 50, T_max: 700, T_optimal: 300,
+  T_min: 100, T_max: 700, T_optimal: 300,
   fluid_min: { SiO2: 50 },
   surface_energy: 'high',
   _sources: ['quartz engine v17+', 'Rimstidt & Barnes 1980 GCA 44:1683', 'Brantley et al. 2008', 'London 2008 (Pegmatites) — pocket quartz to the wet-granite solidus', 'Frontiers Earth Sci. 10:976588 (2022) — Pikes Peak quartz 700-660°C'],
-  _notes: 'SiO2 trigonal. ΔH° = +22 kJ/mol — strongly T-sensitive (corrected v127). σ_crit 1.2 is the heterogeneous value vug nucleation uses; homogeneous σ_crit is 6-20+. v228: envelope hard-enforced — T<50 is opal/chalcedony territory; T_max 700 = wet granite solidus.',
+  _notes: 'SiO2 trigonal. ΔH° = +22 kJ/mol — strongly T-sensitive (corrected v127). σ_crit 1.2 is the heterogeneous value vug nucleation uses; homogeneous σ_crit is 6-20+. SIM 243: crystalline quartz is kinetically admitted at 100-700°C; below 100°C the separate opal phase owns eligible hydrated/amorphous silica precipitation. T_max 700 = wet granite solidus.',
 };
 
 const MINERAL_GATES_feldspar: MineralGates = {
@@ -494,29 +494,31 @@ const MINERAL_GATES_chabazite: MineralGates = {
 };
 
 Object.assign(VugConditions.prototype, {
+  quartz_equilibrium_ratio() {
+  const eq = this.silica_equilibrium(this.effectiveTemperature);
+  if (eq <= 0) return 0;
+  let sigma = this.fluid.SiO2 / eq;
+  if (this.fluid.pH < 4.0 && this.fluid.F > 20) {
+    const hf_attack = (4.0 - this.fluid.pH) * (this.fluid.F / 50.0) * 0.3;
+    sigma -= hf_attack;
+  }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'quartz');
+  return Math.max(sigma, 0);
+},
+
   supersaturation_quartz() {
   // v228 (rung 2): enforce the declared T envelope — the review's smoking gun
-  // #3 was that quartz's gates metadata (T_min 50, v127) was never read here,
+  // #3 was that quartz's gates metadata (formerly T_min 50, now 100) was never read here,
   // so 13 scenarios grew macro-quartz at 23-47°C where silica kinetics only
-  // permit opal/chalcedony (sicily's most-fired phase was quartz, at 23°C).
+  // permit macrocrystalline quartz (sicily's most-fired phase was quartz, at 23°C).
   // Prograde solubility makes this leak SYSTEMATIC: eq(T) falls as T falls,
   // so cold water reads as MORE supersaturated — thermodynamically true,
   // kinetically meaningless. The hard gate is the kinetic truth; sub-floor
   // silica routes to the opal engine (its window already owns 5-100°C).
   const g = MINERAL_GATES_quartz;
+  if (this.silica_precipitate_phase() !== 'quartz') return 0;
   if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
-  const eq = this.silica_equilibrium(this.effectiveTemperature);
-  if (eq <= 0) return 0;
-  let sigma = this.fluid.SiO2 / eq;
-
-  // HF attack on quartz: low pH + high F = dissolution
-  if (this.fluid.pH < 4.0 && this.fluid.F > 20) {
-    const hf_attack = (4.0 - this.fluid.pH) * (this.fluid.F / 50.0) * 0.3;
-    sigma -= hf_attack;
-  }
-
-  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'quartz');
-  return Math.max(sigma, 0);
+  return this.quartz_equilibrium_ratio();
 },
 
   supersaturation_feldspar() {
@@ -841,12 +843,11 @@ Object.assign(VugConditions.prototype, {
   // regime). High SiO2 supersaturation required (> 200 ppm — Fournier
   // 1977 Geothermics 5:41 amorphous silica solubility curve).
   //
-  // NOTE: separate from the existing grow_quartz polymorph dispatch
-  // (which can label a quartz crystal mineral_display='opal' at very
-  // low T). This standalone opal engine fires nucleation as opal-A
-  // directly, with a higher growth rate and the diagenesis-ladder
-  // mechanic flagged for future POLYMORPH_DIAGENESIS expansion.
+  // SIM 243: this is the only low-temperature generic silica route. Quartz
+  // can no longer nucleate and then acquire an opal/chalcedony display label;
+  // opal-A is born as its own phase with its own inventory and growth record.
   supersaturation_opal() {
+    if (this.silica_precipitate_phase() !== 'opal') return 0;
     if (this.fluid.SiO2 < 200) return 0;
     if (this.temperature < 5 || this.temperature > 100) return 0;
     if (this.fluid.pH < 6.5 || this.fluid.pH > 10.0) return 0;

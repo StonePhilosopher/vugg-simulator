@@ -12382,7 +12382,25 @@
 //       and focus restoration, but is explicitly nonmodal (no false aria-modal
 //       promise). Schneeberg now records bismuthinite's intentional SIM 241
 //       disappearance without a species-specific retune.
-const SIM_VERSION = 242;
+// v243 — HOSTILE-REVIEW ROUND 7 PHASE IDENTITY + SULFUR RESERVOIRS
+//       (2026-08-06). Generic silica now selects a real phase before
+//       saturation and nucleation: opal owns the 5-100 C hydrated/amorphous
+//       window and quartz owns the 100-700 C crystalline window. A quartz
+//       crystal can no longer nucleate cold and be cosmetically relabelled
+//       opal or chalcedony; existing quartz below its kinetic window pauses
+//       unless its actual quartz equilibrium ratio is undersaturated.
+//       Dissolved sulfur is split into independently conserved sulfide and
+//       sulfate reservoirs plus a separate elemental-S precursor. Sulfide,
+//       sulfate, and native-sulfur minerals debit only their corresponding
+//       reservoir, closing the former one-pool double spend. Sulphur Bank now
+//       executes H2S + 1/2 O2 -> S0 + H2O with explicit sulfur/oxygen closure
+//       and no invented proton source. Sicily is a separate anoxic microbial/
+//       inherited-S0 path; BSR transfers sulfate to reduced sulfur and adds
+//       carbonate alkalinity without borrowing the oxic hot-spring mechanism.
+//       Creative Mode exposes all three reservoir levers and the native-S
+//       pathway in setup and live editing. The fluid-pressure envelope reaches
+//       0.001 kbar so surface scenarios are representable without range clipping.
+const SIM_VERSION = 243;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12390,13 +12408,15 @@ const SIM_VERSION = 242;
 // any token's meaning changes, even if a developer forgets a version bump—the
 // mismatch guards then fail loudly instead of allowing provenance drift.
 const MODEL_DIGEST = [
-  'Pfluid:kbar-0.01..4.4',
+  'Pfluid:kbar-0.001..4.4',
   'CaCO3:Hacker05-negative-linear+/-1kbar',
   'Prock:Pattison92-AndSil-16+/-3barC',
   'stress:instant-resolved-shear-stable-grain-v2',
   'event-fluid:absolute-replace-v1',
   'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
+  'silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1',
+  'sulfur-ledger:sulfide+sulfate+elemental-independent+pathway-gated-v1',
   'CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1',
   'growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6',
   'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',

@@ -719,7 +719,7 @@ function grow_stibnite(crystal, conditions, step) {
   else if (excess > 0.5) { crystal.habit = 'radiating_spray'; crystal.dominant_forms = ['radiating bladed spray', 'sword-blade aggregate']; color_note = 'radiating spray of steel-gray blades'; }
   else { crystal.habit = 'elongated_prism_blade'; crystal.dominant_forms = ['elongated {110} prism', 'sword-blade terminations', 'brilliant metallic luster']; color_note = 'elongated sword-blade — the Ichinokawa habit (lead-gray metallic)'; }
   f.Sb = Math.max(f.Sb - rate * 0.025, 0);
-  f.S = Math.max(f.S - rate * 0.018, 0);
+  debitSulfurPool(f, 'sulfide', rate * 0.018);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 
@@ -896,7 +896,7 @@ function grow_bismuthinite(crystal, conditions, step) {
   else if (excess > 1.0) { crystal.habit = 'radiating_cluster'; crystal.dominant_forms = ['radiating cluster', 'needle bundle']; color_note = 'radiating cluster of fine bismuthinite needles'; }
   else { crystal.habit = 'acicular_needle'; crystal.dominant_forms = ['acicular {110} needles', 'lead-gray with iridescent tarnish']; color_note = `acicular needles (low-T form, T=${T.toFixed(0)}°C) — iridescent tarnish develops`; }
   f.Bi = Math.max(f.Bi - rate * 0.030, 0);
-  f.S = Math.max(f.S - rate * 0.018, 0);
+  debitSulfurPool(f, 'sulfide', rate * 0.018);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 
@@ -923,7 +923,7 @@ function grow_bornite(crystal, conditions, step) {
   const trace_Fe = f.Fe * 0.02;
   f.Cu = Math.max(f.Cu - rate * 0.03, 0);
   f.Fe = Math.max(f.Fe - rate * 0.008, 0);
-  f.S = Math.max(f.S - rate * 0.018, 0);
+  debitSulfurPool(f, 'sulfide', rate * 0.018);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe, note: color_note });
 }
 
@@ -962,7 +962,7 @@ function grow_chalcocite(crystal, conditions, step) {
     color_note = 'dark gray metallic tabular';
   }
   f.Cu = Math.max(f.Cu - rate * 0.04, 0);
-  f.S = Math.max(f.S - rate * 0.018, 0);
+  debitSulfurPool(f, 'sulfide', rate * 0.018);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 
@@ -986,7 +986,7 @@ function grow_covellite(crystal, conditions, step) {
   else if (f.O2 > 0.5 && f.O2 < 1.2) { crystal.habit = 'iridescent_coating'; crystal.dominant_forms = ['iridescent cleavage {0001}', 'purple-green thin-film interference']; color_note = `indigo-blue with iridescent purple-green tarnish (near oxidation boundary, O₂ ${f.O2.toFixed(1)})`; }
   else { crystal.habit = 'hex_plate'; crystal.dominant_forms = ['{0001} hexagonal basal plate', 'perfect basal cleavage — peels like mica']; color_note = 'indigo-blue hexagonal plate — the only common blue mineral'; }
   f.Cu = Math.max(f.Cu - rate * 0.03, 0);
-  f.S = Math.max(f.S - rate * 0.03, 0);
+  debitSulfurPool(f, 'sulfide', rate * 0.03);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 
@@ -1075,7 +1075,7 @@ function grow_metacinnabar(crystal, conditions, step) {
     crystal.dominant_forms = ['fine-grained disseminated'];
   }
   conditions.fluid.Hg = Math.max(conditions.fluid.Hg - rate * 0.025, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.012, 0);
+  debitSulfurPool(conditions.fluid, 'sulfide', rate * 0.012);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `metacinnabar (β-HgS) ${crystal.habit}, IRON-BLACK metallic (CONTRAST with cinnabar's scarlet — diagnostic visual marker)` });
 }
 
@@ -1420,7 +1420,7 @@ function grow_enargite(crystal, conditions, step) {
 
   conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.030, 0);
   conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.010, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.040, 0);
+  debitSulfurPool(conditions.fluid, 'sulfide', rate * 0.040);
 
   return new GrowthZone({
     step, temperature: conditions.temperature,

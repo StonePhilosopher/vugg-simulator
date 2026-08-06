@@ -100,9 +100,9 @@ function grow_native_sulfur(crystal, conditions, step) {
     habit_note = 'α-sulfur bipyramidal — Sicilian Agrigento habit, the iconic bright-yellow crystals';
   }
 
-  // Synproportionation acidifies the local fluid slightly
-  conditions.fluid.pH = Math.max(conditions.fluid.pH - rate * 0.0003, 0.5);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.02, 0);
+  // The shell ledger debits S_elemental after the zone is finalized. Crystal
+  // growth itself neither performs the upstream oxidation reaction nor
+  // invents acidity; H2S + 1/2 O2 -> S0 + H2O produces no H+.
 
   return new GrowthZone({
     step, temperature: conditions.temperature,

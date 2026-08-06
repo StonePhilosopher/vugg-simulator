@@ -108,7 +108,10 @@ const SPECIES_PROPERTIES: Record<string, { charge: number; molarMass: number; no
 
   // Major anions
   CO3: { charge: -2, molarMass: 60.01, note: 'CO₃²⁻; Phase 3 splits DIC by Bjerrum' },
-  S:   { charge: -2, molarMass: 32.07, note: 'SO₄²⁻ default; Phase 4 splits sulfide/sulfate' },
+  S:   { charge: -2, molarMass: 32.07, note: 'legacy total sulfur; explicit fluids use the three reservoirs below' },
+  S_sulfide:   { charge: -1, molarMass: 32.07, note: 'reduced sulfur as H₂S/HS⁻; effective mixed-species charge' },
+  S_sulfate:   { charge: -2, molarMass: 32.07, note: 'oxidized sulfur tracked as sulfur mass in SO₄²⁻ equivalents' },
+  S_elemental: { charge:  0, molarMass: 32.07, note: 'neutral suspended or colloidal elemental sulfur precursor' },
   F:   { charge: -1, molarMass: 19.00 },
   Cl:  { charge: -1, molarMass: 35.45 },
   P:   { charge: -3, molarMass: 30.97, note: 'as PO₄³⁻; element mass' },
@@ -142,6 +145,9 @@ function ionicStrength(fluid: any): number {
   for (const species in SPECIES_PROPERTIES) {
     const props = SPECIES_PROPERTIES[species];
     if (props.charge === 0) continue;
+    // `S` is an observer for explicit-pool fluids. Counting it as well as
+    // S_sulfide and S_sulfate would double the sulfur contribution.
+    if (species === 'S' && fluid?.sulfurPoolsExplicit) continue;
     const m = ppmToMolality(fluid[species], props.molarMass);
     I += 0.5 * m * props.charge * props.charge;
   }

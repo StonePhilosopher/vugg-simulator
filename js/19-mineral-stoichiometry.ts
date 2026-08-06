@@ -681,6 +681,23 @@ function stoichiometricBudgetDebitPpmPerUm(species: string, coefficient: number)
   return STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM * nu * molarMass;
 }
 
+// Explicit sulfur fluids book each mineral family against a chemically
+// distinct reservoir. Legacy fluids continue to use `S`, preserving their
+// historical calibration until their scenario chemistry is explicitly
+// migrated.
+const SULFATE_STOICHIOMETRY_MINERALS = new Set([
+  'leadhillite', 'barite', 'celestine', 'selenite', 'anhydrite', 'jarosite',
+  'alunite', 'brochantite', 'antlerite', 'anglesite', 'chalcanthite',
+  'mirabilite', 'thenardite', 'linarite', 'caledonite',
+]);
+
+function stoichiometricReservoirSpecies(mineral: string, species: string, fluid: any): string {
+  if (species !== 'S' || !fluid?.sulfurPoolsExplicit) return species;
+  if (mineral === 'native_sulfur') return 'S_elemental';
+  if (SULFATE_STOICHIOMETRY_MINERALS.has(mineral)) return 'S_sulfate';
+  return 'S_sulfide';
+}
+
 // Returns the list of species names that just transitioned from positive
 // to zero (depletion events), or null on no-op / missing stoichiometry.
 // _runEngineForCrystal uses this to emit "Fe²⁺ depleted in ring 4 —
@@ -734,7 +751,9 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
         inventory = {};
         const formula = MINERAL_STOICHIOMETRY[crystal.mineral] || {};
         for (const species in formula) {
-          inventory[species] = stoichiometricBudgetDebitPpmPerUm(species, formula[species]);
+          const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
+          inventory[reservoir] = (inventory[reservoir] || 0)
+            + stoichiometricBudgetDebitPpmPerUm(species, formula[species]);
         }
         for (const species in (z.trace_stoichiometry || {})) {
           inventory[species] = (inventory[species] || 0)
@@ -742,7 +761,8 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
         }
       }
       for (const species in inventory) {
-        returned[species] = (returned[species] || 0)
+        const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
+        returned[reservoir] = (returned[reservoir] || 0)
           + removedHere * inventory[species];
       }
     }
@@ -750,6 +770,7 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
       if (typeof fluid[species] !== 'number') continue;
       fluid[species] += returned[species];
     }
+    if (fluid.sulfurPoolsExplicit) syncExplicitSulfurTotal(fluid);
     zone._returned_budget_inventory = returned;
     return null;  // depletion narration is precipitation-only
   }
@@ -776,13 +797,14 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
   for (const species in stoich) {
     const demandPerUm = stoichiometricBudgetDebitPpmPerUm(species, stoich[species]);
     if (!(demandPerUm > 0)) continue;
-    const available = (typeof fluid[species] === 'number' && Number.isFinite(fluid[species]))
-      ? Math.max(0, fluid[species])
+    const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
+    const available = (typeof fluid[reservoir] === 'number' && Number.isFinite(fluid[reservoir]))
+      ? Math.max(0, fluid[reservoir])
       : 0;
     const supported = available / demandPerUm;
     if (supported < acceptedThickness) {
       acceptedThickness = supported;
-      limitingSpecies = species;
+      limitingSpecies = reservoir;
     }
   }
   acceptedThickness = Math.max(0, Math.min(requestedThickness, acceptedThickness));
@@ -801,7 +823,8 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
   const bookedInventoryPerUm: Record<string, number> = {};
   let depleted: string[] | null = null;
   for (const species in stoich) {
-    const previous = fluid[species];
+    const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
+    const previous = fluid[reservoir];
     if (typeof previous !== 'number') continue;
     const demandPerUm = stoichiometricBudgetDebitPpmPerUm(species, stoich[species]);
     const proposed = previous - zone.thickness_um * demandPerUm;
@@ -813,11 +836,11 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
     // not the steady-state "already exhausted" case.
     if (previous > STOICHIOMETRIC_GROWTH_BUDGET_DEPLETION_THRESHOLD &&
         proposed <= STOICHIOMETRIC_GROWTH_BUDGET_DEPLETION_THRESHOLD) {
-      (depleted ||= []).push(species);
+      (depleted ||= []).push(reservoir);
     }
-    fluid[species] = Math.max(0, proposed);
-    bookedInventoryPerUm[species] = zone.thickness_um > 0
-      ? (previous - fluid[species]) / zone.thickness_um
+    fluid[reservoir] = Math.max(0, proposed);
+    bookedInventoryPerUm[reservoir] = zone.thickness_um > 0
+      ? (previous - fluid[reservoir]) / zone.thickness_um
       : demandPerUm;
   }
   // Trace substitutions are optional rather than formula-limiting. Incorporate
@@ -839,6 +862,7 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
         + (zone.thickness_um > 0 ? (previous - fluid[species]) / zone.thickness_um : 0);
     }
   }
+  if (fluid.sulfurPoolsExplicit) syncExplicitSulfurTotal(fluid);
   zone._budget_inventory_per_um = bookedInventoryPerUm;
   zone._remaining_solid_um = zone.thickness_um;
   return depleted;

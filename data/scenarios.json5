@@ -3577,12 +3577,12 @@
 
     "sulphur_bank": {
       "anchor": "Sulphur Bank Mine, south shore of Clear Lake, Lake County, California — Pleistocene hot-spring mercury-sulfur deposit. Active hot-spring system since ~150,000 years ago; mined for mercury 1865-1957 (one of California's largest Hg producers). Now EPA Superfund site CAD980893275. The textbook hot-spring quicksilver-sulfur deposit per White & Roberson 1962 (USGS PP 432-A).",
-      "description": "Hot-spring mercury-sulfur deposit at the surface mixing zone where rising H₂S-rich fluid meets atmospheric O₂. Headline minerals: native sulfur (from synproportionation 2 H₂S + O₂ → 2 S° + 2 H₂O) and cinnabar (HgS, the deposit's mining commodity — Sulphur Bank yielded ~450 tons of mercury 1865-1957). The H₂SO₄ byproduct keeps fluid pH at 2-4. Accessory As-sulfides realgar (orange-red AsS) and orpiment (golden-yellow As₂S₃) deposit alongside in the same H₂S + O₂ mixing zone. Native sulfur grows in α-bipyramidal habit; cinnabar in deep cochineal-red rhombohedra; realgar in orange-red prisms; orpiment in foliated golden plates. Supporting cast: pyrite + marcasite from the Fe trace, quartz from silica-rich hot water.",
+      "description": "Hot-spring mercury-sulfur deposit at the surface mixing zone where rising H₂S-rich fluid meets atmospheric O₂. Headline minerals: native sulfur (from partial oxidation 2 H₂S + O₂ → 2 S° + 2 H₂O) and cinnabar (HgS, the deposit's mining commodity — Sulphur Bank yielded ~450 tons of mercury 1865-1957). The elemental-sulfur reaction itself produces no acid; the measured pH 2-4 belongs to the source acid-sulfate fluid and to more-complete sulfur oxidation outside this modeled branch. Accessory As-sulfides realgar (orange-red AsS) and orpiment (golden-yellow As₂S₃) deposit in the mixing zone. Supporting silica is modeled as opal when its own low-temperature, pH, and concentration gates are met—not cosmetically relabeled quartz.",
       "expects_species": ["native_sulfur", "cinnabar", "realgar", "orpiment", "pararealgar", "pyrite", "marcasite"],
       "duration_steps": 200,
       "notes": [
         "Anchor: Sulphur Bank Mine, the canonical hot-spring native-sulfur deposit. White & Roberson 1962 (USGS PP 432-A) is the foundational monograph; White 1981 placed it in the broader active-geothermal-ore-deposit framework. The deposit was the type case for the 'hot-spring mercury-sulfur' class. Active hot springs still vent today (60-90°C; the EPA Superfund record documents continuous monitoring 1990s-present).",
-        "Engine fit (native_sulfur in js/36-supersat-native.ts): the supersaturation gates are S ≥ 100 ppm, O₂ ∈ [0.1, 0.7] (the synproportionation window), pH ≤ 5, metal_sum (Fe+Cu+Pb+Zn) ≤ 100, T 20-95°C optimal. Sulphur Bank fluid sits dead-center in all five gates. This is the simpler of the two native_sulfur deposit types — the acid-sulfate hot-spring mode the existing engine was implicitly designed for. The Sicily-style sedimentary BSR mode (pH 7-8, calcite-buffered) is a future scenario after engine broadening.",
+        "Engine fit (SIM 243): H₂S recharge adds only to S_sulfide. Each open-air mixing event imports and consumes the exact O₂ mass required by H₂S + ½O₂ → S° + H₂O, transfers sulfur into S_elemental with zero sulfur loss, and records zero proton production for that reaction. Native-sulfur growth can debit only S_elemental; coexisting sulfides debit S_sulfide and cannot spend the same sulfur twice.",
         "Habit dispatcher: the engine's three habits are sublimation_crust (T > 60 + excess > 1.5; fumarole vent zone), prismatic_beta (T ≥ 95; rare high-T monoclinic), and bipyramidal_alpha (the iconic Sicilian {111} dipyramid habit, < 60°C). The scenario starts at 75°C — sublimation_crust at high σ, bipyramidal_alpha after cooling pulses. Both habits real for Sulphur Bank.",
         "Mercury: the namesake commodity (cinnabar, HgS) isn't in MINERAL_SPEC yet — a follow-up commit can add it for the full Sulphur Bank assemblage. For now the scenario carries trace Fe + As to fire pyrite + marcasite alongside the headline native_sulfur.",
         "ARSENOPYRITE WITHDRAWN from expects_species (v228, hostile-review rung 2 — the tormiq/mvt de-confabulation precedent): White & Roberson 1962's own ore list is cinnabar, marcasite, pyrite, dolomite, calcite, quartz, zeolite, ± metacinnabar, stibnite — no arsenopyrite; the USGS stable-isotope mineral set for the mine likewise lacks it, and FeAsS is a ≥200°C mineral (Kretschmar & Scott calibration; Carlin fluids 180-240°C) that a 50-77°C spring cannot grow. Pre-v228 it fired here only because the declared T_min 200 was unenforced. The promise was the confabulation; the As stays in the broth and reports through the documented low-T As phases.",
@@ -3590,7 +3590,7 @@
       ],
       "initial": {
         "temperature_C": 75.0,
-        "pressure_kbar": 0.05,
+        "pressure_kbar": 0.001,
         "fluid": {
           // F=2: Coast Range connate water, high-B high-NH4 F-POOR type; measured 0.4-0.6 mg/L
           // at the impoundment (USGS 2022-23); zero F-bearing minerals in the locality suite.
@@ -3621,6 +3621,11 @@
           // v82 was 500 ppm (slightly above measured range); v83
           // tuned to 400 to follow the published upper bound exactly.
           "S": 400,
+          "S_sulfide": 400,
+          "S_sulfate": 0,
+          "S_elemental": 0,
+          "sulfurPoolsExplicit": true,
+          "nativeSulfurPathway": "oxidative_interface",
           "Cl": 80,       // low-moderate salinity for hot spring
           // Trace metals — low. metal_sum = Fe(25)+Cu(3)+Pb(2)+Zn(5)
           // = 35 < 100 (the engine cap; mercury hot springs are
@@ -3664,7 +3669,8 @@
           // cinnabar engine's Hg ≥ 1 gate with headroom for the
           // hg_f factor (Hg/5, capped at 4.0) to hit 3.0.
           "Hg": 15,
-          // pH: acid from H₂S + ½O₂ → S° + H₂SO₄ at the vents.
+          // pH: measured acid-sulfate source-fluid acidity. The partial
+          // oxidation branch H₂S + ½O₂ → S° + H₂O produces no H+.
           // White & Roberson 1962 measured pH 1.8-4.0 at active
           // vents (some assays reaching 1.5 in the most active
           // mixing zones). 1.8 is in the low end of that range —
@@ -3748,11 +3754,11 @@
 
     "sicily_solfifera": {
       "anchor": "Cianciana / Caltanissetta district, Agrigento province, Sicily — Solfifera Series (Messinian, 6-5.3 Ma). The canonical sedimentary BSR native-sulfur deposit. World's primary sulfur production center 1860s-1950s, when the Sicilian fields supplied ~80% of global elemental sulfur. Type for 'bacterial-mediated sedimentary sulfur' per Ziegenbalg et al. 2010.",
-      "description": "Sedimentary native sulfur from bacterial sulfate reduction of Messinian gypsum + Pleistocene meteoric O₂ infiltration. The OTHER half of the native_sulfur story (Sulphur Bank = acid-sulfate hot-spring; Sicily = alkaline-buffered BSR-near-surface). Mineable S° crystallizes in the upper few meters of the Solfifera Series, the gypsum-marl-sulfur sequence deposited during the Mediterranean salinity crisis. Co-products: calcite cement from the BSR-generated H₂CO₃, residual selenite (Messinian gypsum), celestine from gypsum-derived Sr trace, sometimes aragonite.",
+      "description": "Sedimentary native sulfur associated with anaerobic microbial sulfate reduction of Messinian gypsum and hydrocarbons. This is deliberately distinct from Sulphur Bank's oxic hot-spring interface: the vug inherits a separately sourced elemental-S reservoir produced over geological time in sulfur-bearing carbonate, while in-run BSR transfers sulfate to reduced sulfur and raises carbonate alkalinity. Mineable S° crystallizes with secondary carbonates in the Solfifera Series. Co-products: calcite cement, residual selenite, and celestine from gypsum-derived Sr trace.",
       "expects_species": ["native_sulfur", "calcite", "selenite", "celestine"],
       "duration_steps": 200,
       "notes": [
-        "Anchor: Sicilian Solfifera Series, Cianciana / Caltanissetta. The Messinian salinity crisis (6-5.3 Ma) precipitated a thick gypsum + halite + marl sequence in the central Sicilian basin (Decima & Wezel 1971; Manzi et al. 2009). Bacterial sulfate reduction at depth, fueled by organic-C burial, converted gypsum sulfate to H₂S + CaCO₃ over millions of years (Ziegenbalg et al. 2010 — sedimentary geology evidence; Aharon 2000 — isotope record). Pleistocene meteoric water infiltrated the upper meters, bringing dissolved O₂. The H₂S met O₂ in the upper oxidation zone and precipitated as native S° via synproportionation. Cianciana alone produced ~2 Mt of sulfur 1840-1950.",
+        "Anchor: Sicilian Solfifera Series, Cianciana / Caltanissetta. Microbial sulfate reduction of Messinian gypsum and hydrocarbons produced secondary carbonate and native sulfur under anoxic conditions. Ziegenbalg et al. (2010) establish the microbial sulfate-reduction association; Rouwendaal et al. (2025) demonstrate that molecular O₂ is not required at Monte Palco. The simulator therefore carries inherited microbial S° separately from sulfate and sulfide instead of reusing the Sulphur Bank oxic-interface mechanism.",
         "Engine mode: this scenario fires the BSR-near-surface peak of the v80 bimodal pH factor (peaks at 2.5 Sulphur-Bank-style and 6.0 Sicily-style). The pH = 6.0 initial condition is dead-center on the BSR peak. The engine's metal_sum ≤ 100 gate fits Sicilian fluid — Messinian marls are clean (metal_sum ≈ 25, dominated by trace Fe).",
         "Co-products: the simulator's calcite + selenite + celestine + aragonite engines fire under the same broth: calcite from the 600 ppm Ca + 80 ppm CO₃ supersat; selenite (gypsum) from the same Ca + 400 ppm S (sulfate fraction); celestine from the trace Sr; aragonite as the calcite polymorph at low T + appropriate Mg/Ca. This is the geologically-real Sicilian assemblage — the same minerals you'd identify in a hand specimen from Cianciana.",
         "Wall composition: 'limestone' — Sicily IS literally hosted in calcite/gypsum matrix. The Solfifera Series sits on the Trubi Formation (Pliocene pelagic chalk) and is interbedded with limestone marls. The wall's dissolve() releases Ca + CO₃ which models the actual gypsum/calcite matrix dissolution. reactivity = 0.5 keeps the buffer gentle so pH stays in the BSR window."
@@ -3761,7 +3767,7 @@
         // Sedimentary basin T — ambient. The Messinian-Pleistocene
         // section never reached hydrothermal T; BSR happens cool.
         "temperature_C": 30.0,
-        "pressure_kbar": 0.5,            // ~5m depth (top of Solfifera oxidation zone)
+        "pressure_kbar": 0.001,          // shallow diagenetic pore (~10 m water-equivalent)
         "fluid": {
           // F=2: Messinian evaporite porewater + meteoric karst overprint; gypsum/calcite-
           // saturated Ca scavenges F (CaF2 Ksp ~3.5e-11); the Solfifera assemblage has no
@@ -3777,10 +3783,15 @@
           "Ca": 600,
           // CO3 moderate — BSR generates H₂CO₃ that buffers the porewater.
           "CO3": 80,
-          // Sulfur: the BSR-produced sulfide pool. 400 ppm is in the
-          // measured Solfifera porewater range. Above the engine's
-          // 100 ppm threshold; s_f saturates at 2.0.
+          // Sulfur reservoirs are explicit: 300 ppm sulfate from gypsum,
+          // 100 ppm reduced S from BSR, and a separate 200 ppm-equivalent
+          // inherited microbial S° precursor in the sulfur-bearing rock.
           "S": 400,
+          "S_sulfide": 100,
+          "S_sulfate": 300,
+          "S_elemental": 200,
+          "sulfurPoolsExplicit": true,
+          "nativeSulfurPathway": "anaerobic_microbial_inherited",
           // Trace metals — LOW. Messinian marls are clean evaporite-
           // derived sediments. metal_sum = Fe(5)+Cu(0)+Pb(0)+Zn(0) = 5
           // well below the engine's 100 cap.
@@ -3803,10 +3814,9 @@
           // Real Solfifera porewater measurements (Aharon 2000) cluster
           // at 5.8-6.3. 6.0 is dead-center.
           "pH": 6.0,
-          // O₂: mixed-oxic Pleistocene meteoric infiltration. 0.40 is
-          // the peak of the engine's nativeRedoxTent — the
-          // synproportionation sweet spot.
-          "O2": 0.40,
+          // O₂ remains anoxic. Native S here is inherited from the
+          // anaerobic microbial deposit pathway, not an oxic interface.
+          "O2": 0.02,
           "salinity": 5.0
         },
         "wall": {
@@ -3844,25 +3854,25 @@
       },
       "events": [
         // 10 events over 200 steps modeling the Pleistocene infiltration
-        // and BSR-cycle hydrology. The geological story: each event is
-        // a recharge pulse where meteoric water dissolves more
-        // upgradient gypsum (replenishing S substrate) and brings O₂
-        // (driving synproportionation in the oxidation zone). Slow
+        // and BSR-cycle hydrology. Each recharge pulse dissolves more
+        // upgradient gypsum or imports previously formed microbial S°.
+        // The modeled pore remains anoxic throughout. Slow
         // cycle — sedimentary BSR operates on 10,000-year timescales
         // IRL but compressed to 200 steps here.
         { "step":  15, "type": "sicily_gypsum_dissolution",        "name": "Gypsum Pulse #1",          "description": "Meteoric water dissolves Messinian gypsum" },
-        { "step":  25, "type": "sicily_meteoric_o2_pulse",         "name": "Meteoric O₂ Pulse #1",     "description": "O₂-rich water reaches the oxidation zone" },
+        { "step":  25, "type": "sicily_bsr_reduction",             "name": "BSR Pulse #1",              "description": "Anaerobic microbes reduce gypsum-derived sulfate" },
         { "step":  50, "type": "sicily_gypsum_dissolution",        "name": "Gypsum Pulse #2",          "description": "Renewed gypsum dissolution upgradient" },
-        { "step":  60, "type": "sicily_meteoric_o2_pulse",         "name": "Meteoric O₂ Pulse #2",     "description": "Synproportionation continues" },
+        { "step":  60, "type": "sicily_bsr_reduction",             "name": "BSR Pulse #2",              "description": "Sulfate reduction raises carbonate alkalinity" },
         { "step":  85, "type": "sicily_carbonate_buffer",          "name": "Carbonate Buffer Lock",    "description": "BSR-generated H₂CO₃ pins pH at 6.0" },
         { "step": 105, "type": "sicily_gypsum_dissolution",        "name": "Gypsum Pulse #3",          "description": "Continued upgradient gypsum dissolution" },
-        { "step": 115, "type": "sicily_late_synproportionation",   "name": "Late Synproportionation",  "description": "Fresh O₂ + replenished S pool" },
+        { "step": 115, "type": "sicily_inherited_sulfur_recharge", "name": "Inherited S° Recharge",    "description": "Anoxic porewater imports previously formed microbial S°" },
         { "step": 140, "type": "sicily_carbonate_buffer",          "name": "Mid-Run Buffer Refresh",   "description": "Carbonate buffer maintains pH 6.0" },
-        { "step": 160, "type": "sicily_late_synproportionation",   "name": "Late Synproportionation",  "description": "Continued S° growth in oxidation zone" },
-        { "step": 180, "type": "sicily_late_synproportionation",   "name": "Final Synproportionation", "description": "Last meteoric pulse before run-end" }
+        { "step": 160, "type": "sicily_inherited_sulfur_recharge", "name": "Inherited S° Recharge",    "description": "Continued anoxic supply from sulfur-bearing carbonate" },
+        { "step": 180, "type": "sicily_inherited_sulfur_recharge", "name": "Final S° Recharge",        "description": "Last inherited microbial sulfur pulse before run-end" }
       ],
       "sources": [
         "Ziegenbalg S.B., Brunner B., Birgel D., Voigt M., Strauss H., Peckmann J. (2010) — Formation of secondary carbonates and native sulphur in sulphate-rich Messinian strata, Sicily. Sedimentary Geology 227: 37-50.",
+        "Rouwendaal E.A. et al. (2025) — An Anaerobic Microbial Community Mediates Epigenetic Native Sulfur and Carbonate Formation During Replacement of Messinian Gypsum at Monte Palco, Sicily. Geobiology. doi:10.1111/gbi.70015.",
         "Manzi V., Lugli S., Roveri M., Schreiber B.C. (2009) — A new facies model for the Upper Gypsum of Sicily (Italy): chronological and palaeoenvironmental constraints. Sedimentology 56: 1937-1960.",
         "Garcia-Veigas J., Ortí F., Rosell L., Ayora C., Rouchy J.M., Lugli S. (1995) — The Messinian salt of the Mediterranean: geochemical study of the salt from the central Sicily basin. Bulletin Société Géologique de France 166: 699-710.",
         "Decima A., Wezel F.C. (1971) — Osservazioni sulle evaporiti messiniane della Sicilia centro-meridionale. Rivista Mineraria Siciliana 22 (130-132): 172-187.",

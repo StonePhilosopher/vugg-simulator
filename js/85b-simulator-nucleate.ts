@@ -1521,6 +1521,7 @@ _computeGraduatedZones() {
         it.sigma,
         it.initiative,
         physicalCandidateThickness,
+        group.fluid,
       );
       if (r) runs.push(r);
       else noStoich.push(it);

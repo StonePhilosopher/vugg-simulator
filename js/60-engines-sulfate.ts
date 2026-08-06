@@ -632,7 +632,7 @@ function grow_anglesite(crystal, conditions, step) {
   const trace_Fe = f.Fe * 0.015;
   const trace_Pb = f.Pb * 0.015;
   f.Pb = Math.max(f.Pb - rate * 0.02, 0);
-  f.S = Math.max(f.S - rate * 0.018, 0);
+  debitSulfurPool(f, 'sulfate', rate * 0.018);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe, trace_Pb, note: color_note });
 }
 
@@ -670,7 +670,7 @@ function grow_linarite(crystal, conditions, step) {
   }
   conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.018, 0);
   conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.012, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.020, 0);
+  debitSulfurPool(conditions.fluid, 'sulfate', rate * 0.020);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `linarite ${crystal.habit}, deep azure-blue (SG 5.3, NO HCl fizz vs azurite — heavy in hand is diagnostic)` });
 }
 
@@ -706,7 +706,7 @@ function grow_caledonite(crystal, conditions, step) {
   }
   conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.025, 0);
   conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.010, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.018, 0);
+  debitSulfurPool(conditions.fluid, 'sulfate', rate * 0.018);
   conditions.fluid.CO3 = Math.max(conditions.fluid.CO3 - rate * 0.008, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `caledonite ${crystal.habit}, blue-GREEN (the only blue-green of the Pb-Cu sulfate trio; SG 5.6)` });
 }
@@ -742,7 +742,7 @@ function grow_leadhillite(crystal, conditions, step) {
     crystal.dominant_forms = ['massive granular vug filling'];
   }
   conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.030, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.010, 0);
+  debitSulfurPool(conditions.fluid, 'sulfate', rate * 0.010);
   conditions.fluid.CO3 = Math.max(conditions.fluid.CO3 - rate * 0.015, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `leadhillite ${crystal.habit}, pearly white pseudo-hexagonal (SG 6.5+, mica-like cleavage; metastable → anglesite+cerussite over geological time)` });
 }

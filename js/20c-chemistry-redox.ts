@@ -202,6 +202,10 @@ function o2FromEh(Eh_mV: number): number {
 // enough?"). With flag off, identical to `fluid.O2 >= X` — the strict
 // `<` legacy form combined with the negation gives the same boundary.
 function sulfateRedoxAvailable(fluid: any, o2Threshold: number): boolean {
+  // An explicit sulfate reservoir is separately sourced disequilibrium. Its
+  // existence is stronger evidence than deriving sulfate from instantaneous
+  // Eh, so an anoxic fluid may retain and precipitate inherited sulfate.
+  if (fluid?.sulfurPoolsExplicit) return (Number(fluid.S_sulfate) || 0) > 0;
   if (!EH_DYNAMIC_ENABLED) {
     return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) >= o2Threshold;
   }
@@ -217,6 +221,7 @@ function sulfateRedoxAvailable(fluid: any, o2Threshold: number): boolean {
 // identical to the inline expression. With flag on, derives a
 // synthetic O2 from current Eh and applies the same ratio.
 function sulfateRedoxFactor(fluid: any, scaleAtFull: number, cap: number = Infinity): number {
+  if (fluid?.sulfurPoolsExplicit) return Math.min(1, cap);
   if (!EH_DYNAMIC_ENABLED) {
     const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
     return Math.min(O2 / scaleAtFull, cap);
@@ -515,6 +520,7 @@ function sulfurReducedFraction(fluid: any, T: number): number {
 // sphalerite, pyrite, acanthite, etc. (js/41-supersat-sulfide.ts, js/91).
 function sulfideAvailablePpm(fluid: any, T: number): number {
   if (!fluid || typeof fluid.S !== 'number') return 0;
+  if (fluid.sulfurPoolsExplicit) return Math.max(0, Number(fluid.S_sulfide) || 0);
   return fluid.S * sulfurReducedFraction(fluid, T);
 }
 
@@ -522,19 +528,135 @@ function sulfideAvailablePpm(fluid: any, T: number): number {
 // reads in supersaturation_* methods of barite, celestine, anhydrite, selenite, the
 // supergene Pb/Cu sulfates, etc. (js/40-supersat-sulfate.ts, js/90).
 //
-// CARVE-OUT (S1, boss-approved 2026-07-23): a fluid carrying externally-sourced OXIDIZED
-// sulfate — a meteoric sulfate pulse into an otherwise-reducing vein (wittichen's late
-// barite stage; its bare-wall barite did NOT recover live and forms in a fluid kept
-// reducing to protect the arsenide suite) — carries an inherited SO₄²⁻ pool the single-Eh
-// derivation can't represent (the two-pool Model-C case). Until Model C, the scenario sets
-// fluid.sulfateInherited and sulfates read the full S. This DOUBLE-BOOKS with any residual
-// sulfide consumer (wittichen's silver still tarnishes to acanthite at the same stage) —
-// the accepted, honestly-flagged cost of a one-pool model for a genuinely two-pool fluid;
-// sulfideAvailablePpm is deliberately left on the normal split so those consumers survive.
+// Legacy carve-out: sulfateInherited preserves old one-pool scenarios that authored an
+// externally sourced sulfate pulse. New mixed-valence content must use the explicit
+// reservoirs so sulfate and sulfide cannot spend the same sulfur twice.
 function sulfateAvailablePpm(fluid: any, T: number): number {
   if (!fluid || typeof fluid.S !== 'number') return 0;
+  if (fluid.sulfurPoolsExplicit) return Math.max(0, Number(fluid.S_sulfate) || 0);
   if (fluid.sulfateInherited) return fluid.S;
   return fluid.S * (1 - sulfurReducedFraction(fluid, T));
+}
+
+// Elemental-sulfur precursor available to native-S precipitation. There is
+// deliberately no legacy fallback: dissolved total S is not S0.
+function elementalSulfurAvailablePpm(fluid: any): number {
+  if (!fluid || !fluid.sulfurPoolsExplicit) return 0;
+  return Math.max(0, Number(fluid.S_elemental) || 0);
+}
+
+function syncExplicitSulfurTotal(fluid: any): number {
+  if (!fluid || !fluid.sulfurPoolsExplicit) return Number(fluid?.S) || 0;
+  fluid.S_sulfide = Math.max(0, Number(fluid.S_sulfide) || 0);
+  fluid.S_sulfate = Math.max(0, Number(fluid.S_sulfate) || 0);
+  fluid.S_elemental = Math.max(0, Number(fluid.S_elemental) || 0);
+  fluid.S = fluid.S_sulfide + fluid.S_sulfate;
+  return fluid.S;
+}
+
+function sulfurSystemTotalPpm(fluid: any): number {
+  if (!fluid) return 0;
+  if (!fluid.sulfurPoolsExplicit) return Math.max(0, Number(fluid.S) || 0);
+  return syncExplicitSulfurTotal(fluid) + fluid.S_elemental;
+}
+
+function ensureExplicitSulfurPools(fluid: any, T: number): any {
+  if (!fluid) return fluid;
+  if (!fluid.sulfurPoolsExplicit) {
+    const total = Math.max(0, Number(fluid.S) || 0);
+    const reduced = total * sulfurReducedFraction(fluid, T);
+    fluid.S_sulfide = reduced;
+    fluid.S_sulfate = total - reduced;
+    fluid.S_elemental = Math.max(0, Number(fluid.S_elemental) || 0);
+    fluid.sulfurPoolsExplicit = true;
+    fluid.sulfateInherited = false;
+  }
+  syncExplicitSulfurTotal(fluid);
+  return fluid;
+}
+
+function addSulfurToPool(fluid: any, pool: 'sulfide' | 'sulfate' | 'elemental', ppm: number, T: number): number {
+  ensureExplicitSulfurPools(fluid, T);
+  const key = pool === 'sulfide' ? 'S_sulfide' : pool === 'sulfate' ? 'S_sulfate' : 'S_elemental';
+  const addition = Math.max(0, Number(ppm) || 0);
+  fluid[key] = Math.max(0, Number(fluid[key]) || 0) + addition;
+  syncExplicitSulfurTotal(fluid);
+  return addition;
+}
+
+function debitSulfurPool(fluid: any, pool: 'sulfide' | 'sulfate' | 'elemental', ppm: number): number {
+  const demand = Math.max(0, Number(ppm) || 0);
+  if (!fluid?.sulfurPoolsExplicit) {
+    const before = Math.max(0, Number(fluid?.S) || 0);
+    if (fluid) fluid.S = Math.max(0, before - demand);
+    return before - (Number(fluid?.S) || 0);
+  }
+  const key = pool === 'sulfide' ? 'S_sulfide' : pool === 'sulfate' ? 'S_sulfate' : 'S_elemental';
+  const before = Math.max(0, Number(fluid[key]) || 0);
+  fluid[key] = Math.max(0, before - demand);
+  syncExplicitSulfurTotal(fluid);
+  return before - fluid[key];
+}
+
+// Mass-balanced partial oxidation at an open air-water interface:
+// H2S + 1/2 O2 -> S0 + H2O. Sulfur is transferred, not deleted. O2 is
+// imported from the atmosphere as an explicit boundary flux and consumed at
+// 0.5 mol O2 per mol S. This reaction produces no H+.
+function oxidizeReducedSulfurToElemental(
+  fluid: any,
+  fraction: number,
+  targetResidualO2Ppm: number = 0.4,
+): any {
+  ensureExplicitSulfurPools(fluid, 25);
+  const beforeS = sulfurSystemTotalPpm(fluid);
+  const beforeO2 = Math.max(0, Number(fluid.O2) || 0);
+  const convertedS = fluid.S_sulfide * Math.min(1, Math.max(0, Number(fraction) || 0));
+  const oxygenConsumed = convertedS * (0.5 * 32.00 / 32.07);
+  const residual = Math.max(0, Number(targetResidualO2Ppm) || 0);
+  const oxygenImported = Math.max(0, oxygenConsumed + residual - beforeO2);
+  fluid.O2 = beforeO2 + oxygenImported - oxygenConsumed;
+  fluid.S_sulfide -= convertedS;
+  fluid.S_elemental += convertedS;
+  syncExplicitSulfurTotal(fluid);
+  if (typeof ehFromO2 === 'function') fluid.Eh = ehFromO2(fluid.O2);
+  const result = {
+    pathway: 'oxidative_interface',
+    sulfurBeforePpm: beforeS,
+    sulfurAfterPpm: sulfurSystemTotalPpm(fluid),
+    sulfurTransferredPpm: convertedS,
+    oxygenBeforePpm: beforeO2,
+    oxygenImportedPpm: oxygenImported,
+    oxygenConsumedPpm: oxygenConsumed,
+    oxygenAfterPpm: fluid.O2,
+    protonsProducedMmolKg: 0,
+  };
+  Object.defineProperty(fluid, '_lastSulfurReaction', { value: result, writable: true, configurable: true, enumerable: false });
+  return result;
+}
+
+// Bacterial sulfate reduction transfers sulfate to reduced sulfur. Organic
+// carbon is an explicit untracked boundary reagent; carbonate alkalinity is
+// credited at two mol C per mol S for the scenario-scale reaction.
+function bacterialReduceSulfate(fluid: any, sulfurPpm: number, T: number): any {
+  ensureExplicitSulfurPools(fluid, T);
+  const beforeS = sulfurSystemTotalPpm(fluid);
+  const transferred = Math.min(Math.max(0, Number(sulfurPpm) || 0), fluid.S_sulfate);
+  fluid.S_sulfate -= transferred;
+  fluid.S_sulfide += transferred;
+  const carbonateAdded = transferred * (2 * 60.01 / 32.07);
+  fluid.CO3 = Math.max(0, Number(fluid.CO3) || 0) + carbonateAdded;
+  syncExplicitSulfurTotal(fluid);
+  const result = {
+    pathway: 'bacterial_sulfate_reduction',
+    sulfurBeforePpm: beforeS,
+    sulfurAfterPpm: sulfurSystemTotalPpm(fluid),
+    sulfurTransferredPpm: transferred,
+    carbonateAddedPpm: carbonateAdded,
+    oxygenConsumedPpm: 0,
+    organicElectronDonorBoundary: true,
+  };
+  Object.defineProperty(fluid, '_lastSulfurReaction', { value: result, writable: true, configurable: true, enumerable: false });
+  return result;
 }
 
 // ============================================================

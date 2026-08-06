@@ -21,16 +21,16 @@ declare function setSeed(seed: number): void;
 
 describe('pressure science primitives', () => {
   it('keeps fluid pressure inside the researched model envelope', () => {
-    expect(clampFluidPressureKbar(-10)).toBe(0.01);
+    expect(clampFluidPressureKbar(-10)).toBe(0.001);
     expect(clampFluidPressureKbar(2.25)).toBe(2.25);
     expect(clampFluidPressureKbar(99)).toBe(4.4);
-    expect(new VugConditions({ pressure: -10 }).pressure).toBe(0.01);
+    expect(new VugConditions({ pressure: -10 }).pressure).toBe(0.001);
     expect(new VugConditions({ pressure: 99 }).pressure).toBe(4.4);
     const moving = { pressure: 1.5 };
     _movementSetField(moving, 'pressure', 9);
     expect(moving.pressure).toBe(4.4);
     _movementSetField(moving, 'pressure', -2);
-    expect(moving.pressure).toBe(0.01);
+    expect(moving.pressure).toBe(0.001);
   });
 
   it('selects the deep/cold aragonite field without disturbing shallow Mg kinetics', () => {

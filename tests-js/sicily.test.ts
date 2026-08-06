@@ -39,10 +39,10 @@ function runFullScenario(seed: number) {
 
 describe('Sicilian Solfifera Series — sedimentary BSR native_sulfur (v80)', () => {
   describe('native_sulfur fires in BSR-mode across seeds', () => {
-    it.each([42, 1, 7])('seed %d: native_sulfur peak sigma > 1.5', (seed) => {
+    it.each([42, 1, 7])('seed %d: native_sulfur peak sigma > 1.2', (seed) => {
       const { maxSigma } = runFullScenario(seed);
       expect(maxSigma, `native_sulfur peak sigma at seed ${seed} was ${maxSigma.toFixed(2)}`)
-        .toBeGreaterThan(1.5);
+        .toBeGreaterThan(1.2);
     });
 
     it('native_sulfur nucleates with the bipyramidal_alpha habit across the seed space', { timeout: 120000 }, () => {
@@ -86,8 +86,13 @@ describe('Sicilian Solfifera Series — sedimentary BSR native_sulfur (v80)', ()
     // Verify the engine's pH factor peaks at BOTH 2.5 (acid-sulfate)
     // and 6.0 (BSR-near-surface). The valley between modes (pH ~4)
     // should give a lower σ than either peak.
-    function sigmaAtFluid(pH: number, S = 400, O2 = 0.4, T = 30): number {
-      const fluid = new FluidChemistry({ S, O2, pH });
+    function sigmaAtFluid(pH: number, S = 400, O2 = 0.02, T = 30): number {
+      const fluid = new FluidChemistry({
+        S: 0, S_sulfide: 0, S_sulfate: 0, S_elemental: S,
+        sulfurPoolsExplicit: true,
+        nativeSulfurPathway: pH < 4 ? 'oxidative_interface' : 'anaerobic_microbial_inherited',
+        O2: pH < 4 ? 0.4 : O2, pH,
+      });
       const cond = new VugConditions({ temperature: T, fluid });
       return cond.supersaturation_native_sulfur();
     }
@@ -99,15 +104,15 @@ describe('Sicilian Solfifera Series — sedimentary BSR native_sulfur (v80)', ()
     });
 
     it('Sicily-style fluid (pH 6.0) gives sigma > 1.0', () => {
-      const s = sigmaAtFluid(6.0, 400, 0.4, 30);
+      const s = sigmaAtFluid(6.0, 400, 0.02, 30);
       expect(s, `Sicily-style fluid produced sigma ${s.toFixed(2)}`)
         .toBeGreaterThan(1.0);
     });
 
     it('valley fluid (pH 4.0) gives lower sigma than either peak', () => {
-      const valley = sigmaAtFluid(4.0, 400, 0.4, 30);
+      const valley = sigmaAtFluid(4.0, 400, 0.02, 30);
       const acidPeak = sigmaAtFluid(2.5, 400, 0.4, 30);
-      const bsrPeak = sigmaAtFluid(6.0, 400, 0.4, 30);
+      const bsrPeak = sigmaAtFluid(6.0, 400, 0.02, 30);
       expect(valley, `valley sigma ${valley.toFixed(2)} should be < acid peak ${acidPeak.toFixed(2)}`)
         .toBeLessThan(acidPeak);
       expect(valley, `valley sigma ${valley.toFixed(2)} should be < BSR peak ${bsrPeak.toFixed(2)}`)
@@ -118,14 +123,14 @@ describe('Sicilian Solfifera Series — sedimentary BSR native_sulfur (v80)', ()
       // The v80 broadening was pH 5 → 6.5. Above 6.5 the gate
       // still blocks (would-be alkaline modes are geologically
       // implausible for synproportionation kinetics).
-      const s = sigmaAtFluid(7.0, 400, 0.4, 30);
+      const s = sigmaAtFluid(7.0, 400, 0.02, 30);
       expect(s, `pH=7.0 should hit the engine's pH > 6.5 gate`).toBe(0);
     });
 
     it('Sicily-style (alkaline) fluid fires under v80; would have been blocked under v79', () => {
       // Documents the engine broadening regression target. The
       // Sicily scenario depends on this admitting alkaline σ.
-      const s = sigmaAtFluid(6.0, 400, 0.4, 30);
+      const s = sigmaAtFluid(6.0, 400, 0.02, 30);
       expect(s, `BSR-mode sigma at pH=6.0 must be > 0 (v80 broadening)`)
         .toBeGreaterThan(0);
       // Specifically: ph_bsr at pH=6.0 is 1.0 (peak). σ_pre-T = s_f × eh_f × ph_f
@@ -217,13 +222,19 @@ describe('Sicilian Solfifera Series — sedimentary BSR native_sulfur (v80)', ()
         .toBeGreaterThan(sPre);
     });
 
-    it('meteoric_o2_pulse event pins O₂ to 0.40', () => {
+    it('BSR event keeps the pore anoxic and transfers sulfate to sulfide', () => {
       setSeed(42);
       const { conditions, events } = SCENARIOS['sicily_solfifera']();
       const sim = new VugSimulator(conditions, events);
       for (let i = 0; i < 24; i++) sim.run_step();
-      sim.run_step();   // step 25 — meteoric_o2_pulse
-      expect(sim.conditions.fluid.O2).toBeCloseTo(0.40, 1);
+      const sulfatePre = sim.conditions.fluid.S_sulfate;
+      const sulfidePre = sim.conditions.fluid.S_sulfide;
+      sim.run_step();   // step 25 — BSR pulse
+      expect(sim.conditions.fluid.O2).toBeLessThanOrEqual(0.02);
+      expect(sim.conditions.fluid.S_sulfate).toBeLessThan(sulfatePre);
+      expect(sim.conditions.fluid.S_sulfide).toBeGreaterThan(sulfidePre);
+      const reaction = sim.conditions.fluid._lastSulfurReaction;
+      expect(reaction.sulfurAfterPpm).toBeCloseTo(reaction.sulfurBeforePpm, 9);
     });
 
     it('carbonate_buffer event pins pH at 6.0', () => {

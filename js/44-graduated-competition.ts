@@ -326,6 +326,7 @@ function buildCrystalDryRun(
   sigma: number,
   initiative: number,
   desired_thickness_um: number,
+  fluid?: any,
 ): CrystalDryRun | null {
   // SCRIPT-mode bundle: MINERAL_STOICHIOMETRY (js/19) and
   // stoichiometricBudgetDebitPpmPerUm (js/19) is a top-level declaration that
@@ -347,8 +348,9 @@ function buildCrystalDryRun(
   if (!mineStoich) return null;
   const debit_per_species: Record<string, number> = {};
   for (const sp of Object.keys(mineStoich)) {
-    debit_per_species[sp] = desired_thickness_um
-      * stoichiometricBudgetDebitPpmPerUm(sp, mineStoich[sp]);
+    const reservoir = stoichiometricReservoirSpecies(mineral, sp, fluid);
+    debit_per_species[reservoir] = (debit_per_species[reservoir] || 0)
+      + desired_thickness_um * stoichiometricBudgetDebitPpmPerUm(sp, mineStoich[sp]);
   }
   return { crystal_id, mineral, sigma, initiative, desired_thickness_um, debit_per_species };
 }

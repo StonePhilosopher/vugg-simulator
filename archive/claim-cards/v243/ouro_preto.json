@@ -1,0 +1,293 @@
+{
+  "scenario": "ouro_preto",
+  "sim_version": 243,
+  "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1|sulfur-ledger:sulfide+sulfate+elemental-independent+pathway-gated-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "7bb80f17733b411ceb2c6f1c79a2810eb787f64f21154d3073609059d142cd19",
+  "strip_steps": 260,
+  "claim": {
+    "anchor": "Ouro Preto Imperial Topaz veins, Minas Gerais, Brazil (Variant B per Morteani et al. 2002).",
+    "description": "Hydrothermal topaz vein in Precambrian phyllite + quartzite. Single clean cooling curve from 360°C to 50°C — the 'anti-flash-quench' of the gem-pegmatite scenarios. F-pulse gates topaz nucleation; Cr leach commits the imperial color.",
+    "expects_species": [
+      "topaz",
+      "quartz"
+    ],
+    "sources": [
+      "Morteani et al. 2002 — fluid inclusion microthermometry of Ouro Preto Imperial Topaz veins"
+    ],
+    "initial_temperature_C": 360,
+    "initial_pressure_kbar": 3.5,
+    "wall_architecture": null,
+    "notes": [
+      "Hydrothermal veins cutting Precambrian phyllite and quartzite in the Ouro Preto district. Fluid inclusion data (Morteani et al. 2002) puts crystallization at ~360°C, 3.5 kbar from metamorphic brines derived from devolatilization of phyllite.",
+      "Single clean cooling curve — 360°C → 50°C — the anti-flash-quench of the gem-pegmatite scenarios. No thermal events, no pressure spikes. One exhalation from the granite cooling below.",
+      "The gate: topaz can't nucleate until fluorine accumulates past a saturation threshold. Early quartz grows alone. A mid-scenario metamorphic dehydration event (step 35) pumps F from the phyllite micas into the fluid, and the vein transitions to imperial topaz territory. The imperial color — golden-orange to pink — depends on Cr3+ dissolved out of nearby ultramafic bodies; without chromium the topaz is colorless or pale blue.",
+      "Audit gap-fills (Apr 2026): Na=60, K=40 (phyllite muscovite/albite breakdown per Morteani 2002). Mg=15 (phyllite chlorite/biotite, brief-required non-zero baseline; conservative since host is quartzite + phyllite, not mafic)."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1|sulfur-ledger:sulfide+sulfate+elemental-independent+pathway-gated-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 3.5,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 3.20570254,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 109.44999999999999,
+          "initial_water_activity": {
+            "value": 0.9982,
+            "salinityPpt": 3,
+            "naclWeightPercentEquivalent": 0.3,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 7,
+    "paragenetic_order": [
+      {
+        "mineral": "albite",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "feldspar",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "quartz",
+        "first_step": 4,
+        "events": 3
+      },
+      {
+        "mineral": "topaz",
+        "first_step": 34,
+        "events": 6
+      },
+      {
+        "mineral": "goethite",
+        "first_step": 199,
+        "events": 1
+      },
+      {
+        "mineral": "opal",
+        "first_step": 199,
+        "events": 9
+      },
+      {
+        "mineral": "lepidocrocite",
+        "first_step": 239,
+        "events": 1
+      }
+    ],
+    "surprises_not_in_expects": [
+      "albite",
+      "feldspar",
+      "goethite",
+      "opal",
+      "lepidocrocite"
+    ],
+    "expected_no_shows": [],
+    "environment": {
+      "T": {
+        "first": 357.283,
+        "last": 144.685,
+        "min": 38.386,
+        "max": 377.953,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 6.504,
+        "last": 6.504,
+        "min": 5.567,
+        "max": 6.614,
+        "units": ""
+      },
+      "Eh": {
+        "first": 44.094,
+        "last": 303.543,
+        "min": 44.094,
+        "max": 303.937,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 3.15,
+        "last": 3.15,
+        "min": 3.15,
+        "max": 3.15,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 0.315,
+        "last": 1.614,
+        "min": 0.315,
+        "max": 1.614,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -3.78,
+        "last": -2.016,
+        "min": -5.039,
+        "max": -1.575,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -3.906,
+        "last": -2.142,
+        "min": -5.102,
+        "max": -1.701,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -6.866,
+        "last": -4.031,
+        "min": -8,
+        "max": -3.591,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -5.48,
+        "last": -3.717,
+        "min": -6.677,
+        "max": -3.213,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": -1.512,
+        "last": 0.945,
+        "min": -2.394,
+        "max": 0.945,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 260,
+      "fluid_pressure_kbar": {
+        "first": 3.5,
+        "last": 3.5,
+        "min": 3.5,
+        "max": 3.5,
+        "samples": 260
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 260
+      },
+      "temperature_C": {
+        "first": 358.2608943547122,
+        "last": 144.15206551165323,
+        "min": 39.00987336887047,
+        "max": 378.5709302670788,
+        "samples": 260
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 33,
+        "first": {
+          "boundary_kbar": 3.190667169160946,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.448756303262089,
+          "secure_aragonite": true
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 260
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 109.44999999999999
+        },
+        "last": {
+          "pure_water_boundary_C": 109.44999999999999
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

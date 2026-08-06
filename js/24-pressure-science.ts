@@ -8,7 +8,10 @@
 // lithostatic pressure, or differential stress. Those variables may correlate
 // in a particular geological history but are not interchangeable causes.
 
-const FLUID_PRESSURE_MIN_KBAR = 0.01;
+// One atmosphere is about 0.001013 kbar. Keep the lower bound at 0.001 kbar
+// so surface hot-spring and shallow sedimentary scenarios are representable
+// without pretending they sit beneath ~100 m of water.
+const FLUID_PRESSURE_MIN_KBAR = 0.001;
 const FLUID_PRESSURE_MAX_KBAR = 4.4;
 
 function clampFluidPressureKbar(value: number): number {

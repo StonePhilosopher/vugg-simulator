@@ -18,6 +18,17 @@ Living list of open work items, captured from session conversations so context s
 > gameplay, or provenance findings. This review role is not a claim of personal Smithsonian
 > endorsement.
 
+> ## SESSION STATE (2026-08-06) — SIM 243 PHASE-IDENTITY / SULFUR TRANCHE
+>
+> The post-SIM-242 hostile review returned NOT SATISFIED. Its first two blocking findings
+> are corrected in SIM 243: quartz/opal are selected as separate phases before nucleation,
+> and sulfur now has independently conserved sulfide, sulfate, and elemental reservoirs.
+> Sulphur Bank uses a closed H2S oxidation reaction with no synthetic acid; Sicily uses a
+> separate anoxic microbial/inherited-S° path. Creative setup and live editing expose the
+> three sulfur reservoirs and pathway selection. Surface fluid pressure now reaches
+> 0.001 kbar. **NEXT:** land the authoritative gypsum/anhydrite selector and replacement
+> path, then reconcile Sunnyside and Tsumeb before another independent Dr. Wise AI review.
+
 > ## 🗿 SESSION STATE (2026-07-27) — **S2 SELENITE ✅ SIM 237 · elmwood selenite = KNOWN RESIDUE · NEXT = the Hardie ceiling (own commit)**
 >
 > **S2 selenite migration SHIPPED**: supersaturation_selenite reads sulfateAvailablePpm,

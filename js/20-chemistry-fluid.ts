@@ -24,7 +24,8 @@ const FLUID_CHEMISTRY_INPUT_FIELDS = new Set([
   'Cu', 'Mo', 'K', 'Na', 'Mg', 'Ba', 'Sr', 'Cr', 'P', 'As', 'Cl', 'V', 'W',
   'Ag', 'Bi', 'Sb', 'Ni', 'Co', 'B', 'Li', 'Be', 'Te', 'Se', 'Ge', 'Au',
   'Cd', 'Hg', 'Sn', 'Y', 'O2', 'Eh', 'pH', 'salinity', 'concentration',
-  'sulfateInherited',
+  'S_sulfide', 'S_sulfate', 'S_elemental', 'sulfateInherited',
+  'sulfurPoolsExplicit', 'nativeSulfurPathway',
 ]);
 
 class FluidChemistry {
@@ -55,6 +56,12 @@ class FluidChemistry {
     this.F = opts.F ?? 0.0;
     this.Zn = opts.Zn ?? 0.0;
     this.S = opts.S ?? 0.0;
+    // SIM 243 sulfur-reservoir split. `S` remains the backwards-compatible
+    // dissolved-sulfur total used by legacy scenarios; explicit scenarios
+    // keep it equal to S_sulfide + S_sulfate. Elemental sulfur is separate.
+    this.S_sulfide = opts.S_sulfide ?? 0.0;
+    this.S_sulfate = opts.S_sulfate ?? 0.0;
+    this.S_elemental = opts.S_elemental ?? 0.0;
     this.Fe = opts.Fe ?? 5.0;
     this.Mn = opts.Mn ?? 2.0;
     this.Al = opts.Al ?? 3.0;
@@ -118,6 +125,11 @@ class FluidChemistry {
     // otherwise-reducing fluid (wittichen's late barite stage). Default false; a scenario
     // event flips it. Own property so shallow-clones carry it.
     this.sulfateInherited = opts.sulfateInherited ?? false;
+    this.sulfurPoolsExplicit = opts.sulfurPoolsExplicit ?? false;
+    this.nativeSulfurPathway = opts.nativeSulfurPathway ?? null;
+    if (this.sulfurPoolsExplicit) {
+      this.S = Math.max(0, this.S_sulfide) + Math.max(0, this.S_sulfate);
+    }
   }
 
   describe() {

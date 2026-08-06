@@ -170,6 +170,13 @@ function auditSetupUIFluidRoundTrip(registry, readControls, Fluid) {
   try {
     const params = readControls();
     const fluid = new Fluid(params);
+    // SIM 243: once the explicit oxidation-state ledger is selected, bulk S
+    // is a conserved derived total rather than a fourth independent sulfur
+    // reservoir.  The setup fixture intentionally exercises both pools, so
+    // verify the resulting identity instead of the superseded bulk input.
+    if (fluid.sulfurPoolsExplicit) {
+      expected.S = Number(expected.S_sulfide || 0) + Number(expected.S_sulfate || 0);
+    }
     for (const [field, value] of Object.entries(expected)) {
       if (!Object.is(Number(fluid[field]), Number(value))) {
         errors.push(`${field}: setup DOM → readCreativeChemistryControls → FluidChemistry changed ${value} to ${fluid[field]}`);
@@ -213,6 +220,12 @@ function auditLiveSaveReplay(registry, api) {
       if (!Object.is(Number(now), Number(canonical))) {
         errors.push(`${field}: live DOM adapter wrote ${now}, expected ${canonical}`);
       }
+    }
+    // Editing either explicit dissolved reservoir must update the aggregate
+    // S ledger; elemental S remains a separate solid reservoir.
+    const liveFluid = api._liveFortressSim()?.conditions?.fluid;
+    if (liveFluid?.sulfurPoolsExplicit) {
+      expected.S = Number(expected.S_sulfide || 0) + Number(expected.S_sulfate || 0);
     }
     const manual = api._saveManualNamed('creative audit all chemistry');
     if (!manual) {

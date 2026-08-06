@@ -352,6 +352,18 @@ const EXPORTS = [
   // Phase 4b sulfate-class helpers (20c-chemistry-redox.ts).
   'sulfateRedoxAvailable',
   'sulfateRedoxFactor',
+  'sulfurReducedFraction',
+  'sulfideAvailablePpm',
+  'sulfateAvailablePpm',
+  'elementalSulfurAvailablePpm',
+  'syncExplicitSulfurTotal',
+  'sulfurSystemTotalPpm',
+  'ensureExplicitSulfurPools',
+  'addSulfurToPool',
+  'debitSulfurPool',
+  'oxidizeReducedSulfurToElemental',
+  'bacterialReduceSulfate',
+  'stoichiometricReservoirSpecies',
   // Phase 4b hydroxide-class helpers (20c-chemistry-redox.ts).
   'hydroxideRedoxAvailable',
   'hydroxideRedoxFactor',

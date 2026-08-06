@@ -106,7 +106,8 @@ type CreativeChemistryEvidence = {
   consumers: string[];
   probe: {
     kind: 'stoichiometric-capacity' | 'germanium-partition' | 'yttrium-fluorite'
-      | 'oxygen-redox' | 'salinity-water-activity' | 'ph-carbonate-speciation';
+      | 'oxygen-redox' | 'salinity-water-activity' | 'ph-carbonate-speciation'
+      | 'sulfur-reservoir';
     representativeMineral?: string;
     coefficient?: number;
   };
@@ -152,6 +153,9 @@ const _CREATIVE_CHEMISTRY_CONTROL_BASES: Record<string, CreativeChemistryControl
   Mn:_chemistryControl('f-mn','mn','Mn',500,'trace'),
   Cu:_chemistryControl('f-cu','cu','Cu',500,'trace'),
   S:_chemistryControl('f-s','s','S',5000,'ligand'),
+  S_sulfide:_chemistryControl('f-s-sulfide','s-sulfide','S(-II)',5000,'redox'),
+  S_sulfate:_chemistryControl('f-s-sulfate','s-sulfate','S(VI)',5000,'redox'),
+  S_elemental:_chemistryControl('f-s-elemental','s-elemental','S°',5000,'redox'),
   U:_chemistryControl('f-u','u','U',500,'trace'),
   Pb:_chemistryControl('f-pb','pb','Pb',500,'trace'),
   Mo:_chemistryControl('f-mo','mo','Mo',500,'trace'),
@@ -190,6 +194,22 @@ const _CREATIVE_CHEMISTRY_CONTROL_BASES: Record<string, CreativeChemistryControl
 };
 
 function _creativeChemistryEvidence(field: string): CreativeChemistryEvidence {
+  if (field === 'S_sulfide' || field === 'S_sulfate' || field === 'S_elemental') {
+    const reservoir = field.replace('S_', '');
+    return {
+      provenance: [
+        'js/20c-chemistry-redox.ts: explicit sulfur-reservoir ledger',
+        'js/19-mineral-stoichiometry.ts:stoichiometricReservoirSpecies',
+      ],
+      coupling: `${field} is an independently conserved sulfur oxidation-state reservoir; sulfur-bearing mineral growth debits only the matching pool.`,
+      consumers: [
+        `debitSulfurPool:${reservoir}`,
+        'stoichiometricReservoirSpecies',
+        field === 'S_elemental' ? 'supersaturation_native_sulfur' : `${reservoir}AvailablePpm`,
+      ],
+      probe: { kind: 'sulfur-reservoir' },
+    };
+  }
   const stoichiometricConsumers = Object.entries(MINERAL_STOICHIOMETRY)
     .filter(([, formula]) => Number(formula[field]) > 0)
     .map(([mineral]) => mineral)
@@ -383,6 +403,40 @@ function creativeChemistryCausalProbe(field: string, value: number): CreativeChe
       },
     };
   }
+  if (probe.kind === 'sulfur-reservoir') {
+    const pool = field === 'S_elemental' ? 'elemental' : field === 'S_sulfate' ? 'sulfate' : 'sulfide';
+    const fluid = new FluidChemistry({
+      sulfurPoolsExplicit: true,
+      S_sulfide: field === 'S_sulfide' ? decodedValue : 0,
+      S_sulfate: field === 'S_sulfate' ? decodedValue : 0,
+      S_elemental: field === 'S_elemental' ? decodedValue : 0,
+      nativeSulfurPathway: field === 'S_elemental' ? 'anaerobic_microbial_inherited' : null,
+      O2: 0.02,
+      pH: 6,
+    });
+    const before = Number(fluid[field]);
+    const available = field === 'S_sulfide'
+      ? sulfideAvailablePpm(fluid, 25)
+      : field === 'S_sulfate'
+        ? sulfateAvailablePpm(fluid, 25)
+        : elementalSulfurAvailablePpm(fluid);
+    debitSulfurPool(fluid, pool as any, Math.min(1, available));
+    const after = Number(fluid[field]);
+    return {
+      field, input_value: value, fluid_value: before,
+      route: `debitSulfurPool:${pool}`,
+      signal: before - after,
+      consumer_mutated: after !== before,
+      forward_route: field === 'S_elemental'
+        ? 'VugConditions.supersaturation_native_sulfur:S_elemental'
+        : field === 'S_sulfate'
+          ? 'VugConditions.supersaturation_barite:sulfateAvailablePpm'
+          : 'VugConditions.supersaturation_sphalerite:sulfideAvailablePpm',
+      forward_signal: available,
+      forward_observed: Number.isFinite(available),
+      details: { pool, before, after, available },
+    };
+  }
   if (probe.kind === 'germanium-partition') {
     const fluid = new FluidChemistry({ Zn: 1000, S: 1000, Ge: decodedValue, O2: 0, pH: 6.5 });
     const conditions = new VugConditions({ temperature: 200, pressure: 1.5, fluid });
@@ -489,7 +543,11 @@ function creativeChemistryCausalSignal(field: string, value: number): number {
 const CREATIVE_CHEMISTRY_SEARCH_ALIASES: Record<string, string> = {
   SiO2:'silica silicon dioxide', Ca:'calcium', CO3:'carbonate carbon dioxide inorganic carbon DIC',
   F:'fluorine fluoride', Al:'aluminum aluminium', Fe:'iron', Mn:'manganese', Cu:'copper',
-  S:'sulfur sulphur sulfate sulfide', U:'uranium', Pb:'lead', Mo:'molybdenum', Zn:'zinc',
+  S:'sulfur sulphur dissolved total bulk',
+  S_sulfide:'sulfur sulphur sulfide reduced hs h2s minus ii',
+  S_sulfate:'sulfur sulphur sulfate oxidized so4 plus vi',
+  S_elemental:'sulfur sulphur native elemental s0 zero',
+  U:'uranium', Pb:'lead', Mo:'molybdenum', Zn:'zinc',
   Mg:'magnesium', Na:'sodium', K:'potassium', Ba:'barium', Sr:'strontium', Cr:'chromium chrome',
   P:'phosphorus phosphate', As:'arsenic', Cl:'chlorine chloride', V:'vanadium', W:'tungsten',
   Ag:'silver', Bi:'bismuth', Sb:'antimony', Ni:'nickel', Co:'cobalt', B:'boron', Li:'lithium',
@@ -509,7 +567,7 @@ type CreativeExactTransform = {
 
 const _CREATIVE_SETUP_EXACT_TRANSFORMS: Record<string, CreativeExactTransform> = {
   'f-temp': { label:'temperature', unit:'°C', step:1, fromSlider:v=>v, toSlider:v=>v },
-  'f-pressure': { label:'fluid pressure', unit:'kbar', step:0.01, fromSlider:v=>v/100, toSlider:v=>v*100 },
+  'f-pressure': { label:'fluid pressure', unit:'kbar', step:0.001, fromSlider:v=>v/100, toSlider:v=>v*100 },
   'f-confining-pressure': { label:'rock pressure', unit:'kbar', step:0.01, fromSlider:v=>v/100, toSlider:v=>v*100 },
   'f-vug-diameter': { label:'cavity diameter', unit:'mm', step:1, fromSlider:v=>v, toSlider:v=>v },
   'f-host-thickness': { label:'host thickness', unit:'mm', step:10, fromSlider:v=>v, toSlider:v=>v },
@@ -643,6 +701,10 @@ function syncCreativeChemistryControls(fluidParams: Record<string, any>) {
       valueEl.textContent = `${shown}${control.unit ? ` ${control.unit}` : ''}`;
     }
   }
+  const explicit = document.getElementById('f-sulfur-explicit') as HTMLInputElement | null;
+  if (explicit) explicit.checked = !!fluidParams.sulfurPoolsExplicit;
+  const pathway = document.getElementById('f-native-sulfur-pathway') as HTMLSelectElement | null;
+  if (pathway) pathway.value = fluidParams.nativeSulfurPathway || 'none';
 }
 
 function readCreativeChemistryControls(base: Record<string, any> = {}) {
@@ -652,6 +714,18 @@ function readCreativeChemistryControls(base: Record<string, any> = {}) {
     if (!slider) continue;
     const value = parseFloat(slider.value) / control.scale;
     if (Number.isFinite(value)) fluidParams[prop] = value;
+  }
+  const explicit = document.getElementById('f-sulfur-explicit') as HTMLInputElement | null;
+  const pathway = document.getElementById('f-native-sulfur-pathway') as HTMLSelectElement | null;
+  if (explicit || Object.prototype.hasOwnProperty.call(base, 'sulfurPoolsExplicit')) {
+    fluidParams.sulfurPoolsExplicit = explicit
+      ? !!explicit.checked
+      : !!base.sulfurPoolsExplicit;
+  }
+  if (pathway || Object.prototype.hasOwnProperty.call(base, 'nativeSulfurPathway')) {
+    fluidParams.nativeSulfurPathway = pathway?.value && pathway.value !== 'none'
+      ? pathway.value
+      : null;
   }
   return fluidParams;
 }

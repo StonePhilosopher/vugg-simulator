@@ -27,7 +27,7 @@ const BROTH_MAP: Record<string, any> = {
     path: 'pressure',
     get: () => fortressSim.conditions.pressure,
     set: v => { fortressSim.conditions.pressure = clampFluidPressureKbar(v); },
-    fmt: v => v.toFixed(2) + ' kbar fluid',
+    fmt: v => v.toFixed(3) + ' kbar fluid',
     parse: v => parseFloat(v) / 100,
     toSlider: v => v * 100,
   },
@@ -221,6 +221,32 @@ const BROTH_MAP: Record<string, any> = {
     toSlider: v => v ? '1' : '0',
     valid: v => typeof v === 'boolean',
   },
+  sulfur_explicit: {
+    path: 'fluid.sulfurPoolsExplicit',
+    get: () => !!fortressSim.conditions.fluid.sulfurPoolsExplicit,
+    set: v => {
+      const fluid = fortressSim.conditions.fluid;
+      if (v) ensureExplicitSulfurPools(fluid, fortressSim.conditions.temperature);
+      else fluid.sulfurPoolsExplicit = false;
+    },
+    fmt: v => v ? 'explicit reservoirs' : 'legacy bulk proxy',
+    parse: v => String(v) === '1',
+    toSlider: v => v ? '1' : '0',
+    valid: v => typeof v === 'boolean',
+  },
+  native_sulfur_pathway: {
+    path: 'fluid.nativeSulfurPathway',
+    get: () => fortressSim.conditions.fluid.nativeSulfurPathway || 'none',
+    set: v => {
+      const fluid = fortressSim.conditions.fluid;
+      fluid.nativeSulfurPathway = v === 'none' ? null : v;
+      if (v !== 'none') fluid.sulfurPoolsExplicit = true;
+    },
+    fmt: v => String(v || 'none').replaceAll('_', ' '),
+    parse: v => String(v),
+    toSlider: v => String(v || 'none'),
+    valid: v => ['none', 'oxidative_interface', 'anaerobic_microbial_inherited'].includes(String(v)),
+  },
 };
 
 for (const [prop, control] of Object.entries(CREATIVE_CHEMISTRY_CONTROLS)) {
@@ -228,7 +254,24 @@ for (const [prop, control] of Object.entries(CREATIVE_CHEMISTRY_CONTROLS)) {
   BROTH_MAP[control.liveKey] = {
     path: `fluid.${prop}`,
     get: () => fortressSim.conditions.fluid[prop],
-    set: v => { fortressSim.conditions.fluid[prop] = v; },
+    set: v => {
+      const fluid = fortressSim.conditions.fluid;
+      fluid[prop] = v;
+      if (prop === 'S_sulfide' || prop === 'S_sulfate' || prop === 'S_elemental') {
+        fluid.sulfurPoolsExplicit = true;
+        syncExplicitSulfurTotal(fluid);
+      } else if (prop === 'S' && fluid.sulfurPoolsExplicit) {
+        const dissolvedBefore = Math.max(0, fluid.S_sulfide) + Math.max(0, fluid.S_sulfate);
+        if (dissolvedBefore > 0) {
+          const scale = Math.max(0, v) / dissolvedBefore;
+          fluid.S_sulfide *= scale;
+          fluid.S_sulfate *= scale;
+        } else {
+          fluid.S_sulfide = Math.max(0, v);
+        }
+        syncExplicitSulfurTotal(fluid);
+      }
+    },
     fmt: v => `${v.toFixed(decimals)}${control.unit ? ` ${control.unit}` : ''}`,
     parse: v => parseFloat(v) / control.scale,
     toSlider: v => v * control.scale,

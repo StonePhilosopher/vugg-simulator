@@ -3674,7 +3674,7 @@ Scenarios:
 
     <div class="setup-row" title="Fluid pressure in the cavity. This is not depth, confining pressure, or differential stress.">
       <label for="f-pressure">Fluid pressure</label>
-      <input type="range" id="f-pressure" min="1" max="440" value="150" step="1" oninput="document.getElementById('f-pressure-val').textContent=(this.value/100).toFixed(2)+' kbar fluid'">
+      <input type="range" id="f-pressure" min="0.1" max="440" value="150" step="0.1" oninput="document.getElementById('f-pressure-val').textContent=(this.value/100).toFixed(3)+' kbar fluid'">
       <span class="range-val" id="f-pressure-val">1.50 kbar fluid</span>
     </div>
 
@@ -3901,9 +3901,36 @@ Scenarios:
         <span class="range-val" id="f-cu-val">0 ppm</span>
       </div>
       <div class="setup-row">
-        <label for="f-s" style="width:60px">Sulfur</label>
+        <label for="f-s" style="width:60px">Diss. S</label>
         <input type="range" id="f-s" min="0" max="5000" value="0" oninput="document.getElementById('f-s-val').textContent=this.value+' ppm'">
         <span class="range-val" id="f-s-val">0 ppm</span>
+      </div>
+      <div class="setup-row" title="Reduced sulfur reservoir, expressed as ppm sulfur. Editing an explicit pool enables the explicit sulfur ledger.">
+        <label for="f-s-sulfide" style="width:60px">S(-II)</label>
+        <input type="range" id="f-s-sulfide" min="0" max="5000" value="0" step="1" oninput="document.getElementById('f-s-sulfide-val').textContent=this.value+' ppm';document.getElementById('f-sulfur-explicit').checked=true">
+        <span class="range-val" id="f-s-sulfide-val">0 ppm</span>
+      </div>
+      <div class="setup-row" title="Oxidized sulfate-sulfur reservoir, expressed as ppm sulfur. Sulfate minerals debit this pool.">
+        <label for="f-s-sulfate" style="width:60px">S(VI)</label>
+        <input type="range" id="f-s-sulfate" min="0" max="5000" value="0" step="1" oninput="document.getElementById('f-s-sulfate-val').textContent=this.value+' ppm';document.getElementById('f-sulfur-explicit').checked=true">
+        <span class="range-val" id="f-s-sulfate-val">0 ppm</span>
+      </div>
+      <div class="setup-row" title="Elemental sulfur reservoir, expressed as ppm sulfur. Native sulfur can consume this pool only through the selected pathway.">
+        <label for="f-s-elemental" style="width:60px">S°</label>
+        <input type="range" id="f-s-elemental" min="0" max="5000" value="0" step="1" oninput="document.getElementById('f-s-elemental-val').textContent=this.value+' ppm';document.getElementById('f-sulfur-explicit').checked=true">
+        <span class="range-val" id="f-s-elemental-val">0 ppm</span>
+      </div>
+      <div class="setup-row" title="Use independently conserved sulfide, sulfate, and elemental-sulfur reservoirs instead of the backwards-compatible bulk-S redox proxy.">
+        <label for="f-sulfur-explicit" style="width:130px">Explicit S pools</label>
+        <input type="checkbox" id="f-sulfur-explicit">
+      </div>
+      <div class="setup-row" title="Controls whether an elemental-sulfur reservoir is eligible to nucleate native sulfur. It does not create sulfur.">
+        <label for="f-native-sulfur-pathway" style="width:130px">Native-S path</label>
+        <select id="f-native-sulfur-pathway">
+          <option value="none">none / unavailable</option>
+          <option value="oxidative_interface">H₂S–O₂ interface</option>
+          <option value="anaerobic_microbial_inherited">inherited anaerobic microbial S°</option>
+        </select>
       </div>
       <div class="setup-row">
         <label for="f-u" style="width:60px">Uranium</label>
@@ -4159,7 +4186,7 @@ Scenarios:
           </div>
           <div class="broth-slider-row" title="Fluid pressure in the cavity (0.01–4.40 kbar). It is distinct from differential stress and does not imply depth.">
             <label for="broth-pressure">Fluid P</label>
-            <input type="range" id="broth-pressure" min="1" max="440" value="150" step="1"
+            <input type="range" id="broth-pressure" min="0.1" max="440" value="150" step="0.1"
               oninput="setBrothValue('pressure',this.value)">
             <span class="broth-val" id="broth-pressure-val">1.50 kbar fluid</span>
           </div>
@@ -4429,11 +4456,43 @@ Scenarios:
 
         <div class="broth-group">
           <div class="broth-group-label" title="Dissolved gases and reactive species. S enables sulfides. F enables fluorite. O₂ controls redox — sulfides vs oxides.">💨 Volatiles</div>
-          <div class="broth-slider-row" title="Dissolved sulfur (ppm). Required for ALL sulfides: pyrite, sphalerite, galena, chalcopyrite. No sulfur = no sulfides.">
-            <label>S</label>
+          <div class="broth-slider-row" title="Total dissolved sulfur (ppm S). In explicit mode this rescales the sulfide and sulfate pools while preserving their ratio.">
+            <label>Diss. S</label>
             <input type="range" id="broth-s" min="0" max="5000" value="0" step="1"
               oninput="setBrothValue('s',this.value)">
             <span class="broth-val" id="broth-s-val">0 ppm</span>
+          </div>
+          <div class="broth-slider-row" title="Reduced sulfur reservoir (ppm S). Sulfide minerals debit this pool; editing it enables explicit sulfur accounting.">
+            <label for="broth-s-sulfide">S(-II)</label>
+            <input type="range" id="broth-s-sulfide" min="0" max="5000" value="0" step="1" oninput="setBrothValue('s-sulfide',this.value)">
+            <span class="broth-val" id="broth-s-sulfide-val">0 ppm</span>
+          </div>
+          <div class="broth-slider-row" title="Sulfate sulfur reservoir (ppm S). Gypsum, anhydrite, barite, and other sulfate minerals debit this pool.">
+            <label for="broth-s-sulfate">S(VI)</label>
+            <input type="range" id="broth-s-sulfate" min="0" max="5000" value="0" step="1" oninput="setBrothValue('s-sulfate',this.value)">
+            <span class="broth-val" id="broth-s-sulfate-val">0 ppm</span>
+          </div>
+          <div class="broth-slider-row" title="Elemental sulfur reservoir (ppm S). Native sulfur consumes this pool only when a compatible pathway is selected.">
+            <label for="broth-s-elemental">S°</label>
+            <input type="range" id="broth-s-elemental" min="0" max="5000" value="0" step="1" oninput="setBrothValue('s-elemental',this.value)">
+            <span class="broth-val" id="broth-s-elemental-val">0 ppm</span>
+          </div>
+          <div class="broth-slider-row" title="Switch between the legacy bulk-S proxy and independently conserved sulfur reservoirs.">
+            <label for="broth-sulfur_explicit">S ledger</label>
+            <select id="broth-sulfur_explicit" onchange="setBrothValue('sulfur_explicit',this.value)">
+              <option value="0">legacy bulk proxy</option>
+              <option value="1">explicit reservoirs</option>
+            </select>
+            <span class="broth-val" id="broth-sulfur_explicit-val">legacy bulk proxy</span>
+          </div>
+          <div class="broth-slider-row" title="Native-sulfur pathway gate. This selects a mechanism but never creates elemental sulfur inventory.">
+            <label for="broth-native_sulfur_pathway">Native-S path</label>
+            <select id="broth-native_sulfur_pathway" onchange="setBrothValue('native_sulfur_pathway',this.value)">
+              <option value="none">none / unavailable</option>
+              <option value="oxidative_interface">H₂S–O₂ interface</option>
+              <option value="anaerobic_microbial_inherited">inherited anaerobic microbial S°</option>
+            </select>
+            <span class="broth-val" id="broth-native_sulfur_pathway-val">none</span>
           </div>
           <div class="broth-slider-row" title="Fluorine (ppm). Forms fluorite with Ca (sweet spot 100-250°C). At low pH, HF etches quartz — trigonal etch pits.">
             <label>F</label>
@@ -18660,20 +18719,40 @@ function scenarioSpecHash(spec) {
 //       and focus restoration, but is explicitly nonmodal (no false aria-modal
 //       promise). Schneeberg now records bismuthinite's intentional SIM 241
 //       disappearance without a species-specific retune.
-const SIM_VERSION = 242;
+// v243 — HOSTILE-REVIEW ROUND 7 PHASE IDENTITY + SULFUR RESERVOIRS
+//       (2026-08-06). Generic silica now selects a real phase before
+//       saturation and nucleation: opal owns the 5-100 C hydrated/amorphous
+//       window and quartz owns the 100-700 C crystalline window. A quartz
+//       crystal can no longer nucleate cold and be cosmetically relabelled
+//       opal or chalcedony; existing quartz below its kinetic window pauses
+//       unless its actual quartz equilibrium ratio is undersaturated.
+//       Dissolved sulfur is split into independently conserved sulfide and
+//       sulfate reservoirs plus a separate elemental-S precursor. Sulfide,
+//       sulfate, and native-sulfur minerals debit only their corresponding
+//       reservoir, closing the former one-pool double spend. Sulphur Bank now
+//       executes H2S + 1/2 O2 -> S0 + H2O with explicit sulfur/oxygen closure
+//       and no invented proton source. Sicily is a separate anoxic microbial/
+//       inherited-S0 path; BSR transfers sulfate to reduced sulfur and adds
+//       carbonate alkalinity without borrowing the oxic hot-spring mechanism.
+//       Creative Mode exposes all three reservoir levers and the native-S
+//       pathway in setup and live editing. The fluid-pressure envelope reaches
+//       0.001 kbar so surface scenarios are representable without range clipping.
+const SIM_VERSION = 243;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
 // any token's meaning changes, even if a developer forgets a version bump—the
 // mismatch guards then fail loudly instead of allowing provenance drift.
 const MODEL_DIGEST = [
-    'Pfluid:kbar-0.01..4.4',
+    'Pfluid:kbar-0.001..4.4',
     'CaCO3:Hacker05-negative-linear+/-1kbar',
     'Prock:Pattison92-AndSil-16+/-3barC',
     'stress:instant-resolved-shear-stable-grain-v2',
     'event-fluid:absolute-replace-v1',
     'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
     'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
+    'silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1',
+    'sulfur-ledger:sulfide+sulfate+elemental-independent+pathway-gated-v1',
     'CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1',
     'growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6',
     'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',
@@ -19428,6 +19507,24 @@ function stoichiometricBudgetDebitPpmPerUm(species, coefficient) {
         return 0;
     return STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM * nu * molarMass;
 }
+// Explicit sulfur fluids book each mineral family against a chemically
+// distinct reservoir. Legacy fluids continue to use `S`, preserving their
+// historical calibration until their scenario chemistry is explicitly
+// migrated.
+const SULFATE_STOICHIOMETRY_MINERALS = new Set([
+    'leadhillite', 'barite', 'celestine', 'selenite', 'anhydrite', 'jarosite',
+    'alunite', 'brochantite', 'antlerite', 'anglesite', 'chalcanthite',
+    'mirabilite', 'thenardite', 'linarite', 'caledonite',
+]);
+function stoichiometricReservoirSpecies(mineral, species, fluid) {
+    if (species !== 'S' || !fluid?.sulfurPoolsExplicit)
+        return species;
+    if (mineral === 'native_sulfur')
+        return 'S_elemental';
+    if (SULFATE_STOICHIOMETRY_MINERALS.has(mineral))
+        return 'S_sulfate';
+    return 'S_sulfide';
+}
 // Returns the list of species names that just transitioned from positive
 // to zero (depletion events), or null on no-op / missing stoichiometry.
 // _runEngineForCrystal uses this to emit "Fe²⁺ depleted in ring 4 —
@@ -19484,7 +19581,9 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
                 inventory = {};
                 const formula = MINERAL_STOICHIOMETRY[crystal.mineral] || {};
                 for (const species in formula) {
-                    inventory[species] = stoichiometricBudgetDebitPpmPerUm(species, formula[species]);
+                    const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
+                    inventory[reservoir] = (inventory[reservoir] || 0)
+                        + stoichiometricBudgetDebitPpmPerUm(species, formula[species]);
                 }
                 for (const species in (z.trace_stoichiometry || {})) {
                     inventory[species] = (inventory[species] || 0)
@@ -19492,7 +19591,8 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
                 }
             }
             for (const species in inventory) {
-                returned[species] = (returned[species] || 0)
+                const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
+                returned[reservoir] = (returned[reservoir] || 0)
                     + removedHere * inventory[species];
             }
         }
@@ -19501,6 +19601,8 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
                 continue;
             fluid[species] += returned[species];
         }
+        if (fluid.sulfurPoolsExplicit)
+            syncExplicitSulfurTotal(fluid);
         zone._returned_budget_inventory = returned;
         return null; // depletion narration is precipitation-only
     }
@@ -19526,13 +19628,14 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
         const demandPerUm = stoichiometricBudgetDebitPpmPerUm(species, stoich[species]);
         if (!(demandPerUm > 0))
             continue;
-        const available = (typeof fluid[species] === 'number' && Number.isFinite(fluid[species]))
-            ? Math.max(0, fluid[species])
+        const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
+        const available = (typeof fluid[reservoir] === 'number' && Number.isFinite(fluid[reservoir]))
+            ? Math.max(0, fluid[reservoir])
             : 0;
         const supported = available / demandPerUm;
         if (supported < acceptedThickness) {
             acceptedThickness = supported;
-            limitingSpecies = species;
+            limitingSpecies = reservoir;
         }
     }
     acceptedThickness = Math.max(0, Math.min(requestedThickness, acceptedThickness));
@@ -19551,7 +19654,8 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
     const bookedInventoryPerUm = {};
     let depleted = null;
     for (const species in stoich) {
-        const previous = fluid[species];
+        const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
+        const previous = fluid[reservoir];
         if (typeof previous !== 'number')
             continue;
         const demandPerUm = stoichiometricBudgetDebitPpmPerUm(species, stoich[species]);
@@ -19564,11 +19668,11 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
         // not the steady-state "already exhausted" case.
         if (previous > STOICHIOMETRIC_GROWTH_BUDGET_DEPLETION_THRESHOLD &&
             proposed <= STOICHIOMETRIC_GROWTH_BUDGET_DEPLETION_THRESHOLD) {
-            (depleted ||= []).push(species);
+            (depleted ||= []).push(reservoir);
         }
-        fluid[species] = Math.max(0, proposed);
-        bookedInventoryPerUm[species] = zone.thickness_um > 0
-            ? (previous - fluid[species]) / zone.thickness_um
+        fluid[reservoir] = Math.max(0, proposed);
+        bookedInventoryPerUm[reservoir] = zone.thickness_um > 0
+            ? (previous - fluid[reservoir]) / zone.thickness_um
             : demandPerUm;
     }
     // Trace substitutions are optional rather than formula-limiting. Incorporate
@@ -19591,6 +19695,8 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
                 + (zone.thickness_um > 0 ? (previous - fluid[species]) / zone.thickness_um : 0);
         }
     }
+    if (fluid.sulfurPoolsExplicit)
+        syncExplicitSulfurTotal(fluid);
     zone._budget_inventory_per_um = bookedInventoryPerUm;
     zone._remaining_solid_um = zone.thickness_um;
     return depleted;
@@ -19638,7 +19744,8 @@ const FLUID_CHEMISTRY_INPUT_FIELDS = new Set([
     'Cu', 'Mo', 'K', 'Na', 'Mg', 'Ba', 'Sr', 'Cr', 'P', 'As', 'Cl', 'V', 'W',
     'Ag', 'Bi', 'Sb', 'Ni', 'Co', 'B', 'Li', 'Be', 'Te', 'Se', 'Ge', 'Au',
     'Cd', 'Hg', 'Sn', 'Y', 'O2', 'Eh', 'pH', 'salinity', 'concentration',
-    'sulfateInherited',
+    'S_sulfide', 'S_sulfate', 'S_elemental', 'sulfateInherited',
+    'sulfurPoolsExplicit', 'nativeSulfurPathway',
 ]);
 class FluidChemistry {
     constructor(opts = {}) {
@@ -19661,6 +19768,12 @@ class FluidChemistry {
         this.F = opts.F ?? 0.0;
         this.Zn = opts.Zn ?? 0.0;
         this.S = opts.S ?? 0.0;
+        // SIM 243 sulfur-reservoir split. `S` remains the backwards-compatible
+        // dissolved-sulfur total used by legacy scenarios; explicit scenarios
+        // keep it equal to S_sulfide + S_sulfate. Elemental sulfur is separate.
+        this.S_sulfide = opts.S_sulfide ?? 0.0;
+        this.S_sulfate = opts.S_sulfate ?? 0.0;
+        this.S_elemental = opts.S_elemental ?? 0.0;
         this.Fe = opts.Fe ?? 5.0;
         this.Mn = opts.Mn ?? 2.0;
         this.Al = opts.Al ?? 3.0;
@@ -19724,6 +19837,11 @@ class FluidChemistry {
         // otherwise-reducing fluid (wittichen's late barite stage). Default false; a scenario
         // event flips it. Own property so shallow-clones carry it.
         this.sulfateInherited = opts.sulfateInherited ?? false;
+        this.sulfurPoolsExplicit = opts.sulfurPoolsExplicit ?? false;
+        this.nativeSulfurPathway = opts.nativeSulfurPathway ?? null;
+        if (this.sulfurPoolsExplicit) {
+            this.S = Math.max(0, this.S_sulfide) + Math.max(0, this.S_sulfate);
+        }
     }
     describe() {
         const parts = [];
@@ -19873,7 +19991,10 @@ const SPECIES_PROPERTIES = {
     Y: { charge: +3, molarMass: 88.91 },
     // Major anions
     CO3: { charge: -2, molarMass: 60.01, note: 'CO₃²⁻; Phase 3 splits DIC by Bjerrum' },
-    S: { charge: -2, molarMass: 32.07, note: 'SO₄²⁻ default; Phase 4 splits sulfide/sulfate' },
+    S: { charge: -2, molarMass: 32.07, note: 'legacy total sulfur; explicit fluids use the three reservoirs below' },
+    S_sulfide: { charge: -1, molarMass: 32.07, note: 'reduced sulfur as H₂S/HS⁻; effective mixed-species charge' },
+    S_sulfate: { charge: -2, molarMass: 32.07, note: 'oxidized sulfur tracked as sulfur mass in SO₄²⁻ equivalents' },
+    S_elemental: { charge: 0, molarMass: 32.07, note: 'neutral suspended or colloidal elemental sulfur precursor' },
     F: { charge: -1, molarMass: 19.00 },
     Cl: { charge: -1, molarMass: 35.45 },
     P: { charge: -3, molarMass: 30.97, note: 'as PO₄³⁻; element mass' },
@@ -19904,6 +20025,10 @@ function ionicStrength(fluid) {
     for (const species in SPECIES_PROPERTIES) {
         const props = SPECIES_PROPERTIES[species];
         if (props.charge === 0)
+            continue;
+        // `S` is an observer for explicit-pool fluids. Counting it as well as
+        // S_sulfide and S_sulfate would double the sulfur contribution.
+        if (species === 'S' && fluid?.sulfurPoolsExplicit)
             continue;
         const m = ppmToMolality(fluid[species], props.molarMass);
         I += 0.5 * m * props.charge * props.charge;
@@ -20778,6 +20903,11 @@ function o2FromEh(Eh_mV) {
 // enough?"). With flag off, identical to `fluid.O2 >= X` — the strict
 // `<` legacy form combined with the negation gives the same boundary.
 function sulfateRedoxAvailable(fluid, o2Threshold) {
+    // An explicit sulfate reservoir is separately sourced disequilibrium. Its
+    // existence is stronger evidence than deriving sulfate from instantaneous
+    // Eh, so an anoxic fluid may retain and precipitate inherited sulfate.
+    if (fluid?.sulfurPoolsExplicit)
+        return (Number(fluid.S_sulfate) || 0) > 0;
     if (!EH_DYNAMIC_ENABLED) {
         return (typeof fluid.O2 === 'number' ? fluid.O2 : 0) >= o2Threshold;
     }
@@ -20792,6 +20922,8 @@ function sulfateRedoxAvailable(fluid, o2Threshold) {
 // identical to the inline expression. With flag on, derives a
 // synthetic O2 from current Eh and applies the same ratio.
 function sulfateRedoxFactor(fluid, scaleAtFull, cap = Infinity) {
+    if (fluid?.sulfurPoolsExplicit)
+        return Math.min(1, cap);
     if (!EH_DYNAMIC_ENABLED) {
         const O2 = typeof fluid.O2 === 'number' ? fluid.O2 : 0;
         return Math.min(O2 / scaleAtFull, cap);
@@ -21082,27 +21214,141 @@ function sulfurReducedFraction(fluid, T) {
 function sulfideAvailablePpm(fluid, T) {
     if (!fluid || typeof fluid.S !== 'number')
         return 0;
+    if (fluid.sulfurPoolsExplicit)
+        return Math.max(0, Number(fluid.S_sulfide) || 0);
     return fluid.S * sulfurReducedFraction(fluid, T);
 }
 // Oxidized-S ppm (SO₄²⁻) for the sulfate class — the S1 replacement for direct `fluid.S`
 // reads in supersaturation_* methods of barite, celestine, anhydrite, selenite, the
 // supergene Pb/Cu sulfates, etc. (js/40-supersat-sulfate.ts, js/90).
 //
-// CARVE-OUT (S1, boss-approved 2026-07-23): a fluid carrying externally-sourced OXIDIZED
-// sulfate — a meteoric sulfate pulse into an otherwise-reducing vein (wittichen's late
-// barite stage; its bare-wall barite did NOT recover live and forms in a fluid kept
-// reducing to protect the arsenide suite) — carries an inherited SO₄²⁻ pool the single-Eh
-// derivation can't represent (the two-pool Model-C case). Until Model C, the scenario sets
-// fluid.sulfateInherited and sulfates read the full S. This DOUBLE-BOOKS with any residual
-// sulfide consumer (wittichen's silver still tarnishes to acanthite at the same stage) —
-// the accepted, honestly-flagged cost of a one-pool model for a genuinely two-pool fluid;
-// sulfideAvailablePpm is deliberately left on the normal split so those consumers survive.
+// Legacy carve-out: sulfateInherited preserves old one-pool scenarios that authored an
+// externally sourced sulfate pulse. New mixed-valence content must use the explicit
+// reservoirs so sulfate and sulfide cannot spend the same sulfur twice.
 function sulfateAvailablePpm(fluid, T) {
     if (!fluid || typeof fluid.S !== 'number')
         return 0;
+    if (fluid.sulfurPoolsExplicit)
+        return Math.max(0, Number(fluid.S_sulfate) || 0);
     if (fluid.sulfateInherited)
         return fluid.S;
     return fluid.S * (1 - sulfurReducedFraction(fluid, T));
+}
+// Elemental-sulfur precursor available to native-S precipitation. There is
+// deliberately no legacy fallback: dissolved total S is not S0.
+function elementalSulfurAvailablePpm(fluid) {
+    if (!fluid || !fluid.sulfurPoolsExplicit)
+        return 0;
+    return Math.max(0, Number(fluid.S_elemental) || 0);
+}
+function syncExplicitSulfurTotal(fluid) {
+    if (!fluid || !fluid.sulfurPoolsExplicit)
+        return Number(fluid?.S) || 0;
+    fluid.S_sulfide = Math.max(0, Number(fluid.S_sulfide) || 0);
+    fluid.S_sulfate = Math.max(0, Number(fluid.S_sulfate) || 0);
+    fluid.S_elemental = Math.max(0, Number(fluid.S_elemental) || 0);
+    fluid.S = fluid.S_sulfide + fluid.S_sulfate;
+    return fluid.S;
+}
+function sulfurSystemTotalPpm(fluid) {
+    if (!fluid)
+        return 0;
+    if (!fluid.sulfurPoolsExplicit)
+        return Math.max(0, Number(fluid.S) || 0);
+    return syncExplicitSulfurTotal(fluid) + fluid.S_elemental;
+}
+function ensureExplicitSulfurPools(fluid, T) {
+    if (!fluid)
+        return fluid;
+    if (!fluid.sulfurPoolsExplicit) {
+        const total = Math.max(0, Number(fluid.S) || 0);
+        const reduced = total * sulfurReducedFraction(fluid, T);
+        fluid.S_sulfide = reduced;
+        fluid.S_sulfate = total - reduced;
+        fluid.S_elemental = Math.max(0, Number(fluid.S_elemental) || 0);
+        fluid.sulfurPoolsExplicit = true;
+        fluid.sulfateInherited = false;
+    }
+    syncExplicitSulfurTotal(fluid);
+    return fluid;
+}
+function addSulfurToPool(fluid, pool, ppm, T) {
+    ensureExplicitSulfurPools(fluid, T);
+    const key = pool === 'sulfide' ? 'S_sulfide' : pool === 'sulfate' ? 'S_sulfate' : 'S_elemental';
+    const addition = Math.max(0, Number(ppm) || 0);
+    fluid[key] = Math.max(0, Number(fluid[key]) || 0) + addition;
+    syncExplicitSulfurTotal(fluid);
+    return addition;
+}
+function debitSulfurPool(fluid, pool, ppm) {
+    const demand = Math.max(0, Number(ppm) || 0);
+    if (!fluid?.sulfurPoolsExplicit) {
+        const before = Math.max(0, Number(fluid?.S) || 0);
+        if (fluid)
+            fluid.S = Math.max(0, before - demand);
+        return before - (Number(fluid?.S) || 0);
+    }
+    const key = pool === 'sulfide' ? 'S_sulfide' : pool === 'sulfate' ? 'S_sulfate' : 'S_elemental';
+    const before = Math.max(0, Number(fluid[key]) || 0);
+    fluid[key] = Math.max(0, before - demand);
+    syncExplicitSulfurTotal(fluid);
+    return before - fluid[key];
+}
+// Mass-balanced partial oxidation at an open air-water interface:
+// H2S + 1/2 O2 -> S0 + H2O. Sulfur is transferred, not deleted. O2 is
+// imported from the atmosphere as an explicit boundary flux and consumed at
+// 0.5 mol O2 per mol S. This reaction produces no H+.
+function oxidizeReducedSulfurToElemental(fluid, fraction, targetResidualO2Ppm = 0.4) {
+    ensureExplicitSulfurPools(fluid, 25);
+    const beforeS = sulfurSystemTotalPpm(fluid);
+    const beforeO2 = Math.max(0, Number(fluid.O2) || 0);
+    const convertedS = fluid.S_sulfide * Math.min(1, Math.max(0, Number(fraction) || 0));
+    const oxygenConsumed = convertedS * (0.5 * 32.00 / 32.07);
+    const residual = Math.max(0, Number(targetResidualO2Ppm) || 0);
+    const oxygenImported = Math.max(0, oxygenConsumed + residual - beforeO2);
+    fluid.O2 = beforeO2 + oxygenImported - oxygenConsumed;
+    fluid.S_sulfide -= convertedS;
+    fluid.S_elemental += convertedS;
+    syncExplicitSulfurTotal(fluid);
+    if (typeof ehFromO2 === 'function')
+        fluid.Eh = ehFromO2(fluid.O2);
+    const result = {
+        pathway: 'oxidative_interface',
+        sulfurBeforePpm: beforeS,
+        sulfurAfterPpm: sulfurSystemTotalPpm(fluid),
+        sulfurTransferredPpm: convertedS,
+        oxygenBeforePpm: beforeO2,
+        oxygenImportedPpm: oxygenImported,
+        oxygenConsumedPpm: oxygenConsumed,
+        oxygenAfterPpm: fluid.O2,
+        protonsProducedMmolKg: 0,
+    };
+    Object.defineProperty(fluid, '_lastSulfurReaction', { value: result, writable: true, configurable: true, enumerable: false });
+    return result;
+}
+// Bacterial sulfate reduction transfers sulfate to reduced sulfur. Organic
+// carbon is an explicit untracked boundary reagent; carbonate alkalinity is
+// credited at two mol C per mol S for the scenario-scale reaction.
+function bacterialReduceSulfate(fluid, sulfurPpm, T) {
+    ensureExplicitSulfurPools(fluid, T);
+    const beforeS = sulfurSystemTotalPpm(fluid);
+    const transferred = Math.min(Math.max(0, Number(sulfurPpm) || 0), fluid.S_sulfate);
+    fluid.S_sulfate -= transferred;
+    fluid.S_sulfide += transferred;
+    const carbonateAdded = transferred * (2 * 60.01 / 32.07);
+    fluid.CO3 = Math.max(0, Number(fluid.CO3) || 0) + carbonateAdded;
+    syncExplicitSulfurTotal(fluid);
+    const result = {
+        pathway: 'bacterial_sulfate_reduction',
+        sulfurBeforePpm: beforeS,
+        sulfurAfterPpm: sulfurSystemTotalPpm(fluid),
+        sulfurTransferredPpm: transferred,
+        carbonateAddedPpm: carbonateAdded,
+        oxygenConsumedPpm: 0,
+        organicElectronDonorBoundary: true,
+    };
+    Object.defineProperty(fluid, '_lastSulfurReaction', { value: result, writable: true, configurable: true, enumerable: false });
+    return result;
 }
 // ============================================================
 // Phase 4b arsenate-class engine helpers
@@ -24618,7 +24864,10 @@ class CavityVoxelGrid {
 // The scalar on VugConditions is FLUID pressure in kbar. It is not depth,
 // lithostatic pressure, or differential stress. Those variables may correlate
 // in a particular geological history but are not interchangeable causes.
-const FLUID_PRESSURE_MIN_KBAR = 0.01;
+// One atmosphere is about 0.001013 kbar. Keep the lower bound at 0.001 kbar
+// so surface hot-spring and shallow sedimentary scenarios are representable
+// without pretending they sit beneath ~100 m of water.
+const FLUID_PRESSURE_MIN_KBAR = 0.001;
 const FLUID_PRESSURE_MAX_KBAR = 4.4;
 function clampFluidPressureKbar(value) {
     if (!Number.isFinite(value))
@@ -24984,12 +25233,21 @@ class VugConditions {
         return table[table.length - 1][1];
     }
     // Which SiO₂ polymorph precipitates at this temperature?
+    // Select a first-class silica phase before saturation/nucleation. The
+    // simulator currently has independently plumbed opal and quartz phases;
+    // chalcedony waits for its own solubility and kinetic implementation.
+    silica_precipitate_phase() {
+        const T = this.temperature;
+        const f = this.fluid;
+        if (T >= 5 && T < 100 && f.SiO2 >= 200 && f.pH >= 6.5 && f.pH <= 10.0)
+            return 'opal';
+        if (T >= 100 && T <= 700 && f.SiO2 >= 50)
+            return 'quartz';
+        return null;
+    }
+    // Crystalline SiO2 polymorph used only after quartz has been selected.
     silica_polymorph() {
         const T = this.temperature;
-        if (T < 100)
-            return 'opal'; // Amorphous silica
-        if (T < 200)
-            return 'chalcedony'; // Microcrystalline quartz
         if (T < 573)
             return 'alpha-quartz'; // α-quartz — the classic
         if (T < 870)
@@ -28635,12 +28893,12 @@ const MINERAL_GATES_native_tellurium = {
 const MINERAL_GATES_native_sulfur = {
     sigma_crit: 1.0,
     T_max: 200, T_optimal: 50,
-    fluid_min: { S: 100 },
-    O2_min: 0.1, O2_max: 0.7, // synproportionation window
+    fluid_min: { S_elemental: 100 },
+    O2_min: 0.1, O2_max: 0.7, // oxidative-interface pathway only
     pH_max: 6.5,
     surface_energy: 'low',
     _sources: ['native_sulfur engine v79+ (sulphur_bank)', 'native_sulfur engine v80 (Sicily BSR)', 'White & Roberson 1962', 'Ziegenbalg et al. 2010'],
-    _notes: 'S° synproportionation H2S + ½O2 → S° + H2O. Bimodal pH peaks at 2.5 (acid-sulfate) + 6.0 (BSR-near-surface). metal_sum > 100 blocks.',
+    _notes: 'Consumes an explicit S° precursor pool. Sulphur Bank creates it by H2S + ½O2 → S° + H2O; Sicily carries separately sourced, inherited microbial S° under anoxic conditions. Dissolved sulfide and sulfate cannot be spent as native sulfur.',
 };
 const MINERAL_GATES_native_arsenic = {
     sigma_crit: 1.0,
@@ -28803,17 +29061,33 @@ Object.assign(VugConditions.prototype, {
         // broadens to `pH > 6.5 → return 0` AND replaces the monotonic
         // ph_f with a bimodal one peaked at both regimes.
         const g = MINERAL_GATES_native_sulfur;
-        if (this.fluid.S < g.fluid_min.S)
+        const elementalS = elementalSulfurAvailablePpm(this.fluid);
+        if (elementalS < g.fluid_min.S_elemental)
             return 0;
-        if (!nativeRedoxWindow(this.fluid, g.O2_min, g.O2_max))
+        const pathway = this.fluid.nativeSulfurPathway;
+        if (pathway === 'oxidative_interface') {
+            if (!nativeRedoxWindow(this.fluid, g.O2_min, g.O2_max))
+                return 0;
+        }
+        else if (pathway === 'anaerobic_microbial_inherited') {
+            if ((Number(this.fluid.O2) || 0) > 0.1)
+                return 0;
+        }
+        else {
             return 0;
+        }
         if (this.fluid.pH > g.pH_max)
             return 0; // v80: was 5; broadened for BSR mode
         const metal_sum = this.fluid.Fe + this.fluid.Cu + this.fluid.Pb + this.fluid.Zn;
         if (metal_sum > 100)
             return 0;
-        const s_f = Math.min(this.fluid.S / 200.0, 4.0);
-        const eh_f = nativeRedoxTent(this.fluid, 0.4, 2.0, 0.4);
+        // The explicit precursor gate is 100 ppm-equivalent; normalize at that
+        // same threshold so a pool that just clears the gate is not immediately
+        // pushed back below nucleation by an unrelated legacy-total-S divisor.
+        const s_f = Math.min(elementalS / 100.0, 4.0);
+        const eh_f = pathway === 'oxidative_interface'
+            ? nativeRedoxTent(this.fluid, 0.4, 2.0, 0.4)
+            : Math.max(0.8, 1.0 - (Number(this.fluid.O2) || 0) * 2.0);
         // Bimodal pH factor: two regime peaks, valley between them.
         //
         //   ph_acid: peaks at pH 2.5 (Sulphur-Bank acid-sulfate), decay rate
@@ -30441,11 +30715,11 @@ const MINERAL_GATES_quartz = {
     // barrier (β-quartz grows, inverts on cooling). Pre-v228 the declared 600
     // was both unenforced AND wrong: gem_pegmatite grew geologically-correct
     // quartz at 617-650°C in violation of its own metadata.
-    T_min: 50, T_max: 700, T_optimal: 300,
+    T_min: 100, T_max: 700, T_optimal: 300,
     fluid_min: { SiO2: 50 },
     surface_energy: 'high',
     _sources: ['quartz engine v17+', 'Rimstidt & Barnes 1980 GCA 44:1683', 'Brantley et al. 2008', 'London 2008 (Pegmatites) — pocket quartz to the wet-granite solidus', 'Frontiers Earth Sci. 10:976588 (2022) — Pikes Peak quartz 700-660°C'],
-    _notes: 'SiO2 trigonal. ΔH° = +22 kJ/mol — strongly T-sensitive (corrected v127). σ_crit 1.2 is the heterogeneous value vug nucleation uses; homogeneous σ_crit is 6-20+. v228: envelope hard-enforced — T<50 is opal/chalcedony territory; T_max 700 = wet granite solidus.',
+    _notes: 'SiO2 trigonal. ΔH° = +22 kJ/mol — strongly T-sensitive (corrected v127). σ_crit 1.2 is the heterogeneous value vug nucleation uses; homogeneous σ_crit is 6-20+. SIM 243: crystalline quartz is kinetically admitted at 100-700°C; below 100°C the separate opal phase owns eligible hydrated/amorphous silica precipitation. T_max 700 = wet granite solidus.',
 };
 const MINERAL_GATES_feldspar = {
     sigma_crit: 1.0,
@@ -30871,23 +31145,11 @@ const MINERAL_GATES_chabazite = {
     _notes: 'Ca2Al2Si4O12·6H2O — trigonal R-3m, hex cell a13.83 c15.02. Intermediate Si/Al~2; LATE perching amygdule phase. Cation-flexible Ca>Na>K (K NOT required); chabazite-Ca is the amygdule default. Rhombohedral pseudo-cube + phacolite penetration twins. Looks like calcite but {1011} cleavage is POOR (calcite perfect) + no effervescence + harder (4-5 vs 3) + lighter (2.1 vs 2.71).',
 };
 Object.assign(VugConditions.prototype, {
-    supersaturation_quartz() {
-        // v228 (rung 2): enforce the declared T envelope — the review's smoking gun
-        // #3 was that quartz's gates metadata (T_min 50, v127) was never read here,
-        // so 13 scenarios grew macro-quartz at 23-47°C where silica kinetics only
-        // permit opal/chalcedony (sicily's most-fired phase was quartz, at 23°C).
-        // Prograde solubility makes this leak SYSTEMATIC: eq(T) falls as T falls,
-        // so cold water reads as MORE supersaturated — thermodynamically true,
-        // kinetically meaningless. The hard gate is the kinetic truth; sub-floor
-        // silica routes to the opal engine (its window already owns 5-100°C).
-        const g = MINERAL_GATES_quartz;
-        if (this.temperature < g.T_min || this.temperature > g.T_max)
-            return 0;
+    quartz_equilibrium_ratio() {
         const eq = this.silica_equilibrium(this.effectiveTemperature);
         if (eq <= 0)
             return 0;
         let sigma = this.fluid.SiO2 / eq;
-        // HF attack on quartz: low pH + high F = dissolution
         if (this.fluid.pH < 4.0 && this.fluid.F > 20) {
             const hf_attack = (4.0 - this.fluid.pH) * (this.fluid.F / 50.0) * 0.3;
             sigma -= hf_attack;
@@ -30895,6 +31157,22 @@ Object.assign(VugConditions.prototype, {
         if (ACTIVITY_CORRECTED_SUPERSAT)
             sigma *= activityCorrectionFactor(this.fluid, 'quartz');
         return Math.max(sigma, 0);
+    },
+    supersaturation_quartz() {
+        // v228 (rung 2): enforce the declared T envelope — the review's smoking gun
+        // #3 was that quartz's gates metadata (formerly T_min 50, now 100) was never read here,
+        // so 13 scenarios grew macro-quartz at 23-47°C where silica kinetics only
+        // permit macrocrystalline quartz (sicily's most-fired phase was quartz, at 23°C).
+        // Prograde solubility makes this leak SYSTEMATIC: eq(T) falls as T falls,
+        // so cold water reads as MORE supersaturated — thermodynamically true,
+        // kinetically meaningless. The hard gate is the kinetic truth; sub-floor
+        // silica routes to the opal engine (its window already owns 5-100°C).
+        const g = MINERAL_GATES_quartz;
+        if (this.silica_precipitate_phase() !== 'quartz')
+            return 0;
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
+            return 0;
+        return this.quartz_equilibrium_ratio();
     },
     supersaturation_feldspar() {
         // K-feldspar (sanidine/orthoclase/microcline polymorphs).
@@ -31300,12 +31578,12 @@ Object.assign(VugConditions.prototype, {
     // regime). High SiO2 supersaturation required (> 200 ppm — Fournier
     // 1977 Geothermics 5:41 amorphous silica solubility curve).
     //
-    // NOTE: separate from the existing grow_quartz polymorph dispatch
-    // (which can label a quartz crystal mineral_display='opal' at very
-    // low T). This standalone opal engine fires nucleation as opal-A
-    // directly, with a higher growth rate and the diagenesis-ladder
-    // mechanic flagged for future POLYMORPH_DIAGENESIS expansion.
+    // SIM 243: this is the only low-temperature generic silica route. Quartz
+    // can no longer nucleate and then acquire an opal/chalcedony display label;
+    // opal-A is born as its own phase with its own inventory and growth record.
     supersaturation_opal() {
+        if (this.silica_precipitate_phase() !== 'opal')
+            return 0;
         if (this.fluid.SiO2 < 200)
             return 0;
         if (this.temperature < 5 || this.temperature > 100)
@@ -35781,7 +36059,7 @@ function computeGraduatedAllocations(runs, fluid) {
 // (i.e., it pre-dates the v128 contract; eventually all firing minerals
 // must have stoichiometry, enforced by tests-js/mineral-stoichiometry-
 // coverage.test.ts).
-function buildCrystalDryRun(crystal_id, mineral, sigma, initiative, desired_thickness_um) {
+function buildCrystalDryRun(crystal_id, mineral, sigma, initiative, desired_thickness_um, fluid) {
     // SCRIPT-mode bundle: MINERAL_STOICHIOMETRY (js/19) and
     // stoichiometricBudgetDebitPpmPerUm (js/19) is a top-level declaration that
     // wind up as closure-scoped identifiers after concatenation. Reading
@@ -35804,8 +36082,9 @@ function buildCrystalDryRun(crystal_id, mineral, sigma, initiative, desired_thic
         return null;
     const debit_per_species = {};
     for (const sp of Object.keys(mineStoich)) {
-        debit_per_species[sp] = desired_thickness_um
-            * stoichiometricBudgetDebitPpmPerUm(sp, mineStoich[sp]);
+        const reservoir = stoichiometricReservoirSpecies(mineral, sp, fluid);
+        debit_per_species[reservoir] = (debit_per_species[reservoir] || 0)
+            + desired_thickness_um * stoichiometricBudgetDebitPpmPerUm(sp, mineStoich[sp]);
     }
     return { crystal_id, mineral, sigma, initiative, desired_thickness_um, debit_per_species };
 }
@@ -41868,9 +42147,9 @@ function grow_native_sulfur(crystal, conditions, step) {
         crystal.dominant_forms = ['{111} steep dipyramid', '{113} shallow dipyramid', '{001} pinacoid'];
         habit_note = 'α-sulfur bipyramidal — Sicilian Agrigento habit, the iconic bright-yellow crystals';
     }
-    // Synproportionation acidifies the local fluid slightly
-    conditions.fluid.pH = Math.max(conditions.fluid.pH - rate * 0.0003, 0.5);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.02, 0);
+    // The shell ledger debits S_elemental after the zone is finalized. Crystal
+    // growth itself neither performs the upstream oxidation reaction nor
+    // invents acidity; H2S + 1/2 O2 -> S0 + H2O produces no H+.
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -43589,7 +43868,10 @@ function grow_turquoise(crystal, conditions, step) {
 //
 // Phase B8 of PROPOSAL-MODULAR-REFACTOR.
 function grow_quartz(crystal, conditions, step) {
-    const sigma = conditions.supersaturation_quartz();
+    const selectedPhase = conditions.silica_precipitate_phase();
+    const sigma = selectedPhase === 'quartz'
+        ? conditions.supersaturation_quartz()
+        : conditions.quartz_equilibrium_ratio();
     // Smoky / morion colour centres (Rossman 1994, Rev. Mineral. 29:433) —
     // Al³⁺→Si⁴⁺ substitution PLUS a natural γ-dose from the radiogenic felsic
     // host rock (granite / pegmatite K-40 + U + Th background) creates [AlO₄]⁰
@@ -43619,6 +43901,10 @@ function grow_quartz(crystal, conditions, step) {
             crystal.radiation_damage = Math.min((crystal.radiation_damage || 0) + dose, 0.7);
         }
     }
+    // A pre-existing quartz crystal below the quartz kinetic window pauses
+    // while quartz-saturated and dissolves only against quartz equilibrium.
+    if (selectedPhase !== 'quartz' && sigma >= 1.0)
+        return null;
     if (sigma < 1.0) {
         if (crystal.total_growth_um > 10) {
             crystal.dissolved = true;
@@ -43703,19 +43989,6 @@ function grow_quartz(crystal, conditions, step) {
                 crystal.habit = 'scepter overgrowth possible';
         }
     }
-    else if (polymorph === 'chalcedony') {
-        crystal.habit = 'chalcedony (microcrystalline)';
-        crystal.dominant_forms = ['fibrous aggregates', 'botryoidal'];
-        crystal.mineral_display = 'chalcedony';
-        // Chalcedony grows faster than crystalline quartz due to disordered structure
-        rate *= 1.5;
-    }
-    else { // opal
-        crystal.habit = 'opal (amorphous silica)';
-        crystal.dominant_forms = ['botryoidal', 'colloform'];
-        crystal.mineral_display = 'opal';
-        rate *= 2.0; // amorphous precipitates fastest
-    }
     // Dauphiné twinning: occurs during β→α quartz inversion at 573°C,
     // or from mechanical stress / thermal shock. Most common when crystal
     // grew as β-quartz and cooled through the transition.
@@ -43755,15 +44028,7 @@ function grow_quartz(crystal, conditions, step) {
     }
     let note = '';
     // Polymorph-specific growth notes
-    if (polymorph === 'opal') {
-        note = 'amorphous silica precipitating — colloidal deposition';
-    }
-    else if (polymorph === 'chalcedony') {
-        note = 'chalcedony — fibrous microcrystalline growth';
-        if (excess > 1.5)
-            note += ', rapid banding possible';
-    }
-    else if (polymorph === 'beta-quartz') {
+    if (polymorph === 'beta-quartz') {
         note = 'β-quartz crystallizing — hexagonal bipyramids, will invert to α on cooling';
     }
     else if (polymorph === 'tridymite') {
@@ -47311,7 +47576,7 @@ function grow_anglesite(crystal, conditions, step) {
     const trace_Fe = f.Fe * 0.015;
     const trace_Pb = f.Pb * 0.015;
     f.Pb = Math.max(f.Pb - rate * 0.02, 0);
-    f.S = Math.max(f.S - rate * 0.018, 0);
+    debitSulfurPool(f, 'sulfate', rate * 0.018);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe, trace_Pb, note: color_note });
 }
 // v100 (2026-05-19): Pb-Cu supergene sulfate trio grow engines.
@@ -47351,7 +47616,7 @@ function grow_linarite(crystal, conditions, step) {
     }
     conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.018, 0);
     conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.012, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.020, 0);
+    debitSulfurPool(conditions.fluid, 'sulfate', rate * 0.020);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `linarite ${crystal.habit}, deep azure-blue (SG 5.3, NO HCl fizz vs azurite — heavy in hand is diagnostic)` });
 }
 function grow_caledonite(crystal, conditions, step) {
@@ -47390,7 +47655,7 @@ function grow_caledonite(crystal, conditions, step) {
     }
     conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.025, 0);
     conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.010, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.018, 0);
+    debitSulfurPool(conditions.fluid, 'sulfate', rate * 0.018);
     conditions.fluid.CO3 = Math.max(conditions.fluid.CO3 - rate * 0.008, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `caledonite ${crystal.habit}, blue-GREEN (the only blue-green of the Pb-Cu sulfate trio; SG 5.6)` });
 }
@@ -47429,7 +47694,7 @@ function grow_leadhillite(crystal, conditions, step) {
         crystal.dominant_forms = ['massive granular vug filling'];
     }
     conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.030, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.010, 0);
+    debitSulfurPool(conditions.fluid, 'sulfate', rate * 0.010);
     conditions.fluid.CO3 = Math.max(conditions.fluid.CO3 - rate * 0.015, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `leadhillite ${crystal.habit}, pearly white pseudo-hexagonal (SG 6.5+, mica-like cleavage; metastable → anglesite+cerussite over geological time)` });
 }
@@ -48137,7 +48402,7 @@ function grow_stibnite(crystal, conditions, step) {
         color_note = 'elongated sword-blade — the Ichinokawa habit (lead-gray metallic)';
     }
     f.Sb = Math.max(f.Sb - rate * 0.025, 0);
-    f.S = Math.max(f.S - rate * 0.018, 0);
+    debitSulfurPool(f, 'sulfide', rate * 0.018);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 // Realgar (AsS) — α-realgar, monoclinic arsenic sulfide. Orange-red,
@@ -48332,7 +48597,7 @@ function grow_bismuthinite(crystal, conditions, step) {
         color_note = `acicular needles (low-T form, T=${T.toFixed(0)}°C) — iridescent tarnish develops`;
     }
     f.Bi = Math.max(f.Bi - rate * 0.030, 0);
-    f.S = Math.max(f.S - rate * 0.018, 0);
+    debitSulfurPool(f, 'sulfide', rate * 0.018);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 function grow_bornite(crystal, conditions, step) {
@@ -48371,7 +48636,7 @@ function grow_bornite(crystal, conditions, step) {
     const trace_Fe = f.Fe * 0.02;
     f.Cu = Math.max(f.Cu - rate * 0.03, 0);
     f.Fe = Math.max(f.Fe - rate * 0.008, 0);
-    f.S = Math.max(f.S - rate * 0.018, 0);
+    debitSulfurPool(f, 'sulfide', rate * 0.018);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe, note: color_note });
 }
 function grow_chalcocite(crystal, conditions, step) {
@@ -48413,7 +48678,7 @@ function grow_chalcocite(crystal, conditions, step) {
         color_note = 'dark gray metallic tabular';
     }
     f.Cu = Math.max(f.Cu - rate * 0.04, 0);
-    f.S = Math.max(f.S - rate * 0.018, 0);
+    debitSulfurPool(f, 'sulfide', rate * 0.018);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 function grow_covellite(crystal, conditions, step) {
@@ -48449,7 +48714,7 @@ function grow_covellite(crystal, conditions, step) {
         color_note = 'indigo-blue hexagonal plate — the only common blue mineral';
     }
     f.Cu = Math.max(f.Cu - rate * 0.03, 0);
-    f.S = Math.max(f.S - rate * 0.03, 0);
+    debitSulfurPool(f, 'sulfide', rate * 0.03);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 function grow_tetrahedrite(crystal, conditions, step) {
@@ -48541,7 +48806,7 @@ function grow_metacinnabar(crystal, conditions, step) {
         crystal.dominant_forms = ['fine-grained disseminated'];
     }
     conditions.fluid.Hg = Math.max(conditions.fluid.Hg - rate * 0.025, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.012, 0);
+    debitSulfurPool(conditions.fluid, 'sulfide', rate * 0.012);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `metacinnabar (β-HgS) ${crystal.habit}, IRON-BLACK metallic (CONTRAST with cinnabar's scarlet — diagnostic visual marker)` });
 }
 // v95 (2026-05-19): Diarsenide quartet engines. All share the
@@ -48907,7 +49172,7 @@ function grow_enargite(crystal, conditions, step) {
         : `enargite (orthorhombic > 320°C) — Cu₃AsS₄, ${crystal.habit}; high-sulfidation primary Cu (S=${conditions.fluid.S.toFixed(0)}, pH=${conditions.fluid.pH.toFixed(1)})`);
     conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.030, 0);
     conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.010, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.040, 0);
+    debitSulfurPool(conditions.fluid, 'sulfide', rate * 0.040);
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -49984,6 +50249,8 @@ const EVENT_REGISTRY = {
     // alkaline-buffered mode the v80 engine broadening admits). See
     // js/70n-sicily.ts for the four handlers.
     sicily_gypsum_dissolution: event_sicily_gypsum_dissolution,
+    sicily_bsr_reduction: event_sicily_bsr_reduction,
+    sicily_inherited_sulfur_recharge: event_sicily_inherited_sulfur_recharge,
     sicily_meteoric_o2_pulse: event_sicily_meteoric_o2_pulse,
     sicily_carbonate_buffer: event_sicily_carbonate_buffer,
     sicily_late_synproportionation: event_sicily_late_synproportionation,
@@ -51751,14 +52018,15 @@ function event_co2_charge(c) {
 // Mechanism (White & Roberson 1962, USGS PP 432-A):
 //   1. Hot reduced fluid rises from depth carrying H₂S, CO₂, Hg⁰ vapor
 //      + minor metals.
-//   2. Near surface, H₂S meets atmospheric O₂ → oxidizes to H₂SO₄
-//      (acid mixing zone) and elemental S (the synproportionation
-//      reaction: 2 H₂S + O₂ → 2 S° + 2 H₂O).
+//   2. Near surface, partial oxidation transfers reduced sulfur into
+//      elemental S: 2 H₂S + O₂ → 2 S° + 2 H₂O. This branch produces
+//      no H+; measured source-fluid acidity is carried independently.
 //   3. Native sulfur precipitates from the acidic, partially-oxidized
 //      hot fluid in cavities + on vent walls.
 //
 // Engine fit: supersaturation_native_sulfur in js/36-supersat-native.ts
-// gates on (S ≥ 100, O₂ in [0.1, 0.7], pH ≤ 5, metal_sum ≤ 100, T 20-95°C
+// gates on (S_elemental ≥ 100, O₂ in [0.1, 0.7], pH ≤ 5,
+// metal_sum ≤ 100, T 20-95°C
 // optimal). Sulphur Bank fluid matches all five.
 //
 // 3 handlers — fresh H₂S pulse, surface O₂ ingress, late cooling.
@@ -51772,7 +52040,7 @@ function event_sulphur_bank_h2s_recharge(c) {
     // (recovery = 0.1 × min(flow/1.0, 2.0) per step). Higher
     // flow_rates would push pH up faster than the recharge pushes it
     // down, defeating the synproportionation window.
-    c.fluid.S += 150; // bring total back near 500 ppm
+    addSulfurToPool(c.fluid, 'sulfide', 150, c.temperature);
     c.fluid.Fe += 5; // minor Fe co-pulse (pyrite/marcasite contribution)
     c.fluid.As += 2; // trace As (Sulphur Bank ores carry minor arsenopyrite/realgar)
     c.fluid.pH = Math.max(1.5, c.fluid.pH - 1.0); // hard acidification — H₂S overwhelms recovery
@@ -51789,12 +52057,9 @@ function event_sulphur_bank_surface_oxidation(c) {
     //
     // O₂ pinned to 0.4 = the peak of nativeRedoxTent(peakO2=0.4).
     // This is the synproportionation sweet spot.
-    c.fluid.O2 = 0.40;
-    // Some S consumed as it converts to H₂SO₄ (further acidifies).
-    c.fluid.S = Math.max(150, c.fluid.S * 0.85);
-    c.fluid.pH = Math.max(1.5, c.fluid.pH - 0.5);
+    const reaction = oxidizeReducedSulfurToElemental(c.fluid, 0.20, 0.40);
     c.flow_rate = 0.3;
-    return `Atmospheric O₂ ingress at the vent. O₂ pins to ${c.fluid.O2.toFixed(2)} — the synproportionation peak. pH drops to ${c.fluid.pH.toFixed(1)} as H₂SO₄ forms. Native sulfur precipitates from H₂S + ½O₂ → S° + H₂O.`;
+    return `Atmospheric O₂ ingress transfers ${reaction.sulfurTransferredPpm.toFixed(1)} ppm reduced S into an elemental-S precursor pool. The open boundary imports ${reaction.oxygenImportedPpm.toFixed(1)} ppm O₂-equivalent and consumes ${reaction.oxygenConsumedPpm.toFixed(1)} ppm, leaving O₂=${c.fluid.O2.toFixed(2)}. H₂S + ½O₂ → S° + H₂O produces no H⁺; source-fluid acidity remains ${c.fluid.pH.toFixed(1)}.`;
 }
 function event_sulphur_bank_cooling(c) {
     // Surface cooling — winter / reduced vent activity. T drops to
@@ -51829,49 +52094,40 @@ function event_sulphur_bank_cooling(c) {
 //      H₂S accumulates in the gypsum-marl horizon. Some BSR-mediated
 //      microorganisms also directly precipitate S° in the basin
 //      sediment (the bacterial-disproportionation pathway).
-//   3. Pleistocene meteoric water infiltrates the upper few meters
-//      of the section, carrying dissolved atmospheric O₂.
-//   4. H₂S from below meets O₂ from above → synproportionation
-//      H₂S + ½O₂ → S° + H₂O — precipitates the mineable native
-//      sulfur in the upper oxidation zone (top ~5 m of section).
+//   3. The modeled pore inherits elemental sulfur produced by the
+//      anaerobic microbial community over geological time. Molecular
+//      O₂ is not required for this Sicilian pathway (Rouwendaal et al. 2025).
 //   5. Co-products: calcite cement (from CaCO₃ generated by step 2),
 //      residual gypsum (selenite), celestine where Sr is available.
 //
-// Engine fit: the v80 native_sulfur engine has a bimodal pH factor
-// with peaks at 2.5 (Sulphur-Bank acid-sulfate) and 6.0 (Sicilian
-// BSR-near-surface). The pH ≤ 6.5 cap admits Sicilian fluid; the
-// O₂ ∈ [0.1, 0.7] window admits the mixed-oxic infiltration zone.
-// Engine fires unchanged by THIS commit; the v80 engine change
-// landed alongside this scenario.
+// Engine fit (SIM 243): native sulfur consumes only the explicit S°
+// reservoir. The Sicilian pathway is selected independently of Sulphur
+// Bank's oxidative interface and remains anoxic throughout the run.
 //
-// 4 handlers — gypsum dissolution, meteoric O₂ infiltration,
-// carbonate buffering, late S° precipitation pulse.
+// 4 handlers — gypsum dissolution, microbial sulfate reduction,
+// carbonate buffering, and inherited elemental-sulfur recharge.
 function event_sicily_gypsum_dissolution(c) {
     // Meteoric water dissolves the encasing Messinian gypsum
     // (CaSO₄·2H₂O), releasing Ca²⁺ + SO₄²⁻ into the porewater. SO₄
     // is the upstream substrate that BSR converts to H₂S; we add it
-    // as fluid.S (the fluid-chemistry abstraction conflates oxidation
-    // states). Mild pH increase from the dissolution (saturating
+    // into the explicit sulfate reservoir. Mild pH increase from the
+    // dissolution (saturating
     // toward 7.5 the calcite-gypsum equilibrium point).
     c.fluid.Ca += 200;
-    c.fluid.S += 100;
+    addSulfurToPool(c.fluid, 'sulfate', 100, c.temperature);
     c.fluid.Sr += 5; // Messinian gypsum carries 1-3% Sr; celestine signature
     c.fluid.pH = Math.min(6.5, c.fluid.pH + 0.3);
     c.flow_rate = 0.4;
     return `Meteoric water dissolves Messinian gypsum: Ca rises to ${c.fluid.Ca.toFixed(0)} ppm, S to ${c.fluid.S.toFixed(0)} ppm. Sr trace boost for celestine. Carbonate equilibrium pulls pH toward ${c.fluid.pH.toFixed(1)}.`;
 }
-function event_sicily_meteoric_o2_pulse(c) {
-    // Pleistocene meteoric water infiltrates the upper section. O₂
-    // pins to 0.40 — the synproportionation peak. This is what
-    // triggers the BSR-produced H₂S to convert to S° in the upper
-    // oxidation zone.
-    c.fluid.O2 = 0.40;
-    // Some sulfide consumed as it converts to elemental S°. Slight
-    // acidification from the local H₂SO₄ byproduct (synproportionation
-    // is mass-conservative for S but releases H⁺).
-    c.fluid.pH = Math.max(5.5, c.fluid.pH - 0.2);
-    c.flow_rate = 0.5;
-    return `Pleistocene meteoric water arrives — O₂ pins to ${c.fluid.O2.toFixed(2)} at the BSR-oxidation interface. H₂S from depth meets O₂ from above → S° precipitates. pH drifts to ${c.fluid.pH.toFixed(1)}.`;
+function event_sicily_bsr_reduction(c) {
+    // Anaerobic microbes reduce a measured increment of gypsum-derived
+    // sulfate. Organic matter is the declared boundary electron donor.
+    const reaction = bacterialReduceSulfate(c.fluid, 25, c.temperature);
+    c.fluid.O2 = Math.min(c.fluid.O2, 0.02);
+    c.fluid.Eh = ehFromO2(c.fluid.O2);
+    c.flow_rate = 0.2;
+    return `Anaerobic microbial sulfate reduction transfers ${reaction.sulfurTransferredPpm.toFixed(1)} ppm sulfate-S to reduced S and adds ${reaction.carbonateAddedPpm.toFixed(1)} ppm carbonate-equivalent alkalinity. Sulfur closes at ${reaction.sulfurAfterPpm.toFixed(1)} ppm; O₂ remains anoxic at ${c.fluid.O2.toFixed(2)}.`;
 }
 function event_sicily_carbonate_buffer(c) {
     // BSR-generated H₂CO₃ + carbonate-buffered porewater stabilizes pH
@@ -51883,17 +52139,19 @@ function event_sicily_carbonate_buffer(c) {
     c.flow_rate = 0.2;
     return `BSR-generated H₂CO₃ buffers the porewater. CO₃ rises to ${c.fluid.CO3.toFixed(0)} ppm; pH pinned at 6.0 — the peak of the engine's BSR-mode pH factor. Calcite cement starts to precipitate.`;
 }
-function event_sicily_late_synproportionation(c) {
-    // Late-stage synproportionation event: fresh O₂-rich meteoric
-    // pulse + still-high S substrate from the BSR reservoir below.
-    // The geological story: even after millions of years of slow BSR,
-    // the H₂S pool stays replenished as long as gypsum remains.
-    c.fluid.S += 80;
-    c.fluid.O2 = 0.45; // slightly above peak — late synprop slightly excess-O₂
-    c.fluid.pH = Math.max(5.8, c.fluid.pH - 0.1);
+function event_sicily_inherited_sulfur_recharge(c) {
+    // Recharge imports already formed elemental sulfur from the surrounding
+    // anoxic, sulfur-bearing carbonate reservoir.
+    addSulfurToPool(c.fluid, 'elemental', 80, c.temperature);
+    c.fluid.O2 = Math.min(c.fluid.O2, 0.02);
+    c.fluid.Eh = ehFromO2(c.fluid.O2);
     c.flow_rate = 0.3;
-    return `Late synproportionation event — fresh O₂ pulse meets the still-replenished H₂S pool from below. S rises to ${c.fluid.S.toFixed(0)} ppm. Native sulfur continues to grow in the upper oxidation zone.`;
+    return `Anoxic porewater imports 80 ppm-equivalent inherited microbial S° from the surrounding sulfur-bearing carbonate. Elemental S rises to ${c.fluid.S_elemental.toFixed(0)} ppm while dissolved sulfate and sulfide remain separate.`;
 }
+// Save compatibility for pre-SIM-243 event ids. New scenarios use the names
+// above, but an old local save still resolves and receives corrected science.
+function event_sicily_meteoric_o2_pulse(c) { return event_sicily_bsr_reduction(c); }
+function event_sicily_late_synproportionation(c) { return event_sicily_inherited_sulfur_recharge(c); }
 
 // ── 70p-sunnyside.js ──
 
@@ -57377,7 +57635,7 @@ Object.assign(VugSimulator.prototype, {
                 // the raw value would understate demand by timeScale and could create more
                 // solid than the available fluid can supply.
                 const physicalCandidateThickness = it.zone.thickness_um * timeScale;
-                const r = buildCrystalDryRun(it.crystal.crystal_id, it.crystal.mineral, it.sigma, it.initiative, physicalCandidateThickness);
+                const r = buildCrystalDryRun(it.crystal.crystal_id, it.crystal.mineral, it.sigma, it.initiative, physicalCandidateThickness, group.fluid);
                 if (r)
                     runs.push(r);
                 else
@@ -57524,6 +57782,25 @@ Object.assign(VugSimulator.prototype, {
             if (meshS && meshS.cells)
                 for (let i = 0; i < meshS.cells.length; i++)
                     setFlag(meshS.cells[i] && meshS.cells[i].fluid);
+        }
+        // The explicit sulfur-reservoir mode is also a non-numeric latch. Initial
+        // scenario clones already carry it; this broadcast additionally covers a
+        // creative/event fluid converted to explicit pools at runtime.
+        if (this.conditions.fluid.sulfurPoolsExplicit) {
+            const copySulfurFlags = (f) => {
+                if (!f)
+                    return;
+                f.sulfurPoolsExplicit = true;
+                f.nativeSulfurPathway = this.conditions.fluid.nativeSulfurPathway;
+                syncExplicitSulfurTotal(f);
+            };
+            if (grid && grid.voxels)
+                for (let i = 0; i < grid.voxels.length; i++)
+                    copySulfurFlags(grid.voxels[i] && grid.voxels[i].fluid);
+            const meshSulfur = this.wall_state.meshFor(this);
+            if (meshSulfur && meshSulfur.cells)
+                for (let i = 0; i < meshSulfur.cells.length; i++)
+                    copySulfurFlags(meshSulfur.cells[i] && meshSulfur.cells[i].fluid);
         }
         const deltaT = this.conditions.temperature - preTemp;
         if (deltaT !== 0) {
@@ -62753,6 +63030,8 @@ function _nucleateClass_phosphate(sim) {
 //
 // Phase B15 of PROPOSAL-MODULAR-REFACTOR.
 function _nuc_quartz(sim) {
+    if (sim.conditions.silica_precipitate_phase() !== 'quartz')
+        return;
     const sigma_q = sim.conditions.supersaturation_quartz();
     const existing_quartz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
     if (sigma_q > MINERAL_GATES_quartz.sigma_crit && existing_quartz.length < 3 && !sim._atNucleationCap('quartz')) {
@@ -63148,6 +63427,8 @@ function _nuc_chrysoprase(sim) {
 // "embeds everything" universal-binder role of opal in hot-spring
 // systems. RNG-cascade guard via sigma < 1.0 early-out.
 function _nuc_opal(sim) {
+    if (sim.conditions.silica_precipitate_phase() !== 'opal')
+        return;
     const sigma = sim.conditions.supersaturation_opal();
     if (sigma <= MINERAL_GATES_opal.sigma_crit)
         return;
@@ -71914,6 +72195,9 @@ const _CREATIVE_CHEMISTRY_CONTROL_BASES = {
     Mn: _chemistryControl('f-mn', 'mn', 'Mn', 500, 'trace'),
     Cu: _chemistryControl('f-cu', 'cu', 'Cu', 500, 'trace'),
     S: _chemistryControl('f-s', 's', 'S', 5000, 'ligand'),
+    S_sulfide: _chemistryControl('f-s-sulfide', 's-sulfide', 'S(-II)', 5000, 'redox'),
+    S_sulfate: _chemistryControl('f-s-sulfate', 's-sulfate', 'S(VI)', 5000, 'redox'),
+    S_elemental: _chemistryControl('f-s-elemental', 's-elemental', 'S°', 5000, 'redox'),
     U: _chemistryControl('f-u', 'u', 'U', 500, 'trace'),
     Pb: _chemistryControl('f-pb', 'pb', 'Pb', 500, 'trace'),
     Mo: _chemistryControl('f-mo', 'mo', 'Mo', 500, 'trace'),
@@ -71951,6 +72235,22 @@ const _CREATIVE_CHEMISTRY_CONTROL_BASES = {
     pH: _chemistryControl('f-ph', 'ph', 'pH', 14, 'major', 10, '', 1),
 };
 function _creativeChemistryEvidence(field) {
+    if (field === 'S_sulfide' || field === 'S_sulfate' || field === 'S_elemental') {
+        const reservoir = field.replace('S_', '');
+        return {
+            provenance: [
+                'js/20c-chemistry-redox.ts: explicit sulfur-reservoir ledger',
+                'js/19-mineral-stoichiometry.ts:stoichiometricReservoirSpecies',
+            ],
+            coupling: `${field} is an independently conserved sulfur oxidation-state reservoir; sulfur-bearing mineral growth debits only the matching pool.`,
+            consumers: [
+                `debitSulfurPool:${reservoir}`,
+                'stoichiometricReservoirSpecies',
+                field === 'S_elemental' ? 'supersaturation_native_sulfur' : `${reservoir}AvailablePpm`,
+            ],
+            probe: { kind: 'sulfur-reservoir' },
+        };
+    }
     const stoichiometricConsumers = Object.entries(MINERAL_STOICHIOMETRY)
         .filter(([, formula]) => Number(formula[field]) > 0)
         .map(([mineral]) => mineral)
@@ -72138,6 +72438,40 @@ function creativeChemistryCausalProbe(field, value) {
             },
         };
     }
+    if (probe.kind === 'sulfur-reservoir') {
+        const pool = field === 'S_elemental' ? 'elemental' : field === 'S_sulfate' ? 'sulfate' : 'sulfide';
+        const fluid = new FluidChemistry({
+            sulfurPoolsExplicit: true,
+            S_sulfide: field === 'S_sulfide' ? decodedValue : 0,
+            S_sulfate: field === 'S_sulfate' ? decodedValue : 0,
+            S_elemental: field === 'S_elemental' ? decodedValue : 0,
+            nativeSulfurPathway: field === 'S_elemental' ? 'anaerobic_microbial_inherited' : null,
+            O2: 0.02,
+            pH: 6,
+        });
+        const before = Number(fluid[field]);
+        const available = field === 'S_sulfide'
+            ? sulfideAvailablePpm(fluid, 25)
+            : field === 'S_sulfate'
+                ? sulfateAvailablePpm(fluid, 25)
+                : elementalSulfurAvailablePpm(fluid);
+        debitSulfurPool(fluid, pool, Math.min(1, available));
+        const after = Number(fluid[field]);
+        return {
+            field, input_value: value, fluid_value: before,
+            route: `debitSulfurPool:${pool}`,
+            signal: before - after,
+            consumer_mutated: after !== before,
+            forward_route: field === 'S_elemental'
+                ? 'VugConditions.supersaturation_native_sulfur:S_elemental'
+                : field === 'S_sulfate'
+                    ? 'VugConditions.supersaturation_barite:sulfateAvailablePpm'
+                    : 'VugConditions.supersaturation_sphalerite:sulfideAvailablePpm',
+            forward_signal: available,
+            forward_observed: Number.isFinite(available),
+            details: { pool, before, after, available },
+        };
+    }
     if (probe.kind === 'germanium-partition') {
         const fluid = new FluidChemistry({ Zn: 1000, S: 1000, Ge: decodedValue, O2: 0, pH: 6.5 });
         const conditions = new VugConditions({ temperature: 200, pressure: 1.5, fluid });
@@ -72244,7 +72578,11 @@ function creativeChemistryCausalSignal(field, value) {
 const CREATIVE_CHEMISTRY_SEARCH_ALIASES = {
     SiO2: 'silica silicon dioxide', Ca: 'calcium', CO3: 'carbonate carbon dioxide inorganic carbon DIC',
     F: 'fluorine fluoride', Al: 'aluminum aluminium', Fe: 'iron', Mn: 'manganese', Cu: 'copper',
-    S: 'sulfur sulphur sulfate sulfide', U: 'uranium', Pb: 'lead', Mo: 'molybdenum', Zn: 'zinc',
+    S: 'sulfur sulphur dissolved total bulk',
+    S_sulfide: 'sulfur sulphur sulfide reduced hs h2s minus ii',
+    S_sulfate: 'sulfur sulphur sulfate oxidized so4 plus vi',
+    S_elemental: 'sulfur sulphur native elemental s0 zero',
+    U: 'uranium', Pb: 'lead', Mo: 'molybdenum', Zn: 'zinc',
     Mg: 'magnesium', Na: 'sodium', K: 'potassium', Ba: 'barium', Sr: 'strontium', Cr: 'chromium chrome',
     P: 'phosphorus phosphate', As: 'arsenic', Cl: 'chlorine chloride', V: 'vanadium', W: 'tungsten',
     Ag: 'silver', Bi: 'bismuth', Sb: 'antimony', Ni: 'nickel', Co: 'cobalt', B: 'boron', Li: 'lithium',
@@ -72254,7 +72592,7 @@ const CREATIVE_CHEMISTRY_SEARCH_ALIASES = {
 };
 const _CREATIVE_SETUP_EXACT_TRANSFORMS = {
     'f-temp': { label: 'temperature', unit: '°C', step: 1, fromSlider: v => v, toSlider: v => v },
-    'f-pressure': { label: 'fluid pressure', unit: 'kbar', step: 0.01, fromSlider: v => v / 100, toSlider: v => v * 100 },
+    'f-pressure': { label: 'fluid pressure', unit: 'kbar', step: 0.001, fromSlider: v => v / 100, toSlider: v => v * 100 },
     'f-confining-pressure': { label: 'rock pressure', unit: 'kbar', step: 0.01, fromSlider: v => v / 100, toSlider: v => v * 100 },
     'f-vug-diameter': { label: 'cavity diameter', unit: 'mm', step: 1, fromSlider: v => v, toSlider: v => v },
     'f-host-thickness': { label: 'host thickness', unit: 'mm', step: 10, fromSlider: v => v, toSlider: v => v },
@@ -72391,6 +72729,12 @@ function syncCreativeChemistryControls(fluidParams) {
             valueEl.textContent = `${shown}${control.unit ? ` ${control.unit}` : ''}`;
         }
     }
+    const explicit = document.getElementById('f-sulfur-explicit');
+    if (explicit)
+        explicit.checked = !!fluidParams.sulfurPoolsExplicit;
+    const pathway = document.getElementById('f-native-sulfur-pathway');
+    if (pathway)
+        pathway.value = fluidParams.nativeSulfurPathway || 'none';
 }
 function readCreativeChemistryControls(base = {}) {
     const fluidParams = Object.assign({}, base);
@@ -72401,6 +72745,18 @@ function readCreativeChemistryControls(base = {}) {
         const value = parseFloat(slider.value) / control.scale;
         if (Number.isFinite(value))
             fluidParams[prop] = value;
+    }
+    const explicit = document.getElementById('f-sulfur-explicit');
+    const pathway = document.getElementById('f-native-sulfur-pathway');
+    if (explicit || Object.prototype.hasOwnProperty.call(base, 'sulfurPoolsExplicit')) {
+        fluidParams.sulfurPoolsExplicit = explicit
+            ? !!explicit.checked
+            : !!base.sulfurPoolsExplicit;
+    }
+    if (pathway || Object.prototype.hasOwnProperty.call(base, 'nativeSulfurPathway')) {
+        fluidParams.nativeSulfurPathway = pathway?.value && pathway.value !== 'none'
+            ? pathway.value
+            : null;
     }
     return fluidParams;
 }
@@ -73523,7 +73879,7 @@ const BROTH_MAP = {
         path: 'pressure',
         get: () => fortressSim.conditions.pressure,
         set: v => { fortressSim.conditions.pressure = clampFluidPressureKbar(v); },
-        fmt: v => v.toFixed(2) + ' kbar fluid',
+        fmt: v => v.toFixed(3) + ' kbar fluid',
         parse: v => parseFloat(v) / 100,
         toSlider: v => v * 100,
     },
@@ -73718,13 +74074,61 @@ const BROTH_MAP = {
         toSlider: v => v ? '1' : '0',
         valid: v => typeof v === 'boolean',
     },
+    sulfur_explicit: {
+        path: 'fluid.sulfurPoolsExplicit',
+        get: () => !!fortressSim.conditions.fluid.sulfurPoolsExplicit,
+        set: v => {
+            const fluid = fortressSim.conditions.fluid;
+            if (v)
+                ensureExplicitSulfurPools(fluid, fortressSim.conditions.temperature);
+            else
+                fluid.sulfurPoolsExplicit = false;
+        },
+        fmt: v => v ? 'explicit reservoirs' : 'legacy bulk proxy',
+        parse: v => String(v) === '1',
+        toSlider: v => v ? '1' : '0',
+        valid: v => typeof v === 'boolean',
+    },
+    native_sulfur_pathway: {
+        path: 'fluid.nativeSulfurPathway',
+        get: () => fortressSim.conditions.fluid.nativeSulfurPathway || 'none',
+        set: v => {
+            const fluid = fortressSim.conditions.fluid;
+            fluid.nativeSulfurPathway = v === 'none' ? null : v;
+            if (v !== 'none')
+                fluid.sulfurPoolsExplicit = true;
+        },
+        fmt: v => String(v || 'none').replaceAll('_', ' '),
+        parse: v => String(v),
+        toSlider: v => String(v || 'none'),
+        valid: v => ['none', 'oxidative_interface', 'anaerobic_microbial_inherited'].includes(String(v)),
+    },
 };
 for (const [prop, control] of Object.entries(CREATIVE_CHEMISTRY_CONTROLS)) {
     const decimals = control.decimals ?? 0;
     BROTH_MAP[control.liveKey] = {
         path: `fluid.${prop}`,
         get: () => fortressSim.conditions.fluid[prop],
-        set: v => { fortressSim.conditions.fluid[prop] = v; },
+        set: v => {
+            const fluid = fortressSim.conditions.fluid;
+            fluid[prop] = v;
+            if (prop === 'S_sulfide' || prop === 'S_sulfate' || prop === 'S_elemental') {
+                fluid.sulfurPoolsExplicit = true;
+                syncExplicitSulfurTotal(fluid);
+            }
+            else if (prop === 'S' && fluid.sulfurPoolsExplicit) {
+                const dissolvedBefore = Math.max(0, fluid.S_sulfide) + Math.max(0, fluid.S_sulfate);
+                if (dissolvedBefore > 0) {
+                    const scale = Math.max(0, v) / dissolvedBefore;
+                    fluid.S_sulfide *= scale;
+                    fluid.S_sulfate *= scale;
+                }
+                else {
+                    fluid.S_sulfide = Math.max(0, v);
+                }
+                syncExplicitSulfurTotal(fluid);
+            }
+        },
         fmt: v => `${v.toFixed(decimals)}${control.unit ? ` ${control.unit}` : ''}`,
         parse: v => parseFloat(v) / control.scale,
         toSlider: v => v * control.scale,

@@ -10,7 +10,10 @@
 // Phase B8 of PROPOSAL-MODULAR-REFACTOR.
 
 function grow_quartz(crystal, conditions, step) {
-  const sigma = conditions.supersaturation_quartz();
+  const selectedPhase = conditions.silica_precipitate_phase();
+  const sigma = selectedPhase === 'quartz'
+    ? conditions.supersaturation_quartz()
+    : conditions.quartz_equilibrium_ratio();
 
   // Smoky / morion colour centres (Rossman 1994, Rev. Mineral. 29:433) —
   // Al³⁺→Si⁴⁺ substitution PLUS a natural γ-dose from the radiogenic felsic
@@ -41,6 +44,10 @@ function grow_quartz(crystal, conditions, step) {
       crystal.radiation_damage = Math.min((crystal.radiation_damage || 0) + dose, 0.7);
     }
   }
+
+  // A pre-existing quartz crystal below the quartz kinetic window pauses
+  // while quartz-saturated and dissolves only against quartz equilibrium.
+  if (selectedPhase !== 'quartz' && sigma >= 1.0) return null;
 
   if (sigma < 1.0) {
     if (crystal.total_growth_um > 10) {
@@ -121,17 +128,6 @@ function grow_quartz(crystal, conditions, step) {
       crystal.dominant_forms = ['m{100}', 'r{101}', 'z{011} dominant'];
       if (excess > 1.0) crystal.habit = 'scepter overgrowth possible';
     }
-  } else if (polymorph === 'chalcedony') {
-    crystal.habit = 'chalcedony (microcrystalline)';
-    crystal.dominant_forms = ['fibrous aggregates', 'botryoidal'];
-    crystal.mineral_display = 'chalcedony';
-    // Chalcedony grows faster than crystalline quartz due to disordered structure
-    rate *= 1.5;
-  } else { // opal
-    crystal.habit = 'opal (amorphous silica)';
-    crystal.dominant_forms = ['botryoidal', 'colloform'];
-    crystal.mineral_display = 'opal';
-    rate *= 2.0; // amorphous precipitates fastest
   }
 
   // Dauphiné twinning: occurs during β→α quartz inversion at 573°C,
@@ -174,12 +170,7 @@ function grow_quartz(crystal, conditions, step) {
 
   let note = '';
   // Polymorph-specific growth notes
-  if (polymorph === 'opal') {
-    note = 'amorphous silica precipitating — colloidal deposition';
-  } else if (polymorph === 'chalcedony') {
-    note = 'chalcedony — fibrous microcrystalline growth';
-    if (excess > 1.5) note += ', rapid banding possible';
-  } else if (polymorph === 'beta-quartz') {
+  if (polymorph === 'beta-quartz') {
     note = 'β-quartz crystallizing — hexagonal bipyramids, will invert to α on cooling';
   } else if (polymorph === 'tridymite') {
     note = 'tridymite crystallizing — high-T silica polymorph, thin hexagonal plates';

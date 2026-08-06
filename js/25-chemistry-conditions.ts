@@ -180,10 +180,20 @@ class VugConditions {
   }
 
   // Which SiO₂ polymorph precipitates at this temperature?
+  // Select a first-class silica phase before saturation/nucleation. The
+  // simulator currently has independently plumbed opal and quartz phases;
+  // chalcedony waits for its own solubility and kinetic implementation.
+  silica_precipitate_phase() {
+    const T = this.temperature;
+    const f = this.fluid;
+    if (T >= 5 && T < 100 && f.SiO2 >= 200 && f.pH >= 6.5 && f.pH <= 10.0) return 'opal';
+    if (T >= 100 && T <= 700 && f.SiO2 >= 50) return 'quartz';
+    return null;
+  }
+
+  // Crystalline SiO2 polymorph used only after quartz has been selected.
   silica_polymorph() {
     const T = this.temperature;
-    if (T < 100) return 'opal';           // Amorphous silica
-    if (T < 200) return 'chalcedony';     // Microcrystalline quartz
     if (T < 573) return 'alpha-quartz';   // α-quartz — the classic
     if (T < 870) return 'beta-quartz';    // β-quartz (inverts to α on cooling)
     return 'tridymite';                    // High-T volcanic polymorph
