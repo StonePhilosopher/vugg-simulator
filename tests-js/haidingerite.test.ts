@@ -46,7 +46,7 @@ describe('Haidingerite — pharmacolite dehydration paramorph (v90)', () => {
     });
 
     it('legacy entries preserved (v85 + earlier)', () => {
-      expect(DEHYDRATION_TRANSITIONS.borax).toEqual(['tincalconite', 25, 1.5, 75.0]);
+      expect(DEHYDRATION_TRANSITIONS.borax).toEqual(['tincalconite', 25, 1.5, 60.8]);
       expect(DEHYDRATION_TRANSITIONS.mirabilite).toEqual(['thenardite', 30, 1.5, 32.4]);
       expect(DEHYDRATION_TRANSITIONS.autunite).toEqual(['meta-autunite', 40, 1.0, 80.0]);
       expect(DEHYDRATION_TRANSITIONS.torbernite).toEqual(['metatorbernite', 40, 1.0, 75.0]);

@@ -16,12 +16,30 @@ function _cloneFluid(src) {
   return new FluidChemistry(src);
 }
 
+// Canonical constructor schema. Unknown keys are errors rather than silent
+// geology loss: a misspelled or obsolete solute must never look accepted while
+// being discarded by the runtime.
+const FLUID_CHEMISTRY_INPUT_FIELDS = new Set([
+  'SiO2', 'Ca', 'CO3', 'F', 'Zn', 'S', 'Fe', 'Mn', 'Al', 'Ti', 'Pb', 'U',
+  'Cu', 'Mo', 'K', 'Na', 'Mg', 'Ba', 'Sr', 'Cr', 'P', 'As', 'Cl', 'V', 'W',
+  'Ag', 'Bi', 'Sb', 'Ni', 'Co', 'B', 'Li', 'Be', 'Te', 'Se', 'Ge', 'Au',
+  'Cd', 'Hg', 'Sn', 'Y', 'O2', 'Eh', 'pH', 'salinity', 'concentration',
+  'sulfateInherited',
+]);
+
 class FluidChemistry {
+  // Concentration convention: every field labelled ppm is mg solute per kg
+  // solvent (mass basis), matching ppmToMolality in 20a. It is not mg/L, so
+  // changing fluid pressure must not silently density-correct these values.
   // Dataclass-style constructor sets all fields dynamically. The index
   // signature lets TS accept `this.<element>` without a declaration per
   // element (38+ of them) — runtime behavior unchanged.
   [key: string]: any;
   constructor(opts: any = {}) {
+    const unknown = Object.keys(opts).filter(key => !FLUID_CHEMISTRY_INPUT_FIELDS.has(key));
+    if (unknown.length) {
+      throw new TypeError(`Unknown FluidChemistry field${unknown.length === 1 ? '' : 's'}: ${unknown.join(', ')}`);
+    }
     this.SiO2 = opts.SiO2 ?? 500.0;
     this.Ca = opts.Ca ?? 200.0;
     this.CO3 = opts.CO3 ?? 150.0;

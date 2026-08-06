@@ -188,8 +188,10 @@ Object.assign(VugSimulator.prototype, {
   // Prose lives in narratives/arsenopyrite.md.
   const parts = [`Arsenopyrite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
   parts.push(narrative_blurb('arsenopyrite') || "FeAsS — the most common arsenic mineral and a primary mesothermal sulfide.");
-  const trappedAu = (c.zones || []).reduce((s, z) => s + (z.trace_Au || 0), 0);
-  if (trappedAu > 0.01) parts.push(narrative_variant('arsenopyrite', 'invisible_gold', { trapped_au: trappedAu.toFixed(3) }) || `Invisible gold — ${trappedAu.toFixed(3)} ppm Au trapped structurally in the arsenopyrite lattice.`);
+  const trappedAu = (typeof remainingBookedInventory === 'function')
+    ? remainingBookedInventory(c, 'Au')
+    : 0;
+  if (trappedAu > 0.000001) parts.push(narrative_variant('arsenopyrite', 'invisible_gold', { trapped_au: trappedAu.toFixed(6) }) || `Invisible gold — ${trappedAu.toFixed(6)} ppm-equivalent Au remains in the arsenopyrite solid inventory.`);
   if (c.habit === 'striated_prism') parts.push(narrative_variant('arsenopyrite', 'striated_prism') || 'Striated prismatic — the display habit.');
   else if (c.habit === 'rhombic_blade') parts.push(narrative_variant('arsenopyrite', 'rhombic_blade') || 'Rhombic blade.');
   else if (c.habit === 'acicular') parts.push(narrative_variant('arsenopyrite', 'acicular') || 'Acicular.');

@@ -1,10 +1,16 @@
 // ============================================================
 // js/19-mineral-stoichiometry.ts — per-mineral fluid stoichiometry
 // ============================================================
-// Maps each growth-engine mineral name to the moles of each fluid
-// species locked into one formula unit. Multiplied by
-// MASS_BALANCE_SCALE × zone.thickness_um in applyMassBalance to
-// debit/credit the per-ring fluid when MASS_BALANCE_ENABLED is on.
+// Maps each growth-engine mineral name to the moles of each fluid species
+// represented by one formula unit. applyStoichiometricGrowthBudget converts
+// those mole ratios to each species' mg/kg fluid field using its molar mass
+// and STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM.
+//
+// This is deliberately a calibrated axial-growth budget proxy. It preserves
+// mole ratios and exact closure of what it books, but does not scale demand by
+// grain size, habit, density, or rendered shell volume and is therefore not a
+// physical extensive mass-conservation calculation. See the canonical
+// STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE in 18-constants.ts.
 //
 // PROPOSAL-GEOLOGICAL-ACCURACY Phase 1.
 //
@@ -13,7 +19,7 @@
 // the flag."
 //
 // **THE FLAG IS ON AND HAS BEEN FOR A LONG TIME.** See
-// js/18-constants.ts:39 — MASS_BALANCE_ENABLED = true. The historical
+// js/18-constants.ts:39 — STOICHIOMETRIC_GROWTH_BUDGET_ENABLED = true. The historical
 // header above is stale; do NOT trust it. Adding a new entry HERE
 // immediately starts debiting fluid composition for that mineral's
 // growth in every scenario where it fires. That's good (correct
@@ -48,7 +54,7 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   // v146 Week 11: HMC = Ca(1-x)Mg(x)CO3 with variable x = 0.05-0.30.
   // Approximation: use x ≈ 0.10 average (canonical marine HMC). The
   // exact per-crystal mg_content is stored in crystal._mg_content but
-  // mass-balance treats HMC as composition-averaged. Real crystals
+  // growth-budget treats HMC as composition-averaged. Real crystals
   // have slight under-debit for Ca and slight over-debit for Mg at
   // x > 0.10; reverse for x < 0.10. Errors are small (a few percent
   // of Ca and Mg consumption).
@@ -92,7 +98,7 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   // metacinnabar joins). Net: max_um shifts down as the Hg-15-ppm
   // budget is shared more honestly. No paragenesis pin breaks
   // expected — sulphur_bank's metacinnabar is gated by σ on Hg≥1,
-  // T<200, O2<0.8, pH<6.5 only; mass balance affects depth, not the
+  // T<200, O2<0.8, pH<6.5 only; growth budget affects depth, not the
   // nucleation gate. Sulphur Bank is sulphide-rich (S=400 + 6 H2S
   // recharges +150 each), so S debit is irrelevant.
   metacinnabar:   { Hg: 1, S: 1 },                   // β-HgS (cubic polymorph of cinnabar; Sulphur Bank Mine)
@@ -157,11 +163,11 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   feldspar:       { K: 1, Al: 1, SiO2: 3 },          // KAlSi3O8 (sanidine/orthoclase/microcline)
   albite:         { Na: 1, Al: 1, SiO2: 3 },         // NaAlSi3O8
   // chrysoprase: Ni-bearing chalcedony (SiO2 with nano-inclusions of
-  // Ni-phyllosilicate). Mass balance debits SiO2 primarily; the Ni in
+  // Ni-phyllosilicate). Growth budget debits SiO2 primarily; the Ni in
   // the colored nano-inclusions is a trace (Marlborough bulk Ni ~0.4-4
   // wt% NiO ≈ 0.05-0.5 Ni per SiO2 unit). Conservative 0.1 Ni captures
   // the trapping mechanism without over-debiting Ni at high growth rates.
-  // Added 2026-05 — applyMassBalance warning surfaced during stale-mineral
+  // Added 2026-05 — applyStoichiometricGrowthBudget warning surfaced during stale-mineral
   // retune. Without this entry, chrysoprase growth was a free-energy gift.
   chrysoprase:    { SiO2: 1, Ni: 0.1 },              // SiO2 + Ni nano-inclusion trap
   chrysocolla:    { Cu: 2, SiO2: 2 },                // (Cu,Al)2H2Si2O5(OH)4·nH2O
@@ -393,7 +399,7 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
 //
 // Conventions:
 //   - Each entry maps mineral → species → ppm-per-µm-dissolved rate.
-//   - Rates here are NOT scaled by MASS_BALANCE_SCALE — they are the
+//   - Rates here are NOT scaled by the precipitation formula-amount constant — they are the
 //     exact per-µm coefficients the legacy inline credits used.
 //     Calcite Ca=0.5 means "1 µm of calcite dissolution releases 0.5
 //     ppm Ca²⁺ to the fluid in this ring."
@@ -579,13 +585,14 @@ const MINERAL_DISSOLUTION_RATES: Record<string, DissolutionEntry> = {
   }},
 
   // ---- Sulfides (Phase 1e batch 7, v45 — single-mode subset) ----
-  // sphalerite + galena + argentite have no inline dissolution credit at all.
+  // galena + argentite have no inline dissolution credit at all. Sphalerite's
+  // oxidative path is table-mediated so its recorded trace Ge can return.
   // For acanthite + cobaltite, the table handles only the positive cation
   // credits (Ag / Co + As); the inline negative S consumption stays for now
   // pending negative-rate design extension.
-  // For arsenopyrite, the table handles the standard Fe + As + S
-  // rate-scaled credits; the Au-trap (zone-data-driven trace) and the pH
-  // adjustment stay inline since neither is rate-scaled.
+  // Arsenopyrite's Fe/As/S and actual accepted invisible-Au uptake all return
+  // through the exact shell inventory. Only its non-mass pH adjustment remains
+  // inline in the engine.
 
   // ---- Sulfides (Phase 1e batch 8, v47 — multi-mode pyrite + marcasite) ----
   // pyrite has two dissolution modes: oxidative (rate-scaled, low-σ +
@@ -614,6 +621,11 @@ const MINERAL_DISSOLUTION_RATES: Record<string, DissolutionEntry> = {
   wurtzite: { __modes: {
     inversion: { constants: { Zn: 1.5, S: 1.2 } },  // T<=95°C -> sphalerite, dT=-1.5
   }},
+  sphalerite: { __modes: {
+    // Exact inverse of booked precipitation: ZnS debits 1:1 at the
+    // historical axial-growth calibration per accepted micrometre.
+    oxidative: { rates: { Zn: 0.02, S: 0.02 } },
+  }},
   chalcopyrite: { Cu: 0.8, Fe: 0.5, S: 0.3 },          // acid attack
   molybdenite:  { Mo: 0.8, S: 0.2 },                   // oxidative — MoO₄²⁻ released
   nickeline:    { Ni: 0.4, As: 0.4 },                  // oxidative weathering
@@ -628,7 +640,7 @@ const MINERAL_DISSOLUTION_RATES: Record<string, DissolutionEntry> = {
   covellite:    { Cu: 0.4, S: 0.4 },                   // strong oxidation
   tetrahedrite: { Cu: 0.6, Sb: 0.3, S: 0.4 },          // acid + oxidative
   tennantite:   { Cu: 0.6, As: 0.3, S: 0.4 },          // acid + oxidative
-  arsenopyrite: { Fe: 0.5, As: 0.4, S: 0.4 },          // major species; Au-trap stays inline
+  arsenopyrite: { Fe: 0.5, As: 0.4, S: 0.4 },          // legacy rates; exact shell ledger is authoritative
   // Phase 1e batch 14, v53: extended with S consumption (negative rate).
   // The wrapper applies Math.max(0, fluid + delta) when rate<0, matching
   // the legacy inline `fluid.S = Math.max(fluid.S - dissolved_um*0.1, 0)`
@@ -641,112 +653,207 @@ const MINERAL_DISSOLUTION_RATES: Record<string, DissolutionEntry> = {
   native_silver: { Ag: -0.3, S: -0.4 },                // tarnish/skin to acanthite
 };
 
-// Apply mass balance for a single growth or dissolution zone. Called
-// from VugSimulator._runEngineForCrystal after the engine returns.
-// Positive thickness = precipitation (debit fluid via
-// MINERAL_STOICHIOMETRY × MASS_BALANCE_SCALE). Negative thickness =
-// dissolution (credit fluid via MINERAL_DISSOLUTION_RATES, when the
-// mineral has an entry).
+// Apply the calibrated stoichiometric axial-growth budget for one finalized
+// growth or dissolution zone. Called only after time scaling, burial/fill
+// damping, and volume clamps are frozen. Positive thickness books/debits fluid
+// via mole-ratio stoichiometry × species molar mass. Negative thickness returns
+// the exact previously booked shell inventory. This closes the proxy ledger;
+// it does not assert physical solid mass or volume conservation.
 //
 // Two layers of safety while the flag is OFF:
-//   1. The early `if (!MASS_BALANCE_ENABLED) return;` short-circuit.
+//   1. The early `if (!STOICHIOMETRIC_GROWTH_BUDGET_ENABLED) return;` short-circuit.
 //   2. Even when flipped on, missing-mineral entries log a warning
 //      once and skip — so a new mineral added before its
 //      stoichiometry is filed never crashes a run.
-const _massBalanceMissingWarned: Record<string, boolean> = {};
+const _growthBudgetMissingWarned: Record<string, boolean> = {};
+
+// q [mmol formula/kg/µm] × ν [mol species/mol formula] × M [g/mol]
+// equals mg species/kg/µm, numerically the ppm debit per accepted µm.
+// Keep this as the one conversion primitive used by precipitation,
+// legacy-shell reconstruction, graduated competition, and UI capacity.
+function stoichiometricBudgetDebitPpmPerUm(species: string, coefficient: number): number {
+  const props = (typeof SPECIES_PROPERTIES !== 'undefined')
+    ? SPECIES_PROPERTIES[species]
+    : null;
+  const molarMass = Number(props?.molarMass);
+  const nu = Number(coefficient);
+  if (!(nu > 0) || !(molarMass > 0) || !Number.isFinite(molarMass)) return 0;
+  return STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM * nu * molarMass;
+}
 
 // Returns the list of species names that just transitioned from positive
 // to zero (depletion events), or null on no-op / missing stoichiometry.
 // _runEngineForCrystal uses this to emit "Fe²⁺ depleted in ring 4 —
 // pyrite nucleation halted" log lines so players can see when the fluid
 // runs out, instead of crystals silently stopping growth.
-function applyMassBalance(crystal: any, zone: any, conditions: any): string[] | null {
-  if (!MASS_BALANCE_ENABLED) return null;
+function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: any): string[] | null {
+  if (!STOICHIOMETRIC_GROWTH_BUDGET_ENABLED) return null;
   if (!zone || !zone.thickness_um) return null;
-  // Phase 1e (May 2026): the wrapper now handles dissolution too,
-  // for minerals that have an entry in MINERAL_DISSOLUTION_RATES.
-  // Engines whose dissolution credits have NOT yet been migrated
-  // keep their inline `fluid.X += dissolved_um * RATE` blocks; the
-  // wrapper's table-lookup short-circuits via the empty-entry check
-  // so behavior stays byte-identical until the engine's class is
-  // migrated. Single-mode dissolution maps cleanly to a per-mineral
-  // entry; multi-mode (e.g. pyrite oxidative vs acid at different
-  // rates) is left inline pending per-mode dispatch.
+  // Dissolution returns the inventory that precipitation actually removed
+  // from the fluid, shell by shell. The historical
+  // MINERAL_DISSOLUTION_RATES table used unrelated empirical credit numbers;
+  // it could return five or fifty times more material than the solid ever
+  // contained and could not distinguish grow A → etch → grow B. Keep that
+    // table as legacy reaction documentation, but never use it as an inventory source.
   if (zone.thickness_um < 0) {
-    const entry = MINERAL_DISSOLUTION_RATES[crystal.mineral];
-    if (!entry) return null;  // unmigrated mineral — engine still credits inline
     const dissolved_um = -zone.thickness_um;
     const fluid = conditions.fluid;
-    // Resolve credits + flavor (rate-scaled vs constants).
-    let credits: DissolutionRates;
-    let isConstant: boolean;
-    if ((entry as any).__modes) {
-      const modes = (entry as any).__modes as Record<string, DissolutionMode>;
-      const modeName: string | undefined = zone.dissolutionMode;
-      const mode = modeName ? modes[modeName] : modes[Object.keys(modes)[0]];
-      if (!mode) return null;  // unknown mode — caller must specify a declared one
-      if ((mode as any).constants) {
-        credits = (mode as any).constants;
-        isConstant = true;
-      } else {
-        credits = (mode as any).rates;
-        isConstant = false;
+    // Rebuild remaining positive-shell inventory in chronological order. This
+    // is migration-safe for legacy saves and correctly handles
+    // grow A → dissolve → regrow B → dissolve without charging A's earlier loss
+    // against the newer B shell.
+    const priorZones = crystal.zones || [];
+    const shells: any[] = [];
+    for (const historic of priorZones) {
+      if (!historic || !historic.thickness_um) continue;
+      if (historic.thickness_um > 0) {
+        historic._remaining_solid_um = historic.thickness_um;
+        shells.push(historic);
+        continue;
       }
-    } else {
-      credits = entry as DissolutionRates;
-      isConstant = false;
+      let historicRemoval = -historic.thickness_um;
+      for (let si = shells.length - 1; si >= 0 && historicRemoval > 0; si--) {
+        const available = Math.max(0, Number(shells[si]._remaining_solid_um) || 0);
+        const removed = Math.min(available, historicRemoval);
+        shells[si]._remaining_solid_um = available - removed;
+        historicRemoval -= removed;
+      }
     }
-    // Apply credits. Positive-rate species use the legacy `fluid += delta`
-    // path verbatim — preserves byte-identicality with all v45-and-earlier
-    // baselines that depend on this exact accumulation order. Negative-rate
-    // species (consumption — acanthite/cobaltite S sinks, native_silver
-    // tarnish) get the legacy inline pattern `fluid = Math.max(fluid - x, 0)`,
-    // which here becomes `fluid = Math.max(0, fluid + delta)` since `delta`
-    // is already negative.
-    for (const species in credits) {
+    let remainingToRemove = dissolved_um;
+    const returned: Record<string, number> = {};
+    for (let zi = shells.length - 1; zi >= 0 && remainingToRemove > 0; zi--) {
+      const z = shells[zi];
+      const available = Math.max(0, Number(z._remaining_solid_um) || 0);
+      const removedHere = Math.min(available, remainingToRemove);
+      z._remaining_solid_um = available - removedHere;
+      remainingToRemove -= removedHere;
+      // New zones carry their measured fluid debit. For legacy saves, rebuild
+      // the best available inventory from the mineral formula + trace record.
+      let inventory = z._budget_inventory_per_um;
+      if (!inventory || typeof inventory !== 'object') {
+        inventory = {};
+        const formula = MINERAL_STOICHIOMETRY[crystal.mineral] || {};
+        for (const species in formula) {
+          inventory[species] = stoichiometricBudgetDebitPpmPerUm(species, formula[species]);
+        }
+        for (const species in (z.trace_stoichiometry || {})) {
+          inventory[species] = (inventory[species] || 0)
+            + stoichiometricBudgetDebitPpmPerUm(species, z.trace_stoichiometry[species]);
+        }
+      }
+      for (const species in inventory) {
+        returned[species] = (returned[species] || 0)
+          + removedHere * inventory[species];
+      }
+    }
+    for (const species in returned) {
       if (typeof fluid[species] !== 'number') continue;
-      const rate = credits[species];
-      const delta = isConstant ? rate : dissolved_um * rate;
-      if (rate < 0) {
-        fluid[species] = Math.max(0, fluid[species] + delta);
-      } else {
-        fluid[species] += delta;
-      }
+      fluid[species] += returned[species];
     }
+    zone._returned_budget_inventory = returned;
     return null;  // depletion narration is precipitation-only
   }
   const stoich = MINERAL_STOICHIOMETRY[crystal.mineral];
   if (!stoich) {
-    if (!_massBalanceMissingWarned[crystal.mineral]) {
-      _massBalanceMissingWarned[crystal.mineral] = true;
+    if (!_growthBudgetMissingWarned[crystal.mineral]) {
+      _growthBudgetMissingWarned[crystal.mineral] = true;
       console.warn(
-        `[mass-balance] no stoichiometry for ${crystal.mineral} — ` +
+        `[growth-budget] no stoichiometry for ${crystal.mineral} — ` +
         `growth will not debit fluid composition. Add to ` +
         `MINERAL_STOICHIOMETRY in 19-mineral-stoichiometry.ts.`
       );
     }
     return null;
   }
-  // thickness_um is positive (precipitation). Debit each species and
-  // collect any that just crossed below the depletion threshold.
-  const debit = MASS_BALANCE_SCALE * zone.thickness_um;
+  // thickness_um is positive (precipitation). Major formula species are
+  // mandatory: if any reservoir cannot supply the requested formula amount,
+  // shrink the entire zone before booking anything so the solid remains
+  // stoichiometric instead of independently clamping its components.
   const fluid = conditions.fluid;
+  const requestedThickness = zone.thickness_um;
+  let acceptedThickness = requestedThickness;
+  let limitingSpecies: string | null = null;
+  for (const species in stoich) {
+    const demandPerUm = stoichiometricBudgetDebitPpmPerUm(species, stoich[species]);
+    if (!(demandPerUm > 0)) continue;
+    const available = (typeof fluid[species] === 'number' && Number.isFinite(fluid[species]))
+      ? Math.max(0, fluid[species])
+      : 0;
+    const supported = available / demandPerUm;
+    if (supported < acceptedThickness) {
+      acceptedThickness = supported;
+      limitingSpecies = species;
+    }
+  }
+  acceptedThickness = Math.max(0, Math.min(requestedThickness, acceptedThickness));
+  if (acceptedThickness < requestedThickness) {
+    const fraction = requestedThickness > 0 ? acceptedThickness / requestedThickness : 0;
+    zone.thickness_um = acceptedThickness;
+    if (typeof zone.growth_rate === 'number') zone.growth_rate *= fraction;
+    zone._stoichiometric_budget_cap = {
+      requested_thickness_um: requestedThickness,
+      accepted_thickness_um: acceptedThickness,
+      limiting_species: limitingSpecies,
+    };
+    zone.note = `${zone.note || 'growth'} [stoichiometric pool cap: ${limitingSpecies || 'unknown'}]`;
+  }
+
+  const bookedInventoryPerUm: Record<string, number> = {};
   let depleted: string[] | null = null;
   for (const species in stoich) {
     const previous = fluid[species];
     if (typeof previous !== 'number') continue;
-    const proposed = previous - debit * stoich[species];
+    const demandPerUm = stoichiometricBudgetDebitPpmPerUm(species, stoich[species]);
+    const proposed = previous - zone.thickness_um * demandPerUm;
     // Depletion narration fires when the species crosses below the
     // trace threshold from above. 1 ppm is the order of magnitude
     // where further precipitation is no longer meaningful (saturation
     // cratered, σ ≪ 1 for cation-paired anions). Single-shot per
     // event: previous > 1 && proposed ≤ 1 catches the transition,
     // not the steady-state "already exhausted" case.
-    if (previous > MASS_BALANCE_DEPLETION_THRESHOLD &&
-        proposed <= MASS_BALANCE_DEPLETION_THRESHOLD) {
+    if (previous > STOICHIOMETRIC_GROWTH_BUDGET_DEPLETION_THRESHOLD &&
+        proposed <= STOICHIOMETRIC_GROWTH_BUDGET_DEPLETION_THRESHOLD) {
       (depleted ||= []).push(species);
     }
     fluid[species] = Math.max(0, proposed);
+    bookedInventoryPerUm[species] = zone.thickness_um > 0
+      ? (previous - fluid[species]) / zone.thickness_um
+      : demandPerUm;
   }
+  // Trace substitutions are optional rather than formula-limiting. Incorporate
+  // only what exists and record the exact accepted ppm/µm for dissolution.
+  const traceStoich = zone.trace_stoichiometry;
+  if (traceStoich && typeof traceStoich === 'object') {
+    for (const species in traceStoich) {
+      const previous = fluid[species];
+      const coefficient = Number(traceStoich[species]);
+      if (typeof previous !== 'number' || !(coefficient > 0)) continue;
+      const demandPerUm = stoichiometricBudgetDebitPpmPerUm(species, coefficient);
+      const proposed = previous - zone.thickness_um * demandPerUm;
+      if (previous > STOICHIOMETRIC_GROWTH_BUDGET_DEPLETION_THRESHOLD
+          && proposed <= STOICHIOMETRIC_GROWTH_BUDGET_DEPLETION_THRESHOLD) {
+        (depleted ||= []).push(species);
+      }
+      fluid[species] = Math.max(0, proposed);
+      bookedInventoryPerUm[species] = (bookedInventoryPerUm[species] || 0)
+        + (zone.thickness_um > 0 ? (previous - fluid[species]) / zone.thickness_um : 0);
+    }
+  }
+  zone._budget_inventory_per_um = bookedInventoryPerUm;
+  zone._remaining_solid_um = zone.thickness_um;
   return depleted;
+}
+
+function remainingBookedInventory(crystal: any, species: string): number {
+  if (!crystal || !species) return 0;
+  let total = 0;
+  for (const zone of (crystal.zones || [])) {
+    if (!(zone && zone.thickness_um > 0)) continue;
+    const remaining = Number.isFinite(Number(zone._remaining_solid_um))
+      ? Math.max(0, Number(zone._remaining_solid_um))
+      : Math.max(0, Number(zone.thickness_um) || 0);
+    const perUm = Number(zone._budget_inventory_per_um?.[species]) || 0;
+    total += remaining * perUm;
+  }
+  return total;
 }

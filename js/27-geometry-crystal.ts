@@ -100,6 +100,14 @@ class GrowthZone {
     this.trace_Ti = opts.trace_Ti ?? 0;
     this.trace_Pb = opts.trace_Pb ?? 0;
     this.trace_Au = opts.trace_Au ?? 0;  // invisible-gold trace (arsenopyrite)
+    this.trace_Ge = opts.trace_Ge ?? 0;  // solid-zone Ge estimate (sphalerite)
+    // Optional trace-element formula-unit coefficients. applyStoichiometricGrowthBudget uses
+    // these only after a positive zone is accepted, so dry-run competition
+    // cannot consume solute. Unlike decorative trace labels, this closes the
+    // fluid-to-solid inventory loop for empirically modelled trace uptake.
+    if (opts.trace_stoichiometry) {
+      this.trace_stoichiometry = { ...opts.trace_stoichiometry };
+    }
     this.fluid_inclusion = opts.fluid_inclusion ?? false;
     this.inclusion_type = opts.inclusion_type ?? '';
     this.note = opts.note ?? '';
@@ -109,7 +117,7 @@ class GrowthZone {
     this.dissolution_depth_um = opts.dissolution_depth_um ?? 0.0;
     // Phase 1e completion: which dissolution mode the engine chose
     // (e.g. 'oxidative' | 'acid' | 'polymorph' | 'inversion' | 'low_co3' | 'thermal'
-    // | 'dehydration'). Read by applyMassBalance to dispatch the credit
+    // | 'dehydration'). Read by applyStoichiometricGrowthBudget to dispatch the credit
     // through MINERAL_DISSOLUTION_RATES[mineral].__modes[mode]. Optional —
     // single-mode (legacy) entries don't need it; the wrapper falls
     // through to the first declared mode when missing.
@@ -304,8 +312,14 @@ class Crystal {
 
   add_zone(zone, extentMult = 1) {
     // Apply time compression — more geological time per step = thicker zones
-    zone.thickness_um *= timeScale;
-    zone.growth_rate *= timeScale;
+    // The simulator's accepted-zone path finalizes this before growth budget and
+    // marks it `_time_scaled`. Direct callers and legacy saves still get the
+    // historical scaling here, exactly once.
+    if (!zone._time_scaled) {
+      zone.thickness_um *= timeScale;
+      zone.growth_rate *= timeScale;
+      zone._time_scaled = true;
+    }
     // Detect phantom boundaries
     if (zone.thickness_um < 0) {
       zone.is_phantom = true;
@@ -351,6 +365,16 @@ class Crystal {
       // as the cube of the linear dimension. Clamp at 0 if total dissolves.
       const scale = Math.max(0, cNew_mm / cOld_mm);
       this._volume_mm3 *= scale * scale * scale;
+    }
+    if (zone.thickness_um < 0) {
+      // `dissolved` means no solid remains; a shallow weathering/etch zone is
+      // not allowed to make a still-positive crystal disappear from occupancy,
+      // substrate, rendering, or future growth systems.
+      this.dissolved = this.total_growth_um <= 1e-9;
+      this.partially_dissolved = !this.dissolved;
+      if (this.dissolved) this.active = false;
+    } else if (zone.thickness_um > 0 && this.total_growth_um > 1e-9) {
+      this.dissolved = false;
     }
     this.c_length_mm = cNew_mm;
     // W-K VOL-NEUTRAL (measurement): compact the AXIAL extent at CONSTANT volume.
@@ -415,6 +439,7 @@ class Crystal {
     if (z.trace_Mn > 0.5) traces.push(`Mn ${z.trace_Mn.toFixed(1)}`);
     if (z.trace_Ti > 0.1) traces.push(`Ti ${z.trace_Ti.toFixed(2)}`);
     if (z.trace_Al > 1) traces.push(`Al ${z.trace_Al.toFixed(1)}`);
+    if (z.trace_Ge > 0.1) traces.push(`Ge ${z.trace_Ge.toFixed(1)}`);
     if (traces.length) parts.push(`traces: ${traces.join(', ')} ppm`);
     if (z.fluid_inclusion) parts.push(`fluid inclusion (${z.inclusion_type})`);
     if (z.note) parts.push(z.note);

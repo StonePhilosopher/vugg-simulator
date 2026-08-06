@@ -47,8 +47,8 @@ const MINERAL_GATES_apophyllite: MineralGates = {
   fluid_min: { K: 5, Ca: 30, SiO2: 800, F: 2 },
   pH_min: 7.0, pH_max: 10.0,
   surface_energy: 'low',
-  _sources: ['apophyllite engine v17+'],
-  _notes: 'KCa4Si8O20(F,OH)·8H2O — zeolite-facies sheet silicate. Pressure ≤ 0.5 kbar required.',
+  _sources: ['apophyllite engine v17+', 'Geiger et al. 2019 calorimetry', 'Pietroasa magnesian-skarn occurrence (Minerals 13:1362, 2023)', 'research-pressure-science-2026-08-05 §4.6'],
+  _notes: 'KCa4Si8O20(F,OH)·8H2O — zeolite-facies sheet silicate. No measured P–T stability diagram supports the retired 0.5-kbar wall. Temperature and chemistry are hard gates; pressure applies only an occurrence-based soft rarity weighting above 1.5 kbar.',
 };
 
 const MINERAL_GATES_albite: MineralGates = {
@@ -162,7 +162,7 @@ const MINERAL_GATES_andalusite: MineralGates = {
   fluid_min: { Al: 15, SiO2: 50 },
   pH_min: 4.0, pH_max: 9.0,
   surface_energy: 'high',
-  _sources: ['andalusite engine (crystal-face realism arc 2026-06-21)', 'Holdaway 1971 Am.J.Sci 271:97 (Al2SiO5 triple point ~500°C/0.4GPa)', 'research-andalusite dossier'],
+  _sources: ['andalusite engine (crystal-face realism arc 2026-06-21)', 'Pattison 1992 (Al2SiO5 triple point 550°C/4.5±0.5 kbar)', 'research-pressure-science-2026-08-05 §4.5', 'research-andalusite dossier'],
   _notes: 'Al2SiO5 — orthorhombic LOW-PRESSURE polymorph (Pnnm; kyanite=HP, sillimanite=HT). The SILICA-SATURATED complement of corundum. Index mineral of low-P contact-metamorphic aluminous metapelites (hornfels). Peraluminous gate (Na+K low, B<1) keeps it out of pegmatite/skarn scenarios → fleet byte-identical. Chiastolite (the carbon-cross variety) when the host is graphitic.',
 };
 
@@ -545,7 +545,6 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.K < 5 || this.fluid.Ca < 30 || this.fluid.SiO2 < 800 || this.fluid.F < 2) return 0;
   if (this.temperature < 50 || this.temperature > 250) return 0;
   if (this.fluid.pH < 7.0 || this.fluid.pH > 10.0) return 0;
-  if (this.pressure > 0.5) return 0;
   const product = (this.fluid.K / 30.0) * (this.fluid.Ca / 100.0) * (this.fluid.SiO2 / 1500.0) * (this.fluid.F / 8.0);
   let T_factor;
   if (this.temperature >= 100 && this.temperature <= 200) T_factor = 1.4;
@@ -553,6 +552,7 @@ Object.assign(VugConditions.prototype, {
   else T_factor = 0.6;
   const pH_factor = (this.fluid.pH >= 7.5 && this.fluid.pH <= 9.0) ? 1.2 : 0.8;
   let sigma = product * T_factor * pH_factor;
+  sigma *= apophyllitePressureFactor(this.pressure);
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'apophyllite');
   return sigma;
 },
@@ -764,6 +764,11 @@ Object.assign(VugConditions.prototype, {
     if (f.pH < 4 || f.pH > 9) return 0;
     const T = this.temperature;
     if (T < 400 || T > 700) return 0;                // low-P contact-metamorphic window
+    const phase = al2sio5StablePolymorph(T, this.wall?.confining_pressure_kbar);
+    // Missing/uncertain rock pressure cannot honestly hard-block andalusite.
+    // Once the field is securely kyanite or sillimanite, suppress this engine;
+    // those alternative polymorph engines remain explicitly unimplemented.
+    if (phase === 'kyanite' || phase === 'sillimanite') return 0;
     const al_f = Math.min(f.Al / 30.0, 2.0);
     const si_f = Math.min(f.SiO2 / 200.0, 1.5);
     let sigma = al_f * si_f;
@@ -1487,7 +1492,7 @@ Object.assign(VugConditions.prototype, {
   // cleft fluids. No redox gate (Ti4+ is fO2-insensitive). T sweet spot is the
   // alpine-cleft / hydrothermal band 250-450°C (late, low-T on quartz); the
   // wide [150,700] window also admits the hotter magmatic/metamorphic type at
-  // attenuated σ. Mass balance debits Ti, so a Ti-trace fluid self-limits to a
+  // attenuated σ. Growth budget debits Ti, so a Ti-trace fluid self-limits to a
   // few crystals — the correct "minor accessory" footprint.
   supersaturation_titanite() {
     const g = MINERAL_GATES_titanite;

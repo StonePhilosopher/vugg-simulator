@@ -15,3 +15,14 @@ let rng = new SeededRandom(Date.now());
 // 5× = ~50,000 years/step (Simulation/Creative), 1× = ~10,000 years/step (Groove).
 // Physics are identical — the clock is different, not the chemistry.
 let timeScale = 5.0;
+
+function getSimulationTimeScale(): number {
+  return timeScale;
+}
+
+function setSimulationTimeScale(scale: number): number {
+  const next = Number(scale);
+  if (!Number.isFinite(next) || next <= 0) throw new RangeError('time scale must be a positive finite number');
+  timeScale = next;
+  return timeScale;
+}

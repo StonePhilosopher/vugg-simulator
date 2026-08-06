@@ -53,8 +53,9 @@ describe('Cinnabar (HgS) — v81 mineral addition', () => {
 
   describe('supersaturation_cinnabar gates', () => {
     function sigmaAt(opts: any): number {
-      const fluid = new FluidChemistry(opts);
-      const cond = new VugConditions({ temperature: opts.T ?? 75, fluid });
+      const { T, ...fluidOpts } = opts;
+      const fluid = new FluidChemistry(fluidOpts);
+      const cond = new VugConditions({ temperature: T ?? 75, fluid });
       return cond.supersaturation_cinnabar();
     }
 

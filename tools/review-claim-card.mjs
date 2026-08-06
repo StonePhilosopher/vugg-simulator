@@ -28,7 +28,9 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { assertStripIdentity } from './strip-identity.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
@@ -65,7 +67,104 @@ function paragenesis(strip) {
   return order;
 }
 
-function buildCard(name, spec, strip, version) {
+function buildScienceDecisions(spec, science) {
+  const temperatureC = spec.initial?.temperature_C ?? null;
+  const fluidPressureKbar = spec.initial?.pressure_kbar ?? null;
+  const confiningPressureKbar = spec.initial?.wall?.confining_pressure_kbar ?? null;
+  const boundary = Number.isFinite(temperatureC)
+    ? science.calciteAragoniteBoundaryKbar(temperatureC) : null;
+  const aragoniteSecure = Number.isFinite(temperatureC) && Number.isFinite(fluidPressureKbar)
+    ? science.aragoniteIsPressureStable(temperatureC, fluidPressureKbar) : null;
+  const al2sio5 = Number.isFinite(temperatureC)
+    ? science.al2sio5PhaseAssessment(temperatureC, confiningPressureKbar) : null;
+  const gypsumBoundaryC = Number.isFinite(fluidPressureKbar)
+    ? science.gypsumAnhydriteBoundaryC(fluidPressureKbar) : null;
+  const waterActivity = science.waterActivityAssessment(spec.initial?.fluid, temperatureC ?? 25);
+  const stressEvents = (spec.events || [])
+    .filter(e => e.type === 'tectonic_shock' || e.deformation || /strain|stress/.test(e.type || ''))
+    .map(e => ({
+      step: e.step,
+      type: e.type,
+      decision: e.type === 'tectonic_shock'
+        ? { sigma_diff_mpa: 50, timescale: 'instantaneous', model: 'resolved-shear threshold pulse; fluid pressure unchanged; no creep law' }
+        : e.deformation
+          ? { model: 'authored visual deformation overprint', directive: e.deformation }
+          : { model: 'scenario-specific mechanical event; inspect handler' },
+    }));
+  return {
+    model_digest: science.MODEL_DIGEST,
+    growth_budget: science.STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE,
+    fluid_pressure: {
+      initial_kbar: fluidPressureKbar,
+      role: 'cavity-fluid pressure; never silently substituted for rock pressure or differential stress',
+    },
+    confining_pressure: {
+      initial_kbar: confiningPressureKbar,
+      role: confiningPressureKbar == null
+        ? 'unspecified; metamorphic phase field is reported unconstrained'
+        : 'rock/confining pressure used by metamorphic phase fields',
+    },
+    phase_fields: {
+      calcite_aragonite: {
+        boundary_kbar: boundary,
+        secure_aragonite_field: aragoniteSecure,
+        model: 'Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance',
+      },
+      al2sio5,
+      gypsum_anhydrite: {
+        pure_water_boundary_C: gypsumBoundaryC,
+        initial_water_activity: waterActivity,
+        model: 'Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output',
+      },
+    },
+    differential_stress_events: stressEvents,
+  };
+}
+
+function sampleStats(samples, key) {
+  const values = (samples || []).map((s) => s?.[key]).filter(Number.isFinite);
+  if (!values.length) return null;
+  return {
+    first: values[0], last: values[values.length - 1],
+    min: Math.min(...values), max: Math.max(...values), samples: values.length,
+  };
+}
+
+function buildExecutedScienceTestimony(strip) {
+  const pressurePhase = strip.executed_testimony?.pressure_phase || [];
+  const stressEvents = strip.executed_testimony?.stress_events || [];
+  const al2Counts = {};
+  let aragoniteSecureSteps = 0;
+  for (const sample of pressurePhase) {
+    const phase = sample?.al2sio5?.phase || 'unavailable';
+    al2Counts[phase] = (al2Counts[phase] || 0) + 1;
+    if (sample?.calcite_aragonite?.secure_aragonite === true) aragoniteSecureSteps++;
+  }
+  return {
+    source: 'archived executed run state; not reconstructed from scenario definition',
+    pressure_phase_sample_count: pressurePhase.length,
+    fluid_pressure_kbar: sampleStats(pressurePhase, 'fluid_pressure_kbar'),
+    confining_pressure_kbar: sampleStats(pressurePhase, 'confining_pressure_kbar'),
+    temperature_C: sampleStats(pressurePhase, 'temperature_C'),
+    calcite_aragonite: {
+      secure_aragonite_steps: aragoniteSecureSteps,
+      first: pressurePhase[0]?.calcite_aragonite ?? null,
+      last: pressurePhase.at(-1)?.calcite_aragonite ?? null,
+    },
+    al2sio5: {
+      phase_counts: al2Counts,
+      first: pressurePhase[0]?.al2sio5 ?? null,
+      last: pressurePhase.at(-1)?.al2sio5 ?? null,
+    },
+    gypsum_anhydrite: {
+      first: pressurePhase[0]?.gypsum_anhydrite ?? null,
+      last: pressurePhase.at(-1)?.gypsum_anhydrite ?? null,
+    },
+    stress_events: stressEvents,
+  };
+}
+
+export function buildCard(name, spec, strip, science) {
   const para = paragenesis(strip);
   const present = new Set(para.map((p) => p.mineral));
   const expects = spec.expects_species || [];
@@ -85,7 +184,9 @@ function buildCard(name, spec, strip, version) {
 
   return {
     scenario: name,
-    sim_version: version,
+    sim_version: strip.sim_version,
+    model_digest: strip.model_digest,
+    scenario_spec_hash: strip.scenario_spec_hash,
     strip_steps: strip.steps,
     claim: {
       anchor: spec.anchor || null,
@@ -96,6 +197,7 @@ function buildCard(name, spec, strip, version) {
       initial_pressure_kbar: spec.initial?.pressure_kbar ?? null,
       wall_architecture: spec.initial?.wall?.architecture ?? null,
       notes: spec.notes || [],
+      authored_science_context: buildScienceDecisions(spec, science),
     },
     testimony: {
       species_count: present.size,
@@ -104,11 +206,12 @@ function buildCard(name, spec, strip, version) {
       expected_no_shows: noShows,
       environment: env,
       saturation_indices: si,
+      executed_science: buildExecutedScienceTestimony(strip),
     },
   };
 }
 
-function renderMarkdown(card) {
+export function renderMarkdown(card) {
   const c = card.claim, t = card.testimony;
   const L = [];
   L.push(`# CLAIM CARD — ${card.scenario}  (v${card.sim_version}, seed 42, ${card.strip_steps} steps)`);
@@ -116,6 +219,15 @@ function renderMarkdown(card) {
   L.push(`**Anchor:** ${c.anchor || '(none)'}`);
   L.push(`**Deposit:** ${c.description || '(none)'}`);
   L.push(`**Initial:** ${c.initial_temperature_C ?? '?'} °C, ${c.initial_pressure_kbar ?? '?'} kbar, wall=${c.wall_architecture || '?'}`);
+  const sd = c.authored_science_context;
+  L.push(`**Model digest:** ${card.model_digest}`);
+  L.push(`**Scenario spec hash:** ${card.scenario_spec_hash}`);
+  L.push('');
+  L.push('## Model boundary: calibrated growth budget');
+  L.push(`  - Kind: ${sd.growth_budget.kind}`);
+  L.push(`  - Basis: ${sd.growth_budget.basis}`);
+  L.push(`  - Preserves: ${sd.growth_budget.preserves}`);
+  L.push(`  - Limitation: ${sd.growth_budget.limitation}`);
   L.push('');
   L.push(`**expects_species (${c.expects_species.length}):** ${c.expects_species.join(', ') || '(none declared)'}`);
   L.push('');
@@ -141,6 +253,42 @@ function renderMarkdown(card) {
     L.push(`  - ${k}: ${v.first} → ${v.last}  [${v.min}, ${v.max}]`);
   }
   L.push('');
+  L.push('## Authored pressure/stress/phase context (claim, not run testimony)');
+  L.push(`  - Fluid pressure: ${sd.fluid_pressure.initial_kbar ?? 'unspecified'} kbar — ${sd.fluid_pressure.role}`);
+  L.push(`  - Rock pressure: ${sd.confining_pressure.initial_kbar ?? 'unspecified'} kbar — ${sd.confining_pressure.role}`);
+  const ca = sd.phase_fields.calcite_aragonite;
+  L.push(`  - Calcite/aragonite boundary: ${ca.boundary_kbar == null ? 'n/a' : ca.boundary_kbar.toFixed(3) + ' kbar'}; secure aragonite=${ca.secure_aragonite_field ?? 'n/a'}`);
+  const al = sd.phase_fields.al2sio5;
+  L.push(`  - Al2SiO5: ${al ? `${al.phase} (nominal ${al.nominalPhase || 'n/a'}) — ${al.note}` : 'n/a'}`);
+  const gy = sd.phase_fields.gypsum_anhydrite;
+  L.push(`  - Gypsum/anhydrite pure-water boundary: ${gy.pure_water_boundary_C == null ? 'n/a' : gy.pure_water_boundary_C.toFixed(2) + ' °C'}; initial a_w=${gy.initial_water_activity.value.toFixed(3)} ±${gy.initial_water_activity.uncertainty.toFixed(3)} (${gy.initial_water_activity.status})`);
+  if (sd.differential_stress_events.length) {
+    for (const e of sd.differential_stress_events) L.push(`  - Stress/overprint step ${e.step}: ${e.type} — ${e.decision.model}`);
+  } else {
+    L.push('  - Differential stress: no authored stress event.');
+  }
+  L.push('');
+  const ex = t.executed_science;
+  L.push('## Executed pressure/stress/phase testimony (archived run)');
+  L.push(`**Source:** ${ex.source}`);
+  const fmtStats = (v, units) => v
+    ? `${v.first} → ${v.last} ${units} [${v.min}, ${v.max}], n=${v.samples}`
+    : 'not recorded';
+  L.push(`  - Fluid pressure: ${fmtStats(ex.fluid_pressure_kbar, 'kbar')}`);
+  L.push(`  - Rock/confining pressure: ${fmtStats(ex.confining_pressure_kbar, 'kbar')}`);
+  L.push(`  - Temperature: ${fmtStats(ex.temperature_C, '°C')}`);
+  L.push(`  - Secure aragonite assessment: ${ex.calcite_aragonite.secure_aragonite_steps}/${ex.pressure_phase_sample_count} executed steps; first=${JSON.stringify(ex.calcite_aragonite.first)}, last=${JSON.stringify(ex.calcite_aragonite.last)}`);
+  L.push(`  - Al2SiO5 executed phase counts: ${JSON.stringify(ex.al2sio5.phase_counts)}; first=${ex.al2sio5.first?.phase || 'n/a'}, last=${ex.al2sio5.last?.phase || 'n/a'}`);
+  if (ex.stress_events.length) {
+    for (const e of ex.stress_events) {
+      const counts = {};
+      for (const r of (e.evaluated_crystals || [])) counts[r.outcome] = (counts[r.outcome] || 0) + 1;
+      L.push(`  - Executed stress step ${e.step}: σdiff=${e.sigma_diff_mpa} MPa; affected crystal IDs=[${(e.twinned_crystal_ids || []).join(', ')}]; outcomes=${JSON.stringify(counts)}`);
+    }
+  } else {
+    L.push('  - Executed stress: no stress event recorded by the run.');
+  }
+  L.push('');
   L.push(`## Scenario notes (author's own rationale)`);
   for (const n of c.notes) L.push(`> ${n}\n`);
   return L.join('\n');
@@ -162,7 +310,15 @@ async function main() {
   const positional = argv.filter((a, i) => !a.startsWith('--') && !(argv[i - 1] === '--version') && !(argv[i - 1] === '--out'));
 
   const h = await import(pathToFileURL(path.join(ROOT, 'tools', '_harness.mjs')).href);
-  const { SCENARIOS } = await h.loadSimBundle({ toolName: 'review-claim-card' });
+  const science = await h.loadSimBundle({
+    toolName: 'review-claim-card',
+    extraExports: [
+      'calciteAragoniteBoundaryKbar', 'aragoniteIsPressureStable',
+      'al2sio5PhaseAssessment', 'gypsumAnhydriteBoundaryC',
+      'waterActivityAssessment', 'STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE',
+    ],
+  });
+  const { SCENARIOS } = science;
   const stripDir = path.join(ROOT, 'archive', 'strips', `v${version}`);
 
   const names = all
@@ -177,9 +333,22 @@ async function main() {
     if (!spec) { console.error(`[card] no scenario def for ${name}`); continue; }
     if (!fs.existsSync(stripPath)) { console.error(`[card] no strip v${version} for ${name}`); continue; }
     const strip = JSON.parse(fs.readFileSync(stripPath, 'utf8'));
-    const card = buildCard(name, spec, strip, version);
+    if (version !== science.SIM_VERSION) {
+      throw new Error(`[card] requested v${version}, but the loaded science bundle is v${science.SIM_VERSION}; historical cards require their historical science bundle`);
+    }
+    const scenarioSpecHash = crypto.createHash('sha256')
+      .update(JSON.stringify(spec))
+      .digest('hex');
+    assertStripIdentity(strip, {
+      version,
+      modelDigest: science.MODEL_DIGEST,
+      scenario: name,
+      seed: 42,
+      scenarioSpecHash,
+    });
+    const card = buildCard(name, spec, strip, science);
     if (outDir) {
-      fs.writeFileSync(path.join(outDir, `${name}.md`), renderMarkdown(card) + '\n');
+      fs.writeFileSync(path.join(outDir, `${name}.md`), renderMarkdown(card).trimEnd() + '\n');
       fs.writeFileSync(path.join(outDir, `${name}.json`), JSON.stringify(card, null, 2) + '\n');
     } else if (asJson) {
       console.log(JSON.stringify(card, null, 2));
@@ -191,4 +360,8 @@ async function main() {
   if (outDir) console.log(`[card] wrote ${names.length} cards → ${path.relative(ROOT, outDir)}`);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+const invokedDirectly = process.argv[1]
+  && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+if (invokedDirectly) {
+  main().catch((e) => { console.error(e); process.exit(1); });
+}

@@ -16,7 +16,7 @@ function grow_hematite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 3.0) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.1);
-      // Phase 1e: Fe credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.hematite.
+      // Phase 1e: Fe credit handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.hematite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -81,7 +81,7 @@ function grow_uraninite(crystal, conditions, step) {
     if (crystal.total_growth_um > 3 && conditions.fluid.O2 > 0.3) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.12);
-      // Phase 1e: U credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.uraninite.
+      // Phase 1e: U credit handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.uraninite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -104,7 +104,7 @@ function grow_uraninite(crystal, conditions, step) {
     crystal.dominant_forms = ['botryoidal masses', 'colloform banding'];
   }
 
-  // Phase 1d: U consumption owned by the wrapper (applyMassBalance).
+  // Phase 1d: U consumption owned by the wrapper (applyStoichiometricGrowthBudget).
 
   let color_note;
   if (T > 500) color_note = 'pitch-black, submetallic — pegmatitic octahedron';
@@ -125,7 +125,7 @@ function grow_magnetite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && (conditions.fluid.pH < 2.5 || conditions.fluid.O2 > 1.4)) {
       crystal.dissolved = true;
       const d = Math.min(2.0, crystal.total_growth_um * 0.05);
-      // Phase 1e: Fe credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.magnetite.
+      // Phase 1e: Fe credit handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.magnetite.
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `dissolution (pH ${conditions.fluid.pH.toFixed(1)}, O₂ ${conditions.fluid.O2.toFixed(1)}) — martite conversion if oxidizing` });
     }
     return null;
@@ -149,7 +149,7 @@ function grow_cuprite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && (conditions.fluid.pH < 3.5 || conditions.fluid.O2 > 1.5)) {
       crystal.dissolved = true;
       const d = Math.min(2.0, crystal.total_growth_um * 0.07);
-      // Phase 1e: Cu credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.cuprite.
+      // Phase 1e: Cu credit handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.cuprite.
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `dissolution — Eh window exceeded (pH ${conditions.fluid.pH.toFixed(1)}, O₂ ${conditions.fluid.O2.toFixed(1)})` });
     }
     return null;
@@ -429,7 +429,7 @@ function grow_cassiterite(crystal, conditions, step) {
     habit_note += `; trace Nb/Ta indicators (Bi ${f.Bi.toFixed(1)}, W ${f.W.toFixed(1)} ppm) — coupled-substitution evidence`;
   }
 
-  // Mass balance: Sn consumed (the primary deposition); trace Fe + W
+  // Growth budget: Sn consumed (the primary deposition); trace Fe + W
   // sequestered as growth-zone metadata.
   f.Sn = Math.max(f.Sn - rate * 0.025, 0);
 
@@ -532,7 +532,7 @@ function grow_pyrolusite(crystal, conditions, step) {
     habit_note += ` (Fe/Mn ${(f.Fe / Math.max(f.Mn, 0.01)).toFixed(1)} — losing the oxidation competition to goethite)`;
   }
 
-  // Mass balance — Mn consumed primarily. Trace Ba/K/Pb sequestered as
+  // Growth budget — Mn consumed primarily. Trace Ba/K/Pb sequestered as
   // tunnel-cation indicators (low values; tunnel cations partition into
   // pyrolusite weakly compared to romanechite/cryptomelane/coronadite).
   f.Mn = Math.max(f.Mn - rate * 0.030, 0);
@@ -611,7 +611,7 @@ function grow_brucite(crystal, conditions, step) {
     crystal.dominant_forms = ['tabular hexagonal {0001}', 'flat plates with hexagonal outline'];
   }
 
-  // Mass-balance debit — Mg(OH)2
+  // Growth-budget debit — Mg(OH)2
   conditions.fluid.Mg = Math.max(conditions.fluid.Mg - rate * 0.050, 0);
 
   return new GrowthZone({

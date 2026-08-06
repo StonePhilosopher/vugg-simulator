@@ -268,7 +268,7 @@ function _nuc_turquoise(sim) {
 // must not perturb scenarios where Al + P + Pb don't coincide.
 function _nuc_plumbogummite(sim) {
   const sigma = sim.conditions.supersaturation_plumbogummite();
-  if (sigma < MINERAL_GATES_plumbogummite.sigma_crit) return;                       // RNG-cascade guard — DO NOT MOVE
+  if (sigma <= MINERAL_GATES_plumbogummite.sigma_crit) return;                      // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('plumbogummite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'plumbogummite' && c.active);
   const total = sim.crystals.filter(c => c.mineral === 'plumbogummite').length;

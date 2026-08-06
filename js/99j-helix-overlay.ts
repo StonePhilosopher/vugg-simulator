@@ -267,7 +267,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
   // chemistry chip, which made them read from a NOW-VESTIGIAL backing
   // store. Post-Tranche-2+ of PROPOSAL-CAVITY-MESH the live chemistry
   // lives in mesh.cells[ri * cells_per_ring + c].fluid — per-vertex
-  // clones that receive event chemistry + engine mass-balance + Laplacian
+  // clones that receive event chemistry + engine growth-budget + Laplacian
   // diffusion. ring_fluids[] still exists; events still write to
   // ring_fluids[equator] via the alias to conditions.fluid; but no other
   // ring receives any chemistry update.

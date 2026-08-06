@@ -52,7 +52,7 @@ function makeConditions(wallOpts: any = {}, fluidOpts: any = {}) {
   return new VugConditions({
     fluid: new FluidChemistry({
       Ca: 2000, Mg: 1500, CO3: 2200, pH: 8.4,
-      Na: 12, Cl: 10, SO4: 5, Fe: 1, Mn: 0.3, SiO2: 6,
+      Na: 12, Cl: 10, S: 5, sulfateInherited: true, Fe: 1, Mn: 0.3, SiO2: 6,
       Sr: 25, Ba: 3, salinity: 0.5, O2: 5.0,
       concentration: 1.0,
       ...fluidOpts,

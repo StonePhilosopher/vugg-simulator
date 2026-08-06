@@ -239,7 +239,7 @@ function topoRender(optOverrideSnap?) {
   // first impression of Current Game is a cavernous empty box, which
   // looks like a render bug.
   if (!sim && !optOverrideSnap) {
-    _topoPaintPlaceholder(canvas, 'Press Grow to generate a vug — the wall profile will appear here');
+    _topoPaintPlaceholder(canvas, 'Start a Simulation or begin a Creative vug — the wall profile will appear here');
     const btn = document.getElementById('topo-replay-btn');
     if (btn) btn.style.display = 'none';
     const sizeLabel = document.getElementById('topo-vug-size');

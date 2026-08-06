@@ -768,7 +768,7 @@ async function _stripRenderDatasetList(bodyEl: HTMLElement): Promise<void> {
     const date = new Date(e.manifest.recorded_at);
     row.innerHTML = `
       <div class="ds-name">${e.manifest.scenario_id}</div>
-      <div class="ds-meta">seed ${e.manifest.seed} · ${e.manifest.duration_steps} steps · ${e.manifest.chips.length} chips · v${e.manifest.sim_version}</div>
+      <div class="ds-meta">seed ${e.manifest.seed} · ${e.manifest.duration_steps} steps · ${e.manifest.chips.length} chips · v${e.manifest.sim_version}${e.manifest.model_digest && typeof MODEL_DIGEST !== 'undefined' && e.manifest.model_digest !== MODEL_DIGEST ? ' · ⚠ model mismatch' : ''}</div>
       <div class="ds-meta">${date.toLocaleString()}</div>
       <span class="ds-delete" title="Delete">✕</span>
     `;

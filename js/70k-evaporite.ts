@@ -11,6 +11,9 @@
 // flood + evap each fire 12× via the supergene_acidification handler-reuse
 // precedent. Cycle number is preserved via the event `name` field.
 function event_sabkha_flood(c) {
+  // Absolute tidal-water replacement, not a relative offset to preserve in
+  // each already-depleted voxel.
+  c._pending_fluid_replace_fields = ['Mg', 'Ca', 'CO3', 'Sr', 'pH'];
   c.fluid.Mg = 800;
   c.fluid.Ca = 250;
   c.fluid.CO3 = 50;
@@ -21,6 +24,8 @@ function event_sabkha_flood(c) {
 }
 
 function event_sabkha_evap(c) {
+  // Absolute evaporative-brine regime replacement.
+  c._pending_fluid_replace_fields = ['Mg', 'Ca', 'CO3', 'Sr', 'pH'];
   c.fluid.Mg = 2000;
   c.fluid.Ca = 600;
   c.fluid.CO3 = 800;

@@ -37,13 +37,15 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { loadSimBundle } from './_harness.mjs';
+import { assertStripIdentity } from './strip-identity.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const FORCE = process.argv.includes('--force');
 
-const { SIM_VERSION, SCENARIOS, VugSimulator, setSeed, StripRecorder, stripDataIndex, stripDequantize } =
+const { SIM_VERSION, MODEL_DIGEST, SCENARIOS, VugSimulator, setSeed, StripRecorder, stripDataIndex, stripDequantize } =
   await loadSimBundle({
     toolName: 'gen-strip-archive',
     extraExports: ['StripRecorder', 'stripDataIndex', 'stripDequantize'],
@@ -139,17 +141,33 @@ function archiveScenario(name, seed = 42) {
     chips[meta.id] = entry;
   }
 
-  return {
-    format: 'strip-story-v1',
-    sim_version: SIM_VERSION,
+  const scenarioSpecHash = crypto.createHash('sha256')
+    .update(JSON.stringify(SCENARIOS[name]?._json5_spec ?? null))
+    .digest('hex');
+  const story = {
+    format: 'strip-story-v2',
+    sim_version: ds.manifest.sim_version,
+    model_digest: ds.manifest.model_digest,
     scenario: name,
+    scenario_spec_hash: scenarioSpecHash,
     seed,
     recorded_at: ds.manifest.recorded_at ?? null,
     steps: ds.manifest.axes.steps,
     depth_positions: D,
     chips,
     nucleation_events: ds.nucleation_events,
+    executed_testimony: {
+      pressure_phase: ds.pressure_phase_testimony || [],
+      stress_events: ds.stress_event_testimony || [],
+    },
   };
+  return assertStripIdentity(story, {
+    version: SIM_VERSION,
+    modelDigest: MODEL_DIGEST,
+    scenario: name,
+    seed,
+    scenarioSpecHash,
+  });
 }
 
 fs.mkdirSync(OUT_DIR, { recursive: true });

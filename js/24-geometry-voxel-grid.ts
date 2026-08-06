@@ -16,7 +16,7 @@
 //
 // Per [FIRM] A: depth_count = 4. Each slice has clean geological
 // semantics:
-//   d=0  boundary layer (aliased to wall cell; engine mass-balance hits here)
+//   d=0  boundary layer (aliased to wall cell; engine growth-budget hits here)
 //   d=1  near-wall buffer (depletion halo lives here)
 //   d=2  interior bulk (event chemistry target)
 //   d=3  center baseline (slowest to equilibrate)
@@ -281,7 +281,7 @@ class CavityVoxelGrid {
     // The radial coupling is the load-bearing change: the cavity
     // interior reservoir (d=1,2,3, carrying event chemistry via
     // propagateEventDelta) now replenishes wall cells the engines
-    // depleted via mass balance, and depletion halos propagate
+    // depleted via growth budget, and depletion halos propagate
     // radially inward as 3D objects. See _diffuseFull for the
     // optimized implementation + perf notes.
     this._diffuseFull(rate, fieldNames, ringTemps);
@@ -520,19 +520,26 @@ class CavityVoxelGrid {
   // So all wall cells need the delta applied.
   //
   // Mirrors mesh.propagateDelta's signature for drop-in replacement.
-  propagateEventDelta(preFluid: any, fieldNames: string[], postFluid: any, target: string = 'all'): void {
+  propagateEventDelta(
+    preFluid: any,
+    fieldNames: string[],
+    postFluid: any,
+    target: string = 'all',
+    replaceFields: string[] = [],
+  ): void {
     if (!this.voxels || !this.voxels.length) return;
     if (!preFluid || !fieldNames || !fieldNames.length) return;
 
     // Pre-compute per-field deltas; ignore unchanged fields.
     const deltas: number[] = [];
     const dirty: string[] = [];
+    const replace = new Set(replaceFields || []);
     for (let k = 0; k < fieldNames.length; k++) {
       const fname = fieldNames[k];
       const pre = (typeof preFluid[fname] === 'number') ? preFluid[fname] : 0;
       const post = (postFluid && typeof postFluid[fname] === 'number') ? postFluid[fname] : 0;
       const delta = post - pre;
-      if (delta !== 0) {
+      if (delta !== 0 || replace.has(fname)) {
         deltas.push(delta);
         dirty.push(fname);
       }
@@ -574,7 +581,7 @@ class CavityVoxelGrid {
       const fluid = v.fluid;
       for (let d = 0; d < dirty.length; d++) {
         const fname = dirty[d];
-        const next = fluid[fname] + deltas[d];
+        const next = replace.has(fname) ? postFluid[fname] : fluid[fname] + deltas[d];
         // SIM 220 — concentrations floor at 0. The additive delta lands
         // on cells that growth debits have drained BELOW bulk, so a
         // crash-style event/movement (shigar hf_etch ×0.15, sabkha

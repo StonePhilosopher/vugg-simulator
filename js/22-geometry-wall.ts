@@ -108,6 +108,12 @@ class VugWall {
     // unlisted flag from scenarios.json5 is silently dropped.
     this.matrix = opts.matrix ?? null;
     this.thickness_mm = opts.thickness_mm ?? 500.0;
+    // Metamorphic ROCK/confining pressure. This is intentionally separate
+    // from VugConditions.pressure (cavity-fluid pressure). null means the
+    // rock phase field is unknown and must be reported as unconstrained.
+    this.confining_pressure_kbar = Number.isFinite(opts.confining_pressure_kbar)
+      ? Math.max(0.01, Number(opts.confining_pressure_kbar))
+      : null;
     // Size-class cascade: vug < pocket < cave. Each tier maps to a
     // literature-anchored vug_diameter_mm range. Explicit override
     // wins (every shipped scenario sets vug_diameter_mm directly, so

@@ -202,6 +202,12 @@ function installDomStub() {
 
 const EXPORTS = [
   'SIM_VERSION',
+  'MODEL_DIGEST',
+  'sha256HexUtf8',
+  'scenarioSpecHash',
+  'remainingBookedInventory',
+  'getSimulationTimeScale',
+  'setSimulationTimeScale',
   'MINERAL_SPEC',
   'MINERAL_ENGINES',
   'MINERAL_GATES_REGISTRY',  // v127 — per-mineral nucleation gates (sigma_crit, T/pH/O2/fluid_min, surface_energy)
@@ -231,9 +237,13 @@ const EXPORTS = [
   'setGraduatedWinnerTakesFrac',
   'computeGraduatedAllocations',
   'buildCrystalDryRun',
-  // MASS_BALANCE_SCALE is referenced by buildCrystalDryRun lookup.
-  'MASS_BALANCE_SCALE',
+  'STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM',
+  'STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE',
   'MINERAL_STOICHIOMETRY',
+  'SPECIES_PROPERTIES',
+  'stoichiometricBudgetDebitPpmPerUm',
+  'applyStoichiometricGrowthBudget',
+  'sphaleriteGermaniumUptake',
   'MINERAL_GAME_COLORS',
   'crystalColor',
   'zoneColor',
@@ -404,6 +414,8 @@ const EXPORTS = [
   'sulfatesReady',
   'sulfateSaturationIndex',
   'sulfateOmega',
+  'waterActivityAssessment',
+  'waterActivity',
   // Week 4 — wall-mesh localization resolvers + per-vertex accessors
   // + Henry's-Law pH equilibration (20d-localization-resolvers.ts).
   'fluidAtMeshVertex',
@@ -464,6 +476,8 @@ const EXPORTS = [
   'stripAllocateData',
   'stripSerialize',
   'stripDeserialize',
+  'stripStoredRecordFromDataset',
+  'stripDatasetFromStoredRecord',
   'StripRecorder',
   // v-music (2026-06-09, js/08-music.ts) — background music engine +
   // persisted audio settings. SIM-NEUTRAL UI subsystem.
@@ -603,7 +617,21 @@ async function waitForScenarios(timeoutMs = 5000): Promise<void> {
   );
 }
 
+async function waitForMineralSpec(timeoutMs = 5000): Promise<void> {
+  const expected = JSON.parse(fs.readFileSync(path.join(DATA, 'minerals.json'), 'utf8'));
+  const expectedCount = Object.keys(expected.minerals || {}).length;
+  const t0 = Date.now();
+  while (Date.now() - t0 < timeoutMs) {
+    const spec = (globalThis as any).MINERAL_SPEC;
+    if (spec && Object.keys(spec).length === expectedCount) return;
+    await new Promise(r => setTimeout(r, 50));
+  }
+  throw new Error(
+    `[setup] MINERAL_SPEC never reached the canonical ${expectedCount}-mineral dataset within ${timeoutMs}ms`,
+  );
+}
+
 beforeAll(async () => {
   await loadBundle();
-  await waitForScenarios();
+  await Promise.all([waitForScenarios(), waitForMineralSpec()]);
 });

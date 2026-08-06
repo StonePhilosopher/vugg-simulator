@@ -109,7 +109,7 @@ describe('Dioptase + shattuckite Cu-silicate pair (v93)', () => {
       // (malachite/azurite have fully consumed it), pH alkaline
       // (carbonate-buffered limestone host).
       const fluid = new FluidChemistry({
-        Cu: 30, SiO2: 50, CO3: 5, Cl: 100, SO4: 50,
+        Cu: 30, SiO2: 50, CO3: 5, Cl: 100, S: 50, sulfateInherited: true,
         O2: 1.0, pH: 8.2,
       });
       const cond = new VugConditions({ temperature: 40, fluid });
@@ -120,7 +120,7 @@ describe('Dioptase + shattuckite Cu-silicate pair (v93)', () => {
       // pH 7.0 — squarely in dioptase territory, below shattuckite's
       // 7.5-9.5 window. The pH discriminator is the fork mechanism.
       const fluid = new FluidChemistry({
-        Cu: 30, SiO2: 50, CO3: 5, Cl: 100, SO4: 50,
+        Cu: 30, SiO2: 50, CO3: 5, Cl: 100, S: 50, sulfateInherited: true,
         O2: 1.0, pH: 7.0,
       });
       const cond = new VugConditions({ temperature: 40, fluid });
@@ -142,7 +142,7 @@ describe('Dioptase + shattuckite Cu-silicate pair (v93)', () => {
       // CO3 = 25: above shattuckite's 30 cutoff if we cross it slightly,
       // dioptase still passes. Use CO3 = 35 to exceed shattuckite's gate.
       const fluid = new FluidChemistry({
-        Cu: 30, SiO2: 50, CO3: 35, Cl: 100, SO4: 50,
+        Cu: 30, SiO2: 50, CO3: 35, Cl: 100, S: 50, sulfateInherited: true,
         O2: 1.0, pH: 7.8,  // dioptase-permissive
       });
       const cond = new VugConditions({ temperature: 40, fluid });
@@ -156,7 +156,7 @@ describe('Dioptase + shattuckite Cu-silicate pair (v93)', () => {
   describe('pH discriminator between dioptase and shattuckite', () => {
     it('pH 7.2 favors dioptase, suppresses shattuckite', () => {
       const fluid = new FluidChemistry({
-        Cu: 25, SiO2: 45, CO3: 10, Cl: 100, SO4: 50,
+        Cu: 25, SiO2: 45, CO3: 10, Cl: 100, S: 50, sulfateInherited: true,
         O2: 1.2, pH: 7.2,
       });
       const cond = new VugConditions({ temperature: 50, fluid });
@@ -168,7 +168,7 @@ describe('Dioptase + shattuckite Cu-silicate pair (v93)', () => {
 
     it('pH 8.2 favors shattuckite, dioptase still fires', () => {
       const fluid = new FluidChemistry({
-        Cu: 25, SiO2: 45, CO3: 10, Cl: 100, SO4: 50,
+        Cu: 25, SiO2: 45, CO3: 10, Cl: 100, S: 50, sulfateInherited: true,
         O2: 1.2, pH: 8.2,
       });
       const cond = new VugConditions({ temperature: 50, fluid });

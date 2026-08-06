@@ -90,8 +90,9 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — flag mechanism', () => {
   });
 
   it('rosasite + aurichalcite intentionally absent from per-mineral flag table', () => {
-    // Both are tier-D thermo data; SI returns NaN. No flag entry =
-    // documents the "no thermo data" gap clearly.
+    // Both now have Tier-C representative-composition SI observers, but
+    // no validated solid-solution engine. No flag entry prevents an
+    // observer constant from silently becoming gameplay physics.
     expect(CARBONATE_KSP_ACTIVE_PER_MINERAL.rosasite).toBeUndefined();
     expect(CARBONATE_KSP_ACTIVE_PER_MINERAL.aurichalcite).toBeUndefined();
   });
@@ -146,10 +147,37 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — SI math signs', () => {
     expect(Number.isNaN(SI)).toBe(true);
   });
 
-  it('returns NaN for rosasite (no thermo data)', () => {
+  it('exposes composition-labelled Tier-C observers for rosasite and aurichalcite', () => {
     const f = new FluidChemistry({ Cu: 20, Zn: 15, CO3: 80, pH: 7 });
-    const SI = carbonateSaturationIndex('rosasite', f, 25);
-    expect(Number.isNaN(SI)).toBe(true);
+    const rosasite = carbonateSaturationIndex('rosasite', f, 25);
+    const aurichalcite = carbonateSaturationIndex('aurichalcite', f, 25);
+    expect(Number.isFinite(rosasite)).toBe(true);
+    expect(Number.isFinite(aurichalcite)).toBe(true);
+    expect(mixedCarbonateThermoAssessment('rosasite', f, 25)).toMatchObject({
+      status: 'calibrated-25C-observer',
+      confidence: 'C',
+      representativeComposition: 'Cu1.3Zn0.7(CO3)(OH)2',
+    });
+    expect(mixedCarbonateThermoAssessment('aurichalcite', f, 30)).toMatchObject({
+      status: 'temperature-extrapolation',
+      confidence: 'C',
+      representativeComposition: 'Zn2.9Cu2.1(CO3)2(OH)6',
+    });
+  });
+
+  it('mixed-carbonate SI honors published dissolution stoichiometry', () => {
+    const base = new FluidChemistry({ Cu: 20, Zn: 15, CO3: 80, pH: 7 });
+    const highCu = new FluidChemistry({ Cu: 40, Zn: 15, CO3: 80, pH: 7 });
+    const dRosasite = carbonateSaturationIndex('rosasite', highCu, 25)
+      - carbonateSaturationIndex('rosasite', base, 25);
+    const dAurichalcite = carbonateSaturationIndex('aurichalcite', highCu, 25)
+      - carbonateSaturationIndex('aurichalcite', base, 25);
+    // Davies activity changes slightly with ionic strength, so use a narrow
+    // physical band around nu_Cu * log10(2), not an exact ideal-solution pin.
+    expect(dRosasite).toBeGreaterThan(0.34);
+    expect(dRosasite).toBeLessThan(0.45);
+    expect(dAurichalcite).toBeGreaterThan(0.56);
+    expect(dAurichalcite).toBeLessThan(0.70);
   });
 });
 
@@ -364,19 +392,19 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — promotion readiness audit', () =
     expect(carbonatePromotionReady('siderite')).toBe(false);
   });
 
-  it('rosasite + aurichalcite are NOT promotion-ready (tier D thermo, no SI fn)', () => {
+  it('rosasite + aurichalcite have Tier-C SI observers but are not promotion-ready', () => {
     expect(carbonatePromotionReady('rosasite')).toBe(false);
     expect(carbonatePromotionReady('aurichalcite')).toBe(false);
   });
 
-  it('carbonatesWithSI lists exactly the 13 implemented SI engines', () => {
+  it('carbonatesWithSI lists all 15 implemented SI calculations', () => {
     const ids = carbonatesWithSI();
-    expect(ids.length).toBe(13);
+    expect(ids.length).toBe(15);
     expect(ids).toContain('calcite');
     expect(ids).toContain('HMC');
     expect(ids).toContain('hydrozincite');
-    expect(ids).not.toContain('rosasite');
-    expect(ids).not.toContain('aurichalcite');
+    expect(ids).toContain('rosasite');
+    expect(ids).toContain('aurichalcite');
   });
 });
 

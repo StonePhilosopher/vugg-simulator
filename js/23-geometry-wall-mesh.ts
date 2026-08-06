@@ -378,18 +378,19 @@ class WallMesh {
   // ring_fluids[equator] === conditions.fluid alias, so conditions.fluid
   // and ring_fluids[equator] reflect the new value. propagateDelta
   // then applies the same delta to every cell's independent storage.
-  propagateDelta(preFluid, fieldNames, _equatorFluid) {
+  propagateDelta(preFluid, fieldNames, _equatorFluid, replaceFields: string[] = []) {
     if (!this.cells || !this.cells.length) return;
     if (!preFluid || !fieldNames || !fieldNames.length) return;
     // Pre-compute the per-field delta once; ignore unchanged fields.
     const deltas: number[] = [];
     const dirty: number[] = [];
+    const replace = new Set(replaceFields || []);
     for (let k = 0; k < fieldNames.length; k++) {
       // _equatorFluid is the post-event value (aliased to
       // conditions.fluid); subtract preFluid to get the delta.
       const delta = (_equatorFluid ? _equatorFluid[fieldNames[k]] : 0)
                   - (preFluid ? preFluid[fieldNames[k]] : 0);
-      if (delta !== 0) {
+      if (delta !== 0 || replace.has(fieldNames[k])) {
         deltas.push(delta);
         dirty.push(k);
       }
@@ -400,7 +401,7 @@ class WallMesh {
       if (!fluid) continue;
       for (let d = 0; d < dirty.length; d++) {
         const fname = fieldNames[dirty[d]];
-        const next = fluid[fname] + deltas[d];
+        const next = replace.has(fname) ? _equatorFluid[fname] : fluid[fname] + deltas[d];
         // SIM 220 — concentrations floor at 0 (mirror of the canonical
         // voxel-grid clamp in js/24 propagateEventDelta; this is the
         // mesh-only fallback path). pH/Eh are signed — unclamped.

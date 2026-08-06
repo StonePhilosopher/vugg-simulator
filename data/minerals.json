@@ -1243,7 +1243,8 @@
       "trace_ingredients": {
         "Fe": "color darkening to marmatite (>15% Fe)",
         "Cd": "yellow tint",
-        "Mn": "pink tint"
+        "Mn": "pink tint",
+        "Ge": "incorporates on the Zn site through Cu-coupled, vacancy-assisted, and Fe-associated substitutions; the simulator uses a labelled 200°C empirical partitioning proxy and debits the dissolved Ge inventory"
       },
       "thermal_decomp_C": 1020,
       "thermal_decomp_reaction": "ZnS sublimes at 1020C",
@@ -4562,7 +4563,7 @@
           "quartz",
           "vug wall"
         ],
-        "note": "Nashik bloody apophyllite forms when apophyllite nucleates on/grows around pre-existing hematite needles. Requires alkaline pH (7-10), low-pressure vesicle conditions (<0.5 kbar), K+Ca+Si+F-rich fluid."
+        "note": "Nashik bloody apophyllite forms when apophyllite nucleates on/grows around pre-existing hematite needles. Requires alkaline pH (7-10) and K+Ca+Si+F-rich fluid. Deccan vesicles are shallow, but skarn and alpine occurrences show that 0.5 kbar is not a defensible universal pressure ceiling."
       },
       "narrate_function": "_narrate_apophyllite",
       "runtimes_present": [
@@ -11903,6 +11904,8 @@
         "js"
       ],
       "audit_status": "v27 — evaporite chemistry pass. 2026-05-07 backfill from research-halite.md: added stalactitic_speleothem habit, restructured fluorescence (Mn²⁺ activator, weak white/yellow/orange-red LW), added spinel_law_rare twin (probability 0.005), added bacterial_pink (halobacterial carotenoid) + yellow (Fe impurity) + red_hematite_inclusion color rules, type-locality detail in description (Wieliczka / Stassfurt / Searles).",
+      "late_stage_propensity": 0.8,
+      "_late_stage_note": "SIM 239: high propensity for vadose efflorescence and terminal salt crusts. Halite commonly nucleates on already-dry, crowded surfaces, but remains slightly below the full-bypass potash/playa crust set because clean cubic halite also needs open brine-facing area.",
       "class_color": "#cccccc"
     },
     "borax": {
@@ -12031,7 +12034,7 @@
         }
       ],
       "class": "borate",
-      "description": "Na₂B₄O₇·5H₂O — borax with five water molecules gone. Appears in the simulator only as a paramorph product of borax: the external crystal shape is preserved (the cubic outline, the prismatic terminations, all the field marks) but the lattice has collapsed and the surface has bloomed white-powdery. A tincalconite specimen IS a former borax crystal, frozen mid-decay. Stable in any humidity — once dehydrated, it doesn’t re-hydrate.",
+      "description": "Na₂B₄O₇·5H₂O — borax with five water molecules gone. The simulator currently represents the common pseudomorph route: the external borax shape is preserved while the lattice dehydrates and the surface blooms white-powdery. Natural Searles Lake also contains primary 1–3 mm tincalconite crystals in contact with brine. The borax–tincalconite reaction is reversible at sufficiently high water activity; rehydration is a declared model boundary until the simulator records humidity and reversible phase history.",
       "scenarios": [
         "searles_lake"
       ],
@@ -18195,7 +18198,7 @@
         "Ti": 0.5,
         "SiO2": 80
       },
-      "_ingredients_note": "Ca ≥ 40 + Ti ≥ 0.5 + SiO2 ≥ 80. Ti is the LIMITING (rare) ingredient — most broths carry no Ti, so the Ti floor is the discriminator; Ca + Si are abundant in cleft fluids. NO redox gate (Ti⁴⁺ is fO2-insensitive — fires oxidizing or reducing). T 150-700°C (covers magmatic-to-hydrothermal), sweet spot 250-450°C (the alpine-cleft / low-T hydrothermal band, late on quartz). pH 6.0-9.5 near-neutral. Mass balance debits Ti 1:1, so a Ti-trace fluid self-limits to a few crystals (the correct minor-accessory footprint). Activity correction applied.",
+      "_ingredients_note": "Ca ≥ 40 + Ti ≥ 0.5 + SiO2 ≥ 80. Ti is the LIMITING (rare) ingredient — most broths carry no Ti, so the Ti floor is the discriminator; Ca + Si are abundant in cleft fluids. NO redox gate (Ti⁴⁺ is fO2-insensitive — fires oxidizing or reducing). T 150-700°C (covers magmatic-to-hydrothermal), sweet spot 250-450°C (the alpine-cleft / low-T hydrothermal band, late on quartz). pH 6.0-9.5 near-neutral. Growth budget debits Ti 1:1, so a Ti-trace fluid self-limits to a few crystals (the correct minor-accessory footprint). Activity correction applied.",
       "trace_ingredients": {
         "Cr": "Cr³⁺ → Ti gives the prized CHROME-GREEN alpine-cleft variety (>0.5 ppm in this model)",
         "Fe": "Fe³⁺ → Ti (charge-balanced by OH/F) gives the common brown-to-black igneous/metamorphic type (>15 ppm)",

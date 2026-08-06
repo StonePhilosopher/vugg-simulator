@@ -46,6 +46,10 @@ _snapshotGlobal() {
 // conditions.fluid so it already reflects the new value.
 _propagateGlobalDelta(snap) {
   const [preFluid, preTemp] = snap;
+  const replaceFields = Array.isArray(this.conditions._pending_fluid_replace_fields)
+    ? this.conditions._pending_fluid_replace_fields.slice()
+    : [];
+  delete this.conditions._pending_fluid_replace_fields;
   const equator = Math.floor(this.wall_state.ring_count / 2);
   const equatorFluid = this.ring_fluids[equator];  // = conditions.fluid (aliased)
   // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 2a (v159) — voxel grid is
@@ -61,11 +65,11 @@ _propagateGlobalDelta(snap) {
   // isn't available (headless test harnesses without CavityVoxelGrid).
   const grid = this.wall_state.voxelGridFor(this);
   if (grid && typeof grid.propagateEventDelta === 'function') {
-    grid.propagateEventDelta(preFluid, this._fluidFieldNames, equatorFluid);
+    grid.propagateEventDelta(preFluid, this._fluidFieldNames, equatorFluid, 'all', replaceFields);
   } else {
     const mesh = this.wall_state.meshFor(this);
     if (mesh && typeof mesh.propagateDelta === 'function') {
-      mesh.propagateDelta(preFluid, this._fluidFieldNames, equatorFluid);
+      mesh.propagateDelta(preFluid, this._fluidFieldNames, equatorFluid, replaceFields);
     }
   }
   // S1 (fluid.S sulfate/sulfide split): sulfateInherited is a LATCHED boolean, not a
@@ -281,7 +285,7 @@ _diffuseRingState(rate?) {
   },
 
   // Get the boundary-layer voxel (d=0) for wall cell (r, c). Engine
-  // mass-balance lands here in Phase 2+; in v158 the d=0 voxel is
+  // growth-budget lands here in Phase 2+; in v158 the d=0 voxel is
   // aliased to wall.mesh.cells[r*N+c].fluid via [FIRM] B, so reading
   // through this and reading through mesh.cellOf() return the same
   // fluid object.

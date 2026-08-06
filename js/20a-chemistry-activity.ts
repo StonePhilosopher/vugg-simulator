@@ -101,6 +101,10 @@ const SPECIES_PROPERTIES: Record<string, { charge: number; molarMass: number; no
   Be: { charge: +2, molarMass:   9.01 },
   Li: { charge: +1, molarMass:   6.94 },
   Ti: { charge: +2, molarMass:  47.87, note: 'as TiO²⁺' },
+  Cd: { charge: +2, molarMass: 112.41 },
+  Hg: { charge: +2, molarMass: 200.59 },
+  Sn: { charge: +4, molarMass: 118.71 },
+  Y:  { charge: +3, molarMass:  88.91 },
 
   // Major anions
   CO3: { charge: -2, molarMass: 60.01, note: 'CO₃²⁻; Phase 3 splits DIC by Bjerrum' },
@@ -181,6 +185,73 @@ function speciesActivity(fluid: any, species: string, I?: number): number {
   const I_eff = I !== undefined ? I : ionicStrength(fluid);
   const logGamma = daviesLogGamma(props.charge, I_eff);
   return m * Math.pow(10, logGamma);
+}
+
+// Water activity for hydrate equilibria, represented as an explicitly
+// NaCl-equivalent proxy from the simulator's bulk salinity (per mille by
+// mass). Chirife & Resnik (1984) tabulated Pitzer/experimental consensus
+// values at 0.5 wt% intervals; they report agreement within 0.0007 at 25 C
+// and within 0.002 from 15-50 C. Total natural brine salinity is not
+// literally NaCl, so the assessment exposes that composition uncertainty.
+// Above NaCl saturation (26 wt%) the last measured slope is transparently
+// extrapolated over the Creative-mode range.
+const _NACL_WATER_ACTIVITY_15_50C: number[] = [
+  1.000,
+  0.997,0.994,0.991,0.989,0.986,0.983,0.980,0.977,0.973,0.970,
+  0.967,0.964,0.960,0.957,0.954,0.950,0.946,0.943,0.939,0.935,
+  0.931,0.927,0.923,0.919,0.915,0.911,0.906,0.902,0.897,0.892,
+  0.888,0.883,0.878,0.873,0.867,0.862,0.857,0.851,0.845,0.839,
+  0.833,0.827,0.821,0.815,0.808,0.802,0.795,0.788,0.781,0.774,
+  0.766,0.759,
+];
+
+type WaterActivityAssessment = {
+  value: number;
+  salinityPpt: number;
+  naclWeightPercentEquivalent: number;
+  uncertainty: number;
+  status: 'calibrated-proxy' | 'temperature-extrapolation' | 'composition-extrapolation';
+  note: string;
+};
+
+function waterActivityAssessment(fluid: any, temperatureC = 25): WaterActivityAssessment {
+  const salinityPpt = Math.max(0, Number(fluid?.salinity) || 0);
+  const wtPercent = salinityPpt / 10;
+  const lastIndex = _NACL_WATER_ACTIVITY_15_50C.length - 1;
+  const tablePosition = wtPercent * 2;
+  let value: number;
+  if (tablePosition <= lastIndex) {
+    const lo = Math.max(0, Math.floor(tablePosition));
+    const hi = Math.min(lastIndex, Math.ceil(tablePosition));
+    const fraction = tablePosition - lo;
+    value = _NACL_WATER_ACTIVITY_15_50C[lo]
+      + fraction * (_NACL_WATER_ACTIVITY_15_50C[hi] - _NACL_WATER_ACTIVITY_15_50C[lo]);
+  } else {
+    const lastSlopePerWtPercent = (
+      _NACL_WATER_ACTIVITY_15_50C[lastIndex]
+      - _NACL_WATER_ACTIVITY_15_50C[lastIndex - 1]
+    ) / 0.5;
+    value = _NACL_WATER_ACTIVITY_15_50C[lastIndex]
+      + lastSlopePerWtPercent * (wtPercent - 26);
+  }
+  value = Math.max(0.55, Math.min(1, value));
+
+  const temperatureExtrapolated = temperatureC < 15 || temperatureC > 50;
+  const compositionExtrapolated = wtPercent > 26;
+  const status = compositionExtrapolated
+    ? 'composition-extrapolation'
+    : temperatureExtrapolated ? 'temperature-extrapolation' : 'calibrated-proxy';
+  const uncertainty = compositionExtrapolated ? 0.05 : temperatureExtrapolated ? 0.02 : 0.01;
+  const note = compositionExtrapolated
+    ? 'NaCl-equivalent last-slope extrapolation above 26 wt%; real multicomponent bittern composition can shift a_w materially.'
+    : temperatureExtrapolated
+      ? 'NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied.'
+      : 'NaCl-equivalent interpolation of Chirife & Resnik (1984) consensus values; natural multicomponent-brine composition remains the dominant uncertainty.';
+  return { value, salinityPpt, naclWeightPercentEquivalent: wtPercent, uncertainty, status, note };
+}
+
+function waterActivity(fluid: any, temperatureC = 25): number {
+  return waterActivityAssessment(fluid, temperatureC).value;
 }
 
 // Q = ∏ᵢ aᵢ^νᵢ where νᵢ comes from MINERAL_STOICHIOMETRY. Returns Q in

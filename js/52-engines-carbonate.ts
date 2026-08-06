@@ -90,16 +90,8 @@ function grow_calcite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(8.0, crystal.total_growth_um * 0.15);
-      // RECYCLING: Ca, CO3, and trace elements return to fluid
-      // Phase 1e: Ca + CO3 (major species) credits via MINERAL_DISSOLUTION_RATES.calcite.
-      // Mn and Fe trace credits stay inline below — they're zone-data-driven, not rate-scaled.
-      if (crystal.zones.length) {
-        const recentZones = crystal.zones.slice(-3);
-        const avg_mn = recentZones.reduce((s, z) => s + z.trace_Mn, 0) / recentZones.length;
-        const avg_fe = recentZones.reduce((s, z) => s + z.trace_Fe, 0) / recentZones.length;
-        conditions.fluid.Mn += avg_mn * 0.5;
-        conditions.fluid.Fe += avg_fe * 0.5;
-      }
+      // Ca, CO3, and the trace Mn/Fe actually incorporated by each accepted
+      // shell return only through the common remaining-inventory ledger.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -265,6 +257,13 @@ function grow_calcite(crystal, conditions, step) {
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe, trace_Mn,
+    // Zone trace values are solid mass ppm. Convert mass fraction to atoms per
+    // CaCO3 formula unit: ppm*1e-6*(M_calcite/M_element), then debit/return the
+    // exact accepted shell inventory (M_calcite=100.0869 g/mol).
+    trace_stoichiometry: {
+      Mn: trace_Mn * 1e-6 * (100.0869 / 54.938044),
+      Fe: trace_Fe * 1e-6 * (100.0869 / 55.845),
+    },
     fluid_inclusion: fi, inclusion_type: fi_type, note,
     ca_from_wall: ca_wall_fraction,
     ca_from_fluid: ca_fluid_fraction,
@@ -693,7 +692,7 @@ function grow_malachite(crystal, conditions, step) {
   } else if (crystal.habit === 'fibrous/acicular') {
   }
 
-  // Phase 1d: Cu consumption owned by the wrapper (applyMassBalance).
+  // Phase 1d: Cu consumption owned by the wrapper (applyStoichiometricGrowthBudget).
 
   let color_note;
   if (zone_count >= 20) {
@@ -750,7 +749,7 @@ function grow_smithsonite(crystal, conditions, step) {
   if (crystal.habit === 'botryoidal' || crystal.habit === 'botryoidal/stalactitic') {
   }
 
-  // Phase 1d: Zn/CO3 consumption owned by the wrapper (applyMassBalance).
+  // Phase 1d: Zn/CO3 consumption owned by the wrapper (applyStoichiometricGrowthBudget).
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 

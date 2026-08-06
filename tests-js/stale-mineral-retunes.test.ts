@@ -92,9 +92,9 @@ describe('post-Backlog-K stale-mineral retunes (2026-05)', () => {
       expect(AUTHORED_SPEC.chrysoprase._retune_note_nucleation_sigma).toBeDefined();
       expect(AUTHORED_SPEC.chrysoprase._retune_note_nucleation_sigma).toMatch(/2026-05/);
     });
-    it('has a chrysoprase stoichiometry entry (no more mass-balance warning)', () => {
+    it('has a chrysoprase stoichiometry entry (no more growth-budget warning)', () => {
       // Indirectly verified: if missing, the bundle prints
-      // "[mass-balance] no stoichiometry for chrysoprase — growth will not
+      // "[growth-budget] no stoichiometry for chrysoprase — growth will not
       // debit fluid composition. Add to MINERAL_STOICHIOMETRY..." on every
       // chrysoprase growth. We can't easily intercept that warning here,
       // but we can confirm the spec entry's `runtimes_present` field is

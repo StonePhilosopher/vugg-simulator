@@ -43,7 +43,7 @@ function speciesIn(name: string, opts: { seed?: number; steps?: number } = {}): 
 
 describe('v128 calibration assertions (proposal §4.1)', () => {
   describe('Assertion 1 — dioptase under graduated competition', () => {
-    it('dioptase fires across the bisbee seed sweep (was 0 firings under fixed-order v125-v126)', { timeout: 120000 }, () => {
+    it('dioptase fires across the bisbee seed sweep (was 0 firings under fixed-order v125-v126)', { timeout: 240000 }, () => {
       // The qualitative claim — graduated competition lets dioptase fire at
       // ALL (v125 fixed-order produced zero firings, the cascade displaced
       // everything) — is what matters; the proposal predicted schneeberg,
@@ -63,6 +63,10 @@ describe('v128 calibration assertions (proposal §4.1)', () => {
       // competition unblocked dioptase"), not seed 42's lucky realization.
       // Floor ≥2/8 with measured headroom 4/8 — a real cascade re-block
       // (the failure this guards) would zero ALL seeds, as v125 did.
+      // Focused runtime is ~38 s, but the complete 185-file suite can exceed
+      // 120 s here under worker/CPU contention. Keep a local 240 s budget so
+      // infrastructure load cannot masquerade as a paragenesis failure; the
+      // distribution assertion below remains unchanged.
       const seeds = [42, 1, 7, 13, 99, 2024, 17, 3];
       const fired = seeds.filter((seed) => speciesIn('bisbee', { seed }).species.has('dioptase'));
       expect(
@@ -82,16 +86,17 @@ describe('v128 calibration assertions (proposal §4.1)', () => {
       expect(counts.koettigite, 'koettigite should fire ≥ 1 crystal').toBeGreaterThanOrEqual(1);
     });
 
-    it('koettigite firing did NOT cascade-displace the supergene_oxidation paragenesis (≥ 35 species)', () => {
-      // v128 baseline: 40 species. v129: 38. Two species were lost
-      // (alunite + one other near-zero firing). The threshold of 35
-      // catches catastrophic cascades while tolerating modest
-      // redistribution under per-cation rationing.
+    it('koettigite firing did NOT cascade-displace the supergene_oxidation paragenesis (≥ 30 grown species)', () => {
+      // v128 counted 40 nucleated species; v129 counted 38. SIM 239's exact
+      // accepted-shell ledger distinguishes zero-growth/dissolved attempts
+      // from minerals that laid down solid, leaving 33 grown species. A floor
+      // of 30 still catches a catastrophic cascade while no longer treating
+      // failed nuclei as members of the preserved paragenesis.
       const { species } = speciesIn('supergene_oxidation');
       expect(
         species.size,
-        `supergene_oxidation should keep ≥ 35 species under graduated competition + koettigite (v128→v129 drift: 40→38). Got: ${species.size}`,
-      ).toBeGreaterThanOrEqual(35);
+        `supergene_oxidation should keep ≥ 30 grown species under graduated competition + koettigite (SIM 239 exact-ledger census: 33). Got: ${species.size}`,
+      ).toBeGreaterThanOrEqual(30);
     });
   });
 

@@ -77,14 +77,13 @@
 //   hydrozincite Zn5(CO3)2(OH)6:
 //       IAP = a(Zn^2+)^5 * a(CO3^2-)^2 * a(OH^-)^6
 //
-// DEFERRED — rosasite + aurichalcite. Mixed-cation OH-bearing
-// carbonates with NO published thermodynamic data (tier D in
-// data/thermo-carbonates.json). The endmember-mixture approximation
-// the JSON sketches is not enough rigor for engine consumption.
-// Real handling needs either (a) measured Ksp data, (b) explicit
-// solid-solution model (regular vs ideal), or (c) deferral to the
-// empirical engine indefinitely. For now: SI returns NaN; the
-// helicoid trail simply omits these two minerals. When (a) or (b)
+// OBSERVER-ONLY — rosasite + aurichalcite. Published 25°C Ksp values
+// now exist (Alwan et al. 1980; Kaluza et al. 2024), but the latter
+// study demonstrates an approximately 14-log-unit composition/model
+// spread for aurichalcite. The representative-composition SI below is
+// therefore a diagnostic, not an engine promotion. Real engine handling
+// still needs an explicit solid-solution model (regular vs ideal) and a
+// validated aqueous activity/speciation model. When that lands,
 // becomes available, slot them in here.
 //
 // KINETIC MODIFIERS — explicitly NOT in scope.
@@ -128,8 +127,8 @@ let CARBONATE_KSP_ACTIVE = true;
 // only entries here flagged true use the SI engine. Per-mineral
 // promotion is the unit of change — one carbonate per commit per
 // the Week 9-12 plan. Reserved entries (rosasite, aurichalcite, HMC,
-// otavite, etc.) included for documentation; flipping them without
-// Ksp data is a no-op (SI returns NaN, fallback to empirical).
+// otavite, etc.) included for documentation. Representative-composition
+// observer values are not sufficient for engine promotion.
 //
 // v144: calcite flipped to true. Aragonite, dolomite, siderite,
 // rhodochrosite remain false pending their own Week 10/11/12 promotion
@@ -164,8 +163,9 @@ const CARBONATE_KSP_ACTIVE_PER_MINERAL: Record<string, boolean> = {
   azurite:        false,
   hydrozincite:   false,
   HMC:            true,
-  // rosasite + aurichalcite intentionally absent — no thermo data,
-  // would be no-ops if flipped.
+  // rosasite + aurichalcite intentionally absent: their Tier-C values
+  // are representative-composition observers, not an engine-ready
+  // solid-solution model.
 };
 
 function kspSupersatActiveFor(mineralId: string): boolean {
@@ -381,6 +381,74 @@ function saturationIndex_hydrozincite(fluid: any, T: number): number {
   return logIAP - logKsp;
 }
 
+// Variable-composition Cu-Zn hydroxycarbonates. These use a named
+// representative composition only; they must never be read as a complete
+// solid-solution calculation. Exponents match the dissolution convention
+// used by the cited Ksp measurements:
+//   (Cu,Zn)_n(CO3)_c(OH)_h = n cations + c CO3²⁻ + h OH⁻.
+function _SI_mixedCuZnHydroxyCarbonate(
+  mineralId: 'rosasite' | 'aurichalcite',
+  fluid: any,
+  T: number,
+  nuCu: number,
+  nuZn: number,
+  nuCO3: number,
+  nuOH: number,
+): number {
+  const I = ionicStrength(fluid);
+  const logA_Cu = _logActivityCation(fluid, 'Cu', I);
+  const logA_Zn = _logActivityCation(fluid, 'Zn', I);
+  const logA_CO3 = _logActivityCO3(fluid, T, I);
+  const logA_OH = _logActivityOH(fluid, I);
+  if (![logA_Cu, logA_Zn, logA_CO3, logA_OH].every(Number.isFinite)) return NaN;
+  const logKsp = getCarbonateLogKsp(mineralId, T);
+  if (!isFinite(logKsp)) return NaN;
+  return nuCu * logA_Cu + nuZn * logA_Zn
+    + nuCO3 * logA_CO3 + nuOH * logA_OH - logKsp;
+}
+
+function saturationIndex_rosasite(fluid: any, T: number): number {
+  return _SI_mixedCuZnHydroxyCarbonate('rosasite', fluid, T, 1.3, 0.7, 1, 2);
+}
+
+function saturationIndex_aurichalcite(fluid: any, T: number): number {
+  return _SI_mixedCuZnHydroxyCarbonate('aurichalcite', fluid, T, 2.1, 2.9, 2, 6);
+}
+
+interface MixedCarbonateThermoAssessment {
+  mineral: 'rosasite' | 'aurichalcite';
+  saturationIndex: number;
+  temperatureC: number;
+  status: 'calibrated-25C-observer' | 'temperature-extrapolation';
+  confidence: 'C';
+  representativeComposition: string;
+  uncertaintyNote: string;
+}
+
+function mixedCarbonateThermoAssessment(
+  mineralId: 'rosasite' | 'aurichalcite',
+  fluid: any,
+  T_C: number,
+): MixedCarbonateThermoAssessment {
+  const saturationIndex = mineralId === 'rosasite'
+    ? saturationIndex_rosasite(fluid, T_C)
+    : saturationIndex_aurichalcite(fluid, T_C);
+  const calibrated = Math.abs(T_C - 25) < 0.5;
+  return {
+    mineral: mineralId,
+    saturationIndex,
+    temperatureC: T_C,
+    status: calibrated ? 'calibrated-25C-observer' : 'temperature-extrapolation',
+    confidence: 'C',
+    representativeComposition: mineralId === 'rosasite'
+      ? 'Cu1.3Zn0.7(CO3)(OH)2'
+      : 'Zn2.9Cu2.1(CO3)2(OH)6',
+    uncertaintyNote: mineralId === 'rosasite'
+      ? '25°C Ksp only; variable composition and no solid-solution activity model.'
+      : 'Observer uses the 2024 synthetic Zn-rich phase. Published 25°C aurichalcite values differ by about 14 log units with composition/speciation model.',
+  };
+}
+
 // =============================================================
 // Public observers — Week 3 helicoid trails consume these.
 // Always callable regardless of CARBONATE_KSP_ACTIVE.
@@ -407,8 +475,8 @@ function carbonateSaturationIndex(mineralId: string, fluid: any, T_C: number, mg
     case 'malachite':     return saturationIndex_malachite(fluid, T_C);
     case 'azurite':       return saturationIndex_azurite(fluid, T_C);
     case 'hydrozincite':  return saturationIndex_hydrozincite(fluid, T_C);
-    // rosasite + aurichalcite: no thermo data — return NaN. Helicoid
-    // trail simply omits these.
+    case 'rosasite':      return saturationIndex_rosasite(fluid, T_C);
+    case 'aurichalcite':  return saturationIndex_aurichalcite(fluid, T_C);
     default:              return NaN;
   }
 }
@@ -440,15 +508,17 @@ function carbonateEngineSigma(mineralId: string, fluid: any, T_C: number, mg_con
 // Coverage / introspection (for tools + library UI)
 // =============================================================
 
-// Which carbonate minerals have SI implementations in this module?
-// (Distinct from "which have thermo data" — rosasite+aurichalcite have
-// no thermo data and no SI fn; HMC has both but requires mg_content.)
+// Which carbonate minerals have SI implementations in this module? This is an
+// implementation registry, not an engine-promotion registry: Tier-C observer
+// estimates for rosasite/aurichalcite are included, while HMC requires
+// mg_content.
 function carbonatesWithSI(): string[] {
   return [
     'calcite', 'aragonite', 'dolomite', 'HMC',
     'siderite', 'rhodochrosite', 'smithsonite',
     'cerussite', 'witherite', 'strontianite',
     'malachite', 'azurite', 'hydrozincite',
+    'rosasite', 'aurichalcite',
   ];
 }
 

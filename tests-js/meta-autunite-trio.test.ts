@@ -59,7 +59,7 @@ describe('Autunite-group meta- trio — dehydration paramorphs (v85)', () => {
     });
 
     it('legacy borax/mirabilite entries preserved', () => {
-      expect(DEHYDRATION_TRANSITIONS.borax).toEqual(['tincalconite', 25, 1.5, 75.0]);
+      expect(DEHYDRATION_TRANSITIONS.borax).toEqual(['tincalconite', 25, 1.5, 60.8]);
       expect(DEHYDRATION_TRANSITIONS.mirabilite).toEqual(['thenardite', 30, 1.5, 32.4]);
     });
   });

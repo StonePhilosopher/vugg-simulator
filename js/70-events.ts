@@ -27,9 +27,12 @@ function event_cooling_pulse(conditions) {
 }
 
 function event_tectonic_shock(conditions) {
-  conditions.pressure += 0.5;
+  // Differential stress, not isotropic fluid pressure, drives mechanical
+  // twinning. The simulator consumes this transient immediately after the
+  // event; it is deliberately not a persistent environmental scalar.
+  conditions._pending_stress_pulse = { sigma_diff_mpa: 50 };
   conditions.temperature += 15;
-  return 'Tectonic event. Pressure spike. Crystals may twin.';
+  return 'Tectonic event. A 50 MPa differential-stress pulse crosses the cavity; fluid pressure does not rise.';
 }
 
 function event_copper_injection(conditions) {
@@ -176,7 +179,7 @@ window.endTutorial = endTutorial;
 // film's σ*, the crystal stalls, and the film sits until the next pulse: the
 // stall→pulse→break cycle IS the snowball's concentric banding. Ba-only + a flow
 // bump — it touches NO Ca/CO3, so the late golden-scalenohedral calcite showcase
-// (the CO3 pulse train, steps 80+) is untouched. Mass balance debits Ba back as
+// (the CO3 pulse train, steps 80+) is untouched. Growth budget debits Ba back as
 // the barite grows, so the pulse doesn't run away.
 function event_elmwood_barite_stage(conditions) {
   // A Ba FLOOR (set, not add) refreshed each stage as barite consumes it down —
@@ -507,6 +510,7 @@ const _WALL_GENESIS_BY_SCENARIO: { [id: string]: string } = {
 };
 
 function _buildScenarioFromSpec(scenarioId, spec) {
+  const specHash = scenarioSpecHash(spec);
   const initial = spec.initial || {};
   const temperature = Number(initial.temperature_C ?? 350);
   const pressure = Number(initial.pressure_kbar ?? 1.0);
@@ -550,6 +554,8 @@ function _buildScenarioFromSpec(scenarioId, spec) {
     // atmospheric pCO2 at the resolver site, so spec-side opt-in is
     // the only thing that flips behavior.
     conditions._scenario = {
+      id: scenarioId,
+      scenario_spec_hash: specHash,
       open_to_atmosphere: spec.open_to_atmosphere,
       atmospheric_pCO2_bar: spec.atmospheric_pCO2_bar,
       wall_rock_thermal_buffer_C: spec.wall_rock_thermal_buffer_C,
@@ -565,6 +571,7 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       // the default small distribution. Phase 2a is dark (spots stored, unread).
       fluid_spots: spec.fluid_spots,
     };
+    conditions._scenario_id = scenarioId;
     // JS events are plain objects (no Event class on the JS side; the
     // global DOM Event would shadow it). Match the {step,name,description,
     // apply_fn} shape used by the legacy in-code scenarios.
@@ -609,6 +616,8 @@ function _buildScenarioFromSpec(scenarioId, spec) {
   // arbitrary properties; this mirrors how `_json5_spec` is read in
   // startTutorial.
   scenarioCallable._json5_spec = spec;
+  scenarioCallable._scenario_id = scenarioId;
+  scenarioCallable._scenario_spec_hash = specHash;
   return scenarioCallable;
 }
 

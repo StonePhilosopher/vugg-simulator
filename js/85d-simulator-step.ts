@@ -64,6 +64,15 @@ Object.assign(VugSimulator.prototype, {
       this.log.push('');
       this.log.push(`  ⚡ EVENT: ${event.name}`);
       this.log.push(`     ${result}`);
+      const stressPulse = this.conditions._pending_stress_pulse;
+      if (stressPulse) {
+        delete this.conditions._pending_stress_pulse;
+        const stressResult = applyDifferentialStressPulse(
+          this,
+          stressPulse.sigma_diff_mpa,
+        );
+        this.log.push(`     ⟁ STRESS: ${stressResult.sigma_diff_mpa.toFixed(1)} MPa differential; ${stressResult.twinned.length} existing crystal${stressResult.twinned.length === 1 ? '' : 's'} mechanically twinned; fluid pressure unchanged`);
+      }
       // FLUID-SOURCE SPOTS Phase 2d — open/close feeders when an event declares
       // a `spots` directive. The plumbing changes over the vug's life: a fracture
       // seal shuts the feeders (self-sealing = "the fill is ending"); tectonic
@@ -100,7 +109,7 @@ Object.assign(VugSimulator.prototype, {
           minerals: d.minerals || null,
         });
         const ms = d.minerals ? d.minerals.join(', ') : 'all grown crystals';
-        this.log.push(`     ⟁ DEFORMATION: ${d.style || 'bend'} overprint on ${ms} — a post-growth tectonic shear bends what already grew`);
+        this.log.push(`     ⟁ VISUAL DEFORMATION RECONSTRUCTION: ${d.style || 'bend'} on ${ms} — render tag only; no strain-time law is claimed`);
       }
       // POST-GROWTH ETCH overprint (crystal-face-realism arc §2, 2026-06-22) — an
       // event may carry an `etch` directive {amount,minerals,style}. Like the
@@ -126,7 +135,7 @@ Object.assign(VugSimulator.prototype, {
           style: e.style || 'rounded',
         });
         const ems = e.minerals ? e.minerals.join(', ') : 'all grown crystals';
-        this.log.push(`     ⚗ ETCH: ${e.style || 'rounded'} dissolution overprint on ${ems} — a returning undersaturated fluid corrodes/rounds what already grew`);
+        this.log.push(`     ⚗ VISUAL ETCH RECONSTRUCTION: ${e.style || 'rounded'} on ${ems} — render tag only; no crystal mass is removed or returned to fluid`);
       }
       // FILM DUSTING (W-F O5 perturbed regrowth) — an event may carry a `film`
       // directive {mineral, prism, term, minerals?}: a foreign film (chlorite,
@@ -284,24 +293,31 @@ Object.assign(VugSimulator.prototype, {
   }
 
   if (this.conditions.flow_rate > 1.0) this.conditions.flow_rate *= 0.9;
-  const active_quartz = this.crystals.filter(c => c.mineral === 'quartz' && c.active);
-  if (active_quartz.length) {
-    const depletion = active_quartz.reduce((s, c) => s + (c.zones.length ? c.zones[c.zones.length - 1].thickness_um : 0), 0) * 0.1;
-    this.conditions.fluid.SiO2 = Math.max(this.conditions.fluid.SiO2 - depletion, 10);
-  }
+  // Historical fallback only. The canonical accepted-zone mass ledger now
+  // debits every mineral after dampening/clamping/time scaling, so repeating
+  // these old quartz/sulfide heuristics would consume the same solid twice
+  // (and a negative zone would accidentally create a second dissolution
+  // credit). Keep the branch solely for developers explicitly disabling the
+  // growth-budget feature flag in a diagnostic build.
+  if (!STOICHIOMETRIC_GROWTH_BUDGET_ENABLED) {
+    const active_quartz = this.crystals.filter(c => c.mineral === 'quartz' && c.active);
+    if (active_quartz.length) {
+      const depletion = active_quartz.reduce((s, c) => s + (c.zones.length ? c.zones[c.zones.length - 1].thickness_um : 0), 0) * 0.1;
+      this.conditions.fluid.SiO2 = Math.max(this.conditions.fluid.SiO2 - depletion, 10);
+    }
 
-  // Sulfide growth depletes Fe, S, Cu, Zn
-  const active_sulfides = this.crystals.filter(c => (c.mineral === 'pyrite' || c.mineral === 'chalcopyrite' || c.mineral === 'sphalerite') && c.active);
-  for (const c of active_sulfides) {
-    if (c.zones.length) {
-      const dep = c.zones[c.zones.length - 1].thickness_um * 0.05;
-      this.conditions.fluid.S = Math.max(this.conditions.fluid.S - dep, 0);
-      this.conditions.fluid.Fe = Math.max(this.conditions.fluid.Fe - dep * 0.5, 0);
-      if (c.mineral === 'chalcopyrite') {
-        this.conditions.fluid.Cu = Math.max(this.conditions.fluid.Cu - dep * 0.8, 0);
-      }
-      if (c.mineral === 'sphalerite') {
-        this.conditions.fluid.Zn = Math.max(this.conditions.fluid.Zn - dep * 0.8, 0);
+    const active_sulfides = this.crystals.filter(c => (c.mineral === 'pyrite' || c.mineral === 'chalcopyrite' || c.mineral === 'sphalerite') && c.active);
+    for (const c of active_sulfides) {
+      if (c.zones.length) {
+        const dep = c.zones[c.zones.length - 1].thickness_um * 0.05;
+        this.conditions.fluid.S = Math.max(this.conditions.fluid.S - dep, 0);
+        this.conditions.fluid.Fe = Math.max(this.conditions.fluid.Fe - dep * 0.5, 0);
+        if (c.mineral === 'chalcopyrite') {
+          this.conditions.fluid.Cu = Math.max(this.conditions.fluid.Cu - dep * 0.8, 0);
+        }
+        if (c.mineral === 'sphalerite') {
+          this.conditions.fluid.Zn = Math.max(this.conditions.fluid.Zn - dep * 0.8, 0);
+        }
       }
     }
   }

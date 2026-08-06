@@ -64,6 +64,8 @@ function buildCrystalRecord(crystal, meta) {
     trace_Ti: z.trace_Ti || 0,
     trace_Pb: z.trace_Pb || 0,
     trace_Cu: z.trace_Cu || 0,
+    trace_Ge: z.trace_Ge || 0,
+    trace_stoichiometry: z.trace_stoichiometry ? { ...z.trace_stoichiometry } : undefined,
     fluid_inclusion: !!z.fluid_inclusion,
     inclusion_type: z.inclusion_type || '',
     note: z.note || '',

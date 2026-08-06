@@ -11,7 +11,7 @@
 // Without stoichiometry, growth doesn't debit the fluid composition and
 // supersaturation never depletes from that mineral's own consumption —
 // a silent free-energy gift. The v118 (TN457) gen-baseline run surfaced
-// 23 such gifts via `[mass-balance] no stoichiometry for X` warnings.
+// 23 such gifts via `[growth-budget] no stoichiometry for X` warnings.
 // v120 (boss-approved Option 1) ships stoichiometry for 22 inactive-
 // firing engines (zero cascade ripple) and EXPLICITLY DEFERS the 27
 // active-firing engines via this list, where they wait for per-scenario
@@ -72,7 +72,7 @@ const DEFERRED_TUNE_REQUIRED = new Set<string>([
   //   COMPLETED v125 (2026-05-21): metacinnabar.
   //   COMPLETED v128d (2026-05-21): dioptase + koettigite.
   //   COMPLETED v128e (2026-05-21): willemite + conichalcite + duftite
-  //   shipped. The full Tsumeb supergene paragenesis is now mass-balance-
+  //   shipped. The full Tsumeb supergene paragenesis is now growth-budget-
   //   tracked end-to-end.
   //
   // Priority 4 — Schneeberg + Colorado Plateau uranyl
@@ -121,7 +121,7 @@ describe('MINERAL_STOICHIOMETRY coverage audit (v120)', () => {
 
     if (uncovered.length > 0) {
       const msg =
-        `MASS-BALANCE COVERAGE GAP: ${uncovered.length} mineral engine(s) ` +
+        `GROWTH-BUDGET COVERAGE GAP: ${uncovered.length} mineral engine(s) ` +
         `lack a MINERAL_STOICHIOMETRY entry AND are not on the ` +
         `DEFERRED_TUNE_REQUIRED list. Either: (a) add an entry to ` +
         `js/19-mineral-stoichiometry.ts using the formula from data/minerals.json ` +
@@ -223,6 +223,19 @@ describe('MINERAL_STOICHIOMETRY coverage audit (v120)', () => {
       );
     }
     expect(violations).toEqual([]);
+  });
+
+  it('every tracked formula species has a finite molar mass for mg/kg conversion', () => {
+    const t = getStoichiometryTable();
+    const properties = (globalThis as any).SPECIES_PROPERTIES as Record<string, { molarMass?: number }>;
+    const missing = new Set<string>();
+    for (const coeffs of Object.values(t)) {
+      for (const species of Object.keys(coeffs || {})) {
+        const mass = Number(properties?.[species]?.molarMass);
+        if (!(mass > 0) || !Number.isFinite(mass)) missing.add(species);
+      }
+    }
+    expect([...missing].sort(), 'formula species without a molar-mass conversion').toEqual([]);
   });
 
   it('DEFERRED list size matches HANDOFF doc count (13 minerals at v126)', () => {

@@ -16,7 +16,7 @@ function grow_wulfenite(crystal, conditions, step) {
     if (crystal.total_growth_um > 3 && conditions.fluid.pH < 3.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.10);
-      // Phase 1e: Pb + Mo credits handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.wulfenite.
+      // Phase 1e: Pb + Mo credits handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.wulfenite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -34,7 +34,7 @@ function grow_wulfenite(crystal, conditions, step) {
   crystal.dominant_forms = ['{001} tabular plates', 'square outline'];
 
   // Aspect ratio: very flat plates
-  // Phase 1d: Pb/Mo consumption owned by the wrapper (applyMassBalance).
+  // Phase 1d: Pb/Mo consumption owned by the wrapper (applyStoichiometricGrowthBudget).
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
@@ -62,7 +62,7 @@ function grow_ferrimolybdite(crystal, conditions, step) {
     if (crystal.total_growth_um > 2 && (conditions.fluid.pH < 2 || conditions.temperature > 150)) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.18);
-      // Phase 1e: Fe + Mo credits handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.ferrimolybdite.
+      // Phase 1e: Fe + Mo credits handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.ferrimolybdite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,

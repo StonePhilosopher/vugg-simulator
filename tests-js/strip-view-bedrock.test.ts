@@ -28,6 +28,11 @@ declare const stripDataIndex: any;
 declare const stripAllocateData: any;
 declare const stripSerialize: any;
 declare const stripDeserialize: any;
+declare const stripStoredRecordFromDataset: any;
+declare const stripDatasetFromStoredRecord: any;
+declare const sha256HexUtf8: any;
+declare const scenarioSpecHash: any;
+declare const MODEL_DIGEST: string;
 declare const StripRecorder: any;
 declare const SCENARIOS: any;
 declare const VugSimulator: any;
@@ -208,6 +213,48 @@ describe('strip dataset — serialization round-trip', () => {
     }
   });
 
+  it('round-trips v4 executed testimony and exact scientific identity', async () => {
+    const manifest = {
+      format_version: 4, sim_version: 239, model_digest: 'model-A',
+      scenario_id: 'mvt', scenario_spec_hash: 'spec-A', seed: 4242,
+      recorded_at: 9, duration_steps: 1,
+      axes: { steps: 1, angular_indices: 1, height_positions: 1 },
+      chips: [{ id: 'pH', label: 'pH', system: 'special', range: [4, 11] as [number, number], units: '', color: 0x9966ee }],
+    };
+    const ds = {
+      manifest,
+      chip_data: new Uint8Array([127]),
+      nucleation_events: [],
+      floor_data: new Uint8Array([101]),
+      pressure_phase_testimony: [{ step: 0, fluid_pressure_kbar: 1.4 }],
+      stress_event_testimony: [{ event_id: 'stress-1', outcome: 'twinned' }],
+    };
+    const reload = await stripDeserialize(await stripSerialize(ds, false));
+    expect(reload.manifest).toMatchObject({
+      model_digest: 'model-A', scenario_id: 'mvt', scenario_spec_hash: 'spec-A',
+    });
+    expect(reload.pressure_phase_testimony).toEqual(ds.pressure_phase_testimony);
+    expect(reload.stress_event_testimony).toEqual(ds.stress_event_testimony);
+  });
+
+  it('uses a Node-compatible SHA-256 fingerprint for authored scenario specs', () => {
+    expect(sha256HexUtf8('abc')).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+    const spec = SCENARIOS.cooling._json5_spec;
+    expect(scenarioSpecHash(spec)).toBe(SCENARIOS.cooling._scenario_spec_hash);
+  });
+
+  it('preserves all evidence through the exact IndexedDB record codecs', () => {
+    const scenario = SCENARIOS.mvt();
+    const recorder = new StripRecorder(new VugSimulator(scenario.conditions, scenario.events), { duration_steps: 1 });
+    const ds = recorder.finalize();
+    ds.pressure_phase_testimony = [{ step: 0, fluid_pressure_kbar: 1.4 }];
+    ds.stress_event_testimony = [{ event_id: 'stress-storage' }];
+    const reload = stripDatasetFromStoredRecord(stripStoredRecordFromDataset(ds));
+    expect(reload.pressure_phase_testimony).toEqual(ds.pressure_phase_testimony);
+    expect(reload.stress_event_testimony).toEqual(ds.stress_event_testimony);
+    expect(reload.manifest.scenario_spec_hash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
   it('a v3 dataset with no floor_data, and a v2 dataset, both deserialize without a floor channel', async () => {
     const base = {
       sim_version: 175, scenario_id: 'nofloor', seed: 42, recorded_at: 8, duration_steps: 1,
@@ -238,7 +285,10 @@ describe('strip recorder — instrumentation', () => {
 
   it('builds a manifest with all helicoid chips', () => {
     const m = recorder.getManifest();
-    expect(m.format_version).toBe(3);  // v2 added the depth axis; v3 added the depletion-floor channel
+    expect(m.format_version).toBe(4);  // v4 preserves executed scientific testimony
+    expect(m.model_digest).toBe(MODEL_DIGEST);
+    expect(m.scenario_id).toBe('cooling');
+    expect(m.scenario_spec_hash).toMatch(/^[0-9a-f]{64}$/);
     expect(m.axes.steps).toBe(5);
     expect(m.axes.angular_indices).toBe(24);
     expect(m.axes.height_positions).toBe(16);

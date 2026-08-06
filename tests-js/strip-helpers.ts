@@ -10,7 +10,7 @@
 // is the PER-CELL / per-voxel chemistry store — NOT the ring-bulk
 // `ring_fluids[equator]` that several older probes (e.g.
 // carbonate-week7-reactive-wall) sample. The two stores legitimately differ
-// (the bulk view isn't debited by mass balance; the mesh cells are), so a
+// (the bulk view isn't debited by growth budget; the mesh cells are), so a
 // strip series corroborates — it does not duplicate — a bulk-probe series.
 
 declare const VugSimulator: any;

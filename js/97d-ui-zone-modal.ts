@@ -236,7 +236,8 @@ function showZoneHistory(crystal) {
       html += `<span style="color:#cc6644">Fe: ${z.trace_Fe.toFixed(1)}</span> · `;
       html += `<span style="color:#ffaa44">Mn: ${z.trace_Mn.toFixed(1)}</span> · `;
       html += `<span style="color:#8888cc">Al: ${z.trace_Al.toFixed(1)}</span> · `;
-      html += `<span style="color:#88cc88">Ti: ${z.trace_Ti.toFixed(3)}</span><br>`;
+      html += `<span style="color:#88cc88">Ti: ${z.trace_Ti.toFixed(3)}</span> · `;
+      html += `<span style="color:#7fc7d9">Ge: ${(z.trace_Ge || 0).toFixed(1)}</span><br>`;
       if (z.fluid_inclusion) html += `💧 ${z.inclusion_type}<br>`;
       if (z.morph_regime) {
         const label = (typeof morphDisplayLabel === 'function')
@@ -280,6 +281,7 @@ function showZoneHistory(crystal) {
       if (z.trace_Mn > 0.3) traces.push(`Mn ${z.trace_Mn.toFixed(1)}`);
       if (z.trace_Ti > 0.01) traces.push(`Ti ${z.trace_Ti.toFixed(3)}`);
       if (z.trace_Al > 0.5) traces.push(`Al ${z.trace_Al.toFixed(1)}`);
+      if ((z.trace_Ge || 0) > 0.1) traces.push(`Ge ${z.trace_Ge.toFixed(1)}`);
       if (traces.length) html += ` · <span style="color:#a89040">${traces.join(', ')} ppm</span>`;
 
       if (z.fluid_inclusion) html += ` · <span class="z-fi">FI: ${z.inclusion_type}</span>`;

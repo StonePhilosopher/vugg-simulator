@@ -129,7 +129,220 @@ function _makeNucRng(sharedState: number, mineralKey: string, step: number): See
 //
 // fn.name is "_nuc_<mineral>"; the build is a non-minifying concat (148 modules)
 // and tsc/vitest preserve names, so the key is stable across runtimes.
+const _NUCLEATION_PROBE_REGISTRY: Record<string, (sim: any) => void> = {};
+let _REGISTER_NUCLEATORS_ONLY = false;
+
+const _NUCLEATION_PROBE_ALIASES: Record<string, string[]> = {
+  // These dispatchers intentionally evaluate several siblings in one
+  // production function so priority and shared-pool competition stay atomic.
+  _nuc_spodumene: [
+    'spodumene', 'emerald', 'morganite', 'heliodor', 'aquamarine', 'beryl',
+    'ruby', 'sapphire', 'corundum',
+  ],
+  _nuc_stolzite: ['stolzite', 'raspite'],
+};
+
+function _registerNucleatorForProbe(fn: (sim: any) => void, aliases: string[] | null = null): void {
+  if (typeof fn !== 'function') return;
+  const inferred = fn.name.startsWith('_nuc_') ? fn.name.slice(5) : '';
+  const names = aliases || _NUCLEATION_PROBE_ALIASES[fn.name] || (inferred ? [inferred] : []);
+  for (const name of names) _NUCLEATION_PROBE_REGISTRY[name] = fn;
+}
+
+interface ProductionNucleationDecisionProbe {
+  available: boolean;
+  deterministicEligible: boolean;
+  stochastic: boolean;
+  randomDraws: number;
+  source: string | null;
+  attempts: Array<{ mineral: string; position: string; sigma: number }>;
+  competingBirth: string | null;
+  error?: string;
+}
+
+interface ProductionNucleationDecisionAssessment {
+  available: boolean;
+  eligible: boolean;
+  stochasticBirth: boolean;
+  effectiveDrawProbability: number | null;
+  randomDraws: number;
+  source: string | null;
+  competingBirth: string | null;
+  blockers: string[];
+}
+
+// Read-only best-case execution of the actual production nucleator. Every RNG
+// draw returns zero, which passes the codebase's Bernoulli gates while leaving
+// all deterministic sigma, active/total, cap, host, and priority predicates
+// untouched. No live RNG, crystal, fluid, log, or counter state is mutated.
+// This makes the hover panel answer whether production CAN call nucleate() now,
+// then separately disclose that the real path still contains stochastic draws.
+function productionNucleationDecisionProbe(
+  name: string,
+  sim: any,
+  options: { randomValue?: number; targetSigma?: number; crystalMode?: 'current' | 'inactive-target' | 'remove-target' } = {},
+): ProductionNucleationDecisionProbe {
+  const fn = _NUCLEATION_PROBE_REGISTRY[name];
+  const unavailable: ProductionNucleationDecisionProbe = {
+    available: false,
+    deterministicEligible: false,
+    stochastic: false,
+    randomDraws: 0,
+    source: fn?.name || null,
+    attempts: [],
+    competingBirth: null,
+  };
+  if (!fn || !sim || !Array.isArray(sim.crystals) || !sim.conditions
+      || typeof sim._atNucleationCap !== 'function') return unavailable;
+
+  const attempts: Array<{ mineral: string; position: string; sigma: number }> = [];
+  const probe = Object.assign(Object.create(Object.getPrototypeOf(sim)), sim);
+  const crystalMode = options.crystalMode || 'current';
+  probe.crystals = sim.crystals
+    .filter((cr: any) => crystalMode !== 'remove-target' || cr.mineral !== name)
+    .map((cr: any) => ({
+    ...cr,
+    ...(crystalMode === 'inactive-target' && cr.mineral === name ? { active: false } : {}),
+    zones: Array.isArray(cr.zones) ? cr.zones.map((zone: any) => ({ ...zone })) : [],
+  }));
+  probe.conditions = Object.assign(Object.create(Object.getPrototypeOf(sim.conditions)), sim.conditions);
+  probe.conditions.fluid = sim.conditions.fluid;
+  if (Number.isFinite(options.targetSigma)) {
+    probe.conditions[`supersaturation_${name}`] = () => Number(options.targetSigma);
+  }
+  probe.log = [];
+  probe.crystal_counter = Number(sim.crystal_counter) || probe.crystals.length;
+  probe.nucleate = (mineral: string, position = 'vug wall', sigma = 1) => {
+    const birth = { mineral, position, sigma: Number(sigma), crystal_id: ++probe.crystal_counter };
+    attempts.push({ mineral, position, sigma: Number(sigma) });
+    const fake: any = {
+      ...birth,
+      active: true,
+      dissolved: false,
+      enclosed_by: null,
+      zones: [],
+      total_growth_um: 0,
+      habit: 'probe',
+      dominant_forms: [],
+    };
+    probe.crystals.push(fake);
+    return fake;
+  };
+
+  const saved = rng;
+  let randomDraws = 0;
+  const probeRng = new SeededRandom(0);
+  const randomValue = Math.max(0, Math.min(0.999999999, Number(options.randomValue) || 0));
+  const fixed = () => { randomDraws++; return randomValue; };
+  probeRng.random = fixed;
+  probeRng.next = fixed;
+  probeRng.uniform = (lo: number, hi: number) => { randomDraws++; return lo + randomValue * (hi - lo); };
+  rng = probeRng;
+  try {
+    fn(probe);
+  } catch (error) {
+    return {
+      ...unavailable,
+      available: true,
+      randomDraws,
+      source: fn.name,
+      attempts,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  } finally {
+    rng = saved;
+  }
+  const deterministicEligible = attempts.some(attempt => attempt.mineral === name);
+  const competing = attempts.find(attempt => attempt.mineral !== name)?.mineral || null;
+  return {
+    available: true,
+    deterministicEligible,
+    stochastic: deterministicEligible && randomDraws > 0,
+    randomDraws,
+    source: fn.name,
+    attempts,
+    competingBirth: deterministicEligible ? null : competing,
+  };
+}
+
+// Explain the deterministic and stochastic parts of the production decision
+// by counterfactually rerunning that same nucleator against cloned state. This
+// avoids maintaining a second handwritten table of quartz-style repeat gates.
+function assessProductionNucleationDecision(
+  name: string,
+  sim: any,
+  sigma: number,
+  sigmaCrit: number,
+): ProductionNucleationDecisionAssessment {
+  const best = productionNucleationDecisionProbe(name, sim, { randomValue: 0 });
+  const result: ProductionNucleationDecisionAssessment = {
+    available: best.available,
+    eligible: best.deterministicEligible,
+    stochasticBirth: false,
+    effectiveDrawProbability: null,
+    randomDraws: best.randomDraws,
+    source: best.source,
+    competingBirth: best.competingBirth,
+    blockers: [],
+  };
+  if (!best.available) return result;
+
+  if (best.deterministicEligible) {
+    const worst = productionNucleationDecisionProbe(name, sim, { randomValue: 0.999999999 });
+    result.stochasticBirth = !worst.deterministicEligible;
+    if (result.stochasticBirth) {
+      let lo = 0, hi = 1;
+      for (let i = 0; i < 24; i++) {
+        const mid = (lo + hi) / 2;
+        const trial = productionNucleationDecisionProbe(name, sim, { randomValue: mid });
+        if (trial.deterministicEligible) lo = mid;
+        else hi = mid;
+      }
+      result.effectiveDrawProbability = Math.round(lo * 1000) / 1000;
+    }
+    return result;
+  }
+
+  const active = sim.crystals.filter((cr: any) => cr?.mineral === name && cr.active && !cr.dissolved).length;
+  const total = sim.crystals.filter((cr: any) => cr?.mineral === name).length;
+  const inactiveTarget = productionNucleationDecisionProbe(name, sim, {
+    randomValue: 0,
+    crystalMode: 'inactive-target',
+  });
+  const removedTarget = productionNucleationDecisionProbe(name, sim, {
+    randomValue: 0,
+    crystalMode: 'remove-target',
+  });
+  if (inactiveTarget.deterministicEligible) {
+    result.blockers.push(`active-crystal rule blocks at ${active} active (${total} total)`);
+  } else if (removedTarget.deterministicEligible) {
+    result.blockers.push(`total/history rule blocks at ${total} recorded crystal${total === 1 ? '' : 's'}`);
+  }
+
+  const high = Math.max(Number(sigma) + 32, Number(sigmaCrit) + 32, 32);
+  const highProbe = productionNucleationDecisionProbe(name, sim, { randomValue: 0, targetSigma: high });
+  if (sigma > sigmaCrit && highProbe.deterministicEligible) {
+    let lo = Math.max(Number(sigma) || 0, Number(sigmaCrit) || 0), hi = high;
+    for (let i = 0; i < 28; i++) {
+      const mid = (lo + hi) / 2;
+      const trial = productionNucleationDecisionProbe(name, sim, { randomValue: 0, targetSigma: mid });
+      if (trial.deterministicEligible) hi = mid;
+      else lo = mid;
+    }
+    result.blockers.push(`repeat/secondary saturation rule requires σ > ${hi.toFixed(3)}`);
+  }
+  if (best.competingBirth) {
+    result.blockers.push(`${best.competingBirth} takes the shared family-priority slot first`);
+  }
+  if (!result.blockers.length) {
+    result.blockers.push('another deterministic production predicate blocks this nucleator');
+  }
+  return result;
+}
+
 function _runNuc(sim: any, fn: (sim: any) => void): void {
+  _registerNucleatorForProbe(fn);
+  if (_REGISTER_NUCLEATORS_ONLY) return;
   if (!NUC_DERIVED_SEEDS) { fn(sim); return; }
   const saved = rng;
   rng = _makeNucRng(sim._nucSharedState | 0, fn.name, sim.step | 0);
@@ -268,7 +481,11 @@ function _movementSetField(conditions: any, path: string, value: number): void {
   const parts = path.split('.');
   let o = conditions;
   for (let i = 0; i < parts.length - 1; i++) { if (o == null) return; o = o[parts[i]]; }
-  if (o != null) o[parts[parts.length - 1]] = value;
+  if (o != null) {
+    o[parts[parts.length - 1]] = path === 'pressure'
+      ? clampFluidPressureKbar(value)
+      : value;
+  }
 }
 
 // The controller holds the parsed movements + the dedicated rng + per-movement
@@ -281,7 +498,10 @@ class MovementController {
   _state: { base: number; ou: number; started: boolean; originCell: number }[];
 
   constructor(movements: MovementSpec[] | undefined, vuggSeed: number) {
-    this.movements = Array.isArray(movements) ? movements : [];
+    // Own the list. Creative mode can append a trajectory while older ones are
+    // already active; sharing the scenario array would make a push happen
+    // twice when the controller is updated explicitly.
+    this.movements = Array.isArray(movements) ? movements.slice() : [];
     this.rng = _makeMovementRng(vuggSeed);
     // originCell -1 = unresolved; resolved once at first window activation for
     // origin:'cell' movements (Phase 2c), then pinned (stable across steps).
@@ -289,6 +509,14 @@ class MovementController {
   }
 
   get isEmpty(): boolean { return this.movements.length === 0; }
+
+  // Append without rebuilding the controller. Rebuilding would restart the
+  // dedicated RNG stream and discard captured baselines / OU texture for every
+  // trajectory that was already under way.
+  addMovement(movement: MovementSpec): void {
+    this.movements.push(movement);
+    this._state.push({ base: 0, ou: 0, started: false, originCell: -1 });
+  }
 
   // Phase 4c.3a — is any movement driving `field` active at this step? Used by
   // the sim's _syncRedoxEh to flip the redox sync to Eh-CANONICAL (Eh→O2) for

@@ -27,6 +27,8 @@ import { stripDigestForDataset } from '../tools/strip-digest-shape.mjs';
 
 declare const stripDataIndex: any;
 declare const stripDequantize: any;
+declare const SIM_VERSION: number;
+declare const MODEL_DIGEST: string;
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASELINES = path.join(ROOT, 'tests-js', 'baselines');
@@ -63,6 +65,11 @@ describe('strip chemistry-trajectory tripwire — seed 42 vs committed digest', 
     });
     return;
   }
+
+  it('binds the baseline to the active semantic model identity', () => {
+    expect(digest.sim_version).toBe(SIM_VERSION);
+    expect(digest.model_digest).toBe(MODEL_DIGEST);
+  });
 
   const names = Object.keys(digest.scenarios);
 

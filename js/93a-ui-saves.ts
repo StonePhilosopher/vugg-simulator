@@ -29,9 +29,9 @@
 //
 // Loading replays the actions through the REAL fortressStep path with
 // the pacing player in instant mode. Same seed + same actions = the
-// same pocket, zone for zone. A save made under an older SIM_VERSION
-// still replays — under TODAY'S physics — and the load log says so
-// honestly (the rock record shifted; the recipe is what was saved).
+// same pocket, zone for zone. Replay is fail-closed on simulation version,
+// scientific model digest, and (for authored scenarios) the exact scenario-
+// spec hash. A recipe cannot silently grow a different rock under new science.
 //
 // The active run keeps ONE rolling autosave record, re-persisted after
 // every action — "saving is automatic" means a browser crash costs
@@ -45,7 +45,7 @@
 
 const SAVES_KEY = 'vugg-saves-v1';
 const STATS_KEY = 'vugg-stats-v1';
-const SAVE_FORMAT = 1;
+const SAVE_FORMAT = 2;
 // Autosaves beyond this count prune oldest-first (manual saves never
 // auto-prune — the player curated those).
 const MAX_AUTOSAVES = 8;
@@ -133,7 +133,10 @@ function _saveCaptureBroth() {
     const slider = document.getElementById('broth-' + key) as HTMLInputElement | null;
     if (!slider) continue;
     const v = (m as any).parse(slider.value);
-    if (Number.isFinite(v)) out[key] = String(slider.value);
+    const valid = (typeof _isBrothValueValid === 'function')
+      ? _isBrothValueValid(m, v)
+      : Number.isFinite(v);
+    if (valid) out[key] = String(slider.value);
   }
   return out;
 }
@@ -146,19 +149,24 @@ function _saveBrothDelta(now, last) {
   return delta;
 }
 
-// Apply recorded broth values to the SLIDERS ONLY. The sliders are
-// transport, not physics: in live play a slider value reaches the sim
-// exclusively through fortressStep's pre-action re-sync, and post-sync
-// slider values are quantized ECHOES of sim state (toSlider rounds).
-// Replay must keep that exact grammar — writing m.set() here would
-// quantize state the live run never quantized (caught live: T 178.785
-// became 179 when broth_final round-tripped through the temp slider).
-function _saveApplyBroth(broth) {
+// Apply recorded broth values to UI, and optionally to canonical state.
+// Action deltas and explicitly pending player edits use writeState=true.
+// `broth_final` remains display-only: post-step slider values can be quantized
+// echoes of continuous sim state (caught live: T 178.785 became 179 when that
+// final temperature echo was once written back during replay).
+function _saveApplyBroth(broth, writeState = false) {
   if (!broth || typeof BROTH_MAP === 'undefined') return;
   for (const [key, sv] of Object.entries(broth)) {
     if (!BROTH_MAP[key]) continue;
     const slider = document.getElementById('broth-' + key) as HTMLInputElement | null;
     if (slider) slider.value = sv as string;
+    if (writeState) {
+      const value = BROTH_MAP[key].parse(sv as string);
+      const valid = (typeof _isBrothValueValid === 'function')
+        ? _isBrothValueValid(BROTH_MAP[key], value)
+        : Number.isFinite(value);
+      if (valid) BROTH_MAP[key].set(value);
+    }
   }
 }
 
@@ -192,15 +200,61 @@ function _saveCollectedPairs() {
   return out;
 }
 
+function _saveScenarioSpecHash(origin) {
+  if (!origin || origin.type !== 'scenario') return null;
+  const make = (typeof SCENARIOS !== 'undefined') ? SCENARIOS[origin.scenario] : null;
+  return make && typeof make._scenario_spec_hash === 'string'
+    ? make._scenario_spec_hash
+    : null;
+}
+
+// Scientific recipes use the same fail-closed identity invariant as strips.
+// Keep this pure so the load gate and Saves-menu label share one verdict.
+function _saveReplayCompatibility(rec) {
+  if (!rec || rec.format !== SAVE_FORMAT) {
+    return {
+      ok: false,
+      reason: `This save uses format v${rec && rec.format}; this build reads v${SAVE_FORMAT}. It can't be restored.`,
+    };
+  }
+  const nowV = (typeof SIM_VERSION !== 'undefined') ? SIM_VERSION : null;
+  if (rec.sim_version == null || nowV == null || rec.sim_version !== nowV) {
+    return {
+      ok: false,
+      reason: `SIM identity mismatch: this recipe records v${rec.sim_version ?? 'unknown'}, but this build is v${nowV ?? 'unknown'}. Replay is blocked because the physics may differ.`,
+    };
+  }
+  const nowDigest = (typeof MODEL_DIGEST !== 'undefined') ? MODEL_DIGEST : null;
+  if (!rec.model_digest || !nowDigest || rec.model_digest !== nowDigest) {
+    return {
+      ok: false,
+      reason: 'Scientific model digest mismatch: this recipe was recorded under different or unidentified equations. Replay is blocked rather than producing a different specimen.',
+    };
+  }
+  if (rec.origin && rec.origin.type === 'scenario') {
+    const currentHash = _saveScenarioSpecHash(rec.origin);
+    if (!rec.scenario_spec_hash || !currentHash || rec.scenario_spec_hash !== currentHash) {
+      return {
+        ok: false,
+        reason: `Scenario specification mismatch for "${rec.origin.scenario}": its starting geology or events changed (or were not identified). Replay is blocked.`,
+      };
+    }
+  }
+  return { ok: true, reason: '' };
+}
+
 // ---------- recording hooks (called from 97/94 via typeof guards) ----------
 
 // A fortress run just began. Create its rolling autosave.
 function _saveNoteBegin(origin) {
   if (_fortressReplaying) return; // the replay driver adopts records itself
+  if (typeof _clearBrothPlayerChanges === 'function') _clearBrothPlayerChanges();
   _saveActiveRecord = {
     id: _saveNewId(),
     format: SAVE_FORMAT,
     sim_version: (typeof SIM_VERSION !== 'undefined') ? SIM_VERSION : null,
+    model_digest: (typeof MODEL_DIGEST !== 'undefined') ? MODEL_DIGEST : null,
+    scenario_spec_hash: _saveScenarioSpecHash(origin),
     kind: 'auto',
     status: 'in-progress',
     name: `Autosave — ${_saveOriginLabel(origin)}`,
@@ -209,6 +263,7 @@ function _saveNoteBegin(origin) {
     origin,
     actions: [],
     broth_final: null,
+    pending_broth: null,
     collected: [],
     summary: _saveSummaryFromSim(),
   };
@@ -223,7 +278,9 @@ function _saveNoteBegin(origin) {
 function _saveRecordAction(action, payload) {
   if (_fortressReplaying || !_saveActiveRecord || _saveActiveRecord.status === 'finished') return;
   const broth = _saveCaptureBroth();
-  const delta = _saveBrothDelta(broth, _saveLastBroth);
+  const delta = (typeof _consumeBrothPlayerChanges === 'function')
+    ? _consumeBrothPlayerChanges()
+    : _saveBrothDelta(broth, _saveLastBroth);
   _saveLastBroth = broth;
   const entry: any = { a: action };
   if (payload !== undefined && payload !== null) entry.p = payload;
@@ -239,6 +296,10 @@ function _savePersistActive() {
   _saveActiveRecord.updated_at = new Date().toISOString();
   _saveActiveRecord.summary = _saveSummaryFromSim() || _saveActiveRecord.summary;
   _saveActiveRecord.broth_final = _saveCaptureBroth();
+  const pending = (typeof _peekBrothPlayerChanges === 'function')
+    ? _peekBrothPlayerChanges()
+    : {};
+  _saveActiveRecord.pending_broth = Object.keys(pending).length ? pending : null;
   _saveActiveRecord.collected = _saveCollectedPairs();
   const items = loadSaves();
   const idx = items.findIndex(s => s.id === _saveActiveRecord.id);
@@ -264,6 +325,7 @@ function _saveMarkFinished() {
 function _saveNoteReset() {
   _saveActiveRecord = null;
   _saveLastBroth = null;
+  if (typeof _clearBrothPlayerChanges === 'function') _clearBrothPlayerChanges();
 }
 
 // Keep the newest MAX_AUTOSAVES autosaves (by updated_at); the active
@@ -332,8 +394,9 @@ function _saveRebuildOrigin(origin) {
 function loadSaveById(id) {
   const rec = loadSaves().find(s => s.id === id);
   if (!rec) return false;
-  if (rec.format !== SAVE_FORMAT) {
-    alert(`This save uses format v${rec.format}; this build reads v${SAVE_FORMAT}. It can't be restored.`);
+  const compatibility = _saveReplayCompatibility(rec);
+  if (!compatibility.ok) {
+    alert(compatibility.reason);
     return false;
   }
   // switchMode wires the topo canvases — harmless to skip when it
@@ -351,10 +414,14 @@ function loadSaveById(id) {
   try {
     _saveRebuildOrigin(rec.origin);
     for (const entry of (rec.actions || [])) {
-      if (entry.b) _saveApplyBroth(entry.b);
+      if (entry.b) _saveApplyBroth(entry.b, true);
       fortressStep(entry.a, (entry.p !== undefined) ? entry.p : undefined);
     }
-    if (rec.broth_final) _saveApplyBroth(rec.broth_final);
+    // A live control writes state immediately. If it was the last thing the
+    // player did before saving/leaving, no later action exists to carry its
+    // delta, so restore that tail explicitly after replaying the action log.
+    if (rec.pending_broth) _saveApplyBroth(rec.pending_broth, true);
+    if (rec.broth_final) _saveApplyBroth(rec.broth_final, false);
     // Re-mark crystals already in the Library (crystal order is
     // deterministic under replay, so index pairing is stable).
     for (const pair of (rec.collected || [])) {
@@ -398,14 +465,10 @@ function loadSaveById(id) {
     persistSaves(_savePruneAutosaves(items));
   }
 
-  // Post-restore housekeeping + an honest log line.
+  // Post-restore housekeeping. Identity was proved before replay state changed.
   const logEl = document.getElementById('fortress-log');
   const steps = (typeof fortressSim !== 'undefined' && fortressSim) ? fortressSim.step : 0;
   const lines = [`💾 Restored "${rec.name}" — ${(rec.actions || []).length} actions replayed to step ${steps}.`];
-  const nowV = (typeof SIM_VERSION !== 'undefined') ? SIM_VERSION : null;
-  if (rec.sim_version != null && nowV != null && rec.sim_version !== nowV) {
-    lines.push(`   ⚠️ Saved under SIM v${rec.sim_version}; replayed under today's v${nowV} — the rock record has shifted since, so crystals may differ from what you left.`);
-  }
   for (const line of lines) {
     fortressLogLines.push(line);
     if (logEl && typeof appendFortressLine === 'function') appendFortressLine(logEl, line);
@@ -488,9 +551,11 @@ function savesRender() {
     name.className = 'save-name';
     name.textContent = rec.name || '(unnamed)';
     const status = document.createElement('span');
-    status.className = 'save-status ' + (rec.status === 'finished' ? 'finished' : 'progress');
-    status.textContent = rec.status === 'finished' ? '📜 narrated' : '⏳ in progress';
-    if (_saveActiveRecord && rec.id === _saveActiveRecord.id) status.textContent += ' · live';
+    const compatibility = _saveReplayCompatibility(rec);
+    status.className = 'save-status ' + (!compatibility.ok ? 'incompatible' : (rec.status === 'finished' ? 'finished' : 'progress'));
+    status.textContent = !compatibility.ok ? '⚠ incompatible model' : (rec.status === 'finished' ? '📜 narrated' : '⏳ in progress');
+    if (compatibility.ok && _saveActiveRecord && rec.id === _saveActiveRecord.id) status.textContent += ' · live';
+    if (!compatibility.ok) status.title = compatibility.reason;
     head.appendChild(badge);
     head.appendChild(name);
     head.appendChild(status);
@@ -513,7 +578,10 @@ function savesRender() {
     actions.className = 'save-row-actions';
     const loadBtn = document.createElement('button');
     loadBtn.textContent = 'Load';
-    loadBtn.title = 'Re-grow this run from its recipe (seed + actions)';
+    loadBtn.disabled = !compatibility.ok;
+    loadBtn.title = compatibility.ok
+      ? 'Re-grow this run from its identity-verified recipe (seed + actions)'
+      : compatibility.reason;
     loadBtn.onclick = () => loadSaveById(rec.id);
     const renameBtn = document.createElement('button');
     renameBtn.textContent = 'Rename';

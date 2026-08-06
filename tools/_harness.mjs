@@ -39,7 +39,7 @@ import { JSDOM } from 'jsdom';
 const HARNESS_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 // Base export set — what every tool needs.
-const BASE_EXPORTS = ['SIM_VERSION', 'SCENARIOS', 'VugSimulator', 'setSeed', 'SeededRandom'];
+const BASE_EXPORTS = ['SIM_VERSION', 'MODEL_DIGEST', 'SCENARIOS', 'VugSimulator', 'setSeed', 'SeededRandom'];
 
 let _loaded = null;  // memoize across multiple calls in the same process
 
@@ -74,6 +74,12 @@ export async function loadSimBundle(opts = {}) {
   globalThis.document = dom.window.document;
   globalThis.localStorage = dom.window.localStorage;
   globalThis.sessionStorage = dom.window.sessionStorage;
+  // UI audit tools append real controls and dispatch the same events as the
+  // browser. Expose constructors used by bundle-side instanceof checks.
+  globalThis.HTMLElement = dom.window.HTMLElement;
+  globalThis.HTMLInputElement = dom.window.HTMLInputElement;
+  globalThis.HTMLSelectElement = dom.window.HTMLSelectElement;
+  globalThis.Event = dom.window.Event;
 
   // 2. fetch mock — read from disk relative to the repo root
   globalThis.fetch = async (url) => {

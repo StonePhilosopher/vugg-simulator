@@ -53,7 +53,7 @@ function grow_barite(crystal, conditions, step) {
     habit_note += '; honey-yellow (Pb-bearing — Cumberland gold habit)';
   }
 
-  // Phase 1d: Ba/S consumption owned by the wrapper (applyMassBalance).
+  // Phase 1d: Ba/S consumption owned by the wrapper (applyStoichiometricGrowthBudget).
 
   return new GrowthZone({
     step, temperature: conditions.temperature,

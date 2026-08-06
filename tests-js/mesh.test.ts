@@ -17,6 +17,7 @@
 import { describe, expect, it } from 'vitest';
 
 declare const VugSimulator: any;
+declare const FluidChemistry: any;
 declare const VugWall: any;
 declare const WallState: any;
 declare const WallMesh: any;
@@ -149,11 +150,12 @@ describe('cavity-mesh Phase 2 — WallMesh builds + recomputes correctly', () =>
     // dissolution event should change after run_step deposits some
     // wall_depth (cooling has acid pulses that erode the wall).
     const conds: any = {
-      fluid: { Ca: 200, CO3: 200, pH: 7, salinity: 0, Cu: 0, Pb: 0, Zn: 0,
-               Si: 50, Fe: 5, Mn: 1, Al: 1, Mg: 50, K: 1, Na: 1, S: 1, As: 0,
-               Sr: 1, Ba: 1, F: 0, Cl: 0, NO3: 0, PO4: 0, SO4: 50, H2S: 0,
-               concentration: 100, density: 1.0,
-               recompute() { /* no-op for this test */ } },
+      fluid: new FluidChemistry({
+        Ca: 200, CO3: 200, pH: 7, salinity: 0, Cu: 0, Pb: 0, Zn: 0,
+        SiO2: 50, Fe: 5, Mn: 1, Al: 1, Mg: 50, K: 1, Na: 1,
+        S: 50, sulfateInherited: true, As: 0, Sr: 1, Ba: 1, F: 0, Cl: 0,
+        concentration: 100,
+      }),
       wall: new VugWall({ composition: 'limestone' }),
       temperature: 50, pressure_bars: 1, depth_m: 0, oxygen_fugacity: -50,
     };

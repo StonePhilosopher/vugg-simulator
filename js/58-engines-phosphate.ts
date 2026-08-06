@@ -99,7 +99,7 @@ function grow_plumbogummite(crystal, conditions, step) {
     color_note = `lavender-to-white (pure Pb-Al-PO4 — rare among Roughten Gill specimens)`;
   }
 
-  // Mass balance: Pb + Al + P are the primary debits
+  // Growth budget: Pb + Al + P are the primary debits
   f.Pb = Math.max(f.Pb - rate * 0.025, 0);
   f.Al = Math.max(f.Al - rate * 0.015, 0);
   f.P  = Math.max(f.P  - rate * 0.008, 0);

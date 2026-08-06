@@ -193,7 +193,7 @@ describe('computeGraduatedAllocations — edge cases', () => {
 });
 
 describe('buildCrystalDryRun', () => {
-  it('builds a CrystalDryRun from MINERAL_STOICHIOMETRY × MASS_BALANCE_SCALE', () => {
+  it('builds formula-weighted CrystalDryRun budget demands from mole ratios', () => {
     const fn = (globalThis as any).buildCrystalDryRun;
     const r = fn(42, 'calcite', 1.5, 9, 5.0);
     expect(r).not.toBeNull();
@@ -202,10 +202,12 @@ describe('buildCrystalDryRun', () => {
     expect(r.sigma).toBe(1.5);
     expect(r.initiative).toBe(9);
     expect(r.desired_thickness_um).toBe(5.0);
-    // calcite is {Ca: 1, CO3: 1}; expect both with the same coefficient.
+    // Calcite is 1:1 in moles, not in mg/kg. The mass demands must differ by
+    // molar mass while normalizing to the same formula amount.
     expect(r.debit_per_species.Ca).toBeGreaterThan(0);
     expect(r.debit_per_species.CO3).toBeGreaterThan(0);
-    expect(r.debit_per_species.Ca).toBeCloseTo(r.debit_per_species.CO3, 10);
+    expect(r.debit_per_species.Ca).not.toBeCloseTo(r.debit_per_species.CO3, 10);
+    expect(r.debit_per_species.Ca / 40.08).toBeCloseTo(r.debit_per_species.CO3 / 60.01, 12);
   });
 
   it('returns null for minerals without stoichiometry', () => {

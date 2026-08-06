@@ -11,6 +11,7 @@
 // ============================================================
 
 function showTitleScreen() {
+  if (typeof cancelSimulationPlayback === 'function') cancelSimulationPlayback();
   hideAllMenuAndModePanels();
   document.body.classList.add('title-on');
   const titleScreen = document.getElementById('title-screen');

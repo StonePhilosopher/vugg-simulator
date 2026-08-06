@@ -5,7 +5,7 @@
 //      _graduatedZones property stays null after run_step.
 //   2. With the flag flipped ON (the v128c default), _graduatedZones
 //      is populated as a Map keyed by crystal_id.
-//   3. The wiring path (_dryRunEngineForCrystal + _applyZoneMassBalance)
+//   3. The wiring path (_dryRunEngineForCrystal + _applyZoneGrowthBudget)
 //      doesn't crash when invoked against a realistic scenario.
 //   4. Flag-flipping doesn't leak state into subsequent tests — the
 //      afterAll restores the bundle's v128c default (true) so the

@@ -37,8 +37,9 @@ function runSulphurBank(seed: number) {
 describe('Realgar (AsS) + Orpiment (As₂S₃) — v82 mineral additions', () => {
   describe('supersaturation_realgar gates', () => {
     function sigmaAt(opts: any): number {
-      const fluid = new FluidChemistry(opts);
-      const cond = new VugConditions({ temperature: opts.T ?? 75, fluid });
+      const { T, ...fluidOpts } = opts;
+      const fluid = new FluidChemistry(fluidOpts);
+      const cond = new VugConditions({ temperature: T ?? 75, fluid });
       return cond.supersaturation_realgar();
     }
 
@@ -68,8 +69,9 @@ describe('Realgar (AsS) + Orpiment (As₂S₃) — v82 mineral additions', () =>
 
   describe('supersaturation_orpiment gates', () => {
     function sigmaAt(opts: any): number {
-      const fluid = new FluidChemistry(opts);
-      const cond = new VugConditions({ temperature: opts.T ?? 75, fluid });
+      const { T, ...fluidOpts } = opts;
+      const fluid = new FluidChemistry(fluidOpts);
+      const cond = new VugConditions({ temperature: T ?? 75, fluid });
       return cond.supersaturation_orpiment();
     }
 
@@ -134,13 +136,16 @@ describe('Realgar (AsS) + Orpiment (As₂S₃) — v82 mineral additions', () =>
         .toBeGreaterThanOrEqual(4);
     });
 
-    it.each([42, 1, 7])('seed %d: at least 4 active orpiment crystals', (seed) => {
+    it.each([42, 1, 7])('seed %d: at least 4 extant orpiment crystals, including an exposed survivor', (seed) => {
       const { sim } = runSulphurBank(seed);
-      const active = sim.crystals.filter((c: any) =>
-        c.mineral === 'orpiment' && c.active,
-      );
-      expect(active.length, `seed ${seed}: only ${active.length} active orpiment`)
+      const orpiment = sim.crystals.filter((c: any) => c.mineral === 'orpiment');
+      const extant = orpiment.filter((c: any) => !c.dissolved && c.total_growth_um > 0);
+      const exposed = extant.filter((c: any) => c.active);
+      const enclosed = extant.filter((c: any) => c.enclosed_by != null);
+      expect(extant.length, `seed ${seed}: only ${extant.length} extant orpiment`)
         .toBeGreaterThanOrEqual(4);
+      expect(exposed.length, `seed ${seed}: no exposed orpiment survivor`).toBeGreaterThanOrEqual(1);
+      expect(exposed.length + enclosed.length).toBe(extant.length);
     });
 
     it.each([42, 1, 7])('seed %d: realgar-origin reaches a canonical habit', (seed) => {

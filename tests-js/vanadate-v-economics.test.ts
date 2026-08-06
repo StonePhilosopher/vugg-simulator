@@ -131,5 +131,5 @@ describe('v193 — the descloizite-group vanadate reaches its type-abundance sup
       return alive(sim, 'mottramite') + alive(sim, 'descloizite') > 0;
     }).length;
     expect(hits, `descloizite-group grew in ${hits}/5 seeds`).toBeGreaterThanOrEqual(3);
-  });
+  }, 120_000); // Five full stochastic specimens can exceed Vitest's 60 s default under fleet-wide CI contention.
 });

@@ -12,7 +12,7 @@
  * comparable across supersaturation_* methods; calcite research doc §5).
  *
  * 18th-catch basis rule: σ is sampled AFTER run_step (post-growth,
- * post-mass-balance) — the basis the classifier runs on. Pre-hoist
+ * post-growth-budget) — the basis the classifier runs on. Pre-hoist
  * engines (halite/sylvite/bismuth…) made in-step habit flips from the
  * IN-STEP σ; those legacy thresholds are NOT valid on this basis. To
  * make the gap visible, the survey also samples the in-step σ (before

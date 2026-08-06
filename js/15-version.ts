@@ -12283,5 +12283,129 @@
 //       boulder (boss). elmwood-snowball variety guard KEEPS selenite (it
 //       is still present; the handoff's remove-instruction was conditioned
 //       on the death that didn't happen).
-const SIM_VERSION = 237;
+// v238 — SCIENCE-FIRST HOSTILE-REVIEW TRANCHE 1 (2026-08-05): model
+//       identity now matches the behavior players actually run. Corrects the
+//       Hacker et al. calcite/aragonite polynomial sign and carries its +/-1
+//       kbar uncertainty; separates cavity-fluid pressure from optional
+//       rock/confining pressure for the uncertainty-aware Pattison Al2SiO5
+//       grid; makes sabkha flood/evap chemistry absolute replacement rather
+//       than replace-as-delta; and turns Creative dissolved Ge into a labelled
+//       empirical, mass-accounted sphalerite tracer (Kd 1708 +/-157 at 200 C,
+//       structural cap, accepted-zone debit + dissolution return). Adds the
+//       semantic MODEL_DIGEST to saves, strips, agent output, and claim cards
+//       so a same-version scientific-model mismatch is visible rather than
+//       silently replayed. Pressure, confining-pressure, stress, and phase-field
+//       decisions are now explicit in adversarial claim cards. Baseline and
+//       strip artifacts rebaked only after the focused correction tests passed.
+// v239 — HOSTILE-REVIEW ROUND 3 CONSERVATION + SCENARIO RECONCILIATION
+//       (2026-08-05). Growth engines now execute transactionally: legacy direct
+//       fluid mutations are measured and rolled back, then the simulator debits
+//       only the FINAL accepted thickness after time scaling, competition,
+//       burial/fill damping, and cavity clamps. The 0.004 accepted-zone unit
+//       coefficient preserves v238's default-timescale mass while making time
+//       scale proportional instead of quintuple-booked. Positive zones store
+//       their exact solid inventory; dissolution removes chronological LIFO
+//       shells and returns precisely that inventory, including shell-specific
+//       Ge, with a 5 µm resolvable-solid floor. Engine-only supplements such as
+//       chromophores and redox effects are replayed once at accepted scale.
+//       This retires hundreds of hidden double-debits and the empirical
+//       dissolution-rate mass source. Reviewer-driven reconciliation: Bisbee's
+//       barren reducing pulse is genuinely low-S and restores wire native Cu;
+//       halite has high (0.8) vadose-efflorescence propensity; beryl-family K is
+//       re-measured at 36 under the new ledger; one locally supersaturated
+//       post-HF recovery generation can nucleate on freshly exposed wall.
+//       Enclosure-aware tests now distinguish extant inclusions and weathered
+//       cores from full dissolution; morphology and O2 renderer contracts test
+//       their mechanisms instead of stale seed-specific population accidents.
+//       Searles borax/tincalconite was re-opened when exact partial dissolution
+//       left real grown borax remnants rather than the old all-or-nothing husks.
+//       Primary phase-system evidence overturns v234's too-narrow museum-drawer
+//       reading: the pure Na-borate transition is 60.8 C, saturated NaCl-
+//       Na-borate lowers it to 39.6 C, and natural Searles material includes
+//       both brine-contact crystals and borax replacements. The 55 C saline
+//       summer therefore produces tincalconite by an executed phase boundary;
+//       reversible high-humidity hydration remains explicitly out of model.
+// v240 — HOSTILE-REVIEW ROUND 4 COMPETITION CONSERVATION (2026-08-05).
+//       Graduated competition now budgets the physical candidate thickness
+//       after simulation time scaling, matching the accepted-zone ledger. The
+//       former raw-thickness budget could understate demand by 5x at the default
+//       clock and accept more solid than the available fluid could supply.
+//       Allocation scales both thickness and recorded growth rate. Formation
+//       diagnosis also uses effective bare-wall OR substrate-assisted
+//       eligibility for historical verdicts and labels host-dependent support.
+//       Engine-side crystal mutations now stage with the fluid dry-run and commit
+//       only for a positive accepted zone; rejected candidates cannot leak habit,
+//       trace, film, or interlocking state. Supplemental trace uptake records the
+//       actual clamped debit, so later dissolution cannot return unavailable mass.
+//       Diagnostic uncertainty and observer-only qualifications are visible on
+//       touch/focus as well as hover. Event-sourced saves now fail closed before
+//       replay unless SIM version, model digest, and authored scenario hash match.
+//       Calcite Mn/Fe solid ppm now convert to atoms/formula and join the exact
+//       accepted-shell ledger; repeated acid dissolution returns only remaining
+//       inventory. Arsenopyrite Au narration and oxidation likewise read/return
+//       the remaining accepted Au inventory rather than replaying zone labels.
+// v241 — HOSTILE-REVIEW ROUND 5 MOLE-CORRECT LEDGER + CAUSAL DIAGNOSIS
+//       (2026-08-05). Formula stoichiometry is now dimensionally explicit:
+//       accepted micrometres carry mmol formula/kg, converted to each species'
+//       mg/kg debit by its formula coefficient and molar mass. Competition and
+//       the final pool cap spend that same mass-weighted demand, so a 1:1
+//       CaCO3 zone removes equal moles rather than equal ppm masses. If any
+//       mandatory species is limiting, the whole zone and its growth rate shrink
+//       together before crystal mutations commit; trace substitutions remain
+//       optional and dissolve from the exact accepted shell inventory.
+//       Nucleation equality is consistently non-forming (sigma <= sigma_crit),
+//       and diagnostic data attributes preserve full floating-point thresholds.
+//       The Creative mineral explainer now probes the registered production
+//       nucleator on an isolated simulator clone: repeat thresholds, active and
+//       total caps, family priority, and effective stochastic birth draws are
+//       reported instead of inferred from the supersaturation number alone.
+//       Read-traced one-lever counterfactuals expose engine-specific blockers
+//       such as hydrozincite's SiO2/S/Cu ratios. Nucleation floors are separated
+//       from formula-limited supported growth, and raw-CO3 engine routes share
+//       one canonical availability helper with the panel. The pressure ledger
+//       now records the implemented confining-pressure control and the bounded
+//       Pattison/Hacker uncertainty behavior rather than describing them as
+//       future work. The corrected ledger exposed Shigar's 140 mm authored
+//       cavity sealing before its documented late F-rich topaz pulse; a
+//       source-bounded 220 mm cavity restores the staged six-phase pocket by
+//       the physical space lever rather than a species-scoreboard exception.
+// v242 — HOSTILE-REVIEW ROUND 6 MODEL-BOUNDARY CORRECTION (2026-08-05).
+//       The formula-ratio ledger is now named and disclosed everywhere as a
+//       calibrated stoichiometric axial-growth budget proxy. Its fixed
+//       mmol-formula/kg-per-axial-µm basis preserves formula mole ratios and
+//       exact closure of booked shell inventory, but does not scale with grain
+//       size, habit, density, or rendered shell volume and therefore is not a
+//       physical extensive mass-conservation calculation. The Creative setup,
+//       mineral-formation diagnosis, control audit, claim cards, identifiers,
+//       warnings, and tests use that bounded claim. The pinned diagnosis keeps
+//       its accessible dialog label, sticky 44 px Close control, Escape support,
+//       and focus restoration, but is explicitly nonmodal (no false aria-modal
+//       promise). Schneeberg now records bismuthinite's intentional SIM 241
+//       disappearance without a species-specific retune.
+const SIM_VERSION = 242;
+
+// Human-auditable semantic identity for the load-bearing scientific choices.
+// SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
+// a saved recipe, strip, or machine-readable result used. Update it whenever
+// any token's meaning changes, even if a developer forgets a version bump—the
+// mismatch guards then fail loudly instead of allowing provenance drift.
+const MODEL_DIGEST = [
+  'Pfluid:kbar-0.01..4.4',
+  'CaCO3:Hacker05-negative-linear+/-1kbar',
+  'Prock:Pattison92-AndSil-16+/-3barC',
+  'stress:instant-resolved-shear-stable-grain-v2',
+  'event-fluid:absolute-replace-v1',
+  'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
+  'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
+  'CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1',
+  'growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6',
+  'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',
+  'engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3',
+  'beryl:K36-postHF-recovery-v1',
+  'halite:vadose-propensity0.8-v1',
+  'borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1',
+  'competition:accepted-axial-timescale+formula-weighted-budget-v3',
+  'diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4',
+  'save-identity:version+model+scenario-fail-closed-v1',
+].join('|');
 

@@ -39,6 +39,8 @@ declare function _saveManualNamed(name: string): any;
 declare function loadSaveById(id: string): boolean;
 declare function collectAllCrystals(crystals: any[], metaFn: any, opts?: any): { count: number; newSpecies: string[] };
 declare function _libraryProgressHTML(opts?: any): string;
+declare const MODEL_DIGEST: string;
+declare const SCENARIOS: Record<string, any>;
 
 // Real broth sliders so the recording has something genuine to capture.
 // Held by module-scoped references — setup.ts's DOM stub wraps
@@ -68,6 +70,23 @@ function ensureSlider(key: string, min: string, max: string, value: string): HTM
 function ensureFeSlider(): HTMLInputElement {
   ensureSlider('temp', '25', '600', '300');
   return ensureSlider('fe', '0', '500', '0');
+}
+
+function ensureAllChemistrySliders(): Record<string, number> {
+  const registry = (globalThis as any).CREATIVE_CHEMISTRY_CONTROLS;
+  const expected: Record<string, number> = {};
+  for (const [field, control] of Object.entries(registry) as Array<[string, any]>) {
+    const increments = Math.max(1, Math.floor((control.max - control.min) * 0.61 / control.step));
+    const canonical = Math.min(control.max, control.min + increments * control.step);
+    ensureSlider(
+      control.liveKey,
+      String(control.min * control.scale),
+      String(control.max * control.scale),
+      String(canonical * control.scale),
+    ).step = String(control.step * control.scale);
+    expected[field] = canonical;
+  }
+  return expected;
 }
 
 function fingerprint(sim: any) {
@@ -108,14 +127,14 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     expect(loadSaves().length).toBe(1); // autosave opened at begin
     expect(loadSaves()[0].kind).toBe('auto');
 
-    // A varied run: time, temperature verbs, a broth-slider change
-    // mid-run (the re-sync loop feeds it to the sim on the next
-    // action), pH tweaks, a seismic tap (rng-consuming twinning roll).
+    // A varied run: time, temperature verbs, a real broth input event,
+    // pH tweaks, and a seismic tap (rng-consuming twinning roll).
     fortressStep('wait');
     fortressStep('wait');
     fortressStep('heat');
     fortressStep('wait_10');
     ensureFeSlider().value = '120';
+    setBrothValue('fe', '120');
     fortressStep('wait');
     fortressStep('tweak_acidify');
     fortressStep('wait');
@@ -130,6 +149,8 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     const manual = _saveManualNamed('round-trip probe');
     expect(manual).toBeTruthy();
     expect(manual.kind).toBe('manual');
+    expect(manual.model_digest).toBe(MODEL_DIGEST);
+    expect(manual.scenario_spec_hash).toBe(SCENARIOS.cooling._scenario_spec_hash);
     // The broth delta for Fe must be IN the action log (not just final state).
     const hasFeDelta = manual.actions.some((a: any) => a.b && a.b.fe === '120');
     expect(hasFeDelta).toBe(true);
@@ -143,6 +164,34 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     expect(after).toEqual(before);
   });
 
+  it('fails closed before replay when the saved scientific model digest is tampered', () => {
+    fortressBeginFromScenario('cooling', 424243);
+    fortressStep('wait');
+    const manual = _saveManualNamed('tampered model identity');
+    const records = loadSaves();
+    const stored = records.find((r: any) => r.id === manual.id);
+    stored.model_digest = 'tampered-model-digest';
+    localStorage.setItem('vugg-saves-v1', JSON.stringify(records));
+
+    fortressReset();
+    expect(loadSaveById(manual.id)).toBe(false);
+    expect(_liveFortressSim()).toBeNull();
+  });
+
+  it('fails closed before replay when an authored scenario specification hash is tampered', () => {
+    fortressBeginFromScenario('cooling', 424244);
+    fortressStep('wait');
+    const manual = _saveManualNamed('tampered scenario identity');
+    const records = loadSaves();
+    const stored = records.find((r: any) => r.id === manual.id);
+    stored.scenario_spec_hash = 'tampered-scenario-hash';
+    localStorage.setItem('vugg-saves-v1', JSON.stringify(records));
+
+    fortressReset();
+    expect(loadSaveById(manual.id)).toBe(false);
+    expect(_liveFortressSim()).toBeNull();
+  });
+
   it('starter-fluid runs round-trip too (wall shape_seed derives from the run seed)', () => {
     fortressBeginFromStarterFluid('carbonate', 777001);
     for (let i = 0; i < 6; i++) fortressStep('wait');
@@ -154,6 +203,41 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     fortressReset();
     expect(loadSaveById(manual.id)).toBe(true);
     expect(fingerprint(_liveFortressSim())).toEqual(before);
+  });
+
+  it('restores a live control edit saved before any later geological action', () => {
+    fortressBeginFromScenario('cooling', 777002);
+    ensureFeSlider().value = '120';
+    (globalThis as any).setBrothValue('fe', '120');
+    const manual = _saveManualNamed('pending control probe');
+    expect(manual.pending_broth).toEqual({ fe: '120' });
+
+    fortressReset();
+    ensureFeSlider().value = '0';
+    expect(loadSaveById(manual.id)).toBe(true);
+    expect(_liveFortressSim().conditions.fluid.Fe).toBe(120);
+  });
+
+  it('round-trips every Creative chemistry lever through live UI → save → replay', () => {
+    const expected = ensureAllChemistrySliders();
+    const registry = (globalThis as any).CREATIVE_CHEMISTRY_CONTROLS;
+    fortressBeginFromScenario('cooling', 777003);
+    for (const [field, control] of Object.entries(registry) as Array<[string, any]>) {
+      const canonical = expected[field];
+      (globalThis as any).setBrothValue(control.liveKey, String(canonical * control.scale));
+      expect(_liveFortressSim().conditions.fluid[field], `${field}.live write`).toBe(canonical);
+    }
+    const manual = _saveManualNamed('all chemistry replay probe');
+    expect(Object.keys(manual.pending_broth)).toHaveLength(Object.keys(registry).length);
+
+    fortressReset();
+    for (const control of Object.values(registry) as any[]) {
+      ensureSlider(control.liveKey, '0', String(control.max * control.scale), '0').value = '0';
+    }
+    expect(loadSaveById(manual.id)).toBe(true);
+    for (const [field, canonical] of Object.entries(expected)) {
+      expect(_liveFortressSim().conditions.fluid[field], `${field}.replay`).toBe(canonical);
+    }
   });
 
   it('the rolling autosave updates in place on every action', () => {

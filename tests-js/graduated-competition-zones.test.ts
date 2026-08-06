@@ -9,7 +9,7 @@
 //
 //   The v128 architecture bug (before the globalThis fix) broke one
 //   invariant: engine called exactly once per crystal per step. When
-//   MASS_BALANCE_SCALE was read from globalThis (unavailable in the
+//   the growth-budget calibration was read from globalThis (unavailable in the
 //   harness), every dry-run returned null, so _graduatedZones had null
 //   for every crystal, then pass-2 fell through to _runEngineForCrystal
 //   and called the engine again — double-call, RNG drift, calibration
@@ -234,7 +234,7 @@ describe('_computeGraduatedZones — dissolution zones', () => {
   it('dissolution zones (negative thickness_um) are stored as-is, not nulled or scaled', () => {
     // Dissolution bypasses the rationing pass — releasing species doesn't
     // compete for budget. The zone must appear in the map with its original
-    // negative thickness so pass-2 can call _applyZoneMassBalance (which
+    // negative thickness so pass-2 can call _applyZoneGrowthBudget (which
     // releases the species back to the fluid).
     (globalThis as any).setGraduatedCompetitionEnabled(true);
 
@@ -344,8 +344,8 @@ describe('_computeGraduatedZones — RNG determinism (engine-called-once invaria
 
   it('flag-off path produces different RNG consumption than flag-on (not byte-equal)', () => {
     // Sanity test: graduated comp changes the order and timing of engine
-    // calls (pass-1 dry-run before any mass-balance, vs serial engine +
-    // mass-balance per crystal in v127). Two runs with the same seed but
+    // calls (pass-1 dry-run before any growth-budget, vs serial engine +
+    // growth-budget per crystal in v127). Two runs with the same seed but
     // different flag state should produce different crystal growth totals.
     //
     // If they produced identical output it would suggest graduated comp

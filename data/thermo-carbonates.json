@@ -467,21 +467,24 @@
   "rosasite": {
     "formula": "(Cu,Zn)2(CO3)(OH)2",
     "thermodynamics": {
-      "deltaGf_kJ_mol": null,
+      "deltaGf_kJ_mol": -1100,
       "deltaHf_kJ_mol": null,
       "S_J_mol_K": null,
-      "logKsp_25C": null,
+      "logKsp_25C": -36.400,
       "logKsp_fit": {
-        "form": "estimated_from_endmembers",
-        "endmember_malachite_fraction": 0.5,
-        "endmember_smithsonite_fraction": 0.5,
-        "notes": "Variable composition between Cu and Zn endpoints; thermodynamic data tracks the dominant cation. For sim purposes, treat as malachite × (Cu fraction) + smithsonite × (Zn fraction) ideal mixture."
+        "form": "constant_25C_only",
+        "representative_stoichiometry": { "Cu": 1.3, "Zn": 0.7, "CO3": 1, "OH": 2 },
+        "reported_compositions": ["Cu1.16Zn0.84(CO3)(OH)2", "Cu1.4Zn0.6(CO3)(OH)2"],
+        "notes": "Alwan et al. (1980) report Ksp=3.98e-37 for natural rosasite; Kaluza et al. (2024) reproduce that value for two reported compositions. The simulator uses the midpoint Cu1.3Zn0.7 only for an observer calculation. No solid-solution activity model or temperature correction is claimed."
       },
-      "valid_T_range_C": [0, 100],
-      "sources": [],
-      "databases_agree": [],
-      "confidence_tier": "D",
-      "notes": "No direct thermodynamic data published. (Cu,Zn) mixed carbonate with continuous solid solution between rosasite (Cu-rich) and aurichalcite (Zn-rich). For Phase 1: treat as malachite-smithsonite ideal mixture, flag the mineral as tier-D in narrator footnotes. THIS IS A REAL DATABASE GAP — surface in audit report."
+      "valid_T_range_C": [25, 25],
+      "sources": [
+        "Alwan, Thomas & Williams (1980), Transition Metal Chemistry 5:3-5, doi:10.1007/BF01396855",
+        "Kaluza et al. (2024), Industrial & Engineering Chemistry Research 63:14333-14351, doi:10.1021/acs.iecr.4c01616"
+      ],
+      "databases_agree": ["Alwan1980", "Kaluza2024-literature-table"],
+      "confidence_tier": "C",
+      "notes": "A direct 25°C Ksp and sample-specific ΔGf (-1100 kJ/mol) exist, closing the former no-data Tier-D claim. Confidence remains C because rosasite is a variable-composition mixed Cu-Zn hydroxycarbonate and no defensible activity-composition or temperature model is implemented. The values are observer/provenance data only; nucleation remains the disclosed empirical composition/temperature gate."
     },
     "kinetics": {
       "rate_law": "calcite_pwp_scaled",
@@ -498,21 +501,29 @@
   "aurichalcite": {
     "formula": "(Zn,Cu)5(CO3)2(OH)6",
     "thermodynamics": {
-      "deltaGf_kJ_mol": null,
+      "deltaGf_kJ_mol": -2766,
       "deltaHf_kJ_mol": null,
       "S_J_mol_K": null,
-      "logKsp_25C": null,
+      "logKsp_25C": -76.16,
       "logKsp_fit": {
-        "form": "estimated_from_endmembers",
-        "endmember_hydrozincite_fraction": 0.7,
-        "endmember_malachite_fraction_pair": 0.3,
-        "notes": "Zn-dominant analog of rosasite. Approximate as hydrozincite-malachite mixture proportioned by cation ratio."
+        "form": "constant_25C_only",
+        "representative_stoichiometry": { "Zn": 2.9, "Cu": 2.1, "CO3": 2, "OH": 6 },
+        "reported_logKsp": {
+          "synthetic_Zn2.9Cu2.1_25C": -76.16,
+          "natural_Zn2.27Cu2.73_25C": -90.10,
+          "synthetic_Zn2.9Cu2.1_45C": -79.05,
+          "synthetic_Zn2.9Cu2.1_65C": -82.19
+        },
+        "notes": "Kaluza et al. (2024) fitted logKsp=-76.16 at 25°C for synthetic Zn2.9Cu2.1 aurichalcite and found strong temperature/model dependence; their literature table gives -90.10 for a different natural composition from Alwan et al. (1980). The simulator exposes the 2024 Zn-rich composition as an observer with a conflict warning, never as an engine constant."
       },
-      "valid_T_range_C": [0, 100],
-      "sources": [],
-      "databases_agree": [],
-      "confidence_tier": "D",
-      "notes": "No direct thermodynamic data. Variable composition. Continuous solid solution with rosasite on the Zn-rich end. For Phase 1: treat as hydrozincite-dominant mixture. ANOTHER REAL DATABASE GAP — surface in audit report."
+      "valid_T_range_C": [25, 65],
+      "sources": [
+        "Alwan, Thomas & Williams (1980), Transition Metal Chemistry 5:3-5, doi:10.1007/BF01396855",
+        "Kaluza et al. (2024), Industrial & Engineering Chemistry Research 63:14333-14351, doi:10.1021/acs.iecr.4c01616"
+      ],
+      "databases_agree": ["CONFLICT: composition/model-dependent spread of about 14 log units at 25C"],
+      "confidence_tier": "C",
+      "notes": "Direct measurements and a sample-specific ΔGf (-2766 kJ/mol) now exist, closing the former no-data Tier-D claim, but they are not interchangeable: composition and the aqueous speciation/activity model dominate the fitted Ksp. The 25°C synthetic Zn2.9Cu2.1 value is observer-only and is explicitly labelled a disputed composition-specific proxy. The empirical engine remains active until a solid-solution model is validated."
     },
     "kinetics": {
       "rate_law": "calcite_pwp_scaled",

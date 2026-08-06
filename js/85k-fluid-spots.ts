@@ -143,6 +143,29 @@ function _seedFluidSpots(shapeSeed: number, cellCount: number, opts: any = {}): 
   if (n === 0) return [];
   const rng = _makeSpotRng(shapeSeed);
 
+  // Creative's feeder editor may specify exact mesh cells. This is the same
+  // physical spot model as seeded scenarios, just with an explicit geometry
+  // boundary condition. Invalid/duplicate cells are rejected deterministically.
+  if (Array.isArray(opts.spots)) {
+    const used = new Set<number>();
+    const explicit: FluidSpot[] = [];
+    for (const raw of opts.spots) {
+      const cell = Math.floor(Number(raw?.cell));
+      if (!Number.isFinite(cell) || cell < 0 || cell >= n || used.has(cell)) continue;
+      used.add(cell);
+      const kind: FluidSpotKind = _SPOT_KINDS.includes(raw?.kind) ? raw.kind : 'crack';
+      const defaults = _KIND_DEFAULTS[kind];
+      explicit.push({
+        cell,
+        kind,
+        open: raw?.open !== false,
+        supply: Number.isFinite(raw?.supply) ? Math.max(0, raw.supply) : defaults.supply,
+        decayBonus: Number.isFinite(raw?.decayBonus) ? Math.max(0, raw.decayBonus) : defaults.decayBonus,
+      });
+    }
+    return explicit;
+  }
+
   // Count: a fixed override, else a small seeded distribution (mode 1-2, can
   // be 0). Clamped to [minCount, maxCount] then to the available cell count.
   let count: number;

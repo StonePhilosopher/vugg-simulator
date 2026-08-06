@@ -426,7 +426,7 @@ function _nuc_covellite(sim) {
 
 function _nuc_skutterudite(sim) {
   const sigma = sim.conditions.supersaturation_skutterudite();
-  if (sigma < MINERAL_GATES_skutterudite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_skutterudite.sigma_crit) return;
   if (sim._atNucleationCap('skutterudite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'skutterudite' && c.active);
   if (existing.length >= 2) return;
@@ -444,7 +444,7 @@ function _nuc_skutterudite(sim) {
 
 function _nuc_safflorite(sim) {
   const sigma = sim.conditions.supersaturation_safflorite();
-  if (sigma < MINERAL_GATES_safflorite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_safflorite.sigma_crit) return;
   if (sim._atNucleationCap('safflorite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'safflorite' && c.active);
   if (existing.length >= 2) return;
@@ -462,7 +462,7 @@ function _nuc_safflorite(sim) {
 
 function _nuc_rammelsbergite(sim) {
   const sigma = sim.conditions.supersaturation_rammelsbergite();
-  if (sigma < MINERAL_GATES_rammelsbergite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_rammelsbergite.sigma_crit) return;
   if (sim._atNucleationCap('rammelsbergite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'rammelsbergite' && c.active);
   if (existing.length >= 2) return;
@@ -478,7 +478,7 @@ function _nuc_rammelsbergite(sim) {
 
 function _nuc_loellingite(sim) {
   const sigma = sim.conditions.supersaturation_loellingite();
-  if (sigma < MINERAL_GATES_loellingite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_loellingite.sigma_crit) return;
   if (sim._atNucleationCap('loellingite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'loellingite' && c.active);
   if (existing.length >= 2) return;
@@ -500,7 +500,7 @@ function _nuc_loellingite(sim) {
 // fracture surfaces. RNG-cascade guard via sigma < 1.0 early-out.
 function _nuc_metacinnabar(sim) {
   const sigma = sim.conditions.supersaturation_metacinnabar();
-  if (sigma < MINERAL_GATES_metacinnabar.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_metacinnabar.sigma_crit) return;
   if (sim._atNucleationCap('metacinnabar')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'metacinnabar' && c.active);
   if (existing.length >= 3) return;
@@ -523,7 +523,7 @@ function _nuc_metacinnabar(sim) {
 
 function _nuc_proustite(sim) {
   const sigma = sim.conditions.supersaturation_proustite();
-  if (sigma < MINERAL_GATES_proustite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_proustite.sigma_crit) return;
   if (sim._atNucleationCap('proustite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'proustite' && c.active);
   if (existing.length >= 2) return;
@@ -543,7 +543,7 @@ function _nuc_proustite(sim) {
 
 function _nuc_pyrargyrite(sim) {
   const sigma = sim.conditions.supersaturation_pyrargyrite();
-  if (sigma < MINERAL_GATES_pyrargyrite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_pyrargyrite.sigma_crit) return;
   if (sim._atNucleationCap('pyrargyrite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'pyrargyrite' && c.active);
   if (existing.length >= 2) return;
@@ -567,7 +567,7 @@ function _nuc_pyrargyrite(sim) {
 // RNG-cascade guard: early-out if sigma < 1.0 BEFORE substrate picks.
 function _nuc_enargite(sim) {
   const sigma = sim.conditions.supersaturation_enargite();
-  if (sigma < MINERAL_GATES_enargite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_enargite.sigma_crit) return;
   if (sim._atNucleationCap('enargite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'enargite' && c.active);
   if (existing.length) return;  // primary stage — one nucleation per phase

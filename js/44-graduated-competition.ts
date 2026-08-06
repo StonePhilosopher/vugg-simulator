@@ -74,7 +74,7 @@ function setGraduatedWinnerTakesFrac(v: number): void {
 //
 // CrystalDryRun captures what one crystal's engine would have produced
 // under unconstrained fluid. The caller computes these by snapshotting
-// the cell's fluid and running engines without mass balance.
+// the cell's fluid and running engines without growth budget.
 
 interface CrystalDryRun {
   crystal_id: number;
@@ -82,7 +82,7 @@ interface CrystalDryRun {
   sigma: number;
   initiative: number;          // from js/43-initiative.ts computeInitiative
   desired_thickness_um: number;
-  debit_per_species: Record<string, number>;  // already × MASS_BALANCE_SCALE × stoich
+  debit_per_species: Record<string, number>;  // mg/kg demand for the requested physical zone
 }
 
 interface GraduatedAllocation {
@@ -312,8 +312,7 @@ function computeGraduatedAllocations(
 //
 // Helper for the simulator wiring (v128b). Given a crystal + its
 // computed sigma + zone.thickness_um + initiative score, materializes
-// the CrystalDryRun record by looking up MINERAL_STOICHIOMETRY +
-// MASS_BALANCE_SCALE.
+// the CrystalDryRun record by converting formula mole ratios to mg/kg demand.
 //
 // Returns null if the crystal has no stoichiometry entry — in that
 // case it should bypass graduated competition and grow at full rate
@@ -329,7 +328,7 @@ function buildCrystalDryRun(
   desired_thickness_um: number,
 ): CrystalDryRun | null {
   // SCRIPT-mode bundle: MINERAL_STOICHIOMETRY (js/19) and
-  // MASS_BALANCE_SCALE (js/18) are top-level `const` declarations that
+  // stoichiometricBudgetDebitPpmPerUm (js/19) is a top-level declaration that
   // wind up as closure-scoped identifiers after concatenation. Reading
   // them as free identifiers is the canonical pattern across the
   // bundle (engines do the same).
@@ -342,12 +341,14 @@ function buildCrystalDryRun(
   // output. Calibration test failed against its own baseline because
   // they were generated from different code paths. Fixed by reading
   // the constants from their script-scoped declarations.
-  if (typeof MINERAL_STOICHIOMETRY === 'undefined' || typeof MASS_BALANCE_SCALE === 'undefined') return null;
+  if (typeof MINERAL_STOICHIOMETRY === 'undefined'
+      || typeof stoichiometricBudgetDebitPpmPerUm === 'undefined') return null;
   const mineStoich = MINERAL_STOICHIOMETRY[mineral];
   if (!mineStoich) return null;
   const debit_per_species: Record<string, number> = {};
   for (const sp of Object.keys(mineStoich)) {
-    debit_per_species[sp] = MASS_BALANCE_SCALE * desired_thickness_um * mineStoich[sp];
+    debit_per_species[sp] = desired_thickness_um
+      * stoichiometricBudgetDebitPpmPerUm(sp, mineStoich[sp]);
   }
   return { crystal_id, mineral, sigma, initiative, desired_thickness_um, debit_per_species };
 }

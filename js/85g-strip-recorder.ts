@@ -106,6 +106,9 @@ class StripRecorder {
   // Whether the recorder is still accepting steps. Goes false on
   // finalize() OR when capturedSteps reaches axes.steps.
   private active: boolean;
+  private pressurePhaseTestimony: any[];
+  private stressEventTestimony: any[];
+  private lastSeenStressEventCount: number;
 
   constructor(sim: any, opts?: {
     angular_indices?: number,
@@ -164,9 +167,11 @@ class StripRecorder {
     }
 
     this.manifest = {
-      format_version: 3,
+      format_version: _STRIP_FORMAT_VERSION,
       sim_version: Number((sim && sim.SIM_VERSION) || (typeof SIM_VERSION !== 'undefined' ? SIM_VERSION : 0)),
+      model_digest: (typeof MODEL_DIGEST !== 'undefined') ? MODEL_DIGEST : undefined,
       scenario_id: String(sim?.conditions?._scenario?.id || sim?.conditions?._scenario_id || 'unknown'),
+      scenario_spec_hash: sim?.conditions?._scenario?.scenario_spec_hash,
       seed: Number(sim?._seed || 42),
       recorded_at: Date.now(),
       duration_steps: steps,
@@ -181,6 +186,9 @@ class StripRecorder {
     this.lastSeenCrystalCount = Array.isArray(sim?.crystals) ? sim.crystals.length : 0;
     this.capturedSteps = 0;
     this.active = true;
+    this.pressurePhaseTestimony = [];
+    this.stressEventTestimony = [];
+    this.lastSeenStressEventCount = 0;
   }
 
   // ---- chip classification helpers ----------------------------------
@@ -350,6 +358,45 @@ class StripRecorder {
       this.lastSeenCrystalCount = total;
     }
 
+    // Scientific testimony is captured from EXECUTED state, after the step's
+    // movements/events/growth have run. It is deliberately separate from the
+    // authored scenario claim later read by review-claim-card.
+    const temperatureC = Number(sim?.conditions?.temperature);
+    const fluidPressureKbar = Number(sim?.conditions?.pressure);
+    const confiningRaw = sim?.conditions?.wall?.confining_pressure_kbar;
+    const confiningPressureKbar = Number.isFinite(Number(confiningRaw))
+      ? Number(confiningRaw) : null;
+    const calciteBoundary = Number.isFinite(temperatureC)
+      && typeof calciteAragoniteBoundaryKbar === 'function'
+      ? calciteAragoniteBoundaryKbar(temperatureC) : null;
+    const al2sio5 = Number.isFinite(temperatureC)
+      && typeof al2sio5PhaseAssessment === 'function'
+      ? al2sio5PhaseAssessment(temperatureC, confiningPressureKbar) : null;
+    this.pressurePhaseTestimony.push({
+      step,
+      temperature_C: Number.isFinite(temperatureC) ? temperatureC : null,
+      fluid_pressure_kbar: Number.isFinite(fluidPressureKbar) ? fluidPressureKbar : null,
+      confining_pressure_kbar: confiningPressureKbar,
+      calcite_aragonite: {
+        boundary_kbar: calciteBoundary,
+        secure_aragonite: Number.isFinite(temperatureC) && Number.isFinite(fluidPressureKbar)
+          && typeof aragoniteIsPressureStable === 'function'
+          ? aragoniteIsPressureStable(temperatureC, fluidPressureKbar) : null,
+      },
+      al2sio5,
+      gypsum_anhydrite: {
+        pure_water_boundary_C: Number.isFinite(fluidPressureKbar)
+          && typeof gypsumAnhydriteBoundaryC === 'function'
+          ? gypsumAnhydriteBoundaryC(fluidPressureKbar) : null,
+      },
+    });
+    const stressEvents = Array.isArray(sim?._stressEvents) ? sim._stressEvents : [];
+    for (let i = this.lastSeenStressEventCount; i < stressEvents.length; i++) {
+      // Clone so later mutations cannot rewrite archived testimony.
+      this.stressEventTestimony.push(JSON.parse(JSON.stringify(stressEvents[i])));
+    }
+    this.lastSeenStressEventCount = stressEvents.length;
+
     this.capturedSteps++;
     // v3: no longer deactivate on capacity — _growCapacity handles
     // overflow now. Recorder stays active until finalize() is called
@@ -385,6 +432,8 @@ class StripRecorder {
       chip_data: this.chipData,
       nucleation_events: this.events,
       floor_data: this.floorData,
+      pressure_phase_testimony: this.pressurePhaseTestimony,
+      stress_event_testimony: this.stressEventTestimony,
     };
   }
 

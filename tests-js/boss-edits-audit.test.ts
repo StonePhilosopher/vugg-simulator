@@ -42,12 +42,10 @@ declare const EVENT_REGISTRY: any;
 declare const SCENARIOS: any;
 
 function makeBareConditions(opts: any = {}) {
-  // pressure default: 0.05 kbar (~50 bar, atmospheric basalt-vesicle
-  // setting, as deccan_zeolite uses in scenarios.json5). The
-  // apophyllite gate at 39-supersat-silicate.ts:54 rejects when
-  // pressure > 0.5 kbar — geologically correct (apophyllite is a
-  // shallow / low-confining-pressure mineral), so tests against the
-  // apophyllite gate must use a low-P fluid.
+  // pressure default: 0.05 kbar (~50 bar, shallow basalt-vesicle fluid
+  // pressure), matching deccan_zeolite. Higher-pressure apophyllite now uses
+  // an explicitly soft, occurrence-based rarity weight above 1.5 kbar rather
+  // than the unsupported 0.5-kbar hard wall.
   return new VugConditions({
     fluid: new FluidChemistry(opts.fluid || {}),
     wall: new VugWall(),

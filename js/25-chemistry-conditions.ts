@@ -14,7 +14,9 @@ class VugConditions {
   [key: string]: any;
   constructor(opts: any = {}) {
     this.temperature = opts.temperature ?? 350.0;
-    this.pressure = opts.pressure ?? 1.5;
+    // Isotropic FLUID pressure in the cavity (kbar), not depth, lithostatic
+    // pressure, or differential stress. See js/24-pressure-science.ts.
+    this.pressure = clampFluidPressureKbar(opts.pressure ?? 1.5);
     this.fluid = opts.fluid || new FluidChemistry();
     this.flow_rate = opts.flow_rate ?? 1.0;
     this.wall = opts.wall || new VugWall();

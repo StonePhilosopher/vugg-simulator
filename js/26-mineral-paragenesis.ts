@@ -275,6 +275,58 @@ function paragenesisDiscount(hostMineral: string, nucleatingMineral: string): nu
   return typeof factor === 'number' ? factor : 1.0;
 }
 
+// Executable heterogeneous-nucleation routes. This is deliberately narrower
+// than the literature/paragenesis table above: a documented association does
+// not affect gameplay until a nucleation function can actually select that
+// host AND calls `_sigmaDiscountForPosition` before its threshold decision.
+// The hover diagnosis and simulator enforcement both read this registry, so
+// the UI cannot advertise an unimplemented catalytic path.
+//
+// Source call sites:
+//   82-nucleation-carbonate: malachite, smithsonite, azurite
+//   89-nucleation-silicate: chrysocolla
+//   90-nucleation-sulfate: barite
+const ENGINE_EXECUTABLE_SUBSTRATE_ROUTES: Record<string, Set<string>> = {
+  malachite: new Set(['chalcopyrite']),
+  smithsonite: new Set(['sphalerite']),
+  azurite: new Set(['cuprite']),
+  chrysocolla: new Set(['azurite', 'cuprite', 'native_copper']),
+  barite: new Set(['sphalerite', 'galena']),
+};
+
+function engineExecutableSubstrateDiscount(
+  hostMineral: string,
+  nucleatingMineral: string,
+): number {
+  const routes = ENGINE_EXECUTABLE_SUBSTRATE_ROUTES[nucleatingMineral];
+  if (!routes || !routes.has(hostMineral)) return 1.0;
+  return paragenesisDiscount(hostMineral, nucleatingMineral);
+}
+
+function engineExecutableSubstrateRoute(host: any, nucleatingMineral: string) {
+  if (!host) return { executable: false, label: 'missing host' };
+  const discount = engineExecutableSubstrateDiscount(host.mineral, nucleatingMineral);
+  if (!(discount < 1)) return { executable: false, label: 'unregistered host' };
+
+  // Replacement engines intentionally nucleate on the exposed reaction
+  // surface left by a dissolving precursor. These predicates mirror the
+  // production selectors in 82/89; other routes require a living exposed host.
+  let executable = false;
+  if (nucleatingMineral === 'malachite' && host.mineral === 'chalcopyrite') {
+    executable = true; // production's active_cp_all deliberately means all records
+  } else if (nucleatingMineral === 'smithsonite' && host.mineral === 'sphalerite') {
+    executable = true; // fresh or oxidized sphalerite
+  } else if (nucleatingMineral === 'chrysocolla' && host.mineral === 'azurite') {
+    executable = !!host.active || !!host.dissolved;
+  } else {
+    executable = !!host.active && !host.dissolved && host.enclosed_by == null;
+  }
+  const label = host.dissolved
+    ? 'dissolved replacement surface'
+    : (host.active ? 'active exposed host' : 'recorded precursor surface');
+  return { executable, label, discount };
+}
+
 // Pick a substrate for a nucleating mineral, weighted by available
 // hosts and their per-pair discount factors. Pure helper — called by
 // VugSimulator._pickSubstrate which threads the live crystal list +

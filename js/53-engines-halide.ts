@@ -16,7 +16,7 @@ function grow_fluorite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.0) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(6.0, crystal.total_growth_um * 0.12);
-      // Phase 1e: Ca + F credits handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.fluorite.
+      // Phase 1e: Ca + F credits handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.fluorite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -126,8 +126,8 @@ function grow_fluorite(crystal, conditions, step) {
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
-  // Mass balance: F + Ca primary debits handled by Phase 1e
-  // applyMassBalance via MINERAL_STOICHIOMETRY.fluorite. Y consumption
+  // Growth budget: F + Ca primary debits handled by Phase 1e
+  // applyStoichiometricGrowthBudget via MINERAL_STOICHIOMETRY.fluorite. Y consumption
   // is a trace debit handled inline (substitutes at the Ca²⁺ site at
   // ~0.1-1% of fluorite by mass when present).
   if (f.Y > 0) f.Y = Math.max(f.Y - rate * 0.001, 0);
@@ -148,7 +148,7 @@ function grow_halite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.concentration < 1.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(8.0, crystal.total_growth_um * 0.20);
-      // Phase 1e: Na + Cl credits handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.halite.
+      // Phase 1e: Na + Cl credits handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.halite.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,

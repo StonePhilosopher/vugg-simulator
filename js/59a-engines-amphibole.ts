@@ -63,7 +63,7 @@ function grow_tremolite(crystal, conditions, step) {
     crystal.dominant_forms = ['compact felted aggregate', 'low-relief surface mass'];
   }
 
-  // Mass-balance debits — Ca2 Mg5 Si8
+  // Growth-budget debits — Ca2 Mg5 Si8
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.012, 0);
   conditions.fluid.Mg = Math.max(conditions.fluid.Mg - rate * 0.030, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.048, 0);

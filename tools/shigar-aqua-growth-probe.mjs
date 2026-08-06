@@ -112,6 +112,7 @@ function run(K, extraBe) {
     const sim = new VugSimulator(conditions, events);
     const dur = defaultSteps ?? 70;
     const sigmaTrace = [];
+    const postEtchTrace = [];
     for (let s = 1; s <= dur; s++) {
       sim.run_step();
       if (s === EVENT_STEP && extraBe > 0) {
@@ -123,6 +124,18 @@ function run(K, extraBe) {
         const sc = starCellSigma(sim);
         sigmaTrace.push({ s, cellSigma: sc.sigma, cellBe: sc.Be });
       }
+      if ([58, 59, 60, 62, 65, 68, 70].includes(s)) {
+        let bulkSigma = null;
+        try { bulkSigma = +sim.conditions.supersaturation_aquamarine().toFixed(2); } catch { bulkSigma = -1; }
+        postEtchTrace.push({
+          s,
+          bulkSigma,
+          bulkBe: +sim.conditions.fluid.Be.toFixed(2),
+          bulkFe: +sim.conditions.fluid.Fe.toFixed(2),
+          pH: +sim.conditions.fluid.pH.toFixed(2),
+          activeAquas: sim.crystals.filter(c => c.mineral === 'aquamarine' && c.active).length,
+        });
+      }
     }
     const aq = aquaSummary(sim);
     return {
@@ -130,7 +143,7 @@ function run(K, extraBe) {
       nAquas: aq.n, star_mm: aq.star_mm, fry_mm: aq.fry_mm,
       star_etchPct: aq.detail[0]?.etchedPct ?? null,
       fry_etchPct: aq.detail[aq.detail.length - 1]?.etchedPct ?? null,
-      sigmaTrace, census: speciesCensus(sim), big: bigComparators(sim),
+      sigmaTrace, postEtchTrace, census: speciesCensus(sim), big: bigComparators(sim),
       aquaSizes_mm: aq.detail.map(d => d.final_mm),
       nucSteps: aq.detail.map(d => d.nuc),
     };
@@ -196,6 +209,7 @@ function run(K, extraBe) {
   const cases = [
     [2.2, 22], [10, 0], [10, 22], [20, 0], [20, 22], [30, 22],
     [20, 60], [20, 100], [25, 100], [30, 100], [25, 130],
+    [36, 0], [37, 0],
   ];
   for (const [K, extraBe] of cases) grid.push(run(K, extraBe));
   console.log(JSON.stringify({ section: 'C_K_x_delivery_grid', grid }, null, 1));

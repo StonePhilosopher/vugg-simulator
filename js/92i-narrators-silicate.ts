@@ -45,7 +45,7 @@ Object.assign(VugSimulator.prototype, {
     if (c._sceptre.route === 'masking') {
       const film = c._sceptre.filmMineral || (c.zones || []).find((z: any) => z.masked_horizon && z.film_mineral)?.film_mineral;
       parts.push(narrative_variant('quartz', 'sceptre_masking', { capUm: c._sceptre.capUm.toFixed(0) })
-        || `A MASKING SCEPTRE: a ${film ? film + ' ' : ''}film frosted the prism faces mid-growth; the termination stayed free and renewed a wider second-generation cap through the film, leaving the masked horizon buried in the stem — the epitaxial-renewal habit (mass-conserving twin of the corrosion sceptre).`);
+        || `A MASKING SCEPTRE: a ${film ? film + ' ' : ''}film frosted the prism faces mid-growth; the termination stayed free and renewed a wider second-generation cap through the film, leaving the masked horizon buried in the stem — the non-corrosive epitaxial-renewal counterpart to the corrosion sceptre.`);
     } else {
       parts.push(narrative_variant('quartz', 'sceptre', { capUm: c._sceptre.capUm.toFixed(0) })
         || `A SCEPTRE: a fissure seal corroded the gen-1 termination, then a fresh silica breach regenerated a wider second-generation cap over the resorbed tip — the alpine crack-seal habit.`);

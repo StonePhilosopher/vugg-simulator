@@ -54,28 +54,24 @@ describe('native copper + gold morphology (the conflation sweep)', () => {
     expect(morphRegime(MORPH_TH.native_gold, 1.35)).toBe('spiral_smooth');
   });
 
-  it('THE CAST STORY: bisbee copper records dendritic mass on the pulse, then dissolves', () => {
+  it('THE CAST STORY: the Bisbee pulse grows wire copper, then oxidises and buries its surviving core', () => {
     const cu = bisbee().crystals.filter((c: any) => c.mineral === 'native_copper' && c.total_growth_um > 0);
     expect(cu.length).toBeGreaterThanOrEqual(1);
-    // the azurite era eats the trees — they survive as tagged casts
-    expect(cu.every((c: any) => c.dissolved)).toBe(true);
-    let dendr = 0, tot = 0;
+    // The oxidation front etches a rim; exact shell accounting retains the
+    // positive Cu core, which is subsequently enclosed by a supergene host.
+    expect(cu.every((c: any) => !c.dissolved)).toBe(true);
+    expect(cu.every((c: any) => c.enclosed_by != null)).toBe(true);
+    expect(cu.every((c: any) => c.zones.some((z: any) => z.thickness_um < 0))).toBe(true);
+    let stepped = 0, tot = 0;
     for (const c of cu) for (const z of c.zones || []) {
-      if (z.thickness_um > 0 && z.morph_regime) { tot += z.thickness_um; if (z.morph_regime === 'dendritic' || z.morph_regime === 'hopper_skeletal') dendr += z.thickness_um; }
+      if (z.thickness_um > 0 && z.morph_regime) {
+        tot += z.thickness_um;
+        if (z.morph_regime === 'stepped_mild' || z.morph_regime === 'stepped_macro') stepped += z.thickness_um;
+      }
     }
     expect(tot).toBeGreaterThan(0);
-    // The pulse signature is a dendritic/hopper burst in the growth record. Its
-    // exact thickness fraction is seed-42 calibration, not physics: rung 3's
-    // tiger's-eye substrate gate (SIM 229) removed upstream nucleation draws and
-    // re-dealt native_copper's growth window relative to the −400 Cu pulse — the
-    // v228 crystal grew to 133.7 µm and cleared 0.25, the re-dealt v229 crystal
-    // grows to 54.7 µm and records ~0.12 dendritic/hopper (it catches the pulse
-    // shoulder, not its step-264 peak). So pin the MECHANISM — a real dendritic
-    // burst is recorded, then the whole crystal dissolves — not the calibrated
-    // fraction; the σ→regime thresholds are verified directly above (native_copper
-    // σ 2.09 → dendritic).
-    expect(dendr).toBeGreaterThan(0);
-    expect(dendr / tot).toBeGreaterThan(0.05);
+    expect(stepped / tot).toBeGreaterThan(0.8);
+    for (const c of cu) expect(c.habit).toBe('wire_copper');
   });
 
   it('THE CONFLATION FIX: bisbee gold is spongy/dendritic, never nugget; the legacy texture strings are retired from dispatch', () => {

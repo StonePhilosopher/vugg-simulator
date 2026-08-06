@@ -131,9 +131,15 @@ describe('the salt-pan log (searles_lake, seed 42)', () => {
     // scenario whose salt persists.
     const halites = sim().crystals.filter((c: any) => c.mineral === 'halite');
     expect(halites.length).toBeGreaterThanOrEqual(15);
-    const dissolved = halites.filter((c: any) => c.dissolved).length;
-    expect(dissolved / halites.length).toBeGreaterThanOrEqual(0.6);   // most salt redissolves
-    expect(halites.length - dissolved).toBeGreaterThanOrEqual(1);     // late crusts survive to run-end
+    const etched = halites.filter((c: any) =>
+      (c.zones || []).some((z: any) => z.thickness_um < 0));
+    const dissolved = halites.filter((c: any) => c.dissolved);
+    const weatheredRemnants = etched.filter((c: any) => !c.dissolved && c.total_growth_um > 0);
+    // Fresh-water pulses attack most seasonal crusts, but exact shell
+    // accounting distinguishes a weathered core from complete removal.
+    expect(etched.length / halites.length).toBeGreaterThanOrEqual(0.6);
+    expect(dissolved.length).toBeGreaterThanOrEqual(1);
+    expect(weatheredRemnants.length).toBeGreaterThanOrEqual(1);
     // dendrite band deliberately unoccupied, like calcite's fleet
     expect(share(regimeMass(sim(), 'halite'), 'dendritic')).toBe(0);
   });

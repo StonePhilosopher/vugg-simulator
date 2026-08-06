@@ -11,6 +11,35 @@
 // ============================================================
 
 let running = false;
+let _simulationPlaybackGeneration = 0;
+let _simulationPlaybackTimer: any = null;
+let _simulationPromptCleanup: (() => void) | null = null;
+
+// Explicit lifecycle boundary for long computation and paced narrative.
+// Navigation calls this before hiding a mode so a stale timer or capture-
+// phase keyboard handler can never continue mutating a hidden screen.
+function cancelSimulationPlayback() {
+  _simulationPlaybackGeneration++;
+  if (_simulationPlaybackTimer != null) {
+    clearTimeout(_simulationPlaybackTimer);
+    _simulationPlaybackTimer = null;
+  }
+  if (_simulationPromptCleanup) {
+    _simulationPromptCleanup();
+    _simulationPromptCleanup = null;
+  }
+  running = false;
+  document.body.classList.remove('legends-playing');
+  const legendsControls = document.getElementById('legends-controls');
+  if (legendsControls) legendsControls.style.display = '';
+  const grow = document.getElementById('btn-grow') as HTMLButtonElement | null;
+  const random = document.getElementById('btn-random') as HTMLButtonElement | null;
+  if (grow) grow.disabled = false;
+  if (random) random.disabled = false;
+  document.querySelectorAll('.action-grid .action-btn').forEach((btn: any) => btn.disabled = false);
+  if (typeof _topoReplayActiveSnap !== 'undefined') _topoReplayActiveSnap = null;
+  _hideNarrativeSpeedCluster();
+}
 // =====================================================================
 // Simulation mode (internal name: "legends")
 // =====================================================================
@@ -37,7 +66,7 @@ let legendsSim = null;
 // "groove". See proposals/BACKLOG.md "Internal token cleanup".
 let grooveModalCrystal = null;
 
-function runSimulation() {
+async function runSimulation() {
   if (running) return;
   const scenarioName = document.getElementById('scenario').value;
   // Tier 1 B: scenario data lives in data/scenarios.json5 and is
@@ -114,7 +143,16 @@ function runSimulation() {
       };
     }
   }
-  const { conditions, events, defaultSteps } = SCENARIOS[scenarioName](scenarioOverrides);
+  let scenarioData;
+  try {
+    scenarioData = SCENARIOS[scenarioName](scenarioOverrides);
+  } catch (error) {
+    const outputEl = document.getElementById('output');
+    if (outputEl) outputEl.textContent = `Scenario “${scenarioName}” could not be initialized.`;
+    console.error('Scenario initialization failed:', error);
+    return;
+  }
+  const { conditions, events, defaultSteps } = scenarioData;
   const parsedSteps = stepsInput ? parseInt(stepsInput, 10) : NaN;
   const totalSteps = (parsedSteps && parsedSteps > 0) ? parsedSteps : defaultSteps;
 
@@ -166,8 +204,40 @@ function runSimulation() {
   } catch (_e) { /* strip view is optional */ }
   // === END HELIX-OVERLAY-FORK ADDITION ==============================
 
+  // Compute in deterministic chunks. Yielding never changes call order,
+  // RNG consumption, or scientific state; it only lets the browser paint,
+  // accept navigation, and cancel a long scenario between engine steps.
+  const computationGeneration = ++_simulationPlaybackGeneration;
+  running = true;
+  const growButton = document.getElementById('btn-grow') as HTMLButtonElement | null;
+  const randomButton = document.getElementById('btn-random') as HTMLButtonElement | null;
+  if (growButton) growButton.disabled = true;
+  if (randomButton) randomButton.disabled = true;
+  const progressOutput = document.getElementById('output');
+  const showComputeProgress = (completed: number) => {
+    if (!progressOutput) return;
+    progressOutput.innerHTML = '';
+    const status = document.createElement('div');
+    status.className = 'simulation-precompute';
+    status.setAttribute('role', 'status');
+    status.textContent = `Computing geological history… ${completed}/${totalSteps} steps`;
+    progressOutput.appendChild(status);
+  };
+  showComputeProgress(0);
+  let chunkStarted = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
   for (let s = 0; s < totalSteps; s++) {
-    const log = sim.run_step();
+    let log;
+    try {
+      log = sim.run_step();
+    } catch (error) {
+      if (computationGeneration === _simulationPlaybackGeneration) {
+        cancelSimulationPlayback();
+        if (progressOutput) progressOutput.textContent = 'Simulation stopped because the geological engine encountered an error.';
+      }
+      console.error('Simulation step failed:', error);
+      return;
+    }
     const show = (s % 5 === 0) || log.some(l => l.includes('EVENT') || l.includes('NUCLEATION') || l.includes('🧱'));
     if (show && log.length) {
       // The line index ABOUT TO BE PUSHED is the header for sim step (s+1).
@@ -183,7 +253,16 @@ function runSimulation() {
       }
       stepLineCounts[s + 1] = stepLines;
     }
+    const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    if (s + 1 < totalSteps && (now - chunkStarted >= 12 || (s + 1) % 4 === 0)) {
+      showComputeProgress(s + 1);
+      await new Promise<void>(resolve => setTimeout(resolve, 0));
+      if (computationGeneration !== _simulationPlaybackGeneration) return;
+      chunkStarted = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    }
   }
+
+  if (computationGeneration !== _simulationPlaybackGeneration) return;
 
   // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
   // Sim loop done — finalize the strip recording and persist. Non-
@@ -249,7 +328,7 @@ function runRandom() {
   if (shapeSeedEl) shapeSeedEl.value = String(shapeSeed);
   (document.getElementById('steps') as HTMLInputElement).value = '';
   document.getElementById('steps').setAttribute('value', '');
-  runSimulation();
+  void runSimulation();
 }
 
 // Narrative-tempo: insert a "click to continue" pill at a story
@@ -277,11 +356,17 @@ function _insertContinuePrompt(output: any, position: 'prologue' | 'epilogue', o
   try { pill.focus({ preventScroll: true } as any); } catch (_) {}
 
   let consumed = false;
-  const resume = () => {
+  const cleanup = () => {
     if (consumed) return;
     consumed = true;
     document.removeEventListener('keydown', onKey, true);
+    pill.removeEventListener('click', resume);
     if (pill.parentNode) pill.parentNode.removeChild(pill);
+    if (_simulationPromptCleanup === cleanup) _simulationPromptCleanup = null;
+  };
+  const resume = () => {
+    if (consumed) return;
+    cleanup();
     onResume();
   };
   const onKey = (ev: any) => {
@@ -303,6 +388,8 @@ function _insertContinuePrompt(output: any, position: 'prologue' | 'epilogue', o
   // shortcut listener in 99g-renderer-replay.ts, preventing Space
   // from triggering replay play/pause during the narrative pause.
   document.addEventListener('keydown', onKey, true);
+  _simulationPromptCleanup = cleanup;
+  return cleanup;
 }
 
 // Narrative-tempo speed cluster — three discrete settings the boss
@@ -420,6 +507,17 @@ function displayLines(
     if (typeof onDone === 'function') onDone();
     return;
   }
+  if (_simulationPlaybackTimer != null) clearTimeout(_simulationPlaybackTimer);
+  if (_simulationPromptCleanup) _simulationPromptCleanup();
+  _simulationPlaybackTimer = null;
+  _simulationPromptCleanup = null;
+  const playbackGeneration = ++_simulationPlaybackGeneration;
+  const schedule = (callback: () => void, delayMs: number) => {
+    _simulationPlaybackTimer = setTimeout(() => {
+      _simulationPlaybackTimer = null;
+      if (playbackGeneration === _simulationPlaybackGeneration) callback();
+    }, delayMs);
+  };
   running = true;
   if (typeof onStart === 'function') {
     onStart();
@@ -654,7 +752,10 @@ function displayLines(
   let narrativeEl = null;
 
   function addLine() {
+    if (playbackGeneration !== _simulationPlaybackGeneration) return;
     if (i >= lines.length) {
+      _simulationPlaybackTimer = null;
+      _simulationPromptCleanup = null;
       running = false;
       // Default cleanup re-enables the Simulation buttons. Callers
       // that supplied an onStart get to do their own teardown via
@@ -720,11 +821,12 @@ function displayLines(
       // Capture scroll-state BEFORE _insertContinuePrompt's appendChild
       // so the sticky-autoscroll decision reflects the user's intent.
       const live = wasAtLive();
-      _insertContinuePrompt(output, isPrologue ? 'prologue' : 'epilogue', () => {
+      _simulationPromptCleanup = _insertContinuePrompt(output, isPrologue ? 'prologue' : 'epilogue', () => {
+        _simulationPromptCleanup = null;
         // Defer one tick so the click event finishes propagating before
         // the next addLine renders — prevents a double-advance if the
         // click also lands on a subsequently-rendered line.
-        setTimeout(addLine, 0);
+        schedule(addLine, 0);
       });
       // Sticky snap — only force-scroll to the pill if the user was at
       // the live edge. Scrolled-away users keep their reading position.
@@ -798,7 +900,7 @@ function displayLines(
       output.appendChild(box);
       inNarrative = true;
       snapIfLive(live);
-      setTimeout(addLine, baseSetTimeoutFor(20));
+      schedule(addLine, baseSetTimeoutFor(20));
       return;
     }
 
@@ -810,12 +912,12 @@ function displayLines(
       span.className = 'line-header';
       output.appendChild(span);
       snapIfLive(live);
-      setTimeout(addLine, baseSetTimeoutFor(20));
+      schedule(addLine, baseSetTimeoutFor(20));
       return;
     }
 
     if (inNarrative && line.startsWith('─'.repeat(10))) {
-      setTimeout(addLine, baseSetTimeoutFor(5));
+      schedule(addLine, baseSetTimeoutFor(5));
       return;
     }
 
@@ -830,7 +932,7 @@ function displayLines(
       span.style.marginBottom = line === '' ? '0.5em' : '0';
       narrativeEl.appendChild(span);
       snapIfLive(live);
-      setTimeout(addLine, baseSetTimeoutFor(20));
+      schedule(addLine, baseSetTimeoutFor(20));
       return;
     }
 
@@ -859,7 +961,7 @@ function displayLines(
     // reading; once they scroll back to within STICK_TOLERANCE_PX of
     // the live edge, auto-snap resumes.
     snapIfLive(live);
-    setTimeout(addLine, perLineDelay());
+    schedule(addLine, perLineDelay());
   }
 
   // Mount the speed cluster so the user can change the scroll rate

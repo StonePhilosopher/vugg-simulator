@@ -45,8 +45,9 @@ function runSchneeberg(seed: number) {
 describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
   describe('supersaturation_pharmacolite gate correctness', () => {
     function sigmaAt(opts: any): number {
-      const fluid = new FluidChemistry(opts);
-      const cond = new VugConditions({ temperature: opts.T ?? 25, fluid });
+      const { T, ...fluidOpts } = opts;
+      const fluid = new FluidChemistry(fluidOpts);
+      const cond = new VugConditions({ temperature: T ?? 25, fluid });
       return cond.supersaturation_pharmacolite();
     }
 

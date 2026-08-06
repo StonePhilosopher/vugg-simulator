@@ -67,8 +67,9 @@ describe('Cassiterite — SnO₂ engine (v89)', () => {
 
   describe('supersaturation_cassiterite gate correctness', () => {
     function sigmaAt(opts: any): number {
-      const fluid = new FluidChemistry(opts);
-      const cond = new VugConditions({ temperature: opts.T ?? 500, fluid });
+      const { T, ...fluidOpts } = opts;
+      const fluid = new FluidChemistry(fluidOpts);
+      const cond = new VugConditions({ temperature: T ?? 500, fluid });
       return cond.supersaturation_cassiterite();
     }
 

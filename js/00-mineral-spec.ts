@@ -151,7 +151,12 @@ async function _loadSpec(paths) {
 }
 _loadSpec(['./data/minerals.json', '../data/minerals.json', '/data/minerals.json'])
   .then(({ doc, path }) => {
-    MINERAL_SPEC = doc.minerals;
+    // Preserve object identity. UI helpers and the jsdom test harness may
+    // already hold a reference to the fallback object while this fetch is
+    // in flight; replacing the binding leaves those consumers permanently
+    // stale. Updating in place makes the canonical dataset live everywhere.
+    for (const key of Object.keys(MINERAL_SPEC)) delete MINERAL_SPEC[key];
+    Object.assign(MINERAL_SPEC, doc.minerals);
     MINERAL_SPEC_READY = true;
     console.info(`[spec] loaded ${Object.keys(MINERAL_SPEC).length} minerals from ${path}`);
     _specListeners.splice(0).forEach(cb => { try { cb(MINERAL_SPEC); } catch (e) { console.error(e); } });

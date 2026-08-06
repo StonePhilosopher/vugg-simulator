@@ -1,0 +1,348 @@
+{
+  "scenario": "deccan_zeolite",
+  "sim_version": 242,
+  "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "1d6148ec0993db4b796ee2610ac388104df2ea84e7444b775027d271b6ecfd04",
+  "strip_steps": 200,
+  "claim": {
+    "anchor": "Deccan Traps zeolite vesicle (Stage III, ~21-58 Ma post-eruption). Nashik 'bloody apophyllite' is the type expression. Per Ottens et al. 2019.",
+    "description": "Patient zeolite-stage paragenesis in cooled basalt vesicles. Stage I silica veneer + Stage II zeolite blades + Stage III alkaline K-Ca-Si-F pulse builds pseudo-cubic apophyllite around hematite-needle phantoms.",
+    "expects_species": [
+      "hematite",
+      "quartz",
+      "apophyllite",
+      "stilbite",
+      "heulandite",
+      "scolecite",
+      "mesolite",
+      "thomsonite",
+      "chabazite"
+    ],
+    "sources": [
+      "Ottens et al. 2019 — Deccan zeolite paragenesis + Stage III timing (21-58 Ma)",
+      "Pinch & Wilson 1977 — Nashik 'bloody apophyllite' phantom inclusions"
+    ],
+    "initial_temperature_C": 250,
+    "initial_pressure_kbar": 0.05,
+    "wall_architecture": "spherical",
+    "notes": [
+      "Per Ottens et al. 2019, the Deccan basalt vesicles fill in stages over tens of millions of years. Stage I (early): silica veneers, chalcedony coating. Stage II: zeolite blades (stilbite, scolecite, heulandite) and early calcite. Stage III: the apophyllite stage — alkaline K-Ca-Si-F fluid percolates through cooled basalt vesicles and crystallizes pseudo-cubic apophyllite blocks, sometimes carrying hematite-needle phantoms (the 'bloody apophyllite' of Nashik).",
+      "Compared to the metamorphic / hydrothermal scenarios, this is gentle: no acid pulses, no dramatic T excursions. The story is patient crystallization in alkaline groundwater over geologic time.",
+      "v184 thermal honesty (T-rollout close-out) — THREE coupled changes, dark-observed together (tools/t-story-observe.mjs, 3 seeds): (1) thermal_pulses:false — the note above says 'no dramatic T excursions' and the ambient mechanic was firing 5-8 of them per run; (2) cooling_rate 0.3 — with pulses gone, the default 1.5°C/step crashed the vesicle to the floor between the stage events (a cooling flow stack declines gently over ~37 My, the scenario's own 'patient' thesis); (3) the movements block below — a sustained fluid.SiO2 setpoint (950) through the Stage III window. The dark observation EXPOSED a structural noise-dependence: apophyllite's gate needs SiO2 ≥ 800 and the random pulses' +50-300 SiO2 riders were the scenario's de-facto silica budget (the stage_iii event's one-shot +600 — already bumped from 300 once for exactly this reason — gets eaten by background quartz depletion). Ottens calls Stage III 'the long-lasting late stage' (21-58 Ma): a SUSTAINED groundwater regime is the honest model, and on vesicle timescales the percolating aquifer is an infinite reservoir — so the movement PINS SiO2 at 950 for the window rather than shooting it once. Result: all three expects at all seeds (apophyllite was LOST under flag-only variants), fill IMPROVES 0.07-0.18 → 0.28-0.30, and the noise-fed extras (rhodochrosite = pulse-Mn, wollastonite = a skarn mineral that never belonged in an amygdale) drop out.",
+      "Audit gap-fill (Apr 2026): Sr=2 — Deccan zeolites (heulandite, stilbite, mesolite) carry Sr substituting for Ca, sometimes 100s of ppm in the mineral. Sim-scale 2 ppm in the parent fluid documents the source. Brief-required non-zero Mg already covered by Mg=8."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 0.05,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.54051054,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 58.735,
+          "initial_water_activity": {
+            "value": 0.9988,
+            "salinityPpt": 2,
+            "naclWeightPercentEquivalent": 0.2,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 16,
+    "paragenetic_order": [
+      {
+        "mineral": "albite",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "epidote",
+        "first_step": 0,
+        "events": 5
+      },
+      {
+        "mineral": "hematite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "quartz",
+        "first_step": 0,
+        "events": 3
+      },
+      {
+        "mineral": "calcite",
+        "first_step": 6,
+        "events": 1
+      },
+      {
+        "mineral": "heulandite",
+        "first_step": 27,
+        "events": 5
+      },
+      {
+        "mineral": "chabazite",
+        "first_step": 69,
+        "events": 5
+      },
+      {
+        "mineral": "scolecite",
+        "first_step": 69,
+        "events": 5
+      },
+      {
+        "mineral": "stilbite",
+        "first_step": 69,
+        "events": 5
+      },
+      {
+        "mineral": "mesolite",
+        "first_step": 97,
+        "events": 5
+      },
+      {
+        "mineral": "apophyllite",
+        "first_step": 109,
+        "events": 1
+      },
+      {
+        "mineral": "pectolite",
+        "first_step": 109,
+        "events": 1
+      },
+      {
+        "mineral": "aragonite",
+        "first_step": 159,
+        "events": 1
+      },
+      {
+        "mineral": "goethite",
+        "first_step": 159,
+        "events": 1
+      },
+      {
+        "mineral": "opal",
+        "first_step": 159,
+        "events": 5
+      },
+      {
+        "mineral": "thomsonite",
+        "first_step": 159,
+        "events": 5
+      }
+    ],
+    "surprises_not_in_expects": [
+      "albite",
+      "epidote",
+      "calcite",
+      "pectolite",
+      "aragonite",
+      "goethite",
+      "opal"
+    ],
+    "expected_no_shows": [],
+    "environment": {
+      "T": {
+        "first": 250.984,
+        "last": 67.913,
+        "min": 67.913,
+        "max": 250.984,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 8.213,
+        "last": 7.992,
+        "min": 7.992,
+        "max": 8.819,
+        "units": ""
+      },
+      "Eh": {
+        "first": 289.764,
+        "last": 218.898,
+        "min": 200,
+        "max": 289.764,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 2.362,
+        "last": 2.362,
+        "min": 2.362,
+        "max": 2.362,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 1.496,
+        "last": 0.984,
+        "min": 0.906,
+        "max": 1.496,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": 0.126,
+        "last": 1.134,
+        "min": 0.126,
+        "max": 2.016,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": 0.063,
+        "last": 1.008,
+        "min": 0.063,
+        "max": 1.89,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": 0.126,
+        "last": 0.882,
+        "min": 0.126,
+        "max": 2.835,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -1.575,
+        "last": -0.378,
+        "min": -1.575,
+        "max": 0.252,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 3.276,
+        "last": 3.465,
+        "min": 3.276,
+        "max": 4.598,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 200,
+      "fluid_pressure_kbar": {
+        "first": 0.05,
+        "last": 0.05,
+        "min": 0.05,
+        "max": 0.05,
+        "samples": 200
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 200
+      },
+      "temperature_C": {
+        "first": 249.65217887094244,
+        "last": 67.68840124993582,
+        "min": 67.68840124993582,
+        "max": 249.65217887094244,
+        "samples": 200
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.5393283473579826,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.717038917670087,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 200
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 58.735
+        },
+        "last": {
+          "pure_water_boundary_C": 58.735
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

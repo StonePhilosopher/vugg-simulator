@@ -67,14 +67,15 @@ describe('strip chemistry contract — sabkha_dolomitization (Kim 2023)', () => 
 
   it('wall stays cycling while the deep interior depletes (v160 diffusion signature)', () => {
     if (!ds) return;
-    // Observed late-run: wall SI_dolomite ~+3 (still supersaturated), center
-    // ~−3 (depleted). This wall→center gradient is what v160 per-voxel
-    // diffusion + the strangulation gate produce; nothing else guards it.
+    // With flood/evap now authored as absolute replacement waters, the
+    // late-run wall-center separation is ~1.64 SI units. The sign and a
+    // conservative one-unit margin pin the v160 per-voxel diffusion
+    // signature without preserving the old relative-delta chemistry bug.
     const wall = chipSeries(ds, 'SI_dolomite', { depth: 'wall' });
     const center = chipSeries(ds, 'SI_dolomite', { depth: 'center' });
     const D = ds.manifest.axes.depth_positions || 1;
     if (D < 2) return; // depth-collapsed recording (no voxel grid) → no gradient to test
-    expect(series.last(wall)! - series.last(center)!).toBeGreaterThan(2);
+    expect(series.last(wall)! - series.last(center)!).toBeGreaterThan(1);
   });
 });
 

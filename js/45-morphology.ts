@@ -35,7 +35,7 @@
 //                              (calcite: Mg/T → scalenohedral).
 //
 // Basis rule (18th catch — the basis ports WITH the thresholds): the
-// pass runs at the END of run_step, AFTER growth + mass balance +
+// pass runs at the END of run_step, AFTER growth + growth budget +
 // diffusion, so zones are classified from the POST-STEP σ. The first
 // calcite draft classified inside grow_calcite from the IN-STEP
 // (pre-growth) σ; the --engine agreement check exposed 0% agreement on
@@ -363,17 +363,17 @@ MORPH_TH.fluorite = {
 };
 
 // ---- pyrite — fifth tenant (striations ARE step bunching) ----
-// Survey: 6 scenarios, σ 1.2–3.84, CONTINUOUS within-scenario
-// distributions (unlike the halide plateaus) → pyrite crystals are
-// ZONED smooth↔striated as the fluid wanders. The striations on pyrite
+// SIM 239 accepted-ledger survey: Sunnyside 1.29–1.91; MVT has a small
+// 1.59 core then a sustained 8.6–9.6 rind; Sulphur Bank spans 1.07–14.39.
+// The continuous within-crystal distributions make pyrite ZONED as the
+// fluid wanders. The striations on pyrite
 // faces ({100} and {210} both) are oscillatory combination-growth step
 // bunching — the literal physical phenomenon the stepped bands model
 // (Murowchick & Barnes 1987: T + saturation control pyrite morphology).
-// Claims: sunnyside/elmwood/reactive_wall (σ 1.2–1.5) smooth — small
-// early euhedra; mvt (p50 1.59, max 3.27) MIXED smooth↔striated;
-// reactivated vein (2.44–3.49) + sulphur_bank (2.47–3.84) striated→
-// coarse — vein and hot-spring pyrite is striated, the glassy
-// unstriated cube is the EXCEPTION in nature (Navajún's fame).
+// Claims: Sunnyside is the smoother low-driving-force end-member and
+// never reaches skeletal/dendritic bands; MVT records a smooth core,
+// striated transition, and diffusion-limited rind; Sulphur Bank's
+// very-high-sigma history is dominated by unstable aggregate growth.
 // FORM is T-driven in grow_pyrite (>300 cube / 200–300 pyritohedron /
 // 100–200 combo / <100 framboidal-micro) — the form hook mirrors it;
 // the regime overlays 'striated_' onto the euhedral forms only.
@@ -383,8 +383,8 @@ MORPH_TH.pyrite = {
   SPIRAL_MAX: 1.6,       // < this → smooth euhedra (the Navajún glass)
   STEP_MILD_MAX: 2.4,    // fine striations
   STEP_MACRO_MAX: 3.2,   // coarse striations / stepped composite faces
-  HOPPER_MAX: 4.2,       // skeletal pyrite (fleet max 3.84 — just unoccupied)
-  // ≥ 4.2 → dendritic (marcasite-territory crusts; unoccupied)
+  HOPPER_MAX: 4.2,       // skeletal transition
+  // ≥ 4.2 → dendritic/aggregate instability (MVT + Sulphur Bank rinds)
   sigma(conditions: any): number { return conditions.supersaturation_pyrite(); },
   form(conditions: any): string {
     const T = conditions.temperature;
@@ -397,16 +397,15 @@ MORPH_TH.pyrite = {
 
 // ---- native copper + native gold — sixth/seventh tenants (the
 // conflation sweep that closes the boss's list) ----
-// Copper (bisbee, the only home): σ rides the v186 −400 mV pulse —
-// measured ramp 1.0 → 2.09 (peak EXACTLY at the pulse center, step
-// 133) → 0; the crystal then dissolves in the azurite-era oxidation
-// (the Cornish trees survive as casts — grows-then-dies is the correct
-// geology, like schneeberg's bismuth). Bands on the measured ramp: the
-// σ ceiling IS the dendrite moment (the bismuth activity-ceiling
-// lesson). The legacy dispatch was ALREADY Sunagawa-ascending
+// Copper (bisbee, the only home): the low-S pulse gives a measured
+// ramp to σ=1.707 at step 133, then oxidation etches a 10 µm rim and a
+// later supergene host encloses the surviving metal core. The resulting
+// mostly wire/fine-stepped bands match modest driving force; higher
+// thresholds remain available to a future Keweenaw-style high-σ case.
+// The legacy dispatch was ALREADY Sunagawa-ascending
 // (crystal → wire → arborescent) except massive_sheet at top — a
 // fissure-fill aggregate TEXTURE (Keweenaw), not interface morphology,
-// and dead code at current calibration (needs σ>2.5; fleet max 2.09).
+// and dead code at current calibration.
 MORPH_TH.native_copper = {
   SIZE_HALF_UM: Infinity,
   SIZE_DAMP_CAP_UM: Infinity,
@@ -543,7 +542,8 @@ function _qzSumPositive(zones: any[], lo: number, hi: number): number {
 // the sim never grows a wide head; the classifier decides it. `route` records
 // which mechanism made the boundary ('corrosion' = resorbed surface, grimsel's
 // clean reference; 'masking' = a prism film frosted the sides and the tip renewed
-// wider — the ELO twin, mass-conserving).
+// wider — the non-corrosive ELO masking counterpart. capFrac is a render-driving
+// axial-length fraction, not a physical solid-mass or volume calculation).
 function _qzTagSceptre(c: any, zones: any[], capStart: number, boundaryStep: any,
                        stem: number, cap: number, route: string): void {
   const capFrac = cap / (stem + cap);
@@ -577,8 +577,10 @@ function classifyQuartzSceptre(sim: any) {
       // dominant masked_horizon (O5b breakthrough). A foreign film frosted the
       // prism faces (phi_prism > phi_term); the arrested crystal then renewed a
       // wider termination through the film — Takahashi & Sunagawa 2004's ELO,
-      // the mass-conserving twin of corrosion ("dusted and buried" vs "etched and
-      // healed"). The masked_horizon zone is POSITIVE growth (the first renewed
+      // the non-corrosive masking counterpart to corrosion ("dusted and buried"
+      // vs "etched and healed"). This classifier only tags the renderer; it does
+      // not calculate or claim conserved solid mass. The masked_horizon zone is
+      // POSITIVE growth (the first renewed
       // layer), so it is the BASE of the cap: stem before it, cap from it onward.
       // A termination / uniform film (phi_prism ≤ phi_term — EVERY coats_front
       // film today, js/85c) is NOT a sceptre: it is a buried horizon (the elmwood

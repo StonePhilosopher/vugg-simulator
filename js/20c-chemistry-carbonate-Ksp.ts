@@ -109,8 +109,8 @@ type ThermoCarbonatesDoc = {
 };
 
 // Minimal fallback so consumers that ask before the fetch lands still
-// get sensible numbers for the four carbonate minerals load-bearing on
-// the existing scenarios. Values match the JSON; the fallback exists
+// get sensible numbers for load-bearing engine minerals and observer-only
+// diagnostics that may render before the fetch resolves. Values match the JSON; the fallback exists
 // purely so a fetch failure or pre-fetch call doesn't break callers.
 const THERMO_CARBONATES_FALLBACK: ThermoCarbonatesDoc = {
   calcite: {
@@ -143,6 +143,22 @@ const THERMO_CARBONATES_FALLBACK: ThermoCarbonatesDoc = {
       logKsp_25C: -10.89,
       logKsp_fit: { form: 'vanthoff', deltaH_diss_kJ_mol: -20.0 },
       confidence_tier: 'A',
+    },
+  },
+  rosasite: {
+    formula: '(Cu,Zn)2(CO3)(OH)2',
+    thermodynamics: {
+      logKsp_25C: -36.400,
+      logKsp_fit: { form: 'constant_25C_only' },
+      confidence_tier: 'C',
+    },
+  },
+  aurichalcite: {
+    formula: '(Zn,Cu)5(CO3)2(OH)6',
+    thermodynamics: {
+      logKsp_25C: -76.16,
+      logKsp_fit: { form: 'constant_25C_only' },
+      confidence_tier: 'C',
     },
   },
 };

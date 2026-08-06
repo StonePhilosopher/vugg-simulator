@@ -16,7 +16,7 @@ function grow_native_tellurium(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.7) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(2.0, crystal.total_growth_um * 0.10);
-      // Phase 1e: Te credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.native_tellurium.
+      // Phase 1e: Te credit handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.native_tellurium.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -69,7 +69,7 @@ function grow_native_sulfur(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.9) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.10);
-      // Phase 1e: S credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.native_sulfur.
+      // Phase 1e: S credit handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.native_sulfur.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -118,7 +118,7 @@ function grow_native_arsenic(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.7) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(2.5, crystal.total_growth_um * 0.10);
-      // Phase 1e: As credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.native_arsenic.
+      // Phase 1e: As credit handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.native_arsenic.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -244,7 +244,7 @@ function grow_native_bismuth(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.8) {
       crystal.dissolved = true;
       const d = Math.min(2.0, crystal.total_growth_um * 0.05);
-      // Phase 1e: Bi credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.native_bismuth.
+      // Phase 1e: Bi credit handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.native_bismuth.
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `oxidation (O₂ ${conditions.fluid.O2.toFixed(1)}) — bismite/bismutite surface forms` });
     }
     return null;
@@ -343,7 +343,7 @@ function grow_native_copper(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.7) {
       crystal.dissolved = true;
       const d = Math.min(2.0, crystal.total_growth_um * 0.05);
-      // Phase 1e: Cu credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.native_copper.
+      // Phase 1e: Cu credit handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.native_copper.
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `oxidation (O₂ ${conditions.fluid.O2.toFixed(1)}) — forms cuprite film, then malachite if CO₃ is present` });
     }
     return null;
@@ -432,7 +432,7 @@ function grow_awaruite(crystal, conditions, step) {
   if (pos.includes('chrysotile') || pos.includes('serpentine')) substrate_flavor = ' embedded in chrysotile/serpentine matrix';
   else if (pos.includes('magnetite')) substrate_flavor = ' with magnetite — both serpentinization Fe products';
 
-  // Mass-balance debits — Ni-Fe alloy
+  // Growth-budget debits — Ni-Fe alloy
   conditions.fluid.Ni = Math.max(conditions.fluid.Ni - rate * 0.035, 0);
   conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.020, 0);
 

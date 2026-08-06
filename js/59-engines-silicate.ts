@@ -46,7 +46,7 @@ function grow_quartz(crystal, conditions, step) {
     if (crystal.total_growth_um > 10) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.1);
-      // Phase 1e: SiO2 credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.quartz.
+      // Phase 1e: SiO2 credit handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.quartz.
 
       // Determine dissolution type
       let note;
@@ -270,7 +270,7 @@ function grow_feldspar(crystal, conditions, step) {
   crystal.mineral_display = polymorph;
 
   // Phase 1d: K/Na/Al/SiO2 consumption owned by the wrapper
-  // (applyMassBalance, per MINERAL_STOICHIOMETRY['feldspar']).
+  // (applyStoichiometricGrowthBudget, per MINERAL_STOICHIOMETRY['feldspar']).
   // Note: feldspar is K-only per v17 reconciliation; the K-or-Na fork
   // here was a pre-v17 artifact. Albite (Na-feldspar) has its own
   // engine + stoichiometry entry.
@@ -784,7 +784,7 @@ function grow_lepidolite(crystal, conditions, step) {
   const trace_Fe = f.Fe * 0.005;
   const trace_Al = f.Al * 0.010;
 
-  // Mass balance: Li + K + Al + SiO2 + F all consumed; Mn modestly
+  // Growth budget: Li + K + Al + SiO2 + F all consumed; Mn modestly
   // sequestered in octahedral sites for the purple variety.
   f.Li = Math.max(f.Li - rate * 0.030, 0);
   f.K  = Math.max(f.K  - rate * 0.012, 0);
@@ -885,7 +885,13 @@ function grow_spodumene(crystal, conditions, step) {
 // baseline diff. The dev hook exists for
 // tools/shigar-aqua-growth-probe.mjs to sweep K closed-loop; nothing
 // in the sim itself calls it.
-let BERYL_FAMILY_GROWTH_K = 25;
+// The accepted-zone mass ledger (SIM 239) removed engines' duplicate
+// direct fluid debits. Re-running the closed-loop Shigar probe at the new
+// accounting boundary showed K=25 producing a 13.58 mm star; K=36 restores
+// the pre-registered >=20 mm showpiece (20.55 mm) without changing either
+// Be inventory or the sigma ceiling. This is a kinetics re-calibration,
+// not a mass subsidy: the central ledger remains the sole conserved debit.
+let BERYL_FAMILY_GROWTH_K = 36;
 function setBerylFamilyGrowthK(v) { BERYL_FAMILY_GROWTH_K = +v; }
 
 function _beryl_family_habit_forms(T) {
@@ -1526,7 +1532,7 @@ function grow_tigers_eye(crystal, conditions, step) {
     color_note = 'mixed blue-gold (hawk\'s eye intermediate)';
   }
 
-  // Mass-balance — pure SiO2 framework
+  // Growth-budget — pure SiO2 framework
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.045, 0);
   // Fe trace incorporation into chalcedony
   conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.005, 0);
@@ -1590,7 +1596,7 @@ function grow_chrysotile(crystal, conditions, step) {
     crystal.dominant_forms = ['platy texture (lizardite-similar)', 'low-relief serpentine coating'];
   }
 
-  // Mass-balance debits — Mg3 Si2
+  // Growth-budget debits — Mg3 Si2
   conditions.fluid.Mg = Math.max(conditions.fluid.Mg - rate * 0.040, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.030, 0);
 
@@ -1656,7 +1662,7 @@ function grow_pectolite(crystal, conditions, step) {
   else if (pos.includes('vesuvianite')) substrate_flavor = ' with vesuvianite — late rodingite assemblage';
   else if (pos.includes('calcite')) substrate_flavor = ' on calcite — late skarn/amygdale';
 
-  // Mass-balance debits — Na Ca2 Si3
+  // Growth-budget debits — Na Ca2 Si3
   conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.012, 0);
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.045, 0);
@@ -1716,7 +1722,7 @@ function grow_wollastonite(crystal, conditions, step) {
   else if (pos.includes('diopside')) substrate_flavor = ' with diopside — rodingite Ca-Mg-Si trio';
   else if (pos.includes('calcite')) substrate_flavor = ' on calcite — skarn limestone contact';
 
-  // Mass-balance debits — Ca Si (simplest stoichiometry)
+  // Growth-budget debits — Ca Si (simplest stoichiometry)
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.030, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.050, 0);
 
@@ -1791,7 +1797,7 @@ function grow_prehnite(crystal, conditions, step) {
   else if (pos.includes('grossular')) substrate_flavor = ' with grossular — rodingite Ca-Al silicate suite';
   else if (pos.includes('diopside')) substrate_flavor = ' with diopside — rodingite contact';
 
-  // Mass-balance debits — Ca2 Al2 Si3
+  // Growth-budget debits — Ca2 Al2 Si3
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.025, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.018, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.040, 0);
@@ -1860,7 +1866,7 @@ function grow_stilbite(crystal, conditions, step) {
   else if (pos.includes('heulandite')) substrate_flavor = ' intergrown with heulandite';
   else if (pos.includes('apophyllite')) substrate_flavor = ' with apophyllite';
 
-  // Mass-balance debits — Na Ca4 Al9 Si27 (silica-heavy framework)
+  // Growth-budget debits — Na Ca4 Al9 Si27 (silica-heavy framework)
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.018, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.012, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.050, 0);
@@ -1928,7 +1934,7 @@ function grow_heulandite(crystal, conditions, step) {
   else if (pos.includes('stilbite')) substrate_flavor = ' intergrown with stilbite';
   else if (pos.includes('apophyllite')) substrate_flavor = ' with apophyllite';
 
-  // Mass-balance debits — Ca Al2 Si7 (very silica-heavy framework)
+  // Growth-budget debits — Ca Al2 Si7 (very silica-heavy framework)
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.014, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.055, 0);
@@ -1990,7 +1996,7 @@ function grow_scolecite(crystal, conditions, step) {
   else if (pos.includes('mesolite')) substrate_flavor = ' intergrown with mesolite';
   else if (pos.includes('calcite')) substrate_flavor = ' on calcite';
 
-  // Mass-balance debits — Ca Al2 Si3 (low-Si framework)
+  // Growth-budget debits — Ca Al2 Si3 (low-Si framework)
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.016, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.030, 0);
@@ -2050,7 +2056,7 @@ function grow_mesolite(crystal, conditions, step) {
   else if (pos.includes('scolecite')) substrate_flavor = ' intergrown with scolecite';
   else if (pos.includes('calcite')) substrate_flavor = ' on calcite';
 
-  // Mass-balance debits — Na2 Ca2 Al6 Si9 (low-Si framework, Na+Ca)
+  // Growth-budget debits — Na2 Ca2 Al6 Si9 (low-Si framework, Na+Ca)
   conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.012, 0);
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.012, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.018, 0);
@@ -2119,7 +2125,7 @@ function grow_thomsonite(crystal, conditions, step) {
   else if (pos.includes('chalcedony') || pos.includes('quartz')) substrate_flavor = ' on the silica veneer';
   else if (pos.includes('wall')) substrate_flavor = ' direct on the smectite-lined vug wall';
 
-  // Mass-balance debits — Na Ca2 Al5 Si5 (most-aluminous, low-Si framework)
+  // Growth-budget debits — Na Ca2 Al5 Si5 (most-aluminous, low-Si framework)
   conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.008, 0);
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.016, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.020, 0);
@@ -2183,7 +2189,7 @@ function grow_chabazite(crystal, conditions, step) {
   else if (pos.includes('scolecite') || pos.includes('mesolite') || pos.includes('thomsonite')) substrate_flavor = ' perched on the earlier fibrous zeolites';
   else if (pos.includes('calcite')) substrate_flavor = ' with calcite';
 
-  // Mass-balance debits — Ca Al2 Si4 (per-Ca, intermediate-Si framework)
+  // Growth-budget debits — Ca Al2 Si4 (per-Ca, intermediate-Si framework)
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.016, 0);
   conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.004, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.014, 0);
@@ -2256,7 +2262,7 @@ function grow_epidote(crystal, conditions, step) {
   else if (pos.includes('magnetite')) substrate_flavor = ' on magnetite — the Fe-oxide redox partner';
   else if (pos.includes('calcite')) substrate_flavor = ' with calcite — late cooling stage';
 
-  // Mass-balance debits — Ca2 (Al,Fe)3 Si3
+  // Growth-budget debits — Ca2 (Al,Fe)3 Si3
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.022, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.012, 0);
   conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.010, 0);
@@ -2276,7 +2282,7 @@ function grow_epidote(crystal, conditions, step) {
 // ∥{001} (low excess). COLOR is a trace-cation dispatch (NOT a σ gate, per the
 // vugg-add-mineral trace pattern): Cr → the prized chrome-green alpine variety;
 // Fe-rich → brown-black common type; else honey-yellow with the adamantine
-// "fire" (high dispersion). Mass balance CaTiSiO5 (1:1:1) — Ti debit self-limits.
+// "fire" (high dispersion). Growth budget CaTiSiO5 (1:1:1) — Ti debit self-limits.
 function grow_titanite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_titanite();
   if (sigma < 1.0) {
@@ -2321,7 +2327,7 @@ function grow_titanite(crystal, conditions, step) {
   else if (pos.includes('epidote')) substrate_flavor = ' with epidote — the Ca-Ti-Fe cleft suite';
   else if (pos.includes('calcite')) substrate_flavor = ' with calcite — late cooling stage';
 
-  // Mass-balance debits — CaTiSiO5 (1:1:1); Ti is trace so this self-limits
+  // Growth-budget debits — CaTiSiO5 (1:1:1); Ti is trace so this self-limits
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.015, 0);
   conditions.fluid.Ti = Math.max(conditions.fluid.Ti - rate * 0.015, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.020, 0);
@@ -2404,7 +2410,7 @@ function grow_grossular(crystal, conditions, step) {
   else if (pos.includes('wollastonite')) substrate_flavor = ' with wollastonite — late skarn assemblage';
   else if (pos.includes('calcite')) substrate_flavor = ' on calcite — skarn limestone contact';
 
-  // Mass-balance debits — Ca3 Al2 Si3
+  // Growth-budget debits — Ca3 Al2 Si3
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.035, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.020, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.040, 0);
@@ -2487,7 +2493,7 @@ function grow_diopside(crystal, conditions, step) {
   else if (pos.includes('serpentine') || pos.includes('chrysotile')) substrate_flavor = ' in serpentinite matrix — Jeffrey rodingite host';
   else if (pos.includes('calcite')) substrate_flavor = ' on calcite — skarn limestone contact';
 
-  // Mass-balance debits — Ca Mg Si2
+  // Growth-budget debits — Ca Mg Si2
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.025, 0);
   conditions.fluid.Mg = Math.max(conditions.fluid.Mg - rate * 0.015, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.045, 0);
@@ -2586,7 +2592,7 @@ function grow_vesuvianite(crystal, conditions, step) {
   else if (pos.includes('calcite')) substrate_flavor = ' on calcite — skarn / rodingite contact';
   else if (pos.includes('magnetite')) substrate_flavor = ' on magnetite — rodingite Fe-Mg oxide substrate';
 
-  // Mass-balance debits — formula Ca10(Mg,Fe)2Al4(SiO4)5(Si2O7)2(OH)4
+  // Growth-budget debits — formula Ca10(Mg,Fe)2Al4(SiO4)5(Si2O7)2(OH)4
   // ~ Ca10 Mg2 Al4 Si9 — debit proportionally
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.040, 0);
   conditions.fluid.Mg = Math.max(conditions.fluid.Mg - rate * 0.012, 0);
@@ -2696,7 +2702,7 @@ function grow_datolite(crystal, conditions, step) {
   else if (on_native_copper) substrate_flavor = ' with native copper — Keweenaw signature';
   else substrate_flavor = '';
 
-  // Mass-balance debits — formula CaB(SiO4)(OH)
+  // Growth-budget debits — formula CaB(SiO4)(OH)
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
   conditions.fluid.B = Math.max(conditions.fluid.B - rate * 0.005, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.030, 0);

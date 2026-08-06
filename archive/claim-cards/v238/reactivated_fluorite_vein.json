@@ -1,0 +1,318 @@
+{
+  "scenario": "reactivated_fluorite_vein",
+  "sim_version": 238,
+  "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1",
+  "scenario_spec_hash": "a468d4e66b438f087168150c1283fa8757e51bce9bf2e0e38adaa83ac726d0a0",
+  "strip_steps": 160,
+  "claim": {
+    "anchor": "North Pennine Orefield style (Weardale district, England) — a fluorite-galena-barite vein on a reactivated fault (Dunham 1990, BGS Economic Memoir).",
+    "description": "A crack-seal reactivated vug. An ascending brine grows a first generation (fluorite + galena + barite, with sphalerite + calcite gangue) while its feeder fractures are OPEN; a late cement then seals the conduit shut and the cavity goes quiet; a later tectonic pulse breaches the fracture open again, and a cooler fresh fluid grows a second-generation fluorite + calcite. The demonstrator for the fluid-spots SEAL → BREACH lifecycle: the deposition-clustering halo follows the open feeders, so each generation concentrates at the vents and the sealed interval shows no clustering.",
+    "expects_species": [
+      "fluorite",
+      "galena",
+      "barite",
+      "calcite",
+      "sphalerite"
+    ],
+    "sources": [
+      "Dunham, K.C. (1990) — Geology of the Northern Pennine Orefield, Vol. 1 (2nd ed.), British Geological Survey Economic Memoir.",
+      "Ramsay, J.G. (1980) — The crack-seal mechanism of rock deformation, Nature 284.",
+      "Bons, Elburg & Gomez-Rivas (2012) — A review of the formation of tectonic veins and their microstructures, Journal of Structural Geology."
+    ],
+    "initial_temperature_C": 180,
+    "initial_pressure_kbar": 0.3,
+    "wall_architecture": "tabular",
+    "notes": [
+      "DEMONSTRATOR, honestly framed: this scenario exercises the crack-seal SEAL→BREACH mechanic on a North-Pennine-style fluorite-galena-barite vein. The chemistry is DESIGNED (reverse-from-engines) on an mvt-analog NaCl-CaCl2 basinal brine, not lifted from a specific mine's fluid-inclusion dataset — so the broth is a faithful archetype, not a measured locality record. North Pennine veins are textbook reactivated-fault systems with repeated fluid pulses (Dunham 1990); the crack-seal reopening mechanism is Ramsay 1980 (Nature).",
+      "Two generations: STAGE 1 (feeders open, steps 0-78) — the ascending brine fires fluorite + galena + barite (+ sphalerite, calcite) clustering at the open vents, reusing the proven generic fluid_mixing (step 20) + fluid_pulse (step 60) brine events. SEAL (step 78) — a carbonate/silica cement chokes the feeder (spots:'seal'); T drops to ~150°C, flow stalls, the clustering halo switches off. STAGE 2 (breach, step 118) — tectonic reactivation reopens the conduit (spots:'breach'); a cooler fresh pulse (F +16, CO3 +130) grows second-generation fluorite + late calcite at the reopened vents.",
+      "Why limestone wall: North Pennine fluorite veins cut Carboniferous limestone (the Great Limestone and equivalents); the reactive carbonate wall supplies background Ca + CO3, consistent with the calcite gangue in both stages. Architecture 'tabular' = fracture-controlled / vein-bounded, the right cavity archetype for a vein (vs the karst 'irregular' of mvt).",
+      "Calibration note: stage-1 assemblage tracks the mvt scenario (same brine + the same two generic brine events), so fluorite/galena/barite/sphalerite/calcite are expected to fire; deposition clustering shifts spatial competition so exact counts will differ from mvt. Any first-pass miss is aspirational — tune via vugg-tune-scenario, don't inflate the broth."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1",
+      "fluid_pressure": {
+        "initial_kbar": 0.3,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.4196065399999998,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 62.41,
+          "initial_water_activity": {
+            "value": 0.991,
+            "salinityPpt": 15,
+            "naclWeightPercentEquivalent": 1.5,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 12,
+    "paragenetic_order": [
+      {
+        "mineral": "calcite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "fluorite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "rhodochrosite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "siderite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "acanthite",
+        "first_step": 19,
+        "events": 5
+      },
+      {
+        "mineral": "galena",
+        "first_step": 19,
+        "events": 1
+      },
+      {
+        "mineral": "pyrite",
+        "first_step": 19,
+        "events": 1
+      },
+      {
+        "mineral": "sphalerite",
+        "first_step": 19,
+        "events": 1
+      },
+      {
+        "mineral": "barite",
+        "first_step": 20,
+        "events": 6
+      },
+      {
+        "mineral": "greenockite",
+        "first_step": 21,
+        "events": 5
+      },
+      {
+        "mineral": "celestine",
+        "first_step": 22,
+        "events": 6
+      },
+      {
+        "mineral": "quartz",
+        "first_step": 59,
+        "events": 3
+      }
+    ],
+    "surprises_not_in_expects": [
+      "rhodochrosite",
+      "siderite",
+      "acanthite",
+      "pyrite",
+      "greenockite",
+      "celestine",
+      "quartz"
+    ],
+    "expected_no_shows": [],
+    "environment": {
+      "T": {
+        "first": 180.118,
+        "last": 76.772,
+        "min": 76.772,
+        "max": 180.118,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 7.22,
+        "last": 6.724,
+        "min": 6.724,
+        "max": 7.22,
+        "units": ""
+      },
+      "Eh": {
+        "first": 25.197,
+        "last": 25.197,
+        "min": 25.197,
+        "max": 25.197,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 14.961,
+        "last": 14.961,
+        "min": 14.961,
+        "max": 14.961,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 0.236,
+        "last": 0.236,
+        "min": 0.236,
+        "max": 0.236,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": 0.378,
+        "last": 0.378,
+        "min": 0.126,
+        "max": 0.819,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": 0.315,
+        "last": 0.315,
+        "min": 0.063,
+        "max": 0.756,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": 0.504,
+        "last": -0.189,
+        "min": -0.441,
+        "max": 0.945,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -1.323,
+        "last": -1.134,
+        "min": -1.575,
+        "max": -0.882,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 1.89,
+        "last": 2.079,
+        "min": 1.89,
+        "max": 2.394,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -0.693,
+        "min": -8,
+        "max": -0.567,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -0.756,
+        "min": -8,
+        "max": -0.378,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": 2.142,
+        "min": -8,
+        "max": 2.142,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -0.315,
+        "min": -8,
+        "max": -0.063,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 160,
+      "fluid_pressure_kbar": {
+        "first": 0.3,
+        "last": 0.3,
+        "min": 0.3,
+        "max": 0.3,
+        "samples": 160
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 160
+      },
+      "temperature_C": {
+        "first": 179.53623849458992,
+        "last": 76.48933207545434,
+        "min": 76.48933207545434,
+        "max": 179.53623849458992,
+        "samples": 160
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.419589812250558,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.6718678374544154,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 160
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 62.41
+        },
+        "last": {
+          "pure_water_boundary_C": 62.41
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

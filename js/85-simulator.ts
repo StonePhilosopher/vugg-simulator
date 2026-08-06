@@ -364,10 +364,19 @@ class VugSimulator {
         const zone = this._runEngineForCrystal(engine, crystal);
         // W-F O3b — sealed crystals don't dissolve (shielded by neighbors), same
         // as the main-path guard below. Byte-identical when selection is off.
-        if (zone && zone.thickness_um < 0 && !crystal._buried) {
-          crystal.add_zone(zone);
-          currentFill = openSystem ? 0 : this.get_vug_fill();
-          this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
+        if (zone && zone.thickness_um < 0) {
+          if (!crystal._buried) {
+            this._finalizeZoneForApplication(crystal, zone);
+            this._applyZoneGrowthBudget(crystal, zone);
+            crystal.add_zone(zone);
+            currentFill = openSystem ? 0 : this.get_vug_fill();
+            this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
+          } else if (crystal.total_growth_um > 1e-9) {
+            // Several legacy engines optimistically set dissolved=true while
+            // constructing a negative candidate. A buried crystal never accepts
+            // that candidate, so its physical state must remain unchanged.
+            crystal.dissolved = false;
+          }
         }
         continue;
       }
@@ -388,13 +397,13 @@ class VugSimulator {
       const engine = MINERAL_ENGINES[crystal.mineral];
       if (!engine) continue;
       // v128 graduated competition: consume the pre-computed scaled zone
-      // when present, applying mass balance against the cell fluid that
+      // when present, applying growth budget against the cell fluid that
       // the dry-run originally read. Otherwise fall through to the
       // single-pass engine call (v127 behavior).
       //
       // The graduated path skips the engine in pass 2 BECAUSE the
       // engine would now see a fluid that's been mutated by prior
-      // crystals' rationed mass-balance debits — re-running it would
+      // crystals' rationed growth-budget debits — re-running it would
       // re-introduce the cascade-displacement the algorithm is designed
       // to prevent. Instead, we trust the dry-run zone (computed
       // against a clean snapshot), scaled by the per-crystal allocation.
@@ -407,9 +416,6 @@ class VugSimulator {
         // In all cases, DO NOT re-call the engine — that would
         // double-consume RNG vs v127's once-per-crystal contract.
         zone = this._graduatedZones.get(crystal.crystal_id);
-        if (zone && typeof zone.thickness_um === 'number' && zone.thickness_um !== 0) {
-          this._applyZoneMassBalance(crystal, zone);
-        }
       } else {
         // Crystal had no engine entry (skipped at the top of the loop)
         // or wasn't in _graduatedZones (only happens when flag is off,
@@ -419,13 +425,19 @@ class VugSimulator {
         zone = this._runEngineForCrystal(engine, crystal);
       }
       if (zone) {
+        // Texture state is committed only after the formula-pool cap confirms
+        // that some positive solid was actually accepted.
+        let markLateInterlocking = false;
         // W-F O3b — a SEALED (geometrically buried) crystal is shielded from the
         // corrosive fluid by its overgrowing neighbors: suppress its dissolution
         // so it persists as a present short stub rather than being etched away
         // (which would also reopen its mineral's nucleation cap on the freed
         // slot). Positive growth is throttled just below. No-op when selection
         // is off (nothing is _buried) → byte-identical.
-        if (crystal._buried && zone.thickness_um < 0) zone.thickness_um = 0;
+        if (crystal._buried && zone.thickness_um < 0) {
+          zone.thickness_um = 0;
+          if (crystal.total_growth_um > 1e-9) crystal.dissolved = false;
+        }
         // Proposal A — apply fill dampener to positive zone thickness
         // (growth). check_nucleation stashed this._fillDampener for the
         // current step; it equals 1.0 below vugFill ~0.7 and tapers
@@ -448,7 +460,7 @@ class VugSimulator {
           // W-F O3b — a geometrically BURIED crystal (overgrown by a more-normal
           // neighbor; _applyGeometricSelection tagged it) grows at a throttled
           // rate, ending a short leaning stub rather than dying. Scales positive
-          // growth exactly like the fill dampener below, so mass-balance
+          // growth exactly like the fill dampener below, so growth-budget
           // semantics match the established path. No-op when selection is off
           // (nothing is ever _buried) → byte-identical.
           if (crystal._buried) zone.thickness_um *= O3_BURY_GROWTH_MULT;
@@ -497,7 +509,10 @@ class VugSimulator {
               // identical for the current fleet (census: tools/sceptre-mask-census.mjs).
               zone.masked_phi_prism = film.phi_prism || 0;
               zone.masked_phi_term = film.phi_term || 0;
-              crystal._film = null;
+              // Commit removal only if a positive zone survives competition,
+              // masking, fill damping, and the cavity clamp. A zero-thickness
+              // candidate cannot physically bury the film.
+              zone._clear_film_on_accept = true;
             }
           }
           // Proposal D (2026-05-18) part 1: per-iteration dampener
@@ -593,7 +608,7 @@ class VugSimulator {
               // Late-interlocking tag: this zone hit the cavity ceiling —
               // additional chemistry that would have happened gets attributed
               // to in-place densification rather than free extension.
-              crystal.late_interlocking = true;
+              if (zone.thickness_um > 0) markLateInterlocking = true;
               if (zone.note) zone.note = `${zone.note} [interlocking — cavity ceiling reached]`;
               else zone.note = 'interlocking growth at cavity ceiling';
             }
@@ -605,8 +620,8 @@ class VugSimulator {
           // texturally in the interlocking domain (Tsumeb late-stage
           // interlocking patinas, Naica selenite cluster surfaces).
           // Renderer reads this flag for granular / massive textures.
-          if (currentFill >= 0.85 && dampener < 1.0) {
-            crystal.late_interlocking = true;
+          if (zone.thickness_um > 0 && currentFill >= 0.85 && dampener < 1.0) {
+            markLateInterlocking = true;
           }
         }
         // W-F O5 SPLITTING (S-b) — accrue the two-route cumulative-misorientation
@@ -619,6 +634,16 @@ class VugSimulator {
         // the deformation-saddle set a separate cause (§9a #4, census-certified).
         // splitAbility 0 (quartz/feldspar) → no _split → untouched everywhere (the
         // structure-specificity invariant).
+        this._finalizeZoneForApplication(crystal, zone);
+        this._applyZoneGrowthBudget(crystal, zone);
+        // A dry formula reservoir accepts no solid. Do not append a zero shell
+        // or accrue texture/history from a candidate that never precipitated.
+        if (zone._stoichiometric_budget_cap && !(zone.thickness_um > 0)) continue;
+        if (zone.thickness_um > 0 && markLateInterlocking) {
+          crystal.late_interlocking = true;
+        }
+        // Accrue split texture from the mass-limited accepted thickness, not the
+        // larger candidate that the fluid could not supply.
         accrueSplitIndex(crystal, this.conditions, zone.thickness_um);
         // W-K VOL-NEUTRAL (measurement): when O5_VOLNEUTRAL_ENABLED, a split
         // crystal's axial extent is compacted by splitGrowthMult(index) at
@@ -996,7 +1021,7 @@ class VugSimulator {
             );
           } else if (name.includes('tectonic')) {
             paragraphs.push(
-              `A tectonic event at step ${triggering_event.step} produced a pressure spike.` + this._narrate_tectonic(batch)
+              `A tectonic event at step ${triggering_event.step} produced a differential-stress pulse.` + this._narrate_tectonic(batch)
             );
           } else {
             for (const c of batch) (untriggeredByMineral[c.mineral] ||= []).push(c);

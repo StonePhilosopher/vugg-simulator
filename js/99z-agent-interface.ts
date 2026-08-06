@@ -206,6 +206,7 @@ function _agentSpecimenJSON(simOverride?: any): any {
   return {
     ok: true,
     sim_version: (typeof SIM_VERSION !== 'undefined') ? SIM_VERSION : null,
+    model_digest: (typeof MODEL_DIGEST !== 'undefined') ? MODEL_DIGEST : null,
     scenario: meta.scenario || null,
     seed: meta.seed != null ? meta.seed : null,
     shape_seed: meta.shape_seed != null ? meta.shape_seed : null,
@@ -392,6 +393,7 @@ function _agentExposeWindow(): void {
     defineGetter('MINERAL_ENGINES', () => (typeof MINERAL_ENGINES !== 'undefined' ? MINERAL_ENGINES : null));
     defineGetter('MINERAL_SPEC', () => (typeof MINERAL_SPEC !== 'undefined' ? MINERAL_SPEC : null));
     defineGetter('SIM_VERSION', () => (typeof SIM_VERSION !== 'undefined' ? SIM_VERSION : null));
+    defineGetter('MODEL_DIGEST', () => (typeof MODEL_DIGEST !== 'undefined' ? MODEL_DIGEST : null));
     defineGetter('fortressSim', () => (typeof fortressSim !== 'undefined' ? fortressSim : null));
     defineGetter('legendsSim', () => (typeof legendsSim !== 'undefined' ? legendsSim : null));
     defineGetter('idleSim', () => (typeof idleSim !== 'undefined' ? idleSim : null));
@@ -544,7 +546,7 @@ async function _agentBootFromURL(): Promise<void> {
       if (steps != null) setVal('steps', String(steps));
     }
     if (typeof runSimulation === 'function') {
-      runSimulation();
+      await runSimulation();
     }
     return;
   }

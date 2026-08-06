@@ -73,13 +73,30 @@ function applyParamorphTransitions(crystal, T, step) {
 // reputation (between borax's 25 and the autunite-group's 40). T_max
 // 80°C is the documented onset of dehydration (research-pharmacolite.md).
 const DEHYDRATION_TRANSITIONS = {
-  borax: ['tincalconite', 25, 1.5, 75.0],
+  // Pure Na2B4O7-H2O transition: 60.8 C. A halite-saturated
+  // NaCl-Na2B4O7 solution lowers it to 39.6 C (Bowser 1964; Christ,
+  // Truesdell & Jones 1967). The saturated-brine branch is selected
+  // explicitly below rather than inventing an unsupported continuous
+  // salt-composition polynomial.
+  borax: ['tincalconite', 25, 1.5, 60.8],
   mirabilite: ['thenardite', 30, 1.5, 32.4],
   autunite: ['meta-autunite', 40, 1.0, 80.0],
   torbernite: ['metatorbernite', 40, 1.0, 75.0],
   zeunerite: ['metazeunerite', 40, 1.0, 75.0],
   pharmacolite: ['haidingerite', 30, 1.0, 80.0],
 };
+
+const BORAX_TINCALCONITE_SALINE_TRANSITION_C = 39.6;
+const BORAX_TINCALCONITE_HALITE_SATURATION_SW_MULT = 10.6;
+
+function boraxTincalconiteHeatThreshold(ringFluid) {
+  const concentration = Math.max(0, Number(ringFluid?.concentration) || 1.0);
+  const salinity = Math.max(0, Number(ringFluid?.salinity) || 0.0);
+  const brineStrength = (salinity / 35.0) * concentration;
+  return brineStrength >= BORAX_TINCALCONITE_HALITE_SATURATION_SW_MULT
+    ? BORAX_TINCALCONITE_SALINE_TRANSITION_C
+    : DEHYDRATION_TRANSITIONS.borax[3];
+}
 
 function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step) {
   // v28: convert a hydrated mineral in place when its host ring has
@@ -91,7 +108,10 @@ function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step
   const spec = DEHYDRATION_TRANSITIONS[crystal.mineral];
   if (!spec) return null;
   const [newMineral, thresholdSteps, concMin, Tmax] = spec;
-  const isHot = T >= Tmax;
+  const heatThreshold = crystal.mineral === 'borax'
+    ? boraxTincalconiteHeatThreshold(ringFluid)
+    : Tmax;
+  const isHot = T >= heatThreshold;
   let isDry;
   if (ringWaterState === 'vadose') isDry = true;
   else if (ringWaterState === 'meniscus') isDry = ringFluid.concentration >= concMin;
@@ -102,6 +122,8 @@ function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step
       crystal.mineral = newMineral;
       crystal.paramorph_origin = old;
       if (step != null) crystal.paramorph_step = step;
+      crystal.dehydration_driver = 'temperature';
+      crystal.dehydration_threshold_C = heatThreshold;
       return [old, newMineral];
     }
     return null;
@@ -113,6 +135,7 @@ function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step
       crystal.mineral = newMineral;
       crystal.paramorph_origin = old;
       if (step != null) crystal.paramorph_step = step;
+      crystal.dehydration_driver = 'dry-exposure';
       return [old, newMineral];
     }
   }

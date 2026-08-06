@@ -43,11 +43,11 @@
 //    will read artificially supersaturated — but those systems aren't
 //    the targets of these chips. Documented Phase 1 simplification.
 //
-// 2. **a(H₂O) = 1** for gypsum's `CaSO4·2H2O = Ca + SO4 + 2H2O`. The
-//    PHREEQC wateq4f log_k is also defined at unit water activity —
-//    so matching the database convention is the right call here. For
-//    halite-saturated brines a(H₂O) drops to ~0.75 and gypsum SI would
-//    be ~0.25 units low; Pitzer-grade work is research-mode territory.
+// 2. **a(H₂O) is explicit for gypsum.** The reaction is
+//    `CaSO4·2H2O = Ca + SO4 + 2H2O`, so log IAP includes 2 log(a_w).
+//    waterActivity() uses a disclosed NaCl-equivalent interpolation of
+//    Chirife & Resnik (1984) data; natural multicomponent brines retain an
+//    uncertainty flag rather than being mislabeled as Pitzer-grade output.
 //
 // 3. **Davies activity coefficients** (capped at γ ≤ 1) used via the
 //    existing speciesActivity() in 20a — same path as the carbonate
@@ -56,7 +56,7 @@
 // Geometric-mean SI for AB(SO4) sulfates: SI = log10(a_cation · a_SO4) − log10(Ksp).
 // Returns NaN if cation/SO4 absent or thermo not loaded — call sites
 // (strip chip reads) treat NaN as null (chip hides that sample).
-function _SI_AB_sulfate(mineralId: string, fluid: any, T: number, cationKey: string): number {
+function _SI_AB_sulfate(mineralId: string, fluid: any, T: number, cationKey: string, hydrationWaters = 0): number {
   if (!fluid) return NaN;
   const I = ionicStrength(fluid);
   const a_cation = speciesActivity(fluid, cationKey, I);
@@ -65,11 +65,14 @@ function _SI_AB_sulfate(mineralId: string, fluid: any, T: number, cationKey: str
   if (!(a_SO4 > 0)) return NaN;
   const logKsp = getSulfateLogKsp(mineralId, T);
   if (!isFinite(logKsp)) return NaN;
-  return Math.log10(a_cation) + Math.log10(a_SO4) - logKsp;
+  const logWater = hydrationWaters > 0
+    ? hydrationWaters * Math.log10(waterActivity(fluid, T))
+    : 0;
+  return Math.log10(a_cation) + Math.log10(a_SO4) + logWater - logKsp;
 }
 
 function saturationIndex_selenite(fluid: any, T: number): number {
-  return _SI_AB_sulfate('selenite', fluid, T, 'Ca');
+  return _SI_AB_sulfate('selenite', fluid, T, 'Ca', 2);
 }
 function saturationIndex_anhydrite(fluid: any, T: number): number {
   return _SI_AB_sulfate('anhydrite', fluid, T, 'Ca');

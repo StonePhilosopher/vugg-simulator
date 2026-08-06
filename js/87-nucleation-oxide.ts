@@ -152,7 +152,7 @@ function _nuc_cassiterite(sim) {
 // scenarios where Mn is below threshold.
 function _nuc_pyrolusite(sim) {
   const sigma = sim.conditions.supersaturation_pyrolusite();
-  if (sigma < MINERAL_GATES_pyrolusite.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
+  if (sigma <= MINERAL_GATES_pyrolusite.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('pyrolusite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'pyrolusite' && c.active);
   const total = sim.crystals.filter(c => c.mineral === 'pyrolusite').length;
@@ -196,7 +196,7 @@ function _nuc_pyrolusite(sim) {
 // wall. RNG-cascade-guarded.
 function _nuc_brucite(sim) {
   const sigma = sim.conditions.supersaturation_brucite();
-  if (sigma < MINERAL_GATES_brucite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_brucite.sigma_crit) return;
   if (sim._atNucleationCap('brucite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'brucite' && c.active);
   if (existing.length >= 4) return;

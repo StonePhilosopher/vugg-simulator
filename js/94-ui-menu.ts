@@ -167,7 +167,7 @@ function fortressBeginFromStarterFluid(presetId, seedOverride?) {
   logEl.innerHTML = '';
   const initLines = [
     `🏰 Creative Mode — Starter Fluid: ${preset.label}`,
-    `   Temperature: 200°C | Pressure: 1.00 kbar | pH: ${conditions.fluid.pH.toFixed(1)}`,
+    `   Temperature: 200°C | Fluid pressure: 1.00 kbar | pH: ${conditions.fluid.pH.toFixed(1)}`,
     `   Fluid: ${conditions.fluid.describe()}`,
     `   ${preset.desc}`,
     `   No scripted events — only your actions + ambient drift will shape this vug.`,
@@ -223,7 +223,7 @@ function fortressBeginFromScenario(scenarioName, seedOverride?) {
   logEl.innerHTML = '';
   const initLines = [
     `🏰 Creative Mode — Scenario: ${prettyName}`,
-    `   Temperature: ${conditions.temperature.toFixed(0)}°C | Pressure: ${conditions.pressure.toFixed(2)} kbar | pH: ${conditions.fluid.pH.toFixed(1)}`,
+    `   Temperature: ${conditions.temperature.toFixed(0)}°C | Fluid pressure: ${conditions.pressure.toFixed(2)} kbar | pH: ${conditions.fluid.pH.toFixed(1)}`,
     `   Fluid: ${conditions.fluid.describe()}`,
   ];
   if (events && events.length) {
@@ -287,8 +287,7 @@ function titleQuickPlay() {
   const seedEl = document.getElementById('seed') as HTMLInputElement | null;
   if (seedEl) seedEl.value = '';
   if (typeof runSimulation === 'function') {
-    try { runSimulation(); }
-    catch (e) { console.error('Quick Play failed to start simulation:', e); }
+    void runSimulation().catch(e => console.error('Quick Play failed to start simulation:', e));
   }
 }
 function titleLoadGame() {
@@ -419,6 +418,7 @@ let currentGameMode = null;
 const GAME_MODES = ['legends', 'fortress', 'idle', 'random'];
 
 function switchMode(mode) {
+  if (typeof cancelSimulationPlayback === 'function') cancelSimulationPlayback();
   // Music routing (js/08-music.ts): every mode is a BUILDING room
   // (salt-circuit.mp3 looping) EXCEPT Strip View, which is silent —
   // the sonifier owns that room. Moving between building modes does

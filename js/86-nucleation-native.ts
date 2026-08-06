@@ -157,7 +157,7 @@ function _nuc_native_gold(sim) {
 // when S > 5. RNG-cascade-guarded.
 function _nuc_awaruite(sim) {
   const sigma = sim.conditions.supersaturation_awaruite();
-  if (sigma < MINERAL_GATES_awaruite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_awaruite.sigma_crit) return;
   if (sim._atNucleationCap('awaruite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'awaruite' && c.active);
   if (existing.length >= 3) return;

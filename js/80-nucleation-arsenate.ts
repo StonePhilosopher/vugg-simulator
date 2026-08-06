@@ -214,7 +214,7 @@ function _nuc_conichalcite(sim) {
 
 function _nuc_austinite(sim) {
   const sigma = sim.conditions.supersaturation_austinite();
-  if (sigma < MINERAL_GATES_austinite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_austinite.sigma_crit) return;
   if (sim._atNucleationCap('austinite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'austinite' && c.active);
   if (existing.length >= 2) return;
@@ -231,7 +231,7 @@ function _nuc_austinite(sim) {
 
 function _nuc_legrandite(sim) {
   const sigma = sim.conditions.supersaturation_legrandite();
-  if (sigma < MINERAL_GATES_legrandite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_legrandite.sigma_crit) return;
   if (sim._atNucleationCap('legrandite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'legrandite' && c.active);
   if (existing.length >= 2) return;
@@ -248,7 +248,7 @@ function _nuc_legrandite(sim) {
 
 function _nuc_koettigite(sim) {
   const sigma = sim.conditions.supersaturation_koettigite();
-  if (sigma < MINERAL_GATES_koettigite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_koettigite.sigma_crit) return;
   if (sim._atNucleationCap('koettigite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'koettigite' && c.active);
   if (existing.length >= 2) return;
@@ -265,7 +265,7 @@ function _nuc_koettigite(sim) {
 
 function _nuc_duftite(sim) {
   const sigma = sim.conditions.supersaturation_duftite();
-  if (sigma < MINERAL_GATES_duftite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_duftite.sigma_crit) return;
   if (sim._atNucleationCap('duftite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'duftite' && c.active);
   if (existing.length >= 2) return;
@@ -284,7 +284,7 @@ function _nuc_duftite(sim) {
 
 function _nuc_bayldonite(sim) {
   const sigma = sim.conditions.supersaturation_bayldonite();
-  if (sigma < MINERAL_GATES_bayldonite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_bayldonite.sigma_crit) return;
   if (sim._atNucleationCap('bayldonite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'bayldonite' && c.active);
   if (existing.length >= 2) return;

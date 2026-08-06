@@ -50,7 +50,12 @@ function event_bisbee_enrichment_blanket(c) {
 
 function event_bisbee_reducing_pulse(c) {
   c.fluid.O2 = 0.05;
-  c.fluid.S = 15;
+  // This is explicitly a barren reducing fluid. At S=15 the
+  // activity-corrected peak was sigma=1.54 against native copper's
+  // declared 1.6 barrier: the prose promised a low-S metal window while
+  // the broth still described a weak sulfide-bearing one. Ten ppm keeps
+  // sulfide minerals disfavoured and lets Cu cross the unchanged gate.
+  c.fluid.S = 10;
   c.fluid.Cu += 150;
   c.fluid.pH = 6.0;
   c.temperature = 28;

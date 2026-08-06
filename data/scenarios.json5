@@ -365,7 +365,7 @@
         "Hagni 1976 — Tri-State paragenesis",
         "Stoffell et al. 2008 — LA-ICP-MS fluid-inclusion brine analyses",
         "Anderson & Macqueen 1982 — MVT mineralogy review",
-        "Schwartz 2000 (Econ. Geol. 95) — Cd in MVT sphalerite (pending Cd schema)",
+        "Schwartz 2000 (Econ. Geol. 95) — Cd in MVT sphalerite",
         "Hanor 1994 — basinal-brine compendium (Sr/Ba tracers)"
       ]
     },
@@ -434,7 +434,7 @@
         { "step": 50, "type": "elmwood_barite_stage", "name": "Barite Stage — Generation 2", "description": "A fresh barium pulse overtakes the clay film; barite grows a second generation THROUGH it, sealing the coat as an internal snowball horizon" },
         { "step": 60, "type": "film_coat", "name": "Iron-Oxide Coat", "description": "Iron oxides tint the blade fronts a rusty film — the second masking coat", "film": { "mineral": "iron oxide", "term": 0.3, "prism": 0.3, "minerals": ["barite"] } },
         { "step": 68, "type": "elmwood_barite_stage", "name": "Barite Stage — Generation 3", "description": "The third barium pulse breaks through the iron-oxide film — a second snowball horizon buried in the blade" },
-        { "step": 70, "type": "tectonic_shock", "name": "Fault Slip", "description": "The fault valve slips — pressure pulse through the breccia run" },
+        { "step": 70, "type": "tectonic_shock", "name": "Fault Slip", "description": "The fault slips — a differential-stress pulse fractures the breccia run" },
         // S2 celestine tranche (SIM 236): the slip drives Sr-charged diagenetic pore water
         // (host-carbonate recrystallization + dolomitization expel Sr — Hanor 2000, RiMG 40)
         // into the vug just before the vein cools through 100°C; the Ba-bearing fibrous
@@ -845,6 +845,9 @@
           "matrix": "hornfels",         // MATRIX SKIN (render-only): carbonaceous metapelite hornfels — the chiastolite country rock (see notes)
           "thickness_mm": 800.0,
           "vug_diameter_mm": 35.0,
+          // Model assumption: shallow contact-aureole ROCK pressure. This is
+          // separate from the independently adjustable cavity-fluid pressure.
+          "confining_pressure_kbar": 2.5,
           "wall_Fe_ppm": 800.0,
           "wall_Mn_ppm": 100.0,
           "primary_bubbles": 3,
@@ -1163,16 +1166,16 @@
 
     "searles_lake": {
       "anchor": "Searles Lake, San Bernardino County, California — Pleistocene-Holocene closed-basin alkaline-saline brine, the textbook locality for sodium-borate / sodium-sulfate / sodium-chloride evaporites. ~70 evaporite mineral species documented (Smith 1979 USGS PP 1043). Type locality for hanksite, sulfohalite, borax (commercially), tincalconite.",
-      "description": "Mojave desert closed basin with Sierra Nevada snowmelt feed. Wet/dry seasonal cycling drives the full evaporite cascade: halite crusts in the drying windows, borax + mirabilite in cold winter, thenardite paramorphs in summer heat. (Tincalconite — the type-locality dehydration of borax — is chiefly the museum-drawer alteration: it needs dry-air exposure the submerged lake crystals don't get; see the rung-5 withdrawal note.) The 20-mule team era of American borate commerce ran on chemistry like this.",
-      "expects_species": ["halite", "borax", "mirabilite", "thenardite"],
+      "description": "Mojave desert closed basin with Sierra Nevada snowmelt feed. Wet/dry seasonal cycling drives the full evaporite cascade: halite crusts in the drying windows, borax + mirabilite in cold winter, thenardite paramorphs in summer heat, and tincalconite where hot saline brine or exposed dry air dehydrates surviving borax. The 20-mule team era of American borate commerce ran on chemistry like this.",
+      "expects_species": ["halite", "borax", "tincalconite", "mirabilite", "thenardite"],
       "duration_steps": 300,
       "notes": [
         "Smith 1979 USGS Professional Paper 1043 — the canonical Searles Lake mineralogy + paragenesis reference. ~70 mineral species; the simulator covers the major Na-sulfate/borate/chloride suite (halite, borax, tincalconite, mirabilite, thenardite). Trona, hanksite, sulfohalite, glauberite, gaylussite, pirssonite, ulexite, colemanite, kernite are all real and worth adding later.",
         "Initial T = 18°C (Mojave October — playa temps span 5°C winter to 50°C summer). Initial chemistry seeds the alkaline-saline brine: Na 1500, B 100, S 400, Cl 1500, alkaline pH 9.5, low Ca (Ca > 50 would steal borate as colemanite). Salinity high (180 g/L) reflects the ~4× seawater concentration of mid-Pleistocene Searles brine.",
-        "Five seasonal cycles over 300 steps. Each cycle: winter_freeze (steps 30, 90, 150, 210, 270) drops T to 8°C and bumps soluble species; summer_bake (steps 60, 120, 180, 240) heats to 55°C, firing mirabilite → thenardite (its incongruent-melting boundary is 32.4°C, so the bake converts it even submerged). Borax → tincalconite does NOT fire at 55°C: borax's submerged-instability point is ~75°C, and the real conversion route is DRY-AIR exposure (40–50% RH at ambient T — the museum-drawer alteration; OSTI 1850965 thermodynamics), which submerged-or-flushed lake crystals don't experience. Inter-cycle fresh_pulse events flood the basin briefly.",
+        "Five seasonal cycles over 300 steps. Each cycle: winter_freeze (steps 30, 90, 150, 210, 270) drops T to 8°C and bumps soluble species; summer_bake (steps 60, 120, 180, 240) heats to 55°C, firing mirabilite → thenardite (its incongruent-melting boundary is 32.4°C) and borax → tincalconite where the brine reaches the halite-saturated strength represented by the dry-down. The borax transition is 60.8°C in the pure Na2B4O7-H2O system but falls to 39.6°C in saturated NaCl-Na2B4O7 solution (Bowser 1964); controlled-RH measurements independently place the borax/tincalconite boundary near 59±6% RH at 25°C and 88±8% at 55–65°C (Ruhl et al. 2007). Inter-cycle fresh_pulse events flood the basin briefly.",
         "fluid_surface_ring isn't set in initial state — the basin starts fully saturated. The summer_bake events drop it through evaporation; fresh_pulse refills. The vadose-transition concentration boost (×3 per drying) is what brings borax + mirabilite into supersaturation.",
         "Death Valley (Furnace Creek) and Boron, CA also belong to this basin family but with slightly different brine-chemistry signatures. Searles is the most chemically diverse — chosen as the sim's anchor because more of its minerals are already plumbed.",
-        "rung-5 PROMISE WITHDRAWAL (SIM 234): tincalconite struck from expects_species. The pre-rung record's tincalconite ×8 was a DUST ARTIFACT: spurious halite (σ≈405 from the old ppm-anchored gate) crowded the nucleation economy so hard that borax never grew past the 5 µm meteoric-flush threshold — immortal 0 µm dust that sat through wet cycles until dry-exposure converted it. The honest model (halite re-anchored to real brine strength) lets borax GROW (23.6 mm at seed 42, ×17) and grown borax participates in the real wet-dry cycle: it redissolves in flushes instead of loitering. Measured: tincalconite 0 across seeds 7/41/42/43/44/45/100/2024. The borax→tincalconite MECHANIC is retained untouched (js/75: dry-exposure path per the real 40–50% RH ambient chemistry, heat path at the real ~75°C submerged-instability point) — it fires the day a scenario genuinely strands grown borax in a dry ring for 25 steps. Tincalconite joins meta-autunite in the DEAD list: a true transition product awaiting its exposure scenario. Type-locality status (anchor line) is a fact about Searles, not a growth promise for this submerged run.",
+        "SIM 239 SCIENCE CORRECTION TO THE SIM 234 WITHDRAWAL: exact LIFO shell dissolution removed the old all-or-nothing crystal flag and showed that grown borax remnants survive some flushes, then dehydrate during later dry/hot windows. Primary literature supports that result: tincalconite occurs at Searles both as clear 1–3 mm crystals in contact with lake brine and as an alteration product of large borax crystals (Christ, Truesdell & Jones 1967, citing Pabst & Sawyer 1948 and Smith & Haines 1964). Bowser's saline-system measurements lower the transition from 60.8°C in pure Na-borate solution to 39.6°C in saturated NaCl-Na-borate solution. The old 'museum drawer only' interpretation was therefore too narrow. Tincalconite is restored to expects_species because the scenario now has a mechanism-backed saline summer transition plus its dry-exposure path; this is not a locality-scoreboard restoration.",
         "MINDAT VALID-SPECIES REFERENCE (boss-supplied screenshots + reference list, 2026-07-27 — 'Searles Lake, San Bernardino County, California, USA'; full citation transcription in research/scenarios/searles/citations-mindat-searles-lake-2026-07-27.md; 37 valid, 10 type-locality): Analcime, Anhydrite, Aphthitalite, Aragonite, Borax, BURKEITE (TL), Calcite, Celestine, Chlorargyrite (+ var. Bromian), Dolomite, GALEITE (TL), Gaylussite, Glauberite, GYPSUM (var. SELENITE), Halite, HANKSITE (TL), 'Heulandite Subgroup', 'K Feldspar' ('var. Adularia'), Merlinoite, Mirabilite, Nahcolite, Native Sulphur, Natron, Niter, NORTHUPITE (TL), Opal, Orthoclase, 'Phillipsite Subgroup', PIRSSONITE (TL), Quartz, Realgar, SCHAIRERITE (TL), SEARLESITE (TL), SULPHOHALITE (TL), Teepleite, Thenardite, TINCALCONITE (TL), Trona, TYCHITE (TL), Ulexite. WHAT THE LIST VOTES ON (vs seed-42 v236 sim output): (a) THE CLEANEST SHEET IN THE SWEEP — all 8 sim species licensed: borax ✓ (23.5 mm), calcite ✓, celestine ✓ (255 µm), halite ✓, mirabilite ✓, quartz ✓, selenite ✓ (34.2 mm — the S2-selenite migration's searles tenant is record-LICENSED, cross-mine selenite tally now 5-YES/2-NO), thenardite ✓ (40.2 mm); zero census flags. (b) SYLVITE IS NOT ON THE LIST — the rung-5 fleet-wide sylvite extinction (SIM 234, bittern-window physics) is retroactively record-licensed at the scenario that once grew it. (c) TINCALCONITE TL TENSION, resolved honestly: the list licenses the SPECIES at the locality (it IS the type locality) but the rung-5 withdrawal was mechanism-based — real tincalconite is dry-air alteration of grown borax (museum-drawer chemistry), not in-brine growth, so a locality license does not overturn a nucleation-mechanism withdrawal; both records are correct at their own layer. (d) documented-unfired = the famous saline double-salt suite (trona, hanksite, gaylussite, glauberite, pirssonite, northupite, nahcolite, burkeite, sulphohalite, schairerite, galeite, tychite, aphthitalite, teepleite, natron, niter, ulexite, searlesite) — no sim engines yet; the note-1 'worth adding later' list gains mindat corroboration; also anhydrite/aragonite/dolomite/opal + the authigenic silicate tail (analcime, merlinoite, phillipsite/heulandite, K-feldspar — Hay & Moiola 1962 sediment authigenesis, a different growth regime than the vug). (e) realgar + chlorargyrite + native sulphur are valid here but trace/exotic — no vote against the sim's hypogene-free evaporite scope."
       ],
       "initial": {
@@ -1218,6 +1221,11 @@
           "shape_seed": 1862     // first borax claim at Searles, 1862
         }
       },
+      // SIM239 supersession: the earlier MINDAT note's clause (c), which
+      // calls Searles tincalconite exclusively dry-air alteration, is retained
+      // above as audit history but is no longer the active interpretation.
+      // Primary phase-system evidence and the executed saline-summer mechanism
+      // in the preceding notes supersede it.
       "events": [
         { "step":  30, "type": "searles_winter_freeze", "name": "Winter Freeze #1", "description": "Mojave night drops below 32°C; mirabilite + borax precipitate" },
         { "step":  60, "type": "searles_summer_bake",   "name": "Summer Bake #1",   "description": "Playa heats to 55°C; mirabilite → thenardite, borax → tincalconite" },
@@ -1813,7 +1821,7 @@
         "Cascade discipline: initial Be=8 sits BELOW the beryl family's hard Be≥10 ingredient floor — fully dormant, accumulating, until the stage-4 pocket-rupture pulse delivers the hoarded inventory (~118, Evensen/London/Wallace 1999 beryl-saturation territory) and σ(aquamarine) pins its ~9 ceiling at T≈430°C (inside the family's 350-550°C window). Initial B=5 likewise sits below tourmaline's B≥6 floor so schorl genuinely ARRIVES at stage 2 rather than pre-dating the wall zone. Fe-budget routing (the §4 walk): schorl debits Fe from stage 2 on — the stage-4 event re-floors Fe at 12 (fresh reduced fluid with the rupture) so the blue is guaranteed on Fe-hungry seeds; without it the scenario ships occasional goshenite.",
         "The hf_etch stage is the Shigar signature — famously etched, sculpted aquamarines (structure-controlled dissolution pits and skeletal etch forms on Pakistani blue beryl: G&G 57(2) Summer 2021 Quarterly Crystal — the late fluid fell out of equilibrium with the very beryl it grew). Mechanism here: late fluid crashes Be (the big crystals took it; σ falls under 1.0) while F>30 and pH<3.0 — exactly _beryl_family_dissolution's etch branch (trigonal pits, stepped faces). grow_quartz's HF note fires on the same chemistry. Smoky quartz is free with composition 'pegmatite': the Rossman [AlO₄]⁰ γ-dose path keys off the radiogenic felsic host. Blue-not-gold: Fe²⁺ in the beryl channels is the blue chromophore (Goldman, Rossman & Parkin 1978); oxidized Fe³⁺ gives heliodor's yellow, which is why the broth pins O2 low.",
         "Wallrock: 'pegmatite' (inert silicate proxy — pocket pH excursions are unbuffered, which the etch stage needs) + cavity_render 'sharp' + occlusion 0.30, all per the gem_pegmatite precedent (London 2008 pocket photographs: crisp euhedral cavity walls, prisms standing proud). thermal_pulses false — a sealed miarolitic chamber has no fracture-valve hot injections; the seven events ARE the thermal story (600→300°C).",
-        "Tutorial-tempo: duration_steps 70 (≈2.3 min at default narrative pace) because this scenario doubles as Tutorial 4's stage — a first-time collector watches the whole pocket story without a 200-step sit. The pocket (140 mm, size_class via explicit diameter) yields cabinet-specimen aquas worth collecting.",
+        "Tutorial-tempo: duration_steps 70 (≈2.3 min at default narrative pace) because this scenario doubles as Tutorial 4's stage — a first-time collector watches the whole pocket story without a 200-step sit. The 220 mm cavity is conservative beside the documented 1-4 m dikes and ~150 kg Goyungo specimen plate, while leaving physical room for the late F-rich topaz stage instead of sealing during early cleavelandite growth.",
         "shape_seed 1985 — the mid-1980s Dassu production boom that put Shigar aquamarine on every dealer's table."
       ],
       "initial": {
@@ -1862,7 +1870,7 @@
         "wall": {
           "composition": "pegmatite",
           "thickness_mm": 500.0,
-          "vug_diameter_mm": 140.0,
+          "vug_diameter_mm": 220.0,
           "architecture": "pocket",
           "primary_bubbles": 3,
           "secondary_bubbles": 5,
@@ -1887,8 +1895,8 @@
       // tutorial_* twin: the pocket is real science and the tutorial is a
       // guest on it. mode 'legends' boots Simulation mode and presets the
       // setup row; seed 42 makes every player's pocket match this script
-      // (Door 1 / SIM 219: 6 species, 5 aquamarines — a 21 mm etched
-      // star down to a pristine 0.4 mm post-etch runt — stature pinned
+      // (SIM 241 mole-correct ledger: 6 species, 5 aquamarines — a ~38 mm
+      // etched star down to a ~0.9 mm post-etch companion — stature pinned
       // in tests-js/shigar-pegmatite.test.ts). `step: N` fires on the
       // NARRATIVE PLAYBACK position; allowModes lets the tour walk to the
       // Library without the mode-switch teardown ending it.
@@ -2244,7 +2252,8 @@
       "notes": [
         "The mineralogically richest single ore district in Europe — the Erzgebirge had been mined for silver since the 1100s, then bismuth from the 1500s (the very name 'Bismutum' was coined here), then uranium from the 1800s onward. Most autunite-group species were first described from Schneeberg or its sister deposits (Jáchymov, Annaberg). Pinch & Wilson 1977 monographs are the canonical reference.",
         "Mechanic: 6-event lifecycle walking through cation×anion combinatorics. Pegmatite crystallization (step 20): hot reducing fluid grows uraninite + chalcopyrite + arsenopyrite primaries. Cooling (step 70): T drops to ambient. Cu+P phase (step 85): O2 floods, primaries weather, P>As, Cu>Ca → torbernite plates. Cu+As pulse (step 105): As replenishes from arsenopyrite weathering, Cu still high → zeunerite plates. Cu depletion (step 125): Cu consumed by both Cu-cation secondaries; Ca rises from carbonate dissolution → autunite plates. As pulse late (step 145): As replenishes again, Ca dominant → uranospinite plates.",
-        "First scenario to fire all 4 P/As-branch uranyl species (torbernite, autunite, zeunerite, uranospinite) in a single run. The cation+anion fork mechanic introduced by Rounds 9b-9e is finally exercised end-to-end. Uraninite weathers as the v12 gatekeeper feedstock event."
+        "First scenario to fire all 4 P/As-branch uranyl species (torbernite, autunite, zeunerite, uranospinite) in a single run. The cation+anion fork mechanic introduced by Rounds 9b-9e is finally exercised end-to-end. Uraninite weathers as the v12 gatekeeper feedstock event.",
+        "Bismuthinite status (SIM 241 audit): geologically licensed but not an expected species. It occurred in the v240 seed-42 run and in none of five sampled SIM 241 seeds. This disappearance is recorded as an unretuned consequence of the corrected growth-budget/competition model; native_bismuth remains the expected Bi phase. Do not restore bismuthinite through scoreboard tuning."
       ],
       "initial": {
         // T=450°C, P=1.5 kbar: pegmatitic residual fluid before
@@ -2297,8 +2306,9 @@
           "Li": 15,
           "B": 12,
           // Bismuth — Schneeberg was named for its bismuth mining before
-          // the uranium era. Bismuthinite + native_bismuth secondary phases
-          // can form alongside the uranyls. (Was 10 pre-2026-05; bumped to
+          // the uranium era. Native bismuth is expected; bismuthinite is
+          // geologically possible but not an expected or sampled SIM 241
+          // outcome (see the scenario note). (Was 10 pre-2026-05; bumped to
           // 40 during the Path C cascade-gate audit Arc 2 — the gate-
           // softening + bi_f scaling tightening still wasn't enough at
           // Bi=10. Förster 1992 Schneeberg fluid-inclusion data puts Bi at
@@ -2585,6 +2595,27 @@
           "endStep": 200,
           "base": 450,
           "ops": [{ "kind": "trend", "amp": -250, "ease": true }]
+        },
+        {
+          // Gnos, Mullis & Bergemann (2025) D1 -> D3 exhumation path:
+          // ~440 MPa -> ~230 MPa. The fracture fluid is modelled as
+          // near-lithostatic while the cleft is sealing/reopening, so its
+          // isotropic pressure follows the host-rock unloading trend rather
+          // than remaining pinned at peak burial throughout late carbonate
+          // growth. This is the forcing function the corrected Hacker
+          // calcite/aragonite boundary exposed as missing.
+          "field": "pressure",
+          "startStep": 0,
+          "endStep": 200,
+          "base": 4.4,
+          "ops": [{ "kind": "trend", "amp": -2.1, "ease": true }]
+        },
+        {
+          "field": "wall.confining_pressure_kbar",
+          "startStep": 0,
+          "endStep": 200,
+          "base": 4.4,
+          "ops": [{ "kind": "trend", "amp": -2.1, "ease": true }]
         }
       ],
       "initial": {
@@ -2610,6 +2641,7 @@
         },
         "wall": {
           "composition": "pegmatite",
+          "confining_pressure_kbar": 4.4,
           "matrix": "granite",   // MATRIX SKIN (render-only, 2026-07-06): notes: "the granite/granitoid inert-silicate proxy — the Aar granite host"
           "reactivity": 0,
           // W-K V0 (2026-07-03): the Zerrkluft finally SHAPED like one — the
@@ -3370,7 +3402,7 @@
           "Mg": 20,
           "Na": 15,
           "Cl": 10,
-          "SO4": 5,
+          "S": 5,               // canonical total dissolved sulfur; oxic fluid resolves it as sulfate
           "Fe": 1,
           "Mn": 0.5,
           "SiO2": 8,
@@ -3470,7 +3502,7 @@
           "pH": 8.4,
           "Na": 12,
           "Cl": 10,
-          "SO4": 5,
+          "S": 5,               // canonical total dissolved sulfur; oxic fluid resolves it as sulfate
           "Fe": 1,
           "Mn": 0.3,
           "SiO2": 6,
@@ -4344,14 +4376,14 @@
 
     "amethyst_geode": {
       "anchor": "Ametista do Sul, Rio Grande do Sul, Brazil — amethyst geodes in the Serra Geral Formation high-Ti basalt (Paraná Continental Flood Basalt Province, Lower Cretaceous ~134 Ma)",
-      "description": "A Brazilian amethyst geode. A basalt gas cavity fills inward — celadonite rim → agate → clear quartz → amethyst. Mid-growth a green celadonite film frosts the amethyst prism faces; the tip renews a wider cap THROUGH the film — a MASKING SCEPTRE (the mass-conserving twin of grimsel's corrosion sceptre). Goethite staining at the base.",
+      "description": "A Brazilian amethyst geode. A basalt gas cavity fills inward — celadonite rim → agate → clear quartz → amethyst. Mid-growth a green celadonite film frosts the amethyst prism faces; the tip renews a wider cap THROUGH the film — a MASKING SCEPTRE (the non-corrosive masking counterpart to grimsel's corrosion sceptre). Goethite staining at the base.",
       "expects_species": ["quartz"],
       "duration_steps": 110,
       "notes": [
         "Anchor: Ametista do Sul, Rio Grande do Sul — the classic Brazilian amethyst-geode district, hosted in a ~40-50 m subhorizontal high-Ti basalt flow of the Serra Geral Formation (Paraná flood basalts, Lower Cretaceous ~134 Ma). Geode structure INWARD: celadonite rim → agate/chalcedony → colourless quartz → amethyst (Gilg et al. 2003).",
         "Formation temperature is genuinely debated in the literature and the scenario bridges the two camps. Monophase liquid inclusions with low ice-melting depressions argue a LOW-T, low-salinity fluid (<100°C, probably <50°C — a sedimentary-brine / paleo-aquifer model; Gilg et al. 2003). Primary inclusions in the amethyst itself yield 152-238°C with a MAGMATIC silica source (Triz-quarry study, Geol. Mag. 144:731). The scenario nucleates amethyst in a warm early phase (~160°C) and finishes the cavity cool (~70°C via the declared cooling trend), with the celadonite film + goethite stain as the late low-T overprint.",
         "AMETHYST COLOUR is Fe³⁺ substituting for Si⁴⁺, activated by a natural γ-dose (Rossman 1994). The Serra Geral basalt is mafic — low K/U/Th per unit time — but the geode has sat in it for ~134 Ma, so cumulative background dose tips the Fe centres to amethyst (NOT the granite-hosted morion of a Grimsel cleft). The sim expresses this via wall.gamma_host (js/59, added with this scenario): a modest 0.45 accrues radiation_damage into the amethyst band (>0.1) without reaching smoky (>0.3). No pegmatite/phonolite host is claimed — the scenario declares its own low, long background; every existing basalt scenario leaves gamma_host unset and is byte-identical.",
-        "THE MASKING SCEPTRE: the celadonite (green K-Fe mica-clay) that rims these geodes also settles on the growing amethyst as a film. A PRISM-dominant celadonite film (prism 0.45, term 0.08 — frosts the {10-10} prism, spares the tip) arrests the sides; the Silica Renewal Pulse then lifts σ over the dead-zone barrier σ*(φ_prism) and the tip renews a wider {10-11}-capped termination THROUGH the film — a masking-route sceptre (classifyQuartzSceptre js/45; Takahashi & Sunagawa 2004 ELO). grimsel stays the clean CORROSION-sceptre reference; this is the second natural route, the mass-conserving twin.",
+        "THE MASKING SCEPTRE: the celadonite (green K-Fe mica-clay) that rims these geodes also settles on the growing amethyst as a film. A PRISM-dominant celadonite film (prism 0.45, term 0.08 — frosts the {10-10} prism, spares the tip) arrests the sides; the Silica Renewal Pulse then lifts σ over the dead-zone barrier σ*(φ_prism) and the tip renews a wider {10-11}-capped termination THROUGH the film — a masking-route sceptre (classifyQuartzSceptre js/45; Takahashi & Sunagawa 2004 ELO). grimsel stays the clean CORROSION-sceptre reference; this is the non-corrosive masking counterpart. The renderer widens the cap from a length fraction and does not calculate or claim conserved solid mass.",
         "The late iron-oxide film is the diagnostic base staining — a termination/uniform film (prism 0.3, term 0.3), NOT a second sceptre; real Brazilian points are commonly goethite/hematite-stained at the matrix contact."
       ],
       "movements": [

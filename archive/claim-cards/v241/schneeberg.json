@@ -1,0 +1,449 @@
+{
+  "scenario": "schneeberg",
+  "sim_version": 241,
+  "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:mmol-formula-to-mgkg+proportional-poolcap+trace-ledger-v5|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:physical-timescale+mass-weighted-budget-v2|diagnosis:production-nucleator+causal-supersat+route-capacity-v3|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "426b5acb4a12db9abffa3f83d794ff82d32609deb3118a6e54011d94e1618eab",
+  "strip_steps": 160,
+  "claim": {
+    "anchor": "Schneeberg, Erzgebirgskreis (Saxony Ore Mountains), Germany — type locality for torbernite (1772), zeunerite (1872), uranospinite (1873), and ten more uranyl arsenate-phosphate species. Walpurgis Flacher vein, Weisser Hirsch Mine.",
+    "description": "Schneeberg / Erzgebirge oxidized uranium-pegmatite vein system (Walpurgis Flacher vein, Weisser Hirsch Mine, Saxony — type locality for torbernite, zeunerite, and uranospinite). A U-bearing pegmatite + chalcopyrite + arsenopyrite primary assemblage weathers under meteoric oxidation; the resulting uranyl + Cu + As fluid plates the autunite-group secondaries in two cation phases — Cu-rich first (torbernite emerald greens then zeunerite as As-pulse arrives), then Ca-dominant after Cu is consumed (autunite + uranospinite, the bright LW-UV fluorescent yellows).",
+    "expects_species": [
+      "uraninite",
+      "torbernite",
+      "zeunerite",
+      "autunite",
+      "uranospinite",
+      "native_bismuth",
+      "native_arsenic",
+      "erythrite",
+      "annabergite",
+      "cobaltite",
+      "nickeline",
+      "cassiterite",
+      "pharmacolite",
+      "haidingerite"
+    ],
+    "sources": [
+      "Pinch & Wilson 1977 — canonical Schneeberg/Erzgebirge monograph",
+      "Weisbach 1872 — zeunerite type description (Walpurgis Flacher vein)",
+      "Weisbach 1873 — uranospinite type description (Weisser Hirsch Mine)",
+      "Klaproth 1789 — uranium discovery in Schneeberg pitchblende",
+      "research/minerals/research-uranospinite.md (May 2026) — cation-fork mechanic + paragenesis"
+    ],
+    "initial_temperature_C": 450,
+    "initial_pressure_kbar": 1.5,
+    "wall_architecture": "tabular",
+    "notes": [
+      "The mineralogically richest single ore district in Europe — the Erzgebirge had been mined for silver since the 1100s, then bismuth from the 1500s (the very name 'Bismutum' was coined here), then uranium from the 1800s onward. Most autunite-group species were first described from Schneeberg or its sister deposits (Jáchymov, Annaberg). Pinch & Wilson 1977 monographs are the canonical reference.",
+      "Mechanic: 6-event lifecycle walking through cation×anion combinatorics. Pegmatite crystallization (step 20): hot reducing fluid grows uraninite + chalcopyrite + arsenopyrite primaries. Cooling (step 70): T drops to ambient. Cu+P phase (step 85): O2 floods, primaries weather, P>As, Cu>Ca → torbernite plates. Cu+As pulse (step 105): As replenishes from arsenopyrite weathering, Cu still high → zeunerite plates. Cu depletion (step 125): Cu consumed by both Cu-cation secondaries; Ca rises from carbonate dissolution → autunite plates. As pulse late (step 145): As replenishes again, Ca dominant → uranospinite plates.",
+      "First scenario to fire all 4 P/As-branch uranyl species (torbernite, autunite, zeunerite, uranospinite) in a single run. The cation+anion fork mechanic introduced by Rounds 9b-9e is finally exercised end-to-end. Uraninite weathers as the v12 gatekeeper feedstock event."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:mmol-formula-to-mgkg+proportional-poolcap+trace-ledger-v5|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:physical-timescale+mass-weighted-budget-v2|diagnosis:production-nucleator+causal-supersat+route-capacity-v3|save-identity:version+model+scenario-fail-closed-v1",
+      "fluid_pressure": {
+        "initial_kbar": 1.5,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 4.18195054,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 80.05,
+          "initial_water_activity": {
+            "value": 0.9964,
+            "salinityPpt": 6,
+            "naclWeightPercentEquivalent": 0.6,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 33,
+    "paragenetic_order": [
+      {
+        "mineral": "argentite",
+        "first_step": 0,
+        "events": 4
+      },
+      {
+        "mineral": "feldspar",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "morganite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "quartz",
+        "first_step": 0,
+        "events": 3
+      },
+      {
+        "mineral": "spodumene",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "uraninite",
+        "first_step": 0,
+        "events": 3
+      },
+      {
+        "mineral": "arsenopyrite",
+        "first_step": 3,
+        "events": 4
+      },
+      {
+        "mineral": "cobaltite",
+        "first_step": 3,
+        "events": 4
+      },
+      {
+        "mineral": "nickeline",
+        "first_step": 3,
+        "events": 4
+      },
+      {
+        "mineral": "cassiterite",
+        "first_step": 5,
+        "events": 4
+      },
+      {
+        "mineral": "topaz",
+        "first_step": 6,
+        "events": 2
+      },
+      {
+        "mineral": "proustite",
+        "first_step": 19,
+        "events": 2
+      },
+      {
+        "mineral": "tennantite",
+        "first_step": 19,
+        "events": 1
+      },
+      {
+        "mineral": "native_arsenic",
+        "first_step": 36,
+        "events": 3
+      },
+      {
+        "mineral": "native_bismuth",
+        "first_step": 69,
+        "events": 1
+      },
+      {
+        "mineral": "naumannite",
+        "first_step": 69,
+        "events": 2
+      },
+      {
+        "mineral": "native_silver",
+        "first_step": 70,
+        "events": 3
+      },
+      {
+        "mineral": "chrysocolla",
+        "first_step": 87,
+        "events": 5
+      },
+      {
+        "mineral": "opal",
+        "first_step": 88,
+        "events": 5
+      },
+      {
+        "mineral": "brochantite",
+        "first_step": 89,
+        "events": 3
+      },
+      {
+        "mineral": "cuprite",
+        "first_step": 89,
+        "events": 1
+      },
+      {
+        "mineral": "dioptase",
+        "first_step": 90,
+        "events": 4
+      },
+      {
+        "mineral": "turquoise",
+        "first_step": 90,
+        "events": 2
+      },
+      {
+        "mineral": "selenite",
+        "first_step": 91,
+        "events": 1
+      },
+      {
+        "mineral": "torbernite",
+        "first_step": 93,
+        "events": 1
+      },
+      {
+        "mineral": "annabergite",
+        "first_step": 104,
+        "events": 1
+      },
+      {
+        "mineral": "erythrite",
+        "first_step": 104,
+        "events": 1
+      },
+      {
+        "mineral": "uranophane",
+        "first_step": 104,
+        "events": 3
+      },
+      {
+        "mineral": "goethite",
+        "first_step": 109,
+        "events": 3
+      },
+      {
+        "mineral": "zeunerite",
+        "first_step": 109,
+        "events": 4
+      },
+      {
+        "mineral": "autunite",
+        "first_step": 130,
+        "events": 4
+      },
+      {
+        "mineral": "pharmacolite",
+        "first_step": 144,
+        "events": 5
+      },
+      {
+        "mineral": "uranospinite",
+        "first_step": 144,
+        "events": 4
+      }
+    ],
+    "surprises_not_in_expects": [
+      "argentite",
+      "feldspar",
+      "morganite",
+      "quartz",
+      "spodumene",
+      "arsenopyrite",
+      "topaz",
+      "proustite",
+      "tennantite",
+      "naumannite",
+      "native_silver",
+      "chrysocolla",
+      "opal",
+      "brochantite",
+      "cuprite",
+      "dioptase",
+      "turquoise",
+      "selenite",
+      "uranophane",
+      "goethite"
+    ],
+    "expected_no_shows": [
+      "haidingerite"
+    ],
+    "environment": {
+      "T": {
+        "first": 448.819,
+        "last": 23.622,
+        "min": 23.622,
+        "max": 448.819,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 6.504,
+        "last": 6.504,
+        "min": 6.173,
+        "max": 6.504,
+        "units": ""
+      },
+      "Eh": {
+        "first": -201.575,
+        "last": 303.937,
+        "min": -201.575,
+        "max": 322.835,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 6.299,
+        "last": 6.299,
+        "min": 6.299,
+        "max": 6.299,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 0,
+        "last": 1.614,
+        "min": 0,
+        "max": 1.772,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 2.992,
+        "min": 0.984,
+        "max": 2.992,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -3.906,
+        "last": -2.205,
+        "min": -3.906,
+        "max": -2.205,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -4.031,
+        "last": -2.331,
+        "min": -4.031,
+        "max": -2.331,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -7.496,
+        "last": -5.11,
+        "min": -7.496,
+        "max": -4.787,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -5.606,
+        "last": -3.276,
+        "min": -5.606,
+        "max": -3.276,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": -0.882,
+        "last": -0.315,
+        "min": -0.882,
+        "max": 0.315,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -1.89,
+        "last": -1.764,
+        "min": -2.52,
+        "max": -1.764,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -1.386,
+        "last": -1.953,
+        "min": -2.709,
+        "max": -1.386,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 160,
+      "fluid_pressure_kbar": {
+        "first": 1.5,
+        "last": 1.5,
+        "min": 1.5,
+        "max": 1.5,
+        "samples": 160
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 160
+      },
+      "temperature_C": {
+        "first": 448.2608943547122,
+        "last": 25,
+        "min": 25,
+        "max": 448.2608943547122,
+        "samples": 160
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 4.159402232773303,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "andalusite": 19,
+          "unconstrained": 141
+        },
+        "first": {
+          "phase": "andalusite",
+          "nominalPhase": "andalusite",
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": 0.6736855720586571,
+          "note": "Ky-And line; uncertainty propagates Pattison triple-point T and P bounds."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 80.05
+        },
+        "last": {
+          "pure_water_boundary_C": 80.05
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

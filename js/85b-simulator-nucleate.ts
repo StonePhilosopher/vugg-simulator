@@ -8,6 +8,209 @@
 //
 // Phase B20 of PROPOSAL-MODULAR-REFACTOR.
 
+// Growth engines predate the central stoichiometric ledger. A number of them
+// still contain direct `fluid.X -= ...` chemistry and immediate crystal habit /
+// flag assignments. Both are unsafe in the graduated-competition dry run:
+// rejected candidates must change neither fluid nor the pre-existing solid.
+// Treat every engine call as a transaction, stage the candidate effects on the
+// returned zone, restore live state immediately, and commit only after the
+// final accepted thickness is known.
+function _cloneEngineTransactionValue(value: any, seen = new WeakMap()): any {
+  if (value == null || typeof value !== 'object') return value;
+  if (seen.has(value)) return seen.get(value);
+  if (Array.isArray(value)) {
+    const copy: any[] = [];
+    seen.set(value, copy);
+    for (const item of value) copy.push(_cloneEngineTransactionValue(item, seen));
+    return copy;
+  }
+  const proto = Object.getPrototypeOf(value);
+  if (proto === Object.prototype || proto === null) {
+    const copy: Record<string, any> = {};
+    seen.set(value, copy);
+    for (const key of Object.keys(value)) {
+      copy[key] = _cloneEngineTransactionValue(value[key], seen);
+    }
+    return copy;
+  }
+  // Engine mutations are plain scalar/array/object fields. Preserve class
+  // instances (notably historic GrowthZone entries) by identity.
+  return value;
+}
+
+function _engineTransactionValuesEqual(a: any, b: any): boolean {
+  if (Object.is(a, b)) return true;
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length && a.every((value, i) => _engineTransactionValuesEqual(value, b[i]));
+  }
+  if (a && b && typeof a === 'object' && typeof b === 'object'
+      && (Object.getPrototypeOf(a) === Object.prototype || Object.getPrototypeOf(a) === null)
+      && (Object.getPrototypeOf(b) === Object.prototype || Object.getPrototypeOf(b) === null)) {
+    const aKeys = Object.keys(a), bKeys = Object.keys(b);
+    return aKeys.length === bKeys.length
+      && aKeys.every(key => Object.prototype.hasOwnProperty.call(b, key)
+        && _engineTransactionValuesEqual(a[key], b[key]));
+  }
+  return false;
+}
+
+function _snapshotEngineCrystalState(crystal: any): Record<string, any> {
+  const snapshot: Record<string, any> = {};
+  if (!crystal || typeof crystal !== 'object') return snapshot;
+  for (const key of Object.keys(crystal)) {
+    snapshot[key] = _cloneEngineTransactionValue(crystal[key]);
+  }
+  return snapshot;
+}
+
+function _stageAndRestoreEngineCrystalMutations(crystal: any, before: Record<string, any>) {
+  const staged: Record<string, { exists: boolean; value?: any }> = {};
+  if (!crystal || typeof crystal !== 'object') return staged;
+  const after = _snapshotEngineCrystalState(crystal);
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+  for (const key of keys) {
+    const existedBefore = Object.prototype.hasOwnProperty.call(before, key);
+    const existsAfter = Object.prototype.hasOwnProperty.call(after, key);
+    if (existedBefore === existsAfter
+        && (!existsAfter || _engineTransactionValuesEqual(before[key], after[key]))) continue;
+    staged[key] = existsAfter
+      ? { exists: true, value: _cloneEngineTransactionValue(after[key]) }
+      : { exists: false };
+    if (existedBefore) crystal[key] = _cloneEngineTransactionValue(before[key]);
+    else delete crystal[key];
+  }
+  return staged;
+}
+
+function _applyAcceptedCrystalMutations(crystal: any, zone: any) {
+  if (!zone) return;
+  const staged = zone._engine_crystal_mutations;
+  const accepted = Number.isFinite(Number(zone.thickness_um)) && Number(zone.thickness_um) !== 0;
+  if (accepted && staged && crystal) {
+    for (const key of Object.keys(staged)) {
+      const mutation = staged[key];
+      if (mutation.exists) crystal[key] = _cloneEngineTransactionValue(mutation.value);
+      else delete crystal[key];
+    }
+  }
+  if (accepted && zone._clear_film_on_accept && crystal) crystal._film = null;
+  delete zone._engine_crystal_mutations;
+  delete zone._clear_film_on_accept;
+}
+
+function _runEngineFluidTransaction(engine, crystal, conditions, step) {
+  const fluid = conditions && conditions.fluid;
+  const before: Record<string, any> = {};
+  if (fluid) {
+    for (const key of Object.keys(fluid)) before[key] = fluid[key];
+  }
+  const beforeCrystal = _snapshotEngineCrystalState(crystal);
+
+  let zone: any = null;
+  try {
+    zone = engine(crystal, conditions, step);
+    if (zone && Number.isFinite(Number(zone.thickness_um)) && Number(zone.thickness_um) !== 0) {
+      const candidateMagnitude = Math.abs(Number(zone.thickness_um));
+      const perCandidateUm: Record<string, number> = {};
+      const keys = new Set([...Object.keys(before), ...Object.keys(fluid || {})]);
+      for (const key of keys) {
+        const oldValue = before[key];
+        const newValue = fluid && fluid[key];
+        if (typeof oldValue !== 'number' || typeof newValue !== 'number') continue;
+        const delta = newValue - oldValue;
+        if (Number.isFinite(delta) && Math.abs(delta) > 1e-15) {
+          perCandidateUm[key] = delta / candidateMagnitude;
+        }
+      }
+      if (Object.keys(perCandidateUm).length) {
+        zone._engine_fluid_delta_per_candidate_um = perCandidateUm;
+        zone._engine_candidate_thickness_um = Number(zone.thickness_um);
+      }
+    }
+    return zone;
+  } finally {
+    const crystalMutations = _stageAndRestoreEngineCrystalMutations(crystal, beforeCrystal);
+    if (zone && Object.keys(crystalMutations).length) {
+      zone._engine_crystal_mutations = crystalMutations;
+    }
+    // Restore all pre-existing fields and remove any ad-hoc field the engine
+    // created. FluidChemistry normally declares every field, but deleting new
+    // keys makes the transaction invariant explicit and future-proof.
+    if (fluid) {
+      for (const key of Object.keys(fluid)) {
+        if (!Object.prototype.hasOwnProperty.call(before, key)) delete fluid[key];
+      }
+      for (const key of Object.keys(before)) fluid[key] = before[key];
+    }
+  }
+}
+
+function _ledgerSpeciesForAcceptedZone(crystal, zone): Set<string> {
+  if (!zone || !crystal) return new Set();
+  if (zone.thickness_um > 0) {
+    return new Set(Object.keys(MINERAL_STOICHIOMETRY[crystal.mineral] || {}));
+  }
+  const exact = new Set<string>();
+  for (const historic of (crystal.zones || [])) {
+    if (!(historic && historic.thickness_um > 0)) continue;
+    for (const species of Object.keys(historic._budget_inventory_per_um || {})) exact.add(species);
+  }
+  const entry: any = MINERAL_DISSOLUTION_RATES[crystal.mineral];
+  if (!entry) return exact;
+  if (!entry.__modes) {
+    for (const species of Object.keys(entry)) exact.add(species);
+    return exact;
+  }
+  const modes = entry.__modes || {};
+  const mode = (zone.dissolutionMode && modes[zone.dissolutionMode])
+    || modes[Object.keys(modes)[0]];
+  for (const species of Object.keys((mode && (mode.rates || mode.constants)) || {})) exact.add(species);
+  return exact;
+}
+
+function _applyAcceptedEngineFluidDeltas(crystal, zone, conditions) {
+  const deltas = zone && zone._engine_fluid_delta_per_candidate_um;
+  const fluid = conditions && conditions.fluid;
+  if (!deltas || !fluid || !Number.isFinite(Number(zone.thickness_um))) return;
+  const acceptedMagnitude = Math.abs(Number(zone.thickness_um));
+  if (!(acceptedMagnitude > 0)) return;
+  const ledgerSpecies = _ledgerSpeciesForAcceptedZone(crystal, zone);
+  for (const species of Object.keys(deltas)) {
+    // Formula/dissolution species belong exclusively to applyStoichiometricGrowthBudget.
+    // Everything else is a supplementary reaction term (pH, redox proxy,
+    // chromophore/trace capture, invisible-gold release, etc.).
+    if (ledgerSpecies.has(species) || typeof fluid[species] !== 'number') continue;
+    const delta = Number(deltas[species]) * acceptedMagnitude;
+    if (!Number.isFinite(delta) || delta === 0) continue;
+    if (delta < 0) {
+      const floor = species === 'pH' ? 0.5 : 0;
+      const beforeApplied = fluid[species];
+      fluid[species] = Math.max(floor, fluid[species] + delta);
+      const actualConsumed = Math.max(0, beforeApplied - fluid[species]);
+      zone._supplement_uptake_actual ||= {};
+      zone._supplement_uptake_actual[species] = actualConsumed;
+      const requestedConsumed = Math.max(0, -delta);
+      if (actualConsumed + 1e-12 < requestedConsumed) {
+        zone._supplement_uptake_limited ||= {};
+        zone._supplement_uptake_limited[species] = {
+          requested: requestedConsumed,
+          actual: actualConsumed,
+        };
+      }
+      // Negative supplementary element deltas are trace/chromophore uptake.
+      // Store the amount actually removed so later dissolution can return it.
+      if (zone.thickness_um > 0 && !['pH', 'O2', 'Eh', 'salinity', 'concentration'].includes(species)) {
+        const consumed = actualConsumed / acceptedMagnitude;
+        zone._budget_inventory_per_um ||= {};
+        zone._budget_inventory_per_um[species] =
+          (zone._budget_inventory_per_um[species] || 0) + consumed;
+      }
+    } else {
+      fluid[species] += delta;
+    }
+  }
+}
+
 Object.assign(VugSimulator.prototype, {
   nucleate(mineral, position = 'vug wall', sigma = 1.0) {
   this.crystal_counter++;
@@ -26,6 +229,11 @@ Object.assign(VugSimulator.prototype, {
     position,
     vug_diameter_mm: vugDiameterAtBirth,
   });
+  // Stable unresolved lattice orientation used by later differential-stress
+  // pulses. It is born with the crystal and never depends on event time.
+  crystal._stress_orientation_unit = _stressOrientationUnit(
+    Number(this._nucSharedState || 0), crystal.crystal_id,
+  );
 
   // Pick a growth-vector variant from the spec. Its name sets the habit
   // and its wall_spread/void_reach/vector populate the topo-map
@@ -486,7 +694,7 @@ Object.assign(VugSimulator.prototype, {
 // the nucleation threshold across a 3D halo. New nuclei can't form
 // where the wall is depleted — the classic "alpha crystal" exclusion-
 // zone texture. v160's per-voxel 3D diffusion makes these halos real
-// spatial objects: mass balance debits the d=0 wall cell; diffusion
+// spatial objects: growth budget debits the d=0 wall cell; diffusion
 // spreads the depletion laterally across the wall mesh and radially
 // inward, while the interior reservoir (d=1,2,3) replenishes from the
 // other side. Strangulation occurs only where consumption outpaces the
@@ -494,7 +702,7 @@ Object.assign(VugSimulator.prototype, {
 //
 // Why the gate is needed: each nucleation engine's σ-gate reads the
 // BULK view (conditions.fluid = ring_fluids[equator]), which is NOT
-// debited by mass balance — it's the flow-fed cavity average. So an
+// debited by growth budget — it's the flow-fed cavity average. So an
 // engine can decide "the average chemistry favors mineral X" while
 // EVERY accessible wall cell is locally strangled below σ_crit. This
 // gate samples the per-cell wall chemistry (the boundary voxels, via
@@ -629,7 +837,7 @@ _wallStrangledFor(mineral) {
   _sigmaDiscountForPosition(mineral, position) {
     const parsed = parsePositionHost(position, this.crystals);
     if (!parsed) return 1.0;
-    return paragenesisDiscount(parsed.hostMineral, mineral);
+    return engineExecutableSubstrateDiscount(parsed.hostMineral, mineral);
   },
 
   _assignWallCell(position, mineral) {
@@ -887,11 +1095,10 @@ _perVertexNucleationSample(mineral) {
 // conditions.fluid + temperature to the crystal's ring's values
 // for the duration of the call. Engines never see ring_fluids
 // directly — they observe "the fluid" via conditions, the same
-// interface as before. Mass-balance side effects (consumption,
-// byproduct release) hit ring_fluids[k] because that's the object
-// swapped in. Restore globals afterward so subsequent code (events,
-// narrators, log) sees the bulk-fluid view. Mirrors the equivalent
-// try/finally block in VugSimulator.run_step (vugg.py).
+// interface as before. This method only computes the candidate zone. The
+// growth loop finalizes time scaling, burial/fill damping, and cavity clamps
+// before `_applyZoneGrowthBudget` debits or credits the accepted thickness.
+// Restore globals afterward so subsequent code sees the bulk-fluid view.
 _runEngineForCrystal(engine, crystal) {
   // PHASE-1-CAVITY-MESH: read ringIdx through the anchor helper so
   // this site stops touching wall_ring_index directly. Identity
@@ -916,27 +1123,7 @@ _runEngineForCrystal(engine, crystal) {
     this.conditions.temperature = this.ring_temperatures[ringIdx];
   }
   try {
-    const zone = engine(crystal, this.conditions, this.step);
-    // PROPOSAL-GEOLOGICAL-ACCURACY Phase 1 — mass-balance hook.
-    // Each precipitation zone debits the per-ring fluid by stoichiometry
-    // (per MINERAL_STOICHIOMETRY in 19-mineral-stoichiometry.ts).
-    // Returns the list of species that just depleted to zero so we can
-    // narrate the event to the player.
-    if (zone) {
-      const depleted = applyMassBalance(crystal, zone, this.conditions);
-      if (depleted && depleted.length) {
-        const ringTag = ringIdx != null && ringIdx >= 0
-          ? ` in ring ${ringIdx}`
-          : '';
-        for (const species of depleted) {
-          this.log.push(
-            `  ⛔ ${species} depleted${ringTag} — ` +
-            `${capitalize(crystal.mineral)} #${crystal.crystal_id} growth halts`
-          );
-        }
-      }
-    }
-    return zone;
+    return _runEngineFluidTransaction(engine, crystal, this.conditions, this.step);
   } finally {
     if (savedFluid != null) {
       this.conditions.fluid = savedFluid;
@@ -946,6 +1133,28 @@ _runEngineForCrystal(engine, crystal) {
       this.conditions.temperature = savedTemp;
     }
   }
+},
+
+// Freeze the physical thickness that will actually reach Crystal.add_zone.
+// Growth budget must consume this value, never the engine's pre-clock candidate.
+_finalizeZoneForApplication(crystal, zone) {
+  if (!zone || zone._time_scaled) return zone;
+  zone.thickness_um = Number(zone.thickness_um) || 0;
+  zone.growth_rate = Number(zone.growth_rate) || 0;
+  zone.thickness_um *= timeScale;
+  zone.growth_rate *= timeScale;
+  if (zone.thickness_um < 0 && crystal && Number.isFinite(crystal.total_growth_um)) {
+    const totalSolid = Math.max(0, crystal.total_growth_um);
+    zone.thickness_um = Math.max(zone.thickness_um, -totalSolid);
+    const remainingSolid = totalSolid + zone.thickness_um;
+    if (remainingSolid > 1e-9 && remainingSolid <= MIN_RESOLVABLE_SOLID_THICKNESS_UM) {
+      zone.thickness_um = -totalSolid;
+      zone.note = `${zone.note || 'dissolution'} [sub-resolution remainder consumed]`;
+    }
+    if (zone.growth_rate < zone.thickness_um) zone.growth_rate = zone.thickness_um;
+  }
+  zone._time_scaled = true;
+  return zone;
 },
 
   // Phase C v1: pick a ring for a nucleating crystal. Host-substrate
@@ -1051,7 +1260,7 @@ _assignWallRing(position, mineral) {
 // v128 graduated-competition support
 // ============================================================
 // _dryRunEngineForCrystal — same per-cell swap as _runEngineForCrystal,
-// but DOES NOT call applyMassBalance. The engine reads cell.fluid +
+// but DOES NOT call applyStoichiometricGrowthBudget. The engine reads cell.fluid +
 // cell.temperature; the returned zone is the "desired" growth that
 // would happen at zero competition. Used by _computeGraduatedZones
 // during pass 1.
@@ -1059,7 +1268,7 @@ _assignWallRing(position, mineral) {
 // IMPORTANT: like _runEngineForCrystal, this temporarily swaps
 // conditions.fluid / .temperature for the per-cell view. The engine
 // may dereference fluid fields; we don't mutate the cell fluid
-// because mass balance is the only mutation path and we skip it.
+// because growth budget is the only mutation path and we skip it.
 //
 // Returns the engine's zone (or null). Callers should not treat the
 // returned zone as mutable shared state — it's a fresh object per
@@ -1081,7 +1290,7 @@ _dryRunEngineForCrystal(engine, crystal) {
     this.conditions.temperature = this.ring_temperatures[ringIdx];
   }
   try {
-    return engine(crystal, this.conditions, this.step);
+    return _runEngineFluidTransaction(engine, crystal, this.conditions, this.step);
   } finally {
     if (savedFluid != null) {
       this.conditions.fluid = savedFluid;
@@ -1093,14 +1302,13 @@ _dryRunEngineForCrystal(engine, crystal) {
   }
 },
 
-// _applyZoneMassBalance — apply mass balance for a pre-computed zone
-// (one that came from _dryRunEngineForCrystal × graduated scaling).
-// Mirrors the per-cell swap of _runEngineForCrystal so applyMassBalance
-// hits cell.fluid, then restores.
+// _applyZoneGrowthBudget — apply growth budget for the finalized zone that will
+// be appended unchanged. Mirrors the per-cell swap of _runEngineForCrystal so
+// applyStoichiometricGrowthBudget hits cell.fluid, then restores.
 //
-// Returns the depletion list from applyMassBalance (or null).
+// Returns the depletion list from applyStoichiometricGrowthBudget (or null).
 
-_applyZoneMassBalance(crystal, zone) {
+_applyZoneGrowthBudget(crystal, zone) {
   if (!zone) return null;
   const anchor = this.wall_state._resolveAnchor(crystal);
   const ringIdx = anchor ? anchor.ringIdx : null;
@@ -1117,7 +1325,26 @@ _applyZoneMassBalance(crystal, zone) {
     this.conditions.temperature = this.ring_temperatures[ringIdx];
   }
   try {
-    return applyMassBalance(crystal, zone, this.conditions);
+    const depleted = applyStoichiometricGrowthBudget(crystal, zone, this.conditions);
+    // applyStoichiometricGrowthBudget may shrink a requested zone to the formula amount the
+    // local mg/kg reservoirs can actually supply. Commit engine-side habit /
+    // state mutations only after that final accepted thickness is known.
+    _applyAcceptedCrystalMutations(crystal, zone);
+    const returnedAu = Number(zone._returned_budget_inventory?.Au) || 0;
+    if (zone.thickness_um < 0 && crystal.mineral === 'arsenopyrite' && returnedAu > 0) {
+      zone.note = `${zone.note || 'oxidative dissolution'} (returns ${returnedAu.toFixed(6)} ppm-equivalent Au from remaining solid inventory)`;
+    }
+    _applyAcceptedEngineFluidDeltas(crystal, zone, this.conditions);
+    if (depleted && depleted.length) {
+      const ringTag = ringIdx != null && ringIdx >= 0 ? ` in ring ${ringIdx}` : '';
+      for (const species of depleted) {
+        this.log.push(
+          `  ⛔ ${species} depleted${ringTag} — ` +
+          `${capitalize(crystal.mineral)} #${crystal.crystal_id} growth halts`
+        );
+      }
+    }
+    return depleted;
   } finally {
     if (savedFluid != null) {
       this.conditions.fluid = savedFluid;
@@ -1132,7 +1359,7 @@ _applyZoneMassBalance(crystal, zone) {
 // _computeGraduatedZones — pass 1 of v128 graduated competition.
 //
 // For each active crystal:
-//   1. Run engine in dry-run mode (no mass balance) to get its desired
+//   1. Run engine in dry-run mode (no growth budget) to get its desired
 //      zone.thickness_um and σ
 //   2. Compute its initiative score via js/43-initiative.ts
 //   3. Group by per-cell anchor (with ring fallback)
@@ -1282,12 +1509,18 @@ _computeGraduatedZones() {
     const runs: any[] = [];
     const noStoich: any[] = [];
     for (const it of items) {
+      // Competition rations the same physical thickness that the accepted-zone
+      // ledger will debit. Engine zones are still in raw per-step units here;
+      // _finalizeZoneForApplication multiplies them by timeScale later. Budgeting
+      // the raw value would understate demand by timeScale and could create more
+      // solid than the available fluid can supply.
+      const physicalCandidateThickness = it.zone.thickness_um * timeScale;
       const r = buildCrystalDryRun(
         it.crystal.crystal_id,
         it.crystal.mineral,
         it.sigma,
         it.initiative,
-        it.zone.thickness_um,
+        physicalCandidateThickness,
       );
       if (r) runs.push(r);
       else noStoich.push(it);
@@ -1328,6 +1561,9 @@ _computeGraduatedZones() {
         // Scale the dry-run zone. Clone to avoid sharing state.
         const scaled = Object.assign({}, it.zone);
         scaled.thickness_um = it.zone.thickness_um * scaling;
+        if (typeof it.zone.growth_rate === 'number') {
+          scaled.growth_rate = it.zone.growth_rate * scaling;
+        }
         out.set(it.crystal.crystal_id, scaled);
       }
     }

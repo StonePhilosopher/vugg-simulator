@@ -31,7 +31,7 @@ import {
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const BASELINES = path.join(ROOT, 'tests-js', 'baselines');
 
-const { SIM_VERSION, SCENARIOS, VugSimulator, setSeed, StripRecorder, stripDataIndex, stripDequantize } =
+const { SIM_VERSION, MODEL_DIGEST, SCENARIOS, VugSimulator, setSeed, StripRecorder, stripDataIndex, stripDequantize } =
   await loadSimBundle({
     toolName: 'gen-strip-digest',
     extraExports: ['StripRecorder', 'stripDataIndex', 'stripDequantize'],
@@ -50,13 +50,16 @@ function recordScenario(name, seed = 42) {
   return rec.finalize();
 }
 
-const digest = { sim_version: SIM_VERSION, seed: 42, scenarios: {} };
+const digest = { sim_version: SIM_VERSION, model_digest: MODEL_DIGEST, seed: 42, scenarios: {} };
 for (const name of STRIP_DIGEST_SCENARIOS) {
   if (!SCENARIOS[name]) {
     console.log(`  ${name.padEnd(28)} (not registered — skipped)`);
     continue;
   }
   const ds = recordScenario(name, 42);
+  if (ds.manifest.sim_version !== SIM_VERSION || ds.manifest.model_digest !== MODEL_DIGEST) {
+    throw new Error(`[gen-strip-digest] identity mismatch while recording ${name}`);
+  }
   digest.scenarios[name] = stripDigestForDataset(ds, deps);
   const chips = Object.keys(digest.scenarios[name].chips).length;
   console.log(`  ${name.padEnd(28)} ${String(ds.manifest.axes.steps).padStart(3)} steps, ${chips} key chips, depth ${digest.scenarios[name].depth_positions}`);

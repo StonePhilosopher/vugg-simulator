@@ -64,7 +64,10 @@ describe('Proposal D — interlocking textures + single-zone volume clamp', () =
       // quartz-T_min leak (hostile-review rung 2). With them honestly gone,
       // the brine seals at step 6. "Early" is the claim (a 300-step scenario
       // saturating in its opening beats); the clamp mechanics are unchanged.
-      expect(sealedStep!, `sabkha sealedStep ${sealedStep}`).toBeLessThanOrEqual(8);
+      // SIM 239 conservation correction: growth budget now charges the final
+      // time-scaled thickness (not the raw candidate), so ion exhaustion
+      // delays the seal to step 12. This is the intended scientific cascade.
+      expect(sealedStep!, `sabkha sealedStep ${sealedStep}`).toBeLessThanOrEqual(15);
       // After clamping kicked in, at least one crystal should be tagged
       // late_interlocking (the one whose growth was clamped at seal).
       const interlocking = sim.crystals.filter((c: any) => c.late_interlocking);

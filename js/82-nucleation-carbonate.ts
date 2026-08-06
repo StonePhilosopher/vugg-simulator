@@ -84,7 +84,7 @@ function _nuc_dolomite(sim) {
 }
 function _nuc_HMC(sim) {
   const sigma_hmc = sim.conditions.supersaturation_HMC();
-  if (sigma_hmc < MINERAL_GATES_HMC.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
+  if (sigma_hmc <= MINERAL_GATES_HMC.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('HMC')) return;
   const existing_hmc = sim.crystals.filter(c => c.mineral === 'HMC' && c.active);
   // Allow multiple HMC crystals (it's a cement-phase mineral, often
@@ -149,8 +149,10 @@ function _nuc_malachite(sim) {
   if (existing_mal.length || total_mal >= 3 || sim._atNucleationCap('malachite')) return;
   let pos = 'vug wall';
   // Preference for chalcopyrite surface (classic oxidation paragenesis!)
-  const dissolving_cp = sim.crystals.filter(c => c.mineral === 'chalcopyrite' && c.dissolved);
-  const active_cp_all = sim.crystals.filter(c => c.mineral === 'chalcopyrite');
+  const dissolving_cp = sim.crystals.filter(c => c.mineral === 'chalcopyrite' && c.dissolved
+    && engineExecutableSubstrateRoute(c, 'malachite').executable);
+  const active_cp_all = sim.crystals.filter(c => c.mineral === 'chalcopyrite'
+    && engineExecutableSubstrateRoute(c, 'malachite').executable);
   if (dissolving_cp.length && rng.random() < 0.7) {
     pos = `on chalcopyrite #${dissolving_cp[0].crystal_id}`;
   } else if (active_cp_all.length && rng.random() < 0.4) {
@@ -174,8 +176,10 @@ function _nuc_smithsonite(sim) {
   // Pick substrate first (preserve narrative qualifiers), then σ-check
   // with paragenesis discount for the chosen host.
   let pos = 'vug wall';
-  const dissolved_sph = sim.crystals.filter(c => c.mineral === 'sphalerite' && c.dissolved);
-  const any_sph = sim.crystals.filter(c => c.mineral === 'sphalerite');
+  const dissolved_sph = sim.crystals.filter(c => c.mineral === 'sphalerite' && c.dissolved
+    && engineExecutableSubstrateRoute(c, 'smithsonite').executable);
+  const any_sph = sim.crystals.filter(c => c.mineral === 'sphalerite'
+    && engineExecutableSubstrateRoute(c, 'smithsonite').executable);
   if (dissolved_sph.length && rng.random() < 0.7) {
     pos = `on sphalerite #${dissolved_sph[0].crystal_id} (oxidized)`;
   } else if (any_sph.length && rng.random() < 0.3) {
@@ -300,7 +304,7 @@ function _nuc_witherite(sim) {
 // + cave-floor paragenesis (Iglesiente Sardinia + Mežica Slovenia).
 function _nuc_hydrozincite(sim) {
   const sigma = sim.conditions.supersaturation_hydrozincite();
-  if (sigma < MINERAL_GATES_hydrozincite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_hydrozincite.sigma_crit) return;
   if (sim._atNucleationCap('hydrozincite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'hydrozincite' && c.active);
   if (existing.length >= 3) return;
@@ -319,7 +323,10 @@ function _nucleateClass_carbonate(sim) {
   _runNuc(sim, _nuc_calcite);
   _runNuc(sim, _nuc_aragonite);
   _runNuc(sim, _nuc_dolomite);
-  _nuc_HMC(sim);  // v146 Week 11 — disordered Mg-calcite, Kim 2023 precursor
+  _registerNucleatorForProbe(_nuc_HMC, ['HMC']);
+  if (!_REGISTER_NUCLEATORS_ONLY) {
+    _nuc_HMC(sim);  // v146 Week 11 — disordered Mg-calcite, Kim 2023 precursor
+  }
   _runNuc(sim, _nuc_siderite);
   _runNuc(sim, _nuc_rhodochrosite);
   _runNuc(sim, _nuc_malachite);

@@ -133,7 +133,7 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 7 — reactive_wall acid-pulse pH beha
   });
 });
 
-describe('PROPOSAL-CARBONATE-GEOCHEM Week 7 — wall dissolution mass balance', () => {
+describe('PROPOSAL-CARBONATE-GEOCHEM Week 7 — wall dissolution growth budget', () => {
   it('Ca²⁺ rises during/after acid pulses (limestone wall dissolves)', () => {
     const probes = probeReactiveWall();
     if (!probes.length) return;

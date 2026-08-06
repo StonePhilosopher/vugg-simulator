@@ -47,8 +47,9 @@ function runSupergeneOxidation(seed: number) {
 describe('Conichalcite — Ca-Cu arsenate engine (v87)', () => {
   describe('supersaturation_conichalcite gate correctness', () => {
     function sigmaAt(opts: any): number {
-      const fluid = new FluidChemistry(opts);
-      const cond = new VugConditions({ temperature: opts.T ?? 30, fluid });
+      const { T, ...fluidOpts } = opts;
+      const fluid = new FluidChemistry(fluidOpts);
+      const cond = new VugConditions({ temperature: T ?? 30, fluid });
       return cond.supersaturation_conichalcite();
     }
 

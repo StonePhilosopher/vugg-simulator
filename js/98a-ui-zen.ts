@@ -170,13 +170,13 @@ function idleFireRandomEvent() {
     c.fluid[target] = Math.max(c.fluid[target] || 0, 10) * multiplier;
     idleAppendLog(logEl, `💧 FLUID INJECTION — ${target} surges ×${multiplier.toFixed(1)} (${oldVal.toFixed(0)} → ${c.fluid[target].toFixed(0)} ppm)`, 'log-event');
   } else if (roll < 0.70) {
-    // Tectonic crack — pH shift + pressure change
+    // Tectonic crack / valve rupture — rupture drops fluid pressure; an
+    // isotropic pressure rise is not a differential-stress pulse.
     const pHShift = (rng.random() - 0.5) * 1.5;
     c.fluid.pH += pHShift;
     c.fluid.pH = Math.max(3.0, Math.min(9.0, c.fluid.pH));
-    c.pressure += (rng.random() - 0.5) * 0.5;
-    c.pressure = Math.max(0.1, Math.min(5.0, c.pressure));
-    idleAppendLog(logEl, `⚡ TECTONIC CRACK — pH shifts to ${c.fluid.pH.toFixed(1)}, pressure ${c.pressure.toFixed(2)} kbar`, 'log-event');
+    c.pressure = clampFluidPressureKbar(c.pressure - (0.05 + rng.random() * 0.45));
+    idleAppendLog(logEl, `⚡ TECTONIC CRACK — pH shifts to ${c.fluid.pH.toFixed(1)}, fluid pressure drops to ${c.pressure.toFixed(2)} kbar`, 'log-event');
   } else if (roll < 0.85) {
     // Cooling pulse — meteoric water incursion
     const drop = 30 + rng.random() * 50;
