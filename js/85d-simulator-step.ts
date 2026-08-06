@@ -206,7 +206,7 @@ Object.assign(VugSimulator.prototype, {
       this.log.push(`     ${blocked.size} cell${blocked.size === 1 ? '' : 's'} shielded by acid-resistant crystal growth`);
     }
     this.log.push(`     pH ${result.ph_before.toFixed(1)} → ${result.ph_after.toFixed(1)} (carbonate buffering)`);
-    this.log.push(`     Released: Ca²⁺ +${result.ca_released.toFixed(0)} ppm, CO₃²⁻ +${result.co3_released.toFixed(0)} ppm, Fe +${result.fe_released.toFixed(1)}, Mn +${result.mn_released.toFixed(1)}`);
+    this.log.push(`     Released (${result.formula}): Ca²⁺ +${result.ca_released.toFixed(1)} ppm, Mg²⁺ +${result.mg_released.toFixed(1)} ppm, CO₃²⁻ +${result.co3_released.toFixed(1)} ppm, Fe +${result.fe_released.toFixed(1)}, Mn +${result.mn_released.toFixed(1)}`);
     this.log.push(`     Vug diameter: ${result.vug_diameter.toFixed(1)} mm (+${result.total_dissolved.toFixed(1)} mm total enlargement)`);
 
     if (post_sigma_cal > pre_sigma_cal * 1.3 && post_sigma_cal > 1.0) {

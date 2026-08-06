@@ -22,6 +22,8 @@ declare const VugConditions: any;
 declare const FluidChemistry: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
+declare const carbonateSaturationIndex: any;
+declare const simulatorSulfurLedgerSnapshot: any;
 
 function runFullScenario(seed: number) {
   setSeed(seed);
@@ -154,6 +156,28 @@ describe('Sicilian Solfifera Series — sedimentary BSR native_sulfur (v80)', ()
       expect(hits.length, 'celestine should fire from 30 ppm Sr + sulfate')
         .toBeGreaterThan(0);
     });
+
+    it('calcite has positive authoritative SI and retained growth across five seeds', { timeout: 120000 }, () => {
+      for (const seed of [1, 7, 19, 42, 99]) {
+        setSeed(seed);
+        const { conditions, events, defaultSteps } = SCENARIOS.sicily_solfifera();
+        const sim = new VugSimulator(conditions, events);
+        let peakSI = -Infinity;
+        for (let i = 0; i < (defaultSteps ?? 200); i++) {
+          sim.run_step();
+          peakSI = Math.max(
+            peakSI,
+            carbonateSaturationIndex('calcite', sim.conditions.fluid, sim.conditions.temperature),
+          );
+        }
+        const growth = sim.crystals
+          .filter((crystal: any) => crystal.mineral === 'calcite')
+          .flatMap((crystal: any) => crystal.zones || [])
+          .reduce((sum: number, zone: any) => sum + Math.max(0, zone.thickness_um || 0), 0);
+        expect(peakSI, `seed ${seed}: calcite SI never became positive`).toBeGreaterThan(0);
+        expect(growth, `seed ${seed}: calcite had no retained positive growth`).toBeGreaterThan(0);
+      }
+    });
   });
 
   describe('scenario architecture sanity', () => {
@@ -235,6 +259,12 @@ describe('Sicilian Solfifera Series — sedimentary BSR native_sulfur (v80)', ()
       expect(sim.conditions.fluid.S_sulfide).toBeGreaterThan(sulfidePre);
       const reaction = sim.conditions.fluid._lastSulfurReaction;
       expect(reaction.sulfurAfterPpm).toBeCloseTo(reaction.sulfurBeforePpm, 9);
+      expect(reaction.carbonSourceBoundary).toBe('methane');
+      expect(reaction.carbonateMolesPerSulfur).toBe(1);
+      expect(reaction.carbonateAddedPpm).toBeCloseTo(
+        reaction.sulfurTransferredPpm * 60.01 / 32.07,
+        9,
+      );
     });
 
     it('carbonate_buffer event pins pH at 6.0', () => {
@@ -244,6 +274,32 @@ describe('Sicilian Solfifera Series — sedimentary BSR native_sulfur (v80)', ()
       for (let i = 0; i < 84; i++) sim.run_step();
       sim.run_step();   // step 85 — carbonate_buffer
       expect(sim.conditions.fluid.pH).toBeCloseTo(6.0, 1);
+    });
+
+    it('reports reaction testimony without asserting a mineral outcome', () => {
+      const { conditions, events } = SCENARIOS.sicily_solfifera();
+      const bsr = events.find((event: any) => event.name === 'BSR Pulse #1');
+      const buffer = events.find((event: any) => event.name === 'Carbonate Buffer Lock');
+      const bsrText = bsr.apply_fn(conditions);
+      const bufferText = buffer.apply_fn(conditions);
+      expect(bsrText).toContain('reaction testimony');
+      expect(bufferText).toContain('reaction testimony');
+      expect(`${bsrText} ${bufferText}`).toContain('still decide');
+      expect(`${bsrText} ${bufferText}`).not.toMatch(/starts? to precipitate|has precipitated/i);
+    });
+
+    it('closes the whole-scenario sulfur ledger at every step', { timeout: 120000 }, () => {
+      setSeed(42);
+      const { conditions, events, defaultSteps } = SCENARIOS.sicily_solfifera();
+      const sim = new VugSimulator(conditions, events);
+      for (let i = 0; i < (defaultSteps ?? 200); i++) {
+        sim.run_step();
+        const ledger = simulatorSulfurLedgerSnapshot(sim);
+        expect(
+          ledger.closed,
+          `step ${ledger.step}: sulfur error ${ledger.errorPpm} exceeds ${ledger.tolerancePpm}`,
+        ).toBe(true);
+      }
     });
   });
 });

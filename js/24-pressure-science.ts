@@ -106,10 +106,94 @@ function al2sio5StablePolymorph(
   return al2sio5PhaseAssessment(temperatureC, confiningPressureKbar).phase;
 }
 
-// Hardie (1967) pure-water reversal plus the fluid-pressure Clapeyron
-// correction. This is an EQUILIBRIUM observation, not a direct-nucleation
-// gate: gypsum can nucleate metastably and anhydrite has a separate ~100°C
-// kinetic floor in the sulfate engine.
+type GypsumAnhydritePhase = 'gypsum' | 'anhydrite' | 'uncertain';
+type GypsumAnhydriteBoundaryAssessment = {
+  phase: GypsumAnhydritePhase;
+  nominalPhase: 'gypsum' | 'anhydrite';
+  boundaryC: number;
+  uncertaintyC: number;
+  waterActivity: WaterActivityAssessment;
+  waterActivityStatus: 'pure-water-anchor' | 'measured-interpolation' | 'hardie-extrapolation';
+  localSlopeCPerAw: number;
+  pressureCorrectionC: number;
+  note: string;
+};
+
+// Hardie (1967) reversible one-atmosphere points. The pure-water endpoint is
+// the paper's 58 +/- 2 C extrapolated reversal; the other three are measured
+// a_w/T equilibria. Piecewise interpolation preserves the observations rather
+// than fitting an unjustified global polynomial.
+const HARDIE_GYPSUM_ANHYDRITE_AW_POINTS: ReadonlyArray<readonly [number, number]> = [
+  [0.770, 23],
+  [0.845, 39],
+  [0.960, 55],
+  [1.000, 58],
+];
+
+function _hardieBoundaryAtWaterActivity(waterActivityValue: number): {
+  boundaryC: number;
+  localSlopeCPerAw: number;
+  status: GypsumAnhydriteBoundaryAssessment['waterActivityStatus'];
+} {
+  const aw = Math.max(0.55, Math.min(1, Number(waterActivityValue) || 0));
+  let lo = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[0];
+  let hi = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[1];
+  let status: GypsumAnhydriteBoundaryAssessment['waterActivityStatus'] = 'hardie-extrapolation';
+  if (aw >= 0.960) {
+    lo = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[2];
+    hi = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[3];
+    status = aw >= 0.9995 ? 'pure-water-anchor' : 'measured-interpolation';
+  } else if (aw >= 0.845) {
+    lo = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[1];
+    hi = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[2];
+    status = 'measured-interpolation';
+  } else if (aw >= 0.770) {
+    lo = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[0];
+    hi = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[1];
+    status = 'measured-interpolation';
+  }
+  const localSlopeCPerAw = (hi[1] - lo[1]) / (hi[0] - lo[0]);
+  return {
+    boundaryC: lo[1] + localSlopeCPerAw * (aw - lo[0]),
+    localSlopeCPerAw,
+    status,
+  };
+}
+
+// Authoritative equilibrium selector. This is deliberately not a direct-
+// nucleation gate: gypsum can be a primary metastable phase, while primary
+// anhydrite has its own conservative ~100 C kinetic floor. Pressure is FLUID
+// pressure and contributes the pressure-packet Clapeyron approximation.
+function gypsumAnhydritePhaseAssessment(
+  fluid: any,
+  temperatureC: number,
+  fluidPressureKbar: number,
+): GypsumAnhydriteBoundaryAssessment {
+  const aw = waterActivityAssessment(fluid, temperatureC);
+  const hardie = _hardieBoundaryAtWaterActivity(aw.value);
+  const pressureCorrectionC = 14.7 * clampFluidPressureKbar(fluidPressureKbar);
+  const boundaryC = hardie.boundaryC + pressureCorrectionC;
+  const uncertaintyC = Math.hypot(2, Math.abs(hardie.localSlopeCPerAw) * aw.uncertainty);
+  const nominalPhase = temperatureC < boundaryC ? 'gypsum' : 'anhydrite';
+  const withinUncertainty = Math.abs(temperatureC - boundaryC) <= uncertaintyC;
+  const phase: GypsumAnhydritePhase = withinUncertainty ? 'uncertain' : nominalPhase;
+  const extrapolation = hardie.status === 'hardie-extrapolation'
+    ? ' The Hardie a_w relation is extrapolated below its lowest measured point (0.770).'
+    : '';
+  return {
+    phase,
+    nominalPhase,
+    boundaryC,
+    uncertaintyC,
+    waterActivity: aw,
+    waterActivityStatus: hardie.status,
+    localSlopeCPerAw: hardie.localSlopeCPerAw,
+    pressureCorrectionC,
+    note: `Hardie (1967) a_w/T reversal with +14.7 C/kbar fluid-pressure correction.${extrapolation} ${aw.note}`,
+  };
+}
+
+// Backwards-compatible pure-water helper retained for saved reports/tests.
 function gypsumAnhydriteBoundaryC(fluidPressureKbar: number): number {
   return 58 + 14.7 * clampFluidPressureKbar(fluidPressureKbar);
 }

@@ -4,7 +4,8 @@
 // the curved-face saddle render (js/99i _makeSaddleRhomb) is gated on the
 // 'saddle_rhomb' habit and keyed to growth temperature. The science is that
 // saddle curvature is a GROWTH-DEFECT — surface roughening above the ~50–60 °C
-// critical roughening temperature (Gregg & Sibley 1984) + Ca-excess — NOT
+// critical roughening temperature (Gregg & Sibley 1984) + near-stoichiometric
+// Ca-excess — NOT
 // external shear. So the engine should tag saddle_rhomb ONLY in warm
 // hydrothermal settings, and ambient dolomite (coorong sabkha, dripstone,
 // supergene at ~25 °C) must stay planar (massive/coarse), never saddle.
@@ -40,21 +41,20 @@ function dolomites(sim: any): any[] {
   return sim ? sim.crystals.filter((c: any) => c.mineral === 'dolomite' && !c.dissolved && c.total_growth_um > 0) : [];
 }
 
-describe('saddle dolomite — render premise (warm = saddle, ambient = planar)', () => {
-  it('reactive_wall grows at least one saddle_rhomb dolomite', () => {
+describe('dolomite habit premise (temperature plus supersaturation, not temperature alone)', () => {
+  it('reactive_wall high-supersaturation dolomite is massive rather than falsely saddle', () => {
     const sim = run('reactive_wall', 42);
     const dols = dolomites(sim);
     expect(dols.length).toBeGreaterThan(0);
-    const saddles = dols.filter((c) => (c.habit || '').includes('saddle'));
-    expect(saddles.length).toBeGreaterThan(0);
+    for (const c of dols) expect(c.habit).toBe('massive');
   });
 
-  it('the saddle dolomite formed above the ~50–60 °C roughening band', () => {
+  it('the massive reactive-wall dolomite nevertheless formed above the roughening floor', () => {
     const sim = run('reactive_wall', 42);
     const tByStep = (sim as any)._tByStep;
-    const saddles = dolomites(sim).filter((c) => (c.habit || '').includes('saddle'));
-    expect(saddles.length).toBeGreaterThan(0);
-    for (const c of saddles) {
+    const warmMassive = dolomites(sim).filter((c) => c.habit === 'massive');
+    expect(warmMassive.length).toBeGreaterThan(0);
+    for (const c of warmMassive) {
       // representative growth T = mean temperature over its positive zones
       let tSum = 0, tN = 0;
       for (const z of c.zones || []) {

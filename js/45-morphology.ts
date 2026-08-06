@@ -363,14 +363,16 @@ MORPH_TH.fluorite = {
 };
 
 // ---- pyrite — fifth tenant (striations ARE step bunching) ----
-// SIM 239 accepted-ledger survey: Sunnyside 1.29–1.91; MVT has a small
-// 1.59 core then a sustained 8.6–9.6 rind; Sulphur Bank spans 1.07–14.39.
+// SIM 244 accepted-ledger survey: Sunnyside is tightly grouped at 3.26;
+// MVT and Sulphur Bank retain much higher diffusion-limited rinds. Band
+// edges deliberately separate Sunnyside's coarse striations from those
+// truly skeletal high-driving-force end members.
 // The continuous within-crystal distributions make pyrite ZONED as the
 // fluid wanders. The striations on pyrite
 // faces ({100} and {210} both) are oscillatory combination-growth step
 // bunching — the literal physical phenomenon the stepped bands model
 // (Murowchick & Barnes 1987: T + saturation control pyrite morphology).
-// Claims: Sunnyside is the smoother low-driving-force end-member and
+// Claims: Sunnyside is the lower-instability, coarsely striated end-member and
 // never reaches skeletal/dendritic bands; MVT records a smooth core,
 // striated transition, and diffusion-limited rind; Sulphur Bank's
 // very-high-sigma history is dominated by unstable aggregate growth.
@@ -382,7 +384,7 @@ MORPH_TH.pyrite = {
   SIZE_DAMP_CAP_UM: Infinity,
   SPIRAL_MAX: 1.6,       // < this → smooth euhedra (the Navajún glass)
   STEP_MILD_MAX: 2.4,    // fine striations
-  STEP_MACRO_MAX: 3.2,   // coarse striations / stepped composite faces
+  STEP_MACRO_MAX: 3.5,   // coarse striations / stepped composite faces
   HOPPER_MAX: 4.2,       // skeletal transition
   // ≥ 4.2 → dendritic/aggregate instability (MVT + Sulphur Bank rinds)
   sigma(conditions: any): number { return conditions.supersaturation_pyrite(); },

@@ -105,7 +105,9 @@ describe('fluid-spots — 2b wall-decay coupling (lopsided erosion, render-visib
   function runDepths(decayOn: boolean) {
     setFluidSpotsDecayEnabled(decayOn);
     setSeed(42);
-    const { conditions, events, defaultSteps } = SCENARIOS['porphyry']();  // acidic (pH 4.5) → wall dissolves
+    // Sweetwater is the explicit acid-into-carbonate wall-dissolution case.
+    // Porphyry's corrected pegmatite/granite host is intentionally inert.
+    const { conditions, events, defaultSteps } = SCENARIOS['reactive_wall']();
     const sim = new VugSimulator(conditions, events);
     const steps = defaultSteps ?? 100;
     for (let s = 0; s < steps; s++) sim.run_step();
@@ -117,7 +119,7 @@ describe('fluid-spots — 2b wall-decay coupling (lopsided erosion, render-visib
     return { depths, N, mean, cv: mean > 1e-9 ? std / mean : 0, spotCols };
   }
 
-  it('porphyry: OFF erodes uniformly, ON deepens feeder columns (mass-conserving)', () => {
+  it('reactive wall: OFF erodes uniformly, ON deepens feeder columns (mass-conserving)', () => {
     const off = runDepths(false);
     const on = runDepths(true);
     expect(off.mean).toBeGreaterThan(0);            // acidic → the wall actually dissolves

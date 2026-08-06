@@ -514,6 +514,13 @@ const _WALL_GENESIS_BY_SCENARIO: { [id: string]: string } = {
 function _buildScenarioFromSpec(scenarioId, spec) {
   const specHash = scenarioSpecHash(spec);
   const initial = spec.initial || {};
+  if (!initial.wall || typeof initial.wall.composition !== 'string'
+      || !initial.wall.composition.trim()) {
+    throw new Error(
+      `scenarios.json5 scenario '${scenarioId}' must declare initial.wall.composition; ` +
+      `shipped scenarios may not inherit VugWall's generic limestone fallback.`,
+    );
+  }
   const temperature = Number(initial.temperature_C ?? 350);
   const pressure = Number(initial.pressure_kbar ?? 1.0);
   const fluidKwargs = { ...(initial.fluid || {}) };

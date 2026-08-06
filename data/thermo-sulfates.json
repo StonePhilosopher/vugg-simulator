@@ -1,9 +1,9 @@
 {
   "_meta": {
-    "purpose": "Per-sulfate-mineral thermodynamic data (Ksp + T-dependence) with confidence tiers. Consumed by js/20d-chemistry-sulfate-Ksp.ts to compute true log Ω saturation indices for the strip's sulfate SI chips (SI_selenite/anhydrite/barite/celestine). Mirrors thermo-carbonates.json shape; observer-only at this phase (no kinetic engine promotion — the existing 40-supersat-sulfate.ts σ-driver functions remain the nucleation gates).",
+    "purpose": "Per-sulfate-mineral thermodynamic data (Ksp + T-dependence) with confidence tiers. Consumed by js/20d-chemistry-sulfate-Ksp.ts to compute log Ω saturation indices. Gypsum and anhydrite SI are authoritative production gates from SIM 244; the remaining sulfate SI values are observer-only.",
     "schema_version": 1,
     "proposal": "(none — driven by 2026-05-30 strip survey; see handoff at proposals/HANDOFF-SUPERGENE-AND-THERMAL-PULSE-2026-05-29.md, 'sulfate-SI chips' forward lead)",
-    "phase": "1 (observer)",
+    "phase": "CaSO4 promoted; other sulfates observer-only",
     "date_created": "2026-05-30",
     "minerals_covered": "4 well-measured simple sulfates: gypsum (CaSO4·2H2O — engine name 'selenite'), anhydrite (CaSO4), barite (BaSO4), celestine (SrSO4). These are the four binding cases for the SI-blind scenario family the strip survey flagged (naica selenite, sicily_solfifera celestine, sulphur_bank pH-driven, sabkha/searles gypsum).",
     "minerals_deferred_to_phase_2": [

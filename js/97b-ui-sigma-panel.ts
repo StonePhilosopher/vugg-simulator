@@ -241,14 +241,13 @@ function _formationPressureChips(name: string, c: any): FormationDiagnosticChip[
   }
 
   if (name === 'selenite' || name === 'anhydrite') {
-    const boundary = gypsumAnhydriteBoundaryC(pressure);
-    const stable = temperature < boundary ? 'gypsum' : 'anhydrite';
-    const expected = name === 'selenite' ? 'gypsum' : 'anhydrite';
+    const evaluation = evaluateCaSO4System(c.fluid, temperature, pressure);
+    const phase = evaluation.phase;
     return [{
-      text: `${pressure.toFixed(2)} kbar fluid · ${stable} equilibrium field (boundary ${boundary.toFixed(0)}°C)`,
+      text: `${pressure.toFixed(2)} kbar fluid · ${phase.phase} CaSO4 field (boundary ${phase.boundaryC.toFixed(1)}±${phase.uncertaintyC.toFixed(1)}°C)`,
       met: true,
-      status: 'observer',
-      note: `Observer only, not a binary gameplay gate (nominal pure-water field favors ${stable}, while this row is ${expected}). Salinity shifts the boundary; empirical sulfate nucleation and anhydrite's independent kinetic floor drive gameplay.`,
+      status: phase.phase === 'uncertain' ? 'uncertain' : 'observer',
+      note: `${phase.note} This selector drives precursor replacement; primary gypsum and primary anhydrite retain their separate kinetic windows.`,
     }];
   }
 
@@ -378,13 +377,21 @@ function _formationHistory(name: string, sim: any) {
   if (!sim || !Array.isArray(sim.crystals)) {
     return { available: false, total: 0, active: 0, transformed: 0, dissolved: 0, records: [] as any[] };
   }
-  const records = sim.crystals.filter((cr: any) => cr
-    && (cr.mineral === name || cr.paramorph_origin === name));
+  const records = sim.crystals.filter((cr: any) => cr && (
+    cr.mineral === name
+    || cr.paramorph_origin === name
+    || (Array.isArray(cr.phase_transition_history)
+      && cr.phase_transition_history.some((row: any) => row.from === name || row.to === name))
+  ));
   return {
     available: true,
     total: records.length,
     active: records.filter((cr: any) => cr.mineral === name && cr.active && !cr.dissolved).length,
-    transformed: records.filter((cr: any) => cr.mineral !== name && cr.paramorph_origin === name).length,
+    transformed: records.filter((cr: any) => cr.mineral !== name && (
+      cr.paramorph_origin === name
+      || (Array.isArray(cr.phase_transition_history)
+        && cr.phase_transition_history.some((row: any) => row.from === name))
+    )).length,
     dissolved: records.filter((cr: any) => cr.dissolved).length,
     records,
   };
@@ -552,6 +559,44 @@ function _buildMineralFormationExplanation(
   }
   groups.push({ label: 'Saturation', chips: satChips });
 
+  if ((name === 'selenite' || name === 'anhydrite')
+      && typeof evaluateCaSO4System === 'function') {
+    const evaluation = evaluateCaSO4System(c.fluid, c.temperature, c.pressure);
+    const isGypsum = name === 'selenite';
+    const primary = isGypsum
+      ? evaluation.gypsumPrimaryAdmissible
+      : evaluation.anhydritePrimaryAdmissible;
+    const replacement = isGypsum
+      ? evaluation.anhydriteToGypsumAdmissible
+      : evaluation.gypsumToAnhydriteAdmissible;
+    groups.push({
+      label: 'CaSO4 phase & route',
+      chips: [{
+        text: `gypsum SI ${_formationNumber(evaluation.gypsumSI, 3)} · anhydrite SI ${_formationNumber(evaluation.anhydriteSI, 3)}`,
+        met: (isGypsum ? evaluation.gypsumSI : evaluation.anhydriteSI) > 0,
+        note: 'The same activity/Ksp saturation indices used by production nucleation and replacement.',
+      }, {
+        text: `${evaluation.phase.phase} equilibrium field · boundary ${_formationNumber(evaluation.phase.boundaryC, 1)}±${_formationNumber(evaluation.phase.uncertaintyC, 1)}°C`,
+        met: true,
+        status: evaluation.phase.phase === 'uncertain' ? 'uncertain' : 'observer',
+        note: evaluation.phase.note,
+      }, {
+        text: primary ? 'primary nucleation route open' : 'primary nucleation route closed',
+        met: primary,
+        note: isGypsum
+          ? 'Primary gypsum requires positive SI and T ≤ 80°C.'
+          : 'Primary anhydrite requires positive SI, T ≥ 100°C, and its pH window.',
+      }, {
+        text: replacement ? 'precursor-replacement route thermodynamically open' : 'precursor-replacement route closed',
+        met: replacement,
+        status: 'observer',
+        note: replacement
+          ? `Requires an existing ${isGypsum ? 'anhydrite' : 'gypsum'} crystal; it cannot create a fresh nucleus.`
+          : 'Replacement is blocked by the equilibrium field, product SI, or boundary uncertainty.',
+      }],
+    });
+  }
+
   if (productionDecision?.available) {
     const productionChips: FormationDiagnosticChip[] = [{
       text: productionDecision.eligible
@@ -671,8 +716,8 @@ function _buildMineralFormationExplanation(
       chips: [{
         text: `a_w ${aw.value.toFixed(3)} ±${aw.uncertainty.toFixed(3)} · ${aw.salinityPpt.toFixed(1)}‰ salinity`,
         met: true,
-        status: 'observer',
-        note: `${aw.note} This modifies the literature SI observer (gypsum includes 2 log10(a_w)); the current empirical sulfate gameplay engines do not consume a_w.`,
+        status: aw.status === 'calibrated-proxy' ? 'observer' : 'uncertain',
+        note: `${aw.note} Gypsum SI includes 2 log10(a_w), and the Hardie phase selector consumes the same a_w assessment.`,
       }],
     });
   }

@@ -2,19 +2,14 @@
 // js/40b-supersat-sulfate-Ksp.ts — Ksp-based SI for sulfates
 // ============================================================
 // Mirror of 32b-supersat-carbonate-Ksp.ts for the sulfate family.
-// Pure observer (Phase 1 / 2026-05-30): consumed by the strip's
+// Authoritative saturation kernel (promoted for CaSO4 in SIM 244): consumed by the strip's
 // sulfate SI chips (SI_selenite/anhydrite/barite/celestine, added
 // in 99j) so the strip stops being SI-blind on the evaporite +
 // sulfate-vein scenario family (naica / sicily_solfifera /
 // sulphur_bank / sabkha / searles).
 //
-// The existing 40-supersat-sulfate.ts σ-driver functions remain the
-// nucleation gates and are unchanged by this module. The relationship
-// between this module's SI and 40's σ is the same as the relationship
-// between 32b's SI and 32's σ for carbonates: SI is the rigorous
-// thermodynamic observable (log Ω = log IAP − log Ksp(T)); σ is the
-// engine's capped nucleation driver (Math.min(ratio, cap) × T/pH
-// modifiers). They tell different stories — both useful.
+// Gypsum and anhydrite nucleation now require positive SI from this kernel;
+// the other sulfate engines remain on their calibrated empirical routes.
 //
 // Public:
 //   - sulfateSaturationIndex(mineralId, fluid, T_C) → log10 Ω  (NaN if undef)
@@ -58,15 +53,26 @@
 // (strip chip reads) treat NaN as null (chip hides that sample).
 function _SI_AB_sulfate(mineralId: string, fluid: any, T: number, cationKey: string, hydrationWaters = 0): number {
   if (!fluid) return NaN;
-  const I = ionicStrength(fluid);
-  const a_cation = speciesActivity(fluid, cationKey, I);
+  // Explicit sulfur fluids must use only their sulfate reservoir. Legacy
+  // fluids use the redox-partitioned sulfate amount. Clone rather than mutate
+  // the live fluid so the SI calculation is a pure observer/driver.
+  const sulfatePpm = typeof sulfateAvailablePpm === 'function'
+    ? sulfateAvailablePpm(fluid, T)
+    : Math.max(0, Number(fluid.S) || 0);
+  const activityFluid = Object.assign(
+    Object.create(Object.getPrototypeOf(fluid) || null),
+    fluid,
+    { S: sulfatePpm },
+  );
+  const I = ionicStrength(activityFluid);
+  const a_cation = speciesActivity(activityFluid, cationKey, I);
   if (!(a_cation > 0)) return NaN;
-  const a_SO4 = speciesActivity(fluid, 'S', I);
+  const a_SO4 = speciesActivity(activityFluid, 'S', I);
   if (!(a_SO4 > 0)) return NaN;
   const logKsp = getSulfateLogKsp(mineralId, T);
   if (!isFinite(logKsp)) return NaN;
   const logWater = hydrationWaters > 0
-    ? hydrationWaters * Math.log10(waterActivity(fluid, T))
+    ? hydrationWaters * Math.log10(waterActivity(activityFluid, T))
     : 0;
   return Math.log10(a_cation) + Math.log10(a_SO4) + logWater - logKsp;
 }
@@ -110,4 +116,65 @@ function sulfateOmega(mineralId: string, fluid: any, T_C: number): number {
   const SI = sulfateSaturationIndex(mineralId, fluid, T_C);
   if (!isFinite(SI)) return 0;
   return Math.pow(10, SI);
+}
+
+type CaSO4Evaluation = {
+  phase: GypsumAnhydriteBoundaryAssessment;
+  gypsumSI: number;
+  anhydriteSI: number;
+  gypsumOmega: number;
+  anhydriteOmega: number;
+  gypsumPrimaryAdmissible: boolean;
+  anhydritePrimaryAdmissible: boolean;
+  gypsumToAnhydriteAdmissible: boolean;
+  anhydriteToGypsumAdmissible: boolean;
+  reasons: string[];
+};
+
+// Single CaSO4 evaluator consumed by diagnostics, nucleation, and replacement.
+// Stability and kinetic admissibility are separate outputs by design.
+function evaluateCaSO4System(
+  fluid: any,
+  temperatureC: number,
+  fluidPressureKbar: number,
+): CaSO4Evaluation {
+  const phase = gypsumAnhydritePhaseAssessment(fluid, temperatureC, fluidPressureKbar);
+  const gypsumSI = sulfateSaturationIndex('selenite', fluid, temperatureC);
+  const anhydriteSI = sulfateSaturationIndex('anhydrite', fluid, temperatureC);
+  const gypsumOmega = Number.isFinite(gypsumSI) ? Math.pow(10, gypsumSI) : 0;
+  const anhydriteOmega = Number.isFinite(anhydriteSI) ? Math.pow(10, anhydriteSI) : 0;
+  const pH = Number(fluid?.pH);
+  const sulfate = typeof sulfateAvailablePpm === 'function'
+    ? sulfateAvailablePpm(fluid, temperatureC)
+    : Math.max(0, Number(fluid?.S) || 0);
+  const gypsumPrimaryAdmissible = gypsumSI > 0
+    && temperatureC <= 80
+    && (!Number.isFinite(pH) || pH >= 4)
+    && sulfate > 0;
+  const anhydritePrimaryAdmissible = anhydriteSI > 0
+    && temperatureC >= 100
+    && (!Number.isFinite(pH) || (pH >= 5 && pH <= 9))
+    && sulfate > 0;
+  const gypsumToAnhydriteAdmissible = phase.phase === 'anhydrite' && anhydriteSI > 0;
+  const anhydriteToGypsumAdmissible = phase.phase === 'gypsum' && gypsumSI > 0;
+  const reasons = [
+    `gypsum SI ${Number.isFinite(gypsumSI) ? gypsumSI.toFixed(3) : 'undefined'}`,
+    `anhydrite SI ${Number.isFinite(anhydriteSI) ? anhydriteSI.toFixed(3) : 'undefined'}`,
+    `${phase.phase} equilibrium assessment at boundary ${phase.boundaryC.toFixed(1)} +/- ${phase.uncertaintyC.toFixed(1)} C`,
+    temperatureC <= 80 ? 'primary gypsum kinetic window open' : 'primary gypsum kinetic window closed above 80 C',
+    temperatureC >= 100 ? 'primary anhydrite kinetic floor cleared' : 'primary anhydrite kinetic floor not cleared',
+    sulfate > 0 ? `sulfate reservoir ${sulfate.toFixed(3)} ppm` : 'no sulfate available',
+  ];
+  return {
+    phase,
+    gypsumSI,
+    anhydriteSI,
+    gypsumOmega,
+    anhydriteOmega,
+    gypsumPrimaryAdmissible,
+    anhydritePrimaryAdmissible,
+    gypsumToAnhydriteAdmissible,
+    anhydriteToGypsumAdmissible,
+    reasons,
+  };
 }

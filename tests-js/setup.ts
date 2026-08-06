@@ -243,6 +243,8 @@ const EXPORTS = [
   'SPECIES_PROPERTIES',
   'stoichiometricBudgetDebitPpmPerUm',
   'applyStoichiometricGrowthBudget',
+  'bookedSolidSulfurPpm',
+  'simulatorSulfurLedgerSnapshot',
   'sphaleriteGermaniumUptake',
   'MINERAL_GAME_COLORS',
   'crystalColor',
@@ -426,8 +428,12 @@ const EXPORTS = [
   'sulfatesReady',
   'sulfateSaturationIndex',
   'sulfateOmega',
+  'evaluateCaSO4System',
   'waterActivityAssessment',
   'waterActivity',
+  'gypsumAnhydritePhaseAssessment',
+  'applyCaSO4PhaseTransition',
+  'mineralAtReplayStep',
   // Week 4 — wall-mesh localization resolvers + per-vertex accessors
   // + Henry's-Law pH equilibration (20d-localization-resolvers.ts).
   'fluidAtMeshVertex',

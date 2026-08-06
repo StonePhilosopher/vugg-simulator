@@ -47,13 +47,22 @@ function event_sicily_gypsum_dissolution(c) {
 }
 
 function event_sicily_bsr_reduction(c) {
-  // Anaerobic microbes reduce a measured increment of gypsum-derived
-  // sulfate. Organic matter is the declared boundary electron donor.
-  const reaction = bacterialReduceSulfate(c.fluid, 25, c.temperature);
+  // Monte Palco records a high degree of gypsum-sulfate conversion in a
+  // semi-closed pore. Model each compressed SD-AOM episode as a 250 ppm-S
+  // reaction extent. Methane is the declared boundary electron donor/carbon
+  // source and supplies one carbonate-equivalent mole per sulfate-S mole.
+  // Two episodes can therefore process at most 500 of the 600 ppm sulfate-S
+  // supplied by the initial pore plus three gypsum pulses, leaving a real
+  // residual sulfate reservoir for late gypsum/celestine rather than creating
+  // carbonate independently of sulfur reduction.
+  const reaction = bacterialReduceSulfate(c.fluid, 250, c.temperature, {
+    source: 'methane',
+    carbonateMolesPerSulfur: 1,
+  });
   c.fluid.O2 = Math.min(c.fluid.O2, 0.02);
   c.fluid.Eh = ehFromO2(c.fluid.O2);
   c.flow_rate = 0.2;
-  return `Anaerobic microbial sulfate reduction transfers ${reaction.sulfurTransferredPpm.toFixed(1)} ppm sulfate-S to reduced S and adds ${reaction.carbonateAddedPpm.toFixed(1)} ppm carbonate-equivalent alkalinity. Sulfur closes at ${reaction.sulfurAfterPpm.toFixed(1)} ppm; O₂ remains anoxic at ${c.fluid.O2.toFixed(2)}.`;
+  return `SD-AOM reaction testimony: anaerobic microbes transferred ${reaction.sulfurTransferredPpm.toFixed(1)} ppm sulfate-S to reduced S while methane-derived carbon added ${reaction.carbonateAddedPpm.toFixed(1)} ppm carbonate-equivalent alkalinity (1 mol C per mol S). Sulfur closes at ${reaction.sulfurAfterPpm.toFixed(1)} ppm; O₂ remains anoxic at ${c.fluid.O2.toFixed(2)}. Calcite formation remains conditional on the authoritative saturation and kinetic gates.`;
 }
 
 function event_sicily_carbonate_buffer(c) {
@@ -64,7 +73,7 @@ function event_sicily_carbonate_buffer(c) {
   c.fluid.CO3 += 60;
   c.fluid.pH = 6.0;
   c.flow_rate = 0.2;
-  return `BSR-generated H₂CO₃ buffers the porewater. CO₃ rises to ${c.fluid.CO3.toFixed(0)} ppm; pH pinned at 6.0 — the peak of the engine's BSR-mode pH factor. Calcite cement starts to precipitate.`;
+  return `Carbonate-buffer reaction testimony: DIC rises to ${c.fluid.CO3.toFixed(0)} ppm and pH resets to 6.0. This opens the carbonate route, but the authoritative calcite saturation and kinetic gates still decide whether cement forms.`;
 }
 
 function event_sicily_inherited_sulfur_recharge(c) {

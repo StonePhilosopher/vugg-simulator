@@ -175,7 +175,11 @@ function grow_calcite(crystal, conditions, step) {
   // trajectory contract as the Mg branch (the v187 lesson).
   const morphFormT = calciteMorphForm(morphMgRatio, conditions.temperature, sigma, crystal.growth_environment !== 'air');
   const morphRegime = (crystal._morphology && crystal._morphology.regime) || null;
-  if (is_manganocalcite && excess < 0.4) {
+  // The heterogeneous calcite nucleation gate is Ω>1.5, so the historical
+  // excess<0.4 branch (Ω<1.4) was unreachable for a newly nucleated
+  // manganocalcite. The near-threshold window below remains slow relative to
+  // strongly supersaturated spar while overlapping the actual nucleation gate.
+  if (is_manganocalcite && excess < 1.2) {
     crystal.habit = 'botryoidal_manganocalcite';
     crystal.dominant_forms = ['cauliflower botryoidal mass', 'mammillary surface', 'cryptocrystalline interior'];
     crystal._variety = 'manganocalcite';

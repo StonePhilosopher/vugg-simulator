@@ -143,6 +143,126 @@ function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step
 }
 
 // ============================================================
+// CaSO4 DISSOLUTION-REPRECIPITATION REPLACEMENT
+// ============================================================
+
+const GYPSUM_MOLAR_VOLUME_CM3_MOL = 73.9;
+const ANHYDRITE_MOLAR_VOLUME_CM3_MOL = 46.1;
+
+type CaSO4PhaseTransitionRecord = {
+  step: number | null;
+  from: 'selenite' | 'anhydrite';
+  to: 'selenite' | 'anhydrite';
+  driver: 'gypsum-to-anhydrite-replacement' | 'anhydrite-rehydration';
+  waterTransferMmolKg: number;
+  formulaAmountMmolKg: number;
+  boundaryC: number;
+  uncertaintyC: number;
+  waterActivity: number;
+  sourceSI: number;
+  productSI: number;
+  caBeforePpm: number;
+  caAfterPpm: number;
+  sulfateBeforePpm: number;
+  sulfateAfterPpm: number;
+};
+
+// Replacement preserves the existing external envelope and every booked Ca/S
+// shell. Structural water is tracked separately: positive means released to
+// solvent, negative means consumed from solvent. The formula amount uses the
+// same disclosed axial mmol/kg proxy as the growth ledger.
+function applyCaSO4PhaseTransition(
+  crystal: any,
+  fluid: any,
+  temperatureC: number,
+  fluidPressureKbar: number,
+  step: number | null,
+): CaSO4PhaseTransitionRecord | null {
+  if (!crystal?.active || crystal.dissolved) return null;
+  if (crystal.mineral !== 'selenite' && crystal.mineral !== 'anhydrite') return null;
+  if (!(Number(crystal.total_growth_um) > 0)) return null;
+
+  const evaluation = evaluateCaSO4System(fluid, temperatureC, fluidPressureKbar);
+  const from = crystal.mineral as 'selenite' | 'anhydrite';
+  const to = from === 'selenite' ? 'anhydrite' : 'selenite';
+  const admissible = from === 'selenite'
+    ? evaluation.gypsumToAnhydriteAdmissible
+    : evaluation.anhydriteToGypsumAdmissible;
+  if (!admissible) return null;
+
+  const sulfateBeforePpm = typeof sulfateAvailablePpm === 'function'
+    ? sulfateAvailablePpm(fluid, temperatureC)
+    : Math.max(0, Number(fluid?.S) || 0);
+  const caBeforePpm = Math.max(0, Number(fluid?.Ca) || 0);
+  const formulaAmountMmolKg = Number(crystal.total_growth_um)
+    * STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM;
+  const waterTransferMmolKg = (from === 'selenite' ? 2 : -2) * formulaAmountMmolKg;
+
+  crystal.mineral = to;
+  // Compatibility fields keep old saves/replay consumers functional. This is
+  // explicitly a replacement, not asserted to be a solid-state paramorph.
+  crystal.paramorph_origin = from;
+  if (step != null) crystal.paramorph_step = step;
+  crystal.phase_transition_origin = from;
+  crystal.phase_transition_step = step;
+  crystal.phase_transition_driver = from === 'selenite'
+    ? 'gypsum-to-anhydrite-replacement'
+    : 'anhydrite-rehydration';
+  crystal._ca_so4_hydration_water_mmolkg =
+    Number(crystal._ca_so4_hydration_water_mmolkg || 0) + waterTransferMmolKg;
+  crystal._ca_so4_solid_volume_ratio = to === 'anhydrite'
+    ? ANHYDRITE_MOLAR_VOLUME_CM3_MOL / GYPSUM_MOLAR_VOLUME_CM3_MOL
+    : 1;
+  crystal._ca_so4_replacement_porosity_fraction = to === 'anhydrite'
+    ? 1 - crystal._ca_so4_solid_volume_ratio
+    : 0;
+  crystal._ca_so4_pseudomorphic_envelope_preserved = true;
+
+  const record: CaSO4PhaseTransitionRecord = {
+    step,
+    from,
+    to,
+    driver: crystal.phase_transition_driver,
+    waterTransferMmolKg,
+    formulaAmountMmolKg,
+    boundaryC: evaluation.phase.boundaryC,
+    uncertaintyC: evaluation.phase.uncertaintyC,
+    waterActivity: evaluation.phase.waterActivity.value,
+    sourceSI: from === 'selenite' ? evaluation.gypsumSI : evaluation.anhydriteSI,
+    productSI: to === 'selenite' ? evaluation.gypsumSI : evaluation.anhydriteSI,
+    caBeforePpm,
+    caAfterPpm: Math.max(0, Number(fluid?.Ca) || 0),
+    sulfateBeforePpm,
+    sulfateAfterPpm: typeof sulfateAvailablePpm === 'function'
+      ? sulfateAvailablePpm(fluid, temperatureC)
+      : Math.max(0, Number(fluid?.S) || 0),
+  };
+  (crystal.phase_transition_history ||= []).push(record);
+  return record;
+}
+
+// Replay helper supports repeated sabkha hydration/dehydration cycles. Legacy
+// one-shot paramorph/dehydration records continue through the fallback.
+function mineralAtReplayStep(crystal: any, replayStep: number | null): string {
+  if (replayStep == null) return crystal.mineral;
+  const history = Array.isArray(crystal.phase_transition_history)
+    ? crystal.phase_transition_history
+    : [];
+  if (history.length) {
+    let mineral = history[0].from;
+    for (const transition of history) {
+      if (transition.step != null && replayStep >= transition.step) mineral = transition.to;
+    }
+    return mineral;
+  }
+  return crystal.paramorph_step != null
+    && replayStep < crystal.paramorph_step
+    && crystal.paramorph_origin
+    ? crystal.paramorph_origin
+    : crystal.mineral;
+}
+
+// ============================================================
 // LIGHT-INDUCED TRANSITIONS
 // ============================================================
 // v84 (2026-05-19): light-induced isomerization. Distinct from

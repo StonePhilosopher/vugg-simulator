@@ -284,6 +284,17 @@ class Crystal {
     // can flag the cubic-acanthite-after-argentite case.
     this.paramorph_origin = opts.paramorph_origin ?? null;
     this.paramorph_step = opts.paramorph_step ?? null;
+    // CaSO4 replacement is a dissolution-reprecipitation phase change, not a
+    // simple paramorph. Keep an ordered history because sabkha flood/evap
+    // cycles can reverse it repeatedly; replay uses the history directly.
+    this.phase_transition_origin = opts.phase_transition_origin ?? null;
+    this.phase_transition_step = opts.phase_transition_step ?? null;
+    this.phase_transition_driver = opts.phase_transition_driver ?? null;
+    this.phase_transition_history = opts.phase_transition_history ?? [];
+    this._ca_so4_hydration_water_mmolkg = opts._ca_so4_hydration_water_mmolkg ?? 0;
+    this._ca_so4_solid_volume_ratio = opts._ca_so4_solid_volume_ratio ?? 1;
+    this._ca_so4_replacement_porosity_fraction = opts._ca_so4_replacement_porosity_fraction ?? 0;
+    this._ca_so4_pseudomorphic_envelope_preserved = opts._ca_so4_pseudomorphic_envelope_preserved ?? false;
     // v28 dehydration tracking — counts steps in a dry environment
     // for crystals listed in DEHYDRATION_TRANSITIONS.
     this.dry_exposure_steps = opts.dry_exposure_steps ?? 0;

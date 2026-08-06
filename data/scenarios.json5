@@ -199,6 +199,7 @@
           "Mg": 8
         },
         "wall": {
+          "composition": "limestone",
           "primary_bubbles": 2,
           "secondary_bubbles": 3,
           "shape_seed": 2
@@ -298,6 +299,7 @@
           // MVT — Mississippi Valley Type, limestone-hosted. Karst-style
           // dissolution caves: irregular profile + strong Fourier polar
           // variance for the cathedral feel.
+          "composition": "limestone",
           "architecture": "irregular",
           "primary_bubbles": 3,
           "secondary_bubbles": 8,
@@ -403,9 +405,10 @@
           "S": 0,
           "O2": 0.25,
           "pH": 7.1,
-          "salinity": 21.0
-        },
-        "wall": {
+            "salinity": 21.0
+          },
+          "wall": {
+            "composition": "dolomite",
           "matrix": "dolomite",   // MATRIX SKIN (render-only, 2026-07-06): notes: "the host IS dolostone" (Knox/Mascot) — composition defaults limestone for the carbonate dissolve()
           "architecture": "irregular",
           "primary_bubbles": 2,
@@ -697,6 +700,9 @@
           // anisotropic stretch (~3:1 long-to-short axis) typical of
           // fracture-pocket cross-sections. walls_only nucleation_bias
           // keeps crystals on the long flat faces.
+          "composition": "pegmatite",
+          "matrix": "granite",
+          "reactivity": 0,
           "architecture": "tabular",
           "primary_bubbles": 3,
           "secondary_bubbles": 6,
@@ -983,6 +989,10 @@
           "Na": 10500,
           "K": 380,
           "S": 2700,
+          "S_sulfide": 0,
+          "S_sulfate": 2700,
+          "S_elemental": 0,
+          "sulfurPoolsExplicit": true,
           "F": 2,
           "Cl": 18000,
           // Sr is the bonus tracer — marine brines carry ~8 ppm Sr,
@@ -1084,7 +1094,7 @@
       "notes": [
         "Garcia-Ruiz et al. 2007 (Geology 35:327) — the canonical paper on Naica's growth mechanism. Anhydrite at depth (T > 58°C) dissolves slightly; rising water cools to ~54°C; gypsum reprecipitates. The cooling rate is critical: at hundredths of a degree per year, the brine stays close enough to the boundary that crystals grow over geological timescales without significant nucleation of new seeds. Old crystals just keep adding layers.",
         "v182 THERMAL STORY (the first consumer of the v181 T-unlock): the buffered pool is now a DECLARED temperature movement — base 56°C, smoothstep trend −3 over steps 0-260, no OU texture (Naica's signature is thermal stability; fluid-inclusion work shows a remarkably steady bath, so the no-noise choice IS the science, not a simplification). Ambient drift + pulses stand down for the window (pre-v182 they were bulldozing the design: drift crashed 56→25°C in ~21 steps and ~19 random thermal pulses bounced T between the floor and 53°C — the 55-58°C selenite sweet-spot fired ~2 steps per run and the 54-57 Garcia-Ruiz band was occupied 0% of the time; now 31% and 50%). Dark-observed (tools/naica-thermal-observe.mjs, 3 seeds): total crystal count DROPS ~40-60% (27→11, 39→16) while the cavity still seals — fewer nuclei, larger individuals — which is the Garcia-Ruiz mechanism emerging from the engines rather than being scripted. The low-T noise feeders (opal, goethite, lepidocrocite, tigers_eye, pyrolusite) drop out; the cave trends toward its real near-monomineralic character.",
-        "The six slow_cooling events keep their CHEMISTRY half under the movement — the anhydrite-at-depth resupply (Ca≥280, S≥380 floors) + O2/pH/flow resets are what they contribute now; their -0.7°C drops are superseded by the movement's trend (the handler's T>51 guard goes inert inside the window). Events are the chemistry beats; the movement is the thermal sentence.",
+        "The six slow_cooling events keep their CHEMISTRY half under the movement — the anhydrite-at-depth resupply holds the measured Ca≈600 ppm and SO4≈1500 ppm (S≈500 ppm) floors plus O2/pH/flow resets; their -0.7°C drops are superseded by the movement's trend (the handler's T>51 guard goes inert inside the window). Events are chemistry testimony; the movement is the thermal sentence.",
         "Mining-drainage event at step 260 (1985 in real time) fires fluid_surface_ring → 0 and SETS T=35; recharge at step 290 (2017) refloods at T=30. The movement window deliberately ENDS at 260: the thermal buffer was the WATER, so once the cave drains the pool era is over and the mining events own T. Ambient resumes post-260 with cooling_rate 0.1 (a drained cave at 290 m in warm country rock cools gently — observed end T ~27°C, matching the recharge note's 'cooler bath'), and thermal_pulses:false (no fracture-valve reheats in a conductively buffered system; same flag family as bisbee/roughten_gill/schneeberg/reactivated_vein).",
         "The default vug_diameter_mm of 50 mm grossly understates Naica reality (the chamber is ~30m × 10m × 10m). The simulator's max_size_cm cap on selenite is 2400 cm = 24m, double the real-world record (Garcia-Ruiz). Both are intentional — the sim isn't trying to reproduce Naica scale, it's reproducing Naica chemistry.",
         "MINDAT VALID-SPECIES REFERENCE (boss-supplied screenshots, 2026-07-25 — Naica Mine, Saucillo Municipality, Chihuahua; 113 valid; questioned entries Rhodonite? + Fowlerite? — questioned ≠ license). THE SELENITE POSITIVE CONTROL, CONFIRMED: Gypsum (var. Selenite) prominently listed + the page's own Cave-of-the-Crystals text (14 m × 2 m selenite, <200 ka, grown underwater where hot CaCO3+sulfide-saturated Naica-fault fluids mixed with cooler surface water) → the sim's 66 mm selenite giant is record-licensed, and the S2 selenite census closes its sixth locality: elmwood NO / picher YES / sweetwater NO / tsumeb YES / copper-queen YES / NAICA YES. Verdicts vs seed-42 v236 (4 sim species — the cleanest sheet of the sweep): selenite ✓, CELESTINE ✓ (listed at Naica — the 138 µm pair is licensed), quartz ✓, thenardite ×3 @0.6 µm dust FLAGGED (not on the list; the list's efflorescent-sulfate suite is the Mg/Fe family — blödite/kieserite/epsomite/hexahydrite/starkeyite/szmikite/rozenite/szomolnokite — not Na). SPATIAL-GRAIN NOTE (the vertical/temporal variant): this scenario models the CAVE STAGE, not the ore body — the list's 100+ skarn/sulfide species (pyrite/galena/sphalerite gross ore + chalcopyrite/arsenopyrite/pyrrhotite/matildite/kobellite-tintinaite/molybdenite + ECONOMIC SCHEELITE + the calc-silicate suite) are CORRECT ABSENCES here; they'd matter only for a hypothetical naica_skarn ore-stage scenario (the page text is a ready-made brief: felsite dikes → calc-silicate mantos → massive-sulfide 'chimneys', the Benavides seal forcing inverted-tree orebodies, 3 controlling faults, granitic stock westward — even the mantos/chimneys-by-COMPOSITION terminology trap). ANHYDRITE ✓ listed — the Garcia-Ruiz at-depth reservoir is on the record, supporting the slow_cooling events' Ca/S resupply floors. PROVENANCE GEM for the catalog side: the page corrects a famous mislabeling — most 'Cave of the Swords' gypsum specimens (including the Denver Museum's) actually came from XOCHITL CAVE (found second; five major caves total: Swords 1912, Xochitl, Crystals 2000, Queen's Eye, Sails). Mine status notes: 60,000 L/min pumping ('40 t water per t ore'), the 2015 flood never came within 100 m of the Cave of the Crystals, 2026 restart underway with new orebodies west of the historic mine."
@@ -1112,10 +1122,11 @@
           // v228 quartz T_min 50 still retires the late 32-35°C stragglers.
           "SiO2": 30,
           // Anhydrite-saturated Ca-SO4 brine. Garcia-Ruiz et al.
-          // report ~600 ppm Ca, ~1500 ppm SO4 at the cave's 58°C
-          // boundary; we slightly amplify for engine kinetics.
-          "Ca": 320,
-          "S": 420,
+          // report ~600 ppm Ca and ~1500 ppm SO4 at the cave's 58°C
+          // boundary. The sulfur field stores sulfate as sulfur mass:
+          // 1500 ppm SO4 × 32.07/96.06 ≈ 500 ppm S.
+          "Ca": 600,
+          "S": 500,
           "CO3": 15,             // low — limestone host but Ca-SO4 dominates
           "F": 1,
           "Fe": 3,
@@ -1258,7 +1269,7 @@
         "QUARTZ + ANHYDRITE WITHDRAWN from expects_species (v228, hostile-review rung 2). Quartz: the Salt Plains quartz is DETRITAL — wind/water-blown sand mechanically trapped in the growing selenite (it IS the hourglass inclusion source, which the render already models via the growth-zone sediment record); the broth's SiO2:30 was always a silt proxy, and the sim's chemistry engines were precipitating authigenic quartz from it at 23-27°C, which real kinetics forbid (v228 enforces quartz's T_min 50). Anhydrite: the near-surface crust precipitates halite + selenite ONLY; anhydrite belongs to the deep Permian source beds the brine dissolves, and direct anhydrite nucleation below ~100°C is kinetically impossible (Ossorio 2014, Voigt & Freyer 2023) — the pre-v228 events fired through a saline-low-T branch that modeled REPLACEMENT-after-gypsum as direct nucleation. Both promises were mechanism confabulations, not missing minerals. Celestine kept (documented in the OK evaporite suite) but flagged unverified as a SURFACE precipitate at this locality by the rung-2 pass.",
         "USFWS Salt Plains NWR + Oklahoma Geological Survey: selenite forms just under a wafer-thin salt crust where gypsum-saturated saline groundwater reaches the surface and evaporates. Fine sand + clay are mechanically included on the fast-growing sectors, producing the hourglass shape; iron oxide in the red-bed soil gives the reddish-to-chocolate-brown colour. This hourglass habit is found NOWHERE else in the world.",
         "Showcase for the crystal-face-realism arc's hourglass-selenite render (2026-06-22): low-T (<45°C) sediment-laden fast growth → js/45 _seleniteHourglassParams tags the blade gypsum_hourglass; the repeated wet/dry fast-growth pulses drive the stepped-growth ziggurat (steps≥2); accumulated trace_Fe deepens the amber → chocolate brown and floods the heavily-included blades to solid brown. The render machinery already shipped SIM-neutral; this scenario is where it is the centerpiece.",
-        "Initial broth: gypsum-saturated (Ca 120, S 120) salt-saturated (Na 700, Cl 700) oxidized surface brine at 28°C, near-neutral pH 7.6, iron-bearing (Fe 4) with suspended silt (SiO2 30). The DRY events (gsp_dry) spike Ca/S to 150 + concentrate Fe → fast selenite bursts that trap sediment; the WET events (gsp_wet) dilute to Ca/S 35 (σ<1) so growth pauses between pulses. Five wet/dry cycles over 250 steps.",
+        "Measured source brine (Johnson 1972; OGS OFR 3-2019): Ca about 1,500 ppm, Mg about 1,000 ppm, sulfate about 7,000 ppm (= about 2,337 ppm as sulfur), chloride 90,000-150,000 ppm, and NaCl 150,000-250,000 ppm. At those concentrations the brine is saturated with both halite and gypsum. The model stores sulfate as sulfur mass, so initial S=2300 ppm. DRY events retain the measured brine range and concentrate it slightly; WET events represent rain mixing and move authoritative gypsum SI just below zero so growth pauses between bursts.",
         "Halite is a co-product (the literal salt crust of the Salt Plains); minor goethite/iron-oxide staining is geologically the same iron that colours the hourglass. The star is selenite."
       ],
       "initial": {
@@ -1270,18 +1281,18 @@
           // [rung-1 science pass]
           "F": 1,
           "SiO2": 30,            // suspended clay + red-bed silt (the inclusion source)
-          "Ca": 120,             // gypsum-saturated groundwater
-          "Na": 700,             // salt-saturated sand → the crust
-          "Mg": 20,
-          "S": 120,              // sulfate — the gypsum half
-          "Cl": 700,
+          "Ca": 1500,            // OGS/Johnson measured source brine (~1,500 ppm)
+          "Na": 70000,           // ~180,000 ppm NaCl expressed as its Na component
+          "Mg": 1000,            // OGS/Johnson measured source brine (~1,000 ppm)
+          "S": 2300,             // 7,000 ppm SO4 converted to sulfur-mass equivalent
+          "Cl": 110000,          // measured 90,000-150,000 ppm chloride range
           "CO3": 15,             // low — clastic red beds, not carbonate
           "Fe": 8,               // Permian red-bed iron oxide — intense (the red beds ARE red)
           "Mn": 0.5,
           "Sr": 4,
           "O2": 1.6,             // oxidized playa surface
           "pH": 7.6,             // near-neutral
-          "salinity": 150.0
+          "salinity": 200.0
         },
         "wall": {
           // Salt flat over Permian red-bed sand — flat, floor-biased basin (no
@@ -1329,7 +1340,8 @@
       "sources": [
         "U.S. Fish & Wildlife Service — Salt Plains National Wildlife Refuge, selenite crystal digging (formation mechanism: gypsum-saturated groundwater evaporating under a salt crust; clay/sand/iron-oxide inclusions form the hourglass)",
         "Oklahoma Geological Survey / Oklahoma Historical Society — Great Salt Plains; hourglass selenite as the Oklahoma state crystal",
-        "Ham W.E. (1961) Oklahoma Geological Survey — geology of the Salt Plains / Permian red-bed evaporites of northwestern Oklahoma"
+        "Ham W.E. (1961) Oklahoma Geological Survey — geology of the Salt Plains / Permian red-bed evaporites of northwestern Oklahoma",
+        "Johnson K.S. (2019) Oklahoma Geological Survey Open-File Report 3-2019 — Geologic studies, natural-brine emissions, and hourglass-selenite crystals at Great Salt Plains; reproduces Johnson (1972) brine analyses"
       ]
     },
 
@@ -1564,6 +1576,8 @@
           // scale variance, polar_amp×1.4). Default 'pocket' (smooth
           // pegmatite ellipsoid) was wrong for a supergene gossan.
           // Bubble counts left at scenario-tuned 3/7.
+          "composition": "dolomite",
+          "matrix": "dolomite",
           "architecture": "irregular",
           "primary_bubbles": 3,
           "secondary_bubbles": 7,
@@ -2021,6 +2035,9 @@
         // hydrothermal vein in quartzite reads as a small cohesive pocket.
         "wall": {
           "matrix": "phyllite",   // MATRIX SKIN (render-only, 2026-07-06): notes: "host is quartzite + phyllite" — imperial-topaz kaolinized phyllite; composition defaults limestone (physics untouched)
+          "composition": "pegmatite",
+          "matrix": "phyllite",
+          "reactivity": 0,
           "primary_bubbles": 2,
           "secondary_bubbles": 4,
           "shape_seed": 9
@@ -2199,6 +2216,7 @@
         // Pegmatite pocket — fracture-controlled cavity, n=2 "slot" profile
         // (4 primaries + 5 secondaries).
         "wall": {
+          "composition": "pegmatite",
           "primary_bubbles": 4,
           "secondary_bubbles": 5,
           "shape_seed": 6,
@@ -2380,6 +2398,9 @@
           // the cavity here is a slot in the vein, not a smooth
           // pegmatite pocket. 'tabular' archetype encodes the
           // anisotropic stretch (~3:1) of a vein-hosted cavity.
+          "composition": "pegmatite",
+          "matrix": "granite",
+          "reactivity": 0,
           "architecture": "tabular",
           "primary_bubbles": 3,
           "secondary_bubbles": 5,
@@ -2746,6 +2767,7 @@
           // smooth pegmatite bubble. 'irregular' archetype encodes the
           // cathedral-scale variance (polar_amp×1.4) appropriate for
           // sandstone-vug profiles. Bubble counts 4/8 left scenario-tuned.
+          "composition": "sandstone",
           "architecture": "irregular",
           "primary_bubbles": 4,
           "secondary_bubbles": 8,
@@ -3760,7 +3782,7 @@
       "notes": [
         "Anchor: Sicilian Solfifera Series, Cianciana / Caltanissetta. Microbial sulfate reduction of Messinian gypsum and hydrocarbons produced secondary carbonate and native sulfur under anoxic conditions. Ziegenbalg et al. (2010) establish the microbial sulfate-reduction association; Rouwendaal et al. (2025) demonstrate that molecular O₂ is not required at Monte Palco. The simulator therefore carries inherited microbial S° separately from sulfate and sulfide instead of reusing the Sulphur Bank oxic-interface mechanism.",
         "Engine mode: this scenario fires the BSR-near-surface peak of the v80 bimodal pH factor (peaks at 2.5 Sulphur-Bank-style and 6.0 Sicily-style). The pH = 6.0 initial condition is dead-center on the BSR peak. The engine's metal_sum ≤ 100 gate fits Sicilian fluid — Messinian marls are clean (metal_sum ≈ 25, dominated by trace Fe).",
-        "Co-products: the simulator's calcite + selenite + celestine + aragonite engines fire under the same broth: calcite from the 600 ppm Ca + 80 ppm CO₃ supersat; selenite (gypsum) from the same Ca + 400 ppm S (sulfate fraction); celestine from the trace Sr; aragonite as the calcite polymorph at low T + appropriate Mg/Ca. This is the geologically-real Sicilian assemblage — the same minerals you'd identify in a hand specimen from Cianciana.",
+        "Co-product routes are evaluated, not asserted: SD-AOM transfers gypsum-derived sulfate to reduced sulfur and methane-derived DIC at a strict 1 C : 1 S molar ratio; the authoritative saturation/kinetic evaluators then decide whether calcite, residual selenite, celestine, or aragonite actually forms. Across the calibrated Sicily envelope, calcite records the methane-carbonate replacement route while residual sulfate remains available to gypsum and celestine.",
         "Wall composition: 'limestone' — Sicily IS literally hosted in calcite/gypsum matrix. The Solfifera Series sits on the Trubi Formation (Pliocene pelagic chalk) and is interbedded with limestone marls. The wall's dissolve() releases Ca + CO₃ which models the actual gypsum/calcite matrix dissolution. reactivity = 0.5 keeps the buffer gentle so pH stays in the BSR window."
       ],
       "initial": {
@@ -3827,6 +3849,10 @@
           // composition's dissolve() releases Ca + CO₃, modeling the
           // actual gypsum/calcite matrix dissolution.
           "composition": "limestone",
+          // A shallow, conductively buffered diagenetic pore has no random
+          // magmatic reheating. The authored reaction events own this story.
+          "thermal_pulses": false,
+          "cooling_rate": 0,
           // reactivity 0.5 = gentle dissolution. Higher and the wall
           // would over-buffer pH up to ~7.5 (out of the BSR window's
           // ph_f peak); lower and there'd be no carbonate cement
@@ -3883,7 +3909,7 @@
 
     "sunnyside_american_tunnel": {
       "anchor": "Sunnyside Mine / American Tunnel, Silverton caldera, San Juan County, Colorado. Intermediate-sulfidation polymetallic epithermal vein deposit hosted in the Crystal Lake Tuff (27.5 Ma San Juan ignimbrite). The American Tunnel (driven 1959, plugged 2003) was the principal modern source of Silverton-district display rhodochrosite + octahedral REE-fluorite + manganocalcite specimens. Per Casadevall & Ohmoto 1977 Econ. Geol. 72:1285 six-stage paragenesis (compressed to four stages here).",
-      "description": "Late-stage carbonate-fluoride paragenesis at the Sunnyside-American Tunnel vein system. The scenario runs primary sulfide-Au-quartz (Casadevall Stages I-IV at 280-260°C) → Stage V Mn-carbonate (pale-pink small rhodochrosite at 215-245°C, Fe-poor signature) → Stage VI early fluoride pulse (octahedral REE-fluorite at 195-230°C with grass-green visible color + brilliant blue SW UV from Eu²⁺ activator per Bosze & Rakovan 2002 GCA 66:997) → Stage VI late manganocalcite cap (cauliflower botryoidal Mn²⁺-bright-fluorescing calcite at 175-200°C). The REE source is leaching of devitrified ignimbrite glass from the Carpenter Ridge Tuff host per Bachmann et al. 2014 — Eu²⁺ from feldspar at residence T, Y³⁺ general. Headline specimens: pale-pink rhodochrosite + manganocalcite cabinet pieces; octahedral REE-fluorite (~1-2 cm, sometimes with rhodochrosite + manganocalcite associates); native gold in milky quartz from the primary Stage IV ore. Many of these specimens carry dealer labels reading 'Standard Mine, Silverton' — but the only documented Standard Mine in Colorado is in Gunnison County (Ruby District, EPA Superfund, ~80 mi NE, different deposit). The 'Standard Mine, Silverton' label is dealer-conflation; the actual source is American Tunnel material from the 1959-1991 production window.",
+      "description": "Late-stage carbonate-fluoride paragenesis at the Sunnyside-American Tunnel vein system. The scenario runs primary sulfide-Au-quartz (Casadevall Stages I-IV at 280-260°C) → Stage V Mn-carbonate (pale-pink small rhodochrosite at 215-245°C, Fe-poor signature) → Stage VI early fluoride pulse (octahedral REE-fluorite at 195-230°C with grass-green visible color + brilliant blue SW UV from Eu²⁺ activator per Bosze & Rakovan 2002 GCA 66:997) → Stage VI late manganocalcite cap (cauliflower botryoidal Mn²⁺-bright-fluorescing calcite at 175-200°C). The REE source is leaching of devitrified ignimbrite glass from the Carpenter Ridge Tuff host per Bachmann et al. 2014 — Eu²⁺ from feldspar at residence T, Y³⁺ general. Headline specimens: pale-pink rhodochrosite + manganocalcite cabinet pieces; octahedral REE-fluorite (~1-2 cm, sometimes with rhodochrosite + manganocalcite associates); native gold in milky quartz from the primary Stage IV ore. Labels reading 'Standard Mine, Silverton' identify Sunnyside material produced during Standard Metals Corporation's 1959-1978 lease and American Tunnel development; they are not a conflation with the unrelated Standard Mine in Gunnison County.",
       "expects_species": ["pyrite", "galena", "sphalerite", "chalcopyrite", "quartz", "rhodochrosite", "fluorite", "calcite", "native_gold"],
       "duration_steps": 200,
       "notes": [
@@ -3901,19 +3927,19 @@
           "SiO2": 400,
           "Ca": 200,
           "CO3": 50,
-          "Fe": 10,
+          "Fe": 45,
           "Mn": 30,
           "Mg": 8,
           "Na": 100,
           "K": 30,
           "F": 8,
           "Y": 0.0,
-          "Cu": 25,
+          "Cu": 55,
           "Pb": 80,
           "Zn": 120,
           "S": 200,
           "Cl": 60,
-          "Au": 0.5,
+          "Au": 2.5,
           "Te": 1.0,
           "Sb": 5,
           "As": 10,
@@ -3930,6 +3956,8 @@
           "primary_bubbles": 4,
           "secondary_bubbles": 6,
           "shape_seed": 1959,
+          "thermal_pulses": false,
+          "cooling_rate": 0,
           // Central-distance (Wulff) FORM, Phase 4 rung 4a.1 — render the Stage VI REE-fluorite
           // as the TRUE {100}/{111} polyhedron (cube↔cuboctahedron↔octahedron, driven by the Y
           // the Stage VI pulse leaches; Bosze & Rakovan 2002, cited below) instead of a fixed
@@ -3938,10 +3966,10 @@
         }
       },
       "events": [
-        { "step":  30, "type": "sunnyside_cooling_transition",          "name": "Primary Cooling",                     "description": "Stage I-IV closes — sulfides + Au-quartz lock in; T drops; pH neutralizes" },
-        { "step":  70, "type": "sunnyside_stage_v_mn_carbonate",        "name": "Stage V Mn-Carbonate Pulse",           "description": "Pale-pink rhodochrosite — Casadevall Stage V (245-200°C, Fe-poor lattice)" },
-        { "step": 110, "type": "sunnyside_stage_vi_fluoride_pulse",     "name": "Stage VI Fluoride + REE Pulse",        "description": "Magmatic F + Y leached from Carpenter Ridge Tuff glass — octahedral REE-fluorite (grass-green visible, blue SW UV)" },
-        { "step": 150, "type": "sunnyside_stage_vi_manganocalcite_cap", "name": "Stage VI Manganocalcite Cap",          "description": "Cauliflower botryoidal Mn²⁺-fluorescent calcite — terminal Sunnyside texture" }
+        { "step":  30, "type": "sunnyside_cooling_transition",          "name": "Primary Cooling",                     "description": "Stage I-IV chemistry closes; inventory determines retained sulfides and Au-quartz" },
+        { "step":  70, "type": "sunnyside_stage_v_mn_carbonate",        "name": "Stage V Mn-Carbonate Pulse",           "description": "Conditions favor pale-pink Ca-bearing rhodochrosite" },
+        { "step": 110, "type": "sunnyside_stage_vi_fluoride_pulse",     "name": "Stage VI Fluoride + REE Pulse",        "description": "F-Y pulse opens the octahedral REE-fluorite route" },
+        { "step": 150, "type": "sunnyside_stage_vi_manganocalcite_cap", "name": "Stage VI Carbonate Cap",               "description": "CO2 loss raises calcite SI; inventory determines whether Mn-bearing calcite forms" }
       ],
       "sources": [
         "Burbank W.S. & Luedke R.G. (1968) — Geology and Ore Deposits of the Eureka and Adjoining Districts, San Juan Mountains, Colorado. USGS Professional Paper 535.",

@@ -64,10 +64,23 @@ _propagateGlobalDelta(snap) {
   // Defensive fallback to mesh.propagateDelta when the voxel grid
   // isn't available (headless test harnesses without CavityVoxelGrid).
   const grid = this.wall_state.voxelGridFor(this);
+  const mesh = this.wall_state.meshFor(this);
+  const canonicalSulfurInventory = () => {
+    const fluids = grid?.voxels
+      ? grid.voxels.map((voxel: any) => voxel?.fluid).filter(Boolean)
+      : (mesh?.cells || []).map((cell: any) => cell?.fluid).filter(Boolean);
+    return fluids.reduce(
+      (sum: number, fluid: any) => sum + sulfurSystemTotalPpm(fluid),
+      0,
+    );
+  };
+  const explicitSulfurActive = !!(
+    preFluid.sulfurPoolsExplicit || this.conditions.fluid.sulfurPoolsExplicit
+  );
+  const spatialSulfurBefore = explicitSulfurActive ? canonicalSulfurInventory() : 0;
   if (grid && typeof grid.propagateEventDelta === 'function') {
     grid.propagateEventDelta(preFluid, this._fluidFieldNames, equatorFluid, 'all', replaceFields);
   } else {
-    const mesh = this.wall_state.meshFor(this);
     if (mesh && typeof mesh.propagateDelta === 'function') {
       mesh.propagateDelta(preFluid, this._fluidFieldNames, equatorFluid, replaceFields);
     }
@@ -97,6 +110,18 @@ _propagateGlobalDelta(snap) {
     if (grid && grid.voxels) for (let i = 0; i < grid.voxels.length; i++) copySulfurFlags(grid.voxels[i] && grid.voxels[i].fluid);
     const meshSulfur = this.wall_state.meshFor(this);
     if (meshSulfur && meshSulfur.cells) for (let i = 0; i < meshSulfur.cells.length; i++) copySulfurFlags(meshSulfur.cells[i] && meshSulfur.cells[i].fluid);
+  }
+  // Book the ACTUAL canonical spatial inventory change, not the bulk-fluid
+  // delta times voxel count. Atomic sulfur-pool propagation may be reactant-
+  // limited in depleted voxels; only realized additions/removals are boundary
+  // fluxes, while redox transfers close at zero by construction.
+  if (explicitSulfurActive) {
+    const sulfurBoundaryDelta = canonicalSulfurInventory() - spatialSulfurBefore;
+    if (sulfurBoundaryDelta > 0) {
+      this._sulfurBoundaryImportsPpm = (this._sulfurBoundaryImportsPpm || 0) + sulfurBoundaryDelta;
+    } else if (sulfurBoundaryDelta < 0) {
+      this._sulfurBoundaryExportsPpm = (this._sulfurBoundaryExportsPpm || 0) - sulfurBoundaryDelta;
+    }
   }
   const deltaT = this.conditions.temperature - preTemp;
   if (deltaT !== 0) {

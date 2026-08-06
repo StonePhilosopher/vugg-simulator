@@ -3959,7 +3959,7 @@ Scenarios:
       </div>
       <div class="setup-row">
         <label for="f-na" style="width:60px">Sodium</label>
-        <input type="range" id="f-na" min="0" max="20000" value="0" oninput="document.getElementById('f-na-val').textContent=this.value+' ppm'">
+        <input type="range" id="f-na" min="0" max="150000" value="0" oninput="document.getElementById('f-na-val').textContent=this.value+' ppm'">
         <span class="range-val" id="f-na-val">0 ppm</span>
       </div>
       <div class="setup-row">
@@ -3994,7 +3994,7 @@ Scenarios:
       </div>
       <div class="setup-row">
         <label for="f-cl" style="width:60px">Chlorine</label>
-        <input type="range" id="f-cl" min="0" max="20000" value="0" oninput="document.getElementById('f-cl-val').textContent=this.value+' ppm'">
+        <input type="range" id="f-cl" min="0" max="200000" value="0" oninput="document.getElementById('f-cl-val').textContent=this.value+' ppm'">
         <span class="range-val" id="f-cl-val">0 ppm</span>
       </div>
       <div class="setup-row">
@@ -4288,7 +4288,7 @@ Scenarios:
           </div>
           <div class="broth-slider-row" title="Sodium (ppm). Forms albite (Na-feldspar). With K-feldspar + slow cooling: perthite/moonstone.">
             <label>Na</label>
-            <input type="range" id="broth-na" min="0" max="20000" value="0" step="1"
+            <input type="range" id="broth-na" min="0" max="150000" value="0" step="1"
               oninput="setBrothValue('na',this.value)">
             <span class="broth-val" id="broth-na-val">0 ppm</span>
           </div>
@@ -4394,7 +4394,7 @@ Scenarios:
           </div>
           <div class="broth-slider-row" title="Chlorine (ppm). Halite (NaCl), pyromorphite, vanadinite, chlorargyrite. Part of saline brines.">
             <label>Cl</label>
-            <input type="range" id="broth-cl" min="0" max="20000" value="0" step="1"
+            <input type="range" id="broth-cl" min="0" max="200000" value="0" step="1"
               oninput="setBrothValue('cl',this.value)">
             <span class="broth-val" id="broth-cl-val">0 ppm</span>
           </div>
@@ -18737,7 +18737,32 @@ function scenarioSpecHash(spec) {
 //       Creative Mode exposes all three reservoir levers and the native-S
 //       pathway in setup and live editing. The fluid-pressure envelope reaches
 //       0.001 kbar so surface scenarios are representable without range clipping.
-const SIM_VERSION = 243;
+// v244 — HOSTILE-REVIEW ROUND 8 PHASE SELECTION + LOCALITY CLOSURE
+//       (2026-08-06). Gypsum/anhydrite now share one authoritative CaSO4
+//       evaluator: explicit sulfate-pool SI, Hardie water-activity boundary,
+//       pressure shift, kinetic gates, limiting reagents, and competition all
+//       feed nucleation, growth, and the Creative diagnosis. Low-temperature
+//       sabkha anhydrite can arise only by mass-balanced gypsum dehydration;
+//       primary high-temperature anhydrite stays distinct. Replacement
+//       preserves formula extent, transfers structural water, updates volume/
+//       porosity, and is replayable. Sulfur-event propagation is an atomic
+//       voxel transaction, so a depleted local reactant cannot clamp the debit
+//       while receiving the full product credit; boundary fluxes are measured
+//       from realized canonical inventory. Native-S oxidative dissolution now
+//       returns sulfate with explicit O2 closure. Shipped scenarios declare a
+//       host wall; limestone and dolomite dissolution release formula-correct
+//       Ca:Mg:C inventories with closure. Tsumeb is explicitly dolomite-hosted.
+//       Sunnyside reconciles its USGS sequence/provenance and retains primary
+//       chalcopyrite, Au, and Mn-substituting calcite across the tested seeds.
+//       Sicily executes methane-driven SD-AOM at 1 C:1 S, earns positive
+//       calcite SI across the tested envelope, keeps residual sulfate, and
+//       reports reaction testimony separately from mineral outcomes. Naica
+//       now uses published Ca/SO4 concentrations and crosses slightly into
+//       positive gypsum SI; Great Salt Plains uses measured wet/dry brine
+//       concentrations and crosses saturation only during the dry phase.
+//       Creative setup and live Na/Cl ranges expose those natural evaporite
+//       concentrations without clipping.
+const SIM_VERSION = 244;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -18752,7 +18777,11 @@ const MODEL_DIGEST = [
     'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
     'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
     'silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1',
-    'sulfur-ledger:sulfide+sulfate+elemental-independent+pathway-gated-v1',
+    'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
+    'sulfur-ledger:sulfide+sulfate+elemental+atomic-spatial+pathway-gated-v2',
+    'wall-dissolution:formula-stoich-limestone+dolomite-v1',
+    'sicily-SDAOM:methane-1C1S+conditional-calcite-v1',
+    'calcite-Mn:manganocalcite-excess<1.2-v1',
     'CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1',
     'growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6',
     'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',
@@ -19596,7 +19625,53 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
                     + removedHere * inventory[species];
             }
         }
+        // Native sulfur oxidation is a transfer, not a generic S0 return:
+        //   S0 + 1.5 O2 + H2O -> SO4(2-) + 2 H+
+        // An explicitly open air-water interface imports exactly the oxygen it
+        // consumes. A closed fluid oxidizes only the fraction its existing O2 can
+        // support and returns the oxygen-limited remainder to S_elemental.
+        let handledNativeSulfurOxidation = false;
+        if (crystal.mineral === 'native_sulfur'
+            && zone.dissolutionMode === 'oxidative_to_sulfate'
+            && fluid.sulfurPoolsExplicit) {
+            const returnedElemental = Math.max(0, Number(returned.S_elemental) || 0);
+            const oxygenPerSulfurMass = 1.5 * 32.00 / 32.07;
+            const oxygenBefore = Math.max(0, Number(fluid.O2) || 0);
+            const openBoundary = fluid.nativeSulfurPathway === 'oxidative_interface'
+                || !!conditions?._scenario?.open_to_atmosphere
+                || !!conditions?.wall?.open_system;
+            const oxygenNeeded = returnedElemental * oxygenPerSulfurMass;
+            const oxygenImported = openBoundary ? oxygenNeeded : 0;
+            const sulfurOxidized = Math.min(returnedElemental, (oxygenBefore + oxygenImported) / oxygenPerSulfurMass);
+            const oxygenConsumed = sulfurOxidized * oxygenPerSulfurMass;
+            const elementalRemainder = returnedElemental - sulfurOxidized;
+            fluid.O2 = Math.max(0, oxygenBefore + oxygenImported - oxygenConsumed);
+            fluid.S_sulfate += sulfurOxidized;
+            fluid.S_elemental += elementalRemainder;
+            if (typeof ehFromO2 === 'function')
+                fluid.Eh = ehFromO2(fluid.O2);
+            const reaction = {
+                pathway: 'native_sulfur_oxidative_dissolution',
+                sulfurReturnedPpm: returnedElemental,
+                sulfurOxidizedToSulfatePpm: sulfurOxidized,
+                sulfurElementalRemainderPpm: elementalRemainder,
+                oxygenBeforePpm: oxygenBefore,
+                oxygenImportedPpm: oxygenImported,
+                oxygenConsumedPpm: oxygenConsumed,
+                oxygenAfterPpm: fluid.O2,
+                protonsProducedMmolKg: 2 * sulfurOxidized / 32.07,
+                openBoundary,
+            };
+            (fluid._sulfur_oxidation_ledger ||= []).push(reaction);
+            zone._sulfur_oxidation = reaction;
+            returned.S_sulfate = sulfurOxidized;
+            returned.S_elemental = elementalRemainder;
+            handledNativeSulfurOxidation = true;
+        }
         for (const species in returned) {
+            if (handledNativeSulfurOxidation
+                && (species === 'S_sulfate' || species === 'S_elemental'))
+                continue;
             if (typeof fluid[species] !== 'number')
                 continue;
             fluid[species] += returned[species];
@@ -19715,6 +19790,54 @@ function remainingBookedInventory(crystal, species) {
         total += remaining * perUm;
     }
     return total;
+}
+function bookedSolidSulfurPpm(crystals) {
+    const sulfurKeys = ['S', 'S_sulfide', 'S_sulfate', 'S_elemental'];
+    let total = 0;
+    for (const crystal of (crystals || [])) {
+        for (const zone of (crystal?.zones || [])) {
+            if (!(zone && zone.thickness_um > 0))
+                continue;
+            const remaining = Number.isFinite(Number(zone._remaining_solid_um))
+                ? Math.max(0, Number(zone._remaining_solid_um))
+                : Math.max(0, Number(zone.thickness_um) || 0);
+            for (const key of sulfurKeys) {
+                total += remaining * Math.max(0, Number(zone._budget_inventory_per_um?.[key]) || 0);
+            }
+        }
+    }
+    return total;
+}
+// Whole-simulator sulfur audit in the same ppm-equivalent units used by the
+// accepted-zone ledger. Canonical voxel fluids plus booked solid inventory
+// must equal the constructor inventory plus declared boundary imports minus
+// exports. Internal redox transfers cannot change the total.
+function simulatorSulfurLedgerSnapshot(sim) {
+    const grid = sim?.wall_state?.voxelGridFor?.(sim);
+    const fluids = grid?.voxels
+        ? grid.voxels.map((voxel) => voxel?.fluid).filter(Boolean)
+        : [sim?.conditions?.fluid].filter(Boolean);
+    const fluidPpm = fluids.reduce((sum, fluid) => sum + sulfurSystemTotalPpm(fluid), 0);
+    const solidPpm = bookedSolidSulfurPpm(sim?.crystals || []);
+    const initialPpm = Math.max(0, Number(sim?._sulfurLedgerInitialPpm) || 0);
+    const importsPpm = Math.max(0, Number(sim?._sulfurBoundaryImportsPpm) || 0);
+    const exportsPpm = Math.max(0, Number(sim?._sulfurBoundaryExportsPpm) || 0);
+    const expectedPpm = initialPpm + importsPpm - exportsPpm;
+    const actualPpm = fluidPpm + solidPpm;
+    const errorPpm = actualPpm - expectedPpm;
+    return {
+        step: Number(sim?.step) || 0,
+        initialPpm,
+        importsPpm,
+        exportsPpm,
+        fluidPpm,
+        solidPpm,
+        expectedPpm,
+        actualPpm,
+        errorPpm,
+        tolerancePpm: Math.max(1e-7, Math.abs(expectedPpm) * 1e-9),
+        closed: Math.abs(errorPpm) <= Math.max(1e-7, Math.abs(expectedPpm) * 1e-9),
+    };
 }
 
 // ── 20-chemistry-fluid.js ──
@@ -21257,7 +21380,72 @@ function sulfurSystemTotalPpm(fluid) {
         return Math.max(0, Number(fluid.S) || 0);
     return syncExplicitSulfurTotal(fluid) + fluid.S_elemental;
 }
-function ensureExplicitSulfurPools(fluid, T) {
+// Apply a bulk event's explicit sulfur-pool change to one spatial fluid as an
+// atomic transaction. Additive propagation of each field independently is not
+// conservative when a local voxel has less reactant than the bulk fluid: the
+// negative leg clamps at zero while the positive leg would land in full,
+// creating sulfur. Here the positive transfer is limited to the sulfur actually
+// debited in that voxel. A net import/export remains a boundary flux and is
+// measured from the canonical grid after propagation.
+function propagateExplicitSulfurPoolDelta(fluid, preFluid, postFluid, replaceFields = []) {
+    if (!fluid || !(fluid.sulfurPoolsExplicit
+        || preFluid?.sulfurPoolsExplicit || postFluid?.sulfurPoolsExplicit))
+        return false;
+    const keys = ['S_sulfide', 'S_sulfate', 'S_elemental'];
+    const replace = new Set(replaceFields || []);
+    ensureExplicitSulfurPools(fluid);
+    // An authored reservoir reset is an open-boundary replacement, not an
+    // internal redox transfer. Respect replacement fields exactly and apply any
+    // remaining pool changes additively; the ledger records the actual spatial
+    // inventory delta as import/export.
+    if (keys.some(key => replace.has(key))) {
+        for (const key of keys) {
+            if (replace.has(key)) {
+                fluid[key] = Math.max(0, Number(postFluid?.[key]) || 0);
+            }
+            else {
+                const delta = (Number(postFluid?.[key]) || 0) - (Number(preFluid?.[key]) || 0);
+                fluid[key] = Math.max(0, (Number(fluid[key]) || 0) + delta);
+            }
+        }
+        fluid.sulfurPoolsExplicit = true;
+        fluid.nativeSulfurPathway = postFluid?.nativeSulfurPathway;
+        syncExplicitSulfurTotal(fluid);
+        return true;
+    }
+    const deltas = keys.map(key => (Number(postFluid?.[key]) || 0) - (Number(preFluid?.[key]) || 0));
+    const requestedRemoval = deltas.reduce((sum, delta) => sum + Math.max(0, -delta), 0);
+    const requestedCredit = deltas.reduce((sum, delta) => sum + Math.max(0, delta), 0);
+    let removed = 0;
+    for (let i = 0; i < keys.length; i++) {
+        if (deltas[i] >= 0)
+            continue;
+        const available = Math.max(0, Number(fluid[keys[i]]) || 0);
+        const debit = Math.min(available, -deltas[i]);
+        fluid[keys[i]] = available - debit;
+        removed += debit;
+    }
+    // Internal transfer credit equals the locally realized debit. Any positive
+    // net delta is an additional boundary import. For a negative net delta, the
+    // requested export is taken out before the remaining debit is transferred.
+    const netBoundaryDelta = requestedCredit - requestedRemoval;
+    const creditTotal = netBoundaryDelta >= 0
+        ? removed + netBoundaryDelta
+        : Math.max(0, removed + netBoundaryDelta);
+    if (requestedCredit > 0 && creditTotal > 0) {
+        for (let i = 0; i < keys.length; i++) {
+            if (deltas[i] <= 0)
+                continue;
+            fluid[keys[i]] = Math.max(0, Number(fluid[keys[i]]) || 0)
+                + creditTotal * (deltas[i] / requestedCredit);
+        }
+    }
+    fluid.sulfurPoolsExplicit = true;
+    fluid.nativeSulfurPathway = postFluid?.nativeSulfurPathway;
+    syncExplicitSulfurTotal(fluid);
+    return true;
+}
+function ensureExplicitSulfurPools(fluid, T = 25) {
     if (!fluid)
         return fluid;
     if (!fluid.sulfurPoolsExplicit) {
@@ -21326,16 +21514,20 @@ function oxidizeReducedSulfurToElemental(fluid, fraction, targetResidualO2Ppm = 
     Object.defineProperty(fluid, '_lastSulfurReaction', { value: result, writable: true, configurable: true, enumerable: false });
     return result;
 }
-// Bacterial sulfate reduction transfers sulfate to reduced sulfur. Organic
-// carbon is an explicit untracked boundary reagent; carbonate alkalinity is
-// credited at two mol C per mol S for the scenario-scale reaction.
-function bacterialReduceSulfate(fluid, sulfurPpm, T) {
+// Bacterial sulfate reduction transfers sulfate to reduced sulfur. Carbon is
+// an explicit boundary reagent because the simulator does not yet carry a
+// dissolved-organic-carbon or methane reservoir. The default two mol C per
+// mol S preserves the generic organic-matter reaction used by older callers;
+// sulfate-driven anaerobic oxidation of methane (SD-AOM) supplies one mol C
+// per mol S: CH4 + SO4^2- -> HCO3^- + HS^- + H2O.
+function bacterialReduceSulfate(fluid, sulfurPpm, T, carbonBoundary = {}) {
     ensureExplicitSulfurPools(fluid, T);
     const beforeS = sulfurSystemTotalPpm(fluid);
     const transferred = Math.min(Math.max(0, Number(sulfurPpm) || 0), fluid.S_sulfate);
     fluid.S_sulfate -= transferred;
     fluid.S_sulfide += transferred;
-    const carbonateAdded = transferred * (2 * 60.01 / 32.07);
+    const carbonateMolesPerSulfur = Math.max(0, Number(carbonBoundary.carbonateMolesPerSulfur ?? 2) || 0);
+    const carbonateAdded = transferred * (carbonateMolesPerSulfur * 60.01 / 32.07);
     fluid.CO3 = Math.max(0, Number(fluid.CO3) || 0) + carbonateAdded;
     syncExplicitSulfurTotal(fluid);
     const result = {
@@ -21346,6 +21538,8 @@ function bacterialReduceSulfate(fluid, sulfurPpm, T) {
         carbonateAddedPpm: carbonateAdded,
         oxygenConsumedPpm: 0,
         organicElectronDonorBoundary: true,
+        carbonSourceBoundary: carbonBoundary.source || 'organic_matter',
+        carbonateMolesPerSulfur,
     };
     Object.defineProperty(fluid, '_lastSulfurReaction', { value: result, writable: true, configurable: true, enumerable: false });
     return result;
@@ -22183,6 +22377,25 @@ class VugWall {
         this.wall_Mn_ppm = opts.wall_Mn_ppm ?? 500.0;
         this.wall_Mg_ppm = opts.wall_Mg_ppm ?? 1000.0;
         this.ca_from_wall_total = opts.ca_from_wall_total ?? 0.0;
+        // Carbonate-host inventory uses the simulator's calibrated Ca release
+        // (15 ppm-equivalent per mm) as its formula-extent scale. Limestone is
+        // CaCO3; dolomite is CaMg(CO3)2. Tracking formula extent separately from
+        // fluid species lets every dissolution call prove wall loss = fluid gain.
+        const hostFormulaExtentPerMm = (this.composition === 'limestone' || this.composition === 'dolomite')
+            ? 15.0 / 40.078 : 0;
+        this.host_formula_inventory_initial_mmolkg =
+            (this.thickness_mm + this.total_dissolved_mm) * hostFormulaExtentPerMm;
+        this.host_formula_released_mmolkg = opts.host_formula_released_mmolkg
+            ?? this.total_dissolved_mm * hostFormulaExtentPerMm;
+        this.host_release_totals = opts.host_release_totals ?? {
+            Ca: this.host_formula_released_mmolkg * 40.078,
+            Mg: this.composition === 'dolomite'
+                ? this.host_formula_released_mmolkg * 24.305 : 0,
+            CO3: this.host_formula_released_mmolkg * 60.009
+                * (this.composition === 'dolomite' ? 2 : 1),
+        };
+        this.host_release_ledger = Array.isArray(opts.host_release_ledger)
+            ? opts.host_release_ledger.slice() : [];
         // Phase-1 naturalistic void shape (visual only — growth engines
         // still read meanDiameterMm). Two-stage bubble-merge model:
         //   Stage 1 — primary void: a few large bubbles (radii 40–70% of
@@ -22465,23 +22678,58 @@ class VugWall {
         this.thickness_mm -= rate_mm;
         this.total_dissolved_mm += rate_mm;
         this.vug_diameter_mm += rate_mm * 2;
-        const ca_released = rate_mm * 15.0;
-        const co3_released = rate_mm * 12.0;
+        const formula = this.composition === 'dolomite' ? 'CaMg(CO3)2' : 'CaCO3';
+        const carbonateCoefficient = this.composition === 'dolomite' ? 2 : 1;
+        const formula_extent_mmolkg = rate_mm * (15.0 / 40.078);
+        const ca_released = formula_extent_mmolkg * 40.078;
+        const mg_released = this.composition === 'dolomite'
+            ? formula_extent_mmolkg * 24.305 : 0;
+        const co3_released = formula_extent_mmolkg * carbonateCoefficient * 60.009;
         const fe_released = rate_mm * (this.wall_Fe_ppm / 1000.0) * 0.5;
         const mn_released = rate_mm * (this.wall_Mn_ppm / 1000.0) * 0.5;
         const ph_recovery = rate_mm * 0.8;
         const ph_before = fluid.pH;
+        const ca_before = fluid.Ca;
+        const mg_before = fluid.Mg;
+        const co3_before = fluid.CO3;
         fluid.Ca += ca_released;
+        fluid.Mg += mg_released;
         fluid.CO3 += co3_released;
         fluid.Fe += fe_released;
         fluid.Mn += mn_released;
         fluid.pH += ph_recovery;
         fluid.pH = Math.min(fluid.pH, 8.5);
         this.ca_from_wall_total += ca_released;
+        this.host_formula_released_mmolkg += formula_extent_mmolkg;
+        this.host_release_totals.Ca += ca_released;
+        this.host_release_totals.Mg += mg_released;
+        this.host_release_totals.CO3 += co3_released;
+        const remainingFormulaMmolKg = this.thickness_mm * (15.0 / 40.078);
+        const inventoryErrorMmolKg = this.host_formula_inventory_initial_mmolkg
+            - remainingFormulaMmolKg - this.host_formula_released_mmolkg;
+        const transaction = {
+            composition: this.composition,
+            formula,
+            rate_mm,
+            formula_extent_mmolkg,
+            fluid_delta_ppm: {
+                Ca: fluid.Ca - ca_before,
+                Mg: fluid.Mg - mg_before,
+                CO3: fluid.CO3 - co3_before,
+            },
+            expected_ppm: { Ca: ca_released, Mg: mg_released, CO3: co3_released },
+            remaining_formula_mmolkg: remainingFormulaMmolKg,
+            inventory_error_mmolkg: inventoryErrorMmolKg,
+            closed: Math.abs(inventoryErrorMmolKg) <= 1e-9,
+        };
+        this.host_release_ledger.push(transaction);
         return {
             dissolved: true,
             rate_mm,
+            formula,
+            formula_extent_mmolkg,
             ca_released,
+            mg_released,
             co3_released,
             fe_released,
             mn_released,
@@ -22489,6 +22737,7 @@ class VugWall {
             ph_after: fluid.pH,
             vug_diameter: this.vug_diameter_mm,
             total_dissolved: this.total_dissolved_mm,
+            host_transaction: transaction,
         };
     }
     // W-K V1b: the dissolution-rate-weighted mean flow_rate the scallops equilibrated to, or null
@@ -24038,8 +24287,12 @@ class WallMesh {
             const fluid = this.cells[i].fluid;
             if (!fluid)
                 continue;
+            const explicitSulfurHandled = propagateExplicitSulfurPoolDelta(fluid, preFluid, _equatorFluid, replaceFields);
             for (let d = 0; d < dirty.length; d++) {
                 const fname = fieldNames[dirty[d]];
+                if (explicitSulfurHandled && (fname === 'S' || fname === 'S_sulfide'
+                    || fname === 'S_sulfate' || fname === 'S_elemental'))
+                    continue;
                 const next = replace.has(fname) ? _equatorFluid[fname] : fluid[fname] + deltas[d];
                 // SIM 220 — concentrations floor at 0 (mirror of the canonical
                 // voxel-grid clamp in js/24 propagateEventDelta; this is the
@@ -24829,8 +25082,12 @@ class CavityVoxelGrid {
             if (!hit)
                 continue;
             const fluid = v.fluid;
+            const explicitSulfurHandled = propagateExplicitSulfurPoolDelta(fluid, preFluid, postFluid, replaceFields);
             for (let d = 0; d < dirty.length; d++) {
                 const fname = dirty[d];
+                if (explicitSulfurHandled && (fname === 'S' || fname === 'S_sulfide'
+                    || fname === 'S_sulfate' || fname === 'S_elemental'))
+                    continue;
                 const next = replace.has(fname) ? postFluid[fname] : fluid[fname] + deltas[d];
                 // SIM 220 — concentrations floor at 0. The additive delta lands
                 // on cells that growth debits have drained BELOW bulk, so a
@@ -24937,10 +25194,72 @@ function al2sio5PhaseAssessment(temperatureC, confiningPressureKbar) {
 function al2sio5StablePolymorph(temperatureC, confiningPressureKbar) {
     return al2sio5PhaseAssessment(temperatureC, confiningPressureKbar).phase;
 }
-// Hardie (1967) pure-water reversal plus the fluid-pressure Clapeyron
-// correction. This is an EQUILIBRIUM observation, not a direct-nucleation
-// gate: gypsum can nucleate metastably and anhydrite has a separate ~100°C
-// kinetic floor in the sulfate engine.
+// Hardie (1967) reversible one-atmosphere points. The pure-water endpoint is
+// the paper's 58 +/- 2 C extrapolated reversal; the other three are measured
+// a_w/T equilibria. Piecewise interpolation preserves the observations rather
+// than fitting an unjustified global polynomial.
+const HARDIE_GYPSUM_ANHYDRITE_AW_POINTS = [
+    [0.770, 23],
+    [0.845, 39],
+    [0.960, 55],
+    [1.000, 58],
+];
+function _hardieBoundaryAtWaterActivity(waterActivityValue) {
+    const aw = Math.max(0.55, Math.min(1, Number(waterActivityValue) || 0));
+    let lo = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[0];
+    let hi = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[1];
+    let status = 'hardie-extrapolation';
+    if (aw >= 0.960) {
+        lo = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[2];
+        hi = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[3];
+        status = aw >= 0.9995 ? 'pure-water-anchor' : 'measured-interpolation';
+    }
+    else if (aw >= 0.845) {
+        lo = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[1];
+        hi = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[2];
+        status = 'measured-interpolation';
+    }
+    else if (aw >= 0.770) {
+        lo = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[0];
+        hi = HARDIE_GYPSUM_ANHYDRITE_AW_POINTS[1];
+        status = 'measured-interpolation';
+    }
+    const localSlopeCPerAw = (hi[1] - lo[1]) / (hi[0] - lo[0]);
+    return {
+        boundaryC: lo[1] + localSlopeCPerAw * (aw - lo[0]),
+        localSlopeCPerAw,
+        status,
+    };
+}
+// Authoritative equilibrium selector. This is deliberately not a direct-
+// nucleation gate: gypsum can be a primary metastable phase, while primary
+// anhydrite has its own conservative ~100 C kinetic floor. Pressure is FLUID
+// pressure and contributes the pressure-packet Clapeyron approximation.
+function gypsumAnhydritePhaseAssessment(fluid, temperatureC, fluidPressureKbar) {
+    const aw = waterActivityAssessment(fluid, temperatureC);
+    const hardie = _hardieBoundaryAtWaterActivity(aw.value);
+    const pressureCorrectionC = 14.7 * clampFluidPressureKbar(fluidPressureKbar);
+    const boundaryC = hardie.boundaryC + pressureCorrectionC;
+    const uncertaintyC = Math.hypot(2, Math.abs(hardie.localSlopeCPerAw) * aw.uncertainty);
+    const nominalPhase = temperatureC < boundaryC ? 'gypsum' : 'anhydrite';
+    const withinUncertainty = Math.abs(temperatureC - boundaryC) <= uncertaintyC;
+    const phase = withinUncertainty ? 'uncertain' : nominalPhase;
+    const extrapolation = hardie.status === 'hardie-extrapolation'
+        ? ' The Hardie a_w relation is extrapolated below its lowest measured point (0.770).'
+        : '';
+    return {
+        phase,
+        nominalPhase,
+        boundaryC,
+        uncertaintyC,
+        waterActivity: aw,
+        waterActivityStatus: hardie.status,
+        localSlopeCPerAw: hardie.localSlopeCPerAw,
+        pressureCorrectionC,
+        note: `Hardie (1967) a_w/T reversal with +14.7 C/kbar fluid-pressure correction.${extrapolation} ${aw.note}`,
+    };
+}
+// Backwards-compatible pure-water helper retained for saved reports/tests.
 function gypsumAnhydriteBoundaryC(fluidPressureKbar) {
     return 58 + 14.7 * clampFluidPressureKbar(fluidPressureKbar);
 }
@@ -25914,6 +26233,17 @@ class Crystal {
         // can flag the cubic-acanthite-after-argentite case.
         this.paramorph_origin = opts.paramorph_origin ?? null;
         this.paramorph_step = opts.paramorph_step ?? null;
+        // CaSO4 replacement is a dissolution-reprecipitation phase change, not a
+        // simple paramorph. Keep an ordered history because sabkha flood/evap
+        // cycles can reverse it repeatedly; replay uses the history directly.
+        this.phase_transition_origin = opts.phase_transition_origin ?? null;
+        this.phase_transition_step = opts.phase_transition_step ?? null;
+        this.phase_transition_driver = opts.phase_transition_driver ?? null;
+        this.phase_transition_history = opts.phase_transition_history ?? [];
+        this._ca_so4_hydration_water_mmolkg = opts._ca_so4_hydration_water_mmolkg ?? 0;
+        this._ca_so4_solid_volume_ratio = opts._ca_so4_solid_volume_ratio ?? 1;
+        this._ca_so4_replacement_porosity_fraction = opts._ca_so4_replacement_porosity_fraction ?? 0;
+        this._ca_so4_pseudomorphic_envelope_preserved = opts._ca_so4_pseudomorphic_envelope_preserved ?? false;
         // v28 dehydration tracking — counts steps in a dry environment
         // for crystals listed in DEHYDRATION_TRANSITIONS.
         this.dry_exposure_steps = opts.dry_exposure_steps ?? 0;
@@ -32969,24 +33299,22 @@ const MINERAL_GATES_celestine = {
 };
 const MINERAL_GATES_anhydrite = {
     sigma_crit: 1.0,
-    // v228 (rung 2): T_min 100 — anhydrite does NOT nucleate directly from
+    // T_min 100 — anhydrite does NOT nucleate directly from
     // solution below ~100°C on any timescale the lab has reached ("extremely
     // slow crystallization kinetics of anhydrite at T<100°C", Voigt & Freyer
     // 2023; Ossorio 2014 saw NO primary anhydrite at any condition to 120°C
     // over 2 years — the >80°C anhydrite in those runs was transformation-
     // derived from gypsum/bassanite). The retired saline-low-T branch modeled
-    // sabkha anhydrite as direct nucleation; real sabkha anhydrite is always
-    // REPLACEMENT after a gypsum precursor (T>30°C + chlorinity >4 mol/kg,
-    // Gunatilaka 1990) — a mechanic the sim doesn't have yet (BACKLOG). Until
-    // it exists, cold-brine anhydrite (great_salt_plains ×8 at 23.6°C) was a
-    // confabulation and dies here.
+    // sabkha anhydrite as direct nucleation; real sabkha anhydrite is
+    // replacement after a gypsum precursor. SIM 244 implements that separate
+    // mass-balanced path through evaluateCaSO4System/applyCaSO4PhaseTransition.
     T_min: 100, T_optimal: 150,
     fluid_min: { Ca: 50, S: 20 },
     O2_min: 0.3,
     pH_min: 5, pH_max: 9,
     surface_energy: 'medium',
     _sources: ['anhydrite engine v17+', 'Blount & Dickson 1973', 'Ossorio et al. 2014 Chem. Geol. 386:16 (no primary anhydrite ≤120°C)', 'Voigt & Freyer 2023 Front. Nucl. Eng. 2:1208582 (kinetic floor ~100°C; equilibrium boundary 42°C is NOT a nucleation gate)'],
-    _notes: 'CaSO4 — direct nucleation ≥100°C only (v228). Below that, real anhydrite is gypsum-replacement (unbuilt mechanic). Equilibrium gypsum/anhydrite boundary 42±1°C pure water, lower in brines — stability, not nucleability.',
+    _notes: 'CaSO4 — direct nucleation ≥100°C only. Below that, anhydrite requires gypsum replacement. Hardie water-activity/pressure stability is separate from nucleability.',
 };
 const MINERAL_GATES_brochantite = {
     sigma_crit: 1.0,
@@ -33167,41 +33495,12 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_anhydrite() {
-        const g = MINERAL_GATES_anhydrite;
-        if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.S < g.fluid_min.S || !sulfateRedoxAvailable(this.fluid, g.O2_min))
+        const evaluation = evaluateCaSO4System(this.fluid, this.temperature, this.pressure);
+        if (!evaluation.anhydritePrimaryAdmissible)
             return 0;
-        const ca_f = Math.min(this.fluid.Ca / 200.0, 2.5);
-        const s_f = Math.min(this.fluid.S / 40.0, 2.5);
-        const o2_f = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
-        let sigma = ca_f * s_f * o2_f;
-        const T = this.temperature;
-        // v228 (rung 2): hard kinetic floor from the gates — direct anhydrite
-        // nucleation needs ≥~100°C (Voigt & Freyer 2023; Ossorio 2014). The old
-        // sub-60°C salinity branch (full σ at salinity>100 and ambient T) modeled
-        // sabkha replacement-anhydrite as direct nucleation — retired; salinity
-        // moves the EQUILIBRIUM boundary, not nucleability.
-        if (T < g.T_min)
-            return 0;
-        let T_factor;
-        if (T < 200) {
-            T_factor = 0.5 + 0.005 * (T - 60);
-        }
-        else if (T <= 700) {
-            T_factor = 1.2;
-        }
-        else {
-            T_factor = Math.max(0.3, 1.2 - 0.002 * (T - 700));
-        }
-        sigma *= T_factor;
-        if (this.fluid.pH < 5) {
-            sigma *= Math.max(0.4, 1.0 - 0.2 * (5 - this.fluid.pH));
-        }
-        else if (this.fluid.pH > 9) {
-            sigma *= Math.max(0.4, 1.0 - 0.2 * (this.fluid.pH - 9));
-        }
-        if (ACTIVITY_CORRECTED_SUPERSAT)
-            sigma *= activityCorrectionFactor(this.fluid, 'anhydrite');
-        return Math.max(sigma, 0);
+        // Ω is already activity- and Ksp-corrected. Cap only to keep the growth
+        // calibration bounded; do not apply the old independent chemistry factors.
+        return Math.min(evaluation.anhydriteOmega, 10);
     },
     supersaturation_brochantite() {
         const g = MINERAL_GATES_brochantite;
@@ -33420,47 +33719,10 @@ Object.assign(VugConditions.prototype, {
         return Math.max(sigma, 0);
     },
     supersaturation_selenite() {
-        // v17 reconciliation (May 2026): Phase boundary is at ~55-60°C
-        // (Naica 54.5°C, Pulpí 20°C, Van Driessche et al. 2016). Pre-v17
-        // JS used a hard 80°C cutoff which was too lenient — gypsum
-        // converts to anhydrite well before 80°C. Now matches Python's
-        // softer decay starting at 60°C, while keeping JS's T<40 bonus
-        // (real per Pulpí Geode formation).
-        const g = MINERAL_GATES_selenite;
-        // S2 selenite migration (2026-07-27) — the THIRD sulfate consumer to migrate off
-        // total `fluid.S` (barite S1 ÷40→÷20, celestine S2 ÷40→÷18, same shape): selenite
-        // consumes SO₄²⁻, so it reads sulfateAvailablePpm. The tranche census
-        // (tools/selenite-tranche-census.mjs) measured ÷35 as the re-anchor that reproduces
-        // today's live windows fleet-wide at the honest sulfate (elmwood 85=85, roughten_gill
-        // 131=131, radioactive_pegmatite 15=15, schneeberg 18=18, reactive_wall 7=7 live
-        // steps; naica — the must-survive positive control — 320/320); the un-anchored ÷50
-        // would have killed radioactive_pegmatite + schneeberg outright (0 live), both
-        // legit gypsum settings. Unlike celestine's capped s_f, selenite's S term is
-        // uncapped — the recompute is a pure ratio. No sulfateInherited carve-out branch
-        // needed: wittichen grows no selenite.
-        const s_avail = sulfateAvailablePpm(this.fluid, this.temperature);
-        if (this.fluid.Ca < g.fluid_min.Ca || s_avail < g.fluid_min.S || !sulfateRedoxAvailable(this.fluid, g.O2_min))
+        const evaluation = evaluateCaSO4System(this.fluid, this.temperature, this.pressure);
+        if (!evaluation.gypsumPrimaryAdmissible)
             return 0;
-        // v228 (rung 2): hard nucleation ceiling from the gates (Ossorio 2014 —
-        // above 80°C gypsum is no longer the sole primary CaSO4 phase and converts
-        // on geological time; the sim's CaSO4 above the ceiling belongs to
-        // anhydrite). Soft decay above 60°C still applies within the window.
-        if (this.temperature > g.T_max)
-            return 0;
-        let sigma = (this.fluid.Ca / 60.0) * (s_avail / 35.0) * sulfateRedoxFactor(this.fluid, 0.5);
-        if (this.temperature > 60) {
-            sigma *= Math.exp(-0.06 * (this.temperature - 60));
-        }
-        // Cool-T sweet spot — Pulpí 20°C
-        if (this.temperature < 40)
-            sigma *= 1.5;
-        // Neutral to slightly alkaline pH preferred
-        if (this.fluid.pH < 5.0) {
-            sigma -= (5.0 - this.fluid.pH) * 0.2;
-        }
-        if (ACTIVITY_CORRECTED_SUPERSAT)
-            sigma *= activityCorrectionFactor(this.fluid, 'selenite');
-        return Math.max(sigma, 0);
+        return Math.min(evaluation.gypsumOmega, 10);
     },
     supersaturation_anglesite() {
         const g = MINERAL_GATES_anglesite;
@@ -33615,19 +33877,14 @@ Object.assign(VugConditions.prototype, {
 // js/40b-supersat-sulfate-Ksp.ts — Ksp-based SI for sulfates
 // ============================================================
 // Mirror of 32b-supersat-carbonate-Ksp.ts for the sulfate family.
-// Pure observer (Phase 1 / 2026-05-30): consumed by the strip's
+// Authoritative saturation kernel (promoted for CaSO4 in SIM 244): consumed by the strip's
 // sulfate SI chips (SI_selenite/anhydrite/barite/celestine, added
 // in 99j) so the strip stops being SI-blind on the evaporite +
 // sulfate-vein scenario family (naica / sicily_solfifera /
 // sulphur_bank / sabkha / searles).
 //
-// The existing 40-supersat-sulfate.ts σ-driver functions remain the
-// nucleation gates and are unchanged by this module. The relationship
-// between this module's SI and 40's σ is the same as the relationship
-// between 32b's SI and 32's σ for carbonates: SI is the rigorous
-// thermodynamic observable (log Ω = log IAP − log Ksp(T)); σ is the
-// engine's capped nucleation driver (Math.min(ratio, cap) × T/pH
-// modifiers). They tell different stories — both useful.
+// Gypsum and anhydrite nucleation now require positive SI from this kernel;
+// the other sulfate engines remain on their calibrated empirical routes.
 //
 // Public:
 //   - sulfateSaturationIndex(mineralId, fluid, T_C) → log10 Ω  (NaN if undef)
@@ -33671,18 +33928,25 @@ Object.assign(VugConditions.prototype, {
 function _SI_AB_sulfate(mineralId, fluid, T, cationKey, hydrationWaters = 0) {
     if (!fluid)
         return NaN;
-    const I = ionicStrength(fluid);
-    const a_cation = speciesActivity(fluid, cationKey, I);
+    // Explicit sulfur fluids must use only their sulfate reservoir. Legacy
+    // fluids use the redox-partitioned sulfate amount. Clone rather than mutate
+    // the live fluid so the SI calculation is a pure observer/driver.
+    const sulfatePpm = typeof sulfateAvailablePpm === 'function'
+        ? sulfateAvailablePpm(fluid, T)
+        : Math.max(0, Number(fluid.S) || 0);
+    const activityFluid = Object.assign(Object.create(Object.getPrototypeOf(fluid) || null), fluid, { S: sulfatePpm });
+    const I = ionicStrength(activityFluid);
+    const a_cation = speciesActivity(activityFluid, cationKey, I);
     if (!(a_cation > 0))
         return NaN;
-    const a_SO4 = speciesActivity(fluid, 'S', I);
+    const a_SO4 = speciesActivity(activityFluid, 'S', I);
     if (!(a_SO4 > 0))
         return NaN;
     const logKsp = getSulfateLogKsp(mineralId, T);
     if (!isFinite(logKsp))
         return NaN;
     const logWater = hydrationWaters > 0
-        ? hydrationWaters * Math.log10(waterActivity(fluid, T))
+        ? hydrationWaters * Math.log10(waterActivity(activityFluid, T))
         : 0;
     return Math.log10(a_cation) + Math.log10(a_SO4) + logWater - logKsp;
 }
@@ -33724,6 +33988,49 @@ function sulfateOmega(mineralId, fluid, T_C) {
     if (!isFinite(SI))
         return 0;
     return Math.pow(10, SI);
+}
+// Single CaSO4 evaluator consumed by diagnostics, nucleation, and replacement.
+// Stability and kinetic admissibility are separate outputs by design.
+function evaluateCaSO4System(fluid, temperatureC, fluidPressureKbar) {
+    const phase = gypsumAnhydritePhaseAssessment(fluid, temperatureC, fluidPressureKbar);
+    const gypsumSI = sulfateSaturationIndex('selenite', fluid, temperatureC);
+    const anhydriteSI = sulfateSaturationIndex('anhydrite', fluid, temperatureC);
+    const gypsumOmega = Number.isFinite(gypsumSI) ? Math.pow(10, gypsumSI) : 0;
+    const anhydriteOmega = Number.isFinite(anhydriteSI) ? Math.pow(10, anhydriteSI) : 0;
+    const pH = Number(fluid?.pH);
+    const sulfate = typeof sulfateAvailablePpm === 'function'
+        ? sulfateAvailablePpm(fluid, temperatureC)
+        : Math.max(0, Number(fluid?.S) || 0);
+    const gypsumPrimaryAdmissible = gypsumSI > 0
+        && temperatureC <= 80
+        && (!Number.isFinite(pH) || pH >= 4)
+        && sulfate > 0;
+    const anhydritePrimaryAdmissible = anhydriteSI > 0
+        && temperatureC >= 100
+        && (!Number.isFinite(pH) || (pH >= 5 && pH <= 9))
+        && sulfate > 0;
+    const gypsumToAnhydriteAdmissible = phase.phase === 'anhydrite' && anhydriteSI > 0;
+    const anhydriteToGypsumAdmissible = phase.phase === 'gypsum' && gypsumSI > 0;
+    const reasons = [
+        `gypsum SI ${Number.isFinite(gypsumSI) ? gypsumSI.toFixed(3) : 'undefined'}`,
+        `anhydrite SI ${Number.isFinite(anhydriteSI) ? anhydriteSI.toFixed(3) : 'undefined'}`,
+        `${phase.phase} equilibrium assessment at boundary ${phase.boundaryC.toFixed(1)} +/- ${phase.uncertaintyC.toFixed(1)} C`,
+        temperatureC <= 80 ? 'primary gypsum kinetic window open' : 'primary gypsum kinetic window closed above 80 C',
+        temperatureC >= 100 ? 'primary anhydrite kinetic floor cleared' : 'primary anhydrite kinetic floor not cleared',
+        sulfate > 0 ? `sulfate reservoir ${sulfate.toFixed(3)} ppm` : 'no sulfate available',
+    ];
+    return {
+        phase,
+        gypsumSI,
+        anhydriteSI,
+        gypsumOmega,
+        anhydriteOmega,
+        gypsumPrimaryAdmissible,
+        anhydritePrimaryAdmissible,
+        gypsumToAnhydriteAdmissible,
+        anhydriteToGypsumAdmissible,
+        reasons,
+    };
 }
 
 // ── 41-supersat-sulfide.js ──
@@ -37192,14 +37499,16 @@ MORPH_TH.fluorite = {
     form(conditions) { return (conditions.fluid.Y > 1.0) ? 'octahedron' : 'cube'; },
 };
 // ---- pyrite — fifth tenant (striations ARE step bunching) ----
-// SIM 239 accepted-ledger survey: Sunnyside 1.29–1.91; MVT has a small
-// 1.59 core then a sustained 8.6–9.6 rind; Sulphur Bank spans 1.07–14.39.
+// SIM 244 accepted-ledger survey: Sunnyside is tightly grouped at 3.26;
+// MVT and Sulphur Bank retain much higher diffusion-limited rinds. Band
+// edges deliberately separate Sunnyside's coarse striations from those
+// truly skeletal high-driving-force end members.
 // The continuous within-crystal distributions make pyrite ZONED as the
 // fluid wanders. The striations on pyrite
 // faces ({100} and {210} both) are oscillatory combination-growth step
 // bunching — the literal physical phenomenon the stepped bands model
 // (Murowchick & Barnes 1987: T + saturation control pyrite morphology).
-// Claims: Sunnyside is the smoother low-driving-force end-member and
+// Claims: Sunnyside is the lower-instability, coarsely striated end-member and
 // never reaches skeletal/dendritic bands; MVT records a smooth core,
 // striated transition, and diffusion-limited rind; Sulphur Bank's
 // very-high-sigma history is dominated by unstable aggregate growth.
@@ -37211,7 +37520,7 @@ MORPH_TH.pyrite = {
     SIZE_DAMP_CAP_UM: Infinity,
     SPIRAL_MAX: 1.6, // < this → smooth euhedra (the Navajún glass)
     STEP_MILD_MAX: 2.4, // fine striations
-    STEP_MACRO_MAX: 3.2, // coarse striations / stepped composite faces
+    STEP_MACRO_MAX: 3.5, // coarse striations / stepped composite faces
     HOPPER_MAX: 4.2, // skeletal transition
     // ≥ 4.2 → dendritic/aggregate instability (MVT + Sulphur Bank rinds)
     sigma(conditions) { return conditions.supersaturation_pyrite(); },
@@ -40116,7 +40425,11 @@ function grow_calcite(crystal, conditions, step) {
     // trajectory contract as the Mg branch (the v187 lesson).
     const morphFormT = calciteMorphForm(morphMgRatio, conditions.temperature, sigma, crystal.growth_environment !== 'air');
     const morphRegime = (crystal._morphology && crystal._morphology.regime) || null;
-    if (is_manganocalcite && excess < 0.4) {
+    // The heterogeneous calcite nucleation gate is Ω>1.5, so the historical
+    // excess<0.4 branch (Ω<1.4) was unreachable for a newly nucleated
+    // manganocalcite. The near-threshold window below remains slow relative to
+    // strongly supersaturated spar while overlapping the actual nucleation gate.
+    if (is_manganocalcite && excess < 1.2) {
         crystal.habit = 'botryoidal_manganocalcite';
         crystal.dominant_forms = ['cauliflower botryoidal mass', 'mammillary surface', 'cryptocrystalline interior'];
         crystal._variety = 'manganocalcite';
@@ -42072,6 +42385,7 @@ function grow_native_tellurium(crystal, conditions, step) {
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+                dissolutionMode: 'oxidative_to_sulfate',
                 note: `oxidative dissolution (O₂=${conditions.fluid.O2.toFixed(2)}) — Te oxidizing to TeO₃²⁻ tellurite`,
             });
         }
@@ -47140,18 +47454,8 @@ function grow_chalcanthite(crystal, conditions, step) {
 function grow_anhydrite(crystal, conditions, step) {
     const sigma = conditions.supersaturation_anhydrite();
     if (sigma < 1.0) {
-        if (crystal.total_growth_um > 3
-            && conditions.temperature < 55
-            && conditions.fluid.salinity < 95) {
-            crystal.dissolved = true;
-            const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.10);
-            // Phase 1e: Ca + S credits via MINERAL_DISSOLUTION_RATES.anhydrite.
-            return new GrowthZone({
-                step, temperature: conditions.temperature,
-                thickness_um: -dissolved_um, growth_rate: -dissolved_um,
-                note: 'rehydration to gypsum — anhydrite releases Ca²⁺ + SO₄²⁻ as fluid freshens (salinity < 100‰ at T < 60°C)'
-            });
-        }
+        // Hydration is handled by applyCaSO4PhaseTransition. Do not dissolve a
+        // CaSO4 shell, credit Ca/S to the fluid, and falsely call that gypsum.
         return null;
     }
     const excess = sigma - 1.0;
@@ -47462,7 +47766,7 @@ function grow_selenite(crystal, conditions, step) {
     const sigma = conditions.supersaturation_selenite();
     if (sigma < 1.0) {
         // Selenite dissolves easily in undersaturated conditions
-        if (crystal.total_growth_um > 2 && (conditions.fluid.pH < 4 || conditions.temperature > 80)) {
+        if (crystal.total_growth_um > 2 && conditions.fluid.pH < 4) {
             crystal.dissolved = true;
             const dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.15);
             // Phase 1e: Ca + S credits via MINERAL_DISSOLUTION_RATES.selenite.
@@ -47576,7 +47880,7 @@ function grow_anglesite(crystal, conditions, step) {
     const trace_Fe = f.Fe * 0.015;
     const trace_Pb = f.Pb * 0.015;
     f.Pb = Math.max(f.Pb - rate * 0.02, 0);
-    debitSulfurPool(f, 'sulfate', rate * 0.018);
+    // Formula sulfate is booked by the accepted-zone stoichiometric ledger.
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe, trace_Pb, note: color_note });
 }
 // v100 (2026-05-19): Pb-Cu supergene sulfate trio grow engines.
@@ -47616,7 +47920,7 @@ function grow_linarite(crystal, conditions, step) {
     }
     conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.018, 0);
     conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.012, 0);
-    debitSulfurPool(conditions.fluid, 'sulfate', rate * 0.020);
+    // Formula sulfate is booked by the accepted-zone stoichiometric ledger.
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `linarite ${crystal.habit}, deep azure-blue (SG 5.3, NO HCl fizz vs azurite — heavy in hand is diagnostic)` });
 }
 function grow_caledonite(crystal, conditions, step) {
@@ -47655,7 +47959,7 @@ function grow_caledonite(crystal, conditions, step) {
     }
     conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.025, 0);
     conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.010, 0);
-    debitSulfurPool(conditions.fluid, 'sulfate', rate * 0.018);
+    // Formula sulfate is booked by the accepted-zone stoichiometric ledger.
     conditions.fluid.CO3 = Math.max(conditions.fluid.CO3 - rate * 0.008, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `caledonite ${crystal.habit}, blue-GREEN (the only blue-green of the Pb-Cu sulfate trio; SG 5.6)` });
 }
@@ -47694,7 +47998,7 @@ function grow_leadhillite(crystal, conditions, step) {
         crystal.dominant_forms = ['massive granular vug filling'];
     }
     conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.030, 0);
-    debitSulfurPool(conditions.fluid, 'sulfate', rate * 0.010);
+    // Formula sulfate is booked by the accepted-zone stoichiometric ledger.
     conditions.fluid.CO3 = Math.max(conditions.fluid.CO3 - rate * 0.015, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `leadhillite ${crystal.habit}, pearly white pseudo-hexagonal (SG 6.5+, mica-like cleavage; metastable → anglesite+cerussite over geological time)` });
 }
@@ -48402,7 +48706,7 @@ function grow_stibnite(crystal, conditions, step) {
         color_note = 'elongated sword-blade — the Ichinokawa habit (lead-gray metallic)';
     }
     f.Sb = Math.max(f.Sb - rate * 0.025, 0);
-    debitSulfurPool(f, 'sulfide', rate * 0.018);
+    // Formula S is booked once by the accepted-zone stoichiometric ledger.
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 // Realgar (AsS) — α-realgar, monoclinic arsenic sulfide. Orange-red,
@@ -48597,7 +48901,7 @@ function grow_bismuthinite(crystal, conditions, step) {
         color_note = `acicular needles (low-T form, T=${T.toFixed(0)}°C) — iridescent tarnish develops`;
     }
     f.Bi = Math.max(f.Bi - rate * 0.030, 0);
-    debitSulfurPool(f, 'sulfide', rate * 0.018);
+    // Formula S is booked by the accepted-zone stoichiometric ledger.
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 function grow_bornite(crystal, conditions, step) {
@@ -48636,7 +48940,7 @@ function grow_bornite(crystal, conditions, step) {
     const trace_Fe = f.Fe * 0.02;
     f.Cu = Math.max(f.Cu - rate * 0.03, 0);
     f.Fe = Math.max(f.Fe - rate * 0.008, 0);
-    debitSulfurPool(f, 'sulfide', rate * 0.018);
+    // Formula S is booked by the accepted-zone stoichiometric ledger.
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe, note: color_note });
 }
 function grow_chalcocite(crystal, conditions, step) {
@@ -48678,7 +48982,7 @@ function grow_chalcocite(crystal, conditions, step) {
         color_note = 'dark gray metallic tabular';
     }
     f.Cu = Math.max(f.Cu - rate * 0.04, 0);
-    debitSulfurPool(f, 'sulfide', rate * 0.018);
+    // Formula S is booked by the accepted-zone stoichiometric ledger.
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 function grow_covellite(crystal, conditions, step) {
@@ -48714,7 +49018,7 @@ function grow_covellite(crystal, conditions, step) {
         color_note = 'indigo-blue hexagonal plate — the only common blue mineral';
     }
     f.Cu = Math.max(f.Cu - rate * 0.03, 0);
-    debitSulfurPool(f, 'sulfide', rate * 0.03);
+    // Formula S is booked by the accepted-zone stoichiometric ledger.
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 function grow_tetrahedrite(crystal, conditions, step) {
@@ -48806,7 +49110,7 @@ function grow_metacinnabar(crystal, conditions, step) {
         crystal.dominant_forms = ['fine-grained disseminated'];
     }
     conditions.fluid.Hg = Math.max(conditions.fluid.Hg - rate * 0.025, 0);
-    debitSulfurPool(conditions.fluid, 'sulfide', rate * 0.012);
+    // Formula S is booked by the accepted-zone stoichiometric ledger.
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `metacinnabar (β-HgS) ${crystal.habit}, IRON-BLACK metallic (CONTRAST with cinnabar's scarlet — diagnostic visual marker)` });
 }
 // v95 (2026-05-19): Diarsenide quartet engines. All share the
@@ -49061,7 +49365,7 @@ function grow_proustite(crystal, conditions, step) {
     }
     conditions.fluid.Ag = Math.max(conditions.fluid.Ag - rate * 0.020, 0);
     conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.008, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.020, 0);
+    // Formula S is booked by the accepted-zone stoichiometric ledger.
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -49109,7 +49413,7 @@ function grow_pyrargyrite(crystal, conditions, step) {
     conditions.fluid.Ag = Math.max(conditions.fluid.Ag - rate * 0.020, 0);
     if (conditions.fluid.Sb !== undefined)
         conditions.fluid.Sb = Math.max(conditions.fluid.Sb - rate * 0.008, 0);
-    conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.020, 0);
+    // Formula S is booked by the accepted-zone stoichiometric ledger.
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -49172,7 +49476,7 @@ function grow_enargite(crystal, conditions, step) {
         : `enargite (orthorhombic > 320°C) — Cu₃AsS₄, ${crystal.habit}; high-sulfidation primary Cu (S=${conditions.fluid.S.toFixed(0)}, pH=${conditions.fluid.pH.toFixed(1)})`);
     conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.030, 0);
     conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.010, 0);
-    debitSulfurPool(conditions.fluid, 'sulfide', rate * 0.040);
+    // Formula S is booked by the accepted-zone stoichiometric ledger.
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
@@ -50382,6 +50686,11 @@ const _WALL_GENESIS_BY_SCENARIO = {
 function _buildScenarioFromSpec(scenarioId, spec) {
     const specHash = scenarioSpecHash(spec);
     const initial = spec.initial || {};
+    if (!initial.wall || typeof initial.wall.composition !== 'string'
+        || !initial.wall.composition.trim()) {
+        throw new Error(`scenarios.json5 scenario '${scenarioId}' must declare initial.wall.composition; ` +
+            `shipped scenarios may not inherit VugWall's generic limestone fallback.`);
+    }
     const temperature = Number(initial.temperature_C ?? 350);
     const pressure = Number(initial.pressure_kbar ?? 1.0);
     const fluidKwargs = { ...(initial.fluid || {}) };
@@ -51769,30 +52078,52 @@ function event_bisbee_final_drying(c) {
 function event_sabkha_flood(c) {
     // Absolute tidal-water replacement, not a relative offset to preserve in
     // each already-depleted voxel.
-    c._pending_fluid_replace_fields = ['Mg', 'Ca', 'CO3', 'Sr', 'pH'];
+    c._pending_fluid_replace_fields = [
+        'Mg', 'Ca', 'CO3', 'Sr', 'Na', 'Cl', 'S_sulfide', 'S_sulfate',
+        'S_elemental', 'salinity', 'concentration', 'pH',
+    ];
     c.fluid.Mg = 800;
     c.fluid.Ca = 250;
     c.fluid.CO3 = 50;
     c.fluid.Sr = 12;
+    c.fluid.Na = 10500;
+    c.fluid.Cl = 19000;
+    c.fluid.S_sulfide = 0;
+    c.fluid.S_sulfate = 2700;
+    c.fluid.S_elemental = 0;
+    c.fluid.salinity = 35;
+    c.fluid.concentration = 1;
+    syncExplicitSulfurTotal(c.fluid);
     c.fluid.pH = 8.0;
     c.flow_rate = 1.5;
     return 'Flood pulse: low-alkalinity tidal seawater enters the lagoon. CO₃ crashes from sabkha brine levels back to ~50 ppm. Dolomite supersaturation drops below 1 — the disordered Ca/Mg surface layer detaches preferentially (Kim 2023 etch).';
 }
 function event_sabkha_evap(c) {
     // Absolute evaporative-brine regime replacement.
-    c._pending_fluid_replace_fields = ['Mg', 'Ca', 'CO3', 'Sr', 'pH'];
+    c._pending_fluid_replace_fields = [
+        'Mg', 'Ca', 'CO3', 'Sr', 'Na', 'Cl', 'S_sulfide', 'S_sulfate',
+        'S_elemental', 'salinity', 'concentration', 'pH',
+    ];
     c.fluid.Mg = 2000;
     c.fluid.Ca = 600;
     c.fluid.CO3 = 800;
     c.fluid.Sr = 30;
+    c.fluid.Na = 65000;
+    c.fluid.Cl = 110000;
+    c.fluid.S_sulfide = 0;
+    c.fluid.S_sulfate = 9000;
+    c.fluid.S_elemental = 0;
+    c.fluid.salinity = 250;
+    c.fluid.concentration = 7.1;
+    syncExplicitSulfurTotal(c.fluid);
     c.fluid.pH = 8.4;
     c.flow_rate = 0.1;
-    c.temperature = 28;
-    return 'Evaporation pulse: sun bakes the lagoon. Brine reconcentrates to sabkha state — Mg=2000, Ca=600, CO₃=800. Dolomite saturation climbs back well above 1; growth resumes on the ordered template the previous etch left behind. Cycle complete; ordering ratchets up.';
+    c.temperature = 32;
+    return 'Evaporation pulse: sun bakes the lagoon. Brine reconcentrates to 250‰ (a_w≈0.77) and 32°C: gypsum remains the required primary precursor, while the Hardie phase selector opens replacement by anhydrite. Dolomite saturation also climbs back above 1; ordering ratchets up.';
 }
 function event_sabkha_final_seal(c) {
     c.flow_rate = 0.05;
-    c.temperature = 22;
+    c.temperature = 30;
     return "Sabkha matures, then seals. The crust hardens and groundwater stops cycling. What remains is the result of twelve dissolution-precipitation cycles — ordered dolomite where the cycling did its work, disordered HMC where it didn't. The Coorong recipe for ambient-T ordered dolomite, the natural laboratory that Kim 2023 finally explained at the atomic scale.";
 }
 // v29 evaporite-locality scenarios — Naica + Searles Lake events.
@@ -51800,12 +52131,12 @@ function event_sabkha_final_seal(c) {
 function event_naica_slow_cooling(c) {
     if (c.temperature > 51)
         c.temperature -= 0.7;
-    c.fluid.Ca = Math.max(c.fluid.Ca, 280);
-    c.fluid.S = Math.max(c.fluid.S, 380);
+    c.fluid.Ca = Math.max(c.fluid.Ca, 600);
+    c.fluid.S = Math.max(c.fluid.S, 500);
     c.fluid.O2 = 1.5;
     c.fluid.pH = 7.2;
     c.flow_rate = 0.3;
-    return `Geothermal pulse: anhydrite at depth dissolves slightly, resupplying Ca + SO₄ to the rising hot brine. T drifts down to ${c.temperature.toFixed(1)}°C — still above the 54°C Naica equilibrium. Selenite cathedral blades grow another notch. Garcia-Ruiz: "hundredths of a degree per year" maintained for half a million years.`;
+    return `Geothermal reaction testimony: anhydrite at depth resupplies the measured Ca-SO₄ brine while T reaches ${c.temperature.toFixed(1)}°C. The authoritative CaSO₄ selector decides whether the near-equilibrium gypsum route remains open; no crystal outcome is asserted by the event.`;
 }
 function event_naica_mining_drainage(c) {
     c.fluid_surface_ring = 0.0;
@@ -51817,7 +52148,7 @@ function event_naica_mining_recharge(c) {
     c.fluid_surface_ring = 1.0e6;
     c.flow_rate = 0.5;
     c.temperature = 30;
-    return "2017 — Naica's mining stops. The pumps shut down and the cave refloods over a few months. Decades-old vadose rinds dissolve in the fresh groundwater; selenite resumes slow growth in the cooler 30°C bath. The cave is no longer accessible — sealed away from researchers, safe from tourists, growing again.";
+    return "2017 — Naica's mining stops. The pumps shut down and the cave refloods over a few months. The cooler bath restores an aqueous Ca-SO₄ route; the authoritative saturation and kinetic gates decide whether selenite resumes growth.";
 }
 function event_searles_winter_freeze(c) {
     c.temperature = 8;
@@ -51855,11 +52186,14 @@ function event_searles_fresh_pulse(c) {
 // holds its order. The repeated fast pulses are what the js/45 step-counter reads.
 function event_gsp_wet(c) {
     // Spring rain / rising groundwater floods the flat — brine drops well below gypsum
-    // saturation (σ_selenite < 1 even with the cool-T ×1.5 + redox bonuses), so growth
-    // pauses without dissolving the blade. The hiatus leaves the step-gap that the js/45
+    // saturation (authoritative SI just below zero), so growth pauses. The hiatus leaves the step-gap that the js/45
     // segment counter reads as one stepped-growth terrace boundary.
-    c.fluid.Ca = 15;
-    c.fluid.S = 15;
+    c.fluid.Ca = 400;
+    c.fluid.S = 400;
+    c.fluid.Mg = 150;
+    c.fluid.Na = 10000;
+    c.fluid.Cl = 15000;
+    c.fluid.salinity = 35;
     c.fluid.Fe = 2;
     c.fluid.pH = 7.6;
     c.fluid.O2 = 1.5;
@@ -51872,25 +52206,31 @@ function event_gsp_dry(c) {
     // Oklahoma sun bakes the flat — gypsum-saturated groundwater wicks up and evaporates
     // just under the salt crust. σ_selenite ≫ 1 → a fast growth burst that traps clay/
     // sand + iron oxide on the terminal sectors (the hourglass) and stains it brown.
-    c.fluid.Ca = 150;
-    c.fluid.S = 150;
+    c.fluid.Ca = 1800;
+    c.fluid.S = 2600;
+    c.fluid.Mg = 1000;
     c.fluid.Fe = Math.min(16, (c.fluid.Fe || 2) + 6); // red-bed iron oxide concentrates with evaporation
-    c.fluid.Na = Math.max(c.fluid.Na || 0, 700);
-    c.fluid.Cl = Math.max(c.fluid.Cl || 0, 700);
+    c.fluid.Na = Math.max(c.fluid.Na || 0, 70000);
+    c.fluid.Cl = Math.max(c.fluid.Cl || 0, 110000);
+    c.fluid.salinity = 200;
     c.fluid.SiO2 = Math.max(c.fluid.SiO2 || 0, 30); // suspended clay / silt
     c.fluid.pH = 7.6;
     c.fluid.O2 = 1.6;
     c.temperature = 33; // warm but < 45°C (hourglass gate)
     c.flow_rate = 0.1;
     c.fluid_surface_ring = 0.0;
-    return `Summer sun bakes the Salt Plains. T=${c.temperature.toFixed(0)}°C; gypsum-saturated groundwater wicks up under the crust and evaporates fast. Selenite grows in a burst, sweeping clay, sand, and red iron oxide into its terminal sectors — the hourglass. Each dry season steps the blade out another notch.`;
+    return `Dry-season reaction testimony: at ${c.temperature.toFixed(0)}°C the measured Ca-SO₄-NaCl source brine returns beneath the crust and evaporates. Positive gypsum SI opens a fast, sediment-bearing growth route; the authoritative selector and nucleation draw decide the crystal outcome.`;
 }
 function event_gsp_crust_seal(c) {
     c.flow_rate = 0.05;
     c.temperature = 25;
     c.fluid_surface_ring = 0.5;
-    c.fluid.Ca = 90;
-    c.fluid.S = 90;
+    c.fluid.Ca = 1500;
+    c.fluid.S = 2300;
+    c.fluid.Mg = 1000;
+    c.fluid.Na = 70000;
+    c.fluid.Cl = 110000;
+    c.fluid.salinity = 200;
     return 'The salt crust hardens and the cycling slows. What remains just beneath the crust is the harvest of a dozen wet-and-dry seasons: amber blades with an hourglass of trapped sediment inside, the iron-stained ones flooded to chocolate brown. The only place on Earth selenite grows this way.';
 }
 // RED-MUD FLOOD — the flooded-selenite variant (crystal-face realism, 2026-06-22). Years
@@ -51904,11 +52244,13 @@ function event_gsp_crust_seal(c) {
 // stepped hourglass and never reaches the flood, so the 250-step story stays amber; the
 // flood fires only when the run CONTINUES (creative-mode Wait / extended viewing).
 function event_gsp_flood(c) {
-    c.fluid.Ca = 250;
-    c.fluid.S = 250;
+    c.fluid.Ca = 1800;
+    c.fluid.S = 2600;
+    c.fluid.Mg = 1000;
     c.fluid.Fe = 120; // red-mud iron flood — buries the hourglass
-    c.fluid.Na = Math.max(c.fluid.Na || 0, 700);
-    c.fluid.Cl = Math.max(c.fluid.Cl || 0, 700);
+    c.fluid.Na = Math.max(c.fluid.Na || 0, 70000);
+    c.fluid.Cl = Math.max(c.fluid.Cl || 0, 110000);
+    c.fluid.salinity = 200;
     c.fluid.SiO2 = Math.max(c.fluid.SiO2 || 0, 60); // heavy suspended red silt
     c.fluid.pH = 7.6;
     c.fluid.O2 = 1.6;
@@ -52121,13 +52463,22 @@ function event_sicily_gypsum_dissolution(c) {
     return `Meteoric water dissolves Messinian gypsum: Ca rises to ${c.fluid.Ca.toFixed(0)} ppm, S to ${c.fluid.S.toFixed(0)} ppm. Sr trace boost for celestine. Carbonate equilibrium pulls pH toward ${c.fluid.pH.toFixed(1)}.`;
 }
 function event_sicily_bsr_reduction(c) {
-    // Anaerobic microbes reduce a measured increment of gypsum-derived
-    // sulfate. Organic matter is the declared boundary electron donor.
-    const reaction = bacterialReduceSulfate(c.fluid, 25, c.temperature);
+    // Monte Palco records a high degree of gypsum-sulfate conversion in a
+    // semi-closed pore. Model each compressed SD-AOM episode as a 250 ppm-S
+    // reaction extent. Methane is the declared boundary electron donor/carbon
+    // source and supplies one carbonate-equivalent mole per sulfate-S mole.
+    // Two episodes can therefore process at most 500 of the 600 ppm sulfate-S
+    // supplied by the initial pore plus three gypsum pulses, leaving a real
+    // residual sulfate reservoir for late gypsum/celestine rather than creating
+    // carbonate independently of sulfur reduction.
+    const reaction = bacterialReduceSulfate(c.fluid, 250, c.temperature, {
+        source: 'methane',
+        carbonateMolesPerSulfur: 1,
+    });
     c.fluid.O2 = Math.min(c.fluid.O2, 0.02);
     c.fluid.Eh = ehFromO2(c.fluid.O2);
     c.flow_rate = 0.2;
-    return `Anaerobic microbial sulfate reduction transfers ${reaction.sulfurTransferredPpm.toFixed(1)} ppm sulfate-S to reduced S and adds ${reaction.carbonateAddedPpm.toFixed(1)} ppm carbonate-equivalent alkalinity. Sulfur closes at ${reaction.sulfurAfterPpm.toFixed(1)} ppm; O₂ remains anoxic at ${c.fluid.O2.toFixed(2)}.`;
+    return `SD-AOM reaction testimony: anaerobic microbes transferred ${reaction.sulfurTransferredPpm.toFixed(1)} ppm sulfate-S to reduced S while methane-derived carbon added ${reaction.carbonateAddedPpm.toFixed(1)} ppm carbonate-equivalent alkalinity (1 mol C per mol S). Sulfur closes at ${reaction.sulfurAfterPpm.toFixed(1)} ppm; O₂ remains anoxic at ${c.fluid.O2.toFixed(2)}. Calcite formation remains conditional on the authoritative saturation and kinetic gates.`;
 }
 function event_sicily_carbonate_buffer(c) {
     // BSR-generated H₂CO₃ + carbonate-buffered porewater stabilizes pH
@@ -52137,7 +52488,7 @@ function event_sicily_carbonate_buffer(c) {
     c.fluid.CO3 += 60;
     c.fluid.pH = 6.0;
     c.flow_rate = 0.2;
-    return `BSR-generated H₂CO₃ buffers the porewater. CO₃ rises to ${c.fluid.CO3.toFixed(0)} ppm; pH pinned at 6.0 — the peak of the engine's BSR-mode pH factor. Calcite cement starts to precipitate.`;
+    return `Carbonate-buffer reaction testimony: DIC rises to ${c.fluid.CO3.toFixed(0)} ppm and pH resets to 6.0. This opens the carbonate route, but the authoritative calcite saturation and kinetic gates still decide whether cement forms.`;
 }
 function event_sicily_inherited_sulfur_recharge(c) {
     // Recharge imports already formed elemental sulfur from the surrounding
@@ -52222,15 +52573,15 @@ function event_sunnyside_cooling_transition(c) {
     // (sulfides locked, H+ no longer buffered). Fe drops sharply (most
     // Fe consumed by primary pyrite + chalcopyrite + Fe-rich sphalerite
     // marmatite). Salinity drops slightly (dilution by meteoric mixing).
-    c.temperature = Math.max(240, c.temperature - 40);
-    c.fluid.S = Math.max(50, c.fluid.S * 0.6); // sulfide budget consumed
-    c.fluid.Fe = Math.max(1.5, c.fluid.Fe * 0.15); // Fe sequestered in primary
+    c.temperature = 240;
+    c.fluid.S = Math.max(40, c.fluid.S * 0.2); // sulfide budget sequestered
+    c.fluid.Fe = Math.max(1.5, c.fluid.Fe * 0.03); // Fe sequestered in primary
     c.fluid.pH = Math.min(6.0, c.fluid.pH + 1.3); // pH neutralizes
     c.fluid.salinity = Math.max(3.0, c.fluid.salinity * 0.7);
     c.fluid.O2 = Math.min(0.15, c.fluid.O2 + 0.08); // still reducing but less so
     c.fluid.CO3 = Math.min(80, c.fluid.CO3 + 30); // CO2 degassing
     c.flow_rate = 0.3;
-    return `Primary sulfide phase locks in: pyrite + galena + sphalerite + chalcopyrite + Au-Te-quartz solidify (Casadevall Stage I-IV closes). T drops to ${c.temperature.toFixed(0)}°C; S consumed (now ${c.fluid.S.toFixed(0)} ppm); Fe sequestered (now ${c.fluid.Fe.toFixed(1)} ppm); pH neutralizes to ${c.fluid.pH.toFixed(1)}. Stage V Mn-carbonate window opens.`;
+    return `Casadevall Stage I-IV conditions close at T ${c.temperature.toFixed(0)}°C. Sulfur and Fe are sequestered into the primary-ore sink (fluid S ${c.fluid.S.toFixed(0)} ppm; Fe ${c.fluid.Fe.toFixed(1)} ppm), destabilizing Au-bisulfide transport and opening the native-Au + quartz window. Any sulfides already present remain recorded; the inventory, not this event text, reports which species actually formed.`;
 }
 function event_sunnyside_stage_v_mn_carbonate(c) {
     // Stage V: pale-pink rhodochrosite-rich phase. CO3 rises further
@@ -52239,13 +52590,13 @@ function event_sunnyside_stage_v_mn_carbonate(c) {
     // dispatch produces "pale pink (Ca-rich, approaching kutnohorite
     // intermediate)" with Ca=200 + Mn=30 (Ca-fraction ~0.87). The
     // small-pale-rhomb specimen aesthetic is the Stage V signature.
-    c.temperature = Math.max(215, c.temperature - 25);
+    c.temperature = 215;
     c.fluid.CO3 = Math.min(110, c.fluid.CO3 + 35); // strong CO2 degassing
     c.fluid.pH = Math.min(6.5, c.fluid.pH + 0.3);
     c.fluid.O2 = Math.max(0.05, c.fluid.O2 - 0.05); // re-reducing slightly (organics in cool fluid)
     c.fluid.salinity = Math.max(2.5, c.fluid.salinity * 0.85);
     c.flow_rate = 0.25;
-    return `Stage V Mn-carbonate pulse: T ${c.temperature.toFixed(0)}°C, CO3 ${c.fluid.CO3.toFixed(0)} ppm, pH ${c.fluid.pH.toFixed(1)}. Pale-pink rhodochrosite nucleates on vug walls + earlier sulfides — small (3-10 mm) rhombs, Ca-fraction > 0.5 in lattice (kutnohorite-intermediate compositional end).`;
+    return `Stage V Mn-carbonate conditions arrive: T ${c.temperature.toFixed(0)}°C, CO3 ${c.fluid.CO3.toFixed(0)} ppm, pH ${c.fluid.pH.toFixed(1)}. These conditions favor pale-pink, Ca-bearing rhodochrosite; the inventory reports whether nucleation and growth actually occurred.`;
 }
 function event_sunnyside_stage_vi_fluoride_pulse(c) {
     // Stage VI early: F-rich pulse from magmatic vapor mixing with
@@ -52258,13 +52609,13 @@ function event_sunnyside_stage_vi_fluoride_pulse(c) {
     // fresh fluorite: grass-green (yttrofluorite character, Pierce
     // 1990 + Naumov & Naumova 1980 — Y-cluster mechanism); SW UV
     // brilliant blue (Eu²⁺ activator).
-    c.temperature = Math.max(195, c.temperature - 20);
+    c.temperature = 195;
     c.fluid.F = Math.min(35, c.fluid.F + 27); // magmatic F pulse
     c.fluid.Y = Math.min(3.5, c.fluid.Y + 3.2); // REE leached from wallrock
     c.fluid.SiO2 = Math.min(450, c.fluid.SiO2 + 50); // co-pulse silica
     c.fluid.salinity = Math.max(1.5, c.fluid.salinity * 0.85);
     c.flow_rate = 0.2;
-    return `Stage VI fluoride pulse: F surges to ${c.fluid.F.toFixed(0)} ppm; Y leached from Carpenter Ridge Tuff ignimbrite glass to ${c.fluid.Y.toFixed(1)} ppm. T ${c.temperature.toFixed(0)}°C. Octahedral REE-fluorite (grass-green visible color when fresh; bleach-fadable; SW UV brilliant blue from Eu²⁺) nucleates on rhodochrosite + vug walls per Bosze & Rakovan 2002.`;
+    return `Stage VI fluoride pulse: F reaches ${c.fluid.F.toFixed(0)} ppm and Y ${c.fluid.Y.toFixed(1)} ppm at ${c.temperature.toFixed(0)}°C. This opens the octahedral REE-fluorite route; only a crystal recorded in the inventory counts as formation.`;
 }
 function event_sunnyside_stage_vi_manganocalcite_cap(c) {
     // Stage VI late: Mn budget wanes; Ca dominates fluid; T drops to
@@ -52273,15 +52624,16 @@ function event_sunnyside_stage_vi_manganocalcite_cap(c) {
     // fluorescence under SW UV). The specimens show this terminal
     // overgrowth capping rhodochrosite + fluorite — the closing
     // texture of the entire Sunnyside paragenesis.
-    c.temperature = Math.max(175, c.temperature - 20);
+    c.temperature = 175;
     c.fluid.Mn = Math.max(6.0, c.fluid.Mn * 0.35); // Mn budget mostly spent
-    c.fluid.CO3 = Math.min(150, c.fluid.CO3 + 40); // CO3 still rising
+    c.fluid.CO3 = Math.max(200, c.fluid.CO3); // terminal CO2-degassing alkalinity
     c.fluid.F = Math.max(8, c.fluid.F * 0.4); // F mostly spent in fluorite stage
     c.fluid.Y = Math.max(0.5, c.fluid.Y * 0.3); // Y mostly locked in fluorite
-    c.fluid.Ca = Math.min(220, c.fluid.Ca + 30); // Ca continues dominating
+    c.fluid.Ca = Math.max(240, c.fluid.Ca); // Ca continues dominating
+    c.fluid.pH = Math.max(7.2, c.fluid.pH); // CO2 loss raises carbonate-ion activity
     c.fluid.O2 = Math.min(0.2, c.fluid.O2 + 0.05);
     c.flow_rate = 0.1;
-    return `Stage VI manganocalcite cap: T ${c.temperature.toFixed(0)}°C, Mn waning to ${c.fluid.Mn.toFixed(1)} ppm, Fe still ${c.fluid.Fe.toFixed(1)} ppm (Fe-poor — Mn²⁺ fluorescence preserved). Cauliflower botryoidal manganocalcite caps the rhodochrosite + fluorite, brilliant salmon SW UV (Mn²⁺ activator). The Sunnyside-American Tunnel late paragenesis closes.`;
+    return `Stage VI terminal carbonate conditions: T ${c.temperature.toFixed(0)}°C, pH ${c.fluid.pH.toFixed(1)}, Ca ${c.fluid.Ca.toFixed(0)} ppm, CO3 ${c.fluid.CO3.toFixed(0)} ppm, Mn ${c.fluid.Mn.toFixed(1)} ppm, Fe ${c.fluid.Fe.toFixed(1)} ppm. Positive calcite SI permits an Mn-substituting manganocalcite cap, but the inventory reports whether it formed.`;
 }
 
 // ── 70q-roughten-gill.js ──
@@ -53442,6 +53794,101 @@ function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step
         }
     }
     return null;
+}
+// ============================================================
+// CaSO4 DISSOLUTION-REPRECIPITATION REPLACEMENT
+// ============================================================
+const GYPSUM_MOLAR_VOLUME_CM3_MOL = 73.9;
+const ANHYDRITE_MOLAR_VOLUME_CM3_MOL = 46.1;
+// Replacement preserves the existing external envelope and every booked Ca/S
+// shell. Structural water is tracked separately: positive means released to
+// solvent, negative means consumed from solvent. The formula amount uses the
+// same disclosed axial mmol/kg proxy as the growth ledger.
+function applyCaSO4PhaseTransition(crystal, fluid, temperatureC, fluidPressureKbar, step) {
+    if (!crystal?.active || crystal.dissolved)
+        return null;
+    if (crystal.mineral !== 'selenite' && crystal.mineral !== 'anhydrite')
+        return null;
+    if (!(Number(crystal.total_growth_um) > 0))
+        return null;
+    const evaluation = evaluateCaSO4System(fluid, temperatureC, fluidPressureKbar);
+    const from = crystal.mineral;
+    const to = from === 'selenite' ? 'anhydrite' : 'selenite';
+    const admissible = from === 'selenite'
+        ? evaluation.gypsumToAnhydriteAdmissible
+        : evaluation.anhydriteToGypsumAdmissible;
+    if (!admissible)
+        return null;
+    const sulfateBeforePpm = typeof sulfateAvailablePpm === 'function'
+        ? sulfateAvailablePpm(fluid, temperatureC)
+        : Math.max(0, Number(fluid?.S) || 0);
+    const caBeforePpm = Math.max(0, Number(fluid?.Ca) || 0);
+    const formulaAmountMmolKg = Number(crystal.total_growth_um)
+        * STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM;
+    const waterTransferMmolKg = (from === 'selenite' ? 2 : -2) * formulaAmountMmolKg;
+    crystal.mineral = to;
+    // Compatibility fields keep old saves/replay consumers functional. This is
+    // explicitly a replacement, not asserted to be a solid-state paramorph.
+    crystal.paramorph_origin = from;
+    if (step != null)
+        crystal.paramorph_step = step;
+    crystal.phase_transition_origin = from;
+    crystal.phase_transition_step = step;
+    crystal.phase_transition_driver = from === 'selenite'
+        ? 'gypsum-to-anhydrite-replacement'
+        : 'anhydrite-rehydration';
+    crystal._ca_so4_hydration_water_mmolkg =
+        Number(crystal._ca_so4_hydration_water_mmolkg || 0) + waterTransferMmolKg;
+    crystal._ca_so4_solid_volume_ratio = to === 'anhydrite'
+        ? ANHYDRITE_MOLAR_VOLUME_CM3_MOL / GYPSUM_MOLAR_VOLUME_CM3_MOL
+        : 1;
+    crystal._ca_so4_replacement_porosity_fraction = to === 'anhydrite'
+        ? 1 - crystal._ca_so4_solid_volume_ratio
+        : 0;
+    crystal._ca_so4_pseudomorphic_envelope_preserved = true;
+    const record = {
+        step,
+        from,
+        to,
+        driver: crystal.phase_transition_driver,
+        waterTransferMmolKg,
+        formulaAmountMmolKg,
+        boundaryC: evaluation.phase.boundaryC,
+        uncertaintyC: evaluation.phase.uncertaintyC,
+        waterActivity: evaluation.phase.waterActivity.value,
+        sourceSI: from === 'selenite' ? evaluation.gypsumSI : evaluation.anhydriteSI,
+        productSI: to === 'selenite' ? evaluation.gypsumSI : evaluation.anhydriteSI,
+        caBeforePpm,
+        caAfterPpm: Math.max(0, Number(fluid?.Ca) || 0),
+        sulfateBeforePpm,
+        sulfateAfterPpm: typeof sulfateAvailablePpm === 'function'
+            ? sulfateAvailablePpm(fluid, temperatureC)
+            : Math.max(0, Number(fluid?.S) || 0),
+    };
+    (crystal.phase_transition_history ||= []).push(record);
+    return record;
+}
+// Replay helper supports repeated sabkha hydration/dehydration cycles. Legacy
+// one-shot paramorph/dehydration records continue through the fallback.
+function mineralAtReplayStep(crystal, replayStep) {
+    if (replayStep == null)
+        return crystal.mineral;
+    const history = Array.isArray(crystal.phase_transition_history)
+        ? crystal.phase_transition_history
+        : [];
+    if (history.length) {
+        let mineral = history[0].from;
+        for (const transition of history) {
+            if (transition.step != null && replayStep >= transition.step)
+                mineral = transition.to;
+        }
+        return mineral;
+    }
+    return crystal.paramorph_step != null
+        && replayStep < crystal.paramorph_step
+        && crystal.paramorph_origin
+        ? crystal.paramorph_origin
+        : crystal.mineral;
 }
 // ============================================================
 // LIGHT-INDUCED TRANSITIONS
@@ -54723,6 +55170,17 @@ class VugSimulator {
         // The grid is lazy-cached on wall_state; this call forces the
         // build so the grid is ready when _diffuseRingState first fires.
         this.wall_state.voxelGridFor(this);
+        // Explicit-sulfur conservation baseline. Canonical voxel fluids are the
+        // aqueous inventory; accepted growth zones become the solid inventory.
+        // Event/movement deltas are recorded as boundary fluxes by
+        // _propagateGlobalDelta, allowing an audit at every completed step.
+        const sulfurGrid = this.wall_state.voxelGridFor(this);
+        this._sulfurLedgerInitialPpm = this.conditions.fluid.sulfurPoolsExplicit
+            ? sulfurGrid.voxels.reduce((sum, voxel) => sum + sulfurSystemTotalPpm(voxel?.fluid), 0)
+            : 0;
+        this._sulfurBoundaryImportsPpm = 0;
+        this._sulfurBoundaryExportsPpm = 0;
+        this._sulfurLedgerHistory = [];
         // FLUID-SOURCE SPOTS (js/85k, PROPOSAL §10) Phase 2a — seed the spot set off
         // the cavity seed now that the mesh (→ cell count) exists. Uses a DEDICATED
         // _mulberry32(shape_seed ^ SPOTS_SALT) stream, independent of the shared rng,
@@ -55212,6 +55670,36 @@ class VugSimulator {
                 }
             }
         }
+        // CaSO4 phase replacement. Use each crystal's local mesh fluid and
+        // temperature; the authoritative evaluator separates SI, equilibrium
+        // phase, primary kinetics, and precursor-consuming replacement.
+        {
+            const nRings = this.wall_state.ring_count;
+            const mesh = this.wall_state.meshFor ? this.wall_state.meshFor(this) : null;
+            for (const crystal of this.crystals) {
+                if (crystal.mineral !== 'selenite' && crystal.mineral !== 'anhydrite')
+                    continue;
+                const anchor = this.wall_state._resolveAnchor(crystal);
+                const ringIdx = anchor ? anchor.ringIdx : null;
+                const validRing = ringIdx != null && ringIdx >= 0 && ringIdx < nRings;
+                const cell = validRing && mesh?.cellOf
+                    ? mesh.cellOf(crystal, this.wall_state)
+                    : null;
+                const localFluid = cell?.fluid || (validRing ? this.ring_fluids[ringIdx] : this.conditions.fluid);
+                const localT = validRing ? this.ring_temperatures[ringIdx] : this.conditions.temperature;
+                const transition = applyCaSO4PhaseTransition(crystal, localFluid, localT, this.conditions.pressure, this.step);
+                if (!transition)
+                    continue;
+                this._caSO4Transitions ||= [];
+                this._caSO4Transitions.push({ crystal_id: crystal.crystal_id, ...transition });
+                const waterVerb = transition.waterTransferMmolKg >= 0 ? 'released' : 'consumed';
+                this.log.push(`  ↻ CaSO4 REPLACEMENT: ${capitalize(transition.from)} #${crystal.crystal_id} → ${transition.to} ` +
+                    `(a_w=${transition.waterActivity.toFixed(3)}, T=${localT.toFixed(1)}°C, ` +
+                    `boundary=${transition.boundaryC.toFixed(1)}±${transition.uncertaintyC.toFixed(1)}°C, ` +
+                    `${Math.abs(transition.waterTransferMmolKg).toFixed(6)} mmol/kg structural water ${waterVerb}; ` +
+                    `booked Ca and sulfate unchanged; external replacement envelope preserved)`);
+            }
+        }
         // Paramorph transitions — convert crystals whose host fluid has cooled
         // past their phase-transition T (Round 8a-2: argentite → acanthite at
         // 173°C). Preserves habit + dominant_forms + zones; only crystal.mineral
@@ -55473,6 +55961,9 @@ class VugSimulator {
             catch (_err) { /* swallow — strip view is non-essential */ }
         }
         // === END HELIX-OVERLAY-FORK ADDITION ==============================
+        if (this.conditions.fluid.sulfurPoolsExplicit) {
+            this._sulfurLedgerHistory.push(simulatorSulfurLedgerSnapshot(this));
+        }
         return this.log;
     }
     narrate() {
@@ -57757,11 +58248,19 @@ Object.assign(VugSimulator.prototype, {
         // Defensive fallback to mesh.propagateDelta when the voxel grid
         // isn't available (headless test harnesses without CavityVoxelGrid).
         const grid = this.wall_state.voxelGridFor(this);
+        const mesh = this.wall_state.meshFor(this);
+        const canonicalSulfurInventory = () => {
+            const fluids = grid?.voxels
+                ? grid.voxels.map((voxel) => voxel?.fluid).filter(Boolean)
+                : (mesh?.cells || []).map((cell) => cell?.fluid).filter(Boolean);
+            return fluids.reduce((sum, fluid) => sum + sulfurSystemTotalPpm(fluid), 0);
+        };
+        const explicitSulfurActive = !!(preFluid.sulfurPoolsExplicit || this.conditions.fluid.sulfurPoolsExplicit);
+        const spatialSulfurBefore = explicitSulfurActive ? canonicalSulfurInventory() : 0;
         if (grid && typeof grid.propagateEventDelta === 'function') {
             grid.propagateEventDelta(preFluid, this._fluidFieldNames, equatorFluid, 'all', replaceFields);
         }
         else {
-            const mesh = this.wall_state.meshFor(this);
             if (mesh && typeof mesh.propagateDelta === 'function') {
                 mesh.propagateDelta(preFluid, this._fluidFieldNames, equatorFluid, replaceFields);
             }
@@ -57801,6 +58300,19 @@ Object.assign(VugSimulator.prototype, {
             if (meshSulfur && meshSulfur.cells)
                 for (let i = 0; i < meshSulfur.cells.length; i++)
                     copySulfurFlags(meshSulfur.cells[i] && meshSulfur.cells[i].fluid);
+        }
+        // Book the ACTUAL canonical spatial inventory change, not the bulk-fluid
+        // delta times voxel count. Atomic sulfur-pool propagation may be reactant-
+        // limited in depleted voxels; only realized additions/removals are boundary
+        // fluxes, while redox transfers close at zero by construction.
+        if (explicitSulfurActive) {
+            const sulfurBoundaryDelta = canonicalSulfurInventory() - spatialSulfurBefore;
+            if (sulfurBoundaryDelta > 0) {
+                this._sulfurBoundaryImportsPpm = (this._sulfurBoundaryImportsPpm || 0) + sulfurBoundaryDelta;
+            }
+            else if (sulfurBoundaryDelta < 0) {
+                this._sulfurBoundaryExportsPpm = (this._sulfurBoundaryExportsPpm || 0) - sulfurBoundaryDelta;
+            }
         }
         const deltaT = this.conditions.temperature - preTemp;
         if (deltaT !== 0) {
@@ -58875,7 +59387,7 @@ Object.assign(VugSimulator.prototype, {
                 this.log.push(`     ${blocked.size} cell${blocked.size === 1 ? '' : 's'} shielded by acid-resistant crystal growth`);
             }
             this.log.push(`     pH ${result.ph_before.toFixed(1)} → ${result.ph_after.toFixed(1)} (carbonate buffering)`);
-            this.log.push(`     Released: Ca²⁺ +${result.ca_released.toFixed(0)} ppm, CO₃²⁻ +${result.co3_released.toFixed(0)} ppm, Fe +${result.fe_released.toFixed(1)}, Mn +${result.mn_released.toFixed(1)}`);
+            this.log.push(`     Released (${result.formula}): Ca²⁺ +${result.ca_released.toFixed(1)} ppm, Mg²⁺ +${result.mg_released.toFixed(1)} ppm, CO₃²⁻ +${result.co3_released.toFixed(1)} ppm, Fe +${result.fe_released.toFixed(1)}, Mn +${result.mn_released.toFixed(1)}`);
             this.log.push(`     Vug diameter: ${result.vug_diameter.toFixed(1)} mm (+${result.total_dissolved.toFixed(1)} mm total enlargement)`);
             if (post_sigma_cal > pre_sigma_cal * 1.3 && post_sigma_cal > 1.0) {
                 this.log.push(`     ⚡ SUPERSATURATION SPIKE: σ(Cal) ${pre_sigma_cal.toFixed(2)} → ${post_sigma_cal.toFixed(2)} — rapid calcite growth expected!`);
@@ -72203,14 +72715,14 @@ const _CREATIVE_CHEMISTRY_CONTROL_BASES = {
     Mo: _chemistryControl('f-mo', 'mo', 'Mo', 500, 'trace'),
     Zn: _chemistryControl('f-zn', 'zn', 'Zn', 1000, 'trace'),
     Mg: _chemistryControl('f-mg', 'mg', 'Mg', 5000, 'major'),
-    Na: _chemistryControl('f-na', 'na', 'Na', 20000, 'major'),
+    Na: _chemistryControl('f-na', 'na', 'Na', 150000, 'major'),
     K: _chemistryControl('f-k', 'k', 'K', 1000, 'major'),
     Ba: _chemistryControl('f-ba', 'ba', 'Ba', 1000, 'trace'),
     Sr: _chemistryControl('f-sr', 'sr', 'Sr', 1000, 'trace'),
     Cr: _chemistryControl('f-cr', 'cr', 'Cr', 500, 'trace'),
     P: _chemistryControl('f-p', 'p', 'P', 1000, 'trace'),
     As: _chemistryControl('f-as', 'as', 'As', 500, 'trace'),
-    Cl: _chemistryControl('f-cl', 'cl', 'Cl', 20000, 'ligand'),
+    Cl: _chemistryControl('f-cl', 'cl', 'Cl', 200000, 'ligand'),
     V: _chemistryControl('f-v', 'v', 'V', 100, 'trace'),
     W: _chemistryControl('f-w', 'w', 'W', 100, 'trace'),
     Ag: _chemistryControl('f-ag', 'ag', 'Ag', 100, 'trace'),
@@ -74854,14 +75366,13 @@ function _formationPressureChips(name, c) {
             }];
     }
     if (name === 'selenite' || name === 'anhydrite') {
-        const boundary = gypsumAnhydriteBoundaryC(pressure);
-        const stable = temperature < boundary ? 'gypsum' : 'anhydrite';
-        const expected = name === 'selenite' ? 'gypsum' : 'anhydrite';
+        const evaluation = evaluateCaSO4System(c.fluid, temperature, pressure);
+        const phase = evaluation.phase;
         return [{
-                text: `${pressure.toFixed(2)} kbar fluid · ${stable} equilibrium field (boundary ${boundary.toFixed(0)}°C)`,
+                text: `${pressure.toFixed(2)} kbar fluid · ${phase.phase} CaSO4 field (boundary ${phase.boundaryC.toFixed(1)}±${phase.uncertaintyC.toFixed(1)}°C)`,
                 met: true,
-                status: 'observer',
-                note: `Observer only, not a binary gameplay gate (nominal pure-water field favors ${stable}, while this row is ${expected}). Salinity shifts the boundary; empirical sulfate nucleation and anhydrite's independent kinetic floor drive gameplay.`,
+                status: phase.phase === 'uncertain' ? 'uncertain' : 'observer',
+                note: `${phase.note} This selector drives precursor replacement; primary gypsum and primary anhydrite retain their separate kinetic windows.`,
             }];
     }
     return [];
@@ -74998,13 +75509,17 @@ function _formationHistory(name, sim) {
     if (!sim || !Array.isArray(sim.crystals)) {
         return { available: false, total: 0, active: 0, transformed: 0, dissolved: 0, records: [] };
     }
-    const records = sim.crystals.filter((cr) => cr
-        && (cr.mineral === name || cr.paramorph_origin === name));
+    const records = sim.crystals.filter((cr) => cr && (cr.mineral === name
+        || cr.paramorph_origin === name
+        || (Array.isArray(cr.phase_transition_history)
+            && cr.phase_transition_history.some((row) => row.from === name || row.to === name))));
     return {
         available: true,
         total: records.length,
         active: records.filter((cr) => cr.mineral === name && cr.active && !cr.dissolved).length,
-        transformed: records.filter((cr) => cr.mineral !== name && cr.paramorph_origin === name).length,
+        transformed: records.filter((cr) => cr.mineral !== name && (cr.paramorph_origin === name
+            || (Array.isArray(cr.phase_transition_history)
+                && cr.phase_transition_history.some((row) => row.from === name)))).length,
         dissolved: records.filter((cr) => cr.dissolved).length,
         records,
     };
@@ -75172,6 +75687,43 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
         });
     }
     groups.push({ label: 'Saturation', chips: satChips });
+    if ((name === 'selenite' || name === 'anhydrite')
+        && typeof evaluateCaSO4System === 'function') {
+        const evaluation = evaluateCaSO4System(c.fluid, c.temperature, c.pressure);
+        const isGypsum = name === 'selenite';
+        const primary = isGypsum
+            ? evaluation.gypsumPrimaryAdmissible
+            : evaluation.anhydritePrimaryAdmissible;
+        const replacement = isGypsum
+            ? evaluation.anhydriteToGypsumAdmissible
+            : evaluation.gypsumToAnhydriteAdmissible;
+        groups.push({
+            label: 'CaSO4 phase & route',
+            chips: [{
+                    text: `gypsum SI ${_formationNumber(evaluation.gypsumSI, 3)} · anhydrite SI ${_formationNumber(evaluation.anhydriteSI, 3)}`,
+                    met: (isGypsum ? evaluation.gypsumSI : evaluation.anhydriteSI) > 0,
+                    note: 'The same activity/Ksp saturation indices used by production nucleation and replacement.',
+                }, {
+                    text: `${evaluation.phase.phase} equilibrium field · boundary ${_formationNumber(evaluation.phase.boundaryC, 1)}±${_formationNumber(evaluation.phase.uncertaintyC, 1)}°C`,
+                    met: true,
+                    status: evaluation.phase.phase === 'uncertain' ? 'uncertain' : 'observer',
+                    note: evaluation.phase.note,
+                }, {
+                    text: primary ? 'primary nucleation route open' : 'primary nucleation route closed',
+                    met: primary,
+                    note: isGypsum
+                        ? 'Primary gypsum requires positive SI and T ≤ 80°C.'
+                        : 'Primary anhydrite requires positive SI, T ≥ 100°C, and its pH window.',
+                }, {
+                    text: replacement ? 'precursor-replacement route thermodynamically open' : 'precursor-replacement route closed',
+                    met: replacement,
+                    status: 'observer',
+                    note: replacement
+                        ? `Requires an existing ${isGypsum ? 'anhydrite' : 'gypsum'} crystal; it cannot create a fresh nucleus.`
+                        : 'Replacement is blocked by the equilibrium field, product SI, or boundary uncertainty.',
+                }],
+        });
+    }
     if (productionDecision?.available) {
         const productionChips = [{
                 text: productionDecision.eligible
@@ -75287,8 +75839,8 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
             chips: [{
                     text: `a_w ${aw.value.toFixed(3)} ±${aw.uncertainty.toFixed(3)} · ${aw.salinityPpt.toFixed(1)}‰ salinity`,
                     met: true,
-                    status: 'observer',
-                    note: `${aw.note} This modifies the literature SI observer (gypsum includes 2 log10(a_w)); the current empirical sulfate gameplay engines do not consume a_w.`,
+                    status: aw.status === 'calibrated-proxy' ? 'observer' : 'uncertain',
+                    note: `${aw.note} Gypsum SI includes 2 log10(a_w), and the Hardie phase selector consumes the same a_w assessment.`,
                 }],
         });
     }
@@ -87847,11 +88399,7 @@ function _topoCrystalsSignature(sim, replayStep) {
             // before the paramorph transition (argentite at step < paramorph_step).
             // Folding into the signature ensures the cache busts the moment
             // the replay timeline crosses paramorph_step.
-            const effectiveMineral = (c.paramorph_step != null
-                && replayStep < c.paramorph_step
-                && c.paramorph_origin)
-                ? c.paramorph_origin
-                : c.mineral;
+            const effectiveMineral = mineralAtReplayStep(c, replayStep);
             if (!hist) {
                 // Perimorph casts persist at live size as hollow shells —
                 // keep them in the signature so the cache key still busts
@@ -88723,13 +89271,7 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
         // want the ORIGINAL mineral's color/material (pre-cooled argentite
         // looks different from acanthite), so swap to paramorph_origin
         // when replayStep < paramorph_step.
-        let effectiveMineral = crystal.mineral;
-        if (replayStep != null
-            && crystal.paramorph_step != null
-            && replayStep < crystal.paramorph_step
-            && crystal.paramorph_origin) {
-            effectiveMineral = crystal.paramorph_origin;
-        }
+        const effectiveMineral = mineralAtReplayStep(crystal, replayStep);
         // Material — the ONE optics builder (Depth-A, RESEARCH-optical-realism-2026-07-02.md §4.2).
         // All the former inline assembly (class_color, class metalness/roughness heuristics, the
         // CDR/etched/perimorph/sector-zoned/hourglass state modifiers) lives in

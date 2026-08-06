@@ -365,18 +365,14 @@ describe('strip chemistry contract — naica_geothermal (selenite slow-growth ch
   it('selenite SI hovers near saturation — the slow-growth window that grows the giant crystals', () => {
     if (!ds) return;
     const si = chipSeries(ds, 'SI_selenite', { depth: 'wall' });
-    // Observed at v165 (wall): SI_selenite -0.490…-0.079 across 320 steps,
-    // ending -0.227. Always slightly undersaturated; never any supersat
-    // surge. This is the documented condition (Van Driessche et al. 2011)
-    // under which the Cave of Crystals grew gypsum crystals to >11 m:
-    // marginal saturation maintained for tens of millennia by isothermal
-    // brine. Surge to SI>0 would mean fast nucleation, not giant single
-    // crystals. v182 (declared thermal movement, the buffered pool now
-    // actually isothermal instead of noise): the contract holds unchanged
-    // — and means MORE now, since the steady T this assertion always
-    // assumed is finally the trajectory the strip records.
-    expect(series.peak(si)).toBeLessThan(0);          // never supersaturated
-    expect(series.peak(si)).toBeGreaterThan(-0.6);    // but ALWAYS close
+    // v244 corrects the old contradiction in this guard: crystals cannot
+    // grow while the authoritative evaluator reports SI < 0. Published
+    // Naica Ca/SO4 concentrations now put the buffered chamber just across
+    // saturation (seed-42 wall peak 0.063), not in a nucleation-driving
+    // surge. That narrow positive excursion supplies existing crystals at
+    // low supersaturation, consistent with slow giant-crystal growth.
+    expect(series.peak(si)).toBeGreaterThan(0);       // growth is permitted
+    expect(series.peak(si)).toBeLessThan(0.2);        // but remains marginal
   });
 
   it('anhydrite is more undersaturated than gypsum (right phase for T < 55°C)', () => {
@@ -429,17 +425,18 @@ describe('strip chemistry contract — sicily_solfifera (celestine + native sulf
   let ds: any;
   beforeAll(() => { ds = recordScenario('sicily_solfifera'); }, 120000);
 
-  it('celestine SI ramps from supersat to strongly supersat (continuous precipitation)', () => {
+  it('celestine starts supersaturated, then SD-AOM draws down its sulfate substrate', () => {
     if (!ds) return;
     const si = chipSeries(ds, 'SI_celestine', { depth: 'wall' });
-    // Observed (wall): SI_celestine 0.459…0.856, MONO↑, ending 0.856. Sr is
-    // ramping (30→45) AND S is ramping (400→940) as bacterial sulfate
-    // reduction concentrates SO4 alongside the Sr-rich brine. The
-    // monotonic SI rise IS the Sicilian solfifera signature — celestine
-    // precipitates throughout, faster as the run progresses.
-    expect(series.first(si)!).toBeGreaterThan(0.3);     // supersat from the start
-    expect(series.peak(si)).toBeGreaterThan(0.7);       // strongly supersat by the end
-    expect(series.last(si)!).toBeGreaterThan(series.first(si)!);  // climbing
+    // SIM 244 replaces the old total-S ramp with explicit sulfate consumption.
+    // Gypsum-derived Sr + sulfate initially opens celestine; two SD-AOM
+    // transactions then transfer most sulfate to reduced S, so the residual
+    // fluid crosses below celestine saturation instead of pretending BSR
+    // creates sulfate. Early celestine remains as reaction testimony.
+    expect(series.first(si)!).toBeGreaterThan(0.3);
+    expect(series.peak(si)).toBeGreaterThan(0.45);
+    expect(series.min(si)).toBeLessThan(0);
+    expect(series.last(si)!).toBeLessThan(series.first(si)!);
   });
 
   it('celestine SI > selenite SI — Sr-sulfate is more saturated than Ca-sulfate despite Ca >> Sr', () => {
@@ -466,11 +463,11 @@ describe('strip chemistry contract — sicily_solfifera (celestine + native sulf
   it('DIC ramps too — sulfur deposits cohabit with carbonates in the Solfifera series', () => {
     if (!ds) return;
     const dic = chipSeries(ds, 'DIC', { depth: 'wall' });
-    // Observed: DIC 80→200, MONO↑. The Solfifera series is sulfur within
-    // a sedimentary carbonate sequence; both systems are active. Pinning
-    // the DIC ramp guards the carbonate-cohabitation signature.
+    // SD-AOM now adds methane-derived DIC at exactly 1 C per sulfate-S;
+    // the rise is large enough to earn positive calcite SI rather than merely
+    // cohabiting in prose.
     expect(series.first(dic)!).toBeLessThan(100);
-    expect(series.peak(dic)).toBeGreaterThan(180);
+    expect(series.peak(dic)).toBeGreaterThan(900);
   });
 });
 

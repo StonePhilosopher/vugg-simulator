@@ -579,8 +579,16 @@ class CavityVoxelGrid {
       }
       if (!hit) continue;
       const fluid = v.fluid;
+      const explicitSulfurHandled = propagateExplicitSulfurPoolDelta(
+        fluid,
+        preFluid,
+        postFluid,
+        replaceFields,
+      );
       for (let d = 0; d < dirty.length; d++) {
         const fname = dirty[d];
+        if (explicitSulfurHandled && (fname === 'S' || fname === 'S_sulfide'
+            || fname === 'S_sulfate' || fname === 'S_elemental')) continue;
         const next = replace.has(fname) ? postFluid[fname] : fluid[fname] + deltas[d];
         // SIM 220 — concentrations floor at 0. The additive delta lands
         // on cells that growth debits have drained BELOW bulk, so a

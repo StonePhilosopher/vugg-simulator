@@ -20,6 +20,7 @@ function grow_native_tellurium(crystal, conditions, step) {
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        dissolutionMode: 'oxidative_to_sulfate',
         note: `oxidative dissolution (O₂=${conditions.fluid.O2.toFixed(2)}) — Te oxidizing to TeO₃²⁻ tellurite`,
       });
     }

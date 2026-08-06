@@ -399,8 +399,16 @@ class WallMesh {
     for (let i = 0; i < this.numInterior; i++) {
       const fluid = this.cells[i].fluid;
       if (!fluid) continue;
+      const explicitSulfurHandled = propagateExplicitSulfurPoolDelta(
+        fluid,
+        preFluid,
+        _equatorFluid,
+        replaceFields,
+      );
       for (let d = 0; d < dirty.length; d++) {
         const fname = fieldNames[dirty[d]];
+        if (explicitSulfurHandled && (fname === 'S' || fname === 'S_sulfide'
+            || fname === 'S_sulfate' || fname === 'S_elemental')) continue;
         const next = replace.has(fname) ? _equatorFluid[fname] : fluid[fname] + deltas[d];
         // SIM 220 — concentrations floor at 0 (mirror of the canonical
         // voxel-grid clamp in js/24 propagateEventDelta; this is the

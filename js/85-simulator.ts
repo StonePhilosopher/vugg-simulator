@@ -183,6 +183,20 @@ class VugSimulator {
     // The grid is lazy-cached on wall_state; this call forces the
     // build so the grid is ready when _diffuseRingState first fires.
     this.wall_state.voxelGridFor(this);
+    // Explicit-sulfur conservation baseline. Canonical voxel fluids are the
+    // aqueous inventory; accepted growth zones become the solid inventory.
+    // Event/movement deltas are recorded as boundary fluxes by
+    // _propagateGlobalDelta, allowing an audit at every completed step.
+    const sulfurGrid = this.wall_state.voxelGridFor(this);
+    this._sulfurLedgerInitialPpm = this.conditions.fluid.sulfurPoolsExplicit
+      ? sulfurGrid.voxels.reduce(
+        (sum, voxel) => sum + sulfurSystemTotalPpm(voxel?.fluid),
+        0,
+      )
+      : 0;
+    this._sulfurBoundaryImportsPpm = 0;
+    this._sulfurBoundaryExportsPpm = 0;
+    this._sulfurLedgerHistory = [];
     // FLUID-SOURCE SPOTS (js/85k, PROPOSAL §10) Phase 2a — seed the spot set off
     // the cavity seed now that the mesh (→ cell count) exists. Uses a DEDICATED
     // _mulberry32(shape_seed ^ SPOTS_SALT) stream, independent of the shared rng,
@@ -665,6 +679,39 @@ class VugSimulator {
       }
     }
 
+    // CaSO4 phase replacement. Use each crystal's local mesh fluid and
+    // temperature; the authoritative evaluator separates SI, equilibrium
+    // phase, primary kinetics, and precursor-consuming replacement.
+    {
+      const nRings = this.wall_state.ring_count;
+      const mesh = this.wall_state.meshFor ? this.wall_state.meshFor(this) : null;
+      for (const crystal of this.crystals) {
+        if (crystal.mineral !== 'selenite' && crystal.mineral !== 'anhydrite') continue;
+        const anchor = this.wall_state._resolveAnchor(crystal);
+        const ringIdx = anchor ? anchor.ringIdx : null;
+        const validRing = ringIdx != null && ringIdx >= 0 && ringIdx < nRings;
+        const cell = validRing && mesh?.cellOf
+          ? mesh.cellOf(crystal, this.wall_state)
+          : null;
+        const localFluid = cell?.fluid || (validRing ? this.ring_fluids[ringIdx] : this.conditions.fluid);
+        const localT = validRing ? this.ring_temperatures[ringIdx] : this.conditions.temperature;
+        const transition = applyCaSO4PhaseTransition(
+          crystal, localFluid, localT, this.conditions.pressure, this.step,
+        );
+        if (!transition) continue;
+        this._caSO4Transitions ||= [];
+        this._caSO4Transitions.push({ crystal_id: crystal.crystal_id, ...transition });
+        const waterVerb = transition.waterTransferMmolKg >= 0 ? 'released' : 'consumed';
+        this.log.push(
+          `  ↻ CaSO4 REPLACEMENT: ${capitalize(transition.from)} #${crystal.crystal_id} → ${transition.to} ` +
+          `(a_w=${transition.waterActivity.toFixed(3)}, T=${localT.toFixed(1)}°C, ` +
+          `boundary=${transition.boundaryC.toFixed(1)}±${transition.uncertaintyC.toFixed(1)}°C, ` +
+          `${Math.abs(transition.waterTransferMmolKg).toFixed(6)} mmol/kg structural water ${waterVerb}; ` +
+          `booked Ca and sulfate unchanged; external replacement envelope preserved)`,
+        );
+      }
+    }
+
     // Paramorph transitions — convert crystals whose host fluid has cooled
     // past their phase-transition T (Round 8a-2: argentite → acanthite at
     // 173°C). Preserves habit + dominant_forms + zones; only crystal.mineral
@@ -937,6 +984,10 @@ class VugSimulator {
       try { this._stripRecorder.captureStep(this); } catch (_err) { /* swallow — strip view is non-essential */ }
     }
     // === END HELIX-OVERLAY-FORK ADDITION ==============================
+
+    if (this.conditions.fluid.sulfurPoolsExplicit) {
+      this._sulfurLedgerHistory.push(simulatorSulfurLedgerSnapshot(this));
+    }
 
     return this.log;
   }

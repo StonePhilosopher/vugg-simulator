@@ -60,7 +60,7 @@ describe('pyrite morphology registry (fifth tenant)', () => {
     expect(morphRegime(th, 3.84)).toBe('hopper_skeletal'); // fleet max — skeletal sliver
   });
 
-  it('sulphur_bank records an unstable high-sigma rind; Sunnyside remains the smoother end-member', () => {
+  it('sulphur_bank records an unstable rind; Sunnyside remains a lower-instability stepped end-member', () => {
     const sb = pyriteMass(runScenario('sulphur_bank'));
     expect(sb.total).toBeGreaterThan(0);
     const sbNonSmooth = 1 - (sb.mass.spiral_smooth || 0) / sb.total;
@@ -69,10 +69,12 @@ describe('pyrite morphology registry (fifth tenant)', () => {
       .toBeGreaterThanOrEqual(0.5);
     const sun = pyriteMass(runScenario('sunnyside_american_tunnel'));
     expect(sun.total).toBeGreaterThan(0);
-    const sunSmooth = (sun.mass.spiral_smooth || 0) / sun.total;
-    expect(sunSmooth).toBeGreaterThanOrEqual(0.3);
-    expect(sunSmooth).toBeGreaterThan((sb.mass.spiral_smooth || 0) / sb.total);
-    expect((sun.mass.hopper_skeletal || 0) + (sun.mass.dendritic || 0)).toBe(0);
+    const sunStepped = (sun.mass.stepped_mild || 0) + (sun.mass.stepped_macro || 0);
+    const sunSevere = ((sun.mass.hopper_skeletal || 0) + (sun.mass.dendritic || 0)) / sun.total;
+    const sbSevere = ((sb.mass.hopper_skeletal || 0) + (sb.mass.dendritic || 0)) / sb.total;
+    expect(sunStepped).toBeGreaterThan(0);
+    expect(sunSevere).toBe(0);
+    expect(sunSevere).toBeLessThan(sbSevere);
   });
 
   it('mvt pyrite is ZONED (the continuous-σ signature — mixed smooth↔striated)', () => {

@@ -12400,7 +12400,32 @@
 //       Creative Mode exposes all three reservoir levers and the native-S
 //       pathway in setup and live editing. The fluid-pressure envelope reaches
 //       0.001 kbar so surface scenarios are representable without range clipping.
-const SIM_VERSION = 243;
+// v244 — HOSTILE-REVIEW ROUND 8 PHASE SELECTION + LOCALITY CLOSURE
+//       (2026-08-06). Gypsum/anhydrite now share one authoritative CaSO4
+//       evaluator: explicit sulfate-pool SI, Hardie water-activity boundary,
+//       pressure shift, kinetic gates, limiting reagents, and competition all
+//       feed nucleation, growth, and the Creative diagnosis. Low-temperature
+//       sabkha anhydrite can arise only by mass-balanced gypsum dehydration;
+//       primary high-temperature anhydrite stays distinct. Replacement
+//       preserves formula extent, transfers structural water, updates volume/
+//       porosity, and is replayable. Sulfur-event propagation is an atomic
+//       voxel transaction, so a depleted local reactant cannot clamp the debit
+//       while receiving the full product credit; boundary fluxes are measured
+//       from realized canonical inventory. Native-S oxidative dissolution now
+//       returns sulfate with explicit O2 closure. Shipped scenarios declare a
+//       host wall; limestone and dolomite dissolution release formula-correct
+//       Ca:Mg:C inventories with closure. Tsumeb is explicitly dolomite-hosted.
+//       Sunnyside reconciles its USGS sequence/provenance and retains primary
+//       chalcopyrite, Au, and Mn-substituting calcite across the tested seeds.
+//       Sicily executes methane-driven SD-AOM at 1 C:1 S, earns positive
+//       calcite SI across the tested envelope, keeps residual sulfate, and
+//       reports reaction testimony separately from mineral outcomes. Naica
+//       now uses published Ca/SO4 concentrations and crosses slightly into
+//       positive gypsum SI; Great Salt Plains uses measured wet/dry brine
+//       concentrations and crosses saturation only during the dry phase.
+//       Creative setup and live Na/Cl ranges expose those natural evaporite
+//       concentrations without clipping.
+const SIM_VERSION = 244;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12416,7 +12441,11 @@ const MODEL_DIGEST = [
   'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
   'silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1',
-  'sulfur-ledger:sulfide+sulfate+elemental-independent+pathway-gated-v1',
+  'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
+  'sulfur-ledger:sulfide+sulfate+elemental+atomic-spatial+pathway-gated-v2',
+  'wall-dissolution:formula-stoich-limestone+dolomite-v1',
+  'sicily-SDAOM:methane-1C1S+conditional-calcite-v1',
+  'calcite-Mn:manganocalcite-excess<1.2-v1',
   'CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1',
   'growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6',
   'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',

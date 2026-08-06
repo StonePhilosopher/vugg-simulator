@@ -136,6 +136,25 @@ class VugWall {
     this.wall_Mn_ppm = opts.wall_Mn_ppm ?? 500.0;
     this.wall_Mg_ppm = opts.wall_Mg_ppm ?? 1000.0;
     this.ca_from_wall_total = opts.ca_from_wall_total ?? 0.0;
+    // Carbonate-host inventory uses the simulator's calibrated Ca release
+    // (15 ppm-equivalent per mm) as its formula-extent scale. Limestone is
+    // CaCO3; dolomite is CaMg(CO3)2. Tracking formula extent separately from
+    // fluid species lets every dissolution call prove wall loss = fluid gain.
+    const hostFormulaExtentPerMm = (this.composition === 'limestone' || this.composition === 'dolomite')
+      ? 15.0 / 40.078 : 0;
+    this.host_formula_inventory_initial_mmolkg =
+      (this.thickness_mm + this.total_dissolved_mm) * hostFormulaExtentPerMm;
+    this.host_formula_released_mmolkg = opts.host_formula_released_mmolkg
+      ?? this.total_dissolved_mm * hostFormulaExtentPerMm;
+    this.host_release_totals = opts.host_release_totals ?? {
+      Ca: this.host_formula_released_mmolkg * 40.078,
+      Mg: this.composition === 'dolomite'
+        ? this.host_formula_released_mmolkg * 24.305 : 0,
+      CO3: this.host_formula_released_mmolkg * 60.009
+        * (this.composition === 'dolomite' ? 2 : 1),
+    };
+    this.host_release_ledger = Array.isArray(opts.host_release_ledger)
+      ? opts.host_release_ledger.slice() : [];
     // Phase-1 naturalistic void shape (visual only — growth engines
     // still read meanDiameterMm). Two-stage bubble-merge model:
     //   Stage 1 — primary void: a few large bubbles (radii 40–70% of
@@ -422,14 +441,23 @@ class VugWall {
     this.total_dissolved_mm += rate_mm;
     this.vug_diameter_mm += rate_mm * 2;
 
-    const ca_released = rate_mm * 15.0;
-    const co3_released = rate_mm * 12.0;
+    const formula = this.composition === 'dolomite' ? 'CaMg(CO3)2' : 'CaCO3';
+    const carbonateCoefficient = this.composition === 'dolomite' ? 2 : 1;
+    const formula_extent_mmolkg = rate_mm * (15.0 / 40.078);
+    const ca_released = formula_extent_mmolkg * 40.078;
+    const mg_released = this.composition === 'dolomite'
+      ? formula_extent_mmolkg * 24.305 : 0;
+    const co3_released = formula_extent_mmolkg * carbonateCoefficient * 60.009;
     const fe_released = rate_mm * (this.wall_Fe_ppm / 1000.0) * 0.5;
     const mn_released = rate_mm * (this.wall_Mn_ppm / 1000.0) * 0.5;
     const ph_recovery = rate_mm * 0.8;
 
     const ph_before = fluid.pH;
+    const ca_before = fluid.Ca;
+    const mg_before = fluid.Mg;
+    const co3_before = fluid.CO3;
     fluid.Ca += ca_released;
+    fluid.Mg += mg_released;
     fluid.CO3 += co3_released;
     fluid.Fe += fe_released;
     fluid.Mn += mn_released;
@@ -437,11 +465,37 @@ class VugWall {
     fluid.pH = Math.min(fluid.pH, 8.5);
 
     this.ca_from_wall_total += ca_released;
+    this.host_formula_released_mmolkg += formula_extent_mmolkg;
+    this.host_release_totals.Ca += ca_released;
+    this.host_release_totals.Mg += mg_released;
+    this.host_release_totals.CO3 += co3_released;
+    const remainingFormulaMmolKg = this.thickness_mm * (15.0 / 40.078);
+    const inventoryErrorMmolKg = this.host_formula_inventory_initial_mmolkg
+      - remainingFormulaMmolKg - this.host_formula_released_mmolkg;
+    const transaction = {
+      composition: this.composition,
+      formula,
+      rate_mm,
+      formula_extent_mmolkg,
+      fluid_delta_ppm: {
+        Ca: fluid.Ca - ca_before,
+        Mg: fluid.Mg - mg_before,
+        CO3: fluid.CO3 - co3_before,
+      },
+      expected_ppm: { Ca: ca_released, Mg: mg_released, CO3: co3_released },
+      remaining_formula_mmolkg: remainingFormulaMmolKg,
+      inventory_error_mmolkg: inventoryErrorMmolKg,
+      closed: Math.abs(inventoryErrorMmolKg) <= 1e-9,
+    };
+    this.host_release_ledger.push(transaction);
 
     return {
       dissolved: true,
       rate_mm,
+      formula,
+      formula_extent_mmolkg,
       ca_released,
+      mg_released,
       co3_released,
       fe_released,
       mn_released,
@@ -449,6 +503,7 @@ class VugWall {
       ph_after: fluid.pH,
       vug_diameter: this.vug_diameter_mm,
       total_dissolved: this.total_dissolved_mm,
+      host_transaction: transaction,
     };
   }
 

@@ -560,7 +560,79 @@ function sulfurSystemTotalPpm(fluid: any): number {
   return syncExplicitSulfurTotal(fluid) + fluid.S_elemental;
 }
 
-function ensureExplicitSulfurPools(fluid: any, T: number): any {
+// Apply a bulk event's explicit sulfur-pool change to one spatial fluid as an
+// atomic transaction. Additive propagation of each field independently is not
+// conservative when a local voxel has less reactant than the bulk fluid: the
+// negative leg clamps at zero while the positive leg would land in full,
+// creating sulfur. Here the positive transfer is limited to the sulfur actually
+// debited in that voxel. A net import/export remains a boundary flux and is
+// measured from the canonical grid after propagation.
+function propagateExplicitSulfurPoolDelta(
+  fluid: any,
+  preFluid: any,
+  postFluid: any,
+  replaceFields: string[] = [],
+): boolean {
+  if (!fluid || !(fluid.sulfurPoolsExplicit
+      || preFluid?.sulfurPoolsExplicit || postFluid?.sulfurPoolsExplicit)) return false;
+  const keys = ['S_sulfide', 'S_sulfate', 'S_elemental'];
+  const replace = new Set(replaceFields || []);
+  ensureExplicitSulfurPools(fluid);
+
+  // An authored reservoir reset is an open-boundary replacement, not an
+  // internal redox transfer. Respect replacement fields exactly and apply any
+  // remaining pool changes additively; the ledger records the actual spatial
+  // inventory delta as import/export.
+  if (keys.some(key => replace.has(key))) {
+    for (const key of keys) {
+      if (replace.has(key)) {
+        fluid[key] = Math.max(0, Number(postFluid?.[key]) || 0);
+      } else {
+        const delta = (Number(postFluid?.[key]) || 0) - (Number(preFluid?.[key]) || 0);
+        fluid[key] = Math.max(0, (Number(fluid[key]) || 0) + delta);
+      }
+    }
+    fluid.sulfurPoolsExplicit = true;
+    fluid.nativeSulfurPathway = postFluid?.nativeSulfurPathway;
+    syncExplicitSulfurTotal(fluid);
+    return true;
+  }
+
+  const deltas = keys.map(
+    key => (Number(postFluid?.[key]) || 0) - (Number(preFluid?.[key]) || 0),
+  );
+  const requestedRemoval = deltas.reduce((sum, delta) => sum + Math.max(0, -delta), 0);
+  const requestedCredit = deltas.reduce((sum, delta) => sum + Math.max(0, delta), 0);
+  let removed = 0;
+  for (let i = 0; i < keys.length; i++) {
+    if (deltas[i] >= 0) continue;
+    const available = Math.max(0, Number(fluid[keys[i]]) || 0);
+    const debit = Math.min(available, -deltas[i]);
+    fluid[keys[i]] = available - debit;
+    removed += debit;
+  }
+
+  // Internal transfer credit equals the locally realized debit. Any positive
+  // net delta is an additional boundary import. For a negative net delta, the
+  // requested export is taken out before the remaining debit is transferred.
+  const netBoundaryDelta = requestedCredit - requestedRemoval;
+  const creditTotal = netBoundaryDelta >= 0
+    ? removed + netBoundaryDelta
+    : Math.max(0, removed + netBoundaryDelta);
+  if (requestedCredit > 0 && creditTotal > 0) {
+    for (let i = 0; i < keys.length; i++) {
+      if (deltas[i] <= 0) continue;
+      fluid[keys[i]] = Math.max(0, Number(fluid[keys[i]]) || 0)
+        + creditTotal * (deltas[i] / requestedCredit);
+    }
+  }
+  fluid.sulfurPoolsExplicit = true;
+  fluid.nativeSulfurPathway = postFluid?.nativeSulfurPathway;
+  syncExplicitSulfurTotal(fluid);
+  return true;
+}
+
+function ensureExplicitSulfurPools(fluid: any, T: number = 25): any {
   if (!fluid) return fluid;
   if (!fluid.sulfurPoolsExplicit) {
     const total = Math.max(0, Number(fluid.S) || 0);
@@ -634,16 +706,28 @@ function oxidizeReducedSulfurToElemental(
   return result;
 }
 
-// Bacterial sulfate reduction transfers sulfate to reduced sulfur. Organic
-// carbon is an explicit untracked boundary reagent; carbonate alkalinity is
-// credited at two mol C per mol S for the scenario-scale reaction.
-function bacterialReduceSulfate(fluid: any, sulfurPpm: number, T: number): any {
+// Bacterial sulfate reduction transfers sulfate to reduced sulfur. Carbon is
+// an explicit boundary reagent because the simulator does not yet carry a
+// dissolved-organic-carbon or methane reservoir. The default two mol C per
+// mol S preserves the generic organic-matter reaction used by older callers;
+// sulfate-driven anaerobic oxidation of methane (SD-AOM) supplies one mol C
+// per mol S: CH4 + SO4^2- -> HCO3^- + HS^- + H2O.
+function bacterialReduceSulfate(
+  fluid: any,
+  sulfurPpm: number,
+  T: number,
+  carbonBoundary: { source?: string; carbonateMolesPerSulfur?: number } = {},
+): any {
   ensureExplicitSulfurPools(fluid, T);
   const beforeS = sulfurSystemTotalPpm(fluid);
   const transferred = Math.min(Math.max(0, Number(sulfurPpm) || 0), fluid.S_sulfate);
   fluid.S_sulfate -= transferred;
   fluid.S_sulfide += transferred;
-  const carbonateAdded = transferred * (2 * 60.01 / 32.07);
+  const carbonateMolesPerSulfur = Math.max(
+    0,
+    Number(carbonBoundary.carbonateMolesPerSulfur ?? 2) || 0,
+  );
+  const carbonateAdded = transferred * (carbonateMolesPerSulfur * 60.01 / 32.07);
   fluid.CO3 = Math.max(0, Number(fluid.CO3) || 0) + carbonateAdded;
   syncExplicitSulfurTotal(fluid);
   const result = {
@@ -654,6 +738,8 @@ function bacterialReduceSulfate(fluid: any, sulfurPpm: number, T: number): any {
     carbonateAddedPpm: carbonateAdded,
     oxygenConsumedPpm: 0,
     organicElectronDonorBoundary: true,
+    carbonSourceBoundary: carbonBoundary.source || 'organic_matter',
+    carbonateMolesPerSulfur,
   };
   Object.defineProperty(fluid, '_lastSulfurReaction', { value: result, writable: true, configurable: true, enumerable: false });
   return result;

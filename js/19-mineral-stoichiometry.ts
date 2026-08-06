@@ -766,7 +766,54 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
           + removedHere * inventory[species];
       }
     }
+    // Native sulfur oxidation is a transfer, not a generic S0 return:
+    //   S0 + 1.5 O2 + H2O -> SO4(2-) + 2 H+
+    // An explicitly open air-water interface imports exactly the oxygen it
+    // consumes. A closed fluid oxidizes only the fraction its existing O2 can
+    // support and returns the oxygen-limited remainder to S_elemental.
+    let handledNativeSulfurOxidation = false;
+    if (crystal.mineral === 'native_sulfur'
+        && zone.dissolutionMode === 'oxidative_to_sulfate'
+        && fluid.sulfurPoolsExplicit) {
+      const returnedElemental = Math.max(0, Number(returned.S_elemental) || 0);
+      const oxygenPerSulfurMass = 1.5 * 32.00 / 32.07;
+      const oxygenBefore = Math.max(0, Number(fluid.O2) || 0);
+      const openBoundary = fluid.nativeSulfurPathway === 'oxidative_interface'
+        || !!conditions?._scenario?.open_to_atmosphere
+        || !!conditions?.wall?.open_system;
+      const oxygenNeeded = returnedElemental * oxygenPerSulfurMass;
+      const oxygenImported = openBoundary ? oxygenNeeded : 0;
+      const sulfurOxidized = Math.min(
+        returnedElemental,
+        (oxygenBefore + oxygenImported) / oxygenPerSulfurMass,
+      );
+      const oxygenConsumed = sulfurOxidized * oxygenPerSulfurMass;
+      const elementalRemainder = returnedElemental - sulfurOxidized;
+      fluid.O2 = Math.max(0, oxygenBefore + oxygenImported - oxygenConsumed);
+      fluid.S_sulfate += sulfurOxidized;
+      fluid.S_elemental += elementalRemainder;
+      if (typeof ehFromO2 === 'function') fluid.Eh = ehFromO2(fluid.O2);
+      const reaction = {
+        pathway: 'native_sulfur_oxidative_dissolution',
+        sulfurReturnedPpm: returnedElemental,
+        sulfurOxidizedToSulfatePpm: sulfurOxidized,
+        sulfurElementalRemainderPpm: elementalRemainder,
+        oxygenBeforePpm: oxygenBefore,
+        oxygenImportedPpm: oxygenImported,
+        oxygenConsumedPpm: oxygenConsumed,
+        oxygenAfterPpm: fluid.O2,
+        protonsProducedMmolKg: 2 * sulfurOxidized / 32.07,
+        openBoundary,
+      };
+      (fluid._sulfur_oxidation_ledger ||= []).push(reaction);
+      zone._sulfur_oxidation = reaction;
+      returned.S_sulfate = sulfurOxidized;
+      returned.S_elemental = elementalRemainder;
+      handledNativeSulfurOxidation = true;
+    }
     for (const species in returned) {
+      if (handledNativeSulfurOxidation
+          && (species === 'S_sulfate' || species === 'S_elemental')) continue;
       if (typeof fluid[species] !== 'number') continue;
       fluid[species] += returned[species];
     }
@@ -880,4 +927,56 @@ function remainingBookedInventory(crystal: any, species: string): number {
     total += remaining * perUm;
   }
   return total;
+}
+
+function bookedSolidSulfurPpm(crystals: any[]): number {
+  const sulfurKeys = ['S', 'S_sulfide', 'S_sulfate', 'S_elemental'];
+  let total = 0;
+  for (const crystal of (crystals || [])) {
+    for (const zone of (crystal?.zones || [])) {
+      if (!(zone && zone.thickness_um > 0)) continue;
+      const remaining = Number.isFinite(Number(zone._remaining_solid_um))
+        ? Math.max(0, Number(zone._remaining_solid_um))
+        : Math.max(0, Number(zone.thickness_um) || 0);
+      for (const key of sulfurKeys) {
+        total += remaining * Math.max(0, Number(zone._budget_inventory_per_um?.[key]) || 0);
+      }
+    }
+  }
+  return total;
+}
+
+// Whole-simulator sulfur audit in the same ppm-equivalent units used by the
+// accepted-zone ledger. Canonical voxel fluids plus booked solid inventory
+// must equal the constructor inventory plus declared boundary imports minus
+// exports. Internal redox transfers cannot change the total.
+function simulatorSulfurLedgerSnapshot(sim: any): any {
+  const grid = sim?.wall_state?.voxelGridFor?.(sim);
+  const fluids = grid?.voxels
+    ? grid.voxels.map((voxel: any) => voxel?.fluid).filter(Boolean)
+    : [sim?.conditions?.fluid].filter(Boolean);
+  const fluidPpm = fluids.reduce(
+    (sum: number, fluid: any) => sum + sulfurSystemTotalPpm(fluid),
+    0,
+  );
+  const solidPpm = bookedSolidSulfurPpm(sim?.crystals || []);
+  const initialPpm = Math.max(0, Number(sim?._sulfurLedgerInitialPpm) || 0);
+  const importsPpm = Math.max(0, Number(sim?._sulfurBoundaryImportsPpm) || 0);
+  const exportsPpm = Math.max(0, Number(sim?._sulfurBoundaryExportsPpm) || 0);
+  const expectedPpm = initialPpm + importsPpm - exportsPpm;
+  const actualPpm = fluidPpm + solidPpm;
+  const errorPpm = actualPpm - expectedPpm;
+  return {
+    step: Number(sim?.step) || 0,
+    initialPpm,
+    importsPpm,
+    exportsPpm,
+    fluidPpm,
+    solidPpm,
+    expectedPpm,
+    actualPpm,
+    errorPpm,
+    tolerancePpm: Math.max(1e-7, Math.abs(expectedPpm) * 1e-9),
+    closed: Math.abs(errorPpm) <= Math.max(1e-7, Math.abs(expectedPpm) * 1e-9),
+  };
 }

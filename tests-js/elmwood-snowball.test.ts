@@ -118,7 +118,10 @@ describe('W-F O5 — the Elmwood barite snowball (SIM 223)', () => {
     // below the SO₄/HS boundary). Elmwood's documented Zn is sphalerite —
     // smithsonite is not in its expects_species; the same guard's own v228
     // note applies: a confabulated crystal is not a headliner to guard.
-    for (const m of ['selenite', 'galena', 'siderite']) {
+    // Elmwood's locality record does not license gypsum/selenite. The old
+    // positive pin was an artefact of the pre-v244 split CaSO4 pathways.
+    expect(bySpecies(sim, 'selenite').length, 'no undocumented Elmwood gypsum').toBe(0);
+    for (const m of ['galena', 'siderite']) {
       expect(bySpecies(sim, m).length, `${m} still in the assemblage`).toBeGreaterThan(0);
     }
   });

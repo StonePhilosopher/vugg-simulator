@@ -4071,11 +4071,7 @@ function _topoCrystalsSignature(sim: any, replayStep?: number): string {
       // before the paramorph transition (argentite at step < paramorph_step).
       // Folding into the signature ensures the cache busts the moment
       // the replay timeline crosses paramorph_step.
-      const effectiveMineral = (c.paramorph_step != null
-                                 && replayStep < c.paramorph_step
-                                 && c.paramorph_origin)
-        ? c.paramorph_origin
-        : c.mineral;
+      const effectiveMineral = mineralAtReplayStep(c, replayStep);
       if (!hist) {
         // Perimorph casts persist at live size as hollow shells —
         // keep them in the signature so the cache key still busts
@@ -4871,13 +4867,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // want the ORIGINAL mineral's color/material (pre-cooled argentite
     // looks different from acanthite), so swap to paramorph_origin
     // when replayStep < paramorph_step.
-    let effectiveMineral = crystal.mineral;
-    if (replayStep != null
-        && crystal.paramorph_step != null
-        && replayStep < crystal.paramorph_step
-        && crystal.paramorph_origin) {
-      effectiveMineral = crystal.paramorph_origin;
-    }
+    const effectiveMineral = mineralAtReplayStep(crystal, replayStep);
 
     // Material — the ONE optics builder (Depth-A, RESEARCH-optical-realism-2026-07-02.md §4.2).
     // All the former inline assembly (class_color, class metalness/roughness heuristics, the

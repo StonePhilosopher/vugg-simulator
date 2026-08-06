@@ -325,13 +325,13 @@ describe('nucleation hover popover (97b) — recipe chips vs live conditions', (
     const gyWhy = _buildMineralFormationExplanation('selenite', gyConditions, { conditions: gyConditions, crystals: [] }, 2);
     expect(group(gyWhy.groups, 'Pressure / phase field').chips[0].status).toBe('observer');
     const aw = group(gyWhy.groups, 'Water activity').chips[0];
-    expect(aw.status).toBe('observer');
-    expect(aw.note).toContain('do not consume a_w');
+    expect(aw.status).toBe('uncertain');
+    expect(aw.note).toContain('phase selector consumes the same a_w');
     const gyHTML = _nucleationHoverHTML('selenite', gyConditions, { conditions: gyConditions, crystals: [] }, 2);
     expect(gyHTML).toContain('nuc-chip observer');
     const gyText = new DOMParser().parseFromString(gyHTML, 'text/html').body.textContent || '';
     expect(gyText).toContain('Observer only:');
-    expect(gyText).toContain('do not consume a_w');
+    expect(gyText).toContain('phase selector consumes the same a_w');
   });
 
   it('uses the real quartz nucleator for repeat thresholds, active caps, and stochastic birth probability', () => {

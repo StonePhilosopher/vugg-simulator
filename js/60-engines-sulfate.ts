@@ -181,18 +181,8 @@ function grow_anhydrite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_anhydrite();
 
   if (sigma < 1.0) {
-    if (crystal.total_growth_um > 3
-        && conditions.temperature < 55
-        && conditions.fluid.salinity < 95) {
-      crystal.dissolved = true;
-      const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.10);
-      // Phase 1e: Ca + S credits via MINERAL_DISSOLUTION_RATES.anhydrite.
-      return new GrowthZone({
-        step, temperature: conditions.temperature,
-        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
-        note: 'rehydration to gypsum — anhydrite releases Ca²⁺ + SO₄²⁻ as fluid freshens (salinity < 100‰ at T < 60°C)'
-      });
-    }
+    // Hydration is handled by applyCaSO4PhaseTransition. Do not dissolve a
+    // CaSO4 shell, credit Ca/S to the fluid, and falsely call that gypsum.
     return null;
   }
 
@@ -516,7 +506,7 @@ function grow_selenite(crystal, conditions, step) {
 
   if (sigma < 1.0) {
     // Selenite dissolves easily in undersaturated conditions
-    if (crystal.total_growth_um > 2 && (conditions.fluid.pH < 4 || conditions.temperature > 80)) {
+    if (crystal.total_growth_um > 2 && conditions.fluid.pH < 4) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.15);
       // Phase 1e: Ca + S credits via MINERAL_DISSOLUTION_RATES.selenite.
@@ -632,7 +622,7 @@ function grow_anglesite(crystal, conditions, step) {
   const trace_Fe = f.Fe * 0.015;
   const trace_Pb = f.Pb * 0.015;
   f.Pb = Math.max(f.Pb - rate * 0.02, 0);
-  debitSulfurPool(f, 'sulfate', rate * 0.018);
+  // Formula sulfate is booked by the accepted-zone stoichiometric ledger.
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe, trace_Pb, note: color_note });
 }
 
@@ -670,7 +660,7 @@ function grow_linarite(crystal, conditions, step) {
   }
   conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.018, 0);
   conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.012, 0);
-  debitSulfurPool(conditions.fluid, 'sulfate', rate * 0.020);
+  // Formula sulfate is booked by the accepted-zone stoichiometric ledger.
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `linarite ${crystal.habit}, deep azure-blue (SG 5.3, NO HCl fizz vs azurite — heavy in hand is diagnostic)` });
 }
 
@@ -706,7 +696,7 @@ function grow_caledonite(crystal, conditions, step) {
   }
   conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.025, 0);
   conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.010, 0);
-  debitSulfurPool(conditions.fluid, 'sulfate', rate * 0.018);
+  // Formula sulfate is booked by the accepted-zone stoichiometric ledger.
   conditions.fluid.CO3 = Math.max(conditions.fluid.CO3 - rate * 0.008, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `caledonite ${crystal.habit}, blue-GREEN (the only blue-green of the Pb-Cu sulfate trio; SG 5.6)` });
 }
@@ -742,7 +732,7 @@ function grow_leadhillite(crystal, conditions, step) {
     crystal.dominant_forms = ['massive granular vug filling'];
   }
   conditions.fluid.Pb = Math.max(conditions.fluid.Pb - rate * 0.030, 0);
-  debitSulfurPool(conditions.fluid, 'sulfate', rate * 0.010);
+  // Formula sulfate is booked by the accepted-zone stoichiometric ledger.
   conditions.fluid.CO3 = Math.max(conditions.fluid.CO3 - rate * 0.015, 0);
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `leadhillite ${crystal.habit}, pearly white pseudo-hexagonal (SG 6.5+, mica-like cleavage; metastable → anglesite+cerussite over geological time)` });
 }

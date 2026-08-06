@@ -9,6 +9,8 @@ declare const oxidizeReducedSulfurToElemental: any;
 declare const sulfurSystemTotalPpm: any;
 declare const bacterialReduceSulfate: any;
 declare const applyStoichiometricGrowthBudget: any;
+declare const bookedSolidSulfurPpm: any;
+declare const simulatorSulfurLedgerSnapshot: any;
 declare const GrowthZone: any;
 
 describe('SIM 243 silica phase identity', () => {
@@ -119,5 +121,56 @@ describe('SIM 243 explicit sulfur reservoirs', () => {
       conditions,
     );
     expect(fluid.S_elemental).toBeLessThan(before.elemental);
+  });
+
+  it('oxidative native-sulfur dissolution transfers booked S0 to sulfate with an oxygen ledger', () => {
+    const fluid = new FluidChemistry({
+      S: 0, S_sulfide: 0, S_sulfate: 0, S_elemental: 100,
+      sulfurPoolsExplicit: true, nativeSulfurPathway: 'oxidative_interface',
+      O2: 0.4, pH: 2.5,
+    });
+    const conditions = { fluid };
+    const crystal = { mineral: 'native_sulfur', zones: [] };
+    const growth = new GrowthZone({
+      step: 1, temperature: 50, thickness_um: 2, growth_rate: 2,
+    });
+    applyStoichiometricGrowthBudget(crystal, growth, conditions);
+    crystal.zones.push(growth);
+    const beforeSystem = sulfurSystemTotalPpm(fluid) + bookedSolidSulfurPpm([crystal]);
+    const sulfateBefore = fluid.S_sulfate;
+
+    const etch = new GrowthZone({
+      step: 2, temperature: 50, thickness_um: -1, growth_rate: -1,
+      dissolutionMode: 'oxidative_to_sulfate',
+    });
+    applyStoichiometricGrowthBudget(crystal, etch, conditions);
+    crystal.zones.push(etch);
+
+    expect(fluid.S_sulfate).toBeGreaterThan(sulfateBefore);
+    expect(etch._sulfur_oxidation.sulfurElementalRemainderPpm).toBeCloseTo(0, 12);
+    expect(etch._sulfur_oxidation.oxygenBeforePpm
+      + etch._sulfur_oxidation.oxygenImportedPpm
+      - etch._sulfur_oxidation.oxygenConsumedPpm)
+      .toBeCloseTo(etch._sulfur_oxidation.oxygenAfterPpm, 12);
+    expect(sulfurSystemTotalPpm(fluid) + bookedSolidSulfurPpm([crystal]))
+      .toBeCloseTo(beforeSystem, 10);
+  });
+
+  it('closes the full Sulphur Bank sulfur ledger at every step and grows metacinnabar', () => {
+    setSeed(42);
+    const { conditions, events, defaultSteps } = SCENARIOS.sulphur_bank();
+    const sim = new VugSimulator(conditions, events);
+    for (let i = 0; i < (defaultSteps ?? 200); i++) {
+      sim.run_step();
+      const ledger = simulatorSulfurLedgerSnapshot(sim);
+      expect(
+        ledger.closed,
+        `step ${ledger.step}: sulfur error ${ledger.errorPpm} exceeds ${ledger.tolerancePpm}`,
+      ).toBe(true);
+    }
+    const metacinnabarGrowth = sim.crystals
+      .filter((crystal: any) => crystal.mineral === 'metacinnabar')
+      .reduce((sum: number, crystal: any) => sum + Math.max(0, crystal.total_growth_um || 0), 0);
+    expect(metacinnabarGrowth).toBeGreaterThan(0);
   });
 });
