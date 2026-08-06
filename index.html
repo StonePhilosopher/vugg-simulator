@@ -3929,6 +3929,7 @@ Scenarios:
         <select id="f-native-sulfur-pathway">
           <option value="none">none / unavailable</option>
           <option value="oxidative_interface">H₂S–O₂ interface</option>
+          <option value="oxidative_closed_fluid">closed microoxic fluid</option>
           <option value="anaerobic_microbial_inherited">inherited anaerobic microbial S°</option>
         </select>
       </div>
@@ -18762,7 +18763,25 @@ function scenarioSpecHash(spec) {
 //       concentrations and crosses saturation only during the dry phase.
 //       Creative setup and live Na/Cl ranges expose those natural evaporite
 //       concentrations without clipping.
-const SIM_VERSION = 244;
+// v245 — HOSTILE-REVIEW ROUND 9 DECLARED BOUNDARIES + OXIDATION CLOSURE
+//       (2026-08-06). Native-sulfur oxidation is now exercised through the
+//       production engine in both open-interface and closed-fluid modes: open
+//       reactions declare their O2 import, closed reactions stop at the
+//       available O2 inventory, sulfur closes between S0 and sulfate, and H+
+//       yield is labelled diagnostic because the simulator does not conserve
+//       a hydrogen inventory or mutate pH from that yield. Tellurium no longer
+//       inherits sulfur's oxidative etch mode. Spatial sulfur propagation is
+//       declaration-driven: authored additions and replacements are tested
+//       against their declared amount or target, while unannounced residuals
+//       fail closed instead of being laundered into inferred boundary flux.
+//       Sulphur Bank's H2S recharge and Sicily/sabkha sulfur events declare
+//       their sources explicitly. Sulphur Bank cinnabar is no longer assigned
+//       an invented native-sulfur substrate: the documented vertical zoning
+//       is represented as association, not epitaxy. Sicily's SD-AOM carbon is tracked alongside
+//       wall-carbon release in a whole-scenario carbon ledger; its carbonate-
+//       buffer events now repartition existing dissolved inorganic carbon and
+//       adjust pH without inventing carbonate mass.
+const SIM_VERSION = 245;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -18778,9 +18797,11 @@ const MODEL_DIGEST = [
     'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
     'silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1',
     'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
-    'sulfur-ledger:sulfide+sulfate+elemental+atomic-spatial+pathway-gated-v2',
+    'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3',
+    'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
+    'sulphur-bank-HgS:zoned-association-not-S0-substrate-v1',
     'wall-dissolution:formula-stoich-limestone+dolomite-v1',
-    'sicily-SDAOM:methane-1C1S+conditional-calcite-v1',
+    'sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2',
     'calcite-Mn:manganocalcite-excess<1.2-v1',
     'CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1',
     'growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6',
@@ -19659,7 +19680,12 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
                 oxygenImportedPpm: oxygenImported,
                 oxygenConsumedPpm: oxygenConsumed,
                 oxygenAfterPpm: fluid.O2,
-                protonsProducedMmolKg: 2 * sulfurOxidized / 32.07,
+                // pH is an activity proxy and the simulator has no conserved H/DIC
+                // acidity inventory. Report the reaction extent honestly as a
+                // diagnostic rather than pretending those protons were booked.
+                diagnosticProtonsProducedMmolKg: 2 * sulfurOxidized / 32.07,
+                protonAccounting: 'diagnostic_only_no_conserved_hydrogen_inventory',
+                fluidPhUpdated: false,
                 openBoundary,
             };
             (fluid._sulfur_oxidation_ledger ||= []).push(reaction);
@@ -19808,6 +19834,20 @@ function bookedSolidSulfurPpm(crystals) {
     }
     return total;
 }
+function bookedSolidCarbonPpm(crystals) {
+    let total = 0;
+    for (const crystal of (crystals || [])) {
+        for (const zone of (crystal?.zones || [])) {
+            if (!(zone && zone.thickness_um > 0))
+                continue;
+            const remaining = Number.isFinite(Number(zone._remaining_solid_um))
+                ? Math.max(0, Number(zone._remaining_solid_um))
+                : Math.max(0, Number(zone.thickness_um) || 0);
+            total += remaining * Math.max(0, Number(zone._budget_inventory_per_um?.CO3) || 0);
+        }
+    }
+    return total;
+}
 // Whole-simulator sulfur audit in the same ppm-equivalent units used by the
 // accepted-zone ledger. Canonical voxel fluids plus booked solid inventory
 // must equal the constructor inventory plus declared boundary imports minus
@@ -19825,6 +19865,9 @@ function simulatorSulfurLedgerSnapshot(sim) {
     const expectedPpm = initialPpm + importsPpm - exportsPpm;
     const actualPpm = fluidPpm + solidPpm;
     const errorPpm = actualPpm - expectedPpm;
+    const propagationViolations = Array.isArray(sim?._sulfurPropagationViolations)
+        ? sim._sulfurPropagationViolations.length : 0;
+    const tolerancePpm = Math.max(1e-7, Math.abs(expectedPpm) * 1e-9);
     return {
         step: Number(sim?.step) || 0,
         initialPpm,
@@ -19835,8 +19878,49 @@ function simulatorSulfurLedgerSnapshot(sim) {
         expectedPpm,
         actualPpm,
         errorPpm,
-        tolerancePpm: Math.max(1e-7, Math.abs(expectedPpm) * 1e-9),
-        closed: Math.abs(errorPpm) <= Math.max(1e-7, Math.abs(expectedPpm) * 1e-9),
+        tolerancePpm,
+        propagationViolations,
+        closed: Math.abs(errorPpm) <= tolerancePpm && propagationViolations === 0,
+    };
+}
+// Whole-scenario Sicily carbon audit. CO3 is the simulator's total-DIC proxy;
+// methane SD-AOM and host dissolution are declared sources, while accepted
+// carbonate growth is the booked solid sink. pH/speciation changes contribute
+// no carbon term.
+function simulatorCarbonLedgerSnapshot(sim) {
+    const grid = sim?.wall_state?.voxelGridFor?.(sim);
+    const fluids = grid?.voxels
+        ? grid.voxels.map((voxel) => voxel?.fluid).filter(Boolean)
+        : [sim?.conditions?.fluid].filter(Boolean);
+    const fluidPpm = fluids.reduce((sum, fluid) => sum + Math.max(0, Number(fluid?.CO3) || 0), 0);
+    const solidPpm = bookedSolidCarbonPpm(sim?.crystals || []);
+    const initialPpm = Math.max(0, Number(sim?._carbonLedgerInitialPpm) || 0);
+    const methaneImportsPpm = Math.max(0, Number(sim?._carbonMethaneImportsPpm) || 0);
+    const wallReleasePpm = Math.max(0, Number(sim?._carbonWallReleasePpm) || 0);
+    const externalImportsPpm = Math.max(0, Number(sim?._carbonExternalImportsPpm) || 0);
+    const exportsPpm = Math.max(0, Number(sim?._carbonExportsPpm) || 0);
+    const expectedPpm = initialPpm + methaneImportsPpm + wallReleasePpm
+        + externalImportsPpm - exportsPpm;
+    const actualPpm = fluidPpm + solidPpm;
+    const errorPpm = actualPpm - expectedPpm;
+    const tolerancePpm = Math.max(1e-7, Math.abs(expectedPpm) * 1e-9);
+    const propagationViolations = Array.isArray(sim?._carbonPropagationViolations)
+        ? sim._carbonPropagationViolations.length : 0;
+    return {
+        step: Number(sim?.step) || 0,
+        initialPpm,
+        methaneImportsPpm,
+        wallReleasePpm,
+        externalImportsPpm,
+        exportsPpm,
+        fluidPpm,
+        solidPpm,
+        expectedPpm,
+        actualPpm,
+        errorPpm,
+        tolerancePpm,
+        propagationViolations,
+        closed: Math.abs(errorPpm) <= tolerancePpm && propagationViolations === 0,
     };
 }
 
@@ -21466,6 +21550,46 @@ function addSulfurToPool(fluid, pool, ppm, T) {
     const addition = Math.max(0, Number(ppm) || 0);
     fluid[key] = Math.max(0, Number(fluid[key]) || 0) + addition;
     syncExplicitSulfurTotal(fluid);
+    return addition;
+}
+// Boundary declarations are authored reaction records. The spatial
+// propagation audit consumes them after an event is broadcast; it never
+// infers a boundary source from an unexplained inventory residual.
+function declareSulfurBoundaryAddition(conditions, pool, ppm, source) {
+    if (!conditions?.fluid)
+        return 0;
+    const addition = addSulfurToPool(conditions.fluid, pool, ppm, Number(conditions.temperature) || 25);
+    (conditions._pending_sulfur_boundary_declarations ||= []).push({
+        kind: 'addition',
+        source: String(source || 'declared sulfur source'),
+        pool,
+        amountPpmPerFluid: addition,
+    });
+    return addition;
+}
+function declareSulfurBoundaryReplacement(conditions, source, targets) {
+    if (!conditions)
+        return;
+    (conditions._pending_sulfur_boundary_declarations ||= []).push({
+        kind: 'replacement',
+        source: String(source || 'declared sulfur-fluid replacement'),
+        targets: {
+            S_sulfide: Math.max(0, Number(targets?.sulfide) || 0),
+            S_sulfate: Math.max(0, Number(targets?.sulfate) || 0),
+            S_elemental: Math.max(0, Number(targets?.elemental) || 0),
+        },
+    });
+}
+function declareCarbonLedgerAddition(conditions, category, source, carbonatePpm) {
+    if (!conditions)
+        return 0;
+    const addition = Math.max(0, Number(carbonatePpm) || 0);
+    (conditions._pending_carbon_ledger_declarations ||= []).push({
+        kind: 'addition',
+        category,
+        source: String(source || category),
+        carbonatePpmPerFluid: addition,
+    });
     return addition;
 }
 function debitSulfurPool(fluid, pool, ppm) {
@@ -29395,7 +29519,7 @@ Object.assign(VugConditions.prototype, {
         if (elementalS < g.fluid_min.S_elemental)
             return 0;
         const pathway = this.fluid.nativeSulfurPathway;
-        if (pathway === 'oxidative_interface') {
+        if (pathway === 'oxidative_interface' || pathway === 'oxidative_closed_fluid') {
             if (!nativeRedoxWindow(this.fluid, g.O2_min, g.O2_max))
                 return 0;
         }
@@ -29415,7 +29539,7 @@ Object.assign(VugConditions.prototype, {
         // same threshold so a pool that just clears the gate is not immediately
         // pushed back below nucleation by an unrelated legacy-total-S divisor.
         const s_f = Math.min(elementalS / 100.0, 4.0);
-        const eh_f = pathway === 'oxidative_interface'
+        const eh_f = (pathway === 'oxidative_interface' || pathway === 'oxidative_closed_fluid')
             ? nativeRedoxTent(this.fluid, 0.4, 2.0, 0.4)
             : Math.max(0.8, 1.0 - (Number(this.fluid.O2) || 0) * 2.0);
         // Bimodal pH factor: two regime peaks, valley between them.
@@ -42385,7 +42509,6 @@ function grow_native_tellurium(crystal, conditions, step) {
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -dissolved_um, growth_rate: -dissolved_um,
-                dissolutionMode: 'oxidative_to_sulfate',
                 note: `oxidative dissolution (O₂=${conditions.fluid.O2.toFixed(2)}) — Te oxidizing to TeO₃²⁻ tellurite`,
             });
         }
@@ -42428,13 +42551,24 @@ function grow_native_tellurium(crystal, conditions, step) {
 function grow_native_sulfur(crystal, conditions, step) {
     const sigma = conditions.supersaturation_native_sulfur();
     if (sigma < 1.0) {
-        if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.9) {
-            crystal.dissolved = true;
-            const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.10);
+        // Oxidative etching begins in a genuinely microoxic fluid. The old
+        // O2>0.9 gate exceeded the oxygen needed by the largest calibrated shell,
+        // making the closed-fluid oxygen-limited branch mathematically unreachable.
+        // Sicily remains protected by its anaerobic pathway; an open hot-spring
+        // interface or an explicitly closed oxidative fluid can enter this route.
+        const oxidativePathway = conditions.fluid.nativeSulfurPathway === 'oxidative_interface'
+            || conditions.fluid.nativeSulfurPathway === 'oxidative_closed_fluid';
+        if (crystal.total_growth_um > 5 && oxidativePathway && conditions.fluid.O2 > 0.001) {
+            // Engine zones are geological-clock candidates and the accepted path
+            // multiplies them by timeScale. Divide here so the landed shell—not the
+            // pre-clock candidate—removes at most 3 µm or 10% of the crystal.
+            const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.10) / timeScale;
+            crystal.dissolved = dissolved_um * timeScale >= crystal.total_growth_um;
             // Phase 1e: S credit handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.native_sulfur.
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+                dissolutionMode: 'oxidative_to_sulfate',
                 note: `oxidative dissolution (O₂=${conditions.fluid.O2.toFixed(2)}) — S oxidizing to SO₄²⁻`,
             });
         }
@@ -52094,6 +52228,9 @@ function event_sabkha_flood(c) {
     c.fluid.salinity = 35;
     c.fluid.concentration = 1;
     syncExplicitSulfurTotal(c.fluid);
+    declareSulfurBoundaryReplacement(c, 'sabkha tidal seawater replacement', {
+        sulfide: 0, sulfate: 2700, elemental: 0,
+    });
     c.fluid.pH = 8.0;
     c.flow_rate = 1.5;
     return 'Flood pulse: low-alkalinity tidal seawater enters the lagoon. CO₃ crashes from sabkha brine levels back to ~50 ppm. Dolomite supersaturation drops below 1 — the disordered Ca/Mg surface layer detaches preferentially (Kim 2023 etch).';
@@ -52116,6 +52253,9 @@ function event_sabkha_evap(c) {
     c.fluid.salinity = 250;
     c.fluid.concentration = 7.1;
     syncExplicitSulfurTotal(c.fluid);
+    declareSulfurBoundaryReplacement(c, 'sabkha evaporative-brine replacement', {
+        sulfide: 0, sulfate: 9000, elemental: 0,
+    });
     c.fluid.pH = 8.4;
     c.flow_rate = 0.1;
     c.temperature = 32;
@@ -52382,7 +52522,7 @@ function event_sulphur_bank_h2s_recharge(c) {
     // (recovery = 0.1 × min(flow/1.0, 2.0) per step). Higher
     // flow_rates would push pH up faster than the recharge pushes it
     // down, defeating the synproportionation window.
-    addSulfurToPool(c.fluid, 'sulfide', 150, c.temperature);
+    declareSulfurBoundaryAddition(c, 'sulfide', 150, 'Sulphur Bank deep H2S recharge');
     c.fluid.Fe += 5; // minor Fe co-pulse (pyrite/marcasite contribution)
     c.fluid.As += 2; // trace As (Sulphur Bank ores carry minor arsenopyrite/realgar)
     c.fluid.pH = Math.max(1.5, c.fluid.pH - 1.0); // hard acidification — H₂S overwhelms recovery
@@ -52456,7 +52596,7 @@ function event_sicily_gypsum_dissolution(c) {
     // dissolution (saturating
     // toward 7.5 the calcite-gypsum equilibrium point).
     c.fluid.Ca += 200;
-    addSulfurToPool(c.fluid, 'sulfate', 100, c.temperature);
+    declareSulfurBoundaryAddition(c, 'sulfate', 100, 'upgradient Messinian gypsum dissolution');
     c.fluid.Sr += 5; // Messinian gypsum carries 1-3% Sr; celestine signature
     c.fluid.pH = Math.min(6.5, c.fluid.pH + 0.3);
     c.flow_rate = 0.4;
@@ -52475,25 +52615,24 @@ function event_sicily_bsr_reduction(c) {
         source: 'methane',
         carbonateMolesPerSulfur: 1,
     });
+    declareCarbonLedgerAddition(c, 'methane_import', 'methane carbon consumed by sulfate-driven anaerobic oxidation', reaction.carbonateAddedPpm);
     c.fluid.O2 = Math.min(c.fluid.O2, 0.02);
     c.fluid.Eh = ehFromO2(c.fluid.O2);
     c.flow_rate = 0.2;
     return `SD-AOM reaction testimony: anaerobic microbes transferred ${reaction.sulfurTransferredPpm.toFixed(1)} ppm sulfate-S to reduced S while methane-derived carbon added ${reaction.carbonateAddedPpm.toFixed(1)} ppm carbonate-equivalent alkalinity (1 mol C per mol S). Sulfur closes at ${reaction.sulfurAfterPpm.toFixed(1)} ppm; O₂ remains anoxic at ${c.fluid.O2.toFixed(2)}. Calcite formation remains conditional on the authoritative saturation and kinetic gates.`;
 }
 function event_sicily_carbonate_buffer(c) {
-    // BSR-generated H₂CO₃ + carbonate-buffered porewater stabilizes pH
-    // around 6.0 — the peak of the engine's BSR-mode ph_f factor.
-    // CO₃ accumulates from BSR's organic-C oxidation; Ca holds steady
-    // from gypsum dissolution.
-    c.fluid.CO3 += 60;
+    // The already-ledgered DIC pool repartitions as the calcite-bearing pore
+    // buffers acidity. CO3 is the simulator's total-DIC proxy, so a pH/speciation
+    // reset must not create another carbon source.
     c.fluid.pH = 6.0;
     c.flow_rate = 0.2;
-    return `Carbonate-buffer reaction testimony: DIC rises to ${c.fluid.CO3.toFixed(0)} ppm and pH resets to 6.0. This opens the carbonate route, but the authoritative calcite saturation and kinetic gates still decide whether cement forms.`;
+    return `Carbonate-buffer reaction testimony: the existing ${c.fluid.CO3.toFixed(0)} ppm DIC inventory repartitions as pH resets to 6.0; no carbon is created by this speciation step. The authoritative calcite saturation and kinetic gates still decide whether cement forms.`;
 }
 function event_sicily_inherited_sulfur_recharge(c) {
     // Recharge imports already formed elemental sulfur from the surrounding
     // anoxic, sulfur-bearing carbonate reservoir.
-    addSulfurToPool(c.fluid, 'elemental', 80, c.temperature);
+    declareSulfurBoundaryAddition(c, 'elemental', 80, 'inherited microbial sulfur-bearing porewater');
     c.fluid.O2 = Math.min(c.fluid.O2, 0.02);
     c.fluid.Eh = ehFromO2(c.fluid.O2);
     c.flow_rate = 0.3;
@@ -55172,15 +55311,31 @@ class VugSimulator {
         this.wall_state.voxelGridFor(this);
         // Explicit-sulfur conservation baseline. Canonical voxel fluids are the
         // aqueous inventory; accepted growth zones become the solid inventory.
-        // Event/movement deltas are recorded as boundary fluxes by
-        // _propagateGlobalDelta, allowing an audit at every completed step.
+        // _propagateGlobalDelta books only authored boundary declarations and
+        // records an unexplained internal residual as a violation.
         const sulfurGrid = this.wall_state.voxelGridFor(this);
         this._sulfurLedgerInitialPpm = this.conditions.fluid.sulfurPoolsExplicit
             ? sulfurGrid.voxels.reduce((sum, voxel) => sum + sulfurSystemTotalPpm(voxel?.fluid), 0)
             : 0;
         this._sulfurBoundaryImportsPpm = 0;
         this._sulfurBoundaryExportsPpm = 0;
+        this._sulfurBoundaryTransactions = [];
+        this._sulfurPropagationViolations = [];
         this._sulfurLedgerHistory = [];
+        // Sicily carries a strict whole-scenario carbon ledger. Methane-derived
+        // SD-AOM carbon, formula-balanced wall release, fluid DIC, and booked
+        // carbonate solids remain separate terms.
+        this._carbonLedgerEnabled = this.conditions?._scenario?.id === 'sicily_solfifera';
+        this._carbonLedgerInitialPpm = this._carbonLedgerEnabled
+            ? sulfurGrid.voxels.reduce((sum, voxel) => sum + Math.max(0, Number(voxel?.fluid?.CO3) || 0), 0)
+            : 0;
+        this._carbonMethaneImportsPpm = 0;
+        this._carbonWallReleasePpm = 0;
+        this._carbonExternalImportsPpm = 0;
+        this._carbonExportsPpm = 0;
+        this._carbonSourceTransactions = [];
+        this._carbonPropagationViolations = [];
+        this._carbonLedgerHistory = [];
         // FLUID-SOURCE SPOTS (js/85k, PROPOSAL §10) Phase 2a — seed the spot set off
         // the cavity seed now that the mesh (→ cell count) exists. Uses a DEDICATED
         // _mulberry32(shape_seed ^ SPOTS_SALT) stream, independent of the shared rng,
@@ -58209,13 +58364,36 @@ function _replayStride(step) {
         return 243;
     return 729;
 }
+function _canonicalSpatialFluids(sim) {
+    const grid = sim?.wall_state?.voxelGridFor?.(sim);
+    if (grid?.voxels)
+        return grid.voxels.map((voxel) => voxel?.fluid).filter(Boolean);
+    const mesh = sim?.wall_state?.meshFor?.(sim);
+    return (mesh?.cells || []).map((cell) => cell?.fluid).filter(Boolean);
+}
+function _spatialSulfurState(sim) {
+    const fluids = _canonicalSpatialFluids(sim);
+    const totals = fluids.map((fluid) => sulfurSystemTotalPpm(fluid));
+    return { count: totals.length, totals, totalPpm: totals.reduce((a, b) => a + b, 0) };
+}
+function _spatialCarbonState(sim) {
+    const fluids = _canonicalSpatialFluids(sim);
+    const totals = fluids.map((fluid) => Math.max(0, Number(fluid?.CO3) || 0));
+    return { count: totals.length, totals, totalPpm: totals.reduce((a, b) => a + b, 0) };
+}
+function _ledgerTolerance(value) {
+    return Math.max(1e-7, Math.abs(value) * 1e-9);
+}
 Object.assign(VugSimulator.prototype, {
     // Phase C v1: snapshot conditions.fluid + temperature before a
     // global-mutating block (events, wall dissolution, ambient cooling).
     // Pair with _propagateGlobalDelta to apply the same delta to all
     // non-equator rings. Mirrors VugSimulator._snapshot_global in vugg.py.
     _snapshotGlobal() {
-        return [_cloneFluid(this.conditions.fluid), this.conditions.temperature];
+        const sulfurState = this.conditions.fluid.sulfurPoolsExplicit
+            ? _spatialSulfurState(this) : null;
+        const carbonState = this._carbonLedgerEnabled ? _spatialCarbonState(this) : null;
+        return [_cloneFluid(this.conditions.fluid), this.conditions.temperature, sulfurState, carbonState];
     },
     // Phase C v1 (comment trued 2026-06-10): apply the delta between
     // current conditions and the pre-block snapshot. FLUID deltas go to
@@ -58229,7 +58407,13 @@ Object.assign(VugSimulator.prototype, {
     // (_ringFluidMeans, review §1.4). The equator ring is aliased to
     // conditions.fluid so it already reflects the new value.
     _propagateGlobalDelta(snap) {
-        const [preFluid, preTemp] = snap;
+        const [preFluid, preTemp, preSulfurState, preCarbonState] = snap;
+        const sulfurDeclarations = Array.isArray(this.conditions._pending_sulfur_boundary_declarations)
+            ? this.conditions._pending_sulfur_boundary_declarations.slice() : [];
+        const carbonDeclarations = Array.isArray(this.conditions._pending_carbon_ledger_declarations)
+            ? this.conditions._pending_carbon_ledger_declarations.slice() : [];
+        delete this.conditions._pending_sulfur_boundary_declarations;
+        delete this.conditions._pending_carbon_ledger_declarations;
         const replaceFields = Array.isArray(this.conditions._pending_fluid_replace_fields)
             ? this.conditions._pending_fluid_replace_fields.slice()
             : [];
@@ -58249,14 +58433,7 @@ Object.assign(VugSimulator.prototype, {
         // isn't available (headless test harnesses without CavityVoxelGrid).
         const grid = this.wall_state.voxelGridFor(this);
         const mesh = this.wall_state.meshFor(this);
-        const canonicalSulfurInventory = () => {
-            const fluids = grid?.voxels
-                ? grid.voxels.map((voxel) => voxel?.fluid).filter(Boolean)
-                : (mesh?.cells || []).map((cell) => cell?.fluid).filter(Boolean);
-            return fluids.reduce((sum, fluid) => sum + sulfurSystemTotalPpm(fluid), 0);
-        };
         const explicitSulfurActive = !!(preFluid.sulfurPoolsExplicit || this.conditions.fluid.sulfurPoolsExplicit);
-        const spatialSulfurBefore = explicitSulfurActive ? canonicalSulfurInventory() : 0;
         if (grid && typeof grid.propagateEventDelta === 'function') {
             grid.propagateEventDelta(preFluid, this._fluidFieldNames, equatorFluid, 'all', replaceFields);
         }
@@ -58301,17 +58478,111 @@ Object.assign(VugSimulator.prototype, {
                 for (let i = 0; i < meshSulfur.cells.length; i++)
                     copySulfurFlags(meshSulfur.cells[i] && meshSulfur.cells[i].fluid);
         }
-        // Book the ACTUAL canonical spatial inventory change, not the bulk-fluid
-        // delta times voxel count. Atomic sulfur-pool propagation may be reactant-
-        // limited in depleted voxels; only realized additions/removals are boundary
-        // fluxes, while redox transfers close at zero by construction.
+        // Declaration-driven sulfur audit. Internal pool transfers have an expected
+        // net boundary flux of exactly zero. Additions and brine replacements are
+        // computed from their authored transaction records and the PRE-event spatial
+        // state; an unexplained residual is never re-labelled as a boundary source.
         if (explicitSulfurActive) {
-            const sulfurBoundaryDelta = canonicalSulfurInventory() - spatialSulfurBefore;
-            if (sulfurBoundaryDelta > 0) {
-                this._sulfurBoundaryImportsPpm = (this._sulfurBoundaryImportsPpm || 0) + sulfurBoundaryDelta;
+            const before = preSulfurState || _spatialSulfurState(this);
+            const after = _spatialSulfurState(this);
+            let declaredImportsPpm = 0;
+            let declaredExportsPpm = 0;
+            let declaredBulkNetPpm = 0;
+            for (const declaration of sulfurDeclarations) {
+                if (declaration.kind === 'addition') {
+                    const amount = Math.max(0, Number(declaration.amountPpmPerFluid) || 0);
+                    declaredImportsPpm += amount * before.count;
+                    declaredBulkNetPpm += amount;
+                }
+                else if (declaration.kind === 'replacement') {
+                    const target = ['S_sulfide', 'S_sulfate', 'S_elemental'].reduce((sum, key) => sum + Math.max(0, Number(declaration.targets?.[key]) || 0), 0);
+                    for (const prior of before.totals) {
+                        const delta = target - prior;
+                        if (delta >= 0)
+                            declaredImportsPpm += delta;
+                        else
+                            declaredExportsPpm -= delta;
+                    }
+                    declaredBulkNetPpm += target - sulfurSystemTotalPpm(preFluid);
+                }
             }
-            else if (sulfurBoundaryDelta < 0) {
-                this._sulfurBoundaryExportsPpm = (this._sulfurBoundaryExportsPpm || 0) - sulfurBoundaryDelta;
+            const expectedNetPpm = declaredImportsPpm - declaredExportsPpm;
+            const actualNetPpm = after.totalPpm - before.totalPpm;
+            const bulkNetPpm = sulfurSystemTotalPpm(this.conditions.fluid)
+                - sulfurSystemTotalPpm(preFluid);
+            const poolChanged = ['S_sulfide', 'S_sulfate', 'S_elemental'].some(key => (Number(this.conditions.fluid[key]) || 0) !== (Number(preFluid[key]) || 0));
+            const errorPpm = actualNetPpm - expectedNetPpm;
+            const bulkDeclarationErrorPpm = bulkNetPpm - declaredBulkNetPpm;
+            const tolerancePpm = _ledgerTolerance(Math.max(before.totalPpm, after.totalPpm));
+            const closed = Math.abs(errorPpm) <= tolerancePpm
+                && Math.abs(bulkDeclarationErrorPpm) <= _ledgerTolerance(before.count ? before.totalPpm / before.count : 0);
+            if (poolChanged || sulfurDeclarations.length) {
+                const transaction = {
+                    step: Number(this.step) || 0,
+                    declarations: sulfurDeclarations,
+                    kind: sulfurDeclarations.length ? 'declared_boundary' : 'internal_transfer',
+                    beforePpm: before.totalPpm,
+                    afterPpm: after.totalPpm,
+                    declaredImportsPpm,
+                    declaredExportsPpm,
+                    expectedNetPpm,
+                    actualNetPpm,
+                    errorPpm,
+                    bulkDeclarationErrorPpm,
+                    tolerancePpm,
+                    closed,
+                };
+                (this._sulfurBoundaryTransactions ||= []).push(transaction);
+                if (!closed)
+                    (this._sulfurPropagationViolations ||= []).push(transaction);
+            }
+            this._sulfurBoundaryImportsPpm = (this._sulfurBoundaryImportsPpm || 0) + declaredImportsPpm;
+            this._sulfurBoundaryExportsPpm = (this._sulfurBoundaryExportsPpm || 0) + declaredExportsPpm;
+        }
+        // Sicily carbon audit: methane-derived carbonate and formula-balanced wall
+        // release are distinct declared sources. Internal pH/speciation changes must
+        // leave the total-DIC proxy unchanged.
+        if (this._carbonLedgerEnabled && preCarbonState) {
+            const after = _spatialCarbonState(this);
+            const count = preCarbonState.count;
+            let expectedNetPpm = 0;
+            for (const declaration of carbonDeclarations) {
+                if (declaration.kind !== 'addition')
+                    continue;
+                const spatial = Math.max(0, Number(declaration.carbonatePpmPerFluid) || 0) * count;
+                expectedNetPpm += spatial;
+                if (declaration.category === 'methane_import')
+                    this._carbonMethaneImportsPpm += spatial;
+                else if (declaration.category === 'wall_release')
+                    this._carbonWallReleasePpm += spatial;
+                else
+                    this._carbonExternalImportsPpm += spatial;
+            }
+            const actualNetPpm = after.totalPpm - preCarbonState.totalPpm;
+            const bulkNetPpm = Math.max(0, Number(this.conditions.fluid.CO3) || 0)
+                - Math.max(0, Number(preFluid.CO3) || 0);
+            const declaredBulkNetPpm = carbonDeclarations.reduce((sum, declaration) => sum + Math.max(0, Number(declaration.carbonatePpmPerFluid) || 0), 0);
+            const errorPpm = actualNetPpm - expectedNetPpm;
+            const bulkDeclarationErrorPpm = bulkNetPpm - declaredBulkNetPpm;
+            const tolerancePpm = _ledgerTolerance(Math.max(preCarbonState.totalPpm, after.totalPpm));
+            const closed = Math.abs(errorPpm) <= tolerancePpm
+                && Math.abs(bulkDeclarationErrorPpm) <= _ledgerTolerance(count ? preCarbonState.totalPpm / count : 0);
+            if (bulkNetPpm !== 0 || carbonDeclarations.length) {
+                const transaction = {
+                    step: Number(this.step) || 0,
+                    declarations: carbonDeclarations,
+                    beforePpm: preCarbonState.totalPpm,
+                    afterPpm: after.totalPpm,
+                    expectedNetPpm,
+                    actualNetPpm,
+                    errorPpm,
+                    bulkDeclarationErrorPpm,
+                    tolerancePpm,
+                    closed,
+                };
+                this._carbonSourceTransactions.push(transaction);
+                if (!closed)
+                    this._carbonPropagationViolations.push(transaction);
             }
         }
         const deltaT = this.conditions.temperature - preTemp;
@@ -59360,6 +59631,7 @@ Object.assign(VugSimulator.prototype, {
         const pre_Ca = this.conditions.fluid.Ca;
         const result = wall.dissolve(acid_strength, this.conditions.fluid);
         if (result.dissolved) {
+            declareCarbonLedgerAddition(this.conditions, 'wall_release', `${result.formula} host dissolution`, result.co3_released);
             // W-K V1b (paleo-flow scallops): weight THIS step's flow_rate by how much it eroded, so the
             // wall's scallop length records the flow it actually dissolved under (Curl 1974, L ∝ 1/v).
             // Record-only — read via wall.paleoFlow() by the RENDERER, never by the growth engine, so the
@@ -65469,24 +65741,20 @@ function _nuc_stibnite(sim) {
 // both fire). The nucleation threshold σ > 1.0 follows the same
 // canonical lower-tier gate used by pyrite/marcasite/galena.
 //
-// Substrate preference: cinnabar at Sulphur Bank often nucleates on
-// or alongside native_sulfur (both products of the H₂S + O₂ mixing
-// zone). At Almadén the substrate is typically quartz veining. The
-// nucleation handler weights these accordingly.
+// Sulphur Bank is a zoned hot-spring Hg deposit, not evidence for an
+// epitaxial native-sulfur substrate. USGS Bull. 922-L reports cinnabar
+// films on cracks in less-altered basalt, while thoroughly opalized rock
+// contains sulfur but little cinnabar; USGS Bull. 1693 likewise places
+// native sulfur above the palaeo-water table and cinnabar in sinter and
+// fracture coatings. Quartz remains a defensible physical substrate.
 function _nuc_cinnabar(sim) {
     const sigma_cb = sim.conditions.supersaturation_cinnabar();
     const existing_cb = sim.crystals.filter(c => c.mineral === 'cinnabar' && c.active);
     if (sigma_cb > MINERAL_GATES_cinnabar.sigma_crit && !sim._atNucleationCap('cinnabar')) {
         if (!existing_cb.length || (sigma_cb > 1.8 && rng.random() < 0.2)) {
             let pos = 'vug wall';
-            const active_ns = sim.crystals.filter(c => c.mineral === 'native_sulfur' && c.active);
             const active_qtz_cb = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
-            // Substrate preference: native_sulfur > quartz > wall.
-            // At Sulphur Bank, cinnabar and native_sulfur are co-deposited
-            // in the same mixing zone, so substrate association is real.
-            if (active_ns.length && rng.random() < 0.4)
-                pos = `on native_sulfur #${active_ns[0].crystal_id}`;
-            else if (active_qtz_cb.length && rng.random() < 0.3)
+            if (active_qtz_cb.length && rng.random() < 0.3)
                 pos = `on quartz #${active_qtz_cb[0].crystal_id}`;
             const c = sim.nucleate('cinnabar', pos, sigma_cb);
             sim.log.push(`  ✦ NUCLEATION: Cinnabar #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_cb.toFixed(2)}, Hg=${sim.conditions.fluid.Hg.toFixed(1)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
@@ -74613,7 +74881,7 @@ const BROTH_MAP = {
         fmt: v => String(v || 'none').replaceAll('_', ' '),
         parse: v => String(v),
         toSlider: v => String(v || 'none'),
-        valid: v => ['none', 'oxidative_interface', 'anaerobic_microbial_inherited'].includes(String(v)),
+        valid: v => ['none', 'oxidative_interface', 'oxidative_closed_fluid', 'anaerobic_microbial_inherited'].includes(String(v)),
     },
 };
 for (const [prop, control] of Object.entries(CREATIVE_CHEMISTRY_CONTROLS)) {

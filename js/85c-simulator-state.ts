@@ -24,13 +24,39 @@ function _replayStride(step: number): number {
   return 729;
 }
 
+function _canonicalSpatialFluids(sim: any): any[] {
+  const grid = sim?.wall_state?.voxelGridFor?.(sim);
+  if (grid?.voxels) return grid.voxels.map((voxel: any) => voxel?.fluid).filter(Boolean);
+  const mesh = sim?.wall_state?.meshFor?.(sim);
+  return (mesh?.cells || []).map((cell: any) => cell?.fluid).filter(Boolean);
+}
+
+function _spatialSulfurState(sim: any): any {
+  const fluids = _canonicalSpatialFluids(sim);
+  const totals = fluids.map((fluid: any) => sulfurSystemTotalPpm(fluid));
+  return { count: totals.length, totals, totalPpm: totals.reduce((a: number, b: number) => a + b, 0) };
+}
+
+function _spatialCarbonState(sim: any): any {
+  const fluids = _canonicalSpatialFluids(sim);
+  const totals = fluids.map((fluid: any) => Math.max(0, Number(fluid?.CO3) || 0));
+  return { count: totals.length, totals, totalPpm: totals.reduce((a: number, b: number) => a + b, 0) };
+}
+
+function _ledgerTolerance(value: number): number {
+  return Math.max(1e-7, Math.abs(value) * 1e-9);
+}
+
 Object.assign(VugSimulator.prototype, {
   // Phase C v1: snapshot conditions.fluid + temperature before a
 // global-mutating block (events, wall dissolution, ambient cooling).
 // Pair with _propagateGlobalDelta to apply the same delta to all
 // non-equator rings. Mirrors VugSimulator._snapshot_global in vugg.py.
 _snapshotGlobal() {
-  return [_cloneFluid(this.conditions.fluid), this.conditions.temperature];
+  const sulfurState = this.conditions.fluid.sulfurPoolsExplicit
+    ? _spatialSulfurState(this) : null;
+  const carbonState = this._carbonLedgerEnabled ? _spatialCarbonState(this) : null;
+  return [_cloneFluid(this.conditions.fluid), this.conditions.temperature, sulfurState, carbonState];
 },
 
   // Phase C v1 (comment trued 2026-06-10): apply the delta between
@@ -45,7 +71,13 @@ _snapshotGlobal() {
 // (_ringFluidMeans, review §1.4). The equator ring is aliased to
 // conditions.fluid so it already reflects the new value.
 _propagateGlobalDelta(snap) {
-  const [preFluid, preTemp] = snap;
+  const [preFluid, preTemp, preSulfurState, preCarbonState] = snap;
+  const sulfurDeclarations = Array.isArray(this.conditions._pending_sulfur_boundary_declarations)
+    ? this.conditions._pending_sulfur_boundary_declarations.slice() : [];
+  const carbonDeclarations = Array.isArray(this.conditions._pending_carbon_ledger_declarations)
+    ? this.conditions._pending_carbon_ledger_declarations.slice() : [];
+  delete this.conditions._pending_sulfur_boundary_declarations;
+  delete this.conditions._pending_carbon_ledger_declarations;
   const replaceFields = Array.isArray(this.conditions._pending_fluid_replace_fields)
     ? this.conditions._pending_fluid_replace_fields.slice()
     : [];
@@ -65,19 +97,9 @@ _propagateGlobalDelta(snap) {
   // isn't available (headless test harnesses without CavityVoxelGrid).
   const grid = this.wall_state.voxelGridFor(this);
   const mesh = this.wall_state.meshFor(this);
-  const canonicalSulfurInventory = () => {
-    const fluids = grid?.voxels
-      ? grid.voxels.map((voxel: any) => voxel?.fluid).filter(Boolean)
-      : (mesh?.cells || []).map((cell: any) => cell?.fluid).filter(Boolean);
-    return fluids.reduce(
-      (sum: number, fluid: any) => sum + sulfurSystemTotalPpm(fluid),
-      0,
-    );
-  };
   const explicitSulfurActive = !!(
     preFluid.sulfurPoolsExplicit || this.conditions.fluid.sulfurPoolsExplicit
   );
-  const spatialSulfurBefore = explicitSulfurActive ? canonicalSulfurInventory() : 0;
   if (grid && typeof grid.propagateEventDelta === 'function') {
     grid.propagateEventDelta(preFluid, this._fluidFieldNames, equatorFluid, 'all', replaceFields);
   } else {
@@ -111,16 +133,111 @@ _propagateGlobalDelta(snap) {
     const meshSulfur = this.wall_state.meshFor(this);
     if (meshSulfur && meshSulfur.cells) for (let i = 0; i < meshSulfur.cells.length; i++) copySulfurFlags(meshSulfur.cells[i] && meshSulfur.cells[i].fluid);
   }
-  // Book the ACTUAL canonical spatial inventory change, not the bulk-fluid
-  // delta times voxel count. Atomic sulfur-pool propagation may be reactant-
-  // limited in depleted voxels; only realized additions/removals are boundary
-  // fluxes, while redox transfers close at zero by construction.
+  // Declaration-driven sulfur audit. Internal pool transfers have an expected
+  // net boundary flux of exactly zero. Additions and brine replacements are
+  // computed from their authored transaction records and the PRE-event spatial
+  // state; an unexplained residual is never re-labelled as a boundary source.
   if (explicitSulfurActive) {
-    const sulfurBoundaryDelta = canonicalSulfurInventory() - spatialSulfurBefore;
-    if (sulfurBoundaryDelta > 0) {
-      this._sulfurBoundaryImportsPpm = (this._sulfurBoundaryImportsPpm || 0) + sulfurBoundaryDelta;
-    } else if (sulfurBoundaryDelta < 0) {
-      this._sulfurBoundaryExportsPpm = (this._sulfurBoundaryExportsPpm || 0) - sulfurBoundaryDelta;
+    const before = preSulfurState || _spatialSulfurState(this);
+    const after = _spatialSulfurState(this);
+    let declaredImportsPpm = 0;
+    let declaredExportsPpm = 0;
+    let declaredBulkNetPpm = 0;
+    for (const declaration of sulfurDeclarations) {
+      if (declaration.kind === 'addition') {
+        const amount = Math.max(0, Number(declaration.amountPpmPerFluid) || 0);
+        declaredImportsPpm += amount * before.count;
+        declaredBulkNetPpm += amount;
+      } else if (declaration.kind === 'replacement') {
+        const target = ['S_sulfide', 'S_sulfate', 'S_elemental'].reduce(
+          (sum, key) => sum + Math.max(0, Number(declaration.targets?.[key]) || 0),
+          0,
+        );
+        for (const prior of before.totals) {
+          const delta = target - prior;
+          if (delta >= 0) declaredImportsPpm += delta;
+          else declaredExportsPpm -= delta;
+        }
+        declaredBulkNetPpm += target - sulfurSystemTotalPpm(preFluid);
+      }
+    }
+    const expectedNetPpm = declaredImportsPpm - declaredExportsPpm;
+    const actualNetPpm = after.totalPpm - before.totalPpm;
+    const bulkNetPpm = sulfurSystemTotalPpm(this.conditions.fluid)
+      - sulfurSystemTotalPpm(preFluid);
+    const poolChanged = ['S_sulfide', 'S_sulfate', 'S_elemental'].some(
+      key => (Number(this.conditions.fluid[key]) || 0) !== (Number(preFluid[key]) || 0),
+    );
+    const errorPpm = actualNetPpm - expectedNetPpm;
+    const bulkDeclarationErrorPpm = bulkNetPpm - declaredBulkNetPpm;
+    const tolerancePpm = _ledgerTolerance(Math.max(before.totalPpm, after.totalPpm));
+    const closed = Math.abs(errorPpm) <= tolerancePpm
+      && Math.abs(bulkDeclarationErrorPpm) <= _ledgerTolerance(before.count ? before.totalPpm / before.count : 0);
+    if (poolChanged || sulfurDeclarations.length) {
+      const transaction = {
+        step: Number(this.step) || 0,
+        declarations: sulfurDeclarations,
+        kind: sulfurDeclarations.length ? 'declared_boundary' : 'internal_transfer',
+        beforePpm: before.totalPpm,
+        afterPpm: after.totalPpm,
+        declaredImportsPpm,
+        declaredExportsPpm,
+        expectedNetPpm,
+        actualNetPpm,
+        errorPpm,
+        bulkDeclarationErrorPpm,
+        tolerancePpm,
+        closed,
+      };
+      (this._sulfurBoundaryTransactions ||= []).push(transaction);
+      if (!closed) (this._sulfurPropagationViolations ||= []).push(transaction);
+    }
+    this._sulfurBoundaryImportsPpm = (this._sulfurBoundaryImportsPpm || 0) + declaredImportsPpm;
+    this._sulfurBoundaryExportsPpm = (this._sulfurBoundaryExportsPpm || 0) + declaredExportsPpm;
+  }
+
+  // Sicily carbon audit: methane-derived carbonate and formula-balanced wall
+  // release are distinct declared sources. Internal pH/speciation changes must
+  // leave the total-DIC proxy unchanged.
+  if (this._carbonLedgerEnabled && preCarbonState) {
+    const after = _spatialCarbonState(this);
+    const count = preCarbonState.count;
+    let expectedNetPpm = 0;
+    for (const declaration of carbonDeclarations) {
+      if (declaration.kind !== 'addition') continue;
+      const spatial = Math.max(0, Number(declaration.carbonatePpmPerFluid) || 0) * count;
+      expectedNetPpm += spatial;
+      if (declaration.category === 'methane_import') this._carbonMethaneImportsPpm += spatial;
+      else if (declaration.category === 'wall_release') this._carbonWallReleasePpm += spatial;
+      else this._carbonExternalImportsPpm += spatial;
+    }
+    const actualNetPpm = after.totalPpm - preCarbonState.totalPpm;
+    const bulkNetPpm = Math.max(0, Number(this.conditions.fluid.CO3) || 0)
+      - Math.max(0, Number(preFluid.CO3) || 0);
+    const declaredBulkNetPpm = carbonDeclarations.reduce(
+      (sum: number, declaration: any) => sum + Math.max(0, Number(declaration.carbonatePpmPerFluid) || 0),
+      0,
+    );
+    const errorPpm = actualNetPpm - expectedNetPpm;
+    const bulkDeclarationErrorPpm = bulkNetPpm - declaredBulkNetPpm;
+    const tolerancePpm = _ledgerTolerance(Math.max(preCarbonState.totalPpm, after.totalPpm));
+    const closed = Math.abs(errorPpm) <= tolerancePpm
+      && Math.abs(bulkDeclarationErrorPpm) <= _ledgerTolerance(count ? preCarbonState.totalPpm / count : 0);
+    if (bulkNetPpm !== 0 || carbonDeclarations.length) {
+      const transaction = {
+        step: Number(this.step) || 0,
+        declarations: carbonDeclarations,
+        beforePpm: preCarbonState.totalPpm,
+        afterPpm: after.totalPpm,
+        expectedNetPpm,
+        actualNetPpm,
+        errorPpm,
+        bulkDeclarationErrorPpm,
+        tolerancePpm,
+        closed,
+      };
+      this._carbonSourceTransactions.push(transaction);
+      if (!closed) this._carbonPropagationViolations.push(transaction);
     }
   }
   const deltaT = this.conditions.temperature - preTemp;

@@ -45,13 +45,17 @@ describe('Sulphur Bank Mine — native_sulfur scenario pins (v79)', () => {
         .toBeGreaterThan(1.5);
     });
 
-    it.each([42, 1, 7])('seed %d: at least one active native_sulfur crystal', (seed) => {
+    it.each([42, 1, 7])('seed %d: at least one retained native_sulfur crystal', (seed) => {
       const { sim } = runFullScenario(seed);
-      const activeNS = sim.crystals.filter((c: any) =>
-        c.mineral === 'native_sulfur' && c.active,
+      // Enclosure by a later crystal makes a specimen inactive without
+      // dissolving it. Pin retained solid sulfur, not engine eligibility.
+      const retainedNS = sim.crystals.filter((c: any) =>
+          c.mineral === 'native_sulfur'
+          && !c.dissolved
+          && c.total_growth_um > 0,
       );
-      expect(activeNS.length,
-        `seed ${seed}: no active native_sulfur crystal`)
+      expect(retainedNS.length,
+        `seed ${seed}: no retained native_sulfur crystal`)
         .toBeGreaterThanOrEqual(1);
     });
 

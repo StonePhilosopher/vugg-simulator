@@ -29,6 +29,9 @@ function event_sabkha_flood(c) {
   c.fluid.salinity = 35;
   c.fluid.concentration = 1;
   syncExplicitSulfurTotal(c.fluid);
+  declareSulfurBoundaryReplacement(c, 'sabkha tidal seawater replacement', {
+    sulfide: 0, sulfate: 2700, elemental: 0,
+  });
   c.fluid.pH = 8.0;
   c.flow_rate = 1.5;
   return 'Flood pulse: low-alkalinity tidal seawater enters the lagoon. CO₃ crashes from sabkha brine levels back to ~50 ppm. Dolomite supersaturation drops below 1 — the disordered Ca/Mg surface layer detaches preferentially (Kim 2023 etch).';
@@ -52,6 +55,9 @@ function event_sabkha_evap(c) {
   c.fluid.salinity = 250;
   c.fluid.concentration = 7.1;
   syncExplicitSulfurTotal(c.fluid);
+  declareSulfurBoundaryReplacement(c, 'sabkha evaporative-brine replacement', {
+    sulfide: 0, sulfate: 9000, elemental: 0,
+  });
   c.fluid.pH = 8.4;
   c.flow_rate = 0.1;
   c.temperature = 32;

@@ -245,7 +245,7 @@ const BROTH_MAP: Record<string, any> = {
     fmt: v => String(v || 'none').replaceAll('_', ' '),
     parse: v => String(v),
     toSlider: v => String(v || 'none'),
-    valid: v => ['none', 'oxidative_interface', 'anaerobic_microbial_inherited'].includes(String(v)),
+    valid: v => ['none', 'oxidative_interface', 'oxidative_closed_fluid', 'anaerobic_microbial_inherited'].includes(String(v)),
   },
 };
 

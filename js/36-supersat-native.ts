@@ -195,7 +195,7 @@ Object.assign(VugConditions.prototype, {
   const elementalS = elementalSulfurAvailablePpm(this.fluid);
   if (elementalS < g.fluid_min!.S_elemental) return 0;
   const pathway = this.fluid.nativeSulfurPathway;
-  if (pathway === 'oxidative_interface') {
+  if (pathway === 'oxidative_interface' || pathway === 'oxidative_closed_fluid') {
     if (!nativeRedoxWindow(this.fluid, g.O2_min!, g.O2_max!)) return 0;
   } else if (pathway === 'anaerobic_microbial_inherited') {
     if ((Number(this.fluid.O2) || 0) > 0.1) return 0;
@@ -209,7 +209,7 @@ Object.assign(VugConditions.prototype, {
   // same threshold so a pool that just clears the gate is not immediately
   // pushed back below nucleation by an unrelated legacy-total-S divisor.
   const s_f = Math.min(elementalS / 100.0, 4.0);
-  const eh_f = pathway === 'oxidative_interface'
+  const eh_f = (pathway === 'oxidative_interface' || pathway === 'oxidative_closed_fluid')
     ? nativeRedoxTent(this.fluid, 0.4, 2.0, 0.4)
     : Math.max(0.8, 1.0 - (Number(this.fluid.O2) || 0) * 2.0);
   // Bimodal pH factor: two regime peaks, valley between them.

@@ -12425,7 +12425,25 @@
 //       concentrations and crosses saturation only during the dry phase.
 //       Creative setup and live Na/Cl ranges expose those natural evaporite
 //       concentrations without clipping.
-const SIM_VERSION = 244;
+// v245 — HOSTILE-REVIEW ROUND 9 DECLARED BOUNDARIES + OXIDATION CLOSURE
+//       (2026-08-06). Native-sulfur oxidation is now exercised through the
+//       production engine in both open-interface and closed-fluid modes: open
+//       reactions declare their O2 import, closed reactions stop at the
+//       available O2 inventory, sulfur closes between S0 and sulfate, and H+
+//       yield is labelled diagnostic because the simulator does not conserve
+//       a hydrogen inventory or mutate pH from that yield. Tellurium no longer
+//       inherits sulfur's oxidative etch mode. Spatial sulfur propagation is
+//       declaration-driven: authored additions and replacements are tested
+//       against their declared amount or target, while unannounced residuals
+//       fail closed instead of being laundered into inferred boundary flux.
+//       Sulphur Bank's H2S recharge and Sicily/sabkha sulfur events declare
+//       their sources explicitly. Sulphur Bank cinnabar is no longer assigned
+//       an invented native-sulfur substrate: the documented vertical zoning
+//       is represented as association, not epitaxy. Sicily's SD-AOM carbon is tracked alongside
+//       wall-carbon release in a whole-scenario carbon ledger; its carbonate-
+//       buffer events now repartition existing dissolved inorganic carbon and
+//       adjust pH without inventing carbonate mass.
+const SIM_VERSION = 245;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12442,9 +12460,11 @@ const MODEL_DIGEST = [
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
   'silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1',
   'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
-  'sulfur-ledger:sulfide+sulfate+elemental+atomic-spatial+pathway-gated-v2',
+  'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3',
+  'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
+  'sulphur-bank-HgS:zoned-association-not-S0-substrate-v1',
   'wall-dissolution:formula-stoich-limestone+dolomite-v1',
-  'sicily-SDAOM:methane-1C1S+conditional-calcite-v1',
+  'sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2',
   'calcite-Mn:manganocalcite-excess<1.2-v1',
   'CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1',
   'growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6',

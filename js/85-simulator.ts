@@ -185,8 +185,8 @@ class VugSimulator {
     this.wall_state.voxelGridFor(this);
     // Explicit-sulfur conservation baseline. Canonical voxel fluids are the
     // aqueous inventory; accepted growth zones become the solid inventory.
-    // Event/movement deltas are recorded as boundary fluxes by
-    // _propagateGlobalDelta, allowing an audit at every completed step.
+    // _propagateGlobalDelta books only authored boundary declarations and
+    // records an unexplained internal residual as a violation.
     const sulfurGrid = this.wall_state.voxelGridFor(this);
     this._sulfurLedgerInitialPpm = this.conditions.fluid.sulfurPoolsExplicit
       ? sulfurGrid.voxels.reduce(
@@ -196,7 +196,26 @@ class VugSimulator {
       : 0;
     this._sulfurBoundaryImportsPpm = 0;
     this._sulfurBoundaryExportsPpm = 0;
+    this._sulfurBoundaryTransactions = [];
+    this._sulfurPropagationViolations = [];
     this._sulfurLedgerHistory = [];
+    // Sicily carries a strict whole-scenario carbon ledger. Methane-derived
+    // SD-AOM carbon, formula-balanced wall release, fluid DIC, and booked
+    // carbonate solids remain separate terms.
+    this._carbonLedgerEnabled = this.conditions?._scenario?.id === 'sicily_solfifera';
+    this._carbonLedgerInitialPpm = this._carbonLedgerEnabled
+      ? sulfurGrid.voxels.reduce(
+        (sum, voxel) => sum + Math.max(0, Number(voxel?.fluid?.CO3) || 0),
+        0,
+      )
+      : 0;
+    this._carbonMethaneImportsPpm = 0;
+    this._carbonWallReleasePpm = 0;
+    this._carbonExternalImportsPpm = 0;
+    this._carbonExportsPpm = 0;
+    this._carbonSourceTransactions = [];
+    this._carbonPropagationViolations = [];
+    this._carbonLedgerHistory = [];
     // FLUID-SOURCE SPOTS (js/85k, PROPOSAL §10) Phase 2a — seed the spot set off
     // the cavity seed now that the mesh (→ cell count) exists. Uses a DEDICATED
     // _mulberry32(shape_seed ^ SPOTS_SALT) stream, independent of the shared rng,

@@ -178,6 +178,12 @@ Object.assign(VugSimulator.prototype, {
   const result = wall.dissolve(acid_strength, this.conditions.fluid);
 
   if (result.dissolved) {
+    declareCarbonLedgerAddition(
+      this.conditions,
+      'wall_release',
+      `${result.formula} host dissolution`,
+      result.co3_released,
+    );
     // W-K V1b (paleo-flow scallops): weight THIS step's flow_rate by how much it eroded, so the
     // wall's scallop length records the flow it actually dissolved under (Curl 1974, L ∝ 1/v).
     // Record-only — read via wall.paleoFlow() by the RENDERER, never by the growth engine, so the

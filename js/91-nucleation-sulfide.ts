@@ -198,23 +198,20 @@ function _nuc_stibnite(sim) {
 // both fire). The nucleation threshold σ > 1.0 follows the same
 // canonical lower-tier gate used by pyrite/marcasite/galena.
 //
-// Substrate preference: cinnabar at Sulphur Bank often nucleates on
-// or alongside native_sulfur (both products of the H₂S + O₂ mixing
-// zone). At Almadén the substrate is typically quartz veining. The
-// nucleation handler weights these accordingly.
+// Sulphur Bank is a zoned hot-spring Hg deposit, not evidence for an
+// epitaxial native-sulfur substrate. USGS Bull. 922-L reports cinnabar
+// films on cracks in less-altered basalt, while thoroughly opalized rock
+// contains sulfur but little cinnabar; USGS Bull. 1693 likewise places
+// native sulfur above the palaeo-water table and cinnabar in sinter and
+// fracture coatings. Quartz remains a defensible physical substrate.
 function _nuc_cinnabar(sim) {
   const sigma_cb = sim.conditions.supersaturation_cinnabar();
   const existing_cb = sim.crystals.filter(c => c.mineral === 'cinnabar' && c.active);
   if (sigma_cb > MINERAL_GATES_cinnabar.sigma_crit && !sim._atNucleationCap('cinnabar')) {
     if (!existing_cb.length || (sigma_cb > 1.8 && rng.random() < 0.2)) {
       let pos = 'vug wall';
-      const active_ns = sim.crystals.filter(c => c.mineral === 'native_sulfur' && c.active);
       const active_qtz_cb = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
-      // Substrate preference: native_sulfur > quartz > wall.
-      // At Sulphur Bank, cinnabar and native_sulfur are co-deposited
-      // in the same mixing zone, so substrate association is real.
-      if (active_ns.length && rng.random() < 0.4) pos = `on native_sulfur #${active_ns[0].crystal_id}`;
-      else if (active_qtz_cb.length && rng.random() < 0.3) pos = `on quartz #${active_qtz_cb[0].crystal_id}`;
+      if (active_qtz_cb.length && rng.random() < 0.3) pos = `on quartz #${active_qtz_cb[0].crystal_id}`;
       const c = sim.nucleate('cinnabar', pos, sigma_cb);
       sim.log.push(`  ✦ NUCLEATION: Cinnabar #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_cb.toFixed(2)}, Hg=${sim.conditions.fluid.Hg.toFixed(1)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
     }

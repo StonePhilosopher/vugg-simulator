@@ -656,6 +656,65 @@ function addSulfurToPool(fluid: any, pool: 'sulfide' | 'sulfate' | 'elemental', 
   return addition;
 }
 
+// Boundary declarations are authored reaction records. The spatial
+// propagation audit consumes them after an event is broadcast; it never
+// infers a boundary source from an unexplained inventory residual.
+function declareSulfurBoundaryAddition(
+  conditions: any,
+  pool: 'sulfide' | 'sulfate' | 'elemental',
+  ppm: number,
+  source: string,
+): number {
+  if (!conditions?.fluid) return 0;
+  const addition = addSulfurToPool(
+    conditions.fluid,
+    pool,
+    ppm,
+    Number(conditions.temperature) || 25,
+  );
+  (conditions._pending_sulfur_boundary_declarations ||= []).push({
+    kind: 'addition',
+    source: String(source || 'declared sulfur source'),
+    pool,
+    amountPpmPerFluid: addition,
+  });
+  return addition;
+}
+
+function declareSulfurBoundaryReplacement(
+  conditions: any,
+  source: string,
+  targets: { sulfide?: number; sulfate?: number; elemental?: number },
+): void {
+  if (!conditions) return;
+  (conditions._pending_sulfur_boundary_declarations ||= []).push({
+    kind: 'replacement',
+    source: String(source || 'declared sulfur-fluid replacement'),
+    targets: {
+      S_sulfide: Math.max(0, Number(targets?.sulfide) || 0),
+      S_sulfate: Math.max(0, Number(targets?.sulfate) || 0),
+      S_elemental: Math.max(0, Number(targets?.elemental) || 0),
+    },
+  });
+}
+
+function declareCarbonLedgerAddition(
+  conditions: any,
+  category: 'methane_import' | 'wall_release' | 'external_import',
+  source: string,
+  carbonatePpm: number,
+): number {
+  if (!conditions) return 0;
+  const addition = Math.max(0, Number(carbonatePpm) || 0);
+  (conditions._pending_carbon_ledger_declarations ||= []).push({
+    kind: 'addition',
+    category,
+    source: String(source || category),
+    carbonatePpmPerFluid: addition,
+  });
+  return addition;
+}
+
 function debitSulfurPool(fluid: any, pool: 'sulfide' | 'sulfate' | 'elemental', ppm: number): number {
   const demand = Math.max(0, Number(ppm) || 0);
   if (!fluid?.sulfurPoolsExplicit) {

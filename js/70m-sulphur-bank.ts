@@ -33,7 +33,7 @@ function event_sulphur_bank_h2s_recharge(c) {
   // (recovery = 0.1 × min(flow/1.0, 2.0) per step). Higher
   // flow_rates would push pH up faster than the recharge pushes it
   // down, defeating the synproportionation window.
-  addSulfurToPool(c.fluid, 'sulfide', 150, c.temperature);
+  declareSulfurBoundaryAddition(c, 'sulfide', 150, 'Sulphur Bank deep H2S recharge');
   c.fluid.Fe += 5;             // minor Fe co-pulse (pyrite/marcasite contribution)
   c.fluid.As += 2;             // trace As (Sulphur Bank ores carry minor arsenopyrite/realgar)
   c.fluid.pH = Math.max(1.5, c.fluid.pH - 1.0);  // hard acidification — H₂S overwhelms recovery

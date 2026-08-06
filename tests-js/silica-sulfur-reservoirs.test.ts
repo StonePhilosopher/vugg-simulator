@@ -12,6 +12,8 @@ declare const applyStoichiometricGrowthBudget: any;
 declare const bookedSolidSulfurPpm: any;
 declare const simulatorSulfurLedgerSnapshot: any;
 declare const GrowthZone: any;
+declare const Crystal: any;
+declare const grow_native_sulfur: any;
 
 describe('SIM 243 silica phase identity', () => {
   it('Mammoth travertine does not form silica from 54 ppm at seed 42', () => {
@@ -123,37 +125,110 @@ describe('SIM 243 explicit sulfur reservoirs', () => {
     expect(fluid.S_elemental).toBeLessThan(before.elemental);
   });
 
-  it('oxidative native-sulfur dissolution transfers booked S0 to sulfate with an oxygen ledger', () => {
+  function productionNativeSulfurOxidation(openBoundary: boolean) {
     const fluid = new FluidChemistry({
-      S: 0, S_sulfide: 0, S_sulfate: 0, S_elemental: 100,
-      sulfurPoolsExplicit: true, nativeSulfurPathway: 'oxidative_interface',
-      O2: 0.4, pH: 2.5,
+      S: 0, S_sulfide: 0, S_sulfate: 0, S_elemental: 400,
+      sulfurPoolsExplicit: true,
+      nativeSulfurPathway: openBoundary
+        ? 'oxidative_interface' : 'anaerobic_microbial_inherited',
+      O2: openBoundary ? 0.4 : 0.02,
+      pH: openBoundary ? 2.5 : 6.0,
     });
-    const conditions = { fluid };
-    const crystal = { mineral: 'native_sulfur', zones: [] };
-    const growth = new GrowthZone({
-      step: 1, temperature: 50, thickness_um: 2, growth_rate: 2,
-    });
-    applyStoichiometricGrowthBudget(crystal, growth, conditions);
-    crystal.zones.push(growth);
+    const conditions = new VugConditions({ temperature: 50, fluid });
+    const crystal = new Crystal({ mineral: 'native_sulfur', crystal_id: 1 });
+    let step = 1;
+    while (crystal.total_growth_um < 35 && step < 30) {
+      const growth = grow_native_sulfur(crystal, conditions, step++);
+      expect(growth).toBeTruthy();
+      growth._time_scaled = true;
+      applyStoichiometricGrowthBudget(crystal, growth, conditions);
+      crystal.add_zone(growth);
+    }
+    expect(crystal.total_growth_um).toBeGreaterThanOrEqual(35);
     const beforeSystem = sulfurSystemTotalPpm(fluid) + bookedSolidSulfurPpm([crystal]);
     const sulfateBefore = fluid.S_sulfate;
+    const elementalBefore = fluid.S_elemental;
+    const solidBefore = bookedSolidSulfurPpm([crystal]);
 
-    const etch = new GrowthZone({
-      step: 2, temperature: 50, thickness_um: -1, growth_rate: -1,
-      dissolutionMode: 'oxidative_to_sulfate',
-    });
+    // Raise O2 into the oxidative-etch field; the production engine, not the
+    // test fixture, must author the dissolution mode.
+    if (!openBoundary) fluid.nativeSulfurPathway = 'oxidative_closed_fluid';
+    fluid.O2 = openBoundary ? 1.1 : 0.002;
+    fluid.pH = 7.0;
+    const etch = grow_native_sulfur(crystal, conditions, step);
+    expect(etch).toBeTruthy();
+    expect(etch.dissolutionMode).toBe('oxidative_to_sulfate');
+    etch._time_scaled = true;
     applyStoichiometricGrowthBudget(crystal, etch, conditions);
-    crystal.zones.push(etch);
+    crystal.add_zone(etch);
 
     expect(fluid.S_sulfate).toBeGreaterThan(sulfateBefore);
-    expect(etch._sulfur_oxidation.sulfurElementalRemainderPpm).toBeCloseTo(0, 12);
+    expect(bookedSolidSulfurPpm([crystal])).toBeLessThan(solidBefore);
     expect(etch._sulfur_oxidation.oxygenBeforePpm
       + etch._sulfur_oxidation.oxygenImportedPpm
       - etch._sulfur_oxidation.oxygenConsumedPpm)
       .toBeCloseTo(etch._sulfur_oxidation.oxygenAfterPpm, 12);
     expect(sulfurSystemTotalPpm(fluid) + bookedSolidSulfurPpm([crystal]))
       .toBeCloseTo(beforeSystem, 10);
+    expect(etch._sulfur_oxidation.protonAccounting)
+      .toBe('diagnostic_only_no_conserved_hydrogen_inventory');
+    expect(etch._sulfur_oxidation.fluidPhUpdated).toBe(false);
+    return { fluid, crystal, etch, elementalBefore };
+  }
+
+  it('production native-sulfur etch transfers all returned S0 to sulfate at an open interface', () => {
+    const { fluid, etch, elementalBefore } = productionNativeSulfurOxidation(true);
+    expect(etch._sulfur_oxidation.openBoundary).toBe(true);
+    expect(etch._sulfur_oxidation.oxygenImportedPpm)
+      .toBeCloseTo(etch._sulfur_oxidation.oxygenConsumedPpm, 12);
+    expect(etch._sulfur_oxidation.sulfurElementalRemainderPpm).toBeCloseTo(0, 12);
+    expect(fluid.S_elemental).toBeCloseTo(elementalBefore, 12);
+  });
+
+  it('production native-sulfur etch is oxygen-limited in a closed fluid', () => {
+    const { fluid, etch, elementalBefore } = productionNativeSulfurOxidation(false);
+    expect(etch._sulfur_oxidation.openBoundary).toBe(false);
+    expect(etch._sulfur_oxidation.oxygenImportedPpm).toBe(0);
+    expect(etch._sulfur_oxidation.sulfurElementalRemainderPpm).toBeGreaterThan(0);
+    expect(fluid.S_elemental).toBeGreaterThan(elementalBefore);
+    expect(fluid.O2).toBeCloseTo(0, 12);
+  });
+
+  it('rejects an undeclared internal sulfur creation instead of booking a boundary import', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.sulphur_bank();
+    const sim = new VugSimulator(conditions, events);
+    const snap = sim._snapshotGlobal();
+    sim.conditions.fluid.S_elemental += 10;
+    sim._propagateGlobalDelta(snap);
+    const transaction = sim._sulfurBoundaryTransactions.at(-1);
+    expect(transaction.kind).toBe('internal_transfer');
+    expect(transaction.declaredImportsPpm).toBe(0);
+    expect(transaction.actualNetPpm).toBeGreaterThan(0);
+    expect(transaction.closed).toBe(false);
+    expect(simulatorSulfurLedgerSnapshot(sim).closed).toBe(false);
+  });
+
+  it('books H2S recharge from its declaration and oxidation as zero-boundary transfer', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.sulphur_bank();
+    const sim = new VugSimulator(conditions, events);
+    for (let i = 0; i < 10; i++) sim.run_step();
+    const recharge = sim._sulfurBoundaryTransactions.at(-1);
+    expect(recharge.declarations[0].source).toContain('H2S recharge');
+    expect(recharge.declaredImportsPpm).toBeCloseTo(
+      150 * sim.wall_state.voxelGridFor(sim).voxels.length,
+      8,
+    );
+    expect(recharge.actualNetPpm).toBeCloseTo(recharge.expectedNetPpm, 8);
+    expect(recharge.closed).toBe(true);
+
+    for (let i = 10; i < 20; i++) sim.run_step();
+    const oxidation = sim._sulfurBoundaryTransactions.at(-1);
+    expect(oxidation.kind).toBe('internal_transfer');
+    expect(oxidation.expectedNetPpm).toBe(0);
+    expect(oxidation.actualNetPpm).toBeCloseTo(0, 8);
+    expect(oxidation.closed).toBe(true);
   });
 
   it('closes the full Sulphur Bank sulfur ledger at every step and grows metacinnabar', () => {

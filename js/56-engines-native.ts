@@ -20,7 +20,6 @@ function grow_native_tellurium(crystal, conditions, step) {
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
-        dissolutionMode: 'oxidative_to_sulfate',
         note: `oxidative dissolution (O₂=${conditions.fluid.O2.toFixed(2)}) — Te oxidizing to TeO₃²⁻ tellurite`,
       });
     }
@@ -67,13 +66,24 @@ function grow_native_sulfur(crystal, conditions, step) {
   const sigma = conditions.supersaturation_native_sulfur();
 
   if (sigma < 1.0) {
-    if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.9) {
-      crystal.dissolved = true;
-      const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.10);
+    // Oxidative etching begins in a genuinely microoxic fluid. The old
+    // O2>0.9 gate exceeded the oxygen needed by the largest calibrated shell,
+    // making the closed-fluid oxygen-limited branch mathematically unreachable.
+    // Sicily remains protected by its anaerobic pathway; an open hot-spring
+    // interface or an explicitly closed oxidative fluid can enter this route.
+    const oxidativePathway = conditions.fluid.nativeSulfurPathway === 'oxidative_interface'
+      || conditions.fluid.nativeSulfurPathway === 'oxidative_closed_fluid';
+    if (crystal.total_growth_um > 5 && oxidativePathway && conditions.fluid.O2 > 0.001) {
+      // Engine zones are geological-clock candidates and the accepted path
+      // multiplies them by timeScale. Divide here so the landed shell—not the
+      // pre-clock candidate—removes at most 3 µm or 10% of the crystal.
+      const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.10) / timeScale;
+      crystal.dissolved = dissolved_um * timeScale >= crystal.total_growth_um;
       // Phase 1e: S credit handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.native_sulfur.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        dissolutionMode: 'oxidative_to_sulfate',
         note: `oxidative dissolution (O₂=${conditions.fluid.O2.toFixed(2)}) — S oxidizing to SO₄²⁻`,
       });
     }

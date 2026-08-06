@@ -802,7 +802,12 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
         oxygenImportedPpm: oxygenImported,
         oxygenConsumedPpm: oxygenConsumed,
         oxygenAfterPpm: fluid.O2,
-        protonsProducedMmolKg: 2 * sulfurOxidized / 32.07,
+        // pH is an activity proxy and the simulator has no conserved H/DIC
+        // acidity inventory. Report the reaction extent honestly as a
+        // diagnostic rather than pretending those protons were booked.
+        diagnosticProtonsProducedMmolKg: 2 * sulfurOxidized / 32.07,
+        protonAccounting: 'diagnostic_only_no_conserved_hydrogen_inventory',
+        fluidPhUpdated: false,
         openBoundary,
       };
       (fluid._sulfur_oxidation_ledger ||= []).push(reaction);
@@ -946,6 +951,20 @@ function bookedSolidSulfurPpm(crystals: any[]): number {
   return total;
 }
 
+function bookedSolidCarbonPpm(crystals: any[]): number {
+  let total = 0;
+  for (const crystal of (crystals || [])) {
+    for (const zone of (crystal?.zones || [])) {
+      if (!(zone && zone.thickness_um > 0)) continue;
+      const remaining = Number.isFinite(Number(zone._remaining_solid_um))
+        ? Math.max(0, Number(zone._remaining_solid_um))
+        : Math.max(0, Number(zone.thickness_um) || 0);
+      total += remaining * Math.max(0, Number(zone._budget_inventory_per_um?.CO3) || 0);
+    }
+  }
+  return total;
+}
+
 // Whole-simulator sulfur audit in the same ppm-equivalent units used by the
 // accepted-zone ledger. Canonical voxel fluids plus booked solid inventory
 // must equal the constructor inventory plus declared boundary imports minus
@@ -966,6 +985,9 @@ function simulatorSulfurLedgerSnapshot(sim: any): any {
   const expectedPpm = initialPpm + importsPpm - exportsPpm;
   const actualPpm = fluidPpm + solidPpm;
   const errorPpm = actualPpm - expectedPpm;
+  const propagationViolations = Array.isArray(sim?._sulfurPropagationViolations)
+    ? sim._sulfurPropagationViolations.length : 0;
+  const tolerancePpm = Math.max(1e-7, Math.abs(expectedPpm) * 1e-9);
   return {
     step: Number(sim?.step) || 0,
     initialPpm,
@@ -976,7 +998,52 @@ function simulatorSulfurLedgerSnapshot(sim: any): any {
     expectedPpm,
     actualPpm,
     errorPpm,
-    tolerancePpm: Math.max(1e-7, Math.abs(expectedPpm) * 1e-9),
-    closed: Math.abs(errorPpm) <= Math.max(1e-7, Math.abs(expectedPpm) * 1e-9),
+    tolerancePpm,
+    propagationViolations,
+    closed: Math.abs(errorPpm) <= tolerancePpm && propagationViolations === 0,
+  };
+}
+
+// Whole-scenario Sicily carbon audit. CO3 is the simulator's total-DIC proxy;
+// methane SD-AOM and host dissolution are declared sources, while accepted
+// carbonate growth is the booked solid sink. pH/speciation changes contribute
+// no carbon term.
+function simulatorCarbonLedgerSnapshot(sim: any): any {
+  const grid = sim?.wall_state?.voxelGridFor?.(sim);
+  const fluids = grid?.voxels
+    ? grid.voxels.map((voxel: any) => voxel?.fluid).filter(Boolean)
+    : [sim?.conditions?.fluid].filter(Boolean);
+  const fluidPpm = fluids.reduce(
+    (sum: number, fluid: any) => sum + Math.max(0, Number(fluid?.CO3) || 0),
+    0,
+  );
+  const solidPpm = bookedSolidCarbonPpm(sim?.crystals || []);
+  const initialPpm = Math.max(0, Number(sim?._carbonLedgerInitialPpm) || 0);
+  const methaneImportsPpm = Math.max(0, Number(sim?._carbonMethaneImportsPpm) || 0);
+  const wallReleasePpm = Math.max(0, Number(sim?._carbonWallReleasePpm) || 0);
+  const externalImportsPpm = Math.max(0, Number(sim?._carbonExternalImportsPpm) || 0);
+  const exportsPpm = Math.max(0, Number(sim?._carbonExportsPpm) || 0);
+  const expectedPpm = initialPpm + methaneImportsPpm + wallReleasePpm
+    + externalImportsPpm - exportsPpm;
+  const actualPpm = fluidPpm + solidPpm;
+  const errorPpm = actualPpm - expectedPpm;
+  const tolerancePpm = Math.max(1e-7, Math.abs(expectedPpm) * 1e-9);
+  const propagationViolations = Array.isArray(sim?._carbonPropagationViolations)
+    ? sim._carbonPropagationViolations.length : 0;
+  return {
+    step: Number(sim?.step) || 0,
+    initialPpm,
+    methaneImportsPpm,
+    wallReleasePpm,
+    externalImportsPpm,
+    exportsPpm,
+    fluidPpm,
+    solidPpm,
+    expectedPpm,
+    actualPpm,
+    errorPpm,
+    tolerancePpm,
+    propagationViolations,
+    closed: Math.abs(errorPpm) <= tolerancePpm && propagationViolations === 0,
   };
 }

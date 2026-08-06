@@ -3889,7 +3889,7 @@
         { "step":  25, "type": "sicily_bsr_reduction",             "name": "BSR Pulse #1",              "description": "Anaerobic microbes reduce gypsum-derived sulfate" },
         { "step":  50, "type": "sicily_gypsum_dissolution",        "name": "Gypsum Pulse #2",          "description": "Renewed gypsum dissolution upgradient" },
         { "step":  60, "type": "sicily_bsr_reduction",             "name": "BSR Pulse #2",              "description": "Sulfate reduction raises carbonate alkalinity" },
-        { "step":  85, "type": "sicily_carbonate_buffer",          "name": "Carbonate Buffer Lock",    "description": "BSR-generated H₂CO₃ pins pH at 6.0" },
+        { "step":  85, "type": "sicily_carbonate_buffer",          "name": "Carbonate Buffer Lock",    "description": "Existing DIC repartitions as carbonate buffering pins pH at 6.0" },
         { "step": 105, "type": "sicily_gypsum_dissolution",        "name": "Gypsum Pulse #3",          "description": "Continued upgradient gypsum dissolution" },
         { "step": 115, "type": "sicily_inherited_sulfur_recharge", "name": "Inherited S° Recharge",    "description": "Anoxic porewater imports previously formed microbial S°" },
         { "step": 140, "type": "sicily_carbonate_buffer",          "name": "Mid-Run Buffer Refresh",   "description": "Carbonate buffer maintains pH 6.0" },

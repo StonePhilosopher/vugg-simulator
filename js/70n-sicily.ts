@@ -39,7 +39,7 @@ function event_sicily_gypsum_dissolution(c) {
   // dissolution (saturating
   // toward 7.5 the calcite-gypsum equilibrium point).
   c.fluid.Ca += 200;
-  addSulfurToPool(c.fluid, 'sulfate', 100, c.temperature);
+  declareSulfurBoundaryAddition(c, 'sulfate', 100, 'upgradient Messinian gypsum dissolution');
   c.fluid.Sr += 5;             // Messinian gypsum carries 1-3% Sr; celestine signature
   c.fluid.pH = Math.min(6.5, c.fluid.pH + 0.3);
   c.flow_rate = 0.4;
@@ -59,6 +59,12 @@ function event_sicily_bsr_reduction(c) {
     source: 'methane',
     carbonateMolesPerSulfur: 1,
   });
+  declareCarbonLedgerAddition(
+    c,
+    'methane_import',
+    'methane carbon consumed by sulfate-driven anaerobic oxidation',
+    reaction.carbonateAddedPpm,
+  );
   c.fluid.O2 = Math.min(c.fluid.O2, 0.02);
   c.fluid.Eh = ehFromO2(c.fluid.O2);
   c.flow_rate = 0.2;
@@ -66,20 +72,18 @@ function event_sicily_bsr_reduction(c) {
 }
 
 function event_sicily_carbonate_buffer(c) {
-  // BSR-generated H₂CO₃ + carbonate-buffered porewater stabilizes pH
-  // around 6.0 — the peak of the engine's BSR-mode ph_f factor.
-  // CO₃ accumulates from BSR's organic-C oxidation; Ca holds steady
-  // from gypsum dissolution.
-  c.fluid.CO3 += 60;
+  // The already-ledgered DIC pool repartitions as the calcite-bearing pore
+  // buffers acidity. CO3 is the simulator's total-DIC proxy, so a pH/speciation
+  // reset must not create another carbon source.
   c.fluid.pH = 6.0;
   c.flow_rate = 0.2;
-  return `Carbonate-buffer reaction testimony: DIC rises to ${c.fluid.CO3.toFixed(0)} ppm and pH resets to 6.0. This opens the carbonate route, but the authoritative calcite saturation and kinetic gates still decide whether cement forms.`;
+  return `Carbonate-buffer reaction testimony: the existing ${c.fluid.CO3.toFixed(0)} ppm DIC inventory repartitions as pH resets to 6.0; no carbon is created by this speciation step. The authoritative calcite saturation and kinetic gates still decide whether cement forms.`;
 }
 
 function event_sicily_inherited_sulfur_recharge(c) {
   // Recharge imports already formed elemental sulfur from the surrounding
   // anoxic, sulfur-bearing carbonate reservoir.
-  addSulfurToPool(c.fluid, 'elemental', 80, c.temperature);
+  declareSulfurBoundaryAddition(c, 'elemental', 80, 'inherited microbial sulfur-bearing porewater');
   c.fluid.O2 = Math.min(c.fluid.O2, 0.02);
   c.fluid.Eh = ehFromO2(c.fluid.O2);
   c.flow_rate = 0.3;

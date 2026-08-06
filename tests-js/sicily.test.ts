@@ -24,6 +24,7 @@ declare const SCENARIOS: any;
 declare const setSeed: any;
 declare const carbonateSaturationIndex: any;
 declare const simulatorSulfurLedgerSnapshot: any;
+declare const simulatorCarbonLedgerSnapshot: any;
 
 function runFullScenario(seed: number) {
   setSeed(seed);
@@ -272,8 +273,10 @@ describe('Sicilian Solfifera Series — sedimentary BSR native_sulfur (v80)', ()
       const { conditions, events } = SCENARIOS['sicily_solfifera']();
       const sim = new VugSimulator(conditions, events);
       for (let i = 0; i < 84; i++) sim.run_step();
+      const carbonBefore = sim.conditions.fluid.CO3;
       sim.run_step();   // step 85 — carbonate_buffer
       expect(sim.conditions.fluid.pH).toBeCloseTo(6.0, 1);
+      expect(sim.conditions.fluid.CO3).toBeCloseTo(carbonBefore, 12);
     });
 
     it('reports reaction testimony without asserting a mineral outcome', () => {
@@ -300,6 +303,28 @@ describe('Sicilian Solfifera Series — sedimentary BSR native_sulfur (v80)', ()
           `step ${ledger.step}: sulfur error ${ledger.errorPpm} exceeds ${ledger.tolerancePpm}`,
         ).toBe(true);
       }
+    });
+
+    it('closes the whole-scenario carbon ledger with methane and wall sources separated', { timeout: 120000 }, () => {
+      setSeed(42);
+      const { conditions, events, defaultSteps } = SCENARIOS.sicily_solfifera();
+      const sim = new VugSimulator(conditions, events);
+      for (let i = 0; i < (defaultSteps ?? 200); i++) {
+        sim.run_step();
+        const ledger = simulatorCarbonLedgerSnapshot(sim);
+        expect(
+          ledger.closed,
+          `step ${ledger.step}: carbon error ${ledger.errorPpm} exceeds ${ledger.tolerancePpm}`,
+        ).toBe(true);
+      }
+      const ledger = simulatorCarbonLedgerSnapshot(sim);
+      expect(ledger.methaneImportsPpm).toBeGreaterThan(0);
+      expect(ledger.externalImportsPpm).toBe(0);
+      expect(ledger.propagationViolations).toBe(0);
+      expect(sim._carbonSourceTransactions
+        .filter((transaction: any) => transaction.declarations
+          .some((row: any) => row.category === 'methane_import')))
+        .toHaveLength(2);
     });
   });
 });
