@@ -30,6 +30,7 @@ declare const stripSerialize: any;
 declare const stripDeserialize: any;
 declare const stripStoredRecordFromDataset: any;
 declare const stripDatasetFromStoredRecord: any;
+declare const _stripRenderStepSVG: any;
 declare const sha256HexUtf8: any;
 declare const scenarioSpecHash: any;
 declare const MODEL_DIGEST: string;
@@ -297,6 +298,36 @@ describe('strip dataset — serialization round-trip', () => {
     const v2 = await stripDeserialize(await stripSerialize({ manifest: { ...base, format_version: 2 }, chip_data, nucleation_events: [] }, false));
     expect(v2.floor_data).toBeUndefined();
     expect(Array.from(v2.chip_data)).toEqual([10, 20]);
+  });
+});
+
+describe('strip viewer — event-step testimony', () => {
+  const base = {
+    sim_version: 248, scenario_id: 'legacy', seed: 42, recorded_at: 0,
+    duration_steps: 1,
+    axes: { steps: 1, angular_indices: 1, height_positions: 1 },
+    chips: [],
+  };
+
+  it('shows legacy zero-based marker frames as the one-based film-row step', () => {
+    const legacy = {
+      manifest: { ...base, format_version: 4 },
+      chip_data: new Uint8Array(),
+      nucleation_events: [{ step: 0, ring: 0, cell: 0, mineral: 'legacy_calcite' }],
+    };
+    const svg = _stripRenderStepSVG(legacy, 0, 100, 50);
+    expect(svg).toContain('legacy_calcite @ step 1');
+    expect(svg).not.toContain('legacy_calcite @ step 0');
+  });
+
+  it('keeps the actual v5 event step while placing it by sample_index', () => {
+    const current = {
+      manifest: { ...base, format_version: 5 },
+      chip_data: new Uint8Array(),
+      nucleation_events: [{ step: 7, sample_index: 0, ring: 0, cell: 0, mineral: 'current_calcite' }],
+    };
+    const svg = _stripRenderStepSVG(current, 0, 100, 50);
+    expect(svg).toContain('current_calcite @ step 7');
   });
 });
 

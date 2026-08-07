@@ -93999,8 +93999,13 @@ function _stripRenderStripSVG(ds, step, angle, width, height, depth = 0) {
         for (const ev of ds.nucleation_events) {
             // v5 separates the actual simulator/event step from the zero-based tensor
             // frame. Legacy v1-v4 strips stored the frame in `step`, so fall back.
-            const eventSample = Number.isFinite(Number(ev.sample_index))
-                ? Number(ev.sample_index) : Number(ev.step);
+            const hasSampleIndex = ev.sample_index !== undefined
+                && ev.sample_index !== null
+                && Number.isFinite(Number(ev.sample_index));
+            const eventSample = hasSampleIndex ? Number(ev.sample_index) : Number(ev.step);
+            // v1-v4 `step` was the zero-based sample frame, so translate it when
+            // presenting scientific testimony beside the now one-based film rows.
+            const eventDisplayStep = hasSampleIndex ? Number(ev.step) : Number(ev.step) + 1;
             if (eventSample !== step)
                 continue;
             if (angle !== null) {
@@ -94013,7 +94018,7 @@ function _stripRenderStripSVG(ds, step, angle, width, height, depth = 0) {
             // v151: bigger marker radius (2.2 → 3.5) for the taller strip;
             // nudge upward from bottom edge so it sits in the strip body
             // rather than against the border.
-            segs.push(`<circle cx="${x.toFixed(1)}" cy="${(height - 5).toFixed(1)}" r="3.5" fill="#fc6" stroke="#fff" stroke-width="0.6"><title>${ev.mineral} @ step ${ev.step}, ring ${ev.ring}, cell ${ev.cell}</title></circle>`);
+            segs.push(`<circle cx="${x.toFixed(1)}" cy="${(height - 5).toFixed(1)}" r="3.5" fill="#fc6" stroke="#fff" stroke-width="0.6"><title>${ev.mineral} @ step ${eventDisplayStep}, ring ${ev.ring}, cell ${ev.cell}</title></circle>`);
         }
     }
     segs.push('</svg>');
