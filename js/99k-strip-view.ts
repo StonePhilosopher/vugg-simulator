@@ -589,7 +589,11 @@ function _stripRenderStripSVG(
   if (ds.nucleation_events && ds.nucleation_events.length) {
     const cellsPerAngle = 120 / axes.angular_indices; // 5 native cells per 15° bin
     for (const ev of ds.nucleation_events) {
-      if (ev.step !== step) continue;
+      // v5 separates the actual simulator/event step from the zero-based tensor
+      // frame. Legacy v1-v4 strips stored the frame in `step`, so fall back.
+      const eventSample = Number.isFinite(Number(ev.sample_index))
+        ? Number(ev.sample_index) : Number(ev.step);
+      if (eventSample !== step) continue;
       if (angle !== null) {
         // Filter to events whose native cell falls in this angular bin
         const eventAngle = Math.floor(ev.cell / cellsPerAngle);
@@ -948,21 +952,22 @@ function _stripRenderDataset(bodyEl: HTMLElement, ds: StripDataset): void {
   // .strip-view-row-canvas CSS height to avoid SVG aspect-ratio stretch.
   const stripH = 100;
   for (let step = 0; step < ds.manifest.axes.steps; step++) {
+    const displayStep = step + 1;
     const row = document.createElement('div');
     row.className = 'strip-view-row';
-    row.setAttribute('data-row-step', String(step));
+    row.setAttribute('data-row-step', String(displayStep));
     const variance = _stripComputeVarianceLevel(ds, step);
     const datasetKey = stripStorageKey(ds.manifest);
     const favSet = (_stripFavorites[datasetKey] = _stripFavorites[datasetKey] || { time_slices: new Set(), sub_strips: new Set() });
     const isFav = favSet.time_slices.has(step);
     row.innerHTML = `
       <div class="strip-view-row-controls">
-        <span class="strip-view-variance-dot ${variance === 'green' ? '' : variance}" title="step ${step} — variance: ${variance}"></span>
+        <span class="strip-view-variance-dot ${variance === 'green' ? '' : variance}" title="step ${displayStep} — variance: ${variance}"></span>
         <button class="strip-view-expand-btn" data-step="${step}" title="Expand to 24 angular sub-strips">▸</button>
         ${((ds.manifest.axes.depth_positions || 1) > 1)
           ? `<button class="strip-view-radial-btn" data-step="${step}" title="Expand to radial sub-strips (wall → center)">⊙</button>`
           : ''}
-        <button class="strip-view-favorite-btn ${isFav ? 'is-on' : ''}" data-step="${step}" title="Favorite step ${step}">★</button>
+        <button class="strip-view-favorite-btn ${isFav ? 'is-on' : ''}" data-step="${step}" title="Favorite step ${displayStep}">★</button>
       </div>
       <div class="strip-view-row-canvas" data-step="${step}">${_stripRenderStepSVG(ds, step, stripW, stripH)}</div>
     `;

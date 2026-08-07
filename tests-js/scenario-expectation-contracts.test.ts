@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 declare const SCENARIOS: Record<string, any>;
+declare const MINERAL_SPEC: Record<string, any>;
 declare const VugSimulator: any;
 declare const StripRecorder: any;
 declare function setSeed(seed: number): void;
@@ -64,6 +65,7 @@ describe('scenario expectation contracts', () => {
   }, 30_000);
 
   it('keeps deterministic and aspirational promises structurally disjoint', () => {
+    const advertisedExclusions: string[] = [];
     for (const [name, factory] of Object.entries(SCENARIOS)) {
       const spec = factory._json5_spec;
       const deterministic = new Set(spec.expects_species || []);
@@ -71,7 +73,16 @@ describe('scenario expectation contracts', () => {
         expect(deterministic.has(entry.mineral), `${name}:${entry.mineral}`).toBe(false);
         expect(entry.reason, `${name}:${entry.mineral} rationale`).toMatch(/\S/);
       }
+      for (const mineral of Object.keys(spec.excluded_species || {})) {
+        if ((MINERAL_SPEC[mineral]?.scenarios || []).includes(name)) {
+          advertisedExclusions.push(`${name}:${mineral}`);
+        }
+      }
     }
+    expect(
+      advertisedExclusions,
+      'library metadata must not advertise species that the authored scenario excludes',
+    ).toEqual([]);
   });
 
   it('keeps authored nucleation windows finite, ordered, and tied to promises', () => {

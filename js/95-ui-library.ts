@@ -346,7 +346,7 @@ function libraryBuildCard(name, m) {
         <div class="stat-key">Thermal decomp</div>
         <div class="stat-val">${decompText}</div>
       </div>
-      <div class="mineral-card-scenarios">Grows in: ${scenarioChips || '<em style="color:#5a4a30">no scenarios listed</em>'}</div>
+      <div class="mineral-card-scenarios">Grows in: ${scenarioChips || '<em style="color:#5a4a30">Creative mode; no authored scenario listed</em>'}</div>
       ${libraryCompetitivenessSection(name)}
       ${renderCollectedForMineral(name)}
     </div>

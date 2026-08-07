@@ -250,7 +250,8 @@ describe('differential stress is not fluid pressure', () => {
     const dataset = recorder.finalize();
     expect(dataset.pressure_phase_testimony).toHaveLength(2);
     expect(dataset.pressure_phase_testimony[0]).toMatchObject({
-      step: 0,
+      step: 1,
+      sample_index: 0,
       fluid_pressure_kbar: expect.any(Number),
       confining_pressure_kbar: expect.any(Number),
       calcite_aragonite: {

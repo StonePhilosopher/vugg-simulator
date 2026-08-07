@@ -76,3 +76,10 @@ remains a deterministic Tsumeb promise because TSNB159 directly documents it.
   both unsupported species absent, and record no haidingerite transformation.
 - Structural tests keep deterministic, statistical, aspirational, and excluded
   claims disjoint.
+- Mineral-library `scenarios` associations must not advertise any phase that a
+  scenario excludes; globally valid engines without a shipped association are
+  labelled as Creative-mode available rather than assigned to an unsupported
+  locality.
+- Strip format v5 records actual simulator/event `step` separately from the
+  zero-based `sample_index` used to address the chemistry tensor, preventing
+  archives and claim cards from shifting authored boundaries backward by one.

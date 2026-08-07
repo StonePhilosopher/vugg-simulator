@@ -12503,6 +12503,11 @@
 //       searchable Tsumeb catalog. Scenario exclusions now also block a
 //       solid-state transformation whose target lacks locality support, without
 //       disabling that chemically valid transition elsewhere or in Creative.
+//       Mineral-library scenario associations obey the same exclusions, so
+//       “Grows in” never advertises a phase the scenario blocks. Strip format
+//       v5 separates each actual simulator/event step from its zero-based tensor
+//       sample index; archives, claim cards, and displayed row labels therefore
+//       use the same step coordinates as scenario events and hover diagnosis.
 const SIM_VERSION = 248;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
@@ -12537,7 +12542,7 @@ const MODEL_DIGEST = [
   'competition:accepted-axial-timescale+formula-weighted-budget-v3',
   'diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4',
   'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2',
-  'run-testimony:nucleation+solid-state-transformation-v1',
+  'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2',
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
   'transition-locality-exclusion:target-gated-v1',
   'save-identity:version+model+scenario-fail-closed-v1',

@@ -239,6 +239,29 @@ describe('strip dataset — serialization round-trip', () => {
     expect(reload.transformation_event_testimony).toEqual(ds.transformation_event_testimony);
   });
 
+  it('round-trips v5 actual event steps separately from zero-based sample indices', async () => {
+    const manifest = {
+      format_version: 5, sim_version: 248, model_digest: 'model-v5',
+      scenario_id: 'deccan_zeolite', scenario_spec_hash: 'spec-v5', seed: 42,
+      recorded_at: 10, duration_steps: 1,
+      axes: { steps: 1, angular_indices: 1, height_positions: 1 },
+      chips: [{ id: 'pH', label: 'pH', system: 'special', range: [4, 11] as [number, number], units: '', color: 0x9966ee }],
+    };
+    const ds = {
+      manifest,
+      chip_data: new Uint8Array([127]),
+      nucleation_events: [{ step: 1, sample_index: 0, ring: 0, cell: 3, mineral: 'chalcedony' }],
+      floor_data: new Uint8Array([101]),
+      pressure_phase_testimony: [{ step: 1, sample_index: 0, fluid_pressure_kbar: 0.2 }],
+      stress_event_testimony: [],
+      transformation_event_testimony: [{ step: 1, sample_index: 0, crystal_id: 7, from: 'gypsum', to: 'anhydrite', mechanism: 'dehydration' }],
+    };
+    const reload = await stripDeserialize(await stripSerialize(ds, false));
+    expect(reload.nucleation_events[0]).toMatchObject({ step: 1, sample_index: 0 });
+    expect(reload.pressure_phase_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0 });
+    expect(reload.transformation_event_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0 });
+  });
+
   it('uses a Node-compatible SHA-256 fingerprint for authored scenario specs', () => {
     expect(sha256HexUtf8('abc')).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
     const spec = SCENARIOS.cooling._json5_spec;
@@ -289,7 +312,7 @@ describe('strip recorder — instrumentation', () => {
 
   it('builds a manifest with all helicoid chips', () => {
     const m = recorder.getManifest();
-    expect(m.format_version).toBe(4);  // v4 preserves executed scientific testimony
+    expect(m.format_version).toBe(5);  // v5 separates simulator step from tensor sample index
     expect(m.model_digest).toBe(MODEL_DIGEST);
     expect(m.scenario_id).toBe('cooling');
     expect(m.scenario_spec_hash).toMatch(/^[0-9a-f]{64}$/);

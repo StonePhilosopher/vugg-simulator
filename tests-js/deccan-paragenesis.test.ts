@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 declare const SCENARIOS: any;
 declare const VugSimulator: any;
+declare const StripRecorder: any;
 declare function setSeed(seed: number): void;
 declare function assessProductionNucleationDecision(
   name: string, sim: any, sigma: number, sigmaCrit: number,
@@ -82,4 +83,28 @@ describe('Deccan authored paragenesis is executable testimony', () => {
     );
     expect(atPulse.blockers.join(' ')).not.toContain('authored paragenesis');
   });
+
+  it('archives actual simulator steps separately from zero-based strip frames', () => {
+    setSeed(42);
+    const { conditions, events, defaultSteps } = SCENARIOS.deccan_zeolite();
+    const sim = new VugSimulator(conditions, events);
+    const recorder = new StripRecorder(sim, { duration_steps: defaultSteps, angular_indices: 1 });
+    sim._stripRecorder = recorder;
+    for (let i = 0; i < defaultSteps; i++) sim.run_step();
+    const dataset = recorder.finalize();
+    const first = (mineral: string) => Math.min(
+      ...dataset.nucleation_events
+        .filter((event: any) => event.mineral === mineral)
+        .map((event: any) => event.step),
+    );
+    expect(first('scolecite')).toBeGreaterThanOrEqual(70);
+    expect(first('mesolite')).toBeGreaterThanOrEqual(70);
+    expect(first('stilbite')).toBeGreaterThanOrEqual(90);
+    expect(first('heulandite')).toBeGreaterThanOrEqual(90);
+    expect(first('apophyllite')).toBeGreaterThanOrEqual(110);
+    for (const event of dataset.nucleation_events) {
+      expect(event.sample_index, `${event.mineral} step ${event.step}`).toBe(event.step - 1);
+    }
+    expect(dataset.pressure_phase_testimony[0]).toMatchObject({ step: 1, sample_index: 0 });
+  }, 60_000);
 });

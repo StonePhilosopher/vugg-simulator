@@ -18853,6 +18853,11 @@ function scenarioSpecHash(spec) {
 //       searchable Tsumeb catalog. Scenario exclusions now also block a
 //       solid-state transformation whose target lacks locality support, without
 //       disabling that chemically valid transition elsewhere or in Creative.
+//       Mineral-library scenario associations obey the same exclusions, so
+//       “Grows in” never advertises a phase the scenario blocks. Strip format
+//       v5 separates each actual simulator/event step from its zero-based tensor
+//       sample index; archives, claim cards, and displayed row labels therefore
+//       use the same step coordinates as scenario events and hover diagnosis.
 const SIM_VERSION = 248;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -18886,7 +18891,7 @@ const MODEL_DIGEST = [
     'competition:accepted-axial-timescale+formula-weighted-budget-v3',
     'diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4',
     'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2',
-    'run-testimony:nucleation+solid-state-transformation-v1',
+    'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2',
     'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
     'transition-locality-exclusion:target-gated-v1',
     'save-identity:version+model+scenario-fail-closed-v1',
@@ -60806,7 +60811,9 @@ Object.assign(VugSimulator.prototype, {
 // format_version 4 (2026-08-05): preserves executed pressure/phase and
 // differential-stress testimony in downloaded files.  It also adds an exact
 // scenario-spec fingerprint to the manifest.  v1-v3 remain readable.
-const _STRIP_FORMAT_VERSION = 4;
+// format_version 5 (2026-08-06): sparse events expose the simulator/event
+// step and carry `sample_index` separately for the zero-based tensor frame.
+const _STRIP_FORMAT_VERSION = 5;
 const _STRIP_NULL_BYTE = 255; // reserved value meaning "no data"
 const _STRIP_MAX_DATA_BYTE = 254; // chip values map to [0, 254]
 // ============================================================
@@ -60896,8 +60903,8 @@ function stripAllocateData(axes, chip_count) {
 //   [events_json_length bytes: utf-8 JSON nucleation events array]
 //   [format_version 3 ONLY: 4 bytes floor_data_length (LE uint32) + that many
 //                           floor bytes; length 0 means "no floor channel"]
-//   [format_version 4 ONLY: 4 bytes testimony_json_length (LE uint32)
-//                           + UTF-8 JSON executed testimony]
+//   [format_version >= 4: 4 bytes testimony_json_length (LE uint32)
+//                         + UTF-8 JSON executed testimony]
 //   [remainder: chip_data uint8 bytes]
 //
 // The floor section is keyed off manifest.format_version (read first on
@@ -61355,7 +61362,8 @@ class StripRecorder {
                 const ring = anchor && Number.isFinite(anchor.ringIdx) ? anchor.ringIdx : 0;
                 const cell = anchor && Number.isFinite(anchor.cellIdx) ? anchor.cellIdx : 0;
                 this.events.push({
-                    step,
+                    step: Number(c.nucleation_step),
+                    sample_index: step,
                     ring,
                     cell,
                     mineral: String(c.mineral),
@@ -61381,7 +61389,8 @@ class StripRecorder {
                     continue;
                 this.seenTransformationKeys.add(key);
                 this.transformationEventTestimony.push({
-                    step,
+                    step: Number(c.paramorph_step),
+                    sample_index: step,
                     crystal_id: crystalId,
                     from,
                     to,
@@ -61404,7 +61413,8 @@ class StripRecorder {
             && typeof al2sio5PhaseAssessment === 'function'
             ? al2sio5PhaseAssessment(temperatureC, confiningPressureKbar) : null;
         this.pressurePhaseTestimony.push({
-            step,
+            step: Number(sim?.step),
+            sample_index: step,
             temperature_C: Number.isFinite(temperatureC) ? temperatureC : null,
             fluid_pressure_kbar: Number.isFinite(fluidPressureKbar) ? fluidPressureKbar : null,
             confining_pressure_kbar: confiningPressureKbar,
@@ -73140,7 +73150,7 @@ function libraryBuildCard(name, m) {
         <div class="stat-key">Thermal decomp</div>
         <div class="stat-val">${decompText}</div>
       </div>
-      <div class="mineral-card-scenarios">Grows in: ${scenarioChips || '<em style="color:#5a4a30">no scenarios listed</em>'}</div>
+      <div class="mineral-card-scenarios">Grows in: ${scenarioChips || '<em style="color:#5a4a30">Creative mode; no authored scenario listed</em>'}</div>
       ${libraryCompetitivenessSection(name)}
       ${renderCollectedForMineral(name)}
     </div>
@@ -93987,7 +93997,11 @@ function _stripRenderStripSVG(ds, step, angle, width, height, depth = 0) {
     if (ds.nucleation_events && ds.nucleation_events.length) {
         const cellsPerAngle = 120 / axes.angular_indices; // 5 native cells per 15° bin
         for (const ev of ds.nucleation_events) {
-            if (ev.step !== step)
+            // v5 separates the actual simulator/event step from the zero-based tensor
+            // frame. Legacy v1-v4 strips stored the frame in `step`, so fall back.
+            const eventSample = Number.isFinite(Number(ev.sample_index))
+                ? Number(ev.sample_index) : Number(ev.step);
+            if (eventSample !== step)
                 continue;
             if (angle !== null) {
                 // Filter to events whose native cell falls in this angular bin
@@ -94352,21 +94366,22 @@ function _stripRenderDataset(bodyEl, ds) {
     // .strip-view-row-canvas CSS height to avoid SVG aspect-ratio stretch.
     const stripH = 100;
     for (let step = 0; step < ds.manifest.axes.steps; step++) {
+        const displayStep = step + 1;
         const row = document.createElement('div');
         row.className = 'strip-view-row';
-        row.setAttribute('data-row-step', String(step));
+        row.setAttribute('data-row-step', String(displayStep));
         const variance = _stripComputeVarianceLevel(ds, step);
         const datasetKey = stripStorageKey(ds.manifest);
         const favSet = (_stripFavorites[datasetKey] = _stripFavorites[datasetKey] || { time_slices: new Set(), sub_strips: new Set() });
         const isFav = favSet.time_slices.has(step);
         row.innerHTML = `
       <div class="strip-view-row-controls">
-        <span class="strip-view-variance-dot ${variance === 'green' ? '' : variance}" title="step ${step} — variance: ${variance}"></span>
+        <span class="strip-view-variance-dot ${variance === 'green' ? '' : variance}" title="step ${displayStep} — variance: ${variance}"></span>
         <button class="strip-view-expand-btn" data-step="${step}" title="Expand to 24 angular sub-strips">▸</button>
         ${((ds.manifest.axes.depth_positions || 1) > 1)
             ? `<button class="strip-view-radial-btn" data-step="${step}" title="Expand to radial sub-strips (wall → center)">⊙</button>`
             : ''}
-        <button class="strip-view-favorite-btn ${isFav ? 'is-on' : ''}" data-step="${step}" title="Favorite step ${step}">★</button>
+        <button class="strip-view-favorite-btn ${isFav ? 'is-on' : ''}" data-step="${step}" title="Favorite step ${displayStep}">★</button>
       </div>
       <div class="strip-view-row-canvas" data-step="${step}">${_stripRenderStepSVG(ds, step, stripW, stripH)}</div>
     `;

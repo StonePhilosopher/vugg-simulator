@@ -353,7 +353,8 @@ class StripRecorder {
         const ring = anchor && Number.isFinite(anchor.ringIdx) ? anchor.ringIdx : 0;
         const cell = anchor && Number.isFinite(anchor.cellIdx) ? anchor.cellIdx : 0;
         this.events.push({
-          step,
+          step: Number(c.nucleation_step),
+          sample_index: step,
           ring,
           cell,
           mineral: String(c.mineral),
@@ -376,7 +377,8 @@ class StripRecorder {
         if (this.seenTransformationKeys.has(key)) continue;
         this.seenTransformationKeys.add(key);
         this.transformationEventTestimony.push({
-          step,
+          step: Number(c.paramorph_step),
+          sample_index: step,
           crystal_id: crystalId,
           from,
           to,
@@ -400,7 +402,8 @@ class StripRecorder {
       && typeof al2sio5PhaseAssessment === 'function'
       ? al2sio5PhaseAssessment(temperatureC, confiningPressureKbar) : null;
     this.pressurePhaseTestimony.push({
-      step,
+      step: Number(sim?.step),
+      sample_index: step,
       temperature_C: Number.isFinite(temperatureC) ? temperatureC : null,
       fluid_pressure_kbar: Number.isFinite(fluidPressureKbar) ? fluidPressureKbar : null,
       confining_pressure_kbar: confiningPressureKbar,

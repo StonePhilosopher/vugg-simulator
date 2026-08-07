@@ -88,7 +88,9 @@
 // format_version 4 (2026-08-05): preserves executed pressure/phase and
 // differential-stress testimony in downloaded files.  It also adds an exact
 // scenario-spec fingerprint to the manifest.  v1-v3 remain readable.
-const _STRIP_FORMAT_VERSION = 4;
+// format_version 5 (2026-08-06): sparse events expose the simulator/event
+// step and carry `sample_index` separately for the zero-based tensor frame.
+const _STRIP_FORMAT_VERSION = 5;
 const _STRIP_NULL_BYTE = 255;       // reserved value meaning "no data"
 const _STRIP_MAX_DATA_BYTE = 254;   // chip values map to [0, 254]
 
@@ -110,7 +112,8 @@ interface StripChipMeta {
 // the viewer can route the marker to the correct angular sub-strip on
 // demand.
 interface StripNucleationEvent {
-  step: number;          // sim step index
+  step: number;          // actual VugSimulator/event step (starts at 1)
+  sample_index?: number; // zero-based chip_data frame; absent in legacy strips
   ring: number;          // 0 to height_positions-1
   cell: number;          // 0 to 119 (native angular cell index)
   mineral: string;       // mineral id
@@ -120,7 +123,8 @@ interface StripNucleationEvent {
 // separate from nucleation testimony so a review can see both the product and
 // its parentage.
 interface StripTransformationEvent {
-  step: number;
+  step: number;          // actual VugSimulator transformation step
+  sample_index?: number; // zero-based chip_data frame; absent in legacy strips
   crystal_id: number | string | null;
   from: string;
   to: string;
@@ -258,8 +262,8 @@ function stripAllocateData(
 //   [events_json_length bytes: utf-8 JSON nucleation events array]
 //   [format_version 3 ONLY: 4 bytes floor_data_length (LE uint32) + that many
 //                           floor bytes; length 0 means "no floor channel"]
-//   [format_version 4 ONLY: 4 bytes testimony_json_length (LE uint32)
-//                           + UTF-8 JSON executed testimony]
+//   [format_version >= 4: 4 bytes testimony_json_length (LE uint32)
+//                         + UTF-8 JSON executed testimony]
 //   [remainder: chip_data uint8 bytes]
 //
 // The floor section is keyed off manifest.format_version (read first on

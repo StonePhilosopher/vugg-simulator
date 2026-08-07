@@ -2914,7 +2914,6 @@
       "scenarios": [
         "mvt",
         "porphyry",
-        "reactive_wall",
         "supergene_oxidation"
       ],
       "T_range_C": [
@@ -2975,7 +2974,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The Ba sequestration mineral; activates the dormant fluid.Ba pool. Tri-State Ba=20 currently dormant due to scenario O2=0.0 (gap flagged in audit). Sabkha Ba=0 (correctly absent — sabkha is Sr-dominant). Real activation: porphyry post-oxidation; future MVT chemistry tweak (O2 0→0.2) would unlock Tri-State barite.",
+      "audit_status": "reconciled v248 (2026-08-06). Wired in vugg.py and web/index.html; research source: proposals/MINERALS-RESEARCH-SULFATES.md. The Ba sequestration mineral activates the fluid.Ba pool in supported MVT, porphyry, and supergene settings. Sweetwater/reactive_wall is intentionally not advertised because its authored locality contract excludes barite; the global engine remains available in Creative mode.",
       "late_stage_propensity": 0.2,
       "_late_stage_note": "Proposal C (2026-05): propensity:0.2. Sometimes late MVT gangue (Sweetwater snowball habit); otherwise mostly bulk.",
       "class_color": "#eb137f"
@@ -8613,7 +8612,6 @@
       "description": "Ag₂S — monoclinic silver sulfide and the most important silver ore on Earth at 87% Ag by weight. Lead-gray to iron-black metallic, Mohs 2-2.5, sectile (cuts like lead). The cold-storage form: above 173°C the same composition crystallizes as cubic argentite, and most acanthite in nature is paramorphic after cooled argentite, retaining the cubic external form while the lattice underneath inverts to monoclinic (Petruk et al. 1974, Canadian Mineralogist 12). Forms in low-sulfidation epithermal veins, mesothermal silver veins, and supergene enrichment zones; classic localities include Guanajuato (Mexico, pseudo-cubic crystals), Freiberg (Saxony), and Kongsberg (Norway).",
       "scenarios": [
         "mvt",
-        "reactive_wall",
         "supergene_oxidation",
         "bisbee"
       ],
@@ -8660,7 +8658,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 8a-1 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. Habit variants: massive_granular (low σ, dominant economic form), prismatic (mid σ), thorn (high σ), pseudo_cubic (paramorph hook — set in 8a-2 when argentite cools through 173°C). Sources: Petruk et al. 1974 (Canadian Mineralogist 12: 365-369), Hayba & Bethke 1985 (Reviews in Economic Geology 2). Activates dormant Ag pool at MVT/Sweetwater/Tsumeb/Bisbee. First Ag mineral in the sim.",
+      "audit_status": "reconciled v248 (2026-08-06). Engine, supersaturation, nucleation, narrator, and argentite paramorph hook are complete. Habit variants: massive_granular (low σ), prismatic (mid σ), thorn (high σ), and pseudo_cubic after cooled argentite. Sources: Petruk et al. 1974 (Canadian Mineralogist 12:365-369) and Hayba & Bethke 1985 (Reviews in Economic Geology 2). Supported authored settings include MVT, Tsumeb supergene, and Bisbee; Sweetwater/reactive_wall is intentionally not advertised because its locality contract excludes acanthite. The global engine remains available in Creative mode.",
       "class_color": "#7feb13"
     },
     "argentite": {
@@ -9914,8 +9912,7 @@
       "class": "arsenate",
       "description": "CaHAsO₄·2H₂O — monoclinic hydrated calcium hydrogen arsenate. Forms colorless to white delicate radiating/stellate aggregates resembling starbursts of needles — the diagnostic field marker. Vitreous to pearly luster, soft (Mohs 2-2.5). The classic supergene bloom of the Jáchymov (Joachimsthal, Czech) + Schneeberg + Cobalt-Ontario silver-cobalt-arsenic mining districts, where the weathering of cobaltite/nickeline/arsenopyrite primaries releases As⁵⁺ into Ca-rich groundwater. Trace Fe gives yellowish tint, Mn pinkish, Cu greenish — useful provenance fingerprints. Efflorescent: loses water in dry air, converting to haidingerite (CaHAsO₄·H₂O) at ~80-100°C and to anhydrous Ca arsenate at ~150°C, both effectively irreversible. Most field specimens are already partially dehydrated by the time they reach a collection. Highly soluble in dilute HCl/HNO₃; releases toxic arsenic + calcium on dissolution. Type locality: Riegelsdorf, Hesse, Germany (Stromeyer 1819) — but the Jáchymov + Schneeberg displays are the iconic specimens. Sources: research/research-pharmacolite.md (boss canonical 2026-05); Anthony et al. Handbook of Mineralogy Vol. IV; Stromeyer 1819 (type-locality description).",
       "scenarios": [
-        "schneeberg",
-        "supergene_oxidation"
+        "schneeberg"
       ],
       "T_range_C": [
         5,
@@ -9945,7 +9942,7 @@
         "Pb": "high Pb routes to mimetite (Pb arsenate-chloride preference)"
       },
       "thermal_decomp_C": 80,
-      "thermal_decomp_reaction": "Pharmacolite (CaHAsO₄·2H₂O) → haidingerite (CaHAsO₄·H₂O) at 80-100°C, loses 1 H₂O; further heating → anhydrous Ca arsenate + H₂O at ~150°C. Both irreversible. In the v88 sim, modeled as crystal-destruction (mineral dissolution releasing structural water) since haidingerite isn't yet in the catalog.",
+      "thermal_decomp_reaction": "Pharmacolite (CaHAsO₄·2H₂O) → haidingerite (CaHAsO₄·H₂O) at 80-100°C, loses 1 H₂O; further heating → anhydrous Ca arsenate + H₂O at ~150°C. The current simulator preserves the crystal as a haidingerite paramorph; structural water is diagnostic because no conserved H₂O inventory exists.",
       "thermal_decomp_products": {
         "Ca": 0.0,
         "As": 0.0
@@ -9997,7 +9994,7 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "new v88 (2026-05-19). Per research-pharmacolite.md (boss canonical 2026-05). Ca-only hydrated arsenate; closes the supergene-arsenate Ca-without-Cu slot (paired with conichalcite v87 Ca+Cu and olivenite v8 Cu-only on the same supergene Cu-As fluid). Cation anti-gates suppress (not block) when competitors dominate. Substrate priority: cobaltite > arsenopyrite > native_arsenic > nickeline > erythrite > annabergite > calcite > wall (encodes the five-element-vein paragenetic ordering from research §Paragenetic Position). Slots into schneeberg (primary target — research's Jáchymov/Schneeberg type-display locality; Cu depletes by step 125, Ca rises from carbonate dissolution, As stays elevated from arsenide weathering) + supergene_oxidation (Tsumeb-style Ca-rich oxidation, fires when conichalcite stops scavenging the Cu-bearing window). Thermal dehydration to haidingerite at >80°C modeled as crystal-destruction since haidingerite isn't yet in the catalog. Sources: research-pharmacolite.md; Anthony et al. Handbook of Mineralogy Vol. IV; Stromeyer 1819 (Riegelsdorf type locality).",
+      "audit_status": "reconciled v248 (2026-08-06). Ca-only hydrated arsenate with cation anti-gates and the documented five-element-vein substrate order. The shipped scenario association is Schneeberg/Jáchymov-style mineralization; Tsumeb is explicitly excluded because the live Mindat locality record and Harvard Tsumeb catalog audit found no occurrence support. Thermal dehydration preserves a haidingerite paramorph through DEHYDRATION_TRANSITIONS. The engine remains globally available in Creative mode. Sources: research-pharmacolite.md; Anthony et al. Handbook of Mineralogy Vol. IV; Stromeyer 1819 (Riegelsdorf type locality); SIM 248 locality reconciliation memo.",
       "late_stage_propensity": 0.6,
       "_late_stage_note": "Proposal C (2026-05): propensity:0.6. Late-supergene Ca-As arsenate; forms in the closing phase of the oxidation zone after the primary Co/Ni arsenides have weathered and Ca-rich groundwater has flushed through. Between conichalcite (0.5) and chalcanthite (0.7) on the late-stage scale.",
       "class_color": "#e8e8d4"
@@ -10034,8 +10031,7 @@
       "class": "arsenate",
       "description": "CaHAsO₄·H₂O — orthorhombic hydrated calcium arsenate, the half-dehydrated cousin of pharmacolite. Forms EXCLUSIVELY as a transformation product of pharmacolite (CaHAsO₄·2H₂O) — heat above ~80°C OR sustained dry-air exposure drives off 1 of the 2 H₂O molecules, collapsing the lattice from monoclinic pharmacolite to orthorhombic haidingerite. The transformation is irreversible (re-humidifying does not restore the pharmacolite hydrate). External crystal shape is preserved through the in-situ transformation: a haidingerite specimen IS a former pharmacolite crystal, frozen mid-decay. Specific gravity rises from pharmacolite's 2.64-2.73 to haidingerite's 2.85-2.96 — the diagnostic water-loss densification signature. Colorless to white, vitreous luster with pearly cleavage faces on {010}. Mohs 2-2.5 (same as pharmacolite). Sectile tenacity: thin laminae are slightly flexible (unlike pharmacolite which is brittle); a useful field discriminator. Sub-millimeter crystals (Handbook of Mineralogy notes 'to 1 mm'); typically encountered as botryoidal or fibrous coatings on weathered arsenide vein assemblages. Type locality Jáchymov (Joachimsthal), Czech Republic. Named for Wilhelm Karl von Haidinger (1795-1871), Austrian mineralogist. Type pseudomorph occurrence: Getchell mine, Nevada (Handbook of Mineralogy: 'Formed by dehydration of pharmacolite (Getchell mine, Nevada, USA)'). Sources: Palache, Berman, Frondel 1951 (Dana's System of Mineralogy 7th ed v.II 708-709); Ferraris, Jones, Yerkess 1972 (Acta Cryst. 28:209-214, neutron + X-ray structure refinement); Cassien, Herpin, Permingeat 1966 (Bull. Minéral. 89:18-22, crystal structure paper).",
       "scenarios": [
-        "schneeberg",
-        "supergene_oxidation"
+        "schneeberg"
       ],
       "T_range_C": [
         5,
@@ -10104,7 +10100,7 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "new v90 (2026-05-19). Transformation-only paramorph product of pharmacolite via DEHYDRATION_TRANSITIONS (js/75-transitions.ts: pharmacolite → haidingerite, threshold 30 vadose-steps, T_max 80°C heat path). The v88 inline 'thermal destruction at T>80' branch in grow_pharmacolite has been REMOVED — v88 was a stub when haidingerite wasn't in the catalog yet; v90 adds the proper paramorph product so the crystal's external habit + position are preserved through the transformation (radiating stellate pharmacolite → radiating stellate haidingerite-pseudomorph-after-pharmacolite). Research-grade spec from Handbook of Mineralogy (Palache/Berman/Frondel 1951 reissue 2001-2005) + Ferraris/Jones/Yerkess 1972 crystal structure refinement + Cassien/Herpin/Permingeat 1966 structure paper. Type locality Jáchymov; type pseudomorph occurrence Getchell mine Nevada.",
+      "audit_status": "reconciled v248 (2026-08-06). Transformation-only pharmacolite dehydration product via DEHYDRATION_TRANSITIONS (30 vadose steps or the 80°C heat path), preserving external habit and position. The shipped scenario association is Schneeberg/Jáchymov-style mineralization; Tsumeb is explicitly excluded because no pharmacolite parent or haidingerite product is supported by the audited locality catalogs. The global transformation remains live in Creative mode and documented localities. Research-grade spec from Handbook of Mineralogy + Ferraris, Jones & Yerkess 1972 + Cassien, Herpin & Permingeat 1966; type locality Jáchymov and documented pseudomorph occurrence Getchell mine, Nevada.",
       "late_stage_propensity": 1.0,
       "_late_stage_note": "Paramorph after pharmacolite — only ever late by definition (dehydration product); mirrors tincalconite/thenardite/meta-autunite/metatorbernite/metazeunerite/pararealgar pattern. Propensity 1.0.",
       "_transformation_only": true,
@@ -17921,9 +17917,7 @@
       ],
       "class": "silicate",
       "description": "NaCa₂Al₅Si₅O₂₀·6H₂O — orthorhombic (Pncn, pseudotetragonal) framework silicate, a highly aluminous (Si/Al≈1) basalt-amygdule zeolite. H 5-5.5, density 2.23-2.39, vitreous-pearly; white/yellow/pink/green, often concentrically zoned. The famous 'thomsonite eyes' — radiating spherical botryoidal nodules with concentric colour banding — are the Lake Superior (Isle Royale, Grand Marais MN) gem/lapidary material (the green variety is 'lintonite'). Relative order varies between localities and even neighboring cavities; authored scenarios therefore supply locality-specific paragenetic windows instead of a universal sequence. Being Si/Al≈1, it is favored at LOW silica activity — the clean discriminator from the higher-Si natrolite group (Si/Al≈1.5); the engine uses a soft low-silica preference (Na/Ca does NOT cleanly separate thomsonite from mesolite — both are Na-Ca, thomsonite just more-Ca + lower-Si). Type locality Old Kilpatrick, Dunbartonshire, Scotland (named for Dr Thomas Thomson). Field discriminator: the concentric spherical eyes are diagnostic; biaxial (+); orthorhombic (vs monoclinic scolecite/mesolite); much of Lake Superior 'thomsonite' is actually prehnite/mesolite by XRD — distinguish by hardness + optics. Refs: Anthony et al. Handbook of Mineralogy (thomsonite-Ca); Wise & Tschernich 1978 Can.Mineral. 16:487; Coombs et al. 1997; Gatta et al. 2010 Am.Mineral. 95:495.",
-      "scenarios": [
-        "deccan_zeolite"
-      ],
+      "scenarios": [],
       "T_range_C": [
         40,
         150
@@ -18041,9 +18035,7 @@
       ],
       "class": "silicate",
       "description": "Ca₂Al₂Si₄O₁₂·6H₂O (chabazite-Ca, per-Ca CaAl₂Si₄O₁₂·6H₂O) — trigonal (R-3m) framework silicate, an intermediate-silica (Si/Al≈2) member of the basalt-amygdule zeolite suite. H 4-5, density 2.05-2.16 (conspicuously light), vitreous; colorless/white/flesh-pink. Very hydrous (12 H₂O per cell). The signature habit is the rhombohedral pseudo-cube — a near-90° rhombohedron that mimics a cube — plus the famous phacolite penetration twins (lens-shaped twinned aggregates, twin axis [0001]) and the Na-rich tabular herschelite. A chabazite-group SERIES (chabazite-Ca/-Na/-K/-Sr by dominant extra-framework cation, Coombs et al. 1997); the cation runs Ca > Na > K in frequency and K is NOT required — chabazite-Ca is the basalt-amygdule default. Relative paragenetic order is locality-dependent; substrate preferences do not establish chronology. Field discriminator vs CALCITE (the classic trap — the pseudo-cube rhomb looks like a calcite rhomb/cube): chabazite's {101̄1} cleavage is POOR (calcite's is perfect, three directions), it does NOT effervesce in acid, it is harder (4-5 vs 3) and notably lighter (2.1 vs 2.71); optically weakly birefringent + anomalously biaxial/sectored. Type area Sicily (Aci Castello / Cyclopean Isles, historical); famous from Bohemia (Aussig/Ústí), Nova Scotia (Wasson Bluff), the Deccan (Pune), Iceland. Refs: Passaglia & Sheppard 2001 RiMG 45:69 (crystal chemistry, R=0.67, Ca-DEC); Coombs et al. 1997 Can.Mineral. 35:1571; Akizuki & Konno 1987 Mineral.Mag. 51:427 (phacolite twinning); Calligaris et al. 1982 Zeolites (R-3m).",
-      "scenarios": [
-        "deccan_zeolite"
-      ],
+      "scenarios": [],
       "T_range_C": [
         40,
         150
