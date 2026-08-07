@@ -64,6 +64,7 @@ interface StripStoredRecord {
   floor_data?: Uint8Array;   // format_version 3 depletion-floor channel (optional)
   pressure_phase_testimony?: any[];
   stress_event_testimony?: any[];
+  transformation_event_testimony?: StripTransformationEvent[];
 }
 
 interface StripListEntry {
@@ -95,6 +96,7 @@ function stripStoredRecordFromDataset(ds: StripDataset): StripStoredRecord {
     ...(ds.floor_data ? { floor_data: ds.floor_data } : {}),
     ...(ds.pressure_phase_testimony ? { pressure_phase_testimony: ds.pressure_phase_testimony } : {}),
     ...(ds.stress_event_testimony ? { stress_event_testimony: ds.stress_event_testimony } : {}),
+    ...(ds.transformation_event_testimony ? { transformation_event_testimony: ds.transformation_event_testimony } : {}),
   };
 }
 
@@ -106,6 +108,7 @@ function stripDatasetFromStoredRecord(rec: StripStoredRecord): StripDataset {
     ...(rec.floor_data ? { floor_data: rec.floor_data } : {}),
     ...(rec.pressure_phase_testimony ? { pressure_phase_testimony: rec.pressure_phase_testimony } : {}),
     ...(rec.stress_event_testimony ? { stress_event_testimony: rec.stress_event_testimony } : {}),
+    ...(rec.transformation_event_testimony ? { transformation_event_testimony: rec.transformation_event_testimony } : {}),
   };
 }
 

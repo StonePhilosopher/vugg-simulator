@@ -47,7 +47,13 @@ function _linearGridValue(x: number, xs: number[], ys: number[]): number {
 function quartzWaterDensityGcm3(temperatureC: number, fluidPressureKbar: number): number | null {
   const t = Number(temperatureC);
   if (!Number.isFinite(t) || t < 300 || t > 450) return null;
-  const p = Math.max(0.5, Math.min(4.4, Number(fluidPressureKbar) || 0.5));
+  const p = Number(fluidPressureKbar);
+  // The commissioned IAPWS table begins at 0.50 kbar.  Clamping a shallow
+  // fluid to that row silently changed the model while presenting the result
+  // as a measured-pressure calculation.  Reject values outside the tabulated
+  // rectangle; the caller can then use the explicitly labelled legacy quartz
+  // relation instead of fabricating a density extrapolation.
+  if (!Number.isFinite(p) || p < 0.5 || p > 4.4) return null;
   const lowDensity = _linearGridValue(
     p,
     QUARTZ_WATER_DENSITY_GRID.pressuresKbar,
@@ -77,11 +83,24 @@ function manningQuartzSolubilityPpm(
 
 function quartzPressureSolubilityAssessment(temperatureC: number, fluidPressureKbar: number) {
   const pressure = clampFluidPressureKbar(fluidPressureKbar);
+  if (pressure < 0.5 && temperatureC >= 300 && temperatureC <= 450) {
+    const referenceDensityGcm3 = quartzWaterDensityGcm3(temperatureC, 0.5)!;
+    const referencePpm = manningQuartzSolubilityPpm(temperatureC, 0.5)!;
+    return {
+      active: false, equilibriumPpm: null, waterDensityGcm3: null,
+      referenceDensityGcm3, referencePpm, pressureFactor: 1,
+      pressureClampedLow: true,
+      status: 'outside-pressure-grid',
+      note: `Below the 0.50-kbar IAPWS density grid: Manning pressure correction is inactive and the legacy temperature relation remains authoritative. The 0.50-kbar boundary value (rhoH2O ${referenceDensityGcm3.toFixed(3)} g/cm3; quartz ${referencePpm.toFixed(0)} ppm) is reference-only, not this fluid's density or equilibrium.`,
+    };
+  }
   const equilibriumPpm = manningQuartzSolubilityPpm(temperatureC, pressure);
   if (equilibriumPpm == null) {
     return {
       active: false, equilibriumPpm: null, waterDensityGcm3: null,
       referencePpm: null, pressureFactor: 1,
+      pressureClampedLow: false,
+      status: 'outside-temperature-grid',
       note: 'Outside the promoted 300-450 C IAPWS density grid; the low-temperature calibrated quartz relation remains authoritative.',
     };
   }
@@ -90,7 +109,8 @@ function quartzPressureSolubilityAssessment(temperatureC: number, fluidPressureK
   const pressureFactor = equilibriumPpm / referencePpm;
   return {
     active: true, equilibriumPpm, waterDensityGcm3, referencePpm, pressureFactor,
-    pressureClampedLow: pressure < 0.5,
+    pressureClampedLow: false,
+    status: 'active',
     note: `Manning (1994) quartz solubility from bilinearly interpolated IAPWS water density; ${pressureFactor.toFixed(2)}x the 0.5-kbar solubility at this temperature.`,
   };
 }

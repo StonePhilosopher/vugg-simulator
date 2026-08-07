@@ -41,6 +41,14 @@ describe('adversarial claim-card fleet', () => {
         strip_steps: strip.steps,
       });
       expect(card.claim.expects_species, `${scenario}: authored species`).toEqual(spec.expects_species || []);
+      expect(card.claim.expectation_contract.deterministic, `${scenario}: deterministic contract`)
+        .toEqual(spec.expects_species || []);
+      expect(card.claim.expectation_contract.statistical, `${scenario}: statistical contract`)
+        .toEqual(spec.statistical_species || []);
+      expect(card.claim.expectation_contract.aspirational, `${scenario}: aspirational contract`)
+        .toEqual(spec.aspirational_species || []);
+      expect(card.claim.excluded_species, `${scenario}: locality exclusions`)
+        .toEqual(spec.excluded_species || {});
       expect(card.claim.authored_science_context.model_digest, `${scenario}: authored science digest`).toBe(MODEL_DIGEST);
       expect(card.claim.authored_science_context.growth_budget, `${scenario}: disclosed growth-budget boundary`)
         .toEqual(STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE);
@@ -50,17 +58,29 @@ describe('adversarial claim-card fleet', () => {
       for (const event of strip.nucleation_events || []) {
         eventCount.set(event.mineral, (eventCount.get(event.mineral) || 0) + 1);
       }
-      expect(card.testimony.paragenetic_order, `${scenario}: all nucleation testimony`)
-        .toHaveLength(eventCount.size);
+      const transformationCount = new Map<string, number>();
+      for (const event of strip.executed_testimony?.transformations || []) {
+        transformationCount.set(event.to, (transformationCount.get(event.to) || 0) + 1);
+      }
+      const delivered = new Set([...eventCount.keys(), ...transformationCount.keys()]);
+      expect(card.testimony.paragenetic_order, `${scenario}: all appearance testimony`)
+        .toHaveLength(delivered.size);
       for (const entry of card.testimony.paragenetic_order) {
         expect(entry.events, `${scenario}: ${entry.mineral} event count`)
-          .toBe(eventCount.get(entry.mineral));
+          .toBe(eventCount.get(entry.mineral) || 0);
+        expect(entry.transformations, `${scenario}: ${entry.mineral} transformation count`)
+          .toBe(transformationCount.get(entry.mineral) || 0);
       }
+
+      expect(card.testimony.expected_no_shows, `${scenario}: deterministic contract must deliver`).toEqual([]);
+      expect(card.testimony.excluded_species_appearances, `${scenario}: exclusions must hold`).toEqual([]);
 
       const executed = card.testimony.executed_science;
       expect(executed.pressure_phase_sample_count, `${scenario}: pressure samples`).toBe(strip.steps);
       expect(executed.stress_events, `${scenario}: stress testimony`)
         .toEqual(strip.executed_testimony?.stress_events || []);
+      expect(executed.transformations, `${scenario}: transformation testimony`)
+        .toEqual(strip.executed_testimony?.transformations || []);
       expect(Object.keys(card.testimony.saturation_indices).sort(), `${scenario}: SI cards`)
         .toEqual(Object.keys(strip.chips).filter(key => key.startsWith('SI_')).sort());
 
@@ -68,6 +88,8 @@ describe('adversarial claim-card fleet', () => {
         expect(markdown, `${scenario}: rendered digest`).toContain(`**Model digest:** ${MODEL_DIGEST}`);
         expect(markdown, `${scenario}: rendered spec identity`).toContain(`**Scenario spec hash:** ${strip.scenario_spec_hash}`);
         expect(markdown, `${scenario}: rendered model boundary`).toContain('Model boundary: calibrated growth budget');
+        expect(markdown, `${scenario}: rendered expectation contract`).toContain('Expectation contract');
+        expect(markdown, `${scenario}: deterministic delivery`).toContain('**Deterministic no-shows:** (none)');
         expect(markdown, `${scenario}: rendered physical limitation`).toContain('not physical solid mass or volume');
         expect(markdown, `${scenario}: authored section`).toContain('Authored pressure/stress/phase context');
         expect(markdown, `${scenario}: executed section`).toContain('Executed pressure/stress/phase testimony');

@@ -53,18 +53,43 @@ function seriesStats(chip) {
   return { first, last, min, max, units: chip.units || '' };
 }
 
-/** Group nucleation events into first-appearance order — the paragenetic sequence. */
+/** Group nucleation plus alteration products into first-appearance order. */
 function paragenesis(strip) {
-  const firstStep = new Map();     // mineral -> first step it nucleated
-  const count = new Map();          // mineral -> # of nucleation events
+  const firstStep = new Map();
+  const count = new Map();
+  const transformationCount = new Map();
+  const pathways = new Map();
   for (const ev of strip.nucleation_events || []) {
     if (!firstStep.has(ev.mineral) || ev.step < firstStep.get(ev.mineral)) firstStep.set(ev.mineral, ev.step);
     count.set(ev.mineral, (count.get(ev.mineral) || 0) + 1);
+    if (!pathways.has(ev.mineral)) pathways.set(ev.mineral, new Set());
+    pathways.get(ev.mineral).add('nucleation');
+  }
+  for (const ev of strip.executed_testimony?.transformations || []) {
+    if (!ev?.to) continue;
+    if (!firstStep.has(ev.to) || ev.step < firstStep.get(ev.to)) firstStep.set(ev.to, ev.step);
+    transformationCount.set(ev.to, (transformationCount.get(ev.to) || 0) + 1);
+    if (!pathways.has(ev.to)) pathways.set(ev.to, new Set());
+    pathways.get(ev.to).add(`${ev.from || '?'} -> ${ev.to}`);
   }
   const order = [...firstStep.entries()]
     .sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0]))
-    .map(([mineral, step]) => ({ mineral, first_step: step, events: count.get(mineral) }));
+    .map(([mineral, step]) => ({
+      mineral,
+      first_step: step,
+      events: count.get(mineral) || 0,
+      transformations: transformationCount.get(mineral) || 0,
+      pathways: [...(pathways.get(mineral) || [])],
+    }));
   return order;
+}
+
+function normalizeExpectationEntries(entries) {
+  return (Array.isArray(entries) ? entries : []).map((entry) => (
+    typeof entry === 'string'
+      ? { mineral: entry, reason: null }
+      : { mineral: String(entry?.mineral || ''), reason: entry?.reason || null }
+  )).filter((entry) => entry.mineral);
 }
 
 function buildScienceDecisions(spec, science) {
@@ -133,6 +158,7 @@ function sampleStats(samples, key) {
 function buildExecutedScienceTestimony(strip) {
   const pressurePhase = strip.executed_testimony?.pressure_phase || [];
   const stressEvents = strip.executed_testimony?.stress_events || [];
+  const transformations = strip.executed_testimony?.transformations || [];
   const al2Counts = {};
   let aragoniteSecureSteps = 0;
   for (const sample of pressurePhase) {
@@ -161,6 +187,7 @@ function buildExecutedScienceTestimony(strip) {
       last: pressurePhase.at(-1)?.gypsum_anhydrite ?? null,
     },
     stress_events: stressEvents,
+    transformations,
   };
 }
 
@@ -168,8 +195,19 @@ export function buildCard(name, spec, strip, science) {
   const para = paragenesis(strip);
   const present = new Set(para.map((p) => p.mineral));
   const expects = spec.expects_species || [];
-  const surprises = para.filter((p) => !expects.includes(p.mineral)).map((p) => p.mineral);
+  const statistical = normalizeExpectationEntries(spec.statistical_species);
+  const aspirational = normalizeExpectationEntries(spec.aspirational_species);
+  const authored = new Set([
+    ...expects,
+    ...statistical.map((entry) => entry.mineral),
+    ...aspirational.map((entry) => entry.mineral),
+  ]);
+  const surprises = para.filter((p) => !authored.has(p.mineral)).map((p) => p.mineral);
   const noShows = expects.filter((m) => !present.has(m));
+  const statisticalNoShows = statistical.map((entry) => entry.mineral).filter((m) => !present.has(m));
+  const aspirationalNoShows = aspirational.map((entry) => entry.mineral).filter((m) => !present.has(m));
+  const excludedSpecies = spec.excluded_species || {};
+  const excludedAppearances = Object.keys(excludedSpecies).filter((m) => present.has(m));
 
   const env = {};
   for (const k of ['T', 'pH', 'Eh', 'salinity', 'O2', 'concentration']) {
@@ -192,6 +230,12 @@ export function buildCard(name, spec, strip, science) {
       anchor: spec.anchor || null,
       description: spec.description || null,
       expects_species: expects,
+      expectation_contract: {
+        deterministic: expects,
+        statistical,
+        aspirational,
+      },
+      excluded_species: excludedSpecies,
       sources: spec.sources || [],
       initial_temperature_C: spec.initial?.temperature_C ?? null,
       initial_pressure_kbar: spec.initial?.pressure_kbar ?? null,
@@ -204,6 +248,9 @@ export function buildCard(name, spec, strip, science) {
       paragenetic_order: para,
       surprises_not_in_expects: surprises,
       expected_no_shows: noShows,
+      statistical_no_shows: statisticalNoShows,
+      aspirational_no_shows: aspirationalNoShows,
+      excluded_species_appearances: excludedAppearances,
       environment: env,
       saturation_indices: si,
       executed_science: buildExecutedScienceTestimony(strip),
@@ -229,19 +276,27 @@ export function renderMarkdown(card) {
   L.push(`  - Preserves: ${sd.growth_budget.preserves}`);
   L.push(`  - Limitation: ${sd.growth_budget.limitation}`);
   L.push('');
-  L.push(`**expects_species (${c.expects_species.length}):** ${c.expects_species.join(', ') || '(none declared)'}`);
+  L.push('## Expectation contract');
+  L.push(`**Deterministic (${c.expectation_contract.deterministic.length}):** ${c.expectation_contract.deterministic.join(', ') || '(none)'}`);
+  L.push(`**Statistical (${c.expectation_contract.statistical.length}):** ${c.expectation_contract.statistical.map((e) => `${e.mineral}${e.reason ? ` — ${e.reason}` : ''}`).join('; ') || '(none)'}`);
+  L.push(`**Aspirational (${c.expectation_contract.aspirational.length}):** ${c.expectation_contract.aspirational.map((e) => `${e.mineral}${e.reason ? ` — ${e.reason}` : ''}`).join('; ') || '(none)'}`);
+  const excluded = Object.entries(c.excluded_species || {});
+  L.push(`**Locality exclusions (${excluded.length}):** ${excluded.map(([m, reason]) => `${m} — ${reason}`).join('; ') || '(none)'}`);
   L.push('');
   L.push(`**Cited sources:**`);
   for (const s of c.sources) L.push(`  - ${s}`);
   if (!c.sources.length) L.push('  - (none)');
   L.push('');
   L.push(`## Paragenetic order as grown (${t.species_count} species)`);
-  L.push('| # | mineral | first step | # events |');
-  L.push('|--|--|--|--|');
-  t.paragenetic_order.forEach((p, i) => L.push(`| ${i + 1} | ${p.mineral} | ${p.first_step} | ${p.events} |`));
+  L.push('| # | mineral | first step | nucleations | transformations | pathway |');
+  L.push('|--|--|--|--|--|--|');
+  t.paragenetic_order.forEach((p, i) => L.push(`| ${i + 1} | ${p.mineral} | ${p.first_step} | ${p.events} | ${p.transformations} | ${p.pathways.join('; ')} |`));
   L.push('');
-  L.push(`**Surprises (grown but NOT in expects_species):** ${t.surprises_not_in_expects.join(', ') || '(none)'}`);
-  L.push(`**No-shows (expected but never nucleated):** ${t.expected_no_shows.join(', ') || '(none)'}`);
+  L.push(`**Surprises (present but absent from all authored expectation tiers):** ${t.surprises_not_in_expects.join(', ') || '(none)'}`);
+  L.push(`**Deterministic no-shows:** ${t.expected_no_shows.join(', ') || '(none)'}`);
+  L.push(`**Statistical no-shows (non-failing):** ${t.statistical_no_shows.join(', ') || '(none)'}`);
+  L.push(`**Aspirational no-shows (non-failing):** ${t.aspirational_no_shows.join(', ') || '(none)'}`);
+  L.push(`**Excluded-locality appearances (failing):** ${t.excluded_species_appearances.join(', ') || '(none)'}`);
   L.push('');
   L.push(`## Environment trajectory (first → last, [min,max])`);
   for (const [k, v] of Object.entries(t.environment)) {
@@ -287,6 +342,13 @@ export function renderMarkdown(card) {
     }
   } else {
     L.push('  - Executed stress: no stress event recorded by the run.');
+  }
+  if (ex.transformations.length) {
+    for (const e of ex.transformations) {
+      L.push(`  - Transformation step ${e.step}: ${e.from} → ${e.to} (${e.mechanism})`);
+    }
+  } else {
+    L.push('  - Mineral transformations: none executed.');
   }
   L.push('');
   L.push(`## Scenario notes (author's own rationale)`);

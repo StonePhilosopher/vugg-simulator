@@ -165,6 +165,7 @@ function archiveScenario(name, seed = 42) {
     executed_testimony: {
       pressure_phase: ds.pressure_phase_testimony || [],
       stress_events: ds.stress_event_testimony || [],
+      transformations: ds.transformation_event_testimony || [],
     },
   };
   return assertStripIdentity(story, {

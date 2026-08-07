@@ -172,7 +172,10 @@
     "pulse": {
       "anchor": "(generic testing scaffold — no specific locality)",
       "description": "Cooling with a fluid pulse mid-growth + a cooling pulse later. Tests event-driven chemistry perturbation.",
-      "expects_species": ["quartz", "calcite"],
+      "expects_species": ["quartz"],
+      "aspirational_species": [
+        { "mineral": "calcite", "reason": "Geologically plausible late gangue, but absent from the release seed audit; a future carbonate-bearing pulse must deliver it before it becomes deterministic." }
+      ],
       "duration_steps": 100,
       "notes": [
         "Generic testing scenario — not anchored to a real locality. Acts as a slightly more interesting twin of `cooling`: a single fluid pulse plus a cooling pulse halfway through to test event-driven chemistry perturbation.",
@@ -873,14 +876,22 @@
 
     "reactive_wall": {
       "anchor": "Sweetwater Mine (Reynolds County, MO), Viburnum Trend Pb-Zn district. Host: Upper Cambrian Bonneterre Dolomite/dolostone.",
-      "description": "Acid-into-carbonate paragenesis — repeated acid pulses dissolve the Bonneterre dolostone wall, then pH recovery drives supersaturation and growth bursts. Sphalerite-galena-marcasite ± barite, dolomite-calcite gangue.",
-      "expects_species": ["sphalerite", "pyrite", "barite", "dolomite"],
+      "description": "Acid-into-carbonate paragenesis — repeated acid pulses dissolve the Bonneterre dolostone wall, then pH recovery drives supersaturation and growth bursts. Sphalerite-galena-marcasite with dolomite-calcite gangue; Ba and Sr remain dissolved brine tracers at this mine.",
+      "expects_species": ["sphalerite", "pyrite", "dolomite", "calcite", "galena", "marcasite"],
+      "excluded_species": {
+        "acanthite": "Sweetwater records Ag chiefly as trace lattice substitution in galena; no discrete Ag2S phase is documented in the mine species record.",
+        "barite": "The high-Ba value is a fluid-inclusion brine tracer, not evidence for precipitated barite at Sweetwater.",
+        "celestine": "Dissolved Sr is a basinal-brine tracer; discrete celestine is absent from the Sweetwater mine record.",
+        "selenite": "Gypsum/selenite is absent from the Sweetwater mine record.",
+        "rhodochrosite": "The Sweetwater mine record does not document a discrete Mn-carbonate phase.",
+        "siderite": "The Sweetwater mine record does not document a discrete Fe-carbonate phase."
+      },
       "duration_steps": 120,
       "notes": [
         "Anchor: Sweetwater Mine, Viburnum Trend MVT district (high-Ba endmember vs Tri-State, distinguished by Stoffell et al. 2008 LA-ICP-MS).",
         "Mechanic: acid entering a carbonate vug doesn't just dissolve crystals — it dissolves the WALL. Bonneterre dolostone neutralizes the acid and releases formula-balanced Ca2+, Mg2+, and two carbonate units back into solution. When pH recovers, that inventory crosses the dolomite saturation barrier and precipitates as a hydrothermal saddle-dolomite lining. The acid is both destroyer and creator; the vug enlarges as the replacement front advances.",
         "Repeated acid pulses (steps 15/40/70) model the Viburnum dissolution → supersaturation → growth burst cycle. Final fracture seal at step 90 closes the system.",
-        "Chemistry-audit gap-fill pass (Apr 2026): Na, K, Cl (NaCl-CaCl2 brine baseline), Ag (Viburnum galena carries minor Ag — the Trend is one of the 'some deposits' where Leach et al. 2010 allow a byproduct Ag credit, UNLIKE silver-poor Tri-State whose Ag was de-confabulated v195), Sr (basinal-brine tracer + minor celestine documented in Viburnum). v5 gap-fill: O2=0.25 to allow barite + galena coexistence per the MVT-Eh window.",
+        "SIM 247 locality reconciliation: Sweetwater's valid-species record licenses calcite, dolomite, galena, marcasite, pyrite and sphalerite but not acanthite, barite, celestine, selenite, rhodochrosite or siderite. Ba and Sr stay in solution as fluid-inclusion/basinal-brine tracers; Ag is reduced to a lattice-trace inventory and the reducing MVT baseline is restored to O2=0.05. The explicit exclusions are mine-specific negative evidence, not global engine bans.",
         "MINDAT VALID-SPECIES REFERENCE (boss-supplied screenshots, 2026-07-25 — Sweetwater Mine, Ellington, Reynolds Co., MO; 23 valid + 1 erroneous): Anilite, Bornite, Calcite, Carrollite, Chalcocite, Chalcopyrite (var. Blistered Copper), Covellite, Dickite, Digenite, Djurleite, Dolomite, Erythrite, Fletcherite, Galena, Malachite, Marcasite, Millerite, 'Petroleum' (var. Bitumen), Polydymite, Pyrite, Quartz, Siegenite, Sphalerite, Vaesite. LINNAEITE struck through as an ERRONEOUS literature entry — mindat's own flag; never cite it as license. Page text worth keeping: Viburnum differs from other MVT in being shallower, carrying Ni-Co minerals + some Cu-Fe sulfides, with REPETITIVE PRECIPITATION-DISSOLUTION of the sulfides (base metals transported WITH reduced S in the same solutions — cf. the fluid.S split's own two-pool story) — the scenario's acid-pulse mechanic models exactly this. WHAT THE LIST VOTES ON (vs seed-42 v236): (a) THE HEADLINE GAP — the entire Viburnum Ni-Co-Cu sulfide suite is documented here and the sim grows NONE of it: carrollite, fletcherite, millerite, polydymite, siegenite, vaesite (+ the Cu ladder anilite/bornite/chalcocite/covellite/digenite/djurleite + erythrite as the Co bloom). Siegenite is ALREADY on the missing-engines want list — this is its reference locality; a Ni-Co arc would make this scenario the Viburnum showcase its anchor promises. (b) Census flags (sim grows, list lacks): ACANTHITE ×4 @1.8mm — NO discrete Ag species at Sweetwater; the Apr-2026 note's Leach byproduct-Ag credit defends broth Ag / Ag-IN-galena, NOT discrete acanthite crystals (v195-silver family? BOSS ADJUDICATION); BARITE ×6 — unlisted despite the 'high-Ba endmember' anchor (Stoffell's high-Ba is the FLUID-INCLUSION brine, not precipitated barite at this mine; expects_species includes barite — adjudicate before any kill); CELESTINE ×9 (S2-flipped; unlisted — Ba-blanket record-licensed only at elmwood so far); SELENITE ×2 (unlisted — selenite census now reads elmwood NO / picher YES / sweetwater NO); RHODOCHROSITE + SIDERITE (unlisted — the Fe/Mn-carbonate over-fire flag is now 3-for-3 across the MVT family). (c) Licensed ✓: calcite, dolomite, galena, marcasite, pyrite, quartz, sphalerite; dickite + malachite + bitumen = candidates."
       ],
       "initial": {
@@ -914,20 +925,15 @@
           // Cl=200: brine anion paired with Na+K. Free Cl enables Pb-Cl
           // (pyromorphite-laurionite) chemistry where Pb is present.
           "Cl": 200,
-          // Ag=3: Viburnum galena carries minor recoverable Ag (SE Missouri
-          // is a documented byproduct-Ag MVT district — Leach et al. 2010's
-          // "some deposits"). The old comparison "lower than Tri-State Ag=5"
-          // died with the v195 de-confabulation: Tri-State Ag is 0, and
-          // Viburnum is the MORE argentiferous of the two in reality.
-          "Ag": 3,
+          // Ag=0.3: retain only a lattice-trace inventory in galena. The mine's
+          // valid-species record does not license discrete Ag2S crystals.
+          "Ag": 0.3,
           // Sr=12: basinal-brine tracer (Hanor 1994); minor celestine in Viburnum gangue.
           "Sr": 12,
-          // v5 gap-fill: O2=0.25 (was 0.0). Same MVT-Eh rationale as Tri-State —
-          // mildly reducing brine where SO4 2- persists alongside H2S
-          // (barite + galena coexistence). Unlocks dormant Ba=25 + Sr=12 pools
-          // without disturbing the existing sulfide assemblage.
-          // Source: Sverjensky 1981; Anderson & Macqueen 1982.
-          "O2": 0.25,
+          // SIM 247: reducing MVT brine. Ba and Sr remain dissolved tracers;
+          // this locality does not use an artificial oxidizing branch to force
+          // unrecorded barite/celestine precipitation.
+          "O2": 0.05,
           "pH": 7.0,
           "salinity": 18.0
         },
@@ -1681,14 +1687,18 @@
         "Strunz 1959 — Tsumeb deep oxidation zone scheelite + lead-tungstate suite (raspite + stolzite)",
         "Bowell 2014, Rev. Mineral. Geochem. 79:589 — Tsumeb hydrogeochemistry + arsenate mineral stability (the acid-front movement)",
         "Singer & Stumm 1970, Science 167:1121 — Fe(II)→Fe(III) as the rate-determining step of sulfide-oxidation acid generation",
-        "Skarpelis 2009, Resource Geology 59(1) — Lavrion Pb-Ag-Zn supergene oxidation profile (carbonate-hosted analogue)"
+        "Skarpelis 2009, Resource Geology 59(1) — Lavrion Pb-Ag-Zn supergene oxidation profile (carbonate-hosted analogue)",
+        "Harvard Mineralogical & Geological Museum, Tsumeb Mine Notebook TSNB159 — gypsum is a confirmed, somewhat rare Tsumeb mineral from all three oxidation zones; well-formed crystals reach centimetre scale"
       ]
     },
 
     "gem_pegmatite": {
       "anchor": "Cruzeiro mine, São José da Safira, Doce Valley, Minas Gerais (Variant A — Brasiliano-age miarolitic gem pegmatite, 700-450 Ma).",
       "description": "Miarolitic cavity in a complex zoned pegmatite. The residual pocket where incompatible elements (Be, B, Li, F) accumulate beyond belief, then cross saturation in cascade — schorl → beryl → spodumene + elbaite → late topaz, with kaolinization of the microcline walls at the end.",
-      "expects_species": ["tourmaline", "spodumene", "topaz", "feldspar", "albite", "lepidolite", "cassiterite"],
+      "expects_species": ["tourmaline", "spodumene", "feldspar", "albite", "lepidolite", "cassiterite"],
+      "aspirational_species": [
+        { "mineral": "topaz", "reason": "A documented late pegmatite phase, but absent from the release seed audit; retained as a future F-Al pocket-stage tuning target rather than a deterministic promise." }
+      ],
       "duration_steps": 230,
       // FLUID-SPOTS Phase 2c.2b — the per-cell deposition-clustering DEMONSTRATOR
       // (the boss's "best crystals cluster near the feeder"). A miarolitic gem
@@ -2113,7 +2123,10 @@
           // captures — whatever the event just set.
           "field": "fluid.SiO2",
           "startStep": 110,
-          "endStep": 200,
+          // Stop when the explicit late-cooling/depletion event begins.
+          // Extending the 950-ppm setpoint to step 200 used to overwrite that
+          // event and manufacture an unauthored terminal opal generation.
+          "endStep": 160,
           "base": 950,
           "ops": []
         }
@@ -2127,18 +2140,19 @@
           // initially — those climb in Stage III when alkali-rich
           // groundwater finally percolates through, gating apophyllite
           // behind that explicit pulse so it doesn't preempt hematite.
-          // Iron is already abundant from basalt groundmass leaching;
-          // combined with high O2 it lets Stage I deposit hematite
-          // needles before Stage III brings apophyllite.
+          // Reactive Fe, Al and carbonate are delivered by their authored
+          // step-35 and step-70 pulses. Starting them at zero makes the silica
+          // veneer the first preserved cavity generation instead of allowing
+          // hematite, albite/epidote, calcite and zeolites at step zero.
           // Below quartz equilibrium at 250 C: Stage I cannot pre-empt the
           // authored step-20 chalcedony veneer as a step-0 quartz druse.
           "SiO2": 400,
           "Ca": 180,
-          "CO3": 80,
-          "Fe": 180,
+          "CO3": 0,
+          "Fe": 0,
           "Mn": 4,
           "Mg": 8,
-          "Al": 15,
+          "Al": 0,
           "K": 2,
           // Na 40→80 (v201): Deccan amygdule fluids are Na-Ca, and the ordered
           // Na-Ca zeolite mesolite needs BOTH cations — 40 kept Na/(Na+Ca) at
@@ -2197,7 +2211,10 @@
     "radioactive_pegmatite": {
       "anchor": "(generic high-T alkali-granite pocket — not anchored to a specific locality)",
       "description": "High-T pegmatitic fluid + U + Pb. Grows uraninite, smoky quartz (darkened by radiation), feldspar/albite, and late-stage galena from radiogenic Pb.",
-      "expects_species": ["uraninite", "autunite", "quartz", "feldspar", "lepidolite", "cassiterite"],
+      "expects_species": ["uraninite", "quartz", "feldspar", "lepidolite", "cassiterite"],
+      "aspirational_species": [
+        { "mineral": "autunite", "reason": "Secondary hydration product absent from the release seed audit; requires a demonstrably executed oxidation-hydration window before promotion to deterministic." }
+      ],
       "duration_steps": 120,
       "notes": [
         "Generic testing scenario — not anchored to a real locality (per the user's clarification on the audit brief). Pegmatitic fluids are silica-saturated melts with abundant K + Na + Al + U.",
@@ -2274,7 +2291,10 @@
     "schneeberg": {
       "anchor": "Schneeberg, Erzgebirgskreis (Saxony Ore Mountains), Germany — type locality for torbernite (1772), zeunerite (1872), uranospinite (1873), and ten more uranyl arsenate-phosphate species. Walpurgis Flacher vein, Weisser Hirsch Mine.",
       "description": "Schneeberg / Erzgebirge oxidized uranium-pegmatite vein system (Walpurgis Flacher vein, Weisser Hirsch Mine, Saxony — type locality for torbernite, zeunerite, and uranospinite). A U-bearing pegmatite + chalcopyrite + arsenopyrite primary assemblage weathers under meteoric oxidation; the resulting uranyl + Cu + As fluid plates the autunite-group secondaries in two cation phases — Cu-rich first (torbernite emerald greens then zeunerite as As-pulse arrives), then Ca-dominant after Cu is consumed (autunite + uranospinite, the bright LW-UV fluorescent yellows).",
-      "expects_species": ["uraninite", "torbernite", "zeunerite", "autunite", "uranospinite", "native_bismuth", "native_arsenic", "erythrite", "annabergite", "cobaltite", "nickeline", "cassiterite", "pharmacolite", "haidingerite"],
+      "expects_species": ["uraninite", "torbernite", "zeunerite", "autunite", "uranospinite", "native_bismuth", "native_arsenic", "erythrite", "annabergite", "cobaltite", "nickeline", "cassiterite", "pharmacolite"],
+      "aspirational_species": [
+        { "mineral": "haidingerite", "reason": "A possible pharmacolite dehydration product, but no executed conversion appeared in the release seed audit for Schneeberg." }
+      ],
       "duration_steps": 160,
       "movements": [
         {
@@ -3242,7 +3262,11 @@
     "epithermal_telluride": {
       "anchor": "Cripple Creek mining district, Teller County, Colorado — alkalic-volcanic-hosted low-sulfidation epithermal Au-Te. Cresson Mine pocket, Carlton tunnel level. Type district for the world's gold-telluride mineralogy (calaverite, sylvanite, krennerite, hessite, petzite, native tellurium).",
       "description": "Low-sulfidation alkalic-volcanic epithermal vein at the gold-telluride sweet spot. Late-stage K-alkaline fluid carries Au + Ag + Te through fractured phonolite and crystallizes the calaverite + sylvanite + hessite trio along quartz + fluorite + adularia gangue. Cooling from 280°C through the 150-200°C epithermal window over geologic time — the temperature trajectory crosses both the cubic↔monoclinic hessite transition (155°C) and the calaverite-sylvanite Au:Ag fork.",
-      "expects_species": ["calaverite", "sylvanite", "hessite", "native_gold", "native_tellurium", "fluorite", "quartz"],
+      "expects_species": ["calaverite", "sylvanite", "hessite", "native_tellurium", "quartz"],
+      "aspirational_species": [
+        { "mineral": "native_gold", "reason": "Natural epithermal accessory, but absent from the release seed audit; not a deterministic outcome of the current telluride allocation." },
+        { "mineral": "fluorite", "reason": "Plausible gangue in the deposit class, but absent from the release seed audit and not guaranteed by this authored fluid path." }
+      ],
       "duration_steps": 180,
       "notes": [
         "Anchor: Cripple Creek mining district — alkalic-igneous diatreme, late-Oligocene (~32-28 Ma), produces high-grade Au-Te ore from low-sulfidation epithermal veins through phonolite + lamprophyre dikes. The world's premier gold-telluride locality and the type area for calaverite (1861, type specimen from Calaveras County CA but the species grows everywhere here), sylvanite, krennerite, petzite, and nagyágite.",
@@ -3333,7 +3357,10 @@
     "ultramafic_supergene": {
       "anchor": "Marlborough chrysoprase deposits, Queensland, Australia — Ni-laterite weathering of Late-Devonian Marlborough Block ophiolitic peridotite. Type aesthetic: apple-green chrysoprase nodules + magnesite veinlets in saprolite over serpentinized harzburgite.",
       "description": "Tropical-to-temperate Ni-laterite weathering of ultramafic protolith. Olivine + pyroxene break down to serpentine, releasing Ni + Mg + SiO2 to slow alkaline groundwater that percolates through fractures and crystallizes chrysoprase (Ni-bearing chalcedony) as fracture-fill, with magnesite + calcite + chalcedony as the cogenetic gangue suite. The signature green color comes from nano-inclusions of Ni-phyllosilicate (pimelite/willemseite/kerolite) trapped within the chalcedony fabric — a composite color, not a lattice color.",
-      "expects_species": ["chrysoprase", "quartz", "calcite"],
+      "expects_species": ["chrysoprase", "calcite"],
+      "aspirational_species": [
+        { "mineral": "quartz", "reason": "The authored silica inventory is intentionally sufficient for chalcedony-family chrysoprase but does not guarantee macroscopic quartz nucleation." }
+      ],
       "duration_steps": 200,
       "notes": [
         "Anchor: Marlborough chrysoprase deposits (Queensland) — modern world reference for gem-grade chrysoprase. Late Devonian (380-360 Ma) Marlborough Block serpentinite + dunite is the protolith; Cenozoic weathering produced the saprolite + Ni-laterite + chrysoprase chemistry (Sachanbiński et al. 2001 documents the nano-inclusion structure).",
@@ -4059,7 +4086,13 @@
       // adopted (the As-sulfide envelopes are 20-250/280°C and the real
       // Roughten complaint is compositional — As should ride the sulfosalt
       // sink when base metals dominate — which is rung-4 territory).
-      "expects_species": ["galena", "sphalerite", "chalcopyrite", "pyrite", "tetrahedrite", "tennantite", "calcite", "cerussite", "anglesite", "linarite", "caledonite", "leadhillite", "brochantite", "pyromorphite", "mimetite", "mottramite", "native_silver"],
+      "expects_species": ["galena", "sphalerite", "pyrite", "tetrahedrite", "tennantite", "cerussite", "anglesite", "linarite", "caledonite", "leadhillite", "brochantite", "pyromorphite", "mottramite"],
+      "aspirational_species": [
+        { "mineral": "chalcopyrite", "reason": "Documented primary ore but absent from the release seed audit; the current Cu-S allocation preferentially feeds other sulfides." },
+        { "mineral": "calcite", "reason": "Documented gangue but absent from the release seed audit in this silicate-hosted, carbonate-poor path." },
+        { "mineral": "mimetite", "reason": "Documented campylite-stage arsenate but absent from the release seed audit; requires a better Pb-As-Cl allocation window." },
+        { "mineral": "native_silver", "reason": "Documented at the locality but absent from the release seed audit; current silver is retained in or routed to other Ag phases." }
+      ],
       "duration_steps": 200,
       "notes": [
         "Anchor: Roughten Gill Mine, Caldbeck Fells, Cumbria. The Caldbeck Fells district occupies the northern Skiddaw inlier; Roughten Gill itself sits on the southern flank of Balliway Rigg (NY 304 344). Host is the Ordovician Eycott Volcanic Group (basaltic-andesitic to rhyolitic lavas + tuffs — NOT Borrowdale Volcanic Group, a common error in derivative literature). The South Vein cuts a NE-SW normal fault juxtaposing the Carrock Fell Intrusive Complex's Iron Crag Microgranite (Carrock Granophyre, U-Pb zircon 452.4 ± 3.1 Ma) against gabbro of the same complex. Caldbeck Fells district hosts ~175 valid mineral species — the greatest mineralogical diversity per unit area in the British Isles per Bridges et al. 2011 + Cooper & Stanley 1990.",
@@ -4187,7 +4220,10 @@
     "jeffrey_mine": {
       "anchor": "Jeffrey Mine, Val-des-Sources (formerly Asbestos), Quebec, Canada. Open-pit chrysotile-asbestos mine 1881-2011; produced ~40% of world chrysotile for most of the 20th century. Town renamed itself in 2020 from Asbestos to Val-des-Sources to step out from under the asbestos-health-crisis baggage. Among mineral collectors NOT famous for asbestos but for the rodingite metasomatic assemblage exposed by the open-pit excavation — Ca-Al-Mg silicate cabinet specimens 1880s through 2011. The world's premier locality for cabinet-grade CYPRINE vesuvianite (Cu-bearing sky-to-deep-blue Cu²⁺-O charge-transfer variety per Bernardini 1981 MR 12(5):277 figs 12-15). Geological context: Thetford Mines ophiolite complex, Quebec Appalachians, obducted ophiolite from the Taconian Orogeny ~470 Ma; host is serpentinized peridotite with cross-cutting mafic dikes that have been metasomatically altered to rodingite.",
       "description": "Rodingite metasomatic assemblage in the Jeffrey Mine pit. The fluid evolution walks the broth through five stages: (1) Serpentinization onset — olivine + pyroxene hydration releases Mg + Si + Ni + Fe to a hyperalkaline (pH 10.5-11.2), strongly reducing (O2 < 0.1) fluid at T 380→340°C. Chrysotile + brucite + magnetite + awaruite fire as the serpentinization byproducts. (2) Mafic dike alteration begins — the alkaline serpentinizing fluid invades cross-cutting mafic dikes (basalt-to-gabbro composition), releasing Ca + Al + Si from dike plagioclase + clinopyroxene. Trace Cr from chromite enables chrome varieties. Grossular + diopside fire as the high-T garnet + clinopyroxene endmember pair. (3) Mid-rodingite — vesuvianite stage. Trace Cu (1-4 ppm) from background chalcopyrite enables CYPRINE — the world-reference Jeffrey aesthetic per Bernardini 1981. Sky-blue cyprine vesuvianite at 1-5 ppm Cu, deep-azure cyprine > 5 ppm. (4) Late Ca-silicates — Na rises (from late-stage albitization of dike feldspar); pectolite spray-radiating habit on grossular substrate fires. Wollastonite acicular sprays. Prehnite pale-green botryoidal (Fe³⁺ trace). (5) Terminal datolite — trace B (from late hydrothermal fluid concentration) drives datolite gemmy_vitreous_terminated on prehnite/wollastonite substrate. Final-stage cabinet aesthetic; colorless to pale-yellow gemmy datolite crystals. The KEY DISCRIMINATOR vs. all other scenarios is the hyperalkaline pH (10-12) — rodingite is the alkaline outlier in the simulator's catalog (most other scenarios run pH 4-8).",
-      "expects_species": ["chrysotile", "brucite", "magnetite", "awaruite", "grossular", "diopside", "vesuvianite", "pectolite", "wollastonite", "prehnite", "datolite", "calcite"],
+      "expects_species": ["chrysotile", "brucite", "awaruite", "grossular", "diopside", "vesuvianite", "pectolite", "wollastonite", "prehnite", "datolite", "calcite"],
+      "aspirational_species": [
+        { "mineral": "magnetite", "reason": "Canonical serpentinization byproduct, but absent from the release seed audit; the redox/Fe partition needs an executed magnetite window before this becomes deterministic." }
+      ],
       "duration_steps": 200,
       "notes": [
         "Anchor: Jeffrey Mine, Val-des-Sources (45.7686°N 71.9347°W), Quebec, Canada. Open-pit chrysotile-asbestos mine 1881-2011. The pit-side ROAD CUT exposures are the canonical Jeffrey cabinet-specimen source — chrysotile-asbestos veins crisscrossed by mafic dikes, with rodingite-altered contact zones in the dike margins. The town renamed itself Val-des-Sources ('Valley of Springs') in 2020 from its original 'Asbestos' name. The 1949 Quebec Asbestos Strike is a labor-history flashpoint — a 4-month strike at Asbestos QC that was a watershed moment in modern Quebec political history. These cultural-historical facts are real but the scenario encodes the GEOLOGY — the rodingite assemblage is the cabinet-collector story.",

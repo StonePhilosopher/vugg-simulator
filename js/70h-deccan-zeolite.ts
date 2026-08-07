@@ -10,10 +10,9 @@
 // --- deccan_zeolite ---
 function event_deccan_zeolite_silica_veneer(c) {
   c.fluid.SiO2 += 400;
-  c.fluid.Fe += 50;
   c.fluid.O2 = 0.9;
   c.temperature = 200;
-  return "Stage I — hot post-eruption hydrothermal fluid coats the vesicle wall with chalcedony. Silica activity peaks; iron stripped from the basalt groundmass deposits as hematite needles on the chalcedony rind. These needles will become the seeds for the 'bloody apophyllite' phantom inclusions in Stage III.";
+  return 'Stage I — hot post-eruption hydrothermal fluid coats the vesicle wall with a fibrous chalcedony lining. This silica-only veneer establishes the substrate before the separately authored iron pulse arrives.';
 }
 
 function event_deccan_zeolite_hematite_pulse(c) {
@@ -21,7 +20,10 @@ function event_deccan_zeolite_hematite_pulse(c) {
   // operation. The dissolved-silica rise creates a measured activity reversal
   // in the agate; the later maturation event lowers it into the quartz window.
   c.fluid.addReactiveSilica(150);
-  c.fluid.Fe += 80;
+  // Fe is delivered here rather than preloaded into the initial fluid. That
+  // makes the preserved hematite generation testimony of this authored pulse,
+  // not an engine-permitted step-zero precursor that contradicts the story.
+  c.fluid.Fe += 310;
   c.fluid.O2 = 1.0;
   c.temperature = 175;
   return "An iron- and silica-bearing pulse threads through the vesicle, recording a genuine silica-activity reversal in the agate rind. Hematite needles seed the surfaces of any growing apophyllite. When the apophyllite resumes crystallization, those needles get trapped in the next growth zone — the Nashik 'bloody apophyllite' phantom band.";
@@ -39,6 +41,11 @@ function event_deccan_quartz_maturation(c) {
 function event_deccan_zeolite_stage_ii(c) {
   c.fluid.Ca += 80;
   c.fluid.K += 10;
+  // Basalt-derived Al and carbonate belong to the Stage-II groundwater
+  // regime. Holding them back until this event prevents albite/epidote,
+  // calcite and zeolites from pre-empting the Stage-I silica lining.
+  c.fluid.Al += 15;
+  c.fluid.CO3 += 80;
   c.fluid.SiO2 += 200;
   c.fluid.pH = 8.5;
   c.temperature = 130;
@@ -57,9 +64,20 @@ function event_deccan_zeolite_apophyllite_stage_iii(c) {
 
 function event_deccan_zeolite_late_cooling(c) {
   c.temperature = 80;
-  c.fluid.SiO2 = Math.min(c.fluid.SiO2, 100);
+  // The long-lived Stage-III aquifer has shut off. Preserve enough dissolved
+  // silica for the documented late zeolite tail (mesolite/chabazite require
+  // >=150 ppm) while staying below amorphous-silica equilibrium throughout
+  // the modeled 80-to-68 C cooling interval (about 281-to-238 ppm). This is a
+  // depleted residual fluid, not a fresh opal-sinter pulse.
+  c.fluid.SiO2 = Math.min(c.fluid.SiO2, 230);
+  // The terminal zeolite-bearing groundwater is compositionally distinct from
+  // the exhausted Stage-III apophyllite aquifer. Retain the documented Na-Ca-
+  // Al framework supply without restoring silica to opal supersaturation.
+  c.fluid.Ca = Math.max(c.fluid.Ca, 200);
+  c.fluid.Na = Math.max(c.fluid.Na, 150);
+  c.fluid.Al = Math.max(c.fluid.Al, 30);
   c.fluid.reactiveSilicaFraction = 1.0;
   c.fluid.pH = 8.0;
   c.flow_rate = 0.1;
-  return 'Late cooling. The vesicle fluid drops back toward ambient. Apophyllite growth slows but doesn\'t stop entirely; the remaining K-Ca-Si-F supersaturation keeps adding micron-thin growth zones on the existing crystals. This is also when chabazite arrives — rhombohedral pseudo-cubes (and lens-shaped phacolite penetration twins) perching on the earlier zeolite lining, the last zeolite of the cavity. Time, not chemistry, becomes the limiting reagent.';
+  return 'Late cooling after the Stage-III aquifer shuts off. The depleted residual fluid remains zeolite-bearing but is below amorphous-silica saturation, so it can add mesolite/chabazite to the earlier lining without inventing a terminal opal-sinter stage. Apophyllite growth slows to micron-thin zones; time becomes the limiting reagent.';
 }

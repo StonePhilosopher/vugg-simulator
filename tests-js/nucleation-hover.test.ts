@@ -268,6 +268,21 @@ describe('nucleation hover popover (97b) — recipe chips vs live conditions', (
     expect(group(quartzWhy.groups, 'Pressure / phase field')).toBeUndefined();
   });
 
+  it('labels shallow hot quartz as outside the pressure grid without showing a frozen density', () => {
+    const c = {
+      temperature: 350, pressure: 0.05,
+      fluid: { SiO2: 1200, pH: 7, O2: 1, Eh: ehFromO2(1) },
+      supersaturation_quartz() { return 1.2; },
+    };
+    const why = _buildMineralFormationExplanation('quartz', c, { conditions: c, crystals: [] }, 1.2);
+    const pressure = group(why.groups, 'Pressure / phase field').chips[0];
+    expect(pressure.status).toBe('uncertain');
+    expect(pressure.met).toBe(true);
+    expect(pressure.text).toContain('Manning correction inactive below 0.50 kbar');
+    expect(pressure.text).not.toContain('rhoH2O');
+    expect(pressure.note).toContain('reference-only');
+  });
+
   it('renders the calcite/aragonite experimental boundary band as neutral uncertainty', () => {
     const c = {
       temperature: 25, pressure: 3.5,

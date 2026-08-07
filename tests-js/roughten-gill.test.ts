@@ -248,7 +248,7 @@ describe('Roughten Gill Mine scenario (v107)', () => {
   });
 
   describe('expects_species declaration matches JSON5 spec', () => {
-    it('scenario declares Pb-Cu supergene principals (aspirational; v109 tune candidate)', () => {
+    it('separates delivered Pb-Cu principals from explicit future targets', () => {
       const scenSpec = JSON.parse(
         fs.readFileSync(path.join(ROOT, 'data', 'scenarios.json5'), 'utf8')
           .replace(/\/\/[^\n]*/g, '')
@@ -256,16 +256,16 @@ describe('Roughten Gill Mine scenario (v107)', () => {
           .replace(/,(\s*[}\]])/g, '$1')
       );
       const expects = scenSpec.scenarios.roughten_gill.expects_species;
+      const aspirational = scenSpec.scenarios.roughten_gill.aspirational_species;
       expect(Array.isArray(expects)).toBe(true);
-      // The headline minerals — v100 trio in type-district + classic
-      // Caldbeck supergene. Some are aspirational at v107 (v109 tuning
-      // target). The declaration tracks what the scenario AIMS for.
+      // Deterministic means delivered by the canonical evidence run.
       expect(expects).toContain('galena');
       expect(expects).toContain('pyromorphite');
       expect(expects).toContain('linarite');
       expect(expects).toContain('caledonite');
       expect(expects).toContain('leadhillite');
-      expect(expects).toContain('native_silver');
+      expect(expects).not.toContain('native_silver');
+      expect(aspirational.map((entry: any) => entry.mineral)).toContain('native_silver');
     });
   });
 });

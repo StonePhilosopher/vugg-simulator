@@ -43,14 +43,22 @@ function event_supergene_cu_enrichment(c) {
 }
 
 function event_supergene_dry_spell(c) {
-  c.fluid.Ca += 40;
-  c.fluid.S += 30;
+  // Tsumeb Mine Notebook TSNB159 documents centimetre-scale gypsum from all
+  // three oxidation zones. This pulse represents dissolution/reconcentration
+  // of Ca-bearing dolomite plus sulfate liberated by sulfide oxidation; the
+  // larger inventory crosses the gypsum SI gate rather than only approaching it.
+  c.fluid.Ca += 300;
+  if (typeof addSulfurToPool === 'function') {
+    addSulfurToPool(c.fluid, 'sulfate', 300, c.temperature);
+  } else {
+    c.fluid.S += 300;
+  }
   c.fluid.O2 = 1.5;
   c.temperature = 50;
   c.flow_rate = 0.3;
   // v25: water table drops to mid-cavity → upper rings go vadose.
   c.fluid_surface_ring = 8.0;
-  return "Dry season. Flow slows, evaporation concentrates the brine. Water table drops to mid-cavity. Ca²⁺ and SO₄²⁻ climb toward selenite's window — the desert-rose chemistry, the Naica chemistry. Above the meniscus, the air-exposed walls start to oxidize.";
+  return "Dry season. Flow slows and an evaporative dolomite-sulfate recharge concentrates the brine. Water table drops to mid-cavity. Ca²⁺ and SO₄²⁻ cross the documented Tsumeb selenite window. Above the meniscus, air-exposed walls start to oxidize and hydrated arsenates may dehydrate.";
 }
 
 function event_supergene_as_rich_seep(c) {

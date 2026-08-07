@@ -12471,7 +12471,25 @@
 //       asbestos habits become mats.  Deterministic renderer instances spread
 //       that one mass-booked aggregate over its wall footprint; they never add
 //       crystals or spend chemistry, and mobile uses a lower representative LOD.
-const SIM_VERSION = 246;
+// v247 — HOSTILE-REVIEW ROUND 11 EXECUTED CLAIM CONTRACTS (2026-08-06).
+//       Manning quartz pressure corrections now fail closed outside their
+//       published 300-450 C, 0.5-4.4 kbar density grid; sub-0.5-kbar Creative
+//       diagnostics explicitly fall back to the legacy temperature relation
+//       instead of displaying an exact pressure with a hidden 0.5-kbar clamp.
+//       Calcite catalog crust habits route to actual botryoidal crust geometry,
+//       while druzy_crust remains euhedral druse. Deccan's executed sequence is
+//       pulse-locked: chalcedony, hematite, quartz, Stage-II zeolites/calcite,
+//       then apophyllite; late opal is chemically excluded. Scenario promises
+//       now distinguish deterministic, statistical, and aspirational tiers.
+//       Claim cards fail any deterministic no-show and include solid-state
+//       transformation testimony, so pharmacolite->haidingerite and realgar->
+//       pararealgar count as delivered products without being mislabeled as
+//       nucleations. Mine-specific negative evidence can suppress a phase only
+//       in that scenario and appears in Creative's causal diagnosis. Sweetwater
+//       therefore retains dissolved Ba/Sr tracers but excludes unrecorded
+//       barite/celestine/gypsum/Fe-Mn carbonates/Ag2S. Tsumeb's documented
+//       gypsum is delivered by an explicit oxidized-sulfate dry-season recharge.
+const SIM_VERSION = 247;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12486,8 +12504,8 @@ const MODEL_DIGEST = [
   'event-fluid:absolute-replace-v1',
   'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
-  'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-pressure+booked-transition+chemistry-competition-v4',
-  'surface-growth:mass-booked-area+lining+crust+asbestos+druse-representatives-v1',
+  'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',
+  'surface-growth:mass-booked-area+lining+catalog-crust+asbestos+druse-representatives-v2',
   'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
   'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3',
   'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
@@ -12504,6 +12522,9 @@ const MODEL_DIGEST = [
   'borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1',
   'competition:accepted-axial-timescale+formula-weighted-budget-v3',
   'diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4',
+  'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions-v1',
+  'run-testimony:nucleation+solid-state-transformation-v1',
+  'deccan:authored-pulse-gated-paragenesis-v1',
   'save-identity:version+model+scenario-fail-closed-v1',
 ].join('|');
 

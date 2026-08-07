@@ -1195,7 +1195,18 @@ function surfaceGrowthRegimeFor(crystal: any): string | null {
   if (mineral === 'chalcedony' || SURFACE_GROWTH_LINING_HABIT.test(habit)) {
     return 'laminated_lining';
   }
-  if ((mineral === 'quartz' || mineral === 'calcite')
+  // Calcite's production catalog distinguishes botryoidal/travertine crusts
+  // from druzy_crust.  Test the authored habit before the generic coating
+  // vector so an areal nucleation vector cannot turn a travertine rind into
+  // an invented carpet of euhedral rhombs.
+  if (mineral === 'calcite') {
+    if (SURFACE_GROWTH_DRUSE_HABIT.test(habit)) return 'euhedral_druse';
+    if (SURFACE_GROWTH_CRUST_HABIT.test(habit) || vector === 'coating') {
+      return 'botryoidal_crust';
+    }
+    return null;
+  }
+  if (mineral === 'quartz'
       && (vector === 'coating' || SURFACE_GROWTH_DRUSE_HABIT.test(habit))) {
     return 'euhedral_druse';
   }

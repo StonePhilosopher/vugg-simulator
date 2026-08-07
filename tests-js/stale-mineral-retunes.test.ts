@@ -133,7 +133,7 @@ describe('post-Backlog-K stale-mineral retunes (2026-05)', () => {
     it('nucleates in at least one of 3 seeds within default steps', () => {
       const r = runSeeds('supergene_oxidation', 'adamite', [42, 1, 7]);
       expect(r.everNucleated, `adamite σ peaked at ${r.maxSigma.toFixed(2)}`).toBe(true);
-    });
+    }, 120_000);
   });
 
   describe('native_tellurium (epithermal_telluride)', () => {

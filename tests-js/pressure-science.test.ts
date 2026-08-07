@@ -128,6 +128,27 @@ describe('pressure science primitives', () => {
     expect(deep.supersaturation_quartz()).toBe(0);
     expect(shallow.supersaturation_quartz()).toBeGreaterThan(1);
   });
+
+  it('does not masquerade a 0.50-kbar boundary value as shallow-fluid science', () => {
+    expect(quartzWaterDensityGcm3(350, 0.05)).toBeNull();
+    expect(manningQuartzSolubilityPpm(350, 0.05)).toBeNull();
+    const assessment = quartzPressureSolubilityAssessment(350, 0.05);
+    expect(assessment).toMatchObject({
+      active: false,
+      equilibriumPpm: null,
+      waterDensityGcm3: null,
+      pressureClampedLow: true,
+      status: 'outside-pressure-grid',
+    });
+    expect(assessment.note).toContain('reference-only');
+
+    const shallow = new VugConditions({
+      temperature: 350, pressure: 0.05,
+      fluid: new FluidChemistry({ SiO2: 1200, pH: 7 }),
+    });
+    // The declared legacy temperature relation is 1000 ppm at 350 C.
+    expect(shallow.silica_equilibrium(350)).toBe(1000);
+  });
 });
 
 describe('differential stress is not fluid pressure', () => {
@@ -220,6 +241,10 @@ describe('differential stress is not fluid pressure', () => {
     witness.zones = [{}];
     sim.crystals.push(witness);
     applyDifferentialStressPulse(sim, 500);
+    witness.paramorph_origin = 'pharmacolite';
+    witness.mineral = 'haidingerite';
+    witness.paramorph_step = sim.step;
+    witness.dehydration_driver = 'test dry-exposure dehydration';
     sim.run_step();
 
     const dataset = recorder.finalize();
@@ -246,5 +271,13 @@ describe('differential stress is not fluid pressure', () => {
         }),
       ]),
     );
+    expect(dataset.transformation_event_testimony).toEqual([
+      expect.objectContaining({
+        crystal_id: 99001,
+        from: 'pharmacolite',
+        to: 'haidingerite',
+        mechanism: 'test dry-exposure dehydration',
+      }),
+    ]);
   });
 });

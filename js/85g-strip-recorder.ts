@@ -109,6 +109,8 @@ class StripRecorder {
   private pressurePhaseTestimony: any[];
   private stressEventTestimony: any[];
   private lastSeenStressEventCount: number;
+  private transformationEventTestimony: StripTransformationEvent[];
+  private seenTransformationKeys: Set<string>;
 
   constructor(sim: any, opts?: {
     angular_indices?: number,
@@ -189,6 +191,8 @@ class StripRecorder {
     this.pressurePhaseTestimony = [];
     this.stressEventTestimony = [];
     this.lastSeenStressEventCount = 0;
+    this.transformationEventTestimony = [];
+    this.seenTransformationKeys = new Set();
   }
 
   // ---- chip classification helpers ----------------------------------
@@ -356,6 +360,29 @@ class StripRecorder {
         });
       }
       this.lastSeenCrystalCount = total;
+
+      // Transformations mutate existing crystal objects, so they never enter
+      // the newly-added tail above. Record the product independently from the
+      // crystal's provenance and deduplicate it across subsequent frames.
+      for (let i = 0; i < total; i++) {
+        const c = sim.crystals[i];
+        if (!c || !Number.isFinite(Number(c.paramorph_step))) continue;
+        if (Number(c.paramorph_step) > Number(sim.step)) continue;
+        const from = String(c.paramorph_origin || '');
+        const to = String(c.mineral || '');
+        if (!from || !to || from === to) continue;
+        const crystalId = c.id ?? c.crystal_id ?? i;
+        const key = `${crystalId}|${c.paramorph_step}|${from}|${to}`;
+        if (this.seenTransformationKeys.has(key)) continue;
+        this.seenTransformationKeys.add(key);
+        this.transformationEventTestimony.push({
+          step,
+          crystal_id: crystalId,
+          from,
+          to,
+          mechanism: String(c.phase_transition_driver || c.dehydration_driver || 'paramorph'),
+        });
+      }
     }
 
     // Scientific testimony is captured from EXECUTED state, after the step's
@@ -434,6 +461,7 @@ class StripRecorder {
       floor_data: this.floorData,
       pressure_phase_testimony: this.pressurePhaseTestimony,
       stress_event_testimony: this.stressEventTestimony,
+      transformation_event_testimony: this.transformationEventTestimony,
     };
   }
 

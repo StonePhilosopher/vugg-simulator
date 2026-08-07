@@ -171,6 +171,11 @@ interface ProductionNucleationDecisionAssessment {
   blockers: string[];
 }
 
+function _scenarioSpeciesExclusion(sim: any, name: string): string | null {
+  const reason = sim?.conditions?._scenario?.excluded_species?.[name];
+  return typeof reason === 'string' && reason.trim() ? reason.trim() : null;
+}
+
 // Read-only best-case execution of the actual production nucleator. Every RNG
 // draw returns zero, which passes the codebase's Bernoulli gates while leaving
 // all deterministic sigma, active/total, cap, host, and priority predicates
@@ -274,6 +279,19 @@ function assessProductionNucleationDecision(
   sigma: number,
   sigmaCrit: number,
 ): ProductionNucleationDecisionAssessment {
+  const localityExclusion = _scenarioSpeciesExclusion(sim, name);
+  if (localityExclusion) {
+    return {
+      available: true,
+      eligible: false,
+      stochasticBirth: false,
+      effectiveDrawProbability: null,
+      randomDraws: 0,
+      source: 'scenario-locality exclusion',
+      competingBirth: null,
+      blockers: [`locality evidence excludes this phase: ${localityExclusion}`],
+    };
+  }
   const best = productionNucleationDecisionProbe(name, sim, { randomValue: 0 });
   const result: ProductionNucleationDecisionAssessment = {
     available: best.available,
@@ -343,6 +361,8 @@ function assessProductionNucleationDecision(
 function _runNuc(sim: any, fn: (sim: any) => void): void {
   _registerNucleatorForProbe(fn);
   if (_REGISTER_NUCLEATORS_ONLY) return;
+  const inferred = fn.name.startsWith('_nuc_') ? fn.name.slice(5) : '';
+  if (inferred && _scenarioSpeciesExclusion(sim, inferred)) return;
   if (!NUC_DERIVED_SEEDS) { fn(sim); return; }
   const saved = rng;
   rng = _makeNucRng(sim._nucSharedState | 0, fn.name, sim.step | 0);

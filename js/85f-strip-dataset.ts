@@ -116,6 +116,17 @@ interface StripNucleationEvent {
   mineral: string;       // mineral id
 }
 
+// A phase delivered by alteration of an existing crystal. It must remain
+// separate from nucleation testimony so a review can see both the product and
+// its parentage.
+interface StripTransformationEvent {
+  step: number;
+  crystal_id: number | string | null;
+  from: string;
+  to: string;
+  mechanism: string;
+}
+
 // The manifest — JSON-serializable. Header tells the reader what's in
 // the binary blob and how to decode it.
 interface StripManifest {
@@ -155,6 +166,7 @@ interface StripDataset {
   // produced chip_data and nucleation_events.
   pressure_phase_testimony?: any[];
   stress_event_testimony?: any[];
+  transformation_event_testimony?: StripTransformationEvent[];
 }
 
 // ============================================================
@@ -272,6 +284,7 @@ async function stripSerialize(
   const testimonyBytes = writeTestimony ? enc.encode(JSON.stringify({
     pressure_phase_testimony: ds.pressure_phase_testimony || [],
     stress_event_testimony: ds.stress_event_testimony || [],
+    transformation_event_testimony: ds.transformation_event_testimony || [],
   })) : null;
   const testimonySection = testimonyBytes ? 4 + testimonyBytes.length : 0;
 
@@ -339,6 +352,7 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
   }
   let pressure_phase_testimony: any[] | undefined;
   let stress_event_testimony: any[] | undefined;
+  let transformation_event_testimony: StripTransformationEvent[] | undefined;
   if ((manifest.format_version || 0) >= 4) {
     const testimonyLen = dv.getUint32(offset, true); offset += 4;
     const testimony = JSON.parse(
@@ -349,6 +363,8 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
       ? testimony.pressure_phase_testimony : [];
     stress_event_testimony = Array.isArray(testimony.stress_event_testimony)
       ? testimony.stress_event_testimony : [];
+    transformation_event_testimony = Array.isArray(testimony.transformation_event_testimony)
+      ? testimony.transformation_event_testimony : [];
   }
   const chip_data = buf.slice(offset);
   return {
@@ -356,6 +372,7 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
     ...(floor_data ? { floor_data } : {}),
     ...(pressure_phase_testimony ? { pressure_phase_testimony } : {}),
     ...(stress_event_testimony ? { stress_event_testimony } : {}),
+    ...(transformation_event_testimony ? { transformation_event_testimony } : {}),
   };
 }
 

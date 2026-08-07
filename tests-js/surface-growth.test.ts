@@ -26,6 +26,12 @@ function crystal(mineral: string, habit: string, vector = 'projecting', extra: a
   return c;
 }
 
+function catalogCrystal(mineral: string, habitName: string) {
+  const variant = MINERAL_SPEC[mineral].habit_variants.find((row: any) => row.name === habitName);
+  expect(variant, `${mineral}.${habitName} must be a production catalog habit`).toBeTruthy();
+  return crystal(mineral, variant.name, variant.vector, variant);
+}
+
 function runScenario(name: string, seed = 42) {
   setSeed(seed);
   const { conditions, events, defaultSteps } = SCENARIOS[name]();
@@ -50,8 +56,12 @@ describe('SIM 246 area-covering surface-growth fabrics', () => {
 
     expect(surfaceGrowthRegimeFor(crystal('quartz', 'rock_crystal_druse', 'coating')))
       .toBe('euhedral_druse');
-    expect(surfaceGrowthRegimeFor(crystal('calcite', 'rhombohedral_druse', 'coating')))
+    expect(surfaceGrowthRegimeFor(catalogCrystal('calcite', 'druzy_crust')))
       .toBe('euhedral_druse');
+    expect(surfaceGrowthRegimeFor(catalogCrystal('calcite', 'botryoidal')))
+      .toBe('botryoidal_crust');
+    expect(surfaceGrowthRegimeFor(catalogCrystal('calcite', 'travertine_crust')))
+      .toBe('botryoidal_crust');
     expect(surfaceGrowthRegimeFor(crystal('quartz', 'prismatic', 'projecting')))
       .toBeNull();
     expect(surfaceGrowthRegimeFor(crystal('calcite', 'scalenohedral', 'projecting')))

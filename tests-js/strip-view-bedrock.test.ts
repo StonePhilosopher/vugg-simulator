@@ -228,6 +228,7 @@ describe('strip dataset — serialization round-trip', () => {
       floor_data: new Uint8Array([101]),
       pressure_phase_testimony: [{ step: 0, fluid_pressure_kbar: 1.4 }],
       stress_event_testimony: [{ event_id: 'stress-1', outcome: 'twinned' }],
+      transformation_event_testimony: [{ step: 0, crystal_id: 7, from: 'realgar', to: 'pararealgar', mechanism: 'light exposure' }],
     };
     const reload = await stripDeserialize(await stripSerialize(ds, false));
     expect(reload.manifest).toMatchObject({
@@ -235,6 +236,7 @@ describe('strip dataset — serialization round-trip', () => {
     });
     expect(reload.pressure_phase_testimony).toEqual(ds.pressure_phase_testimony);
     expect(reload.stress_event_testimony).toEqual(ds.stress_event_testimony);
+    expect(reload.transformation_event_testimony).toEqual(ds.transformation_event_testimony);
   });
 
   it('uses a Node-compatible SHA-256 fingerprint for authored scenario specs', () => {
@@ -249,9 +251,11 @@ describe('strip dataset — serialization round-trip', () => {
     const ds = recorder.finalize();
     ds.pressure_phase_testimony = [{ step: 0, fluid_pressure_kbar: 1.4 }];
     ds.stress_event_testimony = [{ event_id: 'stress-storage' }];
+    ds.transformation_event_testimony = [{ step: 0, crystal_id: 8, from: 'pharmacolite', to: 'haidingerite', mechanism: 'dry-exposure' }];
     const reload = stripDatasetFromStoredRecord(stripStoredRecordFromDataset(ds));
     expect(reload.pressure_phase_testimony).toEqual(ds.pressure_phase_testimony);
     expect(reload.stress_event_testimony).toEqual(ds.stress_event_testimony);
+    expect(reload.transformation_event_testimony).toEqual(ds.transformation_event_testimony);
     expect(reload.manifest.scenario_spec_hash).toMatch(/^[0-9a-f]{64}$/);
   });
 

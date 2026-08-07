@@ -206,7 +206,15 @@ function _formationPressureChips(name: string, c: any): FormationDiagnosticChip[
 
   if (name === 'quartz') {
     const assessment = quartzPressureSolubilityAssessment(temperature, pressure);
-    if (!assessment.active) return [];
+    if (!assessment.active) {
+      if (!assessment.pressureClampedLow) return [];
+      return [{
+        text: `${pressure.toFixed(3)} kbar fluid · Manning correction inactive below 0.50 kbar`,
+        met: true,
+        status: 'uncertain',
+        note: assessment.note,
+      }];
+    }
     return [{
       text: `${pressure.toFixed(2)} kbar fluid · ρH₂O ${assessment.waterDensityGcm3.toFixed(3)} g/cm³ · quartz equilibrium ${assessment.equilibriumPpm.toFixed(0)} ppm`,
       met: true,
