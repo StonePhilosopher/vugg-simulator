@@ -40,7 +40,7 @@ function event_deccan_quartz_maturation(c) {
 
 function event_deccan_zeolite_stage_ii(c) {
   c.fluid.Ca += 80;
-  c.fluid.K += 10;
+  c.fluid.Na = Math.max(c.fluid.Na, 150);
   // Basalt-derived Al and carbonate belong to the Stage-II groundwater
   // regime. Holding them back until this event prevents albite/epidote,
   // calcite and zeolites from pre-empting the Stage-I silica lining.
@@ -49,7 +49,19 @@ function event_deccan_zeolite_stage_ii(c) {
   c.fluid.SiO2 += 200;
   c.fluid.pH = 8.5;
   c.temperature = 130;
-  return 'Stage II — zeolite blades fill the vesicle, lowest-silica first. Thomsonite came earliest: concentric botryoidal "eyes" (Si/Al≈1, the most aluminous zeolite, the Lake Superior gem) on the fresh cavity wall. Then the fibrous natrolite-group: radiating scolecite sprays (the Ca endmember) and the finest hair-like mesolite tufts (the ordered Na-Ca intermediate), overgrowing the thomsonite. Now the higher-silica sheet zeolites take over — heulandite (the warmer, dehydrated member) as coffin-shaped tablets, stilbite (the cooler, more-hydrated member) as peach wheatsheaf sheaves draping over the earlier fibrous sprays — the stilbite/heulandite dehydration couple (Ca-stilbite = Ca-heulandite + H₂O, Kiseleva et al. 2001). Calcite forms as a late-stage carbonate. The vug is filling slowly, silica activity climbing through the sequence.';
+  return 'Stage IIa — the first zeolite generation enters the middle-zone cavity. Radiating scolecite sprays and hair-like mesolite tufts crystallize on the silica lining. Sukheswala et al. (1974) observed these two as the first zeolites in this Deccan cavity sequence; the authored nucleation window keeps the later sheet zeolites from pre-empting their testimony.';
+}
+
+function event_deccan_zeolite_stage_ii_sheets(c) {
+  // A distinct higher-silica recharge expresses the observed hand-off
+  // from the fibrous natrolite group to the more hydrous sheet zeolites. It is
+  // not an arbitrary clock delay: the event changes the controlling fluid.
+  c.fluid.K += 10;
+  c.fluid.Al += 8;
+  c.fluid.SiO2 += 300;
+  c.fluid.pH = 8.5;
+  c.temperature = 130;
+  return 'Stage IIb — a more silica-rich recharge follows the fibrous generation. Coffin-shaped heulandite tablets and peach stilbite sheaves now overgrow the earlier scolecite–mesolite lining. This pairwise order follows the Western Deccan cavity observations of Sukheswala et al. (1974); their exact order within each coeval pair is intentionally not claimed.';
 }
 
 function event_deccan_zeolite_apophyllite_stage_iii(c) {
@@ -65,8 +77,8 @@ function event_deccan_zeolite_apophyllite_stage_iii(c) {
 function event_deccan_zeolite_late_cooling(c) {
   c.temperature = 80;
   // The long-lived Stage-III aquifer has shut off. Preserve enough dissolved
-  // silica for the documented late zeolite tail (mesolite/chabazite require
-  // >=150 ppm) while staying below amorphous-silica equilibrium throughout
+  // silica for continued growth of the documented lining while staying below
+  // amorphous-silica equilibrium throughout
   // the modeled 80-to-68 C cooling interval (about 281-to-238 ppm). This is a
   // depleted residual fluid, not a fresh opal-sinter pulse.
   c.fluid.SiO2 = Math.min(c.fluid.SiO2, 230);
@@ -79,5 +91,5 @@ function event_deccan_zeolite_late_cooling(c) {
   c.fluid.reactiveSilicaFraction = 1.0;
   c.fluid.pH = 8.0;
   c.flow_rate = 0.1;
-  return 'Late cooling after the Stage-III aquifer shuts off. The depleted residual fluid remains zeolite-bearing but is below amorphous-silica saturation, so it can add mesolite/chabazite to the earlier lining without inventing a terminal opal-sinter stage. Apophyllite growth slows to micron-thin zones; time becomes the limiting reagent.';
+  return 'Late cooling after the Stage-III aquifer shuts off. The depleted residual fluid remains below amorphous-silica saturation, so the established lining can finish without inventing a terminal opal-sinter stage. Apophyllite growth slows to micron-thin zones; time becomes the limiting reagent.';
 }

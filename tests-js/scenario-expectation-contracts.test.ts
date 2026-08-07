@@ -25,7 +25,7 @@ function run(name: string, seed = 42, record = false) {
 }
 
 describe('scenario expectation contracts', () => {
-  it('delivers every deterministic Tsumeb promise, including transformation products', () => {
+  it('delivers documented Tsumeb promises and blocks unsupported Ca-arsenates', () => {
     const { sim, dataset, maxSeleniteSigma } = run('supergene_oxidation', 42, true);
     const present = new Set(sim.crystals.map((c: any) => c.mineral));
     const spec = SCENARIOS.supergene_oxidation._json5_spec;
@@ -35,10 +35,17 @@ describe('scenario expectation contracts', () => {
         `${mineral} must be present; max selenite Ω=${maxSeleniteSigma}, final Ca=${sim.conditions.fluid.Ca}, S=${sim.conditions.fluid.S}`,
       ).toBe(true);
     }
-    expect(dataset.transformation_event_testimony).toEqual(expect.arrayContaining([
-      expect.objectContaining({ from: 'pharmacolite', to: 'haidingerite' }),
+    for (const mineral of Object.keys(spec.excluded_species)) {
+      expect(present.has(mineral), `${mineral} unsupported Tsumeb occurrence`).toBe(false);
+    }
+    expect(dataset.transformation_event_testimony).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ to: 'haidingerite' }),
     ]));
+    const decision = assessProductionNucleationDecision('pharmacolite', sim, 10, 1);
+    expect(decision).toMatchObject({ available: true, eligible: false });
+    expect(decision.blockers.join(' ')).toContain('locality evidence excludes');
     expect(spec.sources.join('\n')).toContain('TSNB159');
+    expect(spec.sources.join('\n')).toContain('Mindat locality record 2428');
   }, 120_000);
 
   it('enforces Sweetwater negative locality evidence without disabling global engines', () => {
@@ -63,6 +70,24 @@ describe('scenario expectation contracts', () => {
       for (const entry of spec.aspirational_species || []) {
         expect(deterministic.has(entry.mineral), `${name}:${entry.mineral}`).toBe(false);
         expect(entry.reason, `${name}:${entry.mineral} rationale`).toMatch(/\S/);
+      }
+    }
+  });
+
+  it('keeps authored nucleation windows finite, ordered, and tied to promises', () => {
+    for (const [name, factory] of Object.entries(SCENARIOS)) {
+      const spec = factory._json5_spec;
+      const deterministic = new Set(spec.expects_species || []);
+      const excluded = new Set(Object.keys(spec.excluded_species || {}));
+      for (const [mineral, window] of Object.entries(spec.nucleation_windows || {}) as any) {
+        expect(deterministic.has(mineral), `${name}:${mineral} window must govern a deterministic promise`).toBe(true);
+        expect(excluded.has(mineral), `${name}:${mineral} cannot be both windowed and excluded`).toBe(false);
+        expect(Number.isInteger(window.start_step), `${name}:${mineral} start_step`).toBe(true);
+        expect(window.start_step, `${name}:${mineral} positive start_step`).toBeGreaterThanOrEqual(1);
+        if (window.end_step != null) {
+          expect(Number.isInteger(window.end_step), `${name}:${mineral} end_step`).toBe(true);
+          expect(window.end_step, `${name}:${mineral} ordered window`).toBeGreaterThanOrEqual(window.start_step);
+        }
       }
     }
   });

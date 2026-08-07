@@ -955,10 +955,10 @@ function _nuc_heulandite(sim) {
   }
 }
 
-// v202 (2026-06-17): Thomsonite — the EARLIEST amygdule zeolite (most aluminous,
-// Si/Al~1). Nucleates on the fresh cavity surface: early calcite > silica veneer
-// > smectite-lined wall. The later natrolite group + sheet zeolites nucleate ON
-// thomsonite. RNG-cascade-guarded.
+// v202 (2026-06-17): Thomsonite — a low-Si, highly aluminous amygdule zeolite.
+// Relative order varies by locality; authored scenarios provide any claimed
+// paragenetic window. Substrate preferences are morphological, not chronology.
+// RNG-cascade-guarded.
 function _nuc_thomsonite(sim) {
   const sigma = sim.conditions.supersaturation_thomsonite();
   if (sigma <= MINERAL_GATES_thomsonite.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
@@ -977,7 +977,7 @@ function _nuc_thomsonite(sim) {
     // at a LOWER sigma threshold than the projecting zeolites.
     if (!existing.length || (sigma > 1.4 && rng.random() < 0.30)) {
       const c = sim.nucleate('thomsonite', pos, sigma);
-      sim.log.push(`  ✦ NUCLEATION: 👁️ Thomsonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — concentric "eye" Na-Ca zeolite, earliest Deccan cavity phase`);
+      sim.log.push(`  ✦ NUCLEATION: 👁️ Thomsonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — concentric "eye" Na-Ca zeolite; relative order is locality-dependent`);
     }
   }
 }
@@ -1037,10 +1037,10 @@ function _nuc_mesolite(sim) {
   }
 }
 
-// v203 (2026-06-17): Chabazite — the LATE, intermediate-Si amygdule zeolite.
-// A perching phase: nucleates on the earlier zeolite lining (sheet zeolites
-// stilbite/heulandite, then the fibrous group), then calcite, then wall.
-// RNG-cascade-guarded. (Last in the silicate iterator — paragenetically late.)
+// v203 (2026-06-17): Chabazite — an intermediate-Si amygdule zeolite.
+// Substrate selection favors existing zeolite surfaces, but relative order is
+// locality-dependent and belongs to the authored scenario contract.
+// RNG-cascade-guarded.
 function _nuc_chabazite(sim) {
   const sigma = sim.conditions.supersaturation_chabazite();
   if (sigma <= MINERAL_GATES_chabazite.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
@@ -1058,7 +1058,7 @@ function _nuc_chabazite(sim) {
   if (sigma > 1.2 * discount) {
     if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
       const c = sim.nucleate('chabazite', pos, sigma);
-      sim.log.push(`  ✦ NUCLEATION: ⬜ Chabazite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — rhombohedral pseudo-cube zeolite, late Deccan cavity phase`);
+      sim.log.push(`  ✦ NUCLEATION: ⬜ Chabazite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — rhombohedral pseudo-cube zeolite; relative order is locality-dependent`);
     }
   }
 }

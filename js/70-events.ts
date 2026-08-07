@@ -325,6 +325,7 @@ const EVENT_REGISTRY = {
   deccan_quartz_maturation: event_deccan_quartz_maturation,
   deccan_zeolite_hematite_pulse: event_deccan_zeolite_hematite_pulse,
   deccan_zeolite_stage_ii: event_deccan_zeolite_stage_ii,
+  deccan_zeolite_stage_ii_sheets: event_deccan_zeolite_stage_ii_sheets,
   deccan_zeolite_apophyllite_stage_iii: event_deccan_zeolite_apophyllite_stage_iii,
   deccan_zeolite_late_cooling: event_deccan_zeolite_late_cooling,
   // Phase 2 — ouro_preto
@@ -613,6 +614,10 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       // constraints, not global mineral bans: the same engine remains live in
       // documented scenarios and Creative mode.
       excluded_species: spec.excluded_species,
+      // Scenario-authoritative crystallization windows use the same step
+      // numbers as events and player-facing testimony.
+      // They constrain only this scenario; Creative mode retains every engine.
+      nucleation_windows: spec.nucleation_windows,
       // Geological MOVEMENTS (js/85j) — persistent master-variable drift.
       // Absent in every scenario today (Phase 0 dark scaffold) → the run_step
       // movement hook stays a no-op and seed-42 is byte-identical. Phase 1

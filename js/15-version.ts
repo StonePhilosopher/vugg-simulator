@@ -12489,7 +12489,21 @@
 //       therefore retains dissolved Ba/Sr tracers but excludes unrecorded
 //       barite/celestine/gypsum/Fe-Mn carbonates/Ag2S. Tsumeb's documented
 //       gypsum is delivered by an explicit oxidized-sulfate dry-season recharge.
-const SIM_VERSION = 247;
+// v248 — HOSTILE-REVIEW ROUND 12 LOCALITY-SPECIFIC PARAGENESIS (2026-08-06).
+//       Deccan now executes a sourced Savda–Nashik archetype rather than a
+//       generalized zeolite story: silica lining, scolecite + mesolite first,
+//       heulandite + stilbite next, and apophyllite last. Authored
+//       nucleation windows are first-class scenario controls, are enforced by
+//       the production nucleator, and appear as causal blockers in Creative's
+//       live formation diagnosis. Thomsonite and chabazite remain available in
+//       the global engine but are explicitly excluded from this one archetype;
+//       their metadata no longer universalizes a Deccan-wide order. Tsumeb no
+//       longer promises pharmacolite or its deterministic haidingerite product:
+//       neither appears in the current Mindat locality record nor Harvard's
+//       searchable Tsumeb catalog. Scenario exclusions now also block a
+//       solid-state transformation whose target lacks locality support, without
+//       disabling that chemically valid transition elsewhere or in Creative.
+const SIM_VERSION = 248;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12522,9 +12536,10 @@ const MODEL_DIGEST = [
   'borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1',
   'competition:accepted-axial-timescale+formula-weighted-budget-v3',
   'diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4',
-  'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions-v1',
+  'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2',
   'run-testimony:nucleation+solid-state-transformation-v1',
-  'deccan:authored-pulse-gated-paragenesis-v1',
+  'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
+  'transition-locality-exclusion:target-gated-v1',
   'save-identity:version+model+scenario-fail-closed-v1',
 ].join('|');
 

@@ -459,11 +459,12 @@ const MINERAL_GATES_mesolite: MineralGates = {
   _notes: 'Na2Ca2Al6Si9O30·8H2O — orthorhombic Fdd2 with a GIANT b-axis (~56.6 A, the ordered 1-natrolite:2-scolecite layer stack). The ordered Na-Ca intermediate — needs BOTH Na and Ca (0.2<=Na/(Na+Ca)<=0.8). Finest hair-like/cottony fibrous tufts. Twin {010}/{100} (secondary vs scolecite). The mixed-cation gate is the discriminator from scolecite (Ca-only) + natrolite (Na-only).',
 };
 
-// v202 (2026-06-17): Thomsonite — the EARLIEST, most-aluminous amygdule zeolite.
+// v202 (2026-06-17): Thomsonite — a low-Si, highly aluminous amygdule zeolite.
 // NaCa2Al5Si5O20·6H2O, Si/Al~1 (the LOWEST silica of the common amygdule
-// zeolites; cf. natrolite-group ~1.5, sheet zeolites ~2.7-3.5). First zeolite in
-// the Deccan cavity sequence (smectite -> calcite -> THOMSONITE -> natrolite ->
-// analcime -> scolecite/mesolite -> sheets). THE DISCRIMINATOR is SILICA
+// zeolites; cf. natrolite-group ~1.5, sheet zeolites ~2.7-3.5). Its relative
+// order is locality-dependent; authored scenarios supply specific paragenetic
+// windows rather than treating one cavity sequence as universal. THE
+// DISCRIMINATOR is SILICA
 // ACTIVITY, not Na/Ca: thomsonite is favored at LOW silica (high Al relative to
 // Si); the natrolite-group Na/Ca fork does NOT cleanly separate it from mesolite
 // (both are Na-Ca; thomsonite is just more-Ca + lower-Si). So the engine gives
@@ -481,14 +482,14 @@ const MINERAL_GATES_thomsonite: MineralGates = {
   pH_min: 7.0, pH_max: 10.5,
   surface_energy: 'low',
   _sources: ['thomsonite engine v202', 'Anthony et al. Handbook of Mineralogy (thomsonite-Ca)', 'Wise & Tschernich 1978 Can.Mineral. 16:487', 'Coombs et al. 1997 Can.Mineral. 35:1571'],
-  _notes: 'NaCa2Al5Si5O20·6H2O — orthorhombic Pncn (Pbmn disordered), pseudotetragonal. The most-aluminous (Si/Al~1) + earliest amygdule zeolite. Famous "thomsonite eyes" — concentric botryoidal nodules (Lake Superior gem / lintonite green variety). Soft low-silica preference is the discriminator from the higher-Si natrolite group. Twin {110}.',
+  _notes: 'NaCa2Al5Si5O20·6H2O — orthorhombic Pncn (Pbmn disordered), pseudotetragonal. A highly aluminous (Si/Al~1) amygdule zeolite whose relative order is locality-dependent. Famous "thomsonite eyes" — concentric botryoidal nodules (Lake Superior gem / lintonite green variety). Soft low-silica preference is the discriminator from the higher-Si natrolite group. Twin {110}.',
 };
 
-// v203 (2026-06-17): Chabazite — the LATE, intermediate-Si amygdule zeolite.
+// v203 (2026-06-17): Chabazite — an intermediate-Si amygdule zeolite.
 // Ca2Al2Si4O12·6H2O (chabazite-Ca), Si/Al~2 — intermediate between the fibrous
 // group/thomsonite (~1-1.5) and the sheet zeolites stilbite/heulandite
-// (~2.7-3.5). A LATE perching phase in the cavity sequence (...stilbite ->
-// heulandite -> apophyllite -> CHABAZITE -> mordenite -> late calcite). Cation-
+// (~2.7-3.5). Its position is locality-dependent, so scenarios—not this global
+// engine—supply any claimed paragenetic order. Cation-
 // FLEXIBLE: the extra-framework cation runs Ca > Na > K in frequency, and K is
 // NOT required (chabazite-Ca is the basalt-amygdule default; K-dominance is a
 // rare special case). So the engine gates on a JOINT (Ca+Na+K) charge budget
@@ -505,7 +506,7 @@ const MINERAL_GATES_chabazite: MineralGates = {
   pH_min: 7.0, pH_max: 10.5,
   surface_energy: 'low',
   _sources: ['chabazite engine v203', 'Passaglia & Sheppard 2001 RiMG 45:69', 'Coombs et al. 1997 Can.Mineral. 35:1571', 'Calligaris et al. 1982 Zeolites (R-3m)'],
-  _notes: 'Ca2Al2Si4O12·6H2O — trigonal R-3m, hex cell a13.83 c15.02. Intermediate Si/Al~2; LATE perching amygdule phase. Cation-flexible Ca>Na>K (K NOT required); chabazite-Ca is the amygdule default. Rhombohedral pseudo-cube + phacolite penetration twins. Looks like calcite but {1011} cleavage is POOR (calcite perfect) + no effervescence + harder (4-5 vs 3) + lighter (2.1 vs 2.71).',
+  _notes: 'Ca2Al2Si4O12·6H2O — trigonal R-3m, hex cell a13.83 c15.02. Intermediate Si/Al~2; its relative amygdule order is locality-dependent. Cation-flexible Ca>Na>K (K NOT required); chabazite-Ca is the amygdule default. Rhombohedral pseudo-cube + phacolite penetration twins. Looks like calcite but {1011} cleavage is POOR (calcite perfect) + no effervescence + harder (4-5 vs 3) + lighter (2.1 vs 2.71).',
 };
 
 Object.assign(VugConditions.prototype, {
@@ -1426,7 +1427,7 @@ Object.assign(VugConditions.prototype, {
     return Math.max(sigma, 0);
   },
 
-  // v202 (2026-06-17): Thomsonite — the earliest, most-aluminous amygdule
+  // v202 (2026-06-17): Thomsonite — a low-Si, highly aluminous amygdule
   // zeolite. Ca-dominant + Na-essential-minor + high Al; the discriminator from
   // the natrolite group is a SOFT low-silica preference (not Na/Ca, not a hard
   // ceiling). See MINERAL_GATES_thomsonite.
@@ -1465,9 +1466,9 @@ Object.assign(VugConditions.prototype, {
     return Math.max(sigma, 0);
   },
 
-  // v203 (2026-06-17): Chabazite — the late, intermediate-Si amygdule zeolite.
+  // v203 (2026-06-17): Chabazite — an intermediate-Si amygdule zeolite.
   // Cation-flexible (Ca>Na>K, K NOT required); Ca-dominant chabazite-Ca is the
-  // amygdule default. Late/cool T sweet spot. See MINERAL_GATES_chabazite.
+  // amygdule default. Cool T sweet spot. See MINERAL_GATES_chabazite.
   supersaturation_chabazite() {
     const g = MINERAL_GATES_chabazite;
     if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Al < g.fluid_min!.Al
@@ -1481,7 +1482,7 @@ Object.assign(VugConditions.prototype, {
     const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
     const si_f = Math.min(this.fluid.SiO2 / 500.0, 1.5);   // intermediate Si/Al~2
     let sigma = ca_f * al_f * si_f;
-    // T sweet spot 50-110 (LATE, cool amygdule phase)
+    // T sweet spot 50-110 (cool amygdule phase; relative order is local)
     const T = this.temperature;
     if (T >= 50 && T <= 110) sigma *= 1.3;
     else if (T < 50) sigma *= Math.max(0.4, (T - 40) / 10 * 0.6 + 0.4);

@@ -1528,13 +1528,17 @@
     "supergene_oxidation": {
       "anchor": "Tsumeb mine, Otavi Mountain Land, Namibia. 1st-stage gossan (uppermost supergene zone). One of the most mineralogically diverse deposits ever discovered (~280 species), type locality for germanium.",
       "description": "Cold, oxygenated supergene weathering of a Pb-Zn-Cu sulfide pipe. Pb+Mo→wulfenite, Zn+CO3→smithsonite, Zn+As→adamite, Pb+As+Cl→mimetite, Fe→goethite, Ca+SO4→selenite, Cu+CO3→malachite. The 1st-stage gossan brings the high-Pb-As-Cl uppermost zone with mimetite, anglesite, cerussite, willemite, and Ge-bearing oxidation phases.",
-      "expects_species": ["wulfenite", "smithsonite", "adamite", "mimetite", "malachite", "vanadinite", "cerussite", "selenite", "conichalcite", "pharmacolite", "haidingerite"],
+      "expects_species": ["wulfenite", "smithsonite", "adamite", "mimetite", "malachite", "vanadinite", "cerussite", "selenite", "conichalcite"],
+      "excluded_species": {
+        "pharmacolite": "No Tsumeb occurrence was found in the live Mindat locality list or Harvard Tsumeb Mine Notebook search audited 2026-08-06; the Ca-arsenate engine remains available in documented five-element-vein localities and Creative mode.",
+        "haidingerite": "No Tsumeb occurrence was found in the live Mindat locality list or Harvard Tsumeb Mine Notebook search audited 2026-08-06; a chemically possible pharmacolite dehydration product is not evidence of this locality occurrence."
+      },
       "duration_steps": 200,
       "notes": [
         "Anchor: Tsumeb mine (Otavi Mountain Land, Namibia). Pipe-shaped Pb-Zn-Cu sulfide body in Neoproterozoic dolomite, with three distinct supergene oxidation zones developed during Mesozoic-Cenozoic uplift. Argentiferous (native Ag, proustite, pyrargyrite, argentiferous galena). References: Pinch & Wilson 1977 (canonical Tsumeb monograph), Lombaard et al. 1986 (geology), Melcher 2003 (Ge geochemistry).",
         "Acid-window mechanic (steps 5-16): the supergene_acidification handler fires FOUR times (steps 5/8/12/16) to hold pH near 4 against the limestone wall's carbonate buffering. Without the repeated pulses, the buffer neutralizes pH back to 6+ within ~5 steps. The 15-step acid window is when scorodite + jarosite + alunite nucleate. ev_meteoric_flush at step 20 ends the acid phase.",
         "Chemistry-audit gap-fill pass (Apr 2026): added Ag (Tsumeb's silver suite), Ge (the type-locality element), Sb (proustite-pyrargyrite + tetrahedrite enabling), Na/K (minor groundwater cation traces), Au=0.3 (sub-threshold trace, no nucleation). v5 gap-fills: Al=25 (alunite enabling per Hemley 1969 + Stoffregen 2000), W=20 (Round 8d-1, Tsumeb deep-zone scheelite + raspite + stolzite per Strunz 1959). Existing 8-event sequence preserved untouched.",
-        "MINDAT VALID-SPECIES REFERENCE (boss-supplied screenshots, 2026-07-25 — Tsumeb Mine (Ongopolo), Oshikoto Region, Namibia; the sweep's GIANT: hundreds of valid species, ~70+ type localities (TL) — too large to transcribe; the record below is the SIM-VERDICT TABLE, i.e. every seed-42 v236 species checked against the captures. CAVEAT: screenshot-limited — a 'not visible' flag means verify on the live page before any kill. Conventions from this page: struck-through = mindat-erroneous (here the Co-bearing + Cu-bearing ADAMITE VARIETIES are struck — adamite the species stays valid); italic-? = questioned (Patrónite?, Richardsite?, Stibnite?, Idaite?, 'Tetrahedrite Subgroup'?) — questioned ≠ license. LICENSED ✓ (28/36 sim species visible on the list): adamite, anglesite, aurichalcite, azurite, brochantite, caledonite, cerussite, chalcocite, conichalcite, covellite, cuprite, duftite (TL), goethite, gypsum→SELENITE (the 151 mm giant is record-licensed — selenite census now reads elmwood NO / picher YES / sweetwater NO / TSUMEB YES), jarosite, köttigite, lepidocrocite, malachite, mimetite, olivenite (+ Zn-bearing var.), plumbogummite (+ Ga-rich var.), powellite, pyromorphite, quartz, scorodite, smithsonite, stolzite, vanadinite, wulfenite (+ var. chillagite). NOT VISIBLE IN CAPTURE — flags, live-page check before acting: the ARSENATE-BLOOM pair erythrite ×7 + annabergite ×4 (heterogenite IS listed, so Co is real here — but the blooms are absent from the visible A/E blocks), the Ca-arsenates haidingerite ×4 + pharmacolite ×2 (BOTH in expects_species!), ferrimolybdite ×6 @17.5 mm (molybdenite listed, its oxidation product not visible), raspite ×1 (stolzite listed; raspite carries the Strunz 1959 deep-zone citation in the note above — literature vs list tension, adjudicate), alunite ×1 (2 µm dust). LICENSED-BUT-UNFIRED candidates the sim already has engines/history for: descloizite + mottramite (both listed — the rung-4b fork pair), willemite (listed! extinct at mvt/tn457 by rung 4a but Tsumeb documents it — a legit future tenant HERE), dioptase, rosasite, hemimorphite, hydrozincite, wurtzite, witherite, greenockite, native copper/silver/gold, azurite-suite depth. The 'Mineral GS1 (of Gebhard)' curiosity noted for the boss."
+        "LIVE LOCALITY RECONCILIATION (2026-08-06): the current Mindat Tsumeb Mine locality list and the Harvard Tsumeb Mine Notebook searchable catalog were checked directly. Neither pharmacolite nor haidingerite appears. Both are therefore excluded from this Tsumeb scenario rather than inferred from fluid chemistry; their global engines remain available where occurrence evidence exists. Gypsum/selenite remains licensed independently by Harvard Tsumeb Mine Notebook record TSNB159."
       ],
       "initial": {
         "temperature_C": 35.0,    // shallow water-table zone
@@ -1688,7 +1692,9 @@
         "Bowell 2014, Rev. Mineral. Geochem. 79:589 — Tsumeb hydrogeochemistry + arsenate mineral stability (the acid-front movement)",
         "Singer & Stumm 1970, Science 167:1121 — Fe(II)→Fe(III) as the rate-determining step of sulfide-oxidation acid generation",
         "Skarpelis 2009, Resource Geology 59(1) — Lavrion Pb-Ag-Zn supergene oxidation profile (carbonate-hosted analogue)",
-        "Harvard Mineralogical & Geological Museum, Tsumeb Mine Notebook TSNB159 — gypsum is a confirmed, somewhat rare Tsumeb mineral from all three oxidation zones; well-formed crystals reach centimetre scale"
+        "Harvard Mineralogical & Geological Museum, Tsumeb Mine Notebook TSNB159 — gypsum is a confirmed, somewhat rare Tsumeb mineral from all three oxidation zones; well-formed crystals reach centimetre scale",
+        "Mindat locality record 2428, Tsumeb Mine mineral list — live species-list audit on 2026-08-06 found no pharmacolite or haidingerite entry",
+        "Harvard Mineralogical & Geological Museum, Tsumeb Mine Notebook searchable catalog — live audit on 2026-08-06 found no pharmacolite or haidingerite object entry"
       ]
     },
 
@@ -2095,10 +2101,21 @@
       // magnetite stopped firing under sim_version 20 (Phase C v1).
       // Same drift cause as bornite/porphyry — see that note. Restore
       // when chemistry tunes for the new sim version.
-      "expects_species": ["hematite", "chalcedony", "quartz", "apophyllite", "stilbite", "heulandite", "scolecite", "mesolite", "thomsonite", "chabazite"],
+      "expects_species": ["hematite", "chalcedony", "quartz", "scolecite", "mesolite", "stilbite", "heulandite", "apophyllite"],
+      "excluded_species": {
+        "thomsonite": "A genuine but rare regional Deccan zeolite, excluded from this specific Ottens/Sukheswala Savda–Nashik paragenetic archetype rather than asserted absent from the province.",
+        "chabazite": "A documented regional Deccan zeolite, excluded from this specific Ottens/Sukheswala Savda–Nashik paragenetic archetype because the chosen cavity sequence does not place it."
+      },
+      "nucleation_windows": {
+        "scolecite": { "start_step": 70, "end_step": 89 },
+        "mesolite": { "start_step": 70, "end_step": 89 },
+        "stilbite": { "start_step": 90, "end_step": 109 },
+        "heulandite": { "start_step": 90, "end_step": 109 },
+        "apophyllite": { "start_step": 110 }
+      },
       "duration_steps": 200,
       "notes": [
-        "Per Ottens et al. 2019, the Deccan basalt vesicles fill in stages over tens of millions of years. Stage I (early): silica veneers, chalcedony coating. Stage II: zeolite blades (stilbite, scolecite, heulandite) and early calcite. Stage III: the apophyllite stage — alkaline K-Ca-Si-F fluid percolates through cooled basalt vesicles and crystallizes pseudo-cubic apophyllite blocks, sometimes carrying hematite-needle phantoms (the 'bloody apophyllite' of Nashik).",
+        "The selected Savda–Nashik archetype follows observed cavity relationships rather than pretending every regional Deccan zeolite belongs to one vug: a silica lining is followed by scolecite+mesolite, then heulandite+stilbite, then the late apophyllite-bearing hydrothermal stage. Sukheswala et al. 1974 documents the fibrous-before-sheet pairwise order; Ottens et al. 2019 documents the late Stage-III apophyllite pulse. Thomsonite and chabazite remain globally available but are excluded from this specific authored cavity.",
         "Compared to the metamorphic / hydrothermal scenarios, this is gentle: no acid pulses, no dramatic T excursions. The story is patient crystallization in alkaline groundwater over geologic time.",
         "v184 thermal honesty (T-rollout close-out) — THREE coupled changes, dark-observed together (tools/t-story-observe.mjs, 3 seeds): (1) thermal_pulses:false — the note above says 'no dramatic T excursions' and the ambient mechanic was firing 5-8 of them per run; (2) cooling_rate 0.3 — with pulses gone, the default 1.5°C/step crashed the vesicle to the floor between the stage events (a cooling flow stack declines gently over ~37 My, the scenario's own 'patient' thesis); (3) the movements block below — a sustained fluid.SiO2 setpoint (950) through the Stage III window. The dark observation EXPOSED a structural noise-dependence: apophyllite's gate needs SiO2 ≥ 800 and the random pulses' +50-300 SiO2 riders were the scenario's de-facto silica budget (the stage_iii event's one-shot +600 — already bumped from 300 once for exactly this reason — gets eaten by background quartz depletion). Ottens calls Stage III 'the long-lasting late stage' (21-58 Ma): a SUSTAINED groundwater regime is the honest model, and on vesicle timescales the percolating aquifer is an infinite reservoir — so the movement PINS SiO2 at 950 for the window rather than shooting it once. Result: all three expects at all seeds (apophyllite was LOST under flag-only variants), fill IMPROVES 0.07-0.18 → 0.28-0.30, and the noise-fed extras (rhodochrosite = pulse-Mn, wollastonite = a skarn mineral that never belonged in an amygdale) drop out.",
         "Audit gap-fill (Apr 2026): Sr=2 — Deccan zeolites (heulandite, stilbite, mesolite) carry Sr substituting for Ca, sometimes 100s of ppm in the mineral. Sim-scale 2 ppm in the parent fluid documents the source. Brief-required non-zero Mg already covered by Mg=8."
@@ -2198,12 +2215,14 @@
         { "step": 20,  "type": "deccan_zeolite_silica_veneer",         "name": "Silica Veneer",          "description": "Stage I early chalcedony coating" },
         { "step": 35,  "type": "deccan_zeolite_hematite_pulse",        "name": "Fe-Silica Replenishment", "description": "A fresh Fe-Si pulse reverses the Stage-I silica drawdown and seeds the vesicle wall with hematite needles" },
         { "step": 55,  "type": "deccan_quartz_maturation",             "name": "Silica Maturation",       "description": "Dissolved silica enters the quartz-only metastable window; euhedral quartz grows inward from chalcedony" },
-        { "step": 70,  "type": "deccan_zeolite_stage_ii",              "name": "Zeolite Stage II",       "description": "Stilbite + heulandite + calcite blades" },
+        { "step": 70,  "type": "deccan_zeolite_stage_ii",              "name": "Zeolite Stage IIa",      "description": "Scolecite + mesolite form the first zeolite generation on the silica lining" },
+        { "step": 90,  "type": "deccan_zeolite_stage_ii_sheets",       "name": "Zeolite Stage IIb",      "description": "Heulandite + stilbite overgrow the earlier fibrous zeolites" },
         { "step": 110, "type": "deccan_zeolite_apophyllite_stage_iii", "name": "Apophyllite Stage III", "description": "Alkaline K-Ca-Si-F pulse — apophyllite grows around the hematite needles, producing the 'bloody apophyllite' phantom band" },
         { "step": 160, "type": "deccan_zeolite_late_cooling",          "name": "Late Cooling",           "description": "System cools toward ambient" }
       ],
       "sources": [
-        "Ottens et al. 2019 — Deccan zeolite paragenesis + Stage III timing (21-58 Ma)",
+        "Sukheswala, Avasia & Gangopadhyay 1974, Mineralogical Magazine 39:658–671 — Western Deccan cavity sequence: scolecite+mesolite first among zeolites, followed by heulandite+stilbite, with apophyllite among the last volatile-bearing phases",
+        "Ottens et al. 2019, Minerals 9:351, doi:10.3390/min9060351 — Savda multistage model and late Stage-III apophyllite timing (21–58 Ma)",
         "Pinch & Wilson 1977 — Nashik 'bloody apophyllite' phantom inclusions"
       ]
     },

@@ -24,6 +24,7 @@ const TOP_LEVEL_CLASSIFICATION = {
   statistical_species: 'validation',
   aspirational_species: 'validation',
   excluded_species: 'validation',
+  nucleation_windows: 'process',
   initial: 'state',
   notes: 'metadata',
   sources: 'metadata',

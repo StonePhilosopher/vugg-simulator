@@ -18839,7 +18839,21 @@ function scenarioSpecHash(spec) {
 //       therefore retains dissolved Ba/Sr tracers but excludes unrecorded
 //       barite/celestine/gypsum/Fe-Mn carbonates/Ag2S. Tsumeb's documented
 //       gypsum is delivered by an explicit oxidized-sulfate dry-season recharge.
-const SIM_VERSION = 247;
+// v248 — HOSTILE-REVIEW ROUND 12 LOCALITY-SPECIFIC PARAGENESIS (2026-08-06).
+//       Deccan now executes a sourced Savda–Nashik archetype rather than a
+//       generalized zeolite story: silica lining, scolecite + mesolite first,
+//       heulandite + stilbite next, and apophyllite last. Authored
+//       nucleation windows are first-class scenario controls, are enforced by
+//       the production nucleator, and appear as causal blockers in Creative's
+//       live formation diagnosis. Thomsonite and chabazite remain available in
+//       the global engine but are explicitly excluded from this one archetype;
+//       their metadata no longer universalizes a Deccan-wide order. Tsumeb no
+//       longer promises pharmacolite or its deterministic haidingerite product:
+//       neither appears in the current Mindat locality record nor Harvard's
+//       searchable Tsumeb catalog. Scenario exclusions now also block a
+//       solid-state transformation whose target lacks locality support, without
+//       disabling that chemically valid transition elsewhere or in Creative.
+const SIM_VERSION = 248;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -18871,9 +18885,10 @@ const MODEL_DIGEST = [
     'borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1',
     'competition:accepted-axial-timescale+formula-weighted-budget-v3',
     'diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4',
-    'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions-v1',
+    'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2',
     'run-testimony:nucleation+solid-state-transformation-v1',
-    'deccan:authored-pulse-gated-paragenesis-v1',
+    'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
+    'transition-locality-exclusion:target-gated-v1',
     'save-identity:version+model+scenario-fail-closed-v1',
 ].join('|');
 
@@ -31870,11 +31885,12 @@ const MINERAL_GATES_mesolite = {
     _sources: ['mesolite engine v201', 'Anthony et al. Handbook of Mineralogy', 'Artioli Smith & Pluth 1986 Acta Cryst. C42:937', 'Alberti Pongiluppi & Vezzalini 1982'],
     _notes: 'Na2Ca2Al6Si9O30·8H2O — orthorhombic Fdd2 with a GIANT b-axis (~56.6 A, the ordered 1-natrolite:2-scolecite layer stack). The ordered Na-Ca intermediate — needs BOTH Na and Ca (0.2<=Na/(Na+Ca)<=0.8). Finest hair-like/cottony fibrous tufts. Twin {010}/{100} (secondary vs scolecite). The mixed-cation gate is the discriminator from scolecite (Ca-only) + natrolite (Na-only).',
 };
-// v202 (2026-06-17): Thomsonite — the EARLIEST, most-aluminous amygdule zeolite.
+// v202 (2026-06-17): Thomsonite — a low-Si, highly aluminous amygdule zeolite.
 // NaCa2Al5Si5O20·6H2O, Si/Al~1 (the LOWEST silica of the common amygdule
-// zeolites; cf. natrolite-group ~1.5, sheet zeolites ~2.7-3.5). First zeolite in
-// the Deccan cavity sequence (smectite -> calcite -> THOMSONITE -> natrolite ->
-// analcime -> scolecite/mesolite -> sheets). THE DISCRIMINATOR is SILICA
+// zeolites; cf. natrolite-group ~1.5, sheet zeolites ~2.7-3.5). Its relative
+// order is locality-dependent; authored scenarios supply specific paragenetic
+// windows rather than treating one cavity sequence as universal. THE
+// DISCRIMINATOR is SILICA
 // ACTIVITY, not Na/Ca: thomsonite is favored at LOW silica (high Al relative to
 // Si); the natrolite-group Na/Ca fork does NOT cleanly separate it from mesolite
 // (both are Na-Ca; thomsonite is just more-Ca + lower-Si). So the engine gives
@@ -31892,13 +31908,13 @@ const MINERAL_GATES_thomsonite = {
     pH_min: 7.0, pH_max: 10.5,
     surface_energy: 'low',
     _sources: ['thomsonite engine v202', 'Anthony et al. Handbook of Mineralogy (thomsonite-Ca)', 'Wise & Tschernich 1978 Can.Mineral. 16:487', 'Coombs et al. 1997 Can.Mineral. 35:1571'],
-    _notes: 'NaCa2Al5Si5O20·6H2O — orthorhombic Pncn (Pbmn disordered), pseudotetragonal. The most-aluminous (Si/Al~1) + earliest amygdule zeolite. Famous "thomsonite eyes" — concentric botryoidal nodules (Lake Superior gem / lintonite green variety). Soft low-silica preference is the discriminator from the higher-Si natrolite group. Twin {110}.',
+    _notes: 'NaCa2Al5Si5O20·6H2O — orthorhombic Pncn (Pbmn disordered), pseudotetragonal. A highly aluminous (Si/Al~1) amygdule zeolite whose relative order is locality-dependent. Famous "thomsonite eyes" — concentric botryoidal nodules (Lake Superior gem / lintonite green variety). Soft low-silica preference is the discriminator from the higher-Si natrolite group. Twin {110}.',
 };
-// v203 (2026-06-17): Chabazite — the LATE, intermediate-Si amygdule zeolite.
+// v203 (2026-06-17): Chabazite — an intermediate-Si amygdule zeolite.
 // Ca2Al2Si4O12·6H2O (chabazite-Ca), Si/Al~2 — intermediate between the fibrous
 // group/thomsonite (~1-1.5) and the sheet zeolites stilbite/heulandite
-// (~2.7-3.5). A LATE perching phase in the cavity sequence (...stilbite ->
-// heulandite -> apophyllite -> CHABAZITE -> mordenite -> late calcite). Cation-
+// (~2.7-3.5). Its position is locality-dependent, so scenarios—not this global
+// engine—supply any claimed paragenetic order. Cation-
 // FLEXIBLE: the extra-framework cation runs Ca > Na > K in frequency, and K is
 // NOT required (chabazite-Ca is the basalt-amygdule default; K-dominance is a
 // rare special case). So the engine gates on a JOINT (Ca+Na+K) charge budget
@@ -31915,7 +31931,7 @@ const MINERAL_GATES_chabazite = {
     pH_min: 7.0, pH_max: 10.5,
     surface_energy: 'low',
     _sources: ['chabazite engine v203', 'Passaglia & Sheppard 2001 RiMG 45:69', 'Coombs et al. 1997 Can.Mineral. 35:1571', 'Calligaris et al. 1982 Zeolites (R-3m)'],
-    _notes: 'Ca2Al2Si4O12·6H2O — trigonal R-3m, hex cell a13.83 c15.02. Intermediate Si/Al~2; LATE perching amygdule phase. Cation-flexible Ca>Na>K (K NOT required); chabazite-Ca is the amygdule default. Rhombohedral pseudo-cube + phacolite penetration twins. Looks like calcite but {1011} cleavage is POOR (calcite perfect) + no effervescence + harder (4-5 vs 3) + lighter (2.1 vs 2.71).',
+    _notes: 'Ca2Al2Si4O12·6H2O — trigonal R-3m, hex cell a13.83 c15.02. Intermediate Si/Al~2; its relative amygdule order is locality-dependent. Cation-flexible Ca>Na>K (K NOT required); chabazite-Ca is the amygdule default. Rhombohedral pseudo-cube + phacolite penetration twins. Looks like calcite but {1011} cleavage is POOR (calcite perfect) + no effervescence + harder (4-5 vs 3) + lighter (2.1 vs 2.71).',
 };
 Object.assign(VugConditions.prototype, {
     quartz_equilibrium_ratio() {
@@ -33074,7 +33090,7 @@ Object.assign(VugConditions.prototype, {
             sigma *= activityCorrectionFactor(this.fluid, 'mesolite');
         return Math.max(sigma, 0);
     },
-    // v202 (2026-06-17): Thomsonite — the earliest, most-aluminous amygdule
+    // v202 (2026-06-17): Thomsonite — a low-Si, highly aluminous amygdule
     // zeolite. Ca-dominant + Na-essential-minor + high Al; the discriminator from
     // the natrolite group is a SOFT low-silica preference (not Na/Ca, not a hard
     // ceiling). See MINERAL_GATES_thomsonite.
@@ -33122,9 +33138,9 @@ Object.assign(VugConditions.prototype, {
             sigma *= activityCorrectionFactor(this.fluid, 'thomsonite');
         return Math.max(sigma, 0);
     },
-    // v203 (2026-06-17): Chabazite — the late, intermediate-Si amygdule zeolite.
+    // v203 (2026-06-17): Chabazite — an intermediate-Si amygdule zeolite.
     // Cation-flexible (Ca>Na>K, K NOT required); Ca-dominant chabazite-Ca is the
-    // amygdule default. Late/cool T sweet spot. See MINERAL_GATES_chabazite.
+    // amygdule default. Cool T sweet spot. See MINERAL_GATES_chabazite.
     supersaturation_chabazite() {
         const g = MINERAL_GATES_chabazite;
         if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.Al < g.fluid_min.Al
@@ -33141,7 +33157,7 @@ Object.assign(VugConditions.prototype, {
         const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
         const si_f = Math.min(this.fluid.SiO2 / 500.0, 1.5); // intermediate Si/Al~2
         let sigma = ca_f * al_f * si_f;
-        // T sweet spot 50-110 (LATE, cool amygdule phase)
+        // T sweet spot 50-110 (cool amygdule phase; relative order is local)
         const T = this.temperature;
         if (T >= 50 && T <= 110)
             sigma *= 1.3;
@@ -51286,6 +51302,7 @@ const EVENT_REGISTRY = {
     deccan_quartz_maturation: event_deccan_quartz_maturation,
     deccan_zeolite_hematite_pulse: event_deccan_zeolite_hematite_pulse,
     deccan_zeolite_stage_ii: event_deccan_zeolite_stage_ii,
+    deccan_zeolite_stage_ii_sheets: event_deccan_zeolite_stage_ii_sheets,
     deccan_zeolite_apophyllite_stage_iii: event_deccan_zeolite_apophyllite_stage_iii,
     deccan_zeolite_late_cooling: event_deccan_zeolite_late_cooling,
     // Phase 2 — ouro_preto
@@ -51569,6 +51586,10 @@ function _buildScenarioFromSpec(scenarioId, spec) {
             // constraints, not global mineral bans: the same engine remains live in
             // documented scenarios and Creative mode.
             excluded_species: spec.excluded_species,
+            // Scenario-authoritative crystallization windows use the same step
+            // numbers as events and player-facing testimony.
+            // They constrain only this scenario; Creative mode retains every engine.
+            nucleation_windows: spec.nucleation_windows,
             // Geological MOVEMENTS (js/85j) — persistent master-variable drift.
             // Absent in every scenario today (Phase 0 dark scaffold) → the run_step
             // movement hook stays a no-op and seed-42 is byte-identical. Phase 1
@@ -52682,7 +52703,7 @@ function event_deccan_quartz_maturation(c) {
 }
 function event_deccan_zeolite_stage_ii(c) {
     c.fluid.Ca += 80;
-    c.fluid.K += 10;
+    c.fluid.Na = Math.max(c.fluid.Na, 150);
     // Basalt-derived Al and carbonate belong to the Stage-II groundwater
     // regime. Holding them back until this event prevents albite/epidote,
     // calcite and zeolites from pre-empting the Stage-I silica lining.
@@ -52691,7 +52712,18 @@ function event_deccan_zeolite_stage_ii(c) {
     c.fluid.SiO2 += 200;
     c.fluid.pH = 8.5;
     c.temperature = 130;
-    return 'Stage II — zeolite blades fill the vesicle, lowest-silica first. Thomsonite came earliest: concentric botryoidal "eyes" (Si/Al≈1, the most aluminous zeolite, the Lake Superior gem) on the fresh cavity wall. Then the fibrous natrolite-group: radiating scolecite sprays (the Ca endmember) and the finest hair-like mesolite tufts (the ordered Na-Ca intermediate), overgrowing the thomsonite. Now the higher-silica sheet zeolites take over — heulandite (the warmer, dehydrated member) as coffin-shaped tablets, stilbite (the cooler, more-hydrated member) as peach wheatsheaf sheaves draping over the earlier fibrous sprays — the stilbite/heulandite dehydration couple (Ca-stilbite = Ca-heulandite + H₂O, Kiseleva et al. 2001). Calcite forms as a late-stage carbonate. The vug is filling slowly, silica activity climbing through the sequence.';
+    return 'Stage IIa — the first zeolite generation enters the middle-zone cavity. Radiating scolecite sprays and hair-like mesolite tufts crystallize on the silica lining. Sukheswala et al. (1974) observed these two as the first zeolites in this Deccan cavity sequence; the authored nucleation window keeps the later sheet zeolites from pre-empting their testimony.';
+}
+function event_deccan_zeolite_stage_ii_sheets(c) {
+    // A distinct higher-silica recharge expresses the observed hand-off
+    // from the fibrous natrolite group to the more hydrous sheet zeolites. It is
+    // not an arbitrary clock delay: the event changes the controlling fluid.
+    c.fluid.K += 10;
+    c.fluid.Al += 8;
+    c.fluid.SiO2 += 300;
+    c.fluid.pH = 8.5;
+    c.temperature = 130;
+    return 'Stage IIb — a more silica-rich recharge follows the fibrous generation. Coffin-shaped heulandite tablets and peach stilbite sheaves now overgrow the earlier scolecite–mesolite lining. This pairwise order follows the Western Deccan cavity observations of Sukheswala et al. (1974); their exact order within each coeval pair is intentionally not claimed.';
 }
 function event_deccan_zeolite_apophyllite_stage_iii(c) {
     c.fluid.K += 25;
@@ -52705,8 +52737,8 @@ function event_deccan_zeolite_apophyllite_stage_iii(c) {
 function event_deccan_zeolite_late_cooling(c) {
     c.temperature = 80;
     // The long-lived Stage-III aquifer has shut off. Preserve enough dissolved
-    // silica for the documented late zeolite tail (mesolite/chabazite require
-    // >=150 ppm) while staying below amorphous-silica equilibrium throughout
+    // silica for continued growth of the documented lining while staying below
+    // amorphous-silica equilibrium throughout
     // the modeled 80-to-68 C cooling interval (about 281-to-238 ppm). This is a
     // depleted residual fluid, not a fresh opal-sinter pulse.
     c.fluid.SiO2 = Math.min(c.fluid.SiO2, 230);
@@ -52719,7 +52751,7 @@ function event_deccan_zeolite_late_cooling(c) {
     c.fluid.reactiveSilicaFraction = 1.0;
     c.fluid.pH = 8.0;
     c.flow_rate = 0.1;
-    return 'Late cooling after the Stage-III aquifer shuts off. The depleted residual fluid remains zeolite-bearing but is below amorphous-silica saturation, so it can add mesolite/chabazite to the earlier lining without inventing a terminal opal-sinter stage. Apophyllite growth slows to micron-thin zones; time becomes the limiting reagent.';
+    return 'Late cooling after the Stage-III aquifer shuts off. The depleted residual fluid remains below amorphous-silica saturation, so the established lining can finish without inventing a terminal opal-sinter stage. Apophyllite growth slows to micron-thin zones; time becomes the limiting reagent.';
 }
 
 // ── 70i-supergene.js ──
@@ -56666,7 +56698,14 @@ class VugSimulator {
                 ? this.wall_state.meshFor(this)
                 : null;
             for (const crystal of this.crystals) {
-                if (!DEHYDRATION_TRANSITIONS[crystal.mineral])
+                const dehydrationSpec = DEHYDRATION_TRANSITIONS[crystal.mineral];
+                if (!dehydrationSpec)
+                    continue;
+                // A scenario-local negative-evidence contract applies to transformation
+                // products as well as direct nucleation. The global dehydration engine
+                // remains live in documented localities and Creative mode.
+                const dehydrationTarget = dehydrationSpec[0];
+                if (this.conditions?._scenario?.excluded_species?.[dehydrationTarget])
                     continue;
                 // PHASE-1-CAVITY-MESH: read ringIdx via _resolveAnchor so this
                 // dehydration loop no longer reads wall_ring_index directly.
@@ -63019,6 +63058,24 @@ function _scenarioSpeciesExclusion(sim, name) {
     const reason = sim?.conditions?._scenario?.excluded_species?.[name];
     return typeof reason === 'string' && reason.trim() ? reason.trim() : null;
 }
+function _scenarioNucleationWindowBlock(sim, name) {
+    const window = sim?.conditions?._scenario?.nucleation_windows?.[name];
+    if (!window || typeof window !== 'object')
+        return null;
+    // VugSimulator increments `step` before applying events and nucleating, so
+    // its live step number already matches the authored event declarations.
+    // Do not add one here: that would open a window one cycle before its pulse.
+    const authoredStep = Number(sim?.step) || 0;
+    const start = Number(window.start_step);
+    const end = Number(window.end_step);
+    if (Number.isFinite(start) && authoredStep < start) {
+        return `authored paragenesis opens at step ${start} (current step ${authoredStep})`;
+    }
+    if (Number.isFinite(end) && authoredStep > end) {
+        return `authored paragenesis closed after step ${end} (current step ${authoredStep})`;
+    }
+    return null;
+}
 // Read-only best-case execution of the actual production nucleator. Every RNG
 // draw returns zero, which passes the codebase's Bernoulli gates while leaving
 // all deterministic sigma, active/total, cap, host, and priority predicates
@@ -63126,6 +63183,19 @@ function assessProductionNucleationDecision(name, sim, sigma, sigmaCrit) {
             blockers: [`locality evidence excludes this phase: ${localityExclusion}`],
         };
     }
+    const scenarioWindowBlock = _scenarioNucleationWindowBlock(sim, name);
+    if (scenarioWindowBlock) {
+        return {
+            available: true,
+            eligible: false,
+            stochasticBirth: false,
+            effectiveDrawProbability: null,
+            randomDraws: 0,
+            source: 'scenario paragenetic window',
+            competingBirth: null,
+            blockers: [scenarioWindowBlock],
+        };
+    }
     const best = productionNucleationDecisionProbe(name, sim, { randomValue: 0 });
     const result = {
         available: best.available,
@@ -63200,6 +63270,8 @@ function _runNuc(sim, fn) {
         return;
     const inferred = fn.name.startsWith('_nuc_') ? fn.name.slice(5) : '';
     if (inferred && _scenarioSpeciesExclusion(sim, inferred))
+        return;
+    if (inferred && _scenarioNucleationWindowBlock(sim, inferred))
         return;
     if (!NUC_DERIVED_SEEDS) {
         fn(sim);
@@ -65714,10 +65786,10 @@ function _nuc_heulandite(sim) {
         }
     }
 }
-// v202 (2026-06-17): Thomsonite — the EARLIEST amygdule zeolite (most aluminous,
-// Si/Al~1). Nucleates on the fresh cavity surface: early calcite > silica veneer
-// > smectite-lined wall. The later natrolite group + sheet zeolites nucleate ON
-// thomsonite. RNG-cascade-guarded.
+// v202 (2026-06-17): Thomsonite — a low-Si, highly aluminous amygdule zeolite.
+// Relative order varies by locality; authored scenarios provide any claimed
+// paragenetic window. Substrate preferences are morphological, not chronology.
+// RNG-cascade-guarded.
 function _nuc_thomsonite(sim) {
     const sigma = sim.conditions.supersaturation_thomsonite();
     if (sigma <= MINERAL_GATES_thomsonite.sigma_crit)
@@ -65741,7 +65813,7 @@ function _nuc_thomsonite(sim) {
         // at a LOWER sigma threshold than the projecting zeolites.
         if (!existing.length || (sigma > 1.4 && rng.random() < 0.30)) {
             const c = sim.nucleate('thomsonite', pos, sigma);
-            sim.log.push(`  ✦ NUCLEATION: 👁️ Thomsonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — concentric "eye" Na-Ca zeolite, earliest Deccan cavity phase`);
+            sim.log.push(`  ✦ NUCLEATION: 👁️ Thomsonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — concentric "eye" Na-Ca zeolite; relative order is locality-dependent`);
         }
     }
 }
@@ -65812,10 +65884,10 @@ function _nuc_mesolite(sim) {
         }
     }
 }
-// v203 (2026-06-17): Chabazite — the LATE, intermediate-Si amygdule zeolite.
-// A perching phase: nucleates on the earlier zeolite lining (sheet zeolites
-// stilbite/heulandite, then the fibrous group), then calcite, then wall.
-// RNG-cascade-guarded. (Last in the silicate iterator — paragenetically late.)
+// v203 (2026-06-17): Chabazite — an intermediate-Si amygdule zeolite.
+// Substrate selection favors existing zeolite surfaces, but relative order is
+// locality-dependent and belongs to the authored scenario contract.
+// RNG-cascade-guarded.
 function _nuc_chabazite(sim) {
     const sigma = sim.conditions.supersaturation_chabazite();
     if (sigma <= MINERAL_GATES_chabazite.sigma_crit)
@@ -65839,7 +65911,7 @@ function _nuc_chabazite(sim) {
     if (sigma > 1.2 * discount) {
         if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
             const c = sim.nucleate('chabazite', pos, sigma);
-            sim.log.push(`  ✦ NUCLEATION: ⬜ Chabazite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — rhombohedral pseudo-cube zeolite, late Deccan cavity phase`);
+            sim.log.push(`  ✦ NUCLEATION: ⬜ Chabazite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — rhombohedral pseudo-cube zeolite; relative order is locality-dependent`);
         }
     }
 }

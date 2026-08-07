@@ -176,6 +176,24 @@ function _scenarioSpeciesExclusion(sim: any, name: string): string | null {
   return typeof reason === 'string' && reason.trim() ? reason.trim() : null;
 }
 
+function _scenarioNucleationWindowBlock(sim: any, name: string): string | null {
+  const window = sim?.conditions?._scenario?.nucleation_windows?.[name];
+  if (!window || typeof window !== 'object') return null;
+  // VugSimulator increments `step` before applying events and nucleating, so
+  // its live step number already matches the authored event declarations.
+  // Do not add one here: that would open a window one cycle before its pulse.
+  const authoredStep = Number(sim?.step) || 0;
+  const start = Number(window.start_step);
+  const end = Number(window.end_step);
+  if (Number.isFinite(start) && authoredStep < start) {
+    return `authored paragenesis opens at step ${start} (current step ${authoredStep})`;
+  }
+  if (Number.isFinite(end) && authoredStep > end) {
+    return `authored paragenesis closed after step ${end} (current step ${authoredStep})`;
+  }
+  return null;
+}
+
 // Read-only best-case execution of the actual production nucleator. Every RNG
 // draw returns zero, which passes the codebase's Bernoulli gates while leaving
 // all deterministic sigma, active/total, cap, host, and priority predicates
@@ -292,6 +310,19 @@ function assessProductionNucleationDecision(
       blockers: [`locality evidence excludes this phase: ${localityExclusion}`],
     };
   }
+  const scenarioWindowBlock = _scenarioNucleationWindowBlock(sim, name);
+  if (scenarioWindowBlock) {
+    return {
+      available: true,
+      eligible: false,
+      stochasticBirth: false,
+      effectiveDrawProbability: null,
+      randomDraws: 0,
+      source: 'scenario paragenetic window',
+      competingBirth: null,
+      blockers: [scenarioWindowBlock],
+    };
+  }
   const best = productionNucleationDecisionProbe(name, sim, { randomValue: 0 });
   const result: ProductionNucleationDecisionAssessment = {
     available: best.available,
@@ -363,6 +394,7 @@ function _runNuc(sim: any, fn: (sim: any) => void): void {
   if (_REGISTER_NUCLEATORS_ONLY) return;
   const inferred = fn.name.startsWith('_nuc_') ? fn.name.slice(5) : '';
   if (inferred && _scenarioSpeciesExclusion(sim, inferred)) return;
+  if (inferred && _scenarioNucleationWindowBlock(sim, inferred)) return;
   if (!NUC_DERIVED_SEEDS) { fn(sim); return; }
   const saved = rng;
   rng = _makeNucRng(sim._nucSharedState | 0, fn.name, sim.step | 0);

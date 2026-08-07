@@ -794,7 +794,13 @@ class VugSimulator {
         ? this.wall_state.meshFor(this)
         : null;
       for (const crystal of this.crystals) {
-        if (!DEHYDRATION_TRANSITIONS[crystal.mineral]) continue;
+        const dehydrationSpec = DEHYDRATION_TRANSITIONS[crystal.mineral];
+        if (!dehydrationSpec) continue;
+        // A scenario-local negative-evidence contract applies to transformation
+        // products as well as direct nucleation. The global dehydration engine
+        // remains live in documented localities and Creative mode.
+        const dehydrationTarget = dehydrationSpec[0];
+        if (this.conditions?._scenario?.excluded_species?.[dehydrationTarget]) continue;
         // PHASE-1-CAVITY-MESH: read ringIdx via _resolveAnchor so this
         // dehydration loop no longer reads wall_ring_index directly.
         const anchor = this.wall_state._resolveAnchor(crystal);
