@@ -16,10 +16,45 @@ function _nuc_quartz(sim) {
   const existing_quartz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
   if (sigma_q > MINERAL_GATES_quartz.sigma_crit && existing_quartz.length < 3 && !sim._atNucleationCap('quartz')) {
     if (!existing_quartz.length || (sigma_q > 2.0 && rng.random() < 0.3)) {
-      const c = sim.nucleate('quartz', 'vug wall', sigma_q);
+      const substrate = typeof executableSubstrateCandidates === 'function'
+        ? executableSubstrateCandidates('quartz', sim.crystals)[0]
+        : null;
+      const chalcedony = substrate?.host || null;
+      const pos = chalcedony ? `chalcedony #${chalcedony.crystal_id}` : 'vug wall';
+      const c = sim.nucleate('quartz', pos, sigma_q);
+      sim.conditions._stableQuartzExposed = true;
       sim.log.push(`  ✦ NUCLEATION: Quartz #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_q.toFixed(2)})`);
     }
   }
+}
+
+function _nuc_chalcedony(sim) {
+  if (sim.conditions.silica_precipitate_phase() !== 'chalcedony') return;
+  // Do not run the generic silica succession backwards. Once stable quartz is
+  // exposed, a later cooling step may make the remaining fluid supersaturated
+  // with respect to chalcedony, but it should feed/overgrow the lower-solubility
+  // quartz rather than create a fresh metastable chalcedony generation.
+  const exposedQuartz = sim.crystals.some(
+    c => c.mineral === 'quartz' && c.active && !c.dissolved,
+  );
+  if (exposedQuartz) return;
+  const sigma = sim.conditions.supersaturation_chalcedony();
+  if (sigma <= MINERAL_GATES_chalcedony.sigma_crit) return;
+  if (sim._atNucleationCap('chalcedony')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'chalcedony' && c.active);
+  if (existing.length >= 4) return;
+  if (existing.length && !(sigma > 1.8 && rng.random() < 0.22)) return;
+
+  // Opal is the natural precursor substrate when an amorphous-silica pulse
+  // matures. Otherwise chalcedony starts as a fibrous veneer on the cavity wall.
+  const opal = sim.crystals.find(c => c.mineral === 'opal' && c.active && !c.dissolved);
+  const pos = opal ? `opal #${opal.crystal_id}` : 'vug wall';
+  const c = sim.nucleate('chalcedony', pos, sigma);
+  sim.log.push(
+    `  ✦ NUCLEATION: Chalcedony #${c.crystal_id} on ${c.position} ` +
+    `(T=${sim.conditions.temperature.toFixed(0)}°C, σch=${sigma.toFixed(2)}) — ` +
+    'a first-class length-fast microfibrous SiO2 aggregate, not a quartz display label',
+  );
 }
 function _nuc_apophyllite(sim) {
   const sigma_ap = sim.conditions.supersaturation_apophyllite();
@@ -1029,6 +1064,7 @@ function _nuc_chabazite(sim) {
 }
 
 function _nucleateClass_silicate(sim) {
+  _runNuc(sim, _nuc_chalcedony);
   _runNuc(sim, _nuc_quartz);
   _runNuc(sim, _nuc_apophyllite);
   _runNuc(sim, _nuc_feldspar);

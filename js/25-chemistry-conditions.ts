@@ -9,6 +9,8 @@
 //
 // Phase B6 of PROPOSAL-MODULAR-REFACTOR.
 
+const CHALCEDONY_NUCLEATION_SIGMA = 1.12;
+
 class VugConditions {
   // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;
@@ -167,6 +169,12 @@ class VugConditions {
   ];
 
   silica_equilibrium(T) {
+    const pressureAssessment = typeof quartzPressureSolubilityAssessment === 'function'
+      ? quartzPressureSolubilityAssessment(Number(T), Number(this.pressure))
+      : null;
+    if (pressureAssessment?.active && Number.isFinite(pressureAssessment.equilibriumPpm)) {
+      return pressureAssessment.equilibriumPpm;
+    }
     const table = VugConditions._SiO2_SOLUBILITY;
     if (T <= table[0][0]) return table[0][1];
     if (T >= table[table.length-1][0]) return table[table.length-1][1];
@@ -179,15 +187,92 @@ class VugConditions {
     return table[table.length-1][1];
   }
 
-  // Which SiO₂ polymorph precipitates at this temperature?
-  // Select a first-class silica phase before saturation/nucleation. The
-  // simulator currently has independently plumbed opal and quartz phases;
-  // chalcedony waits for its own solubility and kinetic implementation.
+  // Chalcedony and amorphous-silica equilibrium concentrations (mg/L ~= ppm
+  // in the simulator's dilute-water convention), inverted from the USGS
+  // Fournier silica geothermometers:
+  //   Tchal = 1032 / (4.69 - log10 SiO2) - 273.15
+  //   Tam   =  731 / (4.52 - log10 SiO2) - 273.15
+  // The chalcedony relation is published for 0-250 C; the amorphous-silica
+  // relation is used only inside opal's 5-100 C kinetic window. Keeping these
+  // separate from quartz equilibrium is what permits real Ostwald stepping:
+  // opal -> chalcedony -> quartz as dissolved silica is consumed.
+  chalcedony_equilibrium(T) {
+    const boundedT = Math.max(0, Math.min(Number(T) || 0, 250));
+    return Math.pow(10, 4.69 - 1032 / (boundedT + 273.15));
+  }
+
+  opal_equilibrium(T) {
+    const boundedT = Math.max(5, Math.min(Number(T) || 0, 100));
+    return Math.pow(10, 4.52 - 731 / (boundedT + 273.15));
+  }
+
+  // Yellowstone's surface hydrothermal deposits separate into silica-bearing
+  // alkaline-chloride waters and Ca-carbonate travertine waters. A dissolved-
+  // silica equilibrium ratio alone cannot reproduce that kinetic/depositional
+  // distinction: Mammoth's documented 54 ppm SiO2 can be supersaturated with
+  // respect to crystalline silica after cooling, yet its limestone-hosted,
+  // Ca-HCO3 water deposits travertine rather than silica sinter. This observer
+  // keeps the equilibrium values intact while identifying that competing water
+  // type. The dimensionless share remains visible as context; the production
+  // discriminator uses the observed shallow/cool/limestone/low-Si combination,
+  // which Creative Mode can cross with SiO2, temperature, pressure, or host.
+  silica_depositional_regime() {
+    const f = this.fluid;
+    const totalSilicaPpm = Math.max(0, Number(f.SiO2) || 0);
+    const reactiveSilicaFraction = Math.max(
+      0,
+      Math.min(1, Number(f.reactiveSilicaFraction) || 0),
+    );
+    const si = typeof f.reactiveSilicaPpm === 'function'
+      ? f.reactiveSilicaPpm()
+      : totalSilicaPpm * reactiveSilicaFraction;
+    const carbonateLoad = Math.sqrt(
+      Math.max(0, Number(f.Ca) || 0) * Math.max(0, Number(f.CO3) || 0),
+    );
+    const silicaShare = si / Math.max(si + carbonateLoad, 1e-9);
+    const shallowSurfaceSpring = Number(this.pressure) <= 0.10 && Number(this.temperature) <= 100;
+    // USGS Bull. 1444 reports 54 mg/L SiO2 for Mammoth versus roughly 420 mg/L
+    // for silica-depositing Norris water. The 75 mg/L boundary deliberately
+    // separates that measured low-Si endmember without suppressing deeper,
+    // long-residence limestone-hosted chalcedony/quartz systems.
+    const carbonateCompetitive = carbonateLoad >= 100 && carbonateLoad >= 2 * si;
+    const carbonateDominant = shallowSurfaceSpring && si < 75 && carbonateCompetitive;
+    return {
+      phase: carbonateDominant ? 'carbonate-travertine water' : 'silica-permissive water',
+      silicaShare,
+      totalSilicaPpm,
+      reactiveSilicaPpm: si,
+      reactiveSilicaFraction,
+      carbonateLoad,
+      carbonateCompetitive,
+      permitsSilicaPrecipitation: !carbonateDominant,
+      note: carbonateDominant
+        ? 'Shallow Ca-DIC water is in the Mammoth travertine regime; the actual carbonate load exceeds both its calibrated floor and twice the reactive-silica load, so carbonate deposition kinetically outcompetes a fresh silica sinter/lining.'
+        : 'The fluid is outside the calibrated Mammoth carbonate-dominant exclusion and may follow the opal/chalcedony/quartz saturation sequence.',
+    };
+  }
+
+  // Select the actual NEW generic SiO2 precipitate before nucleation.
+  // Order is deliberate: the more soluble, less ordered phase wins only while
+  // it clears both equilibrium and its calibrated nucleation barrier. A merely
+  // metastable, subcritical chalcedony solution must not veto lower-solubility
+  // quartz forever (the Herkimer case). Existing chalcedony is handled by its
+  // growth engine and does not pay this fresh-nucleus barrier again.
   silica_precipitate_phase() {
     const T = this.temperature;
     const f = this.fluid;
-    if (T >= 5 && T < 100 && f.SiO2 >= 200 && f.pH >= 6.5 && f.pH <= 10.0) return 'opal';
-    if (T >= 100 && T <= 700 && f.SiO2 >= 50) return 'quartz';
+    const si = typeof f.reactiveSilicaPpm === 'function'
+      ? f.reactiveSilicaPpm()
+      : Math.max(0, Number(f.SiO2) || 0);
+    const pH = Number(f.pH);
+    if (!this.silica_depositional_regime().permitsSilicaPrecipitation) return null;
+    if (T >= 5 && T <= 100 && pH >= 6.5 && pH <= 10.0
+        && si > this.opal_equilibrium(T)) return 'opal';
+    if (this._stableQuartzExposed && T >= 100 && T <= 700
+        && si > this.silica_equilibrium(T)) return 'quartz';
+    if (T >= 0 && T <= 200 && pH >= 3.0 && pH <= 10.0
+        && si / Math.max(this.chalcedony_equilibrium(T), 1e-9) > CHALCEDONY_NUCLEATION_SIGMA) return 'chalcedony';
+    if (T >= 100 && T <= 700 && si > this.silica_equilibrium(T)) return 'quartz';
     return null;
   }
 

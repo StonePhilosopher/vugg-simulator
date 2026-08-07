@@ -57,6 +57,11 @@ function event_co2_degas_with_reheat(c) {
   c.fluid.CO3 = oldDIC * (1 - fraction);
   c.fluid.pH = Math.min(9.5, oldPH + 0.5);
   c.temperature = 75;
+  // This canonical event is an actively vented hot-spring recharge: repeated
+  // CO2 loss plates a terrace crust. Store the executed depositional pathway
+  // so calcite habit follows mechanism, not merely a Ca/DIC ratio that also
+  // occurs in sabkhas and cave drip films.
+  c._calciteDepositionalMode = 'travertine';
   return (
     `Fresh hot pulse degasses — new CO₂-rich water from depth replaces ` +
     `what cooled. T resets to ${c.temperature}°C; DIC drops ` +

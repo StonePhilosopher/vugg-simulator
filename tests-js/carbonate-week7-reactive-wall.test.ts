@@ -6,7 +6,8 @@
 //
 // reactive_wall (Sweetwater Mine, Viburnum Trend) injects CO2-saturated
 // brine at steps 15/40/70. Each pulse acidifies the fluid; the
-// limestone wall buffers via dissolution, releasing Ca²⁺ + HCO₃⁻
+// Bonneterre dolostone buffers via dissolution, releasing formula-balanced
+// Ca²⁺ + Mg²⁺ + 2 carbonate units
 // back into solution. As pH recovers, the freshly-released carbonate
 // supersaturates and precipitates as growth bands on existing crystals.
 //
@@ -120,7 +121,7 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 7 — reactive_wall acid-pulse pH beha
     expect(minOverall).toBeLessThan(6.5);
   });
 
-  it('pH recovers above 6 after pulses (limestone wall buffers)', () => {
+  it('pH recovers above 6 after pulses (dolostone wall buffers)', () => {
     const probes = probeReactiveWall();
     if (!probes.length) return;
     // Check final stretch (post-step 95) — after all pulses + the
@@ -134,7 +135,7 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 7 — reactive_wall acid-pulse pH beha
 });
 
 describe('PROPOSAL-CARBONATE-GEOCHEM Week 7 — wall dissolution growth budget', () => {
-  it('Ca²⁺ rises during/after acid pulses (limestone wall dissolves)', () => {
+  it('Ca²⁺ rises during/after acid pulses (dolostone wall dissolves)', () => {
     const probes = probeReactiveWall();
     if (!probes.length) return;
     // Compare Ca at step 5 (before any pulse) vs step 50 (after two

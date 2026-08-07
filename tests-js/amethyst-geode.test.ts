@@ -35,7 +35,7 @@ describe('W-F O5 amethyst geode — the masking sceptre grows and renders amethy
     setSeed(42);
     const scen = SCENARIOS['amethyst_geode']();
     const sim = new VugSimulator(scen.conditions, scen.events);
-    const steps = scen.duration_steps ?? 110;
+    const steps = scen.defaultSteps ?? 150;
     for (let i = 0; i < steps; i++) sim.run_step();
     return sim;
   };

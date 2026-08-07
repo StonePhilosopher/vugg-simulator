@@ -3549,6 +3549,211 @@ function _clusterSatelliteCount(crystal: any, pattern: ClusterPattern, cLenOverr
 // a-axis tangentially around the substrate normal, scaled to 0.4-0.8×
 // parent, tilted up to ±11° off the parent's c-axis. Satellites are
 // added to state.crystals alongside the parent.
+// AREA-COVERING SURFACE GROWTH (SIM 246)
+// ---------------------------------------
+// A surface-growth Crystal is one mass-booked aggregate, not N extra crystals.
+// The instance cloud below is therefore representative geometry: one draw call,
+// no additions to sim.crystals, no extra accepted volume, and a hard mobile cap.
+// The physical coverage/thickness/volume record is crystal._surfaceGrowth (js/45).
+const SURFACE_GROWTH_INSTANCE_CAP_DESKTOP = 128;
+const SURFACE_GROWTH_INSTANCE_CAP_MOBILE = 56;
+
+function _surfaceGrowthInstanceCount(coverage: number, mobile = false): number {
+  const cap = mobile ? SURFACE_GROWTH_INSTANCE_CAP_MOBILE : SURFACE_GROWTH_INSTANCE_CAP_DESKTOP;
+  return Math.max(12, Math.min(cap, Math.round(12 + coverage * (cap - 12))));
+}
+
+// Equal-area deterministic points inside a spherical cap. `center` is the
+// outward wall direction; cap area / whole-sphere area is exactly `coverage`.
+// The golden-angle azimuth avoids both grid seams and random clumping.
+function _surfaceGrowthSampleDirections(
+  center: [number, number, number], count: number, coverage: number, seed = 0,
+): Array<[number, number, number]> {
+  let [cx, cy, cz] = center;
+  const cl = Math.sqrt(cx * cx + cy * cy + cz * cz) || 1;
+  cx /= cl; cy /= cl; cz /= cl;
+  const ref = Math.abs(cy) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+  let t1x = ref[1] * cz - ref[2] * cy;
+  let t1y = ref[2] * cx - ref[0] * cz;
+  let t1z = ref[0] * cy - ref[1] * cx;
+  const tl = Math.sqrt(t1x * t1x + t1y * t1y + t1z * t1z) || 1;
+  t1x /= tl; t1y /= tl; t1z /= tl;
+  const t2x = cy * t1z - cz * t1y;
+  const t2y = cz * t1x - cx * t1z;
+  const t2z = cx * t1y - cy * t1x;
+  const cov = Math.max(0.001, Math.min(0.999, coverage));
+  const cosEdge = 1 - 2 * cov;
+  const phase = ((seed * 0.6180339887498949) % 1 + 1) % 1 * Math.PI * 2;
+  const golden = Math.PI * (3 - Math.sqrt(5));
+  const out: Array<[number, number, number]> = [];
+  for (let i = 0; i < count; i++) {
+    const u = (i + 0.5) / count;
+    const cosA = 1 - u * (1 - cosEdge);
+    const sinA = Math.sqrt(Math.max(0, 1 - cosA * cosA));
+    const az = phase + i * golden;
+    const ca = Math.cos(az), sa = Math.sin(az);
+    out.push([
+      cx * cosA + (t1x * ca + t2x * sa) * sinA,
+      cy * cosA + (t1y * ca + t2y * sa) * sinA,
+      cz * cosA + (t1z * ca + t2z * sa) * sinA,
+    ]);
+  }
+  return out;
+}
+
+function _surfaceGrowthWallPoint(
+  wall: any, dir: [number, number, number], ringCount: number, N: number, initR: number,
+): any {
+  let [dx, dy, dz] = dir;
+  const dl = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+  dx /= dl; dy /= dl; dz /= dl;
+  const phi = Math.acos(Math.max(-1, Math.min(1, -dy)));
+  const ringIdx = Math.max(0, Math.min(ringCount - 1,
+    Math.round((phi / Math.PI) * ringCount - 0.5)));
+  const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1;
+  const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0;
+  let theta = Math.atan2(dz, dx) - twist;
+  while (theta < 0) theta += 2 * Math.PI;
+  while (theta >= 2 * Math.PI) theta -= 2 * Math.PI;
+  const cellIdx = Math.max(0, Math.min(N - 1, Math.floor(theta / (2 * Math.PI) * N)));
+  const cell = wall.rings[ringIdx] && wall.rings[ringIdx][cellIdx];
+  const baseR = cell && cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
+  const radius = (baseR + (cell ? cell.wall_depth : 0)) * polar;
+  return {
+    x: radius * dx, y: radius * dy, z: radius * dz,
+    // Cavity-facing normal points inward.
+    nx: -dx, ny: -dy, nz: -dz,
+    ringIdx, cellIdx, radius,
+  };
+}
+
+function _emitSurfaceGrowthSwath(
+  state: any, crystal: any, parentMat: any,
+  ax: number, ay: number, az: number,
+  wall: any, ringCount: number, N: number, initR: number,
+  renderC: number,
+): void {
+  const record = crystal && crystal._surfaceGrowth;
+  if (!record || !(record.coverage_fraction > 0) || !wall || !wall.rings) return;
+  const liveC = Math.max(1e-9, Number(crystal.c_length_mm) || 0);
+  // Replay grows the footprint from the historical size rather than painting
+  // the final shell on the first frame.
+  const replayMaturity = Math.max(0.02, Math.min(1, renderC / liveC));
+  const coverage = Math.max(0.005, Math.min(0.98,
+    record.coverage_fraction * Math.sqrt(replayMaturity)));
+  const mobile = typeof window !== 'undefined'
+    && ((window.innerWidth || 1024) <= 720 || (window.devicePixelRatio || 1) >= 2.5);
+  const count = _surfaceGrowthInstanceCount(coverage, mobile);
+  const al = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
+  const directions = _surfaceGrowthSampleDirections(
+    [ax / al, ay / al, az / al], count, coverage, crystal.crystal_id || 0,
+  );
+
+  let key = '__surface_patch_lowpoly';
+  let geom = state.geomCache.get(key);
+  if (!geom) {
+    geom = new THREE.SphereGeometry(0.5, 8, 5);
+    state.geomCache.set(key, geom);
+  }
+  if (record.regime === 'euhedral_druse') {
+    key = crystal.mineral === 'calcite' ? '__surface_calcite_tooth' : '__surface_quartz_point';
+    geom = state.geomCache.get(key);
+    if (!geom) {
+      geom = _buildHabitGeom(crystal.mineral === 'calcite' ? 'scalene' : 'prism');
+      state.geomCache.set(key, geom);
+    }
+  } else if (record.regime === 'fibrous_mat') {
+    key = '__surface_fiber';
+    geom = state.geomCache.get(key);
+    if (!geom) { geom = _buildHabitGeom('spike'); state.geomCache.set(key, geom); }
+  }
+
+  const mat = parentMat.clone();
+  mat.roughness = record.regime === 'fibrous_mat' ? 0.72
+    : record.regime === 'laminated_lining' ? 0.82 : Math.max(0.48, mat.roughness || 0.5);
+  if (record.regime === 'laminated_lining' && mat.transparent) {
+    mat.opacity = Math.max(0.46, mat.opacity || 0);
+  }
+  _applyCavityClip(mat, state.clipUniforms);
+
+  const swath = new THREE.InstancedMesh(geom, mat, count);
+  const dummy = new THREE.Object3D();
+  const up = new THREE.Vector3(0, 1, 0);
+  const axis = new THREE.Vector3();
+  const cavityR = Math.max(1, Number(state.clipUniforms?.uVugRadius?.value) || initR);
+  const areaPerRepresentative = (4 * Math.PI * cavityR * cavityR * coverage) / count;
+  const patchRadius = Math.max(0.22, Math.sqrt(areaPerRepresentative / Math.PI) * 1.08);
+  const trueThicknessMm = Math.max(0, Number(record.mean_thickness_um) || 0) / 1000;
+  const displayThickness = Math.max(0.06, Math.min(patchRadius * 0.45,
+    trueThicknessMm > 0 ? Math.max(trueThicknessMm, 0.06) : 0.06));
+
+  for (let i = 0; i < count; i++) {
+    const p = _surfaceGrowthWallPoint(wall, directions[i], ringCount, N, initR);
+    const h = Math.abs(Math.sin((crystal.crystal_id + 1) * 17.17 + i * 9.73)) % 1;
+    if (record.regime === 'euhedral_druse') {
+      const height = Math.max(0.24, Math.min(1.6, patchRadius * (0.28 + 0.22 * h)));
+      const width = height * (crystal.mineral === 'calcite' ? 0.42 : 0.28);
+      axis.set(p.nx, p.ny, p.nz);
+      dummy.quaternion.setFromUnitVectors(up, axis);
+      dummy.rotateY(h * Math.PI * 2);
+      dummy.position.set(
+        p.x + p.nx * height * 0.5,
+        p.y + p.ny * height * 0.5,
+        p.z + p.nz * height * 0.5,
+      );
+      dummy.scale.set(width, height, width);
+    } else if (record.regime === 'fibrous_mat') {
+      // Slip-/felt-fibre representation: lay each bundle in the local tangent
+      // plane instead of making a forest of needles normal to the wall.
+      let tx = -p.nz, ty = 0, tz = p.nx;
+      let tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+      if (tl < 1e-6) { tx = 1; ty = 0; tz = 0; tl = 1; }
+      tx /= tl; ty /= tl; tz /= tl;
+      const bx = p.ny * tz - p.nz * ty;
+      const by = p.nz * tx - p.nx * tz;
+      const bz = p.nx * ty - p.ny * tx;
+      const spin = h * Math.PI * 0.7 - Math.PI * 0.35;
+      axis.set(tx * Math.cos(spin) + bx * Math.sin(spin),
+        ty * Math.cos(spin) + by * Math.sin(spin),
+        tz * Math.cos(spin) + bz * Math.sin(spin)).normalize();
+      const length = Math.max(0.45, Math.min(2.4, patchRadius * (0.8 + h * 0.5)));
+      const width = Math.max(0.035, Math.min(0.11, length * 0.055));
+      dummy.quaternion.setFromUnitVectors(up, axis);
+      dummy.position.set(p.x + p.nx * width, p.y + p.ny * width, p.z + p.nz * width);
+      dummy.scale.set(width, length, width);
+    } else {
+      const lateral = patchRadius * (record.regime === 'laminated_lining' ? 2.2 : 1.55);
+      const relief = record.regime === 'botryoidal_crust'
+        ? Math.max(displayThickness, patchRadius * (0.30 + h * 0.18))
+        : displayThickness;
+      axis.set(p.nx, p.ny, p.nz);
+      dummy.quaternion.setFromUnitVectors(up, axis);
+      dummy.position.set(
+        p.x + p.nx * relief * 0.5,
+        p.y + p.ny * relief * 0.5,
+        p.z + p.nz * relief * 0.5,
+      );
+      dummy.scale.set(lateral, relief, lateral);
+    }
+    dummy.updateMatrix();
+    swath.setMatrixAt(i, dummy.matrix);
+  }
+  swath.instanceMatrix.needsUpdate = true;
+  if (typeof swath.computeBoundingSphere === 'function') swath.computeBoundingSphere();
+  swath.renderOrder = record.regime === 'laminated_lining' ? 0.55 : 0.8;
+  swath.raycast = function () {};
+  swath.userData = {
+    surfaceGrowth: true,
+    crystal_id: crystal.crystal_id,
+    mineral: crystal.mineral,
+    regime: record.regime,
+    coverage_fraction: coverage,
+    physical_mean_thickness_um: record.mean_thickness_um,
+    representative_only: true,
+  };
+  state.crystals.add(swath);
+}
+
 function _emitClusterSatellites(
   state: any, crystal: any, geom: any, mat: any,
   ax: number, ay: number, az: number,
@@ -5112,6 +5317,15 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     };
 
     state.crystals.add(mesh);
+    // A booked aggregate can occupy a broad wall swath even though it is one
+    // Crystal record. Emit one instanced representative layer; it neither adds
+    // simulation entities nor multiplies the accepted mineral volume.
+    if (!isInclusion && crystal._surfaceGrowth) {
+      _emitSurfaceGrowthSwath(
+        state, crystal, mat, ax, ay, az,
+        wall, ringCount, N, initR, renderC,
+      );
+    }
     // W-F O4a — register every crystal as a possible host, and defer inclusion
     // placement to pass 2 (the host mesh may build later in this same loop).
     _hostMeshById.set(crystal.crystal_id, mesh);
@@ -5132,7 +5346,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // geomToken selects a per-habit cluster pattern (acicular spray,
     // tabular rosette, prismatic forest, cubic carpet, etc.). An engulfed
     // inclusion has no free druse spray, so it opts out (W-F O4a).
-    if (!isInclusion) {
+    if (!isInclusion && !crystal._surfaceGrowth) {
       _emitClusterSatellites(state, crystal, geom, mat, ax, ay, az, nx, ny, nz, cLen, aWid, token, wall, ringCount, N, initR, occF);
     }
   }

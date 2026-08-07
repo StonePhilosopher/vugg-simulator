@@ -336,7 +336,7 @@ describe('nucleation hover popover (97b) — recipe chips vs live conditions', (
 
   it('uses the real quartz nucleator for repeat thresholds, active caps, and stochastic birth probability', () => {
     const conditions = new VugConditions({
-      temperature: 200,
+      temperature: 250,
       fluid: new FluidChemistry({ SiO2: 1000, pH: 7, O2: 0.1 }),
     });
     conditions.supersaturation_quartz = () => 1.5;

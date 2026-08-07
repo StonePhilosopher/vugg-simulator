@@ -3855,6 +3855,11 @@ Scenarios:
         <input type="range" id="f-sio2" min="0" max="20000" value="600" step="1" oninput="document.getElementById('f-sio2-val').textContent=this.value+' ppm'">
         <span class="range-val" id="f-sio2-val">600 ppm</span>
       </div>
+      <div class="setup-row" title="Fraction of total analytical SiO₂ that is dissolved/reactive rather than suspended clay or detrital silt.">
+        <label for="f-reactive-silica" style="width:60px">Reactive Si</label>
+        <input type="range" id="f-reactive-silica" min="0" max="100" value="100" step="1" oninput="document.getElementById('f-reactive-silica-val').textContent=(this.value/100).toFixed(2)+' fraction'">
+        <span class="range-val" id="f-reactive-silica-val">1.00 fraction</span>
+      </div>
       <div class="setup-row">
         <label for="f-ca" style="width:60px">Calcium</label>
         <input type="range" id="f-ca" min="0" max="5000" value="150" step="1" oninput="document.getElementById('f-ca-val').textContent=this.value+' ppm'">
@@ -4179,7 +4184,7 @@ Scenarios:
 
         <div class="broth-group">
           <div class="broth-group-label" title="Controls the thermal environment. Higher T increases silica solubility. 573°C = β→α quartz inversion. Above 500°C calcite decomposes.">🌡️ Temperature</div>
-          <div class="broth-slider-row" title="Fluid temperature (°C). Controls solubility, growth rate, and which polymorph crystallizes. Below 200°C: chalcedony. 200-573°C: α-quartz. Above 573°C: β-quartz.">
+          <div class="broth-slider-row" title="Fluid temperature (°C). Controls phase-specific silica solubility and kinetics. At 5–100°C, very silica-rich fluid can form opal first; fluid above chalcedony equilibrium can form chalcedony through 200°C; after those reservoirs are undersaturated, quartz can grow from 100–700°C (β-quartz above 573°C).">
             <label>Temp</label>
             <input type="range" id="broth-temp" min="0" max="900" value="300" step="0.1"
               oninput="setBrothValue('temp',this.value)">
@@ -4210,6 +4215,12 @@ Scenarios:
             <input type="range" id="broth-sio2" min="0" max="20000" value="500" step="1"
               oninput="setBrothValue('sio2',this.value)">
             <span class="broth-val" id="broth-sio2-val">500 ppm</span>
+          </div>
+          <div class="broth-slider-row" title="Dissolved/reactive fraction of total analytical SiO₂. 0 means the silica is suspended sediment; 1 means all of it can enter aqueous mineral reactions.">
+            <label>Reactive Si</label>
+            <input type="range" id="broth-reactive-silica" min="0" max="100" value="100" step="1"
+              oninput="setBrothValue('reactive-silica',this.value)">
+            <span class="broth-val" id="broth-reactive-silica-val">1.00 fraction</span>
           </div>
           <div class="broth-slider-row" title="Dissolved calcium (ppm). Forms calcite with CO₃, fluorite with F. Essential for carbonate and fluoride minerals.">
             <label>Ca</label>
@@ -4961,6 +4972,7 @@ Scenarios:
 // `node tools/sync-spec.js` — the drift checker will flag mismatches.
 const MINERAL_SPEC_FALLBACK = {
     quartz: { formula: "SiO2", nucleation_sigma: 1.0, max_size_cm: 1200, growth_rate_mult: 0.3, thermal_decomp_C: 1713, fluorescence: { activator: "Al", threshold_ppm: 5, color: "weak_blue_LW" }, twin_laws: [{ name: "Dauphine", probability: 0.15 }], acid_dissolution: { pH_threshold: 4.0, requires: { F: 20 } } },
+    chalcedony: { formula: "SiO2", nucleation_sigma: 1.12, max_size_cm: 100, growth_rate_mult: 0.45, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0, requires: { F: 20 } } },
     calcite: { formula: "CaCO3", nucleation_sigma: 1.0, max_size_cm: 2000, growth_rate_mult: 1.0, thermal_decomp_C: 840, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "orange_red", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "c_twin", probability: 0.10 }], acid_dissolution: { pH_threshold: 5.5 } },
     aragonite: { formula: "CaCO3", nucleation_sigma: 1.0, max_size_cm: 30, growth_rate_mult: 0.5, thermal_decomp_C: 450, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "orange_yellow", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "cyclic_sextet", probability: 0.40 }], acid_dissolution: { pH_threshold: 5.5 } },
     rhodochrosite: { formula: "MnCO3", nucleation_sigma: 1.0, max_size_cm: 25, growth_rate_mult: 0.5, thermal_decomp_C: 600, fluorescence: { activator: "intrinsic", color: "red_pink_LW" }, twin_laws: [{ name: "polysynthetic", probability: 0.02 }], acid_dissolution: { pH_threshold: 5.5 } },
@@ -5629,7 +5641,7 @@ const MINERAL_THUMBS = {
 };
 // Game colors for each mineral (used in charts, inventory tinting)
 const MINERAL_GAME_COLORS = {
-    quartz: '#e8e8e8', calcite: '#ffd699', fluorite: '#b088dd',
+    quartz: '#e8e8e8', chalcedony: '#b9d7d9', calcite: '#ffd699', fluorite: '#b088dd',
     pyrite: '#c8b830', chalcopyrite: '#c89830', galena: '#a0a0a0', molybdenite: '#707888',
     hematite: '#b04040', malachite: '#2e8b57', sphalerite: '#cc8844',
     goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',
@@ -6022,7 +6034,7 @@ const COLOUR_LEXICON = {
     chalk_white: '#f2efe8', pearly_white: '#efece5', white_powdery: '#f2f0ea',
     white_spray: '#f0ede6', white_flesh: '#eaddce', white_pink_zoned: '#ecdcd6',
     white_pale_green: '#e2e6da', white_pale_blue_green: '#dde8e2', common_white_brown: '#e6ddce',
-    gray_to_white: '#dcdad2', white_to_pale_yellow: '#eee9d2',
+    gray_to_white: '#dcdad2', blue_gray_white: '#b9cdd0', white_to_pale_yellow: '#eee9d2',
     // --- yellows / golds ---
     pale_yellow: '#e2cb6a', yellow: '#e6d23a', bright_yellow: '#eedc2a', lemon_yellow: '#edea45',
     canary_yellow: '#e9d92c', rich_yellow: '#e8b722', golden_yellow: '#e2b32a', straw_yellow: '#ddca7a',
@@ -18781,7 +18793,35 @@ function scenarioSpecHash(spec) {
 //       wall-carbon release in a whole-scenario carbon ledger; its carbonate-
 //       buffer events now repartition existing dissolved inorganic carbon and
 //       adjust pH without inventing carbonate mass.
-const SIM_VERSION = 245;
+// v246 — HOSTILE-REVIEW ROUND 10 FIRST-CLASS CHALCEDONY (2026-08-06).
+//       Generic silica now has three independently saturated phases. USGS
+//       Fournier relations provide temperature-dependent amorphous-silica and
+//       chalcedony equilibria; quartz retains its separate equilibrium. The
+//       selector applies Ostwald stepping: opal while amorphous silica is
+//       supersaturated, chalcedony after opal falls below equilibrium, then
+//       quartz after chalcedony is depleted (or above the 200 C chalcedony
+//       field). Chalcedony has its own production nucleator, Creative diagnosis,
+//       low-surface-energy gate, accepted-shell SiO2 ledger, growth engine, and
+//       length-fast microfibrous aggregation record. Seven or more accepted
+//       layers in a basalt cavity or oscillatory fluid produce a real banded-
+//       agate fabric; a quartz-filled vug is never cosmetically renamed agate.
+//       Opal-to-chalcedony and chalcedony-to-quartz maturation are explicit
+//       solution-mediated dissolution/reprecipitation: exact booked SiO2 is
+//       returned before the next phase spends it. Structural water remains
+//       diagnostic because the simulator has no conserved H2O inventory.
+//       Deccan and Ametista do Sul now require the chalcedony they describe,
+//       while still permitting later inward-growing quartz. A documented
+//       shallow limestone/carbonate-water discriminator keeps Mammoth's 54 ppm
+//       silica travertine fluid out of the silica-deposition route, and that
+//       surface scenario disables the generic fracture-driven silica pulse.
+//       Area-covering aggregates now persist their physical fabric and booked
+//       volume: chalcedony/agate becomes a laminated lining, appropriate
+//       hematite/Cu-carbonate/Mn-oxide habits become crusts, quartz and calcite
+//       coating variants become euhedral druse, and only genuinely fibrous
+//       asbestos habits become mats.  Deterministic renderer instances spread
+//       that one mass-booked aggregate over its wall footprint; they never add
+//       crystals or spend chemistry, and mobile uses a lower representative LOD.
+const SIM_VERSION = 246;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -18795,7 +18835,8 @@ const MODEL_DIGEST = [
     'event-fluid:absolute-replace-v1',
     'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
     'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
-    'silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1',
+    'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-pressure+booked-transition+chemistry-competition-v4',
+    'surface-growth:mass-booked-area+lining+crust+asbestos+druse-representatives-v1',
     'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
     'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3',
     'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
@@ -19088,6 +19129,7 @@ const MINERAL_STOICHIOMETRY = {
     clausthalite: { Pb: 1, Se: 1 }, // PbSe
     // ---- Oxides ----
     quartz: { SiO2: 1 }, // SiO2
+    chalcedony: { SiO2: 1 }, // cryptocrystalline fibrous SiO2 aggregate
     // v125 P3 Tsumeb-adjacent probe: opal — amorphous silica, same
     // stoichiometry as quartz. Fires in 6 scenarios; SiO2 broths in
     // each are thousands of ppm so the debit is sub-percent of budget.
@@ -19404,6 +19446,7 @@ const MINERAL_DISSOLUTION_RATES = {
     vanadinite: { Pb: 0.3, V: 0.2, Cl: 0.3 },
     // ---- Silicates (Phase 1e batch 5, v43 — single-mode subset) ----
     quartz: { SiO2: 0.8 }, // OH⁻-assisted dissolution
+    chalcedony: { SiO2: 0.8 }, // undersaturation / solution-mediated quartz maturation
     feldspar: { K: 0.3, Al: 0.05, SiO2: 0.5 }, // most Al stays in kaolinite
     albite: { Na: 0.3, Al: 0.05, SiO2: 0.3 }, // most Al stays in kaolinite
     topaz: { Al: 0.3, SiO2: 0.2, F: 0.4 }, // HF-assisted etch
@@ -19700,7 +19743,12 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
                 continue;
             if (typeof fluid[species] !== 'number')
                 continue;
-            fluid[species] += returned[species];
+            if (species === 'SiO2' && typeof fluid.addReactiveSilica === 'function') {
+                fluid.addReactiveSilica(returned[species]);
+            }
+            else {
+                fluid[species] += returned[species];
+            }
         }
         if (fluid.sulfurPoolsExplicit)
             syncExplicitSulfurTotal(fluid);
@@ -19730,9 +19778,11 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
         if (!(demandPerUm > 0))
             continue;
         const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
-        const available = (typeof fluid[reservoir] === 'number' && Number.isFinite(fluid[reservoir]))
-            ? Math.max(0, fluid[reservoir])
-            : 0;
+        const available = reservoir === 'SiO2' && typeof fluid.reactiveSilicaPpm === 'function'
+            ? fluid.reactiveSilicaPpm()
+            : (typeof fluid[reservoir] === 'number' && Number.isFinite(fluid[reservoir]))
+                ? Math.max(0, fluid[reservoir])
+                : 0;
         const supported = available / demandPerUm;
         if (supported < acceptedThickness) {
             acceptedThickness = supported;
@@ -19756,7 +19806,9 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
     let depleted = null;
     for (const species in stoich) {
         const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
-        const previous = fluid[reservoir];
+        const previous = reservoir === 'SiO2' && typeof fluid.reactiveSilicaPpm === 'function'
+            ? fluid.reactiveSilicaPpm()
+            : fluid[reservoir];
         if (typeof previous !== 'number')
             continue;
         const demandPerUm = stoichiometricBudgetDebitPpmPerUm(species, stoich[species]);
@@ -19771,9 +19823,17 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
             proposed <= STOICHIOMETRIC_GROWTH_BUDGET_DEPLETION_THRESHOLD) {
             (depleted ||= []).push(reservoir);
         }
-        fluid[reservoir] = Math.max(0, proposed);
+        if (reservoir === 'SiO2' && typeof fluid.debitReactiveSilica === 'function') {
+            fluid.debitReactiveSilica(zone.thickness_um * demandPerUm);
+        }
+        else {
+            fluid[reservoir] = Math.max(0, proposed);
+        }
+        const remaining = reservoir === 'SiO2' && typeof fluid.reactiveSilicaPpm === 'function'
+            ? fluid.reactiveSilicaPpm()
+            : fluid[reservoir];
         bookedInventoryPerUm[reservoir] = zone.thickness_um > 0
-            ? (previous - fluid[reservoir]) / zone.thickness_um
+            ? (previous - remaining) / zone.thickness_um
             : demandPerUm;
     }
     // Trace substitutions are optional rather than formula-limiting. Incorporate
@@ -19947,7 +20007,7 @@ function _cloneFluid(src) {
 // geology loss: a misspelled or obsolete solute must never look accepted while
 // being discarded by the runtime.
 const FLUID_CHEMISTRY_INPUT_FIELDS = new Set([
-    'SiO2', 'Ca', 'CO3', 'F', 'Zn', 'S', 'Fe', 'Mn', 'Al', 'Ti', 'Pb', 'U',
+    'SiO2', 'reactiveSilicaFraction', 'Ca', 'CO3', 'F', 'Zn', 'S', 'Fe', 'Mn', 'Al', 'Ti', 'Pb', 'U',
     'Cu', 'Mo', 'K', 'Na', 'Mg', 'Ba', 'Sr', 'Cr', 'P', 'As', 'Cl', 'V', 'W',
     'Ag', 'Bi', 'Sb', 'Ni', 'Co', 'B', 'Li', 'Be', 'Te', 'Se', 'Ge', 'Au',
     'Cd', 'Hg', 'Sn', 'Y', 'O2', 'Eh', 'pH', 'salinity', 'concentration',
@@ -19961,6 +20021,11 @@ class FluidChemistry {
             throw new TypeError(`Unknown FluidChemistry field${unknown.length === 1 ? '' : 's'}: ${unknown.join(', ')}`);
         }
         this.SiO2 = opts.SiO2 ?? 500.0;
+        // Fraction of the bulk SiO2 analytical pool that is dissolved/reactive
+        // silica rather than suspended clay, detrital silt, or another particulate
+        // inclusion load. Keep the authored value reversible for Creative exact
+        // inputs; the observer below clamps it to its physical 0..1 domain.
+        this.reactiveSilicaFraction = opts.reactiveSilicaFraction ?? 1.0;
         this.Ca = opts.Ca ?? 200.0;
         this.CO3 = opts.CO3 ?? 150.0;
         // F default 10 → 0 (hostile review 2026-07-14, fix-ladder rung 1 step c).
@@ -20049,6 +20114,37 @@ class FluidChemistry {
         if (this.sulfurPoolsExplicit) {
             this.S = Math.max(0, this.S_sulfide) + Math.max(0, this.S_sulfate);
         }
+    }
+    reactiveSilicaPpm() {
+        const total = Math.max(0, Number(this.SiO2) || 0);
+        const fraction = Math.max(0, Math.min(1, Number(this.reactiveSilicaFraction) || 0));
+        return total * fraction;
+    }
+    // Mix an explicitly dissolved silica pulse into a fluid that may also carry
+    // inert particulate SiO2. The total and reactive inventories stay exactly
+    // reconstructible from (SiO2, reactiveSilicaFraction).
+    addReactiveSilica(ppm) {
+        const addition = Math.max(0, Number(ppm) || 0);
+        const totalBefore = Math.max(0, Number(this.SiO2) || 0);
+        const reactiveBefore = this.reactiveSilicaPpm();
+        this.SiO2 = totalBefore + addition;
+        this.reactiveSilicaFraction = this.SiO2 > 0
+            ? (reactiveBefore + addition) / this.SiO2
+            : 0;
+        return addition;
+    }
+    // Precipitation can consume only dissolved/reactive silica; suspended grains
+    // remain in the bulk analytical total. Returns the actual ppm removed.
+    debitReactiveSilica(ppm) {
+        const requested = Math.max(0, Number(ppm) || 0);
+        const totalBefore = Math.max(0, Number(this.SiO2) || 0);
+        const reactiveBefore = this.reactiveSilicaPpm();
+        const removed = Math.min(requested, reactiveBefore);
+        const totalAfter = Math.max(0, totalBefore - removed);
+        const reactiveAfter = Math.max(0, reactiveBefore - removed);
+        this.SiO2 = totalAfter;
+        this.reactiveSilicaFraction = totalAfter > 0 ? reactiveAfter / totalAfter : 0;
+        return removed;
     }
     describe() {
         const parts = [];
@@ -25255,6 +25351,71 @@ function clampFluidPressureKbar(value) {
         return 1.0;
     return Math.max(FLUID_PRESSURE_MIN_KBAR, Math.min(FLUID_PRESSURE_MAX_KBAR, value));
 }
+// Coarse IAPWS water-density grid transcribed from the commissioned pressure
+// packet (Wagner & Pruß 2002 values). Bilinear interpolation is deliberately
+// limited to the measured 300-450 C, 0.5-4.4 kbar rectangle; callers outside
+// that rectangle keep the existing low-temperature calibration rather than
+// extrapolating through the near-critical low-density corner.
+const QUARTZ_WATER_DENSITY_GRID = {
+    temperaturesC: [300, 450],
+    pressuresKbar: [0.5, 1.8, 3.1, 4.4],
+    densityGcm3: [
+        [0.77648, 0.87469, 0.93341, 0.97761],
+        [0.40204, 0.72440, 0.81791, 0.87877],
+    ],
+};
+function _linearGridValue(x, xs, ys) {
+    if (x <= xs[0])
+        return ys[0];
+    if (x >= xs[xs.length - 1])
+        return ys[ys.length - 1];
+    for (let i = 0; i < xs.length - 1; i++) {
+        if (x < xs[i] || x > xs[i + 1])
+            continue;
+        const f = (x - xs[i]) / (xs[i + 1] - xs[i]);
+        return ys[i] + f * (ys[i + 1] - ys[i]);
+    }
+    return ys[ys.length - 1];
+}
+function quartzWaterDensityGcm3(temperatureC, fluidPressureKbar) {
+    const t = Number(temperatureC);
+    if (!Number.isFinite(t) || t < 300 || t > 450)
+        return null;
+    const p = Math.max(0.5, Math.min(4.4, Number(fluidPressureKbar) || 0.5));
+    const lowDensity = _linearGridValue(p, QUARTZ_WATER_DENSITY_GRID.pressuresKbar, QUARTZ_WATER_DENSITY_GRID.densityGcm3[0]);
+    const highDensity = _linearGridValue(p, QUARTZ_WATER_DENSITY_GRID.pressuresKbar, QUARTZ_WATER_DENSITY_GRID.densityGcm3[1]);
+    const f = (t - 300) / 150;
+    return lowDensity + f * (highDensity - lowDensity);
+}
+function manningQuartzSolubilityPpm(temperatureC, fluidPressureKbar) {
+    const density = quartzWaterDensityGcm3(temperatureC, fluidPressureKbar);
+    if (!(density && density > 0))
+        return null;
+    const T = temperatureC + 273.15;
+    const a = 4.2620 - 5764.2 / T + 1.7513e6 / (T * T) - 2.2869e8 / (T * T * T);
+    const b = 2.8454 - 1006.9 / T + 3.5689e5 / (T * T);
+    const molality = Math.pow(10, a + b * Math.log10(density));
+    return molality * 60.0843 * 1000;
+}
+function quartzPressureSolubilityAssessment(temperatureC, fluidPressureKbar) {
+    const pressure = clampFluidPressureKbar(fluidPressureKbar);
+    const equilibriumPpm = manningQuartzSolubilityPpm(temperatureC, pressure);
+    if (equilibriumPpm == null) {
+        return {
+            active: false, equilibriumPpm: null, waterDensityGcm3: null,
+            referencePpm: null, pressureFactor: 1,
+            note: 'Outside the promoted 300-450 C IAPWS density grid; the low-temperature calibrated quartz relation remains authoritative.',
+        };
+    }
+    const waterDensityGcm3 = quartzWaterDensityGcm3(temperatureC, pressure);
+    const referencePpm = manningQuartzSolubilityPpm(temperatureC, 0.5);
+    const pressureFactor = equilibriumPpm / referencePpm;
+    return {
+        active: true, equilibriumPpm, waterDensityGcm3, referencePpm, pressureFactor,
+        pressureClampedLow: pressure < 0.5,
+        note: `Manning (1994) quartz solubility from bilinearly interpolated IAPWS water density; ${pressureFactor.toFixed(2)}x the 0.5-kbar solubility at this temperature.`,
+    };
+}
 // Hacker et al. (2005) calcite/aragonite reversal fit, transcribed exactly
 // from the primary paper. The earlier positive-linear reconstruction was an
 // un-reproduced hypothesis, not the published Hacker equation. Returns kbar.
@@ -25508,6 +25669,7 @@ function applyDifferentialStressPulse(sim, sigmaDiffMpa) {
 // leaving this module slim.
 //
 // Phase B6 of PROPOSAL-MODULAR-REFACTOR.
+const CHALCEDONY_NUCLEATION_SIGMA = 1.12;
 class VugConditions {
     constructor(opts = {}) {
         this.temperature = opts.temperature ?? 350.0;
@@ -25662,6 +25824,12 @@ class VugConditions {
         [350, 1000], [375, 1100], [400, 1200], [450, 1400], [500, 1500], [600, 1600]
     ]; }
     silica_equilibrium(T) {
+        const pressureAssessment = typeof quartzPressureSolubilityAssessment === 'function'
+            ? quartzPressureSolubilityAssessment(Number(T), Number(this.pressure))
+            : null;
+        if (pressureAssessment?.active && Number.isFinite(pressureAssessment.equilibriumPpm)) {
+            return pressureAssessment.equilibriumPpm;
+        }
         const table = VugConditions._SiO2_SOLUBILITY;
         if (T <= table[0][0])
             return table[0][1];
@@ -25675,16 +25843,88 @@ class VugConditions {
         }
         return table[table.length - 1][1];
     }
-    // Which SiO₂ polymorph precipitates at this temperature?
-    // Select a first-class silica phase before saturation/nucleation. The
-    // simulator currently has independently plumbed opal and quartz phases;
-    // chalcedony waits for its own solubility and kinetic implementation.
+    // Chalcedony and amorphous-silica equilibrium concentrations (mg/L ~= ppm
+    // in the simulator's dilute-water convention), inverted from the USGS
+    // Fournier silica geothermometers:
+    //   Tchal = 1032 / (4.69 - log10 SiO2) - 273.15
+    //   Tam   =  731 / (4.52 - log10 SiO2) - 273.15
+    // The chalcedony relation is published for 0-250 C; the amorphous-silica
+    // relation is used only inside opal's 5-100 C kinetic window. Keeping these
+    // separate from quartz equilibrium is what permits real Ostwald stepping:
+    // opal -> chalcedony -> quartz as dissolved silica is consumed.
+    chalcedony_equilibrium(T) {
+        const boundedT = Math.max(0, Math.min(Number(T) || 0, 250));
+        return Math.pow(10, 4.69 - 1032 / (boundedT + 273.15));
+    }
+    opal_equilibrium(T) {
+        const boundedT = Math.max(5, Math.min(Number(T) || 0, 100));
+        return Math.pow(10, 4.52 - 731 / (boundedT + 273.15));
+    }
+    // Yellowstone's surface hydrothermal deposits separate into silica-bearing
+    // alkaline-chloride waters and Ca-carbonate travertine waters. A dissolved-
+    // silica equilibrium ratio alone cannot reproduce that kinetic/depositional
+    // distinction: Mammoth's documented 54 ppm SiO2 can be supersaturated with
+    // respect to crystalline silica after cooling, yet its limestone-hosted,
+    // Ca-HCO3 water deposits travertine rather than silica sinter. This observer
+    // keeps the equilibrium values intact while identifying that competing water
+    // type. The dimensionless share remains visible as context; the production
+    // discriminator uses the observed shallow/cool/limestone/low-Si combination,
+    // which Creative Mode can cross with SiO2, temperature, pressure, or host.
+    silica_depositional_regime() {
+        const f = this.fluid;
+        const totalSilicaPpm = Math.max(0, Number(f.SiO2) || 0);
+        const reactiveSilicaFraction = Math.max(0, Math.min(1, Number(f.reactiveSilicaFraction) || 0));
+        const si = typeof f.reactiveSilicaPpm === 'function'
+            ? f.reactiveSilicaPpm()
+            : totalSilicaPpm * reactiveSilicaFraction;
+        const carbonateLoad = Math.sqrt(Math.max(0, Number(f.Ca) || 0) * Math.max(0, Number(f.CO3) || 0));
+        const silicaShare = si / Math.max(si + carbonateLoad, 1e-9);
+        const shallowSurfaceSpring = Number(this.pressure) <= 0.10 && Number(this.temperature) <= 100;
+        // USGS Bull. 1444 reports 54 mg/L SiO2 for Mammoth versus roughly 420 mg/L
+        // for silica-depositing Norris water. The 75 mg/L boundary deliberately
+        // separates that measured low-Si endmember without suppressing deeper,
+        // long-residence limestone-hosted chalcedony/quartz systems.
+        const carbonateCompetitive = carbonateLoad >= 100 && carbonateLoad >= 2 * si;
+        const carbonateDominant = shallowSurfaceSpring && si < 75 && carbonateCompetitive;
+        return {
+            phase: carbonateDominant ? 'carbonate-travertine water' : 'silica-permissive water',
+            silicaShare,
+            totalSilicaPpm,
+            reactiveSilicaPpm: si,
+            reactiveSilicaFraction,
+            carbonateLoad,
+            carbonateCompetitive,
+            permitsSilicaPrecipitation: !carbonateDominant,
+            note: carbonateDominant
+                ? 'Shallow Ca-DIC water is in the Mammoth travertine regime; the actual carbonate load exceeds both its calibrated floor and twice the reactive-silica load, so carbonate deposition kinetically outcompetes a fresh silica sinter/lining.'
+                : 'The fluid is outside the calibrated Mammoth carbonate-dominant exclusion and may follow the opal/chalcedony/quartz saturation sequence.',
+        };
+    }
+    // Select the actual NEW generic SiO2 precipitate before nucleation.
+    // Order is deliberate: the more soluble, less ordered phase wins only while
+    // it clears both equilibrium and its calibrated nucleation barrier. A merely
+    // metastable, subcritical chalcedony solution must not veto lower-solubility
+    // quartz forever (the Herkimer case). Existing chalcedony is handled by its
+    // growth engine and does not pay this fresh-nucleus barrier again.
     silica_precipitate_phase() {
         const T = this.temperature;
         const f = this.fluid;
-        if (T >= 5 && T < 100 && f.SiO2 >= 200 && f.pH >= 6.5 && f.pH <= 10.0)
+        const si = typeof f.reactiveSilicaPpm === 'function'
+            ? f.reactiveSilicaPpm()
+            : Math.max(0, Number(f.SiO2) || 0);
+        const pH = Number(f.pH);
+        if (!this.silica_depositional_regime().permitsSilicaPrecipitation)
+            return null;
+        if (T >= 5 && T <= 100 && pH >= 6.5 && pH <= 10.0
+            && si > this.opal_equilibrium(T))
             return 'opal';
-        if (T >= 100 && T <= 700 && f.SiO2 >= 50)
+        if (this._stableQuartzExposed && T >= 100 && T <= 700
+            && si > this.silica_equilibrium(T))
+            return 'quartz';
+        if (T >= 0 && T <= 200 && pH >= 3.0 && pH <= 10.0
+            && si / Math.max(this.chalcedony_equilibrium(T), 1e-9) > CHALCEDONY_NUCLEATION_SIGMA)
+            return 'chalcedony';
+        if (T >= 100 && T <= 700 && si > this.silica_equilibrium(T))
             return 'quartz';
         return null;
     }
@@ -25972,6 +26212,10 @@ function paragenesisDiscount(hostMineral, nucleatingMineral) {
 //   89-nucleation-silicate: chrysocolla
 //   90-nucleation-sulfate: barite
 const ENGINE_EXECUTABLE_SUBSTRATE_ROUTES = {
+    // Solution-mediated agate maturation: quartz may inherit the exposed
+    // chalcedony lining as a spatial host, but receives no invented sigma
+    // discount or growth-rate multiplier from that association.
+    quartz: new Set(['chalcedony']),
     malachite: new Set(['chalcopyrite']),
     smithsonite: new Set(['sphalerite']),
     azurite: new Set(['cuprite']),
@@ -25987,9 +26231,11 @@ function engineExecutableSubstrateDiscount(hostMineral, nucleatingMineral) {
 function engineExecutableSubstrateRoute(host, nucleatingMineral) {
     if (!host)
         return { executable: false, label: 'missing host' };
+    const routes = ENGINE_EXECUTABLE_SUBSTRATE_ROUTES[nucleatingMineral];
+    if (!routes || !routes.has(host.mineral)) {
+        return { executable: false, label: 'unregistered host', discount: 1.0 };
+    }
     const discount = engineExecutableSubstrateDiscount(host.mineral, nucleatingMineral);
-    if (!(discount < 1))
-        return { executable: false, label: 'unregistered host' };
     // Replacement engines intentionally nucleate on the exposed reaction
     // surface left by a dissolving precursor. These predicates mirror the
     // production selectors in 82/89; other routes require a living exposed host.
@@ -26010,6 +26256,16 @@ function engineExecutableSubstrateRoute(host, nucleatingMineral) {
         ? 'dissolved replacement surface'
         : (host.active ? 'active exposed host' : 'recorded precursor surface');
     return { executable, label, discount };
+}
+function executableSubstrateCandidates(nucleatingMineral, crystals) {
+    const candidates = [];
+    for (const host of (crystals || [])) {
+        const route = engineExecutableSubstrateRoute(host, nucleatingMineral);
+        if (!route.executable)
+            continue;
+        candidates.push({ host, discount: route.discount, label: route.label });
+    }
+    return candidates;
 }
 // Pick a substrate for a nucleating mineral, weighted by available
 // hosts and their per-pair discount factors. Pure helper — called by
@@ -26351,6 +26607,13 @@ class Crystal {
         // O5_MASKING_ENABLED, false until O5b. Cleared when the fluid grows through
         // the film (O5b) or, for a coats_front film, on liberation.
         this._film = opts._film ?? null;
+        // _surfaceGrowth is assigned post-growth by classifySurfaceGrowth (js/45)
+        // only for area-covering aggregate fabrics. It stores physical wall coverage,
+        // booked aggregate volume and derived mean thickness. The renderer may repeat
+        // representative microgeometry, but those instances never enter this Crystal's
+        // accepted-zone inventory or _volume_mm3 mass basis.
+        if (opts._surfaceGrowth)
+            this._surfaceGrowth = opts._surfaceGrowth;
         // Paramorph tracking — set by applyParamorphTransitions when the crystal
         // crosses a phase-transition T (Round 8a-2: argentite → acanthite at 173°C).
         // Stores the *original* (pre-transition) mineral name so library + narrator
@@ -31173,7 +31436,21 @@ const MINERAL_GATES_quartz = {
     fluid_min: { SiO2: 50 },
     surface_energy: 'high',
     _sources: ['quartz engine v17+', 'Rimstidt & Barnes 1980 GCA 44:1683', 'Brantley et al. 2008', 'London 2008 (Pegmatites) — pocket quartz to the wet-granite solidus', 'Frontiers Earth Sci. 10:976588 (2022) — Pikes Peak quartz 700-660°C'],
-    _notes: 'SiO2 trigonal. ΔH° = +22 kJ/mol — strongly T-sensitive (corrected v127). σ_crit 1.2 is the heterogeneous value vug nucleation uses; homogeneous σ_crit is 6-20+. SIM 243: crystalline quartz is kinetically admitted at 100-700°C; below 100°C the separate opal phase owns eligible hydrated/amorphous silica precipitation. T_max 700 = wet granite solidus.',
+    _notes: 'SiO2 trigonal. ΔH° = +22 kJ/mol — strongly T-sensitive (corrected v127). σ_crit 1.2 is the heterogeneous value vug nucleation uses; homogeneous σ_crit is 6-20+. SIM 246: quartz is the least-soluble generic silica phase. At 100-200°C it becomes selectable only after fluid falls below chalcedony saturation; above 200°C it owns the crystalline route. T_max 700 = wet granite solidus.',
+};
+const MINERAL_GATES_chalcedony = {
+    sigma_crit: CHALCEDONY_NUCLEATION_SIGMA,
+    T_min: 0, T_max: 200, T_optimal: 80,
+    fluid_min: { SiO2: 8 },
+    pH_min: 3.0, pH_max: 10.0,
+    surface_energy: 'low',
+    _sources: [
+        'Fournier 1977 USGS silica geothermometer: T=1032/(4.69-log SiO2)-273.15',
+        'Fournier 1981 / USGS OFR 84-690: chalcedony solubility valid 0-250 C',
+        'Reed & Mariner 2007: chalcedony-to-quartz transition near 200 C',
+        'Heaney & Davis 1995 Science 269:1562-1565: self-organized agate microtextures',
+    ],
+    _notes: 'Cryptocrystalline fibrous SiO2 aggregate. Its own equilibrium, not quartz solubility or a display label, controls saturation. Ostwald stepping admits chalcedony only after opal is undersaturated and before the fluid falls to quartz-only saturation. A documented carbonate-water competition regime prevents Mammoth-type limestone-hosted travertine water from spuriously depositing a silica lining. Repeated accepted growth zones can build a physically recorded banded-agate fabric.',
 };
 const MINERAL_GATES_feldspar = {
     sigma_crit: 1.0,
@@ -31299,11 +31576,11 @@ const MINERAL_GATES_andalusite = {
 const MINERAL_GATES_opal = {
     sigma_crit: 0.8, // v131 (2026-05-21): literature value per Iler 1979 — heterogeneous σ_crit range 0.5-1.0, midpoint 0.8. Was 1.0 (v101 engine-matched calibration); v127 engine-gates refactor surfaced the engine/literature mismatch as a v129 calibration target.
     T_min: 5, T_max: 100, T_optimal: 40,
-    fluid_min: { SiO2: 200 },
+    fluid_min: { SiO2: 75 },
     pH_min: 6.5, pH_max: 10.0,
     surface_energy: 'very_low',
     _sources: ['opal engine v101+', 'Jones & Segnit 1971', 'Iler 1979', 'Fournier 1977 Geothermics 5:41'],
-    _notes: 'SiO2·nH2O amorphous-to-CT mineraloid. γ_sl ~0.05-0.10 J/m² (very_low — lowest in catalog). ΔH° corrected to +14 kJ/mol (v127 science fix). Geyser sinter at 30-85°C optimum. σ_crit set to 0.8 per Iler 1979 heterogeneous nucleation midpoint (v131 calibration); was 1.0 v101-v130 (engine-matched, pre-literature-grounding).',
+    _notes: 'SiO2·nH2O amorphous-to-CT mineraloid. γ_sl ~0.05-0.10 J/m² (very_low — lowest in catalog). SIM 246 replaces the former fixed 200 ppm shortcut with the temperature-dependent Fournier amorphous-silica equilibrium; 75 ppm is only the absolute modeled low-temperature floor. Geyser sinter at 30-85°C optimum. σ_crit 0.8 is the heterogeneous midpoint.',
 };
 const MINERAL_GATES_coffinite = {
     sigma_crit: 1.0,
@@ -31603,7 +31880,10 @@ Object.assign(VugConditions.prototype, {
         const eq = this.silica_equilibrium(this.effectiveTemperature);
         if (eq <= 0)
             return 0;
-        let sigma = this.fluid.SiO2 / eq;
+        const reactiveSilica = typeof this.fluid.reactiveSilicaPpm === 'function'
+            ? this.fluid.reactiveSilicaPpm()
+            : this.fluid.SiO2;
+        let sigma = reactiveSilica / eq;
         if (this.fluid.pH < 4.0 && this.fluid.F > 20) {
             const hf_attack = (4.0 - this.fluid.pH) * (this.fluid.F / 50.0) * 0.3;
             sigma -= hf_attack;
@@ -31627,6 +31907,32 @@ Object.assign(VugConditions.prototype, {
         if (this.temperature < g.T_min || this.temperature > g.T_max)
             return 0;
         return this.quartz_equilibrium_ratio();
+    },
+    chalcedony_equilibrium_ratio() {
+        const eq = this.chalcedony_equilibrium(this.effectiveTemperature);
+        if (eq <= 0)
+            return 0;
+        const reactiveSilica = typeof this.fluid.reactiveSilicaPpm === 'function'
+            ? this.fluid.reactiveSilicaPpm()
+            : this.fluid.SiO2;
+        let sigma = reactiveSilica / eq;
+        if (this.fluid.pH < 4.0 && this.fluid.F > 20) {
+            const hfAttack = (4.0 - this.fluid.pH) * (this.fluid.F / 50.0) * 0.3;
+            sigma -= hfAttack;
+        }
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'chalcedony');
+        return Math.max(sigma, 0);
+    },
+    supersaturation_chalcedony() {
+        const g = MINERAL_GATES_chalcedony;
+        if (this.silica_precipitate_phase() !== 'chalcedony')
+            return 0;
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
+            return 0;
+        if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
+            return 0;
+        return this.chalcedony_equilibrium_ratio();
     },
     supersaturation_feldspar() {
         // K-feldspar (sanidine/orthoclase/microcline polymorphs).
@@ -32032,20 +32338,29 @@ Object.assign(VugConditions.prototype, {
     // regime). High SiO2 supersaturation required (> 200 ppm — Fournier
     // 1977 Geothermics 5:41 amorphous silica solubility curve).
     //
-    // SIM 243: this is the only low-temperature generic silica route. Quartz
-    // can no longer nucleate and then acquire an opal/chalcedony display label;
-    // opal-A is born as its own phase with its own inventory and growth record.
+    // SIM 246: opal is the highest-solubility first step. Once amorphous silica
+    // is undersaturated, the selector can route the same fluid to first-class
+    // chalcedony and eventually quartz rather than relabelling either phase.
+    opal_equilibrium_ratio() {
+        const eq = this.opal_equilibrium(this.effectiveTemperature);
+        if (eq <= 0)
+            return 0;
+        const reactiveSilica = typeof this.fluid.reactiveSilicaPpm === 'function'
+            ? this.fluid.reactiveSilicaPpm()
+            : this.fluid.SiO2;
+        let sigma = Math.min(reactiveSilica / eq, 6.0);
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(this.fluid, 'opal');
+        return Math.max(sigma, 0);
+    },
     supersaturation_opal() {
         if (this.silica_precipitate_phase() !== 'opal')
-            return 0;
-        if (this.fluid.SiO2 < 200)
             return 0;
         if (this.temperature < 5 || this.temperature > 100)
             return 0;
         if (this.fluid.pH < 6.5 || this.fluid.pH > 10.0)
             return 0;
-        const si_f = Math.min(this.fluid.SiO2 / 400.0, 3.0);
-        let sigma = si_f;
+        let sigma = this.opal_equilibrium_ratio();
         const T = this.temperature;
         // Sweet spot 30-85°C (geyser sinter regime, Yellowstone /
         // Steamboat Springs / Sulphur Bank / Wairakei NZ)
@@ -32061,8 +32376,6 @@ Object.assign(VugConditions.prototype, {
             sigma *= 1.2;
         else
             sigma *= Math.max(0.6, 1.0 - Math.abs(pH - 8.0) * 0.3);
-        if (ACTIVITY_CORRECTED_SUPERSAT)
-            sigma *= activityCorrectionFactor(this.fluid, 'opal');
         return Math.max(sigma, 0);
     },
     // v99 (2026-05-19): Uranyl silicates — coffinite (U(IV), primary,
@@ -35843,6 +36156,7 @@ const MINERAL_GATES_REGISTRY = {
     turquoise: MINERAL_GATES_turquoise,
     // ---- Silicate (js/39-supersat-silicate.ts) ----
     quartz: MINERAL_GATES_quartz,
+    chalcedony: MINERAL_GATES_chalcedony,
     feldspar: MINERAL_GATES_feldspar,
     apophyllite: MINERAL_GATES_apophyllite,
     albite: MINERAL_GATES_albite,
@@ -36408,6 +36722,9 @@ function computeGraduatedAllocations(runs, fluid) {
         _gradCompStats.maxGroupSize = runs.length;
     if (!runs.length)
         return out;
+    const availablePool = (speciesName) => (speciesName === 'SiO2' && typeof fluid.reactiveSilicaPpm === 'function'
+        ? fluid.reactiveSilicaPpm()
+        : fluid[speciesName] ?? 0);
     // Collect species touched by any crystal.
     const species = new Set();
     for (const r of runs) {
@@ -36422,7 +36739,7 @@ function computeGraduatedAllocations(runs, fluid) {
     const speciesRationed = {};
     for (const sp of species) {
         const wanting = runs.filter(r => (r.debit_per_species[sp] || 0) > 0);
-        const available = fluid[sp] ?? 0;
+        const available = availablePool(sp);
         let demand = 0;
         for (const r of wanting)
             demand += (r.debit_per_species[sp] || 0);
@@ -36446,7 +36763,7 @@ function computeGraduatedAllocations(runs, fluid) {
             if (!speciesRationed[sp])
                 continue; // free; doesn't cap
             // Rationed: crystal's share of fluid[sp] is the cap on its debit.
-            const available = fluid[sp] ?? 0;
+            const available = availablePool(sp);
             const myShareFrac = speciesShares[sp].get(r.crystal_id) || 0;
             const allowedDebit = myShareFrac * available;
             const scaleForThisSp = debit > 0 ? Math.min(1.0, allowedDebit / debit) : 1.0;
@@ -36467,7 +36784,7 @@ function computeGraduatedAllocations(runs, fluid) {
             why = 'no rationing — full growth';
         }
         else {
-            const avail = fluid[limiting] ?? 0;
+            const avail = availablePool(limiting);
             why = `${limiting}-limited (share ${(limitingShare * 100).toFixed(0)}% of ${avail.toFixed(2)}, scaling ${(scaling * 100).toFixed(0)}%)`;
         }
         out.set(r.crystal_id, {
@@ -38490,6 +38807,127 @@ function _o1aBaseTipSigma(sim, crystal) {
     if (!Number.isFinite(s0) || !Number.isFinite(sD))
         return null;
     return { s0, sD };
+}
+// AREA-COVERING SURFACE GROWTH (SIM 246, 2026-08-06)
+// ----------------------------------------------------
+// One Crystal record can represent an aggregate made of millions of sub-visible
+// crystallites. Treating that record as one museum-scale free crystal is especially
+// misleading for wall-lining chalcedony, botryoidal/earthy crusts, asbestos mats and
+// quartz/calcite druse. This classifier records the aggregate's areal geometry while
+// leaving its accepted-zone inventory authoritative:
+//
+//   booked_volume_mm3 = Crystal._volume_mm3 (never multiplied by render instances)
+//   covered_area_mm2  = cavity area x coverage_fraction
+//   mean_thickness_um = booked volume / covered area
+//
+// The Three.js renderer consumes this record as representative instancing. It may use
+// a visibility floor for sub-pixel grains, but the record makes the physical thickness
+// and the display-only nature of those representatives auditable. No fluid, growth,
+// volume or RNG state is mutated here.
+//
+// Scientific boundaries:
+//   * wall-lining chalcedony is a radially fibrous lining, not a quartz point;
+//   * botryoidal/earthy habits are coalesced crusts;
+//   * the six commercial asbestos minerals form fibrous mats only when the persisted
+//     habit is actually fibrous/asbestiform;
+//   * a quartz/calcite carpet requires the coating vector selected at nucleation -- a
+//     large projecting prism/rhomb is never relabelled "druse" after the fact;
+//   * pyrolusite is never given a dendritic film. Potter & Rossman (1979) showed the
+//     familiar Mn-oxide dendrites/coatings are commonly birnessite/romanechite-family
+//     material, not pyrolusite. Only its own massive-sooty/botryoidal habits qualify.
+const SURFACE_GROWTH_ASBESTOS = new Set([
+    'chrysotile', 'tremolite', 'actinolite', 'anthophyllite', 'amosite', 'crocidolite',
+]);
+// "Massive" alone is not an areal fabric: a massive aggregate can still be a
+// compact projecting body.  Banded non-silica aggregates (notably malachite)
+// are crusts, while laminated linings are reserved for chalcedony/agate and an
+// explicitly authored wall-lining habit.
+const SURFACE_GROWTH_CRUST_HABIT = /botryoid|mammillary|reniform|colloform|crust|coat|encrust|earthy|sooty|ochre|banded|sinter|film|blanket/i;
+const SURFACE_GROWTH_LINING_HABIT = /chalcedony|agate|wall.?lining/i;
+const SURFACE_GROWTH_DRUSE_HABIT = /drus|druz/i;
+function surfaceGrowthRegimeFor(crystal) {
+    if (!crystal || crystal.dissolved || !(crystal.total_growth_um > 0))
+        return null;
+    const mineral = String(crystal.mineral || '').toLowerCase();
+    const habit = String(crystal.habit || '').toLowerCase();
+    const vector = String(crystal.vector || '').toLowerCase();
+    if (SURFACE_GROWTH_ASBESTOS.has(mineral) && /fibrous|asbestiform/.test(habit)) {
+        return 'fibrous_mat';
+    }
+    if (mineral === 'chalcedony' || SURFACE_GROWTH_LINING_HABIT.test(habit)) {
+        return 'laminated_lining';
+    }
+    if ((mineral === 'quartz' || mineral === 'calcite')
+        && (vector === 'coating' || SURFACE_GROWTH_DRUSE_HABIT.test(habit))) {
+        return 'euhedral_druse';
+    }
+    if (vector === 'coating' && SURFACE_GROWTH_DRUSE_HABIT.test(habit)) {
+        return 'euhedral_druse';
+    }
+    if (mineral === 'pyrolusite') {
+        return /massive_sooty|botryoidal_reniform/.test(habit)
+            ? 'botryoidal_crust'
+            : null;
+    }
+    if (vector === 'coating' || SURFACE_GROWTH_CRUST_HABIT.test(habit)) {
+        return 'botryoidal_crust';
+    }
+    return null;
+}
+function surfaceGrowthDescriptor(crystal, wall) {
+    const regime = surfaceGrowthRegimeFor(crystal);
+    if (!regime)
+        return null;
+    const spread = Math.max(0.02, Math.min(0.99, Number(crystal.wall_spread) || 0.5));
+    // Aggregate fabrics establish lateral continuity early. Maturity controls
+    // completion of the target footprint, not a fictitious linear radius.
+    const maturityScaleUm = regime === 'laminated_lining' ? 75
+        : regime === 'fibrous_mat' ? 180
+            : regime === 'euhedral_druse' ? 350 : 250;
+    const maturity = 1 - Math.exp(-Math.max(0, crystal.total_growth_um) / maturityScaleUm);
+    let coverage = spread * (0.28 + 0.72 * maturity);
+    // Asbestos "mat" is an areal fabric by definition. Chrysotile's older fibrous
+    // catalog row used wall_spread=0.55 because it pre-dated a surface renderer;
+    // keep that honest without rewriting its chemistry or axial volume.
+    if (regime === 'fibrous_mat')
+        coverage = Math.max(coverage, 0.65 * maturity);
+    coverage = Math.max(0.02, Math.min(0.98, coverage));
+    const diameter = wall && typeof wall.meanDiameterMm === 'function'
+        ? wall.meanDiameterMm()
+        : Number(wall && wall.vug_diameter_mm) || Number(crystal.vug_diameter_mm) || 50;
+    const radius = Math.max(0.5, diameter / 2);
+    const cavityArea = 4 * Math.PI * radius * radius;
+    const coveredArea = Math.max(1e-9, cavityArea * coverage);
+    const bookedVolume = Math.max(0, Number(crystal._volume_mm3) || 0);
+    const meanThicknessUm = bookedVolume / coveredArea * 1000;
+    return {
+        regime,
+        coverage_fraction: coverage,
+        covered_area_mm2: coveredArea,
+        mean_thickness_um: meanThicknessUm,
+        booked_volume_mm3: bookedVolume,
+        wall_spread: spread,
+        void_reach: Math.max(0, Math.min(1, Number(crystal.void_reach) || 0)),
+        substrate: crystal.position || 'vug wall',
+        mass_basis: 'accepted Crystal._volume_mm3; renderer instances are representative only',
+    };
+}
+function classifySurfaceGrowth(sim) {
+    const wall = sim && sim.wall_state;
+    if (!sim || !sim.crystals)
+        return;
+    for (const c of sim.crystals) {
+        if (!c)
+            continue;
+        const desc = surfaceGrowthDescriptor(c, wall);
+        if (desc) {
+            desc.at_step = sim.step;
+            c._surfaceGrowth = desc;
+        }
+        else if (c._surfaceGrowth) {
+            delete c._surfaceGrowth;
+        }
+    }
 }
 function classifyWulffForm(sim) {
     const wall = sim.conditions && sim.conditions.wall;
@@ -40549,11 +40987,26 @@ function grow_calcite(crystal, conditions, step) {
     // trajectory contract as the Mg branch (the v187 lesson).
     const morphFormT = calciteMorphForm(morphMgRatio, conditions.temperature, sigma, crystal.growth_environment !== 'air');
     const morphRegime = (crystal._morphology && crystal._morphology.regime) || null;
+    const depositionalRegime = typeof conditions.silica_depositional_regime === 'function'
+        ? conditions.silica_depositional_regime()
+        : null;
+    const isTravertineWater = depositionalRegime?.phase === 'carbonate-travertine water'
+        && conditions._calciteDepositionalMode === 'travertine';
     // The heterogeneous calcite nucleation gate is Ω>1.5, so the historical
     // excess<0.4 branch (Ω<1.4) was unreachable for a newly nucleated
     // manganocalcite. The near-threshold window below remains slow relative to
     // strongly supersaturated spar while overlapping the actual nucleation gate.
-    if (is_manganocalcite && excess < 1.2) {
+    if (isTravertineWater) {
+        // Mammoth is a CO2-degassing terrace deposit: the product is a laminated,
+        // microcrystalline calcite crust (with microbial/flow fabrics), not a vug-
+        // projecting rhombohedral or dogtooth cabinet crystal. The water-type
+        // discriminator is shared with the silica competition panel, while the
+        // executed CO2-degas/reheat event supplies the depositional-pathway gate.
+        crystal.habit = 'travertine_crust';
+        crystal.dominant_forms = ['laminated microcrystalline calcite terrace crust', 'flow-normal surface coating'];
+        crystal._depositional_fabric = 'carbonate travertine';
+    }
+    else if (is_manganocalcite && excess < 1.2) {
         crystal.habit = 'botryoidal_manganocalcite';
         crystal.dominant_forms = ['cauliflower botryoidal mass', 'mammillary surface', 'cryptocrystalline interior'];
         crystal._variety = 'manganocalcite';
@@ -40783,6 +41236,14 @@ function grow_dolomite(crystal, conditions, step) {
         return null;
     }
     const excess = sigma - 1.0;
+    // Habit thresholds must live on the same dimensionless scale after the
+    // dolomite engine's empirical-sigma -> textbook-omega promotion. Raw omega
+    // at first nucleation is >=10, so comparing (omega - 1) to the legacy 1.2
+    // threshold made every newly nucleated hydrothermal dolomite "massive" and
+    // erased the documented saddle/baroque habit. Normalize by the executable
+    // nucleation barrier for morphology only; equilibrium and PWP growth retain
+    // the unmodified omega above.
+    const morphologyExcess = sigma / Math.max(MINERAL_GATES_dolomite.sigma_crit, 1e-9) - 1.0;
     // Kim 2023: ordering fraction f_ord ramps with FLUID-LEVEL cycle count.
     // Tracking at the fluid level captures the geological insight that an
     // oscillatory environment ratchets ordering across all dolomite nuclei,
@@ -40807,11 +41268,11 @@ function grow_dolomite(crystal, conditions, step) {
         const base_rate = 4.5 * excess * rng.uniform(0.7, 1.3);
         rate = base_rate * (0.30 + 0.70 * f_ord);
     }
-    if (conditions.temperature > 200 && excess < 0.5) {
+    if (conditions.temperature > 200 && morphologyExcess < 0.5) {
         crystal.habit = 'coarse_rhomb';
         crystal.dominant_forms = ['coarse rhombohedral {104}', 'transparent to white textbook crystals'];
     }
-    else if (excess > 1.2) {
+    else if (morphologyExcess > 1.2) {
         crystal.habit = 'massive';
         crystal.dominant_forms = ['massive granular', 'white to gray sugary aggregate'];
     }
@@ -41295,7 +41756,12 @@ function grow_azurite(crystal, conditions, step) {
     if (rate < 0.1)
         return null;
     let color_note;
-    if (excess > 1.0) {
+    if (crystal.vector === 'coating') {
+        crystal.habit = 'crystalline_crust';
+        crystal.dominant_forms = ['fine-grained blue coating', 'coalesced crystalline crust'];
+        color_note = 'blue crystalline crust — fine azurite aggregates spread across the supergene cavity wall';
+    }
+    else if (excess > 1.0) {
         crystal.habit = 'azurite_sun';
         crystal.dominant_forms = ['radiating flat disc', 'azurite-sun in fracture'];
         color_note = 'deep blue azurite-sun — radiating disc habit in narrow fracture';
@@ -44388,6 +44854,9 @@ function grow_quartz(crystal, conditions, step) {
     // suppressing mid-T growth. See vugg.py grow_quartz comment for full
     // rationale and the look-up table.
     rate *= Math.exp(-1000.0 / (conditions.temperature + 273.15)) * 8.27;
+    // A chalcedony lining remains a spatial substrate only. It does not create
+    // an unmeasured rate multiplier; saturation, temperature, and the shared
+    // reactive-silica ledger control the successor quartz growth rate.
     rate *= rng.uniform(0.7, 1.3);
     if (rate < 0.1)
         return null;
@@ -44734,24 +45203,157 @@ function grow_chrysocolla(crystal, conditions, step) {
     conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.035, 0);
     return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
+// SIM 246: first-class cryptocrystalline silica. Chalcedony is an aggregate
+// of length-fast microfibres (commonly quartz + moganite), not a quartz habit
+// label. Repeated accepted shells store their own silica activity and fabric;
+// basalt-cavity or strongly oscillatory stacks become genuine banded agate.
+function grow_chalcedony(crystal, conditions, step) {
+    const selectedPhase = conditions.silica_precipitate_phase();
+    const sigma = selectedPhase === 'chalcedony'
+        ? conditions.supersaturation_chalcedony()
+        : conditions.chalcedony_equilibrium_ratio();
+    // Metastable chalcedony-to-quartz maturation is represented as
+    // solution-mediated dissolution/reprecipitation. The negative shell returns
+    // its exact booked SiO2 inventory; quartz subsequently debits that same
+    // reservoir. No untracked solid is renamed in place.
+    if (selectedPhase === 'quartz' && crystal.total_growth_um > 0) {
+        // Inside the 100-200 C metastable overlap, an established fibrous lining
+        // can persist beside inward-growing quartz for geologic time. Re-equilibrate
+        // only above that overlap; selecting inward quartz does not erase the agate
+        // lining that supplied its substrate.
+        if (conditions.temperature <= 200)
+            return null;
+        const d = Math.min(2.0, Math.max(0.4, crystal.total_growth_um * 0.04));
+        const zone = new GrowthZone({
+            step, temperature: conditions.temperature,
+            thickness_um: -d, growth_rate: -d,
+            dissolutionMode: 'silica_recrystallization',
+            note: `solution-mediated maturation to quartz at ${conditions.temperature.toFixed(0)}°C — chalcedony dissolves before quartz reprecipitates`,
+        });
+        zone._silica_transition = {
+            from: 'chalcedony', to: 'quartz', pathway: 'solution_mediated',
+            tracked_inventory: 'SiO2 exact booked-shell return',
+        };
+        return zone;
+    }
+    // An opal-forming fluid is also supersaturated with respect to chalcedony,
+    // but Ostwald's step rule gives the less ordered phase the kinetic lead.
+    // Existing chalcedony therefore persists without stealing opal's new growth.
+    if (selectedPhase === 'opal' && sigma >= 1.0)
+        return null;
+    if (selectedPhase !== 'chalcedony' && sigma >= 1.0)
+        return null;
+    if (sigma < 1.0) {
+        if (crystal.total_growth_um <= 0)
+            return null;
+        const hfAttack = conditions.fluid.pH < 4 && conditions.fluid.F > 20;
+        // Ordinary low-T undersaturation is kinetically too slow to erase an
+        // established agate lining over one vug run. HF attack remains active;
+        // high-temperature maturation is handled by the explicit branch above.
+        if (!hfAttack && conditions.temperature <= 200)
+            return null;
+        const d = Math.min(2.5, Math.max(0.3, crystal.total_growth_um * 0.08));
+        return new GrowthZone({
+            step, temperature: conditions.temperature,
+            thickness_um: -d, growth_rate: -d,
+            note: hfAttack
+                ? 'HF-assisted chalcedony dissolution — the microfibrous SiO2 lining is etched back'
+                : 'chalcedony undersaturation — outer microfibrous shell redissolves',
+        });
+    }
+    const excess = sigma - 1.0;
+    let rate = 2.6 * Math.pow(Math.max(excess, 0), 0.72);
+    const T = conditions.temperature;
+    const kinetic = T < 20 ? 0.45 + T / 50 : T <= 120 ? 1.0 : Math.max(0.55, 1.0 - (T - 120) / 220);
+    rate *= kinetic * rng.uniform(0.82, 1.18);
+    rate = Math.min(rate, 8.0);
+    if (rate < 0.1)
+        return null;
+    const priorPositive = crystal.zones.filter(z => z.thickness_um > 0);
+    const priorSigma = priorPositive
+        .map(z => Number(z.silica_sigma))
+        .filter(v => Number.isFinite(v));
+    const contrast = priorSigma.length
+        ? Math.max(...priorSigma, sigma) - Math.min(...priorSigma, sigma)
+        : 0;
+    const sigmaSeries = [...priorSigma, sigma];
+    const directionalMoves = sigmaSeries.slice(1)
+        .map((value, i) => value - sigmaSeries[i])
+        .filter(delta => Math.abs(delta) >= 0.03)
+        .map(delta => Math.sign(delta));
+    let oscillationReversals = 0;
+    for (let i = 1; i < directionalMoves.length; i++) {
+        if (directionalMoves[i] !== directionalMoves[i - 1])
+            oscillationReversals++;
+    }
+    const layerNumber = priorPositive.length + 1;
+    let microfabric = 'length-fast fibrous chalcedony wall lining';
+    if (layerNumber >= 7 && contrast >= 0.18 && oscillationReversals >= 1) {
+        crystal.habit = 'banded_agate';
+        crystal.dominant_forms = ['alternating length-fast chalcedony fibre bands', 'cryptocrystalline concentric wall layers'];
+        crystal.mineral_display = 'agate (banded chalcedony)';
+        crystal._aggregation_stage = 'self-organized banded agate';
+        microfabric = 'oscillatory length-fast/normal-fibrous chalcedony band';
+    }
+    else if (layerNumber >= 3 || excess > 0.7) {
+        crystal.habit = 'botryoidal_chalcedony';
+        crystal.dominant_forms = ['radiating fibrous spherulites', 'botryoidal cryptocrystalline crust'];
+        crystal.mineral_display = 'chalcedony';
+        crystal._aggregation_stage = 'intergrown fibrous spherulites';
+        microfabric = 'radiating fibrous spherulitic layer';
+    }
+    else {
+        crystal.habit = 'fibrous_chalcedony_lining';
+        crystal.dominant_forms = ['length-fast microfibres normal to substrate', 'thin cryptocrystalline wall veneer'];
+        crystal.mineral_display = 'chalcedony';
+        crystal._aggregation_stage = 'wall-nucleated fibrous veneer';
+    }
+    crystal._silica_phase = 'chalcedony';
+    crystal._silica_sigma_contrast = contrast;
+    crystal._silica_oscillation_reversals = oscillationReversals;
+    const ironStained = conditions.fluid.Fe > 20;
+    const colorNote = ironStained ? 'iron-stained gray-red' : 'translucent blue-gray to white';
+    const zone = new GrowthZone({
+        step, temperature: T, thickness_um: rate, growth_rate: rate,
+        trace_Fe: conditions.fluid.Fe * 0.002,
+        note: `${colorNote} chalcedony — ${microfabric}; σch=${sigma.toFixed(2)}`,
+    });
+    zone.silica_sigma = sigma;
+    zone.silica_ppm = conditions.fluid.SiO2;
+    zone.microfabric = microfabric;
+    zone.layer_number = layerNumber;
+    return zone;
+}
 // v101 (2026-05-19): Opal SiO2·nH2O — amorphous-to-short-range-
 // ordered silica mineraloid. Forms hot-spring sinter aprons, botryoidal
 // fillings, replacement of organics (opalized wood). Diagenesis-ladder
 // flagged via crystal._diagenesis_stage for future POLYMORPH_DIAGENESIS
 // implementation (opal-A → opal-CT → opal-C → chalcedony → quartz).
 function grow_opal(crystal, conditions, step) {
+    const selectedPhase = conditions.silica_precipitate_phase();
     const sigma = conditions.supersaturation_opal();
     if (sigma < 1.0) {
         if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
-            crystal.dissolved = true;
             const d = Math.min(3.0, crystal.total_growth_um * 0.12);
             return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — opal redissolves to silicic acid` });
         }
-        if (crystal.total_growth_um > 5 && conditions.temperature > 150) {
-            // High-T diagenesis: opal recrystallizes to chalcedony/quartz
-            crystal.dissolved = true;
-            const d = Math.min(2.0, crystal.total_growth_um * 0.05);
-            return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, dissolutionMode: 'diagenesis', note: `diagenesis to chalcedony/quartz > 150°C — opal-A → opal-CT → opal-C → chalcedony → quartz ladder` });
+        if (crystal.total_growth_um > 0 && (selectedPhase === 'chalcedony' || selectedPhase === 'quartz')) {
+            // Explicit solution-mediated maturation: exact booked SiO2 is returned
+            // before the selected crystalline phase spends it. Structural water is
+            // disclosed but remains outside the simulator's conserved inventories.
+            const d = Math.min(2.0, Math.max(0.4, crystal.total_growth_um * 0.05));
+            const zone = new GrowthZone({
+                step, temperature: conditions.temperature,
+                thickness_um: -d, growth_rate: -d,
+                dissolutionMode: 'silica_recrystallization',
+                note: `solution-mediated opal maturation to ${selectedPhase} — opal dissolves and returns tracked SiO2 before reprecipitation`,
+            });
+            zone._silica_transition = {
+                from: 'opal', to: selectedPhase, pathway: 'solution_mediated',
+                tracked_inventory: 'SiO2 exact booked-shell return',
+                structural_water: 'diagnostic only — no conserved H2O inventory',
+            };
+            return zone;
         }
         return null;
     }
@@ -49933,6 +50535,7 @@ function grow_hawleyite(crystal, conditions, step) {
 // stay global so call sites in 99-legacy-bundle.ts keep working.
 const MINERAL_ENGINES = {
     quartz: grow_quartz,
+    chalcedony: grow_chalcedony,
     calcite: grow_calcite,
     aragonite: grow_aragonite,
     siderite: grow_siderite,
@@ -50363,11 +50966,43 @@ function event_tectonic_shock(conditions) {
     conditions.temperature += 15;
     return 'Tectonic event. A 50 MPa differential-stress pulse crosses the cavity; fluid pressure does not rise.';
 }
+// Ametista do Sul's inward agate -> quartz sequence needs a real change in
+// silica activity, not a display rename. These events place the fluid inside
+// the measured metastability window: supersaturated with respect to quartz but
+// below the calibrated fresh-chalcedony nucleation barrier at the CURRENT
+// temperature. The bounds move with the same equations Creative Mode exposes.
+function _setAmethystQuartzWindow(conditions, quartzMultiple = 1.30) {
+    const qEq = conditions.silica_equilibrium(conditions.effectiveTemperature);
+    const chEq = conditions.chalcedony_equilibrium(conditions.effectiveTemperature);
+    // Existing agate no longer buys a rate multiplier. Put the dissolved fluid
+    // near the top of the real metastable window instead: quartz-supersaturated
+    // but still below the fresh-chalcedony nucleation barrier.
+    const target = Math.min(chEq * CHALCEDONY_NUCLEATION_SIGMA * 0.98, qEq * quartzMultiple);
+    conditions.fluid.SiO2 = Math.max(qEq * 1.22, target);
+    conditions.fluid.reactiveSilicaFraction = 1.0;
+    return { qEq, chEq, target: conditions.fluid.SiO2 };
+}
+function event_amethyst_chalcedony_maturation(conditions) {
+    const w = _setAmethystQuartzWindow(conditions, 1.62);
+    conditions.flow_rate = 0.25;
+    return `Silica maturation — early chalcedony/agate has lowered dissolved SiO2 to ${w.target.toFixed(0)} ppm: below the fresh-chalcedony nucleation barrier but above quartz equilibrium (${w.qEq.toFixed(0)}), opening the inward euhedral-quartz stage.`;
+}
+function event_amethyst_quartz_renewal(conditions) {
+    const w = _setAmethystQuartzWindow(conditions, 1.68);
+    conditions.fluid.Fe *= 1.35;
+    conditions.flow_rate = 5.0;
+    return `Quartz-window renewal — fresh Fe-bearing fluid restores SiO2 to ${w.target.toFixed(0)} ppm, above quartz equilibrium (${w.qEq.toFixed(0)}) but still below the fresh-chalcedony nucleation barrier, so the celadonite-masked quartz tip can renew without regrowing the outer agate.`;
+}
 function event_copper_injection(conditions) {
     conditions.fluid.Cu = 120.0;
     conditions.fluid.Fe += 40.0;
     conditions.fluid.S += 80.0;
-    conditions.fluid.SiO2 += 200.0;
+    if (typeof conditions.fluid.addReactiveSilica === 'function') {
+        conditions.fluid.addReactiveSilica(200.0);
+    }
+    else {
+        conditions.fluid.SiO2 += 200.0;
+    }
     // Drift-fix: Python event also bumps Pb +20 (porphyry fluids carry Pb).
     // Was missing from JS.
     conditions.fluid.Pb += 20.0;
@@ -50561,6 +51196,8 @@ function event_film_coat(conditions) {
 // to verify both registries cover every type referenced in the JSON5.
 const EVENT_REGISTRY = {
     fluid_pulse: event_fluid_pulse,
+    amethyst_chalcedony_maturation: event_amethyst_chalcedony_maturation,
+    amethyst_quartz_renewal: event_amethyst_quartz_renewal,
     elmwood_barite_stage: event_elmwood_barite_stage,
     elmwood_diagenetic_sr: event_elmwood_diagenetic_sr,
     film_coat: event_film_coat,
@@ -50592,6 +51229,7 @@ const EVENT_REGISTRY = {
     radioactive_pegmatite_final_cooling: event_radioactive_pegmatite_final_cooling,
     // Phase 2 — deccan_zeolite
     deccan_zeolite_silica_veneer: event_deccan_zeolite_silica_veneer,
+    deccan_quartz_maturation: event_deccan_quartz_maturation,
     deccan_zeolite_hematite_pulse: event_deccan_zeolite_hematite_pulse,
     deccan_zeolite_stage_ii: event_deccan_zeolite_stage_ii,
     deccan_zeolite_apophyllite_stage_iii: event_deccan_zeolite_apophyllite_stage_iii,
@@ -50665,7 +51303,7 @@ const EVENT_REGISTRY = {
     // Tutorials (May 2026) — see proposals/TUTORIAL-SYSTEM-BUILDER-REVIEW.md.
     // Surfaced in the New Game Menu under "Tutorials"; structurally these
     // are scenarios with simple, pedagogically-paced events.
-    tutorial_temperature_drop: event_tutorial_temperature_drop,
+    tutorial_temperature_spike: event_tutorial_temperature_spike,
     tutorial_mn_pulse: event_tutorial_mn_pulse,
     tutorial_fe_drop: event_tutorial_fe_drop,
     // PROPOSAL-GEOLOGICAL-ACCURACY Phase 3b (May 2026):
@@ -51614,7 +52252,7 @@ function event_reactive_wall_acid_pulse_1(c) {
     c.fluid.Zn += 60.0;
     c.fluid.Fe += 15.0;
     c.flow_rate = 4.0;
-    return 'CO₂-saturated brine surges into the vug. pH crashes to 3.5. The limestone walls begin to fizz — carbonate dissolving on contact.';
+    return 'CO₂-saturated brine surges into the vug. pH crashes to 3.5. The Bonneterre dolostone wall begins to dissolve, releasing Ca-Mg-carbonate inventory.';
 }
 function event_reactive_wall_acid_pulse_2(c) {
     c.fluid.pH = 3.0;
@@ -51634,9 +52272,17 @@ function event_reactive_wall_acid_pulse_3(c) {
 }
 function event_reactive_wall_seal(c) {
     c.flow_rate = 0.1;
-    c.fluid.pH += 0.5;
-    c.fluid.pH = Math.min(c.fluid.pH, 8.0);
-    return 'The feeding fracture seals. Flow stops. The vug becomes a closed system. Whatever\'s dissolved will precipitate until equilibrium.';
+    // The last acidic brine is neutralized against Bonneterre dolostone before
+    // isolation. Its Ca-Mg-carbonate release is already booked by VugWall;
+    // this recovery exposes that real inventory to the dolomite SI gate.
+    // Only a modest rebound is needed: at 105-140 C the booked Ca-Mg-CO3
+    // inventory crosses the heterogeneous dolomite-nucleation barrier near
+    // neutral pH. Avoid an artificial alkaline spike and its runaway omega.
+    c.fluid.pH = Math.min(c.fluid.pH + 0.3, 8.0);
+    // Active basinal advection had held the conduit nearly isothermal. Once the
+    // fracture seals, resume the simulator's ordinary conductive cooling.
+    c.wall.cooling_rate = 1.5;
+    return 'The feeding fracture seals. Flow stops; the last acidic brine finishes neutralizing against Bonneterre dolostone, then the isolated vug cools conductively while its Ca-Mg-carbonate load precipitates.';
 }
 
 // ── 70d-pegmatite-radioactive.js ──
@@ -51915,12 +52561,13 @@ function event_colorado_plateau_arid_stabilization(c) {
 // each is referenced by name from EVENT_REGISTRY in 70-events.ts.
 //
 // Phase B17 of PROPOSAL-MODULAR-REFACTOR.
-function event_tutorial_temperature_drop(c) {
-    // Knock T down by 80°C, never below ambient. From 180°C this lands
-    // ~100°C — outside quartz's comfort window for sustained growth, but
-    // not so cold the existing crystal immediately re-dissolves.
-    c.temperature = Math.max(25.0, c.temperature - 80.0);
-    return 'The vug cools quickly. Temperature drops out of quartz\'s growth window — the silica supply that was happily plating onto the crystal a moment ago no longer wants to leave the fluid. Growth slows, then stops. The crystal is still there, still beautiful, but nothing new is forming on its faces. Conditions matter; minerals only grow when the broth wants to give them up.';
+function event_tutorial_temperature_spike(c) {
+    // Quartz solubility rises strongly with temperature. From the tutorial's
+    // 220°C quartz-growth stage, a hot recharge to 420°C moves the unchanged
+    // 600-ppm fluid below quartz equilibrium, so the accepted crystal record
+    // changes from positive growth to real mass-balanced dissolution.
+    c.temperature = 420.0;
+    return 'A much hotter recharge enters the vug. At 420°C water can hold far more dissolved silica, so the fluid is now undersaturated with respect to quartz. Growth stops and the existing crystal begins returning its booked SiO2 to solution. Conditions control both growth and dissolution.';
 }
 function event_tutorial_mn_pulse(c) {
     // Push Mn well past calcite's 2 ppm activator threshold. From a
@@ -51956,10 +52603,22 @@ function event_deccan_zeolite_silica_veneer(c) {
     return "Stage I — hot post-eruption hydrothermal fluid coats the vesicle wall with chalcedony. Silica activity peaks; iron stripped from the basalt groundmass deposits as hematite needles on the chalcedony rind. These needles will become the seeds for the 'bloody apophyllite' phantom inclusions in Stage III.";
 }
 function event_deccan_zeolite_hematite_pulse(c) {
+    // This is an Fe-Si hydrothermal replenishment, not an iron-only paint
+    // operation. The dissolved-silica rise creates a measured activity reversal
+    // in the agate; the later maturation event lowers it into the quartz window.
+    c.fluid.addReactiveSilica(150);
     c.fluid.Fe += 80;
     c.fluid.O2 = 1.0;
     c.temperature = 175;
-    return "An iron-bearing pulse threads through the vesicle. Hematite needles seed the surfaces of any growing apophyllite. When the apophyllite resumes crystallization, those needles get trapped in the next growth zone — the Nashik 'bloody apophyllite' phantom band.";
+    return "An iron- and silica-bearing pulse threads through the vesicle, recording a genuine silica-activity reversal in the agate rind. Hematite needles seed the surfaces of any growing apophyllite. When the apophyllite resumes crystallization, those needles get trapped in the next growth zone — the Nashik 'bloody apophyllite' phantom band.";
+}
+function event_deccan_quartz_maturation(c) {
+    const qEq = c.silica_equilibrium(c.effectiveTemperature);
+    const chEq = c.chalcedony_equilibrium(c.effectiveTemperature);
+    c.fluid.SiO2 = Math.max(qEq * 1.25, Math.min(chEq * 1.08, qEq * 1.35));
+    c.fluid.reactiveSilicaFraction = 1.0;
+    c.flow_rate = 0.35;
+    return `Stage I maturation — silica activity falls below the fresh-chalcedony barrier while remaining ${(c.fluid.SiO2 / qEq).toFixed(2)}× quartz equilibrium; inward euhedral quartz now grows on the fibrous lining.`;
 }
 function event_deccan_zeolite_stage_ii(c) {
     c.fluid.Ca += 80;
@@ -51980,6 +52639,8 @@ function event_deccan_zeolite_apophyllite_stage_iii(c) {
 }
 function event_deccan_zeolite_late_cooling(c) {
     c.temperature = 80;
+    c.fluid.SiO2 = Math.min(c.fluid.SiO2, 100);
+    c.fluid.reactiveSilicaFraction = 1.0;
     c.fluid.pH = 8.0;
     c.flow_rate = 0.1;
     return 'Late cooling. The vesicle fluid drops back toward ambient. Apophyllite growth slows but doesn\'t stop entirely; the remaining K-Ca-Si-F supersaturation keeps adding micron-thin growth zones on the existing crystals. This is also when chabazite arrives — rhombohedral pseudo-cubes (and lens-shaped phacolite penetration twins) perching on the earlier zeolite lining, the last zeolite of the cavity. Time, not chemistry, becomes the limiting reagent.';
@@ -52457,6 +53118,11 @@ function event_co2_degas_with_reheat(c) {
     c.fluid.CO3 = oldDIC * (1 - fraction);
     c.fluid.pH = Math.min(9.5, oldPH + 0.5);
     c.temperature = 75;
+    // This canonical event is an actively vented hot-spring recharge: repeated
+    // CO2 loss plates a terrace crust. Store the executed depositional pathway
+    // so calcite habit follows mechanism, not merely a Ca/DIC ratio that also
+    // occurs in sabkhas and cave drip films.
+    c._calciteDepositionalMode = 'travertine';
     return (`Fresh hot pulse degasses — new CO₂-rich water from depth replaces ` +
         `what cooled. T resets to ${c.temperature}°C; DIC drops ` +
         `${oldDIC.toFixed(0)} → ${c.fluid.CO3.toFixed(0)} ppm as CO₂ escapes; ` +
@@ -52744,11 +53410,15 @@ function event_sunnyside_stage_vi_fluoride_pulse(c) {
     // Carpenter Ridge Tuff REE budget per Bachmann et al. 2014; Eu²⁺
     // from feldspar at residence-T, Y³⁺ general. Y enters fluid at
     // 3 ppm, triggering REE-octahedral fluorite habit per Bosze &
-    // Rakovan 2002 GCA 66:997. T drops to 195. Visible color of
+    // Rakovan 2002 GCA 66:997. T drops to 205 C, inside the measured
+    // 230-200 C Stage-VI window and just above the calibrated chalcedony
+    // kinetic field; the co-pulse can therefore form the documented
+    // quartz-fluorite assemblage without relabeling chalcedony as quartz.
+    // Visible color of
     // fresh fluorite: grass-green (yttrofluorite character, Pierce
     // 1990 + Naumov & Naumova 1980 — Y-cluster mechanism); SW UV
     // brilliant blue (Eu²⁺ activator).
-    c.temperature = 195;
+    c.temperature = 205;
     c.fluid.F = Math.min(35, c.fluid.F + 27); // magmatic F pulse
     c.fluid.Y = Math.min(3.5, c.fluid.Y + 3.2); // REE leached from wallrock
     c.fluid.SiO2 = Math.min(450, c.fluid.SiO2 + 50); // co-pulse silica
@@ -53468,12 +54138,14 @@ function event_grimsel_seal_2(c) {
     return `Fissure re-seals — SiO₂ → ${c.fluid.SiO2.toFixed(0)} (σ≈0.88, gentle pause) → second growth hiatus. T ${c.temperature.toFixed(0)}°C.`;
 }
 function event_grimsel_breach_2(c) {
-    // D3 re-opening (~289 °C): the coolest fresh pulse, SiO₂ → 1.9×eq (σ≈1.9) →
-    // the tallest cap (gen-3). Slightly stronger than breach 1 — the coolest
-    // pulse is the most supersaturated (the cap-grows-cooler rule).
-    c.fluid.SiO2 = _grimselSiO2ForSigma(c, 1.9);
+    // D3 re-opening (~289 °C): the coolest fresh pulse, SiO₂ → 2.5×eq
+    // (σ≈2.5) → the tallest cap (gen-3). The higher activity is an authored
+    // fluid recharge, not a pressure bypass: eq is still evaluated at the live
+    // Manning-corrected P-T state. It restores quartz as the volumetric main
+    // stage after pressure made the D1 water able to retain much more silica.
+    c.fluid.SiO2 = _grimselSiO2ForSigma(c, 2.5);
     c.flow_rate = 0.4;
-    return `Cleft re-opens (D3) — coolest fresh pulse, SiO₂ → ${c.fluid.SiO2.toFixed(0)} (σ≈1.9) → tallest sceptre cap. T ${c.temperature.toFixed(0)}°C.`;
+    return `Cleft re-opens (D3) — coolest fresh pulse, SiO₂ → ${c.fluid.SiO2.toFixed(0)} (σ≈2.5) → tallest sceptre cap. T ${c.temperature.toFixed(0)}°C.`;
 }
 function event_grimsel_late_carbonate(c) {
     // Late, low-T (~241 °C → 200 °C): the fissure fluid turns carbonate-bearing;
@@ -55440,11 +56112,8 @@ class VugSimulator {
             const sorted = Object.entries(mineralVols).sort((a, b) => b[1] - a[1]);
             const dominant = sorted[0] ? sorted[0][0] : 'mineral';
             let sealMsg = `🪨 VUG SEALED — cavity completely filled after ${this.step} steps`;
-            if (dominant === 'quartz' && sorted[0][1] / Object.values(mineralVols).reduce((a, b) => a + b, 0) > 0.8) {
-                sealMsg += ` — AGATE (>80% quartz)`;
-            }
-            else if (sorted.length > 1) {
-                sealMsg += ` — dominant: ${dominant}, with ${sorted.slice(1).map(s => s[0]).join(', ')}`;
+            if (sorted.length) {
+                sealMsg += ` — dominant: ${dominant}${sorted.length > 1 ? `, with ${sorted.slice(1).map(s => s[0]).join(', ')}` : ''}`;
             }
             this.log.push(sealMsg);
         }
@@ -55459,6 +56128,10 @@ class VugSimulator {
         // for the strip.
         this._syncRedoxEh(this._movements
             ? this._movements.drivesFieldAt('Eh', this.step) : false);
+        // History-aware Ostwald routing: an exposed stable quartz surface lets
+        // later silica attach/grow as quartz instead of restarting a metastable
+        // chalcedony generation after cooling or renewed supply.
+        this.conditions._stableQuartzExposed = this.crystals.some(c => c.mineral === 'quartz' && c.active && !c.dissolved && c.enclosed_by == null);
         this.check_nucleation(vugFill);
         // v128 graduated competition: pre-compute per-crystal scaled zones
         // BEFORE the growth loop runs. The pre-computation does a dry-run
@@ -55980,11 +56653,8 @@ class VugSimulator {
             const sorted = Object.entries(mineralVols).sort((a, b) => b[1] - a[1]);
             const dominant = sorted[0] ? sorted[0][0] : 'mineral';
             let sealMsg = `🪨 VUG SEALED — cavity completely filled after ${this.step} steps`;
-            if (dominant === 'quartz' && sorted[0][1] / Object.values(mineralVols).reduce((a, b) => a + b, 0) > 0.8) {
-                sealMsg += ` — AGATE (>80% quartz)`;
-            }
-            else if (sorted.length > 1) {
-                sealMsg += ` — dominant: ${dominant}, with ${sorted.slice(1).map(s => s[0]).join(', ')}`;
+            if (sorted.length) {
+                sealMsg += ` — dominant: ${dominant}${sorted.length > 1 ? `, with ${sorted.slice(1).map(s => s[0]).join(', ')}` : ''}`;
             }
             this.log.push(sealMsg);
         }
@@ -56096,6 +56766,11 @@ class VugSimulator {
         // singly-terminated drusy habit). The renderer sinks that fraction below the wall surface.
         // Pure tagging; gated on wall.occlusion (only mvt opts in) → byte-identical fleet. See js/45.
         classifyOcclusion(this);
+        // Area-covering aggregate fabrics (wall linings, botryoidal/earthy crusts,
+        // asbestiform mats and true quartz/calcite druse). Records physical coverage,
+        // booked volume and mean layer thickness for the renderer; representative
+        // instances never create extra mineral inventory. See js/45.
+        classifySurfaceGrowth(this);
         // Central-distance (Wulff) FORM (central-distance arc Phase 4 rung 4a.1, 2026-06-28) — the
         // arc's destination: tags fluorite with the {100}/{111} central-distance bias so the renderer
         // draws the geometrically-true cube↔cuboctahedron↔octahedron form instead of a fixed primitive.
@@ -59720,7 +60395,13 @@ Object.assign(VugSimulator.prototype, {
                 if (actualSpike > 15) {
                     this.conditions.temperature = newTemp;
                     // Fresh fluid pulse brings chemistry
-                    this.conditions.fluid.SiO2 += this._thermalRng.uniform(50, 300);
+                    const silicaPulse = this._thermalRng.uniform(50, 300);
+                    if (typeof this.conditions.fluid.addReactiveSilica === 'function') {
+                        this.conditions.fluid.addReactiveSilica(silicaPulse);
+                    }
+                    else {
+                        this.conditions.fluid.SiO2 += silicaPulse;
+                    }
                     this.conditions.fluid.Fe += this._thermalRng.uniform(2, 15);
                     this.conditions.fluid.Mn += this._thermalRng.uniform(1, 5);
                     this.conditions.flow_rate = this._thermalRng.uniform(1.5, 3.0);
@@ -63820,10 +64501,45 @@ function _nuc_quartz(sim) {
     const existing_quartz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
     if (sigma_q > MINERAL_GATES_quartz.sigma_crit && existing_quartz.length < 3 && !sim._atNucleationCap('quartz')) {
         if (!existing_quartz.length || (sigma_q > 2.0 && rng.random() < 0.3)) {
-            const c = sim.nucleate('quartz', 'vug wall', sigma_q);
+            const substrate = typeof executableSubstrateCandidates === 'function'
+                ? executableSubstrateCandidates('quartz', sim.crystals)[0]
+                : null;
+            const chalcedony = substrate?.host || null;
+            const pos = chalcedony ? `chalcedony #${chalcedony.crystal_id}` : 'vug wall';
+            const c = sim.nucleate('quartz', pos, sigma_q);
+            sim.conditions._stableQuartzExposed = true;
             sim.log.push(`  ✦ NUCLEATION: Quartz #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_q.toFixed(2)})`);
         }
     }
+}
+function _nuc_chalcedony(sim) {
+    if (sim.conditions.silica_precipitate_phase() !== 'chalcedony')
+        return;
+    // Do not run the generic silica succession backwards. Once stable quartz is
+    // exposed, a later cooling step may make the remaining fluid supersaturated
+    // with respect to chalcedony, but it should feed/overgrow the lower-solubility
+    // quartz rather than create a fresh metastable chalcedony generation.
+    const exposedQuartz = sim.crystals.some(c => c.mineral === 'quartz' && c.active && !c.dissolved);
+    if (exposedQuartz)
+        return;
+    const sigma = sim.conditions.supersaturation_chalcedony();
+    if (sigma <= MINERAL_GATES_chalcedony.sigma_crit)
+        return;
+    if (sim._atNucleationCap('chalcedony'))
+        return;
+    const existing = sim.crystals.filter(c => c.mineral === 'chalcedony' && c.active);
+    if (existing.length >= 4)
+        return;
+    if (existing.length && !(sigma > 1.8 && rng.random() < 0.22))
+        return;
+    // Opal is the natural precursor substrate when an amorphous-silica pulse
+    // matures. Otherwise chalcedony starts as a fibrous veneer on the cavity wall.
+    const opal = sim.crystals.find(c => c.mineral === 'opal' && c.active && !c.dissolved);
+    const pos = opal ? `opal #${opal.crystal_id}` : 'vug wall';
+    const c = sim.nucleate('chalcedony', pos, sigma);
+    sim.log.push(`  ✦ NUCLEATION: Chalcedony #${c.crystal_id} on ${c.position} ` +
+        `(T=${sim.conditions.temperature.toFixed(0)}°C, σch=${sigma.toFixed(2)}) — ` +
+        'a first-class length-fast microfibrous SiO2 aggregate, not a quartz display label');
 }
 function _nuc_apophyllite(sim) {
     const sigma_ap = sim.conditions.supersaturation_apophyllite();
@@ -64987,6 +65703,7 @@ function _nuc_chabazite(sim) {
     }
 }
 function _nucleateClass_silicate(sim) {
+    _runNuc(sim, _nuc_chalcedony);
     _runNuc(sim, _nuc_quartz);
     _runNuc(sim, _nuc_apophyllite);
     _runNuc(sim, _nuc_feldspar);
@@ -68924,6 +69641,29 @@ Object.assign(VugSimulator.prototype, {
         const size_desc = c.c_length_mm < 0.5 ? 'microscopic' : c.c_length_mm < 5 ? 'thumbnail' : 'cabinet-sized';
         parts.push(narrative_variant('quartz', 'final_size', { size_desc, mm: c.c_length_mm.toFixed(1), a_width_mm: c.a_width_mm.toFixed(1) }) || `Final size: ${size_desc} (${c.c_length_mm.toFixed(1)} × ${c.a_width_mm.toFixed(1)} mm).`);
         return parts.filter(p => p).join(' ');
+    },
+    _narrate_chalcedony(c) {
+        if (!c.zones.length) {
+            return `Chalcedony #${c.crystal_id} nucleated at ${c.nucleation_temp.toFixed(0)}°C but did not build a resolvable microfibrous lining.`;
+        }
+        const positive = c.zones.filter(z => z.thickness_um > 0);
+        const transitions = c.zones.filter(z => z._silica_transition);
+        const parts = [
+            `Chalcedony #${c.crystal_id} built ${positive.length} recorded cryptocrystalline SiO₂ layer${positive.length === 1 ? '' : 's'} to ${c.c_length_mm.toFixed(1)} mm.`,
+        ];
+        if (c.habit === 'banded_agate') {
+            parts.push('AGATE — repeated silica-activity changes produced alternating length-fast fibrous bands recorded shell by shell; this is a chalcedony aggregate texture, not a quartz-filled-vug nickname.');
+        }
+        else if (c.habit === 'botryoidal_chalcedony') {
+            parts.push('Radiating microfibres coalesced into botryoidal spherulites on the cavity wall.');
+        }
+        else {
+            parts.push('Length-fast silica microfibres grew normal to the substrate as a thin wall veneer.');
+        }
+        if (transitions.length) {
+            parts.push('Later quartz stability drove solution-mediated maturation: chalcedony shells dissolved back to the tracked silica pool before quartz could reprecipitate.');
+        }
+        return parts.join(' ');
     },
     _narrate_feldspar(c) {
         // Prose lives in narratives/feldspar.md (boss-pushed 2026-04-30 commit
@@ -72912,7 +73652,7 @@ const FLUID_PRESETS = {
     silica: {
         label: 'Silica-rich',
         desc: 'Test recipe — high silica (600 ppm SiO₂), moderate Ca, low metals. Quartz-dominant growth. Generic; not anchored to a locality.',
-        fluid: { SiO2: 600, Ca: 150, CO3: 100, Fe: 8, Mn: 3, Ti: 0.8, Al: 4, F: 10, Zn: 0, S: 0, Cu: 0, O2: 0, pH: 6.5, salinity: 5.0 }
+        fluid: { SiO2: 600, Ca: 150, CO3: 100, Fe: 8, Mn: 3, Ti: 0.1, Al: 4, F: 10, Zn: 0, S: 0, Cu: 0, O2: 0, pH: 6.5, salinity: 5.0 }
     },
     carbonate: {
         label: 'Carbonate',
@@ -72967,6 +73707,7 @@ function _chemistryControl(id, liveKey, label, max, group, scale = 1, unit = 'pp
 }
 const _CREATIVE_CHEMISTRY_CONTROL_BASES = {
     SiO2: _chemistryControl('f-sio2', 'sio2', 'SiO₂', 20000, 'major'),
+    reactiveSilicaFraction: _chemistryControl('f-reactive-silica', 'reactive-silica', 'Reactive SiO₂ fraction', 1, 'physical', 100, 'fraction', 2),
     Ca: _chemistryControl('f-ca', 'ca', 'Ca', 5000, 'major'),
     CO3: _chemistryControl('f-co3', 'co3', 'CO₃', 5000, 'major'),
     F: _chemistryControl('f-f', 'f', 'F', 1000, 'ligand'),
@@ -73053,6 +73794,15 @@ function _creativeChemistryEvidence(field) {
         };
     }
     const special = {
+        reactiveSilicaFraction: {
+            provenance: [
+                'js/20-chemistry-fluid.ts:reactiveSilicaPpm/addReactiveSilica/debitReactiveSilica',
+                'js/25-chemistry-conditions.ts:silica_precipitate_phase',
+            ],
+            coupling: 'Separates dissolved/reactive silica from suspended or detrital analytical SiO2; generic silica saturation and every SiO2 growth debit can use only the reactive inventory.',
+            consumers: ['FluidChemistry.reactiveSilicaPpm', 'silica_precipitate_phase', 'supersaturation_opal/chalcedony/quartz', 'applyStoichiometricGrowthBudget:SiO2'],
+            probe: { kind: 'reactive-silica-fraction' },
+        },
         Ge: {
             provenance: [
                 'js/61-engines-sulfide.ts:sphaleriteGermaniumUptake',
@@ -73346,6 +74096,23 @@ function creativeChemistryCausalProbe(field, value) {
             details: { calcite_sigma: sigma, carbonate_fraction: bjerrumFractions(fluid.pH, 25).CO3 },
         };
     }
+    if (probe.kind === 'reactive-silica-fraction') {
+        const fluid = new FluidChemistry({ SiO2: 400, reactiveSilicaFraction: decodedValue, pH: 7 });
+        const conditions = new VugConditions({ temperature: 150, pressure: 1.5, fluid });
+        const reactive = fluid.reactiveSilicaPpm();
+        const sigma = Number(conditions.supersaturation_chalcedony())
+            + Number(conditions.supersaturation_quartz());
+        return {
+            field, input_value: value, fluid_value: fluid.reactiveSilicaFraction,
+            route: 'FluidChemistry.reactiveSilicaPpm',
+            signal: reactive,
+            consumer_mutated: reactive > 0,
+            forward_route: 'VugConditions.supersaturation_chalcedony/quartz',
+            forward_signal: sigma,
+            forward_observed: Number.isFinite(sigma),
+            details: { total_SiO2_ppm: fluid.SiO2, reactive_SiO2_ppm: reactive },
+        };
+    }
     return { field, input_value: value, fluid_value: inputFluid[field], route: 'unimplemented', signal: NaN, consumer_mutated: false };
 }
 // Backward-compatible scalar facade. New audits inspect the structured route
@@ -73356,7 +74123,9 @@ function creativeChemistryCausalSignal(field, value) {
 // Full-name aliases make expert search useful without requiring players to
 // remember whether a compact row says “German.”, “Ge”, or “germanium”.
 const CREATIVE_CHEMISTRY_SEARCH_ALIASES = {
-    SiO2: 'silica silicon dioxide', Ca: 'calcium', CO3: 'carbonate carbon dioxide inorganic carbon DIC',
+    SiO2: 'silica silicon dioxide total analytical bulk',
+    reactiveSilicaFraction: 'silica dissolved reactive silicic acid h4sio4 suspended particulate detrital fraction',
+    Ca: 'calcium', CO3: 'carbonate carbon dioxide inorganic carbon DIC',
     F: 'fluorine fluoride', Al: 'aluminum aluminium', Fe: 'iron', Mn: 'manganese', Cu: 'copper',
     S: 'sulfur sulphur dissolved total bulk',
     S_sulfide: 'sulfur sulphur sulfide reduced hs h2s minus ii',
@@ -74033,7 +74802,12 @@ function fortressStep(action, payload) {
                 actionDesc = `💉 Unknown species '${sp}' — no change`;
             }
             else {
-                c.fluid[sp] = (c.fluid[sp] || 0) + amount;
+                if (sp === 'SiO2' && typeof c.fluid.addReactiveSilica === 'function') {
+                    c.fluid.addReactiveSilica(amount);
+                }
+                else {
+                    c.fluid[sp] = (c.fluid[sp] || 0) + amount;
+                }
                 actionDesc = `💉 Inject ${sp} +${amount} ppm → ${c.fluid[sp].toFixed(0)} ppm`;
             }
             break;
@@ -74042,7 +74816,10 @@ function fortressStep(action, payload) {
         // saved keyboard macros) working. Each routes through inject_species
         // semantics where possible.
         case 'silica':
-            c.fluid.SiO2 += 400;
+            if (typeof c.fluid.addReactiveSilica === 'function')
+                c.fluid.addReactiveSilica(400);
+            else
+                c.fluid.SiO2 += 400;
             c.fluid.Al += 2;
             c.fluid.Ti += 0.3;
             actionDesc = '🔮 Silica injected — SiO₂ +400 ppm (now ' + c.fluid.SiO2.toFixed(0) + ')';
@@ -74067,7 +74844,10 @@ function fortressStep(action, payload) {
             c.fluid.Cu = 120.0;
             c.fluid.Fe += 40;
             c.fluid.S += 80;
-            c.fluid.SiO2 += 200;
+            if (typeof c.fluid.addReactiveSilica === 'function')
+                c.fluid.addReactiveSilica(200);
+            else
+                c.fluid.SiO2 += 200;
             c.fluid.O2 = 0.3;
             c.temperature = Math.min(c.temperature + 30, 600);
             c.flow_rate = 4.0;
@@ -75602,6 +76382,17 @@ function _formationPressureChips(name, c) {
                 note: 'Uncertain soft occurrence weighting, not a pass/fail stability boundary: no pressure penalty through 1.5 kbar, then a graded rarity weight that never hard-blocks nucleation.',
             }];
     }
+    if (name === 'quartz') {
+        const assessment = quartzPressureSolubilityAssessment(temperature, pressure);
+        if (!assessment.active)
+            return [];
+        return [{
+                text: `${pressure.toFixed(2)} kbar fluid · ρH₂O ${assessment.waterDensityGcm3.toFixed(3)} g/cm³ · quartz equilibrium ${assessment.equilibriumPpm.toFixed(0)} ppm`,
+                met: true,
+                status: 'observer',
+                note: assessment.note,
+            }];
+    }
     if (name === 'andalusite') {
         const assessment = al2sio5PhaseAssessment(temperature, c?.wall?.confining_pressure_kbar);
         const rockPressure = assessment.confiningPressureKbar;
@@ -75652,6 +76443,12 @@ function _formationPressureChips(name, c) {
 function _formationAvailableAmount(name, species, c) {
     const f = c?.fluid || {};
     const spec = (typeof MINERAL_SPEC !== 'undefined') ? MINERAL_SPEC[name] : null;
+    if (species === 'SiO2' && typeof f.reactiveSilicaPpm === 'function') {
+        try {
+            return f.reactiveSilicaPpm();
+        }
+        catch (_e) { /* raw fallback below */ }
+    }
     if (species === 'CO3' && typeof carbonateEngineAvailableCO3 === 'function') {
         try {
             return carbonateEngineAvailableCO3(name, f, c?.temperature);
@@ -75794,18 +76591,16 @@ function _formationHistory(name, sim) {
 }
 function _formationSubstrate(name, sim) {
     const available = [];
-    if (sim && Array.isArray(sim.crystals) && typeof engineExecutableSubstrateRoute === 'function') {
+    if (sim && Array.isArray(sim.crystals) && typeof executableSubstrateCandidates === 'function') {
         const grouped = new Map();
-        for (const cr of sim.crystals) {
-            const route = engineExecutableSubstrateRoute(cr, name);
-            if (!route.executable || !(route.discount < 1))
-                continue;
-            const key = `${cr.mineral}|${route.label}`;
+        for (const candidate of executableSubstrateCandidates(name, sim.crystals)) {
+            const cr = candidate.host;
+            const key = `${cr.mineral}|${candidate.label}`;
             const prior = grouped.get(key);
             grouped.set(key, {
                 count: (prior?.count || 0) + 1,
-                discount: prior ? Math.min(prior.discount, route.discount) : route.discount,
-                state: route.label,
+                discount: prior ? Math.min(prior.discount, candidate.discount) : candidate.discount,
+                state: candidate.label,
             });
         }
         for (const [key, row] of grouped) {
@@ -76063,7 +76858,9 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
     }
     const stoich = (typeof MINERAL_STOICHIOMETRY !== 'undefined') ? MINERAL_STOICHIOMETRY[name] : null;
     const capacities = stoich ? Object.entries(stoich).map(([species, coefficient]) => {
-        const raw = Number(c.fluid[species]);
+        const raw = species === 'SiO2' && typeof c.fluid.reactiveSilicaPpm === 'function'
+            ? c.fluid.reactiveSilicaPpm()
+            : Number(c.fluid[species]);
         const available = Number.isFinite(raw) ? Math.max(0, raw) : 0;
         const demandPerUm = typeof stoichiometricBudgetDebitPpmPerUm === 'function'
             ? stoichiometricBudgetDebitPpmPerUm(species, Number(coefficient))
@@ -76129,7 +76926,9 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
         ? substrate.available.map(row => ({
             text: `${row.mineral} ×${row.count} · ${row.state} · σcrit ×${row.discount.toFixed(2)}${row.epitaxy ? ' · epitaxy' : ''}`,
             met: true,
-            note: 'Executable production host route; availability lowers the barrier only if the stochastic engine selects this surface.',
+            note: row.discount < 1
+                ? 'Executable production host route; availability lowers the barrier only if the production nucleator selects this surface.'
+                : 'Executable production spatial host route; no unmeasured saturation or growth-rate discount is applied.',
         }))
         : [{ text: 'bare wall · no registered catalytic host exposed', met: true }];
     if (history.records.length) {
@@ -76145,6 +76944,15 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
             note: 'Potential shared-reagent competition. Actual graduated rationing is local to crystals sharing a fluid cell.',
         }))
         : [{ text: 'no active shared-reagent competitors', met: true }];
+    if (['opal', 'chalcedony', 'quartz'].includes(name)
+        && typeof c.silica_depositional_regime === 'function') {
+        const regime = c.silica_depositional_regime();
+        compChips.unshift({
+            text: `${regime.phase} · reactive silica ${_formationNumber(regime.reactiveSilicaPpm)} of ${_formationNumber(regime.totalSilicaPpm)} ppm (${Math.round(regime.reactiveSilicaFraction * 100)}%) · silica share ${Math.round(regime.silicaShare * 100)}%`,
+            met: regime.permitsSilicaPrecipitation,
+            note: regime.note,
+        });
+    }
     if (competition.initiative) {
         const compMod = competition.initiative.modifiers.find(m => m.source === 'competition');
         compChips.unshift({
@@ -83378,6 +84186,15 @@ function _topoTooltipFromEvent(ev) {
             if (crystal) {
                 lines.push(`${crystal.habit}${crystal.twinned ? ` (${crystal.twin_law} twin)` : ''}`);
                 lines.push(`${crystal.c_length_mm.toFixed(2)} mm · vector: ${crystal.vector}`);
+                if (crystal._surfaceGrowth) {
+                    const sg = crystal._surfaceGrowth;
+                    const regime = String(sg.regime || 'surface growth').replace(/_/g, ' ');
+                    const cover = Math.round(Math.max(0, Math.min(1, sg.coverage_fraction || 0)) * 100);
+                    const thickness = Number(sg.mean_thickness_um || 0);
+                    const tLabel = thickness < 0.1 ? '<0.1' : thickness.toFixed(thickness < 10 ? 1 : 0);
+                    lines.push(`${regime} · ${cover}% wall coverage · mean ${tLabel} µm`);
+                    lines.push(`Mass: ${Number(sg.booked_volume_mm3 || 0).toFixed(3)} mm³ booked; repeated grains are representative`);
+                }
             }
             html = lines.join('<br>');
         }
@@ -84301,13 +85118,17 @@ function idleDrawPie() {
             .map(s => s.pct >= 0.1 ? `${s.label} ${s.pct.toFixed(1)}%` : `${s.label} microcrystals`)
             .join(' · ');
         labelEl.textContent = mineralList || 'empty vug';
-        // Agate detection!
-        if (fillPct > 90) {
-            const quartzPct = (mineralVolumes['quartz'] || 0) / vugVolume * 100;
-            if (quartzPct > fillPct * 0.8) {
-                labelEl.textContent = '🪨 AGATE — vug filled with quartz!';
-                labelEl.style.color = '#f0c050';
-            }
+        labelEl.style.color = '';
+        // Agate is a recorded banded-chalcedony fabric, not a fill-percentage
+        // nickname for macrocrystalline quartz.
+        const agate = idleSim && idleSim.crystals
+            ? idleSim.crystals.find(c => c.mineral === 'chalcedony'
+                && c.habit === 'banded_agate' && !c.dissolved)
+            : null;
+        if (agate) {
+            const bands = agate.zones.filter(z => z.thickness_um > 0).length;
+            labelEl.textContent = `🪨 AGATE — ${bands} recorded chalcedony bands`;
+            labelEl.style.color = '#f0c050';
         }
     }
 }
@@ -88121,6 +88942,201 @@ function _clusterSatelliteCount(crystal, pattern, cLenOverride) {
 // a-axis tangentially around the substrate normal, scaled to 0.4-0.8×
 // parent, tilted up to ±11° off the parent's c-axis. Satellites are
 // added to state.crystals alongside the parent.
+// AREA-COVERING SURFACE GROWTH (SIM 246)
+// ---------------------------------------
+// A surface-growth Crystal is one mass-booked aggregate, not N extra crystals.
+// The instance cloud below is therefore representative geometry: one draw call,
+// no additions to sim.crystals, no extra accepted volume, and a hard mobile cap.
+// The physical coverage/thickness/volume record is crystal._surfaceGrowth (js/45).
+const SURFACE_GROWTH_INSTANCE_CAP_DESKTOP = 128;
+const SURFACE_GROWTH_INSTANCE_CAP_MOBILE = 56;
+function _surfaceGrowthInstanceCount(coverage, mobile = false) {
+    const cap = mobile ? SURFACE_GROWTH_INSTANCE_CAP_MOBILE : SURFACE_GROWTH_INSTANCE_CAP_DESKTOP;
+    return Math.max(12, Math.min(cap, Math.round(12 + coverage * (cap - 12))));
+}
+// Equal-area deterministic points inside a spherical cap. `center` is the
+// outward wall direction; cap area / whole-sphere area is exactly `coverage`.
+// The golden-angle azimuth avoids both grid seams and random clumping.
+function _surfaceGrowthSampleDirections(center, count, coverage, seed = 0) {
+    let [cx, cy, cz] = center;
+    const cl = Math.sqrt(cx * cx + cy * cy + cz * cz) || 1;
+    cx /= cl;
+    cy /= cl;
+    cz /= cl;
+    const ref = Math.abs(cy) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+    let t1x = ref[1] * cz - ref[2] * cy;
+    let t1y = ref[2] * cx - ref[0] * cz;
+    let t1z = ref[0] * cy - ref[1] * cx;
+    const tl = Math.sqrt(t1x * t1x + t1y * t1y + t1z * t1z) || 1;
+    t1x /= tl;
+    t1y /= tl;
+    t1z /= tl;
+    const t2x = cy * t1z - cz * t1y;
+    const t2y = cz * t1x - cx * t1z;
+    const t2z = cx * t1y - cy * t1x;
+    const cov = Math.max(0.001, Math.min(0.999, coverage));
+    const cosEdge = 1 - 2 * cov;
+    const phase = ((seed * 0.6180339887498949) % 1 + 1) % 1 * Math.PI * 2;
+    const golden = Math.PI * (3 - Math.sqrt(5));
+    const out = [];
+    for (let i = 0; i < count; i++) {
+        const u = (i + 0.5) / count;
+        const cosA = 1 - u * (1 - cosEdge);
+        const sinA = Math.sqrt(Math.max(0, 1 - cosA * cosA));
+        const az = phase + i * golden;
+        const ca = Math.cos(az), sa = Math.sin(az);
+        out.push([
+            cx * cosA + (t1x * ca + t2x * sa) * sinA,
+            cy * cosA + (t1y * ca + t2y * sa) * sinA,
+            cz * cosA + (t1z * ca + t2z * sa) * sinA,
+        ]);
+    }
+    return out;
+}
+function _surfaceGrowthWallPoint(wall, dir, ringCount, N, initR) {
+    let [dx, dy, dz] = dir;
+    const dl = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+    dx /= dl;
+    dy /= dl;
+    dz /= dl;
+    const phi = Math.acos(Math.max(-1, Math.min(1, -dy)));
+    const ringIdx = Math.max(0, Math.min(ringCount - 1, Math.round((phi / Math.PI) * ringCount - 0.5)));
+    const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1;
+    const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0;
+    let theta = Math.atan2(dz, dx) - twist;
+    while (theta < 0)
+        theta += 2 * Math.PI;
+    while (theta >= 2 * Math.PI)
+        theta -= 2 * Math.PI;
+    const cellIdx = Math.max(0, Math.min(N - 1, Math.floor(theta / (2 * Math.PI) * N)));
+    const cell = wall.rings[ringIdx] && wall.rings[ringIdx][cellIdx];
+    const baseR = cell && cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
+    const radius = (baseR + (cell ? cell.wall_depth : 0)) * polar;
+    return {
+        x: radius * dx, y: radius * dy, z: radius * dz,
+        // Cavity-facing normal points inward.
+        nx: -dx, ny: -dy, nz: -dz,
+        ringIdx, cellIdx, radius,
+    };
+}
+function _emitSurfaceGrowthSwath(state, crystal, parentMat, ax, ay, az, wall, ringCount, N, initR, renderC) {
+    const record = crystal && crystal._surfaceGrowth;
+    if (!record || !(record.coverage_fraction > 0) || !wall || !wall.rings)
+        return;
+    const liveC = Math.max(1e-9, Number(crystal.c_length_mm) || 0);
+    // Replay grows the footprint from the historical size rather than painting
+    // the final shell on the first frame.
+    const replayMaturity = Math.max(0.02, Math.min(1, renderC / liveC));
+    const coverage = Math.max(0.005, Math.min(0.98, record.coverage_fraction * Math.sqrt(replayMaturity)));
+    const mobile = typeof window !== 'undefined'
+        && ((window.innerWidth || 1024) <= 720 || (window.devicePixelRatio || 1) >= 2.5);
+    const count = _surfaceGrowthInstanceCount(coverage, mobile);
+    const al = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
+    const directions = _surfaceGrowthSampleDirections([ax / al, ay / al, az / al], count, coverage, crystal.crystal_id || 0);
+    let key = '__surface_patch_lowpoly';
+    let geom = state.geomCache.get(key);
+    if (!geom) {
+        geom = new THREE.SphereGeometry(0.5, 8, 5);
+        state.geomCache.set(key, geom);
+    }
+    if (record.regime === 'euhedral_druse') {
+        key = crystal.mineral === 'calcite' ? '__surface_calcite_tooth' : '__surface_quartz_point';
+        geom = state.geomCache.get(key);
+        if (!geom) {
+            geom = _buildHabitGeom(crystal.mineral === 'calcite' ? 'scalene' : 'prism');
+            state.geomCache.set(key, geom);
+        }
+    }
+    else if (record.regime === 'fibrous_mat') {
+        key = '__surface_fiber';
+        geom = state.geomCache.get(key);
+        if (!geom) {
+            geom = _buildHabitGeom('spike');
+            state.geomCache.set(key, geom);
+        }
+    }
+    const mat = parentMat.clone();
+    mat.roughness = record.regime === 'fibrous_mat' ? 0.72
+        : record.regime === 'laminated_lining' ? 0.82 : Math.max(0.48, mat.roughness || 0.5);
+    if (record.regime === 'laminated_lining' && mat.transparent) {
+        mat.opacity = Math.max(0.46, mat.opacity || 0);
+    }
+    _applyCavityClip(mat, state.clipUniforms);
+    const swath = new THREE.InstancedMesh(geom, mat, count);
+    const dummy = new THREE.Object3D();
+    const up = new THREE.Vector3(0, 1, 0);
+    const axis = new THREE.Vector3();
+    const cavityR = Math.max(1, Number(state.clipUniforms?.uVugRadius?.value) || initR);
+    const areaPerRepresentative = (4 * Math.PI * cavityR * cavityR * coverage) / count;
+    const patchRadius = Math.max(0.22, Math.sqrt(areaPerRepresentative / Math.PI) * 1.08);
+    const trueThicknessMm = Math.max(0, Number(record.mean_thickness_um) || 0) / 1000;
+    const displayThickness = Math.max(0.06, Math.min(patchRadius * 0.45, trueThicknessMm > 0 ? Math.max(trueThicknessMm, 0.06) : 0.06));
+    for (let i = 0; i < count; i++) {
+        const p = _surfaceGrowthWallPoint(wall, directions[i], ringCount, N, initR);
+        const h = Math.abs(Math.sin((crystal.crystal_id + 1) * 17.17 + i * 9.73)) % 1;
+        if (record.regime === 'euhedral_druse') {
+            const height = Math.max(0.24, Math.min(1.6, patchRadius * (0.28 + 0.22 * h)));
+            const width = height * (crystal.mineral === 'calcite' ? 0.42 : 0.28);
+            axis.set(p.nx, p.ny, p.nz);
+            dummy.quaternion.setFromUnitVectors(up, axis);
+            dummy.rotateY(h * Math.PI * 2);
+            dummy.position.set(p.x + p.nx * height * 0.5, p.y + p.ny * height * 0.5, p.z + p.nz * height * 0.5);
+            dummy.scale.set(width, height, width);
+        }
+        else if (record.regime === 'fibrous_mat') {
+            // Slip-/felt-fibre representation: lay each bundle in the local tangent
+            // plane instead of making a forest of needles normal to the wall.
+            let tx = -p.nz, ty = 0, tz = p.nx;
+            let tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+            if (tl < 1e-6) {
+                tx = 1;
+                ty = 0;
+                tz = 0;
+                tl = 1;
+            }
+            tx /= tl;
+            ty /= tl;
+            tz /= tl;
+            const bx = p.ny * tz - p.nz * ty;
+            const by = p.nz * tx - p.nx * tz;
+            const bz = p.nx * ty - p.ny * tx;
+            const spin = h * Math.PI * 0.7 - Math.PI * 0.35;
+            axis.set(tx * Math.cos(spin) + bx * Math.sin(spin), ty * Math.cos(spin) + by * Math.sin(spin), tz * Math.cos(spin) + bz * Math.sin(spin)).normalize();
+            const length = Math.max(0.45, Math.min(2.4, patchRadius * (0.8 + h * 0.5)));
+            const width = Math.max(0.035, Math.min(0.11, length * 0.055));
+            dummy.quaternion.setFromUnitVectors(up, axis);
+            dummy.position.set(p.x + p.nx * width, p.y + p.ny * width, p.z + p.nz * width);
+            dummy.scale.set(width, length, width);
+        }
+        else {
+            const lateral = patchRadius * (record.regime === 'laminated_lining' ? 2.2 : 1.55);
+            const relief = record.regime === 'botryoidal_crust'
+                ? Math.max(displayThickness, patchRadius * (0.30 + h * 0.18))
+                : displayThickness;
+            axis.set(p.nx, p.ny, p.nz);
+            dummy.quaternion.setFromUnitVectors(up, axis);
+            dummy.position.set(p.x + p.nx * relief * 0.5, p.y + p.ny * relief * 0.5, p.z + p.nz * relief * 0.5);
+            dummy.scale.set(lateral, relief, lateral);
+        }
+        dummy.updateMatrix();
+        swath.setMatrixAt(i, dummy.matrix);
+    }
+    swath.instanceMatrix.needsUpdate = true;
+    if (typeof swath.computeBoundingSphere === 'function')
+        swath.computeBoundingSphere();
+    swath.renderOrder = record.regime === 'laminated_lining' ? 0.55 : 0.8;
+    swath.raycast = function () { };
+    swath.userData = {
+        surfaceGrowth: true,
+        crystal_id: crystal.crystal_id,
+        mineral: crystal.mineral,
+        regime: record.regime,
+        coverage_fraction: coverage,
+        physical_mean_thickness_um: record.mean_thickness_um,
+        representative_only: true,
+    };
+    state.crystals.add(swath);
+}
 function _emitClusterSatellites(state, crystal, geom, mat, ax, ay, az, nx, ny, nz, parentCLen, parentAWid, geomToken, wall, ringCount, N, initR, 
 // W-F O0: the parent's attachment fraction. Satellites share the parent's
 // GEOM — for a half-form (clipped) geom the scar cap sits at the mesh
@@ -89780,6 +90796,12 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
             // === END HELIX-OVERLAY-FORK ADDITION ===========================
         };
         state.crystals.add(mesh);
+        // A booked aggregate can occupy a broad wall swath even though it is one
+        // Crystal record. Emit one instanced representative layer; it neither adds
+        // simulation entities nor multiplies the accepted mineral volume.
+        if (!isInclusion && crystal._surfaceGrowth) {
+            _emitSurfaceGrowthSwath(state, crystal, mat, ax, ay, az, wall, ringCount, N, initR, renderC);
+        }
         // W-F O4a — register every crystal as a possible host, and defer inclusion
         // placement to pass 2 (the host mesh may build later in this same loop).
         _hostMeshById.set(crystal.crystal_id, mesh);
@@ -89799,7 +90821,7 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
         // geomToken selects a per-habit cluster pattern (acicular spray,
         // tabular rosette, prismatic forest, cubic carpet, etc.). An engulfed
         // inclusion has no free druse spray, so it opts out (W-F O4a).
-        if (!isInclusion) {
+        if (!isInclusion && !crystal._surfaceGrowth) {
             _emitClusterSatellites(state, crystal, geom, mat, ax, ay, az, nx, ny, nz, cLen, aWid, token, wall, ringCount, N, initR, occF);
         }
     }

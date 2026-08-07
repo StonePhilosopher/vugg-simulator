@@ -121,14 +121,18 @@ describe('C0 — fleet genre outcomes (seed 42, the sweep census)', () => {
       'deccan lost its dogtooth').toBe(true);
   });
 
-  it('nailhead genres HOLD: the Pennine-style vein + wittichen + travertine stay rhombohedral', () => {
-    for (const name of ['reactivated_fluorite_vein', 'wittichen', 'tutorial_travertine']) {
+  it('nailhead genres hold while Mammoth records a travertine crust rather than cabinet spar', () => {
+    for (const name of ['reactivated_fluorite_vein', 'wittichen']) {
       const cals = calcitesOf(runScenario(name));
       expect(cals.length, `${name} grew no calcite`).toBeGreaterThan(0);
       for (const c of cals) {
         expect(String(c.habit).indexOf('scaleno'), `${name} id${c.crystal_id} flipped to dogtooth`).toBe(-1);
       }
     }
+    const travertine = calcitesOf(runScenario('tutorial_travertine'));
+    expect(travertine.length, 'tutorial_travertine grew no calcite').toBeGreaterThan(0);
+    expect(travertine.every((c: any) => c.habit === 'travertine_crust')).toBe(true);
+    expect(travertine.every((c: any) => c._depositional_fabric === 'carbonate travertine')).toBe(true);
   });
 
   it('the air gate HOLDS in the field: stalactites at drip-film Ω (~1500) stay rhombohedral', () => {

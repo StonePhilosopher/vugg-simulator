@@ -324,10 +324,8 @@ class VugSimulator {
       const sorted = Object.entries(mineralVols).sort((a,b) => b[1] - a[1]);
       const dominant = sorted[0] ? sorted[0][0] : 'mineral';
       let sealMsg = `🪨 VUG SEALED — cavity completely filled after ${this.step} steps`;
-      if (dominant === 'quartz' && sorted[0][1] / Object.values(mineralVols).reduce((a,b)=>a+b,0) > 0.8) {
-        sealMsg += ` — AGATE (>80% quartz)`;
-      } else if (sorted.length > 1) {
-        sealMsg += ` — dominant: ${dominant}, with ${sorted.slice(1).map(s=>s[0]).join(', ')}`;
+      if (sorted.length) {
+        sealMsg += ` — dominant: ${dominant}${sorted.length > 1 ? `, with ${sorted.slice(1).map(s=>s[0]).join(', ')}` : ''}`;
       }
       this.log.push(sealMsg);
     }
@@ -343,6 +341,12 @@ class VugSimulator {
     // for the strip.
     this._syncRedoxEh(this._movements
       ? this._movements.drivesFieldAt('Eh', this.step) : false);
+    // History-aware Ostwald routing: an exposed stable quartz surface lets
+    // later silica attach/grow as quartz instead of restarting a metastable
+    // chalcedony generation after cooling or renewed supply.
+    this.conditions._stableQuartzExposed = this.crystals.some(
+      c => c.mineral === 'quartz' && c.active && !c.dissolved && c.enclosed_by == null,
+    );
     this.check_nucleation(vugFill);
 
     // v128 graduated competition: pre-compute per-crystal scaled zones
@@ -865,10 +869,8 @@ class VugSimulator {
       const sorted = Object.entries(mineralVols).sort((a,b) => b[1] - a[1]);
       const dominant = sorted[0] ? sorted[0][0] : 'mineral';
       let sealMsg = `🪨 VUG SEALED — cavity completely filled after ${this.step} steps`;
-      if (dominant === 'quartz' && sorted[0][1] / Object.values(mineralVols).reduce((a,b)=>a+b,0) > 0.8) {
-        sealMsg += ` — AGATE (>80% quartz)`;
-      } else if (sorted.length > 1) {
-        sealMsg += ` — dominant: ${dominant}, with ${sorted.slice(1).map(s=>s[0]).join(', ')}`;
+      if (sorted.length) {
+        sealMsg += ` — dominant: ${dominant}${sorted.length > 1 ? `, with ${sorted.slice(1).map(s=>s[0]).join(', ')}` : ''}`;
       }
       this.log.push(sealMsg);
     }
@@ -985,6 +987,11 @@ class VugSimulator {
     // singly-terminated drusy habit). The renderer sinks that fraction below the wall surface.
     // Pure tagging; gated on wall.occlusion (only mvt opts in) → byte-identical fleet. See js/45.
     classifyOcclusion(this);
+    // Area-covering aggregate fabrics (wall linings, botryoidal/earthy crusts,
+    // asbestiform mats and true quartz/calcite druse). Records physical coverage,
+    // booked volume and mean layer thickness for the renderer; representative
+    // instances never create extra mineral inventory. See js/45.
+    classifySurfaceGrowth(this);
     // Central-distance (Wulff) FORM (central-distance arc Phase 4 rung 4a.1, 2026-06-28) — the
     // arc's destination: tags fluorite with the {100}/{111} central-distance bias so the renderer
     // draws the geometrically-true cube↔cuboctahedron↔octahedron form instead of a fixed primitive.

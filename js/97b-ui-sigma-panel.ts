@@ -204,6 +204,17 @@ function _formationPressureChips(name: string, c: any): FormationDiagnosticChip[
     }];
   }
 
+  if (name === 'quartz') {
+    const assessment = quartzPressureSolubilityAssessment(temperature, pressure);
+    if (!assessment.active) return [];
+    return [{
+      text: `${pressure.toFixed(2)} kbar fluid · ρH₂O ${assessment.waterDensityGcm3.toFixed(3)} g/cm³ · quartz equilibrium ${assessment.equilibriumPpm.toFixed(0)} ppm`,
+      met: true,
+      status: 'observer',
+      note: assessment.note,
+    }];
+  }
+
   if (name === 'andalusite') {
     const assessment = al2sio5PhaseAssessment(
       temperature,
@@ -261,6 +272,9 @@ function _formationPressureChips(name: string, c: any): FormationDiagnosticChip[
 function _formationAvailableAmount(name: string, species: string, c: any): number {
   const f = c?.fluid || {};
   const spec = (typeof MINERAL_SPEC !== 'undefined') ? MINERAL_SPEC[name] : null;
+  if (species === 'SiO2' && typeof f.reactiveSilicaPpm === 'function') {
+    try { return f.reactiveSilicaPpm(); } catch (_e) { /* raw fallback below */ }
+  }
   if (species === 'CO3' && typeof carbonateEngineAvailableCO3 === 'function') {
     try { return carbonateEngineAvailableCO3(name, f, c?.temperature); } catch (_e) { /* raw fallback below */ }
   }
@@ -399,17 +413,16 @@ function _formationHistory(name: string, sim: any) {
 
 function _formationSubstrate(name: string, sim: any) {
   const available: Array<{ mineral: string; count: number; discount: number; epitaxy: boolean; state: string }> = [];
-  if (sim && Array.isArray(sim.crystals) && typeof engineExecutableSubstrateRoute === 'function') {
+  if (sim && Array.isArray(sim.crystals) && typeof executableSubstrateCandidates === 'function') {
     const grouped = new Map<string, { count: number; discount: number; state: string }>();
-    for (const cr of sim.crystals) {
-      const route = engineExecutableSubstrateRoute(cr, name);
-      if (!route.executable || !(route.discount < 1)) continue;
-      const key = `${cr.mineral}|${route.label}`;
+    for (const candidate of executableSubstrateCandidates(name, sim.crystals)) {
+      const cr = candidate.host;
+      const key = `${cr.mineral}|${candidate.label}`;
       const prior = grouped.get(key);
       grouped.set(key, {
         count: (prior?.count || 0) + 1,
-        discount: prior ? Math.min(prior.discount, route.discount) : route.discount,
-        state: route.label,
+        discount: prior ? Math.min(prior.discount, candidate.discount) : candidate.discount,
+        state: candidate.label,
       });
     }
     for (const [key, row] of grouped) {
@@ -670,7 +683,9 @@ function _buildMineralFormationExplanation(
   }
   const stoich = (typeof MINERAL_STOICHIOMETRY !== 'undefined') ? MINERAL_STOICHIOMETRY[name] : null;
   const capacities = stoich ? Object.entries(stoich).map(([species, coefficient]) => {
-    const raw = Number(c.fluid[species]);
+    const raw = species === 'SiO2' && typeof c.fluid.reactiveSilicaPpm === 'function'
+      ? c.fluid.reactiveSilicaPpm()
+      : Number(c.fluid[species]);
     const available = Number.isFinite(raw) ? Math.max(0, raw) : 0;
     const demandPerUm = typeof stoichiometricBudgetDebitPpmPerUm === 'function'
       ? stoichiometricBudgetDebitPpmPerUm(species, Number(coefficient))
@@ -740,7 +755,9 @@ function _buildMineralFormationExplanation(
     ? substrate.available.map(row => ({
       text: `${row.mineral} ×${row.count} · ${row.state} · σcrit ×${row.discount.toFixed(2)}${row.epitaxy ? ' · epitaxy' : ''}`,
       met: true,
-      note: 'Executable production host route; availability lowers the barrier only if the stochastic engine selects this surface.',
+      note: row.discount < 1
+        ? 'Executable production host route; availability lowers the barrier only if the production nucleator selects this surface.'
+        : 'Executable production spatial host route; no unmeasured saturation or growth-rate discount is applied.',
     }))
     : [{ text: 'bare wall · no registered catalytic host exposed', met: true }];
   if (history.records.length) {
@@ -756,6 +773,15 @@ function _buildMineralFormationExplanation(
       note: 'Potential shared-reagent competition. Actual graduated rationing is local to crystals sharing a fluid cell.',
     }))
     : [{ text: 'no active shared-reagent competitors', met: true }];
+  if (['opal', 'chalcedony', 'quartz'].includes(name)
+      && typeof c.silica_depositional_regime === 'function') {
+    const regime = c.silica_depositional_regime();
+    compChips.unshift({
+      text: `${regime.phase} · reactive silica ${_formationNumber(regime.reactiveSilicaPpm)} of ${_formationNumber(regime.totalSilicaPpm)} ppm (${Math.round(regime.reactiveSilicaFraction * 100)}%) · silica share ${Math.round(regime.silicaShare * 100)}%`,
+      met: regime.permitsSilicaPrecipitation,
+      note: regime.note,
+    });
+  }
   if (competition.initiative) {
     const compMod = competition.initiative.modifiers.find(m => m.source === 'competition');
     compChips.unshift({

@@ -35,11 +35,48 @@ function event_tectonic_shock(conditions) {
   return 'Tectonic event. A 50 MPa differential-stress pulse crosses the cavity; fluid pressure does not rise.';
 }
 
+// Ametista do Sul's inward agate -> quartz sequence needs a real change in
+// silica activity, not a display rename. These events place the fluid inside
+// the measured metastability window: supersaturated with respect to quartz but
+// below the calibrated fresh-chalcedony nucleation barrier at the CURRENT
+// temperature. The bounds move with the same equations Creative Mode exposes.
+function _setAmethystQuartzWindow(conditions, quartzMultiple = 1.30) {
+  const qEq = conditions.silica_equilibrium(conditions.effectiveTemperature);
+  const chEq = conditions.chalcedony_equilibrium(conditions.effectiveTemperature);
+  // Existing agate no longer buys a rate multiplier. Put the dissolved fluid
+  // near the top of the real metastable window instead: quartz-supersaturated
+  // but still below the fresh-chalcedony nucleation barrier.
+  const target = Math.min(
+    chEq * CHALCEDONY_NUCLEATION_SIGMA * 0.98,
+    qEq * quartzMultiple,
+  );
+  conditions.fluid.SiO2 = Math.max(qEq * 1.22, target);
+  conditions.fluid.reactiveSilicaFraction = 1.0;
+  return { qEq, chEq, target: conditions.fluid.SiO2 };
+}
+
+function event_amethyst_chalcedony_maturation(conditions) {
+  const w = _setAmethystQuartzWindow(conditions, 1.62);
+  conditions.flow_rate = 0.25;
+  return `Silica maturation — early chalcedony/agate has lowered dissolved SiO2 to ${w.target.toFixed(0)} ppm: below the fresh-chalcedony nucleation barrier but above quartz equilibrium (${w.qEq.toFixed(0)}), opening the inward euhedral-quartz stage.`;
+}
+
+function event_amethyst_quartz_renewal(conditions) {
+  const w = _setAmethystQuartzWindow(conditions, 1.68);
+  conditions.fluid.Fe *= 1.35;
+  conditions.flow_rate = 5.0;
+  return `Quartz-window renewal — fresh Fe-bearing fluid restores SiO2 to ${w.target.toFixed(0)} ppm, above quartz equilibrium (${w.qEq.toFixed(0)}) but still below the fresh-chalcedony nucleation barrier, so the celadonite-masked quartz tip can renew without regrowing the outer agate.`;
+}
+
 function event_copper_injection(conditions) {
   conditions.fluid.Cu = 120.0;
   conditions.fluid.Fe += 40.0;
   conditions.fluid.S += 80.0;
-  conditions.fluid.SiO2 += 200.0;
+  if (typeof conditions.fluid.addReactiveSilica === 'function') {
+    conditions.fluid.addReactiveSilica(200.0);
+  } else {
+    conditions.fluid.SiO2 += 200.0;
+  }
   // Drift-fix: Python event also bumps Pb +20 (porphyry fluids carry Pb).
   // Was missing from JS.
   conditions.fluid.Pb += 20.0;
@@ -252,6 +289,8 @@ function event_film_coat(conditions) {
 
 const EVENT_REGISTRY = {
   fluid_pulse: event_fluid_pulse,
+  amethyst_chalcedony_maturation: event_amethyst_chalcedony_maturation,
+  amethyst_quartz_renewal: event_amethyst_quartz_renewal,
   elmwood_barite_stage: event_elmwood_barite_stage,
   elmwood_diagenetic_sr: event_elmwood_diagenetic_sr,
   film_coat: event_film_coat,
@@ -283,6 +322,7 @@ const EVENT_REGISTRY = {
   radioactive_pegmatite_final_cooling: event_radioactive_pegmatite_final_cooling,
   // Phase 2 — deccan_zeolite
   deccan_zeolite_silica_veneer: event_deccan_zeolite_silica_veneer,
+  deccan_quartz_maturation: event_deccan_quartz_maturation,
   deccan_zeolite_hematite_pulse: event_deccan_zeolite_hematite_pulse,
   deccan_zeolite_stage_ii: event_deccan_zeolite_stage_ii,
   deccan_zeolite_apophyllite_stage_iii: event_deccan_zeolite_apophyllite_stage_iii,
@@ -356,7 +396,7 @@ const EVENT_REGISTRY = {
   // Tutorials (May 2026) — see proposals/TUTORIAL-SYSTEM-BUILDER-REVIEW.md.
   // Surfaced in the New Game Menu under "Tutorials"; structurally these
   // are scenarios with simple, pedagogically-paced events.
-  tutorial_temperature_drop: event_tutorial_temperature_drop,
+  tutorial_temperature_spike: event_tutorial_temperature_spike,
   tutorial_mn_pulse: event_tutorial_mn_pulse,
   tutorial_fe_drop: event_tutorial_fe_drop,
   // PROPOSAL-GEOLOGICAL-ACCURACY Phase 3b (May 2026):

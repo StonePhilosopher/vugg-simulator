@@ -52,6 +52,15 @@ function _topoTooltipFromEvent(ev) {
       if (crystal) {
         lines.push(`${crystal.habit}${crystal.twinned ? ` (${crystal.twin_law} twin)` : ''}`);
         lines.push(`${crystal.c_length_mm.toFixed(2)} mm · vector: ${crystal.vector}`);
+        if (crystal._surfaceGrowth) {
+          const sg = crystal._surfaceGrowth;
+          const regime = String(sg.regime || 'surface growth').replace(/_/g, ' ');
+          const cover = Math.round(Math.max(0, Math.min(1, sg.coverage_fraction || 0)) * 100);
+          const thickness = Number(sg.mean_thickness_um || 0);
+          const tLabel = thickness < 0.1 ? '<0.1' : thickness.toFixed(thickness < 10 ? 1 : 0);
+          lines.push(`${regime} · ${cover}% wall coverage · mean ${tLabel} µm`);
+          lines.push(`Mass: ${Number(sg.booked_volume_mm3 || 0).toFixed(3)} mm³ booked; repeated grains are representative`);
+        }
       }
       html = lines.join('<br>');
     }

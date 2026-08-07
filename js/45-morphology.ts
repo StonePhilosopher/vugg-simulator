@@ -1144,6 +1144,129 @@ function _o1aBaseTipSigma(sim: any, crystal: any): any {
   return { s0, sD };
 }
 
+// AREA-COVERING SURFACE GROWTH (SIM 246, 2026-08-06)
+// ----------------------------------------------------
+// One Crystal record can represent an aggregate made of millions of sub-visible
+// crystallites. Treating that record as one museum-scale free crystal is especially
+// misleading for wall-lining chalcedony, botryoidal/earthy crusts, asbestos mats and
+// quartz/calcite druse. This classifier records the aggregate's areal geometry while
+// leaving its accepted-zone inventory authoritative:
+//
+//   booked_volume_mm3 = Crystal._volume_mm3 (never multiplied by render instances)
+//   covered_area_mm2  = cavity area x coverage_fraction
+//   mean_thickness_um = booked volume / covered area
+//
+// The Three.js renderer consumes this record as representative instancing. It may use
+// a visibility floor for sub-pixel grains, but the record makes the physical thickness
+// and the display-only nature of those representatives auditable. No fluid, growth,
+// volume or RNG state is mutated here.
+//
+// Scientific boundaries:
+//   * wall-lining chalcedony is a radially fibrous lining, not a quartz point;
+//   * botryoidal/earthy habits are coalesced crusts;
+//   * the six commercial asbestos minerals form fibrous mats only when the persisted
+//     habit is actually fibrous/asbestiform;
+//   * a quartz/calcite carpet requires the coating vector selected at nucleation -- a
+//     large projecting prism/rhomb is never relabelled "druse" after the fact;
+//   * pyrolusite is never given a dendritic film. Potter & Rossman (1979) showed the
+//     familiar Mn-oxide dendrites/coatings are commonly birnessite/romanechite-family
+//     material, not pyrolusite. Only its own massive-sooty/botryoidal habits qualify.
+const SURFACE_GROWTH_ASBESTOS = new Set([
+  'chrysotile', 'tremolite', 'actinolite', 'anthophyllite', 'amosite', 'crocidolite',
+]);
+
+// "Massive" alone is not an areal fabric: a massive aggregate can still be a
+// compact projecting body.  Banded non-silica aggregates (notably malachite)
+// are crusts, while laminated linings are reserved for chalcedony/agate and an
+// explicitly authored wall-lining habit.
+const SURFACE_GROWTH_CRUST_HABIT = /botryoid|mammillary|reniform|colloform|crust|coat|encrust|earthy|sooty|ochre|banded|sinter|film|blanket/i;
+const SURFACE_GROWTH_LINING_HABIT = /chalcedony|agate|wall.?lining/i;
+const SURFACE_GROWTH_DRUSE_HABIT = /drus|druz/i;
+
+function surfaceGrowthRegimeFor(crystal: any): string | null {
+  if (!crystal || crystal.dissolved || !(crystal.total_growth_um > 0)) return null;
+  const mineral = String(crystal.mineral || '').toLowerCase();
+  const habit = String(crystal.habit || '').toLowerCase();
+  const vector = String(crystal.vector || '').toLowerCase();
+
+  if (SURFACE_GROWTH_ASBESTOS.has(mineral) && /fibrous|asbestiform/.test(habit)) {
+    return 'fibrous_mat';
+  }
+  if (mineral === 'chalcedony' || SURFACE_GROWTH_LINING_HABIT.test(habit)) {
+    return 'laminated_lining';
+  }
+  if ((mineral === 'quartz' || mineral === 'calcite')
+      && (vector === 'coating' || SURFACE_GROWTH_DRUSE_HABIT.test(habit))) {
+    return 'euhedral_druse';
+  }
+  if (vector === 'coating' && SURFACE_GROWTH_DRUSE_HABIT.test(habit)) {
+    return 'euhedral_druse';
+  }
+  if (mineral === 'pyrolusite') {
+    return /massive_sooty|botryoidal_reniform/.test(habit)
+      ? 'botryoidal_crust'
+      : null;
+  }
+  if (vector === 'coating' || SURFACE_GROWTH_CRUST_HABIT.test(habit)) {
+    return 'botryoidal_crust';
+  }
+  return null;
+}
+
+function surfaceGrowthDescriptor(crystal: any, wall: any): any | null {
+  const regime = surfaceGrowthRegimeFor(crystal);
+  if (!regime) return null;
+  const spread = Math.max(0.02, Math.min(0.99, Number(crystal.wall_spread) || 0.5));
+  // Aggregate fabrics establish lateral continuity early. Maturity controls
+  // completion of the target footprint, not a fictitious linear radius.
+  const maturityScaleUm = regime === 'laminated_lining' ? 75
+    : regime === 'fibrous_mat' ? 180
+    : regime === 'euhedral_druse' ? 350 : 250;
+  const maturity = 1 - Math.exp(-Math.max(0, crystal.total_growth_um) / maturityScaleUm);
+  let coverage = spread * (0.28 + 0.72 * maturity);
+  // Asbestos "mat" is an areal fabric by definition. Chrysotile's older fibrous
+  // catalog row used wall_spread=0.55 because it pre-dated a surface renderer;
+  // keep that honest without rewriting its chemistry or axial volume.
+  if (regime === 'fibrous_mat') coverage = Math.max(coverage, 0.65 * maturity);
+  coverage = Math.max(0.02, Math.min(0.98, coverage));
+
+  const diameter = wall && typeof wall.meanDiameterMm === 'function'
+    ? wall.meanDiameterMm()
+    : Number(wall && wall.vug_diameter_mm) || Number(crystal.vug_diameter_mm) || 50;
+  const radius = Math.max(0.5, diameter / 2);
+  const cavityArea = 4 * Math.PI * radius * radius;
+  const coveredArea = Math.max(1e-9, cavityArea * coverage);
+  const bookedVolume = Math.max(0, Number(crystal._volume_mm3) || 0);
+  const meanThicknessUm = bookedVolume / coveredArea * 1000;
+
+  return {
+    regime,
+    coverage_fraction: coverage,
+    covered_area_mm2: coveredArea,
+    mean_thickness_um: meanThicknessUm,
+    booked_volume_mm3: bookedVolume,
+    wall_spread: spread,
+    void_reach: Math.max(0, Math.min(1, Number(crystal.void_reach) || 0)),
+    substrate: crystal.position || 'vug wall',
+    mass_basis: 'accepted Crystal._volume_mm3; renderer instances are representative only',
+  };
+}
+
+function classifySurfaceGrowth(sim: any) {
+  const wall = sim && sim.wall_state;
+  if (!sim || !sim.crystals) return;
+  for (const c of sim.crystals) {
+    if (!c) continue;
+    const desc = surfaceGrowthDescriptor(c, wall);
+    if (desc) {
+      desc.at_step = sim.step;
+      c._surfaceGrowth = desc;
+    } else if (c._surfaceGrowth) {
+      delete c._surfaceGrowth;
+    }
+  }
+}
+
 function classifyWulffForm(sim: any) {
   const wall = sim.conditions && sim.conditions.wall;
   if (!wall) return;

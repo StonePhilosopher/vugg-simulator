@@ -19,6 +19,82 @@ function clampFluidPressureKbar(value: number): number {
   return Math.max(FLUID_PRESSURE_MIN_KBAR, Math.min(FLUID_PRESSURE_MAX_KBAR, value));
 }
 
+// Coarse IAPWS water-density grid transcribed from the commissioned pressure
+// packet (Wagner & Pruß 2002 values). Bilinear interpolation is deliberately
+// limited to the measured 300-450 C, 0.5-4.4 kbar rectangle; callers outside
+// that rectangle keep the existing low-temperature calibration rather than
+// extrapolating through the near-critical low-density corner.
+const QUARTZ_WATER_DENSITY_GRID = {
+  temperaturesC: [300, 450],
+  pressuresKbar: [0.5, 1.8, 3.1, 4.4],
+  densityGcm3: [
+    [0.77648, 0.87469, 0.93341, 0.97761],
+    [0.40204, 0.72440, 0.81791, 0.87877],
+  ],
+};
+
+function _linearGridValue(x: number, xs: number[], ys: number[]): number {
+  if (x <= xs[0]) return ys[0];
+  if (x >= xs[xs.length - 1]) return ys[ys.length - 1];
+  for (let i = 0; i < xs.length - 1; i++) {
+    if (x < xs[i] || x > xs[i + 1]) continue;
+    const f = (x - xs[i]) / (xs[i + 1] - xs[i]);
+    return ys[i] + f * (ys[i + 1] - ys[i]);
+  }
+  return ys[ys.length - 1];
+}
+
+function quartzWaterDensityGcm3(temperatureC: number, fluidPressureKbar: number): number | null {
+  const t = Number(temperatureC);
+  if (!Number.isFinite(t) || t < 300 || t > 450) return null;
+  const p = Math.max(0.5, Math.min(4.4, Number(fluidPressureKbar) || 0.5));
+  const lowDensity = _linearGridValue(
+    p,
+    QUARTZ_WATER_DENSITY_GRID.pressuresKbar,
+    QUARTZ_WATER_DENSITY_GRID.densityGcm3[0],
+  );
+  const highDensity = _linearGridValue(
+    p,
+    QUARTZ_WATER_DENSITY_GRID.pressuresKbar,
+    QUARTZ_WATER_DENSITY_GRID.densityGcm3[1],
+  );
+  const f = (t - 300) / 150;
+  return lowDensity + f * (highDensity - lowDensity);
+}
+
+function manningQuartzSolubilityPpm(
+  temperatureC: number,
+  fluidPressureKbar: number,
+): number | null {
+  const density = quartzWaterDensityGcm3(temperatureC, fluidPressureKbar);
+  if (!(density && density > 0)) return null;
+  const T = temperatureC + 273.15;
+  const a = 4.2620 - 5764.2 / T + 1.7513e6 / (T * T) - 2.2869e8 / (T * T * T);
+  const b = 2.8454 - 1006.9 / T + 3.5689e5 / (T * T);
+  const molality = Math.pow(10, a + b * Math.log10(density));
+  return molality * 60.0843 * 1000;
+}
+
+function quartzPressureSolubilityAssessment(temperatureC: number, fluidPressureKbar: number) {
+  const pressure = clampFluidPressureKbar(fluidPressureKbar);
+  const equilibriumPpm = manningQuartzSolubilityPpm(temperatureC, pressure);
+  if (equilibriumPpm == null) {
+    return {
+      active: false, equilibriumPpm: null, waterDensityGcm3: null,
+      referencePpm: null, pressureFactor: 1,
+      note: 'Outside the promoted 300-450 C IAPWS density grid; the low-temperature calibrated quartz relation remains authoritative.',
+    };
+  }
+  const waterDensityGcm3 = quartzWaterDensityGcm3(temperatureC, pressure)!;
+  const referencePpm = manningQuartzSolubilityPpm(temperatureC, 0.5)!;
+  const pressureFactor = equilibriumPpm / referencePpm;
+  return {
+    active: true, equilibriumPpm, waterDensityGcm3, referencePpm, pressureFactor,
+    pressureClampedLow: pressure < 0.5,
+    note: `Manning (1994) quartz solubility from bilinearly interpolated IAPWS water density; ${pressureFactor.toFixed(2)}x the 0.5-kbar solubility at this temperature.`,
+  };
+}
+
 // Hacker et al. (2005) calcite/aragonite reversal fit, transcribed exactly
 // from the primary paper. The earlier positive-linear reconstruction was an
 // un-reproduced hypothesis, not the published Hacker equation. Returns kbar.

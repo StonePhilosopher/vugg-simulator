@@ -271,6 +271,12 @@ const EXPORTS = [
   'WATER_STATE_PREFERENCE',
   // Phase D habit-bias helper (99i-renderer-three.ts).
   '_topoCAxisForCrystal',
+  // SIM 246 area-covering aggregate state + deterministic renderer plan.
+  'surfaceGrowthRegimeFor',
+  'surfaceGrowthDescriptor',
+  'classifySurfaceGrowth',
+  '_surfaceGrowthInstanceCount',
+  '_surfaceGrowthSampleDirections',
   // Habit-variant picker (07-habit-variant.ts) — Proposal B (2026-05)
   // added a 5th `localFill` parameter.
   'selectHabitVariant',

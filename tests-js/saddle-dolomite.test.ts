@@ -42,19 +42,19 @@ function dolomites(sim: any): any[] {
 }
 
 describe('dolomite habit premise (temperature plus supersaturation, not temperature alone)', () => {
-  it('reactive_wall high-supersaturation dolomite is massive rather than falsely saddle', () => {
+  it('Sweetwater reactive-wall dolomite is the documented saddle/baroque habit', () => {
     const sim = run('reactive_wall', 42);
     const dols = dolomites(sim);
     expect(dols.length).toBeGreaterThan(0);
-    for (const c of dols) expect(c.habit).toBe('massive');
+    for (const c of dols) expect(c.habit).toBe('saddle_rhomb');
   });
 
-  it('the massive reactive-wall dolomite nevertheless formed above the roughening floor', () => {
+  it('the Sweetwater saddle dolomite formed above the roughening floor', () => {
     const sim = run('reactive_wall', 42);
     const tByStep = (sim as any)._tByStep;
-    const warmMassive = dolomites(sim).filter((c) => c.habit === 'massive');
-    expect(warmMassive.length).toBeGreaterThan(0);
-    for (const c of warmMassive) {
+    const warmSaddles = dolomites(sim).filter((c) => c.habit === 'saddle_rhomb');
+    expect(warmSaddles.length).toBeGreaterThan(0);
+    for (const c of warmSaddles) {
       // representative growth T = mean temperature over its positive zones
       let tSum = 0, tN = 0;
       for (const z of c.zones || []) {

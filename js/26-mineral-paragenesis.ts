@@ -287,6 +287,10 @@ function paragenesisDiscount(hostMineral: string, nucleatingMineral: string): nu
 //   89-nucleation-silicate: chrysocolla
 //   90-nucleation-sulfate: barite
 const ENGINE_EXECUTABLE_SUBSTRATE_ROUTES: Record<string, Set<string>> = {
+  // Solution-mediated agate maturation: quartz may inherit the exposed
+  // chalcedony lining as a spatial host, but receives no invented sigma
+  // discount or growth-rate multiplier from that association.
+  quartz: new Set(['chalcedony']),
   malachite: new Set(['chalcopyrite']),
   smithsonite: new Set(['sphalerite']),
   azurite: new Set(['cuprite']),
@@ -305,8 +309,11 @@ function engineExecutableSubstrateDiscount(
 
 function engineExecutableSubstrateRoute(host: any, nucleatingMineral: string) {
   if (!host) return { executable: false, label: 'missing host' };
+  const routes = ENGINE_EXECUTABLE_SUBSTRATE_ROUTES[nucleatingMineral];
+  if (!routes || !routes.has(host.mineral)) {
+    return { executable: false, label: 'unregistered host', discount: 1.0 };
+  }
   const discount = engineExecutableSubstrateDiscount(host.mineral, nucleatingMineral);
-  if (!(discount < 1)) return { executable: false, label: 'unregistered host' };
 
   // Replacement engines intentionally nucleate on the exposed reaction
   // surface left by a dissolving precursor. These predicates mirror the
@@ -325,6 +332,16 @@ function engineExecutableSubstrateRoute(host: any, nucleatingMineral: string) {
     ? 'dissolved replacement surface'
     : (host.active ? 'active exposed host' : 'recorded precursor surface');
   return { executable, label, discount };
+}
+
+function executableSubstrateCandidates(nucleatingMineral: string, crystals: any[]) {
+  const candidates: Array<{ host: any; discount: number; label: string }> = [];
+  for (const host of (crystals || [])) {
+    const route = engineExecutableSubstrateRoute(host, nucleatingMineral);
+    if (!route.executable) continue;
+    candidates.push({ host, discount: route.discount, label: route.label });
+  }
+  return candidates;
 }
 
 // Pick a substrate for a nucleating mineral, weighted by available

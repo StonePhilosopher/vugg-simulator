@@ -12443,7 +12443,35 @@
 //       wall-carbon release in a whole-scenario carbon ledger; its carbonate-
 //       buffer events now repartition existing dissolved inorganic carbon and
 //       adjust pH without inventing carbonate mass.
-const SIM_VERSION = 245;
+// v246 — HOSTILE-REVIEW ROUND 10 FIRST-CLASS CHALCEDONY (2026-08-06).
+//       Generic silica now has three independently saturated phases. USGS
+//       Fournier relations provide temperature-dependent amorphous-silica and
+//       chalcedony equilibria; quartz retains its separate equilibrium. The
+//       selector applies Ostwald stepping: opal while amorphous silica is
+//       supersaturated, chalcedony after opal falls below equilibrium, then
+//       quartz after chalcedony is depleted (or above the 200 C chalcedony
+//       field). Chalcedony has its own production nucleator, Creative diagnosis,
+//       low-surface-energy gate, accepted-shell SiO2 ledger, growth engine, and
+//       length-fast microfibrous aggregation record. Seven or more accepted
+//       layers in a basalt cavity or oscillatory fluid produce a real banded-
+//       agate fabric; a quartz-filled vug is never cosmetically renamed agate.
+//       Opal-to-chalcedony and chalcedony-to-quartz maturation are explicit
+//       solution-mediated dissolution/reprecipitation: exact booked SiO2 is
+//       returned before the next phase spends it. Structural water remains
+//       diagnostic because the simulator has no conserved H2O inventory.
+//       Deccan and Ametista do Sul now require the chalcedony they describe,
+//       while still permitting later inward-growing quartz. A documented
+//       shallow limestone/carbonate-water discriminator keeps Mammoth's 54 ppm
+//       silica travertine fluid out of the silica-deposition route, and that
+//       surface scenario disables the generic fracture-driven silica pulse.
+//       Area-covering aggregates now persist their physical fabric and booked
+//       volume: chalcedony/agate becomes a laminated lining, appropriate
+//       hematite/Cu-carbonate/Mn-oxide habits become crusts, quartz and calcite
+//       coating variants become euhedral druse, and only genuinely fibrous
+//       asbestos habits become mats.  Deterministic renderer instances spread
+//       that one mass-booked aggregate over its wall footprint; they never add
+//       crystals or spend chemistry, and mobile uses a lower representative LOD.
+const SIM_VERSION = 246;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12458,7 +12486,8 @@ const MODEL_DIGEST = [
   'event-fluid:absolute-replace-v1',
   'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
-  'silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1',
+  'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-pressure+booked-transition+chemistry-competition-v4',
+  'surface-growth:mass-booked-area+lining+crust+asbestos+druse-representatives-v1',
   'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
   'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3',
   'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',

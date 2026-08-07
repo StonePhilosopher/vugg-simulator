@@ -116,7 +116,7 @@ describe('Sunnyside-American Tunnel scenario (v105)', () => {
       expect(growthZones.every((zone: any) => zone._budget_inventory_per_um?.Au > 0)).toBe(true);
     });
 
-    it('fires quartz (ongoing through all stages)', () => {
+    it('fires quartz in the documented Stage VI quartz-fluorite pulse', () => {
       ensureSim();
       expect(species.has('quartz')).toBe(true);
     });

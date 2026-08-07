@@ -20,7 +20,10 @@ import { loadSimBundle } from './_harness.mjs';
 const seedArg = process.argv.indexOf('--seed');
 const SEED = seedArg >= 0 ? (parseInt(process.argv[seedArg + 1], 10) | 0) : 42;
 
-const bundle = await loadSimBundle({ toolName: 'amethyst-sceptre-probe' });
+const bundle = await loadSimBundle({
+  toolName: 'amethyst-sceptre-probe',
+  extraExports: ['resolveBodyColour', 'MINERAL_SPEC'],
+});
 const { SCENARIOS, VugSimulator, setSeed, resolveBodyColour, MINERAL_SPEC } = bundle;
 
 // The AUTHORITATIVE render colour — call the D1b resolver the Three renderer uses
@@ -52,25 +55,33 @@ function quartzColour(c) {
 setSeed(SEED);
 const scen = SCENARIOS['amethyst_geode']();
 const sim = new VugSimulator(scen.conditions, scen.events);
-const steps = scen.duration_steps ?? scen.defaultSteps ?? 110;
+const steps = scen.defaultSteps ?? 110;
 for (let i = 0; i < steps; i++) sim.run_step();
 
 const quartz = sim.crystals.filter((c) => c && c.mineral === 'quartz');
+const chalcedony = sim.crystals.filter((c) => c && c.mineral === 'chalcedony');
 
 console.log(`\nAMETHYST GEODE PROBE — seed ${SEED}, ${steps} steps`);
 console.log('='.repeat(80));
-console.log(`crystals total: ${sim.crystals.length}   quartz: ${quartz.length}`);
+console.log(`crystals total: ${sim.crystals.length}   chalcedony: ${chalcedony.length}   quartz: ${quartz.length}`);
+console.log(`final fluid: T ${(sim.conditions.temperature || 0).toFixed(1)}°C   SiO2 ${(sim.conditions.fluid.SiO2 || 0).toFixed(2)} ppm   Fe ${(sim.conditions.fluid.Fe || 0).toFixed(2)} ppm`);
+for (const c of chalcedony) {
+  const positive = (c.zones || []).filter((z) => z.thickness_um > 0);
+  console.log(`\n#${c.crystal_id} CHALCEDONY  growth ${(c.total_growth_um || 0).toFixed(1)}µm  zones ${positive.length}  habit ${c.habit}  display ${c.mineral_display || 'chalcedony'}  active ${!!c.active}`);
+}
 
 let sceptres = 0, amethysts = 0;
 for (const c of quartz) {
   const col = quartzColour(c);
   const zones = c.zones || [];
+  const positive = zones.filter((z) => z.thickness_um > 0);
   const mh = zones.filter((z) => z.masked_horizon);
   const sc = c._sceptre;
   if (sc) sceptres++;
   if (col.name === 'AMETHYST') amethysts++;
-  console.log(`\n#${c.crystal_id}  c_len ${(c.c_length_mm || 0).toFixed(2)}mm  zones ${zones.length}  habit ${c.habit}`);
-  console.log(`   colour: ${col.name}  (avgFe ${col.avgFe}, radDmg ${col.radDmg})`);
+  console.log(`\n#${c.crystal_id} QUARTZ  c_len ${(c.c_length_mm || 0).toFixed(2)}mm  growth ${(c.total_growth_um || 0).toFixed(1)}µm  zones ${zones.length} (${positive.length} positive)  habit ${c.habit}`);
+  console.log(`   position: ${c.position || 'wall'}  active ${!!c.active}  film ${c._film ? JSON.stringify(c._film) : 'none'}`);
+  console.log(`   colour: ${col.name}  (growth-weighted Fe ${col.gwFe}, radDmg ${col.radDmg})`);
   if (sc) {
     console.log(`   SCEPTRE route=${sc.route}  stem ${Math.round(sc.stemUm)}µm  cap ${Math.round(sc.capUm)}µm  capFrac ${(sc.capFrac || 0).toFixed(2)}  @step ${sc.boundaryStep}`);
   } else {

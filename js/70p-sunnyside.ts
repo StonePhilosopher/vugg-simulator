@@ -100,11 +100,15 @@ function event_sunnyside_stage_vi_fluoride_pulse(c) {
   // Carpenter Ridge Tuff REE budget per Bachmann et al. 2014; Eu²⁺
   // from feldspar at residence-T, Y³⁺ general. Y enters fluid at
   // 3 ppm, triggering REE-octahedral fluorite habit per Bosze &
-  // Rakovan 2002 GCA 66:997. T drops to 195. Visible color of
+  // Rakovan 2002 GCA 66:997. T drops to 205 C, inside the measured
+  // 230-200 C Stage-VI window and just above the calibrated chalcedony
+  // kinetic field; the co-pulse can therefore form the documented
+  // quartz-fluorite assemblage without relabeling chalcedony as quartz.
+  // Visible color of
   // fresh fluorite: grass-green (yttrofluorite character, Pierce
   // 1990 + Naumov & Naumova 1980 — Y-cluster mechanism); SW UV
   // brilliant blue (Eu²⁺ activator).
-  c.temperature = 195;
+  c.temperature = 205;
   c.fluid.F = Math.min(35, c.fluid.F + 27);           // magmatic F pulse
   c.fluid.Y = Math.min(3.5, c.fluid.Y + 3.2);         // REE leached from wallrock
   c.fluid.SiO2 = Math.min(450, c.fluid.SiO2 + 50);    // co-pulse silica

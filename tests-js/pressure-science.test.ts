@@ -7,6 +7,9 @@ declare function al2sio5StablePolymorph(temperatureC: number, pressureKbar: numb
 declare function al2sio5PhaseAssessment(temperatureC: number, pressureKbar: number | null): any;
 declare function gypsumAnhydriteBoundaryC(pressureKbar: number): number;
 declare function apophyllitePressureFactor(pressureKbar: number): number;
+declare function quartzWaterDensityGcm3(temperatureC: number, pressureKbar: number): number | null;
+declare function manningQuartzSolubilityPpm(temperatureC: number, pressureKbar: number): number | null;
+declare function quartzPressureSolubilityAssessment(temperatureC: number, pressureKbar: number): any;
 declare function applyDifferentialStressPulse(sim: any, stressMpa: number): any;
 declare function _movementSetField(conditions: any, path: string, value: number): void;
 declare const EVENT_REGISTRY: Record<string, (conditions: any) => string>;
@@ -101,6 +104,29 @@ describe('pressure science primitives', () => {
     expect(apophyllitePressureFactor(2.0)).toBeLessThan(1);
     expect(apophyllitePressureFactor(2.0)).toBeGreaterThan(0);
     expect(apophyllitePressureFactor(4.4)).toBeGreaterThan(0);
+  });
+
+  it('uses the commissioned IAPWS/Manning pressure observable for deep quartz', () => {
+    expect(quartzWaterDensityGcm3(300, 0.5)).toBeCloseTo(0.77648, 5);
+    expect(quartzWaterDensityGcm3(300, 4.4)).toBeCloseTo(0.97761, 5);
+    expect(quartzWaterDensityGcm3(450, 0.5)).toBeCloseTo(0.40204, 5);
+    expect(quartzWaterDensityGcm3(450, 4.4)).toBeCloseTo(0.87877, 5);
+    expect(manningQuartzSolubilityPpm(300, 0.5)).toBeCloseTo(727, -1);
+    expect(manningQuartzSolubilityPpm(300, 4.4)).toBeCloseTo(1199, -1);
+    expect(manningQuartzSolubilityPpm(450, 0.5)).toBeCloseTo(931, -1);
+    expect(manningQuartzSolubilityPpm(450, 4.4)).toBeCloseTo(4945, -1);
+    expect(quartzPressureSolubilityAssessment(450, 4.4).pressureFactor).toBeGreaterThan(5);
+
+    const deep = new VugConditions({
+      temperature: 450, pressure: 4.4,
+      fluid: new FluidChemistry({ SiO2: 2000, pH: 7 }),
+    });
+    const shallow = new VugConditions({
+      temperature: 450, pressure: 0.5,
+      fluid: new FluidChemistry({ SiO2: 2000, pH: 7 }),
+    });
+    expect(deep.supersaturation_quartz()).toBe(0);
+    expect(shallow.supersaturation_quartz()).toBeGreaterThan(1);
   });
 });
 

@@ -82,6 +82,28 @@ Object.assign(VugSimulator.prototype, {
   return parts.filter(p => p).join(' ');
 },
 
+  _narrate_chalcedony(c) {
+  if (!c.zones.length) {
+    return `Chalcedony #${c.crystal_id} nucleated at ${c.nucleation_temp.toFixed(0)}°C but did not build a resolvable microfibrous lining.`;
+  }
+  const positive = c.zones.filter(z => z.thickness_um > 0);
+  const transitions = c.zones.filter(z => z._silica_transition);
+  const parts = [
+    `Chalcedony #${c.crystal_id} built ${positive.length} recorded cryptocrystalline SiO₂ layer${positive.length === 1 ? '' : 's'} to ${c.c_length_mm.toFixed(1)} mm.`,
+  ];
+  if (c.habit === 'banded_agate') {
+    parts.push('AGATE — repeated silica-activity changes produced alternating length-fast fibrous bands recorded shell by shell; this is a chalcedony aggregate texture, not a quartz-filled-vug nickname.');
+  } else if (c.habit === 'botryoidal_chalcedony') {
+    parts.push('Radiating microfibres coalesced into botryoidal spherulites on the cavity wall.');
+  } else {
+    parts.push('Length-fast silica microfibres grew normal to the substrate as a thin wall veneer.');
+  }
+  if (transitions.length) {
+    parts.push('Later quartz stability drove solution-mediated maturation: chalcedony shells dissolved back to the tracked silica pool before quartz could reprecipitate.');
+  }
+  return parts.join(' ');
+},
+
   _narrate_feldspar(c) {
   // Prose lives in narratives/feldspar.md (boss-pushed 2026-04-30 commit
   // 34ed3e8). JS canonical, polymorph storytelling, per-twin-law prose.

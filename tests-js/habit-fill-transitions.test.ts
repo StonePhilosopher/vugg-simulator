@@ -6,8 +6,9 @@
 //     score higher when localFill > 0.75 (or > 0.95 for post-seal)
 //   * Variants with "low fill" trigger keywords score higher when
 //     localFill < 0.7
-//   * NEW variants added for calcite + quartz + aragonite carry the
-//     expected high-fill keywords
+//   * NEW variants added for calcite + aragonite carry the expected high-fill
+//     keywords. Cryptocrystalline silica is a first-class chalcedony solid;
+//     quartz must never acquire a cosmetic microcrystalline habit.
 //   * End-to-end: in a high-fill bias environment, halite hopper_growth
 //     fires more often than cubic
 //
@@ -38,13 +39,14 @@ describe('Proposal B — habit transitions on fill × σ', () => {
       expect(v.vector).toBe('coating');
     });
 
-    it('quartz has a microcrystalline variant with high-fill trigger', () => {
-      const v = AUTHORED_SPEC.quartz.habit_variants.find(
+    it('cryptocrystalline fill belongs to first-class chalcedony, not quartz cosmetics', () => {
+      const quartzShortcut = AUTHORED_SPEC.quartz.habit_variants.find(
         (x: any) => x.name === 'microcrystalline'
       );
-      expect(v, 'quartz should have a microcrystalline variant').toBeDefined();
-      expect(v.trigger.toLowerCase()).toMatch(/high fill|drusy/);
-      expect(v.vector).toBe('coating');
+      expect(quartzShortcut, 'quartz must not impersonate chalcedony').toBeUndefined();
+      const chalcedonyNames = AUTHORED_SPEC.chalcedony.habit_variants.map((x: any) => x.name);
+      expect(chalcedonyNames).toContain('fibrous_chalcedony_lining');
+      expect(chalcedonyNames).toContain('banded_agate');
     });
 
     it('aragonite has a botryoidal_crust variant with high-fill trigger', () => {
@@ -106,21 +108,14 @@ describe('Proposal B — habit transitions on fill × σ', () => {
         .toBeGreaterThan(cubic_at_high);
     });
 
-    it('quartz at high fill (0.9) with low σ picks microcrystalline more often than at low fill (0.3)', () => {
+    it('quartz never selects the retired cosmetic microcrystalline shortcut at any fill', () => {
       setSeed(42);
-      let micro_at_high = 0;
-      for (let i = 0; i < 1000; i++) {
-        const v = selectHabitVariant('quartz', 1.2, 100, false, 0.9);
-        if (v?.name === 'microcrystalline') micro_at_high++;
+      for (const fill of [0.3, 0.9]) {
+        for (let i = 0; i < 1000; i++) {
+          const v = selectHabitVariant('quartz', 1.2, 100, false, fill);
+          expect(v?.name).not.toBe('microcrystalline');
+        }
       }
-      setSeed(42);
-      let micro_at_low = 0;
-      for (let i = 0; i < 1000; i++) {
-        const v = selectHabitVariant('quartz', 1.2, 100, false, 0.3);
-        if (v?.name === 'microcrystalline') micro_at_low++;
-      }
-      expect(micro_at_high, `microcrystalline at fill=0.9: ${micro_at_high}, at fill=0.3: ${micro_at_low}`)
-        .toBeGreaterThan(micro_at_low * 2);
     });
 
     it('legacy callers without localFill still get sensible variant selection (backward compat)', () => {

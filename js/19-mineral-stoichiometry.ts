@@ -134,6 +134,7 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
 
   // ---- Oxides ----
   quartz:         { SiO2: 1 },                       // SiO2
+  chalcedony:     { SiO2: 1 },                       // cryptocrystalline fibrous SiO2 aggregate
   // v125 P3 Tsumeb-adjacent probe: opal — amorphous silica, same
   // stoichiometry as quartz. Fires in 6 scenarios; SiO2 broths in
   // each are thousands of ppm so the debit is sub-percent of budget.
@@ -520,6 +521,7 @@ const MINERAL_DISSOLUTION_RATES: Record<string, DissolutionEntry> = {
 
   // ---- Silicates (Phase 1e batch 5, v43 — single-mode subset) ----
   quartz:       { SiO2: 0.8 },                         // OH⁻-assisted dissolution
+  chalcedony:   { SiO2: 0.8 },                         // undersaturation / solution-mediated quartz maturation
   feldspar:     { K: 0.3, Al: 0.05, SiO2: 0.5 },       // most Al stays in kaolinite
   albite:       { Na: 0.3, Al: 0.05, SiO2: 0.3 },      // most Al stays in kaolinite
   topaz:        { Al: 0.3, SiO2: 0.2, F: 0.4 },        // HF-assisted etch
@@ -820,7 +822,11 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
       if (handledNativeSulfurOxidation
           && (species === 'S_sulfate' || species === 'S_elemental')) continue;
       if (typeof fluid[species] !== 'number') continue;
-      fluid[species] += returned[species];
+      if (species === 'SiO2' && typeof fluid.addReactiveSilica === 'function') {
+        fluid.addReactiveSilica(returned[species]);
+      } else {
+        fluid[species] += returned[species];
+      }
     }
     if (fluid.sulfurPoolsExplicit) syncExplicitSulfurTotal(fluid);
     zone._returned_budget_inventory = returned;
@@ -850,9 +856,11 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
     const demandPerUm = stoichiometricBudgetDebitPpmPerUm(species, stoich[species]);
     if (!(demandPerUm > 0)) continue;
     const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
-    const available = (typeof fluid[reservoir] === 'number' && Number.isFinite(fluid[reservoir]))
-      ? Math.max(0, fluid[reservoir])
-      : 0;
+    const available = reservoir === 'SiO2' && typeof fluid.reactiveSilicaPpm === 'function'
+      ? fluid.reactiveSilicaPpm()
+      : (typeof fluid[reservoir] === 'number' && Number.isFinite(fluid[reservoir]))
+        ? Math.max(0, fluid[reservoir])
+        : 0;
     const supported = available / demandPerUm;
     if (supported < acceptedThickness) {
       acceptedThickness = supported;
@@ -876,7 +884,9 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
   let depleted: string[] | null = null;
   for (const species in stoich) {
     const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
-    const previous = fluid[reservoir];
+    const previous = reservoir === 'SiO2' && typeof fluid.reactiveSilicaPpm === 'function'
+      ? fluid.reactiveSilicaPpm()
+      : fluid[reservoir];
     if (typeof previous !== 'number') continue;
     const demandPerUm = stoichiometricBudgetDebitPpmPerUm(species, stoich[species]);
     const proposed = previous - zone.thickness_um * demandPerUm;
@@ -890,9 +900,16 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
         proposed <= STOICHIOMETRIC_GROWTH_BUDGET_DEPLETION_THRESHOLD) {
       (depleted ||= []).push(reservoir);
     }
-    fluid[reservoir] = Math.max(0, proposed);
+    if (reservoir === 'SiO2' && typeof fluid.debitReactiveSilica === 'function') {
+      fluid.debitReactiveSilica(zone.thickness_um * demandPerUm);
+    } else {
+      fluid[reservoir] = Math.max(0, proposed);
+    }
+    const remaining = reservoir === 'SiO2' && typeof fluid.reactiveSilicaPpm === 'function'
+      ? fluid.reactiveSilicaPpm()
+      : fluid[reservoir];
     bookedInventoryPerUm[reservoir] = zone.thickness_um > 0
-      ? (previous - fluid[reservoir]) / zone.thickness_um
+      ? (previous - remaining) / zone.thickness_um
       : demandPerUm;
   }
   // Trace substitutions are optional rather than formula-limiting. Incorporate

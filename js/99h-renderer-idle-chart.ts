@@ -250,13 +250,17 @@ function idleDrawPie() {
       .map(s => s.pct >= 0.1 ? `${s.label} ${s.pct.toFixed(1)}%` : `${s.label} microcrystals`)
       .join(' · ');
     labelEl.textContent = mineralList || 'empty vug';
-    // Agate detection!
-    if (fillPct > 90) {
-      const quartzPct = (mineralVolumes['quartz'] || 0) / vugVolume * 100;
-      if (quartzPct > fillPct * 0.8) {
-        labelEl.textContent = '🪨 AGATE — vug filled with quartz!';
-        labelEl.style.color = '#f0c050';
-      }
+    labelEl.style.color = '';
+    // Agate is a recorded banded-chalcedony fabric, not a fill-percentage
+    // nickname for macrocrystalline quartz.
+    const agate = idleSim && idleSim.crystals
+      ? idleSim.crystals.find(c => c.mineral === 'chalcedony'
+        && c.habit === 'banded_agate' && !c.dissolved)
+      : null;
+    if (agate) {
+      const bands = agate.zones.filter(z => z.thickness_um > 0).length;
+      labelEl.textContent = `🪨 AGATE — ${bands} recorded chalcedony bands`;
+      labelEl.style.color = '#f0c050';
     }
   }
 }

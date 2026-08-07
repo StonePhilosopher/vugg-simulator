@@ -28,7 +28,22 @@ const MINERAL_GATES_quartz: MineralGates = {
   fluid_min: { SiO2: 50 },
   surface_energy: 'high',
   _sources: ['quartz engine v17+', 'Rimstidt & Barnes 1980 GCA 44:1683', 'Brantley et al. 2008', 'London 2008 (Pegmatites) — pocket quartz to the wet-granite solidus', 'Frontiers Earth Sci. 10:976588 (2022) — Pikes Peak quartz 700-660°C'],
-  _notes: 'SiO2 trigonal. ΔH° = +22 kJ/mol — strongly T-sensitive (corrected v127). σ_crit 1.2 is the heterogeneous value vug nucleation uses; homogeneous σ_crit is 6-20+. SIM 243: crystalline quartz is kinetically admitted at 100-700°C; below 100°C the separate opal phase owns eligible hydrated/amorphous silica precipitation. T_max 700 = wet granite solidus.',
+  _notes: 'SiO2 trigonal. ΔH° = +22 kJ/mol — strongly T-sensitive (corrected v127). σ_crit 1.2 is the heterogeneous value vug nucleation uses; homogeneous σ_crit is 6-20+. SIM 246: quartz is the least-soluble generic silica phase. At 100-200°C it becomes selectable only after fluid falls below chalcedony saturation; above 200°C it owns the crystalline route. T_max 700 = wet granite solidus.',
+};
+
+const MINERAL_GATES_chalcedony: MineralGates = {
+  sigma_crit: CHALCEDONY_NUCLEATION_SIGMA,
+  T_min: 0, T_max: 200, T_optimal: 80,
+  fluid_min: { SiO2: 8 },
+  pH_min: 3.0, pH_max: 10.0,
+  surface_energy: 'low',
+  _sources: [
+    'Fournier 1977 USGS silica geothermometer: T=1032/(4.69-log SiO2)-273.15',
+    'Fournier 1981 / USGS OFR 84-690: chalcedony solubility valid 0-250 C',
+    'Reed & Mariner 2007: chalcedony-to-quartz transition near 200 C',
+    'Heaney & Davis 1995 Science 269:1562-1565: self-organized agate microtextures',
+  ],
+  _notes: 'Cryptocrystalline fibrous SiO2 aggregate. Its own equilibrium, not quartz solubility or a display label, controls saturation. Ostwald stepping admits chalcedony only after opal is undersaturated and before the fluid falls to quartz-only saturation. A documented carbonate-water competition regime prevents Mammoth-type limestone-hosted travertine water from spuriously depositing a silica lining. Repeated accepted growth zones can build a physically recorded banded-agate fabric.',
 };
 
 const MINERAL_GATES_feldspar: MineralGates = {
@@ -169,11 +184,11 @@ const MINERAL_GATES_andalusite: MineralGates = {
 const MINERAL_GATES_opal: MineralGates = {
   sigma_crit: 0.8,                          // v131 (2026-05-21): literature value per Iler 1979 — heterogeneous σ_crit range 0.5-1.0, midpoint 0.8. Was 1.0 (v101 engine-matched calibration); v127 engine-gates refactor surfaced the engine/literature mismatch as a v129 calibration target.
   T_min: 5, T_max: 100, T_optimal: 40,
-  fluid_min: { SiO2: 200 },
+  fluid_min: { SiO2: 75 },
   pH_min: 6.5, pH_max: 10.0,
   surface_energy: 'very_low',
   _sources: ['opal engine v101+', 'Jones & Segnit 1971', 'Iler 1979', 'Fournier 1977 Geothermics 5:41'],
-  _notes: 'SiO2·nH2O amorphous-to-CT mineraloid. γ_sl ~0.05-0.10 J/m² (very_low — lowest in catalog). ΔH° corrected to +14 kJ/mol (v127 science fix). Geyser sinter at 30-85°C optimum. σ_crit set to 0.8 per Iler 1979 heterogeneous nucleation midpoint (v131 calibration); was 1.0 v101-v130 (engine-matched, pre-literature-grounding).',
+  _notes: 'SiO2·nH2O amorphous-to-CT mineraloid. γ_sl ~0.05-0.10 J/m² (very_low — lowest in catalog). SIM 246 replaces the former fixed 200 ppm shortcut with the temperature-dependent Fournier amorphous-silica equilibrium; 75 ppm is only the absolute modeled low-temperature floor. Geyser sinter at 30-85°C optimum. σ_crit 0.8 is the heterogeneous midpoint.',
 };
 
 const MINERAL_GATES_coffinite: MineralGates = {
@@ -497,7 +512,10 @@ Object.assign(VugConditions.prototype, {
   quartz_equilibrium_ratio() {
   const eq = this.silica_equilibrium(this.effectiveTemperature);
   if (eq <= 0) return 0;
-  let sigma = this.fluid.SiO2 / eq;
+  const reactiveSilica = typeof this.fluid.reactiveSilicaPpm === 'function'
+    ? this.fluid.reactiveSilicaPpm()
+    : this.fluid.SiO2;
+  let sigma = reactiveSilica / eq;
   if (this.fluid.pH < 4.0 && this.fluid.F > 20) {
     const hf_attack = (4.0 - this.fluid.pH) * (this.fluid.F / 50.0) * 0.3;
     sigma -= hf_attack;
@@ -520,6 +538,29 @@ Object.assign(VugConditions.prototype, {
   if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
   return this.quartz_equilibrium_ratio();
 },
+
+  chalcedony_equilibrium_ratio() {
+    const eq = this.chalcedony_equilibrium(this.effectiveTemperature);
+    if (eq <= 0) return 0;
+    const reactiveSilica = typeof this.fluid.reactiveSilicaPpm === 'function'
+      ? this.fluid.reactiveSilicaPpm()
+      : this.fluid.SiO2;
+    let sigma = reactiveSilica / eq;
+    if (this.fluid.pH < 4.0 && this.fluid.F > 20) {
+      const hfAttack = (4.0 - this.fluid.pH) * (this.fluid.F / 50.0) * 0.3;
+      sigma -= hfAttack;
+    }
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'chalcedony');
+    return Math.max(sigma, 0);
+  },
+
+  supersaturation_chalcedony() {
+    const g = MINERAL_GATES_chalcedony;
+    if (this.silica_precipitate_phase() !== 'chalcedony') return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+    return this.chalcedony_equilibrium_ratio();
+  },
 
   supersaturation_feldspar() {
   // K-feldspar (sanidine/orthoclase/microcline polymorphs).
@@ -843,16 +884,25 @@ Object.assign(VugConditions.prototype, {
   // regime). High SiO2 supersaturation required (> 200 ppm — Fournier
   // 1977 Geothermics 5:41 amorphous silica solubility curve).
   //
-  // SIM 243: this is the only low-temperature generic silica route. Quartz
-  // can no longer nucleate and then acquire an opal/chalcedony display label;
-  // opal-A is born as its own phase with its own inventory and growth record.
+  // SIM 246: opal is the highest-solubility first step. Once amorphous silica
+  // is undersaturated, the selector can route the same fluid to first-class
+  // chalcedony and eventually quartz rather than relabelling either phase.
+  opal_equilibrium_ratio() {
+    const eq = this.opal_equilibrium(this.effectiveTemperature);
+    if (eq <= 0) return 0;
+    const reactiveSilica = typeof this.fluid.reactiveSilicaPpm === 'function'
+      ? this.fluid.reactiveSilicaPpm()
+      : this.fluid.SiO2;
+    let sigma = Math.min(reactiveSilica / eq, 6.0);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'opal');
+    return Math.max(sigma, 0);
+  },
+
   supersaturation_opal() {
     if (this.silica_precipitate_phase() !== 'opal') return 0;
-    if (this.fluid.SiO2 < 200) return 0;
     if (this.temperature < 5 || this.temperature > 100) return 0;
     if (this.fluid.pH < 6.5 || this.fluid.pH > 10.0) return 0;
-    const si_f = Math.min(this.fluid.SiO2 / 400.0, 3.0);
-    let sigma = si_f;
+    let sigma = this.opal_equilibrium_ratio();
     const T = this.temperature;
     // Sweet spot 30-85°C (geyser sinter regime, Yellowstone /
     // Steamboat Springs / Sulphur Bank / Wairakei NZ)
@@ -863,7 +913,6 @@ Object.assign(VugConditions.prototype, {
     const pH = this.fluid.pH;
     if (pH >= 7.0 && pH <= 9.0) sigma *= 1.2;
     else sigma *= Math.max(0.6, 1.0 - Math.abs(pH - 8.0) * 0.3);
-    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'opal');
     return Math.max(sigma, 0);
   },
 

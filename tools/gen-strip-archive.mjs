@@ -33,6 +33,10 @@
  * overwrite an existing version folder unless --force.
  *
  *   1. bump SIM_VERSION  2. npm run build  3. node tools/gen-strip-archive.mjs
+ *
+ * During a pre-commit review loop, a correction confined to one scenario may
+ * refresh only that story after the full version archive exists:
+ *   node tools/gen-strip-archive.mjs --scenario <id> --force
  */
 
 import fs from 'node:fs';
@@ -44,6 +48,8 @@ import { assertStripIdentity } from './strip-identity.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const FORCE = process.argv.includes('--force');
+const SCENARIO_FLAG = process.argv.indexOf('--scenario');
+const ONLY_SCENARIO = SCENARIO_FLAG >= 0 ? process.argv[SCENARIO_FLAG + 1] : null;
 
 const { SIM_VERSION, MODEL_DIGEST, SCENARIOS, VugSimulator, setSeed, StripRecorder, stripDataIndex, stripDequantize } =
   await loadSimBundle({
@@ -172,7 +178,10 @@ function archiveScenario(name, seed = 42) {
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 let totalBytes = 0;
-const names = Object.keys(SCENARIOS).sort();
+if (ONLY_SCENARIO && !SCENARIOS[ONLY_SCENARIO]) {
+  throw new Error(`[gen-strip-archive] unknown scenario: ${ONLY_SCENARIO}`);
+}
+const names = ONLY_SCENARIO ? [ONLY_SCENARIO] : Object.keys(SCENARIOS).sort();
 for (const name of names) {
   const story = archiveScenario(name, 42);
   const outPath = path.join(OUT_DIR, `${name}.json`);

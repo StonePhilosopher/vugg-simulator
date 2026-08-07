@@ -17,10 +17,23 @@ function event_deccan_zeolite_silica_veneer(c) {
 }
 
 function event_deccan_zeolite_hematite_pulse(c) {
+  // This is an Fe-Si hydrothermal replenishment, not an iron-only paint
+  // operation. The dissolved-silica rise creates a measured activity reversal
+  // in the agate; the later maturation event lowers it into the quartz window.
+  c.fluid.addReactiveSilica(150);
   c.fluid.Fe += 80;
   c.fluid.O2 = 1.0;
   c.temperature = 175;
-  return "An iron-bearing pulse threads through the vesicle. Hematite needles seed the surfaces of any growing apophyllite. When the apophyllite resumes crystallization, those needles get trapped in the next growth zone — the Nashik 'bloody apophyllite' phantom band.";
+  return "An iron- and silica-bearing pulse threads through the vesicle, recording a genuine silica-activity reversal in the agate rind. Hematite needles seed the surfaces of any growing apophyllite. When the apophyllite resumes crystallization, those needles get trapped in the next growth zone — the Nashik 'bloody apophyllite' phantom band.";
+}
+
+function event_deccan_quartz_maturation(c) {
+  const qEq = c.silica_equilibrium(c.effectiveTemperature);
+  const chEq = c.chalcedony_equilibrium(c.effectiveTemperature);
+  c.fluid.SiO2 = Math.max(qEq * 1.25, Math.min(chEq * 1.08, qEq * 1.35));
+  c.fluid.reactiveSilicaFraction = 1.0;
+  c.flow_rate = 0.35;
+  return `Stage I maturation — silica activity falls below the fresh-chalcedony barrier while remaining ${(c.fluid.SiO2 / qEq).toFixed(2)}× quartz equilibrium; inward euhedral quartz now grows on the fibrous lining.`;
 }
 
 function event_deccan_zeolite_stage_ii(c) {
@@ -44,6 +57,8 @@ function event_deccan_zeolite_apophyllite_stage_iii(c) {
 
 function event_deccan_zeolite_late_cooling(c) {
   c.temperature = 80;
+  c.fluid.SiO2 = Math.min(c.fluid.SiO2, 100);
+  c.fluid.reactiveSilicaFraction = 1.0;
   c.fluid.pH = 8.0;
   c.flow_rate = 0.1;
   return 'Late cooling. The vesicle fluid drops back toward ambient. Apophyllite growth slows but doesn\'t stop entirely; the remaining K-Ca-Si-F supersaturation keeps adding micron-thin growth zones on the existing crystals. This is also when chabazite arrives — rhombohedral pseudo-cubes (and lens-shaped phacolite penetration twins) perching on the earlier zeolite lining, the last zeolite of the cavity. Time, not chemistry, becomes the limiting reagent.';

@@ -269,15 +269,15 @@
           "trigger": "high σ, Fe³⁺ present, space-constrained"
         },
         {
-          "name": "microcrystalline",
-          "wall_spread": 0.95,
-          "void_reach": 0.05,
+          "name": "rock_crystal_druse",
+          "wall_spread": 0.92,
+          "void_reach": 0.08,
           "vector": "coating",
-          "trigger": "high fill or drusy — microcrystalline chalcedony / agate carpet covering existing crystals (boundary-layer diffusion at late-stage low-σ SiO2 produces tiny-grain fabric rather than euhedral prisms)"
+          "trigger": "high fill or drusy — a dense carpet of small euhedral quartz points across available cavity wall, without requiring the Fe/irradiation chromophore of amethyst"
         }
       ],
       "class": "silicate",
-      "description": "The most abundant vug-lining mineral on Earth. Silica dissolved in hot fluid crystallizes on cooling — clear, smoky when irradiated, amethyst when Fe-bearing and irradiated together. The canvas on which most other vug minerals grow.",
+      "description": "The least-soluble generic silica phase in the simulator's Ostwald sequence. Once a fluid has fallen below opal and chalcedony saturation but remains supersaturated with respect to quartz, it grows euhedral trigonal crystals — clear, smoky when Al-bearing and irradiated, or amethyst when Fe-bearing and irradiated. Cryptocrystalline chalcedony and amorphous opal are separate solids with separate growth records.",
       "scenarios": [
         "cooling",
         "pulse",
@@ -286,8 +286,8 @@
         "radioactive_pegmatite"
       ],
       "T_range_C": [
-        50,
-        1713
+        100,
+        700
       ],
       "T_optimum_C": [
         200,
@@ -298,7 +298,7 @@
       "pH_dissolution_above": null,
       "redox_requirement": "any",
       "required_ingredients": {
-        "SiO2": 50
+        "SiO2": 60
       },
       "trace_ingredients": {
         "Ti": "TitaniQ geothermometer",
@@ -381,8 +381,95 @@
       ],
       "audit_status": "ok",
       "late_stage_propensity": 0.2,
-      "_late_stage_note": "Proposal C (2026-05): propensity:0.2. Drusy chalcedony / amethyst-pocket interior is well-documented as a late-stage layer in agate geodes; otherwise mostly bulk.",
+      "_late_stage_note": "Proposal C (2026-05): propensity:0.2. Euhedral drusy quartz commonly follows an earlier chalcedony lining in agate geodes; otherwise it is mostly a bulk vug-lining phase.",
       "class_color": "#1313eb"
+    },
+    "chalcedony": {
+      "optics": {
+        "diaphaneity": "translucent_to_opaque",
+        "clarity": 0.45,
+        "lustre": ["waxy", "dull", "vitreous"],
+        "notes": "cryptocrystalline fibrous silica aggregate; locally vitreous on fresh fracture; agate is its rhythmically banded texture",
+        "source": "USGS Spectral Library + Heaney & Davis 1995"
+      },
+      "formula": "SiO2",
+      "nucleation_sigma": 1.12,
+      "max_nucleation_count": 4,
+      "max_size_cm": 100,
+      "growth_rate_mult": 0.45,
+      "habit_variants": [
+        {
+          "name": "fibrous_chalcedony_lining",
+          "wall_spread": 0.96,
+          "void_reach": 0.04,
+          "vector": "coating",
+          "trigger": "first accepted layers — length-fast microfibres normal to the cavity wall"
+        },
+        {
+          "name": "botryoidal_chalcedony",
+          "wall_spread": 0.88,
+          "void_reach": 0.12,
+          "vector": "coating",
+          "trigger": "three or more accepted layers or moderate supersaturation — radiating fibrous spherulites coalesce into a botryoidal crust"
+        },
+        {
+          "name": "banded_agate",
+          "wall_spread": 0.98,
+          "void_reach": 0.02,
+          "vector": "coating",
+          "trigger": "seven or more accepted layers in a basalt cavity or an oscillatory silica-activity history — alternating microfibrous bands stored shell by shell"
+        }
+      ],
+      "class": "silicate",
+      "description": "Cryptocrystalline, commonly fibrous SiO₂ rather than a tiny euhedral quartz habit. The simulator evaluates its own Fournier chalcedony equilibrium from 0–200°C; it can follow amorphous opal as silica activity falls and can in turn dissolve and reprecipitate as quartz. Repeated accepted microfibrous layers in basalt cavities produce an actual banded-agate fabric. Agate is therefore a recorded texture of chalcedony, not a cosmetic label for a quartz-filled vug.",
+      "scenarios": [
+        "deccan_zeolite",
+        "amethyst_geode"
+      ],
+      "T_range_C": [0, 200],
+      "T_optimum_C": [40, 120],
+      "T_behavior": "prograde_solubility",
+      "pH_dissolution_below": 3.0,
+      "pH_dissolution_above": 10.0,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "SiO2": 8
+      },
+      "_ingredients_note": "8 ppm is only the absolute low-temperature floor of the modeled Fournier relation. The actual gate is temperature-dependent: C_eq = 10^(4.69 - 1032/T_K), valid 0–250°C in the cited USGS implementation; precipitation requires σch > 1.12 and loses priority to opal while amorphous silica is supersaturated.",
+      "trace_ingredients": {
+        "Fe": "gray-red or carnelian/jasper-like staining; not a required lattice constituent"
+      },
+      "thermal_decomp_C": 200,
+      "thermal_decomp_reaction": "Above the modeled chalcedony field, solution-mediated maturation returns exact booked SiO2 to fluid before quartz reprecipitates; no solid is renamed in place.",
+      "thermal_decomp_products": {
+        "SiO2": 1
+      },
+      "fluorescence": null,
+      "_twin_laws_note": "A microfibrous aggregate has no single euhedral crystal on which a macroscopic twin law can be expressed.",
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "requires": { "F": 20 },
+        "reaction": "HF-assisted etching of the microfibrous SiO2 aggregate",
+        "products": { "SiO2": 1 }
+      },
+      "habit": "fibrous_chalcedony_lining",
+      "color_rules": {
+        "blue_gray_white": { "default": true },
+        "iron_stained": { "trigger": "Fe > 20 ppm" },
+        "banded_agate": { "trigger": "habit = banded_agate" }
+      },
+      "narrate_function": "_narrate_chalcedony",
+      "runtimes_present": ["js"],
+      "audit_status": "SIM 246 first-class generic phase: independent equilibrium, production nucleator, growth/aggregation engine, accepted-shell SiO2 ledger, solution-mediated quartz maturation, Creative formation diagnosis, and basalt-agate scenario coverage.",
+      "late_stage_propensity": 0.15,
+      "_late_stage_note": "Usually an early-to-intermediate wall lining before inward-projecting euhedral quartz; banding can continue through repeated pulses.",
+      "class_color": "#1313eb",
+      "test_cases": [
+        { "name": "warm silica-rich chalcedony field", "fluid": { "SiO2": 400, "pH": 7 }, "T_C": 150, "expects": { "sigma": ">1.0" }, "rationale": "Above chalcedony equilibrium and outside opal's kinetic window." },
+        { "name": "depleted fluid routes to quartz", "fluid": { "SiO2": 160, "pH": 7 }, "T_C": 150, "expects": { "sigma": "==0" }, "rationale": "Below chalcedony equilibrium but still above quartz equilibrium; selector gives quartz priority." },
+        { "name": "alkaline silica remains dissolved", "fluid": { "SiO2": 400, "pH": 11 }, "T_C": 80, "expects": { "sigma": "==0" }, "rationale": "Deprotonated aqueous silica raises solubility beyond the modeled neutral-field gate." }
+      ]
     },
     "calcite": {
       "optics": {
@@ -425,6 +512,13 @@
           "void_reach": 0.15,
           "vector": "coating",
           "trigger": "high σ, rapid deposition, Mn-rich"
+        },
+        {
+          "name": "travertine_crust",
+          "wall_spread": 0.99,
+          "void_reach": 0.01,
+          "vector": "coating",
+          "trigger": "shallow limestone-hosted Ca-HCO3 spring water undergoing CO2 degassing — laminated to microcrystalline terrace crust, not cabinet spar"
         },
         {
           "name": "flos-ferri_acicular",
@@ -6871,6 +6965,13 @@
           "void_reach": 0.3,
           "vector": "tabular",
           "trigger": "moderate-high σ, low T, thin fracture"
+        },
+        {
+          "name": "crystalline_crust",
+          "wall_spread": 0.88,
+          "void_reach": 0.12,
+          "vector": "coating",
+          "trigger": "high fill or drusy — fine blue crystals coalescing as coatings and crystalline crusts on supergene fissure and cavity walls (Števko et al. 2011)"
         },
         {
           "name": "default_prismatic",

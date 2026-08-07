@@ -220,7 +220,10 @@ describe('strip chemistry contract — searles_lake (evaporite concentration cyc
 
 describe('strip chemistry contract — bisbee (supergene copper paragenesis)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('bisbee'); }, 120000);
+  // Full-fleet Windows CI can leave this WebGL-free 150-step strip competing
+  // with several other scenario recorders. Keep the chemistry assertions
+  // strict while allowing the recorder the same headroom as the archive job.
+  beforeAll(() => { ds = recordScenario('bisbee'); }, 300000);
 
   // NOTE ON TEMPERATURE. bisbee's T is deliberately NOT pinned here. The
   // scenario's events stop setting T after the oxidation_zone (step 145, T=25)

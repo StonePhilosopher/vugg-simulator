@@ -85,6 +85,9 @@ function grow_quartz(crystal, conditions, step) {
   // suppressing mid-T growth. See vugg.py grow_quartz comment for full
   // rationale and the look-up table.
   rate *= Math.exp(-1000.0 / (conditions.temperature + 273.15)) * 8.27;
+  // A chalcedony lining remains a spatial substrate only. It does not create
+  // an unmeasured rate multiplier; saturation, temperature, and the shared
+  // reactive-silica ledger control the successor quartz growth rate.
   rate *= rng.uniform(0.7, 1.3);
 
   if (rate < 0.1) return null;
@@ -410,24 +413,156 @@ function grow_chrysocolla(crystal, conditions, step) {
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 
+// SIM 246: first-class cryptocrystalline silica. Chalcedony is an aggregate
+// of length-fast microfibres (commonly quartz + moganite), not a quartz habit
+// label. Repeated accepted shells store their own silica activity and fabric;
+// basalt-cavity or strongly oscillatory stacks become genuine banded agate.
+function grow_chalcedony(crystal, conditions, step) {
+  const selectedPhase = conditions.silica_precipitate_phase();
+  const sigma = selectedPhase === 'chalcedony'
+    ? conditions.supersaturation_chalcedony()
+    : conditions.chalcedony_equilibrium_ratio();
+
+  // Metastable chalcedony-to-quartz maturation is represented as
+  // solution-mediated dissolution/reprecipitation. The negative shell returns
+  // its exact booked SiO2 inventory; quartz subsequently debits that same
+  // reservoir. No untracked solid is renamed in place.
+  if (selectedPhase === 'quartz' && crystal.total_growth_um > 0) {
+    // Inside the 100-200 C metastable overlap, an established fibrous lining
+    // can persist beside inward-growing quartz for geologic time. Re-equilibrate
+    // only above that overlap; selecting inward quartz does not erase the agate
+    // lining that supplied its substrate.
+    if (conditions.temperature <= 200) return null;
+    const d = Math.min(2.0, Math.max(0.4, crystal.total_growth_um * 0.04));
+    const zone = new GrowthZone({
+      step, temperature: conditions.temperature,
+      thickness_um: -d, growth_rate: -d,
+      dissolutionMode: 'silica_recrystallization',
+      note: `solution-mediated maturation to quartz at ${conditions.temperature.toFixed(0)}°C — chalcedony dissolves before quartz reprecipitates`,
+    });
+    zone._silica_transition = {
+      from: 'chalcedony', to: 'quartz', pathway: 'solution_mediated',
+      tracked_inventory: 'SiO2 exact booked-shell return',
+    };
+    return zone;
+  }
+
+  // An opal-forming fluid is also supersaturated with respect to chalcedony,
+  // but Ostwald's step rule gives the less ordered phase the kinetic lead.
+  // Existing chalcedony therefore persists without stealing opal's new growth.
+  if (selectedPhase === 'opal' && sigma >= 1.0) return null;
+  if (selectedPhase !== 'chalcedony' && sigma >= 1.0) return null;
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um <= 0) return null;
+    const hfAttack = conditions.fluid.pH < 4 && conditions.fluid.F > 20;
+    // Ordinary low-T undersaturation is kinetically too slow to erase an
+    // established agate lining over one vug run. HF attack remains active;
+    // high-temperature maturation is handled by the explicit branch above.
+    if (!hfAttack && conditions.temperature <= 200) return null;
+    const d = Math.min(2.5, Math.max(0.3, crystal.total_growth_um * 0.08));
+    return new GrowthZone({
+      step, temperature: conditions.temperature,
+      thickness_um: -d, growth_rate: -d,
+      note: hfAttack
+        ? 'HF-assisted chalcedony dissolution — the microfibrous SiO2 lining is etched back'
+        : 'chalcedony undersaturation — outer microfibrous shell redissolves',
+    });
+  }
+
+  const excess = sigma - 1.0;
+  let rate = 2.6 * Math.pow(Math.max(excess, 0), 0.72);
+  const T = conditions.temperature;
+  const kinetic = T < 20 ? 0.45 + T / 50 : T <= 120 ? 1.0 : Math.max(0.55, 1.0 - (T - 120) / 220);
+  rate *= kinetic * rng.uniform(0.82, 1.18);
+  rate = Math.min(rate, 8.0);
+  if (rate < 0.1) return null;
+
+  const priorPositive = crystal.zones.filter(z => z.thickness_um > 0);
+  const priorSigma = priorPositive
+    .map(z => Number(z.silica_sigma))
+    .filter(v => Number.isFinite(v));
+  const contrast = priorSigma.length
+    ? Math.max(...priorSigma, sigma) - Math.min(...priorSigma, sigma)
+    : 0;
+  const sigmaSeries = [...priorSigma, sigma];
+  const directionalMoves = sigmaSeries.slice(1)
+    .map((value, i) => value - sigmaSeries[i])
+    .filter(delta => Math.abs(delta) >= 0.03)
+    .map(delta => Math.sign(delta));
+  let oscillationReversals = 0;
+  for (let i = 1; i < directionalMoves.length; i++) {
+    if (directionalMoves[i] !== directionalMoves[i - 1]) oscillationReversals++;
+  }
+  const layerNumber = priorPositive.length + 1;
+
+  let microfabric = 'length-fast fibrous chalcedony wall lining';
+  if (layerNumber >= 7 && contrast >= 0.18 && oscillationReversals >= 1) {
+    crystal.habit = 'banded_agate';
+    crystal.dominant_forms = ['alternating length-fast chalcedony fibre bands', 'cryptocrystalline concentric wall layers'];
+    crystal.mineral_display = 'agate (banded chalcedony)';
+    crystal._aggregation_stage = 'self-organized banded agate';
+    microfabric = 'oscillatory length-fast/normal-fibrous chalcedony band';
+  } else if (layerNumber >= 3 || excess > 0.7) {
+    crystal.habit = 'botryoidal_chalcedony';
+    crystal.dominant_forms = ['radiating fibrous spherulites', 'botryoidal cryptocrystalline crust'];
+    crystal.mineral_display = 'chalcedony';
+    crystal._aggregation_stage = 'intergrown fibrous spherulites';
+    microfabric = 'radiating fibrous spherulitic layer';
+  } else {
+    crystal.habit = 'fibrous_chalcedony_lining';
+    crystal.dominant_forms = ['length-fast microfibres normal to substrate', 'thin cryptocrystalline wall veneer'];
+    crystal.mineral_display = 'chalcedony';
+    crystal._aggregation_stage = 'wall-nucleated fibrous veneer';
+  }
+  crystal._silica_phase = 'chalcedony';
+  crystal._silica_sigma_contrast = contrast;
+  crystal._silica_oscillation_reversals = oscillationReversals;
+
+  const ironStained = conditions.fluid.Fe > 20;
+  const colorNote = ironStained ? 'iron-stained gray-red' : 'translucent blue-gray to white';
+  const zone = new GrowthZone({
+    step, temperature: T, thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.002,
+    note: `${colorNote} chalcedony — ${microfabric}; σch=${sigma.toFixed(2)}`,
+  });
+  zone.silica_sigma = sigma;
+  zone.silica_ppm = conditions.fluid.SiO2;
+  zone.microfabric = microfabric;
+  zone.layer_number = layerNumber;
+  return zone;
+}
+
 // v101 (2026-05-19): Opal SiO2·nH2O — amorphous-to-short-range-
 // ordered silica mineraloid. Forms hot-spring sinter aprons, botryoidal
 // fillings, replacement of organics (opalized wood). Diagenesis-ladder
 // flagged via crystal._diagenesis_stage for future POLYMORPH_DIAGENESIS
 // implementation (opal-A → opal-CT → opal-C → chalcedony → quartz).
 function grow_opal(crystal, conditions, step) {
+  const selectedPhase = conditions.silica_precipitate_phase();
   const sigma = conditions.supersaturation_opal();
   if (sigma < 1.0) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
-      crystal.dissolved = true;
       const d = Math.min(3.0, crystal.total_growth_um * 0.12);
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — opal redissolves to silicic acid` });
     }
-    if (crystal.total_growth_um > 5 && conditions.temperature > 150) {
-      // High-T diagenesis: opal recrystallizes to chalcedony/quartz
-      crystal.dissolved = true;
-      const d = Math.min(2.0, crystal.total_growth_um * 0.05);
-      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, dissolutionMode: 'diagenesis', note: `diagenesis to chalcedony/quartz > 150°C — opal-A → opal-CT → opal-C → chalcedony → quartz ladder` });
+    if (crystal.total_growth_um > 0 && (selectedPhase === 'chalcedony' || selectedPhase === 'quartz')) {
+      // Explicit solution-mediated maturation: exact booked SiO2 is returned
+      // before the selected crystalline phase spends it. Structural water is
+      // disclosed but remains outside the simulator's conserved inventories.
+      const d = Math.min(2.0, Math.max(0.4, crystal.total_growth_um * 0.05));
+      const zone = new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d,
+        dissolutionMode: 'silica_recrystallization',
+        note: `solution-mediated opal maturation to ${selectedPhase} — opal dissolves and returns tracked SiO2 before reprecipitation`,
+      });
+      zone._silica_transition = {
+        from: 'opal', to: selectedPhase, pathway: 'solution_mediated',
+        tracked_inventory: 'SiO2 exact booked-shell return',
+        structural_water: 'diagnostic only — no conserved H2O inventory',
+      };
+      return zone;
     }
     return null;
   }

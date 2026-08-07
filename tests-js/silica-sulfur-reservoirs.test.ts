@@ -14,15 +14,58 @@ declare const simulatorSulfurLedgerSnapshot: any;
 declare const GrowthZone: any;
 declare const Crystal: any;
 declare const grow_native_sulfur: any;
+declare const _buildMineralFormationExplanation: any;
 
-describe('SIM 243 silica phase identity', () => {
+describe('SIM 246 silica phase identity and Ostwald stepping', () => {
   it('Mammoth travertine does not form silica from 54 ppm at seed 42', () => {
     setSeed(42);
     const { conditions, events, defaultSteps } = SCENARIOS.tutorial_travertine();
-    const sim = new VugSimulator(conditions, events);
+    const regime = conditions.silica_depositional_regime();
+    expect(regime).toMatchObject({
+      phase: 'carbonate-travertine water',
+      permitsSilicaPrecipitation: false,
+    });
+    expect(conditions.silica_precipitate_phase()).toBeNull();
+    const before = new VugSimulator(conditions, events);
+    const why = _buildMineralFormationExplanation('chalcedony', conditions, before);
+    const competition = why.groups.find((g: any) => g.label === 'Competition');
+    expect(competition.chips.some((chip: any) =>
+      chip.text.includes('carbonate-travertine water') && chip.met === false,
+    )).toBe(true);
+    const sim = before;
     for (let i = 0; i < (defaultSteps ?? 200); i++) sim.run_step();
-    const silica = sim.crystals.filter((c: any) => c.mineral === 'quartz' || c.mineral === 'opal');
-    expect(silica).toHaveLength(0);
+    const silica = sim.crystals.filter((c: any) => ['quartz', 'chalcedony', 'opal'].includes(c.mineral));
+    expect(silica.map((c: any) => ({
+      mineral: c.mineral,
+      nucleationStep: c.nucleation_step,
+      growthUm: c.total_growth_um,
+      finalRegime: sim.conditions.silica_depositional_regime(),
+      finalTemperatureC: sim.conditions.temperature,
+      finalPressureKbar: sim.conditions.pressure,
+      finalSilicaPpm: sim.conditions.fluid.SiO2,
+    }))).toEqual([]);
+  });
+
+  it('makes carbonate chemistry causal instead of treating host name as competition', () => {
+    const noCarbonate = new VugConditions({
+      temperature: 70, pressure: 0.05,
+      fluid: new FluidChemistry({ SiO2: 54, Ca: 0, CO3: 0, pH: 7 }),
+      wall: { composition: 'limestone' },
+    });
+    expect(noCarbonate.silica_depositional_regime()).toMatchObject({
+      carbonateCompetitive: false,
+      permitsSilicaPrecipitation: true,
+    });
+
+    const carbonateWaterOnSandstone = new VugConditions({
+      temperature: 70, pressure: 0.05,
+      fluid: new FluidChemistry({ SiO2: 54, Ca: 500, CO3: 500, pH: 7 }),
+      wall: { composition: 'sandstone' },
+    });
+    expect(carbonateWaterOnSandstone.silica_depositional_regime()).toMatchObject({
+      carbonateCompetitive: true,
+      permitsSilicaPrecipitation: false,
+    });
   });
 
   it('selects a real opal phase in a low-temperature silica-rich control', () => {
@@ -33,19 +76,30 @@ describe('SIM 243 silica phase identity', () => {
     expect(conditions.supersaturation_opal()).toBeGreaterThan(0.8);
   });
 
-  it('selects quartz, never a cosmetic chalcedony label, in the crystalline window', () => {
+  it('selects a real chalcedony phase while its own equilibrium is exceeded', () => {
     const fluid = new FluidChemistry({ SiO2: 400, pH: 7, O2: 0.2 });
     const conditions = new VugConditions({ temperature: 150, fluid });
-    expect(conditions.silica_precipitate_phase()).toBe('quartz');
-    expect(conditions.silica_polymorph()).toBe('alpha-quartz');
-    expect(conditions.supersaturation_quartz()).toBeGreaterThan(0);
+    expect(conditions.silica_precipitate_phase()).toBe('chalcedony');
+    expect(conditions.supersaturation_chalcedony()).toBeGreaterThan(1.12);
+    expect(conditions.supersaturation_quartz()).toBe(0);
     expect(conditions.supersaturation_opal()).toBe(0);
   });
 
-  it('keeps thermodynamic quartz equilibrium separate from its kinetic selector', () => {
+  it('routes depleted 150 C fluid from chalcedony to quartz without relabelling', () => {
+    const fluid = new FluidChemistry({ SiO2: 160, pH: 7, O2: 0.2 });
+    const conditions = new VugConditions({ temperature: 150, fluid });
+    expect(conditions.chalcedony_equilibrium_ratio()).toBeLessThan(1);
+    expect(conditions.quartz_equilibrium_ratio()).toBeGreaterThan(1);
+    expect(conditions.silica_precipitate_phase()).toBe('quartz');
+    expect(conditions.supersaturation_chalcedony()).toBe(0);
+    expect(conditions.supersaturation_quartz()).toBeGreaterThan(1);
+  });
+
+  it('keeps thermodynamic quartz equilibrium separate from the selected low-T chalcedony phase', () => {
     const fluid = new FluidChemistry({ SiO2: 100, pH: 7, O2: 0.2 });
     const conditions = new VugConditions({ temperature: 70, fluid });
-    expect(conditions.silica_precipitate_phase()).toBe(null);
+    expect(conditions.silica_precipitate_phase()).toBe('chalcedony');
+    expect(conditions.supersaturation_chalcedony()).toBeGreaterThan(1);
     expect(conditions.supersaturation_quartz()).toBe(0);
     expect(conditions.quartz_equilibrium_ratio()).toBeGreaterThan(1);
   });

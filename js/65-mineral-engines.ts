@@ -8,6 +8,7 @@
 
 const MINERAL_ENGINES = {
   quartz: grow_quartz,
+  chalcedony: grow_chalcedony,
   calcite: grow_calcite,
   aragonite: grow_aragonite,
   siderite: grow_siderite,

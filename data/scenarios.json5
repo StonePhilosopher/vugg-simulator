@@ -872,13 +872,13 @@
     },
 
     "reactive_wall": {
-      "anchor": "Sweetwater Mine (Reynolds County, MO), Viburnum Trend Pb-Zn district. Host: Cambrian Bonneterre Formation dolomitic limestone.",
-      "description": "Acid-into-carbonate paragenesis — repeated acid pulses dissolve the limestone wall, then pH recovery drives supersaturation and growth bursts. Sphalerite-galena-marcasite ± barite, dolomite-calcite gangue.",
+      "anchor": "Sweetwater Mine (Reynolds County, MO), Viburnum Trend Pb-Zn district. Host: Upper Cambrian Bonneterre Dolomite/dolostone.",
+      "description": "Acid-into-carbonate paragenesis — repeated acid pulses dissolve the Bonneterre dolostone wall, then pH recovery drives supersaturation and growth bursts. Sphalerite-galena-marcasite ± barite, dolomite-calcite gangue.",
       "expects_species": ["sphalerite", "pyrite", "barite", "dolomite"],
       "duration_steps": 120,
       "notes": [
         "Anchor: Sweetwater Mine, Viburnum Trend MVT district (high-Ba endmember vs Tri-State, distinguished by Stoffell et al. 2008 LA-ICP-MS).",
-        "Mechanic: acid entering a carbonate vug doesn't just dissolve crystals — it dissolves the WALL. The wall neutralizes the acid AND releases Ca2+/CO3 2- back into solution. When pH recovers, that dissolved carbonate supersaturates and precipitates as rapid growth bands on existing crystals. The acid is both destroyer and creator. The vug enlarges as the crystals grow.",
+        "Mechanic: acid entering a carbonate vug doesn't just dissolve crystals — it dissolves the WALL. Bonneterre dolostone neutralizes the acid and releases formula-balanced Ca2+, Mg2+, and two carbonate units back into solution. When pH recovers, that inventory crosses the dolomite saturation barrier and precipitates as a hydrothermal saddle-dolomite lining. The acid is both destroyer and creator; the vug enlarges as the replacement front advances.",
         "Repeated acid pulses (steps 15/40/70) model the Viburnum dissolution → supersaturation → growth burst cycle. Final fracture seal at step 90 closes the system.",
         "Chemistry-audit gap-fill pass (Apr 2026): Na, K, Cl (NaCl-CaCl2 brine baseline), Ag (Viburnum galena carries minor Ag — the Trend is one of the 'some deposits' where Leach et al. 2010 allow a byproduct Ag credit, UNLIKE silver-poor Tri-State whose Ag was de-confabulated v195), Sr (basinal-brine tracer + minor celestine documented in Viburnum). v5 gap-fill: O2=0.25 to allow barite + galena coexistence per the MVT-Eh window.",
         "MINDAT VALID-SPECIES REFERENCE (boss-supplied screenshots, 2026-07-25 — Sweetwater Mine, Ellington, Reynolds Co., MO; 23 valid + 1 erroneous): Anilite, Bornite, Calcite, Carrollite, Chalcocite, Chalcopyrite (var. Blistered Copper), Covellite, Dickite, Digenite, Djurleite, Dolomite, Erythrite, Fletcherite, Galena, Malachite, Marcasite, Millerite, 'Petroleum' (var. Bitumen), Polydymite, Pyrite, Quartz, Siegenite, Sphalerite, Vaesite. LINNAEITE struck through as an ERRONEOUS literature entry — mindat's own flag; never cite it as license. Page text worth keeping: Viburnum differs from other MVT in being shallower, carrying Ni-Co minerals + some Cu-Fe sulfides, with REPETITIVE PRECIPITATION-DISSOLUTION of the sulfides (base metals transported WITH reduced S in the same solutions — cf. the fluid.S split's own two-pool story) — the scenario's acid-pulse mechanic models exactly this. WHAT THE LIST VOTES ON (vs seed-42 v236): (a) THE HEADLINE GAP — the entire Viburnum Ni-Co-Cu sulfide suite is documented here and the sim grows NONE of it: carrollite, fletcherite, millerite, polydymite, siegenite, vaesite (+ the Cu ladder anilite/bornite/chalcocite/covellite/digenite/djurleite + erythrite as the Co bloom). Siegenite is ALREADY on the missing-engines want list — this is its reference locality; a Ni-Co arc would make this scenario the Viburnum showcase its anchor promises. (b) Census flags (sim grows, list lacks): ACANTHITE ×4 @1.8mm — NO discrete Ag species at Sweetwater; the Apr-2026 note's Leach byproduct-Ag credit defends broth Ag / Ag-IN-galena, NOT discrete acanthite crystals (v195-silver family? BOSS ADJUDICATION); BARITE ×6 — unlisted despite the 'high-Ba endmember' anchor (Stoffell's high-Ba is the FLUID-INCLUSION brine, not precipitated barite at this mine; expects_species includes barite — adjudicate before any kill); CELESTINE ×9 (S2-flipped; unlisted — Ba-blanket record-licensed only at elmwood so far); SELENITE ×2 (unlisted — selenite census now reads elmwood NO / picher YES / sweetwater NO); RHODOCHROSITE + SIDERITE (unlisted — the Fe/Mn-carbonate over-fire flag is now 3-for-3 across the MVT family). (c) Licensed ✓: calcite, dolomite, galena, marcasite, pyrite, quartz, sphalerite; dickite + malachite + bitumen = candidates."
@@ -932,16 +932,31 @@
           "salinity": 18.0
         },
         "wall": {
-          "composition": "limestone",
+          // The Sweetwater deposit is hosted by Bonneterre Dolomite/dolostone,
+          // not a calcitic-limestone endmember (USGS OFR 87-675; Hagni &
+          // Trancynger 1977). Acid attack must therefore release Mg as well as
+          // Ca and carbonate. That host-rock ledger is the mechanistic source
+          // of post-pulse dolomite gangue; it replaces dependence on generic
+          // silica-bearing thermal injections.
+          "composition": "dolomite",
           "thickness_mm": 500.0,
           "vug_diameter_mm": 40.0,
-          "wall_Fe_ppm": 3000.0,   // iron-bearing limestone
+          "wall_Fe_ppm": 3000.0,   // iron-bearing dolostone
           "wall_Mn_ppm": 800.0,    // Mn in the host rock
           // Aggressive acid dissolution — 3 primary + 10 secondary bubbles
           // give the deeply lobed cavity of a reactive front.
           "primary_bubbles": 3,
           "secondary_bubbles": 10,
-          "shape_seed": 5
+          "shape_seed": 5,
+          // The authored acid-pulse history is the complete forcing function;
+          // stochastic magmatic reheats would inject unlicensed silica.
+          "thermal_pulses": false,
+          // Viburnum fluid inclusions do not record district-scale cooling as
+          // the sulfide-precipitation driver (Rowan & Leach 1989). Advective
+          // basinal brine therefore holds the open conduit near its measured
+          // hydrothermal temperature; the seal event below restores ordinary
+          // conductive cooling once flow stops (Rowan & Leach 1989).
+          "cooling_rate": 0.1
         }
       },
       "events": [
@@ -955,7 +970,8 @@
         "Stoffell et al. 2008 — LA-ICP-MS fluid-inclusion brine analyses (Tri-State vs Viburnum distinction)",
         "Leach et al. 2010 — MVT genesis review",
         "Anderson & Macqueen 1982 — MVT mineralogy review",
-        "Hanor 1994 — basinal-brine compendium (Sr/Ba tracers)"
+        "Hanor 1994 — basinal-brine compendium (Sr/Ba tracers)",
+        "Rowan & Leach 1989, Economic Geology 84:1948-1963 — 105-125 C saline inclusions in Bonneterre hydrothermal dolomite; regional advective heat transport and cooling rejected as the primary sulfide driver"
       ]
     },
 
@@ -1194,6 +1210,11 @@
         "pressure_kbar": 0.05,
         "fluid": {
           "SiO2": 40,            // playa silt, rhyolitic ash from Sierra
+          // Analytical SiO2 here is suspended/detrital sediment, not a
+          // 40-ppm dissolved H4SiO4 reservoir. Opal is documented elsewhere
+          // in the basin record, but this seasonal evaporite broth does not
+          // get to precipitate it (or chalcedony) from particulate ash.
+          "reactiveSilicaFraction": 0.0,
           "Ca": 25,              // intentionally low — Ca > 50 inhibits borax
           "Na": 1500,            // 4x seawater Na
           "K": 250,              // Searles is K-anomalous (commercial K2SO4)
@@ -1281,6 +1302,7 @@
           // [rung-1 science pass]
           "F": 1,
           "SiO2": 30,            // suspended clay + red-bed silt (the inclusion source)
+          "reactiveSilicaFraction": 0.0, // analytical SiO2 is particulate inclusion sediment, not dissolved H4SiO4
           "Ca": 1500,            // OGS/Johnson measured source brine (~1,500 ppm)
           "Na": 70000,           // ~180,000 ppm NaCl expressed as its Na component
           "Mg": 1000,            // OGS/Johnson measured source brine (~1,000 ppm)
@@ -2063,7 +2085,7 @@
       // magnetite stopped firing under sim_version 20 (Phase C v1).
       // Same drift cause as bornite/porphyry — see that note. Restore
       // when chemistry tunes for the new sim version.
-      "expects_species": ["hematite", "quartz", "apophyllite", "stilbite", "heulandite", "scolecite", "mesolite", "thomsonite", "chabazite"],
+      "expects_species": ["hematite", "chalcedony", "quartz", "apophyllite", "stilbite", "heulandite", "scolecite", "mesolite", "thomsonite", "chabazite"],
       "duration_steps": 200,
       "notes": [
         "Per Ottens et al. 2019, the Deccan basalt vesicles fill in stages over tens of millions of years. Stage I (early): silica veneers, chalcedony coating. Stage II: zeolite blades (stilbite, scolecite, heulandite) and early calcite. Stage III: the apophyllite stage — alkaline K-Ca-Si-F fluid percolates through cooled basalt vesicles and crystallizes pseudo-cubic apophyllite blocks, sometimes carrying hematite-needle phantoms (the 'bloody apophyllite' of Nashik).",
@@ -2072,6 +2094,16 @@
         "Audit gap-fill (Apr 2026): Sr=2 — Deccan zeolites (heulandite, stilbite, mesolite) carry Sr substituting for Ca, sometimes 100s of ppm in the mineral. Sim-scale 2 ppm in the parent fluid documents the source. Brief-required non-zero Mg already covered by Mg=8."
       ],
       "movements": [
+        {
+          // Stage-I silica is consumed while the first fibrous lining grows.
+          // The step-35 Fe-Si replenishment then raises activity again, so the
+          // agate label is licensed by a recorded down-then-up chemistry path.
+          "field": "fluid.SiO2",
+          "startStep": 20,
+          "endStep": 35,
+          "base": 800,
+          "ops": [{ "kind": "trend", "amp": -300, "ease": true }]
+        },
         {
           // Stage III sustained alkaline groundwater (see v184 note): a
           // constant setpoint (no ops = base held) modeling continuous
@@ -2098,7 +2130,9 @@
           // Iron is already abundant from basalt groundmass leaching;
           // combined with high O2 it lets Stage I deposit hematite
           // needles before Stage III brings apophyllite.
-          "SiO2": 900,
+          // Below quartz equilibrium at 250 C: Stage I cannot pre-empt the
+          // authored step-20 chalcedony veneer as a step-0 quartz druse.
+          "SiO2": 400,
           "Ca": 180,
           "CO3": 80,
           "Fe": 180,
@@ -2148,7 +2182,8 @@
       },
       "events": [
         { "step": 20,  "type": "deccan_zeolite_silica_veneer",         "name": "Silica Veneer",          "description": "Stage I early chalcedony coating" },
-        { "step": 35,  "type": "deccan_zeolite_hematite_pulse",        "name": "Hematite Pulse",         "description": "Iron seeds the vesicle wall — pre-zeolite needle deposition" },
+        { "step": 35,  "type": "deccan_zeolite_hematite_pulse",        "name": "Fe-Silica Replenishment", "description": "A fresh Fe-Si pulse reverses the Stage-I silica drawdown and seeds the vesicle wall with hematite needles" },
+        { "step": 55,  "type": "deccan_quartz_maturation",             "name": "Silica Maturation",       "description": "Dissolved silica enters the quartz-only metastable window; euhedral quartz grows inward from chalcedony" },
         { "step": 70,  "type": "deccan_zeolite_stage_ii",              "name": "Zeolite Stage II",       "description": "Stilbite + heulandite + calcite blades" },
         { "step": 110, "type": "deccan_zeolite_apophyllite_stage_iii", "name": "Apophyllite Stage III", "description": "Alkaline K-Ca-Si-F pulse — apophyllite grows around the hematite needles, producing the 'bloody apophyllite' phantom band" },
         { "step": 160, "type": "deccan_zeolite_late_cooling",          "name": "Late Cooling",           "description": "System cools toward ambient" }
@@ -2605,7 +2640,7 @@
       "notes": [
         "Anchor: Mullis, Dubessy, Poty & O'Neil 1994 (Geochim. Cosmochim. Acta 58:2239-2267) — fissure-quartz fluid inclusions along a Central-Alps geotraverse (dilute, oxidizing, H2O-CO2 epizone). Retrograde P-T-t: Mullis 1996 (Schweiz. Mineral. Petrogr. Mitt. 76:159-164) quartz forms ~450-550C cooling to ~200C at 0.3-0.45 GPa; Gnos, Mullis & Bergemann 2025 (Swiss J. Geosci. 118:12) tie the Grimsel cleft path to D1 (~450C/440MPa, ~14.6 Ma) -> D2 (~385C/325MPa) -> D3 (~330->300C/230MPa) deformation stages. Poty 1969 (PhD thesis, Univ. Nancy) measured fissure quartz at 350-420C. Citations web-verified 2026-06-19 per the cross-check discipline.",
         "T story = a DECLARED temperature movement (retrograde 450->200C trend, no texture, the naica v182 idiom) + thermal_pulses:false + cooling_rate:0.4 (an open feeder advects heat -> slow cooling, not random magmatic re-warm pulses). The events are the chemistry BEATS that compose with it (SiO2 sawtooth + Fe/CO3 stage pulses on different fields -> no same-field clobber).",
-        "The SCEPTRE mechanism: sigma_quartz = SiO2 / silica_equilibrium(T), and eq(T) falls from ~1400 ppm at 450C to ~300 at 200C. A crack-seal SEAL drops SiO2 below eq (sigma<1 -> a growth HIATUS); the following BREACH re-floods fresh silica at a cooler temperature, so the same SiO2 load gives a HIGHER sigma than the hot first-generation stem -> a wider cap nucleates on the tip. Caps grow cooler than stems (the documented alpine-sceptre habit) falls straight out of the engine. Two seal/breach cycles -> two sceptre generations; verified by tools/quartz-hiatus-census.mjs.",
+        "The SCEPTRE mechanism: sigma_quartz = SiO2 / silica_equilibrium(T,P). Along the declared exhumation path the Manning-corrected equilibrium falls from about 4,940 ppm at 450C/4.4 kbar to about 300 ppm at 200C/2.3 kbar. A crack-seal SEAL drops reactive SiO2 below equilibrium (sigma<1 -> a growth HIATUS); the following BREACH re-floods fresh silica at a cooler, lower-pressure state, and the D3 fluid pulse reaches sigma about 2.5. The renewed termination therefore grows faster and wider than the early stem. Two seal/breach cycles -> two sceptre generations; verified by the executable Grimsel tests.",
         "Wallrock: pegmatite (the granite/granitoid inert-silicate proxy — the Aar granite host; the Ca-Al-Fe-Ti-F-P arrive in the FLUID, not from wall dissolution, reactivity 0). Architecture CLEFT (W-K V0, SIM 215): the planar-lens Zerrkluft — a flat slab ~4.5-6:1 against its aperture, opposed druses on the two fissure walls — replacing the round 'pocket' stand-in (the vug-genesis census's worst-case shape lie, now closed). Pocket size class, shape_seed 1932 (the Grimsel hydroelectric era that opened the cleft tunnels to strahlers). Growth histories measured bit-identical across the re-genre (0/37 baseline drift; sceptre scan still 3 robust sceptres at seed 42).",
         "Calibration target: a free-grown cleft druse — cream blocky adularia + dark-green chlorite coatings, from which rise lustrous SMOKY quartz crystals (Tessin-habit prisms or smoky sceptres with wider darker caps), accented by metallic hematite iron-roses, honey-brown wedge titanite, small apatite prisms, and a late calcite lining. expects_species declared aspirationally where needed; observe seed-42 firing + the hiatus census, then tune (vugg-tune-scenario) before the quartz-morphology work (#109). Smoky quartz color + the sceptre/Tessin/fenster/gwindel morphology are the follow-on tasks #110/#109."
       ],
@@ -2716,7 +2751,10 @@
           // no fluorite; US groundwater F mostly <0.7 mg/L, arid-west elevated (McMahon et al.
           // 2020). [rung-1 science pass]
           "F": 2,
-          // Sandstone matrix — moderate silica
+          // Reactive silica leached from the sandstone matrix. This inventory
+          // is required by the locality's Ca-uranyl-silicate (uranophane)
+          // branch; free opal is therefore an honest competing sink rather
+          // than removable particulate sediment.
           "SiO2": 200,
           // Ca dominant by background (groundwater Ca-bicarbonate)
           "Ca": 100,
@@ -2807,16 +2845,15 @@
       "expects_species": ["quartz"],
       "duration_steps": 30,
       "notes": [
-        "Tutorial scenario. Designed for the guided first-time-player experience. REWORKED 2026-07-04 (the Grand Tour): the overlay script now opens with a top-down tour of the screen (title, quick-nav, Wall Profile viewers ending on the helicoid manifold, the σ nucleating/dormant readout, action panel, log, inventory) before handing off to the original arc — simple silica-rich broth, quartz nucleates within a few steps at 180°C, then a scripted temperature drop at step 8 pulls T well out of quartz's growth window. The intended player learning is: (1) what every part of the screen is, (2) clicking Advance moves time, (3) crystals need conditions in the right range, (4) when the conditions drift, growth stops.",
+        "Tutorial scenario. Designed for the guided first-time-player experience. REWORKED 2026-07-04 (the Grand Tour): the overlay script opens with a top-down tour of the screen before handing off to the first-crystal arc. SIM 246 corrects that arc's thermodynamic direction: quartz nucleates above the chalcedony field at 220°C, then a 420°C hot recharge raises quartz solubility enough to make the unchanged 600-ppm fluid undersaturated. The accepted quartz record switches from growth to mass-balanced dissolution. The intended learning is: (1) what every part of the screen is, (2) clicking Advance moves time, (3) phase identity and saturation depend on conditions, and (4) changing conditions can reverse growth.",
         "Surfaced in the New Game Menu under Tutorials. Not anchored to a real locality — it's a teaching scaffold. Sandbox-testable as a normal scenario (the overlay only engages via startTutorial).",
         "Broth shape mirrors FLUID_PRESETS.silica (the existing 'Silica-rich' starter fluid) so the lesson generalizes to that picker entry."
       ],
       "initial": {
-        // T=180°C: quartz growth window center. Gives σ(Qz) ~1.2-1.5 at
-        // start so quartz nucleates within a few steps. Drops to ~100°C
-        // after the tutorial event, putting growth firmly outside the
-        // comfort window without going so cold the crystal disappears.
-        "temperature_C": 180.0,
+        // T=220°C is above the chalcedony kinetic field and gives quartz
+        // σ > 1.2 from the 600-ppm broth. The step-8 hot recharge raises T
+        // to 420°C, where quartz equilibrium exceeds the unchanged supply.
+        "temperature_C": 220.0,
         "pressure_kbar": 1.0,
         "fluid": {
           // Silica-rich broth, mirrors FLUID_PRESETS.silica.
@@ -2826,7 +2863,10 @@
           "Fe": 8,
           "Mn": 3,
           "Mg": 8,
-          "Ti": 0.8,
+          // Trace Ti stays below titanite's executable 0.5-ppm ingredient
+          // floor. This one-mineral teaching broth must not turn its Ca-Ti-Si
+          // inventory into an unrelated sphene surprise after quartz dissolves.
+          "Ti": 0.1,
           "Al": 4,
           "F": 10,
           "pH": 6.5,
@@ -2840,7 +2880,7 @@
         }
       },
       "events": [
-        { "step": 8, "type": "tutorial_temperature_drop", "name": "Temperature Drops", "description": "Conditions drift out of quartz's growth window — the crystal stops growing" }
+        { "step": 8, "type": "tutorial_temperature_spike", "name": "Hot Recharge", "description": "Hotter water raises quartz solubility; the unchanged fluid becomes undersaturated and the crystal begins to dissolve" }
       ],
       // Tutorial overlay script — ENGINE v2 (the Grand Tour rework,
       // 2026-07-04). Consumed by the state machine in
@@ -2942,14 +2982,14 @@
 
           // ---- Handoff into the narrative arc ----
           { "anchor": "#f-advance", "side": "top", "unlock": ["#f-advance", ".act-wait"],
-            "text": "Time to grow something. This broth is 180°C and loaded with silica — quartz country. Advance is unlocked (⏩ Advance 10 too, for the impatient). Press it and watch the wall.",
+            "text": "Time to grow something. This broth is 220°C and loaded with silica — above the chalcedony field and supersaturated with quartz. Advance is unlocked (⏩ Advance 10 too, for the impatient). Press it and watch the wall.",
             "buttonLabel": "Begin ⏎" },
 
           // ---- THE ARC: first crystal, and losing the window ----
           { "step": 4,  "anchor": "#fortress-status", "side": "bottom",
-            "text": "Quartz is forming on the wall. Each press of Advance grows it a little more. Notice the temperature sitting around 180°C — that's right in quartz's comfort window." },
+            "text": "Quartz is forming on the wall. Each press of Advance grows it a little more. At about 220°C the broth is above the chalcedony field and carries more silica than quartz equilibrium can keep dissolved." },
           { "step": 9,  "anchor": "#f-stat-temp", "side": "bottom",
-            "text": "The temperature just dropped sharply. Watch what happens to growth as you keep pressing Advance — the broth got colder, and cold silica wants to stay in solution rather than crystallize out." },
+            "text": "A much hotter recharge just arrived. Hot water can hold more dissolved silica, so the same 600-ppm supply is now below quartz equilibrium. Watch the growth record reverse as you keep pressing Advance." },
           { "action": { "event": "click", "selector": ".inv-crystal" },
             "anchor": "#fortress-inventory", "side": "left",
             "text": "Your quartz has a card in the inventory now. Tap it.",
@@ -2957,13 +2997,13 @@
           { "anchor": "#zone-modal", "side": "left",
             "text": "The zone history. Every band is one growth zone — a time-stamped record of the broth at the moment it grew: temperature, chemistry, UV response. This is how real collectors read real crystals, and everything you do to the broth is being written down in here. Close it when you've had a look." },
           { "step": 16, "anchor": "#fortress-log", "side": "left",
-            "text": "Notice the log: 'no growth this step' is starting to appear. Your crystal is still there, beautiful, but no new layers are forming. The broth doesn't want to give up its silica anymore." },
+            "text": "Notice the log: quartz is re-dissolving. Those negative zones are not cosmetic damage—the formula ledger returns the dissolved shell's booked SiO2 to the fluid." },
           { "step": 25, "anchor": "#fortress-log", "side": "left", "unlock": [".action-btn"],
-            "text": "That's the lesson: conditions control whether a crystal grows. Same broth, same crystal, different temperature — different outcome. Everything else in the game is elaborations on this idea. The whole instrument panel is now unlocked — try to warm the broth back into quartz's window, or finish up and keep the crystal." }
+            "text": "That's the lesson: conditions control whether a crystal grows or dissolves. Same broth and crystal, different temperature—opposite mass transfer. The whole instrument panel is now unlocked: try cooling the broth back into quartz supersaturation, or finish and inspect the surviving growth record." }
         ]
       },
       "sources": [
-        "(tutorial scaffold — no published source)"
+        "Tutorial scaffold; quartz's prograde aqueous solubility follows the simulator's Fournier & Potter / Rimstidt-Barnes basis."
       ]
     },
 
@@ -3108,11 +3148,11 @@
           // SiO2=54: the documented Mammoth value (USGS Bull. 1444 Table 2 —
           // same table as the rung-1 F figure). Mammoth is a silica-POOR
           // Ca-Mg-HCO3-SO4 limestone water (vs ~420 ppm at Norris) and
-          // deposits NO silica sinter. Note (rung 2): quartz still clears its
-          // σ gate here at 68-70°C from this honest broth — that's a
-          // TIMESCALE artifact (a 60-step pool isn't Herkimer's megayears),
-          // owned by the parked silica_polymorph species-selection follow-on,
-          // not by a fake broth value or a dishonest T-floor.
+          // deposits NO silica sinter. SIM 246 closes the former artifact in
+          // two production-visible ways: the carbonate-travertine water regime
+          // blocks a fresh silica phase at this shallow/cool/limestone/low-Si
+          // endmember, and thermal_pulses=false below prevents the generic
+          // fracture-reheat system from injecting 50-300 ppm fictitious SiO2.
           "SiO2": 54,
           "Na": 200,
           "Cl": 300,
@@ -3124,6 +3164,10 @@
         },
         "wall": {
           "composition": "limestone",
+          // An open surface spring recharged by the three explicit hot-water
+          // events, not a sealed hydrothermal fracture with stochastic silica-
+          // bearing reheats. This keeps the measured Mammoth water type intact.
+          "thermal_pulses": false,
           "primary_bubbles": 3,
           "secondary_bubbles": 4,
           "shape_seed": 4
@@ -4275,7 +4319,10 @@
           "secondary_bubbles": 3,
           "wall_Fe_ppm": 800,
           "wall_Mn_ppm": 200,
-          "shape_seed": 457
+          "shape_seed": 457,
+          // This is a controlled Ba-Mn pulse experiment, not a magmatic
+          // fracture system; background reheats formerly minted chalcedony.
+          "thermal_pulses": false
         }
       },
       "events": [
@@ -4415,24 +4462,53 @@
     "amethyst_geode": {
       "anchor": "Ametista do Sul, Rio Grande do Sul, Brazil — amethyst geodes in the Serra Geral Formation high-Ti basalt (Paraná Continental Flood Basalt Province, Lower Cretaceous ~134 Ma)",
       "description": "A Brazilian amethyst geode. A basalt gas cavity fills inward — celadonite rim → agate → clear quartz → amethyst. Mid-growth a green celadonite film frosts the amethyst prism faces; the tip renews a wider cap THROUGH the film — a MASKING SCEPTRE (the non-corrosive masking counterpart to grimsel's corrosion sceptre). Goethite staining at the base.",
-      "expects_species": ["quartz"],
-      "duration_steps": 110,
+      "expects_species": ["chalcedony", "quartz"],
+      "duration_steps": 240,
       "notes": [
         "Anchor: Ametista do Sul, Rio Grande do Sul — the classic Brazilian amethyst-geode district, hosted in a ~40-50 m subhorizontal high-Ti basalt flow of the Serra Geral Formation (Paraná flood basalts, Lower Cretaceous ~134 Ma). Geode structure INWARD: celadonite rim → agate/chalcedony → colourless quartz → amethyst (Gilg et al. 2003).",
-        "Formation temperature is genuinely debated in the literature and the scenario bridges the two camps. Monophase liquid inclusions with low ice-melting depressions argue a LOW-T, low-salinity fluid (<100°C, probably <50°C — a sedimentary-brine / paleo-aquifer model; Gilg et al. 2003). Primary inclusions in the amethyst itself yield 152-238°C with a MAGMATIC silica source (Triz-quarry study, Geol. Mag. 144:731). The scenario nucleates amethyst in a warm early phase (~160°C) and finishes the cavity cool (~70°C via the declared cooling trend), with the celadonite film + goethite stain as the late low-T overprint.",
-        "AMETHYST COLOUR is Fe³⁺ substituting for Si⁴⁺, activated by a natural γ-dose (Rossman 1994). The Serra Geral basalt is mafic — low K/U/Th per unit time — but the geode has sat in it for ~134 Ma, so cumulative background dose tips the Fe centres to amethyst (NOT the granite-hosted morion of a Grimsel cleft). The sim expresses this via wall.gamma_host (js/59, added with this scenario): a modest 0.45 accrues radiation_damage into the amethyst band (>0.1) without reaching smoky (>0.3). No pegmatite/phonolite host is claimed — the scenario declares its own low, long background; every existing basalt scenario leaves gamma_host unset and is byte-identical.",
-        "THE MASKING SCEPTRE: the celadonite (green K-Fe mica-clay) that rims these geodes also settles on the growing amethyst as a film. A PRISM-dominant celadonite film (prism 0.45, term 0.08 — frosts the {10-10} prism, spares the tip) arrests the sides; the Silica Renewal Pulse then lifts σ over the dead-zone barrier σ*(φ_prism) and the tip renews a wider {10-11}-capped termination THROUGH the film — a masking-route sceptre (classifyQuartzSceptre js/45; Takahashi & Sunagawa 2004 ELO). grimsel stays the clean CORROSION-sceptre reference; this is the non-corrosive masking counterpart. The renderer widens the cap from a length fraction and does not calculate or claim conserved solid mass.",
+        "Formation temperature is genuinely debated in the literature and the scenario bridges the two camps. Monophase liquid inclusions with low ice-melting depressions argue a LOW-T, low-salinity fluid (<100°C, probably <50°C — a sedimentary-brine / paleo-aquifer model; Gilg et al. 2003). Primary inclusions in the amethyst itself yield 152-238°C with a MAGMATIC silica source (Triz-quarry study, Geol. Mag. 144:731). The scenario holds the early agate/quartz/amethyst stage near 160°C through step 190, then cools to ~70°C by step 240 for the celadonite/goethite overprint. This stages the two measured temperature populations instead of averaging them into one continuous ambiguous ramp.",
+        "AMETHYST COLOUR is Fe³⁺ substituting for Si⁴⁺, activated by a natural γ-dose (Rossman 1994). The Serra Geral basalt is mafic — low K/U/Th per unit time — but the geode has sat in it for ~134 Ma, so its integrated background dose tips the Fe centres to amethyst (NOT the granite-hosted morion of a Grimsel cleft). wall.gamma_host=0.23 is the normalized long-residence integrated dose, not an instantaneous U-Th assay; over the longer warm growth stage it lands radiation_damage in the amethyst band (>0.1, <0.3). Every other basalt scenario leaves gamma_host unset and receives no such long-residence dose.",
+        "THE SILICA PHASE SEQUENCE IS EXECUTED: the early 320 ppm fluid is above the temperature-dependent chalcedony equilibrium and builds a real accepted-shell agate lining. At step 18, solution aging/depletion lowers dissolved SiO2 beneath the fresh-chalcedony nucleation barrier while keeping quartz supersaturated; chalcedony stops and inward euhedral quartz nucleates. This is the same T-SiO2 window a player can reproduce in Creative Mode, not a scenario-only phase flag.",
+        "THE MASKING SCEPTRE: the celadonite (green K-Fe mica-clay) that rims these geodes also settles on the growing amethyst as a film. A partial, PRISM-dominant celadonite dusting (prism 0.18, term 0.04 — frosts gaps across the {10-10} prism, largely spares the tip) arrests the sides; these coverages keep the calibrated σ*(φ) barrier below the independently calculated chalcedony/quartz solubility ratio at 160°C. The Quartz-Window Renewal can therefore cross the film barrier while remaining below the fresh-chalcedony nucleation threshold, and the tip renews a wider {10-11}-capped termination THROUGH the film — a masking-route sceptre (classifyQuartzSceptre js/45; Takahashi & Sunagawa 2004 ELO). grimsel stays the clean CORROSION-sceptre reference; this is the non-corrosive masking counterpart. The renderer widens the cap from a length fraction and does not calculate or claim conserved solid mass.",
         "The late iron-oxide film is the diagnostic base staining — a termination/uniform film (prism 0.3, term 0.3), NOT a second sceptre; real Brazilian points are commonly goethite/hematite-stained at the matrix contact."
       ],
       "movements": [
         {
-          // Warm amethyst nucleation (~160°C, the primary-inclusion high end) easing
-          // down to a cool finish (~70°C, toward the low-T monophase-inclusion camp).
+          // Executed silica-activity oscillation during the wall-lining stage.
+          // Recorded sigma reversals, not basalt identity alone, license the
+          // later banded/oscillatory agate fabric.
+          "field": "fluid.SiO2",
+          "startStep": 0,
+          "endStep": 18,
+          "base": 320,
+          "ops": [{ "kind": "pulse", "amp": 80, "center": 0.5, "width": 0.22 }]
+        },
+        {
+          // Warm primary-inclusion population: agate -> quartz -> amethyst.
           "field": "temperature",
           "startStep": 0,
-          "endStep": 110,
+          "endStep": 190,
+          "base": 160,
+          "ops": []
+        },
+        {
+          // Late low-T monophase-inclusion population and iron-oxide overprint.
+          "field": "temperature",
+          "startStep": 190,
+          "endStep": 240,
           "base": 160,
           "ops": [{ "kind": "trend", "amp": -90, "ease": true }]
+        },
+        {
+          // Open-flow silica drawdown during late cooling. The trajectory stays
+          // below the fresh-chalcedony nucleation barrier while remaining above quartz equilibrium
+          // through the >100 C portion, preserving the authored inward sequence;
+          // it finishes below both once macroquartz kinetics close.
+          "field": "fluid.SiO2",
+          "startStep": 190,
+          "endStep": 240,
+          "base": 175,
+          "ops": [{ "kind": "trend", "amp": -150, "ease": true }]
         }
       ],
       "initial": {
@@ -4449,12 +4525,12 @@
           // (Triz-quarry magmatic model); the Renewal Pulse (×1.8) then spikes it
           // over the masked-prism barrier for the sceptre cap.
           "SiO2": 320,
-          // Fe=35: mafic basalt leachate — the amethyst chromophore (Fe³⁺ centre,
+          // Fe=45: mafic basalt leachate — the amethyst chromophore (Fe³⁺ centre,
           // Rossman 1994). Sized so the growth-weighted quartz trace_Fe (fluid.Fe
           // ×0.005, js/59) clears the recalibrated amethyst gate (>0.2) once the
           // γ-dose lands radiation_damage in the amethyst band [0.1,0.3]. Kept below
           // the level that would nucleate a free Fe-oxide phase (verified quartz-only).
-          "Fe": 35,
+          "Fe": 45,
           // Al=9: basalt feldspar leachate; >1 so the γ-dose accrues (js/59), and
           // the smoky Al-centre precursor — kept modest so the colour is amethyst,
           // not smoky, once radiation_damage lands in 0.1-0.3.
@@ -4479,7 +4555,7 @@
           // radiation_damage lands in the amethyst band [0.1,0.3] (not smoky >0.3)
           // for the longest-lived crystal. Only this scenario sets it; default 0
           // keeps the fleet byte-identical.
-          "gamma_host": 0.4,
+          "gamma_host": 0.23,
           "primary_bubbles": 1,
           "secondary_bubbles": 2,
           "shape_seed": 7,
@@ -4488,9 +4564,10 @@
         }
       },
       "events": [
-        { "step": 42, "type": "film_coat", "name": "Celadonite Film (prism frost)", "film": { "mineral": "celadonite", "prism": 0.45, "term": 0.08, "minerals": ["quartz"] }, "description": "Green celadonite clay frosts the amethyst prism faces — the masking film that arrests the sides while the tip stays free." },
-        { "step": 52, "type": "fluid_pulse", "name": "Silica Renewal Pulse", "description": "Fresh silica-charged fluid floods the geode — σ clears the masked prism and the tip renews a wider cap." },
-        { "step": 84, "type": "film_coat", "name": "Goethite Base Stain", "film": { "mineral": "iron oxide", "prism": 0.3, "term": 0.3, "minerals": ["quartz"] }, "description": "Goethite/hematite staining at the matrix contact — the diagnostic base stain (a uniform film, not a sceptre)." }
+        { "step": 18, "type": "amethyst_chalcedony_maturation", "name": "Agate-to-Quartz Maturation", "description": "Silica activity falls below the fresh-chalcedony nucleation barrier but remains above quartz equilibrium — the inner euhedral-quartz stage opens." },
+        { "step": 80, "type": "film_coat", "name": "Celadonite Film (prism frost)", "film": { "mineral": "celadonite", "prism": 0.18, "term": 0.04, "minerals": ["quartz"] }, "description": "A partial green celadonite dusting preferentially frosts the amethyst prism faces — the masking film that arrests the sides while the tip stays largely free." },
+        { "step": 90, "type": "amethyst_quartz_renewal", "name": "Quartz-Window Renewal", "description": "Fresh Fe-bearing fluid raises quartz σ without crossing the fresh-chalcedony nucleation barrier — the masked tip renews a wider cap." },
+        { "step": 214, "type": "film_coat", "name": "Goethite Base Stain", "film": { "mineral": "iron oxide", "prism": 0.3, "term": 0.3, "minerals": ["quartz"] }, "description": "Goethite/hematite staining at the matrix contact — the diagnostic base stain (a uniform film, not a sceptre)." }
       ],
       "sources": [
         "Gilg H.A., Morteani G., Kostitsyn Y., Preinfalk C., Gatter I., Strieder A.J. (2003) — Genesis of amethyst geodes in basaltic rocks of the Serra Geral Formation (Ametista do Sul, Rio Grande do Sul, Brazil): a fluid inclusion, REE, oxygen, carbon, and Sr isotope study on basalt, quartz, and calcite. Mineralium Deposita 38: 1009-1025. Geode structure celadonite→agate→quartz→amethyst; LOW-T (<100°C, prob <50°C) low-salinity sedimentary-brine model.",

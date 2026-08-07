@@ -1,0 +1,69 @@
+# CLAIM CARD — tutorial_first_crystal  (v246, seed 42, 30 steps)
+
+**Anchor:** (tutorial scaffold — generic silica-rich broth)
+**Deposit:** Tutorial 1: The Grand Tour + First Crystal. A guided top-down walk of the whole interface, then grow a quartz and watch what happens when conditions drift out of its growth window.
+**Initial:** 220 °C, 1 kbar, wall=?
+**Model digest:** Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-pressure+booked-transition+chemistry-competition-v4|surface-growth:mass-booked-area+lining+crust+asbestos+druse-representatives-v1|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1
+**Scenario spec hash:** d3c5878a944c50d18f99f51912177fb42ccdff69f4edf1bd680090a5a32daf19
+
+## Model boundary: calibrated growth budget
+  - Kind: calibrated stoichiometric axial-growth budget proxy
+  - Basis: 0.00008 mmol formula/kg solvent per accepted axial micrometre
+  - Preserves: formula mole ratios and exact closure of booked inventory on dissolution
+  - Limitation: not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume
+
+**expects_species (1):** quartz
+
+**Cited sources:**
+  - Tutorial scaffold; quartz's prograde aqueous solubility follows the simulator's Fournier & Potter / Rimstidt-Barnes basis.
+
+## Paragenetic order as grown (1 species)
+| # | mineral | first step | # events |
+|--|--|--|--|
+| 1 | quartz | 0 | 1 |
+
+**Surprises (grown but NOT in expects_species):** (none)
+**No-shows (expected but never nucleated):** (none)
+
+## Environment trajectory (first → last, [min,max])
+  - T: 218.504 → 386.811 °C  [209.646, 419.291]
+  - pH: 6.504 → 6.504   [6.504, 6.504]
+  - Eh: -201.575 → -201.575 mV  [-201.575, -201.575]
+  - salinity: 4.724 → 4.724 psu  [4.724, 4.724]
+  - O2: 0 → 0 mg/L  [0, 0]
+  - concentration: 0.984 → 0.984 ×  [0.984, 0.984]
+
+## Saturation drivers
+  - SI_calcite: -1.89 → -2.583  [-2.583, -1.701]
+  - SI_aragonite: -2.016 → -2.709  [-2.709, -1.827]
+  - SI_dolomite: -4.094 → -5.291  [-5.291, -3.78]
+  - SI_HMC: -3.654 → -4.346  [-4.346, -3.465]
+  - SI_siderite: -0.189 → -0.693  [-0.693, -0.063]
+  - SI_selenite: -8 → -8  [-8, -8]
+  - SI_anhydrite: -8 → -8  [-8, -8]
+  - SI_barite: -8 → -8  [-8, -8]
+  - SI_celestine: -8 → -8  [-8, -8]
+
+## Authored pressure/stress/phase context (claim, not run testimony)
+  - Fluid pressure: 1 kbar — cavity-fluid pressure; never silently substituted for rock pressure or differential stress
+  - Rock pressure: unspecified kbar — unspecified; metamorphic phase field is reported unconstrained
+  - Calcite/aragonite boundary: 2.460 kbar; secure aragonite=false
+  - Al2SiO5: unconstrained (nominal n/a) — Rock/confining pressure is not specified; fluid pressure cannot substitute for it.
+  - Gypsum/anhydrite pure-water boundary: 72.70 °C; initial a_w=0.997 ±0.020 (temperature-extrapolation)
+  - Differential stress: no authored stress event.
+
+## Executed pressure/stress/phase testimony (archived run)
+**Source:** archived executed run state; not reconstructed from scenario definition
+  - Fluid pressure: 1 → 1 kbar [1, 1], n=30
+  - Rock/confining pressure: 0 → 0 kbar [0, 0], n=30
+  - Temperature: 218.2608943547122 → 385.68863863251187 °C [208.75343059925362, 418.3488041042816], n=30
+  - Secure aragonite assessment: 0/30 executed steps; first={"boundary_kbar":2.456545959097281,"secure_aragonite":false}, last={"boundary_kbar":3.4447026292433596,"secure_aragonite":false}
+  - Al2SiO5 executed phase counts: {"unconstrained":17,"andalusite":13}; first=unconstrained, last=unconstrained
+  - Executed stress: no stress event recorded by the run.
+
+## Scenario notes (author's own rationale)
+> Tutorial scenario. Designed for the guided first-time-player experience. REWORKED 2026-07-04 (the Grand Tour): the overlay script opens with a top-down tour of the screen before handing off to the first-crystal arc. SIM 246 corrects that arc's thermodynamic direction: quartz nucleates above the chalcedony field at 220°C, then a 420°C hot recharge raises quartz solubility enough to make the unchanged 600-ppm fluid undersaturated. The accepted quartz record switches from growth to mass-balanced dissolution. The intended learning is: (1) what every part of the screen is, (2) clicking Advance moves time, (3) phase identity and saturation depend on conditions, and (4) changing conditions can reverse growth.
+
+> Surfaced in the New Game Menu under Tutorials. Not anchored to a real locality — it's a teaching scaffold. Sandbox-testable as a normal scenario (the overlay only engages via startTutorial).
+
+> Broth shape mirrors FLUID_PRESETS.silica (the existing 'Silica-rich' starter fluid) so the lesson generalizes to that picker entry.

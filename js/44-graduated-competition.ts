@@ -238,6 +238,12 @@ function computeGraduatedAllocations(
   if (runs.length > _gradCompStats.maxGroupSize) _gradCompStats.maxGroupSize = runs.length;
   if (!runs.length) return out;
 
+  const availablePool = (speciesName: string) => (
+    speciesName === 'SiO2' && typeof (fluid as any).reactiveSilicaPpm === 'function'
+      ? (fluid as any).reactiveSilicaPpm()
+      : fluid[speciesName] ?? 0
+  );
+
   // Collect species touched by any crystal.
   const species = new Set<string>();
   for (const r of runs) {
@@ -252,7 +258,7 @@ function computeGraduatedAllocations(
   const speciesRationed: Record<string, boolean> = {};
   for (const sp of species) {
     const wanting = runs.filter(r => (r.debit_per_species[sp] || 0) > 0);
-    const available = fluid[sp] ?? 0;
+    const available = availablePool(sp);
     let demand = 0;
     for (const r of wanting) demand += (r.debit_per_species[sp] || 0);
     speciesRationed[sp] = demand > available;
@@ -275,7 +281,7 @@ function computeGraduatedAllocations(
       if (!speciesRationed[sp]) continue;  // free; doesn't cap
 
       // Rationed: crystal's share of fluid[sp] is the cap on its debit.
-      const available = fluid[sp] ?? 0;
+      const available = availablePool(sp);
       const myShareFrac = speciesShares[sp].get(r.crystal_id) || 0;
       const allowedDebit = myShareFrac * available;
       const scaleForThisSp = debit > 0 ? Math.min(1.0, allowedDebit / debit) : 1.0;
@@ -294,7 +300,7 @@ function computeGraduatedAllocations(
     if (limiting === null) {
       why = 'no rationing — full growth';
     } else {
-      const avail = fluid[limiting] ?? 0;
+      const avail = availablePool(limiting);
       why = `${limiting}-limited (share ${(limitingShare * 100).toFixed(0)}% of ${avail.toFixed(2)}, scaling ${(scaling * 100).toFixed(0)}%)`;
     }
     out.set(r.crystal_id, {

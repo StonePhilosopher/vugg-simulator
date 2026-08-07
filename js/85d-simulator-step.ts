@@ -276,7 +276,12 @@ Object.assign(VugSimulator.prototype, {
     if (actualSpike > 15) {
       this.conditions.temperature = newTemp;
       // Fresh fluid pulse brings chemistry
-      this.conditions.fluid.SiO2 += this._thermalRng.uniform(50, 300);
+      const silicaPulse = this._thermalRng.uniform(50, 300);
+      if (typeof this.conditions.fluid.addReactiveSilica === 'function') {
+        this.conditions.fluid.addReactiveSilica(silicaPulse);
+      } else {
+        this.conditions.fluid.SiO2 += silicaPulse;
+      }
       this.conditions.fluid.Fe += this._thermalRng.uniform(2, 15);
       this.conditions.fluid.Mn += this._thermalRng.uniform(1, 5);
       this.conditions.flow_rate = this._thermalRng.uniform(1.5, 3.0);

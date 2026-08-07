@@ -119,6 +119,7 @@ const MINERAL_GATES_REGISTRY: Record<string, MineralGates> = {
 
   // ---- Silicate (js/39-supersat-silicate.ts) ----
   quartz: MINERAL_GATES_quartz,
+  chalcedony: MINERAL_GATES_chalcedony,
   feldspar: MINERAL_GATES_feldspar,
   apophyllite: MINERAL_GATES_apophyllite,
   albite: MINERAL_GATES_albite,

@@ -40,7 +40,7 @@ describe('Creative chemistry control contract', () => {
       const input = document.createElement('input');
       input.id = control.id;
       input.type = 'range';
-      const canonical = prop === 'pH' ? 6.4 : ordinal++;
+      const canonical = prop === 'pH' ? 6.4 : prop === 'reactiveSilicaFraction' ? 0.41 : ordinal++;
       input.min = '0';
       input.max = '1000';
       input.value = String(canonical * control.scale);
@@ -59,7 +59,10 @@ describe('Creative chemistry control contract', () => {
     }
 
     const changed = Object.fromEntries(
-      Object.keys(registry).map((prop, index) => [prop, prop === 'pH' ? 7.2 : index + 40]),
+      Object.keys(registry).map((prop, index) => [
+        prop,
+        prop === 'pH' ? 7.2 : prop === 'reactiveSilicaFraction' ? 0.41 : index + 40,
+      ]),
     );
     (globalThis as any).syncCreativeChemistryControls(changed);
     const roundTrip = (globalThis as any).readCreativeChemistryControls();
@@ -80,7 +83,7 @@ describe('Creative chemistry control contract', () => {
     for (const id of expectedLiveIds) {
       expect(parsed.getElementById(id), id).not.toBeNull();
     }
-    expect(Object.keys(registry)).toHaveLength(47);
+    expect(Object.keys(registry)).toHaveLength(48);
 
     const authored = new Set<string>();
     for (const makeScenario of Object.values((globalThis as any).SCENARIOS) as any[]) {

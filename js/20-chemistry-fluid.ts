@@ -20,7 +20,7 @@ function _cloneFluid(src) {
 // geology loss: a misspelled or obsolete solute must never look accepted while
 // being discarded by the runtime.
 const FLUID_CHEMISTRY_INPUT_FIELDS = new Set([
-  'SiO2', 'Ca', 'CO3', 'F', 'Zn', 'S', 'Fe', 'Mn', 'Al', 'Ti', 'Pb', 'U',
+  'SiO2', 'reactiveSilicaFraction', 'Ca', 'CO3', 'F', 'Zn', 'S', 'Fe', 'Mn', 'Al', 'Ti', 'Pb', 'U',
   'Cu', 'Mo', 'K', 'Na', 'Mg', 'Ba', 'Sr', 'Cr', 'P', 'As', 'Cl', 'V', 'W',
   'Ag', 'Bi', 'Sb', 'Ni', 'Co', 'B', 'Li', 'Be', 'Te', 'Se', 'Ge', 'Au',
   'Cd', 'Hg', 'Sn', 'Y', 'O2', 'Eh', 'pH', 'salinity', 'concentration',
@@ -42,6 +42,11 @@ class FluidChemistry {
       throw new TypeError(`Unknown FluidChemistry field${unknown.length === 1 ? '' : 's'}: ${unknown.join(', ')}`);
     }
     this.SiO2 = opts.SiO2 ?? 500.0;
+    // Fraction of the bulk SiO2 analytical pool that is dissolved/reactive
+    // silica rather than suspended clay, detrital silt, or another particulate
+    // inclusion load. Keep the authored value reversible for Creative exact
+    // inputs; the observer below clamps it to its physical 0..1 domain.
+    this.reactiveSilicaFraction = opts.reactiveSilicaFraction ?? 1.0;
     this.Ca = opts.Ca ?? 200.0;
     this.CO3 = opts.CO3 ?? 150.0;
     // F default 10 → 0 (hostile review 2026-07-14, fix-ladder rung 1 step c).
@@ -130,6 +135,40 @@ class FluidChemistry {
     if (this.sulfurPoolsExplicit) {
       this.S = Math.max(0, this.S_sulfide) + Math.max(0, this.S_sulfate);
     }
+  }
+
+  reactiveSilicaPpm() {
+    const total = Math.max(0, Number(this.SiO2) || 0);
+    const fraction = Math.max(0, Math.min(1, Number(this.reactiveSilicaFraction) || 0));
+    return total * fraction;
+  }
+
+  // Mix an explicitly dissolved silica pulse into a fluid that may also carry
+  // inert particulate SiO2. The total and reactive inventories stay exactly
+  // reconstructible from (SiO2, reactiveSilicaFraction).
+  addReactiveSilica(ppm: number) {
+    const addition = Math.max(0, Number(ppm) || 0);
+    const totalBefore = Math.max(0, Number(this.SiO2) || 0);
+    const reactiveBefore = this.reactiveSilicaPpm();
+    this.SiO2 = totalBefore + addition;
+    this.reactiveSilicaFraction = this.SiO2 > 0
+      ? (reactiveBefore + addition) / this.SiO2
+      : 0;
+    return addition;
+  }
+
+  // Precipitation can consume only dissolved/reactive silica; suspended grains
+  // remain in the bulk analytical total. Returns the actual ppm removed.
+  debitReactiveSilica(ppm: number) {
+    const requested = Math.max(0, Number(ppm) || 0);
+    const totalBefore = Math.max(0, Number(this.SiO2) || 0);
+    const reactiveBefore = this.reactiveSilicaPpm();
+    const removed = Math.min(requested, reactiveBefore);
+    const totalAfter = Math.max(0, totalBefore - removed);
+    const reactiveAfter = Math.max(0, reactiveBefore - removed);
+    this.SiO2 = totalAfter;
+    this.reactiveSilicaFraction = totalAfter > 0 ? reactiveAfter / totalAfter : 0;
+    return removed;
   }
 
   describe() {

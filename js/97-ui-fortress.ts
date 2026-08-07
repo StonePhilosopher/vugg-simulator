@@ -38,7 +38,7 @@ const FLUID_PRESETS = {
   silica: {
     label: 'Silica-rich',
     desc: 'Test recipe — high silica (600 ppm SiO₂), moderate Ca, low metals. Quartz-dominant growth. Generic; not anchored to a locality.',
-    fluid: { SiO2: 600, Ca: 150, CO3: 100, Fe: 8, Mn: 3, Ti: 0.8, Al: 4, F: 10, Zn: 0, S: 0, Cu: 0, O2: 0, pH: 6.5, salinity: 5.0 }
+    fluid: { SiO2: 600, Ca: 150, CO3: 100, Fe: 8, Mn: 3, Ti: 0.1, Al: 4, F: 10, Zn: 0, S: 0, Cu: 0, O2: 0, pH: 6.5, salinity: 5.0 }
   },
   carbonate: {
     label: 'Carbonate',
@@ -105,9 +105,9 @@ type CreativeChemistryEvidence = {
   coupling: string;
   consumers: string[];
   probe: {
-    kind: 'stoichiometric-capacity' | 'germanium-partition' | 'yttrium-fluorite'
+      kind: 'stoichiometric-capacity' | 'germanium-partition' | 'yttrium-fluorite'
       | 'oxygen-redox' | 'salinity-water-activity' | 'ph-carbonate-speciation'
-      | 'sulfur-reservoir';
+      | 'sulfur-reservoir' | 'reactive-silica-fraction';
     representativeMineral?: string;
     coefficient?: number;
   };
@@ -145,6 +145,7 @@ function _chemistryControl(
 
 const _CREATIVE_CHEMISTRY_CONTROL_BASES: Record<string, CreativeChemistryControlBase> = {
   SiO2:_chemistryControl('f-sio2','sio2','SiO₂',20000,'major'),
+  reactiveSilicaFraction:_chemistryControl('f-reactive-silica','reactive-silica','Reactive SiO₂ fraction',1,'physical',100,'fraction',2),
   Ca:_chemistryControl('f-ca','ca','Ca',5000,'major'),
   CO3:_chemistryControl('f-co3','co3','CO₃',5000,'major'),
   F:_chemistryControl('f-f','f','F',1000,'ligand'),
@@ -233,6 +234,15 @@ function _creativeChemistryEvidence(field: string): CreativeChemistryEvidence {
   }
 
   const special: Record<string, CreativeChemistryEvidence> = {
+    reactiveSilicaFraction: {
+      provenance: [
+        'js/20-chemistry-fluid.ts:reactiveSilicaPpm/addReactiveSilica/debitReactiveSilica',
+        'js/25-chemistry-conditions.ts:silica_precipitate_phase',
+      ],
+      coupling: 'Separates dissolved/reactive silica from suspended or detrital analytical SiO2; generic silica saturation and every SiO2 growth debit can use only the reactive inventory.',
+      consumers: ['FluidChemistry.reactiveSilicaPpm', 'silica_precipitate_phase', 'supersaturation_opal/chalcedony/quartz', 'applyStoichiometricGrowthBudget:SiO2'],
+      probe: { kind: 'reactive-silica-fraction' },
+    },
     Ge: {
       provenance: [
         'js/61-engines-sulfide.ts:sphaleriteGermaniumUptake',
@@ -529,6 +539,23 @@ function creativeChemistryCausalProbe(field: string, value: number): CreativeChe
       details: { calcite_sigma: sigma, carbonate_fraction: bjerrumFractions(fluid.pH, 25).CO3 },
     };
   }
+  if (probe.kind === 'reactive-silica-fraction') {
+    const fluid = new FluidChemistry({ SiO2: 400, reactiveSilicaFraction: decodedValue, pH: 7 });
+    const conditions = new VugConditions({ temperature: 150, pressure: 1.5, fluid });
+    const reactive = fluid.reactiveSilicaPpm();
+    const sigma = Number(conditions.supersaturation_chalcedony())
+      + Number(conditions.supersaturation_quartz());
+    return {
+      field, input_value: value, fluid_value: fluid.reactiveSilicaFraction,
+      route: 'FluidChemistry.reactiveSilicaPpm',
+      signal: reactive,
+      consumer_mutated: reactive > 0,
+      forward_route: 'VugConditions.supersaturation_chalcedony/quartz',
+      forward_signal: sigma,
+      forward_observed: Number.isFinite(sigma),
+      details: { total_SiO2_ppm: fluid.SiO2, reactive_SiO2_ppm: reactive },
+    };
+  }
   return { field, input_value: value, fluid_value: inputFluid[field], route: 'unimplemented', signal: NaN, consumer_mutated: false };
 }
 
@@ -541,7 +568,9 @@ function creativeChemistryCausalSignal(field: string, value: number): number {
 // Full-name aliases make expert search useful without requiring players to
 // remember whether a compact row says “German.”, “Ge”, or “germanium”.
 const CREATIVE_CHEMISTRY_SEARCH_ALIASES: Record<string, string> = {
-  SiO2:'silica silicon dioxide', Ca:'calcium', CO3:'carbonate carbon dioxide inorganic carbon DIC',
+  SiO2:'silica silicon dioxide total analytical bulk',
+  reactiveSilicaFraction:'silica dissolved reactive silicic acid h4sio4 suspended particulate detrital fraction',
+  Ca:'calcium', CO3:'carbonate carbon dioxide inorganic carbon DIC',
   F:'fluorine fluoride', Al:'aluminum aluminium', Fe:'iron', Mn:'manganese', Cu:'copper',
   S:'sulfur sulphur dissolved total bulk',
   S_sulfide:'sulfur sulphur sulfide reduced hs h2s minus ii',
@@ -1250,7 +1279,11 @@ function fortressStep(action, payload) {
       if (typeof c.fluid[sp] !== 'number') {
         actionDesc = `💉 Unknown species '${sp}' — no change`;
       } else {
-        c.fluid[sp] = (c.fluid[sp] || 0) + amount;
+        if (sp === 'SiO2' && typeof c.fluid.addReactiveSilica === 'function') {
+          c.fluid.addReactiveSilica(amount);
+        } else {
+          c.fluid[sp] = (c.fluid[sp] || 0) + amount;
+        }
         actionDesc = `💉 Inject ${sp} +${amount} ppm → ${c.fluid[sp].toFixed(0)} ppm`;
       }
       break;
@@ -1260,7 +1293,8 @@ function fortressStep(action, payload) {
     // saved keyboard macros) working. Each routes through inject_species
     // semantics where possible.
     case 'silica':
-      c.fluid.SiO2 += 400;
+      if (typeof c.fluid.addReactiveSilica === 'function') c.fluid.addReactiveSilica(400);
+      else c.fluid.SiO2 += 400;
       c.fluid.Al += 2;
       c.fluid.Ti += 0.3;
       actionDesc = '🔮 Silica injected — SiO₂ +400 ppm (now ' + c.fluid.SiO2.toFixed(0) + ')';
@@ -1285,7 +1319,8 @@ function fortressStep(action, payload) {
       c.fluid.Cu = 120.0;
       c.fluid.Fe += 40;
       c.fluid.S += 80;
-      c.fluid.SiO2 += 200;
+      if (typeof c.fluid.addReactiveSilica === 'function') c.fluid.addReactiveSilica(200);
+      else c.fluid.SiO2 += 200;
       c.fluid.O2 = 0.3;
       c.temperature = Math.min(c.temperature + 30, 600);
       c.flow_rate = 4.0;

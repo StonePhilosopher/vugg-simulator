@@ -14,7 +14,7 @@ function event_reactive_wall_acid_pulse_1(c) {
   c.fluid.Zn += 60.0;
   c.fluid.Fe += 15.0;
   c.flow_rate = 4.0;
-  return 'CO₂-saturated brine surges into the vug. pH crashes to 3.5. The limestone walls begin to fizz — carbonate dissolving on contact.';
+  return 'CO₂-saturated brine surges into the vug. pH crashes to 3.5. The Bonneterre dolostone wall begins to dissolve, releasing Ca-Mg-carbonate inventory.';
 }
 
 function event_reactive_wall_acid_pulse_2(c) {
@@ -37,7 +37,15 @@ function event_reactive_wall_acid_pulse_3(c) {
 
 function event_reactive_wall_seal(c) {
   c.flow_rate = 0.1;
-  c.fluid.pH += 0.5;
-  c.fluid.pH = Math.min(c.fluid.pH, 8.0);
-  return 'The feeding fracture seals. Flow stops. The vug becomes a closed system. Whatever\'s dissolved will precipitate until equilibrium.';
+  // The last acidic brine is neutralized against Bonneterre dolostone before
+  // isolation. Its Ca-Mg-carbonate release is already booked by VugWall;
+  // this recovery exposes that real inventory to the dolomite SI gate.
+  // Only a modest rebound is needed: at 105-140 C the booked Ca-Mg-CO3
+  // inventory crosses the heterogeneous dolomite-nucleation barrier near
+  // neutral pH. Avoid an artificial alkaline spike and its runaway omega.
+  c.fluid.pH = Math.min(c.fluid.pH + 0.3, 8.0);
+  // Active basinal advection had held the conduit nearly isothermal. Once the
+  // fracture seals, resume the simulator's ordinary conductive cooling.
+  c.wall.cooling_rate = 1.5;
+  return 'The feeding fracture seals. Flow stops; the last acidic brine finishes neutralizing against Bonneterre dolostone, then the isolated vug cools conductively while its Ca-Mg-carbonate load precipitates.';
 }

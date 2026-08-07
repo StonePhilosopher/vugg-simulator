@@ -175,11 +175,25 @@ function grow_calcite(crystal, conditions, step) {
   // trajectory contract as the Mg branch (the v187 lesson).
   const morphFormT = calciteMorphForm(morphMgRatio, conditions.temperature, sigma, crystal.growth_environment !== 'air');
   const morphRegime = (crystal._morphology && crystal._morphology.regime) || null;
+  const depositionalRegime = typeof conditions.silica_depositional_regime === 'function'
+    ? conditions.silica_depositional_regime()
+    : null;
+  const isTravertineWater = depositionalRegime?.phase === 'carbonate-travertine water'
+    && conditions._calciteDepositionalMode === 'travertine';
   // The heterogeneous calcite nucleation gate is Ω>1.5, so the historical
   // excess<0.4 branch (Ω<1.4) was unreachable for a newly nucleated
   // manganocalcite. The near-threshold window below remains slow relative to
   // strongly supersaturated spar while overlapping the actual nucleation gate.
-  if (is_manganocalcite && excess < 1.2) {
+  if (isTravertineWater) {
+    // Mammoth is a CO2-degassing terrace deposit: the product is a laminated,
+    // microcrystalline calcite crust (with microbial/flow fabrics), not a vug-
+    // projecting rhombohedral or dogtooth cabinet crystal. The water-type
+    // discriminator is shared with the silica competition panel, while the
+    // executed CO2-degas/reheat event supplies the depositional-pathway gate.
+    crystal.habit = 'travertine_crust';
+    crystal.dominant_forms = ['laminated microcrystalline calcite terrace crust', 'flow-normal surface coating'];
+    crystal._depositional_fabric = 'carbonate travertine';
+  } else if (is_manganocalcite && excess < 1.2) {
     crystal.habit = 'botryoidal_manganocalcite';
     crystal.dominant_forms = ['cauliflower botryoidal mass', 'mammillary surface', 'cryptocrystalline interior'];
     crystal._variety = 'manganocalcite';
@@ -405,6 +419,14 @@ function grow_dolomite(crystal, conditions, step) {
   }
 
   const excess = sigma - 1.0;
+  // Habit thresholds must live on the same dimensionless scale after the
+  // dolomite engine's empirical-sigma -> textbook-omega promotion. Raw omega
+  // at first nucleation is >=10, so comparing (omega - 1) to the legacy 1.2
+  // threshold made every newly nucleated hydrothermal dolomite "massive" and
+  // erased the documented saddle/baroque habit. Normalize by the executable
+  // nucleation barrier for morphology only; equilibrium and PWP growth retain
+  // the unmodified omega above.
+  const morphologyExcess = sigma / Math.max(MINERAL_GATES_dolomite.sigma_crit, 1e-9) - 1.0;
   // Kim 2023: ordering fraction f_ord ramps with FLUID-LEVEL cycle count.
   // Tracking at the fluid level captures the geological insight that an
   // oscillatory environment ratchets ordering across all dolomite nuclei,
@@ -429,10 +451,10 @@ function grow_dolomite(crystal, conditions, step) {
     rate = base_rate * (0.30 + 0.70 * f_ord);
   }
 
-  if (conditions.temperature > 200 && excess < 0.5) {
+  if (conditions.temperature > 200 && morphologyExcess < 0.5) {
     crystal.habit = 'coarse_rhomb';
     crystal.dominant_forms = ['coarse rhombohedral {104}', 'transparent to white textbook crystals'];
-  } else if (excess > 1.2) {
+  } else if (morphologyExcess > 1.2) {
     crystal.habit = 'massive';
     crystal.dominant_forms = ['massive granular', 'white to gray sugary aggregate'];
   } else {
@@ -906,7 +928,8 @@ function grow_azurite(crystal, conditions, step) {
   const rate = 3.0 * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.1) return null;
   let color_note;
-  if (excess > 1.0) { crystal.habit = 'azurite_sun'; crystal.dominant_forms = ['radiating flat disc', 'azurite-sun in fracture']; color_note = 'deep blue azurite-sun — radiating disc habit in narrow fracture'; }
+  if (crystal.vector === 'coating') { crystal.habit = 'crystalline_crust'; crystal.dominant_forms = ['fine-grained blue coating', 'coalesced crystalline crust']; color_note = 'blue crystalline crust — fine azurite aggregates spread across the supergene cavity wall'; }
+  else if (excess > 1.0) { crystal.habit = 'azurite_sun'; crystal.dominant_forms = ['radiating flat disc', 'azurite-sun in fracture']; color_note = 'deep blue azurite-sun — radiating disc habit in narrow fracture'; }
   else if (excess > 0.4) { crystal.habit = 'rosette_bladed'; crystal.dominant_forms = ['radiating bladed crystals', 'rosette']; color_note = 'deep blue rosette of radiating blades'; }
   else { crystal.habit = 'deep_blue_prismatic'; crystal.dominant_forms = ['monoclinic prismatic', 'deep azure/midnight blue']; color_note = 'deep azure-blue monoclinic prism'; }
   conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.025, 0);

@@ -48,7 +48,7 @@ const COLOUR_LEXICON: { [name: string]: string } = {
   chalk_white: '#f2efe8', pearly_white: '#efece5', white_powdery: '#f2f0ea',
   white_spray: '#f0ede6', white_flesh: '#eaddce', white_pink_zoned: '#ecdcd6',
   white_pale_green: '#e2e6da', white_pale_blue_green: '#dde8e2', common_white_brown: '#e6ddce',
-  gray_to_white: '#dcdad2', white_to_pale_yellow: '#eee9d2',
+  gray_to_white: '#dcdad2', blue_gray_white: '#b9cdd0', white_to_pale_yellow: '#eee9d2',
   // --- yellows / golds ---
   pale_yellow: '#e2cb6a', yellow: '#e6d23a', bright_yellow: '#eedc2a', lemon_yellow: '#edea45',
   canary_yellow: '#e9d92c', rich_yellow: '#e8b722', golden_yellow: '#e2b32a', straw_yellow: '#ddca7a',

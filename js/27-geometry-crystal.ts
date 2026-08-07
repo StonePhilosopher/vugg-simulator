@@ -278,6 +278,12 @@ class Crystal {
     // O5_MASKING_ENABLED, false until O5b. Cleared when the fluid grows through
     // the film (O5b) or, for a coats_front film, on liberation.
     this._film = opts._film ?? null;
+    // _surfaceGrowth is assigned post-growth by classifySurfaceGrowth (js/45)
+    // only for area-covering aggregate fabrics. It stores physical wall coverage,
+    // booked aggregate volume and derived mean thickness. The renderer may repeat
+    // representative microgeometry, but those instances never enter this Crystal's
+    // accepted-zone inventory or _volume_mm3 mass basis.
+    if (opts._surfaceGrowth) this._surfaceGrowth = opts._surfaceGrowth;
     // Paramorph tracking — set by applyParamorphTransitions when the crystal
     // crosses a phase-transition T (Round 8a-2: argentite → acanthite at 173°C).
     // Stores the *original* (pre-transition) mineral name so library + narrator
