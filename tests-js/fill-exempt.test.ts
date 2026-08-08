@@ -267,7 +267,7 @@ describe('Backlog K — fill-cap exemption', () => {
       // tincalconite + thenardite. Same semantic as the realgar-
       // origin pin in realgar-orpiment.test.ts.
       const seeds = [42, 1, 7, 13, 23];
-      let anyEvaporiteCrust = 0;
+      let hitSeed: number | null = null;
       for (const seed of seeds) {
         setSeed(seed);
         const scen = SCENARIOS['searles_lake'];
@@ -282,14 +282,17 @@ describe('Backlog K — fill-cap exemption', () => {
         const hasMirab = sim.crystals.some((c: any) =>
           c.mineral === 'mirabilite' || c.paramorph_origin === 'mirabilite',
         );
-        if (hasBorax || hasMirab) anyEvaporiteCrust++;
+        if (hasBorax || hasMirab) {
+          hitSeed = seed;
+          break;
+        }
       }
       // At least 1 of 5 seeds should produce the evaporite crust
       // (borax/mirabilite-origin) now that fill-exempt unlocks the
       // path. Was 0/5 before Backlog K (handoff §4: "halite fills
       // cavity > 95% before borax's rare-event 12% gate fires").
-      expect(anyEvaporiteCrust,
-        'no seed produced borax/mirabilite-origin crystals — Backlog K regressed').toBeGreaterThanOrEqual(1);
+      expect(hitSeed,
+        'no seed produced borax/mirabilite-origin crystals — Backlog K regressed').not.toBeNull();
     });
   });
 });

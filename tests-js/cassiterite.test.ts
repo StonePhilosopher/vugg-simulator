@@ -31,7 +31,7 @@ declare const FluidChemistry: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
 
-function runScenario(scenarioName: string, seed: number) {
+function runScenarioFresh(scenarioName: string, seed: number) {
   setSeed(seed);
   const { conditions, events, defaultSteps } = SCENARIOS[scenarioName]();
   const sim = new VugSimulator(conditions, events);
@@ -43,6 +43,22 @@ function runScenario(scenarioName: string, seed: number) {
     if (s > maxSigma) maxSigma = s;
   }
   return { sim, maxSigma };
+}
+
+// Scenario histories are deterministic for a (scenario, simulation-seed)
+// pair. Most assertions below only inspect them, so execute each pair once.
+// Tests that deliberately mutate the completed simulator use
+// runScenarioFresh() instead.
+const scenarioCache = new Map<string, ReturnType<typeof runScenarioFresh>>();
+
+function runScenario(scenarioName: string, seed: number) {
+  const key = `${scenarioName}:${seed}`;
+  let result = scenarioCache.get(key);
+  if (!result) {
+    result = runScenarioFresh(scenarioName, seed);
+    scenarioCache.set(key, result);
+  }
+  return result;
 }
 
 describe('Cassiterite — SnO₂ engine (v89)', () => {
@@ -240,7 +256,7 @@ describe('Cassiterite — SnO₂ engine (v89)', () => {
       // Force-create scenario where cassiterite exists, then drop pH —
       // should still be present at end (no acid path in grow_cassiterite).
       setSeed(42);
-      const { sim } = runScenario('schneeberg', 42);
+      const { sim } = runScenarioFresh('schneeberg', 42);
       const initialCas = sim.crystals.filter((c: any) => c.mineral === 'cassiterite');
       if (initialCas.length === 0) return; // covered by integration tests
       // Crank pH down; should still be intact
@@ -260,7 +276,7 @@ describe('Cassiterite — SnO₂ engine (v89)', () => {
 
     it('does not thermally decompose at high T (no thermal_decomp path)', () => {
       setSeed(42);
-      const { sim } = runScenario('schneeberg', 42);
+      const { sim } = runScenarioFresh('schneeberg', 42);
       const initialCas = sim.crystals.filter((c: any) => c.mineral === 'cassiterite');
       if (initialCas.length === 0) return;
       // Crank T well above 700°C — should still survive (no thermal decomp)

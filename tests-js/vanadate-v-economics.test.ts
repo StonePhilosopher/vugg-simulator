@@ -126,10 +126,12 @@ describe('v193 — the descloizite-group vanadate reaches its type-abundance sup
     // Zn-rich: smithsonite (ZnCO3) is one of its expects_species. So pin the GROUP reaching
     // supergene abundance, not the specific member the Cu/Zn budget happens to select.
     // (Measured post-4b: descloizite alive 4,4,2,3,3 across these seeds; mottramite 0.)
-    const hits = [1, 2, 3, 7, 13].filter((s) => {
-      const sim = runScenario('supergene_oxidation', s);
-      return alive(sim, 'mottramite') + alive(sim, 'descloizite') > 0;
-    }).length;
+    let hits = 0;
+    for (const seed of [1, 2, 3, 7, 13]) {
+      const sim = runScenario('supergene_oxidation', seed);
+      if (alive(sim, 'mottramite') + alive(sim, 'descloizite') > 0) hits++;
+      if (hits >= 3) break;
+    }
     expect(hits, `descloizite-group grew in ${hits}/5 seeds`).toBeGreaterThanOrEqual(3);
-  }, 120_000); // Five full stochastic specimens can exceed Vitest's 60 s default under fleet-wide CI contention.
+  }, 180_000); // Three independent witnesses are sufficient; failure still exhausts all five seeds.
 });

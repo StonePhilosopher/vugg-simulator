@@ -262,6 +262,9 @@ const MINERAL_ENGINES = {
   // textbook "dendritic pyrolusite" is actually cryptomelane.
   // First dogfood test of the vugg-add-mineral skill (~/.claude/skills/
   // vugg-add-mineral/SKILL.md).
+  birnessite: grow_birnessite,
+  romanechite: grow_romanechite,
+  todorokite: grow_todorokite,
   pyrolusite: grow_pyrolusite,
   // v108 (2026-05-20): plumbogummite PbAl3(PO4)2(OH)5·H2O —
   // trigonal alunite-supergroup Pb-Al-PO4 supergene endmember.

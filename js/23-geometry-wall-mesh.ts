@@ -99,6 +99,12 @@ class WallMesh {
     // equatorial max). One slot per ring; the renderer reads ringCount
     // slots into its uVugRadiiByRing uniform array.
     this.maxRadiusByRing = null;
+    // Exact area of the tessellated cavity surface. Surface-growth
+    // aggregates use this same triangle ledger for physical thickness and
+    // representative placement, so an irregular vug is not silently
+    // replaced by a mean-diameter sphere.
+    this.surface_area_mm2 = 0;
+    this._surfaceTriangles = [];
   }
 
   // ---- Factory ----
@@ -470,31 +476,253 @@ class WallMesh {
     this.indices = indices;
   }
 
+  // Rebuild triangle areas, centroids and outward normals from the exact
+  // position/index buffers consumed by the renderer. A triangle can be
+  // fractionally weighted at a patch boundary; this lets covered area close
+  // exactly to target coverage without pretending that a coarse boundary
+  // triangle is either wholly bare or wholly coated.
+  _recomputeSurfaceMetrics() {
+    const positions = this.positions;
+    const indices = this.indices;
+    const triangles: any[] = [];
+    let totalArea = 0;
+    if (!positions || !indices) {
+      this.surface_area_mm2 = 0;
+      this._surfaceTriangles = triangles;
+      return;
+    }
+    for (let offset = 0; offset + 2 < indices.length; offset += 3) {
+      const ia = indices[offset], ib = indices[offset + 1], ic = indices[offset + 2];
+      const ax = positions[ia * 3], ay = positions[ia * 3 + 1], az = positions[ia * 3 + 2];
+      const bx = positions[ib * 3], by = positions[ib * 3 + 1], bz = positions[ib * 3 + 2];
+      const cx = positions[ic * 3], cy = positions[ic * 3 + 1], cz = positions[ic * 3 + 2];
+      const abx = bx - ax, aby = by - ay, abz = bz - az;
+      const acx = cx - ax, acy = cy - ay, acz = cz - az;
+      let nx = aby * acz - abz * acy;
+      let ny = abz * acx - abx * acz;
+      let nz = abx * acy - aby * acx;
+      const crossLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
+      const area = crossLen * 0.5;
+      if (!(area > 1e-12)) continue;
+      nx /= crossLen; ny /= crossLen; nz /= crossLen;
+      let mx = (ax + bx + cx) / 3;
+      let my = (ay + by + cy) / 3;
+      let mz = (az + bz + cz) / 3;
+      const ml = Math.sqrt(mx * mx + my * my + mz * mz) || 1;
+      // Indices should wind away from the cavity centre. Defensively make
+      // that convention explicit so the returned growth normal can always
+      // be the opposite, cavity-facing direction.
+      if (nx * mx + ny * my + nz * mz < 0) {
+        nx = -nx; ny = -ny; nz = -nz;
+      }
+      mx /= ml; my /= ml; mz /= ml;
+      triangles.push({
+        triangle_index: offset / 3,
+        ia, ib, ic, area_mm2: area,
+        centroid_dir: [mx, my, mz],
+        outward_normal: [nx, ny, nz],
+      });
+      totalArea += area;
+    }
+    // Build edge adjacency once with the geometry. Surface fabrics then grow
+    // out from their anchor as one edge-connected swath instead of selecting
+    // merely nearby, but potentially disconnected, triangles on an irregular
+    // multi-lobed cavity.
+    const edgeOwners = new Map<string, any[]>();
+    for (const triangle of triangles) {
+      triangle.neighbor_indices = [];
+      const edges = [[triangle.ia, triangle.ib], [triangle.ib, triangle.ic], [triangle.ic, triangle.ia]];
+      for (const edge of edges) {
+        const lo = Math.min(edge[0], edge[1]);
+        const hi = Math.max(edge[0], edge[1]);
+        const key = `${lo}:${hi}`;
+        const owners = edgeOwners.get(key) || [];
+        owners.push(triangle);
+        edgeOwners.set(key, owners);
+      }
+    }
+    edgeOwners.forEach((owners) => {
+      if (owners.length < 2) return;
+      for (const a of owners) {
+        for (const b of owners) {
+          if (a !== b && !a.neighbor_indices.includes(b.triangle_index)) {
+            a.neighbor_indices.push(b.triangle_index);
+          }
+        }
+        a.neighbor_indices.sort((x, y) => x - y);
+      }
+    });
+    this.surface_area_mm2 = totalArea;
+    this._surfaceTriangles = triangles;
+  }
+
+  surfaceAreaMm2() {
+    return Number(this.surface_area_mm2) || 0;
+  }
+
+  // Select the closest triangle swath around an anchor direction until its
+  // area equals the requested fraction of the exact wall area. The final
+  // triangle carries a fractional physical weight when necessary.
+  surfacePatch(anchorDirection, targetCoverage) {
+    const raw = Array.isArray(anchorDirection) ? anchorDirection : [0, 1, 0];
+    const al = Math.sqrt(raw[0] * raw[0] + raw[1] * raw[1] + raw[2] * raw[2]) || 1;
+    const anchor = [raw[0] / al, raw[1] / al, raw[2] / al];
+    const coverage = Math.max(0, Math.min(1, Number(targetCoverage) || 0));
+    const targetArea = this.surfaceAreaMm2() * coverage;
+    if (!(targetArea > 0) || !this._surfaceTriangles.length) {
+      return { anchor, coverage_fraction: coverage, area_mm2: 0, triangles: [] };
+    }
+    const ranked = this._surfaceTriangles.map((t) => ({
+      triangle: t,
+      score: t.centroid_dir[0] * anchor[0]
+        + t.centroid_dir[1] * anchor[1]
+        + t.centroid_dir[2] * anchor[2],
+    }));
+    ranked.sort((a, b) => (b.score - a.score)
+      || (a.triangle.triangle_index - b.triangle.triangle_index));
+    const selected: any[] = [];
+    const rankedByIndex = new Map(ranked.map((item) => [item.triangle.triangle_index, item]));
+    const visited = new Set<number>();
+    const queued = new Set<number>();
+    const frontier: any[] = [];
+    const enqueue = (item: any) => {
+      if (!item) return;
+      const index = item.triangle.triangle_index;
+      if (visited.has(index) || queued.has(index)) return;
+      frontier.push(item);
+      queued.add(index);
+    };
+    enqueue(ranked[0]);
+    let remaining = targetArea;
+    while (remaining > 1e-12 && selected.length < ranked.length) {
+      // Highest anchor affinity among triangles touching the existing patch.
+      // The triangle index tie-break makes the patch replay-deterministic.
+      frontier.sort((a, b) => (b.score - a.score)
+        || (a.triangle.triangle_index - b.triangle.triangle_index));
+      let item = frontier.shift();
+      if (!item) {
+        // Defensive recovery for a malformed/disconnected mesh. Production
+        // WallMesh tessellations are closed and connected, so this branch is
+        // not used by a valid cavity.
+        item = ranked.find((candidate) => !visited.has(candidate.triangle.triangle_index));
+        if (!item) break;
+      }
+      const index = item.triangle.triangle_index;
+      queued.delete(index);
+      if (visited.has(index)) continue;
+      visited.add(index);
+      const weight = Math.min(item.triangle.area_mm2, remaining);
+      selected.push({ ...item.triangle, weight_mm2: weight });
+      remaining -= weight;
+      for (const neighborIndex of item.triangle.neighbor_indices || []) {
+        enqueue(rankedByIndex.get(neighborIndex));
+      }
+    }
+    return {
+      anchor,
+      coverage_fraction: coverage,
+      area_mm2: targetArea - Math.max(0, remaining),
+      triangles: selected,
+    };
+  }
+
+  _surfaceSampleUnit(seed, index, channel) {
+    let x = ((Number(seed) | 0) ^ Math.imul((index + 1) | 0, 0x9e3779b1)
+      ^ Math.imul((channel + 11) | 0, 0x85ebca6b)) >>> 0;
+    x ^= x >>> 16;
+    x = Math.imul(x, 0x7feb352d) >>> 0;
+    x ^= x >>> 15;
+    x = Math.imul(x, 0x846ca68b) >>> 0;
+    x ^= x >>> 16;
+    return (x >>> 0) / 4294967296;
+  }
+
+  // Deterministic, area-weighted points on the exact triangle patch. The
+  // returned normals face into the cavity, which is the mineral-growth
+  // direction. Desktop/mobile can request different counts without changing
+  // the patch, area, mass, or layer identity.
+  sampleSurfacePatch(anchorDirection, count, targetCoverage, seed) {
+    const patch = this.surfacePatch(anchorDirection, targetCoverage);
+    const n = Math.max(0, Number(count) | 0);
+    const samples: any[] = [];
+    if (!n || !(patch.area_mm2 > 0) || !patch.triangles.length || !this.positions) {
+      return { ...patch, samples, triangle_indices: [] };
+    }
+    const cumulative: number[] = [];
+    let sum = 0;
+    for (const t of patch.triangles) {
+      sum += t.weight_mm2;
+      cumulative.push(sum);
+    }
+    const phase = this._surfaceSampleUnit(seed, 0, 97);
+    const golden = 0.6180339887498949;
+    for (let i = 0; i < n; i++) {
+      const target = (((i + 0.5) * golden + phase) % 1) * sum;
+      let lo = 0, hi = cumulative.length - 1;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (cumulative[mid] < target) lo = mid + 1;
+        else hi = mid;
+      }
+      const t = patch.triangles[lo];
+      const u = this._surfaceSampleUnit(seed, i, 1);
+      const v = this._surfaceSampleUnit(seed, i, 2);
+      const su = Math.sqrt(u);
+      const wa = 1 - su, wb = su * (1 - v), wc = su * v;
+      const p = this.positions;
+      samples.push({
+        x: wa * p[t.ia * 3] + wb * p[t.ib * 3] + wc * p[t.ic * 3],
+        y: wa * p[t.ia * 3 + 1] + wb * p[t.ib * 3 + 1] + wc * p[t.ic * 3 + 1],
+        z: wa * p[t.ia * 3 + 2] + wb * p[t.ib * 3 + 2] + wc * p[t.ic * 3 + 2],
+        nx: -t.outward_normal[0],
+        ny: -t.outward_normal[1],
+        nz: -t.outward_normal[2],
+        triangle_index: t.triangle_index,
+      });
+    }
+    return {
+      ...patch,
+      samples,
+      triangle_indices: patch.triangles.map((t) => t.triangle_index),
+    };
+  }
+
   // ---- Cache fingerprint ----
   //
-  // Match the legacy _topoCavitySignature in 99i so the renderer's
-  // cache-hit/miss timing doesn't change. The signature folds in
-  // ring count, cells per ring, a sampled wall_depth checksum (8
-  // cells per ring), and the current fluid-surface ring. Cheap to
-  // compute; busts whenever a dissolution event or fluid-level
-  // change shifts the cavity.
+  // Exact invalidation fingerprint shared with the renderer. Production
+  // WallState cells advance a monotonic revision from their wall_depth and
+  // base_radius_mm setters, so every position-affecting write is represented
+  // and cache reads stay O(1). Plain snapshot/test walls have no revision; for
+  // those, every cell radius participates in the exact fallback hash. Sampling
+  // a few cells is never sufficient once surface area and coating thickness
+  // are scientific state.
   static _signature(wall, sim) {
     if (!wall || !wall.rings || !wall.rings.length) return '';
     const ring0 = wall.rings[0];
     const N = ring0 ? ring0.length : 0;
-    let depthSum = 0;
+    const surf = sim && sim.conditions ? sim.conditions.fluid_surface_ring : null;
+    if (Number.isSafeInteger(wall._geometry_revision)) {
+      return `${wall.ring_count}|${N}|rev:${wall._geometry_revision}|${surf}`;
+    }
+    let hashA = 0x811c9dc5;
+    let hashB = 0x9e3779b9;
+    const scratch = new DataView(new ArrayBuffer(8));
     for (let r = 0; r < wall.rings.length; r++) {
       const ring = wall.rings[r];
       if (!ring) continue;
-      const stride = Math.max(1, Math.floor(N / 8));
-      for (let c = 0; c < N; c += stride) {
+      for (let c = 0; c < N; c++) {
         const cell = ring[c];
         if (!cell) continue;
-        depthSum += (cell.base_radius_mm + cell.wall_depth) * (r * 31 + c);
+        const radius = (Number(cell.base_radius_mm) || 0) + (Number(cell.wall_depth) || 0);
+        scratch.setFloat64(0, radius, true);
+        for (let byte = 0; byte < 8; byte++) {
+          const value = scratch.getUint8(byte);
+          hashA = Math.imul(hashA ^ value, 0x01000193) >>> 0;
+          hashB = (Math.imul(hashB ^ value, 0x85ebca6b) + 0x27d4eb2f) >>> 0;
+        }
       }
     }
-    const surf = sim && sim.conditions ? sim.conditions.fluid_surface_ring : null;
-    return `${wall.ring_count}|${N}|${depthSum.toFixed(2)}|${surf}`;
+    return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}|${surf}`;
   }
 
   // ---- Recompute (cheap when stale, no-op when fresh) ----
@@ -636,6 +864,7 @@ class WallMesh {
     if (northR2 > maxR2) maxR2 = northR2;
 
     this.max_radius_mm = Math.sqrt(maxR2);
+    this._recomputeSurfaceMetrics();
     this.sig = WallMesh._signature(wall, sim);
   }
 }

@@ -176,6 +176,16 @@ function _scenarioSpeciesExclusion(sim: any, name: string): string | null {
   return typeof reason === 'string' && reason.trim() ? reason.trim() : null;
 }
 
+function _scenarioPositiveLicenseBlock(sim: any, name: string): string | null {
+  const scenarioId = sim?.conditions?._scenario?.id;
+  if (!scenarioId) return null; // Creative/custom broth: every engine remains available.
+  const spec = (typeof MINERAL_SPEC !== 'undefined') ? MINERAL_SPEC?.[name] : null;
+  if (!spec?._requires_scenario_license) return null;
+  const licensed = Array.isArray(spec.scenarios) ? spec.scenarios : [];
+  if (licensed.includes(scenarioId)) return null;
+  return `no locality license for ${name} in ${scenarioId}; chemistry alone does not prove occurrence (Creative mode remains unrestricted)`;
+}
+
 function _scenarioNucleationWindowBlock(sim: any, name: string): string | null {
   const window = sim?.conditions?._scenario?.nucleation_windows?.[name];
   if (!window || typeof window !== 'object') return null;
@@ -227,6 +237,8 @@ function productionNucleationDecisionProbe(
     ...cr,
     ...(crystalMode === 'inactive-target' && cr.mineral === name ? { active: false } : {}),
     zones: Array.isArray(cr.zones) ? cr.zones.map((zone: any) => ({ ...zone })) : [],
+    phase_transition_history: Array.isArray(cr.phase_transition_history)
+      ? cr.phase_transition_history.map((row: any) => ({ ...row })) : [],
   }));
   probe.conditions = Object.assign(Object.create(Object.getPrototypeOf(sim.conditions)), sim.conditions);
   probe.conditions.fluid = sim.conditions.fluid;
@@ -235,6 +247,7 @@ function productionNucleationDecisionProbe(
   }
   probe.log = [];
   probe.crystal_counter = Number(sim.crystal_counter) || probe.crystals.length;
+  const mineralBeforeProbe = probe.crystals.map((cr: any) => cr?.mineral);
   probe.nucleate = (mineral: string, position = 'vug wall', sigma = 1) => {
     const birth = { mineral, position, sigma: Number(sigma), crystal_id: ++probe.crystal_counter };
     attempts.push({ mineral, position, sigma: Number(sigma) });
@@ -275,7 +288,9 @@ function productionNucleationDecisionProbe(
   } finally {
     rng = saved;
   }
-  const deterministicEligible = attempts.some(attempt => attempt.mineral === name);
+  const deterministicEligible = attempts.some(attempt => attempt.mineral === name)
+    || probe.crystals.some((cr: any, index: number) => cr?.mineral === name
+      && mineralBeforeProbe[index] != null && mineralBeforeProbe[index] !== name);
   const competing = attempts.find(attempt => attempt.mineral !== name)?.mineral || null;
   return {
     available: true,
@@ -310,6 +325,19 @@ function assessProductionNucleationDecision(
       blockers: [`locality evidence excludes this phase: ${localityExclusion}`],
     };
   }
+  const licenseBlock = _scenarioPositiveLicenseBlock(sim, name);
+  if (licenseBlock) {
+    return {
+      available: true,
+      eligible: false,
+      stochasticBirth: false,
+      effectiveDrawProbability: null,
+      randomDraws: 0,
+      source: 'scenario locality license',
+      competingBirth: null,
+      blockers: [licenseBlock],
+    };
+  }
   const scenarioWindowBlock = _scenarioNucleationWindowBlock(sim, name);
   if (scenarioWindowBlock) {
     return {
@@ -322,6 +350,24 @@ function assessProductionNucleationDecision(
       competingBirth: null,
       blockers: [scenarioWindowBlock],
     };
+  }
+  const requiredSubstrate = (typeof MINERAL_GATES_REGISTRY !== 'undefined')
+    ? MINERAL_GATES_REGISTRY?.[name]?.required_substrate : null;
+  if (requiredSubstrate) {
+    const candidates = typeof executableSubstrateCandidates === 'function'
+      ? executableSubstrateCandidates(name, sim.crystals || []) : [];
+    if (!candidates.some((candidate: any) => candidate.host?.mineral === requiredSubstrate)) {
+      return {
+        available: true,
+        eligible: false,
+        stochasticBirth: false,
+        effectiveDrawProbability: null,
+        randomDraws: 0,
+        source: 'required transformation precursor',
+        competingBirth: null,
+        blockers: [`requires an active exposed ${requiredSubstrate} precursor; fluid supersaturation alone cannot create ${name}`],
+      };
+    }
   }
   const best = productionNucleationDecisionProbe(name, sim, { randomValue: 0 });
   const result: ProductionNucleationDecisionAssessment = {
@@ -394,6 +440,7 @@ function _runNuc(sim: any, fn: (sim: any) => void): void {
   if (_REGISTER_NUCLEATORS_ONLY) return;
   const inferred = fn.name.startsWith('_nuc_') ? fn.name.slice(5) : '';
   if (inferred && _scenarioSpeciesExclusion(sim, inferred)) return;
+  if (inferred && _scenarioPositiveLicenseBlock(sim, inferred)) return;
   if (inferred && _scenarioNucleationWindowBlock(sim, inferred)) return;
   if (!NUC_DERIVED_SEEDS) { fn(sim); return; }
   const saved = rng;

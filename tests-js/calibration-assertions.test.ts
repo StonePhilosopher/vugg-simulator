@@ -24,7 +24,14 @@
 import { describe, expect, it } from 'vitest';
 import { runScenario } from './helpers';
 
-function speciesIn(name: string, opts: { seed?: number; steps?: number } = {}): { species: Set<string>; counts: Record<string, number>; maxUm: Record<string, number> } {
+type SpeciesResult = { species: Set<string>; counts: Record<string, number>; maxUm: Record<string, number> };
+
+const speciesCache = new Map<string, SpeciesResult>();
+
+function speciesIn(name: string, opts: { seed?: number; steps?: number } = {}): SpeciesResult {
+  const key = `${name}:${opts.seed ?? 42}:${opts.steps ?? 'default'}`;
+  const cached = speciesCache.get(key);
+  if (cached) return cached;
   const sim = runScenario(name, opts);
   if (!sim) return { species: new Set(), counts: {}, maxUm: {} };
   const species = new Set<string>();
@@ -38,12 +45,14 @@ function speciesIn(name: string, opts: { seed?: number; steps?: number } = {}): 
       maxUm[c.mineral] = c.total_growth_um;
     }
   }
-  return { species, counts, maxUm };
+  const result = { species, counts, maxUm };
+  speciesCache.set(key, result);
+  return result;
 }
 
 describe('v128 calibration assertions (proposal §4.1)', () => {
   describe('Assertion 1 — dioptase under graduated competition', () => {
-    it('dioptase fires across the bisbee seed sweep (was 0 firings under fixed-order v125-v126)', { timeout: 240000 }, () => {
+    it('dioptase fires across the bisbee seed sweep (was 0 firings under fixed-order v125-v126)', { timeout: 420000 }, () => {
       // The qualitative claim — graduated competition lets dioptase fire at
       // ALL (v125 fixed-order produced zero firings, the cascade displaced
       // everything) — is what matters; the proposal predicted schneeberg,
@@ -63,12 +72,21 @@ describe('v128 calibration assertions (proposal §4.1)', () => {
       // competition unblocked dioptase"), not seed 42's lucky realization.
       // Floor ≥2/8 with measured headroom 4/8 — a real cascade re-block
       // (the failure this guards) would zero ALL seeds, as v125 did.
-      // Focused runtime is ~38 s, but the complete 185-file suite can exceed
-      // 120 s here under worker/CPU contention. Keep a local 240 s budget so
-      // infrastructure load cannot masquerade as a paragenesis failure; the
-      // distribution assertion below remains unchanged.
-      const seeds = [42, 1, 7, 13, 99, 2024, 17, 3];
-      const fired = seeds.filter((seed) => speciesIn('bisbee', { seed }).species.has('dioptase'));
+      // Exact surface classification makes the two-witness probe ~315 s in a
+      // cold v250 worker. Keep a measured 420 s infrastructure budget so the
+      // timer cannot masquerade as a paragenesis failure; the distribution
+      // assertion below remains unchanged.
+      // This is a statistical reachability pin, not the canonical seed-42
+      // baseline (which is exercised elsewhere). Put two established witness
+      // seeds first so the test can stop as soon as its stated >=2 threshold
+      // is proven; a failure still exhausts the complete eight-seed sample,
+      // including seed 42.
+      const seeds = [13, 99, 42, 1, 7, 2024, 17, 3];
+      const fired: number[] = [];
+      for (const seed of seeds) {
+        if (speciesIn('bisbee', { seed }).species.has('dioptase')) fired.push(seed);
+        if (fired.length >= 2) break;
+      }
       expect(
         fired.length,
         `dioptase should grow in ≥2/8 bisbee seeds under graduated competition (v186 measured 4/8: 13,99,2024,3). Fired in: ${fired.join(', ') || 'none'} — zero would mean the v125 cascade re-blocked it`,

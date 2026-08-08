@@ -111,6 +111,49 @@ const MINERAL_GATES_chromite: MineralGates = {
   _notes: 'FeCr2O4 spinel. Magmatic-only — requires T > 800°C (no current scenario reaches this). Engine stays dormant until layered-mafic intrusion lands.',
 };
 
+// Mn-oxide surface-family split (SIM 249). Potter & Rossman (1979)
+// demonstrated that a black dendritic morphology is not a species name:
+// surface dendrites are commonly romanechite/hollandite-group material,
+// underground mine dendrites are todorokite, and stream/cave coatings are
+// commonly birnessite. These gates use the load-bearing structural cations
+// rather than relabelling every coating as pyrolusite.
+const MINERAL_GATES_birnessite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 90, T_optimal: 25,
+  fluid_min: { Mn: 0.3 },
+  O2_min: 0.5,
+  pH_min: 5.8, pH_max: 9.5,
+  surface_energy: 'low',
+  _sources: ['Potter & Rossman 1979', 'Post 1999', 'Boumaiza et al. 2018'],
+  _notes: 'Hydrous, poorly crystalline layer Mn oxide. Low-temperature stream/cave/coating field; Ba and Mg tunnel-cation fields divert to romanechite and todorokite.',
+};
+
+const MINERAL_GATES_romanechite: MineralGates = {
+  sigma_crit: 1.0,
+  T_min: 5, T_max: 180, T_optimal: 30,
+  fluid_min: { Mn: 0.5, Ba: 100 },
+  O2_min: 0.5,
+  pH_min: 5.5, pH_max: 9.5,
+  surface_energy: 'low',
+  _sources: ['Potter & Rossman 1979', 'Turner & Post 1988', 'Post 1999'],
+  _notes: 'Hydrated Ba-Mn 2x3 tunnel oxide. Ba is a required framework-balancing tunnel cation, not a cosmetic trace; surface dendritic and botryoidal coatings.',
+};
+
+const MINERAL_GATES_todorokite: MineralGates = {
+  sigma_crit: 1.0,
+  // Zhao et al. used reflux conditions; Golden et al. autoclaved the
+  // Mg-exchanged precursor at 155 C. This is a bounded hydrothermal
+  // transformation window, not a direct room-temperature route.
+  T_min: 95, T_max: 200, T_optimal: 155,
+  fluid_min: { Mn: 0.5, Mg: 25 },
+  O2_min: 0.5,
+  pH_min: 6.0, pH_max: 9.5,
+  required_substrate: 'birnessite',
+  surface_energy: 'low',
+  _sources: ['Potter & Rossman 1979', 'Golden, Chen & Dixon 1986', 'Zhao et al. 2015'],
+  _notes: 'Hydrated 3x3 tunnel Mn oxide. Requires an existing, booked birnessite layer precursor and Mg exchange in the bounded hydrothermal window; no direct bare-wall or room-temperature route is claimed.',
+};
+
 const MINERAL_GATES_pyrolusite: MineralGates = {
   sigma_crit: 1.0,
   T_min: 5, T_max: 250, T_optimal: 25,
@@ -315,6 +358,72 @@ Object.assign(VugConditions.prototype, {
   // for cataloging completeness. Requires very high T (>1000°C) which no
   // existing scenario delivers — engine stays dormant until a layered-mafic-
   // intrusion scenario lands.
+  // SIM 249: birnessite — the hydrous, layered low-temperature member of
+  // the Mn-oxide coating family. This is a kinetic/mineralogical phase
+  // selector, not a full aqueous activity model: Mn and oxidant provide the
+  // precipitation drive, while Ba and Mg divert the budget to tunnel phases.
+  supersaturation_birnessite() {
+    const g = MINERAL_GATES_birnessite;
+    const f = this.fluid;
+    if (f.Mn < g.fluid_min!.Mn) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (f.pH < g.pH_min! || f.pH > g.pH_max!) return 0;
+    if (!oxideRedoxAvailable(f, g.O2_min!)) return 0;
+    let sigma = Math.min(f.Mn / 3.0, 3.0) * oxideRedoxFactor(f, 0.8);
+    const T = this.temperature;
+    sigma *= T <= 40 ? 1.25 : Math.max(0.55, 1.25 - (T - 40) / 100);
+    if (f.pH >= 7 && f.pH <= 9) sigma *= 1.12;
+    if (f.Fe > 2 * f.Mn) sigma *= 0.25;
+    if (f.Ba >= MINERAL_GATES_romanechite.fluid_min!.Ba) sigma *= 0.18;
+    if (f.Mg >= MINERAL_GATES_todorokite.fluid_min!.Mg) sigma *= 0.42;
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(f, 'birnessite');
+    return Math.max(sigma, 0);
+  },
+
+  // SIM 249: romanechite — hydrated Ba-bearing 2x3 tunnel oxide. Ba is
+  // deliberately load-bearing: without it this phase cannot claim a generic
+  // black Mn film merely because the morphology happens to be dendritic.
+  supersaturation_romanechite() {
+    const g = MINERAL_GATES_romanechite;
+    const f = this.fluid;
+    if (f.Mn < g.fluid_min!.Mn || f.Ba < g.fluid_min!.Ba) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (f.pH < g.pH_min! || f.pH > g.pH_max!) return 0;
+    if (!oxideRedoxAvailable(f, g.O2_min!)) return 0;
+    const mn = Math.min(f.Mn / 4.0, 3.0);
+    const ba = Math.min(f.Ba / g.fluid_min!.Ba, 2.5);
+    let sigma = mn * ba * oxideRedoxFactor(f, 0.8);
+    const T = this.temperature;
+    sigma *= T <= 60 ? 1.2 : Math.max(0.45, 1.2 - (T - 60) / 150);
+    if (f.Fe > 2 * f.Mn) sigma *= 0.35;
+    if (f.Pb > 30 || f.K > 75) sigma *= 0.65;
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(f, 'romanechite');
+    return Math.max(sigma, 0);
+  },
+
+  // SIM 249: todorokite — Mg-templated 3x3 tunnel oxide. Laboratory and
+  // natural transformation studies both make the interlayer Mg precursor a
+  // mechanistic discriminator; it therefore participates in sigma and in the
+  // booked stoichiometric budget rather than appearing as a tooltip-only gate.
+  supersaturation_todorokite() {
+    const g = MINERAL_GATES_todorokite;
+    const f = this.fluid;
+    if (f.Mn < g.fluid_min!.Mn || f.Mg < g.fluid_min!.Mg) return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (f.pH < g.pH_min! || f.pH > g.pH_max!) return 0;
+    if (!oxideRedoxAvailable(f, g.O2_min!)) return 0;
+    const mn = Math.min(f.Mn / 4.0, 3.0);
+    const mg = Math.min(f.Mg / g.fluid_min!.Mg, 2.5);
+    let sigma = mn * mg * oxideRedoxFactor(f, 0.8);
+    const T = this.temperature;
+    sigma *= T >= 60 && T <= 160 ? 1.2 : 0.85;
+    if (f.pH >= 7 && f.pH <= 8.5) sigma *= 1.12;
+    if (f.Fe > 2 * f.Mn) sigma *= 0.4;
+    if (f.Ba >= MINERAL_GATES_romanechite.fluid_min!.Ba) sigma *= 0.35;
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(f, 'todorokite');
+    return Math.max(sigma, 0);
+  },
+
   // v102 (2026-05-19): pyrolusite β-MnO2 — tetragonal rutile-type Mn(IV)
   // oxide. The default Mn4+ supergene phase when (Ba, K, Pb) low AND Fe
   // doesn't dominate. Two formation modes:
@@ -383,13 +492,12 @@ Object.assign(VugConditions.prototype, {
     if (this.fluid.Fe > 2 * this.fluid.Mn) {
       sigma *= 0.3;
     }
-    // Tunnel-cation discriminators — Ba/K/Pb would divert Mn4+
-    // oxidation to romanechite/cryptomelane/coronadite (none wired
-    // yet; the gates encode the suppressor so pyrolusite doesn't
-    // pretend to capture the full Mn4+ budget at tunnel-cation
-    // localities like Imini). Will route correctly once sister
-    // Mn-oxide engines land.
-    if (this.fluid.Ba > 100) sigma *= 0.5;
+    // First-class competitors now claim the hydrous coating/tunnel fields.
+    // Pyrolusite remains possible as a later crystalline endmember, but it no
+    // longer dominates the low-T surface-film budget by default.
+    if (T <= MINERAL_GATES_birnessite.T_max!) sigma *= 0.35;
+    if (this.fluid.Ba >= MINERAL_GATES_romanechite.fluid_min!.Ba) sigma *= 0.25;
+    if (this.fluid.Mg >= MINERAL_GATES_todorokite.fluid_min!.Mg) sigma *= 0.45;
     if (this.fluid.K > 50) sigma *= 0.4;
     if (this.fluid.Pb > 30) sigma *= 0.3;
     // Si > 200: favors todorokite + Mn-silicates (research §3)

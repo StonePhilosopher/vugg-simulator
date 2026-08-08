@@ -200,7 +200,7 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
       // Pharmacolite is documented as a Jáchymov/Schneeberg type-
       // locality signature; the assertion that it CAN fire somewhere
       // in the broader seed space remains scientifically meaningful.
-      let anyHit = 0;
+      let hitSeed: number | null = null;
       const seeds = [
         42, 1, 7, 13, 99, 2024, 17, 3, 5, 11, 23, 47, 71, 137, 211, 313,
         401, 503, 617, 727, 829, 941, 1031, 1129, 1223, 1327, 1429, 1523,
@@ -209,11 +209,14 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
       for (const seed of seeds) {
         const { sim } = runSchneeberg(seed);
         const ph = sim.crystals.filter((c: any) => c.mineral === 'pharmacolite');
-        if (ph.length > 0) anyHit++;
+        if (ph.length > 0) {
+          hitSeed = seed;
+          break;
+        }
       }
-      expect(anyHit,
-        `expected at least 1/${seeds.length} schneeberg seeds to fire pharmacolite; got ${anyHit}/${seeds.length}`)
-        .toBeGreaterThan(0);
+      expect(hitSeed,
+        `expected at least 1/${seeds.length} schneeberg seeds to fire pharmacolite; no sampled seed fired`)
+        .not.toBeNull();
     });
   });
 

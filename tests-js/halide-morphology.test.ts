@@ -37,12 +37,17 @@ declare const CALCITE_MORPH_DISPLAY: any;
 declare const _habitAspectRatio: any;
 declare const _HELIX_CHEM_PARAMS: any;
 
+const scenarioCache = new Map<string, any>();
+
 function runScenario(name: string, seed = 42, steps?: number) {
+  const key = `${name}:${seed}:${steps ?? 'default'}`;
+  if (scenarioCache.has(key)) return scenarioCache.get(key);
   setSeed(seed);
   const { conditions, events, defaultSteps } = SCENARIOS[name]();
   const sim = new VugSimulator(conditions, events);
   const n = steps ?? defaultSteps ?? 100;
   for (let i = 0; i < n; i++) sim.run_step();
+  scenarioCache.set(key, sim);
   return sim;
 }
 
@@ -142,6 +147,13 @@ describe('the salt-pan log (searles_lake, seed 42)', () => {
     expect(weatheredRemnants.length).toBeGreaterThanOrEqual(1);
     // dendrite band deliberately unoccupied, like calcite's fleet
     expect(share(regimeMass(sim(), 'halite'), 'dendritic')).toBe(0);
+  });
+
+  it.each([
+    ['great_salt_plains', gsp],
+    ['bisbee', bis],
+  ])('builds the canonical %s fleet witness independently', (_name, makeSim) => {
+    expect(makeSim().crystals).toBeInstanceOf(Array);
   });
 
   it('every positive halide zone in the living fleet is tagged, form cube + finite surf σ', () => {

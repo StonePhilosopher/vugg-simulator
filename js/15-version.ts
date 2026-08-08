@@ -12508,7 +12508,36 @@
 //       v5 separates each actual simulator/event step from its zero-based tensor
 //       sample index; archives, claim cards, and displayed row labels therefore
 //       use the same step coordinates as scenario events and hover diagnosis.
-const SIM_VERSION = 248;
+// v249 — EXACT SURFACE FABRICS + Mn-OXIDE PHASE FAMILY (2026-08-07).
+//       The renderer now integrates the actual irregular WallMesh triangle
+//       area, samples the exact coated triangle patch, and derives physical
+//       mean thickness from the single booked Crystal volume. Representative
+//       instances no longer coexist with a duplicate trophy-sized parent;
+//       they are raycastable and later coatings sit above earlier overlapping
+//       layers using explicit nucleation-step stratigraphy. Desktop/mobile LOD
+//       changes only representative count, never physical area, mass or layer
+//       relief. Manganese coatings split into first-class birnessite,
+//       romanechite and todorokite phases. Ba and Mg are mass-booked structural
+//       selectors for the 2x3 and 3x3 tunnel oxides; low-T hydrous films route
+//       to birnessite, while pyrolusite remains a crystalline high-Eh
+//       endmember. Dendritic Mn films receive a flattened wall-tangent branch
+//       grammar, never the old free-standing needle/trophy representation.
+// v250 — HOSTILE-REVIEW EXACTNESS CLOSURE (2026-08-07).
+//       Every wall-cell radius now participates in the shared mesh/renderer
+//       invalidation identity, so exact area, patch samples, and derived
+//       thickness cannot remain stale after an off-stride dissolution edit.
+//       Production WallCells advance an exact mutation-time geometry revision
+//       (O(1) cache reads); plain snapshot walls retain the all-cell hash
+//       fallback. The formerly 529 s Sabkha digest replay returns to 31 s.
+//       Surface stratigraphy is testified only from shared exact WallMesh
+//       triangles; the spherical fallback is explicitly labelled possible.
+//       Todorokite no longer precipitates from bare wall or at 25 C: production
+//       requires a grown, booked birnessite precursor at 95-200 C, transforms
+//       it in place, preserves its Mn inventory, and books exchanged Mg at the
+//       1:6 formula ratio. Executed vendored-Three integration tests now prove
+//       finite instance matrices, raycast hits, single scene representation,
+//       overlap relief, flattened dendrites, and mobile/desktop relief parity.
+const SIM_VERSION = 250;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12524,7 +12553,8 @@ const MODEL_DIGEST = [
   'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
   'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',
-  'surface-growth:mass-booked-area+lining+catalog-crust+asbestos+druse-representatives-v2',
+  'surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4',
+  'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
   'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
   'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3',
   'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',

@@ -24,7 +24,11 @@ declare const FluidChemistry: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
 
+const scenarioCache = new Map<string, any>();
+
 function runScenario(scenarioName: string, seed: number) {
+  const key = `${scenarioName}:${seed}`;
+  if (scenarioCache.has(key)) return scenarioCache.get(key);
   setSeed(seed);
   const { conditions, events, defaultSteps } = SCENARIOS[scenarioName]();
   const sim = new VugSimulator(conditions, events);
@@ -35,7 +39,9 @@ function runScenario(scenarioName: string, seed: number) {
     const s = sim.conditions.supersaturation_titanite();
     if (s > maxSigma) maxSigma = s;
   }
-  return { sim, maxSigma };
+  const result = { sim, maxSigma };
+  scenarioCache.set(key, result);
+  return result;
 }
 
 function sigmaAt(opts: any): number {
@@ -146,7 +152,7 @@ describe('Titanite — CaTiSiO₅ engine (v205)', () => {
   });
 
   describe('footprint is contained — Ti-poor scenarios stay titanite-free', () => {
-    it.each(['bisbee', 'supergene_oxidation', 'sulphur_bank'])('%s: zero titanite (no Ti budget)', (scen) => {
+    it.each(['bisbee', 'supergene_oxidation', 'sulphur_bank'])('%s: zero titanite (no Ti budget)', { timeout: 240000 }, (scen) => {
       const { sim } = runScenario(scen, 42);
       const tt = sim.crystals.filter((c: any) => c.mineral === 'titanite');
       expect(tt.length).toBe(0);

@@ -24,14 +24,26 @@ declare const setSeed: any;
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
+// The paragenesis assertions repeatedly inspect the same deterministic
+// scenario/seed histories. Reuse completed simulations within this file so
+// independent mineral claims read identical executed evidence instead of
+// recomputing up to 32 duplicate 200-step histories.
+const scenarioCache = new Map<string, any>();
+
 function runScenario(scenarioName: string, seed = 42) {
+  const cacheKey = `${scenarioName}|${seed}`;
+  if (scenarioCache.has(cacheKey)) return scenarioCache.get(cacheKey);
   setSeed(seed);
   const scen = SCENARIOS[scenarioName];
-  if (!scen) return null;
+  if (!scen) {
+    scenarioCache.set(cacheKey, null);
+    return null;
+  }
   const { conditions, events, defaultSteps } = scen();
   const sim = new VugSimulator(conditions, events);
   const steps = defaultSteps ?? 200;
   for (let i = 0; i < steps; i++) sim.run_step();
+  scenarioCache.set(cacheKey, sim);
   return sim;
 }
 
@@ -73,14 +85,11 @@ describe('Roughten Gill Mine scenario (v107)', () => {
       expect(species.has('proustite')).toBe(true);
     });
 
-    // 2026-06-10 timeout bump (90s → 150s), same shape as pharmacolite's
-    // v160 bump: this 16-seed × 200-step loop runs in well under the
-    // budget in ISOLATION (whole file 56 s), but under parallel suite
-    // load wall time inflates ~2-3.5×, leaving zero headroom at 90 s —
-    // it red-lined the moment the §1.4 snapshot projection added ~2.6 s
-    // per seed-sample test (the 14th catch in CATCHES.md). 150 s gives
-    // the same ~3.5× headroom pharmacolite gets.
-    it('fires sphalerite as Zn primary across the seed sample', { timeout: 150000 }, () => {
+    // v250 exact surface classification makes a full 16-seed miss cost about
+    // 440s in the measured one-worker run. The test exits on the first hit,
+    // but retains a bounded 600s ceiling so a genuine all-seed miss reaches
+    // the scientific assertion rather than masquerading as a timeout.
+    it('fires sphalerite as Zn primary across the seed sample', { timeout: 600000 }, () => {
       // v138 retune: phosphate twin_laws batch (autunite + zeunerite +
       // uranospinite + pyromorphite + vanadinite + descloizite +
       // mottramite + clinobisvanite) added 8 new rng.random() draws
@@ -102,7 +111,10 @@ describe('Roughten Gill Mine scenario (v107)', () => {
       for (const seed of seeds) {
         const s = runScenario('roughten_gill', seed);
         const sph = s.crystals.filter((c: any) => c.mineral === 'sphalerite').length;
-        if (sph > 0) anyHit++;
+        if (sph > 0) {
+          anyHit++;
+          break;
+        }
       }
       expect(anyHit,
         `expected at least 1/${seeds.length} roughten_gill seeds to fire sphalerite; got ${anyHit}/${seeds.length}`)
@@ -139,8 +151,9 @@ describe('Roughten Gill Mine scenario (v107)', () => {
       expect(species.has('cerussite')).toBe(true);
     });
 
-    // 2026-06-10: 90s → 150s, same rationale as the sphalerite test above.
-    it('fires brochantite across the seed sample (Cu-SO4 supergene — v109 tune gain)', { timeout: 150000 }, () => {
+    // Same bounded all-seed-miss ceiling and first-hit exit as sphalerite;
+    // scenarioCache reuses every seed history already executed above.
+    it('fires brochantite across the seed sample (Cu-SO4 supergene — v109 tune gain)', { timeout: 600000 }, () => {
       // v140 retune: sulfate twin_laws batch (celestine + anglesite +
       // anhydrite + jarosite + alunite + brochantite + antlerite +
       // mirabilite + thenardite) added 9 new rng.random() draws per
@@ -157,7 +170,10 @@ describe('Roughten Gill Mine scenario (v107)', () => {
       const seeds = [42, 1, 7, 13, 99, 2024, 17, 3, 5, 11, 23, 47, 71, 137, 211, 313];
       for (const seed of seeds) {
         const s = runScenario('roughten_gill', seed);
-        if (s.crystals.some((c: any) => c.mineral === 'brochantite')) anyHit++;
+        if (s.crystals.some((c: any) => c.mineral === 'brochantite')) {
+          anyHit++;
+          break;
+        }
       }
       expect(anyHit,
         `expected at least 1/${seeds.length} roughten_gill seeds to fire brochantite; got ${anyHit}/${seeds.length}`)

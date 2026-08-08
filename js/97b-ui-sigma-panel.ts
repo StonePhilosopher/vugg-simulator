@@ -540,9 +540,17 @@ function _buildMineralFormationExplanation(
   const chemistryEligible = sigma > sigmaCrit;
   const history = _formationHistory(name, sim);
   const substrate = _formationSubstrate(name, sim);
+  const requiredSubstrate = gate?.required_substrate || null;
+  const requiredSubstrateAvailable = requiredSubstrate
+    ? substrate.available.some(row => row.mineral === requiredSubstrate)
+    : true;
   const assistedCrit = sigmaCrit * substrate.bestDiscount;
-  const substrateEligible = !chemistryEligible && substrate.bestDiscount < 1 && sigma > assistedCrit;
-  const effectiveEligible = chemistryEligible || substrateEligible;
+  const substrateEligible = requiredSubstrate
+    ? chemistryEligible && requiredSubstrateAvailable
+    : (!chemistryEligible && substrate.bestDiscount < 1 && sigma > assistedCrit);
+  const effectiveEligible = requiredSubstrate
+    ? chemistryEligible && requiredSubstrateAvailable
+    : (chemistryEligible || substrateEligible);
   const competition = _formationCompetition(name, sigma, c, sim);
   const productionDecision = sim && sim.conditions === c
     && typeof assessProductionNucleationDecision === 'function'
@@ -759,7 +767,7 @@ function _buildMineralFormationExplanation(
   });
   groups.push({ label: 'Redox gate', chips: [_formationRedoxChip(gate, c)] });
 
-  const substrateChips: FormationDiagnosticChip[] = substrate.available.length
+  let substrateChips: FormationDiagnosticChip[] = substrate.available.length
     ? substrate.available.map(row => ({
       text: `${row.mineral} ×${row.count} · ${row.state} · σcrit ×${row.discount.toFixed(2)}${row.epitaxy ? ' · epitaxy' : ''}`,
       met: true,
@@ -768,6 +776,21 @@ function _buildMineralFormationExplanation(
         : 'Executable production spatial host route; no unmeasured saturation or growth-rate discount is applied.',
     }))
     : [{ text: 'bare wall · no registered catalytic host exposed', met: true }];
+  if (requiredSubstrate) {
+    if (requiredSubstrateAvailable) {
+      substrateChips.unshift({
+        text: `${requiredSubstrate} precursor present · required transformation substrate`,
+        met: true,
+        note: 'This phase has no licensed bare-wall route. Production transforms the accepted precursor solid in place and books the exchanged structural reagent.',
+      });
+    } else {
+      substrateChips = [{
+        text: `${requiredSubstrate} precursor absent · transformation blocked`,
+        met: false,
+        note: 'Fluid-only supersaturation is not a formation route for this phase; an active exposed, mass-booked precursor is required.',
+      }];
+    }
+  }
   if (history.records.length) {
     const last = history.records[history.records.length - 1];
     if (last?.position) substrateChips.unshift({ text: `last formed: ${last.position}`, met: true });
@@ -840,6 +863,8 @@ function _buildMineralFormationExplanation(
       if (substrateEligible) {
         const best = substrate.available[0];
         verdict = `Formed (${history.active} active, ${history.transformed} transformed, ${history.dissolved} dissolved); the current broth clears the ${best.mineral}-assisted threshold (${_formationNumber(assistedCrit)}) but not the bare-wall threshold, so fresh nucleation remains host-dependent and the engine must select an exposed host.`;
+      } else if (requiredSubstrate) {
+        verdict = `Formed (${history.active} active, ${history.transformed} transformed, ${history.dissolved} dissolved); current fluid conditions and an exposed ${requiredSubstrate} precursor support the bounded transformation route.`;
       } else {
         verdict = `Formed (${history.active} active, ${history.transformed} transformed, ${history.dissolved} dissolved); the current broth still clears the bare-wall nucleation threshold.`;
       }
@@ -852,7 +877,9 @@ function _buildMineralFormationExplanation(
     }
   } else if (history.available && productionEligible && chemistryEligible && !capReached && !strangled) {
     state = 'eligible';
-    verdict = 'Not formed yet, but chemistry is eligible; site selection and the engine\'s stochastic nucleation draw remain.';
+    verdict = requiredSubstrate
+      ? `Not transformed yet, but fluid conditions and the required ${requiredSubstrate} precursor are eligible; the kinetic transformation draw remains.`
+      : 'Not formed yet, but chemistry is eligible; site selection and the engine\'s stochastic nucleation draw remain.';
   } else if (history.available && productionEligible && substrateEligible && !capReached && !strangled) {
     state = 'conditional';
     verdict = 'Not formed: below the bare-wall threshold, but an exposed registered substrate could lower the nucleation barrier.';

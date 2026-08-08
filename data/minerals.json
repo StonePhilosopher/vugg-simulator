@@ -16295,6 +16295,192 @@
       "_late_stage_note": "Paramorph after zeunerite — only ever late by definition (dehydration product).",
       "_transformation_only": true
     },
+    "birnessite": {
+      "formula": "(Na,Ca,K)x(Mn4+,Mn3+)O2·nH2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 2,
+      "max_size_cm": 2,
+      "growth_rate_mult": 0.25,
+      "habit_variants": [
+        {
+          "name": "laminated_manganese_wall_lining",
+          "wall_spread": 0.96,
+          "void_reach": 0.04,
+          "vector": "coating",
+          "trigger": "default low-temperature hydrous phase — continuous poorly crystalline layer-Mn-oxide film across the wetted cavity surface"
+        },
+        {
+          "name": "botryoidal_hydrous_crust",
+          "wall_spread": 0.82,
+          "void_reach": 0.18,
+          "vector": "coating",
+          "trigger": "higher supersaturation — coalesced black-brown hydrous Mn-oxide globules over a continuous film"
+        }
+      ],
+      "class": "oxide",
+      "description": "A variable, hydrous, poorly crystalline layer manganese oxide rather than a single fixed-composition MnO2 crystal. Birnessite is the scientifically appropriate first-class phase for many low-temperature stream, cave, subglacial and wet-wall manganese coatings. Potter and Rossman (1979) found stream deposits generally birnessite and cave/subglacial material resembling those stream deposits. The simulator therefore renders its booked mass as a broad nanocrystalline lining or coalesced crust, never as one trophy-sized prism. Exchangeable Na/Ca/K and water are structurally real but compositionally variable; the fixed growth ledger books Mn as the framework-limiting reagent and reports interlayer cations as traces rather than inventing an exact endmember.",
+      "scenarios": [],
+      "_requires_scenario_license": true,
+      "T_range_C": [5, 90],
+      "T_optimum_C": [15, 40],
+      "T_behavior": "low_temperature_hydrous",
+      "pH_dissolution_below": 5.2,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": { "Mn": 0.3 },
+      "_ingredients_note": "Mn plus oxidant are load-bearing. Ba >= 100 ppm diverts the framework to romanechite; Mg >= 25 ppm favors Mg-templated todorokite. Fe > 2×Mn suppresses Mn precipitation because Fe oxyhydroxides capture the earlier oxidation front.",
+      "trace_ingredients": {
+        "Na": "exchangeable interlayer cation in Na-birnessite",
+        "Ca": "exchangeable interlayer cation in natural hydrous birnessite",
+        "K": "exchangeable interlayer cation; high K may instead stabilize a hollandite-group phase"
+      },
+      "thermal_decomp_C": 150,
+      "thermal_decomp_reaction": "Progressive dehydration and layer-to-tunnel/recrystallization reactions; there is no single invariant decomposition temperature for compositionally variable natural birnessite.",
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "_twin_laws_note": "Poorly crystalline/nanocrystalline aggregate; macroscopic twin laws are not a meaningful visual discriminator.",
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 5.2,
+        "reaction": "Layer Mn(III/IV) oxide + H+ + reductant -> dissolved Mn2+ + H2O",
+        "products": { "Mn": 0.6 }
+      },
+      "habit": "laminated_manganese_wall_lining",
+      "color_rules": {
+        "brownish_black": { "default": true, "trigger": "poorly crystalline hydrous coating" },
+        "steel_black": { "trigger": "denser, more strongly oxidized aggregate" }
+      },
+      "narrate_function": null,
+      "runtimes_present": ["js"],
+      "audit_status": "SIM 249 first-class Mn surface phase. Phase identity follows Potter & Rossman 1979 morphology/mineralogy observations and Post 1999 layer/tunnel classification. The variable formula is deliberately not forced into a false pure endmember.",
+      "late_stage_propensity": 0.85,
+      "_late_stage_note": "Oxidative near-surface/wet-wall coating, commonly after primary Mn-bearing phases.",
+      "class_color": "#443d38"
+    },
+    "romanechite": {
+      "formula": "(Ba,H2O)2(Mn4+,Mn3+)5O10",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 2,
+      "max_size_cm": 5,
+      "growth_rate_mult": 0.22,
+      "habit_variants": [
+        {
+          "name": "dendritic_surface_film",
+          "wall_spread": 0.94,
+          "void_reach": 0.06,
+          "vector": "coating",
+          "trigger": "low-to-moderate supersaturation on an exposed wall or passive silicate substrate — branching surface dendrites, correctly identified as Ba-Mn tunnel oxide rather than pyrolusite"
+        },
+        {
+          "name": "botryoidal_reniform",
+          "wall_spread": 0.82,
+          "void_reach": 0.18,
+          "vector": "coating",
+          "trigger": "higher supersaturation — dense steel-black botryoidal/reniform Ba-Mn oxide crust"
+        }
+      ],
+      "class": "oxide",
+      "description": "Hydrated barium manganese oxide with a 2x3 tunnel framework. The tunnel Ba and water are structural: Ba is a required limiting reagent in the simulator, not a decorative trace. Potter and Rossman (1979) identified surface-exposed manganese dendrites as romanechite or a hollandite-group mineral and found no pyrolusite example. Consequently this phase owns the Ba-rich surface-dendrite field and renders as a wall-parallel branching film or botryoidal crust whose displayed area is derived from its booked mass.",
+      "scenarios": [],
+      "_requires_scenario_license": true,
+      "T_range_C": [5, 180],
+      "T_optimum_C": [15, 60],
+      "T_behavior": "low_temperature_tunnel_oxide",
+      "pH_dissolution_below": 5.2,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": { "Mn": 0.5, "Ba": 100 },
+      "_ingredients_note": "Ba >= 100 ppm is the authoritative tunnel-cation selector. Both Ba and Mn are booked by MINERAL_STOICHIOMETRY, so romanechite cannot grow after the Ba budget is exhausted.",
+      "trace_ingredients": {
+        "K": "minor tunnel substitution; a strongly K-dominant fluid belongs to a hollandite-group phase",
+        "Ca": "minor tunnel substitution",
+        "Mg": "minor tunnel substitution"
+      },
+      "thermal_decomp_C": 450,
+      "thermal_decomp_reaction": "Dehydration followed by collapse/recrystallization of the 2x3 tunnel framework at elevated temperature.",
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "_twin_laws_note": "Natural material is typically cryptocrystalline, fibrous or botryoidal; no macroscopic twin treatment is warranted for this rendering scale.",
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 5.2,
+        "reaction": "Ba-Mn tunnel oxide + H+ + reductant -> Ba2+ + Mn2+ + H2O",
+        "products": { "Ba": 0.15, "Mn": 0.6 }
+      },
+      "habit": "dendritic_surface_film",
+      "color_rules": {
+        "steel_black": { "default": true, "trigger": "dense tunnel-oxide aggregate" },
+        "brownish_black": { "trigger": "fine hydrous dendritic film" }
+      },
+      "narrate_function": null,
+      "runtimes_present": ["js"],
+      "audit_status": "SIM 249 first-class Ba-Mn tunnel oxide. Corrects the historical 'dendritic pyrolusite' misidentification and makes Ba a mass-balanced selector.",
+      "late_stage_propensity": 0.85,
+      "_late_stage_note": "Oxidative coating phase on exposed fracture and cavity surfaces.",
+      "class_color": "#272729"
+    },
+    "todorokite": {
+      "formula": "(Mg,Na,Ca)(Mn,Mg)6O12·3-4H2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 2,
+      "max_size_cm": 4,
+      "growth_rate_mult": 0.22,
+      "habit_variants": [
+        {
+          "name": "dendritic_mine_coating",
+          "wall_spread": 0.93,
+          "void_reach": 0.07,
+          "vector": "coating",
+          "trigger": "Mg-rich low-temperature wall film, especially on a birnessite-like precursor — the underground mine dendrite field of Potter and Rossman (1979)"
+        },
+        {
+          "name": "radiating_fibrous_mat",
+          "wall_spread": 0.78,
+          "void_reach": 0.22,
+          "vector": "coating",
+          "trigger": "higher supersaturation — radiating/felted bundles of hydrated 3x3 tunnel oxide across the cavity wall"
+        }
+      ],
+      "class": "oxide",
+      "description": "Hydrated manganese oxide with a large 3x3 tunnel framework. Mg-rich interlayers in a birnessite-like precursor template tunnel formation; Golden, Chen and Dixon (1986) produced well-crystallized todorokite by Mg exchange followed by hydrothermal treatment at 155 °C, and Zhao et al. (2015) used reflux treatment to show that interlayer cation identity and Mn oxidation state control conversion. Potter and Rossman (1979) found underground mine dendrites to be todorokite, but did not establish a direct precipitation pathway. The simulator therefore has no bare-wall or room-temperature route: it converts an active, mass-booked birnessite coating in place at 95–200 °C, preserves the precursor Mn inventory, books exchanged Mg at a 1:6 formula ratio, and renders the product as wall-parallel mine dendrites or fibrous mats.",
+      "scenarios": [],
+      "_requires_scenario_license": true,
+      "T_range_C": [95, 200],
+      "T_optimum_C": [100, 160],
+      "T_behavior": "hydrothermal_precursor_transformation",
+      "pH_dissolution_below": 5.2,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": { "Mn": 0.5, "Mg": 25 },
+      "_ingredients_note": "Mg >= 25 ppm is a conservative simulator-scale fluid gate for the Mg-templated layer-to-tunnel pathway. Existing birnessite framework Mn is preserved rather than spent twice; exchanged structural Mg is booked at 1 Mg per 6 Mn formula mass. Ba-rich fluid diverts initial coating precipitation to romanechite.",
+      "trace_ingredients": {
+        "Na": "interlayer precursor cation; Na pre-exchange can assist later Mg exchange",
+        "Ca": "possible tunnel/interlayer cation",
+        "Ni": "common minor large-tunnel occupant in natural marine/hydrothermal material"
+      },
+      "thermal_decomp_C": 400,
+      "thermal_decomp_reaction": "Dehydration followed by collapse of the hydrated 3x3 tunnel framework and recrystallization to denser Mn oxides.",
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "_twin_laws_note": "Fine fibrous/tunnel-oxide aggregate at simulator scale; macroscopic twins are not an appropriate visual discriminator.",
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 5.2,
+        "reaction": "Hydrated Mg-Mn tunnel oxide + H+ + reductant -> Mg2+ + Mn2+ + H2O",
+        "products": { "Mg": 0.1, "Mn": 0.6 }
+      },
+      "habit": "dendritic_mine_coating",
+      "color_rules": {
+        "brownish_black": { "default": true, "trigger": "hydrated poorly crystalline tunnel oxide" },
+        "steel_black": { "trigger": "denser fibrous aggregate" }
+      },
+      "narrate_function": null,
+      "runtimes_present": ["js"],
+      "audit_status": "SIM 250 first-class Mg-Mn tunnel oxide. Formation is restricted to an in-place, mass-ledger-preserving Mg exchange of active birnessite in a 95–200 °C hydrothermal window; no bare-wall/25 °C route is claimed. Potter & Rossman support underground-mine dendrite identity, not mechanism.",
+      "late_stage_propensity": 0.9,
+      "_late_stage_note": "Commonly a transformation/overgrowth product after a hydrous layer-Mn-oxide precursor.",
+      "class_color": "#38332f"
+    },
     "pyrolusite": {
       "formula": "MnO2",
       "nucleation_sigma": 1.2,
@@ -16346,7 +16532,7 @@
         }
       ],
       "class": "oxide",
-      "description": "MnO₂ — tetragonal Mn(IV) oxide with the rutile structure (P4₂/mnm, a=4.39 Å, c=2.87 Å), the default Mn⁴⁺ supergene endmember. Iron-black to dark steel-gray; black streak (NOT brown — this is the field discriminator from manganite, hardness bimodal at 6 well-crystallized vs 2 massive earthy 'soils-the-fingers' aggregate). Forms by oxidation of Mn²⁺ in two modes: low-T continental weathering / lacustrine / bog (mode A, ~95% of occurrences, T 5-40°C, pH 6.5-9, strongly oxidizing per the Hem 1963 Pourbaix diagram) and low-T hydrothermal vein (mode B, <250°C, replaces manganite in cooling vugs, source of the rare prismatic Ilfeld/Ilmenau crystals). Pyrolusite occupies the HIGH-Eh corner of the Mn⁴⁺ field; the discriminator from its catalog cousins is canonical: romanechite (Ba > 100 ppm tunnel cation), cryptomelane (K > 50 ppm), coronadite (Pb > 30 ppm), hausmannite (T > 250°C, the spinel-distorted Mn²⁺/Mn³⁺ phase), manganite (γ-MnOOH, lower Eh / cooler, dehydrates TO pyrolusite as the polianite pseudomorph). Fe-Mn supergene separation: when Fe > 2*Mn, goethite captures the oxidation budget first and pyrolusite is residual (Hem 1963 Eh sequence — Fe oxidizes ~+0.2 V earlier than Mn). IMPORTANT (Potter & Rossman 1979 Am.Min. 64:1219): the classic 'dendritic pyrolusite' in moss agate and limestone is NOT pyrolusite — it's cryptomelane / romanechite / birnessite microcrystalline aggregates. The engine refuses to ship a dendritic habit; dendrites route to those cousins when their engines land. Type-locality folklore correction: most references cite Horní Blatná (Platten) Czech Republic, but Haidinger 1827 originally used material from Eiserfeld (Siegen, Westphalia), Elgersburg, and Ilmenau (Thuringia, Germany) — Ilmenau is the defensible canonical type. Famous localities: Imini Morocco (high-grade karst-hosted ore, two-stage paragenesis per Dekoninck et al. 2016 Min.Dep. 51:13), Ilfeld Harz (classic radiating-fibrous polianite pseudomorphs), Cuyuna Range Minnesota, Mapimí Ojuela Mexico (botryoidal on calcite). Sources: Anthony et al. Handbook v.III; Dana 7th v.I pp.555-561; Potter & Rossman 1979; Birkner & Navrotsky 2017 PNAS 114:E1046 (Mn-oxide cascade thermodynamics: Mn²⁺ → hausmannite → groutite → bixbyite → pyrolusite is the thermodynamic endpoint); Champness 1971 Min.Mag. 38:245 (polianite mechanism); Hem 1963 USGS WSP 1667-A (Pourbaix + autocatalysis on existing MnO₂ surfaces); Post 1999 PNAS 96:3447 (tunnel-structure classification, pyrolusite as 1×1 tunnel endmember of the rutile-hollandite-romanechite-todorokite series).",
+      "description": "MnO₂ — tetragonal rutile-structure Mn(IV) oxide (P4₂/mnm, a=4.39 Å, c=2.87 Å), retained as the crystalline high-Eh endmember of the simulator's Mn-oxide family. Iron-black to dark steel-gray with a black streak; well-crystallized material is hard and metallic, while earthy aggregates can be soft and sooty. It can form during strongly oxidizing weathering and in low-temperature hydrothermal veins, including prismatic or radiating polianite-style material after manganite. It is not a morphology label for every black coating. Potter and Rossman (1979) found surface dendrites to be romanechite or hollandite-group material, underground mine dendrites to be todorokite, and many stream/cave coatings to be birnessite; they identified no pyrolusite dendrite. SIM 249 therefore routes low-temperature hydrous films, Ba-rich surface dendrites and Mg-templated mine coatings to first-class birnessite, romanechite and todorokite engines. Pyrolusite has no dendritic habit and competes as a later crystalline endpoint. Sources: Anthony et al. Handbook v.III; Potter & Rossman 1979; Champness 1971; Hem 1963; Post 1999; Birkner & Navrotsky 2017.",
       "scenarios": [
         "supergene_oxidation"
       ],
@@ -16365,7 +16551,7 @@
       "required_ingredients": {
         "Mn": 0.2
       },
-      "_ingredients_note": "Mn ≥ 0.2 ppm matches Hem's (1963) lower-bound supergene threshold; autocatalysis on existing MnO₂ surfaces (Hem 1963) means once the field fires it stays lit. Oxidizing required (Eh +0.4 to +1.0 V at pH 7) — pyrolusite is the highest-Eh Mn(IV) field endmember; uses oxideRedoxAvailable gate threshold 0.5 like hematite/magnetite/cuprite. Discriminator fork via soft suppressors (not hard cutoffs to allow weak co-deposition): Fe > 2*Mn → sigma × 0.3 (goethite/lepidocrocite capture the oxidation budget first); Ba > 100 → sigma × 0.5 (would route to romanechite); K > 50 → sigma × 0.4 (cryptomelane); Pb > 30 → sigma × 0.3 (coronadite); SiO₂ > 200 → sigma × 0.7 (todorokite + Mn-silicates compete). Hard cutoff T > 250 (hausmannite field). pH sweet spot 7-9 (Hem 1963 kinetic optimum at pH 8.5).",
+      "_ingredients_note": "Mn ≥ 0.2 ppm matches Hem's (1963) lower-bound supergene threshold; autocatalysis on existing MnO₂ surfaces (Hem 1963) means once the crystalline field fires it can persist. Oxidizing required. SIM 249 phase competition is first-class: T ≤ 90°C hydrous films favor birnessite; Ba ≥ 100 ppm routes mass to romanechite; Mg ≥ 25 ppm favors todorokite; K > 50 and Pb > 30 remain soft suppressors for not-yet-implemented hollandite-group endmembers; Fe > 2×Mn lets Fe oxyhydroxides capture the earlier oxidation front. Hard cutoff T > 250°C reserves the higher-temperature Mn-oxide field.",
       "trace_ingredients": {
         "Ba": "trace tunnel cation; partitions weakly into pyrolusite compared to romanechite",
         "K": "trace tunnel cation; partitions weakly into pyrolusite compared to cryptomelane",
@@ -16416,7 +16602,7 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "new v102 (2026-05-19). Default Mn⁴⁺ supergene endmember; discriminator-fork engine encodes the canonical Mn-oxide family decision tree (Ba → romanechite, K → cryptomelane, Pb → coronadite, T>250 → hausmannite, lower Eh → manganite, Fe-dominated → goethite). Sister Mn-oxide engines (romanechite/cryptomelane/coronadite/hausmannite/manganite) not yet wired — gates encode the suppressor so pyrolusite doesn't claim the full Mn(IV) budget at tunnel-cation localities. Substrate priority: rhodochrosite (epitactic replacement — 'rotted rhomb' supergene texture) > manganite (polianite pseudomorph — reserved for when manganite lands) > siderite (Mn-bearing → Fe-Mn 'wad') > dolomite (Imini karst) > calcite (Mapimí) > goethite (Fe-Mn rind) > wall. Per Potter & Rossman 1979 NO dendritic habit (the textbook dendrites are cryptomelane). First dogfood test of the vugg-add-mineral skill.",
+      "audit_status": "v102 pyrolusite engine, revised SIM 249. Pyrolusite is the crystalline high-Eh endmember, not the name for every black surface aggregate. Birnessite, Ba-bearing romanechite and Mg-templated todorokite are now first-class mass-balanced competitors and own the appropriate hydrous/dendritic coating fields. K-rich cryptomelane/coronadite, hausmannite and manganite remain explicit future species, with suppressors preventing pyrolusite from silently claiming their full budgets. Per Potter & Rossman 1979 pyrolusite still has no dendritic habit.",
       "late_stage_propensity": 0.8,
       "_late_stage_note": "Supergene weathering endmember — by definition late-stage (the terminal Mn(IV) oxidation product). High propensity matches its position as the final phase in the Mn²⁺ → hausmannite → groutite → bixbyite → pyrolusite oxidation cascade (Birkner & Navrotsky 2017).",
       "class_color": "#2b2b2b"

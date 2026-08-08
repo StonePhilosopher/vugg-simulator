@@ -85,19 +85,32 @@ describe('cavity-mesh Phase 2 — WallMesh builds + recomputes correctly', () =>
     expect(mesh.positions[idx * 3 + 2]).toBeCloseTo(expectZ, 5);
   });
 
-  it('signature changes when wall_depth changes (dissolution path)', () => {
-    const wall = new WallState({ cells_per_ring: 120, ring_count: 16 });
+  it('invalidates exact geometry when any wall cell changes, including formerly unsampled cells', () => {
+    const wall = new WallState({ cells_per_ring: 48, ring_count: 12 });
     const meshA = WallMesh.fromWallState(wall);
     const sigA = meshA.sig;
-    // Simulate a dissolution event: bump a sampled cell's wall_depth.
-    // The cheap signature samples every floor(N/8) = 15th cell, so
-    // c=0 is guaranteed to be in the checksum. (Mirrors how
-    // wall.erodeCells distributes wall_depth across many cells in
-    // practice — at least one sampled cell will catch any real event.)
-    wall.rings[3][0].wall_depth += 1.5;
+    const revisionA = wall._geometry_revision;
+    expect(sigA).toContain(`rev:${revisionA}`);
+    expect(JSON.parse(JSON.stringify(wall.rings[3][1]))).toMatchObject({
+      wall_depth: 0,
+      base_radius_mm: wall.rings[3][1].base_radius_mm,
+    });
+    const anchor = wall.surfaceAnchorDirection({ wall_anchor: wall._anchorFromRingCell(3, 1) });
+    const beforeArea = meshA.surfaceAreaMm2();
+    const beforePatch = meshA.sampleSurfacePatch(anchor, 24, 0.02, 77).samples;
+    const vertexIndex = 3 * 48 + 1;
+    const beforeVertex = Array.from(meshA.positions.slice(vertexIndex * 3, vertexIndex * 3 + 3));
+    // Cell 1 was outside the old eight-cells-per-ring checksum.
+    wall.rings[3][1].wall_depth += 4.0;
+    expect(wall._geometry_revision).toBe(revisionA + 1);
     meshA.recomputeIfStale(wall);
     const sigB = meshA.sig;
     expect(sigB).not.toBe(sigA);
+    expect(meshA.surfaceAreaMm2()).not.toBeCloseTo(beforeArea, 8);
+    expect(Array.from(meshA.positions.slice(vertexIndex * 3, vertexIndex * 3 + 3)))
+      .not.toEqual(beforeVertex);
+    expect(meshA.sampleSurfacePatch(anchor, 24, 0.02, 77).samples)
+      .not.toEqual(beforePatch);
     // And the cached signature on the SAME mesh updated in place — no
     // stale identity hanging around for the cache layer to mis-key on.
     expect(meshA.sig).toBe(sigB);
@@ -120,6 +133,67 @@ describe('cavity-mesh Phase 2 — WallMesh builds + recomputes correctly', () =>
     const m1 = wall.meshFor();
     const m2 = wall.meshFor();
     expect(m1).toBe(m2);
+  });
+
+  it('integrates exact tessellated surface area and updates it with wall geometry', () => {
+    const wall = new WallState({
+      cells_per_ring: 48, ring_count: 12, vug_diameter_mm: 70,
+      primary_bubbles: 4, secondary_bubbles: 8, shape_seed: 31415,
+    });
+    const mesh = wall.meshFor();
+    let independentArea = 0;
+    for (let i = 0; i < mesh.indices.length; i += 3) {
+      const ia = mesh.indices[i], ib = mesh.indices[i + 1], ic = mesh.indices[i + 2];
+      const p = mesh.positions;
+      const ab = [p[ib * 3] - p[ia * 3], p[ib * 3 + 1] - p[ia * 3 + 1], p[ib * 3 + 2] - p[ia * 3 + 2]];
+      const ac = [p[ic * 3] - p[ia * 3], p[ic * 3 + 1] - p[ia * 3 + 1], p[ic * 3 + 2] - p[ia * 3 + 2]];
+      const cross = [
+        ab[1] * ac[2] - ab[2] * ac[1],
+        ab[2] * ac[0] - ab[0] * ac[2],
+        ab[0] * ac[1] - ab[1] * ac[0],
+      ];
+      independentArea += 0.5 * Math.hypot(cross[0], cross[1], cross[2]);
+    }
+    expect(mesh.surfaceAreaMm2()).toBeCloseTo(independentArea, 9);
+    expect(wall.surfaceAreaMm2()).toBeCloseTo(independentArea, 9);
+
+    const before = mesh.surfaceAreaMm2();
+    wall.rings[3][1].wall_depth += 4;
+    wall.meshFor();
+    expect(mesh.surfaceAreaMm2()).not.toBeCloseTo(before, 6);
+  });
+
+  it('selects and samples an exact-area deterministic wall patch', () => {
+    const wall = new WallState({
+      cells_per_ring: 48, ring_count: 12, vug_diameter_mm: 70,
+      primary_bubbles: 4, secondary_bubbles: 8, shape_seed: 2718,
+    });
+    const mesh = wall.meshFor();
+    const coverage = 0.37;
+    const a = mesh.sampleSurfacePatch([1, 0, 0], 32, coverage, 99);
+    const b = mesh.sampleSurfacePatch([1, 0, 0], 32, coverage, 99);
+    expect(a.area_mm2).toBeCloseTo(mesh.surfaceAreaMm2() * coverage, 9);
+    expect(a.samples).toEqual(b.samples);
+    expect(a.samples).toHaveLength(32);
+    expect(a.triangle_indices.length).toBeGreaterThan(0);
+    const selected = new Set(a.triangle_indices);
+    const reached = new Set<number>();
+    const queue = [a.triangles[0].triangle_index];
+    while (queue.length) {
+      const index = queue.shift()!;
+      if (reached.has(index)) continue;
+      reached.add(index);
+      const triangle = a.triangles.find((t: any) => t.triangle_index === index);
+      for (const neighbor of triangle?.neighbor_indices || []) {
+        if (selected.has(neighbor) && !reached.has(neighbor)) queue.push(neighbor);
+      }
+    }
+    expect(reached.size).toBe(selected.size);
+    for (const p of a.samples) {
+      expect(Number.isFinite(p.x + p.y + p.z + p.nx + p.ny + p.nz)).toBe(true);
+      expect(Math.hypot(p.nx, p.ny, p.nz)).toBeCloseTo(1, 10);
+      expect(p.x * p.nx + p.y * p.ny + p.z * p.nz).toBeLessThan(0);
+    }
   });
 
   it('maxRadiusByRing reflects per-ring max distance', () => {

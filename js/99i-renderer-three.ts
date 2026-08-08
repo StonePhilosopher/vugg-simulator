@@ -420,19 +420,29 @@ function _topoCavitySignature(wall: any, sim: any): string {
   if (!wall.rings || !wall.rings.length) return '';
   const ring0 = wall.rings[0];
   const N = ring0 ? ring0.length : 0;
-  let depthSum = 0;
+  const surf = sim && sim.conditions ? sim.conditions.fluid_surface_ring : null;
+  if (Number.isSafeInteger(wall._geometry_revision)) {
+    return `${wall.ring_count}|${N}|rev:${wall._geometry_revision}|${surf}`;
+  }
+  let hashA = 0x811c9dc5;
+  let hashB = 0x9e3779b9;
+  const scratch = new DataView(new ArrayBuffer(8));
   for (let r = 0; r < wall.rings.length; r++) {
     const ring = wall.rings[r];
     if (!ring) continue;
-    const stride = Math.max(1, Math.floor(N / 8));
-    for (let c = 0; c < N; c += stride) {
+    for (let c = 0; c < N; c++) {
       const cell = ring[c];
       if (!cell) continue;
-      depthSum += (cell.base_radius_mm + cell.wall_depth) * (r * 31 + c);
+      const radius = (Number(cell.base_radius_mm) || 0) + (Number(cell.wall_depth) || 0);
+      scratch.setFloat64(0, radius, true);
+      for (let byte = 0; byte < 8; byte++) {
+        const value = scratch.getUint8(byte);
+        hashA = Math.imul(hashA ^ value, 0x01000193) >>> 0;
+        hashB = (Math.imul(hashB ^ value, 0x85ebca6b) + 0x27d4eb2f) >>> 0;
+      }
     }
   }
-  const surf = sim && sim.conditions ? sim.conditions.fluid_surface_ring : null;
-  return `${wall.ring_count}|${N}|${depthSum.toFixed(2)}|${surf}`;
+  return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}|${surf}`;
 }
 
 // PHASE-2-CAVITY-MESH: cavity geometry now sources from WallMesh
@@ -3627,14 +3637,25 @@ function _surfaceGrowthWallPoint(
   };
 }
 
+// Single-representation gate used by production sync and executed Three.js
+// integration tests. A surface aggregate owns one instanced swath; adding its
+// legacy trophy parent as well would depict one booked solid twice.
+function _addCrystalParentRepresentation(state: any, crystal: any, mesh: any): boolean {
+  if (crystal?._surfaceGrowth) return false;
+  state.crystals.add(mesh);
+  return true;
+}
+
 function _emitSurfaceGrowthSwath(
   state: any, crystal: any, parentMat: any,
   ax: number, ay: number, az: number,
   wall: any, ringCount: number, N: number, initR: number,
   renderC: number,
-): void {
+  sim: any,
+  earlierLayers: any[],
+): any {
   const record = crystal && crystal._surfaceGrowth;
-  if (!record || !(record.coverage_fraction > 0) || !wall || !wall.rings) return;
+  if (!record || !(record.coverage_fraction > 0) || !wall || !wall.rings) return null;
   const liveC = Math.max(1e-9, Number(crystal.c_length_mm) || 0);
   // Replay grows the footprint from the historical size rather than painting
   // the final shell on the first frame.
@@ -3648,6 +3669,12 @@ function _emitSurfaceGrowthSwath(
   const directions = _surfaceGrowthSampleDirections(
     [ax / al, ay / al, az / al], count, coverage, crystal.crystal_id || 0,
   );
+  const wallMesh = wall && typeof wall.meshFor === 'function' ? wall.meshFor(sim) : null;
+  const exactPatch = wallMesh && typeof wallMesh.sampleSurfacePatch === 'function'
+    ? wallMesh.sampleSurfacePatch(
+      [ax / al, ay / al, az / al], count, coverage, crystal.crystal_id || 0,
+    )
+    : null;
 
   let key = '__surface_patch_lowpoly';
   let geom = state.geomCache.get(key);
@@ -3666,10 +3693,16 @@ function _emitSurfaceGrowthSwath(
     key = '__surface_fiber';
     geom = state.geomCache.get(key);
     if (!geom) { geom = _buildHabitGeom('spike'); state.geomCache.set(key, geom); }
+  } else if (record.regime === 'dendritic_film') {
+    // A wall dendrite is a branching two-dimensional film, not a forest of
+    // pyrolusite needles. Reuse the deterministic tree skeleton, then flatten
+    // it into the local tangent plane below.
+    geom = _getDendriteTreeGeom(state, crystal);
   }
 
   const mat = parentMat.clone();
   mat.roughness = record.regime === 'fibrous_mat' ? 0.72
+    : record.regime === 'dendritic_film' ? 0.78
     : record.regime === 'laminated_lining' ? 0.82 : Math.max(0.48, mat.roughness || 0.5);
   if (record.regime === 'laminated_lining' && mat.transparent) {
     mat.opacity = Math.max(0.46, mat.opacity || 0);
@@ -3680,15 +3713,34 @@ function _emitSurfaceGrowthSwath(
   const dummy = new THREE.Object3D();
   const up = new THREE.Vector3(0, 1, 0);
   const axis = new THREE.Vector3();
+  const normal = new THREE.Vector3();
+  const lateral = new THREE.Vector3();
+  const basis = new THREE.Matrix4();
   const cavityR = Math.max(1, Number(state.clipUniforms?.uVugRadius?.value) || initR);
-  const areaPerRepresentative = (4 * Math.PI * cavityR * cavityR * coverage) / count;
+  const fallbackArea = 4 * Math.PI * cavityR * cavityR * coverage;
+  const representedArea = exactPatch && exactPatch.area_mm2 > 0
+    ? exactPatch.area_mm2
+    : (Number(record.cavity_area_mm2) > 0
+      ? Number(record.cavity_area_mm2) * coverage
+      : fallbackArea);
+  const areaPerRepresentative = representedArea / count;
   const patchRadius = Math.max(0.22, Math.sqrt(areaPerRepresentative / Math.PI) * 1.08);
   const trueThicknessMm = Math.max(0, Number(record.mean_thickness_um) || 0) / 1000;
   const displayThickness = Math.max(0.06, Math.min(patchRadius * 0.45,
     trueThicknessMm > 0 ? Math.max(trueThicknessMm, 0.06) : 0.06));
 
   for (let i = 0; i < count; i++) {
-    const p = _surfaceGrowthWallPoint(wall, directions[i], ringCount, N, initR);
+    const p = exactPatch && exactPatch.samples && exactPatch.samples[i]
+      ? exactPatch.samples[i]
+      : _surfaceGrowthWallPoint(wall, directions[i], ringCount, N, initR);
+    let underburdenDisplayMm = 0;
+    if (p.triangle_index != null) {
+      for (const layer of earlierLayers) {
+        if (layer.triangle_indices.has(p.triangle_index)) {
+          underburdenDisplayMm += layer.representative_relief_mm;
+        }
+      }
+    }
     const h = Math.abs(Math.sin((crystal.crystal_id + 1) * 17.17 + i * 9.73)) % 1;
     if (record.regime === 'euhedral_druse') {
       const height = Math.max(0.24, Math.min(1.6, patchRadius * (0.28 + 0.22 * h)));
@@ -3697,11 +3749,41 @@ function _emitSurfaceGrowthSwath(
       dummy.quaternion.setFromUnitVectors(up, axis);
       dummy.rotateY(h * Math.PI * 2);
       dummy.position.set(
-        p.x + p.nx * height * 0.5,
-        p.y + p.ny * height * 0.5,
-        p.z + p.nz * height * 0.5,
+        p.x + p.nx * (underburdenDisplayMm + height * 0.5),
+        p.y + p.ny * (underburdenDisplayMm + height * 0.5),
+        p.z + p.nz * (underburdenDisplayMm + height * 0.5),
       );
       dummy.scale.set(width, height, width);
+    } else if (record.regime === 'dendritic_film') {
+      // Build a right-handed local frame with tree +Y along the wall tangent
+      // and tree +Z along the cavity-facing normal, then crush Z to a genuine
+      // film. This retains the branch silhouette across a wide swath without
+      // inventing free-standing museum-scale Mn crystals.
+      let tx = -p.nz, ty = 0, tz = p.nx;
+      let tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+      if (tl < 1e-6) { tx = 1; ty = 0; tz = 0; tl = 1; }
+      tx /= tl; ty /= tl; tz /= tl;
+      const spin = h * Math.PI * 1.2 - Math.PI * 0.6;
+      const bx = p.ny * tz - p.nz * ty;
+      const by = p.nz * tx - p.nx * tz;
+      const bz = p.nx * ty - p.ny * tx;
+      axis.set(
+        tx * Math.cos(spin) + bx * Math.sin(spin),
+        ty * Math.cos(spin) + by * Math.sin(spin),
+        tz * Math.cos(spin) + bz * Math.sin(spin),
+      ).normalize();
+      normal.set(p.nx, p.ny, p.nz).normalize();
+      lateral.crossVectors(axis, normal).normalize();
+      basis.makeBasis(lateral, axis, normal);
+      dummy.quaternion.setFromRotationMatrix(basis);
+      const length = Math.max(0.65, Math.min(3.2, patchRadius * (1.0 + h * 0.6)));
+      const filmRelief = Math.max(0.035, Math.min(0.10, displayThickness));
+      dummy.position.set(
+        p.x + p.nx * (underburdenDisplayMm + filmRelief * 0.5),
+        p.y + p.ny * (underburdenDisplayMm + filmRelief * 0.5),
+        p.z + p.nz * (underburdenDisplayMm + filmRelief * 0.5),
+      );
+      dummy.scale.set(length * 0.58, length, filmRelief);
     } else if (record.regime === 'fibrous_mat') {
       // Slip-/felt-fibre representation: lay each bundle in the local tangent
       // plane instead of making a forest of needles normal to the wall.
@@ -3719,7 +3801,11 @@ function _emitSurfaceGrowthSwath(
       const length = Math.max(0.45, Math.min(2.4, patchRadius * (0.8 + h * 0.5)));
       const width = Math.max(0.035, Math.min(0.11, length * 0.055));
       dummy.quaternion.setFromUnitVectors(up, axis);
-      dummy.position.set(p.x + p.nx * width, p.y + p.ny * width, p.z + p.nz * width);
+      dummy.position.set(
+        p.x + p.nx * (underburdenDisplayMm + width),
+        p.y + p.ny * (underburdenDisplayMm + width),
+        p.z + p.nz * (underburdenDisplayMm + width),
+      );
       dummy.scale.set(width, length, width);
     } else {
       const lateral = patchRadius * (record.regime === 'laminated_lining' ? 2.2 : 1.55);
@@ -3729,9 +3815,9 @@ function _emitSurfaceGrowthSwath(
       axis.set(p.nx, p.ny, p.nz);
       dummy.quaternion.setFromUnitVectors(up, axis);
       dummy.position.set(
-        p.x + p.nx * relief * 0.5,
-        p.y + p.ny * relief * 0.5,
-        p.z + p.nz * relief * 0.5,
+        p.x + p.nx * (underburdenDisplayMm + relief * 0.5),
+        p.y + p.ny * (underburdenDisplayMm + relief * 0.5),
+        p.z + p.nz * (underburdenDisplayMm + relief * 0.5),
       );
       dummy.scale.set(lateral, relief, lateral);
     }
@@ -3740,8 +3826,8 @@ function _emitSurfaceGrowthSwath(
   }
   swath.instanceMatrix.needsUpdate = true;
   if (typeof swath.computeBoundingSphere === 'function') swath.computeBoundingSphere();
-  swath.renderOrder = record.regime === 'laminated_lining' ? 0.55 : 0.8;
-  swath.raycast = function () {};
+  swath.renderOrder = (record.regime === 'laminated_lining' ? 0.55 : 0.8)
+    + Math.min(0.1, Number(record.stratigraphic_index || 0) * 0.001);
   swath.userData = {
     surfaceGrowth: true,
     crystal_id: crystal.crystal_id,
@@ -3750,8 +3836,37 @@ function _emitSurfaceGrowthSwath(
     coverage_fraction: coverage,
     physical_mean_thickness_um: record.mean_thickness_um,
     representative_only: true,
+    area_basis: record.area_basis,
+    stratigraphic_index: record.stratigraphic_index,
   };
   state.crystals.add(swath);
+  // Canonical desktop-density relief is intentionally independent of mobile
+  // LOD; subsequent layers therefore sit on the same depicted substrate on
+  // every viewport even when this layer uses fewer representatives.
+  const canonicalCount = _surfaceGrowthInstanceCount(coverage, false);
+  const canonicalPatchRadius = Math.max(0.22,
+    Math.sqrt(representedArea / canonicalCount / Math.PI) * 1.08);
+  const canonicalDisplayThickness = Math.max(0.06, Math.min(canonicalPatchRadius * 0.45,
+    trueThicknessMm > 0 ? Math.max(trueThicknessMm, 0.06) : 0.06));
+  const representativeRelief = record.regime === 'botryoidal_crust'
+    ? Math.max(canonicalDisplayThickness, canonicalPatchRadius * 0.38)
+    : record.regime === 'euhedral_druse'
+      ? Math.max(0.24, Math.min(1.6, canonicalPatchRadius * 0.39))
+      : record.regime === 'fibrous_mat'
+        ? Math.max(0.035, Math.min(0.11, canonicalPatchRadius * 0.055))
+        : record.regime === 'dendritic_film'
+          ? Math.max(0.035, Math.min(0.10, canonicalDisplayThickness))
+        : canonicalDisplayThickness;
+  const layer = {
+    crystal_id: crystal.crystal_id,
+    triangle_indices: new Set(exactPatch && exactPatch.triangle_indices
+      ? exactPatch.triangle_indices : []),
+    representative_relief_mm: representativeRelief,
+  };
+  swath.userData.representative_relief_mm = representativeRelief;
+  swath.userData.triangle_indices = Array.from(layer.triangle_indices);
+  earlierLayers.push(layer);
+  return swath;
 }
 
 function _emitClusterSatellites(
@@ -4538,6 +4653,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
   // _pendingInclusions holds the guests to place.
   const _hostMeshById: Map<any, any> = new Map();
   const _pendingInclusions: any[] = [];
+  const _surfaceLayers: any[] = [];
 
   for (const crystal of sim.crystals) {
     if (!crystal) continue;
@@ -5316,14 +5432,17 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       // === END HELIX-OVERLAY-FORK ADDITION ===========================
     };
 
-    state.crystals.add(mesh);
+    // An aggregate surface fabric is represented by its swath, not by the old
+    // trophy-sized parent body as well. Keeping both would visually double one
+    // booked Crystal and contradict the mass ledger.
+    _addCrystalParentRepresentation(state, crystal, mesh);
     // A booked aggregate can occupy a broad wall swath even though it is one
     // Crystal record. Emit one instanced representative layer; it neither adds
     // simulation entities nor multiplies the accepted mineral volume.
     if (!isInclusion && crystal._surfaceGrowth) {
       _emitSurfaceGrowthSwath(
         state, crystal, mat, ax, ay, az,
-        wall, ringCount, N, initR, renderC,
+        wall, ringCount, N, initR, renderC, sim, _surfaceLayers,
       );
     }
     // W-F O4a — register every crystal as a possible host, and defer inclusion
@@ -5595,6 +5714,12 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
   // Synthetic wall — reuse method shapes from liveWall via Object.assign
   // so polarProfileFactor, ringTwistRadians, etc. still work.
   const synth: any = Object.assign(Object.create(Object.getPrototypeOf(liveWall) || null), liveWall);
+  // Never inherit geometry identity or a live mesh. The rings below are a
+  // distinct historical surface, so they must take the exact all-cell
+  // signature path and build their own WallMesh. Otherwise every replay frame
+  // can silently render the live wall's cached vertices.
+  delete synth._geometry_revision;
+  delete synth._mesh;
 
   // Detect snapshot shape:
   //   * Multi-ring (v65+): { step, rings: [...] } — use directly.

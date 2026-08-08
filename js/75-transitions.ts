@@ -241,6 +241,83 @@ function applyCaSO4PhaseTransition(
   return record;
 }
 
+// ============================================================
+// BIRNESSITE -> TODOROKITE Mg-EXCHANGE / TUNNEL TRANSFORMATION
+// ============================================================
+
+const MN_ATOMIC_MASS_G_MOL = 54.938044;
+const MG_ATOMIC_MASS_G_MOL = 24.305;
+const TODOROKITE_MG_MASS_PER_MN_MASS = MG_ATOMIC_MASS_G_MOL / (6 * MN_ATOMIC_MASS_G_MOL);
+
+function applyBirnessiteTodorokiteTransition(
+  crystal: any,
+  fluid: any,
+  temperatureC: number,
+  step: number | null,
+): any | null {
+  if (!crystal?.active || crystal.dissolved || crystal.mineral !== 'birnessite') return null;
+  if (!(Number(crystal.total_growth_um) > 0)) return null;
+  if (temperatureC < MINERAL_GATES_todorokite.T_min!
+      || temperatureC > MINERAL_GATES_todorokite.T_max!) return null;
+
+  // Framework Mn is already in the accepted solid ledger. Preserve it rather
+  // than spending the fluid for a second crystal; only exchanged structural
+  // Mg is newly booked, at the 1 Mg : 6 Mn formula mass ratio.
+  const bookedMnPpm = remainingBookedInventory(crystal, 'Mn');
+  if (!(bookedMnPpm > 0)) return null;
+  const requiredMgPpm = bookedMnPpm * TODOROKITE_MG_MASS_PER_MN_MASS;
+  const mgBeforePpm = Math.max(0, Number(fluid?.Mg) || 0);
+  if (mgBeforePpm + 1e-12 < requiredMgPpm) return null;
+
+  for (const zone of (crystal.zones || [])) {
+    if (!(zone && Number(zone.thickness_um) > 0)) continue;
+    const remaining = Number.isFinite(Number(zone._remaining_solid_um))
+      ? Math.max(0, Number(zone._remaining_solid_um))
+      : Math.max(0, Number(zone.thickness_um) || 0);
+    if (!(remaining > 0)) continue;
+    const mnPerUm = Number(zone._budget_inventory_per_um?.Mn) || 0;
+    if (!(mnPerUm > 0)) continue;
+    zone._budget_inventory_per_um ||= {};
+    zone._budget_inventory_per_um.Mg = (Number(zone._budget_inventory_per_um.Mg) || 0)
+      + mnPerUm * TODOROKITE_MG_MASS_PER_MN_MASS;
+  }
+  fluid.Mg = Math.max(0, mgBeforePpm - requiredMgPpm);
+
+  const from = 'birnessite';
+  const to = 'todorokite';
+  crystal.mineral = to;
+  // Compatibility fields preserve replay and source-cap behavior. This is a
+  // solution-mediated layer-to-tunnel transformation, not a paramorph.
+  crystal.paramorph_origin = from;
+  if (step != null) crystal.paramorph_step = step;
+  crystal.phase_transition_origin = from;
+  crystal.phase_transition_step = step;
+  crystal.phase_transition_driver = 'Mg-exchanged-birnessite-to-todorokite';
+  crystal.habit = 'dendritic_mine_coating';
+  crystal.vector = 'coating';
+  crystal.dominant_forms = [
+    'wall-parallel branching mine dendrites',
+    '3x3 tunnel oxide after Mg exchange into a booked birnessite precursor',
+  ];
+  crystal.position = `in-place after birnessite #${crystal.crystal_id} (Mg-exchanged tunnel transformation)`;
+  crystal._todorokite_transition_mg_ppm = requiredMgPpm;
+
+  const record = {
+    step,
+    from,
+    to,
+    driver: crystal.phase_transition_driver,
+    bookedMnPreservedPpm: bookedMnPpm,
+    structuralMgBookedPpm: requiredMgPpm,
+    mgBeforePpm,
+    mgAfterPpm: fluid.Mg,
+    temperatureC,
+    modelBoundary: 'in-place booked-solid proxy for Mg exchange and layer-to-tunnel reorganization; structural water and Mn(III) ordering are not conserved state variables',
+  };
+  (crystal.phase_transition_history ||= []).push(record);
+  return record;
+}
+
 // Replay helper supports repeated sabkha hydration/dehydration cycles. Legacy
 // one-shot paramorph/dehydration records continue through the fallback.
 function mineralAtReplayStep(crystal: any, replayStep: number | null): string {

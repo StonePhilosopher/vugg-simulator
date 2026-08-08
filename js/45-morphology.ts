@@ -1182,6 +1182,7 @@ const SURFACE_GROWTH_ASBESTOS = new Set([
 const SURFACE_GROWTH_CRUST_HABIT = /botryoid|mammillary|reniform|colloform|crust|coat|encrust|earthy|sooty|ochre|banded|sinter|film|blanket/i;
 const SURFACE_GROWTH_LINING_HABIT = /chalcedony|agate|wall.?lining/i;
 const SURFACE_GROWTH_DRUSE_HABIT = /drus|druz/i;
+const SURFACE_GROWTH_MN_FAMILY = new Set(['birnessite', 'romanechite', 'todorokite']);
 
 function surfaceGrowthRegimeFor(crystal: any): string | null {
   if (!crystal || crystal.dissolved || !(crystal.total_growth_um > 0)) return null;
@@ -1190,6 +1191,12 @@ function surfaceGrowthRegimeFor(crystal: any): string | null {
   const vector = String(crystal.vector || '').toLowerCase();
 
   if (SURFACE_GROWTH_ASBESTOS.has(mineral) && /fibrous|asbestiform/.test(habit)) {
+    return 'fibrous_mat';
+  }
+  if (SURFACE_GROWTH_MN_FAMILY.has(mineral) && /dendrit|arborescent/.test(habit)) {
+    return 'dendritic_film';
+  }
+  if (mineral === 'todorokite' && /fibrous|felted/.test(habit)) {
     return 'fibrous_mat';
   }
   if (mineral === 'chalcedony' || SURFACE_GROWTH_LINING_HABIT.test(habit)) {
@@ -1224,13 +1231,14 @@ function surfaceGrowthRegimeFor(crystal: any): string | null {
   return null;
 }
 
-function surfaceGrowthDescriptor(crystal: any, wall: any): any | null {
+function surfaceGrowthDescriptor(crystal: any, wall: any, sim?: any): any | null {
   const regime = surfaceGrowthRegimeFor(crystal);
   if (!regime) return null;
   const spread = Math.max(0.02, Math.min(0.99, Number(crystal.wall_spread) || 0.5));
   // Aggregate fabrics establish lateral continuity early. Maturity controls
   // completion of the target footprint, not a fictitious linear radius.
   const maturityScaleUm = regime === 'laminated_lining' ? 75
+    : regime === 'dendritic_film' ? 110
     : regime === 'fibrous_mat' ? 180
     : regime === 'euhedral_druse' ? 350 : 250;
   const maturity = 1 - Math.exp(-Math.max(0, crystal.total_growth_um) / maturityScaleUm);
@@ -1239,13 +1247,16 @@ function surfaceGrowthDescriptor(crystal: any, wall: any): any | null {
   // catalog row used wall_spread=0.55 because it pre-dated a surface renderer;
   // keep that honest without rewriting its chemistry or axial volume.
   if (regime === 'fibrous_mat') coverage = Math.max(coverage, 0.65 * maturity);
+  if (regime === 'dendritic_film') coverage = Math.max(coverage, 0.72 * maturity);
   coverage = Math.max(0.02, Math.min(0.98, coverage));
 
+  const exactArea = wall && typeof wall.surfaceAreaMm2 === 'function'
+    ? Number(wall.surfaceAreaMm2(sim)) : 0;
   const diameter = wall && typeof wall.meanDiameterMm === 'function'
     ? wall.meanDiameterMm()
     : Number(wall && wall.vug_diameter_mm) || Number(crystal.vug_diameter_mm) || 50;
   const radius = Math.max(0.5, diameter / 2);
-  const cavityArea = 4 * Math.PI * radius * radius;
+  const cavityArea = exactArea > 0 ? exactArea : 4 * Math.PI * radius * radius;
   const coveredArea = Math.max(1e-9, cavityArea * coverage);
   const bookedVolume = Math.max(0, Number(crystal._volume_mm3) || 0);
   const meanThicknessUm = bookedVolume / coveredArea * 1000;
@@ -1253,12 +1264,16 @@ function surfaceGrowthDescriptor(crystal: any, wall: any): any | null {
   return {
     regime,
     coverage_fraction: coverage,
+    cavity_area_mm2: cavityArea,
     covered_area_mm2: coveredArea,
     mean_thickness_um: meanThicknessUm,
     booked_volume_mm3: bookedVolume,
     wall_spread: spread,
     void_reach: Math.max(0, Math.min(1, Number(crystal.void_reach) || 0)),
     substrate: crystal.position || 'vug wall',
+    area_basis: exactArea > 0
+      ? 'exact WallMesh triangle area'
+      : 'mean-diameter spherical fallback',
     mass_basis: 'accepted Crystal._volume_mm3; renderer instances are representative only',
   };
 }
@@ -1266,15 +1281,58 @@ function surfaceGrowthDescriptor(crystal: any, wall: any): any | null {
 function classifySurfaceGrowth(sim: any) {
   const wall = sim && sim.wall_state;
   if (!sim || !sim.crystals) return;
+  const eligible: any[] = [];
   for (const c of sim.crystals) {
     if (!c) continue;
-    const desc = surfaceGrowthDescriptor(c, wall);
+    const desc = surfaceGrowthDescriptor(c, wall, sim);
     if (desc) {
       desc.at_step = sim.step;
       c._surfaceGrowth = desc;
+      eligible.push(c);
     } else if (c._surfaceGrowth) {
       delete c._surfaceGrowth;
     }
+  }
+  // Preserve spatial paragenesis as explicit model evidence. A later layer
+  // lists only earlier surface fabrics whose spherical-cap footprints can
+  // overlap; the renderer refines this to exact shared triangles per sample.
+  eligible.sort((a, b) => (Number(a.nucleation_step) - Number(b.nucleation_step))
+    || (Number(a.crystal_id) - Number(b.crystal_id)));
+  const prior: any[] = [];
+  const exactMesh = wall && typeof wall.meshFor === 'function'
+    ? wall.meshFor(sim) : null;
+  for (let i = 0; i < eligible.length; i++) {
+    const c = eligible[i];
+    const desc = c._surfaceGrowth;
+    const dir = wall && typeof wall.surfaceAnchorDirection === 'function'
+      ? wall.surfaceAnchorDirection(c) : [0, 1, 0];
+    const radius = Math.acos(Math.max(-1, Math.min(1, 1 - 2 * desc.coverage_fraction)));
+    const exactPatch = exactMesh && typeof exactMesh.surfacePatch === 'function'
+      ? exactMesh.surfacePatch(dir, desc.coverage_fraction) : null;
+    const exactTriangles = exactPatch && Array.isArray(exactPatch.triangles)
+      ? new Set(exactPatch.triangles.map((triangle: any) => triangle.triangle_index))
+      : null;
+    const underlying: number[] = [];
+    for (const p of prior) {
+      if (exactTriangles && p.exactTriangles) {
+        let sharesTriangle = false;
+        for (const triangleIndex of exactTriangles) {
+          if (p.exactTriangles.has(triangleIndex)) { sharesTriangle = true; break; }
+        }
+        if (sharesTriangle) underlying.push(p.crystal.crystal_id);
+      } else {
+        const dot = dir[0] * p.dir[0] + dir[1] * p.dir[1] + dir[2] * p.dir[2];
+        const distance = Math.acos(Math.max(-1, Math.min(1, dot)));
+        if (distance <= radius + p.radius) underlying.push(p.crystal.crystal_id);
+      }
+    }
+    desc.stratigraphic_index = i;
+    desc.nucleation_step = Number(c.nucleation_step) || 0;
+    desc.underlying_surface_crystal_ids = underlying;
+    desc.stratigraphy_basis = exactTriangles
+      ? 'exact shared WallMesh triangles'
+      : 'spherical-cap fallback';
+    prior.push({ crystal: c, dir, radius, exactTriangles });
   }
 }
 

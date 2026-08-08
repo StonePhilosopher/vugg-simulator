@@ -375,7 +375,10 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   willemite:      { Zn: 2, SiO2: 1 },                 // Zn2SiO4
   conichalcite:   { Ca: 1, Cu: 1, As: 1 },            // CaCu(AsO4)(OH)
   duftite:        { Pb: 1, Cu: 1, As: 1 },            // PbCu(AsO4)(OH)
-  pyrolusite:     { Mn: 1 },                          // MnO2 — Mn supergene oxide
+  birnessite:     { Mn: 1 },                          // (Na,Ca,K)x(Mn4+,Mn3+)O2·nH2O — variable interlayer cations excluded from fixed framework debit
+  romanechite:    { Ba: 1, Mn: 5 },                   // BaMn5O10·xH2O — Ba-bearing 2×3 tunnel oxide
+  todorokite:     { Mg: 1, Mn: 6 },                   // (Mg,Na,Ca)(Mn,Mg)6O12·3–4H2O — Mg-templated 3×3 tunnel approximation
+  pyrolusite:     { Mn: 1 },                          // MnO2 — crystalline Mn(IV) endmember
   tigers_eye:     { SiO2: 1 },                        // SiO2 pseudomorph; Fe/Na/Mg from precursor
 
   // ---- v126 P1-holdout backfill (pectolite, no-fire pure-infra add) ----

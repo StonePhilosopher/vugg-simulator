@@ -79,7 +79,8 @@ const COLOUR_LEXICON: { [name: string]: string } = {
   // --- metallic greys / silvers (sulfides, natives, oxides) ---
   lead_gray: '#74767c', lead_gray_metallic: '#73767c', lead_steel_gray: '#6d7076', lead_tin_white: '#b7b3a8',
   steel_gray: '#5c5d63', iron_gray: '#5f6167', gray_black: '#3f3f45', dark_gray_black: '#34343a',
-  iron_black: '#27272b', black: '#232326', black_metallic: '#2b2b2e', black_ferberite: '#2a2723',
+  iron_black: '#27272b', steel_black: '#292a2d', brownish_black: '#332d29',
+  black: '#232326', black_metallic: '#2b2b2e', black_ferberite: '#2a2723',
   specular_metallic_gray: '#5a5b5f', silver_gray_metallic: '#8a8d94', silver_white: '#cfcdc6',
   silver_white_fresh: '#cbcabf', silver_white_metallic: '#c9c6bd', silvery_metallic: '#bcbcc2',
   tin_white: '#c2c0b6', tin_white_iridescent: '#bdbcc0', bronze_fresh: '#a06a44', copper_red_fresh: '#bb6a34',

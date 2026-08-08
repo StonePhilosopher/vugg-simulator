@@ -519,9 +519,40 @@ class VugWall {
 // the renderer walks the cells in order and draws a line whose color and
 // thickness come from the crystal occupying that cell.
 class WallCell {
-  // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;
-  constructor() {
+  constructor(geometryOwner: any = null) {
+    // v250 exact mesh invalidation: geometry writes mark the owning wall
+    // dirty at mutation time. The public properties remain enumerable so
+    // saves, snapshots, Object.keys(), and object spread keep the historical
+    // WallCell shape. Plain snapshot cells are handled by WallMesh's exact
+    // all-cell hash fallback.
+    let wallDepth = 0;
+    let baseRadiusMm = 0;
+    const touchGeometry = () => {
+      if (geometryOwner && typeof geometryOwner._touchGeometry === 'function') {
+        geometryOwner._touchGeometry();
+      }
+    };
+    Object.defineProperty(this, 'wall_depth', {
+      enumerable: true,
+      configurable: true,
+      get: () => wallDepth,
+      set: (value) => {
+        if (Object.is(wallDepth, value)) return;
+        wallDepth = value;
+        touchGeometry();
+      },
+    });
+    Object.defineProperty(this, 'base_radius_mm', {
+      enumerable: true,
+      configurable: true,
+      get: () => baseRadiusMm,
+      set: (value) => {
+        if (Object.is(baseRadiusMm, value)) return;
+        baseRadiusMm = value;
+        touchGeometry();
+      },
+    });
     this.wall_depth = 0;       // dissolution depth, mm (negative = eroded)
     this.crystal_id = null;    // id of the crystal occupying this cell
     this.mineral = null;       // mineral name for class_color lookup
@@ -750,6 +781,9 @@ class WallState {
   // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;
   constructor(opts: any = {}) {
+    // Mutation-time exact cache invalidation: the two position-affecting
+    // WallCell setters advance this monotonic revision.
+    this._geometry_revision = 0;
     this.cells_per_ring = opts.cells_per_ring ?? 120;
     // Phase 1 of PROPOSAL-3D-SIMULATION: 16 vertically-stacked rings as
     // the new default. Engine still operates on ring[0] only — rings 1..15
@@ -846,7 +880,7 @@ class WallState {
     this.rings = [];
     for (let r = 0; r < this.ring_count; r++) {
       const ring = [];
-      for (let c = 0; c < this.cells_per_ring; c++) ring.push(new WallCell());
+      for (let c = 0; c < this.cells_per_ring; c++) ring.push(new WallCell(this));
       this.rings.push(ring);
     }
     // Bake per-cell base_radius_mm from the 3D sphere-union profile.
@@ -883,6 +917,13 @@ class WallState {
       for (const c of ring)
         if (c.base_radius_mm > maxBase) maxBase = c.base_radius_mm;
     this.max_seen_radius_mm = maxBase * 2;
+  }
+
+  _touchGeometry() {
+    const current = Number.isSafeInteger(this._geometry_revision)
+      ? this._geometry_revision
+      : 0;
+    this._geometry_revision = current + 1;
   }
 
   // 2026-05-11 — true 3D sphere-union cavity geometry. Replaces the
@@ -1263,6 +1304,34 @@ class WallState {
     let sum = 0;
     for (const c of ring0) sum += c.base_radius_mm + c.wall_depth;
     return 2 * sum / ring0.length;
+  }
+
+  // Exact area of the current irregular tessellated cavity wall. The
+  // mean-diameter sphere remains a bootstrap fallback only when WallMesh is
+  // unavailable (for example, an intentionally tiny headless fixture).
+  surfaceAreaMm2(sim?) {
+    const mesh = this.meshFor(sim);
+    const exact = mesh && typeof mesh.surfaceAreaMm2 === 'function'
+      ? mesh.surfaceAreaMm2() : 0;
+    if (exact > 0) return exact;
+    const radius = Math.max(0.5, this.meanDiameterMm() / 2);
+    return 4 * Math.PI * radius * radius;
+  }
+
+  // Unit vector from the cavity centre to a crystal's authored anchor. It
+  // includes the same ring twist used by WallMesh, making the descriptor and
+  // renderer select the same physical wall patch.
+  surfaceAnchorDirection(crystal) {
+    const anchor = this._resolveAnchor(crystal);
+    if (!anchor) return [0, 1, 0];
+    const phi = Math.PI * (anchor.ringIdx + 0.5) / Math.max(1, this.ring_count);
+    const twist = this.ringTwistRadians ? this.ringTwistRadians(phi) : 0;
+    const theta = 2 * Math.PI * anchor.cellIdx / Math.max(1, this.cells_per_ring) + twist;
+    return [
+      Math.sin(phi) * Math.cos(theta),
+      -Math.cos(phi),
+      Math.sin(phi) * Math.sin(theta),
+    ];
   }
 
   updateDiameter(newDiameter) { this.vug_diameter_mm = newDiameter; }

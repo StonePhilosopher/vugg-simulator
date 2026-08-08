@@ -12,6 +12,21 @@ declare const SCENARIOS: Record<string, any>;
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 describe('archived strip testimony identity', () => {
+  it('keeps simulation seed 42 distinct from every authored wall shape seed', () => {
+    const entries = Object.entries(SCENARIOS);
+    expect(entries).toHaveLength(39);
+    for (const [scenario, makeScenario] of entries) {
+      expect(
+        makeScenario._json5_spec?.initial?.wall?.shape_seed,
+        `${scenario} must author initial.wall.shape_seed independently of the simulation seed`,
+      ).toEqual(expect.any(Number));
+      expect(
+        Number.isInteger(makeScenario._json5_spec.initial.wall.shape_seed),
+        `${scenario} shape_seed must be an integer`,
+      ).toBe(true);
+    }
+  });
+
   it('binds every current strip to model, scenario spec, seed, and filename', () => {
     const dir = path.join(ROOT, 'archive', 'strips', `v${SIM_VERSION}`);
     const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json'));

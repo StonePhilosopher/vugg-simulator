@@ -23,17 +23,27 @@ declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
 
+const scenarioCache = new Map<string, any>();
+
+function runScenario(scenarioName: string, seed: number) {
+  const key = `${scenarioName}:${seed}`;
+  if (scenarioCache.has(key)) return scenarioCache.get(key);
+  setSeed(seed);
+  const scen = SCENARIOS[scenarioName];
+  if (!scen) return null;
+  const { conditions, events, defaultSteps } = scen();
+  const sim = new VugSimulator(conditions, events);
+  const steps = defaultSteps ?? 100;
+  for (let i = 0; i < steps; i++) sim.run_step();
+  scenarioCache.set(key, sim);
+  return sim;
+}
+
 function runSeeds(scenarioName: string, mineralName: string, seeds: number[]) {
-  let everNucleated = false;
   let totalCount = 0;
   for (const seed of seeds) {
-    setSeed(seed);
-    const scen = SCENARIOS[scenarioName];
-    if (!scen) return { everNucleated: null, totalCount: 0, missingScenario: true };
-    const { conditions, events, defaultSteps } = scen();
-    const sim = new VugSimulator(conditions, events);
-    const steps = defaultSteps ?? 100;
-    for (let i = 0; i < steps; i++) sim.run_step();
+    const sim = runScenario(scenarioName, seed);
+    if (!sim) return { everNucleated: null, totalCount: 0, missingScenario: true };
     // v85 (2026-05-19): count any crystal that ORIGINATED as the named
     // mineral, including post-transformation paramorphs. The autunite-
     // group meta- trio (meta-autunite, metatorbernite, metazeunerite)
@@ -48,11 +58,11 @@ function runSeeds(scenarioName: string, mineralName: string, seeds: number[]) {
       c.mineral === mineralName || c.paramorph_origin === mineralName,
     );
     if (hits.length > 0) {
-      everNucleated = true;
       totalCount += hits.length;
+      return { everNucleated: true, totalCount };
     }
   }
-  return { everNucleated, totalCount };
+  return { everNucleated: false, totalCount };
 }
 
 describe('Architecture audit — cavity archetype pins (2026-05-18, v78)', () => {

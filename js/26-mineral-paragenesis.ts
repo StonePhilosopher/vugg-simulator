@@ -296,6 +296,9 @@ const ENGINE_EXECUTABLE_SUBSTRATE_ROUTES: Record<string, Set<string>> = {
   azurite: new Set(['cuprite']),
   chrysocolla: new Set(['azurite', 'cuprite', 'native_copper']),
   barite: new Set(['sphalerite', 'galena']),
+  // Required transformation precursor, not merely an association or a
+  // catalytic discount: production converts this booked layer in place.
+  todorokite: new Set(['birnessite']),
 };
 
 function engineExecutableSubstrateDiscount(
@@ -305,6 +308,23 @@ function engineExecutableSubstrateDiscount(
   const routes = ENGINE_EXECUTABLE_SUBSTRATE_ROUTES[nucleatingMineral];
   if (!routes || !routes.has(hostMineral)) return 1.0;
   return paragenesisDiscount(hostMineral, nucleatingMineral);
+}
+
+// Todorokite is not licensed as a bare-wall precipitate in this model. Its
+// production route is an in-place Mg exchange / layer-to-tunnel
+// reorganization of an already-grown birnessite solid. Keep the full solid
+// eligibility rule here, beside the executable substrate registry, so the
+// nucleator, production counterfactual, and Creative hover diagnosis all use
+// the same predicate instead of independently approximating "precursor".
+function isTodorokiteBirnessitePrecursor(host: any): boolean {
+  return !!host
+    && host.mineral === 'birnessite'
+    && !!host.active
+    && !host.dissolved
+    && host.enclosed_by == null
+    && Number(host.total_growth_um) > 0
+    && typeof remainingBookedInventory === 'function'
+    && remainingBookedInventory(host, 'Mn') > 0;
 }
 
 function engineExecutableSubstrateRoute(host: any, nucleatingMineral: string) {
@@ -325,6 +345,8 @@ function engineExecutableSubstrateRoute(host: any, nucleatingMineral: string) {
     executable = true; // fresh or oxidized sphalerite
   } else if (nucleatingMineral === 'chrysocolla' && host.mineral === 'azurite') {
     executable = !!host.active || !!host.dissolved;
+  } else if (nucleatingMineral === 'todorokite' && host.mineral === 'birnessite') {
+    executable = isTodorokiteBirnessitePrecursor(host);
   } else {
     executable = !!host.active && !host.dissolved && host.enclosed_by == null;
   }

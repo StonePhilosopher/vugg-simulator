@@ -6065,7 +6065,8 @@ const COLOUR_LEXICON = {
     // --- metallic greys / silvers (sulfides, natives, oxides) ---
     lead_gray: '#74767c', lead_gray_metallic: '#73767c', lead_steel_gray: '#6d7076', lead_tin_white: '#b7b3a8',
     steel_gray: '#5c5d63', iron_gray: '#5f6167', gray_black: '#3f3f45', dark_gray_black: '#34343a',
-    iron_black: '#27272b', black: '#232326', black_metallic: '#2b2b2e', black_ferberite: '#2a2723',
+    iron_black: '#27272b', steel_black: '#292a2d', brownish_black: '#332d29',
+    black: '#232326', black_metallic: '#2b2b2e', black_ferberite: '#2a2723',
     specular_metallic_gray: '#5a5b5f', silver_gray_metallic: '#8a8d94', silver_white: '#cfcdc6',
     silver_white_fresh: '#cbcabf', silver_white_metallic: '#c9c6bd', silvery_metallic: '#bcbcc2',
     tin_white: '#c2c0b6', tin_white_iridescent: '#bdbcc0', bronze_fresh: '#a06a44', copper_red_fresh: '#bb6a34',
@@ -18858,7 +18859,36 @@ function scenarioSpecHash(spec) {
 //       v5 separates each actual simulator/event step from its zero-based tensor
 //       sample index; archives, claim cards, and displayed row labels therefore
 //       use the same step coordinates as scenario events and hover diagnosis.
-const SIM_VERSION = 248;
+// v249 — EXACT SURFACE FABRICS + Mn-OXIDE PHASE FAMILY (2026-08-07).
+//       The renderer now integrates the actual irregular WallMesh triangle
+//       area, samples the exact coated triangle patch, and derives physical
+//       mean thickness from the single booked Crystal volume. Representative
+//       instances no longer coexist with a duplicate trophy-sized parent;
+//       they are raycastable and later coatings sit above earlier overlapping
+//       layers using explicit nucleation-step stratigraphy. Desktop/mobile LOD
+//       changes only representative count, never physical area, mass or layer
+//       relief. Manganese coatings split into first-class birnessite,
+//       romanechite and todorokite phases. Ba and Mg are mass-booked structural
+//       selectors for the 2x3 and 3x3 tunnel oxides; low-T hydrous films route
+//       to birnessite, while pyrolusite remains a crystalline high-Eh
+//       endmember. Dendritic Mn films receive a flattened wall-tangent branch
+//       grammar, never the old free-standing needle/trophy representation.
+// v250 — HOSTILE-REVIEW EXACTNESS CLOSURE (2026-08-07).
+//       Every wall-cell radius now participates in the shared mesh/renderer
+//       invalidation identity, so exact area, patch samples, and derived
+//       thickness cannot remain stale after an off-stride dissolution edit.
+//       Production WallCells advance an exact mutation-time geometry revision
+//       (O(1) cache reads); plain snapshot walls retain the all-cell hash
+//       fallback. The formerly 529 s Sabkha digest replay returns to 31 s.
+//       Surface stratigraphy is testified only from shared exact WallMesh
+//       triangles; the spherical fallback is explicitly labelled possible.
+//       Todorokite no longer precipitates from bare wall or at 25 C: production
+//       requires a grown, booked birnessite precursor at 95-200 C, transforms
+//       it in place, preserves its Mn inventory, and books exchanged Mg at the
+//       1:6 formula ratio. Executed vendored-Three integration tests now prove
+//       finite instance matrices, raycast hits, single scene representation,
+//       overlap relief, flattened dendrites, and mobile/desktop relief parity.
+const SIM_VERSION = 250;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -18873,7 +18903,8 @@ const MODEL_DIGEST = [
     'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
     'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
     'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',
-    'surface-growth:mass-booked-area+lining+catalog-crust+asbestos+druse-representatives-v2',
+    'surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4',
+    'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
     'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
     'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3',
     'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
@@ -19401,7 +19432,10 @@ const MINERAL_STOICHIOMETRY = {
     willemite: { Zn: 2, SiO2: 1 }, // Zn2SiO4
     conichalcite: { Ca: 1, Cu: 1, As: 1 }, // CaCu(AsO4)(OH)
     duftite: { Pb: 1, Cu: 1, As: 1 }, // PbCu(AsO4)(OH)
-    pyrolusite: { Mn: 1 }, // MnO2 — Mn supergene oxide
+    birnessite: { Mn: 1 }, // (Na,Ca,K)x(Mn4+,Mn3+)O2·nH2O — variable interlayer cations excluded from fixed framework debit
+    romanechite: { Ba: 1, Mn: 5 }, // BaMn5O10·xH2O — Ba-bearing 2×3 tunnel oxide
+    todorokite: { Mg: 1, Mn: 6 }, // (Mg,Na,Ca)(Mn,Mg)6O12·3–4H2O — Mg-templated 3×3 tunnel approximation
+    pyrolusite: { Mn: 1 }, // MnO2 — crystalline Mn(IV) endmember
     tigers_eye: { SiO2: 1 }, // SiO2 pseudomorph; Fe/Na/Mg from precursor
     // ---- v126 P1-holdout backfill (pectolite, no-fire pure-infra add) ----
     // pectolite is the one P1 Jeffrey-arc mineral that v123 deferred
@@ -23012,7 +23046,41 @@ class VugWall {
 // the renderer walks the cells in order and draws a line whose color and
 // thickness come from the crystal occupying that cell.
 class WallCell {
-    constructor() {
+    constructor(geometryOwner = null) {
+        // v250 exact mesh invalidation: geometry writes mark the owning wall
+        // dirty at mutation time. The public properties remain enumerable so
+        // saves, snapshots, Object.keys(), and object spread keep the historical
+        // WallCell shape. Plain snapshot cells are handled by WallMesh's exact
+        // all-cell hash fallback.
+        let wallDepth = 0;
+        let baseRadiusMm = 0;
+        const touchGeometry = () => {
+            if (geometryOwner && typeof geometryOwner._touchGeometry === 'function') {
+                geometryOwner._touchGeometry();
+            }
+        };
+        Object.defineProperty(this, 'wall_depth', {
+            enumerable: true,
+            configurable: true,
+            get: () => wallDepth,
+            set: (value) => {
+                if (Object.is(wallDepth, value))
+                    return;
+                wallDepth = value;
+                touchGeometry();
+            },
+        });
+        Object.defineProperty(this, 'base_radius_mm', {
+            enumerable: true,
+            configurable: true,
+            get: () => baseRadiusMm,
+            set: (value) => {
+                if (Object.is(baseRadiusMm, value))
+                    return;
+                baseRadiusMm = value;
+                touchGeometry();
+            },
+        });
         this.wall_depth = 0; // dissolution depth, mm (negative = eroded)
         this.crystal_id = null; // id of the crystal occupying this cell
         this.mineral = null; // mineral name for class_color lookup
@@ -23203,6 +23271,9 @@ function _raycastUnion3D(spheres, dx, dy, dz) {
 }
 class WallState {
     constructor(opts = {}) {
+        // Mutation-time exact cache invalidation: the two position-affecting
+        // WallCell setters advance this monotonic revision.
+        this._geometry_revision = 0;
         this.cells_per_ring = opts.cells_per_ring ?? 120;
         // Phase 1 of PROPOSAL-3D-SIMULATION: 16 vertically-stacked rings as
         // the new default. Engine still operates on ring[0] only — rings 1..15
@@ -23298,7 +23369,7 @@ class WallState {
         for (let r = 0; r < this.ring_count; r++) {
             const ring = [];
             for (let c = 0; c < this.cells_per_ring; c++)
-                ring.push(new WallCell());
+                ring.push(new WallCell(this));
             this.rings.push(ring);
         }
         // Bake per-cell base_radius_mm from the 3D sphere-union profile.
@@ -23337,6 +23408,12 @@ class WallState {
                 if (c.base_radius_mm > maxBase)
                     maxBase = c.base_radius_mm;
         this.max_seen_radius_mm = maxBase * 2;
+    }
+    _touchGeometry() {
+        const current = Number.isSafeInteger(this._geometry_revision)
+            ? this._geometry_revision
+            : 0;
+        this._geometry_revision = current + 1;
     }
     // 2026-05-11 — true 3D sphere-union cavity geometry. Replaces the
     // legacy 2D bubble-merge (_buildProfile) for the production cavity
@@ -23700,6 +23777,34 @@ class WallState {
         for (const c of ring0)
             sum += c.base_radius_mm + c.wall_depth;
         return 2 * sum / ring0.length;
+    }
+    // Exact area of the current irregular tessellated cavity wall. The
+    // mean-diameter sphere remains a bootstrap fallback only when WallMesh is
+    // unavailable (for example, an intentionally tiny headless fixture).
+    surfaceAreaMm2(sim) {
+        const mesh = this.meshFor(sim);
+        const exact = mesh && typeof mesh.surfaceAreaMm2 === 'function'
+            ? mesh.surfaceAreaMm2() : 0;
+        if (exact > 0)
+            return exact;
+        const radius = Math.max(0.5, this.meanDiameterMm() / 2);
+        return 4 * Math.PI * radius * radius;
+    }
+    // Unit vector from the cavity centre to a crystal's authored anchor. It
+    // includes the same ring twist used by WallMesh, making the descriptor and
+    // renderer select the same physical wall patch.
+    surfaceAnchorDirection(crystal) {
+        const anchor = this._resolveAnchor(crystal);
+        if (!anchor)
+            return [0, 1, 0];
+        const phi = Math.PI * (anchor.ringIdx + 0.5) / Math.max(1, this.ring_count);
+        const twist = this.ringTwistRadians ? this.ringTwistRadians(phi) : 0;
+        const theta = 2 * Math.PI * anchor.cellIdx / Math.max(1, this.cells_per_ring) + twist;
+        return [
+            Math.sin(phi) * Math.cos(theta),
+            -Math.cos(phi),
+            Math.sin(phi) * Math.sin(theta),
+        ];
     }
     updateDiameter(newDiameter) { this.vug_diameter_mm = newDiameter; }
     // PHASE-2-CAVITY-MESH (PROPOSAL-CAVITY-MESH §6): lazy accessor that
@@ -24239,6 +24344,12 @@ class WallMesh {
         // equatorial max). One slot per ring; the renderer reads ringCount
         // slots into its uVugRadiiByRing uniform array.
         this.maxRadiusByRing = null;
+        // Exact area of the tessellated cavity surface. Surface-growth
+        // aggregates use this same triangle ledger for physical thickness and
+        // representative placement, so an irregular vug is not silently
+        // replaced by a mean-diameter sphere.
+        this.surface_area_mm2 = 0;
+        this._surfaceTriangles = [];
     }
     // ---- Factory ----
     //
@@ -24616,34 +24727,265 @@ class WallMesh {
         }
         this.indices = indices;
     }
+    // Rebuild triangle areas, centroids and outward normals from the exact
+    // position/index buffers consumed by the renderer. A triangle can be
+    // fractionally weighted at a patch boundary; this lets covered area close
+    // exactly to target coverage without pretending that a coarse boundary
+    // triangle is either wholly bare or wholly coated.
+    _recomputeSurfaceMetrics() {
+        const positions = this.positions;
+        const indices = this.indices;
+        const triangles = [];
+        let totalArea = 0;
+        if (!positions || !indices) {
+            this.surface_area_mm2 = 0;
+            this._surfaceTriangles = triangles;
+            return;
+        }
+        for (let offset = 0; offset + 2 < indices.length; offset += 3) {
+            const ia = indices[offset], ib = indices[offset + 1], ic = indices[offset + 2];
+            const ax = positions[ia * 3], ay = positions[ia * 3 + 1], az = positions[ia * 3 + 2];
+            const bx = positions[ib * 3], by = positions[ib * 3 + 1], bz = positions[ib * 3 + 2];
+            const cx = positions[ic * 3], cy = positions[ic * 3 + 1], cz = positions[ic * 3 + 2];
+            const abx = bx - ax, aby = by - ay, abz = bz - az;
+            const acx = cx - ax, acy = cy - ay, acz = cz - az;
+            let nx = aby * acz - abz * acy;
+            let ny = abz * acx - abx * acz;
+            let nz = abx * acy - aby * acx;
+            const crossLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
+            const area = crossLen * 0.5;
+            if (!(area > 1e-12))
+                continue;
+            nx /= crossLen;
+            ny /= crossLen;
+            nz /= crossLen;
+            let mx = (ax + bx + cx) / 3;
+            let my = (ay + by + cy) / 3;
+            let mz = (az + bz + cz) / 3;
+            const ml = Math.sqrt(mx * mx + my * my + mz * mz) || 1;
+            // Indices should wind away from the cavity centre. Defensively make
+            // that convention explicit so the returned growth normal can always
+            // be the opposite, cavity-facing direction.
+            if (nx * mx + ny * my + nz * mz < 0) {
+                nx = -nx;
+                ny = -ny;
+                nz = -nz;
+            }
+            mx /= ml;
+            my /= ml;
+            mz /= ml;
+            triangles.push({
+                triangle_index: offset / 3,
+                ia, ib, ic, area_mm2: area,
+                centroid_dir: [mx, my, mz],
+                outward_normal: [nx, ny, nz],
+            });
+            totalArea += area;
+        }
+        // Build edge adjacency once with the geometry. Surface fabrics then grow
+        // out from their anchor as one edge-connected swath instead of selecting
+        // merely nearby, but potentially disconnected, triangles on an irregular
+        // multi-lobed cavity.
+        const edgeOwners = new Map();
+        for (const triangle of triangles) {
+            triangle.neighbor_indices = [];
+            const edges = [[triangle.ia, triangle.ib], [triangle.ib, triangle.ic], [triangle.ic, triangle.ia]];
+            for (const edge of edges) {
+                const lo = Math.min(edge[0], edge[1]);
+                const hi = Math.max(edge[0], edge[1]);
+                const key = `${lo}:${hi}`;
+                const owners = edgeOwners.get(key) || [];
+                owners.push(triangle);
+                edgeOwners.set(key, owners);
+            }
+        }
+        edgeOwners.forEach((owners) => {
+            if (owners.length < 2)
+                return;
+            for (const a of owners) {
+                for (const b of owners) {
+                    if (a !== b && !a.neighbor_indices.includes(b.triangle_index)) {
+                        a.neighbor_indices.push(b.triangle_index);
+                    }
+                }
+                a.neighbor_indices.sort((x, y) => x - y);
+            }
+        });
+        this.surface_area_mm2 = totalArea;
+        this._surfaceTriangles = triangles;
+    }
+    surfaceAreaMm2() {
+        return Number(this.surface_area_mm2) || 0;
+    }
+    // Select the closest triangle swath around an anchor direction until its
+    // area equals the requested fraction of the exact wall area. The final
+    // triangle carries a fractional physical weight when necessary.
+    surfacePatch(anchorDirection, targetCoverage) {
+        const raw = Array.isArray(anchorDirection) ? anchorDirection : [0, 1, 0];
+        const al = Math.sqrt(raw[0] * raw[0] + raw[1] * raw[1] + raw[2] * raw[2]) || 1;
+        const anchor = [raw[0] / al, raw[1] / al, raw[2] / al];
+        const coverage = Math.max(0, Math.min(1, Number(targetCoverage) || 0));
+        const targetArea = this.surfaceAreaMm2() * coverage;
+        if (!(targetArea > 0) || !this._surfaceTriangles.length) {
+            return { anchor, coverage_fraction: coverage, area_mm2: 0, triangles: [] };
+        }
+        const ranked = this._surfaceTriangles.map((t) => ({
+            triangle: t,
+            score: t.centroid_dir[0] * anchor[0]
+                + t.centroid_dir[1] * anchor[1]
+                + t.centroid_dir[2] * anchor[2],
+        }));
+        ranked.sort((a, b) => (b.score - a.score)
+            || (a.triangle.triangle_index - b.triangle.triangle_index));
+        const selected = [];
+        const rankedByIndex = new Map(ranked.map((item) => [item.triangle.triangle_index, item]));
+        const visited = new Set();
+        const queued = new Set();
+        const frontier = [];
+        const enqueue = (item) => {
+            if (!item)
+                return;
+            const index = item.triangle.triangle_index;
+            if (visited.has(index) || queued.has(index))
+                return;
+            frontier.push(item);
+            queued.add(index);
+        };
+        enqueue(ranked[0]);
+        let remaining = targetArea;
+        while (remaining > 1e-12 && selected.length < ranked.length) {
+            // Highest anchor affinity among triangles touching the existing patch.
+            // The triangle index tie-break makes the patch replay-deterministic.
+            frontier.sort((a, b) => (b.score - a.score)
+                || (a.triangle.triangle_index - b.triangle.triangle_index));
+            let item = frontier.shift();
+            if (!item) {
+                // Defensive recovery for a malformed/disconnected mesh. Production
+                // WallMesh tessellations are closed and connected, so this branch is
+                // not used by a valid cavity.
+                item = ranked.find((candidate) => !visited.has(candidate.triangle.triangle_index));
+                if (!item)
+                    break;
+            }
+            const index = item.triangle.triangle_index;
+            queued.delete(index);
+            if (visited.has(index))
+                continue;
+            visited.add(index);
+            const weight = Math.min(item.triangle.area_mm2, remaining);
+            selected.push({ ...item.triangle, weight_mm2: weight });
+            remaining -= weight;
+            for (const neighborIndex of item.triangle.neighbor_indices || []) {
+                enqueue(rankedByIndex.get(neighborIndex));
+            }
+        }
+        return {
+            anchor,
+            coverage_fraction: coverage,
+            area_mm2: targetArea - Math.max(0, remaining),
+            triangles: selected,
+        };
+    }
+    _surfaceSampleUnit(seed, index, channel) {
+        let x = ((Number(seed) | 0) ^ Math.imul((index + 1) | 0, 0x9e3779b1)
+            ^ Math.imul((channel + 11) | 0, 0x85ebca6b)) >>> 0;
+        x ^= x >>> 16;
+        x = Math.imul(x, 0x7feb352d) >>> 0;
+        x ^= x >>> 15;
+        x = Math.imul(x, 0x846ca68b) >>> 0;
+        x ^= x >>> 16;
+        return (x >>> 0) / 4294967296;
+    }
+    // Deterministic, area-weighted points on the exact triangle patch. The
+    // returned normals face into the cavity, which is the mineral-growth
+    // direction. Desktop/mobile can request different counts without changing
+    // the patch, area, mass, or layer identity.
+    sampleSurfacePatch(anchorDirection, count, targetCoverage, seed) {
+        const patch = this.surfacePatch(anchorDirection, targetCoverage);
+        const n = Math.max(0, Number(count) | 0);
+        const samples = [];
+        if (!n || !(patch.area_mm2 > 0) || !patch.triangles.length || !this.positions) {
+            return { ...patch, samples, triangle_indices: [] };
+        }
+        const cumulative = [];
+        let sum = 0;
+        for (const t of patch.triangles) {
+            sum += t.weight_mm2;
+            cumulative.push(sum);
+        }
+        const phase = this._surfaceSampleUnit(seed, 0, 97);
+        const golden = 0.6180339887498949;
+        for (let i = 0; i < n; i++) {
+            const target = (((i + 0.5) * golden + phase) % 1) * sum;
+            let lo = 0, hi = cumulative.length - 1;
+            while (lo < hi) {
+                const mid = (lo + hi) >> 1;
+                if (cumulative[mid] < target)
+                    lo = mid + 1;
+                else
+                    hi = mid;
+            }
+            const t = patch.triangles[lo];
+            const u = this._surfaceSampleUnit(seed, i, 1);
+            const v = this._surfaceSampleUnit(seed, i, 2);
+            const su = Math.sqrt(u);
+            const wa = 1 - su, wb = su * (1 - v), wc = su * v;
+            const p = this.positions;
+            samples.push({
+                x: wa * p[t.ia * 3] + wb * p[t.ib * 3] + wc * p[t.ic * 3],
+                y: wa * p[t.ia * 3 + 1] + wb * p[t.ib * 3 + 1] + wc * p[t.ic * 3 + 1],
+                z: wa * p[t.ia * 3 + 2] + wb * p[t.ib * 3 + 2] + wc * p[t.ic * 3 + 2],
+                nx: -t.outward_normal[0],
+                ny: -t.outward_normal[1],
+                nz: -t.outward_normal[2],
+                triangle_index: t.triangle_index,
+            });
+        }
+        return {
+            ...patch,
+            samples,
+            triangle_indices: patch.triangles.map((t) => t.triangle_index),
+        };
+    }
     // ---- Cache fingerprint ----
     //
-    // Match the legacy _topoCavitySignature in 99i so the renderer's
-    // cache-hit/miss timing doesn't change. The signature folds in
-    // ring count, cells per ring, a sampled wall_depth checksum (8
-    // cells per ring), and the current fluid-surface ring. Cheap to
-    // compute; busts whenever a dissolution event or fluid-level
-    // change shifts the cavity.
+    // Exact invalidation fingerprint shared with the renderer. Production
+    // WallState cells advance a monotonic revision from their wall_depth and
+    // base_radius_mm setters, so every position-affecting write is represented
+    // and cache reads stay O(1). Plain snapshot/test walls have no revision; for
+    // those, every cell radius participates in the exact fallback hash. Sampling
+    // a few cells is never sufficient once surface area and coating thickness
+    // are scientific state.
     static _signature(wall, sim) {
         if (!wall || !wall.rings || !wall.rings.length)
             return '';
         const ring0 = wall.rings[0];
         const N = ring0 ? ring0.length : 0;
-        let depthSum = 0;
+        const surf = sim && sim.conditions ? sim.conditions.fluid_surface_ring : null;
+        if (Number.isSafeInteger(wall._geometry_revision)) {
+            return `${wall.ring_count}|${N}|rev:${wall._geometry_revision}|${surf}`;
+        }
+        let hashA = 0x811c9dc5;
+        let hashB = 0x9e3779b9;
+        const scratch = new DataView(new ArrayBuffer(8));
         for (let r = 0; r < wall.rings.length; r++) {
             const ring = wall.rings[r];
             if (!ring)
                 continue;
-            const stride = Math.max(1, Math.floor(N / 8));
-            for (let c = 0; c < N; c += stride) {
+            for (let c = 0; c < N; c++) {
                 const cell = ring[c];
                 if (!cell)
                     continue;
-                depthSum += (cell.base_radius_mm + cell.wall_depth) * (r * 31 + c);
+                const radius = (Number(cell.base_radius_mm) || 0) + (Number(cell.wall_depth) || 0);
+                scratch.setFloat64(0, radius, true);
+                for (let byte = 0; byte < 8; byte++) {
+                    const value = scratch.getUint8(byte);
+                    hashA = Math.imul(hashA ^ value, 0x01000193) >>> 0;
+                    hashB = (Math.imul(hashB ^ value, 0x85ebca6b) + 0x27d4eb2f) >>> 0;
+                }
             }
         }
-        const surf = sim && sim.conditions ? sim.conditions.fluid_surface_ring : null;
-        return `${wall.ring_count}|${N}|${depthSum.toFixed(2)}|${surf}`;
+        return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}|${surf}`;
     }
     // ---- Recompute (cheap when stale, no-op when fresh) ----
     recomputeIfStale(wall, sim) {
@@ -24788,6 +25130,7 @@ class WallMesh {
         if (northR2 > maxR2)
             maxR2 = northR2;
         this.max_radius_mm = Math.sqrt(maxR2);
+        this._recomputeSurfaceMetrics();
         this.sig = WallMesh._signature(wall, sim);
     }
 }
@@ -26283,12 +26626,31 @@ const ENGINE_EXECUTABLE_SUBSTRATE_ROUTES = {
     azurite: new Set(['cuprite']),
     chrysocolla: new Set(['azurite', 'cuprite', 'native_copper']),
     barite: new Set(['sphalerite', 'galena']),
+    // Required transformation precursor, not merely an association or a
+    // catalytic discount: production converts this booked layer in place.
+    todorokite: new Set(['birnessite']),
 };
 function engineExecutableSubstrateDiscount(hostMineral, nucleatingMineral) {
     const routes = ENGINE_EXECUTABLE_SUBSTRATE_ROUTES[nucleatingMineral];
     if (!routes || !routes.has(hostMineral))
         return 1.0;
     return paragenesisDiscount(hostMineral, nucleatingMineral);
+}
+// Todorokite is not licensed as a bare-wall precipitate in this model. Its
+// production route is an in-place Mg exchange / layer-to-tunnel
+// reorganization of an already-grown birnessite solid. Keep the full solid
+// eligibility rule here, beside the executable substrate registry, so the
+// nucleator, production counterfactual, and Creative hover diagnosis all use
+// the same predicate instead of independently approximating "precursor".
+function isTodorokiteBirnessitePrecursor(host) {
+    return !!host
+        && host.mineral === 'birnessite'
+        && !!host.active
+        && !host.dissolved
+        && host.enclosed_by == null
+        && Number(host.total_growth_um) > 0
+        && typeof remainingBookedInventory === 'function'
+        && remainingBookedInventory(host, 'Mn') > 0;
 }
 function engineExecutableSubstrateRoute(host, nucleatingMineral) {
     if (!host)
@@ -26310,6 +26672,9 @@ function engineExecutableSubstrateRoute(host, nucleatingMineral) {
     }
     else if (nucleatingMineral === 'chrysocolla' && host.mineral === 'azurite') {
         executable = !!host.active || !!host.dissolved;
+    }
+    else if (nucleatingMineral === 'todorokite' && host.mineral === 'birnessite') {
+        executable = isTodorokiteBirnessitePrecursor(host);
     }
     else {
         executable = !!host.active && !host.dissolved && host.enclosed_by == null;
@@ -30330,6 +30695,46 @@ const MINERAL_GATES_chromite = {
     _sources: ['chromite engine v63+'],
     _notes: 'FeCr2O4 spinel. Magmatic-only — requires T > 800°C (no current scenario reaches this). Engine stays dormant until layered-mafic intrusion lands.',
 };
+// Mn-oxide surface-family split (SIM 249). Potter & Rossman (1979)
+// demonstrated that a black dendritic morphology is not a species name:
+// surface dendrites are commonly romanechite/hollandite-group material,
+// underground mine dendrites are todorokite, and stream/cave coatings are
+// commonly birnessite. These gates use the load-bearing structural cations
+// rather than relabelling every coating as pyrolusite.
+const MINERAL_GATES_birnessite = {
+    sigma_crit: 1.0,
+    T_min: 5, T_max: 90, T_optimal: 25,
+    fluid_min: { Mn: 0.3 },
+    O2_min: 0.5,
+    pH_min: 5.8, pH_max: 9.5,
+    surface_energy: 'low',
+    _sources: ['Potter & Rossman 1979', 'Post 1999', 'Boumaiza et al. 2018'],
+    _notes: 'Hydrous, poorly crystalline layer Mn oxide. Low-temperature stream/cave/coating field; Ba and Mg tunnel-cation fields divert to romanechite and todorokite.',
+};
+const MINERAL_GATES_romanechite = {
+    sigma_crit: 1.0,
+    T_min: 5, T_max: 180, T_optimal: 30,
+    fluid_min: { Mn: 0.5, Ba: 100 },
+    O2_min: 0.5,
+    pH_min: 5.5, pH_max: 9.5,
+    surface_energy: 'low',
+    _sources: ['Potter & Rossman 1979', 'Turner & Post 1988', 'Post 1999'],
+    _notes: 'Hydrated Ba-Mn 2x3 tunnel oxide. Ba is a required framework-balancing tunnel cation, not a cosmetic trace; surface dendritic and botryoidal coatings.',
+};
+const MINERAL_GATES_todorokite = {
+    sigma_crit: 1.0,
+    // Zhao et al. used reflux conditions; Golden et al. autoclaved the
+    // Mg-exchanged precursor at 155 C. This is a bounded hydrothermal
+    // transformation window, not a direct room-temperature route.
+    T_min: 95, T_max: 200, T_optimal: 155,
+    fluid_min: { Mn: 0.5, Mg: 25 },
+    O2_min: 0.5,
+    pH_min: 6.0, pH_max: 9.5,
+    required_substrate: 'birnessite',
+    surface_energy: 'low',
+    _sources: ['Potter & Rossman 1979', 'Golden, Chen & Dixon 1986', 'Zhao et al. 2015'],
+    _notes: 'Hydrated 3x3 tunnel Mn oxide. Requires an existing, booked birnessite layer precursor and Mg exchange in the bounded hydrothermal window; no direct bare-wall or room-temperature route is claimed.',
+};
 const MINERAL_GATES_pyrolusite = {
     sigma_crit: 1.0,
     T_min: 5, T_max: 250, T_optimal: 25,
@@ -30562,6 +30967,93 @@ Object.assign(VugConditions.prototype, {
     // for cataloging completeness. Requires very high T (>1000°C) which no
     // existing scenario delivers — engine stays dormant until a layered-mafic-
     // intrusion scenario lands.
+    // SIM 249: birnessite — the hydrous, layered low-temperature member of
+    // the Mn-oxide coating family. This is a kinetic/mineralogical phase
+    // selector, not a full aqueous activity model: Mn and oxidant provide the
+    // precipitation drive, while Ba and Mg divert the budget to tunnel phases.
+    supersaturation_birnessite() {
+        const g = MINERAL_GATES_birnessite;
+        const f = this.fluid;
+        if (f.Mn < g.fluid_min.Mn)
+            return 0;
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
+            return 0;
+        if (f.pH < g.pH_min || f.pH > g.pH_max)
+            return 0;
+        if (!oxideRedoxAvailable(f, g.O2_min))
+            return 0;
+        let sigma = Math.min(f.Mn / 3.0, 3.0) * oxideRedoxFactor(f, 0.8);
+        const T = this.temperature;
+        sigma *= T <= 40 ? 1.25 : Math.max(0.55, 1.25 - (T - 40) / 100);
+        if (f.pH >= 7 && f.pH <= 9)
+            sigma *= 1.12;
+        if (f.Fe > 2 * f.Mn)
+            sigma *= 0.25;
+        if (f.Ba >= MINERAL_GATES_romanechite.fluid_min.Ba)
+            sigma *= 0.18;
+        if (f.Mg >= MINERAL_GATES_todorokite.fluid_min.Mg)
+            sigma *= 0.42;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(f, 'birnessite');
+        return Math.max(sigma, 0);
+    },
+    // SIM 249: romanechite — hydrated Ba-bearing 2x3 tunnel oxide. Ba is
+    // deliberately load-bearing: without it this phase cannot claim a generic
+    // black Mn film merely because the morphology happens to be dendritic.
+    supersaturation_romanechite() {
+        const g = MINERAL_GATES_romanechite;
+        const f = this.fluid;
+        if (f.Mn < g.fluid_min.Mn || f.Ba < g.fluid_min.Ba)
+            return 0;
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
+            return 0;
+        if (f.pH < g.pH_min || f.pH > g.pH_max)
+            return 0;
+        if (!oxideRedoxAvailable(f, g.O2_min))
+            return 0;
+        const mn = Math.min(f.Mn / 4.0, 3.0);
+        const ba = Math.min(f.Ba / g.fluid_min.Ba, 2.5);
+        let sigma = mn * ba * oxideRedoxFactor(f, 0.8);
+        const T = this.temperature;
+        sigma *= T <= 60 ? 1.2 : Math.max(0.45, 1.2 - (T - 60) / 150);
+        if (f.Fe > 2 * f.Mn)
+            sigma *= 0.35;
+        if (f.Pb > 30 || f.K > 75)
+            sigma *= 0.65;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(f, 'romanechite');
+        return Math.max(sigma, 0);
+    },
+    // SIM 249: todorokite — Mg-templated 3x3 tunnel oxide. Laboratory and
+    // natural transformation studies both make the interlayer Mg precursor a
+    // mechanistic discriminator; it therefore participates in sigma and in the
+    // booked stoichiometric budget rather than appearing as a tooltip-only gate.
+    supersaturation_todorokite() {
+        const g = MINERAL_GATES_todorokite;
+        const f = this.fluid;
+        if (f.Mn < g.fluid_min.Mn || f.Mg < g.fluid_min.Mg)
+            return 0;
+        if (this.temperature < g.T_min || this.temperature > g.T_max)
+            return 0;
+        if (f.pH < g.pH_min || f.pH > g.pH_max)
+            return 0;
+        if (!oxideRedoxAvailable(f, g.O2_min))
+            return 0;
+        const mn = Math.min(f.Mn / 4.0, 3.0);
+        const mg = Math.min(f.Mg / g.fluid_min.Mg, 2.5);
+        let sigma = mn * mg * oxideRedoxFactor(f, 0.8);
+        const T = this.temperature;
+        sigma *= T >= 60 && T <= 160 ? 1.2 : 0.85;
+        if (f.pH >= 7 && f.pH <= 8.5)
+            sigma *= 1.12;
+        if (f.Fe > 2 * f.Mn)
+            sigma *= 0.4;
+        if (f.Ba >= MINERAL_GATES_romanechite.fluid_min.Ba)
+            sigma *= 0.35;
+        if (ACTIVITY_CORRECTED_SUPERSAT)
+            sigma *= activityCorrectionFactor(f, 'todorokite');
+        return Math.max(sigma, 0);
+    },
     // v102 (2026-05-19): pyrolusite β-MnO2 — tetragonal rutile-type Mn(IV)
     // oxide. The default Mn4+ supergene phase when (Ba, K, Pb) low AND Fe
     // doesn't dominate. Two formation modes:
@@ -30643,14 +31135,15 @@ Object.assign(VugConditions.prototype, {
         if (this.fluid.Fe > 2 * this.fluid.Mn) {
             sigma *= 0.3;
         }
-        // Tunnel-cation discriminators — Ba/K/Pb would divert Mn4+
-        // oxidation to romanechite/cryptomelane/coronadite (none wired
-        // yet; the gates encode the suppressor so pyrolusite doesn't
-        // pretend to capture the full Mn4+ budget at tunnel-cation
-        // localities like Imini). Will route correctly once sister
-        // Mn-oxide engines land.
-        if (this.fluid.Ba > 100)
-            sigma *= 0.5;
+        // First-class competitors now claim the hydrous coating/tunnel fields.
+        // Pyrolusite remains possible as a later crystalline endmember, but it no
+        // longer dominates the low-T surface-film budget by default.
+        if (T <= MINERAL_GATES_birnessite.T_max)
+            sigma *= 0.35;
+        if (this.fluid.Ba >= MINERAL_GATES_romanechite.fluid_min.Ba)
+            sigma *= 0.25;
+        if (this.fluid.Mg >= MINERAL_GATES_todorokite.fluid_min.Mg)
+            sigma *= 0.45;
         if (this.fluid.K > 50)
             sigma *= 0.4;
         if (this.fluid.Pb > 30)
@@ -36200,6 +36693,9 @@ const MINERAL_GATES_REGISTRY = {
     sapphire: MINERAL_GATES_sapphire,
     rutile: MINERAL_GATES_rutile,
     chromite: MINERAL_GATES_chromite,
+    birnessite: MINERAL_GATES_birnessite,
+    romanechite: MINERAL_GATES_romanechite,
+    todorokite: MINERAL_GATES_todorokite,
     pyrolusite: MINERAL_GATES_pyrolusite,
     brucite: MINERAL_GATES_brucite,
     // ---- Phosphate / vanadate (js/38-supersat-phosphate.ts) ----
@@ -38908,6 +39404,7 @@ const SURFACE_GROWTH_ASBESTOS = new Set([
 const SURFACE_GROWTH_CRUST_HABIT = /botryoid|mammillary|reniform|colloform|crust|coat|encrust|earthy|sooty|ochre|banded|sinter|film|blanket/i;
 const SURFACE_GROWTH_LINING_HABIT = /chalcedony|agate|wall.?lining/i;
 const SURFACE_GROWTH_DRUSE_HABIT = /drus|druz/i;
+const SURFACE_GROWTH_MN_FAMILY = new Set(['birnessite', 'romanechite', 'todorokite']);
 function surfaceGrowthRegimeFor(crystal) {
     if (!crystal || crystal.dissolved || !(crystal.total_growth_um > 0))
         return null;
@@ -38915,6 +39412,12 @@ function surfaceGrowthRegimeFor(crystal) {
     const habit = String(crystal.habit || '').toLowerCase();
     const vector = String(crystal.vector || '').toLowerCase();
     if (SURFACE_GROWTH_ASBESTOS.has(mineral) && /fibrous|asbestiform/.test(habit)) {
+        return 'fibrous_mat';
+    }
+    if (SURFACE_GROWTH_MN_FAMILY.has(mineral) && /dendrit|arborescent/.test(habit)) {
+        return 'dendritic_film';
+    }
+    if (mineral === 'todorokite' && /fibrous|felted/.test(habit)) {
         return 'fibrous_mat';
     }
     if (mineral === 'chalcedony' || SURFACE_GROWTH_LINING_HABIT.test(habit)) {
@@ -38949,7 +39452,7 @@ function surfaceGrowthRegimeFor(crystal) {
     }
     return null;
 }
-function surfaceGrowthDescriptor(crystal, wall) {
+function surfaceGrowthDescriptor(crystal, wall, sim) {
     const regime = surfaceGrowthRegimeFor(crystal);
     if (!regime)
         return null;
@@ -38957,8 +39460,9 @@ function surfaceGrowthDescriptor(crystal, wall) {
     // Aggregate fabrics establish lateral continuity early. Maturity controls
     // completion of the target footprint, not a fictitious linear radius.
     const maturityScaleUm = regime === 'laminated_lining' ? 75
-        : regime === 'fibrous_mat' ? 180
-            : regime === 'euhedral_druse' ? 350 : 250;
+        : regime === 'dendritic_film' ? 110
+            : regime === 'fibrous_mat' ? 180
+                : regime === 'euhedral_druse' ? 350 : 250;
     const maturity = 1 - Math.exp(-Math.max(0, crystal.total_growth_um) / maturityScaleUm);
     let coverage = spread * (0.28 + 0.72 * maturity);
     // Asbestos "mat" is an areal fabric by definition. Chrysotile's older fibrous
@@ -38966,24 +39470,32 @@ function surfaceGrowthDescriptor(crystal, wall) {
     // keep that honest without rewriting its chemistry or axial volume.
     if (regime === 'fibrous_mat')
         coverage = Math.max(coverage, 0.65 * maturity);
+    if (regime === 'dendritic_film')
+        coverage = Math.max(coverage, 0.72 * maturity);
     coverage = Math.max(0.02, Math.min(0.98, coverage));
+    const exactArea = wall && typeof wall.surfaceAreaMm2 === 'function'
+        ? Number(wall.surfaceAreaMm2(sim)) : 0;
     const diameter = wall && typeof wall.meanDiameterMm === 'function'
         ? wall.meanDiameterMm()
         : Number(wall && wall.vug_diameter_mm) || Number(crystal.vug_diameter_mm) || 50;
     const radius = Math.max(0.5, diameter / 2);
-    const cavityArea = 4 * Math.PI * radius * radius;
+    const cavityArea = exactArea > 0 ? exactArea : 4 * Math.PI * radius * radius;
     const coveredArea = Math.max(1e-9, cavityArea * coverage);
     const bookedVolume = Math.max(0, Number(crystal._volume_mm3) || 0);
     const meanThicknessUm = bookedVolume / coveredArea * 1000;
     return {
         regime,
         coverage_fraction: coverage,
+        cavity_area_mm2: cavityArea,
         covered_area_mm2: coveredArea,
         mean_thickness_um: meanThicknessUm,
         booked_volume_mm3: bookedVolume,
         wall_spread: spread,
         void_reach: Math.max(0, Math.min(1, Number(crystal.void_reach) || 0)),
         substrate: crystal.position || 'vug wall',
+        area_basis: exactArea > 0
+            ? 'exact WallMesh triangle area'
+            : 'mean-diameter spherical fallback',
         mass_basis: 'accepted Crystal._volume_mm3; renderer instances are representative only',
     };
 }
@@ -38991,17 +39503,66 @@ function classifySurfaceGrowth(sim) {
     const wall = sim && sim.wall_state;
     if (!sim || !sim.crystals)
         return;
+    const eligible = [];
     for (const c of sim.crystals) {
         if (!c)
             continue;
-        const desc = surfaceGrowthDescriptor(c, wall);
+        const desc = surfaceGrowthDescriptor(c, wall, sim);
         if (desc) {
             desc.at_step = sim.step;
             c._surfaceGrowth = desc;
+            eligible.push(c);
         }
         else if (c._surfaceGrowth) {
             delete c._surfaceGrowth;
         }
+    }
+    // Preserve spatial paragenesis as explicit model evidence. A later layer
+    // lists only earlier surface fabrics whose spherical-cap footprints can
+    // overlap; the renderer refines this to exact shared triangles per sample.
+    eligible.sort((a, b) => (Number(a.nucleation_step) - Number(b.nucleation_step))
+        || (Number(a.crystal_id) - Number(b.crystal_id)));
+    const prior = [];
+    const exactMesh = wall && typeof wall.meshFor === 'function'
+        ? wall.meshFor(sim) : null;
+    for (let i = 0; i < eligible.length; i++) {
+        const c = eligible[i];
+        const desc = c._surfaceGrowth;
+        const dir = wall && typeof wall.surfaceAnchorDirection === 'function'
+            ? wall.surfaceAnchorDirection(c) : [0, 1, 0];
+        const radius = Math.acos(Math.max(-1, Math.min(1, 1 - 2 * desc.coverage_fraction)));
+        const exactPatch = exactMesh && typeof exactMesh.surfacePatch === 'function'
+            ? exactMesh.surfacePatch(dir, desc.coverage_fraction) : null;
+        const exactTriangles = exactPatch && Array.isArray(exactPatch.triangles)
+            ? new Set(exactPatch.triangles.map((triangle) => triangle.triangle_index))
+            : null;
+        const underlying = [];
+        for (const p of prior) {
+            if (exactTriangles && p.exactTriangles) {
+                let sharesTriangle = false;
+                for (const triangleIndex of exactTriangles) {
+                    if (p.exactTriangles.has(triangleIndex)) {
+                        sharesTriangle = true;
+                        break;
+                    }
+                }
+                if (sharesTriangle)
+                    underlying.push(p.crystal.crystal_id);
+            }
+            else {
+                const dot = dir[0] * p.dir[0] + dir[1] * p.dir[1] + dir[2] * p.dir[2];
+                const distance = Math.acos(Math.max(-1, Math.min(1, dot)));
+                if (distance <= radius + p.radius)
+                    underlying.push(p.crystal.crystal_id);
+            }
+        }
+        desc.stratigraphic_index = i;
+        desc.nucleation_step = Number(c.nucleation_step) || 0;
+        desc.underlying_surface_crystal_ids = underlying;
+        desc.stratigraphy_basis = exactTriangles
+            ? 'exact shared WallMesh triangles'
+            : 'spherical-cap fallback';
+        prior.push({ crystal: c, dir, radius, exactTriangles });
     }
 }
 function classifyWulffForm(sim) {
@@ -43983,13 +44544,111 @@ function grow_cassiterite(crystal, conditions, step) {
 //     driven, encodes the canonical Mn-weathering paragenesis.
 //
 // IMPORTANT (Potter & Rossman 1979): we do NOT ship a dendritic habit.
-// Most "dendritic pyrolusite" in textbooks is actually cryptomelane/
-// romanechite. The engine refuses to perpetuate the textbook error;
-// dendritic habits route to those cousins when their engines land.
+// Most "dendritic pyrolusite" in textbooks is actually a hollandite-group,
+// romanechite, birnessite or todorokite aggregate. The engine refuses to
+// perpetuate the textbook error; the first-class sister engines now own those
+// surface-film fields when their structural-cation gates are satisfied.
 //
 // Dissolution: acid (pH < 5.0) + grown > 5 µm → Mn²⁺ released back to
 // fluid. Pyrolusite is stable to alkali but dissolves readily in acidic
 // mine drainage (the standard Mn-oxide AMD signature).
+function _dissolveMnSurfaceOxide(crystal, conditions, step, sigma, label) {
+    if (sigma >= 1.0 || !(crystal.total_growth_um > 5) || conditions.fluid.pH >= 5.2)
+        return null;
+    crystal.dissolved = true;
+    const d = Math.min(2.5, crystal.total_growth_um * 0.08);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+        note: `${label} reductive/acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Mn²⁺ released back to the fluid`,
+    });
+}
+// SIM 249 — birnessite, romanechite and todorokite are first-class
+// surface-aggregate phases. Their axial GrowthZone thickness still books the
+// authoritative volume; the surface renderer converts that booked volume into
+// a covered area and mean physical thickness without multiplying mass.
+function grow_birnessite(crystal, conditions, step) {
+    const sigma = conditions.supersaturation_birnessite();
+    if (sigma < 1.0)
+        return _dissolveMnSurfaceOxide(crystal, conditions, step, sigma, 'birnessite');
+    const excess = sigma - 1.0;
+    const rate = 1.25 * excess * rng.uniform(0.82, 1.18);
+    if (rate < 0.08)
+        return null;
+    const f = conditions.fluid;
+    if (excess > 1.35) {
+        crystal.habit = 'botryoidal_hydrous_crust';
+        crystal.dominant_forms = ['coalesced hydrous Mn-oxide globules', 'poorly crystalline black-brown crust'];
+    }
+    else {
+        crystal.habit = 'laminated_manganese_wall_lining';
+        crystal.dominant_forms = ['continuous nanocrystalline layer-Mn-oxide film', 'submillimetre wall-parallel laminae'];
+    }
+    f.Mn = Math.max(f.Mn - rate * 0.026, 0);
+    f.O2 = Math.max(f.O2 - rate * 0.004, 0);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        trace_Na: f.Na * 0.004,
+        trace_Ca: f.Ca * 0.002,
+        note: `${crystal.habit} — hydrous, poorly crystalline birnessite coating; Mn ${f.Mn.toFixed(1)} ppm, pH ${f.pH.toFixed(1)}`,
+    });
+}
+function grow_romanechite(crystal, conditions, step) {
+    const sigma = conditions.supersaturation_romanechite();
+    if (sigma < 1.0)
+        return _dissolveMnSurfaceOxide(crystal, conditions, step, sigma, 'romanechite');
+    const excess = sigma - 1.0;
+    const rate = 1.05 * excess * rng.uniform(0.82, 1.18);
+    if (rate < 0.08)
+        return null;
+    const f = conditions.fluid;
+    if (excess > 1.45) {
+        crystal.habit = 'botryoidal_reniform';
+        crystal.dominant_forms = ['black steel-gray botryoidal crust', 'concentric Ba-Mn oxide banding'];
+    }
+    else {
+        crystal.habit = 'dendritic_surface_film';
+        crystal.dominant_forms = ['wall-parallel branching dendrites', 'microcrystalline romanechite on a passive silicate substrate'];
+    }
+    f.Mn = Math.max(f.Mn - rate * 0.030, 0);
+    f.Ba = Math.max(f.Ba - rate * 0.006, 0);
+    f.O2 = Math.max(f.O2 - rate * 0.004, 0);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        trace_Ba: f.Ba * 0.012,
+        note: `${crystal.habit} — Ba-bearing 2×3 tunnel Mn oxide; Ba ${f.Ba.toFixed(1)} ppm, Mn ${f.Mn.toFixed(1)} ppm`,
+    });
+}
+function grow_todorokite(crystal, conditions, step) {
+    const sigma = conditions.supersaturation_todorokite();
+    if (sigma < 1.0)
+        return _dissolveMnSurfaceOxide(crystal, conditions, step, sigma, 'todorokite');
+    const excess = sigma - 1.0;
+    const rate = 1.0 * excess * rng.uniform(0.82, 1.18);
+    if (rate < 0.08)
+        return null;
+    const f = conditions.fluid;
+    const onBirnessite = String(crystal.position || '').includes('birnessite');
+    if (onBirnessite || excess < 1.4) {
+        crystal.habit = 'dendritic_mine_coating';
+        crystal.dominant_forms = ['wall-parallel branching mine dendrites', 'tunnel oxide after a birnessite-like precursor'];
+    }
+    else {
+        crystal.habit = 'radiating_fibrous_mat';
+        crystal.dominant_forms = ['radiating fibrous tunnel-oxide bundles', 'felted black-brown cavity coating'];
+    }
+    f.Mn = Math.max(f.Mn - rate * 0.030, 0);
+    f.Mg = Math.max(f.Mg - rate * 0.005, 0);
+    f.O2 = Math.max(f.O2 - rate * 0.004, 0);
+    return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: rate, growth_rate: rate,
+        trace_Mg: f.Mg * 0.010,
+        note: `${crystal.habit} — Mg-templated 3×3 tunnel Mn oxide; Mg ${f.Mg.toFixed(1)} ppm, Mn ${f.Mn.toFixed(1)} ppm`,
+    });
+}
 function grow_pyrolusite(crystal, conditions, step) {
     const sigma = conditions.supersaturation_pyrolusite();
     if (sigma < 1.0) {
@@ -50864,6 +51523,9 @@ const MINERAL_ENGINES = {
     // textbook "dendritic pyrolusite" is actually cryptomelane.
     // First dogfood test of the vugg-add-mineral skill (~/.claude/skills/
     // vugg-add-mineral/SKILL.md).
+    birnessite: grow_birnessite,
+    romanechite: grow_romanechite,
+    todorokite: grow_todorokite,
     pyrolusite: grow_pyrolusite,
     // v108 (2026-05-20): plumbogummite PbAl3(PO4)2(OH)5·H2O —
     // trigonal alunite-supergroup Pb-Al-PO4 supergene endmember.
@@ -54797,6 +55459,80 @@ function applyCaSO4PhaseTransition(crystal, fluid, temperatureC, fluidPressureKb
         sulfateAfterPpm: typeof sulfateAvailablePpm === 'function'
             ? sulfateAvailablePpm(fluid, temperatureC)
             : Math.max(0, Number(fluid?.S) || 0),
+    };
+    (crystal.phase_transition_history ||= []).push(record);
+    return record;
+}
+// ============================================================
+// BIRNESSITE -> TODOROKITE Mg-EXCHANGE / TUNNEL TRANSFORMATION
+// ============================================================
+const MN_ATOMIC_MASS_G_MOL = 54.938044;
+const MG_ATOMIC_MASS_G_MOL = 24.305;
+const TODOROKITE_MG_MASS_PER_MN_MASS = MG_ATOMIC_MASS_G_MOL / (6 * MN_ATOMIC_MASS_G_MOL);
+function applyBirnessiteTodorokiteTransition(crystal, fluid, temperatureC, step) {
+    if (!crystal?.active || crystal.dissolved || crystal.mineral !== 'birnessite')
+        return null;
+    if (!(Number(crystal.total_growth_um) > 0))
+        return null;
+    if (temperatureC < MINERAL_GATES_todorokite.T_min
+        || temperatureC > MINERAL_GATES_todorokite.T_max)
+        return null;
+    // Framework Mn is already in the accepted solid ledger. Preserve it rather
+    // than spending the fluid for a second crystal; only exchanged structural
+    // Mg is newly booked, at the 1 Mg : 6 Mn formula mass ratio.
+    const bookedMnPpm = remainingBookedInventory(crystal, 'Mn');
+    if (!(bookedMnPpm > 0))
+        return null;
+    const requiredMgPpm = bookedMnPpm * TODOROKITE_MG_MASS_PER_MN_MASS;
+    const mgBeforePpm = Math.max(0, Number(fluid?.Mg) || 0);
+    if (mgBeforePpm + 1e-12 < requiredMgPpm)
+        return null;
+    for (const zone of (crystal.zones || [])) {
+        if (!(zone && Number(zone.thickness_um) > 0))
+            continue;
+        const remaining = Number.isFinite(Number(zone._remaining_solid_um))
+            ? Math.max(0, Number(zone._remaining_solid_um))
+            : Math.max(0, Number(zone.thickness_um) || 0);
+        if (!(remaining > 0))
+            continue;
+        const mnPerUm = Number(zone._budget_inventory_per_um?.Mn) || 0;
+        if (!(mnPerUm > 0))
+            continue;
+        zone._budget_inventory_per_um ||= {};
+        zone._budget_inventory_per_um.Mg = (Number(zone._budget_inventory_per_um.Mg) || 0)
+            + mnPerUm * TODOROKITE_MG_MASS_PER_MN_MASS;
+    }
+    fluid.Mg = Math.max(0, mgBeforePpm - requiredMgPpm);
+    const from = 'birnessite';
+    const to = 'todorokite';
+    crystal.mineral = to;
+    // Compatibility fields preserve replay and source-cap behavior. This is a
+    // solution-mediated layer-to-tunnel transformation, not a paramorph.
+    crystal.paramorph_origin = from;
+    if (step != null)
+        crystal.paramorph_step = step;
+    crystal.phase_transition_origin = from;
+    crystal.phase_transition_step = step;
+    crystal.phase_transition_driver = 'Mg-exchanged-birnessite-to-todorokite';
+    crystal.habit = 'dendritic_mine_coating';
+    crystal.vector = 'coating';
+    crystal.dominant_forms = [
+        'wall-parallel branching mine dendrites',
+        '3x3 tunnel oxide after Mg exchange into a booked birnessite precursor',
+    ];
+    crystal.position = `in-place after birnessite #${crystal.crystal_id} (Mg-exchanged tunnel transformation)`;
+    crystal._todorokite_transition_mg_ppm = requiredMgPpm;
+    const record = {
+        step,
+        from,
+        to,
+        driver: crystal.phase_transition_driver,
+        bookedMnPreservedPpm: bookedMnPpm,
+        structuralMgBookedPpm: requiredMgPpm,
+        mgBeforePpm,
+        mgAfterPpm: fluid.Mg,
+        temperatureC,
+        modelBoundary: 'in-place booked-solid proxy for Mg exchange and layer-to-tunnel reorganization; structural water and Mn(III) ordering are not conserved state variables',
     };
     (crystal.phase_transition_history ||= []).push(record);
     return record;
@@ -63068,6 +63804,18 @@ function _scenarioSpeciesExclusion(sim, name) {
     const reason = sim?.conditions?._scenario?.excluded_species?.[name];
     return typeof reason === 'string' && reason.trim() ? reason.trim() : null;
 }
+function _scenarioPositiveLicenseBlock(sim, name) {
+    const scenarioId = sim?.conditions?._scenario?.id;
+    if (!scenarioId)
+        return null; // Creative/custom broth: every engine remains available.
+    const spec = (typeof MINERAL_SPEC !== 'undefined') ? MINERAL_SPEC?.[name] : null;
+    if (!spec?._requires_scenario_license)
+        return null;
+    const licensed = Array.isArray(spec.scenarios) ? spec.scenarios : [];
+    if (licensed.includes(scenarioId))
+        return null;
+    return `no locality license for ${name} in ${scenarioId}; chemistry alone does not prove occurrence (Creative mode remains unrestricted)`;
+}
 function _scenarioNucleationWindowBlock(sim, name) {
     const window = sim?.conditions?._scenario?.nucleation_windows?.[name];
     if (!window || typeof window !== 'object')
@@ -63115,6 +63863,8 @@ function productionNucleationDecisionProbe(name, sim, options = {}) {
         ...cr,
         ...(crystalMode === 'inactive-target' && cr.mineral === name ? { active: false } : {}),
         zones: Array.isArray(cr.zones) ? cr.zones.map((zone) => ({ ...zone })) : [],
+        phase_transition_history: Array.isArray(cr.phase_transition_history)
+            ? cr.phase_transition_history.map((row) => ({ ...row })) : [],
     }));
     probe.conditions = Object.assign(Object.create(Object.getPrototypeOf(sim.conditions)), sim.conditions);
     probe.conditions.fluid = sim.conditions.fluid;
@@ -63123,6 +63873,7 @@ function productionNucleationDecisionProbe(name, sim, options = {}) {
     }
     probe.log = [];
     probe.crystal_counter = Number(sim.crystal_counter) || probe.crystals.length;
+    const mineralBeforeProbe = probe.crystals.map((cr) => cr?.mineral);
     probe.nucleate = (mineral, position = 'vug wall', sigma = 1) => {
         const birth = { mineral, position, sigma: Number(sigma), crystal_id: ++probe.crystal_counter };
         attempts.push({ mineral, position, sigma: Number(sigma) });
@@ -63164,7 +63915,9 @@ function productionNucleationDecisionProbe(name, sim, options = {}) {
     finally {
         rng = saved;
     }
-    const deterministicEligible = attempts.some(attempt => attempt.mineral === name);
+    const deterministicEligible = attempts.some(attempt => attempt.mineral === name)
+        || probe.crystals.some((cr, index) => cr?.mineral === name
+            && mineralBeforeProbe[index] != null && mineralBeforeProbe[index] !== name);
     const competing = attempts.find(attempt => attempt.mineral !== name)?.mineral || null;
     return {
         available: true,
@@ -63193,6 +63946,19 @@ function assessProductionNucleationDecision(name, sim, sigma, sigmaCrit) {
             blockers: [`locality evidence excludes this phase: ${localityExclusion}`],
         };
     }
+    const licenseBlock = _scenarioPositiveLicenseBlock(sim, name);
+    if (licenseBlock) {
+        return {
+            available: true,
+            eligible: false,
+            stochasticBirth: false,
+            effectiveDrawProbability: null,
+            randomDraws: 0,
+            source: 'scenario locality license',
+            competingBirth: null,
+            blockers: [licenseBlock],
+        };
+    }
     const scenarioWindowBlock = _scenarioNucleationWindowBlock(sim, name);
     if (scenarioWindowBlock) {
         return {
@@ -63205,6 +63971,24 @@ function assessProductionNucleationDecision(name, sim, sigma, sigmaCrit) {
             competingBirth: null,
             blockers: [scenarioWindowBlock],
         };
+    }
+    const requiredSubstrate = (typeof MINERAL_GATES_REGISTRY !== 'undefined')
+        ? MINERAL_GATES_REGISTRY?.[name]?.required_substrate : null;
+    if (requiredSubstrate) {
+        const candidates = typeof executableSubstrateCandidates === 'function'
+            ? executableSubstrateCandidates(name, sim.crystals || []) : [];
+        if (!candidates.some((candidate) => candidate.host?.mineral === requiredSubstrate)) {
+            return {
+                available: true,
+                eligible: false,
+                stochasticBirth: false,
+                effectiveDrawProbability: null,
+                randomDraws: 0,
+                source: 'required transformation precursor',
+                competingBirth: null,
+                blockers: [`requires an active exposed ${requiredSubstrate} precursor; fluid supersaturation alone cannot create ${name}`],
+            };
+        }
     }
     const best = productionNucleationDecisionProbe(name, sim, { randomValue: 0 });
     const result = {
@@ -63280,6 +64064,8 @@ function _runNuc(sim, fn) {
         return;
     const inferred = fn.name.startsWith('_nuc_') ? fn.name.slice(5) : '';
     if (inferred && _scenarioSpeciesExclusion(sim, inferred))
+        return;
+    if (inferred && _scenarioPositiveLicenseBlock(sim, inferred))
         return;
     if (inferred && _scenarioNucleationWindowBlock(sim, inferred))
         return;
@@ -64265,6 +65051,58 @@ function _nuc_cassiterite(sim) {
         }
     }
 }
+// SIM 249: first-class Mn-oxide surface phases. Early-out happens before any
+// substrate or repeat-nucleation RNG, preserving the cascade in scenarios
+// that do not enter the relevant chemistry field.
+function _nuc_manganese_surface_phase(sim, mineral, gate, sigma, position, label) {
+    if (sigma <= gate.sigma_crit)
+        return;
+    if (sim._atNucleationCap(mineral))
+        return;
+    const existing = sim.crystals.filter(c => c.mineral === mineral && c.active);
+    const total = sim.crystals.filter(c => c.mineral === mineral).length;
+    if (existing.length >= 2 || total >= 4)
+        return;
+    const discount = sim._sigmaDiscountForPosition(mineral, position);
+    if (sigma <= 1.05 * discount)
+        return;
+    if (existing.length && !(sigma > 1.8 && rng.random() < 0.16))
+        return;
+    const c = sim.nucleate(mineral, position, sigma);
+    const f = sim.conditions.fluid;
+    sim.log.push(`  ✦ NUCLEATION: ⚫ ${label} #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Mn=${f.Mn.toFixed(1)} ppm, pH=${f.pH.toFixed(1)}, O₂=${f.O2.toFixed(2)})`);
+}
+function _nuc_birnessite(sim) {
+    const sigma = sim.conditions.supersaturation_birnessite();
+    _nuc_manganese_surface_phase(sim, 'birnessite', MINERAL_GATES_birnessite, sigma, 'vug wall (hydrous low-temperature coating)', 'Birnessite');
+}
+function _nuc_romanechite(sim) {
+    const sigma = sim.conditions.supersaturation_romanechite();
+    if (sigma <= MINERAL_GATES_romanechite.sigma_crit)
+        return;
+    const passiveSilica = sim.crystals.find(c => (c.mineral === 'quartz' || c.mineral === 'chalcedony') && c.active);
+    const position = passiveSilica
+        ? `on ${passiveSilica.mineral} #${passiveSilica.crystal_id} (passive silicate substrate)`
+        : 'vug wall (Ba-bearing surface dendrite field)';
+    _nuc_manganese_surface_phase(sim, 'romanechite', MINERAL_GATES_romanechite, sigma, position, 'Romanechite');
+}
+function _nuc_todorokite(sim) {
+    const sigma = sim.conditions.supersaturation_todorokite();
+    if (sigma <= MINERAL_GATES_todorokite.sigma_crit)
+        return;
+    if (sim._atNucleationCap('todorokite'))
+        return;
+    const precursor = sim.crystals.find(c => isTodorokiteBirnessitePrecursor(c));
+    if (!precursor)
+        return; // no scientifically licensed bare-wall fallback
+    if (sigma <= 1.05 || rng.random() >= 0.22)
+        return;
+    const transition = applyBirnessiteTodorokiteTransition(precursor, sim.conditions.fluid, sim.conditions.temperature, sim.step);
+    if (!transition)
+        return;
+    const f = sim.conditions.fluid;
+    sim.log.push(`  ✦ TRANSFORMATION: ⚫ Birnessite #${precursor.crystal_id} → Todorokite in place (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, preserved Mn=${transition.bookedMnPreservedPpm.toFixed(3)} ppm, booked Mg=${transition.structuralMgBookedPpm.toFixed(3)} ppm, pH=${f.pH.toFixed(1)})`);
+}
 // v102 (2026-05-19): pyrolusite β-MnO2 — supergene Mn(IV) oxide.
 // Substrate priority encodes the canonical Mn-weathering paragenesis
 // per the dossier §6:
@@ -64367,6 +65205,9 @@ function _nucleateClass_oxide(sim) {
     _runNuc(sim, _nuc_rutile);
     _runNuc(sim, _nuc_chromite);
     _runNuc(sim, _nuc_cassiterite);
+    _runNuc(sim, _nuc_birnessite);
+    _runNuc(sim, _nuc_romanechite);
+    _runNuc(sim, _nuc_todorokite);
     _runNuc(sim, _nuc_pyrolusite);
     _runNuc(sim, _nuc_brucite);
 }
@@ -76943,9 +77784,17 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
     const chemistryEligible = sigma > sigmaCrit;
     const history = _formationHistory(name, sim);
     const substrate = _formationSubstrate(name, sim);
+    const requiredSubstrate = gate?.required_substrate || null;
+    const requiredSubstrateAvailable = requiredSubstrate
+        ? substrate.available.some(row => row.mineral === requiredSubstrate)
+        : true;
     const assistedCrit = sigmaCrit * substrate.bestDiscount;
-    const substrateEligible = !chemistryEligible && substrate.bestDiscount < 1 && sigma > assistedCrit;
-    const effectiveEligible = chemistryEligible || substrateEligible;
+    const substrateEligible = requiredSubstrate
+        ? chemistryEligible && requiredSubstrateAvailable
+        : (!chemistryEligible && substrate.bestDiscount < 1 && sigma > assistedCrit);
+    const effectiveEligible = requiredSubstrate
+        ? chemistryEligible && requiredSubstrateAvailable
+        : (chemistryEligible || substrateEligible);
     const competition = _formationCompetition(name, sigma, c, sim);
     const productionDecision = sim && sim.conditions === c
         && typeof assessProductionNucleationDecision === 'function'
@@ -77153,7 +78002,7 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
         chips: [{ text: `pH ${_formationNumber(pH, 1)} · ${phNeed}`, met: (!hasPHMin && !hasPHMax) || phMet }],
     });
     groups.push({ label: 'Redox gate', chips: [_formationRedoxChip(gate, c)] });
-    const substrateChips = substrate.available.length
+    let substrateChips = substrate.available.length
         ? substrate.available.map(row => ({
             text: `${row.mineral} ×${row.count} · ${row.state} · σcrit ×${row.discount.toFixed(2)}${row.epitaxy ? ' · epitaxy' : ''}`,
             met: true,
@@ -77162,6 +78011,22 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
                 : 'Executable production spatial host route; no unmeasured saturation or growth-rate discount is applied.',
         }))
         : [{ text: 'bare wall · no registered catalytic host exposed', met: true }];
+    if (requiredSubstrate) {
+        if (requiredSubstrateAvailable) {
+            substrateChips.unshift({
+                text: `${requiredSubstrate} precursor present · required transformation substrate`,
+                met: true,
+                note: 'This phase has no licensed bare-wall route. Production transforms the accepted precursor solid in place and books the exchanged structural reagent.',
+            });
+        }
+        else {
+            substrateChips = [{
+                    text: `${requiredSubstrate} precursor absent · transformation blocked`,
+                    met: false,
+                    note: 'Fluid-only supersaturation is not a formation route for this phase; an active exposed, mass-booked precursor is required.',
+                }];
+        }
+    }
     if (history.records.length) {
         const last = history.records[history.records.length - 1];
         if (last?.position)
@@ -77239,6 +78104,9 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
                 const best = substrate.available[0];
                 verdict = `Formed (${history.active} active, ${history.transformed} transformed, ${history.dissolved} dissolved); the current broth clears the ${best.mineral}-assisted threshold (${_formationNumber(assistedCrit)}) but not the bare-wall threshold, so fresh nucleation remains host-dependent and the engine must select an exposed host.`;
             }
+            else if (requiredSubstrate) {
+                verdict = `Formed (${history.active} active, ${history.transformed} transformed, ${history.dissolved} dissolved); current fluid conditions and an exposed ${requiredSubstrate} precursor support the bounded transformation route.`;
+            }
             else {
                 verdict = `Formed (${history.active} active, ${history.transformed} transformed, ${history.dissolved} dissolved); the current broth still clears the bare-wall nucleation threshold.`;
             }
@@ -77253,7 +78121,9 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
     }
     else if (history.available && productionEligible && chemistryEligible && !capReached && !strangled) {
         state = 'eligible';
-        verdict = 'Not formed yet, but chemistry is eligible; site selection and the engine\'s stochastic nucleation draw remain.';
+        verdict = requiredSubstrate
+            ? `Not transformed yet, but fluid conditions and the required ${requiredSubstrate} precursor are eligible; the kinetic transformation draw remains.`
+            : 'Not formed yet, but chemistry is eligible; site selection and the engine\'s stochastic nucleation draw remain.';
     }
     else if (history.available && productionEligible && substrateEligible && !capReached && !strangled) {
         state = 'conditional';
@@ -84424,6 +85294,16 @@ function _topoTooltipFromEvent(ev) {
                     const thickness = Number(sg.mean_thickness_um || 0);
                     const tLabel = thickness < 0.1 ? '<0.1' : thickness.toFixed(thickness < 10 ? 1 : 0);
                     lines.push(`${regime} · ${cover}% wall coverage · mean ${tLabel} µm`);
+                    const area = Number(sg.covered_area_mm2 || 0);
+                    const areaBasis = sg.area_basis === 'exact WallMesh triangle area'
+                        ? 'exact irregular-wall area' : 'spherical fallback area';
+                    lines.push(`${area.toFixed(area < 10 ? 2 : 1)} mm² coated · ${areaBasis}`);
+                    if (Array.isArray(sg.underlying_surface_crystal_ids)
+                        && sg.underlying_surface_crystal_ids.length) {
+                        const relation = sg.stratigraphy_basis === 'exact shared WallMesh triangles'
+                            ? 'Overlies' : 'May overlap';
+                        lines.push(`${relation} surface layer${sg.underlying_surface_crystal_ids.length === 1 ? '' : 's'} #${sg.underlying_surface_crystal_ids.join(', #')}`);
+                    }
                     lines.push(`Mass: ${Number(sg.booked_volume_mm3 || 0).toFixed(3)} mm³ booked; repeated grains are representative`);
                 }
             }
@@ -85986,21 +86866,31 @@ function _topoCavitySignature(wall, sim) {
         return '';
     const ring0 = wall.rings[0];
     const N = ring0 ? ring0.length : 0;
-    let depthSum = 0;
+    const surf = sim && sim.conditions ? sim.conditions.fluid_surface_ring : null;
+    if (Number.isSafeInteger(wall._geometry_revision)) {
+        return `${wall.ring_count}|${N}|rev:${wall._geometry_revision}|${surf}`;
+    }
+    let hashA = 0x811c9dc5;
+    let hashB = 0x9e3779b9;
+    const scratch = new DataView(new ArrayBuffer(8));
     for (let r = 0; r < wall.rings.length; r++) {
         const ring = wall.rings[r];
         if (!ring)
             continue;
-        const stride = Math.max(1, Math.floor(N / 8));
-        for (let c = 0; c < N; c += stride) {
+        for (let c = 0; c < N; c++) {
             const cell = ring[c];
             if (!cell)
                 continue;
-            depthSum += (cell.base_radius_mm + cell.wall_depth) * (r * 31 + c);
+            const radius = (Number(cell.base_radius_mm) || 0) + (Number(cell.wall_depth) || 0);
+            scratch.setFloat64(0, radius, true);
+            for (let byte = 0; byte < 8; byte++) {
+                const value = scratch.getUint8(byte);
+                hashA = Math.imul(hashA ^ value, 0x01000193) >>> 0;
+                hashB = (Math.imul(hashB ^ value, 0x85ebca6b) + 0x27d4eb2f) >>> 0;
+            }
         }
     }
-    const surf = sim && sim.conditions ? sim.conditions.fluid_surface_ring : null;
-    return `${wall.ring_count}|${N}|${depthSum.toFixed(2)}|${surf}`;
+    return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}|${surf}`;
 }
 // PHASE-2-CAVITY-MESH: cavity geometry now sources from WallMesh
 // (js/23-geometry-wall-mesh.ts). The renderer's job here is reduced
@@ -89250,10 +90140,19 @@ function _surfaceGrowthWallPoint(wall, dir, ringCount, N, initR) {
         ringIdx, cellIdx, radius,
     };
 }
-function _emitSurfaceGrowthSwath(state, crystal, parentMat, ax, ay, az, wall, ringCount, N, initR, renderC) {
+// Single-representation gate used by production sync and executed Three.js
+// integration tests. A surface aggregate owns one instanced swath; adding its
+// legacy trophy parent as well would depict one booked solid twice.
+function _addCrystalParentRepresentation(state, crystal, mesh) {
+    if (crystal?._surfaceGrowth)
+        return false;
+    state.crystals.add(mesh);
+    return true;
+}
+function _emitSurfaceGrowthSwath(state, crystal, parentMat, ax, ay, az, wall, ringCount, N, initR, renderC, sim, earlierLayers) {
     const record = crystal && crystal._surfaceGrowth;
     if (!record || !(record.coverage_fraction > 0) || !wall || !wall.rings)
-        return;
+        return null;
     const liveC = Math.max(1e-9, Number(crystal.c_length_mm) || 0);
     // Replay grows the footprint from the historical size rather than painting
     // the final shell on the first frame.
@@ -89264,6 +90163,10 @@ function _emitSurfaceGrowthSwath(state, crystal, parentMat, ax, ay, az, wall, ri
     const count = _surfaceGrowthInstanceCount(coverage, mobile);
     const al = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
     const directions = _surfaceGrowthSampleDirections([ax / al, ay / al, az / al], count, coverage, crystal.crystal_id || 0);
+    const wallMesh = wall && typeof wall.meshFor === 'function' ? wall.meshFor(sim) : null;
+    const exactPatch = wallMesh && typeof wallMesh.sampleSurfacePatch === 'function'
+        ? wallMesh.sampleSurfacePatch([ax / al, ay / al, az / al], count, coverage, crystal.crystal_id || 0)
+        : null;
     let key = '__surface_patch_lowpoly';
     let geom = state.geomCache.get(key);
     if (!geom) {
@@ -89286,9 +90189,16 @@ function _emitSurfaceGrowthSwath(state, crystal, parentMat, ax, ay, az, wall, ri
             state.geomCache.set(key, geom);
         }
     }
+    else if (record.regime === 'dendritic_film') {
+        // A wall dendrite is a branching two-dimensional film, not a forest of
+        // pyrolusite needles. Reuse the deterministic tree skeleton, then flatten
+        // it into the local tangent plane below.
+        geom = _getDendriteTreeGeom(state, crystal);
+    }
     const mat = parentMat.clone();
     mat.roughness = record.regime === 'fibrous_mat' ? 0.72
-        : record.regime === 'laminated_lining' ? 0.82 : Math.max(0.48, mat.roughness || 0.5);
+        : record.regime === 'dendritic_film' ? 0.78
+            : record.regime === 'laminated_lining' ? 0.82 : Math.max(0.48, mat.roughness || 0.5);
     if (record.regime === 'laminated_lining' && mat.transparent) {
         mat.opacity = Math.max(0.46, mat.opacity || 0);
     }
@@ -89297,13 +90207,32 @@ function _emitSurfaceGrowthSwath(state, crystal, parentMat, ax, ay, az, wall, ri
     const dummy = new THREE.Object3D();
     const up = new THREE.Vector3(0, 1, 0);
     const axis = new THREE.Vector3();
+    const normal = new THREE.Vector3();
+    const lateral = new THREE.Vector3();
+    const basis = new THREE.Matrix4();
     const cavityR = Math.max(1, Number(state.clipUniforms?.uVugRadius?.value) || initR);
-    const areaPerRepresentative = (4 * Math.PI * cavityR * cavityR * coverage) / count;
+    const fallbackArea = 4 * Math.PI * cavityR * cavityR * coverage;
+    const representedArea = exactPatch && exactPatch.area_mm2 > 0
+        ? exactPatch.area_mm2
+        : (Number(record.cavity_area_mm2) > 0
+            ? Number(record.cavity_area_mm2) * coverage
+            : fallbackArea);
+    const areaPerRepresentative = representedArea / count;
     const patchRadius = Math.max(0.22, Math.sqrt(areaPerRepresentative / Math.PI) * 1.08);
     const trueThicknessMm = Math.max(0, Number(record.mean_thickness_um) || 0) / 1000;
     const displayThickness = Math.max(0.06, Math.min(patchRadius * 0.45, trueThicknessMm > 0 ? Math.max(trueThicknessMm, 0.06) : 0.06));
     for (let i = 0; i < count; i++) {
-        const p = _surfaceGrowthWallPoint(wall, directions[i], ringCount, N, initR);
+        const p = exactPatch && exactPatch.samples && exactPatch.samples[i]
+            ? exactPatch.samples[i]
+            : _surfaceGrowthWallPoint(wall, directions[i], ringCount, N, initR);
+        let underburdenDisplayMm = 0;
+        if (p.triangle_index != null) {
+            for (const layer of earlierLayers) {
+                if (layer.triangle_indices.has(p.triangle_index)) {
+                    underburdenDisplayMm += layer.representative_relief_mm;
+                }
+            }
+        }
         const h = Math.abs(Math.sin((crystal.crystal_id + 1) * 17.17 + i * 9.73)) % 1;
         if (record.regime === 'euhedral_druse') {
             const height = Math.max(0.24, Math.min(1.6, patchRadius * (0.28 + 0.22 * h)));
@@ -89311,8 +90240,38 @@ function _emitSurfaceGrowthSwath(state, crystal, parentMat, ax, ay, az, wall, ri
             axis.set(p.nx, p.ny, p.nz);
             dummy.quaternion.setFromUnitVectors(up, axis);
             dummy.rotateY(h * Math.PI * 2);
-            dummy.position.set(p.x + p.nx * height * 0.5, p.y + p.ny * height * 0.5, p.z + p.nz * height * 0.5);
+            dummy.position.set(p.x + p.nx * (underburdenDisplayMm + height * 0.5), p.y + p.ny * (underburdenDisplayMm + height * 0.5), p.z + p.nz * (underburdenDisplayMm + height * 0.5));
             dummy.scale.set(width, height, width);
+        }
+        else if (record.regime === 'dendritic_film') {
+            // Build a right-handed local frame with tree +Y along the wall tangent
+            // and tree +Z along the cavity-facing normal, then crush Z to a genuine
+            // film. This retains the branch silhouette across a wide swath without
+            // inventing free-standing museum-scale Mn crystals.
+            let tx = -p.nz, ty = 0, tz = p.nx;
+            let tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+            if (tl < 1e-6) {
+                tx = 1;
+                ty = 0;
+                tz = 0;
+                tl = 1;
+            }
+            tx /= tl;
+            ty /= tl;
+            tz /= tl;
+            const spin = h * Math.PI * 1.2 - Math.PI * 0.6;
+            const bx = p.ny * tz - p.nz * ty;
+            const by = p.nz * tx - p.nx * tz;
+            const bz = p.nx * ty - p.ny * tx;
+            axis.set(tx * Math.cos(spin) + bx * Math.sin(spin), ty * Math.cos(spin) + by * Math.sin(spin), tz * Math.cos(spin) + bz * Math.sin(spin)).normalize();
+            normal.set(p.nx, p.ny, p.nz).normalize();
+            lateral.crossVectors(axis, normal).normalize();
+            basis.makeBasis(lateral, axis, normal);
+            dummy.quaternion.setFromRotationMatrix(basis);
+            const length = Math.max(0.65, Math.min(3.2, patchRadius * (1.0 + h * 0.6)));
+            const filmRelief = Math.max(0.035, Math.min(0.10, displayThickness));
+            dummy.position.set(p.x + p.nx * (underburdenDisplayMm + filmRelief * 0.5), p.y + p.ny * (underburdenDisplayMm + filmRelief * 0.5), p.z + p.nz * (underburdenDisplayMm + filmRelief * 0.5));
+            dummy.scale.set(length * 0.58, length, filmRelief);
         }
         else if (record.regime === 'fibrous_mat') {
             // Slip-/felt-fibre representation: lay each bundle in the local tangent
@@ -89336,7 +90295,7 @@ function _emitSurfaceGrowthSwath(state, crystal, parentMat, ax, ay, az, wall, ri
             const length = Math.max(0.45, Math.min(2.4, patchRadius * (0.8 + h * 0.5)));
             const width = Math.max(0.035, Math.min(0.11, length * 0.055));
             dummy.quaternion.setFromUnitVectors(up, axis);
-            dummy.position.set(p.x + p.nx * width, p.y + p.ny * width, p.z + p.nz * width);
+            dummy.position.set(p.x + p.nx * (underburdenDisplayMm + width), p.y + p.ny * (underburdenDisplayMm + width), p.z + p.nz * (underburdenDisplayMm + width));
             dummy.scale.set(width, length, width);
         }
         else {
@@ -89346,7 +90305,7 @@ function _emitSurfaceGrowthSwath(state, crystal, parentMat, ax, ay, az, wall, ri
                 : displayThickness;
             axis.set(p.nx, p.ny, p.nz);
             dummy.quaternion.setFromUnitVectors(up, axis);
-            dummy.position.set(p.x + p.nx * relief * 0.5, p.y + p.ny * relief * 0.5, p.z + p.nz * relief * 0.5);
+            dummy.position.set(p.x + p.nx * (underburdenDisplayMm + relief * 0.5), p.y + p.ny * (underburdenDisplayMm + relief * 0.5), p.z + p.nz * (underburdenDisplayMm + relief * 0.5));
             dummy.scale.set(lateral, relief, lateral);
         }
         dummy.updateMatrix();
@@ -89355,8 +90314,8 @@ function _emitSurfaceGrowthSwath(state, crystal, parentMat, ax, ay, az, wall, ri
     swath.instanceMatrix.needsUpdate = true;
     if (typeof swath.computeBoundingSphere === 'function')
         swath.computeBoundingSphere();
-    swath.renderOrder = record.regime === 'laminated_lining' ? 0.55 : 0.8;
-    swath.raycast = function () { };
+    swath.renderOrder = (record.regime === 'laminated_lining' ? 0.55 : 0.8)
+        + Math.min(0.1, Number(record.stratigraphic_index || 0) * 0.001);
     swath.userData = {
         surfaceGrowth: true,
         crystal_id: crystal.crystal_id,
@@ -89365,8 +90324,35 @@ function _emitSurfaceGrowthSwath(state, crystal, parentMat, ax, ay, az, wall, ri
         coverage_fraction: coverage,
         physical_mean_thickness_um: record.mean_thickness_um,
         representative_only: true,
+        area_basis: record.area_basis,
+        stratigraphic_index: record.stratigraphic_index,
     };
     state.crystals.add(swath);
+    // Canonical desktop-density relief is intentionally independent of mobile
+    // LOD; subsequent layers therefore sit on the same depicted substrate on
+    // every viewport even when this layer uses fewer representatives.
+    const canonicalCount = _surfaceGrowthInstanceCount(coverage, false);
+    const canonicalPatchRadius = Math.max(0.22, Math.sqrt(representedArea / canonicalCount / Math.PI) * 1.08);
+    const canonicalDisplayThickness = Math.max(0.06, Math.min(canonicalPatchRadius * 0.45, trueThicknessMm > 0 ? Math.max(trueThicknessMm, 0.06) : 0.06));
+    const representativeRelief = record.regime === 'botryoidal_crust'
+        ? Math.max(canonicalDisplayThickness, canonicalPatchRadius * 0.38)
+        : record.regime === 'euhedral_druse'
+            ? Math.max(0.24, Math.min(1.6, canonicalPatchRadius * 0.39))
+            : record.regime === 'fibrous_mat'
+                ? Math.max(0.035, Math.min(0.11, canonicalPatchRadius * 0.055))
+                : record.regime === 'dendritic_film'
+                    ? Math.max(0.035, Math.min(0.10, canonicalDisplayThickness))
+                    : canonicalDisplayThickness;
+    const layer = {
+        crystal_id: crystal.crystal_id,
+        triangle_indices: new Set(exactPatch && exactPatch.triangle_indices
+            ? exactPatch.triangle_indices : []),
+        representative_relief_mm: representativeRelief,
+    };
+    swath.userData.representative_relief_mm = representativeRelief;
+    swath.userData.triangle_indices = Array.from(layer.triangle_indices);
+    earlierLayers.push(layer);
+    return swath;
 }
 function _emitClusterSatellites(state, crystal, geom, mat, ax, ay, az, nx, ny, nz, parentCLen, parentAWid, geomToken, wall, ringCount, N, initR, 
 // W-F O0: the parent's attachment fraction. Satellites share the parent's
@@ -90200,6 +91186,7 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
     // _pendingInclusions holds the guests to place.
     const _hostMeshById = new Map();
     const _pendingInclusions = [];
+    const _surfaceLayers = [];
     for (const crystal of sim.crystals) {
         if (!crystal)
             continue;
@@ -91026,12 +92013,15 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
             naturalOpacity: mat.transparent ? mat.opacity : 1.0,
             // === END HELIX-OVERLAY-FORK ADDITION ===========================
         };
-        state.crystals.add(mesh);
+        // An aggregate surface fabric is represented by its swath, not by the old
+        // trophy-sized parent body as well. Keeping both would visually double one
+        // booked Crystal and contradict the mass ledger.
+        _addCrystalParentRepresentation(state, crystal, mesh);
         // A booked aggregate can occupy a broad wall swath even though it is one
         // Crystal record. Emit one instanced representative layer; it neither adds
         // simulation entities nor multiplies the accepted mineral volume.
         if (!isInclusion && crystal._surfaceGrowth) {
-            _emitSurfaceGrowthSwath(state, crystal, mat, ax, ay, az, wall, ringCount, N, initR, renderC);
+            _emitSurfaceGrowthSwath(state, crystal, mat, ax, ay, az, wall, ringCount, N, initR, renderC, sim, _surfaceLayers);
         }
         // W-F O4a — register every crystal as a possible host, and defer inclusion
         // placement to pass 2 (the host mesh may build later in this same loop).
@@ -91312,6 +92302,12 @@ function _topoSnapshotWall(liveWall, snapshot) {
     // Synthetic wall — reuse method shapes from liveWall via Object.assign
     // so polarProfileFactor, ringTwistRadians, etc. still work.
     const synth = Object.assign(Object.create(Object.getPrototypeOf(liveWall) || null), liveWall);
+    // Never inherit geometry identity or a live mesh. The rings below are a
+    // distinct historical surface, so they must take the exact all-cell
+    // signature path and build their own WallMesh. Otherwise every replay frame
+    // can silently render the live wall's cached vertices.
+    delete synth._geometry_revision;
+    delete synth._mesh;
     // Detect snapshot shape:
     //   * Multi-ring (v65+): { step, rings: [...] } — use directly.
     //   * Legacy flat array (v60..v64): project across all rings.

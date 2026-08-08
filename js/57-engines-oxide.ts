@@ -459,13 +459,105 @@ function grow_cassiterite(crystal, conditions, step) {
 //     driven, encodes the canonical Mn-weathering paragenesis.
 //
 // IMPORTANT (Potter & Rossman 1979): we do NOT ship a dendritic habit.
-// Most "dendritic pyrolusite" in textbooks is actually cryptomelane/
-// romanechite. The engine refuses to perpetuate the textbook error;
-// dendritic habits route to those cousins when their engines land.
+// Most "dendritic pyrolusite" in textbooks is actually a hollandite-group,
+// romanechite, birnessite or todorokite aggregate. The engine refuses to
+// perpetuate the textbook error; the first-class sister engines now own those
+// surface-film fields when their structural-cation gates are satisfied.
 //
 // Dissolution: acid (pH < 5.0) + grown > 5 µm → Mn²⁺ released back to
 // fluid. Pyrolusite is stable to alkali but dissolves readily in acidic
 // mine drainage (the standard Mn-oxide AMD signature).
+function _dissolveMnSurfaceOxide(crystal, conditions, step, sigma, label) {
+  if (sigma >= 1.0 || !(crystal.total_growth_um > 5) || conditions.fluid.pH >= 5.2) return null;
+  crystal.dissolved = true;
+  const d = Math.min(2.5, crystal.total_growth_um * 0.08);
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
+    note: `${label} reductive/acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — Mn²⁺ released back to the fluid`,
+  });
+}
+
+// SIM 249 — birnessite, romanechite and todorokite are first-class
+// surface-aggregate phases. Their axial GrowthZone thickness still books the
+// authoritative volume; the surface renderer converts that booked volume into
+// a covered area and mean physical thickness without multiplying mass.
+function grow_birnessite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_birnessite();
+  if (sigma < 1.0) return _dissolveMnSurfaceOxide(crystal, conditions, step, sigma, 'birnessite');
+  const excess = sigma - 1.0;
+  const rate = 1.25 * excess * rng.uniform(0.82, 1.18);
+  if (rate < 0.08) return null;
+  const f = conditions.fluid;
+  if (excess > 1.35) {
+    crystal.habit = 'botryoidal_hydrous_crust';
+    crystal.dominant_forms = ['coalesced hydrous Mn-oxide globules', 'poorly crystalline black-brown crust'];
+  } else {
+    crystal.habit = 'laminated_manganese_wall_lining';
+    crystal.dominant_forms = ['continuous nanocrystalline layer-Mn-oxide film', 'submillimetre wall-parallel laminae'];
+  }
+  f.Mn = Math.max(f.Mn - rate * 0.026, 0);
+  f.O2 = Math.max(f.O2 - rate * 0.004, 0);
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Na: f.Na * 0.004,
+    trace_Ca: f.Ca * 0.002,
+    note: `${crystal.habit} — hydrous, poorly crystalline birnessite coating; Mn ${f.Mn.toFixed(1)} ppm, pH ${f.pH.toFixed(1)}`,
+  });
+}
+
+function grow_romanechite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_romanechite();
+  if (sigma < 1.0) return _dissolveMnSurfaceOxide(crystal, conditions, step, sigma, 'romanechite');
+  const excess = sigma - 1.0;
+  const rate = 1.05 * excess * rng.uniform(0.82, 1.18);
+  if (rate < 0.08) return null;
+  const f = conditions.fluid;
+  if (excess > 1.45) {
+    crystal.habit = 'botryoidal_reniform';
+    crystal.dominant_forms = ['black steel-gray botryoidal crust', 'concentric Ba-Mn oxide banding'];
+  } else {
+    crystal.habit = 'dendritic_surface_film';
+    crystal.dominant_forms = ['wall-parallel branching dendrites', 'microcrystalline romanechite on a passive silicate substrate'];
+  }
+  f.Mn = Math.max(f.Mn - rate * 0.030, 0);
+  f.Ba = Math.max(f.Ba - rate * 0.006, 0);
+  f.O2 = Math.max(f.O2 - rate * 0.004, 0);
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Ba: f.Ba * 0.012,
+    note: `${crystal.habit} — Ba-bearing 2×3 tunnel Mn oxide; Ba ${f.Ba.toFixed(1)} ppm, Mn ${f.Mn.toFixed(1)} ppm`,
+  });
+}
+
+function grow_todorokite(crystal, conditions, step) {
+  const sigma = conditions.supersaturation_todorokite();
+  if (sigma < 1.0) return _dissolveMnSurfaceOxide(crystal, conditions, step, sigma, 'todorokite');
+  const excess = sigma - 1.0;
+  const rate = 1.0 * excess * rng.uniform(0.82, 1.18);
+  if (rate < 0.08) return null;
+  const f = conditions.fluid;
+  const onBirnessite = String(crystal.position || '').includes('birnessite');
+  if (onBirnessite || excess < 1.4) {
+    crystal.habit = 'dendritic_mine_coating';
+    crystal.dominant_forms = ['wall-parallel branching mine dendrites', 'tunnel oxide after a birnessite-like precursor'];
+  } else {
+    crystal.habit = 'radiating_fibrous_mat';
+    crystal.dominant_forms = ['radiating fibrous tunnel-oxide bundles', 'felted black-brown cavity coating'];
+  }
+  f.Mn = Math.max(f.Mn - rate * 0.030, 0);
+  f.Mg = Math.max(f.Mg - rate * 0.005, 0);
+  f.O2 = Math.max(f.O2 - rate * 0.004, 0);
+  return new GrowthZone({
+    step, temperature: conditions.temperature,
+    thickness_um: rate, growth_rate: rate,
+    trace_Mg: f.Mg * 0.010,
+    note: `${crystal.habit} — Mg-templated 3×3 tunnel Mn oxide; Mg ${f.Mg.toFixed(1)} ppm, Mn ${f.Mn.toFixed(1)} ppm`,
+  });
+}
+
 function grow_pyrolusite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_pyrolusite();
   if (sigma < 1.0) {

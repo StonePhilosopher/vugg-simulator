@@ -30,7 +30,15 @@ declare const FluidChemistry: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
 
+// Four integration contracts inspect the same deterministic seed-42/1/7
+// histories (saturation, nucleation, cap, and substrate). Preserve those
+// completed simulations as shared executed evidence instead of replaying each
+// 200-step scenario four times.
+const supergeneSeedCache = new Map<number, any>();
+
 function runSupergeneOxidation(seed: number) {
+  const cached = supergeneSeedCache.get(seed);
+  if (cached) return cached;
   setSeed(seed);
   const { conditions, events, defaultSteps } = SCENARIOS['supergene_oxidation']();
   const sim = new VugSimulator(conditions, events);
@@ -41,7 +49,9 @@ function runSupergeneOxidation(seed: number) {
     const s = sim.conditions.supersaturation_conichalcite();
     if (s > maxSigma) maxSigma = s;
   }
-  return { sim, maxSigma };
+  const result = { sim, maxSigma };
+  supergeneSeedCache.set(seed, result);
+  return result;
 }
 
 describe('Conichalcite — Ca-Cu arsenate engine (v87)', () => {
