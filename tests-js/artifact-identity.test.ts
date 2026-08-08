@@ -46,6 +46,8 @@ describe('archived strip testimony identity', () => {
       }), file).not.toThrow();
       expect(strip.format, file).toBe('strip-story-v2');
       expect(strip.executed_testimony?.pressure_phase, file).toHaveLength(strip.steps);
+      expect(strip.executed_testimony?.carbonate_boundary || [], file)
+        .toHaveLength(SCENARIOS[scenario]._json5_spec?.carbonate_boundary ? strip.steps : 0);
       for (const event of strip.executed_testimony?.stress_events || []) {
         expect(event.event_id, `${file} stress id`).toMatch(/^stress-\d+-\d+$/);
         expect(event.evaluated_crystals, `${file} stress outcomes`).toBeInstanceOf(Array);

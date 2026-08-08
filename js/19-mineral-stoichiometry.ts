@@ -703,6 +703,26 @@ function stoichiometricReservoirSpecies(mineral: string, species: string, fluid:
   return 'S_sulfide';
 }
 
+function _recordAcceptedCarbonateTransferReceipt(
+  conditions: any,
+  crystal: any,
+  zone: any,
+  beforePpm: number,
+): void {
+  if (!conditions?._carbonateBoundaryState || !Number.isFinite(beforePpm)) return;
+  const afterPpm = Number(conditions.fluid?.CO3);
+  if (!Number.isFinite(afterPpm) || afterPpm === beforePpm) return;
+  (conditions._pending_carbonate_boundary_transfers ||= []).push({
+    schema: 'accepted-carbonate-transfer-v1',
+    step: Number(conditions._sim_step) || null,
+    crystalId: crystal?.crystal_id ?? null,
+    mineral: String(crystal?.mineral || 'unknown'),
+    acceptedThicknessUm: Number(zone?.thickness_um) || 0,
+    localAqueousCarbonDeltaPpm: afterPpm - beforePpm,
+    touchedBulkFluidHandle: conditions.fluid === conditions._carbonateBoundaryBulkFluid,
+  });
+}
+
 // Returns the list of species names that just transitioned from positive
 // to zero (depletion events), or null on no-op / missing stoichiometry.
 // _runEngineForCrystal uses this to emit "Fe²⁺ depleted in ring 4 —
@@ -717,6 +737,7 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
   // it could return five or fifty times more material than the solid ever
   // contained and could not distinguish grow A → etch → grow B. Keep that
     // table as legacy reaction documentation, but never use it as an inventory source.
+  const carbonateBeforePpm = Number(conditions.fluid?.CO3);
   if (zone.thickness_um < 0) {
     const dissolved_um = -zone.thickness_um;
     const fluid = conditions.fluid;
@@ -833,6 +854,7 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
     }
     if (fluid.sulfurPoolsExplicit) syncExplicitSulfurTotal(fluid);
     zone._returned_budget_inventory = returned;
+    _recordAcceptedCarbonateTransferReceipt(conditions, crystal, zone, carbonateBeforePpm);
     return null;  // depletion narration is precipitation-only
   }
   const stoich = MINERAL_STOICHIOMETRY[crystal.mineral];
@@ -937,6 +959,7 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
   if (fluid.sulfurPoolsExplicit) syncExplicitSulfurTotal(fluid);
   zone._budget_inventory_per_um = bookedInventoryPerUm;
   zone._remaining_solid_um = zone.thickness_um;
+  _recordAcceptedCarbonateTransferReceipt(conditions, crystal, zone, carbonateBeforePpm);
   return depleted;
 }
 

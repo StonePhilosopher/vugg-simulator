@@ -1,0 +1,2038 @@
+{
+  "schema": "vugg-science-provenance-manifest-v1",
+  "sim_version": 251,
+  "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+  "canonical_run_seed": 42,
+  "shape_seed_policy": "authored independently in data/scenarios.json5",
+  "support_envelopes": {
+    "temperature_C": {
+      "min": -50,
+      "max": 1300,
+      "basis": "declared browser-engine operating envelope"
+    },
+    "fluid_pressure_kbar": {
+      "min": 0.001,
+      "max": 4.4,
+      "basis": "MODEL_DIGEST Pfluid envelope"
+    },
+    "pH": {
+      "min": 0,
+      "max": 14,
+      "basis": "aqueous pH control domain"
+    },
+    "salinity_ppm": {
+      "min": 0,
+      "max": 350000,
+      "basis": "Creative/FluidChemistry authored domain"
+    },
+    "atmospheric_pCO2_bar": {
+      "min": 1e-7,
+      "max": 100,
+      "basis": "carbonate boundary numerical bracket"
+    }
+  },
+  "totals": {
+    "scenarios": 39,
+    "citations": 215,
+    "event_instances": 277,
+    "referenced_event_handlers": 144,
+    "registered_event_handlers": 150
+  },
+  "referenced_event_handlers": [
+    "alkalinize",
+    "amethyst_chalcedony_maturation",
+    "amethyst_quartz_renewal",
+    "aquifer_recharge_floods",
+    "bisbee_azurite_peak",
+    "bisbee_co2_drop",
+    "bisbee_enrichment_blanket",
+    "bisbee_final_drying",
+    "bisbee_oxidation_zone",
+    "bisbee_primary_cooling",
+    "bisbee_reducing_pulse",
+    "bisbee_silica_seep",
+    "bisbee_uplift_weathering",
+    "co2_degas_with_reheat",
+    "colorado_plateau_arid_stabilization",
+    "colorado_plateau_ca_recovery",
+    "colorado_plateau_groundwater_pulse",
+    "colorado_plateau_k_pulse",
+    "colorado_plateau_roll_front_contact",
+    "cooling_pulse",
+    "copper_injection",
+    "deccan_quartz_maturation",
+    "deccan_zeolite_apophyllite_stage_iii",
+    "deccan_zeolite_hematite_pulse",
+    "deccan_zeolite_late_cooling",
+    "deccan_zeolite_silica_veneer",
+    "deccan_zeolite_stage_ii",
+    "deccan_zeolite_stage_ii_sheets",
+    "elmwood_barite_stage",
+    "elmwood_diagenetic_sr",
+    "film_coat",
+    "fluid_mixing",
+    "fluid_pulse",
+    "gem_pegmatite_albitization",
+    "gem_pegmatite_be_saturation",
+    "gem_pegmatite_clay_softening",
+    "gem_pegmatite_final",
+    "gem_pegmatite_first_schorl",
+    "gem_pegmatite_late_hydrothermal",
+    "gem_pegmatite_li_phase",
+    "gem_pegmatite_outer_shell",
+    "grimsel_breach_1",
+    "grimsel_breach_2",
+    "grimsel_cleft_open",
+    "grimsel_late_carbonate",
+    "grimsel_oxide_roses",
+    "grimsel_seal_1",
+    "grimsel_seal_2",
+    "gsp_crust_seal",
+    "gsp_dry",
+    "gsp_flood",
+    "gsp_wet",
+    "jeffrey_mine_dike_alteration",
+    "jeffrey_mine_late_ca_silicates",
+    "jeffrey_mine_mid_rodingite",
+    "jeffrey_mine_serpentinization_onset",
+    "jeffrey_mine_terminal_datolite",
+    "marble_fracture_seal",
+    "marble_peak_metamorphism",
+    "marble_retrograde_cooling",
+    "marble_tectonic_strain",
+    "molybdenum_pulse",
+    "naica_mining_drainage",
+    "naica_mining_recharge",
+    "naica_slow_cooling",
+    "ouro_preto_cr_leach",
+    "ouro_preto_f_pulse",
+    "ouro_preto_final_cooling",
+    "ouro_preto_late_hydrothermal",
+    "ouro_preto_oxidation_stain",
+    "ouro_preto_steady_cooling",
+    "ouro_preto_vein_opening",
+    "oxidation",
+    "radioactive_pegmatite_crystallization",
+    "radioactive_pegmatite_deep_time",
+    "radioactive_pegmatite_final_cooling",
+    "radioactive_pegmatite_oxidizing",
+    "reactivated_vein_breach",
+    "reactivated_vein_seal",
+    "reactive_wall_acid_pulse_1",
+    "reactive_wall_acid_pulse_2",
+    "reactive_wall_acid_pulse_3",
+    "reactive_wall_seal",
+    "roughten_gill_caledonite_transition",
+    "roughten_gill_leadhillite_cap",
+    "roughten_gill_linarite_stage",
+    "roughten_gill_primary_lockup",
+    "roughten_gill_pyrite_oxidation",
+    "sabkha_evap",
+    "sabkha_final_seal",
+    "sabkha_flood",
+    "schneeberg_as_pulse_late",
+    "schneeberg_cooling",
+    "schneeberg_cu_as_pulse",
+    "schneeberg_cu_depletion",
+    "schneeberg_cu_p_phase",
+    "schneeberg_pegmatite_crystallization",
+    "schneeberg_vadose_exhumation",
+    "searles_fresh_pulse",
+    "searles_summer_bake",
+    "searles_winter_freeze",
+    "shigar_aqua_saturation",
+    "shigar_cleavelandite",
+    "shigar_final_cooling",
+    "shigar_first_schorl",
+    "shigar_hf_etch",
+    "shigar_outer_shell",
+    "shigar_topaz_window",
+    "sicily_bsr_reduction",
+    "sicily_carbonate_buffer",
+    "sicily_gypsum_dissolution",
+    "sicily_inherited_sulfur_recharge",
+    "sulphur_bank_cooling",
+    "sulphur_bank_h2s_recharge",
+    "sulphur_bank_surface_oxidation",
+    "sunnyside_cooling_transition",
+    "sunnyside_stage_v_mn_carbonate",
+    "sunnyside_stage_vi_fluoride_pulse",
+    "sunnyside_stage_vi_manganocalcite_cap",
+    "supergene_acidification",
+    "supergene_as_rich_seep",
+    "supergene_cu_enrichment",
+    "supergene_dry_spell",
+    "supergene_fracture_seal",
+    "supergene_meteoric_flush",
+    "supergene_pb_mo_pulse",
+    "supergene_phosphate_seep",
+    "supergene_v_bearing_seep",
+    "tectonic_shock",
+    "tectonic_uplift_drains",
+    "tn457_mn_ba_pulse",
+    "tormiq_adularia",
+    "tormiq_byssolite",
+    "tormiq_epidote_main",
+    "tormiq_late_calcite",
+    "tormiq_late_shear",
+    "tormiq_oxide_stage",
+    "tormiq_quartz_lining",
+    "tutorial_fe_drop",
+    "tutorial_mn_pulse",
+    "tutorial_temperature_spike",
+    "wittichen_carbonate_gangue",
+    "wittichen_hydrocarbon_influx",
+    "wittichen_meteoric_sulfate"
+  ],
+  "scenarios": [
+    {
+      "id": "amethyst_geode",
+      "scenario_spec_hash": "b94a7df7d612eb1e7b66e6d05e930cd458a45b146cfab6cd50722c48b2520f7e",
+      "anchor": "Ametista do Sul, Rio Grande do Sul, Brazil — amethyst geodes in the Serra Geral Formation high-Ti basalt (Paraná Continental Flood Basalt Province, Lower Cretaceous ~134 Ma)",
+      "duration_steps": 240,
+      "initial": {
+        "temperature_C": 160,
+        "pressure_kbar": 0.3,
+        "pH": 7.2,
+        "salinity_ppm": 4,
+        "shape_seed": 7,
+        "wall_composition": "basalt"
+      },
+      "citations": [
+        "Gilg H.A., Morteani G., Kostitsyn Y., Preinfalk C., Gatter I., Strieder A.J. (2003) — Genesis of amethyst geodes in basaltic rocks of the Serra Geral Formation (Ametista do Sul, Rio Grande do Sul, Brazil): a fluid inclusion, REE, oxygen, carbon, and Sr isotope study on basalt, quartz, and calcite. Mineralium Deposita 38: 1009-1025. Geode structure celadonite→agate→quartz→amethyst; LOW-T (<100°C, prob <50°C) low-salinity sedimentary-brine model.",
+        "Amethyst geodes in the basaltic flow from Triz quarry at Ametista do Sul (Rio Grande do Sul, Brazil): magmatic source of silica for the amethyst crystallizations. Geological Magazine 144(4): 731. Primary amethyst fluid inclusions 152-238°C; magmatic silica source — the high-T camp the scenario's warm nucleation phase reflects.",
+        "Rossman G.R. (1994) — Colored varieties of the silica minerals. Reviews in Mineralogy 29: 433-468. Amethyst = Fe³⁺ colour centre activated by natural γ-irradiation (the same Rossman already cited by the js/59 smoky/morion Al-centre path).",
+        "Proust D. & Fontan F. (2007) — Brazilian amethyst-geode late-stage mineralogy (the same Proust & Fontan cited in minerals.json for the amethyst-pocket late euhedral / lepidocrocite-patina sequence).",
+        "Takahashi K. & Sunagawa I. (2004) — sceptre quartz by epitaxial-like overgrowth (ELO) after a masking film: the masking-sceptre mechanism, distinct from corrosion-then-regeneration."
+      ],
+      "citations_sha256": "24258a11e199108cc3e5da0daa4f11f647644268bdc3bf4329f99fed5f9f3256",
+      "expects_species": [
+        "chalcedony",
+        "quartz"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "amethyst_chalcedony_maturation",
+        "amethyst_quartz_renewal",
+        "film_coat"
+      ],
+      "event_count": 4,
+      "extended_only_event_count": 0,
+      "movement_count": 4,
+      "archive": {
+        "path": "archive/strips/v251/amethyst_geode.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "b94a7df7d612eb1e7b66e6d05e930cd458a45b146cfab6cd50722c48b2520f7e",
+        "seed": 42,
+        "steps": 240
+      }
+    },
+    {
+      "id": "bisbee",
+      "scenario_spec_hash": "5e725d79305df3d921fced7f9913191263f2b2fda9a80a04d0410f346d081cd8",
+      "anchor": "Bisbee, Arizona — Warren Mining District, Cochise County. Laramide quartz-monzonite porphyry intruding Paleozoic Escabrosa Limestone + Abrigo Formation. Major Cu-Ag-Au district (~8 Mt Cu, ~25 Moz Ag, ~3 Moz Au historically).",
+      "duration_steps": 340,
+      "initial": {
+        "temperature_C": 400,
+        "pressure_kbar": 1,
+        "pH": 5,
+        "salinity_ppm": 30,
+        "shape_seed": 13,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "Graeme, Graeme & Graeme 2019 — modern Bisbee monograph",
+        "Bryant 1968 — Warren District geology",
+        "Crane 1911 — early Bisbee geology",
+        "Vink 1986 — azurite ↔ malachite pCO2 thermodynamics",
+        "Mote et al. 2001 — supergene chrysocolla geochemistry"
+      ],
+      "citations_sha256": "7d7b370c4ce897ea48adbebf63d2020840ecc5775dcb58b2e17bf535234071de",
+      "expects_species": [
+        "azurite",
+        "brochantite",
+        "chalcopyrite",
+        "chrysocolla",
+        "malachite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "bisbee_azurite_peak",
+        "bisbee_co2_drop",
+        "bisbee_enrichment_blanket",
+        "bisbee_final_drying",
+        "bisbee_oxidation_zone",
+        "bisbee_primary_cooling",
+        "bisbee_reducing_pulse",
+        "bisbee_silica_seep",
+        "bisbee_uplift_weathering"
+      ],
+      "event_count": 9,
+      "extended_only_event_count": 0,
+      "movement_count": 1,
+      "archive": {
+        "path": "archive/strips/v251/bisbee.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "5e725d79305df3d921fced7f9913191263f2b2fda9a80a04d0410f346d081cd8",
+        "seed": 42,
+        "steps": 340
+      }
+    },
+    {
+      "id": "chiastolite_hornfels",
+      "scenario_spec_hash": "4af4c17ea9991b5d736b1706aa1ccdc465296a3e2f8b195dcfd0a41632838f37",
+      "anchor": "Bimbowrie / Mount Howden, Olary district, South Australia — classic chiastolite (the 'cross stone') in contact-metamorphic hornfels; the Zhoukoudian aureole (Beijing) of Mason et al. 2010 is the peer-reviewed analogue.",
+      "duration_steps": 120,
+      "initial": {
+        "temperature_C": 600,
+        "pressure_kbar": 2.5,
+        "pH": 6.5,
+        "salinity_ppm": 1,
+        "shape_seed": 1888,
+        "wall_composition": "pegmatite"
+      },
+      "citations": [
+        "Mason, Burton, Yuan & She 2010 (Gondwana Research 18(1):222-229) — Chiastolite: quartz+graphite co-precipitation into andalusite growth sectors, graphite-buffered H₂O–CO₂ fluid (Zhoukoudian aureole)",
+        "Dowty 1976 (American Mineralogist 61:460-469) — Crystal structure and crystal growth II: sector zoning in minerals (the protosite model)",
+        "Holdaway 1971 (American Journal of Science 271:97-131) — Stability of andalusite and the aluminum silicate phase diagram (the Al₂SiO₅ triple point)"
+      ],
+      "citations_sha256": "2d4f455abe0abbf29571a8952eb2b116998ad14e20bf0c5840334435be1305e9",
+      "expects_species": [
+        "andalusite",
+        "feldspar"
+      ],
+      "excluded_species": [],
+      "event_types": [],
+      "event_count": 0,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/chiastolite_hornfels.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "4af4c17ea9991b5d736b1706aa1ccdc465296a3e2f8b195dcfd0a41632838f37",
+        "seed": 42,
+        "steps": 120
+      }
+    },
+    {
+      "id": "colorado_plateau",
+      "scenario_spec_hash": "e4a2d307e08a3cbe350d14be77a7dca977d822ec665e78a9c619b41e6472169d",
+      "anchor": "Uravan Mineral Belt, Colorado Plateau — sandstone-hosted roll-front uranium-vanadium deposits (Triassic-Jurassic Morrison Formation). Includes the Carnotite-Eldorado, Uravan, and Moab districts; the V+U bonanza that drove the early-twentieth-century uranium industry decades before the Manhattan Project.",
+      "duration_steps": 180,
+      "initial": {
+        "temperature_C": 22,
+        "pressure_kbar": 0.05,
+        "pH": 7,
+        "salinity_ppm": 8,
+        "shape_seed": 5,
+        "wall_composition": "sandstone"
+      },
+      "citations": [
+        "Friedel & Cumenge 1899 — original carnotite description (Roc Creek)",
+        "Nenadkevich 1912 — tyuyamunite type description (Tyuya-Muyun)",
+        "Hess 1924 — V-U-Ca-K paragenesis review",
+        "Stern et al. 1956 — meta-tyuyamunite (American Mineralogist v.41)",
+        "research/minerals/research-tyuyamunite.md (May 2026) — Colorado Plateau roll-front geology + simulator design"
+      ],
+      "citations_sha256": "231b6012444c6b2b32ee79fd10af4f7b04be9f5fc88ae703a839b887a6d585bd",
+      "expects_species": [
+        "carnotite",
+        "tyuyamunite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "colorado_plateau_arid_stabilization",
+        "colorado_plateau_ca_recovery",
+        "colorado_plateau_groundwater_pulse",
+        "colorado_plateau_k_pulse",
+        "colorado_plateau_roll_front_contact"
+      ],
+      "event_count": 5,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/colorado_plateau.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "e4a2d307e08a3cbe350d14be77a7dca977d822ec665e78a9c619b41e6472169d",
+        "seed": 42,
+        "steps": 180
+      }
+    },
+    {
+      "id": "cooling",
+      "scenario_spec_hash": "a570f57e12063cf5f9df30c6f8b453afb210efd88adf9a6f75da7925dbc3a7f1",
+      "anchor": "Herkimer 'diamond' pocket — Middleville, NY (Little Falls Formation, Cambrian dolostone)",
+      "duration_steps": 100,
+      "initial": {
+        "temperature_C": 180,
+        "pressure_kbar": 1,
+        "pH": 6.8,
+        "salinity_ppm": 18,
+        "shape_seed": 1,
+        "wall_composition": "dolomite"
+      },
+      "citations": [
+        "Selleck 1978 — Mohawk Valley stratigraphy + Little Falls Formation host",
+        "Harris et al. 1978 USGS PP 1197 — Alleghenian thermal maturity",
+        "Friedman & Sanders 1982 Geology 10 — Appalachian burial diagenesis",
+        "Rimstidt 1997 — quartz solubility at 180°C",
+        "Hanor 1994 — Appalachian-basin brine compendium (Mg/Ca, Na/K, salinity)",
+        "Wark & Watson 2006 — TitaniQ thermometer Ti-in-quartz"
+      ],
+      "citations_sha256": "a3a581a206fe933098bfc8e45249f7d4eb6bcf02375063d5329cc4ac817d3e99",
+      "expects_species": [
+        "quartz"
+      ],
+      "excluded_species": [],
+      "event_types": [],
+      "event_count": 0,
+      "extended_only_event_count": 0,
+      "movement_count": 1,
+      "archive": {
+        "path": "archive/strips/v251/cooling.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "a570f57e12063cf5f9df30c6f8b453afb210efd88adf9a6f75da7925dbc3a7f1",
+        "seed": 42,
+        "steps": 100
+      }
+    },
+    {
+      "id": "deccan_zeolite",
+      "scenario_spec_hash": "d9e8c5581258dc87d9209b367f65065795f997cda0814e0197b80bc5b7ad3c22",
+      "anchor": "Deccan Traps zeolite vesicle (Stage III, ~21-58 Ma post-eruption). Nashik 'bloody apophyllite' is the type expression. Per Ottens et al. 2019.",
+      "duration_steps": 200,
+      "initial": {
+        "temperature_C": 250,
+        "pressure_kbar": 0.05,
+        "pH": 8.2,
+        "salinity_ppm": 2,
+        "shape_seed": 21,
+        "wall_composition": "basalt"
+      },
+      "citations": [
+        "Sukheswala, Avasia & Gangopadhyay 1974, Mineralogical Magazine 39:658–671 — Western Deccan cavity sequence: scolecite+mesolite first among zeolites, followed by heulandite+stilbite, with apophyllite among the last volatile-bearing phases",
+        "Ottens et al. 2019, Minerals 9:351, doi:10.3390/min9060351 — Savda multistage model and late Stage-III apophyllite timing (21–58 Ma)",
+        "Pinch & Wilson 1977 — Nashik 'bloody apophyllite' phantom inclusions"
+      ],
+      "citations_sha256": "2121c4572bdc1f4e690b397f65c99bc80c182dd8650ead7e3a683e3ada15dff5",
+      "expects_species": [
+        "apophyllite",
+        "chalcedony",
+        "hematite",
+        "heulandite",
+        "mesolite",
+        "quartz",
+        "scolecite",
+        "stilbite"
+      ],
+      "excluded_species": [
+        "chabazite",
+        "thomsonite"
+      ],
+      "event_types": [
+        "deccan_quartz_maturation",
+        "deccan_zeolite_apophyllite_stage_iii",
+        "deccan_zeolite_hematite_pulse",
+        "deccan_zeolite_late_cooling",
+        "deccan_zeolite_silica_veneer",
+        "deccan_zeolite_stage_ii",
+        "deccan_zeolite_stage_ii_sheets"
+      ],
+      "event_count": 7,
+      "extended_only_event_count": 0,
+      "movement_count": 2,
+      "archive": {
+        "path": "archive/strips/v251/deccan_zeolite.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "d9e8c5581258dc87d9209b367f65065795f997cda0814e0197b80bc5b7ad3c22",
+        "seed": 42,
+        "steps": 200
+      }
+    },
+    {
+      "id": "elmwood",
+      "scenario_spec_hash": "6ef9b2550639c2f1d208d8656ec5d1d6860c61a841566a21b3326c8da262ef46",
+      "anchor": "Elmwood-Gordonsville mines (Carthage, Smith County, TN) — Central Tennessee MVT district; the world-reference stepped golden calcite scalenohedra, on honey sphalerite with purple fluorite + barite, in Knox Group paleokarst breccia",
+      "duration_steps": 200,
+      "initial": {
+        "temperature_C": 120,
+        "pressure_kbar": 0.2,
+        "pH": 7.1,
+        "salinity_ppm": 21,
+        "shape_seed": 11,
+        "wall_composition": "dolomite"
+      },
+      "citations": [
+        "Gratz & Misra 1987 (Econ. Geol. 82) — Elmwood-Gordonsville fluid-inclusion microthermometry",
+        "Misra & Lu 1992 — Central Tennessee zinc district paragenesis",
+        "Kyle 1976 / district literature — Knox unconformity paleokarst breccia ore control",
+        "RESEARCH-calcite-morphology-2026-06-11.md §2 — oscillatory sigma -> step bunching (Movements as the driver)",
+        "Sibson 1992 fault-valve mechanics — episodic brine expulsion (the pulse-train shape)"
+      ],
+      "citations_sha256": "acc2577cd4eb4fe7cf14b9ed5a5c6d9a184ed16517b57f4a78a1a259f4ffd4b6",
+      "expects_species": [
+        "barite",
+        "calcite",
+        "fluorite",
+        "sphalerite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "elmwood_barite_stage",
+        "elmwood_diagenetic_sr",
+        "film_coat",
+        "fluid_mixing",
+        "tectonic_shock"
+      ],
+      "event_count": 9,
+      "extended_only_event_count": 0,
+      "movement_count": 3,
+      "archive": {
+        "path": "archive/strips/v251/elmwood.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "6ef9b2550639c2f1d208d8656ec5d1d6860c61a841566a21b3326c8da262ef46",
+        "seed": 42,
+        "steps": 200
+      }
+    },
+    {
+      "id": "epithermal_telluride",
+      "scenario_spec_hash": "8e518ef2a97a9664707d4113ad7e35a9e20df9695e07905aa16494e5b9ecc2ed",
+      "anchor": "Cripple Creek mining district, Teller County, Colorado — alkalic-volcanic-hosted low-sulfidation epithermal Au-Te. Cresson Mine pocket, Carlton tunnel level. Type district for the world's gold-telluride mineralogy (calaverite, sylvanite, krennerite, hessite, petzite, native tellurium).",
+      "duration_steps": 180,
+      "initial": {
+        "temperature_C": 280,
+        "pressure_kbar": 0.5,
+        "pH": 6.5,
+        "salinity_ppm": 5,
+        "shape_seed": 32,
+        "wall_composition": "phonolite"
+      },
+      "citations": [
+        "Saunders 1991, 2008 — Cripple Creek alkalic-igneous Au-Te paragenesis + fluid inclusion data",
+        "Kelley & Spry 2016 — alkalic gold-telluride deposits review (Econ. Geol.)",
+        "Pinch & Wilson 1977 — Cripple Creek + Sacarîmb (Romania) telluride mineralogy",
+        "Goldschmidt 1922 — calaverite morphology (92 forms catalogued; the 'incommensurate modulation' problem)"
+      ],
+      "citations_sha256": "b860b5784edc7ea4132fb4a5f7961fcd4297e0f728b1a96876de3798952a64e4",
+      "expects_species": [
+        "calaverite",
+        "hessite",
+        "native_tellurium",
+        "quartz",
+        "sylvanite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "cooling_pulse",
+        "fluid_pulse"
+      ],
+      "event_count": 4,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/epithermal_telluride.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "8e518ef2a97a9664707d4113ad7e35a9e20df9695e07905aa16494e5b9ecc2ed",
+        "seed": 42,
+        "steps": 180
+      }
+    },
+    {
+      "id": "gem_pegmatite",
+      "scenario_spec_hash": "b114712f212637f29d7bf9aaf3a29cc83dbcbe02ffb8267ba094813f30af8eac",
+      "anchor": "Cruzeiro mine, São José da Safira, Doce Valley, Minas Gerais (Variant A — Brasiliano-age miarolitic gem pegmatite, 700-450 Ma).",
+      "duration_steps": 230,
+      "initial": {
+        "temperature_C": 650,
+        "pressure_kbar": 3,
+        "pH": 6.8,
+        "salinity_ppm": 6,
+        "shape_seed": 8,
+        "wall_composition": "pegmatite"
+      },
+      "citations": [
+        "Morteani et al. 2002 — fluid chemistry of Brazilian gem pegmatites",
+        "Cassedanne 1991 — Cruzeiro mine paragenesis",
+        "Proctor 1985 — Cruzeiro tourmaline + beryl mineralogy",
+        "London 2008 — pegmatite fluid Al partition (~150 ppm upper bound)"
+      ],
+      "citations_sha256": "6ab07abc9c17545281ab2fe3928bc2a0a5e09a0c88bf325d53d69d4e2c7c27ab",
+      "expects_species": [
+        "albite",
+        "cassiterite",
+        "feldspar",
+        "lepidolite",
+        "spodumene",
+        "tourmaline"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "gem_pegmatite_albitization",
+        "gem_pegmatite_be_saturation",
+        "gem_pegmatite_clay_softening",
+        "gem_pegmatite_final",
+        "gem_pegmatite_first_schorl",
+        "gem_pegmatite_late_hydrothermal",
+        "gem_pegmatite_li_phase",
+        "gem_pegmatite_outer_shell"
+      ],
+      "event_count": 8,
+      "extended_only_event_count": 0,
+      "movement_count": 1,
+      "archive": {
+        "path": "archive/strips/v251/gem_pegmatite.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "b114712f212637f29d7bf9aaf3a29cc83dbcbe02ffb8267ba094813f30af8eac",
+        "seed": 42,
+        "steps": 230
+      }
+    },
+    {
+      "id": "great_salt_plains",
+      "scenario_spec_hash": "fc968fd2d0763db80d518bd7f8a1eaaa00297a97c9bb1cf8992e2983293ca210",
+      "anchor": "Salt Plains National Wildlife Refuge, Alfalfa County, Oklahoma — a 65-km² salt flat on the Permian red beds (Flowerpot Shale / Cedar Hills Sandstone). The ONLY place on Earth selenite grows the iron-stained 'hourglass' habit. The hourglass selenite is the Oklahoma state crystal; the refuge is the public crystal-digging locality.",
+      "duration_steps": 250,
+      "initial": {
+        "temperature_C": 28,
+        "pressure_kbar": 0.05,
+        "pH": 7.6,
+        "salinity_ppm": 200,
+        "shape_seed": 1930,
+        "wall_composition": "sandstone"
+      },
+      "citations": [
+        "U.S. Fish & Wildlife Service — Salt Plains National Wildlife Refuge, selenite crystal digging (formation mechanism: gypsum-saturated groundwater evaporating under a salt crust; clay/sand/iron-oxide inclusions form the hourglass)",
+        "Oklahoma Geological Survey / Oklahoma Historical Society — Great Salt Plains; hourglass selenite as the Oklahoma state crystal",
+        "Ham W.E. (1961) Oklahoma Geological Survey — geology of the Salt Plains / Permian red-bed evaporites of northwestern Oklahoma",
+        "Johnson K.S. (2019) Oklahoma Geological Survey Open-File Report 3-2019 — Geologic studies, natural-brine emissions, and hourglass-selenite crystals at Great Salt Plains; reproduces Johnson (1972) brine analyses"
+      ],
+      "citations_sha256": "613a0a20fe816651aef19290ddc86ee854474dd3d7dbf162a4e8d6eb29699ebe",
+      "expects_species": [
+        "celestine",
+        "halite",
+        "selenite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "gsp_crust_seal",
+        "gsp_dry",
+        "gsp_flood",
+        "gsp_wet"
+      ],
+      "event_count": 12,
+      "extended_only_event_count": 1,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/great_salt_plains.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "fc968fd2d0763db80d518bd7f8a1eaaa00297a97c9bb1cf8992e2983293ca210",
+        "seed": 42,
+        "steps": 250
+      }
+    },
+    {
+      "id": "grimsel_alpine_cleft",
+      "scenario_spec_hash": "6d561037461326c14020a906b31fd71e3104c5aa333d6ca575ef9c736f1e8ba9",
+      "anchor": "Grimsel Pass / central Aar massif, Bernese-Uri Alps, Switzerland — the type region of the Swiss alpine-cleft (Zerrkluft) SMOKY-QUARTZ suite (with Göscheneralp, Furka, Gotthard analogues). The granite-hosted counterpart to the amphibolite-hosted epidote cleft (tormiq_alpine_cleft); the content home for the quartz-morphology arc (sceptre / Tessin / fenster / gwindel).",
+      "duration_steps": 200,
+      "initial": {
+        "temperature_C": 450,
+        "pressure_kbar": 4.4,
+        "pH": 7,
+        "salinity_ppm": 2,
+        "shape_seed": 1932,
+        "wall_composition": "pegmatite"
+      },
+      "citations": [
+        "Mullis, Dubessy, Poty & O'Neil 1994, Geochim. Cosmochim. Acta 58(10):2239-2267 — fissure-quartz fluid inclusions, Central Alps geotraverse",
+        "Mullis 1996, Schweiz. Mineral. Petrogr. Mitt. 76:159-164 — P-T-t path of quartz formation in extensional veins of the Central Alps",
+        "Gnos, Mullis & Bergemann 2025, Swiss J. Geosci. 118(1):12 — P-T-t of successive deformation stages, Aar Massif (the D1/D2/D3 crack-seal spine)",
+        "Poty 1969, PhD thesis Univ. Nancy — La croissance des cristaux de quartz dans les filons (La Gardette + Mont-Blanc; fissure quartz 350-420C)",
+        "Rossman 1994, Reviews in Mineralogy 29:433-467 (MSA) — the colored varieties of silica (smoky-quartz Al + irradiation color-center mechanism)",
+        "quartzpage.de — alpine-type fissures, quartz habits (Tessin / sceptre / gwindel), smoky quartz (careful secondary synthesis)"
+      ],
+      "citations_sha256": "82a224e41024a8275527daede211b6f43ad0f565644a42fba95ab78f197b1e60",
+      "expects_species": [
+        "apatite",
+        "calcite",
+        "feldspar",
+        "fluorite",
+        "hematite",
+        "quartz",
+        "titanite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "grimsel_breach_1",
+        "grimsel_breach_2",
+        "grimsel_cleft_open",
+        "grimsel_late_carbonate",
+        "grimsel_oxide_roses",
+        "grimsel_seal_1",
+        "grimsel_seal_2"
+      ],
+      "event_count": 7,
+      "extended_only_event_count": 0,
+      "movement_count": 3,
+      "archive": {
+        "path": "archive/strips/v251/grimsel_alpine_cleft.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "6d561037461326c14020a906b31fd71e3104c5aa333d6ca575ef9c736f1e8ba9",
+        "seed": 42,
+        "steps": 200
+      }
+    },
+    {
+      "id": "jeffrey_mine",
+      "scenario_spec_hash": "4c9ff574296fb572316e3b7316725f42b487a1b44e23d29baebd285e91d4e1d3",
+      "anchor": "Jeffrey Mine, Val-des-Sources (formerly Asbestos), Quebec, Canada. Open-pit chrysotile-asbestos mine 1881-2011; produced ~40% of world chrysotile for most of the 20th century. Town renamed itself in 2020 from Asbestos to Val-des-Sources to step out from under the asbestos-health-crisis baggage. Among mineral collectors NOT famous for asbestos but for the rodingite metasomatic assemblage exposed by the open-pit excavation — Ca-Al-Mg silicate cabinet specimens 1880s through 2011. The world's premier locality for cabinet-grade CYPRINE vesuvianite (Cu-bearing sky-to-deep-blue Cu²⁺-O charge-transfer variety per Bernardini 1981 MR 12(5):277 figs 12-15). Geological context: Thetford Mines ophiolite complex, Quebec Appalachians, obducted ophiolite from the Taconian Orogeny ~470 Ma; host is serpentinized peridotite with cross-cutting mafic dikes that have been metasomatically altered to rodingite.",
+      "duration_steps": 200,
+      "initial": {
+        "temperature_C": 380,
+        "pressure_kbar": 1.5,
+        "pH": 10,
+        "salinity_ppm": 1.5,
+        "shape_seed": 1881,
+        "wall_composition": "ultramafic"
+      },
+      "citations": [
+        "Bernardini G.P. (1981) — The Jeffrey Mine, Asbestos, Quebec. Mineralogical Record 12(5): 277-291. THE canonical Jeffrey paper; per-mineral descriptions + habit + paragenesis + cyprine vesuvianite figs 12-15 world-reference material.",
+        "Hudson R.G.S. (1922) — The geology of the Chrysotile-bearing serpentine of southern Quebec. Geological Survey of Canada. Early reference for the Thetford Mines ophiolite framework.",
+        "Coleman R.G. (1977) — Ophiolites: Ancient Oceanic Lithosphere? Springer-Verlag. Global rodingite framework + serpentine mineralogy. The textbook for ophiolite-hosted rodingite paragenesis.",
+        "Wares R. (1987) — PhD thesis (Univ. Sherbrooke or McGill), detailed Thetford Mines complex geology. Field-mapped petrography of the host serpentinite + dike contacts.",
+        "Wicks F.J. & Plant A.G. (1979) — Electron-microprobe and transmission-electron-microscope study of serpentine textures. Canadian Mineralogist 17: 785-830. Serpentinite-host chemistry + chrysotile/lizardite/antigorite discrimination.",
+        "O'Hanley D.S. (1996) — Serpentinites: Records of Tectonic and Petrological History. Oxford University Press. Rodingite + serpentinization framework.",
+        "Manning C.E. & Bird D.K. (1990) — Hydrothermal clinopyroxenes from rodingites. Journal of Petrology 31: 1-37. Rodingite-clinopyroxene canonical for diopside + augite endmember stability.",
+        "Bird D.K. & Bassett W.A. (1980) — Fluid inclusion and thermodynamic study of an active geothermal system. Geochim. Cosmochim. Acta 44: 1659. Fe-Ni alloy stability in serpentinite — anchors awaruite gates.",
+        "Frost B.R. (1985) — On the stability of sulfides, oxides and native metals in serpentinite. Contributions to Mineralogy and Petrology 91: 139-153. Sulfur + oxygen fugacity controls — the framework for the awaruite low-S strict gate.",
+        "Hawthorne F.C., Burns P.C., Grice J.D. (1996) — The crystal chemistry of boron. Reviews in Mineralogy 33: 41-115. Boron-mineral chemistry framework — datolite + tourmaline lattice partitioning.",
+        "Allen F.M. & Burnham C.W. (1992) — Vesuvianite structure-model + symmetry variations. American Mineralogist 77: 268-285. Vesuvianite crystal chemistry.",
+        "Groat L.A., Hawthorne F.C., Ercit T.S. (1992) — The chemistry of vesuvianite. Canadian Mineralogist 30: 19-48.",
+        "Filipos P.J. & Frantz J.D. (1979) — Larimar: A blue pectolite from Hispaniola. Geological Magazine 116: 323. Cu-bearing pectolite color framework; applies to potential Jeffrey blue-pectolite micro-occurrences though canonical Jeffrey pectolite is white.",
+        "Liou J.G. (1971) — Synthesis and stability relations of prehnite. American Mineralogist 56: 507-531. DEFINITIVE prehnite stability + zeolite-facies parageneses.",
+        "Krenn K. & Hauzenberger C.A. (2007) — Tonga ophiolite Fe-Ni alloy thermometry. Awaruite stability framework.",
+        "Research dossier 2026-05-20 — internal Jeffrey research compilation anchoring scenario broth on Bernardini 1981 + Coleman 1977 + Wicks & Plant 1979 + Manning & Bird 1990."
+      ],
+      "citations_sha256": "0e9b83079c923cfbbf12810925fed74317d448aaaed0bdcd4c53ce5086903331",
+      "expects_species": [
+        "awaruite",
+        "brucite",
+        "calcite",
+        "chrysotile",
+        "datolite",
+        "diopside",
+        "grossular",
+        "pectolite",
+        "prehnite",
+        "vesuvianite",
+        "wollastonite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "jeffrey_mine_dike_alteration",
+        "jeffrey_mine_late_ca_silicates",
+        "jeffrey_mine_mid_rodingite",
+        "jeffrey_mine_serpentinization_onset",
+        "jeffrey_mine_terminal_datolite"
+      ],
+      "event_count": 5,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/jeffrey_mine.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "4c9ff574296fb572316e3b7316725f42b487a1b44e23d29baebd285e91d4e1d3",
+        "seed": 42,
+        "steps": 200
+      }
+    },
+    {
+      "id": "marble_contact_metamorphism",
+      "scenario_spec_hash": "6760433d44fe528ba3fa583418f7b3b8d10d6df705c0c3022aa242ca69439a11",
+      "anchor": "Mogok Stone Tract, Mandalay Region, Burma — type locality for marble-hosted ruby + 2000+-year source of 'pigeon's blood' rubies",
+      "duration_steps": 180,
+      "initial": {
+        "temperature_C": 500,
+        "pressure_kbar": 3,
+        "pH": 8,
+        "salinity_ppm": 2,
+        "shape_seed": 11,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "Ferrill D.A. et al. 2004 (J. Struct. Geol. 26:1521) — calcite twin morphology Type I-IV geothermometer",
+        "Burkhard M. 1993 (J. Struct. Geol. 15:351) — calcite twins as strain/T gauge; Turner 1953 (Am. J. Sci. 251:276)",
+        "Garnier et al. 2008 (Ore Geology Reviews 34:169-191) — Marble-hosted ruby deposits from Central and Southeast Asia",
+        "Peretti et al. 2018 (Gems & Gemology special issue) — Update on corundum and its gem varieties",
+        "Searle et al. 2007 (Journal of Geology 115:1-23) — Tectonic evolution of the Mogok metamorphic belt, Burma (Myanmar)"
+      ],
+      "citations_sha256": "1c1360c784b3e26ce5d7dd1d4d25f480945b4ea567cbb7a7effb66a15c979f4b",
+      "expects_species": [
+        "calcite",
+        "ruby"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "marble_fracture_seal",
+        "marble_peak_metamorphism",
+        "marble_retrograde_cooling",
+        "marble_tectonic_strain"
+      ],
+      "event_count": 4,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/marble_contact_metamorphism.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "6760433d44fe528ba3fa583418f7b3b8d10d6df705c0c3022aa242ca69439a11",
+        "seed": 42,
+        "steps": 180
+      }
+    },
+    {
+      "id": "mvt",
+      "scenario_spec_hash": "89a09a533cc8a0310803590948ed092c50d9496688b7d94918711ae9dc03e556",
+      "anchor": "Tri-State district (Joplin / Picher / Galena MO-KS-OK) — Pb-Zn in Mississippian Boone Formation cherty limestone",
+      "duration_steps": 120,
+      "initial": {
+        "temperature_C": 180,
+        "pressure_kbar": 0.3,
+        "pH": 7.2,
+        "salinity_ppm": 15,
+        "shape_seed": 3,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "Roedder 1976 — Tri-State fluid-inclusion microthermometry",
+        "Ohle 1959 — Tri-State district geology",
+        "Hagni 1976 — Tri-State paragenesis",
+        "Stoffell et al. 2008 — LA-ICP-MS fluid-inclusion brine analyses",
+        "Anderson & Macqueen 1982 — MVT mineralogy review",
+        "Schwartz 2000 (Econ. Geol. 95) — Cd in MVT sphalerite",
+        "Hanor 1994 — basinal-brine compendium (Sr/Ba tracers)"
+      ],
+      "citations_sha256": "9cb8cfa261293d94c3432f81ac367e14316e8afdf88852d06e290125e5b16879",
+      "expects_species": [
+        "barite",
+        "calcite",
+        "fluorite",
+        "galena",
+        "sphalerite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "fluid_mixing",
+        "fluid_pulse",
+        "tectonic_shock"
+      ],
+      "event_count": 3,
+      "extended_only_event_count": 0,
+      "movement_count": 1,
+      "archive": {
+        "path": "archive/strips/v251/mvt.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "89a09a533cc8a0310803590948ed092c50d9496688b7d94918711ae9dc03e556",
+        "seed": 42,
+        "steps": 120
+      }
+    },
+    {
+      "id": "naica_geothermal",
+      "scenario_spec_hash": "0b14ccebf230fbfd26ddcfd880ad714d08956ebccf3967b41e3229d08ca6abd5",
+      "anchor": "Naica, Chihuahua, Mexico — Cueva de los Cristales, 290 m below surface. Lead-Zinc-Silver mine (Industrias Peñoles); the giant selenite cave was breached in April 2000 when a mine drift broke through into the chamber. Selenite blades up to 12 m × 1 m × 55 tonnes.",
+      "duration_steps": 320,
+      "initial": {
+        "temperature_C": 56,
+        "pressure_kbar": 0.08,
+        "pH": 7.2,
+        "salinity_ppm": 4,
+        "shape_seed": 58,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "Garcia-Ruiz, Villasuso, Ayora, Canals, Otálora 2007 (Geology 35:327) — Formation of natural gypsum megacrystals in Naica, Mexico",
+        "Otálora & Garcia-Ruiz 2014 (Chem. Soc. Rev. 43:2013) — Nucleation and growth of the Naica giant gypsum crystals",
+        "Forti & Sanna 2010 (NSS Bull.) — The Naica caves and their crystals: a unique speleological problem",
+        "Van Driessche, Garcia-Ruiz, Tsukamoto, Patiño-Lopez, Satoh 2011 (PNAS 108:15721) — Ultraslow growth rates of giant gypsum crystals (the measured stability the v182 thermal movement models: no-noise pool at marginal saturation)"
+      ],
+      "citations_sha256": "8f3ea63650ebb12bba866567e664b1281742ad6f79530bad40bd19de4e9dc7a0",
+      "expects_species": [
+        "selenite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "naica_mining_drainage",
+        "naica_mining_recharge",
+        "naica_slow_cooling"
+      ],
+      "event_count": 8,
+      "extended_only_event_count": 0,
+      "movement_count": 1,
+      "archive": {
+        "path": "archive/strips/v251/naica_geothermal.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "0b14ccebf230fbfd26ddcfd880ad714d08956ebccf3967b41e3229d08ca6abd5",
+        "seed": 42,
+        "steps": 320
+      }
+    },
+    {
+      "id": "ouro_preto",
+      "scenario_spec_hash": "fce77488d63ccb9a163d2c41e90299273aae1d590bbbe5b99d8404ed055d5acd",
+      "anchor": "Ouro Preto Imperial Topaz veins, Minas Gerais, Brazil (Variant B per Morteani et al. 2002).",
+      "duration_steps": 260,
+      "initial": {
+        "temperature_C": 360,
+        "pressure_kbar": 3.5,
+        "pH": 6.5,
+        "salinity_ppm": 3,
+        "shape_seed": 9,
+        "wall_composition": "pegmatite"
+      },
+      "citations": [
+        "Morteani et al. 2002 — fluid inclusion microthermometry of Ouro Preto Imperial Topaz veins"
+      ],
+      "citations_sha256": "0ea3acd4620d4d796108ca6067067a57648a6c3cb6f39aea887306bf9c0a9f45",
+      "expects_species": [
+        "quartz",
+        "topaz"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "ouro_preto_cr_leach",
+        "ouro_preto_f_pulse",
+        "ouro_preto_final_cooling",
+        "ouro_preto_late_hydrothermal",
+        "ouro_preto_oxidation_stain",
+        "ouro_preto_steady_cooling",
+        "ouro_preto_vein_opening"
+      ],
+      "event_count": 7,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/ouro_preto.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "fce77488d63ccb9a163d2c41e90299273aae1d590bbbe5b99d8404ed055d5acd",
+        "seed": 42,
+        "steps": 260
+      }
+    },
+    {
+      "id": "porphyry",
+      "scenario_spec_hash": "06bb7b5e56109fea53d953ccd521b90e0b0db6be3f410d4a72e7f79f0580a48a",
+      "anchor": "Bingham Canyon Cu-Mo-Au, Oquirrh Mountains, UT (late-Eocene quartz-monzonite porphyry, ~38 Ma)",
+      "duration_steps": 120,
+      "initial": {
+        "temperature_C": 400,
+        "pressure_kbar": 2,
+        "pH": 4.5,
+        "salinity_ppm": 10,
+        "shape_seed": 4,
+        "wall_composition": "pegmatite"
+      },
+      "citations": [
+        "Landtwing et al. 2010 (Econ. Geol. 105) — Bingham fluid evolution + Au content",
+        "Seo et al. 2012 — Mo pulse timing in porphyry systems",
+        "Heinrich 2007 — porphyry fluid chemistry compendium",
+        "Kouzmanov & Pokrovski 2012 — As activity in epithermal Cu systems"
+      ],
+      "citations_sha256": "4dc9d57c977bde0454ac262650b6d8beb59b7f28fd795ef1e252d952b8b18b2d",
+      "expects_species": [
+        "chalcopyrite",
+        "molybdenite",
+        "pyrite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "cooling_pulse",
+        "copper_injection",
+        "molybdenum_pulse",
+        "oxidation"
+      ],
+      "event_count": 5,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/porphyry.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "06bb7b5e56109fea53d953ccd521b90e0b0db6be3f410d4a72e7f79f0580a48a",
+        "seed": 42,
+        "steps": 120
+      }
+    },
+    {
+      "id": "pulse",
+      "scenario_spec_hash": "7703c131164c85391310268eb8e57397b65ec715fe1e1397b0e0a4dfceb1d68d",
+      "anchor": "(generic testing scaffold — no specific locality)",
+      "duration_steps": 100,
+      "initial": {
+        "temperature_C": 350,
+        "pressure_kbar": 1.2,
+        "pH": null,
+        "salinity_ppm": null,
+        "shape_seed": 2,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "(testing scaffold — no published source)"
+      ],
+      "citations_sha256": "0511de46f7cca4514a85fe731e509d975c5b190141b9ebde483f78aa3fc11b04",
+      "expects_species": [
+        "quartz"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "cooling_pulse",
+        "fluid_pulse"
+      ],
+      "event_count": 2,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/pulse.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "7703c131164c85391310268eb8e57397b65ec715fe1e1397b0e0a4dfceb1d68d",
+        "seed": 42,
+        "steps": 100
+      }
+    },
+    {
+      "id": "radioactive_pegmatite",
+      "scenario_spec_hash": "ba6b61443e1aacb810c89e31d2dad3bb50b6ab4ac2e921a5cd0b03312e416124",
+      "anchor": "(generic high-T alkali-granite pocket — not anchored to a specific locality)",
+      "duration_steps": 120,
+      "initial": {
+        "temperature_C": 600,
+        "pressure_kbar": 2,
+        "pH": 6.5,
+        "salinity_ppm": 8,
+        "shape_seed": 6,
+        "wall_composition": "pegmatite"
+      },
+      "citations": [
+        "(generic testing scenario — no published source)"
+      ],
+      "citations_sha256": "7962689acfcc23743a0cffdc71c2efdd17d910dbbabca9eee74db82742696742",
+      "expects_species": [
+        "cassiterite",
+        "feldspar",
+        "lepidolite",
+        "quartz",
+        "uraninite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "radioactive_pegmatite_crystallization",
+        "radioactive_pegmatite_deep_time",
+        "radioactive_pegmatite_final_cooling",
+        "radioactive_pegmatite_oxidizing"
+      ],
+      "event_count": 4,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/radioactive_pegmatite.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "ba6b61443e1aacb810c89e31d2dad3bb50b6ab4ac2e921a5cd0b03312e416124",
+        "seed": 42,
+        "steps": 120
+      }
+    },
+    {
+      "id": "reactivated_fluorite_vein",
+      "scenario_spec_hash": "a468d4e66b438f087168150c1283fa8757e51bce9bf2e0e38adaa83ac726d0a0",
+      "anchor": "North Pennine Orefield style (Weardale district, England) — a fluorite-galena-barite vein on a reactivated fault (Dunham 1990, BGS Economic Memoir).",
+      "duration_steps": 160,
+      "initial": {
+        "temperature_C": 180,
+        "pressure_kbar": 0.3,
+        "pH": 7.2,
+        "salinity_ppm": 15,
+        "shape_seed": 1850,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "Dunham, K.C. (1990) — Geology of the Northern Pennine Orefield, Vol. 1 (2nd ed.), British Geological Survey Economic Memoir.",
+        "Ramsay, J.G. (1980) — The crack-seal mechanism of rock deformation, Nature 284.",
+        "Bons, Elburg & Gomez-Rivas (2012) — A review of the formation of tectonic veins and their microstructures, Journal of Structural Geology."
+      ],
+      "citations_sha256": "677adc3e73a8d53acb59d17fff3a64d2ee5cfc1d9052d851add5d0485f8dd5fe",
+      "expects_species": [
+        "barite",
+        "calcite",
+        "fluorite",
+        "galena",
+        "sphalerite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "fluid_mixing",
+        "fluid_pulse",
+        "reactivated_vein_breach",
+        "reactivated_vein_seal"
+      ],
+      "event_count": 4,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/reactivated_fluorite_vein.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "a468d4e66b438f087168150c1283fa8757e51bce9bf2e0e38adaa83ac726d0a0",
+        "seed": 42,
+        "steps": 160
+      }
+    },
+    {
+      "id": "reactive_wall",
+      "scenario_spec_hash": "99dbfb7bfd21d0c653a8a032135716d6628c1207aaf2945d8adeabdc0257ca7b",
+      "anchor": "Sweetwater Mine (Reynolds County, MO), Viburnum Trend Pb-Zn district. Host: Upper Cambrian Bonneterre Dolomite/dolostone.",
+      "duration_steps": 120,
+      "initial": {
+        "temperature_C": 140,
+        "pressure_kbar": 0.2,
+        "pH": 7,
+        "salinity_ppm": 18,
+        "shape_seed": 5,
+        "wall_composition": "dolomite"
+      },
+      "citations": [
+        "Sverjensky 1981 (Econ. Geol. 76) — Viburnum Trend brine geochemistry",
+        "Stoffell et al. 2008 — LA-ICP-MS fluid-inclusion brine analyses (Tri-State vs Viburnum distinction)",
+        "Leach et al. 2010 — MVT genesis review",
+        "Anderson & Macqueen 1982 — MVT mineralogy review",
+        "Hanor 1994 — basinal-brine compendium (Sr/Ba tracers)",
+        "Rowan & Leach 1989, Economic Geology 84:1948-1963 — 105-125 C saline inclusions in Bonneterre hydrothermal dolomite; regional advective heat transport and cooling rejected as the primary sulfide driver"
+      ],
+      "citations_sha256": "23ca199820c27e05ad6fcb3c89a925b1625faaea17c8d64d8d69dcff15f6ca21",
+      "expects_species": [
+        "calcite",
+        "dolomite",
+        "galena",
+        "marcasite",
+        "pyrite",
+        "sphalerite"
+      ],
+      "excluded_species": [
+        "acanthite",
+        "barite",
+        "celestine",
+        "rhodochrosite",
+        "selenite",
+        "siderite"
+      ],
+      "event_types": [
+        "reactive_wall_acid_pulse_1",
+        "reactive_wall_acid_pulse_2",
+        "reactive_wall_acid_pulse_3",
+        "reactive_wall_seal"
+      ],
+      "event_count": 4,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/reactive_wall.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "99dbfb7bfd21d0c653a8a032135716d6628c1207aaf2945d8adeabdc0257ca7b",
+        "seed": 42,
+        "steps": 120
+      }
+    },
+    {
+      "id": "roughten_gill",
+      "scenario_spec_hash": "9aa83b17961beff1755619dec6919551a9982c9a114748356884214503371471",
+      "anchor": "Roughten Gill Mine, Caldbeck Fells, Lake District, Cumbria, England. Polymetallic Pb-Cu fissure-vein deposit in Eycott Volcanic Group + Carrock Fell Intrusive Complex (granophyre footwall + gabbro hangingwall). Worked 1700s-1894 for lead + minor copper, dumps reworked for barite post-1894; classic specimen-collector locality. TYPE LOCALITY for plumbogummite (Hartley 1882; Förtsch 1967 corrected type material to plumbogummite-hinsdalite-hidalgoite mix-crystal). Per Cooper & Stanley (1990) 'Minerals of the English Lake District: Caldbeck Fells' + the Russell Society multi-part review (Bridges et al. 2011 Part 3).",
+      "duration_steps": 200,
+      "initial": {
+        "temperature_C": 130,
+        "pressure_kbar": 0.5,
+        "pH": 5,
+        "salinity_ppm": 8,
+        "shape_seed": 1882,
+        "wall_composition": "basalt"
+      },
+      "citations": [
+        "Cooper M.P. & Stanley C.J. (1990) — Minerals of the English Lake District: Caldbeck Fells. Natural History Museum, London. ISBN 0-565-01102-2. THE canonical multi-volume monograph with per-mine paragenetic detail for every Caldbeck locality.",
+        "Bridges T.F., Green D.I., Rumsey M.S. & Leppington C.M. (2011) — A review of the mineralisation at the Roughton Gill Mines, Caldbeck Fells, Cumbria: Part 3 - Roughton Gill Mine. Journal of the Russell Society 14: 3-23. The modern definitive paper on Roughten Gill specifically.",
+        "Green D.I., Bridges T.F., Rumsey M.S., Leppington C.M. & Tindle A.G. (2008) — A review of the mineralogy of the Roughton Gill Mines, Caldbeck Fells, Cumbria: Part 2 - The Roughton Gill South Vein on Balliway Rigg. Journal of the Russell Society 11: 3-28.",
+        "Rumsey M.S. et al. (2008) — A review of the mineralization at Red Gill Mine, Caldbeck Fells, Cumbria, England. Journal of the Russell Society 11: 29-47. Companion paper covering the adjacent Red Gill (carbonate-deficient supergene chemistry is identified there and applies to Roughten Gill similarly).",
+        "Symes R.F. & Young B.R. (2008) — Minerals of Northern England. British Geological Survey / National Museums Scotland. ISBN 978-1-905267-01-9. Regional context for Caldbeck within the broader Northern English mining heritage.",
+        "Förtsch E.B. (1967) — Plumbogummite from Roughten Gill, Cumberland. Mineralogical Magazine 36 (280): 530-538. DOI 10.1180/minmag.1967.036.280.07. Critical re-examination of Hartley's 1882 type material — demonstrated it is a plumbogummite-hinsdalite-hidalgoite mix-crystal by X-ray + IR + optical methods.",
+        "Hartley J. (1882) — On plumbogummite from Roughten Gill, Cumberland. Mineralogical Magazine 5: 21-23. Original type description of plumbogummite from the type locality.",
+        "Russell A. (1925) — On the occurrence of plumbogummite at Roughten Gill, Cumberland. Mineralogical Magazine 20: 257-264. Russell's Caldbeck mineralogy work.",
+        "Russell A. (1986) — A review of the mineralization of the English Lake District. Mineralogical Magazine 50: 587-600.",
+        "Pluth J.J., Steele I.M., Kampf A.R. & Green D.I. (2005) — Redgillite, Cu6(OH)10(SO4).H2O, a new mineral from Caldbeck Fells, Cumbria, England: description and crystal structure. Mineralogical Magazine 69: 973-980. Redgillite is a Caldbeck type-locality species (Red Gill, adjacent); flagged for future add-mineral.",
+        "Stanley C.J., Symes R.F. & Jones G.C. (1991) — Nickeloan mottramite and a chemical and structural study of the descloizite group of minerals. Mineralogical Magazine 55: 121-126. Caldbeck mottramite chemistry.",
+        "Goldring D. (1991) — Cumbria's Underground Heritage. Historical mining context for the Caldbeck Fells district + Roughten Gill working history.",
+        "British Geological Survey Earthwise — Mineralization in the Lake District. Fluid-inclusion T 110-130°C, K-Ar wallrock alteration ages 360-330 Ma, sulfur partly from Carboniferous evaporites, Ag-in-galena ~838 ppm.",
+        "Research dossier 2026-05-20 — internal research-agent compilation anchoring the scenario broth on Cooper & Stanley 1990 + Russell Society three-part review + BGS Earthwise."
+      ],
+      "citations_sha256": "e10d9746f2f0eaf3b25490b656627bea89fc4f33fca72516887aec05eab2e6e0",
+      "expects_species": [
+        "anglesite",
+        "brochantite",
+        "caledonite",
+        "cerussite",
+        "galena",
+        "leadhillite",
+        "linarite",
+        "mottramite",
+        "pyrite",
+        "pyromorphite",
+        "sphalerite",
+        "tennantite",
+        "tetrahedrite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "roughten_gill_caledonite_transition",
+        "roughten_gill_leadhillite_cap",
+        "roughten_gill_linarite_stage",
+        "roughten_gill_primary_lockup",
+        "roughten_gill_pyrite_oxidation"
+      ],
+      "event_count": 5,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/roughten_gill.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "9aa83b17961beff1755619dec6919551a9982c9a114748356884214503371471",
+        "seed": 42,
+        "steps": 200
+      }
+    },
+    {
+      "id": "sabkha_dolomitization",
+      "scenario_spec_hash": "ad7bf2ea0d7b718e123f35d79bf73f0f65c31f41990f146798301f81b02a6ed7",
+      "anchor": "Coorong lagoon system (South Australia) and Persian Gulf sabkhas. The classic natural laboratory for direct-from-solution dolomite formation per Kim, Sun et al. 2023 (Science 382:915).",
+      "duration_steps": 260,
+      "initial": {
+        "temperature_C": 25,
+        "pressure_kbar": 0.05,
+        "pH": 8.3,
+        "salinity_ppm": 120,
+        "shape_seed": 24,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "Kim, Sun et al. 2023 (Science 382:915) — cyclic Ω modulation produces ordered dolomite at ambient T",
+        "Coorong lagoon (South Australia) + Persian Gulf sabkhas — natural laboratory anchors"
+      ],
+      "citations_sha256": "b2e829f5679cbf13b2f011149132f38b790f4fb47b7ceea1d742bcb6300450b7",
+      "expects_species": [
+        "anhydrite",
+        "dolomite",
+        "selenite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "sabkha_evap",
+        "sabkha_final_seal",
+        "sabkha_flood"
+      ],
+      "event_count": 25,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/sabkha_dolomitization.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "ad7bf2ea0d7b718e123f35d79bf73f0f65c31f41990f146798301f81b02a6ed7",
+        "seed": 42,
+        "steps": 260
+      }
+    },
+    {
+      "id": "schneeberg",
+      "scenario_spec_hash": "eef3a58e24fbd1c521b86551910cc1bebbdf70a97cde24757549adab92d98451",
+      "anchor": "Schneeberg, Erzgebirgskreis (Saxony Ore Mountains), Germany — type locality for torbernite (1772), zeunerite (1872), uranospinite (1873), and ten more uranyl arsenate-phosphate species. Walpurgis Flacher vein, Weisser Hirsch Mine.",
+      "duration_steps": 160,
+      "initial": {
+        "temperature_C": 450,
+        "pressure_kbar": 1.5,
+        "pH": 6.5,
+        "salinity_ppm": 6,
+        "shape_seed": 9,
+        "wall_composition": "pegmatite"
+      },
+      "citations": [
+        "Pinch & Wilson 1977 — canonical Schneeberg/Erzgebirge monograph",
+        "Weisbach 1872 — zeunerite type description (Walpurgis Flacher vein)",
+        "Weisbach 1873 — uranospinite type description (Weisser Hirsch Mine)",
+        "Klaproth 1789 — uranium discovery in Schneeberg pitchblende",
+        "research/minerals/research-uranospinite.md (May 2026) — cation-fork mechanic + paragenesis"
+      ],
+      "citations_sha256": "108321473394b9858641dd2d9082c9a663759bc1497f049517dbd992f1f54936",
+      "expects_species": [
+        "annabergite",
+        "autunite",
+        "cassiterite",
+        "cobaltite",
+        "erythrite",
+        "native_arsenic",
+        "native_bismuth",
+        "nickeline",
+        "pharmacolite",
+        "torbernite",
+        "uraninite",
+        "uranospinite",
+        "zeunerite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "schneeberg_as_pulse_late",
+        "schneeberg_cooling",
+        "schneeberg_cu_as_pulse",
+        "schneeberg_cu_depletion",
+        "schneeberg_cu_p_phase",
+        "schneeberg_pegmatite_crystallization",
+        "schneeberg_vadose_exhumation"
+      ],
+      "event_count": 7,
+      "extended_only_event_count": 0,
+      "movement_count": 1,
+      "archive": {
+        "path": "archive/strips/v251/schneeberg.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "eef3a58e24fbd1c521b86551910cc1bebbdf70a97cde24757549adab92d98451",
+        "seed": 42,
+        "steps": 160
+      }
+    },
+    {
+      "id": "searles_lake",
+      "scenario_spec_hash": "c5bdf3056193ed94dfe8df2b9de3eccdae69966d32e8fb348e3d5bb493e47afc",
+      "anchor": "Searles Lake, San Bernardino County, California — Pleistocene-Holocene closed-basin alkaline-saline brine, the textbook locality for sodium-borate / sodium-sulfate / sodium-chloride evaporites. ~70 evaporite mineral species documented (Smith 1979 USGS PP 1043). Type locality for hanksite, sulfohalite, borax (commercially), tincalconite.",
+      "duration_steps": 300,
+      "initial": {
+        "temperature_C": 18,
+        "pressure_kbar": 0.05,
+        "pH": 9.5,
+        "salinity_ppm": 180,
+        "shape_seed": 1862,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "Smith 1979 USGS Professional Paper 1043 — Subsurface Stratigraphy and Geochemistry of Late Quaternary Evaporites, Searles Lake, California",
+        "Smith & Pratt 1957 USGS Bull. 1045-A — Hanksite from Searles Lake",
+        "Eugster 1980 Annu. Rev. Earth Planet. Sci. 8:35 — Lake Magadi-Searles brine geochemistry",
+        "Boron, CA + Death Valley — adjacent commercially-active borate localities in the same basin family"
+      ],
+      "citations_sha256": "b31587165b1a958ef084036239b745d1d94516dcda26c3ee37ce5d9a9c931fff",
+      "expects_species": [
+        "borax",
+        "halite",
+        "mirabilite",
+        "thenardite",
+        "tincalconite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "searles_fresh_pulse",
+        "searles_summer_bake",
+        "searles_winter_freeze"
+      ],
+      "event_count": 13,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/searles_lake.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "c5bdf3056193ed94dfe8df2b9de3eccdae69966d32e8fb348e3d5bb493e47afc",
+        "seed": 42,
+        "steps": 300
+      }
+    },
+    {
+      "id": "shigar_pegmatite",
+      "scenario_spec_hash": "1b666c17ad29a6cc9431233b662762e0d6423556e6f72ea944be16b3a2d493ba",
+      "anchor": "Shigar Valley, Skardu District, Gilgit-Baltistan, Pakistan (Dassu / Nyet-Bruk / Yuno / Alchuri pocket zone) — miarolitic aquamarine pegmatites intruding the Dassu orthogneiss dome, Karakoram Metamorphic Complex (Agheem et al. 2014). The beryl-family's anchor scenario (aquamarine's first coverage) + the stage for Tutorial 4 (collecting).",
+      "duration_steps": 70,
+      "initial": {
+        "temperature_C": 600,
+        "pressure_kbar": 1.5,
+        "pH": 6.5,
+        "salinity_ppm": 8,
+        "shape_seed": 1985,
+        "wall_composition": "pegmatite"
+      },
+      "citations": [
+        "Agheem, M.H., Shah, M.T., Khan, T., Murata, M., Arif, M. & Dars, H. 2014 — Shigar valley gemstones, their chemical composition and origin, Skardu, Gilgit-Baltistan, Pakistan. Arabian Journal of Geosciences 7(9), 3801-3814 (EPMA on Shigar beryl/schorl/topaz/fluorite/apatite; gems in vugs of the intermediate zone)",
+        "Agheem, M.H. et al. 2015 — Petrogenetic evolution of pegmatites of the Shigar Valley, Skardu, Gilgit-Baltistan, Pakistan. Arabian Journal of Geosciences 8(11), 9877-9886",
+        "London, D., Hunt, L.E. & Duval, C.L. 2020 — Temperatures and duration of crystallization within gem-bearing cavities of granitic pegmatites. Lithos 360-361, 105417 (pocket stage 435-355 C)",
+        "Michallik, R.M., Wagner, T. & Fusswinkel, T. 2021 — Late-stage fluid exsolution and fluid phase separation in the Luumaki gem beryl pegmatite, SE Finland. Lithos 380-381, 105852 (380±80 C, 1.2±0.7 kbar, ~8 wt% NaCl eq — the pocket-fluid analog)",
+        "London, D. 2008 — Pegmatites. Canadian Mineralogist Special Publication 10, 347 p. (miarolitic framework)",
+        "Kazmi, A.H. & O'Donoghue, M. 1990 — Gemstones of Pakistan: Geology and Gemmology. Gemstone Corporation of Pakistan, Peshawar, 146 pp.",
+        "Blauwet, D. 2006 — Famous mineral localities: Alchuri, Shigar Valley, Northern Areas, Pakistan. Mineralogical Record 37(6), 513-540",
+        "Smith, B., Smith, C. & Blauwet, D. 1997 — A guide to the mineral localities of the Northern Areas, Pakistan. Mineralogical Record 28(3), 183-200",
+        "Trinchillo, D. 2020 — Collecting the King of Kashmir Aquamarine. Mineralogical Record 51(6), 755-779 (the Goyungo cliff / Nyet-Bruk find; geology section by F. Pezzotta)",
+        "Awais, M., Liu, X.-C., Qasim, M. & Wu, F.-Y. 2022 — U(-Th)-Pb age and petrogenesis of Shigar leucogranites, Karakoram Metamorphic Complex, North Pakistan. Geological Journal 57, 4052-4073 (the ~7-3 Ma ages; anatexis of the Dassu gneiss)",
+        "Goldman, D.S., Rossman, G.R. & Parkin, K.M. 1978 — Channel constituents in beryl. Physics and Chemistry of Minerals 3, 225-235 (Fe2+ channel = the blue)",
+        "Hu, Y. & Lu, R. 2018 — Aquamarine from Pakistan. Gems & Gemology 54(1), Gem News International (Shigar FI observations, gemological data)",
+        "Quarterly Crystal: Heavily Etched Blue Beryl Crystals Reportedly from Pakistan. Gems & Gemology 57(2), Summer 2021 (the etch-stage ground truth)",
+        "Parrish, R.R. & Tirrul, R. 1989 — U-Pb age of the Baltoro granite, northwest Himalaya. Geology 17(12), 1076-1079 (21.0±0.5 Ma batholith context)",
+        "Cerny, P. & Ercit, T.S. 2005 — The classification of granitic pegmatites revisited. Canadian Mineralogist 43(6), 2005-2026",
+        "Laurs, B.M., Dilles, J.H., Wairrach, Y., Kausar, A.B. & Snee, L.W. 1998 — Symmetrically zoned miarolitic granitic pegmatites at Stak Nala, Nanga Parbat-Haramosh Massif. Canadian Mineralogist 36, 1-47 (the cleavelandite-as-volatile-escape + albitization-by-cooling-alkali-fluoride mechanism; NPHM analog, not Shigar proper)",
+        "Peretyazhko, I.S., Zagorsky, V.Ye., Smirnov, S.Z. & Mikhailov, M.Y. 2004 — Conditions of pocket formation in the Oktyabrskaya tourmaline-rich gem pegmatite, Transbaikalia. Chemical Geology 210, 91-111 (pocket internal overpressure ΔP ~+1.5 kbar → rupture)",
+        "London, D. 2013 — Crystal-filled cavities in granitic pegmatites: bursting the bubble. Rocks & Minerals 88(6) (pocket rupture concept)",
+        "McCaffrey, D.M. & Jowitt, S.M. 2023 — (miarolitic pegmatite compilation: mean crystallization 460±25 C). Earth-Science Reviews"
+      ],
+      "citations_sha256": "a8de25a9512c50e4dfebb97ca31695248fcedbb46407493bbaa9ae5fe5581852",
+      "expects_species": [
+        "albite",
+        "aquamarine",
+        "feldspar",
+        "quartz",
+        "topaz",
+        "tourmaline"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "shigar_aqua_saturation",
+        "shigar_cleavelandite",
+        "shigar_final_cooling",
+        "shigar_first_schorl",
+        "shigar_hf_etch",
+        "shigar_outer_shell",
+        "shigar_topaz_window"
+      ],
+      "event_count": 7,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/shigar_pegmatite.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "1b666c17ad29a6cc9431233b662762e0d6423556e6f72ea944be16b3a2d493ba",
+        "seed": 42,
+        "steps": 70
+      }
+    },
+    {
+      "id": "sicily_solfifera",
+      "scenario_spec_hash": "1f2478de5e903807c88a5a46e0ebd155b7e8aa209b82e29d12e95010ae71eea7",
+      "anchor": "Cianciana / Caltanissetta district, Agrigento province, Sicily — Solfifera Series (Messinian, 6-5.3 Ma). The canonical sedimentary BSR native-sulfur deposit. World's primary sulfur production center 1860s-1950s, when the Sicilian fields supplied ~80% of global elemental sulfur. Type for 'bacterial-mediated sedimentary sulfur' per Ziegenbalg et al. 2010.",
+      "duration_steps": 200,
+      "initial": {
+        "temperature_C": 30,
+        "pressure_kbar": 0.001,
+        "pH": 6,
+        "salinity_ppm": 5,
+        "shape_seed": 1860,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "Ziegenbalg S.B., Brunner B., Birgel D., Voigt M., Strauss H., Peckmann J. (2010) — Formation of secondary carbonates and native sulphur in sulphate-rich Messinian strata, Sicily. Sedimentary Geology 227: 37-50.",
+        "Rouwendaal E.A. et al. (2025) — An Anaerobic Microbial Community Mediates Epigenetic Native Sulfur and Carbonate Formation During Replacement of Messinian Gypsum at Monte Palco, Sicily. Geobiology. doi:10.1111/gbi.70015.",
+        "Manzi V., Lugli S., Roveri M., Schreiber B.C. (2009) — A new facies model for the Upper Gypsum of Sicily (Italy): chronological and palaeoenvironmental constraints. Sedimentology 56: 1937-1960.",
+        "Garcia-Veigas J., Ortí F., Rosell L., Ayora C., Rouchy J.M., Lugli S. (1995) — The Messinian salt of the Mediterranean: geochemical study of the salt from the central Sicily basin. Bulletin Société Géologique de France 166: 699-710.",
+        "Decima A., Wezel F.C. (1971) — Osservazioni sulle evaporiti messiniane della Sicilia centro-meridionale. Rivista Mineraria Siciliana 22 (130-132): 172-187.",
+        "Aharon P. (2000) — Microbial processes and products fueled by hydrocarbons at submarine seeps. Microbial Sediments (Springer): 270-281. (Sulfur-isotope evidence for BSR in Sicilian Solfifera Series.)",
+        "Wikipedia — Sicilian sulfur mining (history + production figures 1860-1950)."
+      ],
+      "citations_sha256": "43f45a40bb57f6ed7fba2a34cb43c7cd4c5f8b369e6a6647007604f34e30042f",
+      "expects_species": [
+        "calcite",
+        "celestine",
+        "native_sulfur",
+        "selenite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "sicily_bsr_reduction",
+        "sicily_carbonate_buffer",
+        "sicily_gypsum_dissolution",
+        "sicily_inherited_sulfur_recharge"
+      ],
+      "event_count": 10,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/sicily_solfifera.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "1f2478de5e903807c88a5a46e0ebd155b7e8aa209b82e29d12e95010ae71eea7",
+        "seed": 42,
+        "steps": 200
+      }
+    },
+    {
+      "id": "stalactite_demo",
+      "scenario_spec_hash": "8194b4d9167ddcdad00e87386ec86796793df8cba4d313c8ed97c626480f0a56",
+      "anchor": "Generic limestone-cave dripstone — Carlsbad Caverns / Lechuguilla / Mammoth Cave family. Cave-air-filled cavity (vadose throughout), calcite precipitating from CO₂-degassed drip water on ceiling, floor, and walls in three different morphologies.",
+      "duration_steps": 100,
+      "initial": {
+        "temperature_C": 15,
+        "pressure_kbar": 0.01,
+        "pH": 8.3,
+        "salinity_ppm": 0.5,
+        "shape_seed": 42,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "Pentecost A. (2005), Travertine — comprehensive review of CO₂-degas calcite (cave + spring)",
+        "Hill & Forti (1997), Cave Minerals of the World, 2nd ed. — speleothem morphology reference",
+        "Ford & Williams (2007), Karst Hydrogeology and Geomorphology — cave drip-water chemistry"
+      ],
+      "citations_sha256": "5293dea5d539780aad62cb0f8ce7d74e457d3d9e5ea76c2a524f5820cce2c83a",
+      "expects_species": [
+        "calcite"
+      ],
+      "excluded_species": [],
+      "event_types": [],
+      "event_count": 0,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/stalactite_demo.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "8194b4d9167ddcdad00e87386ec86796793df8cba4d313c8ed97c626480f0a56",
+        "seed": 42,
+        "steps": 100
+      }
+    },
+    {
+      "id": "sulphur_bank",
+      "scenario_spec_hash": "983e0f505a5390c6b2711620994eac13438b7430d0834cde117a035823427a41",
+      "anchor": "Sulphur Bank Mine, south shore of Clear Lake, Lake County, California — Pleistocene hot-spring mercury-sulfur deposit. Active hot-spring system since ~150,000 years ago; mined for mercury 1865-1957 (one of California's largest Hg producers). Now EPA Superfund site CAD980893275. The textbook hot-spring quicksilver-sulfur deposit per White & Roberson 1962 (USGS PP 432-A).",
+      "duration_steps": 200,
+      "initial": {
+        "temperature_C": 75,
+        "pressure_kbar": 0.001,
+        "pH": 1.8,
+        "salinity_ppm": 4,
+        "shape_seed": 1865,
+        "wall_composition": "basalt"
+      },
+      "citations": [
+        "White D.E. and Roberson C.E. (1962) — Sulphur Bank, California, a major hot-spring quicksilver deposit. USGS Professional Paper 432-A.",
+        "White D.E. (1981) — Active geothermal systems and hydrothermal ore deposits. Economic Geology 75th Anniversary Volume.",
+        "Donnelly-Nolan J.M., Burns M.G., Goff F.E., Peters E.K., Thompson J.M. (1993) — The Geysers - Clear Lake area, California: thermal waters, mineralization, volcanism, and geothermal potential. Economic Geology 88: 301-316.",
+        "EPA Superfund site CAD980893275 — Sulphur Bank Mercury Mine. Site monitoring records 1990-present document continuous hot-spring activity at the vent zone."
+      ],
+      "citations_sha256": "6be12543c083f0d6eb20e92fdb5db633820c1d99f1d04afd2cba22c74f732a7d",
+      "expects_species": [
+        "cinnabar",
+        "marcasite",
+        "native_sulfur",
+        "orpiment",
+        "pararealgar",
+        "pyrite",
+        "realgar"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "sulphur_bank_cooling",
+        "sulphur_bank_h2s_recharge",
+        "sulphur_bank_surface_oxidation"
+      ],
+      "event_count": 13,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/sulphur_bank.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "983e0f505a5390c6b2711620994eac13438b7430d0834cde117a035823427a41",
+        "seed": 42,
+        "steps": 200
+      }
+    },
+    {
+      "id": "sunnyside_american_tunnel",
+      "scenario_spec_hash": "6a097c534c3df2d0ebe8d8fd1720a9de38e1238422bbec851552704400033183",
+      "anchor": "Sunnyside Mine / American Tunnel, Silverton caldera, San Juan County, Colorado. Intermediate-sulfidation polymetallic epithermal vein deposit hosted in the Crystal Lake Tuff (27.5 Ma San Juan ignimbrite). The American Tunnel (driven 1959, plugged 2003) was the principal modern source of Silverton-district display rhodochrosite + octahedral REE-fluorite + manganocalcite specimens. Per Casadevall & Ohmoto 1977 Econ. Geol. 72:1285 six-stage paragenesis (compressed to four stages here).",
+      "duration_steps": 200,
+      "initial": {
+        "temperature_C": 280,
+        "pressure_kbar": 0.5,
+        "pH": 4.5,
+        "salinity_ppm": 5,
+        "shape_seed": 1959,
+        "wall_composition": "basalt"
+      },
+      "citations": [
+        "Burbank W.S. & Luedke R.G. (1968) — Geology and Ore Deposits of the Eureka and Adjoining Districts, San Juan Mountains, Colorado. USGS Professional Paper 535.",
+        "Casadevall T. & Ohmoto H. (1977) — Sunnyside Mine, Eureka mining district, San Juan County, Colorado; geochemistry of gold and base metal ore deposition in a volcanic environment. Economic Geology 72: 1285-1320. DOI 10.2113/gsecongeo.72.7.1285.",
+        "Burbank W.S. (1933) — Geology and Ore Deposits of the South Silverton Mining Area, San Juan County, Colorado. USGS Professional Paper 378-A.",
+        "Bachmann O. et al. (2014) — Building zoned ignimbrites by recycling silicic cumulates: insight from the Carpenter Ridge Tuff, CO. Contrib. Min. Pet. 167: 1025. DOI 10.1007/s00410-014-1025-3. (REE/Eu source rock for the Y³⁺/Eu²⁺ leached during the Stage VI fluoride pulse.)",
+        "Bosze S. & Rakovan J. (2002) — Surface-structure-controlled sectoral zoning of REE in fluorite from Long Lake NY and Bingham NM. Geochim. Cosmochim. Acta 66: 997-1009. DOI 10.1016/S0016-7037(01)00822-5. (Octahedral fluorite habit mechanism; Y³⁺ partition coefficient 1.4-3.5x into {111} vs {100}.)",
+        "Naumov V.A. & Naumova S.S. (1980) — Optical spectra of rare-earth-bearing fluorites. (Russian literature; original yttrofluorite green color-mechanism description.)",
+        "Pierce M.L. (1990) — Color centers and rare-earth substitution in Pikes Peak fluorite. (HREE-cluster green color mechanism distinct from F-center blue.)",
+        "Bill H. & Calas G. (1978) — Color centers, associated rare-earth ions and the origin of coloration in natural fluorites. Phys. Chem. Min. 3: 117-131. (F-center photobleaching kinetics; SW UV REE fluorescence bleach-stability.)",
+        "Pohl W.L. (2011) — Economic Geology of Mineral Deposits. Schweizerbart. (Manganocalcite paragenesis + Mn²⁺ activator fluorescence brightness.)",
+        "Research dossier 2026-05-19 — internal research-agent compilation anchoring the scenario broth on Casadevall fluid-inclusion data + Bachmann REE-source-rock budget + boss specimen calibration targets."
+      ],
+      "citations_sha256": "afc37c0f2812da87bd7afc3ddd689bc27c4ec4d8ab8e649361b62561152d87b6",
+      "expects_species": [
+        "calcite",
+        "chalcopyrite",
+        "fluorite",
+        "galena",
+        "native_gold",
+        "pyrite",
+        "quartz",
+        "rhodochrosite",
+        "sphalerite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "sunnyside_cooling_transition",
+        "sunnyside_stage_v_mn_carbonate",
+        "sunnyside_stage_vi_fluoride_pulse",
+        "sunnyside_stage_vi_manganocalcite_cap"
+      ],
+      "event_count": 4,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/sunnyside_american_tunnel.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "6a097c534c3df2d0ebe8d8fd1720a9de38e1238422bbec851552704400033183",
+        "seed": 42,
+        "steps": 200
+      }
+    },
+    {
+      "id": "supergene_oxidation",
+      "scenario_spec_hash": "75ec1282d927a4980296738a964fec2248fee0ce974ee98a59e7c8f6f57ddd5a",
+      "anchor": "Tsumeb mine, Otavi Mountain Land, Namibia. 1st-stage gossan (uppermost supergene zone). One of the most mineralogically diverse deposits ever discovered (~280 species), type locality for germanium.",
+      "duration_steps": 200,
+      "initial": {
+        "temperature_C": 35,
+        "pressure_kbar": 0.05,
+        "pH": 6.8,
+        "salinity_ppm": 2,
+        "shape_seed": 7,
+        "wall_composition": "dolomite"
+      },
+      "citations": [
+        "Pinch & Wilson 1977 — canonical Tsumeb monograph",
+        "Lombaard et al. 1986 — Tsumeb geology",
+        "Melcher 2003 — Tsumeb Ge geochemistry",
+        "Seo et al. 2012 — Pb+Mo simultaneous weathering for wulfenite formation",
+        "Hemley et al. 1969 — alunite stability + Al solubility under acid-sulfate conditions",
+        "Stoffregen et al. 2000 — alunite-jarosite paragenesis review",
+        "Strunz 1959 — Tsumeb deep oxidation zone scheelite + lead-tungstate suite (raspite + stolzite)",
+        "Bowell 2014, Rev. Mineral. Geochem. 79:589 — Tsumeb hydrogeochemistry + arsenate mineral stability (the acid-front movement)",
+        "Singer & Stumm 1970, Science 167:1121 — Fe(II)→Fe(III) as the rate-determining step of sulfide-oxidation acid generation",
+        "Skarpelis 2009, Resource Geology 59(1) — Lavrion Pb-Ag-Zn supergene oxidation profile (carbonate-hosted analogue)",
+        "Harvard Mineralogical & Geological Museum, Tsumeb Mine Notebook TSNB159 — gypsum is a confirmed, somewhat rare Tsumeb mineral from all three oxidation zones; well-formed crystals reach centimetre scale",
+        "Mindat locality record 2428, Tsumeb Mine mineral list — live species-list audit on 2026-08-06 found no pharmacolite or haidingerite entry",
+        "Harvard Mineralogical & Geological Museum, Tsumeb Mine Notebook searchable catalog — live audit on 2026-08-06 found no pharmacolite or haidingerite object entry"
+      ],
+      "citations_sha256": "fff616dedf9ed5283d9a320c41d1e361b5d947e0c55bff51cce7a303b02caa4f",
+      "expects_species": [
+        "adamite",
+        "cerussite",
+        "conichalcite",
+        "malachite",
+        "mimetite",
+        "selenite",
+        "smithsonite",
+        "vanadinite",
+        "wulfenite"
+      ],
+      "excluded_species": [
+        "haidingerite",
+        "pharmacolite"
+      ],
+      "event_types": [
+        "supergene_acidification",
+        "supergene_as_rich_seep",
+        "supergene_cu_enrichment",
+        "supergene_dry_spell",
+        "supergene_fracture_seal",
+        "supergene_meteoric_flush",
+        "supergene_pb_mo_pulse",
+        "supergene_phosphate_seep",
+        "supergene_v_bearing_seep"
+      ],
+      "event_count": 12,
+      "extended_only_event_count": 0,
+      "movement_count": 1,
+      "archive": {
+        "path": "archive/strips/v251/supergene_oxidation.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "75ec1282d927a4980296738a964fec2248fee0ce974ee98a59e7c8f6f57ddd5a",
+        "seed": 42,
+        "steps": 200
+      }
+    },
+    {
+      "id": "tn457_barite_pulses",
+      "scenario_spec_hash": "7c99d569c9bf1655dfda86132ea2d78d6825a48ec998568415cc83254ee7e211",
+      "anchor": "TN457 (boss collection proxy designation) — pink barite on sphalerite, England (probable Cumbria; lineage points to the Caldbeck Fells / North Pennines orefield: Carboniferous-limestone-hosted post-Variscan Pb-Zn-Ba MVT-style mineralization). Thousands of pink tabular barite crystals coin-stacked on sphalerite substrate, 5+ macroscopically-visible growth stages, mild blue/white UV fluorescence (late hydrozincite). Pink color is Mn²⁺-activated; the coin-stack morphology is the mineralogical signature of episodic fluid pulse precipitation (Putnis & Perthuisot 2001, Jamtveit et al. 2000). DOGFOOD: PROPOSAL-EVENT-DRIVEN-PRECIPITATION (Rock Bot + Professor, 2026-05-20) as the forcing-function test — does the engine already produce the TN457 signature from event chemistry alone, or are the missing pieces all renderer-side?",
+      "duration_steps": 110,
+      "initial": {
+        "temperature_C": 120,
+        "pressure_kbar": 0.4,
+        "pH": 6.5,
+        "salinity_ppm": 4.5,
+        "shape_seed": 457,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "Alderton D.H.M. & Bevins R.E. (1996) — Fluid inclusion microthermometry of Pb-Zn-Ba veins, Cumbrian orefield, England. Journal of the Geological Society 153: 91-104. Brine T 100-150°C, salinity ~20 wt% NaCl eq., post-Variscan timing.",
+        "Bouch J.E., Naden J., Shepherd T.J., McKervey J.A., Young B., Benham A.J., Sloane H.J. (2006) — Direct evidence of fluid mixing in the formation of stratabound Pb-Zn-Ba-F mineralisation in the Alston Block, North Pennines orefield. Mineralogical Magazine 70: 567-588. PRIMARY REFERENCE — multi-stage fluid mixing produces the oscillatory chemistry, Mn²⁺ partitioning into barite tracks the pulse history.",
+        "Sherlock R.L., Tosdal R.M., Lehrman N.J., Graney J.R., Losh S., Jowett E.C., Kesler S.E. (1999) — Origin of the McLaughlin Mine sheeted vein complex: metal zoning, fluid inclusion, and isotopic evidence. Economic Geology 90: 2156-2181. Comparison framework for low-T brine MVT-style mineralization.",
+        "Putnis A. & Perthuisot J-P. (2001) — A model of oscillatory zoning in solid solutions grown from aqueous solutions: applications to the (Ba,Sr)SO4 system. Geochimica et Cosmochimica Acta 65: 3387-3399. THE oscillatory-zoning mechanism — episodic fluid pulses + boundary-layer feedback. The same Putnis whose CDR work is already in Crystal.cdr_replaces_crystal_id (vugg-simulator follows-the-science).",
+        "Jamtveit B., Wogelius R.A., Fraser D.G. (2000) — Noise and oscillatory zoning of minerals. Geochimica et Cosmochimica Acta 64: 2347-2360. Information-theoretic framework for oscillatory zoning in barite + calcite + plagioclase.",
+        "Reich M., Mateo S., Barra F., Deditius A., Roberts M.P., Bilenker L.D., Simon A.C., Skidmore C., González R., Tardani D. (2023) — Formation of giant iron oxide-copper-gold deposits by superimposed episodic hydrothermal pulses. Scientific Reports 13: 11669. Modern framework for episodic-pulse formation of giant ore systems — the same mechanism scales from TN457's hand-specimen barite stacks to district-scale orogenic systems.",
+        "L'Heureux I. (1993) — Oscillatory zoning in crystal growth: a constitutional undercooling mechanism. Physical Review E 48: 4460-4469. Self-organization mechanism — the engine implements this implicitly through per-step rng-driven supersaturation noise.",
+        "Heaney P.J. & Davis A.M. (1995) — Observation and origin of self-organized textures in agates. Science 269: 1562-1565. Adjacent literature for oscillatory chalcedony banding; cross-applies to barite tabs as a Mn-banded analog."
+      ],
+      "citations_sha256": "851cfb8fc75f421ae5cabf03b6c05ef3df9b26eb7ccf24aba501c35fb452d8e1",
+      "expects_species": [
+        "barite",
+        "sphalerite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "tn457_mn_ba_pulse"
+      ],
+      "event_count": 50,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/tn457_barite_pulses.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "7c99d569c9bf1655dfda86132ea2d78d6825a48ec998568415cc83254ee7e211",
+        "seed": 42,
+        "steps": 110
+      }
+    },
+    {
+      "id": "tormiq_alpine_cleft",
+      "scenario_spec_hash": "67ad31564a7715eb085869d7e7f517fd25dbdd7fa35a13d3bd6c7df989ab7cbc",
+      "anchor": "Tormiq Valley, Haramosh Mts., Roundu/Skardu District, Gilgit-Baltistan, Pakistan — the world's premier ALPINE-CLEFT epidote locality (Anthony et al. Handbook of Mineralogy 2001 names Tormiq type-quality, rivaling Knappenwand, Austria). The anchor scenario for epidote (added v196).",
+      "duration_steps": 200,
+      "initial": {
+        "temperature_C": 420,
+        "pressure_kbar": 4,
+        "pH": 7,
+        "salinity_ppm": 3,
+        "shape_seed": 1990,
+        "wall_composition": "basalt"
+      },
+      "citations": [
+        "Anthony, Bideaux, Bladh & Nichols 2001, Handbook of Mineralogy (epidote sheet — names Tormiq, Pakistan as type-quality)",
+        "Deer, Howie & Zussman 1986, Rock-Forming Minerals 2nd ed. v.1B, pp.44-134 (epidote group)",
+        "Liebscher A. & Franz G. eds. 2004, Reviews in Mineralogy & Geochemistry v.56 Epidotes (MSA)",
+        "Mullis J. 1994, Geochim. Cosmochim. Acta 58:2239 — alpine fissure quartz fluid inclusions (low-salinity, oxidized, meteoric)",
+        "Bergemann C. et al. 2017, Swiss J. Geosci. — alpine fissure formation episodes (T/fluid regime)",
+        "Holdaway M.J. 1972, Contrib. Mineral. Petrol. 37:307; Liou J.G. 1973, J. Petrol. 14:381 — epidote stability vs fO2 (why oxidized = Fe³⁺ green epidote)",
+        "mindat locality 5734 — Tormiq Valley geology (Main Karakoram Thrust clefts in amphibolite)"
+      ],
+      "citations_sha256": "a3b251f7406dc3c0ab351e92137e880d14347403b51a37f279fb884f82d4278f",
+      "expects_species": [
+        "actinolite",
+        "albite",
+        "epidote",
+        "feldspar",
+        "quartz"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "tormiq_adularia",
+        "tormiq_byssolite",
+        "tormiq_epidote_main",
+        "tormiq_late_calcite",
+        "tormiq_late_shear",
+        "tormiq_oxide_stage",
+        "tormiq_quartz_lining"
+      ],
+      "event_count": 7,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/tormiq_alpine_cleft.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "67ad31564a7715eb085869d7e7f517fd25dbdd7fa35a13d3bd6c7df989ab7cbc",
+        "seed": 42,
+        "steps": 200
+      }
+    },
+    {
+      "id": "tutorial_first_crystal",
+      "scenario_spec_hash": "d3c5878a944c50d18f99f51912177fb42ccdff69f4edf1bd680090a5a32daf19",
+      "anchor": "(tutorial scaffold — generic silica-rich broth)",
+      "duration_steps": 30,
+      "initial": {
+        "temperature_C": 220,
+        "pressure_kbar": 1,
+        "pH": 6.5,
+        "salinity_ppm": 5,
+        "shape_seed": 1,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "Tutorial scaffold; quartz's prograde aqueous solubility follows the simulator's Fournier & Potter / Rimstidt-Barnes basis."
+      ],
+      "citations_sha256": "e4a6281f93d6880b3f771fb3d8876ad5beff5007b9c1a6f206d17843fa7bbc9f",
+      "expects_species": [
+        "quartz"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "tutorial_temperature_spike"
+      ],
+      "event_count": 1,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/tutorial_first_crystal.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "d3c5878a944c50d18f99f51912177fb42ccdff69f4edf1bd680090a5a32daf19",
+        "seed": 42,
+        "steps": 30
+      }
+    },
+    {
+      "id": "tutorial_mn_calcite",
+      "scenario_spec_hash": "4d907c8a28feb90ea854da4ae7aee2819e6e5aefd320e889f517a190d9583ac6",
+      "anchor": "(tutorial scaffold — generic carbonate broth)",
+      "duration_steps": 30,
+      "initial": {
+        "temperature_C": 100,
+        "pressure_kbar": 0.5,
+        "pH": 7,
+        "salinity_ppm": 8,
+        "shape_seed": 2,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "(tutorial scaffold — no published source)",
+        "Franklin / Sterling Hill (NJ) — type locality for Mn-activated calcite fluorescence"
+      ],
+      "citations_sha256": "17f147836dcc5bcda3344ff343d46c95520a75e47e396ae951f247b72daaccd0",
+      "expects_species": [
+        "calcite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "tutorial_fe_drop",
+        "tutorial_mn_pulse"
+      ],
+      "event_count": 2,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/tutorial_mn_calcite.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "4d907c8a28feb90ea854da4ae7aee2819e6e5aefd320e889f517a190d9583ac6",
+        "seed": 42,
+        "steps": 30
+      }
+    },
+    {
+      "id": "tutorial_travertine",
+      "scenario_spec_hash": "6c3b3d0f3275c5c11510f7efa4c002d53810ee31a4474103f907a3c0f5ba7ac7",
+      "anchor": "Mammoth Hot Springs (Yellowstone) — travertine is the canonical CO₂-degas calcite",
+      "duration_steps": 60,
+      "initial": {
+        "temperature_C": 70,
+        "pressure_kbar": 0.00101325,
+        "pH": 6.5,
+        "salinity_ppm": 2,
+        "shape_seed": 4,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "Mammoth Hot Springs, Yellowstone NP — type locality for actively-forming travertine",
+        "Pentecost A. (2005), Travertine — comprehensive review of CO₂-degas calcite",
+        "Stumm & Morgan, Aquatic Chemistry (3rd ed.), Bjerrum partition + Henry's-Law CO₂"
+      ],
+      "citations_sha256": "e75613be7e5583f5f518994d1cfd62e5b0863828a5337e67ae847ec922bd32e3",
+      "expects_species": [
+        "calcite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "co2_degas_with_reheat"
+      ],
+      "event_count": 3,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/tutorial_travertine.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "6c3b3d0f3275c5c11510f7efa4c002d53810ee31a4474103f907a3c0f5ba7ac7",
+        "seed": 42,
+        "steps": 60
+      }
+    },
+    {
+      "id": "ultramafic_supergene",
+      "scenario_spec_hash": "483aac8bc86c6136c9df323f2b7b136aaebc771fef44e042183b26bbf856a96f",
+      "anchor": "Marlborough chrysoprase deposits, Queensland, Australia — Ni-laterite weathering of Late-Devonian Marlborough Block ophiolitic peridotite. Type aesthetic: apple-green chrysoprase nodules + magnesite veinlets in saprolite over serpentinized harzburgite.",
+      "duration_steps": 200,
+      "initial": {
+        "temperature_C": 30,
+        "pressure_kbar": 0.05,
+        "pH": 8.5,
+        "salinity_ppm": 1,
+        "shape_seed": 47,
+        "wall_composition": "basalt"
+      },
+      "citations": [
+        "Sachanbiński et al. 2001 — chrysoprase nano-inclusion structure (Ni-clay in chalcedony)",
+        "Witkowski 2007 — chrysoprase color-cause confirmation",
+        "Garnier et al. 2008 — Goro Ni-laterite hydrology + supergene Ni mobility",
+        "Cluzel & Vigier 2008 — New Caledonia ultramafic weathering geochemistry",
+        "Marlborough Mine Queensland production records — modern Ni-rich chrysoprase reference"
+      ],
+      "citations_sha256": "81c7731d94ac143bd1de74c25d7e90e608b7bd90915837add50148671d141945",
+      "expects_species": [
+        "calcite",
+        "chrysoprase"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "alkalinize",
+        "aquifer_recharge_floods",
+        "fluid_pulse",
+        "tectonic_uplift_drains"
+      ],
+      "event_count": 4,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/ultramafic_supergene.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "483aac8bc86c6136c9df323f2b7b136aaebc771fef44e042183b26bbf856a96f",
+        "seed": 42,
+        "steps": 200
+      }
+    },
+    {
+      "id": "wittichen",
+      "scenario_spec_hash": "9e8801be38edae5a68b9dcd3f6595287b87c7a064a9f50bd90542a858a6c9d31",
+      "anchor": "Kloster Wittichen, Schwarzwald (Black Forest), Baden-Württemberg, Germany — the classic Bi-Co-Ni-Ag-As-(Ba) five-element vein district; cobalt-pigment + silver mining boom 1730s–40s around the convent. Sophia and Johann-Georg veins.",
+      "duration_steps": 160,
+      "initial": {
+        "temperature_C": 340,
+        "pressure_kbar": 0.9,
+        "pH": 6.2,
+        "salinity_ppm": 24,
+        "shape_seed": 1736,
+        "wall_composition": "pegmatite"
+      },
+      "citations": [
+        "Kissin S.A. 1992, Canadian Mineralogist 30 — Five-element (Ni-Co-As-Ag-Bi) veins: the deposit-class review",
+        "Burisch M., Walter B.F., Gerdes A., Lanz M., Markl G. 2017, Geology 45 — Methane and the origin of five-element veins (the hydrocarbon reduction trigger)",
+        "Scharrer M., Kreissl S., Markl G. 2019, Ore Geology Reviews — The mineralogical variability of hydrothermal native element-arsenide associations",
+        "Staude S., Bons P.D., Markl G. 2012, Mineralium Deposita 47 — Schwarzwald hydrothermal veins: fluid inclusion record, 20-26 wt% NaCl basement brines",
+        "Markl G. et al. 2016 — Cobalt (Ontario) arsenide zoning, X_As 0.96-0.99 (the skutterudite engine's anchor citation)",
+        "Kloster Wittichen district history — cobalt-blue pigment + silver boom, 1730s-1740s (shape_seed 1736)"
+      ],
+      "citations_sha256": "fd0177d8fe94aa3470847c1ca40b00b1702f5b5a3d80cd5673e0cecfff0cca9e",
+      "expects_species": [
+        "acanthite",
+        "barite",
+        "calcite",
+        "native_arsenic",
+        "native_bismuth",
+        "native_silver",
+        "nickeline",
+        "proustite",
+        "safflorite",
+        "skutterudite"
+      ],
+      "excluded_species": [],
+      "event_types": [
+        "wittichen_carbonate_gangue",
+        "wittichen_hydrocarbon_influx",
+        "wittichen_meteoric_sulfate"
+      ],
+      "event_count": 3,
+      "extended_only_event_count": 0,
+      "movement_count": 2,
+      "archive": {
+        "path": "archive/strips/v251/wittichen.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "9e8801be38edae5a68b9dcd3f6595287b87c7a064a9f50bd90542a858a6c9d31",
+        "seed": 42,
+        "steps": 160
+      }
+    },
+    {
+      "id": "zoned_dripstone_cave",
+      "scenario_spec_hash": "b721565208220bc2d57012dba9eb6da4268a44e5b797d0618ada184b126e3ffe",
+      "anchor": "Mg/Ca-zoned dripstone cave — composite of Frasassi (Italy, Mg-rich ceiling aragonite), Carlsbad Caverns (NM, calcite floor), and Reed Flute Cave (Guilin, twin morphologies). The geochemistry of cave dripstone where the drip-water Mg/Ca ratio differs between ceiling-percolation pathways and floor-puddle re-precipitation, producing aragonite stalactites + calcite stalagmites in the same cavity.",
+      "duration_steps": 150,
+      "initial": {
+        "temperature_C": 18,
+        "pressure_kbar": 0.01,
+        "pH": 8.4,
+        "salinity_ppm": 0.5,
+        "shape_seed": 24,
+        "wall_composition": "limestone"
+      },
+      "citations": [
+        "Frisia S., Borsato A., Fairchild I.J., et al. (2002) — Aragonite-calcite relationships in speleothems (Grotte de Clamouse, France, and Italian cave systems). Lithos 65 (1-2): 119-133.",
+        "Sherwin C.M., Baldini J.U.L. (2011) — Cave air and hydrological controls on prior calcite precipitation and stalagmite growth rates. Chem. Geol. 290: 79-87.",
+        "Railsback L.B., Brook G.A., Liang F. et al. (1994) — Speleothem fabric record of aragonite-calcite transitions. Carbonates and Evaporites 9: 217-230.",
+        "Spötl C., Mangini A. (2007) — Speleothems and paleoclimates: aragonite vs calcite as climate archives. Quaternary Science Reviews 26: 1488-1499."
+      ],
+      "citations_sha256": "3c006afc5af7fc4a74a50f002f8390dc82ffdb6b0ae8a05a66e908481ada9416",
+      "expects_species": [
+        "aragonite",
+        "calcite"
+      ],
+      "excluded_species": [],
+      "event_types": [],
+      "event_count": 0,
+      "extended_only_event_count": 0,
+      "movement_count": 0,
+      "archive": {
+        "path": "archive/strips/v251/zoned_dripstone_cave.json",
+        "sim_version": 251,
+        "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+        "scenario_spec_hash": "b721565208220bc2d57012dba9eb6da4268a44e5b797d0618ada184b126e3ffe",
+        "seed": 42,
+        "steps": 150
+      }
+    }
+  ],
+  "validation": {
+    "status": "PASS",
+    "error_count": 0
+  }
+}

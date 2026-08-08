@@ -159,6 +159,7 @@ function buildExecutedScienceTestimony(strip) {
   const pressurePhase = strip.executed_testimony?.pressure_phase || [];
   const stressEvents = strip.executed_testimony?.stress_events || [];
   const transformations = strip.executed_testimony?.transformations || [];
+  const carbonateBoundary = strip.executed_testimony?.carbonate_boundary || [];
   const al2Counts = {};
   let aragoniteSecureSteps = 0;
   for (const sample of pressurePhase) {
@@ -188,6 +189,12 @@ function buildExecutedScienceTestimony(strip) {
     },
     stress_events: stressEvents,
     transformations,
+    carbonate_boundary: {
+      sample_count: carbonateBoundary.length,
+      first: carbonateBoundary[0] ?? null,
+      last: carbonateBoundary.at(-1) ?? null,
+      samples: carbonateBoundary,
+    },
   };
 }
 
@@ -349,6 +356,17 @@ export function renderMarkdown(card) {
     }
   } else {
     L.push('  - Mineral transformations: none executed.');
+  }
+  if (ex.carbonate_boundary.sample_count) {
+    const first = ex.carbonate_boundary.first;
+    const last = ex.carbonate_boundary.last;
+    const failed = ex.carbonate_boundary.samples.filter(sample => sample?.last_transaction?.ok === false).length;
+    L.push(`  - Conserved carbonate boundary: ${ex.carbonate_boundary.sample_count} samples; `
+      + `mode ${first.mode}→${last.mode}; DIC ${first.dic_mol_kg}→${last.dic_mol_kg} mol/kg; `
+      + `export ${last.boundary_export_mol_kg} mol/kg; reduced alkalinity ${last.reduced_alkalinity_eq_kg} eq/kg; `
+      + `blocked=${last.blocked}; failed latest transactions=${failed}; uncertainties=${JSON.stringify(last.uncertainties || [])}`);
+  } else {
+    L.push('  - Conserved carbonate boundary: not enabled for this archived run.');
   }
   L.push('');
   L.push(`## Scenario notes (author's own rationale)`);

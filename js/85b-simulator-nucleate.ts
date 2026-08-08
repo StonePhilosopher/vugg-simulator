@@ -1310,6 +1310,7 @@ _dryRunEngineForCrystal(engine, crystal) {
 
 _applyZoneGrowthBudget(crystal, zone) {
   if (!zone) return null;
+  const bulkFluidHandle = this.conditions.fluid;
   const anchor = this.wall_state._resolveAnchor(crystal);
   const ringIdx = anchor ? anchor.ringIdx : null;
   let savedFluid = null;
@@ -1325,6 +1326,7 @@ _applyZoneGrowthBudget(crystal, zone) {
     this.conditions.temperature = this.ring_temperatures[ringIdx];
   }
   try {
+    this.conditions._carbonateBoundaryBulkFluid = bulkFluidHandle;
     const depleted = applyStoichiometricGrowthBudget(crystal, zone, this.conditions);
     // applyStoichiometricGrowthBudget may shrink a requested zone to the formula amount the
     // local mg/kg reservoirs can actually supply. Commit engine-side habit /
@@ -1346,6 +1348,7 @@ _applyZoneGrowthBudget(crystal, zone) {
     }
     return depleted;
   } finally {
+    delete this.conditions._carbonateBoundaryBulkFluid;
     if (savedFluid != null) {
       this.conditions.fluid = savedFluid;
     }

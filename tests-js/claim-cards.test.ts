@@ -81,6 +81,10 @@ describe('adversarial claim-card fleet', () => {
         .toEqual(strip.executed_testimony?.stress_events || []);
       expect(executed.transformations, `${scenario}: transformation testimony`)
         .toEqual(strip.executed_testimony?.transformations || []);
+      expect(executed.carbonate_boundary.samples, `${scenario}: carbonate-boundary testimony`)
+        .toEqual(strip.executed_testimony?.carbonate_boundary || []);
+      expect(executed.carbonate_boundary.sample_count, `${scenario}: carbonate-boundary sample count`)
+        .toBe(spec.carbonate_boundary ? strip.steps : 0);
       expect(Object.keys(card.testimony.saturation_indices).sort(), `${scenario}: SI cards`)
         .toEqual(Object.keys(strip.chips).filter(key => key.startsWith('SI_')).sort());
 
@@ -93,6 +97,7 @@ describe('adversarial claim-card fleet', () => {
         expect(markdown, `${scenario}: rendered physical limitation`).toContain('not physical solid mass or volume');
         expect(markdown, `${scenario}: authored section`).toContain('Authored pressure/stress/phase context');
         expect(markdown, `${scenario}: executed section`).toContain('Executed pressure/stress/phase testimony');
+        expect(markdown, `${scenario}: carbonate testimony`).toContain('Conserved carbonate boundary:');
       }
     } finally {
       fs.rmSync(outDir, { recursive: true, force: true });

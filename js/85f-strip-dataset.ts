@@ -171,6 +171,7 @@ interface StripDataset {
   pressure_phase_testimony?: any[];
   stress_event_testimony?: any[];
   transformation_event_testimony?: StripTransformationEvent[];
+  carbonate_boundary_testimony?: any[];
 }
 
 // ============================================================
@@ -289,6 +290,7 @@ async function stripSerialize(
     pressure_phase_testimony: ds.pressure_phase_testimony || [],
     stress_event_testimony: ds.stress_event_testimony || [],
     transformation_event_testimony: ds.transformation_event_testimony || [],
+    carbonate_boundary_testimony: ds.carbonate_boundary_testimony || [],
   })) : null;
   const testimonySection = testimonyBytes ? 4 + testimonyBytes.length : 0;
 
@@ -357,6 +359,7 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
   let pressure_phase_testimony: any[] | undefined;
   let stress_event_testimony: any[] | undefined;
   let transformation_event_testimony: StripTransformationEvent[] | undefined;
+  let carbonate_boundary_testimony: any[] | undefined;
   if ((manifest.format_version || 0) >= 4) {
     const testimonyLen = dv.getUint32(offset, true); offset += 4;
     const testimony = JSON.parse(
@@ -369,6 +372,8 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
       ? testimony.stress_event_testimony : [];
     transformation_event_testimony = Array.isArray(testimony.transformation_event_testimony)
       ? testimony.transformation_event_testimony : [];
+    carbonate_boundary_testimony = Array.isArray(testimony.carbonate_boundary_testimony)
+      ? testimony.carbonate_boundary_testimony : [];
   }
   const chip_data = buf.slice(offset);
   return {
@@ -377,6 +382,7 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
     ...(pressure_phase_testimony ? { pressure_phase_testimony } : {}),
     ...(stress_event_testimony ? { stress_event_testimony } : {}),
     ...(transformation_event_testimony ? { transformation_event_testimony } : {}),
+    ...(carbonate_boundary_testimony ? { carbonate_boundary_testimony } : {}),
   };
 }
 

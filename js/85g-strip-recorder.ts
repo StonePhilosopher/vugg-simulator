@@ -111,6 +111,7 @@ class StripRecorder {
   private lastSeenStressEventCount: number;
   private transformationEventTestimony: StripTransformationEvent[];
   private seenTransformationKeys: Set<string>;
+  private carbonateBoundaryTestimony: any[];
 
   constructor(sim: any, opts?: {
     angular_indices?: number,
@@ -193,6 +194,7 @@ class StripRecorder {
     this.lastSeenStressEventCount = 0;
     this.transformationEventTestimony = [];
     this.seenTransformationKeys = new Set();
+    this.carbonateBoundaryTestimony = [];
   }
 
   // ---- chip classification helpers ----------------------------------
@@ -420,6 +422,27 @@ class StripRecorder {
           ? gypsumAnhydriteBoundaryC(fluidPressureKbar) : null,
       },
     });
+    const carbon = sim?._carbonateBoundaryState;
+    if (carbon) {
+      const transactions = Array.isArray(carbon.transactions) ? carbon.transactions : [];
+      const last = transactions.length ? transactions[transactions.length - 1] : null;
+      this.carbonateBoundaryTestimony.push({
+        step: Number(sim?.step),
+        sample_index: step,
+        mode: String(carbon.mode || 'closed'),
+        dic_mol_kg: Number(carbon.lastDICMolKg),
+        headspace_co2_mol_kg: Number(carbon.headspaceCO2MolKg),
+        reduced_alkalinity_eq_kg: Number(carbon.reducedAlkalinityEqKg),
+        solid_carbon_mol_kg: Number(carbon.solidCarbonMolKg),
+        boundary_import_mol_kg: Number(carbon.boundaryImportMolKg),
+        boundary_export_mol_kg: Number(carbon.boundaryExportMolKg),
+        target_pco2_bar: Number(carbon.targetPCO2Bar),
+        blocked: !!carbon.blocked,
+        uncertainties: Array.isArray(carbon.uncertainties) ? [...carbon.uncertainties] : [],
+        transaction_count: transactions.length,
+        last_transaction: last ? JSON.parse(JSON.stringify(last)) : null,
+      });
+    }
     const stressEvents = Array.isArray(sim?._stressEvents) ? sim._stressEvents : [];
     for (let i = this.lastSeenStressEventCount; i < stressEvents.length; i++) {
       // Clone so later mutations cannot rewrite archived testimony.
@@ -465,6 +488,7 @@ class StripRecorder {
       pressure_phase_testimony: this.pressurePhaseTestimony,
       stress_event_testimony: this.stressEventTestimony,
       transformation_event_testimony: this.transformationEventTestimony,
+      carbonate_boundary_testimony: this.carbonateBoundaryTestimony,
     };
   }
 

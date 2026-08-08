@@ -14,12 +14,27 @@ let running = false;
 let _simulationPlaybackGeneration = 0;
 let _simulationPlaybackTimer: any = null;
 let _simulationPromptCleanup: (() => void) | null = null;
+let _activeSimulationCommandRuntime: any = null;
+let legendsSimulationCheckpoint: any = null;
 
 // Explicit lifecycle boundary for long computation and paced narrative.
 // Navigation calls this before hiding a mode so a stale timer or capture-
 // phase keyboard handler can never continue mutating a hidden screen.
 function cancelSimulationPlayback() {
   _simulationPlaybackGeneration++;
+  if (_activeSimulationCommandRuntime
+      && _activeSimulationCommandRuntime.status !== 'cancelled') {
+    try {
+      applySimulationCommand(
+        _activeSimulationCommandRuntime,
+        makeSimulationCancelCommand('simulation playback cancelled'),
+      );
+      legendsSimulationCheckpoint = createSimulationCheckpoint(
+        _activeSimulationCommandRuntime,
+      );
+      try { persistSimulationCheckpoint(legendsSimulationCheckpoint); } catch (_e) { /* optional */ }
+    } catch (_e) { /* preserve the last known-good checkpoint */ }
+  }
   if (_simulationPlaybackTimer != null) {
     clearTimeout(_simulationPlaybackTimer);
     _simulationPlaybackTimer = null;
@@ -113,7 +128,6 @@ async function runSimulation() {
   const shapeSeedInput = shapeSeedEl ? shapeSeedEl.value : '';
 
   const seed = seedInput ? parseInt(seedInput, 10) : Math.floor(Math.random() * 2147483647);
-  rng = new SeededRandom(seed);
 
   const scenarioOverrides: any = {};
   if (shapeSeedInput) {
@@ -144,8 +158,15 @@ async function runSimulation() {
     }
   }
   let scenarioData;
+  let commandRuntime: any;
   try {
-    scenarioData = SCENARIOS[scenarioName](scenarioOverrides);
+    commandRuntime = startSimulationCommandRuntime(
+      makeSimulationStartCommand(scenarioName, seed, scenarioOverrides),
+    );
+    scenarioData = commandRuntime.scenarioData;
+    _activeSimulationCommandRuntime = commandRuntime;
+    legendsSimulationCheckpoint = createSimulationCheckpoint(commandRuntime);
+    try { persistSimulationCheckpoint(legendsSimulationCheckpoint); } catch (_e) { /* optional */ }
   } catch (error) {
     const outputEl = document.getElementById('output');
     if (outputEl) outputEl.textContent = `Scenario “${scenarioName}” could not be initialized.`;
@@ -185,7 +206,7 @@ async function runSimulation() {
   for (const e of events) allLines.push(`     Step ${e.step}: ${e.name}`);
   allLines.push('═'.repeat(70));
 
-  const sim = new VugSimulator(conditions, events);
+  const sim = commandRuntime.sim;
   legendsSim = sim;
 
   // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
@@ -229,9 +250,17 @@ async function runSimulation() {
   for (let s = 0; s < totalSteps; s++) {
     let log;
     try {
-      log = sim.run_step();
+      const commandResult = applySimulationCommand(
+        commandRuntime,
+        makeSimulationAdvanceCommand(1),
+      );
+      log = commandResult.lastLog;
     } catch (error) {
       if (computationGeneration === _simulationPlaybackGeneration) {
+        // A thrown engine step is not part of the immutable command log, so
+        // retain the prior known-good checkpoint instead of snapshotting a
+        // partially mutated scientific state.
+        _activeSimulationCommandRuntime = null;
         cancelSimulationPlayback();
         if (progressOutput) progressOutput.textContent = 'Simulation stopped because the geological engine encountered an error.';
       }
@@ -255,6 +284,8 @@ async function runSimulation() {
     }
     const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     if (s + 1 < totalSteps && (now - chunkStarted >= 12 || (s + 1) % 4 === 0)) {
+      legendsSimulationCheckpoint = createSimulationCheckpoint(commandRuntime);
+      try { persistSimulationCheckpoint(legendsSimulationCheckpoint); } catch (_e) { /* optional */ }
       showComputeProgress(s + 1);
       await new Promise<void>(resolve => setTimeout(resolve, 0));
       if (computationGeneration !== _simulationPlaybackGeneration) return;
@@ -263,6 +294,8 @@ async function runSimulation() {
   }
 
   if (computationGeneration !== _simulationPlaybackGeneration) return;
+  legendsSimulationCheckpoint = createSimulationCheckpoint(commandRuntime);
+  try { persistSimulationCheckpoint(legendsSimulationCheckpoint); } catch (_e) { /* optional */ }
 
   // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
   // Sim loop done — finalize the strip recording and persist. Non-

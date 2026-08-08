@@ -3804,10 +3804,20 @@ Scenarios:
       <input type="range" id="f-shape-seed" min="0" max="65535" value="0" step="1" oninput="document.getElementById('f-shape-seed-val').textContent=this.value">
       <span class="range-val" id="f-shape-seed-val">0</span>
     </div>
-    <div class="setup-row" title="Allow fluid carbonate chemistry to equilibrate with an atmospheric or cave-gas CO₂ reservoir.">
-      <label for="f-open-atmosphere">Atmospheric exchange</label>
+    <div class="setup-row" title="Select an open gas reservoir. With Conserved carbon off, this uses the visibly legacy fixed-DIC pH-only heuristic.">
+      <label for="f-open-atmosphere">Open CO₂ reservoir</label>
       <input type="checkbox" id="f-open-atmosphere" style="width:auto;flex:0 0 auto;margin-right:0.4rem;">
-      <span class="range-val">closed</span>
+      <span class="range-val">closed (legacy if solver off)</span>
+    </div>
+    <div class="setup-row" title="Track DIC, reduced carbonate alkalinity, gas-phase CO₂, and exact boundary fluxes. Off retains the legacy pH-only reservoir for comparison.">
+      <label for="f-carbon-boundary">Conserved carbon</label>
+      <input type="checkbox" id="f-carbon-boundary" style="width:auto;flex:0 0 auto;margin-right:0.4rem;">
+      <span class="range-val">legacy/off</span>
+    </div>
+    <div class="setup-row" title="Authored gas control volume per kilogram of water; used by the closed aqueous-headspace mass balance.">
+      <label for="f-carbon-headspace">CO₂ headspace</label>
+      <input type="range" id="f-carbon-headspace" min="0" max="500" value="100" step="1" oninput="document.getElementById('f-carbon-headspace-val').textContent=(this.value/100).toFixed(2)+' L/kg'">
+      <span class="range-val" id="f-carbon-headspace-val">1.00 L/kg</span>
     </div>
     <div class="setup-row" title="Atmospheric/cave-gas CO₂ partial pressure on a logarithmic scale from 10⁻⁶ to 1 bar.">
       <label for="f-pco2">Gas pCO₂</label>
@@ -4586,11 +4596,15 @@ Scenarios:
             <input type="range" id="broth-pco2" min="-600" max="0" value="-338" step="1" oninput="setBrothValue('pco2',this.value)">
             <span class="broth-val" id="broth-pco2-val">4.17e-4 bar</span>
           </div>
+          <div class="broth-slider-row" title="Enable the conserved DIC + reduced-alkalinity + CO₂-headspace solver. Changes are event-sourced into saves."><label for="broth-carbon_boundary">Carbon solver</label><select id="broth-carbon_boundary" oninput="setBrothValue('carbon_boundary',this.value)"><option value="0">legacy / off</option><option value="1">conserved boundary</option></select><span class="broth-val" id="broth-carbon_boundary-val">legacy / off</span></div>
+          <div class="broth-slider-row" title="Gas control volume per kilogram of water for closed-system mass balance."><label>CO₂ headspace</label><input type="range" id="broth-carbon_headspace" min="0" max="500" value="100" step="1" oninput="setBrothValue('carbon_headspace',this.value)"><span class="broth-val" id="broth-carbon_headspace-val">1.00 L/kg</span></div>
+          <div class="broth-slider-row" title="Conserved acid/base capacity. Editing this performs an explicit strong-acid/base titration; pH is solved, not independently assigned."><label>Reduced alkalinity</label><input type="range" id="broth-carbon_alkalinity" min="-500" max="5000" value="200" step="1" oninput="setBrothValue('carbon_alkalinity',this.value)"><span class="broth-val" id="broth-carbon_alkalinity-val">2.000 meq/kg</span></div>
           <div class="broth-slider-row"><label for="broth-host">Host rock</label><select id="broth-host" oninput="setBrothValue('host',this.value)"><option value="limestone">limestone</option><option value="dolomite">dolomite</option><option value="pegmatite">pegmatite / granite</option><option value="basalt">basalt / mafic</option><option value="sandstone">sandstone</option><option value="phonolite">phonolite</option><option value="ultramafic">ultramafic</option></select><span class="broth-val" id="broth-host-val">limestone</span></div>
-          <div class="broth-slider-row"><label for="broth-open_atmosphere">Atmosphere</label><select id="broth-open_atmosphere" oninput="setBrothValue('open_atmosphere',this.value)"><option value="0">closed</option><option value="1">open exchange</option></select><span class="broth-val" id="broth-open_atmosphere-val">closed</span></div>
+          <div class="broth-slider-row" title="With the conserved solver off, open exchange is a legacy fixed-DIC pH-only heuristic."><label for="broth-open_atmosphere">CO₂ boundary</label><select id="broth-open_atmosphere" oninput="setBrothValue('open_atmosphere',this.value)"><option value="0">closed</option><option value="1">open (legacy if solver off)</option></select><span class="broth-val" id="broth-open_atmosphere-val">closed</span></div>
           <div class="broth-slider-row"><label for="broth-open_system">System</label><select id="broth-open_system" oninput="setBrothValue('open_system',this.value)"><option value="0">finite cavity</option><option value="1">open surface</option></select><span class="broth-val" id="broth-open_system-val">finite cavity</span></div>
           <div class="broth-slider-row"><label for="broth-graphitic">Carbon host</label><select id="broth-graphitic" oninput="setBrothValue('graphitic',this.value)"><option value="0">non-graphitic</option><option value="1">graphitic</option></select><span class="broth-val" id="broth-graphitic-val">non-graphitic</span></div>
           <div class="broth-slider-row"><label for="broth-thermal_pulses">Heat source</label><select id="broth-thermal_pulses" oninput="setBrothValue('thermal_pulses',this.value)"><option value="1">thermal pulses</option><option value="0">no pulses</option></select><span class="broth-val" id="broth-thermal_pulses-val">enabled</span></div>
+          <div id="carbonate-boundary-readout" role="status" aria-live="polite" style="grid-column:1/-1;padding:0.65rem 0.75rem;border:1px solid rgba(112,210,190,.3);border-radius:6px;font-size:0.76rem;line-height:1.45;color:#bcd8d2;">Conserved carbonate boundary is off.</div>
         </div>
 
         <div class="broth-snapshot-row" id="broth-snapshots">
@@ -18888,7 +18902,21 @@ function scenarioSpecHash(spec) {
 //       1:6 formula ratio. Executed vendored-Three integration tests now prove
 //       finite instance matrices, raycast hits, single scene representation,
 //       overlap relief, flattened dendrites, and mobile/desktop relief parity.
-const SIM_VERSION = 250;
+// v251 — CONSERVED CARBONATE BOUNDARY (2026-08-08).
+//       Opt-in scenarios now carry separate DIC, reduced carbonate alkalinity,
+//       headspace CO2, solid carbon, and open-boundary import/export inventories.
+//       pH is solved from the carbonate system; closed steps conserve carbon,
+//       vents target an authored pCO2, root failures do not mutate state, and
+//       only explicit calcite/aragonite transfers close v1 solid carbon. The
+//       fully mixed v1 spatial contract is restricted to equal-volume wet
+//       voxels and records uncertainty instead of implying brine/high-P support.
+//       tutorial_travertine is migrated from fixed-percent/fixed-pH pulses and
+//       gains a field-by-field Mammoth benchmark receipt. Creative setup/live
+//       controls, event-sourced saves, and strip testimony preserve the ledger.
+//       Hostile-review closure adds atomic charge/recharge/titration, separate
+//       replacement-water import/export legs, accepted-zone transfer receipts,
+//       a bulk-handle guard, and visible blocked/failure diagnostics.
+const SIM_VERSION = 251;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -18900,6 +18928,7 @@ const MODEL_DIGEST = [
     'Prock:Pattison92-AndSil-16+/-3barC',
     'stress:instant-resolved-shear-stable-grain-v2',
     'event-fluid:absolute-replace-v1',
+    'carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2',
     'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
     'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
     'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',
@@ -19693,6 +19722,22 @@ function stoichiometricReservoirSpecies(mineral, species, fluid) {
         return 'S_sulfate';
     return 'S_sulfide';
 }
+function _recordAcceptedCarbonateTransferReceipt(conditions, crystal, zone, beforePpm) {
+    if (!conditions?._carbonateBoundaryState || !Number.isFinite(beforePpm))
+        return;
+    const afterPpm = Number(conditions.fluid?.CO3);
+    if (!Number.isFinite(afterPpm) || afterPpm === beforePpm)
+        return;
+    (conditions._pending_carbonate_boundary_transfers ||= []).push({
+        schema: 'accepted-carbonate-transfer-v1',
+        step: Number(conditions._sim_step) || null,
+        crystalId: crystal?.crystal_id ?? null,
+        mineral: String(crystal?.mineral || 'unknown'),
+        acceptedThicknessUm: Number(zone?.thickness_um) || 0,
+        localAqueousCarbonDeltaPpm: afterPpm - beforePpm,
+        touchedBulkFluidHandle: conditions.fluid === conditions._carbonateBoundaryBulkFluid,
+    });
+}
 // Returns the list of species names that just transitioned from positive
 // to zero (depletion events), or null on no-op / missing stoichiometry.
 // _runEngineForCrystal uses this to emit "Fe²⁺ depleted in ring 4 —
@@ -19709,6 +19754,7 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
     // it could return five or fifty times more material than the solid ever
     // contained and could not distinguish grow A → etch → grow B. Keep that
     // table as legacy reaction documentation, but never use it as an inventory source.
+    const carbonateBeforePpm = Number(conditions.fluid?.CO3);
     if (zone.thickness_um < 0) {
         const dissolved_um = -zone.thickness_um;
         const fluid = conditions.fluid;
@@ -19828,6 +19874,7 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
         if (fluid.sulfurPoolsExplicit)
             syncExplicitSulfurTotal(fluid);
         zone._returned_budget_inventory = returned;
+        _recordAcceptedCarbonateTransferReceipt(conditions, crystal, zone, carbonateBeforePpm);
         return null; // depletion narration is precipitation-only
     }
     const stoich = MINERAL_STOICHIOMETRY[crystal.mineral];
@@ -19935,6 +19982,7 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
         syncExplicitSulfurTotal(fluid);
     zone._budget_inventory_per_um = bookedInventoryPerUm;
     zone._remaining_solid_um = zone.thickness_um;
+    _recordAcceptedCarbonateTransferReceipt(conditions, crystal, zone, carbonateBeforePpm);
     return depleted;
 }
 function remainingBookedInventory(crystal, species) {
@@ -20777,6 +20825,507 @@ function equilibriumPCO2(fluid, T_celsius) {
     const H2CO3_molal = DIC_molal * fractions.H2CO3;
     const KH = Math.pow(10, -pKH_CO2(T_celsius));
     return KH > 0 ? H2CO3_molal / KH : 0;
+}
+// =============================================================
+// Conserved carbonate boundary (science contract 2026-08-08)
+// =============================================================
+//
+// These helpers are deliberately pure/serializable. They are the numerical
+// kernel for the opt-in boundary controller; scenarios that do not declare a
+// carbonate_boundary never call them and retain their legacy trajectory.
+const CARBONATE_SURROGATE_G_MOL = 60.01;
+const ATM_IN_BAR = 1.01325;
+const GAS_R_L_BAR_MOL_K = 0.08314462618;
+function dicPpmToMolKg(ppmAsCO3) {
+    return Math.max(0, Number(ppmAsCO3) || 0) / (1000 * CARBONATE_SURROGATE_G_MOL);
+}
+function dicMolKgToPpm(molKg) {
+    return Math.max(0, Number(molKg) || 0) * 1000 * CARBONATE_SURROGATE_G_MOL;
+}
+// Atmospheric-pressure pure-water density (kg/m3), used only inside the
+// Marshall-Franck ionization relation. Kell 1975, JCED 20:97-105,
+// doi:10.1021/je60064a005. Validity is deliberately clamped to v1's 0-90 C.
+function pureWaterDensityKgM3(T_celsius) {
+    const t = Math.max(0, Math.min(90, Number(T_celsius) || 0));
+    return 1000 * (1 - ((t + 288.9414) * Math.pow(t - 3.9863, 2))
+        / (508929.2 * (t + 68.12963)));
+}
+// Marshall & Franck 1981 (JPCRD 10:295, doi:10.1063/1.555643), T in
+// kelvin and density in g/cm3. Returns -log10(Kw). At 25 C ~=13.99 and
+// at 90 C ~=12.43. The reduced v1 model treats 10^-pH as molal H+
+// activity under an explicitly declared ideal-dilute 1 mol/kg standard-state
+// approximation; it does not mix an unlabelled activity with concentration.
+function pKwWater(T_celsius) {
+    const t = Math.max(0, Math.min(90, Number(T_celsius) || 0));
+    const TK = t + 273.15;
+    const densityGcm3 = pureWaterDensityKgM3(t) / 1000;
+    const logKw = -4.098 - 3245.2 / TK + 2.2362e5 / (TK * TK)
+        - 3.984e7 / (TK * TK * TK)
+        + (13.957 - 1262.3 / TK + 8.5641e5 / (TK * TK)) * Math.log10(densityGcm3);
+    return -logKw;
+}
+function reducedCarbonateAlkalinityEqKg(dicMolKg, pH, T_celsius) {
+    const dic = Math.max(0, Number(dicMolKg) || 0);
+    const ph = Number.isFinite(pH) ? Number(pH) : 7;
+    const fractions = bjerrumFractions(ph, T_celsius);
+    const h = Math.pow(10, -ph);
+    const kw = Math.pow(10, -pKwWater(T_celsius));
+    const oh = kw / Math.max(h, 1e-30);
+    return dic * (fractions.HCO3 + 2 * fractions.CO3) + oh - h;
+}
+function solvePHForReducedCarbonateAlkalinity(dicMolKg, alkalinityEqKg, T_celsius) {
+    const result = solvePHForReducedCarbonateAlkalinityResult(dicMolKg, alkalinityEqKg, T_celsius);
+    return result.ok ? result.pH : NaN;
+}
+function solvePHForReducedCarbonateAlkalinityResult(dicMolKg, alkalinityEqKg, T_celsius) {
+    const dic = Math.max(0, Number(dicMolKg) || 0);
+    const target = Number(alkalinityEqKg) || 0;
+    let lo = 0;
+    let hi = 14;
+    const at = (ph) => reducedCarbonateAlkalinityEqKg(dic, ph, T_celsius) - target;
+    const fLo = at(lo);
+    const fHi = at(hi);
+    if (!Number.isFinite(fLo) || !Number.isFinite(fHi)) {
+        return { ok: false, error: 'nonfinite', fLo, fHi };
+    }
+    if (fLo > 0 || fHi < 0) {
+        return { ok: false, error: 'no_bracket', fLo, fHi };
+    }
+    if (fLo === 0)
+        return { ok: true, pH: lo, residualEqKg: 0 };
+    if (fHi === 0)
+        return { ok: true, pH: hi, residualEqKg: 0 };
+    for (let i = 0; i < 80; i++) {
+        const mid = (lo + hi) * 0.5;
+        if (at(mid) < 0)
+            lo = mid;
+        else
+            hi = mid;
+    }
+    const pH = (lo + hi) * 0.5;
+    return { ok: true, pH, residualEqKg: at(pH) };
+}
+function _co2MolalityAtBar(pCO2Bar, T_celsius) {
+    const pBar = Math.max(0, Number(pCO2Bar) || 0);
+    const k0MolKgAtm = Math.pow(10, -pKH_CO2(T_celsius));
+    return k0MolKgAtm * (pBar / ATM_IN_BAR);
+}
+function _pCO2BarFromDICAndPH(dicMolKg, pH, T_celsius) {
+    const fractions = bjerrumFractions(pH, T_celsius);
+    const k0MolKgAtm = Math.pow(10, -pKH_CO2(T_celsius));
+    if (!(k0MolKgAtm > 0))
+        return 0;
+    return Math.max(0, dicMolKg) * fractions.H2CO3 / k0MolKgAtm * ATM_IN_BAR;
+}
+function _headspaceCO2MolKg(pCO2Bar, headspaceLKg, T_celsius) {
+    const p = Math.max(0, Number(pCO2Bar) || 0);
+    const v = Math.max(0, Number(headspaceLKg) || 0);
+    const tk = Math.max(1, Number(T_celsius) + 273.15);
+    return p * v / (GAS_R_L_BAR_MOL_K * tk);
+}
+function solveOpenCarbonateBoundary(alkalinityEqKg, targetPCO2Bar, T_celsius, headspaceLKg) {
+    const target = Math.max(1e-12, Number(targetPCO2Bar) || 0);
+    const dissolvedCO2 = _co2MolalityAtBar(target, T_celsius);
+    const alk = Number(alkalinityEqKg) || 0;
+    const residual = (ph) => {
+        const alpha0 = Math.max(1e-30, bjerrumFractions(ph, T_celsius).H2CO3);
+        const dic = dissolvedCO2 / alpha0;
+        return reducedCarbonateAlkalinityEqKg(dic, ph, T_celsius) - alk;
+    };
+    let lo = 0;
+    let hi = 14;
+    const fLo = residual(lo);
+    const fHi = residual(hi);
+    if (!Number.isFinite(fLo) || !Number.isFinite(fHi)) {
+        return { ok: false, error: 'nonfinite', fLo, fHi };
+    }
+    if (fLo > 0 || fHi < 0)
+        return { ok: false, error: 'no_bracket', fLo, fHi };
+    for (let i = 0; i < 80; i++) {
+        const mid = (lo + hi) * 0.5;
+        if (residual(mid) < 0)
+            lo = mid;
+        else
+            hi = mid;
+    }
+    const pH = (lo + hi) * 0.5;
+    const alpha0 = Math.max(1e-30, bjerrumFractions(pH, T_celsius).H2CO3);
+    const dicMolKg = dissolvedCO2 / alpha0;
+    return {
+        ok: true,
+        dicMolKg,
+        pH,
+        pCO2Bar: target,
+        headspaceCO2MolKg: _headspaceCO2MolKg(target, headspaceLKg, T_celsius),
+        residualEqKg: residual(pH),
+    };
+}
+function solveClosedCarbonateBoundary(totalCarbonMolKg, alkalinityEqKg, T_celsius, headspaceLKg) {
+    const total = Math.max(0, Number(totalCarbonMolKg) || 0);
+    const alk = Number(alkalinityEqKg) || 0;
+    const evaluate = (dic) => {
+        const phResult = solvePHForReducedCarbonateAlkalinityResult(dic, alk, T_celsius);
+        if (!phResult.ok)
+            return { ok: false, error: phResult.error };
+        const pH = phResult.pH;
+        const pCO2Bar = _pCO2BarFromDICAndPH(dic, pH, T_celsius);
+        const gas = _headspaceCO2MolKg(pCO2Bar, headspaceLKg, T_celsius);
+        return { ok: true, dicMolKg: dic, pH, pCO2Bar, headspaceCO2MolKg: gas, residual: dic + gas - total };
+    };
+    if (total === 0)
+        return evaluate(0);
+    let lo = 0;
+    let hi = total;
+    const eLo = evaluate(lo);
+    const eHi = evaluate(hi);
+    if (!eLo.ok || !eHi.ok)
+        return { ok: false, error: eLo.error || eHi.error || 'no_bracket' };
+    if (eLo.residual > 0 || eHi.residual < 0) {
+        return { ok: false, error: 'no_bracket', fLo: eLo.residual, fHi: eHi.residual };
+    }
+    for (let i = 0; i < 100; i++) {
+        const mid = (lo + hi) * 0.5;
+        const evaluated = evaluate(mid);
+        if (!evaluated.ok)
+            return { ok: false, error: evaluated.error || 'nonfinite' };
+        if (evaluated.residual < 0)
+            lo = mid;
+        else
+            hi = mid;
+    }
+    return evaluate((lo + hi) * 0.5);
+}
+function carbonateBoundaryUncertainties(fluid, T_celsius, fluidPressureKbar, pCO2Bar) {
+    const out = [];
+    const salinity = Math.max(0, Number(fluid?.salinity) || 0);
+    if (salinity > 5)
+        out.push('salinity_model_missing');
+    if (T_celsius < 0 || T_celsius > 90)
+        out.push('temperature_outside_pb82');
+    if (pCO2Bar > 1)
+        out.push('gas_nonideality_missing');
+    if (Math.abs(Math.max(0, Number(fluidPressureKbar) || 0) * 1000 - 1.01325) > 1) {
+        out.push('fluid_pressure_not_coupled_to_headspace');
+    }
+    if (['B', 'P', 'SiO2', 'S_sulfide'].some((key) => Math.max(0, Number(fluid?.[key]) || 0) > 0)) {
+        out.push('full_alkalinity_systems_omitted');
+    }
+    return out;
+}
+function createCarbonateBoundaryState(fluid, T_celsius, opts = {}) {
+    const dicMolKg = dicPpmToMolKg(fluid?.CO3);
+    const pH = Number.isFinite(fluid?.pH) ? Number(fluid.pH) : 7;
+    const pCO2Bar = _pCO2BarFromDICAndPH(dicMolKg, pH, T_celsius);
+    const headspaceLKg = Math.max(0, Number(opts.headspace_L_per_kg_water) || 0);
+    return {
+        schema: 'carbonate-boundary-v1',
+        mode: opts.mode === 'open' ? 'open' : 'closed',
+        headspaceLKg,
+        targetPCO2Bar: Math.max(1e-12, Number(opts.target_pCO2_bar) || pCO2Bar || 4.2e-4),
+        reducedAlkalinityEqKg: Number.isFinite(opts.reduced_alkalinity_eq_per_kg)
+            ? Number(opts.reduced_alkalinity_eq_per_kg)
+            : reducedCarbonateAlkalinityEqKg(dicMolKg, pH, T_celsius),
+        headspaceCO2MolKg: _headspaceCO2MolKg(pCO2Bar, headspaceLKg, T_celsius),
+        boundaryImportMolKg: 0,
+        boundaryExportMolKg: 0,
+        lastDICMolKg: dicMolKg,
+        lastBulkDICPpm: dicMolKgToPpm(dicMolKg),
+        solidCarbonMolKg: 0,
+        initialSystemCarbonMolKg: dicMolKg + _headspaceCO2MolKg(pCO2Bar, headspaceLKg, T_celsius),
+        blocked: false,
+        transactions: [],
+        uncertainties: carbonateBoundaryUncertainties(fluid, T_celsius, Number(opts.fluid_pressure_kbar) || 0, pCO2Bar),
+    };
+}
+function _recordCarbonateBoundaryTransaction(state, tx) {
+    (state.transactions ||= []).push(tx);
+    if (tx.ok !== false) {
+        state.lastDICMolKg = tx.after.dicMolKg;
+        state.headspaceCO2MolKg = tx.after.headspaceCO2MolKg;
+        state.lastBulkDICPpm = dicMolKgToPpm(tx.after.dicMolKg);
+    }
+    return tx;
+}
+function equilibrateClosedCarbonateBoundaryState(state, fluid, T_celsius, note = 'closed equilibration') {
+    const beforeDIC = dicPpmToMolKg(fluid?.CO3);
+    const beforeGas = Math.max(0, Number(state.headspaceCO2MolKg) || 0);
+    const totalBefore = beforeDIC + beforeGas;
+    const solved = solveClosedCarbonateBoundary(totalBefore, state.reducedAlkalinityEqKg, T_celsius, state.headspaceLKg);
+    if (!solved.ok) {
+        return _recordCarbonateBoundaryTransaction(state, {
+            ok: false, kind: 'failed', attemptedKind: 'closed', note,
+            error: solved.error,
+            before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+            after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+        });
+    }
+    fluid.CO3 = dicMolKgToPpm(solved.dicMolKg);
+    fluid.pH = solved.pH;
+    const totalAfter = solved.dicMolKg + solved.headspaceCO2MolKg;
+    return _recordCarbonateBoundaryTransaction(state, {
+        ok: true, kind: 'closed', note,
+        before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+        after: { ...solved, totalCarbonMolKg: totalAfter },
+        carbonErrorMolKg: totalAfter - totalBefore,
+        alkalinityChangeEqKg: 0,
+    });
+}
+function equilibrateOpenCarbonateBoundaryState(state, fluid, T_celsius, targetPCO2Bar, note = 'open equilibration') {
+    const beforeDIC = dicPpmToMolKg(fluid?.CO3);
+    const beforeGas = Math.max(0, Number(state.headspaceCO2MolKg) || 0);
+    const totalBefore = beforeDIC + beforeGas;
+    const solved = solveOpenCarbonateBoundary(state.reducedAlkalinityEqKg, targetPCO2Bar, T_celsius, state.headspaceLKg);
+    if (!solved.ok) {
+        return _recordCarbonateBoundaryTransaction(state, {
+            ok: false, kind: 'failed', attemptedKind: 'open', note,
+            error: solved.error,
+            before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+            after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+        });
+    }
+    fluid.CO3 = dicMolKgToPpm(solved.dicMolKg);
+    fluid.pH = solved.pH;
+    const totalAfter = solved.dicMolKg + solved.headspaceCO2MolKg;
+    const delta = totalAfter - totalBefore;
+    if (delta >= 0)
+        state.boundaryImportMolKg += delta;
+    else
+        state.boundaryExportMolKg -= delta;
+    state.targetPCO2Bar = solved.pCO2Bar;
+    return _recordCarbonateBoundaryTransaction(state, {
+        ok: true, kind: 'open', note,
+        before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+        after: { ...solved, totalCarbonMolKg: totalAfter },
+        boundaryDeltaMolKg: delta,
+        alkalinityChangeEqKg: 0,
+    });
+}
+function chargeCarbonateBoundaryState(state, fluid, T_celsius, carbonMolKg, note = 'pure CO2 charge') {
+    const charge = Math.max(0, Number(carbonMolKg) || 0);
+    const beforeDIC = dicPpmToMolKg(fluid?.CO3);
+    const beforeGas = Math.max(0, Number(state.headspaceCO2MolKg) || 0);
+    const totalBefore = beforeDIC + beforeGas;
+    const solved = solveClosedCarbonateBoundary(totalBefore + charge, state.reducedAlkalinityEqKg, T_celsius, state.headspaceLKg);
+    if (!solved.ok) {
+        return _recordCarbonateBoundaryTransaction(state, {
+            ok: false, kind: 'failed', attemptedKind: 'charge', note,
+            error: solved.error,
+            requestedImportMolKg: charge,
+            before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+            after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+        });
+    }
+    const totalAfter = solved.dicMolKg + solved.headspaceCO2MolKg;
+    fluid.CO3 = dicMolKgToPpm(solved.dicMolKg);
+    fluid.pH = solved.pH;
+    state.headspaceCO2MolKg = solved.headspaceCO2MolKg;
+    state.boundaryImportMolKg += charge;
+    return _recordCarbonateBoundaryTransaction(state, {
+        ok: true, kind: 'charge', note,
+        boundaryImportMolKg: charge,
+        boundaryExportMolKg: 0,
+        before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+        after: { ...solved, totalCarbonMolKg: totalAfter },
+        carbonErrorMolKg: totalAfter - totalBefore - charge,
+        alkalinityChangeEqKg: 0,
+    });
+}
+// Replace a declared fraction of the one-kilogram aqueous control volume with
+// authored incoming water. Unlike a pure-CO2 charge, recharge carries both DIC
+// and reduced carbonate alkalinity; neither may be inferred from pH alone. The
+// outgoing and incoming carbon legs are recorded separately, then the retained
+// headspace and mixed water equilibrate as a closed control volume.
+function rechargeCarbonateBoundaryState(state, fluid, T_celsius, replacementFraction, incomingDICMolKg, incomingReducedAlkalinityEqKg, note = 'authored replacement-water recharge') {
+    const fraction = Number(replacementFraction);
+    const incomingDIC = Number(incomingDICMolKg);
+    const incomingAlkalinity = Number(incomingReducedAlkalinityEqKg);
+    const beforeDIC = dicPpmToMolKg(fluid?.CO3);
+    const beforeGas = Math.max(0, Number(state.headspaceCO2MolKg) || 0);
+    const beforeAlkalinity = Number(state.reducedAlkalinityEqKg);
+    const totalBefore = beforeDIC + beforeGas;
+    const valid = Number.isFinite(fraction) && fraction >= 0 && fraction <= 1
+        && Number.isFinite(incomingDIC) && incomingDIC >= 0
+        && Number.isFinite(incomingAlkalinity);
+    if (!valid) {
+        return _recordCarbonateBoundaryTransaction(state, {
+            ok: false, kind: 'failed', attemptedKind: 'recharge', note,
+            error: 'recharge_requires_fraction_0_to_1_and_explicit_finite_incoming_DIC_and_alkalinity',
+            before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+            after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+        });
+    }
+    const exportedAqueous = fraction * beforeDIC;
+    const importedAqueous = fraction * incomingDIC;
+    const mixedDIC = beforeDIC - exportedAqueous + importedAqueous;
+    const mixedAlkalinity = (1 - fraction) * beforeAlkalinity + fraction * incomingAlkalinity;
+    const solved = solveClosedCarbonateBoundary(mixedDIC + beforeGas, mixedAlkalinity, T_celsius, state.headspaceLKg);
+    if (!solved.ok) {
+        return _recordCarbonateBoundaryTransaction(state, {
+            ok: false, kind: 'failed', attemptedKind: 'recharge', note,
+            error: solved.error,
+            requestedBoundaryImportMolKg: importedAqueous,
+            requestedBoundaryExportMolKg: exportedAqueous,
+            before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+            after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+        });
+    }
+    const totalAfter = solved.dicMolKg + solved.headspaceCO2MolKg;
+    fluid.CO3 = dicMolKgToPpm(solved.dicMolKg);
+    fluid.pH = solved.pH;
+    state.reducedAlkalinityEqKg = mixedAlkalinity;
+    state.headspaceCO2MolKg = solved.headspaceCO2MolKg;
+    state.boundaryImportMolKg += importedAqueous;
+    state.boundaryExportMolKg += exportedAqueous;
+    return _recordCarbonateBoundaryTransaction(state, {
+        ok: true, kind: 'recharge', note,
+        replacementFraction: fraction,
+        incomingDICMolKg: incomingDIC,
+        incomingReducedAlkalinityEqKg: incomingAlkalinity,
+        boundaryImportMolKg: importedAqueous,
+        boundaryExportMolKg: exportedAqueous,
+        before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+        after: { ...solved, totalCarbonMolKg: totalAfter },
+        carbonErrorMolKg: totalAfter - totalBefore - importedAqueous + exportedAqueous,
+        alkalinityChangeEqKg: mixedAlkalinity - beforeAlkalinity,
+    });
+}
+// Strong-acid/base capacity edit for Creative mode. Carbon is not added by a
+// closed titration; an open gas boundary may exchange carbon while it restores
+// its authored pCO2. The requested reduced alkalinity is committed only after a
+// successful solve, so failed edits leave both inventories and fluid unchanged.
+function setCarbonateBoundaryReducedAlkalinityState(state, fluid, T_celsius, requestedAlkalinityEqKg, note = 'authored reduced-alkalinity titration') {
+    const requested = Number(requestedAlkalinityEqKg);
+    const beforeDIC = dicPpmToMolKg(fluid?.CO3);
+    const beforeGas = Math.max(0, Number(state.headspaceCO2MolKg) || 0);
+    const beforeAlkalinity = Number(state.reducedAlkalinityEqKg);
+    const totalBefore = beforeDIC + beforeGas;
+    if (!Number.isFinite(requested)) {
+        return _recordCarbonateBoundaryTransaction(state, {
+            ok: false, kind: 'failed', attemptedKind: 'alkalinity_titration', note,
+            error: 'finite_reduced_alkalinity_required',
+            before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+            after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+        });
+    }
+    const solved = state.mode === 'open'
+        ? solveOpenCarbonateBoundary(requested, state.targetPCO2Bar, T_celsius, state.headspaceLKg)
+        : solveClosedCarbonateBoundary(totalBefore, requested, T_celsius, state.headspaceLKg);
+    if (!solved.ok) {
+        return _recordCarbonateBoundaryTransaction(state, {
+            ok: false, kind: 'failed', attemptedKind: 'alkalinity_titration', note,
+            error: solved.error,
+            requestedReducedAlkalinityEqKg: requested,
+            before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+            after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+        });
+    }
+    const totalAfter = solved.dicMolKg + solved.headspaceCO2MolKg;
+    const boundaryDelta = state.mode === 'open' ? totalAfter - totalBefore : 0;
+    fluid.CO3 = dicMolKgToPpm(solved.dicMolKg);
+    fluid.pH = solved.pH;
+    state.reducedAlkalinityEqKg = requested;
+    state.headspaceCO2MolKg = solved.headspaceCO2MolKg;
+    if (boundaryDelta >= 0)
+        state.boundaryImportMolKg += boundaryDelta;
+    else
+        state.boundaryExportMolKg -= boundaryDelta;
+    return _recordCarbonateBoundaryTransaction(state, {
+        ok: true, kind: 'alkalinity_titration', note,
+        requestedReducedAlkalinityEqKg: requested,
+        boundaryImportMolKg: Math.max(0, boundaryDelta),
+        boundaryExportMolKg: Math.max(0, -boundaryDelta),
+        before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+        after: { ...solved, totalCarbonMolKg: totalAfter },
+        carbonErrorMolKg: totalAfter - totalBefore - boundaryDelta,
+        alkalinityChangeEqKg: requested - beforeAlkalinity,
+    });
+}
+function titrateCarbonateBoundaryToPHState(state, fluid, T_celsius, targetPH, note = 'authored strong-acid/base pH titration') {
+    const pH = Number(targetPH);
+    if (!Number.isFinite(pH) || pH < 0 || pH > 14) {
+        const beforeDIC = dicPpmToMolKg(fluid?.CO3);
+        const beforeGas = Math.max(0, Number(state.headspaceCO2MolKg) || 0);
+        return _recordCarbonateBoundaryTransaction(state, {
+            ok: false, kind: 'failed', attemptedKind: 'ph_titration', note,
+            error: 'target_pH_must_be_between_0_and_14',
+            before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: beforeDIC + beforeGas },
+            after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: beforeDIC + beforeGas },
+        });
+    }
+    let targetDIC;
+    if (state.mode === 'open') {
+        const dissolvedCO2 = _co2MolalityAtBar(state.targetPCO2Bar, T_celsius);
+        const alpha0 = Math.max(1e-30, bjerrumFractions(pH, T_celsius).H2CO3);
+        targetDIC = dissolvedCO2 / alpha0;
+    }
+    else {
+        const total = dicPpmToMolKg(fluid?.CO3)
+            + Math.max(0, Number(state.headspaceCO2MolKg) || 0);
+        const gasPerMolDIC = _headspaceCO2MolKg(_pCO2BarFromDICAndPH(1, pH, T_celsius), state.headspaceLKg, T_celsius);
+        targetDIC = total / (1 + gasPerMolDIC);
+    }
+    const targetAlkalinity = reducedCarbonateAlkalinityEqKg(targetDIC, pH, T_celsius);
+    const tx = setCarbonateBoundaryReducedAlkalinityState(state, fluid, T_celsius, targetAlkalinity, note);
+    if (tx?.ok) {
+        tx.kind = 'ph_titration';
+        tx.targetPH = pH;
+    }
+    else if (tx) {
+        tx.attemptedKind = 'ph_titration';
+        tx.targetPH = pH;
+    }
+    return tx;
+}
+function recordSimpleCaCO3SolidTransferState(state, aqueousCarbonDeltaMolKg, mineral, note = 'explicit simple CaCO3 transfer') {
+    const minerals = (Array.isArray(mineral) ? mineral : [mineral]).map(String);
+    if (!minerals.length || minerals.some((phase) => phase !== 'calcite' && phase !== 'aragonite')) {
+        const failed = {
+            ok: false,
+            kind: 'solid_transfer_unresolved',
+            note,
+            minerals,
+            error: 'v1_supports_only_calcite_or_aragonite',
+        };
+        (state.transactions ||= []).push(failed);
+        return failed;
+    }
+    const deltaAqueous = Number(aqueousCarbonDeltaMolKg) || 0;
+    const previous = Math.max(0, Number(state.lastDICMolKg) || 0);
+    if (Math.abs(deltaAqueous) <= Math.max(1e-15, Math.abs(previous) * 1e-12))
+        return null;
+    // Valid only for the explicitly named simple CaCO3 phases above. Basic and
+    // hydroxycarbonates have different proton/alkalinity stoichiometry and are
+    // deliberately rejected rather than silently forced through this rule.
+    state.reducedAlkalinityEqKg += 2 * deltaAqueous;
+    state.solidCarbonMolKg = Math.max(0, (Number(state.solidCarbonMolKg) || 0) - deltaAqueous);
+    state.lastDICMolKg = Math.max(0, (Number(state.lastDICMolKg) || 0) + deltaAqueous);
+    const tx = {
+        ok: true,
+        kind: 'solid_transfer',
+        note,
+        minerals,
+        aqueousCarbonDeltaMolKg: deltaAqueous,
+        solidCarbonDeltaMolKg: -deltaAqueous,
+        alkalinityChangeEqKg: 2 * deltaAqueous,
+    };
+    (state.transactions ||= []).push(tx);
+    return tx;
+}
+function recordUnresolvedCarbonateTransferState(state, observedDICMolKg, note) {
+    const observed = Math.max(0, Number(observedDICMolKg) || 0);
+    const previous = Math.max(0, Number(state.lastDICMolKg) || 0);
+    const delta = observed - previous;
+    if (Math.abs(delta) <= Math.max(1e-15, Math.abs(previous) * 1e-12))
+        return null;
+    const tx = {
+        ok: false,
+        kind: 'solid_transfer_unresolved',
+        note,
+        observedAqueousCarbonDeltaMolKg: delta,
+        error: 'undeclared_DIC_change',
+    };
+    (state.transactions ||= []).push(tx);
+    return tx;
 }
 
 // ── 20c-chemistry-carbonate-Ksp.js ──
@@ -51783,11 +52332,23 @@ function event_aquifer_recharge_floods(conditions) {
     return "Heavy meteoric pulse. The cavity floods back to the ceiling. Fluid contact resumes on every wall — previously-oxidized rinds dissolve where they can; fresh sulfide growth starts wherever they can't.";
 }
 function event_acidify(conditions) {
+    if (conditions._carbonateBoundaryState) {
+        const tx = titrateCarbonateBoundaryToPHState(conditions._carbonateBoundaryState, conditions.fluid, conditions.temperature, Math.max(conditions.fluid.pH - 2, 2), 'acidic fluid/strong-acid titration');
+        return tx?.ok
+            ? `Strong-acid capacity is booked; the conserved carbonate solve gives pH ${conditions.fluid.pH.toFixed(2)}.`
+            : `Acid titration rejected (${tx?.error || 'unknown error'}); fluid state was not mutated.`;
+    }
     conditions.fluid.pH -= 2.0;
     conditions.fluid.pH = Math.max(conditions.fluid.pH, 2.0);
     return `Acidic fluid incursion. pH drops to ${conditions.fluid.pH.toFixed(1)}. Carbonates becoming unstable — calcite may dissolve.`;
 }
 function event_alkalinize(conditions) {
+    if (conditions._carbonateBoundaryState) {
+        const tx = titrateCarbonateBoundaryToPHState(conditions._carbonateBoundaryState, conditions.fluid, conditions.temperature, Math.min(conditions.fluid.pH + 2, 10), 'alkaline fluid/strong-base titration');
+        return tx?.ok
+            ? `Strong-base capacity is booked; the conserved carbonate solve gives pH ${conditions.fluid.pH.toFixed(2)}.`
+            : `Base titration rejected (${tx?.error || 'unknown error'}); fluid state was not mutated.`;
+    }
     conditions.fluid.pH += 2.0;
     conditions.fluid.pH = Math.min(conditions.fluid.pH, 10.0);
     return `Alkaline fluid incursion. pH rises to ${conditions.fluid.pH.toFixed(1)}. Carbonate precipitation favored.`;
@@ -52050,6 +52611,7 @@ const EVENT_REGISTRY = {
     co2_degas: event_co2_degas,
     co2_degas_with_reheat: event_co2_degas_with_reheat,
     co2_charge: event_co2_charge,
+    carbonate_recharge: event_carbonate_recharge,
     // 2026-05-18 — Sulphur Bank Mine (Lake County, CA). Pleistocene
     // hot-spring sulfur deposit; the canonical native_sulfur locality
     // that matches the engine's acid-sulfate gates. See
@@ -52247,6 +52809,13 @@ function _buildScenarioFromSpec(scenarioId, spec) {
             scenario_spec_hash: specHash,
             open_to_atmosphere: spec.open_to_atmosphere,
             atmospheric_pCO2_bar: spec.atmospheric_pCO2_bar,
+            // Conserved carbonate boundary v1. Absent means the legacy open-pH
+            // behavior (when separately requested) and keeps existing scenarios
+            // byte-identical. The object is copied, not interpreted, at build time so
+            // it remains serializable for saves and the future worker protocol.
+            carbonate_boundary: spec.carbonate_boundary
+                ? { ...spec.carbonate_boundary }
+                : undefined,
             wall_rock_thermal_buffer_C: spec.wall_rock_thermal_buffer_C,
             host_rock_composition: spec.host_rock_composition,
             // Mine-specific negative evidence. These are explicit locality
@@ -52276,7 +52845,10 @@ function _buildScenarioFromSpec(scenarioId, spec) {
             step: Math.floor(ev.step),
             name: ev.name || ev.type || '',
             description: ev.description || '',
-            apply_fn: EVENT_REGISTRY[ev.type],
+            // Preserve the authored event payload for handlers that need a physical
+            // boundary value (for example a vent target pCO2). Existing one-argument
+            // handlers ignore the extra argument and retain their behavior.
+            apply_fn: (conditions) => EVENT_REGISTRY[ev.type](conditions, ev),
             // FLUID-SOURCE SPOTS Phase 2d — optional spot-lifecycle directive. A
             // string ('seal' | 'breach') or {action, kind} closes/opens the cavity's
             // feeders when this event fires (apply_events handles it centrally, after
@@ -53875,7 +54447,26 @@ function event_gsp_flood(c) {
 // Default: removes 30% of DIC, raises pH by 0.5 (clamped at 9.5).
 // Scenarios can subclass via additional fields if/when needed; for
 // now this is the single canonical degas event.
-function event_co2_degas(c) {
+function event_co2_degas(c, eventSpec = {}) {
+    const boundary = c._carbonateBoundaryState;
+    if (boundary) {
+        if (boundary.blocked)
+            return 'CO₂ vent paused: the spatial/transfer audit is unresolved.';
+        const unresolved = recordUnresolvedCarbonateTransferState(boundary, dicPpmToMolKg(c.fluid.CO3), 'pre-vent DIC audit');
+        if (unresolved)
+            return 'CO₂ vent paused: DIC changed without a declared boundary or simple-CaCO₃ transaction.';
+        const target = Math.max(1e-12, Number(eventSpec.target_pCO2_bar) || Number(boundary.targetPCO2Bar) || 4.2e-4);
+        const tx = equilibrateOpenCarbonateBoundaryState(boundary, c.fluid, c.temperature, target, eventSpec.name || 'CO2 vent');
+        if (!tx?.ok) {
+            return `CO₂ vent paused: the carbonate boundary solve failed (${tx?.error || 'unknown error'}); fluid state was not mutated.`;
+        }
+        const exported = Math.max(0, -tx.boundaryDeltaMolKg) * 1000;
+        return (`COâ‚‚ vents to an authored ${target.toExponential(2)} bar boundary. ` +
+            `The solved carbonate system exports ${exported.toFixed(3)} mmol C/kg; ` +
+            `pH becomes ${c.fluid.pH.toFixed(2)} and DIC becomes ` +
+            `${(tx.after.dicMolKg * 1000).toFixed(3)} mmol C/kg. Reduced carbonate ` +
+            `alkalinity is conserved; no fixed pH increment or boiling claim is used.`);
+    }
     const oldDIC = c.fluid.CO3;
     const oldPH = c.fluid.pH;
     const fraction = 0.3;
@@ -53894,7 +54485,33 @@ function event_co2_degas(c) {
 // T toward 25 °C and calcite (retrograde solubility) loses the
 // thermal assist that makes natural travertine work. Used by
 // tutorial_travertine.
-function event_co2_degas_with_reheat(c) {
+function event_co2_degas_with_reheat(c, eventSpec = {}) {
+    const boundary = c._carbonateBoundaryState;
+    if (boundary) {
+        if (boundary.blocked)
+            return 'Heated CO₂ vent paused: the spatial/transfer audit is unresolved.';
+        const oldT = c.temperature;
+        const reheatT = Number.isFinite(eventSpec.reheat_C)
+            ? Number(eventSpec.reheat_C)
+            : 70;
+        const unresolved = recordUnresolvedCarbonateTransferState(boundary, dicPpmToMolKg(c.fluid.CO3), 'pre-vent DIC audit');
+        if (unresolved)
+            return 'Heated CO₂ vent paused: DIC changed without a declared boundary or simple-CaCO₃ transaction.';
+        const target = Math.max(1e-12, Number(eventSpec.target_pCO2_bar) || Number(boundary.targetPCO2Bar) || 4.2e-4);
+        const tx = equilibrateOpenCarbonateBoundaryState(boundary, c.fluid, reheatT, target, eventSpec.name || 'heated CO2 vent');
+        if (!tx?.ok) {
+            return `Heated CO₂ vent paused: the carbonate boundary solve failed (${tx?.error || 'unknown error'}); fluid state was not mutated.`;
+        }
+        c.temperature = reheatT;
+        c._calciteDepositionalMode = 'travertine';
+        const exported = Math.max(0, -tx.boundaryDeltaMolKg) * 1000;
+        return (`Geothermal heat restores ${oldT.toFixed(1)} â†’ ${c.temperature.toFixed(1)}Â°C; ` +
+            `the water then vents toward ${target.toExponential(2)} bar pCOâ‚‚. ` +
+            `${exported.toFixed(3)} mmol C/kg leaves the aqueous+headspace system; ` +
+            `the conserved-alkalinity solve gives pH ${c.fluid.pH.toFixed(2)} and ` +
+            `DIC ${(tx.after.dicMolKg * 1000).toFixed(3)} mmol C/kg. This is heat ` +
+            `recharge, not an undeclared replacement-water or boiling shortcut.`);
+    }
     const oldDIC = c.fluid.CO3;
     const oldPH = c.fluid.pH;
     const oldT = c.temperature;
@@ -53923,7 +54540,27 @@ function event_co2_degas_with_reheat(c) {
 // Carbonates already in the cavity become subsaturated — they may
 // dissolve and free their cations back to the fluid, the
 // well-known "CO₂ pulse erodes existing speleothems" mechanism.
-function event_co2_charge(c) {
+function event_co2_charge(c, eventSpec = {}) {
+    const boundary = c._carbonateBoundaryState;
+    if (boundary) {
+        if (boundary.blocked)
+            return 'CO₂ charge paused: the spatial/transfer audit is unresolved.';
+        const unresolved = recordUnresolvedCarbonateTransferState(boundary, dicPpmToMolKg(c.fluid.CO3), 'pre-charge DIC audit');
+        if (unresolved)
+            return 'CO₂ charge paused: DIC changed without a declared boundary or simple-CaCO₃ transaction.';
+        const chargeMolKg = Math.max(0, Number(eventSpec.carbon_mol_per_kg)
+            || dicPpmToMolKg(Number(eventSpec.dic_as_co3_ppm) || 100));
+        const oldPH = c.fluid.pH;
+        const tx = chargeCarbonateBoundaryState(boundary, c.fluid, c.temperature, chargeMolKg, eventSpec.name || 'pure CO2 charge');
+        if (!tx?.ok) {
+            return `CO₂ charge paused: the carbonate boundary solve failed (${tx?.error || 'unknown error'}); fluid state was not mutated.`;
+        }
+        return (`Pure COâ‚‚ charge imports ${(chargeMolKg * 1000).toFixed(3)} mmol C/kg ` +
+            `into the declared headspace. Closed equilibration conserves carbon ` +
+            `(residual ${(tx.carbonErrorMolKg * 1e9).toFixed(3)} nmol/kg) and leaves ` +
+            `reduced carbonate alkalinity unchanged; solved pH ${oldPH.toFixed(2)} â†’ ` +
+            `${c.fluid.pH.toFixed(2)}.`);
+    }
     const oldDIC = c.fluid.CO3;
     const oldPH = c.fluid.pH;
     const addDIC = 100;
@@ -53934,6 +54571,36 @@ function event_co2_charge(c) {
         `pH drops ${oldPH.toFixed(2)} → ${c.fluid.pH.toFixed(2)}. ` +
         `Existing carbonates may begin to corrode as σ drops below 1; the fluid ` +
         `is now more aggressive toward limestone walls and any pre-existing calcite.`);
+}
+// Replacement-water recharge. Both incoming DIC and reduced carbonate
+// alkalinity are mandatory authored boundary conditions. This is deliberately
+// separate from pure-CO2 charge: water carries acid/base capacity and exports
+// the displaced aqueous carbon even when the net DIC change is zero.
+function event_carbonate_recharge(c, eventSpec = {}) {
+    const boundary = c._carbonateBoundaryState;
+    if (!boundary) {
+        return 'Carbonate recharge refused: this scenario uses the legacy fixed-DIC heuristic and has no conserved boundary.';
+    }
+    if (boundary.blocked)
+        return 'Carbonate recharge paused: the spatial/transfer audit is unresolved.';
+    const fraction = Number(eventSpec.replace_fraction);
+    const incomingPpm = Number(eventSpec.incoming_dic_as_co3_ppm);
+    const incomingAlkalinity = Number(eventSpec.incoming_reduced_alkalinity_eq_per_kg);
+    if (!Number.isFinite(fraction) || !Number.isFinite(incomingPpm) || !Number.isFinite(incomingAlkalinity)) {
+        return 'Carbonate recharge refused: replace_fraction, incoming_dic_as_co3_ppm, and incoming_reduced_alkalinity_eq_per_kg are all required.';
+    }
+    const unresolved = recordUnresolvedCarbonateTransferState(boundary, dicPpmToMolKg(c.fluid.CO3), 'pre-recharge DIC audit');
+    if (unresolved)
+        return 'Carbonate recharge paused: DIC changed without a declared boundary or simple-CaCO3 transaction.';
+    const tx = rechargeCarbonateBoundaryState(boundary, c.fluid, c.temperature, fraction, dicPpmToMolKg(incomingPpm), incomingAlkalinity, eventSpec.name || 'replacement-water recharge');
+    if (!tx?.ok) {
+        return `Carbonate recharge paused: the carbonate boundary solve failed (${tx?.error || 'unknown error'}); fluid state was not mutated.`;
+    }
+    return (`Replacement water exchanges ${(fraction * 100).toFixed(1)}% of the aqueous control volume. ` +
+        `The ledger separately exports ${(tx.boundaryExportMolKg * 1000).toFixed(3)} and imports ` +
+        `${(tx.boundaryImportMolKg * 1000).toFixed(3)} mmol C/kg; incoming reduced alkalinity was ` +
+        `${incomingAlkalinity.toExponential(3)} eq/kg. Closed re-equilibration gives pH ` +
+        `${c.fluid.pH.toFixed(2)} with carbon residual ${(tx.carbonErrorMolKg * 1e9).toFixed(3)} nmol/kg.`);
 }
 
 // ── 70m-sulphur-bank.js ──
@@ -56866,6 +57533,26 @@ class VugSimulator {
         this._carbonSourceTransactions = [];
         this._carbonPropagationViolations = [];
         this._carbonLedgerHistory = [];
+        // Conserved carbonate boundary v1 is explicit opt-in. It lives on both the
+        // simulator and conditions because event handlers receive conditions, while
+        // the step controller owns equilibration. The state is plain JSON data so a
+        // later worker/save snapshot can copy it without class revival.
+        const carbonateBoundary = this.conditions?._scenario?.carbonate_boundary;
+        this._carbonateBoundaryState = carbonateBoundary
+            ? createCarbonateBoundaryState(this.conditions.fluid, this.conditions.temperature, {
+                ...carbonateBoundary,
+                fluid_pressure_kbar: this.conditions.pressure,
+            })
+            : null;
+        if (this._carbonateBoundaryState) {
+            this.conditions._carbonateBoundaryState = this._carbonateBoundaryState;
+        }
+        // One authored scenario still uses the pre-boundary atmospheric comparison
+        // while its full open-system migration is being validated. Keep that
+        // selectable path scientifically explicit in runtime output; Creative's
+        // live readout carries the same label.
+        this._legacyCarbonateHeuristicActive = !!(this.conditions?._scenario?.open_to_atmosphere
+            && !this._carbonateBoundaryState);
         // FLUID-SOURCE SPOTS (js/85k, PROPOSAL §10) Phase 2a — seed the spot set off
         // the cavity seed now that the mesh (→ cell count) exists. Uses a DEDICATED
         // _mulberry32(shape_seed ^ SPOTS_SALT) stream, independent of the shared rng,
@@ -56896,6 +57583,16 @@ class VugSimulator {
     run_step() {
         this.log = [];
         this.step++;
+        this.conditions._sim_step = this.step;
+        if (this.step === 1 && this._legacyCarbonateHeuristicActive) {
+            this.log.push('  ⚠ Carbonate boundary: LEGACY HEURISTIC — atmospheric exchange changes pH at fixed DIC; carbon and reduced alkalinity are not conserved.');
+        }
+        // Equal-volume, fully mixed carbonate v1 audits the canonical wet voxels
+        // before any event sees the bulk handle. This is where explicitly scoped
+        // calcite/aragonite transfer is booked; undeclared DIC changes block the
+        // boundary rather than being relabelled as CaCO3.
+        if (this._carbonateBoundaryState)
+            this._prepareCarbonateBoundarySpatialState();
         // Phase C v1: events apply to conditions.fluid (= equator ring
         // fluid via aliasing). Snapshot before and propagate the delta to
         // non-equator rings — otherwise a global event pulse never reaches
@@ -56941,7 +57638,18 @@ class VugSimulator {
         // pH is re-solved so its equilibrium pCO2 matches the local
         // atmospheric value. Runs BEFORE dissolution + nucleation so
         // downstream supersat math sees the equilibrated chemistry.
-        this._applyOpenAtmosphereEquilibration();
+        if (this.conditions?._scenario?.carbonate_boundary) {
+            // Events and persistent movements execute after the start-of-step audit.
+            // Re-audit at the actual solver boundary so a same-step, unreceipted DIC
+            // mutation cannot be adopted as a new closed-system total.
+            this._prepareCarbonateBoundarySpatialState();
+            const carbonateSnap = this._snapshotGlobal();
+            this._applyOpenAtmosphereEquilibration();
+            this._propagateGlobalDelta(carbonateSnap);
+        }
+        else {
+            this._applyOpenAtmosphereEquilibration();
+        }
         // Track dolomite saturation crossings for the Kim 2023 cycle mechanism.
         this.conditions.update_dol_cycles();
         snap = this._snapshotGlobal();
@@ -59618,6 +60326,7 @@ Object.assign(VugSimulator.prototype, {
     _applyZoneGrowthBudget(crystal, zone) {
         if (!zone)
             return null;
+        const bulkFluidHandle = this.conditions.fluid;
         const anchor = this.wall_state._resolveAnchor(crystal);
         const ringIdx = anchor ? anchor.ringIdx : null;
         let savedFluid = null;
@@ -59633,6 +60342,7 @@ Object.assign(VugSimulator.prototype, {
             this.conditions.temperature = this.ring_temperatures[ringIdx];
         }
         try {
+            this.conditions._carbonateBoundaryBulkFluid = bulkFluidHandle;
             const depleted = applyStoichiometricGrowthBudget(crystal, zone, this.conditions);
             // applyStoichiometricGrowthBudget may shrink a requested zone to the formula amount the
             // local mg/kg reservoirs can actually supply. Commit engine-side habit /
@@ -59653,6 +60363,7 @@ Object.assign(VugSimulator.prototype, {
             return depleted;
         }
         finally {
+            delete this.conditions._carbonateBoundaryBulkFluid;
             if (savedFluid != null) {
                 this.conditions.fluid = savedFluid;
             }
@@ -59925,6 +60636,121 @@ function _ledgerTolerance(value) {
     return Math.max(1e-7, Math.abs(value) * 1e-9);
 }
 Object.assign(VugSimulator.prototype, {
+    _replaceFullyMixedCarbonateFluid() {
+        if (!this._carbonateBoundaryState)
+            return false;
+        const source = this.conditions?.fluid;
+        if (!source)
+            return false;
+        const fluids = _canonicalSpatialFluids(this);
+        for (const fluid of fluids) {
+            fluid.CO3 = source.CO3;
+            fluid.pH = source.pH;
+        }
+        for (const fluid of (this.ring_fluids || [])) {
+            if (!fluid)
+                continue;
+            fluid.CO3 = source.CO3;
+            fluid.pH = source.pH;
+        }
+        this._carbonateBoundaryState.lastDICMolKg = dicPpmToMolKg(source.CO3);
+        this._carbonateBoundaryState.lastBulkDICPpm = source.CO3;
+        return fluids.length > 0;
+    },
+    _prepareCarbonateBoundarySpatialState() {
+        const state = this._carbonateBoundaryState;
+        const config = this.conditions?._scenario?.carbonate_boundary;
+        if (!state || !config)
+            return false;
+        const receipts = Array.isArray(this.conditions._pending_carbonate_boundary_transfers)
+            ? this.conditions._pending_carbonate_boundary_transfers.slice() : [];
+        delete this.conditions._pending_carbonate_boundary_transfers;
+        const pendingViolation = this.conditions._pending_carbonate_boundary_violation || null;
+        delete this.conditions._pending_carbonate_boundary_violation;
+        const surfaceHeight = this.conditions.fluid_surface_height_mm;
+        const surfaceRing = this.conditions.fluid_surface_ring;
+        const fullyFlooded = (surfaceHeight == null && surfaceRing == null)
+            || (Number.isFinite(surfaceRing) && surfaceRing >= this.wall_state.ring_count);
+        if (!fullyFlooded || config.spatial_model !== 'equal_volume_fully_mixed') {
+            state.blocked = true;
+            const tx = {
+                ok: false,
+                kind: 'spatial_boundary_unsupported',
+                step: this.step,
+                error: fullyFlooded ? 'unsupported_spatial_model' : 'partially_flooded_boundary_deferred',
+            };
+            const prior = state.transactions?.[state.transactions.length - 1];
+            if (!prior || prior.kind !== tx.kind || prior.error !== tx.error || prior.step !== tx.step) {
+                (state.transactions ||= []).push(tx);
+            }
+            return false;
+        }
+        const fluids = _canonicalSpatialFluids(this);
+        if (!fluids.length) {
+            state.blocked = true;
+            (state.transactions ||= []).push({
+                ok: false, kind: 'spatial_boundary_unsupported', step: this.step, error: 'no_canonical_fluids',
+            });
+            return false;
+        }
+        // Cavity voxels currently represent equal control volumes. The v1 spatial
+        // contract is therefore an unweighted arithmetic mean over every fully wet
+        // canonical voxel. Partial wetting is rejected above.
+        const meanCO3 = fluids.reduce((sum, f) => sum + Math.max(0, Number(f.CO3) || 0), 0) / fluids.length;
+        const meanPH = fluids.reduce((sum, f) => sum + (Number.isFinite(f.pH) ? Number(f.pH) : 7), 0) / fluids.length;
+        const observedDIC = dicPpmToMolKg(meanCO3);
+        const previous = Math.max(0, Number(state.lastDICMolKg) || 0);
+        const delta = observedDIC - previous;
+        const allowed = Array.isArray(config.simple_caco3_phases)
+            ? config.simple_caco3_phases.filter((m) => m === 'calcite' || m === 'aragonite')
+            : [];
+        const receiptDelta = receipts.reduce((sum, receipt) => sum
+            + (Number(receipt.localAqueousCarbonDeltaPpm) || 0)
+                / (1000 * CARBONATE_SURROGATE_G_MOL * fluids.length), 0);
+        const residual = delta - receiptDelta;
+        const expectedBulkDeltaPpm = receipts.reduce((sum, receipt) => sum + (receipt.touchedBulkFluidHandle
+            ? Number(receipt.localAqueousCarbonDeltaPpm) || 0 : 0), 0);
+        const lastBulkPpm = Number.isFinite(state.lastBulkDICPpm)
+            ? Number(state.lastBulkDICPpm) : dicMolKgToPpm(previous);
+        const observedBulkPpm = Math.max(0, Number(this.conditions.fluid?.CO3) || 0);
+        const bulkResidualPpm = observedBulkPpm - lastBulkPpm - expectedBulkDeltaPpm;
+        const receiptMineralsSupported = receipts.every((receipt) => receipt?.schema === 'accepted-carbonate-transfer-v1'
+            && allowed.includes(String(receipt.mineral)));
+        const matchTolerance = Math.max(1e-15, Math.abs(previous) * 1e-12, Math.abs(delta) * 1e-10);
+        const bulkTolerancePpm = Math.max(1e-7, Math.abs(lastBulkPpm) * 1e-12);
+        if (pendingViolation || !receiptMineralsSupported || Math.abs(residual) > matchTolerance
+            || Math.abs(bulkResidualPpm) > bulkTolerancePpm) {
+            const tx = {
+                ok: false,
+                kind: 'solid_transfer_unresolved',
+                note: `step ${this.step}: observed spatial DIC delta does not match accepted-zone receipts`,
+                observedAqueousCarbonDeltaMolKg: delta,
+                receiptedAqueousCarbonDeltaMolKg: receiptDelta,
+                residualAqueousCarbonDeltaMolKg: residual,
+                observedBulkDICPpm: observedBulkPpm,
+                receiptedBulkDICDeltaPpm: expectedBulkDeltaPpm,
+                residualBulkDICPpm: bulkResidualPpm,
+                receipts,
+                attemptedKind: pendingViolation?.attemptedKind,
+                field: pendingViolation?.field,
+                error: pendingViolation?.error || (receiptMineralsSupported
+                    ? 'unreceipted_DIC_change' : 'unsupported_carbonate_phase_receipt'),
+            };
+            (state.transactions ||= []).push(tx);
+            state.blocked = true;
+            return false;
+        }
+        for (const receipt of receipts) {
+            const receiptMolKg = (Number(receipt.localAqueousCarbonDeltaPpm) || 0)
+                / (1000 * CARBONATE_SURROGATE_G_MOL * fluids.length);
+            recordSimpleCaCO3SolidTransferState(state, receiptMolKg, String(receipt.mineral), `step ${this.step}: accepted zone ${receipt.crystalId ?? '?'} (${receipt.acceptedThicknessUm} um)`);
+        }
+        state.blocked = false;
+        this.conditions.fluid.CO3 = meanCO3;
+        this.conditions.fluid.pH = meanPH;
+        state.lastBulkDICPpm = meanCO3;
+        return true;
+    },
     // Phase C v1: snapshot conditions.fluid + temperature before a
     // global-mutating block (events, wall dissolution, ambient cooling).
     // Pair with _propagateGlobalDelta to apply the same delta to all
@@ -60935,6 +61761,34 @@ Object.assign(VugSimulator.prototype, {
         const scen = this.conditions && this.conditions._scenario;
         if (!scen)
             return;
+        // Conserved boundary v1 supersedes the legacy fixed-DIC pH solve only for
+        // explicit opt-ins. Reconcile intervening carbonate precipitation/
+        // dissolution at the CaCO3 stoichiometric alkalinity ratio, then solve the
+        // declared open or closed gas boundary. Only the global concentration is
+        // changed here; run_step wraps this call in the canonical event-delta
+        // propagation path so every voxel receives the same per-kg transaction.
+        if (scen.carbonate_boundary && this._carbonateBoundaryState) {
+            const state = this._carbonateBoundaryState;
+            if (state.blocked)
+                return;
+            const fluid = this.conditions.fluid;
+            const T = this.conditions.temperature;
+            if (state.mode === 'open') {
+                equilibrateOpenCarbonateBoundaryState(state, fluid, T, state.targetPCO2Bar, `step ${this.step}: continuous open boundary`);
+            }
+            else {
+                equilibrateClosedCarbonateBoundaryState(state, fluid, T, `step ${this.step}: closed aqueous-headspace equilibration`);
+            }
+            state.uncertainties = carbonateBoundaryUncertainties(fluid, T, this.conditions.pressure, state.targetPCO2Bar);
+            // This v1 is a declared fully mixed control volume. Replace, rather than
+            // delta-shift, DIC and pH in every equal-volume voxel so a single shared
+            // pCO2/alkalinity state is not broadcast over hidden local offsets.
+            this.conditions._pending_fluid_replace_fields = Array.from(new Set([
+                ...(this.conditions._pending_fluid_replace_fields || []),
+                'CO3', 'pH',
+            ]));
+            return;
+        }
         if (typeof isOpenAtMeshVertex !== 'function')
             return;
         if (typeof equilibratePHtoPCO2 !== 'function')
@@ -61662,6 +62516,7 @@ async function stripSerialize(ds, gzip = true) {
         pressure_phase_testimony: ds.pressure_phase_testimony || [],
         stress_event_testimony: ds.stress_event_testimony || [],
         transformation_event_testimony: ds.transformation_event_testimony || [],
+        carbonate_boundary_testimony: ds.carbonate_boundary_testimony || [],
     })) : null;
     const testimonySection = testimonyBytes ? 4 + testimonyBytes.length : 0;
     const headerSize = 4 + manifestBytes.length + 4 + eventsBytes.length + floorSection + testimonySection;
@@ -61742,6 +62597,7 @@ async function stripDeserialize(input) {
     let pressure_phase_testimony;
     let stress_event_testimony;
     let transformation_event_testimony;
+    let carbonate_boundary_testimony;
     if ((manifest.format_version || 0) >= 4) {
         const testimonyLen = dv.getUint32(offset, true);
         offset += 4;
@@ -61753,6 +62609,8 @@ async function stripDeserialize(input) {
             ? testimony.stress_event_testimony : [];
         transformation_event_testimony = Array.isArray(testimony.transformation_event_testimony)
             ? testimony.transformation_event_testimony : [];
+        carbonate_boundary_testimony = Array.isArray(testimony.carbonate_boundary_testimony)
+            ? testimony.carbonate_boundary_testimony : [];
     }
     const chip_data = buf.slice(offset);
     return {
@@ -61761,6 +62619,7 @@ async function stripDeserialize(input) {
         ...(pressure_phase_testimony ? { pressure_phase_testimony } : {}),
         ...(stress_event_testimony ? { stress_event_testimony } : {}),
         ...(transformation_event_testimony ? { transformation_event_testimony } : {}),
+        ...(carbonate_boundary_testimony ? { carbonate_boundary_testimony } : {}),
     };
 }
 // === END HELIX-OVERLAY-FORK ADDITION ==================================
@@ -61914,6 +62773,7 @@ class StripRecorder {
         this.lastSeenStressEventCount = 0;
         this.transformationEventTestimony = [];
         this.seenTransformationKeys = new Set();
+        this.carbonateBoundaryTestimony = [];
     }
     // ---- chip classification helpers ----------------------------------
     // Group chips into the same systems the helicoid legend uses. The
@@ -62167,6 +63027,27 @@ class StripRecorder {
                     ? gypsumAnhydriteBoundaryC(fluidPressureKbar) : null,
             },
         });
+        const carbon = sim?._carbonateBoundaryState;
+        if (carbon) {
+            const transactions = Array.isArray(carbon.transactions) ? carbon.transactions : [];
+            const last = transactions.length ? transactions[transactions.length - 1] : null;
+            this.carbonateBoundaryTestimony.push({
+                step: Number(sim?.step),
+                sample_index: step,
+                mode: String(carbon.mode || 'closed'),
+                dic_mol_kg: Number(carbon.lastDICMolKg),
+                headspace_co2_mol_kg: Number(carbon.headspaceCO2MolKg),
+                reduced_alkalinity_eq_kg: Number(carbon.reducedAlkalinityEqKg),
+                solid_carbon_mol_kg: Number(carbon.solidCarbonMolKg),
+                boundary_import_mol_kg: Number(carbon.boundaryImportMolKg),
+                boundary_export_mol_kg: Number(carbon.boundaryExportMolKg),
+                target_pco2_bar: Number(carbon.targetPCO2Bar),
+                blocked: !!carbon.blocked,
+                uncertainties: Array.isArray(carbon.uncertainties) ? [...carbon.uncertainties] : [],
+                transaction_count: transactions.length,
+                last_transaction: last ? JSON.parse(JSON.stringify(last)) : null,
+            });
+        }
         const stressEvents = Array.isArray(sim?._stressEvents) ? sim._stressEvents : [];
         for (let i = this.lastSeenStressEventCount; i < stressEvents.length; i++) {
             // Clone so later mutations cannot rewrite archived testimony.
@@ -62209,6 +63090,7 @@ class StripRecorder {
             pressure_phase_testimony: this.pressurePhaseTestimony,
             stress_event_testimony: this.stressEventTestimony,
             transformation_event_testimony: this.transformationEventTestimony,
+            carbonate_boundary_testimony: this.carbonateBoundaryTestimony,
         };
     }
     // ---- introspection -------------------------------------------------
@@ -62298,6 +63180,7 @@ function stripStoredRecordFromDataset(ds) {
         ...(ds.pressure_phase_testimony ? { pressure_phase_testimony: ds.pressure_phase_testimony } : {}),
         ...(ds.stress_event_testimony ? { stress_event_testimony: ds.stress_event_testimony } : {}),
         ...(ds.transformation_event_testimony ? { transformation_event_testimony: ds.transformation_event_testimony } : {}),
+        ...(ds.carbonate_boundary_testimony ? { carbonate_boundary_testimony: ds.carbonate_boundary_testimony } : {}),
     };
 }
 function stripDatasetFromStoredRecord(rec) {
@@ -62309,6 +63192,7 @@ function stripDatasetFromStoredRecord(rec) {
         ...(rec.pressure_phase_testimony ? { pressure_phase_testimony: rec.pressure_phase_testimony } : {}),
         ...(rec.stress_event_testimony ? { stress_event_testimony: rec.stress_event_testimony } : {}),
         ...(rec.transformation_event_testimony ? { transformation_event_testimony: rec.transformation_event_testimony } : {}),
+        ...(rec.carbonate_boundary_testimony ? { carbonate_boundary_testimony: rec.carbonate_boundary_testimony } : {}),
     };
 }
 // Open (or create) the DB. Promisified — IDB's onsuccess callback model
@@ -64268,6 +65152,19 @@ class MovementController {
                 value = Math.max(m.clampMin, value);
             if (typeof m.clampMax === 'number')
                 value = Math.min(m.clampMax, value);
+            if (conditions?._carbonateBoundaryState
+                && (m.field === 'fluid.CO3' || m.field === 'fluid.pH')) {
+                conditions._pending_carbonate_boundary_violation = {
+                    kind: 'movement_boundary_violation',
+                    attemptedKind: 'movement',
+                    field: m.field,
+                    step,
+                    error: m.field === 'fluid.CO3'
+                        ? 'movement_DIC_requires_explicit_recharge'
+                        : 'movement_pH_requires_explicit_alkalinity_capacity',
+                };
+                continue;
+            }
             // SPATIAL origin (Phase 2c): instead of SETTING the bulk field (global),
             // pin ONE seeded origin cell's per-vertex fluid to `value` — a fixed-
             // composition feeder — and let the step-end _diffuseRingState carry it
@@ -64716,6 +65613,426 @@ function _createFluidSpotField(sim) {
     const opts = (sim && sim.conditions && sim.conditions._scenario)
         ? (sim.conditions._scenario.fluid_spots || {}) : {};
     return new FluidSpotField(_seedFluidSpots(vuggSeed, cellCount, opts));
+}
+
+// ── 85l-simulation-command-protocol.js ──
+
+// ============================================================
+// js/85l-simulation-command-protocol.ts — deterministic command/checkpoint host
+// ============================================================
+// The scientific engine remains synchronous one step at a time. This layer
+// makes orchestration immutable and structured-clone-safe, so the same command
+// messages can run on the main thread today or inside a dedicated worker later.
+const SIMULATION_COMMAND_SCHEMA = 'vugg-simulation-command-v1';
+const SIMULATION_CHECKPOINT_SCHEMA = 'vugg-simulation-checkpoint-v1';
+const SIMULATION_WORKER_MESSAGE_SCHEMA = 'vugg-simulation-worker-message-v1';
+const SIMULATION_CHECKPOINT_STORAGE_SCHEMA = 'vugg-simulation-checkpoint-storage-v1';
+const SIMULATION_CHECKPOINT_STORAGE_KEYS = Object.freeze({
+    primary: 'vugg.simulation.checkpoint.v1.primary',
+    staging: 'vugg.simulation.checkpoint.v1.staging',
+    backup: 'vugg.simulation.checkpoint.v1.backup',
+});
+function _simulationJsonClone(value) {
+    return value == null ? value : JSON.parse(JSON.stringify(value));
+}
+function _simulationDeepFreeze(value) {
+    if (!value || typeof value !== 'object' || Object.isFrozen(value))
+        return value;
+    Object.freeze(value);
+    for (const child of Object.values(value))
+        _simulationDeepFreeze(child);
+    return value;
+}
+function _simulationCommandId(payload) {
+    return sha256HexUtf8(JSON.stringify(payload));
+}
+function makeSimulationStartCommand(scenarioId, seed = 42, overrides = {}) {
+    const payload = {
+        schema: SIMULATION_COMMAND_SCHEMA,
+        type: 'start',
+        scenarioId: String(scenarioId),
+        seed: Number.isFinite(seed) ? Math.trunc(seed) : 42,
+        overrides: _simulationJsonClone(overrides || {}),
+    };
+    return _simulationDeepFreeze({ ...payload, commandId: _simulationCommandId(payload) });
+}
+function makeSimulationAdvanceCommand(steps) {
+    const payload = {
+        schema: SIMULATION_COMMAND_SCHEMA,
+        type: 'advance',
+        steps: Math.max(0, Math.trunc(Number(steps) || 0)),
+    };
+    return _simulationDeepFreeze({ ...payload, commandId: _simulationCommandId(payload) });
+}
+function makeSimulationCancelCommand(reason = 'cancelled by caller') {
+    const payload = { schema: SIMULATION_COMMAND_SCHEMA, type: 'cancel', reason: String(reason) };
+    return _simulationDeepFreeze({ ...payload, commandId: _simulationCommandId(payload) });
+}
+function makeSimulationResumeCommand() {
+    const payload = { schema: SIMULATION_COMMAND_SCHEMA, type: 'resume' };
+    return _simulationDeepFreeze({ ...payload, commandId: _simulationCommandId(payload) });
+}
+function _simulationAssertCommand(command, expectedType) {
+    if (!command || command.schema !== SIMULATION_COMMAND_SCHEMA) {
+        throw new Error('invalid simulation command schema');
+    }
+    if (expectedType && command.type !== expectedType) {
+        throw new Error(`expected ${expectedType} command, received ${command.type}`);
+    }
+    const { commandId: _ignored, ...payload } = command;
+    if (command.commandId !== _simulationCommandId(payload)) {
+        throw new Error('simulation command integrity mismatch');
+    }
+}
+function _simulationFluidProjection(fluid) {
+    const out = {};
+    for (const key of Object.keys(fluid || {}).sort()) {
+        const value = fluid[key];
+        if (typeof value === 'number' && Number.isFinite(value))
+            out[key] = value;
+        else if (typeof value === 'string' || typeof value === 'boolean' || value == null)
+            out[key] = value;
+    }
+    return out;
+}
+function _simulationCrystalProjection(crystal) {
+    return {
+        id: crystal.crystal_id,
+        mineral: crystal.mineral,
+        active: !!crystal.active,
+        dissolved: !!crystal.dissolved,
+        totalGrowthUm: Number(crystal.total_growth_um) || 0,
+        cLengthMm: Number(crystal.c_length_mm) || 0,
+        aWidthMm: Number(crystal.a_width_mm) || 0,
+        habit: crystal.habit || null,
+        zones: (crystal.zones || []).map((zone) => ({
+            thicknessUm: Number(zone.thickness_um) || 0,
+            growthRate: Number(zone.growth_rate) || 0,
+            note: zone.note || null,
+            traceMn: Number(zone.trace_Mn) || 0,
+            mgContent: Number(zone.mg_content) || 0,
+        })),
+    };
+}
+function simulationStateProjection(runtimeOrSim, rngStateOverride) {
+    const runtime = runtimeOrSim?.sim ? runtimeOrSim : null;
+    const sim = runtime ? runtime.sim : runtimeOrSim;
+    const rngState = Number.isFinite(rngStateOverride)
+        ? Number(rngStateOverride)
+        : runtime && Number.isFinite(runtime.rngState)
+            ? Number(runtime.rngState)
+            : Number(rng?.state) || 0;
+    return {
+        simVersion: SIM_VERSION,
+        modelDigest: MODEL_DIGEST,
+        scenarioId: runtime?.origin?.scenarioId || sim?.conditions?._scenario?.id || null,
+        seed: runtime?.origin?.seed ?? null,
+        step: Number(sim?.step) || 0,
+        rngState: rngState >>> 0,
+        temperatureC: Number(sim?.conditions?.temperature) || 0,
+        pressureKbar: Number(sim?.conditions?.pressure) || 0,
+        flowRate: Number(sim?.conditions?.flow_rate) || 0,
+        fluid: _simulationFluidProjection(sim?.conditions?.fluid),
+        ringTemperatures: (sim?.ring_temperatures || []).map((v) => Number(v) || 0),
+        ringFluids: (sim?.ring_fluids || []).map(_simulationFluidProjection),
+        wallCellRadii: (sim?.wall_state?.cells || []).map((cell) => Number(cell.radius_mm) || 0),
+        crystals: (sim?.crystals || []).map(_simulationCrystalProjection),
+        carbonateBoundary: sim?._carbonateBoundaryState
+            ? _simulationJsonClone(sim._carbonateBoundaryState) : null,
+    };
+}
+function simulationStateFingerprint(runtimeOrSim) {
+    return sha256HexUtf8(JSON.stringify(simulationStateProjection(runtimeOrSim)));
+}
+function _simulationAppendCommand(runtime, command) {
+    const copy = _simulationJsonClone(command);
+    const prior = runtime.commandLog[runtime.commandLog.length - 1];
+    if (copy.type === 'advance' && prior?.type === 'advance') {
+        runtime.commandLog[runtime.commandLog.length - 1] = makeSimulationAdvanceCommand(prior.steps + copy.steps);
+    }
+    else {
+        runtime.commandLog.push(copy);
+    }
+}
+function startSimulationCommandRuntime(startCommand) {
+    _simulationAssertCommand(startCommand, 'start');
+    const factory = SCENARIOS?.[startCommand.scenarioId];
+    if (typeof factory !== 'function')
+        throw new Error(`unknown scenario '${startCommand.scenarioId}'`);
+    rng = new SeededRandom(startCommand.seed);
+    const scenarioData = factory(_simulationJsonClone(startCommand.overrides));
+    const sim = new VugSimulator(scenarioData.conditions, scenarioData.events);
+    const spec = factory._json5_spec ?? null;
+    return {
+        schema: 'vugg-simulation-runtime-v1',
+        origin: _simulationJsonClone(startCommand),
+        scenarioSpecHash: scenarioSpecHash(spec),
+        scenarioData,
+        sim,
+        commandLog: [_simulationJsonClone(startCommand)],
+        rngState: rng.state >>> 0,
+        status: 'ready',
+        cancelReason: null,
+    };
+}
+function applySimulationCommand(runtime, command) {
+    _simulationAssertCommand(command);
+    if (!runtime?.sim)
+        throw new Error('simulation runtime is not initialized');
+    if (command.type === 'start')
+        throw new Error('start requires a new runtime');
+    if (command.type === 'cancel') {
+        runtime.status = 'cancelled';
+        runtime.cancelReason = command.reason;
+        _simulationAppendCommand(runtime, command);
+        return { status: runtime.status, step: runtime.sim.step, reason: runtime.cancelReason };
+    }
+    if (command.type === 'resume') {
+        if (runtime.status === 'complete')
+            throw new Error('completed simulation cannot resume');
+        runtime.status = 'ready';
+        runtime.cancelReason = null;
+        _simulationAppendCommand(runtime, command);
+        return { status: runtime.status, step: runtime.sim.step };
+    }
+    if (command.type !== 'advance')
+        throw new Error(`unsupported simulation command '${command.type}'`);
+    if (runtime.status === 'cancelled') {
+        return { status: 'cancelled', step: runtime.sim.step, executedSteps: 0, lastLog: [] };
+    }
+    rng = new SeededRandom(0);
+    rng.state = runtime.rngState >>> 0;
+    let lastLog = [];
+    runtime.status = 'running';
+    for (let i = 0; i < command.steps; i++)
+        lastLog = runtime.sim.run_step();
+    runtime.rngState = rng.state >>> 0;
+    _simulationAppendCommand(runtime, command);
+    runtime.status = 'ready';
+    return {
+        status: runtime.status,
+        step: runtime.sim.step,
+        executedSteps: command.steps,
+        lastLog,
+        fingerprint: simulationStateFingerprint(runtime),
+    };
+}
+function createSimulationCheckpoint(runtime) {
+    if (!runtime?.sim)
+        throw new Error('simulation runtime is not initialized');
+    const payload = {
+        schema: SIMULATION_CHECKPOINT_SCHEMA,
+        simVersion: SIM_VERSION,
+        modelDigest: MODEL_DIGEST,
+        scenarioSpecHash: runtime.scenarioSpecHash,
+        origin: _simulationJsonClone(runtime.origin),
+        commandLog: _simulationJsonClone(runtime.commandLog),
+        status: runtime.status,
+        cancelReason: runtime.cancelReason,
+        completedSteps: runtime.sim.step,
+        rngState: runtime.rngState >>> 0,
+        stateFingerprint: simulationStateFingerprint(runtime),
+    };
+    payload.integrityHash = sha256HexUtf8(JSON.stringify(payload));
+    return _simulationDeepFreeze(payload);
+}
+function restoreSimulationCommandRuntime(checkpointInput) {
+    const checkpoint = _simulationJsonClone(checkpointInput);
+    if (checkpoint?.schema !== SIMULATION_CHECKPOINT_SCHEMA)
+        throw new Error('invalid checkpoint schema');
+    const integrityHash = checkpoint.integrityHash;
+    delete checkpoint.integrityHash;
+    if (integrityHash !== sha256HexUtf8(JSON.stringify(checkpoint)))
+        throw new Error('checkpoint integrity mismatch');
+    if (checkpoint.simVersion !== SIM_VERSION || checkpoint.modelDigest !== MODEL_DIGEST) {
+        throw new Error('checkpoint model identity mismatch');
+    }
+    const start = checkpoint.commandLog?.[0];
+    const runtime = startSimulationCommandRuntime(start);
+    if (runtime.scenarioSpecHash !== checkpoint.scenarioSpecHash)
+        throw new Error('checkpoint scenario identity mismatch');
+    for (const command of checkpoint.commandLog.slice(1)) {
+        if (command.type === 'cancel') {
+            runtime.status = 'cancelled';
+            runtime.cancelReason = command.reason;
+            _simulationAppendCommand(runtime, command);
+        }
+        else if (command.type === 'resume') {
+            runtime.status = 'ready';
+            runtime.cancelReason = null;
+            _simulationAppendCommand(runtime, command);
+        }
+        else {
+            applySimulationCommand(runtime, command);
+        }
+    }
+    if (runtime.sim.step !== checkpoint.completedSteps
+        || runtime.rngState !== checkpoint.rngState
+        || simulationStateFingerprint(runtime) !== checkpoint.stateFingerprint) {
+        throw new Error('checkpoint deterministic replay mismatch');
+    }
+    runtime.status = checkpoint.status;
+    runtime.cancelReason = checkpoint.cancelReason;
+    return runtime;
+}
+function _validateSimulationCheckpointIntegrity(checkpointInput) {
+    const checkpoint = _simulationJsonClone(checkpointInput);
+    if (checkpoint?.schema !== SIMULATION_CHECKPOINT_SCHEMA) {
+        throw new Error('invalid checkpoint schema');
+    }
+    const integrityHash = checkpoint.integrityHash;
+    delete checkpoint.integrityHash;
+    if (integrityHash !== sha256HexUtf8(JSON.stringify(checkpoint))) {
+        throw new Error('checkpoint integrity mismatch');
+    }
+    if (checkpoint.simVersion !== SIM_VERSION || checkpoint.modelDigest !== MODEL_DIGEST) {
+        throw new Error('checkpoint model identity mismatch');
+    }
+    return { ...checkpoint, integrityHash };
+}
+function _encodeSimulationCheckpointEnvelope(checkpointInput) {
+    const checkpoint = _validateSimulationCheckpointIntegrity(checkpointInput);
+    const payload = {
+        schema: SIMULATION_CHECKPOINT_STORAGE_SCHEMA,
+        writtenAt: new Date().toISOString(),
+        checkpoint,
+    };
+    payload.integrityHash = sha256HexUtf8(JSON.stringify(payload));
+    return JSON.stringify(payload);
+}
+function _decodeSimulationCheckpointEnvelope(encoded) {
+    const envelope = JSON.parse(encoded);
+    if (envelope?.schema !== SIMULATION_CHECKPOINT_STORAGE_SCHEMA) {
+        throw new Error('invalid checkpoint storage schema');
+    }
+    const integrityHash = envelope.integrityHash;
+    delete envelope.integrityHash;
+    if (integrityHash !== sha256HexUtf8(JSON.stringify(envelope))) {
+        throw new Error('checkpoint storage integrity mismatch');
+    }
+    return _validateSimulationCheckpointIntegrity(envelope.checkpoint);
+}
+// Crash-safe, two-generation local persistence.  A new envelope is written to
+// staging first, the prior valid primary is copied to backup, and primary is
+// replaced last.  Recovery considers all three slots, so interruption at any
+// individual localStorage write still leaves at least one validated generation.
+function persistSimulationCheckpoint(checkpoint, storage = globalThis.localStorage) {
+    if (!storage?.getItem || !storage?.setItem)
+        throw new Error('checkpoint storage unavailable');
+    const encoded = _encodeSimulationCheckpointEnvelope(checkpoint);
+    storage.setItem(SIMULATION_CHECKPOINT_STORAGE_KEYS.staging, encoded);
+    const prior = storage.getItem(SIMULATION_CHECKPOINT_STORAGE_KEYS.primary);
+    if (prior) {
+        try {
+            _decodeSimulationCheckpointEnvelope(prior);
+            storage.setItem(SIMULATION_CHECKPOINT_STORAGE_KEYS.backup, prior);
+        }
+        catch (_e) { /* never replace a known-good backup with corrupt primary */ }
+    }
+    storage.setItem(SIMULATION_CHECKPOINT_STORAGE_KEYS.primary, encoded);
+    if (storage.removeItem)
+        storage.removeItem(SIMULATION_CHECKPOINT_STORAGE_KEYS.staging);
+    return _simulationDeepFreeze({
+        key: SIMULATION_CHECKPOINT_STORAGE_KEYS.primary,
+        checkpoint: _simulationJsonClone(checkpoint),
+    });
+}
+function recoverPersistedSimulationRuntime(storage = globalThis.localStorage) {
+    if (!storage?.getItem)
+        return { runtime: null, checkpoint: null, source: null, errors: ['checkpoint storage unavailable'] };
+    const errors = [];
+    for (const source of ['primary', 'staging', 'backup']) {
+        const key = SIMULATION_CHECKPOINT_STORAGE_KEYS[source];
+        const encoded = storage.getItem(key);
+        if (!encoded)
+            continue;
+        try {
+            const checkpoint = _decodeSimulationCheckpointEnvelope(encoded);
+            const runtime = restoreSimulationCommandRuntime(checkpoint);
+            return { runtime, checkpoint, source, errors };
+        }
+        catch (error) {
+            errors.push(`${source}: ${error?.message || String(error)}`);
+        }
+    }
+    return { runtime: null, checkpoint: null, source: null, errors };
+}
+async function runSimulationProgressively(runtime, steps, opts = {}) {
+    const total = Math.max(0, Math.trunc(Number(steps) || 0));
+    const chunkSteps = Math.max(1, Math.trunc(Number(opts.chunkSteps) || 4));
+    const yieldFn = typeof opts.yieldFn === 'function'
+        ? opts.yieldFn : () => new Promise(resolve => setTimeout(resolve, 0));
+    let completed = 0;
+    while (completed < total) {
+        if (opts.signal?.aborted || runtime.status === 'cancelled') {
+            if (runtime.status !== 'cancelled')
+                applySimulationCommand(runtime, makeSimulationCancelCommand(opts.signal?.reason || 'aborted'));
+            break;
+        }
+        const count = Math.min(chunkSteps, total - completed);
+        applySimulationCommand(runtime, makeSimulationAdvanceCommand(count));
+        completed += count;
+        if (typeof opts.onProgress === 'function') {
+            opts.onProgress(_simulationJsonClone({
+                completed, total, step: runtime.sim.step,
+                checkpoint: createSimulationCheckpoint(runtime),
+            }));
+        }
+        if (completed < total)
+            await yieldFn();
+    }
+    return {
+        status: runtime.status,
+        completed,
+        total,
+        checkpoint: createSimulationCheckpoint(runtime),
+    };
+}
+// One-message/one-chunk worker reducer. The closure returned below is a real
+// worker endpoint when wired to self.postMessage, and is directly testable in
+// jsdom without starting background processes.
+function createSimulationWorkerEndpoint(send) {
+    let runtime = null;
+    return async (message) => {
+        if (message?.schema !== SIMULATION_WORKER_MESSAGE_SCHEMA) {
+            send({ schema: SIMULATION_WORKER_MESSAGE_SCHEMA, ok: false, error: 'invalid_worker_message_schema' });
+            return;
+        }
+        try {
+            const command = message.command;
+            if (command?.type === 'start')
+                runtime = startSimulationCommandRuntime(command);
+            else if (message.checkpoint && !runtime)
+                runtime = restoreSimulationCommandRuntime(message.checkpoint);
+            if (!runtime)
+                throw new Error('worker runtime not started');
+            let result;
+            if (command.type === 'advance') {
+                const chunk = Math.min(command.steps, Math.max(1, Math.trunc(message.maxChunkSteps || 4)));
+                result = applySimulationCommand(runtime, makeSimulationAdvanceCommand(chunk));
+                result.remainingSteps = command.steps - chunk;
+            }
+            else if (command.type !== 'start')
+                result = applySimulationCommand(runtime, command);
+            else
+                result = { status: runtime.status, step: runtime.sim.step };
+            send({
+                schema: SIMULATION_WORKER_MESSAGE_SCHEMA,
+                requestId: message.requestId ?? null,
+                ok: true,
+                result: _simulationJsonClone(result),
+                checkpoint: createSimulationCheckpoint(runtime),
+            });
+        }
+        catch (error) {
+            send({
+                schema: SIMULATION_WORKER_MESSAGE_SCHEMA,
+                requestId: message.requestId ?? null,
+                ok: false,
+                error: error?.message || String(error),
+            });
+        }
+    };
 }
 
 // ── 86-nucleation-native.js ──
@@ -68092,11 +69409,25 @@ let running = false;
 let _simulationPlaybackGeneration = 0;
 let _simulationPlaybackTimer = null;
 let _simulationPromptCleanup = null;
+let _activeSimulationCommandRuntime = null;
+let legendsSimulationCheckpoint = null;
 // Explicit lifecycle boundary for long computation and paced narrative.
 // Navigation calls this before hiding a mode so a stale timer or capture-
 // phase keyboard handler can never continue mutating a hidden screen.
 function cancelSimulationPlayback() {
     _simulationPlaybackGeneration++;
+    if (_activeSimulationCommandRuntime
+        && _activeSimulationCommandRuntime.status !== 'cancelled') {
+        try {
+            applySimulationCommand(_activeSimulationCommandRuntime, makeSimulationCancelCommand('simulation playback cancelled'));
+            legendsSimulationCheckpoint = createSimulationCheckpoint(_activeSimulationCommandRuntime);
+            try {
+                persistSimulationCheckpoint(legendsSimulationCheckpoint);
+            }
+            catch (_e) { /* optional */ }
+        }
+        catch (_e) { /* preserve the last known-good checkpoint */ }
+    }
     if (_simulationPlaybackTimer != null) {
         clearTimeout(_simulationPlaybackTimer);
         _simulationPlaybackTimer = null;
@@ -68193,7 +69524,6 @@ async function runSimulation() {
     const shapeSeedEl = document.getElementById('shape-seed');
     const shapeSeedInput = shapeSeedEl ? shapeSeedEl.value : '';
     const seed = seedInput ? parseInt(seedInput, 10) : Math.floor(Math.random() * 2147483647);
-    rng = new SeededRandom(seed);
     const scenarioOverrides = {};
     if (shapeSeedInput) {
         const parsedShape = parseInt(shapeSeedInput, 10);
@@ -68223,8 +69553,16 @@ async function runSimulation() {
         }
     }
     let scenarioData;
+    let commandRuntime;
     try {
-        scenarioData = SCENARIOS[scenarioName](scenarioOverrides);
+        commandRuntime = startSimulationCommandRuntime(makeSimulationStartCommand(scenarioName, seed, scenarioOverrides));
+        scenarioData = commandRuntime.scenarioData;
+        _activeSimulationCommandRuntime = commandRuntime;
+        legendsSimulationCheckpoint = createSimulationCheckpoint(commandRuntime);
+        try {
+            persistSimulationCheckpoint(legendsSimulationCheckpoint);
+        }
+        catch (_e) { /* optional */ }
     }
     catch (error) {
         const outputEl = document.getElementById('output');
@@ -68264,7 +69602,7 @@ async function runSimulation() {
     for (const e of events)
         allLines.push(`     Step ${e.step}: ${e.name}`);
     allLines.push('═'.repeat(70));
-    const sim = new VugSimulator(conditions, events);
+    const sim = commandRuntime.sim;
     legendsSim = sim;
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Attach a StripRecorder so this Simulation run is captured. Same
@@ -68310,10 +69648,15 @@ async function runSimulation() {
     for (let s = 0; s < totalSteps; s++) {
         let log;
         try {
-            log = sim.run_step();
+            const commandResult = applySimulationCommand(commandRuntime, makeSimulationAdvanceCommand(1));
+            log = commandResult.lastLog;
         }
         catch (error) {
             if (computationGeneration === _simulationPlaybackGeneration) {
+                // A thrown engine step is not part of the immutable command log, so
+                // retain the prior known-good checkpoint instead of snapshotting a
+                // partially mutated scientific state.
+                _activeSimulationCommandRuntime = null;
                 cancelSimulationPlayback();
                 if (progressOutput)
                     progressOutput.textContent = 'Simulation stopped because the geological engine encountered an error.';
@@ -68339,6 +69682,11 @@ async function runSimulation() {
         }
         const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
         if (s + 1 < totalSteps && (now - chunkStarted >= 12 || (s + 1) % 4 === 0)) {
+            legendsSimulationCheckpoint = createSimulationCheckpoint(commandRuntime);
+            try {
+                persistSimulationCheckpoint(legendsSimulationCheckpoint);
+            }
+            catch (_e) { /* optional */ }
             showComputeProgress(s + 1);
             await new Promise(resolve => setTimeout(resolve, 0));
             if (computationGeneration !== _simulationPlaybackGeneration)
@@ -68348,6 +69696,11 @@ async function runSimulation() {
     }
     if (computationGeneration !== _simulationPlaybackGeneration)
         return;
+    legendsSimulationCheckpoint = createSimulationCheckpoint(commandRuntime);
+    try {
+        persistSimulationCheckpoint(legendsSimulationCheckpoint);
+    }
+    catch (_e) { /* optional */ }
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Sim loop done — finalize the strip recording and persist. Non-
     // blocking + non-fatal; the playback continues even if save fails.
@@ -75228,6 +76581,11 @@ const _CREATIVE_SETUP_EXACT_TRANSFORMS = {
         toSlider: v => Math.log10(Math.max(1e-6, v)) * 100,
         format: v => v.toExponential(3),
     },
+    'f-carbon-headspace': {
+        label: 'carbonate headspace volume', unit: 'L/kg water', step: 0.01,
+        fromSlider: v => v / 100,
+        toSlider: v => v * 100,
+    },
 };
 function _creativeExactString(value, transform) {
     if (transform.format)
@@ -75415,10 +76773,22 @@ function readCreativeGeologicalControls(baseWall = {}) {
             porosity: _creativeControlNumber('f-porosity', 100, 0),
         },
         initialWaterTablePct: _creativeControlNumber('f-water-table', 10, 100),
-        scenarioOpts: {
-            open_to_atmosphere: !!document.getElementById('f-open-atmosphere')?.checked,
-            atmospheric_pCO2_bar: Math.pow(10, _creativeControlNumber('f-pco2', 100, -3.38)),
-        },
+        scenarioOpts: (() => {
+            const open = !!document.getElementById('f-open-atmosphere')?.checked;
+            const pCO2 = Math.pow(10, _creativeControlNumber('f-pco2', 100, -3.38));
+            const conserved = !!document.getElementById('f-carbon-boundary')?.checked;
+            return {
+                open_to_atmosphere: open,
+                atmospheric_pCO2_bar: pCO2,
+                carbonate_boundary: conserved ? {
+                    mode: open ? 'open' : 'closed',
+                    spatial_model: 'equal_volume_fully_mixed',
+                    simple_caco3_phases: ['calcite', 'aragonite'],
+                    target_pCO2_bar: pCO2,
+                    headspace_L_per_kg_water: _creativeControlNumber('f-carbon-headspace', 100, 1),
+                } : undefined,
+            };
+        })(),
     };
 }
 // Snapshot of the starting fluid recipe captured at fortressBegin time.
@@ -75721,6 +77091,32 @@ function _fortressPaceLines(lines, lineToStep, stepLineCounts, onDone) {
         document.querySelectorAll('.action-grid .action-btn').forEach((btn) => btn.disabled = true);
     });
 }
+function _fortressCarbonateRecharge(replacementFraction, incomingDICPpm, incomingPH, note) {
+    const state = fortressSim?._carbonateBoundaryState;
+    if (!state)
+        return null;
+    if (!fortressSim._prepareCarbonateBoundarySpatialState() || state.blocked) {
+        return { ok: false, error: 'carbonate_boundary_blocked_or_unreconciled' };
+    }
+    const incomingDIC = dicPpmToMolKg(incomingDICPpm);
+    const incomingAlkalinity = reducedCarbonateAlkalinityEqKg(incomingDIC, incomingPH, fortressSim.conditions.temperature);
+    const tx = rechargeCarbonateBoundaryState(state, fortressSim.conditions.fluid, fortressSim.conditions.temperature, replacementFraction, incomingDIC, incomingAlkalinity, note);
+    if (tx?.ok)
+        fortressSim._replaceFullyMixedCarbonateFluid();
+    return tx;
+}
+function _fortressCarbonateTitrate(targetPH, note) {
+    const state = fortressSim?._carbonateBoundaryState;
+    if (!state)
+        return null;
+    if (!fortressSim._prepareCarbonateBoundarySpatialState() || state.blocked) {
+        return { ok: false, error: 'carbonate_boundary_blocked_or_unreconciled' };
+    }
+    const tx = titrateCarbonateBoundaryToPHState(state, fortressSim.conditions.fluid, fortressSim.conditions.temperature, targetPH, note);
+    if (tx?.ok)
+        fortressSim._replaceFullyMixedCarbonateFluid();
+    return tx;
+}
 function fortressStep(action, payload) {
     if (!fortressSim || !fortressActive)
         return;
@@ -75770,8 +77166,16 @@ function fortressStep(action, payload) {
             c.flow_rate = Math.max(c.flow_rate, 1.5);
             c.fluid.SiO2 *= 0.85;
             c.fluid.Ca *= 1.10;
-            c.fluid.CO3 *= 1.08;
-            c.fluid.pH = Math.min(c.fluid.pH + 0.1, 10.0);
+            if (fortressSim._carbonateBoundaryState) {
+                const tx = _fortressCarbonateRecharge(0.10, c.fluid.CO3 * 1.8, Math.min(c.fluid.pH + 0.1, 10), 'Creative seep recharge');
+                _carbonateBoundaryControlNotice = tx?.ok
+                    ? 'Seep executed as 10% replacement-water recharge with separate carbon import/export.'
+                    : `Seep carbonate recharge rejected: ${tx?.error || 'unknown error'}.`;
+            }
+            else {
+                c.fluid.CO3 *= 1.08;
+                c.fluid.pH = Math.min(c.fluid.pH + 0.1, 10.0);
+            }
             actionDesc = `💧 Seep — fresh fluid trickles in${rise ? `, water level +${rise.toFixed(1)}` : ''}`;
             break;
         }
@@ -75781,8 +77185,16 @@ function fortressStep(action, payload) {
             c.flow_rate = 5.0;
             c.fluid.SiO2 *= 0.6;
             c.fluid.Ca *= 1.3;
-            c.fluid.CO3 *= 1.2;
-            c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
+            if (fortressSim._carbonateBoundaryState) {
+                const tx = _fortressCarbonateRecharge(0.30, c.fluid.CO3 * (5 / 3), Math.min(c.fluid.pH + 0.3, 10), 'Creative flood recharge');
+                _carbonateBoundaryControlNotice = tx?.ok
+                    ? 'Flood executed as 30% replacement-water recharge with separate carbon import/export.'
+                    : `Flood carbonate recharge rejected: ${tx?.error || 'unknown error'}.`;
+            }
+            else {
+                c.fluid.CO3 *= 1.2;
+                c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
+            }
             actionDesc = `🌊 Flood — fresh fluid pulse, silica diluted, carbonates refreshed${rise ? `, water level +${rise.toFixed(1)}` : ''}`;
             break;
         }
@@ -75802,31 +77214,70 @@ function fortressStep(action, payload) {
             c.flow_rate = Math.max(c.flow_rate * 0.2, 0.05);
             c.fluid.O2 = Math.max(c.fluid.O2, 1.5);
             // Concentrate solubles (skip pH; that's set by speciation, not bulk).
-            const concSpecies = ['Ca', 'Mg', 'Na', 'K', 'Cl', 'S', 'CO3', 'B', 'F', 'Sr'];
+            const concSpecies = ['Ca', 'Mg', 'Na', 'K', 'Cl', 'S', 'B', 'F', 'Sr'];
+            if (!fortressSim._carbonateBoundaryState)
+                concSpecies.push('CO3');
             for (const sp of concSpecies) {
                 if (typeof c.fluid[sp] === 'number')
                     c.fluid[sp] *= 1.4;
             }
             c.temperature = Math.max(c.temperature - 10, 25);
+            if (fortressSim._carbonateBoundaryState) {
+                const state = fortressSim._carbonateBoundaryState;
+                if (!state.uncertainties.includes('water_mass_change_not_modeled')) {
+                    state.uncertainties.push('water_mass_change_not_modeled');
+                }
+                _carbonateBoundaryControlNotice = 'Evaporation held the conserved carbonate inventory fixed because changing the one-kg-water control-volume basis is not yet supported.';
+            }
             actionDesc = `☀️ Evaporate — water level −${drop.toFixed(1)}, brine concentrates ×1.4, sulfides oxidize`;
             break;
         }
         // ── 4. pH — tweak/shift pairs in both directions ──
         case 'tweak_acidify':
-            c.fluid.pH = Math.max(c.fluid.pH - 0.3, 2.0);
+            if (fortressSim._carbonateBoundaryState) {
+                const tx = _fortressCarbonateTitrate(Math.max(c.fluid.pH - 0.3, 2), 'Creative gentle acid titration');
+                _carbonateBoundaryControlNotice = tx?.ok
+                    ? `Strong-acid capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
+                    : `Acid titration rejected: ${tx?.error || 'unknown error'}.`;
+            }
+            else
+                c.fluid.pH = Math.max(c.fluid.pH - 0.3, 2.0);
             actionDesc = `🧪 Tweak pH −0.3 → ${c.fluid.pH.toFixed(1)}`;
             break;
         case 'shift_acidify':
         case 'acidify': // legacy alias — fortressStep('acidify') still works
-            actionDesc = '🧪 ' + event_acidify(c);
+            if (fortressSim._carbonateBoundaryState) {
+                const tx = _fortressCarbonateTitrate(Math.max(c.fluid.pH - 2, 2), 'Creative strong acid titration');
+                _carbonateBoundaryControlNotice = tx?.ok
+                    ? `Strong-acid capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
+                    : `Acid titration rejected: ${tx?.error || 'unknown error'}.`;
+                actionDesc = tx?.ok ? `🧪 Acid titration → pH ${c.fluid.pH.toFixed(2)}` : '🧪 Acid titration rejected';
+            }
+            else
+                actionDesc = '🧪 ' + event_acidify(c);
             break;
         case 'tweak_alkalinize':
-            c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
+            if (fortressSim._carbonateBoundaryState) {
+                const tx = _fortressCarbonateTitrate(Math.min(c.fluid.pH + 0.3, 10), 'Creative gentle base titration');
+                _carbonateBoundaryControlNotice = tx?.ok
+                    ? `Strong-base capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
+                    : `Base titration rejected: ${tx?.error || 'unknown error'}.`;
+            }
+            else
+                c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
             actionDesc = `⚗️ Tweak pH +0.3 → ${c.fluid.pH.toFixed(1)}`;
             break;
         case 'shift_alkalinize':
         case 'alkalinize': // legacy alias
-            actionDesc = '⚗️ ' + event_alkalinize(c);
+            if (fortressSim._carbonateBoundaryState) {
+                const tx = _fortressCarbonateTitrate(Math.min(c.fluid.pH + 2, 10), 'Creative strong base titration');
+                _carbonateBoundaryControlNotice = tx?.ok
+                    ? `Strong-base capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
+                    : `Base titration rejected: ${tx?.error || 'unknown error'}.`;
+                actionDesc = tx?.ok ? `⚗️ Base titration → pH ${c.fluid.pH.toFixed(2)}` : '⚗️ Base titration rejected';
+            }
+            else
+                actionDesc = '⚗️ ' + event_alkalinize(c);
             break;
         // ── 5. REPLENISH — host rock leaches the starting recipe back in ──
         // Replaces the proposal's per-element inject picker (redundant with
@@ -75844,9 +77295,19 @@ function fortressStep(action, payload) {
             let touched = 0;
             for (const [k, v] of Object.entries(_fortressInitialFluidParams)) {
                 if (typeof v === 'number' && typeof c.fluid[k] === 'number') {
+                    if (fortressSim._carbonateBoundaryState && (k === 'CO3' || k === 'pH'))
+                        continue;
                     c.fluid[k] = v;
                     touched++;
                 }
+            }
+            if (fortressSim._carbonateBoundaryState) {
+                const incomingDIC = Number(_fortressInitialFluidParams.CO3);
+                const incomingPH = Number(_fortressInitialFluidParams.pH);
+                const tx = _fortressCarbonateRecharge(1, Number.isFinite(incomingDIC) ? incomingDIC : c.fluid.CO3, Number.isFinite(incomingPH) ? incomingPH : c.fluid.pH, 'Creative host-rock replenish recharge');
+                _carbonateBoundaryControlNotice = tx?.ok
+                    ? 'Replenish executed as full replacement-water recharge with explicit incoming DIC and reduced alkalinity.'
+                    : `Replenish carbonate recharge rejected: ${tx?.error || 'unknown error'}.`;
             }
             actionDesc = `🥣 Replenish — host rock leaches ${touched} species back to starting values; pH → ${c.fluid.pH.toFixed(1)}`;
             break;
@@ -75862,6 +77323,11 @@ function fortressStep(action, payload) {
             }
             const sp = String(payload.species);
             const amount = Number(payload.ppm) || 50;
+            if (sp === 'CO3' && fortressSim._carbonateBoundaryState) {
+                actionDesc = 'DIC injection refused: choose pure CO2 charge or replacement-water recharge so alkalinity and the carbon boundary are explicit.';
+                _carbonateBoundaryControlNotice = actionDesc;
+                break;
+            }
             if (typeof c.fluid[sp] !== 'number') {
                 actionDesc = `💉 Unknown species '${sp}' — no change`;
             }
@@ -75955,6 +77421,14 @@ function fortressStep(action, payload) {
             const spec = normalizeCreativeMovementSpec(payload, fortressSim.step);
             if (!spec) {
                 actionDesc = 'Trajectory ignored — choose a field and finite amount/target.';
+                break;
+            }
+            if (fortressSim._carbonateBoundaryState
+                && (spec.field === 'fluid.CO3' || spec.field === 'fluid.pH')) {
+                actionDesc = spec.field === 'fluid.CO3'
+                    ? 'DIC trajectory refused — schedule explicit replacement-water recharge with incoming DIC and reduced alkalinity.'
+                    : 'pH trajectory refused — schedule a reduced-alkalinity/strong-acid-base trajectory so pH remains solved.';
+                _carbonateBoundaryControlNotice = actionDesc;
                 break;
             }
             c._scenario ||= {};
@@ -76482,6 +77956,7 @@ function copyFortressLog() {
 // ============================================================
 // SCRIPT-mode TS: top-level declarations stay global for cross-file use.
 let brothSnapshots = [];
+let _carbonateBoundaryControlNotice = '';
 function toggleBrothPanel() {
     const toggle = document.getElementById('broth-toggle');
     const body = document.getElementById('broth-body');
@@ -76638,10 +78113,92 @@ const BROTH_MAP = {
         set: v => {
             fortressSim.conditions._scenario ||= {};
             fortressSim.conditions._scenario.atmospheric_pCO2_bar = v;
+            if (fortressSim._carbonateBoundaryState) {
+                fortressSim._carbonateBoundaryState.targetPCO2Bar = v;
+            }
         },
         fmt: v => v.toExponential(2) + ' bar',
         parse: v => Math.pow(10, parseFloat(v) / 100),
         toSlider: v => Math.log10(Math.max(1e-6, v)) * 100,
+    },
+    carbon_boundary: {
+        path: '_scenario.carbonate_boundary',
+        get: () => !!fortressSim._carbonateBoundaryState,
+        set: v => {
+            fortressSim.conditions._scenario ||= {};
+            if (v) {
+                const scenario = fortressSim.conditions._scenario;
+                const config = scenario.carbonate_boundary || {
+                    mode: scenario.open_to_atmosphere ? 'open' : 'closed',
+                    spatial_model: 'equal_volume_fully_mixed',
+                    simple_caco3_phases: ['calcite', 'aragonite'],
+                    target_pCO2_bar: scenario.atmospheric_pCO2_bar ?? 4.2e-4,
+                    headspace_L_per_kg_water: 1,
+                };
+                scenario.carbonate_boundary = config;
+                fortressSim._carbonateBoundaryState = createCarbonateBoundaryState(fortressSim.conditions.fluid, fortressSim.conditions.temperature, { ...config, fluid_pressure_kbar: fortressSim.conditions.pressure });
+                fortressSim.conditions._carbonateBoundaryState = fortressSim._carbonateBoundaryState;
+            }
+            else {
+                delete fortressSim.conditions._scenario.carbonate_boundary;
+                delete fortressSim.conditions._carbonateBoundaryState;
+                fortressSim._carbonateBoundaryState = null;
+            }
+        },
+        fmt: v => v ? 'conserved boundary' : 'legacy / off',
+        parse: v => String(v) === '1',
+        toSlider: v => v ? '1' : '0',
+        valid: v => typeof v === 'boolean',
+    },
+    carbon_headspace: {
+        path: '_scenario.carbonate_boundary.headspace_L_per_kg_water',
+        get: () => fortressSim._carbonateBoundaryState?.headspaceLKg
+            ?? fortressSim.conditions._scenario?.carbonate_boundary?.headspace_L_per_kg_water
+            ?? 1,
+        set: v => {
+            const volume = Math.max(0, v);
+            fortressSim.conditions._scenario ||= {};
+            if (fortressSim.conditions._scenario.carbonate_boundary) {
+                fortressSim.conditions._scenario.carbonate_boundary.headspace_L_per_kg_water = volume;
+            }
+            if (fortressSim._carbonateBoundaryState)
+                fortressSim._carbonateBoundaryState.headspaceLKg = volume;
+        },
+        fmt: v => v.toFixed(2) + ' L/kg',
+        parse: v => parseFloat(v) / 100,
+        toSlider: v => v * 100,
+    },
+    carbon_alkalinity: {
+        path: '_carbonateBoundaryState.reducedAlkalinityEqKg',
+        get: () => fortressSim._carbonateBoundaryState?.reducedAlkalinityEqKg
+            ?? reducedCarbonateAlkalinityEqKg(dicPpmToMolKg(fortressSim.conditions.fluid.CO3), fortressSim.conditions.fluid.pH, fortressSim.conditions.temperature),
+        set: v => {
+            const state = fortressSim._carbonateBoundaryState;
+            if (!state) {
+                _carbonateBoundaryControlNotice = 'Reduced alkalinity requires the conserved carbon solver.';
+                return false;
+            }
+            if (!fortressSim._prepareCarbonateBoundarySpatialState() || state.blocked) {
+                _carbonateBoundaryControlNotice = 'Alkalinity edit rejected: reconcile the blocked carbonate state first.';
+                return false;
+            }
+            const tx = setCarbonateBoundaryReducedAlkalinityState(state, fortressSim.conditions.fluid, fortressSim.conditions.temperature, v, 'Creative reduced-alkalinity titration');
+            if (!tx?.ok) {
+                _carbonateBoundaryControlNotice = `Alkalinity edit rejected: ${tx?.error || 'solve failed'}.`;
+                return false;
+            }
+            fortressSim._replaceFullyMixedCarbonateFluid();
+            _carbonateBoundaryControlNotice = `Applied ${tx.alkalinityChangeEqKg >= 0 ? 'base' : 'acid'} capacity: reduced alkalinity changed by ${(tx.alkalinityChangeEqKg * 1000).toFixed(3)} meq/kg; pH was solved from the new inventory.`;
+            return true;
+        },
+        fmt: v => (v * 1000).toFixed(3) + ' meq/kg',
+        parse: v => parseFloat(v) / 100000,
+        toSlider: v => v * 100000,
+        exact: {
+            label: 'Reduced carbonate alkalinity', unit: 'eq/kg',
+            min: -0.005, max: 0.05, step: 0.00001,
+            rawMin: -500, rawMax: 5000, rawStep: 1,
+        },
     },
     host: {
         path: 'wall.composition',
@@ -76665,6 +78222,12 @@ const BROTH_MAP = {
         set: v => {
             fortressSim.conditions._scenario ||= {};
             fortressSim.conditions._scenario.open_to_atmosphere = !!v;
+            if (fortressSim.conditions._scenario.carbonate_boundary) {
+                fortressSim.conditions._scenario.carbonate_boundary.mode = v ? 'open' : 'closed';
+            }
+            if (fortressSim._carbonateBoundaryState) {
+                fortressSim._carbonateBoundaryState.mode = v ? 'open' : 'closed';
+            }
         },
         fmt: v => v ? 'open' : 'closed',
         parse: v => String(v) === '1',
@@ -76735,6 +78298,25 @@ for (const [prop, control] of Object.entries(CREATIVE_CHEMISTRY_CONTROLS)) {
         get: () => fortressSim.conditions.fluid[prop],
         set: v => {
             const fluid = fortressSim.conditions.fluid;
+            const boundary = fortressSim._carbonateBoundaryState;
+            if (prop === 'pH' && boundary) {
+                _carbonateBoundaryControlNotice = 'pH is derived while the conserved carbon solver is on. Adjust reduced alkalinity, DIC recharge, gas pCO2, or headspace instead.';
+                return false;
+            }
+            if (prop === 'CO3' && boundary) {
+                if (!fortressSim._prepareCarbonateBoundarySpatialState() || boundary.blocked) {
+                    _carbonateBoundaryControlNotice = 'DIC recharge rejected: reconcile the blocked carbonate state first.';
+                    return false;
+                }
+                const tx = rechargeCarbonateBoundaryState(boundary, fluid, fortressSim.conditions.temperature, 1, dicPpmToMolKg(v), boundary.reducedAlkalinityEqKg, 'Creative full-volume DIC recharge');
+                if (!tx?.ok) {
+                    _carbonateBoundaryControlNotice = `DIC recharge rejected: ${tx?.error || 'solve failed'}.`;
+                    return false;
+                }
+                fortressSim._replaceFullyMixedCarbonateFluid();
+                _carbonateBoundaryControlNotice = `DIC control executed as 100% replacement-water recharge: exported ${(tx.boundaryExportMolKg * 1000).toFixed(3)} and imported ${(tx.boundaryImportMolKg * 1000).toFixed(3)} mmol C/kg at the current authored alkalinity.`;
+                return true;
+            }
             fluid[prop] = v;
             if (prop === 'S_sulfide' || prop === 'S_sulfate' || prop === 'S_elemental') {
                 fluid.sulfurPoolsExplicit = true;
@@ -76752,6 +78334,7 @@ for (const [prop, control] of Object.entries(CREATIVE_CHEMISTRY_CONTROLS)) {
                 }
                 syncExplicitSulfurTotal(fluid);
             }
+            return true;
         },
         fmt: v => `${v.toFixed(decimals)}${control.unit ? ` ${control.unit}` : ''}`,
         parse: v => parseFloat(v) / control.scale,
@@ -76910,7 +78493,12 @@ function setBrothValue(key, sliderVal) {
     const realVal = m.parse(sliderVal);
     if (!_isBrothValueValid(m, realVal))
         return;
-    m.set(realVal);
+    const applied = m.set(realVal);
+    if (applied === false) {
+        updateCarbonateBoundaryReadout();
+        syncBrothSliders();
+        return;
+    }
     _brothPendingPlayerChanges[key] = String(sliderVal);
     const valueEl = document.getElementById('broth-' + key + '-val');
     if (valueEl)
@@ -76919,6 +78507,7 @@ function setBrothValue(key, sliderVal) {
     if (exact)
         exact.value = _brothExactString(realVal, m._exactBounds?.step ?? 'any');
     updateFortressStatus();
+    updateCarbonateBoundaryReadout();
     // Persist the edit even if the player saves or leaves before taking another
     // geological action. The next action still consumes it into that action's
     // event delta, preserving deterministic replay order.
@@ -76938,16 +78527,51 @@ function syncBrothSliders() {
             // Browsers may visually clamp a value outside an HTML range. This echo is
             // never fed back to physics unless the player emits an input event.
             slider.value = String(sliderVal);
+            slider.disabled = key === 'ph' && !!fortressSim._carbonateBoundaryState;
+            if (key === 'ph' && fortressSim._carbonateBoundaryState) {
+                slider.title = 'Derived by the conserved carbonate solve; adjust reduced alkalinity to change pH.';
+            }
         }
         const valEl = document.getElementById('broth-' + key + '-val');
         if (valEl)
             valEl.textContent = m.fmt(val);
         const exact = document.getElementById('broth-' + key + '-exact');
-        if (exact)
+        if (exact) {
             exact.value = _brothExactString(val, m._exactBounds?.step ?? 'any');
+            exact.disabled = key === 'ph' && !!fortressSim._carbonateBoundaryState;
+        }
     }
     if (typeof refreshCreativeGeologyEditors === 'function')
         refreshCreativeGeologyEditors();
+    updateCarbonateBoundaryReadout();
+}
+function updateCarbonateBoundaryReadout() {
+    const el = document.getElementById('carbonate-boundary-readout');
+    if (!el)
+        return;
+    const state = fortressSim?._carbonateBoundaryState;
+    if (!state) {
+        el.textContent = 'Conserved carbonate boundary is off. Open exchange uses the legacy fixed-DIC pH comparison model.';
+        return;
+    }
+    const fluid = fortressSim.conditions.fluid;
+    const dic = dicPpmToMolKg(fluid.CO3) * 1000;
+    const gas = Math.max(0, Number(state.headspaceCO2MolKg) || 0) * 1000;
+    const imports = Math.max(0, Number(state.boundaryImportMolKg) || 0) * 1000;
+    const exports = Math.max(0, Number(state.boundaryExportMolKg) || 0) * 1000;
+    const flags = !state.blocked && Array.isArray(state.uncertainties) && state.uncertainties.length
+        ? ` Uncertainty: ${state.uncertainties.join(', ')}.`
+        : state.blocked ? '' : ' Within the v1 dilute-water envelope.';
+    el.textContent = `${state.mode.toUpperCase()} carbon boundary · DIC ${dic.toFixed(3)} mmol C/kg · `
+        + `headspace CO₂ ${gas.toFixed(3)} mmol/kg in ${state.headspaceLKg.toFixed(2)} L/kg · `
+        + `reduced alkalinity ${(state.reducedAlkalinityEqKg * 1000).toFixed(3)} meq/kg · `
+        + `imports ${imports.toFixed(3)}, exports ${exports.toFixed(3)} mmol C/kg.${flags}`;
+    if (state.blocked) {
+        const latestFailure = [...(state.transactions || [])].reverse().find((tx) => tx?.ok === false);
+        el.textContent = `BLOCKED · ${el.textContent} Failure: ${latestFailure?.error || latestFailure?.kind || 'unresolved carbonate transaction'}${latestFailure?.attemptedKind ? ` (${latestFailure.attemptedKind})` : ''}.`;
+    }
+    if (_carbonateBoundaryControlNotice)
+        el.textContent += ` ${_carbonateBoundaryControlNotice}`;
 }
 function takeBrothSnapshot() {
     if (!fortressSim)

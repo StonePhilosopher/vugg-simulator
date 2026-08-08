@@ -216,6 +216,32 @@ class VugSimulator {
     this._carbonSourceTransactions = [];
     this._carbonPropagationViolations = [];
     this._carbonLedgerHistory = [];
+    // Conserved carbonate boundary v1 is explicit opt-in. It lives on both the
+    // simulator and conditions because event handlers receive conditions, while
+    // the step controller owns equilibration. The state is plain JSON data so a
+    // later worker/save snapshot can copy it without class revival.
+    const carbonateBoundary = this.conditions?._scenario?.carbonate_boundary;
+    this._carbonateBoundaryState = carbonateBoundary
+      ? createCarbonateBoundaryState(
+        this.conditions.fluid,
+        this.conditions.temperature,
+        {
+          ...carbonateBoundary,
+          fluid_pressure_kbar: this.conditions.pressure,
+        },
+      )
+      : null;
+    if (this._carbonateBoundaryState) {
+      this.conditions._carbonateBoundaryState = this._carbonateBoundaryState;
+    }
+    // One authored scenario still uses the pre-boundary atmospheric comparison
+    // while its full open-system migration is being validated. Keep that
+    // selectable path scientifically explicit in runtime output; Creative's
+    // live readout carries the same label.
+    this._legacyCarbonateHeuristicActive = !!(
+      this.conditions?._scenario?.open_to_atmosphere
+      && !this._carbonateBoundaryState
+    );
     // FLUID-SOURCE SPOTS (js/85k, PROPOSAL §10) Phase 2a — seed the spot set off
     // the cavity seed now that the mesh (→ cell count) exists. Uses a DEDICATED
     // _mulberry32(shape_seed ^ SPOTS_SALT) stream, independent of the shared rng,
@@ -249,6 +275,17 @@ class VugSimulator {
   run_step() {
     this.log = [];
     this.step++;
+    this.conditions._sim_step = this.step;
+    if (this.step === 1 && this._legacyCarbonateHeuristicActive) {
+      this.log.push(
+        '  ⚠ Carbonate boundary: LEGACY HEURISTIC — atmospheric exchange changes pH at fixed DIC; carbon and reduced alkalinity are not conserved.',
+      );
+    }
+    // Equal-volume, fully mixed carbonate v1 audits the canonical wet voxels
+    // before any event sees the bulk handle. This is where explicitly scoped
+    // calcite/aragonite transfer is booked; undeclared DIC changes block the
+    // boundary rather than being relabelled as CaCO3.
+    if (this._carbonateBoundaryState) this._prepareCarbonateBoundarySpatialState();
     // Phase C v1: events apply to conditions.fluid (= equator ring
     // fluid via aliasing). Snapshot before and propagate the delta to
     // non-equator rings — otherwise a global event pulse never reaches
@@ -294,7 +331,17 @@ class VugSimulator {
     // pH is re-solved so its equilibrium pCO2 matches the local
     // atmospheric value. Runs BEFORE dissolution + nucleation so
     // downstream supersat math sees the equilibrated chemistry.
-    this._applyOpenAtmosphereEquilibration();
+    if (this.conditions?._scenario?.carbonate_boundary) {
+      // Events and persistent movements execute after the start-of-step audit.
+      // Re-audit at the actual solver boundary so a same-step, unreceipted DIC
+      // mutation cannot be adopted as a new closed-system total.
+      this._prepareCarbonateBoundarySpatialState();
+      const carbonateSnap = this._snapshotGlobal();
+      this._applyOpenAtmosphereEquilibration();
+      this._propagateGlobalDelta(carbonateSnap);
+    } else {
+      this._applyOpenAtmosphereEquilibration();
+    }
     // Track dolomite saturation crossings for the Kim 2023 cycle mechanism.
     this.conditions.update_dol_cycles();
     snap = this._snapshotGlobal();

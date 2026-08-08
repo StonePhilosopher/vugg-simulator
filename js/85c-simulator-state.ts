@@ -48,6 +48,136 @@ function _ledgerTolerance(value: number): number {
 }
 
 Object.assign(VugSimulator.prototype, {
+  _replaceFullyMixedCarbonateFluid() {
+    if (!this._carbonateBoundaryState) return false;
+    const source = this.conditions?.fluid;
+    if (!source) return false;
+    const fluids = _canonicalSpatialFluids(this);
+    for (const fluid of fluids) {
+      fluid.CO3 = source.CO3;
+      fluid.pH = source.pH;
+    }
+    for (const fluid of (this.ring_fluids || [])) {
+      if (!fluid) continue;
+      fluid.CO3 = source.CO3;
+      fluid.pH = source.pH;
+    }
+    this._carbonateBoundaryState.lastDICMolKg = dicPpmToMolKg(source.CO3);
+    this._carbonateBoundaryState.lastBulkDICPpm = source.CO3;
+    return fluids.length > 0;
+  },
+
+  _prepareCarbonateBoundarySpatialState() {
+    const state = this._carbonateBoundaryState;
+    const config = this.conditions?._scenario?.carbonate_boundary;
+    if (!state || !config) return false;
+    const receipts = Array.isArray(this.conditions._pending_carbonate_boundary_transfers)
+      ? this.conditions._pending_carbonate_boundary_transfers.slice() : [];
+    delete this.conditions._pending_carbonate_boundary_transfers;
+    const pendingViolation = this.conditions._pending_carbonate_boundary_violation || null;
+    delete this.conditions._pending_carbonate_boundary_violation;
+    const surfaceHeight = this.conditions.fluid_surface_height_mm;
+    const surfaceRing = this.conditions.fluid_surface_ring;
+    const fullyFlooded = (surfaceHeight == null && surfaceRing == null)
+      || (Number.isFinite(surfaceRing) && surfaceRing >= this.wall_state.ring_count);
+    if (!fullyFlooded || config.spatial_model !== 'equal_volume_fully_mixed') {
+      state.blocked = true;
+      const tx = {
+        ok: false,
+        kind: 'spatial_boundary_unsupported',
+        step: this.step,
+        error: fullyFlooded ? 'unsupported_spatial_model' : 'partially_flooded_boundary_deferred',
+      };
+      const prior = state.transactions?.[state.transactions.length - 1];
+      if (!prior || prior.kind !== tx.kind || prior.error !== tx.error || prior.step !== tx.step) {
+        (state.transactions ||= []).push(tx);
+      }
+      return false;
+    }
+    const fluids = _canonicalSpatialFluids(this);
+    if (!fluids.length) {
+      state.blocked = true;
+      (state.transactions ||= []).push({
+        ok: false, kind: 'spatial_boundary_unsupported', step: this.step, error: 'no_canonical_fluids',
+      });
+      return false;
+    }
+    // Cavity voxels currently represent equal control volumes. The v1 spatial
+    // contract is therefore an unweighted arithmetic mean over every fully wet
+    // canonical voxel. Partial wetting is rejected above.
+    const meanCO3 = fluids.reduce(
+      (sum: number, f: any) => sum + Math.max(0, Number(f.CO3) || 0), 0,
+    ) / fluids.length;
+    const meanPH = fluids.reduce(
+      (sum: number, f: any) => sum + (Number.isFinite(f.pH) ? Number(f.pH) : 7), 0,
+    ) / fluids.length;
+    const observedDIC = dicPpmToMolKg(meanCO3);
+    const previous = Math.max(0, Number(state.lastDICMolKg) || 0);
+    const delta = observedDIC - previous;
+    const allowed = Array.isArray(config.simple_caco3_phases)
+      ? config.simple_caco3_phases.filter((m: string) => m === 'calcite' || m === 'aragonite')
+      : [];
+    const receiptDelta = receipts.reduce(
+      (sum: number, receipt: any) => sum
+        + (Number(receipt.localAqueousCarbonDeltaPpm) || 0)
+          / (1000 * CARBONATE_SURROGATE_G_MOL * fluids.length),
+      0,
+    );
+    const residual = delta - receiptDelta;
+    const expectedBulkDeltaPpm = receipts.reduce(
+      (sum: number, receipt: any) => sum + (receipt.touchedBulkFluidHandle
+        ? Number(receipt.localAqueousCarbonDeltaPpm) || 0 : 0),
+      0,
+    );
+    const lastBulkPpm = Number.isFinite(state.lastBulkDICPpm)
+      ? Number(state.lastBulkDICPpm) : dicMolKgToPpm(previous);
+    const observedBulkPpm = Math.max(0, Number(this.conditions.fluid?.CO3) || 0);
+    const bulkResidualPpm = observedBulkPpm - lastBulkPpm - expectedBulkDeltaPpm;
+    const receiptMineralsSupported = receipts.every((receipt: any) =>
+      receipt?.schema === 'accepted-carbonate-transfer-v1'
+      && allowed.includes(String(receipt.mineral)),
+    );
+    const matchTolerance = Math.max(1e-15, Math.abs(previous) * 1e-12, Math.abs(delta) * 1e-10);
+    const bulkTolerancePpm = Math.max(1e-7, Math.abs(lastBulkPpm) * 1e-12);
+    if (pendingViolation || !receiptMineralsSupported || Math.abs(residual) > matchTolerance
+        || Math.abs(bulkResidualPpm) > bulkTolerancePpm) {
+      const tx = {
+        ok: false,
+        kind: 'solid_transfer_unresolved',
+        note: `step ${this.step}: observed spatial DIC delta does not match accepted-zone receipts`,
+        observedAqueousCarbonDeltaMolKg: delta,
+        receiptedAqueousCarbonDeltaMolKg: receiptDelta,
+        residualAqueousCarbonDeltaMolKg: residual,
+        observedBulkDICPpm: observedBulkPpm,
+        receiptedBulkDICDeltaPpm: expectedBulkDeltaPpm,
+        residualBulkDICPpm: bulkResidualPpm,
+        receipts,
+        attemptedKind: pendingViolation?.attemptedKind,
+        field: pendingViolation?.field,
+        error: pendingViolation?.error || (receiptMineralsSupported
+          ? 'unreceipted_DIC_change' : 'unsupported_carbonate_phase_receipt'),
+      };
+      (state.transactions ||= []).push(tx);
+      state.blocked = true;
+      return false;
+    }
+    for (const receipt of receipts) {
+      const receiptMolKg = (Number(receipt.localAqueousCarbonDeltaPpm) || 0)
+        / (1000 * CARBONATE_SURROGATE_G_MOL * fluids.length);
+      recordSimpleCaCO3SolidTransferState(
+        state,
+        receiptMolKg,
+        String(receipt.mineral),
+        `step ${this.step}: accepted zone ${receipt.crystalId ?? '?'} (${receipt.acceptedThicknessUm} um)`,
+      );
+    }
+    state.blocked = false;
+    this.conditions.fluid.CO3 = meanCO3;
+    this.conditions.fluid.pH = meanPH;
+    state.lastBulkDICPpm = meanCO3;
+    return true;
+  },
+
   // Phase C v1: snapshot conditions.fluid + temperature before a
 // global-mutating block (events, wall dissolution, ambient cooling).
 // Pair with _propagateGlobalDelta to apply the same delta to all
@@ -1019,6 +1149,48 @@ _check_liberation() {
   _applyOpenAtmosphereEquilibration() {
     const scen = this.conditions && this.conditions._scenario;
     if (!scen) return;
+    // Conserved boundary v1 supersedes the legacy fixed-DIC pH solve only for
+    // explicit opt-ins. Reconcile intervening carbonate precipitation/
+    // dissolution at the CaCO3 stoichiometric alkalinity ratio, then solve the
+    // declared open or closed gas boundary. Only the global concentration is
+    // changed here; run_step wraps this call in the canonical event-delta
+    // propagation path so every voxel receives the same per-kg transaction.
+    if (scen.carbonate_boundary && this._carbonateBoundaryState) {
+      const state = this._carbonateBoundaryState;
+      if (state.blocked) return;
+      const fluid = this.conditions.fluid;
+      const T = this.conditions.temperature;
+      if (state.mode === 'open') {
+        equilibrateOpenCarbonateBoundaryState(
+          state,
+          fluid,
+          T,
+          state.targetPCO2Bar,
+          `step ${this.step}: continuous open boundary`,
+        );
+      } else {
+        equilibrateClosedCarbonateBoundaryState(
+          state,
+          fluid,
+          T,
+          `step ${this.step}: closed aqueous-headspace equilibration`,
+        );
+      }
+      state.uncertainties = carbonateBoundaryUncertainties(
+        fluid,
+        T,
+        this.conditions.pressure,
+        state.targetPCO2Bar,
+      );
+      // This v1 is a declared fully mixed control volume. Replace, rather than
+      // delta-shift, DIC and pH in every equal-volume voxel so a single shared
+      // pCO2/alkalinity state is not broadcast over hidden local offsets.
+      this.conditions._pending_fluid_replace_fields = Array.from(new Set([
+        ...(this.conditions._pending_fluid_replace_fields || []),
+        'CO3', 'pH',
+      ]));
+      return;
+    }
     if (typeof isOpenAtMeshVertex !== 'function') return;
     if (typeof equilibratePHtoPCO2 !== 'function') return;
     if (typeof atmosphericPCO2AtMeshVertex !== 'function') return;

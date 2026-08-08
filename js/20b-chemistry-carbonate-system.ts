@@ -191,3 +191,615 @@ function equilibriumPCO2(fluid: any, T_celsius: number): number {
   const KH = Math.pow(10, -pKH_CO2(T_celsius));
   return KH > 0 ? H2CO3_molal / KH : 0;
 }
+
+// =============================================================
+// Conserved carbonate boundary (science contract 2026-08-08)
+// =============================================================
+//
+// These helpers are deliberately pure/serializable. They are the numerical
+// kernel for the opt-in boundary controller; scenarios that do not declare a
+// carbonate_boundary never call them and retain their legacy trajectory.
+
+const CARBONATE_SURROGATE_G_MOL = 60.01;
+const ATM_IN_BAR = 1.01325;
+const GAS_R_L_BAR_MOL_K = 0.08314462618;
+
+function dicPpmToMolKg(ppmAsCO3: number): number {
+  return Math.max(0, Number(ppmAsCO3) || 0) / (1000 * CARBONATE_SURROGATE_G_MOL);
+}
+
+function dicMolKgToPpm(molKg: number): number {
+  return Math.max(0, Number(molKg) || 0) * 1000 * CARBONATE_SURROGATE_G_MOL;
+}
+
+// Atmospheric-pressure pure-water density (kg/m3), used only inside the
+// Marshall-Franck ionization relation. Kell 1975, JCED 20:97-105,
+// doi:10.1021/je60064a005. Validity is deliberately clamped to v1's 0-90 C.
+function pureWaterDensityKgM3(T_celsius: number): number {
+  const t = Math.max(0, Math.min(90, Number(T_celsius) || 0));
+  return 1000 * (1 - ((t + 288.9414) * Math.pow(t - 3.9863, 2))
+    / (508929.2 * (t + 68.12963)));
+}
+
+// Marshall & Franck 1981 (JPCRD 10:295, doi:10.1063/1.555643), T in
+// kelvin and density in g/cm3. Returns -log10(Kw). At 25 C ~=13.99 and
+// at 90 C ~=12.43. The reduced v1 model treats 10^-pH as molal H+
+// activity under an explicitly declared ideal-dilute 1 mol/kg standard-state
+// approximation; it does not mix an unlabelled activity with concentration.
+function pKwWater(T_celsius: number): number {
+  const t = Math.max(0, Math.min(90, Number(T_celsius) || 0));
+  const TK = t + 273.15;
+  const densityGcm3 = pureWaterDensityKgM3(t) / 1000;
+  const logKw = -4.098 - 3245.2 / TK + 2.2362e5 / (TK * TK)
+    - 3.984e7 / (TK * TK * TK)
+    + (13.957 - 1262.3 / TK + 8.5641e5 / (TK * TK)) * Math.log10(densityGcm3);
+  return -logKw;
+}
+
+function reducedCarbonateAlkalinityEqKg(
+  dicMolKg: number,
+  pH: number,
+  T_celsius: number,
+): number {
+  const dic = Math.max(0, Number(dicMolKg) || 0);
+  const ph = Number.isFinite(pH) ? Number(pH) : 7;
+  const fractions = bjerrumFractions(ph, T_celsius);
+  const h = Math.pow(10, -ph);
+  const kw = Math.pow(10, -pKwWater(T_celsius));
+  const oh = kw / Math.max(h, 1e-30);
+  return dic * (fractions.HCO3 + 2 * fractions.CO3) + oh - h;
+}
+
+function solvePHForReducedCarbonateAlkalinity(
+  dicMolKg: number,
+  alkalinityEqKg: number,
+  T_celsius: number,
+): number {
+  const result = solvePHForReducedCarbonateAlkalinityResult(dicMolKg, alkalinityEqKg, T_celsius);
+  return result.ok ? result.pH : NaN;
+}
+
+function solvePHForReducedCarbonateAlkalinityResult(
+  dicMolKg: number,
+  alkalinityEqKg: number,
+  T_celsius: number,
+): any {
+  const dic = Math.max(0, Number(dicMolKg) || 0);
+  const target = Number(alkalinityEqKg) || 0;
+  let lo = 0;
+  let hi = 14;
+  const at = (ph: number) => reducedCarbonateAlkalinityEqKg(dic, ph, T_celsius) - target;
+  const fLo = at(lo);
+  const fHi = at(hi);
+  if (!Number.isFinite(fLo) || !Number.isFinite(fHi)) {
+    return { ok: false, error: 'nonfinite', fLo, fHi };
+  }
+  if (fLo > 0 || fHi < 0) {
+    return { ok: false, error: 'no_bracket', fLo, fHi };
+  }
+  if (fLo === 0) return { ok: true, pH: lo, residualEqKg: 0 };
+  if (fHi === 0) return { ok: true, pH: hi, residualEqKg: 0 };
+  for (let i = 0; i < 80; i++) {
+    const mid = (lo + hi) * 0.5;
+    if (at(mid) < 0) lo = mid;
+    else hi = mid;
+  }
+  const pH = (lo + hi) * 0.5;
+  return { ok: true, pH, residualEqKg: at(pH) };
+}
+
+function _co2MolalityAtBar(pCO2Bar: number, T_celsius: number): number {
+  const pBar = Math.max(0, Number(pCO2Bar) || 0);
+  const k0MolKgAtm = Math.pow(10, -pKH_CO2(T_celsius));
+  return k0MolKgAtm * (pBar / ATM_IN_BAR);
+}
+
+function _pCO2BarFromDICAndPH(dicMolKg: number, pH: number, T_celsius: number): number {
+  const fractions = bjerrumFractions(pH, T_celsius);
+  const k0MolKgAtm = Math.pow(10, -pKH_CO2(T_celsius));
+  if (!(k0MolKgAtm > 0)) return 0;
+  return Math.max(0, dicMolKg) * fractions.H2CO3 / k0MolKgAtm * ATM_IN_BAR;
+}
+
+function _headspaceCO2MolKg(
+  pCO2Bar: number,
+  headspaceLKg: number,
+  T_celsius: number,
+): number {
+  const p = Math.max(0, Number(pCO2Bar) || 0);
+  const v = Math.max(0, Number(headspaceLKg) || 0);
+  const tk = Math.max(1, Number(T_celsius) + 273.15);
+  return p * v / (GAS_R_L_BAR_MOL_K * tk);
+}
+
+function solveOpenCarbonateBoundary(
+  alkalinityEqKg: number,
+  targetPCO2Bar: number,
+  T_celsius: number,
+  headspaceLKg: number,
+): any {
+  const target = Math.max(1e-12, Number(targetPCO2Bar) || 0);
+  const dissolvedCO2 = _co2MolalityAtBar(target, T_celsius);
+  const alk = Number(alkalinityEqKg) || 0;
+  const residual = (ph: number) => {
+    const alpha0 = Math.max(1e-30, bjerrumFractions(ph, T_celsius).H2CO3);
+    const dic = dissolvedCO2 / alpha0;
+    return reducedCarbonateAlkalinityEqKg(dic, ph, T_celsius) - alk;
+  };
+  let lo = 0;
+  let hi = 14;
+  const fLo = residual(lo);
+  const fHi = residual(hi);
+  if (!Number.isFinite(fLo) || !Number.isFinite(fHi)) {
+    return { ok: false, error: 'nonfinite', fLo, fHi };
+  }
+  if (fLo > 0 || fHi < 0) return { ok: false, error: 'no_bracket', fLo, fHi };
+  for (let i = 0; i < 80; i++) {
+    const mid = (lo + hi) * 0.5;
+    if (residual(mid) < 0) lo = mid;
+    else hi = mid;
+  }
+  const pH = (lo + hi) * 0.5;
+  const alpha0 = Math.max(1e-30, bjerrumFractions(pH, T_celsius).H2CO3);
+  const dicMolKg = dissolvedCO2 / alpha0;
+  return {
+    ok: true,
+    dicMolKg,
+    pH,
+    pCO2Bar: target,
+    headspaceCO2MolKg: _headspaceCO2MolKg(target, headspaceLKg, T_celsius),
+    residualEqKg: residual(pH),
+  };
+}
+
+function solveClosedCarbonateBoundary(
+  totalCarbonMolKg: number,
+  alkalinityEqKg: number,
+  T_celsius: number,
+  headspaceLKg: number,
+): any {
+  const total = Math.max(0, Number(totalCarbonMolKg) || 0);
+  const alk = Number(alkalinityEqKg) || 0;
+  const evaluate = (dic: number) => {
+    const phResult = solvePHForReducedCarbonateAlkalinityResult(dic, alk, T_celsius);
+    if (!phResult.ok) return { ok: false, error: phResult.error };
+    const pH = phResult.pH;
+    const pCO2Bar = _pCO2BarFromDICAndPH(dic, pH, T_celsius);
+    const gas = _headspaceCO2MolKg(pCO2Bar, headspaceLKg, T_celsius);
+    return { ok: true, dicMolKg: dic, pH, pCO2Bar, headspaceCO2MolKg: gas, residual: dic + gas - total };
+  };
+  if (total === 0) return evaluate(0);
+  let lo = 0;
+  let hi = total;
+  const eLo = evaluate(lo);
+  const eHi = evaluate(hi);
+  if (!eLo.ok || !eHi.ok) return { ok: false, error: eLo.error || eHi.error || 'no_bracket' };
+  if (eLo.residual > 0 || eHi.residual < 0) {
+    return { ok: false, error: 'no_bracket', fLo: eLo.residual, fHi: eHi.residual };
+  }
+  for (let i = 0; i < 100; i++) {
+    const mid = (lo + hi) * 0.5;
+    const evaluated = evaluate(mid);
+    if (!evaluated.ok) return { ok: false, error: evaluated.error || 'nonfinite' };
+    if (evaluated.residual < 0) lo = mid;
+    else hi = mid;
+  }
+  return evaluate((lo + hi) * 0.5);
+}
+
+function carbonateBoundaryUncertainties(
+  fluid: any,
+  T_celsius: number,
+  fluidPressureKbar: number,
+  pCO2Bar: number,
+): string[] {
+  const out: string[] = [];
+  const salinity = Math.max(0, Number(fluid?.salinity) || 0);
+  if (salinity > 5) out.push('salinity_model_missing');
+  if (T_celsius < 0 || T_celsius > 90) out.push('temperature_outside_pb82');
+  if (pCO2Bar > 1) out.push('gas_nonideality_missing');
+  if (Math.abs(Math.max(0, Number(fluidPressureKbar) || 0) * 1000 - 1.01325) > 1) {
+    out.push('fluid_pressure_not_coupled_to_headspace');
+  }
+  if (['B', 'P', 'SiO2', 'S_sulfide'].some((key) => Math.max(0, Number(fluid?.[key]) || 0) > 0)) {
+    out.push('full_alkalinity_systems_omitted');
+  }
+  return out;
+}
+
+function createCarbonateBoundaryState(fluid: any, T_celsius: number, opts: any = {}): any {
+  const dicMolKg = dicPpmToMolKg(fluid?.CO3);
+  const pH = Number.isFinite(fluid?.pH) ? Number(fluid.pH) : 7;
+  const pCO2Bar = _pCO2BarFromDICAndPH(dicMolKg, pH, T_celsius);
+  const headspaceLKg = Math.max(0, Number(opts.headspace_L_per_kg_water) || 0);
+  return {
+    schema: 'carbonate-boundary-v1',
+    mode: opts.mode === 'open' ? 'open' : 'closed',
+    headspaceLKg,
+    targetPCO2Bar: Math.max(1e-12, Number(opts.target_pCO2_bar) || pCO2Bar || 4.2e-4),
+    reducedAlkalinityEqKg: Number.isFinite(opts.reduced_alkalinity_eq_per_kg)
+      ? Number(opts.reduced_alkalinity_eq_per_kg)
+      : reducedCarbonateAlkalinityEqKg(dicMolKg, pH, T_celsius),
+    headspaceCO2MolKg: _headspaceCO2MolKg(pCO2Bar, headspaceLKg, T_celsius),
+    boundaryImportMolKg: 0,
+    boundaryExportMolKg: 0,
+    lastDICMolKg: dicMolKg,
+    lastBulkDICPpm: dicMolKgToPpm(dicMolKg),
+    solidCarbonMolKg: 0,
+    initialSystemCarbonMolKg: dicMolKg + _headspaceCO2MolKg(pCO2Bar, headspaceLKg, T_celsius),
+    blocked: false,
+    transactions: [],
+    uncertainties: carbonateBoundaryUncertainties(
+      fluid,
+      T_celsius,
+      Number(opts.fluid_pressure_kbar) || 0,
+      pCO2Bar,
+    ),
+  };
+}
+
+function _recordCarbonateBoundaryTransaction(state: any, tx: any): any {
+  (state.transactions ||= []).push(tx);
+  if (tx.ok !== false) {
+    state.lastDICMolKg = tx.after.dicMolKg;
+    state.headspaceCO2MolKg = tx.after.headspaceCO2MolKg;
+    state.lastBulkDICPpm = dicMolKgToPpm(tx.after.dicMolKg);
+  }
+  return tx;
+}
+
+function equilibrateClosedCarbonateBoundaryState(
+  state: any,
+  fluid: any,
+  T_celsius: number,
+  note: string = 'closed equilibration',
+): any {
+  const beforeDIC = dicPpmToMolKg(fluid?.CO3);
+  const beforeGas = Math.max(0, Number(state.headspaceCO2MolKg) || 0);
+  const totalBefore = beforeDIC + beforeGas;
+  const solved = solveClosedCarbonateBoundary(
+    totalBefore,
+    state.reducedAlkalinityEqKg,
+    T_celsius,
+    state.headspaceLKg,
+  );
+  if (!solved.ok) {
+    return _recordCarbonateBoundaryTransaction(state, {
+      ok: false, kind: 'failed', attemptedKind: 'closed', note,
+      error: solved.error,
+      before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+      after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+    });
+  }
+  fluid.CO3 = dicMolKgToPpm(solved.dicMolKg);
+  fluid.pH = solved.pH;
+  const totalAfter = solved.dicMolKg + solved.headspaceCO2MolKg;
+  return _recordCarbonateBoundaryTransaction(state, {
+    ok: true, kind: 'closed', note,
+    before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+    after: { ...solved, totalCarbonMolKg: totalAfter },
+    carbonErrorMolKg: totalAfter - totalBefore,
+    alkalinityChangeEqKg: 0,
+  });
+}
+
+function equilibrateOpenCarbonateBoundaryState(
+  state: any,
+  fluid: any,
+  T_celsius: number,
+  targetPCO2Bar: number,
+  note: string = 'open equilibration',
+): any {
+  const beforeDIC = dicPpmToMolKg(fluid?.CO3);
+  const beforeGas = Math.max(0, Number(state.headspaceCO2MolKg) || 0);
+  const totalBefore = beforeDIC + beforeGas;
+  const solved = solveOpenCarbonateBoundary(
+    state.reducedAlkalinityEqKg,
+    targetPCO2Bar,
+    T_celsius,
+    state.headspaceLKg,
+  );
+  if (!solved.ok) {
+    return _recordCarbonateBoundaryTransaction(state, {
+      ok: false, kind: 'failed', attemptedKind: 'open', note,
+      error: solved.error,
+      before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+      after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+    });
+  }
+  fluid.CO3 = dicMolKgToPpm(solved.dicMolKg);
+  fluid.pH = solved.pH;
+  const totalAfter = solved.dicMolKg + solved.headspaceCO2MolKg;
+  const delta = totalAfter - totalBefore;
+  if (delta >= 0) state.boundaryImportMolKg += delta;
+  else state.boundaryExportMolKg -= delta;
+  state.targetPCO2Bar = solved.pCO2Bar;
+  return _recordCarbonateBoundaryTransaction(state, {
+    ok: true, kind: 'open', note,
+    before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+    after: { ...solved, totalCarbonMolKg: totalAfter },
+    boundaryDeltaMolKg: delta,
+    alkalinityChangeEqKg: 0,
+  });
+}
+
+function chargeCarbonateBoundaryState(
+  state: any,
+  fluid: any,
+  T_celsius: number,
+  carbonMolKg: number,
+  note: string = 'pure CO2 charge',
+): any {
+  const charge = Math.max(0, Number(carbonMolKg) || 0);
+  const beforeDIC = dicPpmToMolKg(fluid?.CO3);
+  const beforeGas = Math.max(0, Number(state.headspaceCO2MolKg) || 0);
+  const totalBefore = beforeDIC + beforeGas;
+  const solved = solveClosedCarbonateBoundary(
+    totalBefore + charge,
+    state.reducedAlkalinityEqKg,
+    T_celsius,
+    state.headspaceLKg,
+  );
+  if (!solved.ok) {
+    return _recordCarbonateBoundaryTransaction(state, {
+      ok: false, kind: 'failed', attemptedKind: 'charge', note,
+      error: solved.error,
+      requestedImportMolKg: charge,
+      before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+      after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+    });
+  }
+  const totalAfter = solved.dicMolKg + solved.headspaceCO2MolKg;
+  fluid.CO3 = dicMolKgToPpm(solved.dicMolKg);
+  fluid.pH = solved.pH;
+  state.headspaceCO2MolKg = solved.headspaceCO2MolKg;
+  state.boundaryImportMolKg += charge;
+  return _recordCarbonateBoundaryTransaction(state, {
+    ok: true, kind: 'charge', note,
+    boundaryImportMolKg: charge,
+    boundaryExportMolKg: 0,
+    before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+    after: { ...solved, totalCarbonMolKg: totalAfter },
+    carbonErrorMolKg: totalAfter - totalBefore - charge,
+    alkalinityChangeEqKg: 0,
+  });
+}
+
+// Replace a declared fraction of the one-kilogram aqueous control volume with
+// authored incoming water. Unlike a pure-CO2 charge, recharge carries both DIC
+// and reduced carbonate alkalinity; neither may be inferred from pH alone. The
+// outgoing and incoming carbon legs are recorded separately, then the retained
+// headspace and mixed water equilibrate as a closed control volume.
+function rechargeCarbonateBoundaryState(
+  state: any,
+  fluid: any,
+  T_celsius: number,
+  replacementFraction: number,
+  incomingDICMolKg: number,
+  incomingReducedAlkalinityEqKg: number,
+  note: string = 'authored replacement-water recharge',
+): any {
+  const fraction = Number(replacementFraction);
+  const incomingDIC = Number(incomingDICMolKg);
+  const incomingAlkalinity = Number(incomingReducedAlkalinityEqKg);
+  const beforeDIC = dicPpmToMolKg(fluid?.CO3);
+  const beforeGas = Math.max(0, Number(state.headspaceCO2MolKg) || 0);
+  const beforeAlkalinity = Number(state.reducedAlkalinityEqKg);
+  const totalBefore = beforeDIC + beforeGas;
+  const valid = Number.isFinite(fraction) && fraction >= 0 && fraction <= 1
+    && Number.isFinite(incomingDIC) && incomingDIC >= 0
+    && Number.isFinite(incomingAlkalinity);
+  if (!valid) {
+    return _recordCarbonateBoundaryTransaction(state, {
+      ok: false, kind: 'failed', attemptedKind: 'recharge', note,
+      error: 'recharge_requires_fraction_0_to_1_and_explicit_finite_incoming_DIC_and_alkalinity',
+      before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+      after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+    });
+  }
+
+  const exportedAqueous = fraction * beforeDIC;
+  const importedAqueous = fraction * incomingDIC;
+  const mixedDIC = beforeDIC - exportedAqueous + importedAqueous;
+  const mixedAlkalinity = (1 - fraction) * beforeAlkalinity + fraction * incomingAlkalinity;
+  const solved = solveClosedCarbonateBoundary(
+    mixedDIC + beforeGas,
+    mixedAlkalinity,
+    T_celsius,
+    state.headspaceLKg,
+  );
+  if (!solved.ok) {
+    return _recordCarbonateBoundaryTransaction(state, {
+      ok: false, kind: 'failed', attemptedKind: 'recharge', note,
+      error: solved.error,
+      requestedBoundaryImportMolKg: importedAqueous,
+      requestedBoundaryExportMolKg: exportedAqueous,
+      before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+      after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+    });
+  }
+
+  const totalAfter = solved.dicMolKg + solved.headspaceCO2MolKg;
+  fluid.CO3 = dicMolKgToPpm(solved.dicMolKg);
+  fluid.pH = solved.pH;
+  state.reducedAlkalinityEqKg = mixedAlkalinity;
+  state.headspaceCO2MolKg = solved.headspaceCO2MolKg;
+  state.boundaryImportMolKg += importedAqueous;
+  state.boundaryExportMolKg += exportedAqueous;
+  return _recordCarbonateBoundaryTransaction(state, {
+    ok: true, kind: 'recharge', note,
+    replacementFraction: fraction,
+    incomingDICMolKg: incomingDIC,
+    incomingReducedAlkalinityEqKg: incomingAlkalinity,
+    boundaryImportMolKg: importedAqueous,
+    boundaryExportMolKg: exportedAqueous,
+    before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+    after: { ...solved, totalCarbonMolKg: totalAfter },
+    carbonErrorMolKg: totalAfter - totalBefore - importedAqueous + exportedAqueous,
+    alkalinityChangeEqKg: mixedAlkalinity - beforeAlkalinity,
+  });
+}
+
+// Strong-acid/base capacity edit for Creative mode. Carbon is not added by a
+// closed titration; an open gas boundary may exchange carbon while it restores
+// its authored pCO2. The requested reduced alkalinity is committed only after a
+// successful solve, so failed edits leave both inventories and fluid unchanged.
+function setCarbonateBoundaryReducedAlkalinityState(
+  state: any,
+  fluid: any,
+  T_celsius: number,
+  requestedAlkalinityEqKg: number,
+  note: string = 'authored reduced-alkalinity titration',
+): any {
+  const requested = Number(requestedAlkalinityEqKg);
+  const beforeDIC = dicPpmToMolKg(fluid?.CO3);
+  const beforeGas = Math.max(0, Number(state.headspaceCO2MolKg) || 0);
+  const beforeAlkalinity = Number(state.reducedAlkalinityEqKg);
+  const totalBefore = beforeDIC + beforeGas;
+  if (!Number.isFinite(requested)) {
+    return _recordCarbonateBoundaryTransaction(state, {
+      ok: false, kind: 'failed', attemptedKind: 'alkalinity_titration', note,
+      error: 'finite_reduced_alkalinity_required',
+      before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+      after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+    });
+  }
+  const solved = state.mode === 'open'
+    ? solveOpenCarbonateBoundary(requested, state.targetPCO2Bar, T_celsius, state.headspaceLKg)
+    : solveClosedCarbonateBoundary(totalBefore, requested, T_celsius, state.headspaceLKg);
+  if (!solved.ok) {
+    return _recordCarbonateBoundaryTransaction(state, {
+      ok: false, kind: 'failed', attemptedKind: 'alkalinity_titration', note,
+      error: solved.error,
+      requestedReducedAlkalinityEqKg: requested,
+      before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+      after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+    });
+  }
+  const totalAfter = solved.dicMolKg + solved.headspaceCO2MolKg;
+  const boundaryDelta = state.mode === 'open' ? totalAfter - totalBefore : 0;
+  fluid.CO3 = dicMolKgToPpm(solved.dicMolKg);
+  fluid.pH = solved.pH;
+  state.reducedAlkalinityEqKg = requested;
+  state.headspaceCO2MolKg = solved.headspaceCO2MolKg;
+  if (boundaryDelta >= 0) state.boundaryImportMolKg += boundaryDelta;
+  else state.boundaryExportMolKg -= boundaryDelta;
+  return _recordCarbonateBoundaryTransaction(state, {
+    ok: true, kind: 'alkalinity_titration', note,
+    requestedReducedAlkalinityEqKg: requested,
+    boundaryImportMolKg: Math.max(0, boundaryDelta),
+    boundaryExportMolKg: Math.max(0, -boundaryDelta),
+    before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: totalBefore },
+    after: { ...solved, totalCarbonMolKg: totalAfter },
+    carbonErrorMolKg: totalAfter - totalBefore - boundaryDelta,
+    alkalinityChangeEqKg: requested - beforeAlkalinity,
+  });
+}
+
+function titrateCarbonateBoundaryToPHState(
+  state: any,
+  fluid: any,
+  T_celsius: number,
+  targetPH: number,
+  note: string = 'authored strong-acid/base pH titration',
+): any {
+  const pH = Number(targetPH);
+  if (!Number.isFinite(pH) || pH < 0 || pH > 14) {
+    const beforeDIC = dicPpmToMolKg(fluid?.CO3);
+    const beforeGas = Math.max(0, Number(state.headspaceCO2MolKg) || 0);
+    return _recordCarbonateBoundaryTransaction(state, {
+      ok: false, kind: 'failed', attemptedKind: 'ph_titration', note,
+      error: 'target_pH_must_be_between_0_and_14',
+      before: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: beforeDIC + beforeGas },
+      after: { dicMolKg: beforeDIC, headspaceCO2MolKg: beforeGas, totalCarbonMolKg: beforeDIC + beforeGas },
+    });
+  }
+  let targetDIC: number;
+  if (state.mode === 'open') {
+    const dissolvedCO2 = _co2MolalityAtBar(state.targetPCO2Bar, T_celsius);
+    const alpha0 = Math.max(1e-30, bjerrumFractions(pH, T_celsius).H2CO3);
+    targetDIC = dissolvedCO2 / alpha0;
+  } else {
+    const total = dicPpmToMolKg(fluid?.CO3)
+      + Math.max(0, Number(state.headspaceCO2MolKg) || 0);
+    const gasPerMolDIC = _headspaceCO2MolKg(
+      _pCO2BarFromDICAndPH(1, pH, T_celsius),
+      state.headspaceLKg,
+      T_celsius,
+    );
+    targetDIC = total / (1 + gasPerMolDIC);
+  }
+  const targetAlkalinity = reducedCarbonateAlkalinityEqKg(targetDIC, pH, T_celsius);
+  const tx = setCarbonateBoundaryReducedAlkalinityState(
+    state, fluid, T_celsius, targetAlkalinity, note,
+  );
+  if (tx?.ok) {
+    tx.kind = 'ph_titration';
+    tx.targetPH = pH;
+  } else if (tx) {
+    tx.attemptedKind = 'ph_titration';
+    tx.targetPH = pH;
+  }
+  return tx;
+}
+
+function recordSimpleCaCO3SolidTransferState(
+  state: any,
+  aqueousCarbonDeltaMolKg: number,
+  mineral: string | string[],
+  note: string = 'explicit simple CaCO3 transfer',
+): any {
+  const minerals = (Array.isArray(mineral) ? mineral : [mineral]).map(String);
+  if (!minerals.length || minerals.some((phase) => phase !== 'calcite' && phase !== 'aragonite')) {
+    const failed = {
+      ok: false,
+      kind: 'solid_transfer_unresolved',
+      note,
+      minerals,
+      error: 'v1_supports_only_calcite_or_aragonite',
+    };
+    (state.transactions ||= []).push(failed);
+    return failed;
+  }
+  const deltaAqueous = Number(aqueousCarbonDeltaMolKg) || 0;
+  const previous = Math.max(0, Number(state.lastDICMolKg) || 0);
+  if (Math.abs(deltaAqueous) <= Math.max(1e-15, Math.abs(previous) * 1e-12)) return null;
+  // Valid only for the explicitly named simple CaCO3 phases above. Basic and
+  // hydroxycarbonates have different proton/alkalinity stoichiometry and are
+  // deliberately rejected rather than silently forced through this rule.
+  state.reducedAlkalinityEqKg += 2 * deltaAqueous;
+  state.solidCarbonMolKg = Math.max(0,
+    (Number(state.solidCarbonMolKg) || 0) - deltaAqueous);
+  state.lastDICMolKg = Math.max(0, (Number(state.lastDICMolKg) || 0) + deltaAqueous);
+  const tx = {
+    ok: true,
+    kind: 'solid_transfer',
+    note,
+    minerals,
+    aqueousCarbonDeltaMolKg: deltaAqueous,
+    solidCarbonDeltaMolKg: -deltaAqueous,
+    alkalinityChangeEqKg: 2 * deltaAqueous,
+  };
+  (state.transactions ||= []).push(tx);
+  return tx;
+}
+
+function recordUnresolvedCarbonateTransferState(
+  state: any,
+  observedDICMolKg: number,
+  note: string,
+): any | null {
+  const observed = Math.max(0, Number(observedDICMolKg) || 0);
+  const previous = Math.max(0, Number(state.lastDICMolKg) || 0);
+  const delta = observed - previous;
+  if (Math.abs(delta) <= Math.max(1e-15, Math.abs(previous) * 1e-12)) return null;
+  const tx = {
+    ok: false,
+    kind: 'solid_transfer_unresolved',
+    note,
+    observedAqueousCarbonDeltaMolKg: delta,
+    error: 'undeclared_DIC_change',
+  };
+  (state.transactions ||= []).push(tx);
+  return tx;
+}

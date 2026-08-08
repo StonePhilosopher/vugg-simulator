@@ -230,6 +230,7 @@ describe('strip dataset — serialization round-trip', () => {
       pressure_phase_testimony: [{ step: 0, fluid_pressure_kbar: 1.4 }],
       stress_event_testimony: [{ event_id: 'stress-1', outcome: 'twinned' }],
       transformation_event_testimony: [{ step: 0, crystal_id: 7, from: 'realgar', to: 'pararealgar', mechanism: 'light exposure' }],
+      carbonate_boundary_testimony: [{ step: 0, mode: 'closed', dic_mol_kg: 0.0083 }],
     };
     const reload = await stripDeserialize(await stripSerialize(ds, false));
     expect(reload.manifest).toMatchObject({
@@ -238,6 +239,7 @@ describe('strip dataset — serialization round-trip', () => {
     expect(reload.pressure_phase_testimony).toEqual(ds.pressure_phase_testimony);
     expect(reload.stress_event_testimony).toEqual(ds.stress_event_testimony);
     expect(reload.transformation_event_testimony).toEqual(ds.transformation_event_testimony);
+    expect(reload.carbonate_boundary_testimony).toEqual(ds.carbonate_boundary_testimony);
   });
 
   it('round-trips v5 actual event steps separately from zero-based sample indices', async () => {
@@ -256,11 +258,13 @@ describe('strip dataset — serialization round-trip', () => {
       pressure_phase_testimony: [{ step: 1, sample_index: 0, fluid_pressure_kbar: 0.2 }],
       stress_event_testimony: [],
       transformation_event_testimony: [{ step: 1, sample_index: 0, crystal_id: 7, from: 'gypsum', to: 'anhydrite', mechanism: 'dehydration' }],
+      carbonate_boundary_testimony: [{ step: 1, sample_index: 0, mode: 'open', boundary_export_mol_kg: 0.001 }],
     };
     const reload = await stripDeserialize(await stripSerialize(ds, false));
     expect(reload.nucleation_events[0]).toMatchObject({ step: 1, sample_index: 0 });
     expect(reload.pressure_phase_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0 });
     expect(reload.transformation_event_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0 });
+    expect(reload.carbonate_boundary_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0, mode: 'open' });
   });
 
   it('uses a Node-compatible SHA-256 fingerprint for authored scenario specs', () => {
@@ -276,10 +280,12 @@ describe('strip dataset — serialization round-trip', () => {
     ds.pressure_phase_testimony = [{ step: 0, fluid_pressure_kbar: 1.4 }];
     ds.stress_event_testimony = [{ event_id: 'stress-storage' }];
     ds.transformation_event_testimony = [{ step: 0, crystal_id: 8, from: 'pharmacolite', to: 'haidingerite', mechanism: 'dry-exposure' }];
+    ds.carbonate_boundary_testimony = [{ step: 0, mode: 'closed', reduced_alkalinity_eq_kg: 0.01 }];
     const reload = stripDatasetFromStoredRecord(stripStoredRecordFromDataset(ds));
     expect(reload.pressure_phase_testimony).toEqual(ds.pressure_phase_testimony);
     expect(reload.stress_event_testimony).toEqual(ds.stress_event_testimony);
     expect(reload.transformation_event_testimony).toEqual(ds.transformation_event_testimony);
+    expect(reload.carbonate_boundary_testimony).toEqual(ds.carbonate_boundary_testimony);
     expect(reload.manifest.scenario_spec_hash).toMatch(/^[0-9a-f]{64}$/);
   });
 
@@ -481,5 +487,28 @@ describe('strip recorder — instrumentation', () => {
     expect(kCa).toBeGreaterThanOrEqual(0);
     const idx = stripDataIndex(0, 0, ring, kCa, axes, chipCount, 0);
     expect(ds.floor_data[idx]).toBeLessThan(ds.chip_data[idx]);
+  });
+
+  it('archives executed carbonate-boundary inventories and the last transaction', () => {
+    setSeed(42);
+    const travertine = SCENARIOS.tutorial_travertine();
+    const simC = new VugSimulator(travertine.conditions, travertine.events);
+    const rec = new StripRecorder(simC, { duration_steps: 1 });
+    simC._stripRecorder = rec;
+    simC.run_step();
+    const ds = rec.finalize();
+    expect(ds.carbonate_boundary_testimony).toHaveLength(1);
+    expect(ds.carbonate_boundary_testimony[0]).toMatchObject({
+      step: 1,
+      sample_index: 0,
+      mode: 'closed',
+      blocked: false,
+    });
+    expect(ds.carbonate_boundary_testimony[0].dic_mol_kg).toBeGreaterThan(0);
+    expect(ds.carbonate_boundary_testimony[0].reduced_alkalinity_eq_kg).toBeGreaterThan(0);
+    expect(ds.carbonate_boundary_testimony[0].last_transaction).toMatchObject({
+      ok: true,
+      kind: 'closed',
+    });
   });
 });

@@ -4,6 +4,7 @@
 // SCRIPT-mode TS: top-level declarations stay global for cross-file use.
 
 let brothSnapshots = [];
+let _carbonateBoundaryControlNotice = '';
 
 function toggleBrothPanel() {
   const toggle = document.getElementById('broth-toggle');
@@ -162,10 +163,101 @@ const BROTH_MAP: Record<string, any> = {
     set: v => {
       fortressSim.conditions._scenario ||= {};
       fortressSim.conditions._scenario.atmospheric_pCO2_bar = v;
+      if (fortressSim._carbonateBoundaryState) {
+        fortressSim._carbonateBoundaryState.targetPCO2Bar = v;
+      }
     },
     fmt: v => v.toExponential(2) + ' bar',
     parse: v => Math.pow(10, parseFloat(v) / 100),
     toSlider: v => Math.log10(Math.max(1e-6, v)) * 100,
+  },
+  carbon_boundary: {
+    path: '_scenario.carbonate_boundary',
+    get: () => !!fortressSim._carbonateBoundaryState,
+    set: v => {
+      fortressSim.conditions._scenario ||= {};
+      if (v) {
+        const scenario = fortressSim.conditions._scenario;
+        const config = scenario.carbonate_boundary || {
+          mode: scenario.open_to_atmosphere ? 'open' : 'closed',
+          spatial_model: 'equal_volume_fully_mixed',
+          simple_caco3_phases: ['calcite', 'aragonite'],
+          target_pCO2_bar: scenario.atmospheric_pCO2_bar ?? 4.2e-4,
+          headspace_L_per_kg_water: 1,
+        };
+        scenario.carbonate_boundary = config;
+        fortressSim._carbonateBoundaryState = createCarbonateBoundaryState(
+          fortressSim.conditions.fluid,
+          fortressSim.conditions.temperature,
+          { ...config, fluid_pressure_kbar: fortressSim.conditions.pressure },
+        );
+        fortressSim.conditions._carbonateBoundaryState = fortressSim._carbonateBoundaryState;
+      } else {
+        delete fortressSim.conditions._scenario.carbonate_boundary;
+        delete fortressSim.conditions._carbonateBoundaryState;
+        fortressSim._carbonateBoundaryState = null;
+      }
+    },
+    fmt: v => v ? 'conserved boundary' : 'legacy / off',
+    parse: v => String(v) === '1',
+    toSlider: v => v ? '1' : '0',
+    valid: v => typeof v === 'boolean',
+  },
+  carbon_headspace: {
+    path: '_scenario.carbonate_boundary.headspace_L_per_kg_water',
+    get: () => fortressSim._carbonateBoundaryState?.headspaceLKg
+      ?? fortressSim.conditions._scenario?.carbonate_boundary?.headspace_L_per_kg_water
+      ?? 1,
+    set: v => {
+      const volume = Math.max(0, v);
+      fortressSim.conditions._scenario ||= {};
+      if (fortressSim.conditions._scenario.carbonate_boundary) {
+        fortressSim.conditions._scenario.carbonate_boundary.headspace_L_per_kg_water = volume;
+      }
+      if (fortressSim._carbonateBoundaryState) fortressSim._carbonateBoundaryState.headspaceLKg = volume;
+    },
+    fmt: v => v.toFixed(2) + ' L/kg',
+    parse: v => parseFloat(v) / 100,
+    toSlider: v => v * 100,
+  },
+  carbon_alkalinity: {
+    path: '_carbonateBoundaryState.reducedAlkalinityEqKg',
+    get: () => fortressSim._carbonateBoundaryState?.reducedAlkalinityEqKg
+      ?? reducedCarbonateAlkalinityEqKg(
+        dicPpmToMolKg(fortressSim.conditions.fluid.CO3),
+        fortressSim.conditions.fluid.pH,
+        fortressSim.conditions.temperature,
+      ),
+    set: v => {
+      const state = fortressSim._carbonateBoundaryState;
+      if (!state) {
+        _carbonateBoundaryControlNotice = 'Reduced alkalinity requires the conserved carbon solver.';
+        return false;
+      }
+      if (!fortressSim._prepareCarbonateBoundarySpatialState() || state.blocked) {
+        _carbonateBoundaryControlNotice = 'Alkalinity edit rejected: reconcile the blocked carbonate state first.';
+        return false;
+      }
+      const tx = setCarbonateBoundaryReducedAlkalinityState(
+        state, fortressSim.conditions.fluid, fortressSim.conditions.temperature, v,
+        'Creative reduced-alkalinity titration',
+      );
+      if (!tx?.ok) {
+        _carbonateBoundaryControlNotice = `Alkalinity edit rejected: ${tx?.error || 'solve failed'}.`;
+        return false;
+      }
+      fortressSim._replaceFullyMixedCarbonateFluid();
+      _carbonateBoundaryControlNotice = `Applied ${tx.alkalinityChangeEqKg >= 0 ? 'base' : 'acid'} capacity: reduced alkalinity changed by ${(tx.alkalinityChangeEqKg * 1000).toFixed(3)} meq/kg; pH was solved from the new inventory.`;
+      return true;
+    },
+    fmt: v => (v * 1000).toFixed(3) + ' meq/kg',
+    parse: v => parseFloat(v) / 100000,
+    toSlider: v => v * 100000,
+    exact: {
+      label: 'Reduced carbonate alkalinity', unit: 'eq/kg',
+      min: -0.005, max: 0.05, step: 0.00001,
+      rawMin: -500, rawMax: 5000, rawStep: 1,
+    },
   },
   host: {
     path: 'wall.composition',
@@ -188,6 +280,12 @@ const BROTH_MAP: Record<string, any> = {
     set: v => {
       fortressSim.conditions._scenario ||= {};
       fortressSim.conditions._scenario.open_to_atmosphere = !!v;
+      if (fortressSim.conditions._scenario.carbonate_boundary) {
+        fortressSim.conditions._scenario.carbonate_boundary.mode = v ? 'open' : 'closed';
+      }
+      if (fortressSim._carbonateBoundaryState) {
+        fortressSim._carbonateBoundaryState.mode = v ? 'open' : 'closed';
+      }
     },
     fmt: v => v ? 'open' : 'closed',
     parse: v => String(v) === '1',
@@ -256,6 +354,33 @@ for (const [prop, control] of Object.entries(CREATIVE_CHEMISTRY_CONTROLS)) {
     get: () => fortressSim.conditions.fluid[prop],
     set: v => {
       const fluid = fortressSim.conditions.fluid;
+      const boundary = fortressSim._carbonateBoundaryState;
+      if (prop === 'pH' && boundary) {
+        _carbonateBoundaryControlNotice = 'pH is derived while the conserved carbon solver is on. Adjust reduced alkalinity, DIC recharge, gas pCO2, or headspace instead.';
+        return false;
+      }
+      if (prop === 'CO3' && boundary) {
+        if (!fortressSim._prepareCarbonateBoundarySpatialState() || boundary.blocked) {
+          _carbonateBoundaryControlNotice = 'DIC recharge rejected: reconcile the blocked carbonate state first.';
+          return false;
+        }
+        const tx = rechargeCarbonateBoundaryState(
+          boundary,
+          fluid,
+          fortressSim.conditions.temperature,
+          1,
+          dicPpmToMolKg(v),
+          boundary.reducedAlkalinityEqKg,
+          'Creative full-volume DIC recharge',
+        );
+        if (!tx?.ok) {
+          _carbonateBoundaryControlNotice = `DIC recharge rejected: ${tx?.error || 'solve failed'}.`;
+          return false;
+        }
+        fortressSim._replaceFullyMixedCarbonateFluid();
+        _carbonateBoundaryControlNotice = `DIC control executed as 100% replacement-water recharge: exported ${(tx.boundaryExportMolKg * 1000).toFixed(3)} and imported ${(tx.boundaryImportMolKg * 1000).toFixed(3)} mmol C/kg at the current authored alkalinity.`;
+        return true;
+      }
       fluid[prop] = v;
       if (prop === 'S_sulfide' || prop === 'S_sulfate' || prop === 'S_elemental') {
         fluid.sulfurPoolsExplicit = true;
@@ -271,6 +396,7 @@ for (const [prop, control] of Object.entries(CREATIVE_CHEMISTRY_CONTROLS)) {
         }
         syncExplicitSulfurTotal(fluid);
       }
+      return true;
     },
     fmt: v => `${v.toFixed(decimals)}${control.unit ? ` ${control.unit}` : ''}`,
     parse: v => parseFloat(v) / control.scale,
@@ -428,13 +554,19 @@ function setBrothValue(key, sliderVal) {
   if (!m) return;
   const realVal = m.parse(sliderVal);
   if (!_isBrothValueValid(m, realVal)) return;
-  m.set(realVal);
+  const applied = m.set(realVal);
+  if (applied === false) {
+    updateCarbonateBoundaryReadout();
+    syncBrothSliders();
+    return;
+  }
   _brothPendingPlayerChanges[key] = String(sliderVal);
   const valueEl = document.getElementById('broth-' + key + '-val');
   if (valueEl) valueEl.textContent = m.fmt(realVal);
   const exact = document.getElementById('broth-' + key + '-exact') as HTMLInputElement | null;
   if (exact) exact.value = _brothExactString(realVal, m._exactBounds?.step ?? 'any');
   updateFortressStatus();
+  updateCarbonateBoundaryReadout();
   // Persist the edit even if the player saves or leaves before taking another
   // geological action. The next action still consumes it into that action's
   // event delta, preserving deterministic replay order.
@@ -453,13 +585,48 @@ function syncBrothSliders() {
       // Browsers may visually clamp a value outside an HTML range. This echo is
       // never fed back to physics unless the player emits an input event.
       slider.value = String(sliderVal);
+      slider.disabled = key === 'ph' && !!fortressSim._carbonateBoundaryState;
+      if (key === 'ph' && fortressSim._carbonateBoundaryState) {
+        slider.title = 'Derived by the conserved carbonate solve; adjust reduced alkalinity to change pH.';
+      }
     }
     const valEl = document.getElementById('broth-' + key + '-val');
     if (valEl) valEl.textContent = m.fmt(val);
     const exact = document.getElementById('broth-' + key + '-exact') as HTMLInputElement | null;
-    if (exact) exact.value = _brothExactString(val, m._exactBounds?.step ?? 'any');
+    if (exact) {
+      exact.value = _brothExactString(val, m._exactBounds?.step ?? 'any');
+      exact.disabled = key === 'ph' && !!fortressSim._carbonateBoundaryState;
+    }
   }
   if (typeof refreshCreativeGeologyEditors === 'function') refreshCreativeGeologyEditors();
+  updateCarbonateBoundaryReadout();
+}
+
+function updateCarbonateBoundaryReadout() {
+  const el = document.getElementById('carbonate-boundary-readout');
+  if (!el) return;
+  const state = fortressSim?._carbonateBoundaryState;
+  if (!state) {
+    el.textContent = 'Conserved carbonate boundary is off. Open exchange uses the legacy fixed-DIC pH comparison model.';
+    return;
+  }
+  const fluid = fortressSim.conditions.fluid;
+  const dic = dicPpmToMolKg(fluid.CO3) * 1000;
+  const gas = Math.max(0, Number(state.headspaceCO2MolKg) || 0) * 1000;
+  const imports = Math.max(0, Number(state.boundaryImportMolKg) || 0) * 1000;
+  const exports = Math.max(0, Number(state.boundaryExportMolKg) || 0) * 1000;
+  const flags = !state.blocked && Array.isArray(state.uncertainties) && state.uncertainties.length
+    ? ` Uncertainty: ${state.uncertainties.join(', ')}.`
+    : state.blocked ? '' : ' Within the v1 dilute-water envelope.';
+  el.textContent = `${state.mode.toUpperCase()} carbon boundary · DIC ${dic.toFixed(3)} mmol C/kg · `
+    + `headspace CO₂ ${gas.toFixed(3)} mmol/kg in ${state.headspaceLKg.toFixed(2)} L/kg · `
+    + `reduced alkalinity ${(state.reducedAlkalinityEqKg * 1000).toFixed(3)} meq/kg · `
+    + `imports ${imports.toFixed(3)}, exports ${exports.toFixed(3)} mmol C/kg.${flags}`;
+  if (state.blocked) {
+    const latestFailure = [...(state.transactions || [])].reverse().find((tx: any) => tx?.ok === false);
+    el.textContent = `BLOCKED · ${el.textContent} Failure: ${latestFailure?.error || latestFailure?.kind || 'unresolved carbonate transaction'}${latestFailure?.attemptedKind ? ` (${latestFailure.attemptedKind})` : ''}.`;
+  }
+  if (_carbonateBoundaryControlNotice) el.textContent += ` ${_carbonateBoundaryControlNotice}`;
 }
 
 function takeBrothSnapshot() {

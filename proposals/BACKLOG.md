@@ -1,5 +1,10 @@
 # BACKLOG — Vugg Simulator
 
+> **2026-08-08 execution note:** historical “open” labels below are not reliable
+> current state. The authoritative, reconciled execution list is
+> [`OPEN-IMPROVEMENTS-LEDGER-2026-08-08.md`](OPEN-IMPROVEMENTS-LEDGER-2026-08-08.md).
+> Keep this file as provenance; add or close active work in the reconciled ledger.
+
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
 > ## SESSION STATE (2026-08-05) — SCIENCE-FIRST AAA / DR. WISE HOSTILE LOOP ACTIVE

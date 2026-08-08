@@ -232,6 +232,14 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 4 — Henry\'s-Law pH equilibrator', (
 });
 
 describe('PROPOSAL-CARBONATE-GEOCHEM Week 4b — run_step wiring (positive control)', () => {
+  it('labels the selectable fixed-DIC atmospheric path as a legacy heuristic', () => {
+    const { conditions, events } = SCENARIOS.sabkha_dolomitization();
+    const sim = new VugSimulator(conditions, events);
+    const log = sim.run_step();
+    expect(log.join('\n')).toContain('LEGACY HEURISTIC');
+    expect(log.join('\n')).toContain('fixed DIC');
+  });
+
   // Confirms the dispatcher in 85-simulator.ts run_step actually calls
   // _applyOpenAtmosphereEquilibration AND that scenarios.json5's
   // open_to_atmosphere + atmospheric_pCO2_bar fields make it onto

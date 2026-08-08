@@ -679,6 +679,20 @@ class MovementController {
       if (typeof m.clampMin === 'number') value = Math.max(m.clampMin, value);
       if (typeof m.clampMax === 'number') value = Math.min(m.clampMax, value);
 
+      if (conditions?._carbonateBoundaryState
+          && (m.field === 'fluid.CO3' || m.field === 'fluid.pH')) {
+        conditions._pending_carbonate_boundary_violation = {
+          kind: 'movement_boundary_violation',
+          attemptedKind: 'movement',
+          field: m.field,
+          step,
+          error: m.field === 'fluid.CO3'
+            ? 'movement_DIC_requires_explicit_recharge'
+            : 'movement_pH_requires_explicit_alkalinity_capacity',
+        };
+        continue;
+      }
+
       // SPATIAL origin (Phase 2c): instead of SETTING the bulk field (global),
       // pin ONE seeded origin cell's per-vertex fluid to `value` — a fixed-
       // composition feeder — and let the step-end _diffuseRingState carry it

@@ -125,12 +125,36 @@ function event_aquifer_recharge_floods(conditions) {
 }
 
 function event_acidify(conditions) {
+  if (conditions._carbonateBoundaryState) {
+    const tx = titrateCarbonateBoundaryToPHState(
+      conditions._carbonateBoundaryState,
+      conditions.fluid,
+      conditions.temperature,
+      Math.max(conditions.fluid.pH - 2, 2),
+      'acidic fluid/strong-acid titration',
+    );
+    return tx?.ok
+      ? `Strong-acid capacity is booked; the conserved carbonate solve gives pH ${conditions.fluid.pH.toFixed(2)}.`
+      : `Acid titration rejected (${tx?.error || 'unknown error'}); fluid state was not mutated.`;
+  }
   conditions.fluid.pH -= 2.0;
   conditions.fluid.pH = Math.max(conditions.fluid.pH, 2.0);
   return `Acidic fluid incursion. pH drops to ${conditions.fluid.pH.toFixed(1)}. Carbonates becoming unstable — calcite may dissolve.`;
 }
 
 function event_alkalinize(conditions) {
+  if (conditions._carbonateBoundaryState) {
+    const tx = titrateCarbonateBoundaryToPHState(
+      conditions._carbonateBoundaryState,
+      conditions.fluid,
+      conditions.temperature,
+      Math.min(conditions.fluid.pH + 2, 10),
+      'alkaline fluid/strong-base titration',
+    );
+    return tx?.ok
+      ? `Strong-base capacity is booked; the conserved carbonate solve gives pH ${conditions.fluid.pH.toFixed(2)}.`
+      : `Base titration rejected (${tx?.error || 'unknown error'}); fluid state was not mutated.`;
+  }
   conditions.fluid.pH += 2.0;
   conditions.fluid.pH = Math.min(conditions.fluid.pH, 10.0);
   return `Alkaline fluid incursion. pH rises to ${conditions.fluid.pH.toFixed(1)}. Carbonate precipitation favored.`;
@@ -406,6 +430,7 @@ const EVENT_REGISTRY = {
   co2_degas: event_co2_degas,
   co2_degas_with_reheat: event_co2_degas_with_reheat,
   co2_charge: event_co2_charge,
+  carbonate_recharge: event_carbonate_recharge,
   // 2026-05-18 — Sulphur Bank Mine (Lake County, CA). Pleistocene
   // hot-spring sulfur deposit; the canonical native_sulfur locality
   // that matches the engine's acid-sulfate gates. See
@@ -608,6 +633,13 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       scenario_spec_hash: specHash,
       open_to_atmosphere: spec.open_to_atmosphere,
       atmospheric_pCO2_bar: spec.atmospheric_pCO2_bar,
+      // Conserved carbonate boundary v1. Absent means the legacy open-pH
+      // behavior (when separately requested) and keeps existing scenarios
+      // byte-identical. The object is copied, not interpreted, at build time so
+      // it remains serializable for saves and the future worker protocol.
+      carbonate_boundary: spec.carbonate_boundary
+        ? { ...spec.carbonate_boundary }
+        : undefined,
       wall_rock_thermal_buffer_C: spec.wall_rock_thermal_buffer_C,
       host_rock_composition: spec.host_rock_composition,
       // Mine-specific negative evidence. These are explicit locality
@@ -637,7 +669,10 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       step: Math.floor(ev.step),
       name: ev.name || ev.type || '',
       description: ev.description || '',
-      apply_fn: EVENT_REGISTRY[ev.type],
+      // Preserve the authored event payload for handlers that need a physical
+      // boundary value (for example a vent target pCO2). Existing one-argument
+      // handlers ignore the extra argument and retain their behavior.
+      apply_fn: (conditions: any) => EVENT_REGISTRY[ev.type](conditions, ev),
       // FLUID-SOURCE SPOTS Phase 2d — optional spot-lifecycle directive. A
       // string ('seal' | 'breach') or {action, kind} closes/opens the cavity's
       // feeders when this event fires (apply_events handles it centrally, after

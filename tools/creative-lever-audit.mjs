@@ -31,6 +31,7 @@ const TOP_LEVEL_CLASSIFICATION = {
   tutorial: 'presentation',
   open_to_atmosphere: 'direct',
   atmospheric_pCO2_bar: 'direct',
+  carbonate_boundary: 'direct',
   movements: 'direct',
   fluid_spots: 'direct',
 };

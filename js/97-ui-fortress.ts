@@ -619,6 +619,11 @@ const _CREATIVE_SETUP_EXACT_TRANSFORMS: Record<string, CreativeExactTransform> =
     toSlider:v=>Math.log10(Math.max(1e-6,v))*100,
     format:v=>v.toExponential(3),
   },
+  'f-carbon-headspace': {
+    label:'carbonate headspace volume', unit:'L/kg water', step:0.01,
+    fromSlider:v=>v/100,
+    toSlider:v=>v*100,
+  },
 };
 
 function _creativeExactString(value: number, transform: CreativeExactTransform) {
@@ -803,10 +808,22 @@ function readCreativeGeologicalControls(baseWall: Record<string, any> = {}) {
       porosity: _creativeControlNumber('f-porosity', 100, 0),
     },
     initialWaterTablePct: _creativeControlNumber('f-water-table', 10, 100),
-    scenarioOpts: {
-      open_to_atmosphere: !!(document.getElementById('f-open-atmosphere') as HTMLInputElement | null)?.checked,
-      atmospheric_pCO2_bar: Math.pow(10, _creativeControlNumber('f-pco2', 100, -3.38)),
-    },
+    scenarioOpts: (() => {
+      const open = !!(document.getElementById('f-open-atmosphere') as HTMLInputElement | null)?.checked;
+      const pCO2 = Math.pow(10, _creativeControlNumber('f-pco2', 100, -3.38));
+      const conserved = !!(document.getElementById('f-carbon-boundary') as HTMLInputElement | null)?.checked;
+      return {
+        open_to_atmosphere: open,
+        atmospheric_pCO2_bar: pCO2,
+        carbonate_boundary: conserved ? {
+          mode: open ? 'open' : 'closed',
+          spatial_model: 'equal_volume_fully_mixed',
+          simple_caco3_phases: ['calcite', 'aragonite'],
+          target_pCO2_bar: pCO2,
+          headspace_L_per_kg_water: _creativeControlNumber('f-carbon-headspace', 100, 1),
+        } : undefined,
+      };
+    })(),
   };
 }
 
@@ -1128,6 +1145,47 @@ function _fortressPaceLines(lines: string[], lineToStep: Record<number, number>,
   );
 }
 
+function _fortressCarbonateRecharge(
+  replacementFraction: number,
+  incomingDICPpm: number,
+  incomingPH: number,
+  note: string,
+): any {
+  const state = fortressSim?._carbonateBoundaryState;
+  if (!state) return null;
+  if (!fortressSim._prepareCarbonateBoundarySpatialState() || state.blocked) {
+    return { ok: false, error: 'carbonate_boundary_blocked_or_unreconciled' };
+  }
+  const incomingDIC = dicPpmToMolKg(incomingDICPpm);
+  const incomingAlkalinity = reducedCarbonateAlkalinityEqKg(
+    incomingDIC, incomingPH, fortressSim.conditions.temperature,
+  );
+  const tx = rechargeCarbonateBoundaryState(
+    state,
+    fortressSim.conditions.fluid,
+    fortressSim.conditions.temperature,
+    replacementFraction,
+    incomingDIC,
+    incomingAlkalinity,
+    note,
+  );
+  if (tx?.ok) fortressSim._replaceFullyMixedCarbonateFluid();
+  return tx;
+}
+
+function _fortressCarbonateTitrate(targetPH: number, note: string): any {
+  const state = fortressSim?._carbonateBoundaryState;
+  if (!state) return null;
+  if (!fortressSim._prepareCarbonateBoundarySpatialState() || state.blocked) {
+    return { ok: false, error: 'carbonate_boundary_blocked_or_unreconciled' };
+  }
+  const tx = titrateCarbonateBoundaryToPHState(
+    state, fortressSim.conditions.fluid, fortressSim.conditions.temperature, targetPH, note,
+  );
+  if (tx?.ok) fortressSim._replaceFullyMixedCarbonateFluid();
+  return tx;
+}
+
 function fortressStep(action, payload) {
   if (!fortressSim || !fortressActive) return;
 
@@ -1182,8 +1240,17 @@ function fortressStep(action, payload) {
       c.flow_rate = Math.max(c.flow_rate, 1.5);
       c.fluid.SiO2 *= 0.85;
       c.fluid.Ca *= 1.10;
-      c.fluid.CO3 *= 1.08;
-      c.fluid.pH = Math.min(c.fluid.pH + 0.1, 10.0);
+      if (fortressSim._carbonateBoundaryState) {
+        const tx = _fortressCarbonateRecharge(
+          0.10, c.fluid.CO3 * 1.8, Math.min(c.fluid.pH + 0.1, 10), 'Creative seep recharge',
+        );
+        _carbonateBoundaryControlNotice = tx?.ok
+          ? 'Seep executed as 10% replacement-water recharge with separate carbon import/export.'
+          : `Seep carbonate recharge rejected: ${tx?.error || 'unknown error'}.`;
+      } else {
+        c.fluid.CO3 *= 1.08;
+        c.fluid.pH = Math.min(c.fluid.pH + 0.1, 10.0);
+      }
       actionDesc = `💧 Seep — fresh fluid trickles in${rise ? `, water level +${rise.toFixed(1)}` : ''}`;
       break;
     }
@@ -1193,8 +1260,17 @@ function fortressStep(action, payload) {
       c.flow_rate = 5.0;
       c.fluid.SiO2 *= 0.6;
       c.fluid.Ca *= 1.3;
-      c.fluid.CO3 *= 1.2;
-      c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
+      if (fortressSim._carbonateBoundaryState) {
+        const tx = _fortressCarbonateRecharge(
+          0.30, c.fluid.CO3 * (5 / 3), Math.min(c.fluid.pH + 0.3, 10), 'Creative flood recharge',
+        );
+        _carbonateBoundaryControlNotice = tx?.ok
+          ? 'Flood executed as 30% replacement-water recharge with separate carbon import/export.'
+          : `Flood carbonate recharge rejected: ${tx?.error || 'unknown error'}.`;
+      } else {
+        c.fluid.CO3 *= 1.2;
+        c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
+      }
       actionDesc = `🌊 Flood — fresh fluid pulse, silica diluted, carbonates refreshed${rise ? `, water level +${rise.toFixed(1)}` : ''}`;
       break;
     }
@@ -1214,31 +1290,61 @@ function fortressStep(action, payload) {
       c.flow_rate = Math.max(c.flow_rate * 0.2, 0.05);
       c.fluid.O2 = Math.max(c.fluid.O2, 1.5);
       // Concentrate solubles (skip pH; that's set by speciation, not bulk).
-      const concSpecies = ['Ca', 'Mg', 'Na', 'K', 'Cl', 'S', 'CO3', 'B', 'F', 'Sr'];
+      const concSpecies = ['Ca', 'Mg', 'Na', 'K', 'Cl', 'S', 'B', 'F', 'Sr'];
+      if (!fortressSim._carbonateBoundaryState) concSpecies.push('CO3');
       for (const sp of concSpecies) {
         if (typeof c.fluid[sp] === 'number') c.fluid[sp] *= 1.4;
       }
       c.temperature = Math.max(c.temperature - 10, 25);
+      if (fortressSim._carbonateBoundaryState) {
+        const state = fortressSim._carbonateBoundaryState;
+        if (!state.uncertainties.includes('water_mass_change_not_modeled')) {
+          state.uncertainties.push('water_mass_change_not_modeled');
+        }
+        _carbonateBoundaryControlNotice = 'Evaporation held the conserved carbonate inventory fixed because changing the one-kg-water control-volume basis is not yet supported.';
+      }
       actionDesc = `☀️ Evaporate — water level −${drop.toFixed(1)}, brine concentrates ×1.4, sulfides oxidize`;
       break;
     }
 
     // ── 4. pH — tweak/shift pairs in both directions ──
     case 'tweak_acidify':
-      c.fluid.pH = Math.max(c.fluid.pH - 0.3, 2.0);
+      if (fortressSim._carbonateBoundaryState) {
+        const tx = _fortressCarbonateTitrate(Math.max(c.fluid.pH - 0.3, 2), 'Creative gentle acid titration');
+        _carbonateBoundaryControlNotice = tx?.ok
+          ? `Strong-acid capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
+          : `Acid titration rejected: ${tx?.error || 'unknown error'}.`;
+      } else c.fluid.pH = Math.max(c.fluid.pH - 0.3, 2.0);
       actionDesc = `🧪 Tweak pH −0.3 → ${c.fluid.pH.toFixed(1)}`;
       break;
     case 'shift_acidify':
     case 'acidify': // legacy alias — fortressStep('acidify') still works
-      actionDesc = '🧪 ' + event_acidify(c);
+      if (fortressSim._carbonateBoundaryState) {
+        const tx = _fortressCarbonateTitrate(Math.max(c.fluid.pH - 2, 2), 'Creative strong acid titration');
+        _carbonateBoundaryControlNotice = tx?.ok
+          ? `Strong-acid capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
+          : `Acid titration rejected: ${tx?.error || 'unknown error'}.`;
+        actionDesc = tx?.ok ? `🧪 Acid titration → pH ${c.fluid.pH.toFixed(2)}` : '🧪 Acid titration rejected';
+      } else actionDesc = '🧪 ' + event_acidify(c);
       break;
     case 'tweak_alkalinize':
-      c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
+      if (fortressSim._carbonateBoundaryState) {
+        const tx = _fortressCarbonateTitrate(Math.min(c.fluid.pH + 0.3, 10), 'Creative gentle base titration');
+        _carbonateBoundaryControlNotice = tx?.ok
+          ? `Strong-base capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
+          : `Base titration rejected: ${tx?.error || 'unknown error'}.`;
+      } else c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
       actionDesc = `⚗️ Tweak pH +0.3 → ${c.fluid.pH.toFixed(1)}`;
       break;
     case 'shift_alkalinize':
     case 'alkalinize': // legacy alias
-      actionDesc = '⚗️ ' + event_alkalinize(c);
+      if (fortressSim._carbonateBoundaryState) {
+        const tx = _fortressCarbonateTitrate(Math.min(c.fluid.pH + 2, 10), 'Creative strong base titration');
+        _carbonateBoundaryControlNotice = tx?.ok
+          ? `Strong-base capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
+          : `Base titration rejected: ${tx?.error || 'unknown error'}.`;
+        actionDesc = tx?.ok ? `⚗️ Base titration → pH ${c.fluid.pH.toFixed(2)}` : '⚗️ Base titration rejected';
+      } else actionDesc = '⚗️ ' + event_alkalinize(c);
       break;
 
     // ── 5. REPLENISH — host rock leaches the starting recipe back in ──
@@ -1257,9 +1363,23 @@ function fortressStep(action, payload) {
       let touched = 0;
       for (const [k, v] of Object.entries(_fortressInitialFluidParams)) {
         if (typeof v === 'number' && typeof c.fluid[k] === 'number') {
+          if (fortressSim._carbonateBoundaryState && (k === 'CO3' || k === 'pH')) continue;
           c.fluid[k] = v;
           touched++;
         }
+      }
+      if (fortressSim._carbonateBoundaryState) {
+        const incomingDIC = Number(_fortressInitialFluidParams.CO3);
+        const incomingPH = Number(_fortressInitialFluidParams.pH);
+        const tx = _fortressCarbonateRecharge(
+          1,
+          Number.isFinite(incomingDIC) ? incomingDIC : c.fluid.CO3,
+          Number.isFinite(incomingPH) ? incomingPH : c.fluid.pH,
+          'Creative host-rock replenish recharge',
+        );
+        _carbonateBoundaryControlNotice = tx?.ok
+          ? 'Replenish executed as full replacement-water recharge with explicit incoming DIC and reduced alkalinity.'
+          : `Replenish carbonate recharge rejected: ${tx?.error || 'unknown error'}.`;
       }
       actionDesc = `🥣 Replenish — host rock leaches ${touched} species back to starting values; pH → ${c.fluid.pH.toFixed(1)}`;
       break;
@@ -1276,6 +1396,11 @@ function fortressStep(action, payload) {
       }
       const sp = String(payload.species);
       const amount = Number(payload.ppm) || 50;
+      if (sp === 'CO3' && fortressSim._carbonateBoundaryState) {
+        actionDesc = 'DIC injection refused: choose pure CO2 charge or replacement-water recharge so alkalinity and the carbon boundary are explicit.';
+        _carbonateBoundaryControlNotice = actionDesc;
+        break;
+      }
       if (typeof c.fluid[sp] !== 'number') {
         actionDesc = `💉 Unknown species '${sp}' — no change`;
       } else {
@@ -1366,6 +1491,14 @@ function fortressStep(action, payload) {
       const spec = normalizeCreativeMovementSpec(payload, fortressSim.step);
       if (!spec) {
         actionDesc = 'Trajectory ignored — choose a field and finite amount/target.';
+        break;
+      }
+      if (fortressSim._carbonateBoundaryState
+          && (spec.field === 'fluid.CO3' || spec.field === 'fluid.pH')) {
+        actionDesc = spec.field === 'fluid.CO3'
+          ? 'DIC trajectory refused — schedule explicit replacement-water recharge with incoming DIC and reduced alkalinity.'
+          : 'pH trajectory refused — schedule a reduced-alkalinity/strong-acid-base trajectory so pH remains solved.';
+        _carbonateBoundaryControlNotice = actionDesc;
         break;
       }
       c._scenario ||= {};

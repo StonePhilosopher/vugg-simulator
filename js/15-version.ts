@@ -12537,7 +12537,21 @@
 //       1:6 formula ratio. Executed vendored-Three integration tests now prove
 //       finite instance matrices, raycast hits, single scene representation,
 //       overlap relief, flattened dendrites, and mobile/desktop relief parity.
-const SIM_VERSION = 250;
+// v251 — CONSERVED CARBONATE BOUNDARY (2026-08-08).
+//       Opt-in scenarios now carry separate DIC, reduced carbonate alkalinity,
+//       headspace CO2, solid carbon, and open-boundary import/export inventories.
+//       pH is solved from the carbonate system; closed steps conserve carbon,
+//       vents target an authored pCO2, root failures do not mutate state, and
+//       only explicit calcite/aragonite transfers close v1 solid carbon. The
+//       fully mixed v1 spatial contract is restricted to equal-volume wet
+//       voxels and records uncertainty instead of implying brine/high-P support.
+//       tutorial_travertine is migrated from fixed-percent/fixed-pH pulses and
+//       gains a field-by-field Mammoth benchmark receipt. Creative setup/live
+//       controls, event-sourced saves, and strip testimony preserve the ledger.
+//       Hostile-review closure adds atomic charge/recharge/titration, separate
+//       replacement-water import/export legs, accepted-zone transfer receipts,
+//       a bulk-handle guard, and visible blocked/failure diagnostics.
+const SIM_VERSION = 251;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12550,6 +12564,7 @@ const MODEL_DIGEST = [
   'Prock:Pattison92-AndSil-16+/-3barC',
   'stress:instant-resolved-shear-stable-grain-v2',
   'event-fluid:absolute-replace-v1',
+  'carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2',
   'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
   'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',

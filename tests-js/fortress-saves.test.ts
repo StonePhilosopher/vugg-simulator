@@ -39,6 +39,8 @@ declare function _saveManualNamed(name: string): any;
 declare function loadSaveById(id: string): boolean;
 declare function collectAllCrystals(crystals: any[], metaFn: any, opts?: any): { count: number; newSpecies: string[] };
 declare function _libraryProgressHTML(opts?: any): string;
+declare function setBrothValue(key: string, sliderVal: string): void;
+declare function updateCarbonateBoundaryReadout(): void;
 declare const MODEL_DIGEST: string;
 declare const SCENARIOS: Record<string, any>;
 
@@ -70,6 +72,41 @@ function ensureSlider(key: string, min: string, max: string, value: string): HTM
 function ensureFeSlider(): HTMLInputElement {
   ensureSlider('temp', '25', '600', '300');
   return ensureSlider('fe', '0', '500', '0');
+}
+
+function ensureCarbonBoundaryControls(): void {
+  ensureSlider('carbon_boundary', '0', '1', '1');
+  ensureSlider('carbon_headspace', '0', '2000', '100');
+  ensureSlider('pco2', '-600', '-30', String(Math.log10(0.22) * 100));
+  ensureSlider('open_atmosphere', '0', '1', '0');
+  ensureSlider('carbon_alkalinity', '-500', '5000', '200');
+  ensureSlider('co3', '0', '5000', '500');
+  ensureSlider('ph', '0', '140', '70');
+}
+
+let _carbonReadout: HTMLDivElement | null = null;
+function ensureCarbonReadout(): HTMLDivElement {
+  if (!_carbonReadout || !_carbonReadout.isConnected) {
+    _carbonReadout = document.createElement('div');
+    _carbonReadout.id = 'carbonate-boundary-readout';
+    document.body.appendChild(_carbonReadout);
+  }
+  return _carbonReadout;
+}
+
+function carbonateFingerprint(sim: any) {
+  const state = sim._carbonateBoundaryState;
+  return {
+    mode: state.mode,
+    headspaceLKg: +state.headspaceLKg.toFixed(9),
+    targetPCO2Bar: +state.targetPCO2Bar.toFixed(12),
+    dicMolKg: +state.lastDICMolKg.toFixed(12),
+    headspaceCO2MolKg: +state.headspaceCO2MolKg.toFixed(12),
+    reducedAlkalinityEqKg: +state.reducedAlkalinityEqKg.toFixed(12),
+    imported: +state.boundaryImportMolKg.toFixed(12),
+    exported: +state.boundaryExportMolKg.toFixed(12),
+    transactions: state.transactions.map((tx: any) => [tx.kind, !!tx.ok, tx.note]),
+  };
 }
 
 function ensureAllChemistrySliders(): Record<string, number> {
@@ -242,6 +279,94 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     expect(loadSaveById(manual.id)).toBe(true);
     for (const [field, canonical] of Object.entries(expected)) {
       expect(_liveFortressSim().conditions.fluid[field], `${field}.replay`).toBe(canonical);
+    }
+  });
+
+  it('round-trips conserved-carbon controls and the transaction ledger through save/replay', () => {
+    ensureCarbonBoundaryControls();
+    fortressBeginFromScenario('tutorial_travertine', 42);
+    expect(_liveFortressSim()._carbonateBoundaryState).toBeTruthy();
+
+    setBrothValue('carbon_headspace', '250'); // 2.50 L/kg
+    setBrothValue('pco2', '-200'); // 10^-2 bar
+    setBrothValue('open_atmosphere', '1');
+    fortressStep('wait');
+
+    const before = carbonateFingerprint(_liveFortressSim());
+    const manual = _saveManualNamed('carbonate boundary replay probe');
+    expect(manual.actions.some((a: any) =>
+      a.b?.carbon_headspace === '250'
+      && a.b?.pco2 === '-200'
+      && a.b?.open_atmosphere === '1')).toBe(true);
+
+    fortressReset();
+    expect(loadSaveById(manual.id)).toBe(true);
+    expect(carbonateFingerprint(_liveFortressSim())).toEqual(before);
+  });
+
+  it('surfaces conserved inventories and labels the disabled fallback as legacy', () => {
+    ensureCarbonBoundaryControls();
+    const readout = ensureCarbonReadout();
+    fortressBeginFromScenario('tutorial_travertine', 42);
+    updateCarbonateBoundaryReadout();
+    expect(readout.textContent).toContain('CLOSED carbon boundary');
+    expect(readout.textContent).toContain('DIC');
+    expect(readout.textContent).toContain('headspace CO₂');
+    expect(readout.textContent).toContain('reduced alkalinity');
+    expect(readout.textContent).toContain('Uncertainty:');
+
+    setBrothValue('carbon_boundary', '0');
+    expect(readout.textContent).toContain('legacy fixed-DIC pH comparison model');
+  });
+
+  it('routes live DIC through recharge, derives pH, and exposes blocked failures', () => {
+    ensureCarbonBoundaryControls();
+    const readout = ensureCarbonReadout();
+    fortressBeginFromScenario('tutorial_travertine', 42);
+    for (let i = 0; i < 8; i++) fortressStep('wait');
+    const sim = _liveFortressSim();
+
+    setBrothValue('co3', '5000');
+    expect(sim._carbonateBoundaryState.transactions.at(-1)).toMatchObject({
+      ok: true, kind: 'recharge', replacementFraction: 1,
+    });
+    expect(sim._carbonateBoundaryState.boundaryImportMolKg).toBeGreaterThan(0);
+    expect(sim._carbonateBoundaryState.boundaryExportMolKg).toBeGreaterThan(0);
+
+    const derivedPH = sim.conditions.fluid.pH;
+    const txCount = sim._carbonateBoundaryState.transactions.length;
+    setBrothValue('ph', '80');
+    expect(sim.conditions.fluid.pH).toBe(derivedPH);
+    expect(sim._carbonateBoundaryState.transactions).toHaveLength(txCount);
+
+    setBrothValue('carbon_alkalinity', '300');
+    expect(sim._carbonateBoundaryState.transactions.at(-1)).toMatchObject({
+      ok: true, kind: 'alkalinity_titration', requestedReducedAlkalinityEqKg: 0.003,
+    });
+
+    sim.conditions.fluid.CO3 = 6500;
+    fortressStep('wait');
+    updateCarbonateBoundaryReadout();
+    expect(sim._carbonateBoundaryState.blocked).toBe(true);
+    expect(readout.textContent).toContain('BLOCKED');
+    expect(readout.textContent).toContain('unreceipted_DIC_change');
+    expect(readout.textContent).not.toContain('Within the v1 dilute-water envelope');
+  });
+
+  it('routes every Creative acid/base alias through spatially synchronized titration', () => {
+    ensureCarbonBoundaryControls();
+    for (const action of ['tweak_acidify', 'shift_acidify', 'acidify', 'tweak_alkalinize', 'shift_alkalinize', 'alkalinize']) {
+      fortressReset();
+      fortressBeginFromScenario('tutorial_travertine', 42);
+      const sim = _liveFortressSim();
+      fortressStep(action);
+      expect(sim._carbonateBoundaryState.transactions.at(-1), action).toMatchObject({
+        ok: true, kind: 'ph_titration',
+      });
+      fortressStep('wait');
+      expect(sim._carbonateBoundaryState.blocked, action).toBe(false);
+      expect(sim._carbonateBoundaryState.transactions.some((tx: any) =>
+        tx.error === 'unreceipted_DIC_change')).toBe(false);
     }
   });
 

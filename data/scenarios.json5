@@ -1363,7 +1363,7 @@
         // reaches the flood. It WORKS because the plain is open_system (the cavity never
         // sealed, so the blades keep growing) — fires only when the run CONTINUES past 250
         // (creative-mode Wait / extended viewing). Run ~330 steps to see the flooded blade.
-        { "step": 265, "type": "gsp_flood",       "name": "Red-Mud Flood",    "description": "An exceptional flood year buries the still-growing blades in iron-rich slurry — the hourglass overgrows to solid brown (fires only past the canonical 250-step run)" }
+        { "step": 265, "type": "gsp_flood",       "name": "Red-Mud Flood",    "description": "An exceptional flood year buries the still-growing blades in iron-rich slurry — the hourglass overgrows to solid brown (fires only past the canonical 250-step run)", "extended_only": true }
       ],
       "sources": [
         "U.S. Fish & Wildlife Service — Salt Plains National Wildlife Refuge, selenite crystal digging (formation mechanism: gypsum-saturated groundwater evaporating under a salt crust; clay/sand/iron-oxide inclusions form the hourglass)",
@@ -3160,15 +3160,18 @@
       "expects_species": ["calcite"],
       "duration_steps": 60,
       "notes": [
-        "Tutorial scenario for PROPOSAL-GEOLOGICAL-ACCURACY Phase 3. Showcases the CO₂-degas → pH rise → calcite supersaturates cascade. Player presses Advance through three degassing pulses (steps 10, 25, 40) and watches calcite go from a barely-viable trickle to massive precipitation purely via pH change — no temperature drop, no mineral mixing, no fluid pulse adds Ca.",
+        "Tutorial scenario for the conserved carbonate boundary. Three downstream vent stages (steps 10, 25, 40) lower the authored pCO₂ boundary while DIC, reduced carbonate alkalinity, and a 1 L/kg pedagogical headspace remain separate inventories. pH is solved from the carbonate system; no pulse adds Ca and no fixed pH shift is authored.",
+        "Scope: this is a reduced pedagogical analogue of the Mammoth Hot Springs degassing pathway, not a sample-for-sample reconstruction. USGS Bulletin 1444's outlet-water analysis (69 °C, pH 7.2, Ca 323, Mg 67, HCO3 755, SO4 563 mg/L) is compared field by field in research/arcs/mammoth-travertine-benchmark-receipt-2026-08-08.md; the deliberately authored differences and omitted sulfate alkalinity are visible there.",
         "REWORKED 2026-07-07 (tutorial-parity pass): legacy 8-beat sim-step script rebuilt in the Grand Tour's engine-v2 vocabulary — continue-step framing on the σ forecast, Begin ⏎ handoff, sim-step beats riding the pulses, then the INVERSE EXPERIMENT: the 🧪 acid verbs unlock and the player runs the cascade backwards, watching σ(calcite) fall (the cave-dissolution lesson for free). Broth + events byte-identical. TEXT RE-TRUED against the observed run: the old script's claims ('Ca 200 ppm', 'calcite isn't growing yet', 'crossed the line at step 20') predate the Ca 200→350 recalibration — measured seed run shows σ(calcite) 1.61 at t0 (one crystal creeping from step ~2) and pulse 1 multiplying σ 1.34→5.04, so the lesson is narrated as barely-viable-trickle → multiplication, which is also the truer Mammoth story (vent water arrives near saturation; degassing drives the plating downstream).",
-        "Initial fluid is high-DIC (CO3 = 500 ppm = ~10 mmol/kg DIC, typical of CO₂-charged hot-spring source water) at moderately acidic pH 6.5 (the pH at which most DIC sits as H₂CO₃* and HCO₃⁻; <0.1% is CO₃²⁻). At the current Ca = 350 ppm calibration, calcite starts MARGINAL (σ ≈ 1.6, a bare trickle of growth) rather than subsaturated — the pre-recalibration 'Ca = 200, stays subsaturated' description was stale; the pulses do the real work either way.",
-        "Each `co2_degas` event removes 30% of the DIC (CO₂ leaves as gas) and raises pH by 0.5 units. The CO₃²⁻ fraction of DIC grows ~10× per pH unit (Bjerrum partition). After three degassing pulses, pH ~ 8 and calcite is wildly supersaturated; players see calcite nucleate and grow steadily through the back half of the run.",
+        "Initial fluid uses CO3 = 500 mg/kg as the simulator's CO3-equivalent DIC surrogate, exactly 8.332 mmol C/kg, at pH 6.5. Ca = 350 mg/kg represents the measured high-Ca Mammoth water family. The source pool is marginally supersaturated; progressive open-boundary loss, not an invented reagent addition, drives downstream coating.",
+        "The three `co2_degas_with_reheat` events vent toward 0.08, 0.02, then 0.004 bar pCO2. Each event reports its computed mmol C/kg export, resulting DIC, and solved pH. Reduced carbonate alkalinity is conserved during gas exchange. The 1 L/kg headspace is an authored pedagogical control volume, not a claim about a measured Mammoth bubble volume.",
         "Geological reference: Mammoth Hot Springs (Yellowstone, USA), Pamukkale (Turkey), Pancake Hot Springs (CA). All build travertine via this exact cascade. Cave flowstone uses the same chemistry but with cooler fluid and lower flow."
       ],
       "initial": {
         "temperature_C": 70.0,
-        "pressure_kbar": 0.05,
+        // Open terrace pool: near-atmospheric liquid pressure, not the former
+        // 0.05 kbar (= 50 bar) deep-fracture placeholder.
+        "pressure_kbar": 0.00101325,
         "fluid": {
           // F=3: Mammoth measures F=2.5 mg/L (USGS Bull. 1444 Table 2) — a real magmatic F
           // signature, carbonate-diluted vs the rhyolite geysers; still sub-gate.
@@ -3199,7 +3202,8 @@
           "Fe": 5,
           "Mn": 2,
           "pH": 6.5,
-          "salinity": 6.0
+          // Dilute limestone spring water; this is not a NaCl brine.
+          "salinity": 2.0
         },
         "wall": {
           "composition": "limestone",
@@ -3212,10 +3216,17 @@
           "shape_seed": 4
         }
       },
+      "carbonate_boundary": {
+        "mode": "closed",
+        "spatial_model": "equal_volume_fully_mixed",
+        "simple_caco3_phases": ["calcite", "aragonite"],
+        "headspace_L_per_kg_water": 1.0,
+        "target_pCO2_bar": 0.22
+      },
       "events": [
-        { "step": 10, "type": "co2_degas_with_reheat", "name": "First Pulse", "description": "Fresh hot CO₂-rich fluid arrives — first pulse of CO₂ escapes as it reaches the pool" },
-        { "step": 25, "type": "co2_degas_with_reheat", "name": "Second Pulse", "description": "Continued CO₂ outgassing — pH continues to rise, CO₃²⁻ fraction grows" },
-        { "step": 40, "type": "co2_degas_with_reheat", "name": "Third Pulse", "description": "Final pulse — pH near 8, calcite massively supersaturated" }
+        { "step": 10, "type": "co2_degas_with_reheat", "name": "Upper Vent", "description": "The first downstream reach vents toward 0.08 bar pCO2", "target_pCO2_bar": 0.08, "reheat_C": 70 },
+        { "step": 25, "type": "co2_degas_with_reheat", "name": "Terrace Run", "description": "Further gas exchange lowers the boundary to 0.02 bar pCO2", "target_pCO2_bar": 0.02, "reheat_C": 70 },
+        { "step": 40, "type": "co2_degas_with_reheat", "name": "Apron Vent", "description": "The distal apron approaches 0.004 bar pCO2", "target_pCO2_bar": 0.004, "reheat_C": 70 }
       ],
       // Tutorial overlay script — see tutorial_first_crystal for schema
       // notes. Reworked 2026-07-07 to the Grand Tour's vocabulary:
@@ -3250,13 +3261,13 @@
           { "step": 4, "anchor": "#f-sat-bar", "side": "bottom",
             "text": "A calcite has seeded, and it's creeping — thin-film pace, σ drifting along in the 1.3s. The pool is barely keeping ahead of its own dissolution. Without the gas leaving, this trickle would be the entire story." },
           { "step": 11, "anchor": "#f-sat-bar", "side": "bottom",
-            "text": "⚡ First pulse — the log says a third of the dissolved CO₂ just left as gas and pH climbed half a unit. Now look at the forecast: σ(calcite) LEAPED to around 5. Half a pH unit, several times the supersaturation. Nothing was added to this water. Something left it." },
+            "text": "⚡ Upper vent — read the transaction in the log: it names the pCO₂ boundary, the exact mmol C/kg exported, and the pH the carbonate equations solved. Nothing added Ca and nobody typed in a pH increase; carbon crossed an open boundary." },
           { "step": 20, "anchor": "#f-sat-bar", "side": "bottom",
             "text": "See σ easing back as the wall drinks the surplus — every new layer of crust locks carbonate away, and growth is compounding. The pool spends what the pulse loaded. Two more deliveries coming." },
           { "step": 26, "anchor": "#f-stat-ph", "side": "bottom",
-            "text": "⚡ Second pulse. pH 7.5 and climbing — and tenfold-per-unit means the CO₃²⁻ supply is compounding. Watch the growth lines in the log pick up pace with it." },
+            "text": "⚡ Terrace run. The pCO₂ boundary falls again. Compare DIC, pH, and calcite σ: total dissolved carbon can fall while the reactive CO₃²⁻ share and calcite drive rise. That apparent paradox is carbonate partitioning." },
           { "step": 41, "anchor": "#fortress-log", "side": "left",
-            "text": "⚡ Third pulse. pH is near 8: this water arrived acidic and is leaving alkaline, and calcite is now wildly supersaturated — every surface in the pool is getting plated. This is travertine. Not a rare mineral; ordinary calcite with an extraordinary delivery mechanism." },
+            "text": "⚡ Apron vent. The distal water approaches a lower pCO₂ reservoir and the solved carbonate state plates open surfaces. This is travertine: ordinary calcite recording an open-system carbon pathway, with every import/export visible in the ledger." },
           { "step": 50, "anchor": "#topo-panel", "side": "top",
             "text": "Look at the wall — crusted. At Mammoth Hot Springs the active vents plate travertine at millimeters a DAY, geologically explosive, and the result is terraces, rimstone pools, whole petrified waterfalls. Pamukkale in Turkey is this same cascade; so is the flowstone in every limestone cave, just colder and slower." },
 
