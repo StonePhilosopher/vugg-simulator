@@ -1,0 +1,651 @@
+{
+  "scenario": "searles_lake",
+  "sim_version": 253,
+  "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1|aragonite-selector:Mg+shallowP<=0.10kbar-spring+highPstable-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "c5bdf3056193ed94dfe8df2b9de3eccdae69966d32e8fb348e3d5bb493e47afc",
+  "strip_steps": 300,
+  "claim": {
+    "anchor": "Searles Lake, San Bernardino County, California — Pleistocene-Holocene closed-basin alkaline-saline brine, the textbook locality for sodium-borate / sodium-sulfate / sodium-chloride evaporites. ~70 evaporite mineral species documented (Smith 1979 USGS PP 1043). Type locality for hanksite, sulfohalite, borax (commercially), tincalconite.",
+    "description": "Mojave desert closed basin with Sierra Nevada snowmelt feed. Wet/dry seasonal cycling drives the full evaporite cascade: halite crusts in the drying windows, borax + mirabilite in cold winter, thenardite paramorphs in summer heat, and tincalconite where hot saline brine or exposed dry air dehydrates surviving borax. The 20-mule team era of American borate commerce ran on chemistry like this.",
+    "expects_species": [
+      "halite",
+      "borax",
+      "tincalconite",
+      "mirabilite",
+      "thenardite"
+    ],
+    "expectation_contract": {
+      "deterministic": [
+        "halite",
+        "borax",
+        "tincalconite",
+        "mirabilite",
+        "thenardite"
+      ],
+      "statistical": [],
+      "aspirational": []
+    },
+    "excluded_species": {},
+    "sources": [
+      "Smith 1979 USGS Professional Paper 1043 — Subsurface Stratigraphy and Geochemistry of Late Quaternary Evaporites, Searles Lake, California",
+      "Smith & Pratt 1957 USGS Bull. 1045-A — Hanksite from Searles Lake",
+      "Eugster 1980 Annu. Rev. Earth Planet. Sci. 8:35 — Lake Magadi-Searles brine geochemistry",
+      "Boron, CA + Death Valley — adjacent commercially-active borate localities in the same basin family"
+    ],
+    "initial_temperature_C": 18,
+    "initial_pressure_kbar": 0.05,
+    "wall_architecture": "basin",
+    "notes": [
+      "Smith 1979 USGS Professional Paper 1043 — the canonical Searles Lake mineralogy + paragenesis reference. ~70 mineral species; the simulator covers the major Na-sulfate/borate/chloride suite (halite, borax, tincalconite, mirabilite, thenardite). Trona, hanksite, sulfohalite, glauberite, gaylussite, pirssonite, ulexite, colemanite, kernite are all real and worth adding later.",
+      "Initial T = 18°C (Mojave October — playa temps span 5°C winter to 50°C summer). Initial chemistry seeds the alkaline-saline brine: Na 1500, B 100, S 400, Cl 1500, alkaline pH 9.5, low Ca (Ca > 50 would steal borate as colemanite). Salinity high (180 g/L) reflects the ~4× seawater concentration of mid-Pleistocene Searles brine.",
+      "Five seasonal cycles over 300 steps. Each cycle: winter_freeze (steps 30, 90, 150, 210, 270) drops T to 8°C and bumps soluble species; summer_bake (steps 60, 120, 180, 240) heats to 55°C, firing mirabilite → thenardite (its incongruent-melting boundary is 32.4°C) and borax → tincalconite where the brine reaches the halite-saturated strength represented by the dry-down. The borax transition is 60.8°C in the pure Na2B4O7-H2O system but falls to 39.6°C in saturated NaCl-Na2B4O7 solution (Bowser 1964); controlled-RH measurements independently place the borax/tincalconite boundary near 59±6% RH at 25°C and 88±8% at 55–65°C (Ruhl et al. 2007). Inter-cycle fresh_pulse events flood the basin briefly.",
+      "fluid_surface_ring isn't set in initial state — the basin starts fully saturated. The summer_bake events drop it through evaporation; fresh_pulse refills. The vadose-transition concentration boost (×3 per drying) is what brings borax + mirabilite into supersaturation.",
+      "Death Valley (Furnace Creek) and Boron, CA also belong to this basin family but with slightly different brine-chemistry signatures. Searles is the most chemically diverse — chosen as the sim's anchor because more of its minerals are already plumbed.",
+      "SIM 239 SCIENCE CORRECTION TO THE SIM 234 WITHDRAWAL: exact LIFO shell dissolution removed the old all-or-nothing crystal flag and showed that grown borax remnants survive some flushes, then dehydrate during later dry/hot windows. Primary literature supports that result: tincalconite occurs at Searles both as clear 1–3 mm crystals in contact with lake brine and as an alteration product of large borax crystals (Christ, Truesdell & Jones 1967, citing Pabst & Sawyer 1948 and Smith & Haines 1964). Bowser's saline-system measurements lower the transition from 60.8°C in pure Na-borate solution to 39.6°C in saturated NaCl-Na-borate solution. The old 'museum drawer only' interpretation was therefore too narrow. Tincalconite is restored to expects_species because the scenario now has a mechanism-backed saline summer transition plus its dry-exposure path; this is not a locality-scoreboard restoration.",
+      "MINDAT VALID-SPECIES REFERENCE (boss-supplied screenshots + reference list, 2026-07-27 — 'Searles Lake, San Bernardino County, California, USA'; full citation transcription in research/scenarios/searles/citations-mindat-searles-lake-2026-07-27.md; 37 valid, 10 type-locality): Analcime, Anhydrite, Aphthitalite, Aragonite, Borax, BURKEITE (TL), Calcite, Celestine, Chlorargyrite (+ var. Bromian), Dolomite, GALEITE (TL), Gaylussite, Glauberite, GYPSUM (var. SELENITE), Halite, HANKSITE (TL), 'Heulandite Subgroup', 'K Feldspar' ('var. Adularia'), Merlinoite, Mirabilite, Nahcolite, Native Sulphur, Natron, Niter, NORTHUPITE (TL), Opal, Orthoclase, 'Phillipsite Subgroup', PIRSSONITE (TL), Quartz, Realgar, SCHAIRERITE (TL), SEARLESITE (TL), SULPHOHALITE (TL), Teepleite, Thenardite, TINCALCONITE (TL), Trona, TYCHITE (TL), Ulexite. WHAT THE LIST VOTES ON (vs seed-42 v236 sim output): (a) THE CLEANEST SHEET IN THE SWEEP — all 8 sim species licensed: borax ✓ (23.5 mm), calcite ✓, celestine ✓ (255 µm), halite ✓, mirabilite ✓, quartz ✓, selenite ✓ (34.2 mm — the S2-selenite migration's searles tenant is record-LICENSED, cross-mine selenite tally now 5-YES/2-NO), thenardite ✓ (40.2 mm); zero census flags. (b) SYLVITE IS NOT ON THE LIST — the rung-5 fleet-wide sylvite extinction (SIM 234, bittern-window physics) is retroactively record-licensed at the scenario that once grew it. (c) TINCALCONITE TL TENSION, resolved honestly: the list licenses the SPECIES at the locality (it IS the type locality) but the rung-5 withdrawal was mechanism-based — real tincalconite is dry-air alteration of grown borax (museum-drawer chemistry), not in-brine growth, so a locality license does not overturn a nucleation-mechanism withdrawal; both records are correct at their own layer. (d) documented-unfired = the famous saline double-salt suite (trona, hanksite, gaylussite, glauberite, pirssonite, northupite, nahcolite, burkeite, sulphohalite, schairerite, galeite, tychite, aphthitalite, teepleite, natron, niter, ulexite, searlesite) — no sim engines yet; the note-1 'worth adding later' list gains mindat corroboration; also anhydrite/aragonite/dolomite/opal + the authigenic silicate tail (analcime, merlinoite, phillipsite/heulandite, K-feldspar — Hay & Moiola 1962 sediment authigenesis, a different growth regime than the vug). (e) realgar + chlorargyrite + native sulphur are valid here but trace/exotic — no vote against the sim's hypogene-free evaporite scope."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1|aragonite-selector:Mg+shallowP<=0.10kbar-spring+highPstable-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 0.05,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 3.04181614,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 58.735,
+          "initial_water_activity": {
+            "value": 0.862,
+            "salinityPpt": 180,
+            "naclWeightPercentEquivalent": 18,
+            "uncertainty": 0.01,
+            "status": "calibrated-proxy",
+            "note": "NaCl-equivalent interpolation of Chirife & Resnik (1984) consensus values; natural multicomponent-brine composition remains the dominant uncertainty."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "pressure_ksp_grid": {
+        "rule": "reaction-specific SUPCRTBL delta-logK grid; bilinear only inside density and per-reaction temperature masks; no constant reaction-volume proxy",
+        "assessments": {
+          "calcite": {
+            "mineral": "calcite",
+            "temperatureC": 18,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.05396033533333333,
+            "waterDensityGcm3": 1.0005465806666667,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Calcite = Ca+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              90
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.054 relative to 1 bar at the same temperature."
+          },
+          "aragonite": {
+            "mineral": "aragonite",
+            "temperatureC": 18,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.051542663999999995,
+            "waterDensityGcm3": 1.0005465806666667,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Aragonite = Ca+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              90
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.052 relative to 1 bar at the same temperature."
+          },
+          "dolomite": {
+            "mineral": "dolomite",
+            "temperatureC": 18,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.102503908,
+            "waterDensityGcm3": 1.0005465806666667,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Dolomite,ordered = Ca+2 + Mg+2 + 2 CO3-2",
+            "usableTemperatureC": [
+              10,
+              250
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.103 relative to 1 bar at the same temperature."
+          },
+          "siderite": {
+            "mineral": "siderite",
+            "temperatureC": 18,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.05073122133333333,
+            "waterDensityGcm3": 1.0005465806666667,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Siderite = Fe+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.051 relative to 1 bar at the same temperature."
+          },
+          "rhodochrosite": {
+            "mineral": "rhodochrosite",
+            "temperatureC": 18,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.04777057466666666,
+            "waterDensityGcm3": 1.0005465806666667,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Rhodochrosite = Mn+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.048 relative to 1 bar at the same temperature."
+          },
+          "anhydrite": {
+            "mineral": "anhydrite",
+            "temperatureC": 18,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.046149338,
+            "waterDensityGcm3": 1.0005465806666667,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Anhydrite = Ca+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              300
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.046 relative to 1 bar at the same temperature."
+          },
+          "barite": {
+            "mineral": "barite",
+            "temperatureC": 18,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.047028815333333335,
+            "waterDensityGcm3": 1.0005465806666667,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Barite = Ba+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              300
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.047 relative to 1 bar at the same temperature."
+          },
+          "celestine": {
+            "mineral": "celestine",
+            "temperatureC": 18,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.045660031999999996,
+            "waterDensityGcm3": 1.0005465806666667,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Celestite = Sr+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.046 relative to 1 bar at the same temperature."
+          },
+          "selenite": {
+            "mineral": "selenite",
+            "temperatureC": 18,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0,
+            "waterDensityGcm3": null,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": false,
+            "active": false,
+            "status": "unsupported-reaction",
+            "reaction": null,
+            "usableTemperatureC": null,
+            "note": "Gypsum is absent from the SUPCRTBL solid-species set; the Hardie water-activity/temperature phase selector remains active, but no Ksp pressure correction is fabricated."
+          }
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 7,
+    "paragenetic_order": [
+      {
+        "mineral": "calcite",
+        "first_step": 1,
+        "events": 60,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "celestine",
+        "first_step": 5,
+        "events": 10,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "mirabilite",
+        "first_step": 31,
+        "events": 12,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "halite",
+        "first_step": 32,
+        "events": 32,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "borax",
+        "first_step": 36,
+        "events": 7,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "thenardite",
+        "first_step": 43,
+        "events": 7,
+        "transformations": 10,
+        "pathways": [
+          "nucleation",
+          "mirabilite -> thenardite"
+        ]
+      },
+      {
+        "mineral": "tincalconite",
+        "first_step": 60,
+        "events": 2,
+        "transformations": 8,
+        "pathways": [
+          "nucleation",
+          "borax -> tincalconite"
+        ]
+      }
+    ],
+    "surprises_not_in_expects": [
+      "calcite",
+      "celestine"
+    ],
+    "expected_no_shows": [],
+    "statistical_no_shows": [],
+    "aspirational_no_shows": [],
+    "excluded_species_appearances": [],
+    "environment": {
+      "T": {
+        "first": 23.622,
+        "last": 23.622,
+        "min": 23.622,
+        "max": 53.15,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 9.48,
+        "last": 9.48,
+        "min": 9.48,
+        "max": 9.48,
+        "units": ""
+      },
+      "Eh": {
+        "first": 303.937,
+        "last": 289.764,
+        "min": 285.039,
+        "max": 322.835,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 180.315,
+        "last": 180.315,
+        "min": 180.315,
+        "max": 180.315,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 1.614,
+        "last": 1.496,
+        "min": 1.457,
+        "max": 1.772,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 2.992,
+        "min": 0.984,
+        "max": 2.992,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": 0.63,
+        "last": 0.63,
+        "min": 0.63,
+        "max": 1.008,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": 0.504,
+        "last": 0.504,
+        "min": 0.504,
+        "max": 0.882,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": 1.827,
+        "last": 1.827,
+        "min": 1.764,
+        "max": 2.583,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -0.252,
+        "last": -0.315,
+        "min": -0.315,
+        "max": -0.126,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 1.512,
+        "last": 1.512,
+        "min": 1.512,
+        "max": 1.953,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -1.638,
+        "last": -1.575,
+        "min": -2.016,
+        "max": -1.575,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -1.764,
+        "last": -1.701,
+        "min": -2.205,
+        "max": -1.638,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -0.504,
+        "last": -0.504,
+        "min": -0.945,
+        "max": -0.441,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 300,
+      "fluid_pressure_kbar": {
+        "first": 0.05,
+        "last": 0.05,
+        "min": 0.05,
+        "max": 0.05,
+        "samples": 300
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 300
+      },
+      "temperature_C": {
+        "first": 25,
+        "last": 25,
+        "min": 25,
+        "max": 53.704463973874226,
+        "samples": 300
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 300
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 58.735
+        },
+        "last": {
+          "pure_water_boundary_C": 58.735
+        }
+      },
+      "stress_events": [],
+      "transformations": [
+        {
+          "step": 60,
+          "sample_index": 59,
+          "crystal_id": 9,
+          "from": "mirabilite",
+          "to": "thenardite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 60,
+          "sample_index": 59,
+          "crystal_id": 11,
+          "from": "borax",
+          "to": "tincalconite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 61,
+          "sample_index": 60,
+          "crystal_id": 6,
+          "from": "mirabilite",
+          "to": "thenardite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 61,
+          "sample_index": 60,
+          "crystal_id": 17,
+          "from": "mirabilite",
+          "to": "thenardite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 62,
+          "sample_index": 61,
+          "crystal_id": 18,
+          "from": "borax",
+          "to": "tincalconite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 66,
+          "sample_index": 65,
+          "crystal_id": 22,
+          "from": "borax",
+          "to": "tincalconite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 68,
+          "sample_index": 67,
+          "crystal_id": 26,
+          "from": "borax",
+          "to": "tincalconite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 120,
+          "sample_index": 119,
+          "crystal_id": 47,
+          "from": "borax",
+          "to": "tincalconite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 120,
+          "sample_index": 119,
+          "crystal_id": 54,
+          "from": "borax",
+          "to": "tincalconite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 120,
+          "sample_index": 119,
+          "crystal_id": 57,
+          "from": "mirabilite",
+          "to": "thenardite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 121,
+          "sample_index": 120,
+          "crystal_id": 36,
+          "from": "mirabilite",
+          "to": "thenardite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 121,
+          "sample_index": 120,
+          "crystal_id": 46,
+          "from": "borax",
+          "to": "tincalconite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 180,
+          "sample_index": 179,
+          "crystal_id": 72,
+          "from": "borax",
+          "to": "tincalconite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 180,
+          "sample_index": 179,
+          "crystal_id": 73,
+          "from": "mirabilite",
+          "to": "thenardite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 180,
+          "sample_index": 179,
+          "crystal_id": 85,
+          "from": "mirabilite",
+          "to": "thenardite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 240,
+          "sample_index": 239,
+          "crystal_id": 93,
+          "from": "mirabilite",
+          "to": "thenardite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 241,
+          "sample_index": 240,
+          "crystal_id": 98,
+          "from": "mirabilite",
+          "to": "thenardite",
+          "mechanism": "temperature"
+        },
+        {
+          "step": 241,
+          "sample_index": 240,
+          "crystal_id": 102,
+          "from": "mirabilite",
+          "to": "thenardite",
+          "mechanism": "temperature"
+        }
+      ],
+      "carbonate_boundary": {
+        "sample_count": 0,
+        "first": null,
+        "last": null,
+        "samples": []
+      }
+    }
+  }
+}

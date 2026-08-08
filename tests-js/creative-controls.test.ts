@@ -506,23 +506,30 @@ describe('Creative chemistry control contract', () => {
     expect(sim.conditions.wall.per_vertex_nucleation).toBe(false);
   });
 
-  it('records Creative deformation, etch, and film overprints', () => {
+  it('records Creative deformation/film and rejects unsupported physical etch', () => {
     (globalThis as any).fortressBeginFromScenario('cooling', 8132);
     const sim = (globalThis as any)._liveFortressSim();
-    sim.crystals.push({ active: true, dissolved: false, enclosed_by: null, mineral: 'quartz' });
+    sim.crystals.push({
+      active: true, dissolved: false, enclosed_by: null, mineral: 'quartz',
+      crystal_id: 999, total_growth_um: 100, zones: [{ step: -1, thickness_um: 100 }],
+    });
 
     (globalThis as any).fortressStep('apply_deformation', {
       style: 'shear', magnitude: 0.7, minerals: ['quartz'],
     });
     (globalThis as any).fortressStep('apply_etch', {
-      style: 'pitted', amount: 0.4, minerals: ['quartz'],
+      duration_days: 4, minerals: ['quartz'],
     });
     (globalThis as any).fortressStep('apply_film', {
       mineral: 'chlorite', prism: 0.35, term: 0.2, minerals: ['quartz'],
     });
 
     expect(sim._deformationEvents.at(-1)).toMatchObject({ style: 'shear', magnitude: 0.7 });
-    expect(sim._etchEvents.at(-1)).toMatchObject({ style: 'pitted', amount: 0.4 });
+    expect(sim._etchEvents.at(-1)).toMatchObject({ duration_days: 4, physical: true });
+    expect(sim._etchEvents.at(-1)).not.toHaveProperty('style');
+    expect(sim._lastPhysicalEtch).toMatchObject({ considered: 1, accepted: 0, rejected: 1 });
+    expect(sim._lastPhysicalEtch.receipts[0].rejection)
+      .toBe('no_face_matched_evidence_bounded_rate_model');
     expect(sim.crystals[0]._film).toMatchObject({ mineral: 'chlorite', phi_prism: 0.35, phi_term: 0.2 });
   });
 });

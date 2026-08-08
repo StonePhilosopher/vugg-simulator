@@ -226,8 +226,7 @@ function creativeApplyStressPulse() {
 
 function creativeApplyEtch() {
   fortressStep('apply_etch', {
-    style: (document.getElementById('creative-etch-style') as HTMLSelectElement | null)?.value || 'rounded',
-    amount: _creativeOptionalNumber('creative-etch-amount') ?? 0.5,
+    duration_days: _creativeOptionalNumber('creative-etch-duration-days') ?? 19.5,
     minerals: _creativeMineralFilter(),
   });
 }

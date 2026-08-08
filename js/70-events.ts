@@ -488,11 +488,13 @@ const EVENT_REGISTRY = {
   // js/70s-tn457.ts for the per-pulse chemistry.
   tn457_mn_ba_pulse: event_tn457_mn_ba_pulse,
   // 2026-06-08 — reactivated_fluorite_vein: the fluid-spots SEAL → BREACH
-  // (Phase 2d) demonstrator. Two handlers do the chemistry of each transition;
+  // (Phase 2d) demonstrator. Three handlers separate sealing, the acidic
+  // dissolution wash, and the following mineralizing recharge;
   // the feeder open/close itself is the event's `spots: 'seal'|'breach'`
   // directive (handled centrally in apply_events). See js/70t-reactivated-vein.ts.
   reactivated_vein_seal: event_reactivated_vein_seal,
   reactivated_vein_breach: event_reactivated_vein_breach,
+  reactivated_vein_recharge: event_reactivated_vein_recharge,
   // 2026-06-12 — wittichen five-element vein (v189): the reduction-shock
   // dendrite showcase. The redox shock itself is a DECLARED fluid.Eh
   // movement (event-subsumption discipline — handlers carry only the
@@ -686,11 +688,11 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       // bends/twins crystals that already grew. Absent → no overprint → byte-
       // identical. Mechanical + post-growth, so it does NOT mutate the fluid.
       deformation: ev.deformation,
-      // POST-GROWTH ETCH (crystal-face-realism arc §2, 2026-06-22) — optional directive
-      // {amount,minerals,style}. apply_events records it onto sim._etchEvents with the
-      // step it fired; classifyEtch (js/45) rounds/frosts crystals that already grew.
-      // Absent → no overprint → byte-identical. Chemical corrosion is post-growth, so it
-      // does NOT mutate the fluid.
+      // PHYSICAL ETCH — optional directive {duration_days|amount, minerals}.
+      // apply_events queues it until the authored fluid boundary reaches each
+      // local cell. The accepted model removes solid volume and returns the
+      // exact booked shell inventory; morphology comes from the face-matched
+      // rate experiment, not from an authored cosmetic style.
       etch: ev.etch,
       // FILM DUSTING (W-F O5 perturbed regrowth) — optional directive
       // {mineral, prism, term, minerals?}. apply_events (js/85d) sets `_film` on

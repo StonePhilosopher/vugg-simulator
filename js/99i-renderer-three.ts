@@ -1319,19 +1319,19 @@ function _makeBentPrism(bend: number): any {
   return geom;
 }
 
-// Etched / dissolution-sculpted cube (crystal-face-realism arc §2, 2026-06-22). A
-// returning UNDERSATURATED fluid rounds a finished crystal's edges + corners (Sangwal
-// 1987, Etching of Crystals); on an isometric habit (fluorite / galena cube) the corners
-// — the highest-energy sites — round first, the classic etched/dissolved fluorite look.
-// Built from a SUBDIVIDED box whose vertices are lerped toward a sphere: corners (the
-// farthest from centre) move the most, face-centres barely move, so the cube keeps flat
-// faces but gains rounded etched edges + corners. `round` 0 = sharp, ~0.5 = strongly
-// dissolved. Gated in the mesh-sync hook on crystal._etch + the cube token; paired with a
-// frosted (high-roughness) material. Lead-with-rounding — reads better than literal pits
-// at thumbnail scale (the §2 design note). A low-poly box can't round (its 8 corners are
-// equidistant → a uniform lerp just shrinks it), hence the SEG subdivision.
-function _makeEtchedCube(round: number): any {
-  const t = Math.max(0.0, Math.min(0.85, round || 0.3));
+// Dissolution-sculpted {100} fluorite cube. Godinho et al. (2012) report that
+// near-{100} top surfaces remain comparatively flat while pre-existing pores
+// evolve into cubic pits bounded by {100} walls at 90 degrees. The accepted
+// receipt selects that morphology. Crystal scale carries measured volume loss.
+// The two deterministic pores per face are an explicitly RECEIPTED schematic
+// defect assumption, not inferred natural-crystal defect density; their relief
+// is vertically exaggerated 250× so sub-micrometre retreat can be inspected.
+// The player-facing zone panel states that magnification and the physical
+// silhouette remains unchanged by this overlay. The optional round parameter
+// exists only for old cosmetic save tags and is zero for physical {100} receipts.
+function _makeEtchedCube(round: number, pitStrength: number = 0.5, morphology = ''): any {
+  const t = Math.max(0.0, Math.min(0.85, round ?? 0.3));
+  const pitAmp = Math.max(0, Math.min(1, pitStrength || 0));
   const SEG = 12;
   const geom = new THREE.BoxGeometry(0.8, 0.8, 0.8, SEG, SEG, SEG);
   const pos = geom.attributes.position;
@@ -1339,14 +1339,46 @@ function _makeEtchedCube(round: number): any {
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
     const r = Math.hypot(x, y, z) || 1e-6;
-    pos.setXYZ(i,
-      x * (1 - t) + (x / r) * R * t,
-      y * (1 - t) + (y / r) * R * t,
-      z * (1 - t) + (z / r) * R * t);
+    let nx = x * (1 - t) + (x / r) * R * t;
+    let ny = y * (1 - t) + (y / r) * R * t;
+    let nz = z * (1 - t) + (z / r) * R * t;
+    // Deterministic cubic pits on the original cube faces. A broad flat floor
+    // and narrow transition approximate the observed 90-degree {100} walls at
+    // this deliberately low mesh resolution.
+    const ax = Math.abs(x), ay = Math.abs(y), az = Math.abs(z);
+    let u = 0, v = 0, axis = 0;
+    if (ax >= ay && ax >= az) { axis = 1; u = y / 0.4; v = z / 0.4; }
+    else if (ay >= ax && ay >= az) { axis = 2; u = x / 0.4; v = z / 0.4; }
+    else { axis = 3; u = x / 0.4; v = y / 0.4; }
+    const crater = (cx: number, cy: number, radius: number) => {
+      if (morphology.includes('cubic-{100}-pits')) {
+        const squareRadius = Math.max(Math.abs(u - cx), Math.abs(v - cy)) / radius;
+        if (squareRadius <= 0.62) return 1;
+        return squareRadius < 1 ? (1 - squareRadius) / 0.38 : 0;
+      }
+      const normalized = Math.hypot(u - cx, v - cy) / radius;
+      return normalized < 1 ? Math.pow(1 - normalized, 1.35) : 0;
+    };
+    const pit = Math.min(1,
+      crater(-0.35, 0.20, 0.38) + crater(0.30, -0.28, 0.30));
+    const inset = 0.055 * pitAmp * pit;
+    if (axis === 1) nx -= Math.sign(nx || x) * inset;
+    else if (axis === 2) ny -= Math.sign(ny || y) * inset;
+    else nz -= Math.sign(nz || z) * inset;
+    pos.setXYZ(i, nx, ny, nz);
   }
   pos.needsUpdate = true;
   geom.computeVertexNormals();
   return geom;
+}
+
+// Preserve progressive healing in the geometry cache. A 0.1 bucket collapsed
+// the seed-42 etched (0.1036), first-healed (0.0854), and final (0.0658)
+// surfaces into one identical mesh. Thousandth-resolution keeps replay depth
+// within 0.0005 of the receipt-derived 250× schematic magnitude.
+function _physicalEtchReliefBucket(intensity: number): number {
+  const bounded = Math.max(0, Math.min(1, Number(intensity) || 0));
+  return Math.round(bounded * 1000) / 1000;
 }
 
 // Calcite cleavage rhombohedron — 6 rhombic faces, 8 vertices, 3-fold
@@ -4243,11 +4275,9 @@ function _topoParseColor(s: string): any {
 // or had no positive size by replayStep (in which case the caller skips
 // rendering it entirely so replay shows growth order).
 //
-// Caps the historical total at the live total_growth_um so a
-// dissolution event later in life can't accidentally inflate replay
-// size for steps past dissolution. Negative-thickness phantom zones
-// (dissolution) already net into the running sum, so the same
-// accumulator handles both growth and dissolution paths.
+// Negative-thickness zones net directly into the historical sum. Do not cap
+// an earlier frame to the smaller live total: that erased the larger
+// pre-dissolution body and made sharp → etched → healed replay impossible.
 //
 // Habit ratio mirrors Crystal.add_zone in 27-geometry-crystal.ts; if
 // either file shifts the habit:a_ratio table, both sites need to move
@@ -4264,9 +4294,6 @@ function _topoHistoricalCrystalSize(crystal: any, replayStep: number): { c_lengt
     zoneCount++;
   }
   if (zoneCount === 0) return null;
-  if (crystal.total_growth_um != null && totalUm > crystal.total_growth_um) {
-    totalUm = crystal.total_growth_um;
-  }
   if (totalUm <= 0) return null;
   let c = totalUm / 1000.0;
   let a;
@@ -4795,23 +4822,26 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     let isWulffWulfenite = false;  // wulfenite Wulff tabular plate → isotropic scale by plate diameter (rung 4a.3)
     let isWulffBarite = false;  // barite Wulff RECTANGULAR tabular plate → isotropic scale by plate diameter (rung 4a.4)
     let isWulffTitanite = false;  // titanite Wulff monoclinic sphenoid WEDGE → isotropic scale by diameter (rung 4a.6)
-    // ETCHED crystal — post-growth dissolution overprint (crystal-face realism arc §2,
-    // 2026-06-22). The sim tags crystal._etch when a scenario etch event corroded a
-    // crystal that had ALREADY grown (js/45 classifyEtch; reactivated_fluorite_vein's
-    // breach reopens the conduit and a cooler undersaturated fluid rounds the gen-1
-    // fluorite + galena). Runs FIRST — BEFORE the terrace/hopper render — because
-    // corrosion ROUNDS AWAY fine growth relief: an etched stepped cube becomes a rounded
-    // dissolved blob, not a fresh ziggurat. Gated on the cube token (the isometric
-    // fluorite/galena tenant). Cached per rounding bucket; the matOpts block frosts the
-    // surface. A replay before the etch step keeps the sharp (un-etched) crystal.
+    // PHYSICAL ETCH — the accepted receipt selects a measured face-specific
+    // surface morphology. It runs before growth terraces because dissolution
+    // relief is the exposed surface at that replay step; later positive zones
+    // progressively bury it. The current {100} fluorite model produces
+    // cubic pits with near-90° {100} sidewalls and no corner rounding. Pit
+    // depth is a receipt-labelled 250× schematic overlay of assumed
+    // pre-existing pores; mass and silhouette dimensions remain physical.
     let isEtched = false;
-    if (crystal._etch && token === 'cube'
-        && (replayStep == null || replayStep >= crystal._etch.atStep)) {
-      const round = Math.max(0.18, Math.min(0.6, 0.18 + (crystal._etch.amount || 0.5) * 0.5));
-      const q = Math.round(round * 100) / 100;   // quantize for cache reuse
-      const key = '__etched_cube_' + q;
+    const physicalEtch = typeof physicalEtchVisualStateAtStep === 'function'
+      ? physicalEtchVisualStateAtStep(crystal, replayStep) : crystal._etch;
+    if (physicalEtch && token === 'cube') {
+      const intensity = Math.max(0, Math.min(1, physicalEtch.amount || 0));
+      const morphology = String(physicalEtch.morphology || 'unresolved');
+      const round = morphology.includes('cubic-{100}-pits')
+        ? 0 : Math.max(0.08, Math.min(0.6, 0.08 + intensity * 0.52));
+      const q = Math.round(round * 100) / 100;
+      const pq = _physicalEtchReliefBucket(intensity);
+      const key = `__etched_cube_${q}_pit_${pq}_${morphology}`;
       geom = state.geomCache.get(key);
-      if (!geom) { geom = _makeEtchedCube(round); state.geomCache.set(key, geom); }
+      if (!geom) { geom = _makeEtchedCube(round, pq, morphology); state.geomCache.set(key, geom); }
       isEtched = true;
     }
     // CALCITE e-TWIN — post-growth mechanical-twin overprint (deformation arc §5.3 tenant,

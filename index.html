@@ -4665,20 +4665,20 @@ Scenarios:
         </div>
 
         <div class="broth-group">
-          <div class="broth-group-label" title="Differential stress uses a mechanical threshold. Deformation, etch, and film controls below are explicitly visual reconstructions until their material-balance laws are implemented.">Post-growth processes &amp; visual reconstructions</div>
-          <p class="geology-editor-help">âš  Deformation and etch style/amount are render-only reconstructions: they tag visible surfaces but do not yet calculate strain history, remove crystal mass, or return solutes. Differential stress is the separate physical threshold control.</p>
+          <div class="broth-group-label" title="Differential stress uses a mechanical threshold. Physical etch integrates only evidence-bounded mineral rate laws; deformation remains a visual reconstruction.">Post-growth processes</div>
+          <p class="geology-editor-help">Deformation is a visual reconstruction. Physical etch integrates a bounded dissolution analogue over exposure time, removes crystal volume, returns the booked solid inventory to the local fluid, and records its validity envelope. The current fluorite model transfers a laboratory rate to a fixed-pH NaCl, closed-return bath with unquantified systematic uncertainty; its visible pore relief is a labelled 250× schematic while mass and silhouette stay physical. Unsupported surfaces, minerals, or conditions are rejected.</p>
           <div class="geology-editor-grid">
             <label>Target minerals<input type="text" id="creative-process-minerals" placeholder="blank = all; quartz, calcite"></label>
             <label>Deformation style<select id="creative-deformation-style"><option value="bend">bend</option><option value="shear">shear</option><option value="twin">twin</option><option value="fracture">fracture</option></select></label>
             <label>Magnitude (0–1)<input type="number" id="creative-deformation-magnitude" min="0" max="1" step="0.05" value="0.5"></label>
             <label title="Instantaneous resolved-shear threshold evaluation; no creep or time-integrated damage law is currently claimed.">Differential stress pulse (MPa)<input type="number" id="creative-stress-mpa" min="0" max="500" step="5" value="50"></label>
-            <label>Etch style<select id="creative-etch-style"><option value="rounded">rounded</option><option value="pitted">pitted</option><option value="skeletal">skeletal</option><option value="frosted">frosted</option></select></label>
-            <label>Etch amount (0–1)<input type="number" id="creative-etch-amount" min="0" max="1" step="0.05" value="0.5"></label>
+            <label title="Surface form is an output of the mineral, exposed crystallographic face, solution, and accepted rate experiment.">Etch morphology<input type="text" value="model-derived" disabled></label>
+            <label title="Direct duration for the current Godinho {100} analogue. The evidence envelope ends at 468 hours (19.5 days); longer requests fail closed.">Etch duration (days)<input type="number" id="creative-etch-duration-days" min="0.01" max="19.5" step="0.25" value="19.5"></label>
             <label>Film mineral<input type="text" id="creative-film-mineral" value="chlorite"></label>
             <label>Prism coverage<input type="number" id="creative-film-prism" min="0" max="1" step="0.05" value="0.3"></label>
             <label>Termination coverage<input type="number" id="creative-film-term" min="0" max="1" step="0.05" value="0.3"></label>
           </div>
-          <div class="geology-editor-actions"><button onclick="creativeApplyDeformation()">Preview deformation</button><button onclick="creativeApplyStressPulse()">Apply stress pulse</button><button onclick="creativeApplyEtch()">Preview etch</button><button onclick="creativeApplyFilm()">Preview film</button></div>
+          <div class="geology-editor-actions"><button onclick="creativeApplyDeformation()">Preview deformation</button><button onclick="creativeApplyStressPulse()">Apply stress pulse</button><button onclick="creativeApplyEtch()">Apply physical etch</button><button onclick="creativeApplyFilm()">Preview film</button></div>
         </div>
       </div>
     </div>
@@ -18939,7 +18939,29 @@ function scenarioSpecHash(spec) {
 //       aragonite. Seed-42 drift vs v251 is confined to mvt (one 6.6-um
 //       aragonite removed) and the intended sabkha redistribution (70 -> 53
 //       crystals, ordered dolomite 1 -> 4).
-const SIM_VERSION = 252;
+// v253 — PHYSICAL DISSOLUTION OVERPRINTS (2026-08-08).
+//       Etch directives now require a face-matched, validity-bounded rate model
+//       and raw thermodynamic Ω. The first executable model is Godinho et al.
+//       (2012)'s {100} fluorite retreat at 21 C, pH 3.6, I=0.05 M, and
+//       <=468 h. It is explicitly a bounded extrapolation: the simulator's
+//       fixed-pH NaCl analogue and closed return path differ from the source
+//       NaClO4/HClO4 bath renewed every 48 h, and systematic uncertainty is
+//       unquantified. Only Cama's fluorite far-field affinity boundary
+//       (ΔG<=-7 kcal/mol) transfers—not its {111} rate or a face multiplier.
+//       WATEQ4F speciation keeps gameplay sigma separate from Ω. The direct
+//       rate accepts only a flat cubic surface; stepped/hopper states fail
+//       closed. Geometry uses the renderer's isometric cube rather than the
+//       legacy a/c=0.5 axes; no 5-um resolution snap can add unintegrated loss.
+//       Pore relief is a player-labelled 250x schematic of two assumed
+//       pre-existing pores per face while mass and silhouette remain physical.
+//       Creative exposes direct duration in days with a 19.5-day evidence max.
+//       Seed-42 fleet drift vs v252 is confined to reactivated_fluorite_vein:
+//       all five expected minerals remain present; the eligible smooth cubic
+//       fluorite is 4.64 mm rather than the former stepped 9.01 mm crystal,
+//       with barite 36→28, celestine 7→5, and chalcedony 6→3. The other 38
+//       scenario baselines are identical. The 12-scenario compact chemistry
+//       digest is numerically identical after version/digest normalization.
+const SIM_VERSION = 253;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -18969,6 +18991,8 @@ const MODEL_DIGEST = [
     'CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1',
     'growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6',
     'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',
+    'dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3',
+    'fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3',
     'engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3',
     'beryl:K36-postHF-recovery-v1',
     'halite:vadose-propensity0.8-v1',
@@ -19762,6 +19786,59 @@ function _recordAcceptedCarbonateTransferReceipt(conditions, crystal, zone, befo
         localAqueousCarbonDeltaPpm: afterPpm - beforePpm,
         touchedBulkFluidHandle: conditions.fluid === conditions._carbonateBoundaryBulkFluid,
     });
+}
+// Pure preview of the exact inventory that a negative zone would return.
+// Physical dissolution uses this during coupled reaction-path integration:
+// each trial retreat changes the local fluid, which changes saturation and
+// therefore the next rate. Keep this reconstruction byte-for-byte aligned
+// with the accepted negative-zone path below, but never mutate historic zone
+// `_remaining_solid_um` fields or the fluid during a preview.
+function previewBookedDissolutionReturn(crystal, dissolvedUm, fluid) {
+    const requested = Math.max(0, Number(dissolvedUm) || 0);
+    if (!(requested > 0) || !crystal)
+        return {};
+    const shells = [];
+    for (const historic of (crystal.zones || [])) {
+        const thickness = Number(historic?.thickness_um) || 0;
+        if (thickness > 0) {
+            shells.push({ zone: historic, remainingUm: thickness });
+            continue;
+        }
+        let historicRemoval = -thickness;
+        for (let si = shells.length - 1; si >= 0 && historicRemoval > 0; si--) {
+            const removed = Math.min(shells[si].remainingUm, historicRemoval);
+            shells[si].remainingUm -= removed;
+            historicRemoval -= removed;
+        }
+    }
+    const returned = {};
+    let remainingToRemove = requested;
+    for (let si = shells.length - 1; si >= 0 && remainingToRemove > 0; si--) {
+        const shell = shells[si];
+        const removedHere = Math.min(shell.remainingUm, remainingToRemove);
+        shell.remainingUm -= removedHere;
+        remainingToRemove -= removedHere;
+        let inventory = shell.zone._budget_inventory_per_um;
+        if (!inventory || typeof inventory !== 'object') {
+            inventory = {};
+            const formula = MINERAL_STOICHIOMETRY[crystal.mineral] || {};
+            for (const species in formula) {
+                const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
+                inventory[reservoir] = (inventory[reservoir] || 0)
+                    + stoichiometricBudgetDebitPpmPerUm(species, formula[species]);
+            }
+            for (const species in (shell.zone.trace_stoichiometry || {})) {
+                inventory[species] = (inventory[species] || 0)
+                    + stoichiometricBudgetDebitPpmPerUm(species, shell.zone.trace_stoichiometry[species]);
+            }
+        }
+        for (const species in inventory) {
+            const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
+            returned[reservoir] = (returned[reservoir] || 0)
+                + removedHere * (Number(inventory[species]) || 0);
+        }
+    }
+    return returned;
 }
 // Returns the list of species names that just transitioned from positive
 // to zero (depletion events), or null on no-op / missing stoichiometry.
@@ -29617,6 +29694,10 @@ class Crystal {
         this.dissolved = false;
         this.phantom_surfaces = [];
         this.phantom_count = 0;
+        // Evidence-bounded physical dissolution receipts. Each accepted event
+        // points to its negative zone and records rate/envelope, volume retreat,
+        // solution return, and later surface healing state.
+        this.etch_history = opts.etch_history ?? [];
         // Enclosure: crystals this one has swallowed, and the host that
         // swallowed this one (if any). Drives the topo map's inclusion
         // dots and the Sweetwater-style narration.
@@ -40787,6 +40868,574 @@ function accrueSplitIndex(crystal, conditions, dGrowthUm) {
     };
 }
 
+// ── 44d-physical-dissolution.js ──
+
+// ============================================================
+// js/44d-physical-dissolution.ts — coupled, evidence-bounded surface retreat
+// ============================================================
+// A physical etch is an accepted negative zone. The rate model reads a raw
+// thermodynamic saturation state, integrates dissolution and returned solid
+// inventory together, and stops when either evidence or the transferred
+// far-from-equilibrium affinity boundary runs out.
+// See research/arcs/research-physical-dissolution-2026-08-08.md.
+const PHYSICAL_DISSOLUTION_SCHEMA = 'physical-dissolution-v3';
+const _SECONDS_PER_DAY = 86400;
+const _PHYSICAL_ETCH_SUBSTEPS = 512;
+function _wateqAnalyticalLogK(coefficients, temperatureC) {
+    const tK = Number(temperatureC) + 273.15;
+    const [a1 = 0, a2 = 0, a3 = 0, a4 = 0, a5 = 0, a6 = 0] = coefficients;
+    return a1 + a2 * tK + a3 / tK + a4 * Math.log10(tK) + a5 / (tK * tK)
+        + a6 * tK * tK;
+}
+function _associationLogKAtT(logK25, deltaHKcalMol, temperatureC) {
+    const tK = Number(temperatureC) + 273.15;
+    const refK = 298.15;
+    const rJ = 8.314462618;
+    return logK25 - (deltaHKcalMol * 4184 / (2.303 * rJ)) * (1 / tK - 1 / refK);
+}
+// Raw CaF2 saturation, independent of the gameplay/nucleation score. Fluoride
+// is partitioned among F-, HF, HF2-, CaF+, and MgF+ with WATEQ4F association
+// constants. A bisection solve closes the analytical-F mass balance while
+// CaF+/MgF+ also reduce their free-cation pools.
+function fluoriteSaturationAssessment(fluid, temperatureC) {
+    const ionicStrengthMolal = ionicStrength(fluid);
+    const tK = Number(temperatureC) + 273.15;
+    if (!Number.isFinite(tK) || tK <= 0 || !Number.isFinite(ionicStrengthMolal)) {
+        return { status: 'invalid_input', omega: null };
+    }
+    if (ionicStrengthMolal > 0.5) {
+        return {
+            status: 'outside_davies_envelope', omega: null, ionicStrengthMolal,
+            envelope: { ionicStrengthMolal: [0, 0.5] },
+        };
+    }
+    const fTotal = ppmToMolality(Math.max(0, Number(fluid?.F) || 0), 19.00);
+    const caTotal = ppmToMolality(Math.max(0, Number(fluid?.Ca) || 0), 40.08);
+    const mgTotal = ppmToMolality(Math.max(0, Number(fluid?.Mg) || 0), 24.31);
+    const aH = Math.pow(10, -Number(fluid?.pH));
+    if (!(fTotal > 0) || !(caTotal > 0) || !(aH > 0)) {
+        return {
+            status: 'missing_reactant', omega: 0, ionicStrengthMolal,
+            totalFluorideMolal: fTotal, totalCalciumMolal: caTotal,
+        };
+    }
+    const gamma1 = Math.pow(10, daviesLogGamma(1, ionicStrengthMolal));
+    const gamma2 = Math.pow(10, daviesLogGamma(2, ionicStrengthMolal));
+    const betaHF = Math.pow(10, _wateqAnalyticalLogK([-2.033, 0.012645, 429.01, 0, 0], temperatureC));
+    const betaHF2 = Math.pow(10, _associationLogKAtT(3.76, 4.55, temperatureC));
+    const betaCaF = Math.pow(10, _associationLogKAtT(0.94, 4.12, temperatureC));
+    const betaMgF = Math.pow(10, _associationLogKAtT(1.82, 3.20, temperatureC));
+    const speciate = (freeFMolal) => {
+        const freeCaMolal = caTotal / (1 + betaCaF * gamma2 * freeFMolal);
+        const freeMgMolal = mgTotal / (1 + betaMgF * gamma2 * freeFMolal);
+        const aF = gamma1 * freeFMolal;
+        const aCa = gamma2 * freeCaMolal;
+        const aMg = gamma2 * freeMgMolal;
+        const hfMolal = betaHF * aH * aF;
+        const hf2Molal = betaHF2 * aH * aF * aF / gamma1;
+        const caFMolal = betaCaF * aCa * aF / gamma1;
+        const mgFMolal = betaMgF * aMg * aF / gamma1;
+        return {
+            freeFMolal, freeCaMolal, freeMgMolal, aF, aCa, aMg,
+            hfMolal, hf2Molal, caFMolal, mgFMolal,
+            reconstructedFluorideMolal: freeFMolal + hfMolal + 2 * hf2Molal
+                + caFMolal + mgFMolal,
+        };
+    };
+    let lo = 0;
+    let hi = fTotal;
+    for (let i = 0; i < 96; i++) {
+        const mid = (lo + hi) / 2;
+        if (speciate(mid).reconstructedFluorideMolal > fTotal)
+            hi = mid;
+        else
+            lo = mid;
+    }
+    const species = speciate((lo + hi) / 2);
+    // WATEQ4F: CaF2 = Ca+2 + 2F-, log_k analytical expression.
+    const logKsp = _wateqAnalyticalLogK([66.348, 0, -4298.2, -25.271, 0], temperatureC);
+    const logIap = Math.log10(species.aCa) + 2 * Math.log10(species.aF);
+    const omega = Math.pow(10, logIap - logKsp);
+    const deltaGKcalMol = 8.314462618 * tK * Math.log(Math.max(omega, 1e-300)) / 4184;
+    return {
+        status: 'accepted',
+        method: 'WATEQ4F-CaF2-HF-HF2-CaF-MgF-Davies-v1',
+        database: 'USGS PHREEQC wateq4f.dat',
+        ionicStrengthMolal,
+        gammaMonovalent: gamma1,
+        gammaDivalent: gamma2,
+        totalFluorideMolal: fTotal,
+        totalCalciumMolal: caTotal,
+        ...species,
+        logKsp,
+        logIap,
+        omega,
+        deltaGKcalMol,
+    };
+}
+const _FLUORITE_100_MODEL = Object.freeze({
+    id: 'Godinho2012-fluorite-100-bounded-analogue-v2',
+    source: 'Godinho, Piazolo & Evins 2012 GCA 86:392-403, doi:10.1016/j.gca.2012.02.032',
+    face: '{100}',
+    pH: 3.6,
+    pHTolerance: 0.05,
+    temperatureC: 21,
+    temperatureToleranceC: 0.5,
+    ionicStrengthMolal: 0.05,
+    ionicStrengthToleranceMolal: 0.005,
+    pressureKbar: 0.001,
+    pressureToleranceKbar: 0.0003,
+    maxDurationDays: 19.5, // measured first 468 h
+    // Cama et al. (2010) measured a fluorite rate plateau below -7 kcal/mol.
+    // Transfer ONLY that affinity boundary. The numeric {100} rate remains the
+    // direct Godinho value; no {111} rate or face multiplier is imported.
+    maximumDeltaGKcalMol: -7,
+    molarVolumeCm3Mol: 24.55,
+    rateMolM2S: 3.2e-9,
+    rateRangeMolM2S: [3.0e-9, 3.4e-9],
+    surfaceMorphology: 'cubic-{100}-pits-90deg-sidewalls',
+    evidenceClass: 'bounded_extrapolation_from_face_specific_rate',
+    systematicUncertainty: 'unquantified_electrolyte_surface_state_bath_protocol_and_cross_condition_affinity_boundary_transfer',
+    affinityBoundarySource: 'Cama, Ayora & Lasaga 2010 GCA 74:4298-4311, doi:10.1016/j.gca.2010.04.067; fluorite {111}, pH 2',
+    affinityBoundaryTransfer: 'mineral_level_bounded_extrapolation_only_no_rate_or_face_multiplier',
+    sourceBathProtocol: '0.05 M NaClO4/HClO4; pH 3.6; 10 mL renewed every 48 h; Ca kept below 10 ppb',
+    simulatedBathProtocol: '0.05 molal NaCl ionic-strength analogue; fixed pH; closed return path without 48 h renewal',
+    defectAssumption: 'two schematic pre-existing pores per displayed face; density is not a measured natural-crystal inventory',
+    schematicReliefMagnification: 250,
+});
+function _physicalEtchModelFor(crystal) {
+    if (crystal?.mineral !== 'fluorite')
+        return null;
+    const habit = String(crystal?.habit || '').toLowerCase();
+    // Godinho's rate is for cleaned nominally-flat (001) top surfaces. A
+    // stepped/hopper/dendritic cube shares a macroscopic face normal but not the
+    // measured step-site state, so it must fail closed.
+    if (habit === 'cubic')
+        return _FLUORITE_100_MODEL;
+    return null;
+}
+function physicalEtchExposureDays(directive) {
+    const authored = Number(directive?.duration_days);
+    if (Number.isFinite(authored) && authored > 0)
+        return authored;
+    return NaN;
+}
+function _physicalEtchRenderedAxes(crystal) {
+    const cLengthMm = Math.max(0, Number(crystal?.c_length_mm) || 0);
+    const habit = String(crystal?.habit || '').toLowerCase();
+    const isIsometric = crystal?.mineral === 'fluorite'
+        || habit.includes('cube') || habit.includes('octa')
+        || habit.includes('dodec') || habit.includes('snowball');
+    if (isIsometric) {
+        return {
+            cLengthMm,
+            aWidthMm: cLengthMm,
+            shapeModel: 'render-matched-isometric-habit-equivalent',
+        };
+    }
+    return {
+        cLengthMm,
+        aWidthMm: Math.max(0, Number(crystal?.a_width_mm) || 0),
+        shapeModel: 'ledger-axis-ellipsoid-equivalent',
+    };
+}
+function _spheroidAreaMm2(aRadiusMm, cRadiusMm) {
+    if (!(aRadiusMm > 0) || !(cRadiusMm > 0))
+        return 0;
+    const p = 1.6075;
+    const term = (Math.pow(aRadiusMm, 2 * p)
+        + 2 * Math.pow(aRadiusMm * cRadiusMm, p)) / 3;
+    return 4 * Math.PI * Math.pow(term, 1 / p);
+}
+function _physicalEtchEquivalentAxialLoss(crystal, normalRetreatUm) {
+    const axes = _physicalEtchRenderedAxes(crystal);
+    const cLengthMm = axes.cLengthMm;
+    const aWidthMm = axes.aWidthMm;
+    const retreatMm = Math.max(0, Number(normalRetreatUm) || 0) / 1000;
+    const sourceVolume = Math.max(0, Number(crystal?._volume_mm3) || 0);
+    if (axes.shapeModel === 'render-matched-isometric-habit-equivalent') {
+        const remainingSpan = Math.max(0, cLengthMm - 2 * retreatMm);
+        const volumeRatio = cLengthMm > 0 ? Math.pow(remainingSpan / cLengthMm, 3) : 0;
+        const targetVolume = sourceVolume * volumeRatio;
+        const surfaceArea = cLengthMm > 0 ? 6 * sourceVolume / cLengthMm : 0;
+        return {
+            ...axes,
+            sourceVolumeMm3: sourceVolume,
+            targetVolumeMm3: targetVolume,
+            volumeLossMm3: sourceVolume - targetVolume,
+            surfaceAreaMm2: surfaceArea,
+            surfaceAreaToVolumePerMm: sourceVolume > 0 ? surfaceArea / sourceVolume : null,
+            axialLossUm: Math.max(0, (cLengthMm - remainingSpan) * 1000),
+            volumeLossFraction: sourceVolume > 0 ? (sourceVolume - targetVolume) / sourceVolume : 0,
+            renderedDimensionsBeforeMm: { c: cLengthMm, a: aWidthMm },
+            renderedDimensionsAfterMm: { c: remainingSpan, a: remainingSpan },
+        };
+    }
+    const cRadius = cLengthMm / 2;
+    const aRadius = aWidthMm / 2;
+    const shapeVolume = (4 / 3) * Math.PI * aRadius * aRadius * cRadius;
+    const insetA = Math.max(0, aRadius - retreatMm);
+    const insetC = Math.max(0, cRadius - retreatMm);
+    const insetShapeVolume = (4 / 3) * Math.PI * insetA * insetA * insetC;
+    const volumeRatio = shapeVolume > 0 ? Math.max(0, Math.min(1, insetShapeVolume / shapeVolume)) : 0;
+    const targetVolume = sourceVolume * volumeRatio;
+    const equivalentCLengthMm = cLengthMm * Math.cbrt(volumeRatio);
+    const surfaceArea = _spheroidAreaMm2(aRadius, cRadius);
+    return {
+        ...axes,
+        sourceVolumeMm3: sourceVolume,
+        targetVolumeMm3: targetVolume,
+        volumeLossMm3: sourceVolume - targetVolume,
+        surfaceAreaMm2: surfaceArea,
+        surfaceAreaToVolumePerMm: sourceVolume > 0 ? surfaceArea / sourceVolume : null,
+        axialLossUm: Math.max(0, (cLengthMm - equivalentCLengthMm) * 1000),
+        volumeLossFraction: sourceVolume > 0 ? (sourceVolume - targetVolume) / sourceVolume : 0,
+        renderedDimensionsBeforeMm: { c: cLengthMm, a: aWidthMm },
+        renderedDimensionsAfterMm: {
+            c: equivalentCLengthMm,
+            a: aWidthMm * Math.cbrt(volumeRatio),
+        },
+    };
+}
+function _physicalEtchFirstGrowthStep(crystal) {
+    for (const zone of (crystal?.zones || [])) {
+        if ((Number(zone?.thickness_um) || 0) > 0)
+            return Number(zone.step);
+    }
+    return null;
+}
+function physicalEtchVisualStateAtStep(crystal, replayStep) {
+    const history = Array.isArray(crystal?.etch_history) ? crystal.etch_history : [];
+    const atStep = replayStep == null ? Infinity : replayStep;
+    for (let hi = history.length - 1; hi >= 0; hi--) {
+        const receipt = history[hi];
+        if (!receipt?.accepted || receipt.step > atStep)
+            continue;
+        let regrownUm = 0;
+        for (let zi = (receipt.zoneIndex ?? -1) + 1; zi < (crystal.zones || []).length; zi++) {
+            const zone = crystal.zones[zi];
+            if (zone?.step > atStep)
+                break;
+            if ((Number(zone?.thickness_um) || 0) > 0)
+                regrownUm += Number(zone.thickness_um);
+        }
+        const removedUm = Math.max(0, Number(receipt.axialLossUm) || 0);
+        const residualUm = Math.max(0, removedUm - regrownUm);
+        if (!(residualUm > 1e-6) || !(removedUm > 0))
+            continue;
+        const authoredIntensity = Number(receipt.visualIntensity);
+        const baseIntensity = Math.max(0, Math.min(1, Number.isFinite(authoredIntensity) ? authoredIntensity : 0));
+        return {
+            kind: 'model-derived',
+            morphology: receipt.surfaceMorphology,
+            amount: baseIntensity * Math.max(0, Math.min(1, residualUm / removedUm)),
+            atStep: receipt.step,
+            residualUm,
+            removedUm,
+            healedFraction: Math.max(0, Math.min(1, regrownUm / removedUm)),
+            modelId: receipt.modelId,
+            visualRepresentation: receipt.visualRepresentation,
+            schematicReliefMagnification: receipt.schematicReliefMagnification,
+            defectAssumption: receipt.defectAssumption,
+        };
+    }
+    return null;
+}
+function _physicalEtchWithLocalConditions(sim, crystal, fn) {
+    const savedFluid = sim.conditions.fluid;
+    const savedTemperature = sim.conditions.temperature;
+    const anchor = sim.wall_state?._resolveAnchor?.(crystal);
+    const ringIdx = anchor?.ringIdx;
+    try {
+        if (ringIdx != null && ringIdx >= 0 && ringIdx < sim.ring_fluids.length) {
+            const mesh = sim.wall_state.meshFor(sim);
+            const cell = mesh?.cellOf?.(crystal, sim.wall_state);
+            sim.conditions.fluid = cell?.fluid || sim.ring_fluids[ringIdx];
+            sim.conditions.temperature = sim.ring_temperatures[ringIdx];
+        }
+        return fn(sim.conditions);
+    }
+    finally {
+        sim.conditions.fluid = savedFluid;
+        sim.conditions.temperature = savedTemperature;
+    }
+}
+function _physicalEtchGameplaySigma(crystal, conditions) {
+    const fn = conditions?.[`supersaturation_${crystal?.mineral}`];
+    if (typeof fn !== 'function')
+        return null;
+    try {
+        const value = Number(fn.call(conditions));
+        return Number.isFinite(value) ? value : null;
+    }
+    catch (_error) {
+        return null;
+    }
+}
+function _physicalEtchEnvelopeFailure(model, assessment, conditions, durationDays) {
+    const pH = Number(conditions.fluid?.pH);
+    const temperatureC = Number(conditions.temperature);
+    const pressureKbar = Number(conditions.pressure);
+    if (Math.abs(pH - model.pH) > model.pHTolerance
+        || Math.abs(temperatureC - model.temperatureC) > model.temperatureToleranceC
+        || Math.abs(pressureKbar - model.pressureKbar) > model.pressureToleranceKbar
+        || Math.abs(Number(assessment?.ionicStrengthMolal) - model.ionicStrengthMolal)
+            > model.ionicStrengthToleranceMolal
+        || !Number.isFinite(durationDays)
+        || durationDays > model.maxDurationDays)
+        return 'outside_rate_model_envelope';
+    if (assessment?.status !== 'accepted' || !Number.isFinite(Number(assessment?.omega))) {
+        return 'saturation_unavailable';
+    }
+    if (!(Number(assessment.deltaGKcalMol) <= model.maximumDeltaGKcalMol)) {
+        return 'outside_far_field_affinity_plateau';
+    }
+    return null;
+}
+function _omegaAtDeltaG(deltaGKcalMol, temperatureC) {
+    const tK = Number(temperatureC) + 273.15;
+    return Math.exp(Number(deltaGKcalMol) * 4184 / (8.314462618 * tK));
+}
+function _physicalEtchSchematicRelief(crystal, receipt, model) {
+    const spanMm = Math.max(0, Number(receipt?.renderedDimensionsBeforeMm?.c) || 0);
+    const normalRetreatMm = Math.max(0, Number(receipt?.normalRetreatUm) || 0) / 1000;
+    const magnification = Number(model?.schematicReliefMagnification) || 1;
+    // A cube spans 0.8 renderer units and _makeEtchedCube's full-strength pit
+    // inset is 0.055 units. Convert physical retreat to renderer coordinates,
+    // then apply the explicitly disclosed vertical exaggeration. Silhouette and
+    // booked mass remain the physical geometry; only the pore-relief overlay is
+    // magnified.
+    const renderedPhysicalInset = spanMm > 0 ? 0.8 * normalRetreatMm / spanMm : 0;
+    const visualIntensity = Math.max(0, Math.min(1, renderedPhysicalInset * magnification / 0.055));
+    return {
+        visualIntensity,
+        visualRepresentation: 'schematic_magnified_preexisting_pore_relief_mass_silhouette_physical',
+        schematicReliefMagnification: magnification,
+        defectAssumption: model.defectAssumption,
+        physicalReliefResolvedAtDisplayScale: false,
+    };
+}
+function _physicalEtchVirtualFluid(initialFluid, returned) {
+    const virtual = _cloneFluid(initialFluid);
+    for (const species in returned) {
+        if (typeof virtual[species] === 'number')
+            virtual[species] += Number(returned[species]) || 0;
+    }
+    return virtual;
+}
+function applyPhysicalEtchDirective(sim, directive, step) {
+    const mineralFilter = Array.isArray(directive?.minerals) && directive.minerals.length
+        ? new Set(directive.minerals.map(String)) : null;
+    const durationDays = physicalEtchExposureDays(directive);
+    const summary = {
+        schema: PHYSICAL_DISSOLUTION_SCHEMA,
+        step,
+        durationDays,
+        morphologyControl: 'model-derived-not-player-authored',
+        considered: 0,
+        accepted: 0,
+        rejected: 0,
+        totalVolumeLossMm3: 0,
+        totalAxialLossUm: 0,
+        receipts: [],
+    };
+    for (const crystal of (sim?.crystals || [])) {
+        if (!crystal || crystal.dissolved || crystal.enclosed_by != null || crystal._buried)
+            continue;
+        if (mineralFilter && !mineralFilter.has(String(crystal.mineral)))
+            continue;
+        if (!(crystal.total_growth_um > 0))
+            continue;
+        const firstStep = _physicalEtchFirstGrowthStep(crystal);
+        if (firstStep == null || firstStep >= step)
+            continue;
+        summary.considered++;
+        const model = _physicalEtchModelFor(crystal);
+        const receipt = {
+            schema: PHYSICAL_DISSOLUTION_SCHEMA,
+            step,
+            crystalId: crystal.crystal_id,
+            mineral: crystal.mineral,
+            habit: crystal.habit,
+            durationDays,
+            accepted: false,
+        };
+        if (!model) {
+            receipt.rejection = 'no_face_matched_evidence_bounded_rate_model';
+            summary.rejected++;
+            summary.receipts.push(receipt);
+            continue;
+        }
+        _physicalEtchWithLocalConditions(sim, crystal, (conditions) => {
+            const initialFluid = _cloneFluid(conditions.fluid);
+            const temperatureC = Number(conditions.temperature);
+            const pH = Number(initialFluid.pH);
+            const pressureKbar = Number(conditions.pressure);
+            const initialAssessment = fluoriteSaturationAssessment(initialFluid, temperatureC);
+            const gameplaySigma = _physicalEtchGameplaySigma(crystal, conditions);
+            Object.assign(receipt, {
+                pH,
+                temperatureC,
+                pressureKbar,
+                gameplaySigma,
+                omega: initialAssessment.omega,
+                initialOmega: initialAssessment.omega,
+                initialDeltaGKcalMol: initialAssessment.deltaGKcalMol,
+                initialSaturationAssessment: initialAssessment,
+                modelId: model.id,
+                source: model.source,
+                face: model.face,
+                rateRangeMolM2S: model.rateRangeMolM2S,
+                surfaceMorphology: model.surfaceMorphology,
+                evidenceClass: model.evidenceClass,
+                systematicUncertainty: model.systematicUncertainty,
+                affinityBoundarySource: model.affinityBoundarySource,
+                affinityBoundaryTransfer: model.affinityBoundaryTransfer,
+                sourceBathProtocol: model.sourceBathProtocol,
+                simulatedBathProtocol: model.simulatedBathProtocol,
+                pHAccounting: 'externally_fixed_activity_proxy_no_conserved_hydrogen_inventory',
+            });
+            const envelopeFailure = _physicalEtchEnvelopeFailure(model, initialAssessment, conditions, durationDays);
+            if (envelopeFailure) {
+                receipt.rejection = envelopeFailure;
+                receipt.envelope = {
+                    pH: [model.pH - model.pHTolerance, model.pH + model.pHTolerance],
+                    temperatureC: [model.temperatureC - model.temperatureToleranceC,
+                        model.temperatureC + model.temperatureToleranceC],
+                    pressureKbar: [model.pressureKbar - model.pressureToleranceKbar,
+                        model.pressureKbar + model.pressureToleranceKbar],
+                    ionicStrengthMolal: [model.ionicStrengthMolal - model.ionicStrengthToleranceMolal,
+                        model.ionicStrengthMolal + model.ionicStrengthToleranceMolal],
+                    durationDays: [0, model.maxDurationDays],
+                    maximumDeltaGKcalMol: model.maximumDeltaGKcalMol,
+                    maximumOmegaAtTemperature: _omegaAtDeltaG(model.maximumDeltaGKcalMol, temperatureC),
+                };
+                return;
+            }
+            let normalRetreatUm = 0;
+            let endpoint = 'duration_complete';
+            let integrationSubsteps = 0;
+            let finalAssessment = initialAssessment;
+            let returnedPreview = {};
+            const dtDays = durationDays / _PHYSICAL_ETCH_SUBSTEPS;
+            for (let i = 0; i < _PHYSICAL_ETCH_SUBSTEPS; i++) {
+                const proposedNormal = normalRetreatUm + model.rateMolM2S
+                    * model.molarVolumeCm3Mol * _SECONDS_PER_DAY * dtDays;
+                const proposedGeom = _physicalEtchEquivalentAxialLoss(crystal, proposedNormal);
+                const proposedAxial = Math.min(crystal.total_growth_um, proposedGeom.axialLossUm);
+                const proposedReturn = previewBookedDissolutionReturn(crystal, proposedAxial, initialFluid);
+                const proposedFluid = _physicalEtchVirtualFluid(initialFluid, proposedReturn);
+                const proposedAssessment = fluoriteSaturationAssessment(proposedFluid, temperatureC);
+                integrationSubsteps++;
+                if (proposedAssessment.status !== 'accepted') {
+                    endpoint = 'saturation_model_boundary';
+                    break;
+                }
+                if (!(Number(proposedAssessment.deltaGKcalMol) <= model.maximumDeltaGKcalMol)) {
+                    let lower = normalRetreatUm;
+                    let upper = proposedNormal;
+                    for (let bi = 0; bi < 64; bi++) {
+                        const mid = (lower + upper) / 2;
+                        const midGeom = _physicalEtchEquivalentAxialLoss(crystal, mid);
+                        const midAxial = Math.min(crystal.total_growth_um, midGeom.axialLossUm);
+                        const midReturn = previewBookedDissolutionReturn(crystal, midAxial, initialFluid);
+                        const midAssessment = fluoriteSaturationAssessment(_physicalEtchVirtualFluid(initialFluid, midReturn), temperatureC);
+                        if (midAssessment.status === 'accepted'
+                            && Number(midAssessment.deltaGKcalMol) <= model.maximumDeltaGKcalMol)
+                            lower = mid;
+                        else
+                            upper = mid;
+                    }
+                    normalRetreatUm = lower;
+                    const boundaryGeom = _physicalEtchEquivalentAxialLoss(crystal, normalRetreatUm);
+                    const boundaryAxial = Math.min(crystal.total_growth_um, boundaryGeom.axialLossUm);
+                    returnedPreview = previewBookedDissolutionReturn(crystal, boundaryAxial, initialFluid);
+                    finalAssessment = fluoriteSaturationAssessment(_physicalEtchVirtualFluid(initialFluid, returnedPreview), temperatureC);
+                    endpoint = 'far_field_affinity_plateau_limit';
+                    break;
+                }
+                normalRetreatUm = proposedNormal;
+                returnedPreview = proposedReturn;
+                finalAssessment = proposedAssessment;
+                if (proposedAxial >= crystal.total_growth_um - 1e-9) {
+                    endpoint = 'solid_exhausted';
+                    break;
+                }
+            }
+            const geom = _physicalEtchEquivalentAxialLoss(crystal, normalRetreatUm);
+            const axialLossUm = Math.min(crystal.total_growth_um, geom.axialLossUm);
+            if (!(axialLossUm > 1e-6)) {
+                receipt.rejection = 'retreat_below_resolution';
+                return;
+            }
+            returnedPreview = previewBookedDissolutionReturn(crystal, axialLossUm, initialFluid);
+            finalAssessment = fluoriteSaturationAssessment(_physicalEtchVirtualFluid(initialFluid, returnedPreview), temperatureC);
+            const zone = new GrowthZone({
+                step,
+                temperature: temperatureC,
+                thickness_um: -axialLossUm,
+                growth_rate: -(axialLossUm / Math.max(durationDays, 1)),
+                dissolutionMode: 'coupled_face_matched_surface_retreat',
+                note: `${model.id}: raw Ω ${initialAssessment.omega.toExponential(3)}→${Number(finalAssessment.omega).toExponential(3)}, `
+                    + `${durationDays.toFixed(2)} d; ${model.surfaceMorphology}; exact booked shell inventory returned`,
+            });
+            zone._time_scaled = true;
+            sim._applyZoneGrowthBudget(crystal, zone);
+            crystal.add_zone(zone);
+            const finalVolume = Math.max(0, Number(crystal._volume_mm3) || 0);
+            const actualReturned = { ...(zone._returned_budget_inventory || {}) };
+            const returnedClosureSpecies = [...new Set([
+                    ...Object.keys(returnedPreview), ...Object.keys(actualReturned),
+                ])];
+            const returnedClosureMaxAbsPpm = returnedClosureSpecies.reduce((max, species) => Math.max(max, Math.abs((Number(returnedPreview[species]) || 0) - (Number(actualReturned[species]) || 0))), 0);
+            if (returnedClosureMaxAbsPpm > 1e-12) {
+                throw new Error(`Physical etch booked-return closure failed for ${crystal.crystal_id}: `
+                    + `${returnedClosureMaxAbsPpm} ppm`);
+            }
+            Object.assign(receipt, {
+                accepted: true,
+                endpoint,
+                integrationSubsteps,
+                rateMolM2S: model.rateMolM2S,
+                normalRetreatUm,
+                axialLossUm,
+                shapeModel: geom.shapeModel,
+                renderedDimensionsBeforeMm: geom.renderedDimensionsBeforeMm,
+                renderedDimensionsAfterMm: geom.renderedDimensionsAfterMm,
+                volumeBeforeMm3: geom.sourceVolumeMm3,
+                volumeAfterMm3: finalVolume,
+                volumeLossMm3: Math.max(0, geom.sourceVolumeMm3 - finalVolume),
+                volumeLossFraction: geom.sourceVolumeMm3 > 0
+                    ? Math.max(0, (geom.sourceVolumeMm3 - finalVolume) / geom.sourceVolumeMm3) : 0,
+                surfaceAreaMm2: geom.surfaceAreaMm2,
+                surfaceAreaToVolumePerMm: geom.surfaceAreaToVolumePerMm,
+                returnedInventoryPpm: actualReturned,
+                previewReturnedInventoryPpm: returnedPreview,
+                returnedClosureMaxAbsPpm,
+                finalOmega: finalAssessment.omega,
+                finalDeltaGKcalMol: finalAssessment.deltaGKcalMol,
+                finalSaturationAssessment: finalAssessment,
+                zoneIndex: crystal.zones.length - 1,
+            });
+            Object.assign(receipt, _physicalEtchSchematicRelief(crystal, receipt, model));
+            zone.physical_etch = { ...receipt };
+            (crystal.etch_history ||= []).push(receipt);
+            crystal._physicalEtchAppliedStep = step;
+        });
+        if (receipt.accepted) {
+            summary.accepted++;
+            summary.totalVolumeLossMm3 += receipt.volumeLossMm3;
+            summary.totalAxialLossUm += receipt.axialLossUm;
+        }
+        else {
+            summary.rejected++;
+        }
+        summary.receipts.push(receipt);
+    }
+    (sim._physicalEtchReceipts ||= []).push(summary);
+    return summary;
+}
+
 // ── 45-morphology.js ──
 
 // ============================================================
@@ -41491,50 +42140,19 @@ function classifyDeformation(sim) {
         }
     }
 }
-// POST-GROWTH ETCH overprint (crystal-face-realism arc §2, 2026-06-22) — the etched/
-// dissolved habit (rounded edges + corners, frosted faces, in the limit a negative
-// crystal; Sangwal 1987 Etching of Crystals) is imposed on a FINISHED crystal by a
-// later UNDERSATURATED fluid — the same post-growth-overprint shape as deformation, not
-// a grow-integrate field. WHY declarative and not a passive read of existing resorption:
-// the etch-pit-probe census (tools/etch-pit-probe.mjs) found the engine's dissolution
-// is BINARY — a crystal either survives ~intact (resorbed frac ~0.00) or fully
-// dissolves and DROPS from the scene (js/99i: dissolved crystals aren't rendered) — so
-// there is NO population of substantially-etched survivors to read. The etched look is
-// therefore declared as an overprint: a scenario event carries an `etch` directive
-// {amount,minerals,style}; apply_events (js/85d) records it on sim._etchEvents WITH the
-// step it fired; this pass (post-growth, like classifyDeformation) tags surviving
-// crystals that had ALREADY grown by that step. PURE tagging — crystal._etch is a RENDER
-// tag; the engine baseline is untouched (gen-baseline serialises only counts/sizes), so
-// this is byte-identical. Tag-once (idempotent). Geologically: reactivated veins corrode
-// their early generation when a cooler fresh fluid reopens the conduit.
-const ETCH_MIN_UM = 100; // skip nucleation-only specks — need a body to round
+// PHYSICAL ETCH surface classifier (SIM 253). Accepted negative zones and
+// crystal.etch_history are the source of truth. `_etch` is now only a derived
+// render cache: positive regrowth progressively heals the exposed pits while
+// the negative zone and phantom boundary remain permanently inspectable.
 function classifyEtch(sim) {
-    const evs = sim._etchEvents;
-    if (!evs || !evs.length)
-        return;
-    for (const ev of evs) {
-        const mins = (ev && ev.minerals) || null;
-        const style = (ev && ev.style) || 'rounded';
-        const amount = (ev && typeof ev.amount === 'number') ? ev.amount : 0.5;
-        for (const c of sim.crystals) {
-            if (!c || c.dissolved || c._etch)
-                continue;
-            if (mins && mins.indexOf(c.mineral) < 0)
-                continue;
-            if ((c.total_growth_um || 0) < ETCH_MIN_UM)
-                continue;
-            // must have existed (grown) BEFORE the etching fluid returned
-            let firstStep = null;
-            for (const z of (c.zones || [])) {
-                if ((z.thickness_um || 0) > 0) {
-                    firstStep = z.step;
-                    break;
-                }
-            }
-            if (firstStep == null || firstStep >= ev.step)
-                continue;
-            c._etch = { kind: style, amount, atStep: ev.step };
-        }
+    for (const crystal of (sim?.crystals || [])) {
+        if (!crystal)
+            continue;
+        const exposed = physicalEtchVisualStateAtStep(crystal);
+        if (exposed)
+            crystal._etch = exposed;
+        else
+            delete crystal._etch;
     }
 }
 // SECTOR (HOURGLASS) ZONING — different growth sectors (crystal faces) incorporate
@@ -54768,11 +55386,13 @@ const EVENT_REGISTRY = {
     // js/70s-tn457.ts for the per-pulse chemistry.
     tn457_mn_ba_pulse: event_tn457_mn_ba_pulse,
     // 2026-06-08 — reactivated_fluorite_vein: the fluid-spots SEAL → BREACH
-    // (Phase 2d) demonstrator. Two handlers do the chemistry of each transition;
+    // (Phase 2d) demonstrator. Three handlers separate sealing, the acidic
+    // dissolution wash, and the following mineralizing recharge;
     // the feeder open/close itself is the event's `spots: 'seal'|'breach'`
     // directive (handled centrally in apply_events). See js/70t-reactivated-vein.ts.
     reactivated_vein_seal: event_reactivated_vein_seal,
     reactivated_vein_breach: event_reactivated_vein_breach,
+    reactivated_vein_recharge: event_reactivated_vein_recharge,
     // 2026-06-12 — wittichen five-element vein (v189): the reduction-shock
     // dendrite showcase. The redox shock itself is a DECLARED fluid.Eh
     // movement (event-subsumption discipline — handlers carry only the
@@ -54961,11 +55581,11 @@ function _buildScenarioFromSpec(scenarioId, spec) {
             // bends/twins crystals that already grew. Absent → no overprint → byte-
             // identical. Mechanical + post-growth, so it does NOT mutate the fluid.
             deformation: ev.deformation,
-            // POST-GROWTH ETCH (crystal-face-realism arc §2, 2026-06-22) — optional directive
-            // {amount,minerals,style}. apply_events records it onto sim._etchEvents with the
-            // step it fired; classifyEtch (js/45) rounds/frosts crystals that already grew.
-            // Absent → no overprint → byte-identical. Chemical corrosion is post-growth, so it
-            // does NOT mutate the fluid.
+            // PHYSICAL ETCH — optional directive {duration_days|amount, minerals}.
+            // apply_events queues it until the authored fluid boundary reaches each
+            // local cell. The accepted model removes solid volume and returns the
+            // exact booked shell inventory; morphology comes from the face-matched
+            // rate experiment, not from an authored cosmetic style.
             etch: ev.etch,
             // FILM DUSTING (W-F O5 perturbed regrowth) — optional directive
             // {mineral, prism, term, minerals?}. apply_events (js/85d) sets `_film` on
@@ -57592,18 +58212,64 @@ function event_reactivated_vein_seal(c) {
     c.fluid.F = Math.max(2, c.fluid.F - 4); // residual F drawn down by gen-1 fluorite
     return `Feeder cementation seals the cavity — T ${c.temperature.toFixed(0)}°C, flow stalls; the vug goes quiet.`;
 }
-// BREACH — tectonic reactivation reopens the fracture and a cooler, fresh
-// fluid pulse pours in: replenished F brings a second-generation fluorite, and
-// the CO3 + Ca spike brings late calcite. Paired with `spots: 'breach'`, which
-// reopens the feeders so the second generation clusters at the same vents.
+// BREACH WASH — tectonic reactivation first admits a cool acidic,
+// fluorite-undersaturated ionic-strength analogue of the direct {100}
+// measurements of Godinho et al. (2012). Fresh mineralizing brine follows one
+// step later. The receipt discloses the NaCl/NaClO4 and closed/renewed-bath
+// transfer rather than presenting this natural-fluid reconstruction as a
+// matching laboratory experiment.
 function event_reactivated_vein_breach(c) {
-    // v179: same non-heating floor as the seal (plain max heats below 100°C).
-    c.temperature = Math.max(Math.min(c.temperature, 90), c.temperature - 10); // the second pulse is cooler than the first
-    c.fluid.F = Math.min(30, c.fluid.F + 16); // fresh fluorine → gen-2 fluorite
-    c.fluid.Ca = Math.min(420, c.fluid.Ca + 90); // Ca for both fluorite + calcite
-    c.fluid.CO3 = Math.min(320, c.fluid.CO3 + 130); // carbonate spike → late calcite
-    c.flow_rate = 0.4; // plumbing reopened, flow resumes
-    return `Tectonic reactivation breaches the feeder — a cooler fresh pulse (F +16, CO3 +130) at T ${c.temperature.toFixed(0)}°C; gen-2 fluorite + calcite.`;
+    c.temperature = 21;
+    c.pressure = 0.001;
+    // Replace the reactive solute inventory with the experimental-analogue
+    // wash. The boundary-delta propagator then carries this authored fluid to
+    // every local cell before the physical etch is evaluated.
+    for (const key of Object.keys(c.fluid)) {
+        if (typeof c.fluid[key] === 'number')
+            c.fluid[key] = 0;
+    }
+    c.fluid.Ca = 8;
+    c.fluid.F = 0.01;
+    c.fluid.Na = 1138;
+    c.fluid.Cl = 1755;
+    c.fluid.pH = 3.6;
+    c.fluid.salinity = 2.9;
+    c.fluid.concentration = 1;
+    c.fluid.O2 = 8;
+    c.fluid.Eh = ehFromO2(c.fluid.O2);
+    // Delta propagation preserves pre-existing spatial gradients. This event is
+    // a pore-fluid replacement, so ask the post-propagation etch stage to replace
+    // every local handle with this exact authored wash before rate evaluation.
+    c._pending_exact_fluid_replacement = _cloneFluid(c.fluid);
+    c.flow_rate = 0.8;
+    return 'Tectonic reactivation breaches the feeder — a 21°C, pH 3.6, I≈0.05 molal NaCl ionic-strength analogue retreats eligible flat {100} fluorite. The rate transfer is a fixed-pH closed-return extrapolation from Godinho\'s 48-hour-renewed NaClO4 bath; its ΔG≤−7 far-field gate is a mineral-level transfer from Cama\'s {111}, pH 2 experiment, not that study\'s rate. Systematic uncertainty is unquantified.';
+}
+// RECHARGE — the mineralizing F–Ca–carbonate brine arrives after the wash.
+// This sequencing removes the former contradiction where one fluid was
+// described as both fluorine-recharging and fluorite-undersaturated.
+function event_reactivated_vein_recharge(c) {
+    c.temperature = 90;
+    for (const key of Object.keys(c.fluid)) {
+        if (typeof c.fluid[key] === 'number')
+            c.fluid[key] = 0;
+    }
+    c.fluid.pH = 6.4;
+    // Slightly above the existing-crystal growth threshold but below the new-
+    // nucleus gate: the old face heals over several steps instead of erasing
+    // the measured sub-micrometre relief in one frame.
+    c.fluid.F = 18.01;
+    c.fluid.Ca = 300;
+    c.fluid.CO3 = 250;
+    c.fluid.Mg = 30;
+    c.fluid.Na = 80;
+    c.fluid.Cl = 200;
+    c.fluid.salinity = 15;
+    c.fluid.concentration = 1;
+    c.fluid.O2 = 0.25;
+    c.fluid.Eh = ehFromO2(c.fluid.O2);
+    c._pending_exact_fluid_replacement = _cloneFluid(c.fluid);
+    c.flow_rate = 0.4;
+    return `Fresh mineralizing brine replaces the wash — F 18.01, Ca 300, CO3 250 ppm at T ${c.temperature.toFixed(0)}°C; second-generation fluorite + calcite can overgrow and heal the pitted surface.`;
 }
 
 // ── 70u-grimsel.js ──
@@ -59702,6 +60368,13 @@ class VugSimulator {
         let snap = this._snapshotGlobal();
         this.apply_events();
         this._propagateGlobalDelta(snap);
+        // Some authored events replace the pore fluid rather than mixing a delta
+        // into a pre-existing spatial gradient. Apply that exact boundary after
+        // ordinary propagation and before any local reaction model reads it.
+        this.apply_pending_exact_fluid_replacement();
+        // A physical etch must read the event chemistry after it has reached each
+        // crystal's local mesh cell, but before ordinary growth/dissolution runs.
+        this.apply_pending_physical_etch();
         // Geological MOVEMENTS (js/85j) — persistent master-variable drift between
         // discrete events. DARK in Phase 0: no scenario declares `movements`, so
         // this guard is always false and run_step is byte-identical. When a
@@ -59850,6 +60523,9 @@ class VugSimulator {
                 if (!engine)
                     continue;
                 const zone = this._runEngineForCrystal(engine, crystal);
+                if (zone && zone.thickness_um < 0
+                    && crystal._physicalEtchAppliedStep === this.step)
+                    continue;
                 // W-F O3b — sealed crystals don't dissolve (shielded by neighbors), same
                 // as the main-path guard below. Byte-identical when selection is off.
                 if (zone && zone.thickness_um < 0) {
@@ -59915,6 +60591,12 @@ class VugSimulator {
                 // matching v127 byte-identically.
                 zone = this._runEngineForCrystal(engine, crystal);
             }
+            // The duration-integrated physical etch already consumed this
+            // crystal's dissolution exposure for the step. Applying the engine's
+            // one-step negative candidate as well would count the pulse twice.
+            if (zone && zone.thickness_um < 0
+                && crystal._physicalEtchAppliedStep === this.step)
+                continue;
             if (zone) {
                 // Texture state is committed only after the formula-pool cap confirms
                 // that some positive solid was actually accepted.
@@ -60415,10 +61097,9 @@ class VugSimulator {
         // deformation directive (sim._deformationEvents). Pure tagging; no-op unless
         // a scenario declares one → byte-identical fleet. See js/45.
         classifyDeformation(this);
-        // Post-growth ETCH overprint (crystal-face realism arc §2, 2026-06-22) — rounds/
-        // frosts crystals that had ALREADY grown when a scenario event recorded an `etch`
-        // directive (sim._etchEvents). Same post-growth-overprint shape as deformation.
-        // Pure tagging; no-op unless a scenario declares one → byte-identical fleet. See js/45.
+        // Physical ETCH history classifier. Accepted etches already removed solid
+        // and returned booked inventory during the event step; this pass derives
+        // the currently exposed/healed surface state for narration and rendering.
         classifyEtch(this);
         // Sector (hourglass) ZONING (crystal-face realism arc 2026-06-21) — tags
         // sector-zoned minerals (tourmaline) so the renderer tints the termination
@@ -64016,6 +64697,27 @@ function _fillDampenerFor(vugFill) {
     return 1.0 / (1.0 + Math.exp(20 * (vugFill - 0.85)));
 }
 Object.assign(VugSimulator.prototype, {
+    apply_pending_exact_fluid_replacement() {
+        const replacement = this.conditions._pending_exact_fluid_replacement;
+        delete this.conditions._pending_exact_fluid_replacement;
+        if (!replacement)
+            return 0;
+        const handles = new Set();
+        handles.add(this.conditions.fluid);
+        for (const fluid of (this.ring_fluids || []))
+            handles.add(fluid);
+        const grid = this.wall_state?.voxelGridFor?.(this);
+        for (const voxel of (grid?.voxels || [])) {
+            if (voxel?.fluid)
+                handles.add(voxel.fluid);
+        }
+        for (const fluid of handles) {
+            for (const key of Object.keys(replacement))
+                fluid[key] = replacement[key];
+        }
+        this.log.push(`     ⚗ PORE-FLUID REPLACEMENT: ${handles.size} local fluid handles receive the authored replacement fluid`);
+        return handles.size;
+    },
     apply_events() {
         for (const event of this.events) {
             if (event.step === this.step) {
@@ -64068,32 +64770,25 @@ Object.assign(VugSimulator.prototype, {
                     const ms = d.minerals ? d.minerals.join(', ') : 'all grown crystals';
                     this.log.push(`     ⟁ VISUAL DEFORMATION RECONSTRUCTION: ${d.style || 'bend'} on ${ms} — render tag only; no strain-time law is claimed`);
                 }
-                // POST-GROWTH ETCH overprint (crystal-face-realism arc §2, 2026-06-22) — an
-                // event may carry an `etch` directive {amount,minerals,style}. Like the
-                // deformation overprint, etching is a POST-growth phenomenon: a returning
-                // UNDERSATURATED fluid corrodes a crystal that has ALREADY grown (rounds its
-                // edges/corners, frosts its faces — the classic etched/dissolved habit of
-                // reactivated veins). It records an etch event onto the sim WITH the step it
-                // fired (classifyEtch, post-growth in js/45, then tags crystals that grew
-                // before this step). NOTE this is the DECLARATIVE driver, not a passive read
-                // of accidental resorption: the engine's dissolution is binary (a crystal
-                // either survives ~intact or fully dissolves and drops from the scene — the
-                // etch-pit-probe census found NO population of substantially-etched survivors),
-                // so the etched look is declared as an overprint exactly like deformation.
-                // Chemically INERT by design: apply_fn must not touch fluid/T (the assemblage
-                // stays byte-identical; the etch is a render tag + a log line).
+                // PHYSICAL ETCH (SIM 253). The event handler first establishes the
+                // undersaturated fluid. Queue the directive until run_step propagates
+                // that global boundary delta into every local cell; only then can the
+                // evidence-bounded rate law read the chemistry the crystal actually sees.
                 if (event.etch) {
                     if (!this._etchEvents)
                         this._etchEvents = [];
                     const e = event.etch;
-                    this._etchEvents.push({
+                    const queued = {
                         step: this.step,
                         amount: (typeof e.amount === 'number') ? e.amount : 0.5,
+                        duration_days: (typeof e.duration_days === 'number') ? e.duration_days : undefined,
                         minerals: e.minerals || null,
-                        style: e.style || 'rounded',
-                    });
+                        physical: true,
+                    };
+                    this._etchEvents.push(queued);
+                    (this._pendingPhysicalEtchDirectives ||= []).push(queued);
                     const ems = e.minerals ? e.minerals.join(', ') : 'all grown crystals';
-                    this.log.push(`     ⚗ VISUAL ETCH RECONSTRUCTION: ${e.style || 'rounded'} on ${ems} — render tag only; no crystal mass is removed or returned to fluid`);
+                    this.log.push(`     ⚗ PHYSICAL ETCH QUEUED: model-derived surface retreat on ${ems} — evaluates after local fluid propagation`);
                 }
                 // FILM DUSTING (W-F O5 perturbed regrowth) — an event may carry a `film`
                 // directive {mineral, prism, term, minerals?}: a foreign film (chlorite,
@@ -64110,6 +64805,23 @@ Object.assign(VugSimulator.prototype, {
                     this.log.push(`     ▓ FILM: ${f.mineral || 'chlorite'} dusts ${fms} (${dusted} crystal${dusted === 1 ? '' : 's'}) — a foreign coat masks the growth front; growth stalls until a fresh pulse clears it`);
                 }
                 this.log.push('');
+            }
+        }
+    },
+    apply_pending_physical_etch() {
+        const pending = this._pendingPhysicalEtchDirectives || [];
+        this._pendingPhysicalEtchDirectives = [];
+        for (const directive of pending) {
+            const result = applyPhysicalEtchDirective(this, directive, this.step);
+            const returned = result.receipts
+                .filter((r) => r.accepted)
+                .flatMap((r) => Object.keys(r.returnedInventoryPpm || {}));
+            const returnedLabel = [...new Set(returned)].join(', ') || 'none';
+            this.log.push(`     ⚗ PHYSICAL ETCH: ${result.accepted}/${result.considered} exposed crystals retreated; `
+                + `${result.totalAxialLossUm.toFixed(1)} µm axial-equivalent solid removed; `
+                + `booked solution return (${returnedLabel})`);
+            for (const rejected of result.receipts.filter((r) => !r.accepted)) {
+                this.log.push(`       ↳ ${rejected.mineral} #${rejected.crystalId}: no etch — ${rejected.rejection}`);
             }
         }
     },
@@ -79595,14 +80307,21 @@ function fortressStep(action, payload) {
         }
         case 'apply_etch': {
             fortressSim._etchEvents ||= [];
-            const amount = Math.max(0, Math.min(1, Number(payload?.amount) || 0));
-            fortressSim._etchEvents.push({
+            const durationDays = Number(payload?.duration_days);
+            const directive = {
                 step: fortressSim.step,
-                style: payload?.style || 'rounded',
-                amount,
+                duration_days: durationDays,
                 minerals: Array.isArray(payload?.minerals) && payload.minerals.length ? payload.minerals : null,
-            });
-            actionDesc = `Visual etch reconstruction — ${payload?.style || 'rounded'}, amount ${amount.toFixed(2)}; render tag only, so no crystal mass is removed and no solute is returned.`;
+                physical: true,
+            };
+            fortressSim._etchEvents.push(directive);
+            const result = applyPhysicalEtchDirective(fortressSim, directive, fortressSim.step);
+            fortressSim._lastPhysicalEtch = result;
+            actionDesc = `Physical etch — model-derived morphology, ${Number.isFinite(result.durationDays) ? result.durationDays.toFixed(2) : 'invalid'} days: `
+                + `${result.accepted}/${result.considered} exposed crystals retreated, `
+                + `${result.totalAxialLossUm.toFixed(1)} µm axial-equivalent solid removed; exact booked shell inventory returned. `
+                + `Accepted relief is a labelled 250× schematic pore overlay while mass and silhouette stay physical. `
+                + `${result.rejected ? `${result.rejected} target(s) lacked a flat cubic surface or were outside the bounded rate/affinity envelope.` : ''}`;
             break;
         }
         case 'apply_film': {
@@ -80953,8 +81672,7 @@ function creativeApplyStressPulse() {
 }
 function creativeApplyEtch() {
     fortressStep('apply_etch', {
-        style: document.getElementById('creative-etch-style')?.value || 'rounded',
-        amount: _creativeOptionalNumber('creative-etch-amount') ?? 0.5,
+        duration_days: _creativeOptionalNumber('creative-etch-duration-days') ?? 19.5,
         minerals: _creativeMineralFilter(),
     });
 }
@@ -82565,12 +83283,34 @@ function showZoneHistory(crystal) {
     // Crystal summary
     const summary = document.createElement('div');
     summary.style.cssText = 'margin-bottom:0.8rem;font-size:0.8rem;color:#c0a848;line-height:1.5';
+    const etchHistory = Array.isArray(crystal.etch_history) ? crystal.etch_history : [];
+    const acceptedEtches = etchHistory.filter((receipt) => receipt && receipt.accepted);
+    const exposedEtch = typeof physicalEtchVisualStateAtStep === 'function'
+        ? physicalEtchVisualStateAtStep(crystal) : null;
+    const etchVolumeLoss = acceptedEtches.reduce((sum, receipt) => sum + (Number(receipt.volumeLossMm3) || 0), 0);
+    const latestEtch = acceptedEtches.at(-1);
+    const etchDisclosure = latestEtch
+        ? `<div style="margin-top:0.25rem;color:#bfa98c;font-size:0.72rem">`
+            + `Measured change: ${Number(latestEtch.normalRetreatUm).toFixed(3)} µm surface-normal retreat; mass and silhouette use the physical dimensions. `
+            + `Visible pore relief is a ${Number(latestEtch.schematicReliefMagnification).toFixed(0)}× schematic overlay with two assumed pre-existing pores per displayed face—not a measured defect density. `
+            + `Rate status: bounded analogue with unquantified systematic uncertainty. Source bath: NaClO4/HClO4, renewed every 48 h, Ca &lt;10 ppb. `
+            + `Simulation: NaCl ionic-strength analogue, fixed pH, closed dissolved-inventory return; ΔG ${Number(latestEtch.initialDeltaGKcalMol).toFixed(2)}→${Number(latestEtch.finalDeltaGKcalMol).toFixed(2)} kcal/mol. `
+            + `The ≤−7 kcal/mol far-field gate is a mineral-level bounded transfer from Cama et al. (2010)'s {111}, pH 2 experiment—not its rate or a face multiplier.`
+            + `</div>`
+        : '';
+    const etchSummary = acceptedEtches.length
+        ? `<div style="color:#d18b55">Physical etch: ${acceptedEtches.length} event${acceptedEtches.length === 1 ? '' : 's'}, `
+            + `${etchVolumeLoss.toFixed(3)} mm³ removed; outer surface ${exposedEtch
+                ? `${(exposedEtch.healedFraction * 100).toFixed(0)}% healed, pits still exposed`
+                : 'healed/overgrown (phantom boundary retained)'}</div>${etchDisclosure}`
+        : '';
     summary.innerHTML = `
     <div>Nucleated: step ${crystal.nucleation_step} at ${crystal.nucleation_temp.toFixed(0)}°C</div>
     <div>Morphology: ${crystal.describe_morphology()}</div>
     <div>Total growth: ${crystal.total_growth_um.toFixed(0)} µm (${crystal.c_length_mm.toFixed(1)} mm)</div>
     ${crystal.twinned ? `<div style="color:#bb66ee">Twinned: ${crystal.twin_law}</div>` : ''}
     ${crystal.dissolved ? `<div style="color:#cc4444">Partially dissolved</div>` : ''}
+    ${etchSummary}
     <div>Fluorescence: ${crystal.predict_fluorescence()}</div>
     ${MINERAL_ASCII[crystal.mineral] ? `<pre style="margin:0.8rem 0;font-size:0.45rem;line-height:1.1;color:${cColor};overflow-x:auto;text-align:center">${MINERAL_ASCII[crystal.mineral]}</pre>` : (MINERAL_THUMBS[crystal.mineral] ? `<div style="margin:0.8rem 0;text-align:center">${mineralThumbHTML(crystal.mineral, 160, crystal)}</div>` : '')}
     <div style="margin-top:0.5rem"><button onclick="grooveFromModal()" style="background:#2a2510;border:1px solid #5a4a20;color:#d4a843;padding:0.3rem 0.8rem;font-size:0.75rem;border-radius:3px;cursor:pointer">📀 Play Record</button></div>
@@ -91550,19 +92290,19 @@ function _makeBentPrism(bend) {
     geom.computeVertexNormals();
     return geom;
 }
-// Etched / dissolution-sculpted cube (crystal-face-realism arc §2, 2026-06-22). A
-// returning UNDERSATURATED fluid rounds a finished crystal's edges + corners (Sangwal
-// 1987, Etching of Crystals); on an isometric habit (fluorite / galena cube) the corners
-// — the highest-energy sites — round first, the classic etched/dissolved fluorite look.
-// Built from a SUBDIVIDED box whose vertices are lerped toward a sphere: corners (the
-// farthest from centre) move the most, face-centres barely move, so the cube keeps flat
-// faces but gains rounded etched edges + corners. `round` 0 = sharp, ~0.5 = strongly
-// dissolved. Gated in the mesh-sync hook on crystal._etch + the cube token; paired with a
-// frosted (high-roughness) material. Lead-with-rounding — reads better than literal pits
-// at thumbnail scale (the §2 design note). A low-poly box can't round (its 8 corners are
-// equidistant → a uniform lerp just shrinks it), hence the SEG subdivision.
-function _makeEtchedCube(round) {
-    const t = Math.max(0.0, Math.min(0.85, round || 0.3));
+// Dissolution-sculpted {100} fluorite cube. Godinho et al. (2012) report that
+// near-{100} top surfaces remain comparatively flat while pre-existing pores
+// evolve into cubic pits bounded by {100} walls at 90 degrees. The accepted
+// receipt selects that morphology. Crystal scale carries measured volume loss.
+// The two deterministic pores per face are an explicitly RECEIPTED schematic
+// defect assumption, not inferred natural-crystal defect density; their relief
+// is vertically exaggerated 250× so sub-micrometre retreat can be inspected.
+// The player-facing zone panel states that magnification and the physical
+// silhouette remains unchanged by this overlay. The optional round parameter
+// exists only for old cosmetic save tags and is zero for physical {100} receipts.
+function _makeEtchedCube(round, pitStrength = 0.5, morphology = '') {
+    const t = Math.max(0.0, Math.min(0.85, round ?? 0.3));
+    const pitAmp = Math.max(0, Math.min(1, pitStrength || 0));
     const SEG = 12;
     const geom = new THREE.BoxGeometry(0.8, 0.8, 0.8, SEG, SEG, SEG);
     const pos = geom.attributes.position;
@@ -91570,11 +92310,60 @@ function _makeEtchedCube(round) {
     for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
         const r = Math.hypot(x, y, z) || 1e-6;
-        pos.setXYZ(i, x * (1 - t) + (x / r) * R * t, y * (1 - t) + (y / r) * R * t, z * (1 - t) + (z / r) * R * t);
+        let nx = x * (1 - t) + (x / r) * R * t;
+        let ny = y * (1 - t) + (y / r) * R * t;
+        let nz = z * (1 - t) + (z / r) * R * t;
+        // Deterministic cubic pits on the original cube faces. A broad flat floor
+        // and narrow transition approximate the observed 90-degree {100} walls at
+        // this deliberately low mesh resolution.
+        const ax = Math.abs(x), ay = Math.abs(y), az = Math.abs(z);
+        let u = 0, v = 0, axis = 0;
+        if (ax >= ay && ax >= az) {
+            axis = 1;
+            u = y / 0.4;
+            v = z / 0.4;
+        }
+        else if (ay >= ax && ay >= az) {
+            axis = 2;
+            u = x / 0.4;
+            v = z / 0.4;
+        }
+        else {
+            axis = 3;
+            u = x / 0.4;
+            v = y / 0.4;
+        }
+        const crater = (cx, cy, radius) => {
+            if (morphology.includes('cubic-{100}-pits')) {
+                const squareRadius = Math.max(Math.abs(u - cx), Math.abs(v - cy)) / radius;
+                if (squareRadius <= 0.62)
+                    return 1;
+                return squareRadius < 1 ? (1 - squareRadius) / 0.38 : 0;
+            }
+            const normalized = Math.hypot(u - cx, v - cy) / radius;
+            return normalized < 1 ? Math.pow(1 - normalized, 1.35) : 0;
+        };
+        const pit = Math.min(1, crater(-0.35, 0.20, 0.38) + crater(0.30, -0.28, 0.30));
+        const inset = 0.055 * pitAmp * pit;
+        if (axis === 1)
+            nx -= Math.sign(nx || x) * inset;
+        else if (axis === 2)
+            ny -= Math.sign(ny || y) * inset;
+        else
+            nz -= Math.sign(nz || z) * inset;
+        pos.setXYZ(i, nx, ny, nz);
     }
     pos.needsUpdate = true;
     geom.computeVertexNormals();
     return geom;
+}
+// Preserve progressive healing in the geometry cache. A 0.1 bucket collapsed
+// the seed-42 etched (0.1036), first-healed (0.0854), and final (0.0658)
+// surfaces into one identical mesh. Thousandth-resolution keeps replay depth
+// within 0.0005 of the receipt-derived 250× schematic magnitude.
+function _physicalEtchReliefBucket(intensity) {
+    const bounded = Math.max(0, Math.min(1, Number(intensity) || 0));
+    return Math.round(bounded * 1000) / 1000;
 }
 // Calcite cleavage rhombohedron — 6 rhombic faces, 8 vertices, 3-fold
 // symmetric around the c-axis. Two apex vertices on the c-axis at
@@ -94485,11 +95274,9 @@ function _topoParseColor(s) {
 // or had no positive size by replayStep (in which case the caller skips
 // rendering it entirely so replay shows growth order).
 //
-// Caps the historical total at the live total_growth_um so a
-// dissolution event later in life can't accidentally inflate replay
-// size for steps past dissolution. Negative-thickness phantom zones
-// (dissolution) already net into the running sum, so the same
-// accumulator handles both growth and dissolution paths.
+// Negative-thickness zones net directly into the historical sum. Do not cap
+// an earlier frame to the smaller live total: that erased the larger
+// pre-dissolution body and made sharp → etched → healed replay impossible.
 //
 // Habit ratio mirrors Crystal.add_zone in 27-geometry-crystal.ts; if
 // either file shifts the habit:a_ratio table, both sites need to move
@@ -94511,9 +95298,6 @@ function _topoHistoricalCrystalSize(crystal, replayStep) {
     }
     if (zoneCount === 0)
         return null;
-    if (crystal.total_growth_um != null && totalUm > crystal.total_growth_um) {
-        totalUm = crystal.total_growth_um;
-    }
     if (totalUm <= 0)
         return null;
     let c = totalUm / 1000.0;
@@ -95072,24 +95856,27 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
         let isWulffWulfenite = false; // wulfenite Wulff tabular plate → isotropic scale by plate diameter (rung 4a.3)
         let isWulffBarite = false; // barite Wulff RECTANGULAR tabular plate → isotropic scale by plate diameter (rung 4a.4)
         let isWulffTitanite = false; // titanite Wulff monoclinic sphenoid WEDGE → isotropic scale by diameter (rung 4a.6)
-        // ETCHED crystal — post-growth dissolution overprint (crystal-face realism arc §2,
-        // 2026-06-22). The sim tags crystal._etch when a scenario etch event corroded a
-        // crystal that had ALREADY grown (js/45 classifyEtch; reactivated_fluorite_vein's
-        // breach reopens the conduit and a cooler undersaturated fluid rounds the gen-1
-        // fluorite + galena). Runs FIRST — BEFORE the terrace/hopper render — because
-        // corrosion ROUNDS AWAY fine growth relief: an etched stepped cube becomes a rounded
-        // dissolved blob, not a fresh ziggurat. Gated on the cube token (the isometric
-        // fluorite/galena tenant). Cached per rounding bucket; the matOpts block frosts the
-        // surface. A replay before the etch step keeps the sharp (un-etched) crystal.
+        // PHYSICAL ETCH — the accepted receipt selects a measured face-specific
+        // surface morphology. It runs before growth terraces because dissolution
+        // relief is the exposed surface at that replay step; later positive zones
+        // progressively bury it. The current {100} fluorite model produces
+        // cubic pits with near-90° {100} sidewalls and no corner rounding. Pit
+        // depth is a receipt-labelled 250× schematic overlay of assumed
+        // pre-existing pores; mass and silhouette dimensions remain physical.
         let isEtched = false;
-        if (crystal._etch && token === 'cube'
-            && (replayStep == null || replayStep >= crystal._etch.atStep)) {
-            const round = Math.max(0.18, Math.min(0.6, 0.18 + (crystal._etch.amount || 0.5) * 0.5));
-            const q = Math.round(round * 100) / 100; // quantize for cache reuse
-            const key = '__etched_cube_' + q;
+        const physicalEtch = typeof physicalEtchVisualStateAtStep === 'function'
+            ? physicalEtchVisualStateAtStep(crystal, replayStep) : crystal._etch;
+        if (physicalEtch && token === 'cube') {
+            const intensity = Math.max(0, Math.min(1, physicalEtch.amount || 0));
+            const morphology = String(physicalEtch.morphology || 'unresolved');
+            const round = morphology.includes('cubic-{100}-pits')
+                ? 0 : Math.max(0.08, Math.min(0.6, 0.08 + intensity * 0.52));
+            const q = Math.round(round * 100) / 100;
+            const pq = _physicalEtchReliefBucket(intensity);
+            const key = `__etched_cube_${q}_pit_${pq}_${morphology}`;
             geom = state.geomCache.get(key);
             if (!geom) {
-                geom = _makeEtchedCube(round);
+                geom = _makeEtchedCube(round, pq, morphology);
                 state.geomCache.set(key, geom);
             }
             isEtched = true;

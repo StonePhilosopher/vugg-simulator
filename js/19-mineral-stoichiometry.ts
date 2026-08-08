@@ -723,6 +723,67 @@ function _recordAcceptedCarbonateTransferReceipt(
   });
 }
 
+// Pure preview of the exact inventory that a negative zone would return.
+// Physical dissolution uses this during coupled reaction-path integration:
+// each trial retreat changes the local fluid, which changes saturation and
+// therefore the next rate. Keep this reconstruction byte-for-byte aligned
+// with the accepted negative-zone path below, but never mutate historic zone
+// `_remaining_solid_um` fields or the fluid during a preview.
+function previewBookedDissolutionReturn(
+  crystal: any,
+  dissolvedUm: number,
+  fluid: any,
+): Record<string, number> {
+  const requested = Math.max(0, Number(dissolvedUm) || 0);
+  if (!(requested > 0) || !crystal) return {};
+  const shells: Array<{ zone: any, remainingUm: number }> = [];
+  for (const historic of (crystal.zones || [])) {
+    const thickness = Number(historic?.thickness_um) || 0;
+    if (thickness > 0) {
+      shells.push({ zone: historic, remainingUm: thickness });
+      continue;
+    }
+    let historicRemoval = -thickness;
+    for (let si = shells.length - 1; si >= 0 && historicRemoval > 0; si--) {
+      const removed = Math.min(shells[si].remainingUm, historicRemoval);
+      shells[si].remainingUm -= removed;
+      historicRemoval -= removed;
+    }
+  }
+
+  const returned: Record<string, number> = {};
+  let remainingToRemove = requested;
+  for (let si = shells.length - 1; si >= 0 && remainingToRemove > 0; si--) {
+    const shell = shells[si];
+    const removedHere = Math.min(shell.remainingUm, remainingToRemove);
+    shell.remainingUm -= removedHere;
+    remainingToRemove -= removedHere;
+    let inventory = shell.zone._budget_inventory_per_um;
+    if (!inventory || typeof inventory !== 'object') {
+      inventory = {};
+      const formula = MINERAL_STOICHIOMETRY[crystal.mineral] || {};
+      for (const species in formula) {
+        const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
+        inventory[reservoir] = (inventory[reservoir] || 0)
+          + stoichiometricBudgetDebitPpmPerUm(species, formula[species]);
+      }
+      for (const species in (shell.zone.trace_stoichiometry || {})) {
+        inventory[species] = (inventory[species] || 0)
+          + stoichiometricBudgetDebitPpmPerUm(
+            species,
+            shell.zone.trace_stoichiometry[species],
+          );
+      }
+    }
+    for (const species in inventory) {
+      const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
+      returned[reservoir] = (returned[reservoir] || 0)
+        + removedHere * (Number(inventory[species]) || 0);
+    }
+  }
+  return returned;
+}
+
 // Returns the list of species names that just transitioned from positive
 // to zero (depletion events), or null on no-op / missing stoichiometry.
 // _runEngineForCrystal uses this to emit "Fe²⁺ depleted in ring 4 —

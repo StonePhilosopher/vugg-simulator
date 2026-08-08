@@ -57,6 +57,24 @@ function _fillDampenerFor(vugFill: number): number {
 }
 
 Object.assign(VugSimulator.prototype, {
+  apply_pending_exact_fluid_replacement() {
+    const replacement = this.conditions._pending_exact_fluid_replacement;
+    delete this.conditions._pending_exact_fluid_replacement;
+    if (!replacement) return 0;
+    const handles = new Set<any>();
+    handles.add(this.conditions.fluid);
+    for (const fluid of (this.ring_fluids || [])) handles.add(fluid);
+    const grid = this.wall_state?.voxelGridFor?.(this);
+    for (const voxel of (grid?.voxels || [])) {
+      if (voxel?.fluid) handles.add(voxel.fluid);
+    }
+    for (const fluid of handles) {
+      for (const key of Object.keys(replacement)) fluid[key] = replacement[key];
+    }
+    this.log.push(`     ⚗ PORE-FLUID REPLACEMENT: ${handles.size} local fluid handles receive the authored replacement fluid`);
+    return handles.size;
+  },
+
   apply_events() {
   for (const event of this.events) {
     if (event.step === this.step) {
@@ -111,31 +129,24 @@ Object.assign(VugSimulator.prototype, {
         const ms = d.minerals ? d.minerals.join(', ') : 'all grown crystals';
         this.log.push(`     ⟁ VISUAL DEFORMATION RECONSTRUCTION: ${d.style || 'bend'} on ${ms} — render tag only; no strain-time law is claimed`);
       }
-      // POST-GROWTH ETCH overprint (crystal-face-realism arc §2, 2026-06-22) — an
-      // event may carry an `etch` directive {amount,minerals,style}. Like the
-      // deformation overprint, etching is a POST-growth phenomenon: a returning
-      // UNDERSATURATED fluid corrodes a crystal that has ALREADY grown (rounds its
-      // edges/corners, frosts its faces — the classic etched/dissolved habit of
-      // reactivated veins). It records an etch event onto the sim WITH the step it
-      // fired (classifyEtch, post-growth in js/45, then tags crystals that grew
-      // before this step). NOTE this is the DECLARATIVE driver, not a passive read
-      // of accidental resorption: the engine's dissolution is binary (a crystal
-      // either survives ~intact or fully dissolves and drops from the scene — the
-      // etch-pit-probe census found NO population of substantially-etched survivors),
-      // so the etched look is declared as an overprint exactly like deformation.
-      // Chemically INERT by design: apply_fn must not touch fluid/T (the assemblage
-      // stays byte-identical; the etch is a render tag + a log line).
+      // PHYSICAL ETCH (SIM 253). The event handler first establishes the
+      // undersaturated fluid. Queue the directive until run_step propagates
+      // that global boundary delta into every local cell; only then can the
+      // evidence-bounded rate law read the chemistry the crystal actually sees.
       if (event.etch) {
         if (!this._etchEvents) this._etchEvents = [];
         const e = event.etch;
-        this._etchEvents.push({
+        const queued = {
           step: this.step,
           amount: (typeof e.amount === 'number') ? e.amount : 0.5,
+          duration_days: (typeof e.duration_days === 'number') ? e.duration_days : undefined,
           minerals: e.minerals || null,
-          style: e.style || 'rounded',
-        });
+          physical: true,
+        };
+        this._etchEvents.push(queued);
+        (this._pendingPhysicalEtchDirectives ||= []).push(queued);
         const ems = e.minerals ? e.minerals.join(', ') : 'all grown crystals';
-        this.log.push(`     ⚗ VISUAL ETCH RECONSTRUCTION: ${e.style || 'rounded'} on ${ems} — render tag only; no crystal mass is removed or returned to fluid`);
+        this.log.push(`     ⚗ PHYSICAL ETCH QUEUED: model-derived surface retreat on ${ems} — evaluates after local fluid propagation`);
       }
       // FILM DUSTING (W-F O5 perturbed regrowth) — an event may carry a `film`
       // directive {mineral, prism, term, minerals?}: a foreign film (chlorite,
@@ -162,6 +173,28 @@ Object.assign(VugSimulator.prototype, {
     }
   }
 },
+
+  apply_pending_physical_etch() {
+    const pending = this._pendingPhysicalEtchDirectives || [];
+    this._pendingPhysicalEtchDirectives = [];
+    for (const directive of pending) {
+      const result = applyPhysicalEtchDirective(this, directive, this.step);
+      const returned = result.receipts
+        .filter((r: any) => r.accepted)
+        .flatMap((r: any) => Object.keys(r.returnedInventoryPpm || {}));
+      const returnedLabel = [...new Set(returned)].join(', ') || 'none';
+      this.log.push(
+        `     ⚗ PHYSICAL ETCH: ${result.accepted}/${result.considered} exposed crystals retreated; `
+        + `${result.totalAxialLossUm.toFixed(1)} µm axial-equivalent solid removed; `
+        + `booked solution return (${returnedLabel})`,
+      );
+      for (const rejected of result.receipts.filter((r: any) => !r.accepted)) {
+        this.log.push(
+          `       ↳ ${rejected.mineral} #${rejected.crystalId}: no etch — ${rejected.rejection}`,
+        );
+      }
+    }
+  },
 
   dissolve_wall() {
   const wall = this.conditions.wall;

@@ -12574,7 +12574,29 @@
 //       aragonite. Seed-42 drift vs v251 is confined to mvt (one 6.6-um
 //       aragonite removed) and the intended sabkha redistribution (70 -> 53
 //       crystals, ordered dolomite 1 -> 4).
-const SIM_VERSION = 252;
+// v253 — PHYSICAL DISSOLUTION OVERPRINTS (2026-08-08).
+//       Etch directives now require a face-matched, validity-bounded rate model
+//       and raw thermodynamic Ω. The first executable model is Godinho et al.
+//       (2012)'s {100} fluorite retreat at 21 C, pH 3.6, I=0.05 M, and
+//       <=468 h. It is explicitly a bounded extrapolation: the simulator's
+//       fixed-pH NaCl analogue and closed return path differ from the source
+//       NaClO4/HClO4 bath renewed every 48 h, and systematic uncertainty is
+//       unquantified. Only Cama's fluorite far-field affinity boundary
+//       (ΔG<=-7 kcal/mol) transfers—not its {111} rate or a face multiplier.
+//       WATEQ4F speciation keeps gameplay sigma separate from Ω. The direct
+//       rate accepts only a flat cubic surface; stepped/hopper states fail
+//       closed. Geometry uses the renderer's isometric cube rather than the
+//       legacy a/c=0.5 axes; no 5-um resolution snap can add unintegrated loss.
+//       Pore relief is a player-labelled 250x schematic of two assumed
+//       pre-existing pores per face while mass and silhouette remain physical.
+//       Creative exposes direct duration in days with a 19.5-day evidence max.
+//       Seed-42 fleet drift vs v252 is confined to reactivated_fluorite_vein:
+//       all five expected minerals remain present; the eligible smooth cubic
+//       fluorite is 4.64 mm rather than the former stepped 9.01 mm crystal,
+//       with barite 36→28, celestine 7→5, and chalcedony 6→3. The other 38
+//       scenario baselines are identical. The 12-scenario compact chemistry
+//       digest is numerically identical after version/digest normalization.
+const SIM_VERSION = 253;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12605,6 +12627,8 @@ const MODEL_DIGEST = [
   'CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1',
   'growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6',
   'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',
+  'dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3',
+  'fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3',
   'engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3',
   'beryl:K36-postHF-recovery-v1',
   'halite:vadose-propensity0.8-v1',

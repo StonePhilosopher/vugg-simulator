@@ -294,6 +294,13 @@ class VugSimulator {
     let snap = this._snapshotGlobal();
     this.apply_events();
     this._propagateGlobalDelta(snap);
+    // Some authored events replace the pore fluid rather than mixing a delta
+    // into a pre-existing spatial gradient. Apply that exact boundary after
+    // ordinary propagation and before any local reaction model reads it.
+    this.apply_pending_exact_fluid_replacement();
+    // A physical etch must read the event chemistry after it has reached each
+    // crystal's local mesh cell, but before ordinary growth/dissolution runs.
+    this.apply_pending_physical_etch();
     // Geological MOVEMENTS (js/85j) — persistent master-variable drift between
     // discrete events. DARK in Phase 0: no scenario declares `movements`, so
     // this guard is always false and run_step is byte-identical. When a
@@ -446,6 +453,8 @@ class VugSimulator {
         const engine = MINERAL_ENGINES[crystal.mineral];
         if (!engine) continue;
         const zone = this._runEngineForCrystal(engine, crystal);
+        if (zone && zone.thickness_um < 0
+            && crystal._physicalEtchAppliedStep === this.step) continue;
         // W-F O3b — sealed crystals don't dissolve (shielded by neighbors), same
         // as the main-path guard below. Byte-identical when selection is off.
         if (zone && zone.thickness_um < 0) {
@@ -508,6 +517,11 @@ class VugSimulator {
         // matching v127 byte-identically.
         zone = this._runEngineForCrystal(engine, crystal);
       }
+      // The duration-integrated physical etch already consumed this
+      // crystal's dissolution exposure for the step. Applying the engine's
+      // one-step negative candidate as well would count the pulse twice.
+      if (zone && zone.thickness_um < 0
+          && crystal._physicalEtchAppliedStep === this.step) continue;
       if (zone) {
         // Texture state is committed only after the formula-pool cap confirms
         // that some positive solid was actually accepted.
@@ -1015,10 +1029,9 @@ class VugSimulator {
     // deformation directive (sim._deformationEvents). Pure tagging; no-op unless
     // a scenario declares one → byte-identical fleet. See js/45.
     classifyDeformation(this);
-    // Post-growth ETCH overprint (crystal-face realism arc §2, 2026-06-22) — rounds/
-    // frosts crystals that had ALREADY grown when a scenario event recorded an `etch`
-    // directive (sim._etchEvents). Same post-growth-overprint shape as deformation.
-    // Pure tagging; no-op unless a scenario declares one → byte-identical fleet. See js/45.
+    // Physical ETCH history classifier. Accepted etches already removed solid
+    // and returned booked inventory during the event step; this pass derives
+    // the currently exposed/healed surface state for narration and rendering.
     classifyEtch(this);
     // Sector (hourglass) ZONING (crystal-face realism arc 2026-06-21) — tags
     // sector-zoned minerals (tourmaline) so the renderer tints the termination

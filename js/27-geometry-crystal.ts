@@ -257,6 +257,10 @@ class Crystal {
     this.dissolved = false;
     this.phantom_surfaces = [];
     this.phantom_count = 0;
+    // Evidence-bounded physical dissolution receipts. Each accepted event
+    // points to its negative zone and records rate/envelope, volume retreat,
+    // solution return, and later surface healing state.
+    this.etch_history = opts.etch_history ?? [];
     // Enclosure: crystals this one has swallowed, and the host that
     // swallowed this one (if any). Drives the topo map's inclusion
     // dots and the Sweetwater-style narration.

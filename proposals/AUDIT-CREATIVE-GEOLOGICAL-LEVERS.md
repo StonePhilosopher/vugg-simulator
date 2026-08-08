@@ -168,7 +168,8 @@ Shipping events use parameterized deformation, etching, foreign-film dusting, an
 Add advanced process actions for:
 
 - deformation style, magnitude, and target assemblage;
-- chemical etch episode, amount, style, and targets;
+- physical chemical-etch episode, direct duration, and targets; morphology is a
+  face/solution/rate-model output rather than a cosmetic style override;
 - mineral/clay film deposition and coverage;
 - fracture sealing and breaching.
 

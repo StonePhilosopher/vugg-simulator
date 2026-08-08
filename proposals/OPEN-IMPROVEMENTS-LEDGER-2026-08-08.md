@@ -39,7 +39,7 @@ single execution ledger for the science-first AAA completion branch.
 - [x] One generated science/provenance manifest that rejects missing citations,
   unsupported ranges, unregistered handlers, and stale scenario metadata.
   Evidence: `tools/gen-science-provenance-manifest.mjs`,
-  `data/generated/science-provenance-manifest.json` (39 scenarios, 215 citations),
+  `data/generated/science-provenance-manifest.json` (39 scenarios, 218 citations),
   and `tests-js/science-provenance-manifest.test.ts`.
 
 ## P1 — remaining scientific mechanisms
@@ -51,8 +51,14 @@ single execution ledger for the science-first AAA completion branch.
   bounded runtime consumers, `tests-js/thermo-pressure-grid.test.ts`, and AI Dr.
   Wise `SATISFIED` after the pinned-environment reproducibility rerun on
   2026-08-08.
-- [ ] Physical etch/dissolution: mass-balanced solid loss, surface retreat/pits,
+- [x] Physical etch/dissolution: mass-balanced solid loss, surface retreat/pits,
   solution return, habit-specific kinetics, and reversible visual history.
+  Evidence: `research/arcs/research-physical-dissolution-2026-08-08.md`,
+  `js/44d-physical-dissolution.ts`, `tools/physical-etch-observe.mjs`,
+  `tests-js/etch-overprint.test.ts`, v253 seed-42 baseline/strip/digest/claim-card
+  archives, and AI Dr. Wise `SATISFIED` after the ΔG, surface-state,
+  bath-protocol, mass-closure, Creative-duration, and schematic-relief hostile
+  review loop on 2026-08-08.
 - [ ] Mixed-carbonate solid solutions with composition-dependent activity and
   recorded zoning; remove fixed-composition HMC/aurichalcite/rosasite proxies where
   evidence supports a continuous solution.

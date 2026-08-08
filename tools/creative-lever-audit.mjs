@@ -439,10 +439,27 @@ const requiredAdvancedEditorIds = [
   'creative-movement-field', 'creative-movement-operator',
   'creative-feeder-kind', 'creative-feeder-cells',
   'creative-zone-name', 'creative-zone-field',
-  'creative-deformation-style', 'creative-stress-mpa', 'creative-etch-style', 'creative-film-mineral',
+  'creative-deformation-style', 'creative-stress-mpa', 'creative-etch-duration-days', 'creative-film-mineral',
 ];
 const missingAdvancedEditorIds = requiredAdvancedEditorIds
   .filter((id) => !setupHtml.includes(`id="${id}"`));
+const etchProcessContractErrors = [];
+const etchDurationTag = setupHtml.match(/<input\b[^>]*\bid="creative-etch-duration-days"[^>]*>/)?.[0] || '';
+const etchNumberAttribute = (name) => {
+  const match = etchDurationTag.match(new RegExp(`\\b${name}="([^"]+)"`));
+  return match ? Number(match[1]) : NaN;
+};
+if (setupHtml.includes('id="creative-etch-style"')) {
+  etchProcessContractErrors.push('cosmetic creative-etch-style override must remain absent; morphology is model-derived');
+}
+if (etchDurationTag) {
+  if (!(etchNumberAttribute('min') > 0)) etchProcessContractErrors.push('etch duration min must be positive');
+  if (etchNumberAttribute('max') !== 19.5) etchProcessContractErrors.push('etch duration max must equal measured 19.5-day envelope');
+  if (etchNumberAttribute('value') !== 19.5) etchProcessContractErrors.push('etch duration default must equal 19.5 days');
+}
+if (!setupHtml.includes("duration_days: _creativeOptionalNumber('creative-etch-duration-days')")) {
+  etchProcessContractErrors.push('Creative etch action must dispatch direct duration_days');
+}
 const liveFluidFields = livePaths
   .filter((fieldPath) => fieldPath.startsWith('fluid.'))
   .map((fieldPath) => fieldPath.slice('fluid.'.length))
@@ -524,6 +541,7 @@ const result = {
       && missingLiveEnvironmentalPaths.length === 0
       && missingSetupEnvironmentalIds.length === 0
       && missingAdvancedEditorIds.length === 0
+      && etchProcessContractErrors.length === 0
       && eventWrites.errors.length === 0
       && chemistryEvidenceErrors.length === 0
       && setupUIFluidRoundTrip.errors.length === 0
@@ -535,6 +553,7 @@ const result = {
     missingLiveEnvironmentalPaths,
     missingSetupEnvironmentalIds,
     missingAdvancedEditorIds,
+    etchProcessContractErrors,
     chemistryEvidenceErrors,
     setupUIFluidRoundTripErrors: setupUIFluidRoundTrip.errors,
     liveSaveReplayErrors: liveSaveReplay.errors,
@@ -616,6 +635,7 @@ if (process.argv.includes('--json')) {
   if (missingLiveEnvironmentalPaths.length) console.error(`  Missing live environmental controls: ${missingLiveEnvironmentalPaths.join(', ')}`);
   if (missingSetupEnvironmentalIds.length) console.error(`  Missing setup environmental controls: ${missingSetupEnvironmentalIds.join(', ')}`);
   if (missingAdvancedEditorIds.length) console.error(`  Missing advanced history editors: ${missingAdvancedEditorIds.join(', ')}`);
+  for (const error of etchProcessContractErrors) console.error(`  Etch process contract error: ${error}`);
   for (const error of chemistryEvidenceErrors) console.error(`  Chemistry evidence error: ${error}`);
   for (const error of setupUIFluidRoundTrip.errors) console.error(`  Setup round-trip error: ${error}`);
   for (const error of liveSaveReplay.errors) console.error(`  Save replay error: ${error}`);

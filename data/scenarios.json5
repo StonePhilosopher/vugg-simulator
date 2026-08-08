@@ -523,18 +523,18 @@
       "fluid_spots": { "deposition": true },
       "notes": [
         "DEMONSTRATOR, honestly framed: this scenario exercises the crack-seal SEAL→BREACH mechanic on a North-Pennine-style fluorite-galena-barite vein. The chemistry is DESIGNED (reverse-from-engines) on an mvt-analog NaCl-CaCl2 basinal brine, not lifted from a specific mine's fluid-inclusion dataset — so the broth is a faithful archetype, not a measured locality record. North Pennine veins are textbook reactivated-fault systems with repeated fluid pulses (Dunham 1990); the crack-seal reopening mechanism is Ramsay 1980 (Nature).",
-        "Two generations: STAGE 1 (feeders open, steps 0-78) — the ascending brine fires fluorite + galena + barite (+ sphalerite, calcite) clustering at the open vents, reusing the proven generic fluid_mixing (step 20) + fluid_pulse (step 60) brine events. SEAL (step 78) — a carbonate/silica cement chokes the feeder (spots:'seal'); T drops to ~150°C, flow stalls, the clustering halo switches off. STAGE 2 (breach, step 118) — tectonic reactivation reopens the conduit (spots:'breach'); a cooler fresh pulse (F +16, CO3 +130) grows second-generation fluorite + late calcite at the reopened vents.",
+        "Two generations plus a bounded dissolution analogue: STAGE 1 (feeders open, steps 0-78) — the ascending brine fires fluorite + galena + barite (+ sphalerite, calcite) at the open vents. SEAL (step 78) — carbonate/silica cement chokes the feeder, flow stalls, and the clustering halo switches off. ACIDIC BREACH WASH (step 118) — reopening admits a 21°C, pH 3.6, I≈0.05 molal NaCl ionic-strength analogue of Godinho et al. (2012)'s {100} fluorite experiment. The game uses a fixed-pH closed return path, unlike the source experiment's NaClO4 bath renewed every 48 h, so the transferred rate carries unquantified systematic uncertainty. MINERALIZING RECHARGE (step 119) — a distinct F-Ca-carbonate brine grows gen-2 fluorite + calcite and progressively heals the dissolution relief.",
         "Why limestone wall: North Pennine fluorite veins cut Carboniferous limestone (the Great Limestone and equivalents); the reactive carbonate wall supplies background Ca + CO3, consistent with the calcite gangue in both stages. Architecture 'tabular' = fracture-controlled / vein-bounded, the right cavity archetype for a vein (vs the karst 'irregular' of mvt).",
-        "Calibration note: stage-1 assemblage tracks the mvt scenario (same brine + the same two generic brine events), so fluorite/galena/barite/sphalerite/calcite are expected to fire; deposition clustering shifts spatial competition so exact counts will differ from mvt. Any first-pass miss is aspirational — tune via vugg-tune-scenario, don't inflate the broth."
+        "Calibration note: stage-1 F=4 ppm plus the step-20 mixing pulse opens the fluorite gate while keeping seed-42 gen-1 fluorite in the smooth cubic surface-state envelope required by the dissolution analogue. Stepped/hopper cubes are rejected because a common {100} normal does not reproduce Godinho's cleaned nominal-(001) step-site state. Deposition clustering shifts spatial competition, so exact counts differ from generic MVT."
       ],
       "initial": {
         "temperature_C": 180.0,
         "pressure_kbar": 0.3,
         "fluid": {
-          // mvt-analog NaCl-CaCl2 basinal brine (see the mvt scenario for the
-          // per-field provenance); F raised to 25 (fluorite-forward vein vs mvt's
-          // gangue-trace F=5) so fluorite is a prominent gen-1 phase against the
-          // barite/greenockite/celestine competition for Ca + the anion budget.
+          // MVT-analog NaCl-CaCl2 basinal brine (see the mvt scenario for the
+          // per-field provenance). F=4 plus the authored step-20 +40 ppm mixing
+          // pulse crosses the fluorite gate without forcing seed-42 into a
+          // stepped growth surface outside the later etch model's evidence.
           "SiO2": 100,
           "Ca": 300,
           "CO3": 250,
@@ -542,7 +542,7 @@
           "Mn": 25,
           "Zn": 0,
           "S": 0,
-          "F": 25,
+          "F": 4,
           "Mg": 30,
           "Pb": 40,
           "Na": 80,
@@ -588,23 +588,18 @@
         { "step": 20,  "type": "fluid_mixing",            "name": "Ascending Brine",   "description": "Stage-1 brine meets groundwater — fluorite + galena + barite at the open feeders" },
         { "step": 60,  "type": "fluid_pulse",             "name": "Second Pulse",       "description": "More stage-1 growth" },
         { "step": 78,  "type": "reactivated_vein_seal",   "name": "Feeder Sealed",      "description": "Cement chokes the fracture — the vug goes quiet", "spots": "seal" },
-        { "step": 118, "type": "reactivated_vein_breach", "name": "Reactivation",       "description": "Tectonic uplift breaches the feeder — a cooler fresh pulse grows gen-2 fluorite + calcite, and the returning undersaturated fluid ETCHES the gen-1 fluorite (rounded, frosted edges) before the overgrowth", "spots": "breach",
-          // POST-GROWTH ETCH overprint (crystal-face-realism arc §2). A reopened vein's
-          // first returning fluid is undersaturated w.r.t. the early fluorite it meets:
-          // it corrodes/rounds the gen-1 cubes (steps 0-78) before gen-2 fluorite + calcite
-          // overgrow them — the classic etched-then-overgrown texture of reactivated
-          // North-Pennine fluorite veins. minerals:['fluorite'] so only the early fluorite
-          // is etched; gen-2 fluorite (grown after step 118) stays sharp. Galena is
-          // included — the early galena cubes corrode the same way when the vein reopens
-          // (cubic galena → the etched-cube render; octahedral galena keeps its form).
-          // INERT directive: records sim._etchEvents only (no fluid/T change) → byte-identical.
-          "etch": { "minerals": ["fluorite", "galena"], "amount": 0.6, "style": "rounded" }
-        }
+        { "step": 118, "type": "reactivated_vein_breach", "name": "Acidic Reopening Wash", "description": "Tectonic uplift breaches the feeder. A 21°C, pH 3.6, I≈0.05 molal NaCl ionic-strength analogue transfers Godinho et al.'s {100} rate; the ΔG≤−7 far-field gate is a mineral-level transfer from Cama et al.'s {111}, pH 2 experiment, not its rate. Fixed-pH closed return differs from Godinho's renewed NaClO4 bath and carries unquantified systematic uncertainty.", "spots": "breach",
+          "etch": { "minerals": ["fluorite"], "duration_days": 19.5 }
+        },
+        { "step": 119, "type": "reactivated_vein_recharge", "name": "Mineralizing Recharge", "description": "Fresh F-Ca-carbonate brine follows the wash; gen-2 fluorite + calcite overgrow and progressively heal the pitted gen-1 surface." }
       ],
       "sources": [
         "Dunham, K.C. (1990) — Geology of the Northern Pennine Orefield, Vol. 1 (2nd ed.), British Geological Survey Economic Memoir.",
         "Ramsay, J.G. (1980) — The crack-seal mechanism of rock deformation, Nature 284.",
-        "Bons, Elburg & Gomez-Rivas (2012) — A review of the formation of tectonic veins and their microstructures, Journal of Structural Geology."
+        "Bons, Elburg & Gomez-Rivas (2012) — A review of the formation of tectonic veins and their microstructures, Journal of Structural Geology.",
+        "Godinho, Piazolo & Evins (2012) — Effect of surface orientation on dissolution rates and topography of CaF2, Geochimica et Cosmochimica Acta 86, 392-403, doi:10.1016/j.gca.2012.02.032.",
+        "Cama, Ayora & Lasaga (2010) — The deviation-from-equilibrium effect on dissolution rate and on apparent variations in activation energy, Geochimica et Cosmochimica Acta 74, 4298-4311, doi:10.1016/j.gca.2010.04.067.",
+        "Dell'Angelo et al. (2025) — Unravelling the cleavage-rate relationship from both the experimental and theoretical standpoint: The instance of fluorite dissolution, Journal of Colloid and Interface Science 684, 844-855, doi:10.1016/j.jcis.2024.12.242."
       ]
     },
 

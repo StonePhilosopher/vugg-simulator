@@ -1563,14 +1563,21 @@ function fortressStep(action, payload) {
     }
     case 'apply_etch': {
       fortressSim._etchEvents ||= [];
-      const amount = Math.max(0, Math.min(1, Number(payload?.amount) || 0));
-      fortressSim._etchEvents.push({
+      const durationDays = Number(payload?.duration_days);
+      const directive = {
         step: fortressSim.step,
-        style: payload?.style || 'rounded',
-        amount,
+        duration_days: durationDays,
         minerals: Array.isArray(payload?.minerals) && payload.minerals.length ? payload.minerals : null,
-      });
-      actionDesc = `Visual etch reconstruction — ${payload?.style || 'rounded'}, amount ${amount.toFixed(2)}; render tag only, so no crystal mass is removed and no solute is returned.`;
+        physical: true,
+      };
+      fortressSim._etchEvents.push(directive);
+      const result = applyPhysicalEtchDirective(fortressSim, directive, fortressSim.step);
+      fortressSim._lastPhysicalEtch = result;
+      actionDesc = `Physical etch — model-derived morphology, ${Number.isFinite(result.durationDays) ? result.durationDays.toFixed(2) : 'invalid'} days: `
+        + `${result.accepted}/${result.considered} exposed crystals retreated, `
+        + `${result.totalAxialLossUm.toFixed(1)} µm axial-equivalent solid removed; exact booked shell inventory returned. `
+        + `Accepted relief is a labelled 250× schematic pore overlay while mass and silhouette stay physical. `
+        + `${result.rejected ? `${result.rejected} target(s) lacked a flat cubic surface or were outside the bounded rate/affinity envelope.` : ''}`;
       break;
     }
     case 'apply_film': {
