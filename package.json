@@ -9,6 +9,8 @@
     "build:check": "node tools/build-all.mjs --check",
     "audit:creative": "node tools/creative-lever-audit.mjs",
     "audit:science": "node tools/gen-science-provenance-manifest.mjs --check",
+    "generate:pressure-grid": "node tools/run-pressure-grid.mjs",
+    "check:pressure-grid": "node tools/run-pressure-grid.mjs --check",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "pretest": "tsc -p tsconfig.json",
     "test": "vitest run",

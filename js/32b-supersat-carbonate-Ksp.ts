@@ -459,33 +459,52 @@ function mixedCarbonateThermoAssessment(
 // fluid lacks required cation, etc.). Consumers (helicoid trails,
 // engines, narrators) decide how to handle NaN — typically by hiding
 // the trail or skipping the read.
-function carbonateSaturationIndex(mineralId: string, fluid: any, T_C: number, mg_content: number = 0): number {
+function carbonateSaturationIndex(
+  mineralId: string,
+  fluid: any,
+  T_C: number,
+  mg_content: number = 0,
+  fluidPressureKbar: number = 0.001,
+): number {
   if (!fluid) return NaN;
+  let baseSI: number;
   switch (mineralId) {
-    case 'calcite':       return saturationIndex_calcite(fluid, T_C);
-    case 'aragonite':     return saturationIndex_aragonite(fluid, T_C);
-    case 'dolomite':      return saturationIndex_dolomite(fluid, T_C);
-    case 'HMC':           return saturationIndex_HMC(fluid, T_C, mg_content);
-    case 'siderite':      return saturationIndex_siderite(fluid, T_C);
-    case 'rhodochrosite': return saturationIndex_rhodochrosite(fluid, T_C);
-    case 'smithsonite':   return saturationIndex_smithsonite(fluid, T_C);
-    case 'cerussite':     return saturationIndex_cerussite(fluid, T_C);
-    case 'witherite':     return saturationIndex_witherite(fluid, T_C);
-    case 'strontianite':  return saturationIndex_strontianite(fluid, T_C);
-    case 'malachite':     return saturationIndex_malachite(fluid, T_C);
-    case 'azurite':       return saturationIndex_azurite(fluid, T_C);
-    case 'hydrozincite':  return saturationIndex_hydrozincite(fluid, T_C);
-    case 'rosasite':      return saturationIndex_rosasite(fluid, T_C);
-    case 'aurichalcite':  return saturationIndex_aurichalcite(fluid, T_C);
+    case 'calcite':       baseSI = saturationIndex_calcite(fluid, T_C); break;
+    case 'aragonite':     baseSI = saturationIndex_aragonite(fluid, T_C); break;
+    case 'dolomite':      baseSI = saturationIndex_dolomite(fluid, T_C); break;
+    case 'HMC':           baseSI = saturationIndex_HMC(fluid, T_C, mg_content); break;
+    case 'siderite':      baseSI = saturationIndex_siderite(fluid, T_C); break;
+    case 'rhodochrosite': baseSI = saturationIndex_rhodochrosite(fluid, T_C); break;
+    case 'smithsonite':   baseSI = saturationIndex_smithsonite(fluid, T_C); break;
+    case 'cerussite':     baseSI = saturationIndex_cerussite(fluid, T_C); break;
+    case 'witherite':     baseSI = saturationIndex_witherite(fluid, T_C); break;
+    case 'strontianite':  baseSI = saturationIndex_strontianite(fluid, T_C); break;
+    case 'malachite':     baseSI = saturationIndex_malachite(fluid, T_C); break;
+    case 'azurite':       baseSI = saturationIndex_azurite(fluid, T_C); break;
+    case 'hydrozincite':  baseSI = saturationIndex_hydrozincite(fluid, T_C); break;
+    case 'rosasite':      baseSI = saturationIndex_rosasite(fluid, T_C); break;
+    case 'aurichalcite':  baseSI = saturationIndex_aurichalcite(fluid, T_C); break;
     default:              return NaN;
   }
+  if (!Number.isFinite(baseSI)) return baseSI;
+  // SI = log10(IAP) - log10(Ksp).  SUPCRTBL supplies a reaction-specific
+  // delta-logK pressure correction, so a positive Ksp shift lowers SI by
+  // exactly the same amount. Unsupported reactions return a zero correction
+  // with an explicit assessment rather than inheriting a family proxy.
+  return baseSI - thermoPressureLogKCorrection(mineralId, T_C, fluidPressureKbar);
 }
 
 // Saturation ratio omega = IAP/Ksp = 10^SI. Returns 0 (not NaN) for
 // missing data so engine call sites can treat omega=0 as "no
 // information / cannot precipitate" without defensive checks.
-function carbonateOmega(mineralId: string, fluid: any, T_C: number, mg_content: number = 0): number {
-  const SI = carbonateSaturationIndex(mineralId, fluid, T_C, mg_content);
+function carbonateOmega(
+  mineralId: string,
+  fluid: any,
+  T_C: number,
+  mg_content: number = 0,
+  fluidPressureKbar: number = 0.001,
+): number {
+  const SI = carbonateSaturationIndex(mineralId, fluid, T_C, mg_content, fluidPressureKbar);
   if (!isFinite(SI)) return 0;
   return Math.pow(10, SI);
 }
@@ -500,8 +519,14 @@ function carbonateOmega(mineralId: string, fluid: any, T_C: number, mg_content: 
 // textbook omega have different absolute magnitudes (empirical
 // sigma_crit ~ 1.0-1.3 for calcite; new omega-based sigma_crit lives
 // in [1, ~5] depending on the nucleation-barrier margin desired).
-function carbonateEngineSigma(mineralId: string, fluid: any, T_C: number, mg_content: number = 0): number {
-  return carbonateOmega(mineralId, fluid, T_C, mg_content);
+function carbonateEngineSigma(
+  mineralId: string,
+  fluid: any,
+  T_C: number,
+  mg_content: number = 0,
+  fluidPressureKbar: number = 0.001,
+): number {
+  return carbonateOmega(mineralId, fluid, T_C, mg_content, fluidPressureKbar);
 }
 
 // =============================================================

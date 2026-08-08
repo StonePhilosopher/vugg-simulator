@@ -111,7 +111,7 @@ function grow_calcite(crystal, conditions, step) {
   const excess = sigma - 1.0;
   let rate;
   if (kspSupersatActiveFor('calcite')) {
-    const pwp_mol = calciteRate(conditions.fluid, conditions.temperature);
+    const pwp_mol = calciteRate(conditions.fluid, conditions.temperature, conditions.pressure);
     rate = pwpRateToSimMicronsPerStep('calcite', pwp_mol) * rng.uniform(0.8, 1.2);
     // PWP under-supersat (omega < 1) yields negative rate, which is
     // dissolution territory — but we already handled the sigma < 1
@@ -340,7 +340,7 @@ function grow_aragonite(crystal, conditions, step) {
   // gate as W9-W11. Empirical 5.5 × excess fallback stays.
   let rate;
   if (kspSupersatActiveFor('aragonite')) {
-    const pwp_mol = aragoniteRate(conditions.fluid, conditions.temperature);
+    const pwp_mol = aragoniteRate(conditions.fluid, conditions.temperature, conditions.pressure);
     rate = pwpRateToSimMicronsPerStep('aragonite', pwp_mol) * rng.uniform(0.7, 1.3);
     if (rate < 0) rate = 0;
   } else {
@@ -443,7 +443,7 @@ function grow_dolomite(crystal, conditions, step) {
   // base_rate formula stays as the fallback path.
   let rate;
   if (kspSupersatActiveFor('dolomite')) {
-    const pwp_mol = dolomiteRate(conditions.fluid, conditions.temperature, f_ord);
+    const pwp_mol = dolomiteRate(conditions.fluid, conditions.temperature, f_ord, conditions.pressure);
     rate = pwpRateToSimMicronsPerStep('dolomite', pwp_mol) * rng.uniform(0.7, 1.3);
     if (rate < 0) rate = 0;
   } else {
@@ -518,7 +518,7 @@ function grow_HMC(crystal, conditions, step) {
   const excess = sigma - 1.0;
   let rate;
   if (kspSupersatActiveFor('HMC')) {
-    const pwp_mol = HMCRate(conditions.fluid, conditions.temperature, mg_content);
+    const pwp_mol = HMCRate(conditions.fluid, conditions.temperature, mg_content, conditions.pressure);
     rate = pwpRateToSimMicronsPerStep('calcite', pwp_mol) * rng.uniform(0.7, 1.3);  // calcite Vm; close enough for Mg-substituted lattice
     if (rate < 0) rate = 0;
   } else {

@@ -44,8 +44,13 @@ single execution ledger for the science-first AAA completion branch.
 
 ## P1 — remaining scientific mechanisms
 
-- [ ] Carbonate and sulfate pressure corrections on evidence-backed thermodynamic
+- [x] Carbonate and sulfate pressure corrections on evidence-backed thermodynamic
   grids; no constant reaction-volume shortcut outside a demonstrated envelope.
+  Evidence: `research/arcs/research-thermo-pressure-grid-2026-08-08.md`,
+  `tools/gen-thermo-pressure-grid.py`, the digest-pinned generated artifact,
+  bounded runtime consumers, `tests-js/thermo-pressure-grid.test.ts`, and AI Dr.
+  Wise `SATISFIED` after the pinned-environment reproducibility rerun on
+  2026-08-08.
 - [ ] Physical etch/dissolution: mass-balanced solid loss, surface retreat/pits,
   solution return, habit-specific kinetics, and reversible visual history.
 - [ ] Mixed-carbonate solid solutions with composition-dependent activity and

@@ -29,11 +29,11 @@ declare const SCENARIOS: any;
 declare const setSeed: any;
 
 declare const carbonateSaturationIndex: (
-  mineralId: string, fluid: any, T_C: number, mg_content?: number) => number;
+  mineralId: string, fluid: any, T_C: number, mg_content?: number, fluidPressureKbar?: number) => number;
 declare const carbonateOmega: (
-  mineralId: string, fluid: any, T_C: number, mg_content?: number) => number;
+  mineralId: string, fluid: any, T_C: number, mg_content?: number, fluidPressureKbar?: number) => number;
 declare const carbonateEngineSigma: (
-  mineralId: string, fluid: any, T_C: number, mg_content?: number) => number;
+  mineralId: string, fluid: any, T_C: number, mg_content?: number, fluidPressureKbar?: number) => number;
 declare const carbonatesWithSI: () => string[];
 declare const carbonatePromotionReady: (mineralId: string) => boolean;
 declare const kspSupersatActiveFor: (mineralId: string) => boolean;
@@ -452,7 +452,7 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — dispatcher positive control', ()
     const f = new FluidChemistry({ Ca: 200, CO3: 150, pH: 8.0 });
     const cond = new VugConditions({ temperature: 25, fluid: f });
     const engineSigma = cond.supersaturation_calcite();
-    const expected = carbonateEngineSigma('calcite', f, 25);
+    const expected = carbonateEngineSigma('calcite', f, 25, 0, cond.pressure);
     expect(Number.isFinite(engineSigma)).toBe(true);
     expect(Number.isFinite(expected)).toBe(true);
     expect(engineSigma).toBeCloseTo(expected, 6);

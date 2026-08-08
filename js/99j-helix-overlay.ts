@@ -322,6 +322,11 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     return (s.ring_fluids || [])[ri];
   };
 
+  const _chipPressureKbar = (s: any): number => {
+    const value = Number(s?.pressure ?? s?.conditions?.pressure);
+    return Number.isFinite(value) ? value : 0.001;
+  };
+
   // Primary
   params.push({
     id: 'wall', label: 'wall distance', fullName: _HELIX_FULL_NAMES.wall,
@@ -427,7 +432,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     const T = (s.ring_temperatures || [])[i];
     const T_use = (typeof T === 'number') ? T : 25;
     if (typeof carbonateSaturationIndex !== 'function') return null;
-    const si = carbonateSaturationIndex(mineralId, f, T_use);
+    const si = carbonateSaturationIndex(mineralId, f, T_use, 0, _chipPressureKbar(s));
     return isFinite(si) ? si : _SI_CHIP_FLOOR;
   };
 
@@ -506,7 +511,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
       const T = (s.ring_temperatures || [])[i];
       const T_use = (typeof T === 'number') ? T : 25;
       if (typeof carbonateSaturationIndex !== 'function') return null;
-      const si = carbonateSaturationIndex('HMC', f, T_use, _HMC_DEFAULT_MG);
+      const si = carbonateSaturationIndex('HMC', f, T_use, _HMC_DEFAULT_MG, _chipPressureKbar(s));
       return isFinite(si) ? si : _SI_CHIP_FLOOR;  // v166 floor-clamp; cf. _readSI
     },
   });
@@ -633,7 +638,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
       if (!f) return null;
       const T = (s.ring_temperatures || [])[i];
       const T_use = (typeof T === 'number') ? T : 25;
-      const si = sulfateSaturationIndex(mineralId, f, T_use);
+      const si = sulfateSaturationIndex(mineralId, f, T_use, _chipPressureKbar(s));
       return isFinite(si) ? si : _SI_CHIP_FLOOR;
     };
     params.push({

@@ -26,6 +26,27 @@ describe('generated science/provenance manifest', () => {
     expect(manifest.scenarios.map((row: any) => row.id).sort()).toEqual(
       Object.keys(SCENARIOS).sort(),
     );
+    expect(manifest.thermo_pressure_grid).toMatchObject({
+      model_id: 'SUPCRTBL-delta-logK-pressure-grid-v1',
+      generator: 'tools/gen-thermo-pressure-grid.py',
+      reference_pressure_kbar: 0.001,
+      water_density_min_g_cm3: 0.35,
+    });
+    expect(manifest.thermo_pressure_grid.reactions).toHaveLength(8);
+    expect(manifest.thermo_pressure_grid.sources).toHaveLength(3);
+    expect(manifest.thermo_pressure_grid.reproducibility).toMatchObject({
+      generator: { path: 'tools/gen-thermo-pressure-grid.py' },
+      launcher: { path: 'tools/run-pressure-grid.mjs' },
+      environment_receipt: { path: 'environment-pressure-grid.yml' },
+      command: 'npm run check:pressure-grid',
+    });
+    for (const receipt of [
+      manifest.thermo_pressure_grid.reproducibility.generator,
+      manifest.thermo_pressure_grid.reproducibility.launcher,
+      manifest.thermo_pressure_grid.reproducibility.environment_receipt,
+    ]) {
+      expect(receipt.sha256).toMatch(/^[a-f0-9]{64}$/);
+    }
   });
 
   it('pins citations, registered handlers, authored shape seeds, and archive metadata', () => {

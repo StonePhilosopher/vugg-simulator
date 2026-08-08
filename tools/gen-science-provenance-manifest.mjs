@@ -27,6 +27,11 @@ const SUPPORT = Object.freeze({
 });
 
 const sha256 = value => crypto.createHash('sha256').update(value).digest('hex');
+const canonicalJson = value => {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+};
 const stableStrings = values => {
   const list = Array.isArray(values)
     ? values.map(value => typeof value === 'string' ? value : value?.mineral).filter(Boolean)
@@ -83,15 +88,88 @@ function inspectArchive(errors, id, specHash, version, modelDigest) {
 
 const {
   SIM_VERSION, MODEL_DIGEST, SCENARIOS, EVENT_REGISTRY, MINERAL_SPEC,
+  THERMO_PRESSURE_GRID_DATA_SHA256, THERMO_PRESSURE_GRID,
   scenarioSpecHash, setSeed,
 } = await loadSimBundle({
   toolName: 'gen-science-provenance-manifest',
-  extraExports: ['EVENT_REGISTRY', 'MINERAL_SPEC', 'scenarioSpecHash'],
+  extraExports: [
+    'EVENT_REGISTRY', 'MINERAL_SPEC', 'scenarioSpecHash',
+    'THERMO_PRESSURE_GRID_DATA_SHA256', 'THERMO_PRESSURE_GRID',
+  ],
 });
 
 const errors = [];
 const referencedHandlers = new Set();
 const scenarios = [];
+const pressureGridPath = path.join(ROOT, 'data', 'generated', 'thermo-pressure-grid.json');
+const pressureGeneratorPath = path.join(ROOT, 'tools', 'gen-thermo-pressure-grid.py');
+const pressureLauncherPath = path.join(ROOT, 'tools', 'run-pressure-grid.mjs');
+const pressureEnvironmentPath = path.join(ROOT, 'environment-pressure-grid.yml');
+let pressureGridProvenance = null;
+try {
+  const artifact = JSON.parse(fs.readFileSync(pressureGridPath, 'utf8'));
+  const digest = sha256(canonicalJson(artifact.payload));
+  if (digest !== artifact.data_sha256) errors.push('thermo pressure grid payload digest mismatch');
+  if (artifact.data_sha256 !== THERMO_PRESSURE_GRID_DATA_SHA256) {
+    errors.push('thermo pressure grid runtime/data digest mismatch');
+  }
+  if (artifact.payload?.model_id !== THERMO_PRESSURE_GRID?.model_id) {
+    errors.push('thermo pressure grid runtime/data model identity mismatch');
+  }
+  if (!MODEL_DIGEST.includes('Ksp-pressure:SUPCRTBL')) {
+    errors.push('MODEL_DIGEST does not declare the promoted SUPCRTBL pressure grid');
+  }
+  if (artifact.payload?.generator !== 'tools/gen-thermo-pressure-grid.py') {
+    errors.push(`thermo pressure grid declares unexpected generator '${artifact.payload?.generator}'`);
+  }
+  if (artifact.payload?.generator_environment?.python !== '3.12'
+    || artifact.payload?.generator_environment?.reaktoro !== '2.13.0'
+    || artifact.payload?.generator_environment?.database !== 'supcrtbl') {
+    errors.push('thermo pressure grid generator environment is not the promoted Python 3.12 / Reaktoro 2.13.0 / SUPCRTBL identity');
+  }
+  for (const [label, filePath] of [
+    ['generator', pressureGeneratorPath],
+    ['launcher', pressureLauncherPath],
+    ['environment receipt', pressureEnvironmentPath],
+  ]) {
+    if (!fs.existsSync(filePath)) errors.push(`thermo pressure grid ${label} is missing`);
+  }
+  const reactionIds = Object.keys(artifact.payload?.reactions || {});
+  const sources = artifact.payload?.sources || [];
+  if (reactionIds.length !== 8) errors.push(`thermo pressure grid has ${reactionIds.length} reactions, expected 8`);
+  if (!Array.isArray(sources) || sources.length < 3) errors.push('thermo pressure grid lacks primary/model citations');
+  pressureGridProvenance = {
+    path: path.relative(ROOT, pressureGridPath).replaceAll('\\', '/'),
+    data_sha256: artifact.data_sha256,
+    model_id: artifact.payload.model_id,
+    generator: artifact.payload.generator,
+    generator_environment: artifact.payload.generator_environment,
+    reproducibility: {
+      generator: {
+        path: path.relative(ROOT, pressureGeneratorPath).replaceAll('\\', '/'),
+        sha256: sha256(fs.readFileSync(pressureGeneratorPath)),
+      },
+      launcher: {
+        path: path.relative(ROOT, pressureLauncherPath).replaceAll('\\', '/'),
+        sha256: sha256(fs.readFileSync(pressureLauncherPath)),
+      },
+      environment_receipt: {
+        path: path.relative(ROOT, pressureEnvironmentPath).replaceAll('\\', '/'),
+        sha256: sha256(fs.readFileSync(pressureEnvironmentPath)),
+      },
+      command: 'npm run check:pressure-grid',
+    },
+    reference_pressure_kbar: artifact.payload.reference_pressure_kbar,
+    temperature_axis_C: artifact.payload.temperature_axis_C,
+    pressure_axis_kbar: artifact.payload.pressure_axis_kbar,
+    water_density_min_g_cm3: artifact.payload.validity?.water_density_min_g_cm3,
+    reactions: reactionIds,
+    unsupported: artifact.payload.unsupported,
+    sources,
+  };
+} catch (error) {
+  errors.push(`thermo pressure grid unreadable (${error.message})`);
+}
 
 for (const id of Object.keys(SCENARIOS).sort()) {
   const factory = SCENARIOS[id];
@@ -199,12 +277,15 @@ const manifest = {
   canonical_run_seed: 42,
   shape_seed_policy: 'authored independently in data/scenarios.json5',
   support_envelopes: SUPPORT,
+  thermo_pressure_grid: pressureGridProvenance,
   totals: {
     scenarios: scenarios.length,
     citations: scenarios.reduce((sum, row) => sum + row.citations.length, 0),
     event_instances: scenarios.reduce((sum, row) => sum + row.event_count, 0),
     referenced_event_handlers: referencedHandlers.size,
     registered_event_handlers: Object.keys(EVENT_REGISTRY).length,
+    thermodynamic_pressure_reactions: pressureGridProvenance?.reactions.length || 0,
+    thermodynamic_pressure_sources: pressureGridProvenance?.sources.length || 0,
   },
   referenced_event_handlers: [...referencedHandlers].sort(),
   scenarios,

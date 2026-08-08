@@ -1,0 +1,6 @@
+name: vugg-pressure-grid
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12.13
+  - reaktoro=2.13.0

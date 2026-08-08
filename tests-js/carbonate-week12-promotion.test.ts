@@ -46,7 +46,7 @@ declare const VugConditions: any;
 declare const CARBONATE_KSP_ACTIVE_PER_MINERAL: Record<string, boolean>;
 declare const MINERAL_GATES_REGISTRY: Record<string, any>;
 declare const kspSupersatActiveFor: (mineralId: string) => boolean;
-declare const carbonateOmega: (m: string, f: any, T: number) => number;
+declare const carbonateOmega: (m: string, f: any, T: number, mgContent?: number, pressureKbar?: number) => number;
 declare const aragoniteRate: (f: any, T: number) => number;
 declare const aragoniteKineticallyFavoredOver: (f: any, T: number) => boolean;
 declare const pwpRateToSimMicronsPerStep: (m: string, mol: number) => number;
@@ -77,6 +77,14 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 12 — aragonite engine promotion (v14
 });
 
 describe('PROPOSAL-CARBONATE-GEOCHEM Week 12 — supersaturation_aragonite preserves favorability layer', () => {
+  it('does not apply the open-spring temperature selector in a sealed 0.2-kbar vein', () => {
+    const f = new FluidChemistry({ Ca: 300, Mg: 100, CO3: 400, pH: 7.0, Sr: 12, Pb: 30, Ba: 25 });
+    const shallow = new VugConditions({ temperature: 75, pressure: 0.05, fluid: f });
+    const sealed = new VugConditions({ temperature: 75, pressure: 0.2, fluid: f });
+    expect(shallow.supersaturation_aragonite()).toBeGreaterThan(1);
+    expect(sealed.supersaturation_aragonite()).toBeLessThan(1);
+  });
+
   it('T_max gate fires above 400°C (aragonite thermal stability limit)', () => {
     // Carlson 1983 metastability limit. At metamorphic-skarn T,
     // aragonite reverts rapidly to calcite — supersaturation
@@ -93,7 +101,7 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 12 — supersaturation_aragonite prese
     const f = new FluidChemistry({ Ca: 400, Mg: 200, CO3: 200, pH: 8.0 });
     const cond = new VugConditions({ temperature: 25, fluid: f });
     const sigma = cond.supersaturation_aragonite();
-    const raw_omega = carbonateOmega('aragonite', f, 25);
+    const raw_omega = carbonateOmega('aragonite', f, 25, 0, cond.pressure);
     expect(Number.isFinite(sigma)).toBe(true);
     expect(Number.isFinite(raw_omega)).toBe(true);
     // At Mg/Ca = 0.5 (below the 1.5 sigmoid threshold) + T = 25°C
@@ -110,7 +118,7 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 12 — supersaturation_aragonite prese
     const f = new FluidChemistry({ Ca: 200, Mg: 1000, CO3: 200, pH: 8.0 });
     const cond = new VugConditions({ temperature: 60, fluid: f });
     const sigma = cond.supersaturation_aragonite();
-    const raw_omega = carbonateOmega('aragonite', f, 60);
+    const raw_omega = carbonateOmega('aragonite', f, 60, 0, cond.pressure);
     expect(sigma).toBeGreaterThan(0);
     // sigma should be within ~50% of raw_omega at favorable conditions.
     expect(sigma / raw_omega).toBeGreaterThan(0.3);

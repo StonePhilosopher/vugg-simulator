@@ -186,12 +186,18 @@ function pwpForwardRate(mineralId: string, fluid: any, T_C: number): number {
 // At Ω=1 (equilibrium) r_net=0; Ω>1 (supersaturated) r_net>0
 // (precipitation); Ω<1 (undersaturated) r_net<0 (dissolution).
 // Returns mol/(cm²·s) with sign.
-function pwpNetRate(mineralId: string, fluid: any, T_C: number, mg_content: number = 0): number {
+function pwpNetRate(
+  mineralId: string,
+  fluid: any,
+  T_C: number,
+  mg_content: number = 0,
+  fluidPressureKbar: number = 0.001,
+): number {
   if (!fluid) return 0;
   const r_forward = pwpForwardRate(mineralId, fluid, T_C);
   if (r_forward <= 0) return 0;
   if (typeof carbonateOmega !== 'function') return r_forward;
-  const omega = carbonateOmega(mineralId, fluid, T_C, mg_content);
+  const omega = carbonateOmega(mineralId, fluid, T_C, mg_content, fluidPressureKbar);
   if (!isFinite(omega) || omega <= 0) {
     // No omega available — return forward rate (assumes far-from-
     // equilibrium dissolution regime, e.g., dropping fresh acid into
@@ -292,8 +298,8 @@ function mgPoisoningFactor(fluid: any): number {
 // =============================================================
 
 // Calcite — full PWP × Mg-poisoning kinetic modifier.
-function calciteRate(fluid: any, T_C: number): number {
-  const raw = pwpNetRate('calcite', fluid, T_C);
+function calciteRate(fluid: any, T_C: number, fluidPressureKbar: number = 0.001): number {
+  const raw = pwpNetRate('calcite', fluid, T_C, 0, fluidPressureKbar);
   return raw * mgPoisoningFactor(fluid);
 }
 
@@ -301,8 +307,8 @@ function calciteRate(fluid: any, T_C: number): number {
 // If aragonite isn't kinetically favored (low Mg/Ca or cool T),
 // rate stays available but the supersat path would prefer calcite —
 // the polymorph decision is left to the dispatch layer.
-function aragoniteRate(fluid: any, T_C: number): number {
-  return pwpNetRate('aragonite', fluid, T_C);
+function aragoniteRate(fluid: any, T_C: number, fluidPressureKbar: number = 0.001): number {
+  return pwpNetRate('aragonite', fluid, T_C, 0, fluidPressureKbar);
 }
 
 // Dolomite — Kim 2023 cyclic-Ω modulation gate. Without cycling
@@ -312,17 +318,22 @@ function aragoniteRate(fluid: any, T_C: number): number {
 // This captures the Kim mechanism: ordered dolomite forms when
 // cycling has accumulated enough to build cation-disorder-driven
 // step generation.
-function dolomiteRate(fluid: any, T_C: number, f_ord: number): number {
+function dolomiteRate(fluid: any, T_C: number, f_ord: number, fluidPressureKbar: number = 0.001): number {
   const f = Math.max(0, Math.min(1, f_ord));
   const gate = 0.30 + 0.70 * f;
-  return pwpNetRate('dolomite', fluid, T_C) * gate;
+  return pwpNetRate('dolomite', fluid, T_C, 0, fluidPressureKbar) * gate;
 }
 
 // HMC — calcite PWP with Mg poisoning already baked in. mg_content
 // (per-crystal Mg substitution) flows through to omega via the
 // mg_content-dependent Ksp (20c).
-function HMCRate(fluid: any, T_C: number, mg_content: number = 0.10): number {
-  const raw = pwpNetRate('HMC', fluid, T_C, mg_content);
+function HMCRate(
+  fluid: any,
+  T_C: number,
+  mg_content: number = 0.10,
+  fluidPressureKbar: number = 0.001,
+): number {
+  const raw = pwpNetRate('HMC', fluid, T_C, mg_content, fluidPressureKbar);
   return raw * mgPoisoningFactor(fluid);
 }
 
@@ -332,9 +343,9 @@ function HMCRate(fluid: any, T_C: number, mg_content: number = 0.10): number {
 // here — the kinetic engine focuses on rate magnitude; the redox
 // check is geochemical-feasibility and lives in the empirical
 // engine's hard gates per Week 2's dispatcher placement).
-function familyAnalogRate(mineralId: string, fluid: any, T_C: number): number {
-  return pwpNetRate(mineralId, fluid, T_C);
+function familyAnalogRate(mineralId: string, fluid: any, T_C: number, fluidPressureKbar: number = 0.001): number {
+  return pwpNetRate(mineralId, fluid, T_C, 0, fluidPressureKbar);
 }
-function sideriteRate(fluid: any, T_C: number): number { return familyAnalogRate('siderite', fluid, T_C); }
-function rhodochrositeRate(fluid: any, T_C: number): number { return familyAnalogRate('rhodochrosite', fluid, T_C); }
-function smithsoniteRate(fluid: any, T_C: number): number { return familyAnalogRate('smithsonite', fluid, T_C); }
+function sideriteRate(fluid: any, T_C: number, fluidPressureKbar: number = 0.001): number { return familyAnalogRate('siderite', fluid, T_C, fluidPressureKbar); }
+function rhodochrositeRate(fluid: any, T_C: number, fluidPressureKbar: number = 0.001): number { return familyAnalogRate('rhodochrosite', fluid, T_C, fluidPressureKbar); }
+function smithsoniteRate(fluid: any, T_C: number, fluidPressureKbar: number = 0.001): number { return familyAnalogRate('smithsonite', fluid, T_C, fluidPressureKbar); }

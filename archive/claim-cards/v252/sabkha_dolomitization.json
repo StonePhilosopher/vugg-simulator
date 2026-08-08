@@ -1,0 +1,2244 @@
+{
+  "scenario": "sabkha_dolomitization",
+  "sim_version": 252,
+  "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1|aragonite-selector:Mg+shallowP<=0.10kbar-spring+highPstable-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "ad7bf2ea0d7b718e123f35d79bf73f0f65c31f41990f146798301f81b02a6ed7",
+  "strip_steps": 260,
+  "claim": {
+    "anchor": "Coorong lagoon system (South Australia) and Persian Gulf sabkhas. The classic natural laboratory for direct-from-solution dolomite formation per Kim, Sun et al. 2023 (Science 382:915).",
+    "description": "Cycling-brine sabkha producing ORDERED dolomite at ambient T via the Kim 2023 mechanism. Twelve flood/evap pulses over 240 steps drive Ω across the dolomite saturation boundary repeatedly — the cyclic Ω modulation that's needed to produce ordered dolomite at surface T.",
+    "expects_species": [
+      "dolomite",
+      "anhydrite",
+      "selenite"
+    ],
+    "expectation_contract": {
+      "deterministic": [
+        "dolomite",
+        "anhydrite",
+        "selenite"
+      ],
+      "statistical": [],
+      "aspirational": []
+    },
+    "excluded_species": {},
+    "sources": [
+      "Kim, Sun et al. 2023 (Science 382:915) — cyclic Ω modulation produces ordered dolomite at ambient T",
+      "Coorong lagoon (South Australia) + Persian Gulf sabkhas — natural laboratory anchors"
+    ],
+    "initial_temperature_C": 25,
+    "initial_pressure_kbar": 0.05,
+    "wall_architecture": "basin",
+    "notes": [
+      "Surface T (~25°C), high-Mg evaporative brine, seasonal flood-evaporate cycles. Per Kim, Sun et al. (2023, Science 382:915), exactly this kind of cyclic Ω modulation is what's needed to produce ordered dolomite at ambient T.",
+      "The acid-pulse-and-relax style of reactive_wall produces only DISORDERED HMC because the dissolution events are too aggressive (full dissolution rather than gentle surface etch). Sabkha tidal pumping is the right kind of cycling — gentle, frequent, repeated.",
+      "Twelve flood/evap pairs over 240 steps produce ~12 dissolution-precipitation cycles. With N0=10 in the f_ord formula, this reaches ORDERED (f_ord > 0.7) by mid-scenario. The result: true ordered dolomite, the geological prize the Kim 2023 paper made accessible.",
+      "Schema note: the original Python/JS implementations used factory functions `make_flood(idx)` and `make_evap(idx)` to bake the cycle index into each handler's narrator string. Per the Phase 2 migration, we use one flood handler and one evap handler reused across all 12 cycles (the supergene_acidification precedent — same handler, multiple Event entries pointing to it). Cycle number is preserved via the event `name` field ('Tidal Flood #1', 'Evaporation #1', etc.) instead of an in-handler f-string."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1|aragonite-selector:Mg+shallowP<=0.10kbar-spring+highPstable-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 0.05,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 58.735,
+          "initial_water_activity": {
+            "value": 0.919,
+            "salinityPpt": 120,
+            "naclWeightPercentEquivalent": 12,
+            "uncertainty": 0.01,
+            "status": "calibrated-proxy",
+            "note": "NaCl-equivalent interpolation of Chirife & Resnik (1984) consensus values; natural multicomponent-brine composition remains the dominant uncertainty."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "pressure_ksp_grid": {
+        "rule": "reaction-specific SUPCRTBL delta-logK grid; bilinear only inside density and per-reaction temperature masks; no constant reaction-volume proxy",
+        "assessments": {
+          "calcite": {
+            "mineral": "calcite",
+            "temperatureC": 25,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.05237134,
+            "waterDensityGcm3": 0.99924683,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Calcite = Ca+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              90
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.052 relative to 1 bar at the same temperature."
+          },
+          "aragonite": {
+            "mineral": "aragonite",
+            "temperatureC": 25,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.0500191,
+            "waterDensityGcm3": 0.99924683,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Aragonite = Ca+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              90
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.050 relative to 1 bar at the same temperature."
+          },
+          "dolomite": {
+            "mineral": "dolomite",
+            "temperatureC": 25,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.09968883,
+            "waterDensityGcm3": 0.99924683,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Dolomite,ordered = Ca+2 + Mg+2 + 2 CO3-2",
+            "usableTemperatureC": [
+              10,
+              250
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.100 relative to 1 bar at the same temperature."
+          },
+          "siderite": {
+            "mineral": "siderite",
+            "temperatureC": 25,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.04954159,
+            "waterDensityGcm3": 0.99924683,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Siderite = Fe+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.050 relative to 1 bar at the same temperature."
+          },
+          "rhodochrosite": {
+            "mineral": "rhodochrosite",
+            "temperatureC": 25,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.04658225,
+            "waterDensityGcm3": 0.99924683,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Rhodochrosite = Mn+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.047 relative to 1 bar at the same temperature."
+          },
+          "anhydrite": {
+            "mineral": "anhydrite",
+            "temperatureC": 25,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.04387893,
+            "waterDensityGcm3": 0.99924683,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Anhydrite = Ca+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              300
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.044 relative to 1 bar at the same temperature."
+          },
+          "barite": {
+            "mineral": "barite",
+            "temperatureC": 25,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.04438611,
+            "waterDensityGcm3": 0.99924683,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Barite = Ba+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              300
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.044 relative to 1 bar at the same temperature."
+          },
+          "celestine": {
+            "mineral": "celestine",
+            "temperatureC": 25,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0.04352933,
+            "waterDensityGcm3": 0.99924683,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Celestite = Sr+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.044 relative to 1 bar at the same temperature."
+          },
+          "selenite": {
+            "mineral": "selenite",
+            "temperatureC": 25,
+            "fluidPressureKbar": 0.05,
+            "correctionLog10K": 0,
+            "waterDensityGcm3": null,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": false,
+            "active": false,
+            "status": "unsupported-reaction",
+            "reaction": null,
+            "usableTemperatureC": null,
+            "note": "Gypsum is absent from the SUPCRTBL solid-species set; the Hardie water-activity/temperature phase selector remains active, but no Ksp pressure correction is fabricated."
+          }
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 7,
+    "paragenetic_order": [
+      {
+        "mineral": "aragonite",
+        "first_step": 1,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "calcite",
+        "first_step": 1,
+        "events": 5,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "dolomite",
+        "first_step": 1,
+        "events": 4,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "HMC",
+        "first_step": 1,
+        "events": 27,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "selenite",
+        "first_step": 1,
+        "events": 5,
+        "transformations": 104,
+        "pathways": [
+          "nucleation",
+          "anhydrite -> selenite"
+        ]
+      },
+      {
+        "mineral": "celestine",
+        "first_step": 5,
+        "events": 6,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "anhydrite",
+        "first_step": 20,
+        "events": 5,
+        "transformations": 114,
+        "pathways": [
+          "nucleation",
+          "selenite -> anhydrite"
+        ]
+      }
+    ],
+    "surprises_not_in_expects": [
+      "aragonite",
+      "calcite",
+      "HMC",
+      "celestine"
+    ],
+    "expected_no_shows": [],
+    "statistical_no_shows": [],
+    "aspirational_no_shows": [],
+    "excluded_species_appearances": [],
+    "environment": {
+      "T": {
+        "first": 23.622,
+        "last": 23.622,
+        "min": 23.622,
+        "max": 29.528,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 8.874,
+        "last": 9.26,
+        "min": 8.102,
+        "max": 9.26,
+        "units": ""
+      },
+      "Eh": {
+        "first": 289.764,
+        "last": 289.764,
+        "min": 289.764,
+        "max": 289.764,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 119.685,
+        "last": 200,
+        "min": 34.646,
+        "max": 200,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 1.496,
+        "last": 1.496,
+        "min": 1.496,
+        "max": 1.496,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": 1.701,
+        "last": 3.654,
+        "min": -0.063,
+        "max": 3.717,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": 1.575,
+        "last": 3.465,
+        "min": -0.189,
+        "max": 3.591,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": 4.283,
+        "last": 8,
+        "min": 0.693,
+        "max": 8,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": 0.819,
+        "last": 2.772,
+        "min": -0.945,
+        "max": 2.835,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 2.079,
+        "last": 3.843,
+        "min": 0.504,
+        "max": 3.906,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": 0.504,
+        "last": 1.953,
+        "min": 0.315,
+        "max": 1.953,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": 0.315,
+        "last": 1.953,
+        "min": 0.063,
+        "max": 1.953,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": 0.945,
+        "last": 2.583,
+        "min": 0.693,
+        "max": 2.583,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 260,
+      "fluid_pressure_kbar": {
+        "first": 0.05,
+        "last": 0.05,
+        "min": 0.05,
+        "max": 0.05,
+        "samples": 260
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 260
+      },
+      "temperature_C": {
+        "first": 25,
+        "last": 25,
+        "min": 25,
+        "max": 30.79753743512556,
+        "samples": 260
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 260
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 58.735
+        },
+        "last": {
+          "pure_water_boundary_C": 58.735
+        }
+      },
+      "stress_events": [],
+      "transformations": [
+        {
+          "step": 20,
+          "sample_index": 19,
+          "crystal_id": 5,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 20,
+          "sample_index": 19,
+          "crystal_id": 7,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 21,
+          "sample_index": 20,
+          "crystal_id": 12,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 22,
+          "sample_index": 21,
+          "crystal_id": 13,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 23,
+          "sample_index": 22,
+          "crystal_id": 15,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 30,
+          "sample_index": 29,
+          "crystal_id": 5,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 30,
+          "sample_index": 29,
+          "crystal_id": 7,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 30,
+          "sample_index": 29,
+          "crystal_id": 12,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 30,
+          "sample_index": 29,
+          "crystal_id": 13,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 30,
+          "sample_index": 29,
+          "crystal_id": 15,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 40,
+          "sample_index": 39,
+          "crystal_id": 5,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 40,
+          "sample_index": 39,
+          "crystal_id": 7,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 40,
+          "sample_index": 39,
+          "crystal_id": 12,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 40,
+          "sample_index": 39,
+          "crystal_id": 13,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 40,
+          "sample_index": 39,
+          "crystal_id": 15,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 40,
+          "sample_index": 39,
+          "crystal_id": 17,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 40,
+          "sample_index": 39,
+          "crystal_id": 18,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 41,
+          "sample_index": 40,
+          "crystal_id": 22,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 42,
+          "sample_index": 41,
+          "crystal_id": 23,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 50,
+          "sample_index": 49,
+          "crystal_id": 5,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 50,
+          "sample_index": 49,
+          "crystal_id": 7,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 50,
+          "sample_index": 49,
+          "crystal_id": 12,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 50,
+          "sample_index": 49,
+          "crystal_id": 13,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 50,
+          "sample_index": 49,
+          "crystal_id": 15,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 50,
+          "sample_index": 49,
+          "crystal_id": 17,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 50,
+          "sample_index": 49,
+          "crystal_id": 18,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 50,
+          "sample_index": 49,
+          "crystal_id": 22,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 50,
+          "sample_index": 49,
+          "crystal_id": 23,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 60,
+          "sample_index": 59,
+          "crystal_id": 5,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 60,
+          "sample_index": 59,
+          "crystal_id": 7,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 60,
+          "sample_index": 59,
+          "crystal_id": 12,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 60,
+          "sample_index": 59,
+          "crystal_id": 13,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 60,
+          "sample_index": 59,
+          "crystal_id": 15,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 60,
+          "sample_index": 59,
+          "crystal_id": 17,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 60,
+          "sample_index": 59,
+          "crystal_id": 18,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 60,
+          "sample_index": 59,
+          "crystal_id": 22,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 60,
+          "sample_index": 59,
+          "crystal_id": 23,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 60,
+          "sample_index": 59,
+          "crystal_id": 24,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 70,
+          "sample_index": 69,
+          "crystal_id": 5,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 70,
+          "sample_index": 69,
+          "crystal_id": 7,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 70,
+          "sample_index": 69,
+          "crystal_id": 12,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 70,
+          "sample_index": 69,
+          "crystal_id": 13,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 70,
+          "sample_index": 69,
+          "crystal_id": 15,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 70,
+          "sample_index": 69,
+          "crystal_id": 17,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 70,
+          "sample_index": 69,
+          "crystal_id": 18,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 70,
+          "sample_index": 69,
+          "crystal_id": 22,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 70,
+          "sample_index": 69,
+          "crystal_id": 23,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 70,
+          "sample_index": 69,
+          "crystal_id": 24,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 80,
+          "sample_index": 79,
+          "crystal_id": 5,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 80,
+          "sample_index": 79,
+          "crystal_id": 7,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 80,
+          "sample_index": 79,
+          "crystal_id": 12,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 80,
+          "sample_index": 79,
+          "crystal_id": 13,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 80,
+          "sample_index": 79,
+          "crystal_id": 15,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 80,
+          "sample_index": 79,
+          "crystal_id": 17,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 80,
+          "sample_index": 79,
+          "crystal_id": 18,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 80,
+          "sample_index": 79,
+          "crystal_id": 22,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 80,
+          "sample_index": 79,
+          "crystal_id": 23,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 80,
+          "sample_index": 79,
+          "crystal_id": 24,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 90,
+          "sample_index": 89,
+          "crystal_id": 5,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 90,
+          "sample_index": 89,
+          "crystal_id": 7,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 90,
+          "sample_index": 89,
+          "crystal_id": 12,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 90,
+          "sample_index": 89,
+          "crystal_id": 13,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 90,
+          "sample_index": 89,
+          "crystal_id": 15,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 90,
+          "sample_index": 89,
+          "crystal_id": 17,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 90,
+          "sample_index": 89,
+          "crystal_id": 18,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 90,
+          "sample_index": 89,
+          "crystal_id": 22,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 90,
+          "sample_index": 89,
+          "crystal_id": 23,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 90,
+          "sample_index": 89,
+          "crystal_id": 24,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 100,
+          "sample_index": 99,
+          "crystal_id": 5,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 100,
+          "sample_index": 99,
+          "crystal_id": 7,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 100,
+          "sample_index": 99,
+          "crystal_id": 12,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 100,
+          "sample_index": 99,
+          "crystal_id": 13,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 100,
+          "sample_index": 99,
+          "crystal_id": 15,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 100,
+          "sample_index": 99,
+          "crystal_id": 17,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 100,
+          "sample_index": 99,
+          "crystal_id": 18,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 100,
+          "sample_index": 99,
+          "crystal_id": 22,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 100,
+          "sample_index": 99,
+          "crystal_id": 23,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 100,
+          "sample_index": 99,
+          "crystal_id": 24,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 110,
+          "sample_index": 109,
+          "crystal_id": 5,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 110,
+          "sample_index": 109,
+          "crystal_id": 7,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 110,
+          "sample_index": 109,
+          "crystal_id": 12,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 110,
+          "sample_index": 109,
+          "crystal_id": 13,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 110,
+          "sample_index": 109,
+          "crystal_id": 15,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 110,
+          "sample_index": 109,
+          "crystal_id": 17,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 110,
+          "sample_index": 109,
+          "crystal_id": 18,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 110,
+          "sample_index": 109,
+          "crystal_id": 22,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 110,
+          "sample_index": 109,
+          "crystal_id": 23,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 110,
+          "sample_index": 109,
+          "crystal_id": 24,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 120,
+          "sample_index": 119,
+          "crystal_id": 5,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 120,
+          "sample_index": 119,
+          "crystal_id": 7,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 120,
+          "sample_index": 119,
+          "crystal_id": 12,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 120,
+          "sample_index": 119,
+          "crystal_id": 13,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 120,
+          "sample_index": 119,
+          "crystal_id": 15,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 120,
+          "sample_index": 119,
+          "crystal_id": 17,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 120,
+          "sample_index": 119,
+          "crystal_id": 18,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 120,
+          "sample_index": 119,
+          "crystal_id": 22,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 120,
+          "sample_index": 119,
+          "crystal_id": 23,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 120,
+          "sample_index": 119,
+          "crystal_id": 24,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 130,
+          "sample_index": 129,
+          "crystal_id": 5,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 130,
+          "sample_index": 129,
+          "crystal_id": 7,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 130,
+          "sample_index": 129,
+          "crystal_id": 12,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 130,
+          "sample_index": 129,
+          "crystal_id": 13,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 130,
+          "sample_index": 129,
+          "crystal_id": 15,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 130,
+          "sample_index": 129,
+          "crystal_id": 17,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 130,
+          "sample_index": 129,
+          "crystal_id": 18,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 130,
+          "sample_index": 129,
+          "crystal_id": 22,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 130,
+          "sample_index": 129,
+          "crystal_id": 23,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 130,
+          "sample_index": 129,
+          "crystal_id": 24,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 140,
+          "sample_index": 139,
+          "crystal_id": 5,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 140,
+          "sample_index": 139,
+          "crystal_id": 7,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 140,
+          "sample_index": 139,
+          "crystal_id": 12,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 140,
+          "sample_index": 139,
+          "crystal_id": 13,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 140,
+          "sample_index": 139,
+          "crystal_id": 15,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 140,
+          "sample_index": 139,
+          "crystal_id": 17,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 140,
+          "sample_index": 139,
+          "crystal_id": 18,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 140,
+          "sample_index": 139,
+          "crystal_id": 22,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 140,
+          "sample_index": 139,
+          "crystal_id": 23,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 140,
+          "sample_index": 139,
+          "crystal_id": 24,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 150,
+          "sample_index": 149,
+          "crystal_id": 5,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 150,
+          "sample_index": 149,
+          "crystal_id": 7,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 150,
+          "sample_index": 149,
+          "crystal_id": 12,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 150,
+          "sample_index": 149,
+          "crystal_id": 13,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 150,
+          "sample_index": 149,
+          "crystal_id": 15,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 150,
+          "sample_index": 149,
+          "crystal_id": 17,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 150,
+          "sample_index": 149,
+          "crystal_id": 18,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 150,
+          "sample_index": 149,
+          "crystal_id": 22,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 150,
+          "sample_index": 149,
+          "crystal_id": 23,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 150,
+          "sample_index": 149,
+          "crystal_id": 24,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 160,
+          "sample_index": 159,
+          "crystal_id": 5,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 160,
+          "sample_index": 159,
+          "crystal_id": 7,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 160,
+          "sample_index": 159,
+          "crystal_id": 12,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 160,
+          "sample_index": 159,
+          "crystal_id": 13,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 160,
+          "sample_index": 159,
+          "crystal_id": 15,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 160,
+          "sample_index": 159,
+          "crystal_id": 17,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 160,
+          "sample_index": 159,
+          "crystal_id": 18,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 160,
+          "sample_index": 159,
+          "crystal_id": 22,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 160,
+          "sample_index": 159,
+          "crystal_id": 23,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 160,
+          "sample_index": 159,
+          "crystal_id": 24,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 170,
+          "sample_index": 169,
+          "crystal_id": 5,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 170,
+          "sample_index": 169,
+          "crystal_id": 7,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 170,
+          "sample_index": 169,
+          "crystal_id": 12,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 170,
+          "sample_index": 169,
+          "crystal_id": 13,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 170,
+          "sample_index": 169,
+          "crystal_id": 15,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 170,
+          "sample_index": 169,
+          "crystal_id": 17,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 170,
+          "sample_index": 169,
+          "crystal_id": 18,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 170,
+          "sample_index": 169,
+          "crystal_id": 22,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 170,
+          "sample_index": 169,
+          "crystal_id": 23,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 170,
+          "sample_index": 169,
+          "crystal_id": 24,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 180,
+          "sample_index": 179,
+          "crystal_id": 5,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 180,
+          "sample_index": 179,
+          "crystal_id": 7,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 180,
+          "sample_index": 179,
+          "crystal_id": 12,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 180,
+          "sample_index": 179,
+          "crystal_id": 13,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 180,
+          "sample_index": 179,
+          "crystal_id": 15,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 180,
+          "sample_index": 179,
+          "crystal_id": 17,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 180,
+          "sample_index": 179,
+          "crystal_id": 18,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 180,
+          "sample_index": 179,
+          "crystal_id": 22,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 180,
+          "sample_index": 179,
+          "crystal_id": 23,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 180,
+          "sample_index": 179,
+          "crystal_id": 24,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 190,
+          "sample_index": 189,
+          "crystal_id": 5,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 190,
+          "sample_index": 189,
+          "crystal_id": 7,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 190,
+          "sample_index": 189,
+          "crystal_id": 12,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 190,
+          "sample_index": 189,
+          "crystal_id": 13,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 190,
+          "sample_index": 189,
+          "crystal_id": 15,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 190,
+          "sample_index": 189,
+          "crystal_id": 17,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 190,
+          "sample_index": 189,
+          "crystal_id": 18,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 190,
+          "sample_index": 189,
+          "crystal_id": 22,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 190,
+          "sample_index": 189,
+          "crystal_id": 23,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 190,
+          "sample_index": 189,
+          "crystal_id": 24,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 200,
+          "sample_index": 199,
+          "crystal_id": 5,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 200,
+          "sample_index": 199,
+          "crystal_id": 7,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 200,
+          "sample_index": 199,
+          "crystal_id": 12,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 200,
+          "sample_index": 199,
+          "crystal_id": 13,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 200,
+          "sample_index": 199,
+          "crystal_id": 15,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 200,
+          "sample_index": 199,
+          "crystal_id": 17,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 200,
+          "sample_index": 199,
+          "crystal_id": 18,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 200,
+          "sample_index": 199,
+          "crystal_id": 22,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 200,
+          "sample_index": 199,
+          "crystal_id": 23,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 200,
+          "sample_index": 199,
+          "crystal_id": 24,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 210,
+          "sample_index": 209,
+          "crystal_id": 5,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 210,
+          "sample_index": 209,
+          "crystal_id": 7,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 210,
+          "sample_index": 209,
+          "crystal_id": 12,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 210,
+          "sample_index": 209,
+          "crystal_id": 13,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 210,
+          "sample_index": 209,
+          "crystal_id": 15,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 210,
+          "sample_index": 209,
+          "crystal_id": 17,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 210,
+          "sample_index": 209,
+          "crystal_id": 18,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 210,
+          "sample_index": 209,
+          "crystal_id": 22,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 210,
+          "sample_index": 209,
+          "crystal_id": 23,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 210,
+          "sample_index": 209,
+          "crystal_id": 24,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 220,
+          "sample_index": 219,
+          "crystal_id": 5,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 220,
+          "sample_index": 219,
+          "crystal_id": 7,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 220,
+          "sample_index": 219,
+          "crystal_id": 12,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 220,
+          "sample_index": 219,
+          "crystal_id": 13,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 220,
+          "sample_index": 219,
+          "crystal_id": 15,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 220,
+          "sample_index": 219,
+          "crystal_id": 17,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 220,
+          "sample_index": 219,
+          "crystal_id": 18,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 220,
+          "sample_index": 219,
+          "crystal_id": 22,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 220,
+          "sample_index": 219,
+          "crystal_id": 23,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 220,
+          "sample_index": 219,
+          "crystal_id": 24,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 230,
+          "sample_index": 229,
+          "crystal_id": 5,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 230,
+          "sample_index": 229,
+          "crystal_id": 7,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 230,
+          "sample_index": 229,
+          "crystal_id": 12,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 230,
+          "sample_index": 229,
+          "crystal_id": 13,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 230,
+          "sample_index": 229,
+          "crystal_id": 15,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 230,
+          "sample_index": 229,
+          "crystal_id": 17,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 230,
+          "sample_index": 229,
+          "crystal_id": 18,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 230,
+          "sample_index": 229,
+          "crystal_id": 22,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 230,
+          "sample_index": 229,
+          "crystal_id": 23,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 230,
+          "sample_index": 229,
+          "crystal_id": 24,
+          "from": "anhydrite",
+          "to": "selenite",
+          "mechanism": "anhydrite-rehydration"
+        },
+        {
+          "step": 240,
+          "sample_index": 239,
+          "crystal_id": 5,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 240,
+          "sample_index": 239,
+          "crystal_id": 7,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 240,
+          "sample_index": 239,
+          "crystal_id": 12,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 240,
+          "sample_index": 239,
+          "crystal_id": 13,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 240,
+          "sample_index": 239,
+          "crystal_id": 15,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 240,
+          "sample_index": 239,
+          "crystal_id": 17,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 240,
+          "sample_index": 239,
+          "crystal_id": 18,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 240,
+          "sample_index": 239,
+          "crystal_id": 22,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 240,
+          "sample_index": 239,
+          "crystal_id": 23,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        },
+        {
+          "step": 240,
+          "sample_index": 239,
+          "crystal_id": 24,
+          "from": "selenite",
+          "to": "anhydrite",
+          "mechanism": "gypsum-to-anhydrite-replacement"
+        }
+      ],
+      "carbonate_boundary": {
+        "sample_count": 0,
+        "first": null,
+        "last": null,
+        "samples": []
+      }
+    }
+  }
+}

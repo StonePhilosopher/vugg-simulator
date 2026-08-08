@@ -41,9 +41,11 @@ function event_reactive_wall_seal(c) {
   // isolation. Its Ca-Mg-carbonate release is already booked by VugWall;
   // this recovery exposes that real inventory to the dolomite SI gate.
   // Only a modest rebound is needed: at 105-140 C the booked Ca-Mg-CO3
-  // inventory crosses the heterogeneous dolomite-nucleation barrier near
-  // neutral pH. Avoid an artificial alkaline spike and its runaway omega.
-  c.fluid.pH = Math.min(c.fluid.pH + 0.3, 8.0);
+  // inventory crosses the pressure-corrected heterogeneous dolomite-
+  // nucleation barrier near neutral pH. The +0.45 increment restores the
+  // authored wall-neutralization outcome after v252 replaced the implicit
+  // 1-bar Ksp with SUPCRTBL at 0.2 kbar; it still avoids an alkaline spike.
+  c.fluid.pH = Math.min(c.fluid.pH + 0.45, 8.0);
   // Active basinal advection had held the conduit nearly isothermal. Once the
   // fracture seals, resume the simulator's ordinary conductive cooling.
   c.wall.cooling_rate = 1.5;

@@ -12551,7 +12551,30 @@
 //       Hostile-review closure adds atomic charge/recharge/titration, separate
 //       replacement-water import/export legs, accepted-zone transfer receipts,
 //       a bulk-handle guard, and visible blocked/failure diagnostics.
-const SIM_VERSION = 251;
+// v252 — REACTION-SPECIFIC Ksp PRESSURE GRIDS (2026-08-08).
+//       Five exact carbonate dissolutions (calcite, aragonite, ordered
+//       dolomite, siderite, rhodochrosite) and three exact sulfate
+//       dissolutions (anhydrite, barite, celestine) now consume offline-
+//       generated SUPCRTBL delta-logK grids. Reaktoro 2.13 computes standard
+//       molal reaction Gibbs energies on a 10-800 C / 0.001-4.4 kbar grid;
+//       runtime bilinear interpolation is limited to each existing Ksp(T)
+//       evidence envelope and rejects low-density/missing cells. Nucleation,
+//       PWP net growth/dissolution, CaSO4 replacement, strip SI, and Creative
+//       diagnosis share the correction. Gypsum and absent/mixed endmembers are
+//       explicitly unsupported rather than assigned a constant reaction-volume
+//       or family-proxy correction.
+//
+//       Pressure-aware fleet reconciliation also exposed a pre-existing
+//       aragonite-selector leak: the 45-90 C open-spring window was active in
+//       sealed MVT veins. That kinetic selector is now restricted to <=0.10
+//       kbar; Mg poisoning and the high-pressure stable field remain available
+//       at depth. Sweetwater retains hydrothermal dolomite after a small,
+//       near-neutral wall-buffering recalibration (final pH ~7.02), while
+//       reactive_wall and generic mvt no longer mint low-Mg cooling-vein
+//       aragonite. Seed-42 drift vs v251 is confined to mvt (one 6.6-um
+//       aragonite removed) and the intended sabkha redistribution (70 -> 53
+//       crystals, ordered dolomite 1 -> 4).
+const SIM_VERSION = 252;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12560,6 +12583,8 @@ const SIM_VERSION = 251;
 // mismatch guards then fail loudly instead of allowing provenance drift.
 const MODEL_DIGEST = [
   'Pfluid:kbar-0.001..4.4',
+  'Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1',
+  'aragonite-selector:Mg+shallowP<=0.10kbar-spring+highPstable-v2',
   'CaCO3:Hacker05-negative-linear+/-1kbar',
   'Prock:Pattison92-AndSil-16+/-3barC',
   'stress:instant-resolved-shear-stable-grain-v2',

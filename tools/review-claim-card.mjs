@@ -105,6 +105,14 @@ function buildScienceDecisions(spec, science) {
   const gypsumBoundaryC = Number.isFinite(fluidPressureKbar)
     ? science.gypsumAnhydriteBoundaryC(fluidPressureKbar) : null;
   const waterActivity = science.waterActivityAssessment(spec.initial?.fluid, temperatureC ?? 25);
+  const pressureGridMinerals = [
+    'calcite', 'aragonite', 'dolomite', 'siderite', 'rhodochrosite',
+    'anhydrite', 'barite', 'celestine', 'selenite',
+  ];
+  const pressureKsp = Object.fromEntries(pressureGridMinerals.map((mineral) => [
+    mineral,
+    science.thermoPressureAssessment(mineral, temperatureC, fluidPressureKbar),
+  ]));
   const stressEvents = (spec.events || [])
     .filter(e => e.type === 'tectonic_shock' || e.deformation || /strain|stress/.test(e.type || ''))
     .map(e => ({
@@ -141,6 +149,10 @@ function buildScienceDecisions(spec, science) {
         initial_water_activity: waterActivity,
         model: 'Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output',
       },
+    },
+    pressure_ksp_grid: {
+      rule: 'reaction-specific SUPCRTBL delta-logK grid; bilinear only inside density and per-reaction temperature masks; no constant reaction-volume proxy',
+      assessments: pressureKsp,
     },
     differential_stress_events: stressEvents,
   };
@@ -324,6 +336,10 @@ export function renderMarkdown(card) {
   L.push(`  - Al2SiO5: ${al ? `${al.phase} (nominal ${al.nominalPhase || 'n/a'}) — ${al.note}` : 'n/a'}`);
   const gy = sd.phase_fields.gypsum_anhydrite;
   L.push(`  - Gypsum/anhydrite pure-water boundary: ${gy.pure_water_boundary_C == null ? 'n/a' : gy.pure_water_boundary_C.toFixed(2) + ' °C'}; initial a_w=${gy.initial_water_activity.value.toFixed(3)} ±${gy.initial_water_activity.uncertainty.toFixed(3)} (${gy.initial_water_activity.status})`);
+  L.push(`  - Ksp pressure rule: ${sd.pressure_ksp_grid.rule}`);
+  for (const [mineral, assessment] of Object.entries(sd.pressure_ksp_grid.assessments)) {
+    L.push(`    - ${mineral}: ${assessment.status}; active=${assessment.active}; ΔlogK=${assessment.correctionLog10K}; ${assessment.note}`);
+  }
   if (sd.differential_stress_events.length) {
     for (const e of sd.differential_stress_events) L.push(`  - Stress/overprint step ${e.step}: ${e.type} — ${e.decision.model}`);
   } else {
@@ -395,7 +411,8 @@ async function main() {
     extraExports: [
       'calciteAragoniteBoundaryKbar', 'aragoniteIsPressureStable',
       'al2sio5PhaseAssessment', 'gypsumAnhydriteBoundaryC',
-      'waterActivityAssessment', 'STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE',
+      'waterActivityAssessment', 'thermoPressureAssessment',
+      'STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE',
     ],
   });
   const { SCENARIOS } = science;

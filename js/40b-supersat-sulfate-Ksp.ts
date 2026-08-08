@@ -51,7 +51,14 @@
 // Geometric-mean SI for AB(SO4) sulfates: SI = log10(a_cation · a_SO4) − log10(Ksp).
 // Returns NaN if cation/SO4 absent or thermo not loaded — call sites
 // (strip chip reads) treat NaN as null (chip hides that sample).
-function _SI_AB_sulfate(mineralId: string, fluid: any, T: number, cationKey: string, hydrationWaters = 0): number {
+function _SI_AB_sulfate(
+  mineralId: string,
+  fluid: any,
+  T: number,
+  cationKey: string,
+  hydrationWaters = 0,
+  fluidPressureKbar = 0.001,
+): number {
   if (!fluid) return NaN;
   // Explicit sulfur fluids must use only their sulfate reservoir. Legacy
   // fluids use the redox-partitioned sulfate amount. Clone rather than mutate
@@ -69,7 +76,7 @@ function _SI_AB_sulfate(mineralId: string, fluid: any, T: number, cationKey: str
   if (!(a_cation > 0)) return NaN;
   const a_SO4 = speciesActivity(activityFluid, 'S', I);
   if (!(a_SO4 > 0)) return NaN;
-  const logKsp = getSulfateLogKsp(mineralId, T);
+  const logKsp = getSulfateLogKspAtPressure(mineralId, T, fluidPressureKbar);
   if (!isFinite(logKsp)) return NaN;
   const logWater = hydrationWaters > 0
     ? hydrationWaters * Math.log10(waterActivity(activityFluid, T))
@@ -77,17 +84,17 @@ function _SI_AB_sulfate(mineralId: string, fluid: any, T: number, cationKey: str
   return Math.log10(a_cation) + Math.log10(a_SO4) + logWater - logKsp;
 }
 
-function saturationIndex_selenite(fluid: any, T: number): number {
-  return _SI_AB_sulfate('selenite', fluid, T, 'Ca', 2);
+function saturationIndex_selenite(fluid: any, T: number, fluidPressureKbar = 0.001): number {
+  return _SI_AB_sulfate('selenite', fluid, T, 'Ca', 2, fluidPressureKbar);
 }
-function saturationIndex_anhydrite(fluid: any, T: number): number {
-  return _SI_AB_sulfate('anhydrite', fluid, T, 'Ca');
+function saturationIndex_anhydrite(fluid: any, T: number, fluidPressureKbar = 0.001): number {
+  return _SI_AB_sulfate('anhydrite', fluid, T, 'Ca', 0, fluidPressureKbar);
 }
-function saturationIndex_barite(fluid: any, T: number): number {
-  return _SI_AB_sulfate('barite', fluid, T, 'Ba');
+function saturationIndex_barite(fluid: any, T: number, fluidPressureKbar = 0.001): number {
+  return _SI_AB_sulfate('barite', fluid, T, 'Ba', 0, fluidPressureKbar);
 }
-function saturationIndex_celestine(fluid: any, T: number): number {
-  return _SI_AB_sulfate('celestine', fluid, T, 'Sr');
+function saturationIndex_celestine(fluid: any, T: number, fluidPressureKbar = 0.001): number {
+  return _SI_AB_sulfate('celestine', fluid, T, 'Sr', 0, fluidPressureKbar);
 }
 
 // =============================================================
@@ -97,14 +104,19 @@ function saturationIndex_celestine(fluid: any, T: number): number {
 // log10 Ω = log10(IAP / Ksp). 0 = equilibrium, +1 = 10× supersat,
 // −1 = 10× undersat. NaN if data unavailable. Consumers (strip chip
 // reads) treat NaN as null (chip hides that sample).
-function sulfateSaturationIndex(mineralId: string, fluid: any, T_C: number): number {
+function sulfateSaturationIndex(
+  mineralId: string,
+  fluid: any,
+  T_C: number,
+  fluidPressureKbar: number = 0.001,
+): number {
   if (!fluid) return NaN;
   switch (mineralId) {
     case 'selenite':
-    case 'gypsum':    return saturationIndex_selenite(fluid, T_C);
-    case 'anhydrite': return saturationIndex_anhydrite(fluid, T_C);
-    case 'barite':    return saturationIndex_barite(fluid, T_C);
-    case 'celestine': return saturationIndex_celestine(fluid, T_C);
+    case 'gypsum':    return saturationIndex_selenite(fluid, T_C, fluidPressureKbar);
+    case 'anhydrite': return saturationIndex_anhydrite(fluid, T_C, fluidPressureKbar);
+    case 'barite':    return saturationIndex_barite(fluid, T_C, fluidPressureKbar);
+    case 'celestine': return saturationIndex_celestine(fluid, T_C, fluidPressureKbar);
     default:          return NaN;
   }
 }
@@ -112,8 +124,8 @@ function sulfateSaturationIndex(mineralId: string, fluid: any, T_C: number): num
 // Ω = IAP / Ksp = 10^SI. Returns 0 (not NaN) for missing data so
 // engine call sites can treat omega=0 as "cannot precipitate" without
 // defensive checks. Matches carbonateOmega convention in 32b.
-function sulfateOmega(mineralId: string, fluid: any, T_C: number): number {
-  const SI = sulfateSaturationIndex(mineralId, fluid, T_C);
+function sulfateOmega(mineralId: string, fluid: any, T_C: number, fluidPressureKbar: number = 0.001): number {
+  const SI = sulfateSaturationIndex(mineralId, fluid, T_C, fluidPressureKbar);
   if (!isFinite(SI)) return 0;
   return Math.pow(10, SI);
 }
@@ -139,8 +151,8 @@ function evaluateCaSO4System(
   fluidPressureKbar: number,
 ): CaSO4Evaluation {
   const phase = gypsumAnhydritePhaseAssessment(fluid, temperatureC, fluidPressureKbar);
-  const gypsumSI = sulfateSaturationIndex('selenite', fluid, temperatureC);
-  const anhydriteSI = sulfateSaturationIndex('anhydrite', fluid, temperatureC);
+  const gypsumSI = sulfateSaturationIndex('selenite', fluid, temperatureC, fluidPressureKbar);
+  const anhydriteSI = sulfateSaturationIndex('anhydrite', fluid, temperatureC, fluidPressureKbar);
   const gypsumOmega = Number.isFinite(gypsumSI) ? Math.pow(10, gypsumSI) : 0;
   const anhydriteOmega = Number.isFinite(anhydriteSI) ? Math.pow(10, anhydriteSI) : 0;
   const pH = Number(fluid?.pH);

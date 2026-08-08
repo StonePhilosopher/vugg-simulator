@@ -193,10 +193,32 @@ function _formationPressureChips(name: string, c: any): FormationDiagnosticChip[
   const pressure = Number(c?.pressure);
   const temperature = Number(c?.temperature);
   if (!Number.isFinite(pressure) || !Number.isFinite(temperature)) return [];
+  const chips: FormationDiagnosticChip[] = [];
+
+  if (typeof thermoPressureAssessment === 'function') {
+    const thermo = thermoPressureAssessment(name, temperature, pressure);
+    if (thermo.supported) {
+      chips.push({
+        text: thermo.active
+          ? `${pressure.toFixed(3)} kbar fluid · Ksp ΔlogK ${thermo.correctionLog10K >= 0 ? '+' : ''}${thermo.correctionLog10K.toFixed(3)} · ρH₂O ${thermo.waterDensityGcm3!.toFixed(3)} g/cm³`
+          : `${pressure.toFixed(3)} kbar fluid · Ksp pressure correction inactive (${thermo.status})`,
+        met: true,
+        status: thermo.active ? 'observer' : 'uncertain',
+        note: `${thermo.reaction}. ${thermo.note} Source model ${thermo.sourceModel}; no constant reaction-volume shortcut.`,
+      });
+    } else if (thermo.status === 'unsupported-reaction') {
+      chips.push({
+        text: `${pressure.toFixed(3)} kbar fluid · no exact Ksp pressure grid`,
+        met: true,
+        status: 'uncertain',
+        note: `${thermo.note} The runtime applies no proxy correction.`,
+      });
+    }
+  }
 
   if (name === 'apophyllite') {
     const factor = apophyllitePressureFactor(pressure);
-    return [{
+    return [...chips, {
       text: `${pressure.toFixed(2)} kbar fluid · occurrence weight ×${factor.toFixed(2)}`,
       met: true,
       status: 'uncertain',
@@ -208,14 +230,14 @@ function _formationPressureChips(name: string, c: any): FormationDiagnosticChip[
     const assessment = quartzPressureSolubilityAssessment(temperature, pressure);
     if (!assessment.active) {
       if (!assessment.pressureClampedLow) return [];
-      return [{
+      return [...chips, {
         text: `${pressure.toFixed(3)} kbar fluid · Manning correction inactive below 0.50 kbar`,
         met: true,
         status: 'uncertain',
         note: assessment.note,
       }];
     }
-    return [{
+    return [...chips, {
       text: `${pressure.toFixed(2)} kbar fluid · ρH₂O ${assessment.waterDensityGcm3.toFixed(3)} g/cm³ · quartz equilibrium ${assessment.equilibriumPpm.toFixed(0)} ppm`,
       met: true,
       status: 'observer',
@@ -233,7 +255,7 @@ function _formationPressureChips(name: string, c: any): FormationDiagnosticChip[
       ? 'rock pressure unspecified'
       : `${rockPressure.toFixed(2)} kbar rock`;
     const uncertain = assessment.phase === 'uncertain' || assessment.phase === 'unconstrained';
-    return [{
+    return [...chips, {
       text: `${label} · ${assessment.phase} Al2SiO5 field`,
       met: assessment.phase === 'andalusite'
         || uncertain,
@@ -249,7 +271,7 @@ function _formationPressureChips(name: string, c: any): FormationDiagnosticChip[
     const aragoniteStable = offset > 1.0;
     const expected = name === 'aragonite' ? aragoniteStable : !aragoniteStable;
     const calciteObserver = name === 'calcite' && !uncertain;
-    return [{
+    return [...chips, {
       text: `${pressure.toFixed(2)} kbar fluid · calcite/aragonite boundary ${boundary.toFixed(2)} kbar`,
       met: calciteObserver || uncertain || expected,
       status: uncertain ? 'uncertain' : (calciteObserver ? 'observer' : undefined),
@@ -262,7 +284,7 @@ function _formationPressureChips(name: string, c: any): FormationDiagnosticChip[
   if (name === 'selenite' || name === 'anhydrite') {
     const evaluation = evaluateCaSO4System(c.fluid, temperature, pressure);
     const phase = evaluation.phase;
-    return [{
+    return [...chips, {
       text: `${pressure.toFixed(2)} kbar fluid · ${phase.phase} CaSO4 field (boundary ${phase.boundaryC.toFixed(1)}±${phase.uncertaintyC.toFixed(1)}°C)`,
       met: true,
       status: phase.phase === 'uncertain' ? 'uncertain' : 'observer',
@@ -270,7 +292,7 @@ function _formationPressureChips(name: string, c: any): FormationDiagnosticChip[
     }];
   }
 
-  return [];
+  return chips;
 }
 
 // The gate registry is the canonical cross-mineral contract, but a few
