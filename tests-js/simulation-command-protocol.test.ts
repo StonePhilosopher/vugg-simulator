@@ -79,6 +79,64 @@ describe('immutable simulation command/checkpoint protocol', () => {
     expect(() => restoreSimulationCommandRuntime(checkpoint)).toThrow('checkpoint integrity mismatch');
   });
 
+  it('fingerprints canonical local chemistry, dedicated RNG streams, and dissolution inventories', () => {
+    const fresh = () => startSimulationCommandRuntime(
+      makeSimulationStartCommand('cooling', 42),
+    );
+
+    const localChemistry = fresh();
+    const localBaseline = simulationStateFingerprint(localChemistry);
+    const localGrid = localChemistry.sim.wall_state.voxelGridFor(localChemistry.sim);
+    const interior = localGrid.voxels.find((voxel: any) => voxel.depthIdx === 1);
+    interior.fluid.Ba += 0.125;
+    expect(simulationStateFingerprint(localChemistry)).not.toBe(localBaseline);
+
+    const thermalCursor = fresh();
+    const cursorBaseline = simulationStateFingerprint(thermalCursor);
+    thermalCursor.sim._thermalRng.random();
+    expect(simulationStateFingerprint(thermalCursor)).not.toBe(cursorBaseline);
+
+    const orientationCursor = fresh();
+    const orientationBaseline = simulationStateFingerprint(orientationCursor);
+    orientationCursor.sim._orientRng();
+    expect(simulationStateFingerprint(orientationCursor)).not.toBe(orientationBaseline);
+
+    const nucleationSeed = fresh();
+    const nucleationSeedBaseline = simulationStateFingerprint(nucleationSeed);
+    nucleationSeed.sim._nucSharedState = (nucleationSeed.sim._nucSharedState + 1) >>> 0;
+    expect(simulationStateFingerprint(nucleationSeed)).not.toBe(nucleationSeedBaseline);
+
+    const movementCursor = startSimulationCommandRuntime(
+      makeSimulationStartCommand('mvt', 42),
+    );
+    applySimulationCommand(movementCursor, makeSimulationAdvanceCommand(1));
+    const movementCursorBaseline = simulationStateFingerprint(movementCursor);
+    movementCursor.sim._movements.rng();
+    expect(simulationStateFingerprint(movementCursor)).not.toBe(movementCursorBaseline);
+
+    const movementState = startSimulationCommandRuntime(
+      makeSimulationStartCommand('mvt', 42),
+    );
+    applySimulationCommand(movementState, makeSimulationAdvanceCommand(1));
+    const movementStateBaseline = simulationStateFingerprint(movementState);
+    movementState.sim._movements._state[0].ou += 0.001;
+    expect(simulationStateFingerprint(movementState)).not.toBe(movementStateBaseline);
+
+    const dissolutionLedger = fresh();
+    dissolutionLedger.sim.crystals.push({
+      crystal_id: 999, mineral: 'aragonite', active: true, dissolved: false,
+      zones: [{
+        thickness_um: 10,
+        _remaining_solid_um: 10,
+        _budget_inventory_per_um: { Ca: 0.1, CO3: 0.1, Sr: 0.001 },
+        sr_partition: { effectiveDistributionCoefficient: 1.38 },
+      }],
+    });
+    const ledgerBaseline = simulationStateFingerprint(dissolutionLedger);
+    dissolutionLedger.sim.crystals.at(-1).zones[0]._budget_inventory_per_um.Sr += 1e-6;
+    expect(simulationStateFingerprint(dissolutionLedger)).not.toBe(ledgerBaseline);
+  });
+
   it('persists crash-safely and recovers the prior generation when primary is corrupt', () => {
     localStorage.clear();
     const runtime = startSimulationCommandRuntime(makeSimulationStartCommand('cooling', 42));

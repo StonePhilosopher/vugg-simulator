@@ -322,6 +322,18 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     return (s.ring_fluids || [])[ri];
   };
 
+  const _chipTemperature = (s: any, w: any, ri: number, c: number): number => {
+    if (s && typeof s.sampleVoxelTemperature === 'function') {
+      const value = s.sampleVoxelTemperature(ri, c | 0, _stripChipReadDepth);
+      if (Number.isFinite(value)) return value;
+    }
+    const N = (w?.cells_per_ring | 0) || 120;
+    const recorded = s?.boundary_temperatures?.[ri * N + (c | 0)];
+    if (Number.isFinite(recorded)) return recorded;
+    const ring = (s?.ring_temperatures || [])[ri];
+    return Number.isFinite(ring) ? ring : 25;
+  };
+
   const _chipPressureKbar = (s: any): number => {
     const value = Number(s?.pressure ?? s?.conditions?.pressure);
     return Number.isFinite(value) ? value : 0.001;
@@ -361,7 +373,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
   // Specials
   params.push({ id: 'T',        label: 'temperature', fullName: _HELIX_FULL_NAMES.T,        min: 0,    max: 750,  color: 0xff5544,
     system: 'special', units: '°C',
-    read: (s, w, i, c) => (s.ring_temperatures || [])[i] });
+    read: (s, w, i, c) => _chipTemperature(s, w, i, c) });
   params.push({ id: 'pH',       label: 'pH',          fullName: _HELIX_FULL_NAMES.pH,       min: 0,    max: 14,   color: 0x9966ee,
     system: 'special', units: '',
     read: (s, w, i, c) => (_chipFluid(s, w, i, c) || {}).pH });
@@ -429,7 +441,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
   const _readSI = (mineralId: string) => (s: any, w: any, i: number, c: number) => {
     const f = _chipFluid(s, w, i, c);
     if (!f) return null;
-    const T = (s.ring_temperatures || [])[i];
+    const T = _chipTemperature(s, w, i, c);
     const T_use = (typeof T === 'number') ? T : 25;
     if (typeof carbonateSaturationIndex !== 'function') return null;
     const si = carbonateSaturationIndex(mineralId, f, T_use, 0, _chipPressureKbar(s));
@@ -449,7 +461,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     read: (s, w, i, c) => {
       const f = _chipFluid(s, w, i, c);
       if (!f || typeof f.CO3 !== 'number' || f.CO3 <= 0) return null;
-      const T = (s.ring_temperatures || [])[i];
+      const T = _chipTemperature(s, w, i, c);
       const T_use = (typeof T === 'number') ? T : 25;
       if (typeof bjerrumFractions !== 'function') return null;
       const pH = (typeof f.pH === 'number') ? f.pH : 7.0;
@@ -463,7 +475,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     read: (s, w, i, c) => {
       const f = _chipFluid(s, w, i, c);
       if (!f || typeof f.CO3 !== 'number' || f.CO3 <= 0) return null;
-      const T = (s.ring_temperatures || [])[i];
+      const T = _chipTemperature(s, w, i, c);
       const T_use = (typeof T === 'number') ? T : 25;
       if (typeof bjerrumFractions !== 'function') return null;
       const pH = (typeof f.pH === 'number') ? f.pH : 7.0;
@@ -477,7 +489,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     read: (s, w, i, c) => {
       const f = _chipFluid(s, w, i, c);
       if (!f) return null;
-      const T = (s.ring_temperatures || [])[i];
+      const T = _chipTemperature(s, w, i, c);
       const T_use = (typeof T === 'number') ? T : 25;
       if (typeof carbonateIonPpm !== 'function') return null;
       return carbonateIonPpm(f, T_use);
@@ -508,7 +520,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     read: (s, w, i, c) => {
       const f = _chipFluid(s, w, i, c);
       if (!f) return null;
-      const T = (s.ring_temperatures || [])[i];
+      const T = _chipTemperature(s, w, i, c);
       const T_use = (typeof T === 'number') ? T : 25;
       if (typeof carbonateSaturationIndex !== 'function') return null;
       const si = carbonateSaturationIndex('HMC', f, T_use, _HMC_DEFAULT_MG, _chipPressureKbar(s));
@@ -528,7 +540,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     read: (s, w, i, c) => {
       const f = _chipFluid(s, w, i, c);
       if (!f) return null;
-      const T = (s.ring_temperatures || [])[i];
+      const T = _chipTemperature(s, w, i, c);
       const T_use = (typeof T === 'number') ? T : 25;
       if (typeof equilibriumPCO2 !== 'function') return null;
       return equilibriumPCO2(f, T_use);
@@ -636,7 +648,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     const _readSulfateSI = (mineralId: string) => (s: any, w: any, i: number, c: number) => {
       const f = _chipFluid(s, w, i, c);
       if (!f) return null;
-      const T = (s.ring_temperatures || [])[i];
+      const T = _chipTemperature(s, w, i, c);
       const T_use = (typeof T === 'number') ? T : 25;
       const si = sulfateSaturationIndex(mineralId, f, T_use, _chipPressureKbar(s));
       return isFinite(si) ? si : _SI_CHIP_FLOOR;
@@ -747,6 +759,7 @@ function _helixSimAtSnap(sim: any, snap: any): any {
   return {
     ring_fluids: snap.ring_fluids || sim.ring_fluids,
     ring_temperatures: snap.ring_temperatures || sim.ring_temperatures,
+    boundary_temperatures: snap.boundary_temperatures || null,
     // Week 3 — expose _dol_cycle_count so the f_ord chip can read
     // it from the snap (not the live conditions). Replay-correct.
     _dol_cycle_count: (snap._dol_cycle_count != null)

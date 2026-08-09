@@ -195,6 +195,8 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 12 — scenario firings on v147 baseli
     if (!sim) return;
     const { active } = aragoniteCount(sim);
     expect(active).toBeGreaterThan(0);
+    expect(sim.crystals.filter((crystal: any) => crystal.mineral === 'strontianite'))
+      .toHaveLength(0);
   });
 
   it('sabkha_dolomitization nucleates aragonite (Mg-rich brine)', () => {

@@ -378,6 +378,24 @@ describe('nucleation hover popover (97b) — recipe chips vs live conditions', (
     expect(activeCap.blockers.join(' ')).toContain('3 active');
   });
 
+  it('keeps local hover chemistry subordinate to the water-mode calcite serial gate', () => {
+    const conditions = new VugConditions({
+      temperature: 25,
+      fluid: new FluidChemistry({ Ca: 5000, CO3: 5000, pH: 8, O2: 1 }),
+    });
+    const sim = new VugSimulator(conditions, []);
+    sim.crystals = [new Crystal({ mineral: 'calcite', crystal_id: 1 })];
+    const mesh = sim.wall_state.meshFor(sim);
+    for (const cell of mesh.cells) Object.assign(cell.fluid, { Ca: 5000, CO3: 5000, pH: 8 });
+    const why = _buildMineralFormationExplanation('calcite', conditions, sim);
+    const production = group(why.groups, 'Production nucleator');
+    expect(production).toBeTruthy();
+    expect(production.chips[0].text).toContain('blocks a fresh nucleus');
+    expect(production.chips.some((chip: any) => chip.text.includes('active-crystal rule'))).toBe(true);
+    expect(why.state).toBe('formed-past');
+    expect(why.verdict).toContain('Production now blocks a fresh nucleus');
+  });
+
   it('surfaces an engine-specific hydrozincite SiO2 blocker by causal production rerun', () => {
     const conditions = new VugConditions({
       temperature: 20,

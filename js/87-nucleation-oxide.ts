@@ -170,18 +170,43 @@ function _nuc_romanechite(sim) {
 }
 
 function _nuc_todorokite(sim) {
-  const sigma = sim.conditions.supersaturation_todorokite();
-  if (sigma <= MINERAL_GATES_todorokite.sigma_crit) return;
+  const localityActive = !!(
+    sim.wall_state?.per_vertex_nucleation || sim._thermalFieldActivated
+  );
+  let sigma = localityActive ? 0 : sim.conditions.supersaturation_todorokite();
+  if (!localityActive && sigma <= MINERAL_GATES_todorokite.sigma_crit) return;
   if (sim._atNucleationCap('todorokite')) return;
-  const precursor = sim.crystals.find(c => isTodorokiteBirnessitePrecursor(c));
+  let precursor = sim.crystals.find(c => isTodorokiteBirnessitePrecursor(c));
   if (!precursor) return; // no scientifically licensed bare-wall fallback
+  let local: any = null;
+  if (localityActive) {
+    const eligible = sim.crystals
+      .filter(c => isTodorokiteBirnessitePrecursor(c))
+      .map(c => ({
+        precursor: c,
+        local: sim._localNucleationEvaluationAtAnchor(
+          'todorokite', sim.wall_state._resolveAnchor(c),
+        ),
+      }))
+      .filter(candidate => candidate.local?.sigma > MINERAL_GATES_todorokite.sigma_crit)
+      .sort((a, b) => b.local.sigma - a.local.sigma
+        || a.precursor.crystal_id - b.precursor.crystal_id);
+    if (!eligible.length) return;
+    precursor = eligible[0].precursor;
+    local = eligible[0].local;
+    sigma = local.sigma;
+  }
   if (sigma <= 1.05 || rng.random() >= 0.22) return;
   const transition = applyBirnessiteTodorokiteTransition(
-    precursor, sim.conditions.fluid, sim.conditions.temperature, sim.step,
+    precursor, local?.fluid || sim.conditions.fluid,
+    Number.isFinite(local?.temperatureC) ? local.temperatureC : sim.conditions.temperature,
+    sim.step,
   );
   if (!transition) return;
-  const f = sim.conditions.fluid;
-  sim.log.push(`  ✦ TRANSFORMATION: ⚫ Birnessite #${precursor.crystal_id} → Todorokite in place (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, preserved Mn=${transition.bookedMnPreservedPpm.toFixed(3)} ppm, booked Mg=${transition.structuralMgBookedPpm.toFixed(3)} ppm, pH=${f.pH.toFixed(1)})`);
+  const f = local?.fluid || sim.conditions.fluid;
+  const temperatureC = Number.isFinite(local?.temperatureC)
+    ? local.temperatureC : sim.conditions.temperature;
+  sim.log.push(`  ✦ TRANSFORMATION: ⚫ Birnessite #${precursor.crystal_id} → Todorokite in place (T=${temperatureC.toFixed(0)}°C, σ=${sigma.toFixed(2)}, preserved Mn=${transition.bookedMnPreservedPpm.toFixed(3)} ppm, booked Mg=${transition.structuralMgBookedPpm.toFixed(3)} ppm, pH=${f.pH.toFixed(1)})`);
 }
 
 // v102 (2026-05-19): pyrolusite β-MnO2 — supergene Mn(IV) oxide.

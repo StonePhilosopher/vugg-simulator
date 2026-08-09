@@ -682,6 +682,75 @@ function stoichiometricBudgetDebitPpmPerUm(species: string, coefficient: number)
   return STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM * nu * molarMass;
 }
 
+// Speleothem-aragonite Sr partitioning. Wassenburg et al. (2016, GCA 190,
+// 347-367, doi:10.1016/j.gca.2016.06.036) derived D_Sr(Ar)=1.38 +/-0.53,
+// where D=(Sr/Ca)_solid/(Sr/Ca)_solution on a molar basis. Keep the measured
+// distribution coefficient separate from the scenario's dissolved inventory:
+// the latter must be real dripwater Sr, not solid-speleo ppm copied into water.
+const ARAGONITE_SR_PARTITION_MODEL = Object.freeze({
+  id: 'Wassenburg2016-speleothem-aragonite-DSr',
+  distributionCoefficient: 1.38,
+  oneSigma: 0.53,
+  // Match the simulator's canonical SPECIES_PROPERTIES values exactly so a
+  // booked Ca/Sr mole ratio closes bit-for-bit in the proxy ledger.
+  caMolarMass: 40.08,
+  srMolarMass: 87.62,
+  aragoniteFormulaMass: 100.0869,
+});
+
+function aragoniteSrPartitioning(fluid: any) {
+  const caPpm = Math.max(0, Number(fluid?.Ca) || 0);
+  const srPpm = Math.max(0, Number(fluid?.Sr) || 0);
+  const solutionMolarRatio = caPpm > 0
+    ? (srPpm / ARAGONITE_SR_PARTITION_MODEL.srMolarMass)
+      / (caPpm / ARAGONITE_SR_PARTITION_MODEL.caMolarMass)
+    : 0;
+  const formulaCoefficient = ARAGONITE_SR_PARTITION_MODEL.distributionCoefficient
+    * solutionMolarRatio;
+  const targetSolidSrPpm = formulaCoefficient
+    * ARAGONITE_SR_PARTITION_MODEL.srMolarMass
+    / ARAGONITE_SR_PARTITION_MODEL.aragoniteFormulaMass
+    * 1e6;
+  return {
+    model: ARAGONITE_SR_PARTITION_MODEL.id,
+    distributionCoefficient: ARAGONITE_SR_PARTITION_MODEL.distributionCoefficient,
+    oneSigma: ARAGONITE_SR_PARTITION_MODEL.oneSigma,
+    solutionCaPpm: caPpm,
+    solutionSrPpm: srPpm,
+    solutionMolarSrCa: solutionMolarRatio,
+    formulaCoefficientSr: formulaCoefficient,
+    targetSolidSrPpm,
+  };
+}
+
+function finalizeAragoniteSrPartitionReceipt(crystal: any, zone: any) {
+  if (crystal?.mineral !== 'aragonite' || !zone?.sr_partition) return;
+  const requested = zone.sr_partition;
+  const actualSrPerUm = Math.max(0, Number(zone._budget_inventory_per_um?.Sr) || 0);
+  const actualCaPerUm = Math.max(0, Number(zone._budget_inventory_per_um?.Ca) || 0);
+  const solidMolarSrCa = actualCaPerUm > 0
+    ? (actualSrPerUm / ARAGONITE_SR_PARTITION_MODEL.srMolarMass)
+      / (actualCaPerUm / ARAGONITE_SR_PARTITION_MODEL.caMolarMass)
+    : 0;
+  const effectiveD = requested.solutionMolarSrCa > 0
+    ? solidMolarSrCa / requested.solutionMolarSrCa
+    : 0;
+  const formulaMassPerUm = STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM
+    * ARAGONITE_SR_PARTITION_MODEL.aragoniteFormulaMass;
+  zone.trace_Sr = formulaMassPerUm > 0
+    ? actualSrPerUm / formulaMassPerUm * 1e6
+    : 0;
+  zone.sr_partition = {
+    ...requested,
+    acceptedSrPpmPerUm: actualSrPerUm,
+    acceptedCaPpmPerUm: actualCaPerUm,
+    acceptedSolidMolarSrCa: solidMolarSrCa,
+    effectiveDistributionCoefficient: effectiveD,
+    inventoryLimited: actualSrPerUm + 1e-15
+      < stoichiometricBudgetDebitPpmPerUm('Sr', requested.formulaCoefficientSr),
+  };
+}
+
 // Explicit sulfur fluids book each mineral family against a chemically
 // distinct reservoir. Legacy fluids continue to use `S`, preserving their
 // historical calibration until their scenario chemistry is explicitly

@@ -56,13 +56,18 @@ function fluidAtMeshVertex(sim: any, mesh: any, vertexIdx: number): any {
 }
 
 // Returns the temperature (°C) at the given mesh vertex.
-// WallMesh.cells[i].temperature_ring indexes into sim.ring_temperatures
-// (per Tranche 4a — temperature is still per-ring; per-vertex chemistry
-// landed first, per-vertex temperature is a future tranche). Pole
+// Boundary voxels are canonical; ring_temperatures is a display fallback.
 // vertices fall back to the sim's conditions temperature.
 function temperatureAtMeshVertex(sim: any, mesh: any, vertexIdx: number): number {
   if (mesh && mesh.cells && vertexIdx >= 0 && vertexIdx < mesh.cells.length) {
     const cell = mesh.cells[vertexIdx];
+    const columns = sim?.wall_state?.cells_per_ring || 0;
+    const ringIdx = cell && typeof cell.temperature_ring === 'number'
+      ? cell.temperature_ring : (columns > 0 ? Math.floor(vertexIdx / columns) : -1);
+    const cellIdx = columns > 0 ? vertexIdx % columns : -1;
+    const voxel = ringIdx >= 0 && cellIdx >= 0
+      ? sim?.boundaryVoxel?.(ringIdx, cellIdx) : null;
+    if (voxel && Number.isFinite(voxel.temperature)) return voxel.temperature;
     if (cell && typeof cell.temperature_ring === 'number'
         && sim && sim.ring_temperatures
         && cell.temperature_ring >= 0
@@ -146,11 +151,12 @@ function atmosphericPCO2AtMeshVertex(scenario: any, mesh: any, vertexIdx: number
 }
 
 // Resolves scenario.wall_rock_thermal_buffer_C → number per vertex.
-// Default 0 (no thermal buffering). Phase 2 may consume.
+// Missing fixtures return NaN (no boundary). This is intentionally distinct
+// from an authored 0°C boundary, which is a valid cold-rock temperature.
 function wallRockThermalBufferAtMeshVertex(scenario: any, mesh: any, vertexIdx: number): number {
-  if (!scenario) return 0;
-  const v = _resolveFixture(scenario.wall_rock_thermal_buffer_C, mesh, vertexIdx, 0);
-  return typeof v === 'number' && isFinite(v) ? v : 0;
+  if (!scenario) return NaN;
+  const v = _resolveFixture(scenario.wall_rock_thermal_buffer_C, mesh, vertexIdx, NaN);
+  return typeof v === 'number' && isFinite(v) ? v : NaN;
 }
 
 // Resolves scenario.host_rock_composition → string per vertex.

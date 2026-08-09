@@ -315,6 +315,12 @@ class VugWall {
     // geometry). Default false → every existing scenario keeps its fill-and-seal
     // behaviour (byte-identical).
     this.open_system = !!opts.open_system;
+    // Explicit open spring/vent-apron boundary. This is a geological process
+    // selector for low-Mg aragonite, not a synonym for shallow pressure: a
+    // sealed vein and an open degassing terrace can share P-T coordinates but
+    // not nucleation kinetics. Default false keeps ordinary caves and veins
+    // outside the spring route unless the scenario or Creative player opts in.
+    this.open_spring = !!opts.open_spring;
     // v179 (2026-06-09): per-scenario ambient cooling rate, °C/step (default
     // 1.5 — the historical hard-coded value in ambient_cooling, 85d). The
     // reactivated_fluorite_vein exposed the gap: it is the first HOT scenario
@@ -330,6 +336,15 @@ class VugWall {
     // always-draw pattern keeps that stream's cursor rate-independent.)
     this.cooling_rate = (typeof opts.cooling_rate === 'number' && isFinite(opts.cooling_rate) && opts.cooling_rate >= 0)
       ? opts.cooling_rate : 1.5;
+    // Temperature of the far-field environment that passive cooling approaches.
+    // This is a boundary condition, not an implicit 25 C thermostat: cold caves,
+    // playas, and shallow aquifers may be stably colder than room temperature.
+    // null preserves the historical 25 C target for un-authored warm systems;
+    // ambient_cooling is one-way and therefore never warms a colder fluid.
+    this.ambient_temperature_C = (typeof opts.ambient_temperature_C === 'number'
+      && isFinite(opts.ambient_temperature_C))
+      ? Math.max(-50, Math.min(1200, opts.ambient_temperature_C))
+      : null;
     // Alpine-cleft (Zerrkluft) flag — Grimsel/Aar Swiss tension fissures. Opts
     // in to the quartz GWINDEL habit (js/45 classifyQuartzGwindel; SIM 207) and
     // the Tessin/sceptre cleft idiom. Default false (no effect elsewhere).
@@ -607,21 +622,28 @@ class WallCell {
 // Dissolution is per-cell: cells covered by acid-resistant crystals
 // shield their slice, so unblocked cells erode faster — the wall ends
 // up shaped like the deposit history rather than a perfect circle.
-// Minimal mulberry32 PRNG — 32-bit seed in, [0,1) out. Same seed always
-// produces the same stream. Used so JS + Python produce *different*
-// concrete bubble placements (their RNGs don't share streams) but both
-// are deterministic per their own shape_seed. For exact cross-runtime
-// shape parity we'd mirror Python's Mersenne Twister; Phase 1 only
-// requires reproducibility within a runtime.
-function _mulberry32(seed) {
+// Minimal state-reporting mulberry32 PRNG — 32-bit seed in, [0,1) out.
+// Same seed always produces the same stream. The callable's `.state` getter
+// exposes its cursor for deterministic fingerprints/checkpoints; assigning the
+// state restores that cursor without consuming a draw. This preserves the
+// exact historical sequence while making hidden future state auditable.
+type StatefulRandom = (() => number) & { state: number };
+function _mulberry32(seed): StatefulRandom {
   let s = (seed | 0) >>> 0;
-  return function() {
+  const next: any = function() {
     s = (s + 0x6d2b79f5) >>> 0;
     let t = s;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+  Object.defineProperty(next, 'state', {
+    enumerable: true,
+    configurable: false,
+    get: () => s >>> 0,
+    set: (value: number) => { s = (Number(value) | 0) >>> 0; },
+  });
+  return next as StatefulRandom;
 }
 
 // Bubble size ranges as fractions of vug_diameter_mm (the canonical

@@ -1265,7 +1265,11 @@
           "wall_Mn_ppm": 60.0,
           "primary_bubbles": 3,
           "secondary_bubbles": 5,
-          "shape_seed": 1862     // first borax claim at Searles, 1862
+          "shape_seed": 1862,    // first borax claim at Searles, 1862
+          // Passive cooling approaches the authored seasonal baseline; it
+          // never treats a cool October playa as a fluid that needs heating
+          // to the legacy 25 C room-temperature target.
+          "ambient_temperature_C": 18.0
         }
       },
       // SIM239 supersession: the earlier MINDAT note's clause (c), which
@@ -2857,7 +2861,8 @@
           "architecture": "irregular",
           "primary_bubbles": 4,
           "secondary_bubbles": 8,
-          "shape_seed": 5
+          "shape_seed": 5,
+          "ambient_temperature_C": 22.0
         }
       },
       "events": [
@@ -3219,6 +3224,7 @@
           // An open surface spring recharged by the three explicit hot-water
           // events, not a sealed hydrothermal fracture with stochastic silica-
           // bearing reheats. This keeps the measured Mammoth water type intact.
+          "open_spring": true,
           "thermal_pulses": false,
           "primary_bubbles": 3,
           "secondary_bubbles": 4,
@@ -3564,6 +3570,9 @@
           "primary_bubbles": 2,
           "secondary_bubbles": 4,
           "shape_seed": 42,
+          // Far-field cave air/rock boundary. Passive thermal relaxation is
+          // one-way toward 15 C and therefore cannot heat this cave to 25 C.
+          "ambient_temperature_C": 15.0,
           // PROPOSAL-HABIT-BIAS Slice 2 — every crystal nucleates in
           // air-mode regardless of water state. The cave is air-filled
           // from step 0 (no faked drainage event needed).
@@ -3610,14 +3619,14 @@
 
     "zoned_dripstone_cave": {
       "anchor": "Mg/Ca-zoned dripstone cave — composite of Frasassi (Italy, Mg-rich ceiling aragonite), Carlsbad Caverns (NM, calcite floor), and Reed Flute Cave (Guilin, twin morphologies). The geochemistry of cave dripstone where the drip-water Mg/Ca ratio differs between ceiling-percolation pathways and floor-puddle re-precipitation, producing aragonite stalactites + calcite stalagmites in the same cavity.",
-      "description": "Tranche 6 of PROPOSAL-CAVITY-MESH §14 demo scenario. Demonstrates per-vertex nucleation: with wall.per_vertex_nucleation=true, calcite and aragonite engines both fire from the global broth, but each crystal's anchor cell is chosen by the per-cell σ for THAT mineral. Result: calcite nucleates at high-Ca floor cells (Mg/Ca << 1.5 keeps calcite σ high, aragonite σ near zero); aragonite nucleates at high-Mg ceiling cells (Mg/Ca > 4 stunts calcite via the Mg poisoning sigmoid and peaks the aragonite Mg/Ca favorability factor). Same chemistry, same engines — only spatial sampling differs.",
+      "description": "Tranche 6 of PROPOSAL-CAVITY-MESH §14 demo scenario. Demonstrates per-vertex nucleation: with wall.per_vertex_nucleation=true, calcite and aragonite engines both fire from the global broth, but each crystal's anchor cell is chosen by the per-cell σ for THAT mineral. Result: calcite nucleates at high-Ca floor cells (molar Mg/Ca << 1.1 keeps calcite σ high and leaves no aragonite selector); aragonite nucleates at high-Mg ceiling cells (molar Mg/Ca > 7 stunts calcite and strongly selects aragonite). Same chemistry, same engines — only spatial sampling differs.",
       "expects_species": ["calcite", "aragonite"],
       "duration_steps": 150,
       "notes": [
         "Real-world precedent: Frasassi Cave's Sala 200 carries ceiling aragonite frostwork over floor calcite popcorn; Reed Flute Cave (Guilin) shows the same vertical sort. The driver is dripwater Mg/Ca, which on ceiling-percolation pathways gets concentrated by prior dolomite dissolution and selective calcite preprecipitation upstream, while floor-puddle re-precipitation drops Mg as Mg-Mg carbonates / clay along the way and arrives Ca-rich. Frisia et al. 2002 Lithos paper is the canonical Italian cave-aragonite geochem reference; Sherwin & Baldini 2011 reviewed the global pattern.",
-        "Scenario chemistry — global broth (= equator, what the engines see for their gate decisions): Ca=2000, Mg=1500, CO3=2200, pH=8.4. Mg/Ca = 0.75 puts both engines above their nucleation σ thresholds (calcite >1.3, aragonite >1.0) but neither is saturated past its kinetic preferred window. Zone overrides then split the cavity:",
-        "  Floor: Ca=3500, Mg=30. Mg/Ca = 0.009 — calcite σ unstunted (Mg-poisoning sigmoid centered at Mg/Ca=2 gives ~0% inhibition here), aragonite σ ≈ 0 (Mg/Ca << 1.5, aragonite favorability factor near 0). Result: calcite-only cells.",
-        "  Ceiling: Ca=800, Mg=3500. Mg/Ca = 4.4 — calcite σ drops by ~70% (Mg-poisoning sigmoid at high-saturation tail), aragonite σ peaks (favorability factor near 1, plus the Sr/Ba trace boost from the ceiling-percolation history). Result: aragonite-only cells.",
+        "Scenario chemistry — global broth (= equator): Ca=2000, Mg=1500, CO3=2200, pH=8.4. The aqueous molar Mg/Ca is 1.24, just above the evidence threshold, so both carbonate engines can enter their local competition. Zone overrides then split the cavity:",
+        "  Floor: Ca=3500, Mg=30. Molar Mg/Ca = 0.014 — calcite σ is unstunted and the aragonite Mg selector is physically absent. Result: calcite-only cells.",
+        "  Ceiling: Ca=800, Mg=3500. Molar Mg/Ca = 7.21 — calcite is strongly poisoned and the aragonite selector is saturated. Dissolved Sr is 0.59 ppm, scaled from the measured modern Grotte de Piste dripwater molar Sr/Ca relation rather than copied from solid speleothem ppm; accepted aragonite shells debit it at Wassenburg et al.'s D_Sr=1.38+/-0.53. Result: aragonite-only cells without unlicensed strontianite.",
         "  Wall: stays at the global broth. Calcite σ slightly preferred at the boundary.",
         "Per-vertex nucleation closes the loop: without this flag, nucleation engines read only the equator chemistry, the gate fires on the global broth, and the crystal lands at a random area-weighted cell — which means a calcite stalagmite might end up where the aragonite-favoring chemistry is, and vice versa. With wall.per_vertex_nucleation=true, each nucleation picks the cell whose local σ for THAT mineral is highest. The spatial result tracks the chemistry.",
         "inter_ring_diffusion_rate=0 pins the zones across the 150-step run; with the default 0.05 the Laplacian would homogenize the Mg/Ca gradient over ~20 steps and the differentiation would wash out before either engine fires twice.",
@@ -3642,12 +3651,10 @@
           "Fe": 1,
           "Mn": 0.3,
           "SiO2": 6,
-          // Trace Sr + Ba — aragonite favorability factor pulls a +30%
-          // boost from the trace_ratio sigmoid in supersaturation_aragonite
-          // when trace_sum / Ca > 0.01. At Ca=2000 this means Sr+Pb+Ba ≥ 20
-          // saturates the boost. Real cave aragonite specimens carry Sr at
-          // 1000-7000 ppm from the calcite-rejected fraction (Frisia 2002).
-          "Sr": 25,
+          // Dissolved Sr, not solid-speleo ppm. The 2024 Grotte de Piste
+          // dripwater relation gives mean molar Sr/Ca about 3.38e-4; scaled
+          // to this deliberately concentrated 2000-ppm Ca broth => 1.48 ppm.
+          "Sr": 1.48,
           "Ba": 3,
           "Pb": 0,
           "salinity": 0.5,
@@ -3668,6 +3675,7 @@
           "primary_bubbles": 2,
           "secondary_bubbles": 4,
           "shape_seed": 24,
+          "ambient_temperature_C": 18.0,
           // PROPOSAL-HABIT-BIAS Slice 2 — every crystal nucleates in
           // air-mode so ceiling aragonite gets the stalactite c-axis
           // and floor calcite gets the stalagmite c-axis.
@@ -3692,7 +3700,7 @@
             "ceiling": {
               "Ca": 800,
               "Mg": 3500,
-              "Sr": 60,
+              "Sr": 0.59,
               "Ba": 8
             }
           },
@@ -3705,6 +3713,8 @@
       "events": [],
       "sources": [
         "Frisia S., Borsato A., Fairchild I.J., et al. (2002) — Aragonite-calcite relationships in speleothems (Grotte de Clamouse, France, and Italian cave systems). Lithos 65 (1-2): 119-133.",
+        "Wassenburg J.A. et al. (2016) — Determination of aragonite trace-element distribution coefficients from speleothem calcite-aragonite transitions. Geochimica et Cosmochimica Acta 190:347-367, doi:10.1016/j.gca.2016.06.036 (D_Sr=1.38+/-0.53).",
+        "Wassenburg J.A. et al. (2024) — Trace element partitioning controls on cave drip water compositions through prior calcite and aragonite precipitation. Communications Earth & Environment 5:488, doi:10.1038/s43247-024-01648-5 (direct dripwater Sr-Ca relation and D_Sr=1.31+/-0.11).",
         "Sherwin C.M., Baldini J.U.L. (2011) — Cave air and hydrological controls on prior calcite precipitation and stalagmite growth rates. Chem. Geol. 290: 79-87.",
         "Railsback L.B., Brook G.A., Liang F. et al. (1994) — Speleothem fabric record of aragonite-calcite transitions. Carbonates and Evaporites 9: 217-230.",
         "Spötl C., Mangini A. (2007) — Speleothems and paleoclimates: aragonite vs calcite as climate archives. Quaternary Science Reviews 26: 1488-1499."

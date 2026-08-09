@@ -64,6 +64,37 @@ function makeSimulationResumeCommand(): any {
   return _simulationDeepFreeze({ ...payload, commandId: _simulationCommandId(payload) });
 }
 
+function makeSimulationThermalSourceCommand(action: 'set' | 'remove' | 'clear', payload: any = {}): any {
+  const normalizedAction = ['set', 'remove', 'clear'].includes(action) ? action : 'set';
+  const body = normalizedAction === 'set'
+    ? { source: _simulationJsonClone(payload || {}) }
+    : normalizedAction === 'remove'
+      ? { id: String(payload?.id ?? payload ?? '') }
+      : {};
+  const commandPayload = {
+    schema: SIMULATION_COMMAND_SCHEMA,
+    type: 'thermal_source',
+    action: normalizedAction,
+    ...body,
+  };
+  return _simulationDeepFreeze({
+    ...commandPayload,
+    commandId: _simulationCommandId(commandPayload),
+  });
+}
+
+function makeSimulationThermalFieldCommand(config: any = {}): any {
+  const commandPayload = {
+    schema: SIMULATION_COMMAND_SCHEMA,
+    type: 'thermal_field',
+    config: _simulationJsonClone(config || {}),
+  };
+  return _simulationDeepFreeze({
+    ...commandPayload,
+    commandId: _simulationCommandId(commandPayload),
+  });
+}
+
 function _simulationAssertCommand(command: any, expectedType?: string): void {
   if (!command || command.schema !== SIMULATION_COMMAND_SCHEMA) {
     throw new Error('invalid simulation command schema');
@@ -87,6 +118,31 @@ function _simulationFluidProjection(fluid: any): any {
   return out;
 }
 
+function _simulationCanonicalProjection(value: any, seen = new Set<any>()): any {
+  if (value == null || typeof value === 'string' || typeof value === 'boolean') return value;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'function' || typeof value === 'undefined') return undefined;
+  if (Array.isArray(value)) {
+    if (seen.has(value)) return '[circular]';
+    seen.add(value);
+    const out = value.map(item => _simulationCanonicalProjection(item, seen));
+    seen.delete(value);
+    return out;
+  }
+  if (typeof value === 'object') {
+    if (seen.has(value)) return '[circular]';
+    seen.add(value);
+    const out: any = {};
+    for (const key of Object.keys(value).sort()) {
+      const projected = _simulationCanonicalProjection(value[key], seen);
+      if (projected !== undefined) out[key] = projected;
+    }
+    seen.delete(value);
+    return out;
+  }
+  return String(value);
+}
+
 function _simulationCrystalProjection(crystal: any): any {
   return {
     id: crystal.crystal_id,
@@ -97,13 +153,13 @@ function _simulationCrystalProjection(crystal: any): any {
     cLengthMm: Number(crystal.c_length_mm) || 0,
     aWidthMm: Number(crystal.a_width_mm) || 0,
     habit: crystal.habit || null,
-    zones: (crystal.zones || []).map((zone: any) => ({
-      thicknessUm: Number(zone.thickness_um) || 0,
-      growthRate: Number(zone.growth_rate) || 0,
-      note: zone.note || null,
-      traceMn: Number(zone.trace_Mn) || 0,
-      mgContent: Number(zone.mg_content) || 0,
-    })),
+    nucleationTemperatureC: Number(crystal.nucleation_temp) || 0,
+    wallAnchor: crystal.wall_anchor ? _simulationJsonClone(crystal.wall_anchor) : null,
+    // Full canonical zone state is future-determining. In particular the
+    // LIFO dissolution ledger reads accepted `_budget_inventory_per_um`,
+    // remaining-solid thickness, trace stoichiometry, and Sr partition
+    // receipts; a display-only subset cannot prove deterministic replay.
+    zones: _simulationCanonicalProjection(crystal.zones || []),
   };
 }
 
@@ -115,6 +171,12 @@ function simulationStateProjection(runtimeOrSim: any, rngStateOverride?: number)
     : runtime && Number.isFinite(runtime.rngState)
       ? Number(runtime.rngState)
       : Number(rng?.state) || 0;
+  const thermalGrid = sim?.wall_state?.voxelGridFor?.(sim);
+  const dedicatedRngStates: any = {};
+  for (const key of Object.keys(sim || {}).filter(key => /Rng$/.test(key)).sort()) {
+    const state = Number(sim[key]?.state);
+    if (Number.isFinite(state)) dedicatedRngStates[key] = state >>> 0;
+  }
   return {
     simVersion: SIM_VERSION,
     modelDigest: MODEL_DIGEST,
@@ -122,11 +184,35 @@ function simulationStateProjection(runtimeOrSim: any, rngStateOverride?: number)
     seed: runtime?.origin?.seed ?? null,
     step: Number(sim?.step) || 0,
     rngState: rngState >>> 0,
+    nucleationSharedState: Number(sim?._nucSharedState) >>> 0,
+    dedicatedRngStates,
+    movementController: sim?._movements ? {
+      rngState: Number(sim._movements.rng?.state) >>> 0,
+      movements: _simulationCanonicalProjection(sim._movements.movements || []),
+      state: _simulationCanonicalProjection(sim._movements._state || []),
+    } : null,
     temperatureC: Number(sim?.conditions?.temperature) || 0,
     pressureKbar: Number(sim?.conditions?.pressure) || 0,
     flowRate: Number(sim?.conditions?.flow_rate) || 0,
     fluid: _simulationFluidProjection(sim?.conditions?.fluid),
     ringTemperatures: (sim?.ring_temperatures || []).map((v: any) => Number(v) || 0),
+    voxelTemperatures: (thermalGrid?.voxels || []).map(
+      (voxel: any) => Number(voxel?.temperature) || 0,
+    ),
+    // Every radial voxel is canonical chemistry, including d>=1 reservoirs
+    // that are neither the bulk fluid nor the d=0 wall-cell alias.
+    voxelFluids: (thermalGrid?.voxels || []).map(
+      (voxel: any) => _simulationFluidProjection(voxel?.fluid),
+    ),
+    thermalSources: _simulationJsonClone(sim?._thermalSources || []),
+    thermalSourceCounter: Number(sim?._thermalSourceCounter) || 0,
+    thermalFieldActivated: !!sim?._thermalFieldActivated,
+    thermalFieldEnabled: sim?.conditions?._scenario?.thermal_field?.enabled !== false,
+    thermalFieldConfig: _simulationJsonClone(sim?.conditions?._scenario?.thermal_field || null),
+    wallRockThermalBufferC: _simulationJsonClone(
+      sim?.conditions?._scenario?.wall_rock_thermal_buffer_C ?? null,
+    ),
+    wallBoundary: _simulationCanonicalProjection(sim?.conditions?.wall || null),
     ringFluids: (sim?.ring_fluids || []).map(_simulationFluidProjection),
     wallCellRadii: (sim?.wall_state?.cells || []).map((cell: any) => Number(cell.radius_mm) || 0),
     crystals: (sim?.crystals || []).map(_simulationCrystalProjection),
@@ -188,6 +274,31 @@ function applySimulationCommand(runtime: any, command: any): any {
     runtime.cancelReason = null;
     _simulationAppendCommand(runtime, command);
     return { status: runtime.status, step: runtime.sim.step };
+  }
+  if (command.type === 'thermal_source') {
+    let result: any = null;
+    if (command.action === 'set') result = runtime.sim.setThermalSource(command.source);
+    else if (command.action === 'remove') result = runtime.sim.removeThermalSource(command.id);
+    else if (command.action === 'clear') result = runtime.sim.clearThermalSources();
+    else throw new Error(`unsupported thermal source action '${command.action}'`);
+    _simulationAppendCommand(runtime, command);
+    return {
+      status: runtime.status,
+      step: runtime.sim.step,
+      thermalSources: _simulationJsonClone(runtime.sim._thermalSources || []),
+      result: _simulationJsonClone(result),
+      fingerprint: simulationStateFingerprint(runtime),
+    };
+  }
+  if (command.type === 'thermal_field') {
+    const result = runtime.sim.configureThermalField(command.config);
+    _simulationAppendCommand(runtime, command);
+    return {
+      status: runtime.status,
+      step: runtime.sim.step,
+      thermalFieldConfig: _simulationJsonClone(result),
+      fingerprint: simulationStateFingerprint(runtime),
+    };
   }
   if (command.type !== 'advance') throw new Error(`unsupported simulation command '${command.type}'`);
   if (runtime.status === 'cancelled') {

@@ -45,7 +45,7 @@ single execution ledger for the science-first AAA completion branch.
 - [x] One generated science/provenance manifest that rejects missing citations,
   unsupported ranges, unregistered handlers, and stale scenario metadata.
   Evidence: `tools/gen-science-provenance-manifest.mjs`,
-  `data/generated/science-provenance-manifest.json` (39 scenarios, 218 citations),
+  `data/generated/science-provenance-manifest.json` (39 scenarios, 220 citations),
   and `tests-js/science-provenance-manifest.test.ts`.
 
 ## P1 — remaining scientific mechanisms
@@ -75,8 +75,17 @@ single execution ledger for the science-first AAA completion branch.
   `research/arcs/research-mixed-carbonate-solid-solutions-2026-08-08.md`,
   `tests-js/hmc-solid-solution.test.ts`, SIM 255 seed-42 baseline/digest/39-story
   archive, and `proposals/HOSTILE-REVIEW-DR-WISE-SIM255-2026-08-08.md`.
-- [ ] Thermal field localization: per-voxel temperature transport/source commands
-  and flow-aligned gradients, consumed by growth and recorded in zones.
+- [x] Thermal field localization: geometry-weighted per-voxel LTE transport,
+  finite-volume conservative conduction, explicit rock/source/advection and
+  one-way ambient boundaries, immutable source/configuration commands, and
+  local nucleation/growth/morphology/diagnosis consumption. Reproducibility
+  fingerprints cover voxel fluids/temperatures, dedicated RNG cursors,
+  nucleation seed, movement state, and complete zone ledgers. Evidence:
+  `research/arcs/research-thermal-field-localization-2026-08-08.md`,
+  `research/arcs/research-aragonite-sr-and-ambient-boundaries-2026-08-08.md`,
+  `tests-js/thermal-localization.test.ts`, SIM 256 seed-42 baseline,
+  39-story archive, 12-story digest, 39 claim cards, and
+  `proposals/HOSTILE-REVIEW-DR-WISE-SIM256-2026-08-08.md`.
 - [x] Complete open-system carbonate migration for travertine and sabkha.
   Travertine pins its initial DIC/alkalinity and authored vent receipts; sabkha
   runs 24 explicit replacement-water transactions with no unresolved transfer,

@@ -211,7 +211,7 @@ _snapshotGlobal() {
 // consumer, now captures a projection of the cells instead
 // (_ringFluidMeans, review §1.4). The equator ring is aliased to
 // conditions.fluid so it already reflects the new value.
-_propagateGlobalDelta(snap) {
+_propagateGlobalDelta(snap, options: any = {}) {
   const [preFluid, preTemp, preSulfurState, preCarbonState] = snap;
   const sulfurDeclarations = Array.isArray(this.conditions._pending_sulfur_boundary_declarations)
     ? this.conditions._pending_sulfur_boundary_declarations.slice() : [];
@@ -382,12 +382,43 @@ _propagateGlobalDelta(snap) {
     }
   }
   const deltaT = this.conditions.temperature - preTemp;
-  if (deltaT !== 0) {
-    for (let k = 0; k < this.ring_temperatures.length; k++) {
-      if (k === equator) {
-        this.ring_temperatures[k] = this.conditions.temperature;
-      } else {
-        this.ring_temperatures[k] += deltaT;
+  const ambientStep = options?.ambientThermalStep;
+  const hasAmbientThermalDelta = ambientStep
+    && ((Number(ambientStep.coolingDeltaC) || 0) !== 0
+      || (Number(ambientStep.pulseDeltaC) || 0) !== 0);
+  if (deltaT !== 0 || hasAmbientThermalDelta) {
+    const localAmbientStep = ambientStep
+      && Number.isFinite(Number(ambientStep.ambientTemperatureC))
+      && typeof grid?.applyAmbientThermalStep === 'function';
+    if (localAmbientStep) {
+      grid.applyAmbientThermalStep(
+        Number(ambientStep.coolingDeltaC) || 0,
+        Number(ambientStep.ambientTemperatureC),
+        Number(ambientStep.pulseDeltaC) || 0,
+      );
+      const boundaryMeans = grid.boundaryTemperatureMeans?.() || [];
+      for (let k = 0; k < this.ring_temperatures.length; k++) {
+        if (Number.isFinite(boundaryMeans[k])) this.ring_temperatures[k] = boundaryMeans[k];
+      }
+      const volumeMean = grid.temperatureMean?.();
+      if (Number.isFinite(volumeMean)) this.conditions.temperature = volumeMean;
+    } else if (grid && typeof grid.propagateTemperatureDelta === 'function') {
+      grid.propagateTemperatureDelta(deltaT, 'all');
+    }
+    if (!localAmbientStep) {
+      for (let k = 0; k < this.ring_temperatures.length; k++) {
+        if (k === equator) {
+          this.ring_temperatures[k] = this.conditions.temperature;
+        } else if (ambientStep && Number.isFinite(Number(ambientStep.ambientTemperatureC))) {
+          const ambient = Number(ambientStep.ambientTemperatureC);
+          const cooling = Math.min(0, Number(ambientStep.coolingDeltaC) || 0);
+          const pulse = Math.max(0, Number(ambientStep.pulseDeltaC) || 0);
+          const prior = this.ring_temperatures[k];
+          const cooled = prior > ambient ? Math.max(ambient, prior + cooling) : prior;
+          this.ring_temperatures[k] = cooled + pulse;
+        } else {
+          this.ring_temperatures[k] += deltaT;
+        }
       }
     }
   }
@@ -553,11 +584,11 @@ _diffuseRingState(rate?) {
   // mesh.diffuse(). Maintains pre-v158 behavior in those paths.
   const grid = this.wall_state.voxelGridFor(this);
   if (grid && typeof grid.diffuse === 'function') {
-    grid.diffuse(rate, this._fluidFieldNames, this.ring_temperatures);
+    grid.diffuse(rate, this._fluidFieldNames);
   } else {
     const mesh = this.wall_state.meshFor(this);
     if (mesh && typeof mesh.diffuse === 'function') {
-      mesh.diffuse(rate, this._fluidFieldNames, this.ring_temperatures);
+      mesh.diffuse(rate, this._fluidFieldNames);
     }
   }
 },
@@ -610,6 +641,138 @@ _diffuseRingState(rate?) {
       ? this.wall_state.voxelGridFor(this)
       : null;
     return grid ? grid.sampleFluid(r, c, depth, field) : NaN;
+  },
+
+  temperatureAtVoxel(r, c, d) {
+    const grid = this.wall_state?.voxelGridFor?.(this);
+    return grid?.temperatureAt ? grid.temperatureAt(r, c, d) : NaN;
+  },
+
+  sampleVoxelTemperature(r, c, depth) {
+    const grid = this.wall_state?.voxelGridFor?.(this);
+    return grid?.sampleTemperature ? grid.sampleTemperature(r, c, depth) : NaN;
+  },
+
+  configureThermalField(spec: any = {}) {
+    this.conditions._scenario ||= {};
+    const scenario: any = this.conditions._scenario;
+    const prior: any = scenario.thermal_field || {};
+    const finite = (value, fallback) => value !== null && value !== '' && value !== undefined
+      && Number.isFinite(Number(value)) ? Number(value) : fallback;
+    scenario.thermal_field = {
+      enabled: spec.enabled !== false,
+      conduction_fraction_per_step: Math.max(0, Math.min(
+        1 / 6,
+        finite(spec.conduction_fraction_per_step,
+          prior.conduction_fraction_per_step ?? this.inter_ring_diffusion_rate),
+      )),
+      wall_coupling_fraction_per_step: Math.max(0, Math.min(
+        1,
+        finite(spec.wall_coupling_fraction_per_step,
+          prior.wall_coupling_fraction_per_step ?? 0.02),
+      )),
+    };
+    if (spec.wall_rock_thermal_buffer_C === null || spec.wall_rock_thermal_buffer_C === '') {
+      delete scenario.wall_rock_thermal_buffer_C;
+    } else if (Number.isFinite(Number(spec.wall_rock_thermal_buffer_C))) {
+      scenario.wall_rock_thermal_buffer_C = Math.max(-273.15, Math.min(
+        2000, Number(spec.wall_rock_thermal_buffer_C),
+      ));
+    }
+    // Activation records that a canonical spatial field has been configured;
+    // enabled/paused is a separate transport switch. Pausing retains the
+    // field and its sources without making command order change semantics.
+    this._thermalFieldActivated = true;
+    return {
+      ...scenario.thermal_field,
+      wall_rock_thermal_buffer_C: scenario.wall_rock_thermal_buffer_C ?? null,
+    };
+  },
+
+  setThermalSource(spec) {
+    const grid = this.wall_state?.voxelGridFor?.(this);
+    this._thermalSources ||= [];
+    let fallbackId = String(spec?.id || '');
+    if (!fallbackId) {
+      do {
+        this._thermalSourceCounter = (Number(this._thermalSourceCounter) || 0) + 1;
+        fallbackId = `thermal-${this._thermalSourceCounter}`;
+      } while (this._thermalSources.some(source => source.id === fallbackId));
+    }
+    const normalized = normalizeThermalSourceSpec(
+      spec, grid, fallbackId,
+    );
+    if (!normalized) return null;
+    const index = this._thermalSources.findIndex(source => source.id === normalized.id);
+    if (index >= 0) this._thermalSources[index] = normalized;
+    else this._thermalSources.push(normalized);
+    this._thermalSources.sort((a, b) => a.id.localeCompare(b.id));
+    this._thermalFieldActivated = true;
+    return normalized;
+  },
+
+  removeThermalSource(id) {
+    const before = this._thermalSources?.length || 0;
+    this._thermalSources = (this._thermalSources || []).filter(source => source.id !== String(id));
+    return before - this._thermalSources.length;
+  },
+
+  clearThermalSources() {
+    const count = this._thermalSources?.length || 0;
+    this._thermalSources = [];
+    return count;
+  },
+
+  _advanceThermalField() {
+    const grid = this.wall_state?.voxelGridFor?.(this);
+    if (!grid?.advanceTemperatureField) return null;
+    const scenario = this.conditions?._scenario || {};
+    const config = scenario.thermal_field || {};
+    if (config.enabled === false) return null;
+    const hasSources = Array.isArray(this._thermalSources) && this._thermalSources.length > 0;
+    const hasRockBoundary = scenario.wall_rock_thermal_buffer_C != null;
+    // A source-free uniform field needs no work and remains byte-identical.
+    if (!this._thermalFieldActivated && !hasSources && !hasRockBoundary) return null;
+    const receipt = grid.advanceTemperatureField({
+      step: this.step,
+      sources: this._thermalSources,
+      scenario,
+      mesh: this.wall_state.meshFor(this),
+      conduction_fraction_per_step:
+        config.conduction_fraction_per_step ?? this.inter_ring_diffusion_rate,
+      wall_coupling_fraction_per_step: config.wall_coupling_fraction_per_step ?? 0.02,
+    });
+    if (!receipt) return null;
+    const means = grid.boundaryTemperatureMeans();
+    for (let r = 0; r < this.ring_temperatures.length; r++) {
+      if (Number.isFinite(means[r])) this.ring_temperatures[r] = means[r];
+    }
+    const mean = grid.temperatureMean();
+    if (Number.isFinite(mean)) this.conditions.temperature = mean;
+    this._thermalFieldReceipts ||= [];
+    this._thermalFieldReceipts.push(receipt);
+    return receipt;
+  },
+
+  setGlobalTemperature(valueC) {
+    const next = Math.max(-273.15, Math.min(2000, Number(valueC)));
+    if (!Number.isFinite(next)) return this.conditions.temperature;
+    const prior = Number(this.conditions.temperature);
+    const delta = Number.isFinite(prior) ? next - prior : 0;
+    this.conditions.temperature = next;
+    const grid = this.wall_state?.voxelGridFor?.(this);
+    if (grid?.propagateTemperatureDelta && delta !== 0) {
+      grid.propagateTemperatureDelta(delta, 'all');
+      const means = grid.boundaryTemperatureMeans();
+      for (let r = 0; r < this.ring_temperatures.length; r++) {
+        if (Number.isFinite(means[r])) this.ring_temperatures[r] = means[r];
+      }
+    } else if (Array.isArray(this.ring_temperatures)) {
+      for (let r = 0; r < this.ring_temperatures.length; r++) {
+        this.ring_temperatures[r] = next;
+      }
+    }
+    return next;
   },
 
   // ====================================================================
@@ -882,6 +1045,17 @@ _diffuseRingState(rate?) {
     // store is untouched. See _ringFluidMeans for the full rationale.
     ring_fluids: this._ringFluidMeans ? this._ringFluidMeans() : null,
     ring_temperatures: this.ring_temperatures ? this.ring_temperatures.slice() : null,
+    boundary_temperatures: (() => {
+      const grid = this.wall_state?.voxelGridFor?.(this);
+      if (!grid?.temperatureAt) return null;
+      const out = new Array(this.wall_state.ring_count * this.wall_state.cells_per_ring);
+      for (let r = 0; r < this.wall_state.ring_count; r++) {
+        for (let c = 0; c < this.wall_state.cells_per_ring; c++) {
+          out[r * this.wall_state.cells_per_ring + c] = grid.temperatureAt(r, c, 0);
+        }
+      }
+      return out;
+    })(),
     // === END HELIX-OVERLAY-FORK ADDITION ==============================
     // === HELIX-OVERLAY-FORK ADDITION (Week 3 carbonate) ===============
     // f_ord chip in the Carbonate System legend section reads cycle

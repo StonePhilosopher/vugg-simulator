@@ -179,10 +179,29 @@ class VugSimulator {
     // chemistry is bound. d=0 voxels alias the mesh.cells[].fluid
     // objects (per [FIRM] B); d=1, d=2, d=3 voxels each get an
     // independent clone of the bulk fluid. Per-voxel temperature is
-    // initialized to bulk T (per [FIRM] E) but not consumed in v158.
+    // initialized to bulk T and is the canonical local engine temperature.
     // The grid is lazy-cached on wall_state; this call forces the
     // build so the grid is ready when _diffuseRingState first fires.
     this.wall_state.voxelGridFor(this);
+    // SIM 256 thermal localization. Sources stay as plain serializable
+    // records so scenarios, Creative actions, immutable commands, and replay
+    // all share one deterministic representation.
+    this._thermalSources = [];
+    this._thermalSourceCounter = 0;
+    this._thermalFieldReceipts = [];
+    const thermalGrid = this.wall_state.voxelGridFor(this);
+    const authoredThermalSources = this.conditions?._scenario?.thermal_sources;
+    if (thermalGrid && Array.isArray(authoredThermalSources)) {
+      for (let i = 0; i < authoredThermalSources.length; i++) {
+        const normalized = normalizeThermalSourceSpec(
+          authoredThermalSources[i], thermalGrid, `authored-thermal-${i + 1}`,
+        );
+        if (normalized) this._thermalSources.push(normalized);
+      }
+    }
+    this._thermalFieldActivated = this._thermalSources.length > 0
+      || this.conditions?._scenario?.thermal_field != null
+      || this.conditions?._scenario?.wall_rock_thermal_buffer_C != null;
     // Explicit-sulfur conservation baseline. Canonical voxel fluids are the
     // aqueous inventory; accepted growth zones become the solid inventory.
     // _propagateGlobalDelta books only authored boundary declarations and
@@ -394,6 +413,9 @@ class VugSimulator {
     // for the strip.
     this._syncRedoxEh(this._movements
       ? this._movements.drivesFieldAt('Eh', this.step) : false);
+    // Transport first, then let saturation/nucleation read the resulting local
+    // wall temperature during this same step.
+    this._advanceThermalField();
     // History-aware Ostwald routing: an exposed stable quartz surface lets
     // later silica attach/grow as quartz instead of restarting a metastable
     // chalcedony generation after cooling or renewed supply.
@@ -777,7 +799,10 @@ class VugSimulator {
           ? mesh.cellOf(crystal, this.wall_state)
           : null;
         const localFluid = cell?.fluid || (validRing ? this.ring_fluids[ringIdx] : this.conditions.fluid);
-        const localT = validRing ? this.ring_temperatures[ringIdx] : this.conditions.temperature;
+        const vertexIdx = validRing
+          ? anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx : -1;
+        const localT = vertexIdx >= 0
+          ? temperatureAtMeshVertex(this, mesh, vertexIdx) : this.conditions.temperature;
         const transition = applyCaSO4PhaseTransition(
           crystal, localFluid, localT, this.conditions.pressure, this.step,
         );
@@ -800,12 +825,18 @@ class VugSimulator {
     // 173°C). Preserves habit + dominant_forms + zones; only crystal.mineral
     // changes. First non-destructive polymorph mechanic in the sim.
     for (const crystal of this.crystals) {
-      const transition = applyParamorphTransitions(crystal, this.conditions.temperature, this.step);
+      const anchor = this.wall_state._resolveAnchor(crystal);
+      const mesh = this.wall_state.meshFor ? this.wall_state.meshFor(this) : null;
+      const vertexIdx = anchor
+        ? anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx : -1;
+      const localT = vertexIdx >= 0
+        ? temperatureAtMeshVertex(this, mesh, vertexIdx) : this.conditions.temperature;
+      const transition = applyParamorphTransitions(crystal, localT, this.step);
       if (transition) {
         const [oldM, newM] = transition;
         this.log.push(
           `  ↻ PARAMORPH: ${capitalize(oldM)} #${crystal.crystal_id} → ${newM} ` +
-          `(T dropped to ${this.conditions.temperature.toFixed(0)}°C, crossed ${oldM}/${newM} ` +
+          `(local T dropped to ${localT.toFixed(0)}°C, crossed ${oldM}/${newM} ` +
           `phase boundary; cubic external form preserved)`
         );
       }
@@ -875,7 +906,8 @@ class VugSimulator {
           ? cell.fluid
           : this.ring_fluids[ringIdx];
         const ringState = this.conditions.ringWaterState(ringIdx, nRings);
-        const Tlocal = this.ring_temperatures[ringIdx];
+        const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+        const Tlocal = temperatureAtMeshVertex(this, _mesh, vertexIdx);
         const transition = applyDehydrationTransitions(
           crystal, ringFluid, ringState, Tlocal, this.step);
         if (transition) {
@@ -991,10 +1023,12 @@ class VugSimulator {
     {
       const coolSnap = this._snapshotGlobal();
       this.ambient_cooling();
-      this._propagateGlobalDelta(coolSnap);
+      this._propagateGlobalDelta(coolSnap, {
+        ambientThermalStep: this._lastAmbientThermalStep,
+      });
     }
 
-    // Phase C: inter-ring fluid/temperature diffusion runs at the
+    // Phase C: inter-ring fluid diffusion runs at the
     // very end of the step so chemistry exchanges happen against a
     // stable post-events post-growth state. No-op when all rings
     // carry identical values (Laplacian of a constant is zero) —

@@ -117,19 +117,21 @@ describe('calcite morphology classifier (Phase 0)', () => {
     let checked = 0;
     for (let i = 0; i < 60; i++) {
       sim.run_step();
-      let sigmaPost: number;
-      try { sigmaPost = sim.conditions.supersaturation_calcite(); } catch (_e) { continue; }
-      if (!isFinite(sigmaPost) || sigmaPost < 1.0) continue;
       // Phase 4: the Mg bunching term rides the recompute too (post-step
       // Mg:Ca, same basis as σ).
-      const mg = (sim.conditions.fluid.Mg || 0) / Math.max(1e-6, sim.conditions.fluid.Ca || 0);
-      const mgBunch = 1 + CALCITE_MORPH_TH.MG_BUNCH * Math.min(mg, 1);
       for (const c of sim.crystals) {
         if (!c || c.mineral !== 'calcite' || c.dissolved || !c.zones.length) continue;
         const z = c.zones[c.zones.length - 1];
         if (z.step !== sim.step || z.thickness_um <= 0) continue;
+        const local = sim._localNucleationEvaluationAtAnchor('calcite', c.wall_anchor);
+        if (!local || !isFinite(local.sigma) || local.sigma < 1.0) continue;
+        const mg = (local.fluid.Mg || 0) / Math.max(1e-6, local.fluid.Ca || 0);
+        const mgBunch = 1 + CALCITE_MORPH_TH.MG_BUNCH * Math.min(mg, 1);
+        const interfaceSigma = c.growth_environment === 'air'
+          ? 1 + (local.sigma - 1) * CALCITE_MORPH_TH.AIR_FILM_EXCESS_FACTOR
+          : local.sigma;
         const sizeBefore = Math.max(0, c.total_growth_um - z.thickness_um);
-        const expected = calciteMorphRegime(calciteSurfaceSigma(sigmaPost, sizeBefore) * mgBunch);
+        const expected = calciteMorphRegime(calciteSurfaceSigma(interfaceSigma, sizeBefore) * mgBunch);
         expect(z.morph_regime).toBe(expected);
         expect(c._morphology.regime).toBe(expected);
         checked++;

@@ -46,7 +46,7 @@ const _MOVEMENT_SALT = 0x4d4f5645;
 // A dedicated deterministic PRNG for movements, derived from the vugg seed.
 // Reuses _mulberry32 (defined in 22-geometry-wall.ts) — resume-safe, and
 // independent of the shared `rng` cascade. Returns a () => [0,1) function.
-function _makeMovementRng(vuggSeed: number, salt: number = _MOVEMENT_SALT): () => number {
+function _makeMovementRng(vuggSeed: number, salt: number = _MOVEMENT_SALT): StatefulRandom {
   return _mulberry32((((vuggSeed | 0) ^ salt) >>> 0));
 }
 
@@ -210,6 +210,14 @@ function _scenarioNucleationWindowBlock(sim: any, name: string): string | null {
 // untouched. No live RNG, crystal, fluid, log, or counter state is mutated.
 // This makes the hover panel answer whether production CAN call nucleate() now,
 // then separately disclose that the real path still contains stochastic draws.
+function _productionProbeDeepClone(value: any): any {
+  if (value == null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(_productionProbeDeepClone);
+  const clone = Object.create(Object.getPrototypeOf(value));
+  for (const key of Object.keys(value)) clone[key] = _productionProbeDeepClone(value[key]);
+  return clone;
+}
+
 function productionNucleationDecisionProbe(
   name: string,
   sim: any,
@@ -233,15 +241,27 @@ function productionNucleationDecisionProbe(
   const crystalMode = options.crystalMode || 'current';
   probe.crystals = sim.crystals
     .filter((cr: any) => crystalMode !== 'remove-target' || cr.mineral !== name)
-    .map((cr: any) => ({
-    ...cr,
-    ...(crystalMode === 'inactive-target' && cr.mineral === name ? { active: false } : {}),
-    zones: Array.isArray(cr.zones) ? cr.zones.map((zone: any) => ({ ...zone })) : [],
-    phase_transition_history: Array.isArray(cr.phase_transition_history)
-      ? cr.phase_transition_history.map((row: any) => ({ ...row })) : [],
-  }));
-  probe.conditions = Object.assign(Object.create(Object.getPrototypeOf(sim.conditions)), sim.conditions);
-  probe.conditions.fluid = sim.conditions.fluid;
+    .map((cr: any) => {
+      const copy = _productionProbeDeepClone(cr);
+      if (crystalMode === 'inactive-target' && cr.mineral === name) copy.active = false;
+      return copy;
+    });
+  probe.conditions = _productionProbeDeepClone(sim.conditions);
+  // Local nucleation helpers resolve through wall_state.meshFor(). Give the
+  // observer a private chemistry mesh as well as private bulk conditions;
+  // phase-changing probes (notably birnessite -> todorokite) may legitimately
+  // debit their clone but can never reach a live wall-cell fluid.
+  const liveWall = sim.wall_state;
+  const liveMesh = liveWall?.meshFor?.(sim);
+  if (liveWall && liveMesh?.cells) {
+    const probeMesh = Object.assign(Object.create(Object.getPrototypeOf(liveMesh)), liveMesh);
+    probeMesh.cells = liveMesh.cells.map((cell: any) => ({
+      ...cell,
+      fluid: _productionProbeDeepClone(cell?.fluid),
+    }));
+    probe.wall_state = Object.assign(Object.create(Object.getPrototypeOf(liveWall)), liveWall);
+    probe.wall_state.meshFor = () => probeMesh;
+  }
   if (Number.isFinite(options.targetSigma)) {
     probe.conditions[`supersaturation_${name}`] = () => Number(options.targetSigma);
   }
@@ -593,7 +613,7 @@ function _movementSetField(conditions: any, path: string, value: number): void {
 // number — this is what keeps the dark scaffold byte-identical.
 class MovementController {
   movements: MovementSpec[];
-  rng: () => number;
+  rng: StatefulRandom;
   _state: { base: number; ou: number; started: boolean; originCell: number }[];
 
   constructor(movements: MovementSpec[] | undefined, vuggSeed: number) {

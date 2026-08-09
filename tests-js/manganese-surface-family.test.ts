@@ -12,6 +12,9 @@ declare const applyBirnessiteTodorokiteTransition: any;
 declare const remainingBookedInventory: any;
 declare const isTodorokiteBirnessitePrecursor: any;
 declare const _buildMineralFormationExplanation: any;
+declare const _nuc_todorokite: any;
+declare const setSeed: any;
+declare const _liveRng: any;
 
 function conditions(overrides: any = {}, temperature = 25) {
   const fluid = new FluidChemistry({
@@ -79,6 +82,51 @@ describe('SIM 250 honest Mn-oxide surface-family selector', () => {
     expect(c.phase_transition_history).toEqual([record]);
   });
 
+  it('evaluates each precursor at its own voxel and debits only the transformed site', () => {
+    setSeed(7);
+    const c = conditions({ Mg: 100 }, 155);
+    const sim = new VugSimulator(c, []);
+    const cold = bookedBirnessite(201), hot = bookedBirnessite(202);
+    cold.wall_anchor = { ringIdx: 1, cellIdx: 1 };
+    hot.wall_anchor = { ringIdx: 8, cellIdx: 60 };
+    sim.crystals = [cold, hot];
+    const grid = sim.wall_state.voxelGridFor(sim);
+    const mesh = sim.wall_state.meshFor(sim);
+    grid.boundaryVoxel(1, 1).temperature = 25;
+    grid.boundaryVoxel(8, 60).temperature = 155;
+    const coldFluid = mesh.cells[1 * sim.wall_state.cells_per_ring + 1].fluid;
+    const hotFluid = mesh.cells[8 * sim.wall_state.cells_per_ring + 60].fluid;
+    Object.assign(coldFluid, { Mg: 100, Mn: 8, O2: 1.4, pH: 8, SiO2: 40 });
+    Object.assign(hotFluid, { Mg: 100, Mn: 8, O2: 1.4, pH: 8, SiO2: 40 });
+    const coldMgBefore = coldFluid.Mg, hotMgBefore = hotFluid.Mg, bulkMgBefore = c.fluid.Mg;
+    sim._thermalFieldActivated = true;
+    _nuc_todorokite(sim);
+    expect(cold.mineral).toBe('birnessite');
+    expect(coldFluid.Mg).toBe(coldMgBefore);
+    expect(hot.mineral).toBe('todorokite');
+    expect(hotFluid.Mg).toBeLessThan(hotMgBefore);
+    expect(c.fluid.Mg).toBe(bulkMgBefore);
+  });
+
+  it('lets per-vertex chemistry open todorokite when uniform-T bulk chemistry is blocked', () => {
+    setSeed(7);
+    const c = conditions({ Mg: 0.1 }, 155);
+    const sim = new VugSimulator(c, []);
+    const precursor = bookedBirnessite(203);
+    precursor.wall_anchor = { ringIdx: 8, cellIdx: 60 };
+    sim.crystals = [precursor];
+    const mesh = sim.wall_state.meshFor(sim);
+    const localFluid = mesh.cells[8 * sim.wall_state.cells_per_ring + 60].fluid;
+    Object.assign(localFluid, { Mg: 100, Mn: 8, O2: 1.4, pH: 8, SiO2: 40 });
+    expect(c.supersaturation_todorokite()).toBe(0);
+    sim.wall_state.per_vertex_nucleation = true;
+    sim._thermalFieldActivated = false;
+    _nuc_todorokite(sim);
+    expect(precursor.mineral).toBe('todorokite');
+    expect(localFluid.Mg).toBeLessThan(100);
+    expect(c.fluid.Mg).toBe(0.1);
+  });
+
   it('blocks fluid-only todorokite and reports the missing precursor in Creative diagnosis', () => {
     const c = conditions({ Mg: 100 }, 155);
     const sim = new VugSimulator(c, []);
@@ -103,6 +151,32 @@ describe('SIM 250 honest Mn-oxide surface-family selector', () => {
     const whyEligible = _buildMineralFormationExplanation('todorokite', c, sim, sigma);
     expect(whyEligible.state).toBe('eligible');
     expect(whyEligible.verdict).toContain('required birnessite precursor');
+  });
+
+  it('keeps the todorokite hover probe byte-for-byte isolated from live state', () => {
+    setSeed(7);
+    const c = conditions({ Mg: 0.1 }, 155);
+    const sim = new VugSimulator(c, []);
+    const precursor = bookedBirnessite(204);
+    precursor.wall_anchor = { ringIdx: 8, cellIdx: 60 };
+    sim.crystals = [precursor];
+    const mesh = sim.wall_state.meshFor(sim);
+    for (const cell of mesh.cells) cell.fluid.Mg = 0.1;
+    mesh.cells[8 * sim.wall_state.cells_per_ring + 60].fluid.Mg = 100;
+    sim.wall_state.per_vertex_nucleation = true;
+    const testimony = () => JSON.stringify({
+      bulkFluid: c.fluid,
+      wallFluids: mesh.cells.map((cell: any) => cell.fluid),
+      crystals: sim.crystals,
+      log: sim.log,
+      crystalCounter: sim.crystal_counter,
+      rngState: _liveRng().state,
+    });
+    const before = testimony();
+    const why = _buildMineralFormationExplanation('todorokite', c, sim);
+    expect(why.groups.find((group: any) => group.label === 'Production nucleator'))
+      .toBeTruthy();
+    expect(testimony()).toBe(before);
   });
 
   it('shares the full grown, booked, exposed precursor rule with Creative diagnosis', () => {

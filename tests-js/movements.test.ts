@@ -42,6 +42,15 @@ describe('movements — seed-derived PRNG (reproducible randomness)', () => {
       .not.toEqual(Array.from({ length: 6 }, () => other()));
   });
 
+  it('exposes and restores the exact mulberry cursor without changing its sequence', () => {
+    const stream = _makeMovementRng(58);
+    stream();
+    const cursor = stream.state;
+    const expectedNext = stream();
+    stream.state = cursor;
+    expect(stream()).toBe(expectedNext);
+  });
+
   it('_pickOriginCell is seeded (reproducible), in-range, and seed-sensitive', () => {
     const cellCount = 1920;
     const a = _pickOriginCell(_makeMovementRng(58), cellCount);

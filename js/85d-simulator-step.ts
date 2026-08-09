@@ -282,9 +282,39 @@ Object.assign(VugSimulator.prototype, {
   // (declaring a movement is a per-scenario rebake anyway).
   const _mvOwnsT = !!(this._movements && this._movements.drivesFieldAt
     && this._movements.drivesFieldAt('temperature', this.step));
+  // The global conditions object is only the volume-mean view. Preserve the
+  // two physically different contributions so _propagateGlobalDelta can cool
+  // each local control volume toward ambient without blindly subtracting the
+  // bulk delta from cells that are already colder than ambient. A positive
+  // fracture-pulse contribution remains genuine heating and is broadcast
+  // separately below.
+  this._lastAmbientThermalStep = {
+    ambientTemperatureC: null,
+    coolingDeltaC: 0,
+    pulseDeltaC: 0,
+    movementOwnsTemperature: _mvOwnsT,
+  };
   if (!_mvOwnsT) {
-  this.conditions.temperature -= rate * this._thermalRng.uniform(0.8, 1.2);
-  this.conditions.temperature = Math.max(this.conditions.temperature, 25);
+  // Passive conductive loss approaches an authored far-field equilibrium.
+  // The old unconditional Math.max(T, 25) was not cooling: it heated every
+  // 12-22 C cave/playa/aquifer to room temperature on its first step. Keep
+  // the thermal-stream draw unconditional (seed ordering remains stable), but
+  // apply it only while the fluid is warmer than its environment. If no
+  // environment is authored, 25 C remains the legacy warm-system target.
+  const authoredAmbient = this.conditions.wall?.ambient_temperature_C;
+  const ambientTemperature = typeof authoredAmbient === 'number' && Number.isFinite(authoredAmbient)
+    ? authoredAmbient
+    : 25;
+  this._lastAmbientThermalStep.ambientTemperatureC = ambientTemperature;
+  const coolingIncrement = rate * this._thermalRng.uniform(0.8, 1.2);
+  const beforeCooling = this.conditions.temperature;
+  if (this.conditions.temperature > ambientTemperature) {
+    this.conditions.temperature = Math.max(
+      ambientTemperature,
+      this.conditions.temperature - coolingIncrement,
+    );
+  }
+  this._lastAmbientThermalStep.coolingDeltaC = this.conditions.temperature - beforeCooling;
 
   // ---- Thermal pulses: episodic fluid injection ----
   // Real hydrothermal systems don't cool monotonically. Hot fluid pulses
@@ -292,7 +322,11 @@ Object.assign(VugSimulator.prototype, {
   // Probability scales with how far we've cooled (more fractures open as
   // rock contracts) and inversely with how hot we still are (already-hot
   // systems don't notice small pulses).
-  const cooledFraction = 1 - (this.conditions.temperature - 25) / Math.max(this._startTemp || 400, 100);
+  const coolingSpan = Math.max((this._startTemp || 400) - ambientTemperature, 1);
+  const cooledFraction = Math.max(0, Math.min(
+    1,
+    1 - (this.conditions.temperature - ambientTemperature) / coolingSpan,
+  ));
   const pulseChance = 0.04 + cooledFraction * 0.06; // 4-10% per step
   // v162 supergene opt-out (LAST && operand so the chance draw still happens
   // first — keeps the thermal stream's draw pattern uniform). Scenarios that
@@ -308,6 +342,7 @@ Object.assign(VugSimulator.prototype, {
     const actualSpike = newTemp - this.conditions.temperature;
     if (actualSpike > 15) {
       this.conditions.temperature = newTemp;
+      this._lastAmbientThermalStep.pulseDeltaC = actualSpike;
       // Fresh fluid pulse brings chemistry
       const silicaPulse = this._thermalRng.uniform(50, 300);
       if (typeof this.conditions.fluid.addReactiveSilica === 'function') {
@@ -386,18 +421,23 @@ Object.assign(VugSimulator.prototype, {
   // can match against directly). Undefined for legacy non-step paths.
   this._currentVugFill = vugFill;
 
-  _nucleateClass_amphibole(this);
-  _nucleateClass_arsenate(this);
-  _nucleateClass_borate(this);
-  _nucleateClass_carbonate(this);
-  _nucleateClass_halide(this);
-  _nucleateClass_hydroxide(this);
-  _nucleateClass_molybdate(this);
-  _nucleateClass_native(this);
-  _nucleateClass_oxide(this);
-  _nucleateClass_phosphate(this);
-  _nucleateClass_silicate(this);
-  _nucleateClass_sulfate(this);
-  _nucleateClass_sulfide(this);
+  const restoreLocalizedEnvelope = this._installLocalizedNucleationEnvelope?.();
+  try {
+    _nucleateClass_amphibole(this);
+    _nucleateClass_arsenate(this);
+    _nucleateClass_borate(this);
+    _nucleateClass_carbonate(this);
+    _nucleateClass_halide(this);
+    _nucleateClass_hydroxide(this);
+    _nucleateClass_molybdate(this);
+    _nucleateClass_native(this);
+    _nucleateClass_oxide(this);
+    _nucleateClass_phosphate(this);
+    _nucleateClass_silicate(this);
+    _nucleateClass_sulfate(this);
+    _nucleateClass_sulfide(this);
+  } finally {
+    restoreLocalizedEnvelope?.();
+  }
 },
 });

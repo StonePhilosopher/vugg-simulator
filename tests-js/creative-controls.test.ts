@@ -325,6 +325,7 @@ describe('Creative chemistry control contract', () => {
     add('f-wall-mg', '2300');
     add('f-wall-reactivity', '14');
     add('f-cooling-rate', '3');
+    add('f-ambient-temperature', '12');
     add('f-diffusion-rate', '2');
     add('f-primary-bubbles', '4');
     add('f-secondary-bubbles', '9');
@@ -336,6 +337,7 @@ describe('Creative chemistry control contract', () => {
     add('f-pco2', '-200');
     add('f-graphitic', '', 'checkbox').checked = true;
     add('f-open-system', '', 'checkbox').checked = true;
+    add('f-open-spring', '', 'checkbox').checked = true;
     add('f-open-atmosphere', '', 'checkbox').checked = true;
     add('f-thermal-pulses', '', 'checkbox').checked = false;
 
@@ -344,9 +346,10 @@ describe('Creative chemistry control contract', () => {
       composition: 'dolomite', architecture: 'cleft', alpine_cleft: true,
       vug_diameter_mm: 325, thickness_mm: 1200,
       wall_Fe_ppm: 4100, wall_Mn_ppm: 900, wall_Mg_ppm: 2300,
-      reactivity: 1.4, cooling_rate: 0.3, inter_ring_diffusion_rate: 0.02,
+      reactivity: 1.4, cooling_rate: 0.3, ambient_temperature_C: 12,
+      inter_ring_diffusion_rate: 0.02,
       primary_bubbles: 4, secondary_bubbles: 9, shape_seed: 77,
-      gamma_host: 0.35, graphitic: true, open_system: true,
+      gamma_host: 0.35, graphitic: true, open_system: true, open_spring: true,
       thermal_pulses: false,
     });
     expect(result.conditionOpts).toEqual({ flow_rate: 2.7, porosity: 0.18 });
@@ -368,18 +371,21 @@ describe('Creative chemistry control contract', () => {
     set('pressure', '275');
     set('porosity', '22');
     set('cooling', '7');
+    set('ambient', '11');
     set('diameter', '240');
     set('diffusion', '3');
     set('pco2', '-200');
     set('host', 'dolomite');
     set('open_atmosphere', '1');
     set('open_system', '1');
+    set('open_spring', '1');
     set('graphitic', '0');
 
     expect(sim.conditions.fluid_surface_height_mm).toBeCloseTo(sim.wall_state.ring_count * 0.375, 8);
     expect(sim.conditions.pressure).toBe(2.75);
     expect(sim.conditions.porosity).toBe(0.22);
     expect(sim.conditions.wall.cooling_rate).toBe(0.7);
+    expect(sim.conditions.wall.ambient_temperature_C).toBe(11);
     expect(sim.conditions.wall.vug_diameter_mm).toBe(240);
     expect(sim.wall_state.vug_diameter_mm).toBe(240);
     expect(sim.inter_ring_diffusion_rate).toBe(0.03);
@@ -391,6 +397,7 @@ describe('Creative chemistry control contract', () => {
     expect(sim.conditions.wall.composition).toBe('dolomite');
     expect(sim.wall_state.composition).toBe('dolomite');
     expect(sim.conditions.wall.open_system).toBe(true);
+    expect(sim.conditions.wall.open_spring).toBe(true);
     expect(sim.conditions.wall.graphitic).toBe(false);
   });
 
@@ -496,6 +503,63 @@ describe('Creative chemistry control contract', () => {
     expect(sim._fluidSpots.spots.find((s: any) => s.kind === 'crack').open).toBe(true);
     (globalThis as any).fortressStep('toggle_feeders', { action: 'breach', kind: 'geyser' });
     expect(sim._fluidSpots.openSpots()).toHaveLength(2);
+  });
+
+  it('authors and removes localized thermal boundaries without advancing time', () => {
+    (globalThis as any).fortressBeginFromScenario('cooling', 42);
+    const sim = (globalThis as any)._liveFortressSim();
+    const step = sim.step;
+    (globalThis as any).fortressStep('configure_thermal_field', {
+      conduction_fraction_per_step: 0.08,
+      wall_coupling_fraction_per_step: 0.15,
+      wall_rock_thermal_buffer_C: 12,
+    });
+    expect(sim.conditions._scenario.thermal_field).toMatchObject({
+      enabled: true,
+      conduction_fraction_per_step: 0.08,
+      wall_coupling_fraction_per_step: 0.15,
+    });
+    expect(sim.conditions._scenario.wall_rock_thermal_buffer_C).toBe(12);
+    (globalThis as any).fortressStep('set_thermal_source', {
+      id: 'creative-vent', temperature_C: 420, cell: 960, depthIdx: 0,
+      coupling_fraction_per_step: 0.4, advection_fraction_per_step: 0.2,
+      flow_direction: 'toward_center', provenance: 'Creative test',
+    });
+    expect(sim.step).toBe(step);
+    expect(sim._thermalSources).toHaveLength(1);
+    expect(sim._thermalSources[0]).toMatchObject({
+      id: 'creative-vent', temperature_C: 420,
+      coupling_fraction_per_step: 0.4, advection_fraction_per_step: 0.2,
+      flow_direction: 'toward_center',
+    });
+    (globalThis as any).fortressStep('remove_thermal_source', { id: 'creative-vent' });
+    expect(sim.step).toBe(step);
+    expect(sim._thermalSources).toEqual([]);
+    expect(sim._thermalFieldActivated).toBe(true);
+  });
+
+  it('translates the canonical thermal field for every compound temperature action', () => {
+    const cases = [
+      { action: 'brine', expected: (t: number) => t - 10 },
+      { action: 'copper', expected: (t: number) => Math.min(t + 30, 600) },
+      { action: 'oxidize', expected: (t: number) => Math.max(t - 40, 25) },
+      { action: 'shock', expected: (t: number) => t + 15 },
+      { action: 'tectonic', expected: (t: number) => t + 15 },
+    ];
+    for (const row of cases) {
+      (globalThis as any).fortressBeginFromScenario('cooling', 42);
+      const sim = (globalThis as any)._liveFortressSim();
+      const grid = sim.wall_state.voxelGridFor(sim);
+      grid.voxelAt(2, 3, 1).temperature += 17;
+      const before = grid.voxels.map((voxel: any) => voxel.temperature);
+      const beforeBulk = sim.conditions.temperature;
+      (globalThis as any).fortressStep(row.action);
+      const expectedBulk = row.expected(beforeBulk);
+      const delta = expectedBulk - beforeBulk;
+      expect(sim.conditions.temperature, row.action).toBe(expectedBulk);
+      expect(grid.voxels.map((voxel: any) => voxel.temperature), row.action)
+        .toEqual(before.map((temperature: number) => temperature + delta));
+    }
   });
 
   it('sets spatial zone chemistry on the mesh and derives spatial nucleation', () => {

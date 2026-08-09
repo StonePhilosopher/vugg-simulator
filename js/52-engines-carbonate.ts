@@ -368,15 +368,18 @@ function grow_aragonite(crystal, conditions, step) {
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
   let note = `${crystal.habit} CaCO₃`;
-  const sr_uptake = conditions.fluid.Sr * 0.15;
+  const srPartition = aragoniteSrPartitioning(conditions.fluid);
   const pb_uptake = conditions.fluid.Pb * 0.10;
-  if (sr_uptake > 0.5 || pb_uptake > 0.5) {
-    note += ' (Sr+Pb scavenged: aragonite hosts what calcite can\'t)';
+  if (srPartition.formulaCoefficientSr > 0 || pb_uptake > 0.5) {
+    note += ` (Sr partitioned at D=${srPartition.distributionCoefficient.toFixed(2)} from local dripwater`;
+    if (pb_uptake > 0.5) note += '; Pb association observed but not mass-partition calibrated';
+    note += ')';
   }
   if (conditions.fluid.Mg > 0) {
-    const mg_ratio = conditions.fluid.Mg / Math.max(conditions.fluid.Ca, 0.01);
-    if (mg_ratio > 1.5) {
-      note += ` — Mg/Ca=${mg_ratio.toFixed(1)}, calcite is poisoned here`;
+    const mg_ratio_molar = (conditions.fluid.Mg / 24.305)
+      / Math.max(conditions.fluid.Ca / 40.078, 1e-12);
+    if (mg_ratio_molar >= 1.1) {
+      note += ` — molar Mg/Ca=${mg_ratio_molar.toFixed(1)}, calcite is poisoned here`;
     }
   }
 
@@ -384,6 +387,11 @@ function grow_aragonite(crystal, conditions, step) {
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe, trace_Mn,
+    trace_Sr: srPartition.targetSolidSrPpm,
+    trace_stoichiometry: srPartition.formulaCoefficientSr > 0
+      ? { Sr: srPartition.formulaCoefficientSr }
+      : undefined,
+    sr_partition: srPartition,
     note,
   });
 }

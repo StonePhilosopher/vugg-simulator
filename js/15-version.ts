@@ -12644,7 +12644,42 @@
 //       Omega); the cave also carries small mass-balance cascade in HCO3
 //       (0.738 mg/L max) and CO3 (0.013 mg/L max), plus one display-ordinal
 //       calcite-morph sample shift.
-const SIM_VERSION = 255;
+//
+// v256 — Localized LTE thermal field and local decision closure (August 2026).
+//       Every cavity voxel now carries temperature. Conservative six-neighbor
+//       conduction, explicit rock exchange, and order-independent authored
+//       boundary/advection sources evolve the field with geometry-weighted
+//       finite-volume receipts; exchange fractions remain dimensionless
+//       pending a calibrated voxel length and step duration. Nucleation
+//       pre-gates scan every active local chemistry/temperature state,
+//       site selection records local temperature and sigma, growth,
+//       morphology, Wulff-form integrals, dissolution, phase replacement,
+//       HMC composition, and Mn-oxide transformation consume the crystal's
+//       own boundary state. Creative global temperature actions translate the
+//       entire canonical field, while localized sources and pause/resume are
+//       immutable replay commands included in state fingerprints. The live
+//       formation explanation reports the exact maximum cell and probes the
+//       actual production nucleator in that same local context. Habit choice
+//       is evaluated after anchor selection, but its random draw is reserved at
+//       the legacy pre-anchor point so seeded RNG ordering is preserved. All
+//       authored scenario shapes still use scenarios.json5 shape_seed values
+//       and deterministic test runs still default to seed 42. Hostile-review
+//       closeout makes absent aragonite selectors exactly zero (logistic tails
+//       can weight evidence but cannot invent it), replaces the unconditional
+//       25 C thermostat with an authored one-way far-field equilibrium, and
+//       books speleothem-aragonite Sr uptake at Wassenburg et al.'s measured
+//       D_Sr=1.38+/-0.53. Zoned-cave dissolved Sr is scaled from primary
+//       dripwater Sr/Ca data rather than solid-speleo ppm, removing the
+//       unlicensed strontianite branch. Seed-42 baseline comparison moves 7/39
+//       scenarios: bisbee 218->215 crystals, deccan 30->29 (aragonite removed),
+//       elmwood 27->26 (aragonite removed), great_salt_plains 77->65,
+//       roughten_gill 85->81 (descloizite removed), sulphur_bank 46->45, and
+//       supergene_oxidation 111->110 (alunite removed). No species is gained.
+//       The aragonite losses are the intended hard-selector correction; the
+//       remaining count/species changes are deterministic consequences of
+//       local temperature and revised Sr inventory and remain exposed in the
+//       v256 baseline, 39-story archive, 12-story digest, and claim cards.
+const SIM_VERSION = 256;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12654,7 +12689,8 @@ const SIM_VERSION = 255;
 const MODEL_DIGEST = [
   'Pfluid:kbar-0.001..4.4',
   'Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1',
-  'aragonite-selector:Mg+shallowP<=0.10kbar-spring+highPstable-v2',
+  'aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-highPstable-v4',
+  'aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1',
   'CaCO3:Hacker05-negative-linear+/-1kbar',
   'Prock:Pattison92-AndSil-16+/-3barC',
   'stress:instant-resolved-shear-stable-grain-v2',
@@ -12684,11 +12720,12 @@ const MODEL_DIGEST = [
   'halite:vadose-propensity0.8-v1',
   'borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1',
   'competition:accepted-axial-timescale+formula-weighted-budget-v3',
-  'diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4',
+  'thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3',
+  'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
   'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2',
   'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2',
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
   'transition-locality-exclusion:target-gated-v1',
-  'save-identity:version+model+scenario-fail-closed-v1',
+  'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+full-zone-ledgers-fail-closed-v3',
 ].join('|');
 

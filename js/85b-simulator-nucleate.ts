@@ -235,24 +235,10 @@ Object.assign(VugSimulator.prototype, {
     Number(this._nucSharedState || 0), crystal.crystal_id,
   );
 
-  // Pick a growth-vector variant from the spec. Its name sets the habit
-  // and its wall_spread/void_reach/vector populate the topo-map
-  // footprint. Falls back to legacy defaults below if the mineral has
-  // no variant objects in the spec.
-  const variant = selectHabitVariant(
-    mineral, sigma, this.conditions.temperature, this._spaceIsCrowded(),
-    // Proposal B (2026-05): pass current vugFill so habit variants can
-    // gate on it. Stashed by check_nucleation each step. Undefined for
-    // legacy non-step nucleations (preview/library) — selectHabitVariant
-    // skips the fill scoring branch when undefined.
-    this._currentVugFill,
-  );
-  if (variant) {
-    crystal.habit = variant.name || crystal.habit;
-    crystal.wall_spread = Number(variant.wall_spread ?? 0.5);
-    crystal.void_reach = Number(variant.void_reach ?? 0.5);
-    crystal.vector = variant.vector || 'equant';
-  }
+  // Reserve the habit draw at the legacy pre-anchor point so default seeded
+  // scenarios retain their RNG stream. The draw is applied only after the
+  // anchor exists, when its local sigma and temperature are knowable.
+  const _habitVariantDraw = reserveHabitVariantDraw(mineral);
 
   // Anchor on the wall. Crystals that nucleated on another crystal
   // (position "on <mineral> #<id>") inherit the host's cell + ring
@@ -280,9 +266,39 @@ Object.assign(VugSimulator.prototype, {
   // ring + cell come from the same joint sample. Default-off scenarios
   // keep the legacy two-step path.
   this._lastNucVertexRing = null;
+  this._lastNucPositionOverride = null;
   const _cellIdx = this._assignWallCell(position, mineral);
+  if (this._lastNucPositionOverride) {
+    position = this._lastNucPositionOverride;
+    crystal.position = position;
+  }
   const _ringIdx = this._assignWallRing(position, mineral);
   crystal.wall_anchor = this.wall_state._anchorFromRingCell(_ringIdx, _cellIdx);
+  const _meshAtBirth = this.wall_state.meshFor(this);
+  const _vertexAtBirth = _ringIdx * this.wall_state.cells_per_ring + _cellIdx;
+  const _localBirthTemperature = temperatureAtMeshVertex(this, _meshAtBirth, _vertexAtBirth);
+  const _localBirthEvaluation = this._localNucleationEvaluationAtAnchor(
+    mineral, crystal.wall_anchor,
+  );
+  const _localBirthSigma = Number.isFinite(_localBirthEvaluation?.sigma)
+    ? _localBirthEvaluation.sigma : sigma;
+  crystal.nucleation_temp = _localBirthTemperature;
+  crystal.nucleation_sigma = _localBirthSigma;
+  // Pick the growth-vector variant only after the site exists, so temperature-
+  // and saturation-gated habits see the same local boundary voxel as
+  // nucleation and growth. The selector consumes the draw reserved before
+  // site selection, preserving legacy RNG ordering while applying it to the
+  // scientifically correct local birth state.
+  const variant = selectHabitVariant(
+    mineral, _localBirthSigma, _localBirthTemperature,
+    this._spaceIsCrowded(), this._currentVugFill, _habitVariantDraw,
+  );
+  if (variant) {
+    crystal.habit = variant.name || crystal.habit;
+    crystal.wall_spread = Number(variant.wall_spread ?? 0.5);
+    crystal.void_reach = Number(variant.void_reach ?? 0.5);
+    crystal.vector = variant.vector || 'equant';
+  }
 
   // v24 water-level: stamp growth_environment from the ring's
   // water state. Submerged or meniscus = wet = 'fluid'; vadose
@@ -760,22 +776,23 @@ _wallStrangledFor(mineral) {
   if (ringCount < 1 || N < 1) return false;
   if (mesh.cells.length < ringCount * N) return false;
 
-  const ringTemps = this.ring_temperatures || [];
   // Swap conditions.fluid + .temperature to per-cell values inside the
   // loop, restore in finally — same pattern as _perVertexNucleationSample
   // and _runEngineForCrystal.
   const savedFluid = this.conditions.fluid;
   const savedTemp = this.conditions.temperature;
+  const savedDirectEvaluation = !!this._localNucleationDirectEvaluation;
   let anyClears = false;
   try {
+    this._localNucleationDirectEvaluation = true;
     for (let r = 0; r < ringCount && !anyClears; r++) {
-      const tempR = (r < ringTemps.length) ? ringTemps[r] : savedTemp;
-      this.conditions.temperature = tempR;
       for (let c = 0; c < N; c++) {
-        const cell = mesh.cells[r * N + c];
+        const vertexIdx = r * N + c;
+        const cell = mesh.cells[vertexIdx];
         const cellFluid = cell ? cell.fluid : null;
         if (!cellFluid) continue;
         this.conditions.fluid = cellFluid;
+        this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
         let sigma = 0;
         try {
           sigma = sigmaFn.call(this.conditions);
@@ -796,10 +813,115 @@ _wallStrangledFor(mineral) {
       }
     }
   } finally {
+    this._localNucleationDirectEvaluation = savedDirectEvaluation;
     this.conditions.fluid = savedFluid;
     this.conditions.temperature = savedTemp;
   }
   return !anyClears;  // strangled when no cell cleared σ_crit
+},
+
+// Whenever local wall chemistry or the canonical thermal field is active, the
+// traditional bulk supersaturation pre-gates must not veto a viable wall cell.
+// This temporary envelope replaces each supersaturation method only for the
+// check_nucleation transaction. Each wrapper returns the maximum finite local
+// sigma, while the later per-vertex sampler calls the captured production
+// method directly and chooses among the actual eligible cells. A run bypasses
+// the envelope only when neither spatial contract is active.
+_installLocalizedNucleationEnvelope() {
+  const wall = this.wall_state;
+  if (!(wall?.per_vertex_nucleation || this._thermalFieldActivated)) return null;
+  const mesh = wall?.meshFor?.(this);
+  const grid = wall?.voxelGridFor?.(this);
+  const ringCount = wall?.ring_count | 0;
+  const N = wall?.cells_per_ring | 0;
+  if (!mesh?.cells?.length || !grid || ringCount < 1 || N < 1) return null;
+
+  let minT = Infinity, maxT = -Infinity;
+  const boundaryTemperatures: Array<{ vertexIdx: number; temperatureC: number }> = [];
+  for (let r = 0; r < ringCount; r++) {
+    for (let c = 0; c < N; c++) {
+      const value = grid.temperatureAt(r, c, 0);
+      if (!Number.isFinite(value)) continue;
+      minT = Math.min(minT, value);
+      maxT = Math.max(maxT, value);
+      boundaryTemperatures.push({ vertexIdx: r * N + c, temperatureC: value });
+    }
+  }
+  // Temperature is only one part of the local state. Even a completely
+  // uniform thermal field can carry authored zonation or local depletion, so
+  // an honest maximum must include every boundary cell whenever either local
+  // chemistry or the canonical spatial thermal field is active.
+  const candidateVertices = boundaryTemperatures;
+  if (!candidateVertices.length) return null;
+
+  const conditions = this.conditions;
+  const minerals = Object.keys(
+    typeof MINERAL_GATES_REGISTRY !== 'undefined' ? MINERAL_GATES_REGISTRY : {},
+  ).sort();
+  const restores: Array<() => void> = [];
+  const cache = new Map<string, number>();
+  this._localizedNucleationPeaks = {};
+  for (const mineral of minerals) {
+    const methodName = `supersaturation_${mineral}`;
+    const original = conditions[methodName];
+    if (typeof original !== 'function') continue;
+    const priorOwnDescriptor = Object.getOwnPropertyDescriptor(conditions, methodName);
+    const sim = this;
+    conditions[methodName] = function (...args: any[]) {
+      if (sim._localNucleationDirectEvaluation || sim._localNucleationEnvelopeEvaluating) {
+        return original.apply(conditions, args);
+      }
+      const key = `${methodName}:${JSON.stringify(args)}`;
+      if (cache.has(key)) return cache.get(key);
+      const savedFluid = conditions.fluid;
+      const savedTemp = conditions.temperature;
+      let best = -Infinity;
+      let bestVertex = -1;
+      try {
+        sim._localNucleationEnvelopeEvaluating = true;
+        // The local envelope is a boundary-state maximum, not max(bulk,
+        // boundary). Bulk conditions are a UI/event control surface and may be
+        // chemically unlike every accessible wall cell.
+        for (const candidate of candidateVertices) {
+          const vertexIdx = candidate.vertexIdx;
+          const fluid = mesh.cells[vertexIdx]?.fluid;
+          if (!fluid) continue;
+          conditions.fluid = fluid;
+          conditions.temperature = temperatureAtMeshVertex(sim, mesh, vertexIdx);
+          let sigma = 0;
+          try { sigma = Number(original.apply(conditions, args)); } catch (_e) { sigma = 0; }
+          if (Number.isFinite(sigma) && sigma > best) {
+            best = sigma;
+            bestVertex = vertexIdx;
+          }
+        }
+      } finally {
+        sim._localNucleationEnvelopeEvaluating = false;
+        conditions.fluid = savedFluid;
+        conditions.temperature = savedTemp;
+      }
+      const result = Number.isFinite(best) ? best : 0;
+      cache.set(key, result);
+      if (bestVertex >= 0) {
+        sim._localizedNucleationPeaks[mineral] = {
+          sigma: result,
+          ringIdx: Math.floor(bestVertex / N),
+          cellIdx: bestVertex % N,
+          temperatureC: grid.temperatureAt(Math.floor(bestVertex / N), bestVertex % N, 0),
+        };
+      }
+      return result;
+    };
+    restores.push(() => {
+      if (priorOwnDescriptor) Object.defineProperty(conditions, methodName, priorOwnDescriptor);
+      else delete conditions[methodName];
+    });
+  }
+  return () => {
+    for (let i = restores.length - 1; i >= 0; i--) restores[i]();
+    this._localNucleationEnvelopeEvaluating = false;
+    this._localNucleationDirectEvaluation = false;
+  };
 },
 
   // Q1a paragenesis hook — consult MINERAL_PARAGENESIS substrate-
@@ -837,7 +959,49 @@ _wallStrangledFor(mineral) {
   _sigmaDiscountForPosition(mineral, position) {
     const parsed = parsePositionHost(position, this.crystals);
     if (!parsed) return 1.0;
-    return engineExecutableSubstrateDiscount(parsed.hostMineral, mineral);
+    const discount = engineExecutableSubstrateDiscount(parsed.hostMineral, mineral);
+    if (!(this.wall_state?.per_vertex_nucleation || this._thermalFieldActivated)) return discount;
+    const anchor = this.wall_state?._resolveAnchor?.(parsed.host);
+    const local = this._localNucleationEvaluationAtAnchor(mineral, anchor);
+    const sigmaCrit = Number(MINERAL_GATES_REGISTRY?.[mineral]?.sigma_crit);
+    // A catalytic discount belongs to the host surface, not to a remote hot
+    // spot. If this host's own local state does not clear the discounted gate,
+    // remove the discount; a genuinely viable bare-wall maximum may still fire.
+    if (Number.isFinite(sigmaCrit) && !(local?.sigma > sigmaCrit * discount)) return 1.0;
+    return discount;
+  },
+
+  _localNucleationEvaluationAtAnchor(mineral, anchor, args: any[] = []) {
+    if (!anchor) return null;
+    const wall = this.wall_state;
+    const N = wall?.cells_per_ring | 0;
+    const mesh = wall?.meshFor?.(this);
+    const vertexIdx = Number(anchor.ringIdx) * N + Number(anchor.cellIdx);
+    const fluid = mesh?.cells?.[vertexIdx]?.fluid;
+    const sigmaFn = this.conditions?.[`supersaturation_${mineral}`];
+    if (!fluid || typeof sigmaFn !== 'function') return null;
+    const savedFluid = this.conditions.fluid;
+    const savedTemp = this.conditions.temperature;
+    const savedDirect = !!this._localNucleationDirectEvaluation;
+    try {
+      this._localNucleationDirectEvaluation = true;
+      this.conditions.fluid = fluid;
+      this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
+      const sigma = Number(sigmaFn.apply(this.conditions, args));
+      return {
+        sigma: Number.isFinite(sigma) ? sigma : 0,
+        temperatureC: this.conditions.temperature,
+        fluid,
+        ringIdx: anchor.ringIdx,
+        cellIdx: anchor.cellIdx,
+      };
+    } catch (_e) {
+      return { sigma: 0, temperatureC: NaN, fluid, ringIdx: anchor.ringIdx, cellIdx: anchor.cellIdx };
+    } finally {
+      this._localNucleationDirectEvaluation = savedDirect;
+      this.conditions.fluid = savedFluid;
+      this.conditions.temperature = savedTemp;
+    }
   },
 
   _assignWallCell(position, mineral) {
@@ -856,7 +1020,21 @@ _wallStrangledFor(mineral) {
     // site keeps working when the legacy fields retire in Phase 4.
     if (host) {
       const a = this.wall_state._resolveAnchor(host);
-      if (a) return a.cellIdx;
+      if (a) {
+        if (!(this.wall_state?.per_vertex_nucleation || this._thermalFieldActivated)) return a.cellIdx;
+        const local = this._localNucleationEvaluationAtAnchor(mineral, a);
+        const sigmaCrit = Number(MINERAL_GATES_REGISTRY?.[mineral]?.sigma_crit);
+        const discount = this._sigmaDiscountForPosition(mineral, position);
+        if (!Number.isFinite(sigmaCrit) || (local && local.sigma > sigmaCrit * discount)) {
+          return a.cellIdx;
+        }
+        const picked = this._perVertexNucleationSample(mineral);
+        if (picked) {
+          this._lastNucVertexRing = picked.ringIdx;
+          this._lastNucPositionOverride = 'vug wall (local chemistry; proposed remote substrate ineligible)';
+          return picked.cellIdx;
+        }
+      }
     }
   }
   // Tranche 6 of PROPOSAL-CAVITY-MESH §14: per-vertex nucleation. When
@@ -880,7 +1058,7 @@ _wallStrangledFor(mineral) {
     mineral &&
     typeof mineral === 'string' &&
     this.wall_state &&
-    this.wall_state.per_vertex_nucleation
+    (this.wall_state.per_vertex_nucleation || this._thermalFieldActivated)
   ) {
     const picked = this._perVertexNucleationSample(mineral);
     if (picked) {
@@ -1006,6 +1184,8 @@ _perVertexNucleationSample(mineral) {
   // sigma-panel UI use.
   const sigmaFn = this.conditions[`supersaturation_${mineral}`];
   if (typeof sigmaFn !== 'function') return null;
+  const sigmaCrit = Number(MINERAL_GATES_REGISTRY?.[mineral]?.sigma_crit);
+  const localThreshold = Number.isFinite(sigmaCrit) ? Math.max(1, sigmaCrit) : 1;
 
   // Per-vertex chemistry lives on the WallMesh. The mesh is built
   // in the simulator constructor and re-baked on dissolution events
@@ -1015,14 +1195,10 @@ _perVertexNucleationSample(mineral) {
   const mesh = wall.meshFor ? wall.meshFor(this) : null;
   if (!mesh || !mesh.cells || mesh.cells.length < ringCount * N) return null;
 
-  // Pull the per-ring temperature array. ring_temperatures is
-  // allocated in the simulator constructor with one slot per ring;
-  // engines + events mutate it during cooling/thermal pulses.
-  const ringTemps = this.ring_temperatures || [];
-
   // Save conditions.fluid + .temperature once; swap inside the loop.
   const savedFluid = this.conditions.fluid;
   const savedTemp = this.conditions.temperature;
+  const savedDirectEvaluation = !!this._localNucleationDirectEvaluation;
 
   // Phase 2c.2b — DEPOSITION CLUSTERING: multiply the per-cell σ weight by the
   // feeder proximity halo (proximityField), so a per-vertex scenario with open
@@ -1034,9 +1210,8 @@ _perVertexNucleationSample(mineral) {
   const weights = new Float64Array(ringCount * N);
   let total = 0;
   try {
+    this._localNucleationDirectEvaluation = true;
     for (let r = 0; r < ringCount; r++) {
-      const tempR = (r < ringTemps.length) ? ringTemps[r] : savedTemp;
-      this.conditions.temperature = tempR;
       // sin(φ) area weight — depends only on the ring, hoist out of the
       // cell loop. This is the polar-thinning correction (see header).
       const areaW = wall.ringAreaWeight(r);
@@ -1046,6 +1221,7 @@ _perVertexNucleationSample(mineral) {
         const cellFluid = cell ? cell.fluid : null;
         if (!cellFluid) continue;
         this.conditions.fluid = cellFluid;
+        this.conditions.temperature = temperatureAtMeshVertex(this, mesh, idx);
         let sigma = 0;
         try {
           sigma = sigmaFn.call(this.conditions);
@@ -1054,14 +1230,15 @@ _perVertexNucleationSample(mineral) {
           // returning early on missing fields) → treat as σ=0.
           sigma = 0;
         }
-        if (!Number.isFinite(sigma) || sigma <= 1) continue;
-        let w = areaW * (sigma - 1) * (sigma - 1);
+        if (!Number.isFinite(sigma) || sigma <= localThreshold) continue;
+        let w = areaW * (sigma - localThreshold) * (sigma - localThreshold);
         if (prox) w *= prox[idx];
         weights[idx] = w;
         total += w;
       }
     }
   } finally {
+    this._localNucleationDirectEvaluation = savedDirectEvaluation;
     this.conditions.fluid = savedFluid;
     this.conditions.temperature = savedTemp;
   }
@@ -1120,7 +1297,8 @@ _runEngineForCrystal(engine, crystal) {
     this.conditions.fluid = (cell && cell.fluid)
       ? cell.fluid
       : this.ring_fluids[ringIdx];  // last-resort sentinel; should never hit
-    this.conditions.temperature = this.ring_temperatures[ringIdx];
+    const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+    this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
   }
   try {
     return _runEngineFluidTransaction(engine, crystal, this.conditions, this.step);
@@ -1129,7 +1307,6 @@ _runEngineForCrystal(engine, crystal) {
       this.conditions.fluid = savedFluid;
     }
     if (savedTemp != null) {
-      this.ring_temperatures[ringIdx] = this.conditions.temperature;
       this.conditions.temperature = savedTemp;
     }
   }
@@ -1287,7 +1464,8 @@ _dryRunEngineForCrystal(engine, crystal) {
     this.conditions.fluid = (cell && cell.fluid)
       ? cell.fluid
       : this.ring_fluids[ringIdx];
-    this.conditions.temperature = this.ring_temperatures[ringIdx];
+    const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+    this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
   }
   try {
     return _runEngineFluidTransaction(engine, crystal, this.conditions, this.step);
@@ -1296,7 +1474,6 @@ _dryRunEngineForCrystal(engine, crystal) {
       this.conditions.fluid = savedFluid;
     }
     if (savedTemp != null) {
-      this.ring_temperatures[ringIdx] = this.conditions.temperature;
       this.conditions.temperature = savedTemp;
     }
   }
@@ -1323,11 +1500,13 @@ _applyZoneGrowthBudget(crystal, zone) {
     this.conditions.fluid = (cell && cell.fluid)
       ? cell.fluid
       : this.ring_fluids[ringIdx];
-    this.conditions.temperature = this.ring_temperatures[ringIdx];
+    const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+    this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
   }
   try {
     this.conditions._carbonateBoundaryBulkFluid = bulkFluidHandle;
     const depleted = applyStoichiometricGrowthBudget(crystal, zone, this.conditions);
+    finalizeAragoniteSrPartitionReceipt(crystal, zone);
     // applyStoichiometricGrowthBudget may shrink a requested zone to the formula amount the
     // local mg/kg reservoirs can actually supply. Commit engine-side habit /
     // state mutations only after that final accepted thickness is known.
@@ -1353,7 +1532,6 @@ _applyZoneGrowthBudget(crystal, zone) {
       this.conditions.fluid = savedFluid;
     }
     if (savedTemp != null) {
-      this.ring_temperatures[ringIdx] = this.conditions.temperature;
       this.conditions.temperature = savedTemp;
     }
   }
@@ -1459,7 +1637,11 @@ _computeGraduatedZones() {
         const savedFluid = this.conditions.fluid;
         const savedTemp = this.conditions.temperature;
         this.conditions.fluid = cellFluid;
-        this.conditions.temperature = ringIdx != null ? this.ring_temperatures[ringIdx] : savedTemp;
+        const vertexIdx = anchor
+          ? anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx : -1;
+        this.conditions.temperature = vertexIdx >= 0
+          ? temperatureAtMeshVertex(this, this.wall_state.meshFor(this), vertexIdx)
+          : savedTemp;
         try {
           sigma = sigmaFn.call(this.conditions);
         } finally {
@@ -1473,7 +1655,15 @@ _computeGraduatedZones() {
     if (!cellGroups.has(cellKey)) {
       cellGroups.set(cellKey, { fluid: cellFluid, items: [] });
     }
-    cellGroups.get(cellKey).items.push({ crystal, zone: dryZone, sigma, initiative: 0 });
+    const localTemperature = anchor
+      ? temperatureAtMeshVertex(
+        this, this.wall_state.meshFor(this),
+        anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx,
+      )
+      : this.conditions.temperature;
+    cellGroups.get(cellKey).items.push({
+      crystal, zone: dryZone, sigma, initiative: 0, localTemperature,
+    });
   }
 
   // Per-cell: compute initiatives + rationing (`out` already has
@@ -1500,7 +1690,11 @@ _computeGraduatedZones() {
     // crystal of that mineral in the cell).
     const initiativeByMineral: Record<string, number> = {};
     for (const mineral of Object.keys(sigmaByMineral)) {
-      const r = computeInitiative(mineral, sigmaByMineral[mineral], this.conditions, activeMinerals);
+      const representative = items.find(it => it.crystal.mineral === mineral);
+      const r = computeInitiative(
+        mineral, sigmaByMineral[mineral],
+        { temperature: representative?.localTemperature }, activeMinerals,
+      );
       initiativeByMineral[mineral] = r.finalInitiative;
     }
     for (const it of items) {

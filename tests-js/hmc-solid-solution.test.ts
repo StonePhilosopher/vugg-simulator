@@ -13,6 +13,7 @@ declare const hmcSolidSolutionAssessment: (x: number, T: number) => any;
 declare const applyStoichiometricGrowthBudget: (crystal: any, zone: any, conditions: any) => any;
 declare const _buildMineralFormationExplanation: (name: string, c: any, sim?: any, sigma?: number) => any;
 declare const _renderFortressSigmaGroups: (c: any, host: HTMLElement) => void;
+declare const _nuc_HMC: (sim: any) => void;
 
 function diagnosticGroup(explanation: any, label: string): any {
   const group = explanation.groups.find((candidate: any) => candidate.label === label);
@@ -21,6 +22,32 @@ function diagnosticGroup(explanation: any, label: string): any {
 }
 
 describe('HMC measured partition and subregular solid activities', () => {
+  it('nucleates from a covered local fluid even when the bulk parent is outside the partition domain', () => {
+    setSeed(42);
+    const bulk = new VugConditions({
+      temperature: 18,
+      fluid: new FluidChemistry({ Ca: 2000, Mg: 1500, CO3: 2200, pH: 8.4, salinity: 5 }),
+    });
+    const sim = new VugSimulator(bulk, []);
+    const mesh = sim.wall_state.meshFor(sim), grid = sim.wall_state.voxelGridFor(sim);
+    const target = { ringIdx: 6, cellIdx: 31 };
+    const local = mesh.cells[target.ringIdx * sim.wall_state.cells_per_ring + target.cellIdx].fluid;
+    Object.assign(local, { Ca: 400.78, Mg: 1263.86, CO3: 5000, pH: 8, salinity: 35 });
+    grid.boundaryVoxel(target.ringIdx, target.cellIdx).temperature = 25;
+    sim._thermalFieldActivated = true;
+    _nuc_HMC(sim);
+    const hmc = sim.crystals.find((crystal: any) => crystal.mineral === 'HMC');
+    expect(hmc).toBeTruthy();
+    expect(hmc.wall_anchor).toMatchObject(target);
+    expect(hmc._hmc_nucleation_composition).toMatchObject({
+      compositionDomainSupported: true,
+      compositionDomainStatus: 'standard_seawater_ratio_salinity_proxy',
+    });
+    expect(hmc._mg_content).toBeCloseTo(
+      hmc._hmc_nucleation_composition.mgMoleFraction, 12,
+    );
+  });
+
   it('uses molar Mg/Ca and the three measured Mucci temperature anchors', () => {
     // Standard-seawater-like molar Mg/Ca and salinity: the bounded domain
     // of Mucci's three-temperature series.

@@ -37,8 +37,8 @@
 //     from wall cells, events still mutate conditions.fluid, diffusion
 //     still runs on wall slab only). Uniform initial values mean a real
 //     Laplacian would be a no-op anyway.
-//   - Per-voxel temperature stored but not consumed yet ([FIRM] E).
-//     Engines still read ring_temperatures[].
+//   - Historical v158 note: per-voxel temperature was stored but not consumed.
+//     SIM 256 promotes it to the canonical local field (js/24b).
 //   - voxelGrid.diffuse() is the CANONICAL diffusion path going forward
 //     ([FIRM] H merge); in v158 it just delegates to wall.mesh.diffuse.
 //     Phase 2 expands the body to do real per-voxel + radial diffusion.
@@ -71,8 +71,8 @@ interface CavityVoxelLike {
   depthIdx: number;
   // Fluid — aliased to wall mesh cell fluid at d=0; independent clone otherwise.
   fluid: any;
-  // Per-voxel temperature. v158: stored, init to bulk T, not consumed.
-  // Phase 2+: engines read per-voxel T; Phase 4+ adds thermal convection.
+  // Per-voxel LTE temperature. SIM 256 promotes it to the canonical local field.
+  // js/24b supplies bounded conduction, open boundaries, and advection.
   temperature: number;
 }
 
@@ -271,7 +271,7 @@ class CavityVoxelGrid {
   // implementation is already optimized (pre-allocated snapshot,
   // inline neighbor indices, per-field variance skip) and ready to
   // ship; only the dispatch is gated.
-  diffuse(rate: number, fieldNames: string[], ringTemps?: number[]): void {
+  diffuse(rate: number, fieldNames: string[]): void {
     if (!(rate > 0)) return;
     if (!fieldNames || !fieldNames.length) return;
     // v160 (Phase 2b) — real per-voxel 3D Laplacian. The d=0 slab is
@@ -284,7 +284,7 @@ class CavityVoxelGrid {
     // depleted via growth budget, and depletion halos propagate
     // radially inward as 3D objects. See _diffuseFull for the
     // optimized implementation + perf notes.
-    this._diffuseFull(rate, fieldNames, ringTemps);
+    this._diffuseFull(rate, fieldNames);
   }
 
   // v159 prep / v160-ready implementation: real 3D Laplacian across
@@ -310,7 +310,7 @@ class CavityVoxelGrid {
   // scenarios. Under proposal's 20 ms target. Tighter bounds available
   // via further optimization (sparse diffusion per [FIRM] performance
   // table) if v160 surfaces a perf regression.
-  _diffuseFull(rate: number, fieldNames: string[], ringTemps?: number[]): void {
+  _diffuseFull(rate: number, fieldNames: string[]): void {
     if (!(rate > 0)) return;
     if (!fieldNames || !fieldNames.length) return;
     if (!this.voxels || !this.voxels.length) return;
@@ -388,16 +388,6 @@ class CavityVoxelGrid {
     }
     if (activeFieldCount === 0) {
       // Whole grid is uniform across every field — Laplacian is a no-op.
-      // Skip everything except the temperature diffusion below.
-      if (ringTemps && ringTemps.length > 0) {
-        const oldT = ringTemps.slice();
-        const n = ringTemps.length;
-        for (let k = 0; k < n; k++) {
-          const kp = k > 0 ? k - 1 : 0;
-          const kn = k < n - 1 ? k + 1 : n - 1;
-          ringTemps[k] = oldT[k] + rate * (oldT[kp] + oldT[kn] - 2 * oldT[k]);
-        }
-      }
       return;
     }
 
@@ -474,17 +464,6 @@ class CavityVoxelGrid {
       }
     }
 
-    // ringTemps continues to diffuse 1D per-ring (Tranche 4a's pattern).
-    // Per-voxel temperature stored but not consumed yet ([FIRM] E).
-    if (ringTemps && ringTemps.length > 0) {
-      const oldT = ringTemps.slice();
-      const n = ringTemps.length;
-      for (let k = 0; k < n; k++) {
-        const kp = k > 0 ? k - 1 : 0;
-        const kn = k < n - 1 ? k + 1 : n - 1;
-        ringTemps[k] = oldT[k] + rate * (oldT[kp] + oldT[kn] - 2 * oldT[k]);
-      }
-    }
   }
 
   // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 2a (v159) — propagate an

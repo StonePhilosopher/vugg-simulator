@@ -56,7 +56,7 @@ const _ORIENT_SALT = 0x4f524e54;
 // draws. SCRAMBLED not bare-XOR (js/85j:69 — nearby run seeds correlate under a
 // bare XOR): one throwaway avalanche draw, then seed the real stream. Reuses
 // _mulberry32 (js/22), a bundle global available by this file's concat order.
-function _makeOrientRng(sharedState: number): () => number {
+function _makeOrientRng(sharedState: number): StatefulRandom {
   const scramble = _mulberry32((((sharedState | 0) ^ _ORIENT_SALT) >>> 0));
   return _mulberry32(Math.floor(scramble() * 4294967296) >>> 0);
 }

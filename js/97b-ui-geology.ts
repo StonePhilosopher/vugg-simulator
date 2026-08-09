@@ -146,6 +146,40 @@ function creativeToggleFeeders(action: 'seal' | 'breach') {
   fortressStep('toggle_feeders', { action, kind: kind || null });
 }
 
+function creativeSetThermalSource() {
+  if (!fortressSim || !fortressActive) return;
+  fortressStep('set_thermal_source', {
+    id: (document.getElementById('creative-thermal-id') as HTMLInputElement | null)?.value || 'creative-heat-1',
+    temperature_C: _creativeOptionalNumber('creative-thermal-temperature'),
+    cell: _creativeOptionalNumber('creative-thermal-cell'),
+    depthIdx: _creativeOptionalNumber('creative-thermal-depth') ?? 0,
+    coupling_fraction_per_step: _creativeOptionalNumber('creative-thermal-coupling') ?? 0.35,
+    advection_fraction_per_step: _creativeOptionalNumber('creative-thermal-advection') ?? 0.20,
+    flow_direction: (document.getElementById('creative-thermal-direction') as HTMLSelectElement | null)?.value || 'toward_center',
+    start_step: _creativeOptionalNumber('creative-thermal-start'),
+    end_step: _creativeOptionalNumber('creative-thermal-end'),
+    provenance: 'Creative player-authored thermal boundary',
+  });
+}
+
+function creativeConfigureThermalField() {
+  if (!fortressSim || !fortressActive) return;
+  const rockInput = document.getElementById('creative-thermal-rock-temperature') as HTMLInputElement | null;
+  fortressStep('configure_thermal_field', {
+    enabled: (document.getElementById('creative-thermal-enabled') as HTMLSelectElement | null)?.value !== '0',
+    conduction_fraction_per_step: _creativeOptionalNumber('creative-thermal-conduction'),
+    wall_coupling_fraction_per_step: _creativeOptionalNumber('creative-thermal-wall-coupling'),
+    wall_rock_thermal_buffer_C: rockInput?.value === ''
+      ? null : _creativeOptionalNumber('creative-thermal-rock-temperature'),
+  });
+}
+
+function creativeRemoveThermalSource(clearAll = false) {
+  fortressStep(clearAll ? 'clear_thermal_sources' : 'remove_thermal_source', {
+    id: (document.getElementById('creative-thermal-id') as HTMLInputElement | null)?.value || '',
+  });
+}
+
 function applyCreativeZoneChemistry(sim: any, payload: any): number {
   if (!sim || !payload) return 0;
   const zone = ['floor', 'wall', 'ceiling'].includes(payload.zone) ? payload.zone : null;
@@ -255,6 +289,16 @@ function refreshCreativeGeologyEditors() {
     feederEl.textContent = spots.length
       ? spots.map((s, i) => `${i + 1}. cell ${s.cell} · ${s.kind} · ${s.open ? 'open' : 'sealed'} · supply ${s.supply.toFixed(2)} · erosion ${s.decayBonus.toFixed(2)}`).join('\n')
       : 'No point feeders; cavity is uniformly bathed.';
+  }
+  const thermalEl = document.getElementById('creative-thermal-list');
+  if (thermalEl) {
+    const sources = fortressSim._thermalSources || [];
+    const field = fortressSim.conditions?._scenario?.thermal_field || {};
+    const rock = fortressSim.conditions?._scenario?.wall_rock_thermal_buffer_C;
+    const header = `Transport: ${field.enabled === false ? 'paused' : 'enabled'} · conduction ${Number(field.conduction_fraction_per_step ?? fortressSim.inter_ring_diffusion_rate).toFixed(4)}/step · wall exchange ${Number(field.wall_coupling_fraction_per_step ?? 0.02).toFixed(4)}/step · rock ${Number.isFinite(Number(rock)) ? `${Number(rock).toFixed(1)}°C` : 'none'}`;
+    thermalEl.textContent = sources.length
+      ? `${header}\n${sources.map((source, i) => `${i + 1}. ${source.id} · ${source.temperature_C.toFixed(1)}°C · cell ${source.ringIdx * fortressSim.wall_state.cells_per_ring + source.cellIdx}, depth ${source.depthIdx} · ${source.flow_direction} · source ${source.coupling_fraction_per_step.toFixed(2)}/step · advection ${source.advection_fraction_per_step.toFixed(2)}/step · active ${source.start_step ?? 0}–${source.end_step ?? '∞'}`).join('\n')}`
+      : `${header}\nNo localized thermal sources; stored anomalies, if any, relax by conduction.`;
   }
   const zoneEl = document.getElementById('creative-zone-list');
   if (zoneEl) {

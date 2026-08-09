@@ -3755,6 +3755,11 @@ Scenarios:
       <input type="range" id="f-cooling-rate" min="0" max="200" value="15" step="1" oninput="document.getElementById('f-cooling-rate-val').textContent=(this.value/10).toFixed(1)+' °C/step'">
       <span class="range-val" id="f-cooling-rate-val">1.5 °C/step</span>
     </div>
+    <div class="setup-row" title="Far-field rock/air/water temperature approached by passive cooling. Cooling is one-way: a fluid already colder than this boundary is not warmed unless a heat source or event does so.">
+      <label for="f-ambient-temperature">Thermal equilibrium</label>
+      <input type="range" id="f-ambient-temperature" min="-50" max="1200" value="25" step="1" oninput="document.getElementById('f-ambient-temperature-val').textContent=this.value+' °C'">
+      <span class="range-val" id="f-ambient-temperature-val">25 °C</span>
+    </div>
     <div class="setup-row" title="Initial through-flow rate. Higher flow sustains replenishment and affects growth and wall textures.">
       <label for="f-flow-rate">Flow rate</label>
       <input type="range" id="f-flow-rate" min="0" max="100" value="10" step="1" oninput="document.getElementById('f-flow-rate-val').textContent=(this.value/10).toFixed(1)">
@@ -3829,6 +3834,11 @@ Scenarios:
       <label for="f-open-system">Open surface/system</label>
       <input type="checkbox" id="f-open-system" style="width:auto;flex:0 0 auto;margin-right:0.4rem;">
       <span class="range-val">finite cavity</span>
+    </div>
+    <div class="setup-row" title="An explicit open spring or vent-apron boundary enables shallow degassing-driven mineral selectors; pressure and temperature alone do not imply one.">
+      <label for="f-open-spring">Open spring boundary</label>
+      <input type="checkbox" id="f-open-spring" style="width:auto;flex:0 0 auto;margin-right:0.4rem;">
+      <span class="range-val">sealed/non-spring</span>
     </div>
     <div class="setup-row" title="Carbonaceous/graphitic host matter enables chiastolite carbon-cross sector zoning.">
       <label for="f-graphitic">Graphitic host</label>
@@ -4564,6 +4574,11 @@ Scenarios:
             <input type="range" id="broth-cooling" min="0" max="200" value="15" step="1" oninput="setBrothValue('cooling',this.value)">
             <span class="broth-val" id="broth-cooling-val">1.5 °C/step</span>
           </div>
+          <div class="broth-slider-row" title="Far-field equilibrium temperature approached by passive cooling. This boundary never heats a colder fluid.">
+            <label>Thermal equilibrium</label>
+            <input type="range" id="broth-ambient" min="-50" max="1200" value="25" step="1" oninput="setBrothValue('ambient',this.value)">
+            <span class="broth-val" id="broth-ambient-val">25.0 °C equilibrium</span>
+          </div>
           <div class="broth-slider-row" title="Host dissolution multiplier. Only limestone and dolomite dissolve in the current wall chemistry.">
             <label>Reactivity</label>
             <input type="range" id="broth-reactivity" min="0" max="20" value="10" step="1" oninput="setBrothValue('reactivity',this.value)">
@@ -4662,6 +4677,28 @@ Scenarios:
           </div>
           <div class="geology-editor-actions"><button onclick="creativeSetZoneChemistry(false)">Set local chemistry</button><button onclick="creativeSetZoneChemistry(true)">Clear selected override</button></div>
           <pre class="geology-editor-list" id="creative-zone-list">No spatial chemistry overrides.</pre>
+        </div>
+
+        <div class="broth-group">
+          <div class="broth-group-label" title="Create a persistent local temperature boundary and transport its heat along an authored flow direction. Exchange values are dimensionless fractions per simulation step because voxel length and step duration are not calibrated.">Localized thermal field</div>
+          <p class="geology-editor-help">One LTE temperature is resolved per cavity voxel. Conduction is conservative; a thermal boundary is an explicit open source/sink. “Per step” coefficients are numerical exchange fractions, not m²/s or watts.</p>
+          <div class="geology-editor-grid">
+            <label>Transport enabled<select id="creative-thermal-enabled"><option value="1">enabled</option><option value="0">paused (field retained)</option></select></label>
+            <label>Conduction / step<input type="number" id="creative-thermal-conduction" min="0" max="0.166667" step="0.001" value="0.05"></label>
+            <label>Wall exchange / step<input type="number" id="creative-thermal-wall-coupling" min="0" max="1" step="0.01" value="0.02"></label>
+            <label>Rock boundary (°C; blank = none)<input type="number" id="creative-thermal-rock-temperature" min="-273.15" max="2000" step="1" value=""></label>
+            <label>Source ID<input type="text" id="creative-thermal-id" value="creative-heat-1"></label>
+            <label>Boundary temperature (°C)<input type="number" id="creative-thermal-temperature" min="-273.15" max="2000" step="1" value="350"></label>
+            <label>Flat mesh cell<input type="number" id="creative-thermal-cell" min="0" step="1" value="960"></label>
+            <label>Radial depth (0 wall–3 centre)<input type="number" id="creative-thermal-depth" min="0" max="3" step="1" value="0"></label>
+            <label>Boundary exchange / step<input type="number" id="creative-thermal-coupling" min="0" max="1" step="0.01" value="0.35"></label>
+            <label>Advection / step<input type="number" id="creative-thermal-advection" min="0" max="1" step="0.01" value="0.20"></label>
+            <label>Flow direction<select id="creative-thermal-direction"><option value="toward_center">wall → centre</option><option value="toward_wall">centre → wall</option><option value="clockwise">clockwise</option><option value="counterclockwise">counter-clockwise</option><option value="toward_ceiling">toward ceiling</option><option value="toward_floor">toward floor</option><option value="none">no advection</option></select></label>
+            <label>Start step (blank = now)<input type="number" id="creative-thermal-start" min="0" step="1" value=""></label>
+            <label>End step (blank = indefinite)<input type="number" id="creative-thermal-end" min="0" step="1" value=""></label>
+          </div>
+          <div class="geology-editor-actions"><button onclick="creativeConfigureThermalField()">Apply transport / rock</button><button onclick="creativeSetThermalSource()">Set / update source</button><button onclick="creativeRemoveThermalSource(false)">Remove named source</button><button onclick="creativeRemoveThermalSource(true)">Clear all sources</button></div>
+          <pre class="geology-editor-list" id="creative-thermal-list">No localized thermal sources; temperature is spatially uniform.</pre>
         </div>
 
         <div class="broth-group">
@@ -5272,7 +5309,14 @@ function narrative_variant(species, variant, ctx) {
 // `localFill` is optional and defaults to undefined when fill info isn't
 // available (legacy call paths, library/preview rendering). When absent,
 // the fill scoring is skipped — backward compatible.
-function selectHabitVariant(mineral, sigma, temperature, spaceConstrained, localFill) {
+function reserveHabitVariantDraw(mineral) {
+    const entry = MINERAL_SPEC[mineral];
+    if (!entry)
+        return null;
+    const variants = (entry.habit_variants || []).filter(v => v && typeof v === 'object');
+    return variants.length ? rng.random() : null;
+}
+function selectHabitVariant(mineral, sigma, temperature, spaceConstrained, localFill, reservedDraw = null) {
     const entry = MINERAL_SPEC[mineral];
     if (!entry)
         return null;
@@ -5351,7 +5395,8 @@ function selectHabitVariant(mineral, sigma, temperature, spaceConstrained, local
     const total = weights.reduce((a, b) => a + b, 0);
     if (total <= 0)
         return variants[0];
-    let r = rng.random() * total;
+    const unitDraw = Number.isFinite(reservedDraw) ? reservedDraw : rng.random();
+    let r = unitDraw * total;
     for (let i = 0; i < variants.length; i++) {
         r -= weights[i];
         if (r <= 0)
@@ -19009,7 +19054,42 @@ function scenarioSpecHash(spec) {
 //       Omega); the cave also carries small mass-balance cascade in HCO3
 //       (0.738 mg/L max) and CO3 (0.013 mg/L max), plus one display-ordinal
 //       calcite-morph sample shift.
-const SIM_VERSION = 255;
+//
+// v256 — Localized LTE thermal field and local decision closure (August 2026).
+//       Every cavity voxel now carries temperature. Conservative six-neighbor
+//       conduction, explicit rock exchange, and order-independent authored
+//       boundary/advection sources evolve the field with geometry-weighted
+//       finite-volume receipts; exchange fractions remain dimensionless
+//       pending a calibrated voxel length and step duration. Nucleation
+//       pre-gates scan every active local chemistry/temperature state,
+//       site selection records local temperature and sigma, growth,
+//       morphology, Wulff-form integrals, dissolution, phase replacement,
+//       HMC composition, and Mn-oxide transformation consume the crystal's
+//       own boundary state. Creative global temperature actions translate the
+//       entire canonical field, while localized sources and pause/resume are
+//       immutable replay commands included in state fingerprints. The live
+//       formation explanation reports the exact maximum cell and probes the
+//       actual production nucleator in that same local context. Habit choice
+//       is evaluated after anchor selection, but its random draw is reserved at
+//       the legacy pre-anchor point so seeded RNG ordering is preserved. All
+//       authored scenario shapes still use scenarios.json5 shape_seed values
+//       and deterministic test runs still default to seed 42. Hostile-review
+//       closeout makes absent aragonite selectors exactly zero (logistic tails
+//       can weight evidence but cannot invent it), replaces the unconditional
+//       25 C thermostat with an authored one-way far-field equilibrium, and
+//       books speleothem-aragonite Sr uptake at Wassenburg et al.'s measured
+//       D_Sr=1.38+/-0.53. Zoned-cave dissolved Sr is scaled from primary
+//       dripwater Sr/Ca data rather than solid-speleo ppm, removing the
+//       unlicensed strontianite branch. Seed-42 baseline comparison moves 7/39
+//       scenarios: bisbee 218->215 crystals, deccan 30->29 (aragonite removed),
+//       elmwood 27->26 (aragonite removed), great_salt_plains 77->65,
+//       roughten_gill 85->81 (descloizite removed), sulphur_bank 46->45, and
+//       supergene_oxidation 111->110 (alunite removed). No species is gained.
+//       The aragonite losses are the intended hard-selector correction; the
+//       remaining count/species changes are deterministic consequences of
+//       local temperature and revised Sr inventory and remain exposed in the
+//       v256 baseline, 39-story archive, 12-story digest, and claim cards.
+const SIM_VERSION = 256;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -19018,7 +19098,8 @@ const SIM_VERSION = 255;
 const MODEL_DIGEST = [
     'Pfluid:kbar-0.001..4.4',
     'Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1',
-    'aragonite-selector:Mg+shallowP<=0.10kbar-spring+highPstable-v2',
+    'aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-highPstable-v4',
+    'aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1',
     'CaCO3:Hacker05-negative-linear+/-1kbar',
     'Prock:Pattison92-AndSil-16+/-3barC',
     'stress:instant-resolved-shear-stable-grain-v2',
@@ -19048,12 +19129,13 @@ const MODEL_DIGEST = [
     'halite:vadose-propensity0.8-v1',
     'borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1',
     'competition:accepted-axial-timescale+formula-weighted-budget-v3',
-    'diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4',
+    'thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3',
+    'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
     'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2',
     'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2',
     'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
     'transition-locality-exclusion:target-gated-v1',
-    'save-identity:version+model+scenario-fail-closed-v1',
+    'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+full-zone-ledgers-fail-closed-v3',
 ].join('|');
 
 // ── 18-constants.js ──
@@ -19798,6 +19880,73 @@ function stoichiometricBudgetDebitPpmPerUm(species, coefficient) {
     if (!(nu > 0) || !(molarMass > 0) || !Number.isFinite(molarMass))
         return 0;
     return STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM * nu * molarMass;
+}
+// Speleothem-aragonite Sr partitioning. Wassenburg et al. (2016, GCA 190,
+// 347-367, doi:10.1016/j.gca.2016.06.036) derived D_Sr(Ar)=1.38 +/-0.53,
+// where D=(Sr/Ca)_solid/(Sr/Ca)_solution on a molar basis. Keep the measured
+// distribution coefficient separate from the scenario's dissolved inventory:
+// the latter must be real dripwater Sr, not solid-speleo ppm copied into water.
+const ARAGONITE_SR_PARTITION_MODEL = Object.freeze({
+    id: 'Wassenburg2016-speleothem-aragonite-DSr',
+    distributionCoefficient: 1.38,
+    oneSigma: 0.53,
+    // Match the simulator's canonical SPECIES_PROPERTIES values exactly so a
+    // booked Ca/Sr mole ratio closes bit-for-bit in the proxy ledger.
+    caMolarMass: 40.08,
+    srMolarMass: 87.62,
+    aragoniteFormulaMass: 100.0869,
+});
+function aragoniteSrPartitioning(fluid) {
+    const caPpm = Math.max(0, Number(fluid?.Ca) || 0);
+    const srPpm = Math.max(0, Number(fluid?.Sr) || 0);
+    const solutionMolarRatio = caPpm > 0
+        ? (srPpm / ARAGONITE_SR_PARTITION_MODEL.srMolarMass)
+            / (caPpm / ARAGONITE_SR_PARTITION_MODEL.caMolarMass)
+        : 0;
+    const formulaCoefficient = ARAGONITE_SR_PARTITION_MODEL.distributionCoefficient
+        * solutionMolarRatio;
+    const targetSolidSrPpm = formulaCoefficient
+        * ARAGONITE_SR_PARTITION_MODEL.srMolarMass
+        / ARAGONITE_SR_PARTITION_MODEL.aragoniteFormulaMass
+        * 1e6;
+    return {
+        model: ARAGONITE_SR_PARTITION_MODEL.id,
+        distributionCoefficient: ARAGONITE_SR_PARTITION_MODEL.distributionCoefficient,
+        oneSigma: ARAGONITE_SR_PARTITION_MODEL.oneSigma,
+        solutionCaPpm: caPpm,
+        solutionSrPpm: srPpm,
+        solutionMolarSrCa: solutionMolarRatio,
+        formulaCoefficientSr: formulaCoefficient,
+        targetSolidSrPpm,
+    };
+}
+function finalizeAragoniteSrPartitionReceipt(crystal, zone) {
+    if (crystal?.mineral !== 'aragonite' || !zone?.sr_partition)
+        return;
+    const requested = zone.sr_partition;
+    const actualSrPerUm = Math.max(0, Number(zone._budget_inventory_per_um?.Sr) || 0);
+    const actualCaPerUm = Math.max(0, Number(zone._budget_inventory_per_um?.Ca) || 0);
+    const solidMolarSrCa = actualCaPerUm > 0
+        ? (actualSrPerUm / ARAGONITE_SR_PARTITION_MODEL.srMolarMass)
+            / (actualCaPerUm / ARAGONITE_SR_PARTITION_MODEL.caMolarMass)
+        : 0;
+    const effectiveD = requested.solutionMolarSrCa > 0
+        ? solidMolarSrCa / requested.solutionMolarSrCa
+        : 0;
+    const formulaMassPerUm = STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM
+        * ARAGONITE_SR_PARTITION_MODEL.aragoniteFormulaMass;
+    zone.trace_Sr = formulaMassPerUm > 0
+        ? actualSrPerUm / formulaMassPerUm * 1e6
+        : 0;
+    zone.sr_partition = {
+        ...requested,
+        acceptedSrPpmPerUm: actualSrPerUm,
+        acceptedCaPpmPerUm: actualCaPerUm,
+        acceptedSolidMolarSrCa: solidMolarSrCa,
+        effectiveDistributionCoefficient: effectiveD,
+        inventoryLimited: actualSrPerUm + 1e-15
+            < stoichiometricBudgetDebitPpmPerUm('Sr', requested.formulaCoefficientSr),
+    };
 }
 // Explicit sulfur fluids book each mineral family against a chemically
 // distinct reservoir. Legacy fluids continue to use `S`, preserving their
@@ -23436,13 +23585,19 @@ function fluidAtMeshVertex(sim, mesh, vertexIdx) {
     return null;
 }
 // Returns the temperature (°C) at the given mesh vertex.
-// WallMesh.cells[i].temperature_ring indexes into sim.ring_temperatures
-// (per Tranche 4a — temperature is still per-ring; per-vertex chemistry
-// landed first, per-vertex temperature is a future tranche). Pole
+// Boundary voxels are canonical; ring_temperatures is a display fallback.
 // vertices fall back to the sim's conditions temperature.
 function temperatureAtMeshVertex(sim, mesh, vertexIdx) {
     if (mesh && mesh.cells && vertexIdx >= 0 && vertexIdx < mesh.cells.length) {
         const cell = mesh.cells[vertexIdx];
+        const columns = sim?.wall_state?.cells_per_ring || 0;
+        const ringIdx = cell && typeof cell.temperature_ring === 'number'
+            ? cell.temperature_ring : (columns > 0 ? Math.floor(vertexIdx / columns) : -1);
+        const cellIdx = columns > 0 ? vertexIdx % columns : -1;
+        const voxel = ringIdx >= 0 && cellIdx >= 0
+            ? sim?.boundaryVoxel?.(ringIdx, cellIdx) : null;
+        if (voxel && Number.isFinite(voxel.temperature))
+            return voxel.temperature;
         if (cell && typeof cell.temperature_ring === 'number'
             && sim && sim.ring_temperatures
             && cell.temperature_ring >= 0
@@ -23527,12 +23682,13 @@ function atmosphericPCO2AtMeshVertex(scenario, mesh, vertexIdx) {
     return typeof v === 'number' && isFinite(v) && v > 0 ? v : _DEFAULT_ATMOSPHERIC_PCO2_BAR;
 }
 // Resolves scenario.wall_rock_thermal_buffer_C → number per vertex.
-// Default 0 (no thermal buffering). Phase 2 may consume.
+// Missing fixtures return NaN (no boundary). This is intentionally distinct
+// from an authored 0°C boundary, which is a valid cold-rock temperature.
 function wallRockThermalBufferAtMeshVertex(scenario, mesh, vertexIdx) {
     if (!scenario)
-        return 0;
-    const v = _resolveFixture(scenario.wall_rock_thermal_buffer_C, mesh, vertexIdx, 0);
-    return typeof v === 'number' && isFinite(v) ? v : 0;
+        return NaN;
+    const v = _resolveFixture(scenario.wall_rock_thermal_buffer_C, mesh, vertexIdx, NaN);
+    return typeof v === 'number' && isFinite(v) ? v : NaN;
 }
 // Resolves scenario.host_rock_composition → string per vertex.
 // Default 'limestone' (matches existing wall.composition default in
@@ -25920,6 +26076,12 @@ class VugWall {
         // geometry). Default false → every existing scenario keeps its fill-and-seal
         // behaviour (byte-identical).
         this.open_system = !!opts.open_system;
+        // Explicit open spring/vent-apron boundary. This is a geological process
+        // selector for low-Mg aragonite, not a synonym for shallow pressure: a
+        // sealed vein and an open degassing terrace can share P-T coordinates but
+        // not nucleation kinetics. Default false keeps ordinary caves and veins
+        // outside the spring route unless the scenario or Creative player opts in.
+        this.open_spring = !!opts.open_spring;
         // v179 (2026-06-09): per-scenario ambient cooling rate, °C/step (default
         // 1.5 — the historical hard-coded value in ambient_cooling, 85d). The
         // reactivated_fluorite_vein exposed the gap: it is the first HOT scenario
@@ -25935,6 +26097,15 @@ class VugWall {
         // always-draw pattern keeps that stream's cursor rate-independent.)
         this.cooling_rate = (typeof opts.cooling_rate === 'number' && isFinite(opts.cooling_rate) && opts.cooling_rate >= 0)
             ? opts.cooling_rate : 1.5;
+        // Temperature of the far-field environment that passive cooling approaches.
+        // This is a boundary condition, not an implicit 25 C thermostat: cold caves,
+        // playas, and shallow aquifers may be stably colder than room temperature.
+        // null preserves the historical 25 C target for un-authored warm systems;
+        // ambient_cooling is one-way and therefore never warms a colder fluid.
+        this.ambient_temperature_C = (typeof opts.ambient_temperature_C === 'number'
+            && isFinite(opts.ambient_temperature_C))
+            ? Math.max(-50, Math.min(1200, opts.ambient_temperature_C))
+            : null;
         // Alpine-cleft (Zerrkluft) flag — Grimsel/Aar Swiss tension fissures. Opts
         // in to the quartz GWINDEL habit (js/45 classifyQuartzGwindel; SIM 207) and
         // the Tessin/sceptre cleft idiom. Default false (no effect elsewhere).
@@ -26197,27 +26368,22 @@ class WallCell {
         this._localCrystalVol_mm3 = 0;
     }
 }
-// Topographic map of the vug interior, rendered as an irregular circle
-// viewed from above. Each cell is a wedge of angular arc with its own
-// wall_depth (how much acid has pushed that chunk of wall outward).
-// Dissolution is per-cell: cells covered by acid-resistant crystals
-// shield their slice, so unblocked cells erode faster — the wall ends
-// up shaped like the deposit history rather than a perfect circle.
-// Minimal mulberry32 PRNG — 32-bit seed in, [0,1) out. Same seed always
-// produces the same stream. Used so JS + Python produce *different*
-// concrete bubble placements (their RNGs don't share streams) but both
-// are deterministic per their own shape_seed. For exact cross-runtime
-// shape parity we'd mirror Python's Mersenne Twister; Phase 1 only
-// requires reproducibility within a runtime.
 function _mulberry32(seed) {
     let s = (seed | 0) >>> 0;
-    return function () {
+    const next = function () {
         s = (s + 0x6d2b79f5) >>> 0;
         let t = s;
         t = Math.imul(t ^ (t >>> 15), t | 1);
         t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
+    Object.defineProperty(next, 'state', {
+        enumerable: true,
+        configurable: false,
+        get: () => s >>> 0,
+        set: (value) => { s = (Number(value) | 0) >>> 0; },
+    });
+    return next;
 }
 // Bubble size ranges as fractions of vug_diameter_mm (the canonical
 // unit the brief uses). Primary radii form the main cavity; secondary
@@ -27627,7 +27793,7 @@ class WallMesh {
     // Math: for vertex i with neighbors {j₁, j₂, …}, the update is
     //   cells[i].fluid[f] += rate * (Σⱼ cells[j].fluid[f] - degree·cells[i].fluid[f]).
     // Snapshot first so each vertex reads pre-step neighbor values.
-    diffuse(rate, fieldNames, ringTemps) {
+    diffuse(rate, fieldNames) {
         if (!(rate > 0))
             return;
         if (!this.cells || !this.cells.length)
@@ -27673,20 +27839,6 @@ class WallMesh {
                 }
                 fluid[fieldNames[k]] = snap[selfBase + k]
                     + rate * (neighborSum - degree * snap[selfBase + k]);
-            }
-        }
-        // Temperature stays per-ring for Tranche 4a (each cell carries a
-        // temperature_ring index that points into the sim's
-        // ring_temperatures[] array). Tranche 4b can migrate temperature
-        // to per-vertex storage if a future scenario needs it; the
-        // chemistry side is the load-bearing change for Path C.
-        if (ringTemps && ringTemps.length > 0) {
-            const oldT = ringTemps.slice();
-            const n = ringTemps.length;
-            for (let k = 0; k < n; k++) {
-                const kp = k > 0 ? k - 1 : 0;
-                const kn = k < n - 1 ? k + 1 : n - 1;
-                ringTemps[k] = oldT[k] + rate * (oldT[kp] + oldT[kn] - 2 * oldT[k]);
             }
         }
     }
@@ -28245,8 +28397,8 @@ class WallMesh {
 //     from wall cells, events still mutate conditions.fluid, diffusion
 //     still runs on wall slab only). Uniform initial values mean a real
 //     Laplacian would be a no-op anyway.
-//   - Per-voxel temperature stored but not consumed yet ([FIRM] E).
-//     Engines still read ring_temperatures[].
+//   - Historical v158 note: per-voxel temperature was stored but not consumed.
+//     SIM 256 promotes it to the canonical local field (js/24b).
 //   - voxelGrid.diffuse() is the CANONICAL diffusion path going forward
 //     ([FIRM] H merge); in v158 it just delegates to wall.mesh.diffuse.
 //     Phase 2 expands the body to do real per-voxel + radial diffusion.
@@ -28444,7 +28596,7 @@ class CavityVoxelGrid {
     // implementation is already optimized (pre-allocated snapshot,
     // inline neighbor indices, per-field variance skip) and ready to
     // ship; only the dispatch is gated.
-    diffuse(rate, fieldNames, ringTemps) {
+    diffuse(rate, fieldNames) {
         if (!(rate > 0))
             return;
         if (!fieldNames || !fieldNames.length)
@@ -28459,7 +28611,7 @@ class CavityVoxelGrid {
         // depleted via growth budget, and depletion halos propagate
         // radially inward as 3D objects. See _diffuseFull for the
         // optimized implementation + perf notes.
-        this._diffuseFull(rate, fieldNames, ringTemps);
+        this._diffuseFull(rate, fieldNames);
     }
     // v159 prep / v160-ready implementation: real 3D Laplacian across
     // (r, c, d) with up to 6 neighbors per voxel. Private — called only
@@ -28484,7 +28636,7 @@ class CavityVoxelGrid {
     // scenarios. Under proposal's 20 ms target. Tighter bounds available
     // via further optimization (sparse diffusion per [FIRM] performance
     // table) if v160 surfaces a perf regression.
-    _diffuseFull(rate, fieldNames, ringTemps) {
+    _diffuseFull(rate, fieldNames) {
         if (!(rate > 0))
             return;
         if (!fieldNames || !fieldNames.length)
@@ -28568,16 +28720,6 @@ class CavityVoxelGrid {
         }
         if (activeFieldCount === 0) {
             // Whole grid is uniform across every field — Laplacian is a no-op.
-            // Skip everything except the temperature diffusion below.
-            if (ringTemps && ringTemps.length > 0) {
-                const oldT = ringTemps.slice();
-                const n = ringTemps.length;
-                for (let k = 0; k < n; k++) {
-                    const kp = k > 0 ? k - 1 : 0;
-                    const kn = k < n - 1 ? k + 1 : n - 1;
-                    ringTemps[k] = oldT[k] + rate * (oldT[kp] + oldT[kn] - 2 * oldT[k]);
-                }
-            }
             return;
         }
         // Apply Laplacian per voxel. Walk in (r, c, d) order for cache
@@ -28652,17 +28794,6 @@ class CavityVoxelGrid {
                         fluid[fieldNames[k]] = self + rate * (neighborSum - degree * self);
                     }
                 }
-            }
-        }
-        // ringTemps continues to diffuse 1D per-ring (Tranche 4a's pattern).
-        // Per-voxel temperature stored but not consumed yet ([FIRM] E).
-        if (ringTemps && ringTemps.length > 0) {
-            const oldT = ringTemps.slice();
-            const n = ringTemps.length;
-            for (let k = 0; k < n; k++) {
-                const kp = k > 0 ? k - 1 : 0;
-                const kn = k < n - 1 ? k + 1 : n - 1;
-                ringTemps[k] = oldT[k] + rate * (oldT[kp] + oldT[kn] - 2 * oldT[k]);
             }
         }
     }
@@ -29130,6 +29261,426 @@ function applyDifferentialStressPulse(sim, sigmaDiffMpa) {
     });
     return { sigma_diff_mpa: sigma, timescale: 'instantaneous threshold evaluation', twinned };
 }
+
+// ── 24b-geometry-thermal-field.js ──
+
+// ============================================================
+// js/24b-geometry-thermal-field.ts — localized cavity heat transport
+// ============================================================
+//
+// This is a deliberately dimensionless, local-thermal-equilibrium (LTE)
+// transport model.  The simulator has no calibrated voxel length or step
+// duration, so its controls are fractions exchanged per simulation step — not
+// m²/s, watts, or a claim that rock and water temperatures are resolved
+// separately.  The numerical pieces follow the heat-transport structure used
+// by hydrogeology models: symmetric conduction, directional advection, and
+// explicit boundary sources/sinks.
+const THERMAL_FIELD_MODEL = 'lte_geometry_weighted_finite_volume_v2';
+const THERMAL_FIELD_MIN_C = -273.15;
+const THERMAL_FIELD_MAX_C = 2000;
+const THERMAL_CONDUCTION_MAX = 1 / 6; // six-neighbour explicit Laplacian
+function _thermalClamp(value, lo, hi) {
+    return Math.max(lo, Math.min(hi, value));
+}
+function normalizeThermalSourceSpec(spec, grid, fallbackId = 'thermal-source') {
+    if (!grid || !spec)
+        return null;
+    const temperature = Number(spec.temperature_C ?? spec.temperatureC ?? spec.temperature);
+    if (!Number.isFinite(temperature))
+        return null;
+    const R = Math.max(1, Number(grid.ring_count) | 0);
+    const N = Math.max(1, Number(grid.cells_per_ring) | 0);
+    const D = Math.max(1, Number(grid.depth_count) | 0);
+    let ringIdx = Number(spec.ringIdx ?? spec.ring ?? 0) | 0;
+    let cellIdx = Number(spec.cellIdx ?? spec.column ?? 0) | 0;
+    if (Number.isFinite(Number(spec.cell)) && spec.ringIdx == null && spec.ring == null) {
+        const flat = Math.max(0, Number(spec.cell) | 0);
+        ringIdx = Math.floor(flat / N);
+        cellIdx = flat % N;
+    }
+    const permitted = [
+        'none', 'toward_center', 'toward_wall', 'clockwise', 'counterclockwise',
+        'toward_ceiling', 'toward_floor',
+    ];
+    const requestedDirection = String(spec.flow_direction ?? spec.flowDirection ?? 'toward_center');
+    const rawStartStep = spec.start_step ?? spec.startStep;
+    const rawEndStep = spec.end_step ?? spec.endStep;
+    return {
+        id: String(spec.id || fallbackId),
+        temperature_C: _thermalClamp(temperature, THERMAL_FIELD_MIN_C, THERMAL_FIELD_MAX_C),
+        ringIdx: _thermalClamp(ringIdx, 0, R - 1) | 0,
+        cellIdx: ((cellIdx % N) + N) % N,
+        depthIdx: _thermalClamp(Number(spec.depthIdx ?? spec.depth ?? 0) | 0, 0, D - 1),
+        coupling_fraction_per_step: _thermalClamp(Number(spec.coupling_fraction_per_step ?? spec.couplingFraction ?? 0.35) || 0, 0, 1),
+        advection_fraction_per_step: _thermalClamp(Number(spec.advection_fraction_per_step ?? spec.advectionFraction ?? 0.20) || 0, 0, 1),
+        flow_direction: permitted.includes(requestedDirection) ? requestedDirection : 'toward_center',
+        ...(rawStartStep !== null && rawStartStep !== '' && rawStartStep !== undefined
+            && Number.isFinite(Number(rawStartStep))
+            ? { start_step: Math.max(0, Number(rawStartStep) | 0) } : {}),
+        ...(rawEndStep !== null && rawEndStep !== '' && rawEndStep !== undefined
+            && Number.isFinite(Number(rawEndStep))
+            ? { end_step: Math.max(0, Number(rawEndStep) | 0) } : {}),
+        ...(spec.provenance ? { provenance: String(spec.provenance) } : {}),
+    };
+}
+function _thermalSourceActive(source, step) {
+    if (source.start_step != null && step < source.start_step)
+        return false;
+    if (source.end_step != null && step >= source.end_step)
+        return false;
+    return true;
+}
+// Geometry-aware control-volume proxies. The surface share of each wall
+// vertex is assembled from the exact renderer triangles (one triangle's area
+// is divided among its non-pole vertices). The cavity interior is then split
+// into concentric radial shells, whose r^3 differences supply the volume
+// fractions. This is still a dimensionless mesh model—not a calibrated cubic-
+// millimetre fluid inventory—but it removes the false equal-volume assumption
+// at polar cells and across radial depth.
+function _thermalControlVolumeWeights(grid) {
+    const R = Math.max(1, Number(grid?.ring_count) | 0);
+    const N = Math.max(1, Number(grid?.cells_per_ring) | 0);
+    const D = Math.max(1, Number(grid?.depth_count) | 0);
+    const total = R * N * D;
+    const mesh = grid?._mesh || null;
+    const cacheKey = `${R}|${N}|${D}|${mesh?.sig || 'no-mesh'}|${Number(mesh?.surface_area_mm2) || 0}`;
+    if (grid?._thermalControlVolumeCache?.key === cacheKey) {
+        return grid._thermalControlVolumeCache.weights;
+    }
+    const surfaceShares = new Float64Array(R * N);
+    const triangles = Array.isArray(mesh?._surfaceTriangles) ? mesh._surfaceTriangles : [];
+    for (const triangle of triangles) {
+        const ids = [triangle.ia, triangle.ib, triangle.ic]
+            .filter((index) => index >= 0 && index < R * N);
+        const area = Number(triangle.area_mm2);
+        if (!ids.length || !(area > 0))
+            continue;
+        const share = area / ids.length;
+        for (const index of ids)
+            surfaceShares[index] += share;
+    }
+    let surfaceTotal = 0;
+    for (const value of surfaceShares)
+        surfaceTotal += value;
+    if (!(surfaceTotal > 0)) {
+        // Analytic latitudinal bands for headless grids. Unlike sin(phi) at a
+        // centre point, band integration stays finite at both polar rings.
+        for (let r = 0; r < R; r++) {
+            const lo = Math.PI * r / R;
+            const hi = Math.PI * (r + 1) / R;
+            const bandPerCell = Math.max(1e-12, (Math.cos(lo) - Math.cos(hi)) / N);
+            for (let c = 0; c < N; c++)
+                surfaceShares[r * N + c] = bandPerCell;
+        }
+    }
+    const weights = new Float64Array(total);
+    let weightTotal = 0;
+    for (let r = 0; r < R; r++) {
+        for (let c = 0; c < N; c++) {
+            const surfaceIndex = r * N + c;
+            let radius = 1;
+            if (mesh?.positions && surfaceIndex * 3 + 2 < mesh.positions.length) {
+                const x = Number(mesh.positions[surfaceIndex * 3]) || 0;
+                const y = Number(mesh.positions[surfaceIndex * 3 + 1]) || 0;
+                const z = Number(mesh.positions[surfaceIndex * 3 + 2]) || 0;
+                radius = Math.sqrt(x * x + y * y + z * z) || 1;
+            }
+            for (let d = 0; d < D; d++) {
+                const outer = (D - d) / D;
+                const inner = (D - d - 1) / D;
+                const shellFraction = outer ** 3 - inner ** 3;
+                const index = r * N * D + c * D + d;
+                // A_outer * R/3 is the sector volume; the common 1/3 cancels
+                // during normalization, so omit it to keep the proxy compact.
+                const raw = Math.max(1e-18, surfaceShares[surfaceIndex] * radius * shellFraction);
+                weights[index] = raw;
+                weightTotal += raw;
+            }
+        }
+    }
+    if (weightTotal > 0) {
+        for (let i = 0; i < weights.length; i++)
+            weights[i] /= weightTotal;
+    }
+    grid._thermalControlVolumeCache = { key: cacheKey, weights };
+    return weights;
+}
+function _thermalSourcePath(source, grid) {
+    const out = [];
+    const R = grid.ring_count | 0;
+    const N = grid.cells_per_ring | 0;
+    const D = grid.depth_count | 0;
+    const r = source.ringIdx, c = source.cellIdx, d = source.depthIdx;
+    if (source.flow_direction === 'toward_center') {
+        for (let k = d + 1; k < D; k++)
+            out.push([r, c, k]);
+    }
+    else if (source.flow_direction === 'toward_wall') {
+        for (let k = d - 1; k >= 0; k--)
+            out.push([r, c, k]);
+    }
+    else if (source.flow_direction === 'clockwise') {
+        for (let k = 1; k < N; k++)
+            out.push([r, (c + k) % N, d]);
+    }
+    else if (source.flow_direction === 'counterclockwise') {
+        for (let k = 1; k < N; k++)
+            out.push([r, (c - k + N) % N, d]);
+    }
+    else if (source.flow_direction === 'toward_ceiling') {
+        for (let k = r + 1; k < R; k++)
+            out.push([k, c, d]);
+    }
+    else if (source.flow_direction === 'toward_floor') {
+        for (let k = r - 1; k >= 0; k--)
+            out.push([k, c, d]);
+    }
+    return out;
+}
+Object.assign(CavityVoxelGrid.prototype, {
+    controlVolumeWeights() {
+        return _thermalControlVolumeWeights(this);
+    },
+    controlVolumeWeightAt(r, c, d) {
+        const index = this._index(r, c, d);
+        return index >= 0 ? this.controlVolumeWeights()[index] : NaN;
+    },
+    temperatureAt(r, c, d) {
+        const voxel = this.voxelAt(r, c, d);
+        return voxel && Number.isFinite(voxel.temperature) ? voxel.temperature : NaN;
+    },
+    sampleTemperature(r, c, depth) {
+        if (!Number.isFinite(depth))
+            return NaN;
+        const bounded = _thermalClamp(depth, 0, this.depth_count - 1);
+        const d0 = Math.floor(bounded);
+        const d1 = Math.min(d0 + 1, this.depth_count - 1);
+        const f = bounded - d0;
+        const a = this.temperatureAt(r, c, d0);
+        const b = this.temperatureAt(r, c, d1);
+        return Number.isFinite(a) && Number.isFinite(b) ? a * (1 - f) + b * f : NaN;
+    },
+    propagateTemperatureDelta(deltaC, target = 'all') {
+        if (!Number.isFinite(deltaC) || deltaC === 0)
+            return 0;
+        let changed = 0;
+        for (const voxel of this.voxels || []) {
+            if (!voxel || !Number.isFinite(voxel.temperature))
+                continue;
+            const hit = target === 'all'
+                || (target === 'boundary' && voxel.depthIdx === 0)
+                || (target === 'top' && voxel.ringIdx === this.ring_count - 1)
+                || (target === 'bottom' && voxel.ringIdx === 0);
+            if (!hit)
+                continue;
+            voxel.temperature = _thermalClamp(voxel.temperature + deltaC, THERMAL_FIELD_MIN_C, THERMAL_FIELD_MAX_C);
+            changed++;
+        }
+        return changed;
+    },
+    // Apply passive cooling and fracture heating as distinct boundary terms.
+    // Cooling is one-way for every local control volume: a cell warmer than the
+    // authored environment approaches it but cannot cross it, while a cell that
+    // is already colder is left unchanged. A separately receipted positive
+    // fracture pulse may then heat all cells.
+    applyAmbientThermalStep(coolingDeltaC, ambientC, pulseDeltaC = 0) {
+        if (!Number.isFinite(ambientC))
+            return 0;
+        const cooling = Math.min(0, Number(coolingDeltaC) || 0);
+        const pulse = Math.max(0, Number(pulseDeltaC) || 0);
+        let changed = 0;
+        for (const voxel of this.voxels || []) {
+            if (!voxel || !Number.isFinite(voxel.temperature))
+                continue;
+            const prior = voxel.temperature;
+            const cooled = prior > ambientC ? Math.max(ambientC, prior + cooling) : prior;
+            voxel.temperature = _thermalClamp(cooled + pulse, THERMAL_FIELD_MIN_C, THERMAL_FIELD_MAX_C);
+            if (voxel.temperature !== prior)
+                changed++;
+        }
+        return changed;
+    },
+    temperatureMean() {
+        if (!this.voxels?.length)
+            return NaN;
+        const weights = this.controlVolumeWeights();
+        let sum = 0, weightTotal = 0;
+        for (let i = 0; i < this.voxels.length; i++) {
+            const voxel = this.voxels[i];
+            if (!voxel || !Number.isFinite(voxel.temperature))
+                continue;
+            sum += voxel.temperature * weights[i];
+            weightTotal += weights[i];
+        }
+        return weightTotal ? sum / weightTotal : NaN;
+    },
+    boundaryTemperatureMeans() {
+        const means = new Array(this.ring_count).fill(0);
+        const weightTotals = new Array(this.ring_count).fill(0);
+        const weights = this.controlVolumeWeights();
+        for (let r = 0; r < this.ring_count; r++) {
+            for (let c = 0; c < this.cells_per_ring; c++) {
+                const t = this.temperatureAt(r, c, 0);
+                if (!Number.isFinite(t))
+                    continue;
+                const weight = weights[this._index(r, c, 0)];
+                means[r] += t * weight;
+                weightTotals[r] += weight;
+            }
+            means[r] = weightTotals[r] ? means[r] / weightTotals[r] : NaN;
+        }
+        return means;
+    },
+    // One stable explicit LTE finite-volume transport step. Pair exchanges use
+    // a symmetric shared-face proxy and inverse control-volume temperature
+    // updates, conserving the volume-weighted thermal-state proxy exactly.
+    // Rock coupling and authored sources are open boundaries and are receipted.
+    advanceTemperatureField(options = {}) {
+        const total = this.voxels?.length || 0;
+        if (!total)
+            return null;
+        const beforeMean = this.temperatureMean();
+        const conduction = _thermalClamp(Number(options.conduction_fraction_per_step ?? 0.05) || 0, 0, THERMAL_CONDUCTION_MAX);
+        const old = new Float64Array(total);
+        const weights = this.controlVolumeWeights();
+        let min = Infinity, max = -Infinity;
+        for (let i = 0; i < total; i++) {
+            const value = Number(this.voxels[i]?.temperature);
+            old[i] = Number.isFinite(value) ? value : beforeMean;
+            min = Math.min(min, old[i]);
+            max = Math.max(max, old[i]);
+        }
+        const R = this.ring_count, N = this.cells_per_ring, D = this.depth_count;
+        const ND = N * D;
+        if (conduction > 0 && max - min > 1e-12) {
+            const energyDelta = new Float64Array(total);
+            const exchangePair = (i, j) => {
+                const conductance = Math.min(weights[i], weights[j]);
+                const exchange = conduction * conductance * (old[j] - old[i]);
+                energyDelta[i] += exchange;
+                energyDelta[j] -= exchange;
+            };
+            for (let r = 0; r < R; r++) {
+                for (let c = 0; c < N; c++) {
+                    for (let d = 0; d < D; d++) {
+                        const i = r * ND + c * D + d;
+                        // Each undirected face is visited once. N=1/2 need special
+                        // handling so the periodic angular neighbor is not double-booked.
+                        if (N > 1 && (N > 2 || c === 0))
+                            exchangePair(i, r * ND + ((c + 1) % N) * D + d);
+                        if (r + 1 < R)
+                            exchangePair(i, i + ND);
+                        if (d + 1 < D)
+                            exchangePair(i, i + 1);
+                    }
+                }
+            }
+            for (let i = 0; i < total; i++) {
+                this.voxels[i].temperature = old[i] + energyDelta[i] / weights[i];
+            }
+        }
+        const afterConductionMean = this.temperatureMean();
+        const mesh = options.mesh || this._mesh || null;
+        const scenario = options.scenario || null;
+        const rockCoupling = _thermalClamp(Number(options.wall_coupling_fraction_per_step) || 0, 0, 1);
+        let rockControlVolumeDeltaC = 0;
+        if (rockCoupling > 0 && scenario?.wall_rock_thermal_buffer_C != null) {
+            for (let r = 0; r < R; r++) {
+                for (let c = 0; c < N; c++) {
+                    const i = r * ND + c * D;
+                    const authoredTarget = wallRockThermalBufferAtMeshVertex(scenario, mesh, r * N + c);
+                    if (!Number.isFinite(authoredTarget))
+                        continue;
+                    const target = _thermalClamp(authoredTarget, THERMAL_FIELD_MIN_C, THERMAL_FIELD_MAX_C);
+                    const prior = this.voxels[i].temperature;
+                    const next = prior + rockCoupling * (target - prior);
+                    this.voxels[i].temperature = next;
+                    rockControlVolumeDeltaC += weights[i] * (next - prior);
+                }
+            }
+        }
+        const sourceReceipts = [];
+        const sources = (options.sources || [])
+            .filter((source) => _thermalSourceActive(source, Number(options.step) || 0))
+            .slice().sort((a, b) => a.id.localeCompare(b.id));
+        // All source terms read one post-conduction/post-rock snapshot, then combine
+        // as a convex weighted update. IDs are provenance only: renaming or
+        // reordering otherwise identical sources cannot change the field.
+        const sourceBase = new Float64Array(total);
+        for (let i = 0; i < total; i++)
+            sourceBase[i] = this.voxels[i].temperature;
+        const contributions = Array.from({ length: total }, () => []);
+        const receiptDrafts = [];
+        const flatIndex = (r, c, d) => r * ND + c * D + d;
+        for (const source of sources) {
+            const originIndex = flatIndex(source.ringIdx, source.cellIdx, source.depthIdx);
+            if (!this.voxels[originIndex])
+                continue;
+            const sourceIndex = receiptDrafts.length;
+            const beta = source.coupling_fraction_per_step;
+            if (beta > 0)
+                contributions[originIndex].push({
+                    sourceIndex, weight: beta, target: source.temperature_C, coupling: true,
+                });
+            const path = _thermalSourcePath(source, this)
+                .map(([r, c, d]) => flatIndex(r, c, d))
+                .filter((index) => !!this.voxels[index]);
+            const advectiveWeight = source.advection_fraction_per_step;
+            const conditionedOrigin = sourceBase[originIndex]
+                + beta * (source.temperature_C - sourceBase[originIndex]);
+            for (let i = 0; i < path.length && advectiveWeight > 0; i++) {
+                const upstreamTarget = i === 0 ? conditionedOrigin : sourceBase[path[i - 1]];
+                contributions[path[i]].push({
+                    sourceIndex, weight: advectiveWeight, target: upstreamTarget, coupling: false,
+                });
+            }
+            receiptDrafts.push({
+                id: source.id,
+                targetTemperatureC: source.temperature_C,
+                controlVolumeDeltaC: 0,
+                sourceCouplingControlVolumeDeltaC: 0,
+                advectionControlVolumeDeltaC: 0,
+                pathCells: path.length,
+                flowDirection: source.flow_direction,
+                provenance: source.provenance || null,
+            });
+        }
+        for (let i = 0; i < total; i++) {
+            const terms = contributions[i];
+            if (!terms.length)
+                continue;
+            const totalWeight = terms.reduce((sum, term) => sum + term.weight, 0);
+            const scale = 1 / Math.max(1, totalWeight);
+            let delta = 0;
+            for (const term of terms) {
+                const attributed = scale * term.weight * (term.target - sourceBase[i]);
+                delta += attributed;
+                const receipt = receiptDrafts[term.sourceIndex];
+                const volumeAttributed = weights[i] * attributed;
+                receipt.controlVolumeDeltaC += volumeAttributed;
+                if (term.coupling)
+                    receipt.sourceCouplingControlVolumeDeltaC += volumeAttributed;
+                else
+                    receipt.advectionControlVolumeDeltaC += volumeAttributed;
+            }
+            this.voxels[i].temperature = _thermalClamp(sourceBase[i] + delta, THERMAL_FIELD_MIN_C, THERMAL_FIELD_MAX_C);
+        }
+        sourceReceipts.push(...receiptDrafts);
+        const afterMean = this.temperatureMean();
+        return {
+            model: THERMAL_FIELD_MODEL,
+            step: Number(options.step) || 0,
+            voxelCount: total,
+            beforeMeanC: beforeMean,
+            afterConductionMeanC: afterConductionMean,
+            afterMeanC: afterMean,
+            conductionControlVolumeResidualC: afterConductionMean - beforeMean,
+            rockControlVolumeDeltaC,
+            sources: sourceReceipts,
+            unitsDisclosure: 'exchange fractions are per simulation step; deltas are normalized geometry-weighted control-volume × °C proxies, not joules or calibrated fluid volumes',
+        };
+    },
+});
 
 // ── 25-chemistry-conditions.js ──
 
@@ -29925,6 +30476,7 @@ class GrowthZone {
         this.trace_Pb = opts.trace_Pb ?? 0;
         this.trace_Au = opts.trace_Au ?? 0; // invisible-gold trace (arsenopyrite)
         this.trace_Ge = opts.trace_Ge ?? 0; // solid-zone Ge estimate (sphalerite)
+        this.trace_Sr = opts.trace_Sr ?? 0; // measured aragonite Sr partitioning
         // Optional trace-element formula-unit coefficients. applyStoichiometricGrowthBudget uses
         // these only after a positive zone is accepted, so dry-run competition
         // cannot consume solute. Unlike decorative trace labels, this closes the
@@ -29959,6 +30511,8 @@ class GrowthZone {
                     : opts.solid_solution.guggenheimDimensionless,
             };
         }
+        if (opts.sr_partition)
+            this.sr_partition = { ...opts.sr_partition };
         this.fluid_inclusion = opts.fluid_inclusion ?? false;
         this.inclusion_type = opts.inclusion_type ?? '';
         this.note = opts.note ?? '';
@@ -31260,7 +31814,7 @@ const MINERAL_GATES_aragonite = {
     pH_min: 6.0, pH_max: 9.0,
     surface_energy: 'low',
     _sources: ['aragonite engine v17+', 'Folk 1974', 'Morse 1997', 'Burton & Walter 1987 (seawater 5-25°C — see v228 note)', 'Wollast 1990', 'Carlson 1983', 'Fouke et al. 2000 JSR 70:565 (Mammoth facies)', 'Casella et al. 2017 Biogeosciences 14:1461 (inversion kinetics)', 'Wassenburg et al. 2016 GCA (Mg/Ca crossover 1.1 mol/mol)', 'Bots et al. 2011 Geology 39:331 (SO4 evaluated, excluded)'],
-    _notes: 'Orthorhombic CaCO3 dimorph. v228 selectors: Mg/Ca sigmoid centered 1.1 ppm-ratio (~1.8 molar) OR the spring window (T rising ~45°C, closing ~90°C — vent-degassing kinetics; hottest documented primary low-Mg aragonite is ~90-96°C boiling springs). Ω amplifies but cannot select; trace Sr/Pb/Ba boost. Pseudohexagonal cyclic twinning. T_max 400°C from Carlson 1983 metastability limit. v147 SI engine: sigma is omega × kinetic_favorability; PWP rate via aragoniteRate (~3× calcite per Burton-Walter 1987 / Wollast 1990).',
+    _notes: 'Orthorhombic CaCO3 dimorph. v256 selectors: a hard-present aqueous molar Mg/Ca selector at >=1.1 OR an explicitly shallow 40-100 C spring window OR the high-pressure stable field. Smooth tails cannot create a selector outside those evidence domains. Omega amplifies but cannot select; trace Sr/Pb/Ba boost. Pseudohexagonal cyclic twinning. T_max 400 C from Carlson 1983 metastability limit. v147 SI engine: sigma is omega x kinetic_favorability; PWP rate via aragoniteRate (~3x calcite per Burton-Walter 1987 / Wollast 1990).',
 };
 const MINERAL_GATES_dolomite = {
     // v145 (Week 10 SI-engine promotion): sigma_crit bumped 1.0 → 10.
@@ -31705,9 +32259,10 @@ Object.assign(VugConditions.prototype, {
         // hot low-Mg vein brines (elmwood 121°C @ Mg/Ca 0.18, wittichen 156°C,
         // grimsel 221°C…) grew aragonite where every such deposit shows calcite.
         // The physical model is two SELECTORS, either sufficient (an OR):
-        //   1. Mg-poisoning of calcite (works at any T; sigmoid center moved
-        //      1.5 → 1.1 ppm-ratio ≈ 1.8 molar — Wassenburg 2016 cave-dripwater
-        //      crossover 1.1 mol/mol; Folk's classic 1-2 molar band).
+        //   1. Mg-poisoning of calcite (works at any T; aqueous MOLAR Mg/Ca
+        //      threshold 1.1 — Wassenburg 2016 cave-dripwater crossover;
+        //      Folk's classic 1-2 molar band). Concentrations are stored as
+        //      mg/kg, so convert with the element molar masses before comparing.
         //   2. The SPRING WINDOW — vent/apron degassing kinetics, T rising
         //      ~40-45°C (Folk 1994; Fouke 2000: Mammoth vents 71-73°C are
         //      aragonite, distal 28-30°C calcite) and CLOSING ~90°C (Lake
@@ -31729,8 +32284,12 @@ Object.assign(VugConditions.prototype, {
         // two are mutually dependent) rather than acting independently —
         // an additive SO4 term would recreate the exact spurious-driver bug
         // this restructure removes.
-        const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
-        const mg_factor = 1.0 / (1.0 + Math.exp(-(mg_ratio - 1.1) / 0.3));
+        const mg_ratio_molar = (this.fluid.Mg / 24.305)
+            / Math.max(this.fluid.Ca / 40.078, 1e-12);
+        const mgSelectorPresent = mg_ratio_molar >= 1.1;
+        const mg_factor = mgSelectorPresent
+            ? 1.0 / (1.0 + Math.exp(-(mg_ratio_molar - 1.1) / 0.3))
+            : 0;
         const T_rise = 1.0 / (1.0 + Math.exp(-(this.temperature - 45.0) / 10.0));
         const T_fall = 1.0 / (1.0 + Math.exp((this.temperature - 90.0) / 8.0));
         // The low-Mg temperature selector represents an open vent/apron spring,
@@ -31738,8 +32297,12 @@ Object.assign(VugConditions.prototype, {
         // Restrict it to the project's shallow-spring pressure envelope. Deeper
         // fluids can still select aragonite through Mg poisoning or the stable
         // high-pressure phase field below.
-        const shallowSurfaceSpring = Number(this.pressure) <= 0.10;
-        const T_window = shallowSurfaceSpring ? T_rise * T_fall : 0;
+        const shallowSurfaceSpring = this.wall?.open_spring === true
+            && Number(this.pressure) <= 0.10;
+        const springSelectorPresent = shallowSurfaceSpring
+            && this.temperature >= 40
+            && this.temperature <= 100;
+        const T_window = springSelectorPresent ? T_rise * T_fall : 0;
         const omega_factor = 1.0 / (1.0 + Math.exp(-(Math.log10(Math.max(omega, 0.01)) - 1.0) / 0.3));
         const trace_sum = this.fluid.Sr + this.fluid.Pb + this.fluid.Ba;
         const trace_ratio = trace_sum / Math.max(this.fluid.Ca, 0.01);
@@ -31749,11 +32312,16 @@ Object.assign(VugConditions.prototype, {
         // Mg-poisoning or spring-degassing selector. At lower pressure those kinetic
         // selectors remain authoritative.
         const pressureStable = aragoniteIsPressureStable(this.temperature, this.pressure);
-        // Selector OR (weighted sum), then a soft self-gate: a polymorph
+        // Logistic functions have non-zero tails by construction. They are useful
+        // for weighting evidence INSIDE a documented domain, but must not turn an
+        // absent driver into a small positive selector that a huge omega can amplify.
+        if (!pressureStable && !mgSelectorPresent && !springSelectorPresent)
+            return 0;
+        // Selector OR (maximum of independent routes), then a soft self-gate: a polymorph
         // selector must actually be PRESENT — sub-threshold residue from two
         // absent drivers must not multiply a huge Ω over the nucleation gate
         // (stalactite_demo's brine-strength Ω≈56 did exactly that pre-v228).
-        const selector = pressureStable ? 1.0 : 0.75 * mg_factor + 0.25 * T_window;
+        const selector = pressureStable ? 1.0 : Math.max(mg_factor, T_window);
         const selector_gate = 1.0 / (1.0 + Math.exp(-(selector - 0.10) / 0.03));
         const favorability = selector * selector_gate * (0.8 + 0.2 * omega_factor) * trace_factor;
         return omega * favorability;
@@ -41573,7 +42141,8 @@ function _physicalEtchWithLocalConditions(sim, crystal, fn) {
             const mesh = sim.wall_state.meshFor(sim);
             const cell = mesh?.cellOf?.(crystal, sim.wall_state);
             sim.conditions.fluid = cell?.fluid || sim.ring_fluids[ringIdx];
-            sim.conditions.temperature = sim.ring_temperatures[ringIdx];
+            const vertexIdx = anchor.ringIdx * sim.wall_state.cells_per_ring + anchor.cellIdx;
+            sim.conditions.temperature = temperatureAtMeshVertex(sim, mesh, vertexIdx);
         }
         return fn(sim.conditions);
     }
@@ -42025,6 +42594,14 @@ MORPH_TH.calcite = {
     // over-steepened the dripstone family toward dendrite, against
     // ground truth.
     MG_BUNCH: 0.4,
+    // A vadose drip film is not a well-mixed cavity voxel. Its crystal surface
+    // is supplied through a thin, rapidly depleted moving film, so only a
+    // bounded fraction of the voxel-scale supersaturation excess reaches the
+    // interface morphology classifier. The 0.10 factor preserves the observed
+    // stepped stalactite regime while still allowing exceptional pulses to enter
+    // hopper/dendritic bands; it is a dimensionless transport calibration, not a
+    // claim about film thickness or SI mass-transfer rates.
+    AIR_FILM_EXCESS_FACTOR: 0.10,
     // C0 — the calcite σ lever (boss stone #1, SIM 217, 2026-07-06): sustained
     // textbook-Ω above this in SUBAQUEOUS growth → scalenohedral, independent of
     // Mg/T. DIRECTION from the literature: González, Carpenter & Lohmann 1992
@@ -42052,6 +42629,11 @@ MORPH_TH.calcite = {
     // KEEP THE THRESHOLDS IN SYNC with tools/calcite-morphology-map.mjs
     // (the transparent bench — its --engine mode cross-checks this table).
     sigma(conditions) { return conditions.supersaturation_calcite(); },
+    environmentSigma(_conditions, crystal, sigma) {
+        return crystal?.growth_environment === 'air'
+            ? 1 + (sigma - 1) * MORPH_TH.calcite.AIR_FILM_EXCESS_FACTOR
+            : sigma;
+    },
     effSigmaMult(conditions) {
         const f = conditions.fluid;
         const mgRatio = (f.Mg || 0) / Math.max(1e-6, f.Ca || 0);
@@ -43030,27 +43612,30 @@ function _o1aBaseTipSigma(sim, crystal) {
     const fD = grid.fluidAt(anchor.ringIdx, anchor.cellIdx, maxD);
     if (!f0 || !fD || f0 === fD)
         return null;
-    const rt = sim.ring_temperatures || [];
-    const temp = (anchor.ringIdx >= 0 && anchor.ringIdx < rt.length) ? rt[anchor.ringIdx] : cond.temperature;
     const savedF = cond.fluid, savedT = cond.temperature;
-    cond.temperature = temp;
     let s0 = NaN, sD = NaN;
-    cond.fluid = f0;
     try {
-        s0 = fn.call(cond);
+        cond.fluid = f0;
+        cond.temperature = grid.temperatureAt(anchor.ringIdx, anchor.cellIdx, 0);
+        try {
+            s0 = fn.call(cond);
+        }
+        catch {
+            s0 = NaN;
+        }
+        cond.fluid = fD;
+        cond.temperature = grid.temperatureAt(anchor.ringIdx, anchor.cellIdx, maxD);
+        try {
+            sD = fn.call(cond);
+        }
+        catch {
+            sD = NaN;
+        }
     }
-    catch {
-        s0 = NaN;
+    finally {
+        cond.fluid = savedF;
+        cond.temperature = savedT;
     }
-    cond.fluid = fD;
-    try {
-        sD = fn.call(cond);
-    }
-    catch {
-        sD = NaN;
-    }
-    cond.fluid = savedF;
-    cond.temperature = savedT;
     if (!Number.isFinite(s0) || !Number.isFinite(sD))
         return null;
     return { s0, sD };
@@ -43253,6 +43838,41 @@ function classifySurfaceGrowth(sim) {
         prior.push({ crystal: c, dir, radius, exactTriangles });
     }
 }
+function _wulffLocalChemistry(sim, crystal) {
+    const conditions = sim?.conditions;
+    if (!conditions)
+        return null;
+    const wall = sim.wall_state;
+    const anchor = wall?._resolveAnchor?.(crystal);
+    const mesh = wall?.meshFor?.(sim);
+    const vertexIdx = anchor
+        ? anchor.ringIdx * wall.cells_per_ring + anchor.cellIdx : -1;
+    return {
+        fluid: vertexIdx >= 0 ? (mesh?.cells?.[vertexIdx]?.fluid || conditions.fluid) : conditions.fluid,
+        temperatureC: vertexIdx >= 0
+            ? temperatureAtMeshVertex(sim, mesh, vertexIdx) : conditions.temperature,
+    };
+}
+function _wulffSigmaAtLocalChemistry(sim, mineral, local) {
+    const conditions = sim?.conditions;
+    const fn = conditions?.[`supersaturation_${mineral}`];
+    if (!conditions || typeof fn !== 'function' || !local?.fluid)
+        return NaN;
+    const savedFluid = conditions.fluid, savedTemp = conditions.temperature;
+    try {
+        conditions.fluid = local.fluid;
+        conditions.temperature = local.temperatureC;
+        const sigma = Number(fn.call(conditions));
+        return Number.isFinite(sigma) ? sigma : NaN;
+    }
+    catch (_e) {
+        return NaN;
+    }
+    finally {
+        conditions.fluid = savedFluid;
+        conditions.temperature = savedTemp;
+    }
+}
 function classifyWulffForm(sim) {
     const wall = sim.conditions && sim.conditions.wall;
     if (!wall)
@@ -43264,6 +43884,7 @@ function classifyWulffForm(sim) {
         if (!c || c.dissolved)
             continue;
         const m = c.mineral;
+        const localChemistry = _wulffLocalChemistry(sim, c);
         // rung 4a.7 — wulfenite Pb:Mo growth integral. Accumulated BEFORE the size/tag gates so the
         // sub-30µm nucleus growth is in ⟨r⟩ from zone one, and RE-derived for already-tagged crystals
         // so the form keeps integrating its water history (js/99i re-reads biasC + growthFrac through
@@ -43273,7 +43894,7 @@ function classifyWulffForm(sim) {
         // wulfenite first; rung 4a.8 moved that to the shared tagged-crystal site below, fleet-wide.)
         if (m === 'wulfenite' && wulfeniteOn) {
             const z = c.zones && c.zones.length ? c.zones[c.zones.length - 1] : null;
-            const f = sim.conditions.fluid;
+            const f = localChemistry?.fluid || sim.conditions.fluid;
             if (z && z.step === sim.step && z.thickness_um > 0 && f && f.Mo > 0) {
                 const r = (f.Pb / WULFENITE_PBMO.M_PB) / (f.Mo / WULFENITE_PBMO.M_MO); // molar Pb:MoO4
                 const acc = c._wulffPbMo || (c._wulffPbMo = { rG: 0, G: 0 });
@@ -43284,23 +43905,17 @@ function classifyWulffForm(sim) {
             }
         }
         // C0 (SIM 217): calcite joins as the second chemically-exact tenant — a
-        // growth-weighted Ω integral (post-step bulk σ, the 18th-catch basis this
-        // classifier already runs on), PLUS molar Ca:CO₃ recorded-but-unconsumed
+        // growth-weighted Ω integral at the crystal's boundary cell, PLUS molar
+        // Ca:CO₃ recorded-but-unconsumed
         // (the B5-era lever, pre-registered — the probe showed sim-r carries no
         // genre signal yet). READ-only on fluid, no RNG → byte-identical baselines;
         // the biasC map (wulffCalciteOmegaBias) consumes Ω̄ live, so the tooth
         // steepens as hot supersaturated water keeps feeding it.
         if (m === 'calcite' && calciteOn) {
             const z = c.zones && c.zones.length ? c.zones[c.zones.length - 1] : null;
-            const f = sim.conditions.fluid;
+            const f = localChemistry?.fluid || sim.conditions.fluid;
             if (z && z.step === sim.step && z.thickness_um > 0 && f) {
-                let om = NaN;
-                try {
-                    om = sim.conditions.supersaturation_calcite();
-                }
-                catch {
-                    om = NaN;
-                }
+                const om = _wulffSigmaAtLocalChemistry(sim, 'calcite', localChemistry);
                 if (Number.isFinite(om)) {
                     const acc = c._wulffCalInt || (c._wulffCalInt = { oG: 0, rG: 0, rW: 0, G: 0 });
                     acc.oG += om * z.thickness_um;
@@ -43447,27 +44062,46 @@ function classifyWulffForm(sim) {
 function classifyMorphologyStep(sim) {
     for (const mineral in MORPH_TH) {
         const th = MORPH_TH[mineral];
-        let sigma;
-        try {
-            sigma = th.sigma(sim.conditions);
-        }
-        catch (_e) {
-            continue;
-        }
-        if (!isFinite(sigma) || sigma < 1.0)
-            continue;
-        const mult = th.effSigmaMult ? th.effSigmaMult(sim.conditions) : 1;
-        // C0: a tenant may declare formPerCrystal — its form hook then re-evaluates
-        // per crystal (calcite: the subaqueous gate reads growth_environment).
-        // Everyone else keeps the once-per-mineral evaluation.
-        const form0 = (th.form && !th.formPerCrystal) ? th.form(sim.conditions) : null;
+        // Every growing crystal is evaluated at its own boundary cell. Form hooks
+        // run in that same local chemistry/temperature context.
         for (const c of sim.crystals) {
             if (!c || c.mineral !== mineral || c.dissolved)
                 continue;
             const z = c.zones.length ? c.zones[c.zones.length - 1] : null;
             if (!z || z.step !== sim.step || z.thickness_um <= 0)
                 continue;
-            const form = th.formPerCrystal && th.form ? th.form(sim.conditions, c) : form0;
+            const anchor = sim.wall_state?._resolveAnchor?.(c);
+            const mesh = sim.wall_state?.meshFor?.(sim);
+            const vertexIdx = anchor
+                ? anchor.ringIdx * sim.wall_state.cells_per_ring + anchor.cellIdx : -1;
+            const localFluid = vertexIdx >= 0 ? mesh?.cells?.[vertexIdx]?.fluid : null;
+            const savedFluid = sim.conditions.fluid;
+            const savedTemp = sim.conditions.temperature;
+            let sigma = NaN, mult = 1, form = null;
+            try {
+                if (localFluid)
+                    sim.conditions.fluid = localFluid;
+                if (vertexIdx >= 0) {
+                    sim.conditions.temperature = temperatureAtMeshVertex(sim, mesh, vertexIdx);
+                }
+                sigma = th.sigma(sim.conditions);
+                if (isFinite(sigma) && th.environmentSigma) {
+                    sigma = th.environmentSigma(sim.conditions, c, sigma);
+                }
+                if (isFinite(sigma) && sigma >= 1.0) {
+                    mult = th.effSigmaMult ? th.effSigmaMult(sim.conditions) : 1;
+                    form = th.form ? th.form(sim.conditions, c) : null;
+                }
+            }
+            catch (_e) {
+                sigma = NaN;
+            }
+            finally {
+                sim.conditions.fluid = savedFluid;
+                sim.conditions.temperature = savedTemp;
+            }
+            if (!isFinite(sigma) || sigma < 1.0)
+                continue;
             // Size BEFORE this zone — the map tool's sizeAcc semantics.
             const sizeBefore = Math.max(0, c.total_growth_um - z.thickness_um);
             const surf = morphSurfaceSigma(th, sigma, sizeBefore) * mult;
@@ -45512,21 +46146,30 @@ function grow_aragonite(crystal, conditions, step) {
     const trace_Fe = conditions.fluid.Fe * 0.06;
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
     let note = `${crystal.habit} CaCO₃`;
-    const sr_uptake = conditions.fluid.Sr * 0.15;
+    const srPartition = aragoniteSrPartitioning(conditions.fluid);
     const pb_uptake = conditions.fluid.Pb * 0.10;
-    if (sr_uptake > 0.5 || pb_uptake > 0.5) {
-        note += ' (Sr+Pb scavenged: aragonite hosts what calcite can\'t)';
+    if (srPartition.formulaCoefficientSr > 0 || pb_uptake > 0.5) {
+        note += ` (Sr partitioned at D=${srPartition.distributionCoefficient.toFixed(2)} from local dripwater`;
+        if (pb_uptake > 0.5)
+            note += '; Pb association observed but not mass-partition calibrated';
+        note += ')';
     }
     if (conditions.fluid.Mg > 0) {
-        const mg_ratio = conditions.fluid.Mg / Math.max(conditions.fluid.Ca, 0.01);
-        if (mg_ratio > 1.5) {
-            note += ` — Mg/Ca=${mg_ratio.toFixed(1)}, calcite is poisoned here`;
+        const mg_ratio_molar = (conditions.fluid.Mg / 24.305)
+            / Math.max(conditions.fluid.Ca / 40.078, 1e-12);
+        if (mg_ratio_molar >= 1.1) {
+            note += ` — molar Mg/Ca=${mg_ratio_molar.toFixed(1)}, calcite is poisoned here`;
         }
     }
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
         trace_Fe, trace_Mn,
+        trace_Sr: srPartition.targetSolidSrPpm,
+        trace_stoichiometry: srPartition.formulaCoefficientSr > 0
+            ? { Sr: srPartition.formulaCoefficientSr }
+            : undefined,
+        sr_partition: srPartition,
         note,
     });
 }
@@ -59997,7 +60640,27 @@ function _nuc_dolomite(sim) {
     // precursor to ordered dolomite.
 }
 function _nuc_HMC(sim) {
-    const composition = hmcCompositionFromFluid(sim.conditions.fluid, sim.conditions.temperature);
+    let localCandidate = null;
+    if (sim.wall_state?.per_vertex_nucleation || sim._thermalFieldActivated) {
+        const wall = sim.wall_state;
+        const mesh = wall?.meshFor?.(sim);
+        const N = wall?.cells_per_ring | 0;
+        for (let vertexIdx = 0; mesh?.cells && vertexIdx < mesh.cells.length; vertexIdx++) {
+            const anchor = { ringIdx: Math.floor(vertexIdx / N), cellIdx: vertexIdx % N };
+            const local = sim._localNucleationEvaluationAtAnchor('HMC', anchor);
+            if (!local?.fluid)
+                continue;
+            const candidateComposition = hmcCompositionFromFluid(local.fluid, local.temperatureC);
+            if (!candidateComposition.compositionDomainSupported
+                || !candidateComposition.validHMCComposition)
+                continue;
+            const evaluated = sim._localNucleationEvaluationAtAnchor('HMC', anchor, [candidateComposition.mgMoleFraction]);
+            if (!localCandidate || evaluated.sigma > localCandidate.sigma) {
+                localCandidate = { ...evaluated, composition: candidateComposition, anchor };
+            }
+        }
+    }
+    let composition = localCandidate?.composition || hmcCompositionFromFluid(sim.conditions.fluid, sim.conditions.temperature);
     sim._hmc_composition_coverage = { ...composition };
     if (!composition.compositionDomainSupported) {
         const fingerprint = `${composition.compositionDomainStatus}|${composition.temperatureStatus}`;
@@ -60009,7 +60672,8 @@ function _nuc_HMC(sim) {
     }
     if (!composition.validHMCComposition)
         return;
-    const sigma_hmc = sim.conditions.supersaturation_HMC(composition.mgMoleFraction);
+    let sigma_hmc = localCandidate?.sigma
+        ?? sim.conditions.supersaturation_HMC(composition.mgMoleFraction);
     if (sigma_hmc <= MINERAL_GATES_HMC.sigma_crit)
         return; // RNG-cascade guard — DO NOT MOVE
     if (sim._atNucleationCap('HMC'))
@@ -60029,13 +60693,23 @@ function _nuc_HMC(sim) {
         pos = `on calcite #${existing_cal_h[0].crystal_id}`;
     else if (existing_arg_h.length && rng.random() < 0.35)
         pos = `on aragonite #${existing_arg_h[0].crystal_id}`;
-    const mg_ratio = composition.aqueousMgCaMolarRatio;
-    const mg_content = composition.mgMoleFraction;
     const c = sim.nucleate('HMC', pos, sigma_hmc);
-    c._mg_content = mg_content;
+    const actualLocal = sim._localNucleationEvaluationAtAnchor('HMC', c.wall_anchor);
+    if (actualLocal?.fluid) {
+        const actualComposition = hmcCompositionFromFluid(actualLocal.fluid, actualLocal.temperatureC);
+        if (actualComposition.compositionDomainSupported && actualComposition.validHMCComposition) {
+            composition = actualComposition;
+            const actualSigma = sim._localNucleationEvaluationAtAnchor('HMC', c.wall_anchor, [composition.mgMoleFraction]);
+            if (Number.isFinite(actualSigma?.sigma))
+                sigma_hmc = actualSigma.sigma;
+        }
+    }
     c._solid_solution_model = 'calcite_disordered_dolomite_subregular_v1';
+    c._mg_content = composition.mgMoleFraction;
     c._hmc_nucleation_composition = { ...composition };
-    sim.log.push(`  ✦ NUCLEATION: ⚪ HMC #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, molar Mg/Ca=${mg_ratio.toFixed(2)}, x=${mg_content.toFixed(3)} Mg, σ=${sigma_hmc.toFixed(2)}) — measured-partition composition with nonideal calcite–dolomite component activities`);
+    const birthT = Number.isFinite(actualLocal?.temperatureC)
+        ? actualLocal.temperatureC : sim.conditions.temperature;
+    sim.log.push(`  ✦ NUCLEATION: ⚪ HMC #${c.crystal_id} on ${c.position} (T=${birthT.toFixed(0)}°C, molar Mg/Ca=${composition.aqueousMgCaMolarRatio.toFixed(2)}, x=${composition.mgMoleFraction.toFixed(3)} Mg, σ=${sigma_hmc.toFixed(2)}) — measured-partition composition with nonideal calcite–dolomite component activities`);
     // Siderite nucleation — Fe carbonate, brown rhomb. Reducing only.
 }
 function _nuc_siderite(sim) {
@@ -60708,10 +61382,28 @@ class VugSimulator {
         // chemistry is bound. d=0 voxels alias the mesh.cells[].fluid
         // objects (per [FIRM] B); d=1, d=2, d=3 voxels each get an
         // independent clone of the bulk fluid. Per-voxel temperature is
-        // initialized to bulk T (per [FIRM] E) but not consumed in v158.
+        // initialized to bulk T and is the canonical local engine temperature.
         // The grid is lazy-cached on wall_state; this call forces the
         // build so the grid is ready when _diffuseRingState first fires.
         this.wall_state.voxelGridFor(this);
+        // SIM 256 thermal localization. Sources stay as plain serializable
+        // records so scenarios, Creative actions, immutable commands, and replay
+        // all share one deterministic representation.
+        this._thermalSources = [];
+        this._thermalSourceCounter = 0;
+        this._thermalFieldReceipts = [];
+        const thermalGrid = this.wall_state.voxelGridFor(this);
+        const authoredThermalSources = this.conditions?._scenario?.thermal_sources;
+        if (thermalGrid && Array.isArray(authoredThermalSources)) {
+            for (let i = 0; i < authoredThermalSources.length; i++) {
+                const normalized = normalizeThermalSourceSpec(authoredThermalSources[i], thermalGrid, `authored-thermal-${i + 1}`);
+                if (normalized)
+                    this._thermalSources.push(normalized);
+            }
+        }
+        this._thermalFieldActivated = this._thermalSources.length > 0
+            || this.conditions?._scenario?.thermal_field != null
+            || this.conditions?._scenario?.wall_rock_thermal_buffer_C != null;
         // Explicit-sulfur conservation baseline. Canonical voxel fluids are the
         // aqueous inventory; accepted growth zones become the solid inventory.
         // _propagateGlobalDelta books only authored boundary declarations and
@@ -60906,6 +61598,9 @@ class VugSimulator {
         // for the strip.
         this._syncRedoxEh(this._movements
             ? this._movements.drivesFieldAt('Eh', this.step) : false);
+        // Transport first, then let saturation/nucleation read the resulting local
+        // wall temperature during this same step.
+        this._advanceThermalField();
         // History-aware Ostwald routing: an exposed stable quartz surface lets
         // later silica attach/grow as quartz instead of restarting a metastable
         // chalcedony generation after cooling or renewed supply.
@@ -61301,7 +61996,10 @@ class VugSimulator {
                     ? mesh.cellOf(crystal, this.wall_state)
                     : null;
                 const localFluid = cell?.fluid || (validRing ? this.ring_fluids[ringIdx] : this.conditions.fluid);
-                const localT = validRing ? this.ring_temperatures[ringIdx] : this.conditions.temperature;
+                const vertexIdx = validRing
+                    ? anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx : -1;
+                const localT = vertexIdx >= 0
+                    ? temperatureAtMeshVertex(this, mesh, vertexIdx) : this.conditions.temperature;
                 const transition = applyCaSO4PhaseTransition(crystal, localFluid, localT, this.conditions.pressure, this.step);
                 if (!transition)
                     continue;
@@ -61320,11 +62018,17 @@ class VugSimulator {
         // 173°C). Preserves habit + dominant_forms + zones; only crystal.mineral
         // changes. First non-destructive polymorph mechanic in the sim.
         for (const crystal of this.crystals) {
-            const transition = applyParamorphTransitions(crystal, this.conditions.temperature, this.step);
+            const anchor = this.wall_state._resolveAnchor(crystal);
+            const mesh = this.wall_state.meshFor ? this.wall_state.meshFor(this) : null;
+            const vertexIdx = anchor
+                ? anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx : -1;
+            const localT = vertexIdx >= 0
+                ? temperatureAtMeshVertex(this, mesh, vertexIdx) : this.conditions.temperature;
+            const transition = applyParamorphTransitions(crystal, localT, this.step);
             if (transition) {
                 const [oldM, newM] = transition;
                 this.log.push(`  ↻ PARAMORPH: ${capitalize(oldM)} #${crystal.crystal_id} → ${newM} ` +
-                    `(T dropped to ${this.conditions.temperature.toFixed(0)}°C, crossed ${oldM}/${newM} ` +
+                    `(local T dropped to ${localT.toFixed(0)}°C, crossed ${oldM}/${newM} ` +
                     `phase boundary; cubic external form preserved)`);
             }
         }
@@ -61392,7 +62096,8 @@ class VugSimulator {
                     ? cell.fluid
                     : this.ring_fluids[ringIdx];
                 const ringState = this.conditions.ringWaterState(ringIdx, nRings);
-                const Tlocal = this.ring_temperatures[ringIdx];
+                const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+                const Tlocal = temperatureAtMeshVertex(this, _mesh, vertexIdx);
                 const transition = applyDehydrationTransitions(crystal, ringFluid, ringState, Tlocal, this.step);
                 if (transition) {
                     const [oldM, newM] = transition;
@@ -61501,9 +62206,11 @@ class VugSimulator {
         {
             const coolSnap = this._snapshotGlobal();
             this.ambient_cooling();
-            this._propagateGlobalDelta(coolSnap);
+            this._propagateGlobalDelta(coolSnap, {
+                ambientThermalStep: this._lastAmbientThermalStep,
+            });
         }
-        // Phase C: inter-ring fluid/temperature diffusion runs at the
+        // Phase C: inter-ring fluid diffusion runs at the
         // very end of the step so chemistry exchanges happen against a
         // stable post-events post-growth state. No-op when all rings
         // carry identical values (Laplacian of a constant is zero) —
@@ -62393,22 +63100,10 @@ Object.assign(VugSimulator.prototype, {
         // Stable unresolved lattice orientation used by later differential-stress
         // pulses. It is born with the crystal and never depends on event time.
         crystal._stress_orientation_unit = _stressOrientationUnit(Number(this._nucSharedState || 0), crystal.crystal_id);
-        // Pick a growth-vector variant from the spec. Its name sets the habit
-        // and its wall_spread/void_reach/vector populate the topo-map
-        // footprint. Falls back to legacy defaults below if the mineral has
-        // no variant objects in the spec.
-        const variant = selectHabitVariant(mineral, sigma, this.conditions.temperature, this._spaceIsCrowded(), 
-        // Proposal B (2026-05): pass current vugFill so habit variants can
-        // gate on it. Stashed by check_nucleation each step. Undefined for
-        // legacy non-step nucleations (preview/library) — selectHabitVariant
-        // skips the fill scoring branch when undefined.
-        this._currentVugFill);
-        if (variant) {
-            crystal.habit = variant.name || crystal.habit;
-            crystal.wall_spread = Number(variant.wall_spread ?? 0.5);
-            crystal.void_reach = Number(variant.void_reach ?? 0.5);
-            crystal.vector = variant.vector || 'equant';
-        }
+        // Reserve the habit draw at the legacy pre-anchor point so default seeded
+        // scenarios retain their RNG stream. The draw is applied only after the
+        // anchor exists, when its local sigma and temperature are knowable.
+        const _habitVariantDraw = reserveHabitVariantDraw(mineral);
         // Anchor on the wall. Crystals that nucleated on another crystal
         // (position "on <mineral> #<id>") inherit the host's cell + ring
         // so pseudomorphs/overgrowths paint alongside it. Free-wall
@@ -62435,9 +63130,34 @@ Object.assign(VugSimulator.prototype, {
         // ring + cell come from the same joint sample. Default-off scenarios
         // keep the legacy two-step path.
         this._lastNucVertexRing = null;
+        this._lastNucPositionOverride = null;
         const _cellIdx = this._assignWallCell(position, mineral);
+        if (this._lastNucPositionOverride) {
+            position = this._lastNucPositionOverride;
+            crystal.position = position;
+        }
         const _ringIdx = this._assignWallRing(position, mineral);
         crystal.wall_anchor = this.wall_state._anchorFromRingCell(_ringIdx, _cellIdx);
+        const _meshAtBirth = this.wall_state.meshFor(this);
+        const _vertexAtBirth = _ringIdx * this.wall_state.cells_per_ring + _cellIdx;
+        const _localBirthTemperature = temperatureAtMeshVertex(this, _meshAtBirth, _vertexAtBirth);
+        const _localBirthEvaluation = this._localNucleationEvaluationAtAnchor(mineral, crystal.wall_anchor);
+        const _localBirthSigma = Number.isFinite(_localBirthEvaluation?.sigma)
+            ? _localBirthEvaluation.sigma : sigma;
+        crystal.nucleation_temp = _localBirthTemperature;
+        crystal.nucleation_sigma = _localBirthSigma;
+        // Pick the growth-vector variant only after the site exists, so temperature-
+        // and saturation-gated habits see the same local boundary voxel as
+        // nucleation and growth. The selector consumes the draw reserved before
+        // site selection, preserving legacy RNG ordering while applying it to the
+        // scientifically correct local birth state.
+        const variant = selectHabitVariant(mineral, _localBirthSigma, _localBirthTemperature, this._spaceIsCrowded(), this._currentVugFill, _habitVariantDraw);
+        if (variant) {
+            crystal.habit = variant.name || crystal.habit;
+            crystal.wall_spread = Number(variant.wall_spread ?? 0.5);
+            crystal.void_reach = Number(variant.void_reach ?? 0.5);
+            crystal.vector = variant.vector || 'equant';
+        }
         // v24 water-level: stamp growth_environment from the ring's
         // water state. Submerged or meniscus = wet = 'fluid'; vadose
         // (above the meniscus) = 'air'. Mirrors vugg.py.
@@ -62983,23 +63703,24 @@ Object.assign(VugSimulator.prototype, {
             return false;
         if (mesh.cells.length < ringCount * N)
             return false;
-        const ringTemps = this.ring_temperatures || [];
         // Swap conditions.fluid + .temperature to per-cell values inside the
         // loop, restore in finally — same pattern as _perVertexNucleationSample
         // and _runEngineForCrystal.
         const savedFluid = this.conditions.fluid;
         const savedTemp = this.conditions.temperature;
+        const savedDirectEvaluation = !!this._localNucleationDirectEvaluation;
         let anyClears = false;
         try {
+            this._localNucleationDirectEvaluation = true;
             for (let r = 0; r < ringCount && !anyClears; r++) {
-                const tempR = (r < ringTemps.length) ? ringTemps[r] : savedTemp;
-                this.conditions.temperature = tempR;
                 for (let c = 0; c < N; c++) {
-                    const cell = mesh.cells[r * N + c];
+                    const vertexIdx = r * N + c;
+                    const cell = mesh.cells[vertexIdx];
                     const cellFluid = cell ? cell.fluid : null;
                     if (!cellFluid)
                         continue;
                     this.conditions.fluid = cellFluid;
+                    this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
                     let sigma = 0;
                     try {
                         sigma = sigmaFn.call(this.conditions);
@@ -63022,10 +63743,126 @@ Object.assign(VugSimulator.prototype, {
             }
         }
         finally {
+            this._localNucleationDirectEvaluation = savedDirectEvaluation;
             this.conditions.fluid = savedFluid;
             this.conditions.temperature = savedTemp;
         }
         return !anyClears; // strangled when no cell cleared σ_crit
+    },
+    // Whenever local wall chemistry or the canonical thermal field is active, the
+    // traditional bulk supersaturation pre-gates must not veto a viable wall cell.
+    // This temporary envelope replaces each supersaturation method only for the
+    // check_nucleation transaction. Each wrapper returns the maximum finite local
+    // sigma, while the later per-vertex sampler calls the captured production
+    // method directly and chooses among the actual eligible cells. A run bypasses
+    // the envelope only when neither spatial contract is active.
+    _installLocalizedNucleationEnvelope() {
+        const wall = this.wall_state;
+        if (!(wall?.per_vertex_nucleation || this._thermalFieldActivated))
+            return null;
+        const mesh = wall?.meshFor?.(this);
+        const grid = wall?.voxelGridFor?.(this);
+        const ringCount = wall?.ring_count | 0;
+        const N = wall?.cells_per_ring | 0;
+        if (!mesh?.cells?.length || !grid || ringCount < 1 || N < 1)
+            return null;
+        let minT = Infinity, maxT = -Infinity;
+        const boundaryTemperatures = [];
+        for (let r = 0; r < ringCount; r++) {
+            for (let c = 0; c < N; c++) {
+                const value = grid.temperatureAt(r, c, 0);
+                if (!Number.isFinite(value))
+                    continue;
+                minT = Math.min(minT, value);
+                maxT = Math.max(maxT, value);
+                boundaryTemperatures.push({ vertexIdx: r * N + c, temperatureC: value });
+            }
+        }
+        // Temperature is only one part of the local state. Even a completely
+        // uniform thermal field can carry authored zonation or local depletion, so
+        // an honest maximum must include every boundary cell whenever either local
+        // chemistry or the canonical spatial thermal field is active.
+        const candidateVertices = boundaryTemperatures;
+        if (!candidateVertices.length)
+            return null;
+        const conditions = this.conditions;
+        const minerals = Object.keys(typeof MINERAL_GATES_REGISTRY !== 'undefined' ? MINERAL_GATES_REGISTRY : {}).sort();
+        const restores = [];
+        const cache = new Map();
+        this._localizedNucleationPeaks = {};
+        for (const mineral of minerals) {
+            const methodName = `supersaturation_${mineral}`;
+            const original = conditions[methodName];
+            if (typeof original !== 'function')
+                continue;
+            const priorOwnDescriptor = Object.getOwnPropertyDescriptor(conditions, methodName);
+            const sim = this;
+            conditions[methodName] = function (...args) {
+                if (sim._localNucleationDirectEvaluation || sim._localNucleationEnvelopeEvaluating) {
+                    return original.apply(conditions, args);
+                }
+                const key = `${methodName}:${JSON.stringify(args)}`;
+                if (cache.has(key))
+                    return cache.get(key);
+                const savedFluid = conditions.fluid;
+                const savedTemp = conditions.temperature;
+                let best = -Infinity;
+                let bestVertex = -1;
+                try {
+                    sim._localNucleationEnvelopeEvaluating = true;
+                    // The local envelope is a boundary-state maximum, not max(bulk,
+                    // boundary). Bulk conditions are a UI/event control surface and may be
+                    // chemically unlike every accessible wall cell.
+                    for (const candidate of candidateVertices) {
+                        const vertexIdx = candidate.vertexIdx;
+                        const fluid = mesh.cells[vertexIdx]?.fluid;
+                        if (!fluid)
+                            continue;
+                        conditions.fluid = fluid;
+                        conditions.temperature = temperatureAtMeshVertex(sim, mesh, vertexIdx);
+                        let sigma = 0;
+                        try {
+                            sigma = Number(original.apply(conditions, args));
+                        }
+                        catch (_e) {
+                            sigma = 0;
+                        }
+                        if (Number.isFinite(sigma) && sigma > best) {
+                            best = sigma;
+                            bestVertex = vertexIdx;
+                        }
+                    }
+                }
+                finally {
+                    sim._localNucleationEnvelopeEvaluating = false;
+                    conditions.fluid = savedFluid;
+                    conditions.temperature = savedTemp;
+                }
+                const result = Number.isFinite(best) ? best : 0;
+                cache.set(key, result);
+                if (bestVertex >= 0) {
+                    sim._localizedNucleationPeaks[mineral] = {
+                        sigma: result,
+                        ringIdx: Math.floor(bestVertex / N),
+                        cellIdx: bestVertex % N,
+                        temperatureC: grid.temperatureAt(Math.floor(bestVertex / N), bestVertex % N, 0),
+                    };
+                }
+                return result;
+            };
+            restores.push(() => {
+                if (priorOwnDescriptor)
+                    Object.defineProperty(conditions, methodName, priorOwnDescriptor);
+                else
+                    delete conditions[methodName];
+            });
+        }
+        return () => {
+            for (let i = restores.length - 1; i >= 0; i--)
+                restores[i]();
+            this._localNucleationEnvelopeEvaluating = false;
+            this._localNucleationDirectEvaluation = false;
+        };
     },
     // Q1a paragenesis hook — consult MINERAL_PARAGENESIS substrate-
     // affinity table for a heterogeneous-nucleation discount on the
@@ -63062,7 +63899,54 @@ Object.assign(VugSimulator.prototype, {
         const parsed = parsePositionHost(position, this.crystals);
         if (!parsed)
             return 1.0;
-        return engineExecutableSubstrateDiscount(parsed.hostMineral, mineral);
+        const discount = engineExecutableSubstrateDiscount(parsed.hostMineral, mineral);
+        if (!(this.wall_state?.per_vertex_nucleation || this._thermalFieldActivated))
+            return discount;
+        const anchor = this.wall_state?._resolveAnchor?.(parsed.host);
+        const local = this._localNucleationEvaluationAtAnchor(mineral, anchor);
+        const sigmaCrit = Number(MINERAL_GATES_REGISTRY?.[mineral]?.sigma_crit);
+        // A catalytic discount belongs to the host surface, not to a remote hot
+        // spot. If this host's own local state does not clear the discounted gate,
+        // remove the discount; a genuinely viable bare-wall maximum may still fire.
+        if (Number.isFinite(sigmaCrit) && !(local?.sigma > sigmaCrit * discount))
+            return 1.0;
+        return discount;
+    },
+    _localNucleationEvaluationAtAnchor(mineral, anchor, args = []) {
+        if (!anchor)
+            return null;
+        const wall = this.wall_state;
+        const N = wall?.cells_per_ring | 0;
+        const mesh = wall?.meshFor?.(this);
+        const vertexIdx = Number(anchor.ringIdx) * N + Number(anchor.cellIdx);
+        const fluid = mesh?.cells?.[vertexIdx]?.fluid;
+        const sigmaFn = this.conditions?.[`supersaturation_${mineral}`];
+        if (!fluid || typeof sigmaFn !== 'function')
+            return null;
+        const savedFluid = this.conditions.fluid;
+        const savedTemp = this.conditions.temperature;
+        const savedDirect = !!this._localNucleationDirectEvaluation;
+        try {
+            this._localNucleationDirectEvaluation = true;
+            this.conditions.fluid = fluid;
+            this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
+            const sigma = Number(sigmaFn.apply(this.conditions, args));
+            return {
+                sigma: Number.isFinite(sigma) ? sigma : 0,
+                temperatureC: this.conditions.temperature,
+                fluid,
+                ringIdx: anchor.ringIdx,
+                cellIdx: anchor.cellIdx,
+            };
+        }
+        catch (_e) {
+            return { sigma: 0, temperatureC: NaN, fluid, ringIdx: anchor.ringIdx, cellIdx: anchor.cellIdx };
+        }
+        finally {
+            this._localNucleationDirectEvaluation = savedDirect;
+            this.conditions.fluid = savedFluid;
+            this.conditions.temperature = savedTemp;
+        }
     },
     _assignWallCell(position, mineral) {
         // Host-substrate overgrowths inherit the host's cell; free-wall
@@ -63081,8 +63965,22 @@ Object.assign(VugSimulator.prototype, {
             // site keeps working when the legacy fields retire in Phase 4.
             if (host) {
                 const a = this.wall_state._resolveAnchor(host);
-                if (a)
-                    return a.cellIdx;
+                if (a) {
+                    if (!(this.wall_state?.per_vertex_nucleation || this._thermalFieldActivated))
+                        return a.cellIdx;
+                    const local = this._localNucleationEvaluationAtAnchor(mineral, a);
+                    const sigmaCrit = Number(MINERAL_GATES_REGISTRY?.[mineral]?.sigma_crit);
+                    const discount = this._sigmaDiscountForPosition(mineral, position);
+                    if (!Number.isFinite(sigmaCrit) || (local && local.sigma > sigmaCrit * discount)) {
+                        return a.cellIdx;
+                    }
+                    const picked = this._perVertexNucleationSample(mineral);
+                    if (picked) {
+                        this._lastNucVertexRing = picked.ringIdx;
+                        this._lastNucPositionOverride = 'vug wall (local chemistry; proposed remote substrate ineligible)';
+                        return picked.cellIdx;
+                    }
+                }
             }
         }
         // Tranche 6 of PROPOSAL-CAVITY-MESH §14: per-vertex nucleation. When
@@ -63105,7 +64003,7 @@ Object.assign(VugSimulator.prototype, {
         if (mineral &&
             typeof mineral === 'string' &&
             this.wall_state &&
-            this.wall_state.per_vertex_nucleation) {
+            (this.wall_state.per_vertex_nucleation || this._thermalFieldActivated)) {
             const picked = this._perVertexNucleationSample(mineral);
             if (picked) {
                 this._lastNucVertexRing = picked.ringIdx;
@@ -63237,6 +64135,8 @@ Object.assign(VugSimulator.prototype, {
         const sigmaFn = this.conditions[`supersaturation_${mineral}`];
         if (typeof sigmaFn !== 'function')
             return null;
+        const sigmaCrit = Number(MINERAL_GATES_REGISTRY?.[mineral]?.sigma_crit);
+        const localThreshold = Number.isFinite(sigmaCrit) ? Math.max(1, sigmaCrit) : 1;
         // Per-vertex chemistry lives on the WallMesh. The mesh is built
         // in the simulator constructor and re-baked on dissolution events
         // (see WallMesh.recompute), so meshFor() returns the live mesh.
@@ -63245,13 +64145,10 @@ Object.assign(VugSimulator.prototype, {
         const mesh = wall.meshFor ? wall.meshFor(this) : null;
         if (!mesh || !mesh.cells || mesh.cells.length < ringCount * N)
             return null;
-        // Pull the per-ring temperature array. ring_temperatures is
-        // allocated in the simulator constructor with one slot per ring;
-        // engines + events mutate it during cooling/thermal pulses.
-        const ringTemps = this.ring_temperatures || [];
         // Save conditions.fluid + .temperature once; swap inside the loop.
         const savedFluid = this.conditions.fluid;
         const savedTemp = this.conditions.temperature;
+        const savedDirectEvaluation = !!this._localNucleationDirectEvaluation;
         // Phase 2c.2b — DEPOSITION CLUSTERING: multiply the per-cell σ weight by the
         // feeder proximity halo (proximityField), so a per-vertex scenario with open
         // supply-feeders concentrates nucleation around its vents with the SAME decaying
@@ -63262,9 +64159,8 @@ Object.assign(VugSimulator.prototype, {
         const weights = new Float64Array(ringCount * N);
         let total = 0;
         try {
+            this._localNucleationDirectEvaluation = true;
             for (let r = 0; r < ringCount; r++) {
-                const tempR = (r < ringTemps.length) ? ringTemps[r] : savedTemp;
-                this.conditions.temperature = tempR;
                 // sin(φ) area weight — depends only on the ring, hoist out of the
                 // cell loop. This is the polar-thinning correction (see header).
                 const areaW = wall.ringAreaWeight(r);
@@ -63275,6 +64171,7 @@ Object.assign(VugSimulator.prototype, {
                     if (!cellFluid)
                         continue;
                     this.conditions.fluid = cellFluid;
+                    this.conditions.temperature = temperatureAtMeshVertex(this, mesh, idx);
                     let sigma = 0;
                     try {
                         sigma = sigmaFn.call(this.conditions);
@@ -63284,9 +64181,9 @@ Object.assign(VugSimulator.prototype, {
                         // returning early on missing fields) → treat as σ=0.
                         sigma = 0;
                     }
-                    if (!Number.isFinite(sigma) || sigma <= 1)
+                    if (!Number.isFinite(sigma) || sigma <= localThreshold)
                         continue;
-                    let w = areaW * (sigma - 1) * (sigma - 1);
+                    let w = areaW * (sigma - localThreshold) * (sigma - localThreshold);
                     if (prox)
                         w *= prox[idx];
                     weights[idx] = w;
@@ -63295,6 +64192,7 @@ Object.assign(VugSimulator.prototype, {
             }
         }
         finally {
+            this._localNucleationDirectEvaluation = savedDirectEvaluation;
             this.conditions.fluid = savedFluid;
             this.conditions.temperature = savedTemp;
         }
@@ -63351,7 +64249,8 @@ Object.assign(VugSimulator.prototype, {
             this.conditions.fluid = (cell && cell.fluid)
                 ? cell.fluid
                 : this.ring_fluids[ringIdx]; // last-resort sentinel; should never hit
-            this.conditions.temperature = this.ring_temperatures[ringIdx];
+            const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+            this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
         }
         try {
             return _runEngineFluidTransaction(engine, crystal, this.conditions, this.step);
@@ -63361,7 +64260,6 @@ Object.assign(VugSimulator.prototype, {
                 this.conditions.fluid = savedFluid;
             }
             if (savedTemp != null) {
-                this.ring_temperatures[ringIdx] = this.conditions.temperature;
                 this.conditions.temperature = savedTemp;
             }
         }
@@ -63523,7 +64421,8 @@ Object.assign(VugSimulator.prototype, {
             this.conditions.fluid = (cell && cell.fluid)
                 ? cell.fluid
                 : this.ring_fluids[ringIdx];
-            this.conditions.temperature = this.ring_temperatures[ringIdx];
+            const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+            this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
         }
         try {
             return _runEngineFluidTransaction(engine, crystal, this.conditions, this.step);
@@ -63533,7 +64432,6 @@ Object.assign(VugSimulator.prototype, {
                 this.conditions.fluid = savedFluid;
             }
             if (savedTemp != null) {
-                this.ring_temperatures[ringIdx] = this.conditions.temperature;
                 this.conditions.temperature = savedTemp;
             }
         }
@@ -63559,11 +64457,13 @@ Object.assign(VugSimulator.prototype, {
             this.conditions.fluid = (cell && cell.fluid)
                 ? cell.fluid
                 : this.ring_fluids[ringIdx];
-            this.conditions.temperature = this.ring_temperatures[ringIdx];
+            const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+            this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
         }
         try {
             this.conditions._carbonateBoundaryBulkFluid = bulkFluidHandle;
             const depleted = applyStoichiometricGrowthBudget(crystal, zone, this.conditions);
+            finalizeAragoniteSrPartitionReceipt(crystal, zone);
             // applyStoichiometricGrowthBudget may shrink a requested zone to the formula amount the
             // local mg/kg reservoirs can actually supply. Commit engine-side habit /
             // state mutations only after that final accepted thickness is known.
@@ -63588,7 +64488,6 @@ Object.assign(VugSimulator.prototype, {
                 this.conditions.fluid = savedFluid;
             }
             if (savedTemp != null) {
-                this.ring_temperatures[ringIdx] = this.conditions.temperature;
                 this.conditions.temperature = savedTemp;
             }
         }
@@ -63692,7 +64591,11 @@ Object.assign(VugSimulator.prototype, {
                     const savedFluid = this.conditions.fluid;
                     const savedTemp = this.conditions.temperature;
                     this.conditions.fluid = cellFluid;
-                    this.conditions.temperature = ringIdx != null ? this.ring_temperatures[ringIdx] : savedTemp;
+                    const vertexIdx = anchor
+                        ? anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx : -1;
+                    this.conditions.temperature = vertexIdx >= 0
+                        ? temperatureAtMeshVertex(this, this.wall_state.meshFor(this), vertexIdx)
+                        : savedTemp;
                     try {
                         sigma = sigmaFn.call(this.conditions);
                     }
@@ -63710,7 +64613,12 @@ Object.assign(VugSimulator.prototype, {
             if (!cellGroups.has(cellKey)) {
                 cellGroups.set(cellKey, { fluid: cellFluid, items: [] });
             }
-            cellGroups.get(cellKey).items.push({ crystal, zone: dryZone, sigma, initiative: 0 });
+            const localTemperature = anchor
+                ? temperatureAtMeshVertex(this, this.wall_state.meshFor(this), anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx)
+                : this.conditions.temperature;
+            cellGroups.get(cellKey).items.push({
+                crystal, zone: dryZone, sigma, initiative: 0, localTemperature,
+            });
         }
         // Per-cell: compute initiatives + rationing (`out` already has
         // entries for crystals whose dry-run was non-positive — those bypass
@@ -63735,7 +64643,8 @@ Object.assign(VugSimulator.prototype, {
             // crystal of that mineral in the cell).
             const initiativeByMineral = {};
             for (const mineral of Object.keys(sigmaByMineral)) {
-                const r = computeInitiative(mineral, sigmaByMineral[mineral], this.conditions, activeMinerals);
+                const representative = items.find(it => it.crystal.mineral === mineral);
+                const r = computeInitiative(mineral, sigmaByMineral[mineral], { temperature: representative?.localTemperature }, activeMinerals);
                 initiativeByMineral[mineral] = r.finalInitiative;
             }
             for (const it of items) {
@@ -64002,7 +64911,7 @@ Object.assign(VugSimulator.prototype, {
     // consumer, now captures a projection of the cells instead
     // (_ringFluidMeans, review §1.4). The equator ring is aliased to
     // conditions.fluid so it already reflects the new value.
-    _propagateGlobalDelta(snap) {
+    _propagateGlobalDelta(snap, options = {}) {
         const [preFluid, preTemp, preSulfurState, preCarbonState] = snap;
         const sulfurDeclarations = Array.isArray(this.conditions._pending_sulfur_boundary_declarations)
             ? this.conditions._pending_sulfur_boundary_declarations.slice() : [];
@@ -64182,13 +65091,44 @@ Object.assign(VugSimulator.prototype, {
             }
         }
         const deltaT = this.conditions.temperature - preTemp;
-        if (deltaT !== 0) {
-            for (let k = 0; k < this.ring_temperatures.length; k++) {
-                if (k === equator) {
-                    this.ring_temperatures[k] = this.conditions.temperature;
+        const ambientStep = options?.ambientThermalStep;
+        const hasAmbientThermalDelta = ambientStep
+            && ((Number(ambientStep.coolingDeltaC) || 0) !== 0
+                || (Number(ambientStep.pulseDeltaC) || 0) !== 0);
+        if (deltaT !== 0 || hasAmbientThermalDelta) {
+            const localAmbientStep = ambientStep
+                && Number.isFinite(Number(ambientStep.ambientTemperatureC))
+                && typeof grid?.applyAmbientThermalStep === 'function';
+            if (localAmbientStep) {
+                grid.applyAmbientThermalStep(Number(ambientStep.coolingDeltaC) || 0, Number(ambientStep.ambientTemperatureC), Number(ambientStep.pulseDeltaC) || 0);
+                const boundaryMeans = grid.boundaryTemperatureMeans?.() || [];
+                for (let k = 0; k < this.ring_temperatures.length; k++) {
+                    if (Number.isFinite(boundaryMeans[k]))
+                        this.ring_temperatures[k] = boundaryMeans[k];
                 }
-                else {
-                    this.ring_temperatures[k] += deltaT;
+                const volumeMean = grid.temperatureMean?.();
+                if (Number.isFinite(volumeMean))
+                    this.conditions.temperature = volumeMean;
+            }
+            else if (grid && typeof grid.propagateTemperatureDelta === 'function') {
+                grid.propagateTemperatureDelta(deltaT, 'all');
+            }
+            if (!localAmbientStep) {
+                for (let k = 0; k < this.ring_temperatures.length; k++) {
+                    if (k === equator) {
+                        this.ring_temperatures[k] = this.conditions.temperature;
+                    }
+                    else if (ambientStep && Number.isFinite(Number(ambientStep.ambientTemperatureC))) {
+                        const ambient = Number(ambientStep.ambientTemperatureC);
+                        const cooling = Math.min(0, Number(ambientStep.coolingDeltaC) || 0);
+                        const pulse = Math.max(0, Number(ambientStep.pulseDeltaC) || 0);
+                        const prior = this.ring_temperatures[k];
+                        const cooled = prior > ambient ? Math.max(ambient, prior + cooling) : prior;
+                        this.ring_temperatures[k] = cooled + pulse;
+                    }
+                    else {
+                        this.ring_temperatures[k] += deltaT;
+                    }
                 }
             }
         }
@@ -64361,12 +65301,12 @@ Object.assign(VugSimulator.prototype, {
         // mesh.diffuse(). Maintains pre-v158 behavior in those paths.
         const grid = this.wall_state.voxelGridFor(this);
         if (grid && typeof grid.diffuse === 'function') {
-            grid.diffuse(rate, this._fluidFieldNames, this.ring_temperatures);
+            grid.diffuse(rate, this._fluidFieldNames);
         }
         else {
             const mesh = this.wall_state.meshFor(this);
             if (mesh && typeof mesh.diffuse === 'function') {
-                mesh.diffuse(rate, this._fluidFieldNames, this.ring_temperatures);
+                mesh.diffuse(rate, this._fluidFieldNames);
             }
         }
     },
@@ -64414,6 +65354,130 @@ Object.assign(VugSimulator.prototype, {
             ? this.wall_state.voxelGridFor(this)
             : null;
         return grid ? grid.sampleFluid(r, c, depth, field) : NaN;
+    },
+    temperatureAtVoxel(r, c, d) {
+        const grid = this.wall_state?.voxelGridFor?.(this);
+        return grid?.temperatureAt ? grid.temperatureAt(r, c, d) : NaN;
+    },
+    sampleVoxelTemperature(r, c, depth) {
+        const grid = this.wall_state?.voxelGridFor?.(this);
+        return grid?.sampleTemperature ? grid.sampleTemperature(r, c, depth) : NaN;
+    },
+    configureThermalField(spec = {}) {
+        this.conditions._scenario ||= {};
+        const scenario = this.conditions._scenario;
+        const prior = scenario.thermal_field || {};
+        const finite = (value, fallback) => value !== null && value !== '' && value !== undefined
+            && Number.isFinite(Number(value)) ? Number(value) : fallback;
+        scenario.thermal_field = {
+            enabled: spec.enabled !== false,
+            conduction_fraction_per_step: Math.max(0, Math.min(1 / 6, finite(spec.conduction_fraction_per_step, prior.conduction_fraction_per_step ?? this.inter_ring_diffusion_rate))),
+            wall_coupling_fraction_per_step: Math.max(0, Math.min(1, finite(spec.wall_coupling_fraction_per_step, prior.wall_coupling_fraction_per_step ?? 0.02))),
+        };
+        if (spec.wall_rock_thermal_buffer_C === null || spec.wall_rock_thermal_buffer_C === '') {
+            delete scenario.wall_rock_thermal_buffer_C;
+        }
+        else if (Number.isFinite(Number(spec.wall_rock_thermal_buffer_C))) {
+            scenario.wall_rock_thermal_buffer_C = Math.max(-273.15, Math.min(2000, Number(spec.wall_rock_thermal_buffer_C)));
+        }
+        // Activation records that a canonical spatial field has been configured;
+        // enabled/paused is a separate transport switch. Pausing retains the
+        // field and its sources without making command order change semantics.
+        this._thermalFieldActivated = true;
+        return {
+            ...scenario.thermal_field,
+            wall_rock_thermal_buffer_C: scenario.wall_rock_thermal_buffer_C ?? null,
+        };
+    },
+    setThermalSource(spec) {
+        const grid = this.wall_state?.voxelGridFor?.(this);
+        this._thermalSources ||= [];
+        let fallbackId = String(spec?.id || '');
+        if (!fallbackId) {
+            do {
+                this._thermalSourceCounter = (Number(this._thermalSourceCounter) || 0) + 1;
+                fallbackId = `thermal-${this._thermalSourceCounter}`;
+            } while (this._thermalSources.some(source => source.id === fallbackId));
+        }
+        const normalized = normalizeThermalSourceSpec(spec, grid, fallbackId);
+        if (!normalized)
+            return null;
+        const index = this._thermalSources.findIndex(source => source.id === normalized.id);
+        if (index >= 0)
+            this._thermalSources[index] = normalized;
+        else
+            this._thermalSources.push(normalized);
+        this._thermalSources.sort((a, b) => a.id.localeCompare(b.id));
+        this._thermalFieldActivated = true;
+        return normalized;
+    },
+    removeThermalSource(id) {
+        const before = this._thermalSources?.length || 0;
+        this._thermalSources = (this._thermalSources || []).filter(source => source.id !== String(id));
+        return before - this._thermalSources.length;
+    },
+    clearThermalSources() {
+        const count = this._thermalSources?.length || 0;
+        this._thermalSources = [];
+        return count;
+    },
+    _advanceThermalField() {
+        const grid = this.wall_state?.voxelGridFor?.(this);
+        if (!grid?.advanceTemperatureField)
+            return null;
+        const scenario = this.conditions?._scenario || {};
+        const config = scenario.thermal_field || {};
+        if (config.enabled === false)
+            return null;
+        const hasSources = Array.isArray(this._thermalSources) && this._thermalSources.length > 0;
+        const hasRockBoundary = scenario.wall_rock_thermal_buffer_C != null;
+        // A source-free uniform field needs no work and remains byte-identical.
+        if (!this._thermalFieldActivated && !hasSources && !hasRockBoundary)
+            return null;
+        const receipt = grid.advanceTemperatureField({
+            step: this.step,
+            sources: this._thermalSources,
+            scenario,
+            mesh: this.wall_state.meshFor(this),
+            conduction_fraction_per_step: config.conduction_fraction_per_step ?? this.inter_ring_diffusion_rate,
+            wall_coupling_fraction_per_step: config.wall_coupling_fraction_per_step ?? 0.02,
+        });
+        if (!receipt)
+            return null;
+        const means = grid.boundaryTemperatureMeans();
+        for (let r = 0; r < this.ring_temperatures.length; r++) {
+            if (Number.isFinite(means[r]))
+                this.ring_temperatures[r] = means[r];
+        }
+        const mean = grid.temperatureMean();
+        if (Number.isFinite(mean))
+            this.conditions.temperature = mean;
+        this._thermalFieldReceipts ||= [];
+        this._thermalFieldReceipts.push(receipt);
+        return receipt;
+    },
+    setGlobalTemperature(valueC) {
+        const next = Math.max(-273.15, Math.min(2000, Number(valueC)));
+        if (!Number.isFinite(next))
+            return this.conditions.temperature;
+        const prior = Number(this.conditions.temperature);
+        const delta = Number.isFinite(prior) ? next - prior : 0;
+        this.conditions.temperature = next;
+        const grid = this.wall_state?.voxelGridFor?.(this);
+        if (grid?.propagateTemperatureDelta && delta !== 0) {
+            grid.propagateTemperatureDelta(delta, 'all');
+            const means = grid.boundaryTemperatureMeans();
+            for (let r = 0; r < this.ring_temperatures.length; r++) {
+                if (Number.isFinite(means[r]))
+                    this.ring_temperatures[r] = means[r];
+            }
+        }
+        else if (Array.isArray(this.ring_temperatures)) {
+            for (let r = 0; r < this.ring_temperatures.length; r++) {
+                this.ring_temperatures[r] = next;
+            }
+        }
+        return next;
     },
     // ====================================================================
     // PROPOSAL-GEOLOGICAL-ACCURACY Phase 4c.1 — keep fluid.Eh in sync with
@@ -64698,6 +65762,18 @@ Object.assign(VugSimulator.prototype, {
             // store is untouched. See _ringFluidMeans for the full rationale.
             ring_fluids: this._ringFluidMeans ? this._ringFluidMeans() : null,
             ring_temperatures: this.ring_temperatures ? this.ring_temperatures.slice() : null,
+            boundary_temperatures: (() => {
+                const grid = this.wall_state?.voxelGridFor?.(this);
+                if (!grid?.temperatureAt)
+                    return null;
+                const out = new Array(this.wall_state.ring_count * this.wall_state.cells_per_ring);
+                for (let r = 0; r < this.wall_state.ring_count; r++) {
+                    for (let c = 0; c < this.wall_state.cells_per_ring; c++) {
+                        out[r * this.wall_state.cells_per_ring + c] = grid.temperatureAt(r, c, 0);
+                    }
+                }
+                return out;
+            })(),
             // === END HELIX-OVERLAY-FORK ADDITION ==============================
             // === HELIX-OVERLAY-FORK ADDITION (Week 3 carbonate) ===============
             // f_ord chip in the Carbonate System legend section reads cycle
@@ -65290,16 +66366,44 @@ Object.assign(VugSimulator.prototype, {
         // (declaring a movement is a per-scenario rebake anyway).
         const _mvOwnsT = !!(this._movements && this._movements.drivesFieldAt
             && this._movements.drivesFieldAt('temperature', this.step));
+        // The global conditions object is only the volume-mean view. Preserve the
+        // two physically different contributions so _propagateGlobalDelta can cool
+        // each local control volume toward ambient without blindly subtracting the
+        // bulk delta from cells that are already colder than ambient. A positive
+        // fracture-pulse contribution remains genuine heating and is broadcast
+        // separately below.
+        this._lastAmbientThermalStep = {
+            ambientTemperatureC: null,
+            coolingDeltaC: 0,
+            pulseDeltaC: 0,
+            movementOwnsTemperature: _mvOwnsT,
+        };
         if (!_mvOwnsT) {
-            this.conditions.temperature -= rate * this._thermalRng.uniform(0.8, 1.2);
-            this.conditions.temperature = Math.max(this.conditions.temperature, 25);
+            // Passive conductive loss approaches an authored far-field equilibrium.
+            // The old unconditional Math.max(T, 25) was not cooling: it heated every
+            // 12-22 C cave/playa/aquifer to room temperature on its first step. Keep
+            // the thermal-stream draw unconditional (seed ordering remains stable), but
+            // apply it only while the fluid is warmer than its environment. If no
+            // environment is authored, 25 C remains the legacy warm-system target.
+            const authoredAmbient = this.conditions.wall?.ambient_temperature_C;
+            const ambientTemperature = typeof authoredAmbient === 'number' && Number.isFinite(authoredAmbient)
+                ? authoredAmbient
+                : 25;
+            this._lastAmbientThermalStep.ambientTemperatureC = ambientTemperature;
+            const coolingIncrement = rate * this._thermalRng.uniform(0.8, 1.2);
+            const beforeCooling = this.conditions.temperature;
+            if (this.conditions.temperature > ambientTemperature) {
+                this.conditions.temperature = Math.max(ambientTemperature, this.conditions.temperature - coolingIncrement);
+            }
+            this._lastAmbientThermalStep.coolingDeltaC = this.conditions.temperature - beforeCooling;
             // ---- Thermal pulses: episodic fluid injection ----
             // Real hydrothermal systems don't cool monotonically. Hot fluid pulses
             // arrive through fractures — fast, dramatic, then bleed heat back out.
             // Probability scales with how far we've cooled (more fractures open as
             // rock contracts) and inversely with how hot we still are (already-hot
             // systems don't notice small pulses).
-            const cooledFraction = 1 - (this.conditions.temperature - 25) / Math.max(this._startTemp || 400, 100);
+            const coolingSpan = Math.max((this._startTemp || 400) - ambientTemperature, 1);
+            const cooledFraction = Math.max(0, Math.min(1, 1 - (this.conditions.temperature - ambientTemperature) / coolingSpan));
             const pulseChance = 0.04 + cooledFraction * 0.06; // 4-10% per step
             // v162 supergene opt-out (LAST && operand so the chance draw still happens
             // first — keeps the thermal stream's draw pattern uniform). Scenarios that
@@ -65315,6 +66419,7 @@ Object.assign(VugSimulator.prototype, {
                 const actualSpike = newTemp - this.conditions.temperature;
                 if (actualSpike > 15) {
                     this.conditions.temperature = newTemp;
+                    this._lastAmbientThermalStep.pulseDeltaC = actualSpike;
                     // Fresh fluid pulse brings chemistry
                     const silicaPulse = this._thermalRng.uniform(50, 300);
                     if (typeof this.conditions.fluid.addReactiveSilica === 'function') {
@@ -65390,19 +66495,25 @@ Object.assign(VugSimulator.prototype, {
         // is the right input for habit selection (a 0-1 quantity that triggers
         // can match against directly). Undefined for legacy non-step paths.
         this._currentVugFill = vugFill;
-        _nucleateClass_amphibole(this);
-        _nucleateClass_arsenate(this);
-        _nucleateClass_borate(this);
-        _nucleateClass_carbonate(this);
-        _nucleateClass_halide(this);
-        _nucleateClass_hydroxide(this);
-        _nucleateClass_molybdate(this);
-        _nucleateClass_native(this);
-        _nucleateClass_oxide(this);
-        _nucleateClass_phosphate(this);
-        _nucleateClass_silicate(this);
-        _nucleateClass_sulfate(this);
-        _nucleateClass_sulfide(this);
+        const restoreLocalizedEnvelope = this._installLocalizedNucleationEnvelope?.();
+        try {
+            _nucleateClass_amphibole(this);
+            _nucleateClass_arsenate(this);
+            _nucleateClass_borate(this);
+            _nucleateClass_carbonate(this);
+            _nucleateClass_halide(this);
+            _nucleateClass_hydroxide(this);
+            _nucleateClass_molybdate(this);
+            _nucleateClass_native(this);
+            _nucleateClass_oxide(this);
+            _nucleateClass_phosphate(this);
+            _nucleateClass_silicate(this);
+            _nucleateClass_sulfate(this);
+            _nucleateClass_sulfide(this);
+        }
+        finally {
+            restoreLocalizedEnvelope?.();
+        }
     },
 });
 
@@ -67926,6 +69037,16 @@ function _scenarioNucleationWindowBlock(sim, name) {
 // untouched. No live RNG, crystal, fluid, log, or counter state is mutated.
 // This makes the hover panel answer whether production CAN call nucleate() now,
 // then separately disclose that the real path still contains stochastic draws.
+function _productionProbeDeepClone(value) {
+    if (value == null || typeof value !== 'object')
+        return value;
+    if (Array.isArray(value))
+        return value.map(_productionProbeDeepClone);
+    const clone = Object.create(Object.getPrototypeOf(value));
+    for (const key of Object.keys(value))
+        clone[key] = _productionProbeDeepClone(value[key]);
+    return clone;
+}
 function productionNucleationDecisionProbe(name, sim, options = {}) {
     const fn = _NUCLEATION_PROBE_REGISTRY[name];
     const unavailable = {
@@ -67945,15 +69066,28 @@ function productionNucleationDecisionProbe(name, sim, options = {}) {
     const crystalMode = options.crystalMode || 'current';
     probe.crystals = sim.crystals
         .filter((cr) => crystalMode !== 'remove-target' || cr.mineral !== name)
-        .map((cr) => ({
-        ...cr,
-        ...(crystalMode === 'inactive-target' && cr.mineral === name ? { active: false } : {}),
-        zones: Array.isArray(cr.zones) ? cr.zones.map((zone) => ({ ...zone })) : [],
-        phase_transition_history: Array.isArray(cr.phase_transition_history)
-            ? cr.phase_transition_history.map((row) => ({ ...row })) : [],
-    }));
-    probe.conditions = Object.assign(Object.create(Object.getPrototypeOf(sim.conditions)), sim.conditions);
-    probe.conditions.fluid = sim.conditions.fluid;
+        .map((cr) => {
+        const copy = _productionProbeDeepClone(cr);
+        if (crystalMode === 'inactive-target' && cr.mineral === name)
+            copy.active = false;
+        return copy;
+    });
+    probe.conditions = _productionProbeDeepClone(sim.conditions);
+    // Local nucleation helpers resolve through wall_state.meshFor(). Give the
+    // observer a private chemistry mesh as well as private bulk conditions;
+    // phase-changing probes (notably birnessite -> todorokite) may legitimately
+    // debit their clone but can never reach a live wall-cell fluid.
+    const liveWall = sim.wall_state;
+    const liveMesh = liveWall?.meshFor?.(sim);
+    if (liveWall && liveMesh?.cells) {
+        const probeMesh = Object.assign(Object.create(Object.getPrototypeOf(liveMesh)), liveMesh);
+        probeMesh.cells = liveMesh.cells.map((cell) => ({
+            ...cell,
+            fluid: _productionProbeDeepClone(cell?.fluid),
+        }));
+        probe.wall_state = Object.assign(Object.create(Object.getPrototypeOf(liveWall)), liveWall);
+        probe.wall_state.meshFor = () => probeMesh;
+    }
     if (Number.isFinite(options.targetSigma)) {
         probe.conditions[`supersaturation_${name}`] = () => Number(options.targetSigma);
     }
@@ -68874,6 +70008,35 @@ function makeSimulationResumeCommand() {
     const payload = { schema: SIMULATION_COMMAND_SCHEMA, type: 'resume' };
     return _simulationDeepFreeze({ ...payload, commandId: _simulationCommandId(payload) });
 }
+function makeSimulationThermalSourceCommand(action, payload = {}) {
+    const normalizedAction = ['set', 'remove', 'clear'].includes(action) ? action : 'set';
+    const body = normalizedAction === 'set'
+        ? { source: _simulationJsonClone(payload || {}) }
+        : normalizedAction === 'remove'
+            ? { id: String(payload?.id ?? payload ?? '') }
+            : {};
+    const commandPayload = {
+        schema: SIMULATION_COMMAND_SCHEMA,
+        type: 'thermal_source',
+        action: normalizedAction,
+        ...body,
+    };
+    return _simulationDeepFreeze({
+        ...commandPayload,
+        commandId: _simulationCommandId(commandPayload),
+    });
+}
+function makeSimulationThermalFieldCommand(config = {}) {
+    const commandPayload = {
+        schema: SIMULATION_COMMAND_SCHEMA,
+        type: 'thermal_field',
+        config: _simulationJsonClone(config || {}),
+    };
+    return _simulationDeepFreeze({
+        ...commandPayload,
+        commandId: _simulationCommandId(commandPayload),
+    });
+}
 function _simulationAssertCommand(command, expectedType) {
     if (!command || command.schema !== SIMULATION_COMMAND_SCHEMA) {
         throw new Error('invalid simulation command schema');
@@ -68897,6 +70060,36 @@ function _simulationFluidProjection(fluid) {
     }
     return out;
 }
+function _simulationCanonicalProjection(value, seen = new Set()) {
+    if (value == null || typeof value === 'string' || typeof value === 'boolean')
+        return value;
+    if (typeof value === 'number')
+        return Number.isFinite(value) ? value : null;
+    if (typeof value === 'function' || typeof value === 'undefined')
+        return undefined;
+    if (Array.isArray(value)) {
+        if (seen.has(value))
+            return '[circular]';
+        seen.add(value);
+        const out = value.map(item => _simulationCanonicalProjection(item, seen));
+        seen.delete(value);
+        return out;
+    }
+    if (typeof value === 'object') {
+        if (seen.has(value))
+            return '[circular]';
+        seen.add(value);
+        const out = {};
+        for (const key of Object.keys(value).sort()) {
+            const projected = _simulationCanonicalProjection(value[key], seen);
+            if (projected !== undefined)
+                out[key] = projected;
+        }
+        seen.delete(value);
+        return out;
+    }
+    return String(value);
+}
 function _simulationCrystalProjection(crystal) {
     return {
         id: crystal.crystal_id,
@@ -68907,13 +70100,13 @@ function _simulationCrystalProjection(crystal) {
         cLengthMm: Number(crystal.c_length_mm) || 0,
         aWidthMm: Number(crystal.a_width_mm) || 0,
         habit: crystal.habit || null,
-        zones: (crystal.zones || []).map((zone) => ({
-            thicknessUm: Number(zone.thickness_um) || 0,
-            growthRate: Number(zone.growth_rate) || 0,
-            note: zone.note || null,
-            traceMn: Number(zone.trace_Mn) || 0,
-            mgContent: Number(zone.mg_content) || 0,
-        })),
+        nucleationTemperatureC: Number(crystal.nucleation_temp) || 0,
+        wallAnchor: crystal.wall_anchor ? _simulationJsonClone(crystal.wall_anchor) : null,
+        // Full canonical zone state is future-determining. In particular the
+        // LIFO dissolution ledger reads accepted `_budget_inventory_per_um`,
+        // remaining-solid thickness, trace stoichiometry, and Sr partition
+        // receipts; a display-only subset cannot prove deterministic replay.
+        zones: _simulationCanonicalProjection(crystal.zones || []),
     };
 }
 function simulationStateProjection(runtimeOrSim, rngStateOverride) {
@@ -68924,6 +70117,13 @@ function simulationStateProjection(runtimeOrSim, rngStateOverride) {
         : runtime && Number.isFinite(runtime.rngState)
             ? Number(runtime.rngState)
             : Number(rng?.state) || 0;
+    const thermalGrid = sim?.wall_state?.voxelGridFor?.(sim);
+    const dedicatedRngStates = {};
+    for (const key of Object.keys(sim || {}).filter(key => /Rng$/.test(key)).sort()) {
+        const state = Number(sim[key]?.state);
+        if (Number.isFinite(state))
+            dedicatedRngStates[key] = state >>> 0;
+    }
     return {
         simVersion: SIM_VERSION,
         modelDigest: MODEL_DIGEST,
@@ -68931,11 +70131,29 @@ function simulationStateProjection(runtimeOrSim, rngStateOverride) {
         seed: runtime?.origin?.seed ?? null,
         step: Number(sim?.step) || 0,
         rngState: rngState >>> 0,
+        nucleationSharedState: Number(sim?._nucSharedState) >>> 0,
+        dedicatedRngStates,
+        movementController: sim?._movements ? {
+            rngState: Number(sim._movements.rng?.state) >>> 0,
+            movements: _simulationCanonicalProjection(sim._movements.movements || []),
+            state: _simulationCanonicalProjection(sim._movements._state || []),
+        } : null,
         temperatureC: Number(sim?.conditions?.temperature) || 0,
         pressureKbar: Number(sim?.conditions?.pressure) || 0,
         flowRate: Number(sim?.conditions?.flow_rate) || 0,
         fluid: _simulationFluidProjection(sim?.conditions?.fluid),
         ringTemperatures: (sim?.ring_temperatures || []).map((v) => Number(v) || 0),
+        voxelTemperatures: (thermalGrid?.voxels || []).map((voxel) => Number(voxel?.temperature) || 0),
+        // Every radial voxel is canonical chemistry, including d>=1 reservoirs
+        // that are neither the bulk fluid nor the d=0 wall-cell alias.
+        voxelFluids: (thermalGrid?.voxels || []).map((voxel) => _simulationFluidProjection(voxel?.fluid)),
+        thermalSources: _simulationJsonClone(sim?._thermalSources || []),
+        thermalSourceCounter: Number(sim?._thermalSourceCounter) || 0,
+        thermalFieldActivated: !!sim?._thermalFieldActivated,
+        thermalFieldEnabled: sim?.conditions?._scenario?.thermal_field?.enabled !== false,
+        thermalFieldConfig: _simulationJsonClone(sim?.conditions?._scenario?.thermal_field || null),
+        wallRockThermalBufferC: _simulationJsonClone(sim?.conditions?._scenario?.wall_rock_thermal_buffer_C ?? null),
+        wallBoundary: _simulationCanonicalProjection(sim?.conditions?.wall || null),
         ringFluids: (sim?.ring_fluids || []).map(_simulationFluidProjection),
         wallCellRadii: (sim?.wall_state?.cells || []).map((cell) => Number(cell.radius_mm) || 0),
         crystals: (sim?.crystals || []).map(_simulationCrystalProjection),
@@ -68996,6 +70214,35 @@ function applySimulationCommand(runtime, command) {
         runtime.cancelReason = null;
         _simulationAppendCommand(runtime, command);
         return { status: runtime.status, step: runtime.sim.step };
+    }
+    if (command.type === 'thermal_source') {
+        let result = null;
+        if (command.action === 'set')
+            result = runtime.sim.setThermalSource(command.source);
+        else if (command.action === 'remove')
+            result = runtime.sim.removeThermalSource(command.id);
+        else if (command.action === 'clear')
+            result = runtime.sim.clearThermalSources();
+        else
+            throw new Error(`unsupported thermal source action '${command.action}'`);
+        _simulationAppendCommand(runtime, command);
+        return {
+            status: runtime.status,
+            step: runtime.sim.step,
+            thermalSources: _simulationJsonClone(runtime.sim._thermalSources || []),
+            result: _simulationJsonClone(result),
+            fingerprint: simulationStateFingerprint(runtime),
+        };
+    }
+    if (command.type === 'thermal_field') {
+        const result = runtime.sim.configureThermalField(command.config);
+        _simulationAppendCommand(runtime, command);
+        return {
+            status: runtime.status,
+            step: runtime.sim.step,
+            thermalFieldConfig: _simulationJsonClone(result),
+            fingerprint: simulationStateFingerprint(runtime),
+        };
     }
     if (command.type !== 'advance')
         throw new Error(`unsupported simulation command '${command.type}'`);
@@ -69606,21 +70853,41 @@ function _nuc_romanechite(sim) {
     _nuc_manganese_surface_phase(sim, 'romanechite', MINERAL_GATES_romanechite, sigma, position, 'Romanechite');
 }
 function _nuc_todorokite(sim) {
-    const sigma = sim.conditions.supersaturation_todorokite();
-    if (sigma <= MINERAL_GATES_todorokite.sigma_crit)
+    const localityActive = !!(sim.wall_state?.per_vertex_nucleation || sim._thermalFieldActivated);
+    let sigma = localityActive ? 0 : sim.conditions.supersaturation_todorokite();
+    if (!localityActive && sigma <= MINERAL_GATES_todorokite.sigma_crit)
         return;
     if (sim._atNucleationCap('todorokite'))
         return;
-    const precursor = sim.crystals.find(c => isTodorokiteBirnessitePrecursor(c));
+    let precursor = sim.crystals.find(c => isTodorokiteBirnessitePrecursor(c));
     if (!precursor)
         return; // no scientifically licensed bare-wall fallback
+    let local = null;
+    if (localityActive) {
+        const eligible = sim.crystals
+            .filter(c => isTodorokiteBirnessitePrecursor(c))
+            .map(c => ({
+            precursor: c,
+            local: sim._localNucleationEvaluationAtAnchor('todorokite', sim.wall_state._resolveAnchor(c)),
+        }))
+            .filter(candidate => candidate.local?.sigma > MINERAL_GATES_todorokite.sigma_crit)
+            .sort((a, b) => b.local.sigma - a.local.sigma
+            || a.precursor.crystal_id - b.precursor.crystal_id);
+        if (!eligible.length)
+            return;
+        precursor = eligible[0].precursor;
+        local = eligible[0].local;
+        sigma = local.sigma;
+    }
     if (sigma <= 1.05 || rng.random() >= 0.22)
         return;
-    const transition = applyBirnessiteTodorokiteTransition(precursor, sim.conditions.fluid, sim.conditions.temperature, sim.step);
+    const transition = applyBirnessiteTodorokiteTransition(precursor, local?.fluid || sim.conditions.fluid, Number.isFinite(local?.temperatureC) ? local.temperatureC : sim.conditions.temperature, sim.step);
     if (!transition)
         return;
-    const f = sim.conditions.fluid;
-    sim.log.push(`  ✦ TRANSFORMATION: ⚫ Birnessite #${precursor.crystal_id} → Todorokite in place (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, preserved Mn=${transition.bookedMnPreservedPpm.toFixed(3)} ppm, booked Mg=${transition.structuralMgBookedPpm.toFixed(3)} ppm, pH=${f.pH.toFixed(1)})`);
+    const f = local?.fluid || sim.conditions.fluid;
+    const temperatureC = Number.isFinite(local?.temperatureC)
+        ? local.temperatureC : sim.conditions.temperature;
+    sim.log.push(`  ✦ TRANSFORMATION: ⚫ Birnessite #${precursor.crystal_id} → Todorokite in place (T=${temperatureC.toFixed(0)}°C, σ=${sigma.toFixed(2)}, preserved Mn=${transition.bookedMnPreservedPpm.toFixed(3)} ppm, booked Mg=${transition.structuralMgBookedPpm.toFixed(3)} ppm, pH=${f.pH.toFixed(1)})`);
 }
 // v102 (2026-05-19): pyrolusite β-MnO2 — supergene Mn(IV) oxide.
 // Substrate priority encodes the canonical Mn-weathering paragenesis
@@ -70078,8 +71345,6 @@ function _nucleateClass_phosphate(sim) {
 //
 // Phase B15 of PROPOSAL-MODULAR-REFACTOR.
 function _nuc_quartz(sim) {
-    if (sim.conditions.silica_precipitate_phase() !== 'quartz')
-        return;
     const sigma_q = sim.conditions.supersaturation_quartz();
     const existing_quartz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
     if (sigma_q > MINERAL_GATES_quartz.sigma_crit && existing_quartz.length < 3 && !sim._atNucleationCap('quartz')) {
@@ -70096,8 +71361,6 @@ function _nuc_quartz(sim) {
     }
 }
 function _nuc_chalcedony(sim) {
-    if (sim.conditions.silica_precipitate_phase() !== 'chalcedony')
-        return;
     // Do not run the generic silica succession backwards. Once stable quartz is
     // exposed, a later cooling step may make the remaining fluid supersaturated
     // with respect to chalcedony, but it should feed/overgrow the lower-solubility
@@ -70510,8 +71773,6 @@ function _nuc_chrysoprase(sim) {
 // "embeds everything" universal-binder role of opal in hot-spring
 // systems. RNG-cascade guard via sigma < 1.0 early-out.
 function _nuc_opal(sim) {
-    if (sim.conditions.silica_precipitate_phase() !== 'opal')
-        return;
     const sigma = sim.conditions.supersaturation_opal();
     if (sigma <= MINERAL_GATES_opal.sigma_crit)
         return;
@@ -79778,6 +81039,7 @@ const _CREATIVE_SETUP_EXACT_TRANSFORMS = {
     'f-host-thickness': { label: 'host thickness', unit: 'mm', step: 10, fromSlider: v => v, toSlider: v => v },
     'f-wall-reactivity': { label: 'wall reactivity', unit: '×', step: 0.1, fromSlider: v => v / 10, toSlider: v => v * 10 },
     'f-cooling-rate': { label: 'cooling rate', unit: '°C/step', step: 0.1, fromSlider: v => v / 10, toSlider: v => v * 10 },
+    'f-ambient-temperature': { label: 'far-field equilibrium temperature', unit: '°C', step: 1, fromSlider: v => v, toSlider: v => v },
     'f-flow-rate': { label: 'flow rate', unit: '', step: 0.1, fromSlider: v => v / 10, toSlider: v => v * 10 },
     'f-water-table': { label: 'water-table height', unit: '%', step: 0.1, fromSlider: v => v / 10, toSlider: v => v * 10 },
     'f-porosity': { label: 'connected porosity', unit: '%', step: 1, fromSlider: v => v, toSlider: v => v },
@@ -79969,6 +81231,7 @@ function readCreativeGeologicalControls(baseWall = {}) {
     wallOpts.wall_Mg_ppm = _creativeControlNumber('f-wall-mg', 1, wallOpts.wall_Mg_ppm ?? 1000);
     wallOpts.reactivity = _creativeControlNumber('f-wall-reactivity', 10, wallOpts.reactivity ?? 1);
     wallOpts.cooling_rate = _creativeControlNumber('f-cooling-rate', 10, wallOpts.cooling_rate ?? 1.5);
+    wallOpts.ambient_temperature_C = _creativeControlNumber('f-ambient-temperature', 1, wallOpts.ambient_temperature_C ?? 25);
     wallOpts.inter_ring_diffusion_rate = _creativeControlNumber('f-diffusion-rate', 100, wallOpts.inter_ring_diffusion_rate ?? 0.05);
     wallOpts.primary_bubbles = Math.round(_creativeControlNumber('f-primary-bubbles', 1, wallOpts.primary_bubbles ?? 3));
     wallOpts.secondary_bubbles = Math.round(_creativeControlNumber('f-secondary-bubbles', 1, wallOpts.secondary_bubbles ?? 6));
@@ -79976,6 +81239,7 @@ function readCreativeGeologicalControls(baseWall = {}) {
     wallOpts.gamma_host = _creativeControlNumber('f-gamma-host', 100, wallOpts.gamma_host ?? 0);
     wallOpts.graphitic = !!document.getElementById('f-graphitic')?.checked;
     wallOpts.open_system = !!document.getElementById('f-open-system')?.checked;
+    wallOpts.open_spring = !!document.getElementById('f-open-spring')?.checked;
     wallOpts.thermal_pulses = !!document.getElementById('f-thermal-pulses')?.checked;
     // Alpine-cleft behavior is a consequence of cleft architecture rather
     // than a second unexplained switch for the same geological setting.
@@ -80366,19 +81630,19 @@ function fortressStep(action, payload) {
             break;
         // ── 2. TEMPERATURE — gentle/large pairs ──
         case 'warm':
-            c.temperature = Math.min(c.temperature + 5, 900);
+            fortressSim.setGlobalTemperature(Math.min(c.temperature + 5, 900));
             actionDesc = '🌤️ Warm +5°C → ' + c.temperature.toFixed(0) + '°C';
             break;
         case 'heat':
-            c.temperature = Math.min(c.temperature + 25, 900);
+            fortressSim.setGlobalTemperature(Math.min(c.temperature + 25, 900));
             actionDesc = '🔥 Heat +25°C → ' + c.temperature.toFixed(0) + '°C';
             break;
         case 'cool':
-            c.temperature = Math.max(c.temperature - 5, 0);
+            fortressSim.setGlobalTemperature(Math.max(c.temperature - 5, 0));
             actionDesc = '🌬️ Cool −5°C → ' + c.temperature.toFixed(0) + '°C';
             break;
         case 'quench':
-            c.temperature = Math.max(c.temperature - 25, 0);
+            fortressSim.setGlobalTemperature(Math.max(c.temperature - 25, 0));
             actionDesc = '❄️ Quench −25°C → ' + c.temperature.toFixed(0) + '°C';
             break;
         // ── 3. WATER — seep/flood (in) and drain/evaporate (out) ──
@@ -80444,7 +81708,7 @@ function fortressStep(action, payload) {
                 if (typeof c.fluid[sp] === 'number')
                     c.fluid[sp] *= 1.4;
             }
-            c.temperature = Math.max(c.temperature - 10, 25);
+            fortressSim.setGlobalTemperature(Math.max(c.temperature - 10, 25));
             if (fortressSim._carbonateBoundaryState) {
                 const state = fortressSim._carbonateBoundaryState;
                 if (!state.uncertainties.includes('water_mass_change_not_modeled')) {
@@ -80585,7 +81849,7 @@ function fortressStep(action, payload) {
         case 'brine':
             c.fluid.Zn += 150;
             c.fluid.S += 120;
-            c.temperature -= 10;
+            fortressSim.setGlobalTemperature(c.temperature - 10);
             actionDesc = '⚗️ Brine mixed — Zn +150, S +120 ppm, T −10°C (mixing)';
             break;
         case 'fluorine':
@@ -80602,14 +81866,14 @@ function fortressStep(action, payload) {
             else
                 c.fluid.SiO2 += 200;
             c.fluid.O2 = 0.3;
-            c.temperature = Math.min(c.temperature + 30, 600);
+            fortressSim.setGlobalTemperature(Math.min(c.temperature + 30, 600));
             c.flow_rate = 4.0;
             actionDesc = `🟠 Copper injection — Cu ${c.fluid.Cu.toFixed(0)} ppm, Fe +40, S +80, reducing. T → ${c.temperature.toFixed(0)}°C`;
             break;
         case 'oxidize': // legacy alias — same intent as drain
             c.fluid.O2 = 1.8;
             c.fluid.S *= 0.3;
-            c.temperature = Math.max(c.temperature - 40, 25);
+            fortressSim.setGlobalTemperature(Math.max(c.temperature - 40, 25));
             _lowerWaterLevel(2);
             actionDesc = `🟡 Oxidation — O₂ → ${c.fluid.O2.toFixed(1)}, sulfur depleted. T → ${c.temperature.toFixed(0)}°C. Sulfides unstable!`;
             break;
@@ -80621,7 +81885,7 @@ function fortressStep(action, payload) {
         }
         case 'shock':
         case 'tectonic': { // legacy alias
-            c.temperature += 15;
+            fortressSim.setGlobalTemperature(c.temperature + 15);
             const stress = applyDifferentialStressPulse(fortressSim, 50);
             actionDesc = `⚡ Shock — 50 MPa differential-stress pulse, T +15°C; fluid pressure unchanged. ${stress.twinned.length} mechanically twinned crystal${stress.twinned.length === 1 ? '' : 's'}.`;
             break;
@@ -80694,6 +81958,30 @@ function fortressStep(action, payload) {
                 ? fortressSim._fluidSpots?.breachSpots(kind)
                 : fortressSim._fluidSpots?.sealSpots(kind);
             actionDesc = `${command === 'breach' ? 'Breached' : 'Sealed'} ${toggled?.length || 0} ${kind || 'point'} feeder${toggled?.length === 1 ? '' : 's'}`;
+            break;
+        }
+        case 'set_thermal_source': {
+            const source = fortressSim.setThermalSource(payload);
+            actionDesc = source
+                ? `Thermal boundary ${source.id} set at cell ${source.ringIdx * fortressSim.wall_state.cells_per_ring + source.cellIdx}, depth ${source.depthIdx}: ${source.temperature_C.toFixed(1)}°C, ${source.flow_direction}. Exchange coefficients are fractions per simulation step, not SI rates.`
+                : 'Thermal source ignored — provide a finite source temperature.';
+            break;
+        }
+        case 'configure_thermal_field': {
+            const config = fortressSim.configureThermalField(payload || {});
+            actionDesc = `Thermal transport ${config.enabled ? 'enabled' : 'paused'}: conduction ${config.conduction_fraction_per_step.toFixed(4)}/step, wall exchange ${config.wall_coupling_fraction_per_step.toFixed(4)}/step, rock boundary ${config.wall_rock_thermal_buffer_C == null ? 'none' : `${config.wall_rock_thermal_buffer_C.toFixed(1)}°C`}. Coefficients are dimensionless until voxel length and step duration are calibrated.`;
+            break;
+        }
+        case 'remove_thermal_source': {
+            const removed = fortressSim.removeThermalSource(payload?.id);
+            actionDesc = removed
+                ? `Thermal boundary ${payload?.id} removed; its existing heat remains and relaxes by conduction.`
+                : `No thermal boundary named ${payload?.id || '(blank)'} was present.`;
+            break;
+        }
+        case 'clear_thermal_sources': {
+            const removed = fortressSim.clearThermalSources();
+            actionDesc = `${removed} localized thermal boundar${removed === 1 ? 'y' : 'ies'} removed; stored heat remains and relaxes by conduction.`;
             break;
         }
         case 'set_zone_chemistry': {
@@ -81199,7 +82487,7 @@ const BROTH_MAP = {
     temp: {
         path: 'temperature',
         get: () => fortressSim.conditions.temperature,
-        set: v => { fortressSim.conditions.temperature = v; },
+        set: v => { fortressSim.setGlobalTemperature(v); },
         fmt: v => v.toFixed(1) + ' °C',
         parse: v => parseFloat(v),
         toSlider: v => v,
@@ -81265,6 +82553,14 @@ const BROTH_MAP = {
         fmt: v => v.toFixed(1) + ' °C/step',
         parse: v => parseFloat(v) / 10,
         toSlider: v => v * 10,
+    },
+    ambient: {
+        path: 'wall.ambient_temperature_C',
+        get: () => fortressSim.conditions.wall.ambient_temperature_C ?? 25,
+        set: v => { fortressSim.conditions.wall.ambient_temperature_C = Math.max(-50, Math.min(1200, v)); },
+        fmt: v => v.toFixed(1) + ' °C equilibrium',
+        parse: v => parseFloat(v),
+        toSlider: v => v,
     },
     reactivity: {
         path: 'wall.reactivity',
@@ -81440,6 +82736,15 @@ const BROTH_MAP = {
         get: () => !!fortressSim.conditions.wall.open_system,
         set: v => { fortressSim.conditions.wall.open_system = !!v; },
         fmt: v => v ? 'open' : 'finite cavity',
+        parse: v => String(v) === '1',
+        toSlider: v => v ? '1' : '0',
+        valid: v => typeof v === 'boolean',
+    },
+    open_spring: {
+        path: 'wall.open_spring',
+        get: () => !!fortressSim.conditions.wall.open_spring,
+        set: v => { fortressSim.conditions.wall.open_spring = !!v; },
+        fmt: v => v ? 'open spring/vent apron' : 'sealed/non-spring',
         parse: v => String(v) === '1',
         toSlider: v => v ? '1' : '0',
         valid: v => typeof v === 'boolean',
@@ -81971,6 +83276,39 @@ function creativeToggleFeeders(action) {
     const kind = document.getElementById('creative-feeder-toggle-kind')?.value || '';
     fortressStep('toggle_feeders', { action, kind: kind || null });
 }
+function creativeSetThermalSource() {
+    if (!fortressSim || !fortressActive)
+        return;
+    fortressStep('set_thermal_source', {
+        id: document.getElementById('creative-thermal-id')?.value || 'creative-heat-1',
+        temperature_C: _creativeOptionalNumber('creative-thermal-temperature'),
+        cell: _creativeOptionalNumber('creative-thermal-cell'),
+        depthIdx: _creativeOptionalNumber('creative-thermal-depth') ?? 0,
+        coupling_fraction_per_step: _creativeOptionalNumber('creative-thermal-coupling') ?? 0.35,
+        advection_fraction_per_step: _creativeOptionalNumber('creative-thermal-advection') ?? 0.20,
+        flow_direction: document.getElementById('creative-thermal-direction')?.value || 'toward_center',
+        start_step: _creativeOptionalNumber('creative-thermal-start'),
+        end_step: _creativeOptionalNumber('creative-thermal-end'),
+        provenance: 'Creative player-authored thermal boundary',
+    });
+}
+function creativeConfigureThermalField() {
+    if (!fortressSim || !fortressActive)
+        return;
+    const rockInput = document.getElementById('creative-thermal-rock-temperature');
+    fortressStep('configure_thermal_field', {
+        enabled: document.getElementById('creative-thermal-enabled')?.value !== '0',
+        conduction_fraction_per_step: _creativeOptionalNumber('creative-thermal-conduction'),
+        wall_coupling_fraction_per_step: _creativeOptionalNumber('creative-thermal-wall-coupling'),
+        wall_rock_thermal_buffer_C: rockInput?.value === ''
+            ? null : _creativeOptionalNumber('creative-thermal-rock-temperature'),
+    });
+}
+function creativeRemoveThermalSource(clearAll = false) {
+    fortressStep(clearAll ? 'clear_thermal_sources' : 'remove_thermal_source', {
+        id: document.getElementById('creative-thermal-id')?.value || '',
+    });
+}
 function applyCreativeZoneChemistry(sim, payload) {
     if (!sim || !payload)
         return 0;
@@ -82082,6 +83420,16 @@ function refreshCreativeGeologyEditors() {
             ? spots.map((s, i) => `${i + 1}. cell ${s.cell} · ${s.kind} · ${s.open ? 'open' : 'sealed'} · supply ${s.supply.toFixed(2)} · erosion ${s.decayBonus.toFixed(2)}`).join('\n')
             : 'No point feeders; cavity is uniformly bathed.';
     }
+    const thermalEl = document.getElementById('creative-thermal-list');
+    if (thermalEl) {
+        const sources = fortressSim._thermalSources || [];
+        const field = fortressSim.conditions?._scenario?.thermal_field || {};
+        const rock = fortressSim.conditions?._scenario?.wall_rock_thermal_buffer_C;
+        const header = `Transport: ${field.enabled === false ? 'paused' : 'enabled'} · conduction ${Number(field.conduction_fraction_per_step ?? fortressSim.inter_ring_diffusion_rate).toFixed(4)}/step · wall exchange ${Number(field.wall_coupling_fraction_per_step ?? 0.02).toFixed(4)}/step · rock ${Number.isFinite(Number(rock)) ? `${Number(rock).toFixed(1)}°C` : 'none'}`;
+        thermalEl.textContent = sources.length
+            ? `${header}\n${sources.map((source, i) => `${i + 1}. ${source.id} · ${source.temperature_C.toFixed(1)}°C · cell ${source.ringIdx * fortressSim.wall_state.cells_per_ring + source.cellIdx}, depth ${source.depthIdx} · ${source.flow_direction} · source ${source.coupling_fraction_per_step.toFixed(2)}/step · advection ${source.advection_fraction_per_step.toFixed(2)}/step · active ${source.start_step ?? 0}–${source.end_step ?? '∞'}`).join('\n')}`
+            : `${header}\nNo localized thermal sources; stored anomalies, if any, relax by conduction.`;
+    }
     const zoneEl = document.getElementById('creative-zone-list');
     if (zoneEl) {
         const zones = fortressSim.conditions.wall.zone_chemistry || {};
@@ -82137,6 +83485,48 @@ function _onSatFilterToggle() {
 // (matching how the pills themselves rewind — v66 replay-aware).
 let _satLastConditions = null;
 let _satLastSim = null;
+let _satSpatialContexts = new Map();
+function _formationSpatialContext(name, c, sim) {
+    if (!sim || sim.conditions !== c)
+        return null;
+    const wall = sim.wall_state;
+    const mesh = wall?.meshFor?.(sim);
+    const grid = wall?.voxelGridFor?.(sim);
+    const N = wall?.cells_per_ring | 0;
+    const fn = c?.[`supersaturation_${name}`];
+    if (!mesh?.cells?.length || N < 1 || typeof fn !== 'function')
+        return null;
+    let minSigma = Infinity, maxSigma = -Infinity, best = null;
+    for (let vertexIdx = 0; vertexIdx < mesh.cells.length; vertexIdx++) {
+        const fluid = mesh.cells[vertexIdx]?.fluid;
+        if (!fluid)
+            continue;
+        const ringIdx = Math.floor(vertexIdx / N), cellIdx = vertexIdx % N;
+        const temperatureC = grid?.temperatureAt
+            ? grid.temperatureAt(ringIdx, cellIdx, 0)
+            : temperatureAtMeshVertex(sim, mesh, vertexIdx);
+        const local = Object.assign(Object.create(Object.getPrototypeOf(c)), c);
+        local.fluid = fluid;
+        local.temperature = temperatureC;
+        let sigma = 0;
+        try {
+            sigma = Number(fn.call(local));
+        }
+        catch (_e) {
+            sigma = 0;
+        }
+        if (!Number.isFinite(sigma))
+            sigma = 0;
+        minSigma = Math.min(minSigma, sigma);
+        if (sigma > maxSigma) {
+            maxSigma = sigma;
+            best = { ringIdx, cellIdx, vertexIdx, temperatureC, fluid, conditions: local, sigma };
+        }
+    }
+    if (!best)
+        return null;
+    return { minSigma, maxSigma, best, cellCount: mesh.cells.length };
+}
 function _renderFortressSigmaGroups(c, host) {
     if (!host)
         return;
@@ -82144,6 +83534,7 @@ function _renderFortressSigmaGroups(c, host) {
     _satLastSim = (typeof fortressSim !== 'undefined' && fortressSim && fortressSim.conditions === c)
         ? fortressSim
         : null;
+    _satSpatialContexts = new Map();
     if (typeof _satHoverHide === 'function')
         _satHoverHide(); // re-render orphans any floating popover
     host.innerHTML = '';
@@ -82156,9 +83547,12 @@ function _renderFortressSigmaGroups(c, host) {
         const fn = c[`supersaturation_${name}`];
         if (typeof fn !== 'function')
             continue;
+        const spatial = _formationSpatialContext(name, c, _satLastSim);
+        if (spatial)
+            _satSpatialContexts.set(name, spatial);
         let sigma;
         try {
-            sigma = fn.call(c);
+            sigma = spatial ? spatial.maxSigma : fn.call(c);
         }
         catch (e) {
             continue;
@@ -82167,7 +83561,7 @@ function _renderFortressSigmaGroups(c, host) {
             continue;
         const compositionUnresolved = name === 'HMC'
             && typeof hmcCompositionFromFluid === 'function'
-            && !hmcCompositionFromFluid(c.fluid, c.temperature).compositionDomainSupported;
+            && !hmcCompositionFromFluid(spatial?.best?.fluid || c.fluid, spatial?.best?.temperatureC ?? c.temperature).compositionDomainSupported;
         const cls = spec.class || 'uncategorized';
         const displayName = _SAT_DISPLAY_NAMES[name]
             || (name.charAt(0).toUpperCase() + name.slice(1));
@@ -82521,12 +83915,18 @@ function _formationSubstrate(name, sim) {
     const available = [];
     if (sim && Array.isArray(sim.crystals) && typeof executableSubstrateCandidates === 'function') {
         const grouped = new Map();
+        const sigmaCrit = _satSigmaCrit(name);
+        const localityActive = !!(sim.wall_state?.per_vertex_nucleation || sim._thermalFieldActivated);
         for (const candidate of executableSubstrateCandidates(name, sim.crystals)) {
             const cr = candidate.host;
             const key = `${cr.mineral}|${candidate.label}`;
             const prior = grouped.get(key);
+            const local = sim._localNucleationEvaluationAtAnchor?.(name, sim.wall_state?._resolveAnchor?.(cr));
+            const localEligible = !localityActive
+                || local?.sigma > sigmaCrit * candidate.discount ? 1 : 0;
             grouped.set(key, {
                 count: (prior?.count || 0) + 1,
+                localEligible: (prior?.localEligible || 0) + localEligible,
                 discount: prior ? Math.min(prior.discount, candidate.discount) : candidate.discount,
                 state: candidate.label,
             });
@@ -82536,16 +83936,18 @@ function _formationSubstrate(name, sim) {
             available.push({
                 mineral,
                 count: row.count,
+                localEligible: row.localEligible,
                 discount: row.discount,
                 epitaxy: typeof EPITAXY_PAIRS !== 'undefined' && EPITAXY_PAIRS.has(`${name}>${mineral}`),
                 state: row.state,
             });
         }
-        available.sort((a, b) => a.discount - b.discount || b.count - a.count || a.mineral.localeCompare(b.mineral));
+        available.sort((a, b) => Number(b.localEligible > 0) - Number(a.localEligible > 0)
+            || a.discount - b.discount || b.count - a.count || a.mineral.localeCompare(b.mineral));
     }
     return {
         available,
-        bestDiscount: available.length ? available[0].discount : 1,
+        bestDiscount: available.find(row => row.localEligible > 0)?.discount ?? 1,
     };
 }
 function _formationCompetition(name, sigma, c, sim) {
@@ -82614,9 +84016,9 @@ function _formationRedoxChip(gate, c) {
     return { text: `O₂ ${_formationNumber(o2)} ppm · needs ${need}`, met };
 }
 // Observer-only diagnosis. It reads the same supersaturation function,
-// MINERAL_GATES_REGISTRY, stoichiometry, paragenesis, and initiative
-// helpers as the engine. It deliberately never calls a nucleation engine
-// or _atNucleationCap, because both may consume RNG.
+// MINERAL_GATES_REGISTRY, stoichiometry, paragenesis, and initiative helpers
+// as the engine. Production reachability is probed only through the cloned,
+// fixed-RNG observer path in assessProductionNucleationDecision.
 function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = null) {
     const spec = (typeof MINERAL_SPEC !== 'undefined') ? MINERAL_SPEC[name] : null;
     const gate = (typeof MINERAL_GATES_REGISTRY !== 'undefined')
@@ -82624,7 +84026,13 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
         : null;
     if (!spec || !c || !c.fluid)
         return null;
-    let sigma = sigmaOverride;
+    const liveConditions = c;
+    const spatial = sim && sim.conditions === liveConditions
+        ? (_satSpatialContexts.get(name) || _formationSpatialContext(name, liveConditions, sim))
+        : null;
+    if (spatial?.best?.conditions)
+        c = spatial.best.conditions;
+    let sigma = spatial ? spatial.maxSigma : sigmaOverride;
     if (typeof sigma !== 'number' || !Number.isFinite(sigma)) {
         const fn = c[`supersaturation_${name}`];
         try {
@@ -82646,7 +84054,7 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
     const substrate = _formationSubstrate(name, sim);
     const requiredSubstrate = gate?.required_substrate || null;
     const requiredSubstrateAvailable = requiredSubstrate
-        ? substrate.available.some(row => row.mineral === requiredSubstrate)
+        ? substrate.available.some(row => row.mineral === requiredSubstrate && row.localEligible > 0)
         : true;
     const assistedCrit = sigmaCrit * substrate.bestDiscount;
     const substrateEligible = requiredSubstrate
@@ -82658,14 +84066,34 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
     const competition = _formationCompetition(name, sigma, c, sim);
     if (hmcCoverageUnresolved)
         competition.initiative = null;
-    const productionDecision = !hmcCoverageUnresolved && sim && sim.conditions === c
-        && typeof assessProductionNucleationDecision === 'function'
-        ? assessProductionNucleationDecision(name, sim, sigma, sigmaCrit)
-        : null;
+    let productionDecision = null;
+    if (!hmcCoverageUnresolved && sim && sim.conditions === liveConditions
+        && typeof assessProductionNucleationDecision === 'function') {
+        // Probe the actual nucleator with the same best local chemistry/T used by
+        // every chip. The simulation and conditions are shallow observer clones;
+        // the production probe then clones crystal state and fixes its own RNG.
+        const productionSim = spatial
+            ? Object.assign(Object.create(Object.getPrototypeOf(sim)), sim, {
+                conditions: c,
+                _localNucleationDirectEvaluation: true,
+            })
+            : sim;
+        productionDecision = assessProductionNucleationDecision(name, productionSim, sigma, sigmaCrit);
+    }
     const productionEligible = productionDecision?.available
         ? productionDecision.eligible
         : effectiveEligible;
     const groups = [];
+    if (spatial) {
+        groups.push({
+            label: 'Local formation site',
+            chips: [{
+                    text: `maximum at ring ${spatial.best.ringIdx}, cell ${spatial.best.cellIdx} · ${_formationNumber(spatial.best.temperatureC, 1)}°C`,
+                    met: spatial.maxSigma > (gate?.sigma_crit ?? 1),
+                    note: `Exact boundary scan across ${spatial.cellCount} chemistry/temperature states. σ range ${_formationNumber(spatial.minSigma)}–${_formationNumber(spatial.maxSigma)}; all reagent, pH, redox, pressure, and temperature rows below describe this maximum-σ cell.`,
+                }],
+        });
+    }
     const satChips = hmcCoverageUnresolved ? [{
             text: 'HMC composition/saturation unresolved',
             met: true,
@@ -82712,7 +84140,7 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
         }
     }
     if (substrate.bestDiscount < 1) {
-        const best = substrate.available[0];
+        const best = substrate.available.find(row => row.localEligible > 0);
         satChips.push({
             text: `${best.mineral} can lower σcrit to ${_formationNumber(assistedCrit)}`,
             met: sigma > assistedCrit,
@@ -82910,8 +84338,8 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
     groups.push({ label: 'Redox gate', chips: [_formationRedoxChip(gate, c)] });
     let substrateChips = substrate.available.length
         ? substrate.available.map(row => ({
-            text: `${row.mineral} ×${row.count} · ${row.state} · σcrit ×${row.discount.toFixed(2)}${row.epitaxy ? ' · epitaxy' : ''}`,
-            met: true,
+            text: `${row.mineral} ×${row.count} · ${row.localEligible} locally eligible · ${row.state} · σcrit ×${row.discount.toFixed(2)}${row.epitaxy ? ' · epitaxy' : ''}`,
+            met: row.localEligible > 0,
             note: row.discount < 1
                 ? 'Executable production host route; availability lowers the barrier only if the production nucleator selects this surface.'
                 : 'Executable production spatial host route; no unmeasured saturation or growth-rate discount is applied.',
@@ -82974,7 +84402,7 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
             capReached = exposed >= cap;
             transportChips.push({ text: `exposed nuclei ${exposed}/${cap}`, met: !capReached });
         }
-        if (sim.conditions === c && chemistryEligible && typeof sim._wallStrangledFor === 'function') {
+        if (sim.conditions === liveConditions && chemistryEligible && typeof sim._wallStrangledFor === 'function') {
             try {
                 strangled = !!sim._wallStrangledFor(name);
             }
@@ -83013,7 +84441,7 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
         if (productionEligible && !strangled) {
             state = 'formed-supported';
             if (substrateEligible) {
-                const best = substrate.available[0];
+                const best = substrate.available.find(row => row.localEligible > 0);
                 verdict = `Formed (${history.active} active, ${history.transformed} transformed, ${history.dissolved} dissolved); the current broth clears the ${best.mineral}-assisted threshold (${_formationNumber(assistedCrit)}) but not the bare-wall threshold, so fresh nucleation remains host-dependent and the engine must select an exposed host.`;
             }
             else if (requiredSubstrate) {
@@ -97701,6 +99129,19 @@ const _HELIX_CHEM_PARAMS = (function () {
         }
         return (s.ring_fluids || [])[ri];
     };
+    const _chipTemperature = (s, w, ri, c) => {
+        if (s && typeof s.sampleVoxelTemperature === 'function') {
+            const value = s.sampleVoxelTemperature(ri, c | 0, _stripChipReadDepth);
+            if (Number.isFinite(value))
+                return value;
+        }
+        const N = (w?.cells_per_ring | 0) || 120;
+        const recorded = s?.boundary_temperatures?.[ri * N + (c | 0)];
+        if (Number.isFinite(recorded))
+            return recorded;
+        const ring = (s?.ring_temperatures || [])[ri];
+        return Number.isFinite(ring) ? ring : 25;
+    };
     const _chipPressureKbar = (s) => {
         const value = Number(s?.pressure ?? s?.conditions?.pressure);
         return Number.isFinite(value) ? value : 0.001;
@@ -97742,7 +99183,7 @@ const _HELIX_CHEM_PARAMS = (function () {
     // Specials
     params.push({ id: 'T', label: 'temperature', fullName: _HELIX_FULL_NAMES.T, min: 0, max: 750, color: 0xff5544,
         system: 'special', units: '°C',
-        read: (s, w, i, c) => (s.ring_temperatures || [])[i] });
+        read: (s, w, i, c) => _chipTemperature(s, w, i, c) });
     params.push({ id: 'pH', label: 'pH', fullName: _HELIX_FULL_NAMES.pH, min: 0, max: 14, color: 0x9966ee,
         system: 'special', units: '',
         read: (s, w, i, c) => (_chipFluid(s, w, i, c) || {}).pH });
@@ -97808,7 +99249,7 @@ const _HELIX_CHEM_PARAMS = (function () {
         const f = _chipFluid(s, w, i, c);
         if (!f)
             return null;
-        const T = (s.ring_temperatures || [])[i];
+        const T = _chipTemperature(s, w, i, c);
         const T_use = (typeof T === 'number') ? T : 25;
         if (typeof carbonateSaturationIndex !== 'function')
             return null;
@@ -97829,7 +99270,7 @@ const _HELIX_CHEM_PARAMS = (function () {
             const f = _chipFluid(s, w, i, c);
             if (!f || typeof f.CO3 !== 'number' || f.CO3 <= 0)
                 return null;
-            const T = (s.ring_temperatures || [])[i];
+            const T = _chipTemperature(s, w, i, c);
             const T_use = (typeof T === 'number') ? T : 25;
             if (typeof bjerrumFractions !== 'function')
                 return null;
@@ -97845,7 +99286,7 @@ const _HELIX_CHEM_PARAMS = (function () {
             const f = _chipFluid(s, w, i, c);
             if (!f || typeof f.CO3 !== 'number' || f.CO3 <= 0)
                 return null;
-            const T = (s.ring_temperatures || [])[i];
+            const T = _chipTemperature(s, w, i, c);
             const T_use = (typeof T === 'number') ? T : 25;
             if (typeof bjerrumFractions !== 'function')
                 return null;
@@ -97861,7 +99302,7 @@ const _HELIX_CHEM_PARAMS = (function () {
             const f = _chipFluid(s, w, i, c);
             if (!f)
                 return null;
-            const T = (s.ring_temperatures || [])[i];
+            const T = _chipTemperature(s, w, i, c);
             const T_use = (typeof T === 'number') ? T : 25;
             if (typeof carbonateIonPpm !== 'function')
                 return null;
@@ -97894,7 +99335,7 @@ const _HELIX_CHEM_PARAMS = (function () {
             const f = _chipFluid(s, w, i, c);
             if (!f)
                 return null;
-            const T = (s.ring_temperatures || [])[i];
+            const T = _chipTemperature(s, w, i, c);
             const T_use = (typeof T === 'number') ? T : 25;
             if (typeof carbonateSaturationIndex !== 'function')
                 return null;
@@ -97916,7 +99357,7 @@ const _HELIX_CHEM_PARAMS = (function () {
             const f = _chipFluid(s, w, i, c);
             if (!f)
                 return null;
-            const T = (s.ring_temperatures || [])[i];
+            const T = _chipTemperature(s, w, i, c);
             const T_use = (typeof T === 'number') ? T : 25;
             if (typeof equilibriumPCO2 !== 'function')
                 return null;
@@ -98033,7 +99474,7 @@ const _HELIX_CHEM_PARAMS = (function () {
             const f = _chipFluid(s, w, i, c);
             if (!f)
                 return null;
-            const T = (s.ring_temperatures || [])[i];
+            const T = _chipTemperature(s, w, i, c);
             const T_use = (typeof T === 'number') ? T : 25;
             const si = sulfateSaturationIndex(mineralId, f, T_use, _chipPressureKbar(s));
             return isFinite(si) ? si : _SI_CHIP_FLOOR;
@@ -98141,6 +99582,7 @@ function _helixSimAtSnap(sim, snap) {
     return {
         ring_fluids: snap.ring_fluids || sim.ring_fluids,
         ring_temperatures: snap.ring_temperatures || sim.ring_temperatures,
+        boundary_temperatures: snap.boundary_temperatures || null,
         // Week 3 — expose _dol_cycle_count so the f_ord chip can read
         // it from the snap (not the live conditions). Replay-correct.
         _dol_cycle_count: (snap._dol_cycle_count != null)

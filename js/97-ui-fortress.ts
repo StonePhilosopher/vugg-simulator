@@ -602,6 +602,7 @@ const _CREATIVE_SETUP_EXACT_TRANSFORMS: Record<string, CreativeExactTransform> =
   'f-host-thickness': { label:'host thickness', unit:'mm', step:10, fromSlider:v=>v, toSlider:v=>v },
   'f-wall-reactivity': { label:'wall reactivity', unit:'×', step:0.1, fromSlider:v=>v/10, toSlider:v=>v*10 },
   'f-cooling-rate': { label:'cooling rate', unit:'°C/step', step:0.1, fromSlider:v=>v/10, toSlider:v=>v*10 },
+  'f-ambient-temperature': { label:'far-field equilibrium temperature', unit:'°C', step:1, fromSlider:v=>v, toSlider:v=>v },
   'f-flow-rate': { label:'flow rate', unit:'', step:0.1, fromSlider:v=>v/10, toSlider:v=>v*10 },
   'f-water-table': { label:'water-table height', unit:'%', step:0.1, fromSlider:v=>v/10, toSlider:v=>v*10 },
   'f-porosity': { label:'connected porosity', unit:'%', step:1, fromSlider:v=>v, toSlider:v=>v },
@@ -789,6 +790,9 @@ function readCreativeGeologicalControls(baseWall: Record<string, any> = {}) {
   wallOpts.wall_Mg_ppm = _creativeControlNumber('f-wall-mg', 1, wallOpts.wall_Mg_ppm ?? 1000);
   wallOpts.reactivity = _creativeControlNumber('f-wall-reactivity', 10, wallOpts.reactivity ?? 1);
   wallOpts.cooling_rate = _creativeControlNumber('f-cooling-rate', 10, wallOpts.cooling_rate ?? 1.5);
+  wallOpts.ambient_temperature_C = _creativeControlNumber(
+    'f-ambient-temperature', 1, wallOpts.ambient_temperature_C ?? 25,
+  );
   wallOpts.inter_ring_diffusion_rate = _creativeControlNumber('f-diffusion-rate', 100, wallOpts.inter_ring_diffusion_rate ?? 0.05);
   wallOpts.primary_bubbles = Math.round(_creativeControlNumber('f-primary-bubbles', 1, wallOpts.primary_bubbles ?? 3));
   wallOpts.secondary_bubbles = Math.round(_creativeControlNumber('f-secondary-bubbles', 1, wallOpts.secondary_bubbles ?? 6));
@@ -796,6 +800,7 @@ function readCreativeGeologicalControls(baseWall: Record<string, any> = {}) {
   wallOpts.gamma_host = _creativeControlNumber('f-gamma-host', 100, wallOpts.gamma_host ?? 0);
   wallOpts.graphitic = !!(document.getElementById('f-graphitic') as HTMLInputElement | null)?.checked;
   wallOpts.open_system = !!(document.getElementById('f-open-system') as HTMLInputElement | null)?.checked;
+  wallOpts.open_spring = !!(document.getElementById('f-open-spring') as HTMLInputElement | null)?.checked;
   wallOpts.thermal_pulses = !!(document.getElementById('f-thermal-pulses') as HTMLInputElement | null)?.checked;
   // Alpine-cleft behavior is a consequence of cleft architecture rather
   // than a second unexplained switch for the same geological setting.
@@ -1229,19 +1234,19 @@ function fortressStep(action, payload) {
 
     // ── 2. TEMPERATURE — gentle/large pairs ──
     case 'warm':
-      c.temperature = Math.min(c.temperature + 5, 900);
+      fortressSim.setGlobalTemperature(Math.min(c.temperature + 5, 900));
       actionDesc = '🌤️ Warm +5°C → ' + c.temperature.toFixed(0) + '°C';
       break;
     case 'heat':
-      c.temperature = Math.min(c.temperature + 25, 900);
+      fortressSim.setGlobalTemperature(Math.min(c.temperature + 25, 900));
       actionDesc = '🔥 Heat +25°C → ' + c.temperature.toFixed(0) + '°C';
       break;
     case 'cool':
-      c.temperature = Math.max(c.temperature - 5, 0);
+      fortressSim.setGlobalTemperature(Math.max(c.temperature - 5, 0));
       actionDesc = '🌬️ Cool −5°C → ' + c.temperature.toFixed(0) + '°C';
       break;
     case 'quench':
-      c.temperature = Math.max(c.temperature - 25, 0);
+      fortressSim.setGlobalTemperature(Math.max(c.temperature - 25, 0));
       actionDesc = '❄️ Quench −25°C → ' + c.temperature.toFixed(0) + '°C';
       break;
 
@@ -1308,7 +1313,7 @@ function fortressStep(action, payload) {
       for (const sp of concSpecies) {
         if (typeof c.fluid[sp] === 'number') c.fluid[sp] *= 1.4;
       }
-      c.temperature = Math.max(c.temperature - 10, 25);
+      fortressSim.setGlobalTemperature(Math.max(c.temperature - 10, 25));
       if (fortressSim._carbonateBoundaryState) {
         const state = fortressSim._carbonateBoundaryState;
         if (!state.uncertainties.includes('water_mass_change_not_modeled')) {
@@ -1445,7 +1450,7 @@ function fortressStep(action, payload) {
     case 'brine':
       c.fluid.Zn += 150;
       c.fluid.S += 120;
-      c.temperature -= 10;
+      fortressSim.setGlobalTemperature(c.temperature - 10);
       actionDesc = '⚗️ Brine mixed — Zn +150, S +120 ppm, T −10°C (mixing)';
       break;
     case 'fluorine':
@@ -1460,14 +1465,14 @@ function fortressStep(action, payload) {
       if (typeof c.fluid.addReactiveSilica === 'function') c.fluid.addReactiveSilica(200);
       else c.fluid.SiO2 += 200;
       c.fluid.O2 = 0.3;
-      c.temperature = Math.min(c.temperature + 30, 600);
+      fortressSim.setGlobalTemperature(Math.min(c.temperature + 30, 600));
       c.flow_rate = 4.0;
       actionDesc = `🟠 Copper injection — Cu ${c.fluid.Cu.toFixed(0)} ppm, Fe +40, S +80, reducing. T → ${c.temperature.toFixed(0)}°C`;
       break;
     case 'oxidize': // legacy alias — same intent as drain
       c.fluid.O2 = 1.8;
       c.fluid.S *= 0.3;
-      c.temperature = Math.max(c.temperature - 40, 25);
+      fortressSim.setGlobalTemperature(Math.max(c.temperature - 40, 25));
       _lowerWaterLevel(2);
       actionDesc = `🟡 Oxidation — O₂ → ${c.fluid.O2.toFixed(1)}, sulfur depleted. T → ${c.temperature.toFixed(0)}°C. Sulfides unstable!`;
       break;
@@ -1480,7 +1485,7 @@ function fortressStep(action, payload) {
     }
     case 'shock':
     case 'tectonic': { // legacy alias
-      c.temperature += 15;
+      fortressSim.setGlobalTemperature(c.temperature + 15);
       const stress = applyDifferentialStressPulse(fortressSim, 50);
       actionDesc = `⚡ Shock — 50 MPa differential-stress pulse, T +15°C; fluid pressure unchanged. ${stress.twinned.length} mechanically twinned crystal${stress.twinned.length === 1 ? '' : 's'}.`;
       break;
@@ -1553,6 +1558,30 @@ function fortressStep(action, payload) {
         ? fortressSim._fluidSpots?.breachSpots(kind)
         : fortressSim._fluidSpots?.sealSpots(kind);
       actionDesc = `${command === 'breach' ? 'Breached' : 'Sealed'} ${toggled?.length || 0} ${kind || 'point'} feeder${toggled?.length === 1 ? '' : 's'}`;
+      break;
+    }
+    case 'set_thermal_source': {
+      const source = fortressSim.setThermalSource(payload);
+      actionDesc = source
+        ? `Thermal boundary ${source.id} set at cell ${source.ringIdx * fortressSim.wall_state.cells_per_ring + source.cellIdx}, depth ${source.depthIdx}: ${source.temperature_C.toFixed(1)}°C, ${source.flow_direction}. Exchange coefficients are fractions per simulation step, not SI rates.`
+        : 'Thermal source ignored — provide a finite source temperature.';
+      break;
+    }
+    case 'configure_thermal_field': {
+      const config = fortressSim.configureThermalField(payload || {});
+      actionDesc = `Thermal transport ${config.enabled ? 'enabled' : 'paused'}: conduction ${config.conduction_fraction_per_step.toFixed(4)}/step, wall exchange ${config.wall_coupling_fraction_per_step.toFixed(4)}/step, rock boundary ${config.wall_rock_thermal_buffer_C == null ? 'none' : `${config.wall_rock_thermal_buffer_C.toFixed(1)}°C`}. Coefficients are dimensionless until voxel length and step duration are calibrated.`;
+      break;
+    }
+    case 'remove_thermal_source': {
+      const removed = fortressSim.removeThermalSource(payload?.id);
+      actionDesc = removed
+        ? `Thermal boundary ${payload?.id} removed; its existing heat remains and relaxes by conduction.`
+        : `No thermal boundary named ${payload?.id || '(blank)'} was present.`;
+      break;
+    }
+    case 'clear_thermal_sources': {
+      const removed = fortressSim.clearThermalSources();
+      actionDesc = `${removed} localized thermal boundar${removed === 1 ? 'y' : 'ies'} removed; stored heat remains and relaxes by conduction.`;
       break;
     }
     case 'set_zone_chemistry': {

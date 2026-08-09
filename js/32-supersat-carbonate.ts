@@ -59,7 +59,7 @@ const MINERAL_GATES_aragonite: MineralGates = {
   pH_min: 6.0, pH_max: 9.0,
   surface_energy: 'low',
   _sources: ['aragonite engine v17+', 'Folk 1974', 'Morse 1997', 'Burton & Walter 1987 (seawater 5-25°C — see v228 note)', 'Wollast 1990', 'Carlson 1983', 'Fouke et al. 2000 JSR 70:565 (Mammoth facies)', 'Casella et al. 2017 Biogeosciences 14:1461 (inversion kinetics)', 'Wassenburg et al. 2016 GCA (Mg/Ca crossover 1.1 mol/mol)', 'Bots et al. 2011 Geology 39:331 (SO4 evaluated, excluded)'],
-  _notes: 'Orthorhombic CaCO3 dimorph. v228 selectors: Mg/Ca sigmoid centered 1.1 ppm-ratio (~1.8 molar) OR the spring window (T rising ~45°C, closing ~90°C — vent-degassing kinetics; hottest documented primary low-Mg aragonite is ~90-96°C boiling springs). Ω amplifies but cannot select; trace Sr/Pb/Ba boost. Pseudohexagonal cyclic twinning. T_max 400°C from Carlson 1983 metastability limit. v147 SI engine: sigma is omega × kinetic_favorability; PWP rate via aragoniteRate (~3× calcite per Burton-Walter 1987 / Wollast 1990).',
+  _notes: 'Orthorhombic CaCO3 dimorph. v256 selectors: a hard-present aqueous molar Mg/Ca selector at >=1.1 OR an explicitly shallow 40-100 C spring window OR the high-pressure stable field. Smooth tails cannot create a selector outside those evidence domains. Omega amplifies but cannot select; trace Sr/Pb/Ba boost. Pseudohexagonal cyclic twinning. T_max 400 C from Carlson 1983 metastability limit. v147 SI engine: sigma is omega x kinetic_favorability; PWP rate via aragoniteRate (~3x calcite per Burton-Walter 1987 / Wollast 1990).',
 };
 
 const MINERAL_GATES_dolomite: MineralGates = {
@@ -483,9 +483,10 @@ Object.assign(VugConditions.prototype, {
   // hot low-Mg vein brines (elmwood 121°C @ Mg/Ca 0.18, wittichen 156°C,
   // grimsel 221°C…) grew aragonite where every such deposit shows calcite.
   // The physical model is two SELECTORS, either sufficient (an OR):
-  //   1. Mg-poisoning of calcite (works at any T; sigmoid center moved
-  //      1.5 → 1.1 ppm-ratio ≈ 1.8 molar — Wassenburg 2016 cave-dripwater
-  //      crossover 1.1 mol/mol; Folk's classic 1-2 molar band).
+  //   1. Mg-poisoning of calcite (works at any T; aqueous MOLAR Mg/Ca
+  //      threshold 1.1 — Wassenburg 2016 cave-dripwater crossover;
+  //      Folk's classic 1-2 molar band). Concentrations are stored as
+  //      mg/kg, so convert with the element molar masses before comparing.
   //   2. The SPRING WINDOW — vent/apron degassing kinetics, T rising
   //      ~40-45°C (Folk 1994; Fouke 2000: Mammoth vents 71-73°C are
   //      aragonite, distal 28-30°C calcite) and CLOSING ~90°C (Lake
@@ -507,8 +508,12 @@ Object.assign(VugConditions.prototype, {
   // two are mutually dependent) rather than acting independently —
   // an additive SO4 term would recreate the exact spurious-driver bug
   // this restructure removes.
-  const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
-  const mg_factor = 1.0 / (1.0 + Math.exp(-(mg_ratio - 1.1) / 0.3));
+  const mg_ratio_molar = (this.fluid.Mg / 24.305)
+    / Math.max(this.fluid.Ca / 40.078, 1e-12);
+  const mgSelectorPresent = mg_ratio_molar >= 1.1;
+  const mg_factor = mgSelectorPresent
+    ? 1.0 / (1.0 + Math.exp(-(mg_ratio_molar - 1.1) / 0.3))
+    : 0;
   const T_rise = 1.0 / (1.0 + Math.exp(-(this.temperature - 45.0) / 10.0));
   const T_fall = 1.0 / (1.0 + Math.exp((this.temperature - 90.0) / 8.0));
   // The low-Mg temperature selector represents an open vent/apron spring,
@@ -516,8 +521,12 @@ Object.assign(VugConditions.prototype, {
   // Restrict it to the project's shallow-spring pressure envelope. Deeper
   // fluids can still select aragonite through Mg poisoning or the stable
   // high-pressure phase field below.
-  const shallowSurfaceSpring = Number(this.pressure) <= 0.10;
-  const T_window = shallowSurfaceSpring ? T_rise * T_fall : 0;
+  const shallowSurfaceSpring = this.wall?.open_spring === true
+    && Number(this.pressure) <= 0.10;
+  const springSelectorPresent = shallowSurfaceSpring
+    && this.temperature >= 40
+    && this.temperature <= 100;
+  const T_window = springSelectorPresent ? T_rise * T_fall : 0;
   const omega_factor = 1.0 / (1.0 + Math.exp(-(Math.log10(Math.max(omega, 0.01)) - 1.0) / 0.3));
   const trace_sum = this.fluid.Sr + this.fluid.Pb + this.fluid.Ba;
   const trace_ratio = trace_sum / Math.max(this.fluid.Ca, 0.01);
@@ -529,11 +538,16 @@ Object.assign(VugConditions.prototype, {
   // selectors remain authoritative.
   const pressureStable = aragoniteIsPressureStable(this.temperature, this.pressure);
 
-  // Selector OR (weighted sum), then a soft self-gate: a polymorph
+  // Logistic functions have non-zero tails by construction. They are useful
+  // for weighting evidence INSIDE a documented domain, but must not turn an
+  // absent driver into a small positive selector that a huge omega can amplify.
+  if (!pressureStable && !mgSelectorPresent && !springSelectorPresent) return 0;
+
+  // Selector OR (maximum of independent routes), then a soft self-gate: a polymorph
   // selector must actually be PRESENT — sub-threshold residue from two
   // absent drivers must not multiply a huge Ω over the nucleation gate
   // (stalactite_demo's brine-strength Ω≈56 did exactly that pre-v228).
-  const selector = pressureStable ? 1.0 : 0.75 * mg_factor + 0.25 * T_window;
+  const selector = pressureStable ? 1.0 : Math.max(mg_factor, T_window);
   const selector_gate = 1.0 / (1.0 + Math.exp(-(selector - 0.10) / 0.03));
   const favorability = selector * selector_gate * (0.8 + 0.2 * omega_factor) * trace_factor;
   return omega * favorability;

@@ -168,6 +168,14 @@ MORPH_TH.calcite = {
   // over-steepened the dripstone family toward dendrite, against
   // ground truth.
   MG_BUNCH: 0.4,
+  // A vadose drip film is not a well-mixed cavity voxel. Its crystal surface
+  // is supplied through a thin, rapidly depleted moving film, so only a
+  // bounded fraction of the voxel-scale supersaturation excess reaches the
+  // interface morphology classifier. The 0.10 factor preserves the observed
+  // stepped stalactite regime while still allowing exceptional pulses to enter
+  // hopper/dendritic bands; it is a dimensionless transport calibration, not a
+  // claim about film thickness or SI mass-transfer rates.
+  AIR_FILM_EXCESS_FACTOR: 0.10,
   // C0 — the calcite σ lever (boss stone #1, SIM 217, 2026-07-06): sustained
   // textbook-Ω above this in SUBAQUEOUS growth → scalenohedral, independent of
   // Mg/T. DIRECTION from the literature: González, Carpenter & Lohmann 1992
@@ -195,6 +203,11 @@ MORPH_TH.calcite = {
   // KEEP THE THRESHOLDS IN SYNC with tools/calcite-morphology-map.mjs
   // (the transparent bench — its --engine mode cross-checks this table).
   sigma(conditions: any): number { return conditions.supersaturation_calcite(); },
+  environmentSigma(_conditions: any, crystal: any, sigma: number): number {
+    return crystal?.growth_environment === 'air'
+      ? 1 + (sigma - 1) * MORPH_TH.calcite.AIR_FILM_EXCESS_FACTOR
+      : sigma;
+  },
   effSigmaMult(conditions: any): number {
     const f = conditions.fluid;
     const mgRatio = (f.Mg || 0) / Math.max(1e-6, f.Ca || 0);
@@ -1108,14 +1121,19 @@ function _o1aBaseTipSigma(sim: any, crystal: any): any {
   const f0 = grid.fluidAt(anchor.ringIdx, anchor.cellIdx, 0);
   const fD = grid.fluidAt(anchor.ringIdx, anchor.cellIdx, maxD);
   if (!f0 || !fD || f0 === fD) return null;
-  const rt = sim.ring_temperatures || [];
-  const temp = (anchor.ringIdx >= 0 && anchor.ringIdx < rt.length) ? rt[anchor.ringIdx] : cond.temperature;
   const savedF = cond.fluid, savedT = cond.temperature;
-  cond.temperature = temp;
   let s0 = NaN, sD = NaN;
-  cond.fluid = f0; try { s0 = fn.call(cond); } catch { s0 = NaN; }
-  cond.fluid = fD; try { sD = fn.call(cond); } catch { sD = NaN; }
-  cond.fluid = savedF; cond.temperature = savedT;
+  try {
+    cond.fluid = f0;
+    cond.temperature = grid.temperatureAt(anchor.ringIdx, anchor.cellIdx, 0);
+    try { s0 = fn.call(cond); } catch { s0 = NaN; }
+    cond.fluid = fD;
+    cond.temperature = grid.temperatureAt(anchor.ringIdx, anchor.cellIdx, maxD);
+    try { sD = fn.call(cond); } catch { sD = NaN; }
+  } finally {
+    cond.fluid = savedF;
+    cond.temperature = savedT;
+  }
   if (!Number.isFinite(s0) || !Number.isFinite(sD)) return null;
   return { s0, sD };
 }
@@ -1312,6 +1330,39 @@ function classifySurfaceGrowth(sim: any) {
   }
 }
 
+function _wulffLocalChemistry(sim: any, crystal: any): any {
+  const conditions = sim?.conditions;
+  if (!conditions) return null;
+  const wall = sim.wall_state;
+  const anchor = wall?._resolveAnchor?.(crystal);
+  const mesh = wall?.meshFor?.(sim);
+  const vertexIdx = anchor
+    ? anchor.ringIdx * wall.cells_per_ring + anchor.cellIdx : -1;
+  return {
+    fluid: vertexIdx >= 0 ? (mesh?.cells?.[vertexIdx]?.fluid || conditions.fluid) : conditions.fluid,
+    temperatureC: vertexIdx >= 0
+      ? temperatureAtMeshVertex(sim, mesh, vertexIdx) : conditions.temperature,
+  };
+}
+
+function _wulffSigmaAtLocalChemistry(sim: any, mineral: string, local: any): number {
+  const conditions = sim?.conditions;
+  const fn = conditions?.[`supersaturation_${mineral}`];
+  if (!conditions || typeof fn !== 'function' || !local?.fluid) return NaN;
+  const savedFluid = conditions.fluid, savedTemp = conditions.temperature;
+  try {
+    conditions.fluid = local.fluid;
+    conditions.temperature = local.temperatureC;
+    const sigma = Number(fn.call(conditions));
+    return Number.isFinite(sigma) ? sigma : NaN;
+  } catch (_e) {
+    return NaN;
+  } finally {
+    conditions.fluid = savedFluid;
+    conditions.temperature = savedTemp;
+  }
+}
+
 function classifyWulffForm(sim: any) {
   const wall = sim.conditions && sim.conditions.wall;
   if (!wall) return;
@@ -1322,6 +1373,7 @@ function classifyWulffForm(sim: any) {
   for (const c of sim.crystals) {
     if (!c || c.dissolved) continue;
     const m = c.mineral;
+    const localChemistry = _wulffLocalChemistry(sim, c);
     // rung 4a.7 — wulfenite Pb:Mo growth integral. Accumulated BEFORE the size/tag gates so the
     // sub-30µm nucleus growth is in ⟨r⟩ from zone one, and RE-derived for already-tagged crystals
     // so the form keeps integrating its water history (js/99i re-reads biasC + growthFrac through
@@ -1331,7 +1383,7 @@ function classifyWulffForm(sim: any) {
     // wulfenite first; rung 4a.8 moved that to the shared tagged-crystal site below, fleet-wide.)
     if (m === 'wulfenite' && wulfeniteOn) {
       const z = c.zones && c.zones.length ? c.zones[c.zones.length - 1] : null;
-      const f = sim.conditions.fluid;
+      const f = localChemistry?.fluid || sim.conditions.fluid;
       if (z && z.step === sim.step && z.thickness_um > 0 && f && f.Mo > 0) {
         const r = (f.Pb / WULFENITE_PBMO.M_PB) / (f.Mo / WULFENITE_PBMO.M_MO);   // molar Pb:MoO4
         const acc = c._wulffPbMo || (c._wulffPbMo = { rG: 0, G: 0 });
@@ -1340,18 +1392,17 @@ function classifyWulffForm(sim: any) {
       }
     }
     // C0 (SIM 217): calcite joins as the second chemically-exact tenant — a
-    // growth-weighted Ω integral (post-step bulk σ, the 18th-catch basis this
-    // classifier already runs on), PLUS molar Ca:CO₃ recorded-but-unconsumed
+    // growth-weighted Ω integral at the crystal's boundary cell, PLUS molar
+    // Ca:CO₃ recorded-but-unconsumed
     // (the B5-era lever, pre-registered — the probe showed sim-r carries no
     // genre signal yet). READ-only on fluid, no RNG → byte-identical baselines;
     // the biasC map (wulffCalciteOmegaBias) consumes Ω̄ live, so the tooth
     // steepens as hot supersaturated water keeps feeding it.
     if (m === 'calcite' && calciteOn) {
       const z = c.zones && c.zones.length ? c.zones[c.zones.length - 1] : null;
-      const f = sim.conditions.fluid;
+      const f = localChemistry?.fluid || sim.conditions.fluid;
       if (z && z.step === sim.step && z.thickness_um > 0 && f) {
-        let om = NaN;
-        try { om = sim.conditions.supersaturation_calcite(); } catch { om = NaN; }
+        const om = _wulffSigmaAtLocalChemistry(sim, 'calcite', localChemistry);
         if (Number.isFinite(om)) {
           const acc = c._wulffCalInt || (c._wulffCalInt = { oG: 0, rG: 0, rW: 0, G: 0 });
           acc.oG += om * z.thickness_um; acc.G += z.thickness_um;
@@ -1489,19 +1540,40 @@ function classifyWulffForm(sim: any) {
 function classifyMorphologyStep(sim: any) {
   for (const mineral in MORPH_TH) {
     const th = MORPH_TH[mineral];
-    let sigma;
-    try { sigma = th.sigma(sim.conditions); } catch (_e) { continue; }
-    if (!isFinite(sigma) || sigma < 1.0) continue;
-    const mult = th.effSigmaMult ? th.effSigmaMult(sim.conditions) : 1;
-    // C0: a tenant may declare formPerCrystal — its form hook then re-evaluates
-    // per crystal (calcite: the subaqueous gate reads growth_environment).
-    // Everyone else keeps the once-per-mineral evaluation.
-    const form0 = (th.form && !th.formPerCrystal) ? th.form(sim.conditions) : null;
+    // Every growing crystal is evaluated at its own boundary cell. Form hooks
+    // run in that same local chemistry/temperature context.
     for (const c of sim.crystals) {
       if (!c || c.mineral !== mineral || c.dissolved) continue;
       const z = c.zones.length ? c.zones[c.zones.length - 1] : null;
       if (!z || z.step !== sim.step || z.thickness_um <= 0) continue;
-      const form = th.formPerCrystal && th.form ? th.form(sim.conditions, c) : form0;
+      const anchor = sim.wall_state?._resolveAnchor?.(c);
+      const mesh = sim.wall_state?.meshFor?.(sim);
+      const vertexIdx = anchor
+        ? anchor.ringIdx * sim.wall_state.cells_per_ring + anchor.cellIdx : -1;
+      const localFluid = vertexIdx >= 0 ? mesh?.cells?.[vertexIdx]?.fluid : null;
+      const savedFluid = sim.conditions.fluid;
+      const savedTemp = sim.conditions.temperature;
+      let sigma = NaN, mult = 1, form = null;
+      try {
+        if (localFluid) sim.conditions.fluid = localFluid;
+        if (vertexIdx >= 0) {
+          sim.conditions.temperature = temperatureAtMeshVertex(sim, mesh, vertexIdx);
+        }
+        sigma = th.sigma(sim.conditions);
+        if (isFinite(sigma) && th.environmentSigma) {
+          sigma = th.environmentSigma(sim.conditions, c, sigma);
+        }
+        if (isFinite(sigma) && sigma >= 1.0) {
+          mult = th.effSigmaMult ? th.effSigmaMult(sim.conditions) : 1;
+          form = th.form ? th.form(sim.conditions, c) : null;
+        }
+      } catch (_e) {
+        sigma = NaN;
+      } finally {
+        sim.conditions.fluid = savedFluid;
+        sim.conditions.temperature = savedTemp;
+      }
+      if (!isFinite(sigma) || sigma < 1.0) continue;
       // Size BEFORE this zone — the map tool's sizeAcc semantics.
       const sizeBefore = Math.max(0, c.total_growth_um - z.thickness_um);
       const surf = morphSurfaceSigma(th, sigma, sizeBefore) * mult;

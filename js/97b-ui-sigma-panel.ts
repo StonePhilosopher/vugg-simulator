@@ -43,6 +43,39 @@ function _onSatFilterToggle() {
 // (matching how the pills themselves rewind — v66 replay-aware).
 let _satLastConditions = null;
 let _satLastSim = null;
+let _satSpatialContexts = new Map<string, any>();
+
+function _formationSpatialContext(name: string, c: any, sim: any): any | null {
+  if (!sim || sim.conditions !== c) return null;
+  const wall = sim.wall_state;
+  const mesh = wall?.meshFor?.(sim);
+  const grid = wall?.voxelGridFor?.(sim);
+  const N = wall?.cells_per_ring | 0;
+  const fn = c?.[`supersaturation_${name}`];
+  if (!mesh?.cells?.length || N < 1 || typeof fn !== 'function') return null;
+  let minSigma = Infinity, maxSigma = -Infinity, best: any = null;
+  for (let vertexIdx = 0; vertexIdx < mesh.cells.length; vertexIdx++) {
+    const fluid = mesh.cells[vertexIdx]?.fluid;
+    if (!fluid) continue;
+    const ringIdx = Math.floor(vertexIdx / N), cellIdx = vertexIdx % N;
+    const temperatureC = grid?.temperatureAt
+      ? grid.temperatureAt(ringIdx, cellIdx, 0)
+      : temperatureAtMeshVertex(sim, mesh, vertexIdx);
+    const local = Object.assign(Object.create(Object.getPrototypeOf(c)), c);
+    local.fluid = fluid;
+    local.temperature = temperatureC;
+    let sigma = 0;
+    try { sigma = Number(fn.call(local)); } catch (_e) { sigma = 0; }
+    if (!Number.isFinite(sigma)) sigma = 0;
+    minSigma = Math.min(minSigma, sigma);
+    if (sigma > maxSigma) {
+      maxSigma = sigma;
+      best = { ringIdx, cellIdx, vertexIdx, temperatureC, fluid, conditions: local, sigma };
+    }
+  }
+  if (!best) return null;
+  return { minSigma, maxSigma, best, cellCount: mesh.cells.length };
+}
 
 function _renderFortressSigmaGroups(c, host) {
   if (!host) return;
@@ -50,6 +83,7 @@ function _renderFortressSigmaGroups(c, host) {
   _satLastSim = (typeof fortressSim !== 'undefined' && fortressSim && fortressSim.conditions === c)
     ? fortressSim
     : null;
+  _satSpatialContexts = new Map();
   if (typeof _satHoverHide === 'function') _satHoverHide(); // re-render orphans any floating popover
   host.innerHTML = '';
   if (typeof MINERAL_SPEC === 'undefined') return;
@@ -59,12 +93,17 @@ function _renderFortressSigmaGroups(c, host) {
   for (const [name, spec] of Object.entries(MINERAL_SPEC)) {
     const fn = c[`supersaturation_${name}`];
     if (typeof fn !== 'function') continue;
+    const spatial = _formationSpatialContext(name, c, _satLastSim);
+    if (spatial) _satSpatialContexts.set(name, spatial);
     let sigma;
-    try { sigma = fn.call(c); } catch (e) { continue; }
+    try { sigma = spatial ? spatial.maxSigma : fn.call(c); } catch (e) { continue; }
     if (typeof sigma !== 'number' || !isFinite(sigma)) continue;
     const compositionUnresolved = name === 'HMC'
       && typeof hmcCompositionFromFluid === 'function'
-      && !hmcCompositionFromFluid(c.fluid, c.temperature).compositionDomainSupported;
+      && !hmcCompositionFromFluid(
+        spatial?.best?.fluid || c.fluid,
+        spatial?.best?.temperatureC ?? c.temperature,
+      ).compositionDomainSupported;
     const cls = spec.class || 'uncategorized';
     const displayName = _SAT_DISPLAY_NAMES[name]
       || (name.charAt(0).toUpperCase() + name.slice(1));
@@ -451,15 +490,28 @@ function _formationHistory(name: string, sim: any) {
 }
 
 function _formationSubstrate(name: string, sim: any) {
-  const available: Array<{ mineral: string; count: number; discount: number; epitaxy: boolean; state: string }> = [];
+  const available: Array<{
+    mineral: string; count: number; localEligible: number;
+    discount: number; epitaxy: boolean; state: string;
+  }> = [];
   if (sim && Array.isArray(sim.crystals) && typeof executableSubstrateCandidates === 'function') {
-    const grouped = new Map<string, { count: number; discount: number; state: string }>();
+    const grouped = new Map<string, {
+      count: number; localEligible: number; discount: number; state: string;
+    }>();
+    const sigmaCrit = _satSigmaCrit(name);
+    const localityActive = !!(sim.wall_state?.per_vertex_nucleation || sim._thermalFieldActivated);
     for (const candidate of executableSubstrateCandidates(name, sim.crystals)) {
       const cr = candidate.host;
       const key = `${cr.mineral}|${candidate.label}`;
       const prior = grouped.get(key);
+      const local = sim._localNucleationEvaluationAtAnchor?.(
+        name, sim.wall_state?._resolveAnchor?.(cr),
+      );
+      const localEligible = !localityActive
+        || local?.sigma > sigmaCrit * candidate.discount ? 1 : 0;
       grouped.set(key, {
         count: (prior?.count || 0) + 1,
+        localEligible: (prior?.localEligible || 0) + localEligible,
         discount: prior ? Math.min(prior.discount, candidate.discount) : candidate.discount,
         state: candidate.label,
       });
@@ -469,16 +521,18 @@ function _formationSubstrate(name: string, sim: any) {
       available.push({
         mineral,
         count: row.count,
+        localEligible: row.localEligible,
         discount: row.discount,
         epitaxy: typeof EPITAXY_PAIRS !== 'undefined' && EPITAXY_PAIRS.has(`${name}>${mineral}`),
         state: row.state,
       });
     }
-    available.sort((a, b) => a.discount - b.discount || b.count - a.count || a.mineral.localeCompare(b.mineral));
+    available.sort((a, b) => Number(b.localEligible > 0) - Number(a.localEligible > 0)
+      || a.discount - b.discount || b.count - a.count || a.mineral.localeCompare(b.mineral));
   }
   return {
     available,
-    bestDiscount: available.length ? available[0].discount : 1,
+    bestDiscount: available.find(row => row.localEligible > 0)?.discount ?? 1,
   };
 }
 
@@ -546,9 +600,9 @@ function _formationRedoxChip(gate: MineralGates | null, c: any): FormationDiagno
 }
 
 // Observer-only diagnosis. It reads the same supersaturation function,
-// MINERAL_GATES_REGISTRY, stoichiometry, paragenesis, and initiative
-// helpers as the engine. It deliberately never calls a nucleation engine
-// or _atNucleationCap, because both may consume RNG.
+// MINERAL_GATES_REGISTRY, stoichiometry, paragenesis, and initiative helpers
+// as the engine. Production reachability is probed only through the cloned,
+// fixed-RNG observer path in assessProductionNucleationDecision.
 function _buildMineralFormationExplanation(
   name: string,
   c: any,
@@ -561,7 +615,13 @@ function _buildMineralFormationExplanation(
     : null;
   if (!spec || !c || !c.fluid) return null;
 
-  let sigma = sigmaOverride;
+  const liveConditions = c;
+  const spatial = sim && sim.conditions === liveConditions
+    ? (_satSpatialContexts.get(name) || _formationSpatialContext(name, liveConditions, sim))
+    : null;
+  if (spatial?.best?.conditions) c = spatial.best.conditions;
+
+  let sigma = spatial ? spatial.maxSigma : sigmaOverride;
   if (typeof sigma !== 'number' || !Number.isFinite(sigma)) {
     const fn = c[`supersaturation_${name}`];
     try { sigma = typeof fn === 'function' ? fn.call(c) : 0; } catch (_e) { sigma = 0; }
@@ -577,7 +637,7 @@ function _buildMineralFormationExplanation(
   const substrate = _formationSubstrate(name, sim);
   const requiredSubstrate = gate?.required_substrate || null;
   const requiredSubstrateAvailable = requiredSubstrate
-    ? substrate.available.some(row => row.mineral === requiredSubstrate)
+    ? substrate.available.some(row => row.mineral === requiredSubstrate && row.localEligible > 0)
     : true;
   const assistedCrit = sigmaCrit * substrate.bestDiscount;
   const substrateEligible = requiredSubstrate
@@ -588,14 +648,37 @@ function _buildMineralFormationExplanation(
     : (chemistryEligible || substrateEligible);
   const competition = _formationCompetition(name, sigma, c, sim);
   if (hmcCoverageUnresolved) competition.initiative = null;
-  const productionDecision = !hmcCoverageUnresolved && sim && sim.conditions === c
-    && typeof assessProductionNucleationDecision === 'function'
-    ? assessProductionNucleationDecision(name, sim, sigma, sigmaCrit)
-    : null;
+  let productionDecision: ProductionNucleationDecisionAssessment | null = null;
+  if (!hmcCoverageUnresolved && sim && sim.conditions === liveConditions
+      && typeof assessProductionNucleationDecision === 'function') {
+    // Probe the actual nucleator with the same best local chemistry/T used by
+    // every chip. The simulation and conditions are shallow observer clones;
+    // the production probe then clones crystal state and fixes its own RNG.
+    const productionSim = spatial
+      ? Object.assign(Object.create(Object.getPrototypeOf(sim)), sim, {
+        conditions: c,
+        _localNucleationDirectEvaluation: true,
+      })
+      : sim;
+    productionDecision = assessProductionNucleationDecision(
+      name, productionSim, sigma, sigmaCrit,
+    );
+  }
   const productionEligible = productionDecision?.available
     ? productionDecision.eligible
     : effectiveEligible;
   const groups: FormationDiagnosticGroup[] = [];
+
+  if (spatial) {
+    groups.push({
+      label: 'Local formation site',
+      chips: [{
+        text: `maximum at ring ${spatial.best.ringIdx}, cell ${spatial.best.cellIdx} · ${_formationNumber(spatial.best.temperatureC, 1)}°C`,
+        met: spatial.maxSigma > (gate?.sigma_crit ?? 1),
+        note: `Exact boundary scan across ${spatial.cellCount} chemistry/temperature states. σ range ${_formationNumber(spatial.minSigma)}–${_formationNumber(spatial.maxSigma)}; all reagent, pH, redox, pressure, and temperature rows below describe this maximum-σ cell.`,
+      }],
+    });
+  }
 
   const satChips: FormationDiagnosticChip[] = hmcCoverageUnresolved ? [{
     text: 'HMC composition/saturation unresolved',
@@ -642,7 +725,7 @@ function _buildMineralFormationExplanation(
     }
   }
   if (substrate.bestDiscount < 1) {
-    const best = substrate.available[0];
+    const best = substrate.available.find(row => row.localEligible > 0)!;
     satChips.push({
       text: `${best.mineral} can lower σcrit to ${_formationNumber(assistedCrit)}`,
       met: sigma > assistedCrit,
@@ -847,8 +930,8 @@ function _buildMineralFormationExplanation(
 
   let substrateChips: FormationDiagnosticChip[] = substrate.available.length
     ? substrate.available.map(row => ({
-      text: `${row.mineral} ×${row.count} · ${row.state} · σcrit ×${row.discount.toFixed(2)}${row.epitaxy ? ' · epitaxy' : ''}`,
-      met: true,
+      text: `${row.mineral} ×${row.count} · ${row.localEligible} locally eligible · ${row.state} · σcrit ×${row.discount.toFixed(2)}${row.epitaxy ? ' · epitaxy' : ''}`,
+      met: row.localEligible > 0,
       note: row.discount < 1
         ? 'Executable production host route; availability lowers the barrier only if the production nucleator selects this surface.'
         : 'Executable production spatial host route; no unmeasured saturation or growth-rate discount is applied.',
@@ -911,7 +994,7 @@ function _buildMineralFormationExplanation(
       capReached = exposed >= cap;
       transportChips.push({ text: `exposed nuclei ${exposed}/${cap}`, met: !capReached });
     }
-    if (sim.conditions === c && chemistryEligible && typeof sim._wallStrangledFor === 'function') {
+    if (sim.conditions === liveConditions && chemistryEligible && typeof sim._wallStrangledFor === 'function') {
       try { strangled = !!sim._wallStrangledFor(name); } catch (_e) { strangled = false; }
       transportChips.push({
         text: strangled ? 'all wall cells below σcrit' : 'an accessible wall cell clears σcrit',
@@ -944,7 +1027,7 @@ function _buildMineralFormationExplanation(
     if (productionEligible && !strangled) {
       state = 'formed-supported';
       if (substrateEligible) {
-        const best = substrate.available[0];
+        const best = substrate.available.find(row => row.localEligible > 0)!;
         verdict = `Formed (${history.active} active, ${history.transformed} transformed, ${history.dissolved} dissolved); the current broth clears the ${best.mineral}-assisted threshold (${_formationNumber(assistedCrit)}) but not the bare-wall threshold, so fresh nucleation remains host-dependent and the engine must select an exposed host.`;
       } else if (requiredSubstrate) {
         verdict = `Formed (${history.active} active, ${history.transformed} transformed, ${history.dissolved} dissolved); current fluid conditions and an exposed ${requiredSubstrate} precursor support the bounded transformation route.`;

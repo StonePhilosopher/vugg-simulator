@@ -11,7 +11,6 @@
 // Phase B15 of PROPOSAL-MODULAR-REFACTOR.
 
 function _nuc_quartz(sim) {
-  if (sim.conditions.silica_precipitate_phase() !== 'quartz') return;
   const sigma_q = sim.conditions.supersaturation_quartz();
   const existing_quartz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
   if (sigma_q > MINERAL_GATES_quartz.sigma_crit && existing_quartz.length < 3 && !sim._atNucleationCap('quartz')) {
@@ -29,7 +28,6 @@ function _nuc_quartz(sim) {
 }
 
 function _nuc_chalcedony(sim) {
-  if (sim.conditions.silica_precipitate_phase() !== 'chalcedony') return;
   // Do not run the generic silica succession backwards. Once stable quartz is
   // exposed, a later cooling step may make the remaining fluid supersaturated
   // with respect to chalcedony, but it should feed/overgrow the lower-solubility
@@ -418,7 +416,6 @@ function _nuc_chrysoprase(sim) {
 // "embeds everything" universal-binder role of opal in hot-spring
 // systems. RNG-cascade guard via sigma < 1.0 early-out.
 function _nuc_opal(sim) {
-  if (sim.conditions.silica_precipitate_phase() !== 'opal') return;
   const sigma = sim.conditions.supersaturation_opal();
   if (sigma <= MINERAL_GATES_opal.sigma_crit) return;
   if (sim._atNucleationCap('opal')) return;

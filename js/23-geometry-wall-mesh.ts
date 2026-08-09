@@ -315,7 +315,7 @@ class WallMesh {
   // Math: for vertex i with neighbors {j₁, j₂, …}, the update is
   //   cells[i].fluid[f] += rate * (Σⱼ cells[j].fluid[f] - degree·cells[i].fluid[f]).
   // Snapshot first so each vertex reads pre-step neighbor values.
-  diffuse(rate, fieldNames, ringTemps) {
+  diffuse(rate, fieldNames) {
     if (!(rate > 0)) return;
     if (!this.cells || !this.cells.length) return;
     if (!fieldNames || !fieldNames.length) return;
@@ -353,20 +353,6 @@ class WallMesh {
         }
         fluid[fieldNames[k]] = snap[selfBase + k]
           + rate * (neighborSum - degree * snap[selfBase + k]);
-      }
-    }
-    // Temperature stays per-ring for Tranche 4a (each cell carries a
-    // temperature_ring index that points into the sim's
-    // ring_temperatures[] array). Tranche 4b can migrate temperature
-    // to per-vertex storage if a future scenario needs it; the
-    // chemistry side is the load-bearing change for Path C.
-    if (ringTemps && ringTemps.length > 0) {
-      const oldT = ringTemps.slice();
-      const n = ringTemps.length;
-      for (let k = 0; k < n; k++) {
-        const kp = k > 0 ? k - 1 : 0;
-        const kn = k < n - 1 ? k + 1 : n - 1;
-        ringTemps[k] = oldT[k] + rate * (oldT[kp] + oldT[kn] - 2 * oldT[k]);
       }
     }
   }

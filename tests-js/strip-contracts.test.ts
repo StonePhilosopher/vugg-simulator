@@ -65,17 +65,20 @@ describe('strip chemistry contract — sabkha_dolomitization (Kim 2023)', () => 
     expect(series.crossings(si, 2.0)).toBeGreaterThanOrEqual(3);
   });
 
-  it('wall stays cycling while the deep interior depletes (v160 diffusion signature)', () => {
+  it('well-mixed recharge replaces every wet voxel without a fictitious depth gradient', () => {
     if (!ds) return;
-    // With flood/evap now authored as absolute replacement waters, the
-    // late-run wall-center separation is ~1.64 SI units. The sign and a
-    // conservative one-unit margin pin the v160 per-voxel diffusion
-    // signature without preserving the old relative-delta chemistry bug.
+    // Each authored flood is an absolute, well-mixed replacement water. The
+    // conserved carbonate boundary therefore replaces every wet voxel with
+    // the same solved recharge state; inventing a wall-only composition here
+    // would create carbon from a discarded relative-delta implementation.
+    // Spatial gradients remain possible for local reactions between floods,
+    // but the last sample follows a whole-cavity recharge and must agree to
+    // within one uint8 SI quantum (16 / 254 ~= 0.063).
     const wall = chipSeries(ds, 'SI_dolomite', { depth: 'wall' });
     const center = chipSeries(ds, 'SI_dolomite', { depth: 'center' });
     const D = ds.manifest.axes.depth_positions || 1;
     if (D < 2) return; // depth-collapsed recording (no voxel grid) → no gradient to test
-    expect(series.last(wall)! - series.last(center)!).toBeGreaterThan(1);
+    expect(Math.abs(series.last(wall)! - series.last(center)!)).toBeLessThan(0.07);
   });
 });
 
@@ -143,19 +146,22 @@ describe('strip chemistry contract — cooling (calcite retrograde solubility)',
   });
 });
 
-describe('strip chemistry contract — mvt (hot carbonate-supersaturated start)', () => {
+describe('strip chemistry contract — mvt (hot, low-Mg carbonate start)', () => {
   let ds: any;
   beforeAll(() => { ds = recordScenario('mvt'); }, 120000);
 
-  it('starts carbonate-supersaturated (dolomite > calcite), SI declines on cooling', () => {
+  it('starts carbonate-supersaturated with calcite favored; SI declines on cooling', () => {
     if (!ds) return;
     const cal = chipSeries(ds, 'SI_calcite', { depth: 'wall' });
     const dol = chipSeries(ds, 'SI_dolomite', { depth: 'wall' });
-    // Observed start: SI_calcite +0.99, SI_dolomite +1.75 — dolomite favored at
-    // the hot MVT start (early carbonate gangue + dolomitization). Both decline
-    // as the fluid cools (retrograde solubility); last SI_calcite ~0.19.
+    // Observed start after the pressure-grid correction: SI_calcite ~+0.38,
+    // SI_dolomite ~+0.25. The authored Ca-rich, low-Mg MVT brine therefore
+    // favors calcite. Positive dolomite SI without direct precipitation is the
+    // expected kinetic "dolomite problem", not evidence that dolomite should
+    // outrank calcite. Both indices subsequently decline as the system cools.
     expect(series.first(cal)!).toBeGreaterThan(0);                  // starts supersaturated
-    expect(series.first(dol)!).toBeGreaterThan(series.first(cal)!); // dolomite favored early
+    expect(series.first(dol)!).toBeGreaterThan(0);                  // thermodynamically supersaturated
+    expect(series.first(cal)!).toBeGreaterThan(series.first(dol)!); // low-Mg brine favors calcite
     expect(series.last(cal)!).toBeLessThan(series.first(cal)!);     // declines on cooling
   });
 });

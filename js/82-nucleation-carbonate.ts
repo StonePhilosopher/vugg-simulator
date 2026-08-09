@@ -83,7 +83,27 @@ function _nuc_dolomite(sim) {
   // precursor to ordered dolomite.
 }
 function _nuc_HMC(sim) {
-  const composition = hmcCompositionFromFluid(
+  let localCandidate: any = null;
+  if (sim.wall_state?.per_vertex_nucleation || sim._thermalFieldActivated) {
+    const wall = sim.wall_state;
+    const mesh = wall?.meshFor?.(sim);
+    const N = wall?.cells_per_ring | 0;
+    for (let vertexIdx = 0; mesh?.cells && vertexIdx < mesh.cells.length; vertexIdx++) {
+      const anchor = { ringIdx: Math.floor(vertexIdx / N), cellIdx: vertexIdx % N };
+      const local = sim._localNucleationEvaluationAtAnchor('HMC', anchor);
+      if (!local?.fluid) continue;
+      const candidateComposition = hmcCompositionFromFluid(local.fluid, local.temperatureC);
+      if (!candidateComposition.compositionDomainSupported
+          || !candidateComposition.validHMCComposition) continue;
+      const evaluated = sim._localNucleationEvaluationAtAnchor(
+        'HMC', anchor, [candidateComposition.mgMoleFraction],
+      );
+      if (!localCandidate || evaluated.sigma > localCandidate.sigma) {
+        localCandidate = { ...evaluated, composition: candidateComposition, anchor };
+      }
+    }
+  }
+  let composition = localCandidate?.composition || hmcCompositionFromFluid(
     sim.conditions.fluid, sim.conditions.temperature,
   );
   sim._hmc_composition_coverage = { ...composition };
@@ -96,7 +116,8 @@ function _nuc_HMC(sim) {
     return;
   }
   if (!composition.validHMCComposition) return;
-  const sigma_hmc = sim.conditions.supersaturation_HMC(composition.mgMoleFraction);
+  let sigma_hmc = localCandidate?.sigma
+    ?? sim.conditions.supersaturation_HMC(composition.mgMoleFraction);
   if (sigma_hmc <= MINERAL_GATES_HMC.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('HMC')) return;
   const existing_hmc = sim.crystals.filter(c => c.mineral === 'HMC' && c.active);
@@ -111,13 +132,24 @@ function _nuc_HMC(sim) {
   const existing_arg_h = sim.crystals.filter(c => c.mineral === 'aragonite' && c.active);
   if (existing_cal_h.length && rng.random() < 0.45) pos = `on calcite #${existing_cal_h[0].crystal_id}`;
   else if (existing_arg_h.length && rng.random() < 0.35) pos = `on aragonite #${existing_arg_h[0].crystal_id}`;
-  const mg_ratio = composition.aqueousMgCaMolarRatio;
-  const mg_content = composition.mgMoleFraction;
   const c = sim.nucleate('HMC', pos, sigma_hmc);
-  c._mg_content = mg_content;
+  const actualLocal = sim._localNucleationEvaluationAtAnchor('HMC', c.wall_anchor);
+  if (actualLocal?.fluid) {
+    const actualComposition = hmcCompositionFromFluid(actualLocal.fluid, actualLocal.temperatureC);
+    if (actualComposition.compositionDomainSupported && actualComposition.validHMCComposition) {
+      composition = actualComposition;
+      const actualSigma = sim._localNucleationEvaluationAtAnchor(
+        'HMC', c.wall_anchor, [composition.mgMoleFraction],
+      );
+      if (Number.isFinite(actualSigma?.sigma)) sigma_hmc = actualSigma.sigma;
+    }
+  }
   c._solid_solution_model = 'calcite_disordered_dolomite_subregular_v1';
+  c._mg_content = composition.mgMoleFraction;
   c._hmc_nucleation_composition = { ...composition };
-  sim.log.push(`  ✦ NUCLEATION: ⚪ HMC #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, molar Mg/Ca=${mg_ratio.toFixed(2)}, x=${mg_content.toFixed(3)} Mg, σ=${sigma_hmc.toFixed(2)}) — measured-partition composition with nonideal calcite–dolomite component activities`);
+  const birthT = Number.isFinite(actualLocal?.temperatureC)
+    ? actualLocal.temperatureC : sim.conditions.temperature;
+  sim.log.push(`  ✦ NUCLEATION: ⚪ HMC #${c.crystal_id} on ${c.position} (T=${birthT.toFixed(0)}°C, molar Mg/Ca=${composition.aqueousMgCaMolarRatio.toFixed(2)}, x=${composition.mgMoleFraction.toFixed(3)} Mg, σ=${sigma_hmc.toFixed(2)}) — measured-partition composition with nonideal calcite–dolomite component activities`);
 
   // Siderite nucleation — Fe carbonate, brown rhomb. Reducing only.
 }
