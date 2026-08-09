@@ -207,6 +207,23 @@ function fortressBeginFromScenario(scenarioName, seedOverride?) {
   rng = new SeededRandom(seed);
   const { conditions, events, defaultSteps } = make();
 
+  // Creative mode always exposes the mass-balanced carbon controls. Scenarios
+  // that do not need atmospheric exchange stay closed, but never drop into the
+  // retired fixed-DIC/pH-only path when the player opens the CO2 reservoir.
+  conditions._scenario ||= {};
+  if (!conditions._scenario.carbonate_boundary) {
+    conditions._scenario.carbonate_boundary = createConservedCarbonateBoundaryConfig(
+      conditions.fluid,
+      conditions.temperature,
+      {
+        mode: conditions._scenario.open_to_atmosphere ? 'open' : 'closed',
+        target_pCO2_bar: conditions._scenario.atmospheric_pCO2_bar ?? 4.2e-4,
+        headspace_L_per_kg_water: 1,
+        initialization: 'creative_scenario_initial_DIC_plus_pH_to_reduced_alkalinity',
+      },
+    );
+  }
+
   fortressSim = new VugSimulator(conditions, events);
   _attachStripRecorderToSim(fortressSim, `fortress_${scenarioName}`, `Fortress — scenario: ${scenarioName}`);
   fortressActive = true;

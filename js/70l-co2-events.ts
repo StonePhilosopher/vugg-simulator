@@ -10,23 +10,29 @@
 // DIC grows, and calcite (or any carbonate) supersaturates without
 // any other change.
 //
-// Couples deliberately with PROPOSAL-VOLATILE-GASES (Rock Bot,
-// 2026-05-04, on canonical) — when its volatiles dict lands, these
-// handlers will additionally update volatiles['CO2'] (i.e. the
-// gas-phase pCO₂). Until then, they manipulate only the aqueous
-// side: drop DIC, raise pH (degas) or raise DIC, drop pH (charge).
-// The pH shift is calibrated so the carbonate-system stays roughly
-// in equilibrium per equilibriumPCO2 — Phase 3c can refine via
-// proper Newton iteration on the Bjerrum equations if needed.
+// Every handler requires the conserved DIC + reduced-alkalinity boundary.
+// Missing state is a recorded configuration violation and leaves the fluid,
+// temperature, and depositional mode untouched. There is no fixed-DIC or
+// fixed-pH fallback.
+
+function _refuseCO2EventWithoutConservedBoundary(c: any, attemptedKind: string, note: string): string {
+  c._pending_carbonate_boundary_violation = {
+    ok: false,
+    kind: 'carbonate_boundary_required',
+    attemptedKind,
+    error: 'co2_event_requires_conserved_carbonate_boundary',
+    note,
+  };
+  return `CO₂ ${attemptedKind} refused: conserved DIC, reduced alkalinity, and an explicit gas boundary are required; no chemistry was mutated.`;
+}
 
 // CO₂ degassing — fluid loses CO₂ as gas (boiling, depressurization,
 // venting through a fracture). DIC drops; pH rises because each CO₂
 // leaving takes its conjugate H⁺ along (CO₂ + H₂O ⇌ H⁺ + HCO₃⁻
 // reverses).
 //
-// Default: removes 30% of DIC, raises pH by 0.5 (clamped at 9.5).
-// Scenarios can subclass via additional fields if/when needed; for
-// now this is the single canonical degas event.
+// The event solves to its authored gas boundary. It never removes a fixed
+// percentage or imposes a fixed pH increment.
 function event_co2_degas(c, eventSpec: any = {}) {
   const boundary = c._carbonateBoundaryState;
   if (boundary) {
@@ -58,19 +64,7 @@ function event_co2_degas(c, eventSpec: any = {}) {
       `alkalinity is conserved; no fixed pH increment or boiling claim is used.`
     );
   }
-  const oldDIC = c.fluid.CO3;
-  const oldPH = c.fluid.pH;
-  const fraction = 0.3;
-  c.fluid.CO3 = oldDIC * (1 - fraction);
-  c.fluid.pH = Math.min(9.5, oldPH + 0.5);
-  return (
-    `CO₂ degasses — fluid loses ${(fraction * 100).toFixed(0)}% of its dissolved ` +
-    `inorganic carbon as gas. pH rises ${oldPH.toFixed(2)} → ${c.fluid.pH.toFixed(2)}; ` +
-    `DIC drops ${oldDIC.toFixed(0)} → ${c.fluid.CO3.toFixed(0)} ppm. ` +
-    `Carbonate supersaturation jumps because the CO₃²⁻ fraction of DIC grows ` +
-    `with pH (Bjerrum partition). The same mechanism that builds travertine ` +
-    `at hot springs and flowstone in caves.`
-  );
+  return _refuseCO2EventWithoutConservedBoundary(c, 'vent', eventSpec.name || 'CO2 vent');
 }
 
 // Tutorial variant — combines CO₂ degas with re-heating to model an
@@ -117,25 +111,8 @@ function event_co2_degas_with_reheat(c, eventSpec: any = {}) {
       `recharge, not an undeclared replacement-water or boiling shortcut.`
     );
   }
-  const oldDIC = c.fluid.CO3;
-  const oldPH = c.fluid.pH;
-  const oldT = c.temperature;
-  const fraction = 0.3;
-  c.fluid.CO3 = oldDIC * (1 - fraction);
-  c.fluid.pH = Math.min(9.5, oldPH + 0.5);
-  c.temperature = 75;
-  // This canonical event is an actively vented hot-spring recharge: repeated
-  // CO2 loss plates a terrace crust. Store the executed depositional pathway
-  // so calcite habit follows mechanism, not merely a Ca/DIC ratio that also
-  // occurs in sabkhas and cave drip films.
-  c._calciteDepositionalMode = 'travertine';
-  return (
-    `Fresh hot pulse degasses — new CO₂-rich water from depth replaces ` +
-    `what cooled. T resets to ${c.temperature}°C; DIC drops ` +
-    `${oldDIC.toFixed(0)} → ${c.fluid.CO3.toFixed(0)} ppm as CO₂ escapes; ` +
-    `pH rises ${oldPH.toFixed(2)} → ${c.fluid.pH.toFixed(2)}. Each pulse ` +
-    `nudges the carbonate system toward calcite saturation: lower DIC, ` +
-    `higher pH means a much higher CO₃²⁻ fraction (Bjerrum cascade).`
+  return _refuseCO2EventWithoutConservedBoundary(
+    c, 'heated_vent', eventSpec.name || 'heated CO2 vent',
   );
 }
 
@@ -144,10 +121,8 @@ function event_co2_degas_with_reheat(c, eventSpec: any = {}) {
 // soil-zone CO₂). DIC rises; pH drops because new CO₂ adds H⁺ via
 // CO₂ + H₂O → H⁺ + HCO₃⁻.
 //
-// Default: adds 100 ppm DIC, drops pH by 0.5 (clamped at 4.0).
-// Carbonates already in the cavity become subsaturated — they may
-// dissolve and free their cations back to the fluid, the
-// well-known "CO₂ pulse erodes existing speleothems" mechanism.
+// The event adds an authored pure-CO₂ amount to the declared headspace and
+// derives pH from DIC + alkalinity. It never adds fixed DIC or subtracts pH.
 function event_co2_charge(c, eventSpec: any = {}) {
   const boundary = c._carbonateBoundaryState;
   if (boundary) {
@@ -180,18 +155,7 @@ function event_co2_charge(c, eventSpec: any = {}) {
       `${c.fluid.pH.toFixed(2)}.`
     );
   }
-  const oldDIC = c.fluid.CO3;
-  const oldPH = c.fluid.pH;
-  const addDIC = 100;
-  c.fluid.CO3 = oldDIC + addDIC;
-  c.fluid.pH = Math.max(4.0, oldPH - 0.5);
-  return (
-    `Magmatic CO₂ pulse — fresh fluid carrying elevated pCO₂ enters the cavity. ` +
-    `DIC rises ${oldDIC.toFixed(0)} → ${c.fluid.CO3.toFixed(0)} ppm; ` +
-    `pH drops ${oldPH.toFixed(2)} → ${c.fluid.pH.toFixed(2)}. ` +
-    `Existing carbonates may begin to corrode as σ drops below 1; the fluid ` +
-    `is now more aggressive toward limestone walls and any pre-existing calcite.`
-  );
+  return _refuseCO2EventWithoutConservedBoundary(c, 'charge', eventSpec.name || 'pure CO2 charge');
 }
 
 // Replacement-water recharge. Both incoming DIC and reduced carbonate
@@ -201,7 +165,7 @@ function event_co2_charge(c, eventSpec: any = {}) {
 function event_carbonate_recharge(c, eventSpec: any = {}) {
   const boundary = c._carbonateBoundaryState;
   if (!boundary) {
-    return 'Carbonate recharge refused: this scenario uses the legacy fixed-DIC heuristic and has no conserved boundary.';
+    return 'Carbonate recharge refused: conserved DIC, reduced alkalinity, and a gas boundary are required.';
   }
   if (boundary.blocked) return 'Carbonate recharge paused: the spatial/transfer audit is unresolved.';
   const fraction = Number(eventSpec.replace_fraction);

@@ -230,8 +230,28 @@ export function buildCard(name, spec, strip, science) {
 
   const env = {};
   for (const k of ['T', 'pH', 'Eh', 'salinity', 'O2', 'concentration']) {
-    const st = seriesStats(strip.chips[k]);
-    if (st) env[k] = st;
+    const chip = strip.chips[k];
+    const quantized = seriesStats(chip);
+    const raw = Array.isArray(strip.raw_environment?.[k])
+      ? seriesStats({ wall: strip.raw_environment[k], units: chip?.units || quantized?.units || '' })
+      : null;
+    const st = raw || quantized;
+    if (!st) continue;
+    st.source = raw ? 'raw_simulation_state' : 'quantized_spatial_chip';
+    if (raw && Array.isArray(chip?.range) && chip.range.length === 2) {
+      const [rangeMin, rangeMax] = chip.range.map(Number);
+      const lower = raw.min < rangeMin;
+      const upper = raw.max > rangeMax;
+      if (lower || upper) {
+        st.quantized_display_clipping = {
+          range: [rangeMin, rangeMax],
+          lower,
+          upper,
+          reported_values_use_raw_state: true,
+        };
+      }
+    }
+    env[k] = st;
   }
   // saturation drivers present in this scenario's chip set
   const si = {};
@@ -319,7 +339,10 @@ export function renderMarkdown(card) {
   L.push('');
   L.push(`## Environment trajectory (first → last, [min,max])`);
   for (const [k, v] of Object.entries(t.environment)) {
-    L.push(`  - ${k}: ${v.first} → ${v.last} ${v.units}  [${v.min}, ${v.max}]`);
+    const clipped = v.quantized_display_clipping
+      ? `; quantized display range [${v.quantized_display_clipping.range.join(', ')}] clipped, raw executed state reported`
+      : '';
+    L.push(`  - ${k}: ${v.first} → ${v.last} ${v.units}  [${v.min}, ${v.max}] (${v.source})${clipped}`);
   }
   L.push('');
   L.push(`## Saturation drivers`);

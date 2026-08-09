@@ -1057,6 +1057,21 @@
           "shape_seed": 24             // 24 hours = one tidal cycle
         }
       },
+      "carbonate_boundary": {
+        "schema": "carbonate-boundary-v1",
+        "mode": "open",
+        "spatial_model": "equal_volume_fully_mixed",
+        "simple_carbonate_phases": ["calcite", "aragonite", "dolomite", "HMC"],
+        "headspace_L_per_kg_water": 1.0,
+        "target_pCO2_bar": 4.2e-4,
+        // Explicit 25 C initialization from the authored 300 ppm DIC-equivalent
+        // and pH 8.3 endmember. The reduced model omits salinity activity
+        // corrections at 120-250 per mil, so every receipt carries
+        // salinity_model_missing rather than claiming quantitative precision.
+        "initial_DIC_mol_kg": 0.004999166805532411,
+        "reduced_alkalinity_eq_per_kg": 0.00499182158415134,
+        "initialization": "authored_sabkha_DIC_and_reduced_alkalinity"
+      },
       "events": [
         // Twelve flood/evap pairs (one Kim cycle per pair) over 240 steps,
         // followed by a final seal event at step 245. flood at steps
@@ -3212,11 +3227,15 @@
         }
       },
       "carbonate_boundary": {
+        "schema": "carbonate-boundary-v1",
         "mode": "closed",
         "spatial_model": "equal_volume_fully_mixed",
-        "simple_caco3_phases": ["calcite", "aragonite"],
+        "simple_carbonate_phases": ["calcite", "aragonite"],
         "headspace_L_per_kg_water": 1.0,
-        "target_pCO2_bar": 0.22
+        "target_pCO2_bar": 0.22,
+        "initial_DIC_mol_kg": 0.008331944675887352,
+        "reduced_alkalinity_eq_per_kg": 0.005072005818966855,
+        "initialization": "authored_travertine_DIC_and_reduced_alkalinity"
       },
       "events": [
         { "step": 10, "type": "co2_degas_with_reheat", "name": "Upper Vent", "description": "The first downstream reach vents toward 0.08 bar pCO2", "target_pCO2_bar": 0.08, "reheat_C": 70 },

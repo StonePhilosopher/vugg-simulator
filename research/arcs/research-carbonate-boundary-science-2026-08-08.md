@@ -120,10 +120,12 @@ The retained headspace plus `DIC_mixed` then undergo closed equilibration.
 `DIC_in` and `Ac_in` are both mandatory finite inputs. A failed solve commits
 neither physical state nor either boundary-ledger leg.
 
-Calcite or aragonite precipitation/dissolution changes reduced alkalinity by
-`2 eq` per mole of CaCO3 transferred. This rule is not generalized to dolomite,
-basic/hydroxycarbonates, mixed solids, or arbitrary DIC edits. v1 accepts only an
-explicit calcite/aragonite transaction; every other observed DIC change emits
+Calcite, aragonite, dolomite, or HMC precipitation/dissolution changes reduced
+alkalinity by `2 eq` per mole of carbonate carbon transferred. Dolomite carries
+two carbonate carbons per formula unit and therefore four equivalents per
+formula mole. This rule is not generalized to basic/hydroxycarbonates or
+arbitrary DIC edits. v1 accepts only an explicit transaction from that four-phase
+allowlist; every other observed DIC change emits
 `solid_transfer_unresolved`, blocks equilibration, and leaves state unchanged.
 Accepted growth/dissolution zones emit mineral-tagged, local-fluid receipts.
 The controller converts their signed ppm changes to the equal-volume mean and
@@ -183,13 +185,14 @@ high-accuracy geochemical prediction.
 6. No boiling claim and no implicit H2O/H2S bookkeeping.
 7. State survives Creative setup, live edits, save/replay, hover diagnosis, strip
    recording, and the future worker snapshot format.
-8. Scenarios without `carbonate_boundary` remain byte-identical.
+8. Closed scenarios without `carbonate_boundary` remain byte-identical; an open
+   reservoir without one fails closed and records a configuration error.
 9. The travertine tutorial replaces fixed-percentage narration with ledger values.
 10. Typecheck, full tests, audit, scenario baselines, and conservation tests pass.
 11. A numerical root that does not bracket returns `no_bracket`/`nonfinite`,
     records a failed transaction, and does not mutate fluid or ledger state.
-12. The legacy fixed-DIC pH-only atmosphere remains baseline-compatible but is
-    visibly labeled “legacy heuristic” until each consumer is migrated.
+12. No runtime or Creative control can select the retired fixed-DIC pH-only
+    atmosphere.
 13. Accepted-zone receipts, not mineral presence, must exactly explain spatial
     DIC transfer; a residual on either the canonical mean or bulk handle blocks.
 14. Charge, recharge, and titration failures are atomic. Recharge records its
@@ -207,3 +210,34 @@ high-accuracy geochemical prediction.
 5. Migrate sabkha only after replacement events declare DIC + alkalinity and the
    high-salinity uncertainty is visible.
 6. Dr. Wise hostile review, then the worker-compatible command/snapshot tranche.
+
+## SIM 254 migration completion — 2026-08-08
+
+The remaining atmospheric consumer is retired. `VugSimulator` no longer calls
+the old `equilibratePHtoPCO2` comparison path: an open reservoir without a
+conserved boundary fails closed. Creative custom and scenario runs always create
+an explicit boundary from the player's initial DIC + pH pair, then expose open
+versus closed gas exchange, headspace volume, pCO2, and reduced alkalinity.
+“Solver off” was removed because it was an unphysical implementation switch,
+not a geological lever.
+
+Sabkha now authors its initial DIC and reduced alkalinity and treats every flood
+or evaporative pulse as a 100% replacement-water transaction with fixed incoming
+DIC and reduced alkalinity. The simple-carbonate transfer ledger admits only
+calcite, aragonite, dolomite, and HMC; all carry two equivalents per mole of
+carbonate carbon. Basic/hydroxycarbonates remain rejected. At seed 42 the full
+260-step run records 24 replacement transactions and 260 open-boundary solves,
+with zero failed/unresolved transactions and a maximum recharge carbon residual
+of `1.735e-18 mol/kg`. `salinity_model_missing` remains present throughout the
+35–250‰ cycle, so the numerical pH/DIC trajectory is explicitly qualitative.
+See `tools/sabkha-carbonate-observe.mjs`.
+
+The regenerated v254 seed-42 archive localizes all fleet drift to sabkha
+(`1/39` scenarios). The same six mineral species survive. Ordered dolomite stays
+at four crystals and increases from `163` to `170 µm`; HMC moves from 27 to 25
+nuclei and calcite from 5 to 15, moving the total from 53 to 61. The largest
+carbonate saturation-index difference from v253 is `0.063 log Ω`. This is
+threshold-scale phase partitioning caused by the newly explicit conserved
+replacement-water inventory, not an unlocalized engine change. It remains a
+qualitative high-salinity prediction pending a Pitzer-class activity model and
+must not be presented as a quantitative abundance forecast.

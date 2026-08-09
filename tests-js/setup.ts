@@ -438,6 +438,7 @@ const EXPORTS = [
   'setCarbonateBoundaryReducedAlkalinityState',
   'titrateCarbonateBoundaryToPHState',
   'recordSimpleCaCO3SolidTransferState',
+  'recordSimpleCarbonateSolidTransferState',
   'recordUnresolvedCarbonateTransferState',
   'getCarbonateLogKsp',
   'getCarbonateKsp',

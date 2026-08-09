@@ -222,10 +222,16 @@ function auditLiveSaveReplay(registry, api) {
       expected[field] = canonical;
       api.setBrothValue(control.liveKey, String(canonical * control.scale));
       const now = api._liveFortressSim()?.conditions?.fluid?.[field];
-      if (!Object.is(Number(now), Number(canonical))) {
+      if (field !== 'CO3' && field !== 'pH' && !Object.is(Number(now), Number(canonical))) {
         errors.push(`${field}: live DOM adapter wrote ${now}, expected ${canonical}`);
       }
     }
+    // Conserved-carbon Creative runs treat live DIC as explicit replacement
+    // water and solve pH from reduced alkalinity. Their resulting values are
+    // the replay contract; neither is an independent post-solve assignment.
+    const conservedFluid = api._liveFortressSim()?.conditions?.fluid;
+    expected.CO3 = Number(conservedFluid?.CO3);
+    expected.pH = Number(conservedFluid?.pH);
     // Editing either explicit dissolved reservoir must update the aggregate
     // S ledger; elemental S remains a separate solid reservoir.
     const liveFluid = api._liveFortressSim()?.conditions?.fluid;

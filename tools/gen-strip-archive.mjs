@@ -120,7 +120,22 @@ function archiveScenario(name, seed = 42) {
   const sim = new VugSimulator(conditions, events);
   const rec = new StripRecorder(sim, { duration_steps: steps, notes: `archive ${name}` });
   sim._stripRecorder = rec;
-  for (let i = 0; i < steps; i++) sim.run_step();
+  // Preserve exact executed global state alongside the quantized spatial chips.
+  // Chip ranges are visualization ranges and may clamp extreme values (sabkha
+  // salinity reaches an authored 250 psu while its helix display tops at 200).
+  // Review testimony must never mistake that display clamp for measured state.
+  const rawEnvironment = Object.fromEntries(
+    ['T', 'pH', 'Eh', 'salinity', 'O2', 'concentration'].map((key) => [key, []]),
+  );
+  for (let i = 0; i < steps; i++) {
+    sim.run_step();
+    const fluid = sim.conditions?.fluid || {};
+    rawEnvironment.T.push(Number.isFinite(Number(sim.conditions?.temperature))
+      ? Number(sim.conditions.temperature) : null);
+    for (const key of ['pH', 'Eh', 'salinity', 'O2', 'concentration']) {
+      rawEnvironment[key].push(Number.isFinite(Number(fluid[key])) ? Number(fluid[key]) : null);
+    }
+  }
   const ds = rec.finalize();
 
   const D = (ds.manifest.axes.depth_positions && ds.manifest.axes.depth_positions > 0)
@@ -160,6 +175,7 @@ function archiveScenario(name, seed = 42) {
     recorded_at: ds.manifest.recorded_at ?? null,
     steps: ds.manifest.axes.steps,
     depth_positions: D,
+    raw_environment: rawEnvironment,
     chips,
     nucleation_events: ds.nucleation_events,
     executed_testimony: {

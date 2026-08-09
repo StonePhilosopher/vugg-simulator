@@ -27,10 +27,16 @@ single execution ledger for the science-first AAA completion branch.
 - [x] Conserved DIC / reduced alkalinity / CO2-headspace boundary with explicit
   open, closed, charge, vent, recharge, and uncertainty semantics. Evidence:
   `research/arcs/research-carbonate-boundary-science-2026-08-08.md`,
-  `tools/carbonate-boundary-observe.mjs`, 39 regenerated v251 strips, and AI Dr.
-  Wise `SATISFIED` on 2026-08-08.
-- [ ] Retire each fixed-DIC pH-only atmospheric consumer after migration; until
-  then label the old path “legacy heuristic” everywhere it can be selected.
+  `tools/carbonate-boundary-observe.mjs`, 39 regenerated v254 strips, and
+  `proposals/HOSTILE-REVIEW-DR-WISE-SIM254-2026-08-08.md`.
+- [x] Retire every fixed-DIC pH-only atmospheric consumer. Open reservoirs now
+  fail closed without conserved DIC + reduced alkalinity, and Creative always
+  constructs the conserved state; the false “solver off” control is gone.
+  Initialization/configuration failures remain permanently blocked through the
+  real run loop. Evidence: SIM 254,
+  `tests-js/carbonate-boundary-conservation.test.ts`,
+  `tests-js/carbonate-localization-equilibration.test.ts`, and
+  `tests-js/creative-controls.test.ts`.
 - [x] Immutable, serializable simulation commands and snapshots; worker-compatible
   progressive execution, cancellation, deterministic parity, and recovery.
   Evidence: `js/85l-simulation-command-protocol.ts` and
@@ -64,8 +70,14 @@ single execution ledger for the science-first AAA completion branch.
   evidence supports a continuous solution.
 - [ ] Thermal field localization: per-voxel temperature transport/source commands
   and flow-aligned gradients, consumed by growth and recorded in zones.
-- [ ] Complete open-system carbonate migration for travertine and sabkha after the
-  reduced model's validity/uncertainty receipts exist.
+- [x] Complete open-system carbonate migration for travertine and sabkha.
+  Travertine pins its initial DIC/alkalinity and authored vent receipts; sabkha
+  runs 24 explicit replacement-water transactions with no unresolved transfer,
+  while `salinity_model_missing` keeps its high-salinity results qualitative.
+  Evidence: `tools/carbonate-boundary-observe.mjs`,
+  `tools/sabkha-carbonate-observe.mjs`, and
+  `tests-js/carbonate-boundary-conservation.test.ts`; AI Dr. Wise returned
+  `SATISFIED` after the permanent fail-closed and raw-salinity review loop.
 
 ## P2 — scenario and content science
 

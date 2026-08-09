@@ -353,6 +353,10 @@ describe('Creative chemistry control contract', () => {
     expect(result.initialWaterTablePct).toBe(62.5);
     expect(result.scenarioOpts.open_to_atmosphere).toBe(true);
     expect(result.scenarioOpts.atmospheric_pCO2_bar).toBeCloseTo(0.01, 8);
+    expect(result.scenarioOpts.carbonate_boundary).toMatchObject({
+      mode: 'open',
+      spatial_model: 'equal_volume_fully_mixed',
+    });
   });
 
   it('applies live environmental and host edits to their physics-bearing state', () => {
@@ -382,10 +386,25 @@ describe('Creative chemistry control contract', () => {
     expect(sim.conditions.wall.inter_ring_diffusion_rate).toBe(0.03);
     expect(sim.conditions._scenario.atmospheric_pCO2_bar).toBeCloseTo(0.01, 8);
     expect(sim.conditions._scenario.open_to_atmosphere).toBe(true);
+    expect(sim._carbonateBoundaryState).toBeTruthy();
+    expect(sim._carbonateBoundaryState.mode).toBe('open');
     expect(sim.conditions.wall.composition).toBe('dolomite');
     expect(sim.wall_state.composition).toBe('dolomite');
     expect(sim.conditions.wall.open_system).toBe(true);
     expect(sim.conditions.wall.graphitic).toBe(false);
+  });
+
+  it('does not expose the retired fixed-DIC carbon-solver-off path', () => {
+    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    expect(parsed.getElementById('f-carbon-boundary')).toBeNull();
+    expect(parsed.getElementById('broth-carbon_boundary')).toBeNull();
+    expect(html).not.toContain('open (legacy if solver off)');
+    (globalThis as any).fortressBeginFromScenario('cooling', 8130);
+    const sim = (globalThis as any)._liveFortressSim();
+    expect(sim._carbonateBoundaryState).toBeTruthy();
+    expect(sim.conditions._scenario.carbonate_boundary.initial_DIC_mol_kg).toBeGreaterThan(0);
+    expect(sim.conditions._scenario.carbonate_boundary.reduced_alkalinity_eq_per_kg)
+      .toEqual(expect.any(Number));
   });
 
   it('keeps authored preset wall defaults visible in the exact setup controls', () => {

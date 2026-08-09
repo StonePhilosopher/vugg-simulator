@@ -3804,15 +3804,10 @@ Scenarios:
       <input type="range" id="f-shape-seed" min="0" max="65535" value="0" step="1" oninput="document.getElementById('f-shape-seed-val').textContent=this.value">
       <span class="range-val" id="f-shape-seed-val">0</span>
     </div>
-    <div class="setup-row" title="Select an open gas reservoir. With Conserved carbon off, this uses the visibly legacy fixed-DIC pH-only heuristic.">
+    <div class="setup-row" title="Select an open or closed CO₂ reservoir. DIC, reduced alkalinity, headspace CO₂, and boundary fluxes are always conserved and receipted.">
       <label for="f-open-atmosphere">Open CO₂ reservoir</label>
       <input type="checkbox" id="f-open-atmosphere" style="width:auto;flex:0 0 auto;margin-right:0.4rem;">
-      <span class="range-val">closed (legacy if solver off)</span>
-    </div>
-    <div class="setup-row" title="Track DIC, reduced carbonate alkalinity, gas-phase CO₂, and exact boundary fluxes. Off retains the legacy pH-only reservoir for comparison.">
-      <label for="f-carbon-boundary">Conserved carbon</label>
-      <input type="checkbox" id="f-carbon-boundary" style="width:auto;flex:0 0 auto;margin-right:0.4rem;">
-      <span class="range-val">legacy/off</span>
+      <span class="range-val">closed</span>
     </div>
     <div class="setup-row" title="Authored gas control volume per kilogram of water; used by the closed aqueous-headspace mass balance.">
       <label for="f-carbon-headspace">CO₂ headspace</label>
@@ -4596,15 +4591,14 @@ Scenarios:
             <input type="range" id="broth-pco2" min="-600" max="0" value="-338" step="1" oninput="setBrothValue('pco2',this.value)">
             <span class="broth-val" id="broth-pco2-val">4.17e-4 bar</span>
           </div>
-          <div class="broth-slider-row" title="Enable the conserved DIC + reduced-alkalinity + CO₂-headspace solver. Changes are event-sourced into saves."><label for="broth-carbon_boundary">Carbon solver</label><select id="broth-carbon_boundary" oninput="setBrothValue('carbon_boundary',this.value)"><option value="0">legacy / off</option><option value="1">conserved boundary</option></select><span class="broth-val" id="broth-carbon_boundary-val">legacy / off</span></div>
           <div class="broth-slider-row" title="Gas control volume per kilogram of water for closed-system mass balance."><label>CO₂ headspace</label><input type="range" id="broth-carbon_headspace" min="0" max="500" value="100" step="1" oninput="setBrothValue('carbon_headspace',this.value)"><span class="broth-val" id="broth-carbon_headspace-val">1.00 L/kg</span></div>
           <div class="broth-slider-row" title="Conserved acid/base capacity. Editing this performs an explicit strong-acid/base titration; pH is solved, not independently assigned."><label>Reduced alkalinity</label><input type="range" id="broth-carbon_alkalinity" min="-500" max="5000" value="200" step="1" oninput="setBrothValue('carbon_alkalinity',this.value)"><span class="broth-val" id="broth-carbon_alkalinity-val">2.000 meq/kg</span></div>
           <div class="broth-slider-row"><label for="broth-host">Host rock</label><select id="broth-host" oninput="setBrothValue('host',this.value)"><option value="limestone">limestone</option><option value="dolomite">dolomite</option><option value="pegmatite">pegmatite / granite</option><option value="basalt">basalt / mafic</option><option value="sandstone">sandstone</option><option value="phonolite">phonolite</option><option value="ultramafic">ultramafic</option></select><span class="broth-val" id="broth-host-val">limestone</span></div>
-          <div class="broth-slider-row" title="With the conserved solver off, open exchange is a legacy fixed-DIC pH-only heuristic."><label for="broth-open_atmosphere">CO₂ boundary</label><select id="broth-open_atmosphere" oninput="setBrothValue('open_atmosphere',this.value)"><option value="0">closed</option><option value="1">open (legacy if solver off)</option></select><span class="broth-val" id="broth-open_atmosphere-val">closed</span></div>
+          <div class="broth-slider-row" title="Switch the conserved carbonate controller between a closed headspace and an open authored pCO₂ reservoir."><label for="broth-open_atmosphere">CO₂ boundary</label><select id="broth-open_atmosphere" oninput="setBrothValue('open_atmosphere',this.value)"><option value="0">closed</option><option value="1">open reservoir</option></select><span class="broth-val" id="broth-open_atmosphere-val">closed</span></div>
           <div class="broth-slider-row"><label for="broth-open_system">System</label><select id="broth-open_system" oninput="setBrothValue('open_system',this.value)"><option value="0">finite cavity</option><option value="1">open surface</option></select><span class="broth-val" id="broth-open_system-val">finite cavity</span></div>
           <div class="broth-slider-row"><label for="broth-graphitic">Carbon host</label><select id="broth-graphitic" oninput="setBrothValue('graphitic',this.value)"><option value="0">non-graphitic</option><option value="1">graphitic</option></select><span class="broth-val" id="broth-graphitic-val">non-graphitic</span></div>
           <div class="broth-slider-row"><label for="broth-thermal_pulses">Heat source</label><select id="broth-thermal_pulses" oninput="setBrothValue('thermal_pulses',this.value)"><option value="1">thermal pulses</option><option value="0">no pulses</option></select><span class="broth-val" id="broth-thermal_pulses-val">enabled</span></div>
-          <div id="carbonate-boundary-readout" role="status" aria-live="polite" style="grid-column:1/-1;padding:0.65rem 0.75rem;border:1px solid rgba(112,210,190,.3);border-radius:6px;font-size:0.76rem;line-height:1.45;color:#bcd8d2;">Conserved carbonate boundary is off.</div>
+          <div id="carbonate-boundary-readout" role="status" aria-live="polite" style="grid-column:1/-1;padding:0.65rem 0.75rem;border:1px solid rgba(112,210,190,.3);border-radius:6px;font-size:0.76rem;line-height:1.45;color:#bcd8d2;">Conserved carbonate boundary is initializing.</div>
         </div>
 
         <div class="broth-snapshot-row" id="broth-snapshots">
@@ -18961,7 +18955,23 @@ function scenarioSpecHash(spec) {
 //       with barite 36→28, celestine 7→5, and chalcedony 6→3. The other 38
 //       scenario baselines are identical. The 12-scenario compact chemistry
 //       digest is numerically identical after version/digest normalization.
-const SIM_VERSION = 253;
+// v254 — CONSERVED ATMOSPHERIC CARBON ONLY (2026-08-08).
+//       The fixed-DIC/pH-only atmospheric fallback is retired. Open CO2
+//       reservoirs now fail closed without an explicit conserved DIC + reduced
+//       alkalinity boundary, and Creative always constructs that boundary from
+//       the player's authored initial DIC/pH pair. Sabkha now declares its
+//       initial inventory and executes each flood/evap endmember as a 100%
+//       replacement-water transaction with separate carbon import/export and
+//       explicit reduced alkalinity. Its 35-250 per mil brines retain the
+//       salinity_model_missing flag: carbonate results there are qualitative,
+//       not falsely activity-corrected. Tutorial travertine's formerly implicit
+//       initial inventory is now pinned in scenarios.json5. The regenerated
+//       seed-42 fleet confirms drift in sabkha only (1/39 stories): the same six
+//       mineral species survive, ordered dolomite remains 4 crystals and grows
+//       163 -> 170 um, while threshold-scale partitioning shifts HMC 27 -> 25
+//       and calcite 5 -> 15 (total nuclei 53 -> 61). The largest carbonate-SI
+//       shift is 0.063 log Omega; all other scenario stories are unchanged.
+const SIM_VERSION = 254;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -18993,6 +19003,7 @@ const MODEL_DIGEST = [
     'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',
     'dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3',
     'fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3',
+    'carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge-v2',
     'engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3',
     'beryl:K36-postHF-recovery-v1',
     'halite:vadose-propensity0.8-v1',
@@ -20933,11 +20944,18 @@ function equilibriumPCO2(fluid, T_celsius) {
 // =============================================================
 //
 // These helpers are deliberately pure/serializable. They are the numerical
-// kernel for the opt-in boundary controller; scenarios that do not declare a
-// carbonate_boundary never call them and retain their legacy trajectory.
+// kernel for the explicit boundary controller. Closed scenarios may omit a
+// carbonate_boundary and retain their closed-system trajectory; an open CO2
+// reservoir without this state is a configuration error and fails closed.
 const CARBONATE_SURROGATE_G_MOL = 60.01;
 const ATM_IN_BAR = 1.01325;
 const GAS_R_L_BAR_MOL_K = 0.08314462618;
+// Minerals whose accepted-zone DIC debit is exactly carbonate transfer at
+// two equivalents of reduced alkalinity per mole C. Basic/hydroxycarbonates
+// are deliberately excluded because their proton stoichiometry differs.
+const SIMPLE_CARBONATE_TRANSFER_MINERALS = Object.freeze([
+    'calcite', 'aragonite', 'dolomite', 'HMC',
+]);
 function dicPpmToMolKg(ppmAsCO3) {
     return Math.max(0, Number(ppmAsCO3) || 0) / (1000 * CARBONATE_SURROGATE_G_MOL);
 }
@@ -21114,28 +21132,118 @@ function carbonateBoundaryUncertainties(fluid, T_celsius, fluidPressureKbar, pCO
     }
     return out;
 }
+// Build the complete conserved-boundary declaration used by Creative mode.
+// DIC and pH are both player-authored initial conditions here; converting that
+// pair into reduced carbonate alkalinity is an explicit initialization
+// transaction, not a continuing fixed-DIC pH shortcut.
+function createConservedCarbonateBoundaryConfig(fluid, T_celsius, opts = {}) {
+    const initialDICMolKg = dicPpmToMolKg(fluid?.CO3);
+    const initialPH = Number.isFinite(fluid?.pH) ? Number(fluid.pH) : 7;
+    const requestedSimplePhases = Array.isArray(opts.simple_carbonate_phases)
+        ? opts.simple_carbonate_phases.map((phase) => String(phase))
+        : [...SIMPLE_CARBONATE_TRANSFER_MINERALS];
+    return {
+        schema: 'carbonate-boundary-v1',
+        mode: opts.mode === 'open' ? 'open' : 'closed',
+        spatial_model: 'equal_volume_fully_mixed',
+        simple_carbonate_phases: Array.from(new Set(requestedSimplePhases)),
+        target_pCO2_bar: Math.max(1e-12, Number(opts.target_pCO2_bar) || 4.2e-4),
+        headspace_L_per_kg_water: Math.max(0, Number.isFinite(opts.headspace_L_per_kg_water)
+            ? Number(opts.headspace_L_per_kg_water) : 1),
+        initial_DIC_mol_kg: initialDICMolKg,
+        reduced_alkalinity_eq_per_kg: reducedCarbonateAlkalinityEqKg(initialDICMolKg, initialPH, T_celsius),
+        initialization: opts.initialization || 'explicit_initial_DIC_plus_pH_to_reduced_alkalinity',
+    };
+}
 function createCarbonateBoundaryState(fluid, T_celsius, opts = {}) {
     const dicMolKg = dicPpmToMolKg(fluid?.CO3);
-    const pH = Number.isFinite(fluid?.pH) ? Number(fluid.pH) : 7;
-    const pCO2Bar = _pCO2BarFromDICAndPH(dicMolKg, pH, T_celsius);
+    const observedPH = Number.isFinite(fluid?.pH) ? Number(fluid.pH) : 7;
     const headspaceLKg = Math.max(0, Number(opts.headspace_L_per_kg_water) || 0);
+    const hasAuthoredInitialDIC = Number.isFinite(opts.initial_DIC_mol_kg);
+    const authoredInitialDIC = hasAuthoredInitialDIC ? Number(opts.initial_DIC_mol_kg) : dicMolKg;
+    const initialDICResidual = dicMolKg - authoredInitialDIC;
+    const initialDICMismatch = hasAuthoredInitialDIC
+        && Math.abs(initialDICResidual) > Math.max(1e-15, Math.abs(authoredInitialDIC) * 1e-12);
+    const hasAuthoredAlkalinity = Number.isFinite(opts.reduced_alkalinity_eq_per_kg);
+    const authoredAlkalinity = hasAuthoredAlkalinity
+        ? Number(opts.reduced_alkalinity_eq_per_kg)
+        : reducedCarbonateAlkalinityEqKg(dicMolKg, observedPH, T_celsius);
+    const derivedPHResult = hasAuthoredAlkalinity
+        ? solvePHForReducedCarbonateAlkalinityResult(authoredInitialDIC, authoredAlkalinity, T_celsius)
+        : { ok: true, pH: observedPH, residualEqKg: 0 };
+    const derivedPH = derivedPHResult.ok ? Number(derivedPHResult.pH) : observedPH;
+    const initialPHResidual = observedPH - derivedPH;
+    const initialPHMismatch = hasAuthoredAlkalinity && (!derivedPHResult.ok
+        || Math.abs(initialPHResidual) > Math.max(1e-10, Math.abs(observedPH) * 1e-10));
+    const configuredSimplePhases = Array.isArray(opts.simple_carbonate_phases)
+        ? opts.simple_carbonate_phases.map((phase) => String(phase))
+        : [...SIMPLE_CARBONATE_TRANSFER_MINERALS];
+    const invalidSimplePhases = configuredSimplePhases.filter((phase) => !SIMPLE_CARBONATE_TRANSFER_MINERALS.includes(phase));
+    const initialTransactions = [];
+    if (initialDICMismatch)
+        initialTransactions.push({
+            ok: false,
+            kind: 'initialization_mismatch',
+            error: 'authored_initial_DIC_does_not_match_fluid_CO3',
+            authoredInitialDICMolKg: authoredInitialDIC,
+            observedInitialDICMolKg: dicMolKg,
+            residualMolKg: initialDICResidual,
+        });
+    if (initialPHMismatch)
+        initialTransactions.push({
+            ok: false,
+            kind: 'initialization_mismatch',
+            error: derivedPHResult.ok
+                ? 'authored_reduced_alkalinity_does_not_match_fluid_pH'
+                : `authored_reduced_alkalinity_${derivedPHResult.error || 'unsolvable'}`,
+            authoredInitialDICMolKg: authoredInitialDIC,
+            authoredReducedAlkalinityEqKg: authoredAlkalinity,
+            observedInitialPH: observedPH,
+            derivedInitialPH: derivedPHResult.ok ? derivedPH : null,
+            residualPH: derivedPHResult.ok ? initialPHResidual : null,
+        });
+    if (invalidSimplePhases.length)
+        initialTransactions.push({
+            ok: false,
+            kind: 'configuration_error',
+            error: 'unsupported_simple_carbonate_phase',
+            invalidSimpleCarbonatePhases: [...new Set(invalidSimplePhases)],
+            supportedSimpleCarbonatePhases: [...SIMPLE_CARBONATE_TRANSFER_MINERALS],
+        });
+    // Only a mutually consistent authored DIC + alkalinity pair may determine
+    // the gas inventory. A rejected declaration leaves the observed fluid's
+    // pH in charge, so even blocked diagnostic state cannot invent headspace C.
+    const initializationBlocked = initialDICMismatch || initialPHMismatch;
+    const configurationBlocked = invalidSimplePhases.length > 0;
+    const permanentBlocked = initializationBlocked || configurationBlocked;
+    const initialPHForGas = permanentBlocked ? observedPH : derivedPH;
+    const pCO2Bar = _pCO2BarFromDICAndPH(dicMolKg, initialPHForGas, T_celsius);
+    const headspaceCO2MolKg = _headspaceCO2MolKg(pCO2Bar, headspaceLKg, T_celsius);
     return {
         schema: 'carbonate-boundary-v1',
         mode: opts.mode === 'open' ? 'open' : 'closed',
         headspaceLKg,
         targetPCO2Bar: Math.max(1e-12, Number(opts.target_pCO2_bar) || pCO2Bar || 4.2e-4),
-        reducedAlkalinityEqKg: Number.isFinite(opts.reduced_alkalinity_eq_per_kg)
-            ? Number(opts.reduced_alkalinity_eq_per_kg)
-            : reducedCarbonateAlkalinityEqKg(dicMolKg, pH, T_celsius),
-        headspaceCO2MolKg: _headspaceCO2MolKg(pCO2Bar, headspaceLKg, T_celsius),
+        reducedAlkalinityEqKg: authoredAlkalinity,
+        headspaceCO2MolKg,
         boundaryImportMolKg: 0,
         boundaryExportMolKg: 0,
         lastDICMolKg: dicMolKg,
         lastBulkDICPpm: dicMolKgToPpm(dicMolKg),
         solidCarbonMolKg: 0,
-        initialSystemCarbonMolKg: dicMolKg + _headspaceCO2MolKg(pCO2Bar, headspaceLKg, T_celsius),
-        blocked: false,
-        transactions: [],
+        initialSystemCarbonMolKg: dicMolKg + headspaceCO2MolKg,
+        authoredInitialDICMolKg: authoredInitialDIC,
+        initialization: opts.initialization || (hasAuthoredInitialDIC
+            ? 'authored_DIC_and_reduced_alkalinity' : 'initial_fluid_DIC_plus_pH_compatibility_conversion'),
+        // Authored-state and schema failures are permanent for this simulator
+        // instance. A later clean spatial audit may clear a recoverable voxel/
+        // receipt block, but it must never rehabilitate inconsistent initial
+        // chemistry or an unsupported transfer phase.
+        initializationBlocked,
+        configurationBlocked,
+        permanentBlocked,
+        blocked: permanentBlocked,
+        transactions: initialTransactions,
         uncertainties: carbonateBoundaryUncertainties(fluid, T_celsius, Number(opts.fluid_pressure_kbar) || 0, pCO2Bar),
     };
 }
@@ -21378,15 +21486,15 @@ function titrateCarbonateBoundaryToPHState(state, fluid, T_celsius, targetPH, no
     }
     return tx;
 }
-function recordSimpleCaCO3SolidTransferState(state, aqueousCarbonDeltaMolKg, mineral, note = 'explicit simple CaCO3 transfer') {
+function recordSimpleCarbonateSolidTransferState(state, aqueousCarbonDeltaMolKg, mineral, note = 'explicit simple CaCO3 transfer') {
     const minerals = (Array.isArray(mineral) ? mineral : [mineral]).map(String);
-    if (!minerals.length || minerals.some((phase) => phase !== 'calcite' && phase !== 'aragonite')) {
+    if (!minerals.length || minerals.some((phase) => !SIMPLE_CARBONATE_TRANSFER_MINERALS.includes(phase))) {
         const failed = {
             ok: false,
             kind: 'solid_transfer_unresolved',
             note,
             minerals,
-            error: 'v1_supports_only_calcite_or_aragonite',
+            error: 'phase_requires_explicit_carbonate_proton_stoichiometry',
         };
         (state.transactions ||= []).push(failed);
         return failed;
@@ -21395,9 +21503,9 @@ function recordSimpleCaCO3SolidTransferState(state, aqueousCarbonDeltaMolKg, min
     const previous = Math.max(0, Number(state.lastDICMolKg) || 0);
     if (Math.abs(deltaAqueous) <= Math.max(1e-15, Math.abs(previous) * 1e-12))
         return null;
-    // Valid only for the explicitly named simple CaCO3 phases above. Basic and
-    // hydroxycarbonates have different proton/alkalinity stoichiometry and are
-    // deliberately rejected rather than silently forced through this rule.
+    // Valid only for the explicitly named simple carbonate phases above. One
+    // carbonate carbon carries two equivalents whether the phase is CaCO3,
+    // Mg-substituted CaCO3, or CaMg(CO3)2. Basic/hydroxycarbonates are rejected.
     state.reducedAlkalinityEqKg += 2 * deltaAqueous;
     state.solidCarbonMolKg = Math.max(0, (Number(state.solidCarbonMolKg) || 0) - deltaAqueous);
     state.lastDICMolKg = Math.max(0, (Number(state.lastDICMolKg) || 0) + deltaAqueous);
@@ -21413,6 +21521,9 @@ function recordSimpleCaCO3SolidTransferState(state, aqueousCarbonDeltaMolKg, min
     (state.transactions ||= []).push(tx);
     return tx;
 }
+// Compatibility alias for saved test/tool surfaces authored before dolomite
+// and HMC were admitted to the same per-carbon stoichiometric ledger.
+const recordSimpleCaCO3SolidTransferState = recordSimpleCarbonateSolidTransferState;
 function recordUnresolvedCarbonateTransferState(state, observedDICMolKg, note) {
     const observed = Math.max(0, Number(observedDICMolKg) || 0);
     const previous = Math.max(0, Number(state.lastDICMolKg) || 0);
@@ -56947,6 +57058,36 @@ function event_bisbee_final_drying(c) {
 // --- sabkha_dolomitization (Coorong/Persian Gulf cycling brine, Kim 2023 mechanism) ---
 // flood + evap each fire 12× via the supergene_acidification handler-reuse
 // precedent. Cycle number is preserved via the event `name` field.
+const SABKHA_CARBONATE_ENDMEMBERS = Object.freeze({
+    flood: Object.freeze({
+        dicMolKg: 0.0008331944675887352, // 50 ppm CO3-equivalent
+        reducedAlkalinityEqKg: 0.0008197637983922784, // pH 8.0 at 25 C
+    }),
+    evap: Object.freeze({
+        dicMolKg: 0.013331111481419763, // 800 ppm CO3-equivalent
+        reducedAlkalinityEqKg: 0.013401527005837206, // pH 8.4 at 32 C
+    }),
+});
+function _sabkhaRechargeCarbonateBoundary(c, endmember, note) {
+    const state = c._carbonateBoundaryState;
+    if (!state) {
+        c._pending_carbonate_boundary_violation = {
+            ok: false,
+            attemptedKind: 'recharge',
+            error: 'sabkha_replacement_requires_conserved_carbonate_boundary',
+            note,
+        };
+        return null;
+    }
+    const tx = rechargeCarbonateBoundaryState(state, c.fluid, c.temperature, 1, endmember.dicMolKg, endmember.reducedAlkalinityEqKg, note);
+    if (tx?.ok) {
+        c._pending_fluid_replace_fields = Array.from(new Set([
+            ...(c._pending_fluid_replace_fields || []),
+            'CO3', 'pH',
+        ]));
+    }
+    return tx;
+}
 function event_sabkha_flood(c) {
     // Absolute tidal-water replacement, not a relative offset to preserve in
     // each already-depleted voxel.
@@ -56956,7 +57097,6 @@ function event_sabkha_flood(c) {
     ];
     c.fluid.Mg = 800;
     c.fluid.Ca = 250;
-    c.fluid.CO3 = 50;
     c.fluid.Sr = 12;
     c.fluid.Na = 10500;
     c.fluid.Cl = 19000;
@@ -56969,9 +57109,9 @@ function event_sabkha_flood(c) {
     declareSulfurBoundaryReplacement(c, 'sabkha tidal seawater replacement', {
         sulfide: 0, sulfate: 2700, elemental: 0,
     });
-    c.fluid.pH = 8.0;
+    const carbonateTx = _sabkhaRechargeCarbonateBoundary(c, SABKHA_CARBONATE_ENDMEMBERS.flood, 'sabkha tidal seawater: 100% authored replacement-water recharge');
     c.flow_rate = 1.5;
-    return 'Flood pulse: low-alkalinity tidal seawater enters the lagoon. CO₃ crashes from sabkha brine levels back to ~50 ppm. Dolomite supersaturation drops below 1 — the disordered Ca/Mg surface layer detaches preferentially (Kim 2023 etch).';
+    return `Flood pulse: low-alkalinity tidal seawater replaces the pore water. The receipt books outgoing and incoming carbon separately, then the open pCO₂ boundary re-equilibrates DIC + pH${carbonateTx?.ok ? '' : ' (carbonate transaction BLOCKED)'}. The high-salinity activity model remains unavailable and is flagged, not hidden.`;
 }
 function event_sabkha_evap(c) {
     // Absolute evaporative-brine regime replacement.
@@ -56981,7 +57121,6 @@ function event_sabkha_evap(c) {
     ];
     c.fluid.Mg = 2000;
     c.fluid.Ca = 600;
-    c.fluid.CO3 = 800;
     c.fluid.Sr = 30;
     c.fluid.Na = 65000;
     c.fluid.Cl = 110000;
@@ -56994,10 +57133,10 @@ function event_sabkha_evap(c) {
     declareSulfurBoundaryReplacement(c, 'sabkha evaporative-brine replacement', {
         sulfide: 0, sulfate: 9000, elemental: 0,
     });
-    c.fluid.pH = 8.4;
     c.flow_rate = 0.1;
     c.temperature = 32;
-    return 'Evaporation pulse: sun bakes the lagoon. Brine reconcentrates to 250‰ (a_w≈0.77) and 32°C: gypsum remains the required primary precursor, while the Hardie phase selector opens replacement by anhydrite. Dolomite saturation also climbs back above 1; ordering ratchets up.';
+    const carbonateTx = _sabkhaRechargeCarbonateBoundary(c, SABKHA_CARBONATE_ENDMEMBERS.evap, 'sabkha evaporative brine: 100% authored replacement-water endmember');
+    return `Evaporation pulse: the authored 250‰ brine endmember replaces the pore water at 32°C. Carbon import/export and reduced alkalinity are explicit${carbonateTx?.ok ? '' : ' (carbonate transaction BLOCKED)'}; salinity_model_missing marks the carbonate solve as qualitative. Gypsum remains the required precursor while the Hardie selector controls anhydrite replacement.`;
 }
 function event_sabkha_final_seal(c) {
     c.flow_rate = 0.05;
@@ -57152,22 +57291,27 @@ function event_gsp_flood(c) {
 // DIC grows, and calcite (or any carbonate) supersaturates without
 // any other change.
 //
-// Couples deliberately with PROPOSAL-VOLATILE-GASES (Rock Bot,
-// 2026-05-04, on canonical) — when its volatiles dict lands, these
-// handlers will additionally update volatiles['CO2'] (i.e. the
-// gas-phase pCO₂). Until then, they manipulate only the aqueous
-// side: drop DIC, raise pH (degas) or raise DIC, drop pH (charge).
-// The pH shift is calibrated so the carbonate-system stays roughly
-// in equilibrium per equilibriumPCO2 — Phase 3c can refine via
-// proper Newton iteration on the Bjerrum equations if needed.
+// Every handler requires the conserved DIC + reduced-alkalinity boundary.
+// Missing state is a recorded configuration violation and leaves the fluid,
+// temperature, and depositional mode untouched. There is no fixed-DIC or
+// fixed-pH fallback.
+function _refuseCO2EventWithoutConservedBoundary(c, attemptedKind, note) {
+    c._pending_carbonate_boundary_violation = {
+        ok: false,
+        kind: 'carbonate_boundary_required',
+        attemptedKind,
+        error: 'co2_event_requires_conserved_carbonate_boundary',
+        note,
+    };
+    return `CO₂ ${attemptedKind} refused: conserved DIC, reduced alkalinity, and an explicit gas boundary are required; no chemistry was mutated.`;
+}
 // CO₂ degassing — fluid loses CO₂ as gas (boiling, depressurization,
 // venting through a fracture). DIC drops; pH rises because each CO₂
 // leaving takes its conjugate H⁺ along (CO₂ + H₂O ⇌ H⁺ + HCO₃⁻
 // reverses).
 //
-// Default: removes 30% of DIC, raises pH by 0.5 (clamped at 9.5).
-// Scenarios can subclass via additional fields if/when needed; for
-// now this is the single canonical degas event.
+// The event solves to its authored gas boundary. It never removes a fixed
+// percentage or imposes a fixed pH increment.
 function event_co2_degas(c, eventSpec = {}) {
     const boundary = c._carbonateBoundaryState;
     if (boundary) {
@@ -57188,17 +57332,7 @@ function event_co2_degas(c, eventSpec = {}) {
             `${(tx.after.dicMolKg * 1000).toFixed(3)} mmol C/kg. Reduced carbonate ` +
             `alkalinity is conserved; no fixed pH increment or boiling claim is used.`);
     }
-    const oldDIC = c.fluid.CO3;
-    const oldPH = c.fluid.pH;
-    const fraction = 0.3;
-    c.fluid.CO3 = oldDIC * (1 - fraction);
-    c.fluid.pH = Math.min(9.5, oldPH + 0.5);
-    return (`CO₂ degasses — fluid loses ${(fraction * 100).toFixed(0)}% of its dissolved ` +
-        `inorganic carbon as gas. pH rises ${oldPH.toFixed(2)} → ${c.fluid.pH.toFixed(2)}; ` +
-        `DIC drops ${oldDIC.toFixed(0)} → ${c.fluid.CO3.toFixed(0)} ppm. ` +
-        `Carbonate supersaturation jumps because the CO₃²⁻ fraction of DIC grows ` +
-        `with pH (Bjerrum partition). The same mechanism that builds travertine ` +
-        `at hot springs and flowstone in caves.`);
+    return _refuseCO2EventWithoutConservedBoundary(c, 'vent', eventSpec.name || 'CO2 vent');
 }
 // Tutorial variant — combines CO₂ degas with re-heating to model an
 // active hot spring where new hot CO₂-rich fluid keeps arriving as
@@ -57233,34 +57367,15 @@ function event_co2_degas_with_reheat(c, eventSpec = {}) {
             `DIC ${(tx.after.dicMolKg * 1000).toFixed(3)} mmol C/kg. This is heat ` +
             `recharge, not an undeclared replacement-water or boiling shortcut.`);
     }
-    const oldDIC = c.fluid.CO3;
-    const oldPH = c.fluid.pH;
-    const oldT = c.temperature;
-    const fraction = 0.3;
-    c.fluid.CO3 = oldDIC * (1 - fraction);
-    c.fluid.pH = Math.min(9.5, oldPH + 0.5);
-    c.temperature = 75;
-    // This canonical event is an actively vented hot-spring recharge: repeated
-    // CO2 loss plates a terrace crust. Store the executed depositional pathway
-    // so calcite habit follows mechanism, not merely a Ca/DIC ratio that also
-    // occurs in sabkhas and cave drip films.
-    c._calciteDepositionalMode = 'travertine';
-    return (`Fresh hot pulse degasses — new CO₂-rich water from depth replaces ` +
-        `what cooled. T resets to ${c.temperature}°C; DIC drops ` +
-        `${oldDIC.toFixed(0)} → ${c.fluid.CO3.toFixed(0)} ppm as CO₂ escapes; ` +
-        `pH rises ${oldPH.toFixed(2)} → ${c.fluid.pH.toFixed(2)}. Each pulse ` +
-        `nudges the carbonate system toward calcite saturation: lower DIC, ` +
-        `higher pH means a much higher CO₃²⁻ fraction (Bjerrum cascade).`);
+    return _refuseCO2EventWithoutConservedBoundary(c, 'heated_vent', eventSpec.name || 'heated CO2 vent');
 }
 // CO₂ charge — fresh fluid pulse with elevated pCO₂ (deep magmatic
 // source, organic decay seep, fresh meteoric water that picked up
 // soil-zone CO₂). DIC rises; pH drops because new CO₂ adds H⁺ via
 // CO₂ + H₂O → H⁺ + HCO₃⁻.
 //
-// Default: adds 100 ppm DIC, drops pH by 0.5 (clamped at 4.0).
-// Carbonates already in the cavity become subsaturated — they may
-// dissolve and free their cations back to the fluid, the
-// well-known "CO₂ pulse erodes existing speleothems" mechanism.
+// The event adds an authored pure-CO₂ amount to the declared headspace and
+// derives pH from DIC + alkalinity. It never adds fixed DIC or subtracts pH.
 function event_co2_charge(c, eventSpec = {}) {
     const boundary = c._carbonateBoundaryState;
     if (boundary) {
@@ -57282,16 +57397,7 @@ function event_co2_charge(c, eventSpec = {}) {
             `reduced carbonate alkalinity unchanged; solved pH ${oldPH.toFixed(2)} â†’ ` +
             `${c.fluid.pH.toFixed(2)}.`);
     }
-    const oldDIC = c.fluid.CO3;
-    const oldPH = c.fluid.pH;
-    const addDIC = 100;
-    c.fluid.CO3 = oldDIC + addDIC;
-    c.fluid.pH = Math.max(4.0, oldPH - 0.5);
-    return (`Magmatic CO₂ pulse — fresh fluid carrying elevated pCO₂ enters the cavity. ` +
-        `DIC rises ${oldDIC.toFixed(0)} → ${c.fluid.CO3.toFixed(0)} ppm; ` +
-        `pH drops ${oldPH.toFixed(2)} → ${c.fluid.pH.toFixed(2)}. ` +
-        `Existing carbonates may begin to corrode as σ drops below 1; the fluid ` +
-        `is now more aggressive toward limestone walls and any pre-existing calcite.`);
+    return _refuseCO2EventWithoutConservedBoundary(c, 'charge', eventSpec.name || 'pure CO2 charge');
 }
 // Replacement-water recharge. Both incoming DIC and reduced carbonate
 // alkalinity are mandatory authored boundary conditions. This is deliberately
@@ -57300,7 +57406,7 @@ function event_co2_charge(c, eventSpec = {}) {
 function event_carbonate_recharge(c, eventSpec = {}) {
     const boundary = c._carbonateBoundaryState;
     if (!boundary) {
-        return 'Carbonate recharge refused: this scenario uses the legacy fixed-DIC heuristic and has no conserved boundary.';
+        return 'Carbonate recharge refused: conserved DIC, reduced alkalinity, and a gas boundary are required.';
     }
     if (boundary.blocked)
         return 'Carbonate recharge paused: the spatial/transfer audit is unresolved.';
@@ -60314,12 +60420,11 @@ class VugSimulator {
         if (this._carbonateBoundaryState) {
             this.conditions._carbonateBoundaryState = this._carbonateBoundaryState;
         }
-        // One authored scenario still uses the pre-boundary atmospheric comparison
-        // while its full open-system migration is being validated. Keep that
-        // selectable path scientifically explicit in runtime output; Creative's
-        // live readout carries the same label.
-        this._legacyCarbonateHeuristicActive = !!(this.conditions?._scenario?.open_to_atmosphere
-            && !this._carbonateBoundaryState);
+        // An open gas reservoir without DIC + reduced alkalinity is not a usable
+        // scientific state. The retired fallback changed pH at fixed DIC and
+        // silently created/destroyed acid-base capacity.
+        this._carbonateBoundaryConfigurationError = !!(this.conditions?._scenario?.open_to_atmosphere
+            && !this._carbonateBoundaryState) ? 'open_CO2_reservoir_requires_conserved_carbonate_boundary' : null;
         // FLUID-SOURCE SPOTS (js/85k, PROPOSAL §10) Phase 2a — seed the spot set off
         // the cavity seed now that the mesh (→ cell count) exists. Uses a DEDICATED
         // _mulberry32(shape_seed ^ SPOTS_SALT) stream, independent of the shared rng,
@@ -60351,13 +60456,13 @@ class VugSimulator {
         this.log = [];
         this.step++;
         this.conditions._sim_step = this.step;
-        if (this.step === 1 && this._legacyCarbonateHeuristicActive) {
-            this.log.push('  ⚠ Carbonate boundary: LEGACY HEURISTIC — atmospheric exchange changes pH at fixed DIC; carbon and reduced alkalinity are not conserved.');
+        if (this.step === 1 && this._carbonateBoundaryConfigurationError) {
+            this.log.push('  ⛔ Carbonate boundary BLOCKED — an open CO₂ reservoir requires conserved DIC, reduced alkalinity, and an explicit gas boundary. No atmospheric chemistry was applied.');
         }
         // Equal-volume, fully mixed carbonate v1 audits the canonical wet voxels
         // before any event sees the bulk handle. This is where explicitly scoped
-        // calcite/aragonite transfer is booked; undeclared DIC changes block the
-        // boundary rather than being relabelled as CaCO3.
+        // calcite/aragonite/dolomite/HMC transfer is booked; undeclared DIC changes
+        // block the boundary rather than being relabelled as a simple carbonate.
         if (this._carbonateBoundaryState)
             this._prepareCarbonateBoundarySpatialState();
         // Phase C v1: events apply to conditions.fluid (= equator ring
@@ -63444,6 +63549,15 @@ Object.assign(VugSimulator.prototype, {
         const config = this.conditions?._scenario?.carbonate_boundary;
         if (!state || !config)
             return false;
+        // Initialization and configuration failures cannot be repaired by a
+        // subsequent zero-residual voxel audit. Keep these distinct from the
+        // recoverable spatial/receipt blocks below, which a later clean step may
+        // legitimately clear.
+        if (state.permanentBlocked || state.initializationBlocked || state.configurationBlocked) {
+            state.permanentBlocked = true;
+            state.blocked = true;
+            return false;
+        }
         const receipts = Array.isArray(this.conditions._pending_carbonate_boundary_transfers)
             ? this.conditions._pending_carbonate_boundary_transfers.slice() : [];
         delete this.conditions._pending_carbonate_boundary_transfers;
@@ -63483,9 +63597,10 @@ Object.assign(VugSimulator.prototype, {
         const observedDIC = dicPpmToMolKg(meanCO3);
         const previous = Math.max(0, Number(state.lastDICMolKg) || 0);
         const delta = observedDIC - previous;
-        const allowed = Array.isArray(config.simple_caco3_phases)
-            ? config.simple_caco3_phases.filter((m) => m === 'calcite' || m === 'aragonite')
-            : [];
+        const declaredSimpleCarbonates = Array.isArray(config.simple_carbonate_phases)
+            ? config.simple_carbonate_phases
+            : Array.isArray(config.simple_caco3_phases) ? config.simple_caco3_phases : [];
+        const allowed = declaredSimpleCarbonates.filter((mineral) => SIMPLE_CARBONATE_TRANSFER_MINERALS.includes(mineral));
         const receiptDelta = receipts.reduce((sum, receipt) => sum
             + (Number(receipt.localAqueousCarbonDeltaPpm) || 0)
                 / (1000 * CARBONATE_SURROGATE_G_MOL * fluids.length), 0);
@@ -63525,7 +63640,7 @@ Object.assign(VugSimulator.prototype, {
         for (const receipt of receipts) {
             const receiptMolKg = (Number(receipt.localAqueousCarbonDeltaPpm) || 0)
                 / (1000 * CARBONATE_SURROGATE_G_MOL * fluids.length);
-            recordSimpleCaCO3SolidTransferState(state, receiptMolKg, String(receipt.mineral), `step ${this.step}: accepted zone ${receipt.crystalId ?? '?'} (${receipt.acceptedThicknessUm} um)`);
+            recordSimpleCarbonateSolidTransferState(state, receiptMolKg, String(receipt.mineral), `step ${this.step}: accepted zone ${receipt.crystalId ?? '?'} (${receipt.acceptedThicknessUm} um)`);
         }
         state.blocked = false;
         this.conditions.fluid.CO3 = meanCO3;
@@ -64543,8 +64658,8 @@ Object.assign(VugSimulator.prototype, {
         const scen = this.conditions && this.conditions._scenario;
         if (!scen)
             return;
-        // Conserved boundary v1 supersedes the legacy fixed-DIC pH solve only for
-        // explicit opt-ins. Reconcile intervening carbonate precipitation/
+        // Conserved boundary v1 is the only atmospheric-carbon path. Reconcile
+        // intervening carbonate precipitation/
         // dissolution at the CaCO3 stoichiometric alkalinity ratio, then solve the
         // declared open or closed gas boundary. Only the global concentration is
         // changed here; run_step wraps this call in the canonical event-delta
@@ -64571,68 +64686,9 @@ Object.assign(VugSimulator.prototype, {
             ]));
             return;
         }
-        if (typeof isOpenAtMeshVertex !== 'function')
-            return;
-        if (typeof equilibratePHtoPCO2 !== 'function')
-            return;
-        if (typeof atmosphericPCO2AtMeshVertex !== 'function')
-            return;
-        // Phase 1 uses scalar resolution (passing null mesh + vertex 0).
-        // The resolver shortcuts on scalars without touching the mesh.
-        // When a scenario writes per-region or per-vertex form, this loop
-        // will need the actual mesh — Phase 1c work.
-        const open = isOpenAtMeshVertex(scen, null, 0);
-        if (!open)
-            return;
-        const target = atmosphericPCO2AtMeshVertex(scen, null, 0);
-        // Global conditions fluid — sets the baseline subsequent
-        // _propagateGlobalDelta loops would see.
-        const cnd = this.conditions;
-        if (cnd && cnd.fluid) {
-            const newPH = equilibratePHtoPCO2(cnd.fluid, cnd.temperature, target);
-            if (typeof newPH === 'number' && isFinite(newPH)) {
-                cnd.fluid.pH = newPH;
-            }
-        }
-        // Per-ring fluids — the engines read ring_fluids directly for
-        // ring-aware supersat. Each ring sees its own equilibration at
-        // its own temperature (the atmosphere is well-mixed for Phase 1;
-        // T differences across rings can shift the equilibrium pH).
-        if (this.ring_fluids) {
-            for (let r = 0; r < this.ring_fluids.length; r++) {
-                const f = this.ring_fluids[r];
-                if (!f)
-                    continue;
-                const T = this.ring_temperatures
-                    ? (this.ring_temperatures[r] != null ? this.ring_temperatures[r] : cnd.temperature)
-                    : cnd.temperature;
-                const newPH = equilibratePHtoPCO2(f, T, target);
-                if (typeof newPH === 'number' && isFinite(newPH)) {
-                    f.pH = newPH;
-                }
-            }
-        }
-        // Per-vertex mesh cells — Tranche 4a un-aliased per-vertex fluids,
-        // so ring-level mutation doesn't reach them. Walk the mesh and
-        // equilibrate each cell's own fluid.
-        const mesh = this.wall_state && this.wall_state.meshFor
-            ? this.wall_state.meshFor(this)
-            : null;
-        if (mesh && mesh.cells) {
-            for (let i = 0; i < mesh.cells.length; i++) {
-                const cell = mesh.cells[i];
-                if (!cell || !cell.fluid)
-                    continue;
-                const ringIdx = cell.temperature_ring;
-                const T = (this.ring_temperatures && ringIdx >= 0 && ringIdx < this.ring_temperatures.length)
-                    ? this.ring_temperatures[ringIdx]
-                    : cnd.temperature;
-                const newPH = equilibratePHtoPCO2(cell.fluid, T, target);
-                if (typeof newPH === 'number' && isFinite(newPH)) {
-                    cell.fluid.pH = newPH;
-                }
-            }
-        }
+        // Fail closed. Standard closed scenarios may omit this controller, but an
+        // open reservoir never falls back to the retired fixed-DIC/pH-only path.
+        return;
     },
 });
 
@@ -77367,6 +77423,18 @@ function fortressBeginFromScenario(scenarioName, seedOverride) {
     const seed = (seedOverride != null) ? (seedOverride >>> 0) : (Date.now() >>> 0);
     rng = new SeededRandom(seed);
     const { conditions, events, defaultSteps } = make();
+    // Creative mode always exposes the mass-balanced carbon controls. Scenarios
+    // that do not need atmospheric exchange stay closed, but never drop into the
+    // retired fixed-DIC/pH-only path when the player opens the CO2 reservoir.
+    conditions._scenario ||= {};
+    if (!conditions._scenario.carbonate_boundary) {
+        conditions._scenario.carbonate_boundary = createConservedCarbonateBoundaryConfig(conditions.fluid, conditions.temperature, {
+            mode: conditions._scenario.open_to_atmosphere ? 'open' : 'closed',
+            target_pCO2_bar: conditions._scenario.atmospheric_pCO2_bar ?? 4.2e-4,
+            headspace_L_per_kg_water: 1,
+            initialization: 'creative_scenario_initial_DIC_plus_pH_to_reduced_alkalinity',
+        });
+    }
     fortressSim = new VugSimulator(conditions, events);
     _attachStripRecorderToSim(fortressSim, `fortress_${scenarioName}`, `Fortress — scenario: ${scenarioName}`);
     fortressActive = true;
@@ -79589,17 +79657,17 @@ function readCreativeGeologicalControls(baseWall = {}) {
         scenarioOpts: (() => {
             const open = !!document.getElementById('f-open-atmosphere')?.checked;
             const pCO2 = Math.pow(10, _creativeControlNumber('f-pco2', 100, -3.38));
-            const conserved = !!document.getElementById('f-carbon-boundary')?.checked;
             return {
                 open_to_atmosphere: open,
                 atmospheric_pCO2_bar: pCO2,
-                carbonate_boundary: conserved ? {
+                carbonate_boundary: {
                     mode: open ? 'open' : 'closed',
                     spatial_model: 'equal_volume_fully_mixed',
-                    simple_caco3_phases: ['calcite', 'aragonite'],
+                    simple_carbonate_phases: ['calcite', 'aragonite', 'dolomite', 'HMC'],
                     target_pCO2_bar: pCO2,
                     headspace_L_per_kg_water: _creativeControlNumber('f-carbon-headspace', 100, 1),
-                } : undefined,
+                    initialization: 'creative_explicit_initial_DIC_plus_pH_to_reduced_alkalinity',
+                },
             };
         })(),
     };
@@ -79722,6 +79790,15 @@ function _fortressBeginCustomFromParams(params, seedOverride) {
     const wall = new VugWall(Object.assign({}, wallOpts));
     const conditions = new VugConditions(Object.assign({ temperature: temp, pressure, fluid, wall }, params.conditionOpts || {}));
     conditions._scenario = Object.assign({}, params.scenarioOpts || {});
+    const requestedBoundary = conditions._scenario.carbonate_boundary || {};
+    conditions._scenario.carbonate_boundary = createConservedCarbonateBoundaryConfig(fluid, temp, {
+        ...requestedBoundary,
+        mode: conditions._scenario.open_to_atmosphere ? 'open' : 'closed',
+        target_pCO2_bar: conditions._scenario.atmospheric_pCO2_bar
+            ?? requestedBoundary.target_pCO2_bar,
+        initialization: requestedBoundary.initialization
+            || 'creative_explicit_initial_DIC_plus_pH_to_reduced_alkalinity',
+    });
     fortressSim = new VugSimulator(conditions, []);
     if (Number.isFinite(params.initialWaterTablePct)) {
         const pct = Math.max(0, Math.min(100, params.initialWaterTablePct));
@@ -80941,35 +81018,6 @@ const BROTH_MAP = {
         parse: v => Math.pow(10, parseFloat(v) / 100),
         toSlider: v => Math.log10(Math.max(1e-6, v)) * 100,
     },
-    carbon_boundary: {
-        path: '_scenario.carbonate_boundary',
-        get: () => !!fortressSim._carbonateBoundaryState,
-        set: v => {
-            fortressSim.conditions._scenario ||= {};
-            if (v) {
-                const scenario = fortressSim.conditions._scenario;
-                const config = scenario.carbonate_boundary || {
-                    mode: scenario.open_to_atmosphere ? 'open' : 'closed',
-                    spatial_model: 'equal_volume_fully_mixed',
-                    simple_caco3_phases: ['calcite', 'aragonite'],
-                    target_pCO2_bar: scenario.atmospheric_pCO2_bar ?? 4.2e-4,
-                    headspace_L_per_kg_water: 1,
-                };
-                scenario.carbonate_boundary = config;
-                fortressSim._carbonateBoundaryState = createCarbonateBoundaryState(fortressSim.conditions.fluid, fortressSim.conditions.temperature, { ...config, fluid_pressure_kbar: fortressSim.conditions.pressure });
-                fortressSim.conditions._carbonateBoundaryState = fortressSim._carbonateBoundaryState;
-            }
-            else {
-                delete fortressSim.conditions._scenario.carbonate_boundary;
-                delete fortressSim.conditions._carbonateBoundaryState;
-                fortressSim._carbonateBoundaryState = null;
-            }
-        },
-        fmt: v => v ? 'conserved boundary' : 'legacy / off',
-        parse: v => String(v) === '1',
-        toSlider: v => v ? '1' : '0',
-        valid: v => typeof v === 'boolean',
-    },
     carbon_headspace: {
         path: '_scenario.carbonate_boundary.headspace_L_per_kg_water',
         get: () => fortressSim._carbonateBoundaryState?.headspaceLKg
@@ -81371,7 +81419,7 @@ function updateCarbonateBoundaryReadout() {
         return;
     const state = fortressSim?._carbonateBoundaryState;
     if (!state) {
-        el.textContent = 'Conserved carbonate boundary is off. Open exchange uses the legacy fixed-DIC pH comparison model.';
+        el.textContent = 'BLOCKED · conserved carbonate state is unavailable. Open CO₂ exchange and direct pH/DIC edits are disabled.';
         return;
     }
     const fluid = fortressSim.conditions.fluid;

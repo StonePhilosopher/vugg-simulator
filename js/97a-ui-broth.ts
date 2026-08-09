@@ -171,38 +171,6 @@ const BROTH_MAP: Record<string, any> = {
     parse: v => Math.pow(10, parseFloat(v) / 100),
     toSlider: v => Math.log10(Math.max(1e-6, v)) * 100,
   },
-  carbon_boundary: {
-    path: '_scenario.carbonate_boundary',
-    get: () => !!fortressSim._carbonateBoundaryState,
-    set: v => {
-      fortressSim.conditions._scenario ||= {};
-      if (v) {
-        const scenario = fortressSim.conditions._scenario;
-        const config = scenario.carbonate_boundary || {
-          mode: scenario.open_to_atmosphere ? 'open' : 'closed',
-          spatial_model: 'equal_volume_fully_mixed',
-          simple_caco3_phases: ['calcite', 'aragonite'],
-          target_pCO2_bar: scenario.atmospheric_pCO2_bar ?? 4.2e-4,
-          headspace_L_per_kg_water: 1,
-        };
-        scenario.carbonate_boundary = config;
-        fortressSim._carbonateBoundaryState = createCarbonateBoundaryState(
-          fortressSim.conditions.fluid,
-          fortressSim.conditions.temperature,
-          { ...config, fluid_pressure_kbar: fortressSim.conditions.pressure },
-        );
-        fortressSim.conditions._carbonateBoundaryState = fortressSim._carbonateBoundaryState;
-      } else {
-        delete fortressSim.conditions._scenario.carbonate_boundary;
-        delete fortressSim.conditions._carbonateBoundaryState;
-        fortressSim._carbonateBoundaryState = null;
-      }
-    },
-    fmt: v => v ? 'conserved boundary' : 'legacy / off',
-    parse: v => String(v) === '1',
-    toSlider: v => v ? '1' : '0',
-    valid: v => typeof v === 'boolean',
-  },
   carbon_headspace: {
     path: '_scenario.carbonate_boundary.headspace_L_per_kg_water',
     get: () => fortressSim._carbonateBoundaryState?.headspaceLKg
@@ -607,7 +575,7 @@ function updateCarbonateBoundaryReadout() {
   if (!el) return;
   const state = fortressSim?._carbonateBoundaryState;
   if (!state) {
-    el.textContent = 'Conserved carbonate boundary is off. Open exchange uses the legacy fixed-DIC pH comparison model.';
+    el.textContent = 'BLOCKED · conserved carbonate state is unavailable. Open CO₂ exchange and direct pH/DIC edits are disabled.';
     return;
   }
   const fluid = fortressSim.conditions.fluid;

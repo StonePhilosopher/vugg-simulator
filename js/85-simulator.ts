@@ -234,14 +234,13 @@ class VugSimulator {
     if (this._carbonateBoundaryState) {
       this.conditions._carbonateBoundaryState = this._carbonateBoundaryState;
     }
-    // One authored scenario still uses the pre-boundary atmospheric comparison
-    // while its full open-system migration is being validated. Keep that
-    // selectable path scientifically explicit in runtime output; Creative's
-    // live readout carries the same label.
-    this._legacyCarbonateHeuristicActive = !!(
+    // An open gas reservoir without DIC + reduced alkalinity is not a usable
+    // scientific state. The retired fallback changed pH at fixed DIC and
+    // silently created/destroyed acid-base capacity.
+    this._carbonateBoundaryConfigurationError = !!(
       this.conditions?._scenario?.open_to_atmosphere
       && !this._carbonateBoundaryState
-    );
+    ) ? 'open_CO2_reservoir_requires_conserved_carbonate_boundary' : null;
     // FLUID-SOURCE SPOTS (js/85k, PROPOSAL §10) Phase 2a — seed the spot set off
     // the cavity seed now that the mesh (→ cell count) exists. Uses a DEDICATED
     // _mulberry32(shape_seed ^ SPOTS_SALT) stream, independent of the shared rng,
@@ -276,15 +275,15 @@ class VugSimulator {
     this.log = [];
     this.step++;
     this.conditions._sim_step = this.step;
-    if (this.step === 1 && this._legacyCarbonateHeuristicActive) {
+    if (this.step === 1 && this._carbonateBoundaryConfigurationError) {
       this.log.push(
-        '  ⚠ Carbonate boundary: LEGACY HEURISTIC — atmospheric exchange changes pH at fixed DIC; carbon and reduced alkalinity are not conserved.',
+        '  ⛔ Carbonate boundary BLOCKED — an open CO₂ reservoir requires conserved DIC, reduced alkalinity, and an explicit gas boundary. No atmospheric chemistry was applied.',
       );
     }
     // Equal-volume, fully mixed carbonate v1 audits the canonical wet voxels
     // before any event sees the bulk handle. This is where explicitly scoped
-    // calcite/aragonite transfer is booked; undeclared DIC changes block the
-    // boundary rather than being relabelled as CaCO3.
+    // calcite/aragonite/dolomite/HMC transfer is booked; undeclared DIC changes
+    // block the boundary rather than being relabelled as a simple carbonate.
     if (this._carbonateBoundaryState) this._prepareCarbonateBoundarySpatialState();
     // Phase C v1: events apply to conditions.fluid (= equator ring
     // fluid via aliasing). Snapshot before and propagate the delta to

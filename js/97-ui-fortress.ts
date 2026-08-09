@@ -811,17 +811,17 @@ function readCreativeGeologicalControls(baseWall: Record<string, any> = {}) {
     scenarioOpts: (() => {
       const open = !!(document.getElementById('f-open-atmosphere') as HTMLInputElement | null)?.checked;
       const pCO2 = Math.pow(10, _creativeControlNumber('f-pco2', 100, -3.38));
-      const conserved = !!(document.getElementById('f-carbon-boundary') as HTMLInputElement | null)?.checked;
       return {
         open_to_atmosphere: open,
         atmospheric_pCO2_bar: pCO2,
-        carbonate_boundary: conserved ? {
+        carbonate_boundary: {
           mode: open ? 'open' : 'closed',
           spatial_model: 'equal_volume_fully_mixed',
-          simple_caco3_phases: ['calcite', 'aragonite'],
+          simple_carbonate_phases: ['calcite', 'aragonite', 'dolomite', 'HMC'],
           target_pCO2_bar: pCO2,
           headspace_L_per_kg_water: _creativeControlNumber('f-carbon-headspace', 100, 1),
-        } : undefined,
+          initialization: 'creative_explicit_initial_DIC_plus_pH_to_reduced_alkalinity',
+        },
       };
     })(),
   };
@@ -953,6 +953,19 @@ function _fortressBeginCustomFromParams(params, seedOverride?) {
     params.conditionOpts || {},
   ));
   conditions._scenario = Object.assign({}, params.scenarioOpts || {});
+  const requestedBoundary = conditions._scenario.carbonate_boundary || {};
+  conditions._scenario.carbonate_boundary = createConservedCarbonateBoundaryConfig(
+    fluid,
+    temp,
+    {
+      ...requestedBoundary,
+      mode: conditions._scenario.open_to_atmosphere ? 'open' : 'closed',
+      target_pCO2_bar: conditions._scenario.atmospheric_pCO2_bar
+        ?? requestedBoundary.target_pCO2_bar,
+      initialization: requestedBoundary.initialization
+        || 'creative_explicit_initial_DIC_plus_pH_to_reduced_alkalinity',
+    },
+  );
 
   fortressSim = new VugSimulator(conditions, []);
   if (Number.isFinite(params.initialWaterTablePct)) {

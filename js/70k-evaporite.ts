@@ -10,6 +10,46 @@
 // --- sabkha_dolomitization (Coorong/Persian Gulf cycling brine, Kim 2023 mechanism) ---
 // flood + evap each fire 12× via the supergene_acidification handler-reuse
 // precedent. Cycle number is preserved via the event `name` field.
+const SABKHA_CARBONATE_ENDMEMBERS = Object.freeze({
+  flood: Object.freeze({
+    dicMolKg: 0.0008331944675887352,             // 50 ppm CO3-equivalent
+    reducedAlkalinityEqKg: 0.0008197637983922784, // pH 8.0 at 25 C
+  }),
+  evap: Object.freeze({
+    dicMolKg: 0.013331111481419763,              // 800 ppm CO3-equivalent
+    reducedAlkalinityEqKg: 0.013401527005837206, // pH 8.4 at 32 C
+  }),
+});
+
+function _sabkhaRechargeCarbonateBoundary(c, endmember, note) {
+  const state = c._carbonateBoundaryState;
+  if (!state) {
+    c._pending_carbonate_boundary_violation = {
+      ok: false,
+      attemptedKind: 'recharge',
+      error: 'sabkha_replacement_requires_conserved_carbonate_boundary',
+      note,
+    };
+    return null;
+  }
+  const tx = rechargeCarbonateBoundaryState(
+    state,
+    c.fluid,
+    c.temperature,
+    1,
+    endmember.dicMolKg,
+    endmember.reducedAlkalinityEqKg,
+    note,
+  );
+  if (tx?.ok) {
+    c._pending_fluid_replace_fields = Array.from(new Set([
+      ...(c._pending_fluid_replace_fields || []),
+      'CO3', 'pH',
+    ]));
+  }
+  return tx;
+}
+
 function event_sabkha_flood(c) {
   // Absolute tidal-water replacement, not a relative offset to preserve in
   // each already-depleted voxel.
@@ -19,7 +59,6 @@ function event_sabkha_flood(c) {
   ];
   c.fluid.Mg = 800;
   c.fluid.Ca = 250;
-  c.fluid.CO3 = 50;
   c.fluid.Sr = 12;
   c.fluid.Na = 10500;
   c.fluid.Cl = 19000;
@@ -32,9 +71,13 @@ function event_sabkha_flood(c) {
   declareSulfurBoundaryReplacement(c, 'sabkha tidal seawater replacement', {
     sulfide: 0, sulfate: 2700, elemental: 0,
   });
-  c.fluid.pH = 8.0;
+  const carbonateTx = _sabkhaRechargeCarbonateBoundary(
+    c,
+    SABKHA_CARBONATE_ENDMEMBERS.flood,
+    'sabkha tidal seawater: 100% authored replacement-water recharge',
+  );
   c.flow_rate = 1.5;
-  return 'Flood pulse: low-alkalinity tidal seawater enters the lagoon. CO₃ crashes from sabkha brine levels back to ~50 ppm. Dolomite supersaturation drops below 1 — the disordered Ca/Mg surface layer detaches preferentially (Kim 2023 etch).';
+  return `Flood pulse: low-alkalinity tidal seawater replaces the pore water. The receipt books outgoing and incoming carbon separately, then the open pCO₂ boundary re-equilibrates DIC + pH${carbonateTx?.ok ? '' : ' (carbonate transaction BLOCKED)'}. The high-salinity activity model remains unavailable and is flagged, not hidden.`;
 }
 
 function event_sabkha_evap(c) {
@@ -45,7 +88,6 @@ function event_sabkha_evap(c) {
   ];
   c.fluid.Mg = 2000;
   c.fluid.Ca = 600;
-  c.fluid.CO3 = 800;
   c.fluid.Sr = 30;
   c.fluid.Na = 65000;
   c.fluid.Cl = 110000;
@@ -58,10 +100,14 @@ function event_sabkha_evap(c) {
   declareSulfurBoundaryReplacement(c, 'sabkha evaporative-brine replacement', {
     sulfide: 0, sulfate: 9000, elemental: 0,
   });
-  c.fluid.pH = 8.4;
   c.flow_rate = 0.1;
   c.temperature = 32;
-  return 'Evaporation pulse: sun bakes the lagoon. Brine reconcentrates to 250‰ (a_w≈0.77) and 32°C: gypsum remains the required primary precursor, while the Hardie phase selector opens replacement by anhydrite. Dolomite saturation also climbs back above 1; ordering ratchets up.';
+  const carbonateTx = _sabkhaRechargeCarbonateBoundary(
+    c,
+    SABKHA_CARBONATE_ENDMEMBERS.evap,
+    'sabkha evaporative brine: 100% authored replacement-water endmember',
+  );
+  return `Evaporation pulse: the authored 250‰ brine endmember replaces the pore water at 32°C. Carbon import/export and reduced alkalinity are explicit${carbonateTx?.ok ? '' : ' (carbonate transaction BLOCKED)'}; salinity_model_missing marks the carbonate solve as qualitative. Gypsum remains the required precursor while the Hardie selector controls anhydrite replacement.`;
 }
 
 function event_sabkha_final_seal(c) {

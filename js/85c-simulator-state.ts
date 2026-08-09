@@ -71,6 +71,15 @@ Object.assign(VugSimulator.prototype, {
     const state = this._carbonateBoundaryState;
     const config = this.conditions?._scenario?.carbonate_boundary;
     if (!state || !config) return false;
+    // Initialization and configuration failures cannot be repaired by a
+    // subsequent zero-residual voxel audit. Keep these distinct from the
+    // recoverable spatial/receipt blocks below, which a later clean step may
+    // legitimately clear.
+    if (state.permanentBlocked || state.initializationBlocked || state.configurationBlocked) {
+      state.permanentBlocked = true;
+      state.blocked = true;
+      return false;
+    }
     const receipts = Array.isArray(this.conditions._pending_carbonate_boundary_transfers)
       ? this.conditions._pending_carbonate_boundary_transfers.slice() : [];
     delete this.conditions._pending_carbonate_boundary_transfers;
@@ -114,9 +123,11 @@ Object.assign(VugSimulator.prototype, {
     const observedDIC = dicPpmToMolKg(meanCO3);
     const previous = Math.max(0, Number(state.lastDICMolKg) || 0);
     const delta = observedDIC - previous;
-    const allowed = Array.isArray(config.simple_caco3_phases)
-      ? config.simple_caco3_phases.filter((m: string) => m === 'calcite' || m === 'aragonite')
-      : [];
+    const declaredSimpleCarbonates = Array.isArray(config.simple_carbonate_phases)
+      ? config.simple_carbonate_phases
+      : Array.isArray(config.simple_caco3_phases) ? config.simple_caco3_phases : [];
+    const allowed = declaredSimpleCarbonates.filter((mineral: string) =>
+      SIMPLE_CARBONATE_TRANSFER_MINERALS.includes(mineral));
     const receiptDelta = receipts.reduce(
       (sum: number, receipt: any) => sum
         + (Number(receipt.localAqueousCarbonDeltaPpm) || 0)
@@ -164,7 +175,7 @@ Object.assign(VugSimulator.prototype, {
     for (const receipt of receipts) {
       const receiptMolKg = (Number(receipt.localAqueousCarbonDeltaPpm) || 0)
         / (1000 * CARBONATE_SURROGATE_G_MOL * fluids.length);
-      recordSimpleCaCO3SolidTransferState(
+      recordSimpleCarbonateSolidTransferState(
         state,
         receiptMolKg,
         String(receipt.mineral),
@@ -1149,8 +1160,8 @@ _check_liberation() {
   _applyOpenAtmosphereEquilibration() {
     const scen = this.conditions && this.conditions._scenario;
     if (!scen) return;
-    // Conserved boundary v1 supersedes the legacy fixed-DIC pH solve only for
-    // explicit opt-ins. Reconcile intervening carbonate precipitation/
+    // Conserved boundary v1 is the only atmospheric-carbon path. Reconcile
+    // intervening carbonate precipitation/
     // dissolution at the CaCO3 stoichiometric alkalinity ratio, then solve the
     // declared open or closed gas boundary. Only the global concentration is
     // changed here; run_step wraps this call in the canonical event-delta
@@ -1191,65 +1202,8 @@ _check_liberation() {
       ]));
       return;
     }
-    if (typeof isOpenAtMeshVertex !== 'function') return;
-    if (typeof equilibratePHtoPCO2 !== 'function') return;
-    if (typeof atmosphericPCO2AtMeshVertex !== 'function') return;
-
-    // Phase 1 uses scalar resolution (passing null mesh + vertex 0).
-    // The resolver shortcuts on scalars without touching the mesh.
-    // When a scenario writes per-region or per-vertex form, this loop
-    // will need the actual mesh — Phase 1c work.
-    const open = isOpenAtMeshVertex(scen, null, 0);
-    if (!open) return;
-    const target = atmosphericPCO2AtMeshVertex(scen, null, 0);
-
-    // Global conditions fluid — sets the baseline subsequent
-    // _propagateGlobalDelta loops would see.
-    const cnd = this.conditions;
-    if (cnd && cnd.fluid) {
-      const newPH = equilibratePHtoPCO2(cnd.fluid, cnd.temperature, target);
-      if (typeof newPH === 'number' && isFinite(newPH)) {
-        cnd.fluid.pH = newPH;
-      }
-    }
-
-    // Per-ring fluids — the engines read ring_fluids directly for
-    // ring-aware supersat. Each ring sees its own equilibration at
-    // its own temperature (the atmosphere is well-mixed for Phase 1;
-    // T differences across rings can shift the equilibrium pH).
-    if (this.ring_fluids) {
-      for (let r = 0; r < this.ring_fluids.length; r++) {
-        const f = this.ring_fluids[r];
-        if (!f) continue;
-        const T = this.ring_temperatures
-          ? (this.ring_temperatures[r] != null ? this.ring_temperatures[r] : cnd.temperature)
-          : cnd.temperature;
-        const newPH = equilibratePHtoPCO2(f, T, target);
-        if (typeof newPH === 'number' && isFinite(newPH)) {
-          f.pH = newPH;
-        }
-      }
-    }
-
-    // Per-vertex mesh cells — Tranche 4a un-aliased per-vertex fluids,
-    // so ring-level mutation doesn't reach them. Walk the mesh and
-    // equilibrate each cell's own fluid.
-    const mesh = this.wall_state && this.wall_state.meshFor
-      ? this.wall_state.meshFor(this)
-      : null;
-    if (mesh && mesh.cells) {
-      for (let i = 0; i < mesh.cells.length; i++) {
-        const cell = mesh.cells[i];
-        if (!cell || !cell.fluid) continue;
-        const ringIdx = cell.temperature_ring;
-        const T = (this.ring_temperatures && ringIdx >= 0 && ringIdx < this.ring_temperatures.length)
-          ? this.ring_temperatures[ringIdx]
-          : cnd.temperature;
-        const newPH = equilibratePHtoPCO2(cell.fluid, T, target);
-        if (typeof newPH === 'number' && isFinite(newPH)) {
-          cell.fluid.pH = newPH;
-        }
-      }
-    }
+    // Fail closed. Standard closed scenarios may omit this controller, but an
+    // open reservoir never falls back to the retired fixed-DIC/pH-only path.
+    return;
   },
 });

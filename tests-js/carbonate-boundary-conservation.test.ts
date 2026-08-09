@@ -7,6 +7,7 @@ declare const pureWaterDensityKgM3: (t: number) => number;
 declare const pKwWater: (temperatureC: number) => number;
 declare const reducedCarbonateAlkalinityEqKg: (dic: number, pH: number, t: number) => number;
 declare const solvePHForReducedCarbonateAlkalinity: (dic: number, alk: number, t: number) => number;
+declare const createConservedCarbonateBoundaryConfig: (fluid: any, t: number, opts?: any) => any;
 declare const createCarbonateBoundaryState: (fluid: any, t: number, opts?: any) => any;
 declare const equilibrateClosedCarbonateBoundaryState: (state: any, fluid: any, t: number, note?: string) => any;
 declare const equilibrateOpenCarbonateBoundaryState: (state: any, fluid: any, t: number, target: number, note?: string) => any;
@@ -17,9 +18,74 @@ declare const recordUnresolvedCarbonateTransferState: (state: any, observedDIC: 
 declare const carbonateBoundaryUncertainties: (fluid: any, t: number, pressureKbar: number, pCO2Bar: number) => string[];
 declare const SCENARIOS: any;
 declare const VugSimulator: any;
+declare const VugConditions: any;
+declare const VugWall: any;
+declare const EVENT_REGISTRY: Record<string, (conditions: any, eventSpec?: any) => string>;
 declare const setSeed: (seed: number) => void;
 
 const tolerance = (value: number) => Math.max(1e-12, Math.abs(value) * 1e-9);
+
+function inertOpenBoundaryConditions(configure: (config: any, fluid: any) => any): any {
+  const fluid = new FluidChemistry();
+  // Leave DIC as the only reactive analytical pool so a run-step assertion
+  // isolates boundary behavior from unrelated mineral nucleation/growth.
+  for (const key of Object.keys(fluid)) {
+    if (typeof fluid[key] === 'number') fluid[key] = 0;
+  }
+  fluid.CO3 = 500;
+  fluid.pH = 7.2;
+  fluid.Eh = 0;
+  fluid.concentration = 1;
+  const conditions = new VugConditions({
+    temperature: 25,
+    pressure: 0.00101325,
+    fluid,
+    wall: new VugWall({ composition: 'pegmatite', reactivity: 0, shape_seed: 42 }),
+  });
+  const config = createConservedCarbonateBoundaryConfig(fluid, 25, {
+    mode: 'open', target_pCO2_bar: 4.2e-4, headspace_L_per_kg_water: 1,
+  });
+  conditions._scenario = {
+    id: 'synthetic_boundary_fail_closed',
+    open_to_atmosphere: true,
+    carbonate_boundary: configure(config, fluid),
+  };
+  return conditions;
+}
+
+function expectPermanentBoundaryBlockSurvivesRunStep(conditions: any, expectedFlag: string): void {
+  setSeed(42);
+  const sim = new VugSimulator(conditions, []);
+  const state = sim._carbonateBoundaryState;
+  const before = {
+    CO3: conditions.fluid.CO3,
+    pH: conditions.fluid.pH,
+    gas: state.headspaceCO2MolKg,
+    system: state.initialSystemCarbonMolKg,
+    lastDIC: state.lastDICMolKg,
+    lastBulk: state.lastBulkDICPpm,
+    transactions: JSON.parse(JSON.stringify(state.transactions)),
+  };
+  expect(state[expectedFlag]).toBe(true);
+  expect(state.permanentBlocked).toBe(true);
+  expect(state.blocked).toBe(true);
+
+  sim.run_step();
+
+  expect(state[expectedFlag]).toBe(true);
+  expect(state.permanentBlocked).toBe(true);
+  expect(state.blocked).toBe(true);
+  expect({
+    CO3: conditions.fluid.CO3,
+    pH: conditions.fluid.pH,
+    gas: state.headspaceCO2MolKg,
+    system: state.initialSystemCarbonMolKg,
+    lastDIC: state.lastDICMolKg,
+    lastBulk: state.lastBulkDICPpm,
+    transactions: state.transactions,
+  }).toEqual(before);
+  expect(state.transactions.some((tx: any) => tx.kind === 'open' || tx.kind === 'closed')).toBe(false);
+}
 
 describe('conserved carbonate boundary numerical kernel', () => {
   it('round-trips the simulator CO3-equivalent DIC convention exactly', () => {
@@ -41,6 +107,124 @@ describe('conserved carbonate boundary numerical kernel', () => {
         const alk = reducedCarbonateAlkalinityEqKg(dic, pH, t);
         expect(solvePHForReducedCarbonateAlkalinity(dic, alk, t)).toBeCloseTo(pH, 8);
       }
+    }
+  });
+
+  it('defaults Creative-style conserved boundaries to every validated simple-carbonate phase', () => {
+    const fluid = new FluidChemistry({ CO3: 500, pH: 7.5, salinity: 0 });
+    const config = createConservedCarbonateBoundaryConfig(fluid, 25, {});
+    expect(config.simple_carbonate_phases)
+      .toEqual(['calcite', 'aragonite', 'dolomite', 'HMC']);
+
+    const invalid = createCarbonateBoundaryState(fluid, 25, {
+      ...config,
+      simple_carbonate_phases: [...config.simple_carbonate_phases, 'malachite'],
+    });
+    expect(invalid.blocked).toBe(true);
+    expect(invalid.configurationBlocked).toBe(true);
+    expect(invalid.permanentBlocked).toBe(true);
+    expect(invalid.transactions).toContainEqual(expect.objectContaining({
+      kind: 'configuration_error',
+      error: 'unsupported_simple_carbonate_phase',
+      invalidSimpleCarbonatePhases: ['malachite'],
+    }));
+  });
+
+  it('rejects inconsistent authored alkalinity before it can define headspace carbon', () => {
+    const fluid = new FluidChemistry({ CO3: 500, pH: 7.2, salinity: 0 });
+    const before = { CO3: fluid.CO3, pH: fluid.pH };
+    const reference = createCarbonateBoundaryState(fluid, 25, {
+      headspace_L_per_kg_water: 1,
+    });
+    const authoredDIC = dicPpmToMolKg(fluid.CO3);
+    const state = createCarbonateBoundaryState(fluid, 25, {
+      initial_DIC_mol_kg: authoredDIC,
+      reduced_alkalinity_eq_per_kg: reducedCarbonateAlkalinityEqKg(authoredDIC, 9.2, 25),
+      headspace_L_per_kg_water: 1,
+    });
+    expect(state.blocked).toBe(true);
+    expect(state.initializationBlocked).toBe(true);
+    expect(state.permanentBlocked).toBe(true);
+    expect(state.transactions).toContainEqual(expect.objectContaining({
+      kind: 'initialization_mismatch',
+      error: 'authored_reduced_alkalinity_does_not_match_fluid_pH',
+      observedInitialPH: 7.2,
+      derivedInitialPH: expect.closeTo(9.2, 8),
+    }));
+    expect({ CO3: fluid.CO3, pH: fluid.pH }).toEqual(before);
+    expect(state.initialSystemCarbonMolKg).toBeCloseTo(reference.initialSystemCarbonMolKg, 14);
+    expect(state.headspaceCO2MolKg).toBeCloseTo(reference.headspaceCO2MolKg, 14);
+  });
+
+  it('keeps an authored alkalinity/pH mismatch permanently fail-closed through run_step', () => {
+    const conditions = inertOpenBoundaryConditions((config, fluid) => ({
+      ...config,
+      reduced_alkalinity_eq_per_kg: reducedCarbonateAlkalinityEqKg(
+        dicPpmToMolKg(fluid.CO3), 9.2, 25,
+      ),
+    }));
+    expectPermanentBoundaryBlockSurvivesRunStep(conditions, 'initializationBlocked');
+  });
+
+  it('keeps an unsupported carbonate phase permanently fail-closed through run_step', () => {
+    const conditions = inertOpenBoundaryConditions(config => ({
+      ...config,
+      simple_carbonate_phases: [...config.simple_carbonate_phases, 'malachite'],
+    }));
+    expectPermanentBoundaryBlockSurvivesRunStep(conditions, 'configurationBlocked');
+  });
+
+  it('records and refuses every CO2 event when conserved boundary state is absent', () => {
+    for (const type of ['co2_degas', 'co2_degas_with_reheat', 'co2_charge']) {
+      const conditions: any = {
+        temperature: 55,
+        fluid: new FluidChemistry({ CO3: 500, pH: 7.2, salinity: 0 }),
+      };
+      const before = { temperature: conditions.temperature, CO3: conditions.fluid.CO3, pH: conditions.fluid.pH };
+      const message = EVENT_REGISTRY[type](conditions, { name: `test ${type}` });
+      expect({ temperature: conditions.temperature, CO3: conditions.fluid.CO3, pH: conditions.fluid.pH })
+        .toEqual(before);
+      expect(conditions._calciteDepositionalMode).toBeUndefined();
+      expect(conditions._pending_carbonate_boundary_violation).toMatchObject({
+        ok: false,
+        kind: 'carbonate_boundary_required',
+        error: 'co2_event_requires_conserved_carbonate_boundary',
+      });
+      expect(message).toContain('refused');
+      expect(message).toContain('no chemistry was mutated');
+    }
+  });
+
+  it('accepts dolomite and HMC receipts through a default custom conserved boundary', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.tutorial_travertine();
+    conditions._scenario.open_to_atmosphere = false;
+    conditions._scenario.carbonate_boundary = createConservedCarbonateBoundaryConfig(
+      conditions.fluid, conditions.temperature, { mode: 'closed' },
+    );
+    const sim = new VugSimulator(conditions, events);
+    const fluids = sim.wall_state.voxelGridFor(sim).voxels
+      .map((voxel: any) => voxel.fluid).filter(Boolean);
+    const localFluid = fluids.find((candidate: any) => candidate !== conditions.fluid);
+    expect(localFluid).toBeDefined();
+    for (const mineral of ['dolomite', 'HMC']) {
+      const localDeltaPpm = -0.006001;
+      localFluid.CO3 += localDeltaPpm;
+      conditions._pending_carbonate_boundary_transfers = [{
+        schema: 'accepted-carbonate-transfer-v1',
+        crystalId: 1,
+        mineral,
+        acceptedThicknessUm: 0.01,
+        localAqueousCarbonDeltaPpm: localDeltaPpm,
+        touchedBulkFluidHandle: false,
+      }];
+      expect(sim._prepareCarbonateBoundarySpatialState()).toBe(true);
+      expect(sim._carbonateBoundaryState.blocked).toBe(false);
+      expect(sim._carbonateBoundaryState.transactions.at(-1)).toMatchObject({
+        ok: true,
+        kind: 'solid_transfer',
+        minerals: [mineral],
+      });
     }
   });
 
@@ -163,6 +347,19 @@ describe('conserved carbonate boundary numerical kernel', () => {
     expect(state.reducedAlkalinityEqKg - beforeAlk).toBeCloseTo(2 * delta, 14);
   });
 
+  it('uses the same per-carbon alkalinity stoichiometry for dolomite and HMC', () => {
+    const fluid = new FluidChemistry({ CO3: 500, pH: 7.5, salinity: 0 });
+    for (const mineral of ['dolomite', 'HMC']) {
+      const state = createCarbonateBoundaryState(fluid, 25, {});
+      const before = state.reducedAlkalinityEqKg;
+      const delta = -0.00025;
+      const tx = recordSimpleCaCO3SolidTransferState(state, delta, mineral);
+      expect(tx.ok).toBe(true);
+      expect(tx.minerals).toEqual([mineral]);
+      expect(state.reducedAlkalinityEqKg - before).toBeCloseTo(2 * delta, 14);
+    }
+  });
+
   it('rejects hydroxycarbonate transfer instead of applying the CaCO3 rule', () => {
     const fluid = new FluidChemistry({ CO3: 500, pH: 7.5, salinity: 0 });
     const state = createCarbonateBoundaryState(fluid, 25, {});
@@ -270,6 +467,8 @@ describe('tutorial travertine conserved-boundary integration', () => {
     expect(conditions._scenario.carbonate_boundary).toMatchObject({
       mode: 'closed',
       headspace_L_per_kg_water: 1,
+      initial_DIC_mol_kg: expect.any(Number),
+      reduced_alkalinity_eq_per_kg: expect.any(Number),
     });
     const initialPH = conditions.fluid.pH;
     const sim = new VugSimulator(conditions, events);
@@ -296,4 +495,31 @@ describe('tutorial travertine conserved-boundary integration', () => {
     );
     expect(state.transactions.some((tx: any) => tx.kind === 'solid_transfer_unresolved')).toBe(false);
   });
+});
+
+describe('sabkha conserved open-boundary integration', () => {
+  it('authors every tidal endmember as a mass-balanced replacement-water receipt', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.sabkha_dolomitization();
+    expect(conditions.wall.shape_seed).toBe(24);
+    expect(conditions._scenario.carbonate_boundary).toMatchObject({
+      mode: 'open',
+      target_pCO2_bar: 4.2e-4,
+      initial_DIC_mol_kg: expect.any(Number),
+      reduced_alkalinity_eq_per_kg: expect.any(Number),
+    });
+    const sim = new VugSimulator(conditions, events);
+    for (let i = 0; i < 40; i++) sim.run_step();
+    const state = sim._carbonateBoundaryState;
+    const replacements = state.transactions.filter((tx: any) => tx.kind === 'recharge');
+    expect(replacements).toHaveLength(4);
+    expect(replacements.every((tx: any) => tx.replacementFraction === 1)).toBe(true);
+    expect(replacements.every((tx: any) => Number.isFinite(tx.incomingDICMolKg)
+      && Number.isFinite(tx.incomingReducedAlkalinityEqKg))).toBe(true);
+    expect(replacements.every((tx: any) => Math.abs(tx.carbonErrorMolKg) < 1e-12)).toBe(true);
+    expect(state.boundaryImportMolKg).toBeGreaterThan(0);
+    expect(state.boundaryExportMolKg).toBeGreaterThan(0);
+    expect(state.uncertainties).toContain('salinity_model_missing');
+    expect(state.transactions.some((tx: any) => tx.ok === false)).toBe(false);
+  }, 120_000);
 });

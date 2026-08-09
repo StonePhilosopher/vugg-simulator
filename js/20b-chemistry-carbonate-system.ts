@@ -197,12 +197,19 @@ function equilibriumPCO2(fluid: any, T_celsius: number): number {
 // =============================================================
 //
 // These helpers are deliberately pure/serializable. They are the numerical
-// kernel for the opt-in boundary controller; scenarios that do not declare a
-// carbonate_boundary never call them and retain their legacy trajectory.
+// kernel for the explicit boundary controller. Closed scenarios may omit a
+// carbonate_boundary and retain their closed-system trajectory; an open CO2
+// reservoir without this state is a configuration error and fails closed.
 
 const CARBONATE_SURROGATE_G_MOL = 60.01;
 const ATM_IN_BAR = 1.01325;
 const GAS_R_L_BAR_MOL_K = 0.08314462618;
+// Minerals whose accepted-zone DIC debit is exactly carbonate transfer at
+// two equivalents of reduced alkalinity per mole C. Basic/hydroxycarbonates
+// are deliberately excluded because their proton stoichiometry differs.
+const SIMPLE_CARBONATE_TRANSFER_MINERALS = Object.freeze([
+  'calcite', 'aragonite', 'dolomite', 'HMC',
+]);
 
 function dicPpmToMolKg(ppmAsCO3: number): number {
   return Math.max(0, Number(ppmAsCO3) || 0) / (1000 * CARBONATE_SURROGATE_G_MOL);
@@ -407,28 +414,127 @@ function carbonateBoundaryUncertainties(
   return out;
 }
 
+// Build the complete conserved-boundary declaration used by Creative mode.
+// DIC and pH are both player-authored initial conditions here; converting that
+// pair into reduced carbonate alkalinity is an explicit initialization
+// transaction, not a continuing fixed-DIC pH shortcut.
+function createConservedCarbonateBoundaryConfig(
+  fluid: any,
+  T_celsius: number,
+  opts: any = {},
+): any {
+  const initialDICMolKg = dicPpmToMolKg(fluid?.CO3);
+  const initialPH = Number.isFinite(fluid?.pH) ? Number(fluid.pH) : 7;
+  const requestedSimplePhases = Array.isArray(opts.simple_carbonate_phases)
+    ? opts.simple_carbonate_phases.map((phase: any) => String(phase))
+    : [...SIMPLE_CARBONATE_TRANSFER_MINERALS];
+  return {
+    schema: 'carbonate-boundary-v1',
+    mode: opts.mode === 'open' ? 'open' : 'closed',
+    spatial_model: 'equal_volume_fully_mixed',
+    simple_carbonate_phases: Array.from(new Set(requestedSimplePhases)),
+    target_pCO2_bar: Math.max(1e-12, Number(opts.target_pCO2_bar) || 4.2e-4),
+    headspace_L_per_kg_water: Math.max(0,
+      Number.isFinite(opts.headspace_L_per_kg_water)
+        ? Number(opts.headspace_L_per_kg_water) : 1),
+    initial_DIC_mol_kg: initialDICMolKg,
+    reduced_alkalinity_eq_per_kg: reducedCarbonateAlkalinityEqKg(
+      initialDICMolKg, initialPH, T_celsius,
+    ),
+    initialization: opts.initialization || 'explicit_initial_DIC_plus_pH_to_reduced_alkalinity',
+  };
+}
+
 function createCarbonateBoundaryState(fluid: any, T_celsius: number, opts: any = {}): any {
   const dicMolKg = dicPpmToMolKg(fluid?.CO3);
-  const pH = Number.isFinite(fluid?.pH) ? Number(fluid.pH) : 7;
-  const pCO2Bar = _pCO2BarFromDICAndPH(dicMolKg, pH, T_celsius);
+  const observedPH = Number.isFinite(fluid?.pH) ? Number(fluid.pH) : 7;
   const headspaceLKg = Math.max(0, Number(opts.headspace_L_per_kg_water) || 0);
+  const hasAuthoredInitialDIC = Number.isFinite(opts.initial_DIC_mol_kg);
+  const authoredInitialDIC = hasAuthoredInitialDIC ? Number(opts.initial_DIC_mol_kg) : dicMolKg;
+  const initialDICResidual = dicMolKg - authoredInitialDIC;
+  const initialDICMismatch = hasAuthoredInitialDIC
+    && Math.abs(initialDICResidual) > Math.max(1e-15, Math.abs(authoredInitialDIC) * 1e-12);
+  const hasAuthoredAlkalinity = Number.isFinite(opts.reduced_alkalinity_eq_per_kg);
+  const authoredAlkalinity = hasAuthoredAlkalinity
+    ? Number(opts.reduced_alkalinity_eq_per_kg)
+    : reducedCarbonateAlkalinityEqKg(dicMolKg, observedPH, T_celsius);
+  const derivedPHResult = hasAuthoredAlkalinity
+    ? solvePHForReducedCarbonateAlkalinityResult(authoredInitialDIC, authoredAlkalinity, T_celsius)
+    : { ok: true, pH: observedPH, residualEqKg: 0 };
+  const derivedPH = derivedPHResult.ok ? Number(derivedPHResult.pH) : observedPH;
+  const initialPHResidual = observedPH - derivedPH;
+  const initialPHMismatch = hasAuthoredAlkalinity && (
+    !derivedPHResult.ok
+    || Math.abs(initialPHResidual) > Math.max(1e-10, Math.abs(observedPH) * 1e-10)
+  );
+  const configuredSimplePhases = Array.isArray(opts.simple_carbonate_phases)
+    ? opts.simple_carbonate_phases.map((phase: any) => String(phase))
+    : [...SIMPLE_CARBONATE_TRANSFER_MINERALS];
+  const invalidSimplePhases = configuredSimplePhases.filter(
+    (phase: string) => !SIMPLE_CARBONATE_TRANSFER_MINERALS.includes(phase),
+  );
+  const initialTransactions: any[] = [];
+  if (initialDICMismatch) initialTransactions.push({
+    ok: false,
+    kind: 'initialization_mismatch',
+    error: 'authored_initial_DIC_does_not_match_fluid_CO3',
+    authoredInitialDICMolKg: authoredInitialDIC,
+    observedInitialDICMolKg: dicMolKg,
+    residualMolKg: initialDICResidual,
+  });
+  if (initialPHMismatch) initialTransactions.push({
+    ok: false,
+    kind: 'initialization_mismatch',
+    error: derivedPHResult.ok
+      ? 'authored_reduced_alkalinity_does_not_match_fluid_pH'
+      : `authored_reduced_alkalinity_${derivedPHResult.error || 'unsolvable'}`,
+    authoredInitialDICMolKg: authoredInitialDIC,
+    authoredReducedAlkalinityEqKg: authoredAlkalinity,
+    observedInitialPH: observedPH,
+    derivedInitialPH: derivedPHResult.ok ? derivedPH : null,
+    residualPH: derivedPHResult.ok ? initialPHResidual : null,
+  });
+  if (invalidSimplePhases.length) initialTransactions.push({
+    ok: false,
+    kind: 'configuration_error',
+    error: 'unsupported_simple_carbonate_phase',
+    invalidSimpleCarbonatePhases: [...new Set(invalidSimplePhases)],
+    supportedSimpleCarbonatePhases: [...SIMPLE_CARBONATE_TRANSFER_MINERALS],
+  });
+  // Only a mutually consistent authored DIC + alkalinity pair may determine
+  // the gas inventory. A rejected declaration leaves the observed fluid's
+  // pH in charge, so even blocked diagnostic state cannot invent headspace C.
+  const initializationBlocked = initialDICMismatch || initialPHMismatch;
+  const configurationBlocked = invalidSimplePhases.length > 0;
+  const permanentBlocked = initializationBlocked || configurationBlocked;
+  const initialPHForGas = permanentBlocked ? observedPH : derivedPH;
+  const pCO2Bar = _pCO2BarFromDICAndPH(dicMolKg, initialPHForGas, T_celsius);
+  const headspaceCO2MolKg = _headspaceCO2MolKg(pCO2Bar, headspaceLKg, T_celsius);
   return {
     schema: 'carbonate-boundary-v1',
     mode: opts.mode === 'open' ? 'open' : 'closed',
     headspaceLKg,
     targetPCO2Bar: Math.max(1e-12, Number(opts.target_pCO2_bar) || pCO2Bar || 4.2e-4),
-    reducedAlkalinityEqKg: Number.isFinite(opts.reduced_alkalinity_eq_per_kg)
-      ? Number(opts.reduced_alkalinity_eq_per_kg)
-      : reducedCarbonateAlkalinityEqKg(dicMolKg, pH, T_celsius),
-    headspaceCO2MolKg: _headspaceCO2MolKg(pCO2Bar, headspaceLKg, T_celsius),
+    reducedAlkalinityEqKg: authoredAlkalinity,
+    headspaceCO2MolKg,
     boundaryImportMolKg: 0,
     boundaryExportMolKg: 0,
     lastDICMolKg: dicMolKg,
     lastBulkDICPpm: dicMolKgToPpm(dicMolKg),
     solidCarbonMolKg: 0,
-    initialSystemCarbonMolKg: dicMolKg + _headspaceCO2MolKg(pCO2Bar, headspaceLKg, T_celsius),
-    blocked: false,
-    transactions: [],
+    initialSystemCarbonMolKg: dicMolKg + headspaceCO2MolKg,
+    authoredInitialDICMolKg: authoredInitialDIC,
+    initialization: opts.initialization || (hasAuthoredInitialDIC
+      ? 'authored_DIC_and_reduced_alkalinity' : 'initial_fluid_DIC_plus_pH_compatibility_conversion'),
+    // Authored-state and schema failures are permanent for this simulator
+    // instance. A later clean spatial audit may clear a recoverable voxel/
+    // receipt block, but it must never rehabilitate inconsistent initial
+    // chemistry or an unsupported transfer phase.
+    initializationBlocked,
+    configurationBlocked,
+    permanentBlocked,
+    blocked: permanentBlocked,
+    transactions: initialTransactions,
     uncertainties: carbonateBoundaryUncertainties(
       fluid,
       T_celsius,
@@ -743,20 +849,22 @@ function titrateCarbonateBoundaryToPHState(
   return tx;
 }
 
-function recordSimpleCaCO3SolidTransferState(
+function recordSimpleCarbonateSolidTransferState(
   state: any,
   aqueousCarbonDeltaMolKg: number,
   mineral: string | string[],
   note: string = 'explicit simple CaCO3 transfer',
 ): any {
   const minerals = (Array.isArray(mineral) ? mineral : [mineral]).map(String);
-  if (!minerals.length || minerals.some((phase) => phase !== 'calcite' && phase !== 'aragonite')) {
+  if (!minerals.length || minerals.some(
+    (phase) => !SIMPLE_CARBONATE_TRANSFER_MINERALS.includes(phase),
+  )) {
     const failed = {
       ok: false,
       kind: 'solid_transfer_unresolved',
       note,
       minerals,
-      error: 'v1_supports_only_calcite_or_aragonite',
+      error: 'phase_requires_explicit_carbonate_proton_stoichiometry',
     };
     (state.transactions ||= []).push(failed);
     return failed;
@@ -764,9 +872,9 @@ function recordSimpleCaCO3SolidTransferState(
   const deltaAqueous = Number(aqueousCarbonDeltaMolKg) || 0;
   const previous = Math.max(0, Number(state.lastDICMolKg) || 0);
   if (Math.abs(deltaAqueous) <= Math.max(1e-15, Math.abs(previous) * 1e-12)) return null;
-  // Valid only for the explicitly named simple CaCO3 phases above. Basic and
-  // hydroxycarbonates have different proton/alkalinity stoichiometry and are
-  // deliberately rejected rather than silently forced through this rule.
+  // Valid only for the explicitly named simple carbonate phases above. One
+  // carbonate carbon carries two equivalents whether the phase is CaCO3,
+  // Mg-substituted CaCO3, or CaMg(CO3)2. Basic/hydroxycarbonates are rejected.
   state.reducedAlkalinityEqKg += 2 * deltaAqueous;
   state.solidCarbonMolKg = Math.max(0,
     (Number(state.solidCarbonMolKg) || 0) - deltaAqueous);
@@ -783,6 +891,10 @@ function recordSimpleCaCO3SolidTransferState(
   (state.transactions ||= []).push(tx);
   return tx;
 }
+
+// Compatibility alias for saved test/tool surfaces authored before dolomite
+// and HMC were admitted to the same per-carbon stoichiometric ledger.
+const recordSimpleCaCO3SolidTransferState = recordSimpleCarbonateSolidTransferState;
 
 function recordUnresolvedCarbonateTransferState(
   state: any,

@@ -75,7 +75,6 @@ function ensureFeSlider(): HTMLInputElement {
 }
 
 function ensureCarbonBoundaryControls(): void {
-  ensureSlider('carbon_boundary', '0', '1', '1');
   ensureSlider('carbon_headspace', '0', '2000', '100');
   ensureSlider('pco2', '-600', '-30', String(Math.log10(0.22) * 100));
   ensureSlider('open_atmosphere', '0', '1', '0');
@@ -262,15 +261,25 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     for (const [field, control] of Object.entries(registry) as Array<[string, any]>) {
       const canonical = expected[field];
       (globalThis as any).setBrothValue(control.liveKey, String(canonical * control.scale));
-      expect(_liveFortressSim().conditions.fluid[field], `${field}.live write`).toBe(canonical);
+      if (field !== 'CO3' && field !== 'pH') {
+        expect(_liveFortressSim().conditions.fluid[field], `${field}.live write`).toBe(canonical);
+      }
     }
+    // In a conserved Creative run, the DIC control is a 100% authored
+    // replacement-water recharge and pH is solved from reduced alkalinity.
+    // Persist the resulting state rather than pretending both are independent
+    // sliders with exact post-equilibration values.
+    expected.CO3 = _liveFortressSim().conditions.fluid.CO3;
+    expected.pH = _liveFortressSim().conditions.fluid.pH;
     // In explicit mode S is a derived observer, not a fourth spendable pool.
     // The later S(-II)/S(VI) writes intentionally replace the earlier bulk-S
     // value, so both the saved live state and replay must expose their sum.
     expected.S = expected.S_sulfide + expected.S_sulfate;
     expect(_liveFortressSim().conditions.fluid.S, 'derived dissolved S before save').toBe(expected.S);
     const manual = _saveManualNamed('all chemistry replay probe');
-    expect(Object.keys(manual.pending_broth)).toHaveLength(Object.keys(registry).length);
+    expect(Object.keys(manual.pending_broth)).toHaveLength(Object.keys(registry).length - 1);
+    expect(manual.pending_broth).not.toHaveProperty('ph');
+    expect(manual.pending_broth).toHaveProperty('co3');
 
     fortressReset();
     for (const control of Object.values(registry) as any[]) {
@@ -304,7 +313,7 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     expect(carbonateFingerprint(_liveFortressSim())).toEqual(before);
   });
 
-  it('surfaces conserved inventories and labels the disabled fallback as legacy', () => {
+  it('surfaces conserved inventories and exposes no solver-off fallback', () => {
     ensureCarbonBoundaryControls();
     const readout = ensureCarbonReadout();
     fortressBeginFromScenario('tutorial_travertine', 42);
@@ -315,8 +324,9 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     expect(readout.textContent).toContain('reduced alkalinity');
     expect(readout.textContent).toContain('Uncertainty:');
 
-    setBrothValue('carbon_boundary', '0');
-    expect(readout.textContent).toContain('legacy fixed-DIC pH comparison model');
+    expect((globalThis as any).BROTH_MAP.carbon_boundary).toBeUndefined();
+    expect(_liveFortressSim()._carbonateBoundaryState).toBeTruthy();
+    expect(readout.textContent).not.toContain('legacy fixed-DIC');
   });
 
   it('routes live DIC through recharge, derives pH, and exposes blocked failures', () => {

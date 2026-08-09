@@ -12596,7 +12596,23 @@
 //       with barite 36→28, celestine 7→5, and chalcedony 6→3. The other 38
 //       scenario baselines are identical. The 12-scenario compact chemistry
 //       digest is numerically identical after version/digest normalization.
-const SIM_VERSION = 253;
+// v254 — CONSERVED ATMOSPHERIC CARBON ONLY (2026-08-08).
+//       The fixed-DIC/pH-only atmospheric fallback is retired. Open CO2
+//       reservoirs now fail closed without an explicit conserved DIC + reduced
+//       alkalinity boundary, and Creative always constructs that boundary from
+//       the player's authored initial DIC/pH pair. Sabkha now declares its
+//       initial inventory and executes each flood/evap endmember as a 100%
+//       replacement-water transaction with separate carbon import/export and
+//       explicit reduced alkalinity. Its 35-250 per mil brines retain the
+//       salinity_model_missing flag: carbonate results there are qualitative,
+//       not falsely activity-corrected. Tutorial travertine's formerly implicit
+//       initial inventory is now pinned in scenarios.json5. The regenerated
+//       seed-42 fleet confirms drift in sabkha only (1/39 stories): the same six
+//       mineral species survive, ordered dolomite remains 4 crystals and grows
+//       163 -> 170 um, while threshold-scale partitioning shifts HMC 27 -> 25
+//       and calcite 5 -> 15 (total nuclei 53 -> 61). The largest carbonate-SI
+//       shift is 0.063 log Omega; all other scenario stories are unchanged.
+const SIM_VERSION = 254;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12629,6 +12645,7 @@ const MODEL_DIGEST = [
   'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',
   'dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3',
   'fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3',
+  'carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge-v2',
   'engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3',
   'beryl:K36-postHF-recovery-v1',
   'halite:vadose-propensity0.8-v1',

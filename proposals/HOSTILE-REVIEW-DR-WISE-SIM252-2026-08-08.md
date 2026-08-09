@@ -20,19 +20,27 @@ Verdict: **SATISFIED**
   Mg-driven, and high-pressure aragonite paths.
 - Seed-42 baseline/digest, all 39 strips and claim cards, and science provenance.
 
-## Hostile finding and resolution
+## Reproducibility clarification
 
-The first review found no thermodynamic or consumer defect, but rejected the
-bare `python` package command as a reproducibility gap. The fix added:
+The simulator's former Python runtime and pytest suite had already been
+retired; Python/JavaScript parity is not a release or science gate. The shipped
+game, authoritative engine tests, build, and CI are TypeScript/JavaScript.
+
+The pressure-grid work introduced a separate, offline scientific-data compiler,
+not a restored game runtime. It records the exact external thermodynamic model
+used to commission the versioned grid:
 
 - `environment-pressure-grid.yml` pinning Python 3.12.13 and Reaktoro 2.13.0;
 - `tools/run-pressure-grid.mjs`, which probes candidate interpreters and rejects
   every environment that does not import exactly Reaktoro 2.13.0;
-- `npm run check:pressure-grid`, verified from the ordinary project command;
+- an opt-in pressure-grid artifact check, outside the ordinary CI path;
 - digest-pinned generator, launcher, and environment receipts in the generated
   science manifest.
 
-The reviewer reran against the refreshed shared tree and returned `SATISFIED`.
+The runtime tests consume only the digest-pinned generated artifact. They do not
+require Python, Reaktoro, or an interpreter on the player's/developer's PATH.
+Any older references to Python game/runtime parity remain historical fossils,
+as documented in `ARCHITECTURE.md`.
 
 ## Verification presented
 

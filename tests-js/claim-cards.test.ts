@@ -88,6 +88,18 @@ describe('adversarial claim-card fleet', () => {
       expect(Object.keys(card.testimony.saturation_indices).sort(), `${scenario}: SI cards`)
         .toEqual(Object.keys(strip.chips).filter(key => key.startsWith('SI_')).sort());
 
+      if (scenario === 'sabkha_dolomitization') {
+        expect(card.testimony.environment.salinity).toMatchObject({
+          max: 250,
+          source: 'raw_simulation_state',
+          quantized_display_clipping: {
+            range: [0, 200],
+            upper: true,
+            reported_values_use_raw_state: true,
+          },
+        });
+      }
+
         const markdown = fs.readFileSync(path.join(outDir, `${scenario}.md`), 'utf8');
         expect(markdown, `${scenario}: rendered digest`).toContain(`**Model digest:** ${MODEL_DIGEST}`);
         expect(markdown, `${scenario}: rendered spec identity`).toContain(`**Scenario spec hash:** ${strip.scenario_spec_hash}`);
@@ -98,6 +110,10 @@ describe('adversarial claim-card fleet', () => {
         expect(markdown, `${scenario}: authored section`).toContain('Authored pressure/stress/phase context');
         expect(markdown, `${scenario}: executed section`).toContain('Executed pressure/stress/phase testimony');
         expect(markdown, `${scenario}: carbonate testimony`).toContain('Conserved carbonate boundary:');
+        if (scenario === 'sabkha_dolomitization') {
+          expect(markdown).toContain('salinity: 120 → 250 psu  [35, 250]');
+          expect(markdown).toContain('quantized display range [0, 200] clipped, raw executed state reported');
+        }
       }
     } finally {
       fs.rmSync(outDir, { recursive: true, force: true });
