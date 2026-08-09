@@ -16615,18 +16615,18 @@
       "growth_rate_mult": 0.25,
       "habit_variants": [
         {
-          "name": "pseudomorph_after_pyromorphite",
+          "name": "encrusting_pyromorphite",
           "wall_spread": 0.55,
           "void_reach": 0.45,
           "vector": "coating",
-          "trigger": "on pyromorphite substrate — the iconic Roughten Gill cabinet aesthetic. Cobalt-blue botryoidal crust preserves the hexagonal-prism outline of underlying pyromorphite; residual green pyromorphite tips often project through the blue crust."
+          "trigger": "on pyromorphite substrate — the iconic Roughton Gill cabinet aesthetic. Cobalt-blue botryoidal plumbogummite encrusts the hexagonal prisms; residual active green pyromorphite tips can project through the blue crust. This renderer relationship is an overgrowth, not a booked replacement."
         },
         {
-          "name": "pseudomorph_after_mimetite",
+          "name": "encrusting_mimetite",
           "wall_spread": 0.55,
           "void_reach": 0.45,
           "vector": "coating",
-          "trigger": "on mimetite substrate — less common but documented at Roughten Gill; same hexagonal-prism preservation mechanism as pyromorphite pseudomorph."
+          "trigger": "on mimetite substrate — a less common documented encrusting relationship; the underlying mimetite remains an active parent unless a separately booked dissolution process removes it."
         },
         {
           "name": "botryoidal_mammillary",
@@ -16644,7 +16644,7 @@
         }
       ],
       "class": "phosphate",
-      "description": "PbAl₃(PO₄)₂(OH)₅·H₂O — trigonal Pb-Al-PO₄ supergene endmember, alunite supergroup (beudantite group). The terminal phase of the Pb-PO₄ supergene paragenesis: forms LATE, after pyromorphite has had time to nucleate, then pseudomorphs it as Al accumulates from continued silicate-wallrock weathering. Type locality Roughten Gill (Caldbeck Fells, Cumbria, England) — Hartley J. (1882) MinMag 5:21 original description; Förtsch E.B. (1967) MinMag 36:530 re-examined the type material by X-ray + IR + optical methods and showed it to be a plumbogummite-hinsdalite-hidalgoite mix-crystal (alunite-supergroup endmember nomenclature; a 7.018 Å, c 16.784 Å trigonal; ω 1.680, ε 1.698). The headline cabinet aesthetic — known to UK mineral collectors as the standard Caldbeck specimen — is cobalt-blue/sky-blue/lavender/turquoise botryoidal crusts pseudomorphing pyromorphite, with residual green pyromorphite hexagonal-prism tips visible through the blue crust. The Cu trace at typical supergene levels (1-15 ppm) drives the diagnostic blue color; pure Pb-Al-PO₄ would be lavender-to-white. Found at many other UK supergene localities (Force Crag, Saddleback Old Mine, Sweet Home Mine analogs) but Roughten Gill remains the type and the most-cited specimen source. References: Hartley J. (1882) MinMag 5:21 type description; Förtsch E.B. (1967) MinMag 36:530 type-material correction; Russell A. (1925) MinMag 20:257 revisit; Bridges et al. (2011) JRS 14:3 modern Roughten Gill review; Cooper M.P. & Stanley C.J. (1990) Minerals of the English Lake District: Caldbeck Fells (canonical monograph).",
+      "description": "PbAl₃(PO₄)₂(OH)₅·H₂O — trigonal Pb-Al-PO₄ supergene endmember, alunite supergroup (beudantite group). At Roughton Gill it forms late in the Pb-PO₄ supergene sequence, after pyromorphite, as cobalt-blue to lavender botryoidal crusts encrusting locally arsenian pyromorphite; surviving green parent tips may remain visible. The simulator therefore models a coexisting encrusting overgrowth and does not claim mass-balanced pseudomorphic replacement. Type locality Roughten Gill (Caldbeck Fells, Cumbria, England) — Hartley J. (1882) MinMag 5:21 original description; Förtsch E.B. (1967) MinMag 36:530 re-examined the type material by X-ray + IR + optical methods and showed it to be a plumbogummite-hinsdalite-hidalgoite mix-crystal (alunite-supergroup endmember nomenclature; a 7.018 Å, c 16.784 Å trigonal; ω 1.680, ε 1.698). The Cu trace at typical supergene levels (1-15 ppm) drives the diagnostic blue color; pure Pb-Al-PO₄ would be lavender-to-white. Found at many other UK supergene localities (Force Crag, Saddleback Old Mine, Sweet Home Mine analogs) but Roughten Gill remains the type and the most-cited specimen source. References: Hartley J. (1882) MinMag 5:21 type description; Förtsch E.B. (1967) MinMag 36:530 type-material correction; Russell A. (1925) MinMag 20:257 revisit; Bridges et al. (2011) JRS 14:3 modern Roughten Gill review; Cooper M.P. & Stanley C.J. (1990) Minerals of the English Lake District: Caldbeck Fells (canonical monograph).",
       "scenarios": [
         "roughten_gill"
       ],
@@ -16665,7 +16665,7 @@
         "Al": 3,
         "P": 2
       },
-      "_ingredients_note": "Pb ≥ 30 (supergene Pb-rich environment) + Al ≥ 3 (KEY discriminator — aluminous silicate wallrock required, distinguishes plumbogummite from other Pb-PO4 phases) + P ≥ 2 (biological / meteoric PO4 source). Cl > 30 mildly suppresses plumbogummite via pyromorphite stability — high Cl keeps Pb-PO4 as pyromorphite rather than replacing to Al-PO4. T 5-50°C oxidizing supergene window per Hartley 1882 + Bridges 2011.",
+      "_ingredients_note": "Pb ≥ 30 (supergene Pb-rich environment) + Al ≥ 3 (KEY discriminator — aluminous silicate wallrock required, distinguishes plumbogummite from other Pb-PO4 phases) + P ≥ 2 (biological / meteoric PO4 source). Cl > 30 mildly suppresses plumbogummite relative to pyromorphite stability; this competition does not itself consume or transform a pre-existing pyromorphite crystal. T 5-50°C oxidizing supergene window per Hartley 1882 + Bridges 2011.",
       "trace_ingredients": {
         "Cu": "1-15 ppm trace gives the characteristic cobalt-blue / sky-blue Roughten Gill color (the diagnostic specimen aesthetic); higher Cu drifts toward deep blue Cu-bearing alunite-supergroup end-members",
         "Fe": "5+ ppm shifts color toward pale yellow-tan (drift toward beudantite, the Fe-PO4 endmember of the alunite supergroup)",
@@ -16685,7 +16685,7 @@
         "quencher": null,
         "status": "Non-fluorescent under standard SW/MW/LW UV. The Pb²⁺ + Al³⁺ + Cu²⁺ trace combination provides no fluorescence activator (Pb²⁺ at high concentrations in mineral lattice is a quencher rather than activator; Cu²⁺ trace amounts are likewise non-fluorescent). Visible cobalt-blue color is absorption + electronic transitions in Cu²⁺-Pb²⁺-O charge transfer, not fluorescence."
       },
-      "_twin_laws_note": "Intentionally empty — plumbogummite (PbAl₃(PO₄)₂(OH)₅·H₂O, trigonal R3̄m) habit code 'pseudomorph_after_pyromorphite' captures its typical occurrence as a supergene pseudomorph replacing earlier pyromorphite. Doesn't nucleate fresh as euhedral individuals at vugg-scale; the pseudomorph inherits external habit from pyromorphite but no twin behavior is documented for either the replacement or the rare primary occurrences. v138 phosphate batch.",
+      "_twin_laws_note": "Intentionally empty — plumbogummite (PbAl₃(PO₄)₂(OH)₅·H₂O, trigonal R3̄m) is represented here as a botryoidal encrustation over an earlier substrate, not as an individual euhedral crystal or a simulated lattice replacement. No twin behavior is documented for the crust or the rare crystallized occurrences. Corrected from the older unbooked pseudomorph label in SIM 257.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 4.0,
@@ -16696,7 +16696,7 @@
           "P": 0.08
         }
       },
-      "habit": "pseudomorph_after_pyromorphite",
+      "habit": "encrusting_pyromorphite",
       "color_rules": {
         "cobalt_blue": {
           "default": true,
@@ -16716,9 +16716,9 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "new v108 (2026-05-20). Pb-Al-PO4 alunite-supergroup supergene endmember; completes the type-locality story for the v107 Roughten Gill scenario. Substrate priority: pyromorphite (the iconic pseudomorph substrate — cobalt-blue crust on hexagonal-prism outline) > mimetite (less common Roughten Gill substrate) > cerussite > anglesite > galena_dissolving > wall. Headline cabinet aesthetic IS the pseudomorph_after_pyromorphite habit. Discriminator from pyromorphite: pyromorphite needs Cl ≥ 5; plumbogummite needs Al ≥ 3 + Cl < 30 (high Cl favors pyromorphite stability). Per Hartley 1882 + Förtsch 1967 + Bridges 2011 + Cooper & Stanley 1990. Co-eligible alunite-supergroup endmembers (hinsdalite + hidalgoite + beudantite + corkite) noted as future add-mineral candidates per the v107 dossier — Förtsch 1967 demonstrated Hartley's type material is actually a mix-crystal of the first three. Plumbogummite ships first as the dominant species.",
+      "audit_status": "Reconciled SIM 257. Pb-Al-PO4 alunite-supergroup supergene endmember. Substrate priority remains pyromorphite > mimetite > cerussite > anglesite > dissolving galena > wall, but the Roughton Gill relationship is explicitly an encrusting botryoidal overgrowth on an older active pyromorphite, not an unbooked pseudomorphic replacement. Alternate substrates remain globally reachable; only Roughton Gill imposes its authored late pyromorphite-first chronology. Discriminator from pyromorphite: pyromorphite needs Cl ≥ 5; plumbogummite needs Al ≥ 3 + Cl < 30 (high Cl favors pyromorphite stability). Per Hartley 1882 + Förtsch 1967 + Bridges 2011 + Cooper & Stanley 1990. Co-eligible alunite-supergroup endmembers (hinsdalite + hidalgoite + beudantite + corkite) remain future candidates; Förtsch 1967 demonstrated Hartley's type material is actually a mix-crystal of the first three.",
       "late_stage_propensity": 0.9,
-      "_late_stage_note": "Terminal Pb-Al-PO4 of the supergene paragenesis — by definition late-stage. High propensity matches its position as the final phase that replaces pyromorphite after sufficient wallrock weathering has accumulated Al in the fluid (geologically requires 10^4-10^6 years of supergene window persistence).",
+      "_late_stage_note": "Late Pb-Al-PO4 of the Roughton Gill supergene paragenesis. High propensity matches its occurrence as an encrusting crust after sufficient wall-rock weathering has accumulated Al in the fluid; the parent substrate can remain present.",
       "class_color": "#4a5fc8"
     },
     "datolite": {

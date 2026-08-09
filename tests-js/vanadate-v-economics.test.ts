@@ -1,18 +1,16 @@
-// tests-js/vanadate-v-economics.test.ts — v193 Caldbeck V-suite arc.
+// tests-js/vanadate-v-economics.test.ts — descloizite-group V economics.
 //
 // THE CORRECTION (task #55, the twice-deferred roughten_gill mottramite
 // arc): mottramite + descloizite were a dead-species pair fleet-wide
 // while their V-gate sat at 10 — 5× vanadinite's 2 — backwards against
 // the deposits (the descloizite group ARE the abundant supergene V ores;
 // Boni et al. 2007 Econ Geol 102:441). Two engine bugs + one missing
-// scenario mechanic, each pinned here:
+// engine corrections, each pinned here:
 //
 //   1. vanadinite's MISSING redox gate (was cloned from pyromorphite,
 //      a PO4 phase with no redox requirement; V⁵⁺ vanadate needs O2).
 //   2. descloizite-group V-economics (V_min 10→4, v_f /20→/8 — brought
 //      to vanadinite-comparable V economy, not privileged).
-//   3. roughten_gill supergene V-leach delivers mottramite at seed 42
-//      WITHOUT disturbing the primary suite (event-timed after lockup).
 
 import { describe, expect, it } from 'vitest';
 
@@ -82,33 +80,6 @@ describe('v193 — descloizite-group V-economics (gate 10→4, v_f /20→/8)', (
     const reducing = new VugConditions({ temperature: 30,
       fluid: new FluidChemistry({ Pb: 90, Cu: 75, Zn: 50, V: 14, O2: 0.2, pH: 5.5 }) });
     expect(reducing.supersaturation_mottramite()).toBe(0);
-  });
-});
-
-describe('v193 — roughten_gill delivers mottramite without disturbing the primary suite', () => {
-  let sim: any;
-  function ensure() { if (!sim) sim = runScenario('roughten_gill'); }
-
-  it('mottramite fires at seed 42 (the arc goal — the Caldbeck V suite)', () => {
-    ensure();
-    // The supergene V-leach (step-70 oxidation event, V 6→14) + the engine
-    // V-economics correction deliver the Brae Fell rice-grain mottramite.
-    expect(alive(sim, 'mottramite')).toBeGreaterThan(0);
-  });
-
-  it('vanadinite still fires (re-timed to the oxidizing window, not lost)', () => {
-    ensure();
-    expect(alive(sim, 'vanadinite')).toBeGreaterThan(0);
-  });
-
-  it('the primary suite is INTACT — the V-leach fires after the step-25 lockup', () => {
-    ensure();
-    // The v109/v180 failures bumped INITIAL-broth V (from step 0) and
-    // halved sphalerite by re-rolling the primary RNG. The v193 leach is
-    // event-timed at step 70, after primaries lock — galena unchanged,
-    // sphalerite not suppressed.
-    expect(alive(sim, 'galena')).toBeGreaterThan(0);
-    expect(alive(sim, 'sphalerite')).toBeGreaterThan(0);
   });
 });
 

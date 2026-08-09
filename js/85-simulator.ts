@@ -218,10 +218,12 @@ class VugSimulator {
     this._sulfurBoundaryTransactions = [];
     this._sulfurPropagationViolations = [];
     this._sulfurLedgerHistory = [];
-    // Sicily carries a strict whole-scenario carbon ledger. Methane-derived
-    // SD-AOM carbon, formula-balanced wall release, fluid DIC, and booked
-    // carbonate solids remain separate terms.
-    this._carbonLedgerEnabled = this.conditions?._scenario?.id === 'sicily_solfifera';
+    // Authored scenarios may opt into a strict whole-scenario carbon ledger.
+    // Methane-derived carbon, formula-balanced wall release, fluid DIC, and
+    // booked carbonate solids remain separate terms. Keep Sicily enabled for
+    // save compatibility with specifications predating the generic flag.
+    this._carbonLedgerEnabled = this.conditions?._scenario?.carbon_ledger === true
+      || this.conditions?._scenario?.id === 'sicily_solfifera';
     this._carbonLedgerInitialPpm = this._carbonLedgerEnabled
       ? sulfurGrid.voxels.reduce(
         (sum, voxel) => sum + Math.max(0, Number(voxel?.fluid?.CO3) || 0),
@@ -235,6 +237,8 @@ class VugSimulator {
     this._carbonSourceTransactions = [];
     this._carbonPropagationViolations = [];
     this._carbonLedgerHistory = [];
+    this._fluidBoundaryTransactions = [];
+    this._fluidBoundaryViolations = [];
     // Conserved carbonate boundary v1 is explicit opt-in. It lives on both the
     // simulator and conditions because event handlers receive conditions, while
     // the step controller owns equilibration. The state is plain JSON data so a

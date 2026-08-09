@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 
 declare const FluidChemistry: any;
 declare const VugConditions: any;
+declare function _nuc_plumbogummite(sim: any): void;
 
 describe('Plumbogummite PbAl3(PO4)2(OH)5·H2O — Pb-Al-PO4 (v108)', () => {
   describe('canonical fluid gates', () => {
@@ -115,6 +116,75 @@ describe('Plumbogummite PbAl3(PO4)2(OH)5·H2O — Pb-Al-PO4 (v108)', () => {
     it('plumbogummite grow engine is wired', () => {
       const MINERAL_ENGINES = (globalThis as any).MINERAL_ENGINES;
       expect(typeof MINERAL_ENGINES.plumbogummite).toBe('function');
+    });
+
+    it('retains a global bare-wall route without a pyromorphite parent', () => {
+      const sim: any = {
+        step: 12,
+        crystals: [],
+        log: [],
+        conditions: {
+          temperature: 25,
+          _scenario: { id: 'creative' },
+          fluid: { Pb: 60, Al: 8, P: 4 },
+          supersaturation_plumbogummite: () => 2,
+        },
+        _atNucleationCap: () => false,
+        _sigmaDiscountForPosition: () => 1,
+        nucleate(mineral: string, position: string, sigma: number) {
+          const crystal = {
+            crystal_id: 1, mineral, position, sigma, active: true,
+            nucleation_step: this.step,
+          };
+          this.crystals.push(crystal);
+          return crystal;
+        },
+      };
+      _nuc_plumbogummite(sim);
+      expect(sim.crystals).toEqual([expect.objectContaining({
+        mineral: 'plumbogummite', position: 'vug wall',
+      })]);
+    });
+
+    it('retains the historical parent-selection RNG draw outside Roughton Gill', () => {
+      const globalRng = (globalThis as any).rng;
+      const originalRandom = globalRng.random;
+      let draws = 0;
+      globalRng.random = () => { draws++; return 0.1; };
+      const sim: any = {
+        step: 12,
+        crystals: [{
+          crystal_id: 7, mineral: 'pyromorphite', active: true,
+          // A same-dispatcher-tick parent remains globally eligible, matching
+          // the pre-SIM-257 dispatcher and its RNG consumption. Only Roughton
+          // requires the parent to be older than the current step.
+          dissolved: false, nucleation_step: 12,
+        }],
+        log: [],
+        conditions: {
+          temperature: 25,
+          _scenario: { id: 'creative' },
+          fluid: { Pb: 60, Al: 8, P: 4 },
+          supersaturation_plumbogummite: () => 2,
+        },
+        _atNucleationCap: () => false,
+        _sigmaDiscountForPosition: () => 1,
+        nucleate(mineral: string, position: string, sigma: number) {
+          const crystal = {
+            crystal_id: 8, mineral, position, sigma, active: true,
+            nucleation_step: this.step,
+          };
+          this.crystals.push(crystal);
+          return crystal;
+        },
+      };
+      try {
+        _nuc_plumbogummite(sim);
+      } finally {
+        globalRng.random = originalRandom;
+      }
+      expect(draws).toBe(1);
+      expect(sim.crystals[1].position).toContain('encrusting pyromorphite #7');
     });
   });
 });

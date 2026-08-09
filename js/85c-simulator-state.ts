@@ -217,8 +217,11 @@ _propagateGlobalDelta(snap, options: any = {}) {
     ? this.conditions._pending_sulfur_boundary_declarations.slice() : [];
   const carbonDeclarations = Array.isArray(this.conditions._pending_carbon_ledger_declarations)
     ? this.conditions._pending_carbon_ledger_declarations.slice() : [];
+  const fluidBoundaryDeclarations = Array.isArray(this.conditions._pending_fluid_boundary_declarations)
+    ? this.conditions._pending_fluid_boundary_declarations.slice() : [];
   delete this.conditions._pending_sulfur_boundary_declarations;
   delete this.conditions._pending_carbon_ledger_declarations;
+  delete this.conditions._pending_fluid_boundary_declarations;
   const replaceFields = Array.isArray(this.conditions._pending_fluid_replace_fields)
     ? this.conditions._pending_fluid_replace_fields.slice()
     : [];
@@ -337,28 +340,47 @@ _propagateGlobalDelta(snap, options: any = {}) {
     this._sulfurBoundaryExportsPpm = (this._sulfurBoundaryExportsPpm || 0) + declaredExportsPpm;
   }
 
-  // Sicily carbon audit: methane-derived carbonate and formula-balanced wall
-  // release are distinct declared sources. Internal pH/speciation changes must
-  // leave the total-DIC proxy unchanged.
+  // Opt-in scenario carbon audit: methane-derived carbonate, wall release,
+  // and external imports are distinct declared sources. Internal pH/
+  // speciation changes must leave the total-DIC proxy unchanged.
   if (this._carbonLedgerEnabled && preCarbonState) {
     const after = _spatialCarbonState(this);
     const count = preCarbonState.count;
     let expectedNetPpm = 0;
+    let declaredImportsPpm = 0;
+    let declaredExportsPpm = 0;
+    let declaredBulkNetPpm = 0;
+    let replacementImportsPpm = 0;
     for (const declaration of carbonDeclarations) {
-      if (declaration.kind !== 'addition') continue;
-      const spatial = Math.max(0, Number(declaration.carbonatePpmPerFluid) || 0) * count;
-      expectedNetPpm += spatial;
-      if (declaration.category === 'methane_import') this._carbonMethaneImportsPpm += spatial;
-      else if (declaration.category === 'wall_release') this._carbonWallReleasePpm += spatial;
-      else this._carbonExternalImportsPpm += spatial;
+      if (declaration.kind === 'addition') {
+        const amount = Math.max(0, Number(declaration.carbonatePpmPerFluid) || 0);
+        const spatial = amount * count;
+        expectedNetPpm += spatial;
+        declaredImportsPpm += spatial;
+        declaredBulkNetPpm += amount;
+        if (declaration.category === 'methane_import') this._carbonMethaneImportsPpm += spatial;
+        else if (declaration.category === 'wall_release') this._carbonWallReleasePpm += spatial;
+        else this._carbonExternalImportsPpm += spatial;
+      } else if (declaration.kind === 'replacement') {
+        const target = Math.max(0, Number(declaration.targetCarbonatePpm) || 0);
+        for (const prior of preCarbonState.totals) {
+          const delta = target - prior;
+          if (delta >= 0) {
+            declaredImportsPpm += delta;
+            replacementImportsPpm += delta;
+          }
+          else declaredExportsPpm -= delta;
+        }
+        const replacementNet = (target * count) - preCarbonState.totalPpm;
+        expectedNetPpm += replacementNet;
+        declaredBulkNetPpm += target - Math.max(0, Number(preFluid.CO3) || 0);
+      }
     }
+    this._carbonExternalImportsPpm += replacementImportsPpm;
+    this._carbonExportsPpm += declaredExportsPpm;
     const actualNetPpm = after.totalPpm - preCarbonState.totalPpm;
     const bulkNetPpm = Math.max(0, Number(this.conditions.fluid.CO3) || 0)
       - Math.max(0, Number(preFluid.CO3) || 0);
-    const declaredBulkNetPpm = carbonDeclarations.reduce(
-      (sum: number, declaration: any) => sum + Math.max(0, Number(declaration.carbonatePpmPerFluid) || 0),
-      0,
-    );
     const errorPpm = actualNetPpm - expectedNetPpm;
     const bulkDeclarationErrorPpm = bulkNetPpm - declaredBulkNetPpm;
     const tolerancePpm = _ledgerTolerance(Math.max(preCarbonState.totalPpm, after.totalPpm));
@@ -371,6 +393,8 @@ _propagateGlobalDelta(snap, options: any = {}) {
         beforePpm: preCarbonState.totalPpm,
         afterPpm: after.totalPpm,
         expectedNetPpm,
+        declaredImportsPpm,
+        declaredExportsPpm,
         actualNetPpm,
         errorPpm,
         bulkDeclarationErrorPpm,
@@ -380,6 +404,53 @@ _propagateGlobalDelta(snap, options: any = {}) {
       this._carbonSourceTransactions.push(transaction);
       if (!closed) this._carbonPropagationViolations.push(transaction);
     }
+  }
+  if (fluidBoundaryDeclarations.length) {
+    const declaredFields = new Set<string>();
+    const declaredAdditions: Record<string, number> = {};
+    const declaredReplacementTargets: Record<string, number> = {};
+    const expectedAfterByField: Record<string, number> = {};
+    for (const declaration of fluidBoundaryDeclarations) {
+      for (const [field, raw] of Object.entries(declaration.fields || {})) {
+        const value = Math.max(0, Number(raw) || 0);
+        declaredFields.add(field);
+        if (!(field in expectedAfterByField)) {
+          expectedAfterByField[field] = Math.max(0, Number(preFluid[field]) || 0);
+        }
+        if (declaration.kind === 'addition') {
+          declaredAdditions[field] = (declaredAdditions[field] || 0) + value;
+          expectedAfterByField[field] += value;
+        } else if (declaration.kind === 'replacement') {
+          declaredReplacementTargets[field] = value;
+          expectedAfterByField[field] = value;
+        }
+      }
+    }
+    const fields = Array.from(declaredFields).sort();
+    const testimony = fields.map(field => {
+      const before = Math.max(0, Number(preFluid[field]) || 0);
+      const after = Math.max(0, Number(this.conditions.fluid[field]) || 0);
+      const declaredAddition = declaredAdditions[field] || 0;
+      const declaredReplacementTarget = field in declaredReplacementTargets
+        ? declaredReplacementTargets[field] : null;
+      const declaredDelta = expectedAfterByField[field] - before;
+      const declaredImports = Math.max(0, declaredDelta);
+      const declaredExports = Math.max(0, -declaredDelta);
+      const actualDelta = after - before;
+      const error = actualDelta - declaredDelta;
+      const tolerance = _ledgerTolerance(Math.max(before, after));
+      return { field, before, after, declaredAddition, declaredReplacementTarget,
+        declaredDelta, declaredImports, declaredExports, actualDelta, error, tolerance,
+        closed: Math.abs(error) <= tolerance };
+    });
+    const transaction = {
+      step: Number(this.step) || 0,
+      declarations: fluidBoundaryDeclarations,
+      testimony,
+      closed: testimony.every(row => row.closed),
+    };
+    this._fluidBoundaryTransactions.push(transaction);
+    if (!transaction.closed) this._fluidBoundaryViolations.push(transaction);
   }
   const deltaT = this.conditions.temperature - preTemp;
   const ambientStep = options?.ambientThermalStep;

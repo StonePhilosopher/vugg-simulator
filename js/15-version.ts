@@ -12679,7 +12679,24 @@
 //       remaining count/species changes are deterministic consequences of
 //       local temperature and revised Sr inventory and remain exposed in the
 //       v256 baseline, 39-story archive, 12-story digest, and claim cards.
-const SIM_VERSION = 256;
+//
+// v257 — Roughton Gill mine-specific reconciliation (August 2026).
+//       Replaces the inherited linarite-centric, carbonate-deficient story
+//       with Bridges et al. (2011): a sustained 110–130 C quartz-carbonate
+//       primary stage carrying galena + chalcopyrite + sphalerite, followed by
+//       explicit meteoric replacement, conserved sulfide-to-sulfate oxidation,
+//       separately audited open-fluid carbon replacements, calcite/dolomite-
+//       gangue carbon release, dominant malachite + cerussite, documented
+//       aurichalcite/rosasite, silica-fed hemimorphite, and the
+//       pyromorphite/plumbogummite cap. Rare
+//       linarite/caledonite/leadhillite remain aspirational rather than headline
+//       promises. Mine-grain exclusions block unsupported As sulfides, ruby
+//       silver, turquoise, wrong V phases, and unsupported Ca/Zn arsenate or
+//       siderite sinks without disabling those engines in Creative mode.
+//       Hostile-review closure adds a hard step-215, older-pyromorphite parent
+//       requirement for the terminal plumbogummite pseudomorph and generic
+//       source receipts for the upgradient Cu/Zn/metal and wall-silica imports.
+const SIM_VERSION = 257;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12723,6 +12740,7 @@ const MODEL_DIGEST = [
   'thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3',
   'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
   'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2',
+  'roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3',
   'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2',
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
   'transition-locality-exclusion:target-gated-v1',

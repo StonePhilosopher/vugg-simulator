@@ -32,6 +32,7 @@ const TOP_LEVEL_CLASSIFICATION = {
   open_to_atmosphere: 'direct',
   atmospheric_pCO2_bar: 'direct',
   carbonate_boundary: 'direct',
+  carbon_ledger: 'validation',
   movements: 'direct',
   fluid_spots: 'direct',
 };

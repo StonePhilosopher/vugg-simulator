@@ -459,12 +459,18 @@ const EVENT_REGISTRY = {
   sunnyside_stage_v_mn_carbonate: event_sunnyside_stage_v_mn_carbonate,
   sunnyside_stage_vi_fluoride_pulse: event_sunnyside_stage_vi_fluoride_pulse,
   sunnyside_stage_vi_manganocalcite_cap: event_sunnyside_stage_vi_manganocalcite_cap,
-  // 2026-05-20 — Roughten Gill Mine (Caldbeck Fells, Cumbria, England).
-  // Polymetallic Pb-Cu vein in Borrowdale Volcanic Group; type locality
-  // for plumbogummite. The Pb-Cu sulfate trio (linarite + caledonite +
-  // leadhillite, v100) fires in their type district. See
+  // Roughton Gill Mine (historical scenario id: roughten_gill), Caldbeck
+  // Fells. Quartz-carbonate Pb-Cu-Zn vein in the Eycott Volcanic Group /
+  // Carrock Fell intrusive contact; type locality for plumbogummite. The
+  // mine-specific reconstruction follows carbonate-buffered weathering,
+  // not the former linarite-centered district generalization. See
   // js/70q-roughten-gill.ts for the five stage-transition handlers.
   roughten_gill_primary_lockup: event_roughten_gill_primary_lockup,
+  roughten_gill_deep_weathering: event_roughten_gill_deep_weathering,
+  roughten_gill_carbonate_buffering: event_roughten_gill_carbonate_buffering,
+  roughten_gill_silica_zinc_weathering: event_roughten_gill_silica_zinc_weathering,
+  roughten_gill_plumbogummite_cap: event_roughten_gill_plumbogummite_cap,
+  // Pre-reconciliation save aliases.
   roughten_gill_pyrite_oxidation: event_roughten_gill_pyrite_oxidation,
   roughten_gill_linarite_stage: event_roughten_gill_linarite_stage,
   roughten_gill_caledonite_transition: event_roughten_gill_caledonite_transition,
@@ -635,6 +641,9 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       scenario_spec_hash: specHash,
       open_to_atmosphere: spec.open_to_atmosphere,
       atmospheric_pCO2_bar: spec.atmospheric_pCO2_bar,
+      // Whole-scenario DIC ledger. Sicily originated the implementation;
+      // any authored scenario that declares carbon sources can now opt in.
+      carbon_ledger: spec.carbon_ledger === true,
       // Conserved carbonate boundary v1. Absent means the legacy open-pH
       // behavior (when separately requested) and keeps existing scenarios
       // byte-identical. The object is copied, not interpreted, at build time so

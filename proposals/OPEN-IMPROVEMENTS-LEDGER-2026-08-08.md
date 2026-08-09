@@ -99,7 +99,18 @@ single execution ledger for the science-first AAA completion branch.
 
 - [ ] Weathering/vadose epilogues with explicit O2, CO2, drainage, light, and
   dissolution/replacement histories rather than final-state labels.
-- [ ] Roughten Gill primary-stage reconstruction before its supergene sequence.
+- [x] Roughton Gill primary-stage reconstruction before its supergene sequence.
+  The mine-specific Bridges et al. hierarchy now replaces the old linarite
+  headline with a seed-42 110–130°C quartz–calcite + galena–sphalerite–
+  chalcopyrite primary stage, declared open-fluid replacements, conserved
+  sulfide-to-sulfate oxidation, carbonate-buffered malachite/cerussite,
+  silica-fed hemimorphite, and pyromorphite/plumbogummite. Evidence:
+  `research/scenarios/roughten_gill/research-roughton-gill-reconciliation-2026-08-08.md`,
+  `tools/roughten-gill-reconciliation-observe.mjs`, and
+  `tests-js/roughten-gill.test.ts`; the SIM 257 seed-42 baseline, 39-story
+  archive, 12-story digest, and 39 claim cards are current, and AI Dr. Wise
+  returned `SATISFIED` after the signed-boundary, honest-encrustation, and
+  scenario-local RNG review loop.
 - [ ] Zn/cation competition sinks and remaining orphaned analytical solutes.
 - [ ] BIF/crocidolite/tiger's-eye scenario built from locality-grade evidence.
 - [ ] Re-run every locality envelope and negative-evidence constraint against the

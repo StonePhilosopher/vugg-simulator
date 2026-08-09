@@ -715,6 +715,61 @@ function declareCarbonLedgerAddition(
   return addition;
 }
 
+function declareCarbonLedgerReplacement(
+  conditions: any,
+  source: string,
+  targetCarbonatePpm: number,
+): number {
+  if (!conditions) return 0;
+  const target = Math.max(0, Number(targetCarbonatePpm) || 0);
+  (conditions._pending_carbon_ledger_declarations ||= []).push({
+    kind: 'replacement',
+    source: String(source || 'declared carbon-fluid replacement'),
+    targetCarbonatePpm: target,
+  });
+  return target;
+}
+
+function declareFluidBoundaryAddition(
+  conditions: any,
+  source: string,
+  fields: Record<string, number>,
+): Record<string, number> {
+  if (!conditions) return {};
+  const additions: Record<string, number> = {};
+  for (const [field, raw] of Object.entries(fields || {})) {
+    const amount = Math.max(0, Number(raw) || 0);
+    if (amount > 0) additions[field] = amount;
+  }
+  if (!Object.keys(additions).length) return additions;
+  (conditions._pending_fluid_boundary_declarations ||= []).push({
+    kind: 'addition',
+    source: String(source || 'declared fluid-boundary addition'),
+    fields: additions,
+  });
+  return additions;
+}
+
+function declareFluidBoundaryReplacement(
+  conditions: any,
+  source: string,
+  fields: Record<string, number>,
+): Record<string, number> {
+  if (!conditions) return {};
+  const targets: Record<string, number> = {};
+  for (const [field, raw] of Object.entries(fields || {})) {
+    const target = Number(raw);
+    if (Number.isFinite(target)) targets[field] = Math.max(0, target);
+  }
+  if (!Object.keys(targets).length) return targets;
+  (conditions._pending_fluid_boundary_declarations ||= []).push({
+    kind: 'replacement',
+    source: String(source || 'declared fluid-boundary replacement'),
+    fields: targets,
+  });
+  return targets;
+}
+
 function debitSulfurPool(fluid: any, pool: 'sulfide' | 'sulfate' | 'elemental', ppm: number): number {
   const demand = Math.max(0, Number(ppm) || 0);
   if (!fluid?.sulfurPoolsExplicit) {
