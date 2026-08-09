@@ -286,6 +286,19 @@ const BROTH_MAP: Record<string, any> = {
     toSlider: v => v ? '1' : '0',
     valid: v => typeof v === 'boolean',
   },
+  is_lit: {
+    path: 'wall.is_lit',
+    get: () => fortressSim.wall_state?.is_lit !== false,
+    set: v => {
+      const exposed = !!v;
+      fortressSim.conditions.wall.is_lit = exposed;
+      if (fortressSim.wall_state) fortressSim.wall_state.is_lit = exposed;
+    },
+    fmt: v => v ? 'light-exposed' : 'dark cavity',
+    parse: v => String(v) === '1',
+    toSlider: v => v ? '1' : '0',
+    valid: v => typeof v === 'boolean',
+  },
   graphitic: {
     path: 'wall.graphitic',
     get: () => !!fortressSim.conditions.wall.graphitic,

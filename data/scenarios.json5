@@ -1122,6 +1122,36 @@
       "description": "Slow geothermal pool that grew the largest crystals on Earth. Anhydrite-saturated water cools by hundredths of a degree per year through the gypsum-anhydrite boundary at ~58°C and holds just below it (~54-57°C), where gypsum reprecipitates from anhydrite dissolving at depth. Stable for ~500,000 years (Garcia-Ruiz et al. 2007). Mining begun 1985 dewatered the cave; pumping stopped 2017 and the cave reflooded.",
       "expects_species": ["selenite"],
       "duration_steps": 320,
+      "weathering_epilogue": {
+        "kind": "mine-dewatering preservation interval",
+        "start_step": 260,
+        "end_step": 320,
+        "localized_nucleation": true,
+        "tracked_products": [],
+        "drainage": {
+          "mode": "industrial pumping then documented recharge",
+          "concentration_factor": 1.0,
+          "note": "A drained gypsum chamber is not an evaporating residual brine; do not manufacture a Na-sulfate concentration pulse."
+        },
+        "oxygen": {
+          "mode": "open cave atmosphere on vadose voxels",
+          "target_residual_ppm": 1.8
+        },
+        "co2": {
+          "mode": "no authored carbonate-gas exchange",
+          "imported_carbonate_ppm": 0,
+          "note": "The Cueva de los Cristales interval is a Ca-SO4 preservation problem; no conserved DIC/alkalinity boundary is authored."
+        },
+        "light": {
+          "mode": "no continuous geological daylight; mine lamps are episodic",
+          "exposed": false
+        },
+        "excluded_outcome": {
+          "status": "out-of-scope cave facies",
+          "mineralization": "late Fe-Mn oxide stage",
+          "reason": "Forti, Galli & Rossi 2007 document oxide-hydroxides preceding giant gypsum in Cueva de las Velas, a distinct Naica cave. This Cueva de los Cristales scenario records drainage and recharge without transplanting that assemblage."
+        }
+      },
       "notes": [
         "Garcia-Ruiz et al. 2007 (Geology 35:327) — the canonical paper on Naica's growth mechanism. Anhydrite at depth (T > 58°C) dissolves slightly; rising water cools to ~54°C; gypsum reprecipitates. The cooling rate is critical: at hundredths of a degree per year, the brine stays close enough to the boundary that crystals grow over geological timescales without significant nucleation of new seeds. Old crystals just keep adding layers.",
         "v182 THERMAL STORY (the first consumer of the v181 T-unlock): the buffered pool is now a DECLARED temperature movement — base 56°C, smoothstep trend −3 over steps 0-260, no OU texture (Naica's signature is thermal stability; fluid-inclusion work shows a remarkably steady bath, so the no-noise choice IS the science, not a simplification). Ambient drift + pulses stand down for the window (pre-v182 they were bulldozing the design: drift crashed 56→25°C in ~21 steps and ~19 random thermal pulses bounced T between the floor and 53°C — the 55-58°C selenite sweet-spot fired ~2 steps per run and the 54-57 Garcia-Ruiz band was occupied 0% of the time; now 31% and 50%). Dark-observed (tools/naica-thermal-observe.mjs, 3 seeds): total crystal count DROPS ~40-60% (27→11, 39→16) while the cavity still seals — fewer nuclei, larger individuals — which is the Garcia-Ruiz mechanism emerging from the engines rather than being scripted. The low-T noise feeders (opal, goethite, lepidocrocite, tigers_eye, pyrolusite) drop out; the cave trends toward its real near-monomineralic character.",
@@ -1185,7 +1215,8 @@
           // v182 thermal story (see notes): the declared movement owns T
           // through step 260; these two govern the post-drainage era only.
           "thermal_pulses": false,
-          "cooling_rate": 0.1
+          "cooling_rate": 0.1,
+          "is_lit": false
         }
       },
       "events": [
@@ -1201,6 +1232,7 @@
       "sources": [
         "Garcia-Ruiz, Villasuso, Ayora, Canals, Otálora 2007 (Geology 35:327) — Formation of natural gypsum megacrystals in Naica, Mexico",
         "Otálora & Garcia-Ruiz 2014 (Chem. Soc. Rev. 43:2013) — Nucleation and growth of the Naica giant gypsum crystals",
+        "Forti, Galli & Rossi 2007 (Carsologica 36:23-34), DOI 10.3986/ac.v36i3.171 — Cueva de las Velas oxide-hydroxides precede giant gypsum; a distinct cave facies, not a late Cueva de los Cristales stage",
         "Forti & Sanna 2010 (NSS Bull.) — The Naica caves and their crystals: a unique speleological problem",
         "Van Driessche, Garcia-Ruiz, Tsukamoto, Patiño-Lopez, Satoh 2011 (PNAS 108:15721) — Ultraslow growth rates of giant gypsum crystals (the measured stability the v182 thermal movement models: no-noise pool at marginal saturation)"
       ]
@@ -2521,9 +2553,10 @@
 
     "wittichen": {
       "anchor": "Kloster Wittichen, Schwarzwald (Black Forest), Baden-Württemberg, Germany — the classic Bi-Co-Ni-Ag-As-(Ba) five-element vein district; cobalt-pigment + silver mining boom 1730s–40s around the convent. Sophia and Johann-Georg veins.",
-      "description": "A five-element vein in granite basement: hot, saline, SULFUR-STARVED brine carries Bi + Co + Ni + Ag + As. S ~3 ppm is load-bearing — bismuthinite and acanthite never gate open, so the metals stay NATIVE and arsenides are the metal sinks. Hot stage grows skutterudite + nickeline rosettes (320–420°C); cooling brings the fluid into bismuth's window; then the deposit-defining REDUCING SHOCK (hydrocarbon influx along the fault — the declared fluid.Eh pulse) slams native-metal σ to its structural ceiling and bismuth precipitates as ARBORESCENT DENDRITES, safflorite riming the fresh branches (its T window overlaps the shock). Late meteoric water brings oxidized sulfate (barite stage) and carbonate gangue seals the dendrites into the vein — the cross-section hand specimen of the class.",
-      "expects_species": ["skutterudite", "nickeline", "safflorite", "native_bismuth", "native_arsenic", "native_silver", "proustite", "acanthite", "calcite", "barite"],
-      "duration_steps": 160,
+      "description": "A five-element vein in granite basement: hot, saline, SULFUR-STARVED brine carries Bi + Co + Ni + Ag + As. S ~3 ppm is load-bearing — bismuthinite and acanthite never gate open, so the metals stay NATIVE and arsenides are the metal sinks. Hot stage grows skutterudite + nickeline rosettes; the deposit-defining REDUCING SHOCK precipitates arborescent bismuth, then barite + calcite gangue seal the vein. A distinct post-vein epilogue exhumates and partly drains the cavity: only vadose wall voxels oxidize Co arsenides, returning booked Co + As for erythrite and ambient cobalt-bearing aragonite while the submerged floor preserves the hypogene suite.",
+      "expects_species": ["skutterudite", "nickeline", "safflorite", "native_bismuth", "native_arsenic", "native_silver", "proustite", "acanthite", "calcite", "barite", "erythrite", "aragonite"],
+      "duration_steps": 220,
+      "carbon_ledger": true,
       "notes": [
         "Anchor + mechanism: Kissin 1992 (Canadian Mineralogist 30) defines the five-element class; Burisch et al. 2017 (Geology 45) ties the native-metal stage to methane/hydrocarbon influx — fluid inclusions in Schwarzwald five-element veins carry CH4 exactly at the dendrite stage, and the reduction is fast (hours-to-days), which is WHY the metals dendrite. Scharrer, Kreissl & Markl 2019 (Ore Geology Reviews) survey the assemblage diversity; Staude et al. 2012 (Mineralium Deposita 47) give the Schwarzwald basement-brine fluid-inclusion record (20–26 wt% NaCl, 150–340°C) this broth is anchored on.",
         "The redox shock is a DECLARED fluid.Eh movement (event-subsumption discipline, v185/v186): base −20 mV (mildly reducing basement brine), ONE deep pulse (amp −320) at u=0.58 (the CH4 influx; width ~8 steps; measured floor ~−253 mV at seed 42), and a late oxidizing trend (+95 ease — meteoric tail, tuned DOWN from +140 which dissolved the arsenide suite; a stronger late-oxidation finger was tried and reverted for the same reason — barite/erythrite are the documented aspirational casualties of arsenide survival). The wittichen_hydrocarbon_influx event at the pulse center is NARRATIVE-ONLY (no fluid writes).",
@@ -2531,9 +2564,46 @@
         "Wallrock: 'pegmatite' composition as the granite proxy (inert silicate — Wittichen veins cut Triberg granite; the carbonate gangue arrives in the FLUID via the late CO3 event, not from wall dissolution). Architecture tabular (vein-bounded), pocket size class, shape_seed 1736 (the cobalt-boom decade).",
         "Calibration target: the hand specimen is silver-white dendritic Bi embedded in white carbonate with gray arsenide rims, read in cross-section. MEASURED at seeds 42-45 (calibration session, 2026-06-12): native_bismuth 3-5 alive with 45-49% DENDRITIC zone mass (the shock recorded); skutterudite 2 + safflorite 2 + nickeline 4 + native_arsenic 4 all ALIVE; native_silver grows then sulfidizes to acanthite 4 at the meteoric-sulfate stage (the tarnish story — hand-specimen Wittichen silver is acanthite-coated); proustite 2 (ruby silver); calcite + aragonite gangue. Bi band edges re-pinned against this trajectory (js/45 — the activity correction at salinity 24 compresses the structural ~4.5 ceiling to ~2.4 measured).",
         "BARITE DELIVERED (v191, gate-census tune): the v189 'aspirational barite' diagnosis was WRONG about the mechanism — the gate census (tools/wittichen-sulfate-probe.mjs) measured every gate component PASSING from step ~133 (Ba✓ S✓ redox✓ pH✓ T✓) with σ plateaued at 0.60: barite never needed more OXIDATION, it needed more BARIUM (ba_f 24/30 × s_f 30/40 × the salinity-24 activity penalty ≈ 0.59 pinned σ under 1 forever). The locality is the authority: Wittichen's veins are literally Barytgänge — barite-gangue veins, the district's defining gangue — so Ba 24 was unjustifiably shy. Ba 75 (still modest for a heavy-spar district) puts the barite stage at σ 1.47–1.55 from the meteoric beat on: barite 2/6/3 crystals at seeds 42/43/44, NO witherite (the BaCO3 competitor never gates), and the living suite intact at all probed seeds. No Eh change — the reverted +100 oxidation finger stays reverted.",
-        "ERYTHRITE DEMOTED from expects (v191, measured): the cobalt bloom's gate needs T ≤ 50°C (MINERAL_GATES_erythrite — weathering-zone physics) and this scenario's T trajectory ends at ~150°C, so erythrite is STRUCTURALLY out-of-window in a sealed-vein story, not tuning-shy. The real Wittichen erythrite the 1730s miners followed formed during post-Variscan exhumation weathering, long after the vein sealed; modeling it honestly needs a vadose/weathering EPILOGUE (drain + cool to ~20°C + spatially-partial oxidation), which contradicts this scenario's closing beat (carbonate seals the vug at ~150°C). If a weathering-epilogue mechanic ever lands (the schneeberg step-110 vadose pattern, made spatially partial), erythrite is its first client — logged in BACKLOG, not in expects.",
-        "ARAGONITE DEMOTED from expects (v228, hostile-review rung 2 — the erythrite precedent, exactly): Wittichen aragonite is REAL but it is the SUPERGENE phase — mindat's cobalt-bearing aragonite (Co²⁺-in-CaCO3) is recorded from Wittichen as a secondary phase over oxidizing Co-arsenides (Staude et al. 2012 describe the supergene alteration suite), not a 156°C vein gangue. Pre-v228 the aragonite favorability's open-ended T-term grew it at step 141 / ~156°C — precisely the hot low-Mg vein confabulation the v228 spring-window ceiling (~90°C, Casella 2017 inversion kinetics) retires; at Mg/Ca 0.04 and a T floor of ~150°C the phase is structurally out-of-window for this sealed-vein story. The vein's primary CaCO3 gangue is CALCITE (kept). Same weathering-epilogue mechanic that owes erythrite its home owes the cobaltoan pink aragonite — second client, logged in BACKLOG."
+        "WEATHERING EPILOGUE EXECUTED: step 170 is a new post-vein boundary, not a retuned hydrothermal tail. T falls to 25°C, pressure to 0.001 kbar, the water table to 2 mm, and the buried-stage thermal-pulse generator stops. The 3-D vadose boundary raises O2 only above that surface and preserves total dissolved sulfur. Erythrite cannot nucleate until a same-site Co arsenide has actually dissolved and returned both Co and As through the accepted-shell LIFO budget. Sophia Mine occurrence evidence supports the erythrite bloom; Staude et al. 2012 supports the district's final supergene arsenate/carbonate/sulfate stage but is not misquoted as naming erythrite.",
+        "COBALT ARAGONITE EXECUTED WITH AN EVIDENCE DOMAIN: Barber et al. 1975 measured calcite poisoning from 5e-4 M Co at 25°C and mostly aragonite by 3e-3 M; González-López et al. 2018 constrains the Co/Ca pathway, and Brazier & Mavromatis 2022 supplies equilibrium DCo≈0.1 at 25°C. The selector is unavailable during the 150–340°C vein stage and above the 1e-2 M amorphous-only limit. Accepted pink aragonite shells debit their trace Co and attach only to a weathering Co-arsenide that has returned booked Co. Wittichen occurrence is locality evidence; no direct observed substrate texture is attributed to Staude et al."
       ],
+      "nucleation_windows": {
+        "erythrite": { "start_step": 171, "end_step": 220 },
+        "aragonite": { "start_step": 171, "end_step": 220 }
+      },
+      "weathering_epilogue": {
+        "kind": "post-Variscan vadose supergene oxidation",
+        "start_step": 170,
+        "end_step": 220,
+        "localized_nucleation": true,
+        "tracked_products": ["erythrite", "aragonite"],
+        "parent_minerals": {
+          "erythrite": ["skutterudite", "safflorite", "cobaltite"],
+          "aragonite": ["skutterudite", "safflorite", "cobaltite"]
+        },
+        "require_released_species": {
+          "erythrite": ["Co", "As"],
+          "aragonite": ["Co"]
+        },
+        "drainage": {
+          "mode": "partial exhumation water-table fall",
+          "concentration_factor": 1.2,
+          "target_surface_height_mm": 2.0
+        },
+        "oxygen": {
+          "mode": "open atmospheric reservoir on vadose voxels",
+          "target_residual_ppm": 1.8
+        },
+        "co2": {
+          "mode": "closed inherited carbonate-gangue DIC",
+          "imported_carbonate_ppm": 0,
+          "note": "No unsupported atmospheric DIC import; the step-142 carbonate gangue fluid is the conserved source pool."
+        },
+        "light": {
+          "mode": "dark underground weathering pocket",
+          "exposed": false
+        }
+      },
       "movements": [
         {
           "field": "temperature",
@@ -2590,6 +2660,7 @@
           "primary_bubbles": 3,
           "secondary_bubbles": 6,
           "shape_seed": 1736,
+          "is_lit": false,
           // rung 4a.4 (2026-06-29) — opt the late-stage (wittichen_meteoric_sulfate, step 134) BLADED
           // barite into the orthorhombic-mmm Wulff RECTANGULAR tabular plate (js/46
           // wulffOrthorhombicNormals). Render-only, byte-identical — the bladed vein barite renders as
@@ -2601,13 +2672,17 @@
       "events": [
         { "step": 93, "type": "wittichen_hydrocarbon_influx", "name": "Hydrocarbon Influx", "description": "CH4-bearing fluid floods the vein — the reducing shock arrives (narrative marker; the declared Eh movement carries the chemistry)" },
         { "step": 134, "type": "wittichen_meteoric_sulfate", "name": "Meteoric Sulfate", "description": "Cooled meteoric water brings oxidized sulfate — the barite stage" },
-        { "step": 142, "type": "wittichen_carbonate_gangue", "name": "Carbonate Gangue", "description": "CO3 + Ca influx — calcite seals the dendrites into the vein" }
+        { "step": 142, "type": "wittichen_carbonate_gangue", "name": "Carbonate Gangue", "description": "CO3 + Ca influx — calcite seals the dendrites into the vein" },
+        { "step": 170, "type": "wittichen_vadose_weathering", "name": "Post-vein Exhumation", "description": "Partial drainage and ambient vadose oxidation of exposed Co arsenides" }
       ],
       "sources": [
         "Kissin S.A. 1992, Canadian Mineralogist 30 — Five-element (Ni-Co-As-Ag-Bi) veins: the deposit-class review",
         "Burisch M., Walter B.F., Gerdes A., Lanz M., Markl G. 2017, Geology 45 — Methane and the origin of five-element veins (the hydrocarbon reduction trigger)",
         "Scharrer M., Kreissl S., Markl G. 2019, Ore Geology Reviews — The mineralogical variability of hydrothermal native element-arsenide associations",
         "Staude S., Bons P.D., Markl G. 2012, Mineralium Deposita 47 — Schwarzwald hydrothermal veins: fluid inclusion record, 20-26 wt% NaCl basement brines",
+        "Barber D.M., Malone P.G., Larson R.J. 1975, Chemical Geology 16:239-241, DOI 10.1016/0009-2541(75)90032-7 — Co-induced aragonite at 25°C",
+        "González-López J. et al. 2018, Chemical Geology 482:91-100, DOI 10.1016/j.chemgeo.2018.02.003 — Co/Ca-controlled amorphous-to-aragonite pathway",
+        "Brazier J.-M. & Mavromatis V. 2022, Chemical Geology 600:120863, DOI 10.1016/j.chemgeo.2022.120863 — Co partitioning into aragonite at 25°C",
         "Markl G. et al. 2016 — Cobalt (Ontario) arsenide zoning, X_As 0.96-0.99 (the skutterudite engine's anchor citation)",
         "Kloster Wittichen district history — cobalt-blue pigment + silver boom, 1730s-1740s (shape_seed 1736)"
       ]
@@ -3624,7 +3699,7 @@
       "duration_steps": 150,
       "notes": [
         "Real-world precedent: Frasassi Cave's Sala 200 carries ceiling aragonite frostwork over floor calcite popcorn; Reed Flute Cave (Guilin) shows the same vertical sort. The driver is dripwater Mg/Ca, which on ceiling-percolation pathways gets concentrated by prior dolomite dissolution and selective calcite preprecipitation upstream, while floor-puddle re-precipitation drops Mg as Mg-Mg carbonates / clay along the way and arrives Ca-rich. Frisia et al. 2002 Lithos paper is the canonical Italian cave-aragonite geochem reference; Sherwin & Baldini 2011 reviewed the global pattern.",
-        "Scenario chemistry — global broth (= equator): Ca=2000, Mg=1500, CO3=2200, pH=8.4. The aqueous molar Mg/Ca is 1.24, just above the evidence threshold, so both carbonate engines can enter their local competition. Zone overrides then split the cavity:",
+        "Scenario chemistry — global broth (= equator): Ca=2000, Mg=1000, CO3=2200, pH=8.4. The aqueous molar Mg/Ca is 0.82, below the evidence-bounded aragonite selector, so the equatorial wall stays calcite-favoring while the local ceiling override opens the aragonite route. Zone overrides then split the cavity:",
         "  Floor: Ca=3500, Mg=30. Molar Mg/Ca = 0.014 — calcite σ is unstunted and the aragonite Mg selector is physically absent. Result: calcite-only cells.",
         "  Ceiling: Ca=800, Mg=3500. Molar Mg/Ca = 7.21 — calcite is strongly poisoned and the aragonite selector is saturated. Dissolved Sr is 0.59 ppm, scaled from the measured modern Grotte de Piste dripwater molar Sr/Ca relation rather than copied from solid speleothem ppm; accepted aragonite shells debit it at Wassenburg et al.'s D_Sr=1.38+/-0.53. Result: aragonite-only cells without unlicensed strontianite.",
         "  Wall: stays at the global broth. Calcite σ slightly preferred at the boundary.",
@@ -3642,7 +3717,7 @@
           // [rung-1 science pass]
           "F": 1,
           "Ca": 2000,
-          "Mg": 1500,
+          "Mg": 1000,
           "CO3": 2200,
           "pH": 8.4,
           "Na": 12,

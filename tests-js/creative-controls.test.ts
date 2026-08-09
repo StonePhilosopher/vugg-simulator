@@ -339,6 +339,7 @@ describe('Creative chemistry control contract', () => {
     add('f-open-system', '', 'checkbox').checked = true;
     add('f-open-spring', '', 'checkbox').checked = true;
     add('f-open-atmosphere', '', 'checkbox').checked = true;
+    add('f-is-lit', '', 'checkbox').checked = false;
     add('f-thermal-pulses', '', 'checkbox').checked = false;
 
     const result = (globalThis as any).readCreativeGeologicalControls({});
@@ -350,7 +351,7 @@ describe('Creative chemistry control contract', () => {
       inter_ring_diffusion_rate: 0.02,
       primary_bubbles: 4, secondary_bubbles: 9, shape_seed: 77,
       gamma_host: 0.35, graphitic: true, open_system: true, open_spring: true,
-      thermal_pulses: false,
+      is_lit: false, thermal_pulses: false,
     });
     expect(result.conditionOpts).toEqual({ flow_rate: 2.7, porosity: 0.18 });
     expect(result.initialWaterTablePct).toBe(62.5);
@@ -379,6 +380,7 @@ describe('Creative chemistry control contract', () => {
     set('open_atmosphere', '1');
     set('open_system', '1');
     set('open_spring', '1');
+    set('is_lit', '0');
     set('graphitic', '0');
 
     expect(sim.conditions.fluid_surface_height_mm).toBeCloseTo(sim.wall_state.ring_count * 0.375, 8);
@@ -398,6 +400,8 @@ describe('Creative chemistry control contract', () => {
     expect(sim.wall_state.composition).toBe('dolomite');
     expect(sim.conditions.wall.open_system).toBe(true);
     expect(sim.conditions.wall.open_spring).toBe(true);
+    expect(sim.conditions.wall.is_lit).toBe(false);
+    expect(sim.wall_state.is_lit).toBe(false);
     expect(sim.conditions.wall.graphitic).toBe(false);
   });
 

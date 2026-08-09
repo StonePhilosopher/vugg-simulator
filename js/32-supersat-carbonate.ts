@@ -1,7 +1,9 @@
 // ============================================================
 // js/32-supersat-carbonate.ts — supersaturation methods for carbonate minerals
 // ============================================================
-// Mirror of vugg/chemistry/supersat/carbonate.py. Minerals (11): aragonite, aurichalcite, azurite, calcite, cerussite, dolomite, malachite, rhodochrosite, rosasite, siderite, smithsonite.
+// Authoritative TypeScript carbonate supersaturation runtime. Minerals (11):
+// aragonite, aurichalcite, azurite, calcite, cerussite, dolomite, malachite,
+// rhodochrosite, rosasite, siderite, smithsonite.
 //
 // Methods are attached to VugConditions.prototype after the class is
 // defined in 25-chemistry-conditions.ts, so call sites
@@ -58,9 +60,70 @@ const MINERAL_GATES_aragonite: MineralGates = {
   fluid_min: { Ca: 30, CO3: 20 },
   pH_min: 6.0, pH_max: 9.0,
   surface_energy: 'low',
-  _sources: ['aragonite engine v17+', 'Folk 1974', 'Morse 1997', 'Burton & Walter 1987 (seawater 5-25°C — see v228 note)', 'Wollast 1990', 'Carlson 1983', 'Fouke et al. 2000 JSR 70:565 (Mammoth facies)', 'Casella et al. 2017 Biogeosciences 14:1461 (inversion kinetics)', 'Wassenburg et al. 2016 GCA (Mg/Ca crossover 1.1 mol/mol)', 'Bots et al. 2011 Geology 39:331 (SO4 evaluated, excluded)'],
-  _notes: 'Orthorhombic CaCO3 dimorph. v256 selectors: a hard-present aqueous molar Mg/Ca selector at >=1.1 OR an explicitly shallow 40-100 C spring window OR the high-pressure stable field. Smooth tails cannot create a selector outside those evidence domains. Omega amplifies but cannot select; trace Sr/Pb/Ba boost. Pseudohexagonal cyclic twinning. T_max 400 C from Carlson 1983 metastability limit. v147 SI engine: sigma is omega x kinetic_favorability; PWP rate via aragoniteRate (~3x calcite per Burton-Walter 1987 / Wollast 1990).',
+  _sources: ['aragonite engine v17+', 'Folk 1974', 'Morse 1997', 'Burton & Walter 1987 (seawater 5-25°C — see v228 note)', 'Wollast 1990', 'Carlson 1983', 'Fouke et al. 2000 JSR 70:565 (Mammoth facies)', 'Casella et al. 2017 Biogeosciences 14:1461 (inversion kinetics)', 'Wassenburg et al. 2016 GCA (Mg/Ca crossover 1.1 mol/mol)', 'Bots et al. 2011 Geology 39:331 (SO4 evaluated, excluded)', 'Barber et al. 1975 Chemical Geology 16:239-241 DOI 10.1016/0009-2541(75)90032-7 (Co poisoning at 25 C)', 'González-López et al. 2018 Chemical Geology 482:91-100 DOI 10.1016/j.chemgeo.2018.02.003 (Co/Ca pathway)', 'Brazier & Mavromatis 2022 Chemical Geology 600:120863 DOI 10.1016/j.chemgeo.2022.120863 (Co partitioning)'],
+  _notes: 'Orthorhombic CaCO3 dimorph. Selectors: hard-present aqueous molar Mg/Ca >=1.1 OR explicit shallow 40-100 C spring OR 20-30 C dissolved Co >=5e-4 mol/kg within Co/Ca<0.6 and below the >=1e-2 M amorphous-only limit OR high-pressure stability. Smooth tails cannot create selectors outside evidence domains. Omega amplifies but cannot select. Co-bearing shells debit trace Co at equilibrium DCo=0.1 in the measured 25 C domain.',
 };
+
+// Cobalt can poison calcite growth and redirect CaCO3 precipitation toward
+// aragonite. Barber et al. (1975) observed the first mixtures at 5e-4 M Co,
+// mostly aragonite by 3e-3 M, and amorphous material alone at 1e-2 M. The
+// simulator's ppm convention is mg/kg, so concentration/1000/M gives mol/kg;
+// at these dilute concentrations molality is the honest available proxy for
+// the experiment's molarity. We keep the temperature envelope tight around
+// the ambient experiments instead of extrapolating this selector into hot
+// veins.
+function aragoniteCoSelector(fluid: any, temperatureC: number): any {
+  const cobaltMolal = Math.max(0, Number(fluid?.Co) || 0) / 1000 / 58.933194;
+  const calciumMolal = Math.max(0, Number(fluid?.Ca) || 0) / 1000 / 40.078;
+  const aqueousCoCaMolarRatio = cobaltMolal / Math.max(calciumMolal, 1e-12);
+  const temperatureSupported = temperatureC >= 20 && temperatureC <= 30;
+  const compositionSupported = aqueousCoCaMolarRatio < 0.6;
+  const crystallineWindow = cobaltMolal >= 5e-4 && cobaltMolal < 1e-2;
+  const present = temperatureSupported && compositionSupported && crystallineWindow;
+  const progress = Math.max(0, Math.min(1, (cobaltMolal - 5e-4) / (3e-3 - 5e-4)));
+  return {
+    schema: 'aragonite-Co-selector-v1',
+    present,
+    // The lower anchor is the first experimentally observed aragonite+calcite
+    // mixture, so crossing it must open (not merely hint at) the aragonite
+    // route. The 0.90→1.00 ramp represents increasing selector confidence;
+    // ordinary saturation, nucleation RNG, local substrate, and Co mass still
+    // decide whether a crystal actually appears.
+    strength: present ? 0.90 + 0.10 * progress : 0,
+    cobaltMolal,
+    aqueousCoCaMolarRatio,
+    temperatureSupported,
+    compositionSupported,
+    crystallineWindow,
+    lowerThresholdMolal: 5e-4,
+    mostlyAragoniteMolal: 3e-3,
+    amorphousOnlyThresholdMolal: 1e-2,
+  };
+}
+
+function aragoniteCoPartitioning(fluid: any, temperatureC: number): any {
+  const selector = aragoniteCoSelector(fluid, temperatureC);
+  // Brazier & Mavromatis (2022): equilibrium log DCo ≈ -1.0 at
+  // 25 C/1 bar. D = (Co/Ca)solid / (Co/Ca)aqueous.
+  const distributionCoefficient = selector.temperatureSupported ? 0.1 : 0;
+  const formulaCoefficientCo = selector.present
+    ? distributionCoefficient * selector.aqueousCoCaMolarRatio
+    : 0;
+  const effectiveBookedDistributionCoefficient = selector.aqueousCoCaMolarRatio > 0
+    ? formulaCoefficientCo / selector.aqueousCoCaMolarRatio : 0;
+  const targetSolidCoPpm = formulaCoefficientCo > 0
+    ? formulaCoefficientCo * 58.933194 / 100.0869 * 1e6
+    : 0;
+  return {
+    schema: 'aragonite-Co-partition-v2',
+    ...selector,
+    distributionCoefficient,
+    effectiveBookedDistributionCoefficient,
+    formulaCoefficientCo,
+    targetSolidCoPpm,
+    domain: '20-30 C ambient Co-bearing CaCO3; equilibrium and booked DCo=0.1 anchored at 25 C',
+  };
+}
 
 const MINERAL_GATES_dolomite: MineralGates = {
   // v145 (Week 10 SI-engine promotion): sigma_crit bumped 1.0 → 10.
@@ -527,6 +590,12 @@ Object.assign(VugConditions.prototype, {
     && this.temperature >= 40
     && this.temperature <= 100;
   const T_window = springSelectorPresent ? T_rise * T_fall : 0;
+  // Ambient cobalt-bearing water is a fourth measured selector. Co²⁺
+  // poisons calcite step propagation much as Mg²⁺ does; unlike a generic
+  // trace boost, this route is hard-bounded to the Barber/González-López
+  // experiment domain and is unavailable to the hot hypogene vein stage.
+  const coSelector = aragoniteCoSelector(this.fluid, this.temperature);
+  const coSelectorPresent = coSelector.present;
   const omega_factor = 1.0 / (1.0 + Math.exp(-(Math.log10(Math.max(omega, 0.01)) - 1.0) / 0.3));
   const trace_sum = this.fluid.Sr + this.fluid.Pb + this.fluid.Ba;
   const trace_ratio = trace_sum / Math.max(this.fluid.Ca, 0.01);
@@ -541,13 +610,16 @@ Object.assign(VugConditions.prototype, {
   // Logistic functions have non-zero tails by construction. They are useful
   // for weighting evidence INSIDE a documented domain, but must not turn an
   // absent driver into a small positive selector that a huge omega can amplify.
-  if (!pressureStable && !mgSelectorPresent && !springSelectorPresent) return 0;
+  if (!pressureStable && !mgSelectorPresent && !springSelectorPresent
+      && !coSelectorPresent) return 0;
 
   // Selector OR (maximum of independent routes), then a soft self-gate: a polymorph
   // selector must actually be PRESENT — sub-threshold residue from two
   // absent drivers must not multiply a huge Ω over the nucleation gate
   // (stalactite_demo's brine-strength Ω≈56 did exactly that pre-v228).
-  const selector = pressureStable ? 1.0 : Math.max(mg_factor, T_window);
+  const selector = pressureStable
+    ? 1.0
+    : Math.max(mg_factor, T_window, coSelector.strength);
   const selector_gate = 1.0 / (1.0 + Math.exp(-(selector - 0.10) / 0.03));
   const favorability = selector * selector_gate * (0.8 + 0.2 * omega_factor) * trace_factor;
   return omega * favorability;

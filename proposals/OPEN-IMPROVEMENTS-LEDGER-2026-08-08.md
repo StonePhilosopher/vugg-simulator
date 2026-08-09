@@ -97,8 +97,22 @@ single execution ledger for the science-first AAA completion branch.
 
 ## P2 — scenario and content science
 
-- [ ] Weathering/vadose epilogues with explicit O2, CO2, drainage, light, and
-  dissolution/replacement histories rather than final-state labels.
+- [x] Weathering/vadose epilogues with explicit O2, CO2, drainage, light, and
+  dissolution/replacement histories rather than final-state labels. SIM 258
+  gives Wittichen a same-site, accepted-shell Co-arsenide weathering history
+  before erythrite/Co-aragonite and gives Naica a sulfur-conserving documented
+  drain/recharge interval without invented residual-brine salts or imported Las
+  Velas facies. The normalized declaration schema fails closed before and after
+  activation, every consumer shares one inclusive start/end window, all-depth
+  voxel O2 imports are receipted separately from compatibility mirrors, and Co
+  uptake books the declared effective DCo=0.1 across the supported domain.
+  Evidence: `research/arcs/research-weathering-vadose-epilogues-2026-08-08.md`,
+  `tools/weathering-epilogue-observe.mjs`,
+  `tests-js/weathering-epilogues.test.ts`, the current SIM 258 baseline,
+  39-story archive, 12-story digest, 39 JSON + 39 Markdown claim cards, and
+  39-scenario provenance manifest. AI Dr. Wise returned `SATISFIED` after the
+  malformed-schema, bounded-window, pre-activation, coefficient-receipt, and
+  release-identity hostile-review loop.
 - [x] Roughton Gill primary-stage reconstruction before its supergene sequence.
   The mine-specific Bridges et al. hierarchy now replaces the old linarite
   headline with a seed-42 110–130°C quartz–calcite + galena–sphalerite–

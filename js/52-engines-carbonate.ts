@@ -367,9 +367,22 @@ function grow_aragonite(crystal, conditions, step) {
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
-  let note = `${crystal.habit} CaCO₃`;
   const srPartition = aragoniteSrPartitioning(conditions.fluid);
+  const coPartition = aragoniteCoPartitioning(
+    conditions.fluid, conditions.temperature,
+  );
   const pb_uptake = conditions.fluid.Pb * 0.10;
+
+  // Secondary cobalt aragonite commonly forms crusts/rounded aggregates in
+  // weathered Co ores. Set the actual fabric before composing the zone note so
+  // the recorded history and the rendered habit cannot disagree.
+  if (coPartition.formulaCoefficientCo > 0
+      && conditions.temperature >= 20 && conditions.temperature <= 30) {
+    crystal.habit = 'botryoidal_crust';
+    crystal.dominant_forms = ['pink botryoidal coating', 'radiating microcrystalline aragonite'];
+  }
+
+  let note = `${crystal.habit} CaCO₃`;
   if (srPartition.formulaCoefficientSr > 0 || pb_uptake > 0.5) {
     note += ` (Sr partitioned at D=${srPartition.distributionCoefficient.toFixed(2)} from local dripwater`;
     if (pb_uptake > 0.5) note += '; Pb association observed but not mass-partition calibrated';
@@ -382,22 +395,37 @@ function grow_aragonite(crystal, conditions, step) {
       note += ` — molar Mg/Ca=${mg_ratio_molar.toFixed(1)}, calcite is poisoned here`;
     }
   }
+  if (coPartition.formulaCoefficientCo > 0) {
+    note += ` — Co-bearing aragonite (equilibrium DCo=${coPartition.distributionCoefficient.toFixed(2)}, `
+      + `effective booked DCo=${coPartition.effectiveBookedDistributionCoefficient.toFixed(2)}, `
+      + `${coPartition.targetSolidCoPpm.toFixed(0)} ppm target shell Co; exact accepted uptake booked)`;
+  }
+
+  const traceStoichiometry: Record<string, number> = {};
+  if (srPartition.formulaCoefficientSr > 0) {
+    traceStoichiometry.Sr = srPartition.formulaCoefficientSr;
+  }
+  if (coPartition.formulaCoefficientCo > 0) {
+    traceStoichiometry.Co = coPartition.formulaCoefficientCo;
+  }
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe, trace_Mn,
     trace_Sr: srPartition.targetSolidSrPpm,
-    trace_stoichiometry: srPartition.formulaCoefficientSr > 0
-      ? { Sr: srPartition.formulaCoefficientSr }
-      : undefined,
+    trace_Co: coPartition.targetSolidCoPpm,
+    trace_stoichiometry: Object.keys(traceStoichiometry).length
+      ? traceStoichiometry : undefined,
     sr_partition: srPartition,
+    co_partition: coPartition,
     note,
   });
 }
 
 function grow_dolomite(crystal, conditions, step) {
-  // Kim 2023 kinetics — see Python grow_dolomite for full citation.
+  // Kim 2023 cyclic-omega kinetics. The executable ordering model and its
+  // citations live in the TypeScript carbonate kinetics/runtime modules.
   // Cycling required for true ordered dolomite; phantom_count tracks cycles.
   const sigma = conditions.supersaturation_dolomite();
   if (sigma < 1.0) {
@@ -459,7 +487,13 @@ function grow_dolomite(crystal, conditions, step) {
     rate = base_rate * (0.30 + 0.70 * f_ord);
   }
 
-  if (conditions.temperature > 200 && morphologyExcess < 0.5) {
+  // Saddle/baroque curvature is a rough-growth defect that requires the
+  // ~50-60 C critical roughening regime (Gregg & Sibley 1984). Saturation
+  // alone must not give an ambient sabkha or cave dolomite curved faces.
+  if (conditions.temperature < 50) {
+    crystal.habit = 'coarse_rhomb';
+    crystal.dominant_forms = ['planar rhombohedral {104}', 'ambient-temperature dolomite'];
+  } else if (conditions.temperature > 200 && morphologyExcess < 0.5) {
     crystal.habit = 'coarse_rhomb';
     crystal.dominant_forms = ['coarse rhombohedral {104}', 'transparent to white textbook crystals'];
   } else if (morphologyExcess > 1.2) {

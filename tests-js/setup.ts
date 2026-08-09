@@ -211,6 +211,14 @@ const EXPORTS = [
   'MINERAL_SPEC',
   'MINERAL_ENGINES',
   'MINERAL_GATES_REGISTRY',  // v127 — per-mineral nucleation gates (sigma_crit, T/pH/O2/fluid_min, surface_energy)
+  'aragoniteCoSelector',
+  'aragoniteCoPartitioning',
+  'validateWeatheringEpilogueConfig',
+  'activateWeatheringEpilogueIfDue',
+  'weatheringEpilogueActive',
+  'weatheringLightAtCrystal',
+  'weatheringNucleationContext',
+  '_nuc_erythrite',
   '_nuc_quartz',
   // v127 initiative scaffold (read-only — does not affect growth in v127, lands in v128 graduated competition).
   'baseInitiative',

@@ -801,6 +801,7 @@ function readCreativeGeologicalControls(baseWall: Record<string, any> = {}) {
   wallOpts.graphitic = !!(document.getElementById('f-graphitic') as HTMLInputElement | null)?.checked;
   wallOpts.open_system = !!(document.getElementById('f-open-system') as HTMLInputElement | null)?.checked;
   wallOpts.open_spring = !!(document.getElementById('f-open-spring') as HTMLInputElement | null)?.checked;
+  wallOpts.is_lit = !!(document.getElementById('f-is-lit') as HTMLInputElement | null)?.checked;
   wallOpts.thermal_pulses = !!(document.getElementById('f-thermal-pulses') as HTMLInputElement | null)?.checked;
   // Alpine-cleft behavior is a consequence of cleft architecture rather
   // than a second unexplained switch for the same geological setting.

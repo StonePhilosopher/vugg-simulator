@@ -1,8 +1,7 @@
 // ============================================================
 // js/85-simulator.ts — VugSimulator class + small utilities
 // ============================================================
-// The run-loop class. Mirror of vugg.VugSimulator (Phase A8 of the
-// Python refactor would split this further; for now it lives whole).
+// The authoritative TypeScript run-loop class.
 //
 // Reads from VugConditions / FluidChemistry / WallState, dispatches to
 // MINERAL_ENGINES per crystal per step, applies events, runs paramorph
@@ -312,7 +311,7 @@ class VugSimulator {
     // fluid via aliasing). Snapshot before and propagate the delta to
     // non-equator rings — otherwise a global event pulse never reaches
     // the rings where crystals are actually growing. Same wrap on
-    // dissolve_wall and ambient_cooling. Mirrors vugg.py.
+    // dissolve_wall and ambient_cooling.
     let snap = this._snapshotGlobal();
     this.apply_events();
     this._propagateGlobalDelta(snap);
@@ -339,6 +338,10 @@ class VugSimulator {
       this._movements.applyStep(this.conditions, this.step, this);
       this._propagateGlobalDelta(mvSnap);
     }
+    // An authored weathering epilogue is an executed boundary contract, not a
+    // scenario label. Activate it only after same-step events/movements have
+    // established T/P/water level and before the vadose transition is applied.
+    activateWeatheringEpilogueIfDue(this);
     // v26: continuous drainage from host-rock porosity. Runs before
     // the vadose override so a porosity-driven drift-out gets caught
     // as a transition on the same step it dries.
@@ -862,7 +865,8 @@ class VugSimulator {
     // for museum-collection specimens.
     const isLit = this.wall_state.is_lit !== false;
     for (const crystal of this.crystals) {
-      const transition = applyLightTransitions(crystal, isLit, this.step);
+      const localIsLit = weatheringLightAtCrystal(this, crystal, isLit);
+      const transition = applyLightTransitions(crystal, localIsLit, this.step);
       if (transition) {
         const [oldM, newM] = transition;
         this.log.push(
@@ -876,7 +880,7 @@ class VugSimulator {
 
     // v28: dehydration paramorphs — environment-triggered counterpart
     // to PARAMORPH_TRANSITIONS. Borax left in a vadose ring loses
-    // water and pseudomorphs to tincalconite. Mirror of vugg.py.
+    // water and pseudomorphs to tincalconite.
     {
       const nRings = this.wall_state.ring_count;
       // PROPOSAL-CAVITY-MESH Phase 4 Tranche 4a — read the crystal's
@@ -1095,6 +1099,11 @@ class VugSimulator {
     // booked volume and mean layer thickness for the renderer; representative
     // instances never create extra mineral inventory. See js/45.
     classifySurfaceGrowth(this);
+    // Capture the actual environmental and mass-transfer result after every
+    // growth/dissolution and transformation path has had its turn this step.
+    // This produces an auditable history with empty rows when a declared
+    // weathering interval causes no reaction — absence is evidence too.
+    recordWeatheringEpilogueStep(this);
     // Central-distance (Wulff) FORM (central-distance arc Phase 4 rung 4a.1, 2026-06-28) — the
     // arc's destination: tags fluorite with the {100}/{111} central-distance bias so the renderer
     // draws the geometrically-true cube↔cuboctahedron↔octahedron form instead of a fixed primitive.
@@ -1116,6 +1125,9 @@ class VugSimulator {
 
     if (this.conditions.fluid.sulfurPoolsExplicit) {
       this._sulfurLedgerHistory.push(simulatorSulfurLedgerSnapshot(this));
+    }
+    if (this._carbonLedgerEnabled) {
+      this._carbonLedgerHistory.push(simulatorCarbonLedgerSnapshot(this));
     }
 
     return this.log;

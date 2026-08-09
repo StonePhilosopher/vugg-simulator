@@ -46,7 +46,11 @@ function _nuc_calcite(sim) {
   // Aragonite nucleation — Mg/Ca + T + Ω + trace Sr/Pb/Ba favorability.
 }
 function _nuc_aragonite(sim) {
-  const sigma_arag = sim.conditions.supersaturation_aragonite();
+  const weathering = weatheringNucleationContext(sim, 'aragonite');
+  if (weathering.required && !weathering.eligible) return;
+  const sigma_arag = weathering.required
+    ? weathering.localSigma
+    : sim.conditions.supersaturation_aragonite();
   const existing_arag = sim.crystals.filter(c => c.mineral === 'aragonite' && c.active);
   const air_mode = !!(sim.conditions.wall && sim.conditions.wall.air_mode_default);
   // Air-mode path matches calcite above. See _AIR_MODE_NUCLEATION_PROB
@@ -55,13 +59,23 @@ function _nuc_aragonite(sim) {
     ? (rng.random() < _AIR_MODE_NUCLEATION_PROB)
     : !existing_arag.length;
   if (sigma_arag > MINERAL_GATES_aragonite.sigma_crit && gateClear && !sim._atNucleationCap('aragonite')) {
-    let pos = 'vug wall';
+    let pos = weathering.parent
+      ? `on weathering ${weathering.parent.mineral} #${weathering.parent.crystal_id}`
+      : 'vug wall';
     const existing_goe_a = sim.crystals.filter(c => c.mineral === 'goethite' && c.active);
     const existing_hem_a = sim.crystals.filter(c => c.mineral === 'hematite' && c.active);
-    if (existing_goe_a.length && rng.random() < 0.4) pos = `on goethite #${existing_goe_a[0].crystal_id}`;
-    else if (existing_hem_a.length && rng.random() < 0.3) pos = `on hematite #${existing_hem_a[0].crystal_id}`;
+    if (!weathering.parent && existing_goe_a.length && rng.random() < 0.4) pos = `on goethite #${existing_goe_a[0].crystal_id}`;
+    else if (!weathering.parent && existing_hem_a.length && rng.random() < 0.3) pos = `on hematite #${existing_hem_a[0].crystal_id}`;
     const mg_ratio = sim.conditions.fluid.Mg / Math.max(sim.conditions.fluid.Ca, 0.01);
     const c = sim.nucleate('aragonite', pos, sigma_arag);
+    if (weathering.required) {
+      c.weathering_precursor_receipt = {
+        schema: 'weathering-precursor-v1',
+        parentCrystalId: weathering.parent.crystal_id,
+        parentMineral: weathering.parent.mineral,
+        releasedInventory: { ...weathering.released },
+      };
+    }
     sim.log.push(`  ✦ NUCLEATION: Aragonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, Mg/Ca=${mg_ratio.toFixed(2)}, σ=${sigma_arag.toFixed(2)})`);
   }
 

@@ -3840,6 +3840,11 @@ Scenarios:
       <input type="checkbox" id="f-open-spring" style="width:auto;flex:0 0 auto;margin-right:0.4rem;">
       <span class="range-val">sealed/non-spring</span>
     </div>
+    <div class="setup-row" title="Whether the cavity surface is exposed to light. Light can drive photochemical mineral alteration; buried and sealed cavities remain dark.">
+      <label for="f-is-lit">Light exposure</label>
+      <input type="checkbox" id="f-is-lit" checked style="width:auto;flex:0 0 auto;margin-right:0.4rem;">
+      <span class="range-val">light-exposed</span>
+    </div>
     <div class="setup-row" title="Carbonaceous/graphitic host matter enables chiastolite carbon-cross sector zoning.">
       <label for="f-graphitic">Graphitic host</label>
       <input type="checkbox" id="f-graphitic" style="width:auto;flex:0 0 auto;margin-right:0.4rem;">
@@ -4617,6 +4622,7 @@ Scenarios:
           <div class="broth-slider-row"><label for="broth-host">Host rock</label><select id="broth-host" oninput="setBrothValue('host',this.value)"><option value="limestone">limestone</option><option value="dolomite">dolomite</option><option value="pegmatite">pegmatite / granite</option><option value="basalt">basalt / mafic</option><option value="sandstone">sandstone</option><option value="phonolite">phonolite</option><option value="ultramafic">ultramafic</option></select><span class="broth-val" id="broth-host-val">limestone</span></div>
           <div class="broth-slider-row" title="Switch the conserved carbonate controller between a closed headspace and an open authored pCO₂ reservoir."><label for="broth-open_atmosphere">CO₂ boundary</label><select id="broth-open_atmosphere" oninput="setBrothValue('open_atmosphere',this.value)"><option value="0">closed</option><option value="1">open reservoir</option></select><span class="broth-val" id="broth-open_atmosphere-val">closed</span></div>
           <div class="broth-slider-row"><label for="broth-open_system">System</label><select id="broth-open_system" oninput="setBrothValue('open_system',this.value)"><option value="0">finite cavity</option><option value="1">open surface</option></select><span class="broth-val" id="broth-open_system-val">finite cavity</span></div>
+          <div class="broth-slider-row" title="Live light boundary consumed by photochemical alteration. This does not imply atmospheric gas exchange or drainage."><label for="broth-is_lit">Light</label><select id="broth-is_lit" oninput="setBrothValue('is_lit',this.value)"><option value="1">light-exposed</option><option value="0">dark cavity</option></select><span class="broth-val" id="broth-is_lit-val">light-exposed</span></div>
           <div class="broth-slider-row"><label for="broth-graphitic">Carbon host</label><select id="broth-graphitic" oninput="setBrothValue('graphitic',this.value)"><option value="0">non-graphitic</option><option value="1">graphitic</option></select><span class="broth-val" id="broth-graphitic-val">non-graphitic</span></div>
           <div class="broth-slider-row"><label for="broth-thermal_pulses">Heat source</label><select id="broth-thermal_pulses" oninput="setBrothValue('thermal_pulses',this.value)"><option value="1">thermal pulses</option><option value="0">no pulses</option></select><span class="broth-val" id="broth-thermal_pulses-val">enabled</span></div>
           <div id="carbonate-boundary-readout" role="status" aria-live="polite" style="grid-column:1/-1;padding:0.65rem 0.75rem;border:1px solid rgba(112,210,190,.3);border-radius:6px;font-size:0.76rem;line-height:1.45;color:#bcd8d2;">Conserved carbonate boundary is initializing.</div>
@@ -19106,7 +19112,28 @@ function scenarioSpecHash(spec) {
 //       Hostile-review closure adds a hard step-215, older-pyromorphite parent
 //       requirement for the terminal plumbogummite pseudomorph and generic
 //       source receipts for the upgradient Cu/Zn/metal and wall-silica imports.
-const SIM_VERSION = 257;
+//
+// v258 — Executed weathering/vadose histories (August 2026).
+//       Scenario-authored epilogues now expose explicit drainage, oxygen, CO2,
+//       and light boundaries and record their per-step effects. The vadose
+//       transition applies to every 3-D voxel above the water surface, preserves
+//       dissolved sulfur instead of deleting 70%, receipts atmospheric O2, and
+//       fails closed on unknown spatial targets. Wittichen's ambient epilogue
+//       requires accepted same-site Co-arsenide dissolution before erythrite or
+//       cobalt-bearing aragonite can nucleate; accepted aragonite shells book Co
+//       at DCo=0.1 inside the measured 20–30 C selector domain. Naica records
+//       mine drainage and recharge without inventing residual-brine thenardite
+//       or transplanting the distinct Cueva de las Velas oxide facies.
+//       Seed-42 baseline review changes numerical receipts in 10/39 scenarios:
+//       Naica loses thenardite; Wittichen gains the executed supergene suite;
+//       six other drying tenants change counts under the all-depth, sulfur-
+//       conserving boundary; Roughton Gill and the zoned cave retain identical
+//       inventories/counts while small maximum-size receipts move. Searles'
+//       final borax label disappears because all eight surviving parents carry
+//       the executed borax-to-tincalconite history, not because borax failed to
+//       precipitate (max sigma about 37). Oxygen receipts itemize canonical
+//       voxel ppm-equivalents separately from compatibility ring mirrors.
+const SIM_VERSION = 258;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -19115,8 +19142,9 @@ const SIM_VERSION = 257;
 const MODEL_DIGEST = [
     'Pfluid:kbar-0.001..4.4',
     'Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1',
-    'aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-highPstable-v4',
+    'aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5',
     'aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1',
+    'aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2',
     'CaCO3:Hacker05-negative-linear+/-1kbar',
     'Prock:Pattison92-AndSil-16+/-3barC',
     'stress:instant-resolved-shear-stable-grain-v2',
@@ -19149,6 +19177,7 @@ const MODEL_DIGEST = [
     'thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3',
     'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
     'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2',
+    'weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2',
     'roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3',
     'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2',
     'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
@@ -28919,9 +28948,9 @@ class CavityVoxelGrid {
             return;
         // Resolve which voxels receive the delta based on target. Default
         // 'all' touches every voxel — preserves pre-v158 bulk-view event
-        // semantics. Other targets are stubbed in v159 (boundary, top,
-        // bottom, vadose); fully populated when scenario-level spatial
-        // targeting lands in Phase 2b.
+        // semantics. Unknown spatial targets fail closed: silently treating a
+        // misspelled or unimplemented target as `all` would turn a localized
+        // geochemical boundary into a cavity-wide fluid replacement.
         const total = this.voxels.length;
         const R = this.ring_count;
         const D = this.depth_count;
@@ -28945,8 +28974,7 @@ class CavityVoxelGrid {
                     hit = (v.ringIdx === 0);
                     break;
                 default:
-                    // Unrecognized target — fall through to 'all' for safety.
-                    hit = true;
+                    hit = false;
                     break;
             }
             if (!hit)
@@ -30543,6 +30571,7 @@ class GrowthZone {
         this.trace_Au = opts.trace_Au ?? 0; // invisible-gold trace (arsenopyrite)
         this.trace_Ge = opts.trace_Ge ?? 0; // solid-zone Ge estimate (sphalerite)
         this.trace_Sr = opts.trace_Sr ?? 0; // measured aragonite Sr partitioning
+        this.trace_Co = opts.trace_Co ?? 0; // measured Co-bearing aragonite partitioning
         // Optional trace-element formula-unit coefficients. applyStoichiometricGrowthBudget uses
         // these only after a positive zone is accepted, so dry-run competition
         // cannot consume solute. Unlike decorative trace labels, this closes the
@@ -30579,6 +30608,8 @@ class GrowthZone {
         }
         if (opts.sr_partition)
             this.sr_partition = { ...opts.sr_partition };
+        if (opts.co_partition)
+            this.co_partition = { ...opts.co_partition };
         this.fluid_inclusion = opts.fluid_inclusion ?? false;
         this.inclusion_type = opts.inclusion_type ?? '';
         this.note = opts.note ?? '';
@@ -31825,7 +31856,9 @@ Object.assign(VugConditions.prototype, {
 // ============================================================
 // js/32-supersat-carbonate.ts — supersaturation methods for carbonate minerals
 // ============================================================
-// Mirror of vugg/chemistry/supersat/carbonate.py. Minerals (11): aragonite, aurichalcite, azurite, calcite, cerussite, dolomite, malachite, rhodochrosite, rosasite, siderite, smithsonite.
+// Authoritative TypeScript carbonate supersaturation runtime. Minerals (11):
+// aragonite, aurichalcite, azurite, calcite, cerussite, dolomite, malachite,
+// rhodochrosite, rosasite, siderite, smithsonite.
 //
 // Methods are attached to VugConditions.prototype after the class is
 // defined in 25-chemistry-conditions.ts, so call sites
@@ -31879,9 +31912,68 @@ const MINERAL_GATES_aragonite = {
     fluid_min: { Ca: 30, CO3: 20 },
     pH_min: 6.0, pH_max: 9.0,
     surface_energy: 'low',
-    _sources: ['aragonite engine v17+', 'Folk 1974', 'Morse 1997', 'Burton & Walter 1987 (seawater 5-25°C — see v228 note)', 'Wollast 1990', 'Carlson 1983', 'Fouke et al. 2000 JSR 70:565 (Mammoth facies)', 'Casella et al. 2017 Biogeosciences 14:1461 (inversion kinetics)', 'Wassenburg et al. 2016 GCA (Mg/Ca crossover 1.1 mol/mol)', 'Bots et al. 2011 Geology 39:331 (SO4 evaluated, excluded)'],
-    _notes: 'Orthorhombic CaCO3 dimorph. v256 selectors: a hard-present aqueous molar Mg/Ca selector at >=1.1 OR an explicitly shallow 40-100 C spring window OR the high-pressure stable field. Smooth tails cannot create a selector outside those evidence domains. Omega amplifies but cannot select; trace Sr/Pb/Ba boost. Pseudohexagonal cyclic twinning. T_max 400 C from Carlson 1983 metastability limit. v147 SI engine: sigma is omega x kinetic_favorability; PWP rate via aragoniteRate (~3x calcite per Burton-Walter 1987 / Wollast 1990).',
+    _sources: ['aragonite engine v17+', 'Folk 1974', 'Morse 1997', 'Burton & Walter 1987 (seawater 5-25°C — see v228 note)', 'Wollast 1990', 'Carlson 1983', 'Fouke et al. 2000 JSR 70:565 (Mammoth facies)', 'Casella et al. 2017 Biogeosciences 14:1461 (inversion kinetics)', 'Wassenburg et al. 2016 GCA (Mg/Ca crossover 1.1 mol/mol)', 'Bots et al. 2011 Geology 39:331 (SO4 evaluated, excluded)', 'Barber et al. 1975 Chemical Geology 16:239-241 DOI 10.1016/0009-2541(75)90032-7 (Co poisoning at 25 C)', 'González-López et al. 2018 Chemical Geology 482:91-100 DOI 10.1016/j.chemgeo.2018.02.003 (Co/Ca pathway)', 'Brazier & Mavromatis 2022 Chemical Geology 600:120863 DOI 10.1016/j.chemgeo.2022.120863 (Co partitioning)'],
+    _notes: 'Orthorhombic CaCO3 dimorph. Selectors: hard-present aqueous molar Mg/Ca >=1.1 OR explicit shallow 40-100 C spring OR 20-30 C dissolved Co >=5e-4 mol/kg within Co/Ca<0.6 and below the >=1e-2 M amorphous-only limit OR high-pressure stability. Smooth tails cannot create selectors outside evidence domains. Omega amplifies but cannot select. Co-bearing shells debit trace Co at equilibrium DCo=0.1 in the measured 25 C domain.',
 };
+// Cobalt can poison calcite growth and redirect CaCO3 precipitation toward
+// aragonite. Barber et al. (1975) observed the first mixtures at 5e-4 M Co,
+// mostly aragonite by 3e-3 M, and amorphous material alone at 1e-2 M. The
+// simulator's ppm convention is mg/kg, so concentration/1000/M gives mol/kg;
+// at these dilute concentrations molality is the honest available proxy for
+// the experiment's molarity. We keep the temperature envelope tight around
+// the ambient experiments instead of extrapolating this selector into hot
+// veins.
+function aragoniteCoSelector(fluid, temperatureC) {
+    const cobaltMolal = Math.max(0, Number(fluid?.Co) || 0) / 1000 / 58.933194;
+    const calciumMolal = Math.max(0, Number(fluid?.Ca) || 0) / 1000 / 40.078;
+    const aqueousCoCaMolarRatio = cobaltMolal / Math.max(calciumMolal, 1e-12);
+    const temperatureSupported = temperatureC >= 20 && temperatureC <= 30;
+    const compositionSupported = aqueousCoCaMolarRatio < 0.6;
+    const crystallineWindow = cobaltMolal >= 5e-4 && cobaltMolal < 1e-2;
+    const present = temperatureSupported && compositionSupported && crystallineWindow;
+    const progress = Math.max(0, Math.min(1, (cobaltMolal - 5e-4) / (3e-3 - 5e-4)));
+    return {
+        schema: 'aragonite-Co-selector-v1',
+        present,
+        // The lower anchor is the first experimentally observed aragonite+calcite
+        // mixture, so crossing it must open (not merely hint at) the aragonite
+        // route. The 0.90→1.00 ramp represents increasing selector confidence;
+        // ordinary saturation, nucleation RNG, local substrate, and Co mass still
+        // decide whether a crystal actually appears.
+        strength: present ? 0.90 + 0.10 * progress : 0,
+        cobaltMolal,
+        aqueousCoCaMolarRatio,
+        temperatureSupported,
+        compositionSupported,
+        crystallineWindow,
+        lowerThresholdMolal: 5e-4,
+        mostlyAragoniteMolal: 3e-3,
+        amorphousOnlyThresholdMolal: 1e-2,
+    };
+}
+function aragoniteCoPartitioning(fluid, temperatureC) {
+    const selector = aragoniteCoSelector(fluid, temperatureC);
+    // Brazier & Mavromatis (2022): equilibrium log DCo ≈ -1.0 at
+    // 25 C/1 bar. D = (Co/Ca)solid / (Co/Ca)aqueous.
+    const distributionCoefficient = selector.temperatureSupported ? 0.1 : 0;
+    const formulaCoefficientCo = selector.present
+        ? distributionCoefficient * selector.aqueousCoCaMolarRatio
+        : 0;
+    const effectiveBookedDistributionCoefficient = selector.aqueousCoCaMolarRatio > 0
+        ? formulaCoefficientCo / selector.aqueousCoCaMolarRatio : 0;
+    const targetSolidCoPpm = formulaCoefficientCo > 0
+        ? formulaCoefficientCo * 58.933194 / 100.0869 * 1e6
+        : 0;
+    return {
+        schema: 'aragonite-Co-partition-v2',
+        ...selector,
+        distributionCoefficient,
+        effectiveBookedDistributionCoefficient,
+        formulaCoefficientCo,
+        targetSolidCoPpm,
+        domain: '20-30 C ambient Co-bearing CaCO3; equilibrium and booked DCo=0.1 anchored at 25 C',
+    };
+}
 const MINERAL_GATES_dolomite = {
     // v145 (Week 10 SI-engine promotion): sigma_crit bumped 1.0 → 10.
     // The empirical engine's 1.0 was in empirical-sigma units (4th-root
@@ -32369,6 +32461,12 @@ Object.assign(VugConditions.prototype, {
             && this.temperature >= 40
             && this.temperature <= 100;
         const T_window = springSelectorPresent ? T_rise * T_fall : 0;
+        // Ambient cobalt-bearing water is a fourth measured selector. Co²⁺
+        // poisons calcite step propagation much as Mg²⁺ does; unlike a generic
+        // trace boost, this route is hard-bounded to the Barber/González-López
+        // experiment domain and is unavailable to the hot hypogene vein stage.
+        const coSelector = aragoniteCoSelector(this.fluid, this.temperature);
+        const coSelectorPresent = coSelector.present;
         const omega_factor = 1.0 / (1.0 + Math.exp(-(Math.log10(Math.max(omega, 0.01)) - 1.0) / 0.3));
         const trace_sum = this.fluid.Sr + this.fluid.Pb + this.fluid.Ba;
         const trace_ratio = trace_sum / Math.max(this.fluid.Ca, 0.01);
@@ -32381,13 +32479,16 @@ Object.assign(VugConditions.prototype, {
         // Logistic functions have non-zero tails by construction. They are useful
         // for weighting evidence INSIDE a documented domain, but must not turn an
         // absent driver into a small positive selector that a huge omega can amplify.
-        if (!pressureStable && !mgSelectorPresent && !springSelectorPresent)
+        if (!pressureStable && !mgSelectorPresent && !springSelectorPresent
+            && !coSelectorPresent)
             return 0;
         // Selector OR (maximum of independent routes), then a soft self-gate: a polymorph
         // selector must actually be PRESENT — sub-threshold residue from two
         // absent drivers must not multiply a huge Ω over the nucleation gate
         // (stalactite_demo's brine-strength Ω≈56 did exactly that pre-v228).
-        const selector = pressureStable ? 1.0 : Math.max(mg_factor, T_window);
+        const selector = pressureStable
+            ? 1.0
+            : Math.max(mg_factor, T_window, coSelector.strength);
         const selector_gate = 1.0 / (1.0 + Math.exp(-(selector - 0.10) / 0.03));
         const favorability = selector * selector_gate * (0.8 + 0.2 * omega_factor) * trace_factor;
         return omega * favorability;
@@ -42493,6 +42594,425 @@ function applyPhysicalEtchDirective(sim, directive, step) {
     return summary;
 }
 
+// ── 44e-weathering-epilogue.js ──
+
+// ============================================================
+// js/44e-weathering-epilogue.ts — executed weathering histories
+// ============================================================
+//
+// A scenario may declare a `weathering_epilogue` only when it can state the
+// physical boundary conditions explicitly: drainage, O2, CO2, light, and the
+// mineral inventory released by dissolution.  The declaration is not a final
+// assemblage label.  These helpers make it an auditable, spatially resolved
+// history consumed by the ordinary nucleation and growth engines.
+const WEATHERING_PARENT_MINERALS = {
+    erythrite: ['skutterudite', 'safflorite', 'cobaltite'],
+    aragonite: ['skutterudite', 'safflorite', 'cobaltite'],
+};
+function weatheringEpilogueConfig(sim) {
+    const cfg = sim?.conditions?._scenario?.weathering_epilogue;
+    return cfg && typeof cfg === 'object' ? cfg : null;
+}
+function validateWeatheringEpilogueConfig(cfg) {
+    const errors = [];
+    if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) {
+        return { valid: false, errors: ['weathering_epilogue must be an object'], normalized: null };
+    }
+    const objectField = (key) => {
+        const value = cfg[key];
+        if (!value || typeof value !== 'object' || Array.isArray(value)) {
+            errors.push(`${key} must be an object`);
+            return {};
+        }
+        return value;
+    };
+    const nonempty = (value, path) => {
+        const normalized = typeof value === 'string' ? value.trim() : '';
+        if (!normalized)
+            errors.push(`${path} must be a nonempty string`);
+        return normalized;
+    };
+    const finite = (value, path, minimum = 0) => {
+        const normalized = Number(value);
+        if (!Number.isFinite(normalized) || normalized < minimum) {
+            errors.push(`${path} must be finite and >= ${minimum}`);
+            return null;
+        }
+        return normalized;
+    };
+    const step = (value, path) => {
+        const normalized = finite(value, path, 0);
+        if (normalized != null && !Number.isInteger(normalized)) {
+            errors.push(`${path} must be an integer step`);
+            return null;
+        }
+        return normalized;
+    };
+    const optionalNote = (value, path) => {
+        if (value == null)
+            return null;
+        return nonempty(value, path);
+    };
+    const stringArray = (value, path, allowEmpty = true) => {
+        if (!Array.isArray(value)) {
+            errors.push(`${path} must be an array`);
+            return [];
+        }
+        if (!allowEmpty && value.length === 0)
+            errors.push(`${path} must not be empty`);
+        const normalized = value.map((entry, index) => nonempty(entry, `${path}[${index}]`));
+        return [...new Set(normalized.filter(Boolean))];
+    };
+    const productMap = (value, path) => {
+        if (value == null)
+            return {};
+        if (typeof value !== 'object' || Array.isArray(value)) {
+            errors.push(`${path} must be an object of product -> nonempty string array`);
+            return {};
+        }
+        const normalized = {};
+        for (const [rawProduct, entries] of Object.entries(value)) {
+            const product = nonempty(rawProduct, `${path} product key`);
+            const members = stringArray(entries, `${path}.${rawProduct}`, false);
+            if (product)
+                normalized[product] = members;
+        }
+        return normalized;
+    };
+    const drainage = objectField('drainage');
+    const oxygen = objectField('oxygen');
+    const co2 = objectField('co2');
+    const light = objectField('light');
+    const startStep = step(cfg.start_step, 'start_step');
+    const endStep = step(cfg.end_step, 'end_step');
+    if (startStep != null && endStep != null && endStep < startStep) {
+        errors.push('end_step must be >= start_step');
+    }
+    const concentrationFactor = finite(drainage.concentration_factor, 'drainage.concentration_factor', Number.MIN_VALUE);
+    const targetResidualPpm = finite(oxygen.target_residual_ppm, 'oxygen.target_residual_ppm');
+    const importedCarbonatePpm = finite(co2.imported_carbonate_ppm, 'co2.imported_carbonate_ppm');
+    if (typeof light.exposed !== 'boolean') {
+        errors.push('light.exposed must be boolean');
+    }
+    if (cfg.localized_nucleation != null && typeof cfg.localized_nucleation !== 'boolean') {
+        errors.push('localized_nucleation must be boolean when supplied');
+    }
+    const targetSurfaceHeightMm = drainage.target_surface_height_mm == null
+        ? null
+        : finite(drainage.target_surface_height_mm, 'drainage.target_surface_height_mm');
+    const kind = nonempty(cfg.kind, 'kind');
+    const drainageMode = nonempty(drainage.mode, 'drainage.mode');
+    const oxygenMode = nonempty(oxygen.mode, 'oxygen.mode');
+    const co2Mode = nonempty(co2.mode, 'co2.mode');
+    const lightMode = nonempty(light.mode, 'light.mode');
+    const trackedProducts = cfg.tracked_products == null
+        ? [] : stringArray(cfg.tracked_products, 'tracked_products');
+    const parentMinerals = productMap(cfg.parent_minerals, 'parent_minerals');
+    const requiredReleasedSpecies = productMap(cfg.require_released_species, 'require_released_species');
+    let excludedOutcome = null;
+    if (cfg.excluded_outcome != null) {
+        if (typeof cfg.excluded_outcome !== 'object' || Array.isArray(cfg.excluded_outcome)) {
+            errors.push('excluded_outcome must be an object');
+        }
+        else {
+            excludedOutcome = {
+                status: nonempty(cfg.excluded_outcome.status, 'excluded_outcome.status'),
+                mineralization: nonempty(cfg.excluded_outcome.mineralization, 'excluded_outcome.mineralization'),
+                reason: nonempty(cfg.excluded_outcome.reason, 'excluded_outcome.reason'),
+            };
+        }
+    }
+    const drainageNote = optionalNote(drainage.note, 'drainage.note');
+    const oxygenNote = optionalNote(oxygen.note, 'oxygen.note');
+    const co2Note = optionalNote(co2.note, 'co2.note');
+    const lightNote = optionalNote(light.note, 'light.note');
+    if (errors.length)
+        return { valid: false, errors, normalized: null };
+    return {
+        valid: true,
+        errors: [],
+        normalized: {
+            kind,
+            start_step: startStep,
+            end_step: endStep,
+            localized_nucleation: cfg.localized_nucleation === true,
+            tracked_products: trackedProducts,
+            parent_minerals: parentMinerals,
+            require_released_species: requiredReleasedSpecies,
+            drainage: {
+                mode: drainageMode,
+                concentration_factor: concentrationFactor,
+                ...(drainageNote == null ? {} : { note: drainageNote }),
+                ...(targetSurfaceHeightMm == null
+                    ? {} : { target_surface_height_mm: targetSurfaceHeightMm }),
+            },
+            oxygen: {
+                mode: oxygenMode,
+                target_residual_ppm: targetResidualPpm,
+                ...(oxygenNote == null ? {} : { note: oxygenNote }),
+            },
+            co2: {
+                mode: co2Mode,
+                imported_carbonate_ppm: importedCarbonatePpm,
+                ...(co2Note == null ? {} : { note: co2Note }),
+            },
+            light: {
+                mode: lightMode,
+                exposed: light.exposed,
+                ...(lightNote == null ? {} : { note: lightNote }),
+            },
+            ...(excludedOutcome == null ? {} : { excluded_outcome: excludedOutcome }),
+        },
+    };
+}
+function _weatheringBlockedProductsFromRaw(cfg) {
+    const products = new Set(Object.keys(WEATHERING_PARENT_MINERALS));
+    for (const key of ['require_released_species', 'parent_minerals']) {
+        const value = cfg?.[key];
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+            Object.keys(value).filter(Boolean).forEach(product => products.add(product));
+        }
+    }
+    if (Array.isArray(cfg?.tracked_products)) {
+        cfg.tracked_products.filter((value) => typeof value === 'string' && value.trim())
+            .forEach((product) => products.add(product.trim()));
+    }
+    return [...products].sort();
+}
+function weatheringEpilogueActive(sim) {
+    const state = sim?._weatheringEpilogueState;
+    if (!state?.valid || !state.config)
+        return false;
+    return sim.step >= state.startStep
+        && (state.endStep == null || sim.step <= state.endStep);
+}
+function activateWeatheringEpilogueIfDue(sim) {
+    const rawCfg = weatheringEpilogueConfig(sim);
+    if (!rawCfg)
+        return null;
+    const validation = validateWeatheringEpilogueConfig(rawCfg);
+    const cfg = validation.normalized;
+    const startStep = cfg?.start_step ?? null;
+    if (validation.valid && sim.step < startStep)
+        return null;
+    if (sim._weatheringEpilogueState)
+        return sim._weatheringEpilogueState;
+    const state = {
+        schema: 'weathering-epilogue-history-v2',
+        scenarioId: sim?.conditions?._scenario?.id || null,
+        kind: cfg?.kind || String(rawCfg.kind || 'invalid weathering declaration'),
+        startStep,
+        endStep: cfg?.end_step ?? null,
+        valid: validation.valid,
+        errors: [...validation.errors],
+        config: cfg,
+        blockedProducts: validation.valid ? [] : _weatheringBlockedProductsFromRaw(rawCfg),
+        activation: {
+            step: sim.step,
+            temperatureC: Number(sim.conditions.temperature),
+            pressureKbar: Number(sim.conditions.pressure),
+            fluidSurfaceHeightMm: sim.conditions.fluid_surface_height_mm,
+            drainageMode: cfg?.drainage.mode || null,
+            oxygenMode: cfg?.oxygen.mode || null,
+            co2Mode: cfg?.co2.mode || null,
+            co2ImportedPpm: cfg?.co2.imported_carbonate_ppm ?? null,
+            lightMode: cfg?.light.mode || null,
+            lightExposed: cfg?.light.exposed ?? null,
+        },
+        timeline: [],
+    };
+    sim._weatheringEpilogueState = state;
+    sim._weatheringHistory = state.timeline;
+    if (!state.valid) {
+        sim.log.push(`  ⛔ Weathering epilogue BLOCKED — ${state.errors.join('; ')}.`);
+        return state;
+    }
+    if (cfg.localized_nucleation === true) {
+        sim.wall_state.per_vertex_nucleation = true;
+        if (sim.conditions.wall)
+            sim.conditions.wall.per_vertex_nucleation = true;
+    }
+    sim.log.push(`  ☁ Weathering epilogue begins — ${state.kind}; drainage=${cfg.drainage.mode}, `
+        + `O₂=${cfg.oxygen.mode}, CO₂=${cfg.co2.mode}, light=${cfg.light.mode}.`);
+    return state;
+}
+function _weatheringRequiredReleaseSpecies(sim, mineral) {
+    const cfg = sim?._weatheringEpilogueState?.valid
+        ? sim._weatheringEpilogueState.config : null;
+    const listed = cfg?.require_released_species?.[mineral];
+    return Array.isArray(listed) ? listed.map(String) : [];
+}
+function weatheringNucleationContext(sim, mineral) {
+    const state = sim?._weatheringEpilogueState;
+    if (state && !state.valid && state.blockedProducts?.includes(mineral)) {
+        return { required: true, eligible: false, reason: 'invalid-weathering-declaration',
+            parent: null, localSigma: 0, released: {} };
+    }
+    // Before activation, validate the declaration read-only so scenario-specific
+    // products cannot nucleate through the ordinary path before start_step.
+    const rawCfg = !state ? weatheringEpilogueConfig(sim) : null;
+    const preActivation = rawCfg ? validateWeatheringEpilogueConfig(rawCfg) : null;
+    if (!state && preActivation && !preActivation.valid
+        && _weatheringBlockedProductsFromRaw(rawCfg).includes(mineral)) {
+        return { required: true, eligible: false, reason: 'invalid-weathering-declaration',
+            parent: null, localSigma: 0, released: {} };
+    }
+    const cfg = state?.valid ? state.config
+        : (preActivation?.valid ? preActivation.normalized : null);
+    const requiredSpecies = _weatheringRequiredReleaseSpecies(sim, mineral);
+    const declaredRequiredSpecies = requiredSpecies.length
+        ? requiredSpecies : (Array.isArray(cfg?.require_released_species?.[mineral])
+        ? cfg.require_released_species[mineral] : []);
+    if (!cfg || !declaredRequiredSpecies.length) {
+        return { required: false, eligible: true, parent: null, localSigma: null, released: {} };
+    }
+    const startStep = Number(cfg.start_step);
+    const endStep = Number(cfg.end_step);
+    const active = state ? weatheringEpilogueActive(sim)
+        : (sim.step >= startStep && sim.step <= endStep);
+    if (!active) {
+        return { required: true, eligible: false, reason: 'outside-weathering-window',
+            parent: null, localSigma: 0, released: {} };
+    }
+    const allowedParents = Array.isArray(cfg.parent_minerals?.[mineral])
+        ? cfg.parent_minerals[mineral].map(String)
+        : (WEATHERING_PARENT_MINERALS[mineral] || []);
+    const candidates = [];
+    for (const crystal of (sim.crystals || [])) {
+        if (!allowedParents.includes(crystal.mineral))
+            continue;
+        const released = {};
+        let latestStep = -Infinity;
+        for (const zone of (crystal.zones || [])) {
+            if (!(zone && Number(zone.step) >= startStep && Number(zone.thickness_um) < 0))
+                continue;
+            const returned = zone._returned_budget_inventory || {};
+            for (const species of declaredRequiredSpecies) {
+                released[species] = (released[species] || 0)
+                    + Math.max(0, Number(returned[species]) || 0);
+            }
+            latestStep = Math.max(latestStep, Number(zone.step) || 0);
+        }
+        if (!declaredRequiredSpecies.every(species => (released[species] || 0) > 0))
+            continue;
+        const anchor = sim.wall_state?._resolveAnchor?.(crystal);
+        const local = sim._localNucleationEvaluationAtAnchor?.(mineral, anchor);
+        const sigmaCrit = Number(MINERAL_GATES_REGISTRY?.[mineral]?.sigma_crit);
+        const localSigma = Number(local?.sigma) || 0;
+        if (Number.isFinite(sigmaCrit) && !(localSigma > sigmaCrit))
+            continue;
+        const releaseTotal = declaredRequiredSpecies.reduce((sum, species) => sum + released[species], 0);
+        candidates.push({ crystal, released, latestStep, localSigma, releaseTotal });
+    }
+    candidates.sort((a, b) => b.latestStep - a.latestStep
+        || b.releaseTotal - a.releaseTotal
+        || a.crystal.crystal_id - b.crystal.crystal_id);
+    const best = candidates[0];
+    return best
+        ? { required: true, eligible: true, reason: 'qualified-precursor', parent: best.crystal,
+            localSigma: best.localSigma, released: best.released }
+        : { required: true, eligible: false, reason: 'no-qualified-precursor',
+            parent: null, localSigma: 0, released: {} };
+}
+function weatheringLightAtCrystal(sim, crystal, baseIsLit) {
+    const state = sim?._weatheringEpilogueState;
+    const cfg = state?.valid ? state.config : null;
+    if (!cfg || !weatheringEpilogueActive(sim))
+        return baseIsLit;
+    if (cfg.light?.exposed !== true)
+        return false;
+    const anchor = sim.wall_state?._resolveAnchor?.(crystal);
+    if (!anchor)
+        return false;
+    return sim.conditions.ringWaterState(anchor.ringIdx, sim.wall_state.ring_count) === 'vadose';
+}
+function recordWeatheringEpilogueStep(sim) {
+    const state = sim?._weatheringEpilogueState;
+    const cfg = state?.valid ? state.config : null;
+    if (!cfg || !weatheringEpilogueActive(sim))
+        return;
+    const nRings = sim.wall_state.ring_count;
+    const drainageCounts = { submerged: 0, meniscus: 0, vadose: 0 };
+    for (let r = 0; r < nRings; r++) {
+        const key = sim.conditions.ringWaterState(r, nRings);
+        drainageCounts[key]++;
+    }
+    const grid = sim.wall_state?.voxelGridFor?.(sim);
+    const vadoseTemperatures = (grid?.voxels || [])
+        .filter((voxel) => sim.conditions.ringWaterState(voxel.ringIdx, nRings) === 'vadose')
+        .map((voxel) => Number(voxel.temperature))
+        .filter((value) => Number.isFinite(value));
+    const localTemperatureRangeC = vadoseTemperatures.length ? {
+        scope: 'canonical vadose voxels',
+        sampleCount: vadoseTemperatures.length,
+        min: Math.min(...vadoseTemperatures),
+        max: Math.max(...vadoseTemperatures),
+        mean: vadoseTemperatures.reduce((sum, value) => sum + value, 0)
+            / vadoseTemperatures.length,
+    } : null;
+    const boundary = (sim._vadoseExposureTransactions || [])
+        .filter((tx) => tx.step === sim.step);
+    const dissolution = [];
+    const replacement = [];
+    const trackedProducts = Array.isArray(cfg.tracked_products)
+        ? cfg.tracked_products.map(String) : [];
+    for (const crystal of (sim.crystals || [])) {
+        for (const zone of (crystal.zones || [])) {
+            if (Number(zone?.step) !== sim.step)
+                continue;
+            if (Number(zone.thickness_um) < 0) {
+                dissolution.push({
+                    crystalId: crystal.crystal_id,
+                    mineral: crystal.mineral,
+                    mode: zone.dissolutionMode || null,
+                    thicknessUm: -Number(zone.thickness_um),
+                    returnedInventory: { ...(zone._returned_budget_inventory || {}) },
+                    massAccounting: 'accepted-shell LIFO return',
+                });
+            }
+            else if (Number(zone.thickness_um) > 0 && trackedProducts.includes(crystal.mineral)) {
+                replacement.push({
+                    crystalId: crystal.crystal_id,
+                    mineral: crystal.mineral,
+                    thicknessUm: Number(zone.thickness_um),
+                    position: crystal.position,
+                    bookedInventoryPerUm: { ...(zone._budget_inventory_per_um || {}) },
+                    coPartition: zone.co_partition ? { ...zone.co_partition } : null,
+                });
+            }
+        }
+    }
+    state.timeline.push({
+        step: sim.step,
+        temperatureC: Number(sim.conditions.temperature),
+        localTemperatureRangeC,
+        pressureKbar: Number(sim.conditions.pressure),
+        drainage: {
+            mode: cfg.drainage.mode,
+            fluidSurfaceHeightMm: sim.conditions.fluid_surface_height_mm,
+            ringCounts: drainageCounts,
+        },
+        oxygen: {
+            mode: cfg.oxygen.mode,
+            targetResidualPpm: Number(cfg.oxygen.target_residual_ppm),
+            transactions: boundary.map((tx) => ({ ...tx })),
+        },
+        co2: {
+            mode: cfg.co2.mode,
+            importedCarbonatePpm: Math.max(0, Number(cfg.co2.imported_carbonate_ppm) || 0),
+            note: cfg.co2.note || null,
+        },
+        light: {
+            mode: cfg.light.mode,
+            exposed: cfg.light.exposed === true,
+            exposedRingCount: cfg.light.exposed === true ? drainageCounts.vadose : 0,
+        },
+        dissolution,
+        replacement,
+        excludedOutcome: cfg.excluded_outcome ? { ...cfg.excluded_outcome } : null,
+    });
+}
+
 // ── 45-morphology.js ──
 
 // ============================================================
@@ -46211,9 +46731,18 @@ function grow_aragonite(crystal, conditions, step) {
     const trace_Mn = conditions.fluid.Mn * 0.05;
     const trace_Fe = conditions.fluid.Fe * 0.06;
     // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
-    let note = `${crystal.habit} CaCO₃`;
     const srPartition = aragoniteSrPartitioning(conditions.fluid);
+    const coPartition = aragoniteCoPartitioning(conditions.fluid, conditions.temperature);
     const pb_uptake = conditions.fluid.Pb * 0.10;
+    // Secondary cobalt aragonite commonly forms crusts/rounded aggregates in
+    // weathered Co ores. Set the actual fabric before composing the zone note so
+    // the recorded history and the rendered habit cannot disagree.
+    if (coPartition.formulaCoefficientCo > 0
+        && conditions.temperature >= 20 && conditions.temperature <= 30) {
+        crystal.habit = 'botryoidal_crust';
+        crystal.dominant_forms = ['pink botryoidal coating', 'radiating microcrystalline aragonite'];
+    }
+    let note = `${crystal.habit} CaCO₃`;
     if (srPartition.formulaCoefficientSr > 0 || pb_uptake > 0.5) {
         note += ` (Sr partitioned at D=${srPartition.distributionCoefficient.toFixed(2)} from local dripwater`;
         if (pb_uptake > 0.5)
@@ -46227,20 +46756,34 @@ function grow_aragonite(crystal, conditions, step) {
             note += ` — molar Mg/Ca=${mg_ratio_molar.toFixed(1)}, calcite is poisoned here`;
         }
     }
+    if (coPartition.formulaCoefficientCo > 0) {
+        note += ` — Co-bearing aragonite (equilibrium DCo=${coPartition.distributionCoefficient.toFixed(2)}, `
+            + `effective booked DCo=${coPartition.effectiveBookedDistributionCoefficient.toFixed(2)}, `
+            + `${coPartition.targetSolidCoPpm.toFixed(0)} ppm target shell Co; exact accepted uptake booked)`;
+    }
+    const traceStoichiometry = {};
+    if (srPartition.formulaCoefficientSr > 0) {
+        traceStoichiometry.Sr = srPartition.formulaCoefficientSr;
+    }
+    if (coPartition.formulaCoefficientCo > 0) {
+        traceStoichiometry.Co = coPartition.formulaCoefficientCo;
+    }
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
         trace_Fe, trace_Mn,
         trace_Sr: srPartition.targetSolidSrPpm,
-        trace_stoichiometry: srPartition.formulaCoefficientSr > 0
-            ? { Sr: srPartition.formulaCoefficientSr }
-            : undefined,
+        trace_Co: coPartition.targetSolidCoPpm,
+        trace_stoichiometry: Object.keys(traceStoichiometry).length
+            ? traceStoichiometry : undefined,
         sr_partition: srPartition,
+        co_partition: coPartition,
         note,
     });
 }
 function grow_dolomite(crystal, conditions, step) {
-    // Kim 2023 kinetics — see Python grow_dolomite for full citation.
+    // Kim 2023 cyclic-omega kinetics. The executable ordering model and its
+    // citations live in the TypeScript carbonate kinetics/runtime modules.
     // Cycling required for true ordered dolomite; phantom_count tracks cycles.
     const sigma = conditions.supersaturation_dolomite();
     if (sigma < 1.0) {
@@ -46301,7 +46844,14 @@ function grow_dolomite(crystal, conditions, step) {
         const base_rate = 4.5 * excess * rng.uniform(0.7, 1.3);
         rate = base_rate * (0.30 + 0.70 * f_ord);
     }
-    if (conditions.temperature > 200 && morphologyExcess < 0.5) {
+    // Saddle/baroque curvature is a rough-growth defect that requires the
+    // ~50-60 C critical roughening regime (Gregg & Sibley 1984). Saturation
+    // alone must not give an ambient sabkha or cave dolomite curved faces.
+    if (conditions.temperature < 50) {
+        crystal.habit = 'coarse_rhomb';
+        crystal.dominant_forms = ['planar rhombohedral {104}', 'ambient-temperature dolomite'];
+    }
+    else if (conditions.temperature > 200 && morphologyExcess < 0.5) {
         crystal.habit = 'coarse_rhomb';
         crystal.dominant_forms = ['coarse rhombohedral {104}', 'transparent to white textbook crystals'];
     }
@@ -56151,8 +56701,7 @@ function event_copper_injection(conditions) {
     else {
         conditions.fluid.SiO2 += 200.0;
     }
-    // Drift-fix: Python event also bumps Pb +20 (porphyry fluids carry Pb).
-    // Was missing from JS.
+    // Porphyry fluids carry Pb; keep the Cu pulse chemically complete.
     conditions.fluid.Pb += 20.0;
     conditions.fluid.O2 = 0.3;
     conditions.temperature += 30;
@@ -56161,8 +56710,7 @@ function event_copper_injection(conditions) {
 }
 // Late-stage Mo pulse — separate from Cu in porphyry systems. Per Seo et
 // al. 2012 (Bingham Canyon), Mo arrives in a distinct later pulse from Cu.
-// This mirror was added to JS in the porphyry chemistry-audit pass — the
-// Python equivalent has existed since carbonate round 3.
+// Added in the porphyry chemistry-audit pass.
 function event_molybdenum_pulse(conditions) {
     conditions.fluid.Mo = 80.0;
     conditions.fluid.S += 40.0;
@@ -56352,8 +56900,7 @@ function event_film_coat(conditions) {
 // Per proposals/TASK-BRIEF-DATA-AS-TRUTH.md item 1, Option A.
 // Maps event-type strings used in data/scenarios.json5 to module-level
 // event handler functions. Adding a new event type requires registering
-// it here; tools/sync-spec.js verifies that this registry covers every
-// type referenced in the JSON5.
+// it here; scenario contract tests verify coverage of every type in JSON5.
 const EVENT_REGISTRY = {
     fluid_pulse: event_fluid_pulse,
     amethyst_chalcedony_maturation: event_amethyst_chalcedony_maturation,
@@ -56552,6 +57099,7 @@ const EVENT_REGISTRY = {
     wittichen_hydrocarbon_influx: event_wittichen_hydrocarbon_influx,
     wittichen_meteoric_sulfate: event_wittichen_meteoric_sulfate,
     wittichen_carbonate_gangue: event_wittichen_carbonate_gangue,
+    wittichen_vadose_weathering: event_wittichen_vadose_weathering,
     // 2026-06-15 — Tormiq Valley alpine-cleft epidote (Gilgit-Baltistan,
     // Pakistan), the v197 anchor for epidote. See js/70v-tormiq.ts (6 handlers).
     tormiq_quartz_lining: event_tormiq_quartz_lining,
@@ -56699,6 +57247,12 @@ function _buildScenarioFromSpec(scenarioId, spec) {
             // numbers as events and player-facing testimony.
             // They constrain only this scenario; Creative mode retains every engine.
             nucleation_windows: spec.nucleation_windows,
+            // Executed low-temperature exposure history.  This is copied as data,
+            // then validated/consumed by js/44e-weathering-epilogue.ts; an authored
+            // final-state label alone never changes chemistry.
+            weathering_epilogue: spec.weathering_epilogue
+                ? { ...spec.weathering_epilogue }
+                : undefined,
             // Geological MOVEMENTS (js/85j) — persistent master-variable drift.
             // Absent in every scenario today (Phase 0 dark scaffold) → the run_step
             // movement hook stays a no-op and seed-42 is byte-identical. Phase 1
@@ -58186,7 +58740,6 @@ function event_sabkha_final_seal(c) {
     return "Sabkha matures, then seals. The crust hardens and groundwater stops cycling. What remains is the result of twelve dissolution-precipitation cycles — ordered dolomite where the cycling did its work, disordered HMC where it didn't. The Coorong recipe for ambient-T ordered dolomite, the natural laboratory that Kim 2023 finally explained at the atomic scale.";
 }
 // v29 evaporite-locality scenarios — Naica + Searles Lake events.
-// Mirror of event_naica_* + event_searles_* in vugg.py.
 function event_naica_slow_cooling(c) {
     if (c.temperature > 51)
         c.temperature -= 0.7;
@@ -59581,12 +60134,34 @@ function event_wittichen_meteoric_sulfate(c) {
     return `Meteoric water reaches the vein — oxidized sulfate arrives (S ${c.fluid.S.toFixed(0)} ppm, T ${c.temperature.toFixed(0)}°C). The barite stage opens; the arsenide stage is over; the silver begins to tarnish.`;
 }
 function event_wittichen_carbonate_gangue(c) {
-    c.fluid.CO3 = Math.min(140, c.fluid.CO3 + 95);
-    c.fluid.Ca = Math.min(420, c.fluid.Ca + 160);
+    const targetCO3 = Math.min(140, c.fluid.CO3 + 95);
+    const targetCa = Math.min(420, c.fluid.Ca + 160);
+    const carbonateAdded = Math.max(0, targetCO3 - c.fluid.CO3);
+    const calciumAdded = Math.max(0, targetCa - c.fluid.Ca);
+    declareFluidBoundaryAddition(c, 'Wittichen late carbonate-gangue fluid', { CO3: carbonateAdded, Ca: calciumAdded });
+    declareCarbonLedgerAddition(c, 'external_import', 'Wittichen late carbonate-gangue fluid', carbonateAdded);
+    c.fluid.CO3 = targetCO3;
+    c.fluid.Ca = targetCa;
     // Carbonate-buffered late water — without the pH shift calcite never
     // opened at the first observation (pH 6.2 throughout the run).
     c.fluid.pH = Math.min(7.4, c.fluid.pH + 1.1);
     return `Carbonate gangue stage — CO₃ ${c.fluid.CO3.toFixed(0)}, Ca ${c.fluid.Ca.toFixed(0)} ppm, pH ${c.fluid.pH.toFixed(1)}. Calcite seals the dendrites into the vein: the cross-section specimen assembles itself.`;
+}
+function event_wittichen_vadose_weathering(c) {
+    // Post-vein exhumation is a new physical regime, not an extra hydrothermal
+    // pulse.  The event owns only the boundary change.  js/44e records the
+    // explicit O2/CO2/light/drainage contract, while ordinary local engines
+    // dissolve exposed Co arsenides and book any secondary products.
+    c.temperature = 25;
+    c.pressure = clampFluidPressureKbar(0.001);
+    c.fluid_surface_height_mm = 2.0;
+    c.flow_rate = 0.08;
+    // The vein-scale fracture-pulse generator belongs to the buried hydrothermal
+    // stage. Once exhumation establishes an atmospheric vadose pocket it cannot
+    // randomly reheat the local field toward the 340 C starting temperature.
+    c.wall.ambient_temperature_C = 25;
+    c.wall.thermal_pulses = false;
+    return 'Exhumation breaches the upper vein. The water table falls to 2 mm, pressure approaches atmospheric, and the exposed wall cools to 25°C. Only vadose cells receive atmospheric O₂; the submerged floor preserves the hypogene assemblage.';
 }
 
 // ── 70v-tormiq.js ──
@@ -60317,19 +60892,34 @@ function _nuc_mimetite(sim) {
     // Erythrite nucleation — the cobalt bloom, low-T oxidation of Co arsenides.
 }
 function _nuc_erythrite(sim) {
-    const sigma_ery = sim.conditions.supersaturation_erythrite();
+    const weathering = weatheringNucleationContext(sim, 'erythrite');
+    if (weathering.required && !weathering.eligible)
+        return;
+    const sigma_ery = weathering.required
+        ? weathering.localSigma
+        : sim.conditions.supersaturation_erythrite();
     const existing_ery = sim.crystals.filter(c => c.mineral === 'erythrite' && c.active);
     if (sigma_ery > MINERAL_GATES_erythrite.sigma_crit && !existing_ery.length && !sim._atNucleationCap('erythrite')) {
-        let pos = 'vug wall';
+        let pos = weathering.parent
+            ? `on weathering ${weathering.parent.mineral} #${weathering.parent.crystal_id}`
+            : 'vug wall';
         const existing_goe_e = sim.crystals.filter(c => c.mineral === 'goethite' && c.active);
         const existing_adam_e = sim.crystals.filter(c => c.mineral === 'adamite' && c.active);
-        if (existing_goe_e.length && rng.random() < 0.5) {
+        if (!weathering.parent && existing_goe_e.length && rng.random() < 0.5) {
             pos = `on goethite #${existing_goe_e[0].crystal_id}`;
         }
-        else if (existing_adam_e.length && rng.random() < 0.3) {
+        else if (!weathering.parent && existing_adam_e.length && rng.random() < 0.3) {
             pos = `on adamite #${existing_adam_e[0].crystal_id}`;
         }
         const c = sim.nucleate('erythrite', pos, sigma_ery);
+        if (weathering.required) {
+            c.weathering_precursor_receipt = {
+                schema: 'weathering-precursor-v1',
+                parentCrystalId: weathering.parent.crystal_id,
+                parentMineral: weathering.parent.mineral,
+                releasedInventory: { ...weathering.released },
+            };
+        }
         sim.log.push(`  ✦ NUCLEATION: Erythrite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_ery.toFixed(2)})`);
     }
     // Annabergite nucleation — the nickel bloom, Ni equivalent of erythrite.
@@ -60662,7 +61252,12 @@ function _nuc_calcite(sim) {
     // Aragonite nucleation — Mg/Ca + T + Ω + trace Sr/Pb/Ba favorability.
 }
 function _nuc_aragonite(sim) {
-    const sigma_arag = sim.conditions.supersaturation_aragonite();
+    const weathering = weatheringNucleationContext(sim, 'aragonite');
+    if (weathering.required && !weathering.eligible)
+        return;
+    const sigma_arag = weathering.required
+        ? weathering.localSigma
+        : sim.conditions.supersaturation_aragonite();
     const existing_arag = sim.crystals.filter(c => c.mineral === 'aragonite' && c.active);
     const air_mode = !!(sim.conditions.wall && sim.conditions.wall.air_mode_default);
     // Air-mode path matches calcite above. See _AIR_MODE_NUCLEATION_PROB
@@ -60671,15 +61266,25 @@ function _nuc_aragonite(sim) {
         ? (rng.random() < _AIR_MODE_NUCLEATION_PROB)
         : !existing_arag.length;
     if (sigma_arag > MINERAL_GATES_aragonite.sigma_crit && gateClear && !sim._atNucleationCap('aragonite')) {
-        let pos = 'vug wall';
+        let pos = weathering.parent
+            ? `on weathering ${weathering.parent.mineral} #${weathering.parent.crystal_id}`
+            : 'vug wall';
         const existing_goe_a = sim.crystals.filter(c => c.mineral === 'goethite' && c.active);
         const existing_hem_a = sim.crystals.filter(c => c.mineral === 'hematite' && c.active);
-        if (existing_goe_a.length && rng.random() < 0.4)
+        if (!weathering.parent && existing_goe_a.length && rng.random() < 0.4)
             pos = `on goethite #${existing_goe_a[0].crystal_id}`;
-        else if (existing_hem_a.length && rng.random() < 0.3)
+        else if (!weathering.parent && existing_hem_a.length && rng.random() < 0.3)
             pos = `on hematite #${existing_hem_a[0].crystal_id}`;
         const mg_ratio = sim.conditions.fluid.Mg / Math.max(sim.conditions.fluid.Ca, 0.01);
         const c = sim.nucleate('aragonite', pos, sigma_arag);
+        if (weathering.required) {
+            c.weathering_precursor_receipt = {
+                schema: 'weathering-precursor-v1',
+                parentCrystalId: weathering.parent.crystal_id,
+                parentMineral: weathering.parent.mineral,
+                releasedInventory: { ...weathering.released },
+            };
+        }
         sim.log.push(`  ✦ NUCLEATION: Aragonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, Mg/Ca=${mg_ratio.toFixed(2)}, σ=${sigma_arag.toFixed(2)})`);
     }
     // Dolomite nucleation — Ca-Mg carbonate, needs both cations + T > 50°C.
@@ -61267,8 +61872,7 @@ function _nucleateClass_molybdate(sim) {
 // ============================================================
 // js/85-simulator.ts — VugSimulator class + small utilities
 // ============================================================
-// The run-loop class. Mirror of vugg.VugSimulator (Phase A8 of the
-// Python refactor would split this further; for now it lives whole).
+// The authoritative TypeScript run-loop class.
 //
 // Reads from VugConditions / FluidChemistry / WallState, dispatches to
 // MINERAL_ENGINES per crystal per step, applies events, runs paramorph
@@ -61558,7 +62162,7 @@ class VugSimulator {
         // fluid via aliasing). Snapshot before and propagate the delta to
         // non-equator rings — otherwise a global event pulse never reaches
         // the rings where crystals are actually growing. Same wrap on
-        // dissolve_wall and ambient_cooling. Mirrors vugg.py.
+        // dissolve_wall and ambient_cooling.
         let snap = this._snapshotGlobal();
         this.apply_events();
         this._propagateGlobalDelta(snap);
@@ -61586,6 +62190,10 @@ class VugSimulator {
             this._movements.applyStep(this.conditions, this.step, this);
             this._propagateGlobalDelta(mvSnap);
         }
+        // An authored weathering epilogue is an executed boundary contract, not a
+        // scenario label. Activate it only after same-step events/movements have
+        // established T/P/water level and before the vadose transition is applied.
+        activateWeatheringEpilogueIfDue(this);
         // v26: continuous drainage from host-rock porosity. Runs before
         // the vadose override so a porosity-driven drift-out gets caught
         // as a transition on the same step it dries.
@@ -62112,7 +62720,8 @@ class VugSimulator {
         // for museum-collection specimens.
         const isLit = this.wall_state.is_lit !== false;
         for (const crystal of this.crystals) {
-            const transition = applyLightTransitions(crystal, isLit, this.step);
+            const localIsLit = weatheringLightAtCrystal(this, crystal, isLit);
+            const transition = applyLightTransitions(crystal, localIsLit, this.step);
             if (transition) {
                 const [oldM, newM] = transition;
                 this.log.push(`  ☼ LIGHT-INDUCED: ${capitalize(oldM)} #${crystal.crystal_id} → ${newM} ` +
@@ -62123,7 +62732,7 @@ class VugSimulator {
         }
         // v28: dehydration paramorphs — environment-triggered counterpart
         // to PARAMORPH_TRANSITIONS. Borax left in a vadose ring loses
-        // water and pseudomorphs to tincalconite. Mirror of vugg.py.
+        // water and pseudomorphs to tincalconite.
         {
             const nRings = this.wall_state.ring_count;
             // PROPOSAL-CAVITY-MESH Phase 4 Tranche 4a — read the crystal's
@@ -62335,6 +62944,11 @@ class VugSimulator {
         // booked volume and mean layer thickness for the renderer; representative
         // instances never create extra mineral inventory. See js/45.
         classifySurfaceGrowth(this);
+        // Capture the actual environmental and mass-transfer result after every
+        // growth/dissolution and transformation path has had its turn this step.
+        // This produces an auditable history with empty rows when a declared
+        // weathering interval causes no reaction — absence is evidence too.
+        recordWeatheringEpilogueStep(this);
         // Central-distance (Wulff) FORM (central-distance arc Phase 4 rung 4a.1, 2026-06-28) — the
         // arc's destination: tags fluorite with the {100}/{111} central-distance bias so the renderer
         // draws the geometrically-true cube↔cuboctahedron↔octahedron form instead of a fixed primitive.
@@ -62357,6 +62971,9 @@ class VugSimulator {
         // === END HELIX-OVERLAY-FORK ADDITION ==============================
         if (this.conditions.fluid.sulfurPoolsExplicit) {
             this._sulfurLedgerHistory.push(simulatorSulfurLedgerSnapshot(this));
+        }
+        if (this._carbonLedgerEnabled) {
+            this._carbonLedgerHistory.push(simulatorCarbonLedgerSnapshot(this));
         }
         return this.log;
     }
@@ -64957,7 +65574,7 @@ Object.assign(VugSimulator.prototype, {
     // Phase C v1: snapshot conditions.fluid + temperature before a
     // global-mutating block (events, wall dissolution, ambient cooling).
     // Pair with _propagateGlobalDelta to apply the same delta to all
-    // non-equator rings. Mirrors VugSimulator._snapshot_global in vugg.py.
+    // non-equator rings.
     _snapshotGlobal() {
         const sulfurState = this.conditions.fluid.sulfurPoolsExplicit
             ? _spatialSulfurState(this) : null;
@@ -65282,7 +65899,6 @@ Object.assign(VugSimulator.prototype, {
     // snap fluid_surface_ring above ring_count get clamped here on the
     // next step (so events can write a sentinel like 1e6 to mean
     // "fill to ceiling" without needing to know ring_count themselves).
-    // Mirror of VugSimulator._apply_water_level_drift in vugg.py.
     _applyWaterLevelDrift() {
         let s = this.conditions.fluid_surface_ring;
         if (s === null || s === undefined)
@@ -65306,7 +65922,6 @@ Object.assign(VugSimulator.prototype, {
     // stays reducing while the now-exposed ceiling oxidizes — matches
     // real-world supergene paragenesis (galena → cerussite, chalcopyrite
     // → malachite/azurite, pyrite → limonite, all in the air zone).
-    // Mirror of VugSimulator._apply_vadose_oxidation_override in vugg.py.
     _applyVadoseOxidationOverride() {
         const n = this.wall_state.ring_count;
         const newSurface = this.conditions.fluid_surface_ring;
@@ -65334,24 +65949,71 @@ Object.assign(VugSimulator.prototype, {
         const mesh = this.wall_state.meshFor
             ? this.wall_state.meshFor(this)
             : null;
+        const grid = this.wall_state.voxelGridFor
+            ? this.wall_state.voxelGridFor(this)
+            : null;
         const cellsPerRing = this.wall_state.cells_per_ring || 0;
+        // Only the normalized config stored by the semantic validator may alter the
+        // drying boundary. A malformed declaration therefore falls back to the
+        // ordinary vadose behavior; raw authored values never partly activate.
+        const weatheringState = this._weatheringEpilogueState;
+        const weatheringCfg = weatheringState?.valid ? weatheringState.config : null;
+        const weatheringActive = !!weatheringCfg && weatheringEpilogueActive(this);
+        const targetResidualO2 = weatheringActive
+            ? weatheringCfg.oxygen.target_residual_ppm
+            : 1.8;
+        const concentrationFactor = weatheringActive
+            ? weatheringCfg.drainage.concentration_factor
+            : EVAPORATIVE_CONCENTRATION_FACTOR;
         const becameVadose = [];
         const rewetted = [];
+        const exposureRows = [];
+        const applyDryingBoundary = (fluid) => {
+            if (!fluid)
+                return null;
+            const oxygenBefore = Math.max(0, Number(fluid.O2) || 0);
+            const sulfurBefore = fluid.sulfurPoolsExplicit
+                ? sulfurSystemTotalPpm(fluid)
+                : Math.max(0, Number(fluid.S) || 0);
+            // Open-air exposure supplies dissolved oxygen up to the authored residual.
+            // Sulfur is never deleted here. Legacy one-pool fluids retain their total;
+            // explicit-pool reactions must use a separately balanced redox transfer.
+            fluid.O2 = Math.max(oxygenBefore, targetResidualO2);
+            fluid.concentration *= concentrationFactor;
+            const sulfurAfter = fluid.sulfurPoolsExplicit
+                ? sulfurSystemTotalPpm(fluid)
+                : Math.max(0, Number(fluid.S) || 0);
+            return {
+                oxygenBeforePpm: oxygenBefore,
+                oxygenImportedPpm: fluid.O2 - oxygenBefore,
+                oxygenAfterPpm: fluid.O2,
+                sulfurBeforePpm: sulfurBefore,
+                sulfurAfterPpm: sulfurAfter,
+                sulfurClosed: Math.abs(sulfurAfter - sulfurBefore) <= _ledgerTolerance(sulfurBefore),
+            };
+        };
         for (let r = 0; r < n; r++) {
             const was = VugConditions._classifyWaterState(oldSurface, r, n);
             const now = VugConditions._classifyWaterState(newSurface, r, n);
             if (now === 'vadose' && was !== 'vadose') {
-                // Apply oxidation override to every cell in this ring.
-                if (mesh && mesh.cells && cellsPerRing > 0) {
-                    for (let c = 0; c < cellsPerRing; c++) {
-                        const cell = mesh.cells[r * cellsPerRing + c];
-                        if (!cell || !cell.fluid)
+                // Canonical 3-D path: every depth voxel in the exposed ring receives
+                // the same atmospheric boundary. d=0 aliases the wall mesh, so this also
+                // updates every visible wall cell without double-applying the factor.
+                const canonicalRows = [];
+                if (grid?.voxels?.length) {
+                    for (const voxel of grid.voxels) {
+                        if (voxel?.ringIdx !== r || !voxel.fluid)
                             continue;
-                        if (cell.fluid.O2 < 1.8)
-                            cell.fluid.O2 = 1.8;
-                        cell.fluid.S *= 0.3;
-                        // v27 evaporative concentration boost (mirror of vugg.py).
-                        cell.fluid.concentration *= EVAPORATIVE_CONCENTRATION_FACTOR;
+                        const row = applyDryingBoundary(voxel.fluid);
+                        if (row)
+                            canonicalRows.push(row);
+                    }
+                }
+                else if (mesh && mesh.cells && cellsPerRing > 0) {
+                    for (let c = 0; c < cellsPerRing; c++) {
+                        const row = applyDryingBoundary(mesh.cells[r * cellsPerRing + c]?.fluid);
+                        if (row)
+                            canonicalRows.push(row);
                     }
                 }
                 // ALSO update ring_fluids[r] so nucleation gates see the vadose
@@ -65372,12 +66034,18 @@ Object.assign(VugSimulator.prototype, {
                 // conditions.fluid — the engine sees the boost without further
                 // plumbing.
                 const rf = this.ring_fluids[r];
-                if (rf) {
-                    if (rf.O2 < 1.8)
-                        rf.O2 = 1.8;
-                    rf.S *= 0.3;
-                    rf.concentration *= EVAPORATIVE_CONCENTRATION_FACTOR;
-                }
+                const ringRow = applyDryingBoundary(rf);
+                const allRows = ringRow ? [...canonicalRows, ringRow] : canonicalRows;
+                exposureRows.push({
+                    ring: r,
+                    canonicalFluidCount: canonicalRows.length,
+                    compatibilityMirrorCount: ringRow ? 1 : 0,
+                    oxygenImportedCanonicalPpmEquivalent: canonicalRows.reduce((sum, row) => sum + row.oxygenImportedPpm, 0),
+                    oxygenImportedCompatibilityMirrorPpm: ringRow?.oxygenImportedPpm || 0,
+                    sulfurBeforePpmEquivalent: allRows.reduce((sum, row) => sum + row.sulfurBeforePpm, 0),
+                    sulfurAfterPpmEquivalent: allRows.reduce((sum, row) => sum + row.sulfurAfterPpm, 0),
+                    sulfurClosed: allRows.every(row => row.sulfurClosed),
+                });
                 becameVadose.push(r);
             }
             else if (was === 'vadose' && now !== 'vadose'
@@ -65391,12 +66059,17 @@ Object.assign(VugSimulator.prototype, {
                 // NOT un-oxidize (O2) or restore S: air-exposure mineral reactions
                 // (sulfide→oxide supergene paragenesis) persist through reflooding;
                 // only the soluble evaporite load dilutes.
-                if (mesh && mesh.cells && cellsPerRing > 0) {
+                if (grid?.voxels?.length) {
+                    for (const voxel of grid.voxels) {
+                        if (voxel?.ringIdx === r && voxel.fluid)
+                            voxel.fluid.concentration = 1.0;
+                    }
+                }
+                else if (mesh && mesh.cells && cellsPerRing > 0) {
                     for (let c = 0; c < cellsPerRing; c++) {
                         const cell = mesh.cells[r * cellsPerRing + c];
-                        if (!cell || !cell.fluid)
-                            continue;
-                        cell.fluid.concentration = 1.0;
+                        if (cell?.fluid)
+                            cell.fluid.concentration = 1.0;
                     }
                 }
                 const rf = this.ring_fluids[r];
@@ -65408,6 +66081,20 @@ Object.assign(VugSimulator.prototype, {
         if (rewetted.length) {
             this.log.push(`  💧 Rewetting: rings ${rewetted.join(',')} reflooded — brine dilutes, `
                 + `evaporative concentration resets to baseline 1.0×`);
+        }
+        if (becameVadose.length || rewetted.length) {
+            (this._vadoseExposureTransactions ||= []).push({
+                schema: 'vadose-boundary-receipt-v2',
+                step: this.step,
+                becameVadose: [...becameVadose],
+                rewetted: [...rewetted],
+                targetResidualO2Ppm: targetResidualO2,
+                concentrationFactor,
+                oxygenAccounting: 'canonical voxel ppm-equivalents; compatibility ring mirrors itemized separately',
+                sulfurHandling: 'total-preserved; no implicit redox deletion',
+                rings: exposureRows,
+                closed: exposureRows.every(row => row.sulfurClosed),
+            });
         }
         return becameVadose;
     },
@@ -66025,7 +66712,7 @@ Object.assign(VugSimulator.prototype, {
     // When a big crystal grows past an adjacent smaller one that's stopped
     // growing, the smaller crystal becomes an inclusion inside the bigger
     // one. Classic "Sweetwater mechanism" — pyrite first, then calcite
-    // grows around it. Ports check_enclosure from vugg.py 1:1.
+    // grows around it.
     _check_enclosure() {
         for (const grower of this.crystals) {
             if (!grower.active || grower.c_length_mm < 0.5)
@@ -66143,8 +66830,7 @@ Object.assign(VugSimulator.prototype, {
         }
     },
     // When the host crystal is dissolving back past the point it enclosed
-    // a neighbor, the neighbor is freed. Ports check_liberation from
-    // vugg.py 1:1.
+    // a neighbor, the neighbor is freed.
     _check_liberation() {
         for (const host of this.crystals) {
             if (!host.enclosed_crystals.length)
@@ -81390,6 +82076,7 @@ function readCreativeGeologicalControls(baseWall = {}) {
     wallOpts.graphitic = !!document.getElementById('f-graphitic')?.checked;
     wallOpts.open_system = !!document.getElementById('f-open-system')?.checked;
     wallOpts.open_spring = !!document.getElementById('f-open-spring')?.checked;
+    wallOpts.is_lit = !!document.getElementById('f-is-lit')?.checked;
     wallOpts.thermal_pulses = !!document.getElementById('f-thermal-pulses')?.checked;
     // Alpine-cleft behavior is a consequence of cleft architecture rather
     // than a second unexplained switch for the same geological setting.
@@ -82895,6 +83582,20 @@ const BROTH_MAP = {
         get: () => !!fortressSim.conditions.wall.open_spring,
         set: v => { fortressSim.conditions.wall.open_spring = !!v; },
         fmt: v => v ? 'open spring/vent apron' : 'sealed/non-spring',
+        parse: v => String(v) === '1',
+        toSlider: v => v ? '1' : '0',
+        valid: v => typeof v === 'boolean',
+    },
+    is_lit: {
+        path: 'wall.is_lit',
+        get: () => fortressSim.wall_state?.is_lit !== false,
+        set: v => {
+            const exposed = !!v;
+            fortressSim.conditions.wall.is_lit = exposed;
+            if (fortressSim.wall_state)
+                fortressSim.wall_state.is_lit = exposed;
+        },
+        fmt: v => v ? 'light-exposed' : 'dark cavity',
         parse: v => String(v) === '1',
         toSlider: v => v ? '1' : '0',
         valid: v => typeof v === 'boolean',

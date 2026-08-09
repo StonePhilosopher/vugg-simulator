@@ -117,7 +117,6 @@ function event_sabkha_final_seal(c) {
 }
 
 // v29 evaporite-locality scenarios — Naica + Searles Lake events.
-// Mirror of event_naica_* + event_searles_* in vugg.py.
 
 function event_naica_slow_cooling(c) {
   if (c.temperature > 51) c.temperature -= 0.7;

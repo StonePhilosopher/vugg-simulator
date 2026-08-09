@@ -79,8 +79,12 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 12 — aragonite engine promotion (v14
 describe('PROPOSAL-CARBONATE-GEOCHEM Week 12 — supersaturation_aragonite preserves favorability layer', () => {
   it('does not apply the open-spring temperature selector in a sealed 0.2-kbar vein', () => {
     const f = new FluidChemistry({ Ca: 300, Mg: 100, CO3: 400, pH: 7.0, Sr: 12, Pb: 30, Ba: 25 });
-    const shallow = new VugConditions({ temperature: 75, pressure: 0.05, fluid: f });
-    const sealed = new VugConditions({ temperature: 75, pressure: 0.2, fluid: f });
+    const shallow = new VugConditions({
+      temperature: 75, pressure: 0.05, fluid: f, wall: { open_spring: true },
+    });
+    const sealed = new VugConditions({
+      temperature: 75, pressure: 0.2, fluid: f, wall: { open_spring: false },
+    });
     expect(shallow.supersaturation_aragonite()).toBeGreaterThan(1);
     expect(sealed.supersaturation_aragonite()).toBeLessThan(1);
   });

@@ -338,16 +338,22 @@ describe('wulfenite Pb:Mo habit lever (rung 4a.7)', () => {
 // in; its late-stage (wittichen_meteoric_sulfate) barite grows bladed. The a≠b rectangle is a kernel
 // property (wulff-geometry.test.ts), not a classifier one.
 describe('Wulff form tag — barite tenant (rung 4a.4)', () => {
-  it('wittichen (wall.wulff_barite) tags its bladed vein barite, biasC in the bladed band', () => {
+  it('wittichen tags each mixed barite habit in its matching Wulff band', () => {
     const sim = run('wittichen');
     expect(sim).toBeTruthy();
     const tagged = wulffed(sim).filter((c: any) => c.mineral === 'barite');
-    expect(tagged.length).toBeGreaterThan(0);            // the late-oxidation bladed barite
+    expect(tagged.length).toBeGreaterThan(0);
+    expect(tagged.some((c: any) => c._wulffForm.bladed)).toBe(true);
+    expect(tagged.some((c: any) => !c._wulffForm.bladed)).toBe(true);
     for (const c of tagged) {
       expect(c._wulffForm.tabular).toBe(true);           // tabular-family plate (signals the diameter scale)
-      // bladed band [1.9,3.0] (aspect ≈ 4.5–6.9 — a thin divergent blade; from the orthorhombic sweep)
-      expect(c._wulffForm.biasC).toBeGreaterThanOrEqual(1.9);
-      expect(c._wulffForm.biasC).toBeLessThanOrEqual(3.0);
+      if (c._wulffForm.bladed) {
+        expect(c._wulffForm.biasC).toBeGreaterThanOrEqual(1.9);
+        expect(c._wulffForm.biasC).toBeLessThanOrEqual(3.0);
+      } else {
+        expect(c._wulffForm.biasC).toBeGreaterThanOrEqual(1.3);
+        expect(c._wulffForm.biasC).toBeLessThanOrEqual(2.2);
+      }
       expect(_makeWulffGeom(wulffFaceSetForMineral('barite', c._wulffForm.growthFrac, 0, c._wulffForm.biasC))).toBeTruthy();
     }
   });

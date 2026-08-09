@@ -192,7 +192,7 @@ Object.assign(VugSimulator.prototype, {
   // Phase C v1: snapshot conditions.fluid + temperature before a
 // global-mutating block (events, wall dissolution, ambient cooling).
 // Pair with _propagateGlobalDelta to apply the same delta to all
-// non-equator rings. Mirrors VugSimulator._snapshot_global in vugg.py.
+// non-equator rings.
 _snapshotGlobal() {
   const sulfurState = this.conditions.fluid.sulfurPoolsExplicit
     ? _spatialSulfurState(this) : null;
@@ -503,7 +503,6 @@ _propagateGlobalDelta(snap, options: any = {}) {
 // snap fluid_surface_ring above ring_count get clamped here on the
 // next step (so events can write a sentinel like 1e6 to mean
 // "fill to ceiling" without needing to know ring_count themselves).
-// Mirror of VugSimulator._apply_water_level_drift in vugg.py.
 _applyWaterLevelDrift() {
   let s = this.conditions.fluid_surface_ring;
   if (s === null || s === undefined) return 0;
@@ -526,7 +525,6 @@ _applyWaterLevelDrift() {
 // stays reducing while the now-exposed ceiling oxidizes — matches
 // real-world supergene paragenesis (galena → cerussite, chalcopyrite
 // → malachite/azurite, pyrite → limonite, all in the air zone).
-// Mirror of VugSimulator._apply_vadose_oxidation_override in vugg.py.
 _applyVadoseOxidationOverride() {
   const n = this.wall_state.ring_count;
   const newSurface = this.conditions.fluid_surface_ring;
@@ -553,22 +551,66 @@ _applyVadoseOxidationOverride() {
   const mesh = this.wall_state.meshFor
     ? this.wall_state.meshFor(this)
     : null;
+  const grid = this.wall_state.voxelGridFor
+    ? this.wall_state.voxelGridFor(this)
+    : null;
   const cellsPerRing = this.wall_state.cells_per_ring || 0;
+  // Only the normalized config stored by the semantic validator may alter the
+  // drying boundary. A malformed declaration therefore falls back to the
+  // ordinary vadose behavior; raw authored values never partly activate.
+  const weatheringState = this._weatheringEpilogueState;
+  const weatheringCfg = weatheringState?.valid ? weatheringState.config : null;
+  const weatheringActive = !!weatheringCfg && weatheringEpilogueActive(this);
+  const targetResidualO2 = weatheringActive
+    ? weatheringCfg.oxygen.target_residual_ppm
+    : 1.8;
+  const concentrationFactor = weatheringActive
+    ? weatheringCfg.drainage.concentration_factor
+    : EVAPORATIVE_CONCENTRATION_FACTOR;
   const becameVadose = [];
   const rewetted = [];
+  const exposureRows: any[] = [];
+  const applyDryingBoundary = (fluid: any) => {
+    if (!fluid) return null;
+    const oxygenBefore = Math.max(0, Number(fluid.O2) || 0);
+    const sulfurBefore = fluid.sulfurPoolsExplicit
+      ? sulfurSystemTotalPpm(fluid)
+      : Math.max(0, Number(fluid.S) || 0);
+    // Open-air exposure supplies dissolved oxygen up to the authored residual.
+    // Sulfur is never deleted here. Legacy one-pool fluids retain their total;
+    // explicit-pool reactions must use a separately balanced redox transfer.
+    fluid.O2 = Math.max(oxygenBefore, targetResidualO2);
+    fluid.concentration *= concentrationFactor;
+    const sulfurAfter = fluid.sulfurPoolsExplicit
+      ? sulfurSystemTotalPpm(fluid)
+      : Math.max(0, Number(fluid.S) || 0);
+    return {
+      oxygenBeforePpm: oxygenBefore,
+      oxygenImportedPpm: fluid.O2 - oxygenBefore,
+      oxygenAfterPpm: fluid.O2,
+      sulfurBeforePpm: sulfurBefore,
+      sulfurAfterPpm: sulfurAfter,
+      sulfurClosed: Math.abs(sulfurAfter - sulfurBefore) <= _ledgerTolerance(sulfurBefore),
+    };
+  };
   for (let r = 0; r < n; r++) {
     const was = VugConditions._classifyWaterState(oldSurface, r, n);
     const now = VugConditions._classifyWaterState(newSurface, r, n);
     if (now === 'vadose' && was !== 'vadose') {
-      // Apply oxidation override to every cell in this ring.
-      if (mesh && mesh.cells && cellsPerRing > 0) {
+      // Canonical 3-D path: every depth voxel in the exposed ring receives
+      // the same atmospheric boundary. d=0 aliases the wall mesh, so this also
+      // updates every visible wall cell without double-applying the factor.
+      const canonicalRows: any[] = [];
+      if (grid?.voxels?.length) {
+        for (const voxel of grid.voxels) {
+          if (voxel?.ringIdx !== r || !voxel.fluid) continue;
+          const row = applyDryingBoundary(voxel.fluid);
+          if (row) canonicalRows.push(row);
+        }
+      } else if (mesh && mesh.cells && cellsPerRing > 0) {
         for (let c = 0; c < cellsPerRing; c++) {
-          const cell = mesh.cells[r * cellsPerRing + c];
-          if (!cell || !cell.fluid) continue;
-          if (cell.fluid.O2 < 1.8) cell.fluid.O2 = 1.8;
-          cell.fluid.S *= 0.3;
-          // v27 evaporative concentration boost (mirror of vugg.py).
-          cell.fluid.concentration *= EVAPORATIVE_CONCENTRATION_FACTOR;
+          const row = applyDryingBoundary(mesh.cells[r * cellsPerRing + c]?.fluid);
+          if (row) canonicalRows.push(row);
         }
       }
       // ALSO update ring_fluids[r] so nucleation gates see the vadose
@@ -589,11 +631,24 @@ _applyVadoseOxidationOverride() {
       // conditions.fluid — the engine sees the boost without further
       // plumbing.
       const rf = this.ring_fluids[r];
-      if (rf) {
-        if (rf.O2 < 1.8) rf.O2 = 1.8;
-        rf.S *= 0.3;
-        rf.concentration *= EVAPORATIVE_CONCENTRATION_FACTOR;
-      }
+      const ringRow = applyDryingBoundary(rf);
+      const allRows = ringRow ? [...canonicalRows, ringRow] : canonicalRows;
+      exposureRows.push({
+        ring: r,
+        canonicalFluidCount: canonicalRows.length,
+        compatibilityMirrorCount: ringRow ? 1 : 0,
+        oxygenImportedCanonicalPpmEquivalent: canonicalRows.reduce(
+          (sum, row) => sum + row.oxygenImportedPpm, 0,
+        ),
+        oxygenImportedCompatibilityMirrorPpm: ringRow?.oxygenImportedPpm || 0,
+        sulfurBeforePpmEquivalent: allRows.reduce(
+          (sum, row) => sum + row.sulfurBeforePpm, 0,
+        ),
+        sulfurAfterPpmEquivalent: allRows.reduce(
+          (sum, row) => sum + row.sulfurAfterPpm, 0,
+        ),
+        sulfurClosed: allRows.every(row => row.sulfurClosed),
+      });
       becameVadose.push(r);
     } else if (was === 'vadose' && now !== 'vadose'
                && oldSurface !== null && oldSurface !== undefined) {
@@ -606,11 +661,14 @@ _applyVadoseOxidationOverride() {
       // NOT un-oxidize (O2) or restore S: air-exposure mineral reactions
       // (sulfide→oxide supergene paragenesis) persist through reflooding;
       // only the soluble evaporite load dilutes.
-      if (mesh && mesh.cells && cellsPerRing > 0) {
+      if (grid?.voxels?.length) {
+        for (const voxel of grid.voxels) {
+          if (voxel?.ringIdx === r && voxel.fluid) voxel.fluid.concentration = 1.0;
+        }
+      } else if (mesh && mesh.cells && cellsPerRing > 0) {
         for (let c = 0; c < cellsPerRing; c++) {
           const cell = mesh.cells[r * cellsPerRing + c];
-          if (!cell || !cell.fluid) continue;
-          cell.fluid.concentration = 1.0;
+          if (cell?.fluid) cell.fluid.concentration = 1.0;
         }
       }
       const rf = this.ring_fluids[r];
@@ -622,6 +680,20 @@ _applyVadoseOxidationOverride() {
     this.log.push(
       `  💧 Rewetting: rings ${rewetted.join(',')} reflooded — brine dilutes, `
       + `evaporative concentration resets to baseline 1.0×`);
+  }
+  if (becameVadose.length || rewetted.length) {
+    (this._vadoseExposureTransactions ||= []).push({
+      schema: 'vadose-boundary-receipt-v2',
+      step: this.step,
+      becameVadose: [...becameVadose],
+      rewetted: [...rewetted],
+      targetResidualO2Ppm: targetResidualO2,
+      concentrationFactor,
+      oxygenAccounting: 'canonical voxel ppm-equivalents; compatibility ring mirrors itemized separately',
+      sulfurHandling: 'total-preserved; no implicit redox deletion',
+      rings: exposureRows,
+      closed: exposureRows.every(row => row.sulfurClosed),
+    });
   }
   return becameVadose;
 },
@@ -1226,7 +1298,7 @@ _diffuseRingState(rate?) {
   // When a big crystal grows past an adjacent smaller one that's stopped
 // growing, the smaller crystal becomes an inclusion inside the bigger
 // one. Classic "Sweetwater mechanism" — pyrite first, then calcite
-// grows around it. Ports check_enclosure from vugg.py 1:1.
+// grows around it.
 _check_enclosure() {
   for (const grower of this.crystals) {
     if (!grower.active || grower.c_length_mm < 0.5) continue;
@@ -1343,8 +1415,7 @@ _check_enclosure() {
 },
 
   // When the host crystal is dissolving back past the point it enclosed
-// a neighbor, the neighbor is freed. Ports check_liberation from
-// vugg.py 1:1.
+// a neighbor, the neighbor is freed.
 _check_liberation() {
   for (const host of this.crystals) {
     if (!host.enclosed_crystals.length) continue;

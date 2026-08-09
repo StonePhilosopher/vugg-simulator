@@ -77,8 +77,7 @@ function event_copper_injection(conditions) {
   } else {
     conditions.fluid.SiO2 += 200.0;
   }
-  // Drift-fix: Python event also bumps Pb +20 (porphyry fluids carry Pb).
-  // Was missing from JS.
+  // Porphyry fluids carry Pb; keep the Cu pulse chemically complete.
   conditions.fluid.Pb += 20.0;
   conditions.fluid.O2 = 0.3;
   conditions.temperature += 30;
@@ -88,8 +87,7 @@ function event_copper_injection(conditions) {
 
 // Late-stage Mo pulse — separate from Cu in porphyry systems. Per Seo et
 // al. 2012 (Bingham Canyon), Mo arrives in a distinct later pulse from Cu.
-// This mirror was added to JS in the porphyry chemistry-audit pass — the
-// Python equivalent has existed since carbonate round 3.
+// Added in the porphyry chemistry-audit pass.
 function event_molybdenum_pulse(conditions) {
   conditions.fluid.Mo = 80.0;
   conditions.fluid.S += 40.0;
@@ -308,8 +306,7 @@ function event_film_coat(conditions) {
 // Per proposals/TASK-BRIEF-DATA-AS-TRUTH.md item 1, Option A.
 // Maps event-type strings used in data/scenarios.json5 to module-level
 // event handler functions. Adding a new event type requires registering
-// it here; tools/sync-spec.js verifies that this registry covers every
-// type referenced in the JSON5.
+// it here; scenario contract tests verify coverage of every type in JSON5.
 
 const EVENT_REGISTRY = {
   fluid_pulse: event_fluid_pulse,
@@ -509,6 +506,7 @@ const EVENT_REGISTRY = {
   wittichen_hydrocarbon_influx: event_wittichen_hydrocarbon_influx,
   wittichen_meteoric_sulfate: event_wittichen_meteoric_sulfate,
   wittichen_carbonate_gangue: event_wittichen_carbonate_gangue,
+  wittichen_vadose_weathering: event_wittichen_vadose_weathering,
   // 2026-06-15 — Tormiq Valley alpine-cleft epidote (Gilgit-Baltistan,
   // Pakistan), the v197 anchor for epidote. See js/70v-tormiq.ts (6 handlers).
   tormiq_quartz_lining: event_tormiq_quartz_lining,
@@ -661,6 +659,12 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       // numbers as events and player-facing testimony.
       // They constrain only this scenario; Creative mode retains every engine.
       nucleation_windows: spec.nucleation_windows,
+      // Executed low-temperature exposure history.  This is copied as data,
+      // then validated/consumed by js/44e-weathering-epilogue.ts; an authored
+      // final-state label alone never changes chemistry.
+      weathering_epilogue: spec.weathering_epilogue
+        ? { ...spec.weathering_epilogue }
+        : undefined,
       // Geological MOVEMENTS (js/85j) — persistent master-variable drift.
       // Absent in every scenario today (Phase 0 dark scaffold) → the run_step
       // movement hook stays a no-op and seed-42 is byte-identical. Phase 1

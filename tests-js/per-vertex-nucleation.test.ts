@@ -263,23 +263,18 @@ describe('Tranche 6 — zoned_dripstone_cave scenario (end-to-end demo)', () => 
     expect(aragCeil + aragFloor + aragWall).toBe(NTRIALS);
     expect(calcCeil + calcFloor + calcWall).toBe(NTRIALS);
 
-    // v167 area term: weight = ringAreaWeight(r)·(σ−1)². The wall (≈5× the
-    // ceiling's surface area) is now the single largest zone by nuclei count,
-    // so ceiling is no longer the PLURALITY for aragonite. The geology the
-    // feature promises is unchanged and stated more honestly as ENRICHMENT
-    // vs the area baseline + the CROSS-SORT between the two minerals
-    // (measured over 4000 trials, tools/placement-skew-probe.mjs):
-    //   * aragonite ceiling share ~37% ≫ its 14.6% area baseline → real
-    //     Mg-driven ceiling enrichment, and ≫ its own floor share ~14% →
-    //     the Mg/Ca gradient direction.
+    // The equatorial broth is now honestly below the authoritative molar
+    // Mg/Ca selector. Only the ceiling override crosses it, so aragonite has
+    // zero weight on floor and wall even after the area term; this is a hard
+    // spatial selector rather than a weak enrichment against a large wall.
+    // Calcite retains its broader floor/wall distribution:
     //   * calcite ceiling share ~2% ≪ 14.6% baseline → Mg-poisoning exclusion;
     //     calcite floor share ~40% → it prefers the Ca-rich floor.
     //   * the two minerals sort to OPPOSITE poles — aragonite's ceiling share
     //     dwarfs calcite's. Area-independent, and THE promise of Tranche 6.
-    // (NTRIALS=100 here, so allow ±5% noise against those 4000-trial shares.)
-    expect(aragCeil).toBeGreaterThan(25);          // ≫ 14.6% area baseline → ceiling enrichment
-    expect(aragCeil).toBeGreaterThan(aragFloor);   // Mg gradient: ceiling > floor
-    expect(aragFloor).toBeLessThan(aragWall);      // floor is the Mg-poor excluded zone
+    expect(aragCeil).toBe(NTRIALS);
+    expect(aragFloor).toBe(0);
+    expect(aragWall).toBe(0);
     // Calcite: excluded from the Mg-rich ceiling; prefers the Ca-rich floor.
     expect(calcCeil).toBeLessThanOrEqual(10);      // ≪ 14.6% baseline → exclusion
     expect(calcFloor).toBeGreaterThan(calcCeil);   // calcite floor ≫ calcite ceiling
@@ -287,18 +282,10 @@ describe('Tranche 6 — zoned_dripstone_cave scenario (end-to-end demo)', () => 
     expect(aragCeil).toBeGreaterThan(calcCeil * 3);
   });
 
-  it('per_vertex_nucleation: false on the same scenario does NOT show the spatial sort (control)', () => {
-    // Run the same scenario with the flag flipped off. The orientation
-    // distribution should NOT show a strong floor/ceiling sort for
-    // calcite vs aragonite — placements are area-weighted random.
-    //
-    // We don't insist on ZERO sorting (random area-weight + ring
-    // orientation preferences could still bias slightly), only that
-    // the calcite-floor / aragonite-ceiling differential isn't as
-    // strong as in the on-case. Specifically: at least one of the
-    // signed differentials (aragoniteCeiling-aragoniteFloor or
-    // calciteFloor-calciteCeiling) should be SMALLER than the
-    // corresponding on-case differential.
+  it('per_vertex_nucleation: false cannot discover the local ceiling selector', () => {
+    // With local evaluation disabled, the engine sees only the sub-threshold
+    // equatorial Mg/Ca ratio. Calcite remains available, but aragonite cannot
+    // be invented from an unseen ceiling composition.
     const scen = SCENARIOS.zoned_dripstone_cave;
     const spec = (scen as any)._json5_spec;
     // Build a control with per_vertex_nucleation flipped off.
@@ -320,16 +307,8 @@ describe('Tranche 6 — zoned_dripstone_cave scenario (end-to-end demo)', () => 
 
     const aragonites = sim.crystals.filter((c: any) => c.mineral === 'aragonite');
     const calcites = sim.crystals.filter((c: any) => c.mineral === 'calcite');
-    // Both minerals still nucleate (engines still gate on equator broth).
-    expect(aragonites.length).toBeGreaterThan(0);
+    expect(aragonites).toHaveLength(0);
     expect(calcites.length).toBeGreaterThan(0);
-
-    // For the control, we assert WEAKER: the spatial signal is not
-    // guaranteed any particular way. We just verify the run completes
-    // without crashing — that the legacy code path stays healthy with
-    // zone_chemistry alone.
-    const _aragoniteCeiling = aragonites.filter((c: any) => orientationOf(c) === 'ceiling').length;
-    const _calciteFloor = calcites.filter((c: any) => orientationOf(c) === 'floor').length;
-    expect(_aragoniteCeiling + _calciteFloor).toBeGreaterThanOrEqual(0);  // smoke
+    expect(calcites.some((c: any) => orientationOf(c) !== 'unknown')).toBe(true);
   });
 });

@@ -66,9 +66,9 @@ describe('evidence-bounded physical etch', () => {
     });
     const receipt = summary.receipts[0];
     expect(receipt.modelId).toBe('Godinho2012-fluorite-100-bounded-analogue-v2');
+    expect(receipt.temperatureC).toBeCloseTo(21, 10);
     expect(receipt).toMatchObject({
       pH: 3.6,
-      temperatureC: 21,
       pressureKbar: 0.001,
       gameplaySigma: 0,
       face: '{100}',

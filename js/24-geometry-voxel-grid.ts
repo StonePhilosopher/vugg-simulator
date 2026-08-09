@@ -527,9 +527,9 @@ class CavityVoxelGrid {
 
     // Resolve which voxels receive the delta based on target. Default
     // 'all' touches every voxel — preserves pre-v158 bulk-view event
-    // semantics. Other targets are stubbed in v159 (boundary, top,
-    // bottom, vadose); fully populated when scenario-level spatial
-    // targeting lands in Phase 2b.
+    // semantics. Unknown spatial targets fail closed: silently treating a
+    // misspelled or unimplemented target as `all` would turn a localized
+    // geochemical boundary into a cavity-wide fluid replacement.
     const total = this.voxels.length;
     const R = this.ring_count;
     const D = this.depth_count;
@@ -552,8 +552,7 @@ class CavityVoxelGrid {
           hit = (v.ringIdx === 0);
           break;
         default:
-          // Unrecognized target — fall through to 'all' for safety.
-          hit = true;
+          hit = false;
           break;
       }
       if (!hit) continue;

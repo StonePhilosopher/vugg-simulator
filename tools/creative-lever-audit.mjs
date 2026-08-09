@@ -35,6 +35,7 @@ const TOP_LEVEL_CLASSIFICATION = {
   carbon_ledger: 'validation',
   movements: 'direct',
   fluid_spots: 'direct',
+  weathering_epilogue: 'process',
 };
 
 // Classification is explicit so a new scenario wall field cannot silently
@@ -55,6 +56,7 @@ const WALL_CLASSIFICATION = {
   gamma_host: 'direct',
   graphitic: 'direct',
   inter_ring_diffusion_rate: 'direct',
+  is_lit: 'direct',
   matrix: 'presentation',
   occlusion: 'presentation',
   occlusion_fraction: 'presentation',
@@ -428,6 +430,7 @@ const requiredLiveEnvironmentalPaths = [
   '_scenario.open_to_atmosphere',
   'wall.open_system',
   'wall.open_spring',
+  'wall.is_lit',
   'wall.graphitic',
   'wall.thermal_pulses',
 ];
@@ -441,6 +444,7 @@ const requiredSetupEnvironmentalIds = [
   'f-wall-reactivity', 'f-cooling-rate', 'f-ambient-temperature', 'f-diffusion-rate',
   'f-primary-bubbles', 'f-secondary-bubbles', 'f-shape-seed',
   'f-gamma-host', 'f-graphitic', 'f-open-system', 'f-open-spring', 'f-thermal-pulses',
+  'f-is-lit',
   'f-flow-rate', 'f-porosity', 'f-water-table',
   'f-open-atmosphere', 'f-pco2',
 ];

@@ -78,18 +78,32 @@ function _nuc_mimetite(sim) {
   // Erythrite nucleation — the cobalt bloom, low-T oxidation of Co arsenides.
 }
 function _nuc_erythrite(sim) {
-  const sigma_ery = sim.conditions.supersaturation_erythrite();
+  const weathering = weatheringNucleationContext(sim, 'erythrite');
+  if (weathering.required && !weathering.eligible) return;
+  const sigma_ery = weathering.required
+    ? weathering.localSigma
+    : sim.conditions.supersaturation_erythrite();
   const existing_ery = sim.crystals.filter(c => c.mineral === 'erythrite' && c.active);
   if (sigma_ery > MINERAL_GATES_erythrite.sigma_crit && !existing_ery.length && !sim._atNucleationCap('erythrite')) {
-    let pos = 'vug wall';
+    let pos = weathering.parent
+      ? `on weathering ${weathering.parent.mineral} #${weathering.parent.crystal_id}`
+      : 'vug wall';
     const existing_goe_e = sim.crystals.filter(c => c.mineral === 'goethite' && c.active);
     const existing_adam_e = sim.crystals.filter(c => c.mineral === 'adamite' && c.active);
-    if (existing_goe_e.length && rng.random() < 0.5) {
+    if (!weathering.parent && existing_goe_e.length && rng.random() < 0.5) {
       pos = `on goethite #${existing_goe_e[0].crystal_id}`;
-    } else if (existing_adam_e.length && rng.random() < 0.3) {
+    } else if (!weathering.parent && existing_adam_e.length && rng.random() < 0.3) {
       pos = `on adamite #${existing_adam_e[0].crystal_id}`;
     }
     const c = sim.nucleate('erythrite', pos, sigma_ery);
+    if (weathering.required) {
+      c.weathering_precursor_receipt = {
+        schema: 'weathering-precursor-v1',
+        parentCrystalId: weathering.parent.crystal_id,
+        parentMineral: weathering.parent.mineral,
+        releasedInventory: { ...weathering.released },
+      };
+    }
     sim.log.push(`  ✦ NUCLEATION: Erythrite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_ery.toFixed(2)})`);
   }
 

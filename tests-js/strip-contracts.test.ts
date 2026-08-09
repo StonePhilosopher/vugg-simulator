@@ -186,16 +186,17 @@ describe('strip chemistry contract — searles_lake (evaporite concentration cyc
     expect(series.crossings(conc, 2.0)).toBeGreaterThanOrEqual(2); // multiple dry cycles
   });
 
-  it('the cavity interior never evaporatively concentrates (spatial signature)', () => {
+  it('full drainage concentrates the cavity interior and resets it on flooding', () => {
     if (!ds) return;
     const D = ds.manifest.axes.depth_positions || 1;
     if (D < 2) return; // depth-collapsed recording → no wall/interior contrast
     const center = chipSeries(ds, 'concentration', { depth: 'center' });
-    // Observed: center stays flat at ~1.0 the entire run. Only wall rings
-    // transition wet→vadose (the playa surface dries); the interior voxel
-    // store never dries, so the evaporative boost never touches it. The
-    // evaporite action is a wall phenomenon.
-    expect(series.peak(center)).toBeLessThan(1.5);
+    // The authored water table drains the whole cavity, not only its wall
+    // skin. Every depth voxel therefore enters the vadose state, reaches the
+    // same ~3x concentration envelope, and resets when the basin floods.
+    expect(series.peak(center)).toBeGreaterThan(2.5);
+    expect(series.min(center)).toBeLessThan(1.5);
+    expect(series.crossings(center, 2.0)).toBeGreaterThanOrEqual(2);
   });
 
   it('soda-lake brine: alkaline pH, dolomite-favored carbonate supersaturation', () => {
@@ -417,16 +418,15 @@ describe('strip chemistry contract — naica_geothermal (selenite slow-growth ch
     expect(series.min(T)).toBeLessThan(30);
   });
 
-  it('Ca pinned + S cycling — naica chemistry is sulfate-driven, not Ca-driven', () => {
+  it('Ca and closed-system total S stay pinned through drainage/recharge', () => {
     if (!ds) return;
     const ca = chipSeries(ds, 'Ca', { depth: 'wall' });
     const s  = chipSeries(ds, 'S',  { depth: 'wall' });
-    // Observed: Ca FLAT at 320 (groundwater equilibrium with the limestone
-    // host); S 141…420, cycling with the hot-fluid pulses. So the SI_selenite
-    // oscillation tracks S, not Ca — which is the geologically correct
-    // mechanism for naica (sulfate brought in by ascending fluid).
+    // Ca remains buffered by the limestone host. Total analytical sulfur is
+    // conserved across the vadose boundary; drainage changes water state and
+    // sulfate phase selection, not the closed inventory by deleting 70% S.
     expect(series.peak(ca) - series.min(ca)).toBeLessThan(1);  // Ca pinned
-    expect(series.peak(s)  - series.min(s)).toBeGreaterThan(100);  // S oscillates
+    expect(series.peak(s)  - series.min(s)).toBeLessThan(1);   // total S conserved
   });
 });
 

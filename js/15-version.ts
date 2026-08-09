@@ -12696,7 +12696,28 @@
 //       Hostile-review closure adds a hard step-215, older-pyromorphite parent
 //       requirement for the terminal plumbogummite pseudomorph and generic
 //       source receipts for the upgradient Cu/Zn/metal and wall-silica imports.
-const SIM_VERSION = 257;
+//
+// v258 — Executed weathering/vadose histories (August 2026).
+//       Scenario-authored epilogues now expose explicit drainage, oxygen, CO2,
+//       and light boundaries and record their per-step effects. The vadose
+//       transition applies to every 3-D voxel above the water surface, preserves
+//       dissolved sulfur instead of deleting 70%, receipts atmospheric O2, and
+//       fails closed on unknown spatial targets. Wittichen's ambient epilogue
+//       requires accepted same-site Co-arsenide dissolution before erythrite or
+//       cobalt-bearing aragonite can nucleate; accepted aragonite shells book Co
+//       at DCo=0.1 inside the measured 20–30 C selector domain. Naica records
+//       mine drainage and recharge without inventing residual-brine thenardite
+//       or transplanting the distinct Cueva de las Velas oxide facies.
+//       Seed-42 baseline review changes numerical receipts in 10/39 scenarios:
+//       Naica loses thenardite; Wittichen gains the executed supergene suite;
+//       six other drying tenants change counts under the all-depth, sulfur-
+//       conserving boundary; Roughton Gill and the zoned cave retain identical
+//       inventories/counts while small maximum-size receipts move. Searles'
+//       final borax label disappears because all eight surviving parents carry
+//       the executed borax-to-tincalconite history, not because borax failed to
+//       precipitate (max sigma about 37). Oxygen receipts itemize canonical
+//       voxel ppm-equivalents separately from compatibility ring mirrors.
+const SIM_VERSION = 258;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12706,8 +12727,9 @@ const SIM_VERSION = 257;
 const MODEL_DIGEST = [
   'Pfluid:kbar-0.001..4.4',
   'Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1',
-  'aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-highPstable-v4',
+  'aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5',
   'aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1',
+  'aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2',
   'CaCO3:Hacker05-negative-linear+/-1kbar',
   'Prock:Pattison92-AndSil-16+/-3barC',
   'stress:instant-resolved-shear-stable-grain-v2',
@@ -12740,6 +12762,7 @@ const MODEL_DIGEST = [
   'thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3',
   'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
   'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2',
+  'weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2',
   'roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3',
   'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2',
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',

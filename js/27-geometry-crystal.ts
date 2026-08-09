@@ -102,6 +102,7 @@ class GrowthZone {
     this.trace_Au = opts.trace_Au ?? 0;  // invisible-gold trace (arsenopyrite)
     this.trace_Ge = opts.trace_Ge ?? 0;  // solid-zone Ge estimate (sphalerite)
     this.trace_Sr = opts.trace_Sr ?? 0;  // measured aragonite Sr partitioning
+    this.trace_Co = opts.trace_Co ?? 0;  // measured Co-bearing aragonite partitioning
     // Optional trace-element formula-unit coefficients. applyStoichiometricGrowthBudget uses
     // these only after a positive zone is accepted, so dry-run competition
     // cannot consume solute. Unlike decorative trace labels, this closes the
@@ -137,6 +138,7 @@ class GrowthZone {
       };
     }
     if (opts.sr_partition) this.sr_partition = { ...opts.sr_partition };
+    if (opts.co_partition) this.co_partition = { ...opts.co_partition };
     this.fluid_inclusion = opts.fluid_inclusion ?? false;
     this.inclusion_type = opts.inclusion_type ?? '';
     this.note = opts.note ?? '';
