@@ -65,9 +65,16 @@ single execution ledger for the science-first AAA completion branch.
   archives, and AI Dr. Wise `SATISFIED` after the ΔG, surface-state,
   bath-protocol, mass-closure, Creative-duration, and schematic-relief hostile
   review loop on 2026-08-08.
-- [ ] Mixed-carbonate solid solutions with composition-dependent activity and
-  recorded zoning; remove fixed-composition HMC/aurichalcite/rosasite proxies where
-  evidence supports a continuous solution.
+- [x] Mixed-carbonate solid solutions with composition-dependent activity and
+  recorded zoning where evidence supports it. HMC now uses parent-fluid-bounded
+  Mucci partitioning, metastable nonideal calcite–disordered-dolomite component
+  activities, exact per-zone `Ca(1-x)Mg(x)CO3` booking/dissolution, and explicit
+  unknown Creative verdicts outside measured domains. Rosasite and aurichalcite
+  remain Tier-C empirical/observer models because the reviewed evidence does not
+  license aqueous-to-solid Cu/Zn partition inference. Evidence:
+  `research/arcs/research-mixed-carbonate-solid-solutions-2026-08-08.md`,
+  `tests-js/hmc-solid-solution.test.ts`, SIM 255 seed-42 baseline/digest/39-story
+  archive, and `proposals/HOSTILE-REVIEW-DR-WISE-SIM255-2026-08-08.md`.
 - [ ] Thermal field localization: per-voxel temperature transport/source commands
   and flow-aligned gradients, consumed by growth and recorded in zones.
 - [x] Complete open-system carbonate migration for travertine and sabkha.

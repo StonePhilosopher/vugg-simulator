@@ -108,6 +108,33 @@ class GrowthZone {
     if (opts.trace_stoichiometry) {
       this.trace_stoichiometry = { ...opts.trace_stoichiometry };
     }
+    // Major-element formula coefficients may vary from shell to shell in a
+    // solid solution.  The accepted-zone budget consumes this exact formula,
+    // and dissolution later returns the inventory that was actually booked.
+    // A shallow numeric map is sufficient and keeps the serialized zone
+    // record independent from the caller's mutable object.
+    if (opts.formula_stoichiometry) {
+      this.formula_stoichiometry = { ...opts.formula_stoichiometry };
+    }
+    // Scientific provenance for a compositionally variable shell.  Preserve
+    // nested component/activity maps because the Creative-mode explanation
+    // and save/replay inspection use them as an immutable formation receipt.
+    if (opts.solid_solution) {
+      this.solid_solution = {
+        ...opts.solid_solution,
+        componentMoleFractions: opts.solid_solution.componentMoleFractions
+          ? { ...opts.solid_solution.componentMoleFractions } : undefined,
+        activityCoefficients: opts.solid_solution.activityCoefficients
+          ? { ...opts.solid_solution.activityCoefficients } : undefined,
+        componentActivities: opts.solid_solution.componentActivities
+          ? { ...opts.solid_solution.componentActivities } : undefined,
+        guggenheimKJMol: Array.isArray(opts.solid_solution.guggenheimKJMol)
+          ? [...opts.solid_solution.guggenheimKJMol] : opts.solid_solution.guggenheimKJMol,
+        guggenheimDimensionless: Array.isArray(opts.solid_solution.guggenheimDimensionless)
+          ? [...opts.solid_solution.guggenheimDimensionless]
+          : opts.solid_solution.guggenheimDimensionless,
+      };
+    }
     this.fluid_inclusion = opts.fluid_inclusion ?? false;
     this.inclusion_type = opts.inclusion_type ?? '';
     this.note = opts.note ?? '';

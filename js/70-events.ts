@@ -308,8 +308,8 @@ function event_film_coat(conditions) {
 // Per proposals/TASK-BRIEF-DATA-AS-TRUTH.md item 1, Option A.
 // Maps event-type strings used in data/scenarios.json5 to module-level
 // event handler functions. Adding a new event type requires registering
-// it here AND in vugg.py's EVENT_REGISTRY. tools/sync-spec.js extends
-// to verify both registries cover every type referenced in the JSON5.
+// it here; tools/sync-spec.js verifies that this registry covers every
+// type referenced in the JSON5.
 
 const EVENT_REGISTRY = {
   fluid_pulse: event_fluid_pulse,
@@ -602,7 +602,7 @@ function _buildScenarioFromSpec(scenarioId, spec) {
   const eventSpecs = (spec.events || []).slice();
   for (const ev of eventSpecs) {
     if (!EVENT_REGISTRY[ev.type]) {
-      throw new Error(`scenarios.json5 scenario '${scenarioId}' references unknown event type '${ev.type}' — register it in EVENT_REGISTRY (index.html) + the Python mirror (vugg.py).`);
+      throw new Error(`scenarios.json5 scenario '${scenarioId}' references unknown event type '${ev.type}' — register it in the TypeScript EVENT_REGISTRY.`);
     }
   }
   const scenarioCallable = function scenarioCallable(overrides: any = {}) {
@@ -764,9 +764,8 @@ async function _loadScenariosJSON5() {
 // All declarative scenarios live in data/scenarios.json5 and are
 // populated asynchronously by _loadScenariosJSON5() above. `let` so the
 // loader can mutate the object in place. scenario_random is the only
-// procedural scenario; it's wired into the title-screen Random Vugg
-// button below rather than added here (pre-existing intentional drift
-// from the Python side, where vugg.SCENARIOS["random"] = scenario_random).
+// procedural scenario; it is wired into the title-screen Random Vugg
+// button below rather than represented as a declarative scenario.
 let SCENARIOS = {};
 
 // The menu_layout block from data/scenarios.json5 (Door 3 / §10.5 t2-3):

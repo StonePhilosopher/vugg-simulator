@@ -2,7 +2,7 @@
 // data/scenarios.json5 — declarative scenario specs for the simulator
 // =============================================================
 //
-// Source of truth for: vugg.py + index.html
+// Source of truth for scenario data consumed by the TypeScript runtime.
 //
 // Per proposals/TASK-BRIEF-DATA-AS-TRUTH.md item 1, Option A:
 //   Initial fluid + T + P + wall config + event timelines live here.
@@ -59,9 +59,8 @@
 //                     where `type` is the event-handler string identifier
 //   sources         — array of citation strings
 //
-// Drift detection: tools/sync-spec.js (extended in this commit) checks
-// that every event-handler `type` referenced here is registered in
-// both vugg.py and index.html EVENT_REGISTRY tables.
+// Drift detection: tools/sync-spec.js checks that every event-handler
+// `type` referenced here is registered in the TypeScript EVENT_REGISTRY.
 // =============================================================
 {
   "$schema_version": "1.0.0",

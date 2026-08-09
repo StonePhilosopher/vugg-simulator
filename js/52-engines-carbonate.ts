@@ -486,10 +486,15 @@ function grow_dolomite(crystal, conditions, step) {
 // v146 (Week 11): HMC (High-Magnesium Calcite) — disordered
 // Ca(1-x)Mg(x)CO3 with x ≈ 0.05-0.30. Kinetic precursor to ordered
 // dolomite per Kim 2023; persists as metastable Mg-rich calcite
-// intermediate without cycling. The mg_content is per-crystal state,
-// set at nucleation from fluid Mg/Ca (Mucci-Morse 1983 partitioning).
+// intermediate without cycling. Every accepted shell derives its own
+// composition from aqueous molar Mg/Ca and Mucci's measured D_Mg(T), then
+// records nonideal calcite/disordered-dolomite component activities.
 function grow_HMC(crystal, conditions, step) {
-  const sigma = conditions.supersaturation_HMC();
+  const composition = hmcCompositionFromFluid(conditions.fluid, conditions.temperature);
+  crystal._hmc_growth_composition_assessment = { ...composition };
+  const mg_content = composition.mgMoleFraction;
+  const sigma = composition.compositionDomainSupported && composition.validHMCComposition
+    ? conditions.supersaturation_HMC(mg_content) : 0;
   if (sigma < 1.0) {
     // Acid dissolution — HMC dissolves more readily than calcite due
     // to higher Ksp of the Mg-substituted lattice (Bischoff-Mackenzie-
@@ -505,10 +510,6 @@ function grow_HMC(crystal, conditions, step) {
     }
     return null;
   }
-
-  // Read crystal's stored mg_content (set at nucleation). If absent
-  // (legacy data), default to 0.10 — a representative marine HMC value.
-  const mg_content = typeof crystal._mg_content === 'number' ? crystal._mg_content : 0.10;
 
   // Growth rate dispatch — v146 Week 11: when HMC SI flag is on,
   // delegate the rate to PWP kinetics via HMCRate (which is calcite
@@ -549,10 +550,22 @@ function grow_HMC(crystal, conditions, step) {
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
-    trace_Mg: conditions.fluid.Mg * 0.04,  // crystal Mg trace (small relative to lattice Mg)
+    formula_stoichiometry: { Ca: 1 - mg_content, Mg: mg_content, CO3: 1 },
+    solid_solution: {
+      ...hmcSolidSolutionAssessment(mg_content, conditions.temperature),
+      partitionModel: composition.model,
+      aqueousMgCaMolarRatio: composition.aqueousMgCaMolarRatio,
+      distributionCoefficient: composition.distributionCoefficient,
+      temperatureStatus: composition.temperatureStatus,
+      compositionDomainStatus: composition.compositionDomainStatus,
+      compositionDomainSupported: composition.compositionDomainSupported,
+      unconstrainedMgMoleFraction: composition.unconstrainedMgMoleFraction,
+      clampedAtPromotedHMCMaximum: composition.clampedAtPromotedHMCMaximum,
+      uncertainty: composition.uncertainty,
+    },
     trace_Fe: conditions.fluid.Fe * 0.06,
     trace_Mn: conditions.fluid.Mn * 0.04,
-    note: `${crystal.habit}${prov_note} — disordered Ca-Mg carbonate (x = ${mg_content.toFixed(2)}); will recrystallize to LMC over geological time without cycling, or to ordered dolomite under Kim 2023 cyclic-Ω mechanism`,
+    note: `${crystal.habit}${prov_note} — disordered Ca-Mg carbonate shell (x = ${mg_content.toFixed(3)}, D_Mg=${composition.distributionCoefficient.toFixed(4)}); will recrystallize to LMC over geological time without cycling, or to ordered dolomite under Kim 2023 cyclic-Ω mechanism`,
   });
 }
 

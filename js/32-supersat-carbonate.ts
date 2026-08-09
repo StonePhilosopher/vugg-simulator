@@ -103,8 +103,8 @@ const MINERAL_GATES_HMC: MineralGates = {
   fluid_min: { Ca: 10, Mg: 5, CO3: 20 },
   pH_min: 7.0, pH_max: 10.5,
   surface_energy: 'medium',
-  _sources: ['Bischoff_Mackenzie_Bishop_1987', 'Morse_Mackenzie_1990', 'Davis_2000', 'Kim_2023', 'Goldsmith_Graf_1958'],
-  _notes: 'Mg/Ca window 0.5-30. T_max 60°C (above this, conversion to ordered dolomite or aragonite dominates per Burton & Walter 1987). Marine/sabkha cement + biogenic. Solid-solution composition — mg_content is per-crystal state, predicted from fluid Mg/Ca at nucleation per Mucci-Morse 1983 partitioning. Distinguishable from calcite/dolomite by XRD d104 peak shift (Goldsmith & Graf 1958).',
+  _sources: ['Busenberg_Plummer_1989', 'Glynn_Reardon_1990', 'Mucci_1987', 'Mucci_Morse_1983', 'Davis_2000', 'Kim_2023', 'Goldsmith_Graf_1958'],
+  _notes: 'The candidate shell must contain 4-30 mol% Mg under a domain-bounded partition screen using aqueous molar Mg/Ca. Mucci 1987 D_Mg(T) applies only to the standard-seawater ratio+salinity proxy; Mucci-Morse 1983 supplies the separate Mg/Ca 7.5-20, seawater-matrix plateau at 25 C. Other parent fluids produce an explicit coverage gap, not a low-HMC verdict. T_max 60°C is an authored kinetic occurrence gate, not a solid-solution equilibrium boundary. The subregular calculation is a metastable fixed-composition screen inside the documented 25 C miscibility gap, never a stable homogeneous-solution claim.',
 };
 
 const MINERAL_GATES_siderite: MineralGates = {
@@ -355,30 +355,36 @@ Object.assign(VugConditions.prototype, {
   return Math.max(sigma, 0);
 },
 
-  supersaturation_HMC() {
+  supersaturation_HMC(mg_content?: number) {
   // High-Magnesium Calcite Ca(1-x)Mg(x)CO3, x ≈ 0.05-0.30.
   // Disordered Mg-substituted calcite intermediate. Kinetic precursor
   // to ordered dolomite (Kim 2023 cyclic mechanism); persists as a
-  // metastable phase without cycling. Solubility per Bischoff,
-  // Mackenzie & Bishop 1987 GCA 51:1413: Ksp scales linearly with
-  // mol-% Mg (~0.1 log unit per mol% Mg).
+  // metastable phase without cycling. The promoted thermodynamic screen uses
+  // the nondefective subregular calcite/disordered-dolomite component model
+  // of Busenberg & Plummer (1989) and Glynn & Reardon (1990); defects remain
+  // an explicit kinetic uncertainty rather than a fake linear Ksp correction.
   //
-  // The mg_content of a given crystal is per-crystal state. For
-  // NUCLEATION GATE purposes, the supersaturation function uses
-  // x=0.10 (a representative marine/sabkha HMC composition per
-  // Mucci-Morse 1983 fluid-mineral partitioning). The actual
-  // crystal._mg_content is set at nucleation from fluid Mg/Ca, and
-  // the GROW engine reads that for the kinetic rate calc.
+  // Each candidate shell receives the composition predicted from the current
+  // aqueous *molar* Mg/Ca ratio and Mucci's measured temperature-dependent
+  // distribution coefficient. An explicit x is accepted for per-crystal/
+  // per-zone thermodynamic probes; production nucleation never substitutes a
+  // fixed representative composition.
   const g = MINERAL_GATES_HMC;
   if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Mg < g.fluid_min!.Mg || effectiveCO3(this.fluid, this.temperature) < g.fluid_min!.CO3) return 0;
   if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
   if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
-  const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
-  if (mg_ratio < 0.5 || mg_ratio > 30.0) return 0;
-  // Reference mg_content for nucleation gate. Use 0.10 (10 mol% Mg)
-  // as the canonical marine-HMC composition.
-  const REF_MG_CONTENT = 0.10;
-  if (kspSupersatActiveFor('HMC')) return carbonateEngineSigma('HMC', this.fluid, this.temperature, REF_MG_CONTENT, this.pressure);
+  const predicted = hmcCompositionFromFluid(this.fluid, this.temperature);
+  this._hmcCompositionAssessment = predicted;
+  const explicitComposition = Number.isFinite(mg_content);
+  if (!explicitComposition && !predicted.compositionDomainSupported) return 0;
+  const x = explicitComposition
+    ? Math.max(0, Math.min(0.30, Number(mg_content)))
+    : predicted.mgMoleFraction;
+  if (!explicitComposition && !predicted.validHMCComposition) return 0;
+  const mg_ratio = predicted.aqueousMgCaMolarRatio;
+  if (kspSupersatActiveFor('HMC')) {
+    return carbonateEngineSigma('HMC', this.fluid, this.temperature, x, this.pressure);
+  }
 
   // Empirical fallback (flag-off): calcite-like formula with
   // Mg-substitution accounted for via a milder eq, and damped by

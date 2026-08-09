@@ -49,6 +49,10 @@
       "Robie_Hemingway_1995": "Robie & Hemingway (1995) USGS Bull. 2131. Calorimetric standard.",
       "Bischoff_Mackenzie_Bishop_1987": "Bischoff, Mackenzie & Bishop (1987) Geochim. Cosmochim. Acta 51:1413-1423. Stabilities of synthetic magnesian calcites in aqueous solution: comparison with biogenic materials. (v146 prep correction: earlier entry listed authors as Bischoff-Bishop-Mackenzie and journal as Am. Mineral. 72:1316-1326 — both wrong per the published record. The one 1987 paper by these authors covers BOTH synthetic stability AND biogenic comparison, was in GCA, not Am. Min.)",
       "Morse_Mackenzie_1990": "Morse & Mackenzie (1990) Geochemistry of Sedimentary Carbonates, Elsevier. HMC chapter.",
+      "Busenberg_Plummer_1989": "Busenberg & Plummer (1989) Geochim. Cosmochim. Acta 53:1189-1208. Subregular thermodynamics of magnesian-calcite solid solutions.",
+      "Glynn_Reardon_1990": "Glynn & Reardon (1990) Am. J. Sci. 290:164-201. Solid-solution/aqueous-solution activity theory.",
+      "Mucci_1987": "Mucci (1987) Geochim. Cosmochim. Acta 51:1977-1984. Temperature dependence of Mg partitioning into calcite overgrowths.",
+      "Mucci_Morse_1983": "Mucci & Morse (1983) Geochim. Cosmochim. Acta 47:217-233. Mg and Sr incorporation into calcite overgrowths; D_Mg depends on parent Mg/Ca below the high-ratio plateau.",
       "Davis_2000": "Davis, Dove & De Yoreo (2000) Science 290:1134-1137. Mg poisoning of calcite step edges.",
       "Schindler_1978": "Schindler et al. (1978). Hydrozincite Ksp.",
       "Stronach_Sharpe_1996": "Stronach & Sharpe (1996). Cu-basic carbonates."
@@ -545,17 +549,25 @@
       "S_J_mol_K": null,
       "logKsp_25C": "function_of_mg_content",
       "logKsp_fit": {
-        "form": "mg_content_linear",
-        "logKsp_at_x0": -8.48,
-        "delta_logKsp_per_mol_pct_Mg": 0.10,
+        "form": "subregular_calcite_disordered_dolomite",
+        "components": ["calcite", "Ca0.5Mg0.5CO3"],
+        "guggenheim_kJ_mol": [12.593, 4.70],
+        "guggenheim_nondimensional_25C": [5.08, 1.90],
+        "miscibility_gap_component2_25C": [0.0428, 0.9991],
+        "partition_DMg_temperature_anchors": [[5, 0.0121], [25, 0.0172], [40, 0.0271]],
+        "partition_DMg_high_ratio_25C": 0.0123,
+        "partition_composition_domains": {
+          "standard_seawater_proxy": { "molar_Mg_Ca": [4.5, 6.0], "salinity_per_mil": [30, 40], "temperature_C": [5, 40] },
+          "high_ratio_plateau_25C": { "molar_Mg_Ca": [7.5, 20.0], "salinity_per_mil": [30, 40], "temperature_C": 25 }
+        },
         "valid_mg_content_range": [0.0, 0.30],
-        "notes": "Mg substitution destabilizes the calcite lattice → Ksp increases ~0.1 log unit per mol-% Mg incorporated. At x=0.05 (5% Mg): logKsp ≈ -8.0. At x=0.30 (30% Mg): logKsp ≈ -5.5 (approaching disordered dolomite stability)."
+        "notes": "Nonideal component activities follow the 25 C PHREEQC/Glynn subregular calcite-Ca0.5Mg0.5CO3 example. Its documented 25 C miscibility gap contains the promoted HMC range, so this is a metastable fixed-composition kinetic saturation screen, never a stable-equilibrium claim. Away from 25 C, holding the dimensional interaction parameters constant and dividing by RT is explicitly a bounded activity-model extrapolation. Mucci's temperature series is applied only to a standard-seawater ratio+salinity proxy; the separate Mucci-Morse high-Mg/Ca plateau is restricted to the measured molar Mg/Ca 7.5-20, seawater-like solution matrix, and 25 C. Other parent fluids return unsupported instead of extrapolating."
       },
       "valid_T_range_C": [0, 60],
-      "sources": ["Bischoff_Mackenzie_Bishop_1987", "Morse_Mackenzie_1990"],
+      "sources": ["Busenberg_Plummer_1989", "Glynn_Reardon_1990", "Mucci_1987", "Mucci_Morse_1983", "Bischoff_Mackenzie_Bishop_1987", "Morse_Mackenzie_1990"],
       "databases_agree": [],
       "confidence_tier": "B",
-      "notes": "HMC is a continuum, not a discrete phase. Mg content x is per-crystal state (crystal.mg_content). Ksp scales linearly with mol-% Mg over the valid range. Above x=0.30, structure tilts toward dolomite. Bischoff, Mackenzie & Bishop 1987 (GCA 51:1413-1423) is the canonical synthesis-Mg-calcite solubility reference (it also covers biogenic comparison — one paper, two strands). Morse & Mackenzie 1990 'Geochemistry of Sedimentary Carbonates' (Elsevier Developments in Sedimentology 48) consolidates. NEW MINERAL — to be added to data/minerals.json via vugg-add-mineral in Week 11."
+      "notes": "HMC is a continuum, not a discrete pure phase. Each accepted zone records its Mg mole fraction, aqueous molar Mg/Ca, parent-fluid domain, solid component activities, and phase-stability status. The promoted activity calculation is a metastable fixed-composition branch inside the model's documented 25 C miscibility gap, used only as a kinetic saturation screen. Natural defect density and transport remain explicit uncertainties. The measured partition domains produce x below 0.30; higher-ratio parent fluids are unresolved rather than clipped into a fabricated HMC composition."
     },
     "kinetics": {
       "rate_law": "calcite_pwp_with_mg_inhibition",

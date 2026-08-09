@@ -326,7 +326,7 @@ function dolomiteRate(fluid: any, T_C: number, f_ord: number, fluidPressureKbar:
 
 // HMC — calcite PWP with Mg poisoning already baked in. mg_content
 // (per-crystal Mg substitution) flows through to omega via the
-// mg_content-dependent Ksp (20c).
+// composition-dependent nonideal solid-solution activity model (20c).
 function HMCRate(
   fluid: any,
   T_C: number,

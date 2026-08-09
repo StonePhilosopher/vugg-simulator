@@ -11,7 +11,7 @@
 //     metastable — needs more supersaturation to precipitate)
 //   - Dolomite IAP uses CO3 squared (sensitivity check vs simple
 //     carbonates)
-//   - HMC SI depends on mg_content via Ksp scaling
+//   - HMC SI depends on composition through nonideal solid activities
 //   - OH-bearing carbonates respond to pH via OH activity
 //   - Engine integration: with all flags off, supersaturation_calcite()
 //     gives the same result as the empirical engine (regression pin)
@@ -46,6 +46,7 @@ declare const snapshotCarbonateKspFlags: () => { global: boolean; perMineral: Re
 declare const restoreCarbonateKspFlags: (snap: { global: boolean; perMineral: Record<string, boolean> }) => void;
 
 declare const getCarbonateLogKsp: (mineralId: string, T_C: number, mg_content?: number) => number;
+declare const hmcSolidSolutionAssessment: (mg_content: number, T_C: number) => any;
 declare const bjerrumFractions: (pH: number, T_C: number) => { H2CO3: number; HCO3: number; CO3: number };
 declare const carbonateIonPpm: (fluid: any, T_C: number) => number;
 
@@ -256,13 +257,7 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — polymorph + stoichiometry', () =
 });
 
 describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — HMC mg_content', () => {
-  it('HMC SI varies with mg_content (Ksp scales with x)', () => {
-    // logKsp(x) = -8.48 + 0.10 × x × 100  (per data/thermo-carbonates.json
-    // mg_content_linear fit).
-    //   x=0.00: logKsp = -8.48 (= calcite)
-    //   x=0.10: logKsp = -7.48 (10× more soluble than pure calcite)
-    //   x=0.20: logKsp = -6.48
-    // Higher x → MORE soluble → LOWER SI at the same fluid.
+  it('HMC SI varies nonlinearly with composition-dependent solid activities', () => {
     const f = new FluidChemistry({ Ca: 400, Mg: 400, CO3: 200, pH: 8.0 });
     const SI_pure = carbonateSaturationIndex('HMC', f, 25, 0.0);
     const SI_low = carbonateSaturationIndex('HMC', f, 25, 0.10);
@@ -272,8 +267,15 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — HMC mg_content', () => {
     expect(Number.isFinite(SI_high)).toBe(true);
     expect(SI_pure).toBeGreaterThan(SI_low);
     expect(SI_low).toBeGreaterThan(SI_high);
-    // 0 → 10 mol-% Mg = 1 log-unit drop in SI per the linear fit.
-    expect(Math.abs((SI_pure - SI_low) - 1.0)).toBeLessThan(0.3);
+    const lowStep = SI_pure - SI_low;
+    const highStep = SI_low - SI_high;
+    expect(lowStep).toBeGreaterThan(0);
+    expect(highStep).toBeGreaterThan(0);
+    expect(Math.abs(lowStep - highStep)).toBeGreaterThan(0.02);
+    const assessment = hmcSolidSolutionAssessment(0.10, 25);
+    expect(assessment.model).toBe('calcite_disordered_dolomite_subregular_v1');
+    expect(assessment.activityCoefficients.calcite).not.toBeCloseTo(1, 3);
+    expect(assessment.activityCoefficients.disorderedDolomiteHalfFormula).not.toBeCloseTo(1, 3);
   });
 
   it('HMC SI at x=0 matches calcite SI (HMC is pure calcite when mg_content = 0)', () => {

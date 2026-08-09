@@ -62,6 +62,9 @@ function _renderFortressSigmaGroups(c, host) {
     let sigma;
     try { sigma = fn.call(c); } catch (e) { continue; }
     if (typeof sigma !== 'number' || !isFinite(sigma)) continue;
+    const compositionUnresolved = name === 'HMC'
+      && typeof hmcCompositionFromFluid === 'function'
+      && !hmcCompositionFromFluid(c.fluid, c.temperature).compositionDomainSupported;
     const cls = spec.class || 'uncategorized';
     const displayName = _SAT_DISPLAY_NAMES[name]
       || (name.charAt(0).toUpperCase() + name.slice(1));
@@ -74,8 +77,8 @@ function _renderFortressSigmaGroups(c, host) {
     }
     const threshold = _satSigmaCrit(name);
     const ratio = threshold > 0 ? sigma / threshold : sigma;
-    byClass[cls].entries.push({ name, displayName, sigma, threshold, ratio });
-    if (ratio > byClass[cls].maxSigma) byClass[cls].maxSigma = ratio;
+    byClass[cls].entries.push({ name, displayName, sigma, threshold, ratio, compositionUnresolved });
+    if (!compositionUnresolved && ratio > byClass[cls].maxSigma) byClass[cls].maxSigma = ratio;
   }
   // Order: active classes (any σ > its mineral's sigma_crit) first,
   // sorted by the largest σ/σcrit ratio; then dormant classes by
@@ -96,13 +99,14 @@ function _renderFortressSigmaGroups(c, host) {
     const group = byClass[cls];
     // Apply filter: drop entries the user is currently hiding.
     const filtered = group.entries.filter(e => {
+      if (e.compositionUnresolved) return true;
       const isSuper = e.sigma > e.threshold;
       return isSuper ? _satShowNucleating : _satShowDormant;
     });
     if (!filtered.length) continue;  // class hides entirely if all pills filtered out
     // Sort entries within group by σ descending so the "interesting
     // ones" are visually first.
-    filtered.sort((a, b) => b.sigma - a.sigma);
+    filtered.sort((a, b) => Number(b.compositionUnresolved) - Number(a.compositionUnresolved) || b.sigma - a.sigma);
     const isActive = group.maxSigma > 1;
     const maxLabel = Math.min(group.maxSigma, _SAT_DISPLAY_MAX);
     const meta = isActive
@@ -115,15 +119,20 @@ function _renderFortressSigmaGroups(c, host) {
       + `</summary>`;
     const pills = filtered.map(e => {
       const isSuper = e.sigma > e.threshold;
-      const klass = 'sat-indicator ' + (isSuper ? 'sat-super' : 'sat-under');
+      const klass = 'sat-indicator ' + (e.compositionUnresolved ? 'sat-unknown' : (isSuper ? 'sat-super' : 'sat-under'));
       // data-hl-mineral lets the panel double as the legend: hover
       // a pill → highlight that mineral on the topo (replaces the
       // legacy classes-tab hover behavior, which only highlighted
       // by class). The native title tooltip is gone (2026-07-08) —
       // the nucleation hover popover carries the state now, and a
       // browser tooltip would fight it.
-      const label = `${e.displayName}: saturation ${e.sigma.toFixed(2)}, nucleation threshold ${e.threshold.toFixed(2)}. Focus for formation diagnosis.`;
-      return `<button type="button" class="${klass}" data-hl-mineral="${_satEsc(e.name)}" data-sigma="${_satEsc(String(e.sigma))}" data-sigma-crit="${_satEsc(String(e.threshold))}" aria-label="${_satEsc(label)}">${_satEsc(e.displayName)} σ=${e.sigma.toFixed(2)}</button>`;
+      const label = e.compositionUnresolved
+        ? `${e.displayName}: composition and saturation unresolved because the partition model lacks coverage. Focus for formation diagnosis.`
+        : `${e.displayName}: saturation ${e.sigma.toFixed(2)}, nucleation threshold ${e.threshold.toFixed(2)}. Focus for formation diagnosis.`;
+      const text = e.compositionUnresolved
+        ? `${e.displayName} composition/saturation unresolved`
+        : `${e.displayName} σ=${e.sigma.toFixed(2)}`;
+      return `<button type="button" class="${klass}" data-hl-mineral="${_satEsc(e.name)}" data-sigma="${_satEsc(String(e.sigma))}" data-sigma-crit="${_satEsc(String(e.threshold))}" aria-label="${_satEsc(label)}">${_satEsc(text)}</button>`;
     }).join('');
     // All groups open by default. Filters do the visual reduction
     // now; collapsing groups was the pre-filter solution.
@@ -271,25 +280,25 @@ function _formationPressureChips(name: string, c: any): FormationDiagnosticChip[
     const aragoniteStable = offset > 1.0;
     const expected = name === 'aragonite' ? aragoniteStable : !aragoniteStable;
     const calciteObserver = name === 'calcite' && !uncertain;
-    return [...chips, {
+    return [{
       text: `${pressure.toFixed(2)} kbar fluid · calcite/aragonite boundary ${boundary.toFixed(2)} kbar`,
       met: calciteObserver || uncertain || expected,
       status: uncertain ? 'uncertain' : (calciteObserver ? 'observer' : undefined),
       note: uncertain
         ? 'Published Hacker et al. fit, inside its +/-1 kbar experimental uncertainty band: neither polymorph receives a red/green phase-field claim.'
         : `${calciteObserver ? 'Observer only, not a failed gameplay gate. ' : ''}Published Hacker et al. fit lies outside its +/-1 kbar uncertainty band and nominally favors ${aragoniteStable ? 'aragonite' : 'calcite'}. The calcite engine does not use this as an exclusion gate; below 3 kbar the separate Mg-kinetic shallow selector remains authoritative.`,
-    }];
+    }, ...chips];
   }
 
   if (name === 'selenite' || name === 'anhydrite') {
     const evaluation = evaluateCaSO4System(c.fluid, temperature, pressure);
     const phase = evaluation.phase;
-    return [...chips, {
+    return [{
       text: `${pressure.toFixed(2)} kbar fluid · ${phase.phase} CaSO4 field (boundary ${phase.boundaryC.toFixed(1)}±${phase.uncertaintyC.toFixed(1)}°C)`,
       met: true,
       status: phase.phase === 'uncertain' ? 'uncertain' : 'observer',
       note: `${phase.note} This selector drives precursor replacement; primary gypsum and primary anhydrite retain their separate kinetic windows.`,
-    }];
+    }, ...chips];
   }
 
   return chips;
@@ -558,6 +567,10 @@ function _buildMineralFormationExplanation(
     try { sigma = typeof fn === 'function' ? fn.call(c) : 0; } catch (_e) { sigma = 0; }
   }
   if (typeof sigma !== 'number' || !Number.isFinite(sigma)) sigma = 0;
+  const hmcComposition = name === 'HMC' && typeof hmcCompositionFromFluid === 'function'
+    ? hmcCompositionFromFluid(c.fluid, c.temperature)
+    : null;
+  const hmcCoverageUnresolved = !!hmcComposition && !hmcComposition.compositionDomainSupported;
   const sigmaCrit = gate && Number.isFinite(gate.sigma_crit) ? gate.sigma_crit : 1;
   const chemistryEligible = sigma > sigmaCrit;
   const history = _formationHistory(name, sim);
@@ -574,7 +587,8 @@ function _buildMineralFormationExplanation(
     ? chemistryEligible && requiredSubstrateAvailable
     : (chemistryEligible || substrateEligible);
   const competition = _formationCompetition(name, sigma, c, sim);
-  const productionDecision = sim && sim.conditions === c
+  if (hmcCoverageUnresolved) competition.initiative = null;
+  const productionDecision = !hmcCoverageUnresolved && sim && sim.conditions === c
     && typeof assessProductionNucleationDecision === 'function'
     ? assessProductionNucleationDecision(name, sim, sigma, sigmaCrit)
     : null;
@@ -583,7 +597,12 @@ function _buildMineralFormationExplanation(
     : effectiveEligible;
   const groups: FormationDiagnosticGroup[] = [];
 
-  const satChips: FormationDiagnosticChip[] = [{
+  const satChips: FormationDiagnosticChip[] = hmcCoverageUnresolved ? [{
+    text: 'HMC composition/saturation unresolved',
+    met: true,
+    status: 'uncertain',
+    note: 'No numeric saturation or undersaturation is inferred because the measured Mg-partition model does not cover this parent fluid.',
+  }] : [{
     text: `σ ${_formationNumber(sigma)} · bare-wall σcrit ${_formationNumber(sigmaCrit)}`,
     met: chemistryEligible,
     note: 'This is the mineral engine\'s final supersaturation result after its thermodynamic, composition, and kinetic gates.',
@@ -597,6 +616,28 @@ function _buildMineralFormationExplanation(
         met: thermo.saturationIndex > 0,
         status: 'observer',
         note: `${thermo.representativeComposition}; ${thermo.status}. ${thermo.uncertaintyNote} This diagnostic does not drive the empirical nucleation engine.`,
+      });
+    }
+  }
+  if (name === 'HMC'
+      && typeof hmcCompositionFromFluid === 'function'
+      && typeof hmcSolidSolutionAssessment === 'function') {
+    const composition = hmcComposition || hmcCompositionFromFluid(c.fluid, c.temperature);
+    if (!composition.compositionDomainSupported) {
+      satChips.push({
+        text: `shell composition unresolved · molar Mg/Ca ${_formationNumber(composition.aqueousMgCaMolarRatio)} · salinity ${_formationNumber(composition.salinityPerMil)}‰`,
+        met: true,
+        status: 'uncertain',
+        note: `${composition.compositionDomainStatus}; ${composition.temperatureStatus}. ${composition.uncertainty} Production therefore makes no HMC presence or absence claim for this parent fluid.`,
+      });
+    } else {
+      const thermo = hmcSolidSolutionAssessment(composition.mgMoleFraction, c.temperature);
+      const xText = `predicted shell x ${(100 * composition.mgMoleFraction).toFixed(1)} mol% Mg`;
+      satChips.push({
+        text: `${xText} · molar Mg/Ca ${_formationNumber(composition.aqueousMgCaMolarRatio)}`,
+        met: composition.validHMCComposition,
+        status: composition.validHMCComposition ? 'met' : 'unmet',
+        note: `D_Mg=${composition.distributionCoefficient.toFixed(4)} (${composition.compositionDomainStatus}; ${composition.temperatureStatus}); fixed-composition log K=${_formationNumber(thermo.fixedCompositionLogK, 3)}, γcalcite=${_formationNumber(thermo.activityCoefficients.calcite, 3)}, γdisordered-dolomite=${_formationNumber(thermo.activityCoefficients.disorderedDolomiteHalfFormula, 3)}. Activity-model temperature status: ${thermo.activityModelTemperatureStatus}. Phase status: ${thermo.phaseStabilityStatus}; ${thermo.screenRole}; stable equilibrium claim=${thermo.stableEquilibriumClaim}. ${composition.uncertainty}.`,
       });
     }
   }
@@ -677,7 +718,7 @@ function _buildMineralFormationExplanation(
     groups.push({ label: 'Production nucleator', chips: productionChips });
   }
 
-  if (!productionEligible) {
+  if (!productionEligible && !hmcCoverageUnresolved) {
     const causal = _formationCausalCounterfactuals(name, c, sigma, sigmaCrit);
     groups.push({
       label: 'Production counterfactuals',
@@ -719,7 +760,20 @@ function _buildMineralFormationExplanation(
       })),
     });
   }
-  const stoich = (typeof MINERAL_STOICHIOMETRY !== 'undefined') ? MINERAL_STOICHIOMETRY[name] : null;
+  let stoich = (typeof MINERAL_STOICHIOMETRY !== 'undefined') ? MINERAL_STOICHIOMETRY[name] : null;
+  let stoichSource = 'registered representative formula';
+  let stoichUnavailableReason: string | null = null;
+  if (name === 'HMC' && typeof hmcCompositionFromFluid === 'function') {
+    const composition = hmcCompositionFromFluid(c.fluid, c.temperature);
+    if (composition.compositionDomainSupported) {
+      const x = composition.mgMoleFraction;
+      stoich = { Ca: 1 - x, Mg: x, CO3: 1 };
+      stoichSource = `current predicted shell formula Ca${(1 - x).toFixed(3)}Mg${x.toFixed(3)}CO3`;
+    } else {
+      stoich = null;
+      stoichUnavailableReason = `${composition.compositionDomainStatus}: no formula or limiting-reagent capacity is inferred outside the measured partition domain.`;
+    }
+  }
   const capacities = stoich ? Object.entries(stoich).map(([species, coefficient]) => {
     const raw = species === 'SiO2' && typeof c.fluid.reactiveSilicaPpm === 'function'
       ? c.fluid.reactiveSilicaPpm()
@@ -741,9 +795,11 @@ function _buildMineralFormationExplanation(
       ? capacities.map((row, i) => ({
         text: `${row.species} books ${_formationNumber(row.capacityUm, 0)} proxy axial µm${i === 0 ? ' · limiting booked reagent' : ''}`,
         met: row.capacityUm > 0,
-        note: `${_formationNumber(row.available)} mg/kg available ÷ ${_formationNumber(row.demandPerUm, 6)} mg/kg per accepted axial µm. ${STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE.preserves}; ${STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE.limitation}.`,
+        note: `${_formationNumber(row.available)} mg/kg available ÷ ${_formationNumber(row.demandPerUm, 6)} mg/kg per accepted axial µm (${stoichSource}). ${STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE.preserves}; ${STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE.limitation}.`,
       }))
-      : [{ text: 'No calibrated stoichiometric budget registered', met: true }],
+      : stoichUnavailableReason
+        ? [{ text: 'HMC shell formula unresolved · no limiting-reagent verdict', met: true, status: 'uncertain', note: stoichUnavailableReason }]
+        : [{ text: 'No calibrated stoichiometric budget registered', met: true }],
   });
 
   const T = c.temperature;
@@ -879,7 +935,12 @@ function _buildMineralFormationExplanation(
 
   let state: MineralFormationExplanation['state'] = 'unknown';
   let verdict = 'Formation history is unavailable for this snapshot.';
-  if (history.available && history.total > 0) {
+  if (hmcCoverageUnresolved) {
+    state = 'unknown';
+    verdict = history.available && history.total > 0
+      ? `HMC formed earlier (${history.active} active, ${history.transformed} transformed, ${history.dissolved} dissolved), but current composition and saturation are unresolved. The simulator skips fresh nucleation because the measured partition model lacks coverage; this is not a geological absence or undersaturation verdict.`
+      : 'HMC formation is unresolved for this parent fluid. The simulator skips nucleation because the measured partition model lacks coverage; this is not a geological absence or undersaturation verdict.';
+  } else if (history.available && history.total > 0) {
     if (productionEligible && !strangled) {
       state = 'formed-supported';
       if (substrateEligible) {

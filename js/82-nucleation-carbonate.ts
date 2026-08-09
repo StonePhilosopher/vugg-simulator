@@ -83,7 +83,20 @@ function _nuc_dolomite(sim) {
   // precursor to ordered dolomite.
 }
 function _nuc_HMC(sim) {
-  const sigma_hmc = sim.conditions.supersaturation_HMC();
+  const composition = hmcCompositionFromFluid(
+    sim.conditions.fluid, sim.conditions.temperature,
+  );
+  sim._hmc_composition_coverage = { ...composition };
+  if (!composition.compositionDomainSupported) {
+    const fingerprint = `${composition.compositionDomainStatus}|${composition.temperatureStatus}`;
+    if (sim._last_hmc_coverage_log !== fingerprint) {
+      sim._last_hmc_coverage_log = fingerprint;
+      sim.log.push(`  ◇ HMC COMPOSITION UNRESOLVED: molar Mg/Ca=${composition.aqueousMgCaMolarRatio.toFixed(2)}, salinity=${Number.isFinite(composition.salinityPerMil) ? composition.salinityPerMil.toFixed(1) : 'unknown'}‰, T=${sim.conditions.temperature.toFixed(1)}°C lies outside the measured partition domain (${composition.compositionDomainStatus}); no HMC presence or absence verdict is inferred.`);
+    }
+    return;
+  }
+  if (!composition.validHMCComposition) return;
+  const sigma_hmc = sim.conditions.supersaturation_HMC(composition.mgMoleFraction);
   if (sigma_hmc <= MINERAL_GATES_HMC.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('HMC')) return;
   const existing_hmc = sim.crystals.filter(c => c.mineral === 'HMC' && c.active);
@@ -98,16 +111,13 @@ function _nuc_HMC(sim) {
   const existing_arg_h = sim.crystals.filter(c => c.mineral === 'aragonite' && c.active);
   if (existing_cal_h.length && rng.random() < 0.45) pos = `on calcite #${existing_cal_h[0].crystal_id}`;
   else if (existing_arg_h.length && rng.random() < 0.35) pos = `on aragonite #${existing_arg_h[0].crystal_id}`;
-  // Compute crystal._mg_content from fluid Mg/Ca at nucleation time
-  // per Mucci-Morse 1983 partitioning. Empirical linear approximation
-  // calibrated for marine/sabkha conditions:
-  //   mg_content ≈ 0.05 + 0.02 × (Mg/Ca - 1), capped at 0.30
-  // At Mg/Ca=1: 5% Mg. At Mg/Ca=5: 13%. At Mg/Ca=15: 30%.
-  const mg_ratio = sim.conditions.fluid.Mg / Math.max(sim.conditions.fluid.Ca, 0.01);
-  const mg_content = Math.max(0.04, Math.min(0.30, 0.05 + 0.02 * (mg_ratio - 1.0)));
+  const mg_ratio = composition.aqueousMgCaMolarRatio;
+  const mg_content = composition.mgMoleFraction;
   const c = sim.nucleate('HMC', pos, sigma_hmc);
-  c._mg_content = mg_content;  // per-crystal state for grow_HMC + SI engine
-  sim.log.push(`  ✦ NUCLEATION: ⚪ HMC #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, Mg/Ca=${mg_ratio.toFixed(2)}, x=${mg_content.toFixed(2)} mol Mg, σ=${sigma_hmc.toFixed(2)}) — disordered Mg-calcite intermediate, kinetic precursor to ordered dolomite per Kim 2023`);
+  c._mg_content = mg_content;
+  c._solid_solution_model = 'calcite_disordered_dolomite_subregular_v1';
+  c._hmc_nucleation_composition = { ...composition };
+  sim.log.push(`  ✦ NUCLEATION: ⚪ HMC #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, molar Mg/Ca=${mg_ratio.toFixed(2)}, x=${mg_content.toFixed(3)} Mg, σ=${sigma_hmc.toFixed(2)}) — measured-partition composition with nonideal calcite–dolomite component activities`);
 
   // Siderite nucleation — Fe carbonate, brown rhomb. Reducing only.
 }

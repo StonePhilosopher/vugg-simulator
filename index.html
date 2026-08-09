@@ -1986,6 +1986,12 @@ body.tutorial-active #mode-toggle.tutorial-spotlight { opacity: 1; }
   background: rgba(180,50,50,0.1);
 }
 
+.sat-unknown {
+  color: #dfc177;
+  border-color: #8a6a2a;
+  background: rgba(210,160,50,0.10);
+}
+
 /* Class-grouped sigma pills (post-2026-05). Each <details> is one
    mineral class (sulfide / carbonate / etc). Active state compares
    each mineral against its own registered sigma_crit. Class swatches
@@ -6364,15 +6370,13 @@ function scenarioSpecHash(spec) {
 // ============================================================
 // js/15-version.ts — SIM_VERSION + per-bump engine-drift history
 // ============================================================
-// JS counterpart of vugg/version.py — currently sits at v17 while Python has progressed past v30. Drift documented in BACKLOG; future "JS catch-up" rounds land here.
-//
 // Phase B4 of PROPOSAL-MODULAR-REFACTOR. SCRIPT-mode TS — top-level decls
 // stay global so call sites in 99-legacy-bundle.ts keep working.
 // ============================================================
 // SIM VERSION
 // ============================================================
 // Monotonic version tag bumped by any change that could shift seed-42
-// output for any scenario. Mirrors SIM_VERSION in vugg.py.
+// output for any scenario. This TypeScript runtime is authoritative.
 //   v1 — pre-audit: generic FluidChemistry defaults, Mg=0 in most scenarios
 //   v2 — scenario-chemistry audit (Apr 2026): every scenario anchored to a
 //        named locality with cited fluid values; locality_chemistry.json
@@ -18971,7 +18975,41 @@ function scenarioSpecHash(spec) {
 //       163 -> 170 um, while threshold-scale partitioning shifts HMC 27 -> 25
 //       and calcite 5 -> 15 (total nuclei 53 -> 61). The largest carbonate-SI
 //       shift is 0.063 log Omega; all other scenario stories are unchanged.
-const SIM_VERSION = 254;
+// v255 — ZONE-RESOLVED HMC SOLID SOLUTION (2026-08-08).
+//       The fixed 10 mol% Mg HMC proxy and linear Ksp ramp are retired.
+//       Candidate shells use aqueous molar Mg/Ca and Mucci's measured,
+//       parent-fluid-bounded D_Mg anchors, then evaluate the nondefective
+//       calcite/Ca0.5Mg0.5CO3 subregular component activities documented by
+//       Busenberg-Plummer, Glynn-Reardon, and PHREEQC. Unsupported parent
+//       compositions produce a named coverage gap, never a false absence
+//       verdict. The standard-seawater proxy is Mg/Ca 4.5-6, 30-40 per mil,
+//       and 5-40 C; the high-ratio plateau is restricted to the measured
+//       Mg/Ca 7.5-20 seawater-matrix interval at 25 C. Creative renders those
+//       gaps as unknown, without a numeric sigma or blocked/undersaturated
+//       verdict, whether HMC never formed or formed earlier. The documented
+//       25 C miscibility gap spans the HMC range, so
+//       the calculation is explicitly a metastable fixed-composition kinetic
+//       screen, not stable homogeneous equilibrium. Every accepted shell
+//       records x, activities, uncertainty, and its exact Ca(1-x)Mg(x)CO3
+//       formula; the booked-inventory ledger returns that shell composition
+//       during dissolution. Crystal `_mg_content` is now only the remaining-
+//       shell thickness-weighted summary. Creative's formation explanation
+//       reports the same live partition/activity calculation and limiting
+//       formula. Rosasite and aurichalcite remain honest Tier-C observers: no
+//       unmeasured aqueous-to-solid Cu/Zn partition relation is invented.
+//       Seed-42 fleet drift is confined to 3/39 scenarios, all removing an
+//       unsupported HMC interpretation: sabkha 61→37 crystals and 6→5 species
+//       (HMC 25→0; calcite 15→18; dolomite 4→2), ultramafic supergene 27→24
+//       and 6→5 (four zero-growth HMC nuclei removed), and zoned dripstone
+//       cave 13→9 and 4→3 (HMC 4→0). No expected species disappeared; the
+//       remaining small size/count shifts are deterministic RNG cascade. The
+//       12-scenario compact chemistry digest is numerically identical after
+//       version/model-digest normalization. Full strip comparison confines
+//       direct model drift to SI_HMC in all three stories (max about 1.01 log
+//       Omega); the cave also carries small mass-balance cascade in HCO3
+//       (0.738 mg/L max) and CO3 (0.013 mg/L max), plus one display-ordinal
+//       calcite-morph sample shift.
+const SIM_VERSION = 255;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -18998,8 +19036,9 @@ const MODEL_DIGEST = [
     'wall-dissolution:formula-stoich-limestone+dolomite-v1',
     'sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2',
     'calcite-Mn:manganocalcite-excess<1.2-v1',
+    'HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3',
     'CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1',
-    'growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6',
+    'growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7',
     'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',
     'dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3',
     'fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3',
@@ -19209,14 +19248,10 @@ const MINERAL_STOICHIOMETRY = {
     calcite: { Ca: 1, CO3: 1 }, // CaCO3
     aragonite: { Ca: 1, CO3: 1 }, // CaCO3 (orthorhombic)
     dolomite: { Ca: 1, Mg: 1, CO3: 2 }, // CaMg(CO3)2
-    // v146 Week 11: HMC = Ca(1-x)Mg(x)CO3 with variable x = 0.05-0.30.
-    // Approximation: use x ≈ 0.10 average (canonical marine HMC). The
-    // exact per-crystal mg_content is stored in crystal._mg_content but
-    // growth-budget treats HMC as composition-averaged. Real crystals
-    // have slight under-debit for Ca and slight over-debit for Mg at
-    // x > 0.10; reverse for x < 0.10. Errors are small (a few percent
-    // of Ca and Mg consumption).
-    HMC: { Ca: 0.9, Mg: 0.1, CO3: 1 }, // Ca(0.9)Mg(0.1)CO3 (canonical)
+    // Legacy/save fallback only. New HMC zones carry their measured-partition
+    // Ca(1-x)Mg(x)CO3 formula in `zone.formula_stoichiometry`; the budget and
+    // dissolution ledger use that exact per-zone map instead of this midpoint.
+    HMC: { Ca: 0.9, Mg: 0.1, CO3: 1 },
     siderite: { Fe: 1, CO3: 1 }, // FeCO3
     rhodochrosite: { Mn: 1, CO3: 1 }, // MnCO3
     smithsonite: { Zn: 1, CO3: 1 }, // ZnCO3
@@ -19798,6 +19833,65 @@ function _recordAcceptedCarbonateTransferReceipt(conditions, crystal, zone, befo
         touchedBulkFluidHandle: conditions.fluid === conditions._carbonateBoundaryBulkFluid,
     });
 }
+function _formulaStoichiometryForZone(crystal, zone) {
+    const zoned = zone?.formula_stoichiometry;
+    if (zoned && typeof zoned === 'object' && Object.keys(zoned).length)
+        return zoned;
+    return MINERAL_STOICHIOMETRY[crystal?.mineral] || null;
+}
+// HMC is a solid solution, so a crystal-wide single x is meaningful only as
+// the remaining-shell thickness-weighted mean.  The thermodynamic decision
+// and mass balance remain on each individual zone; this aggregate is for
+// morphology, display, and legacy consumers that still read `_mg_content`.
+function _refreshRemainingSolidSolutionComposition(crystal, pendingZone = null) {
+    if (crystal?.mineral !== 'HMC')
+        return;
+    let weightedMg = 0;
+    let totalThickness = 0;
+    const include = (z, remaining) => {
+        if (!(remaining > 0))
+            return;
+        const formula = _formulaStoichiometryForZone(crystal, z) || {};
+        const formulaCa = Math.max(0, Number(formula.Ca) || 0);
+        const formulaMg = Math.max(0, Number(formula.Mg) || 0);
+        const formulaX = formulaCa + formulaMg > 0 ? formulaMg / (formulaCa + formulaMg) : NaN;
+        const recordedX = Number(z?.solid_solution?.mgMoleFraction);
+        const x = Number.isFinite(recordedX) ? recordedX : formulaX;
+        if (!Number.isFinite(x))
+            return;
+        weightedMg += remaining * Math.max(0, Math.min(0.30, x));
+        totalThickness += remaining;
+    };
+    for (const z of (crystal.zones || [])) {
+        if (!(Number(z?.thickness_um) > 0))
+            continue;
+        const remaining = Number.isFinite(Number(z._remaining_solid_um))
+            ? Math.max(0, Number(z._remaining_solid_um))
+            : Math.max(0, Number(z.thickness_um) || 0);
+        include(z, remaining);
+    }
+    if (pendingZone && Number(pendingZone.thickness_um) > 0) {
+        include(pendingZone, Number(pendingZone.thickness_um));
+    }
+    if (totalThickness > 0) {
+        crystal._mg_content = weightedMg / totalThickness;
+        crystal._solid_solution_model = 'calcite_disordered_dolomite_subregular_v1';
+        crystal._solid_solution_bulk = {
+            schema: 'remaining-shell-thickness-weighted-v1',
+            mgMoleFraction: crystal._mg_content,
+            remainingThicknessUm: totalThickness,
+        };
+    }
+    else {
+        crystal._mg_content = null;
+        crystal._solid_solution_bulk = {
+            schema: 'remaining-shell-thickness-weighted-v1',
+            mgMoleFraction: null,
+            remainingThicknessUm: 0,
+            status: 'no_remaining_solid',
+        };
+    }
+}
 // Pure preview of the exact inventory that a negative zone would return.
 // Physical dissolution uses this during coupled reaction-path integration:
 // each trial retreat changes the local fluid, which changes saturation and
@@ -19832,7 +19926,7 @@ function previewBookedDissolutionReturn(crystal, dissolvedUm, fluid) {
         let inventory = shell.zone._budget_inventory_per_um;
         if (!inventory || typeof inventory !== 'object') {
             inventory = {};
-            const formula = MINERAL_STOICHIOMETRY[crystal.mineral] || {};
+            const formula = _formulaStoichiometryForZone(crystal, shell.zone) || {};
             for (const species in formula) {
                 const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
                 inventory[reservoir] = (inventory[reservoir] || 0)
@@ -19906,7 +20000,7 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
             let inventory = z._budget_inventory_per_um;
             if (!inventory || typeof inventory !== 'object') {
                 inventory = {};
-                const formula = MINERAL_STOICHIOMETRY[crystal.mineral] || {};
+                const formula = _formulaStoichiometryForZone(crystal, z) || {};
                 for (const species in formula) {
                     const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
                     inventory[reservoir] = (inventory[reservoir] || 0)
@@ -19987,10 +20081,11 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
         if (fluid.sulfurPoolsExplicit)
             syncExplicitSulfurTotal(fluid);
         zone._returned_budget_inventory = returned;
+        _refreshRemainingSolidSolutionComposition(crystal);
         _recordAcceptedCarbonateTransferReceipt(conditions, crystal, zone, carbonateBeforePpm);
         return null; // depletion narration is precipitation-only
     }
-    const stoich = MINERAL_STOICHIOMETRY[crystal.mineral];
+    const stoich = _formulaStoichiometryForZone(crystal, zone);
     if (!stoich) {
         if (!_growthBudgetMissingWarned[crystal.mineral]) {
             _growthBudgetMissingWarned[crystal.mineral] = true;
@@ -20095,6 +20190,7 @@ function applyStoichiometricGrowthBudget(crystal, zone, conditions) {
         syncExplicitSulfurTotal(fluid);
     zone._budget_inventory_per_um = bookedInventoryPerUm;
     zone._remaining_solid_um = zone.thickness_um;
+    _refreshRemainingSolidSolutionComposition(crystal, zone);
     _recordAcceptedCarbonateTransferReceipt(conditions, crystal, zone, carbonateBeforePpm);
     return depleted;
 }
@@ -21587,10 +21683,10 @@ function recordUnresolvedCarbonateTransferState(state, observedDICMolKg, note) {
 // SI = logIAP − logKsp has no fidelity seam at the edges. Above 250°C
 // both hold their 250°C value (bounded extrapolation, not runaway).
 //
-// HMC is special: its logKsp_25C is mg_content-dependent, not a
-// constant. Callers pass mg_content as a second argument; the formula
-// `logKsp(x) = logKsp_at_x0 + delta_logKsp_per_mol_pct_Mg · x · 100`
-// applies before T-correction.
+// HMC is special: it is a binary nonideal calcite–Ca0.5Mg0.5CO3
+// solid solution, not a pure phase with a fitted scalar Ksp. Callers pass
+// Mg mole fraction x. The helpers below evaluate the PHREEQC/Glynn
+// subregular component activities and their stoichiometric Kss.
 const _THERMO_GAS_CONSTANT_kJ_mol_K = 8.31446e-3; // R
 const _THERMO_T_REF_K = 298.15; // 25°C reference
 const _THERMO_LN10 = Math.LN10; // for 2.303 conversion
@@ -21740,6 +21836,194 @@ function getCarbonateKineticTier(mineralId) {
         return 'unknown';
     return entry.kinetics.confidence_tier || 'unknown';
 }
+// Nondefective calcite–dolomite subregular model used by the official PHREEQC
+// solid-solution example (Glynn & Reardon 1990; Busenberg & Plummer 1989).
+// HMC x is Mg/(Ca+Mg). PHREEQC's second component is Ca0.5Mg0.5CO3,
+// therefore its component mole fraction y = 2x over the promoted x <= 0.30
+// envelope. Dimensional parameters are converted at the current temperature,
+// exactly as PHREEQC documents for -Gugg_kJ.
+function hmcSolidSolutionAssessment(mg_content, T_celsius) {
+    const entry = getCarbonateData('HMC');
+    const fit = entry?.thermodynamics?.logKsp_fit || {};
+    const x = Math.max(0, Math.min(0.30, Number(mg_content) || 0));
+    const yDisorderedDolomite = Math.max(0, Math.min(0.60, 2 * x));
+    const yCalcite = 1 - yDisorderedDolomite;
+    const gugg = Array.isArray(fit.guggenheim_kJ_mol)
+        ? fit.guggenheim_kJ_mol : [12.593, 4.70];
+    const T_K = Math.max(273.15, Number(T_celsius) + 273.15);
+    const a0 = Number(gugg[0]) / (_THERMO_GAS_CONSTANT_kJ_mol_K * T_K);
+    const a1 = Number(gugg[1]) / (_THERMO_GAS_CONSTANT_kJ_mol_K * T_K);
+    // PHREEQC equations 39–40. Component 1 = calcite; component 2 =
+    // Ca0.5Mg0.5CO3. Activity = mole fraction × activity coefficient.
+    const lnGammaCalcite = (a0 - a1 * (4 * yCalcite - 1)) * yDisorderedDolomite * yDisorderedDolomite;
+    const lnGammaDisorderedDolomite = (a0 + a1 * (4 * yDisorderedDolomite - 1)) * yCalcite * yCalcite;
+    const gammaCalcite = Math.exp(lnGammaCalcite);
+    const gammaDisorderedDolomite = Math.exp(lnGammaDisorderedDolomite);
+    const activityCalcite = yCalcite * gammaCalcite;
+    const activityDisorderedDolomite = yDisorderedDolomite * gammaDisorderedDolomite;
+    const calciteLogK = getCarbonateLogKsp('calcite', T_celsius);
+    const halfDolomiteLogK = 0.5 * getCarbonateLogKsp('dolomite', T_celsius);
+    const calciteTerm = yCalcite > 0
+        ? yCalcite * (calciteLogK + Math.log10(activityCalcite)) : 0;
+    const dolomiteTerm = yDisorderedDolomite > 0
+        ? yDisorderedDolomite * (halfDolomiteLogK + Math.log10(activityDisorderedDolomite)) : 0;
+    const documentedGap = Array.isArray(fit.miscibility_gap_component2_25C)
+        ? fit.miscibility_gap_component2_25C : [0.0428, 0.9991];
+    const atDocumentedTemperature = Math.abs(Number(T_celsius) - 25) <= 0.25;
+    const insideDocumentedGap = atDocumentedTemperature
+        && yDisorderedDolomite >= Number(documentedGap[0])
+        && yDisorderedDolomite <= Number(documentedGap[1]);
+    const phaseStabilityStatus = !atDocumentedTemperature
+        ? 'miscibility_not_evaluated_outside_documented_25C'
+        : insideDocumentedGap
+            ? 'inside_documented_25C_miscibility_gap_metastable_branch'
+            : 'outside_documented_25C_miscibility_gap';
+    const activityModelTemperatureStatus = atDocumentedTemperature
+        ? 'interaction_parameters_calibrated_at_25C'
+        : 'dimensional_interaction_parameters_divided_by_RT_bounded_extrapolation';
+    return {
+        model: 'calcite_disordered_dolomite_subregular_v1',
+        mgMoleFraction: x,
+        componentMoleFractions: {
+            calcite: yCalcite,
+            disorderedDolomiteHalfFormula: yDisorderedDolomite,
+        },
+        guggenheimKJMol: [Number(gugg[0]), Number(gugg[1])],
+        guggenheimDimensionless: [a0, a1],
+        activityCoefficients: {
+            calcite: gammaCalcite,
+            disorderedDolomiteHalfFormula: gammaDisorderedDolomite,
+        },
+        componentActivities: {
+            calcite: activityCalcite,
+            disorderedDolomiteHalfFormula: activityDisorderedDolomite,
+        },
+        calciteLogK,
+        halfDolomiteLogK,
+        stoichiometricLogKsp: calciteTerm + dolomiteTerm,
+        fixedCompositionLogK: calciteTerm + dolomiteTerm,
+        miscibilityGapComponent2_25C: [Number(documentedGap[0]), Number(documentedGap[1])],
+        phaseStabilityStatus,
+        activityModelTemperatureStatus,
+        insideDocumentedMiscibilityGap: insideDocumentedGap,
+        stableEquilibriumClaim: false,
+        screenRole: 'metastable_fixed_composition_kinetic_saturation_screen',
+        validity: 'nondefective_group_I_metastable_screen; defect density remains kinetic uncertainty; no stable homogeneous-solution claim',
+    };
+}
+// Mucci's seawater overgrowth experiments measured D_Mg =
+// (Mg/Ca)_solid/(Mg/Ca)_aqueous at 5, 25, and 40 °C. Interpolate only
+// between those anchors inside the measured parent-fluid proxy. Temperatures
+// or solution compositions outside the declared domains return unresolved.
+function hmcCompositionFromFluid(fluid, T_celsius) {
+    const T = Number(T_celsius);
+    const aqueousCaMolKg = typeof ppmToMolality === 'function'
+        ? ppmToMolality(Math.max(0, Number(fluid?.Ca) || 0), 40.078)
+        : Math.max(0, Number(fluid?.Ca) || 0) / 40078;
+    const aqueousMgMolKg = typeof ppmToMolality === 'function'
+        ? ppmToMolality(Math.max(0, Number(fluid?.Mg) || 0), 24.305)
+        : Math.max(0, Number(fluid?.Mg) || 0) / 24305;
+    const aqueousMgCaMolarRatio = aqueousMgMolKg / Math.max(aqueousCaMolKg, 1e-30);
+    const salinityPerMil = Number(fluid?.salinity);
+    const standardSeawaterProxy = aqueousMgCaMolarRatio >= 4.5
+        && aqueousMgCaMolarRatio <= 6.0
+        && Number.isFinite(salinityPerMil)
+        && salinityPerMil >= 30
+        && salinityPerMil <= 40;
+    const standardTemperatureSupported = T >= 5 && T <= 40;
+    const highRatioMeasuredRange = aqueousMgCaMolarRatio >= 7.5
+        && aqueousMgCaMolarRatio <= 20;
+    const highRatioSeawaterMatrix = highRatioMeasuredRange
+        && Number.isFinite(salinityPerMil)
+        && salinityPerMil >= 30
+        && salinityPerMil <= 40;
+    const highRatioPlateau25C = highRatioSeawaterMatrix && Math.abs(T - 25) <= 0.25;
+    let distributionCoefficient = null;
+    let temperatureStatus = 'unsupported_temperature_or_parent_composition';
+    let compositionDomainStatus = 'unsupported_parent_fluid_composition';
+    if (standardSeawaterProxy && standardTemperatureSupported) {
+        compositionDomainStatus = 'standard_seawater_ratio_salinity_proxy';
+        temperatureStatus = 'interpolated_5_to_40C';
+        if (T <= 5) {
+            distributionCoefficient = 0.0121;
+            temperatureStatus = 'measured_5C';
+        }
+        else if (T <= 25) {
+            distributionCoefficient = 0.0121 + (0.0172 - 0.0121) * ((T - 5) / 20);
+            if (T === 25)
+                temperatureStatus = 'measured_25C';
+        }
+        else {
+            distributionCoefficient = 0.0172 + (0.0271 - 0.0172) * ((T - 25) / 15);
+            if (T === 40)
+                temperatureStatus = 'measured_40C';
+        }
+    }
+    else if (standardSeawaterProxy) {
+        compositionDomainStatus = 'standard_seawater_proxy_temperature_outside_5_to_40C';
+    }
+    else if (highRatioPlateau25C) {
+        distributionCoefficient = 0.0123;
+        temperatureStatus = 'measured_25C_high_MgCa_plateau';
+        compositionDomainStatus = 'high_MgCa_plateau_Mucci_Morse_1983';
+    }
+    else if (aqueousMgCaMolarRatio > 20) {
+        compositionDomainStatus = 'MgCa_above_measured_20_unresolved';
+    }
+    else if (highRatioMeasuredRange && !highRatioSeawaterMatrix) {
+        compositionDomainStatus = 'high_MgCa_nonseawater_solution_matrix_unresolved';
+    }
+    else if (highRatioMeasuredRange) {
+        compositionDomainStatus = 'high_MgCa_plateau_temperature_unmeasured';
+    }
+    else if (aqueousMgCaMolarRatio < 4.5) {
+        compositionDomainStatus = 'low_MgCa_composition_dependent_DMg_unresolved';
+    }
+    else if (aqueousMgCaMolarRatio > 6.0 && aqueousMgCaMolarRatio < 7.5) {
+        compositionDomainStatus = 'transition_between_seawater_series_and_high_ratio_plateau_unresolved';
+    }
+    else {
+        compositionDomainStatus = 'standard_ratio_but_nonseawater_salinity_unresolved';
+    }
+    const compositionDomainSupported = distributionCoefficient != null;
+    if (!compositionDomainSupported) {
+        return {
+            model: 'mucci_1987_and_mucci_morse_1983_bounded_partition_v3',
+            mgMoleFraction: null,
+            unconstrainedMgMoleFraction: null,
+            aqueousMgCaMolarRatio,
+            aqueousCaMolKg,
+            aqueousMgMolKg,
+            salinityPerMil,
+            distributionCoefficient: null,
+            temperatureStatus,
+            compositionDomainStatus,
+            compositionDomainSupported: false,
+            clampedAtPromotedHMCMaximum: false,
+            validHMCComposition: null,
+            uncertainty: 'No HMC composition or absence verdict: D_Mg depends on unresolved parent-fluid composition in this domain.',
+        };
+    }
+    const solidMgCaRatio = distributionCoefficient * aqueousMgCaMolarRatio;
+    const unconstrainedMgMoleFraction = solidMgCaRatio / (1 + solidMgCaRatio);
+    const mgMoleFraction = unconstrainedMgMoleFraction;
+    return {
+        model: 'mucci_1987_and_mucci_morse_1983_bounded_partition_v3',
+        mgMoleFraction,
+        unconstrainedMgMoleFraction,
+        aqueousMgCaMolarRatio,
+        aqueousCaMolKg,
+        aqueousMgMolKg,
+        salinityPerMil,
+        distributionCoefficient,
+        temperatureStatus,
+        compositionDomainStatus,
+        compositionDomainSupported: true,
+        clampedAtPromotedHMCMaximum: false,
+        validHMCComposition: mgMoleFraction >= 0.04 && mgMoleFraction <= 0.30,
+        uncertainty: 'transport and defect population remain unresolved; low-ratio parent fluids are excluded rather than extrapolated',
+    };
+}
 // Get log10(Ksp) at temperature T (°C). For HMC, pass mg_content (mole
 // fraction Mg, 0-0.30) as third arg; for non-HMC it's ignored.
 //
@@ -21747,24 +22031,17 @@ function getCarbonateKineticTier(mineralId) {
 // In practice, calcite/aragonite/dolomite/siderite always return a
 // real number even before the fetch lands (fallback covers them).
 function getCarbonateLogKsp(mineralId, T_celsius, mg_content = 0) {
+    if (mineralId === 'HMC') {
+        return hmcSolidSolutionAssessment(mg_content, T_celsius).stoichiometricLogKsp;
+    }
     const entry = getCarbonateData(mineralId);
     if (!entry || !entry.thermodynamics)
         return NaN;
     const thermo = entry.thermodynamics;
-    // Compute logKsp_25C (handles HMC's mg_content-dependent form)
+    // Compute logKsp_25C for pure/stoichiometric phases.
     let logKsp_25C;
     if (typeof thermo.logKsp_25C === 'number') {
         logKsp_25C = thermo.logKsp_25C;
-    }
-    else if (thermo.logKsp_25C === 'function_of_mg_content' && thermo.logKsp_fit) {
-        const fit = thermo.logKsp_fit;
-        if (fit.form === 'mg_content_linear' && typeof fit.logKsp_at_x0 === 'number' && typeof fit.delta_logKsp_per_mol_pct_Mg === 'number') {
-            const x = Math.max(0, Math.min(0.30, mg_content));
-            logKsp_25C = fit.logKsp_at_x0 + fit.delta_logKsp_per_mol_pct_Mg * x * 100;
-        }
-        else {
-            return NaN;
-        }
     }
     else {
         return NaN;
@@ -29655,6 +29932,33 @@ class GrowthZone {
         if (opts.trace_stoichiometry) {
             this.trace_stoichiometry = { ...opts.trace_stoichiometry };
         }
+        // Major-element formula coefficients may vary from shell to shell in a
+        // solid solution.  The accepted-zone budget consumes this exact formula,
+        // and dissolution later returns the inventory that was actually booked.
+        // A shallow numeric map is sufficient and keeps the serialized zone
+        // record independent from the caller's mutable object.
+        if (opts.formula_stoichiometry) {
+            this.formula_stoichiometry = { ...opts.formula_stoichiometry };
+        }
+        // Scientific provenance for a compositionally variable shell.  Preserve
+        // nested component/activity maps because the Creative-mode explanation
+        // and save/replay inspection use them as an immutable formation receipt.
+        if (opts.solid_solution) {
+            this.solid_solution = {
+                ...opts.solid_solution,
+                componentMoleFractions: opts.solid_solution.componentMoleFractions
+                    ? { ...opts.solid_solution.componentMoleFractions } : undefined,
+                activityCoefficients: opts.solid_solution.activityCoefficients
+                    ? { ...opts.solid_solution.activityCoefficients } : undefined,
+                componentActivities: opts.solid_solution.componentActivities
+                    ? { ...opts.solid_solution.componentActivities } : undefined,
+                guggenheimKJMol: Array.isArray(opts.solid_solution.guggenheimKJMol)
+                    ? [...opts.solid_solution.guggenheimKJMol] : opts.solid_solution.guggenheimKJMol,
+                guggenheimDimensionless: Array.isArray(opts.solid_solution.guggenheimDimensionless)
+                    ? [...opts.solid_solution.guggenheimDimensionless]
+                    : opts.solid_solution.guggenheimDimensionless,
+            };
+        }
         this.fluid_inclusion = opts.fluid_inclusion ?? false;
         this.inclusion_type = opts.inclusion_type ?? '';
         this.note = opts.note ?? '';
@@ -30998,8 +31302,8 @@ const MINERAL_GATES_HMC = {
     fluid_min: { Ca: 10, Mg: 5, CO3: 20 },
     pH_min: 7.0, pH_max: 10.5,
     surface_energy: 'medium',
-    _sources: ['Bischoff_Mackenzie_Bishop_1987', 'Morse_Mackenzie_1990', 'Davis_2000', 'Kim_2023', 'Goldsmith_Graf_1958'],
-    _notes: 'Mg/Ca window 0.5-30. T_max 60°C (above this, conversion to ordered dolomite or aragonite dominates per Burton & Walter 1987). Marine/sabkha cement + biogenic. Solid-solution composition — mg_content is per-crystal state, predicted from fluid Mg/Ca at nucleation per Mucci-Morse 1983 partitioning. Distinguishable from calcite/dolomite by XRD d104 peak shift (Goldsmith & Graf 1958).',
+    _sources: ['Busenberg_Plummer_1989', 'Glynn_Reardon_1990', 'Mucci_1987', 'Mucci_Morse_1983', 'Davis_2000', 'Kim_2023', 'Goldsmith_Graf_1958'],
+    _notes: 'The candidate shell must contain 4-30 mol% Mg under a domain-bounded partition screen using aqueous molar Mg/Ca. Mucci 1987 D_Mg(T) applies only to the standard-seawater ratio+salinity proxy; Mucci-Morse 1983 supplies the separate Mg/Ca 7.5-20, seawater-matrix plateau at 25 C. Other parent fluids produce an explicit coverage gap, not a low-HMC verdict. T_max 60°C is an authored kinetic occurrence gate, not a solid-solution equilibrium boundary. The subregular calculation is a metastable fixed-composition screen inside the documented 25 C miscibility gap, never a stable homogeneous-solution claim.',
 };
 const MINERAL_GATES_siderite = {
     sigma_crit: 1.0,
@@ -31251,20 +31555,20 @@ Object.assign(VugConditions.prototype, {
             sigma -= (6.5 - this.fluid.pH) * 0.3;
         return Math.max(sigma, 0);
     },
-    supersaturation_HMC() {
+    supersaturation_HMC(mg_content) {
         // High-Magnesium Calcite Ca(1-x)Mg(x)CO3, x ≈ 0.05-0.30.
         // Disordered Mg-substituted calcite intermediate. Kinetic precursor
         // to ordered dolomite (Kim 2023 cyclic mechanism); persists as a
-        // metastable phase without cycling. Solubility per Bischoff,
-        // Mackenzie & Bishop 1987 GCA 51:1413: Ksp scales linearly with
-        // mol-% Mg (~0.1 log unit per mol% Mg).
+        // metastable phase without cycling. The promoted thermodynamic screen uses
+        // the nondefective subregular calcite/disordered-dolomite component model
+        // of Busenberg & Plummer (1989) and Glynn & Reardon (1990); defects remain
+        // an explicit kinetic uncertainty rather than a fake linear Ksp correction.
         //
-        // The mg_content of a given crystal is per-crystal state. For
-        // NUCLEATION GATE purposes, the supersaturation function uses
-        // x=0.10 (a representative marine/sabkha HMC composition per
-        // Mucci-Morse 1983 fluid-mineral partitioning). The actual
-        // crystal._mg_content is set at nucleation from fluid Mg/Ca, and
-        // the GROW engine reads that for the kinetic rate calc.
+        // Each candidate shell receives the composition predicted from the current
+        // aqueous *molar* Mg/Ca ratio and Mucci's measured temperature-dependent
+        // distribution coefficient. An explicit x is accepted for per-crystal/
+        // per-zone thermodynamic probes; production nucleation never substitutes a
+        // fixed representative composition.
         const g = MINERAL_GATES_HMC;
         if (this.fluid.Ca < g.fluid_min.Ca || this.fluid.Mg < g.fluid_min.Mg || effectiveCO3(this.fluid, this.temperature) < g.fluid_min.CO3)
             return 0;
@@ -31272,14 +31576,20 @@ Object.assign(VugConditions.prototype, {
             return 0;
         if (this.fluid.pH < g.pH_min || this.fluid.pH > g.pH_max)
             return 0;
-        const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
-        if (mg_ratio < 0.5 || mg_ratio > 30.0)
+        const predicted = hmcCompositionFromFluid(this.fluid, this.temperature);
+        this._hmcCompositionAssessment = predicted;
+        const explicitComposition = Number.isFinite(mg_content);
+        if (!explicitComposition && !predicted.compositionDomainSupported)
             return 0;
-        // Reference mg_content for nucleation gate. Use 0.10 (10 mol% Mg)
-        // as the canonical marine-HMC composition.
-        const REF_MG_CONTENT = 0.10;
-        if (kspSupersatActiveFor('HMC'))
-            return carbonateEngineSigma('HMC', this.fluid, this.temperature, REF_MG_CONTENT, this.pressure);
+        const x = explicitComposition
+            ? Math.max(0, Math.min(0.30, Number(mg_content)))
+            : predicted.mgMoleFraction;
+        if (!explicitComposition && !predicted.validHMCComposition)
+            return 0;
+        const mg_ratio = predicted.aqueousMgCaMolarRatio;
+        if (kspSupersatActiveFor('HMC')) {
+            return carbonateEngineSigma('HMC', this.fluid, this.temperature, x, this.pressure);
+        }
         // Empirical fallback (flag-off): calcite-like formula with
         // Mg-substitution accounted for via a milder eq, and damped by
         // distance from the optimum Mg/Ca ≈ 4 (marine seawater equivalent).
@@ -31795,7 +32105,8 @@ Object.assign(VugConditions.prototype, {
 //   dolomite CaMg(CO3)2: IAP = a(Ca^2+) * a(Mg^2+) * a(CO3^2-)^2
 //
 //   HMC Ca(1-x)Mg(x)CO3: IAP = a(Ca^2+)^(1-x) * a(Mg^2+)^x * a(CO3^2-)
-//     Ksp scales with mg_content via mg_content_linear fit in 20c.
+//     Kss includes the subregular calcite/disordered-dolomite component
+//     activities and composition-dependent endmember mixing in 20c.
 //
 //   malachite Cu2(CO3)(OH)2: IAP = a(Cu^2+)^2 * a(CO3^2-) * a(OH^-)^2
 //   azurite Cu3(CO3)2(OH)2: IAP = a(Cu^2+)^3 * a(CO3^2-)^2 * a(OH^-)^2
@@ -32034,9 +32345,9 @@ function saturationIndex_dolomite(fluid, T) {
         return NaN;
     return logIAP - logKsp;
 }
-// HMC Ca(1-x)Mg(x)CO3 — mg_content x is per-crystal state.
+// HMC Ca(1-x)Mg(x)CO3 — mg_content x is the candidate shell composition.
 // IAP = a(Ca^2+)^(1-x) * a(Mg^2+)^x * a(CO3^2-).
-// Ksp varies with x via the mg_content_linear fit in 20c.
+// Kss varies nonideally with x through solid-component activities in 20c.
 function saturationIndex_HMC(fluid, T, mg_content) {
     const x = Math.max(0, Math.min(0.30, mg_content));
     const I = ionicStrength(fluid);
@@ -45319,10 +45630,15 @@ function grow_dolomite(crystal, conditions, step) {
 // v146 (Week 11): HMC (High-Magnesium Calcite) — disordered
 // Ca(1-x)Mg(x)CO3 with x ≈ 0.05-0.30. Kinetic precursor to ordered
 // dolomite per Kim 2023; persists as metastable Mg-rich calcite
-// intermediate without cycling. The mg_content is per-crystal state,
-// set at nucleation from fluid Mg/Ca (Mucci-Morse 1983 partitioning).
+// intermediate without cycling. Every accepted shell derives its own
+// composition from aqueous molar Mg/Ca and Mucci's measured D_Mg(T), then
+// records nonideal calcite/disordered-dolomite component activities.
 function grow_HMC(crystal, conditions, step) {
-    const sigma = conditions.supersaturation_HMC();
+    const composition = hmcCompositionFromFluid(conditions.fluid, conditions.temperature);
+    crystal._hmc_growth_composition_assessment = { ...composition };
+    const mg_content = composition.mgMoleFraction;
+    const sigma = composition.compositionDomainSupported && composition.validHMCComposition
+        ? conditions.supersaturation_HMC(mg_content) : 0;
     if (sigma < 1.0) {
         // Acid dissolution — HMC dissolves more readily than calcite due
         // to higher Ksp of the Mg-substituted lattice (Bischoff-Mackenzie-
@@ -45338,9 +45654,6 @@ function grow_HMC(crystal, conditions, step) {
         }
         return null;
     }
-    // Read crystal's stored mg_content (set at nucleation). If absent
-    // (legacy data), default to 0.10 — a representative marine HMC value.
-    const mg_content = typeof crystal._mg_content === 'number' ? crystal._mg_content : 0.10;
     // Growth rate dispatch — v146 Week 11: when HMC SI flag is on,
     // delegate the rate to PWP kinetics via HMCRate (which is calcite
     // PWP with Mg-poisoning sigmoid already baked in per Davis 2000).
@@ -45383,10 +45696,22 @@ function grow_HMC(crystal, conditions, step) {
     return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
-        trace_Mg: conditions.fluid.Mg * 0.04, // crystal Mg trace (small relative to lattice Mg)
+        formula_stoichiometry: { Ca: 1 - mg_content, Mg: mg_content, CO3: 1 },
+        solid_solution: {
+            ...hmcSolidSolutionAssessment(mg_content, conditions.temperature),
+            partitionModel: composition.model,
+            aqueousMgCaMolarRatio: composition.aqueousMgCaMolarRatio,
+            distributionCoefficient: composition.distributionCoefficient,
+            temperatureStatus: composition.temperatureStatus,
+            compositionDomainStatus: composition.compositionDomainStatus,
+            compositionDomainSupported: composition.compositionDomainSupported,
+            unconstrainedMgMoleFraction: composition.unconstrainedMgMoleFraction,
+            clampedAtPromotedHMCMaximum: composition.clampedAtPromotedHMCMaximum,
+            uncertainty: composition.uncertainty,
+        },
         trace_Fe: conditions.fluid.Fe * 0.06,
         trace_Mn: conditions.fluid.Mn * 0.04,
-        note: `${crystal.habit}${prov_note} — disordered Ca-Mg carbonate (x = ${mg_content.toFixed(2)}); will recrystallize to LMC over geological time without cycling, or to ordered dolomite under Kim 2023 cyclic-Ω mechanism`,
+        note: `${crystal.habit}${prov_note} — disordered Ca-Mg carbonate shell (x = ${mg_content.toFixed(3)}, D_Mg=${composition.distributionCoefficient.toFixed(4)}); will recrystallize to LMC over geological time without cycling, or to ordered dolomite under Kim 2023 cyclic-Ω mechanism`,
     });
 }
 function grow_siderite(crystal, conditions, step) {
@@ -46265,7 +46590,7 @@ function dolomiteRate(fluid, T_C, f_ord, fluidPressureKbar = 0.001) {
 }
 // HMC — calcite PWP with Mg poisoning already baked in. mg_content
 // (per-crystal Mg substitution) flows through to omega via the
-// mg_content-dependent Ksp (20c).
+// composition-dependent nonideal solid-solution activity model (20c).
 function HMCRate(fluid, T_C, mg_content = 0.10, fluidPressureKbar = 0.001) {
     const raw = pwpNetRate('HMC', fluid, T_C, mg_content, fluidPressureKbar);
     return raw * mgPoisoningFactor(fluid);
@@ -55318,8 +55643,8 @@ function event_film_coat(conditions) {
 // Per proposals/TASK-BRIEF-DATA-AS-TRUTH.md item 1, Option A.
 // Maps event-type strings used in data/scenarios.json5 to module-level
 // event handler functions. Adding a new event type requires registering
-// it here AND in vugg.py's EVENT_REGISTRY. tools/sync-spec.js extends
-// to verify both registries cover every type referenced in the JSON5.
+// it here; tools/sync-spec.js verifies that this registry covers every
+// type referenced in the JSON5.
 const EVENT_REGISTRY = {
     fluid_pulse: event_fluid_pulse,
     amethyst_chalcedony_maturation: event_amethyst_chalcedony_maturation,
@@ -55606,7 +55931,7 @@ function _buildScenarioFromSpec(scenarioId, spec) {
     const eventSpecs = (spec.events || []).slice();
     for (const ev of eventSpecs) {
         if (!EVENT_REGISTRY[ev.type]) {
-            throw new Error(`scenarios.json5 scenario '${scenarioId}' references unknown event type '${ev.type}' — register it in EVENT_REGISTRY (index.html) + the Python mirror (vugg.py).`);
+            throw new Error(`scenarios.json5 scenario '${scenarioId}' references unknown event type '${ev.type}' — register it in the TypeScript EVENT_REGISTRY.`);
         }
     }
     const scenarioCallable = function scenarioCallable(overrides = {}) {
@@ -55771,9 +56096,8 @@ async function _loadScenariosJSON5() {
 // All declarative scenarios live in data/scenarios.json5 and are
 // populated asynchronously by _loadScenariosJSON5() above. `let` so the
 // loader can mutate the object in place. scenario_random is the only
-// procedural scenario; it's wired into the title-screen Random Vugg
-// button below rather than added here (pre-existing intentional drift
-// from the Python side, where vugg.SCENARIOS["random"] = scenario_random).
+// procedural scenario; it is wired into the title-screen Random Vugg
+// button below rather than represented as a declarative scenario.
 let SCENARIOS = {};
 // The menu_layout block from data/scenarios.json5 (Door 3 / §10.5 t2-3):
 // the Scenarios picker panel, Zen dropdown, and Begin tutorial buttons as
@@ -59673,7 +59997,19 @@ function _nuc_dolomite(sim) {
     // precursor to ordered dolomite.
 }
 function _nuc_HMC(sim) {
-    const sigma_hmc = sim.conditions.supersaturation_HMC();
+    const composition = hmcCompositionFromFluid(sim.conditions.fluid, sim.conditions.temperature);
+    sim._hmc_composition_coverage = { ...composition };
+    if (!composition.compositionDomainSupported) {
+        const fingerprint = `${composition.compositionDomainStatus}|${composition.temperatureStatus}`;
+        if (sim._last_hmc_coverage_log !== fingerprint) {
+            sim._last_hmc_coverage_log = fingerprint;
+            sim.log.push(`  ◇ HMC COMPOSITION UNRESOLVED: molar Mg/Ca=${composition.aqueousMgCaMolarRatio.toFixed(2)}, salinity=${Number.isFinite(composition.salinityPerMil) ? composition.salinityPerMil.toFixed(1) : 'unknown'}‰, T=${sim.conditions.temperature.toFixed(1)}°C lies outside the measured partition domain (${composition.compositionDomainStatus}); no HMC presence or absence verdict is inferred.`);
+        }
+        return;
+    }
+    if (!composition.validHMCComposition)
+        return;
+    const sigma_hmc = sim.conditions.supersaturation_HMC(composition.mgMoleFraction);
     if (sigma_hmc <= MINERAL_GATES_HMC.sigma_crit)
         return; // RNG-cascade guard — DO NOT MOVE
     if (sim._atNucleationCap('HMC'))
@@ -59693,16 +60029,13 @@ function _nuc_HMC(sim) {
         pos = `on calcite #${existing_cal_h[0].crystal_id}`;
     else if (existing_arg_h.length && rng.random() < 0.35)
         pos = `on aragonite #${existing_arg_h[0].crystal_id}`;
-    // Compute crystal._mg_content from fluid Mg/Ca at nucleation time
-    // per Mucci-Morse 1983 partitioning. Empirical linear approximation
-    // calibrated for marine/sabkha conditions:
-    //   mg_content ≈ 0.05 + 0.02 × (Mg/Ca - 1), capped at 0.30
-    // At Mg/Ca=1: 5% Mg. At Mg/Ca=5: 13%. At Mg/Ca=15: 30%.
-    const mg_ratio = sim.conditions.fluid.Mg / Math.max(sim.conditions.fluid.Ca, 0.01);
-    const mg_content = Math.max(0.04, Math.min(0.30, 0.05 + 0.02 * (mg_ratio - 1.0)));
+    const mg_ratio = composition.aqueousMgCaMolarRatio;
+    const mg_content = composition.mgMoleFraction;
     const c = sim.nucleate('HMC', pos, sigma_hmc);
-    c._mg_content = mg_content; // per-crystal state for grow_HMC + SI engine
-    sim.log.push(`  ✦ NUCLEATION: ⚪ HMC #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, Mg/Ca=${mg_ratio.toFixed(2)}, x=${mg_content.toFixed(2)} mol Mg, σ=${sigma_hmc.toFixed(2)}) — disordered Mg-calcite intermediate, kinetic precursor to ordered dolomite per Kim 2023`);
+    c._mg_content = mg_content;
+    c._solid_solution_model = 'calcite_disordered_dolomite_subregular_v1';
+    c._hmc_nucleation_composition = { ...composition };
+    sim.log.push(`  ✦ NUCLEATION: ⚪ HMC #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, molar Mg/Ca=${mg_ratio.toFixed(2)}, x=${mg_content.toFixed(3)} Mg, σ=${sigma_hmc.toFixed(2)}) — measured-partition composition with nonideal calcite–dolomite component activities`);
     // Siderite nucleation — Fe carbonate, brown rhomb. Reducing only.
 }
 function _nuc_siderite(sim) {
@@ -78959,7 +79292,7 @@ const FLUID_PRESETS = {
     },
     mvt: {
         label: 'MVT Brine (synced to scenario_mvt)',
-        desc: 'Mirrors scenario_mvt. Edit the scenario in vugg.py / index.html to change this preset.',
+        desc: 'Mirrors scenario_mvt. Edit data/scenarios.json5 to change this preset.',
         get fluid() { return _scenarioFluidParams('mvt'); }
     },
     clean: {
@@ -81832,6 +82165,9 @@ function _renderFortressSigmaGroups(c, host) {
         }
         if (typeof sigma !== 'number' || !isFinite(sigma))
             continue;
+        const compositionUnresolved = name === 'HMC'
+            && typeof hmcCompositionFromFluid === 'function'
+            && !hmcCompositionFromFluid(c.fluid, c.temperature).compositionDomainSupported;
         const cls = spec.class || 'uncategorized';
         const displayName = _SAT_DISPLAY_NAMES[name]
             || (name.charAt(0).toUpperCase() + name.slice(1));
@@ -81844,8 +82180,8 @@ function _renderFortressSigmaGroups(c, host) {
         }
         const threshold = _satSigmaCrit(name);
         const ratio = threshold > 0 ? sigma / threshold : sigma;
-        byClass[cls].entries.push({ name, displayName, sigma, threshold, ratio });
-        if (ratio > byClass[cls].maxSigma)
+        byClass[cls].entries.push({ name, displayName, sigma, threshold, ratio, compositionUnresolved });
+        if (!compositionUnresolved && ratio > byClass[cls].maxSigma)
             byClass[cls].maxSigma = ratio;
     }
     // Order: active classes (any σ > its mineral's sigma_crit) first,
@@ -81872,6 +82208,8 @@ function _renderFortressSigmaGroups(c, host) {
         const group = byClass[cls];
         // Apply filter: drop entries the user is currently hiding.
         const filtered = group.entries.filter(e => {
+            if (e.compositionUnresolved)
+                return true;
             const isSuper = e.sigma > e.threshold;
             return isSuper ? _satShowNucleating : _satShowDormant;
         });
@@ -81879,7 +82217,7 @@ function _renderFortressSigmaGroups(c, host) {
             continue; // class hides entirely if all pills filtered out
         // Sort entries within group by σ descending so the "interesting
         // ones" are visually first.
-        filtered.sort((a, b) => b.sigma - a.sigma);
+        filtered.sort((a, b) => Number(b.compositionUnresolved) - Number(a.compositionUnresolved) || b.sigma - a.sigma);
         const isActive = group.maxSigma > 1;
         const maxLabel = Math.min(group.maxSigma, _SAT_DISPLAY_MAX);
         const meta = isActive
@@ -81892,15 +82230,20 @@ function _renderFortressSigmaGroups(c, host) {
             + `</summary>`;
         const pills = filtered.map(e => {
             const isSuper = e.sigma > e.threshold;
-            const klass = 'sat-indicator ' + (isSuper ? 'sat-super' : 'sat-under');
+            const klass = 'sat-indicator ' + (e.compositionUnresolved ? 'sat-unknown' : (isSuper ? 'sat-super' : 'sat-under'));
             // data-hl-mineral lets the panel double as the legend: hover
             // a pill → highlight that mineral on the topo (replaces the
             // legacy classes-tab hover behavior, which only highlighted
             // by class). The native title tooltip is gone (2026-07-08) —
             // the nucleation hover popover carries the state now, and a
             // browser tooltip would fight it.
-            const label = `${e.displayName}: saturation ${e.sigma.toFixed(2)}, nucleation threshold ${e.threshold.toFixed(2)}. Focus for formation diagnosis.`;
-            return `<button type="button" class="${klass}" data-hl-mineral="${_satEsc(e.name)}" data-sigma="${_satEsc(String(e.sigma))}" data-sigma-crit="${_satEsc(String(e.threshold))}" aria-label="${_satEsc(label)}">${_satEsc(e.displayName)} σ=${e.sigma.toFixed(2)}</button>`;
+            const label = e.compositionUnresolved
+                ? `${e.displayName}: composition and saturation unresolved because the partition model lacks coverage. Focus for formation diagnosis.`
+                : `${e.displayName}: saturation ${e.sigma.toFixed(2)}, nucleation threshold ${e.threshold.toFixed(2)}. Focus for formation diagnosis.`;
+            const text = e.compositionUnresolved
+                ? `${e.displayName} composition/saturation unresolved`
+                : `${e.displayName} σ=${e.sigma.toFixed(2)}`;
+            return `<button type="button" class="${klass}" data-hl-mineral="${_satEsc(e.name)}" data-sigma="${_satEsc(String(e.sigma))}" data-sigma-crit="${_satEsc(String(e.threshold))}" aria-label="${_satEsc(label)}">${_satEsc(text)}</button>`;
         }).join('');
         // All groups open by default. Filters do the visual reduction
         // now; collapsing groups was the pre-filter solution.
@@ -82000,24 +82343,24 @@ function _formationPressureChips(name, c) {
         const aragoniteStable = offset > 1.0;
         const expected = name === 'aragonite' ? aragoniteStable : !aragoniteStable;
         const calciteObserver = name === 'calcite' && !uncertain;
-        return [...chips, {
+        return [{
                 text: `${pressure.toFixed(2)} kbar fluid · calcite/aragonite boundary ${boundary.toFixed(2)} kbar`,
                 met: calciteObserver || uncertain || expected,
                 status: uncertain ? 'uncertain' : (calciteObserver ? 'observer' : undefined),
                 note: uncertain
                     ? 'Published Hacker et al. fit, inside its +/-1 kbar experimental uncertainty band: neither polymorph receives a red/green phase-field claim.'
                     : `${calciteObserver ? 'Observer only, not a failed gameplay gate. ' : ''}Published Hacker et al. fit lies outside its +/-1 kbar uncertainty band and nominally favors ${aragoniteStable ? 'aragonite' : 'calcite'}. The calcite engine does not use this as an exclusion gate; below 3 kbar the separate Mg-kinetic shallow selector remains authoritative.`,
-            }];
+            }, ...chips];
     }
     if (name === 'selenite' || name === 'anhydrite') {
         const evaluation = evaluateCaSO4System(c.fluid, temperature, pressure);
         const phase = evaluation.phase;
-        return [...chips, {
+        return [{
                 text: `${pressure.toFixed(2)} kbar fluid · ${phase.phase} CaSO4 field (boundary ${phase.boundaryC.toFixed(1)}±${phase.uncertaintyC.toFixed(1)}°C)`,
                 met: true,
                 status: phase.phase === 'uncertain' ? 'uncertain' : 'observer',
                 note: `${phase.note} This selector drives precursor replacement; primary gypsum and primary anhydrite retain their separate kinetic windows.`,
-            }];
+            }, ...chips];
     }
     return chips;
 }
@@ -82293,6 +82636,10 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
     }
     if (typeof sigma !== 'number' || !Number.isFinite(sigma))
         sigma = 0;
+    const hmcComposition = name === 'HMC' && typeof hmcCompositionFromFluid === 'function'
+        ? hmcCompositionFromFluid(c.fluid, c.temperature)
+        : null;
+    const hmcCoverageUnresolved = !!hmcComposition && !hmcComposition.compositionDomainSupported;
     const sigmaCrit = gate && Number.isFinite(gate.sigma_crit) ? gate.sigma_crit : 1;
     const chemistryEligible = sigma > sigmaCrit;
     const history = _formationHistory(name, sim);
@@ -82309,7 +82656,9 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
         ? chemistryEligible && requiredSubstrateAvailable
         : (chemistryEligible || substrateEligible);
     const competition = _formationCompetition(name, sigma, c, sim);
-    const productionDecision = sim && sim.conditions === c
+    if (hmcCoverageUnresolved)
+        competition.initiative = null;
+    const productionDecision = !hmcCoverageUnresolved && sim && sim.conditions === c
         && typeof assessProductionNucleationDecision === 'function'
         ? assessProductionNucleationDecision(name, sim, sigma, sigmaCrit)
         : null;
@@ -82317,7 +82666,12 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
         ? productionDecision.eligible
         : effectiveEligible;
     const groups = [];
-    const satChips = [{
+    const satChips = hmcCoverageUnresolved ? [{
+            text: 'HMC composition/saturation unresolved',
+            met: true,
+            status: 'uncertain',
+            note: 'No numeric saturation or undersaturation is inferred because the measured Mg-partition model does not cover this parent fluid.',
+        }] : [{
             text: `σ ${_formationNumber(sigma)} · bare-wall σcrit ${_formationNumber(sigmaCrit)}`,
             met: chemistryEligible,
             note: 'This is the mineral engine\'s final supersaturation result after its thermodynamic, composition, and kinetic gates.',
@@ -82331,6 +82685,29 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
                 met: thermo.saturationIndex > 0,
                 status: 'observer',
                 note: `${thermo.representativeComposition}; ${thermo.status}. ${thermo.uncertaintyNote} This diagnostic does not drive the empirical nucleation engine.`,
+            });
+        }
+    }
+    if (name === 'HMC'
+        && typeof hmcCompositionFromFluid === 'function'
+        && typeof hmcSolidSolutionAssessment === 'function') {
+        const composition = hmcComposition || hmcCompositionFromFluid(c.fluid, c.temperature);
+        if (!composition.compositionDomainSupported) {
+            satChips.push({
+                text: `shell composition unresolved · molar Mg/Ca ${_formationNumber(composition.aqueousMgCaMolarRatio)} · salinity ${_formationNumber(composition.salinityPerMil)}‰`,
+                met: true,
+                status: 'uncertain',
+                note: `${composition.compositionDomainStatus}; ${composition.temperatureStatus}. ${composition.uncertainty} Production therefore makes no HMC presence or absence claim for this parent fluid.`,
+            });
+        }
+        else {
+            const thermo = hmcSolidSolutionAssessment(composition.mgMoleFraction, c.temperature);
+            const xText = `predicted shell x ${(100 * composition.mgMoleFraction).toFixed(1)} mol% Mg`;
+            satChips.push({
+                text: `${xText} · molar Mg/Ca ${_formationNumber(composition.aqueousMgCaMolarRatio)}`,
+                met: composition.validHMCComposition,
+                status: composition.validHMCComposition ? 'met' : 'unmet',
+                note: `D_Mg=${composition.distributionCoefficient.toFixed(4)} (${composition.compositionDomainStatus}; ${composition.temperatureStatus}); fixed-composition log K=${_formationNumber(thermo.fixedCompositionLogK, 3)}, γcalcite=${_formationNumber(thermo.activityCoefficients.calcite, 3)}, γdisordered-dolomite=${_formationNumber(thermo.activityCoefficients.disorderedDolomiteHalfFormula, 3)}. Activity-model temperature status: ${thermo.activityModelTemperatureStatus}. Phase status: ${thermo.phaseStabilityStatus}; ${thermo.screenRole}; stable equilibrium claim=${thermo.stableEquilibriumClaim}. ${composition.uncertainty}.`,
             });
         }
     }
@@ -82409,7 +82786,7 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
         }
         groups.push({ label: 'Production nucleator', chips: productionChips });
     }
-    if (!productionEligible) {
+    if (!productionEligible && !hmcCoverageUnresolved) {
         const causal = _formationCausalCounterfactuals(name, c, sigma, sigmaCrit);
         groups.push({
             label: 'Production counterfactuals',
@@ -82449,7 +82826,21 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
             })),
         });
     }
-    const stoich = (typeof MINERAL_STOICHIOMETRY !== 'undefined') ? MINERAL_STOICHIOMETRY[name] : null;
+    let stoich = (typeof MINERAL_STOICHIOMETRY !== 'undefined') ? MINERAL_STOICHIOMETRY[name] : null;
+    let stoichSource = 'registered representative formula';
+    let stoichUnavailableReason = null;
+    if (name === 'HMC' && typeof hmcCompositionFromFluid === 'function') {
+        const composition = hmcCompositionFromFluid(c.fluid, c.temperature);
+        if (composition.compositionDomainSupported) {
+            const x = composition.mgMoleFraction;
+            stoich = { Ca: 1 - x, Mg: x, CO3: 1 };
+            stoichSource = `current predicted shell formula Ca${(1 - x).toFixed(3)}Mg${x.toFixed(3)}CO3`;
+        }
+        else {
+            stoich = null;
+            stoichUnavailableReason = `${composition.compositionDomainStatus}: no formula or limiting-reagent capacity is inferred outside the measured partition domain.`;
+        }
+    }
     const capacities = stoich ? Object.entries(stoich).map(([species, coefficient]) => {
         const raw = species === 'SiO2' && typeof c.fluid.reactiveSilicaPpm === 'function'
             ? c.fluid.reactiveSilicaPpm()
@@ -82471,9 +82862,11 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
             ? capacities.map((row, i) => ({
                 text: `${row.species} books ${_formationNumber(row.capacityUm, 0)} proxy axial µm${i === 0 ? ' · limiting booked reagent' : ''}`,
                 met: row.capacityUm > 0,
-                note: `${_formationNumber(row.available)} mg/kg available ÷ ${_formationNumber(row.demandPerUm, 6)} mg/kg per accepted axial µm. ${STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE.preserves}; ${STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE.limitation}.`,
+                note: `${_formationNumber(row.available)} mg/kg available ÷ ${_formationNumber(row.demandPerUm, 6)} mg/kg per accepted axial µm (${stoichSource}). ${STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE.preserves}; ${STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE.limitation}.`,
             }))
-            : [{ text: 'No calibrated stoichiometric budget registered', met: true }],
+            : stoichUnavailableReason
+                ? [{ text: 'HMC shell formula unresolved · no limiting-reagent verdict', met: true, status: 'uncertain', note: stoichUnavailableReason }]
+                : [{ text: 'No calibrated stoichiometric budget registered', met: true }],
     });
     const T = c.temperature;
     const hasTMin = gate?.T_min != null, hasTMax = gate?.T_max != null;
@@ -82610,7 +83003,13 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
         groups.push({ label: 'Space & transport', chips: transportChips });
     let state = 'unknown';
     let verdict = 'Formation history is unavailable for this snapshot.';
-    if (history.available && history.total > 0) {
+    if (hmcCoverageUnresolved) {
+        state = 'unknown';
+        verdict = history.available && history.total > 0
+            ? `HMC formed earlier (${history.active} active, ${history.transformed} transformed, ${history.dissolved} dissolved), but current composition and saturation are unresolved. The simulator skips fresh nucleation because the measured partition model lacks coverage; this is not a geological absence or undersaturation verdict.`
+            : 'HMC formation is unresolved for this parent fluid. The simulator skips nucleation because the measured partition model lacks coverage; this is not a geological absence or undersaturation verdict.';
+    }
+    else if (history.available && history.total > 0) {
         if (productionEligible && !strangled) {
             state = 'formed-supported';
             if (substrateEligible) {

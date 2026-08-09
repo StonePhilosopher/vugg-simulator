@@ -51,14 +51,10 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   calcite:        { Ca: 1, CO3: 1 },                 // CaCO3
   aragonite:      { Ca: 1, CO3: 1 },                 // CaCO3 (orthorhombic)
   dolomite:       { Ca: 1, Mg: 1, CO3: 2 },          // CaMg(CO3)2
-  // v146 Week 11: HMC = Ca(1-x)Mg(x)CO3 with variable x = 0.05-0.30.
-  // Approximation: use x ≈ 0.10 average (canonical marine HMC). The
-  // exact per-crystal mg_content is stored in crystal._mg_content but
-  // growth-budget treats HMC as composition-averaged. Real crystals
-  // have slight under-debit for Ca and slight over-debit for Mg at
-  // x > 0.10; reverse for x < 0.10. Errors are small (a few percent
-  // of Ca and Mg consumption).
-  HMC:            { Ca: 0.9, Mg: 0.1, CO3: 1 },      // Ca(0.9)Mg(0.1)CO3 (canonical)
+  // Legacy/save fallback only. New HMC zones carry their measured-partition
+  // Ca(1-x)Mg(x)CO3 formula in `zone.formula_stoichiometry`; the budget and
+  // dissolution ledger use that exact per-zone map instead of this midpoint.
+  HMC:            { Ca: 0.9, Mg: 0.1, CO3: 1 },
   siderite:       { Fe: 1, CO3: 1 },                 // FeCO3
   rhodochrosite:  { Mn: 1, CO3: 1 },                 // MnCO3
   smithsonite:    { Zn: 1, CO3: 1 },                 // ZnCO3
@@ -723,6 +719,61 @@ function _recordAcceptedCarbonateTransferReceipt(
   });
 }
 
+function _formulaStoichiometryForZone(crystal: any, zone: any): Record<string, number> | null {
+  const zoned = zone?.formula_stoichiometry;
+  if (zoned && typeof zoned === 'object' && Object.keys(zoned).length) return zoned;
+  return MINERAL_STOICHIOMETRY[crystal?.mineral] || null;
+}
+
+// HMC is a solid solution, so a crystal-wide single x is meaningful only as
+// the remaining-shell thickness-weighted mean.  The thermodynamic decision
+// and mass balance remain on each individual zone; this aggregate is for
+// morphology, display, and legacy consumers that still read `_mg_content`.
+function _refreshRemainingSolidSolutionComposition(crystal: any, pendingZone: any = null): void {
+  if (crystal?.mineral !== 'HMC') return;
+  let weightedMg = 0;
+  let totalThickness = 0;
+  const include = (z: any, remaining: number) => {
+    if (!(remaining > 0)) return;
+    const formula = _formulaStoichiometryForZone(crystal, z) || {};
+    const formulaCa = Math.max(0, Number(formula.Ca) || 0);
+    const formulaMg = Math.max(0, Number(formula.Mg) || 0);
+    const formulaX = formulaCa + formulaMg > 0 ? formulaMg / (formulaCa + formulaMg) : NaN;
+    const recordedX = Number(z?.solid_solution?.mgMoleFraction);
+    const x = Number.isFinite(recordedX) ? recordedX : formulaX;
+    if (!Number.isFinite(x)) return;
+    weightedMg += remaining * Math.max(0, Math.min(0.30, x));
+    totalThickness += remaining;
+  };
+  for (const z of (crystal.zones || [])) {
+    if (!(Number(z?.thickness_um) > 0)) continue;
+    const remaining = Number.isFinite(Number(z._remaining_solid_um))
+      ? Math.max(0, Number(z._remaining_solid_um))
+      : Math.max(0, Number(z.thickness_um) || 0);
+    include(z, remaining);
+  }
+  if (pendingZone && Number(pendingZone.thickness_um) > 0) {
+    include(pendingZone, Number(pendingZone.thickness_um));
+  }
+  if (totalThickness > 0) {
+    crystal._mg_content = weightedMg / totalThickness;
+    crystal._solid_solution_model = 'calcite_disordered_dolomite_subregular_v1';
+    crystal._solid_solution_bulk = {
+      schema: 'remaining-shell-thickness-weighted-v1',
+      mgMoleFraction: crystal._mg_content,
+      remainingThicknessUm: totalThickness,
+    };
+  } else {
+    crystal._mg_content = null;
+    crystal._solid_solution_bulk = {
+      schema: 'remaining-shell-thickness-weighted-v1',
+      mgMoleFraction: null,
+      remainingThicknessUm: 0,
+      status: 'no_remaining_solid',
+    };
+  }
+}
+
 // Pure preview of the exact inventory that a negative zone would return.
 // Physical dissolution uses this during coupled reaction-path integration:
 // each trial retreat changes the local fluid, which changes saturation and
@@ -761,7 +812,7 @@ function previewBookedDissolutionReturn(
     let inventory = shell.zone._budget_inventory_per_um;
     if (!inventory || typeof inventory !== 'object') {
       inventory = {};
-      const formula = MINERAL_STOICHIOMETRY[crystal.mineral] || {};
+      const formula = _formulaStoichiometryForZone(crystal, shell.zone) || {};
       for (const species in formula) {
         const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
         inventory[reservoir] = (inventory[reservoir] || 0)
@@ -836,7 +887,7 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
       let inventory = z._budget_inventory_per_um;
       if (!inventory || typeof inventory !== 'object') {
         inventory = {};
-        const formula = MINERAL_STOICHIOMETRY[crystal.mineral] || {};
+        const formula = _formulaStoichiometryForZone(crystal, z) || {};
         for (const species in formula) {
           const reservoir = stoichiometricReservoirSpecies(crystal.mineral, species, fluid);
           inventory[reservoir] = (inventory[reservoir] || 0)
@@ -915,10 +966,11 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
     }
     if (fluid.sulfurPoolsExplicit) syncExplicitSulfurTotal(fluid);
     zone._returned_budget_inventory = returned;
+    _refreshRemainingSolidSolutionComposition(crystal);
     _recordAcceptedCarbonateTransferReceipt(conditions, crystal, zone, carbonateBeforePpm);
     return null;  // depletion narration is precipitation-only
   }
-  const stoich = MINERAL_STOICHIOMETRY[crystal.mineral];
+  const stoich = _formulaStoichiometryForZone(crystal, zone);
   if (!stoich) {
     if (!_growthBudgetMissingWarned[crystal.mineral]) {
       _growthBudgetMissingWarned[crystal.mineral] = true;
@@ -1020,6 +1072,7 @@ function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: an
   if (fluid.sulfurPoolsExplicit) syncExplicitSulfurTotal(fluid);
   zone._budget_inventory_per_um = bookedInventoryPerUm;
   zone._remaining_solid_um = zone.thickness_um;
+  _refreshRemainingSolidSolutionComposition(crystal, zone);
   _recordAcceptedCarbonateTransferReceipt(conditions, crystal, zone, carbonateBeforePpm);
   return depleted;
 }

@@ -445,6 +445,8 @@ const EXPORTS = [
   'getCarbonateData',
   'getCarbonateThermoTier',
   'getCarbonateKineticTier',
+  'hmcSolidSolutionAssessment',
+  'hmcCompositionFromFluid',
   'listCarbonatesAtTier',
   'carbonateThermoCoverage',
   // Week 2 SI engine + flag mechanism (32b).

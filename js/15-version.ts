@@ -1,8 +1,6 @@
 // ============================================================
 // js/15-version.ts — SIM_VERSION + per-bump engine-drift history
 // ============================================================
-// JS counterpart of vugg/version.py — currently sits at v17 while Python has progressed past v30. Drift documented in BACKLOG; future "JS catch-up" rounds land here.
-//
 // Phase B4 of PROPOSAL-MODULAR-REFACTOR. SCRIPT-mode TS — top-level decls
 // stay global so call sites in 99-legacy-bundle.ts keep working.
 
@@ -10,7 +8,7 @@
 // SIM VERSION
 // ============================================================
 // Monotonic version tag bumped by any change that could shift seed-42
-// output for any scenario. Mirrors SIM_VERSION in vugg.py.
+// output for any scenario. This TypeScript runtime is authoritative.
 //   v1 — pre-audit: generic FluidChemistry defaults, Mg=0 in most scenarios
 //   v2 — scenario-chemistry audit (Apr 2026): every scenario anchored to a
 //        named locality with cited fluid values; locality_chemistry.json
@@ -12612,7 +12610,41 @@
 //       163 -> 170 um, while threshold-scale partitioning shifts HMC 27 -> 25
 //       and calcite 5 -> 15 (total nuclei 53 -> 61). The largest carbonate-SI
 //       shift is 0.063 log Omega; all other scenario stories are unchanged.
-const SIM_VERSION = 254;
+// v255 — ZONE-RESOLVED HMC SOLID SOLUTION (2026-08-08).
+//       The fixed 10 mol% Mg HMC proxy and linear Ksp ramp are retired.
+//       Candidate shells use aqueous molar Mg/Ca and Mucci's measured,
+//       parent-fluid-bounded D_Mg anchors, then evaluate the nondefective
+//       calcite/Ca0.5Mg0.5CO3 subregular component activities documented by
+//       Busenberg-Plummer, Glynn-Reardon, and PHREEQC. Unsupported parent
+//       compositions produce a named coverage gap, never a false absence
+//       verdict. The standard-seawater proxy is Mg/Ca 4.5-6, 30-40 per mil,
+//       and 5-40 C; the high-ratio plateau is restricted to the measured
+//       Mg/Ca 7.5-20 seawater-matrix interval at 25 C. Creative renders those
+//       gaps as unknown, without a numeric sigma or blocked/undersaturated
+//       verdict, whether HMC never formed or formed earlier. The documented
+//       25 C miscibility gap spans the HMC range, so
+//       the calculation is explicitly a metastable fixed-composition kinetic
+//       screen, not stable homogeneous equilibrium. Every accepted shell
+//       records x, activities, uncertainty, and its exact Ca(1-x)Mg(x)CO3
+//       formula; the booked-inventory ledger returns that shell composition
+//       during dissolution. Crystal `_mg_content` is now only the remaining-
+//       shell thickness-weighted summary. Creative's formation explanation
+//       reports the same live partition/activity calculation and limiting
+//       formula. Rosasite and aurichalcite remain honest Tier-C observers: no
+//       unmeasured aqueous-to-solid Cu/Zn partition relation is invented.
+//       Seed-42 fleet drift is confined to 3/39 scenarios, all removing an
+//       unsupported HMC interpretation: sabkha 61→37 crystals and 6→5 species
+//       (HMC 25→0; calcite 15→18; dolomite 4→2), ultramafic supergene 27→24
+//       and 6→5 (four zero-growth HMC nuclei removed), and zoned dripstone
+//       cave 13→9 and 4→3 (HMC 4→0). No expected species disappeared; the
+//       remaining small size/count shifts are deterministic RNG cascade. The
+//       12-scenario compact chemistry digest is numerically identical after
+//       version/model-digest normalization. Full strip comparison confines
+//       direct model drift to SI_HMC in all three stories (max about 1.01 log
+//       Omega); the cave also carries small mass-balance cascade in HCO3
+//       (0.738 mg/L max) and CO3 (0.013 mg/L max), plus one display-ordinal
+//       calcite-morph sample shift.
+const SIM_VERSION = 255;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12640,8 +12672,9 @@ const MODEL_DIGEST = [
   'wall-dissolution:formula-stoich-limestone+dolomite-v1',
   'sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2',
   'calcite-Mn:manganocalcite-excess<1.2-v1',
+  'HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3',
   'CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1',
-  'growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6',
+  'growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7',
   'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',
   'dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3',
   'fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3',

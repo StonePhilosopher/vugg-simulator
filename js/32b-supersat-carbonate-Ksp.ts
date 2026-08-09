@@ -70,7 +70,8 @@
 //   dolomite CaMg(CO3)2: IAP = a(Ca^2+) * a(Mg^2+) * a(CO3^2-)^2
 //
 //   HMC Ca(1-x)Mg(x)CO3: IAP = a(Ca^2+)^(1-x) * a(Mg^2+)^x * a(CO3^2-)
-//     Ksp scales with mg_content via mg_content_linear fit in 20c.
+//     Kss includes the subregular calcite/disordered-dolomite component
+//     activities and composition-dependent endmember mixing in 20c.
 //
 //   malachite Cu2(CO3)(OH)2: IAP = a(Cu^2+)^2 * a(CO3^2-) * a(OH^-)^2
 //   azurite Cu3(CO3)2(OH)2: IAP = a(Cu^2+)^3 * a(CO3^2-)^2 * a(OH^-)^2
@@ -311,9 +312,9 @@ function saturationIndex_dolomite(fluid: any, T: number): number {
   return logIAP - logKsp;
 }
 
-// HMC Ca(1-x)Mg(x)CO3 — mg_content x is per-crystal state.
+// HMC Ca(1-x)Mg(x)CO3 — mg_content x is the candidate shell composition.
 // IAP = a(Ca^2+)^(1-x) * a(Mg^2+)^x * a(CO3^2-).
-// Ksp varies with x via the mg_content_linear fit in 20c.
+// Kss varies nonideally with x through solid-component activities in 20c.
 function saturationIndex_HMC(fluid: any, T: number, mg_content: number): number {
   const x = Math.max(0, Math.min(0.30, mg_content));
   const I = ionicStrength(fluid);

@@ -47,7 +47,7 @@ const FLUID_PRESETS = {
   },
   mvt: {
     label: 'MVT Brine (synced to scenario_mvt)',
-    desc: 'Mirrors scenario_mvt. Edit the scenario in vugg.py / index.html to change this preset.',
+    desc: 'Mirrors scenario_mvt. Edit data/scenarios.json5 to change this preset.',
     get fluid() { return _scenarioFluidParams('mvt'); }
   },
   clean: {

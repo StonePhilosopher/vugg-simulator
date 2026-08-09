@@ -1,7 +1,7 @@
 // Vitest config — JS test harness for vugg-simulator.
 //
-// The shipped product is the JS bundle in index.html (Python in vugg/
-// is dead code). This harness loads the dist/ tsc output (same files
+// The shipped product is the JS bundle in index.html. The retired Python
+// prototype is not a runtime or test dependency. This harness loads the dist/ tsc output (same files
 // build.mjs concatenates into the bundle), evals it inside jsdom so
 // fetch / DOM globals are available, and exposes the simulator's
 // classes for tests to drive scenarios deterministically.
