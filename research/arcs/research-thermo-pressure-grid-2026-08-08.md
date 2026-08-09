@@ -14,16 +14,16 @@ reaction-volume extrapolation. Runtime interpolation is bilinear only inside the
 generated grid, only inside each game's already promoted temperature envelope,
 and only when all four water-density corners are at least 0.35 g/cm³.
 
-## Reproducible generator
+## Versioned research artifact
 
-- Generator: `tools/gen-thermo-pressure-grid.py`
-- Environment receipt: `environment-pressure-grid.yml`
-- Cross-shell launcher: `tools/run-pressure-grid.mjs`; it rejects every Python
-  candidate that does not import exactly Reaktoro 2.13.0. Set
-  `VUGG_REAKTORO_PYTHON` for CI, create `.venv-pressure-grid` from the receipt,
-  or let the launcher discover a matching disposable environment.
-- Environment: Python 3.12; Reaktoro 2.13.0; embedded
-  `SupcrtDatabase("supcrtbl")`
+- The supported repository workflow is Node.js/TypeScript-only. The old Python
+  gameplay/testing runtime is retired, and this pressure work does not restore
+  a Python toolchain.
+- The checked-in numeric table records an offline Reaktoro 2.13.0 + SUPCRTBL
+  commissioning calculation. It is treated as an immutable research artifact,
+  not as an executable generator maintained by this repository.
+- `tools/check-pressure-grid.mjs` verifies the canonical payload digest, the
+  browser runtime copy, the source-model receipt, and the promoted reactions.
 - Output: `data/generated/thermo-pressure-grid.json`
 - Synchronous runtime artifact: `js/20e-thermo-pressure-grid.generated.ts`
 - Axes: 10–800°C; 0.001–4.4 kbar
@@ -35,9 +35,9 @@ and only when all four water-density corners are at least 0.35 g/cm³.
   0.77648 g/cm³ at 300°C/0.5 kbar and 0.87877 g/cm³ at 450°C/4.4 kbar.
 
 The official Geochemical Modeling Gateway exposes SUPCRTBL, but its interactive
-service requires a signed-in, administrator-approved account. The versioned
-local generator uses the documented embedded database instead, so rebuilding
-the artifact does not depend on an authenticated web session.
+service requires a signed-in, administrator-approved account. Ordinary builds,
+tests, audits, and releases do not depend on that service or a second language
+runtime; any future recommissioning is a separate research task.
 
 ## Promoted exact reactions
 
@@ -112,8 +112,8 @@ proxy.
 - `tools/gen-science-provenance-manifest.mjs` rejects missing/tampered pressure
   data, runtime/data digest drift, missing citations, or an undeclared model
   identity.
-- `npm run check:pressure-grid` recomputes both artifacts through the pinned
-  launcher; it does not assume that a bare `python` command has Reaktoro.
+- `npm run check:pressure-grid` verifies both checked-in artifacts through the
+  pinned Node verifier; it does not probe for or invoke an external interpreter.
 
 ## Fleet reconciliation found by the pressure promotion
 

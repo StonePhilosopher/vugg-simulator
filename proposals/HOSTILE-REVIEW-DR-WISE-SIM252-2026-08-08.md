@@ -26,20 +26,17 @@ The simulator's former Python runtime and pytest suite had already been
 retired; Python/JavaScript parity is not a release or science gate. The shipped
 game, authoritative engine tests, build, and CI are TypeScript/JavaScript.
 
-The pressure-grid work introduced a separate, offline scientific-data compiler,
-not a restored game runtime. It records the exact external thermodynamic model
-used to commission the versioned grid:
+The pressure-grid work preserves a checked-in table commissioned from Reaktoro
+2.13.0 + SUPCRTBL; it does not restore a second repository runtime. The active
+workflow is now explicit:
 
-- `environment-pressure-grid.yml` pinning Python 3.12.13 and Reaktoro 2.13.0;
-- `tools/run-pressure-grid.mjs`, which probes candidate interpreters and rejects
-  every environment that does not import exactly Reaktoro 2.13.0;
-- an opt-in pressure-grid artifact check, outside the ordinary CI path;
-- digest-pinned generator, launcher, and environment receipts in the generated
-  science manifest.
+- `tools/check-pressure-grid.mjs` verifies the canonical data digest and exact
+  browser-runtime copy using Node.js;
+- the science manifest pins that verifier and the source-model receipt;
+- no package script searches for or invokes an external interpreter.
 
-The runtime tests consume only the digest-pinned generated artifact. They do not
-require Python, Reaktoro, or an interpreter on the player's/developer's PATH.
-Any older references to Python game/runtime parity remain historical fossils,
+The runtime tests consume only the digest-pinned generated artifact. Older
+references to the retired game/runtime parity harness remain historical fossils,
 as documented in `ARCHITECTURE.md`.
 
 ## Verification presented

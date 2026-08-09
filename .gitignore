@@ -20,7 +20,6 @@ __pycache__/
 node_modules/
 dist/
 *.tsbuildinfo
-.venv-pressure-grid/
 
 # Cold-CI verdict stamp (tools/cold-ci.mjs) — per-machine, per-run state;
 # committing it would churn every run and vouch for trees it never saw

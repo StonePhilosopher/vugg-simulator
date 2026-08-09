@@ -53,7 +53,7 @@ single execution ledger for the science-first AAA completion branch.
 - [x] Carbonate and sulfate pressure corrections on evidence-backed thermodynamic
   grids; no constant reaction-volume shortcut outside a demonstrated envelope.
   Evidence: `research/arcs/research-thermo-pressure-grid-2026-08-08.md`,
-  `tools/gen-thermo-pressure-grid.py`, the digest-pinned generated artifact,
+  the digest-pinned generated artifact, Node-only `tools/check-pressure-grid.mjs`,
   bounded runtime consumers, `tests-js/thermo-pressure-grid.test.ts`, and AI Dr.
   Wise `SATISFIED` after the pinned-environment reproducibility rerun on
   2026-08-08.

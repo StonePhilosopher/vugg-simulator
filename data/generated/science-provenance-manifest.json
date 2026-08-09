@@ -33,28 +33,21 @@
   },
   "thermo_pressure_grid": {
     "path": "data/generated/thermo-pressure-grid.json",
-    "data_sha256": "ab799c97f7ac5c9c2b8658eeebfa90a7000c64767aec9a3b8f80ecea2803c321",
+    "data_sha256": "cf84b9f5da62b9fec0caad8713af24b1845c3f274df18f87eb45cf4c66620c4b",
     "model_id": "SUPCRTBL-delta-logK-pressure-grid-v1",
-    "generator": "tools/gen-thermo-pressure-grid.py",
-    "generator_environment": {
-      "python": "3.12",
-      "reaktoro": "2.13.0",
+    "artifact_origin": "offline SUPCRTBL commissioning calculation",
+    "source_model": {
+      "software": "Reaktoro",
+      "version": "2.13.0",
       "database": "supcrtbl"
     },
     "reproducibility": {
-      "generator": {
-        "path": "tools/gen-thermo-pressure-grid.py",
-        "sha256": "e93679b966796568380ccd7af818515713a25e46f66e0c4fdd53899e1d937269"
+      "verifier": {
+        "path": "tools/check-pressure-grid.mjs",
+        "sha256": "692542e29634d4acd8b1ea5042e661494ea507bda699e4a006326563f02f0760"
       },
-      "launcher": {
-        "path": "tools/run-pressure-grid.mjs",
-        "sha256": "5954835d5eb0cae2bf9b4ac1cbbac639a785bd356a0a680912c8912cbeabb4ed"
-      },
-      "environment_receipt": {
-        "path": "environment-pressure-grid.yml",
-        "sha256": "68d15982ecf1afce70d3b2f8e6eb6dc387040f0dcb2ded0374c8cc809c76363d"
-      },
-      "command": "npm run check:pressure-grid"
+      "command": "npm run check:pressure-grid",
+      "runtime": "Node.js/TypeScript only"
     },
     "reference_pressure_kbar": 0.001,
     "temperature_axis_C": [

@@ -102,9 +102,7 @@ const errors = [];
 const referencedHandlers = new Set();
 const scenarios = [];
 const pressureGridPath = path.join(ROOT, 'data', 'generated', 'thermo-pressure-grid.json');
-const pressureGeneratorPath = path.join(ROOT, 'tools', 'gen-thermo-pressure-grid.py');
-const pressureLauncherPath = path.join(ROOT, 'tools', 'run-pressure-grid.mjs');
-const pressureEnvironmentPath = path.join(ROOT, 'environment-pressure-grid.yml');
+const pressureVerifierPath = path.join(ROOT, 'tools', 'check-pressure-grid.mjs');
 let pressureGridProvenance = null;
 try {
   const artifact = JSON.parse(fs.readFileSync(pressureGridPath, 'utf8'));
@@ -119,21 +117,15 @@ try {
   if (!MODEL_DIGEST.includes('Ksp-pressure:SUPCRTBL')) {
     errors.push('MODEL_DIGEST does not declare the promoted SUPCRTBL pressure grid');
   }
-  if (artifact.payload?.generator !== 'tools/gen-thermo-pressure-grid.py') {
-    errors.push(`thermo pressure grid declares unexpected generator '${artifact.payload?.generator}'`);
+  if (artifact.payload?.artifact_origin !== 'offline SUPCRTBL commissioning calculation') {
+    errors.push(`thermo pressure grid declares unexpected origin '${artifact.payload?.artifact_origin}'`);
   }
-  if (artifact.payload?.generator_environment?.python !== '3.12'
-    || artifact.payload?.generator_environment?.reaktoro !== '2.13.0'
-    || artifact.payload?.generator_environment?.database !== 'supcrtbl') {
-    errors.push('thermo pressure grid generator environment is not the promoted Python 3.12 / Reaktoro 2.13.0 / SUPCRTBL identity');
+  if (artifact.payload?.source_model?.software !== 'Reaktoro'
+    || artifact.payload?.source_model?.version !== '2.13.0'
+    || artifact.payload?.source_model?.database !== 'supcrtbl') {
+    errors.push('thermo pressure grid source model is not the promoted Reaktoro 2.13.0 / SUPCRTBL identity');
   }
-  for (const [label, filePath] of [
-    ['generator', pressureGeneratorPath],
-    ['launcher', pressureLauncherPath],
-    ['environment receipt', pressureEnvironmentPath],
-  ]) {
-    if (!fs.existsSync(filePath)) errors.push(`thermo pressure grid ${label} is missing`);
-  }
+  if (!fs.existsSync(pressureVerifierPath)) errors.push('thermo pressure grid Node verifier is missing');
   const reactionIds = Object.keys(artifact.payload?.reactions || {});
   const sources = artifact.payload?.sources || [];
   if (reactionIds.length !== 8) errors.push(`thermo pressure grid has ${reactionIds.length} reactions, expected 8`);
@@ -142,22 +134,15 @@ try {
     path: path.relative(ROOT, pressureGridPath).replaceAll('\\', '/'),
     data_sha256: artifact.data_sha256,
     model_id: artifact.payload.model_id,
-    generator: artifact.payload.generator,
-    generator_environment: artifact.payload.generator_environment,
+    artifact_origin: artifact.payload.artifact_origin,
+    source_model: artifact.payload.source_model,
     reproducibility: {
-      generator: {
-        path: path.relative(ROOT, pressureGeneratorPath).replaceAll('\\', '/'),
-        sha256: sha256(fs.readFileSync(pressureGeneratorPath)),
-      },
-      launcher: {
-        path: path.relative(ROOT, pressureLauncherPath).replaceAll('\\', '/'),
-        sha256: sha256(fs.readFileSync(pressureLauncherPath)),
-      },
-      environment_receipt: {
-        path: path.relative(ROOT, pressureEnvironmentPath).replaceAll('\\', '/'),
-        sha256: sha256(fs.readFileSync(pressureEnvironmentPath)),
+      verifier: {
+        path: path.relative(ROOT, pressureVerifierPath).replaceAll('\\', '/'),
+        sha256: sha256(fs.readFileSync(pressureVerifierPath)),
       },
       command: 'npm run check:pressure-grid',
+      runtime: 'Node.js/TypeScript only',
     },
     reference_pressure_kbar: artifact.payload.reference_pressure_kbar,
     temperature_axis_C: artifact.payload.temperature_axis_C,
