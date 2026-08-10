@@ -36,6 +36,8 @@ const TOP_LEVEL_CLASSIFICATION = {
   movements: 'direct',
   fluid_spots: 'direct',
   weathering_epilogue: 'process',
+  tiger_eye_origin_model: 'direct',
+  tiger_eye_stage: 'process',
 };
 
 // Classification is explicit so a new scenario wall field cannot silently

@@ -817,9 +817,13 @@ function readCreativeGeologicalControls(baseWall: Record<string, any> = {}) {
     scenarioOpts: (() => {
       const open = !!(document.getElementById('f-open-atmosphere') as HTMLInputElement | null)?.checked;
       const pCO2 = Math.pow(10, _creativeControlNumber('f-pco2', 100, -3.38));
+      const tigerEyeOriginModel =
+        (document.getElementById('f-tiger-eye-model') as HTMLSelectElement | null)?.value ||
+        'surficial_alteration';
       return {
         open_to_atmosphere: open,
         atmospheric_pCO2_bar: pCO2,
+        tiger_eye_origin_model: tigerEyeOriginModel,
         carbonate_boundary: {
           mode: open ? 'open' : 'closed',
           spatial_model: 'equal_volume_fully_mixed',

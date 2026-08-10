@@ -221,21 +221,22 @@ function grow_amosite(crystal, conditions, step) {
 function grow_crocidolite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_crocidolite();
   if (sigma < 1.0) {
-    // Crocidolite OXIDIZES — this is the tiger's eye precursor reaction.
-    // At elevated O2 + temperature, Fe2+ → Fe3+ + the Na is exchanged
-    // out, the fiber bundles get SILICA-REPLACED by chalcedony in
-    // pseudomorph (the famous gold-brown chatoyant gemstone).
+    // The origin of tiger's eye remains disputed.  In the surficial-
+    // alteration model, oxidation consumes an older crocidolite seam.  In
+    // the antitaxial crack-seal model, quartz and crocidolite grew together
+    // and later oxidation changed colour without destroying the fibres.
     if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.4) {
-      crystal.dissolved = true;
+      const tigerEyeModel = tigerEyeOriginModel(conditions);
+      if (!tigerEyeModel) return null;
+      if (tigerEyeModel === 'antitaxial_crack_seal') return null;
       const d = Math.min(2.0, crystal.total_growth_um * 0.06);
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -d, growth_rate: -d, dissolutionMode: 'oxidative',
-        note: `oxidative dissolution (O₂ ${conditions.fluid.O2.toFixed(1)}) — crocidolite Fe²⁺ oxidizes to Fe³⁺; tiger's eye CHALCEDONY PSEUDOMORPH precursor reaction. Na released to fluid; Fe³⁺ creates the chatoyant golden-brown color in chalcedony fiber pseudomorph.`,
+        note: `accepted oxidative alteration (O₂ ${conditions.fluid.O2.toFixed(1)}) — older crocidolite loses material as Fe²⁺ oxidizes and Na is mobilized; this is the Gutzmer-Beukes-Cairncross surficial-alteration hypothesis, not proof of a pseudomorph sensu stricto.`,
       });
     }
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.5) {
-      crystal.dissolved = true;
       const d = Math.min(2.0, crystal.total_growth_um * 0.04);
       return new GrowthZone({
         step, temperature: conditions.temperature,
@@ -261,7 +262,7 @@ function grow_crocidolite(crystal, conditions, step) {
   // Color dispatch — partial oxidation creates "hawk's eye" intermediate
   let color_note;
   if (conditions.fluid.O2 > 0.2 && conditions.fluid.O2 < 0.4) {
-    color_note = 'hawk\'s eye intermediate (partial oxidation — blue-grey-gold chatoyant); precursor to full tiger\'s eye pseudomorph at higher O2';
+    color_note = 'blue-grey to blue-gold fibres under modest oxidation; later alteration may produce hawk\'s-eye/tiger\'s-eye colours';
   } else {
     color_note = 'deep blue to lavender-blue crocidolite; Na2Fe²⁺3Fe³⁺2 charge transfer';
   }

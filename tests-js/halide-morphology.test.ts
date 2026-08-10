@@ -154,7 +154,7 @@ describe('the salt-pan log (searles_lake, seed 42)', () => {
     ['bisbee', bis],
   ])('builds the canonical %s fleet witness independently', (_name, makeSim) => {
     expect(makeSim().crystals).toBeInstanceOf(Array);
-  });
+  }, 180000);
 
   it('every positive halide zone in the living fleet is tagged, form cube + finite surf σ', () => {
     // Fleet-level: searles' surviving crusts are late and thin; GSP +

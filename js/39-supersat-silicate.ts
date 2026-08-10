@@ -270,13 +270,18 @@ const MINERAL_GATES_chrysoprase: MineralGates = {
 
 const MINERAL_GATES_tigers_eye: MineralGates = {
   sigma_crit: 1.0,
-  T_min: 20, T_max: 200, T_optimal: 65,
+  // Union of two published origin hypotheses. The method below applies the
+  // model-specific envelope; this broad range is not one phase field.
+  T_min: 5, T_max: 450, T_optimal: 65,
   fluid_min: { SiO2: 200, Fe: 30 },
-  O2_min: 0.4,
-  pH_min: 5.5, pH_max: 9.5,
+  pH_min: 5.5, pH_max: 11.0,
   surface_energy: 'low',
-  _sources: ['tigers_eye engine v116+', 'Cairncross & Beukes 2013', 'Heaney & Fisher 2003'],
-  _notes: 'SiO2 after crocidolite — chalcedony pseudomorph. Gold-brown chatoyant from Fe3+ trace + preserved fiber framework.',
+  _sources: [
+    'Heaney & Fisher 2003, Geology 31:323-326, DOI 10.1130/0091-7613(2003)031<0323:NIOTOO>2.0.CO;2',
+    'Gutzmer, Beukes & Cairncross 2004, Geology 32:e44, DOI 10.1130/0091-7613-32.1.e44',
+    'Miyano & Klein 1983, Mining Geology 33:213-222, DOI 10.11456/shigenchishitsu1951.33.213',
+  ],
+  _notes: 'Hypothesis pair, not a settled pseudomorph claim: synchronous antitaxial quartz-crocidolite crack-seal growth versus surficial silicification/oxidation of older crocidolite with texture preserved (not pseudomorphic sensu stricto). Production nucleation enforces the corresponding substrate history.',
 };
 
 const MINERAL_GATES_chrysotile: MineralGates = {
@@ -508,6 +513,25 @@ const MINERAL_GATES_chabazite: MineralGates = {
   _sources: ['chabazite engine v203', 'Passaglia & Sheppard 2001 RiMG 45:69', 'Coombs et al. 1997 Can.Mineral. 35:1571', 'Calligaris et al. 1982 Zeolites (R-3m)'],
   _notes: 'Ca2Al2Si4O12·6H2O — trigonal R-3m, hex cell a13.83 c15.02. Intermediate Si/Al~2; its relative amygdule order is locality-dependent. Cation-flexible Ca>Na>K (K NOT required); chabazite-Ca is the amygdule default. Rhombohedral pseudo-cube + phacolite penetration twins. Looks like calcite but {1011} cleavage is POOR (calcite perfect) + no effervescence + harder (4-5 vs 3) + lighter (2.1 vs 2.71).',
 };
+
+function tigerEyeOriginModel(conditions) {
+  const authored = conditions?._scenario?.tiger_eye_origin_model;
+  if (authored == null || authored === '') return 'surficial_alteration';
+  if (authored === 'antitaxial_crack_seal' || authored === 'surficial_alteration') return authored;
+  return null;
+}
+
+function tigerEyeCrackSealOxidationStage(conditions) {
+  if (tigerEyeOriginModel(conditions) !== 'antitaxial_crack_seal') return false;
+  if (conditions._scenario?.tiger_eye_stage === 'post_growth_oxidation') return true;
+  const T = Number(conditions.temperature);
+  const pH = Number(conditions.fluid?.pH);
+  const O2 = Number(conditions.fluid?.O2);
+  // Creative mode has no scripted event clock. Moving a previously selected
+  // crack-seal system into this measured surface envelope is therefore the
+  // executable geological lever that advances it into its later overprint.
+  return T >= 5 && T <= 100 && pH >= 5.5 && pH <= 9.5 && O2 >= 0.4;
+}
 
 Object.assign(VugConditions.prototype, {
   quartz_equilibrium_ratio() {
@@ -1119,47 +1143,54 @@ Object.assign(VugConditions.prototype, {
     return Math.max(sigma, 0);
   },
 
-  // v116 (2026-05-20): Tiger's eye — chalcedony pseudomorph AFTER
-  // crocidolite. The famous gold-brown chatoyant gemstone variety;
-  // Cu2+-bearing chalcedony fibers preserve the crocidolite-asbestos
-  // fiber-bundle morphology, producing the characteristic silky-chatoyant
-  // cat's-eye effect. Type-locality Northern Cape South Africa BIF
-  // (Hamersley + Mt. Brockman + Asbestos Hills); also Wittenoom WA,
-  // Cherokee NC. Three habit variants:
-  //   chatoyant_pseudomorph (default) — fully oxidized; gold-brown
-  //                                      classic gemstone aesthetic
-  //   hawks_eye (partial)             — crocidolite + chalcedony coexist;
-  //                                      blue-grey-gold intermediate
-  //   tiger_iron (BIF context)        — hematite + jasper + tiger's eye
-  //                                      banded; the BIF assemblage rock
-  // Geological process: supergene oxidation of crocidolite Fe2+ to Fe3+
-  // releases the Na, replaces the silicate fiber framework with
-  // microcrystalline SiO2 (chalcedony), with Fe3+ trace giving the
-  // gold-brown chatoyant color. Engine reads crocidolite_dissolving
-  // substrate; pure-SiO2 alternative path (Fe ≥ 50 + O2 > 0.5 + low T)
-  // captures the "tiger iron" BIF context.
-  // Refs: Cairncross B & Beukes NJ (2013) "The Northern Cape diamond
-  // route — geology + gemstones." Geological Society of South Africa;
-  // Heaney PJ & Fisher DM (2003) Am. Min. 88:1-14 "New interpretation
-  // of the origin of tiger's-eye."
+  // SIM 260: Tiger's eye carries the published origin dispute as executable
+  // geology. Heaney & Fisher (2003, Geology 31:323-326) explicitly REJECT
+  // pseudomorphic quartz replacement and interpret synchronous antitaxial
+  // quartz+crocidolite crack-seal growth. Gutzmer, Beukes & Cairncross (2004,
+  // Geology 32:e44) instead use field relationships to argue for an older
+  // crocidolite seam followed by surficial silicification and partial
+  // oxidation; they call it alteration preserving texture, not a pseudomorph
+  // sensu stricto. The scenario/Creative selector chooses the boundary. The
+  // production nucleator separately proves the required substrate history.
   supersaturation_tigers_eye() {
+    const wall = this.wall || {};
+    // `matrix` is a renderer-only skin; physics reads authored composition.
+    if (wall.composition !== 'banded_iron_formation') return 0;
     if (this.fluid.SiO2 < 200 || this.fluid.Fe < 30) return 0;
-    if (this.temperature < 20 || this.temperature > 200) return 0;
-    if (this.fluid.pH < 5.5 || this.fluid.pH > 9.5) return 0;
-    // OXIDIZING required — the supergene weathering condition
-    if (this.fluid.O2 < 0.4) return 0;
+    const model = tigerEyeOriginModel(this);
+    if (!model) return 0;
+    const crackSeal = model === 'antitaxial_crack_seal';
+    const oxidationStage = tigerEyeCrackSealOxidationStage(this);
+    // Heaney & Fisher's later oxidation is a colour/Fe-state overprint of
+    // existing synchronous fabric, not another quartz-precipitation stage.
+    // The growth engine records that overprint with zero framework thickness.
+    if (oxidationStage) return 0;
+    if (crackSeal && !oxidationStage) {
+      // Miyano & Klein's lower-T amphibole-asbestos stability family.
+      // Oxygen is not a reactant in the synchronous vein-fill step.
+      if (this.temperature < 150 || this.temperature > 450) return 0;
+      if (this.fluid.pH < 7.0 || this.fluid.pH > 11.0) return 0;
+      if (this.fluid.O2 >= 0.6) return 0;
+    } else {
+      // Surface oxidation applies to the alteration model. The 5-100 C bound is a
+      // disclosed near-surface kinetic proxy, not locality thermometry.
+      if (this.temperature < 5 || this.temperature > 100) return 0;
+      if (this.fluid.pH < 5.5 || this.fluid.pH > 9.5) return 0;
+      if (this.fluid.O2 < 0.4) return 0;
+    }
     const si_f = Math.min(this.fluid.SiO2 / 400.0, 2.0);
     const fe_f = Math.min(this.fluid.Fe / 80.0, 2.0);
     let sigma = si_f * fe_f;
-    // T sweet spot 30-100°C (surface-supergene weathering of BIF)
     const T = this.temperature;
-    if (T >= 30 && T <= 100) sigma *= 1.3;
-    else if (T < 30) sigma *= Math.max(0.4, T / 30);
-    else sigma *= Math.max(0.4, 1.0 - (T - 100) / 100);
-    // pH sweet spot 6.5-8.0
+    if (crackSeal && !oxidationStage) {
+      if (T >= 200 && T <= 350) sigma *= 1.3;
+      else sigma *= 0.85;
+    } else if (T >= 30 && T <= 80) sigma *= 1.3;
+    else sigma *= 0.8;
     const pH = this.fluid.pH;
-    if (pH >= 6.5 && pH <= 8.0) sigma *= 1.2;
-    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 7.25) * 0.3);
+    const pHCenter = crackSeal && !oxidationStage ? 9.0 : 7.25;
+    if (Math.abs(pH - pHCenter) <= 0.75) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - pHCenter) * 0.3);
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'tigers_eye');
     return Math.max(sigma, 0);
   },

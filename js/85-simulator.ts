@@ -483,6 +483,13 @@ class VugSimulator {
         const zone = this._runEngineForCrystal(engine, crystal);
         if (zone && zone.thickness_um < 0
             && crystal._physicalEtchAppliedStep === this.step) continue;
+        if (zone && Number(zone.thickness_um) === 0 && zone.state_overprint) {
+          this._finalizeZoneForApplication(crystal, zone);
+          this._applyZoneGrowthBudget(crystal, zone);
+          crystal.add_zone(zone);
+          this.log.push(`  â—† ${capitalize(crystal.mineral)} #${crystal.crystal_id}: REACTION OVERPRINT ${zone.note}`);
+          continue;
+        }
         // W-F O3b — sealed crystals don't dissolve (shielded by neighbors), same
         // as the main-path guard below. Byte-identical when selection is off.
         if (zone && zone.thickness_um < 0) {
@@ -538,11 +545,10 @@ class VugSimulator {
         // double-consume RNG vs v127's once-per-crystal contract.
         zone = this._graduatedZones.get(crystal.crystal_id);
       } else {
-        // Crystal had no engine entry (skipped at the top of the loop)
-        // or wasn't in _graduatedZones (only happens when flag is off,
-        // because pass 1 enumerates every active crystal). The flag-off
-        // branch runs the engine exactly once via _runEngineForCrystal,
-        // matching v127 byte-identically.
+        // Crystal had no engine entry, the flag is off, or pass 1 deliberately
+        // omitted an RNG-free zero-thickness state overprint so it can be
+        // re-evaluated against the actual sequential local reagent reservoir.
+        // Ordinary flag-off growth still runs exactly once, matching v127.
         zone = this._runEngineForCrystal(engine, crystal);
       }
       // The duration-integrated physical etch already consumed this

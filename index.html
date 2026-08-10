@@ -3701,6 +3701,7 @@ Scenarios:
           <option value="sandstone">sandstone</option>
           <option value="phonolite">phonolite</option>
           <option value="ultramafic">ultramafic</option>
+          <option value="banded_iron_formation">banded iron formation</option>
         </select>
       </div>
       <div class="setup-row" title="Cavity architecture controls the physical shape and substrate orientation used by nucleation and rendering.">
@@ -3712,6 +3713,13 @@ Scenarios:
           <option value="tabular">tabular vein</option>
           <option value="basin">open basin / playa</option>
           <option value="cleft">alpine cleft</option>
+        </select>
+      </div>
+      <div class="setup-row" title="Tiger's-eye origin remains scientifically disputed. Choose which published process model the simulation should execute; both require crocidolite rather than bare iron oxide or wall rock.">
+        <label for="f-tiger-eye-model">Tiger's-eye model</label>
+        <select id="f-tiger-eye-model" style="flex:1;max-width:280px;background:#1a1a0e;color:#d4c060;border:1px solid #4a4220;padding:0.3rem;border-radius:3px;">
+          <option value="surficial_alteration" selected>older crocidolite → surficial alteration</option>
+          <option value="antitaxial_crack_seal">synchronous antitaxial crack-seal</option>
         </select>
       </div>
     </div>
@@ -4272,7 +4280,7 @@ Scenarios:
           <div class="broth-group-label" title="Metals that substitute into crystal lattices, creating color, fluorescence, and diagnostic signatures in the Record Groove.">⚙️ Trace Metals</div>
           <div class="broth-slider-row" title="Iron (ppm). Colors quartz smoky/amethyst. QUENCHES Mn²⁺ fluorescence in calcite. Required for pyrite, chalcopyrite, hematite.">
             <label>Fe</label>
-            <input type="range" id="broth-fe" min="0" max="200" value="5" step="1"
+            <input type="range" id="broth-fe" min="0" max="500" value="5" step="1"
               oninput="setBrothValue('fe',this.value)">
             <span class="broth-val" id="broth-fe-val">5 ppm</span>
           </div>
@@ -11680,17 +11688,15 @@ function scenarioSpecHash(spec) {
 //                                                  asbestos per Frank
 //                                                  et al. 2002
 //
-//            1 silicate-class pseudomorph mineral:
-//              tigers_eye     SiO2 chalcedony pseudomorph AFTER
-//                              crocidolite. THE famous gold-brown
-//                              chatoyant gemstone. Three habits:
-//                              chatoyant_pseudomorph (gold-brown classic),
-//                              hawks_eye (partial-oxidation blue-gold
-//                              intermediate), tiger_iron (BIF-banded with
-//                              hematite + jasper layers). Per Heaney &
-//                              Fisher 2003 Am.Min. 88:1 — modern
-//                              mechanism is crocidolite REPLACEMENT,
-//                              not crocidolite-inclusions-in-quartz.
+//            1 silicate-class aggregate (retrospective SIM 260 correction):
+//              tigers_eye     Originally shipped here under the settled
+//                              pseudomorph interpretation. That description
+//                              and its citation were wrong. Heaney & Fisher
+//                              (2003, Geology 31:323-326) reject replacement
+//                              and propose synchronous antitaxial crack-seal
+//                              growth; Gutzmer et al. (2004, Geology 32:e44)
+//                              argue for later surficial alteration of older
+//                              crocidolite. SIM 260 executes both hypotheses.
 //
 //          NEW AMPHIBOLE CLASS — files js/39a-supersat-amphibole.ts,
 //          js/59a-engines-amphibole.ts, js/89a-nucleation-amphibole.ts.
@@ -11732,9 +11738,9 @@ function scenarioSpecHash(spec) {
 //          marble_contact_metamorphism and jeffrey_mine). Crocidolite
 //          + amosite need BIF-style chemistry (high Fe, Na for
 //          crocidolite); may fire in scenarios with the right
-//          chemistry. Tiger's eye needs crocidolite_dissolving as
-//          substrate, so likely fires only after crocidolite is
-//          established. Will document actual drift in commit message
+//          chemistry. Historical v116 note: tiger's eye used the cosmetic
+//          crocidolite_dissolving flag. SIM 260 retires that shortcut in
+//          favor of model-specific booked growth/alteration receipts.
 //          after baseline regen.
 //
 //          TESTS:
@@ -11758,7 +11764,9 @@ function scenarioSpecHash(spec) {
 //              chemistry of South African crocidolite. Int. J. Occup.
 //              Environ. Health 8:38.
 //            * Heaney PJ & Fisher DM (2003) New interpretation of the
-//              origin of tiger's-eye. American Mineralogist 88:1-14.
+//              origin of tiger's-eye. Geology 31(4):323-326.
+//            * Gutzmer J, Beukes NJ & Cairncross B (2004) Comment.
+//              Geology 32(1):e44 (e45 is the separate H&F reply).
 //            * Cairncross B & Beukes NJ (2013) on Northern Cape diamond
 //              + gemstone routes.
 //            * Anthony Handbook v.IIB Single-Chain Silicates.
@@ -12887,7 +12895,7 @@ function scenarioSpecHash(spec) {
 //            conichalcite  CaCu(AsO4)(OH)           P3, supergene_oxidation 4×
 //            duftite       PbCu(AsO4)(OH)           P3, doubly cascade-prone
 //            pyrolusite    MnO2                     P5, 350% Mn budget shift
-//            tigers_eye    SiO2 (chalcedony pseudo) P5, paired with crocidolite paramorph
+//            tigers_eye    SiO2-rich aggregate      P5, older label corrected in SIM 260
 //
 //          ALGORITHMIC CONFIRMATION
 //          The v128 graduated-competition algorithm now has TWO empirical
@@ -13315,8 +13323,8 @@ function scenarioSpecHash(spec) {
 //            chrysoprase   — microcrystalline chalcedony (Ni-bearing)
 //            opal          — amorphous (opal-A) or nano-crystalline (opal-CT/C);
 //                            no crystal structure to twin
-//            tigers_eye    — chalcedony pseudomorph after crocidolite —
-//                            fibrous parallel-aligned, no euhedral form
+//            tigers_eye    — fibrous quartz-crocidolite aggregate —
+//                            parallel-aligned, no euhedral whole-specimen form
 //            chrysotile    — fibrous serpentine asbestos; no individual
 //                            euhedra
 //            coffinite     — fracture-replacement / colloform / sooty —
@@ -18417,16 +18425,16 @@ function scenarioSpecHash(spec) {
 //        correction: the rung-3 handoff's "(or BIF Fe-oxide) substrate" prose
 //        was too permissive — deccan fired tiger iron on hematite in a BASALT
 //        AMYGDALE, which is not a BIF; bare iron oxide (an oxidized ore body, a
-//        basalt vug) is not a crocidolite context. Geology (Heaney & Fisher
-//        2003 Am.Min. 88:1, the sim's own cited source) + the offender table
-//        (all four = pure kills) both demand crocidolite-required. Hematite is
+//        basalt vug) is not a crocidolite context. The BIF/crocidolite
+//        substrate requirement + the offender table (all four = pure kills)
+//        both demand crocidolite-required. Hematite is
 //        kept ONLY as a co-present habit modifier (dissolving croc + banded
 //        hematite → the TIGER IRON assemblage habit).
 //        Census verdict: NO scenario grows crocidolite (jeffrey_mine — the
 //        minerals.json "home" tag for both crocidolite and tigers_eye — is
 //        chrysotile/rodingite: Na 5 + Fe 50, below crocidolite's Na≥30/Fe≥100
 //        gate). So the p=0.65 crocidolite branch is dead code and tiger's eye
-//        is EXTINCT at seed 42 — CORRECT until a Griqualand-West/Hamersley BIF
+//        is EXTINCT at seed 42 — intentionally blocked until a real BIF
 //        scenario ships (BACKLOG §T; the scenarios:[jeffrey_mine] tag on
 //        crocidolite/tigers_eye is itself a confabulation to fix there). No
 //        promise decisions: no scenario expects tiger's eye.
@@ -19153,7 +19161,31 @@ function scenarioSpecHash(spec) {
 //       (2014) restricts Tsumeb köttigite to the third-zone Level 44 zinc
 //       pocket, so the authored first-stage gossan enforces a scenario-local
 //       exclusion rather than precipitating outside its locality envelope.
-const SIM_VERSION = 259;
+//
+// v260 — Asbestos Hills BIF and tiger's-eye origin-model correction
+//       (August 2026). Retires the false claim that Heaney & Fisher (2003)
+//       established pseudomorphic replacement; their Geology paper instead
+//       argues for synchronous antitaxial quartz-crocidolite crack-seal
+//       growth. A paired scenario executes the competing field model of
+//       Gutzmer, Beukes & Cairncross (2004): an older crocidolite seam later
+//       silicified and oxidized near the planation surface, not a pseudomorph
+//       sensu stricto. Production nucleation requires grown active
+//       crocidolite for crack-seal or an accepted oxidative negative zone for
+//       surficial alteration. Bare wall, bare iron oxide, random substrate
+//       rolls, and cosmetic dissolved flags cannot unlock tiger's-eye. Both
+//       hypotheses ship as named real-locality scenarios with independent
+//       shape seeds (2003/2004) and seed-42 regressions. Creative mode gains
+//       the same origin selector plus a BIF host, and the renderer gains a
+//       dedicated chert/jasper/hematite/magnetite banded skin. Follow-up
+//       hostile review makes the physical BIF host mandatory, requires exact
+//       booked Na-Fe-Si substrate receipts, and fails unknown model ids closed.
+//       Later crack-seal oxidation is a cumulative zero-thickness Fe-state
+//       overprint whose O2 debit closes against a declared meteoric boundary;
+//       it never adds post-growth SiO2. Partial extent remains hawk's-eye and
+//       oxygen replenishment can complete the gold-brown state. HF is required
+//       for acid framework loss, and tiger iron requires a local exposed iron
+//       phase rather than distant hematite elsewhere in the vug.
+const SIM_VERSION = 260;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -19174,6 +19206,7 @@ const MODEL_DIGEST = [
     'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
     'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',
     'surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4',
+    'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
     'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
     'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
     'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3',
@@ -19696,11 +19729,10 @@ const MINERAL_STOICHIOMETRY = {
     // conichalcite  CaCu(AsO4)(OH)          — Tsumeb Ca-Cu arsenate, paired with austinite
     // duftite       PbCu(AsO4)(OH)          — Tsumeb Pb-Cu arsenate
     // pyrolusite    MnO2                    — Mn supergene oxide
-    // tigers_eye    SiO2                    — chalcedony pseudomorph after crocidolite;
-    //                                         Fe + Na + Mg released by the dissolving
-    //                                         precursor, so the growth debit on tigers_eye
-    //                                         is SiO2-only (matches opal + chrysoprase
-    //                                         pattern for chalcedony-class entries).
+    // tigers_eye    SiO2                    — SiO2-rich quartz-crocidolite aggregate.
+    //                                         Quartz growth itself debits SiO2 only;
+    //                                         crocidolite retains its own booked Na-Fe-Si
+    //                                         inventory in either origin model.
     caledonite: { Pb: 5, Cu: 2, CO3: 1, S: 3 }, // Pb5Cu2(CO3)(SO4)3(OH)6
     plumbogummite: { Pb: 1, Al: 3, P: 2 }, // PbAl3(PO4)2(OH)5·H2O
     proustite: { Ag: 3, As: 1, S: 3 }, // Ag3AsS3 — light ruby silver
@@ -19711,7 +19743,7 @@ const MINERAL_STOICHIOMETRY = {
     romanechite: { Ba: 1, Mn: 5 }, // BaMn5O10·xH2O — Ba-bearing 2×3 tunnel oxide
     todorokite: { Mg: 1, Mn: 6 }, // (Mg,Na,Ca)(Mn,Mg)6O12·3–4H2O — Mg-templated 3×3 tunnel approximation
     pyrolusite: { Mn: 1 }, // MnO2 — crystalline Mn(IV) endmember
-    tigers_eye: { SiO2: 1 }, // SiO2 pseudomorph; Fe/Na/Mg from precursor
+    tigers_eye: { SiO2: 1 }, // SiO2-rich chatoyant aggregate; origin model is explicit, not a settled pseudomorph
     // ---- v126 P1-holdout backfill (pectolite, no-fire pure-infra add) ----
     // pectolite is the one P1 Jeffrey-arc mineral that v123 deferred
     // because it doesn't reliably fire in any current baseline scenario
@@ -36153,13 +36185,18 @@ const MINERAL_GATES_chrysoprase = {
 };
 const MINERAL_GATES_tigers_eye = {
     sigma_crit: 1.0,
-    T_min: 20, T_max: 200, T_optimal: 65,
+    // Union of two published origin hypotheses. The method below applies the
+    // model-specific envelope; this broad range is not one phase field.
+    T_min: 5, T_max: 450, T_optimal: 65,
     fluid_min: { SiO2: 200, Fe: 30 },
-    O2_min: 0.4,
-    pH_min: 5.5, pH_max: 9.5,
+    pH_min: 5.5, pH_max: 11.0,
     surface_energy: 'low',
-    _sources: ['tigers_eye engine v116+', 'Cairncross & Beukes 2013', 'Heaney & Fisher 2003'],
-    _notes: 'SiO2 after crocidolite — chalcedony pseudomorph. Gold-brown chatoyant from Fe3+ trace + preserved fiber framework.',
+    _sources: [
+        'Heaney & Fisher 2003, Geology 31:323-326, DOI 10.1130/0091-7613(2003)031<0323:NIOTOO>2.0.CO;2',
+        'Gutzmer, Beukes & Cairncross 2004, Geology 32:e44, DOI 10.1130/0091-7613-32.1.e44',
+        'Miyano & Klein 1983, Mining Geology 33:213-222, DOI 10.11456/shigenchishitsu1951.33.213',
+    ],
+    _notes: 'Hypothesis pair, not a settled pseudomorph claim: synchronous antitaxial quartz-crocidolite crack-seal growth versus surficial silicification/oxidation of older crocidolite with texture preserved (not pseudomorphic sensu stricto). Production nucleation enforces the corresponding substrate history.',
 };
 const MINERAL_GATES_chrysotile = {
     sigma_crit: 1.0,
@@ -36375,6 +36412,27 @@ const MINERAL_GATES_chabazite = {
     _sources: ['chabazite engine v203', 'Passaglia & Sheppard 2001 RiMG 45:69', 'Coombs et al. 1997 Can.Mineral. 35:1571', 'Calligaris et al. 1982 Zeolites (R-3m)'],
     _notes: 'Ca2Al2Si4O12·6H2O — trigonal R-3m, hex cell a13.83 c15.02. Intermediate Si/Al~2; its relative amygdule order is locality-dependent. Cation-flexible Ca>Na>K (K NOT required); chabazite-Ca is the amygdule default. Rhombohedral pseudo-cube + phacolite penetration twins. Looks like calcite but {1011} cleavage is POOR (calcite perfect) + no effervescence + harder (4-5 vs 3) + lighter (2.1 vs 2.71).',
 };
+function tigerEyeOriginModel(conditions) {
+    const authored = conditions?._scenario?.tiger_eye_origin_model;
+    if (authored == null || authored === '')
+        return 'surficial_alteration';
+    if (authored === 'antitaxial_crack_seal' || authored === 'surficial_alteration')
+        return authored;
+    return null;
+}
+function tigerEyeCrackSealOxidationStage(conditions) {
+    if (tigerEyeOriginModel(conditions) !== 'antitaxial_crack_seal')
+        return false;
+    if (conditions._scenario?.tiger_eye_stage === 'post_growth_oxidation')
+        return true;
+    const T = Number(conditions.temperature);
+    const pH = Number(conditions.fluid?.pH);
+    const O2 = Number(conditions.fluid?.O2);
+    // Creative mode has no scripted event clock. Moving a previously selected
+    // crack-seal system into this measured surface envelope is therefore the
+    // executable geological lever that advances it into its later overprint.
+    return T >= 5 && T <= 100 && pH >= 5.5 && pH <= 9.5 && O2 >= 0.4;
+}
 Object.assign(VugConditions.prototype, {
     quartz_equilibrium_ratio() {
         const eq = this.silica_equilibrium(this.effectiveTemperature);
@@ -37146,56 +37204,72 @@ Object.assign(VugConditions.prototype, {
             sigma *= activityCorrectionFactor(this.fluid, 'chrysoprase');
         return Math.max(sigma, 0);
     },
-    // v116 (2026-05-20): Tiger's eye — chalcedony pseudomorph AFTER
-    // crocidolite. The famous gold-brown chatoyant gemstone variety;
-    // Cu2+-bearing chalcedony fibers preserve the crocidolite-asbestos
-    // fiber-bundle morphology, producing the characteristic silky-chatoyant
-    // cat's-eye effect. Type-locality Northern Cape South Africa BIF
-    // (Hamersley + Mt. Brockman + Asbestos Hills); also Wittenoom WA,
-    // Cherokee NC. Three habit variants:
-    //   chatoyant_pseudomorph (default) — fully oxidized; gold-brown
-    //                                      classic gemstone aesthetic
-    //   hawks_eye (partial)             — crocidolite + chalcedony coexist;
-    //                                      blue-grey-gold intermediate
-    //   tiger_iron (BIF context)        — hematite + jasper + tiger's eye
-    //                                      banded; the BIF assemblage rock
-    // Geological process: supergene oxidation of crocidolite Fe2+ to Fe3+
-    // releases the Na, replaces the silicate fiber framework with
-    // microcrystalline SiO2 (chalcedony), with Fe3+ trace giving the
-    // gold-brown chatoyant color. Engine reads crocidolite_dissolving
-    // substrate; pure-SiO2 alternative path (Fe ≥ 50 + O2 > 0.5 + low T)
-    // captures the "tiger iron" BIF context.
-    // Refs: Cairncross B & Beukes NJ (2013) "The Northern Cape diamond
-    // route — geology + gemstones." Geological Society of South Africa;
-    // Heaney PJ & Fisher DM (2003) Am. Min. 88:1-14 "New interpretation
-    // of the origin of tiger's-eye."
+    // SIM 260: Tiger's eye carries the published origin dispute as executable
+    // geology. Heaney & Fisher (2003, Geology 31:323-326) explicitly REJECT
+    // pseudomorphic quartz replacement and interpret synchronous antitaxial
+    // quartz+crocidolite crack-seal growth. Gutzmer, Beukes & Cairncross (2004,
+    // Geology 32:e44) instead use field relationships to argue for an older
+    // crocidolite seam followed by surficial silicification and partial
+    // oxidation; they call it alteration preserving texture, not a pseudomorph
+    // sensu stricto. The scenario/Creative selector chooses the boundary. The
+    // production nucleator separately proves the required substrate history.
     supersaturation_tigers_eye() {
+        const wall = this.wall || {};
+        // `matrix` is a renderer-only skin; physics reads authored composition.
+        if (wall.composition !== 'banded_iron_formation')
+            return 0;
         if (this.fluid.SiO2 < 200 || this.fluid.Fe < 30)
             return 0;
-        if (this.temperature < 20 || this.temperature > 200)
+        const model = tigerEyeOriginModel(this);
+        if (!model)
             return 0;
-        if (this.fluid.pH < 5.5 || this.fluid.pH > 9.5)
+        const crackSeal = model === 'antitaxial_crack_seal';
+        const oxidationStage = tigerEyeCrackSealOxidationStage(this);
+        // Heaney & Fisher's later oxidation is a colour/Fe-state overprint of
+        // existing synchronous fabric, not another quartz-precipitation stage.
+        // The growth engine records that overprint with zero framework thickness.
+        if (oxidationStage)
             return 0;
-        // OXIDIZING required — the supergene weathering condition
-        if (this.fluid.O2 < 0.4)
-            return 0;
+        if (crackSeal && !oxidationStage) {
+            // Miyano & Klein's lower-T amphibole-asbestos stability family.
+            // Oxygen is not a reactant in the synchronous vein-fill step.
+            if (this.temperature < 150 || this.temperature > 450)
+                return 0;
+            if (this.fluid.pH < 7.0 || this.fluid.pH > 11.0)
+                return 0;
+            if (this.fluid.O2 >= 0.6)
+                return 0;
+        }
+        else {
+            // Surface oxidation applies to the alteration model. The 5-100 C bound is a
+            // disclosed near-surface kinetic proxy, not locality thermometry.
+            if (this.temperature < 5 || this.temperature > 100)
+                return 0;
+            if (this.fluid.pH < 5.5 || this.fluid.pH > 9.5)
+                return 0;
+            if (this.fluid.O2 < 0.4)
+                return 0;
+        }
         const si_f = Math.min(this.fluid.SiO2 / 400.0, 2.0);
         const fe_f = Math.min(this.fluid.Fe / 80.0, 2.0);
         let sigma = si_f * fe_f;
-        // T sweet spot 30-100°C (surface-supergene weathering of BIF)
         const T = this.temperature;
-        if (T >= 30 && T <= 100)
+        if (crackSeal && !oxidationStage) {
+            if (T >= 200 && T <= 350)
+                sigma *= 1.3;
+            else
+                sigma *= 0.85;
+        }
+        else if (T >= 30 && T <= 80)
             sigma *= 1.3;
-        else if (T < 30)
-            sigma *= Math.max(0.4, T / 30);
         else
-            sigma *= Math.max(0.4, 1.0 - (T - 100) / 100);
-        // pH sweet spot 6.5-8.0
+            sigma *= 0.8;
         const pH = this.fluid.pH;
-        if (pH >= 6.5 && pH <= 8.0)
+        const pHCenter = crackSeal && !oxidationStage ? 9.0 : 7.25;
+        if (Math.abs(pH - pHCenter) <= 0.75)
             sigma *= 1.2;
         else
-            sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 7.25) * 0.3);
+            sigma *= Math.max(0.5, 1.0 - Math.abs(pH - pHCenter) * 0.3);
         if (ACTIVITY_CORRECTED_SUPERSAT)
             sigma *= activityCorrectionFactor(this.fluid, 'tigers_eye');
         return Math.max(sigma, 0);
@@ -37934,11 +38008,10 @@ Object.assign(VugConditions.prototype, {
 // asbestiform habit dispatch via the grow engine; the supersat layer
 // only gates on chemistry + T/pH.
 //
-// Tiger's eye (chalcedony pseudomorph after crocidolite — the famous
-// gold-brown chatoyant gemstone variety) ships in the silicate class
-// (js/39/59/89), NOT here. Tiger's eye is structurally chalcedony
-// (microcrystalline SiO2) preserving the crocidolite fiber-bundle
-// pseudomorph; engine reads crocidolite_dissolving substrate.
+// Tiger's eye ships in the silicate class (js/39/59/89), NOT here. SIM 260
+// represents both the Heaney-Fisher synchronous antitaxial crack-seal model
+// and the Gutzmer-Beukes-Cairncross older-crocidolite/surficial-alteration
+// model. Neither is described here as settled pseudomorphic replacement.
 //
 // REFERENCES:
 //   * Hawthorne FC et al. (2012) Am. Min. 97:2031 — IMA nomenclature
@@ -37993,12 +38066,12 @@ const MINERAL_GATES_amosite = {
 };
 const MINERAL_GATES_crocidolite = {
     sigma_crit: 1.0,
-    T_min: 100, T_max: 400, T_optimal: 275,
+    T_min: 150, T_max: 450, T_optimal: 300,
     fluid_min: { Na: 30, Fe: 100, SiO2: 200 },
     pH_min: 7.0, pH_max: 11.0,
     surface_energy: 'medium',
-    _sources: ['amphibole engine v116', 'Frank et al. 2002', 'Wittenoom + Northern Cape literature'],
-    _notes: '"Blue asbestos" riebeckite-asbestiform variety. BIF-hosted. Ca > 50 routes to calcic amphibole. Tiger\'s eye precursor on supergene oxidation.',
+    _sources: ['amphibole engine v116', 'Miyano & Klein 1983 DOI 10.11456/shigenchishitsu1951.33.213', 'Wittenoom + Northern Cape literature'],
+    _notes: '"Blue asbestos" riebeckite-asbestiform variety. Precambrian BIF-hosted 150-450 C lower-temperature stability family. Ca > 50 routes to calcic amphibole. Crocidolite participates in both published tiger-eye origin hypotheses.',
 };
 Object.assign(VugConditions.prototype, {
     // TREMOLITE Ca2Mg5Si8O22(OH)2 — calcic amphibole; tremolite-asbestos
@@ -38160,8 +38233,9 @@ Object.assign(VugConditions.prototype, {
     // CROCIDOLITE Na2Fe2+3Fe3+2Si8O22(OH)2 — "BLUE ASBESTOS." Riebeckite
     // asbestiform variety. BIF-hosted (banded-iron-formation): Wittenoom
     // + Hamersley + Mount Brockman Western Australia; Northern Cape SA
-    // (Mt. Brockman is the type for the chatoyant variety that produces
-    // tiger's eye via supergene oxidation). Crocidolite is the most
+    // (classic chatoyant aggregates occur in these BIF terranes). The
+    // quartz-crocidolite relationship is model-dependent in SIM 260.
+    // Crocidolite is the most
     // carcinogenic of the asbestos minerals (Frank et al. 2002; lawsuits
     // closed the Wittenoom town in 1966). The most distinctive color
     // in the family: deep blue to lavender-blue to slate-blue; partial
@@ -38182,14 +38256,15 @@ Object.assign(VugConditions.prototype, {
         const fe_f = Math.min(this.fluid.Fe / 200.0, 2.0);
         const si_f = Math.min(this.fluid.SiO2 / 300.0, 1.5);
         let sigma = na_f * fe_f * si_f;
-        // T sweet spot 200-350°C (low-grade BIF metamorphism)
+        // T sweet spot 200-350°C within Miyano & Klein's 150-450°C
+        // low-to-medium-temperature amphibole-asbestos stability family.
         const T = this.temperature;
         if (T >= 200 && T <= 350)
             sigma *= 1.3;
         else if (T < 200)
-            sigma *= Math.max(0.4, (T - 100) / 100 + 0.4);
+            sigma *= Math.max(0.4, (T - 150) / 50 + 0.4);
         else
-            sigma *= Math.max(0.4, 1.0 - (T - 350) / 50);
+            sigma *= Math.max(0.4, 1.0 - (T - 350) / 100);
         const pH = this.fluid.pH;
         if (pH >= 8.0 && pH <= 10.0)
             sigma *= 1.2;
@@ -52191,28 +52266,115 @@ function grow_chrysoprase(crystal, conditions, step) {
         note: color_note,
     });
 }
-// v116 (2026-05-20): Tiger's eye — chalcedony pseudomorph AFTER
-// crocidolite. The supergene oxidation of crocidolite-asbestos fiber
-// bundles, with chalcedony replacing the silicate framework while
-// Fe2+ → Fe3+ provides the gold-brown chatoyant color. Three habits
-// cover the gemstone family:
-//   chatoyant_pseudomorph (default — gold-brown classic)
-//   hawks_eye (partial oxidation — blue-grey-gold)
-//   tiger_iron (BIF context — banded hematite-jasper-tigers-eye rock)
-// Substrate: crocidolite_dissolving ONLY (the pseudomorph framework the
-// chalcedony replaces); co-present hematite bands it into the TIGER IRON
-// assemblage. No bare-wall / bare-Fe-oxide substrate — the nucleation gate
-// (js/89) requires a dissolving crocidolite crystal. rung 3, SIM 229.
+// Tiger's eye follows the player-selected literature interpretation:
+// synchronous antitaxial quartz-crocidolite crack-seal growth followed by
+// oxidation (Heaney & Fisher 2003), or alteration of an older crocidolite
+// seam during near-surface silicification/oxidation (Gutzmer et al. 2004).
 function grow_tigers_eye(crystal, conditions, step) {
+    const selectedModel = tigerEyeOriginModel(conditions);
+    if (!selectedModel)
+        return null;
+    const pos = crystal.position || '';
+    const with_hematite = pos.includes('hematite') || pos.includes('jasper');
+    const crackSeal = pos.includes('model=antitaxial-crack-seal') ||
+        selectedModel === 'antitaxial_crack_seal';
+    const alteration = pos.includes('model=surficial-alteration') ||
+        selectedModel === 'surficial_alteration';
+    const crackSealOxidation = crackSeal && tigerEyeCrackSealOxidationStage(conditions);
+    if (crackSealOxidation) {
+        if (crystal.total_growth_um <= 5)
+            return null;
+        // Crocidolite contains three ferrous Fe atoms out of five total Fe. Use
+        // that 0.6 fraction as a declared chromophore proxy for Fe already booked
+        // into the synchronous aggregate, then debit O2 for
+        // 4 FeO + O2 -> 2 Fe2O3. This changes state and colour, not SiO2 mass.
+        const bookedFe = remainingBookedInventory(crystal, 'Fe');
+        const ferrousFe = bookedFe * 0.6;
+        const previousOxidizedFe = Math.min(ferrousFe, Math.max(0, Number(crystal._tiger_eye_oxidation_state?.oxidized_fe_ppm_equivalent) || 0));
+        const remainingFerrousFe = Math.max(0, ferrousFe - previousOxidizedFe);
+        const oxygenRequired = remainingFerrousFe * (8.0 / 55.845);
+        const oxygenBefore = Math.max(0, Number(conditions.fluid.O2) || 0);
+        const oxygenConsumed = Math.min(oxygenBefore, oxygenRequired);
+        if (!(bookedFe > 0) || !(remainingFerrousFe > 0) || !(oxygenConsumed > 0))
+            return null;
+        conditions.fluid.O2 = Math.max(0, oxygenBefore - oxygenConsumed);
+        conditions.fluid.Eh = ehFromO2(conditions.fluid.O2);
+        const oxidizedThisStep = oxygenConsumed / (8.0 / 55.845);
+        const cumulativeOxidizedFe = Math.min(ferrousFe, previousOxidizedFe + oxidizedThisStep);
+        const cumulativeFraction = ferrousFe > 0 ? cumulativeOxidizedFe / ferrousFe : 0;
+        const colourState = cumulativeFraction >= 0.9
+            ? 'gold_brown_tigers_eye'
+            : cumulativeFraction >= 0.15
+                ? 'mixed_blue_gold_hawks_eye_transition'
+                : 'blue_grey_weakly_oxidized';
+        const receipt = {
+            process: 'post_growth_fe_oxidation_colour_overprint',
+            step,
+            framework_growth_um: 0,
+            booked_fe_ppm_equivalent: bookedFe,
+            assumed_ferrous_fraction: 0.6,
+            previous_oxidized_fe_ppm_equivalent: previousOxidizedFe,
+            oxidized_fe_this_step_ppm_equivalent: oxidizedThisStep,
+            oxidized_fe_ppm_equivalent: cumulativeOxidizedFe,
+            remaining_ferrous_fe_ppm_equivalent: Math.max(0, ferrousFe - cumulativeOxidizedFe),
+            oxygen_before: oxygenBefore,
+            oxygen_required: oxygenRequired,
+            oxygen_consumed: oxygenConsumed,
+            oxygen_after: conditions.fluid.O2,
+            incremental_ferrous_oxidation_fraction: remainingFerrousFe > 0
+                ? oxidizedThisStep / remainingFerrousFe : 0,
+            modeled_ferrous_oxidation_fraction: cumulativeFraction,
+            colour_state: colourState,
+            gold_brown_threshold_fraction: 0.9,
+            reaction_basis: '4 FeO + O2 -> 2 Fe2O3; Fe-state proxy only',
+        };
+        if (cumulativeFraction >= 0.9) {
+            crystal.habit = 'oxidized_crack_seal_chatoyant';
+            crystal.dominant_forms = [
+                'gold-brown chatoyant antitaxial vein',
+                'quartz columns crossed by crocidolite microfibre bands',
+                'later oxidation colours preserved crack-seal fabric',
+            ];
+        }
+        else if (cumulativeFraction >= 0.15) {
+            crystal.habit = 'partly_oxidized_crack_seal_hawks_eye';
+            crystal.dominant_forms = [
+                'mixed blue-gold chatoyant antitaxial vein',
+                'preserved crocidolite microfibre bands',
+                'partial Fe oxidation advancing toward tiger\'s-eye colour',
+            ];
+        }
+        else {
+            crystal.habit = 'antitaxial_crack_seal';
+            crystal.dominant_forms = [
+                'blue-grey quartz-crocidolite crack-seal vein',
+                'crocidolite microfibre bands crossing quartz columns',
+                'weak initial oxidation overprint',
+            ];
+        }
+        crystal._tiger_eye_oxidation_state = receipt;
+        const overprint = new GrowthZone({
+            step,
+            temperature: conditions.temperature,
+            thickness_um: 0,
+            growth_rate: 0,
+            note: `post-growth Fe-oxidation colour overprint; ${oxygenConsumed.toFixed(4)} O2 units booked; cumulative Fe-state fraction ${cumulativeFraction.toFixed(3)} (${colourState}); existing crack-seal framework preserved with zero new SiO2 thickness`,
+        });
+        overprint.state_overprint = 'tiger_eye_fe_oxidation_colour';
+        overprint.oxidation_receipt = receipt;
+        return overprint;
+    }
     const sigma = conditions.supersaturation_tigers_eye();
     if (sigma < 1.0) {
-        if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.0) {
+        if (crystal.total_growth_um > 5
+            && conditions.fluid.pH < 4.0
+            && conditions.fluid.F > 20) {
             crystal.dissolved = true;
             const d = Math.min(2.0, crystal.total_growth_um * 0.06);
             return new GrowthZone({
                 step, temperature: conditions.temperature,
-                thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
-                note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — tiger's eye chalcedony framework breaks down; Fe³⁺ released to limonite/goethite`,
+                thickness_um: -d, growth_rate: -d, dissolutionMode: 'hf',
+                note: `HF-assisted dissolution (pH ${conditions.fluid.pH.toFixed(1)}, F ${conditions.fluid.F.toFixed(0)}) — SiO2 framework inventory returned; no unbooked Fe-oxide product is asserted`,
             });
         }
         return null;
@@ -52221,28 +52383,29 @@ function grow_tigers_eye(crystal, conditions, step) {
     const rate = 2.5 * excess * rng.uniform(0.8, 1.2);
     if (rate < 0.1)
         return null;
-    // Habit dispatch — substrate-driven primary
-    const pos = crystal.position || '';
-    const after_crocidolite = pos.includes('crocidolite');
-    const with_hematite = pos.includes('hematite') || pos.includes('jasper');
-    if (with_hematite) {
+    const oxidized = !crackSeal && (conditions.fluid.O2 >= 0.4 ||
+        conditions._scenario?.tiger_eye_stage === 'post_growth_oxidation');
+    if (crackSeal && oxidized) {
+        crystal.habit = 'oxidized_crack_seal_chatoyant';
+        crystal.dominant_forms = ['gold-brown chatoyant antitaxial vein', 'quartz columns crossed by crocidolite microfibre bands', 'later oxidation colours preserved crack-seal fabric'];
+    }
+    else if (crackSeal) {
+        crystal.habit = 'antitaxial_crack_seal';
+        crystal.dominant_forms = ['blue-grey quartz-crocidolite crack-seal vein', 'crocidolite microfibre bands crossing quartz columns', 'synchronous mineral growth'];
+    }
+    else if (alteration && with_hematite) {
         crystal.habit = 'tiger_iron';
-        crystal.dominant_forms = ['banded TIGER IRON', 'hematite-jasper-chalcedony BIF assemblage', 'centimeter-scale interlayered red-black-gold bands', 'Northern Cape SA + Hamersley WA type'];
+        crystal.dominant_forms = ['banded tiger iron', 'hematite-jasper-quartz BIF assemblage', 'interlayered red-black-gold bands'];
     }
-    else if (after_crocidolite && excess > 1.0 && conditions.fluid.O2 > 0.6) {
-        crystal.habit = 'chatoyant_pseudomorph';
-        crystal.dominant_forms = ['gold-brown chatoyant chalcedony pseudomorph after crocidolite', 'silky cat\'s-eye effect from preserved fiber bundles', 'classic tiger\'s eye gemstone aesthetic'];
-    }
-    else if (after_crocidolite) {
-        crystal.habit = 'hawks_eye';
-        crystal.dominant_forms = ['blue-grey-gold hawk\'s eye', 'partial oxidation — crocidolite + chalcedony coexist', 'precursor stage to full tiger\'s eye'];
+    else if (alteration) {
+        crystal.habit = 'alteration_preserved_fabric';
+        crystal.dominant_forms = ['gold-brown chatoyant alteration band', 'quartz preserving the orientation of older crocidolite seams', 'near-surface silicification and oxidation fabric'];
     }
     else {
-        // Defensive fallback — unreachable since v229: nucleation now requires a
-        // dissolving crocidolite substrate, so every tiger's eye carries
-        // 'crocidolite' in its position. Kept only for replayed pre-v229 saves.
-        crystal.habit = 'chatoyant_pseudomorph';
-        crystal.dominant_forms = ['gold-brown chatoyant chalcedony', 'fibrous internal texture', 'classic gemstone aesthetic'];
+        // Defensive compatibility path for saves authored before the origin-model
+        // selector existed. New nucleation always stamps a named model.
+        crystal.habit = 'alteration_preserved_fabric';
+        crystal.dominant_forms = ['gold-brown chatoyant quartz', 'fibrous internal texture', 'legacy save interpreted as alteration fabric'];
     }
     // Color dispatch — Fe-oxidation state drives color
     let color_note;
@@ -52263,7 +52426,7 @@ function grow_tigers_eye(crystal, conditions, step) {
         step, temperature: conditions.temperature,
         thickness_um: rate, growth_rate: rate,
         trace_Fe: conditions.fluid.Fe * 0.01,
-        note: `tiger's eye ${crystal.habit}, ${color_note}; microcrystalline SiO2 (chalcedony) with preserved crocidolite fiber pseudomorph, H 7, chatoyant silky luster`,
+        note: `tiger's eye ${crystal.habit}, ${color_note}; SiO2-rich chatoyant quartz-crocidolite aggregate following the named ${crackSeal ? 'antitaxial crack-seal' : 'surficial-alteration'} model; H 7, silky luster`,
     });
 }
 // v114 (2026-05-20): Chrysotile Mg3Si2O5(OH)4 — fibrous serpentine.
@@ -53702,21 +53865,24 @@ function grow_amosite(crystal, conditions, step) {
 function grow_crocidolite(crystal, conditions, step) {
     const sigma = conditions.supersaturation_crocidolite();
     if (sigma < 1.0) {
-        // Crocidolite OXIDIZES — this is the tiger's eye precursor reaction.
-        // At elevated O2 + temperature, Fe2+ → Fe3+ + the Na is exchanged
-        // out, the fiber bundles get SILICA-REPLACED by chalcedony in
-        // pseudomorph (the famous gold-brown chatoyant gemstone).
+        // The origin of tiger's eye remains disputed.  In the surficial-
+        // alteration model, oxidation consumes an older crocidolite seam.  In
+        // the antitaxial crack-seal model, quartz and crocidolite grew together
+        // and later oxidation changed colour without destroying the fibres.
         if (crystal.total_growth_um > 5 && conditions.fluid.O2 > 0.4) {
-            crystal.dissolved = true;
+            const tigerEyeModel = tigerEyeOriginModel(conditions);
+            if (!tigerEyeModel)
+                return null;
+            if (tigerEyeModel === 'antitaxial_crack_seal')
+                return null;
             const d = Math.min(2.0, crystal.total_growth_um * 0.06);
             return new GrowthZone({
                 step, temperature: conditions.temperature,
                 thickness_um: -d, growth_rate: -d, dissolutionMode: 'oxidative',
-                note: `oxidative dissolution (O₂ ${conditions.fluid.O2.toFixed(1)}) — crocidolite Fe²⁺ oxidizes to Fe³⁺; tiger's eye CHALCEDONY PSEUDOMORPH precursor reaction. Na released to fluid; Fe³⁺ creates the chatoyant golden-brown color in chalcedony fiber pseudomorph.`,
+                note: `accepted oxidative alteration (O₂ ${conditions.fluid.O2.toFixed(1)}) — older crocidolite loses material as Fe²⁺ oxidizes and Na is mobilized; this is the Gutzmer-Beukes-Cairncross surficial-alteration hypothesis, not proof of a pseudomorph sensu stricto.`,
             });
         }
         if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.5) {
-            crystal.dissolved = true;
             const d = Math.min(2.0, crystal.total_growth_um * 0.04);
             return new GrowthZone({
                 step, temperature: conditions.temperature,
@@ -53742,7 +53908,7 @@ function grow_crocidolite(crystal, conditions, step) {
     // Color dispatch — partial oxidation creates "hawk's eye" intermediate
     let color_note;
     if (conditions.fluid.O2 > 0.2 && conditions.fluid.O2 < 0.4) {
-        color_note = 'hawk\'s eye intermediate (partial oxidation — blue-grey-gold chatoyant); precursor to full tiger\'s eye pseudomorph at higher O2';
+        color_note = 'blue-grey to blue-gold fibres under modest oxidation; later alteration may produce hawk\'s-eye/tiger\'s-eye colours';
     }
     else {
         color_note = 'deep blue to lavender-blue crocidolite; Na2Fe²⁺3Fe³⁺2 charge transfer';
@@ -56675,11 +56841,9 @@ const MINERAL_ENGINES = {
     // files (js/39a / 59a / 89a) per Hawthorne et al. 2012 supergroup
     // nomenclature.
     //
-    // Tiger's eye = chalcedony pseudomorph AFTER crocidolite (supergene
-    // oxidation of Fe2+ → Fe3+; the famous chatoyant gemstone). Lives
-    // in silicate class since structurally chalcedony. Three habit
-    // variants: chatoyant_pseudomorph (gold-brown classic), hawks_eye
-    // (partial oxidation), tiger_iron (BIF-banded with hematite+jasper).
+    // Tiger's eye is an SiO2-rich quartz-crocidolite aggregate. The silicate
+    // engine executes either synchronous antitaxial crack-seal growth or later
+    // surficial alteration of an older crocidolite seam; the model is explicit.
     tremolite: grow_tremolite,
     actinolite: grow_actinolite,
     anthophyllite: grow_anthophyllite,
@@ -57188,6 +57352,10 @@ const EVENT_REGISTRY = {
     shigar_topaz_window: event_shigar_topaz_window,
     shigar_hf_etch: event_shigar_hf_etch,
     shigar_final_cooling: event_shigar_final_cooling,
+    // Paired Asbestos Hills tiger's-eye hypotheses (js/70x).
+    asbestos_hills_crack_seal_oxidation: event_asbestos_hills_crack_seal_oxidation,
+    asbestos_hills_surficial_silicification: event_asbestos_hills_surficial_silicification,
+    asbestos_hills_surficial_maturation: event_asbestos_hills_surficial_maturation,
 };
 // Minimal JSONC parser — strips // line + /* */ block comments and
 // trailing commas, then JSON.parse. Sufficient for our spec files; not
@@ -57216,6 +57384,7 @@ const _WALL_GENESIS_BY_SCENARIO = {
     // vein — hydrothermal open-space fracture fill (comb/palisade)
     tn457_barite_pulses: 'vein', reactivated_fluorite_vein: 'vein', sunnyside_american_tunnel: 'vein',
     ouro_preto: 'vein', wittichen: 'vein', epithermal_telluride: 'vein', jeffrey_mine: 'vein',
+    asbestos_hills_crack_seal: 'vein', asbestos_hills_surficial_alteration: 'vein',
     // pocket — pegmatite miarolitic (blocky euhedral druse)
     gem_pegmatite: 'pocket', shigar_pegmatite: 'pocket', radioactive_pegmatite: 'pocket',
     // supergene — gossan boxwork after leached sulphide
@@ -57285,6 +57454,11 @@ function _buildScenarioFromSpec(scenarioId, spec) {
             scenario_spec_hash: specHash,
             open_to_atmosphere: spec.open_to_atmosphere,
             atmospheric_pCO2_bar: spec.atmospheric_pCO2_bar,
+            // Tiger's-eye has two competing published origin hypotheses. Scenario
+            // and Creative data select one explicitly; engines never infer it from
+            // colour or silently collapse the disagreement.
+            tiger_eye_origin_model: spec.tiger_eye_origin_model,
+            tiger_eye_stage: spec.tiger_eye_stage,
             // Whole-scenario DIC ledger. Sicily originated the implementation;
             // any authored scenario that declares carbon sources can now opt in.
             carbon_ledger: spec.carbon_ledger === true,
@@ -60440,6 +60614,72 @@ function event_shigar_final_cooling(c) {
     return 'Meteoric water finds the system as the range lifts and erodes. The acid is flushed, the chemistry goes quiet, and the pocket waits — barely a few million years; these upper-valley dikes are almost Pliocene-young — for a miner\'s hammer at four thousand meters.';
 }
 
+// ── 70x-asbestos-hills.js ──
+
+// ============================================================
+// js/70x-asbestos-hills.ts — paired tiger's-eye origin models
+// ============================================================
+// Both scenarios begin with low-grade metamorphic crocidolite in banded
+// iron formation, consistent with Miyano & Klein (1983). They then diverge:
+//
+//  * Heaney & Fisher (2003): quartz and crocidolite grow synchronously in
+//    an antitaxial crack-seal vein; later oxidation changes colour while the
+//    fibre bands remain.
+//  * Gutzmer, Beukes & Cairncross (2004): an older crocidolite seam is
+//    altered in a shallow silicified/goethitized zone. The code requires a
+//    real, accepted oxidative crocidolite loss zone before tiger's eye can
+//    nucleate.
+//
+// The 40–60 C weathering temperatures are declared numerical proxies for a
+// near-surface reaction window, not locality fluid-inclusion thermometry.
+function _asbestosHillsAddSilicaBoundary(c, source, targetPpm) {
+    const before = Math.max(0, Number(c.fluid.SiO2) || 0);
+    const added = Math.max(0, targetPpm - before);
+    if (typeof c.fluid.addReactiveSilica === 'function')
+        c.fluid.addReactiveSilica(added);
+    else
+        c.fluid.SiO2 += added;
+    declareFluidBoundaryAddition(c, source, { SiO2: added });
+    return added;
+}
+function event_asbestos_hills_crack_seal_oxidation(c) {
+    if (c._scenario)
+        c._scenario.tiger_eye_stage = 'post_growth_oxidation';
+    c.temperature = 60;
+    c.pressure = 0.001;
+    c.wall.confining_pressure_kbar = 0.001;
+    c.fluid.pH = 7.3;
+    c.fluid.O2 = 0.78;
+    c.fluid.Eh = ehFromO2(c.fluid.O2);
+    declareFluidBoundaryReplacement(c, 'Asbestos Hills oxidizing meteoric-water replacement', { O2: c.fluid.O2 });
+    c.flow_rate = 0.18;
+    return `Exhumation brings the crack-seal vein to the atmospheric pressure floor (0.001 kbar) for its later oxidation stage. Oxygen rises to ${c.fluid.O2.toFixed(2)} at a declared 60°C weathering proxy. Crocidolite fibres and the synchronous SiO₂ framework are preserved: a booked Fe-state colour overprint records oxidation with zero later quartz growth.`;
+}
+function event_asbestos_hills_surficial_silicification(c) {
+    if (c._scenario)
+        c._scenario.tiger_eye_stage = 'surficial_silicification';
+    c.temperature = 60;
+    c.pressure = 0.001;
+    c.wall.confining_pressure_kbar = 0.001;
+    c.fluid.pH = 7.2;
+    c.fluid.O2 = 0.82;
+    c.fluid.Eh = ehFromO2(c.fluid.O2);
+    declareFluidBoundaryReplacement(c, 'Asbestos Hills planation-surface oxidizing-water replacement', { O2: c.fluid.O2 });
+    c.flow_rate = 0.3;
+    const silicaAdded = _asbestosHillsAddSilicaBoundary(c, 'Asbestos Hills planation-surface silicification boundary', 900);
+    return `Exhumation reaches the planation-surface alteration zone at the simulator's atmospheric pressure floor (0.001 kbar). At a declared 60°C process proxy, oxidizing water adds ${silicaAdded.toFixed(0)} ppm reactive SiO₂. Tiger's eye remains blocked until the growth ledger accepts an oxidative crocidolite loss zone.`;
+}
+function event_asbestos_hills_surficial_maturation(c) {
+    c.temperature = 40;
+    c.fluid.pH = 6.9;
+    c.fluid.O2 = 1.0;
+    c.fluid.Eh = ehFromO2(c.fluid.O2);
+    declareFluidBoundaryReplacement(c, 'Asbestos Hills waning oxidizing-water replacement', { O2: c.fluid.O2 });
+    c.flow_rate = 0.12;
+    const silicaAdded = _asbestosHillsAddSilicaBoundary(c, 'Asbestos Hills waning silica-rich weathering boundary', 1000);
+    return `Silicification matures in the shallow weathering zone: T 40°C proxy, O₂ ${c.fluid.O2.toFixed(2)}, and ${silicaAdded.toFixed(0)} ppm additional reactive SiO₂. Hematite/goethite colour and quartz growth overprint the accepted alteration fabric.`;
+}
+
 // ── 75-transitions.js ──
 
 // ============================================================
@@ -62390,6 +62630,13 @@ class VugSimulator {
                 if (zone && zone.thickness_um < 0
                     && crystal._physicalEtchAppliedStep === this.step)
                     continue;
+                if (zone && Number(zone.thickness_um) === 0 && zone.state_overprint) {
+                    this._finalizeZoneForApplication(crystal, zone);
+                    this._applyZoneGrowthBudget(crystal, zone);
+                    crystal.add_zone(zone);
+                    this.log.push(`  â—† ${capitalize(crystal.mineral)} #${crystal.crystal_id}: REACTION OVERPRINT ${zone.note}`);
+                    continue;
+                }
                 // W-F O3b — sealed crystals don't dissolve (shielded by neighbors), same
                 // as the main-path guard below. Byte-identical when selection is off.
                 if (zone && zone.thickness_um < 0) {
@@ -62448,11 +62695,10 @@ class VugSimulator {
                 zone = this._graduatedZones.get(crystal.crystal_id);
             }
             else {
-                // Crystal had no engine entry (skipped at the top of the loop)
-                // or wasn't in _graduatedZones (only happens when flag is off,
-                // because pass 1 enumerates every active crystal). The flag-off
-                // branch runs the engine exactly once via _runEngineForCrystal,
-                // matching v127 byte-identically.
+                // Crystal had no engine entry, the flag is off, or pass 1 deliberately
+                // omitted an RNG-free zero-thickness state overprint so it can be
+                // re-evaluated against the actual sequential local reagent reservoir.
+                // Ordinary flag-off growth still runs exactly once, matching v127.
                 zone = this._runEngineForCrystal(engine, crystal);
             }
             // The duration-integrated physical etch already consumed this
@@ -63679,7 +63925,9 @@ function _applyAcceptedCrystalMutations(crystal, zone) {
     if (!zone)
         return;
     const staged = zone._engine_crystal_mutations;
-    const accepted = Number.isFinite(Number(zone.thickness_um)) && Number(zone.thickness_um) !== 0;
+    const thickness = Number(zone.thickness_um);
+    const accepted = Number.isFinite(thickness)
+        && (thickness !== 0 || (thickness === 0 && !!zone.state_overprint));
     if (accepted && staged && crystal) {
         for (const key of Object.keys(staged)) {
             const mutation = staged[key];
@@ -63722,6 +63970,22 @@ function _runEngineFluidTransaction(engine, crystal, conditions, step) {
             if (Object.keys(perCandidateUm).length) {
                 zone._engine_fluid_delta_per_candidate_um = perCandidateUm;
                 zone._engine_candidate_thickness_um = Number(zone.thickness_um);
+            }
+        }
+        else if (zone && Number(zone.thickness_um) === 0 && zone.state_overprint) {
+            const absoluteDeltas = {};
+            const keys = new Set([...Object.keys(before), ...Object.keys(fluid || {})]);
+            for (const key of keys) {
+                const oldValue = before[key];
+                const newValue = fluid && fluid[key];
+                if (typeof oldValue !== 'number' || typeof newValue !== 'number')
+                    continue;
+                const delta = newValue - oldValue;
+                if (Number.isFinite(delta) && Math.abs(delta) > 1e-15)
+                    absoluteDeltas[key] = delta;
+            }
+            if (Object.keys(absoluteDeltas).length) {
+                zone._engine_state_fluid_deltas = absoluteDeltas;
             }
         }
         return zone;
@@ -63773,6 +64037,21 @@ function _ledgerSpeciesForAcceptedZone(crystal, zone) {
     return exact;
 }
 function _applyAcceptedEngineFluidDeltas(crystal, zone, conditions) {
+    const stateDeltas = zone && zone._engine_state_fluid_deltas;
+    const stateFluid = conditions && conditions.fluid;
+    if (stateDeltas && stateFluid && zone.state_overprint && Number(zone.thickness_um) === 0) {
+        zone._state_overprint_fluid_delta_actual = {};
+        for (const species of Object.keys(stateDeltas)) {
+            if (typeof stateFluid[species] !== 'number')
+                continue;
+            const floor = species === 'pH' ? 0.5 : 0;
+            const beforeApplied = stateFluid[species];
+            stateFluid[species] = Math.max(floor, beforeApplied + Number(stateDeltas[species]));
+            zone._state_overprint_fluid_delta_actual[species] = stateFluid[species] - beforeApplied;
+        }
+        delete zone._engine_state_fluid_deltas;
+        return;
+    }
     const deltas = zone && zone._engine_fluid_delta_per_candidate_um;
     const fluid = conditions && conditions.fluid;
     if (!deltas || !fluid || !Number.isFinite(Number(zone.thickness_um)))
@@ -65255,10 +65534,10 @@ Object.assign(VugSimulator.prototype, {
         const cellGroups = new Map();
         // out is the public return; we populate it here for crystals whose
         // dry-run didn't produce positive thickness (negative = dissolution,
-        // null/zero = no growth). Those entries don't go through rationing —
-        // they pass through to pass 2 as-is so the growth loop knows the
-        // engine was already called for them and not to re-invoke it.
-        // (Re-invoking would double-consume RNG vs v127, breaking determinism.)
+        // null/ordinary zero = no growth). Those entries don't go through rationing.
+        // Deterministic zero-thickness state overprints are the one explicit
+        // exception: pass 2 re-evaluates them sequentially against the then-current
+        // local reagent reservoir, and their engine branch consumes no RNG.
         const out = new Map();
         for (const crystal of this.crystals) {
             if (!crystal.active)
@@ -65266,9 +65545,11 @@ Object.assign(VugSimulator.prototype, {
             const engine = MINERAL_ENGINES[crystal.mineral];
             if (!engine)
                 continue;
-            // Dry-run the engine to get its desired zone. The engine is called
-            // EXACTLY ONCE per crystal per step — same as v127. Pass 2 will
-            // consume this stored zone instead of calling the engine again.
+            // Dry-run the engine to get its desired zone. Precipitation,
+            // dissolution, and ordinary no-growth results are called exactly once
+            // per crystal per step. RNG-free state overprints are the documented
+            // exception: pass 2 re-evaluates them against the actual sequential
+            // local reagent reservoir before committing the receipt.
             const dryZone = this._dryRunEngineForCrystal(engine, crystal);
             if (!dryZone) {
                 // Engine returned null (no zone produced). Pass 2 needs to know
@@ -65289,7 +65570,13 @@ Object.assign(VugSimulator.prototype, {
                 continue;
             }
             if (dryZone.thickness_um === 0) {
-                out.set(crystal.crystal_id, null);
+                // A reaction overprint is deliberately outside precipitation
+                // competition. Do not reuse its dry-run fluid delta: another overprint
+                // in the same cell may consume O2 first. Leaving it absent makes pass 2
+                // re-evaluate the deterministic (RNG-free) reaction against the actual
+                // sequential local reservoir before committing state and receipt.
+                if (!dryZone.state_overprint)
+                    out.set(crystal.crystal_id, null);
                 continue;
             }
             // Identify the cell + fluid this crystal competes within.
@@ -72846,11 +73133,59 @@ function _nuc_shattuckite(sim) {
         }
     }
 }
-// v116 (2026-05-20): Tiger's eye — chalcedony pseudomorph after
-// crocidolite. Substrate priority: crocidolite_dissolving (canonical
-// pseudomorph substrate, p=0.65) > hematite (BIF tiger-iron context,
-// p=0.45) > magnetite > wall.
+function _hasAcceptedOxidativeCrocidoliteAlteration(crystal) {
+    return crystal?.mineral === 'crocidolite' &&
+        (crystal.zones || []).some(zone => {
+            const returned = zone?._returned_budget_inventory;
+            return zone?.thickness_um < 0
+                && zone?.dissolutionMode === 'oxidative'
+                && Number(returned?.Na) > 0
+                && Number(returned?.Fe) > 0
+                && Number(returned?.SiO2) > 0;
+        });
+}
+function _hasAcceptedCrocidoliteGrowth(crystal) {
+    return crystal?.mineral === 'crocidolite'
+        && crystal.active && !crystal.dissolved
+        && (crystal.zones || []).some(zone => {
+            const booked = zone?._budget_inventory_per_um;
+            return zone?.thickness_um > 0
+                && Number(booked?.Na) > 0
+                && Number(booked?.Fe) > 0
+                && Number(booked?.SiO2) > 0;
+        });
+}
+function _isBandedIronFormationHost(sim) {
+    const wall = sim?.conditions?.wall || {};
+    return wall.composition === 'banded_iron_formation';
+}
+function _localTigerIronPhase(sim, substrate) {
+    const origin = sim?.wall_state?._resolveAnchor?.(substrate);
+    const cellCount = Number(sim?.wall_state?.cells_per_ring) || 0;
+    if (!origin || cellCount < 1)
+        return null;
+    return sim.crystals.find(crystal => {
+        if (!['hematite', 'jasper'].includes(crystal?.mineral))
+            return false;
+        if (!crystal.active || crystal.dissolved || crystal._buried || crystal.enclosed_by != null)
+            return false;
+        const anchor = sim.wall_state._resolveAnchor(crystal);
+        if (!anchor || anchor.ringIdx !== origin.ringIdx)
+            return false;
+        const direct = Math.abs(anchor.cellIdx - origin.cellIdx);
+        const circular = Math.min(direct, cellCount - direct);
+        return circular <= 1;
+    }) || null;
+}
+// Tiger's-eye origin is implemented as two explicitly named literature
+// models. Heaney & Fisher (2003) requires grown, still-present crocidolite
+// in a synchronous antitaxial crack-seal vein. Gutzmer, Beukes & Cairncross
+// (2004) requires an accepted oxidative loss zone in an older crocidolite
+// seam before later silica can grow. Neither model permits bare-wall or
+// bare-iron-oxide tiger's eye.
 function _nuc_tigers_eye(sim) {
+    if (!_isBandedIronFormationHost(sim))
+        return;
     const sigma = sim.conditions.supersaturation_tigers_eye();
     if (sigma <= MINERAL_GATES_tigers_eye.sigma_crit)
         return;
@@ -72859,30 +73194,35 @@ function _nuc_tigers_eye(sim) {
     const existing = sim.crystals.filter(c => c.mineral === 'tigers_eye' && c.active);
     if (existing.length >= 3)
         return;
-    // Tiger's eye is a chalcedony PSEUDOMORPH after crocidolite (asbestiform
-    // riebeckite) — a Precambrian-BIF-only phenomenon (Heaney & Fisher 2003
-    // Am.Min. 88:1, the sim's own cited source). It cannot nucleate on a bare
-    // wall, nor on bare hematite/magnetite: iron oxide alone (a basalt amygdale,
-    // an oxidized ore body) is NOT a BIF crocidolite context — it is the
-    // dissolving crocidolite framework that the chalcedony replaces. So the ONLY
-    // substrate is a dissolving crocidolite crystal; no crocidolite → no tiger's
-    // eye (rung 3, SIM 229 — retires the bare-wall + bare-Fe-oxide fallbacks that
-    // minted it in deccan basalt, bisbee/ouro_preto ore, and pegmatite pockets).
-    const dissolving_croc = sim.crystals.filter(c => c.mineral === 'crocidolite' && c.dissolved);
-    if (!dissolving_croc.length || rng.random() >= 0.65)
+    const model = tigerEyeOriginModel(sim.conditions);
+    if (!model)
         return;
-    // BIF co-context: banded hematite/jasper alongside the dissolving crocidolite
-    // renders the TIGER IRON assemblage; otherwise the classic chatoyant band.
-    const active_hem = sim.crystals.filter(c => c.mineral === 'hematite' && c.active);
-    const pos = active_hem.length
-        ? `pseudomorph after crocidolite #${dissolving_croc[0].crystal_id}, banded with hematite #${active_hem[0].crystal_id} (TIGER IRON BIF assemblage)`
-        : `pseudomorph after crocidolite #${dissolving_croc[0].crystal_id} (the canonical tiger's eye paragenesis)`;
+    const crackSeal = model === 'antitaxial_crack_seal';
+    const substrates = sim.crystals.filter(c => {
+        if (c.mineral !== 'crocidolite')
+            return false;
+        if (crackSeal)
+            return _hasAcceptedCrocidoliteGrowth(c);
+        return _hasAcceptedOxidativeCrocidoliteAlteration(c);
+    });
+    if (!substrates.length)
+        return;
+    const substrate = substrates[0];
+    const localIronPhase = _localTigerIronPhase(sim, substrate);
+    const modelToken = crackSeal ? 'model=antitaxial-crack-seal' : 'model=surficial-alteration';
+    const substrateText = crackSeal
+        ? `synchronous with crocidolite #${substrate.crystal_id}`
+        : `after accepted oxidative alteration of crocidolite #${substrate.crystal_id}`;
+    const pos = localIronPhase
+        ? `${substrateText}, banded with ${localIronPhase.mineral} #${localIronPhase.crystal_id} (${modelToken}; TIGER IRON BIF assemblage)`
+        : `${substrateText} (${modelToken})`;
     const discount = sim._sigmaDiscountForPosition('tigers_eye', pos);
     if (sigma > 1.2 * discount) {
         if (!existing.length || (sigma > 2.0 && rng.random() < 0.22)) {
             const c = sim.nucleate('tigers_eye', pos, sigma);
-            const variety = pos.includes('hematite') ? 'TIGER IRON' : 'CHATOYANT pseudomorph';
-            sim.log.push(`  ✦ NUCLEATION: 🐅 Tiger's eye #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, O₂=${sim.conditions.fluid.O2.toFixed(1)}) — ${variety}, supergene chalcedony pseudomorph after crocidolite`);
+            const variety = localIronPhase ? 'TIGER IRON' : 'CHATOYANT quartz-crocidolite aggregate';
+            const interpretation = crackSeal ? 'antitaxial crack-seal interpretation' : 'surficial-alteration interpretation';
+            sim.log.push(`  ✦ NUCLEATION: 🐅 Tiger's eye #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, O₂=${sim.conditions.fluid.O2.toFixed(1)}) — ${variety}, ${interpretation}`);
         }
     }
 }
@@ -73626,7 +73966,7 @@ function _nuc_crocidolite(sim) {
     if (sigma > 1.2 * discount) {
         if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
             const c = sim.nucleate('crocidolite', pos, sigma);
-            sim.log.push(`  ✦ NUCLEATION: 🟦 Crocidolite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, O2=${sim.conditions.fluid.O2.toFixed(2)}) — "BLUE ASBESTOS" riebeckite-asbestiform variety (Wittenoom Australia + Northern Cape SA); tiger's eye precursor when O2 rises`);
+            sim.log.push(`  ✦ NUCLEATION: 🟦 Crocidolite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, O2=${sim.conditions.fluid.O2.toFixed(2)}) — "BLUE ASBESTOS" riebeckite-asbestiform variety (Wittenoom Australia + Northern Cape SA); required fibrous substrate for the selected tiger's-eye origin model`);
         }
     }
 }
@@ -82150,9 +82490,12 @@ function readCreativeGeologicalControls(baseWall = {}) {
         scenarioOpts: (() => {
             const open = !!document.getElementById('f-open-atmosphere')?.checked;
             const pCO2 = Math.pow(10, _creativeControlNumber('f-pco2', 100, -3.38));
+            const tigerEyeOriginModel = document.getElementById('f-tiger-eye-model')?.value ||
+                'surficial_alteration';
             return {
                 open_to_atmosphere: open,
                 atmospheric_pCO2_bar: pCO2,
+                tiger_eye_origin_model: tigerEyeOriginModel,
                 carbonate_boundary: {
                     mode: open ? 'open' : 'closed',
                     spatial_model: 'equal_volume_fully_mixed',
@@ -84925,13 +85268,41 @@ function _formationRedoxChip(gate, c) {
         : hasMin ? `≥ ${gate.O2_min} ppm` : `≤ ${gate.O2_max} ppm`;
     return { text: `O₂ ${_formationNumber(o2)} ppm · needs ${need}`, met };
 }
+// Some minerals carry mutually exclusive process models rather than one broad
+// union envelope. Keep the shared registry broad for discovery, but resolve
+// the exact selected gate before building player-facing T/pH/redox chips.
+function _formationEffectiveGate(name, base, c) {
+    if (name !== 'tigers_eye' || !base)
+        return base;
+    const gate = { ...base };
+    delete gate.O2_min;
+    delete gate.O2_max;
+    const model = tigerEyeOriginModel(c);
+    const crackSealGrowth = model === 'antitaxial_crack_seal'
+        && !tigerEyeCrackSealOxidationStage(c);
+    if (crackSealGrowth) {
+        gate.T_min = 150;
+        gate.T_max = 450;
+        gate.pH_min = 7;
+        gate.pH_max = 11;
+        gate.O2_max = 0.6;
+    }
+    else {
+        gate.T_min = 5;
+        gate.T_max = 100;
+        gate.pH_min = 5.5;
+        gate.pH_max = 9.5;
+        gate.O2_min = 0.4;
+    }
+    return gate;
+}
 // Observer-only diagnosis. It reads the same supersaturation function,
 // MINERAL_GATES_REGISTRY, stoichiometry, paragenesis, and initiative helpers
 // as the engine. Production reachability is probed only through the cloned,
 // fixed-RNG observer path in assessProductionNucleationDecision.
 function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = null) {
     const spec = (typeof MINERAL_SPEC !== 'undefined') ? MINERAL_SPEC[name] : null;
-    const gate = (typeof MINERAL_GATES_REGISTRY !== 'undefined')
+    const registryGate = (typeof MINERAL_GATES_REGISTRY !== 'undefined')
         ? (MINERAL_GATES_REGISTRY[name] || null)
         : null;
     if (!spec || !c || !c.fluid)
@@ -84942,6 +85313,7 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
         : null;
     if (spatial?.best?.conditions)
         c = spatial.best.conditions;
+    const gate = _formationEffectiveGate(name, registryGate, c);
     let sigma = spatial ? spatial.maxSigma : sigmaOverride;
     if (typeof sigma !== 'number' || !Number.isFinite(sigma)) {
         const fn = c[`supersaturation_${name}`];
@@ -85058,6 +85430,49 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
         });
     }
     groups.push({ label: 'Saturation', chips: satChips });
+    if (name === 'tigers_eye') {
+        const model = tigerEyeOriginModel(c);
+        const crackSealOxidation = tigerEyeCrackSealOxidationStage(c);
+        const crackSealGrowth = model === 'antitaxial_crack_seal'
+            && !crackSealOxidation;
+        groups.push({
+            label: 'Origin model',
+            chips: [{
+                    text: model == null
+                        ? `unsupported origin model: ${String(c?._scenario?.tiger_eye_origin_model)}`
+                        : crackSealGrowth
+                            ? 'Heaney–Fisher antitaxial crack-seal · synchronous quartz + crocidolite'
+                            : model === 'antitaxial_crack_seal'
+                                ? 'Heaney–Fisher crack-seal · later oxidation of preserved fibres'
+                                : 'Gutzmer–Beukes–Cairncross · older crocidolite + surficial alteration',
+                    met: model != null,
+                    status: 'observer',
+                    note: 'Creative mode selects the published interpretation explicitly. In the crack-seal model, moving T, pH, and O2 into the displayed surface envelope advances existing synchronous fabric to a zero-thickness Fe-oxidation colour overprint. The exact pH/O2 cutoffs, oxidation rate, and 0.9 gold-brown threshold are disclosed simulator-calibrated proxies, not values reported by either origin paper.',
+                }],
+        });
+        const bifHost = c?.wall?.composition === 'banded_iron_formation';
+        groups.push({
+            label: 'Host geology',
+            chips: [{
+                    text: `${c?.wall?.composition || 'unknown'} · banded iron formation required`,
+                    met: bifHost,
+                    note: '`wall.matrix` is renderer-only; only the authored physical wall composition can satisfy this gate.',
+                }],
+        });
+        if (model === 'antitaxial_crack_seal') {
+            groups.push({
+                label: 'Process advance',
+                chips: [{
+                        text: crackSealOxidation
+                            ? 'surface T/pH/O2 levers active · post-growth Fe-colour overprint, zero SiO2 growth'
+                            : 'grow at 150–450°C, then set T 5–100°C, pH 5.5–9.5, O2 ≥ 0.4 to oxidize existing fabric',
+                        met: true,
+                        status: 'observer',
+                        note: 'The transition is derived from the player-controlled geological state; an authored scenario stage flag reaches the same production branch.',
+                    }],
+            });
+        }
+    }
     if ((name === 'selenite' || name === 'anhydrite')
         && typeof evaluateCaSO4System === 'function') {
         const evaluation = evaluateCaSO4System(c.fluid, c.temperature, c.pressure);
@@ -85255,6 +85670,29 @@ function _buildMineralFormationExplanation(name, c, sim = null, sigmaOverride = 
                 : 'Executable production spatial host route; no unmeasured saturation or growth-rate discount is applied.',
         }))
         : [{ text: 'bare wall · no registered catalytic host exposed', met: true }];
+    if (name === 'tigers_eye') {
+        const model = tigerEyeOriginModel(c);
+        const crackSeal = model === 'antitaxial_crack_seal';
+        const crocidolites = sim && Array.isArray(sim.crystals)
+            ? sim.crystals.filter(crystal => crystal?.mineral === 'crocidolite')
+            : [];
+        const eligible = model == null ? [] : crocidolites.filter(crystal => crackSeal
+            ? _hasAcceptedCrocidoliteGrowth(crystal)
+            : _hasAcceptedOxidativeCrocidoliteAlteration(crystal));
+        substrateChips = [{
+                text: model == null
+                    ? `unsupported origin model ${String(c?._scenario?.tiger_eye_origin_model)} · substrate route blocked`
+                    : crackSeal
+                        ? `grown active crocidolite ×${eligible.length} · required synchronous crack-seal substrate`
+                        : `oxidatively altered crocidolite ×${eligible.length} · accepted negative zone required`,
+                met: eligible.length > 0,
+                note: model == null
+                    ? 'Unknown nonempty model identifiers fail closed; only an absent value receives the legacy surficial-alteration migration default.'
+                    : crackSeal
+                        ? 'Bare wall and bare iron oxide are blocked; crocidolite must be active and carry a positive zone with booked Na, Fe, and SiO2 debits.'
+                        : 'A flag or synthetic negative zone is not evidence. Production requires oxidative loss with positive returned Na, Fe, and SiO2 in _returned_budget_inventory.',
+            }];
+    }
     if (requiredSubstrate) {
         if (requiredSubstrateAvailable) {
             substrateChips.unshift({
@@ -89032,6 +89470,13 @@ const _MATRIX_SKIN_PAINTERS = {
         _mskBase(ctx, '#d4c19f');
         _mskStipple(ctx, rnd, 900, ['#cdb894', '#dbc9a9', '#c5b08a'], 0.5, 1.8, 0.7);
         _mskBands(ctx, rnd, 7, '#c2ab83', 0.4, 3, 8, 2);
+    },
+    banded_iron_formation(ctx, rnd) {
+        _mskBase(ctx, '#6c635d');
+        _mskBands(ctx, rnd, 11, '#382f30', 0.92, 5, 14, 2.2); // magnetite/hematite-rich bands
+        _mskBands(ctx, rnd, 8, '#984f3d', 0.72, 3, 10, 2.0); // jasper/oxidized iron bands
+        _mskBands(ctx, rnd, 7, '#c2b8a2', 0.62, 2, 8, 1.6); // chert-rich laminae
+        _mskStipple(ctx, rnd, 180, ['#28272a', '#8b4638', '#b9ae99'], 0.5, 1.8, 0.45);
     },
     phonolite(ctx, rnd) {
         _mskBase(ctx, '#a9ac9c');

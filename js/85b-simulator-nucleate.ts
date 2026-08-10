@@ -85,7 +85,9 @@ function _stageAndRestoreEngineCrystalMutations(crystal: any, before: Record<str
 function _applyAcceptedCrystalMutations(crystal: any, zone: any) {
   if (!zone) return;
   const staged = zone._engine_crystal_mutations;
-  const accepted = Number.isFinite(Number(zone.thickness_um)) && Number(zone.thickness_um) !== 0;
+  const thickness = Number(zone.thickness_um);
+  const accepted = Number.isFinite(thickness)
+    && (thickness !== 0 || (thickness === 0 && !!zone.state_overprint));
   if (accepted && staged && crystal) {
     for (const key of Object.keys(staged)) {
       const mutation = staged[key];
@@ -125,6 +127,19 @@ function _runEngineFluidTransaction(engine, crystal, conditions, step) {
       if (Object.keys(perCandidateUm).length) {
         zone._engine_fluid_delta_per_candidate_um = perCandidateUm;
         zone._engine_candidate_thickness_um = Number(zone.thickness_um);
+      }
+    } else if (zone && Number(zone.thickness_um) === 0 && zone.state_overprint) {
+      const absoluteDeltas: Record<string, number> = {};
+      const keys = new Set([...Object.keys(before), ...Object.keys(fluid || {})]);
+      for (const key of keys) {
+        const oldValue = before[key];
+        const newValue = fluid && fluid[key];
+        if (typeof oldValue !== 'number' || typeof newValue !== 'number') continue;
+        const delta = newValue - oldValue;
+        if (Number.isFinite(delta) && Math.abs(delta) > 1e-15) absoluteDeltas[key] = delta;
+      }
+      if (Object.keys(absoluteDeltas).length) {
+        zone._engine_state_fluid_deltas = absoluteDeltas;
       }
     }
     return zone;
@@ -169,6 +184,20 @@ function _ledgerSpeciesForAcceptedZone(crystal, zone): Set<string> {
 }
 
 function _applyAcceptedEngineFluidDeltas(crystal, zone, conditions) {
+  const stateDeltas = zone && zone._engine_state_fluid_deltas;
+  const stateFluid = conditions && conditions.fluid;
+  if (stateDeltas && stateFluid && zone.state_overprint && Number(zone.thickness_um) === 0) {
+    zone._state_overprint_fluid_delta_actual = {};
+    for (const species of Object.keys(stateDeltas)) {
+      if (typeof stateFluid[species] !== 'number') continue;
+      const floor = species === 'pH' ? 0.5 : 0;
+      const beforeApplied = stateFluid[species];
+      stateFluid[species] = Math.max(floor, beforeApplied + Number(stateDeltas[species]));
+      zone._state_overprint_fluid_delta_actual[species] = stateFluid[species] - beforeApplied;
+    }
+    delete zone._engine_state_fluid_deltas;
+    return;
+  }
   const deltas = zone && zone._engine_fluid_delta_per_candidate_um;
   const fluid = conditions && conditions.fluid;
   if (!deltas || !fluid || !Number.isFinite(Number(zone.thickness_um))) return;
@@ -1561,10 +1590,10 @@ _computeGraduatedZones() {
   const cellGroups = new Map();
   // out is the public return; we populate it here for crystals whose
   // dry-run didn't produce positive thickness (negative = dissolution,
-  // null/zero = no growth). Those entries don't go through rationing —
-  // they pass through to pass 2 as-is so the growth loop knows the
-  // engine was already called for them and not to re-invoke it.
-  // (Re-invoking would double-consume RNG vs v127, breaking determinism.)
+  // null/ordinary zero = no growth). Those entries don't go through rationing.
+  // Deterministic zero-thickness state overprints are the one explicit
+  // exception: pass 2 re-evaluates them sequentially against the then-current
+  // local reagent reservoir, and their engine branch consumes no RNG.
   const out = new Map();
 
   for (const crystal of this.crystals) {
@@ -1572,9 +1601,11 @@ _computeGraduatedZones() {
     const engine = MINERAL_ENGINES[crystal.mineral];
     if (!engine) continue;
 
-    // Dry-run the engine to get its desired zone. The engine is called
-    // EXACTLY ONCE per crystal per step — same as v127. Pass 2 will
-    // consume this stored zone instead of calling the engine again.
+    // Dry-run the engine to get its desired zone. Precipitation,
+    // dissolution, and ordinary no-growth results are called exactly once
+    // per crystal per step. RNG-free state overprints are the documented
+    // exception: pass 2 re-evaluates them against the actual sequential
+    // local reagent reservoir before committing the receipt.
     const dryZone = this._dryRunEngineForCrystal(engine, crystal);
     if (!dryZone) {
       // Engine returned null (no zone produced). Pass 2 needs to know
@@ -1595,7 +1626,12 @@ _computeGraduatedZones() {
       continue;
     }
     if (dryZone.thickness_um === 0) {
-      out.set(crystal.crystal_id, null);
+      // A reaction overprint is deliberately outside precipitation
+      // competition. Do not reuse its dry-run fluid delta: another overprint
+      // in the same cell may consume O2 first. Leaving it absent makes pass 2
+      // re-evaluate the deterministic (RNG-free) reaction against the actual
+      // sequential local reservoir before committing state and receipt.
+      if (!dryZone.state_overprint) out.set(crystal.crystal_id, null);
       continue;
     }
 

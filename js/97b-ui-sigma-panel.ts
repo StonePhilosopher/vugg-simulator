@@ -599,6 +599,29 @@ function _formationRedoxChip(gate: MineralGates | null, c: any): FormationDiagno
   return { text: `O₂ ${_formationNumber(o2)} ppm · needs ${need}`, met };
 }
 
+// Some minerals carry mutually exclusive process models rather than one broad
+// union envelope. Keep the shared registry broad for discovery, but resolve
+// the exact selected gate before building player-facing T/pH/redox chips.
+function _formationEffectiveGate(name: string, base: MineralGates | null, c: any): MineralGates | null {
+  if (name !== 'tigers_eye' || !base) return base;
+  const gate: MineralGates = { ...base };
+  delete gate.O2_min;
+  delete gate.O2_max;
+  const model = tigerEyeOriginModel(c);
+  const crackSealGrowth = model === 'antitaxial_crack_seal'
+    && !tigerEyeCrackSealOxidationStage(c);
+  if (crackSealGrowth) {
+    gate.T_min = 150; gate.T_max = 450;
+    gate.pH_min = 7; gate.pH_max = 11;
+    gate.O2_max = 0.6;
+  } else {
+    gate.T_min = 5; gate.T_max = 100;
+    gate.pH_min = 5.5; gate.pH_max = 9.5;
+    gate.O2_min = 0.4;
+  }
+  return gate;
+}
+
 // Observer-only diagnosis. It reads the same supersaturation function,
 // MINERAL_GATES_REGISTRY, stoichiometry, paragenesis, and initiative helpers
 // as the engine. Production reachability is probed only through the cloned,
@@ -610,7 +633,7 @@ function _buildMineralFormationExplanation(
   sigmaOverride: number | null = null,
 ): MineralFormationExplanation | null {
   const spec = (typeof MINERAL_SPEC !== 'undefined') ? MINERAL_SPEC[name] : null;
-  const gate: MineralGates | null = (typeof MINERAL_GATES_REGISTRY !== 'undefined')
+  const registryGate: MineralGates | null = (typeof MINERAL_GATES_REGISTRY !== 'undefined')
     ? (MINERAL_GATES_REGISTRY[name] || null)
     : null;
   if (!spec || !c || !c.fluid) return null;
@@ -620,6 +643,7 @@ function _buildMineralFormationExplanation(
     ? (_satSpatialContexts.get(name) || _formationSpatialContext(name, liveConditions, sim))
     : null;
   if (spatial?.best?.conditions) c = spatial.best.conditions;
+  const gate = _formationEffectiveGate(name, registryGate, c);
 
   let sigma = spatial ? spatial.maxSigma : sigmaOverride;
   if (typeof sigma !== 'number' || !Number.isFinite(sigma)) {
@@ -733,6 +757,50 @@ function _buildMineralFormationExplanation(
     });
   }
   groups.push({ label: 'Saturation', chips: satChips });
+
+  if (name === 'tigers_eye') {
+    const model = tigerEyeOriginModel(c);
+    const crackSealOxidation = tigerEyeCrackSealOxidationStage(c);
+    const crackSealGrowth = model === 'antitaxial_crack_seal'
+      && !crackSealOxidation;
+    groups.push({
+      label: 'Origin model',
+      chips: [{
+        text: model == null
+          ? `unsupported origin model: ${String(c?._scenario?.tiger_eye_origin_model)}`
+          : crackSealGrowth
+          ? 'Heaney–Fisher antitaxial crack-seal · synchronous quartz + crocidolite'
+          : model === 'antitaxial_crack_seal'
+            ? 'Heaney–Fisher crack-seal · later oxidation of preserved fibres'
+            : 'Gutzmer–Beukes–Cairncross · older crocidolite + surficial alteration',
+        met: model != null,
+        status: 'observer',
+        note: 'Creative mode selects the published interpretation explicitly. In the crack-seal model, moving T, pH, and O2 into the displayed surface envelope advances existing synchronous fabric to a zero-thickness Fe-oxidation colour overprint. The exact pH/O2 cutoffs, oxidation rate, and 0.9 gold-brown threshold are disclosed simulator-calibrated proxies, not values reported by either origin paper.',
+      }],
+    });
+    const bifHost = c?.wall?.composition === 'banded_iron_formation';
+    groups.push({
+      label: 'Host geology',
+      chips: [{
+        text: `${c?.wall?.composition || 'unknown'} · banded iron formation required`,
+        met: bifHost,
+        note: '`wall.matrix` is renderer-only; only the authored physical wall composition can satisfy this gate.',
+      }],
+    });
+    if (model === 'antitaxial_crack_seal') {
+      groups.push({
+        label: 'Process advance',
+        chips: [{
+          text: crackSealOxidation
+            ? 'surface T/pH/O2 levers active · post-growth Fe-colour overprint, zero SiO2 growth'
+            : 'grow at 150–450°C, then set T 5–100°C, pH 5.5–9.5, O2 ≥ 0.4 to oxidize existing fabric',
+          met: true,
+          status: 'observer',
+          note: 'The transition is derived from the player-controlled geological state; an authored scenario stage flag reaches the same production branch.',
+        }],
+      });
+    }
+  }
 
   if ((name === 'selenite' || name === 'anhydrite')
       && typeof evaluateCaSO4System === 'function') {
@@ -937,6 +1005,29 @@ function _buildMineralFormationExplanation(
         : 'Executable production spatial host route; no unmeasured saturation or growth-rate discount is applied.',
     }))
     : [{ text: 'bare wall · no registered catalytic host exposed', met: true }];
+  if (name === 'tigers_eye') {
+    const model = tigerEyeOriginModel(c);
+    const crackSeal = model === 'antitaxial_crack_seal';
+    const crocidolites = sim && Array.isArray(sim.crystals)
+      ? sim.crystals.filter(crystal => crystal?.mineral === 'crocidolite')
+      : [];
+    const eligible = model == null ? [] : crocidolites.filter(crystal => crackSeal
+      ? _hasAcceptedCrocidoliteGrowth(crystal)
+      : _hasAcceptedOxidativeCrocidoliteAlteration(crystal));
+    substrateChips = [{
+      text: model == null
+        ? `unsupported origin model ${String(c?._scenario?.tiger_eye_origin_model)} · substrate route blocked`
+        : crackSeal
+        ? `grown active crocidolite ×${eligible.length} · required synchronous crack-seal substrate`
+        : `oxidatively altered crocidolite ×${eligible.length} · accepted negative zone required`,
+      met: eligible.length > 0,
+      note: model == null
+        ? 'Unknown nonempty model identifiers fail closed; only an absent value receives the legacy surficial-alteration migration default.'
+        : crackSeal
+        ? 'Bare wall and bare iron oxide are blocked; crocidolite must be active and carry a positive zone with booked Na, Fe, and SiO2 debits.'
+        : 'A flag or synthetic negative zone is not evidence. Production requires oxidative loss with positive returned Na, Fe, and SiO2 in _returned_budget_inventory.',
+    }];
+  }
   if (requiredSubstrate) {
     if (requiredSubstrateAvailable) {
       substrateChips.unshift({

@@ -318,6 +318,7 @@ describe('Creative chemistry control contract', () => {
 
     select('f-host-composition', 'dolomite');
     select('f-architecture', 'cleft');
+    select('f-tiger-eye-model', 'antitaxial_crack_seal');
     add('f-vug-diameter', '325');
     add('f-host-thickness', '1200');
     add('f-wall-fe', '4100');
@@ -357,6 +358,7 @@ describe('Creative chemistry control contract', () => {
     expect(result.initialWaterTablePct).toBe(62.5);
     expect(result.scenarioOpts.open_to_atmosphere).toBe(true);
     expect(result.scenarioOpts.atmospheric_pCO2_bar).toBeCloseTo(0.01, 8);
+    expect(result.scenarioOpts.tiger_eye_origin_model).toBe('antitaxial_crack_seal');
     expect(result.scenarioOpts.carbonate_boundary).toMatchObject({
       mode: 'open',
       spatial_model: 'equal_volume_fully_mixed',

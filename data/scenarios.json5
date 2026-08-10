@@ -4722,6 +4722,101 @@
         "Proust D. & Fontan F. (2007) — Brazilian amethyst-geode late-stage mineralogy (the same Proust & Fontan cited in minerals.json for the amethyst-pocket late euhedral / lepidocrocite-patina sequence).",
         "Takahashi K. & Sunagawa I. (2004) — sceptre quartz by epitaxial-like overgrowth (ELO) after a masking film: the masking-sceptre mechanism, distinct from corrosion-then-regeneration."
       ]
+    },
+
+    "asbestos_hills_crack_seal": {
+      "anchor": "Asbestos Hills, Northern Cape, South Africa — crocidolite-bearing banded iron formation; Heaney-Fisher antitaxial crack-seal interpretation",
+      "description": "Execute the Heaney & Fisher (2003) model: quartz and crocidolite grow synchronously in an antitaxial crack-seal seam, then a later oxidizing overprint changes the colour without consuming the crocidolite fibres.",
+      "expects_species": ["crocidolite", "tigers_eye", "magnetite"],
+      "duration_steps": 110,
+      "tiger_eye_origin_model": "antitaxial_crack_seal",
+      "tiger_eye_stage": "synchronous_crack_seal",
+      "notes": [
+        "This scenario is one of a deliberately paired hypothesis test. Heaney & Fisher (2003, Geology 31:323-326) reject quartz pseudomorphism after pre-existing crocidolite and interpret synchronous quartz-crocidolite growth by antitaxial crack-seal vein filling.",
+        "The initial 300°C condition lies inside Miyano & Klein's (1983) 150-450°C low-to-medium-temperature amphibole-asbestos stability field. Pressure 1.0 kbar is a disclosed generic low-grade-metamorphic boundary, not locality barometry.",
+        "At step 58 exhumation carries the seam to the simulator's 0.001 kbar atmospheric floor and into a shallow oxidation window. Crocidolite remains solid in this model; tiger's-eye colour develops across the preserved crack-seal fabric. The 60°C value is a declared numerical weathering proxy, not measured Asbestos Hills fluid-inclusion thermometry.",
+        "Shape seed 2003 is authored independently from gameplay seed 42 and records the publication year of the modeled hypothesis."
+      ],
+      "initial": {
+        "temperature_C": 300,
+        "pressure_kbar": 1.0,
+        "fluid": {
+          "F": 0, "SiO2": 650, "reactiveSilicaFraction": 1,
+          "Ca": 10, "CO3": 5, "Fe": 300, "Mn": 4, "Mg": 8,
+          "Na": 160, "K": 5, "Cu": 0, "Pb": 0, "Zn": 0,
+          "S": 0, "Cl": 20, "Al": 0, "Ti": 0, "P": 0,
+          "As": 0, "Cr": 0, "Ni": 0, "B": 0,
+          "O2": 0.28, "pH": 9.0, "salinity": 5
+        },
+        "wall": {
+          "composition": "banded_iron_formation",
+          "matrix": "banded_iron_formation",
+          "architecture": "tabular",
+          "vug_diameter_mm": 50,
+          "thickness_mm": 1000,
+          "confining_pressure_kbar": 1.0,
+          "reactivity": 0,
+          "primary_bubbles": 2,
+          "secondary_bubbles": 3,
+          "shape_seed": 2003,
+          "thermal_pulses": false
+        }
+      },
+      "events": [
+        { "step": 58, "type": "asbestos_hills_crack_seal_oxidation", "name": "Later Oxidation of the Crack-Seal Fabric", "description": "Cool oxidizing meteoric water changes the colour of the synchronous quartz-crocidolite aggregate while preserving its fibres." }
+      ],
+      "sources": [
+        "Heaney P.J. & Fisher D.M. (2003) — New interpretation of the origin of tiger's-eye. Geology 31(4):323-326. DOI 10.1130/0091-7613(2003)031<0323:NIOTOO>2.0.CO;2. Synchronous antitaxial quartz-crocidolite crack-seal model; explicitly rejects pseudomorphic quartz replacement.",
+        "Miyano T. & Klein C. (1983) — Evaluation of the Stability Relations of Amphibole Asbestos in Metamorphosed Iron-Formations. Mining Geology 33:213-222. DOI 10.11456/shigenchishitsu1951.33.213. Crocidolite/amosite stability and BIF assemblages at 150-450°C."
+      ]
+    },
+
+    "asbestos_hills_surficial_alteration": {
+      "anchor": "Asbestos Hills, Northern Cape, South Africa — crocidolite-bearing banded iron formation; Gutzmer-Beukes-Cairncross surficial-alteration interpretation",
+      "description": "Execute the Gutzmer, Beukes & Cairncross (2004) field model: an older metamorphic crocidolite seam is exposed to near-surface silicification and oxidation. Tiger's eye can form only after the mass ledger accepts oxidative crocidolite loss.",
+      "expects_species": ["crocidolite", "tigers_eye", "magnetite", "hematite"],
+      "duration_steps": 120,
+      "tiger_eye_origin_model": "surficial_alteration",
+      "tiger_eye_stage": "older_crocidolite_seam",
+      "notes": [
+        "This paired scenario executes the field interpretation in Gutzmer, Beukes & Cairncross (2004, Geology 32:e44): tiger's-eye is restricted to a shallow silicified/goethitized planation surface and grades downward through hawk's-eye to unaltered crocidolite. They argue for later alteration of older crocidolite and state that the result is not a pseudomorph sensu stricto.",
+        "The initial 300°C stage grows the older BIF amphibole-asbestos seam inside the Miyano & Klein (1983) stability family. At step 58, a silica-rich oxidizing surface boundary arrives; the nucleator remains locked until a negative oxidative crocidolite zone is actually accepted by the mass-balanced growth transaction.",
+        "The simulated 40-60°C surface values are transparent process proxies. The paper constrains field depth relationships, not a unique temperature-pressure path; pressure 1.0 kbar belongs only to the precursor metamorphic stage, and the event explicitly resets fluid and rock pressure to the simulator's 0.001 kbar atmospheric floor.",
+        "Shape seed 2004 is authored independently from gameplay seed 42 and records the publication year of the modeled comment."
+      ],
+      "initial": {
+        "temperature_C": 300,
+        "pressure_kbar": 1.0,
+        "fluid": {
+          "F": 0, "SiO2": 650, "reactiveSilicaFraction": 1,
+          "Ca": 10, "CO3": 5, "Fe": 300, "Mn": 4, "Mg": 8,
+          "Na": 160, "K": 5, "Cu": 0, "Pb": 0, "Zn": 0,
+          "S": 0, "Cl": 20, "Al": 0, "Ti": 0, "P": 0,
+          "As": 0, "Cr": 0, "Ni": 0, "B": 0,
+          "O2": 0.28, "pH": 9.0, "salinity": 5
+        },
+        "wall": {
+          "composition": "banded_iron_formation",
+          "matrix": "banded_iron_formation",
+          "architecture": "tabular",
+          "vug_diameter_mm": 50,
+          "thickness_mm": 1000,
+          "confining_pressure_kbar": 1.0,
+          "reactivity": 0,
+          "primary_bubbles": 2,
+          "secondary_bubbles": 3,
+          "shape_seed": 2004,
+          "thermal_pulses": false
+        }
+      },
+      "events": [
+        { "step": 58, "type": "asbestos_hills_surficial_silicification", "name": "Planation-Surface Silicification", "description": "Oxidizing silica-rich water reaches the older crocidolite seam; accepted oxidative alteration becomes the required substrate record." },
+        { "step": 82, "type": "asbestos_hills_surficial_maturation", "name": "Waning Surface Alteration", "description": "Cooler weathering water continues silica supply and iron oxidation through the shallow alteration zone." }
+      ],
+      "sources": [
+        "Gutzmer J., Beukes N.J. & Cairncross B. (2004) — New interpretation of the origin of tiger's-eye: Comment. Geology 32(1):e44. DOI 10.1130/0091-7613-32.1.e44. Field transition from tiger's-eye through hawk's-eye to crocidolite and restriction to the shallow silicified/goethitized zone.",
+        "Miyano T. & Klein C. (1983) — Evaluation of the Stability Relations of Amphibole Asbestos in Metamorphosed Iron-Formations. Mining Geology 33:213-222. DOI 10.11456/shigenchishitsu1951.33.213. Crocidolite/amosite stability and BIF assemblages at 150-450°C."
+      ]
     }
 
   },
@@ -4783,6 +4878,14 @@
           {
             "scenario": "amethyst_geode",
             "text": "🟣 Brazilian Amethyst Geode — Ametista do Sul (Rio Grande do Sul, Brazil): a celadonite film frosts the prism mid-growth, then the tip breaks through wider — the masking sceptre."
+          },
+          {
+            "scenario": "asbestos_hills_crack_seal",
+            "text": "🐅 Asbestos Hills Tiger's-Eye A — Northern Cape (South Africa): execute the Heaney-Fisher synchronous antitaxial crack-seal model, then oxidize the preserved fibres."
+          },
+          {
+            "scenario": "asbestos_hills_surficial_alteration",
+            "text": "🐅 Asbestos Hills Tiger's-Eye B — Northern Cape (South Africa): execute the Gutzmer-Beukes-Cairncross older-crocidolite plus surficial-alteration model."
           },
           {
             "scenario": "shigar_pegmatite",
@@ -4965,6 +5068,14 @@
       {
         "scenario": "amethyst_geode",
         "text": "Brazilian Amethyst Geode (Ametista do Sul)"
+      },
+      {
+        "scenario": "asbestos_hills_crack_seal",
+        "text": "Asbestos Hills Tiger's-Eye — Crack-Seal Model"
+      },
+      {
+        "scenario": "asbestos_hills_surficial_alteration",
+        "text": "Asbestos Hills Tiger's-Eye — Surficial Model"
       },
       {
         "scenario": "jeffrey_mine",

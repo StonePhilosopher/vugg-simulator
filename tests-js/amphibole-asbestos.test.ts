@@ -1,21 +1,23 @@
 // tests-js/amphibole-asbestos.test.ts — commercial asbestos quintet
 // (tremolite + actinolite + anthophyllite + amosite + crocidolite) +
-// tiger's eye chalcedony pseudomorph (v116, 2026-05-20).
+// paired tiger's-eye literature models (corrected SIM 260).
 //
 // Closes the asbestiform-family gap the Jeffrey rodingite arc was
 // missing. Five amphibole-asbestos minerals (new amphibole chemistry
-// class) + tiger's eye (silicate-class, chalcedony pseudomorph after
-// crocidolite).
+// class) + tiger's eye (silicate-class, always requiring a real
+// crocidolite history).
 //
 // Refs: Hawthorne et al. 2012 Am.Min. 97:2031 (IMA amphibole
 // nomenclature); WHO IARC Monograph 100C (2012); Frank et al. 2002
-// (crocidolite carcinogenicity); Heaney & Fisher 2003 Am.Min. 88:1
-// (tiger's eye mechanism).
+// (crocidolite carcinogenicity); Miyano & Klein 1983 Mining Geology
+// 33:213-222; Heaney & Fisher 2003 Geology 31:323-326; Gutzmer,
+// Beukes & Cairncross 2004 Geology 32:e44.
 
 import { describe, expect, it } from 'vitest';
 
 declare const FluidChemistry: any;
 declare const VugConditions: any;
+declare const VugWall: any;
 
 describe('Tremolite Ca2Mg5Si8O22(OH)2 (v116)', () => {
   it('canonical Jeffrey skarn/rodingite broth fires', () => {
@@ -136,29 +138,51 @@ describe('Crocidolite Na2Fe2+3Fe3+2Si8O22(OH)2 (v116)', () => {
   });
 });
 
-describe('Tiger\'s eye — chalcedony pseudomorph after crocidolite (v116)', () => {
-  it('canonical supergene oxidation broth fires', () => {
-    // High SiO2 + Fe + STRICT oxidizing + surface T
+describe('Tiger\'s eye — explicit competing origin models (SIM 260)', () => {
+  it('surficial-alteration chemistry fires only in the shallow oxidizing proxy window', () => {
     const fluid = new FluidChemistry({ SiO2: 400, Fe: 80, O2: 0.7, pH: 7.0 });
-    const cond = new VugConditions({ temperature: 50, fluid });
+    const cond = new VugConditions({ temperature: 50, fluid,
+      wall: new VugWall({ composition: 'banded_iron_formation' }) });
+    cond._scenario = { tiger_eye_origin_model: 'surficial_alteration' };
     expect(cond.supersaturation_tigers_eye()).toBeGreaterThan(0);
   });
 
-  it('O2 = 0.1 blocks — needs STRICT oxidizing (Fe2+ → Fe3+)', () => {
+  it('surficial-alteration chemistry blocks low O2 and high T', () => {
     const fluid = new FluidChemistry({ SiO2: 400, Fe: 80, O2: 0.1, pH: 7.0 });
     const cond = new VugConditions({ temperature: 50, fluid });
+    cond._scenario = { tiger_eye_origin_model: 'surficial_alteration' };
+    expect(cond.supersaturation_tigers_eye()).toBe(0);
+    cond.temperature = 300;
+    cond.fluid.O2 = 0.7;
     expect(cond.supersaturation_tigers_eye()).toBe(0);
   });
 
-  it('T = 300°C blocks — supergene surface only (< 200)', () => {
+  it('antitaxial crack-seal chemistry fires at 300°C without requiring oxidation', () => {
+    const fluid = new FluidChemistry({ SiO2: 400, Fe: 80, O2: 0.25, pH: 9.0 });
+    const cond = new VugConditions({ temperature: 300, fluid,
+      wall: new VugWall({ composition: 'banded_iron_formation' }) });
+    cond._scenario = {
+      tiger_eye_origin_model: 'antitaxial_crack_seal',
+      tiger_eye_stage: 'synchronous_crack_seal',
+    };
+    expect(cond.supersaturation_tigers_eye()).toBeGreaterThan(0);
+  });
+
+  it('the crack-seal colour-overprint stage permits no new framework supersaturation', () => {
     const fluid = new FluidChemistry({ SiO2: 400, Fe: 80, O2: 0.7, pH: 7.0 });
-    const cond = new VugConditions({ temperature: 300, fluid });
+    const cond = new VugConditions({ temperature: 50, fluid,
+      wall: new VugWall({ composition: 'banded_iron_formation' }) });
+    cond._scenario = {
+      tiger_eye_origin_model: 'antitaxial_crack_seal',
+      tiger_eye_stage: 'post_growth_oxidation',
+    };
     expect(cond.supersaturation_tigers_eye()).toBe(0);
   });
 
   it('Fe = 10 blocks — needs Fe for chatoyant chromophore (Fe >= 30)', () => {
     const fluid = new FluidChemistry({ SiO2: 400, Fe: 10, O2: 0.7, pH: 7.0 });
     const cond = new VugConditions({ temperature: 50, fluid });
+    cond._scenario = { tiger_eye_origin_model: 'surficial_alteration' };
     expect(cond.supersaturation_tigers_eye()).toBe(0);
   });
 

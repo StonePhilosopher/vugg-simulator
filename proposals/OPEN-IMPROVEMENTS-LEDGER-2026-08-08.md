@@ -132,7 +132,17 @@ single execution ledger for the science-first AAA completion branch.
   Zn control volumes. Full local CI passed 203 files/2,744 tests; the AI Dr.
   Michael Wise hostile review returned `SATISFIED` after the dimensional,
   trajectory-integrity, provenance, and generated-artifact review loop.
-- [ ] BIF/crocidolite/tiger's-eye scenario built from locality-grade evidence.
+- [x] BIF/crocidolite/tiger's-eye scenarios built from locality-grade evidence.
+  SIM 260 represents both the Heaney–Fisher antitaxial crack-seal model and the
+  competing Gutzmer et al. surficial-alteration model, with physical BIF host
+  gating, booked amphibole growth/dissolution, zero-framework oxidation state
+  overprints, local tiger-iron substrate, and Creative causal diagnosis.
+  Evidence: `research/arcs/research-bif-crocidolite-tigers-eye-2026-08-09.md`,
+  `tools/asbestos-hills-observe.mjs`, `tests-js/bif-tigers-eye.test.ts`, the
+  SIM 260 baseline/digest/41-story archive/41 claim cards, and
+  `proposals/HOSTILE-REVIEW-DR-WISE-SIM260-2026-08-09.md`. Full local CI passed
+  204 files/2,770 tests; 0/39 pre-existing scenarios moved, and AI Dr. Wise
+  returned `SATISFIED`.
 - [ ] Re-run every locality envelope and negative-evidence constraint against the
   current engine; resolve Bingham/Bisbee and any remaining species mismatches.
 - [ ] Retire stale inline narrative fallbacks and generate the narrative manifest.

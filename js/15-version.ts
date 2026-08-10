@@ -5261,17 +5261,15 @@
 //                                                  asbestos per Frank
 //                                                  et al. 2002
 //
-//            1 silicate-class pseudomorph mineral:
-//              tigers_eye     SiO2 chalcedony pseudomorph AFTER
-//                              crocidolite. THE famous gold-brown
-//                              chatoyant gemstone. Three habits:
-//                              chatoyant_pseudomorph (gold-brown classic),
-//                              hawks_eye (partial-oxidation blue-gold
-//                              intermediate), tiger_iron (BIF-banded with
-//                              hematite + jasper layers). Per Heaney &
-//                              Fisher 2003 Am.Min. 88:1 — modern
-//                              mechanism is crocidolite REPLACEMENT,
-//                              not crocidolite-inclusions-in-quartz.
+//            1 silicate-class aggregate (retrospective SIM 260 correction):
+//              tigers_eye     Originally shipped here under the settled
+//                              pseudomorph interpretation. That description
+//                              and its citation were wrong. Heaney & Fisher
+//                              (2003, Geology 31:323-326) reject replacement
+//                              and propose synchronous antitaxial crack-seal
+//                              growth; Gutzmer et al. (2004, Geology 32:e44)
+//                              argue for later surficial alteration of older
+//                              crocidolite. SIM 260 executes both hypotheses.
 //
 //          NEW AMPHIBOLE CLASS — files js/39a-supersat-amphibole.ts,
 //          js/59a-engines-amphibole.ts, js/89a-nucleation-amphibole.ts.
@@ -5313,9 +5311,9 @@
 //          marble_contact_metamorphism and jeffrey_mine). Crocidolite
 //          + amosite need BIF-style chemistry (high Fe, Na for
 //          crocidolite); may fire in scenarios with the right
-//          chemistry. Tiger's eye needs crocidolite_dissolving as
-//          substrate, so likely fires only after crocidolite is
-//          established. Will document actual drift in commit message
+//          chemistry. Historical v116 note: tiger's eye used the cosmetic
+//          crocidolite_dissolving flag. SIM 260 retires that shortcut in
+//          favor of model-specific booked growth/alteration receipts.
 //          after baseline regen.
 //
 //          TESTS:
@@ -5339,7 +5337,9 @@
 //              chemistry of South African crocidolite. Int. J. Occup.
 //              Environ. Health 8:38.
 //            * Heaney PJ & Fisher DM (2003) New interpretation of the
-//              origin of tiger's-eye. American Mineralogist 88:1-14.
+//              origin of tiger's-eye. Geology 31(4):323-326.
+//            * Gutzmer J, Beukes NJ & Cairncross B (2004) Comment.
+//              Geology 32(1):e44 (e45 is the separate H&F reply).
 //            * Cairncross B & Beukes NJ (2013) on Northern Cape diamond
 //              + gemstone routes.
 //            * Anthony Handbook v.IIB Single-Chain Silicates.
@@ -6468,7 +6468,7 @@
 //            conichalcite  CaCu(AsO4)(OH)           P3, supergene_oxidation 4×
 //            duftite       PbCu(AsO4)(OH)           P3, doubly cascade-prone
 //            pyrolusite    MnO2                     P5, 350% Mn budget shift
-//            tigers_eye    SiO2 (chalcedony pseudo) P5, paired with crocidolite paramorph
+//            tigers_eye    SiO2-rich aggregate      P5, older label corrected in SIM 260
 //
 //          ALGORITHMIC CONFIRMATION
 //          The v128 graduated-competition algorithm now has TWO empirical
@@ -6896,8 +6896,8 @@
 //            chrysoprase   — microcrystalline chalcedony (Ni-bearing)
 //            opal          — amorphous (opal-A) or nano-crystalline (opal-CT/C);
 //                            no crystal structure to twin
-//            tigers_eye    — chalcedony pseudomorph after crocidolite —
-//                            fibrous parallel-aligned, no euhedral form
+//            tigers_eye    — fibrous quartz-crocidolite aggregate —
+//                            parallel-aligned, no euhedral whole-specimen form
 //            chrysotile    — fibrous serpentine asbestos; no individual
 //                            euhedra
 //            coffinite     — fracture-replacement / colloform / sooty —
@@ -12001,16 +12001,16 @@
 //        correction: the rung-3 handoff's "(or BIF Fe-oxide) substrate" prose
 //        was too permissive — deccan fired tiger iron on hematite in a BASALT
 //        AMYGDALE, which is not a BIF; bare iron oxide (an oxidized ore body, a
-//        basalt vug) is not a crocidolite context. Geology (Heaney & Fisher
-//        2003 Am.Min. 88:1, the sim's own cited source) + the offender table
-//        (all four = pure kills) both demand crocidolite-required. Hematite is
+//        basalt vug) is not a crocidolite context. The BIF/crocidolite
+//        substrate requirement + the offender table (all four = pure kills)
+//        both demand crocidolite-required. Hematite is
 //        kept ONLY as a co-present habit modifier (dissolving croc + banded
 //        hematite → the TIGER IRON assemblage habit).
 //        Census verdict: NO scenario grows crocidolite (jeffrey_mine — the
 //        minerals.json "home" tag for both crocidolite and tigers_eye — is
 //        chrysotile/rodingite: Na 5 + Fe 50, below crocidolite's Na≥30/Fe≥100
 //        gate). So the p=0.65 crocidolite branch is dead code and tiger's eye
-//        is EXTINCT at seed 42 — CORRECT until a Griqualand-West/Hamersley BIF
+//        is EXTINCT at seed 42 — intentionally blocked until a real BIF
 //        scenario ships (BACKLOG §T; the scenarios:[jeffrey_mine] tag on
 //        crocidolite/tigers_eye is itself a confabulation to fix there). No
 //        promise decisions: no scenario expects tiger's eye.
@@ -12737,7 +12737,31 @@
 //       (2014) restricts Tsumeb köttigite to the third-zone Level 44 zinc
 //       pocket, so the authored first-stage gossan enforces a scenario-local
 //       exclusion rather than precipitating outside its locality envelope.
-const SIM_VERSION = 259;
+//
+// v260 — Asbestos Hills BIF and tiger's-eye origin-model correction
+//       (August 2026). Retires the false claim that Heaney & Fisher (2003)
+//       established pseudomorphic replacement; their Geology paper instead
+//       argues for synchronous antitaxial quartz-crocidolite crack-seal
+//       growth. A paired scenario executes the competing field model of
+//       Gutzmer, Beukes & Cairncross (2004): an older crocidolite seam later
+//       silicified and oxidized near the planation surface, not a pseudomorph
+//       sensu stricto. Production nucleation requires grown active
+//       crocidolite for crack-seal or an accepted oxidative negative zone for
+//       surficial alteration. Bare wall, bare iron oxide, random substrate
+//       rolls, and cosmetic dissolved flags cannot unlock tiger's-eye. Both
+//       hypotheses ship as named real-locality scenarios with independent
+//       shape seeds (2003/2004) and seed-42 regressions. Creative mode gains
+//       the same origin selector plus a BIF host, and the renderer gains a
+//       dedicated chert/jasper/hematite/magnetite banded skin. Follow-up
+//       hostile review makes the physical BIF host mandatory, requires exact
+//       booked Na-Fe-Si substrate receipts, and fails unknown model ids closed.
+//       Later crack-seal oxidation is a cumulative zero-thickness Fe-state
+//       overprint whose O2 debit closes against a declared meteoric boundary;
+//       it never adds post-growth SiO2. Partial extent remains hawk's-eye and
+//       oxygen replenishment can complete the gold-brown state. HF is required
+//       for acid framework loss, and tiger iron requires a local exposed iron
+//       phase rather than distant hematite elsewhere in the vug.
+const SIM_VERSION = 260;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12759,6 +12783,7 @@ const MODEL_DIGEST = [
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
   'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',
   'surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4',
+  'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
   'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
   'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
   'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3',

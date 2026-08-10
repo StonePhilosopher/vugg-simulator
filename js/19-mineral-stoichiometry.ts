@@ -360,11 +360,10 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   // conichalcite  CaCu(AsO4)(OH)          — Tsumeb Ca-Cu arsenate, paired with austinite
   // duftite       PbCu(AsO4)(OH)          — Tsumeb Pb-Cu arsenate
   // pyrolusite    MnO2                    — Mn supergene oxide
-  // tigers_eye    SiO2                    — chalcedony pseudomorph after crocidolite;
-  //                                         Fe + Na + Mg released by the dissolving
-  //                                         precursor, so the growth debit on tigers_eye
-  //                                         is SiO2-only (matches opal + chrysoprase
-  //                                         pattern for chalcedony-class entries).
+  // tigers_eye    SiO2                    — SiO2-rich quartz-crocidolite aggregate.
+  //                                         Quartz growth itself debits SiO2 only;
+  //                                         crocidolite retains its own booked Na-Fe-Si
+  //                                         inventory in either origin model.
   caledonite:     { Pb: 5, Cu: 2, CO3: 1, S: 3 },     // Pb5Cu2(CO3)(SO4)3(OH)6
   plumbogummite:  { Pb: 1, Al: 3, P: 2 },             // PbAl3(PO4)2(OH)5·H2O
   proustite:      { Ag: 3, As: 1, S: 3 },             // Ag3AsS3 — light ruby silver
@@ -375,7 +374,7 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   romanechite:    { Ba: 1, Mn: 5 },                   // BaMn5O10·xH2O — Ba-bearing 2×3 tunnel oxide
   todorokite:     { Mg: 1, Mn: 6 },                   // (Mg,Na,Ca)(Mn,Mg)6O12·3–4H2O — Mg-templated 3×3 tunnel approximation
   pyrolusite:     { Mn: 1 },                          // MnO2 — crystalline Mn(IV) endmember
-  tigers_eye:     { SiO2: 1 },                        // SiO2 pseudomorph; Fe/Na/Mg from precursor
+  tigers_eye:     { SiO2: 1 },                        // SiO2-rich chatoyant aggregate; origin model is explicit, not a settled pseudomorph
 
   // ---- v126 P1-holdout backfill (pectolite, no-fire pure-infra add) ----
   // pectolite is the one P1 Jeffrey-arc mineral that v123 deferred

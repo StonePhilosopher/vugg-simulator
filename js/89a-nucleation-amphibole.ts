@@ -120,7 +120,7 @@ function _nuc_crocidolite(sim) {
   if (sigma > 1.2 * discount) {
     if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
       const c = sim.nucleate('crocidolite', pos, sigma);
-      sim.log.push(`  ✦ NUCLEATION: 🟦 Crocidolite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, O2=${sim.conditions.fluid.O2.toFixed(2)}) — "BLUE ASBESTOS" riebeckite-asbestiform variety (Wittenoom Australia + Northern Cape SA); tiger's eye precursor when O2 rises`);
+      sim.log.push(`  ✦ NUCLEATION: 🟦 Crocidolite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, O2=${sim.conditions.fluid.O2.toFixed(2)}) — "BLUE ASBESTOS" riebeckite-asbestiform variety (Wittenoom Australia + Northern Cape SA); required fibrous substrate for the selected tiger's-eye origin model`);
     }
   }
 }

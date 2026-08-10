@@ -537,6 +537,10 @@ const EVENT_REGISTRY = {
   shigar_topaz_window: event_shigar_topaz_window,
   shigar_hf_etch: event_shigar_hf_etch,
   shigar_final_cooling: event_shigar_final_cooling,
+  // Paired Asbestos Hills tiger's-eye hypotheses (js/70x).
+  asbestos_hills_crack_seal_oxidation: event_asbestos_hills_crack_seal_oxidation,
+  asbestos_hills_surficial_silicification: event_asbestos_hills_surficial_silicification,
+  asbestos_hills_surficial_maturation: event_asbestos_hills_surficial_maturation,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and
@@ -567,6 +571,7 @@ const _WALL_GENESIS_BY_SCENARIO: { [id: string]: string } = {
   // vein — hydrothermal open-space fracture fill (comb/palisade)
   tn457_barite_pulses: 'vein', reactivated_fluorite_vein: 'vein', sunnyside_american_tunnel: 'vein',
   ouro_preto: 'vein', wittichen: 'vein', epithermal_telluride: 'vein', jeffrey_mine: 'vein',
+  asbestos_hills_crack_seal: 'vein', asbestos_hills_surficial_alteration: 'vein',
   // pocket — pegmatite miarolitic (blocky euhedral druse)
   gem_pegmatite: 'pocket', shigar_pegmatite: 'pocket', radioactive_pegmatite: 'pocket',
   // supergene — gossan boxwork after leached sulphide
@@ -639,6 +644,11 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       scenario_spec_hash: specHash,
       open_to_atmosphere: spec.open_to_atmosphere,
       atmospheric_pCO2_bar: spec.atmospheric_pCO2_bar,
+      // Tiger's-eye has two competing published origin hypotheses. Scenario
+      // and Creative data select one explicitly; engines never infer it from
+      // colour or silently collapse the disagreement.
+      tiger_eye_origin_model: spec.tiger_eye_origin_model,
+      tiger_eye_stage: spec.tiger_eye_stage,
       // Whole-scenario DIC ledger. Sicily originated the implementation;
       // any authored scenario that declares carbon sources can now opt in.
       carbon_ledger: spec.carbon_ledger === true,

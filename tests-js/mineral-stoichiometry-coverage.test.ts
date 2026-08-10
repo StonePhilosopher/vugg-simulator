@@ -86,10 +86,11 @@ const DEFERRED_TUNE_REQUIRED = new Set<string>([
   //   ~14 ppm displacement on a 4 ppm initial budget — a 350% relative
   //   shift) is now rationed: the algorithm caps pyrolusite's share of
   //   the limited Mn pool rather than letting it consume more than the
-  //   fluid can supply. tigers_eye is SiO2-only (chalcedony pseudomorph;
-  //   Fe/Na/Mg sourced from dissolving crocidolite precursor) so its
-  //   debit pattern matches the opal precedent — should be inert under
-  //   graduated comp same as opal was under v125 fixed-order.
+  //   fluid can supply. Tiger's-eye's formula-limiting debit is SiO2;
+  //   optional Fe chromophore uptake is retained as exact supplemental
+  //   inventory by the accepted engine transaction. In the crack-seal
+  //   model, crocidolite keeps its separate booked Na-Fe-Si inventory;
+  //   only the surficial-alteration model returns that precursor inventory.
   //
   // DEFERRED_TUNE_REQUIRED is now EMPTY. Every MINERAL_ENGINES key has
   // a MINERAL_STOICHIOMETRY entry. The cascade-probe arc that began

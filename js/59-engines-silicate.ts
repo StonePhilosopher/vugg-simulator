@@ -1596,28 +1596,115 @@ function grow_chrysoprase(crystal, conditions, step) {
   });
 }
 
-// v116 (2026-05-20): Tiger's eye — chalcedony pseudomorph AFTER
-// crocidolite. The supergene oxidation of crocidolite-asbestos fiber
-// bundles, with chalcedony replacing the silicate framework while
-// Fe2+ → Fe3+ provides the gold-brown chatoyant color. Three habits
-// cover the gemstone family:
-//   chatoyant_pseudomorph (default — gold-brown classic)
-//   hawks_eye (partial oxidation — blue-grey-gold)
-//   tiger_iron (BIF context — banded hematite-jasper-tigers-eye rock)
-// Substrate: crocidolite_dissolving ONLY (the pseudomorph framework the
-// chalcedony replaces); co-present hematite bands it into the TIGER IRON
-// assemblage. No bare-wall / bare-Fe-oxide substrate — the nucleation gate
-// (js/89) requires a dissolving crocidolite crystal. rung 3, SIM 229.
+// Tiger's eye follows the player-selected literature interpretation:
+// synchronous antitaxial quartz-crocidolite crack-seal growth followed by
+// oxidation (Heaney & Fisher 2003), or alteration of an older crocidolite
+// seam during near-surface silicification/oxidation (Gutzmer et al. 2004).
 function grow_tigers_eye(crystal, conditions, step) {
+  const selectedModel = tigerEyeOriginModel(conditions);
+  if (!selectedModel) return null;
+  const pos = crystal.position || '';
+  const with_hematite = pos.includes('hematite') || pos.includes('jasper');
+  const crackSeal = pos.includes('model=antitaxial-crack-seal') ||
+    selectedModel === 'antitaxial_crack_seal';
+  const alteration = pos.includes('model=surficial-alteration') ||
+    selectedModel === 'surficial_alteration';
+  const crackSealOxidation = crackSeal && tigerEyeCrackSealOxidationStage(conditions);
+
+  if (crackSealOxidation) {
+    if (crystal.total_growth_um <= 5) return null;
+    // Crocidolite contains three ferrous Fe atoms out of five total Fe. Use
+    // that 0.6 fraction as a declared chromophore proxy for Fe already booked
+    // into the synchronous aggregate, then debit O2 for
+    // 4 FeO + O2 -> 2 Fe2O3. This changes state and colour, not SiO2 mass.
+    const bookedFe = remainingBookedInventory(crystal, 'Fe');
+    const ferrousFe = bookedFe * 0.6;
+    const previousOxidizedFe = Math.min(
+      ferrousFe,
+      Math.max(0, Number(crystal._tiger_eye_oxidation_state?.oxidized_fe_ppm_equivalent) || 0),
+    );
+    const remainingFerrousFe = Math.max(0, ferrousFe - previousOxidizedFe);
+    const oxygenRequired = remainingFerrousFe * (8.0 / 55.845);
+    const oxygenBefore = Math.max(0, Number(conditions.fluid.O2) || 0);
+    const oxygenConsumed = Math.min(oxygenBefore, oxygenRequired);
+    if (!(bookedFe > 0) || !(remainingFerrousFe > 0) || !(oxygenConsumed > 0)) return null;
+    conditions.fluid.O2 = Math.max(0, oxygenBefore - oxygenConsumed);
+    conditions.fluid.Eh = ehFromO2(conditions.fluid.O2);
+    const oxidizedThisStep = oxygenConsumed / (8.0 / 55.845);
+    const cumulativeOxidizedFe = Math.min(ferrousFe, previousOxidizedFe + oxidizedThisStep);
+    const cumulativeFraction = ferrousFe > 0 ? cumulativeOxidizedFe / ferrousFe : 0;
+    const colourState = cumulativeFraction >= 0.9
+      ? 'gold_brown_tigers_eye'
+      : cumulativeFraction >= 0.15
+        ? 'mixed_blue_gold_hawks_eye_transition'
+        : 'blue_grey_weakly_oxidized';
+    const receipt = {
+      process: 'post_growth_fe_oxidation_colour_overprint',
+      step,
+      framework_growth_um: 0,
+      booked_fe_ppm_equivalent: bookedFe,
+      assumed_ferrous_fraction: 0.6,
+      previous_oxidized_fe_ppm_equivalent: previousOxidizedFe,
+      oxidized_fe_this_step_ppm_equivalent: oxidizedThisStep,
+      oxidized_fe_ppm_equivalent: cumulativeOxidizedFe,
+      remaining_ferrous_fe_ppm_equivalent: Math.max(0, ferrousFe - cumulativeOxidizedFe),
+      oxygen_before: oxygenBefore,
+      oxygen_required: oxygenRequired,
+      oxygen_consumed: oxygenConsumed,
+      oxygen_after: conditions.fluid.O2,
+      incremental_ferrous_oxidation_fraction: remainingFerrousFe > 0
+        ? oxidizedThisStep / remainingFerrousFe : 0,
+      modeled_ferrous_oxidation_fraction: cumulativeFraction,
+      colour_state: colourState,
+      gold_brown_threshold_fraction: 0.9,
+      reaction_basis: '4 FeO + O2 -> 2 Fe2O3; Fe-state proxy only',
+    };
+    if (cumulativeFraction >= 0.9) {
+      crystal.habit = 'oxidized_crack_seal_chatoyant';
+      crystal.dominant_forms = [
+        'gold-brown chatoyant antitaxial vein',
+        'quartz columns crossed by crocidolite microfibre bands',
+        'later oxidation colours preserved crack-seal fabric',
+      ];
+    } else if (cumulativeFraction >= 0.15) {
+      crystal.habit = 'partly_oxidized_crack_seal_hawks_eye';
+      crystal.dominant_forms = [
+        'mixed blue-gold chatoyant antitaxial vein',
+        'preserved crocidolite microfibre bands',
+        'partial Fe oxidation advancing toward tiger\'s-eye colour',
+      ];
+    } else {
+      crystal.habit = 'antitaxial_crack_seal';
+      crystal.dominant_forms = [
+        'blue-grey quartz-crocidolite crack-seal vein',
+        'crocidolite microfibre bands crossing quartz columns',
+        'weak initial oxidation overprint',
+      ];
+    }
+    crystal._tiger_eye_oxidation_state = receipt;
+    const overprint = new GrowthZone({
+      step,
+      temperature: conditions.temperature,
+      thickness_um: 0,
+      growth_rate: 0,
+      note: `post-growth Fe-oxidation colour overprint; ${oxygenConsumed.toFixed(4)} O2 units booked; cumulative Fe-state fraction ${cumulativeFraction.toFixed(3)} (${colourState}); existing crack-seal framework preserved with zero new SiO2 thickness`,
+    });
+    overprint.state_overprint = 'tiger_eye_fe_oxidation_colour';
+    overprint.oxidation_receipt = receipt;
+    return overprint;
+  }
+
   const sigma = conditions.supersaturation_tigers_eye();
   if (sigma < 1.0) {
-    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.0) {
+    if (crystal.total_growth_um > 5
+        && conditions.fluid.pH < 4.0
+        && conditions.fluid.F > 20) {
       crystal.dissolved = true;
       const d = Math.min(2.0, crystal.total_growth_um * 0.06);
       return new GrowthZone({
         step, temperature: conditions.temperature,
-        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
-        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — tiger's eye chalcedony framework breaks down; Fe³⁺ released to limonite/goethite`,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'hf',
+        note: `HF-assisted dissolution (pH ${conditions.fluid.pH.toFixed(1)}, F ${conditions.fluid.F.toFixed(0)}) — SiO2 framework inventory returned; no unbooked Fe-oxide product is asserted`,
       });
     }
     return null;
@@ -1626,26 +1713,26 @@ function grow_tigers_eye(crystal, conditions, step) {
   const rate = 2.5 * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.1) return null;
 
-  // Habit dispatch — substrate-driven primary
-  const pos = crystal.position || '';
-  const after_crocidolite = pos.includes('crocidolite');
-  const with_hematite = pos.includes('hematite') || pos.includes('jasper');
+  const oxidized = !crackSeal && (conditions.fluid.O2 >= 0.4 ||
+    conditions._scenario?.tiger_eye_stage === 'post_growth_oxidation');
 
-  if (with_hematite) {
+  if (crackSeal && oxidized) {
+    crystal.habit = 'oxidized_crack_seal_chatoyant';
+    crystal.dominant_forms = ['gold-brown chatoyant antitaxial vein', 'quartz columns crossed by crocidolite microfibre bands', 'later oxidation colours preserved crack-seal fabric'];
+  } else if (crackSeal) {
+    crystal.habit = 'antitaxial_crack_seal';
+    crystal.dominant_forms = ['blue-grey quartz-crocidolite crack-seal vein', 'crocidolite microfibre bands crossing quartz columns', 'synchronous mineral growth'];
+  } else if (alteration && with_hematite) {
     crystal.habit = 'tiger_iron';
-    crystal.dominant_forms = ['banded TIGER IRON', 'hematite-jasper-chalcedony BIF assemblage', 'centimeter-scale interlayered red-black-gold bands', 'Northern Cape SA + Hamersley WA type'];
-  } else if (after_crocidolite && excess > 1.0 && conditions.fluid.O2 > 0.6) {
-    crystal.habit = 'chatoyant_pseudomorph';
-    crystal.dominant_forms = ['gold-brown chatoyant chalcedony pseudomorph after crocidolite', 'silky cat\'s-eye effect from preserved fiber bundles', 'classic tiger\'s eye gemstone aesthetic'];
-  } else if (after_crocidolite) {
-    crystal.habit = 'hawks_eye';
-    crystal.dominant_forms = ['blue-grey-gold hawk\'s eye', 'partial oxidation — crocidolite + chalcedony coexist', 'precursor stage to full tiger\'s eye'];
+    crystal.dominant_forms = ['banded tiger iron', 'hematite-jasper-quartz BIF assemblage', 'interlayered red-black-gold bands'];
+  } else if (alteration) {
+    crystal.habit = 'alteration_preserved_fabric';
+    crystal.dominant_forms = ['gold-brown chatoyant alteration band', 'quartz preserving the orientation of older crocidolite seams', 'near-surface silicification and oxidation fabric'];
   } else {
-    // Defensive fallback — unreachable since v229: nucleation now requires a
-    // dissolving crocidolite substrate, so every tiger's eye carries
-    // 'crocidolite' in its position. Kept only for replayed pre-v229 saves.
-    crystal.habit = 'chatoyant_pseudomorph';
-    crystal.dominant_forms = ['gold-brown chatoyant chalcedony', 'fibrous internal texture', 'classic gemstone aesthetic'];
+    // Defensive compatibility path for saves authored before the origin-model
+    // selector existed. New nucleation always stamps a named model.
+    crystal.habit = 'alteration_preserved_fabric';
+    crystal.dominant_forms = ['gold-brown chatoyant quartz', 'fibrous internal texture', 'legacy save interpreted as alteration fabric'];
   }
 
   // Color dispatch — Fe-oxidation state drives color
@@ -1667,7 +1754,7 @@ function grow_tigers_eye(crystal, conditions, step) {
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe: conditions.fluid.Fe * 0.01,
-    note: `tiger's eye ${crystal.habit}, ${color_note}; microcrystalline SiO2 (chalcedony) with preserved crocidolite fiber pseudomorph, H 7, chatoyant silky luster`,
+    note: `tiger's eye ${crystal.habit}, ${color_note}; SiO2-rich chatoyant quartz-crocidolite aggregate following the named ${crackSeal ? 'antitaxial crack-seal' : 'surficial-alteration'} model; H 7, silky luster`,
   });
 }
 
