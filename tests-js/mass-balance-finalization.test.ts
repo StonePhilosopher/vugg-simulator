@@ -11,6 +11,7 @@ declare function getSimulationTimeScale(): number;
 declare function setSimulationTimeScale(scale: number): number;
 declare function setGraduatedCompetitionEnabled(value: boolean): void;
 declare function stoichiometricBudgetDebitPpmPerUm(species: string, coefficient: number): number;
+declare function applyStoichiometricGrowthBudget(crystal: any, zone: any, conditions: any): string[] | null;
 declare const STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE: {
   kind: string;
   basis: string;
@@ -166,6 +167,27 @@ afterEach(() => {
 });
 
 describe('accepted-zone stoichiometric growth-budget closure', () => {
+  it('never mints formula ions from an unbooked dissolving nucleus', () => {
+    const fluid = new FluidChemistry({
+      Zn: 0, S: 0, O2: 1, pH: 5, salinity: 1,
+    });
+    const conditions = new VugConditions({ temperature: 20, fluid });
+    const crystal = new Crystal({ mineral: 'wurtzite', crystal_id: 404, habit: 'fixture' });
+    const dissolution = new GrowthZone({
+      step: 1,
+      temperature: 20,
+      thickness_um: -2,
+      growth_rate: -2,
+      dissolutionMode: 'inversion',
+      note: 'unbooked historical-nucleus regression',
+    });
+
+    expect(applyStoichiometricGrowthBudget(crystal, dissolution, conditions)).toBeNull();
+    expect(dissolution._returned_budget_inventory).toEqual({});
+    expect(fluid.Zn).toBe(0);
+    expect(fluid.S).toBe(0);
+  });
+
   it('discloses the fixed axial calibration and its non-extensive physical boundary', () => {
     expect(STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE).toMatchObject({
       kind: 'calibrated stoichiometric axial-growth budget proxy',

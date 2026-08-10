@@ -49,6 +49,35 @@ describe('scenario expectation contracts', () => {
     expect(spec.sources.join('\n')).toContain('Mindat locality record 2428');
   }, 120_000);
 
+  it('enforces the first-zone Tsumeb köttigite exclusion even in a forced pH < 3 fluid', () => {
+    setSeed(42);
+    const { conditions } = SCENARIOS.supergene_oxidation();
+    conditions.temperature = 20;
+    Object.assign(conditions.fluid, {
+      Zn: 160, As: 50, Co: 0, Ni: 0, O2: 1.0, pH: 2.5,
+    });
+    const sim = new VugSimulator(conditions, []);
+
+    expect(
+      sim.conditions.supersaturation_koettigite(),
+      'the counterfactual broth must be chemically favorable before testing locality enforcement',
+    ).toBeGreaterThan(MINERAL_SPEC.koettigite.nucleation_sigma);
+
+    const decision = assessProductionNucleationDecision(
+      'koettigite', sim, sim.conditions.supersaturation_koettigite(),
+      MINERAL_SPEC.koettigite.nucleation_sigma,
+    );
+    expect(decision).toMatchObject({
+      available: true,
+      eligible: false,
+      source: 'scenario-locality exclusion',
+    });
+    expect(decision.blockers.join(' ')).toContain('third oxidation zone');
+
+    sim.run_step();
+    expect(sim.crystals.some((crystal: any) => crystal.mineral === 'koettigite')).toBe(false);
+  });
+
   it('enforces Sweetwater negative locality evidence without disabling global engines', () => {
     const { sim } = run('reactive_wall');
     const spec = SCENARIOS.reactive_wall._json5_spec;

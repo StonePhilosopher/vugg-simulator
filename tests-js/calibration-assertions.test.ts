@@ -9,7 +9,7 @@
 // PROPOSAL §4.1 SAID                                  | v129 REALITY
 // ----------------------------------------------------|----------------------------------------------------
 // 1. dioptase fires in schneeberg; pharmacolite stays | dioptase fires in BISBEE (Cu-supergene, not the Cu-Bi-Ni-Co-U mix of schneeberg); pharmacolite was already absent from v128 schneeberg (the v124 firing was earlier-era). dioptase firing somewhere is the win.
-// 2. koettigite fires in supergene_oxidation;        | koettigite fires (2×, max 70µm). alunite was at 1.9µm dissolved in v128 (effectively zero); v129 drops it entirely. Proposal's "alunite remains" was based on the v124 baseline where alunite was at a much larger size. The drop is from-zero, not a catastrophic cascade.
+// 2. Tsumeb first-stage gossan excludes köttigite;   | SIM 259 corrects the old pH 6–8 gate to pH < 3 and enforces a scenario-local exclusion for this first-zone story; Level 44 is a distinct future scenario.
 //    alunite remains at v124 count                    |
 // 3. lepidolite fires in radioactive_pegmatite        | lepidolite fires 3× max 433µm in radioactive_pegmatite AND 3× max 3µm in gem_pegmatite. The radioactive_pegmatite firing is the canonical LCT-pegmatite habit.
 // 4. cassiterite radioactive_pegmatite 2-of-3         | cassiterite fires 4× max 333µm in radioactive_pegmatite — clean. Also fires in gem_pegmatite (7×, 102µm) and schneeberg (4×, 366µm). The 2-of-3 near-miss is now 3-of-3+.
@@ -94,17 +94,16 @@ describe('v128 calibration assertions (proposal §4.1)', () => {
     });
   });
 
-  describe('Assertion 2 — koettigite in supergene_oxidation', () => {
-    it('koettigite fires in supergene_oxidation', () => {
-      const { species, counts, maxUm } = speciesIn('supergene_oxidation');
+  describe('Assertion 2 — Tsumeb first-stage gossan', () => {
+    it('does not misplace third-zone köttigite in the carbonate-buffered first-stage gossan', () => {
+      const { species } = speciesIn('supergene_oxidation');
       expect(
         species.has('koettigite'),
-        `koettigite should fire in supergene_oxidation (v129 baseline: 2× at max 70µm). Crystals seen: ${[...species].sort().join(', ')}`,
-      ).toBe(true);
-      expect(counts.koettigite, 'koettigite should fire ≥ 1 crystal').toBeGreaterThanOrEqual(1);
+        `koettigite requires pH < 3 and is documented at Tsumeb only in the third-zone zinc pocket. Crystals seen: ${[...species].sort().join(', ')}`,
+      ).toBe(false);
     });
 
-    it('koettigite firing did NOT cascade-displace the supergene_oxidation paragenesis (≥ 30 grown species)', () => {
+    it('the corrected selector does not cascade-displace the supergene paragenesis (≥ 30 grown species)', () => {
       // v128 counted 40 nucleated species; v129 counted 38. SIM 239's exact
       // accepted-shell ledger distinguishes zero-growth/dissolved attempts
       // from minerals that laid down solid, leaving 33 grown species. A floor
@@ -113,7 +112,7 @@ describe('v128 calibration assertions (proposal §4.1)', () => {
       const { species } = speciesIn('supergene_oxidation');
       expect(
         species.size,
-        `supergene_oxidation should keep ≥ 30 grown species under graduated competition + koettigite (SIM 239 exact-ledger census: 33). Got: ${species.size}`,
+        `supergene_oxidation should keep ≥ 30 grown species after removing the misplaced köttigite outcome. Got: ${species.size}`,
       ).toBeGreaterThanOrEqual(30);
     });
   });

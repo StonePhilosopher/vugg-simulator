@@ -71,7 +71,8 @@ function applyParamorphTransitions(crystal, T, step) {
 // per the Handbook of Mineralogy "Formed by dehydration of pharmacolite"
 // citation. Threshold 30 steps matches pharmacolite's efflorescent
 // reputation (between borax's 25 and the autunite-group's 40). T_max
-// 80°C is the documented onset of dehydration (research-pharmacolite.md).
+// 80°C is the documented onset of dehydration; provenance reconciled in
+// research/arcs/research-cation-sinks-orphan-solutes-2026-08-08.md.
 const DEHYDRATION_TRANSITIONS = {
   // Pure Na2B4O7-H2O transition: 60.8 C. A halite-saturated
   // NaCl-Na2B4O7 solution lowers it to 39.6 C (Bowser 1964; Christ,

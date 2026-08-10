@@ -125,7 +125,13 @@ single execution ledger for the science-first AAA completion branch.
   archive, 12-story digest, and 39 claim cards are current, and AI Dr. Wise
   returned `SATISFIED` after the signed-boundary, honest-encrustation, and
   scenario-local RNG review loop.
-- [ ] Zn/cation competition sinks and remaining orphaned analytical solutes.
+- [x] Zn/cation competition sinks and remaining orphaned analytical solutes.
+  SIM259 removes phantom Schneeberg Zn, converts pharmacolite and köttigite
+  competition selectors from mass ppm to disclosed molar proxies, enforces the
+  Tsumeb locality exclusion at runtime, and fails closed across 161 × 7,680
+  Zn control volumes. Full local CI passed 203 files/2,744 tests; the AI Dr.
+  Michael Wise hostile review returned `SATISFIED` after the dimensional,
+  trajectory-integrity, provenance, and generated-artifact review loop.
 - [ ] BIF/crocidolite/tiger's-eye scenario built from locality-grade evidence.
 - [ ] Re-run every locality envelope and negative-evidence constraint against the
   current engine; resolve Bingham/Bisbee and any remaining species mismatches.

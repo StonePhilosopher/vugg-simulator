@@ -9910,7 +9910,7 @@
         }
       ],
       "class": "arsenate",
-      "description": "CaHAsO₄·2H₂O — monoclinic hydrated calcium hydrogen arsenate. Forms colorless to white delicate radiating/stellate aggregates resembling starbursts of needles — the diagnostic field marker. Vitreous to pearly luster, soft (Mohs 2-2.5). The classic supergene bloom of the Jáchymov (Joachimsthal, Czech) + Schneeberg + Cobalt-Ontario silver-cobalt-arsenic mining districts, where the weathering of cobaltite/nickeline/arsenopyrite primaries releases As⁵⁺ into Ca-rich groundwater. Trace Fe gives yellowish tint, Mn pinkish, Cu greenish — useful provenance fingerprints. Efflorescent: loses water in dry air, converting to haidingerite (CaHAsO₄·H₂O) at ~80-100°C and to anhydrous Ca arsenate at ~150°C, both effectively irreversible. Most field specimens are already partially dehydrated by the time they reach a collection. Highly soluble in dilute HCl/HNO₃; releases toxic arsenic + calcium on dissolution. Type locality: Riegelsdorf, Hesse, Germany (Stromeyer 1819) — but the Jáchymov + Schneeberg displays are the iconic specimens. Sources: research/research-pharmacolite.md (boss canonical 2026-05); Anthony et al. Handbook of Mineralogy Vol. IV; Stromeyer 1819 (type-locality description).",
+      "description": "CaHAsO₄·2H₂O — monoclinic hydrated calcium hydrogen arsenate. Forms colorless to white delicate radiating/stellate aggregates resembling starbursts of needles — the diagnostic field marker. Vitreous to pearly luster, soft (Mohs 2-2.5). The classic supergene bloom of the Jáchymov (Joachimsthal, Czech) + Schneeberg + Cobalt-Ontario silver-cobalt-arsenic mining districts, where the weathering of cobaltite/nickeline/arsenopyrite primaries releases As⁵⁺ into Ca-rich groundwater. Trace Fe gives yellowish tint, Mn pinkish, Cu greenish — useful provenance fingerprints. Efflorescent: loses water in dry air, converting to haidingerite (CaHAsO₄·H₂O) at ~80-100°C and to anhydrous Ca arsenate at ~150°C, both effectively irreversible. Most field specimens are already partially dehydrated by the time they reach a collection. Highly soluble in dilute HCl/HNO₃; releases toxic arsenic + calcium on dissolution. Type locality: Riegelsdorf, Hesse, Germany (Stromeyer 1819) — but the Jáchymov + Schneeberg displays are the iconic specimens. Sources: research/arcs/research-cation-sinks-orphan-solutes-2026-08-08.md; Anthony et al. Handbook of Mineralogy Vol. IV; Stromeyer 1819 (type-locality description).",
       "scenarios": [
         "schneeberg"
       ],
@@ -9930,7 +9930,7 @@
         "Ca": 15,
         "As": 5
       },
-      "_ingredients_note": "v88 (2026-05-19): Ca + As only (the formula is Ca-only, no Cu/Co/Ni/Zn). Cation-share gate Ca/(Ca+Cu+Pb+Zn+Co+Ni) > 0.3 enforces the anti-competitor logic per research §Inhibiting elements — high Cu routes to conichalcite, high Co to erythrite, etc.",
+      "_ingredients_note": "SIM259: Ca + As formula. Ca/(Ca+Cu+Pb+Zn+Co+Ni) is computed after converting each mass-ppm concentration to moles with its atomic weight. The >=0.3 threshold is a calibrated dissolved-cation competition proxy, not equilibrium arsenate allocation, speciation, or crystallographic site occupancy. High Cu routes toward conichalcite, high Co toward erythrite, and analogous competitors suppress pharmacolite.",
       "trace_ingredients": {
         "Fe": "Fe substitutes minorly, yields yellowish tint",
         "Mn": "Mn substitutes minorly, pinkish hue",
@@ -9994,7 +9994,7 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "reconciled v248 (2026-08-06). Ca-only hydrated arsenate with cation anti-gates and the documented five-element-vein substrate order. The shipped scenario association is Schneeberg/Jáchymov-style mineralization; Tsumeb is explicitly excluded because the live Mindat locality record and Harvard Tsumeb catalog audit found no occurrence support. Thermal dehydration preserves a haidingerite paramorph through DEHYDRATION_TRANSITIONS. The engine remains globally available in Creative mode. Sources: research-pharmacolite.md; Anthony et al. Handbook of Mineralogy Vol. IV; Stromeyer 1819 (Riegelsdorf type locality); SIM 248 locality reconciliation memo.",
+      "audit_status": "reconciled SIM259 (2026-08-09). Ca-only hydrated arsenate with a mass-to-mole converted dissolved-cation competition proxy and the documented five-element-vein substrate order. The selector is calibrated rather than an equilibrium speciation or site-occupancy calculation. The shipped scenario association is Schneeberg/Jáchymov-style mineralization; Tsumeb is explicitly excluded because the locality record and Harvard Tsumeb catalog audit found no occurrence support. Thermal dehydration preserves a haidingerite paramorph through DEHYDRATION_TRANSITIONS. The engine remains globally available in Creative mode. The all-step cation receipt verifies every canonical voxel remains finite and that Schneeberg carries no phantom Zn. Sources: research/arcs/research-cation-sinks-orphan-solutes-2026-08-08.md; Anthony et al. Handbook of Mineralogy Vol. IV; Stromeyer 1819 (Riegelsdorf type locality); SIM248 locality reconciliation memo.",
       "late_stage_propensity": 0.6,
       "_late_stage_note": "Proposal C (2026-05): propensity:0.6. Late-supergene Ca-As arsenate; forms in the closing phase of the oxidation zone after the primary Co/Ni arsenides have weathered and Ca-rich groundwater has flushed through. Between conichalcite (0.5) and chalcanthite (0.7) on the late-stage scale.",
       "class_color": "#e8e8d4"
@@ -13886,8 +13886,8 @@
         {"name": "drusy_crust", "wall_spread": 0.65, "void_reach": 0.35, "vector": "coating", "trigger": "low σ — thin drusy crusts in damp seams"}
       ],
       "class": "arsenate",
-      "description": "Zn₃(AsO₄)₂·8H₂O — monoclinic VIVIANITE-GROUP, Zn end-member (series with erythrite Co, annabergite Ni, hörnesite Mg, parasymplesite Fe²⁺). Hardness 2.5-3 (soft — fingernail-scratchable, diagnostic), density 3.33 g/cm³. Color pale rose-pink (cobaltian-zinc-tinge), carmine-red (with erythrite component), peach, pale lilac, or near-colorless when pure Zn; pure Zn end-member is white to very pale pink. Perfect {010} cleavage (vivianite-group signature). Forms strictly supergene at <35°C in damp Zn-rich oxidation pockets — the 8 H₂O is fragile, dehydrating rapidly above 50°C. Discriminator from erythrite/annabergite: Zn dominates over Co + Ni in fluid; if Co > 10 or Ni > 10, those win the vivianite-group slot. Substrate priority: erythrite > annabergite (epitactic — same structure) > smithsonite. Type locality Schneeberg, Saxony (Daubrée 1850) but Tsumeb produces well-formed crystals from deep workings. Field discriminator: pink-to-colorless soft (H 2.5-3) bladed crystals with perfect one-direction cleavage = vivianite-group; SG 3.3 lighter than austinite (4.1) or adamite (4.4). Refs: research dossier 2026-05; Daubrée 1850; Gebhard 1999 Tsumeb p. 190; Hill 1979 (structure); Magalhães et al. 1988; Handbook of Mineralogy v.IV.",
-      "scenarios": ["supergene_oxidation"],
+      "description": "Zn₃(AsO₄)₂·8H₂O — monoclinic VIVIANITE-GROUP, Zn end-member (series with erythrite Co, annabergite Ni, hörnesite Mg, parasymplesite Fe²⁺). Hardness 2.5-3 (soft — fingernail-scratchable, diagnostic), density 3.33 g/cm³. Color pale rose-pink (cobaltian-zinc-tinge), carmine-red (with erythrite component), peach, pale lilac, or near-colorless when pure Zn; pure Zn end-member is white to very pale pink. Perfect {010} cleavage (vivianite-group signature). Forms strictly supergene at <35°C in strongly acidic (pH < 3), damp Zn-rich oxidation pockets — the 8 H₂O is fragile, dehydrating rapidly above 50°C. Discriminator from erythrite/annabergite: the bounded solution-chemistry proxy requires Zn to exceed half of the molar dissolved Zn+Co+Ni cation pool and Ni to remain at or below 5 mol%; it does not claim to predict crystal-site occupancy without fluid–solid partition coefficients. Co substitution is extensive, while significant köttigite–Ni substitution is not supported by Ciesielczuk et al. Substrate priority: erythrite > annabergite (epitactic — same structure) > smithsonite. Type locality Schneeberg, Saxony (Daubrée 1850); at Tsumeb it is reported from the deep third oxidation zone zinc pocket, not the first-stage gossan. Field discriminator: pink-to-colorless soft (H 2.5-3) bladed crystals with perfect one-direction cleavage = vivianite-group; SG 3.3 lighter than austinite (4.1) or adamite (4.4). Refs: Ciesielczuk et al. 2020, doi:10.3390/min10060548; Hill 1979; Bowell 2014; Magalhães et al. 1988; Handbook of Mineralogy v.IV.",
+      "scenarios": [],
       "T_range_C": [5, 35],
       "T_optimum_C": [10, 25],
       "T_behavior": "narrow",
@@ -13895,8 +13895,8 @@
       "pH_dissolution_above": null,
       "redox_requirement": "oxidizing",
       "required_ingredients": {"Zn": 50, "As": 10},
-      "_ingredients_note": "v97 (2026-05-19): Zn ≥ 50, As(V) ≥ 10. CRITICAL: Co < 10 (erythrite wins), Ni < 10 (annabergite wins). pH 6-8, sweet spot 6.5-7.5. Sharp T cap — 35°C max, with smooth penalty above 25°C (the 8 H₂O dehydrates rapidly).",
-      "trace_ingredients": {"Co": "trace gives cobaltoan-koettigite pink tinge (more common in nature than pure Zn end)", "Ni": "trace mixes toward annabergite"},
+      "_ingredients_note": "SIM 259: Zn ≥ 50, As(V) ≥ 10, oxidizing, pH < 3. After ppm-to-mole conversion, the bounded solution proxy requires Zn to exceed 50% of dissolved Zn+Co+Ni cations and Ni to be ≤ 5 mol%; this is not a site-occupancy calculation. Co substitution remains allowed. Sharp T cap — 35°C max, with smooth penalty above 25°C (the 8 H₂O dehydrates rapidly).",
+      "trace_ingredients": {"Co": "trace gives cobaltoan-koettigite pink tinge (more common in nature than pure Zn end)", "Ni": "minor trace only; Ni-rich solution is assigned to annabergite competition and blocks the köttigite proxy"},
       "thermal_decomp_C": 50,
       "thermal_decomp_reaction": "Dehydrates above ~50°C — loses structural H₂O, converts to lower hydrates and ultimately anhydrous Zn₃(AsO₄)₂ phases.",
       "thermal_decomp_products": {},
@@ -13911,12 +13911,12 @@
           "_source": "Anthony Handbook v.IV. Koettigite (monoclinic C2/m, Zn₃(AsO₄)₂·8H₂O) is the Zn endmember of the vivianite-group. Less common in field collections than erythrite/annabergite; documented at Mapimí + Schneeberg. Same {010} contact twin behavior but rarer in observed specimens (data sparser); conservative p=0.02."
         }
       ],
-      "acid_dissolution": "Slowly soluble in dilute acid — Zn + AsO₄ released.",
+      "acid_dissolution": "No separate acid-dissolution threshold is modeled. The formation selector follows the documented pH < 3 stability field; dissolution in still more aggressive acid is not parameterized.",
       "habit": "bladed_lath",
       "color_rules": {"pale_pink": {"default": true, "trigger": "pale rose-pink to near-colorless (Zn end)"}, "carmine_red_cobaltoan": {"trigger": "Co > 0.5 — cobaltoan-koettigite, transitional toward erythrite carmine"}},
       "narrate_function": null,
       "runtimes_present": ["js"],
-      "audit_status": "new v97 (2026-05-19). Vivianite-group Zn end-member — completes the erythrite-annabergite-koettigite trio. Damp-niche cool-temperature mineral.",
+      "audit_status": "corrected SIM 259 (2026-08-08). Ciesielczuk et al. 2020 supplies the pH < 3 stability boundary and erythrite–köttigite solid solution; Hill 1979 independently confirms significant Co/Ni in type material. Tsumeb occurrence is restricted to the third-zone zinc pocket in Bowell 2014.",
       "late_stage_propensity": 0.85,
       "_late_stage_note": "Latest+dampest supergene niche — forms in cool damp pockets after erythrite/annabergite chemistry runs out of Co/Ni."
     },

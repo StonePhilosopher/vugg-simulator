@@ -2572,7 +2572,8 @@
 //        pharmacolite Ca-only). The classic Jáchymov / Schneeberg /
 //        Cobalt-Ontario five-element-vein bloom; radiating "starburst
 //        of white needles" habit is the diagnostic field marker.
-//        Per research-pharmacolite.md (boss canonical 2026-05).
+//        Provenance retrospectively reconciled in SIM259; see
+//        research/arcs/research-cation-sinks-orphan-solutes-2026-08-08.md.
 //
 //        Cation-share gate (anti-competitor logic):
 //          Ca/(Ca+Cu+Pb+Zn+Co+Ni) > 0.3 enforces "pharmacolite gets
@@ -2638,14 +2639,14 @@
 //        seed42_v88.json captures the schneeberg + supergene_oxidation
 //        drift; other 24 scenarios byte-identical to v87.
 //
-//        References (from research-pharmacolite.md):
+//        References (retrospectively reconciled in
+//        research/arcs/research-cation-sinks-orphan-solutes-2026-08-08.md):
 //          * Stromeyer F. (1819) — Riegelsdorf type-locality description
 //            (the original pharmacolite name from Greek "pharmakon"
 //            for the As-poisoning property).
 //          * Anthony J.W. et al. — Handbook of Mineralogy Vol. IV.
-//          * research/research-pharmacolite.md (canonical research-agent
-//            file, May 2026 — boss research drop fetched after v85
-//            surfaced the gap).
+//          * SIM259 cation-sink receipt above replaces the unavailable
+//            May 2026 working-note path formerly recorded here.
 //   v89 — Cassiterite + Sn fluid field (2026-05-19). Tetragonal tin
 //        dioxide SnO₂ — primary tin ore, the mineral that built the
 //        Bronze Age. Per research-cassiterite.md (boss canonical
@@ -12717,7 +12718,26 @@
 //       the executed borax-to-tincalconite history, not because borax failed to
 //       precipitate (max sigma about 37). Oxygen receipts itemize canonical
 //       voxel ppm-equivalents separately from compatibility ring mirrors.
-const SIM_VERSION = 258;
+//
+// v259 — Cation-sink and köttigite reconciliation (August 2026).
+//       The historical Schneeberg orphan-Zn symptom is closed at its actual
+//       source: negative zones may return only inventory booked into accepted
+//       positive shells. A canonical seed-42, all-voxel receipt proves that a
+//       scenario with no authored Zn source never mints Zn across every finite
+//       control volume at every step. Pharmacolite's competition selector now
+//       converts analytical mass ppm to a disclosed dissolved-cation molar
+//       proxy rather than calling a mass ratio a cation share. All 48
+//       analytical Creative fields retain
+//       executable gameplay consumers. Köttigite is no longer used as a
+//       scoreboard sink: Ciesielczuk et al. (2020) corrects its selector from
+//       pH 6–8 to pH < 3 and the erythrite–köttigite solid solution replaces
+//       absolute Co/Ni trace blockers with a bounded molar dissolved-cation
+//       proxy (not a crystal-site calculation) and an evidence-bounded 5 mol%
+//       Ni ceiling. Bowell
+//       (2014) restricts Tsumeb köttigite to the third-zone Level 44 zinc
+//       pocket, so the authored first-stage gossan enforces a scenario-local
+//       exclusion rather than precipitating outside its locality envelope.
+const SIM_VERSION = 259;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12763,6 +12783,8 @@ const MODEL_DIGEST = [
   'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
   'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2',
   'weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2',
+  'cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2',
+  'koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3',
   'roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3',
   'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2',
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',

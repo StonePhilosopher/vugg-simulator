@@ -63,7 +63,7 @@ function grow_scorodite(crystal, conditions, step) {
 
 function grow_pharmacolite(crystal, conditions, step) {
   // CaHAsO₄·2H₂O — monoclinic Ca-only hydrated arsenate. Per
-  // research-pharmacolite.md (boss canonical 2026-05). The
+    // research/arcs/research-cation-sinks-orphan-solutes-2026-08-08.md. The
   // diagnostic radiating/stellate acicular habit ("starbursts of
   // white needles") is the field marker; this engine builds toward
   // that habit when σ is high and falls back to powdery efflorescent

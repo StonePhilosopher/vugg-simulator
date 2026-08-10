@@ -5,8 +5,8 @@
 // The Ca-without-Cu sibling of conichalcite; closes the supergene
 // Ca-arsenate cation triangle (olivenite Cu-only / conichalcite Ca-Cu /
 // pharmacolite Ca-only). Classic Jáchymov / Schneeberg / Cobalt-Ontario
-// five-element-vein bloom. Per research-pharmacolite.md (boss
-// canonical 2026-05).
+// five-element-vein bloom. Provenance and the molar competition proxy are
+// reconciled in the SIM259 cation-sink research receipt.
 //
 // What this catches:
 //   * Engine gates (Ca, As, redox, pH, T window, cation-share gate).
@@ -27,6 +27,7 @@ declare const VugConditions: any;
 declare const FluidChemistry: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
+declare function arsenateCompetingCationMolarFraction(fluid: any, target: string): number;
 
 function runSchneeberg(seed: number) {
   setSeed(seed);
@@ -75,10 +76,22 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
       expect(sigmaAt({ Ca: 100, As: 50, O2: 1.5, pH: 6.5, T: 60 })).toBe(0);
     });
 
-    it('returns 0 when cation-share gate fails (Cu/Co/Ni/Pb/Zn dominate)', () => {
-      // Ca=20, competitor sum = 100 → ratio = 0.17 < 0.3
+    it('returns 0 when the molar cation-competition proxy fails', () => {
       expect(sigmaAt({ Ca: 20, As: 50, Cu: 50, Co: 30, Ni: 20, O2: 1.5, pH: 6.5, T: 25 }))
         .toBe(0);
+    });
+
+    it('converts mass ppm to cation moles instead of comparing raw masses', () => {
+      const fluid = new FluidChemistry({
+        Ca: 40.078, Pb: 100, As: 50, O2: 1.5, pH: 6.5,
+      });
+      // Raw-mass Ca share is only 0.286 and the old dimensional error blocked
+      // it. In amount-of-substance units, 1 mmol Ca competes with 0.483 mmol
+      // Pb, so the disclosed molar proxy is about 0.674 and remains eligible.
+      expect(40.078 / (40.078 + 100)).toBeLessThan(0.3);
+      expect(arsenateCompetingCationMolarFraction(fluid, 'Ca')).toBeCloseTo(0.6744, 3);
+      expect(new VugConditions({ temperature: 25, fluid })
+        .supersaturation_pharmacolite()).toBeGreaterThan(0);
     });
 
     it('fires σ > 0.5 at schneeberg-late-style Ca-rich Cu-poor chemistry', () => {
@@ -224,7 +237,7 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
     it('high Cu (Bisbee-style) blocks pharmacolite, fires conichalcite path', () => {
       const fluid = new FluidChemistry({ Ca: 100, As: 50, Cu: 400, O2: 1.5, pH: 6.5 });
       const cond = new VugConditions({ temperature: 25, fluid });
-      // Cation share Ca/(Ca+Cu+...) = 100/500 = 0.2 < 0.3 → blocked
+      // Molar Ca share remains below the calibrated 0.3 threshold.
       expect(cond.supersaturation_pharmacolite()).toBe(0);
     });
 

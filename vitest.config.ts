@@ -16,12 +16,16 @@ export default defineConfig({
     // Run bundle setup once per file rather than per test — eval is
     // expensive (~109 module concat + jsdom init).
     isolate: false,
-    // Each worker evaluates the full multi-megabyte simulator bundle. Leaving
-    // Vitest at CPU-count parallelism created a dozen memory-heavy Node
-    // processes and made unrelated 20-40 s scenario sweeps time out at
-    // 60-150 s under contention. Bound the pool so CI is reproducible and the
-    // workstation stays usable; this is managed parallelism, not serialization.
-    maxWorkers: 8,
+    // Each worker evaluates the full multi-megabyte simulator bundle. The old
+    // eight-worker cap was still unsafe on the local workstation: a measured
+    // full run spawned eight 0.7-1.3 GB Node workers and consumed most system
+    // RAM. Use one threads-pool worker and disable file parallelism so every
+    // ordinary `vitest run`, `npm test`, and `npm run ci` is memory-safe by
+    // default. This is slower, but it makes the automated release gate usable
+    // and reproducible without relying on an operator to remember CLI flags.
+    pool: 'threads',
+    maxWorkers: 1,
+    fileParallelism: false,
     // Generous default; the calibration sweep test runs 20 scenarios.
     // v175 (2026-06-03): doubled both. The strip recorder now also captures
     // the depletion-FLOOR channel (per-bin min for ion chips at the wall),

@@ -145,7 +145,7 @@ function _nuc_olivenite(sim) {
 function _nuc_pharmacolite(sim) {
   // CaHAsO₄·2H₂O — Ca-only hydrated arsenate. The Jáchymov/Schneeberg/
   // Cobalt-Ontario five-element-vein supergene bloom. Per
-  // research-pharmacolite.md §Paragenetic Position: "Forms after
+    // SIM259 cation-sink receipt, paragenetic reconciliation: "Forms after
   // primary arsenides oxidize, releasing arsenic into supergene
   // fluids. Forms before more stable arsenates including conichalcite,
   // erythrite, annabergite". Substrate priority encodes that ordering:
