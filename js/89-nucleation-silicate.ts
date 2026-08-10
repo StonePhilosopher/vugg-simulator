@@ -182,6 +182,13 @@ function _nuc_spodumene(sim) {
   const existing_qtz_ber = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
   const existing_feld_ber = sim.crystals.filter(c => c.mineral === 'feldspar' && c.active);
   for (const [species, sigma_bf, threshold] of beryl_family_candidates) {
+    // This family shares the spodumene dispatcher, so the outer dispatcher
+    // cannot infer which beryl endmember is about to fire. Enforce every
+    // per-species scenario contract at the actual candidate boundary.
+    if (_scenarioSpeciesExclusion(sim, species)
+        || _scenarioPositiveLicenseBlock(sim, species)
+        || _scenarioNucleationWindowBlock(sim, species)
+        || _scenarioNucleationPrerequisiteBlock(sim, species)) continue;
     if (sigma_bf <= threshold) continue;
     const existing_sp = sim.crystals.filter(c => c.mineral === species && c.active);
     // Etching can clear old growth surfaces and a neutralised, still-
@@ -247,6 +254,12 @@ function _nuc_spodumene(sim) {
     ['corundum', sim.conditions.supersaturation_corundum(), MINERAL_GATES_corundum.sigma_crit],
   ];
   for (const [species, sigma_cf, threshold] of corundum_family_candidates) {
+    // Ruby, sapphire, and corundum also share this dispatcher. Apply the
+    // selected endmember's locality contract before it can nucleate.
+    if (_scenarioSpeciesExclusion(sim, species)
+        || _scenarioPositiveLicenseBlock(sim, species)
+        || _scenarioNucleationWindowBlock(sim, species)
+        || _scenarioNucleationPrerequisiteBlock(sim, species)) continue;
     if (sigma_cf <= threshold) continue;
     if (sim._atNucleationCap(species)) continue;
     const existing_sp = sim.crystals.filter(c => c.mineral === species && c.active);

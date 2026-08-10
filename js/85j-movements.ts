@@ -181,9 +181,18 @@ function _scenarioPositiveLicenseBlock(sim: any, name: string): string | null {
   if (!scenarioId) return null; // Creative/custom broth: every engine remains available.
   const spec = (typeof MINERAL_SPEC !== 'undefined') ? MINERAL_SPEC?.[name] : null;
   if (!spec?._requires_scenario_license) return null;
-  const licensed = Array.isArray(spec.scenarios) ? spec.scenarios : [];
-  if (licensed.includes(scenarioId)) return null;
-  return `no locality license for ${name} in ${scenarioId}; chemistry alone does not prove occurrence (Creative mode remains unrestricted)`;
+  const scenario = sim.conditions._scenario;
+  const tierMinerals = (entries: any): string[] => (Array.isArray(entries) ? entries : [])
+    .map((entry: any) => (typeof entry === 'string' ? entry : entry?.mineral))
+    .filter((mineral: any) => typeof mineral === 'string' && mineral.length > 0);
+  const licensed = new Set([
+    ...tierMinerals(scenario.expects_species),
+    ...tierMinerals(scenario.deterministic_species),
+    ...tierMinerals(scenario.statistical_species),
+    ...tierMinerals(scenario.aspirational_species),
+  ]);
+  if (licensed.has(name)) return null;
+  return `no positive four-tier locality license for ${name} in ${scenarioId}; chemistry alone does not prove occurrence (Creative mode remains unrestricted)`;
 }
 
 function _scenarioNucleationWindowBlock(sim: any, name: string): string | null {
@@ -202,6 +211,19 @@ function _scenarioNucleationWindowBlock(sim: any, name: string): string | null {
     return `authored paragenesis closed after step ${end} (current step ${authoredStep})`;
   }
   return null;
+}
+
+function _scenarioNucleationPrerequisiteBlock(sim: any, name: string): string | null {
+  const scenario = sim?.conditions?._scenario;
+  const prerequisite = scenario?.nucleation_prerequisites?.[name];
+  if (!prerequisite || typeof prerequisite !== 'object') return null;
+  const requiredEvents = Array.isArray(prerequisite.event_types)
+    ? prerequisite.event_types.map(String).filter(Boolean) : [];
+  const executed = new Set(Array.isArray(scenario.executed_event_types)
+    ? scenario.executed_event_types.map(String) : []);
+  const missing = requiredEvents.filter((eventType: string) => !executed.has(eventType));
+  if (!missing.length) return null;
+  return `causal paragenesis requires executed event history: ${missing.join(', ')}`;
 }
 
 // Read-only best-case execution of the actual production nucleator. Every RNG
@@ -371,6 +393,19 @@ function assessProductionNucleationDecision(
       blockers: [scenarioWindowBlock],
     };
   }
+  const scenarioPrerequisiteBlock = _scenarioNucleationPrerequisiteBlock(sim, name);
+  if (scenarioPrerequisiteBlock) {
+    return {
+      available: true,
+      eligible: false,
+      stochasticBirth: false,
+      effectiveDrawProbability: null,
+      randomDraws: 0,
+      source: 'scenario causal paragenesis',
+      competingBirth: null,
+      blockers: [scenarioPrerequisiteBlock],
+    };
+  }
   const requiredSubstrate = (typeof MINERAL_GATES_REGISTRY !== 'undefined')
     ? MINERAL_GATES_REGISTRY?.[name]?.required_substrate : null;
   if (requiredSubstrate) {
@@ -462,6 +497,7 @@ function _runNuc(sim: any, fn: (sim: any) => void): void {
   if (inferred && _scenarioSpeciesExclusion(sim, inferred)) return;
   if (inferred && _scenarioPositiveLicenseBlock(sim, inferred)) return;
   if (inferred && _scenarioNucleationWindowBlock(sim, inferred)) return;
+  if (inferred && _scenarioNucleationPrerequisiteBlock(sim, inferred)) return;
   if (!NUC_DERIVED_SEEDS) { fn(sim); return; }
   const saved = rng;
   rng = _makeNucRng(sim._nucSharedState | 0, fn.name, sim.step | 0);

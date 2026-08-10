@@ -1050,9 +1050,7 @@
       ],
       "class": "carbonate",
       "description": "FeCO₃ — the iron carbonate, a calcite-group mineral (R3̄c) with Fe²⁺ in the Ca site. Tan to deep brown depending on Fe content and trace substitution (manganosiderite ↔ rhodochrosite, ankerite ↔ dolomite). Hard-gated to REDUCING conditions because Fe²⁺ must stay reduced to be soluble; rising O₂ progressively converts siderite to goethite/limonite — the diagenetic 'limonite cube after siderite' pseudomorph mechanism. Forms in MVT veins (accessory), sedimentary ironstone formations, hydrothermal Fe veins, and coal-seam concretions (spherosiderite).",
-      "scenarios": [
-        "mvt"
-      ],
+      "scenarios": [],
       "T_range_C": [
         20,
         300
@@ -1179,9 +1177,7 @@
       ],
       "class": "carbonate",
       "description": "MnCO₃ — the rosy manganese carbonate, the pink mineral of cabinet specimens. Same R3̄c calcite-group structure with Mn²⁺ replacing Ca²⁺. Forms a continuous solid solution toward calcite via the kutnohorite (CaMn carbonate) intermediate, producing the diagnostic agate-like banding when Mn/Ca ratios oscillate. Color is intrinsic (Mn²⁺ chromophore), not a trace activator. Stability requires moderate-to-reducing conditions: aggressive oxidation flips Mn²⁺ to Mn³⁺/Mn⁴⁺ and the surface converts to black manganese oxides (pyrolusite, psilomelane). Forms in epithermal Mn-bearing veins (Capillitas Argentina, Sweet Home Colorado), metamorphosed Mn sediments (N'Chwaning South Africa), and low-T carbonate replacement zones.",
-      "scenarios": [
-        "mvt"
-      ],
+      "scenarios": [],
       "T_range_C": [
         20,
         250
@@ -2804,8 +2800,7 @@
       "class": "sulfide",
       "description": "FeAsS, the arsenic gateway mineral and the #1 gold-trapping mineral. Mesothermal primary sulfide (300-500°C, reducing); silver-white metallic prisms with diamond cross-section, deep longitudinal striations. Emits garlic odor when struck (As vapor — diagnostic). Structurally traps Au up to ~1500 ppm as 'invisible gold' (Reich et al. 2005; Cook & Chryssoulis 1990) — released to fluid on supergene oxidation, producing the orogenic Au-enrichment signature (Graeme et al. 2019 for Bisbee). Oxidation pathway: FeAsS + O₂ + H₂O → Fe³⁺ + AsO₄³⁻ + H₂SO₄ → feeds scorodite + acidifies.",
       "scenarios": [
-        "porphyry",
-        "bisbee"
+        "porphyry"
       ],
       "T_range_C": [
         150,
@@ -3025,7 +3020,6 @@
       "class": "sulfate",
       "description": "SrSO₄, the strontium sulfate; isostructural with barite (the two form a partial solid solution; intermediates 'celestobarite' and 'barytocelestine' common in mixed-cation fluids). The diagnostic pale celestial blue is an F-center defect color — radiation-damaged anion vacancies absorb yellow-orange light, leaving the calm sky blue that named the species. Famous occurrences: Madagascar Sakoany geodes (football-sized, 30 cm pale-blue tabular plates — world's largest), Sicilian Caltanissetta sulfur-vug fibrous habit (radiating fibers on yellow native sulfur), Lake Erie / Put-in-Bay (Crystal Cave on South Bass Island — world's largest known geode at 35 ft³). Industrial use: source of Sr for red firework colors; ⁸⁷Sr/⁸⁶Sr-isotope tracer for paleobrine geochronology (Schwartz et al. 2018).",
       "scenarios": [
-        "mvt",
         "supergene_oxidation",
         "sabkha_dolomitization"
       ],
@@ -5601,6 +5595,7 @@
         "gem_pegmatite",
         "radioactive_pegmatite"
       ],
+      "_requires_scenario_license": true,
       "T_range_C": [
         300,
         650
@@ -7900,10 +7895,9 @@
         }
       ],
       "class": "silicate",
-      "description": "Be₃Al₂Si₆O₁₈ with Cr³⁺ (or V³⁺) substituting for Al — the green variety of beryl. The 'emerald paradox': Cr is ultramafic, Be is pegmatitic; these chemistries almost never coexist. Emerald forms where pegmatite fluid meets ultramafic country rock (Colombia Muzo shale-hosted, Zambia Kagem schist-hosted, Cruzeiro pegmatite-only). Top Colombian gem emerald is rarer than diamond as gem material.",
-      "scenarios": [
-        "gem_pegmatite"
-      ],
+      "description": "Be₃Al₂Si₆O₁₈ with Cr³⁺ (or V³⁺) substituting for Al — the green variety of beryl. The 'emerald paradox': Cr is commonly supplied by mafic-ultramafic or Cr-bearing sedimentary rocks while Be is commonly pegmatitic; the required chemistries rarely coexist. Classic deposits include Colombia's black-shale-hosted systems and Zambia's schist-hosted Kagem district. Ordinary green beryl is not automatically emerald without the required chromophore and gemological evidence.",
+      "scenarios": [],
+      "_requires_scenario_license": true,
       "T_range_C": [
         300,
         650
@@ -7997,6 +7991,7 @@
       "scenarios": [
         "gem_pegmatite"
       ],
+      "_requires_scenario_license": true,
       "T_range_C": [
         300,
         650
@@ -8082,6 +8077,7 @@
       "scenarios": [
         "gem_pegmatite"
       ],
+      "_requires_scenario_license": true,
       "T_range_C": [
         300,
         650
@@ -8167,6 +8163,7 @@
       "scenarios": [
         "gem_pegmatite"
       ],
+      "_requires_scenario_license": true,
       "T_range_C": [
         300,
         650
@@ -8273,6 +8270,7 @@
       "scenarios": [
         "marble_contact_metamorphism"
       ],
+      "_requires_scenario_license": true,
       "T_range_C": [
         400,
         1000
@@ -8377,6 +8375,7 @@
       "scenarios": [
         "marble_contact_metamorphism"
       ],
+      "_requires_scenario_license": true,
       "T_range_C": [
         500,
         1000
@@ -8490,6 +8489,7 @@
       "scenarios": [
         "marble_contact_metamorphism"
       ],
+      "_requires_scenario_license": true,
       "T_range_C": [
         500,
         1000
@@ -9219,7 +9219,6 @@
       "class": "sulfide",
       "description": "NiS — trigonal nickel sulfide, brass-yellow to bronze-yellow metallic. Mohs 3-3.5, the rare nickel mineral that grows as hair-thin acicular needles in geode cavities. Forms in lower-T regimes than nickeline (NiAs); when As is depleted and Ni + S remain, NiS takes the field. The capillary habit is so distinctive that 'millerite' is shorthand among collectors for any radiating-needle sulfide. Showcase localities: Halls Gap (Kentucky), Sterling Hill (NJ), Glamorgan (Wales). Sources: research/minerals/research-millerite.md (boss commit f2939da), Bayliss 1969 (Geochim. Cosmochim. Acta 33).",
       "scenarios": [
-        "bisbee",
         "supergene_oxidation"
       ],
       "T_range_C": [
@@ -11928,7 +11927,6 @@
       "description": "NaCl, rock salt — the canonical chloride evaporite. Forms by evaporative concentration of Na-Cl-rich brines: closed-basin playas, sabkha, drained vugs in the supergene zone. Hopper-growth (skeletal cube with pyramidal hollows) is the signature high-supersaturation habit; clean cubes form when the brine concentrates slowly. Type localities: Wieliczka Salt Mine (Poland — meter-scale cubes, the cathedral carved in salt); Stassfurt (Germany — brilliant blue irradiated halite); Searles Lake (California — pink hoppered crystals from evaporation ponds with halobacterial carotenoids).",
       "scenarios": [
         "searles_lake",
-        "bisbee",
         "sabkha_dolomitization"
       ],
       "T_range_C": [

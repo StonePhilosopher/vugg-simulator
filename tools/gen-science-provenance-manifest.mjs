@@ -13,6 +13,11 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { loadSimBundle } from './_harness.mjs';
+import {
+  LOCALITY_FREQUENCY_SEEDS,
+  localityFrequencySpecHash,
+  validateFrequencyScenarioReceipt,
+} from './locality-frequency-contract.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CHECK = process.argv.includes('--check');
@@ -66,7 +71,11 @@ function inspectArchive(errors, id, specHash, version, modelDigest) {
     return null;
   }
   let strip;
-  try { strip = JSON.parse(fs.readFileSync(archivePath, 'utf8')); }
+  let raw;
+  try {
+    raw = fs.readFileSync(archivePath);
+    strip = JSON.parse(raw.toString('utf8'));
+  }
   catch (error) {
     errors.push(`${id}: unreadable strip archive (${error.message})`);
     return null;
@@ -83,6 +92,59 @@ function inspectArchive(errors, id, specHash, version, modelDigest) {
     scenario_spec_hash: strip.scenario_spec_hash,
     seed: strip.seed,
     steps: strip.steps,
+    strip_sha256: sha256(raw),
+  };
+}
+
+function inspectLocalityFrequencyReceipt(errors, version, modelDigest, scenarioFactories) {
+  const receiptPath = path.join(ROOT, 'tests-js', 'baselines', `locality_frequency_v${version}.json`);
+  if (!fs.existsSync(receiptPath)) {
+    errors.push(`missing multi-seed locality receipt ${path.relative(ROOT, receiptPath)}`);
+    return null;
+  }
+  let receipt;
+  let raw;
+  try {
+    raw = fs.readFileSync(receiptPath);
+    receipt = JSON.parse(raw.toString('utf8'));
+  } catch (error) {
+    errors.push(`unreadable multi-seed locality receipt (${error.message})`);
+    return null;
+  }
+  if (receipt.schema !== 'vugg-locality-frequency-baseline-v1') {
+    errors.push(`multi-seed locality receipt has unexpected schema '${receipt.schema}'`);
+  }
+  if (receipt.sim_version !== version) errors.push('multi-seed locality receipt has stale SIM version');
+  if (receipt.model_digest !== modelDigest) errors.push('multi-seed locality receipt has stale model digest');
+  if (canonicalJson(receipt.seeds) !== canonicalJson([...LOCALITY_FREQUENCY_SEEDS])) {
+    errors.push(`multi-seed locality receipt must use seeds ${LOCALITY_FREQUENCY_SEEDS.join(', ')}`);
+  }
+  const expectedIds = Object.keys(scenarioFactories).sort();
+  const actualIds = Object.keys(receipt.scenarios || {}).sort();
+  if (canonicalJson(actualIds) !== canonicalJson(expectedIds)) {
+    errors.push('multi-seed locality receipt scenario fleet is incomplete or contains unknown scenarios');
+  }
+  for (const id of expectedIds) {
+    const scenarioReceipt = receipt.scenarios?.[id];
+    if (!scenarioReceipt) continue;
+    const spec = scenarioFactories[id]._json5_spec;
+    if (scenarioReceipt.locality_frequency_spec_hash !== localityFrequencySpecHash(spec)) {
+      errors.push(`${id}: multi-seed locality behavioral contract hash is stale`);
+    }
+    if (Number(scenarioReceipt.duration_steps) !== Number(spec.duration_steps)) {
+      errors.push(`${id}: multi-seed locality duration is stale`);
+    }
+    const validation = validateFrequencyScenarioReceipt(scenarioReceipt, receipt.seeds);
+    for (const error of validation.errors) errors.push(`${id}: multi-seed locality ${error}`);
+  }
+  return {
+    path: path.relative(ROOT, receiptPath).replaceAll('\\', '/'),
+    schema: receipt.schema,
+    sim_version: receipt.sim_version,
+    model_digest: receipt.model_digest,
+    seeds: receipt.seeds,
+    scenario_count: actualIds.length,
+    sha256: sha256(raw),
   };
 }
 
@@ -101,6 +163,9 @@ const {
 const errors = [];
 const referencedHandlers = new Set();
 const scenarios = [];
+const localityFrequencyProvenance = inspectLocalityFrequencyReceipt(
+  errors, SIM_VERSION, MODEL_DIGEST, SCENARIOS,
+);
 const pressureGridPath = path.join(ROOT, 'data', 'generated', 'thermo-pressure-grid.json');
 const pressureVerifierPath = path.join(ROOT, 'tools', 'check-pressure-grid.mjs');
 let pressureGridProvenance = null;
@@ -203,8 +268,18 @@ for (const id of Object.keys(SCENARIOS).sort()) {
   const expected = (spec.expects_species || []).map(entry => (
     typeof entry === 'string' ? entry : entry?.mineral
   )).filter(Boolean).map(String);
-  for (const mineral of expected) {
-    if (!MINERAL_SPEC[mineral]) errors.push(`${id}: expects_species references unknown mineral '${mineral}'`);
+  const deterministic = stableStrings(spec.deterministic_species || []);
+  const statistical = stableStrings(spec.statistical_species || []);
+  const aspirational = stableStrings(spec.aspirational_species || []);
+  for (const [tier, minerals] of Object.entries({
+    expects_species: expected,
+    deterministic_species: deterministic,
+    statistical_species: statistical,
+    aspirational_species: aspirational,
+  })) {
+    for (const mineral of minerals) {
+      if (!MINERAL_SPEC[mineral]) errors.push(`${id}: ${tier} references unknown mineral '${mineral}'`);
+    }
   }
 
   setSeed(42);
@@ -227,6 +302,7 @@ for (const id of Object.keys(SCENARIOS).sort()) {
   scenarios.push({
     id,
     scenario_spec_hash: specHash,
+    locality_frequency_spec_hash: localityFrequencySpecHash(spec),
     anchor: String(spec.anchor || ''),
     duration_steps: duration,
     initial: {
@@ -240,6 +316,9 @@ for (const id of Object.keys(SCENARIOS).sort()) {
     citations: sources,
     citations_sha256: sha256(JSON.stringify(sources)),
     expects_species: stableStrings(expected),
+    deterministic_species: deterministic,
+    statistical_species: statistical,
+    aspirational_species: aspirational,
     excluded_species: stableStrings(spec.excluded_species || []),
     event_types: stableStrings(eventTypes),
     event_count: (spec.events || []).length,
@@ -256,13 +335,14 @@ if (errors.length) {
 }
 
 const manifest = {
-  schema: 'vugg-science-provenance-manifest-v1',
+  schema: 'vugg-science-provenance-manifest-v4',
   sim_version: SIM_VERSION,
   model_digest: MODEL_DIGEST,
   canonical_run_seed: 42,
   shape_seed_policy: 'authored independently in data/scenarios.json5',
   support_envelopes: SUPPORT,
   thermo_pressure_grid: pressureGridProvenance,
+  locality_frequency: localityFrequencyProvenance,
   totals: {
     scenarios: scenarios.length,
     citations: scenarios.reduce((sum, row) => sum + row.citations.length, 0),

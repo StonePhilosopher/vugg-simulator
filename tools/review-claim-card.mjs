@@ -88,7 +88,7 @@ function normalizeExpectationEntries(entries) {
   return (Array.isArray(entries) ? entries : []).map((entry) => (
     typeof entry === 'string'
       ? { mineral: entry, reason: null }
-      : { mineral: String(entry?.mineral || ''), reason: entry?.reason || null }
+      : { ...entry, mineral: String(entry?.mineral || ''), reason: entry?.reason || null }
   )).filter((entry) => entry.mineral);
 }
 
@@ -210,22 +210,32 @@ function buildExecutedScienceTestimony(strip) {
   };
 }
 
-export function buildCard(name, spec, strip, science) {
+export function buildCard(name, spec, strip, science, { stripSha256 = null } = {}) {
   const para = paragenesis(strip);
   const present = new Set(para.map((p) => p.mineral));
   const expects = spec.expects_species || [];
+  const deterministicAccessories = normalizeExpectationEntries(spec.deterministic_species);
+  const deterministic = [
+    ...expects.map((mineral) => ({
+      mineral: typeof mineral === 'string' ? mineral : String(mineral?.mineral || ''),
+      reason: typeof mineral === 'string' ? 'Authored headline release promise.' : mineral?.reason || null,
+      headline: true,
+    })),
+    ...deterministicAccessories.map((entry) => ({ ...entry, headline: false })),
+  ].filter((entry) => entry.mineral);
   const statistical = normalizeExpectationEntries(spec.statistical_species);
   const aspirational = normalizeExpectationEntries(spec.aspirational_species);
+  const excludedSpecies = spec.excluded_species || {};
   const authored = new Set([
-    ...expects,
+    ...deterministic.map((entry) => entry.mineral),
     ...statistical.map((entry) => entry.mineral),
     ...aspirational.map((entry) => entry.mineral),
+    ...Object.keys(excludedSpecies),
   ]);
   const surprises = para.filter((p) => !authored.has(p.mineral)).map((p) => p.mineral);
-  const noShows = expects.filter((m) => !present.has(m));
+  const noShows = deterministic.map((entry) => entry.mineral).filter((m) => !present.has(m));
   const statisticalNoShows = statistical.map((entry) => entry.mineral).filter((m) => !present.has(m));
   const aspirationalNoShows = aspirational.map((entry) => entry.mineral).filter((m) => !present.has(m));
-  const excludedSpecies = spec.excluded_species || {};
   const excludedAppearances = Object.keys(excludedSpecies).filter((m) => present.has(m));
 
   const env = {};
@@ -260,17 +270,21 @@ export function buildCard(name, spec, strip, science) {
   }
 
   return {
+    schema: 'vugg-claim-card-v2',
     scenario: name,
     sim_version: strip.sim_version,
     model_digest: strip.model_digest,
     scenario_spec_hash: strip.scenario_spec_hash,
     strip_steps: strip.steps,
+    strip_sha256: stripSha256,
     claim: {
       anchor: spec.anchor || null,
       description: spec.description || null,
       expects_species: expects,
       expectation_contract: {
-        deterministic: expects,
+        deterministic,
+        deterministic_headline: expects,
+        deterministic_accessory: deterministicAccessories,
         statistical,
         aspirational,
       },
@@ -308,6 +322,7 @@ export function renderMarkdown(card) {
   const sd = c.authored_science_context;
   L.push(`**Model digest:** ${card.model_digest}`);
   L.push(`**Scenario spec hash:** ${card.scenario_spec_hash}`);
+  L.push(`**Archived strip SHA-256:** ${card.strip_sha256 || '(not recorded)'}`);
   L.push('');
   L.push('## Model boundary: calibrated growth budget');
   L.push(`  - Kind: ${sd.growth_budget.kind}`);
@@ -316,7 +331,8 @@ export function renderMarkdown(card) {
   L.push(`  - Limitation: ${sd.growth_budget.limitation}`);
   L.push('');
   L.push('## Expectation contract');
-  L.push(`**Deterministic (${c.expectation_contract.deterministic.length}):** ${c.expectation_contract.deterministic.join(', ') || '(none)'}`);
+  L.push(`**Deterministic headline (${c.expectation_contract.deterministic_headline.length}):** ${c.expectation_contract.deterministic_headline.join(', ') || '(none)'}`);
+  L.push(`**Deterministic accessories (${c.expectation_contract.deterministic_accessory.length}):** ${c.expectation_contract.deterministic_accessory.map((e) => `${e.mineral}${e.reason ? ` — ${e.reason}` : ''}`).join('; ') || '(none)'}`);
   L.push(`**Statistical (${c.expectation_contract.statistical.length}):** ${c.expectation_contract.statistical.map((e) => `${e.mineral}${e.reason ? ` — ${e.reason}` : ''}`).join('; ') || '(none)'}`);
   L.push(`**Aspirational (${c.expectation_contract.aspirational.length}):** ${c.expectation_contract.aspirational.map((e) => `${e.mineral}${e.reason ? ` — ${e.reason}` : ''}`).join('; ') || '(none)'}`);
   const excluded = Object.entries(c.excluded_species || {});
@@ -452,7 +468,8 @@ async function main() {
     const stripPath = path.join(stripDir, `${name}.json`);
     if (!spec) { console.error(`[card] no scenario def for ${name}`); continue; }
     if (!fs.existsSync(stripPath)) { console.error(`[card] no strip v${version} for ${name}`); continue; }
-    const strip = JSON.parse(fs.readFileSync(stripPath, 'utf8'));
+    const stripRaw = fs.readFileSync(stripPath);
+    const strip = JSON.parse(stripRaw.toString('utf8'));
     if (version !== science.SIM_VERSION) {
       throw new Error(`[card] requested v${version}, but the loaded science bundle is v${science.SIM_VERSION}; historical cards require their historical science bundle`);
     }
@@ -466,7 +483,8 @@ async function main() {
       seed: 42,
       scenarioSpecHash,
     });
-    const card = buildCard(name, spec, strip, science);
+    const stripSha256 = crypto.createHash('sha256').update(stripRaw).digest('hex');
+    const card = buildCard(name, spec, strip, science, { stripSha256 });
     if (outDir) {
       fs.writeFileSync(path.join(outDir, `${name}.md`), renderMarkdown(card).trimEnd() + '\n');
       fs.writeFileSync(path.join(outDir, `${name}.json`), JSON.stringify(card, null, 2) + '\n');

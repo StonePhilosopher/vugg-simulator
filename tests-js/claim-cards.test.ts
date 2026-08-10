@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -30,19 +31,38 @@ describe('adversarial claim-card fleet', () => {
 
       for (const scenario of scenarioNames) {
         const spec = SCENARIOS[scenario]._json5_spec;
-        const strip = JSON.parse(fs.readFileSync(path.join(stripDir, `${scenario}.json`), 'utf8'));
+        const stripBytes = fs.readFileSync(path.join(stripDir, `${scenario}.json`));
+        const strip = JSON.parse(stripBytes.toString('utf8'));
         const card = JSON.parse(fs.readFileSync(path.join(outDir, `${scenario}.json`), 'utf8'));
 
       expect(card, `${scenario}: identity`).toMatchObject({
+        schema: 'vugg-claim-card-v2',
         scenario,
         sim_version: SIM_VERSION,
         model_digest: MODEL_DIGEST,
         scenario_spec_hash: strip.scenario_spec_hash,
         strip_steps: strip.steps,
+        strip_sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       });
       expect(card.claim.expects_species, `${scenario}: authored species`).toEqual(spec.expects_species || []);
+      expect(card.strip_sha256, `${scenario}: strip content binding`)
+        .toBe(crypto.createHash('sha256').update(stripBytes).digest('hex'));
       expect(card.claim.expectation_contract.deterministic, `${scenario}: deterministic contract`)
+        .toEqual([
+          ...(spec.expects_species || []).map((mineral: string) => ({
+            mineral,
+            reason: 'Authored headline release promise.',
+            headline: true,
+          })),
+          ...(spec.deterministic_species || []).map((entry: any) => ({
+            ...entry,
+            headline: false,
+          })),
+        ]);
+      expect(card.claim.expectation_contract.deterministic_headline, `${scenario}: deterministic headline`)
         .toEqual(spec.expects_species || []);
+      expect(card.claim.expectation_contract.deterministic_accessory, `${scenario}: deterministic accessories`)
+        .toEqual(spec.deterministic_species || []);
       expect(card.claim.expectation_contract.statistical, `${scenario}: statistical contract`)
         .toEqual(spec.statistical_species || []);
       expect(card.claim.expectation_contract.aspirational, `${scenario}: aspirational contract`)
@@ -103,6 +123,7 @@ describe('adversarial claim-card fleet', () => {
         const markdown = fs.readFileSync(path.join(outDir, `${scenario}.md`), 'utf8');
         expect(markdown, `${scenario}: rendered digest`).toContain(`**Model digest:** ${MODEL_DIGEST}`);
         expect(markdown, `${scenario}: rendered spec identity`).toContain(`**Scenario spec hash:** ${strip.scenario_spec_hash}`);
+        expect(markdown, `${scenario}: rendered strip digest`).toContain(`**Archived strip SHA-256:** ${card.strip_sha256}`);
         expect(markdown, `${scenario}: rendered model boundary`).toContain('Model boundary: calibrated growth budget');
         expect(markdown, `${scenario}: rendered expectation contract`).toContain('Expectation contract');
         expect(markdown, `${scenario}: deterministic delivery`).toContain('**Deterministic no-shows:** (none)');
@@ -114,6 +135,17 @@ describe('adversarial claim-card fleet', () => {
           expect(markdown).toContain('salinity: 120 → 250 psu  [35, 250]');
           expect(markdown).toContain('quantized display range [0, 200] clipped, raw executed state reported');
         }
+
+        const committedJson = fs.readFileSync(
+          path.join(ROOT, 'archive', 'claim-cards', `v${SIM_VERSION}`, `${scenario}.json`),
+          'utf8',
+        );
+        const committedMarkdown = fs.readFileSync(
+          path.join(ROOT, 'archive', 'claim-cards', `v${SIM_VERSION}`, `${scenario}.md`),
+          'utf8',
+        );
+        expect(fs.readFileSync(path.join(outDir, `${scenario}.json`), 'utf8'), `${scenario}: committed JSON card`).toBe(committedJson);
+        expect(markdown, `${scenario}: committed Markdown card`).toBe(committedMarkdown);
       }
     } finally {
       fs.rmSync(outDir, { recursive: true, force: true });

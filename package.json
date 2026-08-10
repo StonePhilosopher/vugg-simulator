@@ -10,13 +10,18 @@
     "audit:creative": "node tools/creative-lever-audit.mjs",
     "audit:cations": "node tools/cation-sink-audit.mjs schneeberg 42 --check",
     "audit:bif": "node tools/asbestos-hills-observe.mjs --check",
+    "audit:localities": "node tools/locality-envelope-audit.mjs --check",
+    "gen:locality-frequency": "node tools/gen-locality-frequency-baseline.mjs",
+    "science:verify": "node tools/science-workflow.mjs --verify",
+    "science:rebake": "node tools/science-workflow.mjs --rebake",
     "audit:science": "node tools/gen-science-provenance-manifest.mjs --check",
     "check:pressure-grid": "node tools/check-pressure-grid.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "pretest": "tsc -p tsconfig.json",
-    "test": "vitest run",
+    "test": "node tools/test-workflow.mjs",
+    "test:direct": "vitest run",
     "test:watch": "vitest",
-    "ci": "npm run typecheck && npm run build:check && npm run audit:creative && npm run audit:cations && npm run audit:bif && npm run audit:science && npm test"
+    "ci": "npm run typecheck && npm run build:check && npm run audit:creative && npm run audit:cations && npm run audit:bif && npm run audit:science && npm run audit:localities && npm test"
   },
   "devDependencies": {
     "jsdom": "^29.1.1",

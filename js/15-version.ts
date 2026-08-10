@@ -12761,7 +12761,32 @@
 //       oxygen replenishment can complete the gold-brown state. HF is required
 //       for acid framework loss, and tiger iron requires a local exposed iron
 //       phase rather than distant hematite elsewhere in the vug.
-const SIM_VERSION = 260;
+//
+// v261 — Fleet locality-envelope reconciliation (August 2026). Converts the
+//       passive claim-card "surprises" list into a strict, archived-strip
+//       science gate with deterministic/statistical/aspirational/excluded
+//       tiers and optional first-appearance windows. Bingham's step-85
+//       exhumation now drops the oxidized cap to shallow pressure and 35->25 C
+//       and permanently ends magmatic reheating, so supergene malachite cannot
+//       nucleate at the previous ~244 C artifact. The current district-wide
+//       Bisbee inventory removes unsupported Co/Ni loading and excludes
+//       amosite, arsenopyrite, millerite, realgar/pararealgar, erythrite,
+//       annabergite, and halite. Final drying no longer invents a 150 psu
+//       brine solely to force NaCl. Current archived products must now be
+//       explicitly classified or the fast locality audit fails CI. Shared
+//       beryl/corundum dispatchers now enforce the selected endmember's own
+//       exclusion, four-tier positive licence, paragenetic window, and causal
+//       event prerequisite. A bounded seed-1/2/42 receipt distinguishes truly
+//       stochastic products from deterministic and aspirational tiers. Claim
+//       cards/manifests are SHA-256-bound to their exact strip bytes, and absent
+//       rock pressure remains null in executed testimony rather than Number(null)=0.
+//       Three-seed evidence now distinguishes deterministic headline promises,
+//       deterministic accessories with retained rationales, genuinely stochastic
+//       products, and current aspirations. Wittichen's authored cooling movement
+//       reaches its step-170 exhumation boundary and ambient thermal pulses remain
+//       disabled, removing a ten-step false-reheating window that created late
+//       high-temperature accessory phases outside the scenario's paragenesis.
+const SIM_VERSION = 261;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12806,14 +12831,18 @@ const MODEL_DIGEST = [
   'competition:accepted-axial-timescale+formula-weighted-budget-v3',
   'thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3',
   'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
-  'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2',
+  'scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite-v6',
+  'bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3',
+  'bisbee:Graeme-district-inventory+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v2',
+  'wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary-v2',
   'weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2',
   'cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2',
   'koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3',
   'roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3',
-  'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2',
+  'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation+null-confining-pressure-v3',
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
   'transition-locality-exclusion:target-gated-v1',
+  'evidence-binding:strip-sha256+byte-identical-claim-card+frequency-behavior-hash-v1',
   'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+full-zone-ledgers-fail-closed-v3',
 ].join('|');
 

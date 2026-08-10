@@ -395,7 +395,7 @@ class StripRecorder {
     const temperatureC = Number(sim?.conditions?.temperature);
     const fluidPressureKbar = Number(sim?.conditions?.pressure);
     const confiningRaw = sim?.conditions?.wall?.confining_pressure_kbar;
-    const confiningPressureKbar = Number.isFinite(Number(confiningRaw))
+    const confiningPressureKbar = confiningRaw != null && Number.isFinite(Number(confiningRaw))
       ? Number(confiningRaw) : null;
     const calciteBoundary = Number.isFinite(temperatureC)
       && typeof calciteAragoniteBoundaryKbar === 'function'

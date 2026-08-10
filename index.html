@@ -19185,7 +19185,32 @@ function scenarioSpecHash(spec) {
 //       oxygen replenishment can complete the gold-brown state. HF is required
 //       for acid framework loss, and tiger iron requires a local exposed iron
 //       phase rather than distant hematite elsewhere in the vug.
-const SIM_VERSION = 260;
+//
+// v261 — Fleet locality-envelope reconciliation (August 2026). Converts the
+//       passive claim-card "surprises" list into a strict, archived-strip
+//       science gate with deterministic/statistical/aspirational/excluded
+//       tiers and optional first-appearance windows. Bingham's step-85
+//       exhumation now drops the oxidized cap to shallow pressure and 35->25 C
+//       and permanently ends magmatic reheating, so supergene malachite cannot
+//       nucleate at the previous ~244 C artifact. The current district-wide
+//       Bisbee inventory removes unsupported Co/Ni loading and excludes
+//       amosite, arsenopyrite, millerite, realgar/pararealgar, erythrite,
+//       annabergite, and halite. Final drying no longer invents a 150 psu
+//       brine solely to force NaCl. Current archived products must now be
+//       explicitly classified or the fast locality audit fails CI. Shared
+//       beryl/corundum dispatchers now enforce the selected endmember's own
+//       exclusion, four-tier positive licence, paragenetic window, and causal
+//       event prerequisite. A bounded seed-1/2/42 receipt distinguishes truly
+//       stochastic products from deterministic and aspirational tiers. Claim
+//       cards/manifests are SHA-256-bound to their exact strip bytes, and absent
+//       rock pressure remains null in executed testimony rather than Number(null)=0.
+//       Three-seed evidence now distinguishes deterministic headline promises,
+//       deterministic accessories with retained rationales, genuinely stochastic
+//       products, and current aspirations. Wittichen's authored cooling movement
+//       reaches its step-170 exhumation boundary and ambient thermal pulses remain
+//       disabled, removing a ten-step false-reheating window that created late
+//       high-temperature accessory phases outside the scenario's paragenesis.
+const SIM_VERSION = 261;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -19229,14 +19254,18 @@ const MODEL_DIGEST = [
     'competition:accepted-axial-timescale+formula-weighted-budget-v3',
     'thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3',
     'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
-    'scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2',
+    'scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite-v6',
+    'bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3',
+    'bisbee:Graeme-district-inventory+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v2',
+    'wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary-v2',
     'weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2',
     'cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2',
     'koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3',
     'roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3',
-    'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2',
+    'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation+null-confining-pressure-v3',
     'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
     'transition-locality-exclusion:target-gated-v1',
+    'evidence-binding:strip-sha256+byte-identical-claim-card+frequency-behavior-hash-v1',
     'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+full-zone-ledgers-fail-closed-v3',
 ].join('|');
 
@@ -56950,6 +56979,29 @@ function event_oxidation(conditions) {
     conditions.temperature -= 40;
     return `Oxidizing meteoric water infiltrates. Sulfides becoming unstable — S²⁻ oxidizing to SO₄²⁻. T drops to ${conditions.temperature.toFixed(0)}°C. Sulfate available for gypsum/selenite.`;
 }
+// Bingham's upper oxidized cap is separated from the main-stage porphyry by
+// exhumation and a geological time gap. A generic -40 C event left the pocket
+// above 300 C and allowed later fracture pulses to reheat it, which made the
+// seed-42 malachite a high-temperature artifact. This boundary changes the
+// physical regime explicitly: shallow pressure, meteoric temperature, and no
+// resumed magmatic pulse generator after exposure.
+function event_porphyry_supergene_uplift(conditions) {
+    conditions.fluid.O2 = 1.8;
+    const sulfideConsumed = conditions.fluid.S * 0.3;
+    conditions.fluid.S = conditions.fluid.S - sulfideConsumed + (sulfideConsumed * 0.7);
+    conditions.temperature = 35;
+    conditions.pressure = clampFluidPressureKbar(0.001);
+    conditions.flow_rate = 0.8;
+    conditions.wall.ambient_temperature_C = 25;
+    conditions.wall.thermal_pulses = false;
+    return 'Exhumation exposes the Bingham stockwork to oxygenated meteoric water. Pressure falls toward atmospheric, the pocket cools to 35 C, sulfide sulfur begins oxidizing, and the extinct magmatic heat source can no longer re-pulse the supergene cap.';
+}
+function event_porphyry_supergene_maturation(conditions) {
+    conditions.temperature = 25;
+    conditions.flow_rate = 0.2;
+    conditions.fluid.O2 = Math.max(conditions.fluid.O2, 1.8);
+    return 'The exposed cap equilibrates to 25 C. Slow oxygenated seepage can now form documented supergene copper minerals without importing a hydrothermal temperature.';
+}
 // v26: tectonic uplift breaches the cavity, fluid drains completely.
 function event_tectonic_uplift_drains(conditions) {
     conditions.fluid_surface_ring = 0.0;
@@ -57134,6 +57186,8 @@ const EVENT_REGISTRY = {
     tectonic_shock: event_tectonic_shock,
     copper_injection: event_copper_injection,
     oxidation: event_oxidation,
+    porphyry_supergene_uplift: event_porphyry_supergene_uplift,
+    porphyry_supergene_maturation: event_porphyry_supergene_maturation,
     tectonic_uplift_drains: event_tectonic_uplift_drains,
     aquifer_recharge_floods: event_aquifer_recharge_floods,
     acidify: event_acidify,
@@ -57475,10 +57529,24 @@ function _buildScenarioFromSpec(scenarioId, spec) {
             // constraints, not global mineral bans: the same engine remains live in
             // documented scenarios and Creative mode.
             excluded_species: spec.excluded_species,
+            // Positive locality licences are the union of the four authored
+            // positive expectation tiers. Locality-sensitive gem/rare-phase engines
+            // consume this contract instead of the stale display-only `scenarios`
+            // lists in minerals.json. Creative mode has no scenario id and remains
+            // unrestricted.
+            expects_species: spec.expects_species,
+            deterministic_species: spec.deterministic_species,
+            statistical_species: spec.statistical_species,
+            aspirational_species: spec.aspirational_species,
             // Scenario-authoritative crystallization windows use the same step
             // numbers as events and player-facing testimony.
             // They constrain only this scenario; Creative mode retains every engine.
             nucleation_windows: spec.nucleation_windows,
+            // Some paragenetic gates are causal rather than clock-only. The executed
+            // event history below is populated by apply_events and is saved as part
+            // of the ordinary scenario state.
+            nucleation_prerequisites: spec.nucleation_prerequisites,
+            executed_event_types: [],
             // Executed low-temperature exposure history.  This is copied as data,
             // then validated/consumed by js/44e-weathering-epilogue.ts; an authored
             // final-state label alone never changes chemistry.
@@ -57508,6 +57576,7 @@ function _buildScenarioFromSpec(scenarioId, spec) {
             // boundary value (for example a vent target pCO2). Existing one-argument
             // handlers ignore the extra argument and retain their behavior.
             apply_fn: (conditions) => EVENT_REGISTRY[ev.type](conditions, ev),
+            type: ev.type,
             // FLUID-SOURCE SPOTS Phase 2d — optional spot-lifecycle directive. A
             // string ('seal' | 'breach') or {action, kind} closes/opens the cavity's
             // feeders when this event fires (apply_events handles it centrally, after
@@ -58859,18 +58928,11 @@ function event_bisbee_final_drying(c) {
     c.fluid.O2 = 1.0;
     // v25: complete drain — every ring becomes vadose.
     c.fluid_surface_ring = 0.0;
-    // rung-5 (SIM 234): the drying brine's salinity finally rises with the
-    // drying — it sat frozen at 29.9 psu while concentration tripled (the
-    // hostile review's noted decoupling; its lever: "drive final_drying far
-    // higher AND/OR let salinity climb from its frozen 29.9 psu"). 150 psu ×
-    // c 3 = 12.9× seawater — past halite's 10.6× Usiglio onset, so the
-    // DEFENDED arid-supergene efflorescence (mine-wall halite in chalcanthite
-    // country; Onac 2025) fires via the honest mechanism, while sylvite stays
-    // gated out (12.9 ≪ 70× bittern; the review: "no K-evaporite parent
-    // exists in this system"). 150 also keeps the anhydrite angelite-note
-    // threshold (>150) uncrossed and chalcanthite's sal_f already caps at 3
-    // for any salinity ≥ 90 (js/40) — bounded side-effects, checked.
-    c.fluid.salinity = 150;
+    // SIM 261: do not convert a closed, drying oxidation pocket into an
+    // evaporite brine merely to force halite. Bisbee's documented post-mining
+    // crusts are overwhelmingly hydrated sulfates; the current district-wide
+    // species inventory does not list halite. Concentration can still rise as
+    // water is lost, but dissolved-salt mass and salinity are not invented.
     return "The fractures seal with calcite cement. Groundwater stops. The pocket is a closed system again, this time with the full oxidation assemblage frozen in place: chalcopyrite cores wrapped in chalcocite, those wrapped in cuprite, those overgrown by native copper, those overgrown by azurite, those converted to malachite, those pseudomorphed by chrysocolla. A million years from now, when a mining shaft intersects this pocket, an assayer will photograph the specimen and write 'Bisbee, Cochise County' on the label.";
 }
 
@@ -67360,6 +67422,14 @@ Object.assign(VugSimulator.prototype, {
         for (const event of this.events) {
             if (event.step === this.step) {
                 const result = event.apply_fn(this.conditions);
+                const scenarioState = this.conditions?._scenario;
+                if (scenarioState && typeof event.type === 'string' && event.type) {
+                    const history = Array.isArray(scenarioState.executed_event_types)
+                        ? scenarioState.executed_event_types : [];
+                    if (!history.includes(event.type))
+                        history.push(event.type);
+                    scenarioState.executed_event_types = history;
+                }
                 this.log.push('');
                 this.log.push(`  ⚡ EVENT: ${event.name}`);
                 this.log.push(`     ${result}`);
@@ -68486,7 +68556,7 @@ class StripRecorder {
         const temperatureC = Number(sim?.conditions?.temperature);
         const fluidPressureKbar = Number(sim?.conditions?.pressure);
         const confiningRaw = sim?.conditions?.wall?.confining_pressure_kbar;
-        const confiningPressureKbar = Number.isFinite(Number(confiningRaw))
+        const confiningPressureKbar = confiningRaw != null && Number.isFinite(Number(confiningRaw))
             ? Number(confiningRaw) : null;
         const calciteBoundary = Number.isFinite(temperatureC)
             && typeof calciteAragoniteBoundaryKbar === 'function'
@@ -70181,10 +70251,19 @@ function _scenarioPositiveLicenseBlock(sim, name) {
     const spec = (typeof MINERAL_SPEC !== 'undefined') ? MINERAL_SPEC?.[name] : null;
     if (!spec?._requires_scenario_license)
         return null;
-    const licensed = Array.isArray(spec.scenarios) ? spec.scenarios : [];
-    if (licensed.includes(scenarioId))
+    const scenario = sim.conditions._scenario;
+    const tierMinerals = (entries) => (Array.isArray(entries) ? entries : [])
+        .map((entry) => (typeof entry === 'string' ? entry : entry?.mineral))
+        .filter((mineral) => typeof mineral === 'string' && mineral.length > 0);
+    const licensed = new Set([
+        ...tierMinerals(scenario.expects_species),
+        ...tierMinerals(scenario.deterministic_species),
+        ...tierMinerals(scenario.statistical_species),
+        ...tierMinerals(scenario.aspirational_species),
+    ]);
+    if (licensed.has(name))
         return null;
-    return `no locality license for ${name} in ${scenarioId}; chemistry alone does not prove occurrence (Creative mode remains unrestricted)`;
+    return `no positive four-tier locality license for ${name} in ${scenarioId}; chemistry alone does not prove occurrence (Creative mode remains unrestricted)`;
 }
 function _scenarioNucleationWindowBlock(sim, name) {
     const window = sim?.conditions?._scenario?.nucleation_windows?.[name];
@@ -70203,6 +70282,20 @@ function _scenarioNucleationWindowBlock(sim, name) {
         return `authored paragenesis closed after step ${end} (current step ${authoredStep})`;
     }
     return null;
+}
+function _scenarioNucleationPrerequisiteBlock(sim, name) {
+    const scenario = sim?.conditions?._scenario;
+    const prerequisite = scenario?.nucleation_prerequisites?.[name];
+    if (!prerequisite || typeof prerequisite !== 'object')
+        return null;
+    const requiredEvents = Array.isArray(prerequisite.event_types)
+        ? prerequisite.event_types.map(String).filter(Boolean) : [];
+    const executed = new Set(Array.isArray(scenario.executed_event_types)
+        ? scenario.executed_event_types.map(String) : []);
+    const missing = requiredEvents.filter((eventType) => !executed.has(eventType));
+    if (!missing.length)
+        return null;
+    return `causal paragenesis requires executed event history: ${missing.join(', ')}`;
 }
 // Read-only best-case execution of the actual production nucleator. Every RNG
 // draw returns zero, which passes the codebase's Bernoulli gates while leaving
@@ -70365,6 +70458,19 @@ function assessProductionNucleationDecision(name, sim, sigma, sigmaCrit) {
             blockers: [scenarioWindowBlock],
         };
     }
+    const scenarioPrerequisiteBlock = _scenarioNucleationPrerequisiteBlock(sim, name);
+    if (scenarioPrerequisiteBlock) {
+        return {
+            available: true,
+            eligible: false,
+            stochasticBirth: false,
+            effectiveDrawProbability: null,
+            randomDraws: 0,
+            source: 'scenario causal paragenesis',
+            competingBirth: null,
+            blockers: [scenarioPrerequisiteBlock],
+        };
+    }
     const requiredSubstrate = (typeof MINERAL_GATES_REGISTRY !== 'undefined')
         ? MINERAL_GATES_REGISTRY?.[name]?.required_substrate : null;
     if (requiredSubstrate) {
@@ -70461,6 +70567,8 @@ function _runNuc(sim, fn) {
     if (inferred && _scenarioPositiveLicenseBlock(sim, inferred))
         return;
     if (inferred && _scenarioNucleationWindowBlock(sim, inferred))
+        return;
+    if (inferred && _scenarioNucleationPrerequisiteBlock(sim, inferred))
         return;
     if (!NUC_DERIVED_SEEDS) {
         fn(sim);
@@ -72705,6 +72813,14 @@ function _nuc_spodumene(sim) {
     const existing_qtz_ber = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
     const existing_feld_ber = sim.crystals.filter(c => c.mineral === 'feldspar' && c.active);
     for (const [species, sigma_bf, threshold] of beryl_family_candidates) {
+        // This family shares the spodumene dispatcher, so the outer dispatcher
+        // cannot infer which beryl endmember is about to fire. Enforce every
+        // per-species scenario contract at the actual candidate boundary.
+        if (_scenarioSpeciesExclusion(sim, species)
+            || _scenarioPositiveLicenseBlock(sim, species)
+            || _scenarioNucleationWindowBlock(sim, species)
+            || _scenarioNucleationPrerequisiteBlock(sim, species))
+            continue;
         if (sigma_bf <= threshold)
             continue;
         const existing_sp = sim.crystals.filter(c => c.mineral === species && c.active);
@@ -72774,6 +72890,13 @@ function _nuc_spodumene(sim) {
         ['corundum', sim.conditions.supersaturation_corundum(), MINERAL_GATES_corundum.sigma_crit],
     ];
     for (const [species, sigma_cf, threshold] of corundum_family_candidates) {
+        // Ruby, sapphire, and corundum also share this dispatcher. Apply the
+        // selected endmember's locality contract before it can nucleate.
+        if (_scenarioSpeciesExclusion(sim, species)
+            || _scenarioPositiveLicenseBlock(sim, species)
+            || _scenarioNucleationWindowBlock(sim, species)
+            || _scenarioNucleationPrerequisiteBlock(sim, species))
+            continue;
         if (sigma_cf <= threshold)
             continue;
         if (sim._atNucleationCap(species))

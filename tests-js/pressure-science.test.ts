@@ -253,12 +253,12 @@ describe('differential stress is not fluid pressure', () => {
       step: 1,
       sample_index: 0,
       fluid_pressure_kbar: expect.any(Number),
-      confining_pressure_kbar: expect.any(Number),
+      confining_pressure_kbar: null,
       calcite_aragonite: {
         boundary_kbar: expect.any(Number),
         secure_aragonite: expect.any(Boolean),
       },
-      al2sio5: expect.any(Object),
+      al2sio5: expect.objectContaining({ phase: 'unconstrained', confiningPressureKbar: null }),
       gypsum_anhydrite: { pure_water_boundary_C: expect.any(Number) },
     });
     expect(dataset.stress_event_testimony).toHaveLength(1);
@@ -280,5 +280,23 @@ describe('differential stress is not fluid pressure', () => {
         mechanism: 'test dry-exposure dehydration',
       }),
     ]);
+  });
+
+  it('archives unspecified confining pressure as unknown rather than zero kbar', () => {
+    setSeed(42);
+    const { conditions } = SCENARIOS.porphyry();
+    expect(conditions.wall.confining_pressure_kbar).toBeNull();
+    const sim = new VugSimulator(conditions, []);
+    const recorder = new StripRecorder(sim, { duration_steps: 1, angular_indices: 1 });
+    sim._stripRecorder = recorder;
+    sim.run_step();
+
+    const sample = recorder.finalize().pressure_phase_testimony[0];
+    expect(sample.confining_pressure_kbar).toBeNull();
+    expect(sample.al2sio5).toMatchObject({
+      phase: 'unconstrained',
+      nominalPhase: null,
+      confiningPressureKbar: null,
+    });
   });
 });

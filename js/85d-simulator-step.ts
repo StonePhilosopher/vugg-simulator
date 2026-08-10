@@ -79,6 +79,13 @@ Object.assign(VugSimulator.prototype, {
   for (const event of this.events) {
     if (event.step === this.step) {
       const result = event.apply_fn(this.conditions);
+      const scenarioState = this.conditions?._scenario;
+      if (scenarioState && typeof event.type === 'string' && event.type) {
+        const history = Array.isArray(scenarioState.executed_event_types)
+          ? scenarioState.executed_event_types : [];
+        if (!history.includes(event.type)) history.push(event.type);
+        scenarioState.executed_event_types = history;
+      }
       this.log.push('');
       this.log.push(`  ⚡ EVENT: ${event.name}`);
       this.log.push(`     ${result}`);

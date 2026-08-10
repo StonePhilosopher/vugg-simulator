@@ -107,6 +107,31 @@ function event_oxidation(conditions) {
   return `Oxidizing meteoric water infiltrates. Sulfides becoming unstable — S²⁻ oxidizing to SO₄²⁻. T drops to ${conditions.temperature.toFixed(0)}°C. Sulfate available for gypsum/selenite.`;
 }
 
+// Bingham's upper oxidized cap is separated from the main-stage porphyry by
+// exhumation and a geological time gap. A generic -40 C event left the pocket
+// above 300 C and allowed later fracture pulses to reheat it, which made the
+// seed-42 malachite a high-temperature artifact. This boundary changes the
+// physical regime explicitly: shallow pressure, meteoric temperature, and no
+// resumed magmatic pulse generator after exposure.
+function event_porphyry_supergene_uplift(conditions) {
+  conditions.fluid.O2 = 1.8;
+  const sulfideConsumed = conditions.fluid.S * 0.3;
+  conditions.fluid.S = conditions.fluid.S - sulfideConsumed + (sulfideConsumed * 0.7);
+  conditions.temperature = 35;
+  conditions.pressure = clampFluidPressureKbar(0.001);
+  conditions.flow_rate = 0.8;
+  conditions.wall.ambient_temperature_C = 25;
+  conditions.wall.thermal_pulses = false;
+  return 'Exhumation exposes the Bingham stockwork to oxygenated meteoric water. Pressure falls toward atmospheric, the pocket cools to 35 C, sulfide sulfur begins oxidizing, and the extinct magmatic heat source can no longer re-pulse the supergene cap.';
+}
+
+function event_porphyry_supergene_maturation(conditions) {
+  conditions.temperature = 25;
+  conditions.flow_rate = 0.2;
+  conditions.fluid.O2 = Math.max(conditions.fluid.O2, 1.8);
+  return 'The exposed cap equilibrates to 25 C. Slow oxygenated seepage can now form documented supergene copper minerals without importing a hydrothermal temperature.';
+}
+
 // v26: tectonic uplift breaches the cavity, fluid drains completely.
 function event_tectonic_uplift_drains(conditions) {
   conditions.fluid_surface_ring = 0.0;
@@ -319,6 +344,8 @@ const EVENT_REGISTRY = {
   tectonic_shock: event_tectonic_shock,
   copper_injection: event_copper_injection,
   oxidation: event_oxidation,
+  porphyry_supergene_uplift: event_porphyry_supergene_uplift,
+  porphyry_supergene_maturation: event_porphyry_supergene_maturation,
   tectonic_uplift_drains: event_tectonic_uplift_drains,
   aquifer_recharge_floods: event_aquifer_recharge_floods,
   acidify: event_acidify,
@@ -665,10 +692,24 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       // constraints, not global mineral bans: the same engine remains live in
       // documented scenarios and Creative mode.
       excluded_species: spec.excluded_species,
+      // Positive locality licences are the union of the four authored
+      // positive expectation tiers. Locality-sensitive gem/rare-phase engines
+      // consume this contract instead of the stale display-only `scenarios`
+      // lists in minerals.json. Creative mode has no scenario id and remains
+      // unrestricted.
+      expects_species: spec.expects_species,
+      deterministic_species: spec.deterministic_species,
+      statistical_species: spec.statistical_species,
+      aspirational_species: spec.aspirational_species,
       // Scenario-authoritative crystallization windows use the same step
       // numbers as events and player-facing testimony.
       // They constrain only this scenario; Creative mode retains every engine.
       nucleation_windows: spec.nucleation_windows,
+      // Some paragenetic gates are causal rather than clock-only. The executed
+      // event history below is populated by apply_events and is saved as part
+      // of the ordinary scenario state.
+      nucleation_prerequisites: spec.nucleation_prerequisites,
+      executed_event_types: [],
       // Executed low-temperature exposure history.  This is copied as data,
       // then validated/consumed by js/44e-weathering-epilogue.ts; an authored
       // final-state label alone never changes chemistry.
@@ -698,6 +739,7 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       // boundary value (for example a vent target pCO2). Existing one-argument
       // handlers ignore the extra argument and retain their behavior.
       apply_fn: (conditions: any) => EVENT_REGISTRY[ev.type](conditions, ev),
+      type: ev.type,
       // FLUID-SOURCE SPOTS Phase 2d — optional spot-lifecycle directive. A
       // string ('seal' | 'breach') or {action, kind} closes/opens the cavity's
       // feeders when this event fires (apply_events handles it centrally, after

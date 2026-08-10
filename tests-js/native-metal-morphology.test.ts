@@ -22,6 +22,7 @@ declare const SCENARIOS: any;
 declare const setSeed: any;
 declare const MORPH_TH: any;
 declare const morphRegime: any;
+declare const morphDisplayLabel: any;
 declare const _HELIX_CHEM_PARAMS: any;
 
 function runScenario(name: string, seed = 42, steps?: number) {
@@ -85,11 +86,24 @@ describe('native copper + gold morphology (the conflation sweep)', () => {
     for (const c of cu) expect(c.habit).not.toBe('massive_sheet');
   });
 
-  it('porphyry gold stays the rare octahedral inclusion (the correct legacy bottom band, preserved)', () => {
+  it('porphyry gold remains aspirational while its low-saturation habit stays octahedral', () => {
     const sim = runScenario('porphyry');
     const au = sim.crystals.filter((c: any) => c.mineral === 'native_gold' && !c.dissolved && c.total_growth_um > 0);
-    expect(au.length).toBeGreaterThanOrEqual(1);
-    for (const c of au) expect(c.habit).toBe('octahedral');
+    // Bingham gold is documented, but the canonical path does not yet build
+    // the required bornite-bearing substrate after its copper pulse.  Do not
+    // turn that aspirational locality claim into a deterministic test fixture.
+    expect(au).toHaveLength(0);
+    expect(
+      SCENARIOS.porphyry._json5_spec.aspirational_species
+        .some((entry: any) => entry.mineral === 'native_gold'),
+    ).toBe(true);
+
+    // Keep the independent morphology contract: if a future causal path
+    // produces native gold at Bingham's measured low-saturation band, the
+    // shared morphology registry identifies a rare octahedral crystal.
+    const regime = morphRegime(MORPH_TH.native_gold, 1.35);
+    expect(regime).toBe('spiral_smooth');
+    expect(morphDisplayLabel('native_gold', regime)).toBe('octahedral (rare crystal)');
   });
 
   it('copper_morph + gold_morph chips complete the native legend group', () => {
