@@ -214,7 +214,11 @@ function simulationStateProjection(runtimeOrSim: any, rngStateOverride?: number)
     ),
     wallBoundary: _simulationCanonicalProjection(sim?.conditions?.wall || null),
     ringFluids: (sim?.ring_fluids || []).map(_simulationFluidProjection),
-    wallCellRadii: (sim?.wall_state?.cells || []).map((cell: any) => Number(cell.radius_mm) || 0),
+    wallCellDepthsMm: (sim?.wall_state?.rings || []).flatMap(
+      (ring: any[]) => (ring || []).map((cell: any) => Number(cell?.wall_depth) || 0),
+    ),
+    cavityEvolution: sim?.wall_state?.cavityEvolutionLedger?.()
+      ? _simulationCanonicalProjection(sim.wall_state.cavityEvolutionLedger().toJSON()) : null,
     crystals: (sim?.crystals || []).map(_simulationCrystalProjection),
     carbonateBoundary: sim?._carbonateBoundaryState
       ? _simulationJsonClone(sim._carbonateBoundaryState) : null,

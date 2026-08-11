@@ -111,8 +111,9 @@ visible to later files.
 | 20c    | `20c-chemistry-redox.ts`   | Nernst-equation redox infrastructure (Eh / pe) |
 | 20d    | `20d-localization-resolvers.ts` | wall-mesh localization — resolve a crystal/cell to its local fluid sample |
 | 22     | `22-geometry-wall.ts`      | `VugWall` + `WallCell` + `WallState` + the bubble-merge profile init helpers |
-| 23     | `23-geometry-wall-mesh.ts` | `WallMesh` — per-vertex cavity surface mesh (`mesh.cells[]`, the live fluid store) |
-| 23a    | `23a-geometry-cavity-field.ts` | deterministic Cartesian cavity field: exact bubble union plus immutable authored radial masks; renderer-only geometry cache |
+| 22a    | `22a-geometry-cavity-evolution.ts` | immutable carbonate-dissolution ledger: formula extent ↔ cited standard-state solid volume ↔ exact closed-`WallMesh` volume change |
+| 23     | `23-geometry-wall-mesh.ts` | `WallMesh` — canonical Float32 cavity surface, exact enclosed-volume/surface-area authority, geodesics, and live per-vertex fluid store |
+| 23a    | `23a-geometry-cavity-field.ts` | deterministic Cartesian shadow field: exact bubble union + authored radial masks + replayable star-shaped ledger projection |
 | 23b    | `23b-geometry-marching-cubes.ts` | indexed Marching Cubes extraction with shared-face asymptotic decider |
 | 24     | `24-geometry-voxel-grid.ts` | `CavityVoxelGrid` — interior 3D fluid store ((r,c,d) voxels) + `_diffuseFull` 3D diffusion |
 | 25     | `25-chemistry-conditions.ts` | `VugConditions` class (T/P/fluid/wall/ring fields + small helpers like `effective_temperature`, `silica_equilibrium`, `ring_water_state`) |

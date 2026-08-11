@@ -1,10 +1,14 @@
 # PROPOSAL: Marching-Cubes Cavity Surfaces
 
-> **Status:** Tranches 0 and 1 implemented locally as a default-off shadow
-> renderer; reviewed promotion gates remain open. No gameplay, chemistry,
-> anchor, clipping, or save-format authority has moved to the Cartesian field.
-> The AI “Dr. Michael Wise” hostile-review role returned `SATISFIED` after four
-> correction rounds; this is not a claim of review by the real scientist.
+> **Status:** Tranches 0 and 1 are a reviewed default-off shadow renderer.
+> SIM 263 implements and evidence-gates the dissolution-only Tranche 2
+> foundation: exact closed-`WallMesh` volume, atomic chemistry/geometry commits,
+> one capacity authority, authenticated replay prefixes, and executable pre-run
+> Creative host/size authoring. The Node-only science rebake, full bounded test
+> workflow, seed-42 desktop/mobile browser check, and hostile review are closed;
+> the AI “Dr. Michael Wise” role returned `SATISFIED`. Production promotion,
+> exact 3-D clipping, topology-independent anchors, deposition, and production
+> materials remain open. This is not a claim of review by the real scientist.
 > **Authored:** 2026-08-10 after reviewing the current `WallState`, `WallMesh`,
 > `CavityVoxelGrid`, and Three.js cavity-clip paths.
 > **Primary goal:** Let Vugg Simulator represent genuinely three-dimensional
@@ -711,17 +715,20 @@ meant to reveal:
   parity for authored tabular, cleft, and basin cavities, including analytic
   pole caps. The elongation quadrupole is pole-regularized with `sin²(φ)` so a
   single Cartesian point cannot acquire a longitude-dependent radius.
-- Per-cell `wall_depth` is not reconstructible from the base bubbles. It does
-  not invalidate the byte-identical field cache; the canonical clip signature
-  still refreshes until a replayable, mass-balanced erosion ledger exists.
+- **Closed in SIM 263:** per-cell dissolution depth is reconstructed from an
+  immutable, digest-chained, mass/volume-balanced evolution ledger and projected
+  into the Cartesian shadow field. The projection remains star-shaped and does
+  not yet create undercuts or multiple wall crossings on one ray.
 - The visible MC wall and crystal clip disagree because clipping still samples
   the polar `WallMesh` radius texture. This prevents correct undercuts, throats,
   separated chambers, and re-entrant surfaces.
 - Temporary spherical UVs do not preserve the canonical matrix skin, wall
   relief, or water-tint appearance; the comparison wall is visibly darker and
   smoother.
-- Historical replay snapshots contain per-cell `wall_depth`, not a Cartesian
-  primitive ledger, so replay deliberately falls back to `WallMesh`.
+- **Closed in SIM 263 for new snapshots:** replay records a ledger cursor and
+  prefix signature, validates its depth projection, and only then enables the
+  default-off shadow path. Legacy or tampered snapshots fail closed to
+  `WallMesh` without fabricated chemistry history.
 
 The remaining items are promotion blockers, not reasons to remove the
 foundation. The flag stays default-off while Tranche 2 adds deterministic,
@@ -833,3 +840,110 @@ science drift, the AI “Dr. Michael Wise” hostile-review role returned the ex
 verdict `SATISFIED`. This is approval of the authored-mask/default-off shadow
 gate only, not production promotion and not review by the real scientist or
 Smithsonian.
+
+---
+
+## 16. SIM 263 dissolution-only evolution foundation — 2026-08-11
+
+The first implementation deliberately narrows “evolving geology” to one
+relationship that can be defended and tested:
+
+`accepted carbonate-host formula extent (mmol/kg solvent)` ↔ `crystalline
+standard-state solid volume (mm³/kg solvent)` ↔ `enclosed-volume increase of
+the canonical closed Float32 WallMesh`.
+
+Calcite and dolomite use the 36.934 and 64.341 cm³/mol standard-state values
+tabulated in USGS Bulletin 1248. The API records the requested T/P alongside
+the table's 26 °C, 1 bar reference, its reported ±0.015 and ±0.029
+cm³/mol uncertainties, and explicitly labels unquantified P-T and bulk-rock
+uncertainty beyond that reference state. The numerical unit identity is
+`mmol/kg × cm³/mol = mm³/kg`.
+Nothing in this tranche claims actual cavity-fluid mass, P-T-dependent host
+volume, limestone/dolomite phase fraction, porosity, Fe/Mn closure, charge,
+energy, or spatial solute transport.
+
+### Hostile-design corrections applied before the evidence gate
+
+1. Independent spherical wedges were rejected as a false “exact” volume.
+   Every accepted event solves against the oriented tetrahedron volume of the
+   exact position/index buffers rendered by `WallMesh`. The receipt discloses
+   the finite Float32 volume quantum instead of claiming false sub-quantum
+   precision.
+2. Dissolution is preview/commit atomic. Local pH, fractional union of every
+   resistant crystal footprint, full-surface area, and physical-distance feeder
+   flux are sampled from one pre-attack state. Zero exposed reactive surface
+   yields zero accepted extent and zero fluid release. A failed write rolls
+   geometry, capacity, diameter, host inventory, and bulk fluid back together.
+3. The historical ring-0 `erodeCells` and longitude `columnWeights` paths are
+   removed. Diffuse bulk fluid plus optional shortest-path feeder halos operate
+   over every canonical surface vertex; no infinite vertical redistribution is
+   retained.
+4. `cavity_capacity_volume_mm3` is the single capacity authority. The displayed
+   diameter is its derived equivalent-sphere diameter, not an independent
+   radial increment. Canonical capacity cannot change without a paired mesh
+   plan and ledger append.
+5. Each append-only event records schema/model/shape/tessellation identity,
+   event and chemistry IDs, step, pre-state digest, attempted/accepted formula
+   extent, source-bearing molar-volume receipt, target/achieved/residual volume,
+   Float32 tolerance, exposure digest, old/new capacity and diameter, ordered
+   sparse vertex deltas, fluid receipt, host-inventory receipt, and scientific
+   scope. Entries are deeply frozen; callers receive frozen array snapshots;
+   JSON reload checks stored entry digests and depth-chain closure before
+   refreezing. A geometry-only legacy baseline is labeled `legacy_import` and
+   never receives fabricated chemistry receipts.
+6. New replay snapshots store a ledger cursor and prefix signature. A replay
+   frame must match that authenticated prefix and its materialized wall depths;
+   otherwise the renderer stays on the canonical fallback. Deterministic state
+   fingerprints now include both the complete evolution chain and all wall
+   depths.
+7. The shadow scalar cache keys the authenticated prefix and continuously
+   interpolates its radial depths across the periodic theta seam, between
+   latitude rings, and into longitude-independent pole means. This is an
+   explicit star-shaped bridge, not a claim that Tranche 2 already supports
+   re-entrant Cartesian erosion.
+8. Deposition is deferred. It may enter this ledger only after a named solid
+   phase, stoichiometric aqueous withdrawal, volume provenance, and competition
+   policy can be committed atomically.
+
+### Evidence gates closed
+
+- The Node-only `science:rebake` workflow passed: 41 scenarios at seeds 1, 2,
+  and 42; 41 claim cards; 236 provenance citations; zero unclassified locality
+  results; zero locality-envelope violations; and 40 focused science tests.
+  No Python runtime or Python test path is part of this receipt.
+- The complete automated workflow passed 212 test files in 43 strictly
+  sequential batches with one test thread, file parallelism disabled, a 2 GB
+  RSS ceiling, and a maximum observed batch peak of 1.704 GB. The marching-
+  cubes benchmark covered authored pocket, irregular, tabular, basin, and
+  cleft shapes at 48³ and 64³; measured 64³ extraction times were 34–135 ms in
+  this verification environment.
+- The SIM 262→263 seed-42 baseline comparison moved 5 of 41 scenarios, only
+  three of them count-only. Bisbee gained jarosite and lost siderite; Tsumeb
+  lost the unsupported rhodochrosite while retaining selenite. Focused probes
+  found Bisbee jarosite in 3/3 seeds and alunite in 2/3, no wurtzite in six
+  Sweetwater seeds, and Tsumeb selenite by step 70 with no rhodochrosite.
+- Browser QA used the normal default simulation seed 42 and each scenario's
+  authored `shape_seed`. Sweetwater advanced to step 1 at 1280×720 and
+  390×844; both viewports had zero horizontal document overflow, the mobile
+  controls stayed in bounds, the wall and mineral-formation explanation were
+  visible, and the page emitted no warnings or errors.
+- The first SIM 263 hostile pass found four defects. The correction pass pins
+  USGS Bulletin 1248 calcite/dolomite volumes to the actual 26 °C reference and
+  reported uncertainties; routes Creative diameter, thickness, and host changes
+  through pre-run authoring transactions that lock after history begins;
+  validates extent/volume/residual/capacity/diameter/depth closure on ledger
+  append and load; and makes replay fail closed to canonical `WallMesh` on any
+  signature or projection mismatch. The AI “Dr. Michael Wise” hostile-review
+  role then returned the exact verdict `SATISFIED`. This is an AI review role,
+  not review by the real scientist or Smithsonian.
+
+### Production gates that remain open
+
+- Keep Marching Cubes default-off until exact 3-D crystal clipping,
+  topology-independent anchors, production material mapping, ambiguity-safe
+  extraction, and production browser performance budgets are closed. The
+  current radial ledger projection is a verified star-shaped bridge, not the
+  non-star-shaped end state promised by this proposal.
+- Deposition remains deferred until a named solid phase, stoichiometric aqueous
+  withdrawal, volume provenance, and competition policy can be committed in the
+  same atomic transaction.

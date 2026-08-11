@@ -1765,7 +1765,7 @@ function updateFortressStatus() {
   const vugContainer = document.getElementById('f-stat-vug-container');
   if (c.wall.total_dissolved_mm > 0) {
     vugContainer.style.display = '';
-    document.getElementById('f-stat-vug').textContent = `${c.wall.vug_diameter_mm.toFixed(0)}mm (+${c.wall.total_dissolved_mm.toFixed(1)})`;
+    document.getElementById('f-stat-vug').textContent = `${c.wall.vug_diameter_mm.toFixed(2)}mm eq. D (ΔV ${c.wall.host_volume_removed_mm3_per_kg.toFixed(2)}mm³/kg)`;
   } else {
     vugContainer.style.display = 'none';
   }

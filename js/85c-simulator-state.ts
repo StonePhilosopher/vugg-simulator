@@ -1070,7 +1070,10 @@ _diffuseRingState(rate?) {
   _repaintWallState() {
   // Rebuild ring-0 occupancy from the crystal list. Cheap (~120 × ~20)
   // and keeps per-cell thickness consistent with dissolution / enclosure.
-  this.wall_state.updateDiameter(this.conditions.wall.vug_diameter_mm);
+  this.wall_state.updateCapacity(
+    this.conditions.wall.cavity_capacity_volume_mm3,
+    this.conditions.wall.vug_diameter_mm,
+  );
   this.wall_state.clear();
   // Paint smallest-first so biggest crystals win overlaps — that's
   // what a viewer would see from outside the vug.
@@ -1155,6 +1158,12 @@ _diffuseRingState(rate?) {
   const cnd = this.conditions;
   const snap: any = {
     step: this.step,
+    cavity_evolution_cursor: this.wall_state.cavityEvolutionLedger
+      && this.wall_state.cavityEvolutionLedger()
+      ? this.wall_state.cavityEvolutionLedger().cursor : null,
+    cavity_evolution_signature: this.wall_state.cavityEvolutionLedger
+      && this.wall_state.cavityEvolutionLedger()
+      ? this.wall_state.cavityEvolutionLedger().signature : null,
     rings: new Array(ringCount),
     conditions: {
       temperature: cnd.temperature,
@@ -1163,6 +1172,7 @@ _diffuseRingState(rate?) {
       flow_rate: cnd.flow_rate,
       vug_diameter_mm: cnd.wall.vug_diameter_mm,
       total_dissolved_mm: cnd.wall.total_dissolved_mm,
+      cavity_capacity_volume_mm3: cnd.wall.cavity_capacity_volume_mm3,
       fluid_surface_ring: cnd.fluid_surface_ring,
       // Full fluid clone — fortress-status reads f.Cu / f.Fe / etc.
       // for the per-mineral "needs" hints, and the brief explicitly
@@ -1229,32 +1239,103 @@ _diffuseRingState(rate?) {
   this.wall_state_history.push(snap);
 },
 
-  _wallCellsBlockedByCrystals() {
-  // Which ring-0 cells are shielded from wall dissolution. A cell
-  // blocks when it holds a non-dissolved crystal whose mineral is
-  // stable at the current pH — either permanently acid-stable
-  // (acid_dissolution == null, e.g. uraninite/molybdenite) or the
-  // current pH is above its threshold.
-  const ph = this.conditions.fluid.pH;
-  const byId = new Map<number, any>(this.crystals.map(c => [c.crystal_id, c]));
-  const blocked = new Set();
-  const ring0 = this.wall_state.rings[0];
-  for (let i = 0; i < ring0.length; i++) {
-    const cell = ring0[i];
-    if (cell.crystal_id == null) continue;
-    const crystal = byId.get(cell.crystal_id);
-    if (!crystal || crystal.dissolved) continue;
-    const acid = MINERAL_SPEC[crystal.mineral]?.acid_dissolution;
-    if (acid == null) { blocked.add(i); continue; }
-    const threshold = acid.pH_threshold;
-    if (threshold == null || ph >= threshold) blocked.add(i);
+  _wallSurfaceAttackState() {
+  const wall = this.conditions.wall;
+  const mesh = this.wall_state.meshFor(this);
+  if (!mesh || !(mesh.numInterior > 0)) throw new Error('wall attack requires the canonical WallMesh');
+  const areas = mesh.cellSurfaceAreasMm2();
+  const coverage = new Float64Array(mesh.numInterior);
+  const pHValues = new Float64Array(mesh.numInterior);
+  for (let i = 0; i < mesh.numInterior; i++) {
+    const local = mesh.cells[i] && mesh.cells[i].fluid;
+    pHValues[i] = Number.isFinite(local && local.pH)
+      ? Number(local.pH) : Number(this.conditions.fluid.pH);
   }
-  return blocked;
+
+  // Fractional union of every acid-resistant footprint. Unlike the paint
+  // buffer, this does not discard overlapping or smaller crystals. Distances
+  // are shortest paths over the live triangle mesh, and stability reads the
+  // target cell's pre-attack local pH.
+  for (const crystal of this.crystals) {
+    if (!crystal || crystal.dissolved) continue;
+    const anchor = this.wall_state._resolveAnchor(crystal);
+    if (!anchor) continue;
+    const source = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+    if (source < 0 || source >= mesh.numInterior) continue;
+    const distances = mesh.geodesicDistancesFrom(source);
+    const footprintRadiusMm = Math.max(0, this.wall_state.footprintArcMm(crystal) / 2);
+    const acid = MINERAL_SPEC[crystal.mineral]?.acid_dissolution;
+    for (let i = 0; i < mesh.numInterior; i++) {
+      const threshold = acid && acid.pH_threshold;
+      const resistant = acid == null || threshold == null || pHValues[i] >= threshold;
+      if (!resistant) continue;
+      const cellRadius = Math.max(1e-9, Math.sqrt(Math.max(0, areas[i]) / Math.PI));
+      const fraction = i === source ? 1 : Math.max(0, Math.min(1,
+        (footprintRadiusMm + cellRadius - distances[i]) / (2 * cellRadius),
+      ));
+      if (fraction > 0) coverage[i] = 1 - (1 - coverage[i]) * (1 - fraction);
+    }
+  }
+
+  const feederFlux = fluidSpotsDecayEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty
+    ? this._fluidSpots.erosionFluxField(mesh) : null;
+  const vertexWeights = new Float64Array(mesh.numInterior);
+  const blocked = new Set<number>();
+  let totalArea = 0;
+  let exposedArea = 0;
+  let fluxArea = 0;
+  let attemptedWeightedRate = 0;
+  let acceptedWeightedRate = 0;
+  let partialCells = 0;
+  for (let i = 0; i < mesh.numInterior; i++) {
+    const area = areas[i];
+    const exposure = Math.max(0, Math.min(1, 1 - coverage[i]));
+    const flux = feederFlux ? feederFlux[i] : 1;
+    const localAcidStrength = Math.max(0, 5.5 - pHValues[i]);
+    const localRate = wall.dissolutionRateMm(localAcidStrength);
+    vertexWeights[i] = exposure * flux * localRate;
+    totalArea += area;
+    exposedArea += area * exposure;
+    fluxArea += area * flux;
+    attemptedWeightedRate += area * flux * localRate;
+    acceptedWeightedRate += area * flux * localRate * exposure;
+    if (exposure <= 1e-12) blocked.add(i);
+    else if (exposure < 1 - 1e-12) partialCells++;
+  }
+  const attemptedRate = fluxArea > 0 ? attemptedWeightedRate / fluxArea : 0;
+  const acceptedRate = fluxArea > 0 ? acceptedWeightedRate / fluxArea : 0;
+  const digest = CavityEvolutionLedger.digest({
+    areas: Array.from(areas),
+    coverage: Array.from(coverage),
+    pre_attack_pH: Array.from(pHValues),
+    feeder_flux: feederFlux ? Array.from(feederFlux) : null,
+    diffuse_fluid_pathway: true,
+  });
+  return {
+    mesh, areas, coverage, pHValues, feederFlux, vertexWeights, blocked,
+    attemptedRate, acceptedRate,
+    receipt: {
+      digest,
+      total_surface_area_mm2: totalArea,
+      exposed_surface_area_mm2: exposedArea,
+      exposed_area_fraction: totalArea > 0 ? exposedArea / totalArea : 0,
+      fully_blocked_cells: blocked.size,
+      partially_covered_cells: partialCells,
+      total_cells: mesh.numInterior,
+      diffuse_fluid_pathway: true,
+      feeder_model: feederFlux ? 'open-spot geodesic flux halo' : 'none',
+      local_pH_basis: 'pre-attack WallCell fluid, bulk fallback',
+      overlap_model: 'fractional footprint union',
+    },
+  };
+},
+
+  _wallCellsBlockedByCrystals() {
+  return this._wallSurfaceAttackState().blocked;
 },
 
   get_vug_fill() {
-  const vugR = this.conditions.wall.vug_diameter_mm / 2;
-  const vugVol = (4 / 3) * Math.PI * Math.pow(vugR, 3);
+  const vugVol = Number(this.conditions.wall.cavity_capacity_volume_mm3);
   if (vugVol <= 0) return 0;
   let crystalVol = 0;
   for (const c of this.crystals) {

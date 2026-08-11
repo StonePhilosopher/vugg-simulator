@@ -14,7 +14,8 @@
 // PHASE 2 PLAN (each sub-step its own sim-affecting change + verify pass):
 //   2a (THIS) — seed the spot set off the cavity seed; DARK (nothing reads it
 //               yet → SIM-NEUTRAL, seed-42 byte-identical, NO SIM_VERSION bump).
-//   2b        — wall-decay bonus: open-spot cells erode faster (erodeCells) →
+//   2b        — wall-decay bonus: open spots bias the full-surface geodesic
+//               erosion-flux field →
 //               lopsided cavity deepening. First coupling; baseline regen.
 //   2c        — origin:'cell' movements ride OPEN spots (supersede the naive
 //               _pickOriginCell pick) + local deposition/nucleation bias.
@@ -32,7 +33,7 @@
 const _SPOTS_SALT = 0x53504f54;
 
 // Phase 2b coupling gate. When ON (default — the shipped feature), open-spot
-// cells erode preferentially in dissolve_wall/erodeCells → lopsided cavity
+// cells erode preferentially in the atomic cavity-evolution transaction → lopsided cavity
 // deepening toward feeders. The OBSERVER toggles this OFF to recover the
 // no-spot baseline for an A/B look; tests use it for the neutral/active
 // positive control. Mirrors the EH_DYNAMIC_ENABLED pattern (20c). The exported
@@ -208,6 +209,8 @@ class FluidSpotField {
   private _byCell: Map<number, FluidSpot>;
   private _proxCache: Float64Array | null;   // 2c.2b proximityField memo
   private _proxSig: string;
+  private _erosionFluxCache: Float64Array | null;
+  private _erosionFluxSig: string;
 
   constructor(spots: FluidSpot[] | undefined) {
     this.spots = Array.isArray(spots) ? spots : [];
@@ -215,6 +218,8 @@ class FluidSpotField {
     for (const s of this.spots) this._byCell.set(s.cell, s);
     this._proxCache = null;
     this._proxSig = '';
+    this._erosionFluxCache = null;
+    this._erosionFluxSig = '';
   }
 
   get isEmpty(): boolean { return this.spots.length === 0; }
@@ -238,35 +243,48 @@ class FluidSpotField {
     return (s && s.open) ? s.supply : 1.0;
   }
 
-  // Phase 2b — per-COLUMN erosion weights for erodeCells, which operates on the
-  // equatorial ring (ring0) per slice/column. A spot's mesh cell index maps to a
-  // column via (cell % cellsPerRing); the column's weight is the MAX decayBonus
-  // among OPEN spots on it (>1 = erode faster there). Returns a length-cellsPerRing
-  // array of multipliers (1.0 where no open spot). erodeCells redistributes the
-  // FIXED dissolution budget by these weights → lopsided deepening toward feeders,
-  // mass-conserving (the Ca/CO3 release is computed upstream, so this is purely
-  // geometric). Returns null when there's nothing to bias (caller stays on the
-  // uniform path → byte-identical).
-  columnWeights(cellsPerRing: number): number[] | null {
-    const N = cellsPerRing | 0;
-    if (N <= 0 || this.isEmpty) return null;
-    let any = false;
-    const w = new Array(N).fill(1.0);
-    for (const s of this.spots) {
-      if (!s.open || !(s.decayBonus > 1)) continue;
-      const col = ((s.cell % N) + N) % N;
-      if (s.decayBonus > w[col]) { w[col] = s.decayBonus; any = true; }
+  // Mass-balanced cavity evolution uses a full-surface, physical-distance
+  // feeder field. The baseline value 1 is an explicitly diffuse bulk-fluid
+  // pathway; open feeders add their decayBonus halo along shortest paths on
+  // the actual triangle mesh. No open feeder returns null so the caller uses
+  // the diffuse pathway alone. This is the sole feeder authority for dissolution.
+  erosionFluxField(mesh: any): Float64Array | null {
+    if (!mesh || !(mesh.numInterior > 0) || this.isEmpty) return null;
+    const feeders = this.spots.filter(s => s.open && s.decayBonus > 1
+      && Number.isInteger(s.cell) && s.cell >= 0 && s.cell < mesh.numInterior);
+    if (!feeders.length) return null;
+    const openIdentity = feeders.map(s => [s.cell, s.decayBonus]);
+    const sig = String(mesh.sig || 'mesh') + '|erosion|' + JSON.stringify(openIdentity);
+    if (this._erosionFluxCache && this._erosionFluxSig === sig) {
+      return new Float64Array(this._erosionFluxCache);
     }
-    return any ? w : null;
+    const areas = mesh.cellSurfaceAreasMm2();
+    const meanCellScaleMm = Math.sqrt(
+      Math.max(1e-12, Number(mesh.surface_area_mm2) || 0) / Math.max(1, mesh.numInterior),
+    );
+    const lambdaMm = Math.max(meanCellScaleMm * 2.5, 1e-9);
+    const out = new Float64Array(mesh.numInterior);
+    out.fill(1);
+    for (const feeder of feeders) {
+      const distances = mesh.geodesicDistancesFrom(feeder.cell);
+      for (let i = 0; i < out.length; i++) {
+        if (!(areas[i] > 0)) continue;
+        const value = 1 + (feeder.decayBonus - 1) * Math.exp(-distances[i] / lambdaMm);
+        if (value > out[i]) out[i] = value;
+      }
+    }
+    this._erosionFluxCache = new Float64Array(out);
+    this._erosionFluxSig = sig;
+    return out;
   }
 
-  // Phase 2c.2 — per-COLUMN DEPOSITION weights, the placement analog of
-  // columnWeights. Weight = MAX supply among OPEN spots on the column (>1).
+  // Phase 2c.2 — historic per-COLUMN DEPOSITION weights. Weight = MAX supply
+  // among OPEN spots on the column (>1).
   // Crucially uses `supply` NOT decayBonus: a 'crack' (supply 1.0) deepens its
   // column (2b) without seeding crystals; geysers/hotspots are vent precipitators.
   // SUPERSEDED for placement by proximityField (2c.2b) — the column-only bias
   // didn't visibly cluster (see the deposition-flag comment). Kept as the sibling
-  // query to columnWeights. Returns a length-cellsPerRing array or null.
+  // compatibility query. Returns a length-cellsPerRing array or null.
   columnSupplyWeights(cellsPerRing: number): number[] | null {
     const N = cellsPerRing | 0;
     if (N <= 0 || this.isEmpty) return null;
@@ -321,15 +339,15 @@ class FluidSpotField {
 
   // Phase 2d — open/close spots over a vug's life, driven by events (a fracture
   // seals → its feeder shuts; tectonic uplift / aquifer recharge breaches a vent
-  // back open). Because every coupling (2b erosion columnWeights, 2c.1 origin
+  // back open). Because every coupling (2b erosionFluxField, 2c.1 origin
   // openSpots, 2c.2b proximityField) filters on `s.open`, flipping the flag
   // propagates everywhere for free — the couplings re-read it live. `pred`
   // selects which spots: undefined = all, a kind string ('crack'), or a
   // predicate fn. Returns the spots actually toggled (for the event log).
   // CACHE NOTE: proximityField memoizes by (N,R,K,λ) and does NOT key on the
   // open-set, so a toggle MUST invalidate it or a sealed feeder would keep
-  // clustering from the stale cache. _byCell/openSpots/columnWeights read `open`
-  // live, so only the proximity memo needs busting.
+  // clustering from the stale cache. _byCell/openSpots read `open` live; the
+  // proximity and erosion-flux memos are both invalidated explicitly.
   private _matchSpots(pred: any, wantOpen: boolean): FluidSpot[] {
     return this.spots.filter(s => s.open === wantOpen && (
       pred == null ? true :
@@ -339,13 +357,19 @@ class FluidSpotField {
   sealSpots(pred?: any): FluidSpot[] {
     const hit = this._matchSpots(pred, true);
     for (const s of hit) s.open = false;
-    if (hit.length) this._proxCache = null;   // bust the clustering memo
+    if (hit.length) {
+      this._proxCache = null;
+      this._erosionFluxCache = null;
+    }
     return hit;
   }
   breachSpots(pred?: any): FluidSpot[] {
     const hit = this._matchSpots(pred, false);
     for (const s of hit) s.open = true;
-    if (hit.length) this._proxCache = null;
+    if (hit.length) {
+      this._proxCache = null;
+      this._erosionFluxCache = null;
+    }
     return hit;
   }
 }

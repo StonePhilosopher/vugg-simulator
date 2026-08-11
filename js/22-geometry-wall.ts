@@ -122,6 +122,15 @@ class VugWall {
     // generation, size_class alone is the natural interface.
     this.size_class = (opts.size_class as SizeClass) ?? null;
     this.vug_diameter_mm = _resolveVugDiameter(opts);
+    this.authored_vug_diameter_mm = opts.authored_vug_diameter_mm ?? this.vug_diameter_mm;
+    this.initial_vug_diameter_mm = opts.initial_vug_diameter_mm ?? this.vug_diameter_mm;
+    const authoredRadius = this.vug_diameter_mm / 2;
+    const authoredSphereVolume = (4 / 3) * Math.PI * authoredRadius * authoredRadius * authoredRadius;
+    this.cavity_capacity_volume_mm3 = opts.cavity_capacity_volume_mm3 ?? authoredSphereVolume;
+    this.initial_cavity_capacity_volume_mm3 = opts.initial_cavity_capacity_volume_mm3
+      ?? this.cavity_capacity_volume_mm3;
+    this.cavity_capacity_basis = opts.cavity_capacity_basis ?? 'authored_sphere_reference';
+    this.host_volume_removed_mm3_per_kg = opts.host_volume_removed_mm3_per_kg ?? 0;
     this.total_dissolved_mm = opts.total_dissolved_mm ?? 0.0;
     // W-K V1b (paleo-flow scallops): a dissolution-rate-weighted running sum of the flow_rate
     // active WHILE the wall was dissolving. Curl 1974 — scallop length ∝ 1/velocity, and scallops
@@ -432,94 +441,337 @@ class VugWall {
     this.wulff_titanite = !!opts.wulff_titanite;
   }
 
-  dissolve(acid_strength, fluid) {
-    // Gate by composition first — silicate walls are inert regardless
-    // of reactivity (real silicate dissolution at sim T-P-time scales
-    // is geologically negligible).
-    if (this.composition !== 'limestone' && this.composition !== 'dolomite') {
-      return { dissolved: false };
+  static diameterForCapacityMm3(volumeMm3) {
+    const volume = Number(volumeMm3);
+    if (!(volume > 0) || !Number.isFinite(volume)) {
+      throw new RangeError('cavity capacity must be positive and finite');
     }
+    return 2 * Math.cbrt((3 * volume) / (4 * Math.PI));
+  }
 
-    // Acid attack — scales with acid strength × reactivity.
-    const acid_rate = Math.max(0.0, acid_strength) * 0.5 * this.reactivity;
+  initializeCavityCapacity(volumeMm3, basis = 'canonical_closed_wallmesh') {
+    const diameter = VugWall.diameterForCapacityMm3(volumeMm3);
+    this.cavity_capacity_volume_mm3 = Number(volumeMm3);
+    this.initial_cavity_capacity_volume_mm3 = Number(volumeMm3);
+    this.cavity_capacity_basis = basis;
+    this.initial_vug_diameter_mm = diameter;
+    this.vug_diameter_mm = diameter;
+    return diameter;
+  }
 
-    // Water-only baseline — fires regardless of pH but slow. Only
-    // meaningful when reactivity > 1.0 (Creative-mode slider above
-    // default). Models accelerated CO2-charged-groundwater dissolution.
-    const water_rate = Math.max(0.0, this.reactivity - 1.0) * 0.05;
+  reauthorInitialThicknessMm(thicknessMm) {
+    const thickness = Number(thicknessMm);
+    if (!(thickness >= 0) || !Number.isFinite(thickness)) {
+      throw new RangeError('initial host thickness must be finite and non-negative');
+    }
+    if (this.total_dissolved_mm !== 0 || this.host_formula_released_mmolkg !== 0
+        || this.host_release_ledger.length !== 0) {
+      throw new RangeError('host thickness can only be reauthored before dissolution history exists');
+    }
+    const hostFormulaExtentPerMm = (this.composition === 'limestone' || this.composition === 'dolomite')
+      ? 15.0 / 40.078 : 0;
+    this.thickness_mm = thickness;
+    this.host_formula_inventory_initial_mmolkg = thickness * hostFormulaExtentPerMm;
+    this.host_formula_released_mmolkg = 0;
+    this.host_release_totals = { Ca: 0, Mg: 0, CO3: 0 };
+    return Object.freeze({
+      transaction_type: 'creative_initial_host_thickness',
+      thickness_mm: thickness,
+      initial_formula_inventory_mmolkg: this.host_formula_inventory_initial_mmolkg,
+      scope: 'pre-run authored initial condition; no dissolution or deposition event',
+    });
+  }
 
-    let rate_mm = Math.min(acid_rate + water_rate, 2.0);
-    if (rate_mm <= 0.0) return { dissolved: false };
-    if (this.thickness_mm < rate_mm) rate_mm = this.thickness_mm;
+  reauthorInitialComposition(composition) {
+    const value = String(composition || '').trim();
+    if (!value) throw new RangeError('initial host composition must be named');
+    if (this.total_dissolved_mm !== 0 || this.host_formula_released_mmolkg !== 0
+        || this.host_release_ledger.length !== 0) {
+      throw new RangeError('host composition can only be reauthored before dissolution history exists');
+    }
+    this.composition = value;
+    const hostFormulaExtentPerMm = (value === 'limestone' || value === 'dolomite')
+      ? 15.0 / 40.078 : 0;
+    this.host_formula_inventory_initial_mmolkg = this.thickness_mm * hostFormulaExtentPerMm;
+    this.host_formula_released_mmolkg = 0;
+    this.host_release_totals = { Ca: 0, Mg: 0, CO3: 0 };
+    return Object.freeze({
+      transaction_type: 'creative_initial_host_composition',
+      composition: value,
+      initial_formula_inventory_mmolkg: this.host_formula_inventory_initial_mmolkg,
+      scope: 'pre-run authored initial condition; no replacement reaction is claimed',
+    });
+  }
 
-    this.thickness_mm -= rate_mm;
-    this.total_dissolved_mm += rate_mm;
-    this.vug_diameter_mm += rate_mm * 2;
+  dissolutionRateMm(acidStrength) {
+    const acidRate = Math.max(0, Number(acidStrength) || 0) * 0.5 * this.reactivity;
+    const diffuseWaterRate = Math.max(0, this.reactivity - 1) * 0.05;
+    return Math.min(Math.max(0, this.thickness_mm), Math.min(acidRate + diffuseWaterRate, 2));
+  }
 
+  // Pure preview. The simulator may provide surface-integrated attempted and
+  // accepted calibrated rates derived from pre-attack local pH, shielding, and
+  // feeder flux. Direct callers use the bulk-fluid full-exposure path.
+  previewDissolve(acidStrength, fluid, opts: any = {}) {
+    if (this.composition !== 'limestone' && this.composition !== 'dolomite') {
+      return { dissolved: false, rejection: 'non_carbonate_host' };
+    }
+    const defaultRate = this.dissolutionRateMm(acidStrength);
+    let attemptedRate = opts.attempted_rate_mm == null
+      ? defaultRate : Number(opts.attempted_rate_mm);
+    let acceptedRate = opts.accepted_rate_mm == null
+      ? attemptedRate : Number(opts.accepted_rate_mm);
+    if (![attemptedRate, acceptedRate].every(Number.isFinite)
+        || attemptedRate < 0 || acceptedRate < 0 || acceptedRate > attemptedRate + 1e-12) {
+      throw new RangeError('wall dissolution attempted/accepted rates are invalid');
+    }
+    attemptedRate = Math.min(attemptedRate, this.thickness_mm, 2);
+    acceptedRate = Math.min(acceptedRate, attemptedRate, this.thickness_mm);
+    if (!(acceptedRate > 0)) {
+      return { dissolved: false, rejection: 'zero_accepted_extent', attempted_rate_mm: attemptedRate };
+    }
     const formula = this.composition === 'dolomite' ? 'CaMg(CO3)2' : 'CaCO3';
+    const mineral = this.composition === 'dolomite' ? 'dolomite' : 'calcite';
     const carbonateCoefficient = this.composition === 'dolomite' ? 2 : 1;
-    const formula_extent_mmolkg = rate_mm * (15.0 / 40.078);
-    const ca_released = formula_extent_mmolkg * 40.078;
-    const mg_released = this.composition === 'dolomite'
-      ? formula_extent_mmolkg * 24.305 : 0;
-    const co3_released = formula_extent_mmolkg * carbonateCoefficient * 60.009;
-    const fe_released = rate_mm * (this.wall_Fe_ppm / 1000.0) * 0.5;
-    const mn_released = rate_mm * (this.wall_Mn_ppm / 1000.0) * 0.5;
-    const ph_recovery = rate_mm * 0.8;
-
-    const ph_before = fluid.pH;
-    const ca_before = fluid.Ca;
-    const mg_before = fluid.Mg;
-    const co3_before = fluid.CO3;
-    fluid.Ca += ca_released;
-    fluid.Mg += mg_released;
-    fluid.CO3 += co3_released;
-    fluid.Fe += fe_released;
-    fluid.Mn += mn_released;
-    fluid.pH += ph_recovery;
-    fluid.pH = Math.min(fluid.pH, 8.5);
-
-    this.ca_from_wall_total += ca_released;
-    this.host_formula_released_mmolkg += formula_extent_mmolkg;
-    this.host_release_totals.Ca += ca_released;
-    this.host_release_totals.Mg += mg_released;
-    this.host_release_totals.CO3 += co3_released;
-    const remainingFormulaMmolKg = this.thickness_mm * (15.0 / 40.078);
-    const inventoryErrorMmolKg = this.host_formula_inventory_initial_mmolkg
-      - remainingFormulaMmolKg - this.host_formula_released_mmolkg;
-    const transaction = {
+    const attemptedFormulaExtent = attemptedRate * (15 / 40.078);
+    const acceptedFormulaExtent = acceptedRate * (15 / 40.078);
+    const molarVolume = cavityMolarVolume(
+      mineral, opts.temperature_C, opts.pressure_kbar, this.composition,
+    );
+    const targetVolume = cavityFormulaExtentVolumeMm3PerKg(acceptedFormulaExtent, molarVolume);
+    const caReleased = acceptedFormulaExtent * 40.078;
+    const mgReleased = this.composition === 'dolomite' ? acceptedFormulaExtent * 24.305 : 0;
+    const co3Released = acceptedFormulaExtent * carbonateCoefficient * 60.009;
+    const feReleased = acceptedRate * (this.wall_Fe_ppm / 1000) * 0.5;
+    const mnReleased = acceptedRate * (this.wall_Mn_ppm / 1000) * 0.5;
+    const pHBefore = Number(fluid.pH);
+    return Object.freeze({
+      dissolved: true,
       composition: this.composition,
       formula,
-      rate_mm,
-      formula_extent_mmolkg,
-      fluid_delta_ppm: {
-        Ca: fluid.Ca - ca_before,
-        Mg: fluid.Mg - mg_before,
-        CO3: fluid.CO3 - co3_before,
-      },
-      expected_ppm: { Ca: ca_released, Mg: mg_released, CO3: co3_released },
+      mineral,
+      attempted_rate_mm: attemptedRate,
+      rate_mm: acceptedRate,
+      attempted_formula_extent_mmolkg: attemptedFormulaExtent,
+      formula_extent_mmolkg: acceptedFormulaExtent,
+      molar_volume: molarVolume,
+      target_volume_delta_mm3_per_kg: targetVolume,
+      ca_released: caReleased,
+      mg_released: mgReleased,
+      co3_released: co3Released,
+      fe_released: feReleased,
+      mn_released: mnReleased,
+      ph_before: pHBefore,
+      ph_after: Math.min(8.5, pHBefore + acceptedRate * 0.8),
+    });
+  }
+
+  // Commit host, bulk fluid, exact geometry, capacity, and paired ledgers as
+  // one rollback-capable transaction. All fallible preview/validation work is
+  // complete before entry; a caught write failure restores every touched field.
+  commitDissolvePreview(preview, fluid, opts: any = {}) {
+    if (!preview || !preview.dissolved) return preview || { dissolved: false };
+    const wallState = opts.wall_state || null;
+    const geometryPlan = opts.geometry_plan || null;
+    const evolutionLedger = wallState && wallState.cavityEvolutionLedger
+      ? wallState.cavityEvolutionLedger() : null;
+    if ((geometryPlan && !evolutionLedger) || (!geometryPlan && evolutionLedger)) {
+      throw new RangeError('wall dissolution geometry plan/ledger authority mismatch');
+    }
+    if (this.cavity_capacity_basis === 'canonical_closed_wallmesh' && !geometryPlan) {
+      throw new RangeError('canonical cavity capacity cannot change outside its WallMesh ledger');
+    }
+    const oldCapacity = Number(this.cavity_capacity_volume_mm3);
+    const newCapacity = geometryPlan
+      ? oldCapacity + Number(geometryPlan.achieved_volume_delta_mm3_per_kg)
+      : oldCapacity + preview.target_volume_delta_mm3_per_kg;
+    if (geometryPlan) {
+      const volumeTolerance = Math.max(1e-8, preview.target_volume_delta_mm3_per_kg * 1e-8);
+      const capacityTolerance = Math.max(
+        1e-7,
+        oldCapacity * 1e-10,
+        Number(geometryPlan.volume_tolerance_mm3_per_kg) || 0,
+      );
+      if (Math.abs(geometryPlan.target_volume_delta_mm3_per_kg
+          - preview.target_volume_delta_mm3_per_kg) > volumeTolerance
+          || Math.abs(geometryPlan.old_capacity_volume_mm3 - oldCapacity)
+            > capacityTolerance) {
+        throw new RangeError('wall dissolution capacity/geometry preview mismatch: target '
+          + geometryPlan.target_volume_delta_mm3_per_kg + ' vs '
+          + preview.target_volume_delta_mm3_per_kg + '; old '
+          + geometryPlan.old_capacity_volume_mm3 + ' vs ' + oldCapacity);
+      }
+    }
+    const oldDiameter = this.vug_diameter_mm;
+    const newDiameter = VugWall.diameterForCapacityMm3(newCapacity);
+    const transactionId = 'host-dissolution-' + (this.host_release_ledger.length + 1);
+    const remainingFormulaMmolKg = (this.thickness_mm - preview.rate_mm) * (15 / 40.078);
+    const releasedAfter = this.host_formula_released_mmolkg + preview.formula_extent_mmolkg;
+    const inventoryErrorMmolKg = this.host_formula_inventory_initial_mmolkg
+      - remainingFormulaMmolKg - releasedAfter;
+    const fluidBefore = {
+      pH: Number(fluid.pH), Ca: Number(fluid.Ca), Mg: Number(fluid.Mg),
+      CO3: Number(fluid.CO3), Fe: Number(fluid.Fe), Mn: Number(fluid.Mn),
+    };
+    const fluidAfter = {
+      pH: preview.ph_after,
+      Ca: fluidBefore.Ca + preview.ca_released,
+      Mg: fluidBefore.Mg + preview.mg_released,
+      CO3: fluidBefore.CO3 + preview.co3_released,
+      Fe: fluidBefore.Fe + preview.fe_released,
+      Mn: fluidBefore.Mn + preview.mn_released,
+    };
+    if (!Object.values(fluidBefore).every(Number.isFinite)
+        || !Object.values(fluidAfter).every(Number.isFinite)
+        || Math.abs(inventoryErrorMmolKg) > 1e-9) {
+      throw new RangeError('wall dissolution chemistry preview failed finite/inventory closure');
+    }
+    const transaction: any = {
+      transaction_id: transactionId,
+      composition: this.composition,
+      formula: preview.formula,
+      attempted_rate_mm: preview.attempted_rate_mm,
+      rate_mm: preview.rate_mm,
+      attempted_formula_extent_mmolkg: preview.attempted_formula_extent_mmolkg,
+      formula_extent_mmolkg: preview.formula_extent_mmolkg,
+      solvent_reference_kg: 1,
+      fluid_delta_ppm: { Ca: preview.ca_released, Mg: preview.mg_released, CO3: preview.co3_released },
+      expected_ppm: { Ca: preview.ca_released, Mg: preview.mg_released, CO3: preview.co3_released },
       remaining_formula_mmolkg: remainingFormulaMmolKg,
       inventory_error_mmolkg: inventoryErrorMmolKg,
       closed: Math.abs(inventoryErrorMmolKg) <= 1e-9,
+      closure_scope: 'carbonate formula extent and Ca/Mg/CO3 release only',
     };
-    this.host_release_ledger.push(transaction);
 
+    let evolutionEntry: any = null;
+    if (geometryPlan) {
+      evolutionEntry = {
+        schema: CAVITY_EVOLUTION_SCHEMA,
+        model: evolutionLedger.model,
+        transaction_type: 'carbonate_host_dissolution',
+        shape_identity: evolutionLedger.shape_identity,
+        tessellation_identity: evolutionLedger.tessellation_identity,
+        event_id: evolutionLedger.cursor + 1,
+        chemistry_transaction_id: transactionId,
+        step: Math.max(0, Math.floor(Number(opts.step) || 0)),
+        pre_state_digest: evolutionLedger.signature,
+        attempted_formula_extent_mmolkg: preview.attempted_formula_extent_mmolkg,
+        accepted_formula_extent_mmolkg: preview.formula_extent_mmolkg,
+        solvent_reference_kg: 1,
+        mineral: preview.mineral,
+        formula: preview.formula,
+        molar_volume: preview.molar_volume,
+        target_volume_delta_mm3_per_kg: geometryPlan.target_volume_delta_mm3_per_kg,
+        achieved_volume_delta_mm3_per_kg: geometryPlan.achieved_volume_delta_mm3_per_kg,
+        volume_residual_mm3_per_kg: geometryPlan.volume_residual_mm3_per_kg,
+        volume_tolerance_mm3_per_kg: geometryPlan.volume_tolerance_mm3_per_kg,
+        old_capacity_volume_mm3: oldCapacity,
+        new_capacity_volume_mm3: newCapacity,
+        old_equivalent_diameter_mm: oldDiameter,
+        new_equivalent_diameter_mm: newDiameter,
+        exposure: opts.exposure_receipt,
+        vertex_deltas: geometryPlan.vertex_deltas,
+        fluid_receipt: { before: fluidBefore, after: fluidAfter },
+        host_inventory_receipt: {
+          initial_formula_mmolkg: this.host_formula_inventory_initial_mmolkg,
+          released_before_mmolkg: this.host_formula_released_mmolkg,
+          released_after_mmolkg: releasedAfter,
+          remaining_after_mmolkg: remainingFormulaMmolKg,
+          residual_mmolkg: inventoryErrorMmolKg,
+        },
+        scientific_scope: {
+          closed: 'carbonate formula extent to standard-state crystalline volume per 1 kg solvent reference',
+          not_closed: [
+            'actual cavity fluid mass', 'P-T-dependent molar volume',
+            'bulk-rock phase fraction and porosity', 'Fe/Mn inventories',
+            'acid-base charge balance', 'energy', 'spatial solute release',
+          ],
+        },
+      };
+    }
+
+    const wallSnapshot = {
+      thickness_mm: this.thickness_mm,
+      total_dissolved_mm: this.total_dissolved_mm,
+      vug_diameter_mm: this.vug_diameter_mm,
+      cavity_capacity_volume_mm3: this.cavity_capacity_volume_mm3,
+      host_volume_removed_mm3_per_kg: this.host_volume_removed_mm3_per_kg,
+      ca_from_wall_total: this.ca_from_wall_total,
+      host_formula_released_mmolkg: this.host_formula_released_mmolkg,
+      host_release_totals: { ...this.host_release_totals },
+      ledger_length: this.host_release_ledger.length,
+    };
+    let geometryCommitted = false;
+    try {
+      if (evolutionEntry) {
+        evolutionLedger.commitEntry(wallState, evolutionEntry);
+        geometryCommitted = true;
+      }
+      this.thickness_mm -= preview.rate_mm;
+      this.total_dissolved_mm += preview.rate_mm;
+      this.cavity_capacity_volume_mm3 = newCapacity;
+      this.host_volume_removed_mm3_per_kg += geometryPlan
+        ? geometryPlan.achieved_volume_delta_mm3_per_kg
+        : preview.target_volume_delta_mm3_per_kg;
+      this.vug_diameter_mm = newDiameter;
+      fluid.Ca = fluidAfter.Ca;
+      fluid.Mg = fluidAfter.Mg;
+      fluid.CO3 = fluidAfter.CO3;
+      fluid.Fe = fluidAfter.Fe;
+      fluid.Mn = fluidAfter.Mn;
+      fluid.pH = fluidAfter.pH;
+      this.ca_from_wall_total += preview.ca_released;
+      this.host_formula_released_mmolkg = releasedAfter;
+      this.host_release_totals.Ca += preview.ca_released;
+      this.host_release_totals.Mg += preview.mg_released;
+      this.host_release_totals.CO3 += preview.co3_released;
+      this.host_release_ledger.push(transaction);
+      if (wallState) {
+        wallState.updateCapacity(newCapacity, newDiameter);
+        for (const delta of geometryPlan.vertex_deltas) {
+          const ring = Math.floor(delta.vertex_index / wallState.cells_per_ring);
+          const cell = delta.vertex_index % wallState.cells_per_ring;
+          const state = wallState.rings[ring][cell];
+          const radius = state.base_radius_mm + state.wall_depth;
+          if (radius > wallState.max_seen_radius_mm) wallState.max_seen_radius_mm = radius;
+        }
+      }
+    } catch (error) {
+      if (geometryCommitted) evolutionLedger.rollbackLast(wallState, evolutionEntry.event_id);
+      this.thickness_mm = wallSnapshot.thickness_mm;
+      this.total_dissolved_mm = wallSnapshot.total_dissolved_mm;
+      this.vug_diameter_mm = wallSnapshot.vug_diameter_mm;
+      this.cavity_capacity_volume_mm3 = wallSnapshot.cavity_capacity_volume_mm3;
+      this.host_volume_removed_mm3_per_kg = wallSnapshot.host_volume_removed_mm3_per_kg;
+      this.ca_from_wall_total = wallSnapshot.ca_from_wall_total;
+      this.host_formula_released_mmolkg = wallSnapshot.host_formula_released_mmolkg;
+      this.host_release_totals = wallSnapshot.host_release_totals;
+      this.host_release_ledger.length = wallSnapshot.ledger_length;
+      for (const key of Object.keys(fluidBefore)) fluid[key] = fluidBefore[key];
+      if (wallState) wallState.updateCapacity(oldCapacity, oldDiameter);
+      throw error;
+    }
     return {
-      dissolved: true,
-      rate_mm,
-      formula,
-      formula_extent_mmolkg,
-      ca_released,
-      mg_released,
-      co3_released,
-      fe_released,
-      mn_released,
-      ph_before,
-      ph_after: fluid.pH,
+      ...preview,
       vug_diameter: this.vug_diameter_mm,
       total_dissolved: this.total_dissolved_mm,
+      cavity_capacity_volume_mm3: this.cavity_capacity_volume_mm3,
+      achieved_volume_delta_mm3_per_kg: geometryPlan
+        ? geometryPlan.achieved_volume_delta_mm3_per_kg
+        : preview.target_volume_delta_mm3_per_kg,
+      volume_residual_mm3_per_kg: geometryPlan
+        ? geometryPlan.volume_residual_mm3_per_kg : 0,
+      volume_tolerance_mm3_per_kg: geometryPlan
+        ? geometryPlan.volume_tolerance_mm3_per_kg : 0,
       host_transaction: transaction,
+      cavity_evolution_entry: evolutionLedger
+        ? evolutionLedger.entries[evolutionLedger.entries.length - 1] : null,
     };
+  }
+
+  dissolve(acid_strength, fluid) {
+    const preview = this.previewDissolve(acid_strength, fluid);
+    return preview.dissolved ? this.commitDissolvePreview(preview, fluid) : preview;
   }
 
   // W-K V1b: the dissolution-rate-weighted mean flow_rate the scallops equilibrated to, or null
@@ -865,6 +1117,7 @@ class WallState {
     // Mutation-time exact cache invalidation: the two position-affecting
     // WallCell setters advance this monotonic revision.
     this._geometry_revision = 0;
+    this._cavityEvolutionLedger = null;
     this.cells_per_ring = opts.cells_per_ring ?? 120;
     // Phase 1 of PROPOSAL-3D-SIMULATION: 16 vertically-stacked rings as
     // the new default. Engine still operates on ring[0] only — rings 1..15
@@ -873,6 +1126,8 @@ class WallState {
     this.ring_count = opts.ring_count ?? 16;
     this.vug_diameter_mm = opts.vug_diameter_mm ?? 50.0;
     this.initial_radius_mm = opts.initial_radius_mm ?? (this.vug_diameter_mm / 2);
+    this.cavity_capacity_volume_mm3 = opts.cavity_capacity_volume_mm3
+      ?? (4 / 3) * Math.PI * Math.pow(this.vug_diameter_mm / 2, 3);
     this.ring_spacing_mm = opts.ring_spacing_mm ?? 1.0;
     // PROPOSAL-HOST-ROCK Mechanic 5: archetype controls bubble counts,
     // polar/twist amplitude scaling, and nucleation_bias. Default
@@ -1414,7 +1669,114 @@ class WallState {
     ];
   }
 
-  updateDiameter(newDiameter) { this.vug_diameter_mm = newDiameter; }
+  updateCapacity(volumeMm3, equivalentDiameterMm?) {
+    const volume = Number(volumeMm3);
+    if (!(volume > 0) || !Number.isFinite(volume)) throw new RangeError('WallState capacity is invalid');
+    const derivedDiameter = VugWall.diameterForCapacityMm3(volume);
+    if (equivalentDiameterMm != null) {
+      const suppliedDiameter = Number(equivalentDiameterMm);
+      const tolerance = Math.max(1e-10, derivedDiameter * 1e-10);
+      if (!Number.isFinite(suppliedDiameter)
+          || Math.abs(suppliedDiameter - derivedDiameter) > tolerance) {
+        throw new RangeError('WallState equivalent diameter must be derived from capacity');
+      }
+    }
+    this.cavity_capacity_volume_mm3 = volume;
+    this.vug_diameter_mm = derivedDiameter;
+  }
+
+  // Creative mode may reauthor the initial equivalent-volume diameter only
+  // before time, crystals, or erosion exist. Scale the complete authored
+  // closed surface and its source bubbles together, then recompute the exact
+  // Float32 WallMesh capacity and start a fresh authored-initial ledger.
+  reauthorInitialEquivalentDiameterMm(equivalentDiameterMm, sim?) {
+    const requestedDiameter = Number(equivalentDiameterMm);
+    if (!(requestedDiameter > 0) || !Number.isFinite(requestedDiameter)) {
+      throw new RangeError('initial equivalent cavity diameter must be positive and finite');
+    }
+    const ledger = this.cavityEvolutionLedger();
+    if (!ledger || ledger.cursor !== 0) {
+      throw new RangeError('initial cavity diameter can only be reauthored before evolution history exists');
+    }
+    ledger.assertProjection(this);
+    const cells = this.rings.flat();
+    if (cells.some(cell => Math.abs(Number(cell.wall_depth) || 0) > 1e-12)) {
+      throw new RangeError('initial cavity diameter cannot be reauthored after wall evolution');
+    }
+    const mesh = this.meshFor(sim);
+    if (!mesh || typeof mesh.closedVolumeMm3 !== 'function') {
+      throw new RangeError('initial cavity reauthoring requires the canonical closed WallMesh');
+    }
+    const snapshot = {
+      base: cells.map(cell => Number(cell.base_radius_mm)),
+      bubbles: (this.bubbles || []).map(bubble => bubble.slice()),
+      initial_radius_mm: this.initial_radius_mm,
+      max_seen_radius_mm: this.max_seen_radius_mm,
+      vug_diameter_mm: this.vug_diameter_mm,
+      cavity_capacity_volume_mm3: this.cavity_capacity_volume_mm3,
+      ledger: this._cavityEvolutionLedger,
+    };
+    const targetCapacity = (4 / 3) * Math.PI * Math.pow(requestedDiameter / 2, 3);
+    const scaleGeometry = (scale) => {
+      if (!(scale > 0) || !Number.isFinite(scale)) throw new RangeError('invalid cavity authoring scale');
+      for (const cell of cells) cell.base_radius_mm *= scale;
+      for (const bubble of (this.bubbles || [])) {
+        bubble[0] *= scale;
+        bubble[1] *= scale;
+        bubble[2] *= scale;
+        bubble[3] *= scale;
+      }
+      this.initial_radius_mm *= scale;
+      this.max_seen_radius_mm *= scale;
+    };
+    try {
+      for (let iteration = 0; iteration < 4; iteration++) {
+        const currentCapacity = this.meshFor(sim).closedVolumeMm3();
+        const correction = Math.cbrt(targetCapacity / currentCapacity);
+        if (Math.abs(correction - 1) <= 1e-10) break;
+        scaleGeometry(correction);
+      }
+      const exactCapacity = this.meshFor(sim).closedVolumeMm3();
+      const exactDiameter = VugWall.diameterForCapacityMm3(exactCapacity);
+      this.cavity_capacity_volume_mm3 = exactCapacity;
+      this.vug_diameter_mm = exactDiameter;
+      this._cavityEvolutionLedger = CavityEvolutionLedger.forWall(this);
+      this._cavityField = null;
+      this._cavitySurface = null;
+      this._cavitySurfaceFailure = null;
+      this._voxelGrid = null;
+      return Object.freeze({
+        transaction_type: 'creative_initial_cavity_scale',
+        requested_equivalent_diameter_mm: requestedDiameter,
+        exact_equivalent_diameter_mm: exactDiameter,
+        exact_capacity_volume_mm3: exactCapacity,
+        shape_identity: this._cavityEvolutionLedger.shape_identity,
+        scope: 'pre-run authored initial condition; no erosion or deposition event',
+      });
+    } catch (error) {
+      for (let index = 0; index < cells.length; index++) {
+        cells[index].base_radius_mm = snapshot.base[index];
+      }
+      this.bubbles = snapshot.bubbles.map(bubble => bubble.slice());
+      this.initial_radius_mm = snapshot.initial_radius_mm;
+      this.max_seen_radius_mm = snapshot.max_seen_radius_mm;
+      this.vug_diameter_mm = snapshot.vug_diameter_mm;
+      this.cavity_capacity_volume_mm3 = snapshot.cavity_capacity_volume_mm3;
+      this._cavityEvolutionLedger = snapshot.ledger;
+      throw error;
+    }
+  }
+
+  initializeCavityEvolutionLedger(opts: any = {}) {
+    if (this._cavityEvolutionLedger) return this._cavityEvolutionLedger;
+    const Ledger: any = (typeof CavityEvolutionLedger !== 'undefined')
+      ? CavityEvolutionLedger : null;
+    if (!Ledger) throw new Error('CavityEvolutionLedger is unavailable');
+    this._cavityEvolutionLedger = Ledger.forWall(this, opts);
+    return this._cavityEvolutionLedger;
+  }
+
+  cavityEvolutionLedger() { return this._cavityEvolutionLedger; }
 
   // PHASE-2-CAVITY-MESH (PROPOSAL-CAVITY-MESH §6): lazy accessor that
   // returns a WallMesh built from this WallState. First access pays the
@@ -1463,9 +1825,11 @@ class WallState {
     const CF: any = (typeof CavityScalarField !== 'undefined') ? CavityScalarField : null;
     if (!CF) return null;
     const resolution = opts && opts.resolution != null ? opts.resolution : 48;
-    const sig = CF.signatureFor(this, resolution);
+    const ledgerCursor = opts && opts.ledgerCursor != null
+      ? opts.ledgerCursor : this._cavityEvolutionCursor;
+    const sig = CF.signatureFor(this, resolution, ledgerCursor);
     if (!this._cavityField || this._cavityField.sig !== sig) {
-      this._cavityField = CF.fromWallState(this, { resolution });
+      this._cavityField = CF.fromWallState(this, { resolution, ledgerCursor });
       this._cavitySurface = null;
       this._cavitySurfaceFailure = null;
     }
@@ -1633,51 +1997,6 @@ class WallState {
     return idx;
   }
 
-  // Distribute a radial dissolution amount across unblocked cells.
-  // Blocked cells (Set of cell indices) contribute zero — the acid
-  // budget concentrates on exposed slices. Returns the number of
-  // cells eroded.
-  // colWeights (Phase 2b, optional): a length-N array of per-column erosion
-  // multipliers from the fluid-source spots (FluidSpotField.columnWeights). The
-  // FIXED dissolution budget (rateMm·N) is redistributed proportional to the
-  // unblocked cells' weights → preferential deepening at feeder columns (lopsided
-  // cavity growth). Mass-conserving (same total wall_depth added), so the Ca/CO3
-  // release computed upstream in wall.dissolve() is untouched — this is purely
-  // geometric. Absent/null → the legacy UNIFORM distribution (byte-identical).
-  erodeCells(rateMm, blocked, colWeights) {
-    if (!(rateMm > 0)) return 0;
-    const ring0 = this.rings[0];
-    const N = ring0.length;
-    const unblocked = [];
-    for (let i = 0; i < N; i++) if (!blocked.has(i)) unblocked.push(i);
-    if (!unblocked.length) return 0;
-    const total = rateMm * N;
-    if (colWeights) {
-      let wsum = 0;
-      for (const i of unblocked) wsum += (colWeights[i] > 0 ? colWeights[i] : 1);
-      if (wsum > 0) {
-        for (const i of unblocked) {
-          const wi = colWeights[i] > 0 ? colWeights[i] : 1;
-          ring0[i].wall_depth += total * wi / wsum;
-        }
-      } else {
-        const perCell = total / unblocked.length;
-        for (const i of unblocked) ring0[i].wall_depth += perCell;
-      }
-    } else {
-      const perCell = total / unblocked.length;
-      for (const i of unblocked) ring0[i].wall_depth += perCell;
-    }
-    // Bump the monotonic render scale if any cell just passed the
-    // current maximum. Uses per-cell base_radius_mm so Fourier-profile
-    // bulges contribute correctly.
-    for (const c of ring0) {
-      const r = c.base_radius_mm + c.wall_depth;
-      if (r > this.max_seen_radius_mm) this.max_seen_radius_mm = r;
-    }
-    return unblocked.length;
-  }
-
   clear() {
     // Reset per-step occupancy but preserve wall_depth (cumulative).
     // Proposal E (2026-05-18): also reset per-cell local-fill volume
@@ -1714,8 +2033,6 @@ class WallState {
     const n = this.ring_count;
     const N = this.cells_per_ring;
     if (n <= 0 || N <= 0) return 0;
-    const R = (this.vug_diameter_mm || 50) / 2;
-    if (!(R > 0)) return 0;
     // Cache ring-weight sum; invalidate if ring_count ever changes.
     if (this._cachedRingWeightSum == null || this._cachedRingWeightSum_n !== n) {
       let s = 0;
@@ -1724,7 +2041,8 @@ class WallState {
       this._cachedRingWeightSum = s > 0 ? s : n;
       this._cachedRingWeightSum_n = n;
     }
-    const cavityVol = (4 / 3) * Math.PI * R * R * R;
+    const cavityVol = Number(this.cavity_capacity_volume_mm3);
+    if (!(cavityVol > 0)) return 0;
     const w = this.ringAreaWeight(ringIdx) / this._cachedRingWeightSum;
     return (cavityVol * w) / N;
   }

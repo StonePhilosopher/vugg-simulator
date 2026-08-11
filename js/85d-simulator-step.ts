@@ -205,59 +205,70 @@ Object.assign(VugSimulator.prototype, {
 
   dissolve_wall() {
   const wall = this.conditions.wall;
-  // Acid strength = how far below the carbonate-attack threshold pH we
-  // are. Negative when pH ≥ 5.5; clipped to 0 inside wall.dissolve().
-  const acid_strength = Math.max(0.0, 5.5 - this.conditions.fluid.pH);
-  // Skip the call entirely when there's no work to do — neutral fluid
-  // AND default reactivity. Avoids logging noise.
-  if (acid_strength <= 0.0 && wall.reactivity <= 1.0) return;
+  if (wall.composition !== 'limestone' && wall.composition !== 'dolomite') return;
 
-  const pre_sigma_cal = this.conditions.supersaturation_calcite();
-  const pre_Ca = this.conditions.fluid.Ca;
+  // Everything below is computed from the pre-attack state. Local cell pH,
+  // fractional overlapping shielding, and feeder flux are frozen into the
+  // exposure receipt before any bulk-fluid buffering occurs.
+  const attack = this._wallSurfaceAttackState();
+  if (!(attack.attemptedRate > 0) || !(attack.acceptedRate > 0)) return;
+  const preSigmaCalcite = this.conditions.supersaturation_calcite();
+  const preview = wall.previewDissolve(
+    Math.max(0, 5.5 - this.conditions.fluid.pH),
+    this.conditions.fluid,
+    {
+      attempted_rate_mm: attack.attemptedRate,
+      accepted_rate_mm: attack.acceptedRate,
+      temperature_C: this.conditions.temperature,
+      pressure_kbar: this.conditions.pressure,
+    },
+  );
+  if (!preview.dissolved) return;
+  const evolutionLedger = this.wall_state.cavityEvolutionLedger();
+  if (!evolutionLedger) throw new Error('carbonate dissolution requires a cavity evolution ledger');
+  const geometryPlan = evolutionLedger.previewErosion(this.wall_state, attack.mesh, {
+    target_volume_delta_mm3_per_kg: preview.target_volume_delta_mm3_per_kg,
+    vertex_weights: attack.vertexWeights,
+  });
+  const result = wall.commitDissolvePreview(preview, this.conditions.fluid, {
+    wall_state: this.wall_state,
+    geometry_plan: geometryPlan,
+    exposure_receipt: attack.receipt,
+    step: this.step,
+  });
 
-  const result = wall.dissolve(acid_strength, this.conditions.fluid);
+  declareCarbonLedgerAddition(
+    this.conditions,
+    'wall_release',
+    result.formula + ' host dissolution',
+    result.co3_released,
+  );
+  wall.paleo_flow_accum += this.conditions.flow_rate * result.rate_mm;
+  wall.paleo_flow_wt += result.rate_mm;
+  this.wall_state.paleo_flow = wall.paleoFlow();
+  const postSigmaCalcite = this.conditions.supersaturation_calcite();
 
-  if (result.dissolved) {
-    declareCarbonLedgerAddition(
-      this.conditions,
-      'wall_release',
-      `${result.formula} host dissolution`,
-      result.co3_released,
-    );
-    // W-K V1b (paleo-flow scallops): weight THIS step's flow_rate by how much it eroded, so the
-    // wall's scallop length records the flow it actually dissolved under (Curl 1974, L ∝ 1/v).
-    // Record-only — read via wall.paleoFlow() by the RENDERER, never by the growth engine, so the
-    // sim stays byte-identical.
-    wall.paleo_flow_accum += this.conditions.flow_rate * result.rate_mm;
-    wall.paleo_flow_wt += result.rate_mm;
-    this.wall_state.paleo_flow = wall.paleoFlow();   // push the render-side scalar (Object.assign-copied through the snapshot)
-    // Distribute the erosion per-cell. Cells shielded by acid-resistant
-    // crystals don't budge, concentrating the attack elsewhere — the
-    // vug grows lopsided in whatever direction the deposit left bare.
-    const blocked = this._wallCellsBlockedByCrystals();
-    // Phase 2b — FEEDER-LOCALIZED erosion (PROPOSAL §10). Open fluid-source spots
-    // redistribute the FIXED dissolution budget toward their columns, so the cavity
-    // deepens lopsidedly toward its feeders (cracks/geysers/hotspots) instead of as
-    // an even sphere. Gated by fluidSpotsDecayEnabled() (default on); null weights
-    // (coupling off / no spots / no >1 bonus) → the legacy uniform path, byte-
-    // identical. Mass-conserving → chemistry (Ca/CO3 release) unchanged; pure shape.
-    const _colW = (fluidSpotsDecayEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty)
-      ? this._fluidSpots.columnWeights(this.wall_state.cells_per_ring)
-      : null;
-    this.wall_state.erodeCells(result.rate_mm, blocked, _colW);
-    const post_sigma_cal = this.conditions.supersaturation_calcite();
-
-    this.log.push(`  🧱 WALL DISSOLUTION: ${result.rate_mm.toFixed(2)} mm of ${wall.composition} dissolved`);
-    if (blocked.size) {
-      this.log.push(`     ${blocked.size} cell${blocked.size === 1 ? '' : 's'} shielded by acid-resistant crystal growth`);
-    }
-    this.log.push(`     pH ${result.ph_before.toFixed(1)} → ${result.ph_after.toFixed(1)} (carbonate buffering)`);
-    this.log.push(`     Released (${result.formula}): Ca²⁺ +${result.ca_released.toFixed(1)} ppm, Mg²⁺ +${result.mg_released.toFixed(1)} ppm, CO₃²⁻ +${result.co3_released.toFixed(1)} ppm, Fe +${result.fe_released.toFixed(1)}, Mn +${result.mn_released.toFixed(1)}`);
-    this.log.push(`     Vug diameter: ${result.vug_diameter.toFixed(1)} mm (+${result.total_dissolved.toFixed(1)} mm total enlargement)`);
-
-    if (post_sigma_cal > pre_sigma_cal * 1.3 && post_sigma_cal > 1.0) {
-      this.log.push(`     ⚡ SUPERSATURATION SPIKE: σ(Cal) ${pre_sigma_cal.toFixed(2)} → ${post_sigma_cal.toFixed(2)} — rapid calcite growth expected!`);
-    }
+  this.log.push('  WALL DISSOLUTION: ' + result.rate_mm.toFixed(3)
+    + ' mm calibrated reaction-path depth of ' + wall.composition);
+  if (attack.blocked.size || attack.receipt.partially_covered_cells) {
+    this.log.push('     Shielding: ' + attack.blocked.size + ' fully blocked, '
+      + attack.receipt.partially_covered_cells + ' partly covered of '
+      + attack.receipt.total_cells + ' wall cells');
+  }
+  this.log.push('     pH ' + result.ph_before.toFixed(1) + ' -> '
+    + result.ph_after.toFixed(1) + ' (empirical carbonate buffering)');
+  this.log.push('     Released (' + result.formula + '): Ca2+ +'
+    + result.ca_released.toFixed(1) + ' ppm, Mg2+ +' + result.mg_released.toFixed(1)
+    + ' ppm, CO3(2-) +' + result.co3_released.toFixed(1) + ' ppm, Fe +'
+    + result.fe_released.toFixed(1) + ', Mn +' + result.mn_released.toFixed(1));
+  this.log.push('     Cavity capacity +' + result.achieved_volume_delta_mm3_per_kg.toFixed(3)
+    + ' mm3 per 1 kg solvent reference (target '
+    + result.target_volume_delta_mm3_per_kg.toFixed(3) + ', residual '
+    + result.volume_residual_mm3_per_kg.toExponential(2) + '); equivalent diameter '
+    + result.vug_diameter.toFixed(3) + ' mm');
+  if (postSigmaCalcite > preSigmaCalcite * 1.3 && postSigmaCalcite > 1) {
+    this.log.push('     SUPERSATURATION SPIKE: calcite sigma '
+      + preSigmaCalcite.toFixed(2) + ' -> ' + postSigmaCalcite.toFixed(2));
   }
 },
 

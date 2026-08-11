@@ -287,6 +287,9 @@ const EXPORTS = [
   'WallState',
   'WallCell',
   'WallMesh',
+  'CavityEvolutionLedger',
+  'cavityMolarVolume',
+  'cavityFormulaExtentVolumeMm3PerKg',
   'CavityScalarField',
   'MarchingCubesExtractor',
   'CavityVoxelGrid',  // v158 — PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1

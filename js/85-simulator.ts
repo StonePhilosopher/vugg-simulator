@@ -174,6 +174,14 @@ class VugSimulator {
     // 85c-simulator-state.ts:152-168). cells[i] is the same WallCell
     // object as wall.rings[r][c], so legacy ring reads see the binding.
     const _initialMesh = this.wall_state.meshFor(this);
+    if (_initialMesh && _initialMesh.closedVolumeMm3) {
+      const initialCapacity = _initialMesh.closedVolumeMm3();
+      this.wall_state.initializeCavityEvolutionLedger();
+      const equivalentDiameter = this.conditions.wall.initializeCavityCapacity(
+        initialCapacity, 'canonical_closed_wallmesh',
+      );
+      this.wall_state.updateCapacity(initialCapacity, equivalentDiameter);
+    }
     if (_initialMesh && _initialMesh.bindRingChemistry) {
       _initialMesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
     }
@@ -295,6 +303,51 @@ class VugSimulator {
     // against this and applies the override to whatever rings are
     // currently vadose.
     this._prevFluidSurfaceRing = null;
+  }
+
+  canReauthorInitialHostGeometry() {
+    const ledger = this.wall_state?.cavityEvolutionLedger?.();
+    return this.step === 0
+      && this.crystals.length === 0
+      && (!ledger || ledger.cursor === 0)
+      && this.conditions.wall.total_dissolved_mm === 0
+      && this.conditions.wall.host_release_ledger.length === 0;
+  }
+
+  reauthorInitialCavityEquivalentDiameterMm(value) {
+    if (!this.canReauthorInitialHostGeometry()) return false;
+    const wall = this.conditions.wall;
+    const wallState = this.wall_state;
+    const receipt = wallState.reauthorInitialEquivalentDiameterMm(value, this);
+    const exactDiameter = wall.initializeCavityCapacity(
+      receipt.exact_capacity_volume_mm3, 'canonical_closed_wallmesh',
+    );
+    wall.authored_vug_diameter_mm = Number(value);
+    wallState.updateCapacity(receipt.exact_capacity_volume_mm3, exactDiameter);
+    const mesh = wallState.meshFor(this);
+    if (mesh?.bindRingChemistry) mesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
+    wallState.voxelGridFor(this);
+    this.wall_state_history = [];
+    this._creativeInitialAuthoringTransactions ||= [];
+    this._creativeInitialAuthoringTransactions.push(receipt);
+    return true;
+  }
+
+  reauthorInitialHostThicknessMm(value) {
+    if (!this.canReauthorInitialHostGeometry()) return false;
+    const receipt = this.conditions.wall.reauthorInitialThicknessMm(value);
+    this._creativeInitialAuthoringTransactions ||= [];
+    this._creativeInitialAuthoringTransactions.push(receipt);
+    return true;
+  }
+
+  reauthorInitialHostComposition(value) {
+    if (!this.canReauthorInitialHostGeometry()) return false;
+    const receipt = this.conditions.wall.reauthorInitialComposition(value);
+    this.wall_state.composition = receipt.composition;
+    this._creativeInitialAuthoringTransactions ||= [];
+    this._creativeInitialAuthoringTransactions.push(receipt);
+    return true;
   }
 
   run_step() {
@@ -1164,7 +1217,7 @@ class VugSimulator {
     let vug_growth = '';
     if (this.conditions.wall.total_dissolved_mm > 0) {
       const w = this.conditions.wall;
-      vug_growth = ` The cavity itself expanded from ${(w.vug_diameter_mm - w.total_dissolved_mm * 2).toFixed(0)}mm to ${w.vug_diameter_mm.toFixed(0)}mm diameter as acid pulses dissolved ${w.total_dissolved_mm.toFixed(1)}mm of the ${w.composition} host rock.`;
+      vug_growth = ` The cavity's equivalent-volume diameter changed from ${w.initial_vug_diameter_mm.toFixed(2)}mm to ${w.vug_diameter_mm.toFixed(2)}mm as acid pulses removed ${w.host_volume_removed_mm3_per_kg.toFixed(2)}mm³ of ${w.composition} per 1kg solvent reference (standard-state crystalline-volume approximation).`;
     }
 
     const yearsPerStep = timeScale * 10000;

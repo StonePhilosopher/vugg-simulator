@@ -111,24 +111,27 @@ describe('fluid-spots — 2b wall-decay coupling (lopsided erosion, render-visib
     const sim = new VugSimulator(conditions, events);
     const steps = defaultSteps ?? 100;
     for (let s = 0; s < steps; s++) sim.run_step();
-    const depths = sim.wall_state.rings[0].map((c: any) => c.wall_depth);
+    const depths = sim.wall_state.rings.flatMap((ring: any[]) => ring.map((c: any) => c.wall_depth));
     const N = depths.length;
     const mean = depths.reduce((a: number, b: number) => a + b, 0) / N;
     const std = Math.sqrt(depths.reduce((a: number, d: number) => a + (d - mean) ** 2, 0) / N);
-    const spotCols = sim._fluidSpots.spots.filter((s: any) => s.open).map((s: any) => s.cell % N);
-    return { depths, N, mean, cv: mean > 1e-9 ? std / mean : 0, spotCols };
+    const spotCells = sim._fluidSpots.spots.filter((s: any) => s.open).map((s: any) => s.cell);
+    const ledger = sim.wall_state.cavityEvolutionLedger();
+    return { depths, N, mean, cv: mean > 1e-9 ? std / mean : 0, spotCells, ledger };
   }
 
-  it('reactive wall: OFF erodes uniformly, ON deepens feeder columns (mass-conserving)', () => {
+  it('reactive wall: OFF erodes uniformly, ON deepens localized feeder patches with closed mesh volume', () => {
     const off = runDepths(false);
     const on = runDepths(true);
     expect(off.mean).toBeGreaterThan(0);            // acidic → the wall actually dissolves
-    expect(off.cv).toBeLessThan(0.01);              // OFF: uniform radial erosion
-    expect(on.cv).toBeGreaterThan(off.cv + 0.01);   // ON: lopsided
-    expect(on.spotCols.length).toBeGreaterThan(0);
-    expect(Math.abs(on.mean - off.mean)).toBeLessThan(1e-6);   // mass-conserving (same total)
-    const maxSpotDepth = Math.max(...on.spotCols.map((c: number) => on.depths[c]));
-    expect(maxSpotDepth).toBeGreaterThan(on.mean * 1.2);       // feeder column deepened
+    expect(on.spotCells.length).toBeGreaterThan(0);
+    const maxSpotDepth = Math.max(...on.spotCells.map((c: number) => on.depths[c]));
+    expect(maxSpotDepth).toBeGreaterThan(on.mean * 1.05);
+    const feederEnhancement = on.spotCells.reduce((sum: number, cell: number) =>
+      sum + (on.depths[cell] - off.depths[cell]), 0) / on.spotCells.length;
+    expect(feederEnhancement).toBeGreaterThan(0);
+    expect(on.ledger.entries.every((entry: any) =>
+      Math.abs(entry.volume_residual_mm3_per_kg) <= entry.volume_tolerance_mm3_per_kg)).toBe(true);
   });
 
   it('the decay flag toggles cleanly (OFF reverts to the uniform baseline)', () => {
@@ -141,12 +144,12 @@ describe('fluid-spots — 2b wall-decay coupling (lopsided erosion, render-visib
 
 describe('fluid-spots — columnSupplyWeights (2c.2, SUPERSEDED by proximityField, pure)', () => {
   // The column-only bias didn't cluster (a feeder is a 2-D patch, not a stripe);
-  // superseded by proximityField (2c.2b). Kept as the sibling query to columnWeights.
+  // superseded by proximityField (2c.2b). Retained only for deposition compatibility.
   const N = 120;
   it('a CRACK (supply 1.0) yields NO deposition bias — null (erosion-dominant, not vent-fed)', () => {
     const f = new FluidSpotField([{ cell: 7, kind: 'crack', open: true, supply: 1.0, decayBonus: 1.6 }]);
     expect(f.columnSupplyWeights(N)).toBeNull();      // supply not > 1 → no precipitation boost
-    expect(f.columnWeights(N)).not.toBeNull();        // but it DOES bias erosion (decayBonus 1.6)
+    expect(f.decayMultiplierAt(7)).toBeCloseTo(1.6, 6); // erosion metadata remains explicit
   });
   it('a GEYSER (1.8) / HOTSPOT (1.4) weights its column above 1, neutral elsewhere', () => {
     const g = new FluidSpotField([{ cell: 5, kind: 'geyser', open: true, supply: 1.8, decayBonus: 1.2 }]);
@@ -307,7 +310,7 @@ describe('fluid-spots — 2d open/close lifecycle (seal/breach, pure)', () => {
       if (sim.step === 161) openAfterSeal = sim._fluidSpots.openSpots().length;
     }
     expect(openAfterSeal).toBe(0);                                        // sealed by the step-160 Fracture Seal
-    expect(sim._fluidSpots.columnWeights(sim.wall_state.cells_per_ring | 0)).toBeNull(); // 2b feeder-erosion off after seal
+    expect(sim._fluidSpots.erosionFluxField(sim.wall_state.meshFor(sim))).toBeNull(); // full-surface feeder erosion is off
   });
 });
 

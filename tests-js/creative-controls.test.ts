@@ -370,12 +370,24 @@ describe('Creative chemistry control contract', () => {
     const sim = (globalThis as any)._liveFortressSim();
     const set = (key: string, value: string) => (globalThis as any).setBrothValue(key, value);
 
+    expect({
+      canReauthor: sim.canReauthorInitialHostGeometry(),
+      step: sim.step,
+      crystals: sim.crystals.length,
+      cursor: sim.wall_state.cavityEvolutionLedger().cursor,
+      dissolved: sim.conditions.wall.total_dissolved_mm,
+      releases: sim.conditions.wall.host_release_ledger.length,
+    }).toEqual({
+      canReauthor: true, step: 0, crystals: 0, cursor: 0, dissolved: 0, releases: 0,
+    });
+
     set('water', '375');
     set('pressure', '275');
     set('porosity', '22');
     set('cooling', '7');
     set('ambient', '11');
     set('diameter', '240');
+    set('thickness', '2400');
     set('diffusion', '3');
     set('pco2', '-200');
     set('host', 'dolomite');
@@ -390,8 +402,14 @@ describe('Creative chemistry control contract', () => {
     expect(sim.conditions.porosity).toBe(0.22);
     expect(sim.conditions.wall.cooling_rate).toBe(0.7);
     expect(sim.conditions.wall.ambient_temperature_C).toBe(11);
-    expect(sim.conditions.wall.vug_diameter_mm).toBe(240);
-    expect(sim.wall_state.vug_diameter_mm).toBe(240);
+    expect(sim.conditions.wall.vug_diameter_mm).toBeCloseTo(240, 6);
+    expect(sim.wall_state.vug_diameter_mm).toBeCloseTo(240, 6);
+    expect(sim.conditions.wall.cavity_capacity_volume_mm3)
+      .toBeCloseTo(sim.wall_state.meshFor(sim).closedVolumeMm3(), 5);
+    expect(sim.wall_state.cavityEvolutionLedger().cursor).toBe(0);
+    expect(sim.conditions.wall.thickness_mm).toBe(2400);
+    expect(sim.conditions.wall.host_formula_inventory_initial_mmolkg)
+      .toBeCloseTo(2400 * 15 / 40.078, 10);
     expect(sim.inter_ring_diffusion_rate).toBe(0.03);
     expect(sim.conditions.wall.inter_ring_diffusion_rate).toBe(0.03);
     expect(sim.conditions._scenario.atmospheric_pCO2_bar).toBeCloseTo(0.01, 8);
@@ -405,6 +423,14 @@ describe('Creative chemistry control contract', () => {
     expect(sim.conditions.wall.is_lit).toBe(false);
     expect(sim.wall_state.is_lit).toBe(false);
     expect(sim.conditions.wall.graphitic).toBe(false);
+
+    const lockedDiameter = sim.conditions.wall.vug_diameter_mm;
+    const lockedThickness = sim.conditions.wall.thickness_mm;
+    sim.step = 1;
+    set('diameter', '300');
+    set('thickness', '3000');
+    expect(sim.conditions.wall.vug_diameter_mm).toBe(lockedDiameter);
+    expect(sim.conditions.wall.thickness_mm).toBe(lockedThickness);
   });
 
   it('does not expose the retired fixed-DIC carbon-solver-off path', () => {

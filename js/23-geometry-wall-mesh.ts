@@ -46,6 +46,8 @@ class WallMesh {
     // Total interior vertex count (numInterior); pole vertices live at
     // indices numInterior (south) and numInterior+1 (north).
     this.numInterior = 0;
+    this.ringCount = 0;
+    this.cellsPerRing = 0;
     this.southIdx = 0;
     this.northIdx = 0;
     // PROPOSAL-CAVITY-MESH Phase 4 / Path C — per-vertex state.
@@ -129,6 +131,8 @@ class WallMesh {
     // / orientation are immutable for this tessellation; only the
     // dynamic (x,y,z, color) values recompute later.
     mesh.numInterior = ringCount * N;
+    mesh.ringCount = ringCount;
+    mesh.cellsPerRing = N;
     mesh.southIdx = mesh.numInterior;
     mesh.northIdx = mesh.numInterior + 1;
     const numVerts = mesh.numInterior + 2;
@@ -540,6 +544,224 @@ class WallMesh {
     });
     this.surface_area_mm2 = totalArea;
     this._surfaceTriangles = triangles;
+    this._cellSurfaceAreasSig = null;
+    this._cellSurfaceAreas = null;
+    this._geodesicCache = new Map();
+    this._geodesicAdjacency = null;
+  }
+
+  // Exact enclosed volume of the closed triangle surface consumed by the
+  // renderer. The absolute oriented-tetrahedron sum is the geometry authority
+  // for mass-balanced wall evolution; it deliberately does not approximate the
+  // surface as independent spherical wedges.
+  closedVolumeMm3(positionsOverride?: Float32Array | Float64Array): number {
+    const positions = positionsOverride || this.positions;
+    if (!positions || !this.indices) return 0;
+    let signedSixVolume = 0;
+    for (let offset = 0; offset + 2 < this.indices.length; offset += 3) {
+      const ia = this.indices[offset] * 3;
+      const ib = this.indices[offset + 1] * 3;
+      const ic = this.indices[offset + 2] * 3;
+      const ax = positions[ia], ay = positions[ia + 1], az = positions[ia + 2];
+      const bx = positions[ib], by = positions[ib + 1], bz = positions[ib + 2];
+      const cx = positions[ic], cy = positions[ic + 1], cz = positions[ic + 2];
+      signedSixVolume += ax * (by * cz - bz * cy)
+        + ay * (bz * cx - bx * cz)
+        + az * (bx * cy - by * cx);
+    }
+    const volume = Math.abs(signedSixVolume) / 6;
+    if (!Number.isFinite(volume)) throw new RangeError('wall mesh volume is non-finite');
+    return volume;
+  }
+
+  // Allocate every triangle's area to mutable wall cells. A normal vertex gets
+  // one third of an incident triangle. Pole vertices have no WallCell, so their
+  // one-third share is split equally between the two adjacent cap vertices.
+  // The returned areas therefore sum exactly to surface_area_mm2.
+  cellSurfaceAreasMm2(): Float64Array {
+    if (this._cellSurfaceAreas && this._cellSurfaceAreasSig === this.sig) {
+      return new Float64Array(this._cellSurfaceAreas);
+    }
+    const areas = new Float64Array(this.numInterior);
+    const p = this.positions;
+    for (let offset = 0; offset + 2 < this.indices.length; offset += 3) {
+      const ids = [this.indices[offset], this.indices[offset + 1], this.indices[offset + 2]];
+      const a = ids[0] * 3, b = ids[1] * 3, c = ids[2] * 3;
+      const abx = p[b] - p[a], aby = p[b + 1] - p[a + 1], abz = p[b + 2] - p[a + 2];
+      const acx = p[c] - p[a], acy = p[c + 1] - p[a + 1], acz = p[c + 2] - p[a + 2];
+      const nx = aby * acz - abz * acy;
+      const ny = abz * acx - abx * acz;
+      const nz = abx * acy - aby * acx;
+      const area = 0.5 * Math.hypot(nx, ny, nz);
+      if (!(area > 0) || !Number.isFinite(area)) continue;
+      const interior = ids.filter((id) => id < this.numInterior);
+      for (const id of interior) areas[id] += area / 3;
+      const poleCount = 3 - interior.length;
+      if (poleCount && interior.length) {
+        const share = (area / 3) * poleCount / interior.length;
+        for (const id of interior) areas[id] += share;
+      }
+    }
+    const sum = areas.reduce((acc, value) => acc + value, 0);
+    const tolerance = Math.max(1e-9, Math.abs(this.surface_area_mm2) * 1e-10);
+    if (Math.abs(sum - this.surface_area_mm2) > tolerance) {
+      throw new RangeError('wall-cell surface areas do not close to the rendered mesh area');
+    }
+    this._cellSurfaceAreas = new Float64Array(areas);
+    this._cellSurfaceAreasSig = this.sig;
+    return areas;
+  }
+
+  // Candidate geometry for a sparse/dense set of raw WallCell depth deltas.
+  // Each interior vertex moves along its already-rendered ray by delta times
+  // the same polar factor used by recompute(). Pole movement follows the
+  // renderer's nearest-ring mean-depth rule exactly.
+  positionsWithDepthDeltas(wall: any, depthDeltas: ArrayLike<number>): Float32Array {
+    if (!wall || !depthDeltas || depthDeltas.length !== this.numInterior) {
+      throw new RangeError('candidate wall-depth deltas must match the mesh interior vertex count');
+    }
+    // Match the renderer-facing buffer type exactly. Quantizing during preview
+    // prevents the ledger from conserving a double-precision surface that the
+    // actual BufferGeometry cannot reproduce on the next recompute.
+    const out = new Float32Array(this.positions.length);
+    const N = wall.cells_per_ring;
+    const R = wall.ring_count;
+    for (let index = 0; index < this.numInterior; index++) {
+      const delta = Number(depthDeltas[index]);
+      if (!Number.isFinite(delta)) throw new TypeError('candidate wall-depth delta is non-finite');
+      const ringIdx = Math.floor(index / N);
+      const cellIdx = index % N;
+      const phi = Math.PI * (ringIdx + 0.5) / R;
+      const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1;
+      const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0;
+      const cell = wall.rings[ringIdx][cellIdx];
+      const baseRadius = cell && cell.base_radius_mm > 0
+        ? cell.base_radius_mm : wall.initial_radius_mm;
+      const radius = (baseRadius + (Number(cell.wall_depth) || 0) + delta) * polar;
+      if (!(radius > 0) || !Number.isFinite(radius)) {
+        throw new RangeError('candidate wall-depth delta collapses or invalidates a vertex');
+      }
+      const theta = 2 * Math.PI * cellIdx / N + twist;
+      const sinPhi = Math.sin(phi);
+      const base = index * 3;
+      out[base] = radius * sinPhi * Math.cos(theta);
+      out[base + 1] = -radius * Math.cos(phi);
+      out[base + 2] = radius * sinPhi * Math.sin(theta);
+    }
+    const shiftPole = (vertexIndex: number, ringIdx: number, phi: number, sign: number) => {
+      let meanDepth = 0;
+      for (let c = 0; c < N; c++) {
+        meanDepth += (Number(wall.rings[ringIdx][c].wall_depth) || 0)
+          + Number(depthDeltas[ringIdx * N + c]);
+      }
+      meanDepth /= N;
+      const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1;
+      const sourceRadius = Array.isArray(wall.bubbles) && wall.bubbles.length
+        ? _raycastUnion3D(wall.bubbles, 0, sign, 0) : wall.initial_radius_mm;
+      const shape = wall._cavity_shape || wall;
+      const baseRadius = sourceRadius * _cavityRadialScale(shape, phi, 0);
+      out[vertexIndex * 3] = 0;
+      out[vertexIndex * 3 + 1] = sign * (baseRadius + meanDepth * polar);
+      out[vertexIndex * 3 + 2] = 0;
+    };
+    shiftPole(this.southIdx, 0, 0, -1);
+    shiftPole(this.northIdx, R - 1, Math.PI, 1);
+    return out;
+  }
+
+  closedVolumeWithDepthDeltasMm3(wall: any, depthDeltas: ArrayLike<number>): number {
+    return this.closedVolumeMm3(this.positionsWithDepthDeltas(wall, depthDeltas));
+  }
+
+  // Shortest paths along the actual triangle edges provide a physical
+  // surface-distance metric for shielding footprints and feeder flux. Cached
+  // by geometry signature and source vertex; erosion invalidates the cache via
+  // _recomputeSurfaceMetrics().
+  geodesicDistancesFrom(sourceVertex: number): Float64Array {
+    if (!Number.isInteger(sourceVertex) || sourceVertex < 0 || sourceVertex >= this.numInterior) {
+      throw new RangeError('geodesic source must be an interior wall vertex');
+    }
+    if (!this._geodesicCache) this._geodesicCache = new Map();
+    const cached = this._geodesicCache.get(sourceVertex);
+    if (cached) return new Float64Array(cached);
+    const vertexCount = this.numInterior + 2;
+    if (!this._geodesicAdjacency) {
+      const adjacency: Array<Map<number, number>> = Array.from(
+        { length: vertexCount }, () => new Map<number, number>(),
+      );
+      const addEdge = (a: number, b: number) => {
+        if (a === b) return;
+        const ai = a * 3, bi = b * 3;
+        const length = Math.hypot(
+          this.positions[ai] - this.positions[bi],
+          this.positions[ai + 1] - this.positions[bi + 1],
+          this.positions[ai + 2] - this.positions[bi + 2],
+        );
+        const prior = adjacency[a].get(b);
+        if (prior == null || length < prior) {
+          adjacency[a].set(b, length);
+          adjacency[b].set(a, length);
+        }
+      };
+      for (let offset = 0; offset + 2 < this.indices.length; offset += 3) {
+        const a = this.indices[offset], b = this.indices[offset + 1], c = this.indices[offset + 2];
+        addEdge(a, b); addEdge(b, c); addEdge(c, a);
+      }
+      this._geodesicAdjacency = adjacency.map(edges => Array.from(edges.entries()));
+    }
+    const distances = new Float64Array(vertexCount);
+    distances.fill(Infinity);
+    distances[sourceVertex] = 0;
+    const heap: Array<[number, number]> = [[0, sourceVertex]];
+    const push = (item: [number, number]) => {
+      let index = heap.length;
+      heap.push(item);
+      while (index > 0) {
+        const parent = (index - 1) >> 1;
+        if (heap[parent][0] <= item[0]) break;
+        heap[index] = heap[parent];
+        index = parent;
+      }
+      heap[index] = item;
+    };
+    const pop = (): [number, number] | null => {
+      if (!heap.length) return null;
+      const root = heap[0];
+      const tail = heap.pop();
+      if (heap.length && tail) {
+        let index = 0;
+        while (true) {
+          const left = index * 2 + 1;
+          const right = left + 1;
+          if (left >= heap.length) break;
+          const child = right < heap.length && heap[right][0] < heap[left][0] ? right : left;
+          if (heap[child][0] >= tail[0]) break;
+          heap[index] = heap[child];
+          index = child;
+        }
+        heap[index] = tail;
+      }
+      return root;
+    };
+    while (heap.length) {
+      const item = pop();
+      if (!item) break;
+      const distance = item[0], current = item[1];
+      if (distance !== distances[current]) continue;
+      for (const [neighbor, length] of this._geodesicAdjacency[current]) {
+        const candidate = distance + length;
+        if (candidate < distances[neighbor]) {
+          distances[neighbor] = candidate;
+          push([candidate, neighbor]);
+        }
+      }
+    }
+    const interior = distances.slice(0, this.numInterior);
+    if (Array.from(interior).some(value => !Number.isFinite(value))) {
+      throw new RangeError('wall mesh geodesic graph is disconnected');
+    }
+    this._geodesicCache.set(sourceVertex, new Float64Array(interior));
+    return interior;
   }
 
   surfaceAreaMm2() {

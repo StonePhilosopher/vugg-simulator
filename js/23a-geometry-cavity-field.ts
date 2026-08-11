@@ -9,12 +9,14 @@
 //   field < 0  => host rock
 //
 // The base field is the exact union of WallState.bubbles. An inverse radial
-// map then composes the same authored elongation, polar flatten/collapse, and
-// latitude twist used by WallMesh. It does not read or mutate chemistry,
-// crystals, wall cells, or the simulation RNG.
-// IMPORTANT PROMOTION GATE: per-cell wall_depth still has no mass-balanced
-// Cartesian primitive ledger. Until that evolution path exists, this field is
-// a default-off renderer comparison rather than simulation authority.
+// map composes the same authored elongation, polar flatten/collapse, and
+// latitude twist used by WallMesh. The authenticated cavity-evolution ledger
+// is then projected as a continuous radial offset over theta seams and pole
+// caps. It does not mutate chemistry, crystals, wall cells, or simulation RNG.
+// IMPORTANT PROMOTION GATE: that projection is deliberately star-shaped; it
+// cannot encode undercuts or multiple wall crossings on one ray. The field
+// remains a default-off renderer comparison until 3-D clipping, anchors,
+// materials, ambiguity handling, and performance share the same authority.
 
 interface CavitySurfaceBuffers {
   positions: Float32Array;
@@ -87,6 +89,12 @@ class CavityScalarField {
       ? opts.sourceBubbles.map((b) => b.slice())
       : [];
     this.sourceShape = CavityScalarField._validatedShape(opts.sourceShape || {});
+    this.sourceEvolution = opts.sourceEvolution ? {
+      ring_count: Number(opts.sourceEvolution.ring_count),
+      cells_per_ring: Number(opts.sourceEvolution.cells_per_ring),
+      depths_mm: new Float64Array(opts.sourceEvolution.depths_mm),
+      signature: String(opts.sourceEvolution.signature || ''),
+    } : null;
     this.bounds = {
       min: [origin[0], origin[1], origin[2]],
       max: [
@@ -283,6 +291,75 @@ class CavityScalarField {
     return CavityScalarField.bubbleUnionValue(bubbles, sourceX, sourceY, sourceZ);
   }
 
+  static _evolutionWorldOffset(shape: CavityShapeDescriptor, evolution: any,
+                               x: number, y: number, z: number): number {
+    if (!evolution) return 0;
+    const R = evolution.ring_count;
+    const N = evolution.cells_per_ring;
+    const depths = evolution.depths_mm;
+    if (!Number.isInteger(R) || !Number.isInteger(N) || R < 1 || N < 3
+        || !depths || depths.length !== R * N) {
+      throw new RangeError('cavity evolution interpolation grid is malformed');
+    }
+    const radius = Math.hypot(x, y, z);
+    if (radius <= Number.EPSILON) return 0;
+    const phi = Math.acos(Math.max(-1, Math.min(1, -y / radius)));
+    const worldTheta = Math.atan2(z, x);
+    const sourceTheta = worldTheta - _cavityTwistRadians(shape, phi);
+    const wrapped = ((sourceTheta / (2 * Math.PI)) % 1 + 1) % 1;
+    const cellFloat = wrapped * N;
+    const c0 = Math.floor(cellFloat) % N;
+    const c1 = (c0 + 1) % N;
+    const tc = cellFloat - Math.floor(cellFloat);
+    const ringDepth = (ring: number): number => {
+      const a = depths[ring * N + c0];
+      const b = depths[ring * N + c1];
+      return a + (b - a) * tc;
+    };
+    const meanRingDepth = (ring: number): number => {
+      let sum = 0;
+      for (let c = 0; c < N; c++) sum += depths[ring * N + c];
+      return sum / N;
+    };
+    const ringFloat = phi * R / Math.PI - 0.5;
+    let rawDepth = 0;
+    if (ringFloat <= 0) {
+      const t = Math.max(0, ringFloat + 0.5) * 2;
+      const pole = meanRingDepth(0);
+      rawDepth = pole + (ringDepth(0) - pole) * t;
+    } else if (ringFloat >= R - 1) {
+      const t = Math.max(0, Math.min(1, (ringFloat - (R - 1)) * 2));
+      const edge = ringDepth(R - 1);
+      rawDepth = edge + (meanRingDepth(R - 1) - edge) * t;
+    } else {
+      const r0 = Math.floor(ringFloat);
+      const r1 = Math.min(R - 1, r0 + 1);
+      const tr = ringFloat - r0;
+      rawDepth = ringDepth(r0) + (ringDepth(r1) - ringDepth(r0)) * tr;
+    }
+    const polar = _cavityPolarProfileFactor(shape, phi);
+    const offset = rawDepth * polar;
+    if (!(offset >= 0) || !Number.isFinite(offset)) {
+      throw new RangeError('cavity evolution produced an invalid radial offset');
+    }
+    return offset;
+  }
+
+  static _evolvedShapeValueValidated(bubbles: number[][], shape: CavityShapeDescriptor,
+                                     evolution: any, x: number, y: number, z: number): number {
+    if (!evolution) return CavityScalarField._authoredShapeValueValidated(bubbles, shape, x, y, z);
+    const radius = Math.hypot(x, y, z);
+    if (radius <= Number.EPSILON) {
+      return CavityScalarField._authoredShapeValueValidated(bubbles, shape, x, y, z);
+    }
+    const offset = CavityScalarField._evolutionWorldOffset(shape, evolution, x, y, z);
+    const sourceRadius = Math.max(0, radius - offset);
+    const scale = sourceRadius / radius;
+    return CavityScalarField._authoredShapeValueValidated(
+      bubbles, shape, x * scale, y * scale, z * scale,
+    );
+  }
+
   static _sourceHash(bubbles: number[][]): string {
     let hashA = 0x811c9dc5;
     let hashB = 0x9e3779b9;
@@ -300,18 +377,24 @@ class CavityScalarField {
     return `${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
   }
 
-  static signatureFor(wall: any, resolution = 48): string {
+  static signatureFor(wall: any, resolution = 48, ledgerCursor?: number): string {
     const bubbles = CavityScalarField._validatedBubbles(wall && wall.bubbles);
     const shape = CavityScalarField.shapeFor(wall);
     const n = CavityScalarField._resolution(resolution);
-    // Only hash inputs that v2 actually samples. wall._geometry_revision also
-    // changes for per-cell wall_depth, which this authored base-shape field
-    // explicitly does not represent; including it would trigger expensive
-    // byte-identical rebuilds during dissolution.
+    // Hash the immutable authored shape and the authenticated ledger prefix.
+    // The chain signature already commits to every sampled wall-depth delta,
+    // so a second mutable geometry-revision key would be redundant.
     const shapeHash = CavityScalarField._sourceHash([
       CavityScalarField._shapeNumbers(shape),
     ]);
-    return `cavity-field:v2|${n}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${shapeHash}`;
+    const ledger = wall && wall.cavityEvolutionLedger ? wall.cavityEvolutionLedger() : null;
+    let evolutionIdentity = 'none';
+    if (ledger) {
+      const cursor = ledgerCursor == null ? ledger.cursor : Number(ledgerCursor);
+      ledger.assertProjection(wall, cursor);
+      evolutionIdentity = ledger.signatureAt(cursor);
+    }
+    return `cavity-field:v3|${n}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${shapeHash}|e:${evolutionIdentity}`;
   }
 
   static fromWallState(wall: any, opts: any = {}): CavityScalarField {
@@ -319,14 +402,28 @@ class CavityScalarField {
     const resolution = CavityScalarField._resolution(opts.resolution);
     const bubbles = CavityScalarField._validatedBubbles(wall.bubbles);
     const shape = CavityScalarField.shapeFor(wall);
-    const sig = CavityScalarField.signatureFor(wall, resolution);
-    return CavityScalarField.fromBubbles(bubbles, { resolution, sig, shape });
+    const ledger = wall.cavityEvolutionLedger ? wall.cavityEvolutionLedger() : null;
+    const cursor = ledger
+      ? (opts.ledgerCursor == null ? ledger.cursor : Number(opts.ledgerCursor)) : null;
+    let evolution = null;
+    if (ledger) {
+      ledger.assertProjection(wall, cursor);
+      evolution = {
+        ring_count: wall.ring_count,
+        cells_per_ring: wall.cells_per_ring,
+        depths_mm: ledger.materialize(cursor),
+        signature: ledger.signatureAt(cursor),
+      };
+    }
+    const sig = CavityScalarField.signatureFor(wall, resolution, cursor);
+    return CavityScalarField.fromBubbles(bubbles, { resolution, sig, shape, evolution });
   }
 
   static fromBubbles(input: any, opts: any = {}): CavityScalarField {
     const started = CavityScalarField._nowMs();
     const bubbles = CavityScalarField._validatedBubbles(input);
     const shape = CavityScalarField._validatedShape(opts.shape || {});
+    const evolution = opts.evolution || null;
     const resolution = CavityScalarField._resolution(opts.resolution);
 
     const rawMin = [Infinity, Infinity, Infinity];
@@ -354,6 +451,13 @@ class CavityScalarField {
       const deformedRadius = maxSourceRadius * CavityScalarField._maxRadialScale(shape);
       fieldMin = [-deformedRadius, -deformedRadius, -deformedRadius];
       fieldMax = [deformedRadius, deformedRadius, deformedRadius];
+    }
+    if (evolution) {
+      const maxDepth = Number(Array.from(evolution.depths_mm || [])
+        .reduce((maximum: number, value: any) => Math.max(maximum, Number(value) || 0), 0));
+      const paddingDepth = maxDepth * CavityScalarField._maxRadialScale(shape);
+      fieldMin = fieldMin.map(value => value - paddingDepth);
+      fieldMax = fieldMax.map(value => value + paddingDepth);
     }
     const extent = [
       fieldMax[0] - fieldMin[0],
@@ -389,7 +493,9 @@ class CavityScalarField {
         const wy = origin[1] + y * spacingMm;
         for (let x = 0; x < resolution; x++) {
           const wx = origin[0] + x * spacingMm;
-          const value = CavityScalarField._authoredShapeValueValidated(bubbles, shape, wx, wy, wz);
+          const value = CavityScalarField._evolvedShapeValueValidated(
+            bubbles, shape, evolution, wx, wy, wz,
+          );
           if (!Number.isFinite(value)) {
             throw new TypeError(`non-finite cavity field sample at (${x}, ${y}, ${z})`);
           }
@@ -406,7 +512,8 @@ class CavityScalarField {
       values,
       sourceBubbles: bubbles,
       sourceShape: shape,
-      sig: opts.sig || `cavity-field:v2|${resolution}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${CavityScalarField._sourceHash([CavityScalarField._shapeNumbers(shape)])}`,
+      sourceEvolution: evolution,
+      sig: opts.sig || `cavity-field:v3|${resolution}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${CavityScalarField._sourceHash([CavityScalarField._shapeNumbers(shape)])}|e:${evolution ? evolution.signature : 'none'}`,
     });
     field.metrics.field_build_ms = CavityScalarField._nowMs() - started;
     if (!field.hasNegativeBorder(0)) {
@@ -439,8 +546,8 @@ class CavityScalarField {
 
   sampleAnalyticWorld(x: number, y: number, z: number): number {
     if (!this.sourceBubbles.length) return this.sampleWorld(x, y, z);
-    return CavityScalarField._authoredShapeValueValidated(
-      this.sourceBubbles, this.sourceShape, x, y, z,
+    return CavityScalarField._evolvedShapeValueValidated(
+      this.sourceBubbles, this.sourceShape, this.sourceEvolution, x, y, z,
     );
   }
 
@@ -454,8 +561,8 @@ class CavityScalarField {
     if (gx < 0 || gy < 0 || gz < 0
         || gx > this.sizeX - 1 || gy > this.sizeY - 1 || gz > this.sizeZ - 1) {
       if (this.sourceBubbles.length) {
-        return CavityScalarField._authoredShapeValueValidated(
-          this.sourceBubbles, this.sourceShape, x, y, z,
+        return CavityScalarField._evolvedShapeValueValidated(
+          this.sourceBubbles, this.sourceShape, this.sourceEvolution, x, y, z,
         );
       }
       return -Infinity;

@@ -12802,7 +12802,52 @@
 //       half-step approximation. This changes tabular/cleft surface geometry
 //       and exact wall area, so the simulation identity and evidence fleet are
 //       deliberately rebaked rather than mislabeled as render-only.
-const SIM_VERSION = 262;
+//
+// v263 — Atomic, mass/volume-balanced cavity evolution (August 2026).
+//       Carbonate-host dissolution is now one preview/commit transaction from
+//       pre-attack local pH and fractional full-surface crystal shielding,
+//       through physical-distance feeder flux, accepted formula extent, and
+//       cited standard-state calcite/dolomite molar volume, to the exact
+//       enclosed-volume change of the canonical Float32 WallMesh. One capacity
+//       authority drives an equivalent-sphere diameter; the old ring-0 erosion
+//       and longitude-column redistribution paths are removed. Every accepted
+//       change appends an immutable, digest-chained event with chemistry,
+//       exposure, inventory, target/achieved volume, renderer-quantization
+//       tolerance, and ordered sparse vertex deltas. Replay authenticates a
+//       ledger prefix; state fingerprints include both the chain and all wall
+//       depths. The Cartesian shadow field projects that replayable evolution
+//       continuously across theta seams and pole caps, but remains explicitly
+//       star-shaped and default-off pending exact 3-D crystal clipping,
+//       topology-independent anchors, production materials, and performance
+//       promotion. This closes only formula extent versus crystalline
+//       standard-state solid volume per 1 kg solvent reference—not actual
+//       cavity fluid mass, P-T-dependent rock volume, bulk phase fraction,
+//       porosity, Fe/Mn, charge, energy, or spatial solute transport.
+//       Deposition is deferred until a named phase and stoichiometric aqueous
+//       withdrawal can share the same transaction.
+//       Hostile-review correction pins the USGS values to their actual 26 C
+//       table reference and records the reported +/-0.015 (calcite) and
+//       +/-0.029 cm3/mol (dolomite) uncertainty. Append/load now enforce the
+//       depth chain plus extent-volume, residual, capacity, and derived-
+//       diameter identities before exposing a ledger. Replay catches any
+//       projection mismatch and remains on canonical WallMesh. Creative
+//       diameter, thickness, and host composition are executable pre-run
+//       authoring controls; after history begins they lock instead of
+//       rewriting capacity or host inventory retroactively.
+//       Evidence receipt: the Node-only science rebake passed all 41 scenarios
+//       at seeds 1, 2, and 42 with 236 provenance citations, zero unclassified
+//       locality results, zero locality-envelope violations, and 40 focused
+//       science tests. The complete automated workflow passed 212 test files
+//       across 43 strictly sequential batches; one test thread, file
+//       parallelism disabled, 2 GB RSS ceiling, observed maximum 1.704 GB.
+//       Seed-42 browser QA passed Sweetwater at 1280x720 and 390x844 with zero
+//       horizontal overflow, controls in bounds, wall and formation explanation
+//       visible, and no page warning or error. The AI “Dr. Michael Wise”
+//       hostile-review role returned the exact verdict SATISFIED after the four
+//       corrections above. This records an AI role, not review by the real
+//       scientist or Smithsonian. Marching Cubes remains default-off pending
+//       the separately listed production-promotion gates.
+const SIM_VERSION = 263;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12824,14 +12869,14 @@ const MODEL_DIGEST = [
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
   'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',
   'surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4',
-  'cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+cartesian-shadow-v2',
+  'cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-shadow-v3',
   'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
   'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
   'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
   'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3',
   'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
   'sulphur-bank-HgS:zoned-association-not-S0-substrate-v1',
-  'wall-dissolution:formula-stoich-limestone+dolomite-v1',
+  'wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Float32-WallMesh-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+prerun-creative-authoring-v3',
   'sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2',
   'calcite-Mn:manganocalcite-excess<1.2-v1',
   'HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3',
@@ -12850,7 +12895,8 @@ const MODEL_DIGEST = [
   'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
   'scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite-v6',
   'bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3',
-  'bisbee:Graeme-district-inventory+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v2',
+  'bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3',
+  'tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1',
   'wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary-v2',
   'weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2',
   'cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2',
@@ -12860,6 +12906,6 @@ const MODEL_DIGEST = [
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
   'transition-locality-exclusion:target-gated-v1',
   'evidence-binding:strip-sha256+byte-identical-claim-card+frequency-behavior-hash-v1',
-  'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+full-zone-ledgers-fail-closed-v3',
+  'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v4',
 ].join('|');
 

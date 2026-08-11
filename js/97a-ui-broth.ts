@@ -105,10 +105,7 @@ const BROTH_MAP: Record<string, any> = {
   diameter: {
     path: 'wall.vug_diameter_mm',
     get: () => fortressSim.conditions.wall.vug_diameter_mm,
-    set: v => {
-      fortressSim.conditions.wall.vug_diameter_mm = Math.max(1, v);
-      fortressSim.wall_state.updateDiameter(fortressSim.conditions.wall.vug_diameter_mm);
-    },
+    set: v => fortressSim.reauthorInitialCavityEquivalentDiameterMm(Math.max(1, v)),
     fmt: v => v.toFixed(0) + ' mm',
     parse: v => parseFloat(v),
     toSlider: v => v,
@@ -116,7 +113,7 @@ const BROTH_MAP: Record<string, any> = {
   thickness: {
     path: 'wall.thickness_mm',
     get: () => fortressSim.conditions.wall.thickness_mm,
-    set: v => { fortressSim.conditions.wall.thickness_mm = Math.max(0, v); },
+    set: v => fortressSim.reauthorInitialHostThicknessMm(Math.max(0, v)),
     fmt: v => v.toFixed(0) + ' mm',
     parse: v => parseFloat(v),
     toSlider: v => v,
@@ -238,13 +235,7 @@ const BROTH_MAP: Record<string, any> = {
   host: {
     path: 'wall.composition',
     get: () => fortressSim.conditions.wall.composition,
-    set: v => {
-      fortressSim.conditions.wall.composition = v;
-      // WallState is the renderer/mesh mirror of the same physical host.
-      // Keep it synchronized so the display does not claim the old lithology
-      // after a live Creative-mode host change.
-      if (fortressSim.wall_state) fortressSim.wall_state.composition = v;
-    },
+    set: v => fortressSim.reauthorInitialHostComposition(v),
     fmt: v => String(v),
     parse: v => String(v),
     toSlider: v => String(v),
@@ -583,9 +574,14 @@ function syncBrothSliders() {
       // Browsers may visually clamp a value outside an HTML range. This echo is
       // never fed back to physics unless the player emits an input event.
       slider.value = String(sliderVal);
-      slider.disabled = key === 'ph' && !!fortressSim._carbonateBoundaryState;
+      const initialHostLocked = (key === 'diameter' || key === 'thickness' || key === 'host')
+        && !fortressSim.canReauthorInitialHostGeometry();
+      slider.disabled = (key === 'ph' && !!fortressSim._carbonateBoundaryState)
+        || initialHostLocked;
       if (key === 'ph' && fortressSim._carbonateBoundaryState) {
         slider.title = 'Derived by the conserved carbonate solve; adjust reduced alkalinity to change pH.';
+      } else if (initialHostLocked) {
+        slider.title = 'Initial-condition authoring is locked after the first geological step, crystal, or wall-evolution receipt.';
       }
     }
     const valEl = document.getElementById('broth-' + key + '-val');
@@ -593,7 +589,9 @@ function syncBrothSliders() {
     const exact = document.getElementById('broth-' + key + '-exact') as HTMLInputElement | null;
     if (exact) {
       exact.value = _brothExactString(val, m._exactBounds?.step ?? 'any');
-      exact.disabled = key === 'ph' && !!fortressSim._carbonateBoundaryState;
+      exact.disabled = (key === 'ph' && !!fortressSim._carbonateBoundaryState)
+        || ((key === 'diameter' || key === 'thickness' || key === 'host')
+          && !fortressSim.canReauthorInitialHostGeometry());
     }
   }
   if (typeof refreshCreativeGeologyEditors === 'function') refreshCreativeGeologyEditors();

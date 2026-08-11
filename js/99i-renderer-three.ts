@@ -5839,9 +5839,12 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
   delete synth._mesh;
   delete synth._cavityField;
   delete synth._cavitySurface;
-  // The first renderer-only MC tranche intentionally cannot reproduce
-  // historical per-cell wall_depth. Keep replay on its canonical mesh until
-  // the scalar erosion/deposition ledger exists.
+  // Object.assign inherited the live authority. A historical surface must not
+  // expose it until both cursor authentication and depth projection succeed.
+  synth._cavityEvolutionLedger = null;
+  delete synth._cavityEvolutionCursor;
+  // Fail closed by default. Only an authenticated cavity-evolution prefix
+  // below may opt a replay frame into the default-off MC comparison path.
   synth._disableMarchingCubesCavity = true;
 
   // Detect snapshot shape:
@@ -5876,6 +5879,27 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
     rings[r] = ring;
   }
   synth.rings = rings;
+  const ledger = liveWall.cavityEvolutionLedger ? liveWall.cavityEvolutionLedger() : null;
+  const cursor = snapshot && !Array.isArray(snapshot)
+    ? snapshot.cavity_evolution_cursor : null;
+  const expectedSignature = snapshot && !Array.isArray(snapshot)
+    ? snapshot.cavity_evolution_signature : null;
+  if (ledger && Number.isInteger(cursor) && cursor >= 0 && cursor <= ledger.cursor) {
+    try {
+      if (ledger.signatureAt(cursor) !== expectedSignature) return synth;
+      ledger.assertProjection(synth, cursor);
+      synth._cavityEvolutionLedger = ledger;
+      synth._cavityEvolutionCursor = cursor;
+      synth._disableMarchingCubesCavity = false;
+    } catch (_error) {
+      // Replay remains on the canonical WallMesh fallback. A corrupt or
+      // incompatible historical frame is evidence to reject, not an excuse
+      // to throw out of rendering or inherit the live ledger.
+      synth._cavityEvolutionLedger = null;
+      delete synth._cavityEvolutionCursor;
+      synth._disableMarchingCubesCavity = true;
+    }
+  }
   return synth;
 }
 

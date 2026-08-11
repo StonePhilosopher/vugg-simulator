@@ -4597,12 +4597,12 @@ Scenarios:
             <input type="range" id="broth-reactivity" min="0" max="20" value="10" step="1" oninput="setBrothValue('reactivity',this.value)">
             <span class="broth-val" id="broth-reactivity-val">1.0×</span>
           </div>
-          <div class="broth-slider-row" title="Current cavity diameter; wall dissolution also changes this physical state.">
+          <div class="broth-slider-row" title="Authored initial equivalent-volume cavity diameter. Editable at step 0 before crystals or wall evolution; thereafter this readout follows exact mesh capacity and dissolution.">
             <label>Diameter</label>
             <input type="range" id="broth-diameter" min="5" max="5000" value="50" step="1" oninput="setBrothValue('diameter',this.value)">
             <span class="broth-val" id="broth-diameter-val">50 mm</span>
           </div>
-          <div class="broth-slider-row" title="Reactive host thickness remaining around the cavity.">
+          <div class="broth-slider-row" title="Authored initial reactive-host thickness. Editable at step 0 before crystals or wall evolution; thereafter it is inventory-governed and read-only.">
             <label>Thickness</label>
             <input type="range" id="broth-thickness" min="0" max="10000" value="500" step="10" oninput="setBrothValue('thickness',this.value)">
             <span class="broth-val" id="broth-thickness-val">500 mm</span>
@@ -19355,7 +19355,52 @@ function scenarioSpecHash(spec) {
 //       half-step approximation. This changes tabular/cleft surface geometry
 //       and exact wall area, so the simulation identity and evidence fleet are
 //       deliberately rebaked rather than mislabeled as render-only.
-const SIM_VERSION = 262;
+//
+// v263 — Atomic, mass/volume-balanced cavity evolution (August 2026).
+//       Carbonate-host dissolution is now one preview/commit transaction from
+//       pre-attack local pH and fractional full-surface crystal shielding,
+//       through physical-distance feeder flux, accepted formula extent, and
+//       cited standard-state calcite/dolomite molar volume, to the exact
+//       enclosed-volume change of the canonical Float32 WallMesh. One capacity
+//       authority drives an equivalent-sphere diameter; the old ring-0 erosion
+//       and longitude-column redistribution paths are removed. Every accepted
+//       change appends an immutable, digest-chained event with chemistry,
+//       exposure, inventory, target/achieved volume, renderer-quantization
+//       tolerance, and ordered sparse vertex deltas. Replay authenticates a
+//       ledger prefix; state fingerprints include both the chain and all wall
+//       depths. The Cartesian shadow field projects that replayable evolution
+//       continuously across theta seams and pole caps, but remains explicitly
+//       star-shaped and default-off pending exact 3-D crystal clipping,
+//       topology-independent anchors, production materials, and performance
+//       promotion. This closes only formula extent versus crystalline
+//       standard-state solid volume per 1 kg solvent reference—not actual
+//       cavity fluid mass, P-T-dependent rock volume, bulk phase fraction,
+//       porosity, Fe/Mn, charge, energy, or spatial solute transport.
+//       Deposition is deferred until a named phase and stoichiometric aqueous
+//       withdrawal can share the same transaction.
+//       Hostile-review correction pins the USGS values to their actual 26 C
+//       table reference and records the reported +/-0.015 (calcite) and
+//       +/-0.029 cm3/mol (dolomite) uncertainty. Append/load now enforce the
+//       depth chain plus extent-volume, residual, capacity, and derived-
+//       diameter identities before exposing a ledger. Replay catches any
+//       projection mismatch and remains on canonical WallMesh. Creative
+//       diameter, thickness, and host composition are executable pre-run
+//       authoring controls; after history begins they lock instead of
+//       rewriting capacity or host inventory retroactively.
+//       Evidence receipt: the Node-only science rebake passed all 41 scenarios
+//       at seeds 1, 2, and 42 with 236 provenance citations, zero unclassified
+//       locality results, zero locality-envelope violations, and 40 focused
+//       science tests. The complete automated workflow passed 212 test files
+//       across 43 strictly sequential batches; one test thread, file
+//       parallelism disabled, 2 GB RSS ceiling, observed maximum 1.704 GB.
+//       Seed-42 browser QA passed Sweetwater at 1280x720 and 390x844 with zero
+//       horizontal overflow, controls in bounds, wall and formation explanation
+//       visible, and no page warning or error. The AI “Dr. Michael Wise”
+//       hostile-review role returned the exact verdict SATISFIED after the four
+//       corrections above. This records an AI role, not review by the real
+//       scientist or Smithsonian. Marching Cubes remains default-off pending
+//       the separately listed production-promotion gates.
+const SIM_VERSION = 263;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -19376,14 +19421,14 @@ const MODEL_DIGEST = [
     'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
     'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',
     'surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4',
-    'cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+cartesian-shadow-v2',
+    'cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-shadow-v3',
     'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
     'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
     'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
     'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3',
     'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
     'sulphur-bank-HgS:zoned-association-not-S0-substrate-v1',
-    'wall-dissolution:formula-stoich-limestone+dolomite-v1',
+    'wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Float32-WallMesh-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+prerun-creative-authoring-v3',
     'sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2',
     'calcite-Mn:manganocalcite-excess<1.2-v1',
     'HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3',
@@ -19402,7 +19447,8 @@ const MODEL_DIGEST = [
     'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
     'scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite-v6',
     'bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3',
-    'bisbee:Graeme-district-inventory+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v2',
+    'bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3',
+    'tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1',
     'wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary-v2',
     'weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2',
     'cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2',
@@ -19412,7 +19458,7 @@ const MODEL_DIGEST = [
     'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
     'transition-locality-exclusion:target-gated-v1',
     'evidence-binding:strip-sha256+byte-identical-claim-card+frequency-behavior-hash-v1',
-    'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+full-zone-ledgers-fail-closed-v3',
+    'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v4',
 ].join('|');
 
 // ── 18-constants.js ──
@@ -26207,6 +26253,15 @@ class VugWall {
         // generation, size_class alone is the natural interface.
         this.size_class = opts.size_class ?? null;
         this.vug_diameter_mm = _resolveVugDiameter(opts);
+        this.authored_vug_diameter_mm = opts.authored_vug_diameter_mm ?? this.vug_diameter_mm;
+        this.initial_vug_diameter_mm = opts.initial_vug_diameter_mm ?? this.vug_diameter_mm;
+        const authoredRadius = this.vug_diameter_mm / 2;
+        const authoredSphereVolume = (4 / 3) * Math.PI * authoredRadius * authoredRadius * authoredRadius;
+        this.cavity_capacity_volume_mm3 = opts.cavity_capacity_volume_mm3 ?? authoredSphereVolume;
+        this.initial_cavity_capacity_volume_mm3 = opts.initial_cavity_capacity_volume_mm3
+            ?? this.cavity_capacity_volume_mm3;
+        this.cavity_capacity_basis = opts.cavity_capacity_basis ?? 'authored_sphere_reference';
+        this.host_volume_removed_mm3_per_kg = opts.host_volume_removed_mm3_per_kg ?? 0;
         this.total_dissolved_mm = opts.total_dissolved_mm ?? 0.0;
         // W-K V1b (paleo-flow scallops): a dissolution-rate-weighted running sum of the flow_rate
         // active WHILE the wall was dissolving. Curl 1974 — scallop length ∝ 1/velocity, and scallops
@@ -26516,88 +26571,329 @@ class VugWall {
         // byte-identical (no SIM bump, no rebake). Default false; whitelisted explicitly.
         this.wulff_titanite = !!opts.wulff_titanite;
     }
-    dissolve(acid_strength, fluid) {
-        // Gate by composition first — silicate walls are inert regardless
-        // of reactivity (real silicate dissolution at sim T-P-time scales
-        // is geologically negligible).
-        if (this.composition !== 'limestone' && this.composition !== 'dolomite') {
-            return { dissolved: false };
+    static diameterForCapacityMm3(volumeMm3) {
+        const volume = Number(volumeMm3);
+        if (!(volume > 0) || !Number.isFinite(volume)) {
+            throw new RangeError('cavity capacity must be positive and finite');
         }
-        // Acid attack — scales with acid strength × reactivity.
-        const acid_rate = Math.max(0.0, acid_strength) * 0.5 * this.reactivity;
-        // Water-only baseline — fires regardless of pH but slow. Only
-        // meaningful when reactivity > 1.0 (Creative-mode slider above
-        // default). Models accelerated CO2-charged-groundwater dissolution.
-        const water_rate = Math.max(0.0, this.reactivity - 1.0) * 0.05;
-        let rate_mm = Math.min(acid_rate + water_rate, 2.0);
-        if (rate_mm <= 0.0)
-            return { dissolved: false };
-        if (this.thickness_mm < rate_mm)
-            rate_mm = this.thickness_mm;
-        this.thickness_mm -= rate_mm;
-        this.total_dissolved_mm += rate_mm;
-        this.vug_diameter_mm += rate_mm * 2;
+        return 2 * Math.cbrt((3 * volume) / (4 * Math.PI));
+    }
+    initializeCavityCapacity(volumeMm3, basis = 'canonical_closed_wallmesh') {
+        const diameter = VugWall.diameterForCapacityMm3(volumeMm3);
+        this.cavity_capacity_volume_mm3 = Number(volumeMm3);
+        this.initial_cavity_capacity_volume_mm3 = Number(volumeMm3);
+        this.cavity_capacity_basis = basis;
+        this.initial_vug_diameter_mm = diameter;
+        this.vug_diameter_mm = diameter;
+        return diameter;
+    }
+    reauthorInitialThicknessMm(thicknessMm) {
+        const thickness = Number(thicknessMm);
+        if (!(thickness >= 0) || !Number.isFinite(thickness)) {
+            throw new RangeError('initial host thickness must be finite and non-negative');
+        }
+        if (this.total_dissolved_mm !== 0 || this.host_formula_released_mmolkg !== 0
+            || this.host_release_ledger.length !== 0) {
+            throw new RangeError('host thickness can only be reauthored before dissolution history exists');
+        }
+        const hostFormulaExtentPerMm = (this.composition === 'limestone' || this.composition === 'dolomite')
+            ? 15.0 / 40.078 : 0;
+        this.thickness_mm = thickness;
+        this.host_formula_inventory_initial_mmolkg = thickness * hostFormulaExtentPerMm;
+        this.host_formula_released_mmolkg = 0;
+        this.host_release_totals = { Ca: 0, Mg: 0, CO3: 0 };
+        return Object.freeze({
+            transaction_type: 'creative_initial_host_thickness',
+            thickness_mm: thickness,
+            initial_formula_inventory_mmolkg: this.host_formula_inventory_initial_mmolkg,
+            scope: 'pre-run authored initial condition; no dissolution or deposition event',
+        });
+    }
+    reauthorInitialComposition(composition) {
+        const value = String(composition || '').trim();
+        if (!value)
+            throw new RangeError('initial host composition must be named');
+        if (this.total_dissolved_mm !== 0 || this.host_formula_released_mmolkg !== 0
+            || this.host_release_ledger.length !== 0) {
+            throw new RangeError('host composition can only be reauthored before dissolution history exists');
+        }
+        this.composition = value;
+        const hostFormulaExtentPerMm = (value === 'limestone' || value === 'dolomite')
+            ? 15.0 / 40.078 : 0;
+        this.host_formula_inventory_initial_mmolkg = this.thickness_mm * hostFormulaExtentPerMm;
+        this.host_formula_released_mmolkg = 0;
+        this.host_release_totals = { Ca: 0, Mg: 0, CO3: 0 };
+        return Object.freeze({
+            transaction_type: 'creative_initial_host_composition',
+            composition: value,
+            initial_formula_inventory_mmolkg: this.host_formula_inventory_initial_mmolkg,
+            scope: 'pre-run authored initial condition; no replacement reaction is claimed',
+        });
+    }
+    dissolutionRateMm(acidStrength) {
+        const acidRate = Math.max(0, Number(acidStrength) || 0) * 0.5 * this.reactivity;
+        const diffuseWaterRate = Math.max(0, this.reactivity - 1) * 0.05;
+        return Math.min(Math.max(0, this.thickness_mm), Math.min(acidRate + diffuseWaterRate, 2));
+    }
+    // Pure preview. The simulator may provide surface-integrated attempted and
+    // accepted calibrated rates derived from pre-attack local pH, shielding, and
+    // feeder flux. Direct callers use the bulk-fluid full-exposure path.
+    previewDissolve(acidStrength, fluid, opts = {}) {
+        if (this.composition !== 'limestone' && this.composition !== 'dolomite') {
+            return { dissolved: false, rejection: 'non_carbonate_host' };
+        }
+        const defaultRate = this.dissolutionRateMm(acidStrength);
+        let attemptedRate = opts.attempted_rate_mm == null
+            ? defaultRate : Number(opts.attempted_rate_mm);
+        let acceptedRate = opts.accepted_rate_mm == null
+            ? attemptedRate : Number(opts.accepted_rate_mm);
+        if (![attemptedRate, acceptedRate].every(Number.isFinite)
+            || attemptedRate < 0 || acceptedRate < 0 || acceptedRate > attemptedRate + 1e-12) {
+            throw new RangeError('wall dissolution attempted/accepted rates are invalid');
+        }
+        attemptedRate = Math.min(attemptedRate, this.thickness_mm, 2);
+        acceptedRate = Math.min(acceptedRate, attemptedRate, this.thickness_mm);
+        if (!(acceptedRate > 0)) {
+            return { dissolved: false, rejection: 'zero_accepted_extent', attempted_rate_mm: attemptedRate };
+        }
         const formula = this.composition === 'dolomite' ? 'CaMg(CO3)2' : 'CaCO3';
+        const mineral = this.composition === 'dolomite' ? 'dolomite' : 'calcite';
         const carbonateCoefficient = this.composition === 'dolomite' ? 2 : 1;
-        const formula_extent_mmolkg = rate_mm * (15.0 / 40.078);
-        const ca_released = formula_extent_mmolkg * 40.078;
-        const mg_released = this.composition === 'dolomite'
-            ? formula_extent_mmolkg * 24.305 : 0;
-        const co3_released = formula_extent_mmolkg * carbonateCoefficient * 60.009;
-        const fe_released = rate_mm * (this.wall_Fe_ppm / 1000.0) * 0.5;
-        const mn_released = rate_mm * (this.wall_Mn_ppm / 1000.0) * 0.5;
-        const ph_recovery = rate_mm * 0.8;
-        const ph_before = fluid.pH;
-        const ca_before = fluid.Ca;
-        const mg_before = fluid.Mg;
-        const co3_before = fluid.CO3;
-        fluid.Ca += ca_released;
-        fluid.Mg += mg_released;
-        fluid.CO3 += co3_released;
-        fluid.Fe += fe_released;
-        fluid.Mn += mn_released;
-        fluid.pH += ph_recovery;
-        fluid.pH = Math.min(fluid.pH, 8.5);
-        this.ca_from_wall_total += ca_released;
-        this.host_formula_released_mmolkg += formula_extent_mmolkg;
-        this.host_release_totals.Ca += ca_released;
-        this.host_release_totals.Mg += mg_released;
-        this.host_release_totals.CO3 += co3_released;
-        const remainingFormulaMmolKg = this.thickness_mm * (15.0 / 40.078);
-        const inventoryErrorMmolKg = this.host_formula_inventory_initial_mmolkg
-            - remainingFormulaMmolKg - this.host_formula_released_mmolkg;
-        const transaction = {
+        const attemptedFormulaExtent = attemptedRate * (15 / 40.078);
+        const acceptedFormulaExtent = acceptedRate * (15 / 40.078);
+        const molarVolume = cavityMolarVolume(mineral, opts.temperature_C, opts.pressure_kbar, this.composition);
+        const targetVolume = cavityFormulaExtentVolumeMm3PerKg(acceptedFormulaExtent, molarVolume);
+        const caReleased = acceptedFormulaExtent * 40.078;
+        const mgReleased = this.composition === 'dolomite' ? acceptedFormulaExtent * 24.305 : 0;
+        const co3Released = acceptedFormulaExtent * carbonateCoefficient * 60.009;
+        const feReleased = acceptedRate * (this.wall_Fe_ppm / 1000) * 0.5;
+        const mnReleased = acceptedRate * (this.wall_Mn_ppm / 1000) * 0.5;
+        const pHBefore = Number(fluid.pH);
+        return Object.freeze({
+            dissolved: true,
             composition: this.composition,
             formula,
-            rate_mm,
-            formula_extent_mmolkg,
-            fluid_delta_ppm: {
-                Ca: fluid.Ca - ca_before,
-                Mg: fluid.Mg - mg_before,
-                CO3: fluid.CO3 - co3_before,
-            },
-            expected_ppm: { Ca: ca_released, Mg: mg_released, CO3: co3_released },
+            mineral,
+            attempted_rate_mm: attemptedRate,
+            rate_mm: acceptedRate,
+            attempted_formula_extent_mmolkg: attemptedFormulaExtent,
+            formula_extent_mmolkg: acceptedFormulaExtent,
+            molar_volume: molarVolume,
+            target_volume_delta_mm3_per_kg: targetVolume,
+            ca_released: caReleased,
+            mg_released: mgReleased,
+            co3_released: co3Released,
+            fe_released: feReleased,
+            mn_released: mnReleased,
+            ph_before: pHBefore,
+            ph_after: Math.min(8.5, pHBefore + acceptedRate * 0.8),
+        });
+    }
+    // Commit host, bulk fluid, exact geometry, capacity, and paired ledgers as
+    // one rollback-capable transaction. All fallible preview/validation work is
+    // complete before entry; a caught write failure restores every touched field.
+    commitDissolvePreview(preview, fluid, opts = {}) {
+        if (!preview || !preview.dissolved)
+            return preview || { dissolved: false };
+        const wallState = opts.wall_state || null;
+        const geometryPlan = opts.geometry_plan || null;
+        const evolutionLedger = wallState && wallState.cavityEvolutionLedger
+            ? wallState.cavityEvolutionLedger() : null;
+        if ((geometryPlan && !evolutionLedger) || (!geometryPlan && evolutionLedger)) {
+            throw new RangeError('wall dissolution geometry plan/ledger authority mismatch');
+        }
+        if (this.cavity_capacity_basis === 'canonical_closed_wallmesh' && !geometryPlan) {
+            throw new RangeError('canonical cavity capacity cannot change outside its WallMesh ledger');
+        }
+        const oldCapacity = Number(this.cavity_capacity_volume_mm3);
+        const newCapacity = geometryPlan
+            ? oldCapacity + Number(geometryPlan.achieved_volume_delta_mm3_per_kg)
+            : oldCapacity + preview.target_volume_delta_mm3_per_kg;
+        if (geometryPlan) {
+            const volumeTolerance = Math.max(1e-8, preview.target_volume_delta_mm3_per_kg * 1e-8);
+            const capacityTolerance = Math.max(1e-7, oldCapacity * 1e-10, Number(geometryPlan.volume_tolerance_mm3_per_kg) || 0);
+            if (Math.abs(geometryPlan.target_volume_delta_mm3_per_kg
+                - preview.target_volume_delta_mm3_per_kg) > volumeTolerance
+                || Math.abs(geometryPlan.old_capacity_volume_mm3 - oldCapacity)
+                    > capacityTolerance) {
+                throw new RangeError('wall dissolution capacity/geometry preview mismatch: target '
+                    + geometryPlan.target_volume_delta_mm3_per_kg + ' vs '
+                    + preview.target_volume_delta_mm3_per_kg + '; old '
+                    + geometryPlan.old_capacity_volume_mm3 + ' vs ' + oldCapacity);
+            }
+        }
+        const oldDiameter = this.vug_diameter_mm;
+        const newDiameter = VugWall.diameterForCapacityMm3(newCapacity);
+        const transactionId = 'host-dissolution-' + (this.host_release_ledger.length + 1);
+        const remainingFormulaMmolKg = (this.thickness_mm - preview.rate_mm) * (15 / 40.078);
+        const releasedAfter = this.host_formula_released_mmolkg + preview.formula_extent_mmolkg;
+        const inventoryErrorMmolKg = this.host_formula_inventory_initial_mmolkg
+            - remainingFormulaMmolKg - releasedAfter;
+        const fluidBefore = {
+            pH: Number(fluid.pH), Ca: Number(fluid.Ca), Mg: Number(fluid.Mg),
+            CO3: Number(fluid.CO3), Fe: Number(fluid.Fe), Mn: Number(fluid.Mn),
+        };
+        const fluidAfter = {
+            pH: preview.ph_after,
+            Ca: fluidBefore.Ca + preview.ca_released,
+            Mg: fluidBefore.Mg + preview.mg_released,
+            CO3: fluidBefore.CO3 + preview.co3_released,
+            Fe: fluidBefore.Fe + preview.fe_released,
+            Mn: fluidBefore.Mn + preview.mn_released,
+        };
+        if (!Object.values(fluidBefore).every(Number.isFinite)
+            || !Object.values(fluidAfter).every(Number.isFinite)
+            || Math.abs(inventoryErrorMmolKg) > 1e-9) {
+            throw new RangeError('wall dissolution chemistry preview failed finite/inventory closure');
+        }
+        const transaction = {
+            transaction_id: transactionId,
+            composition: this.composition,
+            formula: preview.formula,
+            attempted_rate_mm: preview.attempted_rate_mm,
+            rate_mm: preview.rate_mm,
+            attempted_formula_extent_mmolkg: preview.attempted_formula_extent_mmolkg,
+            formula_extent_mmolkg: preview.formula_extent_mmolkg,
+            solvent_reference_kg: 1,
+            fluid_delta_ppm: { Ca: preview.ca_released, Mg: preview.mg_released, CO3: preview.co3_released },
+            expected_ppm: { Ca: preview.ca_released, Mg: preview.mg_released, CO3: preview.co3_released },
             remaining_formula_mmolkg: remainingFormulaMmolKg,
             inventory_error_mmolkg: inventoryErrorMmolKg,
             closed: Math.abs(inventoryErrorMmolKg) <= 1e-9,
+            closure_scope: 'carbonate formula extent and Ca/Mg/CO3 release only',
         };
-        this.host_release_ledger.push(transaction);
+        let evolutionEntry = null;
+        if (geometryPlan) {
+            evolutionEntry = {
+                schema: CAVITY_EVOLUTION_SCHEMA,
+                model: evolutionLedger.model,
+                transaction_type: 'carbonate_host_dissolution',
+                shape_identity: evolutionLedger.shape_identity,
+                tessellation_identity: evolutionLedger.tessellation_identity,
+                event_id: evolutionLedger.cursor + 1,
+                chemistry_transaction_id: transactionId,
+                step: Math.max(0, Math.floor(Number(opts.step) || 0)),
+                pre_state_digest: evolutionLedger.signature,
+                attempted_formula_extent_mmolkg: preview.attempted_formula_extent_mmolkg,
+                accepted_formula_extent_mmolkg: preview.formula_extent_mmolkg,
+                solvent_reference_kg: 1,
+                mineral: preview.mineral,
+                formula: preview.formula,
+                molar_volume: preview.molar_volume,
+                target_volume_delta_mm3_per_kg: geometryPlan.target_volume_delta_mm3_per_kg,
+                achieved_volume_delta_mm3_per_kg: geometryPlan.achieved_volume_delta_mm3_per_kg,
+                volume_residual_mm3_per_kg: geometryPlan.volume_residual_mm3_per_kg,
+                volume_tolerance_mm3_per_kg: geometryPlan.volume_tolerance_mm3_per_kg,
+                old_capacity_volume_mm3: oldCapacity,
+                new_capacity_volume_mm3: newCapacity,
+                old_equivalent_diameter_mm: oldDiameter,
+                new_equivalent_diameter_mm: newDiameter,
+                exposure: opts.exposure_receipt,
+                vertex_deltas: geometryPlan.vertex_deltas,
+                fluid_receipt: { before: fluidBefore, after: fluidAfter },
+                host_inventory_receipt: {
+                    initial_formula_mmolkg: this.host_formula_inventory_initial_mmolkg,
+                    released_before_mmolkg: this.host_formula_released_mmolkg,
+                    released_after_mmolkg: releasedAfter,
+                    remaining_after_mmolkg: remainingFormulaMmolKg,
+                    residual_mmolkg: inventoryErrorMmolKg,
+                },
+                scientific_scope: {
+                    closed: 'carbonate formula extent to standard-state crystalline volume per 1 kg solvent reference',
+                    not_closed: [
+                        'actual cavity fluid mass', 'P-T-dependent molar volume',
+                        'bulk-rock phase fraction and porosity', 'Fe/Mn inventories',
+                        'acid-base charge balance', 'energy', 'spatial solute release',
+                    ],
+                },
+            };
+        }
+        const wallSnapshot = {
+            thickness_mm: this.thickness_mm,
+            total_dissolved_mm: this.total_dissolved_mm,
+            vug_diameter_mm: this.vug_diameter_mm,
+            cavity_capacity_volume_mm3: this.cavity_capacity_volume_mm3,
+            host_volume_removed_mm3_per_kg: this.host_volume_removed_mm3_per_kg,
+            ca_from_wall_total: this.ca_from_wall_total,
+            host_formula_released_mmolkg: this.host_formula_released_mmolkg,
+            host_release_totals: { ...this.host_release_totals },
+            ledger_length: this.host_release_ledger.length,
+        };
+        let geometryCommitted = false;
+        try {
+            if (evolutionEntry) {
+                evolutionLedger.commitEntry(wallState, evolutionEntry);
+                geometryCommitted = true;
+            }
+            this.thickness_mm -= preview.rate_mm;
+            this.total_dissolved_mm += preview.rate_mm;
+            this.cavity_capacity_volume_mm3 = newCapacity;
+            this.host_volume_removed_mm3_per_kg += geometryPlan
+                ? geometryPlan.achieved_volume_delta_mm3_per_kg
+                : preview.target_volume_delta_mm3_per_kg;
+            this.vug_diameter_mm = newDiameter;
+            fluid.Ca = fluidAfter.Ca;
+            fluid.Mg = fluidAfter.Mg;
+            fluid.CO3 = fluidAfter.CO3;
+            fluid.Fe = fluidAfter.Fe;
+            fluid.Mn = fluidAfter.Mn;
+            fluid.pH = fluidAfter.pH;
+            this.ca_from_wall_total += preview.ca_released;
+            this.host_formula_released_mmolkg = releasedAfter;
+            this.host_release_totals.Ca += preview.ca_released;
+            this.host_release_totals.Mg += preview.mg_released;
+            this.host_release_totals.CO3 += preview.co3_released;
+            this.host_release_ledger.push(transaction);
+            if (wallState) {
+                wallState.updateCapacity(newCapacity, newDiameter);
+                for (const delta of geometryPlan.vertex_deltas) {
+                    const ring = Math.floor(delta.vertex_index / wallState.cells_per_ring);
+                    const cell = delta.vertex_index % wallState.cells_per_ring;
+                    const state = wallState.rings[ring][cell];
+                    const radius = state.base_radius_mm + state.wall_depth;
+                    if (radius > wallState.max_seen_radius_mm)
+                        wallState.max_seen_radius_mm = radius;
+                }
+            }
+        }
+        catch (error) {
+            if (geometryCommitted)
+                evolutionLedger.rollbackLast(wallState, evolutionEntry.event_id);
+            this.thickness_mm = wallSnapshot.thickness_mm;
+            this.total_dissolved_mm = wallSnapshot.total_dissolved_mm;
+            this.vug_diameter_mm = wallSnapshot.vug_diameter_mm;
+            this.cavity_capacity_volume_mm3 = wallSnapshot.cavity_capacity_volume_mm3;
+            this.host_volume_removed_mm3_per_kg = wallSnapshot.host_volume_removed_mm3_per_kg;
+            this.ca_from_wall_total = wallSnapshot.ca_from_wall_total;
+            this.host_formula_released_mmolkg = wallSnapshot.host_formula_released_mmolkg;
+            this.host_release_totals = wallSnapshot.host_release_totals;
+            this.host_release_ledger.length = wallSnapshot.ledger_length;
+            for (const key of Object.keys(fluidBefore))
+                fluid[key] = fluidBefore[key];
+            if (wallState)
+                wallState.updateCapacity(oldCapacity, oldDiameter);
+            throw error;
+        }
         return {
-            dissolved: true,
-            rate_mm,
-            formula,
-            formula_extent_mmolkg,
-            ca_released,
-            mg_released,
-            co3_released,
-            fe_released,
-            mn_released,
-            ph_before,
-            ph_after: fluid.pH,
+            ...preview,
             vug_diameter: this.vug_diameter_mm,
             total_dissolved: this.total_dissolved_mm,
+            cavity_capacity_volume_mm3: this.cavity_capacity_volume_mm3,
+            achieved_volume_delta_mm3_per_kg: geometryPlan
+                ? geometryPlan.achieved_volume_delta_mm3_per_kg
+                : preview.target_volume_delta_mm3_per_kg,
+            volume_residual_mm3_per_kg: geometryPlan
+                ? geometryPlan.volume_residual_mm3_per_kg : 0,
+            volume_tolerance_mm3_per_kg: geometryPlan
+                ? geometryPlan.volume_tolerance_mm3_per_kg : 0,
             host_transaction: transaction,
+            cavity_evolution_entry: evolutionLedger
+                ? evolutionLedger.entries[evolutionLedger.entries.length - 1] : null,
         };
+    }
+    dissolve(acid_strength, fluid) {
+        const preview = this.previewDissolve(acid_strength, fluid);
+        return preview.dissolved ? this.commitDissolvePreview(preview, fluid) : preview;
     }
     // W-K V1b: the dissolution-rate-weighted mean flow_rate the scallops equilibrated to, or null
     // if the wall never dissolved (inert / precipitated cavity → the renderer uses default sizing).
@@ -26886,6 +27182,7 @@ class WallState {
         // Mutation-time exact cache invalidation: the two position-affecting
         // WallCell setters advance this monotonic revision.
         this._geometry_revision = 0;
+        this._cavityEvolutionLedger = null;
         this.cells_per_ring = opts.cells_per_ring ?? 120;
         // Phase 1 of PROPOSAL-3D-SIMULATION: 16 vertically-stacked rings as
         // the new default. Engine still operates on ring[0] only — rings 1..15
@@ -26894,6 +27191,8 @@ class WallState {
         this.ring_count = opts.ring_count ?? 16;
         this.vug_diameter_mm = opts.vug_diameter_mm ?? 50.0;
         this.initial_radius_mm = opts.initial_radius_mm ?? (this.vug_diameter_mm / 2);
+        this.cavity_capacity_volume_mm3 = opts.cavity_capacity_volume_mm3
+            ?? (4 / 3) * Math.PI * Math.pow(this.vug_diameter_mm / 2, 3);
         this.ring_spacing_mm = opts.ring_spacing_mm ?? 1.0;
         // PROPOSAL-HOST-ROCK Mechanic 5: archetype controls bubble counts,
         // polar/twist amplitude scaling, and nucleation_bias. Default
@@ -27416,7 +27715,118 @@ class WallState {
             Math.sin(phi) * Math.sin(theta),
         ];
     }
-    updateDiameter(newDiameter) { this.vug_diameter_mm = newDiameter; }
+    updateCapacity(volumeMm3, equivalentDiameterMm) {
+        const volume = Number(volumeMm3);
+        if (!(volume > 0) || !Number.isFinite(volume))
+            throw new RangeError('WallState capacity is invalid');
+        const derivedDiameter = VugWall.diameterForCapacityMm3(volume);
+        if (equivalentDiameterMm != null) {
+            const suppliedDiameter = Number(equivalentDiameterMm);
+            const tolerance = Math.max(1e-10, derivedDiameter * 1e-10);
+            if (!Number.isFinite(suppliedDiameter)
+                || Math.abs(suppliedDiameter - derivedDiameter) > tolerance) {
+                throw new RangeError('WallState equivalent diameter must be derived from capacity');
+            }
+        }
+        this.cavity_capacity_volume_mm3 = volume;
+        this.vug_diameter_mm = derivedDiameter;
+    }
+    // Creative mode may reauthor the initial equivalent-volume diameter only
+    // before time, crystals, or erosion exist. Scale the complete authored
+    // closed surface and its source bubbles together, then recompute the exact
+    // Float32 WallMesh capacity and start a fresh authored-initial ledger.
+    reauthorInitialEquivalentDiameterMm(equivalentDiameterMm, sim) {
+        const requestedDiameter = Number(equivalentDiameterMm);
+        if (!(requestedDiameter > 0) || !Number.isFinite(requestedDiameter)) {
+            throw new RangeError('initial equivalent cavity diameter must be positive and finite');
+        }
+        const ledger = this.cavityEvolutionLedger();
+        if (!ledger || ledger.cursor !== 0) {
+            throw new RangeError('initial cavity diameter can only be reauthored before evolution history exists');
+        }
+        ledger.assertProjection(this);
+        const cells = this.rings.flat();
+        if (cells.some(cell => Math.abs(Number(cell.wall_depth) || 0) > 1e-12)) {
+            throw new RangeError('initial cavity diameter cannot be reauthored after wall evolution');
+        }
+        const mesh = this.meshFor(sim);
+        if (!mesh || typeof mesh.closedVolumeMm3 !== 'function') {
+            throw new RangeError('initial cavity reauthoring requires the canonical closed WallMesh');
+        }
+        const snapshot = {
+            base: cells.map(cell => Number(cell.base_radius_mm)),
+            bubbles: (this.bubbles || []).map(bubble => bubble.slice()),
+            initial_radius_mm: this.initial_radius_mm,
+            max_seen_radius_mm: this.max_seen_radius_mm,
+            vug_diameter_mm: this.vug_diameter_mm,
+            cavity_capacity_volume_mm3: this.cavity_capacity_volume_mm3,
+            ledger: this._cavityEvolutionLedger,
+        };
+        const targetCapacity = (4 / 3) * Math.PI * Math.pow(requestedDiameter / 2, 3);
+        const scaleGeometry = (scale) => {
+            if (!(scale > 0) || !Number.isFinite(scale))
+                throw new RangeError('invalid cavity authoring scale');
+            for (const cell of cells)
+                cell.base_radius_mm *= scale;
+            for (const bubble of (this.bubbles || [])) {
+                bubble[0] *= scale;
+                bubble[1] *= scale;
+                bubble[2] *= scale;
+                bubble[3] *= scale;
+            }
+            this.initial_radius_mm *= scale;
+            this.max_seen_radius_mm *= scale;
+        };
+        try {
+            for (let iteration = 0; iteration < 4; iteration++) {
+                const currentCapacity = this.meshFor(sim).closedVolumeMm3();
+                const correction = Math.cbrt(targetCapacity / currentCapacity);
+                if (Math.abs(correction - 1) <= 1e-10)
+                    break;
+                scaleGeometry(correction);
+            }
+            const exactCapacity = this.meshFor(sim).closedVolumeMm3();
+            const exactDiameter = VugWall.diameterForCapacityMm3(exactCapacity);
+            this.cavity_capacity_volume_mm3 = exactCapacity;
+            this.vug_diameter_mm = exactDiameter;
+            this._cavityEvolutionLedger = CavityEvolutionLedger.forWall(this);
+            this._cavityField = null;
+            this._cavitySurface = null;
+            this._cavitySurfaceFailure = null;
+            this._voxelGrid = null;
+            return Object.freeze({
+                transaction_type: 'creative_initial_cavity_scale',
+                requested_equivalent_diameter_mm: requestedDiameter,
+                exact_equivalent_diameter_mm: exactDiameter,
+                exact_capacity_volume_mm3: exactCapacity,
+                shape_identity: this._cavityEvolutionLedger.shape_identity,
+                scope: 'pre-run authored initial condition; no erosion or deposition event',
+            });
+        }
+        catch (error) {
+            for (let index = 0; index < cells.length; index++) {
+                cells[index].base_radius_mm = snapshot.base[index];
+            }
+            this.bubbles = snapshot.bubbles.map(bubble => bubble.slice());
+            this.initial_radius_mm = snapshot.initial_radius_mm;
+            this.max_seen_radius_mm = snapshot.max_seen_radius_mm;
+            this.vug_diameter_mm = snapshot.vug_diameter_mm;
+            this.cavity_capacity_volume_mm3 = snapshot.cavity_capacity_volume_mm3;
+            this._cavityEvolutionLedger = snapshot.ledger;
+            throw error;
+        }
+    }
+    initializeCavityEvolutionLedger(opts = {}) {
+        if (this._cavityEvolutionLedger)
+            return this._cavityEvolutionLedger;
+        const Ledger = (typeof CavityEvolutionLedger !== 'undefined')
+            ? CavityEvolutionLedger : null;
+        if (!Ledger)
+            throw new Error('CavityEvolutionLedger is unavailable');
+        this._cavityEvolutionLedger = Ledger.forWall(this, opts);
+        return this._cavityEvolutionLedger;
+    }
+    cavityEvolutionLedger() { return this._cavityEvolutionLedger; }
     // PHASE-2-CAVITY-MESH (PROPOSAL-CAVITY-MESH §6): lazy accessor that
     // returns a WallMesh built from this WallState. First access pays the
     // factory cost (~ringCount × cells_per_ring vertex allocations);
@@ -27466,9 +27876,11 @@ class WallState {
         if (!CF)
             return null;
         const resolution = opts && opts.resolution != null ? opts.resolution : 48;
-        const sig = CF.signatureFor(this, resolution);
+        const ledgerCursor = opts && opts.ledgerCursor != null
+            ? opts.ledgerCursor : this._cavityEvolutionCursor;
+        const sig = CF.signatureFor(this, resolution, ledgerCursor);
         if (!this._cavityField || this._cavityField.sig !== sig) {
-            this._cavityField = CF.fromWallState(this, { resolution });
+            this._cavityField = CF.fromWallState(this, { resolution, ledgerCursor });
             this._cavitySurface = null;
             this._cavitySurfaceFailure = null;
         }
@@ -27643,60 +28055,6 @@ class WallState {
             return this.ring_count - 1;
         return idx;
     }
-    // Distribute a radial dissolution amount across unblocked cells.
-    // Blocked cells (Set of cell indices) contribute zero — the acid
-    // budget concentrates on exposed slices. Returns the number of
-    // cells eroded.
-    // colWeights (Phase 2b, optional): a length-N array of per-column erosion
-    // multipliers from the fluid-source spots (FluidSpotField.columnWeights). The
-    // FIXED dissolution budget (rateMm·N) is redistributed proportional to the
-    // unblocked cells' weights → preferential deepening at feeder columns (lopsided
-    // cavity growth). Mass-conserving (same total wall_depth added), so the Ca/CO3
-    // release computed upstream in wall.dissolve() is untouched — this is purely
-    // geometric. Absent/null → the legacy UNIFORM distribution (byte-identical).
-    erodeCells(rateMm, blocked, colWeights) {
-        if (!(rateMm > 0))
-            return 0;
-        const ring0 = this.rings[0];
-        const N = ring0.length;
-        const unblocked = [];
-        for (let i = 0; i < N; i++)
-            if (!blocked.has(i))
-                unblocked.push(i);
-        if (!unblocked.length)
-            return 0;
-        const total = rateMm * N;
-        if (colWeights) {
-            let wsum = 0;
-            for (const i of unblocked)
-                wsum += (colWeights[i] > 0 ? colWeights[i] : 1);
-            if (wsum > 0) {
-                for (const i of unblocked) {
-                    const wi = colWeights[i] > 0 ? colWeights[i] : 1;
-                    ring0[i].wall_depth += total * wi / wsum;
-                }
-            }
-            else {
-                const perCell = total / unblocked.length;
-                for (const i of unblocked)
-                    ring0[i].wall_depth += perCell;
-            }
-        }
-        else {
-            const perCell = total / unblocked.length;
-            for (const i of unblocked)
-                ring0[i].wall_depth += perCell;
-        }
-        // Bump the monotonic render scale if any cell just passed the
-        // current maximum. Uses per-cell base_radius_mm so Fourier-profile
-        // bulges contribute correctly.
-        for (const c of ring0) {
-            const r = c.base_radius_mm + c.wall_depth;
-            if (r > this.max_seen_radius_mm)
-                this.max_seen_radius_mm = r;
-        }
-        return unblocked.length;
-    }
     clear() {
         // Reset per-step occupancy but preserve wall_depth (cumulative).
         // Proposal E (2026-05-18): also reset per-cell local-fill volume
@@ -27733,9 +28091,6 @@ class WallState {
         const N = this.cells_per_ring;
         if (n <= 0 || N <= 0)
             return 0;
-        const R = (this.vug_diameter_mm || 50) / 2;
-        if (!(R > 0))
-            return 0;
         // Cache ring-weight sum; invalidate if ring_count ever changes.
         if (this._cachedRingWeightSum == null || this._cachedRingWeightSum_n !== n) {
             let s = 0;
@@ -27745,7 +28100,9 @@ class WallState {
             this._cachedRingWeightSum = s > 0 ? s : n;
             this._cachedRingWeightSum_n = n;
         }
-        const cavityVol = (4 / 3) * Math.PI * R * R * R;
+        const cavityVol = Number(this.cavity_capacity_volume_mm3);
+        if (!(cavityVol > 0))
+            return 0;
         const w = this.ringAreaWeight(ringIdx) / this._cachedRingWeightSum;
         return (cavityVol * w) / N;
     }
@@ -27906,6 +28263,561 @@ class WallState {
     }
 }
 
+// ── 22a-geometry-cavity-evolution.js ──
+
+// ============================================================
+// js/22a-geometry-cavity-evolution.ts — cavity evolution authority
+// ============================================================
+//
+// Dissolution-only first tranche. A transaction closes one deliberately
+// limited relationship:
+//
+//   carbonate-host formula extent (mmol/kg solvent reference)
+//     <-> crystalline standard-state solid volume (mm3/kg solvent reference)
+//     <-> exact enclosed-volume change of the canonical closed WallMesh
+//
+// This is not a sealed-cavity fluid-mass claim and not full chemistry closure.
+// It does not yet close pressure/temperature-dependent mineral volume,
+// limestone phase fraction/porosity, Fe/Mn inventories, charge, energy, or
+// spatial solute transport. Deposition is intentionally absent until a named
+// solid phase and an aqueous-withdrawal transaction exist.
+const CAVITY_EVOLUTION_SCHEMA = 1;
+// Future-proof API boundary: callers provide T/P/composition now even though
+// this tranche deliberately returns a disclosed standard-state approximation.
+function cavityMolarVolume(mineral, temperatureC, pressureKbar, _composition) {
+    const key = String(mineral || '').toLowerCase();
+    const record = key === 'dolomite'
+        ? { mineral: 'dolomite', formula: 'CaMg(CO3)2', value: 64.341, uncertainty: 0.029 }
+        : key === 'calcite'
+            ? { mineral: 'calcite', formula: 'CaCO3', value: 36.934, uncertainty: 0.015 }
+            : null;
+    if (!record)
+        throw new RangeError('no cavity molar-volume model for mineral: ' + mineral);
+    const requestedTemperature = temperatureC == null ? null : Number(temperatureC);
+    const requestedPressure = pressureKbar == null ? null : Number(pressureKbar);
+    if (requestedTemperature != null && !Number.isFinite(requestedTemperature)) {
+        throw new TypeError('requested molar-volume temperature must be finite');
+    }
+    if (requestedPressure != null && !Number.isFinite(requestedPressure)) {
+        throw new TypeError('requested molar-volume pressure must be finite');
+    }
+    return Object.freeze({
+        mineral: record.mineral,
+        formula: record.formula,
+        value_cm3_mol: record.value,
+        approximation: 'standard_state_crystalline',
+        reference_temperature_C: 26,
+        reference_pressure_bar: 1,
+        requested_temperature_C: requestedTemperature,
+        requested_pressure_kbar: requestedPressure,
+        source: 'https://pubs.usgs.gov/bul/1248/report.pdf',
+        source_table: 'USGS Bulletin 1248, Molar Volumes and Densities of Minerals, carbonates and nitrates table',
+        uncertainty_cm3_mol: record.uncertainty,
+        uncertainty: `USGS table reports ±${record.uncertainty.toFixed(3)} cm³/mol at 26 °C; P-T and bulk-rock uncertainty beyond that reference state is not quantified in this tranche`,
+    });
+}
+function cavityFormulaExtentVolumeMm3PerKg(formulaExtentMmolKg, molarVolume) {
+    const extent = Number(formulaExtentMmolKg);
+    if (!(extent >= 0) || !Number.isFinite(extent)) {
+        throw new RangeError('formula extent must be finite and non-negative');
+    }
+    if (!molarVolume || !(molarVolume.value_cm3_mol > 0)) {
+        throw new RangeError('molar-volume receipt must be positive');
+    }
+    // mmol/kg * cm3/mol is numerically mm3/kg.
+    return extent * molarVolume.value_cm3_mol;
+}
+class CavityEvolutionLedger {
+    constructor(opts = {}) {
+        this.schema = CAVITY_EVOLUTION_SCHEMA;
+        this.model = 'canonical-wallmesh-volume-v1';
+        this.shape_identity = String(opts.shape_identity || 'unidentified-shape');
+        this.tessellation_identity = String(opts.tessellation_identity || 'unidentified-tessellation');
+        this.baseline_kind = opts.baseline_kind === 'legacy_import' ? 'legacy_import' : 'authored_initial';
+        this.baseline_disclosure = this.baseline_kind === 'legacy_import'
+            ? String(opts.baseline_disclosure || 'Imported geometric depths have no fabricated chemistry receipt.')
+            : 'Authored initial closed-mesh geometry before live wall evolution.';
+        const baseline = Array.from(opts.baseline_depths_mm || [], Number);
+        if (!baseline.length || baseline.some(value => !Number.isFinite(value))) {
+            throw new RangeError('cavity evolution baseline depths must be a finite non-empty array');
+        }
+        this.baseline_depths_mm = Object.freeze(baseline.slice());
+        this._entries = [];
+        this._signatures = [];
+        this.base_state_digest = 'cavity-evolution-base:' + CavityEvolutionLedger.digest({
+            schema: this.schema,
+            model: this.model,
+            shape_identity: this.shape_identity,
+            tessellation_identity: this.tessellation_identity,
+            baseline_kind: this.baseline_kind,
+            baseline_depths_mm: baseline,
+        });
+        this._signature = this.base_state_digest;
+        this._signatures.push(this._signature);
+        for (const entry of (opts.entries || []))
+            this.append(entry);
+    }
+    static _canonical(value) {
+        if (Array.isArray(value))
+            return value.map(item => CavityEvolutionLedger._canonical(item));
+        if (value && typeof value === 'object') {
+            const out = {};
+            for (const key of Object.keys(value).sort()) {
+                if (key === 'entry_digest')
+                    continue;
+                out[key] = CavityEvolutionLedger._canonical(value[key]);
+            }
+            return out;
+        }
+        if (typeof value === 'number' && !Number.isFinite(value)) {
+            throw new TypeError('cavity evolution data contains a non-finite number');
+        }
+        return value;
+    }
+    static digest(value) {
+        const text = JSON.stringify(CavityEvolutionLedger._canonical(value));
+        let a = 0x811c9dc5;
+        let b = 0x9e3779b9;
+        for (let i = 0; i < text.length; i++) {
+            const code = text.charCodeAt(i);
+            a = Math.imul(a ^ (code & 255), 0x01000193) >>> 0;
+            a = Math.imul(a ^ (code >>> 8), 0x01000193) >>> 0;
+            b = (Math.imul(b ^ code, 0x85ebca6b) + 0x27d4eb2f) >>> 0;
+        }
+        return a.toString(16).padStart(8, '0') + b.toString(16).padStart(8, '0');
+    }
+    static _clone(value) {
+        return JSON.parse(JSON.stringify(value));
+    }
+    static _deepFreeze(value) {
+        if (!value || typeof value !== 'object' || Object.isFrozen(value))
+            return value;
+        for (const key of Object.keys(value))
+            CavityEvolutionLedger._deepFreeze(value[key]);
+        return Object.freeze(value);
+    }
+    static identityForWall(wall) {
+        if (!wall || !Array.isArray(wall.rings) || !wall.rings.length) {
+            throw new TypeError('cavity evolution identity requires a populated WallState');
+        }
+        const base = [];
+        for (const ring of wall.rings) {
+            for (const cell of ring)
+                base.push(Number(cell.base_radius_mm) || 0);
+        }
+        const shape = 'wall-shape:' + CavityEvolutionLedger.digest({
+            shape_seed: Number(wall.shape_seed) || 0,
+            architecture: wall.architecture || null,
+            authored_shape: wall._cavity_shape || null,
+            bubbles: wall.bubbles || [],
+            base_radius_mm: base,
+        });
+        const tessellation = 'latlong-wallmesh-v1:' + wall.ring_count + 'x' + wall.cells_per_ring;
+        return { shape, tessellation };
+    }
+    static forWall(wall, opts = {}) {
+        const identity = CavityEvolutionLedger.identityForWall(wall);
+        const depths = [];
+        for (const ring of wall.rings) {
+            for (const cell of ring)
+                depths.push(Number(cell.wall_depth) || 0);
+        }
+        return new CavityEvolutionLedger({
+            shape_identity: identity.shape,
+            tessellation_identity: identity.tessellation,
+            baseline_depths_mm: depths,
+            baseline_kind: opts.legacy_import ? 'legacy_import' : 'authored_initial',
+            baseline_disclosure: opts.baseline_disclosure,
+            entries: opts.entries || [],
+        });
+    }
+    static fromJSON(payload) {
+        if (!payload || payload.schema !== CAVITY_EVOLUTION_SCHEMA) {
+            throw new RangeError('unsupported cavity evolution ledger schema');
+        }
+        const ledger = new CavityEvolutionLedger(payload);
+        // Loading is an authority boundary, not a lazy promise to validate later.
+        // Force the complete chain once before any caller can receive the object.
+        ledger.materialize();
+        return ledger;
+    }
+    // Consumers receive a frozen snapshot so the append-only chain cannot be
+    // mutated by pushing, popping, or replacing an entry outside this authority.
+    get entries() { return Object.freeze(this._entries.slice()); }
+    get signature() { return this._signature; }
+    get cursor() { return this._entries.length; }
+    signatureAt(cursor) {
+        if (!Number.isInteger(cursor) || cursor < 0 || cursor > this._entries.length) {
+            throw new RangeError('cavity evolution cursor is out of range');
+        }
+        return this._signatures[cursor];
+    }
+    _validateEntry(entry) {
+        const copy = CavityEvolutionLedger._clone(entry);
+        if (copy.schema !== CAVITY_EVOLUTION_SCHEMA
+            || copy.model !== this.model
+            || copy.transaction_type !== 'carbonate_host_dissolution') {
+            throw new RangeError('unsupported cavity evolution entry identity');
+        }
+        if (copy.shape_identity !== this.shape_identity
+            || copy.tessellation_identity !== this.tessellation_identity) {
+            throw new RangeError('cavity evolution entry belongs to another shape or tessellation');
+        }
+        if (copy.event_id !== this._entries.length + 1 || !Number.isInteger(copy.event_id)) {
+            throw new RangeError('cavity evolution event_id must be monotonic');
+        }
+        if (copy.pre_state_digest !== this._signature) {
+            throw new RangeError('cavity evolution pre-state digest mismatch');
+        }
+        if (!Number.isInteger(copy.step) || copy.step < 0 || !copy.chemistry_transaction_id) {
+            throw new RangeError('cavity evolution step/chemistry transaction identity is invalid');
+        }
+        const finiteKeys = [
+            'attempted_formula_extent_mmolkg', 'accepted_formula_extent_mmolkg',
+            'target_volume_delta_mm3_per_kg', 'achieved_volume_delta_mm3_per_kg',
+            'volume_residual_mm3_per_kg', 'volume_tolerance_mm3_per_kg', 'old_capacity_volume_mm3',
+            'new_capacity_volume_mm3', 'old_equivalent_diameter_mm',
+            'new_equivalent_diameter_mm',
+        ];
+        for (const key of finiteKeys) {
+            if (!Number.isFinite(Number(copy[key])))
+                throw new TypeError('non-finite cavity entry field: ' + key);
+        }
+        if (copy.accepted_formula_extent_mmolkg < 0
+            || copy.accepted_formula_extent_mmolkg > copy.attempted_formula_extent_mmolkg + 1e-12
+            || copy.target_volume_delta_mm3_per_kg < 0
+            || copy.achieved_volume_delta_mm3_per_kg < 0) {
+            throw new RangeError('cavity evolution accepted extent/volume is out of bounds');
+        }
+        if (Math.abs(copy.volume_residual_mm3_per_kg) > copy.volume_tolerance_mm3_per_kg) {
+            throw new RangeError('cavity evolution volume residual exceeds its disclosed tolerance');
+        }
+        if (!copy.molar_volume || copy.molar_volume.approximation !== 'standard_state_crystalline'
+            || !Number.isFinite(Number(copy.molar_volume.value_cm3_mol))
+            || !(Number(copy.molar_volume.value_cm3_mol) > 0)
+            || !Number.isFinite(Number(copy.molar_volume.uncertainty_cm3_mol))
+            || !(Number(copy.molar_volume.uncertainty_cm3_mol) > 0)
+            || Number(copy.molar_volume.reference_temperature_C) !== 26) {
+            throw new RangeError('cavity evolution entry lacks standard-state molar-volume provenance');
+        }
+        const closes = (actual, expected, scale = 1) => {
+            const tolerance = Math.max(1e-10, Math.abs(scale) * 1e-10);
+            return Math.abs(actual - expected) <= tolerance;
+        };
+        const expectedTarget = Number(copy.accepted_formula_extent_mmolkg)
+            * Number(copy.molar_volume.value_cm3_mol);
+        if (!closes(Number(copy.target_volume_delta_mm3_per_kg), expectedTarget, expectedTarget)) {
+            throw new RangeError('cavity evolution target does not close against formula extent and molar volume');
+        }
+        const expectedResidual = Number(copy.achieved_volume_delta_mm3_per_kg)
+            - Number(copy.target_volume_delta_mm3_per_kg);
+        if (!closes(Number(copy.volume_residual_mm3_per_kg), expectedResidual, Number(copy.target_volume_delta_mm3_per_kg))) {
+            throw new RangeError('cavity evolution residual does not close against achieved minus target volume');
+        }
+        const expectedCapacity = Number(copy.old_capacity_volume_mm3)
+            + Number(copy.achieved_volume_delta_mm3_per_kg);
+        if (!closes(Number(copy.new_capacity_volume_mm3), expectedCapacity, expectedCapacity)) {
+            throw new RangeError('cavity evolution capacity does not close against achieved volume');
+        }
+        const diameterForCapacity = (volume) => 2 * Math.cbrt((3 * volume) / (4 * Math.PI));
+        const expectedOldDiameter = diameterForCapacity(Number(copy.old_capacity_volume_mm3));
+        const expectedNewDiameter = diameterForCapacity(Number(copy.new_capacity_volume_mm3));
+        if (!closes(Number(copy.old_equivalent_diameter_mm), expectedOldDiameter, expectedOldDiameter)
+            || !closes(Number(copy.new_equivalent_diameter_mm), expectedNewDiameter, expectedNewDiameter)) {
+            throw new RangeError('cavity evolution equivalent diameter is not derived from capacity');
+        }
+        if (!Array.isArray(copy.vertex_deltas) || !copy.vertex_deltas.length) {
+            throw new RangeError('cavity evolution entry requires ordered vertex deltas');
+        }
+        const priorDepths = this.materialize();
+        let priorIndex = -1;
+        for (const delta of copy.vertex_deltas) {
+            if (!Number.isInteger(delta.vertex_index) || delta.vertex_index <= priorIndex
+                || delta.vertex_index >= this.baseline_depths_mm.length) {
+                throw new RangeError('cavity evolution vertex deltas must be unique and ordered');
+            }
+            priorIndex = delta.vertex_index;
+            for (const key of ['old_depth_mm', 'new_depth_mm', 'delta_mm']) {
+                if (!Number.isFinite(Number(delta[key])))
+                    throw new TypeError('non-finite cavity vertex delta');
+            }
+            if (Math.abs((delta.old_depth_mm + delta.delta_mm) - delta.new_depth_mm) > 1e-10
+                || !(delta.delta_mm > 0)) {
+                throw new RangeError('cavity erosion vertex delta does not close');
+            }
+            if (Math.abs(priorDepths[delta.vertex_index] - delta.old_depth_mm) > 1e-10) {
+                throw new RangeError('cavity evolution ledger has a broken depth chain');
+            }
+        }
+        if (!copy.exposure || !copy.exposure.digest || !copy.fluid_receipt
+            || !copy.host_inventory_receipt || !copy.scientific_scope) {
+            throw new RangeError('cavity evolution entry is missing authority receipts');
+        }
+        return copy;
+    }
+    append(entry) {
+        const copy = this._validateEntry(entry);
+        const suppliedDigest = copy.entry_digest == null ? null : String(copy.entry_digest);
+        const computedDigest = CavityEvolutionLedger.digest(copy);
+        if (suppliedDigest != null && suppliedDigest !== computedDigest) {
+            throw new RangeError('cavity evolution entry digest mismatch');
+        }
+        copy.entry_digest = computedDigest;
+        const frozen = CavityEvolutionLedger._deepFreeze(copy);
+        this._entries.push(frozen);
+        this._signature = 'cavity-evolution:v1:' + CavityEvolutionLedger.digest({
+            prior: this._signature,
+            entry: copy.entry_digest,
+        });
+        this._signatures.push(this._signature);
+        return frozen;
+    }
+    materialize(cursor = this._entries.length) {
+        if (!Number.isInteger(cursor) || cursor < 0 || cursor > this._entries.length) {
+            throw new RangeError('cavity evolution cursor is out of range');
+        }
+        const depths = new Float64Array(this.baseline_depths_mm);
+        for (let eventIndex = 0; eventIndex < cursor; eventIndex++) {
+            for (const delta of this._entries[eventIndex].vertex_deltas) {
+                const current = depths[delta.vertex_index];
+                if (Math.abs(current - delta.old_depth_mm) > 1e-10) {
+                    throw new RangeError('cavity evolution ledger has a broken depth chain');
+                }
+                depths[delta.vertex_index] = delta.new_depth_mm;
+            }
+        }
+        return depths;
+    }
+    assertProjection(wall, cursor = this._entries.length) {
+        const expected = this.materialize(cursor);
+        let index = 0;
+        for (const ring of wall.rings || []) {
+            for (const cell of ring) {
+                if (Math.abs((Number(cell.wall_depth) || 0) - expected[index]) > 1e-10) {
+                    throw new RangeError('WallState wall_depth diverged from the cavity evolution ledger at vertex ' + index);
+                }
+                index++;
+            }
+        }
+        if (index !== expected.length)
+            throw new RangeError('WallState tessellation diverged from its cavity evolution ledger');
+        return true;
+    }
+    previewErosion(wall, mesh, opts) {
+        const target = Number(opts && opts.target_volume_delta_mm3_per_kg);
+        const weightsInput = opts && opts.vertex_weights;
+        if (!(target > 0) || !Number.isFinite(target)) {
+            throw new RangeError('cavity erosion target volume must be positive and finite');
+        }
+        if (!mesh || typeof mesh.closedVolumeWithDepthDeltasMm3 !== 'function'
+            || !weightsInput || weightsInput.length !== mesh.numInterior) {
+            throw new RangeError('cavity erosion requires canonical mesh-sized vertex weights');
+        }
+        this.assertProjection(wall);
+        const weights = new Float64Array(mesh.numInterior);
+        let maxWeight = 0;
+        for (let i = 0; i < weights.length; i++) {
+            const value = Number(weightsInput[i]);
+            if (!(value >= 0) || !Number.isFinite(value))
+                throw new TypeError('cavity erosion weight is invalid');
+            weights[i] = value;
+            if (value > maxWeight)
+                maxWeight = value;
+        }
+        if (!(maxWeight > 0))
+            throw new RangeError('cavity erosion has no exposed reactive surface');
+        for (let i = 0; i < weights.length; i++)
+            weights[i] /= maxWeight;
+        const oldVolume = mesh.closedVolumeMm3();
+        const desiredVolume = oldVolume + target;
+        const candidate = (lambda) => {
+            const deltas = new Float64Array(weights.length);
+            for (let i = 0; i < weights.length; i++)
+                deltas[i] = lambda * weights[i];
+            return { volume: mesh.closedVolumeWithDepthDeltasMm3(wall, deltas), deltas };
+        };
+        const surfaceArea = Math.max(Number(mesh.surface_area_mm2) || 0, 1e-12);
+        // Every candidate vertex is p + lambda*q. The oriented tetrahedron
+        // volume is therefore exactly cubic in lambda. Four full-mesh samples
+        // identify that polynomial; the remaining root iterations are scalar and
+        // deterministic. One final mesh sample verifies the solved transaction.
+        const h = Math.max(target / surfaceArea, 1e-9);
+        const y0 = oldVolume;
+        const y1 = candidate(h).volume;
+        const y2 = candidate(2 * h).volume;
+        const y3 = candidate(3 * h).volume;
+        const A = y1 - y0;
+        const B = y2 - y0;
+        const C = y3 - y0;
+        const cubic = (C - 3 * B + 3 * A) / 6;
+        const quadratic = (B - 2 * A - 6 * cubic) / 2;
+        const linear = A - cubic - quadratic;
+        const volumeAtT = (t) => y0 + linear * t + quadratic * t * t + cubic * t * t * t;
+        let loT = 0;
+        let hiT = 1;
+        for (let guard = 0; volumeAtT(hiT) < desiredVolume && guard < 60; guard++)
+            hiT *= 2;
+        let solved;
+        if (volumeAtT(hiT) >= desiredVolume) {
+            for (let iteration = 0; iteration < 80; iteration++) {
+                const mid = (loT + hiT) * 0.5;
+                if (volumeAtT(mid) < desiredVolume)
+                    loT = mid;
+                else
+                    hiT = mid;
+            }
+            solved = candidate(h * (loT + hiT) * 0.5);
+        }
+        else {
+            // Float32 quantization can dominate extremely small late-stage targets
+            // and make the four sampled values a poor cubic fit. Fall back to a
+            // bounded monotonic search against the actual renderer buffer. This is
+            // rare; ordinary transactions retain the five-mesh-evaluation path.
+            let loLambda = 0;
+            let hiLambda = h;
+            let high = candidate(hiLambda);
+            for (let guard = 0; high.volume < desiredVolume && guard < 60; guard++) {
+                hiLambda *= 2;
+                high = candidate(hiLambda);
+            }
+            if (high.volume < desiredVolume) {
+                throw new RangeError('cavity erosion renderer geometry could not bracket target volume');
+            }
+            let low = candidate(loLambda);
+            for (let iteration = 0; iteration < 36; iteration++) {
+                const mid = (loLambda + hiLambda) * 0.5;
+                const value = candidate(mid);
+                if (value.volume < desiredVolume) {
+                    loLambda = mid;
+                    low = value;
+                }
+                else {
+                    hiLambda = mid;
+                    high = value;
+                }
+            }
+            solved = Math.abs(low.volume - desiredVolume) <= Math.abs(high.volume - desiredVolume)
+                ? low : high;
+        }
+        let achieved = solved.volume - oldVolume;
+        let residual = achieved - target;
+        const maxRadius = Math.max(Number(mesh.max_radius_mm) || 0, 1e-9);
+        const float32UlpMm = Math.pow(2, Math.floor(Math.log2(maxRadius)) - 23);
+        // The renderer stores positions in Float32. Its smallest possible radial
+        // surface move produces a finite volume quantum; claiming tighter closure
+        // would be false precision. Two area*ULP quanta conservatively include
+        // irregular incidence and the mean-depth pole caps.
+        const rendererQuantizationTolerance = surfaceArea * float32UlpMm * 2;
+        const tolerance = Math.max(1e-8, target * 1e-8, oldVolume * 1e-12, rendererQuantizationTolerance);
+        if (Math.abs(residual) > tolerance) {
+            let loLambda = 0;
+            let hiLambda = h;
+            let low = candidate(loLambda);
+            let high = candidate(hiLambda);
+            for (let guard = 0; high.volume < desiredVolume && guard < 60; guard++) {
+                hiLambda *= 2;
+                high = candidate(hiLambda);
+            }
+            if (high.volume >= desiredVolume) {
+                for (let iteration = 0; iteration < 36; iteration++) {
+                    const mid = (loLambda + hiLambda) * 0.5;
+                    const value = candidate(mid);
+                    if (value.volume < desiredVolume) {
+                        loLambda = mid;
+                        low = value;
+                    }
+                    else {
+                        hiLambda = mid;
+                        high = value;
+                    }
+                }
+                solved = Math.abs(low.volume - desiredVolume) <= Math.abs(high.volume - desiredVolume)
+                    ? low : high;
+                achieved = solved.volume - oldVolume;
+                residual = achieved - target;
+            }
+        }
+        if (Math.abs(residual) > tolerance) {
+            throw new RangeError('cavity erosion volume residual ' + residual
+                + ' exceeds tolerance ' + tolerance + ' for target ' + target);
+        }
+        const currentDepths = this.materialize();
+        const vertexDeltas = [];
+        for (let i = 0; i < solved.deltas.length; i++) {
+            if (!(solved.deltas[i] > 0))
+                continue;
+            vertexDeltas.push({
+                vertex_index: i,
+                old_depth_mm: currentDepths[i],
+                new_depth_mm: currentDepths[i] + solved.deltas[i],
+                delta_mm: solved.deltas[i],
+            });
+        }
+        return {
+            target_volume_delta_mm3_per_kg: target,
+            achieved_volume_delta_mm3_per_kg: achieved,
+            volume_residual_mm3_per_kg: residual,
+            volume_tolerance_mm3_per_kg: tolerance,
+            old_capacity_volume_mm3: oldVolume,
+            new_capacity_volume_mm3: solved.volume,
+            vertex_deltas: vertexDeltas,
+        };
+    }
+    commitEntry(wall, entry) {
+        this.assertProjection(wall);
+        const preSignature = this._signature;
+        const frozen = this.append(entry);
+        const applied = [];
+        try {
+            for (const delta of frozen.vertex_deltas) {
+                const ring = Math.floor(delta.vertex_index / wall.cells_per_ring);
+                const cell = delta.vertex_index % wall.cells_per_ring;
+                const target = wall.rings[ring][cell];
+                if (Math.abs((Number(target.wall_depth) || 0) - delta.old_depth_mm) > 1e-10) {
+                    throw new RangeError('cavity wall changed after transaction preview');
+                }
+                target.wall_depth = delta.new_depth_mm;
+                applied.push({ target, old: delta.old_depth_mm });
+            }
+            return frozen;
+        }
+        catch (error) {
+            for (let i = applied.length - 1; i >= 0; i--)
+                applied[i].target.wall_depth = applied[i].old;
+            this._entries.pop();
+            this._signatures.pop();
+            this._signature = preSignature;
+            throw error;
+        }
+    }
+    rollbackLast(wall, eventId) {
+        const entry = this._entries[this._entries.length - 1];
+        if (!entry || entry.event_id !== eventId)
+            throw new RangeError('cannot roll back a non-tail cavity event');
+        for (let i = entry.vertex_deltas.length - 1; i >= 0; i--) {
+            const delta = entry.vertex_deltas[i];
+            const ring = Math.floor(delta.vertex_index / wall.cells_per_ring);
+            const cell = delta.vertex_index % wall.cells_per_ring;
+            wall.rings[ring][cell].wall_depth = delta.old_depth_mm;
+        }
+        this._entries.pop();
+        this._signatures.pop();
+        this._signature = this._signatures[this._signatures.length - 1];
+    }
+    toJSON() {
+        return CavityEvolutionLedger._clone({
+            schema: this.schema,
+            model: this.model,
+            shape_identity: this.shape_identity,
+            tessellation_identity: this.tessellation_identity,
+            baseline_kind: this.baseline_kind,
+            baseline_disclosure: this.baseline_disclosure,
+            baseline_depths_mm: this.baseline_depths_mm,
+            entries: this._entries,
+        });
+    }
+}
+
 // ── 23-geometry-wall-mesh.js ──
 
 // ============================================================
@@ -27951,6 +28863,8 @@ class WallMesh {
         // Total interior vertex count (numInterior); pole vertices live at
         // indices numInterior (south) and numInterior+1 (north).
         this.numInterior = 0;
+        this.ringCount = 0;
+        this.cellsPerRing = 0;
         this.southIdx = 0;
         this.northIdx = 0;
         // PROPOSAL-CAVITY-MESH Phase 4 / Path C — per-vertex state.
@@ -28031,6 +28945,8 @@ class WallMesh {
         // / orientation are immutable for this tessellation; only the
         // dynamic (x,y,z, color) values recompute later.
         mesh.numInterior = ringCount * N;
+        mesh.ringCount = ringCount;
+        mesh.cellsPerRing = N;
         mesh.southIdx = mesh.numInterior;
         mesh.northIdx = mesh.numInterior + 1;
         const numVerts = mesh.numInterior + 2;
@@ -28456,6 +29372,230 @@ class WallMesh {
         });
         this.surface_area_mm2 = totalArea;
         this._surfaceTriangles = triangles;
+        this._cellSurfaceAreasSig = null;
+        this._cellSurfaceAreas = null;
+        this._geodesicCache = new Map();
+        this._geodesicAdjacency = null;
+    }
+    // Exact enclosed volume of the closed triangle surface consumed by the
+    // renderer. The absolute oriented-tetrahedron sum is the geometry authority
+    // for mass-balanced wall evolution; it deliberately does not approximate the
+    // surface as independent spherical wedges.
+    closedVolumeMm3(positionsOverride) {
+        const positions = positionsOverride || this.positions;
+        if (!positions || !this.indices)
+            return 0;
+        let signedSixVolume = 0;
+        for (let offset = 0; offset + 2 < this.indices.length; offset += 3) {
+            const ia = this.indices[offset] * 3;
+            const ib = this.indices[offset + 1] * 3;
+            const ic = this.indices[offset + 2] * 3;
+            const ax = positions[ia], ay = positions[ia + 1], az = positions[ia + 2];
+            const bx = positions[ib], by = positions[ib + 1], bz = positions[ib + 2];
+            const cx = positions[ic], cy = positions[ic + 1], cz = positions[ic + 2];
+            signedSixVolume += ax * (by * cz - bz * cy)
+                + ay * (bz * cx - bx * cz)
+                + az * (bx * cy - by * cx);
+        }
+        const volume = Math.abs(signedSixVolume) / 6;
+        if (!Number.isFinite(volume))
+            throw new RangeError('wall mesh volume is non-finite');
+        return volume;
+    }
+    // Allocate every triangle's area to mutable wall cells. A normal vertex gets
+    // one third of an incident triangle. Pole vertices have no WallCell, so their
+    // one-third share is split equally between the two adjacent cap vertices.
+    // The returned areas therefore sum exactly to surface_area_mm2.
+    cellSurfaceAreasMm2() {
+        if (this._cellSurfaceAreas && this._cellSurfaceAreasSig === this.sig) {
+            return new Float64Array(this._cellSurfaceAreas);
+        }
+        const areas = new Float64Array(this.numInterior);
+        const p = this.positions;
+        for (let offset = 0; offset + 2 < this.indices.length; offset += 3) {
+            const ids = [this.indices[offset], this.indices[offset + 1], this.indices[offset + 2]];
+            const a = ids[0] * 3, b = ids[1] * 3, c = ids[2] * 3;
+            const abx = p[b] - p[a], aby = p[b + 1] - p[a + 1], abz = p[b + 2] - p[a + 2];
+            const acx = p[c] - p[a], acy = p[c + 1] - p[a + 1], acz = p[c + 2] - p[a + 2];
+            const nx = aby * acz - abz * acy;
+            const ny = abz * acx - abx * acz;
+            const nz = abx * acy - aby * acx;
+            const area = 0.5 * Math.hypot(nx, ny, nz);
+            if (!(area > 0) || !Number.isFinite(area))
+                continue;
+            const interior = ids.filter((id) => id < this.numInterior);
+            for (const id of interior)
+                areas[id] += area / 3;
+            const poleCount = 3 - interior.length;
+            if (poleCount && interior.length) {
+                const share = (area / 3) * poleCount / interior.length;
+                for (const id of interior)
+                    areas[id] += share;
+            }
+        }
+        const sum = areas.reduce((acc, value) => acc + value, 0);
+        const tolerance = Math.max(1e-9, Math.abs(this.surface_area_mm2) * 1e-10);
+        if (Math.abs(sum - this.surface_area_mm2) > tolerance) {
+            throw new RangeError('wall-cell surface areas do not close to the rendered mesh area');
+        }
+        this._cellSurfaceAreas = new Float64Array(areas);
+        this._cellSurfaceAreasSig = this.sig;
+        return areas;
+    }
+    // Candidate geometry for a sparse/dense set of raw WallCell depth deltas.
+    // Each interior vertex moves along its already-rendered ray by delta times
+    // the same polar factor used by recompute(). Pole movement follows the
+    // renderer's nearest-ring mean-depth rule exactly.
+    positionsWithDepthDeltas(wall, depthDeltas) {
+        if (!wall || !depthDeltas || depthDeltas.length !== this.numInterior) {
+            throw new RangeError('candidate wall-depth deltas must match the mesh interior vertex count');
+        }
+        // Match the renderer-facing buffer type exactly. Quantizing during preview
+        // prevents the ledger from conserving a double-precision surface that the
+        // actual BufferGeometry cannot reproduce on the next recompute.
+        const out = new Float32Array(this.positions.length);
+        const N = wall.cells_per_ring;
+        const R = wall.ring_count;
+        for (let index = 0; index < this.numInterior; index++) {
+            const delta = Number(depthDeltas[index]);
+            if (!Number.isFinite(delta))
+                throw new TypeError('candidate wall-depth delta is non-finite');
+            const ringIdx = Math.floor(index / N);
+            const cellIdx = index % N;
+            const phi = Math.PI * (ringIdx + 0.5) / R;
+            const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1;
+            const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0;
+            const cell = wall.rings[ringIdx][cellIdx];
+            const baseRadius = cell && cell.base_radius_mm > 0
+                ? cell.base_radius_mm : wall.initial_radius_mm;
+            const radius = (baseRadius + (Number(cell.wall_depth) || 0) + delta) * polar;
+            if (!(radius > 0) || !Number.isFinite(radius)) {
+                throw new RangeError('candidate wall-depth delta collapses or invalidates a vertex');
+            }
+            const theta = 2 * Math.PI * cellIdx / N + twist;
+            const sinPhi = Math.sin(phi);
+            const base = index * 3;
+            out[base] = radius * sinPhi * Math.cos(theta);
+            out[base + 1] = -radius * Math.cos(phi);
+            out[base + 2] = radius * sinPhi * Math.sin(theta);
+        }
+        const shiftPole = (vertexIndex, ringIdx, phi, sign) => {
+            let meanDepth = 0;
+            for (let c = 0; c < N; c++) {
+                meanDepth += (Number(wall.rings[ringIdx][c].wall_depth) || 0)
+                    + Number(depthDeltas[ringIdx * N + c]);
+            }
+            meanDepth /= N;
+            const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1;
+            const sourceRadius = Array.isArray(wall.bubbles) && wall.bubbles.length
+                ? _raycastUnion3D(wall.bubbles, 0, sign, 0) : wall.initial_radius_mm;
+            const shape = wall._cavity_shape || wall;
+            const baseRadius = sourceRadius * _cavityRadialScale(shape, phi, 0);
+            out[vertexIndex * 3] = 0;
+            out[vertexIndex * 3 + 1] = sign * (baseRadius + meanDepth * polar);
+            out[vertexIndex * 3 + 2] = 0;
+        };
+        shiftPole(this.southIdx, 0, 0, -1);
+        shiftPole(this.northIdx, R - 1, Math.PI, 1);
+        return out;
+    }
+    closedVolumeWithDepthDeltasMm3(wall, depthDeltas) {
+        return this.closedVolumeMm3(this.positionsWithDepthDeltas(wall, depthDeltas));
+    }
+    // Shortest paths along the actual triangle edges provide a physical
+    // surface-distance metric for shielding footprints and feeder flux. Cached
+    // by geometry signature and source vertex; erosion invalidates the cache via
+    // _recomputeSurfaceMetrics().
+    geodesicDistancesFrom(sourceVertex) {
+        if (!Number.isInteger(sourceVertex) || sourceVertex < 0 || sourceVertex >= this.numInterior) {
+            throw new RangeError('geodesic source must be an interior wall vertex');
+        }
+        if (!this._geodesicCache)
+            this._geodesicCache = new Map();
+        const cached = this._geodesicCache.get(sourceVertex);
+        if (cached)
+            return new Float64Array(cached);
+        const vertexCount = this.numInterior + 2;
+        if (!this._geodesicAdjacency) {
+            const adjacency = Array.from({ length: vertexCount }, () => new Map());
+            const addEdge = (a, b) => {
+                if (a === b)
+                    return;
+                const ai = a * 3, bi = b * 3;
+                const length = Math.hypot(this.positions[ai] - this.positions[bi], this.positions[ai + 1] - this.positions[bi + 1], this.positions[ai + 2] - this.positions[bi + 2]);
+                const prior = adjacency[a].get(b);
+                if (prior == null || length < prior) {
+                    adjacency[a].set(b, length);
+                    adjacency[b].set(a, length);
+                }
+            };
+            for (let offset = 0; offset + 2 < this.indices.length; offset += 3) {
+                const a = this.indices[offset], b = this.indices[offset + 1], c = this.indices[offset + 2];
+                addEdge(a, b);
+                addEdge(b, c);
+                addEdge(c, a);
+            }
+            this._geodesicAdjacency = adjacency.map(edges => Array.from(edges.entries()));
+        }
+        const distances = new Float64Array(vertexCount);
+        distances.fill(Infinity);
+        distances[sourceVertex] = 0;
+        const heap = [[0, sourceVertex]];
+        const push = (item) => {
+            let index = heap.length;
+            heap.push(item);
+            while (index > 0) {
+                const parent = (index - 1) >> 1;
+                if (heap[parent][0] <= item[0])
+                    break;
+                heap[index] = heap[parent];
+                index = parent;
+            }
+            heap[index] = item;
+        };
+        const pop = () => {
+            if (!heap.length)
+                return null;
+            const root = heap[0];
+            const tail = heap.pop();
+            if (heap.length && tail) {
+                let index = 0;
+                while (true) {
+                    const left = index * 2 + 1;
+                    const right = left + 1;
+                    if (left >= heap.length)
+                        break;
+                    const child = right < heap.length && heap[right][0] < heap[left][0] ? right : left;
+                    if (heap[child][0] >= tail[0])
+                        break;
+                    heap[index] = heap[child];
+                    index = child;
+                }
+                heap[index] = tail;
+            }
+            return root;
+        };
+        while (heap.length) {
+            const item = pop();
+            if (!item)
+                break;
+            const distance = item[0], current = item[1];
+            if (distance !== distances[current])
+                continue;
+            for (const [neighbor, length] of this._geodesicAdjacency[current]) {
+                const candidate = distance + length;
+                if (candidate < distances[neighbor]) {
+                    distances[neighbor] = candidate;
+                    push([candidate, neighbor]);
+                }
+            }
+        }
+        const interior = distances.slice(0, this.numInterior);
+        if (Array.from(interior).some(value => !Number.isFinite(value))) {
+            throw new RangeError('wall mesh geodesic graph is disconnected');
+        }
+        this._geodesicCache.set(sourceVertex, new Float64Array(interior));
+        return interior;
     }
     surfaceAreaMm2() {
         return Number(this.surface_area_mm2) || 0;
@@ -28820,12 +29960,14 @@ class WallMesh {
 //   field < 0  => host rock
 //
 // The base field is the exact union of WallState.bubbles. An inverse radial
-// map then composes the same authored elongation, polar flatten/collapse, and
-// latitude twist used by WallMesh. It does not read or mutate chemistry,
-// crystals, wall cells, or the simulation RNG.
-// IMPORTANT PROMOTION GATE: per-cell wall_depth still has no mass-balanced
-// Cartesian primitive ledger. Until that evolution path exists, this field is
-// a default-off renderer comparison rather than simulation authority.
+// map composes the same authored elongation, polar flatten/collapse, and
+// latitude twist used by WallMesh. The authenticated cavity-evolution ledger
+// is then projected as a continuous radial offset over theta seams and pole
+// caps. It does not mutate chemistry, crystals, wall cells, or simulation RNG.
+// IMPORTANT PROMOTION GATE: that projection is deliberately star-shaped; it
+// cannot encode undercuts or multiple wall crossings on one ray. The field
+// remains a default-off renderer comparison until 3-D clipping, anchors,
+// materials, ambiguity handling, and performance share the same authority.
 class CavityScalarField {
     constructor(opts) {
         const sizeX = Number(opts && opts.sizeX);
@@ -28863,6 +30005,12 @@ class CavityScalarField {
             ? opts.sourceBubbles.map((b) => b.slice())
             : [];
         this.sourceShape = CavityScalarField._validatedShape(opts.sourceShape || {});
+        this.sourceEvolution = opts.sourceEvolution ? {
+            ring_count: Number(opts.sourceEvolution.ring_count),
+            cells_per_ring: Number(opts.sourceEvolution.cells_per_ring),
+            depths_mm: new Float64Array(opts.sourceEvolution.depths_mm),
+            signature: String(opts.sourceEvolution.signature || ''),
+        } : null;
         this.bounds = {
             min: [origin[0], origin[1], origin[2]],
             max: [
@@ -29047,6 +30195,75 @@ class CavityScalarField {
         // the same exact zero set and sign convention.
         return CavityScalarField.bubbleUnionValue(bubbles, sourceX, sourceY, sourceZ);
     }
+    static _evolutionWorldOffset(shape, evolution, x, y, z) {
+        if (!evolution)
+            return 0;
+        const R = evolution.ring_count;
+        const N = evolution.cells_per_ring;
+        const depths = evolution.depths_mm;
+        if (!Number.isInteger(R) || !Number.isInteger(N) || R < 1 || N < 3
+            || !depths || depths.length !== R * N) {
+            throw new RangeError('cavity evolution interpolation grid is malformed');
+        }
+        const radius = Math.hypot(x, y, z);
+        if (radius <= Number.EPSILON)
+            return 0;
+        const phi = Math.acos(Math.max(-1, Math.min(1, -y / radius)));
+        const worldTheta = Math.atan2(z, x);
+        const sourceTheta = worldTheta - _cavityTwistRadians(shape, phi);
+        const wrapped = ((sourceTheta / (2 * Math.PI)) % 1 + 1) % 1;
+        const cellFloat = wrapped * N;
+        const c0 = Math.floor(cellFloat) % N;
+        const c1 = (c0 + 1) % N;
+        const tc = cellFloat - Math.floor(cellFloat);
+        const ringDepth = (ring) => {
+            const a = depths[ring * N + c0];
+            const b = depths[ring * N + c1];
+            return a + (b - a) * tc;
+        };
+        const meanRingDepth = (ring) => {
+            let sum = 0;
+            for (let c = 0; c < N; c++)
+                sum += depths[ring * N + c];
+            return sum / N;
+        };
+        const ringFloat = phi * R / Math.PI - 0.5;
+        let rawDepth = 0;
+        if (ringFloat <= 0) {
+            const t = Math.max(0, ringFloat + 0.5) * 2;
+            const pole = meanRingDepth(0);
+            rawDepth = pole + (ringDepth(0) - pole) * t;
+        }
+        else if (ringFloat >= R - 1) {
+            const t = Math.max(0, Math.min(1, (ringFloat - (R - 1)) * 2));
+            const edge = ringDepth(R - 1);
+            rawDepth = edge + (meanRingDepth(R - 1) - edge) * t;
+        }
+        else {
+            const r0 = Math.floor(ringFloat);
+            const r1 = Math.min(R - 1, r0 + 1);
+            const tr = ringFloat - r0;
+            rawDepth = ringDepth(r0) + (ringDepth(r1) - ringDepth(r0)) * tr;
+        }
+        const polar = _cavityPolarProfileFactor(shape, phi);
+        const offset = rawDepth * polar;
+        if (!(offset >= 0) || !Number.isFinite(offset)) {
+            throw new RangeError('cavity evolution produced an invalid radial offset');
+        }
+        return offset;
+    }
+    static _evolvedShapeValueValidated(bubbles, shape, evolution, x, y, z) {
+        if (!evolution)
+            return CavityScalarField._authoredShapeValueValidated(bubbles, shape, x, y, z);
+        const radius = Math.hypot(x, y, z);
+        if (radius <= Number.EPSILON) {
+            return CavityScalarField._authoredShapeValueValidated(bubbles, shape, x, y, z);
+        }
+        const offset = CavityScalarField._evolutionWorldOffset(shape, evolution, x, y, z);
+        const sourceRadius = Math.max(0, radius - offset);
+        const scale = sourceRadius / radius;
+        return CavityScalarField._authoredShapeValueValidated(bubbles, shape, x * scale, y * scale, z * scale);
+    }
     static _sourceHash(bubbles) {
         let hashA = 0x811c9dc5;
         let hashB = 0x9e3779b9;
@@ -29063,18 +30280,24 @@ class CavityScalarField {
         }
         return `${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
     }
-    static signatureFor(wall, resolution = 48) {
+    static signatureFor(wall, resolution = 48, ledgerCursor) {
         const bubbles = CavityScalarField._validatedBubbles(wall && wall.bubbles);
         const shape = CavityScalarField.shapeFor(wall);
         const n = CavityScalarField._resolution(resolution);
-        // Only hash inputs that v2 actually samples. wall._geometry_revision also
-        // changes for per-cell wall_depth, which this authored base-shape field
-        // explicitly does not represent; including it would trigger expensive
-        // byte-identical rebuilds during dissolution.
+        // Hash the immutable authored shape and the authenticated ledger prefix.
+        // The chain signature already commits to every sampled wall-depth delta,
+        // so a second mutable geometry-revision key would be redundant.
         const shapeHash = CavityScalarField._sourceHash([
             CavityScalarField._shapeNumbers(shape),
         ]);
-        return `cavity-field:v2|${n}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${shapeHash}`;
+        const ledger = wall && wall.cavityEvolutionLedger ? wall.cavityEvolutionLedger() : null;
+        let evolutionIdentity = 'none';
+        if (ledger) {
+            const cursor = ledgerCursor == null ? ledger.cursor : Number(ledgerCursor);
+            ledger.assertProjection(wall, cursor);
+            evolutionIdentity = ledger.signatureAt(cursor);
+        }
+        return `cavity-field:v3|${n}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${shapeHash}|e:${evolutionIdentity}`;
     }
     static fromWallState(wall, opts = {}) {
         if (!wall)
@@ -29082,13 +30305,27 @@ class CavityScalarField {
         const resolution = CavityScalarField._resolution(opts.resolution);
         const bubbles = CavityScalarField._validatedBubbles(wall.bubbles);
         const shape = CavityScalarField.shapeFor(wall);
-        const sig = CavityScalarField.signatureFor(wall, resolution);
-        return CavityScalarField.fromBubbles(bubbles, { resolution, sig, shape });
+        const ledger = wall.cavityEvolutionLedger ? wall.cavityEvolutionLedger() : null;
+        const cursor = ledger
+            ? (opts.ledgerCursor == null ? ledger.cursor : Number(opts.ledgerCursor)) : null;
+        let evolution = null;
+        if (ledger) {
+            ledger.assertProjection(wall, cursor);
+            evolution = {
+                ring_count: wall.ring_count,
+                cells_per_ring: wall.cells_per_ring,
+                depths_mm: ledger.materialize(cursor),
+                signature: ledger.signatureAt(cursor),
+            };
+        }
+        const sig = CavityScalarField.signatureFor(wall, resolution, cursor);
+        return CavityScalarField.fromBubbles(bubbles, { resolution, sig, shape, evolution });
     }
     static fromBubbles(input, opts = {}) {
         const started = CavityScalarField._nowMs();
         const bubbles = CavityScalarField._validatedBubbles(input);
         const shape = CavityScalarField._validatedShape(opts.shape || {});
+        const evolution = opts.evolution || null;
         const resolution = CavityScalarField._resolution(opts.resolution);
         const rawMin = [Infinity, Infinity, Infinity];
         const rawMax = [-Infinity, -Infinity, -Infinity];
@@ -29115,6 +30352,13 @@ class CavityScalarField {
             const deformedRadius = maxSourceRadius * CavityScalarField._maxRadialScale(shape);
             fieldMin = [-deformedRadius, -deformedRadius, -deformedRadius];
             fieldMax = [deformedRadius, deformedRadius, deformedRadius];
+        }
+        if (evolution) {
+            const maxDepth = Number(Array.from(evolution.depths_mm || [])
+                .reduce((maximum, value) => Math.max(maximum, Number(value) || 0), 0));
+            const paddingDepth = maxDepth * CavityScalarField._maxRadialScale(shape);
+            fieldMin = fieldMin.map(value => value - paddingDepth);
+            fieldMax = fieldMax.map(value => value + paddingDepth);
         }
         const extent = [
             fieldMax[0] - fieldMin[0],
@@ -29149,7 +30393,7 @@ class CavityScalarField {
                 const wy = origin[1] + y * spacingMm;
                 for (let x = 0; x < resolution; x++) {
                     const wx = origin[0] + x * spacingMm;
-                    const value = CavityScalarField._authoredShapeValueValidated(bubbles, shape, wx, wy, wz);
+                    const value = CavityScalarField._evolvedShapeValueValidated(bubbles, shape, evolution, wx, wy, wz);
                     if (!Number.isFinite(value)) {
                         throw new TypeError(`non-finite cavity field sample at (${x}, ${y}, ${z})`);
                     }
@@ -29166,7 +30410,8 @@ class CavityScalarField {
             values,
             sourceBubbles: bubbles,
             sourceShape: shape,
-            sig: opts.sig || `cavity-field:v2|${resolution}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${CavityScalarField._sourceHash([CavityScalarField._shapeNumbers(shape)])}`,
+            sourceEvolution: evolution,
+            sig: opts.sig || `cavity-field:v3|${resolution}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${CavityScalarField._sourceHash([CavityScalarField._shapeNumbers(shape)])}|e:${evolution ? evolution.signature : 'none'}`,
         });
         field.metrics.field_build_ms = CavityScalarField._nowMs() - started;
         if (!field.hasNegativeBorder(0)) {
@@ -29196,7 +30441,7 @@ class CavityScalarField {
     sampleAnalyticWorld(x, y, z) {
         if (!this.sourceBubbles.length)
             return this.sampleWorld(x, y, z);
-        return CavityScalarField._authoredShapeValueValidated(this.sourceBubbles, this.sourceShape, x, y, z);
+        return CavityScalarField._evolvedShapeValueValidated(this.sourceBubbles, this.sourceShape, this.sourceEvolution, x, y, z);
     }
     sampleWorld(x, y, z) {
         if (![x, y, z].every(Number.isFinite)) {
@@ -29208,7 +30453,7 @@ class CavityScalarField {
         if (gx < 0 || gy < 0 || gz < 0
             || gx > this.sizeX - 1 || gy > this.sizeY - 1 || gz > this.sizeZ - 1) {
             if (this.sourceBubbles.length) {
-                return CavityScalarField._authoredShapeValueValidated(this.sourceBubbles, this.sourceShape, x, y, z);
+                return CavityScalarField._evolvedShapeValueValidated(this.sourceBubbles, this.sourceShape, this.sourceEvolution, x, y, z);
             }
             return -Infinity;
         }
@@ -59907,12 +61152,15 @@ function event_supergene_dry_spell(c) {
     // three oxidation zones. This pulse represents dissolution/reconcentration
     // of Ca-bearing dolomite plus sulfate liberated by sulfide oxidation; the
     // larger inventory crosses the gypsum SI gate rather than only approaching it.
-    c.fluid.Ca += 300;
+    // A 350 mmol/kg recharge clears the same live CaSO4 activity evaluator used
+    // by nucleation with a modest margin after exact wall-release accounting.
+    // This is an authored 1 kg-solvent-reference recharge, not cavity volume.
+    c.fluid.Ca += 350;
     if (typeof addSulfurToPool === 'function') {
-        addSulfurToPool(c.fluid, 'sulfate', 300, c.temperature);
+        addSulfurToPool(c.fluid, 'sulfate', 350, c.temperature);
     }
     else {
-        c.fluid.S += 300;
+        c.fluid.S += 350;
     }
     c.fluid.O2 = 1.5;
     c.temperature = 50;
@@ -63543,6 +64791,12 @@ class VugSimulator {
         // 85c-simulator-state.ts:152-168). cells[i] is the same WallCell
         // object as wall.rings[r][c], so legacy ring reads see the binding.
         const _initialMesh = this.wall_state.meshFor(this);
+        if (_initialMesh && _initialMesh.closedVolumeMm3) {
+            const initialCapacity = _initialMesh.closedVolumeMm3();
+            this.wall_state.initializeCavityEvolutionLedger();
+            const equivalentDiameter = this.conditions.wall.initializeCavityCapacity(initialCapacity, 'canonical_closed_wallmesh');
+            this.wall_state.updateCapacity(initialCapacity, equivalentDiameter);
+        }
         if (_initialMesh && _initialMesh.bindRingChemistry) {
             _initialMesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
         }
@@ -63649,6 +64903,49 @@ class VugSimulator {
         // against this and applies the override to whatever rings are
         // currently vadose.
         this._prevFluidSurfaceRing = null;
+    }
+    canReauthorInitialHostGeometry() {
+        const ledger = this.wall_state?.cavityEvolutionLedger?.();
+        return this.step === 0
+            && this.crystals.length === 0
+            && (!ledger || ledger.cursor === 0)
+            && this.conditions.wall.total_dissolved_mm === 0
+            && this.conditions.wall.host_release_ledger.length === 0;
+    }
+    reauthorInitialCavityEquivalentDiameterMm(value) {
+        if (!this.canReauthorInitialHostGeometry())
+            return false;
+        const wall = this.conditions.wall;
+        const wallState = this.wall_state;
+        const receipt = wallState.reauthorInitialEquivalentDiameterMm(value, this);
+        const exactDiameter = wall.initializeCavityCapacity(receipt.exact_capacity_volume_mm3, 'canonical_closed_wallmesh');
+        wall.authored_vug_diameter_mm = Number(value);
+        wallState.updateCapacity(receipt.exact_capacity_volume_mm3, exactDiameter);
+        const mesh = wallState.meshFor(this);
+        if (mesh?.bindRingChemistry)
+            mesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
+        wallState.voxelGridFor(this);
+        this.wall_state_history = [];
+        this._creativeInitialAuthoringTransactions ||= [];
+        this._creativeInitialAuthoringTransactions.push(receipt);
+        return true;
+    }
+    reauthorInitialHostThicknessMm(value) {
+        if (!this.canReauthorInitialHostGeometry())
+            return false;
+        const receipt = this.conditions.wall.reauthorInitialThicknessMm(value);
+        this._creativeInitialAuthoringTransactions ||= [];
+        this._creativeInitialAuthoringTransactions.push(receipt);
+        return true;
+    }
+    reauthorInitialHostComposition(value) {
+        if (!this.canReauthorInitialHostGeometry())
+            return false;
+        const receipt = this.conditions.wall.reauthorInitialComposition(value);
+        this.wall_state.composition = receipt.composition;
+        this._creativeInitialAuthoringTransactions ||= [];
+        this._creativeInitialAuthoringTransactions.push(receipt);
+        return true;
     }
     run_step() {
         this.log = [];
@@ -64509,7 +65806,7 @@ class VugSimulator {
         let vug_growth = '';
         if (this.conditions.wall.total_dissolved_mm > 0) {
             const w = this.conditions.wall;
-            vug_growth = ` The cavity itself expanded from ${(w.vug_diameter_mm - w.total_dissolved_mm * 2).toFixed(0)}mm to ${w.vug_diameter_mm.toFixed(0)}mm diameter as acid pulses dissolved ${w.total_dissolved_mm.toFixed(1)}mm of the ${w.composition} host rock.`;
+            vug_growth = ` The cavity's equivalent-volume diameter changed from ${w.initial_vug_diameter_mm.toFixed(2)}mm to ${w.vug_diameter_mm.toFixed(2)}mm as acid pulses removed ${w.host_volume_removed_mm3_per_kg.toFixed(2)}mm³ of ${w.composition} per 1kg solvent reference (standard-state crystalline-volume approximation).`;
         }
         const yearsPerStep = timeScale * 10000;
         const totalYears = this.step * yearsPerStep;
@@ -68024,7 +69321,7 @@ Object.assign(VugSimulator.prototype, {
     _repaintWallState() {
         // Rebuild ring-0 occupancy from the crystal list. Cheap (~120 × ~20)
         // and keeps per-cell thickness consistent with dissolution / enclosure.
-        this.wall_state.updateDiameter(this.conditions.wall.vug_diameter_mm);
+        this.wall_state.updateCapacity(this.conditions.wall.cavity_capacity_volume_mm3, this.conditions.wall.vug_diameter_mm);
         this.wall_state.clear();
         // Paint smallest-first so biggest crystals win overlaps — that's
         // what a viewer would see from outside the vug.
@@ -68109,6 +69406,12 @@ Object.assign(VugSimulator.prototype, {
         const cnd = this.conditions;
         const snap = {
             step: this.step,
+            cavity_evolution_cursor: this.wall_state.cavityEvolutionLedger
+                && this.wall_state.cavityEvolutionLedger()
+                ? this.wall_state.cavityEvolutionLedger().cursor : null,
+            cavity_evolution_signature: this.wall_state.cavityEvolutionLedger
+                && this.wall_state.cavityEvolutionLedger()
+                ? this.wall_state.cavityEvolutionLedger().signature : null,
             rings: new Array(ringCount),
             conditions: {
                 temperature: cnd.temperature,
@@ -68117,6 +69420,7 @@ Object.assign(VugSimulator.prototype, {
                 flow_rate: cnd.flow_rate,
                 vug_diameter_mm: cnd.wall.vug_diameter_mm,
                 total_dissolved_mm: cnd.wall.total_dissolved_mm,
+                cavity_capacity_volume_mm3: cnd.wall.cavity_capacity_volume_mm3,
                 fluid_surface_ring: cnd.fluid_surface_ring,
                 // Full fluid clone — fortress-status reads f.Cu / f.Fe / etc.
                 // for the per-mineral "needs" hints, and the brief explicitly
@@ -68183,37 +69487,105 @@ Object.assign(VugSimulator.prototype, {
         }
         this.wall_state_history.push(snap);
     },
-    _wallCellsBlockedByCrystals() {
-        // Which ring-0 cells are shielded from wall dissolution. A cell
-        // blocks when it holds a non-dissolved crystal whose mineral is
-        // stable at the current pH — either permanently acid-stable
-        // (acid_dissolution == null, e.g. uraninite/molybdenite) or the
-        // current pH is above its threshold.
-        const ph = this.conditions.fluid.pH;
-        const byId = new Map(this.crystals.map(c => [c.crystal_id, c]));
-        const blocked = new Set();
-        const ring0 = this.wall_state.rings[0];
-        for (let i = 0; i < ring0.length; i++) {
-            const cell = ring0[i];
-            if (cell.crystal_id == null)
-                continue;
-            const crystal = byId.get(cell.crystal_id);
+    _wallSurfaceAttackState() {
+        const wall = this.conditions.wall;
+        const mesh = this.wall_state.meshFor(this);
+        if (!mesh || !(mesh.numInterior > 0))
+            throw new Error('wall attack requires the canonical WallMesh');
+        const areas = mesh.cellSurfaceAreasMm2();
+        const coverage = new Float64Array(mesh.numInterior);
+        const pHValues = new Float64Array(mesh.numInterior);
+        for (let i = 0; i < mesh.numInterior; i++) {
+            const local = mesh.cells[i] && mesh.cells[i].fluid;
+            pHValues[i] = Number.isFinite(local && local.pH)
+                ? Number(local.pH) : Number(this.conditions.fluid.pH);
+        }
+        // Fractional union of every acid-resistant footprint. Unlike the paint
+        // buffer, this does not discard overlapping or smaller crystals. Distances
+        // are shortest paths over the live triangle mesh, and stability reads the
+        // target cell's pre-attack local pH.
+        for (const crystal of this.crystals) {
             if (!crystal || crystal.dissolved)
                 continue;
-            const acid = MINERAL_SPEC[crystal.mineral]?.acid_dissolution;
-            if (acid == null) {
-                blocked.add(i);
+            const anchor = this.wall_state._resolveAnchor(crystal);
+            if (!anchor)
                 continue;
+            const source = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+            if (source < 0 || source >= mesh.numInterior)
+                continue;
+            const distances = mesh.geodesicDistancesFrom(source);
+            const footprintRadiusMm = Math.max(0, this.wall_state.footprintArcMm(crystal) / 2);
+            const acid = MINERAL_SPEC[crystal.mineral]?.acid_dissolution;
+            for (let i = 0; i < mesh.numInterior; i++) {
+                const threshold = acid && acid.pH_threshold;
+                const resistant = acid == null || threshold == null || pHValues[i] >= threshold;
+                if (!resistant)
+                    continue;
+                const cellRadius = Math.max(1e-9, Math.sqrt(Math.max(0, areas[i]) / Math.PI));
+                const fraction = i === source ? 1 : Math.max(0, Math.min(1, (footprintRadiusMm + cellRadius - distances[i]) / (2 * cellRadius)));
+                if (fraction > 0)
+                    coverage[i] = 1 - (1 - coverage[i]) * (1 - fraction);
             }
-            const threshold = acid.pH_threshold;
-            if (threshold == null || ph >= threshold)
-                blocked.add(i);
         }
-        return blocked;
+        const feederFlux = fluidSpotsDecayEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty
+            ? this._fluidSpots.erosionFluxField(mesh) : null;
+        const vertexWeights = new Float64Array(mesh.numInterior);
+        const blocked = new Set();
+        let totalArea = 0;
+        let exposedArea = 0;
+        let fluxArea = 0;
+        let attemptedWeightedRate = 0;
+        let acceptedWeightedRate = 0;
+        let partialCells = 0;
+        for (let i = 0; i < mesh.numInterior; i++) {
+            const area = areas[i];
+            const exposure = Math.max(0, Math.min(1, 1 - coverage[i]));
+            const flux = feederFlux ? feederFlux[i] : 1;
+            const localAcidStrength = Math.max(0, 5.5 - pHValues[i]);
+            const localRate = wall.dissolutionRateMm(localAcidStrength);
+            vertexWeights[i] = exposure * flux * localRate;
+            totalArea += area;
+            exposedArea += area * exposure;
+            fluxArea += area * flux;
+            attemptedWeightedRate += area * flux * localRate;
+            acceptedWeightedRate += area * flux * localRate * exposure;
+            if (exposure <= 1e-12)
+                blocked.add(i);
+            else if (exposure < 1 - 1e-12)
+                partialCells++;
+        }
+        const attemptedRate = fluxArea > 0 ? attemptedWeightedRate / fluxArea : 0;
+        const acceptedRate = fluxArea > 0 ? acceptedWeightedRate / fluxArea : 0;
+        const digest = CavityEvolutionLedger.digest({
+            areas: Array.from(areas),
+            coverage: Array.from(coverage),
+            pre_attack_pH: Array.from(pHValues),
+            feeder_flux: feederFlux ? Array.from(feederFlux) : null,
+            diffuse_fluid_pathway: true,
+        });
+        return {
+            mesh, areas, coverage, pHValues, feederFlux, vertexWeights, blocked,
+            attemptedRate, acceptedRate,
+            receipt: {
+                digest,
+                total_surface_area_mm2: totalArea,
+                exposed_surface_area_mm2: exposedArea,
+                exposed_area_fraction: totalArea > 0 ? exposedArea / totalArea : 0,
+                fully_blocked_cells: blocked.size,
+                partially_covered_cells: partialCells,
+                total_cells: mesh.numInterior,
+                diffuse_fluid_pathway: true,
+                feeder_model: feederFlux ? 'open-spot geodesic flux halo' : 'none',
+                local_pH_basis: 'pre-attack WallCell fluid, bulk fallback',
+                overlap_model: 'fractional footprint union',
+            },
+        };
+    },
+    _wallCellsBlockedByCrystals() {
+        return this._wallSurfaceAttackState().blocked;
     },
     get_vug_fill() {
-        const vugR = this.conditions.wall.vug_diameter_mm / 2;
-        const vugVol = (4 / 3) * Math.PI * Math.pow(vugR, 3);
+        const vugVol = Number(this.conditions.wall.cavity_capacity_volume_mm3);
         if (vugVol <= 0)
             return 0;
         let crystalVol = 0;
@@ -68679,50 +70051,62 @@ Object.assign(VugSimulator.prototype, {
     },
     dissolve_wall() {
         const wall = this.conditions.wall;
-        // Acid strength = how far below the carbonate-attack threshold pH we
-        // are. Negative when pH ≥ 5.5; clipped to 0 inside wall.dissolve().
-        const acid_strength = Math.max(0.0, 5.5 - this.conditions.fluid.pH);
-        // Skip the call entirely when there's no work to do — neutral fluid
-        // AND default reactivity. Avoids logging noise.
-        if (acid_strength <= 0.0 && wall.reactivity <= 1.0)
+        if (wall.composition !== 'limestone' && wall.composition !== 'dolomite')
             return;
-        const pre_sigma_cal = this.conditions.supersaturation_calcite();
-        const pre_Ca = this.conditions.fluid.Ca;
-        const result = wall.dissolve(acid_strength, this.conditions.fluid);
-        if (result.dissolved) {
-            declareCarbonLedgerAddition(this.conditions, 'wall_release', `${result.formula} host dissolution`, result.co3_released);
-            // W-K V1b (paleo-flow scallops): weight THIS step's flow_rate by how much it eroded, so the
-            // wall's scallop length records the flow it actually dissolved under (Curl 1974, L ∝ 1/v).
-            // Record-only — read via wall.paleoFlow() by the RENDERER, never by the growth engine, so the
-            // sim stays byte-identical.
-            wall.paleo_flow_accum += this.conditions.flow_rate * result.rate_mm;
-            wall.paleo_flow_wt += result.rate_mm;
-            this.wall_state.paleo_flow = wall.paleoFlow(); // push the render-side scalar (Object.assign-copied through the snapshot)
-            // Distribute the erosion per-cell. Cells shielded by acid-resistant
-            // crystals don't budge, concentrating the attack elsewhere — the
-            // vug grows lopsided in whatever direction the deposit left bare.
-            const blocked = this._wallCellsBlockedByCrystals();
-            // Phase 2b — FEEDER-LOCALIZED erosion (PROPOSAL §10). Open fluid-source spots
-            // redistribute the FIXED dissolution budget toward their columns, so the cavity
-            // deepens lopsidedly toward its feeders (cracks/geysers/hotspots) instead of as
-            // an even sphere. Gated by fluidSpotsDecayEnabled() (default on); null weights
-            // (coupling off / no spots / no >1 bonus) → the legacy uniform path, byte-
-            // identical. Mass-conserving → chemistry (Ca/CO3 release) unchanged; pure shape.
-            const _colW = (fluidSpotsDecayEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty)
-                ? this._fluidSpots.columnWeights(this.wall_state.cells_per_ring)
-                : null;
-            this.wall_state.erodeCells(result.rate_mm, blocked, _colW);
-            const post_sigma_cal = this.conditions.supersaturation_calcite();
-            this.log.push(`  🧱 WALL DISSOLUTION: ${result.rate_mm.toFixed(2)} mm of ${wall.composition} dissolved`);
-            if (blocked.size) {
-                this.log.push(`     ${blocked.size} cell${blocked.size === 1 ? '' : 's'} shielded by acid-resistant crystal growth`);
-            }
-            this.log.push(`     pH ${result.ph_before.toFixed(1)} → ${result.ph_after.toFixed(1)} (carbonate buffering)`);
-            this.log.push(`     Released (${result.formula}): Ca²⁺ +${result.ca_released.toFixed(1)} ppm, Mg²⁺ +${result.mg_released.toFixed(1)} ppm, CO₃²⁻ +${result.co3_released.toFixed(1)} ppm, Fe +${result.fe_released.toFixed(1)}, Mn +${result.mn_released.toFixed(1)}`);
-            this.log.push(`     Vug diameter: ${result.vug_diameter.toFixed(1)} mm (+${result.total_dissolved.toFixed(1)} mm total enlargement)`);
-            if (post_sigma_cal > pre_sigma_cal * 1.3 && post_sigma_cal > 1.0) {
-                this.log.push(`     ⚡ SUPERSATURATION SPIKE: σ(Cal) ${pre_sigma_cal.toFixed(2)} → ${post_sigma_cal.toFixed(2)} — rapid calcite growth expected!`);
-            }
+        // Everything below is computed from the pre-attack state. Local cell pH,
+        // fractional overlapping shielding, and feeder flux are frozen into the
+        // exposure receipt before any bulk-fluid buffering occurs.
+        const attack = this._wallSurfaceAttackState();
+        if (!(attack.attemptedRate > 0) || !(attack.acceptedRate > 0))
+            return;
+        const preSigmaCalcite = this.conditions.supersaturation_calcite();
+        const preview = wall.previewDissolve(Math.max(0, 5.5 - this.conditions.fluid.pH), this.conditions.fluid, {
+            attempted_rate_mm: attack.attemptedRate,
+            accepted_rate_mm: attack.acceptedRate,
+            temperature_C: this.conditions.temperature,
+            pressure_kbar: this.conditions.pressure,
+        });
+        if (!preview.dissolved)
+            return;
+        const evolutionLedger = this.wall_state.cavityEvolutionLedger();
+        if (!evolutionLedger)
+            throw new Error('carbonate dissolution requires a cavity evolution ledger');
+        const geometryPlan = evolutionLedger.previewErosion(this.wall_state, attack.mesh, {
+            target_volume_delta_mm3_per_kg: preview.target_volume_delta_mm3_per_kg,
+            vertex_weights: attack.vertexWeights,
+        });
+        const result = wall.commitDissolvePreview(preview, this.conditions.fluid, {
+            wall_state: this.wall_state,
+            geometry_plan: geometryPlan,
+            exposure_receipt: attack.receipt,
+            step: this.step,
+        });
+        declareCarbonLedgerAddition(this.conditions, 'wall_release', result.formula + ' host dissolution', result.co3_released);
+        wall.paleo_flow_accum += this.conditions.flow_rate * result.rate_mm;
+        wall.paleo_flow_wt += result.rate_mm;
+        this.wall_state.paleo_flow = wall.paleoFlow();
+        const postSigmaCalcite = this.conditions.supersaturation_calcite();
+        this.log.push('  WALL DISSOLUTION: ' + result.rate_mm.toFixed(3)
+            + ' mm calibrated reaction-path depth of ' + wall.composition);
+        if (attack.blocked.size || attack.receipt.partially_covered_cells) {
+            this.log.push('     Shielding: ' + attack.blocked.size + ' fully blocked, '
+                + attack.receipt.partially_covered_cells + ' partly covered of '
+                + attack.receipt.total_cells + ' wall cells');
+        }
+        this.log.push('     pH ' + result.ph_before.toFixed(1) + ' -> '
+            + result.ph_after.toFixed(1) + ' (empirical carbonate buffering)');
+        this.log.push('     Released (' + result.formula + '): Ca2+ +'
+            + result.ca_released.toFixed(1) + ' ppm, Mg2+ +' + result.mg_released.toFixed(1)
+            + ' ppm, CO3(2-) +' + result.co3_released.toFixed(1) + ' ppm, Fe +'
+            + result.fe_released.toFixed(1) + ', Mn +' + result.mn_released.toFixed(1));
+        this.log.push('     Cavity capacity +' + result.achieved_volume_delta_mm3_per_kg.toFixed(3)
+            + ' mm3 per 1 kg solvent reference (target '
+            + result.target_volume_delta_mm3_per_kg.toFixed(3) + ', residual '
+            + result.volume_residual_mm3_per_kg.toExponential(2) + '); equivalent diameter '
+            + result.vug_diameter.toFixed(3) + ' mm');
+        if (postSigmaCalcite > preSigmaCalcite * 1.3 && postSigmaCalcite > 1) {
+            this.log.push('     SUPERSATURATION SPIKE: calcite sigma '
+                + preSigmaCalcite.toFixed(2) + ' -> ' + postSigmaCalcite.toFixed(2));
         }
     },
     ambient_cooling(rate = null) {
@@ -68922,7 +70306,7 @@ Object.assign(VugSimulator.prototype, {
         const sigma_c = c.supersaturation_calcite();
         let wall_info = '';
         if (c.wall.total_dissolved_mm > 0) {
-            wall_info = ` │ Vug: ${c.wall.vug_diameter_mm.toFixed(0)}mm (+${c.wall.total_dissolved_mm.toFixed(1)})`;
+            wall_info = ` │ Vug equivalent D: ${c.wall.vug_diameter_mm.toFixed(2)}mm (ΔV ${c.wall.host_volume_removed_mm3_per_kg.toFixed(2)}mm³/kg)`;
         }
         return `═══ Step ${String(this.step).padStart(3)} │ T=${this.conditions.temperature.toFixed(1).padStart(6)}°C │ P=${c.pressure.toFixed(2)} kbar │ pH=${c.fluid.pH.toFixed(1)} │ σ(Qz)=${sigma_q.toFixed(2)} σ(Cal)=${sigma_c.toFixed(2)}${wall_info} │ Fluid: ${c.fluid.describe()}`;
     },
@@ -68938,13 +70322,15 @@ Object.assign(VugSimulator.prototype, {
         // Vug wall stats if dissolution occurred
         const w = this.conditions.wall;
         if (w.total_dissolved_mm > 0) {
-            const orig_diam = w.vug_diameter_mm - w.total_dissolved_mm * 2;
+            const orig_diam = w.initial_vug_diameter_mm;
             lines.push('');
             lines.push('VUG CAVITY');
             lines.push(`  Host rock: ${w.composition}`);
             lines.push(`  Original diameter: ${orig_diam.toFixed(0)} mm`);
             lines.push(`  Final diameter: ${w.vug_diameter_mm.toFixed(0)} mm`);
-            lines.push(`  Total wall dissolved: ${w.total_dissolved_mm.toFixed(1)} mm`);
+            lines.push(`  Capacity gained: ${w.host_volume_removed_mm3_per_kg.toFixed(3)} mm³ per 1 kg solvent reference`);
+            lines.push(`  Calibrated reaction-path depth: ${w.total_dissolved_mm.toFixed(3)} mm`);
+            lines.push('  Volume uses standard-state crystalline calcite/dolomite; it is not a sealed-cavity fluid-mass claim.');
             lines.push('  The acid made the room. The room grew the crystals.');
         }
         for (const c of this.crystals) {
@@ -72030,7 +73416,8 @@ function _createMovementController(sim) {
 // PHASE 2 PLAN (each sub-step its own sim-affecting change + verify pass):
 //   2a (THIS) — seed the spot set off the cavity seed; DARK (nothing reads it
 //               yet → SIM-NEUTRAL, seed-42 byte-identical, NO SIM_VERSION bump).
-//   2b        — wall-decay bonus: open-spot cells erode faster (erodeCells) →
+//   2b        — wall-decay bonus: open spots bias the full-surface geodesic
+//               erosion-flux field →
 //               lopsided cavity deepening. First coupling; baseline regen.
 //   2c        — origin:'cell' movements ride OPEN spots (supersede the naive
 //               _pickOriginCell pick) + local deposition/nucleation bias.
@@ -72046,7 +73433,7 @@ function _createMovementController(sim) {
 // (0x4d4f5645) so the spot draws are independent of every other sub-stream.
 const _SPOTS_SALT = 0x53504f54;
 // Phase 2b coupling gate. When ON (default — the shipped feature), open-spot
-// cells erode preferentially in dissolve_wall/erodeCells → lopsided cavity
+// cells erode preferentially in the atomic cavity-evolution transaction → lopsided cavity
 // deepening toward feeders. The OBSERVER toggles this OFF to recover the
 // no-spot baseline for an A/B look; tests use it for the neutral/active
 // positive control. Mirrors the EH_DYNAMIC_ENABLED pattern (20c). The exported
@@ -72209,6 +73596,8 @@ class FluidSpotField {
             this._byCell.set(s.cell, s);
         this._proxCache = null;
         this._proxSig = '';
+        this._erosionFluxCache = null;
+        this._erosionFluxSig = '';
     }
     get isEmpty() { return this.spots.length === 0; }
     // The open spots — the live fluid sources this step (Phase 2c/2d). All seeded
@@ -72227,39 +73616,49 @@ class FluidSpotField {
         const s = this._byCell.get(cell);
         return (s && s.open) ? s.supply : 1.0;
     }
-    // Phase 2b — per-COLUMN erosion weights for erodeCells, which operates on the
-    // equatorial ring (ring0) per slice/column. A spot's mesh cell index maps to a
-    // column via (cell % cellsPerRing); the column's weight is the MAX decayBonus
-    // among OPEN spots on it (>1 = erode faster there). Returns a length-cellsPerRing
-    // array of multipliers (1.0 where no open spot). erodeCells redistributes the
-    // FIXED dissolution budget by these weights → lopsided deepening toward feeders,
-    // mass-conserving (the Ca/CO3 release is computed upstream, so this is purely
-    // geometric). Returns null when there's nothing to bias (caller stays on the
-    // uniform path → byte-identical).
-    columnWeights(cellsPerRing) {
-        const N = cellsPerRing | 0;
-        if (N <= 0 || this.isEmpty)
+    // Mass-balanced cavity evolution uses a full-surface, physical-distance
+    // feeder field. The baseline value 1 is an explicitly diffuse bulk-fluid
+    // pathway; open feeders add their decayBonus halo along shortest paths on
+    // the actual triangle mesh. No open feeder returns null so the caller uses
+    // the diffuse pathway alone. This is the sole feeder authority for dissolution.
+    erosionFluxField(mesh) {
+        if (!mesh || !(mesh.numInterior > 0) || this.isEmpty)
             return null;
-        let any = false;
-        const w = new Array(N).fill(1.0);
-        for (const s of this.spots) {
-            if (!s.open || !(s.decayBonus > 1))
-                continue;
-            const col = ((s.cell % N) + N) % N;
-            if (s.decayBonus > w[col]) {
-                w[col] = s.decayBonus;
-                any = true;
+        const feeders = this.spots.filter(s => s.open && s.decayBonus > 1
+            && Number.isInteger(s.cell) && s.cell >= 0 && s.cell < mesh.numInterior);
+        if (!feeders.length)
+            return null;
+        const openIdentity = feeders.map(s => [s.cell, s.decayBonus]);
+        const sig = String(mesh.sig || 'mesh') + '|erosion|' + JSON.stringify(openIdentity);
+        if (this._erosionFluxCache && this._erosionFluxSig === sig) {
+            return new Float64Array(this._erosionFluxCache);
+        }
+        const areas = mesh.cellSurfaceAreasMm2();
+        const meanCellScaleMm = Math.sqrt(Math.max(1e-12, Number(mesh.surface_area_mm2) || 0) / Math.max(1, mesh.numInterior));
+        const lambdaMm = Math.max(meanCellScaleMm * 2.5, 1e-9);
+        const out = new Float64Array(mesh.numInterior);
+        out.fill(1);
+        for (const feeder of feeders) {
+            const distances = mesh.geodesicDistancesFrom(feeder.cell);
+            for (let i = 0; i < out.length; i++) {
+                if (!(areas[i] > 0))
+                    continue;
+                const value = 1 + (feeder.decayBonus - 1) * Math.exp(-distances[i] / lambdaMm);
+                if (value > out[i])
+                    out[i] = value;
             }
         }
-        return any ? w : null;
+        this._erosionFluxCache = new Float64Array(out);
+        this._erosionFluxSig = sig;
+        return out;
     }
-    // Phase 2c.2 — per-COLUMN DEPOSITION weights, the placement analog of
-    // columnWeights. Weight = MAX supply among OPEN spots on the column (>1).
+    // Phase 2c.2 — historic per-COLUMN DEPOSITION weights. Weight = MAX supply
+    // among OPEN spots on the column (>1).
     // Crucially uses `supply` NOT decayBonus: a 'crack' (supply 1.0) deepens its
     // column (2b) without seeding crystals; geysers/hotspots are vent precipitators.
     // SUPERSEDED for placement by proximityField (2c.2b) — the column-only bias
     // didn't visibly cluster (see the deposition-flag comment). Kept as the sibling
-    // query to columnWeights. Returns a length-cellsPerRing array or null.
+    // compatibility query. Returns a length-cellsPerRing array or null.
     columnSupplyWeights(cellsPerRing) {
         const N = cellsPerRing | 0;
         if (N <= 0 || this.isEmpty)
@@ -72321,15 +73720,15 @@ class FluidSpotField {
     }
     // Phase 2d — open/close spots over a vug's life, driven by events (a fracture
     // seals → its feeder shuts; tectonic uplift / aquifer recharge breaches a vent
-    // back open). Because every coupling (2b erosion columnWeights, 2c.1 origin
+    // back open). Because every coupling (2b erosionFluxField, 2c.1 origin
     // openSpots, 2c.2b proximityField) filters on `s.open`, flipping the flag
     // propagates everywhere for free — the couplings re-read it live. `pred`
     // selects which spots: undefined = all, a kind string ('crack'), or a
     // predicate fn. Returns the spots actually toggled (for the event log).
     // CACHE NOTE: proximityField memoizes by (N,R,K,λ) and does NOT key on the
     // open-set, so a toggle MUST invalidate it or a sealed feeder would keep
-    // clustering from the stale cache. _byCell/openSpots/columnWeights read `open`
-    // live, so only the proximity memo needs busting.
+    // clustering from the stale cache. _byCell/openSpots read `open` live; the
+    // proximity and erosion-flux memos are both invalidated explicitly.
     _matchSpots(pred, wantOpen) {
         return this.spots.filter(s => s.open === wantOpen && (pred == null ? true :
             typeof pred === 'string' ? s.kind === pred :
@@ -72339,16 +73738,20 @@ class FluidSpotField {
         const hit = this._matchSpots(pred, true);
         for (const s of hit)
             s.open = false;
-        if (hit.length)
-            this._proxCache = null; // bust the clustering memo
+        if (hit.length) {
+            this._proxCache = null;
+            this._erosionFluxCache = null;
+        }
         return hit;
     }
     breachSpots(pred) {
         const hit = this._matchSpots(pred, false);
         for (const s of hit)
             s.open = true;
-        if (hit.length)
+        if (hit.length) {
             this._proxCache = null;
+            this._erosionFluxCache = null;
+        }
         return hit;
     }
 }
@@ -72580,7 +73983,9 @@ function simulationStateProjection(runtimeOrSim, rngStateOverride) {
         wallRockThermalBufferC: _simulationJsonClone(sim?.conditions?._scenario?.wall_rock_thermal_buffer_C ?? null),
         wallBoundary: _simulationCanonicalProjection(sim?.conditions?.wall || null),
         ringFluids: (sim?.ring_fluids || []).map(_simulationFluidProjection),
-        wallCellRadii: (sim?.wall_state?.cells || []).map((cell) => Number(cell.radius_mm) || 0),
+        wallCellDepthsMm: (sim?.wall_state?.rings || []).flatMap((ring) => (ring || []).map((cell) => Number(cell?.wall_depth) || 0)),
+        cavityEvolution: sim?.wall_state?.cavityEvolutionLedger?.()
+            ? _simulationCanonicalProjection(sim.wall_state.cavityEvolutionLedger().toJSON()) : null,
         crystals: (sim?.crystals || []).map(_simulationCrystalProjection),
         carbonateBoundary: sim?._carbonateBoundaryState
             ? _simulationJsonClone(sim._carbonateBoundaryState) : null,
@@ -84631,7 +86036,7 @@ function updateFortressStatus() {
     const vugContainer = document.getElementById('f-stat-vug-container');
     if (c.wall.total_dissolved_mm > 0) {
         vugContainer.style.display = '';
-        document.getElementById('f-stat-vug').textContent = `${c.wall.vug_diameter_mm.toFixed(0)}mm (+${c.wall.total_dissolved_mm.toFixed(1)})`;
+        document.getElementById('f-stat-vug').textContent = `${c.wall.vug_diameter_mm.toFixed(2)}mm eq. D (ΔV ${c.wall.host_volume_removed_mm3_per_kg.toFixed(2)}mm³/kg)`;
     }
     else {
         vugContainer.style.display = 'none';
@@ -85049,10 +86454,7 @@ const BROTH_MAP = {
     diameter: {
         path: 'wall.vug_diameter_mm',
         get: () => fortressSim.conditions.wall.vug_diameter_mm,
-        set: v => {
-            fortressSim.conditions.wall.vug_diameter_mm = Math.max(1, v);
-            fortressSim.wall_state.updateDiameter(fortressSim.conditions.wall.vug_diameter_mm);
-        },
+        set: v => fortressSim.reauthorInitialCavityEquivalentDiameterMm(Math.max(1, v)),
         fmt: v => v.toFixed(0) + ' mm',
         parse: v => parseFloat(v),
         toSlider: v => v,
@@ -85060,7 +86462,7 @@ const BROTH_MAP = {
     thickness: {
         path: 'wall.thickness_mm',
         get: () => fortressSim.conditions.wall.thickness_mm,
-        set: v => { fortressSim.conditions.wall.thickness_mm = Math.max(0, v); },
+        set: v => fortressSim.reauthorInitialHostThicknessMm(Math.max(0, v)),
         fmt: v => v.toFixed(0) + ' mm',
         parse: v => parseFloat(v),
         toSlider: v => v,
@@ -85176,14 +86578,7 @@ const BROTH_MAP = {
     host: {
         path: 'wall.composition',
         get: () => fortressSim.conditions.wall.composition,
-        set: v => {
-            fortressSim.conditions.wall.composition = v;
-            // WallState is the renderer/mesh mirror of the same physical host.
-            // Keep it synchronized so the display does not claim the old lithology
-            // after a live Creative-mode host change.
-            if (fortressSim.wall_state)
-                fortressSim.wall_state.composition = v;
-        },
+        set: v => fortressSim.reauthorInitialHostComposition(v),
         fmt: v => String(v),
         parse: v => String(v),
         toSlider: v => String(v),
@@ -85523,9 +86918,15 @@ function syncBrothSliders() {
             // Browsers may visually clamp a value outside an HTML range. This echo is
             // never fed back to physics unless the player emits an input event.
             slider.value = String(sliderVal);
-            slider.disabled = key === 'ph' && !!fortressSim._carbonateBoundaryState;
+            const initialHostLocked = (key === 'diameter' || key === 'thickness' || key === 'host')
+                && !fortressSim.canReauthorInitialHostGeometry();
+            slider.disabled = (key === 'ph' && !!fortressSim._carbonateBoundaryState)
+                || initialHostLocked;
             if (key === 'ph' && fortressSim._carbonateBoundaryState) {
                 slider.title = 'Derived by the conserved carbonate solve; adjust reduced alkalinity to change pH.';
+            }
+            else if (initialHostLocked) {
+                slider.title = 'Initial-condition authoring is locked after the first geological step, crystal, or wall-evolution receipt.';
             }
         }
         const valEl = document.getElementById('broth-' + key + '-val');
@@ -85534,7 +86935,9 @@ function syncBrothSliders() {
         const exact = document.getElementById('broth-' + key + '-exact');
         if (exact) {
             exact.value = _brothExactString(val, m._exactBounds?.step ?? 'any');
-            exact.disabled = key === 'ph' && !!fortressSim._carbonateBoundaryState;
+            exact.disabled = (key === 'ph' && !!fortressSim._carbonateBoundaryState)
+                || ((key === 'diameter' || key === 'thickness' || key === 'host')
+                    && !fortressSim.canReauthorInitialHostGeometry());
         }
     }
     if (typeof refreshCreativeGeologyEditors === 'function')
@@ -101403,9 +102806,12 @@ function _topoSnapshotWall(liveWall, snapshot) {
     delete synth._mesh;
     delete synth._cavityField;
     delete synth._cavitySurface;
-    // The first renderer-only MC tranche intentionally cannot reproduce
-    // historical per-cell wall_depth. Keep replay on its canonical mesh until
-    // the scalar erosion/deposition ledger exists.
+    // Object.assign inherited the live authority. A historical surface must not
+    // expose it until both cursor authentication and depth projection succeed.
+    synth._cavityEvolutionLedger = null;
+    delete synth._cavityEvolutionCursor;
+    // Fail closed by default. Only an authenticated cavity-evolution prefix
+    // below may opt a replay frame into the default-off MC comparison path.
     synth._disableMarchingCubesCavity = true;
     // Detect snapshot shape:
     //   * Multi-ring (v65+): { step, rings: [...] } — use directly.
@@ -101441,6 +102847,29 @@ function _topoSnapshotWall(liveWall, snapshot) {
         rings[r] = ring;
     }
     synth.rings = rings;
+    const ledger = liveWall.cavityEvolutionLedger ? liveWall.cavityEvolutionLedger() : null;
+    const cursor = snapshot && !Array.isArray(snapshot)
+        ? snapshot.cavity_evolution_cursor : null;
+    const expectedSignature = snapshot && !Array.isArray(snapshot)
+        ? snapshot.cavity_evolution_signature : null;
+    if (ledger && Number.isInteger(cursor) && cursor >= 0 && cursor <= ledger.cursor) {
+        try {
+            if (ledger.signatureAt(cursor) !== expectedSignature)
+                return synth;
+            ledger.assertProjection(synth, cursor);
+            synth._cavityEvolutionLedger = ledger;
+            synth._cavityEvolutionCursor = cursor;
+            synth._disableMarchingCubesCavity = false;
+        }
+        catch (_error) {
+            // Replay remains on the canonical WallMesh fallback. A corrupt or
+            // incompatible historical frame is evidence to reject, not an excuse
+            // to throw out of rendering or inherit the live ledger.
+            synth._cavityEvolutionLedger = null;
+            delete synth._cavityEvolutionCursor;
+            synth._disableMarchingCubesCavity = true;
+        }
+    }
     return synth;
 }
 // Public render entry. Called from topoRender's branch when

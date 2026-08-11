@@ -47,11 +47,14 @@ function event_supergene_dry_spell(c) {
   // three oxidation zones. This pulse represents dissolution/reconcentration
   // of Ca-bearing dolomite plus sulfate liberated by sulfide oxidation; the
   // larger inventory crosses the gypsum SI gate rather than only approaching it.
-  c.fluid.Ca += 300;
+  // A 350 mmol/kg recharge clears the same live CaSO4 activity evaluator used
+  // by nucleation with a modest margin after exact wall-release accounting.
+  // This is an authored 1 kg-solvent-reference recharge, not cavity volume.
+  c.fluid.Ca += 350;
   if (typeof addSulfurToPool === 'function') {
-    addSulfurToPool(c.fluid, 'sulfate', 300, c.temperature);
+    addSulfurToPool(c.fluid, 'sulfate', 350, c.temperature);
   } else {
-    c.fluid.S += 300;
+    c.fluid.S += 350;
   }
   c.fluid.O2 = 1.5;
   c.temperature = 50;
