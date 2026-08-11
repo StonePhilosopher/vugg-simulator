@@ -8,12 +8,13 @@
 //   field = 0  => cavity wall
 //   field < 0  => host rock
 //
-// The first tranche samples the exact union of WallState.bubbles. It does
-// not read or mutate wall cells, chemistry, crystals, or the simulation RNG.
-// IMPORTANT PROMOTION GATE: bubbles do not encode the later polar_flatten,
-// polar_collapse, elongation, or per-cell wall_depth transforms used by the
-// canonical WallMesh. Until those transforms have scalar-field equivalents,
-// this field is a default-off renderer comparison, not simulation truth.
+// The base field is the exact union of WallState.bubbles. An inverse radial
+// map then composes the same authored elongation, polar flatten/collapse, and
+// latitude twist used by WallMesh. It does not read or mutate chemistry,
+// crystals, wall cells, or the simulation RNG.
+// IMPORTANT PROMOTION GATE: per-cell wall_depth still has no mass-balanced
+// Cartesian primitive ledger. Until that evolution path exists, this field is
+// a default-off renderer comparison rather than simulation authority.
 
 interface CavitySurfaceBuffers {
   positions: Float32Array;
@@ -34,6 +35,16 @@ interface CavitySurfaceBuffers {
     field_bytes: number;
     surface_bytes: number;
   };
+}
+
+interface CavityShapeDescriptor {
+  elongation: number;
+  polar_flatten: number;
+  polar_collapse: number;
+  polar_amplitudes: number[];
+  polar_phases: number[];
+  twist_amplitudes: number[];
+  twist_phases: number[];
 }
 
 class CavityScalarField {
@@ -75,6 +86,7 @@ class CavityScalarField {
     this.sourceBubbles = Array.isArray(opts.sourceBubbles)
       ? opts.sourceBubbles.map((b) => b.slice())
       : [];
+    this.sourceShape = CavityScalarField._validatedShape(opts.sourceShape || {});
     this.bounds = {
       min: [origin[0], origin[1], origin[2]],
       max: [
@@ -119,6 +131,105 @@ class CavityScalarField {
     });
   }
 
+  static _validatedShape(input: any): CavityShapeDescriptor {
+    const shape = input || {};
+    const finite = (value: any, fallback: number, label: string): number => {
+      if (value == null) return fallback;
+      const number = Number(value);
+      if (!Number.isFinite(number)) throw new TypeError(`cavity ${label} must be finite`);
+      return number;
+    };
+    const harmonics = (amplitudeKey: string, phaseKey: string): [number[], number[]] => {
+      const amplitudeInput = shape[amplitudeKey] == null ? [] : shape[amplitudeKey];
+      const phaseInput = shape[phaseKey] == null ? [] : shape[phaseKey];
+      if (!Array.isArray(amplitudeInput) || !Array.isArray(phaseInput)
+          || amplitudeInput.length !== phaseInput.length) {
+        throw new TypeError(`cavity ${amplitudeKey}/${phaseKey} must be equal-length arrays`);
+      }
+      const amplitudes: number[] = [];
+      const phases: number[] = [];
+      for (let index = 0; index < amplitudeInput.length; index++) {
+        const amplitude = finite(amplitudeInput[index], 0, `${amplitudeKey}[${index}]`);
+        const phase = finite(phaseInput[index], 0, `${phaseKey}[${index}]`);
+        // Preserve array position because it is the harmonic order (n + 1).
+        // A zero-amplitude term still occupies that order, but its phase is
+        // normalized away because the field does not sample it.
+        amplitudes.push(amplitude === 0 ? 0 : amplitude);
+        phases.push(amplitude === 0 ? 0 : phase);
+      }
+      // Trailing zero orders do not affect any later harmonic index and are
+      // therefore not sampled inputs. Interior/leading zeros remain so the
+      // frequency of every active term stays unchanged.
+      while (amplitudes.length && amplitudes[amplitudes.length - 1] === 0) {
+        amplitudes.pop();
+        phases.pop();
+      }
+      return [amplitudes, phases];
+    };
+
+    const elongation = Math.max(0, Math.min(0.85,
+      finite(shape.elongation, 0, 'elongation')));
+    const flattenRaw = finite(shape.polar_flatten, 0, 'polar_flatten');
+    const polarFlatten = flattenRaw > 0
+      ? Math.max(0.05, Math.min(1, flattenRaw)) : 0;
+    const collapseRaw = finite(shape.polar_collapse, 0, 'polar_collapse');
+    if (collapseRaw > 1) {
+      throw new RangeError('cavity polar_collapse must not exceed 1');
+    }
+    // The canonical polar oracle gives flattening precedence over collapse.
+    // Normalize the ignored input away so the cache mirrors sampled inputs.
+    const polarCollapse = polarFlatten > 0 ? 0 : Math.max(0, collapseRaw);
+    const [polarAmplitudes, polarPhases] = harmonics('polar_amplitudes', 'polar_phases');
+    const [twistAmplitudes, twistPhases] = harmonics('twist_amplitudes', 'twist_phases');
+    return {
+      elongation,
+      polar_flatten: polarFlatten,
+      polar_collapse: polarCollapse,
+      polar_amplitudes: polarAmplitudes,
+      polar_phases: polarPhases,
+      twist_amplitudes: twistAmplitudes,
+      twist_phases: twistPhases,
+    };
+  }
+
+  static shapeFor(wall: any): CavityShapeDescriptor {
+    if (!wall) throw new TypeError('cavity shape requires a wall');
+    return CavityScalarField._validatedShape(wall._cavity_shape || wall);
+  }
+
+  static _shapeNumbers(shape: CavityShapeDescriptor): number[] {
+    return [
+      shape.elongation,
+      shape.polar_flatten,
+      shape.polar_collapse,
+      shape.polar_amplitudes.length,
+      ...shape.polar_amplitudes,
+      ...shape.polar_phases,
+      shape.twist_amplitudes.length,
+      ...shape.twist_amplitudes,
+      ...shape.twist_phases,
+    ];
+  }
+
+  static _isIdentityShape(shape: CavityShapeDescriptor): boolean {
+    return shape.elongation === 0
+      && shape.polar_flatten === 0
+      && shape.polar_collapse === 0
+      && shape.polar_amplitudes.every((amplitude) => amplitude === 0)
+      && shape.twist_amplitudes.every((amplitude) => amplitude === 0);
+  }
+
+  static _maxRadialScale(shape: CavityShapeDescriptor): number {
+    const fourierMax = 1 + shape.polar_amplitudes
+      .reduce((sum, amplitude) => sum + Math.abs(amplitude), 0);
+    const polarMax = Math.max(0.5, fourierMax);
+    const scale = (1 + shape.elongation) * polarMax;
+    if (!(scale > 0) || !Number.isFinite(scale)) {
+      throw new RangeError('cavity authored radial scale must be positive and finite');
+    }
+    return scale;
+  }
+
   static bubbleUnionValue(bubbles: number[][], x: number, y: number, z: number): number {
     if (![x, y, z].every(Number.isFinite)) {
       throw new TypeError('cavity field sample coordinates must be finite');
@@ -132,6 +243,44 @@ class CavityScalarField {
       if (sphere > value) value = sphere;
     }
     return value;
+  }
+
+  static authoredShapeValue(bubbles: number[][], shapeInput: any,
+                            x: number, y: number, z: number): number {
+    if (![x, y, z].every(Number.isFinite)) {
+      throw new TypeError('cavity field sample coordinates must be finite');
+    }
+    const shape = CavityScalarField._validatedShape(shapeInput);
+    return CavityScalarField._authoredShapeValueValidated(bubbles, shape, x, y, z);
+  }
+
+  static _authoredShapeValueValidated(bubbles: number[][], shape: CavityShapeDescriptor,
+                                      x: number, y: number, z: number): number {
+    if (CavityScalarField._isIdentityShape(shape)) {
+      return CavityScalarField.bubbleUnionValue(bubbles, x, y, z);
+    }
+    const worldRadius = Math.hypot(x, y, z);
+    if (worldRadius <= Number.EPSILON) {
+      return CavityScalarField.bubbleUnionValue(bubbles, x, y, z);
+    }
+    const phi = Math.acos(Math.max(-1, Math.min(1, -y / worldRadius)));
+    const worldTheta = Math.atan2(z, x);
+    const sourceTheta = worldTheta - _cavityTwistRadians(shape, phi);
+    const radialScale = _cavityRadialScale(shape, phi, sourceTheta);
+    if (!(radialScale > 0) || !Number.isFinite(radialScale)) {
+      throw new RangeError('cavity authored radial scale must be positive and finite');
+    }
+    const sourceRadius = worldRadius / radialScale;
+    const sinPhi = Math.sin(phi);
+    const sourceX = sourceRadius * sinPhi * Math.cos(sourceTheta);
+    const sourceY = -sourceRadius * Math.cos(phi);
+    const sourceZ = sourceRadius * sinPhi * Math.sin(sourceTheta);
+    // Do not multiply by the direction-dependent radial scale. Although that
+    // would retain approximate world-distance magnitudes at the wall, it makes
+    // a positive value at the cavity origin depend on the direction of
+    // approach. The inverse-mapped base field is continuous there and retains
+    // the same exact zero set and sign convention.
+    return CavityScalarField.bubbleUnionValue(bubbles, sourceX, sourceY, sourceZ);
   }
 
   static _sourceHash(bubbles: number[][]): string {
@@ -153,25 +302,31 @@ class CavityScalarField {
 
   static signatureFor(wall: any, resolution = 48): string {
     const bubbles = CavityScalarField._validatedBubbles(wall && wall.bubbles);
+    const shape = CavityScalarField.shapeFor(wall);
     const n = CavityScalarField._resolution(resolution);
-    // Only hash inputs that v1 actually samples. wall._geometry_revision also
-    // changes for per-cell wall_depth, which this bubble-only field explicitly
-    // does not represent; including it would trigger expensive byte-identical
-    // rebuilds during dissolution.
-    return `cavity-field:v1|${n}^3|${CavityScalarField._sourceHash(bubbles)}`;
+    // Only hash inputs that v2 actually samples. wall._geometry_revision also
+    // changes for per-cell wall_depth, which this authored base-shape field
+    // explicitly does not represent; including it would trigger expensive
+    // byte-identical rebuilds during dissolution.
+    const shapeHash = CavityScalarField._sourceHash([
+      CavityScalarField._shapeNumbers(shape),
+    ]);
+    return `cavity-field:v2|${n}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${shapeHash}`;
   }
 
   static fromWallState(wall: any, opts: any = {}): CavityScalarField {
     if (!wall) throw new TypeError('CavityScalarField.fromWallState requires a wall');
     const resolution = CavityScalarField._resolution(opts.resolution);
     const bubbles = CavityScalarField._validatedBubbles(wall.bubbles);
+    const shape = CavityScalarField.shapeFor(wall);
     const sig = CavityScalarField.signatureFor(wall, resolution);
-    return CavityScalarField.fromBubbles(bubbles, { resolution, sig });
+    return CavityScalarField.fromBubbles(bubbles, { resolution, sig, shape });
   }
 
   static fromBubbles(input: any, opts: any = {}): CavityScalarField {
     const started = CavityScalarField._nowMs();
     const bubbles = CavityScalarField._validatedBubbles(input);
+    const shape = CavityScalarField._validatedShape(opts.shape || {});
     const resolution = CavityScalarField._resolution(opts.resolution);
 
     const rawMin = [Infinity, Infinity, Infinity];
@@ -184,7 +339,27 @@ class CavityScalarField {
       rawMax[1] = Math.max(rawMax[1], cy + radius);
       rawMax[2] = Math.max(rawMax[2], cz + radius);
     }
-    const extent = [rawMax[0] - rawMin[0], rawMax[1] - rawMin[1], rawMax[2] - rawMin[2]];
+    let fieldMin = rawMin.slice();
+    let fieldMax = rawMax.slice();
+    if (!CavityScalarField._isIdentityShape(shape)) {
+      // Radial deformation is centered at the authored cavity origin. A
+      // sphere's farthest possible source point is |center| + radius; multiply
+      // that by the analytic maximum deformation to get a conservative cubic
+      // envelope. It is intentionally conservative so twist, flattening, and
+      // future nonzero Fourier profiles can never clip the zero set.
+      let maxSourceRadius = 0;
+      for (const [cx, cy, cz, radius] of bubbles) {
+        maxSourceRadius = Math.max(maxSourceRadius, Math.hypot(cx, cy, cz) + radius);
+      }
+      const deformedRadius = maxSourceRadius * CavityScalarField._maxRadialScale(shape);
+      fieldMin = [-deformedRadius, -deformedRadius, -deformedRadius];
+      fieldMax = [deformedRadius, deformedRadius, deformedRadius];
+    }
+    const extent = [
+      fieldMax[0] - fieldMin[0],
+      fieldMax[1] - fieldMin[1],
+      fieldMax[2] - fieldMin[2],
+    ];
     const largestExtent = Math.max(extent[0], extent[1], extent[2]);
     if (!(largestExtent > 0) || !Number.isFinite(largestExtent)) {
       throw new RangeError('cavity bubble bounds must have positive finite extent');
@@ -200,9 +375,9 @@ class CavityScalarField {
       spacingMm = (largestExtent + 2 * padding) / (resolution - 1);
     }
     const center = [
-      (rawMin[0] + rawMax[0]) * 0.5,
-      (rawMin[1] + rawMax[1]) * 0.5,
-      (rawMin[2] + rawMax[2]) * 0.5,
+      (fieldMin[0] + fieldMax[0]) * 0.5,
+      (fieldMin[1] + fieldMax[1]) * 0.5,
+      (fieldMin[2] + fieldMax[2]) * 0.5,
     ];
     const half = spacingMm * (resolution - 1) * 0.5;
     const origin: [number, number, number] = [center[0] - half, center[1] - half, center[2] - half];
@@ -214,7 +389,7 @@ class CavityScalarField {
         const wy = origin[1] + y * spacingMm;
         for (let x = 0; x < resolution; x++) {
           const wx = origin[0] + x * spacingMm;
-          const value = CavityScalarField.bubbleUnionValue(bubbles, wx, wy, wz);
+          const value = CavityScalarField._authoredShapeValueValidated(bubbles, shape, wx, wy, wz);
           if (!Number.isFinite(value)) {
             throw new TypeError(`non-finite cavity field sample at (${x}, ${y}, ${z})`);
           }
@@ -230,7 +405,8 @@ class CavityScalarField {
       origin,
       values,
       sourceBubbles: bubbles,
-      sig: opts.sig || `cavity-field:v1|${resolution}^3|${CavityScalarField._sourceHash(bubbles)}`,
+      sourceShape: shape,
+      sig: opts.sig || `cavity-field:v2|${resolution}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${CavityScalarField._sourceHash([CavityScalarField._shapeNumbers(shape)])}`,
     });
     field.metrics.field_build_ms = CavityScalarField._nowMs() - started;
     if (!field.hasNegativeBorder(0)) {
@@ -263,7 +439,9 @@ class CavityScalarField {
 
   sampleAnalyticWorld(x: number, y: number, z: number): number {
     if (!this.sourceBubbles.length) return this.sampleWorld(x, y, z);
-    return CavityScalarField.bubbleUnionValue(this.sourceBubbles, x, y, z);
+    return CavityScalarField._authoredShapeValueValidated(
+      this.sourceBubbles, this.sourceShape, x, y, z,
+    );
   }
 
   sampleWorld(x: number, y: number, z: number): number {
@@ -276,7 +454,9 @@ class CavityScalarField {
     if (gx < 0 || gy < 0 || gz < 0
         || gx > this.sizeX - 1 || gy > this.sizeY - 1 || gz > this.sizeZ - 1) {
       if (this.sourceBubbles.length) {
-        return CavityScalarField.bubbleUnionValue(this.sourceBubbles, x, y, z);
+        return CavityScalarField._authoredShapeValueValidated(
+          this.sourceBubbles, this.sourceShape, x, y, z,
+        );
       }
       return -Infinity;
     }

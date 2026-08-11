@@ -489,9 +489,10 @@ function _topoSetMarchingCubesCavity(enabled: boolean, resolution = 48): void {
 // tests. The legacy mesh remains available as clipMesh even when the shadow
 // MC buffers are selected. This mismatch is deliberate and blocks promotion:
 // the current 2D polar clip cannot describe MC undercuts or separated chambers.
-// The v1 MC surface also has temporary spherical UVs and bubble-only geometry,
-// so authored polar masks, wall_depth, matrix-skin mapping, and water tint are
-// comparison findings rather than supported production behavior.
+// The v2 MC surface includes authored radial masks but still has temporary
+// spherical UVs and no live wall_depth ledger, so evolution, matrix-skin
+// mapping, and water tint remain comparison findings rather than supported
+// production behavior.
 function _topoCavitySurfaceSource(wall: any, sim: any,
                                   useMarchingCubes = _topoMarchingCubesCavityEnabled(),
                                   resolution = _topoMarchingCubesResolution()): any {
@@ -502,7 +503,7 @@ function _topoCavitySurfaceSource(wall: any, sim: any,
     try {
       const buffers = wall.cavitySurfaceFor({ resolution, isovalue: 0 });
       if (buffers) {
-        // clipMesh.sig may change for wall_depth even though the bubble-only MC
+        // clipMesh.sig may change for wall_depth even though the authored base MC
         // buffers stay cached. Include it so clip uniforms refresh without
         // paying for a byte-identical field/extraction rebuild.
         return { mode: 'marching-cubes', buffers, clipMesh,

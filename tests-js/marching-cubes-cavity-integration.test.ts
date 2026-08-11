@@ -63,7 +63,7 @@ describe('Marching Cubes cavity renderer shadow integration', () => {
     expect(_liveRng().state).toBe(rngBefore);
   });
 
-  it('keys the field cache to sampled bubbles while refreshing the clip signature', () => {
+  it('keys the field cache to sampled base geometry and masks while refreshing the clip signature', () => {
     const wall = makeWall();
     const firstField = wall.cavityFieldFor({ resolution: 24 });
     const firstSurface = wall.cavitySurfaceFor({ resolution: 24 });
@@ -74,14 +74,30 @@ describe('Marching Cubes cavity renderer shadow integration', () => {
     const secondField = wall.cavityFieldFor({ resolution: 24 });
     const secondSurface = wall.cavitySurfaceFor({ resolution: 24 });
     const secondSource = _topoCavitySurfaceSource(wall, undefined, true, 24);
-    // Tranche 1 samples base bubbles only, so wall-depth erosion must not cause
-    // an expensive byte-identical field/surface rebuild.
+    // The field samples base bubbles plus authored radial masks, but not live
+    // wall-depth erosion; that mutation must not cause a byte-identical rebuild.
     expect(secondField).toBe(firstField);
     expect(secondSurface).toBe(firstSurface);
     // The canonical polar clip does consume wall_depth, so its signature still
     // invalidates the renderer and refreshes clip uniforms.
     expect(secondSource.sig).not.toBe(firstSource.sig);
     expect(secondSource.buffers).toBe(firstSource.buffers);
+
+    expect(() => { wall.elongation = 0.2; }).toThrow(TypeError);
+    expect(wall.cavityFieldFor({ resolution: 24 })).toBe(secondField);
+    expect(wall.cavitySurfaceFor({ resolution: 24 })).toBe(secondSurface);
+
+    const shapedWall = new WallState({
+      cells_per_ring: 32,
+      ring_count: 12,
+      vug_diameter_mm: 50,
+      primary_bubbles: 3,
+      secondary_bubbles: 6,
+      shape_seed: 42,
+      architecture: 'tabular',
+    });
+    expect(shapedWall.cavityFieldFor({ resolution: 24 }).sig).not.toBe(secondField.sig);
+    expect(shapedWall.cavitySurfaceFor({ resolution: 24 })).not.toBeNull();
   });
 
   it('places every extracted edge vertex on the sampled zero set', () => {

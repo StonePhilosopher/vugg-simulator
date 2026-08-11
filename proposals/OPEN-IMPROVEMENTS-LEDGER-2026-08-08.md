@@ -170,19 +170,25 @@ single execution ledger for the science-first AAA completion branch.
 ## P3 — product quality gates that can be completed locally
 
 - [x] Establish the topology-independent cavity foundation without changing
-  simulation authority: deterministic Cartesian bubble-union field, indexed
+  simulation authority: deterministic Cartesian exact-bubble-union field with
+  immutable authored elongation/cleft/basin masks, indexed
   shared-face-decided and manifold-validated shadow extraction, default-off
   renderer adapter, 48³/64³
   benchmark receipt, and mutation/determinism tests. Evidence:
   `proposals/PROPOSAL-MARCHING-CUBES-CAVITY.md`,
   `tests-js/cavity-scalar-field.test.ts`, `tests-js/marching-cubes.test.ts`,
   `tests-js/marching-cubes-cavity-integration.test.ts`, and
-  `tests-js/marching-cubes-performance.test.ts` (25 focused tests), plus complete
-  local `npm test` coverage of 211 files / 2,828 tests; the AI Dr. Michael Wise
-  hostile-review role returned `SATISFIED` after four correction rounds covering
-  topology, normals, caching, atomic flags, and local winding.
-- [ ] Promote Cartesian cavity geometry only after the scalar oracle includes
-  authored elongation/cleft/basin masks and mass-balanced wall evolution, then
+  `tests-js/marching-cubes-performance.test.ts` (the original 25-test gate plus
+  the SIM 262 authored-mask parity, immutability, pole, and benchmark cases),
+  plus complete local `npm test` coverage of 211 files / 2,834 tests. The AI
+  Dr. Michael Wise hostile-review role returned `SATISFIED` after the original
+  four correction rounds covering topology, normals, caching, atomic flags,
+  and local winding, then a SIM 262 reconciliation round covering origin
+  continuity, immutable mask authority, analytic pole caps, tabular coverage,
+  bounded science drift, deterministic build evidence, and desktop/mobile
+  browser receipts.
+- [ ] Promote Cartesian cavity geometry only after mass-balanced wall evolution
+  joins the now-reconciled authored-mask scalar oracle, then
   make crystal clipping, surface anchors, replay, matrix materials, and water
   appearance consume that same topology. Keep the shadow flag default-off
   until those gates and an optimized performance budget pass.

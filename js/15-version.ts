@@ -12787,7 +12787,22 @@
 //       reaches its step-170 exhumation boundary and ambient thermal pulses remain
 //       disabled, removing a ten-step false-reheating window that created late
 //       high-temperature accessory phases outside the scenario's paragenesis.
-const SIM_VERSION = 261;
+//
+// v262 — Authored Cartesian cavity-shape reconciliation (August 2026).
+//       The default-off Marching Cubes scalar oracle now composes the exact
+//       seeded bubble union with the same construction-time elongation,
+//       cleft-lens, basin-collapse, and latitude-twist masks as WallMesh.
+//       Those masks are frozen after WallState construction so the baked
+//       radial cells and scalar cache cannot diverge through live mutation.
+//       The inherited longitude-only elongation is regularized as the smooth
+//       spherical quadrupole sin²(phi)·cos(2 theta): authored equatorial aspect
+//       ratios are preserved while both poles have one continuous limit.
+//       Canonical WallMesh pole caps now raycast the authored bubble union onto
+//       the same analytic zero set instead of sitting inside it by a lat-long
+//       half-step approximation. This changes tabular/cleft surface geometry
+//       and exact wall area, so the simulation identity and evidence fleet are
+//       deliberately rebaked rather than mislabeled as render-only.
+const SIM_VERSION = 262;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12809,6 +12824,7 @@ const MODEL_DIGEST = [
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
   'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',
   'surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4',
+  'cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+cartesian-shadow-v2',
   'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
   'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
   'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',

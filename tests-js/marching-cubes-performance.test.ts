@@ -7,6 +7,7 @@ declare const setSeed: any;
 const CASES = [
   'amethyst_geode',
   'mvt',
+  'reactivated_fluorite_vein',
   'great_salt_plains',
   'tormiq_alpine_cleft',
   'zoned_dripstone_cave',
@@ -16,15 +17,16 @@ const CASES = [
 const EXPECTED_TRIANGLES: Record<string, Record<number, number>> = {
   amethyst_geode: { 48: 11708, 64: 21068 },
   mvt: { 48: 15432, 64: 27908 },
-  great_salt_plains: { 48: 12236, 64: 22106 },
-  tormiq_alpine_cleft: { 48: 13656, 64: 24588 },
+  reactivated_fluorite_vein: { 48: 4136, 64: 7540 },
+  great_salt_plains: { 48: 3744, 64: 6744 },
+  tormiq_alpine_cleft: { 48: 2268, 64: 4176 },
   zoned_dripstone_cave: { 48: 13948, 64: 25112 },
   reactive_wall: { 48: 11120, 64: 20144 },
 };
 
-// The face-decider prototype deliberately rejects this known 64^3 interior
-// ambiguity. The renderer falls back to WallMesh; MC33 is the promotion gate.
-const EXPECTED_REJECTIONS = new Set(['great_salt_plains@64']);
+// Every current authored benchmark case must extract; this exact set makes any
+// newly rejected topology a deliberate, reviewed receipt change.
+const EXPECTED_REJECTIONS = new Set<string>();
 
 describe('Marching Cubes cavity measured budgets', () => {
   it('records 48^3 and 64^3 costs on authored shape seeds', () => {

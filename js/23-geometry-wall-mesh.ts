@@ -818,6 +818,13 @@ class WallMesh {
       }
       return sum / N;
     };
+    const meanRingDepth = (rIdx) => {
+      const ring = wall.rings[rIdx];
+      if (!ring) return 0;
+      let sum = 0;
+      for (let c = 0; c < N; c++) sum += ring[c] ? ring[c].wall_depth : 0;
+      return sum / N;
+    };
     // W-K V0 fix (2026-07-03): the caps must honor the polar profile like
     // every ring vertex does (line ~519), or a flattened/collapsed cavity
     // grows a full-radius NEEDLE at each pole: the cleft lens (polar factor
@@ -829,8 +836,26 @@ class WallMesh {
     // byte-identical.
     const southPolar = wall.polarProfileFactor ? wall.polarProfileFactor(0) : 1.0;
     const northPolar = wall.polarProfileFactor ? wall.polarProfileFactor(Math.PI) : 1.0;
-    const southR = meanRingRadius(0) * Math.cos(Math.PI / (2 * ringCount)) * southPolar;
-    const northR = meanRingRadius(ringCount - 1) * Math.cos(Math.PI / (2 * ringCount)) * northPolar;
+    const poleBaseRadius = (dy, phi, fallback) => {
+      if (!Array.isArray(wall.bubbles) || !wall.bubbles.length) return fallback;
+      const sourceRadius = _raycastUnion3D(wall.bubbles, 0, dy, 0);
+      if (!(sourceRadius > 0)) return fallback;
+      const shape = wall._cavity_shape || wall;
+      return sourceRadius * _cavityRadialScale(shape, phi, 0);
+    };
+    // Put the authored base cap on the same analytic zero set as the Cartesian
+    // field. The legacy mean-ring*cos(half-step) approximation sat measurably
+    // inside even a sphere. Live wall_depth has no pole cell, so retain the
+    // prior nearest-ring mean as its explicitly approximate contribution.
+    const southDepth = meanRingDepth(0);
+    const northDepth = meanRingDepth(ringCount - 1);
+    const southFallback = (meanRingRadius(0) - southDepth)
+      * Math.cos(Math.PI / (2 * ringCount)) * southPolar;
+    const northFallback = (meanRingRadius(ringCount - 1) - northDepth)
+      * Math.cos(Math.PI / (2 * ringCount)) * northPolar;
+    const southR = poleBaseRadius(-1, 0, southFallback) + southDepth * southPolar;
+    const northR = poleBaseRadius(+1, Math.PI, northFallback)
+      + northDepth * northPolar;
     positions[this.southIdx * 3 + 0] = 0;
     positions[this.southIdx * 3 + 1] = -southR;
     positions[this.southIdx * 3 + 2] = 0;

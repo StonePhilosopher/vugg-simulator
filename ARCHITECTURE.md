@@ -67,7 +67,7 @@ vugg-simulator/
 │   ├── 1x-…                    # deterministic helpers + early state
 │   ├── 2x-chemistry-…          # FluidChemistry, VugConditions
 │   ├── 22-geometry-wall.ts
-│   ├── 23a-geometry-cavity-field.ts   # default-off Cartesian cavity field
+│   ├── 23a-geometry-cavity-field.ts   # default-off Cartesian cavity field + authored masks
 │   ├── 23b-geometry-marching-cubes.ts # indexed shadow-surface extractor
 │   ├── 27-geometry-crystal.ts
 │   ├── 3x-supersat-<class>.ts  # 12 per-class supersat mixin files

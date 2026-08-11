@@ -2596,8 +2596,8 @@
       "statistical_species": [
         { "mineral": "pharmacolite", "reason": "A hydrated Ca arsenate is geologically appropriate in the Schneeberg oxidation suite, but it occurs in only two of the three evidence seeds." },
         { "mineral": "turquoise", "reason": "A plausible minor Cu-Al phosphate in the phosphate-bearing supergene assemblage; observed in two of three evidence seeds." },
-        { "mineral": "realgar", "reason": "The Handbook of Mineralogy records fine realgar from Schneeberg; the modeled low-temperature As-sulfide appears in one evidence seed.", "first_step_max": 110 },
-        { "mineral": "pararealgar", "reason": "A light-exposed vadose alteration product of realgar is possible only after the step-110 exhumation and appears in one evidence seed.", "first_step_min": 110 }
+        { "mineral": "realgar", "reason": "The Handbook of Mineralogy records fine realgar from Schneeberg; the modeled low-temperature As-sulfide appears in two of the three evidence seeds.", "first_step_max": 110 },
+        { "mineral": "pararealgar", "reason": "A light-exposed vadose alteration product of realgar is possible only after the step-110 exhumation and appears in two of the three evidence seeds.", "first_step_min": 110 }
       ],
       "aspirational_species": [
         { "mineral": "haidingerite", "reason": "A possible pharmacolite dehydration product, but no executed conversion appeared in the release seed audit for Schneeberg." }

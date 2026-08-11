@@ -680,7 +680,9 @@ interface ArchetypeConfig {
   twist_amp_scale: number;     // multiplier on _buildTwistProfile's ±0.4 base
   // Slice B: anisotropic equator stretch. 0 = circular cross-section,
   // higher = more elongated along the +x axis. Per-cell radius is
-  // multiplied by (1 + elongation × cos(2θ)). Capped at 0.85 in the
+  // multiplied by (1 + elongation × sin²φ × cos(2θ)). The sin²φ term
+  // preserves the authored equatorial aspect while making longitude vanish
+  // continuously at both poles, where θ is undefined. Capped at 0.85 in the
   // builder to avoid degenerate (zero-radius) directions.
   elongation: number;
   // Slice B: top-hemisphere collapse for basins. >0 enables the sigmoid
@@ -797,6 +799,63 @@ function _raycastUnion3D(spheres, dx, dy, dz) {
     else break;
   }
   return wall;
+}
+
+// One authored radial-deformation oracle shared by the canonical WallMesh and
+// the Cartesian cavity field. `theta` is the pre-twist longitude used when the
+// bubble union was raycast; `phi` follows the simulator convention (south pole
+// 0, north pole pi). Keeping these formulas outside either representation
+// prevents a future architecture edit from moving the visible shell without
+// moving its scalar zero set.
+function _cavityElongationFactor(shape, phi, theta) {
+  const elong = Math.max(0, Math.min(0.85, Number(shape && shape.elongation) || 0));
+  const sinPhi = Math.sin(phi);
+  return 1 + elong * sinPhi * sinPhi * Math.cos(2 * theta);
+}
+
+function _cavityPolarProfileFactor(shape, phi) {
+  let fourier = 1.0;
+  const amplitudes = Array.isArray(shape && shape.polar_amplitudes)
+    ? shape.polar_amplitudes : [];
+  const phases = Array.isArray(shape && shape.polar_phases)
+    ? shape.polar_phases : [];
+  for (let n = 0; n < amplitudes.length; n++) {
+    fourier += amplitudes[n] * Math.cos((n + 1) * phi + phases[n]);
+  }
+  const flatten = Number(shape && shape.polar_flatten) || 0;
+  if (flatten > 0) {
+    const q = Math.max(0.05, Math.min(1.0, flatten));
+    const s = Math.sin(phi), c = Math.cos(phi);
+    const lens = q / Math.sqrt(q * q * s * s + c * c);
+    return Math.max(0.03, fourier * lens);
+  }
+  const collapse = Number(shape && shape.polar_collapse) || 0;
+  if (collapse > 0) {
+    const floor = 0.05;
+    const sigma = 0.25;
+    const sigmoidWeight = 1.0 / (1.0 + Math.exp((phi - Math.PI / 2) / sigma));
+    const sigmoid = floor + (1.0 - floor) * sigmoidWeight;
+    const blended = fourier * sigmoid * collapse + fourier * (1 - collapse);
+    return Math.max(floor * 0.5, blended);
+  }
+  return Math.max(0.5, fourier);
+}
+
+function _cavityTwistRadians(shape, phi) {
+  let twist = 0.0;
+  const amplitudes = Array.isArray(shape && shape.twist_amplitudes)
+    ? shape.twist_amplitudes : [];
+  const phases = Array.isArray(shape && shape.twist_phases)
+    ? shape.twist_phases : [];
+  for (let n = 0; n < amplitudes.length; n++) {
+    twist += amplitudes[n] * Math.cos((n + 1) * phi + phases[n]);
+  }
+  return twist;
+}
+
+function _cavityRadialScale(shape, phi, sourceTheta) {
+  return _cavityElongationFactor(shape, phi, sourceTheta)
+    * _cavityPolarProfileFactor(shape, phi);
 }
 
 class WallState {
@@ -929,6 +988,44 @@ class WallState {
     // top of the 3D base profile.
     for (let n = 0; n < this.polar_amplitudes.length; n++) this.polar_amplitudes[n] = 0;
     for (let n = 0; n < this.twist_amplitudes.length; n++) this.twist_amplitudes[n] = 0;
+
+    // Architecture masks are authored construction inputs, not live sliders.
+    // Elongation is already baked into base_radius_mm, while the polar/twist
+    // terms are applied by consumers; allowing either half to mutate later
+    // would split WallMesh and the Cartesian scalar oracle. Freeze one semantic
+    // snapshot and make the public compatibility fields read-only so a caller
+    // must construct a new WallState to author a different cavity shape.
+    const polarAmplitudes = Object.freeze(this.polar_amplitudes.slice());
+    const polarPhases = Object.freeze(this.polar_phases.slice());
+    const twistAmplitudes = Object.freeze(this.twist_amplitudes.slice());
+    const twistPhases = Object.freeze(this.twist_phases.slice());
+    const cavityShape = Object.freeze({
+      elongation: this.elongation,
+      polar_flatten: this.polar_flatten,
+      polar_collapse: this.polar_collapse,
+      polar_amplitudes: polarAmplitudes,
+      polar_phases: polarPhases,
+      twist_amplitudes: twistAmplitudes,
+      twist_phases: twistPhases,
+    });
+    // Internal scalar-renderer authority is deliberately non-enumerable: save
+    // payloads keep the long-standing public authored fields without a second,
+    // redundant copy of the same construction-time state.
+    Object.defineProperty(this, '_cavity_shape', {
+      value: cavityShape,
+      writable: false,
+      configurable: false,
+      enumerable: false,
+    });
+    Object.defineProperties(this, {
+      elongation: { value: this.elongation, writable: false, configurable: false, enumerable: true },
+      polar_flatten: { value: this.polar_flatten, writable: false, configurable: false, enumerable: true },
+      polar_collapse: { value: this.polar_collapse, writable: false, configurable: false, enumerable: true },
+      polar_amplitudes: { value: polarAmplitudes, writable: false, configurable: false, enumerable: true },
+      polar_phases: { value: polarPhases, writable: false, configurable: false, enumerable: true },
+      twist_amplitudes: { value: twistAmplitudes, writable: false, configurable: false, enumerable: true },
+      twist_phases: { value: twistPhases, writable: false, configurable: false, enumerable: true },
+    });
 
     // Monotonic scale reference for the renderer. Starts generously
     // (2× the largest base radius — or 2× initial_radius_mm for a
@@ -1073,17 +1170,19 @@ class WallState {
     }
 
     // ---- Anisotropic stretch (elongation, tabular archetype) ----
-    // Same per-cell stretch the 2D builder applied, but here it acts
-    // on the equatorial plane only (theta direction). Floor sphere
-    // is still untouched in y — that's the right behavior for a
-    // "tabular fracture pocket viewed end-on."
+    // Same equatorial stretch the 2D builder applies, continued over the
+    // sphere as the smooth quadrupole sin²(phi)·cos(2 theta). The taper to
+    // zero at both poles is required because longitude is undefined there;
+    // retaining full cos(2 theta) produced a discontinuous, folded axis.
     const elong = Math.max(0, Math.min(0.85, this.elongation ?? 0));
     if (elong > 0) {
       sumRaw = 0;
       for (let r = 0; r < M; r++) {
         for (let c = 0; c < N; c++) {
           const theta = 2 * Math.PI * c / N;
-          const stretched = rawRadii[r * N + c] * (1 + elong * Math.cos(2 * theta));
+          const phi = Math.PI * (r + 0.5) / M;
+          const stretched = rawRadii[r * N + c]
+            * _cavityElongationFactor(this, phi, theta);
           rawRadii[r * N + c] = stretched;
           sumRaw += stretched;
         }
@@ -1183,7 +1282,7 @@ class WallState {
     if (elong > 0) {
       for (let i = 0; i < N; i++) {
         const theta = 2 * Math.PI * i / N;
-        rawRadii[i] *= (1 + elong * Math.cos(2 * theta));
+        rawRadii[i] *= _cavityElongationFactor(this, Math.PI / 2, theta);
       }
     }
 
@@ -1230,44 +1329,7 @@ class WallState {
   // (polar_collapse ∈ [0, 1]) controls how aggressively the top
   // collapses; 1 = full basin pinch, 0 = legacy Fourier-only.
   polarProfileFactor(phi) {
-    let fourier = 1.0;
-    for (let n = 0; n < this.polar_amplitudes.length; n++) {
-      fourier += this.polar_amplitudes[n] * Math.cos((n + 1) * phi + this.polar_phases[n]);
-    }
-    // W-K V0: planar-lens flattening (cleft archetype). The exact
-    // oblate-spheroid radial profile normalized to equator = 1:
-    //   f(φ) = q / sqrt(q²·sin²φ + cos²φ),  q = polar_flatten
-    // f(π/2) = 1 (equatorial rim untouched), f(0) = f(π) = q (the two
-    // flat faces at q× the in-plane radius). Bypasses the 0.5 legacy
-    // floor deliberately — the lens NEEDS to go below it; its own floor
-    // only guards a degenerate q. Applied at consumers (mesh, renderers,
-    // clip texture, anchors) like polar_collapse, so SIM-side ring-0
-    // radii keep the unflattened chemistry geometry — same contract as
-    // basin.
-    const flatten = this.polar_flatten ?? 0;
-    if (flatten > 0) {
-      const q = Math.max(0.05, Math.min(1.0, flatten));
-      const s = Math.sin(phi), c = Math.cos(phi);
-      const lens = q / Math.sqrt(q * q * s * s + c * c);
-      return Math.max(0.03, fourier * lens);
-    }
-    const collapse = this.polar_collapse ?? 0;
-    if (collapse > 0) {
-      // Sigmoid: 1.0 at south (phi=0), ~0.05 at north (phi=π),
-      // transitioning around equator (phi=π/2). Sigma=0.25 sets the
-      // transition width — softer than a step so basin walls don't
-      // create a sharp ring at the meniscus.
-      const FLOOR = 0.05;
-      const sigma = 0.25;
-      const s = 1.0 / (1.0 + Math.exp((phi - Math.PI / 2) / sigma));
-      const sigmoid = FLOOR + (1.0 - FLOOR) * s;
-      // Lerp Fourier toward sigmoid by collapse strength. Keep the
-      // Fourier jitter on the south half (where it stays ~full radius)
-      // so the floor has texture; the multiplication preserves that.
-      const blended = fourier * sigmoid * collapse + fourier * (1 - collapse);
-      return Math.max(FLOOR * 0.5, blended);
-    }
-    return Math.max(0.5, fourier);
+    return _cavityPolarProfileFactor(this._cavity_shape || this, phi);
   }
 
   // Phase F: per-latitude twist profile. Three harmonics with
@@ -1292,11 +1354,7 @@ class WallState {
   // angle on its ring; the equatorial bubble-merge bumps spiral up the
   // cavity wall rather than stacking in vertical columns.
   ringTwistRadians(phi) {
-    let twist = 0.0;
-    for (let n = 0; n < this.twist_amplitudes.length; n++) {
-      twist += this.twist_amplitudes[n] * Math.cos((n + 1) * phi + this.twist_phases[n]);
-    }
-    return twist;
+    return _cavityTwistRadians(this._cavity_shape || this, phi);
   }
 
   // Wall arc length for one cell — uses current mean radius (per-cell
@@ -1398,8 +1456,9 @@ class WallState {
   // Marching-Cubes cavity migration, Tranches 0/1: renderer-only scalar
   // volume and extracted shadow surface. These caches deliberately coexist
   // with WallMesh; mesh.cells[] remains the canonical chemistry/wall store.
-  // The v1 field is bubble-only: archetype elongation/polar masks and live
-  // wall_depth are not represented yet, so it must remain default-off.
+  // The v2 field composes the authored elongation/polar/twist deformation with
+  // the bubble union. Live wall_depth is not represented yet, so it remains a
+  // default-off comparison rather than simulation authority.
   cavityFieldFor(opts: any = {}) {
     const CF: any = (typeof CavityScalarField !== 'undefined') ? CavityScalarField : null;
     if (!CF) return null;

@@ -644,55 +644,60 @@ The first safe deliverable now exists in the local working tree:
 
 - `js/23a-geometry-cavity-field.ts` builds a deterministic Cartesian
   `Float32Array` volume from the exact union of `wall.bubbles` using the
-  documented positive-void/negative-rock convention.
+  documented positive-void/negative-rock convention. SIM 262 extends the same
+  oracle through the immutable authored elongation, flatten/collapse, harmonic,
+  and twist transforms used by `WallMesh`.
 - `js/23b-geometry-marching-cubes.ts` extracts deterministic indexed buffers,
   deduplicates vertices by global grid edge, uses scalar gradients for normals,
   and resolves shared ambiguous faces with a bilinear asymptotic decider.
 - `js/22-geometry-wall.ts` owns lazy field/surface caches keyed only by the
-  sampled bubble geometry and resolution. Polar-only geometry revisions still
-  refresh the renderer's separate canonical clip signature.
+  sampled bubble geometry, effective construction-time shape descriptor, and
+  resolution. Live `wall_depth` revisions still refresh the renderer's
+  separate canonical clip signature.
 - `js/99i-renderer-three.ts` exposes the shadow renderer only through
   `?mc_cavity=1` (optionally `?mc_resolution=64`) or a debug override. The
   default remains the canonical `WallMesh`.
-- Four focused Vitest files cover scalar-field math, extraction, integration,
-  and the repeatable scenario benchmark. They use test seed 42 while preserving
+- Focused Vitest files cover scalar-field math, extraction, integration,
+  canonical mesh parity, and the repeatable scenario benchmark. They use test
+  seed 42 while preserving
   every scenario's authored `shape_seed`.
 - The complete local `npm test` workflow subsequently passed all 211 test files
-  and 2,828 tests in 43 sequential memory-bounded batches. This includes the 25
+  and 2,834 tests in 43 sequential memory-bounded batches. This includes the 25
   focused tests above inside the same regression run as the existing science,
   scenario, replay, rendering, and narrative contracts.
 
 ### Measured benchmark receipt
 
-Warm local Vitest run on the same Windows machine, six authored scenarios,
+Warm local Vitest run on the same Windows machine, seven authored scenarios,
 default test seed 42. Times are diagnostic wall-clock measurements, not a
 cross-machine performance guarantee. Memory columns are typed-buffer payloads;
 they exclude transient arrays and JavaScript object overhead.
 
 | Scenario (`shape_seed`) | Grid | Field ms | Extract ms | Vertices | Triangles | Field KiB | Surface KiB |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `amethyst_geode` (7) | 48³ | 8.90 | 93.80 | 5,856 | 11,708 | 432 | 320 |
-| `amethyst_geode` (7) | 64³ | 4.79 | 185.37 | 10,536 | 21,068 | 1,024 | 576 |
-| `mvt` (3) | 48³ | 5.59 | 78.54 | 7,718 | 15,432 | 432 | 422 |
-| `mvt` (3) | 64³ | 8.51 | 198.84 | 13,956 | 27,908 | 1,024 | 763 |
-| `great_salt_plains` (1930) | 48³ | 3.55 | 54.55 | 6,120 | 12,236 | 432 | 335 |
-| `great_salt_plains` (1930) | 64³ | — | — | — | — | 1,024 | — |
-| `tormiq_alpine_cleft` (1990) | 48³ | 3.42 | 104.67 | 6,830 | 13,656 | 432 | 373 |
-| `tormiq_alpine_cleft` (1990) | 64³ | 19.24 | 110.62 | 12,296 | 24,588 | 1,024 | 672 |
-| `zoned_dripstone_cave` (24) | 48³ | 3.14 | 103.22 | 6,976 | 13,948 | 432 | 381 |
-| `zoned_dripstone_cave` (24) | 64³ | 8.14 | 126.99 | 12,558 | 25,112 | 1,024 | 687 |
-| `reactive_wall` (5) | 48³ | 12.45 | 47.41 | 5,562 | 11,120 | 432 | 304 |
-| `reactive_wall` (5) | 64³ | 10.88 | 98.32 | 10,074 | 20,144 | 1,024 | 551 |
+| `amethyst_geode` (7) | 48³ | 16.80 | 111.45 | 5,856 | 11,708 | 432 | 320 |
+| `amethyst_geode` (7) | 64³ | 8.71 | 126.77 | 10,536 | 21,068 | 1,024 | 576 |
+| `mvt` (3) | 48³ | 5.05 | 72.91 | 7,718 | 15,432 | 432 | 422 |
+| `mvt` (3) | 64³ | 11.67 | 156.91 | 13,956 | 27,908 | 1,024 | 763 |
+| `reactivated_fluorite_vein` (1850) | 48³ | 30.69 | 24.03 | 2,070 | 4,136 | 432 | 113 |
+| `reactivated_fluorite_vein` (1850) | 64³ | 46.10 | 55.89 | 3,772 | 7,540 | 1,024 | 206 |
+| `great_salt_plains` (1930) | 48³ | 27.62 | 22.58 | 1,874 | 3,744 | 432 | 102 |
+| `great_salt_plains` (1930) | 64³ | 54.84 | 43.14 | 3,374 | 6,744 | 1,024 | 184 |
+| `tormiq_alpine_cleft` (1990) | 48³ | 25.30 | 19.47 | 1,136 | 2,268 | 432 | 62 |
+| `tormiq_alpine_cleft` (1990) | 64³ | 50.40 | 37.71 | 2,090 | 4,176 | 1,024 | 114 |
+| `zoned_dripstone_cave` (24) | 48³ | 8.86 | 62.25 | 6,976 | 13,948 | 432 | 381 |
+| `zoned_dripstone_cave` (24) | 64³ | 20.77 | 121.92 | 12,558 | 25,112 | 1,024 | 687 |
+| `reactive_wall` (5) | 48³ | 21.24 | 83.03 | 5,562 | 11,120 | 432 | 304 |
+| `reactive_wall` (5) | 64³ | 33.61 | 92.98 | 10,074 | 20,144 | 1,024 | 551 |
 
-At 48³, build plus extraction measured 58–108 ms, 11,120–15,432
-triangles, and roughly 0.72–0.83 MiB of retained field plus surface buffers.
-Five valid 64³ cases measured 109–207 ms, 20,144–27,908 triangles, and roughly
-1.54–1.75 MiB. `great_salt_plains` at 64³ is now an explicit expected rejection:
-manifold validation found an unresolved interior ambiguity, and the renderer
-falls back to `WallMesh`. The earlier raw 22,106-triangle buffer is not treated
-as a valid surface. The original sub-33-ms extraction target was not met, so
-64³ is not a production default and the extractor requires MC33-class
-ambiguity handling plus profiling/optimization before any always-on promotion.
+At 48³, build plus extraction measured 45–128 ms, 2,268–15,432
+triangles, and roughly 0.48–0.83 MiB of retained field plus surface buffers.
+All seven 64³ cases measured 88–169 ms, 4,176–27,908 triangles, and roughly
+1.11–1.75 MiB. The earlier `great_salt_plains` rejection disappears when its
+authored basin collapse is sampled instead of incorrectly extracting the raw
+bubble union. The original sub-33-ms extraction target was not met, so 64³ is
+not a production default; profiling and optimization remain gates before any
+always-on promotion.
 
 ### Visual comparison and promotion gates
 
@@ -701,9 +706,11 @@ gross multi-lobe silhouette and that both renderer modes load without console
 warnings or errors. They also exposed the exact limits the shadow path was
 meant to reveal:
 
-- `wall.bubbles` precedes the canonical archetype's `elongation`,
-  `polar_flatten`, and `polar_collapse` transforms. A bubble-only field cannot
-  yet reproduce authored tabular, cleft, or basin cavities.
+- **Closed in SIM 262:** one frozen construction-time shape descriptor now
+  drives both paths. Exhaustive canonical-vertex tests pin zero/inside/outside
+  parity for authored tabular, cleft, and basin cavities, including analytic
+  pole caps. The elongation quadrupole is pole-regularized with `sin²(φ)` so a
+  single Cartesian point cannot acquire a longitude-dependent radius.
 - Per-cell `wall_depth` is not reconstructible from the base bubbles. It does
   not invalidate the byte-identical field cache; the canonical clip signature
   still refreshes until a replayable, mass-balanced erosion ledger exists.
@@ -716,10 +723,11 @@ meant to reveal:
 - Historical replay snapshots contain per-cell `wall_depth`, not a Cartesian
   primitive ledger, so replay deliberately falls back to `WallMesh`.
 
-These are promotion blockers, not reasons to remove the foundation. The flag
-stays default-off while Tranche 2 first composes authored cavity masks into the
-scalar oracle. Tranches 3 and 4 must then make clipping and anchors consume that
-same oracle before non-star-shaped geometry can become simulation authority.
+The remaining items are promotion blockers, not reasons to remove the
+foundation. The flag stays default-off while Tranche 2 adds deterministic,
+mass-balanced wall evolution. Tranches 3 and 4 must then make clipping and
+anchors consume that same oracle before non-star-shaped geometry can become
+simulation authority.
 
 ### Decisions recorded
 
@@ -736,8 +744,9 @@ same oracle before non-star-shaped geometry can become simulation authority.
 - [x] All connected components are emitted so the extractor does not silently
       erase valid chambers.
 - [ ] The 3D clip texture representation remains a Tranche 3 measurement.
-- [x] MC accompanies rather than replaces `WallMesh` until authored masks,
-      dissolution, clipping, anchors, replay, and appearance share one field.
+- [x] MC accompanies rather than replaces `WallMesh` until dissolution,
+      clipping, anchors, replay, and appearance share one field. Authored masks
+      joined the shared oracle in SIM 262.
 - [x] Active evolution should rebuild a cache from a deterministic,
       mass-balanced ledger of erosion/deposition primitives rather than mutate
       an opaque authoritative volume.
@@ -786,3 +795,41 @@ validation pass, the AI “Dr. Michael Wise” hostile-review role returned
 `SATISFIED`. This verdict covers the default-off Tranches 0/1 foundation and
 its explicit limitations; it does not approve production promotion or claim
 review by the real scientist or Smithsonian.
+
+### SIM 262 authored-mask reconciliation — 2026-08-11
+
+The next hostile-review gate closed four defects before rebaking evidence:
+
+1. The inverse radial transform originally rescaled the field magnitude and
+   made the origin longitude-dependent. The scalar now retains the exact
+   bubble-union value after inverse mapping, preserving continuity and sign.
+2. Mutable public mask inputs could let the scalar cache diverge from the
+   already-built `WallMesh`. `WallState` now freezes one non-enumerable semantic
+   shape descriptor and exposes its compatibility fields as read-only values.
+3. Canonical latitude meshes approximated pole caps from their nearest rings,
+   placing the cap inside the analytic zero set. Both pole radii are now exact
+   bubble-union raycasts with the shared authored transform.
+4. Coverage omitted a tabular performance case. The repeatable receipt now
+   includes `reactivated_fluorite_vein` at both 48³ and 64³, while exhaustive
+   canonical-vertex parity covers tabular, cleft, and basin masks.
+
+The geometry change is versioned as SIM 262 because pole regularization and
+analytic caps alter canonical surface area, even though the Marching Cubes
+renderer remains default-off. The Node-only science workflow rebakes and
+verifies the versioned fleet receipt before this gate may be committed.
+
+The completed SIM 262 evidence gate passed all 211 test files / 2,834 tests in
+43 memory-bounded batches, the deterministic 170-module build check, and the
+Node-only science rebake for all 41 scenarios at evidence seeds 1, 2, and 42.
+The rebake produced 41 strips and 41 claim cards with 235 manifest citations,
+zero unclassified products, and zero locality-contract violations. Local
+browser comparison at seed 42 covered ellipsoidal, tabular, basin, and cleft
+cavities at the measured 48-cube resolution; the shadow and canonical geode
+silhouettes matched, an orbited cleft remained closed, and no browser warning
+or error was emitted. At a 390 by 844 phone viewport, document and body widths
+remained equal to their client widths and the 3D canvas stayed inside the
+viewport. After reviewing these receipts and the bounded SIM 261 to SIM 262
+science drift, the AI “Dr. Michael Wise” hostile-review role returned the exact
+verdict `SATISFIED`. This is approval of the authored-mask/default-off shadow
+gate only, not production promotion and not review by the real scientist or
+Smithsonian.
