@@ -31,6 +31,12 @@
 // gracefully if Three.js is unavailable (CDN blocked, file://, etc.).
 
 let _topoUseThreeRenderer = true;
+// Development-only renderer shadow path for the Cartesian cavity field.
+// Default off. Enable locally with ?mc_cavity=1 (optional ?mc_resolution=64)
+// or through _topoSetMarchingCubesCavity() in the debug console. This is not
+// a geological/Creative control: chemistry and anchors still use WallMesh.
+let _topoMarchingCubesCavityOverride: boolean | null = null;
+let _topoMarchingCubesResolutionOverride: number | null = null;
 // Has the default-on initialization run yet? On the FIRST topoRender
 // where Three.js is actually available, we force drag mode to 'rotate'
 // and color the toggle button. Done as one-shot so subsequent renders
@@ -445,6 +451,81 @@ function _topoCavitySignature(wall: any, sim: any): string {
   return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}|${surf}`;
 }
 
+function _topoMarchingCubesCavityEnabled(): boolean {
+  if (_topoMarchingCubesCavityOverride != null) return _topoMarchingCubesCavityOverride;
+  if (typeof window === 'undefined' || !window.location) return false;
+  try {
+    const value = new URLSearchParams(window.location.search || '').get('mc_cavity');
+    return value === '1' || value === 'true' || value === 'on';
+  } catch (_) {
+    return false;
+  }
+}
+
+function _topoMarchingCubesResolution(): number {
+  if (_topoMarchingCubesResolutionOverride != null) return _topoMarchingCubesResolutionOverride;
+  if (typeof window !== 'undefined' && window.location) {
+    try {
+      const raw = Number(new URLSearchParams(window.location.search || '').get('mc_resolution'));
+      if (Number.isFinite(raw) && raw >= 8 && raw <= 128) return Math.round(raw);
+    } catch (_) { /* retain the measured 48^3 default */ }
+  }
+  return 48;
+}
+
+function _topoSetMarchingCubesCavity(enabled: boolean, resolution = 48): void {
+  const parsed = Math.round(Number(resolution));
+  if (!Number.isFinite(parsed) || parsed < 8 || parsed > 128) {
+    throw new RangeError('Marching Cubes cavity resolution must be from 8 through 128');
+  }
+  // Validate the complete request before changing either override. A rejected
+  // debug command must not accidentally enable the shadow renderer.
+  _topoMarchingCubesCavityOverride = !!enabled;
+  _topoMarchingCubesResolutionOverride = parsed;
+  if (_topoThreeState) _topoThreeState.cavitySig = '';
+}
+
+// Pure renderer-facing adapter used by both the Three.js path and integration
+// tests. The legacy mesh remains available as clipMesh even when the shadow
+// MC buffers are selected. This mismatch is deliberate and blocks promotion:
+// the current 2D polar clip cannot describe MC undercuts or separated chambers.
+// The v1 MC surface also has temporary spherical UVs and bubble-only geometry,
+// so authored polar masks, wall_depth, matrix-skin mapping, and water tint are
+// comparison findings rather than supported production behavior.
+function _topoCavitySurfaceSource(wall: any, sim: any,
+                                  useMarchingCubes = _topoMarchingCubesCavityEnabled(),
+                                  resolution = _topoMarchingCubesResolution()): any {
+  if (!wall) return null;
+  const clipMesh = wall.meshFor ? wall.meshFor(sim) : null;
+  if (!clipMesh) return null;
+  if (useMarchingCubes && !wall._disableMarchingCubesCavity && wall.cavitySurfaceFor) {
+    try {
+      const buffers = wall.cavitySurfaceFor({ resolution, isovalue: 0 });
+      if (buffers) {
+        // clipMesh.sig may change for wall_depth even though the bubble-only MC
+        // buffers stay cached. Include it so clip uniforms refresh without
+        // paying for a byte-identical field/extraction rebuild.
+        return { mode: 'marching-cubes', buffers, clipMesh,
+          sig: `mc|${buffers.sig}|clip:${clipMesh.sig}` };
+      }
+      const failure = wall._cavitySurfaceFailure;
+      if (failure && !failure.reported) {
+        failure.reported = true;
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn('[marching-cubes] shadow surface rejected; using WallMesh', failure.error);
+        }
+      }
+    } catch (error) {
+      // Malformed field inputs also fail closed to the canonical renderer.
+      // Expected extraction rejections are cached/reported above.
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[marching-cubes] shadow surface rejected; using WallMesh', error);
+      }
+    }
+  }
+  return { mode: 'wall-mesh', buffers: clipMesh, clipMesh, sig: `wall-mesh|${clipMesh.sig}` };
+}
+
 // PHASE-2-CAVITY-MESH: cavity geometry now sources from WallMesh
 // (js/23-geometry-wall-mesh.ts). The renderer's job here is reduced
 // to: ask the wall for its mesh, copy the mesh's buffers into a
@@ -455,17 +536,19 @@ function _topoCavitySignature(wall: any, sim: any): string {
 // geodesic, irregular) can swap in without touching this file.
 function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
   if (!wall || !wall.rings || !wall.rings.length) return;
-  const mesh = wall.meshFor ? wall.meshFor(sim) : null;
-  if (!mesh) return;
-  if (mesh.sig === state.cavitySig) return;
-  state.cavitySig = mesh.sig;
+  const source = _topoCavitySurfaceSource(wall, sim);
+  if (!source) return;
+  const mesh = source.clipMesh;
+  const surface = source.buffers;
+  if (source.sig === state.cavitySig) return;
+  state.cavitySig = source.sig;
 
   const ringCount = wall.ring_count;
   const ring0 = wall.rings[0];
   const N = ring0 ? ring0.length : 0;
   if (!N || ringCount < 1) return;
 
-  const numVerts = mesh.numInterior + 2;
+  const numVerts = surface.positions.length / 3;
   const geom = new THREE.BufferGeometry();
   // mesh.positions / mesh.colors / mesh.normals are Float32Arrays the
   // mesh owns and rebuilds in-place; copy-on-write into the
@@ -473,19 +556,22 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
   // geometry's data behind Three.js's back. The slice() costs
   // ~75 KB per cavity rebuild at the default 16×120 resolution
   // (≈ once per dissolution event), which is well under the budget.
-  geom.setAttribute('position', new THREE.BufferAttribute(mesh.positions.slice(), 3));
-  geom.setAttribute('color', new THREE.BufferAttribute(mesh.colors.slice(), 3));
-  geom.setAttribute('normal', new THREE.BufferAttribute(mesh.normals.slice(), 3));
+  geom.setAttribute('position', new THREE.BufferAttribute(surface.positions.slice(), 3));
+  geom.setAttribute('color', new THREE.BufferAttribute(surface.colors.slice(), 3));
+  geom.setAttribute('normal', new THREE.BufferAttribute(surface.normals.slice(), 3));
   // MATRIX SKIN (2026-07-06): static lat-long texture coords (js/23) so the
   // per-lithology wall skin can map. Guarded — an old cached mesh without uvs
   // just skips the attribute and the material renders un-mapped.
-  if (mesh.uvs) geom.setAttribute('uv', new THREE.BufferAttribute(mesh.uvs.slice(), 2));
+  if (surface.uvs) geom.setAttribute('uv', new THREE.BufferAttribute(surface.uvs.slice(), 2));
   const indexAttr = numVerts > 65535
-    ? new THREE.Uint32BufferAttribute(mesh.indices, 1)
-    : new THREE.Uint16BufferAttribute(mesh.indices, 1);
+    ? new THREE.Uint32BufferAttribute(surface.indices, 1)
+    : new THREE.Uint16BufferAttribute(surface.indices, 1);
   geom.setIndex(indexAttr);
-  geom.computeVertexNormals();  // overwrite the placeholder normals with
-                                // mesh-aware ones for proper shading
+  // The MC path carries scalar-gradient normals. Recomputing them from
+  // triangles would discard the shared field oracle and reintroduce seams.
+  if (source.mode === 'wall-mesh') {
+    geom.computeVertexNormals();  // legacy mesh placeholders need this pass
+  }
 
   const target = state.cavity;
   const prev = target.geometry;
@@ -5750,6 +5836,12 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
   // can silently render the live wall's cached vertices.
   delete synth._geometry_revision;
   delete synth._mesh;
+  delete synth._cavityField;
+  delete synth._cavitySurface;
+  // The first renderer-only MC tranche intentionally cannot reproduce
+  // historical per-cell wall_depth. Keep replay on its canonical mesh until
+  // the scalar erosion/deposition ledger exists.
+  synth._disableMarchingCubesCavity = true;
 
   // Detect snapshot shape:
   //   * Multi-ring (v65+): { step, rings: [...] } — use directly.

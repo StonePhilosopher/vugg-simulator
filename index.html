@@ -27388,6 +27388,52 @@ class WallState {
         }
         return this._mesh;
     }
+    // Marching-Cubes cavity migration, Tranches 0/1: renderer-only scalar
+    // volume and extracted shadow surface. These caches deliberately coexist
+    // with WallMesh; mesh.cells[] remains the canonical chemistry/wall store.
+    // The v1 field is bubble-only: archetype elongation/polar masks and live
+    // wall_depth are not represented yet, so it must remain default-off.
+    cavityFieldFor(opts = {}) {
+        const CF = (typeof CavityScalarField !== 'undefined') ? CavityScalarField : null;
+        if (!CF)
+            return null;
+        const resolution = opts && opts.resolution != null ? opts.resolution : 48;
+        const sig = CF.signatureFor(this, resolution);
+        if (!this._cavityField || this._cavityField.sig !== sig) {
+            this._cavityField = CF.fromWallState(this, { resolution });
+            this._cavitySurface = null;
+            this._cavitySurfaceFailure = null;
+        }
+        return this._cavityField;
+    }
+    cavitySurfaceFor(opts = {}) {
+        const field = this.cavityFieldFor(opts);
+        if (!field)
+            return null;
+        const isovalue = opts && opts.isovalue != null ? Number(opts.isovalue) : 0;
+        const sig = `${field.sig}|mc-face-decider-orient-probe:v3|iso:${isovalue}`;
+        if (this._cavitySurfaceFailure && this._cavitySurfaceFailure.sig === sig) {
+            if (opts && opts.throwOnFailure)
+                throw this._cavitySurfaceFailure.error;
+            return null;
+        }
+        if (!this._cavitySurface || this._cavitySurface.sig !== sig) {
+            try {
+                this._cavitySurface = field.extract(isovalue);
+                this._cavitySurfaceFailure = null;
+            }
+            catch (error) {
+                // Negative-result cache: a known interior ambiguity must not pay for
+                // the same failed extraction on every render frame. Renderer callers
+                // receive null and fall back; diagnostics may request the cached error.
+                this._cavitySurfaceFailure = { sig, error, reported: false };
+                if (opts && opts.throwOnFailure)
+                    throw error;
+                return null;
+            }
+        }
+        return this._cavitySurface;
+    }
     // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1 (v158) — lazy + cached
     // factory for the cavity interior voxel grid. Same pattern as
     // meshFor(): build on first call, cache for subsequent calls.
@@ -28661,6 +28707,716 @@ class WallMesh {
         this.max_radius_mm = Math.sqrt(maxR2);
         this._recomputeSurfaceMetrics();
         this.sig = WallMesh._signature(wall, sim);
+    }
+}
+
+// ── 23a-geometry-cavity-field.js ──
+
+// ============================================================
+// js/23a-geometry-cavity-field.ts — Cartesian cavity scalar field
+// ============================================================
+// Renderer-side geometry substrate for the Marching Cubes migration.
+//
+// Sign convention (one source of truth):
+//   field > 0  => open cavity / fluid
+//   field = 0  => cavity wall
+//   field < 0  => host rock
+//
+// The first tranche samples the exact union of WallState.bubbles. It does
+// not read or mutate wall cells, chemistry, crystals, or the simulation RNG.
+// IMPORTANT PROMOTION GATE: bubbles do not encode the later polar_flatten,
+// polar_collapse, elongation, or per-cell wall_depth transforms used by the
+// canonical WallMesh. Until those transforms have scalar-field equivalents,
+// this field is a default-off renderer comparison, not simulation truth.
+class CavityScalarField {
+    constructor(opts) {
+        const sizeX = Number(opts && opts.sizeX);
+        const sizeY = Number(opts && opts.sizeY);
+        const sizeZ = Number(opts && opts.sizeZ);
+        const spacingMm = Number(opts && opts.spacingMm);
+        const origin = opts && opts.origin;
+        const values = opts && opts.values;
+        if (!Number.isInteger(sizeX) || !Number.isInteger(sizeY) || !Number.isInteger(sizeZ)
+            || sizeX < 2 || sizeY < 2 || sizeZ < 2) {
+            throw new RangeError('CavityScalarField dimensions must be integers >= 2');
+        }
+        if (!(spacingMm > 0) || !Number.isFinite(spacingMm)) {
+            throw new RangeError('CavityScalarField spacingMm must be positive and finite');
+        }
+        if (!Array.isArray(origin) || origin.length !== 3 || !origin.every(Number.isFinite)) {
+            throw new TypeError('CavityScalarField origin must contain three finite coordinates');
+        }
+        if (!(values instanceof Float32Array) || values.length !== sizeX * sizeY * sizeZ) {
+            throw new RangeError('CavityScalarField values length does not match its dimensions');
+        }
+        for (let i = 0; i < values.length; i++) {
+            if (!Number.isFinite(values[i])) {
+                throw new TypeError(`CavityScalarField contains a non-finite sample at index ${i}`);
+            }
+        }
+        this.sizeX = sizeX;
+        this.sizeY = sizeY;
+        this.sizeZ = sizeZ;
+        this.spacingMm = spacingMm;
+        this.origin = [origin[0], origin[1], origin[2]];
+        this.values = values;
+        this.sig = String(opts.sig || 'cavity-field:fixture');
+        this.sourceBubbles = Array.isArray(opts.sourceBubbles)
+            ? opts.sourceBubbles.map((b) => b.slice())
+            : [];
+        this.bounds = {
+            min: [origin[0], origin[1], origin[2]],
+            max: [
+                origin[0] + spacingMm * (sizeX - 1),
+                origin[1] + spacingMm * (sizeY - 1),
+                origin[2] + spacingMm * (sizeZ - 1),
+            ],
+        };
+        this.metrics = Object.assign({
+            field_build_ms: 0,
+            field_bytes: values.byteLength,
+        }, opts.metrics || {});
+    }
+    static _nowMs() {
+        return (typeof performance !== 'undefined' && performance && performance.now)
+            ? performance.now()
+            : Date.now();
+    }
+    static _resolution(value) {
+        const n = Math.round(Number(value == null ? 48 : value));
+        if (!Number.isFinite(n) || n < 8 || n > 128) {
+            throw new RangeError('cavity field resolution must be an integer from 8 through 128');
+        }
+        return n;
+    }
+    static _validatedBubbles(input) {
+        if (!Array.isArray(input) || input.length === 0) {
+            throw new TypeError('WallState.bubbles must contain at least one 3D sphere');
+        }
+        return input.map((bubble, index) => {
+            if (!Array.isArray(bubble) || bubble.length < 4) {
+                throw new TypeError(`cavity bubble ${index} must be [cx, cy, cz, radius]`);
+            }
+            const out = [Number(bubble[0]), Number(bubble[1]), Number(bubble[2]), Number(bubble[3])];
+            if (!out.every(Number.isFinite) || !(out[3] > 0)) {
+                throw new TypeError(`cavity bubble ${index} must contain finite coordinates and a positive radius`);
+            }
+            return out;
+        });
+    }
+    static bubbleUnionValue(bubbles, x, y, z) {
+        if (![x, y, z].every(Number.isFinite)) {
+            throw new TypeError('cavity field sample coordinates must be finite');
+        }
+        let value = -Infinity;
+        for (const bubble of bubbles) {
+            const dx = x - bubble[0];
+            const dy = y - bubble[1];
+            const dz = z - bubble[2];
+            const sphere = bubble[3] - Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (sphere > value)
+                value = sphere;
+        }
+        return value;
+    }
+    static _sourceHash(bubbles) {
+        let hashA = 0x811c9dc5;
+        let hashB = 0x9e3779b9;
+        const scratch = new DataView(new ArrayBuffer(8));
+        for (const bubble of bubbles) {
+            for (const number of bubble) {
+                scratch.setFloat64(0, number, true);
+                for (let byte = 0; byte < 8; byte++) {
+                    const value = scratch.getUint8(byte);
+                    hashA = Math.imul(hashA ^ value, 0x01000193) >>> 0;
+                    hashB = (Math.imul(hashB ^ value, 0x85ebca6b) + 0x27d4eb2f) >>> 0;
+                }
+            }
+        }
+        return `${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
+    }
+    static signatureFor(wall, resolution = 48) {
+        const bubbles = CavityScalarField._validatedBubbles(wall && wall.bubbles);
+        const n = CavityScalarField._resolution(resolution);
+        // Only hash inputs that v1 actually samples. wall._geometry_revision also
+        // changes for per-cell wall_depth, which this bubble-only field explicitly
+        // does not represent; including it would trigger expensive byte-identical
+        // rebuilds during dissolution.
+        return `cavity-field:v1|${n}^3|${CavityScalarField._sourceHash(bubbles)}`;
+    }
+    static fromWallState(wall, opts = {}) {
+        if (!wall)
+            throw new TypeError('CavityScalarField.fromWallState requires a wall');
+        const resolution = CavityScalarField._resolution(opts.resolution);
+        const bubbles = CavityScalarField._validatedBubbles(wall.bubbles);
+        const sig = CavityScalarField.signatureFor(wall, resolution);
+        return CavityScalarField.fromBubbles(bubbles, { resolution, sig });
+    }
+    static fromBubbles(input, opts = {}) {
+        const started = CavityScalarField._nowMs();
+        const bubbles = CavityScalarField._validatedBubbles(input);
+        const resolution = CavityScalarField._resolution(opts.resolution);
+        const rawMin = [Infinity, Infinity, Infinity];
+        const rawMax = [-Infinity, -Infinity, -Infinity];
+        for (const [cx, cy, cz, radius] of bubbles) {
+            rawMin[0] = Math.min(rawMin[0], cx - radius);
+            rawMin[1] = Math.min(rawMin[1], cy - radius);
+            rawMin[2] = Math.min(rawMin[2], cz - radius);
+            rawMax[0] = Math.max(rawMax[0], cx + radius);
+            rawMax[1] = Math.max(rawMax[1], cy + radius);
+            rawMax[2] = Math.max(rawMax[2], cz + radius);
+        }
+        const extent = [rawMax[0] - rawMin[0], rawMax[1] - rawMin[1], rawMax[2] - rawMin[2]];
+        const largestExtent = Math.max(extent[0], extent[1], extent[2]);
+        if (!(largestExtent > 0) || !Number.isFinite(largestExtent)) {
+            throw new RangeError('cavity bubble bounds must have positive finite extent');
+        }
+        // Cubic physical bounds make spacingMm one honest value on every axis.
+        // Iterate the padding/spacing relation because the required padding is
+        // max(2*spacing, 5% of the largest bubble-union extent).
+        let padding = 0.05 * largestExtent;
+        let spacingMm = (largestExtent + 2 * padding) / (resolution - 1);
+        for (let i = 0; i < 4; i++) {
+            padding = Math.max(2 * spacingMm, 0.05 * largestExtent);
+            spacingMm = (largestExtent + 2 * padding) / (resolution - 1);
+        }
+        const center = [
+            (rawMin[0] + rawMax[0]) * 0.5,
+            (rawMin[1] + rawMax[1]) * 0.5,
+            (rawMin[2] + rawMax[2]) * 0.5,
+        ];
+        const half = spacingMm * (resolution - 1) * 0.5;
+        const origin = [center[0] - half, center[1] - half, center[2] - half];
+        const values = new Float32Array(resolution * resolution * resolution);
+        let offset = 0;
+        for (let z = 0; z < resolution; z++) {
+            const wz = origin[2] + z * spacingMm;
+            for (let y = 0; y < resolution; y++) {
+                const wy = origin[1] + y * spacingMm;
+                for (let x = 0; x < resolution; x++) {
+                    const wx = origin[0] + x * spacingMm;
+                    const value = CavityScalarField.bubbleUnionValue(bubbles, wx, wy, wz);
+                    if (!Number.isFinite(value)) {
+                        throw new TypeError(`non-finite cavity field sample at (${x}, ${y}, ${z})`);
+                    }
+                    values[offset++] = value;
+                }
+            }
+        }
+        const field = new CavityScalarField({
+            sizeX: resolution,
+            sizeY: resolution,
+            sizeZ: resolution,
+            spacingMm,
+            origin,
+            values,
+            sourceBubbles: bubbles,
+            sig: opts.sig || `cavity-field:v1|${resolution}^3|${CavityScalarField._sourceHash(bubbles)}`,
+        });
+        field.metrics.field_build_ms = CavityScalarField._nowMs() - started;
+        if (!field.hasNegativeBorder(0)) {
+            throw new RangeError('cavity scalar field bounds do not retain a complete rock-negative border');
+        }
+        return field;
+    }
+    index(x, y, z) {
+        if (!Number.isInteger(x) || !Number.isInteger(y) || !Number.isInteger(z)
+            || x < 0 || y < 0 || z < 0
+            || x >= this.sizeX || y >= this.sizeY || z >= this.sizeZ) {
+            throw new RangeError(`cavity field index out of range: (${x}, ${y}, ${z})`);
+        }
+        return (z * this.sizeY + y) * this.sizeX + x;
+    }
+    worldPosition(x, y, z) {
+        this.index(x, y, z);
+        return [
+            this.origin[0] + x * this.spacingMm,
+            this.origin[1] + y * this.spacingMm,
+            this.origin[2] + z * this.spacingMm,
+        ];
+    }
+    valueAt(x, y, z) {
+        return this.values[this.index(x, y, z)];
+    }
+    sampleAnalyticWorld(x, y, z) {
+        if (!this.sourceBubbles.length)
+            return this.sampleWorld(x, y, z);
+        return CavityScalarField.bubbleUnionValue(this.sourceBubbles, x, y, z);
+    }
+    sampleWorld(x, y, z) {
+        if (![x, y, z].every(Number.isFinite)) {
+            throw new TypeError('cavity field sample coordinates must be finite');
+        }
+        const gx = (x - this.origin[0]) / this.spacingMm;
+        const gy = (y - this.origin[1]) / this.spacingMm;
+        const gz = (z - this.origin[2]) / this.spacingMm;
+        if (gx < 0 || gy < 0 || gz < 0
+            || gx > this.sizeX - 1 || gy > this.sizeY - 1 || gz > this.sizeZ - 1) {
+            if (this.sourceBubbles.length) {
+                return CavityScalarField.bubbleUnionValue(this.sourceBubbles, x, y, z);
+            }
+            return -Infinity;
+        }
+        const x0 = Math.min(this.sizeX - 2, Math.floor(gx));
+        const y0 = Math.min(this.sizeY - 2, Math.floor(gy));
+        const z0 = Math.min(this.sizeZ - 2, Math.floor(gz));
+        const tx = gx - x0;
+        const ty = gy - y0;
+        const tz = gz - z0;
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const c000 = this.valueAt(x0, y0, z0);
+        const c100 = this.valueAt(x0 + 1, y0, z0);
+        const c010 = this.valueAt(x0, y0 + 1, z0);
+        const c110 = this.valueAt(x0 + 1, y0 + 1, z0);
+        const c001 = this.valueAt(x0, y0, z0 + 1);
+        const c101 = this.valueAt(x0 + 1, y0, z0 + 1);
+        const c011 = this.valueAt(x0, y0 + 1, z0 + 1);
+        const c111 = this.valueAt(x0 + 1, y0 + 1, z0 + 1);
+        const z0Value = lerp(lerp(c000, c100, tx), lerp(c010, c110, tx), ty);
+        const z1Value = lerp(lerp(c001, c101, tx), lerp(c011, c111, tx), ty);
+        return lerp(z0Value, z1Value, tz);
+    }
+    gradientWorld(x, y, z) {
+        const h = this.spacingMm * 0.5;
+        const derivative = (axis) => {
+            const point = [x, y, z];
+            const minus = Math.max(this.bounds.min[axis], point[axis] - h);
+            const plus = Math.min(this.bounds.max[axis], point[axis] + h);
+            if (!(plus > minus))
+                return 0;
+            const a = point.slice();
+            const b = point.slice();
+            a[axis] = minus;
+            b[axis] = plus;
+            return (this.sampleWorld(b[0], b[1], b[2]) - this.sampleWorld(a[0], a[1], a[2]))
+                / (plus - minus);
+        };
+        return [derivative(0), derivative(1), derivative(2)];
+    }
+    hasNegativeBorder(isovalue = 0) {
+        for (let z = 0; z < this.sizeZ; z++) {
+            for (let y = 0; y < this.sizeY; y++) {
+                for (let x = 0; x < this.sizeX; x++) {
+                    if (x !== 0 && y !== 0 && z !== 0
+                        && x !== this.sizeX - 1 && y !== this.sizeY - 1 && z !== this.sizeZ - 1)
+                        continue;
+                    if (!(this.valueAt(x, y, z) < isovalue))
+                        return false;
+                }
+            }
+        }
+        return true;
+    }
+    extract(isovalue = 0) {
+        if (!Number.isFinite(isovalue))
+            throw new TypeError('cavity surface isovalue must be finite');
+        const extractor = (typeof MarchingCubesExtractor !== 'undefined') ? MarchingCubesExtractor : null;
+        if (!extractor)
+            throw new Error('MarchingCubesExtractor is unavailable');
+        return extractor.extract(this, isovalue);
+    }
+}
+
+// ── 23b-geometry-marching-cubes.js ──
+
+// ============================================================
+// js/23b-geometry-marching-cubes.ts — indexed cavity extraction
+// ============================================================
+// A deterministic, indexed Marching Cubes extractor. Instead of a classic
+// 256-row triangle table, each 8-bit cube case is assembled from its six
+// Marching-Squares face contours. Ambiguous four-crossing faces use the
+// bilinear asymptotic decider, shared by both cells touching that face; this
+// prevents face cracks while keeping global grid-edge vertices deduplicated.
+// MC33-style interior ambiguity resolution remains a later production gate.
+class MarchingCubesExtractor {
+    static { this.CORNERS = [
+        [0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
+        [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1],
+    ]; }
+    static { this.EDGES = [
+        [0, 1], [1, 2], [2, 3], [3, 0],
+        [4, 5], [5, 6], [6, 7], [7, 4],
+        [0, 4], [1, 5], [2, 6], [3, 7],
+    ]; }
+    // Corners and perimeter edges are both ordered around each face.
+    static { this.FACES = [
+        { corners: [0, 1, 2, 3], edges: [0, 1, 2, 3] },
+        { corners: [4, 5, 6, 7], edges: [4, 5, 6, 7] },
+        { corners: [0, 1, 5, 4], edges: [0, 9, 4, 8] },
+        { corners: [3, 2, 6, 7], edges: [2, 10, 6, 11] },
+        { corners: [0, 4, 7, 3], edges: [8, 7, 11, 3] },
+        { corners: [1, 2, 6, 5], edges: [1, 10, 5, 9] },
+    ]; }
+    static _edgeKey(cellX, cellY, cellZ, edgeIndex) {
+        const pair = MarchingCubesExtractor.EDGES[edgeIndex];
+        const a = MarchingCubesExtractor.CORNERS[pair[0]];
+        const b = MarchingCubesExtractor.CORNERS[pair[1]];
+        const x = cellX + Math.min(a[0], b[0]);
+        const y = cellY + Math.min(a[1], b[1]);
+        const z = cellZ + Math.min(a[2], b[2]);
+        const axis = a[0] !== b[0] ? 'x' : (a[1] !== b[1] ? 'y' : 'z');
+        return `${axis}:${x}:${y}:${z}`;
+    }
+    static _connect(adjacency, a, b) {
+        const aa = adjacency.get(a) || [];
+        const bb = adjacency.get(b) || [];
+        if (!aa.includes(b))
+            aa.push(b);
+        if (!bb.includes(a))
+            bb.push(a);
+        adjacency.set(a, aa);
+        adjacency.set(b, bb);
+    }
+    static _facePairs(face, values, isovalue) {
+        const crossed = face.edges.filter((edgeIndex) => {
+            const pair = MarchingCubesExtractor.EDGES[edgeIndex];
+            return (values[pair[0]] > isovalue) !== (values[pair[1]] > isovalue);
+        });
+        if (crossed.length === 0)
+            return [];
+        if (crossed.length === 2)
+            return [[crossed[0], crossed[1]]];
+        if (crossed.length !== 4) {
+            throw new Error(`invalid Marching Cubes face crossing count: ${crossed.length}`);
+        }
+        const c = face.corners;
+        const f0 = values[c[0]] - isovalue;
+        const f1 = values[c[1]] - isovalue;
+        const f2 = values[c[2]] - isovalue;
+        const f3 = values[c[3]] - isovalue;
+        const q = f0 * f2 - f1 * f3;
+        // q > 0 means the c0/c2 sign owns the bilinear saddle center, so
+        // isolate the opposite c1/c3 corners. Exact ties use the same first
+        // pairing on both cells and are therefore deterministic/crack-free.
+        if (q >= 0) {
+            return [[face.edges[0], face.edges[1]], [face.edges[2], face.edges[3]]];
+        }
+        return [[face.edges[0], face.edges[3]], [face.edges[1], face.edges[2]]];
+    }
+    static _surfaceColor(normalY) {
+        if (normalY < -Math.SQRT1_2)
+            return [0xA8 / 255, 0x58 / 255, 0x20 / 255];
+        if (normalY > Math.SQRT1_2)
+            return [0xE8 / 255, 0x78 / 255, 0x2C / 255];
+        return [0xD2 / 255, 0x69 / 255, 0x1E / 255];
+    }
+    static extract(field, isovalue = 0) {
+        if (!(field instanceof CavityScalarField)) {
+            throw new TypeError('MarchingCubesExtractor.extract requires a CavityScalarField');
+        }
+        if (!Number.isFinite(isovalue))
+            throw new TypeError('Marching Cubes isovalue must be finite');
+        const started = CavityScalarField._nowMs();
+        const positions = [];
+        const normals = [];
+        const colors = [];
+        const uvs = [];
+        const indices = [];
+        const vertexByGridEdge = new Map();
+        const boundsCenter = [
+            (field.bounds.min[0] + field.bounds.max[0]) * 0.5,
+            (field.bounds.min[1] + field.bounds.max[1]) * 0.5,
+            (field.bounds.min[2] + field.bounds.max[2]) * 0.5,
+        ];
+        const vertexForEdge = (cellX, cellY, cellZ, edgeIndex, cornerValues) => {
+            const key = MarchingCubesExtractor._edgeKey(cellX, cellY, cellZ, edgeIndex);
+            const cached = vertexByGridEdge.get(key);
+            if (cached != null)
+                return cached;
+            const pair = MarchingCubesExtractor.EDGES[edgeIndex];
+            const ca = MarchingCubesExtractor.CORNERS[pair[0]];
+            const cb = MarchingCubesExtractor.CORNERS[pair[1]];
+            const valueA = cornerValues[pair[0]];
+            const valueB = cornerValues[pair[1]];
+            const denominator = valueB - valueA;
+            if (!Number.isFinite(denominator) || denominator === 0) {
+                throw new Error(`invalid Marching Cubes edge interpolation on ${key}`);
+            }
+            const t = Math.max(0, Math.min(1, (isovalue - valueA) / denominator));
+            const gx = cellX + ca[0] + (cb[0] - ca[0]) * t;
+            const gy = cellY + ca[1] + (cb[1] - ca[1]) * t;
+            const gz = cellZ + ca[2] + (cb[2] - ca[2]) * t;
+            const wx = field.origin[0] + gx * field.spacingMm;
+            const wy = field.origin[1] + gy * field.spacingMm;
+            const wz = field.origin[2] + gz * field.spacingMm;
+            if (![wx, wy, wz].every(Number.isFinite)) {
+                throw new Error(`non-finite Marching Cubes vertex on ${key}`);
+            }
+            const gradient = field.gradientWorld(wx, wy, wz);
+            let nx = -gradient[0], ny = -gradient[1], nz = -gradient[2];
+            const length = Math.hypot(nx, ny, nz);
+            // A scalar critical point has no uniquely defined surface normal (for
+            // example, the touching point of two tangent equal spheres). Do not use
+            // a radial guess: reject this shadow surface until an ambiguity-aware
+            // production extractor handles it.
+            if (!(length > 1e-12) || !Number.isFinite(length)) {
+                throw new Error(`undefined Marching Cubes normal at scalar critical point on ${key}`);
+            }
+            nx /= length;
+            ny /= length;
+            nz /= length;
+            const color = MarchingCubesExtractor._surfaceColor(ny);
+            const dx = wx - boundsCenter[0], dy = wy - boundsCenter[1], dz = wz - boundsCenter[2];
+            const radius = Math.hypot(dx, dy, dz) || 1;
+            let u = Math.atan2(dz, dx) / (2 * Math.PI);
+            if (u < 0)
+                u += 1;
+            const v = Math.acos(Math.max(-1, Math.min(1, -dy / radius))) / Math.PI;
+            const index = positions.length / 3;
+            positions.push(wx, wy, wz);
+            normals.push(nx, ny, nz);
+            colors.push(color[0], color[1], color[2]);
+            uvs.push(u, v);
+            vertexByGridEdge.set(key, index);
+            return index;
+        };
+        const addTriangle = (a, b, c) => {
+            if (a === b || b === c || c === a)
+                return;
+            const ax = positions[a * 3], ay = positions[a * 3 + 1], az = positions[a * 3 + 2];
+            const bx = positions[b * 3], by = positions[b * 3 + 1], bz = positions[b * 3 + 2];
+            const cx = positions[c * 3], cy = positions[c * 3 + 1], cz = positions[c * 3 + 2];
+            const abx = bx - ax, aby = by - ay, abz = bz - az;
+            const acx = cx - ax, acy = cy - ay, acz = cz - az;
+            const crossX = aby * acz - abz * acy;
+            const crossY = abz * acx - abx * acz;
+            const crossZ = abx * acy - aby * acx;
+            const area2 = Math.hypot(crossX, crossY, crossZ);
+            if (!(area2 > Math.max(1e-12, field.spacingMm * field.spacingMm * 1e-10)))
+                return;
+            const nx = normals[a * 3] + normals[b * 3] + normals[c * 3];
+            const ny = normals[a * 3 + 1] + normals[b * 3 + 1] + normals[c * 3 + 1];
+            const nz = normals[a * 3 + 2] + normals[b * 3 + 2] + normals[c * 3 + 2];
+            if (crossX * nx + crossY * ny + crossZ * nz < 0)
+                indices.push(a, c, b);
+            else
+                indices.push(a, b, c);
+        };
+        for (let z = 0; z < field.sizeZ - 1; z++) {
+            for (let y = 0; y < field.sizeY - 1; y++) {
+                for (let x = 0; x < field.sizeX - 1; x++) {
+                    const cornerValues = MarchingCubesExtractor.CORNERS.map((corner) => field.valueAt(x + corner[0], y + corner[1], z + corner[2]));
+                    let cubeCase = 0;
+                    for (let corner = 0; corner < 8; corner++) {
+                        if (cornerValues[corner] > isovalue)
+                            cubeCase |= (1 << corner);
+                    }
+                    if (cubeCase === 0 || cubeCase === 255)
+                        continue;
+                    const adjacency = new Map();
+                    for (const face of MarchingCubesExtractor.FACES) {
+                        for (const pair of MarchingCubesExtractor._facePairs(face, cornerValues, isovalue)) {
+                            MarchingCubesExtractor._connect(adjacency, pair[0], pair[1]);
+                        }
+                    }
+                    for (const [edge, neighbors] of adjacency) {
+                        if (neighbors.length !== 2) {
+                            throw new Error(`Marching Cubes case ${cubeCase} produced degree ${neighbors.length} at edge ${edge}`);
+                        }
+                    }
+                    const visited = new Set();
+                    const starts = Array.from(adjacency.keys()).sort((a, b) => a - b);
+                    for (const start of starts) {
+                        if (visited.has(start))
+                            continue;
+                        const loop = [];
+                        let previous = -1;
+                        let current = start;
+                        for (let guard = 0; guard < 13; guard++) {
+                            if (current === start && loop.length > 0)
+                                break;
+                            if (visited.has(current)) {
+                                throw new Error(`Marching Cubes case ${cubeCase} contains a non-cyclic contour`);
+                            }
+                            visited.add(current);
+                            loop.push(current);
+                            const neighbors = adjacency.get(current);
+                            const next = neighbors[0] === previous ? neighbors[1] : neighbors[0];
+                            previous = current;
+                            current = next;
+                        }
+                        if (current !== start || loop.length < 3) {
+                            throw new Error(`Marching Cubes case ${cubeCase} failed to close a face contour`);
+                        }
+                        const polygon = loop.map((edge) => vertexForEdge(x, y, z, edge, cornerValues));
+                        for (let i = 1; i < polygon.length - 1; i++) {
+                            addTriangle(polygon[0], polygon[i], polygon[i + 1]);
+                        }
+                    }
+                }
+            }
+        }
+        // A complete rock-negative border promises a closed cavity surface. The
+        // face decider prevents inter-cell cracks, but it does not solve every
+        // trilinear interior ambiguity. Fail closed if fan triangulation creates
+        // a non-2-manifold edge; MC33 remains the promotion path for such cases.
+        if (field.hasNegativeBorder(isovalue)) {
+            const triangleCount = indices.length / 3;
+            const edgeUses = new Map();
+            for (let i = 0; i < indices.length; i += 3) {
+                const triangle = i / 3;
+                const triangleEdges = [
+                    [indices[i], indices[i + 1]],
+                    [indices[i + 1], indices[i + 2]],
+                    [indices[i + 2], indices[i]],
+                ];
+                for (const [a, b] of triangleEdges) {
+                    const key = a < b ? `${a}:${b}` : `${b}:${a}`;
+                    const uses = edgeUses.get(key) || [];
+                    uses.push({ triangle, direction: a < b ? 1 : -1 });
+                    edgeUses.set(key, uses);
+                }
+            }
+            const neighbors = Array.from({ length: triangleCount }, () => []);
+            for (const [key, uses] of edgeUses) {
+                if (uses.length !== 2) {
+                    throw new Error(`non-manifold Marching Cubes surface edge ${key} has ${uses.length} incident triangles`);
+                }
+                const invert = uses[0].direction === uses[1].direction;
+                neighbors[uses[0].triangle].push({ triangle: uses[1].triangle, invert });
+                neighbors[uses[1].triangle].push({ triangle: uses[0].triangle, invert });
+            }
+            // Propagate one consistent winding across each connected component.
+            // A shared edge must be traversed in opposite directions by its two
+            // triangles. Then choose the component's global direction from the
+            // scalar-gradient normals so THREE.BackSide renders the void-facing side.
+            const flips = new Int8Array(triangleCount);
+            flips.fill(-1);
+            const components = [];
+            for (let start = 0; start < triangleCount; start++) {
+                if (flips[start] !== -1)
+                    continue;
+                flips[start] = 0;
+                const component = [];
+                const queue = [start];
+                while (queue.length) {
+                    const triangle = queue.pop();
+                    component.push(triangle);
+                    for (const neighbor of neighbors[triangle]) {
+                        const required = flips[triangle] ^ (neighbor.invert ? 1 : 0);
+                        if (flips[neighbor.triangle] === -1) {
+                            flips[neighbor.triangle] = required;
+                            queue.push(neighbor.triangle);
+                        }
+                        else if (flips[neighbor.triangle] !== required) {
+                            throw new Error('non-orientable Marching Cubes surface component');
+                        }
+                    }
+                }
+                components.push(component);
+            }
+            const flipTriangle = (triangle) => {
+                const offset = triangle * 3;
+                const swap = indices[offset + 1];
+                indices[offset + 1] = indices[offset + 2];
+                indices[offset + 2] = swap;
+            };
+            for (let triangle = 0; triangle < triangleCount; triangle++) {
+                if (flips[triangle] === 1)
+                    flipTriangle(triangle);
+            }
+            for (const component of components) {
+                let outwardScore = 0;
+                for (const triangle of component) {
+                    const offset = triangle * 3;
+                    const a = indices[offset], b = indices[offset + 1], c = indices[offset + 2];
+                    const ax = positions[a * 3], ay = positions[a * 3 + 1], az = positions[a * 3 + 2];
+                    const abx = positions[b * 3] - ax;
+                    const aby = positions[b * 3 + 1] - ay;
+                    const abz = positions[b * 3 + 2] - az;
+                    const acx = positions[c * 3] - ax;
+                    const acy = positions[c * 3 + 1] - ay;
+                    const acz = positions[c * 3 + 2] - az;
+                    const crossX = aby * acz - abz * acy;
+                    const crossY = abz * acx - abx * acz;
+                    const crossZ = abx * acy - aby * acx;
+                    const nx = normals[a * 3] + normals[b * 3] + normals[c * 3];
+                    const ny = normals[a * 3 + 1] + normals[b * 3 + 1] + normals[c * 3 + 1];
+                    const nz = normals[a * 3 + 2] + normals[b * 3 + 2] + normals[c * 3 + 2];
+                    outwardScore += crossX * nx + crossY * ny + crossZ * nz;
+                }
+                if (!Number.isFinite(outwardScore) || Math.abs(outwardScore) <= 1e-12) {
+                    throw new Error('undefined Marching Cubes component orientation');
+                }
+                if (outwardScore < 0) {
+                    for (const triangle of component)
+                        flipTriangle(triangle);
+                }
+            }
+            // Edge-consistent winding is necessary but not sufficient: a fan can be
+            // geometrically folded across an interior ambiguity. Verify every face
+            // against the scalar oracle. With outward winding (void -> rock), a
+            // small step along the face normal must decrease the positive-void field
+            // relative to the equal step toward the void. If not, the table-free
+            // prototype cannot represent this cell safely and the renderer falls
+            // back to WallMesh rather than exposing a BackSide-culling hole.
+            const probeDistance = field.spacingMm * 0.05;
+            const directionTolerance = Math.max(1e-12, field.spacingMm * 1e-9);
+            for (let triangle = 0; triangle < triangleCount; triangle++) {
+                const offset = triangle * 3;
+                const a = indices[offset], b = indices[offset + 1], c = indices[offset + 2];
+                const ax = positions[a * 3], ay = positions[a * 3 + 1], az = positions[a * 3 + 2];
+                const bx = positions[b * 3], by = positions[b * 3 + 1], bz = positions[b * 3 + 2];
+                const cx = positions[c * 3], cy = positions[c * 3 + 1], cz = positions[c * 3 + 2];
+                const abx = bx - ax, aby = by - ay, abz = bz - az;
+                const acx = cx - ax, acy = cy - ay, acz = cz - az;
+                let nx = aby * acz - abz * acy;
+                let ny = abz * acx - abx * acz;
+                let nz = abx * acy - aby * acx;
+                const normalLength = Math.hypot(nx, ny, nz);
+                if (!(normalLength > 0) || !Number.isFinite(normalLength)) {
+                    throw new Error(`invalid Marching Cubes face normal at triangle ${triangle}`);
+                }
+                nx /= normalLength;
+                ny /= normalLength;
+                nz /= normalLength;
+                const localNormalDot = nx * (normals[a * 3] + normals[b * 3] + normals[c * 3])
+                    + ny * (normals[a * 3 + 1] + normals[b * 3 + 1] + normals[c * 3 + 1])
+                    + nz * (normals[a * 3 + 2] + normals[b * 3 + 2] + normals[c * 3 + 2]);
+                if (!Number.isFinite(localNormalDot) || !(localNormalDot > 1e-8)) {
+                    throw new Error(`unresolved interior ambiguity folds Marching Cubes triangle ${triangle}`);
+                }
+                const centerX = (ax + bx + cx) / 3;
+                const centerY = (ay + by + cy) / 3;
+                const centerZ = (az + bz + cz) / 3;
+                const rockSide = field.sampleWorld(centerX + nx * probeDistance, centerY + ny * probeDistance, centerZ + nz * probeDistance);
+                const voidSide = field.sampleWorld(centerX - nx * probeDistance, centerY - ny * probeDistance, centerZ - nz * probeDistance);
+                if (!Number.isFinite(rockSide) || !Number.isFinite(voidSide)
+                    || !(rockSide < voidSide - directionTolerance)) {
+                    throw new Error(`unresolved interior ambiguity folds Marching Cubes triangle ${triangle}`);
+                }
+            }
+        }
+        const positionBuffer = new Float32Array(positions);
+        const normalBuffer = new Float32Array(normals);
+        const colorBuffer = new Float32Array(colors);
+        const uvBuffer = new Float32Array(uvs);
+        const indexBuffer = positionBuffer.length / 3 > 65535
+            ? new Uint32Array(indices)
+            : new Uint16Array(indices);
+        const extractionMs = CavityScalarField._nowMs() - started;
+        const surfaceBytes = positionBuffer.byteLength + normalBuffer.byteLength
+            + colorBuffer.byteLength + uvBuffer.byteLength + indexBuffer.byteLength;
+        return {
+            positions: positionBuffer,
+            normals: normalBuffer,
+            colors: colorBuffer,
+            indices: indexBuffer,
+            uvs: uvBuffer,
+            sig: `${field.sig}|mc-face-decider-orient-probe:v3|iso:${isovalue}`,
+            bounds: {
+                min: field.bounds.min.slice(),
+                max: field.bounds.max.slice(),
+            },
+            metrics: {
+                field_build_ms: field.metrics.field_build_ms || 0,
+                extraction_ms: extractionMs,
+                triangle_count: indexBuffer.length / 3,
+                vertex_count: positionBuffer.length / 3,
+                field_bytes: field.values.byteLength,
+                surface_bytes: surfaceBytes,
+            },
+        };
     }
 }
 
@@ -94456,6 +95212,12 @@ function idlePickScenario(val) {
 // boot path expects _topoUseThreeRenderer=true and falls back to 2D
 // gracefully if Three.js is unavailable (CDN blocked, file://, etc.).
 let _topoUseThreeRenderer = true;
+// Development-only renderer shadow path for the Cartesian cavity field.
+// Default off. Enable locally with ?mc_cavity=1 (optional ?mc_resolution=64)
+// or through _topoSetMarchingCubesCavity() in the debug console. This is not
+// a geological/Creative control: chemistry and anchors still use WallMesh.
+let _topoMarchingCubesCavityOverride = null;
+let _topoMarchingCubesResolutionOverride = null;
 // Has the default-on initialization run yet? On the FIRST topoRender
 // where Three.js is actually available, we force drag mode to 'rotate'
 // and color the toggle button. Done as one-shot so subsequent renders
@@ -94836,6 +95598,85 @@ function _topoCavitySignature(wall, sim) {
     }
     return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}|${surf}`;
 }
+function _topoMarchingCubesCavityEnabled() {
+    if (_topoMarchingCubesCavityOverride != null)
+        return _topoMarchingCubesCavityOverride;
+    if (typeof window === 'undefined' || !window.location)
+        return false;
+    try {
+        const value = new URLSearchParams(window.location.search || '').get('mc_cavity');
+        return value === '1' || value === 'true' || value === 'on';
+    }
+    catch (_) {
+        return false;
+    }
+}
+function _topoMarchingCubesResolution() {
+    if (_topoMarchingCubesResolutionOverride != null)
+        return _topoMarchingCubesResolutionOverride;
+    if (typeof window !== 'undefined' && window.location) {
+        try {
+            const raw = Number(new URLSearchParams(window.location.search || '').get('mc_resolution'));
+            if (Number.isFinite(raw) && raw >= 8 && raw <= 128)
+                return Math.round(raw);
+        }
+        catch (_) { /* retain the measured 48^3 default */ }
+    }
+    return 48;
+}
+function _topoSetMarchingCubesCavity(enabled, resolution = 48) {
+    const parsed = Math.round(Number(resolution));
+    if (!Number.isFinite(parsed) || parsed < 8 || parsed > 128) {
+        throw new RangeError('Marching Cubes cavity resolution must be from 8 through 128');
+    }
+    // Validate the complete request before changing either override. A rejected
+    // debug command must not accidentally enable the shadow renderer.
+    _topoMarchingCubesCavityOverride = !!enabled;
+    _topoMarchingCubesResolutionOverride = parsed;
+    if (_topoThreeState)
+        _topoThreeState.cavitySig = '';
+}
+// Pure renderer-facing adapter used by both the Three.js path and integration
+// tests. The legacy mesh remains available as clipMesh even when the shadow
+// MC buffers are selected. This mismatch is deliberate and blocks promotion:
+// the current 2D polar clip cannot describe MC undercuts or separated chambers.
+// The v1 MC surface also has temporary spherical UVs and bubble-only geometry,
+// so authored polar masks, wall_depth, matrix-skin mapping, and water tint are
+// comparison findings rather than supported production behavior.
+function _topoCavitySurfaceSource(wall, sim, useMarchingCubes = _topoMarchingCubesCavityEnabled(), resolution = _topoMarchingCubesResolution()) {
+    if (!wall)
+        return null;
+    const clipMesh = wall.meshFor ? wall.meshFor(sim) : null;
+    if (!clipMesh)
+        return null;
+    if (useMarchingCubes && !wall._disableMarchingCubesCavity && wall.cavitySurfaceFor) {
+        try {
+            const buffers = wall.cavitySurfaceFor({ resolution, isovalue: 0 });
+            if (buffers) {
+                // clipMesh.sig may change for wall_depth even though the bubble-only MC
+                // buffers stay cached. Include it so clip uniforms refresh without
+                // paying for a byte-identical field/extraction rebuild.
+                return { mode: 'marching-cubes', buffers, clipMesh,
+                    sig: `mc|${buffers.sig}|clip:${clipMesh.sig}` };
+            }
+            const failure = wall._cavitySurfaceFailure;
+            if (failure && !failure.reported) {
+                failure.reported = true;
+                if (typeof console !== 'undefined' && console.warn) {
+                    console.warn('[marching-cubes] shadow surface rejected; using WallMesh', failure.error);
+                }
+            }
+        }
+        catch (error) {
+            // Malformed field inputs also fail closed to the canonical renderer.
+            // Expected extraction rejections are cached/reported above.
+            if (typeof console !== 'undefined' && console.warn) {
+                console.warn('[marching-cubes] shadow surface rejected; using WallMesh', error);
+            }
+        }
+    }
+    return { mode: 'wall-mesh', buffers: clipMesh, clipMesh, sig: `wall-mesh|${clipMesh.sig}` };
+}
 // PHASE-2-CAVITY-MESH: cavity geometry now sources from WallMesh
 // (js/23-geometry-wall-mesh.ts). The renderer's job here is reduced
 // to: ask the wall for its mesh, copy the mesh's buffers into a
@@ -94847,18 +95688,20 @@ function _topoCavitySignature(wall, sim) {
 function _topoBuildCavityGeometry(state, wall, sim) {
     if (!wall || !wall.rings || !wall.rings.length)
         return;
-    const mesh = wall.meshFor ? wall.meshFor(sim) : null;
-    if (!mesh)
+    const source = _topoCavitySurfaceSource(wall, sim);
+    if (!source)
         return;
-    if (mesh.sig === state.cavitySig)
+    const mesh = source.clipMesh;
+    const surface = source.buffers;
+    if (source.sig === state.cavitySig)
         return;
-    state.cavitySig = mesh.sig;
+    state.cavitySig = source.sig;
     const ringCount = wall.ring_count;
     const ring0 = wall.rings[0];
     const N = ring0 ? ring0.length : 0;
     if (!N || ringCount < 1)
         return;
-    const numVerts = mesh.numInterior + 2;
+    const numVerts = surface.positions.length / 3;
     const geom = new THREE.BufferGeometry();
     // mesh.positions / mesh.colors / mesh.normals are Float32Arrays the
     // mesh owns and rebuilds in-place; copy-on-write into the
@@ -94866,20 +95709,23 @@ function _topoBuildCavityGeometry(state, wall, sim) {
     // geometry's data behind Three.js's back. The slice() costs
     // ~75 KB per cavity rebuild at the default 16×120 resolution
     // (≈ once per dissolution event), which is well under the budget.
-    geom.setAttribute('position', new THREE.BufferAttribute(mesh.positions.slice(), 3));
-    geom.setAttribute('color', new THREE.BufferAttribute(mesh.colors.slice(), 3));
-    geom.setAttribute('normal', new THREE.BufferAttribute(mesh.normals.slice(), 3));
+    geom.setAttribute('position', new THREE.BufferAttribute(surface.positions.slice(), 3));
+    geom.setAttribute('color', new THREE.BufferAttribute(surface.colors.slice(), 3));
+    geom.setAttribute('normal', new THREE.BufferAttribute(surface.normals.slice(), 3));
     // MATRIX SKIN (2026-07-06): static lat-long texture coords (js/23) so the
     // per-lithology wall skin can map. Guarded — an old cached mesh without uvs
     // just skips the attribute and the material renders un-mapped.
-    if (mesh.uvs)
-        geom.setAttribute('uv', new THREE.BufferAttribute(mesh.uvs.slice(), 2));
+    if (surface.uvs)
+        geom.setAttribute('uv', new THREE.BufferAttribute(surface.uvs.slice(), 2));
     const indexAttr = numVerts > 65535
-        ? new THREE.Uint32BufferAttribute(mesh.indices, 1)
-        : new THREE.Uint16BufferAttribute(mesh.indices, 1);
+        ? new THREE.Uint32BufferAttribute(surface.indices, 1)
+        : new THREE.Uint16BufferAttribute(surface.indices, 1);
     geom.setIndex(indexAttr);
-    geom.computeVertexNormals(); // overwrite the placeholder normals with
-    // mesh-aware ones for proper shading
+    // The MC path carries scalar-gradient normals. Recomputing them from
+    // triangles would discard the shared field oracle and reintroduce seams.
+    if (source.mode === 'wall-mesh') {
+        geom.computeVertexNormals(); // legacy mesh placeholders need this pass
+    }
     const target = state.cavity;
     const prev = target.geometry;
     target.geometry = geom;
@@ -100299,6 +101145,12 @@ function _topoSnapshotWall(liveWall, snapshot) {
     // can silently render the live wall's cached vertices.
     delete synth._geometry_revision;
     delete synth._mesh;
+    delete synth._cavityField;
+    delete synth._cavitySurface;
+    // The first renderer-only MC tranche intentionally cannot reproduce
+    // historical per-cell wall_depth. Keep replay on its canonical mesh until
+    // the scalar erosion/deposition ledger exists.
+    synth._disableMarchingCubesCavity = true;
     // Detect snapshot shape:
     //   * Multi-ring (v65+): { step, rings: [...] } — use directly.
     //   * Legacy flat array (v60..v64): project across all rings.

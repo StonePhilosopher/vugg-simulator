@@ -19,6 +19,7 @@ If a section below is wrong, update the canonical source — not this file.
 | Open work / backlog            | `proposals/BACKLOG.md`                               |
 | Current SIM_VERSION            | `js/15-version.ts`                                   |
 | Roadmap and decisions          | `proposals/BACKLOG.md` and individual `proposals/*.md` briefs |
+| Cavity geometry migration      | `proposals/PROPOSAL-MARCHING-CUBES-CAVITY.md`         |
 | Build pipeline                 | "Build pipeline" section below                       |
 | Module index (JS source)       | `js/README.md` — every prefix annotated, "find X by purpose" |
 | Modes shown to the player      | the title screen — open `index.html` and look       |
@@ -66,6 +67,8 @@ vugg-simulator/
 │   ├── 1x-…                    # deterministic helpers + early state
 │   ├── 2x-chemistry-…          # FluidChemistry, VugConditions
 │   ├── 22-geometry-wall.ts
+│   ├── 23a-geometry-cavity-field.ts   # default-off Cartesian cavity field
+│   ├── 23b-geometry-marching-cubes.ts # indexed shadow-surface extractor
 │   ├── 27-geometry-crystal.ts
 │   ├── 3x-supersat-<class>.ts  # 12 per-class supersat mixin files
 │   ├── 5x-engines-<class>.ts   # 12 per-class grow_<mineral> files

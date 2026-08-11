@@ -1395,6 +1395,49 @@ class WallState {
     return this._mesh;
   }
 
+  // Marching-Cubes cavity migration, Tranches 0/1: renderer-only scalar
+  // volume and extracted shadow surface. These caches deliberately coexist
+  // with WallMesh; mesh.cells[] remains the canonical chemistry/wall store.
+  // The v1 field is bubble-only: archetype elongation/polar masks and live
+  // wall_depth are not represented yet, so it must remain default-off.
+  cavityFieldFor(opts: any = {}) {
+    const CF: any = (typeof CavityScalarField !== 'undefined') ? CavityScalarField : null;
+    if (!CF) return null;
+    const resolution = opts && opts.resolution != null ? opts.resolution : 48;
+    const sig = CF.signatureFor(this, resolution);
+    if (!this._cavityField || this._cavityField.sig !== sig) {
+      this._cavityField = CF.fromWallState(this, { resolution });
+      this._cavitySurface = null;
+      this._cavitySurfaceFailure = null;
+    }
+    return this._cavityField;
+  }
+
+  cavitySurfaceFor(opts: any = {}) {
+    const field = this.cavityFieldFor(opts);
+    if (!field) return null;
+    const isovalue = opts && opts.isovalue != null ? Number(opts.isovalue) : 0;
+    const sig = `${field.sig}|mc-face-decider-orient-probe:v3|iso:${isovalue}`;
+    if (this._cavitySurfaceFailure && this._cavitySurfaceFailure.sig === sig) {
+      if (opts && opts.throwOnFailure) throw this._cavitySurfaceFailure.error;
+      return null;
+    }
+    if (!this._cavitySurface || this._cavitySurface.sig !== sig) {
+      try {
+        this._cavitySurface = field.extract(isovalue);
+        this._cavitySurfaceFailure = null;
+      } catch (error) {
+        // Negative-result cache: a known interior ambiguity must not pay for
+        // the same failed extraction on every render frame. Renderer callers
+        // receive null and fall back; diagnostics may request the cached error.
+        this._cavitySurfaceFailure = { sig, error, reported: false };
+        if (opts && opts.throwOnFailure) throw error;
+        return null;
+      }
+    }
+    return this._cavitySurface;
+  }
+
   // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1 (v158) — lazy + cached
   // factory for the cavity interior voxel grid. Same pattern as
   // meshFor(): build on first call, cache for subsequent calls.
