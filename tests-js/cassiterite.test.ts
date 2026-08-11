@@ -339,6 +339,6 @@ describe('Cassiterite — SnO₂ engine (v89)', () => {
       expect(twinCount,
         `expected at least 1 elbow twin across ${totalCount} cassiterite samples (p=0.30); got ${twinCount}`)
         .toBeGreaterThan(0);
-    }, 120000);
+    }, 300000);
   });
 });

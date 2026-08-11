@@ -11348,8 +11348,9 @@
 //        IS A FLEET-WIDE CHANGE: pegmatite-hosted quartz now develops smoky colour
 //        (gem_pegmatite, radioactive_pegmatite, etc.) — geologically correct, colour
 //        only (radiation_damage), no assemblage shift. morion color_rule added.
-//        TESSIN (grow_quartz, alpine-gated): the steep-rhombohedron z{011} face
-//        development (Tessiner Habitus) on cleft quartz. + narrators (js/92i).
+//        TESSIN (grow_quartz, alpine-gated): steep {h0-il} rhombohedra such as
+//        {40-41}/{30-31} dominate over the prism on cleft quartz. + narrators
+//        (js/92i). The earlier z{011} label was corrected in August 2026.
 //        FENSTER + GWINDEL deliberately NOT shipped: fenster has no honest fleet home
 //        (quartz sigma is silica ABUNDANCE not a skeletalization driver — an occupied
 //        band would mislabel slow pegmatites; the 644b267 content-block finding
@@ -11361,9 +11362,9 @@
 //        history — all crystals in one cleft share the same fluid (same
 //        seals/breaches), so a v206-style "continuous vs resorbed" discriminator
 //        is geologically wrong. The gwindel's distinction is CRYSTALLOGRAPHIC: a
-//        progressive a-axis TWIST accumulated over prolonged growth under the
-//        cleft's syn-growth tectonic shear (D2/D3). The sim has no shear FIELD,
-//        so — exactly as it treats twinning — gwindel is a habit variant:
+//        progressive a-axis TWIST incorporated during growth by a screw-dislocation
+//        structure in one crystal. The earlier syn-growth-shear explanation was
+//        retired by v208. As with twinning, the sim represents it as a habit variant:
 //        js/45 classifyQuartzGwindel designates the LARGEST, longest-grown cleft
 //        showpiece (twist deg ∝ growth duration), independent of and taking
 //        render precedence over its sceptre record. js/99i _makeGwindelGeom =

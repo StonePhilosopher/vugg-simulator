@@ -99,8 +99,14 @@ describe('Grimsel alpine-cleft smoky sceptre quartz (v206)', () => {
   });
 
   it('TESSIN: cleft quartz carries the steep-rhombohedron face development', () => {
-    const tessin = quartz42().filter((c) => (c.dominant_forms || []).some((f: string) => f.includes('steep rhombohedron')));
+    const tessin = quartz42().filter((c) =>
+      (c.dominant_forms || []).some((f: string) => f.includes('{40-41}/{30-31}')),
+    );
     expect(tessin.length).toBeGreaterThan(0);
+    for (const crystal of tessin) {
+      expect(crystal.dominant_forms).toContain('steep {40-41}/{30-31} rhombohedra dominant');
+      expect(crystal.dominant_forms.join(' ')).not.toContain('z{011}');
+    }
   });
 
   it('every expects_species fires at seed 42', () => {

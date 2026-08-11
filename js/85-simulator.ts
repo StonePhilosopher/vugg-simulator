@@ -16,6 +16,10 @@ class VugSimulator {
   // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;
   constructor(conditions, events) {
+    // Narrative files are authoritative game data. Synchronous/headless callers
+    // cannot construct a partially narrated simulation while preload is pending
+    // or after it failed; browser entry points await the same readiness promise.
+    assertNarrativesReady();
     this.conditions = conditions;
     this._startTemp = conditions.temperature; // remember initial T for thermal pulse ceiling
     // T-RECONCILIATION (2026-06-10, SIM 181): the ambient drift + thermal-pulse

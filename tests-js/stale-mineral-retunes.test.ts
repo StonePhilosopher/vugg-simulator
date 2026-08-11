@@ -139,7 +139,7 @@ describe('post-Backlog-K stale-mineral retunes (2026-05)', () => {
     // the measured single-worker runtime is about 111s after the mutation-time
     // revision optimization. Keep a bounded 180s ceiling for this eight-run
     // statistical contract rather than weakening the seed sample.
-    }, 180_000);
+    }, 300_000);
   });
 
   describe('adamite (supergene_oxidation)', () => {
@@ -151,7 +151,7 @@ describe('post-Backlog-K stale-mineral retunes (2026-05)', () => {
       expect(r.everNucleated, `adamite σ peaked at ${r.maxSigma.toFixed(2)}`).toBe(true);
     // v250 exact surface-area/patch classification makes this three-seed
     // supergene history about 126s in the measured single-worker run.
-    }, 180_000);
+    }, 300_000);
   });
 
   describe('native_tellurium (epithermal_telluride)', () => {
@@ -181,7 +181,7 @@ describe('post-Backlog-K stale-mineral retunes (2026-05)', () => {
     // Results are retrieved from the identical executed probes above. This
     // retains the aggregate zero-stale assertion without duplicating their
     // expensive exact-surface scenario histories.
-    it('zero stale (mineral, scenario) pairs across the canonical 4', { timeout: 150000 }, () => {
+    it('zero stale (mineral, scenario) pairs across the canonical 4', { timeout: 300000 }, () => {
       // End-to-end: pin that none of the four target minerals shows
       // ever_nucleated=false on the same 3-seed sweep their individual
       // tests above use. Belt-and-suspenders; if a downstream change

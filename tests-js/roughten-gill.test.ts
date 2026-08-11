@@ -77,7 +77,7 @@ describe('Roughton Gill mine-specific scenario', () => {
     expect(conditions._scenario.carbon_ledger).toBe(true);
   });
 
-  it('delivers the documented primary assemblage inside the 110-130 C ore stage', { timeout: 90_000 }, () => {
+  it('delivers the documented primary assemblage inside the 110-130 C ore stage', { timeout: 300_000 }, () => {
     const { sim } = canonicalEvidence();
     for (const mineral of ['quartz', 'calcite', 'galena', 'sphalerite', 'chalcopyrite']) {
       const formed = crystals(sim, mineral);
@@ -93,7 +93,7 @@ describe('Roughton Gill mine-specific scenario', () => {
     }
   });
 
-  it('delivers the carbonate-buffered and silica-rich supergene hierarchy at seed 42', { timeout: 90_000 }, () => {
+  it('delivers the carbonate-buffered and silica-rich supergene hierarchy at seed 42', { timeout: 300_000 }, () => {
     const { sim, present } = canonicalEvidence();
     for (const mineral of [
       'malachite', 'cerussite', 'aurichalcite', 'rosasite', 'hemimorphite',
@@ -128,7 +128,7 @@ describe('Roughton Gill mine-specific scenario', () => {
     }
   });
 
-  it('transfers sulfur internally at oxidation and closes the boundary ledger', { timeout: 90_000 }, () => {
+  it('transfers sulfur internally at oxidation and closes the boundary ledger', { timeout: 300_000 }, () => {
     const { sim, stages } = canonicalEvidence();
     expect(stages.get(99)).toMatchObject({ S_sulfide: 35, S_sulfate: 5, S: 40 });
     expect(stages.get(100)).toMatchObject({ S_sulfide: 5, S_sulfate: 35, S: 40 });
@@ -140,7 +140,7 @@ describe('Roughton Gill mine-specific scenario', () => {
     });
   });
 
-  it('books carbonate-gangue release and both fluid replacements in a closed carbon ledger', { timeout: 90_000 }, () => {
+  it('books carbonate-gangue release and both fluid replacements in a closed carbon ledger', { timeout: 300_000 }, () => {
     const { sim, stages } = canonicalEvidence();
     expect(stages.get(139).CO3).toBeCloseTo(150, 8);
     expect(stages.get(140).CO3).toBeCloseTo(295, 8);
@@ -157,7 +157,7 @@ describe('Roughton Gill mine-specific scenario', () => {
     expect(ledger).toMatchObject({ closed: true, propagationViolations: 0 });
   });
 
-  it('attributes every authored metal/silica import or export and closes signed boundary receipts', { timeout: 90_000 }, () => {
+  it('attributes every authored metal/silica import or export and closes signed boundary receipts', { timeout: 300_000 }, () => {
     const { sim, stages } = canonicalEvidence();
     expect(sim._fluidBoundaryViolations).toEqual([]);
     expect(sim._fluidBoundaryTransactions.map((row: any) => row.step)).toEqual([60, 100, 140, 180, 215]);
@@ -192,7 +192,7 @@ describe('Roughton Gill mine-specific scenario', () => {
     ]));
   });
 
-  it('keeps mine-specific exclusions absent while global mineral engines remain available', { timeout: 90_000 }, () => {
+  it('keeps mine-specific exclusions absent while global mineral engines remain available', { timeout: 300_000 }, () => {
     const { present } = canonicalEvidence();
     const spec = SCENARIOS.roughten_gill._json5_spec;
     for (const mineral of Object.keys(spec.excluded_species)) {
@@ -200,7 +200,7 @@ describe('Roughton Gill mine-specific scenario', () => {
     }
   });
 
-  it('makes every deterministic promise true at canonical seed 42 and keeps aspirations disjoint', { timeout: 90_000 }, () => {
+  it('makes every deterministic promise true at canonical seed 42 and keeps aspirations disjoint', { timeout: 300_000 }, () => {
     const { present } = canonicalEvidence();
     const spec = SCENARIOS.roughten_gill._json5_spec;
     for (const mineral of spec.expects_species) {

@@ -882,7 +882,8 @@ function selectPreset(preset) {
   if (sizeClass) sizeClass.value = 'preset';
 }
 
-function fortressBegin() {
+async function fortressBegin() {
+  await waitForNarrativesReady();
   // Resolution phase: read every setup control into plain params, then
   // hand off to _fortressBeginCustomFromParams. The split exists for the
   // save system (93a-ui-saves.ts): a save stores the RESOLVED params, and

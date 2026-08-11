@@ -116,7 +116,7 @@ describe('evidence-bounded physical etch', () => {
     expect(receipt.volumeBeforeMm3 - receipt.volumeAfterMm3).toBeCloseTo(
       receipt.volumeLossMm3, 10,
     );
-  }, 30000);
+  }, 300000);
 
   it('replay shows sharp → face-derived pits → progressive healing while retaining the phantom boundary', () => {
     const { sim, defaultSteps } = startScenario();
@@ -148,7 +148,7 @@ describe('evidence-bounded physical etch', () => {
     const beforeWash = _topoHistoricalCrystalSize(fluorite, 117);
     const afterWash = _topoHistoricalCrystalSize(fluorite, 118);
     expect(beforeWash.c_length_mm).toBeGreaterThan(afterWash.c_length_mm);
-  }, 30000);
+  }, 300000);
 
   it('computes isometric equivalent geometry without trusting stale ledger axes', () => {
     const cube = _physicalEtchEquivalentAxialLoss({

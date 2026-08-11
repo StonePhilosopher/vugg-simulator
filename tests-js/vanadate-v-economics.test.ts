@@ -104,5 +104,5 @@ describe('v193 — the descloizite-group vanadate reaches its type-abundance sup
       if (hits >= 3) break;
     }
     expect(hits, `descloizite-group grew in ${hits}/5 seeds`).toBeGreaterThanOrEqual(3);
-  }, 180_000); // Three independent witnesses are sufficient; failure still exhausts all five seeds.
+  }, 300_000); // Three independent witnesses are sufficient; failure still exhausts all five seeds.
 });

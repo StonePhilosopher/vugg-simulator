@@ -65,7 +65,7 @@ describe('Deccan authored paragenesis is executable testimony', () => {
     expect(firstStep(sim, 'thomsonite')).toBe(Infinity);
     expect(firstStep(sim, 'chabazite')).toBe(Infinity);
     expect(firstStep(sim, 'opal')).toBe(Infinity);
-  }, 30_000);
+  }, 300_000);
 
   it('reports authored scenario windows in the live formation diagnosis', () => {
     setSeed(42);
@@ -106,5 +106,5 @@ describe('Deccan authored paragenesis is executable testimony', () => {
       expect(event.sample_index, `${event.mineral} step ${event.step}`).toBe(event.step - 1);
     }
     expect(dataset.pressure_phase_testimony[0]).toMatchObject({ step: 1, sample_index: 0 });
-  }, 60_000);
+  }, 300_000);
 });

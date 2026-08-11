@@ -10,8 +10,8 @@
 //      build.mjs concatenates them, eval the result inside an IIFE,
 //      and bind the resulting class / function names to the global
 //      scope so test files can reference them by name.
-//   3. Wait for the async _loadScenariosJSON5() the bundle kicks off
-//      at startup to finish populating SCENARIOS.
+//   3. Wait for scenarios, the canonical mineral spec, and every generated
+//      Markdown narrative entry. Tests never race startup fetches.
 //
 // Architecture note: SCRIPT-mode TypeScript (no import/export) means
 // top-level `let`/`const`/`function` declarations are scoped to the
@@ -707,7 +707,26 @@ async function waitForMineralSpec(timeoutMs = 5000): Promise<void> {
   );
 }
 
+async function waitForNarratives(): Promise<void> {
+  const ready = (globalThis as any).NARRATIVES_READY_PROMISE;
+  if (!ready || typeof ready.then !== 'function') {
+    throw new Error('[setup] NARRATIVES_READY_PROMISE is absent from the compiled bundle');
+  }
+  const receipt = await ready;
+  const failed = Array.isArray(receipt?.failed) ? receipt.failed : [];
+  if (
+    !(globalThis as any).narrativesReady?.()
+    || !Number.isInteger(receipt?.expected)
+    || receipt.loaded !== receipt.expected
+    || failed.length
+  ) {
+    throw new Error(
+      `[setup] narrative preload incomplete: ${receipt?.loaded ?? 0}/${receipt?.expected ?? 0}; failed=${failed.join(',')}`,
+    );
+  }
+}
+
 beforeAll(async () => {
   await loadBundle();
-  await Promise.all([waitForScenarios(), waitForMineralSpec()]);
+  await Promise.all([waitForScenarios(), waitForMineralSpec(), waitForNarratives()]);
 });

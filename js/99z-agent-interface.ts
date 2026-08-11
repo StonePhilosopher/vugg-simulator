@@ -454,6 +454,8 @@ async function _agentBootFromURL(): Promise<void> {
   const mode = params.get('mode') || 'play';
   if (!scenario && mode === 'play') return;  // nothing to do
 
+  await waitForNarrativesReady();
+
   // Wait for scenarios.json5 to populate. Poll the flag the loader
   // in 70-events.ts sets when fetch completes.
   const deadlineMs = Date.now() + 8000;

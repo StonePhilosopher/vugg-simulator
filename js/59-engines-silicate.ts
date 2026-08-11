@@ -154,8 +154,8 @@ function grow_quartz(crystal, conditions, step) {
     }
   }
 
-  // Tessin habit (Tessiner Habitus) — the alpine-cleft face development: the
-  // steep rhombohedron z{011}/{h0hl} dominates the prism m{100}, giving
+  // Tessin habit (Tessiner Habitus) — the alpine-cleft face development:
+  // steep {h0-il} rhombohedra such as {40-41}/{30-31} dominate over the prism, giving
   // slender, sharply-tapered, pseudo-pyramidal terminations. Set for granite-
   // cleft α-quartz (pegmatite host + CO₂, cooler than ~360 °C). The sceptre
   // classifier (js/45) may later re-label the OVERALL habit to
@@ -167,7 +167,7 @@ function grow_quartz(crystal, conditions, step) {
     if (polymorph === 'alpha-quartz' && wc === 'pegmatite'
         && (conditions.fluid.CO3 || 0) > 15 && conditions.temperature < 360) {
       crystal.habit = 'Tessin';
-      crystal.dominant_forms = ['z{011} steep rhombohedron dominant', 'subordinate m{100} prism', 'slender tapered termination'];
+      crystal.dominant_forms = ['steep {40-41}/{30-31} rhombohedra dominant', 'subordinate m{10-10} prism', 'slender tapered termination'];
     }
   }
 

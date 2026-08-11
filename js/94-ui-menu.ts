@@ -104,9 +104,10 @@ function menuGo(modeName) { switchMode(modeName); }
 // step numbers as the sim advances. Optional seed threads through to the
 // seed-first begin (2026-07-08) — callers like the agent API get fully
 // deterministic runs, wall geometry included.
-function startScenarioInCreative(scenarioName, seedOverride?) {
+async function startScenarioInCreative(scenarioName, seedOverride?) {
   const make = SCENARIOS[scenarioName];
   if (!make) { alert('Unknown scenario: ' + scenarioName); return; }
+  await waitForNarrativesReady();
   switchMode('fortress');
   fortressBeginFromScenario(scenarioName, seedOverride);
 }
@@ -115,9 +116,10 @@ function startScenarioInCreative(scenarioName, seedOverride?) {
 // no-event sim. The starter fluid represents what would naturally leak
 // from the host rock; the player perturbs it via in-game actions
 // (Heat / Cool / Inject / Tectonic). No scripted events fire.
-function startStarterFluidInCreative(presetId) {
+async function startStarterFluidInCreative(presetId) {
   const preset = FLUID_PRESETS[presetId];
   if (!preset) { alert('Unknown starter fluid: ' + presetId); return; }
+  await waitForNarrativesReady();
   switchMode('fortress');
   fortressBeginFromStarterFluid(presetId);
 }

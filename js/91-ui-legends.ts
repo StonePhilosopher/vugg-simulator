@@ -83,6 +83,7 @@ let grooveModalCrystal = null;
 
 async function runSimulation() {
   if (running) return;
+  await waitForNarrativesReady();
   const scenarioName = document.getElementById('scenario').value;
   // Tier 1 B: scenario data lives in data/scenarios.json5 and is
   // fetched asynchronously by _loadScenariosJSON5() at boot. If the

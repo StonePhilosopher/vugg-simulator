@@ -15,7 +15,7 @@ If a section below is wrong, update the canonical source — not this file.
 |--------------------------------|------------------------------------------------------|
 | Mineral spec (every field)     | `data/minerals.json`                                 |
 | Locality fluid chemistry       | `data/locality_chemistry.json`                       |
-| Scenarios (initial fluid + events) | `data/scenarios.json5` (loaded by both runtimes) |
+| Scenarios (initial fluid + events) | `data/scenarios.json5`                          |
 | Open work / backlog            | `proposals/BACKLOG.md`                               |
 | Current SIM_VERSION            | `js/15-version.ts`                                   |
 | Roadmap and decisions          | `proposals/BACKLOG.md` and individual `proposals/*.md` briefs |
@@ -109,19 +109,25 @@ vugg-simulator/
 
 ## Build pipeline
 
-`index.html` is **generated** from `js/**/*.ts`. The build is a tiny
-TypeScript compile + concatenation, no bundler or framework.
+`index.html` is **generated** from `js/**/*.ts`. The build is a small
+narrative-manifest audit/generation step, TypeScript compile, and
+concatenation—no bundler or framework.
 
 ```
 npm install              # once — pulls in TypeScript as a devDependency
-npm run build            # tsc + splice → updates index.html in place
+npm run build            # narrative audit + tsc + splice → updates index.html
+npm run audit:narratives # fail on manifest, Markdown, or inline-fallback drift
 npm run typecheck        # tsc --noEmit; CI guard for type regressions
 npm run build:check      # exits 1 if index.html is out-of-date
 npm run ci               # typecheck + build:check (combined regression guard)
 ```
 
-Internals: `tools/build-all.mjs` runs `tsc -p tsconfig.json` (which emits
-`dist/**/*.js`), then `tools/build.mjs` walks `dist/` in lex order,
+Internals: `tools/build-all.mjs` first runs `tools/narrative-workflow.mjs`,
+which derives `js/04-narrative-manifest.generated.ts` from the mineral registry
+and Markdown directory, validates every literal code reference, rejects dynamic
+variant selectors and inline prose fallbacks, and requires an all-files-loaded
+runtime receipt before simulation construction. It then runs
+`tsc -p tsconfig.json` (which emits `dist/**/*.js`), and `tools/build.mjs` walks `dist/` in lex order,
 concatenates with file-marker headers, and splices the result into
 `index.html` between BUILD markers inside the inline `<script>`. The
 markers (`// === BUILD:bundle:start ===` / `…end ===`) live in the HTML;

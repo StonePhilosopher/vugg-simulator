@@ -317,10 +317,11 @@ function idleRefreshCollectAllBtn() {
   }
 }
 
-function idleTogglePlay() {
+async function idleTogglePlay() {
   if (idleRunning && !idlePaused) return;
 
   if (!idleSim) {
+    await waitForNarrativesReady();
     const scenario = document.getElementById('idle-scenario').value;
     idleSim = idleCreateSim(scenario);
     if (!idleSim) return;

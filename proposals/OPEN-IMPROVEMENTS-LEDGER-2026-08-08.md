@@ -143,9 +143,29 @@ single execution ledger for the science-first AAA completion branch.
   `proposals/HOSTILE-REVIEW-DR-WISE-SIM260-2026-08-09.md`. Full local CI passed
   204 files/2,770 tests; 0/39 pre-existing scenarios moved, and AI Dr. Wise
   returned `SATISFIED`.
-- [ ] Re-run every locality envelope and negative-evidence constraint against the
+- [x] Re-run every locality envelope and negative-evidence constraint against the
   current engine; resolve Bingham/Bisbee and any remaining species mismatches.
-- [ ] Retire stale inline narrative fallbacks and generate the narrative manifest.
+  SIM 261 evaluates all 41 authored scenarios at three deterministic science
+  seeds against four-tier locality contracts, including explicit negative
+  evidence. The rerun found and corrected the Bingham/Bisbee mismatches, then
+  closed at 0 envelope failures and 0 negative-evidence failures. Evidence:
+  `tools/scenario-locality-rerun.mjs`, `tests-js/scenario-locality-contracts.test.ts`,
+  the SIM 261 evidence archive, local commit `325a598`, and an AI Dr. Michael
+  Wise hostile-review verdict of `SATISFIED`.
+- [x] Retire stale inline narrative fallbacks and generate the narrative manifest.
+  The Node-only narrative workflow now generates the manifest from 94 canonical
+  Markdown sources and statically validates 589 narrator references with zero
+  dynamic variants,
+  rejects orphaned files, missing sections, registry mismatches, generated drift,
+  and every inline `||` prose fallback. Startup fails closed unless all 94 files
+  load, and the formerly implicit quartz Gwindel, sceptre, bent, and Tessin prose
+  is now canonical data. Evidence: `tools/narrative-workflow.mjs`,
+  `js/04-narrative-manifest.generated.ts`,
+  `tests-js/narrative-integrity.test.ts`, an AI Dr. Michael Wise hostile-review
+  verdict of `SATISFIED`, and complete local `npm test` coverage of 207 files /
+  2,803 tests. The tested resume protocol completed the unchanged game-code
+  baseline in memory-bounded batches after finite slow-scenario timeout repairs;
+  the observed peak remained below the 2 GB RSS watchdog.
 
 ## P3 — product quality gates that can be completed locally
 

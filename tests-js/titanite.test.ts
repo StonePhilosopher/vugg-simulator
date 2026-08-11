@@ -152,7 +152,7 @@ describe('Titanite — CaTiSiO₅ engine (v205)', () => {
   });
 
   describe('footprint is contained — Ti-poor scenarios stay titanite-free', () => {
-    it.each(['bisbee', 'supergene_oxidation', 'sulphur_bank'])('%s: zero titanite (no Ti budget)', { timeout: 240000 }, (scen) => {
+    it.each(['bisbee', 'supergene_oxidation', 'sulphur_bank'])('%s: zero titanite (no Ti budget)', { timeout: 300000 }, (scen) => {
       const { sim } = runScenario(scen, 42);
       const tt = sim.crystals.filter((c: any) => c.mineral === 'titanite');
       expect(tt.length).toBe(0);

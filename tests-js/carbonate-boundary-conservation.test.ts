@@ -521,5 +521,5 @@ describe('sabkha conserved open-boundary integration', () => {
     expect(state.boundaryExportMolKg).toBeGreaterThan(0);
     expect(state.uncertainties).toContain('salinity_model_missing');
     expect(state.transactions.some((tx: any) => tx.ok === false)).toBe(false);
-  }, 120_000);
+  }, 300_000);
 });

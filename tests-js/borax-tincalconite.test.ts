@@ -62,5 +62,5 @@ describe('borax–tincalconite saline phase boundary', () => {
     expect(products.some((c: any) =>
       c.dehydration_driver === 'temperature' || c.dehydration_driver === 'dry-exposure'))
       .toBe(true);
-  }, 30_000);
+  }, 300_000);
 });

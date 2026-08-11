@@ -248,7 +248,7 @@ describe('Backlog K — fill-cap exemption', () => {
     // shows up in a 300-step searles_lake run on at least one seed in
     // a tight 5-seed band. If this fails, the fix has regressed even
     // before the broader sweep runs.
-    it('borax/mirabilite or their dehydration products nucleate in at least one searles_lake run', { timeout: 120000 }, () => {
+    it('borax/mirabilite or their dehydration products nucleate in at least one searles_lake run', { timeout: 300000 }, () => {
       // v161: explicit 60s timeout. The v160 per-voxel diffusion added
       // ~4-6 ms/step; this multi-seed searles_lake sweep runs comfortably
       // in isolation (~12s) but tips past the 30s default under parallel

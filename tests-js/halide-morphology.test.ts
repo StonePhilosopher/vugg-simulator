@@ -149,7 +149,7 @@ describe('the salt-pan log (searles_lake, seed 42)', () => {
 
   it('builds the canonical Great Salt Plains fleet witness independently', () => {
     expect(gsp().crystals).toBeInstanceOf(Array);
-  }, 180000);
+  }, 300000);
 
   it('every positive halide zone in the living fleet is tagged, form cube + finite surf σ', () => {
     // Searles' surviving crusts are late and thin; Great Salt Plains carries

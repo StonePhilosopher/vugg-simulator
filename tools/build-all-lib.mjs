@@ -12,6 +12,21 @@ export function runBuildAll({
   tscEntry = TSC_ENTRY,
   forwardedArgs = process.argv.slice(2),
 } = {}) {
+  const narrativeArgs = ['tools/narrative-workflow.mjs'];
+  if (forwardedArgs.includes('--check')) narrativeArgs.push('--check');
+  console.log('[build-all] auditing narrative manifest…');
+  const narratives = spawn(execPath, narrativeArgs, {
+    cwd: root,
+    stdio: 'inherit',
+  });
+  if (narratives.error) {
+    console.error(`[build-all] could not launch narrative audit: ${narratives.error.message}`);
+    return 1;
+  }
+  if (narratives.status !== 0) {
+    console.error(`[build-all] narrative audit failed (exit ${narratives.status ?? 'unknown'}); compilation skipped.`);
+    return narratives.status ?? 1;
+  }
   console.log('[build-all] running tsc…');
   const tsc = spawn(execPath, [tscEntry, '-p', 'tsconfig.json'], {
     cwd: root,

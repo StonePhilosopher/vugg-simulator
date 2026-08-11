@@ -615,16 +615,15 @@ function classifyQuartzSceptre(sim: any) {
 }
 
 // ---- Quartz gwindel — the alpine-fissure-EXCLUSIVE twisted column ----
-// A gwindel is a stack of subparallel quartz individuals progressively rotated
-// about the a-axis — a flattened, twisted lamellar column, essentially exclusive
-// to alpine-type tension fissures (the Swiss Central Alps / Grimsel / Furka are
-// the world type region). KEY: a gwindel is NOT distinguished from an ordinary
-// (or sceptre) cleft quartz by its FLUID history — all the crystals in one cleft
-// share the same fluid, so they all record the same seals/breaches. The gwindel's
-// distinction is CRYSTALLOGRAPHIC: a progressive a-axis TWIST that accumulates
-// over prolonged growth under the cleft's syn-growth tectonic shear (the D2/D3
-// rotating stress field). The sim has no shear FIELD, so — exactly as it treats
-// twinning — we designate the gwindel as a habit variant: the LARGEST, longest-
+// A gwindel is one quartz crystal with a continuous lattice twist about an
+// a-axis — a flattened, twisted column essentially exclusive to alpine-type
+// tension fissures (the Swiss Central Alps / Grimsel / Furka are the world type
+// region). KEY: it is NOT distinguished from an ordinary (or sceptre) cleft
+// quartz by its FLUID history — all crystals in one cleft share the same fluid
+// and record the same seals/breaches. Its distinction is CRYSTALLOGRAPHIC: a
+// growth-incorporated screw-dislocation structure, not stacked individuals or
+// tectonic shear deformation. The sim represents that growth structure as a
+// habit variant: the LARGEST, longest-
 // grown cleft showpiece (twist ∝ its growth duration), independent of and taking
 // render precedence over its crack-seal sceptre record. PURE tagging; runs AFTER
 // the sceptre pass. A Grimsel cleft thus shows a twisted gwindel showpiece beside

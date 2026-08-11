@@ -7,6 +7,8 @@
   "scripts": {
     "build": "node tools/build-all.mjs",
     "build:check": "node tools/build-all.mjs --check",
+    "gen:narratives": "node tools/narrative-workflow.mjs",
+    "audit:narratives": "node tools/narrative-workflow.mjs --check",
     "audit:creative": "node tools/creative-lever-audit.mjs",
     "audit:cations": "node tools/cation-sink-audit.mjs schneeberg 42 --check",
     "audit:bif": "node tools/asbestos-hills-observe.mjs --check",
@@ -17,7 +19,7 @@
     "audit:science": "node tools/gen-science-provenance-manifest.mjs --check",
     "check:pressure-grid": "node tools/check-pressure-grid.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "pretest": "tsc -p tsconfig.json",
+    "pretest": "node tools/narrative-workflow.mjs --check && tsc -p tsconfig.json",
     "test": "node tools/test-workflow.mjs",
     "test:direct": "vitest run",
     "test:watch": "vitest",

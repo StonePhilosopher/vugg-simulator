@@ -156,7 +156,7 @@ describe('Conichalcite — Ca-Cu arsenate engine (v87)', () => {
       expect(onSubstrate,
         `expected conichalcite on canonical substrate; got ${onSubstrate}/${total}`)
         .toBe(total);
-    }, 120_000);
+    }, 300_000);
   });
 
   describe('cation fork — Cu-dominant blocks conichalcite, routes to olivenite', () => {

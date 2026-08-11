@@ -71,6 +71,10 @@ function summarize(sim: any): Record<string, any> {
 }
 
 const { version, baseline } = loadBaseline();
+// Some full-fidelity localities (notably Bisbee) can exceed the ordinary
+// two-minute unit-test ceiling on a thermally or CPU-constrained workstation.
+// Keep a finite hang detector, but size it for a complete authored scenario.
+const CALIBRATION_SCENARIO_TIMEOUT_MS = 300_000;
 
 describe('calibration sweep — seed 42 vs JS baseline', () => {
   if (!baseline) {
@@ -83,7 +87,7 @@ describe('calibration sweep — seed 42 vs JS baseline', () => {
   // the same set as the baseline as a separate assertion below.
   const baselineScenarios = Object.keys(baseline).sort();
   for (const name of baselineScenarios) {
-    it(`${name} matches baseline`, () => {
+    it(`${name} matches baseline`, { timeout: CALIBRATION_SCENARIO_TIMEOUT_MS }, () => {
       const sim = runScenario(name, { seed: 42 });
       expect(sim).toBeTruthy();  // SCENARIOS must include every baseline name
       const got = summarize(sim);

@@ -26,16 +26,20 @@ export default defineConfig({
     pool: 'threads',
     maxWorkers: 1,
     fileParallelism: false,
-    // Generous default; the calibration sweep test runs 20 scenarios.
-    // v175 (2026-06-03): doubled both. The strip recorder now also captures
+    // Finite but workstation-realistic default. Full-fidelity localities such
+    // as Bisbee are exercised from several test files and can require ~200 s
+    // on a thermally or CPU-constrained host. The memory-bounded workflow also
+    // enforces a 2 GB RSS ceiling, so five minutes remains a hard hang detector
+    // without turning valid scenario replays into flaky failures.
+    // v175 (2026-06-03): the strip recorder also captures
     // the depletion-FLOOR channel (per-bin min for ion chips at the wall),
     // ~25% more chip reads when recording. Long recording-heavy scenarios
     // (sabkha_dolomitization, mvt determinism) sit near the old limits under
     // vitest's parallel CPU contention — they pass comfortably in isolation,
     // but the shared-worker wall-clock tips them over. SIM 247 adds executed
     // transformation testimony to those recorder-heavy runs. Two minutes is
-    // still a finite hang detector while accommodating the bounded worker pool.
-    testTimeout: 120000,
+    // remains finite while accommodating the bounded worker pool.
+    testTimeout: 300000,
     hookTimeout: 180000,
   },
 });

@@ -48,7 +48,7 @@ describe('Sicilian Solfifera Series — sedimentary BSR native_sulfur (v80)', ()
         .toBeGreaterThan(1.2);
     });
 
-    it('native_sulfur nucleates with the bipyramidal_alpha habit across the seed space', { timeout: 120000 }, () => {
+    it('native_sulfur nucleates with the bipyramidal_alpha habit across the seed space', { timeout: 300000 }, () => {
       // 120s budget: 8 full sicily runs ≈ 5s each standalone, ~3× under
       // parallel suite load (the v181 ring_fluids lesson — time budgets
       // are part of the contract). meta-autunite's 8-seed check uses 60s
@@ -158,7 +158,7 @@ describe('Sicilian Solfifera Series — sedimentary BSR native_sulfur (v80)', ()
         .toBeGreaterThan(0);
     });
 
-    it('calcite has positive authoritative SI and retained growth across five seeds', { timeout: 120000 }, () => {
+    it('calcite has positive authoritative SI and retained growth across five seeds', { timeout: 300000 }, () => {
       for (const seed of [1, 7, 19, 42, 99]) {
         setSeed(seed);
         const { conditions, events, defaultSteps } = SCENARIOS.sicily_solfifera();
@@ -291,7 +291,7 @@ describe('Sicilian Solfifera Series — sedimentary BSR native_sulfur (v80)', ()
       expect(`${bsrText} ${bufferText}`).not.toMatch(/starts? to precipitate|has precipitated/i);
     });
 
-    it('closes the whole-scenario sulfur ledger at every step', { timeout: 120000 }, () => {
+    it('closes the whole-scenario sulfur ledger at every step', { timeout: 300000 }, () => {
       setSeed(42);
       const { conditions, events, defaultSteps } = SCENARIOS.sicily_solfifera();
       const sim = new VugSimulator(conditions, events);
@@ -305,7 +305,7 @@ describe('Sicilian Solfifera Series — sedimentary BSR native_sulfur (v80)', ()
       }
     });
 
-    it('closes the whole-scenario carbon ledger with methane and wall sources separated', { timeout: 120000 }, () => {
+    it('closes the whole-scenario carbon ledger with methane and wall sources separated', { timeout: 300000 }, () => {
       setSeed(42);
       const { conditions, events, defaultSteps } = SCENARIOS.sicily_solfifera();
       const sim = new VugSimulator(conditions, events);

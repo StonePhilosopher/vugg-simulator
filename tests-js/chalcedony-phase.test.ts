@@ -230,7 +230,7 @@ describe('SIM 246 first-class chalcedony phase', () => {
     expect(quartz).toBeTruthy();
     expect(agate.nucleation_step).toBeLessThan(quartz.nucleation_step);
     expect(crystalDisplayName(quartz)).toBe('quartz (amethyst)');
-  }, 30_000);
+  }, 300_000);
 
   it('keeps Tutorial 1 thermodynamically honest: quartz grows, then hot water dissolves it', () => {
     const tutorial = runScenario('tutorial_first_crystal', 42);

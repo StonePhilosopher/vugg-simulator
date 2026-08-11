@@ -8,12 +8,8 @@
 //
 // Minerals (2): borax, tincalconite.
 //
-// Tier 1 A port (post-v69) — these were on the BACKLOG.md L34 list of
-// 5 unported narrators after the Python tree deletion 2026-05-07.
-// Authored fresh from the data/minerals.json description blocks
-// (canonical pin per stored memory feedback_narrative_canonical_richer
-// — when JS and Python diverged the richer narrator wins, and here JS
-// is the only runtime so the JS author sets the canon).
+// Borate narrator logic is authored from the canonical data/minerals.json
+// descriptions; these species have not yet moved their prose to Markdown.
 //
 // The two minerals share an unusual property: borax self-destructs in
 // dry air over weeks, losing 5 of its 10 water molecules and becoming

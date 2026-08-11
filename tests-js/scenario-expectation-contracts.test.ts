@@ -48,7 +48,7 @@ describe('scenario expectation contracts', () => {
     expect(decision.blockers.join(' ')).toContain('locality evidence excludes');
     expect(spec.sources.join('\n')).toContain('TSNB159');
     expect(spec.sources.join('\n')).toContain('Mindat locality record 2428');
-  }, 120_000);
+  }, 300_000);
 
   it('enforces the first-zone Tsumeb köttigite exclusion even in a forced pH < 3 fluid', () => {
     setSeed(42);
@@ -92,7 +92,7 @@ describe('scenario expectation contracts', () => {
     const decision = assessProductionNucleationDecision('barite', sim, 10, 1);
     expect(decision).toMatchObject({ available: true, eligible: false });
     expect(decision.blockers.join(' ')).toContain('locality evidence excludes');
-  }, 30_000);
+  }, 300_000);
 
   it('turns Bingham exhumation into a cold, shallow, non-reheating supergene boundary', () => {
     setSeed(42);

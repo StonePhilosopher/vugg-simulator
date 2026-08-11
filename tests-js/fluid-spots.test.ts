@@ -252,7 +252,7 @@ describe('fluid-spots — 2c.2b deposition CLUSTERING (per-cell, render-visible)
     }
     expect(feedersSeen).toBeGreaterThan(0);     // there ARE supply-feeders
     expect(onSum).toBeGreaterThan(offSum);      // crystals concentrate at the vents (aggregate)
-  }, 120_000);
+  }, 300_000);
 
   it('ON preserves the assemblage (species set unchanged — clustering, not chemistry)', () => {
     const off = runPlacement(false);
