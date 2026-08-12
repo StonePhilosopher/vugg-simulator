@@ -1840,7 +1840,7 @@ class WallState {
     const field = this.cavityFieldFor(opts);
     if (!field) return null;
     const isovalue = opts && opts.isovalue != null ? Number(opts.isovalue) : 0;
-    const sig = `${field.sig}|mc-face-decider-orient-probe:v3|iso:${isovalue}`;
+    const sig = field.surfaceSignature(isovalue);
     if (this._cavitySurfaceFailure && this._cavitySurfaceFailure.sig === sig) {
       if (opts && opts.throwOnFailure) throw this._cavitySurfaceFailure.error;
       return null;

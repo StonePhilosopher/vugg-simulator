@@ -82,6 +82,138 @@ class MarchingCubesExtractor {
     return [0xD2 / 255, 0x69 / 255, 0x1E / 255];
   }
 
+  // Quantifies the geometric discrepancy between each planar MC triangle and
+  // the trilinearly interpolated field that a 3-D clip texture will sample.
+  // This is deliberately named a sampled normal-distance metric, not an exact
+  // Hausdorff distance: a finite barycentric lattice cannot certify extrema it
+  // did not sample. The receipt records its density so evidence cannot silently
+  // overstate what was measured.
+  static measureImplicitAgreement(field: CavityScalarField, surface: CavitySurfaceBuffers,
+                                  subdivisions = 4): CavitySurfaceAgreementMetrics {
+    if (!(field instanceof CavityScalarField)) {
+      throw new TypeError('surface agreement requires a CavityScalarField');
+    }
+    if (!surface || surface.source_field_signature !== field.sig
+        || surface.source_field_snapshot_digest !== field.snapshotDigest
+        || surface.sig !== field.surfaceSignature(surface.isovalue)) {
+      throw new Error('surface agreement requires a surface extracted from the same field snapshot');
+    }
+    if (!Number.isInteger(subdivisions) || subdivisions < 1 || subdivisions > 16) {
+      throw new RangeError('surface agreement subdivisions must be an integer from 1 through 16');
+    }
+    const isovalue = Number(surface.isovalue);
+    if (!Number.isFinite(isovalue)) throw new TypeError('surface agreement isovalue must be finite');
+    const positions = surface.positions;
+    const indices = surface.indices;
+    const zeroTolerance = Math.max(1e-8, field.spacingMm * 1e-7);
+    const maxSearchDistance = field.spacingMm * 1.5;
+    const searchSteps = 24;
+    let sampleCount = 0;
+    let unresolvedSampleCount = 0;
+    let maxFieldResidual = 0;
+    let maxNormalRootDistanceMm = 0;
+
+    const valueAt = (point: number[]): number =>
+      field.sampleWorld(point[0], point[1], point[2]) - isovalue;
+    const rootDistance = (point: number[], normal: number[], initialValue: number,
+                          direction: number): number => {
+      if (Math.abs(initialValue) <= zeroTolerance) return 0;
+      let previousDistance = 0;
+      let previousValue = initialValue;
+      for (let step = 1; step <= searchSteps; step++) {
+        const distance = maxSearchDistance * step / searchSteps;
+        const probe = [
+          point[0] + normal[0] * distance * direction,
+          point[1] + normal[1] * distance * direction,
+          point[2] + normal[2] * distance * direction,
+        ];
+        const value = valueAt(probe);
+        if (Math.abs(value) <= zeroTolerance) return distance;
+        if ((previousValue > 0) !== (value > 0)) {
+          let low = previousDistance;
+          let high = distance;
+          let lowValue = previousValue;
+          for (let iteration = 0; iteration < 28; iteration++) {
+            const middle = (low + high) * 0.5;
+            const middleValue = valueAt([
+              point[0] + normal[0] * middle * direction,
+              point[1] + normal[1] * middle * direction,
+              point[2] + normal[2] * middle * direction,
+            ]);
+            if (Math.abs(middleValue) <= zeroTolerance) return middle;
+            if ((lowValue > 0) === (middleValue > 0)) {
+              low = middle;
+              lowValue = middleValue;
+            } else {
+              high = middle;
+            }
+          }
+          return (low + high) * 0.5;
+        }
+        previousDistance = distance;
+        previousValue = value;
+      }
+      return Infinity;
+    };
+
+    for (let offset = 0; offset < indices.length; offset += 3) {
+      const ia = indices[offset] * 3;
+      const ib = indices[offset + 1] * 3;
+      const ic = indices[offset + 2] * 3;
+      const a = [positions[ia], positions[ia + 1], positions[ia + 2]];
+      const b = [positions[ib], positions[ib + 1], positions[ib + 2]];
+      const c = [positions[ic], positions[ic + 1], positions[ic + 2]];
+      const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+      const ac = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+      const normal = [
+        ab[1] * ac[2] - ab[2] * ac[1],
+        ab[2] * ac[0] - ab[0] * ac[2],
+        ab[0] * ac[1] - ab[1] * ac[0],
+      ];
+      const length = Math.hypot(normal[0], normal[1], normal[2]);
+      if (!(length > 0) || !Number.isFinite(length)) {
+        throw new Error(`surface agreement encountered degenerate triangle ${offset / 3}`);
+      }
+      normal[0] /= length; normal[1] /= length; normal[2] /= length;
+      for (let i = 0; i <= subdivisions; i++) {
+        for (let j = 0; j <= subdivisions - i; j++) {
+          const wa = i / subdivisions;
+          const wb = j / subdivisions;
+          const wc = 1 - wa - wb;
+          const point = [
+            a[0] * wa + b[0] * wb + c[0] * wc,
+            a[1] * wa + b[1] * wb + c[1] * wc,
+            a[2] * wa + b[2] * wb + c[2] * wc,
+          ];
+          const fieldValue = valueAt(point);
+          maxFieldResidual = Math.max(maxFieldResidual, Math.abs(fieldValue));
+          const forward = rootDistance(point, normal, fieldValue, 1);
+          const backward = rootDistance(point, normal, fieldValue, -1);
+          const distance = Math.min(forward, backward);
+          sampleCount++;
+          if (!Number.isFinite(distance)) {
+            unresolvedSampleCount++;
+          } else {
+            maxNormalRootDistanceMm = Math.max(maxNormalRootDistanceMm, distance);
+          }
+        }
+      }
+    }
+    return Object.freeze({
+      schema: 'cavity-surface-agreement-v1',
+      field_signature: field.sig,
+      snapshot_digest: field.snapshotDigest,
+      surface_signature: surface.sig,
+      isovalue,
+      barycentric_subdivisions: subdivisions,
+      sample_count: sampleCount,
+      unresolved_sample_count: unresolvedSampleCount,
+      max_field_residual: maxFieldResidual,
+      max_normal_root_distance_mm: maxNormalRootDistanceMm,
+      max_normal_root_distance_voxels: maxNormalRootDistanceMm / field.spacingMm,
+    });
+  }
+
   static extract(field: CavityScalarField, isovalue = 0): CavitySurfaceBuffers {
     if (!(field instanceof CavityScalarField)) {
       throw new TypeError('MarchingCubesExtractor.extract requires a CavityScalarField');
@@ -380,25 +512,28 @@ class MarchingCubesExtractor {
     const extractionMs = CavityScalarField._nowMs() - started;
     const surfaceBytes = positionBuffer.byteLength + normalBuffer.byteLength
       + colorBuffer.byteLength + uvBuffer.byteLength + indexBuffer.byteLength;
-    return {
+    return Object.freeze({
       positions: positionBuffer,
       normals: normalBuffer,
       colors: colorBuffer,
       indices: indexBuffer,
       uvs: uvBuffer,
-      sig: `${field.sig}|mc-face-decider-orient-probe:v3|iso:${isovalue}`,
-      bounds: {
-        min: field.bounds.min.slice() as [number, number, number],
-        max: field.bounds.max.slice() as [number, number, number],
-      },
-      metrics: {
+      sig: field.surfaceSignature(isovalue),
+      source_field_signature: field.sig,
+      source_field_snapshot_digest: field.snapshotDigest,
+      isovalue,
+      bounds: Object.freeze({
+        min: Object.freeze(field.bounds.min.slice()) as any,
+        max: Object.freeze(field.bounds.max.slice()) as any,
+      }),
+      metrics: Object.freeze({
         field_build_ms: field.metrics.field_build_ms || 0,
         extraction_ms: extractionMs,
         triangle_count: indexBuffer.length / 3,
         vertex_count: positionBuffer.length / 3,
-        field_bytes: field.values.byteLength,
+        field_bytes: field.sampleByteLength(),
         surface_bytes: surfaceBytes,
-      },
-    };
+      }),
+    });
   }
 }

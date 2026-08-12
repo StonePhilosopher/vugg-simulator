@@ -27891,7 +27891,7 @@ class WallState {
         if (!field)
             return null;
         const isovalue = opts && opts.isovalue != null ? Number(opts.isovalue) : 0;
-        const sig = `${field.sig}|mc-face-decider-orient-probe:v3|iso:${isovalue}`;
+        const sig = field.surfaceSignature(isovalue);
         if (this._cavitySurfaceFailure && this._cavitySurfaceFailure.sig === sig) {
             if (opts && opts.throwOnFailure)
                 throw this._cavitySurfaceFailure.error;
@@ -29968,6 +29968,12 @@ class WallMesh {
 // cannot encode undercuts or multiple wall crossings on one ray. The field
 // remains a default-off renderer comparison until 3-D clipping, anchors,
 // materials, ambiguity handling, and performance share the same authority.
+// Keep the canonical samples outside the public object. Typed arrays cannot be
+// frozen in a useful cross-browser way, and Three.js uploads texture data
+// lazily. Callers receive copies, so neither a test helper nor renderer code can
+// mutate the field used to extract the paired wall surface.
+const CAVITY_FIELD_VALUES = new WeakMap();
+const CAVITY_FIELD_UPLOAD_STATE = new WeakMap();
 class CavityScalarField {
     constructor(opts) {
         const sizeX = Number(opts && opts.sizeX);
@@ -29994,13 +30000,27 @@ class CavityScalarField {
                 throw new TypeError(`CavityScalarField contains a non-finite sample at index ${i}`);
             }
         }
-        this.sizeX = sizeX;
-        this.sizeY = sizeY;
-        this.sizeZ = sizeZ;
-        this.spacingMm = spacingMm;
-        this.origin = [origin[0], origin[1], origin[2]];
-        this.values = values;
-        this.sig = String(opts.sig || 'cavity-field:fixture');
+        Object.defineProperties(this, {
+            sizeX: { value: sizeX, enumerable: true },
+            sizeY: { value: sizeY, enumerable: true },
+            sizeZ: { value: sizeZ, enumerable: true },
+            spacingMm: { value: spacingMm, enumerable: true },
+            origin: { value: Object.freeze([origin[0], origin[1], origin[2]]), enumerable: true },
+        });
+        const canonicalValues = values.slice();
+        CAVITY_FIELD_VALUES.set(this, canonicalValues);
+        const valueDigest = CavityScalarField._float32Hash(canonicalValues);
+        Object.defineProperties(this, {
+            valueDigest: {
+                value: valueDigest,
+                enumerable: true,
+            },
+            snapshotDigest: {
+                value: CavityScalarField._snapshotHash(sizeX, sizeY, sizeZ, spacingMm, [origin[0], origin[1], origin[2]], canonicalValues),
+                enumerable: true,
+            },
+            sig: { value: String(opts.sig || 'cavity-field:fixture'), enumerable: true },
+        });
         this.sourceBubbles = Array.isArray(opts.sourceBubbles)
             ? opts.sourceBubbles.map((b) => b.slice())
             : [];
@@ -30011,17 +30031,20 @@ class CavityScalarField {
             depths_mm: new Float64Array(opts.sourceEvolution.depths_mm),
             signature: String(opts.sourceEvolution.signature || ''),
         } : null;
-        this.bounds = {
-            min: [origin[0], origin[1], origin[2]],
-            max: [
-                origin[0] + spacingMm * (sizeX - 1),
-                origin[1] + spacingMm * (sizeY - 1),
-                origin[2] + spacingMm * (sizeZ - 1),
-            ],
-        };
+        Object.defineProperty(this, 'bounds', {
+            value: Object.freeze({
+                min: Object.freeze([origin[0], origin[1], origin[2]]),
+                max: Object.freeze([
+                    origin[0] + spacingMm * (sizeX - 1),
+                    origin[1] + spacingMm * (sizeY - 1),
+                    origin[2] + spacingMm * (sizeZ - 1),
+                ]),
+            }),
+            enumerable: true,
+        });
         this.metrics = Object.assign({
             field_build_ms: 0,
-            field_bytes: values.byteLength,
+            field_bytes: canonicalValues.byteLength,
         }, opts.metrics || {});
     }
     static _nowMs() {
@@ -30280,6 +30303,26 @@ class CavityScalarField {
         }
         return `${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
     }
+    static _float32Hash(values) {
+        let hashA = 0x811c9dc5;
+        let hashB = 0x9e3779b9;
+        const scratch = new DataView(new ArrayBuffer(4));
+        for (let index = 0; index < values.length; index++) {
+            scratch.setFloat32(0, values[index], true);
+            for (let byte = 0; byte < 4; byte++) {
+                const value = scratch.getUint8(byte);
+                hashA = Math.imul(hashA ^ value, 0x01000193) >>> 0;
+                hashB = (Math.imul(hashB ^ value, 0x85ebca6b) + 0x27d4eb2f) >>> 0;
+            }
+        }
+        return `${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
+    }
+    static _snapshotHash(sizeX, sizeY, sizeZ, spacingMm, origin, values) {
+        const frameHash = CavityScalarField._sourceHash([[
+                sizeX, sizeY, sizeZ, spacingMm, origin[0], origin[1], origin[2],
+            ]]);
+        return `${frameHash}${CavityScalarField._float32Hash(values)}`;
+    }
     static signatureFor(wall, resolution = 48, ledgerCursor) {
         const bubbles = CavityScalarField._validatedBubbles(wall && wall.bubbles);
         const shape = CavityScalarField.shapeFor(wall);
@@ -30436,7 +30479,82 @@ class CavityScalarField {
         ];
     }
     valueAt(x, y, z) {
-        return this.values[this.index(x, y, z)];
+        const values = CAVITY_FIELD_VALUES.get(this);
+        if (!values)
+            throw new Error('cavity field sample storage is unavailable');
+        return values[this.index(x, y, z)];
+    }
+    get values() {
+        const values = CAVITY_FIELD_VALUES.get(this);
+        if (!values)
+            throw new Error('cavity field sample storage is unavailable');
+        return values.slice();
+    }
+    sampleByteLength() {
+        const values = CAVITY_FIELD_VALUES.get(this);
+        if (!values)
+            throw new Error('cavity field sample storage is unavailable');
+        return values.byteLength;
+    }
+    surfaceSignature(isovalue = 0) {
+        if (!Number.isFinite(isovalue))
+            throw new TypeError('cavity surface isovalue must be finite');
+        return `${this.sig}|snapshot:${this.snapshotDigest}|mc-face-decider-orient-probe:v3|iso:${isovalue}`;
+    }
+    // One CPU/GPU mapping contract for the Tranche-3 clip texture. Data3DTexture
+    // stores width=x, height=y, depth=z with x as the fastest-varying sample,
+    // matching index(). Normalized texture coordinates address TEXEL CENTRES,
+    // hence (grid + 0.5) / dimension rather than grid / (dimension - 1).
+    // The renderer passes this affine transform straight to GLSL; it must not
+    // duplicate the origin/spacing/half-texel arithmetic in shader source.
+    textureContract(isovalue = 0) {
+        if (!Number.isFinite(isovalue))
+            throw new TypeError('cavity texture isovalue must be finite');
+        const dimensions = [this.sizeX, this.sizeY, this.sizeZ];
+        const scale = [
+            1 / (this.spacingMm * this.sizeX),
+            1 / (this.spacingMm * this.sizeY),
+            1 / (this.spacingMm * this.sizeZ),
+        ];
+        const bias = [
+            (0.5 - this.origin[0] / this.spacingMm) / this.sizeX,
+            (0.5 - this.origin[1] / this.spacingMm) / this.sizeY,
+            (0.5 - this.origin[2] / this.spacingMm) / this.sizeZ,
+        ];
+        const freezeTuple = (tuple) => Object.freeze(tuple.slice());
+        return Object.freeze({
+            schema: 'cavity-field-texture-contract-v1',
+            field_signature: this.sig,
+            value_digest: this.valueDigest,
+            snapshot_digest: this.snapshotDigest,
+            isovalue,
+            dimensions: freezeTuple(dimensions),
+            origin_mm: freezeTuple(this.origin),
+            spacing_mm: this.spacingMm,
+            bounds_min_mm: freezeTuple(this.bounds.min),
+            bounds_max_mm: freezeTuple(this.bounds.max),
+            world_to_texture_scale: freezeTuple(scale),
+            world_to_texture_bias: freezeTuple(bias),
+            data_order: 'x-fastest, then y, then z',
+            sign_convention: 'positive-void, zero-wall, negative-rock',
+        });
+    }
+    createTextureUpload(isovalue = 0) {
+        const values = CAVITY_FIELD_VALUES.get(this);
+        if (!values)
+            throw new Error('cavity field sample storage is unavailable');
+        return new CavityFieldTextureUpload(this.textureContract(isovalue), values);
+    }
+    textureCoordinateWorld(x, y, z) {
+        if (![x, y, z].every(Number.isFinite)) {
+            throw new TypeError('cavity texture coordinates require finite world coordinates');
+        }
+        const contract = this.textureContract();
+        return [
+            x * contract.world_to_texture_scale[0] + contract.world_to_texture_bias[0],
+            y * contract.world_to_texture_scale[1] + contract.world_to_texture_bias[1],
+            z * contract.world_to_texture_scale[2] + contract.world_to_texture_bias[2],
+        ];
     }
     sampleAnalyticWorld(x, y, z) {
         if (!this.sourceBubbles.length)
@@ -30514,6 +30632,56 @@ class CavityScalarField {
         if (!extractor)
             throw new Error('MarchingCubesExtractor is unavailable');
         return extractor.extract(this, isovalue);
+    }
+}
+// A one-shot ownership boundary for Three.js's lazy Data3DTexture upload.
+// Renderer code receives the bytes only inside consume(), then must call
+// verifyAfterUpload() from the texture onUpdate callback. Verification hashes
+// the exact retained array together with its coordinate frame; any mutation
+// between construction and the actual GPU upload fails closed.
+class CavityFieldTextureUpload {
+    constructor(contract, values) {
+        Object.defineProperty(this, 'contract', {
+            value: contract,
+            enumerable: true,
+        });
+        CAVITY_FIELD_UPLOAD_STATE.set(this, {
+            values: values.slice(),
+            consumed: false,
+        });
+    }
+    consume(consumer) {
+        if (typeof consumer !== 'function')
+            throw new TypeError('cavity texture upload requires a consumer');
+        const state = CAVITY_FIELD_UPLOAD_STATE.get(this);
+        if (!state)
+            throw new Error('cavity texture upload state is unavailable');
+        if (state.consumed)
+            throw new Error('cavity texture upload bytes may only be consumed once');
+        state.consumed = true;
+        consumer(state.values);
+    }
+    verifyAfterUpload() {
+        const state = CAVITY_FIELD_UPLOAD_STATE.get(this);
+        if (!state)
+            throw new Error('cavity texture upload state is unavailable');
+        if (!state.consumed)
+            throw new Error('cavity texture upload must be consumed before verification');
+        const contract = this.contract;
+        const actualValueDigest = CavityScalarField._float32Hash(state.values);
+        const actualSnapshotDigest = CavityScalarField._snapshotHash(contract.dimensions[0], contract.dimensions[1], contract.dimensions[2], contract.spacing_mm, Array.from(contract.origin_mm), state.values);
+        if (actualValueDigest !== contract.value_digest
+            || actualSnapshotDigest !== contract.snapshot_digest) {
+            throw new Error('cavity texture upload bytes changed before GPU upload');
+        }
+        return Object.freeze({
+            schema: 'cavity-field-texture-upload-receipt-v1',
+            field_signature: contract.field_signature,
+            snapshot_digest: actualSnapshotDigest,
+            value_digest: actualValueDigest,
+            isovalue: contract.isovalue,
+            verified_after_upload: true,
+        });
     }
 }
 
@@ -30599,6 +30767,140 @@ class MarchingCubesExtractor {
         if (normalY > Math.SQRT1_2)
             return [0xE8 / 255, 0x78 / 255, 0x2C / 255];
         return [0xD2 / 255, 0x69 / 255, 0x1E / 255];
+    }
+    // Quantifies the geometric discrepancy between each planar MC triangle and
+    // the trilinearly interpolated field that a 3-D clip texture will sample.
+    // This is deliberately named a sampled normal-distance metric, not an exact
+    // Hausdorff distance: a finite barycentric lattice cannot certify extrema it
+    // did not sample. The receipt records its density so evidence cannot silently
+    // overstate what was measured.
+    static measureImplicitAgreement(field, surface, subdivisions = 4) {
+        if (!(field instanceof CavityScalarField)) {
+            throw new TypeError('surface agreement requires a CavityScalarField');
+        }
+        if (!surface || surface.source_field_signature !== field.sig
+            || surface.source_field_snapshot_digest !== field.snapshotDigest
+            || surface.sig !== field.surfaceSignature(surface.isovalue)) {
+            throw new Error('surface agreement requires a surface extracted from the same field snapshot');
+        }
+        if (!Number.isInteger(subdivisions) || subdivisions < 1 || subdivisions > 16) {
+            throw new RangeError('surface agreement subdivisions must be an integer from 1 through 16');
+        }
+        const isovalue = Number(surface.isovalue);
+        if (!Number.isFinite(isovalue))
+            throw new TypeError('surface agreement isovalue must be finite');
+        const positions = surface.positions;
+        const indices = surface.indices;
+        const zeroTolerance = Math.max(1e-8, field.spacingMm * 1e-7);
+        const maxSearchDistance = field.spacingMm * 1.5;
+        const searchSteps = 24;
+        let sampleCount = 0;
+        let unresolvedSampleCount = 0;
+        let maxFieldResidual = 0;
+        let maxNormalRootDistanceMm = 0;
+        const valueAt = (point) => field.sampleWorld(point[0], point[1], point[2]) - isovalue;
+        const rootDistance = (point, normal, initialValue, direction) => {
+            if (Math.abs(initialValue) <= zeroTolerance)
+                return 0;
+            let previousDistance = 0;
+            let previousValue = initialValue;
+            for (let step = 1; step <= searchSteps; step++) {
+                const distance = maxSearchDistance * step / searchSteps;
+                const probe = [
+                    point[0] + normal[0] * distance * direction,
+                    point[1] + normal[1] * distance * direction,
+                    point[2] + normal[2] * distance * direction,
+                ];
+                const value = valueAt(probe);
+                if (Math.abs(value) <= zeroTolerance)
+                    return distance;
+                if ((previousValue > 0) !== (value > 0)) {
+                    let low = previousDistance;
+                    let high = distance;
+                    let lowValue = previousValue;
+                    for (let iteration = 0; iteration < 28; iteration++) {
+                        const middle = (low + high) * 0.5;
+                        const middleValue = valueAt([
+                            point[0] + normal[0] * middle * direction,
+                            point[1] + normal[1] * middle * direction,
+                            point[2] + normal[2] * middle * direction,
+                        ]);
+                        if (Math.abs(middleValue) <= zeroTolerance)
+                            return middle;
+                        if ((lowValue > 0) === (middleValue > 0)) {
+                            low = middle;
+                            lowValue = middleValue;
+                        }
+                        else {
+                            high = middle;
+                        }
+                    }
+                    return (low + high) * 0.5;
+                }
+                previousDistance = distance;
+                previousValue = value;
+            }
+            return Infinity;
+        };
+        for (let offset = 0; offset < indices.length; offset += 3) {
+            const ia = indices[offset] * 3;
+            const ib = indices[offset + 1] * 3;
+            const ic = indices[offset + 2] * 3;
+            const a = [positions[ia], positions[ia + 1], positions[ia + 2]];
+            const b = [positions[ib], positions[ib + 1], positions[ib + 2]];
+            const c = [positions[ic], positions[ic + 1], positions[ic + 2]];
+            const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+            const ac = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+            const normal = [
+                ab[1] * ac[2] - ab[2] * ac[1],
+                ab[2] * ac[0] - ab[0] * ac[2],
+                ab[0] * ac[1] - ab[1] * ac[0],
+            ];
+            const length = Math.hypot(normal[0], normal[1], normal[2]);
+            if (!(length > 0) || !Number.isFinite(length)) {
+                throw new Error(`surface agreement encountered degenerate triangle ${offset / 3}`);
+            }
+            normal[0] /= length;
+            normal[1] /= length;
+            normal[2] /= length;
+            for (let i = 0; i <= subdivisions; i++) {
+                for (let j = 0; j <= subdivisions - i; j++) {
+                    const wa = i / subdivisions;
+                    const wb = j / subdivisions;
+                    const wc = 1 - wa - wb;
+                    const point = [
+                        a[0] * wa + b[0] * wb + c[0] * wc,
+                        a[1] * wa + b[1] * wb + c[1] * wc,
+                        a[2] * wa + b[2] * wb + c[2] * wc,
+                    ];
+                    const fieldValue = valueAt(point);
+                    maxFieldResidual = Math.max(maxFieldResidual, Math.abs(fieldValue));
+                    const forward = rootDistance(point, normal, fieldValue, 1);
+                    const backward = rootDistance(point, normal, fieldValue, -1);
+                    const distance = Math.min(forward, backward);
+                    sampleCount++;
+                    if (!Number.isFinite(distance)) {
+                        unresolvedSampleCount++;
+                    }
+                    else {
+                        maxNormalRootDistanceMm = Math.max(maxNormalRootDistanceMm, distance);
+                    }
+                }
+            }
+        }
+        return Object.freeze({
+            schema: 'cavity-surface-agreement-v1',
+            field_signature: field.sig,
+            snapshot_digest: field.snapshotDigest,
+            surface_signature: surface.sig,
+            isovalue,
+            barycentric_subdivisions: subdivisions,
+            sample_count: sampleCount,
+            unresolved_sample_count: unresolvedSampleCount,
+            max_field_residual: maxFieldResidual,
+            max_normal_root_distance_mm: maxNormalRootDistanceMm,
+            max_normal_root_distance_voxels: maxNormalRootDistanceMm / field.spacingMm,
+        });
     }
     static extract(field, isovalue = 0) {
         if (!(field instanceof CavityScalarField)) {
@@ -30897,26 +31199,29 @@ class MarchingCubesExtractor {
         const extractionMs = CavityScalarField._nowMs() - started;
         const surfaceBytes = positionBuffer.byteLength + normalBuffer.byteLength
             + colorBuffer.byteLength + uvBuffer.byteLength + indexBuffer.byteLength;
-        return {
+        return Object.freeze({
             positions: positionBuffer,
             normals: normalBuffer,
             colors: colorBuffer,
             indices: indexBuffer,
             uvs: uvBuffer,
-            sig: `${field.sig}|mc-face-decider-orient-probe:v3|iso:${isovalue}`,
-            bounds: {
-                min: field.bounds.min.slice(),
-                max: field.bounds.max.slice(),
-            },
-            metrics: {
+            sig: field.surfaceSignature(isovalue),
+            source_field_signature: field.sig,
+            source_field_snapshot_digest: field.snapshotDigest,
+            isovalue,
+            bounds: Object.freeze({
+                min: Object.freeze(field.bounds.min.slice()),
+                max: Object.freeze(field.bounds.max.slice()),
+            }),
+            metrics: Object.freeze({
                 field_build_ms: field.metrics.field_build_ms || 0,
                 extraction_ms: extractionMs,
                 triangle_count: indexBuffer.length / 3,
                 vertex_count: positionBuffer.length / 3,
-                field_bytes: field.values.byteLength,
+                field_bytes: field.sampleByteLength(),
                 surface_bytes: surfaceBytes,
-            },
-        };
+            }),
+        });
     }
 }
 

@@ -25,9 +25,12 @@ interface CavitySurfaceBuffers {
   indices: Uint16Array | Uint32Array;
   uvs?: Float32Array;
   sig: string;
+  source_field_signature: string;
+  source_field_snapshot_digest: string;
+  isovalue: number;
   bounds: {
-    min: [number, number, number];
-    max: [number, number, number];
+    min: readonly [number, number, number];
+    max: readonly [number, number, number];
   };
   metrics?: {
     field_build_ms?: number;
@@ -48,6 +51,44 @@ interface CavityShapeDescriptor {
   twist_amplitudes: number[];
   twist_phases: number[];
 }
+
+interface CavityFieldTextureContract {
+  schema: 'cavity-field-texture-contract-v1';
+  field_signature: string;
+  value_digest: string;
+  snapshot_digest: string;
+  isovalue: number;
+  dimensions: readonly [number, number, number];
+  origin_mm: readonly [number, number, number];
+  spacing_mm: number;
+  bounds_min_mm: readonly [number, number, number];
+  bounds_max_mm: readonly [number, number, number];
+  world_to_texture_scale: readonly [number, number, number];
+  world_to_texture_bias: readonly [number, number, number];
+  data_order: 'x-fastest, then y, then z';
+  sign_convention: 'positive-void, zero-wall, negative-rock';
+}
+
+interface CavitySurfaceAgreementMetrics {
+  schema: 'cavity-surface-agreement-v1';
+  field_signature: string;
+  snapshot_digest: string;
+  surface_signature: string;
+  isovalue: number;
+  barycentric_subdivisions: number;
+  sample_count: number;
+  unresolved_sample_count: number;
+  max_field_residual: number;
+  max_normal_root_distance_mm: number;
+  max_normal_root_distance_voxels: number;
+}
+
+// Keep the canonical samples outside the public object. Typed arrays cannot be
+// frozen in a useful cross-browser way, and Three.js uploads texture data
+// lazily. Callers receive copies, so neither a test helper nor renderer code can
+// mutate the field used to extract the paired wall surface.
+const CAVITY_FIELD_VALUES = new WeakMap<object, Float32Array>();
+const CAVITY_FIELD_UPLOAD_STATE = new WeakMap<object, any>();
 
 class CavityScalarField {
   [key: string]: any;
@@ -78,13 +119,30 @@ class CavityScalarField {
       }
     }
 
-    this.sizeX = sizeX;
-    this.sizeY = sizeY;
-    this.sizeZ = sizeZ;
-    this.spacingMm = spacingMm;
-    this.origin = [origin[0], origin[1], origin[2]];
-    this.values = values;
-    this.sig = String(opts.sig || 'cavity-field:fixture');
+    Object.defineProperties(this, {
+      sizeX: { value: sizeX, enumerable: true },
+      sizeY: { value: sizeY, enumerable: true },
+      sizeZ: { value: sizeZ, enumerable: true },
+      spacingMm: { value: spacingMm, enumerable: true },
+      origin: { value: Object.freeze([origin[0], origin[1], origin[2]]), enumerable: true },
+    });
+    const canonicalValues = values.slice();
+    CAVITY_FIELD_VALUES.set(this, canonicalValues);
+    const valueDigest = CavityScalarField._float32Hash(canonicalValues);
+    Object.defineProperties(this, {
+      valueDigest: {
+        value: valueDigest,
+        enumerable: true,
+      },
+      snapshotDigest: {
+        value: CavityScalarField._snapshotHash(
+          sizeX, sizeY, sizeZ, spacingMm,
+          [origin[0], origin[1], origin[2]], canonicalValues,
+        ),
+        enumerable: true,
+      },
+      sig: { value: String(opts.sig || 'cavity-field:fixture'), enumerable: true },
+    });
     this.sourceBubbles = Array.isArray(opts.sourceBubbles)
       ? opts.sourceBubbles.map((b) => b.slice())
       : [];
@@ -95,17 +153,20 @@ class CavityScalarField {
       depths_mm: new Float64Array(opts.sourceEvolution.depths_mm),
       signature: String(opts.sourceEvolution.signature || ''),
     } : null;
-    this.bounds = {
-      min: [origin[0], origin[1], origin[2]],
-      max: [
-        origin[0] + spacingMm * (sizeX - 1),
-        origin[1] + spacingMm * (sizeY - 1),
-        origin[2] + spacingMm * (sizeZ - 1),
-      ],
-    };
+    Object.defineProperty(this, 'bounds', {
+      value: Object.freeze({
+        min: Object.freeze([origin[0], origin[1], origin[2]]),
+        max: Object.freeze([
+          origin[0] + spacingMm * (sizeX - 1),
+          origin[1] + spacingMm * (sizeY - 1),
+          origin[2] + spacingMm * (sizeZ - 1),
+        ]),
+      }),
+      enumerable: true,
+    });
     this.metrics = Object.assign({
       field_build_ms: 0,
-      field_bytes: values.byteLength,
+      field_bytes: canonicalValues.byteLength,
     }, opts.metrics || {});
   }
 
@@ -377,6 +438,29 @@ class CavityScalarField {
     return `${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
   }
 
+  static _float32Hash(values: Float32Array): string {
+    let hashA = 0x811c9dc5;
+    let hashB = 0x9e3779b9;
+    const scratch = new DataView(new ArrayBuffer(4));
+    for (let index = 0; index < values.length; index++) {
+      scratch.setFloat32(0, values[index], true);
+      for (let byte = 0; byte < 4; byte++) {
+        const value = scratch.getUint8(byte);
+        hashA = Math.imul(hashA ^ value, 0x01000193) >>> 0;
+        hashB = (Math.imul(hashB ^ value, 0x85ebca6b) + 0x27d4eb2f) >>> 0;
+      }
+    }
+    return `${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
+  }
+
+  static _snapshotHash(sizeX: number, sizeY: number, sizeZ: number, spacingMm: number,
+                       origin: number[], values: Float32Array): string {
+    const frameHash = CavityScalarField._sourceHash([[
+      sizeX, sizeY, sizeZ, spacingMm, origin[0], origin[1], origin[2],
+    ]]);
+    return `${frameHash}${CavityScalarField._float32Hash(values)}`;
+  }
+
   static signatureFor(wall: any, resolution = 48, ledgerCursor?: number): string {
     const bubbles = CavityScalarField._validatedBubbles(wall && wall.bubbles);
     const shape = CavityScalarField.shapeFor(wall);
@@ -541,7 +625,82 @@ class CavityScalarField {
   }
 
   valueAt(x: number, y: number, z: number): number {
-    return this.values[this.index(x, y, z)];
+    const values = CAVITY_FIELD_VALUES.get(this);
+    if (!values) throw new Error('cavity field sample storage is unavailable');
+    return values[this.index(x, y, z)];
+  }
+
+  get values(): Float32Array {
+    const values = CAVITY_FIELD_VALUES.get(this);
+    if (!values) throw new Error('cavity field sample storage is unavailable');
+    return values.slice();
+  }
+
+  sampleByteLength(): number {
+    const values = CAVITY_FIELD_VALUES.get(this);
+    if (!values) throw new Error('cavity field sample storage is unavailable');
+    return values.byteLength;
+  }
+
+  surfaceSignature(isovalue = 0): string {
+    if (!Number.isFinite(isovalue)) throw new TypeError('cavity surface isovalue must be finite');
+    return `${this.sig}|snapshot:${this.snapshotDigest}|mc-face-decider-orient-probe:v3|iso:${isovalue}`;
+  }
+
+  // One CPU/GPU mapping contract for the Tranche-3 clip texture. Data3DTexture
+  // stores width=x, height=y, depth=z with x as the fastest-varying sample,
+  // matching index(). Normalized texture coordinates address TEXEL CENTRES,
+  // hence (grid + 0.5) / dimension rather than grid / (dimension - 1).
+  // The renderer passes this affine transform straight to GLSL; it must not
+  // duplicate the origin/spacing/half-texel arithmetic in shader source.
+  textureContract(isovalue = 0): CavityFieldTextureContract {
+    if (!Number.isFinite(isovalue)) throw new TypeError('cavity texture isovalue must be finite');
+    const dimensions: [number, number, number] = [this.sizeX, this.sizeY, this.sizeZ];
+    const scale: [number, number, number] = [
+      1 / (this.spacingMm * this.sizeX),
+      1 / (this.spacingMm * this.sizeY),
+      1 / (this.spacingMm * this.sizeZ),
+    ];
+    const bias: [number, number, number] = [
+      (0.5 - this.origin[0] / this.spacingMm) / this.sizeX,
+      (0.5 - this.origin[1] / this.spacingMm) / this.sizeY,
+      (0.5 - this.origin[2] / this.spacingMm) / this.sizeZ,
+    ];
+    const freezeTuple = (tuple: number[]) => Object.freeze(tuple.slice()) as any;
+    return Object.freeze({
+      schema: 'cavity-field-texture-contract-v1',
+      field_signature: this.sig,
+      value_digest: this.valueDigest,
+      snapshot_digest: this.snapshotDigest,
+      isovalue,
+      dimensions: freezeTuple(dimensions),
+      origin_mm: freezeTuple(this.origin),
+      spacing_mm: this.spacingMm,
+      bounds_min_mm: freezeTuple(this.bounds.min),
+      bounds_max_mm: freezeTuple(this.bounds.max),
+      world_to_texture_scale: freezeTuple(scale),
+      world_to_texture_bias: freezeTuple(bias),
+      data_order: 'x-fastest, then y, then z',
+      sign_convention: 'positive-void, zero-wall, negative-rock',
+    });
+  }
+
+  createTextureUpload(isovalue = 0): CavityFieldTextureUpload {
+    const values = CAVITY_FIELD_VALUES.get(this);
+    if (!values) throw new Error('cavity field sample storage is unavailable');
+    return new CavityFieldTextureUpload(this.textureContract(isovalue), values);
+  }
+
+  textureCoordinateWorld(x: number, y: number, z: number): [number, number, number] {
+    if (![x, y, z].every(Number.isFinite)) {
+      throw new TypeError('cavity texture coordinates require finite world coordinates');
+    }
+    const contract = this.textureContract();
+    return [
+      x * contract.world_to_texture_scale[0] + contract.world_to_texture_bias[0],
+      y * contract.world_to_texture_scale[1] + contract.world_to_texture_bias[1],
+      z * contract.world_to_texture_scale[2] + contract.world_to_texture_bias[2],
+    ];
   }
 
   sampleAnalyticWorld(x: number, y: number, z: number): number {
@@ -622,5 +781,58 @@ class CavityScalarField {
     const extractor: any = (typeof MarchingCubesExtractor !== 'undefined') ? MarchingCubesExtractor : null;
     if (!extractor) throw new Error('MarchingCubesExtractor is unavailable');
     return extractor.extract(this, isovalue);
+  }
+}
+
+// A one-shot ownership boundary for Three.js's lazy Data3DTexture upload.
+// Renderer code receives the bytes only inside consume(), then must call
+// verifyAfterUpload() from the texture onUpdate callback. Verification hashes
+// the exact retained array together with its coordinate frame; any mutation
+// between construction and the actual GPU upload fails closed.
+class CavityFieldTextureUpload {
+  [key: string]: any;
+
+  constructor(contract: CavityFieldTextureContract, values: Float32Array) {
+    Object.defineProperty(this, 'contract', {
+      value: contract,
+      enumerable: true,
+    });
+    CAVITY_FIELD_UPLOAD_STATE.set(this, {
+      values: values.slice(),
+      consumed: false,
+    });
+  }
+
+  consume(consumer: (values: Float32Array) => void): void {
+    if (typeof consumer !== 'function') throw new TypeError('cavity texture upload requires a consumer');
+    const state = CAVITY_FIELD_UPLOAD_STATE.get(this);
+    if (!state) throw new Error('cavity texture upload state is unavailable');
+    if (state.consumed) throw new Error('cavity texture upload bytes may only be consumed once');
+    state.consumed = true;
+    consumer(state.values);
+  }
+
+  verifyAfterUpload(): any {
+    const state = CAVITY_FIELD_UPLOAD_STATE.get(this);
+    if (!state) throw new Error('cavity texture upload state is unavailable');
+    if (!state.consumed) throw new Error('cavity texture upload must be consumed before verification');
+    const contract = this.contract;
+    const actualValueDigest = CavityScalarField._float32Hash(state.values);
+    const actualSnapshotDigest = CavityScalarField._snapshotHash(
+      contract.dimensions[0], contract.dimensions[1], contract.dimensions[2],
+      contract.spacing_mm, Array.from(contract.origin_mm), state.values,
+    );
+    if (actualValueDigest !== contract.value_digest
+        || actualSnapshotDigest !== contract.snapshot_digest) {
+      throw new Error('cavity texture upload bytes changed before GPU upload');
+    }
+    return Object.freeze({
+      schema: 'cavity-field-texture-upload-receipt-v1',
+      field_signature: contract.field_signature,
+      snapshot_digest: actualSnapshotDigest,
+      value_digest: actualValueDigest,
+      isovalue: contract.isovalue,
+      verified_after_upload: true,
+    });
   }
 }
