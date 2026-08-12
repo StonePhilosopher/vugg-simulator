@@ -1,14 +1,17 @@
 # PROPOSAL: Marching-Cubes Cavity Surfaces
 
-> **Status:** Tranches 0 and 1 are a reviewed default-off shadow renderer.
-> SIM 263 implements and evidence-gates the dissolution-only Tranche 2
-> foundation: exact closed-`WallMesh` volume, atomic chemistry/geometry commits,
-> one capacity authority, authenticated replay prefixes, and executable pre-run
-> Creative host/size authoring. The Node-only science rebake, full bounded test
-> workflow, seed-42 desktop/mobile browser check, and hostile review are closed;
-> the AI “Dr. Michael Wise” role returned `SATISFIED`. Production promotion,
-> exact 3-D clipping, topology-independent anchors, deposition, and production
-> materials remain open. This is not a claim of review by the real scientist.
+> **Status:** Tranches 0–3 are reviewed, default-off foundations. SIM 263
+> implements and evidence-gates the dissolution-only Tranche 2 foundation:
+> exact closed-`WallMesh` volume, atomic chemistry/geometry commits, one capacity
+> authority, authenticated replay prefixes, and executable pre-run Creative
+> host/size authoring. Tranche 3 now pairs the visible Marching-Cubes wall with
+> the exact same immutable Cartesian scalar snapshot for GPU crystal clipping,
+> with measured R32F support, verified upload bytes, scoped shader-link gates,
+> CPU hit-test parity, and a distinct polar/canvas fallback chain. Focused tests,
+> seed-42 desktop/mobile browser checks, and hostile review are closed; the AI
+> “Dr. Michael Wise” role returned `SATISFIED`. Production promotion,
+> topology-independent anchors, deposition, and production materials remain
+> open. This is not a claim of review by the real scientist.
 > **Authored:** 2026-08-10 after reviewing the current `WallState`, `WallMesh`,
 > `CavityVoxelGrid`, and Three.js cavity-clip paths.
 > **Primary goal:** Let Vugg Simulator represent genuinely three-dimensional
@@ -750,7 +753,11 @@ simulation authority.
       before promotion.
 - [x] All connected components are emitted so the extractor does not silently
       erase valid chambers.
-- [ ] The 3D clip texture representation remains a Tranche 3 measurement.
+- [x] Tranche 3 uses an evidence-gated `R32F` `Data3DTexture` with linear
+      filtering. It is enabled only after an actual five-point sampling probe,
+      exact post-upload byte verification, and scoped production-shader link
+      validation. Unsupported or failed hardware keeps the canonical polar or
+      canvas path; no encoded approximation is silently substituted.
 - [x] MC accompanies rather than replaces `WallMesh` until dissolution,
       clipping, anchors, replay, and appearance share one field. Authored masks
       joined the shared oracle in SIM 262.
@@ -939,11 +946,68 @@ energy, or spatial solute transport.
 
 ### Production gates that remain open
 
-- Keep Marching Cubes default-off until exact 3-D crystal clipping,
-  topology-independent anchors, production material mapping, ambiguity-safe
-  extraction, and production browser performance budgets are closed. The
-  current radial ledger projection is a verified star-shaped bridge, not the
-  non-star-shaped end state promised by this proposal.
+- Keep Marching Cubes default-off until topology-independent anchors,
+  production material mapping, ambiguity-safe extraction, and production
+  browser performance budgets are closed. Exact 3-D crystal clipping is closed
+  in Tranche 3. The current radial ledger projection is a verified star-shaped
+  bridge, not the non-star-shaped end state promised by this proposal.
 - Deposition remains deferred until a named solid phase, stoichiometric aqueous
   withdrawal, volume provenance, and competition policy can be committed in the
   same atomic transaction.
+
+---
+
+## 17. Tranche 3 exact scalar-field clipping record — 2026-08-11
+
+The default-off Marching-Cubes wall and every cavity-clipped crystal material
+now consume one authenticated scalar snapshot. The shared contract pins
+dimensions, x-fastest axis order, texel-centre world transform, positive-void /
+negative-rock sign, retained equality, isovalue, field signature, surface
+signature, and immutable typed-buffer digest. A changed or mutated half of the
+pair fails closed to canonical `WallMesh`.
+
+Production activation is an evidence chain rather than a browser-version
+assumption:
+
+1. WebGL2, high-precision vertex/fragment floats, texture-unit capacity,
+   `OES_texture_float_linear`, field dimensions, and maximum 3-D texture size
+   are checked on the actual context.
+2. A raw `R32F` 2³ volume is sampled at four independent texel centres and one
+   off-centre trilinear point. The seed-42 browser receipt observed the exact
+   expected red bytes `[0, 36, 73, 146, 155]` with zero error.
+3. The exact retained field bytes are uploaded through `Data3DTexture`; WebGL
+   allocation errors and a post-upload content digest are checked before the
+   field/wall pair becomes visible.
+4. Every current tagged material program is compiled and forced through Three's
+   deferred link diagnostics before draw. Historical unrelated programs cannot
+   reject the current scene.
+5. Field and polar clipping are separate shader sources and cache keys. The
+   polar variant contains no `sampler3D` or field sampling instruction. If both
+   variants fail, the effective renderer immediately exposes the canvas path,
+   routes hit testing there, and suppresses repeated WebGL compilation until an
+   explicit retry or context restoration.
+
+CPU ray-hit filtering samples the same field transform and sign rule, including
+retained equality. Instanced/batched and ordinary meshes derive the clip point
+after displacement/skinning using Three's batching → instance → model transform
+order. Masked-horizon child shells inherit the same clip variant. Context loss
+immediately publishes a cleared fail-closed DOM receipt; context restoration
+evicts the raw probe cache and re-runs the complete gate.
+
+Focused verification passed 34 renderer/field tests after the final correction.
+The complete automated workflow then passed 213 files and 2,862 tests in 43
+strictly sequential batches, with one test thread, file parallelism disabled, a
+2 GB RSS ceiling, and a maximum observed batch peak of 1.718 GB. Local browser
+QA used simulation seed 42, the scenario-authored Amethyst Geode
+`shape_seed`, 48³ resolution, and the normal locally hosted bundle. It recorded
+active clip mode 1, exact post-upload digest verification, the zero-error probe
+above, and no warning/error for the current page. The AI “Dr. Michael Wise”
+hostile-review role iterated through shader-source fallback, program scoping,
+and effective canvas-state defects, then returned the exact verdict
+`SATISFIED`. This is an AI role, not review by the real scientist or
+Smithsonian.
+
+Topology-independent anchors, production triplanar/material mapping, measured
+production performance budgets, deposition, and promotion remain open. Tranche
+3 changes rendering and hit testing only; it does not alter chemistry, scenario
+baselines, RNG consumption, or authored scenario `shape_seed` values.

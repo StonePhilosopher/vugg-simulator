@@ -411,6 +411,8 @@ function _topoHitTest(ev) {
   // us pixel-accurate per-crystal hits across any orbit angle, free
   // of the inverse-projection math the canvas-vector path needs.
   if (typeof _topoUseThreeRenderer !== 'undefined' && _topoUseThreeRenderer
+      && (typeof _topoThreeRendererEffective !== 'function'
+        || _topoThreeRendererEffective())
       && typeof _topoHitTestThree === 'function') {
     return _topoHitTestThree(ev);
   }

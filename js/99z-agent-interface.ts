@@ -398,6 +398,17 @@ function _agentExposeWindow(): void {
     defineGetter('legendsSim', () => (typeof legendsSim !== 'undefined' ? legendsSim : null));
     defineGetter('idleSim', () => (typeof idleSim !== 'undefined' ? idleSim : null));
     defineGetter('rng', () => (typeof rng !== 'undefined' ? rng : null));
+    defineGetter('cavityClipCapability', () =>
+      (typeof _topoCavityClipCapabilityReceipt === 'function'
+        ? _topoCavityClipCapabilityReceipt() : null));
+
+    v.setMarchingCubesCavity = function (enabled: boolean, resolution = 48) {
+      if (typeof _topoSetMarchingCubesCavity !== 'function') return null;
+      _topoSetMarchingCubesCavity(enabled, resolution);
+      if (typeof topoRender === 'function') topoRender();
+      return typeof _topoCavityClipCapabilityReceipt === 'function'
+        ? _topoCavityClipCapabilityReceipt() : null;
+    };
 
     v.startScenario = function (name: string, opts: any) {
       opts = opts || {};

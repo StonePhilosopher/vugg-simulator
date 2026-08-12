@@ -58,6 +58,7 @@ let _topoThreeState: any = null;
 // first enable attempt — the script tag's async load might still be
 // in flight at boot.
 let _topoThreeUnavailable = false;
+const _CAVITY_R32F_PROBE_CACHE = new WeakMap<object, any>();
 
 function _topoThreeAvailable(): boolean {
   return typeof THREE !== 'undefined' && THREE && THREE.WebGLRenderer;
@@ -190,6 +191,14 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
       uVugCellRadii: { value: null as any },  // THREE.DataTexture
       uVugCellTexW: { value: 0 },  // = N (cellsPerRing)
       uVugCellTexH: { value: 0 },  // = ringCount
+      // Tranche 3 Cartesian clip. Mode 0 is the canonical polar path;
+      // mode 1 samples the exact immutable field snapshot paired with the MC
+      // wall. A mixed wall/clip pair is never installed.
+      uCavityClipMode: { value: 0 },
+      uCavityField: { value: null as any },
+      uCavityFieldWorldScale: { value: new THREE.Vector3(1, 1, 1) },
+      uCavityFieldWorldBias: { value: new THREE.Vector3(0, 0, 0) },
+      uCavityFieldIsovalue: { value: 0 },
       // === HELIX-OVERLAY-FORK ADDITION (v19) =========================
       // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
       // breadcrumb. Per-fragment "helix skin" on crystal materials:
@@ -210,6 +219,28 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
       // === END HELIX-OVERLAY-FORK ADDITION ===========================
     },
   };
+  // A lost WebGL context invalidates both the lazy Three.js upload and the raw
+  // capability probe. Keep the Cartesian wall/clip pair fail-closed until the
+  // restored context has independently passed the probe and upload receipt.
+  canvas.addEventListener('webglcontextlost', (event: Event) => {
+    event.preventDefault();
+    const state = _topoThreeState;
+    if (!state || state.renderer !== renderer) return;
+    _topoHandleCavityContextLost(state);
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    const state = _topoThreeState;
+    if (!state || state.renderer !== renderer) return;
+    _topoResetCavityFieldFailures(state);
+    state.cavityFieldFallbackReason = null;
+    state.cavityFieldCapabilityReceipt = null;
+    state.cavitySig = '';
+    state.crystalsSig = '';
+    if (state.crystals) state.crystals.visible = true;
+    if (typeof requestAnimationFrame === 'function' && typeof topoRender === 'function') {
+      requestAnimationFrame(() => topoRender());
+    }
+  });
   return _topoThreeState;
 }
 
@@ -238,14 +269,29 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
 //      asymmetric cavities — leaks "brighter saturated" patches
 //      where corners stick past the local cell.
 function _applyCavityClip(material: any, clipUniforms: any) {
+  // This capability is a compile-time shader variant. If sampler3D fails to
+  // link, fallback must build a different polar-only program which contains no
+  // 3-D sampler declaration or sample instruction.
+  const useCavityField = Number(clipUniforms?.uCavityClipMode?.value || 0) === 1;
+  const shaderVariant = useCavityField ? 'field-r32f-v1' : 'polar-r32f-free-v1';
+  if (!material.userData) material.userData = {};
+  material.userData.vuggCavityClipVariant = shaderVariant;
+  material.customProgramCacheKey = () => `vugg-cavity-clip:${shaderVariant}`;
   material.onBeforeCompile = (shader: any) => {
-    shader.uniforms.uVugRadius = clipUniforms.uVugRadius;
-    shader.uniforms.uVugCenter = clipUniforms.uVugCenter;
-    shader.uniforms.uVugRingCount = clipUniforms.uVugRingCount;
-    shader.uniforms.uVugRadiiByRing = clipUniforms.uVugRadiiByRing;
-    shader.uniforms.uVugCellRadii = clipUniforms.uVugCellRadii;
-    shader.uniforms.uVugCellTexW = clipUniforms.uVugCellTexW;
-    shader.uniforms.uVugCellTexH = clipUniforms.uVugCellTexH;
+    if (useCavityField) {
+      shader.uniforms.uCavityField = clipUniforms.uCavityField;
+      shader.uniforms.uCavityFieldWorldScale = clipUniforms.uCavityFieldWorldScale;
+      shader.uniforms.uCavityFieldWorldBias = clipUniforms.uCavityFieldWorldBias;
+      shader.uniforms.uCavityFieldIsovalue = clipUniforms.uCavityFieldIsovalue;
+    } else {
+      shader.uniforms.uVugRadius = clipUniforms.uVugRadius;
+      shader.uniforms.uVugCenter = clipUniforms.uVugCenter;
+      shader.uniforms.uVugRingCount = clipUniforms.uVugRingCount;
+      shader.uniforms.uVugRadiiByRing = clipUniforms.uVugRadiiByRing;
+      shader.uniforms.uVugCellRadii = clipUniforms.uVugCellRadii;
+      shader.uniforms.uVugCellTexW = clipUniforms.uVugCellTexW;
+      shader.uniforms.uVugCellTexH = clipUniforms.uVugCellTexH;
+    }
     // === HELIX-OVERLAY-FORK ADDITION (v19) =========================
     shader.uniforms.uHelixEnabled = clipUniforms.uHelixEnabled;
     shader.uniforms.uHelixSweep   = clipUniforms.uHelixSweep;
@@ -258,9 +304,23 @@ function _applyCavityClip(material: any, clipUniforms: any) {
       '#include <common>',
       '#include <common>\nvarying vec3 vCavityWorldPos;'
     );
+    // `transformed` is only object-local after <begin_vertex>. Three applies
+    // batching and instanceMatrix inside <project_vertex>, so derive the clip
+    // position with the same transform order after morphing/skinning/
+    // displacement have already changed `transformed`. This is required for
+    // InstancedMesh surface films and ordinary crystal meshes to clip in the
+    // same world frame.
     shader.vertexShader = shader.vertexShader.replace(
-      '#include <begin_vertex>',
-      '#include <begin_vertex>\nvCavityWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;'
+      '#include <project_vertex>',
+      `#include <project_vertex>
+vec4 _cavityClipWorld = vec4( transformed, 1.0 );
+#ifdef USE_BATCHING
+  _cavityClipWorld = batchingMatrix * _cavityClipWorld;
+#endif
+#ifdef USE_INSTANCING
+  _cavityClipWorld = instanceMatrix * _cavityClipWorld;
+#endif
+vCavityWorldPos = ( modelMatrix * _cavityClipWorld ).xyz;`
     );
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <common>',
@@ -273,6 +333,11 @@ uniform float uVugRadiiByRing[${_MAX_CLIP_RINGS}];
 uniform sampler2D uVugCellRadii;
 uniform float uVugCellTexW;
 uniform float uVugCellTexH;
+uniform int uCavityClipMode;
+uniform sampler3D uCavityField;
+uniform vec3 uCavityFieldWorldScale;
+uniform vec3 uCavityFieldWorldBias;
+uniform float uCavityFieldIsovalue;
 // === HELIX-OVERLAY-FORK ADDITION (v19) — helix skin uniforms =====
 uniform float uHelixEnabled;
 uniform float uHelixSweep;
@@ -320,11 +385,50 @@ float cavityHullRadiusAt(vec3 worldPos) {
   return mix(uVugRadiiByRing[i0], uVugRadiiByRing[i1], t);
 }`
     );
+    // Remove the unused capability from the source itself. This is what makes
+    // the polar fallback safe on a WebGL2 driver that rejects sampler3D.
+    if (useCavityField) {
+      for (const declaration of [
+        'uniform vec3 uVugCenter;\n',
+        'uniform float uVugRadius;\n',
+        'uniform int uVugRingCount;\n',
+        `uniform float uVugRadiiByRing[${_MAX_CLIP_RINGS}];\n`,
+        'uniform sampler2D uVugCellRadii;\n',
+        'uniform float uVugCellTexW;\n',
+        'uniform float uVugCellTexH;\n',
+        'uniform int uCavityClipMode;\n',
+      ]) shader.fragmentShader = shader.fragmentShader.replace(declaration, '');
+      const helperStart = shader.fragmentShader.indexOf('// Per-cell cavity hull lookup.');
+      const helperEnd = helperStart >= 0
+        ? shader.fragmentShader.indexOf('\n}', helperStart) : -1;
+      if (helperStart >= 0 && helperEnd >= 0) {
+        shader.fragmentShader = shader.fragmentShader.slice(0, helperStart)
+          + shader.fragmentShader.slice(helperEnd + 2);
+      }
+    } else {
+      for (const declaration of [
+        'uniform int uCavityClipMode;\n',
+        'uniform sampler3D uCavityField;\n',
+        'uniform vec3 uCavityFieldWorldScale;\n',
+        'uniform vec3 uCavityFieldWorldBias;\n',
+        'uniform float uCavityFieldIsovalue;\n',
+      ]) shader.fragmentShader = shader.fragmentShader.replace(declaration, '');
+    }
+    const cavityDiscard = useCavityField
+      ? `vec3 _cavityTexCoord = vCavityWorldPos * uCavityFieldWorldScale
+    + uCavityFieldWorldBias;
+  // Clamp alone would project a border texel indefinitely. Reject normalized
+  // coordinates outside [0,1] explicitly, then sample the guaranteed
+  // rock-negative border. Positive is void; negative is rock; equality stays.
+  if (any(lessThan(_cavityTexCoord, vec3(0.0)))
+      || any(greaterThan(_cavityTexCoord, vec3(1.0)))) discard;
+  if (texture(uCavityField, _cavityTexCoord).r < uCavityFieldIsovalue) discard;`
+      : `float _vugHullR = cavityHullRadiusAt(vCavityWorldPos);
+  if (length(vCavityWorldPos - uVugCenter) > _vugHullR) discard;`;
     shader.fragmentShader = shader.fragmentShader.replace(
       'void main() {',
       `void main() {
-  float _vugHullR = cavityHullRadiusAt(vCavityWorldPos);
-  if (length(vCavityWorldPos - uVugCenter) > _vugHullR) discard;
+  ${cavityDiscard}
   // === HELIX-OVERLAY-FORK ADDITION (v19) — per-fragment helix skin ====
   // Each surface point on the crystal computes its own age relative to
   // the helicoid leading edge AT THAT Y. The leading-edge world angle
@@ -482,17 +586,273 @@ function _topoSetMarchingCubesCavity(enabled: boolean, resolution = 48): void {
   // debug command must not accidentally enable the shadow renderer.
   _topoMarchingCubesCavityOverride = !!enabled;
   _topoMarchingCubesResolutionOverride = parsed;
-  if (_topoThreeState) _topoThreeState.cavitySig = '';
+  if (_topoThreeState) {
+    // This is also the explicit operator retry after a driver/context change.
+    // A frame loop alone must never hammer a previously rejected snapshot.
+    _topoResetCavityFieldFailures(_topoThreeState);
+    _topoThreeState.cavityFieldFallbackReason = null;
+    _topoThreeState.cavityFieldCapabilityReceipt = null;
+    _topoThreeState.cavitySig = '';
+  }
+}
+
+function _topoResetCavityFieldFailures(state: any): void {
+  if (!state) return;
+  const gl = state.renderer && state.renderer.getContext && state.renderer.getContext();
+  if (gl) _CAVITY_R32F_PROBE_CACHE.delete(gl);
+  if (state.cavityFieldFailedDigests) state.cavityFieldFailedDigests.clear();
+  if (state.cavityFieldFailedReasons) state.cavityFieldFailedReasons.clear();
+  // This function is called only for explicit operator retry and restored
+  // context. Those are the two events allowed to re-arm a terminally failed
+  // Three shader path; animation frames must remain on canvas.
+  state.threeShaderUnusable = false;
+}
+
+function _topoThreeRendererEffective(state = _topoThreeState): boolean {
+  return !!_topoUseThreeRenderer && !(state && state.threeShaderUnusable);
+}
+
+function _topoAttemptEffectiveThree(state: any, attempt: () => boolean): boolean {
+  if (state && state.threeShaderUnusable) return false;
+  return attempt();
+}
+
+function _topoCavityClipCapabilityReceipt(state = _topoThreeState): any {
+  const renderer = state && state.renderer;
+  const gl = renderer && typeof renderer.getContext === 'function' ? renderer.getContext() : null;
+  if (!gl) {
+    return Object.freeze({
+      schema: 'cavity-clip-capability-v1',
+      available: false,
+      reason: 'webgl-context-unavailable',
+    });
+  }
+  const isWebGL2 = typeof WebGL2RenderingContext !== 'undefined'
+    && gl instanceof WebGL2RenderingContext;
+  const floatLinear = !!gl.getExtension('OES_texture_float_linear');
+  const r32fProbe = isWebGL2 && floatLinear ? _topoProbeCavityR32F(gl, renderer) : {
+    passed: false,
+    reason: !isWebGL2 ? 'webgl2-required' : 'float-linear-filtering-required',
+  };
+  const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+  const vertexPrecision = gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT);
+  const fragmentPrecision = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+  const maxTextureSize = Number(gl.getParameter(gl.MAX_3D_TEXTURE_SIZE) || 0);
+  const maxTextureUnits = Number(gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS) || 0);
+  const requiredTextureUnits = 4;
+  const highpAvailable = !!(vertexPrecision && vertexPrecision.precision > 0
+    && fragmentPrecision && fragmentPrecision.precision > 0);
+  const dimensions = state && state.cavityFieldContract
+    ? state.cavityFieldContract.dimensions : null;
+  const resolutionFits = !!(dimensions && dimensions.every((value: number) => value <= maxTextureSize));
+  const supported = isWebGL2 && floatLinear && r32fProbe.passed
+    && maxTextureSize > 0 && maxTextureUnits >= requiredTextureUnits && highpAvailable
+    && (!dimensions || resolutionFits);
+  return Object.freeze({
+    schema: 'cavity-clip-capability-v1',
+    available: supported,
+    reason: supported ? 'r32f-linear-sampling-supported' : (
+      !isWebGL2 ? 'webgl2-required'
+        : !floatLinear ? 'float-linear-filtering-required'
+          : !r32fProbe.passed ? `r32f-probe-failed:${r32fProbe.reason}`
+          : !resolutionFits && dimensions ? 'field-exceeds-max-3d-texture-size'
+            : !highpAvailable ? 'highp-float-required'
+              : 'insufficient-texture-units'
+    ),
+    webgl_version: String(gl.getParameter(gl.VERSION) || ''),
+    shading_language_version: String(gl.getParameter(gl.SHADING_LANGUAGE_VERSION) || ''),
+    vendor: debugInfo ? String(gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '') : null,
+    renderer: debugInfo ? String(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '') : null,
+    max_3d_texture_size: maxTextureSize,
+    max_fragment_texture_units: maxTextureUnits,
+    required_fragment_texture_units: requiredTextureUnits,
+    oes_texture_float_linear: floatLinear,
+    r32f_linear_probe: { ...r32fProbe },
+    vertex_highp_precision_bits: vertexPrecision ? vertexPrecision.precision : 0,
+    fragment_highp_precision_bits: fragmentPrecision ? fragmentPrecision.precision : 0,
+    field_dimensions: dimensions ? Array.from(dimensions) : null,
+    field_resolution_fits: dimensions ? resolutionFits : null,
+    active_clip_mode: state && state.clipUniforms
+      ? Number(state.clipUniforms.uCavityClipMode.value || 0) : 0,
+    field_snapshot_digest: state && state.cavityFieldContract
+      ? state.cavityFieldContract.snapshot_digest : null,
+    upload_receipt: state && state.cavityFieldUploadReceipt
+      ? { ...state.cavityFieldUploadReceipt } : null,
+    fallback_reason: state && state.cavityFieldFallbackReason
+      ? String(state.cavityFieldFallbackReason) : null,
+  });
+}
+
+function _topoPublishCavityClipReceipt(state: any, receipt?: any): void {
+  const canvas = state && state.renderer && state.renderer.domElement;
+  if (!canvas || !canvas.dataset) return;
+  try {
+    const base = receipt || state.cavityFieldCapabilityReceipt
+      || _topoCavityClipCapabilityReceipt(state);
+    const contract = state.cavityFieldContract;
+    canvas.dataset.cavityClipReceipt = JSON.stringify({
+      ...base,
+      field_dimensions: contract ? Array.from(contract.dimensions) : null,
+      field_resolution_fits: contract && base.max_3d_texture_size != null
+        ? contract.dimensions.every((value: number) => value <= base.max_3d_texture_size)
+        : null,
+      active_clip_mode: state.clipUniforms
+        ? Number(state.clipUniforms.uCavityClipMode.value || 0) : 0,
+      field_snapshot_digest: contract ? contract.snapshot_digest : null,
+      upload_receipt: state.cavityFieldUploadReceipt
+        ? { ...state.cavityFieldUploadReceipt } : null,
+      fallback_reason: state.cavityFieldFallbackReason
+        ? String(state.cavityFieldFallbackReason) : null,
+    });
+  } catch (_) {
+    canvas.dataset.cavityClipReceipt = JSON.stringify({
+      schema: 'cavity-clip-capability-v1',
+      available: false,
+      reason: 'receipt-serialization-failed',
+    });
+  }
+}
+
+function _topoHandleCavityContextLost(state: any): void {
+  if (!state) return;
+  state.cavityFieldFallbackReason = 'webgl-context-lost';
+  state.cavityFieldCapabilityReceipt = null;
+  _topoDisposeCavityFieldTexture(state);
+  state.cavitySig = '';
+  state.crystalsSig = '';
+  if (state.cavity) state.cavity.visible = false;
+  if (state.crystals) state.crystals.visible = false;
+  _topoPublishCavityClipReceipt(state, Object.freeze({
+    schema: 'cavity-clip-capability-v1',
+    available: false,
+    reason: 'webgl-context-lost',
+  }));
+}
+
+function _topoProbeCavityR32F(gl: any, renderer?: any): any {
+  if (!gl || typeof gl.createTexture !== 'function') {
+    return Object.freeze({ passed: false, reason: 'invalid-context' });
+  }
+  const cached = _CAVITY_R32F_PROBE_CACHE.get(gl);
+  if (cached) return cached;
+  let volume: any = null;
+  let target: any = null;
+  let framebuffer: any = null;
+  let vertexShader: any = null;
+  let fragmentShader: any = null;
+  let program: any = null;
+  const finish = (receipt: any) => {
+    try { if (program) gl.deleteProgram(program); } catch (_) {}
+    try { if (vertexShader) gl.deleteShader(vertexShader); } catch (_) {}
+    try { if (fragmentShader) gl.deleteShader(fragmentShader); } catch (_) {}
+    try { if (framebuffer) gl.deleteFramebuffer(framebuffer); } catch (_) {}
+    try { if (volume) gl.deleteTexture(volume); } catch (_) {}
+    try { if (target) gl.deleteTexture(target); } catch (_) {}
+    try { if (renderer && typeof renderer.resetState === 'function') renderer.resetState(); } catch (_) {}
+    const frozen = Object.freeze(receipt);
+    _CAVITY_R32F_PROBE_CACHE.set(gl, frozen);
+    return frozen;
+  };
+  try {
+    const compile = (type: number, source: string) => {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        throw new Error(String(gl.getShaderInfoLog(shader) || 'shader-compile-failed'));
+      }
+      return shader;
+    };
+    vertexShader = compile(gl.VERTEX_SHADER, `#version 300 es
+void main() {
+  vec2 p = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}`);
+    fragmentShader = compile(gl.FRAGMENT_SHADER, `#version 300 es
+precision highp float;
+precision highp sampler3D;
+uniform sampler3D uVolume;
+out vec4 outColor;
+void main() {
+  float px = gl_FragCoord.x;
+  vec3 sampleAt = px < 1.0 ? vec3(0.25, 0.25, 0.25)
+    : px < 2.0 ? vec3(0.75, 0.25, 0.25)
+    : px < 3.0 ? vec3(0.25, 0.75, 0.25)
+    : px < 4.0 ? vec3(0.25, 0.25, 0.75)
+    : vec3(0.625, 0.375, 0.625);
+  outColor = vec4(texture(uVolume, sampleAt).rrr, 1.0);
+}`);
+    program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      throw new Error(String(gl.getProgramInfoLog(program) || 'program-link-failed'));
+    }
+
+    // x-fastest asymmetric landmarks: x + 2y + 4z, normalized by 7.
+    // Four texel centres independently pin all three positive axes; the fifth
+    // off-centre sample pins real trilinear interpolation and texel-centre math.
+    const samples = new Float32Array([0, 1 / 7, 2 / 7, 3 / 7, 4 / 7, 5 / 7, 6 / 7, 1]);
+    gl.activeTexture(gl.TEXTURE0);
+    volume = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_3D, volume);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+    gl.texImage3D(gl.TEXTURE_3D, 0, gl.R32F, 2, 2, 2, 0, gl.RED, gl.FLOAT, samples);
+
+    target = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, target);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 5, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    framebuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, target, 0);
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+      throw new Error('probe-framebuffer-incomplete');
+    }
+    gl.viewport(0, 0, 5, 1);
+    gl.useProgram(program);
+    gl.uniform1i(gl.getUniformLocation(program, 'uVolume'), 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    const pixels = new Uint8Array(5 * 4);
+    gl.readPixels(0, 0, 5, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    const expected = [0, 36, 73, 146, 155];
+    const observed = [pixels[0], pixels[4], pixels[8], pixels[12], pixels[16]];
+    const errors = observed.map((value, index) => Math.abs(value - expected[index]));
+    const maxError = Math.max(...errors);
+    const glError = gl.getError();
+    return finish({
+      passed: glError === gl.NO_ERROR && maxError <= 2,
+      reason: glError === gl.NO_ERROR ? (maxError <= 2 ? 'ok' : 'sample-mismatch') : `gl-error-${glError}`,
+      format: 'R32F',
+      filter: 'LINEAR',
+      sample_coordinates: [
+        [0.25, 0.25, 0.25], [0.75, 0.25, 0.25], [0.25, 0.75, 0.25],
+        [0.25, 0.25, 0.75], [0.625, 0.375, 0.625],
+      ],
+      expected_red_u8: expected,
+      observed_red_u8: observed,
+      absolute_error_u8: errors,
+      max_absolute_error_u8: maxError,
+    });
+  } catch (error) {
+    return finish({
+      passed: false,
+      reason: error instanceof Error ? error.message : String(error),
+      format: 'R32F',
+      filter: 'LINEAR',
+    });
+  }
 }
 
 // Pure renderer-facing adapter used by both the Three.js path and integration
-// tests. The legacy mesh remains available as clipMesh even when the shadow
-// MC buffers are selected. This mismatch is deliberate and blocks promotion:
-// the current 2D polar clip cannot describe MC undercuts or separated chambers.
-// The v2 MC surface includes authored radial masks but still has temporary
-// spherical UVs and no live wall_depth ledger, so evolution, matrix-skin
-// mapping, and water tint remain comparison findings rather than supported
-// production behavior.
+// tests. `clipMesh` remains the chemistry/cell topology bridge while MC wall
+// triangles and crystal clipping are paired to the same immutable Cartesian
+// field snapshot. Anchors and multi-chamber evolution remain separate promotion
+// gates; neither is silently inferred from this render-only adapter.
 function _topoCavitySurfaceSource(wall: any, sim: any,
                                   useMarchingCubes = _topoMarchingCubesCavityEnabled(),
                                   resolution = _topoMarchingCubesResolution()): any {
@@ -503,11 +863,17 @@ function _topoCavitySurfaceSource(wall: any, sim: any,
     try {
       const buffers = wall.cavitySurfaceFor({ resolution, isovalue: 0 });
       if (buffers) {
+        MarchingCubesExtractor.verifyBuffers(buffers);
         // clipMesh.sig may change for wall_depth even though the authored base MC
         // buffers stay cached. Include it so clip uniforms refresh without
         // paying for a byte-identical field/extraction rebuild.
-        return { mode: 'marching-cubes', buffers, clipMesh,
-          sig: `mc|${buffers.sig}|clip:${clipMesh.sig}` };
+        const field = wall.cavityFieldFor({ resolution });
+        if (!field || field.snapshotDigest !== buffers.source_field_snapshot_digest
+            || field.surfaceSignature(buffers.isovalue) !== buffers.sig) {
+          throw new Error('Marching Cubes wall and clip field are not the same immutable snapshot');
+        }
+        return { mode: 'marching-cubes', buffers, clipMesh, clipField: field,
+          sig: `mc|${buffers.sig}|clip-field:${field.snapshotDigest}` };
       }
       const failure = wall._cavitySurfaceFailure;
       if (failure && !failure.reported) {
@@ -524,7 +890,234 @@ function _topoCavitySurfaceSource(wall: any, sim: any,
       }
     }
   }
-  return { mode: 'wall-mesh', buffers: clipMesh, clipMesh, sig: `wall-mesh|${clipMesh.sig}` };
+  return { mode: 'wall-mesh', buffers: clipMesh, clipMesh, clipField: null,
+    sig: `wall-mesh|${clipMesh.sig}` };
+}
+
+function _topoDisposeCavityFieldTexture(state: any): void {
+  const texture = state && state.clipUniforms && state.clipUniforms.uCavityField.value;
+  const wasFieldVariant = !!(state && state.clipUniforms
+    && state.clipUniforms.uCavityClipMode.value === 1);
+  if (texture && texture.dispose) texture.dispose();
+  if (state && state.clipUniforms) {
+    state.clipUniforms.uCavityField.value = null;
+    state.clipUniforms.uCavityClipMode.value = 0;
+  }
+  if (state) {
+    state.cavityFieldContract = null;
+    state.cavityFieldUploadReceipt = null;
+    state.cavityFieldCapabilityReceipt = null;
+    state.cavityClipField = null;
+    if (wasFieldVariant) state.crystalsSig = '';
+  }
+}
+
+function _topoRejectActiveCavityFieldClip(
+  state: any, reason: string, texture?: any, scheduleFallback = true,
+): void {
+  if (!state) return;
+  const digest = state.cavityFieldContract && state.cavityFieldContract.snapshot_digest;
+  state.cavityFieldFallbackReason = String(reason || 'cavity-field-clip-rejected');
+  if (digest) {
+    if (!state.cavityFieldFailedDigests) state.cavityFieldFailedDigests = new Set<string>();
+    if (!state.cavityFieldFailedReasons) state.cavityFieldFailedReasons = new Map<string, string>();
+    state.cavityFieldFailedDigests.add(digest);
+    state.cavityFieldFailedReasons.set(digest, state.cavityFieldFallbackReason);
+  }
+  if (state.clipUniforms) state.clipUniforms.uCavityClipMode.value = 0;
+  state.cavityClipField = null;
+  state.cavitySig = '';
+  if (state.cavity) state.cavity.visible = false;
+  if (state.crystals) state.crystals.visible = false;
+  if (texture && texture.dispose) texture.dispose();
+  _topoPublishCavityClipReceipt(state);
+  if (scheduleFallback && typeof requestAnimationFrame === 'function' && typeof topoRender === 'function') {
+    requestAnimationFrame(() => topoRender());
+  }
+}
+
+function _topoCavityShaderProgramsRunnable(programs: any[]): boolean {
+  if (!Array.isArray(programs)) return false;
+  for (const program of programs) {
+    const diagnostics = program && program.diagnostics;
+    if (diagnostics && diagnostics.runnable === false) return false;
+  }
+  return true;
+}
+
+function _topoCompileCavityShaderPrograms(state: any): boolean {
+  const renderer = state && state.renderer;
+  if (!renderer || typeof renderer.compile !== 'function') return false;
+  try {
+    const materials = renderer.compile(state.scene, state.camera);
+    if (!materials || typeof materials[Symbol.iterator] !== 'function') return false;
+    const programs: any[] = [];
+    for (const material of materials) {
+      if (!material?.userData?.vuggCavityClipVariant) continue;
+      const properties = renderer.properties && typeof renderer.properties.get === 'function'
+        ? renderer.properties.get(material) : null;
+      const materialPrograms = properties && properties.programs;
+      if (materialPrograms && typeof materialPrograms.values === 'function') {
+        for (const program of materialPrograms.values()) programs.push(program);
+      } else if (properties && properties.currentProgram) {
+        programs.push(properties.currentProgram);
+      } else {
+        return false;
+      }
+    }
+    // Three defers link diagnostics until its first uniform/attribute access.
+    // Force that access during compile, before any cavity-clipped draw is
+    // permitted. Only programs owned by current traversed, tagged materials
+    // participate; stale/unrelated renderer.info programs cannot poison it.
+    for (const program of programs) {
+      if (program && typeof program.getUniforms === 'function') program.getUniforms();
+    }
+    return _topoCavityShaderProgramsRunnable(programs);
+  } catch (_) {
+    return false;
+  }
+}
+
+function _topoRenderPreparedCavityScene(state: any, installFallback: () => void): boolean {
+  if (!state || !state.renderer) return false;
+  let runnable = _topoCompileCavityShaderPrograms(state);
+  if (state.clipUniforms.uCavityClipMode.value === 1 && !runnable) {
+    _topoRejectActiveCavityFieldClip(
+      state, 'cavity-field-shader-link-failed', undefined, false,
+    );
+    installFallback();
+    runnable = _topoCompileCavityShaderPrograms(state);
+  }
+  // The field failure rebuilds every clipped material as the distinct
+  // polar-r32f-free shader variant. Validate that fallback too. If even the
+  // canonical polar program is unrunnable, the caller must use canvas 2-D;
+  // never draw a known-bad WebGL program.
+  if (!runnable) {
+    state.cavityFieldFallbackReason = 'polar-cavity-shader-link-failed';
+    state.threeShaderUnusable = true;
+    _topoPublishCavityClipReceipt(state);
+    return false;
+  }
+  state.threeShaderUnusable = false;
+  state.renderer.render(state.scene, state.camera);
+  return true;
+}
+
+function _topoInstallCavityFieldClip(state: any, field: CavityScalarField, surface: any): boolean {
+  if (!state || !field || !surface) return false;
+  const contract = field.textureContract(surface.isovalue);
+  if (state.cavityFieldFailedDigests
+      && state.cavityFieldFailedDigests.has(contract.snapshot_digest)) {
+    state.cavityFieldFallbackReason = state.cavityFieldFailedReasons
+      && state.cavityFieldFailedReasons.get(contract.snapshot_digest)
+      || 'previous-field-install-failed';
+    _topoPublishCavityClipReceipt(state);
+    return false;
+  }
+  if (state.cavityFieldContract
+      && state.cavityFieldContract.snapshot_digest === contract.snapshot_digest
+      && state.cavityFieldContract.isovalue === contract.isovalue
+      && state.clipUniforms.uCavityField.value
+      && state.clipUniforms.uCavityClipMode.value === 1) {
+    return true;
+  }
+  if (!state.cavityFieldContract
+      || state.cavityFieldContract.snapshot_digest !== contract.snapshot_digest
+      || state.cavityFieldContract.isovalue !== contract.isovalue) {
+    state.cavityFieldUploadReceipt = null;
+  }
+  state.cavityFieldContract = contract;
+  const capability = _topoCavityClipCapabilityReceipt(state);
+  state.cavityFieldCapabilityReceipt = capability;
+  if (!capability.available) {
+    state.cavityFieldFallbackReason = capability.reason;
+    if (!state.cavityFieldFailedDigests) state.cavityFieldFailedDigests = new Set<string>();
+    if (!state.cavityFieldFailedReasons) state.cavityFieldFailedReasons = new Map<string, string>();
+    state.cavityFieldFailedDigests.add(contract.snapshot_digest);
+    state.cavityFieldFailedReasons.set(contract.snapshot_digest, capability.reason);
+    _topoDisposeCavityFieldTexture(state);
+    _topoPublishCavityClipReceipt(state, capability);
+    return false;
+  }
+  const upload = field.createTextureUpload(surface.isovalue);
+  let texture: any = null;
+  try {
+    upload.consume((values: Float32Array) => {
+      texture = new THREE.Data3DTexture(
+        values,
+        contract.dimensions[0], contract.dimensions[1], contract.dimensions[2],
+      );
+    });
+  } catch (error) {
+    state.cavityFieldFallbackReason = `texture-construction-failed:${
+      error instanceof Error ? error.message : String(error)}`;
+    if (!state.cavityFieldFailedDigests) state.cavityFieldFailedDigests = new Set<string>();
+    if (!state.cavityFieldFailedReasons) state.cavityFieldFailedReasons = new Map<string, string>();
+    state.cavityFieldFailedDigests.add(contract.snapshot_digest);
+    state.cavityFieldFailedReasons.set(contract.snapshot_digest, state.cavityFieldFallbackReason);
+    _topoDisposeCavityFieldTexture(state);
+    _topoPublishCavityClipReceipt(state);
+    return false;
+  }
+  if (!texture) return false;
+  const previous = state.clipUniforms.uCavityField.value;
+  texture.format = THREE.RedFormat;
+  texture.type = THREE.FloatType;
+  texture.internalFormat = 'R32F';
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.wrapR = THREE.ClampToEdgeWrapping;
+  texture.generateMipmaps = false;
+  texture.unpackAlignment = 1;
+  texture.needsUpdate = true;
+  // Force the lazy Three upload before publishing either half of the MC/field
+  // pair. A constructor, allocation, byte-integrity, or GL error falls back to
+  // WallMesh while the previous pair is still untouched.
+  try {
+    const uploadGl = state.renderer && state.renderer.getContext
+      ? state.renderer.getContext() : null;
+    if (!state.renderer || typeof state.renderer.initTexture !== 'function' || !uploadGl) {
+      throw new Error('forced GPU texture initialization is unavailable');
+    }
+    let priorError = uploadGl.NO_ERROR;
+    for (let i = 0; i < 16; i++) {
+      priorError = uploadGl.getError();
+      if (priorError === uploadGl.NO_ERROR) break;
+    }
+    if (priorError !== uploadGl.NO_ERROR) {
+      throw new Error(`WebGL error state could not be cleared (${priorError})`);
+    }
+    state.renderer.initTexture(texture);
+    const glError = uploadGl.getError();
+    if (glError !== uploadGl.NO_ERROR) {
+      throw new Error(`R32F cavity texture GPU upload failed (GL error ${glError})`);
+    }
+    state.cavityFieldUploadReceipt = upload.verifyAfterUpload();
+  } catch (error) {
+    state.cavityFieldFallbackReason = error instanceof Error ? error.message : String(error);
+    if (!state.cavityFieldFailedDigests) state.cavityFieldFailedDigests = new Set<string>();
+    if (!state.cavityFieldFailedReasons) state.cavityFieldFailedReasons = new Map<string, string>();
+    state.cavityFieldFailedDigests.add(contract.snapshot_digest);
+    state.cavityFieldFailedReasons.set(contract.snapshot_digest, state.cavityFieldFallbackReason);
+    texture.dispose();
+    _topoDisposeCavityFieldTexture(state);
+    _topoPublishCavityClipReceipt(state, capability);
+    return false;
+  }
+  const wasFieldVariant = state.clipUniforms.uCavityClipMode.value === 1;
+  state.clipUniforms.uCavityField.value = texture;
+  state.clipUniforms.uCavityFieldWorldScale.value.fromArray(contract.world_to_texture_scale);
+  state.clipUniforms.uCavityFieldWorldBias.value.fromArray(contract.world_to_texture_bias);
+  state.clipUniforms.uCavityFieldIsovalue.value = contract.isovalue;
+  state.clipUniforms.uCavityClipMode.value = 1;
+  if (!wasFieldVariant) state.crystalsSig = '';
+  state.cavityClipField = field;
+  state.cavityFieldFallbackReason = null;
+  _topoPublishCavityClipReceipt(state, capability);
+  if (previous && previous !== texture && previous.dispose) previous.dispose();
+  return true;
 }
 
 // PHASE-2-CAVITY-MESH: cavity geometry now sources from WallMesh
@@ -537,12 +1130,17 @@ function _topoCavitySurfaceSource(wall: any, sim: any,
 // geodesic, irregular) can swap in without touching this file.
 function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
   if (!wall || !wall.rings || !wall.rings.length) return;
-  const source = _topoCavitySurfaceSource(wall, sim);
+  let source = _topoCavitySurfaceSource(wall, sim);
   if (!source) return;
+  if (source.mode === 'marching-cubes'
+      && !_topoInstallCavityFieldClip(state, source.clipField, source.buffers)) {
+    source = _topoCavitySurfaceSource(wall, sim, false, _topoMarchingCubesResolution());
+  }
   const mesh = source.clipMesh;
   const surface = source.buffers;
   if (source.sig === state.cavitySig) return;
   state.cavitySig = source.sig;
+  if (source.mode === 'wall-mesh') _topoDisposeCavityFieldTexture(state);
 
   const ringCount = wall.ring_count;
   const ring0 = wall.rings[0];
@@ -578,6 +1176,12 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
   const prev = target.geometry;
   target.geometry = geom;
   if (prev && prev.dispose) prev.dispose();
+  // An asynchronous upload failure hides both consumers for one fail-closed
+  // frame. A completed rebuild restores the selected wall display and crystals.
+  if (typeof _topoApplyWallDisplay === 'function') _topoApplyWallDisplay(state);
+  else target.visible = true;
+  if (state.crystals) state.crystals.visible = true;
+  _topoPublishCavityClipReceipt(state);
 
   // MATRIX SKIN (2026-07-06, boss ask): the wall texture that tells you what
   // kind of matrix hosts this vug. litho = wall.matrix (render-only override,
@@ -699,6 +1303,7 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
   // PHASE-2-CAVITY-MESH: read straight from mesh.positions — same
   // vertex layout (row-major (r, c)) as before, just lives on the
   // mesh now.
+  if (source.mode === 'wall-mesh') {
   const meshPositions: Float32Array = mesh.positions;
   const cellRadiiBuf = new Float32Array(ringCount * N);
   for (let r = 0; r < ringCount; r++) {
@@ -727,6 +1332,7 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
   state.clipUniforms.uVugCellTexW.value = N;
   state.clipUniforms.uVugCellTexH.value = ringCount;
   if (prevTex && prevTex.dispose) prevTex.dispose();
+  }
 }
 
 // Sync the renderer's drawing-buffer size to the canvas's CSS size and
@@ -4647,7 +5253,7 @@ function _o4InclusionLocalPos(
 // hides it (honest, the O4a contract). Non-raycastable — a band is an internal
 // feature, not a hit target, so hovers fall through to the host shell.
 // Render-only: no crystal mutated, no sim state touched (byte-identical).
-function _o5EmitMaskedBands(hostMesh: any, crystal: any): void {
+function _o5EmitMaskedBands(hostMesh: any, crystal: any, state?: any): void {
   if (!hostMesh || !hostMesh.geometry) return;
   const bands = maskedHorizonBands(crystal);
   if (!bands.length) return;
@@ -4664,6 +5270,7 @@ function _o5EmitMaskedBands(hostMesh: any, crystal: any): void {
       depthWrite: false,
       side: THREE.DoubleSide,
     });
+    if (state && state.clipUniforms) _applyCavityClip(bandMat, state.clipUniforms);
     const bandMesh = new THREE.Mesh(hostMesh.geometry, bandMat);
     bandMesh.scale.setScalar(f);
     // PHANTOMS SHARE THE BASE (boss observation on the ametrine reference
@@ -5574,7 +6181,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // concentric shell at its recorded radial depth. Free-standing crystals
     // only — an engulfed guest (O4a) is a tiny grain inside a host, its own
     // internal bands invisible and not worth the meshes. Render-only.
-    if (!isInclusion) _o5EmitMaskedBands(mesh, crystal);
+    if (!isInclusion) _o5EmitMaskedBands(mesh, crystal, state);
 
     // Phase E5b: emit cluster satellites around this parent. Same
     // geometry + material; inherits parent userData so hit-tests
@@ -5618,6 +6225,21 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
 // avoiding per-pointer-move allocations.
 const _topoThreeRaycaster: { ray?: any; ndc?: any } = {};
 
+function _topoSelectVisibleCavityHit(intersects: any[], clipField: any, isovalue = 0): any {
+  if (!Array.isArray(intersects) || !intersects.length) return null;
+  if (!clipField || typeof clipField.sampleTextureWorld !== 'function') return intersects[0];
+  const iso = Number(isovalue);
+  if (!Number.isFinite(iso)) throw new TypeError('cavity hit-test isovalue must be finite');
+  for (const candidate of intersects) {
+    const point = candidate && candidate.point;
+    if (!point) continue;
+    const value = clipField.sampleTextureWorld(point.x, point.y, point.z);
+    // The shader retains the equality case (`discard` is strictly below iso).
+    if (value >= iso) return candidate;
+  }
+  return null;
+}
+
 // Three.js hit-test. Resolves a screen-space pointer to a
 // `{ mineral, isInclusion, cell }` triple shaped like the canvas-
 // vector hit-test, so _topoTooltipFromEvent / _topoClickFromEvent
@@ -5655,8 +6277,12 @@ function _topoHitTestThree(ev: any): any {
     false,  // crystals are flat meshes, no recursion needed
   );
   if (!intersects.length) return null;
-  // First hit = nearest crystal (intersectObjects returns by distance).
-  const hit = intersects[0];
+  // Raycaster sees the undiscarded CPU triangles. Mirror the active scalar
+  // clip on each distance-sorted hit and skip GPU-discarded candidates.
+  const clipField = _topoThreeState.cavityClipField;
+  const clipIso = Number(_topoThreeState.clipUniforms.uCavityFieldIsovalue.value || 0);
+  const hit = _topoSelectVisibleCavityHit(intersects, clipField, clipIso);
+  if (!hit) return null;
   const data = hit.object && hit.object.userData;
   if (!data || !data.mineral) return null;
   // Synthesize a cell-like object so _topoTooltipFromEvent's existing
@@ -5925,6 +6551,10 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
 function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any, optReplayStep?: number): boolean {
   const canvas = document.getElementById('topo-canvas-three') as HTMLCanvasElement | null;
   if (!canvas) return false;
+  // Terminal shader failure holds the effective renderer on canvas until the
+  // explicit retry/context-restore lifecycle clears it. Avoid recompiling the
+  // same known-bad program on every animation frame.
+  if (!_topoAttemptEffectiveThree(_topoThreeState, () => true)) return false;
   if (!_topoThreeAvailable()) {
     _topoThreeUnavailable = true;
     return false;
@@ -5954,7 +6584,35 @@ function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any, optReplayS
     _topoHelixOverlayDraw(state, sim, renderWall);
   }
   // === END HELIX-OVERLAY-FORK ADDITION ==============================
-  state.renderer.render(state.scene, state.camera);
+  const rendered = _topoRenderPreparedCavityScene(state, () => {
+    const failedDigest = renderWall && renderWall.cavityFieldFor
+      ? renderWall.cavityFieldFor({ resolution: _topoMarchingCubesResolution() }).snapshotDigest
+      : null;
+    if (failedDigest) {
+      if (!state.cavityFieldFailedDigests) state.cavityFieldFailedDigests = new Set<string>();
+      if (!state.cavityFieldFailedReasons) state.cavityFieldFailedReasons = new Map<string, string>();
+      state.cavityFieldFailedDigests.add(failedDigest);
+      state.cavityFieldFailedReasons.set(failedDigest, 'cavity-field-shader-link-failed');
+    }
+    state.cavitySig = '';
+    _topoBuildCavityGeometry(state, renderWall, sim);
+    state.crystalsSig = '';
+    _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
+  });
+  if (!rendered) {
+    // Let topoRender continue into its established canvas renderer. Keep the
+    // user's renderer preference intact so a later explicit retry can restore
+    // Three after a context/driver change.
+    if (state.cavity) state.cavity.visible = false;
+    if (state.crystals) state.crystals.visible = false;
+    _topoSyncThreeCanvasVisibility();
+    _topoPublishCavityClipReceipt(state);
+    return false;
+  }
+  // Three uploads Data3DTexture lazily during render. Publish after the draw so
+  // the DOM receipt observed by browser automation includes verification of
+  // the exact bytes retained until the GPU consumed them.
+  _topoPublishCavityClipReceipt(state);
   return true;
 }
 
@@ -5962,11 +6620,11 @@ function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any, optReplayS
 // the toggle button and topoRender (so an off→on→off cycle leaves the
 // DOM in a coherent state regardless of which path triggered the
 // change).
-function _topoSyncThreeCanvasVisibility() {
+function _topoSyncThreeCanvasVisibility(state = _topoThreeState) {
   const c2 = document.getElementById('topo-canvas') as HTMLCanvasElement | null;
   const c3 = document.getElementById('topo-canvas-three') as HTMLCanvasElement | null;
   if (!c2 || !c3) return;
-  if (_topoUseThreeRenderer) {
+  if (_topoThreeRendererEffective(state)) {
     c3.style.display = 'block';
     c2.style.visibility = 'hidden';  // keep layout but don't paint
   } else {
@@ -5991,6 +6649,13 @@ function topoToggleThreeRenderer() {
     return;
   }
   _topoUseThreeRenderer = !_topoUseThreeRenderer;
+  if (_topoUseThreeRenderer && _topoThreeState?.threeShaderUnusable) {
+    // An intentional offâ†’on toggle is an operator retry, equivalent to the
+    // debug retry and a restored context. Re-arm once; ordinary frames cannot.
+    _topoResetCavityFieldFailures(_topoThreeState);
+    _topoThreeState.cavitySig = '';
+    _topoThreeState.crystalsSig = '';
+  }
   const btn = document.getElementById('topo-three-btn');
   if (btn) (btn as HTMLElement).style.color = _topoUseThreeRenderer ? '#f0c050' : '';
   // Force rotate mode on enable so the existing pointer handlers

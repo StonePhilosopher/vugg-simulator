@@ -1818,9 +1818,10 @@ class WallState {
   // Marching-Cubes cavity migration, Tranches 0/1: renderer-only scalar
   // volume and extracted shadow surface. These caches deliberately coexist
   // with WallMesh; mesh.cells[] remains the canonical chemistry/wall store.
-  // The v2 field composes the authored elongation/polar/twist deformation with
-  // the bubble union. Live wall_depth is not represented yet, so it remains a
-  // default-off comparison rather than simulation authority.
+  // The v3 field composes the authored elongation/polar/twist deformation with
+  // the bubble union and authenticated mass-balanced evolution-ledger prefix.
+  // Topology-independent anchors/materials remain promotion gates, so the path
+  // remains default-off.
   cavityFieldFor(opts: any = {}) {
     const CF: any = (typeof CavityScalarField !== 'undefined') ? CavityScalarField : null;
     if (!CF) return null;
@@ -1857,6 +1858,16 @@ class WallState {
         if (opts && opts.throwOnFailure) throw error;
         return null;
       }
+    }
+    try {
+      MarchingCubesExtractor.verifyBuffers(this._cavitySurface);
+    } catch (error) {
+      // Typed arrays cannot be frozen. Treat a mutated cached extraction like
+      // any other rejected surface and cache the negative result by signature.
+      this._cavitySurface = null;
+      this._cavitySurfaceFailure = { sig, error, reported: false };
+      if (opts && opts.throwOnFailure) throw error;
+      return null;
     }
     return this._cavitySurface;
   }

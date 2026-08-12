@@ -27,6 +27,7 @@ interface CavitySurfaceBuffers {
   sig: string;
   source_field_signature: string;
   source_field_snapshot_digest: string;
+  buffer_digest: string;
   isovalue: number;
   bounds: {
     min: readonly [number, number, number];
@@ -701,6 +702,18 @@ class CavityScalarField {
       y * contract.world_to_texture_scale[1] + contract.world_to_texture_bias[1],
       z * contract.world_to_texture_scale[2] + contract.world_to_texture_bias[2],
     ];
+  }
+
+  sampleTextureWorld(x: number, y: number, z: number): number {
+    if (![x, y, z].every(Number.isFinite)) {
+      throw new TypeError('cavity clip sampling requires finite world coordinates');
+    }
+    if (x < this.bounds.min[0] || x > this.bounds.max[0]
+        || y < this.bounds.min[1] || y > this.bounds.max[1]
+        || z < this.bounds.min[2] || z > this.bounds.max[2]) {
+      return -Infinity;
+    }
+    return this.sampleWorld(x, y, z);
   }
 
   sampleAnalyticWorld(x: number, y: number, z: number): number {

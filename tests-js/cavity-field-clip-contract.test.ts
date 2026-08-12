@@ -39,6 +39,17 @@ describe('cavity field clipping contract', () => {
     }
   });
 
+  it('treats every point outside the uploaded field bounds as rock', () => {
+    const field = asymmetricField();
+    const { min, max } = field.bounds;
+    expect(field.sampleTextureWorld(min[0] - 1e-9, min[1], min[2])).toBe(-Infinity);
+    expect(field.sampleTextureWorld(max[0] + 1e-9, max[1], max[2])).toBe(-Infinity);
+    expect(field.sampleTextureWorld(min[0], min[1] - 1, min[2])).toBe(-Infinity);
+    expect(field.sampleTextureWorld(max[0], max[1], max[2] + 1)).toBe(-Infinity);
+    expect(field.sampleTextureWorld(min[0], min[1], min[2])).toBe(field.valueAt(0, 0, 0));
+    expect(() => field.sampleTextureWorld(Number.NaN, 0, 0)).toThrow(/finite/i);
+  });
+
   it('keeps canonical samples immutable and verifies the exact lazily uploaded bytes', () => {
     const source = new Float32Array(27).map((_, index) => index - 13);
     const field = new CavityScalarField({

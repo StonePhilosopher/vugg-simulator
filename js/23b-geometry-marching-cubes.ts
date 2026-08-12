@@ -9,6 +9,26 @@
 // MC33-style interior ambiguity resolution remains a later production gate.
 
 class MarchingCubesExtractor {
+  static _bufferDigest(surface: any): string {
+    const arrays = [surface && surface.positions, surface && surface.normals,
+      surface && surface.colors, surface && surface.uvs, surface && surface.indices];
+    let joined = '';
+    for (const values of arrays) {
+      if (!values || !ArrayBuffer.isView(values)) throw new TypeError('surface buffer is unavailable');
+      const bytes = new Uint8Array(values.buffer, values.byteOffset, values.byteLength);
+      let hash = 0x811c9dc5;
+      for (let i = 0; i < bytes.length; i++) hash = Math.imul(hash ^ bytes[i], 0x01000193) >>> 0;
+      joined += `${values.constructor.name}:${values.byteLength}:${hash.toString(16).padStart(8, '0')}|`;
+    }
+    return joined;
+  }
+
+  static verifyBuffers(surface: CavitySurfaceBuffers): void {
+    if (!surface || MarchingCubesExtractor._bufferDigest(surface) !== surface.buffer_digest) {
+      throw new Error('Marching Cubes surface buffers changed after extraction');
+    }
+  }
+
   static readonly CORNERS = [
     [0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
     [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1],
@@ -93,6 +113,7 @@ class MarchingCubesExtractor {
     if (!(field instanceof CavityScalarField)) {
       throw new TypeError('surface agreement requires a CavityScalarField');
     }
+    MarchingCubesExtractor.verifyBuffers(surface);
     if (!surface || surface.source_field_signature !== field.sig
         || surface.source_field_snapshot_digest !== field.snapshotDigest
         || surface.sig !== field.surfaceSignature(surface.isovalue)) {
@@ -512,7 +533,7 @@ class MarchingCubesExtractor {
     const extractionMs = CavityScalarField._nowMs() - started;
     const surfaceBytes = positionBuffer.byteLength + normalBuffer.byteLength
       + colorBuffer.byteLength + uvBuffer.byteLength + indexBuffer.byteLength;
-    return Object.freeze({
+    const result: any = {
       positions: positionBuffer,
       normals: normalBuffer,
       colors: colorBuffer,
@@ -534,6 +555,8 @@ class MarchingCubesExtractor {
         field_bytes: field.sampleByteLength(),
         surface_bytes: surfaceBytes,
       }),
-    });
+    };
+    result.buffer_digest = MarchingCubesExtractor._bufferDigest(result);
+    return Object.freeze(result);
   }
 }
