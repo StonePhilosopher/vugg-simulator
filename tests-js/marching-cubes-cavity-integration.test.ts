@@ -108,7 +108,8 @@ describe('Marching Cubes cavity renderer shadow integration', () => {
     expect(shader.fragmentShader).toContain('cavityFreudenthalValue(_cavityGridPosition)');
     expect(shader.fragmentShader).toContain('cavityFieldGridValue');
     expect(shader.fragmentShader).not.toContain('cavityHullRadiusAt');
-    expect(material.customProgramCacheKey()).toBe('vugg-cavity-clip:field-r32f-freudenthal-v2');
+    expect(material.customProgramCacheKey())
+      .toBe('vugg-cavity-clip:field-r32f-freudenthal-v2|helix');
 
     const polarMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
     clipUniforms.uCavityClipMode.value = 0;
@@ -123,8 +124,22 @@ describe('Marching Cubes cavity renderer shadow integration', () => {
     expect(polarShader.fragmentShader).not.toContain('sampler3D');
     expect(polarShader.fragmentShader).not.toContain('texture(uCavityField');
     expect(polarShader.uniforms.uCavityField).toBeUndefined();
-    expect(polarMaterial.customProgramCacheKey()).toBe('vugg-cavity-clip:polar-r32f-free-v1');
+    expect(polarMaterial.customProgramCacheKey())
+      .toBe('vugg-cavity-clip:polar-r32f-free-v1|helix');
     expect(polarMaterial.customProgramCacheKey()).not.toBe(material.customProgramCacheKey());
+
+    const waterMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    clipUniforms.uCavityClipMode.value = 1;
+    _applyCavityClip(waterMaterial, clipUniforms, { helix: false });
+    const waterShader: any = {
+      uniforms: {},
+      vertexShader: '#include <common>\nvoid main() {\n#include <begin_vertex>\n#include <project_vertex>\n}',
+      fragmentShader: '#include <common>\nvoid main() {\n#include <dithering_fragment>\n}',
+    };
+    waterMaterial.onBeforeCompile(waterShader);
+    expect(waterMaterial.customProgramCacheKey())
+      .toBe('vugg-cavity-clip:field-r32f-freudenthal-v2|no-helix');
+    expect(waterShader.uniforms.uHelixEnabled.value).toBe(0);
   });
 
   it('withholds an active exact field view without mutating authority when WebGL rejects it', () => {

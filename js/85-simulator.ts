@@ -103,6 +103,9 @@ class VugSimulator {
       // back to conditions.wall.
       size_class: this.conditions.wall.size_class,
     });
+    // Convert any legacy authored ring coordinate into the one canonical
+    // physical state: millimetres above the nominal cavity floor.
+    this.conditions.bindCavityWaterGeometry?.(this.wall_state);
     // Per-step snapshot of ring[0] for the Replay button. Captured at
     // the end of each step; small (~120 cells × ~4 numbers × 100-200
     // steps), so the memory cost of a whole run is trivial.
@@ -185,6 +188,12 @@ class VugSimulator {
     if (_initialMesh && _initialMesh.bindRingChemistry) {
       _initialMesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
     }
+    // Replay water state is independently authenticated by an append-only
+    // history rather than by the mutable snapshot payload. Keep the ledger on
+    // both owners because snapshots are produced by the simulator while replay
+    // dispatch receives the WallState directly.
+    this._cavityWaterAppearanceLedger = new CavityWaterAppearanceLedger(this.wall_state);
+    this.wall_state._cavityWaterAppearanceLedger = this._cavityWaterAppearanceLedger;
     // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1 (v158) — allocate the
     // cavity interior voxel grid now that the mesh is built and
     // chemistry is bound. d=0 voxels alias the mesh.cells[].fluid
@@ -302,7 +311,8 @@ class VugSimulator {
     // construction means "no surface set yet"; first run_step compares
     // against this and applies the override to whatever rings are
     // currently vadose.
-    this._prevFluidSurfaceRing = null;
+    this._prevFluidSurfaceHeightMm = null;
+    this._prevCavityWaterStates = new Array(nRings).fill('submerged');
   }
 
   canReauthorInitialHostGeometry() {
@@ -335,6 +345,10 @@ class VugSimulator {
     if (!this.canReauthorInitialHostGeometry()) return false;
     const wall = this.conditions.wall;
     const wallState = this.wall_state;
+    const oldSpan = Math.max(CavityWaterAppearance.verticalSpanForWall(wallState), 1e-12);
+    const oldWaterHeight = this.conditions.fluid_surface_height_mm;
+    const waterFraction = oldWaterHeight == null ? null
+      : Math.min(1, Math.max(0, Number(oldWaterHeight) / oldSpan));
     const receipt = wallState.reauthorInitialEquivalentDiameterMm(value, this);
     const exactDiameter = wall.initializeCavityCapacity(
       receipt.exact_capacity_volume_mm3, 'canonical_closed_wallmesh',
@@ -342,8 +356,14 @@ class VugSimulator {
     wall.authored_vug_diameter_mm = Number(value);
     wallState.updateCapacity(receipt.exact_capacity_volume_mm3, exactDiameter);
     const mesh = wallState.meshFor(this);
+    if (waterFraction != null) {
+      const newSpan = CavityWaterAppearance.verticalSpanForWall(wallState);
+      this.conditions.fluid_surface_height_mm = waterFraction * newSpan;
+    }
     if (mesh?.bindRingChemistry) mesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
     wallState.voxelGridFor(this);
+    this._cavityWaterAppearanceLedger = new CavityWaterAppearanceLedger(wallState);
+    wallState._cavityWaterAppearanceLedger = this._cavityWaterAppearanceLedger;
     this.wall_state_history = [];
     this._creativeInitialAuthoringTransactions ||= [];
     this._creativeInitialAuthoringTransactions.push(receipt);

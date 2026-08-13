@@ -218,6 +218,8 @@ function simulationStateProjection(runtimeOrSim: any, rngStateOverride?: number)
     temperatureC: Number(sim?.conditions?.temperature) || 0,
     pressureKbar: Number(sim?.conditions?.pressure) || 0,
     flowRate: Number(sim?.conditions?.flow_rate) || 0,
+    fluidSurfaceHeightMm: sim?.conditions?.fluid_surface_height_mm == null
+      ? null : Number(sim.conditions.fluid_surface_height_mm),
     fluid: _simulationFluidProjection(sim?.conditions?.fluid),
     ringTemperatures: (sim?.ring_temperatures || []).map((v: any) => Number(v) || 0),
     voxelTemperatures: (thermalGrid?.voxels || []).map(

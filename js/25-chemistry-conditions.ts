@@ -25,13 +25,9 @@ class VugConditions {
     // PROPOSAL-CAVITY-MESH Phase 4 Tranche 3 — water-level mechanic
     // migrates to mm-height as the canonical representation.
     //
-    // Old name `fluid_surface_ring` and new name `fluid_surface_height_mm`
-    // are aliased via getters/setters below — they refer to the same
-    // private slot. Numerically identical while `ring_spacing_mm = 1.0`
-    // (the project-wide default across every shipping scenario). When
-    // a future scenario overrides ring spacing, the legacy ring-index
-    // name will need a spacing-aware conversion; flagged in the
-    // proposal's tranche notes.
+    // Old name `fluid_surface_ring` is a compatibility coordinate only. Its
+    // getter/setter maps a ring fraction onto the authenticated current cavity
+    // floor-to-ceiling span; the private scientific state remains millimetres.
     //
     // Why migrate the name: when wall.rings retires (Tranche 4), the
     // "ring index" concept stops being meaningful. Height-in-mm is
@@ -41,9 +37,18 @@ class VugConditions {
     // null = "no water level set" → fully submerged (legacy default,
     // every cell 'submerged'). Below = submerged, surface band =
     // meniscus, above = vadose/'air'.
-    this._fluidSurfaceMm = (opts.fluid_surface_height_mm != null)
-      ? opts.fluid_surface_height_mm
-      : (opts.fluid_surface_ring != null ? opts.fluid_surface_ring : null);
+    this._cavityWaterGeometry = null;
+    this._fluidSurfaceHeightMm = null;
+    this._pendingFluidSurfaceRing = null;
+    if (opts.fluid_surface_height_mm != null) {
+      this.fluid_surface_height_mm = opts.fluid_surface_height_mm;
+    } else if (opts.fluid_surface_ring != null) {
+      const ring = Number(opts.fluid_surface_ring);
+      if (!Number.isFinite(ring) || ring < 0) {
+        throw new RangeError('fluid_surface_ring must be finite and non-negative');
+      }
+      this._pendingFluidSurfaceRing = ring;
+    }
     // v26 host-rock porosity. Sink-only term for water-level drift:
     // each step the surface drops by porosity × WATER_LEVEL_DRAIN_RATE
     // rings. 0.0 = sealed cavity (no drainage; legacy default). 1.0 =
@@ -56,24 +61,63 @@ class VugConditions {
   }
 
   // PROPOSAL-CAVITY-MESH Phase 4 Tranche 3 — water-level accessors.
-  // Both names hit the same private slot (this._fluidSurfaceMm).
-  // Numerically identical while ring_spacing_mm = 1.0 (today's
-  // default everywhere); spacing-aware conversion can land later.
-  get fluid_surface_height_mm() { return this._fluidSurfaceMm; }
-  set fluid_surface_height_mm(v) { this._fluidSurfaceMm = v; }
-  get fluid_surface_ring() { return this._fluidSurfaceMm; }
-  set fluid_surface_ring(v) { this._fluidSurfaceMm = v; }
+  // Both names hit the same physical private slot. Legacy ring values are
+  // converted against the actual current surface span at this boundary.
+  bindCavityWaterGeometry(wallState) {
+    this._cavityWaterGeometry = wallState || null;
+    if (this._pendingFluidSurfaceRing != null && wallState) {
+      const pending = this._pendingFluidSurfaceRing;
+      this._pendingFluidSurfaceRing = null;
+      this.fluid_surface_ring = pending;
+    }
+    return this;
+  }
 
-  // Pure classifier; used by ringWaterState and by transition-detection
-  // logic that needs to compare against an arbitrary previous surface.
-  //
-  // PROPOSAL-CAVITY-MESH Phase 4 Tranche 3 — `surface` is the
-  // fluid surface position. With ring_spacing_mm=1.0 (default), this
-  // is numerically equivalent to a ring index AND to a height in mm
-  // — the arithmetic below uses ring units throughout, so callers
-  // passing either name see consistent results. Spacing-aware
-  // generalization can land when a scenario actually overrides
-  // ring_spacing_mm.
+  get fluid_surface_height_mm() {
+    if (this._fluidSurfaceHeightMm != null) return this._fluidSurfaceHeightMm;
+    return this._pendingFluidSurfaceRing;
+  }
+  set fluid_surface_height_mm(v) {
+    this._pendingFluidSurfaceRing = null;
+    if (v == null) { this._fluidSurfaceHeightMm = null; return; }
+    const height = Number(v);
+    if (!Number.isFinite(height) || height < 0) {
+      throw new RangeError('fluid_surface_height_mm must be finite and non-negative');
+    }
+    this._fluidSurfaceHeightMm = height;
+  }
+  get fluid_surface_ring() {
+    if (this._pendingFluidSurfaceRing != null) return this._pendingFluidSurfaceRing;
+    if (this._fluidSurfaceHeightMm == null) return null;
+    const wall = this._cavityWaterGeometry;
+    if (!wall) return this._fluidSurfaceHeightMm;
+    const span = Math.max(CavityWaterAppearance.verticalSpanForWall(wall), 1e-12);
+    return this._fluidSurfaceHeightMm / span * Math.max(1, Number(wall.ring_count) || 1);
+  }
+  set fluid_surface_ring(v) {
+    if (v == null) {
+      this._pendingFluidSurfaceRing = null;
+      this._fluidSurfaceHeightMm = null;
+      return;
+    }
+    const ring = Number(v);
+    if (!Number.isFinite(ring) || ring < 0) {
+      throw new RangeError('fluid_surface_ring must be finite and non-negative');
+    }
+    const wall = this._cavityWaterGeometry;
+    if (!wall) {
+      this._pendingFluidSurfaceRing = ring;
+      this._fluidSurfaceHeightMm = null;
+      return;
+    }
+    const ringCount = Math.max(1, Number(wall.ring_count) || 1);
+    const span = Math.max(CavityWaterAppearance.verticalSpanForWall(wall), 1e-12);
+    this._pendingFluidSurfaceRing = null;
+    this._fluidSurfaceHeightMm = Math.min(ring, ringCount) / ringCount * span;
+  }
+
+  // Retained only for explicitly legacy, geometry-free callers. Bound
+  // simulation chemistry uses CavityWaterAppearance.ringWaterState instead.
   static _classifyWaterState(surface, ringIdx, ringCount) {
     if (surface === null || surface === undefined) return 'submerged';
     if (ringCount <= 1) return surface >= 1.0 ? 'submerged' : 'vadose';
@@ -82,11 +126,10 @@ class VugConditions {
     return 'meniscus';
   }
 
-  // v24: classify a ring as 'submerged' / 'meniscus' / 'vadose'
-  // from the cavity's current fluid_surface_ring. Mirror of
-  // VugConditions.ring_water_state in vugg.py.
+  // Classify chemistry bands from their actual vertices against the shared
+  // Cartesian plane.
   ringWaterState(ringIdx, ringCount) {
-    return VugConditions._classifyWaterState(this.fluid_surface_ring, ringIdx, ringCount);
+    return CavityWaterAppearance.ringWaterState(this, ringIdx, ringCount);
   }
 
   update_dol_cycles() {

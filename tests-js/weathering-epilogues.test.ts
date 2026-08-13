@@ -271,8 +271,9 @@ describe('executed weathering/vadose epilogues', () => {
     });
     const receipt = sim._vadoseExposureTransactions.find((tx: any) => tx.step === 170);
     expect(receipt.closed).toBe(true);
-    expect(receipt.becameVadose).toContain(2);
-    expect(receipt.becameVadose).not.toContain(1);
+    expect(receipt.becameVadose).toContain(3);
+    expect(receipt.becameVadose).not.toContain(2);
+    expect(sim.conditions.ringWaterState(2, sim.wall_state.ring_count)).toBe('meniscus');
     expect(sim.conditions.wall.thermal_pulses).toBe(false);
     expect(state.timeline.every((row: any) => row.temperatureC >= 20
       && row.temperatureC <= 30)).toBe(true);

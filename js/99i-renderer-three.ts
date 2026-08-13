@@ -269,12 +269,15 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
 //      used until the texture is built (first frame). Generous in
 //      asymmetric cavities — leaks "brighter saturated" patches
 //      where corners stick past the local cell.
-function _applyCavityClip(material: any, clipUniforms: any) {
+function _applyCavityClip(material: any, clipUniforms: any, opts: any = {}) {
   // This capability is a compile-time shader variant. If sampler3D fails to
   // link, fallback must build a different polar-only program which contains no
   // 3-D sampler declaration or sample instruction.
   const useCavityField = Number(clipUniforms?.uCavityClipMode?.value || 0) === 1;
-  const shaderVariant = useCavityField ? 'field-r32f-freudenthal-v2' : 'polar-r32f-free-v1';
+  const useHelix = opts.helix !== false;
+  const shaderVariant = (useCavityField
+    ? 'field-r32f-freudenthal-v2' : 'polar-r32f-free-v1')
+    + (useHelix ? '|helix' : '|no-helix');
   if (!material.userData) material.userData = {};
   material.userData.vuggCavityClipVariant = shaderVariant;
   material.customProgramCacheKey = () => `vugg-cavity-clip:${shaderVariant}`;
@@ -295,7 +298,8 @@ function _applyCavityClip(material: any, clipUniforms: any) {
       shader.uniforms.uVugCellTexH = clipUniforms.uVugCellTexH;
     }
     // === HELIX-OVERLAY-FORK ADDITION (v19) =========================
-    shader.uniforms.uHelixEnabled = clipUniforms.uHelixEnabled;
+    shader.uniforms.uHelixEnabled = useHelix
+      ? clipUniforms.uHelixEnabled : { value: 0 };
     shader.uniforms.uHelixSweep   = clipUniforms.uHelixSweep;
     shader.uniforms.uHelixYCenter = clipUniforms.uHelixYCenter;
     shader.uniforms.uHelixYSpan   = clipUniforms.uHelixYSpan;
@@ -525,6 +529,71 @@ float cavityHullRadiusAt(vec3 worldPos) {
   material.needsUpdate = true;
 }
 
+function _topoSyncCavityWaterAppearance(state: any, source: any,
+                                        appearance: any): void {
+  if (!state?.cavity || !source?.buffers || !appearance?.receipt) return;
+  const receipt = appearance.receipt;
+  if (state.cavityAppearanceSig !== receipt.appearance_digest) {
+    const colors = CavityWaterAppearance.colorsForSurface(source.buffers, receipt);
+    const colorAttribute = state.cavity.geometry?.getAttribute?.('color');
+    if (!colorAttribute || colorAttribute.array.length !== colors.length) {
+      throw new RangeError('cavity appearance color buffer differs from geometry');
+    }
+    colorAttribute.array.set(colors);
+    colorAttribute.needsUpdate = true;
+    state.cavityAppearanceSig = receipt.appearance_digest;
+  } else return;
+
+  const showInterface = receipt.explicit_surface
+    && !receipt.fully_submerged && !receipt.fully_drained;
+  if (!showInterface) {
+    if (state.waterInterface) state.waterInterface.visible = false;
+    return;
+  }
+  const clipVariant = Number(state.clipUniforms?.uCavityClipMode?.value || 0) === 1
+    ? 'field' : 'polar';
+  if (!state.waterInterface || state.waterInterfaceClipVariant !== clipVariant) {
+    if (state.waterInterface) {
+      state.scene.remove(state.waterInterface);
+      state.waterInterface.geometry?.dispose?.();
+      state.waterInterface.material?.dispose?.();
+    }
+    const material = new THREE.MeshPhysicalMaterial({
+      color: 0x56aaf0,
+      roughness: 0.16,
+      metalness: 0,
+      transmission: 0.18,
+      transparent: true,
+      opacity: 0.28,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    _applyCavityClip(material, state.clipUniforms, { helix: false });
+    const water = new THREE.Mesh(new THREE.BufferGeometry(), material);
+    water.name = 'authenticated-cavity-water-interface';
+    water.renderOrder = 1;
+    water.raycast = function() {};
+    state.scene.add(water);
+    state.waterInterface = water;
+    state.waterInterfaceClipVariant = clipVariant;
+  }
+  const min = receipt.bounds_min_mm;
+  const max = receipt.bounds_max_mm;
+  const width = Math.max(Number(max[0]) - Number(min[0]), 1e-9);
+  const depth = Math.max(Number(max[2]) - Number(min[2]), 1e-9);
+  const geometry = new THREE.PlaneGeometry(width, depth, 1, 1);
+  geometry.rotateX(-Math.PI / 2);
+  const previous = state.waterInterface.geometry;
+  state.waterInterface.geometry = geometry;
+  previous?.dispose?.();
+  state.waterInterface.position.set(
+    (Number(min[0]) + Number(max[0])) * 0.5,
+    Number(receipt.water_plane_y_mm),
+    (Number(min[2]) + Number(max[2])) * 0.5,
+  );
+  state.waterInterface.visible = true;
+}
+
 // W-K V1b (wall depth THROUGH translucency, 2026-07-07): the cavity wall's genesis
 // relief as ALBEDO ambient occlusion. V1 gave the wall a normal map (js/99a
 // _wallReliefNormalMap), but a normal map only perturbs LIGHTING — washed out by the
@@ -586,9 +655,8 @@ function _topoCavitySignature(wall: any, sim: any): string {
   if (!wall.rings || !wall.rings.length) return '';
   const ring0 = wall.rings[0];
   const N = ring0 ? ring0.length : 0;
-  const surf = sim && sim.conditions ? sim.conditions.fluid_surface_ring : null;
   if (Number.isSafeInteger(wall._geometry_revision)) {
-    return `${wall.ring_count}|${N}|rev:${wall._geometry_revision}|${surf}`;
+    return `${wall.ring_count}|${N}|rev:${wall._geometry_revision}`;
   }
   let hashA = 0x811c9dc5;
   let hashB = 0x9e3779b9;
@@ -608,7 +676,7 @@ function _topoCavitySignature(wall: any, sim: any): string {
       }
     }
   }
-  return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}|${surf}`;
+  return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
 }
 
 function _topoMarchingCubesCavityEnabled(): boolean {
@@ -1220,7 +1288,9 @@ function _topoInstallCavityFieldClip(state: any, field: CavityScalarField, surfa
 // before, just centralized so future tessellations (icosphere,
 // geodesic, irregular) can swap in without touching this file.
 function _topoBuildCavityGeometry(state: any, wall: any, sim: any,
-                                  forceWallMesh = false) {
+                                  forceWallMesh = false,
+                                  renderConditions: any = sim?.conditions,
+                                  expectedAppearance: any = null) {
   if (!wall || !wall.rings || !wall.rings.length) return false;
   let source: any;
   try {
@@ -1252,10 +1322,35 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any,
   }
   const mesh = source.clipMesh;
   const surface = source.buffers;
-  if (source.sig === state.cavitySig) return true;
+  let appearance: any;
+  try {
+    appearance = CavityWaterAppearance.create(wall, renderConditions, {
+      activeProvider: source.providerAuthority
+        ? wall.activeCavitySurfaceAnchorProvider?.() : null,
+      providerReceipt: source.providerReceipt || { kind: 'wall-mesh' },
+      surface,
+      sim,
+    });
+    if (expectedAppearance
+        && appearance.receipt.appearance_digest !== expectedAppearance.appearance_digest) {
+      throw new RangeError('rendered cavity appearance differs from authenticated replay');
+    }
+  } catch (error) {
+    state.cavityFieldFallbackReason = error instanceof Error ? error.message : String(error);
+    state.cavityAuthorityUnrenderable = true;
+    if (state.cavity) state.cavity.visible = false;
+    if (state.crystals) state.crystals.visible = false;
+    if (state.waterInterface) state.waterInterface.visible = false;
+    return false;
+  }
+  if (source.sig === state.cavitySig) {
+    _topoSyncCavityWaterAppearance(state, source, appearance);
+    return true;
+  }
   state.cavityAuthorityUnrenderable = false;
   state.cavityAuthorityActive = source.providerAuthority === true;
   state.cavitySig = source.sig;
+  state.cavityAppearanceSig = '';
   // Crystal placement resolves against the live cavity provider. A surface
   // revision must invalidate meshes even if size/mineral fields are unchanged.
   state.crystalsSig = '';
@@ -1452,6 +1547,7 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any,
   state.clipUniforms.uVugCellTexH.value = ringCount;
   if (prevTex && prevTex.dispose) prevTex.dispose();
   }
+  _topoSyncCavityWaterAppearance(state, source, appearance);
   return true;
 }
 
@@ -6728,6 +6824,47 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
   } else if (modernSnapshot) {
     return _topoRejectReplayWall(synth, 'missing or invalid replay cavity evolution receipt');
   }
+  const storedAppearance = snapshot && !Array.isArray(snapshot)
+    ? snapshot.cavity_appearance : null;
+  // Current runtime policy is trusted; a snapshot's own version field is not.
+  // Every modern object frame rendered by v265+ must authenticate against the
+  // live wall's append-only history. Only the explicit legacy flat-array shape
+  // remains outside this contract.
+  const requiresWaterHistory = modernSnapshot && SIM_VERSION >= 265;
+  if (requiresWaterHistory) {
+    try {
+      const waterHistory = liveWall._cavityWaterAppearanceLedger;
+      if (!(waterHistory instanceof CavityWaterAppearanceLedger)) {
+        throw new Error('replay lacks append-only cavity water history');
+      }
+      waterHistory.assertSnapshot(synth, snapshot);
+    } catch (error) {
+      return _topoRejectReplayWall(synth, error);
+    }
+  }
+  if (storedAppearance) {
+    try {
+      const replayConditions = CavityWaterAppearance.replayConditions(
+        snapshot.conditions, synth,
+      );
+      const active = synth.activeCavitySurfaceAnchorProvider?.();
+      const surface = active?.surface || synth.meshFor?.();
+      const appearance = CavityWaterAppearance.assertReceipt(
+        synth, replayConditions, storedAppearance, {
+          activeProvider: active,
+          providerReceipt: snapshot.cavity_surface_provider,
+          surface,
+        },
+      );
+      synth._replayCavityAppearance = appearance.receipt;
+      synth._replayConditions = replayConditions;
+    } catch (error) {
+      return _topoRejectReplayWall(synth, error);
+    }
+  } else if (requiresWaterHistory
+      || snapshot?.cavity_surface_provider?.kind === 'cavity-field') {
+    return _topoRejectReplayWall(synth, 'exact replay lacks cavity appearance receipt');
+  }
   return synth;
 }
 
@@ -6768,6 +6905,8 @@ function _topoReplayRenderDecision(liveWall: any, snapshot: any): any {
   return Object.freeze({
     mode: provider?.receipt?.kind === 'cavity-field' ? 'cavity-field' : 'wall-mesh',
     wall,
+    conditions: snapshot ? wall?._replayConditions || null : null,
+    appearance: snapshot ? wall?._replayCavityAppearance || null : null,
     message: null,
   });
 }
@@ -6823,6 +6962,28 @@ function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any,
   }
   const state = _topoInitThree(canvas);
   if (!state) return false;
+  let renderConditions = sim?.conditions;
+  if (optOverrideSnap) {
+    try {
+      renderConditions = replayDecision.conditions
+        || CavityWaterAppearance.replayConditions(
+          Array.isArray(optOverrideSnap)
+            ? { fluid_surface_height_mm: null, fluid_surface_ring: null }
+            : optOverrideSnap.conditions,
+          renderWall,
+        );
+    } catch (error) {
+      state.cavityAuthorityUnrenderable = true;
+      if (state.cavity) state.cavity.visible = false;
+      if (state.crystals) state.crystals.visible = false;
+      if (state.waterInterface) state.waterInterface.visible = false;
+      _topoPaintPlaceholder(
+        document.getElementById('topo-canvas') as HTMLCanvasElement,
+        `Replay frame withheld: ${error instanceof Error ? error.message : String(error)}.`,
+      );
+      return false;
+    }
+  }
   _topoApplyThreeDefaultOnce();
   _topoSyncThreeSize(state, canvas);
   // During replay, build cavity from the snapshot rings so the wall
@@ -6832,7 +6993,9 @@ function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any,
     state.cavitySig = null;
     state.crystalsSig = null;
   }
-  if (!_topoBuildCavityGeometry(state, renderWall, sim)) return false;
+  if (!_topoBuildCavityGeometry(
+    state, renderWall, sim, false, renderConditions, replayDecision.appearance,
+  )) return false;
   _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
   _topoApplyCameraFromTilt(state, renderWall);
   // === HELIX-OVERLAY-FORK ADDITION (v0–v17) =========================
@@ -6863,7 +7026,9 @@ function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any,
     // A failed field shader cannot be replaced by an independently selected MC
     // shadow extraction in the same fallback. Anchors and the visible wall both
     // return to canonical WallMesh before the polar shader is compiled.
-    _topoBuildCavityGeometry(state, renderWall, sim, true);
+    _topoBuildCavityGeometry(
+      state, renderWall, sim, true, renderConditions, replayDecision.appearance,
+    );
     state.crystalsSig = '';
     _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
     return true;

@@ -1000,9 +1000,8 @@ class WallMesh {
     if (!wall || !wall.rings || !wall.rings.length) return '';
     const ring0 = wall.rings[0];
     const N = ring0 ? ring0.length : 0;
-    const surf = sim && sim.conditions ? sim.conditions.fluid_surface_ring : null;
     if (Number.isSafeInteger(wall._geometry_revision)) {
-      return `${wall.ring_count}|${N}|rev:${wall._geometry_revision}|${surf}`;
+      return `${wall.ring_count}|${N}|rev:${wall._geometry_revision}`;
     }
     let hashA = 0x811c9dc5;
     let hashB = 0x9e3779b9;
@@ -1022,7 +1021,7 @@ class WallMesh {
         }
       }
     }
-    return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}|${surf}`;
+    return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
   }
 
   // ---- Recompute (cheap when stale, no-op when fresh) ----
@@ -1056,13 +1055,6 @@ class WallMesh {
       wall:    hexToRgb(0xD2691E),
       ceiling: hexToRgb(0xE8782C),
     };
-    const submergedTint = [0.43, 0.74, 0.96];
-    const mix = (a, b, t) => [
-      a[0] * (1 - t) + b[0] * t,
-      a[1] * (1 - t) + b[1] * t,
-      a[2] * (1 - t) + b[2] * t,
-    ];
-
     const positions = this.positions;
     const colors = this.colors;
     const normals = this.normals;
@@ -1083,12 +1075,6 @@ class WallMesh {
       const ring = wall.rings[r];
       const orient = wall.ringOrientation ? wall.ringOrientation(r) : 'wall';
       const baseColor = wallColors[orient] || wallColors.wall;
-      const wstate = (sim && sim.conditions && sim.conditions.ringWaterState)
-        ? sim.conditions.ringWaterState(r, ringCount)
-        : 'submerged';
-      const isSubmerged = wstate === 'submerged'
-        && sim && sim.conditions && sim.conditions.fluid_surface_ring != null;
-      const tinted = isSubmerged ? mix(baseColor, submergedTint, 0.35) : baseColor;
       let ringMaxR2 = 0;
       for (let c = 0; c < N; c++) {
         const cell = ring && ring[c];
@@ -1103,9 +1089,9 @@ class WallMesh {
         positions[idx * 3 + 0] = x;
         positions[idx * 3 + 1] = y;
         positions[idx * 3 + 2] = z;
-        colors[idx * 3 + 0] = tinted[0];
-        colors[idx * 3 + 1] = tinted[1];
-        colors[idx * 3 + 2] = tinted[2];
+        colors[idx * 3 + 0] = baseColor[0];
+        colors[idx * 3 + 1] = baseColor[1];
+        colors[idx * 3 + 2] = baseColor[2];
         const len = Math.sqrt(x * x + y * y + z * z) || 1;
         normals[idx * 3 + 0] = x / len;
         normals[idx * 3 + 1] = y / len;

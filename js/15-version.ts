@@ -12893,7 +12893,16 @@
 //       one explicit ledger cursor. Canonical evidence is timestamp-free and
 //       binds exact dist/browser bytes, fetched science data, producer
 //       contracts, and every published artifact through a clean-clone receipt.
-const SIM_VERSION = 264;
+// v265 (August 2026): production Cartesian cavity transactions now preflight
+// and book the exact closed Freudenthal surface volume on one immutable 48^3
+// world frame, with independent 64^3 convergence and replay/provider receipts.
+// Water state is an actual millimetre height above the authenticated current
+// cavity floor. Legacy ring events convert at the WallState boundary;
+// spherical chemistry bands, extracted-wall tint, the field-clipped water
+// interface, deterministic fingerprints, and replay all consume that one
+// physical state. This changes vadose reaction history and therefore requires
+// a real simulation/evidence identity bump.
+const SIM_VERSION = 265;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12917,6 +12926,8 @@ const MODEL_DIGEST = [
   'surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4',
   'surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+explicit-pinned-provider-command+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v6',
   'cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-shadow-v3',
+  'cavity-authority:opt-in-fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+exact-volume-transaction+atomic-preflight+64-convergence+field-agreement+semantic-receipt+authenticated-replay-v1',
+  'water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1',
   'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
   'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
   'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
@@ -12953,6 +12964,6 @@ const MODEL_DIGEST = [
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
   'transition-locality-exclusion:target-gated-v1',
   'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2',
-  'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v4',
+  'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+water-height+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v5',
 ].join('|');
 

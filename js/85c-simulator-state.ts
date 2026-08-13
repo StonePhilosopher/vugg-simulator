@@ -85,10 +85,26 @@ Object.assign(VugSimulator.prototype, {
     delete this.conditions._pending_carbonate_boundary_transfers;
     const pendingViolation = this.conditions._pending_carbonate_boundary_violation || null;
     delete this.conditions._pending_carbonate_boundary_violation;
-    const surfaceHeight = this.conditions.fluid_surface_height_mm;
-    const surfaceRing = this.conditions.fluid_surface_ring;
-    const fullyFlooded = (surfaceHeight == null && surfaceRing == null)
-      || (Number.isFinite(surfaceRing) && surfaceRing >= this.wall_state.ring_count);
+    let fullyFlooded = false;
+    try {
+      fullyFlooded = CavityWaterAppearance.create(this.wall_state, this.conditions, {
+        sim: this,
+      }).receipt.fully_submerged;
+    } catch (error) {
+      state.blocked = true;
+      const tx = {
+        ok: false,
+        kind: 'spatial_boundary_unsupported',
+        step: this.step,
+        error: 'cavity_water_authority_unavailable',
+        detail: error instanceof Error ? error.message : String(error),
+      };
+      const prior = state.transactions?.[state.transactions.length - 1];
+      if (!prior || prior.kind !== tx.kind || prior.error !== tx.error || prior.step !== tx.step) {
+        (state.transactions ||= []).push(tx);
+      }
+      return false;
+    }
     if (!fullyFlooded || config.spatial_model !== 'equal_volume_fully_mixed') {
       state.blocked = true;
       const tx = {
@@ -527,10 +543,17 @@ _applyWaterLevelDrift() {
 // → malachite/azurite, pyrite → limonite, all in the air zone).
 _applyVadoseOxidationOverride() {
   const n = this.wall_state.ring_count;
-  const newSurface = this.conditions.fluid_surface_ring;
-  const oldSurface = this._prevFluidSurfaceRing;
-  this._prevFluidSurfaceRing = newSurface;
-  if (newSurface === null || newSurface === undefined) return [];
+  const oldStates = Array.isArray(this._prevCavityWaterStates)
+    && this._prevCavityWaterStates.length === n
+    ? this._prevCavityWaterStates.slice()
+    : new Array(n).fill('submerged');
+  // This deliberately fails closed when production Cartesian authority is
+  // unavailable. Chemistry must not continue from a WallMesh substitute.
+  const newStates = Array.from(
+    { length: n }, (_, ring) => this.conditions.ringWaterState(ring, n),
+  );
+  this._prevFluidSurfaceHeightMm = this.conditions.fluid_surface_height_mm;
+  this._prevCavityWaterStates = newStates;
   // v161: handle BOTH water-level directions in one pass. Drying (wet→vadose)
   // oxidizes + evaporatively concentrates; rewetting (vadose→wet) re-dilutes.
   // Previously this early-returned whenever the surface rose, which made the
@@ -594,8 +617,8 @@ _applyVadoseOxidationOverride() {
     };
   };
   for (let r = 0; r < n; r++) {
-    const was = VugConditions._classifyWaterState(oldSurface, r, n);
-    const now = VugConditions._classifyWaterState(newSurface, r, n);
+    const was = oldStates[r];
+    const now = newStates[r];
     if (now === 'vadose' && was !== 'vadose') {
       // Canonical 3-D path: every depth voxel in the exposed ring receives
       // the same atmospheric boundary. d=0 aliases the wall mesh, so this also
@@ -650,8 +673,7 @@ _applyVadoseOxidationOverride() {
         sulfurClosed: allRows.every(row => row.sulfurClosed),
       });
       becameVadose.push(r);
-    } else if (was === 'vadose' && now !== 'vadose'
-               && oldSurface !== null && oldSurface !== undefined) {
+    } else if (was === 'vadose' && now !== 'vadose') {
       // v161 rewetting: a freshwater flood (searles fresh_pulse, naica /
       // aquifer recharge) reflooded this ring. Reset the evaporative
       // `concentration` multiplier to baseline 1.0 — the dissolved load
@@ -1162,7 +1184,19 @@ _diffuseRingState(rate?) {
   const cavitySurfaceProvider = this.wall_state.cavitySurfaceAnchorProviderReceipt
     ? this.wall_state.cavitySurfaceAnchorProviderReceipt()
     : { kind: 'wall-mesh' };
+  const cavityAppearance = CavityWaterAppearance.create(this.wall_state, cnd, {
+    sim: this,
+    providerReceipt: cavitySurfaceProvider,
+  });
+  const waterHistory = this._cavityWaterAppearanceLedger;
+  if (!waterHistory || waterHistory !== this.wall_state._cavityWaterAppearanceLedger) {
+    throw new Error('cavity water history authority is unavailable');
+  }
+  const waterHistoryEntry = waterHistory.append(
+    this.step, this.wall_state, cnd, cavityAppearance.receipt,
+  );
   const snap: any = {
+    sim_version: SIM_VERSION,
     step: this.step,
     cavity_evolution_cursor: this.wall_state.cavityEvolutionLedger
       && this.wall_state.cavityEvolutionLedger()
@@ -1171,6 +1205,10 @@ _diffuseRingState(rate?) {
       && this.wall_state.cavityEvolutionLedger()
       ? this.wall_state.cavityEvolutionLedger().signature : null,
     cavity_surface_provider: { ...cavitySurfaceProvider },
+    cavity_appearance: { ...cavityAppearance.receipt },
+    cavity_water_history_cursor: waterHistory.cursor,
+    cavity_water_history_signature: waterHistory.signature,
+    cavity_water_history_entry_digest: waterHistoryEntry.entry_digest,
     cavity_production_contract_digest:
       this.wall_state._cavityProductionAuthorityContract?.contract_digest ?? null,
     rings: new Array(ringCount),
@@ -1182,6 +1220,7 @@ _diffuseRingState(rate?) {
       vug_diameter_mm: cnd.wall.vug_diameter_mm,
       total_dissolved_mm: cnd.wall.total_dissolved_mm,
       cavity_capacity_volume_mm3: cnd.wall.cavity_capacity_volume_mm3,
+      fluid_surface_height_mm: cnd.fluid_surface_height_mm,
       fluid_surface_ring: cnd.fluid_surface_ring,
       // Full fluid clone — fortress-status reads f.Cu / f.Fe / etc.
       // for the per-mineral "needs" hints, and the brief explicitly

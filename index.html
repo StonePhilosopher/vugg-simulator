@@ -19460,7 +19460,16 @@ function scenarioSpecHash(spec) {
 //       one explicit ledger cursor. Canonical evidence is timestamp-free and
 //       binds exact dist/browser bytes, fetched science data, producer
 //       contracts, and every published artifact through a clean-clone receipt.
-const SIM_VERSION = 264;
+// v265 (August 2026): production Cartesian cavity transactions now preflight
+// and book the exact closed Freudenthal surface volume on one immutable 48^3
+// world frame, with independent 64^3 convergence and replay/provider receipts.
+// Water state is an actual millimetre height above the authenticated current
+// cavity floor. Legacy ring events convert at the WallState boundary;
+// spherical chemistry bands, extracted-wall tint, the field-clipped water
+// interface, deterministic fingerprints, and replay all consume that one
+// physical state. This changes vadose reaction history and therefore requires
+// a real simulation/evidence identity bump.
+const SIM_VERSION = 265;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -19483,6 +19492,8 @@ const MODEL_DIGEST = [
     'surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4',
     'surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+explicit-pinned-provider-command+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v6',
     'cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-shadow-v3',
+    'cavity-authority:opt-in-fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+exact-volume-transaction+atomic-preflight+64-convergence+field-agreement+semantic-receipt+authenticated-replay-v1',
+    'water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1',
     'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
     'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
     'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
@@ -19519,7 +19530,7 @@ const MODEL_DIGEST = [
     'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
     'transition-locality-exclusion:target-gated-v1',
     'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2',
-    'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v4',
+    'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+water-height+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v5',
 ].join('|');
 
 // ── 18-constants.js ──
@@ -30346,9 +30357,8 @@ class WallMesh {
             return '';
         const ring0 = wall.rings[0];
         const N = ring0 ? ring0.length : 0;
-        const surf = sim && sim.conditions ? sim.conditions.fluid_surface_ring : null;
         if (Number.isSafeInteger(wall._geometry_revision)) {
-            return `${wall.ring_count}|${N}|rev:${wall._geometry_revision}|${surf}`;
+            return `${wall.ring_count}|${N}|rev:${wall._geometry_revision}`;
         }
         let hashA = 0x811c9dc5;
         let hashB = 0x9e3779b9;
@@ -30370,7 +30380,7 @@ class WallMesh {
                 }
             }
         }
-        return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}|${surf}`;
+        return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
     }
     // ---- Recompute (cheap when stale, no-op when fresh) ----
     recomputeIfStale(wall, sim) {
@@ -30404,12 +30414,6 @@ class WallMesh {
             wall: hexToRgb(0xD2691E),
             ceiling: hexToRgb(0xE8782C),
         };
-        const submergedTint = [0.43, 0.74, 0.96];
-        const mix = (a, b, t) => [
-            a[0] * (1 - t) + b[0] * t,
-            a[1] * (1 - t) + b[1] * t,
-            a[2] * (1 - t) + b[2] * t,
-        ];
         const positions = this.positions;
         const colors = this.colors;
         const normals = this.normals;
@@ -30430,12 +30434,6 @@ class WallMesh {
             const ring = wall.rings[r];
             const orient = wall.ringOrientation ? wall.ringOrientation(r) : 'wall';
             const baseColor = wallColors[orient] || wallColors.wall;
-            const wstate = (sim && sim.conditions && sim.conditions.ringWaterState)
-                ? sim.conditions.ringWaterState(r, ringCount)
-                : 'submerged';
-            const isSubmerged = wstate === 'submerged'
-                && sim && sim.conditions && sim.conditions.fluid_surface_ring != null;
-            const tinted = isSubmerged ? mix(baseColor, submergedTint, 0.35) : baseColor;
             let ringMaxR2 = 0;
             for (let c = 0; c < N; c++) {
                 const cell = ring && ring[c];
@@ -30450,9 +30448,9 @@ class WallMesh {
                 positions[idx * 3 + 0] = x;
                 positions[idx * 3 + 1] = y;
                 positions[idx * 3 + 2] = z;
-                colors[idx * 3 + 0] = tinted[0];
-                colors[idx * 3 + 1] = tinted[1];
-                colors[idx * 3 + 2] = tinted[2];
+                colors[idx * 3 + 0] = baseColor[0];
+                colors[idx * 3 + 1] = baseColor[1];
+                colors[idx * 3 + 2] = baseColor[2];
                 const len = Math.sqrt(x * x + y * y + z * z) || 1;
                 normals[idx * 3 + 0] = x / len;
                 normals[idx * 3 + 1] = y / len;
@@ -33477,6 +33475,367 @@ class CavityProductionAuthority {
     }
 }
 
+// ── 23e-geometry-cavity-water-appearance.js ──
+
+// ============================================================
+// js/23e-geometry-cavity-water-appearance.ts
+// ============================================================
+// One physical water datum shared by chemistry projection, wall appearance,
+// the field-clipped water interface, and replay. A water level is a height in
+// millimetres above the current authenticated cavity floor. Ring numbers are
+// accepted only through VugConditions' explicit legacy conversion.
+const CAVITY_WATER_APPEARANCE_SCHEMA = 'cavity-water-appearance-v1';
+const CAVITY_WATER_HISTORY_SCHEMA = 'cavity-water-history-v1';
+class CavityWaterAppearance {
+    static { this._boundsCache = new WeakMap(); }
+    static { this._geometryDigestCache = new WeakMap(); }
+    static { this._ringStateCache = new WeakMap(); }
+    static _finiteHeight(conditions, wall) {
+        if (!conditions)
+            return null;
+        const suppliedHeight = conditions.fluid_surface_height_mm;
+        if (suppliedHeight == null)
+            return null;
+        const height = Number(suppliedHeight);
+        if (!Number.isFinite(height) || height < 0) {
+            throw new RangeError('cavity water-surface height must be finite and non-negative');
+        }
+        return height;
+    }
+    static _surfaceBounds(surface) {
+        const positions = surface?.positions;
+        if (!positions || positions.length < 9 || positions.length % 3 !== 0) {
+            throw new RangeError('cavity water appearance requires a populated surface');
+        }
+        const identity = String(surface.buffer_digest || surface.sig || '');
+        const cached = CavityWaterAppearance._boundsCache.get(surface);
+        if (cached?.identity === identity)
+            return cached.bounds;
+        const min = [Infinity, Infinity, Infinity];
+        const max = [-Infinity, -Infinity, -Infinity];
+        for (let offset = 0; offset < positions.length; offset += 3) {
+            for (let axis = 0; axis < 3; axis++) {
+                const value = Number(positions[offset + axis]);
+                if (!Number.isFinite(value)) {
+                    throw new RangeError('cavity water appearance received non-finite geometry');
+                }
+                if (value < min[axis])
+                    min[axis] = value;
+                if (value > max[axis])
+                    max[axis] = value;
+            }
+        }
+        if (!(max[1] > min[1]))
+            throw new RangeError('cavity water datum has no vertical span');
+        const bounds = Object.freeze({ min: Object.freeze(min), max: Object.freeze(max) });
+        CavityWaterAppearance._boundsCache.set(surface, { identity, bounds });
+        return bounds;
+    }
+    static _geometryDigest(surface, providerReceipt) {
+        if (providerReceipt?.kind === 'cavity-field') {
+            return String(providerReceipt.surface_buffer_digest || '');
+        }
+        const identity = String(surface?.sig || '');
+        const cached = CavityWaterAppearance._geometryDigestCache.get(surface);
+        if (cached?.identity === identity)
+            return cached.digest;
+        const digest = `wall-mesh-buffer:v1:${CavityEvolutionLedger.digest({
+            positions: Array.from(surface.positions, Number),
+            indices: Array.from(surface.indices || [], Number),
+        })}`;
+        CavityWaterAppearance._geometryDigestCache.set(surface, { identity, digest });
+        return digest;
+    }
+    static verticalSpanForWall(wall) {
+        if (!wall)
+            throw new TypeError('cavity water span requires a wall');
+        const active = wall._cavityProductionAuthorityContract
+            ? wall._requireProductionCavitySurfaceProvider?.()
+            : wall.activeCavitySurfaceAnchorProvider?.();
+        if (wall._cavityProductionAuthorityContract
+            && active?.receipt?.kind !== 'cavity-field') {
+            throw new Error('production cavity water span lacks authenticated surface authority');
+        }
+        const surface = active?.surface || wall.meshFor?.();
+        const bounds = CavityWaterAppearance._surfaceBounds(surface);
+        return bounds.max[1] - bounds.min[1];
+    }
+    static create(wall, conditions, opts = {}) {
+        if (!wall)
+            throw new TypeError('cavity water appearance requires a wall');
+        let active = opts.activeProvider || null;
+        if (!active && !opts.surface && wall.activeCavitySurfaceAnchorProvider) {
+            active = wall.activeCavitySurfaceAnchorProvider();
+        }
+        const providerReceipt = opts.providerReceipt
+            || active?.receipt || wall.cavitySurfaceAnchorProviderReceipt?.()
+            || Object.freeze({ kind: 'wall-mesh' });
+        const surface = opts.surface || active?.surface || wall.meshFor?.(opts.sim);
+        const bounds = CavityWaterAppearance._surfaceBounds(surface);
+        const requestedHeight = CavityWaterAppearance._finiteHeight(conditions, wall);
+        const span = bounds.max[1] - bounds.min[1];
+        const explicit = requestedHeight != null;
+        const effectiveHeight = explicit ? Math.min(Math.max(requestedHeight, 0), span) : span;
+        const planeY = bounds.min[1] + effectiveHeight;
+        const epsilon = Math.max(span * 1e-9, 1e-9);
+        const geometryDigest = CavityWaterAppearance._geometryDigest(surface, providerReceipt);
+        if (typeof geometryDigest !== 'string' || !geometryDigest) {
+            throw new RangeError('cavity water appearance lacks geometry identity');
+        }
+        const payload = {
+            schema: CAVITY_WATER_APPEARANCE_SCHEMA,
+            condition_basis: 'millimetres-above-authenticated-current-cavity-floor-v1',
+            requested_height_mm: requestedHeight,
+            effective_height_mm: effectiveHeight,
+            floor_elevation_mm: bounds.min[1],
+            ceiling_elevation_mm: bounds.max[1],
+            water_plane_y_mm: planeY,
+            explicit_surface: explicit,
+            fully_submerged: !explicit || effectiveHeight >= span - epsilon,
+            fully_drained: explicit && effectiveHeight <= epsilon,
+            submerged_half_space: 'world_y<=water_plane_y_mm',
+            source_geometry_digest: geometryDigest,
+            source_provider_kind: providerReceipt?.kind || 'wall-mesh',
+            source_evolution_signature: providerReceipt?.cavity_evolution_signature ?? null,
+            bounds_min_mm: bounds.min.slice(),
+            bounds_max_mm: bounds.max.slice(),
+        };
+        payload.appearance_digest = CavityEvolutionLedger.digest(payload);
+        CavityEvolutionLedger._deepFreeze(payload);
+        return Object.freeze({ receipt: payload, surface, providerReceipt });
+    }
+    static assertReceipt(wall, conditions, stored, opts = {}) {
+        if (!stored || stored.schema !== CAVITY_WATER_APPEARANCE_SCHEMA) {
+            throw new RangeError('missing or unsupported cavity water appearance receipt');
+        }
+        const payload = CavityEvolutionLedger._clone(stored);
+        const suppliedDigest = payload.appearance_digest;
+        delete payload.appearance_digest;
+        if (suppliedDigest !== CavityEvolutionLedger.digest(payload)) {
+            throw new RangeError('cavity water appearance receipt digest mismatch');
+        }
+        const fresh = CavityWaterAppearance.create(wall, conditions, opts);
+        if (fresh.receipt.appearance_digest !== suppliedDigest) {
+            throw new RangeError('cavity water appearance differs from authenticated replay conditions');
+        }
+        return fresh;
+    }
+    static colorsForSurface(surface, receipt) {
+        const positions = surface?.positions;
+        const base = surface?.colors;
+        if (!positions || !base || positions.length !== base.length) {
+            throw new RangeError('cavity water tint requires paired position/color buffers');
+        }
+        const colors = new Float32Array(base);
+        if (!receipt?.explicit_surface)
+            return colors;
+        const water = [0.43, 0.74, 0.96];
+        const plane = Number(receipt.water_plane_y_mm);
+        for (let offset = 0; offset < positions.length; offset += 3) {
+            if (positions[offset + 1] > plane)
+                continue;
+            colors[offset] = colors[offset] * 0.65 + water[0] * 0.35;
+            colors[offset + 1] = colors[offset + 1] * 0.65 + water[1] * 0.35;
+            colors[offset + 2] = colors[offset + 2] * 0.65 + water[2] * 0.35;
+        }
+        return colors;
+    }
+    static ringWaterState(conditions, ringIdx, ringCount) {
+        const height = conditions?.fluid_surface_height_mm;
+        if (height == null)
+            return 'submerged';
+        if (!Number.isInteger(ringIdx) || ringIdx < 0 || ringIdx >= ringCount || ringCount < 1) {
+            throw new RangeError('cavity water-state ring address is invalid');
+        }
+        const wall = conditions._cavityWaterGeometry;
+        if (wall?.meshFor && wall.ring_count === ringCount) {
+            const active = wall._cavityProductionAuthorityContract
+                ? wall._requireProductionCavitySurfaceProvider?.()
+                : wall.activeCavitySurfaceAnchorProvider?.();
+            if (wall._cavityProductionAuthorityContract
+                && active?.receipt?.kind !== 'cavity-field') {
+                throw new Error('production cavity water state lacks authenticated surface authority');
+            }
+            const authoritySurface = active?.surface || wall.meshFor();
+            const chemistrySurface = wall.meshFor();
+            const bounds = CavityWaterAppearance._surfaceBounds(authoritySurface);
+            const span = bounds.max[1] - bounds.min[1];
+            const effectiveHeight = Math.min(Math.max(Number(height), 0), span);
+            const plane = bounds.min[1] + effectiveHeight;
+            const authorityIdentity = active?.receipt?.surface_buffer_digest
+                || String(authoritySurface.sig || '');
+            const key = `${authorityIdentity}|chem:${String(chemistrySurface.sig || '')}`
+                + `|height:${effectiveHeight}|rings:${ringCount}`;
+            let cached = CavityWaterAppearance._ringStateCache.get(wall);
+            if (cached?.key !== key) {
+                const states = new Array(ringCount);
+                const positions = chemistrySurface.positions;
+                const cellsPerRing = wall.cells_per_ring;
+                const epsilon = Math.max(span * 1e-9, 1e-9);
+                for (let ring = 0; ring < ringCount; ring++) {
+                    let ringMin = Infinity;
+                    let ringMax = -Infinity;
+                    for (let cell = 0; cell < cellsPerRing; cell++) {
+                        const y = Number(positions[(ring * cellsPerRing + cell) * 3 + 1]);
+                        ringMin = Math.min(ringMin, y);
+                        ringMax = Math.max(ringMax, y);
+                    }
+                    states[ring] = ringMax <= plane + epsilon ? 'submerged'
+                        : ringMin >= plane - epsilon ? 'vadose' : 'meniscus';
+                }
+                cached = { key, states: Object.freeze(states) };
+                CavityWaterAppearance._ringStateCache.set(wall, cached);
+            }
+            return cached.states[ringIdx];
+        }
+        // Standalone conditions (before VugSimulator binds WallState) retain a
+        // deterministic spherical fallback for event/unit-test compatibility.
+        const span = Math.max(Number(conditions?.wall?.vug_diameter_mm) || ringCount, 1e-12);
+        const plane = Math.min(Math.max(Number(height), 0), span);
+        const phi0 = Math.PI * ringIdx / ringCount;
+        const phi1 = Math.PI * (ringIdx + 1) / ringCount;
+        const lower = span * (1 - Math.cos(phi0)) * 0.5;
+        const upper = span * (1 - Math.cos(phi1)) * 0.5;
+        if (upper <= plane)
+            return 'submerged';
+        if (lower >= plane)
+            return 'vadose';
+        return 'meniscus';
+    }
+    static replayConditions(snapshotConditions, wall) {
+        if (!snapshotConditions || typeof snapshotConditions !== 'object') {
+            throw new RangeError('replay cavity appearance lacks historical conditions');
+        }
+        const view = { ...snapshotConditions, _cavityWaterGeometry: wall };
+        view.ringWaterState = (ringIdx, ringCount) => CavityWaterAppearance.ringWaterState(view, ringIdx, ringCount);
+        return Object.freeze(view);
+    }
+    static planeSegments(surface, planeY) {
+        const positions = surface?.positions;
+        const indices = surface?.indices;
+        if (!positions || !indices || !Number.isFinite(Number(planeY))) {
+            throw new RangeError('cavity water plane intersection requires surface buffers and height');
+        }
+        const segments = [];
+        const epsilon = 1e-9;
+        const point = (index) => [
+            Number(positions[index * 3]),
+            Number(positions[index * 3 + 1]),
+            Number(positions[index * 3 + 2]),
+        ];
+        for (let offset = 0; offset < indices.length; offset += 3) {
+            const vertices = [point(indices[offset]), point(indices[offset + 1]), point(indices[offset + 2])];
+            const cuts = [];
+            for (const [aIndex, bIndex] of [[0, 1], [1, 2], [2, 0]]) {
+                const a = vertices[aIndex], b = vertices[bIndex];
+                const da = a[1] - planeY, db = b[1] - planeY;
+                if (Math.abs(da) <= epsilon && Math.abs(db) <= epsilon)
+                    continue;
+                if ((da < -epsilon && db < -epsilon) || (da > epsilon && db > epsilon))
+                    continue;
+                const denominator = b[1] - a[1];
+                const t = Math.abs(denominator) <= epsilon ? 0 : (planeY - a[1]) / denominator;
+                if (t < -epsilon || t > 1 + epsilon)
+                    continue;
+                const cut = [
+                    a[0] + (b[0] - a[0]) * t,
+                    planeY,
+                    a[2] + (b[2] - a[2]) * t,
+                ];
+                if (!cuts.some(existing => Math.hypot(existing[0] - cut[0], existing[1] - cut[1], existing[2] - cut[2]) <= epsilon))
+                    cuts.push(cut);
+            }
+            if (cuts.length === 2)
+                segments.push(Object.freeze([
+                    Object.freeze(cuts[0]), Object.freeze(cuts[1]),
+                ]));
+        }
+        return Object.freeze(segments);
+    }
+}
+class CavityWaterAppearanceLedger {
+    constructor(wall) {
+        const identity = CavityEvolutionLedger.identityForWall(wall);
+        this.schema = CAVITY_WATER_HISTORY_SCHEMA;
+        this.shape_identity = identity.shape;
+        this.tessellation_identity = identity.tessellation;
+        this._entries = [];
+        this._signatures = [`cavity-water-history:v1:${CavityEvolutionLedger.digest({
+                shape_identity: this.shape_identity,
+                tessellation_identity: this.tessellation_identity,
+            })}`];
+    }
+    get cursor() { return this._entries.length; }
+    get signature() { return this._signatures[this._signatures.length - 1]; }
+    get entries() { return Object.freeze(this._entries.slice()); }
+    signatureAt(cursor) {
+        if (!Number.isInteger(cursor) || cursor < 0 || cursor > this.cursor) {
+            throw new RangeError('cavity water history cursor is invalid');
+        }
+        return this._signatures[cursor];
+    }
+    append(step, wall, conditions, appearanceReceipt) {
+        const identity = CavityEvolutionLedger.identityForWall(wall);
+        if (identity.shape !== this.shape_identity
+            || identity.tessellation !== this.tessellation_identity) {
+            throw new RangeError('cavity water history geometry identity changed');
+        }
+        if (!Number.isInteger(step) || step < 0
+            || (this.cursor && step < this._entries[this.cursor - 1].step)) {
+            throw new RangeError('cavity water history step is invalid');
+        }
+        const evolution = wall.cavityEvolutionLedger?.();
+        const payload = {
+            schema: CAVITY_WATER_HISTORY_SCHEMA,
+            event_id: this.cursor + 1,
+            step,
+            pre_state_signature: this.signature,
+            cavity_evolution_cursor: evolution?.cursor ?? null,
+            cavity_evolution_signature: evolution?.signature ?? null,
+            canonical_height_mm: conditions?.fluid_surface_height_mm == null
+                ? null : Number(conditions.fluid_surface_height_mm),
+            appearance_digest: appearanceReceipt?.appearance_digest || null,
+            source_geometry_digest: appearanceReceipt?.source_geometry_digest || null,
+        };
+        if ((payload.canonical_height_mm != null
+            && (!Number.isFinite(payload.canonical_height_mm) || payload.canonical_height_mm < 0))
+            || typeof payload.appearance_digest !== 'string' || !payload.appearance_digest
+            || typeof payload.source_geometry_digest !== 'string' || !payload.source_geometry_digest) {
+            throw new RangeError('cavity water history entry is incomplete');
+        }
+        payload.entry_digest = CavityEvolutionLedger.digest(payload);
+        CavityEvolutionLedger._deepFreeze(payload);
+        this._entries.push(payload);
+        this._signatures.push(`cavity-water-history:v1:${CavityEvolutionLedger.digest({
+            prior: this.signatureAt(this.cursor - 1), entry: payload.entry_digest,
+        })}`);
+        return payload;
+    }
+    assertSnapshot(wall, snapshot) {
+        const identity = CavityEvolutionLedger.identityForWall(wall);
+        const cursor = snapshot?.cavity_water_history_cursor;
+        if (identity.shape !== this.shape_identity
+            || identity.tessellation !== this.tessellation_identity
+            || !Number.isInteger(cursor) || cursor < 1 || cursor > this.cursor
+            || this.signatureAt(cursor) !== snapshot.cavity_water_history_signature) {
+            throw new RangeError('cavity water history identity or cursor mismatch');
+        }
+        const entry = this._entries[cursor - 1];
+        const height = snapshot.conditions?.fluid_surface_height_mm == null
+            ? null : Number(snapshot.conditions.fluid_surface_height_mm);
+        if (entry.entry_digest !== snapshot.cavity_water_history_entry_digest
+            || entry.step !== snapshot.step
+            || entry.cavity_evolution_cursor !== snapshot.cavity_evolution_cursor
+            || entry.cavity_evolution_signature !== snapshot.cavity_evolution_signature
+            || entry.canonical_height_mm !== height
+            || entry.appearance_digest !== snapshot.cavity_appearance?.appearance_digest
+            || entry.source_geometry_digest !== snapshot.cavity_appearance?.source_geometry_digest) {
+            throw new RangeError('cavity water snapshot differs from append-only history');
+        }
+        return entry;
+    }
+}
+
 // ── 24-geometry-voxel-grid.js ──
 
 // ============================================================
@@ -34827,13 +35186,9 @@ class VugConditions {
         // PROPOSAL-CAVITY-MESH Phase 4 Tranche 3 — water-level mechanic
         // migrates to mm-height as the canonical representation.
         //
-        // Old name `fluid_surface_ring` and new name `fluid_surface_height_mm`
-        // are aliased via getters/setters below — they refer to the same
-        // private slot. Numerically identical while `ring_spacing_mm = 1.0`
-        // (the project-wide default across every shipping scenario). When
-        // a future scenario overrides ring spacing, the legacy ring-index
-        // name will need a spacing-aware conversion; flagged in the
-        // proposal's tranche notes.
+        // Old name `fluid_surface_ring` is a compatibility coordinate only. Its
+        // getter/setter maps a ring fraction onto the authenticated current cavity
+        // floor-to-ceiling span; the private scientific state remains millimetres.
         //
         // Why migrate the name: when wall.rings retires (Tranche 4), the
         // "ring index" concept stops being meaningful. Height-in-mm is
@@ -34843,9 +35198,19 @@ class VugConditions {
         // null = "no water level set" → fully submerged (legacy default,
         // every cell 'submerged'). Below = submerged, surface band =
         // meniscus, above = vadose/'air'.
-        this._fluidSurfaceMm = (opts.fluid_surface_height_mm != null)
-            ? opts.fluid_surface_height_mm
-            : (opts.fluid_surface_ring != null ? opts.fluid_surface_ring : null);
+        this._cavityWaterGeometry = null;
+        this._fluidSurfaceHeightMm = null;
+        this._pendingFluidSurfaceRing = null;
+        if (opts.fluid_surface_height_mm != null) {
+            this.fluid_surface_height_mm = opts.fluid_surface_height_mm;
+        }
+        else if (opts.fluid_surface_ring != null) {
+            const ring = Number(opts.fluid_surface_ring);
+            if (!Number.isFinite(ring) || ring < 0) {
+                throw new RangeError('fluid_surface_ring must be finite and non-negative');
+            }
+            this._pendingFluidSurfaceRing = ring;
+        }
         // v26 host-rock porosity. Sink-only term for water-level drift:
         // each step the surface drops by porosity × WATER_LEVEL_DRAIN_RATE
         // rings. 0.0 = sealed cavity (no drainage; legacy default). 1.0 =
@@ -34857,23 +35222,68 @@ class VugConditions {
         this._dol_in_undersat = false;
     }
     // PROPOSAL-CAVITY-MESH Phase 4 Tranche 3 — water-level accessors.
-    // Both names hit the same private slot (this._fluidSurfaceMm).
-    // Numerically identical while ring_spacing_mm = 1.0 (today's
-    // default everywhere); spacing-aware conversion can land later.
-    get fluid_surface_height_mm() { return this._fluidSurfaceMm; }
-    set fluid_surface_height_mm(v) { this._fluidSurfaceMm = v; }
-    get fluid_surface_ring() { return this._fluidSurfaceMm; }
-    set fluid_surface_ring(v) { this._fluidSurfaceMm = v; }
-    // Pure classifier; used by ringWaterState and by transition-detection
-    // logic that needs to compare against an arbitrary previous surface.
-    //
-    // PROPOSAL-CAVITY-MESH Phase 4 Tranche 3 — `surface` is the
-    // fluid surface position. With ring_spacing_mm=1.0 (default), this
-    // is numerically equivalent to a ring index AND to a height in mm
-    // — the arithmetic below uses ring units throughout, so callers
-    // passing either name see consistent results. Spacing-aware
-    // generalization can land when a scenario actually overrides
-    // ring_spacing_mm.
+    // Both names hit the same physical private slot. Legacy ring values are
+    // converted against the actual current surface span at this boundary.
+    bindCavityWaterGeometry(wallState) {
+        this._cavityWaterGeometry = wallState || null;
+        if (this._pendingFluidSurfaceRing != null && wallState) {
+            const pending = this._pendingFluidSurfaceRing;
+            this._pendingFluidSurfaceRing = null;
+            this.fluid_surface_ring = pending;
+        }
+        return this;
+    }
+    get fluid_surface_height_mm() {
+        if (this._fluidSurfaceHeightMm != null)
+            return this._fluidSurfaceHeightMm;
+        return this._pendingFluidSurfaceRing;
+    }
+    set fluid_surface_height_mm(v) {
+        this._pendingFluidSurfaceRing = null;
+        if (v == null) {
+            this._fluidSurfaceHeightMm = null;
+            return;
+        }
+        const height = Number(v);
+        if (!Number.isFinite(height) || height < 0) {
+            throw new RangeError('fluid_surface_height_mm must be finite and non-negative');
+        }
+        this._fluidSurfaceHeightMm = height;
+    }
+    get fluid_surface_ring() {
+        if (this._pendingFluidSurfaceRing != null)
+            return this._pendingFluidSurfaceRing;
+        if (this._fluidSurfaceHeightMm == null)
+            return null;
+        const wall = this._cavityWaterGeometry;
+        if (!wall)
+            return this._fluidSurfaceHeightMm;
+        const span = Math.max(CavityWaterAppearance.verticalSpanForWall(wall), 1e-12);
+        return this._fluidSurfaceHeightMm / span * Math.max(1, Number(wall.ring_count) || 1);
+    }
+    set fluid_surface_ring(v) {
+        if (v == null) {
+            this._pendingFluidSurfaceRing = null;
+            this._fluidSurfaceHeightMm = null;
+            return;
+        }
+        const ring = Number(v);
+        if (!Number.isFinite(ring) || ring < 0) {
+            throw new RangeError('fluid_surface_ring must be finite and non-negative');
+        }
+        const wall = this._cavityWaterGeometry;
+        if (!wall) {
+            this._pendingFluidSurfaceRing = ring;
+            this._fluidSurfaceHeightMm = null;
+            return;
+        }
+        const ringCount = Math.max(1, Number(wall.ring_count) || 1);
+        const span = Math.max(CavityWaterAppearance.verticalSpanForWall(wall), 1e-12);
+        this._pendingFluidSurfaceRing = null;
+        this._fluidSurfaceHeightMm = Math.min(ring, ringCount) / ringCount * span;
+    }
+    // Retained only for explicitly legacy, geometry-free callers. Bound
+    // simulation chemistry uses CavityWaterAppearance.ringWaterState instead.
     static _classifyWaterState(surface, ringIdx, ringCount) {
         if (surface === null || surface === undefined)
             return 'submerged';
@@ -34885,11 +35295,10 @@ class VugConditions {
             return 'vadose';
         return 'meniscus';
     }
-    // v24: classify a ring as 'submerged' / 'meniscus' / 'vadose'
-    // from the cavity's current fluid_surface_ring. Mirror of
-    // VugConditions.ring_water_state in vugg.py.
+    // Classify chemistry bands from their actual vertices against the shared
+    // Cartesian plane.
     ringWaterState(ringIdx, ringCount) {
-        return VugConditions._classifyWaterState(this.fluid_surface_ring, ringIdx, ringCount);
+        return CavityWaterAppearance.ringWaterState(this, ringIdx, ringCount);
     }
     update_dol_cycles() {
         // Track dolomite saturation crossings — call once per step.
@@ -67288,6 +67697,9 @@ class VugSimulator {
             // back to conditions.wall.
             size_class: this.conditions.wall.size_class,
         });
+        // Convert any legacy authored ring coordinate into the one canonical
+        // physical state: millimetres above the nominal cavity floor.
+        this.conditions.bindCavityWaterGeometry?.(this.wall_state);
         // Per-step snapshot of ring[0] for the Replay button. Captured at
         // the end of each step; small (~120 cells × ~4 numbers × 100-200
         // steps), so the memory cost of a whole run is trivial.
@@ -67368,6 +67780,12 @@ class VugSimulator {
         if (_initialMesh && _initialMesh.bindRingChemistry) {
             _initialMesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
         }
+        // Replay water state is independently authenticated by an append-only
+        // history rather than by the mutable snapshot payload. Keep the ledger on
+        // both owners because snapshots are produced by the simulator while replay
+        // dispatch receives the WallState directly.
+        this._cavityWaterAppearanceLedger = new CavityWaterAppearanceLedger(this.wall_state);
+        this.wall_state._cavityWaterAppearanceLedger = this._cavityWaterAppearanceLedger;
         // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1 (v158) — allocate the
         // cavity interior voxel grid now that the mesh is built and
         // chemistry is bound. d=0 voxels alias the mesh.cells[].fluid
@@ -67470,7 +67888,8 @@ class VugSimulator {
         // construction means "no surface set yet"; first run_step compares
         // against this and applies the override to whatever rings are
         // currently vadose.
-        this._prevFluidSurfaceRing = null;
+        this._prevFluidSurfaceHeightMm = null;
+        this._prevCavityWaterStates = new Array(nRings).fill('submerged');
     }
     canReauthorInitialHostGeometry() {
         const ledger = this.wall_state?.cavityEvolutionLedger?.();
@@ -67499,14 +67918,24 @@ class VugSimulator {
             return false;
         const wall = this.conditions.wall;
         const wallState = this.wall_state;
+        const oldSpan = Math.max(CavityWaterAppearance.verticalSpanForWall(wallState), 1e-12);
+        const oldWaterHeight = this.conditions.fluid_surface_height_mm;
+        const waterFraction = oldWaterHeight == null ? null
+            : Math.min(1, Math.max(0, Number(oldWaterHeight) / oldSpan));
         const receipt = wallState.reauthorInitialEquivalentDiameterMm(value, this);
         const exactDiameter = wall.initializeCavityCapacity(receipt.exact_capacity_volume_mm3, 'canonical_closed_wallmesh');
         wall.authored_vug_diameter_mm = Number(value);
         wallState.updateCapacity(receipt.exact_capacity_volume_mm3, exactDiameter);
         const mesh = wallState.meshFor(this);
+        if (waterFraction != null) {
+            const newSpan = CavityWaterAppearance.verticalSpanForWall(wallState);
+            this.conditions.fluid_surface_height_mm = waterFraction * newSpan;
+        }
         if (mesh?.bindRingChemistry)
             mesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
         wallState.voxelGridFor(this);
+        this._cavityWaterAppearanceLedger = new CavityWaterAppearanceLedger(wallState);
+        wallState._cavityWaterAppearanceLedger = this._cavityWaterAppearanceLedger;
         this.wall_state_history = [];
         this._creativeInitialAuthoringTransactions ||= [];
         this._creativeInitialAuthoringTransactions.push(receipt);
@@ -70960,10 +71389,27 @@ Object.assign(VugSimulator.prototype, {
         delete this.conditions._pending_carbonate_boundary_transfers;
         const pendingViolation = this.conditions._pending_carbonate_boundary_violation || null;
         delete this.conditions._pending_carbonate_boundary_violation;
-        const surfaceHeight = this.conditions.fluid_surface_height_mm;
-        const surfaceRing = this.conditions.fluid_surface_ring;
-        const fullyFlooded = (surfaceHeight == null && surfaceRing == null)
-            || (Number.isFinite(surfaceRing) && surfaceRing >= this.wall_state.ring_count);
+        let fullyFlooded = false;
+        try {
+            fullyFlooded = CavityWaterAppearance.create(this.wall_state, this.conditions, {
+                sim: this,
+            }).receipt.fully_submerged;
+        }
+        catch (error) {
+            state.blocked = true;
+            const tx = {
+                ok: false,
+                kind: 'spatial_boundary_unsupported',
+                step: this.step,
+                error: 'cavity_water_authority_unavailable',
+                detail: error instanceof Error ? error.message : String(error),
+            };
+            const prior = state.transactions?.[state.transactions.length - 1];
+            if (!prior || prior.kind !== tx.kind || prior.error !== tx.error || prior.step !== tx.step) {
+                (state.transactions ||= []).push(tx);
+            }
+            return false;
+        }
         if (!fullyFlooded || config.spatial_model !== 'equal_volume_fully_mixed') {
             state.blocked = true;
             const tx = {
@@ -71398,11 +71844,15 @@ Object.assign(VugSimulator.prototype, {
     // → malachite/azurite, pyrite → limonite, all in the air zone).
     _applyVadoseOxidationOverride() {
         const n = this.wall_state.ring_count;
-        const newSurface = this.conditions.fluid_surface_ring;
-        const oldSurface = this._prevFluidSurfaceRing;
-        this._prevFluidSurfaceRing = newSurface;
-        if (newSurface === null || newSurface === undefined)
-            return [];
+        const oldStates = Array.isArray(this._prevCavityWaterStates)
+            && this._prevCavityWaterStates.length === n
+            ? this._prevCavityWaterStates.slice()
+            : new Array(n).fill('submerged');
+        // This deliberately fails closed when production Cartesian authority is
+        // unavailable. Chemistry must not continue from a WallMesh substitute.
+        const newStates = Array.from({ length: n }, (_, ring) => this.conditions.ringWaterState(ring, n));
+        this._prevFluidSurfaceHeightMm = this.conditions.fluid_surface_height_mm;
+        this._prevCavityWaterStates = newStates;
         // v161: handle BOTH water-level directions in one pass. Drying (wet→vadose)
         // oxidizes + evaporatively concentrates; rewetting (vadose→wet) re-dilutes.
         // Previously this early-returned whenever the surface rose, which made the
@@ -71467,8 +71917,8 @@ Object.assign(VugSimulator.prototype, {
             };
         };
         for (let r = 0; r < n; r++) {
-            const was = VugConditions._classifyWaterState(oldSurface, r, n);
-            const now = VugConditions._classifyWaterState(newSurface, r, n);
+            const was = oldStates[r];
+            const now = newStates[r];
             if (now === 'vadose' && was !== 'vadose') {
                 // Canonical 3-D path: every depth voxel in the exposed ring receives
                 // the same atmospheric boundary. d=0 aliases the wall mesh, so this also
@@ -71522,8 +71972,7 @@ Object.assign(VugSimulator.prototype, {
                 });
                 becameVadose.push(r);
             }
-            else if (was === 'vadose' && now !== 'vadose'
-                && oldSurface !== null && oldSurface !== undefined) {
+            else if (was === 'vadose' && now !== 'vadose') {
                 // v161 rewetting: a freshwater flood (searles fresh_pulse, naica /
                 // aquifer recharge) reflooded this ring. Reset the evaporative
                 // `concentration` multiplier to baseline 1.0 — the dissolved load
@@ -72035,7 +72484,17 @@ Object.assign(VugSimulator.prototype, {
         const cavitySurfaceProvider = this.wall_state.cavitySurfaceAnchorProviderReceipt
             ? this.wall_state.cavitySurfaceAnchorProviderReceipt()
             : { kind: 'wall-mesh' };
+        const cavityAppearance = CavityWaterAppearance.create(this.wall_state, cnd, {
+            sim: this,
+            providerReceipt: cavitySurfaceProvider,
+        });
+        const waterHistory = this._cavityWaterAppearanceLedger;
+        if (!waterHistory || waterHistory !== this.wall_state._cavityWaterAppearanceLedger) {
+            throw new Error('cavity water history authority is unavailable');
+        }
+        const waterHistoryEntry = waterHistory.append(this.step, this.wall_state, cnd, cavityAppearance.receipt);
         const snap = {
+            sim_version: SIM_VERSION,
             step: this.step,
             cavity_evolution_cursor: this.wall_state.cavityEvolutionLedger
                 && this.wall_state.cavityEvolutionLedger()
@@ -72044,6 +72503,10 @@ Object.assign(VugSimulator.prototype, {
                 && this.wall_state.cavityEvolutionLedger()
                 ? this.wall_state.cavityEvolutionLedger().signature : null,
             cavity_surface_provider: { ...cavitySurfaceProvider },
+            cavity_appearance: { ...cavityAppearance.receipt },
+            cavity_water_history_cursor: waterHistory.cursor,
+            cavity_water_history_signature: waterHistory.signature,
+            cavity_water_history_entry_digest: waterHistoryEntry.entry_digest,
             cavity_production_contract_digest: this.wall_state._cavityProductionAuthorityContract?.contract_digest ?? null,
             rings: new Array(ringCount),
             conditions: {
@@ -72054,6 +72517,7 @@ Object.assign(VugSimulator.prototype, {
                 vug_diameter_mm: cnd.wall.vug_diameter_mm,
                 total_dissolved_mm: cnd.wall.total_dissolved_mm,
                 cavity_capacity_volume_mm3: cnd.wall.cavity_capacity_volume_mm3,
+                fluid_surface_height_mm: cnd.fluid_surface_height_mm,
                 fluid_surface_ring: cnd.fluid_surface_ring,
                 // Full fluid clone — fortress-status reads f.Cu / f.Fe / etc.
                 // for the per-mineral "needs" hints, and the brief explicitly
@@ -76623,6 +77087,8 @@ function simulationStateProjection(runtimeOrSim, rngStateOverride) {
         temperatureC: Number(sim?.conditions?.temperature) || 0,
         pressureKbar: Number(sim?.conditions?.pressure) || 0,
         flowRate: Number(sim?.conditions?.flow_rate) || 0,
+        fluidSurfaceHeightMm: sim?.conditions?.fluid_surface_height_mm == null
+            ? null : Number(sim.conditions.fluid_surface_height_mm),
         fluid: _simulationFluidProjection(sim?.conditions?.fluid),
         ringTemperatures: (sim?.ring_temperatures || []).map((v) => Number(v) || 0),
         voxelTemperatures: (thermalGrid?.voxels || []).map((voxel) => Number(voxel?.temperature) || 0),
@@ -87971,9 +88437,8 @@ function _fortressBeginCustomFromParams(params, seedOverride) {
     fortressSim = new VugSimulator(conditions, []);
     if (Number.isFinite(params.initialWaterTablePct)) {
         const pct = Math.max(0, Math.min(100, params.initialWaterTablePct));
-        conditions.fluid_surface_height_mm = pct >= 100
-            ? null
-            : fortressSim.wall_state.ring_count * pct / 100;
+        conditions.fluid_surface_height_mm
+            = CavityWaterAppearance.verticalSpanForWall(fortressSim.wall_state) * pct / 100;
     }
     // HELIX-OVERLAY-FORK ADDITION (strip view v154+): attach recorder.
     if (typeof _attachStripRecorderToSim === 'function') {
@@ -89098,13 +89563,13 @@ const BROTH_MAP = {
         path: 'fluid_surface_height_percent',
         get: () => {
             const surface = fortressSim.conditions.fluid_surface_height_mm;
-            return surface == null ? 100 : 100 * surface / fortressSim.wall_state.ring_count;
+            const span = Math.max(1e-12, CavityWaterAppearance.verticalSpanForWall(fortressSim.wall_state));
+            return surface == null ? 100 : 100 * surface / span;
         },
         set: v => {
             const pct = Math.max(0, Math.min(100, v));
-            fortressSim.conditions.fluid_surface_height_mm = pct >= 100
-                ? null
-                : fortressSim.wall_state.ring_count * pct / 100;
+            fortressSim.conditions.fluid_surface_height_mm
+                = CavityWaterAppearance.verticalSpanForWall(fortressSim.wall_state) * pct / 100;
         },
         fmt: v => v.toFixed(1) + '% cavity height',
         parse: v => parseFloat(v) / 10,
@@ -95416,6 +95881,15 @@ function topoRender(optOverrideSnap) {
         _topoPaintPlaceholder(canvas, replayDecision.message);
         return;
     }
+    let renderSim = sim;
+    if (optOverrideSnap && sim) {
+        const historicalConditions = replayDecision.conditions
+            || CavityWaterAppearance.replayConditions(Array.isArray(optOverrideSnap)
+                ? { fluid_surface_height_mm: null, fluid_surface_ring: null }
+                : optOverrideSnap.conditions, replayDecision.wall);
+        renderSim = Object.create(sim);
+        renderSim.conditions = historicalConditions;
+    }
     // v65: snapshots are { step, rings: [...] }. Detect the shape and
     // pull a single ring for the 2D path (which only renders one slice
     // at a time) plus a `replayStep` so the Three.js path can size each
@@ -95571,7 +96045,17 @@ function topoRender(optOverrideSnap) {
     // and short-circuits the rest of the 2D path. 2D mode falls through
     // unchanged. See PROPOSAL-3D-TOPO-VUG.md ("Tier 1.5") for design.
     if (_topoView3D && wall && wall.rings && wall.rings.length) {
-        _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR, cx, cy, mmToPx, maxT, arcStep, N, viewW, viewH);
+        let renderAppearance = replayDecision.appearance || null;
+        if (!renderAppearance) {
+            try {
+                renderAppearance = CavityWaterAppearance.create(replayDecision.wall, renderSim.conditions, { sim: renderSim }).receipt;
+            }
+            catch (error) {
+                _topoPaintPlaceholder(canvas, `Cavity frame withheld: ${error instanceof Error ? error.message : String(error)}.`);
+                return;
+            }
+        }
+        _topoRenderRings3D(ctx, renderSim, replayDecision.wall, ring0, cellR, boundaryR, cx, cy, mmToPx, maxT, arcStep, N, viewW, viewH, renderAppearance);
         return;
     }
     // Radial wedges: each occupied cell gets a Bezier-bounded wedge.
@@ -97851,7 +98335,7 @@ function _renderWireframeInstance(ctx, crystal, anchor, sphereRadiusPx, mmToPx, 
 //
 // Phase B12 of PROPOSAL-MODULAR-REFACTOR — split renderer.
 //     ambiguous when the disc is tilted.
-function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR, cx, cy, mmToPx, maxT, arcStep, N, viewW, viewH) {
+function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR, cx, cy, mmToPx, maxT, arcStep, N, viewW, viewH, appearanceReceipt = null) {
     const F = 1200; // perspective focal length, matches tier-1's CSS perspective(1200px)
     const ringCount = wall.ring_count;
     // Spherical cavity profile (renderer-only for now — the engine's
@@ -97900,43 +98384,25 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR, cx, cy, mmT
     for (const meta of ringMeta) {
         paintItems.push({ kind: 'ring', meta, sortZ: meta.projZ });
     }
-    // v24 water line. If conditions.fluid_surface_ring is set, the
-    // meniscus sits at φ = π·s/ringCount along the polar axis. Build a
-    // 64-segment polyline tracing the cavity outline at that latitude,
-    // pre-projected to screen, and sort the disc as a single paint item
-    // at its centre's projected z. Polar profile + per-cell wall depth
-    // are folded in so the water line wobbles with the cavity shape.
+    // The canvas tier consumes the same authenticated Cartesian plane as
+    // chemistry and Three.js. Intersecting the actual WallMesh avoids inventing
+    // a spherical latitude from equivalent diameter on asymmetric cavities.
     let waterDisc = null;
-    if (sim && sim.conditions
-        && sim.conditions.fluid_surface_ring != null
-        && ringCount > 1) {
-        const s = sim.conditions.fluid_surface_ring;
-        const sClamped = Math.max(0, Math.min(ringCount, s));
-        const phiW = Math.PI * sClamped / ringCount;
-        const polarW = wall.polarProfileFactor ? wall.polarProfileFactor(phiW) : 1.0;
-        const rrfW = Math.sin(phiW) * polarW;
-        const wzW = -Math.cos(phiW) * sphereRadiusPx;
-        const twistW = wall.ringTwistRadians ? wall.ringTwistRadians(phiW) : 0.0;
-        // Sample N_W points around θ. Use the same per-cell base_radius
-        // ring0 carries — without per-ring radius variation in the engine
-        // this is the best the renderer has for "what shape is the cavity
-        // at this height". Wall_depth on ring0 also folds in.
-        const N_W = 64;
-        const pts = new Array(N_W);
-        for (let j = 0; j < N_W; j++) {
-            const theta = (2 * Math.PI * j) / N_W + twistW;
-            // Sample ring0's per-cell radius at the matching θ index.
-            const cellIdx = Math.floor((j / N_W) * N) % N;
-            const cell = ring0[cellIdx];
-            const baseR = cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
-            const rPx = (baseR + cell.wall_depth) * mmToPx * rrfW;
-            const wx = rPx * Math.cos(theta);
-            const wy = rPx * Math.sin(theta);
-            pts[j] = [wx, wy, wzW];
-        }
+    if (appearanceReceipt?.explicit_surface
+        && !appearanceReceipt.fully_submerged
+        && !appearanceReceipt.fully_drained) {
+        const surface = wall.meshFor?.(sim);
+        const planeY = Number(appearanceReceipt.water_plane_y_mm);
+        const rawSegments = CavityWaterAppearance.planeSegments(surface, planeY);
+        const segments = rawSegments.map((segment) => segment.map((point) => [
+            point[0] * mmToPx, point[2] * mmToPx, point[1] * mmToPx,
+        ]));
+        const wzW = planeY * mmToPx;
         const projZW = _topoProject3D(0, 0, wzW, _topoTiltX, _topoTiltY, F)[2];
-        waterDisc = { points: pts, sortZ: projZW };
-        paintItems.push({ kind: 'water', disc: waterDisc, sortZ: projZW });
+        waterDisc = { segments, sortZ: projZW };
+        if (segments.length) {
+            paintItems.push({ kind: 'water', disc: waterDisc, sortZ: projZW });
+        }
     }
     if (sim && sim.crystals) {
         for (const crystal of sim.crystals) {
@@ -98025,7 +98491,7 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR, cx, cy, mmT
             ? sim.conditions.ringWaterState(ringIdx, ringCount)
             : 'submerged';
         const isSubmerged = wstate === 'submerged'
-            && sim && sim.conditions && sim.conditions.fluid_surface_ring != null;
+            && sim && sim.conditions && sim.conditions.fluid_surface_height_mm != null;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         for (let i = 0; i < N; i++) {
@@ -98089,24 +98555,20 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR, cx, cy, mmT
     // straddling the disc's z (single sortZ for the whole disc), but
     // reads correctly at typical tilt angles.
     function renderWaterDisc(disc) {
-        const proj = projAt(0); // wz baked into points already
-        const screen = disc.points.map(([wx, wy, wz]) => {
-            const [px, py] = _topoProject3D(wx, wy, wz, _topoTiltX, _topoTiltY, F);
-            return [cx + px, cy + py];
-        });
-        if (!screen.length)
+        if (!disc.segments?.length)
             return;
-        ctx.beginPath();
-        ctx.moveTo(screen[0][0], screen[0][1]);
-        for (let j = 1; j < screen.length; j++) {
-            ctx.lineTo(screen[j][0], screen[j][1]);
-        }
-        ctx.closePath();
         ctx.save();
-        ctx.fillStyle = 'rgba(86, 170, 240, 0.22)';
-        ctx.fill();
         ctx.strokeStyle = 'rgba(140, 220, 255, 0.95)';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1.75;
+        ctx.beginPath();
+        for (const segment of disc.segments) {
+            const screen = segment.map(([wx, wy, wz]) => {
+                const [px, py] = _topoProject3D(wx, wy, wz, _topoTiltX, _topoTiltY, F);
+                return [cx + px, cy + py];
+            });
+            ctx.moveTo(screen[0][0], screen[0][1]);
+            ctx.lineTo(screen[1][0], screen[1][1]);
+        }
         ctx.stroke();
         ctx.restore();
     }
@@ -99834,12 +100296,15 @@ function _topoInitThree(canvas) {
 //      used until the texture is built (first frame). Generous in
 //      asymmetric cavities — leaks "brighter saturated" patches
 //      where corners stick past the local cell.
-function _applyCavityClip(material, clipUniforms) {
+function _applyCavityClip(material, clipUniforms, opts = {}) {
     // This capability is a compile-time shader variant. If sampler3D fails to
     // link, fallback must build a different polar-only program which contains no
     // 3-D sampler declaration or sample instruction.
     const useCavityField = Number(clipUniforms?.uCavityClipMode?.value || 0) === 1;
-    const shaderVariant = useCavityField ? 'field-r32f-freudenthal-v2' : 'polar-r32f-free-v1';
+    const useHelix = opts.helix !== false;
+    const shaderVariant = (useCavityField
+        ? 'field-r32f-freudenthal-v2' : 'polar-r32f-free-v1')
+        + (useHelix ? '|helix' : '|no-helix');
     if (!material.userData)
         material.userData = {};
     material.userData.vuggCavityClipVariant = shaderVariant;
@@ -99862,7 +100327,8 @@ function _applyCavityClip(material, clipUniforms) {
             shader.uniforms.uVugCellTexH = clipUniforms.uVugCellTexH;
         }
         // === HELIX-OVERLAY-FORK ADDITION (v19) =========================
-        shader.uniforms.uHelixEnabled = clipUniforms.uHelixEnabled;
+        shader.uniforms.uHelixEnabled = useHelix
+            ? clipUniforms.uHelixEnabled : { value: 0 };
         shader.uniforms.uHelixSweep = clipUniforms.uHelixSweep;
         shader.uniforms.uHelixYCenter = clipUniforms.uHelixYCenter;
         shader.uniforms.uHelixYSpan = clipUniforms.uHelixYSpan;
@@ -100079,6 +100545,68 @@ float cavityHullRadiusAt(vec3 worldPos) {
     // Force shader rebuild on next render.
     material.needsUpdate = true;
 }
+function _topoSyncCavityWaterAppearance(state, source, appearance) {
+    if (!state?.cavity || !source?.buffers || !appearance?.receipt)
+        return;
+    const receipt = appearance.receipt;
+    if (state.cavityAppearanceSig !== receipt.appearance_digest) {
+        const colors = CavityWaterAppearance.colorsForSurface(source.buffers, receipt);
+        const colorAttribute = state.cavity.geometry?.getAttribute?.('color');
+        if (!colorAttribute || colorAttribute.array.length !== colors.length) {
+            throw new RangeError('cavity appearance color buffer differs from geometry');
+        }
+        colorAttribute.array.set(colors);
+        colorAttribute.needsUpdate = true;
+        state.cavityAppearanceSig = receipt.appearance_digest;
+    }
+    else
+        return;
+    const showInterface = receipt.explicit_surface
+        && !receipt.fully_submerged && !receipt.fully_drained;
+    if (!showInterface) {
+        if (state.waterInterface)
+            state.waterInterface.visible = false;
+        return;
+    }
+    const clipVariant = Number(state.clipUniforms?.uCavityClipMode?.value || 0) === 1
+        ? 'field' : 'polar';
+    if (!state.waterInterface || state.waterInterfaceClipVariant !== clipVariant) {
+        if (state.waterInterface) {
+            state.scene.remove(state.waterInterface);
+            state.waterInterface.geometry?.dispose?.();
+            state.waterInterface.material?.dispose?.();
+        }
+        const material = new THREE.MeshPhysicalMaterial({
+            color: 0x56aaf0,
+            roughness: 0.16,
+            metalness: 0,
+            transmission: 0.18,
+            transparent: true,
+            opacity: 0.28,
+            depthWrite: false,
+            side: THREE.DoubleSide,
+        });
+        _applyCavityClip(material, state.clipUniforms, { helix: false });
+        const water = new THREE.Mesh(new THREE.BufferGeometry(), material);
+        water.name = 'authenticated-cavity-water-interface';
+        water.renderOrder = 1;
+        water.raycast = function () { };
+        state.scene.add(water);
+        state.waterInterface = water;
+        state.waterInterfaceClipVariant = clipVariant;
+    }
+    const min = receipt.bounds_min_mm;
+    const max = receipt.bounds_max_mm;
+    const width = Math.max(Number(max[0]) - Number(min[0]), 1e-9);
+    const depth = Math.max(Number(max[2]) - Number(min[2]), 1e-9);
+    const geometry = new THREE.PlaneGeometry(width, depth, 1, 1);
+    geometry.rotateX(-Math.PI / 2);
+    const previous = state.waterInterface.geometry;
+    state.waterInterface.geometry = geometry;
+    previous?.dispose?.();
+    state.waterInterface.position.set((Number(min[0]) + Number(max[0])) * 0.5, Number(receipt.water_plane_y_mm), (Number(min[2]) + Number(max[2])) * 0.5);
+    state.waterInterface.visible = true;
+}
 // W-K V1b (wall depth THROUGH translucency, 2026-07-07): the cavity wall's genesis
 // relief as ALBEDO ambient occlusion. V1 gave the wall a normal map (js/99a
 // _wallReliefNormalMap), but a normal map only perturbs LIGHTING — washed out by the
@@ -100131,9 +100659,8 @@ function _topoCavitySignature(wall, sim) {
         return '';
     const ring0 = wall.rings[0];
     const N = ring0 ? ring0.length : 0;
-    const surf = sim && sim.conditions ? sim.conditions.fluid_surface_ring : null;
     if (Number.isSafeInteger(wall._geometry_revision)) {
-        return `${wall.ring_count}|${N}|rev:${wall._geometry_revision}|${surf}`;
+        return `${wall.ring_count}|${N}|rev:${wall._geometry_revision}`;
     }
     let hashA = 0x811c9dc5;
     let hashB = 0x9e3779b9;
@@ -100155,7 +100682,7 @@ function _topoCavitySignature(wall, sim) {
             }
         }
     }
-    return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}|${surf}`;
+    return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
 }
 function _topoMarchingCubesCavityEnabled() {
     if (_topoMarchingCubesCavityOverride != null)
@@ -100817,7 +101344,7 @@ function _topoInstallCavityFieldClip(state, field, surface) {
 // triangulation) lives in WallMesh.recompute — same formulas as
 // before, just centralized so future tessellations (icosphere,
 // geodesic, irregular) can swap in without touching this file.
-function _topoBuildCavityGeometry(state, wall, sim, forceWallMesh = false) {
+function _topoBuildCavityGeometry(state, wall, sim, forceWallMesh = false, renderConditions = sim?.conditions, expectedAppearance = null) {
     if (!wall || !wall.rings || !wall.rings.length)
         return false;
     let source;
@@ -100854,11 +101381,39 @@ function _topoBuildCavityGeometry(state, wall, sim, forceWallMesh = false) {
     }
     const mesh = source.clipMesh;
     const surface = source.buffers;
-    if (source.sig === state.cavitySig)
+    let appearance;
+    try {
+        appearance = CavityWaterAppearance.create(wall, renderConditions, {
+            activeProvider: source.providerAuthority
+                ? wall.activeCavitySurfaceAnchorProvider?.() : null,
+            providerReceipt: source.providerReceipt || { kind: 'wall-mesh' },
+            surface,
+            sim,
+        });
+        if (expectedAppearance
+            && appearance.receipt.appearance_digest !== expectedAppearance.appearance_digest) {
+            throw new RangeError('rendered cavity appearance differs from authenticated replay');
+        }
+    }
+    catch (error) {
+        state.cavityFieldFallbackReason = error instanceof Error ? error.message : String(error);
+        state.cavityAuthorityUnrenderable = true;
+        if (state.cavity)
+            state.cavity.visible = false;
+        if (state.crystals)
+            state.crystals.visible = false;
+        if (state.waterInterface)
+            state.waterInterface.visible = false;
+        return false;
+    }
+    if (source.sig === state.cavitySig) {
+        _topoSyncCavityWaterAppearance(state, source, appearance);
         return true;
+    }
     state.cavityAuthorityUnrenderable = false;
     state.cavityAuthorityActive = source.providerAuthority === true;
     state.cavitySig = source.sig;
+    state.cavityAppearanceSig = '';
     // Crystal placement resolves against the live cavity provider. A surface
     // revision must invalidate meshes even if size/mineral fields are unchanged.
     state.crystalsSig = '';
@@ -101060,6 +101615,7 @@ function _topoBuildCavityGeometry(state, wall, sim, forceWallMesh = false) {
         if (prevTex && prevTex.dispose)
             prevTex.dispose();
     }
+    _topoSyncCavityWaterAppearance(state, source, appearance);
     return true;
 }
 // Sync the renderer's drawing-buffer size to the canvas's CSS size and
@@ -106484,6 +107040,46 @@ function _topoSnapshotWall(liveWall, snapshot) {
     else if (modernSnapshot) {
         return _topoRejectReplayWall(synth, 'missing or invalid replay cavity evolution receipt');
     }
+    const storedAppearance = snapshot && !Array.isArray(snapshot)
+        ? snapshot.cavity_appearance : null;
+    // Current runtime policy is trusted; a snapshot's own version field is not.
+    // Every modern object frame rendered by v265+ must authenticate against the
+    // live wall's append-only history. Only the explicit legacy flat-array shape
+    // remains outside this contract.
+    const requiresWaterHistory = modernSnapshot && SIM_VERSION >= 265;
+    if (requiresWaterHistory) {
+        try {
+            const waterHistory = liveWall._cavityWaterAppearanceLedger;
+            if (!(waterHistory instanceof CavityWaterAppearanceLedger)) {
+                throw new Error('replay lacks append-only cavity water history');
+            }
+            waterHistory.assertSnapshot(synth, snapshot);
+        }
+        catch (error) {
+            return _topoRejectReplayWall(synth, error);
+        }
+    }
+    if (storedAppearance) {
+        try {
+            const replayConditions = CavityWaterAppearance.replayConditions(snapshot.conditions, synth);
+            const active = synth.activeCavitySurfaceAnchorProvider?.();
+            const surface = active?.surface || synth.meshFor?.();
+            const appearance = CavityWaterAppearance.assertReceipt(synth, replayConditions, storedAppearance, {
+                activeProvider: active,
+                providerReceipt: snapshot.cavity_surface_provider,
+                surface,
+            });
+            synth._replayCavityAppearance = appearance.receipt;
+            synth._replayConditions = replayConditions;
+        }
+        catch (error) {
+            return _topoRejectReplayWall(synth, error);
+        }
+    }
+    else if (requiresWaterHistory
+        || snapshot?.cavity_surface_provider?.kind === 'cavity-field') {
+        return _topoRejectReplayWall(synth, 'exact replay lacks cavity appearance receipt');
+    }
     return synth;
 }
 // One decision boundary shared by canvas and WebGL dispatch. Tests exercise
@@ -106524,6 +107120,8 @@ function _topoReplayRenderDecision(liveWall, snapshot) {
     return Object.freeze({
         mode: provider?.receipt?.kind === 'cavity-field' ? 'cavity-field' : 'wall-mesh',
         wall,
+        conditions: snapshot ? wall?._replayConditions || null : null,
+        appearance: snapshot ? wall?._replayCavityAppearance || null : null,
         message: null,
     });
 }
@@ -106583,6 +107181,26 @@ function _topoRenderThree(sim, wall, optOverrideSnap, optReplayStep) {
     const state = _topoInitThree(canvas);
     if (!state)
         return false;
+    let renderConditions = sim?.conditions;
+    if (optOverrideSnap) {
+        try {
+            renderConditions = replayDecision.conditions
+                || CavityWaterAppearance.replayConditions(Array.isArray(optOverrideSnap)
+                    ? { fluid_surface_height_mm: null, fluid_surface_ring: null }
+                    : optOverrideSnap.conditions, renderWall);
+        }
+        catch (error) {
+            state.cavityAuthorityUnrenderable = true;
+            if (state.cavity)
+                state.cavity.visible = false;
+            if (state.crystals)
+                state.crystals.visible = false;
+            if (state.waterInterface)
+                state.waterInterface.visible = false;
+            _topoPaintPlaceholder(document.getElementById('topo-canvas'), `Replay frame withheld: ${error instanceof Error ? error.message : String(error)}.`);
+            return false;
+        }
+    }
     _topoApplyThreeDefaultOnce();
     _topoSyncThreeSize(state, canvas);
     // During replay, build cavity from the snapshot rings so the wall
@@ -106592,7 +107210,7 @@ function _topoRenderThree(sim, wall, optOverrideSnap, optReplayStep) {
         state.cavitySig = null;
         state.crystalsSig = null;
     }
-    if (!_topoBuildCavityGeometry(state, renderWall, sim))
+    if (!_topoBuildCavityGeometry(state, renderWall, sim, false, renderConditions, replayDecision.appearance))
         return false;
     _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
     _topoApplyCameraFromTilt(state, renderWall);
@@ -106628,7 +107246,7 @@ function _topoRenderThree(sim, wall, optOverrideSnap, optReplayStep) {
         // A failed field shader cannot be replaced by an independently selected MC
         // shadow extraction in the same fallback. Anchors and the visible wall both
         // return to canonical WallMesh before the polar shader is compiled.
-        _topoBuildCavityGeometry(state, renderWall, sim, true);
+        _topoBuildCavityGeometry(state, renderWall, sim, true, renderConditions, replayDecision.appearance);
         state.crystalsSig = '';
         _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
         return true;

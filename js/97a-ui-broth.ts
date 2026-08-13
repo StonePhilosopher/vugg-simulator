@@ -58,13 +58,15 @@ const BROTH_MAP: Record<string, any> = {
     path: 'fluid_surface_height_percent',
     get: () => {
       const surface = fortressSim.conditions.fluid_surface_height_mm;
-      return surface == null ? 100 : 100 * surface / fortressSim.wall_state.ring_count;
+      const span = Math.max(
+        1e-12, CavityWaterAppearance.verticalSpanForWall(fortressSim.wall_state),
+      );
+      return surface == null ? 100 : 100 * surface / span;
     },
     set: v => {
       const pct = Math.max(0, Math.min(100, v));
-      fortressSim.conditions.fluid_surface_height_mm = pct >= 100
-        ? null
-        : fortressSim.wall_state.ring_count * pct / 100;
+      fortressSim.conditions.fluid_surface_height_mm
+        = CavityWaterAppearance.verticalSpanForWall(fortressSim.wall_state) * pct / 100;
     },
     fmt: v => v.toFixed(1) + '% cavity height',
     parse: v => parseFloat(v) / 10,

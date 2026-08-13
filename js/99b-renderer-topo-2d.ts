@@ -232,6 +232,18 @@ function topoRender(optOverrideSnap?) {
     _topoPaintPlaceholder(canvas, replayDecision.message);
     return;
   }
+  let renderSim = sim;
+  if (optOverrideSnap && sim) {
+    const historicalConditions = replayDecision.conditions
+      || CavityWaterAppearance.replayConditions(
+        Array.isArray(optOverrideSnap)
+          ? { fluid_surface_height_mm: null, fluid_surface_ring: null }
+          : optOverrideSnap.conditions,
+        replayDecision.wall,
+      );
+    renderSim = Object.create(sim);
+    renderSim.conditions = historicalConditions;
+  }
 
   // v65: snapshots are { step, rings: [...] }. Detect the shape and
   // pull a single ring for the 2D path (which only renders one slice
@@ -388,8 +400,23 @@ function topoRender(optOverrideSnap?) {
   // and short-circuits the rest of the 2D path. 2D mode falls through
   // unchanged. See PROPOSAL-3D-TOPO-VUG.md ("Tier 1.5") for design.
   if (_topoView3D && wall && wall.rings && wall.rings.length) {
-    _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR, cx, cy,
-                       mmToPx, maxT, arcStep, N, viewW, viewH);
+    let renderAppearance = replayDecision.appearance || null;
+    if (!renderAppearance) {
+      try {
+        renderAppearance = CavityWaterAppearance.create(
+          replayDecision.wall, renderSim.conditions, { sim: renderSim },
+        ).receipt;
+      } catch (error) {
+        _topoPaintPlaceholder(
+          canvas,
+          `Cavity frame withheld: ${error instanceof Error ? error.message : String(error)}.`,
+        );
+        return;
+      }
+    }
+    _topoRenderRings3D(ctx, renderSim, replayDecision.wall, ring0,
+                       cellR, boundaryR, cx, cy, mmToPx, maxT,
+                       arcStep, N, viewW, viewH, renderAppearance);
     return;
   }
 

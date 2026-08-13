@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 declare const FluidChemistry: any;
+declare const CavityWaterAppearance: any;
 declare const dicPpmToMolKg: (ppm: number) => number;
 declare const dicMolKgToPpm: (molKg: number) => number;
 declare const pureWaterDensityKgM3: (t: number) => number;
@@ -226,6 +227,39 @@ describe('conserved carbonate boundary numerical kernel', () => {
         minerals: [mineral],
       });
     }
+  });
+
+  it('gates the spatial boundary with the authenticated physical water span', () => {
+    setSeed(42);
+    const conditions = inertOpenBoundaryConditions(config => config);
+    const sim = new VugSimulator(conditions, []);
+    const appearance = CavityWaterAppearance.create(
+      sim.wall_state, conditions, { sim },
+    ).receipt;
+    const exactSpan = appearance.ceiling_elevation_mm - appearance.floor_elevation_mm;
+    conditions.fluid_surface_height_mm = exactSpan;
+    expect(CavityWaterAppearance.create(sim.wall_state, conditions, { sim }).receipt.fully_submerged)
+      .toBe(true);
+    expect(sim._prepareCarbonateBoundarySpatialState()).toBe(true);
+
+    conditions.fluid_surface_height_mm = exactSpan * 0.5;
+    expect(sim._prepareCarbonateBoundarySpatialState()).toBe(false);
+    expect(sim._carbonateBoundaryState.transactions.at(-1)).toMatchObject({
+      error: 'partially_flooded_boundary_deferred',
+    });
+  });
+
+  it('blocks carbonate equilibration when production water authority is lost', () => {
+    setSeed(42);
+    const conditions = inertOpenBoundaryConditions(config => config);
+    const sim = new VugSimulator(conditions, []);
+    sim.enableProductionCavityAuthority();
+    sim.wall_state._activeCavitySurfaceAnchorProvider = null;
+    sim.wall_state._cavitySurfaceAuthorityFailure = 'test provider loss';
+    expect(sim._prepareCarbonateBoundarySpatialState()).toBe(false);
+    expect(sim._carbonateBoundaryState.transactions.at(-1)).toMatchObject({
+      error: 'cavity_water_authority_unavailable',
+    });
   });
 
   it('closed aqueous/headspace equilibration conserves carbon and alkalinity', () => {

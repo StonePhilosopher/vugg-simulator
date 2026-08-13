@@ -3,6 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
+declare const CavityWaterAppearance: any;
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
@@ -397,7 +399,8 @@ describe('Creative chemistry control contract', () => {
     set('is_lit', '0');
     set('graphitic', '0');
 
-    expect(sim.conditions.fluid_surface_height_mm).toBeCloseTo(sim.wall_state.ring_count * 0.375, 8);
+    expect(sim.conditions.fluid_surface_height_mm)
+      .toBeCloseTo(CavityWaterAppearance.verticalSpanForWall(sim.wall_state) * 0.375, 8);
     expect(sim.conditions.pressure).toBe(2.75);
     expect(sim.conditions.porosity).toBe(0.22);
     expect(sim.conditions.wall.cooling_rate).toBe(0.7);

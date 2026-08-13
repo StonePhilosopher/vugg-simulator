@@ -981,9 +981,8 @@ function _fortressBeginCustomFromParams(params, seedOverride?) {
   fortressSim = new VugSimulator(conditions, []);
   if (Number.isFinite(params.initialWaterTablePct)) {
     const pct = Math.max(0, Math.min(100, params.initialWaterTablePct));
-    conditions.fluid_surface_height_mm = pct >= 100
-      ? null
-      : fortressSim.wall_state.ring_count * pct / 100;
+    conditions.fluid_surface_height_mm
+      = CavityWaterAppearance.verticalSpanForWall(fortressSim.wall_state) * pct / 100;
   }
   // HELIX-OVERLAY-FORK ADDITION (strip view v154+): attach recorder.
   if (typeof _attachStripRecorderToSim === 'function') {
