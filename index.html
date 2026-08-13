@@ -26851,6 +26851,7 @@ class VugWall {
                 new_equivalent_diameter_mm: newDiameter,
                 exposure: opts.exposure_receipt,
                 vertex_deltas: geometryPlan.vertex_deltas,
+                geometry_authority: geometryPlan.authority_receipt || null,
                 fluid_receipt: { before: fluidBefore, after: fluidAfter },
                 host_inventory_receipt: {
                     initial_formula_mmolkg: this.host_formula_inventory_initial_mmolkg,
@@ -26860,7 +26861,9 @@ class VugWall {
                     residual_mmolkg: inventoryErrorMmolKg,
                 },
                 scientific_scope: {
-                    closed: 'carbonate formula extent to standard-state crystalline volume per 1 kg solvent reference',
+                    closed: geometryPlan.authority_receipt
+                        ? 'carbonate formula extent to standard-state crystalline volume and preflighted Cartesian extracted-surface volume per 1 kg solvent reference'
+                        : 'carbonate formula extent to standard-state crystalline volume per 1 kg solvent reference',
                     not_closed: [
                         'actual cavity fluid mass', 'P-T-dependent molar volume',
                         'bulk-rock phase fraction and porosity', 'Fe/Mn inventories',
@@ -26885,6 +26888,9 @@ class VugWall {
             if (evolutionEntry) {
                 evolutionLedger.commitEntry(wallState, evolutionEntry);
                 geometryCommitted = true;
+                if (geometryPlan.authority_receipt) {
+                    CavityProductionAuthority.verifyCommitted(wallState, geometryPlan.authority_receipt, wallState._cavityProductionAuthorityContract);
+                }
             }
             this.thickness_mm -= preview.rate_mm;
             this.total_dissolved_mm += preview.rate_mm;
@@ -27248,6 +27254,8 @@ class WallState {
         // can promote the Cartesian surface to live anchor authority.
         this._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
         this._activeCavitySurfaceAnchorProvider = null;
+        this._cavityProductionAuthorityContract = null;
+        this._cavitySurfaceAuthorityFailure = null;
         this.cells_per_ring = opts.cells_per_ring ?? 120;
         // Phase 1 of PROPOSAL-3D-SIMULATION: 16 vertically-stacked rings as
         // the new default. Engine still operates on ring[0] only — rings 1..15
@@ -27935,12 +27943,22 @@ class WallState {
         const CF = (typeof CavityScalarField !== 'undefined') ? CavityScalarField : null;
         if (!CF)
             return null;
-        const resolution = opts && opts.resolution != null ? opts.resolution : 48;
+        const production = this._cavityProductionAuthorityContract;
+        if (production)
+            CavityProductionAuthority.assertContract(this, production);
+        const resolution = production
+            ? production.scientific_resolution
+            : opts && opts.resolution != null ? opts.resolution : 48;
+        if (production && opts && opts.resolution != null
+            && Number(opts.resolution) !== production.scientific_resolution) {
+            throw new RangeError('production cavity resolution is pinned by the scientific contract');
+        }
         const ledgerCursor = opts && opts.ledgerCursor != null
             ? opts.ledgerCursor : this._cavityEvolutionCursor;
-        const sig = CF.signatureFor(this, resolution, ledgerCursor);
+        const frame = production ? production.frame : null;
+        const sig = CF.signatureFor(this, resolution, ledgerCursor, frame);
         if (!this._cavityField || this._cavityField.sig !== sig) {
-            this._cavityField = CF.fromWallState(this, { resolution, ledgerCursor });
+            this._cavityField = CF.fromWallState(this, { resolution, ledgerCursor, frame });
             this._cavitySurface = null;
             this._cavitySurfaceFailure = null;
         }
@@ -27950,7 +27968,14 @@ class WallState {
         const field = this.cavityFieldFor(opts);
         if (!field)
             return null;
-        const isovalue = opts && opts.isovalue != null ? Number(opts.isovalue) : 0;
+        const production = this._cavityProductionAuthorityContract;
+        const isovalue = production
+            ? production.isovalue
+            : opts && opts.isovalue != null ? Number(opts.isovalue) : 0;
+        if (production && opts && opts.isovalue != null
+            && Number(opts.isovalue) !== production.isovalue) {
+            throw new RangeError('production cavity isovalue is pinned by the scientific contract');
+        }
         const sig = field.surfaceSignature(isovalue);
         if (this._cavitySurfaceFailure && this._cavitySurfaceFailure.sig === sig) {
             if (opts && opts.throwOnFailure)
@@ -27987,7 +28012,11 @@ class WallState {
         return this._cavitySurface;
     }
     activateCavitySurfaceAnchorProvider(opts = {}) {
-        const resolution = opts.resolution == null ? 48 : opts.resolution;
+        const production = this._cavityProductionAuthorityContract;
+        if (production)
+            CavityProductionAuthority.assertContract(this, production);
+        const resolution = production
+            ? production.scientific_resolution : opts.resolution == null ? 48 : opts.resolution;
         const evolution = this.cavityEvolutionLedger?.();
         const ledgerCursor = evolution
             ? (opts.ledgerCursor != null ? Number(opts.ledgerCursor)
@@ -28011,6 +28040,8 @@ class WallState {
             || !(surface.metrics?.vertex_count > 0)) {
             throw new Error('cannot activate an empty, open, or unauthenticated cavity surface provider');
         }
+        const productionAuthentication = production
+            ? CavityProductionAuthority.authenticateSurface(this, field, surface, production, ledgerCursor) : null;
         const receipt = Object.freeze({
             kind: 'cavity-field',
             resolution: field.sizeX,
@@ -28020,6 +28051,11 @@ class WallState {
             surface_signature: surface.sig,
             surface_buffer_digest: surface.buffer_digest,
             cavity_evolution_signature: evolution ? evolution.signatureAt(ledgerCursor) : null,
+            production_contract_digest: production ? production.contract_digest : null,
+            authoritative_volume_mm3: productionAuthentication
+                ? productionAuthentication.volume_mm3 : null,
+            max_field_agreement_voxels: productionAuthentication
+                ? productionAuthentication.agreement.max_normal_root_distance_voxels : null,
         });
         // Pin the exact explicitly activated objects. Later diagnostics may replace
         // `_cavityField/_cavitySurface`; they cannot change simulation authority.
@@ -28036,20 +28072,26 @@ class WallState {
             // and, if necessary, rebuild against that cursor rather than silently
             // upgrading a historical provider to the live ledger head.
             const ledgerCursor = this._cavityEvolutionCursor;
-            const expected = CavityScalarField.signatureFor(this, active.receipt.resolution, ledgerCursor);
+            const production = this._cavityProductionAuthorityContract;
+            if (production)
+                CavityProductionAuthority.assertContract(this, production);
+            const expected = CavityScalarField.signatureFor(this, active.receipt.resolution, ledgerCursor, production ? production.frame : null);
             const evolution = this.cavityEvolutionLedger?.();
             const effectiveCursor = evolution
                 ? (ledgerCursor == null ? evolution.cursor : Number(ledgerCursor)) : null;
             const expectedEvolutionSignature = evolution
                 ? evolution.signatureAt(effectiveCursor) : null;
             if (expected === active.receipt.field_signature
-                && active.receipt.cavity_evolution_signature === expectedEvolutionSignature) {
+                && active.receipt.cavity_evolution_signature === expectedEvolutionSignature
+                && active.receipt.production_contract_digest
+                    === (production ? production.contract_digest : null)) {
                 MarchingCubesExtractor.verifyBuffers(active.surface);
                 return active;
             }
             // Explicit field authority follows authenticated wall evolution at the
-            // same resolution/isovalue. Activation remains atomic: if re-extraction
-            // fails any production gate, the catch below exposes WallMesh instead.
+            // same resolution/isovalue. Production extraction was preflighted before
+            // the chemistry commit; an impossible rebuild is withheld below rather
+            // than silently changing geological topology.
             this.activateCavitySurfaceAnchorProvider({
                 resolution: active.receipt.resolution,
                 isovalue: active.receipt.isovalue,
@@ -28058,21 +28100,95 @@ class WallState {
             return this._activeCavitySurfaceAnchorProvider;
         }
         catch (_error) {
+            if (this._cavityProductionAuthorityContract) {
+                this._cavitySurfaceAuthorityFailure = _error instanceof Error
+                    ? _error.message : String(_error);
+                return null;
+            }
             this.deactivateCavitySurfaceAnchorProvider();
             return null;
         }
     }
     cavitySurfaceAnchorProviderReceipt() {
-        this._activeCavitySurfaceProviderForCurrentGeometry();
-        return this._cavitySurfaceAnchorProvider;
+        const active = this._activeCavitySurfaceProviderForCurrentGeometry();
+        if (this._cavityProductionAuthorityContract
+            && (!active || active.receipt?.kind !== 'cavity-field')) {
+            throw new Error('production cavity surface authority is unavailable: '
+                + (this._cavitySurfaceAuthorityFailure || 'authenticated Cartesian provider missing'));
+        }
+        // Return only the receipt belonging to the provider authenticated above.
+        // `_cavitySurfaceAnchorProvider` is retained for legacy WallMesh state, but
+        // may contain a prior receipt after a fail-closed production rebuild.
+        return active?.receipt || this._cavitySurfaceAnchorProvider;
     }
     activeCavitySurfaceAnchorProvider() {
         return this._activeCavitySurfaceProviderForCurrentGeometry();
     }
+    _requireProductionCavitySurfaceProvider() {
+        const active = this._activeCavitySurfaceProviderForCurrentGeometry();
+        if (this._cavityProductionAuthorityContract
+            && (!active || active.receipt?.kind !== 'cavity-field')) {
+            throw new Error('production cavity surface authority is unavailable: '
+                + (this._cavitySurfaceAuthorityFailure || 'authenticated Cartesian provider missing'));
+        }
+        return active;
+    }
     deactivateCavitySurfaceAnchorProvider() {
+        if (this._cavityProductionAuthorityContract) {
+            throw new RangeError('production cavity authority cannot switch topology after activation');
+        }
         this._activeCavitySurfaceAnchorProvider = null;
         this._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
         return this._cavitySurfaceAnchorProvider;
+    }
+    enableProductionCavityAuthority() {
+        const priorLedger = this._cavityEvolutionLedger;
+        if (!priorLedger || priorLedger.cursor !== 0
+            || this.rings.some((ring) => ring.some((cell) => Math.abs(Number(cell.wall_depth) || 0) > 1e-12))) {
+            throw new RangeError('production cavity authority must be selected before wall evolution');
+        }
+        if (this._cavityProductionAuthorityContract) {
+            CavityProductionAuthority.assertContract(this, this._cavityProductionAuthorityContract);
+            return Object.freeze({
+                contract: this._cavityProductionAuthorityContract,
+                provider: this.cavitySurfaceAnchorProviderReceipt(),
+                initial_volume_mm3: Number(this._cavityProductionAuthorityContract.baseline_volume_mm3),
+            });
+        }
+        const prior = {
+            ledger: priorLedger,
+            field: this._cavityField,
+            surface: this._cavitySurface,
+            failure: this._cavitySurfaceFailure,
+            provider: this._cavitySurfaceAnchorProvider,
+            activeProvider: this._activeCavitySurfaceAnchorProvider,
+        };
+        try {
+            const contract = CavityProductionAuthority.createContract(this);
+            this._cavityProductionAuthorityContract = contract;
+            this._cavityEvolutionLedger = CavityEvolutionLedger.forWall(this, {
+                model: CAVITY_PRODUCTION_VOLUME_MODEL,
+            });
+            this._cavityField = null;
+            this._cavitySurface = null;
+            this._cavitySurfaceFailure = null;
+            const provider = this.activateCavitySurfaceAnchorProvider();
+            return Object.freeze({
+                contract,
+                provider,
+                initial_volume_mm3: Number(contract.baseline_volume_mm3),
+            });
+        }
+        catch (error) {
+            this._cavityProductionAuthorityContract = null;
+            this._cavityEvolutionLedger = prior.ledger;
+            this._cavityField = prior.field;
+            this._cavitySurface = prior.surface;
+            this._cavitySurfaceFailure = prior.failure;
+            this._cavitySurfaceAnchorProvider = prior.provider;
+            this._activeCavitySurfaceAnchorProvider = prior.activeProvider;
+            throw error;
+        }
     }
     // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1 (v158) — lazy + cached
     // factory for the cavity interior voxel grid. Same pattern as
@@ -28125,6 +28241,7 @@ class WallState {
         const mesh = this.meshFor();
         if (!mesh || !(mesh.numInterior > 0))
             return null;
+        this._requireProductionCavitySurfaceProvider();
         return CavitySurfaceAnchors.fromWallMeshVertex(mesh, r * N + c);
     }
     // PHASE-4-CAVITY-MESH (PROPOSAL-CAVITY-MESH §13 Tranche 4b) —
@@ -28147,6 +28264,7 @@ class WallState {
         // Always enter through meshFor(): it checks the monotonic geometry revision
         // before physical remap and chemistry projection use the mesh.
         const mesh = this.meshFor();
+        const requiredProductionProvider = this._requireProductionCavitySurfaceProvider();
         if (a.schema === CavitySurfaceAnchors.SCHEMA && !Object.isFrozen(a)) {
             // Saved JSON is mutable on load. Seal the accepted birth receipt in
             // place before object identity is admitted to the derived remap cache.
@@ -28164,7 +28282,8 @@ class WallState {
         };
         if (a.schema === CavitySurfaceAnchors.SCHEMA) {
             if (a.source?.kind === 'wall-mesh') {
-                const active = this._activeCavitySurfaceProviderForCurrentGeometry();
+                const active = requiredProductionProvider
+                    || this._activeCavitySurfaceProviderForCurrentGeometry();
                 const field = active?.field;
                 const surface = active?.surface;
                 if (active?.receipt?.kind === 'cavity-field'
@@ -28181,7 +28300,8 @@ class WallState {
                 }
                 return cachedRemap(`wall:${mesh.geometry_sig}`, () => CavitySurfaceAnchors.remapToWallMesh(a, mesh));
             }
-            const active = this._activeCavitySurfaceProviderForCurrentGeometry();
+            const active = requiredProductionProvider
+                || this._activeCavitySurfaceProviderForCurrentGeometry();
             const field = active?.field;
             const surface = active?.surface;
             if (!active || active.receipt?.kind !== 'cavity-field') {
@@ -28208,7 +28328,11 @@ class WallState {
             // the canonical WallMesh; chemistry is never used as the remap shortcut.
             return cachedRemap(`fallback:${mesh.geometry_sig}`, () => CavitySurfaceAnchors.remapToWallMesh(a, mesh));
         }
-        return CavitySurfaceAnchors.upgradeLegacy(a, mesh);
+        const upgraded = CavitySurfaceAnchors.upgradeLegacy(a, mesh);
+        if (requiredProductionProvider?.receipt?.kind === 'cavity-field') {
+            return cachedRemap(`field:${requiredProductionProvider.surface.sig}|chem:${mesh.geometry_sig}`, () => CavitySurfaceAnchors.remapToMarchingCubes(upgraded, requiredProductionProvider.field, requiredProductionProvider.surface, mesh));
+        }
+        return upgraded;
     }
     // The boundary transport lattice is intentionally a projection of the
     // physical surface anchor. These helpers keep chemistry consumers from
@@ -28241,6 +28365,7 @@ class WallState {
         return CavitySurfaceAnchors.key(this._resolveAnchor(crystal));
     }
     surfaceAnchorFromMarchingCubes(triangleIndex, barycentric, opts = {}) {
+        this._requireProductionCavitySurfaceProvider();
         const resolution = opts.resolution == null ? 48 : opts.resolution;
         const field = this.cavityFieldFor({ resolution, ledgerCursor: opts.ledgerCursor });
         const surface = this.cavitySurfaceFor({
@@ -28252,6 +28377,7 @@ class WallState {
         return CavitySurfaceAnchors.fromMarchingCubes(field, surface, mesh, triangleIndex, barycentric);
     }
     remapSurfaceAnchorToMarchingCubes(anchor, opts = {}) {
+        this._requireProductionCavitySurfaceProvider();
         const resolution = opts.resolution == null ? 48 : opts.resolution;
         const field = this.cavityFieldFor({ resolution, ledgerCursor: opts.ledgerCursor });
         const surface = this.cavitySurfaceFor({
@@ -28260,11 +28386,18 @@ class WallState {
             throwOnFailure: false,
         });
         const mesh = this._mesh || this.meshFor(opts.sim);
-        if (!field || !surface)
+        if (!field || !surface) {
+            if (this._cavityProductionAuthorityContract) {
+                throw new Error('production cavity surface remap cannot fall back to WallMesh');
+            }
             return CavitySurfaceAnchors.remapToWallMesh(anchor, mesh);
+        }
         return CavitySurfaceAnchors.remapToMarchingCubes(anchor, field, surface, mesh);
     }
     remapSurfaceAnchorToWallMesh(anchor, sim) {
+        if (this._cavityProductionAuthorityContract) {
+            throw new Error('production cavity physical anchors cannot switch to WallMesh');
+        }
         return CavitySurfaceAnchors.remapToWallMesh(anchor, this.meshFor(sim));
     }
     surfaceForCrystal(crystal, sim) {
@@ -28621,7 +28754,8 @@ class WallState {
 //
 //   carbonate-host formula extent (mmol/kg solvent reference)
 //     <-> crystalline standard-state solid volume (mm3/kg solvent reference)
-//     <-> exact enclosed-volume change of the canonical closed WallMesh
+//     <-> exact enclosed-volume change of the selected immutable geometry
+//         authority (legacy closed WallMesh or preflighted Cartesian surface)
 //
 // This is not a sealed-cavity fluid-mass claim and not full chemistry closure.
 // It does not yet close pressure/temperature-dependent mineral volume,
@@ -28677,7 +28811,8 @@ function cavityFormulaExtentVolumeMm3PerKg(formulaExtentMmolKg, molarVolume) {
 class CavityEvolutionLedger {
     constructor(opts = {}) {
         this.schema = CAVITY_EVOLUTION_SCHEMA;
-        this.model = 'canonical-wallmesh-volume-v1';
+        this.model = opts.model === CAVITY_PRODUCTION_VOLUME_MODEL
+            ? CAVITY_PRODUCTION_VOLUME_MODEL : 'canonical-wallmesh-volume-v1';
         this.shape_identity = String(opts.shape_identity || 'unidentified-shape');
         this.tessellation_identity = String(opts.tessellation_identity || 'unidentified-tessellation');
         this.baseline_kind = opts.baseline_kind === 'legacy_import' ? 'legacy_import' : 'authored_initial';
@@ -28775,6 +28910,7 @@ class CavityEvolutionLedger {
             baseline_depths_mm: depths,
             baseline_kind: opts.legacy_import ? 'legacy_import' : 'authored_initial',
             baseline_disclosure: opts.baseline_disclosure,
+            model: opts.model,
             entries: opts.entries || [],
         });
     }
@@ -28798,6 +28934,16 @@ class CavityEvolutionLedger {
             throw new RangeError('cavity evolution cursor is out of range');
         }
         return this._signatures[cursor];
+    }
+    _depthProjectionDigest(depths) {
+        return 'cavity-depth-projection:v1:' + CavityEvolutionLedger.digest({
+            model: CAVITY_PRODUCTION_VOLUME_MODEL,
+            identity: {
+                shape: this.shape_identity,
+                tessellation: this.tessellation_identity,
+            },
+            depths_mm: Array.from(depths, Number),
+        });
     }
     _validateEntry(entry) {
         const copy = CavityEvolutionLedger._clone(entry);
@@ -28877,6 +29023,7 @@ class CavityEvolutionLedger {
             throw new RangeError('cavity evolution entry requires ordered vertex deltas');
         }
         const priorDepths = this.materialize();
+        const nextDepths = new Float64Array(priorDepths);
         let priorIndex = -1;
         for (const delta of copy.vertex_deltas) {
             if (!Number.isInteger(delta.vertex_index) || delta.vertex_index <= priorIndex
@@ -28895,10 +29042,27 @@ class CavityEvolutionLedger {
             if (Math.abs(priorDepths[delta.vertex_index] - delta.old_depth_mm) > 1e-10) {
                 throw new RangeError('cavity evolution ledger has a broken depth chain');
             }
+            nextDepths[delta.vertex_index] = delta.new_depth_mm;
         }
         if (!copy.exposure || !copy.exposure.digest || !copy.fluid_receipt
             || !copy.host_inventory_receipt || !copy.scientific_scope) {
             throw new RangeError('cavity evolution entry is missing authority receipts');
+        }
+        if (this.model === CAVITY_PRODUCTION_VOLUME_MODEL) {
+            const authority = copy.geometry_authority;
+            if (!authority) {
+                throw new RangeError('Cartesian cavity evolution entry is missing its geometry authority receipt');
+            }
+            CavityProductionAuthority.validateAuthorityReceipt(authority, {
+                entry: copy,
+                previousAuthority: this._entries.length
+                    ? this._entries[this._entries.length - 1].geometry_authority : null,
+                expectedOldDepthDigest: this._depthProjectionDigest(priorDepths),
+                expectedNewDepthDigest: this._depthProjectionDigest(nextDepths),
+            });
+        }
+        else if (copy.geometry_authority != null) {
+            throw new RangeError('WallMesh evolution entry cannot claim Cartesian geometry authority');
         }
         return copy;
     }
@@ -28961,6 +29125,12 @@ class CavityEvolutionLedger {
             throw new RangeError('cavity erosion requires canonical mesh-sized vertex weights');
         }
         this.assertProjection(wall);
+        if (this.model === CAVITY_PRODUCTION_VOLUME_MODEL) {
+            return CavityProductionAuthority.previewErosion(wall, weightsInput, {
+                target_volume_delta_mm3_per_kg: target,
+                contract: wall && wall._cavityProductionAuthorityContract,
+            });
+        }
         const weights = new Float64Array(mesh.numInterior);
         let maxWeight = 0;
         for (let i = 0; i < weights.length; i++) {
@@ -30756,7 +30926,33 @@ class CavityScalarField {
             ]]);
         return `${frameHash}${CavityScalarField._float32Hash(values)}`;
     }
-    static signatureFor(wall, resolution = 48, ledgerCursor) {
+    static _validatedFrame(frame, resolution) {
+        if (frame == null)
+            return null;
+        const origin = Array.isArray(frame.origin_mm) ? frame.origin_mm.map(Number) : null;
+        const spacing = Number(frame.spacing_mm);
+        const dimensions = Array.isArray(frame.dimensions) ? frame.dimensions.map(Number) : null;
+        if (!origin || origin.length !== 3 || !origin.every(Number.isFinite)
+            || !(spacing > 0) || !Number.isFinite(spacing)
+            || !dimensions || dimensions.length !== 3
+            || dimensions.some(value => !Number.isInteger(value) || value !== resolution)) {
+            throw new RangeError('cavity field frame must pin finite cubic origin, spacing, and resolution');
+        }
+        return Object.freeze({
+            origin_mm: Object.freeze(origin.slice()),
+            spacing_mm: spacing,
+            dimensions: Object.freeze(dimensions.slice()),
+        });
+    }
+    static _frameSignature(frame, resolution) {
+        const normalized = CavityScalarField._validatedFrame(frame, resolution);
+        return normalized
+            ? CavityScalarField._sourceHash([[
+                    ...normalized.origin_mm, normalized.spacing_mm, ...normalized.dimensions,
+                ]])
+            : 'adaptive';
+    }
+    static signatureFor(wall, resolution = 48, ledgerCursor, frame) {
         const bubbles = CavityScalarField._validatedBubbles(wall && wall.bubbles);
         const shape = CavityScalarField.shapeFor(wall);
         const n = CavityScalarField._resolution(resolution);
@@ -30773,7 +30969,7 @@ class CavityScalarField {
             ledger.assertProjection(wall, cursor);
             evolutionIdentity = ledger.signatureAt(cursor);
         }
-        return `cavity-field:v3|${n}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${shapeHash}|e:${evolutionIdentity}`;
+        return `cavity-field:v5|${n}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${shapeHash}|e:${evolutionIdentity}|f:${CavityScalarField._frameSignature(frame, n)}`;
     }
     static fromWallState(wall, opts = {}) {
         if (!wall)
@@ -30794,8 +30990,9 @@ class CavityScalarField {
                 signature: ledger.signatureAt(cursor),
             };
         }
-        const sig = CavityScalarField.signatureFor(wall, resolution, cursor);
-        return CavityScalarField.fromBubbles(bubbles, { resolution, sig, shape, evolution });
+        const frame = CavityScalarField._validatedFrame(opts.frame, resolution);
+        const sig = CavityScalarField.signatureFor(wall, resolution, cursor, frame);
+        return CavityScalarField.fromBubbles(bubbles, { resolution, sig, shape, evolution, frame });
     }
     static fromBubbles(input, opts = {}) {
         const started = CavityScalarField._nowMs();
@@ -30803,6 +31000,7 @@ class CavityScalarField {
         const shape = CavityScalarField._validatedShape(opts.shape || {});
         const evolution = opts.evolution || null;
         const resolution = CavityScalarField._resolution(opts.resolution);
+        const fixedFrame = CavityScalarField._validatedFrame(opts.frame, resolution);
         const rawMin = [Infinity, Infinity, Infinity];
         const rawMax = [-Infinity, -Infinity, -Infinity];
         for (const [cx, cy, cz, radius] of bubbles) {
@@ -30836,31 +31034,39 @@ class CavityScalarField {
             fieldMin = fieldMin.map(value => value - paddingDepth);
             fieldMax = fieldMax.map(value => value + paddingDepth);
         }
-        const extent = [
-            fieldMax[0] - fieldMin[0],
-            fieldMax[1] - fieldMin[1],
-            fieldMax[2] - fieldMin[2],
-        ];
-        const largestExtent = Math.max(extent[0], extent[1], extent[2]);
-        if (!(largestExtent > 0) || !Number.isFinite(largestExtent)) {
-            throw new RangeError('cavity bubble bounds must have positive finite extent');
+        let spacingMm;
+        let origin;
+        if (fixedFrame) {
+            spacingMm = fixedFrame.spacing_mm;
+            origin = fixedFrame.origin_mm.slice();
         }
-        // Cubic physical bounds make spacingMm one honest value on every axis.
-        // Iterate the padding/spacing relation because the required padding is
-        // max(2*spacing, 5% of the largest bubble-union extent).
-        let padding = 0.05 * largestExtent;
-        let spacingMm = (largestExtent + 2 * padding) / (resolution - 1);
-        for (let i = 0; i < 4; i++) {
-            padding = Math.max(2 * spacingMm, 0.05 * largestExtent);
+        else {
+            const extent = [
+                fieldMax[0] - fieldMin[0],
+                fieldMax[1] - fieldMin[1],
+                fieldMax[2] - fieldMin[2],
+            ];
+            const largestExtent = Math.max(extent[0], extent[1], extent[2]);
+            if (!(largestExtent > 0) || !Number.isFinite(largestExtent)) {
+                throw new RangeError('cavity bubble bounds must have positive finite extent');
+            }
+            // Diagnostic/adaptive fields retain the historic moving envelope. A
+            // production authority instead supplies `fixedFrame`, captured before
+            // time begins, so erosion cannot resample untouched geology.
+            let padding = 0.05 * largestExtent;
             spacingMm = (largestExtent + 2 * padding) / (resolution - 1);
+            for (let i = 0; i < 4; i++) {
+                padding = Math.max(2 * spacingMm, 0.05 * largestExtent);
+                spacingMm = (largestExtent + 2 * padding) / (resolution - 1);
+            }
+            const center = [
+                (fieldMin[0] + fieldMax[0]) * 0.5,
+                (fieldMin[1] + fieldMax[1]) * 0.5,
+                (fieldMin[2] + fieldMax[2]) * 0.5,
+            ];
+            const half = spacingMm * (resolution - 1) * 0.5;
+            origin = [center[0] - half, center[1] - half, center[2] - half];
         }
-        const center = [
-            (fieldMin[0] + fieldMax[0]) * 0.5,
-            (fieldMin[1] + fieldMax[1]) * 0.5,
-            (fieldMin[2] + fieldMax[2]) * 0.5,
-        ];
-        const half = spacingMm * (resolution - 1) * 0.5;
-        const origin = [center[0] - half, center[1] - half, center[2] - half];
         const values = new Float32Array(resolution * resolution * resolution);
         let offset = 0;
         for (let z = 0; z < resolution; z++) {
@@ -30887,7 +31093,7 @@ class CavityScalarField {
             sourceBubbles: bubbles,
             sourceShape: shape,
             sourceEvolution: evolution,
-            sig: opts.sig || `cavity-field:v3|${resolution}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${CavityScalarField._sourceHash([CavityScalarField._shapeNumbers(shape)])}|e:${evolution ? evolution.signature : 'none'}`,
+            sig: opts.sig || `cavity-field:v5|${resolution}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${CavityScalarField._sourceHash([CavityScalarField._shapeNumbers(shape)])}|e:${evolution ? evolution.signature : 'none'}|f:${CavityScalarField._frameSignature(fixedFrame, resolution)}`,
         });
         field.metrics.field_build_ms = CavityScalarField._nowMs() - started;
         if (!field.hasNegativeBorder(0)) {
@@ -30932,7 +31138,7 @@ class CavityScalarField {
     surfaceSignature(isovalue = 0) {
         if (!Number.isFinite(isovalue))
             throw new TypeError('cavity surface isovalue must be finite');
-        return `${this.sig}|snapshot:${this.snapshotDigest}|mc-face-decider-orient-probe:v3|iso:${isovalue}`;
+        return `${this.sig}|snapshot:${this.snapshotDigest}|freudenthal-tetra-plane-auth:v2|iso:${isovalue}`;
     }
     // One CPU/GPU mapping contract for the Tranche-3 clip texture. Data3DTexture
     // stores width=x, height=y, depth=z with x as the fastest-varying sample,
@@ -30956,7 +31162,7 @@ class CavityScalarField {
         ];
         const freezeTuple = (tuple) => Object.freeze(tuple.slice());
         return Object.freeze({
-            schema: 'cavity-field-texture-contract-v1',
+            schema: 'cavity-field-texture-contract-v2',
             field_signature: this.sig,
             value_digest: this.valueDigest,
             snapshot_digest: this.snapshotDigest,
@@ -30969,6 +31175,7 @@ class CavityScalarField {
             world_to_texture_scale: freezeTuple(scale),
             world_to_texture_bias: freezeTuple(bias),
             data_order: 'x-fastest, then y, then z',
+            interpolation: 'freudenthal-piecewise-linear-v1',
             sign_convention: 'positive-void, zero-wall, negative-rock',
         });
     }
@@ -31025,18 +31232,19 @@ class CavityScalarField {
         const tx = gx - x0;
         const ty = gy - y0;
         const tz = gz - z0;
-        const lerp = (a, b, t) => a + (b - a) * t;
+        const coordinates = [tx, ty, tz];
+        const axes = [0, 1, 2].sort((a, b) => coordinates[b] - coordinates[a] || a - b);
+        const p = axes[0], q = axes[1], r = axes[2];
+        const pCorner = [x0, y0, z0];
+        pCorner[p]++;
+        const pqCorner = pCorner.slice();
+        pqCorner[q]++;
         const c000 = this.valueAt(x0, y0, z0);
-        const c100 = this.valueAt(x0 + 1, y0, z0);
-        const c010 = this.valueAt(x0, y0 + 1, z0);
-        const c110 = this.valueAt(x0 + 1, y0 + 1, z0);
-        const c001 = this.valueAt(x0, y0, z0 + 1);
-        const c101 = this.valueAt(x0 + 1, y0, z0 + 1);
-        const c011 = this.valueAt(x0, y0 + 1, z0 + 1);
+        const cp = this.valueAt(pCorner[0], pCorner[1], pCorner[2]);
+        const cpq = this.valueAt(pqCorner[0], pqCorner[1], pqCorner[2]);
         const c111 = this.valueAt(x0 + 1, y0 + 1, z0 + 1);
-        const z0Value = lerp(lerp(c000, c100, tx), lerp(c010, c110, tx), ty);
-        const z1Value = lerp(lerp(c001, c101, tx), lerp(c011, c111, tx), ty);
-        return lerp(z0Value, z1Value, tz);
+        const tp = coordinates[p], tq = coordinates[q], tr = coordinates[r];
+        return c000 * (1 - tp) + cp * (tp - tq) + cpq * (tq - tr) + c111 * tr;
     }
     gradientWorld(x, y, z) {
         const h = this.spacingMm * 0.5;
@@ -31134,12 +31342,12 @@ class CavityFieldTextureUpload {
 // ============================================================
 // js/23b-geometry-marching-cubes.ts — indexed cavity extraction
 // ============================================================
-// A deterministic, indexed Marching Cubes extractor. Instead of a classic
-// 256-row triangle table, each 8-bit cube case is assembled from its six
-// Marching-Squares face contours. Ambiguous four-crossing faces use the
-// bilinear asymptotic decider, shared by both cells touching that face; this
-// prevents face cracks while keeping global grid-edge vertices deduplicated.
-// MC33-style interior ambiguity resolution remains a later production gate.
+// A deterministic, indexed Cartesian isosurface extractor. Every cube uses the
+// same Freudenthal/Kuhn six-tetrahedron decomposition around its 0->6 body
+// diagonal. The induced diagonal on each shared cube face is therefore exactly
+// the same in both neighboring cubes. Tetrahedra have no face or interior
+// topology ambiguity, so this construction is closed and crack-free without a
+// 256-row case table or the unresolved MC33 cases in the former prototype.
 class MarchingCubesExtractor {
     // TypedArray payloads cannot be frozen in JavaScript. Keep their owned targets
     // private and expose read-only proxies: numeric writes and mutating methods
@@ -31263,6 +31471,55 @@ class MarchingCubesExtractor {
             });
         }
     }
+    // Exact enclosed volume of the authenticated indexed surface.  This is the
+    // same oriented-tetrahedron integral used by WallMesh, applied to the actual
+    // Cartesian extraction that clipping, anchors, replay, and rendering consume.
+    // Keeping the calculation here prevents a future promotion from conserving a
+    // different shell than the one shown to the player.
+    static closedVolumeMm3(surface) {
+        MarchingCubesExtractor.verifyBuffers(surface);
+        const positions = surface.positions;
+        const indices = surface.indices;
+        let signedSixVolume = 0;
+        for (let offset = 0; offset + 2 < indices.length; offset += 3) {
+            const ia = indices[offset] * 3;
+            const ib = indices[offset + 1] * 3;
+            const ic = indices[offset + 2] * 3;
+            const ax = positions[ia], ay = positions[ia + 1], az = positions[ia + 2];
+            const bx = positions[ib], by = positions[ib + 1], bz = positions[ib + 2];
+            const cx = positions[ic], cy = positions[ic + 1], cz = positions[ic + 2];
+            signedSixVolume += ax * (by * cz - bz * cy)
+                + ay * (bz * cx - bx * cz)
+                + az * (bx * cy - by * cx);
+        }
+        const volume = Math.abs(signedSixVolume) / 6;
+        if (!(volume > 0) || !Number.isFinite(volume)) {
+            throw new RangeError('Marching Cubes surface volume is non-positive or non-finite');
+        }
+        return volume;
+    }
+    static surfaceAreaMm2(surface) {
+        MarchingCubesExtractor.verifyBuffers(surface);
+        const positions = surface.positions;
+        const indices = surface.indices;
+        let area = 0;
+        for (let offset = 0; offset + 2 < indices.length; offset += 3) {
+            const ia = indices[offset] * 3;
+            const ib = indices[offset + 1] * 3;
+            const ic = indices[offset + 2] * 3;
+            const abx = positions[ib] - positions[ia];
+            const aby = positions[ib + 1] - positions[ia + 1];
+            const abz = positions[ib + 2] - positions[ia + 2];
+            const acx = positions[ic] - positions[ia];
+            const acy = positions[ic + 1] - positions[ia + 1];
+            const acz = positions[ic + 2] - positions[ia + 2];
+            area += 0.5 * Math.hypot(aby * acz - abz * acy, abz * acx - abx * acz, abx * acy - aby * acx);
+        }
+        if (!(area > 0) || !Number.isFinite(area)) {
+            throw new RangeError('Marching Cubes surface area is non-positive or non-finite');
+        }
+        return area;
+    }
     static { this.CORNERS = [
         [0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
         [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1],
@@ -31280,6 +31537,13 @@ class MarchingCubesExtractor {
         { corners: [3, 2, 6, 7], edges: [2, 10, 6, 11] },
         { corners: [0, 4, 7, 3], edges: [8, 7, 11, 3] },
         { corners: [1, 2, 6, 5], edges: [1, 10, 5, 9] },
+    ]; }
+    // Globally compatible Freudenthal triangulation of a Cartesian cube. The
+    // ordering is cyclic around the 0->6 body diagonal; neighboring cubes induce
+    // identical diagonals on their common x, y, and z faces.
+    static { this.TETRAHEDRA = [
+        [0, 1, 2, 6], [0, 2, 3, 6], [0, 3, 7, 6],
+        [0, 7, 4, 6], [0, 4, 5, 6], [0, 5, 1, 6],
     ]; }
     static _edgeKey(cellX, cellY, cellZ, edgeIndex) {
         const pair = MarchingCubesExtractor.EDGES[edgeIndex];
@@ -31334,8 +31598,8 @@ class MarchingCubesExtractor {
             return [0xE8 / 255, 0x78 / 255, 0x2C / 255];
         return [0xD2 / 255, 0x69 / 255, 0x1E / 255];
     }
-    // Quantifies the geometric discrepancy between each planar MC triangle and
-    // the trilinearly interpolated field that a 3-D clip texture will sample.
+    // Quantifies the geometric discrepancy between each planar extracted
+    // triangle and the same Freudenthal piecewise-linear field used for clipping.
     // This is deliberately named a sampled normal-distance metric, not an exact
     // Hausdorff distance: a finite barycentric lattice cannot certify extrema it
     // did not sample. The receipt records its density so evidence cannot silently
@@ -31358,7 +31622,11 @@ class MarchingCubesExtractor {
             throw new TypeError('surface agreement isovalue must be finite');
         const positions = surface.positions;
         const indices = surface.indices;
-        const zeroTolerance = Math.max(1e-8, field.spacingMm * 1e-7);
+        // Positions are intentionally Float32 because these exact bytes feed the
+        // renderer, replay, and receipts. Re-sampling rounded world coordinates can
+        // leave a few scalar micrometres of residual even when the unrounded
+        // tetrahedral point is algebraically on the zero plane.
+        const zeroTolerance = Math.max(1e-6, field.spacingMm * 2e-5);
         const maxSearchDistance = field.spacingMm * 1.5;
         const searchSteps = 24;
         let sampleCount = 0;
@@ -31462,6 +31730,7 @@ class MarchingCubesExtractor {
             surface_signature: surface.sig,
             isovalue,
             barycentric_subdivisions: subdivisions,
+            numerical_zero_tolerance: zeroTolerance,
             sample_count: sampleCount,
             unresolved_sample_count: unresolvedSampleCount,
             max_field_residual: maxFieldResidual,
@@ -31482,26 +31751,40 @@ class MarchingCubesExtractor {
         const uvs = [];
         const indices = [];
         const vertexByGridEdge = new Map();
+        const gridVertexCount = field.sizeX * field.sizeY * field.sizeZ;
         const boundsCenter = [
             (field.bounds.min[0] + field.bounds.max[0]) * 0.5,
             (field.bounds.min[1] + field.bounds.max[1]) * 0.5,
             (field.bounds.min[2] + field.bounds.max[2]) * 0.5,
         ];
-        const vertexForEdge = (cellX, cellY, cellZ, edgeIndex, cornerValues) => {
-            const key = MarchingCubesExtractor._edgeKey(cellX, cellY, cellZ, edgeIndex);
+        const vertexForSegment = (cellX, cellY, cellZ, cornerA, cornerB, cornerValues) => {
+            const ca = MarchingCubesExtractor.CORNERS[cornerA];
+            const cb = MarchingCubesExtractor.CORNERS[cornerB];
+            const ax = cellX + ca[0], ay = cellY + ca[1], az = cellZ + ca[2];
+            const bx = cellX + cb[0], by = cellY + cb[1], bz = cellZ + cb[2];
+            const gridA = field.index(ax, ay, az);
+            const gridB = field.index(bx, by, bz);
+            const valueA = cornerValues[cornerA];
+            const valueB = cornerValues[cornerB];
+            // A root exactly on a grid sample belongs to every incident segment.
+            // Canonicalize that endpoint as one vertex rather than minting duplicate
+            // segment vertices that would make an otherwise closed surface non-manifold.
+            const endpointRoot = valueA === isovalue ? gridA : valueB === isovalue ? gridB : -1;
+            const lowGrid = Math.min(gridA, gridB);
+            const highGrid = Math.max(gridA, gridB);
+            const key = endpointRoot >= 0 ? endpointRoot
+                : gridVertexCount + lowGrid * gridVertexCount + highGrid;
             const cached = vertexByGridEdge.get(key);
             if (cached != null)
                 return cached;
-            const pair = MarchingCubesExtractor.EDGES[edgeIndex];
-            const ca = MarchingCubesExtractor.CORNERS[pair[0]];
-            const cb = MarchingCubesExtractor.CORNERS[pair[1]];
-            const valueA = cornerValues[pair[0]];
-            const valueB = cornerValues[pair[1]];
             const denominator = valueB - valueA;
             if (!Number.isFinite(denominator) || denominator === 0) {
-                throw new Error(`invalid Marching Cubes edge interpolation on ${key}`);
+                throw new Error(`invalid Cartesian isosurface interpolation on ${key}`);
             }
-            const t = Math.max(0, Math.min(1, (isovalue - valueA) / denominator));
+            const t = endpointRoot === gridA ? 0 : endpointRoot === gridB ? 1
+                : Math.max(0, Math.min(1, (isovalue - valueA) / denominator));
+            // Every segment is an edge of one Freudenthal tetrahedron. The field is
+            // linear on that tetrahedron, so this secant is the authoritative root.
             const gx = cellX + ca[0] + (cb[0] - ca[0]) * t;
             const gy = cellY + ca[1] + (cb[1] - ca[1]) * t;
             const gz = cellZ + ca[2] + (cb[2] - ca[2]) * t;
@@ -31509,22 +31792,8 @@ class MarchingCubesExtractor {
             const wy = field.origin[1] + gy * field.spacingMm;
             const wz = field.origin[2] + gz * field.spacingMm;
             if (![wx, wy, wz].every(Number.isFinite)) {
-                throw new Error(`non-finite Marching Cubes vertex on ${key}`);
+                throw new Error(`non-finite Cartesian isosurface vertex on ${key}`);
             }
-            const gradient = field.gradientWorld(wx, wy, wz);
-            let nx = -gradient[0], ny = -gradient[1], nz = -gradient[2];
-            const length = Math.hypot(nx, ny, nz);
-            // A scalar critical point has no uniquely defined surface normal (for
-            // example, the touching point of two tangent equal spheres). Do not use
-            // a radial guess: reject this shadow surface until an ambiguity-aware
-            // production extractor handles it.
-            if (!(length > 1e-12) || !Number.isFinite(length)) {
-                throw new Error(`undefined Marching Cubes normal at scalar critical point on ${key}`);
-            }
-            nx /= length;
-            ny /= length;
-            nz /= length;
-            const color = MarchingCubesExtractor._surfaceColor(ny);
             const dx = wx - boundsCenter[0], dy = wy - boundsCenter[1], dz = wz - boundsCenter[2];
             const radius = Math.hypot(dx, dy, dz) || 1;
             let u = Math.atan2(dz, dx) / (2 * Math.PI);
@@ -31533,8 +31802,8 @@ class MarchingCubesExtractor {
             const v = Math.acos(Math.max(-1, Math.min(1, -dy / radius))) / Math.PI;
             const index = positions.length / 3;
             positions.push(wx, wy, wz);
-            normals.push(nx, ny, nz);
-            colors.push(color[0], color[1], color[2]);
+            normals.push(0, 0, 0);
+            colors.push(0, 0, 0);
             uvs.push(u, v);
             vertexByGridEdge.set(key, index);
             return index;
@@ -31551,104 +31820,125 @@ class MarchingCubesExtractor {
             const crossY = abz * acx - abx * acz;
             const crossZ = abx * acy - aby * acx;
             const area2 = Math.hypot(crossX, crossY, crossZ);
-            if (!(area2 > Math.max(1e-12, field.spacingMm * field.spacingMm * 1e-10)))
+            // Very small triangles near a symbolically perturbed zero-grid sample
+            // remain topologically necessary. An absolute 1e-12/relative 1e-10 cut
+            // opened pinholes at large world scales. Reject only facets that are
+            // indistinguishable from zero at double precision; Float32 collapse is
+            // independently caught by the final face and manifold verification.
+            if (!(area2 > Number.EPSILON * field.spacingMm * field.spacingMm * 64))
                 return;
-            const nx = normals[a * 3] + normals[b * 3] + normals[c * 3];
-            const ny = normals[a * 3 + 1] + normals[b * 3 + 1] + normals[c * 3 + 1];
-            const nz = normals[a * 3 + 2] + normals[b * 3 + 2] + normals[c * 3 + 2];
-            if (crossX * nx + crossY * ny + crossZ * nz < 0)
-                indices.push(a, c, b);
-            else
-                indices.push(a, b, c);
+            indices.push(a, b, c);
         };
         for (let z = 0; z < field.sizeZ - 1; z++) {
             for (let y = 0; y < field.sizeY - 1; y++) {
                 for (let x = 0; x < field.sizeX - 1; x++) {
                     const cornerValues = MarchingCubesExtractor.CORNERS.map((corner) => field.valueAt(x + corner[0], y + corner[1], z + corner[2]));
-                    let cubeCase = 0;
-                    for (let corner = 0; corner < 8; corner++) {
-                        if (cornerValues[corner] > isovalue)
-                            cubeCase |= (1 << corner);
-                    }
-                    if (cubeCase === 0 || cubeCase === 255)
+                    // Simulation of simplicity: an authored/sample value can land
+                    // exactly on the isovalue. Treat it as a tiny positive value in every
+                    // incident tetrahedron for classification only, so topology never
+                    // depends on traversal order; positions remain on the true zero set.
+                    const topologyValues = cornerValues.map(value => value === isovalue
+                        ? isovalue + field.spacingMm * 1e-5 : value);
+                    const allInside = topologyValues.every(value => value > isovalue);
+                    const allOutside = topologyValues.every(value => value <= isovalue);
+                    if (allInside || allOutside)
                         continue;
-                    const adjacency = new Map();
-                    for (const face of MarchingCubesExtractor.FACES) {
-                        for (const pair of MarchingCubesExtractor._facePairs(face, cornerValues, isovalue)) {
-                            MarchingCubesExtractor._connect(adjacency, pair[0], pair[1]);
-                        }
-                    }
-                    for (const [edge, neighbors] of adjacency) {
-                        if (neighbors.length !== 2) {
-                            throw new Error(`Marching Cubes case ${cubeCase} produced degree ${neighbors.length} at edge ${edge}`);
-                        }
-                    }
-                    const visited = new Set();
-                    const starts = Array.from(adjacency.keys()).sort((a, b) => a - b);
-                    for (const start of starts) {
-                        if (visited.has(start))
+                    for (const tetrahedron of MarchingCubesExtractor.TETRAHEDRA) {
+                        const inside = tetrahedron.filter(corner => topologyValues[corner] > isovalue);
+                        if (inside.length === 0 || inside.length === 4)
                             continue;
-                        const loop = [];
-                        let previous = -1;
-                        let current = start;
-                        for (let guard = 0; guard < 13; guard++) {
-                            if (current === start && loop.length > 0)
-                                break;
-                            if (visited.has(current)) {
-                                throw new Error(`Marching Cubes case ${cubeCase} contains a non-cyclic contour`);
-                            }
-                            visited.add(current);
-                            loop.push(current);
-                            const neighbors = adjacency.get(current);
-                            const next = neighbors[0] === previous ? neighbors[1] : neighbors[0];
-                            previous = current;
-                            current = next;
+                        const outside = tetrahedron.filter(corner => topologyValues[corner] <= isovalue);
+                        const vertex = (a, b) => {
+                            // Simulation of simplicity changes only the symbolic sign of an
+                            // exact-zero sample. Geometry remains on the original,
+                            // authenticated field bytes consumed by CPU and GPU clipping.
+                            return vertexForSegment(x, y, z, a, b, cornerValues);
+                        };
+                        if (inside.length === 1) {
+                            const center = inside[0];
+                            addTriangle(vertex(center, outside[0]), vertex(center, outside[1]), vertex(center, outside[2]));
                         }
-                        if (current !== start || loop.length < 3) {
-                            throw new Error(`Marching Cubes case ${cubeCase} failed to close a face contour`);
+                        else if (inside.length === 3) {
+                            const center = outside[0];
+                            addTriangle(vertex(center, inside[0]), vertex(center, inside[1]), vertex(center, inside[2]));
                         }
-                        const polygon = loop.map((edge) => vertexForEdge(x, y, z, edge, cornerValues));
-                        for (let i = 1; i < polygon.length - 1; i++) {
-                            addTriangle(polygon[0], polygon[i], polygon[i + 1]);
+                        else {
+                            // The four cut edges form the cycle a-b-d-c. They are coplanar in
+                            // the shared piecewise-linear field; stable a-d splitting is
+                            // deterministic and requires no scalar or gradient probe.
+                            const a = vertex(inside[0], outside[0]);
+                            const b = vertex(inside[0], outside[1]);
+                            const c = vertex(inside[1], outside[0]);
+                            const d = vertex(inside[1], outside[1]);
+                            addTriangle(a, b, d);
+                            addTriangle(a, d, c);
                         }
                     }
                 }
             }
         }
-        // A complete rock-negative border promises a closed cavity surface. The
-        // face decider prevents inter-cell cracks, but it does not solve every
-        // trilinear interior ambiguity. Fail closed if fan triangulation creates
-        // a non-2-manifold edge; MC33 remains the promotion path for such cases.
+        // A complete rock-negative border promises a closed cavity surface. Verify
+        // the promise independently of the extractor construction and fail closed
+        // on any future regression in face compatibility or tetra triangulation.
         if (field.hasNegativeBorder(isovalue)) {
             const triangleCount = indices.length / 3;
+            const vertexCount = positions.length / 3;
+            if (vertexCount * vertexCount > Number.MAX_SAFE_INTEGER) {
+                throw new RangeError('Cartesian surface is too large for exact numeric edge authentication');
+            }
+            // First edge use is encoded as signed (triangle+1); zero means the edge
+            // already received its required second use. Every manifold triangle has
+            // exactly three fixed neighbor slots, avoiding per-edge strings, arrays,
+            // and objects in this hot verification pass.
             const edgeUses = new Map();
+            const neighborTriangles = new Int32Array(triangleCount * 3);
+            neighborTriangles.fill(-1);
+            const neighborInverts = new Uint8Array(triangleCount * 3);
+            const neighborCounts = new Uint8Array(triangleCount);
+            const connect = (a, b, invert) => {
+                const aSlot = neighborCounts[a]++;
+                const bSlot = neighborCounts[b]++;
+                if (aSlot >= 3 || bSlot >= 3) {
+                    throw new Error('non-manifold Cartesian surface triangle has more than three neighbors');
+                }
+                neighborTriangles[a * 3 + aSlot] = b;
+                neighborTriangles[b * 3 + bSlot] = a;
+                neighborInverts[a * 3 + aSlot] = invert ? 1 : 0;
+                neighborInverts[b * 3 + bSlot] = invert ? 1 : 0;
+            };
             for (let i = 0; i < indices.length; i += 3) {
                 const triangle = i / 3;
-                const triangleEdges = [
-                    [indices[i], indices[i + 1]],
-                    [indices[i + 1], indices[i + 2]],
-                    [indices[i + 2], indices[i]],
-                ];
-                for (const [a, b] of triangleEdges) {
-                    const key = a < b ? `${a}:${b}` : `${b}:${a}`;
-                    const uses = edgeUses.get(key) || [];
-                    uses.push({ triangle, direction: a < b ? 1 : -1 });
-                    edgeUses.set(key, uses);
+                for (let edge = 0; edge < 3; edge++) {
+                    const a = indices[i + edge];
+                    const b = indices[i + ((edge + 1) % 3)];
+                    const low = Math.min(a, b), high = Math.max(a, b);
+                    const key = low * vertexCount + high;
+                    const direction = a < b ? 1 : -1;
+                    const prior = edgeUses.get(key);
+                    if (prior == null) {
+                        edgeUses.set(key, direction * (triangle + 1));
+                    }
+                    else if (prior === 0) {
+                        throw new Error(`non-manifold Cartesian surface edge ${low}:${high} has more than two incident triangles`);
+                    }
+                    else {
+                        const priorTriangle = Math.abs(prior) - 1;
+                        const priorDirection = prior > 0 ? 1 : -1;
+                        connect(priorTriangle, triangle, priorDirection === direction);
+                        edgeUses.set(key, 0);
+                    }
                 }
             }
-            const neighbors = Array.from({ length: triangleCount }, () => []);
-            for (const [key, uses] of edgeUses) {
-                if (uses.length !== 2) {
-                    throw new Error(`non-manifold Marching Cubes surface edge ${key} has ${uses.length} incident triangles`);
+            for (const [key, use] of edgeUses) {
+                if (use !== 0) {
+                    const low = Math.floor(key / vertexCount), high = key % vertexCount;
+                    throw new Error(`non-manifold Cartesian surface edge ${low}:${high} has one incident triangle`);
                 }
-                const invert = uses[0].direction === uses[1].direction;
-                neighbors[uses[0].triangle].push({ triangle: uses[1].triangle, invert });
-                neighbors[uses[1].triangle].push({ triangle: uses[0].triangle, invert });
             }
             // Propagate one consistent winding across each connected component.
             // A shared edge must be traversed in opposite directions by its two
-            // triangles. Then choose the component's global direction from the
-            // scalar-gradient normals so THREE.BackSide renders the void-facing side.
+            // triangles. Then choose the component's global direction from its signed
+            // enclosed volume so THREE.BackSide renders the void-facing side.
             const flips = new Int8Array(triangleCount);
             flips.fill(-1);
             const components = [];
@@ -31661,13 +31951,15 @@ class MarchingCubesExtractor {
                 while (queue.length) {
                     const triangle = queue.pop();
                     component.push(triangle);
-                    for (const neighbor of neighbors[triangle]) {
-                        const required = flips[triangle] ^ (neighbor.invert ? 1 : 0);
-                        if (flips[neighbor.triangle] === -1) {
-                            flips[neighbor.triangle] = required;
-                            queue.push(neighbor.triangle);
+                    const base = triangle * 3;
+                    for (let slot = 0; slot < neighborCounts[triangle]; slot++) {
+                        const neighbor = neighborTriangles[base + slot];
+                        const required = flips[triangle] ^ neighborInverts[base + slot];
+                        if (flips[neighbor] === -1) {
+                            flips[neighbor] = required;
+                            queue.push(neighbor);
                         }
-                        else if (flips[neighbor.triangle] !== required) {
+                        else if (flips[neighbor] !== required) {
                             throw new Error('non-orientable Marching Cubes surface component');
                         }
                     }
@@ -31685,76 +31977,61 @@ class MarchingCubesExtractor {
                     flipTriangle(triangle);
             }
             for (const component of components) {
-                let outwardScore = 0;
+                let signedSixVolume = 0;
                 for (const triangle of component) {
                     const offset = triangle * 3;
                     const a = indices[offset], b = indices[offset + 1], c = indices[offset + 2];
                     const ax = positions[a * 3], ay = positions[a * 3 + 1], az = positions[a * 3 + 2];
-                    const abx = positions[b * 3] - ax;
-                    const aby = positions[b * 3 + 1] - ay;
-                    const abz = positions[b * 3 + 2] - az;
-                    const acx = positions[c * 3] - ax;
-                    const acy = positions[c * 3 + 1] - ay;
-                    const acz = positions[c * 3 + 2] - az;
-                    const crossX = aby * acz - abz * acy;
-                    const crossY = abz * acx - abx * acz;
-                    const crossZ = abx * acy - aby * acx;
-                    const nx = normals[a * 3] + normals[b * 3] + normals[c * 3];
-                    const ny = normals[a * 3 + 1] + normals[b * 3 + 1] + normals[c * 3 + 1];
-                    const nz = normals[a * 3 + 2] + normals[b * 3 + 2] + normals[c * 3 + 2];
-                    outwardScore += crossX * nx + crossY * ny + crossZ * nz;
+                    const bx = positions[b * 3], by = positions[b * 3 + 1], bz = positions[b * 3 + 2];
+                    const cx = positions[c * 3], cy = positions[c * 3 + 1], cz = positions[c * 3 + 2];
+                    signedSixVolume += ax * (by * cz - bz * cy)
+                        + ay * (bz * cx - bx * cz)
+                        + az * (bx * cy - by * cx);
                 }
-                if (!Number.isFinite(outwardScore) || Math.abs(outwardScore) <= 1e-12) {
+                if (!Number.isFinite(signedSixVolume) || Math.abs(signedSixVolume) <= 1e-12) {
                     throw new Error('undefined Marching Cubes component orientation');
                 }
-                if (outwardScore < 0) {
+                if (signedSixVolume < 0) {
                     for (const triangle of component)
                         flipTriangle(triangle);
                 }
             }
-            // Edge-consistent winding is necessary but not sufficient: a fan can be
-            // geometrically folded across an interior ambiguity. Verify every face
-            // against the scalar oracle. With outward winding (void -> rock), a
-            // small step along the face normal must decrease the positive-void field
-            // relative to the equal step toward the void. If not, the table-free
-            // prototype cannot represent this cell safely and the renderer falls
-            // back to WallMesh rather than exposing a BackSide-culling hole.
-            const probeDistance = field.spacingMm * 0.05;
-            const directionTolerance = Math.max(1e-12, field.spacingMm * 1e-9);
-            for (let triangle = 0; triangle < triangleCount; triangle++) {
-                const offset = triangle * 3;
-                const a = indices[offset], b = indices[offset + 1], c = indices[offset + 2];
-                const ax = positions[a * 3], ay = positions[a * 3 + 1], az = positions[a * 3 + 2];
-                const bx = positions[b * 3], by = positions[b * 3 + 1], bz = positions[b * 3 + 2];
-                const cx = positions[c * 3], cy = positions[c * 3 + 1], cz = positions[c * 3 + 2];
-                const abx = bx - ax, aby = by - ay, abz = bz - az;
-                const acx = cx - ax, acy = cy - ay, acz = cz - az;
-                let nx = aby * acz - abz * acy;
-                let ny = abz * acx - abx * acz;
-                let nz = abx * acy - aby * acx;
-                const normalLength = Math.hypot(nx, ny, nz);
-                if (!(normalLength > 0) || !Number.isFinite(normalLength)) {
-                    throw new Error(`invalid Marching Cubes face normal at triangle ${triangle}`);
-                }
-                nx /= normalLength;
-                ny /= normalLength;
-                nz /= normalLength;
-                const localNormalDot = nx * (normals[a * 3] + normals[b * 3] + normals[c * 3])
-                    + ny * (normals[a * 3 + 1] + normals[b * 3 + 1] + normals[c * 3 + 1])
-                    + nz * (normals[a * 3 + 2] + normals[b * 3 + 2] + normals[c * 3 + 2]);
-                if (!Number.isFinite(localNormalDot) || !(localNormalDot > 1e-8)) {
-                    throw new Error(`unresolved interior ambiguity folds Marching Cubes triangle ${triangle}`);
-                }
-                const centerX = (ax + bx + cx) / 3;
-                const centerY = (ay + by + cy) / 3;
-                const centerZ = (az + bz + cz) / 3;
-                const rockSide = field.sampleWorld(centerX + nx * probeDistance, centerY + ny * probeDistance, centerZ + nz * probeDistance);
-                const voidSide = field.sampleWorld(centerX - nx * probeDistance, centerY - ny * probeDistance, centerZ - nz * probeDistance);
-                if (!Number.isFinite(rockSide) || !Number.isFinite(voidSide)
-                    || !(rockSide < voidSide - directionTolerance)) {
-                    throw new Error(`unresolved interior ambiguity folds Marching Cubes triangle ${triangle}`);
-                }
+        }
+        // One topology-derived smooth-normal pass after final winding. This is
+        // equivalent to standard indexed-mesh normal generation and avoids six
+        // scalar samples per vertex plus multiple field probes per triangle.
+        normals.fill(0);
+        for (let offset = 0; offset < indices.length; offset += 3) {
+            const a = indices[offset], b = indices[offset + 1], c = indices[offset + 2];
+            const ax = positions[a * 3], ay = positions[a * 3 + 1], az = positions[a * 3 + 2];
+            const abx = positions[b * 3] - ax;
+            const aby = positions[b * 3 + 1] - ay;
+            const abz = positions[b * 3 + 2] - az;
+            const acx = positions[c * 3] - ax;
+            const acy = positions[c * 3 + 1] - ay;
+            const acz = positions[c * 3 + 2] - az;
+            const nx = aby * acz - abz * acy;
+            const ny = abz * acx - abx * acz;
+            const nz = abx * acy - aby * acx;
+            for (const vertex of [a, b, c]) {
+                normals[vertex * 3] += nx;
+                normals[vertex * 3 + 1] += ny;
+                normals[vertex * 3 + 2] += nz;
             }
+        }
+        for (let vertex = 0; vertex < positions.length / 3; vertex++) {
+            const offset = vertex * 3;
+            const length = Math.hypot(normals[offset], normals[offset + 1], normals[offset + 2]);
+            if (!(length > 1e-12) || !Number.isFinite(length)) {
+                throw new Error(`undefined Cartesian isosurface normal at vertex ${vertex}`);
+            }
+            normals[offset] /= length;
+            normals[offset + 1] /= length;
+            normals[offset + 2] /= length;
+            const color = MarchingCubesExtractor._surfaceColor(normals[offset + 1]);
+            colors[offset] = color[0];
+            colors[offset + 1] = color[1];
+            colors[offset + 2] = color[2];
         }
         const positionBuffer = new Float32Array(positions);
         const normalBuffer = new Float32Array(normals);
@@ -32547,6 +32824,656 @@ class CavitySurfaceAnchors {
             `b:${anchor.barycentric.map(f).join(',')}`,
             `c:${anchor.chemistry.vertexIndex}`,
         ].join('|');
+    }
+}
+
+// ── 23d-geometry-cavity-production-authority.js ──
+
+// ============================================================
+// js/23d-geometry-cavity-production-authority.ts
+// ============================================================
+// Mass/geometry preflight for promoting the Cartesian cavity.  This remains an
+// opt-in authority until the remaining ambiguity, material, water, and browser
+// performance gates close.  Its core rule is already production-shaped:
+// chemistry may commit only after the exact extracted surface for the proposed
+// wall depths exists, is a closed two-manifold, and encloses the booked volume.
+const CAVITY_PRODUCTION_AUTHORITY_SCHEMA = 'cavity-production-authority-v1';
+const CAVITY_PRODUCTION_VOLUME_MODEL = 'cartesian-field-freudenthal-volume-v1';
+const CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION = 48;
+const CAVITY_PRODUCTION_REFERENCE_RESOLUTION = 64;
+const CAVITY_PRODUCTION_ISOVALUE = 0;
+const CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS = 0.75;
+const CAVITY_PRODUCTION_MAX_VOLUME_CONVERGENCE_FRACTION = 0.02;
+class CavityProductionAuthority {
+    static _closes(actual, expected, scale = 1) {
+        const a = Number(actual), e = Number(expected), s = Number(scale);
+        return Number.isFinite(a) && Number.isFinite(e) && Number.isFinite(s)
+            && Math.abs(a - e) <= Math.max(1e-10, Math.abs(s) * 1e-10);
+    }
+    static validateAuthorityReceipt(receipt, opts = {}) {
+        if (!receipt || receipt.schema !== CAVITY_PRODUCTION_AUTHORITY_SCHEMA
+            || receipt.volume_model !== CAVITY_PRODUCTION_VOLUME_MODEL
+            || receipt.resolution !== CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION
+            || receipt.isovalue !== CAVITY_PRODUCTION_ISOVALUE
+            || typeof receipt.production_contract_digest !== 'string'
+            || !receipt.production_contract_digest) {
+            throw new RangeError('invalid Cartesian cavity geometry authority identity');
+        }
+        const payload = CavityEvolutionLedger._clone(receipt);
+        const suppliedDigest = payload.receipt_digest;
+        delete payload.receipt_digest;
+        if (typeof suppliedDigest !== 'string'
+            || suppliedDigest !== CavityEvolutionLedger.digest(payload)) {
+            throw new RangeError('Cartesian cavity geometry authority receipt digest mismatch');
+        }
+        const provenanceKeys = [
+            'old_depth_projection_digest', 'new_depth_projection_digest',
+            'old_field_snapshot_digest', 'new_field_snapshot_digest',
+            'old_surface_buffer_digest', 'new_surface_buffer_digest',
+        ];
+        if (provenanceKeys.some(key => typeof receipt[key] !== 'string' || !receipt[key])) {
+            throw new RangeError('Cartesian cavity geometry authority lacks field/depth provenance');
+        }
+        const finiteKeys = [
+            'old_volume_mm3', 'new_volume_mm3', 'target_volume_delta_mm3_per_kg',
+            'achieved_volume_delta_mm3_per_kg', 'volume_residual_mm3_per_kg',
+            'volume_tolerance_mm3_per_kg',
+        ];
+        if (finiteKeys.some(key => !Number.isFinite(Number(receipt[key])))
+            || !(Number(receipt.old_volume_mm3) > 0)
+            || !(Number(receipt.new_volume_mm3) > 0)
+            || !(Number(receipt.target_volume_delta_mm3_per_kg) > 0)
+            || !(Number(receipt.achieved_volume_delta_mm3_per_kg) > 0)
+            || !(Number(receipt.volume_tolerance_mm3_per_kg) >= 0)
+            || !CavityProductionAuthority._closes(Number(receipt.new_volume_mm3) - Number(receipt.old_volume_mm3), receipt.achieved_volume_delta_mm3_per_kg, receipt.achieved_volume_delta_mm3_per_kg)
+            || !CavityProductionAuthority._closes(Number(receipt.achieved_volume_delta_mm3_per_kg)
+                - Number(receipt.target_volume_delta_mm3_per_kg), receipt.volume_residual_mm3_per_kg, receipt.target_volume_delta_mm3_per_kg)
+            || Math.abs(Number(receipt.volume_residual_mm3_per_kg))
+                > Number(receipt.volume_tolerance_mm3_per_kg)) {
+            throw new RangeError('Cartesian cavity geometry authority volume semantics do not close');
+        }
+        if (!Number.isInteger(receipt.field_build_and_extract_evaluations)
+            || receipt.field_build_and_extract_evaluations < 2) {
+            throw new RangeError('Cartesian cavity geometry authority evaluation count is invalid');
+        }
+        const agreement = receipt.agreement;
+        if (!agreement || agreement.schema !== 'cavity-surface-agreement-v1'
+            || !Number.isInteger(agreement.barycentric_subdivisions)
+            || agreement.barycentric_subdivisions < 1
+            || !(Number(agreement.numerical_zero_tolerance) > 0)
+            || agreement.unresolved_sample_count !== 0
+            || !(Number(agreement.max_normal_root_distance_voxels) >= 0)
+            || Number(agreement.max_normal_root_distance_voxels)
+                > CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS
+            || agreement.maximum_allowed_voxels !== CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS) {
+            throw new RangeError('Cartesian cavity geometry authority agreement gate is invalid');
+        }
+        const convergence = receipt.volume_convergence;
+        const boundsValid = (values) => Array.isArray(values) && values.length === 3
+            && values.every(Number.isFinite);
+        if (!convergence || convergence.schema !== 'cavity-volume-convergence-v1'
+            || convergence.production_resolution !== CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION
+            || convergence.reference_resolution !== CAVITY_PRODUCTION_REFERENCE_RESOLUTION
+            || convergence.maximum_allowed_fraction
+                !== CAVITY_PRODUCTION_MAX_VOLUME_CONVERGENCE_FRACTION
+            || !(Number(convergence.production_volume_mm3) > 0)
+            || !(Number(convergence.reference_volume_mm3) > 0)
+            || !CavityProductionAuthority._closes(convergence.production_volume_mm3, receipt.new_volume_mm3, receipt.new_volume_mm3)
+            || !CavityProductionAuthority._closes(convergence.relative_difference, Math.abs(Number(convergence.production_volume_mm3)
+                - Number(convergence.reference_volume_mm3))
+                / Number(convergence.reference_volume_mm3), 1)
+            || Number(convergence.relative_difference)
+                > CAVITY_PRODUCTION_MAX_VOLUME_CONVERGENCE_FRACTION
+            || !boundsValid(convergence.shared_bounds_min_mm)
+            || !boundsValid(convergence.shared_bounds_max_mm)
+            || typeof convergence.reference_field_snapshot_digest !== 'string'
+            || !convergence.reference_field_snapshot_digest
+            || typeof convergence.reference_surface_buffer_digest !== 'string'
+            || !convergence.reference_surface_buffer_digest) {
+            throw new RangeError('Cartesian cavity geometry authority convergence gate is invalid');
+        }
+        const entry = opts.entry;
+        if (entry) {
+            for (const key of [
+                'target_volume_delta_mm3_per_kg', 'achieved_volume_delta_mm3_per_kg',
+                'volume_residual_mm3_per_kg', 'volume_tolerance_mm3_per_kg',
+            ]) {
+                if (!CavityProductionAuthority._closes(receipt[key], entry[key], entry[key] || 1)) {
+                    throw new RangeError(`Cartesian cavity geometry authority diverges from entry ${key}`);
+                }
+            }
+            if (!CavityProductionAuthority._closes(receipt.old_volume_mm3, entry.old_capacity_volume_mm3, entry.old_capacity_volume_mm3)
+                || !CavityProductionAuthority._closes(receipt.new_volume_mm3, entry.new_capacity_volume_mm3, entry.new_capacity_volume_mm3)) {
+                throw new RangeError('Cartesian cavity geometry authority diverges from entry capacity');
+            }
+        }
+        const previous = opts.previousAuthority;
+        if (previous && (receipt.production_contract_digest !== previous.production_contract_digest
+            || receipt.old_depth_projection_digest !== previous.new_depth_projection_digest
+            || receipt.old_field_snapshot_digest !== previous.new_field_snapshot_digest
+            || receipt.old_surface_buffer_digest !== previous.new_surface_buffer_digest
+            || !CavityProductionAuthority._closes(receipt.old_volume_mm3, previous.new_volume_mm3, previous.new_volume_mm3))) {
+            throw new RangeError('Cartesian cavity geometry authority provenance chain is broken');
+        }
+        if (opts.expectedOldDepthDigest
+            && receipt.old_depth_projection_digest !== opts.expectedOldDepthDigest) {
+            throw new RangeError('Cartesian cavity geometry authority old depth provenance is invalid');
+        }
+        if (opts.expectedNewDepthDigest
+            && receipt.new_depth_projection_digest !== opts.expectedNewDepthDigest) {
+            throw new RangeError('Cartesian cavity geometry authority new depth provenance is invalid');
+        }
+        const contract = opts.contract;
+        if (contract) {
+            CavityProductionAuthority.assertContract(opts.wall, contract);
+            if (receipt.production_contract_digest !== contract.contract_digest
+                || receipt.resolution !== contract.scientific_resolution
+                || receipt.isovalue !== contract.isovalue) {
+                throw new RangeError('Cartesian cavity geometry authority differs from production contract');
+            }
+            if (!previous && (receipt.old_depth_projection_digest
+                !== contract.baseline_depth_projection_digest
+                || receipt.old_field_snapshot_digest !== contract.baseline_field_snapshot_digest
+                || receipt.old_surface_buffer_digest !== contract.baseline_surface_buffer_digest
+                || !CavityProductionAuthority._closes(receipt.old_volume_mm3, contract.baseline_volume_mm3, contract.baseline_volume_mm3))) {
+                throw new RangeError('Cartesian cavity geometry authority does not start at contract baseline');
+            }
+        }
+        return true;
+    }
+    static _depthsFromWall(wall) {
+        if (!wall || !Array.isArray(wall.rings) || !wall.rings.length) {
+            throw new TypeError('Cartesian cavity authority requires a populated WallState');
+        }
+        const depths = new Float64Array(wall.ring_count * wall.cells_per_ring);
+        let index = 0;
+        for (const ring of wall.rings) {
+            if (!Array.isArray(ring) || ring.length !== wall.cells_per_ring) {
+                throw new RangeError('Cartesian cavity authority requires a dense chemistry projection');
+            }
+            for (const cell of ring) {
+                const depth = Number(cell && cell.wall_depth);
+                if (!(depth >= 0) || !Number.isFinite(depth)) {
+                    throw new RangeError('Cartesian cavity authority received an invalid wall depth');
+                }
+                depths[index++] = depth;
+            }
+        }
+        if (index !== depths.length) {
+            throw new RangeError('Cartesian cavity authority tessellation size mismatch');
+        }
+        return depths;
+    }
+    static _depthDigest(wall, depths) {
+        if (!depths || depths.length !== wall.ring_count * wall.cells_per_ring) {
+            throw new RangeError('Cartesian cavity authority depth projection size mismatch');
+        }
+        const normalized = Array.from(depths, (value) => {
+            const number = Number(value);
+            if (!(number >= 0) || !Number.isFinite(number)) {
+                throw new RangeError('Cartesian cavity authority depth projection is invalid');
+            }
+            return number;
+        });
+        return 'cavity-depth-projection:v1:' + CavityEvolutionLedger.digest({
+            model: CAVITY_PRODUCTION_VOLUME_MODEL,
+            identity: CavityEvolutionLedger.identityForWall(wall),
+            depths_mm: normalized,
+        });
+    }
+    static _fieldForDepths(wall, depths, opts = {}) {
+        const resolution = CavityScalarField._resolution(opts.resolution == null ? CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION : opts.resolution);
+        const bubbles = CavityScalarField._validatedBubbles(wall.bubbles);
+        const shape = CavityScalarField.shapeFor(wall);
+        const depthDigest = CavityProductionAuthority._depthDigest(wall, depths);
+        const evolution = {
+            ring_count: wall.ring_count,
+            cells_per_ring: wall.cells_per_ring,
+            depths_mm: new Float64Array(Array.from(depths, Number)),
+            signature: depthDigest,
+        };
+        return CavityScalarField.fromBubbles(bubbles, {
+            resolution,
+            shape,
+            evolution,
+            frame: opts.frame || null,
+            sig: `cavity-field-preflight:v2|${resolution}^3|${depthDigest}|f:${CavityScalarField._frameSignature(opts.frame, resolution)}`,
+        });
+    }
+    static _surfaceState(wall, depths, opts = {}) {
+        const resolution = CavityScalarField._resolution(opts.resolution == null ? CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION : opts.resolution);
+        const isovalue = opts.isovalue == null ? CAVITY_PRODUCTION_ISOVALUE : Number(opts.isovalue);
+        if (!Number.isFinite(isovalue))
+            throw new TypeError('Cartesian cavity isovalue must be finite');
+        const field = CavityProductionAuthority._fieldForDepths(wall, depths, {
+            resolution, frame: opts.frame || null,
+        });
+        const surface = field.extract(isovalue);
+        MarchingCubesExtractor.verifyBuffers(surface);
+        if (!field.hasNegativeBorder(isovalue)
+            || surface.topology?.negative_border !== true
+            || surface.topology?.nonempty !== true
+            || surface.topology?.closed_two_manifold !== true) {
+            throw new RangeError('Cartesian cavity preflight did not produce a closed two-manifold');
+        }
+        const agreement = opts.measureAgreement
+            ? MarchingCubesExtractor.measureImplicitAgreement(field, surface, 2) : null;
+        if (agreement && (agreement.unresolved_sample_count !== 0
+            || agreement.max_normal_root_distance_voxels
+                > CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS)) {
+            throw new RangeError(`Cartesian cavity surface exceeds the field-agreement tolerance: ${JSON.stringify({
+                unresolved_sample_count: agreement.unresolved_sample_count,
+                max_field_residual: agreement.max_field_residual,
+                max_normal_root_distance_voxels: agreement.max_normal_root_distance_voxels,
+                maximum_allowed_voxels: CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS,
+            })}`);
+        }
+        return Object.freeze({
+            field,
+            surface,
+            volume_mm3: MarchingCubesExtractor.closedVolumeMm3(surface),
+            surface_area_mm2: MarchingCubesExtractor.surfaceAreaMm2(surface),
+            depth_projection_digest: CavityProductionAuthority._depthDigest(wall, depths),
+            agreement,
+        });
+    }
+    static _contractPayload(contract) {
+        const payload = JSON.parse(JSON.stringify(contract));
+        delete payload.contract_digest;
+        return payload;
+    }
+    static _referenceFrame(frame) {
+        const base = CavityScalarField._validatedFrame(frame, CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION);
+        return Object.freeze({
+            dimensions: Object.freeze([
+                CAVITY_PRODUCTION_REFERENCE_RESOLUTION,
+                CAVITY_PRODUCTION_REFERENCE_RESOLUTION,
+                CAVITY_PRODUCTION_REFERENCE_RESOLUTION,
+            ]),
+            origin_mm: Object.freeze(base.origin_mm.slice()),
+            spacing_mm: base.spacing_mm
+                * (CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION - 1)
+                / (CAVITY_PRODUCTION_REFERENCE_RESOLUTION - 1),
+        });
+    }
+    static _convergenceReceipt(wall, depths, productionState, frame) {
+        const referenceFrame = CavityProductionAuthority._referenceFrame(frame);
+        const reference = CavityProductionAuthority._surfaceState(wall, depths, {
+            resolution: CAVITY_PRODUCTION_REFERENCE_RESOLUTION,
+            isovalue: CAVITY_PRODUCTION_ISOVALUE,
+            frame: referenceFrame,
+        });
+        const relativeDifference = Math.abs(productionState.volume_mm3 - reference.volume_mm3) / Math.max(reference.volume_mm3, 1e-12);
+        if (!Number.isFinite(relativeDifference)
+            || relativeDifference > CAVITY_PRODUCTION_MAX_VOLUME_CONVERGENCE_FRACTION) {
+            throw new RangeError('Cartesian cavity 48-to-64 volume convergence gate failed');
+        }
+        return Object.freeze({
+            schema: 'cavity-volume-convergence-v1',
+            production_resolution: CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION,
+            reference_resolution: CAVITY_PRODUCTION_REFERENCE_RESOLUTION,
+            shared_bounds_min_mm: Object.freeze(productionState.field.bounds.min.slice()),
+            shared_bounds_max_mm: Object.freeze(productionState.field.bounds.max.slice()),
+            production_volume_mm3: productionState.volume_mm3,
+            reference_volume_mm3: reference.volume_mm3,
+            relative_difference: relativeDifference,
+            maximum_allowed_fraction: CAVITY_PRODUCTION_MAX_VOLUME_CONVERGENCE_FRACTION,
+            reference_field_snapshot_digest: reference.field.snapshotDigest,
+            reference_surface_buffer_digest: reference.surface.buffer_digest,
+        });
+    }
+    static _assertMeasuredEvidence(wall, depths, state, expectedAgreement, expectedConvergence, frame) {
+        const agreement = state.agreement
+            || MarchingCubesExtractor.measureImplicitAgreement(state.field, state.surface, 2);
+        const expectedAgreementSchema = expectedAgreement?.schema
+            || expectedAgreement?.metric_schema;
+        if (!expectedAgreement
+            || expectedAgreementSchema !== agreement.schema
+            || expectedAgreement.barycentric_subdivisions
+                !== agreement.barycentric_subdivisions
+            || !CavityProductionAuthority._closes(expectedAgreement.numerical_zero_tolerance, agreement.numerical_zero_tolerance, agreement.numerical_zero_tolerance)
+            || expectedAgreement.unresolved_sample_count
+                !== agreement.unresolved_sample_count
+            || !CavityProductionAuthority._closes(expectedAgreement.max_normal_root_distance_voxels, agreement.max_normal_root_distance_voxels, 1)
+            || expectedAgreement.maximum_allowed_voxels
+                !== CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS
+            || agreement.unresolved_sample_count !== 0
+            || agreement.max_normal_root_distance_voxels
+                > CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS) {
+            throw new RangeError('Cartesian cavity field-agreement evidence was not reproduced');
+        }
+        // A receipt digest proves only that a record is internally intact.  The
+        // independently extracted 64^3 reference is repeated at every binding
+        // boundary so a self-consistent forged convergence record cannot become
+        // geometry authority merely by recomputing its digest.
+        const convergence = CavityProductionAuthority._convergenceReceipt(wall, depths, state, frame);
+        const vectorCloses = (actual, expected) => Array.isArray(actual)
+            && Array.isArray(expected) && actual.length === 3 && expected.length === 3
+            && actual.every((value, index) => CavityProductionAuthority._closes(value, expected[index], Math.max(Math.abs(Number(expected[index])) || 0, 1)));
+        if (!expectedConvergence
+            || expectedConvergence.schema !== convergence.schema
+            || expectedConvergence.production_resolution !== convergence.production_resolution
+            || expectedConvergence.reference_resolution !== convergence.reference_resolution
+            || expectedConvergence.maximum_allowed_fraction
+                !== convergence.maximum_allowed_fraction
+            || !vectorCloses(expectedConvergence.shared_bounds_min_mm, convergence.shared_bounds_min_mm)
+            || !vectorCloses(expectedConvergence.shared_bounds_max_mm, convergence.shared_bounds_max_mm)
+            || !CavityProductionAuthority._closes(expectedConvergence.production_volume_mm3, convergence.production_volume_mm3, convergence.production_volume_mm3)
+            || !CavityProductionAuthority._closes(expectedConvergence.reference_volume_mm3, convergence.reference_volume_mm3, convergence.reference_volume_mm3)
+            || !CavityProductionAuthority._closes(expectedConvergence.relative_difference, convergence.relative_difference, 1)
+            || expectedConvergence.reference_field_snapshot_digest
+                !== convergence.reference_field_snapshot_digest
+            || expectedConvergence.reference_surface_buffer_digest
+                !== convergence.reference_surface_buffer_digest) {
+            throw new RangeError('Cartesian cavity volume-convergence evidence was not reproduced');
+        }
+        return Object.freeze({ agreement, convergence });
+    }
+    static assertContract(wall, contract) {
+        if (!contract || contract.schema !== CAVITY_PRODUCTION_AUTHORITY_SCHEMA
+            || contract.volume_model !== CAVITY_PRODUCTION_VOLUME_MODEL
+            || contract.scientific_resolution !== CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION
+            || contract.isovalue !== CAVITY_PRODUCTION_ISOVALUE
+            || !(contract.baseline_volume_convergence?.relative_difference
+                <= CAVITY_PRODUCTION_MAX_VOLUME_CONVERGENCE_FRACTION)
+            || contract.shape_identity !== CavityEvolutionLedger.identityForWall(wall).shape
+            || contract.contract_digest
+                !== CavityEvolutionLedger.digest(CavityProductionAuthority._contractPayload(contract))) {
+            throw new RangeError('invalid or foreign Cartesian cavity production contract');
+        }
+        CavityScalarField._validatedFrame(contract.frame, CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION);
+        return true;
+    }
+    static createContract(wall) {
+        const depths = CavityProductionAuthority._depthsFromWall(wall);
+        const bootstrap = CavityProductionAuthority._surfaceState(wall, depths, {
+            resolution: CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION,
+            isovalue: CAVITY_PRODUCTION_ISOVALUE,
+        });
+        const frame = Object.freeze({
+            dimensions: Object.freeze([
+                CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION,
+                CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION,
+                CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION,
+            ]),
+            origin_mm: Object.freeze(bootstrap.field.origin.slice()),
+            spacing_mm: bootstrap.field.spacingMm,
+        });
+        const initial = CavityProductionAuthority._surfaceState(wall, depths, {
+            resolution: CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION,
+            isovalue: CAVITY_PRODUCTION_ISOVALUE,
+            frame,
+            measureAgreement: true,
+        });
+        const convergence = CavityProductionAuthority._convergenceReceipt(wall, depths, initial, frame);
+        const payload = {
+            schema: CAVITY_PRODUCTION_AUTHORITY_SCHEMA,
+            volume_model: CAVITY_PRODUCTION_VOLUME_MODEL,
+            scientific_resolution: CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION,
+            isovalue: CAVITY_PRODUCTION_ISOVALUE,
+            frame,
+            frame_policy: 'immutable run-wide world-space lattice; erosion outside its negative border fails before commit',
+            shape_identity: CavityEvolutionLedger.identityForWall(wall).shape,
+            baseline_depth_projection_digest: initial.depth_projection_digest,
+            baseline_field_snapshot_digest: initial.field.snapshotDigest,
+            baseline_surface_buffer_digest: initial.surface.buffer_digest,
+            baseline_volume_mm3: initial.volume_mm3,
+            baseline_surface_area_mm2: initial.surface_area_mm2,
+            baseline_volume_convergence: convergence,
+            agreement_gate: Object.freeze({
+                metric_schema: initial.agreement.schema,
+                barycentric_subdivisions: initial.agreement.barycentric_subdivisions,
+                numerical_zero_tolerance: initial.agreement.numerical_zero_tolerance,
+                unresolved_sample_count: initial.agreement.unresolved_sample_count,
+                max_normal_root_distance_voxels: initial.agreement.max_normal_root_distance_voxels,
+                maximum_allowed_voxels: CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS,
+            }),
+            authority_scope: 'connected star-shaped radial erosion bridge; no disconnected chambers, re-entrant transport, or deposition claim',
+            quality_policy: 'scientific resolution and zero isovalue are model state, never renderer or hardware quality knobs',
+        };
+        payload.contract_digest = CavityEvolutionLedger.digest(payload);
+        CavityEvolutionLedger._deepFreeze(payload);
+        CavityProductionAuthority.assertContract(wall, payload);
+        return payload;
+    }
+    static initialState(wall, contract) {
+        CavityProductionAuthority.assertContract(wall, contract);
+        return CavityProductionAuthority._surfaceState(wall, CavityProductionAuthority._depthsFromWall(wall), {
+            resolution: contract.scientific_resolution,
+            isovalue: contract.isovalue,
+            frame: contract.frame,
+            measureAgreement: true,
+        });
+    }
+    static authenticateSurface(wall, field, surface, contract, ledgerCursor) {
+        CavityProductionAuthority.assertContract(wall, contract);
+        MarchingCubesExtractor.verifyBuffers(surface);
+        const ledger = wall.cavityEvolutionLedger?.();
+        if (!ledger || ledger.model !== CAVITY_PRODUCTION_VOLUME_MODEL) {
+            throw new RangeError('Cartesian surface is not backed by its production evolution ledger');
+        }
+        const cursor = ledgerCursor == null ? ledger.cursor : Number(ledgerCursor);
+        if (!Number.isInteger(cursor) || cursor < 0 || cursor > ledger.cursor) {
+            throw new RangeError('Cartesian surface production cursor is invalid');
+        }
+        const authority = cursor === 0 ? {
+            new_field_snapshot_digest: contract.baseline_field_snapshot_digest,
+            new_surface_buffer_digest: contract.baseline_surface_buffer_digest,
+            new_volume_mm3: contract.baseline_volume_mm3,
+            volume_tolerance_mm3_per_kg: 0,
+            production_contract_digest: contract.contract_digest,
+        } : ledger.entries[cursor - 1]?.geometry_authority;
+        if (cursor > 0) {
+            CavityProductionAuthority.validateAuthorityReceipt(authority, {
+                entry: ledger.entries[cursor - 1],
+                previousAuthority: cursor > 1 ? ledger.entries[cursor - 2]?.geometry_authority : null,
+                contract,
+                wall,
+            });
+        }
+        if (!authority
+            || authority.production_contract_digest !== contract.contract_digest
+            || field.snapshotDigest !== authority.new_field_snapshot_digest
+            || surface.buffer_digest !== authority.new_surface_buffer_digest) {
+            throw new RangeError('Cartesian surface differs from its mass-authority receipt');
+        }
+        const volume = MarchingCubesExtractor.closedVolumeMm3(surface);
+        const tolerance = Math.max(1e-9, Number(authority.volume_tolerance_mm3_per_kg) || 0);
+        if (Math.abs(volume - Number(authority.new_volume_mm3)) > tolerance) {
+            throw new RangeError('Cartesian surface volume differs from its mass-authority receipt');
+        }
+        const depths = ledger.materialize(cursor);
+        const evidence = CavityProductionAuthority._assertMeasuredEvidence(wall, depths, { field, surface, volume_mm3: volume }, cursor === 0 ? contract.agreement_gate : authority.agreement, cursor === 0 ? contract.baseline_volume_convergence : authority.volume_convergence, contract.frame);
+        return Object.freeze({ volume_mm3: volume, agreement: evidence.agreement });
+    }
+    static previewErosion(wall, weightsInput, opts = {}) {
+        const target = Number(opts.target_volume_delta_mm3_per_kg);
+        const contract = opts.contract;
+        CavityProductionAuthority.assertContract(wall, contract);
+        const resolution = contract.scientific_resolution;
+        const isovalue = contract.isovalue;
+        const frame = contract.frame;
+        const currentDepths = CavityProductionAuthority._depthsFromWall(wall);
+        if (!(target > 0) || !Number.isFinite(target)) {
+            throw new RangeError('Cartesian cavity erosion target volume must be positive and finite');
+        }
+        if (!weightsInput || weightsInput.length !== currentDepths.length) {
+            throw new RangeError('Cartesian cavity erosion weights must match the chemistry projection');
+        }
+        const weights = new Float64Array(currentDepths.length);
+        let maxWeight = 0;
+        for (let index = 0; index < weights.length; index++) {
+            const weight = Number(weightsInput[index]);
+            if (!(weight >= 0) || !Number.isFinite(weight)) {
+                throw new TypeError('Cartesian cavity erosion weight is invalid');
+            }
+            weights[index] = weight;
+            if (weight > maxWeight)
+                maxWeight = weight;
+        }
+        if (!(maxWeight > 0))
+            throw new RangeError('Cartesian cavity erosion has no exposed surface');
+        for (let index = 0; index < weights.length; index++)
+            weights[index] /= maxWeight;
+        const oldState = CavityProductionAuthority._surfaceState(wall, currentDepths, { resolution, isovalue, frame });
+        const desiredVolume = oldState.volume_mm3 + target;
+        const maxCoordinate = Math.max(...oldState.surface.bounds.min.map(Math.abs), ...oldState.surface.bounds.max.map(Math.abs), 1e-9);
+        const float32UlpMm = Math.pow(2, Math.floor(Math.log2(maxCoordinate)) - 23);
+        const tolerance = Math.max(1e-6, target * 1e-6, oldState.volume_mm3 * 1e-10, oldState.surface_area_mm2 * float32UlpMm * 8);
+        let evaluations = 1;
+        const candidate = (lambda) => {
+            const depths = new Float64Array(currentDepths.length);
+            for (let index = 0; index < depths.length; index++) {
+                depths[index] = currentDepths[index] + lambda * weights[index];
+            }
+            const state = CavityProductionAuthority._surfaceState(wall, depths, { resolution, isovalue, frame });
+            evaluations++;
+            return { lambda, depths, state };
+        };
+        let low = { lambda: 0, depths: currentDepths, state: oldState };
+        let high = candidate(Math.max(target / oldState.surface_area_mm2, 1e-9));
+        for (let guard = 0; high.state.volume_mm3 < desiredVolume && guard < 24; guard++) {
+            low = high;
+            high = candidate(high.lambda * 2);
+        }
+        if (high.state.volume_mm3 < desiredVolume) {
+            throw new RangeError('Cartesian cavity erosion could not bracket the target volume');
+        }
+        let solved = Math.abs(low.state.volume_mm3 - desiredVolume)
+            <= Math.abs(high.state.volume_mm3 - desiredVolume) ? low : high;
+        for (let iteration = 0; iteration < 14; iteration++) {
+            if (Math.abs(solved.state.volume_mm3 - desiredVolume) <= tolerance)
+                break;
+            const denominator = high.state.volume_mm3 - low.state.volume_mm3;
+            let nextLambda = denominator > 0
+                ? low.lambda + (desiredVolume - low.state.volume_mm3)
+                    * (high.lambda - low.lambda) / denominator
+                : (low.lambda + high.lambda) * 0.5;
+            const span = high.lambda - low.lambda;
+            if (!(nextLambda > low.lambda && nextLambda < high.lambda)
+                || nextLambda < low.lambda + span * 0.05
+                || nextLambda > high.lambda - span * 0.05) {
+                nextLambda = (low.lambda + high.lambda) * 0.5;
+            }
+            const next = candidate(nextLambda);
+            if (next.state.volume_mm3 < desiredVolume)
+                low = next;
+            else
+                high = next;
+            solved = Math.abs(low.state.volume_mm3 - desiredVolume)
+                <= Math.abs(high.state.volume_mm3 - desiredVolume) ? low : high;
+        }
+        const achieved = solved.state.volume_mm3 - oldState.volume_mm3;
+        const residual = achieved - target;
+        if (Math.abs(residual) > tolerance) {
+            throw new RangeError('Cartesian cavity erosion volume residual ' + residual
+                + ' exceeds tolerance ' + tolerance + ' for target ' + target);
+        }
+        const finalState = CavityProductionAuthority._surfaceState(wall, solved.depths, { resolution, isovalue, frame, measureAgreement: true });
+        if (finalState.field.snapshotDigest !== solved.state.field.snapshotDigest
+            || finalState.surface.buffer_digest !== solved.state.surface.buffer_digest) {
+            throw new RangeError('Cartesian cavity final agreement gate changed the solved surface');
+        }
+        const convergence = CavityProductionAuthority._convergenceReceipt(wall, solved.depths, finalState, frame);
+        const vertexDeltas = [];
+        for (let index = 0; index < solved.depths.length; index++) {
+            const delta = solved.depths[index] - currentDepths[index];
+            if (!(delta > 0))
+                continue;
+            vertexDeltas.push({
+                vertex_index: index,
+                old_depth_mm: currentDepths[index],
+                new_depth_mm: solved.depths[index],
+                delta_mm: delta,
+            });
+        }
+        const receipt = {
+            schema: CAVITY_PRODUCTION_AUTHORITY_SCHEMA,
+            volume_model: CAVITY_PRODUCTION_VOLUME_MODEL,
+            production_contract_digest: contract.contract_digest,
+            resolution,
+            isovalue,
+            old_depth_projection_digest: oldState.depth_projection_digest,
+            new_depth_projection_digest: solved.state.depth_projection_digest,
+            old_field_snapshot_digest: oldState.field.snapshotDigest,
+            new_field_snapshot_digest: solved.state.field.snapshotDigest,
+            old_surface_buffer_digest: oldState.surface.buffer_digest,
+            new_surface_buffer_digest: solved.state.surface.buffer_digest,
+            old_volume_mm3: oldState.volume_mm3,
+            new_volume_mm3: solved.state.volume_mm3,
+            target_volume_delta_mm3_per_kg: target,
+            achieved_volume_delta_mm3_per_kg: achieved,
+            volume_residual_mm3_per_kg: residual,
+            volume_tolerance_mm3_per_kg: tolerance,
+            field_build_and_extract_evaluations: evaluations,
+            agreement: {
+                schema: finalState.agreement.schema,
+                barycentric_subdivisions: finalState.agreement.barycentric_subdivisions,
+                numerical_zero_tolerance: finalState.agreement.numerical_zero_tolerance,
+                unresolved_sample_count: finalState.agreement.unresolved_sample_count,
+                max_normal_root_distance_voxels: finalState.agreement.max_normal_root_distance_voxels,
+                maximum_allowed_voxels: CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS,
+            },
+            volume_convergence: convergence,
+            topology: 'negative-border closed orientable Freudenthal two-manifold; exact-zero samples use deterministic simulation of simplicity',
+        };
+        receipt.receipt_digest = CavityEvolutionLedger.digest(receipt);
+        CavityEvolutionLedger._deepFreeze(receipt);
+        const ledger = wall.cavityEvolutionLedger?.();
+        CavityProductionAuthority.validateAuthorityReceipt(receipt, {
+            previousAuthority: ledger?.cursor
+                ? ledger.entries[ledger.cursor - 1]?.geometry_authority : null,
+            expectedOldDepthDigest: oldState.depth_projection_digest,
+            expectedNewDepthDigest: solved.state.depth_projection_digest,
+            contract,
+            wall,
+        });
+        return Object.freeze({
+            target_volume_delta_mm3_per_kg: target,
+            achieved_volume_delta_mm3_per_kg: achieved,
+            volume_residual_mm3_per_kg: residual,
+            volume_tolerance_mm3_per_kg: tolerance,
+            old_capacity_volume_mm3: oldState.volume_mm3,
+            new_capacity_volume_mm3: solved.state.volume_mm3,
+            vertex_deltas: Object.freeze(vertexDeltas.map(delta => Object.freeze(delta))),
+            authority_receipt: receipt,
+        });
+    }
+    static verifyCommitted(wall, receipt, contract) {
+        CavityProductionAuthority.assertContract(wall, contract);
+        const ledger = wall.cavityEvolutionLedger?.();
+        const cursor = ledger?.cursor || 0;
+        const entry = cursor ? ledger.entries[cursor - 1] : null;
+        CavityProductionAuthority.validateAuthorityReceipt(receipt, {
+            entry,
+            previousAuthority: cursor > 1 ? ledger.entries[cursor - 2]?.geometry_authority : null,
+            contract,
+            wall,
+        });
+        const suppliedDigest = receipt.receipt_digest;
+        const depths = CavityProductionAuthority._depthsFromWall(wall);
+        if (CavityProductionAuthority._depthDigest(wall, depths)
+            !== receipt.new_depth_projection_digest) {
+            throw new RangeError('committed wall depths differ from the Cartesian cavity preflight');
+        }
+        const state = CavityProductionAuthority._surfaceState(wall, depths, {
+            resolution: contract.scientific_resolution,
+            isovalue: contract.isovalue,
+            frame: contract.frame,
+            measureAgreement: true,
+        });
+        const tolerance = Math.max(1e-9, Number(receipt.volume_tolerance_mm3_per_kg) || 0);
+        if (state.field.snapshotDigest !== receipt.new_field_snapshot_digest
+            || state.surface.buffer_digest !== receipt.new_surface_buffer_digest
+            || Math.abs(state.volume_mm3 - Number(receipt.new_volume_mm3)) > tolerance) {
+            throw new RangeError('committed Cartesian cavity does not match its preflighted surface');
+        }
+        CavityProductionAuthority._assertMeasuredEvidence(wall, depths, state, receipt.agreement, receipt.volume_convergence, contract.frame);
+        return Object.freeze({
+            field: state.field,
+            surface: state.surface,
+            verified_receipt_digest: suppliedDigest,
+        });
     }
 }
 
@@ -66553,6 +67480,20 @@ class VugSimulator {
             && this.conditions.wall.total_dissolved_mm === 0
             && this.conditions.wall.host_release_ledger.length === 0;
     }
+    enableProductionCavityAuthority() {
+        if (!this.canReauthorInitialHostGeometry()) {
+            throw new RangeError('production cavity authority must be selected before time or crystallization');
+        }
+        const enabled = this.wall_state.enableProductionCavityAuthority();
+        const exactDiameter = this.conditions.wall.initializeCavityCapacity(enabled.initial_volume_mm3, CAVITY_PRODUCTION_VOLUME_MODEL);
+        this.wall_state.updateCapacity(enabled.initial_volume_mm3, exactDiameter);
+        return Object.freeze({
+            contract: enabled.contract,
+            provider: enabled.provider,
+            exact_capacity_volume_mm3: enabled.initial_volume_mm3,
+            exact_equivalent_diameter_mm: exactDiameter,
+        });
+    }
     reauthorInitialCavityEquivalentDiameterMm(value) {
         if (!this.canReauthorInitialHostGeometry())
             return false;
@@ -71103,6 +72044,7 @@ Object.assign(VugSimulator.prototype, {
                 && this.wall_state.cavityEvolutionLedger()
                 ? this.wall_state.cavityEvolutionLedger().signature : null,
             cavity_surface_provider: { ...cavitySurfaceProvider },
+            cavity_production_contract_digest: this.wall_state._cavityProductionAuthorityContract?.contract_digest ?? null,
             rings: new Array(ringCount),
             conditions: {
                 temperature: cnd.temperature,
@@ -75558,7 +76500,7 @@ function makeSimulationThermalFieldCommand(config = {}) {
     });
 }
 function makeSimulationCavitySurfaceProviderCommand(kind, opts = {}) {
-    if (kind !== 'wall-mesh' && kind !== 'cavity-field') {
+    if (kind !== 'wall-mesh' && kind !== 'cavity-field' && kind !== 'cavity-field-production') {
         throw new RangeError(`unsupported cavity surface provider '${String(kind)}'`);
     }
     const providerKind = kind;
@@ -75788,14 +76730,17 @@ function applySimulationCommand(runtime, command) {
         };
     }
     if (command.type === 'cavity_surface_provider') {
-        if (command.kind !== 'wall-mesh' && command.kind !== 'cavity-field') {
+        if (command.kind !== 'wall-mesh' && command.kind !== 'cavity-field'
+            && command.kind !== 'cavity-field-production') {
             throw new RangeError(`unsupported cavity surface provider '${String(command.kind)}'`);
         }
-        const result = command.kind === 'cavity-field'
-            ? runtime.sim.wall_state.activateCavitySurfaceAnchorProvider({
-                resolution: command.resolution, isovalue: command.isovalue,
-            })
-            : runtime.sim.wall_state.deactivateCavitySurfaceAnchorProvider();
+        const result = command.kind === 'cavity-field-production'
+            ? runtime.sim.enableProductionCavityAuthority()
+            : command.kind === 'cavity-field'
+                ? runtime.sim.wall_state.activateCavitySurfaceAnchorProvider({
+                    resolution: command.resolution, isovalue: command.isovalue,
+                })
+                : runtime.sim.wall_state.deactivateCavitySurfaceAnchorProvider();
         _simulationAppendCommand(runtime, command);
         return {
             status: runtime.status,
@@ -98814,6 +99759,7 @@ function _topoInitThree(canvas) {
             // wall. A mixed wall/clip pair is never installed.
             uCavityClipMode: { value: 0 },
             uCavityField: { value: null },
+            uCavityFieldDimensions: { value: new THREE.Vector3(1, 1, 1) },
             uCavityFieldWorldScale: { value: new THREE.Vector3(1, 1, 1) },
             uCavityFieldWorldBias: { value: new THREE.Vector3(0, 0, 0) },
             uCavityFieldIsovalue: { value: 0 },
@@ -98893,7 +99839,7 @@ function _applyCavityClip(material, clipUniforms) {
     // link, fallback must build a different polar-only program which contains no
     // 3-D sampler declaration or sample instruction.
     const useCavityField = Number(clipUniforms?.uCavityClipMode?.value || 0) === 1;
-    const shaderVariant = useCavityField ? 'field-r32f-v1' : 'polar-r32f-free-v1';
+    const shaderVariant = useCavityField ? 'field-r32f-freudenthal-v2' : 'polar-r32f-free-v1';
     if (!material.userData)
         material.userData = {};
     material.userData.vuggCavityClipVariant = shaderVariant;
@@ -98901,6 +99847,7 @@ function _applyCavityClip(material, clipUniforms) {
     material.onBeforeCompile = (shader) => {
         if (useCavityField) {
             shader.uniforms.uCavityField = clipUniforms.uCavityField;
+            shader.uniforms.uCavityFieldDimensions = clipUniforms.uCavityFieldDimensions;
             shader.uniforms.uCavityFieldWorldScale = clipUniforms.uCavityFieldWorldScale;
             shader.uniforms.uCavityFieldWorldBias = clipUniforms.uCavityFieldWorldBias;
             shader.uniforms.uCavityFieldIsovalue = clipUniforms.uCavityFieldIsovalue;
@@ -98949,9 +99896,62 @@ uniform float uVugCellTexW;
 uniform float uVugCellTexH;
 uniform int uCavityClipMode;
 uniform sampler3D uCavityField;
+uniform vec3 uCavityFieldDimensions;
 uniform vec3 uCavityFieldWorldScale;
 uniform vec3 uCavityFieldWorldBias;
 uniform float uCavityFieldIsovalue;
+${useCavityField ? `
+float cavityFieldGridValue(vec3 gridIndex) {
+  return texture(uCavityField,
+    (gridIndex + vec3(0.5)) / uCavityFieldDimensions).r;
+}
+
+float cavityFreudenthalValue(vec3 gridPosition) {
+  vec3 base = min(floor(gridPosition), uCavityFieldDimensions - vec3(2.0));
+  base = max(base, vec3(0.0));
+  vec3 t = gridPosition - base;
+  vec3 pCorner;
+  vec3 pqCorner;
+  float tp;
+  float tq;
+  float tr;
+  if (t.x >= t.y) {
+    if (t.y >= t.z) {
+      pCorner = base + vec3(1.0, 0.0, 0.0);
+      pqCorner = base + vec3(1.0, 1.0, 0.0);
+      tp = t.x; tq = t.y; tr = t.z;
+    } else if (t.x >= t.z) {
+      pCorner = base + vec3(1.0, 0.0, 0.0);
+      pqCorner = base + vec3(1.0, 0.0, 1.0);
+      tp = t.x; tq = t.z; tr = t.y;
+    } else {
+      pCorner = base + vec3(0.0, 0.0, 1.0);
+      pqCorner = base + vec3(1.0, 0.0, 1.0);
+      tp = t.z; tq = t.x; tr = t.y;
+    }
+  } else {
+    if (t.x >= t.z) {
+      pCorner = base + vec3(0.0, 1.0, 0.0);
+      pqCorner = base + vec3(1.0, 1.0, 0.0);
+      tp = t.y; tq = t.x; tr = t.z;
+    } else if (t.y >= t.z) {
+      pCorner = base + vec3(0.0, 1.0, 0.0);
+      pqCorner = base + vec3(0.0, 1.0, 1.0);
+      tp = t.y; tq = t.z; tr = t.x;
+    } else {
+      pCorner = base + vec3(0.0, 0.0, 1.0);
+      pqCorner = base + vec3(0.0, 1.0, 1.0);
+      tp = t.z; tq = t.y; tr = t.x;
+    }
+  }
+  float c000 = cavityFieldGridValue(base);
+  float cp = cavityFieldGridValue(pCorner);
+  float cpq = cavityFieldGridValue(pqCorner);
+  float c111 = cavityFieldGridValue(base + vec3(1.0));
+  return c000 * (1.0 - tp) + cp * (tp - tq)
+    + cpq * (tq - tr) + c111 * tr;
+}
+` : ''}
 // === HELIX-OVERLAY-FORK ADDITION (v19) — helix skin uniforms =====
 uniform float uHelixEnabled;
 uniform float uHelixSweep;
@@ -99024,6 +100024,7 @@ float cavityHullRadiusAt(vec3 worldPos) {
             for (const declaration of [
                 'uniform int uCavityClipMode;\n',
                 'uniform sampler3D uCavityField;\n',
+                'uniform vec3 uCavityFieldDimensions;\n',
                 'uniform vec3 uCavityFieldWorldScale;\n',
                 'uniform vec3 uCavityFieldWorldBias;\n',
                 'uniform float uCavityFieldIsovalue;\n',
@@ -99033,12 +100034,12 @@ float cavityHullRadiusAt(vec3 worldPos) {
         const cavityDiscard = useCavityField
             ? `vec3 _cavityTexCoord = vCavityWorldPos * uCavityFieldWorldScale
     + uCavityFieldWorldBias;
-  // Clamp alone would project a border texel indefinitely. Reject normalized
-  // coordinates outside [0,1] explicitly, then sample the guaranteed
-  // rock-negative border. Positive is void; negative is rock; equality stays.
-  if (any(lessThan(_cavityTexCoord, vec3(0.0)))
-      || any(greaterThan(_cavityTexCoord, vec3(1.0)))) discard;
-  if (texture(uCavityField, _cavityTexCoord).r < uCavityFieldIsovalue) discard;`
+  vec3 _cavityGridPosition = _cavityTexCoord * uCavityFieldDimensions - vec3(0.5);
+  // The affine map addresses texel centres. Test the actual lattice bounds,
+  // not [0,1], which includes a half-voxel unauthenticated halo.
+  if (any(lessThan(_cavityGridPosition, vec3(0.0)))
+      || any(greaterThan(_cavityGridPosition, uCavityFieldDimensions - vec3(1.0)))) discard;
+  if (cavityFreudenthalValue(_cavityGridPosition) < uCavityFieldIsovalue) discard;`
             : `float _vugHullR = cavityHullRadiusAt(vCavityWorldPos);
   if (length(vCavityWorldPos - uVugCenter) > _vugHullR) discard;`;
         shader.fragmentShader = shader.fragmentShader.replace('void main() {', `void main() {
@@ -99229,7 +100230,7 @@ function _topoCavityClipCapabilityReceipt(state = _topoThreeState) {
     const gl = renderer && typeof renderer.getContext === 'function' ? renderer.getContext() : null;
     if (!gl) {
         return Object.freeze({
-            schema: 'cavity-clip-capability-v1',
+            schema: 'cavity-clip-capability-v2',
             available: false,
             reason: 'webgl-context-unavailable',
         });
@@ -99237,9 +100238,9 @@ function _topoCavityClipCapabilityReceipt(state = _topoThreeState) {
     const isWebGL2 = typeof WebGL2RenderingContext !== 'undefined'
         && gl instanceof WebGL2RenderingContext;
     const floatLinear = !!gl.getExtension('OES_texture_float_linear');
-    const r32fProbe = isWebGL2 && floatLinear ? _topoProbeCavityR32F(gl, renderer) : {
+    const r32fProbe = isWebGL2 ? _topoProbeCavityR32F(gl, renderer) : {
         passed: false,
-        reason: !isWebGL2 ? 'webgl2-required' : 'float-linear-filtering-required',
+        reason: 'webgl2-required',
     };
     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
     const vertexPrecision = gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT);
@@ -99252,18 +100253,17 @@ function _topoCavityClipCapabilityReceipt(state = _topoThreeState) {
     const dimensions = state && state.cavityFieldContract
         ? state.cavityFieldContract.dimensions : null;
     const resolutionFits = !!(dimensions && dimensions.every((value) => value <= maxTextureSize));
-    const supported = isWebGL2 && floatLinear && r32fProbe.passed
+    const supported = isWebGL2 && r32fProbe.passed
         && maxTextureSize > 0 && maxTextureUnits >= requiredTextureUnits && highpAvailable
         && (!dimensions || resolutionFits);
     return Object.freeze({
-        schema: 'cavity-clip-capability-v1',
+        schema: 'cavity-clip-capability-v2',
         available: supported,
-        reason: supported ? 'r32f-linear-sampling-supported' : (!isWebGL2 ? 'webgl2-required'
-            : !floatLinear ? 'float-linear-filtering-required'
-                : !r32fProbe.passed ? `r32f-probe-failed:${r32fProbe.reason}`
-                    : !resolutionFits && dimensions ? 'field-exceeds-max-3d-texture-size'
-                        : !highpAvailable ? 'highp-float-required'
-                            : 'insufficient-texture-units'),
+        reason: supported ? 'r32f-nearest-freudenthal-sampling-supported' : (!isWebGL2 ? 'webgl2-required'
+            : !r32fProbe.passed ? `r32f-probe-failed:${r32fProbe.reason}`
+                : !resolutionFits && dimensions ? 'field-exceeds-max-3d-texture-size'
+                    : !highpAvailable ? 'highp-float-required'
+                        : 'insufficient-texture-units'),
         webgl_version: String(gl.getParameter(gl.VERSION) || ''),
         shading_language_version: String(gl.getParameter(gl.SHADING_LANGUAGE_VERSION) || ''),
         vendor: debugInfo ? String(gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '') : null,
@@ -99272,7 +100272,7 @@ function _topoCavityClipCapabilityReceipt(state = _topoThreeState) {
         max_fragment_texture_units: maxTextureUnits,
         required_fragment_texture_units: requiredTextureUnits,
         oes_texture_float_linear: floatLinear,
-        r32f_linear_probe: { ...r32fProbe },
+        r32f_sampling_probe: { ...r32fProbe },
         vertex_highp_precision_bits: vertexPrecision ? vertexPrecision.precision : 0,
         fragment_highp_precision_bits: fragmentPrecision ? fragmentPrecision.precision : 0,
         field_dimensions: dimensions ? Array.from(dimensions) : null,
@@ -99312,7 +100312,7 @@ function _topoPublishCavityClipReceipt(state, receipt) {
     }
     catch (_) {
         canvas.dataset.cavityClipReceipt = JSON.stringify({
-            schema: 'cavity-clip-capability-v1',
+            schema: 'cavity-clip-capability-v2',
             available: false,
             reason: 'receipt-serialization-failed',
         });
@@ -99331,7 +100331,7 @@ function _topoHandleCavityContextLost(state) {
     if (state.crystals)
         state.crystals.visible = false;
     _topoPublishCavityClipReceipt(state, Object.freeze({
-        schema: 'cavity-clip-capability-v1',
+        schema: 'cavity-clip-capability-v2',
         available: false,
         reason: 'webgl-context-lost',
     }));
@@ -99409,14 +100409,19 @@ precision highp float;
 precision highp sampler3D;
 uniform sampler3D uVolume;
 out vec4 outColor;
+float gridValue(vec3 gridIndex) {
+  return texture(uVolume, (gridIndex + vec3(0.5)) / vec3(2.0)).r;
+}
 void main() {
   float px = gl_FragCoord.x;
-  vec3 sampleAt = px < 1.0 ? vec3(0.25, 0.25, 0.25)
-    : px < 2.0 ? vec3(0.75, 0.25, 0.25)
-    : px < 3.0 ? vec3(0.25, 0.75, 0.25)
-    : px < 4.0 ? vec3(0.25, 0.25, 0.75)
-    : vec3(0.625, 0.375, 0.625);
-  outColor = vec4(texture(uVolume, sampleAt).rrr, 1.0);
+  float value = px < 1.0 ? gridValue(vec3(0.0, 0.0, 0.0))
+    : px < 2.0 ? gridValue(vec3(1.0, 0.0, 0.0))
+    : px < 3.0 ? gridValue(vec3(0.0, 1.0, 0.0))
+    : px < 4.0 ? gridValue(vec3(0.0, 0.0, 1.0))
+    : 0.25 * gridValue(vec3(0.0, 0.0, 0.0))
+      + 0.5 * gridValue(vec3(1.0, 0.0, 1.0))
+      + 0.25 * gridValue(vec3(1.0, 1.0, 1.0));
+  outColor = vec4(value, value, value, 1.0);
 }`);
         program = gl.createProgram();
         gl.attachShader(program, vertexShader);
@@ -99427,13 +100432,13 @@ void main() {
         }
         // x-fastest asymmetric landmarks: x + 2y + 4z, normalized by 7.
         // Four texel centres independently pin all three positive axes; the fifth
-        // off-centre sample pins real trilinear interpolation and texel-centre math.
+        // pins manual Freudenthal weighting using nearest texel-centre reads.
         const samples = new Float32Array([0, 1 / 7, 2 / 7, 3 / 7, 4 / 7, 5 / 7, 6 / 7, 1]);
         gl.activeTexture(gl.TEXTURE0);
         volume = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_3D, volume);
-        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
@@ -99462,7 +100467,8 @@ void main() {
             passed: glError === gl.NO_ERROR && maxError <= 2,
             reason: glError === gl.NO_ERROR ? (maxError <= 2 ? 'ok' : 'sample-mismatch') : `gl-error-${glError}`,
             format: 'R32F',
-            filter: 'LINEAR',
+            filter: 'NEAREST',
+            interpolation: 'freudenthal-piecewise-linear-v1',
             sample_coordinates: [
                 [0.25, 0.25, 0.25], [0.75, 0.25, 0.25], [0.25, 0.75, 0.25],
                 [0.25, 0.25, 0.75], [0.625, 0.375, 0.625],
@@ -99478,7 +100484,8 @@ void main() {
             passed: false,
             reason: error instanceof Error ? error.message : String(error),
             format: 'R32F',
-            filter: 'LINEAR',
+            filter: 'NEAREST',
+            interpolation: 'freudenthal-piecewise-linear-v1',
         });
     }
 }
@@ -99511,6 +100518,10 @@ function _topoCavitySurfaceSource(wall, sim, useMarchingCubes = _topoMarchingCub
             providerAuthority: true, providerReceipt: active.receipt,
             sig: `mc-authority|${buffers.sig}|clip-field:${field.snapshotDigest}`,
         };
+    }
+    if (wall._cavityProductionAuthorityContract) {
+        throw new Error('production cavity authority is unavailable: '
+            + (wall._cavitySurfaceAuthorityFailure || 'authenticated surface missing'));
     }
     if (useMarchingCubes && !wall._disableMarchingCubesCavity && wall.cavitySurfaceFor) {
         try {
@@ -99733,8 +100744,8 @@ function _topoInstallCavityFieldClip(state, field, surface) {
     texture.format = THREE.RedFormat;
     texture.type = THREE.FloatType;
     texture.internalFormat = 'R32F';
-    texture.minFilter = THREE.LinearFilter;
-    texture.magFilter = THREE.LinearFilter;
+    texture.minFilter = THREE.NearestFilter;
+    texture.magFilter = THREE.NearestFilter;
     texture.wrapS = THREE.ClampToEdgeWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
     texture.wrapR = THREE.ClampToEdgeWrapping;
@@ -99781,6 +100792,10 @@ function _topoInstallCavityFieldClip(state, field, surface) {
     }
     const wasFieldVariant = state.clipUniforms.uCavityClipMode.value === 1;
     state.clipUniforms.uCavityField.value = texture;
+    if (!state.clipUniforms.uCavityFieldDimensions) {
+        state.clipUniforms.uCavityFieldDimensions = { value: new THREE.Vector3() };
+    }
+    state.clipUniforms.uCavityFieldDimensions.value.fromArray(contract.dimensions);
     state.clipUniforms.uCavityFieldWorldScale.value.fromArray(contract.world_to_texture_scale);
     state.clipUniforms.uCavityFieldWorldBias.value.fromArray(contract.world_to_texture_bias);
     state.clipUniforms.uCavityFieldIsovalue.value = contract.isovalue;
@@ -105433,6 +106448,12 @@ function _topoSnapshotWall(liveWall, snapshot) {
             // WallMesh; they must never inherit the provider active on `liveWall`.
             const storedProvider = snapshot?.cavity_surface_provider;
             if (storedProvider?.kind === 'cavity-field') {
+                const productionContract = synth._cavityProductionAuthorityContract;
+                const storedContractDigest = snapshot?.cavity_production_contract_digest ?? null;
+                if ((productionContract?.contract_digest ?? null) !== storedContractDigest
+                    || (storedProvider.production_contract_digest ?? null) !== storedContractDigest) {
+                    throw new Error('replay cavity production contract mismatch');
+                }
                 const rebuilt = synth.activateCavitySurfaceAnchorProvider({
                     resolution: storedProvider.resolution,
                     isovalue: storedProvider.isovalue,
@@ -105442,6 +106463,8 @@ function _topoSnapshotWall(liveWall, snapshot) {
                     'kind', 'resolution', 'isovalue', 'field_signature',
                     'field_snapshot_digest', 'surface_signature',
                     'surface_buffer_digest', 'cavity_evolution_signature',
+                    'production_contract_digest',
+                    'authoritative_volume_mm3', 'max_field_agreement_voxels',
                 ];
                 if (identityKeys.some(key => rebuilt[key] !== storedProvider[key])
                     || rebuilt.cavity_evolution_signature !== expectedSignature) {
@@ -105480,7 +106503,24 @@ function _topoReplayRenderDecision(liveWall, snapshot) {
             message: `Replay frame withheld: ${wall._replayAuthenticationFailure}.`,
         });
     }
-    const provider = wall?.activeCavitySurfaceAnchorProvider?.();
+    let provider = null;
+    try {
+        provider = wall?.activeCavitySurfaceAnchorProvider?.();
+    }
+    catch (error) {
+        return Object.freeze({
+            mode: 'corrupt', wall,
+            message: `Cavity frame withheld: ${error instanceof Error ? error.message : String(error)}.`,
+        });
+    }
+    if (wall?._cavityProductionAuthorityContract
+        && provider?.receipt?.kind !== 'cavity-field') {
+        return Object.freeze({
+            mode: 'corrupt', wall,
+            message: `Cavity frame withheld: ${wall._cavitySurfaceAuthorityFailure
+                || 'production Cartesian surface authority is unavailable'}.`,
+        });
+    }
     return Object.freeze({
         mode: provider?.receipt?.kind === 'cavity-field' ? 'cavity-field' : 'wall-mesh',
         wall,
@@ -105488,9 +106528,7 @@ function _topoReplayRenderDecision(liveWall, snapshot) {
     });
 }
 function _topoThreeRenderAuthorityDecision(liveWall, snapshot) {
-    return snapshot
-        ? _topoReplayRenderDecision(liveWall, snapshot)
-        : Object.freeze({ mode: 'wall-mesh', wall: liveWall, message: null });
+    return _topoReplayRenderDecision(liveWall, snapshot);
 }
 // Public render entry. Called from topoRender's branch when
 // _topoUseThreeRenderer is true. Lazily inits on first call; renders

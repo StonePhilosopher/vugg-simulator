@@ -314,6 +314,23 @@ class VugSimulator {
       && this.conditions.wall.host_release_ledger.length === 0;
   }
 
+  enableProductionCavityAuthority() {
+    if (!this.canReauthorInitialHostGeometry()) {
+      throw new RangeError('production cavity authority must be selected before time or crystallization');
+    }
+    const enabled = this.wall_state.enableProductionCavityAuthority();
+    const exactDiameter = this.conditions.wall.initializeCavityCapacity(
+      enabled.initial_volume_mm3, CAVITY_PRODUCTION_VOLUME_MODEL,
+    );
+    this.wall_state.updateCapacity(enabled.initial_volume_mm3, exactDiameter);
+    return Object.freeze({
+      contract: enabled.contract,
+      provider: enabled.provider,
+      exact_capacity_volume_mm3: enabled.initial_volume_mm3,
+      exact_equivalent_diameter_mm: exactDiameter,
+    });
+  }
+
   reauthorInitialCavityEquivalentDiameterMm(value) {
     if (!this.canReauthorInitialHostGeometry()) return false;
     const wall = this.conditions.wall;

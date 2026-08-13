@@ -25,7 +25,9 @@ describe('cavity field clipping contract', () => {
     const field = asymmetricField();
     const contract = field.textureContract();
     expect(contract.dimensions).toEqual([3, 4, 5]);
+    expect(contract.schema).toBe('cavity-field-texture-contract-v2');
     expect(contract.data_order).toBe('x-fastest, then y, then z');
+    expect(contract.interpolation).toBe('freudenthal-piecewise-linear-v1');
     expect(contract.sign_convention).toBe('positive-void, zero-wall, negative-rock');
 
     for (const grid of [[0, 0, 0], [2, 1, 3], [1, 3, 4]]) {
@@ -37,6 +39,19 @@ describe('cavity field clipping contract', () => {
       expect(field.valueAt(grid[0], grid[1], grid[2]))
         .toBe(grid[0] + 10 * grid[1] + 100 * grid[2]);
     }
+  });
+
+  it('uses the same Freudenthal tetrahedron weights advertised to the GPU', () => {
+    const field = new CavityScalarField({
+      sizeX: 2, sizeY: 2, sizeZ: 2,
+      spacingMm: 1, origin: [0, 0, 0],
+      values: new Float32Array([0, 1, 2, 4, 8, 16, 32, 64]),
+      sig: 'non-affine-freudenthal-landmarks',
+    });
+    // t=(0.75,0.25,0.5) lies in x>=z>=y: corners 000,100,101,111.
+    // Weights are 0.25,0.25,0.25,0.25 respectively.
+    expect(field.sampleWorld(0.75, 0.25, 0.5)).toBe((0 + 1 + 16 + 64) / 4);
+    expect(field.textureContract().interpolation).toBe('freudenthal-piecewise-linear-v1');
   });
 
   it('treats every point outside the uploaded field bounds as rock', () => {
@@ -101,7 +116,7 @@ describe('cavity field clipping contract', () => {
     expect(() => { surface.isovalue = 1; }).toThrow(TypeError);
   });
 
-  it('reports sampled planar-vs-trilinear displacement without calling it exact Hausdorff error', () => {
+  it('reports sampled extracted-vs-implicit displacement without calling it exact Hausdorff error', () => {
     const field = CavityScalarField.fromBubbles([[0, 0, 0, 10]], {
       resolution: 24,
       sig: 'agreement-sphere',

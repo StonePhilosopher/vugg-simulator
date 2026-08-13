@@ -1171,6 +1171,8 @@ _diffuseRingState(rate?) {
       && this.wall_state.cavityEvolutionLedger()
       ? this.wall_state.cavityEvolutionLedger().signature : null,
     cavity_surface_provider: { ...cavitySurfaceProvider },
+    cavity_production_contract_digest:
+      this.wall_state._cavityProductionAuthorityContract?.contract_digest ?? null,
     rings: new Array(ringCount),
     conditions: {
       temperature: cnd.temperature,

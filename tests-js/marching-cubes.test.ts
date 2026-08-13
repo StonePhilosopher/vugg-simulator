@@ -75,16 +75,23 @@ describe('MarchingCubesExtractor — indexed deterministic topology', () => {
     expect(MarchingCubesExtractor.extract(fixtureField(2, () => +1)).indices.length).toBe(0);
   });
 
-  it('interpolates the single-positive-corner case on its three crossed edges', () => {
+  it('resolves a single-positive-corner case through the exact tetrahedral zero set', () => {
     const field = fixtureField(2, (x, y, z) => (x === 0 && y === 0 && z === 0 ? 1 : -1));
     const surface = field.extract(0);
-    expect(surface.indices.length).toBe(3);
-    expect(surface.positions.length).toBe(9);
+    expect(surface.indices.length).toBe(18);
+    expect(surface.positions.length).toBe(21);
     const points = [];
     for (let i = 0; i < surface.positions.length; i += 3) {
       points.push(Array.from(surface.positions.slice(i, i + 3)).map((v: number) => Number(v.toFixed(6))).join(','));
     }
-    expect(new Set(points)).toEqual(new Set(['0.5,0,0', '0,0.5,0', '0,0,0.5']));
+    expect(points).toContain('0.5,0,0');
+    expect(points).toContain('0,0.5,0');
+    expect(points).toContain('0,0,0.5');
+    for (let index = 0; index < surface.positions.length; index += 3) {
+      expect(Math.abs(field.sampleWorld(
+        surface.positions[index], surface.positions[index + 1], surface.positions[index + 2],
+      ))).toBeLessThan(1e-7);
+    }
   });
 
   it('extracts a closed finite sphere with normalized outward normals', () => {
@@ -130,15 +137,36 @@ describe('MarchingCubesExtractor — indexed deterministic topology', () => {
     expect(Array.from(edgeIncidence(surface).values()).every((count) => count === 2)).toBe(true);
   });
 
-  it('fails closed on an unresolved trilinear interior ambiguity', () => {
+  it('keeps exact-zero simulation-of-simplicity on the authenticated CPU/GPU zero set', () => {
+    const field = fixtureField(5, (x, y, z) =>
+      1 - (Math.abs(x - 2) + Math.abs(y - 2) + Math.abs(z - 2)));
+    const surface = field.extract();
+    expect(Array.from(edgeIncidence(surface).values()).every(count => count === 2)).toBe(true);
+    let exactZeroVertices = 0;
+    for (let index = 0; index < surface.positions.length; index += 3) {
+      const value = field.sampleWorld(
+        surface.positions[index], surface.positions[index + 1], surface.positions[index + 2],
+      );
+      expect(Math.abs(value)).toBeLessThanOrEqual(field.spacingMm * 2e-5);
+      if (value === 0) exactZeroVertices++;
+    }
+    expect(exactZeroVertices).toBeGreaterThan(0);
+    const agreement = MarchingCubesExtractor.measureImplicitAgreement(field, surface, 2);
+    expect(agreement.unresolved_sample_count).toBe(0);
+    expect(agreement.max_normal_root_distance_voxels).toBe(0);
+  });
+
+  it('resolves the former trilinear interior ambiguity as a closed tetrahedral surface', () => {
     const field = CavityScalarField.fromBubbles(
       [[0, 0, 0, 3], [5, -3, 5, 4]],
       { resolution: 16, sig: 'adversarial-interior-ambiguity' },
     );
-    expect(() => field.extract()).toThrow(/non-manifold/i);
+    const surface = field.extract();
+    expect(surface.indices.length).toBeGreaterThan(0);
+    expect(Array.from(edgeIncidence(surface).values()).every((count) => count === 2)).toBe(true);
   });
 
-  it('rejects an undefined critical-point normal instead of emitting zero', () => {
+  it('rejects a tangent critical point with no unique physical surface normal', () => {
     const field = CavityScalarField.fromBubbles(
       [[-4, 0, 0, 4], [4, 0, 0, 4]],
       { resolution: 17, sig: 'tangent-critical-point' },
@@ -146,12 +174,16 @@ describe('MarchingCubesExtractor — indexed deterministic topology', () => {
     expect(() => field.extract()).toThrow(/undefined.*normal|critical point/i);
   });
 
-  it('rejects a locally folded face even after component winding is consistent', () => {
+  it('resolves the former locally folded face against the shared tetrahedral field', () => {
     const field = CavityScalarField.fromBubbles(
       [[-3, 4, 4, 6], [5, 0, -1, 4]],
       { resolution: 17, sig: 'adversarial-winding' },
     );
-    expect(() => field.extract()).toThrow(/interior ambiguity.*folds/i);
+    const surface = field.extract();
+    expect(Array.from(edgeIncidence(surface).values()).every((count) => count === 2)).toBe(true);
+    const agreement = MarchingCubesExtractor.measureImplicitAgreement(field, surface, 2);
+    expect(agreement.unresolved_sample_count).toBe(0);
+    expect(agreement.max_normal_root_distance_voxels).toBeLessThan(1e-4);
   });
 
   it('emits no non-finite or zero-area triangles', () => {

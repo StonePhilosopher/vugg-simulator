@@ -196,6 +196,7 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
       // wall. A mixed wall/clip pair is never installed.
       uCavityClipMode: { value: 0 },
       uCavityField: { value: null as any },
+      uCavityFieldDimensions: { value: new THREE.Vector3(1, 1, 1) },
       uCavityFieldWorldScale: { value: new THREE.Vector3(1, 1, 1) },
       uCavityFieldWorldBias: { value: new THREE.Vector3(0, 0, 0) },
       uCavityFieldIsovalue: { value: 0 },
@@ -273,13 +274,14 @@ function _applyCavityClip(material: any, clipUniforms: any) {
   // link, fallback must build a different polar-only program which contains no
   // 3-D sampler declaration or sample instruction.
   const useCavityField = Number(clipUniforms?.uCavityClipMode?.value || 0) === 1;
-  const shaderVariant = useCavityField ? 'field-r32f-v1' : 'polar-r32f-free-v1';
+  const shaderVariant = useCavityField ? 'field-r32f-freudenthal-v2' : 'polar-r32f-free-v1';
   if (!material.userData) material.userData = {};
   material.userData.vuggCavityClipVariant = shaderVariant;
   material.customProgramCacheKey = () => `vugg-cavity-clip:${shaderVariant}`;
   material.onBeforeCompile = (shader: any) => {
     if (useCavityField) {
       shader.uniforms.uCavityField = clipUniforms.uCavityField;
+      shader.uniforms.uCavityFieldDimensions = clipUniforms.uCavityFieldDimensions;
       shader.uniforms.uCavityFieldWorldScale = clipUniforms.uCavityFieldWorldScale;
       shader.uniforms.uCavityFieldWorldBias = clipUniforms.uCavityFieldWorldBias;
       shader.uniforms.uCavityFieldIsovalue = clipUniforms.uCavityFieldIsovalue;
@@ -335,9 +337,62 @@ uniform float uVugCellTexW;
 uniform float uVugCellTexH;
 uniform int uCavityClipMode;
 uniform sampler3D uCavityField;
+uniform vec3 uCavityFieldDimensions;
 uniform vec3 uCavityFieldWorldScale;
 uniform vec3 uCavityFieldWorldBias;
 uniform float uCavityFieldIsovalue;
+${useCavityField ? `
+float cavityFieldGridValue(vec3 gridIndex) {
+  return texture(uCavityField,
+    (gridIndex + vec3(0.5)) / uCavityFieldDimensions).r;
+}
+
+float cavityFreudenthalValue(vec3 gridPosition) {
+  vec3 base = min(floor(gridPosition), uCavityFieldDimensions - vec3(2.0));
+  base = max(base, vec3(0.0));
+  vec3 t = gridPosition - base;
+  vec3 pCorner;
+  vec3 pqCorner;
+  float tp;
+  float tq;
+  float tr;
+  if (t.x >= t.y) {
+    if (t.y >= t.z) {
+      pCorner = base + vec3(1.0, 0.0, 0.0);
+      pqCorner = base + vec3(1.0, 1.0, 0.0);
+      tp = t.x; tq = t.y; tr = t.z;
+    } else if (t.x >= t.z) {
+      pCorner = base + vec3(1.0, 0.0, 0.0);
+      pqCorner = base + vec3(1.0, 0.0, 1.0);
+      tp = t.x; tq = t.z; tr = t.y;
+    } else {
+      pCorner = base + vec3(0.0, 0.0, 1.0);
+      pqCorner = base + vec3(1.0, 0.0, 1.0);
+      tp = t.z; tq = t.x; tr = t.y;
+    }
+  } else {
+    if (t.x >= t.z) {
+      pCorner = base + vec3(0.0, 1.0, 0.0);
+      pqCorner = base + vec3(1.0, 1.0, 0.0);
+      tp = t.y; tq = t.x; tr = t.z;
+    } else if (t.y >= t.z) {
+      pCorner = base + vec3(0.0, 1.0, 0.0);
+      pqCorner = base + vec3(0.0, 1.0, 1.0);
+      tp = t.y; tq = t.z; tr = t.x;
+    } else {
+      pCorner = base + vec3(0.0, 0.0, 1.0);
+      pqCorner = base + vec3(0.0, 1.0, 1.0);
+      tp = t.z; tq = t.y; tr = t.x;
+    }
+  }
+  float c000 = cavityFieldGridValue(base);
+  float cp = cavityFieldGridValue(pCorner);
+  float cpq = cavityFieldGridValue(pqCorner);
+  float c111 = cavityFieldGridValue(base + vec3(1.0));
+  return c000 * (1.0 - tp) + cp * (tp - tq)
+    + cpq * (tq - tr) + c111 * tr;
+}
+` : ''}
 // === HELIX-OVERLAY-FORK ADDITION (v19) — helix skin uniforms =====
 uniform float uHelixEnabled;
 uniform float uHelixSweep;
@@ -409,6 +464,7 @@ float cavityHullRadiusAt(vec3 worldPos) {
       for (const declaration of [
         'uniform int uCavityClipMode;\n',
         'uniform sampler3D uCavityField;\n',
+        'uniform vec3 uCavityFieldDimensions;\n',
         'uniform vec3 uCavityFieldWorldScale;\n',
         'uniform vec3 uCavityFieldWorldBias;\n',
         'uniform float uCavityFieldIsovalue;\n',
@@ -417,12 +473,12 @@ float cavityHullRadiusAt(vec3 worldPos) {
     const cavityDiscard = useCavityField
       ? `vec3 _cavityTexCoord = vCavityWorldPos * uCavityFieldWorldScale
     + uCavityFieldWorldBias;
-  // Clamp alone would project a border texel indefinitely. Reject normalized
-  // coordinates outside [0,1] explicitly, then sample the guaranteed
-  // rock-negative border. Positive is void; negative is rock; equality stays.
-  if (any(lessThan(_cavityTexCoord, vec3(0.0)))
-      || any(greaterThan(_cavityTexCoord, vec3(1.0)))) discard;
-  if (texture(uCavityField, _cavityTexCoord).r < uCavityFieldIsovalue) discard;`
+  vec3 _cavityGridPosition = _cavityTexCoord * uCavityFieldDimensions - vec3(0.5);
+  // The affine map addresses texel centres. Test the actual lattice bounds,
+  // not [0,1], which includes a half-voxel unauthenticated halo.
+  if (any(lessThan(_cavityGridPosition, vec3(0.0)))
+      || any(greaterThan(_cavityGridPosition, uCavityFieldDimensions - vec3(1.0)))) discard;
+  if (cavityFreudenthalValue(_cavityGridPosition) < uCavityFieldIsovalue) discard;`
       : `float _vugHullR = cavityHullRadiusAt(vCavityWorldPos);
   if (length(vCavityWorldPos - uVugCenter) > _vugHullR) discard;`;
     shader.fragmentShader = shader.fragmentShader.replace(
@@ -623,7 +679,7 @@ function _topoCavityClipCapabilityReceipt(state = _topoThreeState): any {
   const gl = renderer && typeof renderer.getContext === 'function' ? renderer.getContext() : null;
   if (!gl) {
     return Object.freeze({
-      schema: 'cavity-clip-capability-v1',
+      schema: 'cavity-clip-capability-v2',
       available: false,
       reason: 'webgl-context-unavailable',
     });
@@ -631,9 +687,9 @@ function _topoCavityClipCapabilityReceipt(state = _topoThreeState): any {
   const isWebGL2 = typeof WebGL2RenderingContext !== 'undefined'
     && gl instanceof WebGL2RenderingContext;
   const floatLinear = !!gl.getExtension('OES_texture_float_linear');
-  const r32fProbe = isWebGL2 && floatLinear ? _topoProbeCavityR32F(gl, renderer) : {
+  const r32fProbe = isWebGL2 ? _topoProbeCavityR32F(gl, renderer) : {
     passed: false,
-    reason: !isWebGL2 ? 'webgl2-required' : 'float-linear-filtering-required',
+    reason: 'webgl2-required',
   };
   const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
   const vertexPrecision = gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT);
@@ -646,16 +702,15 @@ function _topoCavityClipCapabilityReceipt(state = _topoThreeState): any {
   const dimensions = state && state.cavityFieldContract
     ? state.cavityFieldContract.dimensions : null;
   const resolutionFits = !!(dimensions && dimensions.every((value: number) => value <= maxTextureSize));
-  const supported = isWebGL2 && floatLinear && r32fProbe.passed
+  const supported = isWebGL2 && r32fProbe.passed
     && maxTextureSize > 0 && maxTextureUnits >= requiredTextureUnits && highpAvailable
     && (!dimensions || resolutionFits);
   return Object.freeze({
-    schema: 'cavity-clip-capability-v1',
+    schema: 'cavity-clip-capability-v2',
     available: supported,
-    reason: supported ? 'r32f-linear-sampling-supported' : (
+    reason: supported ? 'r32f-nearest-freudenthal-sampling-supported' : (
       !isWebGL2 ? 'webgl2-required'
-        : !floatLinear ? 'float-linear-filtering-required'
-          : !r32fProbe.passed ? `r32f-probe-failed:${r32fProbe.reason}`
+        : !r32fProbe.passed ? `r32f-probe-failed:${r32fProbe.reason}`
           : !resolutionFits && dimensions ? 'field-exceeds-max-3d-texture-size'
             : !highpAvailable ? 'highp-float-required'
               : 'insufficient-texture-units'
@@ -668,7 +723,7 @@ function _topoCavityClipCapabilityReceipt(state = _topoThreeState): any {
     max_fragment_texture_units: maxTextureUnits,
     required_fragment_texture_units: requiredTextureUnits,
     oes_texture_float_linear: floatLinear,
-    r32f_linear_probe: { ...r32fProbe },
+    r32f_sampling_probe: { ...r32fProbe },
     vertex_highp_precision_bits: vertexPrecision ? vertexPrecision.precision : 0,
     fragment_highp_precision_bits: fragmentPrecision ? fragmentPrecision.precision : 0,
     field_dimensions: dimensions ? Array.from(dimensions) : null,
@@ -707,7 +762,7 @@ function _topoPublishCavityClipReceipt(state: any, receipt?: any): void {
     });
   } catch (_) {
     canvas.dataset.cavityClipReceipt = JSON.stringify({
-      schema: 'cavity-clip-capability-v1',
+      schema: 'cavity-clip-capability-v2',
       available: false,
       reason: 'receipt-serialization-failed',
     });
@@ -724,7 +779,7 @@ function _topoHandleCavityContextLost(state: any): void {
   if (state.cavity) state.cavity.visible = false;
   if (state.crystals) state.crystals.visible = false;
   _topoPublishCavityClipReceipt(state, Object.freeze({
-    schema: 'cavity-clip-capability-v1',
+    schema: 'cavity-clip-capability-v2',
     available: false,
     reason: 'webgl-context-lost',
   }));
@@ -774,14 +829,19 @@ precision highp float;
 precision highp sampler3D;
 uniform sampler3D uVolume;
 out vec4 outColor;
+float gridValue(vec3 gridIndex) {
+  return texture(uVolume, (gridIndex + vec3(0.5)) / vec3(2.0)).r;
+}
 void main() {
   float px = gl_FragCoord.x;
-  vec3 sampleAt = px < 1.0 ? vec3(0.25, 0.25, 0.25)
-    : px < 2.0 ? vec3(0.75, 0.25, 0.25)
-    : px < 3.0 ? vec3(0.25, 0.75, 0.25)
-    : px < 4.0 ? vec3(0.25, 0.25, 0.75)
-    : vec3(0.625, 0.375, 0.625);
-  outColor = vec4(texture(uVolume, sampleAt).rrr, 1.0);
+  float value = px < 1.0 ? gridValue(vec3(0.0, 0.0, 0.0))
+    : px < 2.0 ? gridValue(vec3(1.0, 0.0, 0.0))
+    : px < 3.0 ? gridValue(vec3(0.0, 1.0, 0.0))
+    : px < 4.0 ? gridValue(vec3(0.0, 0.0, 1.0))
+    : 0.25 * gridValue(vec3(0.0, 0.0, 0.0))
+      + 0.5 * gridValue(vec3(1.0, 0.0, 1.0))
+      + 0.25 * gridValue(vec3(1.0, 1.0, 1.0));
+  outColor = vec4(value, value, value, 1.0);
 }`);
     program = gl.createProgram();
     gl.attachShader(program, vertexShader);
@@ -793,13 +853,13 @@ void main() {
 
     // x-fastest asymmetric landmarks: x + 2y + 4z, normalized by 7.
     // Four texel centres independently pin all three positive axes; the fifth
-    // off-centre sample pins real trilinear interpolation and texel-centre math.
+    // pins manual Freudenthal weighting using nearest texel-centre reads.
     const samples = new Float32Array([0, 1 / 7, 2 / 7, 3 / 7, 4 / 7, 5 / 7, 6 / 7, 1]);
     gl.activeTexture(gl.TEXTURE0);
     volume = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_3D, volume);
-    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
@@ -829,7 +889,8 @@ void main() {
       passed: glError === gl.NO_ERROR && maxError <= 2,
       reason: glError === gl.NO_ERROR ? (maxError <= 2 ? 'ok' : 'sample-mismatch') : `gl-error-${glError}`,
       format: 'R32F',
-      filter: 'LINEAR',
+      filter: 'NEAREST',
+      interpolation: 'freudenthal-piecewise-linear-v1',
       sample_coordinates: [
         [0.25, 0.25, 0.25], [0.75, 0.25, 0.25], [0.25, 0.75, 0.25],
         [0.25, 0.25, 0.75], [0.625, 0.375, 0.625],
@@ -844,7 +905,8 @@ void main() {
       passed: false,
       reason: error instanceof Error ? error.message : String(error),
       format: 'R32F',
-      filter: 'LINEAR',
+      filter: 'NEAREST',
+      interpolation: 'freudenthal-piecewise-linear-v1',
     });
   }
 }
@@ -878,6 +940,10 @@ function _topoCavitySurfaceSource(wall: any, sim: any,
       providerAuthority: true, providerReceipt: active.receipt,
       sig: `mc-authority|${buffers.sig}|clip-field:${field.snapshotDigest}`,
     };
+  }
+  if (wall._cavityProductionAuthorityContract) {
+    throw new Error('production cavity authority is unavailable: '
+      + (wall._cavitySurfaceAuthorityFailure || 'authenticated surface missing'));
   }
   if (useMarchingCubes && !wall._disableMarchingCubesCavity && wall.cavitySurfaceFor) {
     try {
@@ -1085,8 +1151,8 @@ function _topoInstallCavityFieldClip(state: any, field: CavityScalarField, surfa
   texture.format = THREE.RedFormat;
   texture.type = THREE.FloatType;
   texture.internalFormat = 'R32F';
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.NearestFilter;
+  texture.magFilter = THREE.NearestFilter;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.wrapR = THREE.ClampToEdgeWrapping;
@@ -1129,6 +1195,10 @@ function _topoInstallCavityFieldClip(state: any, field: CavityScalarField, surfa
   }
   const wasFieldVariant = state.clipUniforms.uCavityClipMode.value === 1;
   state.clipUniforms.uCavityField.value = texture;
+  if (!state.clipUniforms.uCavityFieldDimensions) {
+    state.clipUniforms.uCavityFieldDimensions = { value: new THREE.Vector3() };
+  }
+  state.clipUniforms.uCavityFieldDimensions.value.fromArray(contract.dimensions);
   state.clipUniforms.uCavityFieldWorldScale.value.fromArray(contract.world_to_texture_scale);
   state.clipUniforms.uCavityFieldWorldBias.value.fromArray(contract.world_to_texture_bias);
   state.clipUniforms.uCavityFieldIsovalue.value = contract.isovalue;
@@ -6625,6 +6695,12 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
       // WallMesh; they must never inherit the provider active on `liveWall`.
       const storedProvider = snapshot?.cavity_surface_provider;
       if (storedProvider?.kind === 'cavity-field') {
+        const productionContract = synth._cavityProductionAuthorityContract;
+        const storedContractDigest = snapshot?.cavity_production_contract_digest ?? null;
+        if ((productionContract?.contract_digest ?? null) !== storedContractDigest
+            || (storedProvider.production_contract_digest ?? null) !== storedContractDigest) {
+          throw new Error('replay cavity production contract mismatch');
+        }
         const rebuilt = synth.activateCavitySurfaceAnchorProvider({
           resolution: storedProvider.resolution,
           isovalue: storedProvider.isovalue,
@@ -6634,6 +6710,8 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
           'kind', 'resolution', 'isovalue', 'field_signature',
           'field_snapshot_digest', 'surface_signature',
           'surface_buffer_digest', 'cavity_evolution_signature',
+          'production_contract_digest',
+          'authoritative_volume_mm3', 'max_field_agreement_voxels',
         ];
         if (identityKeys.some(key => rebuilt[key] !== storedProvider[key])
             || rebuilt.cavity_evolution_signature !== expectedSignature) {
@@ -6670,7 +6748,23 @@ function _topoReplayRenderDecision(liveWall: any, snapshot: any): any {
       message: `Replay frame withheld: ${wall._replayAuthenticationFailure}.`,
     });
   }
-  const provider = wall?.activeCavitySurfaceAnchorProvider?.();
+  let provider = null;
+  try {
+    provider = wall?.activeCavitySurfaceAnchorProvider?.();
+  } catch (error) {
+    return Object.freeze({
+      mode: 'corrupt', wall,
+      message: `Cavity frame withheld: ${error instanceof Error ? error.message : String(error)}.`,
+    });
+  }
+  if (wall?._cavityProductionAuthorityContract
+      && provider?.receipt?.kind !== 'cavity-field') {
+    return Object.freeze({
+      mode: 'corrupt', wall,
+      message: `Cavity frame withheld: ${wall._cavitySurfaceAuthorityFailure
+        || 'production Cartesian surface authority is unavailable'}.`,
+    });
+  }
   return Object.freeze({
     mode: provider?.receipt?.kind === 'cavity-field' ? 'cavity-field' : 'wall-mesh',
     wall,
@@ -6679,9 +6773,7 @@ function _topoReplayRenderDecision(liveWall: any, snapshot: any): any {
 }
 
 function _topoThreeRenderAuthorityDecision(liveWall: any, snapshot: any): any {
-  return snapshot
-    ? _topoReplayRenderDecision(liveWall, snapshot)
-    : Object.freeze({ mode: 'wall-mesh', wall: liveWall, message: null });
+  return _topoReplayRenderDecision(liveWall, snapshot);
 }
 
 // Public render entry. Called from topoRender's branch when

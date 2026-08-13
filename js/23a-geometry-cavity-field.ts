@@ -59,7 +59,7 @@ interface CavityShapeDescriptor {
 }
 
 interface CavityFieldTextureContract {
-  schema: 'cavity-field-texture-contract-v1';
+  schema: 'cavity-field-texture-contract-v2';
   field_signature: string;
   value_digest: string;
   snapshot_digest: string;
@@ -72,6 +72,7 @@ interface CavityFieldTextureContract {
   world_to_texture_scale: readonly [number, number, number];
   world_to_texture_bias: readonly [number, number, number];
   data_order: 'x-fastest, then y, then z';
+  interpolation: 'freudenthal-piecewise-linear-v1';
   sign_convention: 'positive-void, zero-wall, negative-rock';
 }
 
@@ -82,6 +83,7 @@ interface CavitySurfaceAgreementMetrics {
   surface_signature: string;
   isovalue: number;
   barycentric_subdivisions: number;
+  numerical_zero_tolerance: number;
   sample_count: number;
   unresolved_sample_count: number;
   max_field_residual: number;
@@ -467,7 +469,35 @@ class CavityScalarField {
     return `${frameHash}${CavityScalarField._float32Hash(values)}`;
   }
 
-  static signatureFor(wall: any, resolution = 48, ledgerCursor?: number): string {
+  static _validatedFrame(frame: any, resolution: number): any {
+    if (frame == null) return null;
+    const origin = Array.isArray(frame.origin_mm) ? frame.origin_mm.map(Number) : null;
+    const spacing = Number(frame.spacing_mm);
+    const dimensions = Array.isArray(frame.dimensions) ? frame.dimensions.map(Number) : null;
+    if (!origin || origin.length !== 3 || !origin.every(Number.isFinite)
+        || !(spacing > 0) || !Number.isFinite(spacing)
+        || !dimensions || dimensions.length !== 3
+        || dimensions.some(value => !Number.isInteger(value) || value !== resolution)) {
+      throw new RangeError('cavity field frame must pin finite cubic origin, spacing, and resolution');
+    }
+    return Object.freeze({
+      origin_mm: Object.freeze(origin.slice()),
+      spacing_mm: spacing,
+      dimensions: Object.freeze(dimensions.slice()),
+    });
+  }
+
+  static _frameSignature(frame: any, resolution: number): string {
+    const normalized = CavityScalarField._validatedFrame(frame, resolution);
+    return normalized
+      ? CavityScalarField._sourceHash([[
+        ...normalized.origin_mm, normalized.spacing_mm, ...normalized.dimensions,
+      ]])
+      : 'adaptive';
+  }
+
+  static signatureFor(wall: any, resolution = 48, ledgerCursor?: number,
+                      frame?: any): string {
     const bubbles = CavityScalarField._validatedBubbles(wall && wall.bubbles);
     const shape = CavityScalarField.shapeFor(wall);
     const n = CavityScalarField._resolution(resolution);
@@ -484,7 +514,7 @@ class CavityScalarField {
       ledger.assertProjection(wall, cursor);
       evolutionIdentity = ledger.signatureAt(cursor);
     }
-    return `cavity-field:v3|${n}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${shapeHash}|e:${evolutionIdentity}`;
+    return `cavity-field:v5|${n}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${shapeHash}|e:${evolutionIdentity}|f:${CavityScalarField._frameSignature(frame, n)}`;
   }
 
   static fromWallState(wall: any, opts: any = {}): CavityScalarField {
@@ -505,8 +535,9 @@ class CavityScalarField {
         signature: ledger.signatureAt(cursor),
       };
     }
-    const sig = CavityScalarField.signatureFor(wall, resolution, cursor);
-    return CavityScalarField.fromBubbles(bubbles, { resolution, sig, shape, evolution });
+    const frame = CavityScalarField._validatedFrame(opts.frame, resolution);
+    const sig = CavityScalarField.signatureFor(wall, resolution, cursor, frame);
+    return CavityScalarField.fromBubbles(bubbles, { resolution, sig, shape, evolution, frame });
   }
 
   static fromBubbles(input: any, opts: any = {}): CavityScalarField {
@@ -515,6 +546,7 @@ class CavityScalarField {
     const shape = CavityScalarField._validatedShape(opts.shape || {});
     const evolution = opts.evolution || null;
     const resolution = CavityScalarField._resolution(opts.resolution);
+    const fixedFrame = CavityScalarField._validatedFrame(opts.frame, resolution);
 
     const rawMin = [Infinity, Infinity, Infinity];
     const rawMax = [-Infinity, -Infinity, -Infinity];
@@ -549,32 +581,39 @@ class CavityScalarField {
       fieldMin = fieldMin.map(value => value - paddingDepth);
       fieldMax = fieldMax.map(value => value + paddingDepth);
     }
-    const extent = [
-      fieldMax[0] - fieldMin[0],
-      fieldMax[1] - fieldMin[1],
-      fieldMax[2] - fieldMin[2],
-    ];
-    const largestExtent = Math.max(extent[0], extent[1], extent[2]);
-    if (!(largestExtent > 0) || !Number.isFinite(largestExtent)) {
-      throw new RangeError('cavity bubble bounds must have positive finite extent');
-    }
+    let spacingMm: number;
+    let origin: [number, number, number];
+    if (fixedFrame) {
+      spacingMm = fixedFrame.spacing_mm;
+      origin = fixedFrame.origin_mm.slice() as [number, number, number];
+    } else {
+      const extent = [
+        fieldMax[0] - fieldMin[0],
+        fieldMax[1] - fieldMin[1],
+        fieldMax[2] - fieldMin[2],
+      ];
+      const largestExtent = Math.max(extent[0], extent[1], extent[2]);
+      if (!(largestExtent > 0) || !Number.isFinite(largestExtent)) {
+        throw new RangeError('cavity bubble bounds must have positive finite extent');
+      }
 
-    // Cubic physical bounds make spacingMm one honest value on every axis.
-    // Iterate the padding/spacing relation because the required padding is
-    // max(2*spacing, 5% of the largest bubble-union extent).
-    let padding = 0.05 * largestExtent;
-    let spacingMm = (largestExtent + 2 * padding) / (resolution - 1);
-    for (let i = 0; i < 4; i++) {
-      padding = Math.max(2 * spacingMm, 0.05 * largestExtent);
+      // Diagnostic/adaptive fields retain the historic moving envelope. A
+      // production authority instead supplies `fixedFrame`, captured before
+      // time begins, so erosion cannot resample untouched geology.
+      let padding = 0.05 * largestExtent;
       spacingMm = (largestExtent + 2 * padding) / (resolution - 1);
+      for (let i = 0; i < 4; i++) {
+        padding = Math.max(2 * spacingMm, 0.05 * largestExtent);
+        spacingMm = (largestExtent + 2 * padding) / (resolution - 1);
+      }
+      const center = [
+        (fieldMin[0] + fieldMax[0]) * 0.5,
+        (fieldMin[1] + fieldMax[1]) * 0.5,
+        (fieldMin[2] + fieldMax[2]) * 0.5,
+      ];
+      const half = spacingMm * (resolution - 1) * 0.5;
+      origin = [center[0] - half, center[1] - half, center[2] - half];
     }
-    const center = [
-      (fieldMin[0] + fieldMax[0]) * 0.5,
-      (fieldMin[1] + fieldMax[1]) * 0.5,
-      (fieldMin[2] + fieldMax[2]) * 0.5,
-    ];
-    const half = spacingMm * (resolution - 1) * 0.5;
-    const origin: [number, number, number] = [center[0] - half, center[1] - half, center[2] - half];
     const values = new Float32Array(resolution * resolution * resolution);
     let offset = 0;
     for (let z = 0; z < resolution; z++) {
@@ -603,7 +642,7 @@ class CavityScalarField {
       sourceBubbles: bubbles,
       sourceShape: shape,
       sourceEvolution: evolution,
-      sig: opts.sig || `cavity-field:v3|${resolution}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${CavityScalarField._sourceHash([CavityScalarField._shapeNumbers(shape)])}|e:${evolution ? evolution.signature : 'none'}`,
+      sig: opts.sig || `cavity-field:v5|${resolution}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${CavityScalarField._sourceHash([CavityScalarField._shapeNumbers(shape)])}|e:${evolution ? evolution.signature : 'none'}|f:${CavityScalarField._frameSignature(fixedFrame, resolution)}`,
     });
     field.metrics.field_build_ms = CavityScalarField._nowMs() - started;
     if (!field.hasNegativeBorder(0)) {
@@ -650,7 +689,7 @@ class CavityScalarField {
 
   surfaceSignature(isovalue = 0): string {
     if (!Number.isFinite(isovalue)) throw new TypeError('cavity surface isovalue must be finite');
-    return `${this.sig}|snapshot:${this.snapshotDigest}|mc-face-decider-orient-probe:v3|iso:${isovalue}`;
+    return `${this.sig}|snapshot:${this.snapshotDigest}|freudenthal-tetra-plane-auth:v2|iso:${isovalue}`;
   }
 
   // One CPU/GPU mapping contract for the Tranche-3 clip texture. Data3DTexture
@@ -674,7 +713,7 @@ class CavityScalarField {
     ];
     const freezeTuple = (tuple: number[]) => Object.freeze(tuple.slice()) as any;
     return Object.freeze({
-      schema: 'cavity-field-texture-contract-v1',
+      schema: 'cavity-field-texture-contract-v2',
       field_signature: this.sig,
       value_digest: this.valueDigest,
       snapshot_digest: this.snapshotDigest,
@@ -687,6 +726,7 @@ class CavityScalarField {
       world_to_texture_scale: freezeTuple(scale),
       world_to_texture_bias: freezeTuple(bias),
       data_order: 'x-fastest, then y, then z',
+      interpolation: 'freudenthal-piecewise-linear-v1',
       sign_convention: 'positive-void, zero-wall, negative-rock',
     });
   }
@@ -750,18 +790,19 @@ class CavityScalarField {
     const tx = gx - x0;
     const ty = gy - y0;
     const tz = gz - z0;
-    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+    const coordinates = [tx, ty, tz];
+    const axes = [0, 1, 2].sort((a, b) => coordinates[b] - coordinates[a] || a - b);
+    const p = axes[0], q = axes[1], r = axes[2];
+    const pCorner = [x0, y0, z0];
+    pCorner[p]++;
+    const pqCorner = pCorner.slice();
+    pqCorner[q]++;
     const c000 = this.valueAt(x0, y0, z0);
-    const c100 = this.valueAt(x0 + 1, y0, z0);
-    const c010 = this.valueAt(x0, y0 + 1, z0);
-    const c110 = this.valueAt(x0 + 1, y0 + 1, z0);
-    const c001 = this.valueAt(x0, y0, z0 + 1);
-    const c101 = this.valueAt(x0 + 1, y0, z0 + 1);
-    const c011 = this.valueAt(x0, y0 + 1, z0 + 1);
+    const cp = this.valueAt(pCorner[0], pCorner[1], pCorner[2]);
+    const cpq = this.valueAt(pqCorner[0], pqCorner[1], pqCorner[2]);
     const c111 = this.valueAt(x0 + 1, y0 + 1, z0 + 1);
-    const z0Value = lerp(lerp(c000, c100, tx), lerp(c010, c110, tx), ty);
-    const z1Value = lerp(lerp(c001, c101, tx), lerp(c011, c111, tx), ty);
-    return lerp(z0Value, z1Value, tz);
+    const tp = coordinates[p], tq = coordinates[q], tr = coordinates[r];
+    return c000 * (1 - tp) + cp * (tp - tq) + cpq * (tq - tr) + c111 * tr;
   }
 
   gradientWorld(x: number, y: number, z: number): [number, number, number] {

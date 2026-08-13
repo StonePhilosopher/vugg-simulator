@@ -96,9 +96,9 @@ function makeSimulationThermalFieldCommand(config: any = {}): any {
 }
 
 function makeSimulationCavitySurfaceProviderCommand(
-  kind: 'wall-mesh' | 'cavity-field', opts: any = {},
+  kind: 'wall-mesh' | 'cavity-field' | 'cavity-field-production', opts: any = {},
 ): any {
-  if (kind !== 'wall-mesh' && kind !== 'cavity-field') {
+  if (kind !== 'wall-mesh' && kind !== 'cavity-field' && kind !== 'cavity-field-production') {
     throw new RangeError(`unsupported cavity surface provider '${String(kind)}'`);
   }
   const providerKind = kind;
@@ -332,10 +332,13 @@ function applySimulationCommand(runtime: any, command: any): any {
     };
   }
   if (command.type === 'cavity_surface_provider') {
-    if (command.kind !== 'wall-mesh' && command.kind !== 'cavity-field') {
+    if (command.kind !== 'wall-mesh' && command.kind !== 'cavity-field'
+        && command.kind !== 'cavity-field-production') {
       throw new RangeError(`unsupported cavity surface provider '${String(command.kind)}'`);
     }
-    const result = command.kind === 'cavity-field'
+    const result = command.kind === 'cavity-field-production'
+      ? runtime.sim.enableProductionCavityAuthority()
+      : command.kind === 'cavity-field'
       ? runtime.sim.wall_state.activateCavitySurfaceAnchorProvider({
         resolution: command.resolution, isovalue: command.isovalue,
       })

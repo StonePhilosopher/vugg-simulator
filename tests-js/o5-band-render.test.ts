@@ -141,7 +141,7 @@ describe('W-F O5c masked-horizon cavity clipping', () => {
     expect(shader.uniforms.uCavityField).toBe(state.clipUniforms.uCavityField);
     expect(shader.fragmentShader).toContain('uniform sampler3D uCavityField');
     expect(host.children[0].material.customProgramCacheKey())
-      .toBe('vugg-cavity-clip:field-r32f-v1');
+      .toBe('vugg-cavity-clip:field-r32f-freudenthal-v2');
   });
 });
 

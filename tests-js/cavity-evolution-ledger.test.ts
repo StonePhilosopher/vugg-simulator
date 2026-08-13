@@ -220,7 +220,7 @@ describe('mass-balanced cavity evolution authority', () => {
     const p = [liveMesh.positions[0], liveMesh.positions[1], liveMesh.positions[2]];
     expect(Math.abs(after.sampleAnalyticWorld(p[0], p[1], p[2])))
       .toBeLessThan(1e-5);
-    expect(after.sig).toContain('cavity-field:v3');
+    expect(after.sig).toContain('cavity-field:v5');
   });
 
   it('uses full-surface geodesic feeder flux instead of longitude stripes', () => {

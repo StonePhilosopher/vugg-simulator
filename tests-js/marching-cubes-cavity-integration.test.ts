@@ -84,6 +84,7 @@ describe('Marching Cubes cavity renderer shadow integration', () => {
       uVugRingCount: { value: 0 }, uVugRadiiByRing: { value: new Float32Array(32) },
       uVugCellRadii: { value: null }, uVugCellTexW: { value: 0 }, uVugCellTexH: { value: 0 },
       uCavityClipMode: { value: 1 }, uCavityField: { value: null },
+      uCavityFieldDimensions: { value: new THREE.Vector3(48, 48, 48) },
       uCavityFieldWorldScale: { value: new THREE.Vector3(1, 1, 1) },
       uCavityFieldWorldBias: { value: new THREE.Vector3() }, uCavityFieldIsovalue: { value: 0 },
       uHelixEnabled: { value: 0 }, uHelixSweep: { value: 0 }, uHelixYCenter: { value: 0 },
@@ -103,11 +104,11 @@ describe('Marching Cubes cavity renderer shadow integration', () => {
     expect(instance).toBeGreaterThan(project);
     expect(world).toBeGreaterThan(instance);
     expect(shader.fragmentShader).toContain('uniform sampler3D uCavityField');
-    expect(shader.fragmentShader).toContain('lessThan(_cavityTexCoord, vec3(0.0))');
-    expect(shader.fragmentShader).toContain('greaterThan(_cavityTexCoord, vec3(1.0))');
-    expect(shader.fragmentShader).toContain('texture(uCavityField, _cavityTexCoord).r');
+    expect(shader.fragmentShader).toContain('lessThan(_cavityGridPosition, vec3(0.0))');
+    expect(shader.fragmentShader).toContain('cavityFreudenthalValue(_cavityGridPosition)');
+    expect(shader.fragmentShader).toContain('cavityFieldGridValue');
     expect(shader.fragmentShader).not.toContain('cavityHullRadiusAt');
-    expect(material.customProgramCacheKey()).toBe('vugg-cavity-clip:field-r32f-v1');
+    expect(material.customProgramCacheKey()).toBe('vugg-cavity-clip:field-r32f-freudenthal-v2');
 
     const polarMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
     clipUniforms.uCavityClipMode.value = 0;
@@ -420,27 +421,21 @@ describe('Marching Cubes cavity renderer shadow integration', () => {
     expect(field.sampleWorld(field.bounds.max[0], field.bounds.max[1], field.bounds.max[2])).toBeLessThan(0);
   });
 
-  it('falls back to canonical WallMesh when shadow extraction is non-manifold', () => {
+  it('keeps the ambiguity-safe shadow surface for the former non-manifold case', () => {
     const wall = makeWall();
     wall.bubbles = [[0, 0, 0, 3], [5, -3, 5, 4]];
-    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const extraction = vi.spyOn(MarchingCubesExtractor, 'extract');
     try {
       const first = _topoCavitySurfaceSource(wall, undefined, true, 16);
       const second = _topoCavitySurfaceSource(wall, undefined, true, 16);
-      expect(first.mode).toBe('wall-mesh');
-      expect(second.mode).toBe('wall-mesh');
-      expect(first.buffers).toBe(wall.meshFor());
+      expect(first.mode).toBe('marching-cubes');
+      expect(second.mode).toBe('marching-cubes');
+      expect(first.buffers).not.toBe(wall.meshFor());
       expect(second.buffers).toBe(first.buffers);
       expect(extraction).toHaveBeenCalledTimes(1);
-      expect(warning).toHaveBeenCalledTimes(1);
-      expect(warning).toHaveBeenCalledWith(
-        expect.stringMatching(/shadow surface rejected/i),
-        expect.any(Error),
-      );
+      expect(first.buffers.topology.closed_two_manifold).toBe(true);
     } finally {
       extraction.mockRestore();
-      warning.mockRestore();
     }
   });
 });

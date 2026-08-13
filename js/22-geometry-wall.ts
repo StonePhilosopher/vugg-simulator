@@ -671,6 +671,7 @@ class VugWall {
         new_equivalent_diameter_mm: newDiameter,
         exposure: opts.exposure_receipt,
         vertex_deltas: geometryPlan.vertex_deltas,
+        geometry_authority: geometryPlan.authority_receipt || null,
         fluid_receipt: { before: fluidBefore, after: fluidAfter },
         host_inventory_receipt: {
           initial_formula_mmolkg: this.host_formula_inventory_initial_mmolkg,
@@ -680,7 +681,9 @@ class VugWall {
           residual_mmolkg: inventoryErrorMmolKg,
         },
         scientific_scope: {
-          closed: 'carbonate formula extent to standard-state crystalline volume per 1 kg solvent reference',
+          closed: geometryPlan.authority_receipt
+            ? 'carbonate formula extent to standard-state crystalline volume and preflighted Cartesian extracted-surface volume per 1 kg solvent reference'
+            : 'carbonate formula extent to standard-state crystalline volume per 1 kg solvent reference',
           not_closed: [
             'actual cavity fluid mass', 'P-T-dependent molar volume',
             'bulk-rock phase fraction and porosity', 'Fe/Mn inventories',
@@ -706,6 +709,13 @@ class VugWall {
       if (evolutionEntry) {
         evolutionLedger.commitEntry(wallState, evolutionEntry);
         geometryCommitted = true;
+        if (geometryPlan.authority_receipt) {
+          CavityProductionAuthority.verifyCommitted(
+            wallState,
+            geometryPlan.authority_receipt,
+            wallState._cavityProductionAuthorityContract,
+          );
+        }
       }
       this.thickness_mm -= preview.rate_mm;
       this.total_dissolved_mm += preview.rate_mm;
@@ -1122,6 +1132,8 @@ class WallState {
     // can promote the Cartesian surface to live anchor authority.
     this._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
     this._activeCavitySurfaceAnchorProvider = null;
+    this._cavityProductionAuthorityContract = null;
+    this._cavitySurfaceAuthorityFailure = null;
     this.cells_per_ring = opts.cells_per_ring ?? 120;
     // Phase 1 of PROPOSAL-3D-SIMULATION: 16 vertically-stacked rings as
     // the new default. Engine still operates on ring[0] only — rings 1..15
@@ -1823,12 +1835,21 @@ class WallState {
   cavityFieldFor(opts: any = {}) {
     const CF: any = (typeof CavityScalarField !== 'undefined') ? CavityScalarField : null;
     if (!CF) return null;
-    const resolution = opts && opts.resolution != null ? opts.resolution : 48;
+    const production = this._cavityProductionAuthorityContract;
+    if (production) CavityProductionAuthority.assertContract(this, production);
+    const resolution = production
+      ? production.scientific_resolution
+      : opts && opts.resolution != null ? opts.resolution : 48;
+    if (production && opts && opts.resolution != null
+        && Number(opts.resolution) !== production.scientific_resolution) {
+      throw new RangeError('production cavity resolution is pinned by the scientific contract');
+    }
     const ledgerCursor = opts && opts.ledgerCursor != null
       ? opts.ledgerCursor : this._cavityEvolutionCursor;
-    const sig = CF.signatureFor(this, resolution, ledgerCursor);
+    const frame = production ? production.frame : null;
+    const sig = CF.signatureFor(this, resolution, ledgerCursor, frame);
     if (!this._cavityField || this._cavityField.sig !== sig) {
-      this._cavityField = CF.fromWallState(this, { resolution, ledgerCursor });
+      this._cavityField = CF.fromWallState(this, { resolution, ledgerCursor, frame });
       this._cavitySurface = null;
       this._cavitySurfaceFailure = null;
     }
@@ -1838,7 +1859,14 @@ class WallState {
   cavitySurfaceFor(opts: any = {}) {
     const field = this.cavityFieldFor(opts);
     if (!field) return null;
-    const isovalue = opts && opts.isovalue != null ? Number(opts.isovalue) : 0;
+    const production = this._cavityProductionAuthorityContract;
+    const isovalue = production
+      ? production.isovalue
+      : opts && opts.isovalue != null ? Number(opts.isovalue) : 0;
+    if (production && opts && opts.isovalue != null
+        && Number(opts.isovalue) !== production.isovalue) {
+      throw new RangeError('production cavity isovalue is pinned by the scientific contract');
+    }
     const sig = field.surfaceSignature(isovalue);
     if (this._cavitySurfaceFailure && this._cavitySurfaceFailure.sig === sig) {
       if (opts && opts.throwOnFailure) throw this._cavitySurfaceFailure.error;
@@ -1871,7 +1899,10 @@ class WallState {
   }
 
   activateCavitySurfaceAnchorProvider(opts: any = {}) {
-    const resolution = opts.resolution == null ? 48 : opts.resolution;
+    const production = this._cavityProductionAuthorityContract;
+    if (production) CavityProductionAuthority.assertContract(this, production);
+    const resolution = production
+      ? production.scientific_resolution : opts.resolution == null ? 48 : opts.resolution;
     const evolution = this.cavityEvolutionLedger?.();
     const ledgerCursor = evolution
       ? (opts.ledgerCursor != null ? Number(opts.ledgerCursor)
@@ -1894,6 +1925,10 @@ class WallState {
         || !(surface.metrics?.vertex_count > 0)) {
       throw new Error('cannot activate an empty, open, or unauthenticated cavity surface provider');
     }
+    const productionAuthentication = production
+      ? CavityProductionAuthority.authenticateSurface(
+        this, field, surface, production, ledgerCursor,
+      ) : null;
     const receipt = Object.freeze({
       kind: 'cavity-field',
       resolution: field.sizeX,
@@ -1903,6 +1938,11 @@ class WallState {
       surface_signature: surface.sig,
       surface_buffer_digest: surface.buffer_digest,
       cavity_evolution_signature: evolution ? evolution.signatureAt(ledgerCursor) : null,
+      production_contract_digest: production ? production.contract_digest : null,
+      authoritative_volume_mm3: productionAuthentication
+        ? productionAuthentication.volume_mm3 : null,
+      max_field_agreement_voxels: productionAuthentication
+        ? productionAuthentication.agreement.max_normal_root_distance_voxels : null,
     });
     // Pin the exact explicitly activated objects. Later diagnostics may replace
     // `_cavityField/_cavitySurface`; they cannot change simulation authority.
@@ -1919,8 +1959,10 @@ class WallState {
       // and, if necessary, rebuild against that cursor rather than silently
       // upgrading a historical provider to the live ledger head.
       const ledgerCursor = this._cavityEvolutionCursor;
+      const production = this._cavityProductionAuthorityContract;
+      if (production) CavityProductionAuthority.assertContract(this, production);
       const expected = CavityScalarField.signatureFor(
-        this, active.receipt.resolution, ledgerCursor,
+        this, active.receipt.resolution, ledgerCursor, production ? production.frame : null,
       );
       const evolution = this.cavityEvolutionLedger?.();
       const effectiveCursor = evolution
@@ -1928,13 +1970,16 @@ class WallState {
       const expectedEvolutionSignature = evolution
         ? evolution.signatureAt(effectiveCursor) : null;
       if (expected === active.receipt.field_signature
-          && active.receipt.cavity_evolution_signature === expectedEvolutionSignature) {
+          && active.receipt.cavity_evolution_signature === expectedEvolutionSignature
+          && active.receipt.production_contract_digest
+            === (production ? production.contract_digest : null)) {
         MarchingCubesExtractor.verifyBuffers(active.surface);
         return active;
       }
       // Explicit field authority follows authenticated wall evolution at the
-      // same resolution/isovalue. Activation remains atomic: if re-extraction
-      // fails any production gate, the catch below exposes WallMesh instead.
+      // same resolution/isovalue. Production extraction was preflighted before
+      // the chemistry commit; an impossible rebuild is withheld below rather
+      // than silently changing geological topology.
       this.activateCavitySurfaceAnchorProvider({
         resolution: active.receipt.resolution,
         isovalue: active.receipt.isovalue,
@@ -1942,24 +1987,101 @@ class WallState {
       });
       return this._activeCavitySurfaceAnchorProvider;
     } catch (_error) {
+      if (this._cavityProductionAuthorityContract) {
+        this._cavitySurfaceAuthorityFailure = _error instanceof Error
+          ? _error.message : String(_error);
+        return null;
+      }
       this.deactivateCavitySurfaceAnchorProvider();
       return null;
     }
   }
 
   cavitySurfaceAnchorProviderReceipt() {
-    this._activeCavitySurfaceProviderForCurrentGeometry();
-    return this._cavitySurfaceAnchorProvider;
+    const active = this._activeCavitySurfaceProviderForCurrentGeometry();
+    if (this._cavityProductionAuthorityContract
+        && (!active || active.receipt?.kind !== 'cavity-field')) {
+      throw new Error('production cavity surface authority is unavailable: '
+        + (this._cavitySurfaceAuthorityFailure || 'authenticated Cartesian provider missing'));
+    }
+    // Return only the receipt belonging to the provider authenticated above.
+    // `_cavitySurfaceAnchorProvider` is retained for legacy WallMesh state, but
+    // may contain a prior receipt after a fail-closed production rebuild.
+    return active?.receipt || this._cavitySurfaceAnchorProvider;
   }
 
   activeCavitySurfaceAnchorProvider() {
     return this._activeCavitySurfaceProviderForCurrentGeometry();
   }
 
+  _requireProductionCavitySurfaceProvider() {
+    const active = this._activeCavitySurfaceProviderForCurrentGeometry();
+    if (this._cavityProductionAuthorityContract
+        && (!active || active.receipt?.kind !== 'cavity-field')) {
+      throw new Error('production cavity surface authority is unavailable: '
+        + (this._cavitySurfaceAuthorityFailure || 'authenticated Cartesian provider missing'));
+    }
+    return active;
+  }
+
   deactivateCavitySurfaceAnchorProvider() {
+    if (this._cavityProductionAuthorityContract) {
+      throw new RangeError('production cavity authority cannot switch topology after activation');
+    }
     this._activeCavitySurfaceAnchorProvider = null;
     this._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
     return this._cavitySurfaceAnchorProvider;
+  }
+
+  enableProductionCavityAuthority() {
+    const priorLedger = this._cavityEvolutionLedger;
+    if (!priorLedger || priorLedger.cursor !== 0
+        || this.rings.some((ring: any[]) => ring.some(
+          (cell: any) => Math.abs(Number(cell.wall_depth) || 0) > 1e-12,
+        ))) {
+      throw new RangeError('production cavity authority must be selected before wall evolution');
+    }
+    if (this._cavityProductionAuthorityContract) {
+      CavityProductionAuthority.assertContract(this, this._cavityProductionAuthorityContract);
+      return Object.freeze({
+        contract: this._cavityProductionAuthorityContract,
+        provider: this.cavitySurfaceAnchorProviderReceipt(),
+        initial_volume_mm3: Number(this._cavityProductionAuthorityContract.baseline_volume_mm3),
+      });
+    }
+    const prior = {
+      ledger: priorLedger,
+      field: this._cavityField,
+      surface: this._cavitySurface,
+      failure: this._cavitySurfaceFailure,
+      provider: this._cavitySurfaceAnchorProvider,
+      activeProvider: this._activeCavitySurfaceAnchorProvider,
+    };
+    try {
+      const contract = CavityProductionAuthority.createContract(this);
+      this._cavityProductionAuthorityContract = contract;
+      this._cavityEvolutionLedger = CavityEvolutionLedger.forWall(this, {
+        model: CAVITY_PRODUCTION_VOLUME_MODEL,
+      });
+      this._cavityField = null;
+      this._cavitySurface = null;
+      this._cavitySurfaceFailure = null;
+      const provider = this.activateCavitySurfaceAnchorProvider();
+      return Object.freeze({
+        contract,
+        provider,
+        initial_volume_mm3: Number(contract.baseline_volume_mm3),
+      });
+    } catch (error) {
+      this._cavityProductionAuthorityContract = null;
+      this._cavityEvolutionLedger = prior.ledger;
+      this._cavityField = prior.field;
+      this._cavitySurface = prior.surface;
+      this._cavitySurfaceFailure = prior.failure;
+      this._cavitySurfaceAnchorProvider = prior.provider;
+      this._activeCavitySurfaceAnchorProvider = prior.activeProvider;
+      throw error;
+    }
   }
 
   // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1 (v158) — lazy + cached
@@ -2012,6 +2134,7 @@ class WallState {
     // positions and the chemistry projection must follow that same revision.
     const mesh = this.meshFor();
     if (!mesh || !(mesh.numInterior > 0)) return null;
+    this._requireProductionCavitySurfaceProvider();
     return CavitySurfaceAnchors.fromWallMeshVertex(mesh, r * N + c);
   }
 
@@ -2033,6 +2156,7 @@ class WallState {
     // Always enter through meshFor(): it checks the monotonic geometry revision
     // before physical remap and chemistry projection use the mesh.
     const mesh = this.meshFor();
+    const requiredProductionProvider = this._requireProductionCavitySurfaceProvider();
     if (a.schema === CavitySurfaceAnchors.SCHEMA && !Object.isFrozen(a)) {
       // Saved JSON is mutable on load. Seal the accepted birth receipt in
       // place before object identity is admitted to the derived remap cache.
@@ -2048,7 +2172,8 @@ class WallState {
     };
     if (a.schema === CavitySurfaceAnchors.SCHEMA) {
       if (a.source?.kind === 'wall-mesh') {
-        const active = this._activeCavitySurfaceProviderForCurrentGeometry();
+        const active = requiredProductionProvider
+          || this._activeCavitySurfaceProviderForCurrentGeometry();
         const field = active?.field;
         const surface = active?.surface;
         if (active?.receipt?.kind === 'cavity-field'
@@ -2067,7 +2192,8 @@ class WallState {
         return cachedRemap(`wall:${mesh.geometry_sig}`, () =>
           CavitySurfaceAnchors.remapToWallMesh(a, mesh));
       }
-      const active = this._activeCavitySurfaceProviderForCurrentGeometry();
+      const active = requiredProductionProvider
+        || this._activeCavitySurfaceProviderForCurrentGeometry();
       const field = active?.field;
       const surface = active?.surface;
       if (!active || active.receipt?.kind !== 'cavity-field') {
@@ -2100,7 +2226,17 @@ class WallState {
       return cachedRemap(`fallback:${mesh.geometry_sig}`, () =>
         CavitySurfaceAnchors.remapToWallMesh(a, mesh));
     }
-    return CavitySurfaceAnchors.upgradeLegacy(a, mesh);
+    const upgraded = CavitySurfaceAnchors.upgradeLegacy(a, mesh);
+    if (requiredProductionProvider?.receipt?.kind === 'cavity-field') {
+      return cachedRemap(
+        `field:${requiredProductionProvider.surface.sig}|chem:${mesh.geometry_sig}`,
+        () => CavitySurfaceAnchors.remapToMarchingCubes(
+          upgraded, requiredProductionProvider.field,
+          requiredProductionProvider.surface, mesh,
+        ),
+      );
+    }
+    return upgraded;
   }
 
   // The boundary transport lattice is intentionally a projection of the
@@ -2138,6 +2274,7 @@ class WallState {
   }
 
   surfaceAnchorFromMarchingCubes(triangleIndex, barycentric, opts: any = {}) {
+    this._requireProductionCavitySurfaceProvider();
     const resolution = opts.resolution == null ? 48 : opts.resolution;
     const field = this.cavityFieldFor({ resolution, ledgerCursor: opts.ledgerCursor });
     const surface = this.cavitySurfaceFor({
@@ -2152,6 +2289,7 @@ class WallState {
   }
 
   remapSurfaceAnchorToMarchingCubes(anchor, opts: any = {}) {
+    this._requireProductionCavitySurfaceProvider();
     const resolution = opts.resolution == null ? 48 : opts.resolution;
     const field = this.cavityFieldFor({ resolution, ledgerCursor: opts.ledgerCursor });
     const surface = this.cavitySurfaceFor({
@@ -2160,13 +2298,21 @@ class WallState {
       throwOnFailure: false,
     });
     const mesh = this._mesh || this.meshFor(opts.sim);
-    if (!field || !surface) return CavitySurfaceAnchors.remapToWallMesh(anchor, mesh);
+    if (!field || !surface) {
+      if (this._cavityProductionAuthorityContract) {
+        throw new Error('production cavity surface remap cannot fall back to WallMesh');
+      }
+      return CavitySurfaceAnchors.remapToWallMesh(anchor, mesh);
+    }
     return CavitySurfaceAnchors.remapToMarchingCubes(
       anchor, field, surface, mesh,
     );
   }
 
   remapSurfaceAnchorToWallMesh(anchor, sim?) {
+    if (this._cavityProductionAuthorityContract) {
+      throw new Error('production cavity physical anchors cannot switch to WallMesh');
+    }
     return CavitySurfaceAnchors.remapToWallMesh(anchor, this.meshFor(sim));
   }
 

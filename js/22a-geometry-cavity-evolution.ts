@@ -7,7 +7,8 @@
 //
 //   carbonate-host formula extent (mmol/kg solvent reference)
 //     <-> crystalline standard-state solid volume (mm3/kg solvent reference)
-//     <-> exact enclosed-volume change of the canonical closed WallMesh
+//     <-> exact enclosed-volume change of the selected immutable geometry
+//         authority (legacy closed WallMesh or preflighted Cartesian surface)
 //
 // This is not a sealed-cavity fluid-mass claim and not full chemistry closure.
 // It does not yet close pressure/temperature-dependent mineral volume,
@@ -85,7 +86,8 @@ class CavityEvolutionLedger {
 
   constructor(opts: any = {}) {
     this.schema = CAVITY_EVOLUTION_SCHEMA;
-    this.model = 'canonical-wallmesh-volume-v1';
+    this.model = opts.model === CAVITY_PRODUCTION_VOLUME_MODEL
+      ? CAVITY_PRODUCTION_VOLUME_MODEL : 'canonical-wallmesh-volume-v1';
     this.shape_identity = String(opts.shape_identity || 'unidentified-shape');
     this.tessellation_identity = String(opts.tessellation_identity || 'unidentified-tessellation');
     this.baseline_kind = opts.baseline_kind === 'legacy_import' ? 'legacy_import' : 'authored_initial';
@@ -182,6 +184,7 @@ class CavityEvolutionLedger {
       baseline_depths_mm: depths,
       baseline_kind: opts.legacy_import ? 'legacy_import' : 'authored_initial',
       baseline_disclosure: opts.baseline_disclosure,
+      model: opts.model,
       entries: opts.entries || [],
     });
   }
@@ -208,6 +211,17 @@ class CavityEvolutionLedger {
       throw new RangeError('cavity evolution cursor is out of range');
     }
     return this._signatures[cursor];
+  }
+
+  _depthProjectionDigest(depths: ArrayLike<number>): string {
+    return 'cavity-depth-projection:v1:' + CavityEvolutionLedger.digest({
+      model: CAVITY_PRODUCTION_VOLUME_MODEL,
+      identity: {
+        shape: this.shape_identity,
+        tessellation: this.tessellation_identity,
+      },
+      depths_mm: Array.from(depths, Number),
+    });
   }
 
   _validateEntry(entry: any): any {
@@ -288,6 +302,7 @@ class CavityEvolutionLedger {
       throw new RangeError('cavity evolution entry requires ordered vertex deltas');
     }
     const priorDepths = this.materialize();
+    const nextDepths = new Float64Array(priorDepths);
     let priorIndex = -1;
     for (const delta of copy.vertex_deltas) {
       if (!Number.isInteger(delta.vertex_index) || delta.vertex_index <= priorIndex
@@ -305,10 +320,26 @@ class CavityEvolutionLedger {
       if (Math.abs(priorDepths[delta.vertex_index] - delta.old_depth_mm) > 1e-10) {
         throw new RangeError('cavity evolution ledger has a broken depth chain');
       }
+      nextDepths[delta.vertex_index] = delta.new_depth_mm;
     }
     if (!copy.exposure || !copy.exposure.digest || !copy.fluid_receipt
         || !copy.host_inventory_receipt || !copy.scientific_scope) {
       throw new RangeError('cavity evolution entry is missing authority receipts');
+    }
+    if (this.model === CAVITY_PRODUCTION_VOLUME_MODEL) {
+      const authority = copy.geometry_authority;
+      if (!authority) {
+        throw new RangeError('Cartesian cavity evolution entry is missing its geometry authority receipt');
+      }
+      CavityProductionAuthority.validateAuthorityReceipt(authority, {
+        entry: copy,
+        previousAuthority: this._entries.length
+          ? this._entries[this._entries.length - 1].geometry_authority : null,
+        expectedOldDepthDigest: this._depthProjectionDigest(priorDepths),
+        expectedNewDepthDigest: this._depthProjectionDigest(nextDepths),
+      });
+    } else if (copy.geometry_authority != null) {
+      throw new RangeError('WallMesh evolution entry cannot claim Cartesian geometry authority');
     }
     return copy;
   }
@@ -374,6 +405,12 @@ class CavityEvolutionLedger {
       throw new RangeError('cavity erosion requires canonical mesh-sized vertex weights');
     }
     this.assertProjection(wall);
+    if (this.model === CAVITY_PRODUCTION_VOLUME_MODEL) {
+      return CavityProductionAuthority.previewErosion(wall, weightsInput, {
+        target_volume_delta_mm3_per_kg: target,
+        contract: wall && wall._cavityProductionAuthorityContract,
+      });
+    }
     const weights = new Float64Array(mesh.numInterior);
     let maxWeight = 0;
     for (let i = 0; i < weights.length; i++) {

@@ -117,6 +117,43 @@ describe('immutable simulation command/checkpoint protocol', () => {
     expect(simulationStateFingerprint(runtime)).toBe(baseline);
   });
 
+  it('selects the pinned production cavity only before time and restores its contract', () => {
+    const runtime = startSimulationCommandRuntime(makeSimulationStartCommand('cooling', 42));
+    const command = makeSimulationCavitySurfaceProviderCommand(
+      'cavity-field-production', { resolution: 8, isovalue: 0.5 },
+    );
+    // Presentation knobs are deliberately absent from the production command.
+    expect(command).not.toHaveProperty('resolution');
+    expect(command).not.toHaveProperty('isovalue');
+    const result = applySimulationCommand(runtime, command);
+    expect(result.cavitySurfaceProvider).toMatchObject({
+      contract: {
+        scientific_resolution: 48,
+        isovalue: 0,
+        volume_model: 'cartesian-field-freudenthal-volume-v1',
+      },
+      provider: {
+        kind: 'cavity-field',
+        resolution: 48,
+        isovalue: 0,
+      },
+    });
+    const fingerprint = simulationStateFingerprint(runtime);
+    const restored = restoreSimulationCommandRuntime(
+      JSON.parse(JSON.stringify(createSimulationCheckpoint(runtime))),
+    );
+    expect(simulationStateFingerprint(restored)).toBe(fingerprint);
+    expect(restored.sim.wall_state._cavityProductionAuthorityContract)
+      .toEqual(runtime.sim.wall_state._cavityProductionAuthorityContract);
+    expect(() => applySimulationCommand(
+      runtime, makeSimulationCavitySurfaceProviderCommand('wall-mesh'),
+    )).toThrow(/cannot switch topology/i);
+
+    const late = startSimulationCommandRuntime(makeSimulationStartCommand('cooling', 42));
+    applySimulationCommand(late, makeSimulationAdvanceCommand(1));
+    expect(() => applySimulationCommand(late, command)).toThrow(/before time/i);
+  });
+
   it('fingerprints canonical local chemistry, dedicated RNG streams, and dissolution inventories', () => {
     const fresh = () => startSimulationCommandRuntime(
       makeSimulationStartCommand('cooling', 42),

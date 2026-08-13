@@ -294,6 +294,7 @@ const EXPORTS = [
   'CavityScalarField',
   'MarchingCubesExtractor',
   'CavitySurfaceAnchors',
+  'CavityProductionAuthority',
   'CavityVoxelGrid',  // v158 — PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1
   'Crystal',
   'GrowthZone',
