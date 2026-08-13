@@ -1,13 +1,13 @@
 // tests-js/strip-contracts.test.ts — "chemistry contract" tests built on the
 // strip-view recorder (helicoid-as-recorder) via tests-js/strip-helpers.ts.
 //
-// WHAT THESE ARE. Each test records a scenario through the strip recorder and
-// asserts on the spatiotemporal chemistry trajectory it captures
-// ([step][angle][height][depth][chip]). They PIN OBSERVED per-cell behavior —
-// they are regression guards on what the simulator actually does, not
-// re-derivations of the underlying science.
+// WHAT THESE ARE. Each test reads the canonical story generated through the
+// strip recorder by `science:rebake` and asserts on its spatiotemporal
+// chemistry trajectory. The aggregate receipt binds those stories to the
+// exact executable, producer contract, runtime, scenario specification, and
+// seed 42. They PIN OBSERVED per-cell behavior rather than re-deriving it.
 //
-// DATA SOURCE. The recorder reads mesh.cells (and, at depth>0, the
+// DATA SOURCE. The archive's recorder reads mesh.cells (and, at depth>0, the
 // CavityVoxelGrid interior slices) — the PER-CELL / per-voxel store, NOT the
 // ring-bulk `ring_fluids[equator]` that the bespoke Week 7/8 probes sample.
 // The two stores legitimately differ (the bulk view isn't debited by mass
@@ -35,13 +35,13 @@
 // minor RNG-cadence shifts don't make them flaky.
 
 import { beforeAll, describe, expect, it } from 'vitest';
-import { recordScenario, chipSeries, series } from './strip-helpers';
+import { loadArchivedScenario, chipSeries, series } from './strip-helpers';
 
 declare const SCENARIOS: any;
 
 describe('strip chemistry contract — sabkha_dolomitization (Kim 2023)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('sabkha_dolomitization'); }, 300000);
+  beforeAll(() => { ds = loadArchivedScenario('sabkha_dolomitization'); });
 
   it('f_ord accumulates toward ordered dolomite (corroborates Week 8 ~0.82)', () => {
     if (!ds) return; // scenario not registered → skip
@@ -84,7 +84,7 @@ describe('strip chemistry contract — sabkha_dolomitization (Kim 2023)', () => 
 
 describe('strip chemistry contract — reactive_wall (PWP acid pulses)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('reactive_wall'); }, 300000);
+  beforeAll(() => { ds = loadArchivedScenario('reactive_wall'); });
 
   it('acid pulses drive pH down and buffering brings it back (per-cell)', () => {
     if (!ds) return;
@@ -108,7 +108,7 @@ describe('strip chemistry contract — reactive_wall (PWP acid pulses)', () => {
 
 describe('strip chemistry contract — tutorial_travertine (CO2 degassing)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('tutorial_travertine'); }, 300000);
+  beforeAll(() => { ds = loadArchivedScenario('tutorial_travertine'); });
 
   it('CO2 degasses, pH rises, calcite supersaturates (the travertine cascade)', () => {
     if (!ds) return;
@@ -131,7 +131,7 @@ describe('strip chemistry contract — tutorial_travertine (CO2 degassing)', () 
 
 describe('strip chemistry contract — cooling (calcite retrograde solubility)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('cooling'); }, 300000);
+  beforeAll(() => { ds = loadArchivedScenario('cooling'); });
 
   it('calcite does NOT supersaturate on cooling (retrograde solubility)', () => {
     if (!ds) return;
@@ -148,7 +148,7 @@ describe('strip chemistry contract — cooling (calcite retrograde solubility)',
 
 describe('strip chemistry contract — mvt (hot, low-Mg carbonate start)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('mvt'); }, 300000);
+  beforeAll(() => { ds = loadArchivedScenario('mvt'); });
 
   it('starts carbonate-supersaturated with calcite favored; SI declines on cooling', () => {
     if (!ds) return;
@@ -168,7 +168,7 @@ describe('strip chemistry contract — mvt (hot, low-Mg carbonate start)', () =>
 
 describe('strip chemistry contract — searles_lake (evaporite concentration cycle)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('searles_lake'); }, 300000);
+  beforeAll(() => { ds = loadArchivedScenario('searles_lake'); });
 
   it('evaporative concentration CYCLES — ramps on drying, resets on the flood (v161 ratchet fix)', () => {
     if (!ds) return;
@@ -230,7 +230,7 @@ describe('strip chemistry contract — bisbee (supergene copper paragenesis)', (
   // Full-fleet Windows CI can leave this WebGL-free 150-step strip competing
   // with several other scenario recorders. Keep the chemistry assertions
   // strict while allowing the recorder the same headroom as the archive job.
-  beforeAll(() => { ds = recordScenario('bisbee'); }, 300000);
+  beforeAll(() => { ds = loadArchivedScenario('bisbee'); });
 
   // NOTE ON TEMPERATURE. bisbee's T is deliberately NOT pinned here. The
   // scenario's events stop setting T after the oxidation_zone (step 145, T=25)
@@ -299,7 +299,7 @@ describe('strip chemistry contract — bisbee (supergene copper paragenesis)', (
 
 describe('strip chemistry contract — supergene_oxidation (Tsumeb gossan)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('supergene_oxidation'); }, 300000);
+  beforeAll(() => { ds = loadArchivedScenario('supergene_oxidation'); });
 
   it('acid window opens, the flush recovers it, then a sustained meteoric acid front re-acidifies (v170 movement)', () => {
     if (!ds) return;
@@ -370,7 +370,7 @@ describe('strip chemistry contract — supergene_oxidation (Tsumeb gossan)', () 
 
 describe('strip chemistry contract — naica_geothermal (selenite slow-growth chamber)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('naica_geothermal'); }, 300000);
+  beforeAll(() => { ds = loadArchivedScenario('naica_geothermal'); });
 
   it('selenite SI hovers near saturation — the slow-growth window that grows the giant crystals', () => {
     if (!ds) return;
@@ -432,7 +432,7 @@ describe('strip chemistry contract — naica_geothermal (selenite slow-growth ch
 
 describe('strip chemistry contract — sicily_solfifera (celestine + native sulfur)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('sicily_solfifera'); }, 300000);
+  beforeAll(() => { ds = loadArchivedScenario('sicily_solfifera'); });
 
   it('celestine starts supersaturated, then SD-AOM draws down its sulfate substrate', () => {
     if (!ds) return;
@@ -482,7 +482,7 @@ describe('strip chemistry contract — sicily_solfifera (celestine + native sulf
 
 describe('strip chemistry contract — sulphur_bank (acid sulfur springs, NOT a sulfate-precipitating system)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('sulphur_bank'); }, 300000);
+  beforeAll(() => { ds = loadArchivedScenario('sulphur_bank'); });
 
   it('pH crashes sharply acidic (sulfuric-acid spring) and sawtooth-recovers', () => {
     if (!ds) return;

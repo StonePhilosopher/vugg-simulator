@@ -104,8 +104,10 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
       // positional field; _resolveAnchor reads only from it.
       const _anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
       if (!_anchor) continue;
-      const ringIdx = _anchor.ringIdx;
-      const cellIdx = _anchor.cellIdx;
+      const address = wall.chemistryAddressForCrystal?.(crystal);
+      if (!address) continue;
+      const ringIdx = address.ringIdx;
+      const cellIdx = address.cellIdx;
       if (ringIdx == null || cellIdx == null) continue;
       const meta = ringMeta[ringIdx];
       if (!meta) continue;

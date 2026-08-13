@@ -81,7 +81,7 @@ describe('W-F O5b — the masking gate is live', () => {
     }
   });
 
-  it.each(FILM_SCENARIOS)('THE INVARIANT in %s — masked_horizon is positive growth, never dissolution', { timeout: 300000 }, (name) => {
+  it.each(FILM_SCENARIOS)('THE INVARIANT in %s — masked_horizon is positive growth, never dissolution', { timeout: 900_000 }, (name) => {
     // Every masked_horizon zone must be positive-thickness and not is_phantom
     // ("dusted and buried", not "etched and healed"). Each full scenario gets
     // its own timer so synchronous histories cannot consume a shared budget.

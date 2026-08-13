@@ -19,7 +19,7 @@ const manifest = JSON.parse(fs.readFileSync(
 describe('generated science/provenance manifest', () => {
   it('is tied to the current model and complete authored fleet', () => {
     expect(manifest).toMatchObject({
-      schema: 'vugg-science-provenance-manifest-v4',
+      schema: 'vugg-science-provenance-manifest-v5',
       sim_version: SIM_VERSION,
       model_digest: MODEL_DIGEST,
       canonical_run_seed: 42,
@@ -56,6 +56,26 @@ describe('generated science/provenance manifest', () => {
     });
     expect(manifest.locality_frequency.sha256)
       .toBe(crypto.createHash('sha256').update(frequencyBytes).digest('hex'));
+
+    const evidenceBytes = fs.readFileSync(path.join(ROOT, manifest.science_evidence.path));
+    expect(manifest.science_evidence).toMatchObject({
+      schema: 'vugg-science-evidence-receipt-v1',
+      browser_bundle_sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      execution_set_sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      node_runtime: {
+        schema: 'vugg-evidence-node-runtime-v1',
+        node: process.versions.node,
+        v8: process.versions.v8,
+        platform: process.platform,
+        arch: process.arch,
+        icu: process.versions.icu || null,
+        locale: new Intl.Collator().resolvedOptions().locale,
+      },
+      node_runtime_sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      artifact_count: 126,
+    });
+    expect(manifest.science_evidence.sha256)
+      .toBe(crypto.createHash('sha256').update(evidenceBytes).digest('hex'));
   });
 
   it('pins citations, registered handlers, authored shape seeds, and archive metadata', () => {

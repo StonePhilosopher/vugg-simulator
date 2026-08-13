@@ -32,3 +32,8 @@ dist/
 # review-claim-card.mjs --all scratch output (regenerable from archive/strips +
 # scenarios); the COMMITTED record is proposals/DATA-HOSTILE-REVIEW-*.json
 .review-cards/
+
+# Resumable long-running local evidence checkpoints. Final receipts remain in
+# tests-js/baselines and archive/; these files only prevent restart/timeout
+# loss during commissioning sweeps.
+.local-evidence/

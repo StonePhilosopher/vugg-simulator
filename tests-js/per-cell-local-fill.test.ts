@@ -189,7 +189,7 @@ describe('Proposal E — per-cell local fill (2026-05-18)', () => {
       const wall = new WallState({ vug_diameter_mm: 50, ring_count: 16, cells_per_ring: 120 });
       const c = new Crystal({ mineral: 'adamite', crystal_id: 1 });
       c.wall_anchor = wall._anchorFromRingCell(8, 60);
-      const cellVol = wall._cellCavityVolMm3(8);
+      const cellVol = wall._cellCavityVolAtVertexMm3(8 * 120 + 60);
       wall.rings[8][60]._localCrystalVol_mm3 = cellVol * 0.75;
       expect(wall.getCellLocalFillForCrystal(c)).toBeCloseTo(0.75, 6);
     });

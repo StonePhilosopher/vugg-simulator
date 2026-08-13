@@ -1156,6 +1156,12 @@ _diffuseRingState(rate?) {
   // 99i-renderer-three.ts.
   const ringCount = this.wall_state.ring_count;
   const cnd = this.conditions;
+  // Provider selection is part of the scientific replay timeline, not a live
+  // renderer preference. Capture the exact authenticated receipt at this step
+  // so a later replay cannot inherit whichever provider happens to be active.
+  const cavitySurfaceProvider = this.wall_state.cavitySurfaceAnchorProviderReceipt
+    ? this.wall_state.cavitySurfaceAnchorProviderReceipt()
+    : { kind: 'wall-mesh' };
   const snap: any = {
     step: this.step,
     cavity_evolution_cursor: this.wall_state.cavityEvolutionLedger
@@ -1164,6 +1170,7 @@ _diffuseRingState(rate?) {
     cavity_evolution_signature: this.wall_state.cavityEvolutionLedger
       && this.wall_state.cavityEvolutionLedger()
       ? this.wall_state.cavityEvolutionLedger().signature : null,
+    cavity_surface_provider: { ...cavitySurfaceProvider },
     rings: new Array(ringCount),
     conditions: {
       temperature: cnd.temperature,
@@ -1260,7 +1267,7 @@ _diffuseRingState(rate?) {
     if (!crystal || crystal.dissolved) continue;
     const anchor = this.wall_state._resolveAnchor(crystal);
     if (!anchor) continue;
-    const source = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+    const source = this.wall_state.chemistryVertexForCrystal(crystal);
     if (source < 0 || source >= mesh.numInterior) continue;
     const distances = mesh.geodesicDistancesFrom(source);
     const footprintRadiusMm = Math.max(0, this.wall_state.footprintArcMm(crystal) / 2);

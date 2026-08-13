@@ -23,8 +23,10 @@ declare const setGeometricSelectionEnabled: any;
 
 const HALF_PI = Math.PI / 2;
 const TWO_PI = Math.PI * 2;
+const SIM_CACHE = new Map<string, any>();
 
-function makeSim(scenarioName: string, seed = 42, steps?: number) {
+function makeSimFresh(scenarioName: string, seed = 42, steps?: number, selectionEnabled = true) {
+  setGeometricSelectionEnabled(selectionEnabled);
   setSeed(seed);
   const scen = SCENARIOS[scenarioName];
   expect(scen, `scenario ${scenarioName} missing`).toBeTruthy();
@@ -32,7 +34,25 @@ function makeSim(scenarioName: string, seed = 42, steps?: number) {
   const sim = new VugSimulator(conditions, events);
   const n = steps ?? defaultSteps ?? 100;
   for (let i = 0; i < n; i++) sim.run_step();
-  return sim;
+  // Retain only the observation surface used below. Holding complete simulator
+  // graphs for several dense druses defeats the test runner's memory ceiling.
+  const observation = {
+    crystals: sim.crystals.map((c: any) => ({
+      crystal_id: c.crystal_id,
+      _nucTilt: c._nucTilt ? { theta: c._nucTilt.theta, azim: c._nucTilt.azim } : null,
+      _buried: c._buried === true,
+      dissolved: c.dissolved === true,
+    })),
+  };
+  return observation;
+}
+
+function makeSim(scenarioName: string, seed = 42, steps?: number, selectionEnabled = true) {
+  const key = `${scenarioName}|${seed}|${steps ?? 'default'}|selection:${selectionEnabled}`;
+  if (SIM_CACHE.has(key)) return SIM_CACHE.get(key);
+  const observation = makeSimFresh(scenarioName, seed, steps, selectionEnabled);
+  SIM_CACHE.set(key, observation);
+  return observation;
 }
 
 // Scenarios that reliably nucleate a spread of free-wall crystals. Guarded so a
@@ -46,8 +66,11 @@ function tiltsOf(sim: any): Array<{ theta: number; azim: number }> {
   return sim.crystals.filter((c: any) => c && c._nucTilt).map((c: any) => c._nucTilt);
 }
 
-describe('W-F O3a — nucleation orientation draw (recorded, unread)', () => {
-  it('every nucleated crystal carries a well-formed _nucTilt', () => {
+// Full histories are cached by scenario, run seed, and selection mode. This
+// keeps every geological realization live while avoiding repeated computation
+// when multiple assertions inspect the same deterministic seed-42 result.
+describe('W-F O3a — nucleation orientation draw (recorded, unread)', { timeout: 3_600_000 }, () => {
+  it('every nucleated crystal carries a well-formed _nucTilt', { timeout: 3_600_000 }, () => {
     const names = presentScenarios();
     expect(names.length, 'no known scenarios present').toBeGreaterThan(0);
     let seen = 0;
@@ -67,10 +90,12 @@ describe('W-F O3a — nucleation orientation draw (recorded, unread)', () => {
     expect(seen, 'expected some crystals with tilts').toBeGreaterThan(10);
   });
 
-  it('is DETERMINISTIC at a fixed run seed (baseline-reproducible)', () => {
+  it('is DETERMINISTIC at a fixed run seed (baseline-reproducible)', { timeout: 3_600_000 }, () => {
     const name = presentScenarios()[0];
     const a = tiltsOf(makeSim(name, 42));
-    const b = tiltsOf(makeSim(name, 42));
+    // Bypass the observation cache: this must compare two independent
+    // simulations, not two references to the same cached projection.
+    const b = tiltsOf(makeSimFresh(name, 42));
     expect(a.length).toBe(b.length);
     expect(a.length).toBeGreaterThan(0);
     for (let i = 0; i < a.length; i++) {
@@ -79,7 +104,7 @@ describe('W-F O3a — nucleation orientation draw (recorded, unread)', () => {
     }
   });
 
-  it('VARIES across run seeds (weather-not-geology: isolated run-seed stream)', () => {
+  it('VARIES across run seeds (weather-not-geology: isolated run-seed stream)', { timeout: 3_600_000 }, () => {
     const name = presentScenarios()[0];
     const a = tiltsOf(makeSim(name, 42));
     const b = tiltsOf(makeSim(name, 7));
@@ -91,7 +116,7 @@ describe('W-F O3a — nucleation orientation draw (recorded, unread)', () => {
     expect(identical, 'seed 42 and seed 7 gave identical tilts — stream not run-keyed').toBeLessThan(k);
   });
 
-  it('is non-degenerate — real spread, sane mean off-normal tilt', () => {
+  it('is non-degenerate — real spread, sane mean off-normal tilt', { timeout: 3_600_000 }, () => {
     const all: number[] = [];
     for (const name of presentScenarios()) for (const t of tiltsOf(makeSim(name, 42))) all.push(t.theta);
     expect(all.length).toBeGreaterThan(20);
@@ -105,7 +130,7 @@ describe('W-F O3a — nucleation orientation draw (recorded, unread)', () => {
     expect(stdDeg, `tilt std ${stdDeg.toFixed(1)}° too small (degenerate draw)`).toBeGreaterThan(4);
   });
 
-  it('O3b: dense druses BURY their tilted losers (selection culls by orientation)', () => {
+  it('O3b: dense druses BURY their tilted losers (selection culls by orientation)', { timeout: 3_600_000 }, () => {
     // The pegmatite pockets / zeolite druses are the dense competitors (probe:
     // shigar 53%, gem-peg 41%, deccan-zeolite 37%). Buried = the tilted ones.
     const dense = ['gem_pegmatite', 'shigar_pegmatite', 'deccan_zeolite', 'radioactive_pegmatite']
@@ -125,15 +150,13 @@ describe('W-F O3a — nucleation orientation draw (recorded, unread)', () => {
     expect(anyBuried, 'expected some dense druse to bury losers with selection on').toBe(true);
   });
 
-  it('O3b: the flag GATES selection — OFF buries nothing, ON buries some', () => {
+  it('O3b: the flag GATES selection — OFF buries nothing, ON buries some', { timeout: 3_600_000 }, () => {
     const name = ['gem_pegmatite', 'shigar_pegmatite', 'deccan_zeolite'].find((n) => SCENARIOS[n]);
     if (!name) return;
     try {
-      setGeometricSelectionEnabled(false);
-      const off = makeSim(name, 42);
+      const off = makeSim(name, 42, undefined, false);
       const offBuried = off.crystals.filter((c: any) => c && c._buried === true).length;
-      setGeometricSelectionEnabled(true);
-      const on = makeSim(name, 42);
+      const on = makeSim(name, 42, undefined, true);
       const onBuried = on.crystals.filter((c: any) => c && c._buried === true).length;
       expect(offBuried, 'selection OFF must bury nothing').toBe(0);
       expect(onBuried, 'selection ON must bury some in a dense druse').toBeGreaterThan(0);

@@ -77,9 +77,11 @@ function runSeeds(scenarioName: string, mineralName: string, seeds: number[]) {
         try { s = sigmaFn.call(sim.conditions); } catch { s = 0; }
         if (Number.isFinite(s) && s > maxSigma) maxSigma = s;
       }
-    }
-    if (sim.crystals.some((c: any) => c.mineral === mineralName)) {
-      everNucleated = true;
+      if (sim.crystals.some((c: any) => c.mineral === mineralName)) {
+        const result = { everNucleated: true, maxSigma };
+        seedProbeCache.set(cacheKey, result);
+        return result;
+      }
     }
   }
   const result = { everNucleated, maxSigma };

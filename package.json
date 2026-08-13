@@ -17,6 +17,7 @@
     "science:verify": "node tools/science-workflow.mjs --verify",
     "science:rebake": "node tools/science-workflow.mjs --rebake",
     "audit:science": "node tools/gen-science-provenance-manifest.mjs --check",
+    "audit:evidence": "node tools/science-evidence-receipt.mjs --check",
     "check:pressure-grid": "node tools/check-pressure-grid.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "pretest": "node tools/narrative-workflow.mjs --check && tsc -p tsconfig.json",

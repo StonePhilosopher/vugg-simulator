@@ -33,7 +33,9 @@ declare const _makeWulffGeom: any;
 declare const wulffWulfenitePbMoBias: any;
 declare const WULFENITE_PBMO: any;
 
-function run(scenarioName: string, seed = 42) {
+const scenarioCache = new Map<string, any>();
+
+function runFresh(scenarioName: string, seed = 42) {
   setSeed(seed);
   const scen = SCENARIOS[scenarioName];
   if (!scen) return null;
@@ -41,7 +43,26 @@ function run(scenarioName: string, seed = 42) {
   const sim = new VugSimulator(conditions, events);
   const steps = defaultSteps ?? 200;
   for (let i = 0; i < steps; i++) sim.run_step();
-  return sim;
+  // Preserve only fields this render-contract suite observes. Seven complete
+  // simulator graphs retained together exceed a gigabyte without adding
+  // coverage; the compact projection is immutable test evidence.
+  return {
+    crystals: sim.crystals.map((crystal: any) => ({
+      mineral: crystal.mineral,
+      dissolved: crystal.dissolved,
+      total_growth_um: crystal.total_growth_um,
+      habit: crystal.habit,
+      crystal_id: crystal.crystal_id,
+      _wulffForm: crystal._wulffForm ? { ...crystal._wulffForm } : undefined,
+      _wulffPbMo: crystal._wulffPbMo ? { ...crystal._wulffPbMo } : undefined,
+    })),
+  };
+}
+
+function run(scenarioName: string, seed = 42) {
+  const key = `${scenarioName}:${seed}`;
+  if (!scenarioCache.has(key)) scenarioCache.set(key, runFresh(scenarioName, seed));
+  return scenarioCache.get(key);
 }
 
 const wulffed = (sim: any) => sim.crystals.filter((c: any) => c._wulffForm && !c.dissolved);
@@ -108,7 +129,7 @@ describe('Wulff form tag (central-distance arc Phase 4 rung 4a.1)', () => {
 
   it('determinism — two identical runs produce byte-identical biasC (no rng)', () => {
     const a = run('sunnyside_american_tunnel');
-    const b = run('sunnyside_american_tunnel');
+    const b = runFresh('sunnyside_american_tunnel');
     const fa = wulffed(a).map((c: any) => `${c.crystal_id}:${c._wulffForm.biasC}`).sort();
     const fb = wulffed(b).map((c: any) => `${c.crystal_id}:${c._wulffForm.biasC}`).sort();
     expect(fa.length).toBeGreaterThan(0);

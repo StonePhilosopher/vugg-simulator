@@ -863,14 +863,14 @@ class VugSimulator {
       for (const crystal of this.crystals) {
         if (crystal.mineral !== 'selenite' && crystal.mineral !== 'anhydrite') continue;
         const anchor = this.wall_state._resolveAnchor(crystal);
-        const ringIdx = anchor ? anchor.ringIdx : null;
+        const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+        const ringIdx = chemistry ? chemistry.ringIdx : null;
         const validRing = ringIdx != null && ringIdx >= 0 && ringIdx < nRings;
         const cell = validRing && mesh?.cellOf
           ? mesh.cellOf(crystal, this.wall_state)
           : null;
         const localFluid = cell?.fluid || (validRing ? this.ring_fluids[ringIdx] : this.conditions.fluid);
-        const vertexIdx = validRing
-          ? anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx : -1;
+        const vertexIdx = validRing ? chemistry.vertexIndex : -1;
         const localT = vertexIdx >= 0
           ? temperatureAtMeshVertex(this, mesh, vertexIdx) : this.conditions.temperature;
         const transition = applyCaSO4PhaseTransition(
@@ -898,7 +898,7 @@ class VugSimulator {
       const anchor = this.wall_state._resolveAnchor(crystal);
       const mesh = this.wall_state.meshFor ? this.wall_state.meshFor(this) : null;
       const vertexIdx = anchor
-        ? anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx : -1;
+        ? this.wall_state.chemistryVertexForCrystal(crystal) : -1;
       const localT = vertexIdx >= 0
         ? temperatureAtMeshVertex(this, mesh, vertexIdx) : this.conditions.temperature;
       const transition = applyParamorphTransitions(crystal, localT, this.step);
@@ -966,7 +966,8 @@ class VugSimulator {
         // PHASE-1-CAVITY-MESH: read ringIdx via _resolveAnchor so this
         // dehydration loop no longer reads wall_ring_index directly.
         const anchor = this.wall_state._resolveAnchor(crystal);
-        const ringIdx = anchor ? anchor.ringIdx : null;
+        const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+        const ringIdx = chemistry ? chemistry.ringIdx : null;
         if (ringIdx == null || ringIdx < 0 || ringIdx >= nRings) continue;
         // Prefer the crystal's own cell.fluid (per-vertex chemistry).
         // Fall back to the ring-level pool only if the mesh isn't built.
@@ -977,7 +978,7 @@ class VugSimulator {
           ? cell.fluid
           : this.ring_fluids[ringIdx];
         const ringState = this.conditions.ringWaterState(ringIdx, nRings);
-        const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+        const vertexIdx = chemistry.vertexIndex;
         const Tlocal = temperatureAtMeshVertex(this, _mesh, vertexIdx);
         const transition = applyDehydrationTransitions(
           crystal, ringFluid, ringState, Tlocal, this.step);

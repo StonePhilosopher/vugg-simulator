@@ -234,17 +234,23 @@ export async function runVitestBatch({
 export function parseArgs(argv) {
   let batchSize = DEFAULT_TEST_BATCH_SIZE;
   let startIndex = 0;
+  const selectedFiles = [];
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
     if (arg === '--batch-size') batchSize = Number(argv[++index]);
     else if (arg === '--start-index') startIndex = Number(argv[++index]);
-    else if (arg === '--help') return { help: true, batchSize, startIndex };
+    else if (arg === '--file') selectedFiles.push(String(argv[++index] || '').replaceAll('\\', '/'));
+    else if (arg === '--help') return { help: true, batchSize, startIndex, selectedFiles };
     else throw new Error(`unknown argument: ${arg}`);
   }
   if (!Number.isInteger(startIndex) || startIndex < 0) {
     throw new Error(`start index must be a non-negative integer, received ${startIndex}`);
   }
-  return { help: false, batchSize, startIndex };
+  if (selectedFiles.some(file => !file)) throw new Error('--file requires a test path');
+  if (selectedFiles.length && startIndex !== 0) {
+    throw new Error('--file and --start-index cannot be combined');
+  }
+  return { help: false, batchSize, startIndex, selectedFiles };
 }
 
 export async function runTestWorkflow({
@@ -291,12 +297,19 @@ if (invokedDirectly) {
   try {
     const args = parseArgs(process.argv.slice(2));
     if (args.help) {
-      console.log('node tools/test-workflow.mjs [--batch-size N] [--start-index N]');
+      console.log('node tools/test-workflow.mjs [--batch-size N] [--start-index N] [--file tests-js/name.test.ts ...]');
     } else {
       const allFiles = collectTestFiles();
-      const files = selectResumeFiles(allFiles, args.startIndex);
+      for (const file of args.selectedFiles) {
+        if (!allFiles.includes(file)) throw new Error(`selected test file is not registered: ${file}`);
+      }
+      const files = args.selectedFiles.length
+        ? [...new Set(args.selectedFiles)]
+        : selectResumeFiles(allFiles, args.startIndex);
       if (args.startIndex > 0) {
         console.log(`[test-workflow] resuming at sorted file index ${args.startIndex} of ${allFiles.length}`);
+      } else if (args.selectedFiles.length) {
+        console.log(`[test-workflow] selected ${files.length} exact test file(s)`);
       }
       process.exitCode = await runTestWorkflow({
         batchSize: args.batchSize,

@@ -117,6 +117,7 @@ interface StripNucleationEvent {
   ring: number;          // 0 to height_positions-1
   cell: number;          // 0 to 119 (native angular cell index)
   mineral: string;       // mineral id
+  surface_anchor_key?: string; // physical identity; ring/cell is chemistry projection
 }
 
 // A phase delivered by alteration of an existing crystal. It must remain

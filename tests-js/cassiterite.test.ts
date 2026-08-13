@@ -24,12 +24,22 @@
 //   * Other scenarios stay byte-identical (Sn=0 default).
 
 import { describe, expect, it } from 'vitest';
+import {
+  currentEvidenceIdentity,
+  loadAuthenticatedEvidenceJson,
+  requireEvidenceScenario,
+} from './authenticated-evidence';
 
 declare const VugSimulator: any;
 declare const VugConditions: any;
 declare const FluidChemistry: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
+
+const SEED42_BASELINE = loadAuthenticatedEvidenceJson(
+  `tests-js/baselines/seed42_v${currentEvidenceIdentity.simVersion}.json`,
+  'seed42-baseline',
+);
 
 function runScenarioFresh(scenarioName: string, seed: number) {
   setSeed(seed);
@@ -292,24 +302,15 @@ describe('Cassiterite — SnO₂ engine (v89)', () => {
 
   describe('other scenarios — Sn=0 default keeps byte-identical', () => {
     it('sulphur_bank: zero cassiterite (Sn=0 default)', () => {
-      setSeed(42);
-      const { sim } = runScenario('sulphur_bank', 42);
-      const cas = sim.crystals.filter((c: any) => c.mineral === 'cassiterite');
-      expect(cas.length).toBe(0);
+      expect(requireEvidenceScenario(SEED42_BASELINE, 'sulphur_bank').cassiterite).toBeUndefined();
     });
 
     it('supergene_oxidation: zero cassiterite (Sn=0 default)', () => {
-      setSeed(42);
-      const { sim } = runScenario('supergene_oxidation', 42);
-      const cas = sim.crystals.filter((c: any) => c.mineral === 'cassiterite');
-      expect(cas.length).toBe(0);
+      expect(requireEvidenceScenario(SEED42_BASELINE, 'supergene_oxidation').cassiterite).toBeUndefined();
     });
 
     it('bisbee: zero cassiterite (Sn=0 default)', () => {
-      setSeed(42);
-      const { sim } = runScenario('bisbee', 42);
-      const cas = sim.crystals.filter((c: any) => c.mineral === 'cassiterite');
-      expect(cas.length).toBe(0);
+      expect(requireEvidenceScenario(SEED42_BASELINE, 'bisbee').cassiterite).toBeUndefined();
     });
   });
 

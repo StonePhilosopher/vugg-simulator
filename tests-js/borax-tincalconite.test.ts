@@ -62,5 +62,8 @@ describe('borax–tincalconite saline phase boundary', () => {
     expect(products.some((c: any) =>
       c.dehydration_driver === 'temperature' || c.dehydration_driver === 'dry-exposure'))
       .toBe(true);
-  }, 300_000);
+  // A canonical Searles seed takes about 317 s on the commissioning host
+  // after SIM 264's exact surface-anchor work. Keep a finite hang detector,
+  // but do not make the test ceiling shorter than the measured valid run.
+  }, 900_000);
 });

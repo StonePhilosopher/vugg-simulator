@@ -12847,7 +12847,53 @@
 //       corrections above. This records an AI role, not review by the real
 //       scientist or Smithsonian. Marching Cubes remains default-off pending
 //       the separately listed production-promotion gates.
-const SIM_VERSION = 263;
+//
+// v264 — Topology-independent cavity surface anchors (August 2026).
+//       Every newly nucleated crystal now records a physical millimetre
+//       position, void-facing local normal, authenticated triangle and
+//       barycentric source receipt, and a separately named nearest-WallMesh
+//       chemistry projection. WallMesh and the default-off Marching Cubes
+//       extraction emit the same `cavity-surface-anchor-v1` contract; field
+//       anchors additionally commit to scalar signature, immutable snapshot
+//       digest, buffer digest, isovalue, and source field cell. Deterministic
+//       closest-triangle remapping survives re-extraction without treating a
+//       transient triangle index as identity. Legacy ring/cell fixtures upgrade
+//       only at the WallState boundary and are never emitted by new crystals.
+//       Local fluid, temperature, water state, competition, and voxel access
+//       now request the chemistry projection explicitly; renderer transforms,
+//       morphology, hit-test keys, command fingerprints, and strip testimony
+//       consume physical anchor identity. Crystal occupancy and local-fill
+//       volume now spread over shortest-path WallMesh footprints and exact
+//       per-vertex triangle areas instead of a same-latitude slice and
+//       mean-sphere wedge. That scientific correction can change shielding,
+//       crowding, dissolution, and subsequent paragenesis, so v264 is a real
+//       simulation-identity bump with an automated evidence rebake.
+//       Architecture-level nucleation filters also resolve the actual local
+//       void-facing surface normal at the selected cell. This prevents a
+//       rough cleft-face ring from admitting a physically rim-facing patch;
+//       per-vertex and feeder-weighted joint samplers use the same filter.
+//       The correction intentionally changes seed-42 cleft placement and is
+//       included in the v264 digest/evidence rather than hidden as UI drift.
+//       Local browser QA also caught and repaired a narrow-screen playback
+//       defect: at <=600px the narrative and inventory now stack at full width
+//       instead of collapsing the narrative beside a 100%-wide inventory.
+//       Hostile review tightened the receipt before closure: validation now
+//       proves every source digest, reconstructed point/normal, nearest
+//       chemistry vertex, and position-derived scalar cell; regridding never
+//       reuses an old grid-frame tuple. Derived live remaps are WeakMap-cached
+//       without rewriting birth history, and surface-fabric overlap keys pair
+//       the authenticated source signature with the triangle index. These
+//       Provider commands and replay frames also preserve the exact field,
+//       evolution cursor, shape, tessellation, and renderer authority. Failed
+//       authentication is withheld explicitly rather than rendered through a
+//       plausible WallMesh substitute. These rules are represented by
+//       surface-anchor digest v6. Host overgrowths retain the host's immutable
+//       physical attachment instead of reconstructing it from the shared
+//       chemistry voxel, and historical helper calls bind field + surface to
+//       one explicit ledger cursor. Canonical evidence is timestamp-free and
+//       binds exact dist/browser bytes, fetched science data, producer
+//       contracts, and every published artifact through a clean-clone receipt.
+const SIM_VERSION = 264;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12869,6 +12915,7 @@ const MODEL_DIGEST = [
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
   'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',
   'surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4',
+  'surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+explicit-pinned-provider-command+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v6',
   'cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-shadow-v3',
   'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
   'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
@@ -12905,7 +12952,7 @@ const MODEL_DIGEST = [
   'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation+null-confining-pressure-v3',
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
   'transition-locality-exclusion:target-gated-v1',
-  'evidence-binding:strip-sha256+byte-identical-claim-card+frequency-behavior-hash-v1',
+  'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2',
   'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v4',
 ].join('|');
 

@@ -695,6 +695,8 @@ describe('responsive and accessible shell contracts', () => {
     expect(html).toMatch(/\.title-logo\s*\{[\s\S]*?max-width:\s*100%[\s\S]*?letter-spacing:\s*0\.2em/);
     expect(html).toMatch(/\.mode-toggle\s*\{[\s\S]*?flex-wrap:\s*wrap/);
     expect(html).toMatch(/\.setup-row input\[type="range"\]\s*\{[\s\S]*?min-width:\s*0/);
+    expect(html).toMatch(/#output-container\s*\{[\s\S]*?flex-direction:\s*column/);
+    expect(html).toMatch(/#output-container\s*>\s*div:first-child,[\s\S]*?#legends-inventory-col\s*\{[\s\S]*?width:\s*100%[\s\S]*?min-width:\s*0/);
   });
 
   it('keeps phone buttons and exact-value fields at a 44px touch target', () => {

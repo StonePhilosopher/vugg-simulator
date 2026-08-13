@@ -13,6 +13,9 @@ declare const cavityMolarVolume: any;
 declare const setSeed: any;
 declare const simulationStateFingerprint: any;
 declare const _topoSnapshotWall: any;
+declare const _topoReplayRenderDecision: any;
+declare const _topoRenderThree: any;
+declare const _topoThreeRenderAuthorityDecision: any;
 
 function fixture(composition = 'limestone') {
   const wallState = new WallState({
@@ -277,24 +280,73 @@ describe('mass-balanced cavity evolution authority', () => {
     sim.step = 1;
     sim._repaintWallState();
     const first = sim.wall_state_history[sim.wall_state_history.length - 1];
+    expect(first.cavity_surface_provider).toEqual({ kind: 'wall-mesh' });
+    sim.wall_state.activateCavitySurfaceAnchorProvider({ resolution: 20, isovalue: 0 });
     sim.dissolve_wall();
     sim.step = 2;
     sim._repaintWallState();
+    const second = sim.wall_state_history[sim.wall_state_history.length - 1];
+    expect(second.cavity_surface_provider.kind).toBe('cavity-field');
     const ledger = sim.wall_state.cavityEvolutionLedger();
+
+    // Make the live authority deliberately differ from both frames. Replay
+    // must follow each snapshot's recorded command, never today's wall.
+    sim.wall_state.deactivateCavitySurfaceAnchorProvider();
 
     expect(first.cavity_evolution_cursor).toBe(1);
     expect(first.cavity_evolution_signature).toBe(ledger.signatureAt(1));
     const replayWall = _topoSnapshotWall(sim.wall_state, first);
-    expect(replayWall._disableMarchingCubesCavity).toBe(false);
+    expect(replayWall._disableMarchingCubesCavity, replayWall._replayAuthenticationFailure)
+      .toBe(false);
     expect(replayWall._cavityEvolutionCursor).toBe(1);
+    expect(replayWall._cavitySurfaceAnchorProvider).toEqual({ kind: 'wall-mesh' });
+    expect(replayWall._activeCavitySurfaceAnchorProvider).toBeNull();
     expect(ledger.assertProjection(replayWall, 1)).toBe(true);
     expect(replayWall.cavityFieldFor({ resolution: 20 }).sig)
       .toContain(ledger.signatureAt(1));
+    const historicalNoCursorReceipt = replayWall.activateCavitySurfaceAnchorProvider({
+      resolution: 20,
+      isovalue: 0,
+    });
+    expect(historicalNoCursorReceipt.field_signature).toContain(ledger.signatureAt(1));
+    expect(historicalNoCursorReceipt.cavity_evolution_signature).toBe(ledger.signatureAt(1));
+    expect(replayWall.activeCavitySurfaceAnchorProvider().receipt)
+      .toEqual(historicalNoCursorReceipt);
+
+    // The public helper options must authenticate field + surface against one
+    // requested historical prefix even while the live wall default is head 2.
+    const explicitCursorWall = _topoSnapshotWall(sim.wall_state, first);
+    explicitCursorWall._cavityEvolutionCursor = null;
+    const historicalHelperAnchor = explicitCursorWall.surfaceAnchorFromMarchingCubes(
+      0, [0.2, 0.3, 0.5], { resolution: 20, ledgerCursor: 1 },
+    );
+    expect(historicalHelperAnchor.source.fieldSignature).toContain(ledger.signatureAt(1));
+    expect(historicalHelperAnchor.source.fieldSignature).not.toContain(ledger.signatureAt(2));
+    const historicalRemap = explicitCursorWall.remapSurfaceAnchorToMarchingCubes(
+      explicitCursorWall._anchorFromRingCell(4, 11), { resolution: 20, ledgerCursor: 1 },
+    );
+    expect(historicalRemap.source.fieldSignature).toContain(ledger.signatureAt(1));
+
+    const exactReplayWall = _topoSnapshotWall(sim.wall_state, second);
+    const exactReplayProvider = exactReplayWall.activeCavitySurfaceAnchorProvider();
+    expect(exactReplayProvider.receipt).toEqual(second.cavity_surface_provider);
+    expect(exactReplayProvider.receipt.cavity_evolution_signature)
+      .toBe(ledger.signatureAt(2));
+    expect(sim.wall_state.cavitySurfaceAnchorProviderReceipt()).toEqual({ kind: 'wall-mesh' });
+
+    const providerTampered = JSON.parse(JSON.stringify(second));
+    providerTampered.cavity_surface_provider.field_signature = 'tampered';
+    const providerFallback = _topoSnapshotWall(sim.wall_state, providerTampered);
+    expect(providerFallback._disableMarchingCubesCavity).toBe(true);
+    expect(providerFallback._activeCavitySurfaceAnchorProvider).toBeNull();
+    expect(providerFallback._cavitySurfaceAnchorProvider).toEqual({ kind: 'wall-mesh' });
+    expect(_topoReplayRenderDecision(sim.wall_state, providerTampered).mode).toBe('corrupt');
 
     const tampered = { ...first, cavity_evolution_signature: 'tampered' };
     const fallbackWall = _topoSnapshotWall(sim.wall_state, tampered);
     expect(fallbackWall._disableMarchingCubesCavity).toBe(true);
     expect(fallbackWall._cavityEvolutionCursor).toBeUndefined();
+    expect(_topoReplayRenderDecision(sim.wall_state, tampered).mode).toBe('corrupt');
 
     const depthTampered = JSON.parse(JSON.stringify(first));
     depthTampered.rings[0][0].wall_depth += 1;
@@ -302,5 +354,60 @@ describe('mass-balanced cavity evolution authority', () => {
     expect(depthFallback._disableMarchingCubesCavity).toBe(true);
     expect(depthFallback._cavityEvolutionLedger).toBeNull();
     expect(depthFallback._cavityEvolutionCursor).toBeUndefined();
+    expect(_topoReplayRenderDecision(sim.wall_state, depthTampered).mode).toBe('corrupt');
+
+    const radiusTampered = JSON.parse(JSON.stringify(first));
+    radiusTampered.rings[0][0].base_radius_mm += 1;
+    const radiusFallback = _topoSnapshotWall(sim.wall_state, radiusTampered);
+    expect(radiusFallback._replayAuthenticationFailure).toContain('shape or tessellation');
+    expect(_topoReplayRenderDecision(sim.wall_state, radiusTampered)).toMatchObject({
+      mode: 'corrupt',
+      message: expect.stringContaining('Replay frame withheld'),
+    });
+
+    expect(_topoReplayRenderDecision(sim.wall_state, first).mode).toBe('wall-mesh');
+    expect(_topoReplayRenderDecision(sim.wall_state, second).mode).toBe('cavity-field');
+
+    for (const malformed of [{ step: 1 }, { step: 1, rings: null }, { rings: {} }]) {
+      const decision = _topoReplayRenderDecision(sim.wall_state, malformed);
+      expect(decision.mode).toBe('corrupt');
+      expect(decision.message).toContain('Replay frame withheld');
+      expect(decision.wall).not.toBe(sim.wall_state);
+      // Direct Three entry authenticates before canvas/WebGL availability and
+      // cannot substitute the live wall for the malformed historical frame.
+      expect(_topoRenderThree(sim, sim.wall_state, malformed, 1)).toBe(false);
+    }
+
+    const shortRings = JSON.parse(JSON.stringify(first));
+    shortRings.rings.pop();
+    const longRings = JSON.parse(JSON.stringify(first));
+    longRings.rings.push(JSON.parse(JSON.stringify(longRings.rings[0])));
+    const shortCells = JSON.parse(JSON.stringify(first));
+    shortCells.rings[0].pop();
+    const longCells = JSON.parse(JSON.stringify(first));
+    longCells.rings[0].push(JSON.parse(JSON.stringify(longCells.rings[0][0])));
+    const sparseRings = JSON.parse(JSON.stringify(first));
+    delete sparseRings.rings[1];
+    const sparseCells = JSON.parse(JSON.stringify(first));
+    delete sparseCells.rings[0][1];
+    for (const wrongDimensions of [
+      shortRings, longRings, shortCells, longCells, sparseRings, sparseCells,
+    ]) {
+      expect(_topoReplayRenderDecision(sim.wall_state, wrongDimensions)).toMatchObject({
+        mode: 'corrupt',
+        message: expect.stringContaining('dimensions'),
+      });
+    }
+
+    // The render authority binder has no injection parameter. Even an extra
+    // live-wall argument is ignored by JavaScript; the authenticated cursor-1
+    // wall remains the only wall returned to Three.
+    const bound = _topoThreeRenderAuthorityDecision(
+      sim.wall_state, first, sim.wall_state,
+    );
+    expect(_topoThreeRenderAuthorityDecision.length).toBe(2);
+    expect(bound.wall).not.toBe(sim.wall_state);
+    expect(bound.wall._cavityEvolutionCursor).toBe(1);
+    expect(bound.mode).toBe('wall-mesh');
   });
 });

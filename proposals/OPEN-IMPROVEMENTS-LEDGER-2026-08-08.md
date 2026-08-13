@@ -187,6 +187,27 @@ single execution ledger for the science-first AAA completion branch.
   continuity, immutable mask authority, analytic pole caps, tabular coverage,
   bounded science drift, deterministic build evidence, and desktop/mobile
   browser receipts.
+- [x] Establish topology-independent crystal surface anchors before any
+  non-star-shaped production opt-in. SIM 264 separates exact physical
+  position/void-normal/source identity from the nearest-WallMesh chemistry
+  projection, authenticates WallMesh and Cartesian-field triangle/barycentric
+  caches, upgrades legacy fixtures only at boundaries, and migrates rendering,
+  hit testing, morphology, local chemistry, geodesic occupancy, shielding,
+  competition, and architecture placement. Evidence:
+  `proposals/PROPOSAL-CAVITY-SURFACE-ANCHORS-2026-08-12.md`,
+  `tests-js/cavity-surface-anchor.test.ts`, the v264 science archive, the
+  memory-bounded automated test workflow, and desktop/390x844 local-browser
+  receipts. The exact-execution evidence receipt authenticates 126 generated
+  artifacts; `science:verify` passes 41 scenarios, 236 citations, zero locality
+  violations, and 40 focused science tests; the resumed bounded sweep covers
+  all 217 test files. Evidence-consuming tests now fail closed against that
+  aggregate receipt, O3 determinism uses an independent replay, and the
+  vanadate locality pin retains its multi-seed final alive/grown contract. The
+  AI Dr. Michael Wise hostile-review role returned `SATISFIED` after
+  simulation-authority, evidence-reproducibility, and post-bake test-integrity
+  rounds.
+  The scalar provider remains default-off pending the production promotion
+  gates below.
 - [ ] Promote Cartesian cavity geometry only after mass-balanced wall evolution
   joins the now-reconciled authored-mask scalar oracle, then
   make crystal clipping, surface anchors, replay, matrix materials, and water

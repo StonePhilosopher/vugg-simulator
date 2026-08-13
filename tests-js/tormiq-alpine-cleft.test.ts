@@ -15,32 +15,27 @@
 // NO-halite control.
 
 import { describe, expect, it } from 'vitest';
+import {
+  currentEvidenceIdentity,
+  loadAuthenticatedEvidenceJson,
+  requireEvidenceScenario,
+} from './authenticated-evidence';
 
-declare const VugSimulator: any;
 declare const SCENARIOS: any;
-declare const setSeed: any;
 
-function run(scenarioName: string, seed = 42) {
-  setSeed(seed);
-  const scen = SCENARIOS[scenarioName];
-  if (!scen) return null;
-  const { conditions, events, defaultSteps } = scen();
-  const sim = new VugSimulator(conditions, events);
-  const steps = defaultSteps ?? 200;
-  for (let i = 0; i < steps; i++) sim.run_step();
-  return sim;
-}
+const SEED42_BASELINE = loadAuthenticatedEvidenceJson(
+  `tests-js/baselines/seed42_v${currentEvidenceIdentity.simVersion}.json`,
+  'seed42-baseline',
+);
 
-// Lazy memo — runs at first it() execution, NOT at collection time (when the
-// bundle globals aren't ready yet).
-let _counts: Record<string, number> | null = null;
+// The aggregate science-evidence receipt authenticates this exact-bundle
+// seed-42 fleet summary; the chemistry gates above remain live assertions.
 function counts42(): Record<string, number> {
-  if (_counts) return _counts;
-  const sim = run('tormiq_alpine_cleft', 42);
-  const m: Record<string, number> = {};
-  if (sim) for (const c of sim.crystals) m[c.mineral] = (m[c.mineral] || 0) + 1;
-  _counts = m;
-  return m;
+  const summary = requireEvidenceScenario(SEED42_BASELINE, 'tormiq_alpine_cleft');
+  return Object.fromEntries(Object.entries(summary).map(([mineral, value]: [string, any]) => [
+    mineral,
+    Number(value?.total || 0),
+  ]));
 }
 
 describe('Tormiq alpine-cleft epidote scenario (v197)', () => {

@@ -18,6 +18,18 @@ import {
   localityFrequencySpecHash,
   validateFrequencyScenarioReceipt,
 } from './locality-frequency-contract.mjs';
+import {
+  browserBundleDigest,
+  nodeRuntimeDigest,
+  nodeRuntimeIdentity,
+  producerContractDigest,
+  runtimeExecutionDigest,
+} from './evidence-runtime.mjs';
+import {
+  SCIENCE_EVIDENCE_PRODUCERS,
+  SCIENCE_EVIDENCE_RECEIPT_SCHEMA,
+  verifyArtifactHashMap,
+} from './science-evidence-receipt.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CHECK = process.argv.includes('--check');
@@ -148,6 +160,55 @@ function inspectLocalityFrequencyReceipt(errors, version, modelDigest, scenarioF
   };
 }
 
+function inspectScienceEvidenceReceipt(errors, version, modelDigest) {
+  const receiptPath = path.join(ROOT, 'archive', 'evidence', `v${version}.json`);
+  if (!fs.existsSync(receiptPath)) {
+    errors.push(`missing aggregate science evidence receipt ${path.relative(ROOT, receiptPath)}`);
+    return null;
+  }
+  let receipt;
+  let raw;
+  try {
+    raw = fs.readFileSync(receiptPath);
+    receipt = JSON.parse(raw.toString('utf8'));
+  } catch (error) {
+    errors.push(`unreadable aggregate science evidence receipt (${error.message})`);
+    return null;
+  }
+  if (receipt.schema !== SCIENCE_EVIDENCE_RECEIPT_SCHEMA) errors.push('aggregate science evidence schema mismatch');
+  if (receipt.sim_version !== version) errors.push('aggregate science evidence SIM version mismatch');
+  if (receipt.model_digest !== modelDigest) errors.push('aggregate science evidence model digest mismatch');
+  if (receipt.canonical_seed !== 42) errors.push('aggregate science evidence canonical seed mismatch');
+  if (receipt.browser_bundle_sha256 !== browserBundleDigest(ROOT)) {
+    errors.push('aggregate science evidence browser bundle mismatch');
+  }
+  if (receipt.execution_set_sha256 !== runtimeExecutionDigest(ROOT)) {
+    errors.push('aggregate science evidence execution set mismatch');
+  }
+  if (canonicalJson(receipt.node_runtime) !== canonicalJson(nodeRuntimeIdentity())
+      || receipt.node_runtime_sha256 !== nodeRuntimeDigest()) {
+    errors.push('aggregate science evidence Node/V8 runtime mismatch');
+  }
+  for (const kind of SCIENCE_EVIDENCE_PRODUCERS) {
+    if (receipt.producer_contracts?.[kind] !== producerContractDigest(ROOT, kind)) {
+      errors.push(`aggregate science evidence producer mismatch: ${kind}`);
+    }
+  }
+  try { verifyArtifactHashMap(ROOT, receipt.artifacts); }
+  catch (error) { errors.push(error.message); }
+  return {
+    path: path.relative(ROOT, receiptPath).replaceAll('\\', '/'),
+    sha256: sha256(raw),
+    schema: receipt.schema,
+    browser_bundle_sha256: receipt.browser_bundle_sha256,
+    execution_set_sha256: receipt.execution_set_sha256,
+    node_runtime: receipt.node_runtime,
+    node_runtime_sha256: receipt.node_runtime_sha256,
+    producer_contracts: receipt.producer_contracts,
+    artifact_count: Object.keys(receipt.artifacts || {}).length,
+  };
+}
+
 const {
   SIM_VERSION, MODEL_DIGEST, SCENARIOS, EVENT_REGISTRY, MINERAL_SPEC,
   THERMO_PRESSURE_GRID_DATA_SHA256, THERMO_PRESSURE_GRID,
@@ -165,6 +226,9 @@ const referencedHandlers = new Set();
 const scenarios = [];
 const localityFrequencyProvenance = inspectLocalityFrequencyReceipt(
   errors, SIM_VERSION, MODEL_DIGEST, SCENARIOS,
+);
+const scienceEvidenceProvenance = inspectScienceEvidenceReceipt(
+  errors, SIM_VERSION, MODEL_DIGEST,
 );
 const pressureGridPath = path.join(ROOT, 'data', 'generated', 'thermo-pressure-grid.json');
 const pressureVerifierPath = path.join(ROOT, 'tools', 'check-pressure-grid.mjs');
@@ -335,7 +399,7 @@ if (errors.length) {
 }
 
 const manifest = {
-  schema: 'vugg-science-provenance-manifest-v4',
+  schema: 'vugg-science-provenance-manifest-v5',
   sim_version: SIM_VERSION,
   model_digest: MODEL_DIGEST,
   canonical_run_seed: 42,
@@ -343,6 +407,7 @@ const manifest = {
   support_envelopes: SUPPORT,
   thermo_pressure_grid: pressureGridProvenance,
   locality_frequency: localityFrequencyProvenance,
+  science_evidence: scienceEvidenceProvenance,
   totals: {
     scenarios: scenarios.length,
     citations: scenarios.reduce((sum, row) => sum + row.citations.length, 0),

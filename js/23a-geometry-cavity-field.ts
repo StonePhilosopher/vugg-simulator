@@ -41,6 +41,11 @@ interface CavitySurfaceBuffers {
     field_bytes: number;
     surface_bytes: number;
   };
+  topology?: {
+    negative_border: boolean;
+    nonempty: boolean;
+    closed_two_manifold: boolean;
+  };
 }
 
 interface CavityShapeDescriptor {

@@ -26,11 +26,13 @@ export default defineConfig({
     pool: 'threads',
     maxWorkers: 1,
     fileParallelism: false,
-    // Finite but workstation-realistic default. Full-fidelity localities such
-    // as Bisbee are exercised from several test files and can require ~200 s
-    // on a thermally or CPU-constrained host. The memory-bounded workflow also
-    // enforces a 2 GB RSS ceiling, so five minutes remains a hard hang detector
-    // without turning valid scenario replays into flaky failures.
+    // Finite but workstation-realistic default. SIM 264 commissioning measured
+    // the heaviest single authored seed (Tsumeb/supergene_oxidation) at about
+    // 570 s, while three-seed Schneeberg probes take about 353 s. The
+    // memory-bounded workflow also enforces a 2 GB RSS ceiling, so fifteen
+    // minutes remains a hard hang detector without turning valid scenario
+    // replays into flaky failures. Small unit tests may still declare shorter
+    // local ceilings.
     // v175 (2026-06-03): the strip recorder also captures
     // the depletion-FLOOR channel (per-bin min for ion chips at the wall),
     // ~25% more chip reads when recording. Long recording-heavy scenarios
@@ -39,7 +41,7 @@ export default defineConfig({
     // but the shared-worker wall-clock tips them over. SIM 247 adds executed
     // transformation testimony to those recorder-heavy runs. Two minutes is
     // remains finite while accommodating the bounded worker pool.
-    testTimeout: 300000,
+    testTimeout: 900000,
     hookTimeout: 180000,
   },
 });

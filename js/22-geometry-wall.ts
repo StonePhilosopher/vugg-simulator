@@ -1118,6 +1118,10 @@ class WallState {
     // WallCell setters advance this monotonic revision.
     this._geometry_revision = 0;
     this._cavityEvolutionLedger = null;
+    // Cached extraction is diagnostic/render state. Only this explicit switch
+    // can promote the Cartesian surface to live anchor authority.
+    this._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
+    this._activeCavitySurfaceAnchorProvider = null;
     this.cells_per_ring = opts.cells_per_ring ?? 120;
     // Phase 1 of PROPOSAL-3D-SIMULATION: 16 vertically-stacked rings as
     // the new default. Engine still operates on ring[0] only — rings 1..15
@@ -1657,16 +1661,10 @@ class WallState {
   // includes the same ring twist used by WallMesh, making the descriptor and
   // renderer select the same physical wall patch.
   surfaceAnchorDirection(crystal) {
-    const anchor = this._resolveAnchor(crystal);
-    if (!anchor) return [0, 1, 0];
-    const phi = Math.PI * (anchor.ringIdx + 0.5) / Math.max(1, this.ring_count);
-    const twist = this.ringTwistRadians ? this.ringTwistRadians(phi) : 0;
-    const theta = 2 * Math.PI * anchor.cellIdx / Math.max(1, this.cells_per_ring) + twist;
-    return [
-      Math.sin(phi) * Math.cos(theta),
-      -Math.cos(phi),
-      Math.sin(phi) * Math.sin(theta),
-    ];
+    const point = this.surfacePointForCrystal(crystal);
+    if (!point) return [0, 1, 0];
+    const length = Math.hypot(point[0], point[1], point[2]) || 1;
+    return [point[0] / length, point[1] / length, point[2] / length];
   }
 
   updateCapacity(volumeMm3, equivalentDiameterMm?) {
@@ -1872,6 +1870,98 @@ class WallState {
     return this._cavitySurface;
   }
 
+  activateCavitySurfaceAnchorProvider(opts: any = {}) {
+    const resolution = opts.resolution == null ? 48 : opts.resolution;
+    const evolution = this.cavityEvolutionLedger?.();
+    const ledgerCursor = evolution
+      ? (opts.ledgerCursor != null ? Number(opts.ledgerCursor)
+        : this._cavityEvolutionCursor != null ? Number(this._cavityEvolutionCursor)
+          : evolution.cursor)
+      : null;
+    const field = this.cavityFieldFor({ resolution, ledgerCursor });
+    const surface = this.cavitySurfaceFor({
+      resolution, ledgerCursor,
+      isovalue: opts.isovalue == null ? 0 : opts.isovalue,
+      throwOnFailure: true,
+    });
+    if (!field || !surface) throw new Error('cannot activate an unavailable cavity surface provider');
+    MarchingCubesExtractor.verifyBuffers(surface);
+    if (!field.hasNegativeBorder(surface.isovalue)
+        || surface.topology?.negative_border !== true
+        || surface.topology?.nonempty !== true
+        || surface.topology?.closed_two_manifold !== true
+        || !(surface.metrics?.triangle_count > 0)
+        || !(surface.metrics?.vertex_count > 0)) {
+      throw new Error('cannot activate an empty, open, or unauthenticated cavity surface provider');
+    }
+    const receipt = Object.freeze({
+      kind: 'cavity-field',
+      resolution: field.sizeX,
+      isovalue: Number(surface.isovalue),
+      field_signature: field.sig,
+      field_snapshot_digest: field.snapshotDigest,
+      surface_signature: surface.sig,
+      surface_buffer_digest: surface.buffer_digest,
+      cavity_evolution_signature: evolution ? evolution.signatureAt(ledgerCursor) : null,
+    });
+    // Pin the exact explicitly activated objects. Later diagnostics may replace
+    // `_cavityField/_cavitySurface`; they cannot change simulation authority.
+    this._activeCavitySurfaceAnchorProvider = Object.freeze({ field, surface, receipt });
+    this._cavitySurfaceAnchorProvider = receipt;
+    return receipt;
+  }
+
+  _activeCavitySurfaceProviderForCurrentGeometry() {
+    const active = this._activeCavitySurfaceAnchorProvider;
+    if (!active || active.receipt?.kind !== 'cavity-field') return null;
+    try {
+      // Replay walls pin an authenticated historical ledger prefix. Compare
+      // and, if necessary, rebuild against that cursor rather than silently
+      // upgrading a historical provider to the live ledger head.
+      const ledgerCursor = this._cavityEvolutionCursor;
+      const expected = CavityScalarField.signatureFor(
+        this, active.receipt.resolution, ledgerCursor,
+      );
+      const evolution = this.cavityEvolutionLedger?.();
+      const effectiveCursor = evolution
+        ? (ledgerCursor == null ? evolution.cursor : Number(ledgerCursor)) : null;
+      const expectedEvolutionSignature = evolution
+        ? evolution.signatureAt(effectiveCursor) : null;
+      if (expected === active.receipt.field_signature
+          && active.receipt.cavity_evolution_signature === expectedEvolutionSignature) {
+        MarchingCubesExtractor.verifyBuffers(active.surface);
+        return active;
+      }
+      // Explicit field authority follows authenticated wall evolution at the
+      // same resolution/isovalue. Activation remains atomic: if re-extraction
+      // fails any production gate, the catch below exposes WallMesh instead.
+      this.activateCavitySurfaceAnchorProvider({
+        resolution: active.receipt.resolution,
+        isovalue: active.receipt.isovalue,
+        ledgerCursor,
+      });
+      return this._activeCavitySurfaceAnchorProvider;
+    } catch (_error) {
+      this.deactivateCavitySurfaceAnchorProvider();
+      return null;
+    }
+  }
+
+  cavitySurfaceAnchorProviderReceipt() {
+    this._activeCavitySurfaceProviderForCurrentGeometry();
+    return this._cavitySurfaceAnchorProvider;
+  }
+
+  activeCavitySurfaceAnchorProvider() {
+    return this._activeCavitySurfaceProviderForCurrentGeometry();
+  }
+
+  deactivateCavitySurfaceAnchorProvider() {
+    this._activeCavitySurfaceAnchorProvider = null;
+    this._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
+    return this._cavitySurfaceAnchorProvider;
+  }
+
   // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1 (v158) — lazy + cached
   // factory for the cavity interior voxel grid. Same pattern as
   // meshFor(): build on first call, cache for subsequent calls.
@@ -1917,12 +2007,12 @@ class WallState {
     const N = Math.max(1, this.cells_per_ring);
     const r = ((ringIdx | 0) + n) % n;
     const c = ((cellIdx | 0) % N + N) % N;
-    return {
-      phi: Math.PI * (r + 0.5) / n,
-      theta: 2 * Math.PI * c / N,
-      ringIdx: r,
-      cellIdx: c,
-    };
+    // `meshFor()` performs the cheap geometry-revision check. Do not bypass it
+    // with an existing reference: cavity evolution may have invalidated the
+    // positions and the chemistry projection must follow that same revision.
+    const mesh = this.meshFor();
+    if (!mesh || !(mesh.numInterior > 0)) return null;
+    return CavitySurfaceAnchors.fromWallMeshVertex(mesh, r * N + c);
   }
 
   // PHASE-4-CAVITY-MESH (PROPOSAL-CAVITY-MESH §13 Tranche 4b) —
@@ -1939,10 +2029,173 @@ class WallState {
   _resolveAnchor(crystal) {
     if (!crystal) return null;
     const a = crystal.wall_anchor;
-    if (a && a.ringIdx != null && a.cellIdx != null) {
-      return { ringIdx: a.ringIdx, cellIdx: a.cellIdx };
+    if (!a) return null;
+    // Always enter through meshFor(): it checks the monotonic geometry revision
+    // before physical remap and chemistry projection use the mesh.
+    const mesh = this.meshFor();
+    if (a.schema === CavitySurfaceAnchors.SCHEMA && !Object.isFrozen(a)) {
+      // Saved JSON is mutable on load. Seal the accepted birth receipt in
+      // place before object identity is admitted to the derived remap cache.
+      CavitySurfaceAnchors.seal(a, mesh);
     }
-    return null;
+    const cachedRemap = (key: string, compute: () => any) => {
+      if (!this._surfaceAnchorRemapCache) this._surfaceAnchorRemapCache = new WeakMap();
+      const cached = this._surfaceAnchorRemapCache.get(a);
+      if (cached?.key === key) return cached.anchor;
+      const resolved = compute();
+      this._surfaceAnchorRemapCache.set(a, { key, anchor: resolved });
+      return resolved;
+    };
+    if (a.schema === CavitySurfaceAnchors.SCHEMA) {
+      if (a.source?.kind === 'wall-mesh') {
+        const active = this._activeCavitySurfaceProviderForCurrentGeometry();
+        const field = active?.field;
+        const surface = active?.surface;
+        if (active?.receipt?.kind === 'cavity-field'
+            && field && surface && surface.source_field_signature === field.sig
+            && surface.source_field_snapshot_digest === field.snapshotDigest) {
+          // Once an authenticated Cartesian provider exists, normalize all
+          // physical consumers onto it. This makes mixed historical providers
+          // share one live topology for placement and stratigraphy.
+          return cachedRemap(`field:${surface.sig}|chem:${mesh.geometry_sig}`, () =>
+            CavitySurfaceAnchors.remapToMarchingCubes(a, field, surface, mesh));
+        }
+        if (a.source.signature === mesh.geometry_sig) {
+          CavitySurfaceAnchors.validate(a, mesh, mesh);
+          return a;
+        }
+        return cachedRemap(`wall:${mesh.geometry_sig}`, () =>
+          CavitySurfaceAnchors.remapToWallMesh(a, mesh));
+      }
+      const active = this._activeCavitySurfaceProviderForCurrentGeometry();
+      const field = active?.field;
+      const surface = active?.surface;
+      if (!active || active.receipt?.kind !== 'cavity-field') {
+        return cachedRemap(`fallback:${mesh.geometry_sig}`, () =>
+          CavitySurfaceAnchors.remapToWallMesh(a, mesh));
+      }
+      if (field && surface && surface.source_field_signature === field.sig
+          && surface.source_field_snapshot_digest === field.snapshotDigest
+          && (a.source?.signature !== surface.sig || a.source?.fieldSignature !== field.sig)) {
+        return cachedRemap(`field:${surface.sig}|chem:${mesh.geometry_sig}`, () =>
+          CavitySurfaceAnchors.remapToMarchingCubes(a, field, surface, mesh));
+      }
+      if (field && surface && a.source?.signature === surface.sig
+          && a.source?.fieldSignature === field.sig) {
+        // Authenticate the physical receipt first. A changed WallMesh makes
+        // the chemistry projection stale, not the physical attachment stale;
+        // reproject that derived address atomically without mutating history.
+        if (a.chemistry?.meshSignature === mesh.geometry_sig) {
+          CavitySurfaceAnchors.validate(a, surface, mesh, field);
+          return a;
+        }
+        CavitySurfaceAnchors.validate(a, surface, mesh, field, { allowStaleChemistry: true });
+        return cachedRemap(`field:${surface.sig}|chem:${mesh.geometry_sig}`, () =>
+          CavitySurfaceAnchors.fromMarchingCubes(
+            field, surface, mesh, a.triangleIndex, a.barycentric,
+          ));
+      }
+      // A missing/rejected/stale scalar extraction fails closed explicitly to
+      // the canonical WallMesh; chemistry is never used as the remap shortcut.
+      return cachedRemap(`fallback:${mesh.geometry_sig}`, () =>
+        CavitySurfaceAnchors.remapToWallMesh(a, mesh));
+    }
+    return CavitySurfaceAnchors.upgradeLegacy(a, mesh);
+  }
+
+  // The boundary transport lattice is intentionally a projection of the
+  // physical surface anchor. These helpers keep chemistry consumers from
+  // mistaking a ring/cell cache for crystal identity.
+  chemistryAddressForAnchor(anchor) {
+    const resolved = anchor && anchor.wall_anchor !== undefined
+      ? this._resolveAnchor(anchor) : this._resolveAnchor({ wall_anchor: anchor });
+    return CavitySurfaceAnchors.chemistryAddress(resolved);
+  }
+
+  chemistryAddressForCrystal(crystal) {
+    return this.chemistryAddressForAnchor(crystal);
+  }
+
+  chemistryVertexForCrystal(crystal) {
+    const address = this.chemistryAddressForCrystal(crystal);
+    return address ? address.vertexIndex : -1;
+  }
+
+  surfacePointForCrystal(crystal) {
+    const anchor = this._resolveAnchor(crystal);
+    if (!anchor) return null;
+    return anchor.position.slice();
+  }
+
+  surfaceNormalForCrystal(crystal) {
+    const anchor = this._resolveAnchor(crystal);
+    if (!anchor) return null;
+    return anchor.normal.slice();
+  }
+
+  surfaceAnchorKey(crystal) {
+    return CavitySurfaceAnchors.key(this._resolveAnchor(crystal));
+  }
+
+  surfaceAnchorFromMarchingCubes(triangleIndex, barycentric, opts: any = {}) {
+    const resolution = opts.resolution == null ? 48 : opts.resolution;
+    const field = this.cavityFieldFor({ resolution, ledgerCursor: opts.ledgerCursor });
+    const surface = this.cavitySurfaceFor({
+      resolution, ledgerCursor: opts.ledgerCursor,
+      isovalue: opts.isovalue == null ? 0 : opts.isovalue,
+      throwOnFailure: true,
+    });
+    const mesh = this._mesh || this.meshFor(opts.sim);
+    return CavitySurfaceAnchors.fromMarchingCubes(
+      field, surface, mesh, triangleIndex, barycentric,
+    );
+  }
+
+  remapSurfaceAnchorToMarchingCubes(anchor, opts: any = {}) {
+    const resolution = opts.resolution == null ? 48 : opts.resolution;
+    const field = this.cavityFieldFor({ resolution, ledgerCursor: opts.ledgerCursor });
+    const surface = this.cavitySurfaceFor({
+      resolution, ledgerCursor: opts.ledgerCursor,
+      isovalue: opts.isovalue == null ? 0 : opts.isovalue,
+      throwOnFailure: false,
+    });
+    const mesh = this._mesh || this.meshFor(opts.sim);
+    if (!field || !surface) return CavitySurfaceAnchors.remapToWallMesh(anchor, mesh);
+    return CavitySurfaceAnchors.remapToMarchingCubes(
+      anchor, field, surface, mesh,
+    );
+  }
+
+  remapSurfaceAnchorToWallMesh(anchor, sim?) {
+    return CavitySurfaceAnchors.remapToWallMesh(anchor, this.meshFor(sim));
+  }
+
+  surfaceForCrystal(crystal, sim?) {
+    const anchor = this._resolveAnchor(crystal);
+    if (!anchor) return null;
+    const activeSurface = this._activeCavitySurfaceProviderForCurrentGeometry()?.surface;
+    if (anchor.source.kind === 'cavity-field'
+        && activeSurface?.sig === anchor.source.signature) return activeSurface;
+    return this._mesh || this.meshFor(sim);
+  }
+
+  surfaceAreaForCrystal(crystal, sim?) {
+    const surface = this.surfaceForCrystal(crystal, sim);
+    return surface ? CavitySurfaceAnchors.surfaceAreaMm2(surface) : 0;
+  }
+
+  surfacePatchForCrystal(crystal, coverage, sim?) {
+    const anchor = this._resolveAnchor(crystal);
+    const surface = this.surfaceForCrystal(crystal, sim);
+    return anchor && surface ? CavitySurfaceAnchors.surfacePatch(anchor, surface, coverage) : null;
+  }
+
+  sampleSurfacePatchForCrystal(crystal, count, coverage, seed, sim?) {
+    const anchor = this._resolveAnchor(crystal);
+    const surface = this.surfaceForCrystal(crystal, sim);
+    return anchor && surface
+      ? CavitySurfaceAnchors.sampleSurfacePatch(anchor, surface, count, coverage, seed)
+      : null;
   }
 
   // Phase D: which third of the sphere this ring belongs to.
@@ -1978,9 +2231,24 @@ class WallState {
   // habit code (PROPOSAL-3D-SIMULATION Phase D) reads the same source.
   zoneOf(crystal) {
     if (!crystal) return null;
-    const anchor = this._resolveAnchor(crystal);
-    if (!anchor) return null;
-    return this.ringOrientation(anchor.ringIdx);
+    const normal = this.surfaceNormalForCrystal(crystal);
+    return this.zoneFromSurfaceNormal(normal);
+  }
+
+  zoneFromSurfaceNormal(normal) {
+    if (!normal) return null;
+    if (normal[1] > Math.SQRT1_2) return 'floor';
+    if (normal[1] < -Math.SQRT1_2) return 'ceiling';
+    return 'wall';
+  }
+
+  surfaceZoneAtVertex(ringIdx, cellIdx, sim?) {
+    const R = this.ring_count | 0;
+    const N = this.cells_per_ring | 0;
+    if (!Number.isInteger(ringIdx) || !Number.isInteger(cellIdx)
+        || ringIdx < 0 || ringIdx >= R || cellIdx < 0 || cellIdx >= N) return null;
+    const mesh = this._mesh || this.meshFor(sim);
+    return this.zoneFromSurfaceNormal(mesh?.voidNormalAtVertex?.(ringIdx * N + cellIdx));
   }
 
   // Phase D: per-ring nucleation weight proportional to the ring's
@@ -2058,6 +2326,27 @@ class WallState {
     return (cavityVol * w) / N;
   }
 
+  _cellCavityVolAtVertexMm3(vertexIdx) {
+    const mesh = this._mesh || this.meshFor();
+    if (!mesh || vertexIdx < 0 || vertexIdx >= mesh.numInterior) return 0;
+    const area = mesh.cellSurfaceAreaAtVertexMm2
+      ? mesh.cellSurfaceAreaAtVertexMm2(vertexIdx) : 0;
+    const total = Number(mesh.surfaceAreaMm2 ? mesh.surfaceAreaMm2() : 0);
+    const cavityVol = Number(this.cavity_capacity_volume_mm3);
+    if (!(area > 0) || !(total > 0) || !(cavityVol > 0)) return 0;
+    return cavityVol * area / total;
+  }
+
+  _footprintVertices(crystal) {
+    const source = this.chemistryVertexForCrystal(crystal);
+    const mesh = this._mesh || this.meshFor();
+    if (!mesh || source < 0 || source >= mesh.numInterior) return [];
+    const radiusMm = Math.max(this.cell_arc_mm, this.footprintArcMm(crystal) / 2);
+    const covered: number[] = mesh.verticesWithinGeodesicRadius(source, radiusMm);
+    if (!covered.includes(source)) covered.unshift(source);
+    return covered;
+  }
+
   // Proposal E (2026-05-18) — paint a crystal's _volume_mm3 contribution
   // across the cells covered by its footprint.
   //
@@ -2086,24 +2375,24 @@ class WallState {
   _paintCrystalVolume(crystal) {
     if (!crystal) return;
     if (typeof crystal._volume_mm3 !== 'number' || !(crystal._volume_mm3 > 0)) return;
-    const anchor = this._resolveAnchor(crystal);
-    if (!anchor) return;
-    let ringIdx = anchor.ringIdx;
-    if (ringIdx == null || ringIdx < 0 || ringIdx >= this.ring_count) return;
-    const centerCell = anchor.cellIdx;
-    if (centerCell == null) return;
-    const arcMm = this.footprintArcMm(crystal);
-    const halfCells = Math.max(1, Math.round(arcMm / this.cell_arc_mm / 2));
-    const span = 2 * halfCells + 1;
-    const volPerCell = crystal._volume_mm3 / span;
-    const ring = this.rings[ringIdx];
-    if (!ring) return;
-    const N = this.cells_per_ring;
-    for (let offset = -halfCells; offset <= halfCells; offset++) {
-      const idx = ((centerCell + offset) % N + N) % N;
-      const cell = ring[idx];
+    const mesh = this._mesh || this.meshFor();
+    const covered = this._footprintVertices(crystal);
+    if (!mesh || !covered.length) return;
+    let coveredArea = 0;
+    for (const vertexIdx of covered) {
+      coveredArea += mesh.cellSurfaceAreaAtVertexMm2(vertexIdx);
+    }
+    if (!(coveredArea > 0)) return;
+    let assigned = 0;
+    for (let i = 0; i < covered.length; i++) {
+      const vertexIdx = covered[i];
+      const cell = mesh.cells[vertexIdx];
       if (!cell) continue;
-      cell._localCrystalVol_mm3 = (cell._localCrystalVol_mm3 || 0) + volPerCell;
+      const share = i === covered.length - 1
+        ? crystal._volume_mm3 - assigned
+        : crystal._volume_mm3 * mesh.cellSurfaceAreaAtVertexMm2(vertexIdx) / coveredArea;
+      cell._localCrystalVol_mm3 = (cell._localCrystalVol_mm3 || 0) + share;
+      assigned += share;
     }
   }
 
@@ -2130,9 +2419,13 @@ class WallState {
   // Returns 0 for unanchored crystals — the growth loop falls back to
   // global vugFill in that case.
   getCellLocalFillForCrystal(crystal) {
-    const anchor = this._resolveAnchor(crystal);
-    if (!anchor) return 0;
-    return this.getCellLocalFill(anchor.ringIdx, anchor.cellIdx);
+    const vertexIdx = this.chemistryVertexForCrystal(crystal);
+    const mesh = this._mesh || this.meshFor();
+    if (!mesh || vertexIdx < 0 || vertexIdx >= mesh.numInterior) return 0;
+    const cell = mesh.cells[vertexIdx];
+    const volume = Number(cell?._localCrystalVol_mm3) || 0;
+    const capacity = this._cellCavityVolAtVertexMm3(vertexIdx);
+    return volume > 0 && capacity > 0 ? volume / capacity : 0;
   }
 
   // W-F O4b — the footprint law, hoisted so the two painters and the
@@ -2157,12 +2450,18 @@ class WallState {
   // (tools/o4b-adjacency-census.mjs) and the enclosure gate share this
   // metric without re-deriving positions.
   anchorDistanceMm(a, b) {
-    const A = this._anchorFromRingCell(a.ringIdx, a.cellIdx);
-    const B = this._anchorFromRingCell(b.ringIdx, b.cellIdx);
-    const cosD = Math.cos(A.phi) * Math.cos(B.phi)
-      + Math.sin(A.phi) * Math.sin(B.phi) * Math.cos(A.theta - B.theta);
-    const R = (this.cell_arc_mm * this.cells_per_ring) / (2 * Math.PI);
-    return R * Math.acos(Math.max(-1, Math.min(1, cosD)));
+    const A = this.chemistryAddressForAnchor(a);
+    const B = this.chemistryAddressForAnchor(b);
+    const mesh = this._mesh || this.meshFor();
+    if (A && B && mesh && A.vertexIndex >= 0 && B.vertexIndex >= 0
+        && typeof mesh.geodesicDistancesFrom === 'function') {
+      return mesh.geodesicDistanceBetween(A.vertexIndex, B.vertexIndex);
+    }
+    const ap = a?.position, bp = b?.position;
+    if (Array.isArray(ap) && Array.isArray(bp)) {
+      return Math.hypot(ap[0] - bp[0], ap[1] - bp[1], ap[2] - bp[2]);
+    }
+    return Infinity;
   }
 
   // Mark the cells this crystal occupies with its id / mineral / thickness.
@@ -2183,21 +2482,13 @@ class WallState {
     // renderer stops reading wall_ring_index / wall_center_cell
     // directly. Behavior is unchanged when wall_anchor is set in step
     // with the legacy fields (current default at nucleation).
-    const anchor = this._resolveAnchor(crystal);
-    if (!anchor) return;
-    let ringIdx = anchor.ringIdx;
-    if (ringIdx == null || ringIdx < 0 || ringIdx >= this.ring_count) {
-      ringIdx = 0;
-    }
-    const centerCell = anchor.cellIdx;
-    const arcMm = this.footprintArcMm(crystal);
-    const halfCells = Math.max(1, Math.round(arcMm / this.cell_arc_mm / 2));
+    const mesh = this._mesh || this.meshFor();
+    const covered = this._footprintVertices(crystal);
+    if (!mesh || !covered.length) return;
     const thickness = Math.max(crystal.total_growth_um, 1);  // nucleated = visible
-    const ring = this.rings[ringIdx];
-    const N = this.cells_per_ring;
-    for (let offset = -halfCells; offset <= halfCells; offset++) {
-      const idx = ((centerCell + offset) % N + N) % N;
-      const cell = ring[idx];
+    for (const vertexIdx of covered) {
+      const cell = mesh.cells[vertexIdx];
+      if (!cell) continue;
       if (cell.thickness_um < thickness) {
         cell.crystal_id = crystal.crystal_id;
         cell.mineral = crystal.mineral;

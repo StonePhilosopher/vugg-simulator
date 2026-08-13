@@ -63,6 +63,20 @@ describe('Marching Cubes cavity renderer shadow integration', () => {
     expect(a.sig).toContain('24^3');
   });
 
+  it('renders the exact active provider despite an off shadow flag or different defaults', () => {
+    const wall = makeWall();
+    const receipt = wall.activateCavitySurfaceAnchorProvider({ resolution: 20, isovalue: 0.05 });
+    const active = wall.activeCavitySurfaceAnchorProvider();
+    const source = _topoCavitySurfaceSource(wall, undefined, false, 48);
+    expect(source.mode).toBe('marching-cubes');
+    expect(source.providerAuthority).toBe(true);
+    expect(source.buffers).toBe(active.surface);
+    expect(source.clipField).toBe(active.field);
+    expect(source.buffers.sig).toBe(receipt.surface_signature);
+    expect(source.buffers.isovalue).toBe(0.05);
+    expect(source.clipField.sizeX).toBe(20);
+  });
+
   it('injects world position after batching/instancing and field clip before polar fallback', () => {
     const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
     const clipUniforms = {
@@ -112,9 +126,8 @@ describe('Marching Cubes cavity renderer shadow integration', () => {
     expect(polarMaterial.customProgramCacheKey()).not.toBe(material.customProgramCacheKey());
   });
 
-  it('atomically falls back to WallMesh when the actual WebGL capability gate fails', () => {
+  it('withholds an active exact field view without mutating authority when WebGL rejects it', () => {
     const wall = makeWall();
-    const mesh = wall.meshFor();
     const disposed: any[] = [];
     let capabilityChecks = 0;
     const state: any = {
@@ -135,20 +148,24 @@ describe('Marching Cubes cavity renderer shadow integration', () => {
     };
     state.cavity.geometry.dispose = () => disposed.push(true);
     try {
-      _topoSetMarchingCubesCavity(true, 24);
-      _topoBuildCavityGeometry(state, wall, undefined);
-      expect(state.cavitySig).toBe(`wall-mesh|${mesh.sig}`);
+      _topoSetMarchingCubesCavity(false, 48);
+      wall.activateCavitySurfaceAnchorProvider({ resolution: 20, isovalue: 0.05 });
+      const receipt = wall._cavitySurfaceAnchorProvider;
+      expect(_topoBuildCavityGeometry(state, wall, undefined)).toBe(false);
+      expect(wall._cavitySurfaceAnchorProvider).toBe(receipt);
+      expect(wall._activeCavitySurfaceAnchorProvider).not.toBeNull();
+      expect(state.cavityAuthorityUnrenderable).toBe(true);
+      expect(state.cavity.visible).toBe(false);
       expect(state.clipUniforms.uCavityClipMode.value).toBe(0);
       expect(state.clipUniforms.uCavityField.value).toBeNull();
-      expect(state.cavity.geometry.getAttribute('position').array)
-        .toEqual(mesh.positions);
+      expect(state.cavity.geometry.getAttribute('position')).toBeUndefined();
       expect(_topoCavityClipCapabilityReceipt(state).available).toBe(false);
       expect(state.cavityFieldContract).toBeNull();
       expect(state.cavityFieldUploadReceipt).toBeNull();
       expect(state.cavityFieldFallbackReason).toBe('webgl-context-unavailable');
       const checksAfterReceipt = capabilityChecks;
       expect(checksAfterReceipt).toBeGreaterThan(0);
-      _topoBuildCavityGeometry(state, wall, undefined);
+      expect(_topoBuildCavityGeometry(state, wall, undefined)).toBe(false);
       expect(capabilityChecks).toBe(checksAfterReceipt); // rejected digest is not retried each frame
     } finally {
       _topoSetMarchingCubesCavity(false, 48);
@@ -348,21 +365,42 @@ describe('Marching Cubes cavity renderer shadow integration', () => {
     expect(shapedWall.cavitySurfaceFor({ resolution: 24 })).not.toBeNull();
   });
 
-  it('rejects a mutated cached MC wall instead of pairing it with a valid field clip', () => {
+  it('prevents mutation of authenticated cached MC buffers and exposed ArrayBuffers', () => {
     const wall = makeWall();
     const source = _topoCavitySurfaceSource(wall, undefined, true, 24);
-    source.buffers.positions[0] += 1;
-    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const protectedValue = source.buffers.positions[7];
+    expect(() => { source.buffers.positions[7] += 1; }).toThrow(/immutable/i);
+    expect(() => source.buffers.positions.fill(0)).toThrow(/immutable/i);
+    const escaped = source.buffers.positions.valueOf();
+    expect(escaped).toBe(source.buffers.positions);
+    expect(() => { escaped[7] += 1; }).toThrow(/immutable/i);
+    let callbackReceiver: any = null;
+    source.buffers.positions.forEach((_value: number, _index: number, receiver: any) => {
+      if (!callbackReceiver) callbackReceiver = receiver;
+    });
+    expect(callbackReceiver).not.toBe(source.buffers.positions);
+    callbackReceiver[7] += 50;
+    const alias = new Float32Array(source.buffers.positions.buffer);
+    alias[7] += 100;
+    expect(source.buffers.positions[7]).toBe(protectedValue);
+    expect(() => MarchingCubesExtractor.verifyBuffers(source.buffers)).not.toThrow();
+    expect(_topoCavitySurfaceSource(wall, undefined, true, 24).mode).toBe('marching-cubes');
+  });
+
+  it('does not expose authoritative bytes through caller-controlled prototype getters', () => {
+    const source = _topoCavitySurfaceSource(makeWall(), undefined, true, 24);
+    const positions: any = source.buffers.positions;
+    const prototype = Object.getPrototypeOf(new Float32Array());
+    Object.defineProperty(prototype, '__vuggRawBufferEscape', {
+      configurable: true,
+      get() { return this.buffer; },
+    });
     try {
-      const rejected = _topoCavitySurfaceSource(wall, undefined, true, 24);
-      expect(rejected.mode).toBe('wall-mesh');
-      expect(rejected.clipField).toBeNull();
-      expect(warning).toHaveBeenCalledWith(
-        expect.stringMatching(/shadow surface rejected/i),
-        expect.any(Error),
-      );
+      expect(positions.__vuggRawBufferEscape).toBeUndefined();
+      expect(() => Object.setPrototypeOf(positions, {})).toThrow(/immutable/i);
+      expect(() => MarchingCubesExtractor.verifyBuffers(source.buffers)).not.toThrow();
     } finally {
-      warning.mockRestore();
+      delete prototype.__vuggRawBufferEscape;
     }
   });
 

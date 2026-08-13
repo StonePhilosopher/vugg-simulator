@@ -52,7 +52,7 @@ function speciesIn(name: string, opts: { seed?: number; steps?: number } = {}): 
 
 describe('v128 calibration assertions (proposal §4.1)', () => {
   describe('Assertion 1 — dioptase under graduated competition', () => {
-    it('dioptase fires across the bisbee seed sweep (was 0 firings under fixed-order v125-v126)', { timeout: 420000 }, () => {
+    it('dioptase fires across the bisbee seed sweep (was 0 firings under fixed-order v125-v126)', { timeout: 1_800_000 }, () => {
       // The qualitative claim — graduated competition lets dioptase fire at
       // ALL (v125 fixed-order produced zero firings, the cascade displaced
       // everything) — is what matters; the proposal predicted schneeberg,
@@ -72,10 +72,11 @@ describe('v128 calibration assertions (proposal §4.1)', () => {
       // competition unblocked dioptase"), not seed 42's lucky realization.
       // Floor ≥2/8 with measured headroom 4/8 — a real cascade re-block
       // (the failure this guards) would zero ALL seeds, as v125 did.
-      // Exact surface classification makes the two-witness probe ~315 s in a
-      // cold v250 worker. Keep a measured 420 s infrastructure budget so the
-      // timer cannot masquerade as a paragenesis failure; the distribution
-      // assertion below remains unchanged.
+      // Exact SIM 264 surface classification can put each Bisbee witness near
+      // the full ~210 s canonical runtime. Keep a finite 30-minute budget for
+      // the two-witness fast path (and complete eight-seed failure path) so
+      // the timer cannot masquerade as a paragenesis failure; the
+      // distribution assertion below remains unchanged.
       // This is a statistical reachability pin, not the canonical seed-42
       // baseline (which is exercised elsewhere). Put two established witness
       // seeds first so the test can stop as soon as its stated >=2 threshold
@@ -95,7 +96,7 @@ describe('v128 calibration assertions (proposal §4.1)', () => {
   });
 
   describe('Assertion 2 — Tsumeb first-stage gossan', () => {
-    it('does not misplace third-zone köttigite in the carbonate-buffered first-stage gossan', () => {
+    it('does not misplace third-zone köttigite in the carbonate-buffered first-stage gossan', { timeout: 900_000 }, () => {
       const { species } = speciesIn('supergene_oxidation');
       expect(
         species.has('koettigite'),
@@ -103,7 +104,7 @@ describe('v128 calibration assertions (proposal §4.1)', () => {
       ).toBe(false);
     });
 
-    it('the corrected selector does not cascade-displace the supergene paragenesis (≥ 30 grown species)', () => {
+    it('the corrected selector does not cascade-displace the supergene paragenesis (≥ 30 grown species)', { timeout: 900_000 }, () => {
       // v128 counted 40 nucleated species; v129 counted 38. SIM 239's exact
       // accepted-shell ledger distinguishes zero-growth/dissolved attempts
       // from minerals that laid down solid, leaving 33 grown species. A floor

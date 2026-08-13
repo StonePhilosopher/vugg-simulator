@@ -90,6 +90,9 @@ class WallMesh {
     // matching the legacy _topoCavitySignature() so cache-hit semantics
     // don't shift.
     this.sig = '';
+    // Geometry-only identity used by surface anchors. Unlike `sig`, this does
+    // not change when the water level recolors otherwise identical vertices.
+    this.geometry_sig = '';
 
     // Conservative monotonic radius reference — populated during
     // recompute, mirrors WallState.max_seen_radius_mm so the renderer's
@@ -107,6 +110,7 @@ class WallMesh {
     // replaced by a mean-diameter sphere.
     this.surface_area_mm2 = 0;
     this._surfaceTriangles = [];
+    this._voidNormalsByVertex = null;
   }
 
   // ---- Factory ----
@@ -425,13 +429,8 @@ class WallMesh {
   // (phi, theta) but the call signature is stable.
   cellOf(crystal, wall) {
     if (!crystal || !this.cells || !this.cells.length) return null;
-    const anchor = (wall && wall._resolveAnchor)
-      ? wall._resolveAnchor(crystal)
-      : null;
-    if (!anchor || anchor.ringIdx == null || anchor.cellIdx == null) return null;
-    const cellsPerRing = wall.cells_per_ring || 0;
-    if (cellsPerRing <= 0) return null;
-    const idx = anchor.ringIdx * cellsPerRing + anchor.cellIdx;
+    const idx = wall && wall.chemistryVertexForCrystal
+      ? wall.chemistryVertexForCrystal(crystal) : -1;
     if (idx < 0 || idx >= this.cells.length) return null;
     return this.cells[idx];
   }
@@ -475,6 +474,7 @@ class WallMesh {
     const positions = this.positions;
     const indices = this.indices;
     const triangles: any[] = [];
+    const incidentTriangleByVertex: any[] = new Array(this.numInterior);
     let totalArea = 0;
     if (!positions || !indices) {
       this.surface_area_mm2 = 0;
@@ -513,6 +513,16 @@ class WallMesh {
         outward_normal: [nx, ny, nz],
       });
       totalArea += area;
+      const triangleIndex = offset / 3;
+      if (ia < this.numInterior && !incidentTriangleByVertex[ia]) {
+        incidentTriangleByVertex[ia] = { triangleIndex, barycentric: [1, 0, 0] };
+      }
+      if (ib < this.numInterior && !incidentTriangleByVertex[ib]) {
+        incidentTriangleByVertex[ib] = { triangleIndex, barycentric: [0, 1, 0] };
+      }
+      if (ic < this.numInterior && !incidentTriangleByVertex[ic]) {
+        incidentTriangleByVertex[ic] = { triangleIndex, barycentric: [0, 0, 1] };
+      }
     }
     // Build edge adjacency once with the geometry. Surface fabrics then grow
     // out from their anchor as one edge-connected swath instead of selecting
@@ -544,6 +554,28 @@ class WallMesh {
     });
     this.surface_area_mm2 = totalArea;
     this._surfaceTriangles = triangles;
+    const voidNormals = new Float32Array(this.numInterior * 3);
+    for (const triangle of triangles) {
+      for (const vertexIndex of [triangle.ia, triangle.ib, triangle.ic]) {
+        if (vertexIndex >= this.numInterior) continue;
+        const base = vertexIndex * 3;
+        voidNormals[base] -= triangle.outward_normal[0] * triangle.area_mm2;
+        voidNormals[base + 1] -= triangle.outward_normal[1] * triangle.area_mm2;
+        voidNormals[base + 2] -= triangle.outward_normal[2] * triangle.area_mm2;
+      }
+    }
+    for (let vertexIndex = 0; vertexIndex < this.numInterior; vertexIndex++) {
+      const base = vertexIndex * 3;
+      const length = Math.hypot(
+        voidNormals[base], voidNormals[base + 1], voidNormals[base + 2],
+      );
+      if (!(length > 1e-12)) throw new RangeError('WallMesh vertex has no defined void normal');
+      voidNormals[base] /= length;
+      voidNormals[base + 1] /= length;
+      voidNormals[base + 2] /= length;
+    }
+    this._voidNormalsByVertex = voidNormals;
+    this._incidentTriangleByVertex = incidentTriangleByVertex;
     this._cellSurfaceAreasSig = null;
     this._cellSurfaceAreas = null;
     this._geodesicCache = new Map();
@@ -580,8 +612,9 @@ class WallMesh {
   // The returned areas therefore sum exactly to surface_area_mm2.
   cellSurfaceAreasMm2(): Float64Array {
     if (this._cellSurfaceAreas && this._cellSurfaceAreasSig === this.sig) {
-      return new Float64Array(this._cellSurfaceAreas);
-    }
+    return new Float64Array(this._cellSurfaceAreas);
+  }
+
     const areas = new Float64Array(this.numInterior);
     const p = this.positions;
     for (let offset = 0; offset + 2 < this.indices.length; offset += 3) {
@@ -610,6 +643,30 @@ class WallMesh {
     this._cellSurfaceAreas = new Float64Array(areas);
     this._cellSurfaceAreasSig = this.sig;
     return areas;
+  }
+
+  // Hot-path scalar accessor. The bulk method above intentionally returns a
+  // defensive copy; growth/local-fill code that needs one vertex must not
+  // allocate and copy all ~1,920 areas for every crystal on every step.
+  cellSurfaceAreaAtVertexMm2(vertexIndex: number): number {
+    if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= this.numInterior) {
+      return 0;
+    }
+    if (!this._cellSurfaceAreas || this._cellSurfaceAreasSig !== this.sig) {
+      this.cellSurfaceAreasMm2();
+    }
+    return Number(this._cellSurfaceAreas?.[vertexIndex]) || 0;
+  }
+
+  incidentTriangleForVertex(vertexIndex: number): any {
+    if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= this.numInterior) {
+      return null;
+    }
+    const receipt = this._incidentTriangleByVertex?.[vertexIndex];
+    return receipt ? {
+      triangleIndex: receipt.triangleIndex,
+      barycentric: receipt.barycentric.slice(),
+    } : null;
   }
 
   // Candidate geometry for a sparse/dense set of raw WallCell depth deltas.
@@ -678,12 +735,16 @@ class WallMesh {
   // by geometry signature and source vertex; erosion invalidates the cache via
   // _recomputeSurfaceMetrics().
   geodesicDistancesFrom(sourceVertex: number): Float64Array {
+    return new Float64Array(this._geodesicDistancesFromInternal(sourceVertex));
+  }
+
+  _geodesicDistancesFromInternal(sourceVertex: number): Float64Array {
     if (!Number.isInteger(sourceVertex) || sourceVertex < 0 || sourceVertex >= this.numInterior) {
       throw new RangeError('geodesic source must be an interior wall vertex');
     }
     if (!this._geodesicCache) this._geodesicCache = new Map();
     const cached = this._geodesicCache.get(sourceVertex);
-    if (cached) return new Float64Array(cached);
+    if (cached) return cached;
     const vertexCount = this.numInterior + 2;
     if (!this._geodesicAdjacency) {
       const adjacency: Array<Map<number, number>> = Array.from(
@@ -761,11 +822,42 @@ class WallMesh {
       throw new RangeError('wall mesh geodesic graph is disconnected');
     }
     this._geodesicCache.set(sourceVertex, new Float64Array(interior));
-    return interior;
+    return this._geodesicCache.get(sourceVertex);
+  }
+
+  verticesWithinGeodesicRadius(sourceVertex: number, radiusMm: number): number[] {
+    const radius = Number(radiusMm);
+    if (!(radius >= 0) || !Number.isFinite(radius)) {
+      throw new RangeError('geodesic radius must be finite and non-negative');
+    }
+    const distances = this._geodesicDistancesFromInternal(sourceVertex);
+    const vertices: number[] = [];
+    for (let index = 0; index < distances.length; index++) {
+      if (distances[index] <= radius + 1e-10) vertices.push(index);
+    }
+    return vertices;
+  }
+
+  geodesicDistanceBetween(sourceVertex: number, targetVertex: number): number {
+    if (!Number.isInteger(targetVertex) || targetVertex < 0 || targetVertex >= this.numInterior) {
+      throw new RangeError('geodesic target must be an interior wall vertex');
+    }
+    return this._geodesicDistancesFromInternal(sourceVertex)[targetVertex];
   }
 
   surfaceAreaMm2() {
     return Number(this.surface_area_mm2) || 0;
+  }
+
+  voidNormalAtVertex(vertexIndex: number): [number, number, number] | null {
+    if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= this.numInterior
+        || !this._voidNormalsByVertex) return null;
+    const base = vertexIndex * 3;
+    return [
+      this._voidNormalsByVertex[base],
+      this._voidNormalsByVertex[base + 1],
+      this._voidNormalsByVertex[base + 2],
+    ];
   }
 
   // Select the closest triangle swath around an anchor direction until its
@@ -1098,6 +1190,7 @@ class WallMesh {
 
     this.max_radius_mm = Math.sqrt(maxR2);
     this._recomputeSurfaceMetrics();
+    this.geometry_sig = WallMesh._signature(wall, null);
     this.sig = WallMesh._signature(wall, sim);
   }
 }

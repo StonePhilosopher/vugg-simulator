@@ -605,17 +605,31 @@ function _isBandedIronFormationHost(sim) {
 }
 
 function _localTigerIronPhase(sim, substrate) {
-  const origin = sim?.wall_state?._resolveAnchor?.(substrate);
-  const cellCount = Number(sim?.wall_state?.cells_per_ring) || 0;
-  if (!origin || cellCount < 1) return null;
+  const wall = sim?.wall_state;
+  const origin = wall?._resolveAnchor?.(substrate);
+  const mesh = wall?.meshFor?.(sim);
+  if (!origin || !mesh) return null;
+  const source = wall.chemistryVertexForCrystal(substrate);
+  const distances = source >= 0 ? mesh.geodesicDistancesFrom(source) : null;
+  if (!distances) return null;
+  // "Banded with" means the iron phase occupies the immediately adjacent
+  // surface patch.  cell_arc_mm is an equatorial mean and is too wide near a
+  // pole, where several ring cells can fit inside that arc.  Use the closest
+  // non-zero geodesic chemistry spacing at the actual substrate instead.  It
+  // preserves one-patch locality while remaining metric and topology-neutral.
+  let localRadiusMm = Infinity;
+  for (let vertex = 0; vertex < mesh.numInterior; vertex++) {
+    const distance = distances[vertex];
+    if (distance > 1e-10 && distance < localRadiusMm) localRadiusMm = distance;
+  }
+  if (!Number.isFinite(localRadiusMm)) return null;
+  const toleranceMm = Math.max(1e-10, localRadiusMm * 1e-9);
   return sim.crystals.find(crystal => {
     if (!['hematite', 'jasper'].includes(crystal?.mineral)) return false;
     if (!crystal.active || crystal.dissolved || crystal._buried || crystal.enclosed_by != null) return false;
-    const anchor = sim.wall_state._resolveAnchor(crystal);
-    if (!anchor || anchor.ringIdx !== origin.ringIdx) return false;
-    const direct = Math.abs(anchor.cellIdx - origin.cellIdx);
-    const circular = Math.min(direct, cellCount - direct);
-    return circular <= 1;
+    const anchor = wall._resolveAnchor(crystal);
+    const target = wall.chemistryVertexForCrystal(crystal);
+    return !!anchor && target >= 0 && distances[target] <= localRadiusMm + toleranceMm;
   }) || null;
 }
 

@@ -48,7 +48,12 @@ describe('scenario expectation contracts', () => {
     expect(decision.blockers.join(' ')).toContain('locality evidence excludes');
     expect(spec.sources.join('\n')).toContain('TSNB159');
     expect(spec.sources.join('\n')).toContain('Mindat locality record 2428');
-  }, 300_000);
+  // SIM 264's authenticated surface anchors make this the suite's densest
+  // recorder-backed scenario.  The canonical seed-42 run is finite but was
+  // measured at 658 s on an otherwise idle reference workstation and over
+  // 15 minutes under concurrent desktop load; keep a 30-minute hang detector
+  // without weakening or splitting the scientific assertions.
+  }, 1_800_000);
 
   it('enforces the first-zone Tsumeb köttigite exclusion even in a forced pH < 3 fluid', () => {
     setSeed(42);

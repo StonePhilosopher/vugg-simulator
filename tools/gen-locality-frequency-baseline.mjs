@@ -11,20 +11,55 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadSimBundle } from './_harness.mjs';
 import {
+  checkpointIdentity,
+  evidenceBundleDigest,
+  loadScenarioCheckpoint,
+  prepareCheckpointDirectory,
+  writeJsonAtomic,
+} from './locality-frequency-checkpoint.mjs';
+import { nodeRuntimeDigest, producerContractDigest, runtimeExecutionDigest } from './evidence-runtime.mjs';
+import {
   LOCALITY_FREQUENCY_SEEDS,
   localityFrequencySpecHash,
   reconstructFrequencyOccurrences,
 } from './locality-frequency-contract.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const args = process.argv.slice(2);
+const fresh = args.includes('--fresh');
+for (const arg of args) {
+  if (arg !== '--fresh') throw new Error(`unknown argument: ${arg}`);
+}
 const { SIM_VERSION, MODEL_DIGEST, SCENARIOS, VugSimulator, setSeed } = await loadSimBundle({
   toolName: 'gen-locality-frequency-baseline',
 });
+const identity = checkpointIdentity({
+  simVersion: SIM_VERSION,
+  modelDigest: MODEL_DIGEST,
+  seeds: LOCALITY_FREQUENCY_SEEDS,
+  bundleDigest: evidenceBundleDigest(ROOT),
+  executionDigest: runtimeExecutionDigest(ROOT),
+  producerDigest: producerContractDigest(ROOT, 'locality-frequency'),
+  runtimeDigest: nodeRuntimeDigest(),
+});
+const checkpointDir = prepareCheckpointDirectory(ROOT, identity, { fresh });
 
 const scenarios = {};
 for (const id of Object.keys(SCENARIOS).sort()) {
   const spec = SCENARIOS[id]._json5_spec;
+  const specHash = localityFrequencySpecHash(spec);
+  const durationSteps = Number(spec.duration_steps);
+  const checkpointPath = path.join(checkpointDir, `${id}.json`);
+  const checkpoint = loadScenarioCheckpoint(checkpointPath, {
+    id, specHash, durationSteps, seeds: LOCALITY_FREQUENCY_SEEDS,
+  }, reconstructFrequencyOccurrences);
+  if (checkpoint) {
+    scenarios[id] = checkpoint;
+    console.log(`  ${id.padEnd(32)} ${Object.keys(checkpoint.occurrences).length} panel species [resumed]`);
+    continue;
+  }
   const runs = [];
+  const started = performance.now();
 
   for (const seed of LOCALITY_FREQUENCY_SEEDS) {
     setSeed(seed);
@@ -55,13 +90,15 @@ for (const id of Object.keys(SCENARIOS).sort()) {
   }
   const occurrences = reconstructed.occurrences;
   scenarios[id] = {
-    locality_frequency_spec_hash: localityFrequencySpecHash(spec),
-    duration_steps: Number(spec.duration_steps),
+    locality_frequency_spec_hash: specHash,
+    duration_steps: durationSteps,
     occurrences,
     runs,
   };
+  writeJsonAtomic(checkpointPath, scenarios[id]);
   const statisticalCount = (spec.statistical_species || []).length;
-  console.log(`  ${id.padEnd(32)} ${Object.keys(occurrences).length} panel species, ${statisticalCount} statistical target(s)`);
+  const elapsedSeconds = ((performance.now() - started) / 1000).toFixed(1);
+  console.log(`  ${id.padEnd(32)} ${Object.keys(occurrences).length} panel species, ${statisticalCount} statistical target(s), ${elapsedSeconds}s`);
 }
 
 const receipt = {
@@ -72,5 +109,5 @@ const receipt = {
   scenarios,
 };
 const outPath = path.join(ROOT, 'tests-js', 'baselines', `locality_frequency_v${SIM_VERSION}.json`);
-fs.writeFileSync(outPath, `${JSON.stringify(receipt, null, 2)}\n`);
+writeJsonAtomic(outPath, receipt);
 console.log(`\n[gen-locality-frequency] wrote ${path.relative(ROOT, outPath)} (${Object.keys(scenarios).length} scenarios, seeds ${LOCALITY_FREQUENCY_SEEDS.join(', ')})`);

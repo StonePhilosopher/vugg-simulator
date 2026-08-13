@@ -13,23 +13,38 @@
 //      to vanadinite-comparable V economy, not privileged).
 
 import { describe, expect, it } from 'vitest';
+import {
+  currentEvidenceIdentity,
+  loadAuthenticatedEvidenceJson,
+  requireEvidenceScenario,
+} from './authenticated-evidence';
 
 declare const VugConditions: any;
 declare const FluidChemistry: any;
 declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
+const SIM_VERSION = currentEvidenceIdentity.simVersion;
+const LOCALITY_FREQUENCY = loadAuthenticatedEvidenceJson(
+  `tests-js/baselines/locality_frequency_v${SIM_VERSION}.json`,
+  'locality-frequency',
+);
+const SEED42_BASELINE = loadAuthenticatedEvidenceJson(
+  `tests-js/baselines/seed42_v${SIM_VERSION}.json`,
+  'seed42-baseline',
+);
 
-function runScenario(name: string, seed = 42) {
+function finalAliveGrownGroup(seed: number): number {
   setSeed(seed);
-  const { conditions, events, defaultSteps } = SCENARIOS[name]();
+  const { conditions, events, defaultSteps } = SCENARIOS.supergene_oxidation();
   const sim = new VugSimulator(conditions, events);
-  const n = defaultSteps ?? 200;
-  for (let i = 0; i < n; i++) sim.run_step();
-  return sim;
+  for (let step = 0; step < (defaultSteps ?? 200); step++) sim.run_step();
+  return sim.crystals.filter((crystal: any) =>
+    (crystal.mineral === 'mottramite' || crystal.mineral === 'descloizite')
+      && !crystal.dissolved
+      && Number(crystal.total_growth_um) > 0,
+  ).length;
 }
-const alive = (sim: any, m: string) =>
-  sim.crystals.filter((c: any) => c.mineral === m && !c.dissolved && c.total_growth_um > 0).length;
 
 describe('v193 — vanadinite redox gate (the missing V⁵⁺ oxidation requirement)', () => {
   it('blocks under reducing conditions (O2 < 0.5) even with full Pb+V+Cl', () => {
@@ -84,7 +99,7 @@ describe('v193 — descloizite-group V-economics (gate 10→4, v_f /20→/8)', (
 });
 
 describe('v193 — the descloizite-group vanadate reaches its type-abundance supergene locality (Boni 2007)', () => {
-  it('the Cu/Zn vanadate suite (mottramite OR descloizite) fires at supergene_oxidation', () => {
+  it('appears in all three evidence seeds and remains alive/grown at final seed 42', () => {
     // Boni 2007: the descloizite-group V ores are abundant around oxidizing Cu(-Zn)-sulfide
     // bodies (Tsumeb-type). WHICH member forms is set by the fluid's Cu/Zn ratio (the fork
     // pinned above: Cu-dominant → mottramite, Zn-dominant → descloizite).
@@ -97,12 +112,38 @@ describe('v193 — the descloizite-group vanadate reaches its type-abundance sup
     // Zn-rich: smithsonite (ZnCO3) is one of its expects_species. So pin the GROUP reaching
     // supergene abundance, not the specific member the Cu/Zn budget happens to select.
     // (Measured post-4b: descloizite alive 4,4,2,3,3 across these seeds; mottramite 0.)
-    let hits = 0;
+    // The aggregate science-evidence receipt authenticates this exact-bundle
+    // three-seed fleet observation; engine/fork behavior remains live above.
+    const frequency = requireEvidenceScenario(LOCALITY_FREQUENCY, 'supergene_oxidation');
+    const occurrenceSeeds = new Set<number>([
+      ...(frequency.occurrences?.mottramite?.seeds || []),
+      ...(frequency.occurrences?.descloizite?.seeds || []),
+    ]);
+    expect([...occurrenceSeeds].sort((a, b) => a - b)).toEqual([1, 2, 42]);
+
+    // First appearance alone cannot establish growth or persistence. The
+    // independently authenticated seed-42 final-state summary must retain an
+    // alive descloizite-group crystal with positive cumulative growth.
+    const finalState = requireEvidenceScenario(SEED42_BASELINE, 'supergene_oxidation');
+    const group = [finalState.mottramite, finalState.descloizite]
+      .filter((row: any) => row && typeof row === 'object');
+    expect(group.reduce((sum: number, row: any) => sum + Number(row.active || 0), 0))
+      .toBeGreaterThan(0);
+    expect(Math.max(...group.map((row: any) => Number(row.max_um || 0))))
+      .toBeGreaterThan(0);
+  });
+
+  it('finishes alive and positively grown in at least 3/5 independent fleet seeds', { timeout: 3_600_000 }, () => {
+    // This is intentionally a live final-state contract. The locality-frequency
+    // receipt records first appearance and therefore cannot prove persistence.
+    // Stop after the third independent witness, but exhaust the five-seed fleet
+    // before failing so immediate-dissolution and seed-fragility regressions show.
+    let witnesses = 0;
     for (const seed of [1, 2, 3, 7, 13]) {
-      const sim = runScenario('supergene_oxidation', seed);
-      if (alive(sim, 'mottramite') + alive(sim, 'descloizite') > 0) hits++;
-      if (hits >= 3) break;
+      if (finalAliveGrownGroup(seed) > 0) witnesses++;
+      if (witnesses >= 3) break;
     }
-    expect(hits, `descloizite-group grew in ${hits}/5 seeds`).toBeGreaterThanOrEqual(3);
-  }, 300_000); // Three independent witnesses are sufficient; failure still exhausts all five seeds.
+    expect(witnesses, `descloizite-group survived and grew in ${witnesses}/5 fleet seeds`)
+      .toBeGreaterThanOrEqual(3);
+  });
 });

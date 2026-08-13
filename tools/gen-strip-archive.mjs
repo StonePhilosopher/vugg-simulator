@@ -29,8 +29,11 @@
  * (the substrate layer). The temporal narrative survives whole.
  *
  * Run AFTER the SIM_VERSION bump (same footgun as gen-js-baseline:
- * the folder is named from the CURRENT SIM_VERSION). Refuses to
- * overwrite an existing version folder unless --force.
+ * the folder is named from the CURRENT SIM_VERSION). Exact-bundle receipts in
+ * .local-evidence resume completed stories; --force recomputes the selection
+ * and --fresh discards the current receipt set. There is deliberately no
+ * adoption escape hatch: only an execution by the exact bundle may mint its
+ * receipt.
  *
  *   1. bump SIM_VERSION  2. npm run build  3. node tools/gen-strip-archive.mjs
  *
@@ -44,12 +47,30 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { loadSimBundle } from './_harness.mjs';
-import { assertStripIdentity } from './strip-identity.mjs';
+import { assertStripIdentity, canonicalStripRecordedAt } from './strip-identity.mjs';
+import { evidenceBundleDigest } from './locality-frequency-checkpoint.mjs';
+import { nodeRuntimeDigest, producerContractDigest, runtimeExecutionDigest } from './evidence-runtime.mjs';
+import {
+  evidenceIdentity,
+  loadScenarioReceipt,
+  prepareEvidenceCheckpointDirectory,
+  scenarioReceipt,
+  scenarioSpecHash,
+  sha256File,
+  writeJsonAtomic,
+} from './scenario-evidence-checkpoint.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const FORCE = process.argv.includes('--force');
+const FRESH = process.argv.includes('--fresh');
 const SCENARIO_FLAG = process.argv.indexOf('--scenario');
 const ONLY_SCENARIO = SCENARIO_FLAG >= 0 ? process.argv[SCENARIO_FLAG + 1] : null;
+for (let i = 2; i < process.argv.length; i++) {
+  const arg = process.argv[i];
+  if (['--force', '--fresh'].includes(arg)) continue;
+  if (arg === '--scenario') { i++; continue; }
+  throw new Error(`unknown argument: ${arg}`);
+}
 
 const { SIM_VERSION, MODEL_DIGEST, SCENARIOS, VugSimulator, setSeed, StripRecorder, stripDataIndex, stripDequantize } =
   await loadSimBundle({
@@ -58,11 +79,16 @@ const { SIM_VERSION, MODEL_DIGEST, SCENARIOS, VugSimulator, setSeed, StripRecord
   });
 
 const OUT_DIR = path.join(ROOT, 'archive', 'strips', `v${SIM_VERSION}`);
-if (fs.existsSync(OUT_DIR) && !FORCE) {
-  console.error(`[gen-strip-archive] ${path.relative(ROOT, OUT_DIR)} already exists — `
-    + `did you forget to bump SIM_VERSION first? (--force to overwrite)`);
-  process.exit(1);
-}
+const checkpointDir = prepareEvidenceCheckpointDirectory(ROOT, evidenceIdentity({
+  kind: 'strip-archive',
+  simVersion: SIM_VERSION,
+  modelDigest: MODEL_DIGEST,
+  bundleDigest: evidenceBundleDigest(ROOT),
+  executionDigest: runtimeExecutionDigest(ROOT),
+  producerDigest: producerContractDigest(ROOT, 'strip-archive'),
+  runtimeDigest: nodeRuntimeDigest(),
+  seed: 42,
+}), { fresh: FRESH });
 
 // Sparse crystal-anchored ordinal chips read as max-over-space (mirrors
 // STRIP_DIGEST_SPARSE_MAX_CHIPS in strip-digest-shape.mjs — keep in sync
@@ -162,7 +188,7 @@ function archiveScenario(name, seed = 42) {
     chips[meta.id] = entry;
   }
 
-  const scenarioSpecHash = crypto.createHash('sha256')
+  const scenarioSpecHashValue = crypto.createHash('sha256')
     .update(JSON.stringify(SCENARIOS[name]?._json5_spec ?? null))
     .digest('hex');
   const story = {
@@ -170,9 +196,11 @@ function archiveScenario(name, seed = 42) {
     sim_version: ds.manifest.sim_version,
     model_digest: ds.manifest.model_digest,
     scenario: name,
-    scenario_spec_hash: scenarioSpecHash,
+    scenario_spec_hash: scenarioSpecHashValue,
     seed,
-    recorded_at: ds.manifest.recorded_at ?? null,
+    // Wall-clock time is operational metadata, not scientific state. A
+    // canonical seed/bundle rebake must be byte-identical on another day.
+    recorded_at: canonicalStripRecordedAt(ds.manifest.recorded_at),
     steps: ds.manifest.axes.steps,
     depth_positions: D,
     raw_environment: rawEnvironment,
@@ -190,7 +218,7 @@ function archiveScenario(name, seed = 42) {
     modelDigest: MODEL_DIGEST,
     scenario: name,
     seed,
-    scenarioSpecHash,
+    scenarioSpecHash: scenarioSpecHashValue,
   });
 }
 
@@ -201,14 +229,45 @@ if (ONLY_SCENARIO && !SCENARIOS[ONLY_SCENARIO]) {
 }
 const names = ONLY_SCENARIO ? [ONLY_SCENARIO] : Object.keys(SCENARIOS).sort();
 for (const name of names) {
-  const story = archiveScenario(name, 42);
   const outPath = path.join(OUT_DIR, `${name}.json`);
-  const json = JSON.stringify(story);
-  fs.writeFileSync(outPath, json + '\n');
-  totalBytes += json.length;
+  const { defaultSteps } = SCENARIOS[name]();
+  const expected = {
+    id: name,
+    specHash: scenarioSpecHash(SCENARIOS[name]._json5_spec),
+    durationSteps: defaultSteps ?? 100,
+    seed: 42,
+    artifactPath: outPath,
+  };
+  const checkpointPath = path.join(checkpointDir, `${name}.json`);
+  const checkpoint = FORCE ? null : loadScenarioReceipt(checkpointPath, expected);
+  if (checkpoint) {
+    const story = JSON.parse(fs.readFileSync(outPath, 'utf8'));
+    assertStripIdentity(story, {
+      version: SIM_VERSION,
+      modelDigest: MODEL_DIGEST,
+      scenario: name,
+      seed: 42,
+      scenarioSpecHash: expected.specHash,
+    });
+    totalBytes += fs.statSync(outPath).size;
+    console.log(`  ${name.padEnd(28)} ${String(story.steps).padStart(3)} steps, `
+      + `${Object.keys(story.chips).length} chips, ${story.nucleation_events.length} nucleations [resumed]`);
+    continue;
+  }
+  const story = archiveScenario(name, 42);
+  writeJsonAtomic(outPath, story);
+  const bytes = fs.statSync(outPath).size;
+  totalBytes += bytes;
+  writeJsonAtomic(checkpointPath, scenarioReceipt({
+    id: name,
+    specHash: expected.specHash,
+    durationSteps: expected.durationSteps,
+    seed: expected.seed,
+    artifactSha256: sha256File(outPath),
+  }));
   console.log(`  ${name.padEnd(28)} ${String(story.steps).padStart(3)} steps, `
     + `${Object.keys(story.chips).length} chips, ${story.nucleation_events.length} nucleations, `
-    + `${(json.length / 1024).toFixed(0)} KB`);
+    + `${(bytes / 1024).toFixed(0)} KB`);
 }
 console.log(`\n[gen-strip-archive] wrote ${names.length} stories to `
   + `${path.relative(ROOT, OUT_DIR)} (${(totalBytes / 1024 / 1024).toFixed(1)} MB total)`);

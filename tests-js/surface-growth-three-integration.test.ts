@@ -7,6 +7,8 @@ declare const classifySurfaceGrowth: any;
 declare const _addCrystalParentRepresentation: any;
 declare const _emitSurfaceGrowthSwath: any;
 declare const _topoSnapshotWall: any;
+declare const _topoCrystalsSignature: any;
+declare const _topoSyncCrystalMeshes: any;
 
 function makeAggregate(wall: any, id: number, mineral = 'chalcedony', habit = 'banded_agate') {
   const crystal = new Crystal({
@@ -105,15 +107,16 @@ describe('SIM 250 executed Three.js surface-fabric contract', () => {
     secondSwath.getMatrixAt(0, secondMatrix);
     const firstPosition = new THREE.Vector3().setFromMatrixPosition(firstMatrix);
     const secondPosition = new THREE.Vector3().setFromMatrixPosition(secondMatrix);
-    const direction = wall.surfaceAnchorDirection(first);
-    const patch = wall.meshFor(sim).sampleSurfacePatch(
-      direction, swath.count, first._surfaceGrowth.coverage_fraction, first.crystal_id,
+    const patch = wall.sampleSurfacePatchForCrystal(
+      first, swath.count, first._surfaceGrowth.coverage_fraction, first.crystal_id, sim,
     );
     const normal = new THREE.Vector3(
       patch.samples[0].nx, patch.samples[0].ny, patch.samples[0].nz,
     );
     const offset = secondPosition.clone().sub(firstPosition).dot(normal);
-    expect(offset).toBeCloseTo(layers[0].representative_relief_mm, 6);
+    // InstancedMatrix stores translations in Float32; compare at its physical
+    // precision rather than requiring sub-micrometre Float64 equality.
+    expect(offset).toBeCloseTo(layers[0].representative_relief_mm, 5);
   });
 
   it('keeps physical relief invariant across mobile LOD and executes flattened dendrite matrices', () => {
@@ -160,6 +163,76 @@ describe('SIM 250 executed Three.js surface-fabric contract', () => {
       expect(scale.y).toBeGreaterThan(scale.z * 5);
       expect(matrix.elements.every((value: number) => Number.isFinite(value))).toBe(true);
     }
+  });
+
+  it('does not apply renderer underburden from the same triangle number on another surface', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1200 });
+    Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: 1 });
+    const wall = new WallState({
+      cells_per_ring: 48, ring_count: 12, vug_diameter_mm: 70, shape_seed: 42,
+    });
+    const crystal = makeAggregate(wall, 650);
+    const sim = { step: 900, wall_state: wall, crystals: [crystal] };
+    classifySurfaceGrowth(sim);
+
+    const referenceState = renderState(wall);
+    const reference = emit(referenceState, crystal, wall, sim, []);
+    const patch = wall.sampleSurfacePatchForCrystal(
+      crystal, reference.count, crystal._surfaceGrowth.coverage_fraction,
+      crystal.crystal_id, sim,
+    );
+    const conflictingNumber = patch.samples[0].triangle_index;
+    const wrongSourceLayers = [{
+      triangle_keys: new Set([`different-authenticated-surface:${conflictingNumber}`]),
+      representative_relief_mm: 7,
+    }];
+    const candidateState = renderState(wall);
+    const candidate = emit(candidateState, crystal, wall, sim, wrongSourceLayers);
+    const referenceMatrix = new THREE.Matrix4();
+    const candidateMatrix = new THREE.Matrix4();
+    reference.getMatrixAt(0, referenceMatrix);
+    candidate.getMatrixAt(0, candidateMatrix);
+    expect(new THREE.Vector3().setFromMatrixPosition(candidateMatrix).distanceTo(
+      new THREE.Vector3().setFromMatrixPosition(referenceMatrix),
+    )).toBeCloseTo(0, 12);
+  });
+
+  it('invalidates the crystal renderer signature when wall evolution remaps a birth anchor', () => {
+    const wall = new WallState({
+      cells_per_ring: 48, ring_count: 12, vug_diameter_mm: 70, shape_seed: 42,
+    });
+    const crystal = new Crystal({
+      mineral: 'quartz', habit: 'prismatic', vector: 'projecting',
+      crystal_id: 675, wall_anchor: wall._anchorFromRingCell(6, 12),
+    });
+    crystal.c_length_mm = 1.2;
+    const sim = { step: 4, wall_state: wall, crystals: [crystal] };
+    const before = _topoCrystalsSignature(sim, wall);
+    wall.rings[6][12].wall_depth += 0.25;
+    wall.meshFor(sim);
+    const after = _topoCrystalsSignature(sim, wall);
+    expect(after).not.toBe(before);
+    expect(crystal.wall_anchor.source.signature).not.toBe(
+      wall._resolveAnchor(crystal).source.signature,
+    );
+
+    const state = renderState(wall);
+    state.crystalsSig = null;
+    _topoSyncCrystalMeshes(state, sim, wall);
+    const firstMesh = state.crystals.children.find(
+      (child: any) => child.userData?.crystal_id === crystal.crystal_id,
+    );
+    expect(firstMesh).toBeTruthy();
+    const firstPosition = firstMesh.position.clone();
+    for (const ring of wall.rings) for (const cell of ring) cell.wall_depth += 0.25;
+    wall.meshFor(sim);
+    _topoSyncCrystalMeshes(state, sim, wall);
+    const secondMesh = state.crystals.children.find(
+      (child: any) => child.userData?.crystal_id === crystal.crystal_id,
+    );
+    expect(secondMesh).toBeTruthy();
+    expect(secondMesh).not.toBe(firstMesh);
+    expect(secondMesh.position.distanceTo(firstPosition)).toBeGreaterThan(0.05);
   });
 
   it('builds replay geometry from each snapshot rather than the live-wall cache', () => {

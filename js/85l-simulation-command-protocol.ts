@@ -95,6 +95,30 @@ function makeSimulationThermalFieldCommand(config: any = {}): any {
   });
 }
 
+function makeSimulationCavitySurfaceProviderCommand(
+  kind: 'wall-mesh' | 'cavity-field', opts: any = {},
+): any {
+  if (kind !== 'wall-mesh' && kind !== 'cavity-field') {
+    throw new RangeError(`unsupported cavity surface provider '${String(kind)}'`);
+  }
+  const providerKind = kind;
+  const commandPayload: any = {
+    schema: SIMULATION_COMMAND_SCHEMA,
+    type: 'cavity_surface_provider',
+    kind: providerKind,
+  };
+  if (providerKind === 'cavity-field') {
+    commandPayload.resolution = Math.max(8, Math.min(128,
+      Math.round(Number(opts.resolution) || 48)));
+    commandPayload.isovalue = Number.isFinite(Number(opts.isovalue))
+      ? Number(opts.isovalue) : 0;
+  }
+  return _simulationDeepFreeze({
+    ...commandPayload,
+    commandId: _simulationCommandId(commandPayload),
+  });
+}
+
 function _simulationAssertCommand(command: any, expectedType?: string): void {
   if (!command || command.schema !== SIMULATION_COMMAND_SCHEMA) {
     throw new Error('invalid simulation command schema');
@@ -219,6 +243,9 @@ function simulationStateProjection(runtimeOrSim: any, rngStateOverride?: number)
     ),
     cavityEvolution: sim?.wall_state?.cavityEvolutionLedger?.()
       ? _simulationCanonicalProjection(sim.wall_state.cavityEvolutionLedger().toJSON()) : null,
+    cavitySurfaceProvider: _simulationCanonicalProjection(
+      sim?.wall_state?.cavitySurfaceAnchorProviderReceipt?.() || { kind: 'wall-mesh' },
+    ),
     crystals: (sim?.crystals || []).map(_simulationCrystalProjection),
     carbonateBoundary: sim?._carbonateBoundaryState
       ? _simulationJsonClone(sim._carbonateBoundaryState) : null,
@@ -301,6 +328,23 @@ function applySimulationCommand(runtime: any, command: any): any {
       status: runtime.status,
       step: runtime.sim.step,
       thermalFieldConfig: _simulationJsonClone(result),
+      fingerprint: simulationStateFingerprint(runtime),
+    };
+  }
+  if (command.type === 'cavity_surface_provider') {
+    if (command.kind !== 'wall-mesh' && command.kind !== 'cavity-field') {
+      throw new RangeError(`unsupported cavity surface provider '${String(command.kind)}'`);
+    }
+    const result = command.kind === 'cavity-field'
+      ? runtime.sim.wall_state.activateCavitySurfaceAnchorProvider({
+        resolution: command.resolution, isovalue: command.isovalue,
+      })
+      : runtime.sim.wall_state.deactivateCavitySurfaceAnchorProvider();
+    _simulationAppendCommand(runtime, command);
+    return {
+      status: runtime.status,
+      step: runtime.sim.step,
+      cavitySurfaceProvider: _simulationJsonClone(result),
       fingerprint: simulationStateFingerprint(runtime),
     };
   }

@@ -335,7 +335,9 @@ function weatheringLightAtCrystal(sim: any, crystal: any, baseIsLit: boolean): b
   if (cfg.light?.exposed !== true) return false;
   const anchor = sim.wall_state?._resolveAnchor?.(crystal);
   if (!anchor) return false;
-  return sim.conditions.ringWaterState(anchor.ringIdx, sim.wall_state.ring_count) === 'vadose';
+  const chemistry = sim.wall_state.chemistryAddressForCrystal?.(crystal);
+  if (!chemistry) return false;
+  return sim.conditions.ringWaterState(chemistry.ringIdx, sim.wall_state.ring_count) === 'vadose';
 }
 
 function recordWeatheringEpilogueStep(sim: any): void {

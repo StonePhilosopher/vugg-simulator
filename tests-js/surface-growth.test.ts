@@ -8,6 +8,7 @@ declare const MINERAL_SPEC: any;
 declare const SCENARIOS: any;
 declare const VugSimulator: any;
 declare const WallState: any;
+declare const CavitySurfaceAnchors: any;
 declare const setSeed: any;
 declare const surfaceGrowthRegimeFor: any;
 declare const surfaceGrowthDescriptor: any;
@@ -136,7 +137,35 @@ describe('SIM 246 area-covering surface-growth fabrics', () => {
     expect(lining._surfaceGrowth.underlying_surface_crystal_ids).toEqual([]);
     expect(druse._surfaceGrowth.stratigraphic_index).toBe(1);
     expect(druse._surfaceGrowth.underlying_surface_crystal_ids).toContain(2);
-    expect(druse._surfaceGrowth.stratigraphy_basis).toBe('exact shared WallMesh triangles');
+    expect(druse._surfaceGrowth.stratigraphy_basis).toBe('exact shared authenticated-surface triangles');
+  });
+
+  it('normalizes coincident WallMesh and MC layers onto one live surface for stratigraphy', () => {
+    const wall = new WallState({
+      cells_per_ring: 48, ring_count: 12, vug_diameter_mm: 60, shape_seed: 42,
+    });
+    const wallLayer = crystal('chalcedony', 'banded_agate', 'coating', {
+      crystal_id: 21, nucleation_step: 2,
+    });
+    const fieldLayer = crystal('quartz', 'rock_crystal_druse', 'coating', {
+      crystal_id: 22, nucleation_step: 3,
+    });
+    wallLayer.wall_anchor = wall._anchorFromRingCell(6, 12);
+    fieldLayer.wall_anchor = wall.remapSurfaceAnchorToMarchingCubes(
+      wallLayer.wall_anchor, { resolution: 20 },
+    );
+    wall.activateCavitySurfaceAnchorProvider({ resolution: 20 });
+    const sim = { step: 5, wall_state: wall, crystals: [wallLayer, fieldLayer] };
+    classifySurfaceGrowth(sim);
+
+    const firstPatch = wall.surfacePatchForCrystal(
+      wallLayer, wallLayer._surfaceGrowth.coverage_fraction, sim,
+    );
+    const secondPatch = wall.surfacePatchForCrystal(
+      fieldLayer, fieldLayer._surfaceGrowth.coverage_fraction, sim,
+    );
+    expect(firstPatch.source_signature).toBe(secondPatch.source_signature);
+    expect(fieldLayer._surfaceGrowth.underlying_surface_crystal_ids).toContain(21);
   });
 
   it('does not claim overlap when spherical caps touch but exact wall patches do not', () => {
@@ -152,21 +181,20 @@ describe('SIM 246 area-covering surface-growth fabrics', () => {
     earlier.total_growth_um = 0.0001;
     later.total_growth_um = 0.0001;
     earlier.wall_anchor = wall._anchorFromRingCell(0, 0);
-    later.wall_anchor = wall._anchorFromRingCell(2, 43);
+    later.wall_anchor = wall._anchorFromRingCell(11, 24);
     const sim = { step: 5, wall_state: wall, crystals: [earlier, later] };
     classifySurfaceGrowth(sim);
 
-    const mesh = wall.meshFor(sim);
-    const firstPatch = mesh.surfacePatch(
-      wall.surfaceAnchorDirection(earlier), earlier._surfaceGrowth.coverage_fraction,
+    const firstPatch = wall.surfacePatchForCrystal(
+      earlier, earlier._surfaceGrowth.coverage_fraction, sim,
     );
-    const secondPatch = mesh.surfacePatch(
-      wall.surfaceAnchorDirection(later), later._surfaceGrowth.coverage_fraction,
+    const secondPatch = wall.surfacePatchForCrystal(
+      later, later._surfaceGrowth.coverage_fraction, sim,
     );
     const firstTriangles = new Set(firstPatch.triangles.map((t: any) => t.triangle_index));
     expect(secondPatch.triangles.some((t: any) => firstTriangles.has(t.triangle_index))).toBe(false);
     expect(later._surfaceGrowth.underlying_surface_crystal_ids).toEqual([]);
-    expect(later._surfaceGrowth.stratigraphy_basis).toBe('exact shared WallMesh triangles');
+    expect(later._surfaceGrowth.stratigraphy_basis).toBe('exact shared authenticated-surface triangles');
   });
 
   it('refreshes eligible records and removes stale records without changing the mass ledger', () => {

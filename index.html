@@ -3290,6 +3290,20 @@ footer a:hover {
   }
   .controls { gap: 0.5rem; }
   #output { font-size: 0.7rem; max-height: 60vh; padding: 0.6rem; }
+  /* Simulation playback is a side-by-side narrative/inventory workspace on
+     desktop.  On phones the inventory's 100% width used to compete with the
+     flexible narrative column on the same row, collapsing the log to a
+     sliver and pushing the inventory beyond the viewport. */
+  #output-container {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  #output-container > div:first-child,
+  #legends-inventory-col {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
   body { padding: 0.5rem; }
   .fortress-main { flex-direction: column; }
   .inventory-col { width: 100%; }
@@ -19400,7 +19414,53 @@ function scenarioSpecHash(spec) {
 //       corrections above. This records an AI role, not review by the real
 //       scientist or Smithsonian. Marching Cubes remains default-off pending
 //       the separately listed production-promotion gates.
-const SIM_VERSION = 263;
+//
+// v264 — Topology-independent cavity surface anchors (August 2026).
+//       Every newly nucleated crystal now records a physical millimetre
+//       position, void-facing local normal, authenticated triangle and
+//       barycentric source receipt, and a separately named nearest-WallMesh
+//       chemistry projection. WallMesh and the default-off Marching Cubes
+//       extraction emit the same `cavity-surface-anchor-v1` contract; field
+//       anchors additionally commit to scalar signature, immutable snapshot
+//       digest, buffer digest, isovalue, and source field cell. Deterministic
+//       closest-triangle remapping survives re-extraction without treating a
+//       transient triangle index as identity. Legacy ring/cell fixtures upgrade
+//       only at the WallState boundary and are never emitted by new crystals.
+//       Local fluid, temperature, water state, competition, and voxel access
+//       now request the chemistry projection explicitly; renderer transforms,
+//       morphology, hit-test keys, command fingerprints, and strip testimony
+//       consume physical anchor identity. Crystal occupancy and local-fill
+//       volume now spread over shortest-path WallMesh footprints and exact
+//       per-vertex triangle areas instead of a same-latitude slice and
+//       mean-sphere wedge. That scientific correction can change shielding,
+//       crowding, dissolution, and subsequent paragenesis, so v264 is a real
+//       simulation-identity bump with an automated evidence rebake.
+//       Architecture-level nucleation filters also resolve the actual local
+//       void-facing surface normal at the selected cell. This prevents a
+//       rough cleft-face ring from admitting a physically rim-facing patch;
+//       per-vertex and feeder-weighted joint samplers use the same filter.
+//       The correction intentionally changes seed-42 cleft placement and is
+//       included in the v264 digest/evidence rather than hidden as UI drift.
+//       Local browser QA also caught and repaired a narrow-screen playback
+//       defect: at <=600px the narrative and inventory now stack at full width
+//       instead of collapsing the narrative beside a 100%-wide inventory.
+//       Hostile review tightened the receipt before closure: validation now
+//       proves every source digest, reconstructed point/normal, nearest
+//       chemistry vertex, and position-derived scalar cell; regridding never
+//       reuses an old grid-frame tuple. Derived live remaps are WeakMap-cached
+//       without rewriting birth history, and surface-fabric overlap keys pair
+//       the authenticated source signature with the triangle index. These
+//       Provider commands and replay frames also preserve the exact field,
+//       evolution cursor, shape, tessellation, and renderer authority. Failed
+//       authentication is withheld explicitly rather than rendered through a
+//       plausible WallMesh substitute. These rules are represented by
+//       surface-anchor digest v6. Host overgrowths retain the host's immutable
+//       physical attachment instead of reconstructing it from the shared
+//       chemistry voxel, and historical helper calls bind field + surface to
+//       one explicit ledger cursor. Canonical evidence is timestamp-free and
+//       binds exact dist/browser bytes, fetched science data, producer
+//       contracts, and every published artifact through a clean-clone receipt.
+const SIM_VERSION = 264;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -19421,6 +19481,7 @@ const MODEL_DIGEST = [
     'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
     'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',
     'surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4',
+    'surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+explicit-pinned-provider-command+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v6',
     'cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-shadow-v3',
     'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
     'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
@@ -19457,7 +19518,7 @@ const MODEL_DIGEST = [
     'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation+null-confining-pressure-v3',
     'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
     'transition-locality-exclusion:target-gated-v1',
-    'evidence-binding:strip-sha256+byte-identical-claim-card+frequency-behavior-hash-v1',
+    'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2',
     'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v4',
 ].join('|');
 
@@ -27183,6 +27244,10 @@ class WallState {
         // WallCell setters advance this monotonic revision.
         this._geometry_revision = 0;
         this._cavityEvolutionLedger = null;
+        // Cached extraction is diagnostic/render state. Only this explicit switch
+        // can promote the Cartesian surface to live anchor authority.
+        this._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
+        this._activeCavitySurfaceAnchorProvider = null;
         this.cells_per_ring = opts.cells_per_ring ?? 120;
         // Phase 1 of PROPOSAL-3D-SIMULATION: 16 vertically-stacked rings as
         // the new default. Engine still operates on ring[0] only — rings 1..15
@@ -27703,17 +27768,11 @@ class WallState {
     // includes the same ring twist used by WallMesh, making the descriptor and
     // renderer select the same physical wall patch.
     surfaceAnchorDirection(crystal) {
-        const anchor = this._resolveAnchor(crystal);
-        if (!anchor)
+        const point = this.surfacePointForCrystal(crystal);
+        if (!point)
             return [0, 1, 0];
-        const phi = Math.PI * (anchor.ringIdx + 0.5) / Math.max(1, this.ring_count);
-        const twist = this.ringTwistRadians ? this.ringTwistRadians(phi) : 0;
-        const theta = 2 * Math.PI * anchor.cellIdx / Math.max(1, this.cells_per_ring) + twist;
-        return [
-            Math.sin(phi) * Math.cos(theta),
-            -Math.cos(phi),
-            Math.sin(phi) * Math.sin(theta),
-        ];
+        const length = Math.hypot(point[0], point[1], point[2]) || 1;
+        return [point[0] / length, point[1] / length, point[2] / length];
     }
     updateCapacity(volumeMm3, equivalentDiameterMm) {
         const volume = Number(volumeMm3);
@@ -27927,6 +27986,94 @@ class WallState {
         }
         return this._cavitySurface;
     }
+    activateCavitySurfaceAnchorProvider(opts = {}) {
+        const resolution = opts.resolution == null ? 48 : opts.resolution;
+        const evolution = this.cavityEvolutionLedger?.();
+        const ledgerCursor = evolution
+            ? (opts.ledgerCursor != null ? Number(opts.ledgerCursor)
+                : this._cavityEvolutionCursor != null ? Number(this._cavityEvolutionCursor)
+                    : evolution.cursor)
+            : null;
+        const field = this.cavityFieldFor({ resolution, ledgerCursor });
+        const surface = this.cavitySurfaceFor({
+            resolution, ledgerCursor,
+            isovalue: opts.isovalue == null ? 0 : opts.isovalue,
+            throwOnFailure: true,
+        });
+        if (!field || !surface)
+            throw new Error('cannot activate an unavailable cavity surface provider');
+        MarchingCubesExtractor.verifyBuffers(surface);
+        if (!field.hasNegativeBorder(surface.isovalue)
+            || surface.topology?.negative_border !== true
+            || surface.topology?.nonempty !== true
+            || surface.topology?.closed_two_manifold !== true
+            || !(surface.metrics?.triangle_count > 0)
+            || !(surface.metrics?.vertex_count > 0)) {
+            throw new Error('cannot activate an empty, open, or unauthenticated cavity surface provider');
+        }
+        const receipt = Object.freeze({
+            kind: 'cavity-field',
+            resolution: field.sizeX,
+            isovalue: Number(surface.isovalue),
+            field_signature: field.sig,
+            field_snapshot_digest: field.snapshotDigest,
+            surface_signature: surface.sig,
+            surface_buffer_digest: surface.buffer_digest,
+            cavity_evolution_signature: evolution ? evolution.signatureAt(ledgerCursor) : null,
+        });
+        // Pin the exact explicitly activated objects. Later diagnostics may replace
+        // `_cavityField/_cavitySurface`; they cannot change simulation authority.
+        this._activeCavitySurfaceAnchorProvider = Object.freeze({ field, surface, receipt });
+        this._cavitySurfaceAnchorProvider = receipt;
+        return receipt;
+    }
+    _activeCavitySurfaceProviderForCurrentGeometry() {
+        const active = this._activeCavitySurfaceAnchorProvider;
+        if (!active || active.receipt?.kind !== 'cavity-field')
+            return null;
+        try {
+            // Replay walls pin an authenticated historical ledger prefix. Compare
+            // and, if necessary, rebuild against that cursor rather than silently
+            // upgrading a historical provider to the live ledger head.
+            const ledgerCursor = this._cavityEvolutionCursor;
+            const expected = CavityScalarField.signatureFor(this, active.receipt.resolution, ledgerCursor);
+            const evolution = this.cavityEvolutionLedger?.();
+            const effectiveCursor = evolution
+                ? (ledgerCursor == null ? evolution.cursor : Number(ledgerCursor)) : null;
+            const expectedEvolutionSignature = evolution
+                ? evolution.signatureAt(effectiveCursor) : null;
+            if (expected === active.receipt.field_signature
+                && active.receipt.cavity_evolution_signature === expectedEvolutionSignature) {
+                MarchingCubesExtractor.verifyBuffers(active.surface);
+                return active;
+            }
+            // Explicit field authority follows authenticated wall evolution at the
+            // same resolution/isovalue. Activation remains atomic: if re-extraction
+            // fails any production gate, the catch below exposes WallMesh instead.
+            this.activateCavitySurfaceAnchorProvider({
+                resolution: active.receipt.resolution,
+                isovalue: active.receipt.isovalue,
+                ledgerCursor,
+            });
+            return this._activeCavitySurfaceAnchorProvider;
+        }
+        catch (_error) {
+            this.deactivateCavitySurfaceAnchorProvider();
+            return null;
+        }
+    }
+    cavitySurfaceAnchorProviderReceipt() {
+        this._activeCavitySurfaceProviderForCurrentGeometry();
+        return this._cavitySurfaceAnchorProvider;
+    }
+    activeCavitySurfaceAnchorProvider() {
+        return this._activeCavitySurfaceProviderForCurrentGeometry();
+    }
+    deactivateCavitySurfaceAnchorProvider() {
+        this._activeCavitySurfaceAnchorProvider = null;
+        this._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
+        return this._cavitySurfaceAnchorProvider;
+    }
     // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1 (v158) — lazy + cached
     // factory for the cavity interior voxel grid. Same pattern as
     // meshFor(): build on first call, cache for subsequent calls.
@@ -27972,12 +28119,13 @@ class WallState {
         const N = Math.max(1, this.cells_per_ring);
         const r = ((ringIdx | 0) + n) % n;
         const c = ((cellIdx | 0) % N + N) % N;
-        return {
-            phi: Math.PI * (r + 0.5) / n,
-            theta: 2 * Math.PI * c / N,
-            ringIdx: r,
-            cellIdx: c,
-        };
+        // `meshFor()` performs the cheap geometry-revision check. Do not bypass it
+        // with an existing reference: cavity evolution may have invalidated the
+        // positions and the chemistry projection must follow that same revision.
+        const mesh = this.meshFor();
+        if (!mesh || !(mesh.numInterior > 0))
+            return null;
+        return CavitySurfaceAnchors.fromWallMeshVertex(mesh, r * N + c);
     }
     // PHASE-4-CAVITY-MESH (PROPOSAL-CAVITY-MESH §13 Tranche 4b) —
     // resolve a crystal's anchor to a (ringIdx, cellIdx) pair. Phase 1
@@ -27994,10 +28142,156 @@ class WallState {
         if (!crystal)
             return null;
         const a = crystal.wall_anchor;
-        if (a && a.ringIdx != null && a.cellIdx != null) {
-            return { ringIdx: a.ringIdx, cellIdx: a.cellIdx };
+        if (!a)
+            return null;
+        // Always enter through meshFor(): it checks the monotonic geometry revision
+        // before physical remap and chemistry projection use the mesh.
+        const mesh = this.meshFor();
+        if (a.schema === CavitySurfaceAnchors.SCHEMA && !Object.isFrozen(a)) {
+            // Saved JSON is mutable on load. Seal the accepted birth receipt in
+            // place before object identity is admitted to the derived remap cache.
+            CavitySurfaceAnchors.seal(a, mesh);
         }
-        return null;
+        const cachedRemap = (key, compute) => {
+            if (!this._surfaceAnchorRemapCache)
+                this._surfaceAnchorRemapCache = new WeakMap();
+            const cached = this._surfaceAnchorRemapCache.get(a);
+            if (cached?.key === key)
+                return cached.anchor;
+            const resolved = compute();
+            this._surfaceAnchorRemapCache.set(a, { key, anchor: resolved });
+            return resolved;
+        };
+        if (a.schema === CavitySurfaceAnchors.SCHEMA) {
+            if (a.source?.kind === 'wall-mesh') {
+                const active = this._activeCavitySurfaceProviderForCurrentGeometry();
+                const field = active?.field;
+                const surface = active?.surface;
+                if (active?.receipt?.kind === 'cavity-field'
+                    && field && surface && surface.source_field_signature === field.sig
+                    && surface.source_field_snapshot_digest === field.snapshotDigest) {
+                    // Once an authenticated Cartesian provider exists, normalize all
+                    // physical consumers onto it. This makes mixed historical providers
+                    // share one live topology for placement and stratigraphy.
+                    return cachedRemap(`field:${surface.sig}|chem:${mesh.geometry_sig}`, () => CavitySurfaceAnchors.remapToMarchingCubes(a, field, surface, mesh));
+                }
+                if (a.source.signature === mesh.geometry_sig) {
+                    CavitySurfaceAnchors.validate(a, mesh, mesh);
+                    return a;
+                }
+                return cachedRemap(`wall:${mesh.geometry_sig}`, () => CavitySurfaceAnchors.remapToWallMesh(a, mesh));
+            }
+            const active = this._activeCavitySurfaceProviderForCurrentGeometry();
+            const field = active?.field;
+            const surface = active?.surface;
+            if (!active || active.receipt?.kind !== 'cavity-field') {
+                return cachedRemap(`fallback:${mesh.geometry_sig}`, () => CavitySurfaceAnchors.remapToWallMesh(a, mesh));
+            }
+            if (field && surface && surface.source_field_signature === field.sig
+                && surface.source_field_snapshot_digest === field.snapshotDigest
+                && (a.source?.signature !== surface.sig || a.source?.fieldSignature !== field.sig)) {
+                return cachedRemap(`field:${surface.sig}|chem:${mesh.geometry_sig}`, () => CavitySurfaceAnchors.remapToMarchingCubes(a, field, surface, mesh));
+            }
+            if (field && surface && a.source?.signature === surface.sig
+                && a.source?.fieldSignature === field.sig) {
+                // Authenticate the physical receipt first. A changed WallMesh makes
+                // the chemistry projection stale, not the physical attachment stale;
+                // reproject that derived address atomically without mutating history.
+                if (a.chemistry?.meshSignature === mesh.geometry_sig) {
+                    CavitySurfaceAnchors.validate(a, surface, mesh, field);
+                    return a;
+                }
+                CavitySurfaceAnchors.validate(a, surface, mesh, field, { allowStaleChemistry: true });
+                return cachedRemap(`field:${surface.sig}|chem:${mesh.geometry_sig}`, () => CavitySurfaceAnchors.fromMarchingCubes(field, surface, mesh, a.triangleIndex, a.barycentric));
+            }
+            // A missing/rejected/stale scalar extraction fails closed explicitly to
+            // the canonical WallMesh; chemistry is never used as the remap shortcut.
+            return cachedRemap(`fallback:${mesh.geometry_sig}`, () => CavitySurfaceAnchors.remapToWallMesh(a, mesh));
+        }
+        return CavitySurfaceAnchors.upgradeLegacy(a, mesh);
+    }
+    // The boundary transport lattice is intentionally a projection of the
+    // physical surface anchor. These helpers keep chemistry consumers from
+    // mistaking a ring/cell cache for crystal identity.
+    chemistryAddressForAnchor(anchor) {
+        const resolved = anchor && anchor.wall_anchor !== undefined
+            ? this._resolveAnchor(anchor) : this._resolveAnchor({ wall_anchor: anchor });
+        return CavitySurfaceAnchors.chemistryAddress(resolved);
+    }
+    chemistryAddressForCrystal(crystal) {
+        return this.chemistryAddressForAnchor(crystal);
+    }
+    chemistryVertexForCrystal(crystal) {
+        const address = this.chemistryAddressForCrystal(crystal);
+        return address ? address.vertexIndex : -1;
+    }
+    surfacePointForCrystal(crystal) {
+        const anchor = this._resolveAnchor(crystal);
+        if (!anchor)
+            return null;
+        return anchor.position.slice();
+    }
+    surfaceNormalForCrystal(crystal) {
+        const anchor = this._resolveAnchor(crystal);
+        if (!anchor)
+            return null;
+        return anchor.normal.slice();
+    }
+    surfaceAnchorKey(crystal) {
+        return CavitySurfaceAnchors.key(this._resolveAnchor(crystal));
+    }
+    surfaceAnchorFromMarchingCubes(triangleIndex, barycentric, opts = {}) {
+        const resolution = opts.resolution == null ? 48 : opts.resolution;
+        const field = this.cavityFieldFor({ resolution, ledgerCursor: opts.ledgerCursor });
+        const surface = this.cavitySurfaceFor({
+            resolution, ledgerCursor: opts.ledgerCursor,
+            isovalue: opts.isovalue == null ? 0 : opts.isovalue,
+            throwOnFailure: true,
+        });
+        const mesh = this._mesh || this.meshFor(opts.sim);
+        return CavitySurfaceAnchors.fromMarchingCubes(field, surface, mesh, triangleIndex, barycentric);
+    }
+    remapSurfaceAnchorToMarchingCubes(anchor, opts = {}) {
+        const resolution = opts.resolution == null ? 48 : opts.resolution;
+        const field = this.cavityFieldFor({ resolution, ledgerCursor: opts.ledgerCursor });
+        const surface = this.cavitySurfaceFor({
+            resolution, ledgerCursor: opts.ledgerCursor,
+            isovalue: opts.isovalue == null ? 0 : opts.isovalue,
+            throwOnFailure: false,
+        });
+        const mesh = this._mesh || this.meshFor(opts.sim);
+        if (!field || !surface)
+            return CavitySurfaceAnchors.remapToWallMesh(anchor, mesh);
+        return CavitySurfaceAnchors.remapToMarchingCubes(anchor, field, surface, mesh);
+    }
+    remapSurfaceAnchorToWallMesh(anchor, sim) {
+        return CavitySurfaceAnchors.remapToWallMesh(anchor, this.meshFor(sim));
+    }
+    surfaceForCrystal(crystal, sim) {
+        const anchor = this._resolveAnchor(crystal);
+        if (!anchor)
+            return null;
+        const activeSurface = this._activeCavitySurfaceProviderForCurrentGeometry()?.surface;
+        if (anchor.source.kind === 'cavity-field'
+            && activeSurface?.sig === anchor.source.signature)
+            return activeSurface;
+        return this._mesh || this.meshFor(sim);
+    }
+    surfaceAreaForCrystal(crystal, sim) {
+        const surface = this.surfaceForCrystal(crystal, sim);
+        return surface ? CavitySurfaceAnchors.surfaceAreaMm2(surface) : 0;
+    }
+    surfacePatchForCrystal(crystal, coverage, sim) {
+        const anchor = this._resolveAnchor(crystal);
+        const surface = this.surfaceForCrystal(crystal, sim);
+        return anchor && surface ? CavitySurfaceAnchors.surfacePatch(anchor, surface, coverage) : null;
+    }
+    sampleSurfacePatchForCrystal(crystal, count, coverage, seed, sim) {
+        const anchor = this._resolveAnchor(crystal);
+        const surface = this.surfaceForCrystal(crystal, sim);
+        return anchor && surface
+            ? CavitySurfaceAnchors.sampleSurfacePatch(anchor, surface, count, coverage, seed)
+            : null;
     }
     // Phase D: which third of the sphere this ring belongs to.
     // Floor / wall / ceiling tags derived from ring index — bottom
@@ -28036,10 +28330,26 @@ class WallState {
     zoneOf(crystal) {
         if (!crystal)
             return null;
-        const anchor = this._resolveAnchor(crystal);
-        if (!anchor)
+        const normal = this.surfaceNormalForCrystal(crystal);
+        return this.zoneFromSurfaceNormal(normal);
+    }
+    zoneFromSurfaceNormal(normal) {
+        if (!normal)
             return null;
-        return this.ringOrientation(anchor.ringIdx);
+        if (normal[1] > Math.SQRT1_2)
+            return 'floor';
+        if (normal[1] < -Math.SQRT1_2)
+            return 'ceiling';
+        return 'wall';
+    }
+    surfaceZoneAtVertex(ringIdx, cellIdx, sim) {
+        const R = this.ring_count | 0;
+        const N = this.cells_per_ring | 0;
+        if (!Number.isInteger(ringIdx) || !Number.isInteger(cellIdx)
+            || ringIdx < 0 || ringIdx >= R || cellIdx < 0 || cellIdx >= N)
+            return null;
+        const mesh = this._mesh || this.meshFor(sim);
+        return this.zoneFromSurfaceNormal(mesh?.voidNormalAtVertex?.(ringIdx * N + cellIdx));
     }
     // Phase D: per-ring nucleation weight proportional to the ring's
     // circumference on the sphere. sin(latitude) at the half-step
@@ -28119,6 +28429,29 @@ class WallState {
         const w = this.ringAreaWeight(ringIdx) / this._cachedRingWeightSum;
         return (cavityVol * w) / N;
     }
+    _cellCavityVolAtVertexMm3(vertexIdx) {
+        const mesh = this._mesh || this.meshFor();
+        if (!mesh || vertexIdx < 0 || vertexIdx >= mesh.numInterior)
+            return 0;
+        const area = mesh.cellSurfaceAreaAtVertexMm2
+            ? mesh.cellSurfaceAreaAtVertexMm2(vertexIdx) : 0;
+        const total = Number(mesh.surfaceAreaMm2 ? mesh.surfaceAreaMm2() : 0);
+        const cavityVol = Number(this.cavity_capacity_volume_mm3);
+        if (!(area > 0) || !(total > 0) || !(cavityVol > 0))
+            return 0;
+        return cavityVol * area / total;
+    }
+    _footprintVertices(crystal) {
+        const source = this.chemistryVertexForCrystal(crystal);
+        const mesh = this._mesh || this.meshFor();
+        if (!mesh || source < 0 || source >= mesh.numInterior)
+            return [];
+        const radiusMm = Math.max(this.cell_arc_mm, this.footprintArcMm(crystal) / 2);
+        const covered = mesh.verticesWithinGeodesicRadius(source, radiusMm);
+        if (!covered.includes(source))
+            covered.unshift(source);
+        return covered;
+    }
     // Proposal E (2026-05-18) — paint a crystal's _volume_mm3 contribution
     // across the cells covered by its footprint.
     //
@@ -28149,29 +28482,27 @@ class WallState {
             return;
         if (typeof crystal._volume_mm3 !== 'number' || !(crystal._volume_mm3 > 0))
             return;
-        const anchor = this._resolveAnchor(crystal);
-        if (!anchor)
+        const mesh = this._mesh || this.meshFor();
+        const covered = this._footprintVertices(crystal);
+        if (!mesh || !covered.length)
             return;
-        let ringIdx = anchor.ringIdx;
-        if (ringIdx == null || ringIdx < 0 || ringIdx >= this.ring_count)
+        let coveredArea = 0;
+        for (const vertexIdx of covered) {
+            coveredArea += mesh.cellSurfaceAreaAtVertexMm2(vertexIdx);
+        }
+        if (!(coveredArea > 0))
             return;
-        const centerCell = anchor.cellIdx;
-        if (centerCell == null)
-            return;
-        const arcMm = this.footprintArcMm(crystal);
-        const halfCells = Math.max(1, Math.round(arcMm / this.cell_arc_mm / 2));
-        const span = 2 * halfCells + 1;
-        const volPerCell = crystal._volume_mm3 / span;
-        const ring = this.rings[ringIdx];
-        if (!ring)
-            return;
-        const N = this.cells_per_ring;
-        for (let offset = -halfCells; offset <= halfCells; offset++) {
-            const idx = ((centerCell + offset) % N + N) % N;
-            const cell = ring[idx];
+        let assigned = 0;
+        for (let i = 0; i < covered.length; i++) {
+            const vertexIdx = covered[i];
+            const cell = mesh.cells[vertexIdx];
             if (!cell)
                 continue;
-            cell._localCrystalVol_mm3 = (cell._localCrystalVol_mm3 || 0) + volPerCell;
+            const share = i === covered.length - 1
+                ? crystal._volume_mm3 - assigned
+                : crystal._volume_mm3 * mesh.cellSurfaceAreaAtVertexMm2(vertexIdx) / coveredArea;
+            cell._localCrystalVol_mm3 = (cell._localCrystalVol_mm3 || 0) + share;
+            assigned += share;
         }
     }
     // Proposal E (2026-05-18) — read the local fill at one cell.
@@ -28200,10 +28531,14 @@ class WallState {
     // Returns 0 for unanchored crystals — the growth loop falls back to
     // global vugFill in that case.
     getCellLocalFillForCrystal(crystal) {
-        const anchor = this._resolveAnchor(crystal);
-        if (!anchor)
+        const vertexIdx = this.chemistryVertexForCrystal(crystal);
+        const mesh = this._mesh || this.meshFor();
+        if (!mesh || vertexIdx < 0 || vertexIdx >= mesh.numInterior)
             return 0;
-        return this.getCellLocalFill(anchor.ringIdx, anchor.cellIdx);
+        const cell = mesh.cells[vertexIdx];
+        const volume = Number(cell?._localCrystalVol_mm3) || 0;
+        const capacity = this._cellCavityVolAtVertexMm3(vertexIdx);
+        return volume > 0 && capacity > 0 ? volume / capacity : 0;
     }
     // W-F O4b — the footprint law, hoisted so the two painters and the
     // enclosure adjacency (js/85c _check_enclosure) read ONE expression.
@@ -28226,12 +28561,18 @@ class WallState {
     // (tools/o4b-adjacency-census.mjs) and the enclosure gate share this
     // metric without re-deriving positions.
     anchorDistanceMm(a, b) {
-        const A = this._anchorFromRingCell(a.ringIdx, a.cellIdx);
-        const B = this._anchorFromRingCell(b.ringIdx, b.cellIdx);
-        const cosD = Math.cos(A.phi) * Math.cos(B.phi)
-            + Math.sin(A.phi) * Math.sin(B.phi) * Math.cos(A.theta - B.theta);
-        const R = (this.cell_arc_mm * this.cells_per_ring) / (2 * Math.PI);
-        return R * Math.acos(Math.max(-1, Math.min(1, cosD)));
+        const A = this.chemistryAddressForAnchor(a);
+        const B = this.chemistryAddressForAnchor(b);
+        const mesh = this._mesh || this.meshFor();
+        if (A && B && mesh && A.vertexIndex >= 0 && B.vertexIndex >= 0
+            && typeof mesh.geodesicDistancesFrom === 'function') {
+            return mesh.geodesicDistanceBetween(A.vertexIndex, B.vertexIndex);
+        }
+        const ap = a?.position, bp = b?.position;
+        if (Array.isArray(ap) && Array.isArray(bp)) {
+            return Math.hypot(ap[0] - bp[0], ap[1] - bp[1], ap[2] - bp[2]);
+        }
+        return Infinity;
     }
     // Mark the cells this crystal occupies with its id / mineral / thickness.
     // Only ring[0] in v1; multi-ring paint will follow void_reach later.
@@ -28251,22 +28592,15 @@ class WallState {
         // renderer stops reading wall_ring_index / wall_center_cell
         // directly. Behavior is unchanged when wall_anchor is set in step
         // with the legacy fields (current default at nucleation).
-        const anchor = this._resolveAnchor(crystal);
-        if (!anchor)
+        const mesh = this._mesh || this.meshFor();
+        const covered = this._footprintVertices(crystal);
+        if (!mesh || !covered.length)
             return;
-        let ringIdx = anchor.ringIdx;
-        if (ringIdx == null || ringIdx < 0 || ringIdx >= this.ring_count) {
-            ringIdx = 0;
-        }
-        const centerCell = anchor.cellIdx;
-        const arcMm = this.footprintArcMm(crystal);
-        const halfCells = Math.max(1, Math.round(arcMm / this.cell_arc_mm / 2));
         const thickness = Math.max(crystal.total_growth_um, 1); // nucleated = visible
-        const ring = this.rings[ringIdx];
-        const N = this.cells_per_ring;
-        for (let offset = -halfCells; offset <= halfCells; offset++) {
-            const idx = ((centerCell + offset) % N + N) % N;
-            const cell = ring[idx];
+        for (const vertexIdx of covered) {
+            const cell = mesh.cells[vertexIdx];
+            if (!cell)
+                continue;
             if (cell.thickness_um < thickness) {
                 cell.crystal_id = crystal.crystal_id;
                 cell.mineral = crystal.mineral;
@@ -28918,6 +29252,9 @@ class WallMesh {
         // matching the legacy _topoCavitySignature() so cache-hit semantics
         // don't shift.
         this.sig = '';
+        // Geometry-only identity used by surface anchors. Unlike `sig`, this does
+        // not change when the water level recolors otherwise identical vertices.
+        this.geometry_sig = '';
         // Conservative monotonic radius reference — populated during
         // recompute, mirrors WallState.max_seen_radius_mm so the renderer's
         // clip uniforms have a single source of truth as we migrate.
@@ -28934,6 +29271,7 @@ class WallMesh {
         // replaced by a mean-diameter sphere.
         this.surface_area_mm2 = 0;
         this._surfaceTriangles = [];
+        this._voidNormalsByVertex = null;
     }
     // ---- Factory ----
     //
@@ -29257,15 +29595,8 @@ class WallMesh {
     cellOf(crystal, wall) {
         if (!crystal || !this.cells || !this.cells.length)
             return null;
-        const anchor = (wall && wall._resolveAnchor)
-            ? wall._resolveAnchor(crystal)
-            : null;
-        if (!anchor || anchor.ringIdx == null || anchor.cellIdx == null)
-            return null;
-        const cellsPerRing = wall.cells_per_ring || 0;
-        if (cellsPerRing <= 0)
-            return null;
-        const idx = anchor.ringIdx * cellsPerRing + anchor.cellIdx;
+        const idx = wall && wall.chemistryVertexForCrystal
+            ? wall.chemistryVertexForCrystal(crystal) : -1;
         if (idx < 0 || idx >= this.cells.length)
             return null;
         return this.cells[idx];
@@ -29308,6 +29639,7 @@ class WallMesh {
         const positions = this.positions;
         const indices = this.indices;
         const triangles = [];
+        const incidentTriangleByVertex = new Array(this.numInterior);
         let totalArea = 0;
         if (!positions || !indices) {
             this.surface_area_mm2 = 0;
@@ -29353,6 +29685,16 @@ class WallMesh {
                 outward_normal: [nx, ny, nz],
             });
             totalArea += area;
+            const triangleIndex = offset / 3;
+            if (ia < this.numInterior && !incidentTriangleByVertex[ia]) {
+                incidentTriangleByVertex[ia] = { triangleIndex, barycentric: [1, 0, 0] };
+            }
+            if (ib < this.numInterior && !incidentTriangleByVertex[ib]) {
+                incidentTriangleByVertex[ib] = { triangleIndex, barycentric: [0, 1, 0] };
+            }
+            if (ic < this.numInterior && !incidentTriangleByVertex[ic]) {
+                incidentTriangleByVertex[ic] = { triangleIndex, barycentric: [0, 0, 1] };
+            }
         }
         // Build edge adjacency once with the geometry. Surface fabrics then grow
         // out from their anchor as one edge-connected swath instead of selecting
@@ -29385,6 +29727,28 @@ class WallMesh {
         });
         this.surface_area_mm2 = totalArea;
         this._surfaceTriangles = triangles;
+        const voidNormals = new Float32Array(this.numInterior * 3);
+        for (const triangle of triangles) {
+            for (const vertexIndex of [triangle.ia, triangle.ib, triangle.ic]) {
+                if (vertexIndex >= this.numInterior)
+                    continue;
+                const base = vertexIndex * 3;
+                voidNormals[base] -= triangle.outward_normal[0] * triangle.area_mm2;
+                voidNormals[base + 1] -= triangle.outward_normal[1] * triangle.area_mm2;
+                voidNormals[base + 2] -= triangle.outward_normal[2] * triangle.area_mm2;
+            }
+        }
+        for (let vertexIndex = 0; vertexIndex < this.numInterior; vertexIndex++) {
+            const base = vertexIndex * 3;
+            const length = Math.hypot(voidNormals[base], voidNormals[base + 1], voidNormals[base + 2]);
+            if (!(length > 1e-12))
+                throw new RangeError('WallMesh vertex has no defined void normal');
+            voidNormals[base] /= length;
+            voidNormals[base + 1] /= length;
+            voidNormals[base + 2] /= length;
+        }
+        this._voidNormalsByVertex = voidNormals;
+        this._incidentTriangleByVertex = incidentTriangleByVertex;
         this._cellSurfaceAreasSig = null;
         this._cellSurfaceAreas = null;
         this._geodesicCache = new Map();
@@ -29455,6 +29819,28 @@ class WallMesh {
         this._cellSurfaceAreasSig = this.sig;
         return areas;
     }
+    // Hot-path scalar accessor. The bulk method above intentionally returns a
+    // defensive copy; growth/local-fill code that needs one vertex must not
+    // allocate and copy all ~1,920 areas for every crystal on every step.
+    cellSurfaceAreaAtVertexMm2(vertexIndex) {
+        if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= this.numInterior) {
+            return 0;
+        }
+        if (!this._cellSurfaceAreas || this._cellSurfaceAreasSig !== this.sig) {
+            this.cellSurfaceAreasMm2();
+        }
+        return Number(this._cellSurfaceAreas?.[vertexIndex]) || 0;
+    }
+    incidentTriangleForVertex(vertexIndex) {
+        if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= this.numInterior) {
+            return null;
+        }
+        const receipt = this._incidentTriangleByVertex?.[vertexIndex];
+        return receipt ? {
+            triangleIndex: receipt.triangleIndex,
+            barycentric: receipt.barycentric.slice(),
+        } : null;
+    }
     // Candidate geometry for a sparse/dense set of raw WallCell depth deltas.
     // Each interior vertex moves along its already-rendered ray by delta times
     // the same polar factor used by recompute(). Pole movement follows the
@@ -29520,6 +29906,9 @@ class WallMesh {
     // by geometry signature and source vertex; erosion invalidates the cache via
     // _recomputeSurfaceMetrics().
     geodesicDistancesFrom(sourceVertex) {
+        return new Float64Array(this._geodesicDistancesFromInternal(sourceVertex));
+    }
+    _geodesicDistancesFromInternal(sourceVertex) {
         if (!Number.isInteger(sourceVertex) || sourceVertex < 0 || sourceVertex >= this.numInterior) {
             throw new RangeError('geodesic source must be an interior wall vertex');
         }
@@ -29527,7 +29916,7 @@ class WallMesh {
             this._geodesicCache = new Map();
         const cached = this._geodesicCache.get(sourceVertex);
         if (cached)
-            return new Float64Array(cached);
+            return cached;
         const vertexCount = this.numInterior + 2;
         if (!this._geodesicAdjacency) {
             const adjacency = Array.from({ length: vertexCount }, () => new Map());
@@ -29608,10 +29997,40 @@ class WallMesh {
             throw new RangeError('wall mesh geodesic graph is disconnected');
         }
         this._geodesicCache.set(sourceVertex, new Float64Array(interior));
-        return interior;
+        return this._geodesicCache.get(sourceVertex);
+    }
+    verticesWithinGeodesicRadius(sourceVertex, radiusMm) {
+        const radius = Number(radiusMm);
+        if (!(radius >= 0) || !Number.isFinite(radius)) {
+            throw new RangeError('geodesic radius must be finite and non-negative');
+        }
+        const distances = this._geodesicDistancesFromInternal(sourceVertex);
+        const vertices = [];
+        for (let index = 0; index < distances.length; index++) {
+            if (distances[index] <= radius + 1e-10)
+                vertices.push(index);
+        }
+        return vertices;
+    }
+    geodesicDistanceBetween(sourceVertex, targetVertex) {
+        if (!Number.isInteger(targetVertex) || targetVertex < 0 || targetVertex >= this.numInterior) {
+            throw new RangeError('geodesic target must be an interior wall vertex');
+        }
+        return this._geodesicDistancesFromInternal(sourceVertex)[targetVertex];
     }
     surfaceAreaMm2() {
         return Number(this.surface_area_mm2) || 0;
+    }
+    voidNormalAtVertex(vertexIndex) {
+        if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= this.numInterior
+            || !this._voidNormalsByVertex)
+            return null;
+        const base = vertexIndex * 3;
+        return [
+            this._voidNormalsByVertex[base],
+            this._voidNormalsByVertex[base + 1],
+            this._voidNormalsByVertex[base + 2],
+        ];
     }
     // Select the closest triangle swath around an anchor direction until its
     // area equals the requested fraction of the exact wall area. The final
@@ -29956,6 +30375,7 @@ class WallMesh {
             maxR2 = northR2;
         this.max_radius_mm = Math.sqrt(maxR2);
         this._recomputeSurfaceMetrics();
+        this.geometry_sig = WallMesh._signature(wall, null);
         this.sig = WallMesh._signature(wall, sim);
     }
 }
@@ -30721,24 +31141,126 @@ class CavityFieldTextureUpload {
 // prevents face cracks while keeping global grid-edge vertices deduplicated.
 // MC33-style interior ambiguity resolution remains a later production gate.
 class MarchingCubesExtractor {
+    // TypedArray payloads cannot be frozen in JavaScript. Keep their owned targets
+    // private and expose read-only proxies: numeric writes and mutating methods
+    // throw, while `.buffer` returns a copy rather than a writable alias. The one
+    // complete digest is therefore authenticated at the immutable extraction
+    // boundary; later verification is O(1) object identity.
+    static #verifiedBuffers = new WeakMap();
+    static #readonlyTargets = new WeakMap();
+    static #readonlyProxies = new WeakMap();
+    static #typedArrayPrototype = Object.getPrototypeOf(Float32Array.prototype);
+    static #typedArraySlice = MarchingCubesExtractor.#typedArrayPrototype.slice;
+    static #callbackMethods = new Map(['every', 'filter', 'find', 'findIndex', 'findLast', 'findLastIndex', 'forEach',
+        'map', 'reduce', 'reduceRight', 'some'].map(name => [name, MarchingCubesExtractor.#typedArrayPrototype[name]]));
+    static #iteratorMethods = new Map([
+        [Symbol.iterator, MarchingCubesExtractor.#typedArrayPrototype.values],
+        ['entries', MarchingCubesExtractor.#typedArrayPrototype.entries],
+        ['keys', MarchingCubesExtractor.#typedArrayPrototype.keys],
+        ['values', MarchingCubesExtractor.#typedArrayPrototype.values],
+    ]);
+    static #copyMethods = new Map(['at', 'includes', 'indexOf', 'lastIndexOf', 'join', 'toLocaleString', 'toString']
+        .map(name => [name, MarchingCubesExtractor.#typedArrayPrototype[name]]));
+    static #rawBuffer(values) {
+        return MarchingCubesExtractor.#readonlyTargets.get(values) || values;
+    }
+    static #readonlyBuffer(values) {
+        const existing = MarchingCubesExtractor.#readonlyProxies.get(values);
+        if (existing)
+            return existing;
+        const mutators = new Set(['copyWithin', 'fill', 'reverse', 'set', 'sort']);
+        const typedArrayConstructor = values.constructor;
+        const copy = (start, end) => Reflect.apply(MarchingCubesExtractor.#typedArraySlice, values, start == null ? [] : end == null ? [start] : [start, end]);
+        let proxy;
+        proxy = new Proxy(values, {
+            get(target, property) {
+                if (typeof property === 'string' && /^(0|[1-9]\d*)$/.test(property)) {
+                    return target[Number(property)];
+                }
+                if (property === 'buffer') {
+                    return target.buffer.slice(target.byteOffset, target.byteOffset + target.byteLength);
+                }
+                if (property === 'byteOffset')
+                    return 0;
+                if (property === 'byteLength' || property === 'length')
+                    return target[property];
+                if (property === Symbol.toStringTag)
+                    return target.constructor.name;
+                if (property === 'valueOf')
+                    return () => proxy;
+                if (property === 'constructor')
+                    return typedArrayConstructor;
+                if (property === 'subarray')
+                    return (start, end) => MarchingCubesExtractor.#readonlyBuffer(copy(start, end));
+                if (mutators.has(String(property)))
+                    return () => {
+                        throw new TypeError('Marching Cubes surface buffers are immutable');
+                    };
+                const iteratorMethod = MarchingCubesExtractor.#iteratorMethods.get(property);
+                if (iteratorMethod) {
+                    return (...args) => Reflect.apply(iteratorMethod, target, args);
+                }
+                // Callback-bearing TypedArray methods pass their receiver as an
+                // argument. Execute them on a copy so callbacks cannot capture the
+                // private authoritative target through that argument.
+                const callbackMethod = MarchingCubesExtractor.#callbackMethods.get(String(property));
+                if (callbackMethod) {
+                    return (...args) => Reflect.apply(callbackMethod, copy(), args);
+                }
+                if (property === 'slice')
+                    return copy;
+                const copyMethod = MarchingCubesExtractor.#copyMethods.get(String(property));
+                if (copyMethod) {
+                    return (...args) => Reflect.apply(copyMethod, copy(), args);
+                }
+                // Do not Reflect.get arbitrary properties with the authoritative typed
+                // array as receiver. A caller-controlled prototype getter could return
+                // `this.buffer` and escape the raw storage without crossing a proxy trap.
+                return undefined;
+            },
+            set() { throw new TypeError('Marching Cubes surface buffers are immutable'); },
+            defineProperty() { throw new TypeError('Marching Cubes surface buffers are immutable'); },
+            deleteProperty() { throw new TypeError('Marching Cubes surface buffers are immutable'); },
+            setPrototypeOf() { throw new TypeError('Marching Cubes surface buffers are immutable'); },
+            preventExtensions() { throw new TypeError('Marching Cubes surface buffers are immutable'); },
+        });
+        MarchingCubesExtractor.#readonlyTargets.set(proxy, values);
+        MarchingCubesExtractor.#readonlyProxies.set(values, proxy);
+        return proxy;
+    }
     static _bufferDigest(surface) {
         const arrays = [surface && surface.positions, surface && surface.normals,
             surface && surface.colors, surface && surface.uvs, surface && surface.indices];
         let joined = '';
         for (const values of arrays) {
-            if (!values || !ArrayBuffer.isView(values))
+            const raw = MarchingCubesExtractor.#rawBuffer(values);
+            if (!raw || !ArrayBuffer.isView(raw))
                 throw new TypeError('surface buffer is unavailable');
-            const bytes = new Uint8Array(values.buffer, values.byteOffset, values.byteLength);
+            const bytes = new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength);
             let hash = 0x811c9dc5;
             for (let i = 0; i < bytes.length; i++)
                 hash = Math.imul(hash ^ bytes[i], 0x01000193) >>> 0;
-            joined += `${values.constructor.name}:${values.byteLength}:${hash.toString(16).padStart(8, '0')}|`;
+            joined += `${raw.constructor.name}:${raw.byteLength}:${hash.toString(16).padStart(8, '0')}|`;
         }
         return joined;
     }
     static verifyBuffers(surface) {
-        if (!surface || MarchingCubesExtractor._bufferDigest(surface) !== surface.buffer_digest) {
+        if (!surface)
             throw new Error('Marching Cubes surface buffers changed after extraction');
+        const trusted = MarchingCubesExtractor.#verifiedBuffers.get(surface);
+        const buffers = [surface.positions, surface.normals, surface.colors, surface.uvs, surface.indices];
+        const immutableOwned = buffers.every((values) => MarchingCubesExtractor.#readonlyTargets.has(values));
+        if (trusted && immutableOwned && trusted.digest === surface.buffer_digest
+            && buffers.every((values, index) => values === trusted.buffers[index]))
+            return;
+        if (MarchingCubesExtractor._bufferDigest(surface) !== surface.buffer_digest) {
+            throw new Error('Marching Cubes surface buffers changed after extraction');
+        }
+        if (immutableOwned) {
+            MarchingCubesExtractor.#verifiedBuffers.set(surface, {
+                digest: surface.buffer_digest,
+                buffers,
+            });
         }
     }
     static { this.CORNERS = [
@@ -31245,11 +31767,11 @@ class MarchingCubesExtractor {
         const surfaceBytes = positionBuffer.byteLength + normalBuffer.byteLength
             + colorBuffer.byteLength + uvBuffer.byteLength + indexBuffer.byteLength;
         const result = {
-            positions: positionBuffer,
-            normals: normalBuffer,
-            colors: colorBuffer,
-            indices: indexBuffer,
-            uvs: uvBuffer,
+            positions: MarchingCubesExtractor.#readonlyBuffer(positionBuffer),
+            normals: MarchingCubesExtractor.#readonlyBuffer(normalBuffer),
+            colors: MarchingCubesExtractor.#readonlyBuffer(colorBuffer),
+            indices: MarchingCubesExtractor.#readonlyBuffer(indexBuffer),
+            uvs: MarchingCubesExtractor.#readonlyBuffer(uvBuffer),
             sig: field.surfaceSignature(isovalue),
             source_field_signature: field.sig,
             source_field_snapshot_digest: field.snapshotDigest,
@@ -31266,9 +31788,765 @@ class MarchingCubesExtractor {
                 field_bytes: field.sampleByteLength(),
                 surface_bytes: surfaceBytes,
             }),
+            topology: Object.freeze({
+                negative_border: field.hasNegativeBorder(isovalue),
+                nonempty: indexBuffer.length >= 3 && positionBuffer.length >= 9,
+                closed_two_manifold: field.hasNegativeBorder(isovalue) && indexBuffer.length >= 3,
+            }),
         };
         result.buffer_digest = MarchingCubesExtractor._bufferDigest(result);
+        MarchingCubesExtractor.#verifiedBuffers.set(result, {
+            digest: result.buffer_digest,
+            buffers: [result.positions, result.normals, result.colors, result.uvs, result.indices],
+        });
         return Object.freeze(result);
+    }
+}
+
+// ── 23c-geometry-surface-anchor.js ──
+
+// ============================================================
+// js/23c-geometry-surface-anchor.ts — topology-independent anchors
+// ============================================================
+// A crystal is attached to a physical point and local substrate normal, not
+// to a latitude/longitude address or a transient triangle number. See
+// proposals/PROPOSAL-CAVITY-SURFACE-ANCHORS-2026-08-12.md.
+class CavitySurfaceAnchors {
+    static { this.SCHEMA = 'cavity-surface-anchor-v1'; }
+    static { this.MAPPING = 'nearest-wall-mesh-vertex-v1'; }
+    static { this._surfaceTopologyCache = new WeakMap(); }
+    static { this._validationCache = new WeakMap(); }
+    static _validationKey(anchor, surface, mesh, field, allowStaleChemistry) {
+        return [
+            anchor?.source?.kind, anchor?.source?.signature, anchor?.source?.fieldSignature,
+            anchor?.source?.snapshotDigest, anchor?.source?.bufferDigest, anchor?.source?.isovalue,
+            anchor?.triangleIndex, ...(anchor?.position || []), ...(anchor?.normal || []),
+            ...(anchor?.barycentric || []), ...(anchor?.fieldCell || []),
+            anchor?.chemistry?.vertexIndex, anchor?.chemistry?.ringIdx, anchor?.chemistry?.cellIdx,
+            anchor?.chemistry?.meshSignature, anchor?.chemistry?.mapping,
+            CavitySurfaceAnchors._surfaceSignature(surface),
+            CavitySurfaceAnchors._geometrySignature(mesh), field?.sig, field?.snapshotDigest,
+            allowStaleChemistry ? 'stale-chemistry-ok' : 'complete',
+        ].join('|');
+    }
+    static _tuple3(value, label) {
+        if (!Array.isArray(value) || value.length !== 3) {
+            throw new TypeError(`${label} must contain exactly three coordinates`);
+        }
+        const out = [Number(value[0]), Number(value[1]), Number(value[2])];
+        if (!out.every(Number.isFinite))
+            throw new TypeError(`${label} must contain finite coordinates`);
+        return out;
+    }
+    static _unit(value, label) {
+        const out = CavitySurfaceAnchors._tuple3(value, label);
+        const length = Math.hypot(out[0], out[1], out[2]);
+        if (!(length > 1e-12) || !Number.isFinite(length)) {
+            throw new RangeError(`${label} must have a finite non-zero length`);
+        }
+        return [out[0] / length, out[1] / length, out[2] / length];
+    }
+    static _barycentric(value) {
+        const bary = CavitySurfaceAnchors._tuple3(value, 'surface anchor barycentric coordinates');
+        const tolerance = 1e-7;
+        if (bary.some(component => component < -tolerance || component > 1 + tolerance)
+            || Math.abs(bary[0] + bary[1] + bary[2] - 1) > tolerance) {
+            throw new RangeError('surface anchor barycentric coordinates must be non-negative and sum to one');
+        }
+        const clamped = [
+            Math.max(0, Math.min(1, bary[0])),
+            Math.max(0, Math.min(1, bary[1])),
+            Math.max(0, Math.min(1, bary[2])),
+        ];
+        const sum = clamped[0] + clamped[1] + clamped[2];
+        return [clamped[0] / sum, clamped[1] / sum, clamped[2] / sum];
+    }
+    static _geometrySignature(mesh) {
+        return String(mesh?.geometry_sig || mesh?.sig || 'wall-mesh:unversioned');
+    }
+    static _triangle(surface, triangleIndex) {
+        if (!Number.isInteger(triangleIndex) || triangleIndex < 0) {
+            throw new RangeError('surface anchor triangleIndex must be a non-negative integer');
+        }
+        const indices = surface?.indices;
+        const positions = surface?.positions;
+        const offset = triangleIndex * 3;
+        if (!indices || !positions || offset + 2 >= indices.length) {
+            throw new RangeError('surface anchor triangleIndex is outside the source surface');
+        }
+        return {
+            ia: Number(indices[offset]),
+            ib: Number(indices[offset + 1]),
+            ic: Number(indices[offset + 2]),
+        };
+    }
+    static _point(surface, triangleIndex, barycentric) {
+        const t = CavitySurfaceAnchors._triangle(surface, triangleIndex);
+        const bary = CavitySurfaceAnchors._barycentric(barycentric);
+        const p = surface.positions;
+        return [
+            bary[0] * p[t.ia * 3] + bary[1] * p[t.ib * 3] + bary[2] * p[t.ic * 3],
+            bary[0] * p[t.ia * 3 + 1] + bary[1] * p[t.ib * 3 + 1] + bary[2] * p[t.ic * 3 + 1],
+            bary[0] * p[t.ia * 3 + 2] + bary[1] * p[t.ib * 3 + 2] + bary[2] * p[t.ic * 3 + 2],
+        ];
+    }
+    static _voidNormal(surface, triangleIndex, barycentric) {
+        const t = CavitySurfaceAnchors._triangle(surface, triangleIndex);
+        const bary = CavitySurfaceAnchors._barycentric(barycentric);
+        const normals = surface.normals;
+        if (normals && normals.length >= surface.positions.length) {
+            return CavitySurfaceAnchors._unit([
+                -(bary[0] * normals[t.ia * 3] + bary[1] * normals[t.ib * 3] + bary[2] * normals[t.ic * 3]),
+                -(bary[0] * normals[t.ia * 3 + 1] + bary[1] * normals[t.ib * 3 + 1] + bary[2] * normals[t.ic * 3 + 1]),
+                -(bary[0] * normals[t.ia * 3 + 2] + bary[1] * normals[t.ib * 3 + 2] + bary[2] * normals[t.ic * 3 + 2]),
+            ], 'surface anchor normal');
+        }
+        const p = surface.positions;
+        const ax = p[t.ia * 3], ay = p[t.ia * 3 + 1], az = p[t.ia * 3 + 2];
+        const abx = p[t.ib * 3] - ax, aby = p[t.ib * 3 + 1] - ay, abz = p[t.ib * 3 + 2] - az;
+        const acx = p[t.ic * 3] - ax, acy = p[t.ic * 3 + 1] - ay, acz = p[t.ic * 3 + 2] - az;
+        return CavitySurfaceAnchors._unit([
+            -(aby * acz - abz * acy),
+            -(abz * acx - abx * acz),
+            -(abx * acy - aby * acx),
+        ], 'surface anchor normal');
+    }
+    static _nearestChemistryVertex(mesh, position) {
+        if (!mesh?.positions || !(mesh.numInterior > 0)) {
+            throw new RangeError('surface anchor chemistry projection requires a populated WallMesh');
+        }
+        const point = CavitySurfaceAnchors._tuple3(position, 'surface anchor position');
+        let best = -1;
+        let bestDistance2 = Infinity;
+        for (let index = 0; index < mesh.numInterior; index++) {
+            const base = index * 3;
+            const dx = Number(mesh.positions[base]) - point[0];
+            const dy = Number(mesh.positions[base + 1]) - point[1];
+            const dz = Number(mesh.positions[base + 2]) - point[2];
+            const distance2 = dx * dx + dy * dy + dz * dz;
+            // Strictly-less plus ascending scan makes exact ties choose the lowest
+            // vertex index without a floating epsilon that could reorder near-ties.
+            if (distance2 < bestDistance2) {
+                bestDistance2 = distance2;
+                best = index;
+            }
+        }
+        if (best < 0 || !Number.isFinite(bestDistance2)) {
+            throw new RangeError('surface anchor chemistry projection failed');
+        }
+        return best;
+    }
+    static _chemistry(mesh, vertexIndex) {
+        if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= mesh.numInterior) {
+            throw new RangeError('surface anchor chemistry vertex is outside WallMesh');
+        }
+        const vertex = mesh.vertices?.[vertexIndex];
+        const N = Number(mesh.cellsPerRing) || 0;
+        const ringIdx = vertex && Number.isInteger(vertex.ringIdx)
+            ? vertex.ringIdx : Math.floor(vertexIndex / N);
+        const cellIdx = vertex && Number.isInteger(vertex.cellIdx)
+            ? vertex.cellIdx : vertexIndex % N;
+        return {
+            vertexIndex,
+            ringIdx,
+            cellIdx,
+            meshSignature: CavitySurfaceAnchors._geometrySignature(mesh),
+            mapping: CavitySurfaceAnchors.MAPPING,
+        };
+    }
+    static _decorateCompatibility(anchor, mesh) {
+        if (!anchor || anchor.schema !== CavitySurfaceAnchors.SCHEMA)
+            return anchor;
+        const chemistry = anchor.chemistry;
+        const vertex = mesh?.vertices?.[chemistry.vertexIndex];
+        const aliases = {
+            ringIdx: chemistry.ringIdx,
+            cellIdx: chemistry.cellIdx,
+            phi: vertex && Number.isFinite(vertex.phi) ? vertex.phi : undefined,
+            theta: vertex && Number.isFinite(vertex.theta) ? vertex.theta : undefined,
+        };
+        for (const key of Object.keys(aliases)) {
+            if (Object.prototype.hasOwnProperty.call(anchor, key))
+                continue;
+            Object.defineProperty(anchor, key, {
+                configurable: true,
+                enumerable: false,
+                get: () => aliases[key],
+            });
+        }
+        return anchor;
+    }
+    static seal(anchor, mesh) {
+        CavitySurfaceAnchors._decorateCompatibility(anchor, mesh);
+        for (const key of ['position', 'normal', 'barycentric', 'fieldCell']) {
+            if (Array.isArray(anchor?.[key]) && !Object.isFrozen(anchor[key]))
+                Object.freeze(anchor[key]);
+        }
+        if (anchor?.source && !Object.isFrozen(anchor.source))
+            Object.freeze(anchor.source);
+        if (anchor?.chemistry && !Object.isFrozen(anchor.chemistry))
+            Object.freeze(anchor.chemistry);
+        return Object.isFrozen(anchor) ? anchor : Object.freeze(anchor);
+    }
+    static fromWallMeshTriangle(mesh, triangleIndex, barycentric, chemistryVertex) {
+        const bary = CavitySurfaceAnchors._barycentric(barycentric);
+        const position = CavitySurfaceAnchors._point(mesh, triangleIndex, bary);
+        const vertexIndex = chemistryVertex == null
+            ? CavitySurfaceAnchors._nearestChemistryVertex(mesh, position)
+            : Number(chemistryVertex);
+        const anchor = {
+            schema: CavitySurfaceAnchors.SCHEMA,
+            position,
+            normal: CavitySurfaceAnchors._voidNormal(mesh, triangleIndex, bary),
+            triangleIndex,
+            barycentric: bary,
+            source: {
+                kind: 'wall-mesh',
+                signature: CavitySurfaceAnchors._geometrySignature(mesh),
+            },
+            chemistry: CavitySurfaceAnchors._chemistry(mesh, vertexIndex),
+        };
+        const triangle = CavitySurfaceAnchors._triangle(mesh, triangleIndex);
+        const oneHotVertex = bary[0] > 1 - 1e-9 ? triangle.ia
+            : bary[1] > 1 - 1e-9 ? triangle.ib
+                : bary[2] > 1 - 1e-9 ? triangle.ic : -1;
+        const averaged = oneHotVertex >= 0 ? mesh.voidNormalAtVertex?.(oneHotVertex) : null;
+        if (averaged)
+            anchor.normal = CavitySurfaceAnchors._unit(averaged, 'WallMesh vertex normal');
+        CavitySurfaceAnchors.validate(anchor, mesh, mesh);
+        return CavitySurfaceAnchors.seal(anchor, mesh);
+    }
+    static fromWallMeshVertex(mesh, vertexIndex) {
+        if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= mesh?.numInterior) {
+            throw new RangeError('WallMesh surface anchor requires an interior vertex');
+        }
+        const incident = mesh.incidentTriangleForVertex?.(vertexIndex);
+        if (!incident)
+            throw new RangeError('WallMesh vertex has no incident surface triangle');
+        return CavitySurfaceAnchors.fromWallMeshTriangle(mesh, incident.triangleIndex, incident.barycentric, vertexIndex);
+    }
+    static fromMarchingCubes(field, surface, mesh, triangleIndex, barycentric) {
+        if (!field || !surface || !mesh)
+            throw new TypeError('Marching Cubes anchor requires field, surface, and WallMesh');
+        if (surface.source_field_signature !== field.sig
+            || surface.source_field_snapshot_digest !== field.snapshotDigest
+            || surface.sig !== field.surfaceSignature(surface.isovalue)) {
+            throw new Error('Marching Cubes anchor requires an authenticated field/surface pair');
+        }
+        MarchingCubesExtractor.verifyBuffers(surface);
+        const bary = CavitySurfaceAnchors._barycentric(barycentric);
+        const position = CavitySurfaceAnchors._point(surface, triangleIndex, bary);
+        const fieldCell = [
+            Math.max(0, Math.min(field.sizeX - 2, Math.floor((position[0] - field.origin[0]) / field.spacingMm))),
+            Math.max(0, Math.min(field.sizeY - 2, Math.floor((position[1] - field.origin[1]) / field.spacingMm))),
+            Math.max(0, Math.min(field.sizeZ - 2, Math.floor((position[2] - field.origin[2]) / field.spacingMm))),
+        ];
+        const chemistryVertex = CavitySurfaceAnchors._nearestChemistryVertex(mesh, position);
+        const anchor = {
+            schema: CavitySurfaceAnchors.SCHEMA,
+            position,
+            normal: CavitySurfaceAnchors._voidNormal(surface, triangleIndex, bary),
+            triangleIndex,
+            barycentric: bary,
+            fieldCell,
+            source: {
+                kind: 'cavity-field',
+                signature: String(surface.sig),
+                fieldSignature: String(field.sig),
+                snapshotDigest: String(field.snapshotDigest),
+                bufferDigest: String(surface.buffer_digest),
+                isovalue: Number(surface.isovalue),
+            },
+            chemistry: CavitySurfaceAnchors._chemistry(mesh, chemistryVertex),
+        };
+        CavitySurfaceAnchors.validate(anchor, surface, mesh, field);
+        return CavitySurfaceAnchors.seal(anchor, mesh);
+    }
+    static chemistryAddress(anchor) {
+        if (!anchor)
+            return null;
+        if (anchor.schema === CavitySurfaceAnchors.SCHEMA && anchor.chemistry) {
+            const c = anchor.chemistry;
+            if (Number.isInteger(c.vertexIndex) && Number.isInteger(c.ringIdx) && Number.isInteger(c.cellIdx)) {
+                return { vertexIndex: c.vertexIndex, ringIdx: c.ringIdx, cellIdx: c.cellIdx };
+            }
+        }
+        if (Number.isInteger(anchor.ringIdx) && Number.isInteger(anchor.cellIdx)) {
+            return { vertexIndex: null, ringIdx: anchor.ringIdx, cellIdx: anchor.cellIdx };
+        }
+        return null;
+    }
+    static upgradeLegacy(anchor, mesh) {
+        const address = CavitySurfaceAnchors.chemistryAddress(anchor);
+        if (!address || !(mesh?.cellsPerRing > 0))
+            return null;
+        const vertexIndex = address.vertexIndex == null
+            ? address.ringIdx * mesh.cellsPerRing + address.cellIdx
+            : address.vertexIndex;
+        if (vertexIndex < 0 || vertexIndex >= mesh.numInterior)
+            return null;
+        return CavitySurfaceAnchors.fromWallMeshVertex(mesh, vertexIndex);
+    }
+    static _closestPointOnTriangle(point, a, b, c) {
+        // Ericson, Real-Time Collision Detection, closest point on triangle.
+        const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+        const ac = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+        const ap = [point[0] - a[0], point[1] - a[1], point[2] - a[2]];
+        const dot = (u, v) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
+        const d1 = dot(ab, ap), d2 = dot(ac, ap);
+        if (d1 <= 0 && d2 <= 0)
+            return { point: a, barycentric: [1, 0, 0] };
+        const bp = [point[0] - b[0], point[1] - b[1], point[2] - b[2]];
+        const d3 = dot(ab, bp), d4 = dot(ac, bp);
+        if (d3 >= 0 && d4 <= d3)
+            return { point: b, barycentric: [0, 1, 0] };
+        const vc = d1 * d4 - d3 * d2;
+        if (vc <= 0 && d1 >= 0 && d3 <= 0) {
+            const v = d1 / (d1 - d3);
+            return { point: [a[0] + v * ab[0], a[1] + v * ab[1], a[2] + v * ab[2]], barycentric: [1 - v, v, 0] };
+        }
+        const cp = [point[0] - c[0], point[1] - c[1], point[2] - c[2]];
+        const d5 = dot(ab, cp), d6 = dot(ac, cp);
+        if (d6 >= 0 && d5 <= d6)
+            return { point: c, barycentric: [0, 0, 1] };
+        const vb = d5 * d2 - d1 * d6;
+        if (vb <= 0 && d2 >= 0 && d6 <= 0) {
+            const w = d2 / (d2 - d6);
+            return { point: [a[0] + w * ac[0], a[1] + w * ac[1], a[2] + w * ac[2]], barycentric: [1 - w, 0, w] };
+        }
+        const va = d3 * d6 - d5 * d4;
+        if (va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0) {
+            const w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+            return {
+                point: [b[0] + w * (c[0] - b[0]), b[1] + w * (c[1] - b[1]), b[2] + w * (c[2] - b[2])],
+                barycentric: [0, 1 - w, w],
+            };
+        }
+        const denominator = 1 / (va + vb + vc);
+        const v = vb * denominator, w = vc * denominator;
+        return {
+            point: [a[0] + ab[0] * v + ac[0] * w, a[1] + ab[1] * v + ac[1] * w, a[2] + ab[2] * v + ac[2] * w],
+            barycentric: [1 - v - w, v, w],
+        };
+    }
+    static closestTriangle(surface, position, triangleIndices) {
+        const point = CavitySurfaceAnchors._tuple3(position, 'surface remap position');
+        let best = null;
+        const candidates = triangleIndices || Array.from({ length: surface.indices.length / 3 }, (_, index) => index);
+        for (const triangleIndex of candidates) {
+            const t = CavitySurfaceAnchors._triangle(surface, triangleIndex);
+            const p = surface.positions;
+            const candidate = CavitySurfaceAnchors._closestPointOnTriangle(point, [p[t.ia * 3], p[t.ia * 3 + 1], p[t.ia * 3 + 2]], [p[t.ib * 3], p[t.ib * 3 + 1], p[t.ib * 3 + 2]], [p[t.ic * 3], p[t.ic * 3 + 1], p[t.ic * 3 + 2]]);
+            const dx = candidate.point[0] - point[0];
+            const dy = candidate.point[1] - point[1];
+            const dz = candidate.point[2] - point[2];
+            const distance2 = dx * dx + dy * dy + dz * dz;
+            if (!best || distance2 < best.distance2) {
+                best = { triangleIndex, barycentric: candidate.barycentric, point: candidate.point, distance2 };
+            }
+        }
+        if (!best)
+            throw new RangeError('cannot remap anchor to an empty surface');
+        return best;
+    }
+    static _fieldNeighborhoodTriangles(anchor, field, surface) {
+        if (!field?.origin || !(field.spacingMm > 0))
+            return [];
+        // `position` is authoritative across regridding. An old integer fieldCell
+        // belongs to the old origin/spacing/resolution and must never be applied to
+        // a new grid merely because the tuple remains in bounds.
+        const fieldCell = CavitySurfaceAnchors._fieldCellForPosition(field, anchor?.position);
+        const spacing = Number(field.spacingMm);
+        const min = fieldCell.map((value, axis) => Number(field.origin[axis]) + Math.max(0, value - 1) * spacing);
+        const dims = [field.sizeX, field.sizeY, field.sizeZ];
+        const max = fieldCell.map((value, axis) => Number(field.origin[axis]) + Math.min(dims[axis] - 1, value + 2) * spacing);
+        const positions = surface?.positions;
+        const indices = surface?.indices;
+        if (!positions || !indices)
+            return [];
+        const candidates = [];
+        for (let triangleIndex = 0; triangleIndex < indices.length / 3; triangleIndex++) {
+            const t = CavitySurfaceAnchors._triangle(surface, triangleIndex);
+            let overlaps = true;
+            for (let axis = 0; axis < 3; axis++) {
+                const lo = Math.min(positions[t.ia * 3 + axis], positions[t.ib * 3 + axis], positions[t.ic * 3 + axis]);
+                const hi = Math.max(positions[t.ia * 3 + axis], positions[t.ib * 3 + axis], positions[t.ic * 3 + axis]);
+                if (hi < min[axis] || lo > max[axis]) {
+                    overlaps = false;
+                    break;
+                }
+            }
+            if (overlaps)
+                candidates.push(triangleIndex);
+        }
+        return candidates;
+    }
+    static _fieldCellForPosition(field, position) {
+        if (!field?.origin || !(field.spacingMm > 0)
+            || !(field.sizeX > 1) || !(field.sizeY > 1) || !(field.sizeZ > 1)) {
+            throw new TypeError('surface anchor field cell requires a valid scalar grid');
+        }
+        const point = CavitySurfaceAnchors._tuple3(position, 'surface anchor position');
+        return [field.sizeX, field.sizeY, field.sizeZ].map((size, axis) => Math.max(0, Math.min(size - 2, Math.floor((point[axis] - Number(field.origin[axis])) / Number(field.spacingMm)))));
+    }
+    static remapToMarchingCubes(anchor, field, surface, mesh) {
+        if (anchor?.schema === CavitySurfaceAnchors.SCHEMA
+            && anchor.source?.kind === 'cavity-field'
+            && anchor.source.signature === surface?.sig) {
+            CavitySurfaceAnchors.validate(anchor, surface, mesh, field);
+            return CavitySurfaceAnchors.seal(anchor, mesh);
+        }
+        const source = CavitySurfaceAnchors._tuple3(anchor?.position, 'surface remap position');
+        const localCandidates = CavitySurfaceAnchors._fieldNeighborhoodTriangles(anchor, field, surface);
+        let closest = localCandidates.length
+            ? CavitySurfaceAnchors.closestTriangle(surface, source, localCandidates)
+            : CavitySurfaceAnchors.closestTriangle(surface, source);
+        // The expanded neighborhood boundary is at least one cell spacing from a
+        // point in the central cell. If the local surface is farther away, an
+        // outside triangle may be closer and correctness requires the full scan.
+        if (localCandidates.length && closest.distance2 >= field.spacingMm * field.spacingMm) {
+            closest = CavitySurfaceAnchors.closestTriangle(surface, source);
+        }
+        return CavitySurfaceAnchors.fromMarchingCubes(field, surface, mesh, closest.triangleIndex, closest.barycentric);
+    }
+    static remapToWallMesh(anchor, mesh) {
+        // Physical position is authoritative. The chemistry vertex is only a
+        // transport projection and must never become a geometric remap shortcut.
+        const closest = CavitySurfaceAnchors.closestTriangle(mesh, anchor?.position);
+        return CavitySurfaceAnchors.fromWallMeshTriangle(mesh, closest.triangleIndex, closest.barycentric);
+    }
+    static validate(anchor, surface, mesh, field, opts = {}) {
+        if (!anchor || anchor.schema !== CavitySurfaceAnchors.SCHEMA) {
+            throw new TypeError('surface anchor schema is unsupported');
+        }
+        // Authenticate MC buffer ownership before consulting the anchor cache.
+        // Extractor-owned buffers are private read-only proxies with O(1) identity
+        // verification; externally supplied surfaces still pay a complete digest.
+        if (anchor.source?.kind === 'cavity-field' && surface) {
+            MarchingCubesExtractor.verifyBuffers(surface);
+        }
+        const validationKey = CavitySurfaceAnchors._validationKey(anchor, surface, mesh, field, !!opts.allowStaleChemistry);
+        const cachedValidations = CavitySurfaceAnchors._validationCache.get(anchor);
+        if (cachedValidations?.has(validationKey))
+            return true;
+        const position = CavitySurfaceAnchors._tuple3(anchor.position, 'surface anchor position');
+        const normal = CavitySurfaceAnchors._unit(anchor.normal, 'surface anchor normal');
+        if (Math.abs(Math.hypot(anchor.normal[0], anchor.normal[1], anchor.normal[2]) - 1) > 1e-6) {
+            throw new RangeError('surface anchor normal must already be unit length');
+        }
+        const bary = CavitySurfaceAnchors._barycentric(anchor.barycentric);
+        if (!Number.isInteger(anchor.triangleIndex) || anchor.triangleIndex < 0) {
+            throw new RangeError('surface anchor triangleIndex must be a non-negative integer');
+        }
+        if (!anchor.source || (anchor.source.kind !== 'wall-mesh' && anchor.source.kind !== 'cavity-field')
+            || typeof anchor.source.signature !== 'string' || !anchor.source.signature) {
+            throw new TypeError('surface anchor source receipt is incomplete');
+        }
+        if (anchor.source.kind === 'cavity-field'
+            && (typeof anchor.source.fieldSignature !== 'string' || !anchor.source.fieldSignature
+                || typeof anchor.source.snapshotDigest !== 'string' || !anchor.source.snapshotDigest
+                || typeof anchor.source.bufferDigest !== 'string' || !anchor.source.bufferDigest
+                || !Number.isFinite(anchor.source.isovalue))) {
+            throw new TypeError('surface anchor cavity-field receipt is incomplete');
+        }
+        const c = anchor.chemistry;
+        if (!c || !Number.isInteger(c.vertexIndex) || c.vertexIndex < 0
+            || !Number.isInteger(c.ringIdx) || c.ringIdx < 0
+            || !Number.isInteger(c.cellIdx) || c.cellIdx < 0
+            || c.mapping !== CavitySurfaceAnchors.MAPPING) {
+            throw new TypeError('surface anchor chemistry projection is incomplete');
+        }
+        if (!opts.allowStaleChemistry) {
+            if (!mesh || CavitySurfaceAnchors._geometrySignature(mesh) !== c.meshSignature
+                || c.vertexIndex >= mesh.numInterior) {
+                throw new Error('surface anchor chemistry projection does not match its WallMesh');
+            }
+            const expectedChemistry = CavitySurfaceAnchors._chemistry(mesh, c.vertexIndex);
+            if (expectedChemistry.ringIdx !== c.ringIdx || expectedChemistry.cellIdx !== c.cellIdx) {
+                throw new Error('surface anchor chemistry address disagrees with its WallMesh vertex');
+            }
+            if (CavitySurfaceAnchors._nearestChemistryVertex(mesh, position) !== c.vertexIndex) {
+                throw new Error('surface anchor chemistry projection is not the nearest WallMesh vertex');
+            }
+        }
+        if (anchor.fieldCell != null && (!Array.isArray(anchor.fieldCell)
+            || anchor.fieldCell.length !== 3
+            || anchor.fieldCell.some((value) => !Number.isInteger(value) || value < 0))) {
+            throw new TypeError('surface anchor fieldCell must contain three non-negative integers');
+        }
+        if (field && anchor.fieldCell && anchor.fieldCell.some((value, axis) => value >= [field.sizeX - 1, field.sizeY - 1, field.sizeZ - 1][axis])) {
+            throw new RangeError('surface anchor fieldCell is outside its scalar field');
+        }
+        if (field && anchor.fieldCell) {
+            const expectedFieldCell = CavitySurfaceAnchors._fieldCellForPosition(field, position);
+            if (anchor.fieldCell.some((value, axis) => value !== expectedFieldCell[axis])) {
+                throw new Error('surface anchor fieldCell disagrees with its physical position');
+            }
+        }
+        if (surface) {
+            if (anchor.source.kind === 'wall-mesh') {
+                if (surface !== mesh
+                    || anchor.source.signature !== CavitySurfaceAnchors._geometrySignature(surface)) {
+                    throw new Error('surface anchor WallMesh source signature is stale or unauthenticated');
+                }
+            }
+            else {
+                if (anchor.source.signature !== surface.sig
+                    || anchor.source.fieldSignature !== surface.source_field_signature
+                    || anchor.source.snapshotDigest !== surface.source_field_snapshot_digest
+                    || anchor.source.bufferDigest !== surface.buffer_digest
+                    || Number(anchor.source.isovalue) !== Number(surface.isovalue)) {
+                    throw new Error('surface anchor cavity-field source receipt is stale or unauthenticated');
+                }
+                if (field && (field.sig !== anchor.source.fieldSignature
+                    || field.snapshotDigest !== anchor.source.snapshotDigest
+                    || field.surfaceSignature(surface.isovalue) !== anchor.source.signature)) {
+                    throw new Error('surface anchor field snapshot does not authenticate its extracted surface');
+                }
+            }
+            const reconstructed = CavitySurfaceAnchors._point(surface, anchor.triangleIndex, bary);
+            const scale = Math.max(1, Math.hypot(position[0], position[1], position[2]));
+            if (Math.hypot(reconstructed[0] - position[0], reconstructed[1] - position[1], reconstructed[2] - position[2]) > scale * 2e-6) {
+                throw new Error('surface anchor position disagrees with its triangle/barycentric receipt');
+            }
+            const expected = CavitySurfaceAnchors._voidNormal(surface, anchor.triangleIndex, bary);
+            let authenticated = expected;
+            if (anchor.source.kind === 'wall-mesh') {
+                const oneHotVertex = bary[0] > 1 - 1e-9 ? CavitySurfaceAnchors._triangle(surface, anchor.triangleIndex).ia
+                    : bary[1] > 1 - 1e-9 ? CavitySurfaceAnchors._triangle(surface, anchor.triangleIndex).ib
+                        : bary[2] > 1 - 1e-9 ? CavitySurfaceAnchors._triangle(surface, anchor.triangleIndex).ic : -1;
+                const averaged = oneHotVertex >= 0 ? mesh.voidNormalAtVertex?.(oneHotVertex) : null;
+                if (averaged)
+                    authenticated = CavitySurfaceAnchors._unit(averaged, 'WallMesh vertex normal');
+            }
+            if (Math.hypot(normal[0] - authenticated[0], normal[1] - authenticated[1], normal[2] - authenticated[2]) > 2e-6) {
+                throw new Error('surface anchor normal disagrees with its authenticated surface');
+            }
+        }
+        const validations = cachedValidations || new Set();
+        validations.add(validationKey);
+        CavitySurfaceAnchors._validationCache.set(anchor, validations);
+        return true;
+    }
+    static _surfaceSignature(surface) {
+        return String(surface?.source_field_signature ? surface?.sig
+            : CavitySurfaceAnchors._geometrySignature(surface));
+    }
+    static _surfaceTopology(surface) {
+        if (!surface?.positions || !surface?.indices) {
+            throw new TypeError('surface patch requires indexed position buffers');
+        }
+        const signature = CavitySurfaceAnchors._surfaceSignature(surface);
+        const cached = CavitySurfaceAnchors._surfaceTopologyCache.get(surface);
+        if (cached?.signature === signature)
+            return cached;
+        const triangles = [];
+        const edgeOwners = new Map();
+        let totalArea = 0;
+        for (let triangleIndex = 0; triangleIndex < surface.indices.length / 3; triangleIndex++) {
+            const t = CavitySurfaceAnchors._triangle(surface, triangleIndex);
+            const p = surface.positions;
+            const ax = p[t.ia * 3], ay = p[t.ia * 3 + 1], az = p[t.ia * 3 + 2];
+            const bx = p[t.ib * 3], by = p[t.ib * 3 + 1], bz = p[t.ib * 3 + 2];
+            const cx = p[t.ic * 3], cy = p[t.ic * 3 + 1], cz = p[t.ic * 3 + 2];
+            const abx = bx - ax, aby = by - ay, abz = bz - az;
+            const acx = cx - ax, acy = cy - ay, acz = cz - az;
+            const cross = [aby * acz - abz * acy, abz * acx - abx * acz, abx * acy - aby * acx];
+            const length = Math.hypot(cross[0], cross[1], cross[2]);
+            if (!(length > 0) || !Number.isFinite(length))
+                continue;
+            const normals = surface.normals;
+            if (normals && normals.length >= surface.positions.length) {
+                const rockNormal = [
+                    normals[t.ia * 3] + normals[t.ib * 3] + normals[t.ic * 3],
+                    normals[t.ia * 3 + 1] + normals[t.ib * 3 + 1] + normals[t.ic * 3 + 1],
+                    normals[t.ia * 3 + 2] + normals[t.ib * 3 + 2] + normals[t.ic * 3 + 2],
+                ];
+                if (cross[0] * rockNormal[0] + cross[1] * rockNormal[1]
+                    + cross[2] * rockNormal[2] < 0) {
+                    cross[0] = -cross[0];
+                    cross[1] = -cross[1];
+                    cross[2] = -cross[2];
+                }
+            }
+            const triangle = {
+                triangle_index: triangleIndex, ia: t.ia, ib: t.ib, ic: t.ic,
+                area_mm2: length / 2,
+                centroid: [(ax + bx + cx) / 3, (ay + by + cy) / 3, (az + bz + cz) / 3],
+                void_normal: [-cross[0] / length, -cross[1] / length, -cross[2] / length],
+                neighbor_indices: [],
+            };
+            triangles.push(triangle);
+            totalArea += triangle.area_mm2;
+            for (const [u, v] of [[t.ia, t.ib], [t.ib, t.ic], [t.ic, t.ia]]) {
+                const key = u < v ? `${u}:${v}` : `${v}:${u}`;
+                const owners = edgeOwners.get(key);
+                if (owners)
+                    owners.push(triangleIndex);
+                else
+                    edgeOwners.set(key, [triangleIndex]);
+            }
+        }
+        const byIndex = new Map(triangles.map(triangle => [triangle.triangle_index, triangle]));
+        for (const owners of edgeOwners.values()) {
+            for (let i = 0; i < owners.length; i++)
+                for (let j = i + 1; j < owners.length; j++) {
+                    byIndex.get(owners[i])?.neighbor_indices.push(owners[j]);
+                    byIndex.get(owners[j])?.neighbor_indices.push(owners[i]);
+                }
+        }
+        for (const triangle of triangles) {
+            triangle.neighbor_indices = Array.from(new Set(triangle.neighbor_indices)).sort((a, b) => a - b);
+        }
+        const topology = { signature, triangles, byIndex, totalArea };
+        CavitySurfaceAnchors._surfaceTopologyCache.set(surface, topology);
+        return topology;
+    }
+    static surfaceAreaMm2(surface) {
+        return CavitySurfaceAnchors._surfaceTopology(surface).totalArea;
+    }
+    static surfacePatch(anchor, surface, targetCoverage) {
+        const topology = CavitySurfaceAnchors._surfaceTopology(surface);
+        const coverage = Math.max(0, Math.min(1, Number(targetCoverage) || 0));
+        const targetArea = topology.totalArea * coverage;
+        const start = topology.byIndex.get(anchor?.triangleIndex);
+        if (!start || !(targetArea > 0)) {
+            return { source_signature: topology.signature, coverage_fraction: coverage, area_mm2: 0, triangles: [] };
+        }
+        const point = CavitySurfaceAnchors._tuple3(anchor.position, 'surface patch anchor position');
+        const sharedEdgeMidpoint = (a, b) => {
+            const aVertices = [a.ia, a.ib, a.ic];
+            const bVertices = new Set([b.ia, b.ib, b.ic]);
+            const shared = aVertices.filter(vertex => bVertices.has(vertex));
+            if (shared.length !== 2)
+                throw new Error('surface topology neighbors must share one edge');
+            const p = surface.positions;
+            return [0, 1, 2].map(axis => (p[shared[0] * 3 + axis] + p[shared[1] * 3 + axis]) / 2);
+        };
+        const crossingDistance = (a, b, origin) => {
+            const midpoint = sharedEdgeMidpoint(a, b);
+            return Math.hypot(origin[0] - midpoint[0], origin[1] - midpoint[1], origin[2] - midpoint[2])
+                + Math.hypot(b.centroid[0] - midpoint[0], b.centroid[1] - midpoint[1], b.centroid[2] - midpoint[2]);
+        };
+        const selected = [], visited = new Set(), queued = new Set();
+        const bestDistance = new Map([[start.triangle_index, 0]]);
+        const frontier = [{ triangle: start, distance_mm: 0 }];
+        queued.add(start.triangle_index);
+        let remaining = targetArea;
+        while (remaining > 1e-12 && frontier.length) {
+            frontier.sort((a, b) => a.distance_mm - b.distance_mm
+                || a.triangle.triangle_index - b.triangle.triangle_index);
+            const current = frontier.shift();
+            const triangle = current.triangle;
+            queued.delete(triangle.triangle_index);
+            if (visited.has(triangle.triangle_index))
+                continue;
+            visited.add(triangle.triangle_index);
+            const weight = Math.min(triangle.area_mm2, remaining);
+            selected.push({ ...triangle, weight_mm2: weight, surface_distance_mm: current.distance_mm });
+            remaining -= weight;
+            for (const index of triangle.neighbor_indices) {
+                if (visited.has(index))
+                    continue;
+                const neighbor = topology.byIndex.get(index);
+                if (!neighbor)
+                    continue;
+                // The first crossing begins at the authoritative barycentric birth
+                // point, not at the source triangle centroid. Later crossings route
+                // through each shared edge, so folded-near Euclidean triangles cannot
+                // shortcut the surface graph.
+                const origin = triangle.triangle_index === start.triangle_index
+                    ? point : triangle.centroid;
+                const candidateDistance = current.distance_mm
+                    + crossingDistance(triangle, neighbor, origin);
+                const priorDistance = bestDistance.get(index);
+                if (priorDistance != null && candidateDistance >= priorDistance - 1e-12)
+                    continue;
+                bestDistance.set(index, candidateDistance);
+                if (queued.has(index)) {
+                    const queuedEntry = frontier.find(entry => entry.triangle.triangle_index === index);
+                    if (queuedEntry)
+                        queuedEntry.distance_mm = candidateDistance;
+                }
+                else {
+                    frontier.push({ triangle: neighbor, distance_mm: candidateDistance });
+                    queued.add(index);
+                }
+            }
+        }
+        return {
+            source_signature: topology.signature,
+            coverage_fraction: coverage,
+            area_mm2: targetArea - Math.max(0, remaining),
+            triangles: selected,
+        };
+    }
+    static _sampleUnit(seed, index, channel) {
+        let x = ((Number(seed) | 0) ^ Math.imul((index + 1) | 0, 0x9e3779b1)
+            ^ Math.imul((channel + 11) | 0, 0x85ebca6b)) >>> 0;
+        x ^= x >>> 16;
+        x = Math.imul(x, 0x7feb352d) >>> 0;
+        x ^= x >>> 15;
+        x = Math.imul(x, 0x846ca68b) >>> 0;
+        x ^= x >>> 16;
+        return (x >>> 0) / 4294967296;
+    }
+    static sampleSurfacePatch(anchor, surface, count, targetCoverage, seed) {
+        const patch = CavitySurfaceAnchors.surfacePatch(anchor, surface, targetCoverage);
+        const n = Math.max(0, Number(count) | 0), samples = [];
+        if (!n || !(patch.area_mm2 > 0) || !patch.triangles.length) {
+            return { ...patch, samples, triangle_indices: [] };
+        }
+        const cumulative = [];
+        let total = 0;
+        for (const triangle of patch.triangles) {
+            total += triangle.weight_mm2;
+            cumulative.push(total);
+        }
+        const phase = CavitySurfaceAnchors._sampleUnit(seed, 0, 97), golden = 0.6180339887498949;
+        for (let i = 0; i < n; i++) {
+            const target = (((i + 0.5) * golden + phase) % 1) * total;
+            let lo = 0, hi = cumulative.length - 1;
+            while (lo < hi) {
+                const mid = (lo + hi) >> 1;
+                if (cumulative[mid] < target)
+                    lo = mid + 1;
+                else
+                    hi = mid;
+            }
+            const triangle = patch.triangles[lo];
+            const u = CavitySurfaceAnchors._sampleUnit(seed, i, 1);
+            const v = CavitySurfaceAnchors._sampleUnit(seed, i, 2);
+            const su = Math.sqrt(u), wa = 1 - su, wb = su * (1 - v), wc = su * v;
+            const p = surface.positions;
+            samples.push({
+                x: wa * p[triangle.ia * 3] + wb * p[triangle.ib * 3] + wc * p[triangle.ic * 3],
+                y: wa * p[triangle.ia * 3 + 1] + wb * p[triangle.ib * 3 + 1] + wc * p[triangle.ic * 3 + 1],
+                z: wa * p[triangle.ia * 3 + 2] + wb * p[triangle.ib * 3 + 2] + wc * p[triangle.ic * 3 + 2],
+                nx: triangle.void_normal[0], ny: triangle.void_normal[1], nz: triangle.void_normal[2],
+                triangle_index: triangle.triangle_index,
+            });
+        }
+        return { ...patch, samples, triangle_indices: patch.triangles.map((triangle) => triangle.triangle_index) };
+    }
+    static key(anchor) {
+        if (!anchor)
+            return 'unanchored';
+        if (anchor.schema !== CavitySurfaceAnchors.SCHEMA) {
+            const c = CavitySurfaceAnchors.chemistryAddress(anchor);
+            return c ? `legacy:${c.ringIdx}:${c.cellIdx}` : 'unanchored';
+        }
+        const f = (value) => Number(value).toPrecision(12);
+        return [
+            anchor.schema,
+            anchor.source.kind,
+            anchor.source.signature,
+            `p:${anchor.position.map(f).join(',')}`,
+            `n:${anchor.normal.map(f).join(',')}`,
+            `t:${anchor.triangleIndex}`,
+            `b:${anchor.barycentric.map(f).join(',')}`,
+            `c:${anchor.chemistry.vertexIndex}`,
+        ].join('|');
     }
 }
 
@@ -45202,13 +46480,14 @@ function _physicalEtchWithLocalConditions(sim, crystal, fn) {
     const savedFluid = sim.conditions.fluid;
     const savedTemperature = sim.conditions.temperature;
     const anchor = sim.wall_state?._resolveAnchor?.(crystal);
-    const ringIdx = anchor?.ringIdx;
+    const chemistry = sim.wall_state?.chemistryAddressForCrystal?.(crystal);
+    const ringIdx = chemistry?.ringIdx;
     try {
         if (ringIdx != null && ringIdx >= 0 && ringIdx < sim.ring_fluids.length) {
             const mesh = sim.wall_state.meshFor(sim);
             const cell = mesh?.cellOf?.(crystal, sim.wall_state);
             sim.conditions.fluid = cell?.fluid || sim.ring_fluids[ringIdx];
-            const vertexIdx = anchor.ringIdx * sim.wall_state.cells_per_ring + anchor.cellIdx;
+            const vertexIdx = chemistry.vertexIndex;
             sim.conditions.temperature = temperatureAtMeshVertex(sim, mesh, vertexIdx);
         }
         return fn(sim.conditions);
@@ -45824,7 +47103,10 @@ function weatheringLightAtCrystal(sim, crystal, baseIsLit) {
     const anchor = sim.wall_state?._resolveAnchor?.(crystal);
     if (!anchor)
         return false;
-    return sim.conditions.ringWaterState(anchor.ringIdx, sim.wall_state.ring_count) === 'vadose';
+    const chemistry = sim.wall_state.chemistryAddressForCrystal?.(crystal);
+    if (!chemistry)
+        return false;
+    return sim.conditions.ringWaterState(chemistry.ringIdx, sim.wall_state.ring_count) === 'vadose';
 }
 function recordWeatheringEpilogueStep(sim) {
     const state = sim?._weatheringEpilogueState;
@@ -47090,18 +48372,21 @@ function _o1aBaseTipSigma(sim, crystal) {
     const anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
     if (!anchor)
         return null;
+    const chemistry = wall.chemistryAddressForCrystal?.(crystal);
+    if (!chemistry)
+        return null;
     const maxD = grid.depth_count - 1;
     if (maxD < 1)
         return null;
-    const f0 = grid.fluidAt(anchor.ringIdx, anchor.cellIdx, 0);
-    const fD = grid.fluidAt(anchor.ringIdx, anchor.cellIdx, maxD);
+    const f0 = grid.fluidAt(chemistry.ringIdx, chemistry.cellIdx, 0);
+    const fD = grid.fluidAt(chemistry.ringIdx, chemistry.cellIdx, maxD);
     if (!f0 || !fD || f0 === fD)
         return null;
     const savedF = cond.fluid, savedT = cond.temperature;
     let s0 = NaN, sD = NaN;
     try {
         cond.fluid = f0;
-        cond.temperature = grid.temperatureAt(anchor.ringIdx, anchor.cellIdx, 0);
+        cond.temperature = grid.temperatureAt(chemistry.ringIdx, chemistry.cellIdx, 0);
         try {
             s0 = fn.call(cond);
         }
@@ -47109,7 +48394,7 @@ function _o1aBaseTipSigma(sim, crystal) {
             s0 = NaN;
         }
         cond.fluid = fD;
-        cond.temperature = grid.temperatureAt(anchor.ringIdx, anchor.cellIdx, maxD);
+        cond.temperature = grid.temperatureAt(chemistry.ringIdx, chemistry.cellIdx, maxD);
         try {
             sD = fn.call(cond);
         }
@@ -47231,8 +48516,9 @@ function surfaceGrowthDescriptor(crystal, wall, sim) {
     if (regime === 'dendritic_film')
         coverage = Math.max(coverage, 0.72 * maturity);
     coverage = Math.max(0.02, Math.min(0.98, coverage));
-    const exactArea = wall && typeof wall.surfaceAreaMm2 === 'function'
-        ? Number(wall.surfaceAreaMm2(sim)) : 0;
+    const exactArea = wall && typeof wall.surfaceAreaForCrystal === 'function'
+        ? Number(wall.surfaceAreaForCrystal(crystal, sim))
+        : (wall && typeof wall.surfaceAreaMm2 === 'function' ? Number(wall.surfaceAreaMm2(sim)) : 0);
     const diameter = wall && typeof wall.meanDiameterMm === 'function'
         ? wall.meanDiameterMm()
         : Number(wall && wall.vug_diameter_mm) || Number(crystal.vug_diameter_mm) || 50;
@@ -47252,7 +48538,8 @@ function surfaceGrowthDescriptor(crystal, wall, sim) {
         void_reach: Math.max(0, Math.min(1, Number(crystal.void_reach) || 0)),
         substrate: crystal.position || 'vug wall',
         area_basis: exactArea > 0
-            ? 'exact WallMesh triangle area'
+            ? (wall?._resolveAnchor?.(crystal)?.source?.kind === 'cavity-field'
+                ? 'exact cavity-field triangle area' : 'exact WallMesh triangle area')
             : 'mean-diameter spherical fallback',
         mass_basis: 'accepted Crystal._volume_mm3; renderer instances are representative only',
     };
@@ -47276,8 +48563,9 @@ function classifySurfaceGrowth(sim) {
         }
     }
     // Preserve spatial paragenesis as explicit model evidence. A later layer
-    // lists only earlier surface fabrics whose spherical-cap footprints can
-    // overlap; the renderer refines this to exact shared triangles per sample.
+    // lists only earlier surface fabrics whose connected physical-surface
+    // footprints overlap. Position + source triangle choose the component and
+    // patch; origin-radial direction is not surface identity.
     eligible.sort((a, b) => (Number(a.nucleation_step) - Number(b.nucleation_step))
         || (Number(a.crystal_id) - Number(b.crystal_id)));
     const prior = [];
@@ -47286,20 +48574,22 @@ function classifySurfaceGrowth(sim) {
     for (let i = 0; i < eligible.length; i++) {
         const c = eligible[i];
         const desc = c._surfaceGrowth;
-        const dir = wall && typeof wall.surfaceAnchorDirection === 'function'
-            ? wall.surfaceAnchorDirection(c) : [0, 1, 0];
+        const dir = wall && typeof wall.surfaceNormalForCrystal === 'function'
+            ? wall.surfaceNormalForCrystal(c) : [0, 1, 0];
         const radius = Math.acos(Math.max(-1, Math.min(1, 1 - 2 * desc.coverage_fraction)));
-        const exactPatch = exactMesh && typeof exactMesh.surfacePatch === 'function'
-            ? exactMesh.surfacePatch(dir, desc.coverage_fraction) : null;
+        const exactPatch = wall && typeof wall.surfacePatchForCrystal === 'function'
+            ? wall.surfacePatchForCrystal(c, desc.coverage_fraction, sim) : null;
         const exactTriangles = exactPatch && Array.isArray(exactPatch.triangles)
             ? new Set(exactPatch.triangles.map((triangle) => triangle.triangle_index))
             : null;
+        const exactTriangleKeys = exactTriangles
+            ? new Set(Array.from(exactTriangles).map((triangleIndex) => `${exactPatch.source_signature}:${triangleIndex}`)) : null;
         const underlying = [];
         for (const p of prior) {
-            if (exactTriangles && p.exactTriangles) {
+            if (exactTriangleKeys && p.exactTriangleKeys) {
                 let sharesTriangle = false;
-                for (const triangleIndex of exactTriangles) {
-                    if (p.exactTriangles.has(triangleIndex)) {
+                for (const triangleKey of exactTriangleKeys) {
+                    if (p.exactTriangleKeys.has(triangleKey)) {
                         sharesTriangle = true;
                         break;
                     }
@@ -47318,9 +48608,9 @@ function classifySurfaceGrowth(sim) {
         desc.nucleation_step = Number(c.nucleation_step) || 0;
         desc.underlying_surface_crystal_ids = underlying;
         desc.stratigraphy_basis = exactTriangles
-            ? 'exact shared WallMesh triangles'
+            ? 'exact shared authenticated-surface triangles'
             : 'spherical-cap fallback';
-        prior.push({ crystal: c, dir, radius, exactTriangles });
+        prior.push({ crystal: c, dir, radius, exactTriangles, exactTriangleKeys });
     }
 }
 function _wulffLocalChemistry(sim, crystal) {
@@ -47330,8 +48620,7 @@ function _wulffLocalChemistry(sim, crystal) {
     const wall = sim.wall_state;
     const anchor = wall?._resolveAnchor?.(crystal);
     const mesh = wall?.meshFor?.(sim);
-    const vertexIdx = anchor
-        ? anchor.ringIdx * wall.cells_per_ring + anchor.cellIdx : -1;
+    const vertexIdx = anchor ? wall.chemistryVertexForCrystal?.(crystal) : -1;
     return {
         fluid: vertexIdx >= 0 ? (mesh?.cells?.[vertexIdx]?.fluid || conditions.fluid) : conditions.fluid,
         temperatureC: vertexIdx >= 0
@@ -47558,7 +48847,7 @@ function classifyMorphologyStep(sim) {
             const anchor = sim.wall_state?._resolveAnchor?.(c);
             const mesh = sim.wall_state?.meshFor?.(sim);
             const vertexIdx = anchor
-                ? anchor.ringIdx * sim.wall_state.cells_per_ring + anchor.cellIdx : -1;
+                ? sim.wall_state.chemistryVertexForCrystal?.(c) : -1;
             const localFluid = vertexIdx >= 0 ? mesh?.cells?.[vertexIdx]?.fluid : null;
             const savedFluid = sim.conditions.fluid;
             const savedTemp = sim.conditions.temperature;
@@ -65822,14 +67111,14 @@ class VugSimulator {
                 if (crystal.mineral !== 'selenite' && crystal.mineral !== 'anhydrite')
                     continue;
                 const anchor = this.wall_state._resolveAnchor(crystal);
-                const ringIdx = anchor ? anchor.ringIdx : null;
+                const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+                const ringIdx = chemistry ? chemistry.ringIdx : null;
                 const validRing = ringIdx != null && ringIdx >= 0 && ringIdx < nRings;
                 const cell = validRing && mesh?.cellOf
                     ? mesh.cellOf(crystal, this.wall_state)
                     : null;
                 const localFluid = cell?.fluid || (validRing ? this.ring_fluids[ringIdx] : this.conditions.fluid);
-                const vertexIdx = validRing
-                    ? anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx : -1;
+                const vertexIdx = validRing ? chemistry.vertexIndex : -1;
                 const localT = vertexIdx >= 0
                     ? temperatureAtMeshVertex(this, mesh, vertexIdx) : this.conditions.temperature;
                 const transition = applyCaSO4PhaseTransition(crystal, localFluid, localT, this.conditions.pressure, this.step);
@@ -65853,7 +67142,7 @@ class VugSimulator {
             const anchor = this.wall_state._resolveAnchor(crystal);
             const mesh = this.wall_state.meshFor ? this.wall_state.meshFor(this) : null;
             const vertexIdx = anchor
-                ? anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx : -1;
+                ? this.wall_state.chemistryVertexForCrystal(crystal) : -1;
             const localT = vertexIdx >= 0
                 ? temperatureAtMeshVertex(this, mesh, vertexIdx) : this.conditions.temperature;
             const transition = applyParamorphTransitions(crystal, localT, this.step);
@@ -65917,7 +67206,8 @@ class VugSimulator {
                 // PHASE-1-CAVITY-MESH: read ringIdx via _resolveAnchor so this
                 // dehydration loop no longer reads wall_ring_index directly.
                 const anchor = this.wall_state._resolveAnchor(crystal);
-                const ringIdx = anchor ? anchor.ringIdx : null;
+                const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+                const ringIdx = chemistry ? chemistry.ringIdx : null;
                 if (ringIdx == null || ringIdx < 0 || ringIdx >= nRings)
                     continue;
                 // Prefer the crystal's own cell.fluid (per-vertex chemistry).
@@ -65929,7 +67219,7 @@ class VugSimulator {
                     ? cell.fluid
                     : this.ring_fluids[ringIdx];
                 const ringState = this.conditions.ringWaterState(ringIdx, nRings);
-                const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+                const vertexIdx = chemistry.vertexIndex;
                 const Tlocal = temperatureAtMeshVertex(this, _mesh, vertexIdx);
                 const transition = applyDehydrationTransitions(crystal, ringFluid, ringState, Tlocal, this.step);
                 if (transition) {
@@ -67005,13 +68295,20 @@ Object.assign(VugSimulator.prototype, {
         // keep the legacy two-step path.
         this._lastNucVertexRing = null;
         this._lastNucPositionOverride = null;
+        this._lastNucInheritedSurfaceAnchor = null;
         const _cellIdx = this._assignWallCell(position, mineral);
         if (this._lastNucPositionOverride) {
             position = this._lastNucPositionOverride;
             crystal.position = position;
         }
-        const _ringIdx = this._assignWallRing(position, mineral);
-        crystal.wall_anchor = this.wall_state._anchorFromRingCell(_ringIdx, _cellIdx);
+        const _ringIdx = this._assignWallRing(position, mineral, _cellIdx);
+        // A host overgrowth shares its host's immutable physical attachment. The
+        // ring/cell pair remains the boundary-chemistry projection only; rebuilding
+        // an anchor from that projection would move barycentric/MC hosts to a
+        // different physical point.
+        crystal.wall_anchor = this._lastNucInheritedSurfaceAnchor
+            || this.wall_state._anchorFromRingCell(_ringIdx, _cellIdx);
+        this._lastNucInheritedSurfaceAnchor = null;
         const _meshAtBirth = this.wall_state.meshFor(this);
         const _vertexAtBirth = _ringIdx * this.wall_state.cells_per_ring + _cellIdx;
         const _localBirthTemperature = temperatureAtMeshVertex(this, _meshAtBirth, _vertexAtBirth);
@@ -67286,11 +68583,12 @@ Object.assign(VugSimulator.prototype, {
             const aw = c.a_width_mm || 0;
             if (aw <= 0 || c.c_length_mm <= aw * O3_SELECT_MIN_ASPECT)
                 continue;
-            const a = wall._resolveAnchor ? wall._resolveAnchor(c) : c.wall_anchor;
-            if (!a)
+            const chemistry = wall.chemistryAddressForCrystal?.(c)
+                || CavitySurfaceAnchors.chemistryAddress(c.wall_anchor);
+            if (!chemistry)
                 continue;
             const rec = {
-                c, ri: a.ringIdx | 0, ci: a.cellIdx | 0,
+                c, ri: chemistry.ringIdx | 0, ci: chemistry.cellIdx | 0,
                 theta: t.theta, front: o3NormalFrontMm(c), nucStep: c.nucleation_step | 0,
             };
             elig.push(rec);
@@ -67790,9 +69088,13 @@ Object.assign(VugSimulator.prototype, {
         if (!anchor)
             return null;
         const wall = this.wall_state;
-        const N = wall?.cells_per_ring | 0;
         const mesh = wall?.meshFor?.(this);
-        const vertexIdx = Number(anchor.ringIdx) * N + Number(anchor.cellIdx);
+        const resolved = anchor.schema === CavitySurfaceAnchors.SCHEMA
+            ? anchor : CavitySurfaceAnchors.upgradeLegacy(anchor, mesh);
+        const chemistry = CavitySurfaceAnchors.chemistryAddress(resolved);
+        if (!chemistry)
+            return null;
+        const vertexIdx = chemistry.vertexIndex;
         const fluid = mesh?.cells?.[vertexIdx]?.fluid;
         const sigmaFn = this.conditions?.[`supersaturation_${mineral}`];
         if (!fluid || typeof sigmaFn !== 'function')
@@ -67809,12 +69111,13 @@ Object.assign(VugSimulator.prototype, {
                 sigma: Number.isFinite(sigma) ? sigma : 0,
                 temperatureC: this.conditions.temperature,
                 fluid,
-                ringIdx: anchor.ringIdx,
-                cellIdx: anchor.cellIdx,
+                ringIdx: chemistry.ringIdx,
+                cellIdx: chemistry.cellIdx,
             };
         }
         catch (_e) {
-            return { sigma: 0, temperatureC: NaN, fluid, ringIdx: anchor.ringIdx, cellIdx: anchor.cellIdx };
+            return { sigma: 0, temperatureC: NaN, fluid,
+                ringIdx: chemistry.ringIdx, cellIdx: chemistry.cellIdx };
         }
         finally {
             this._localNucleationDirectEvaluation = savedDirect;
@@ -67835,18 +69138,23 @@ Object.assign(VugSimulator.prototype, {
         }
         if (hostId != null) {
             const host = this.crystals.find(c => c.crystal_id === hostId);
-            // PHASE-1-CAVITY-MESH: read host's cell via _resolveAnchor so this
-            // site keeps working when the legacy fields retire in Phase 4.
+            // Surface-anchor contract: overgrowths inherit the host's projected
+            // chemistry cell explicitly. Physical placement remains the host's
+            // independent surface anchor and is not inferred from this address.
             if (host) {
                 const a = this.wall_state._resolveAnchor(host);
-                if (a) {
-                    if (!(this.wall_state?.per_vertex_nucleation || this._thermalFieldActivated))
-                        return a.cellIdx;
+                const chemistry = this.wall_state.chemistryAddressForCrystal(host);
+                if (a && chemistry) {
+                    if (!(this.wall_state?.per_vertex_nucleation || this._thermalFieldActivated)) {
+                        this._lastNucInheritedSurfaceAnchor = a;
+                        return chemistry.cellIdx;
+                    }
                     const local = this._localNucleationEvaluationAtAnchor(mineral, a);
                     const sigmaCrit = Number(MINERAL_GATES_REGISTRY?.[mineral]?.sigma_crit);
                     const discount = this._sigmaDiscountForPosition(mineral, position);
                     if (!Number.isFinite(sigmaCrit) || (local && local.sigma > sigmaCrit * discount)) {
-                        return a.cellIdx;
+                        this._lastNucInheritedSurfaceAnchor = a;
+                        return chemistry.cellIdx;
                     }
                     const picked = this._perVertexNucleationSample(mineral);
                     if (picked) {
@@ -67935,10 +69243,18 @@ Object.assign(VugSimulator.prototype, {
             return null; // no open supply-feeders
         const weights = new Float64Array(R * N);
         let total = 0;
+        const archBias = wall.nucleation_bias || 'uniform';
+        const zoneAllowed = (zone) => archBias === 'uniform'
+            || (archBias === 'walls_only' && zone === 'wall')
+            || (archBias === 'floor_only' && zone === 'floor')
+            || (archBias === 'ceiling_only' && zone === 'ceiling')
+            || (archBias === 'floor_ceiling' && (zone === 'floor' || zone === 'ceiling'));
         for (let r = 0; r < R; r++) {
             const areaW = wall.ringAreaWeight(r);
             for (let c = 0; c < N; c++) {
                 const idx = r * N + c;
+                if (!zoneAllowed(wall.surfaceZoneAtVertex?.(r, c, this)))
+                    continue;
                 const w = areaW * prox[idx];
                 weights[idx] = w;
                 total += w;
@@ -68032,6 +69348,12 @@ Object.assign(VugSimulator.prototype, {
             ? this._fluidSpots.proximityField(N, ringCount) : null;
         const weights = new Float64Array(ringCount * N);
         let total = 0;
+        const archBias = wall.nucleation_bias || 'uniform';
+        const zoneAllowed = (zone) => archBias === 'uniform'
+            || (archBias === 'walls_only' && zone === 'wall')
+            || (archBias === 'floor_only' && zone === 'floor')
+            || (archBias === 'ceiling_only' && zone === 'ceiling')
+            || (archBias === 'floor_ceiling' && (zone === 'floor' || zone === 'ceiling'));
         try {
             this._localNucleationDirectEvaluation = true;
             for (let r = 0; r < ringCount; r++) {
@@ -68040,6 +69362,8 @@ Object.assign(VugSimulator.prototype, {
                 const areaW = wall.ringAreaWeight(r);
                 for (let c = 0; c < N; c++) {
                     const idx = r * N + c;
+                    if (!zoneAllowed(wall.surfaceZoneAtVertex?.(r, c, this)))
+                        continue;
                     const cell = mesh.cells[idx];
                     const cellFluid = cell ? cell.fluid : null;
                     if (!cellFluid)
@@ -68107,7 +69431,8 @@ Object.assign(VugSimulator.prototype, {
         // this site stops touching wall_ring_index directly. Identity
         // result while wall_anchor and legacy fields are kept in sync.
         const anchor = this.wall_state._resolveAnchor(crystal);
-        const ringIdx = anchor ? anchor.ringIdx : null;
+        const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+        const ringIdx = chemistry ? chemistry.ringIdx : null;
         let savedFluid = null;
         let savedTemp = null;
         if (ringIdx != null && ringIdx >= 0 && ringIdx < this.ring_fluids.length) {
@@ -68123,7 +69448,7 @@ Object.assign(VugSimulator.prototype, {
             this.conditions.fluid = (cell && cell.fluid)
                 ? cell.fluid
                 : this.ring_fluids[ringIdx]; // last-resort sentinel; should never hit
-            const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+            const vertexIdx = chemistry.vertexIndex;
             this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
         }
         try {
@@ -68167,7 +69492,7 @@ Object.assign(VugSimulator.prototype, {
     // Phase D v2: per-mineral orientation bias (see ORIENTATION_PREFERENCE
     // module-level table). Spatially neutral minerals stay area-weighted.
     // Mirrors VugSimulator._assign_wall_ring in vugg.py.
-    _assignWallRing(position, mineral) {
+    _assignWallRing(position, mineral, cellIdx) {
         // Tranche 6: when _assignWallCell ran the joint σ-weighted sample,
         // it stashed the picked ring on this._lastNucVertexRing. Honor that
         // — both indices come from the same joint draw, so the cell and
@@ -68186,12 +69511,12 @@ Object.assign(VugSimulator.prototype, {
         }
         if (hostId != null) {
             const host = this.crystals.find(c => c.crystal_id === hostId);
-            // PHASE-1-CAVITY-MESH: read host's ring via _resolveAnchor so this
-            // site survives the Phase 4 legacy-field drop.
+            // Surface-anchor contract: inherit the host's projected chemistry ring;
+            // do not treat that lattice address as the physical surface location.
             if (host) {
-                const a = this.wall_state._resolveAnchor(host);
-                if (a)
-                    return a.ringIdx;
+                const chemistry = this.wall_state.chemistryAddressForCrystal(host);
+                if (chemistry)
+                    return chemistry.ringIdx;
             }
         }
         // Phase D: area-weighted sample (equator gets more nucleations
@@ -68240,7 +69565,12 @@ Object.assign(VugSimulator.prototype, {
         if (archBias !== 'uniform' && n > 1) {
             total = 0;
             for (let k = 0; k < n; k++) {
-                const orient = this.wall_state.ringOrientation(k);
+                // Architecture biases apply to the physical patch normal at the cell
+                // already selected by _assignWallCell.  Ring labels remain a fallback
+                // for direct legacy callers that do not provide a cell.
+                const orient = Number.isInteger(cellIdx)
+                    ? this.wall_state.surfaceZoneAtVertex?.(k, cellIdx, this)
+                    : this.wall_state.ringOrientation(k);
                 const allowed = archBias === 'walls_only' ? (orient === 'wall') :
                     archBias === 'floor_only' ? (orient === 'floor') :
                         archBias === 'ceiling_only' ? (orient === 'ceiling') :
@@ -68284,7 +69614,8 @@ Object.assign(VugSimulator.prototype, {
     // crystal per call.
     _dryRunEngineForCrystal(engine, crystal) {
         const anchor = this.wall_state._resolveAnchor(crystal);
-        const ringIdx = anchor ? anchor.ringIdx : null;
+        const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+        const ringIdx = chemistry ? chemistry.ringIdx : null;
         let savedFluid = null;
         let savedTemp = null;
         if (ringIdx != null && ringIdx >= 0 && ringIdx < this.ring_fluids.length) {
@@ -68295,7 +69626,7 @@ Object.assign(VugSimulator.prototype, {
             this.conditions.fluid = (cell && cell.fluid)
                 ? cell.fluid
                 : this.ring_fluids[ringIdx];
-            const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+            const vertexIdx = chemistry.vertexIndex;
             this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
         }
         try {
@@ -68320,7 +69651,8 @@ Object.assign(VugSimulator.prototype, {
             return null;
         const bulkFluidHandle = this.conditions.fluid;
         const anchor = this.wall_state._resolveAnchor(crystal);
-        const ringIdx = anchor ? anchor.ringIdx : null;
+        const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+        const ringIdx = chemistry ? chemistry.ringIdx : null;
         let savedFluid = null;
         let savedTemp = null;
         if (ringIdx != null && ringIdx >= 0 && ringIdx < this.ring_fluids.length) {
@@ -68331,7 +69663,7 @@ Object.assign(VugSimulator.prototype, {
             this.conditions.fluid = (cell && cell.fluid)
                 ? cell.fluid
                 : this.ring_fluids[ringIdx];
-            const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+            const vertexIdx = chemistry.vertexIndex;
             this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
         }
         try {
@@ -68436,7 +69768,8 @@ Object.assign(VugSimulator.prototype, {
             }
             // Identify the cell + fluid this crystal competes within.
             const anchor = this.wall_state._resolveAnchor(crystal);
-            const ringIdx = anchor ? anchor.ringIdx : null;
+            const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+            const ringIdx = chemistry ? chemistry.ringIdx : null;
             let cellFluid = null;
             let cellKey;
             if (ringIdx != null && ringIdx >= 0 && ringIdx < this.ring_fluids.length) {
@@ -68451,7 +69784,7 @@ Object.assign(VugSimulator.prototype, {
                 // the shared ring fluid, so group identity always matches budget.
                 if (cell && cell.fluid) {
                     cellFluid = cell.fluid;
-                    cellKey = `cell:${anchor.ringIdx}:${anchor.cellIdx}`;
+                    cellKey = `cell:${chemistry.vertexIndex}`;
                 }
                 else {
                     cellFluid = this.ring_fluids[ringIdx];
@@ -68473,8 +69806,7 @@ Object.assign(VugSimulator.prototype, {
                     const savedFluid = this.conditions.fluid;
                     const savedTemp = this.conditions.temperature;
                     this.conditions.fluid = cellFluid;
-                    const vertexIdx = anchor
-                        ? anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx : -1;
+                    const vertexIdx = chemistry ? chemistry.vertexIndex : -1;
                     this.conditions.temperature = vertexIdx >= 0
                         ? temperatureAtMeshVertex(this, this.wall_state.meshFor(this), vertexIdx)
                         : savedTemp;
@@ -68495,8 +69827,8 @@ Object.assign(VugSimulator.prototype, {
             if (!cellGroups.has(cellKey)) {
                 cellGroups.set(cellKey, { fluid: cellFluid, items: [] });
             }
-            const localTemperature = anchor
-                ? temperatureAtMeshVertex(this, this.wall_state.meshFor(this), anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx)
+            const localTemperature = chemistry
+                ? temperatureAtMeshVertex(this, this.wall_state.meshFor(this), chemistry.vertexIndex)
                 : this.conditions.temperature;
             cellGroups.get(cellKey).items.push({
                 crystal, zone: dryZone, sigma, initiative: 0, localTemperature,
@@ -69756,6 +71088,12 @@ Object.assign(VugSimulator.prototype, {
         // 99i-renderer-three.ts.
         const ringCount = this.wall_state.ring_count;
         const cnd = this.conditions;
+        // Provider selection is part of the scientific replay timeline, not a live
+        // renderer preference. Capture the exact authenticated receipt at this step
+        // so a later replay cannot inherit whichever provider happens to be active.
+        const cavitySurfaceProvider = this.wall_state.cavitySurfaceAnchorProviderReceipt
+            ? this.wall_state.cavitySurfaceAnchorProviderReceipt()
+            : { kind: 'wall-mesh' };
         const snap = {
             step: this.step,
             cavity_evolution_cursor: this.wall_state.cavityEvolutionLedger
@@ -69764,6 +71102,7 @@ Object.assign(VugSimulator.prototype, {
             cavity_evolution_signature: this.wall_state.cavityEvolutionLedger
                 && this.wall_state.cavityEvolutionLedger()
                 ? this.wall_state.cavityEvolutionLedger().signature : null,
+            cavity_surface_provider: { ...cavitySurfaceProvider },
             rings: new Array(ringCount),
             conditions: {
                 temperature: cnd.temperature,
@@ -69862,7 +71201,7 @@ Object.assign(VugSimulator.prototype, {
             const anchor = this.wall_state._resolveAnchor(crystal);
             if (!anchor)
                 continue;
-            const source = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+            const source = this.wall_state.chemistryVertexForCrystal(crystal);
             if (source < 0 || source >= mesh.numInterior)
                 continue;
             const distances = mesh.geodesicDistancesFrom(source);
@@ -71392,15 +72731,16 @@ class StripRecorder {
                 const c = sim.crystals[i];
                 if (!c || c.nucleation_step !== sim.step)
                     continue;
-                const anchor = c.wall_anchor;
-                const ring = anchor && Number.isFinite(anchor.ringIdx) ? anchor.ringIdx : 0;
-                const cell = anchor && Number.isFinite(anchor.cellIdx) ? anchor.cellIdx : 0;
+                const address = sim.wall_state?.chemistryAddressForCrystal?.(c);
+                const ring = address && Number.isFinite(address.ringIdx) ? address.ringIdx : 0;
+                const cell = address && Number.isFinite(address.cellIdx) ? address.cellIdx : 0;
                 this.events.push({
                     step: Number(c.nucleation_step),
                     sample_index: step,
                     ring,
                     cell,
                     mineral: String(c.mineral),
+                    surface_anchor_key: sim.wall_state?.surfaceAnchorKey?.(c),
                 });
             }
             this.lastSeenCrystalCount = total;
@@ -74217,6 +75557,26 @@ function makeSimulationThermalFieldCommand(config = {}) {
         commandId: _simulationCommandId(commandPayload),
     });
 }
+function makeSimulationCavitySurfaceProviderCommand(kind, opts = {}) {
+    if (kind !== 'wall-mesh' && kind !== 'cavity-field') {
+        throw new RangeError(`unsupported cavity surface provider '${String(kind)}'`);
+    }
+    const providerKind = kind;
+    const commandPayload = {
+        schema: SIMULATION_COMMAND_SCHEMA,
+        type: 'cavity_surface_provider',
+        kind: providerKind,
+    };
+    if (providerKind === 'cavity-field') {
+        commandPayload.resolution = Math.max(8, Math.min(128, Math.round(Number(opts.resolution) || 48)));
+        commandPayload.isovalue = Number.isFinite(Number(opts.isovalue))
+            ? Number(opts.isovalue) : 0;
+    }
+    return _simulationDeepFreeze({
+        ...commandPayload,
+        commandId: _simulationCommandId(commandPayload),
+    });
+}
 function _simulationAssertCommand(command, expectedType) {
     if (!command || command.schema !== SIMULATION_COMMAND_SCHEMA) {
         throw new Error('invalid simulation command schema');
@@ -74338,6 +75698,7 @@ function simulationStateProjection(runtimeOrSim, rngStateOverride) {
         wallCellDepthsMm: (sim?.wall_state?.rings || []).flatMap((ring) => (ring || []).map((cell) => Number(cell?.wall_depth) || 0)),
         cavityEvolution: sim?.wall_state?.cavityEvolutionLedger?.()
             ? _simulationCanonicalProjection(sim.wall_state.cavityEvolutionLedger().toJSON()) : null,
+        cavitySurfaceProvider: _simulationCanonicalProjection(sim?.wall_state?.cavitySurfaceAnchorProviderReceipt?.() || { kind: 'wall-mesh' }),
         crystals: (sim?.crystals || []).map(_simulationCrystalProjection),
         carbonateBoundary: sim?._carbonateBoundaryState
             ? _simulationJsonClone(sim._carbonateBoundaryState) : null,
@@ -74423,6 +75784,23 @@ function applySimulationCommand(runtime, command) {
             status: runtime.status,
             step: runtime.sim.step,
             thermalFieldConfig: _simulationJsonClone(result),
+            fingerprint: simulationStateFingerprint(runtime),
+        };
+    }
+    if (command.type === 'cavity_surface_provider') {
+        if (command.kind !== 'wall-mesh' && command.kind !== 'cavity-field') {
+            throw new RangeError(`unsupported cavity surface provider '${String(command.kind)}'`);
+        }
+        const result = command.kind === 'cavity-field'
+            ? runtime.sim.wall_state.activateCavitySurfaceAnchorProvider({
+                resolution: command.resolution, isovalue: command.isovalue,
+            })
+            : runtime.sim.wall_state.deactivateCavitySurfaceAnchorProvider();
+        _simulationAppendCommand(runtime, command);
+        return {
+            status: runtime.status,
+            step: runtime.sim.step,
+            cavitySurfaceProvider: _simulationJsonClone(result),
             fingerprint: simulationStateFingerprint(runtime),
         };
     }
@@ -76184,21 +77562,37 @@ function _isBandedIronFormationHost(sim) {
     return wall.composition === 'banded_iron_formation';
 }
 function _localTigerIronPhase(sim, substrate) {
-    const origin = sim?.wall_state?._resolveAnchor?.(substrate);
-    const cellCount = Number(sim?.wall_state?.cells_per_ring) || 0;
-    if (!origin || cellCount < 1)
+    const wall = sim?.wall_state;
+    const origin = wall?._resolveAnchor?.(substrate);
+    const mesh = wall?.meshFor?.(sim);
+    if (!origin || !mesh)
         return null;
+    const source = wall.chemistryVertexForCrystal(substrate);
+    const distances = source >= 0 ? mesh.geodesicDistancesFrom(source) : null;
+    if (!distances)
+        return null;
+    // "Banded with" means the iron phase occupies the immediately adjacent
+    // surface patch.  cell_arc_mm is an equatorial mean and is too wide near a
+    // pole, where several ring cells can fit inside that arc.  Use the closest
+    // non-zero geodesic chemistry spacing at the actual substrate instead.  It
+    // preserves one-patch locality while remaining metric and topology-neutral.
+    let localRadiusMm = Infinity;
+    for (let vertex = 0; vertex < mesh.numInterior; vertex++) {
+        const distance = distances[vertex];
+        if (distance > 1e-10 && distance < localRadiusMm)
+            localRadiusMm = distance;
+    }
+    if (!Number.isFinite(localRadiusMm))
+        return null;
+    const toleranceMm = Math.max(1e-10, localRadiusMm * 1e-9);
     return sim.crystals.find(crystal => {
         if (!['hematite', 'jasper'].includes(crystal?.mineral))
             return false;
         if (!crystal.active || crystal.dissolved || crystal._buried || crystal.enclosed_by != null)
             return false;
-        const anchor = sim.wall_state._resolveAnchor(crystal);
-        if (!anchor || anchor.ringIdx !== origin.ringIdx)
-            return false;
-        const direct = Math.abs(anchor.cellIdx - origin.cellIdx);
-        const circular = Math.min(direct, cellCount - direct);
-        return circular <= 1;
+        const anchor = wall._resolveAnchor(crystal);
+        const target = wall.chemistryVertexForCrystal(crystal);
+        return !!anchor && target >= 0 && distances[target] <= localRadiusMm + toleranceMm;
     }) || null;
 }
 // Tiger's-eye origin is implemented as two explicitly named literature
@@ -93012,6 +94406,9 @@ function _topoActiveRingForRender(wall) {
 function topoCycleSlice(dir) {
     const sim = topoActiveSim();
     const wall = sim ? sim.wall_state : null;
+    // Historical payload authentication precedes shape aggregation and every
+    // empty-state guard. Otherwise a malformed replay can look like a merely
+    // empty frame—or worse, borrow the live wall.
     const n = wall ? wall.ring_count : 0;
     if (n <= 1) {
         // Single-ring sim — no stepper to cycle. Stay aggregated.
@@ -93055,6 +94452,25 @@ function topoRender(optOverrideSnap) {
         return;
     const sim = topoActiveSim();
     const wall = sim ? sim.wall_state : null;
+    // Authenticate historical payloads before aggregation or empty-state
+    // handling so malformed replay can never borrow today's live wall.
+    const replayDecision = typeof _topoReplayRenderDecision === 'function'
+        ? _topoReplayRenderDecision(wall, optOverrideSnap)
+        : { mode: 'wall-mesh', wall };
+    if (replayDecision.mode === 'corrupt') {
+        if (typeof _topoSyncThreeCanvasVisibility === 'function') {
+            if (_topoThreeState) {
+                _topoThreeState.cavityAuthorityUnrenderable = true;
+                if (_topoThreeState.cavity)
+                    _topoThreeState.cavity.visible = false;
+                if (_topoThreeState.crystals)
+                    _topoThreeState.crystals.visible = false;
+            }
+            _topoSyncThreeCanvasVisibility();
+        }
+        _topoPaintPlaceholder(canvas, replayDecision.message);
+        return;
+    }
     // v65: snapshots are { step, rings: [...] }. Detect the shape and
     // pull a single ring for the 2D path (which only renders one slice
     // at a time) plus a `replayStep` so the Three.js path can size each
@@ -93180,9 +94596,23 @@ function topoRender(optOverrideSnap) {
     // optReplayStep are forwarded so the Three.js path can rebuild
     // cavity geometry from the historical rings AND size each crystal
     // from its zones[] history up to that step.
-    if (_topoUseThreeRenderer && wall && wall.rings && wall.rings.length) {
+    // Provider authority follows the frame being rendered. Reconstruct replay
+    // walls before dispatch so today's live provider cannot force an old
+    // WallMesh frame into the exact-field placeholder (or vice versa).
+    const renderAuthorityWall = replayDecision.wall;
+    const exactFieldAuthority = renderAuthorityWall?.activeCavitySurfaceAnchorProvider?.();
+    if ((_topoUseThreeRenderer || exactFieldAuthority?.receipt?.kind === 'cavity-field')
+        && wall && wall.rings && wall.rings.length) {
         if (_topoRenderThree(sim, wall, optOverrideSnap, optReplayStep)) {
             _topoSyncThreeCanvasVisibility();
+            return;
+        }
+        if (exactFieldAuthority?.receipt?.kind === 'cavity-field') {
+            // Canvas/polar geometry cannot represent the authoritative re-entrant
+            // field. Be explicit rather than presenting a scientifically different
+            // cavity on hardware that rejected the exact renderer/clip pair.
+            _topoSyncThreeCanvasVisibility();
+            _topoPaintPlaceholder(canvas, 'Exact 3D cavity authority is active, but this device cannot render its authenticated field/clip pair. Simulation state is unchanged.');
             return;
         }
     }
@@ -93337,10 +94767,11 @@ function topoRender(optOverrideSnap) {
                 continue;
             // PHASE-4-CAVITY-MESH Tranche 4b — wall_anchor is the sole
             // positional field; legacy fallback retired.
-            const _hostAnchor = wall._resolveAnchor ? wall._resolveAnchor(host) : null;
-            if (!_hostAnchor)
+            const _hostChemistry = wall.chemistryAddressForCrystal?.(host)
+                || CavitySurfaceAnchors.chemistryAddress(host.wall_anchor);
+            if (!_hostChemistry)
                 continue;
-            const _hostCenterCell = _hostAnchor.cellIdx;
+            const _hostCenterCell = _hostChemistry.cellIdx;
             if (host.dissolved || _hostCenterCell == null)
                 continue;
             // Build the host's painted-cell set. Fall back to its center cell
@@ -95571,8 +97002,11 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR, cx, cy, mmT
             const _anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
             if (!_anchor)
                 continue;
-            const ringIdx = _anchor.ringIdx;
-            const cellIdx = _anchor.cellIdx;
+            const address = wall.chemistryAddressForCrystal?.(crystal);
+            if (!address)
+                continue;
+            const ringIdx = address.ringIdx;
+            const cellIdx = address.cellIdx;
             if (ringIdx == null || cellIdx == null)
                 continue;
             const meta = ringMeta[ringIdx];
@@ -97782,7 +99216,8 @@ function _topoResetCavityFieldFailures(state) {
     state.threeShaderUnusable = false;
 }
 function _topoThreeRendererEffective(state = _topoThreeState) {
-    return !!_topoUseThreeRenderer && !(state && state.threeShaderUnusable);
+    return !!(_topoUseThreeRenderer || state?.cavityAuthorityActive)
+        && !(state && (state.threeShaderUnusable || state.cavityAuthorityUnrenderable));
 }
 function _topoAttemptEffectiveThree(state, attempt) {
     if (state && state.threeShaderUnusable)
@@ -98048,16 +99483,35 @@ void main() {
     }
 }
 // Pure renderer-facing adapter used by both the Three.js path and integration
-// tests. `clipMesh` remains the chemistry/cell topology bridge while MC wall
-// triangles and crystal clipping are paired to the same immutable Cartesian
-// field snapshot. Anchors and multi-chamber evolution remain separate promotion
-// gates; neither is silently inferred from this render-only adapter.
+// tests. `clipMesh` remains the chemistry/cell topology bridge while MC wall,
+// crystal clipping, and explicit anchor authority consume one immutable field /
+// surface pair. The developer shadow flag is still independent while WallMesh
+// owns anchors, but it may never override or suppress an activated provider.
 function _topoCavitySurfaceSource(wall, sim, useMarchingCubes = _topoMarchingCubesCavityEnabled(), resolution = _topoMarchingCubesResolution()) {
     if (!wall)
         return null;
     const clipMesh = wall.meshFor ? wall.meshFor(sim) : null;
     if (!clipMesh)
         return null;
+    const active = wall.activeCavitySurfaceAnchorProvider
+        ? wall.activeCavitySurfaceAnchorProvider() : null;
+    if (active?.receipt?.kind === 'cavity-field') {
+        const field = active.field;
+        const buffers = active.surface;
+        MarchingCubesExtractor.verifyBuffers(buffers);
+        if (!field || field.sig !== active.receipt.field_signature
+            || field.snapshotDigest !== active.receipt.field_snapshot_digest
+            || buffers.sig !== active.receipt.surface_signature
+            || buffers.buffer_digest !== active.receipt.surface_buffer_digest
+            || field.surfaceSignature(active.receipt.isovalue) !== buffers.sig) {
+            throw new Error('active cavity surface authority is not one authenticated field/surface pair');
+        }
+        return {
+            mode: 'marching-cubes', buffers, clipMesh, clipField: field,
+            providerAuthority: true, providerReceipt: active.receipt,
+            sig: `mc-authority|${buffers.sig}|clip-field:${field.snapshotDigest}`,
+        };
+    }
     if (useMarchingCubes && !wall._disableMarchingCubesCavity && wall.cavitySurfaceFor) {
         try {
             const buffers = wall.cavitySurfaceFor({ resolution, isovalue: 0 });
@@ -98072,6 +99526,7 @@ function _topoCavitySurfaceSource(wall, sim, useMarchingCubes = _topoMarchingCub
                     throw new Error('Marching Cubes wall and clip field are not the same immutable snapshot');
                 }
                 return { mode: 'marching-cubes', buffers, clipMesh, clipField: field,
+                    providerAuthority: false,
                     sig: `mc|${buffers.sig}|clip-field:${field.snapshotDigest}` };
             }
             const failure = wall._cavitySurfaceFailure;
@@ -98196,7 +99651,8 @@ function _topoRenderPreparedCavityScene(state, installFallback) {
     let runnable = _topoCompileCavityShaderPrograms(state);
     if (state.clipUniforms.uCavityClipMode.value === 1 && !runnable) {
         _topoRejectActiveCavityFieldClip(state, 'cavity-field-shader-link-failed', undefined, false);
-        installFallback();
+        if (installFallback() === false)
+            return false;
         runnable = _topoCompileCavityShaderPrograms(state);
     }
     // The field failure rebuilds every clipped material as the distinct
@@ -98346,21 +99802,51 @@ function _topoInstallCavityFieldClip(state, field, surface) {
 // triangulation) lives in WallMesh.recompute — same formulas as
 // before, just centralized so future tessellations (icosphere,
 // geodesic, irregular) can swap in without touching this file.
-function _topoBuildCavityGeometry(state, wall, sim) {
+function _topoBuildCavityGeometry(state, wall, sim, forceWallMesh = false) {
     if (!wall || !wall.rings || !wall.rings.length)
-        return;
-    let source = _topoCavitySurfaceSource(wall, sim);
+        return false;
+    let source;
+    try {
+        source = _topoCavitySurfaceSource(wall, sim, forceWallMesh ? false : _topoMarchingCubesCavityEnabled());
+    }
+    catch (error) {
+        state.cavityFieldFallbackReason = error instanceof Error ? error.message : String(error);
+        state.cavityAuthorityUnrenderable = true;
+        if (state.cavity)
+            state.cavity.visible = false;
+        if (state.crystals)
+            state.crystals.visible = false;
+        _topoPublishCavityClipReceipt(state);
+        return false;
+    }
     if (!source)
-        return;
+        return false;
     if (source.mode === 'marching-cubes'
         && !_topoInstallCavityFieldClip(state, source.clipField, source.buffers)) {
+        if (source.providerAuthority) {
+            // Renderer capability is presentation state, never geological state. An
+            // incapable device withholds the view instead of drawing a different wall
+            // or mutating the deterministic provider command/fingerprint.
+            state.cavityAuthorityUnrenderable = true;
+            if (state.cavity)
+                state.cavity.visible = false;
+            if (state.crystals)
+                state.crystals.visible = false;
+            _topoPublishCavityClipReceipt(state);
+            return false;
+        }
         source = _topoCavitySurfaceSource(wall, sim, false, _topoMarchingCubesResolution());
     }
     const mesh = source.clipMesh;
     const surface = source.buffers;
     if (source.sig === state.cavitySig)
-        return;
+        return true;
+    state.cavityAuthorityUnrenderable = false;
+    state.cavityAuthorityActive = source.providerAuthority === true;
     state.cavitySig = source.sig;
+    // Crystal placement resolves against the live cavity provider. A surface
+    // revision must invalidate meshes even if size/mineral fields are unchanged.
+    state.crystalsSig = '';
     if (source.mode === 'wall-mesh')
         _topoDisposeCavityFieldTexture(state);
     const ringCount = wall.ring_count;
@@ -98385,8 +99871,8 @@ function _topoBuildCavityGeometry(state, wall, sim) {
     if (surface.uvs)
         geom.setAttribute('uv', new THREE.BufferAttribute(surface.uvs.slice(), 2));
     const indexAttr = numVerts > 65535
-        ? new THREE.Uint32BufferAttribute(surface.indices, 1)
-        : new THREE.Uint16BufferAttribute(surface.indices, 1);
+        ? new THREE.Uint32BufferAttribute(surface.indices.slice(), 1)
+        : new THREE.Uint16BufferAttribute(surface.indices.slice(), 1);
     geom.setIndex(indexAttr);
     // The MC path carries scalar-gradient normals. Recomputing them from
     // triangles would discard the shared field oracle and reintroduce seams.
@@ -98559,6 +100045,7 @@ function _topoBuildCavityGeometry(state, wall, sim) {
         if (prevTex && prevTex.dispose)
             prevTex.dispose();
     }
+    return true;
 }
 // Sync the renderer's drawing-buffer size to the canvas's CSS size and
 // keep the camera aspect in sync. Called every render — cheap when
@@ -101678,11 +103165,12 @@ function _emitSurfaceGrowthSwath(state, crystal, parentMat, ax, ay, az, wall, ri
     const mobile = typeof window !== 'undefined'
         && ((window.innerWidth || 1024) <= 720 || (window.devicePixelRatio || 1) >= 2.5);
     const count = _surfaceGrowthInstanceCount(coverage, mobile);
-    const al = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
-    const directions = _surfaceGrowthSampleDirections([ax / al, ay / al, az / al], count, coverage, crystal.crystal_id || 0);
-    const wallMesh = wall && typeof wall.meshFor === 'function' ? wall.meshFor(sim) : null;
-    const exactPatch = wallMesh && typeof wallMesh.sampleSurfacePatch === 'function'
-        ? wallMesh.sampleSurfacePatch([ax / al, ay / al, az / al], count, coverage, crystal.crystal_id || 0)
+    const anchorNormal = wall?.surfaceNormalForCrystal?.(crystal) || [ax, ay, az];
+    const al = Math.sqrt(anchorNormal[0] * anchorNormal[0]
+        + anchorNormal[1] * anchorNormal[1] + anchorNormal[2] * anchorNormal[2]) || 1;
+    const directions = _surfaceGrowthSampleDirections([anchorNormal[0] / al, anchorNormal[1] / al, anchorNormal[2] / al], count, coverage, crystal.crystal_id || 0);
+    const exactPatch = wall && typeof wall.sampleSurfacePatchForCrystal === 'function'
+        ? wall.sampleSurfacePatchForCrystal(crystal, count, coverage, crystal.crystal_id || 0, sim)
         : null;
     let key = '__surface_patch_lowpoly';
     let geom = state.geomCache.get(key);
@@ -101744,8 +103232,9 @@ function _emitSurfaceGrowthSwath(state, crystal, parentMat, ax, ay, az, wall, ri
             : _surfaceGrowthWallPoint(wall, directions[i], ringCount, N, initR);
         let underburdenDisplayMm = 0;
         if (p.triangle_index != null) {
+            const triangleKey = `${exactPatch?.source_signature}:${p.triangle_index}`;
             for (const layer of earlierLayers) {
-                if (layer.triangle_indices.has(p.triangle_index)) {
+                if (layer.triangle_keys.has(triangleKey)) {
                     underburdenDisplayMm += layer.representative_relief_mm;
                 }
             }
@@ -101862,12 +103351,16 @@ function _emitSurfaceGrowthSwath(state, crystal, parentMat, ax, ay, az, wall, ri
                     : canonicalDisplayThickness;
     const layer = {
         crystal_id: crystal.crystal_id,
+        source_signature: exactPatch?.source_signature || null,
         triangle_indices: new Set(exactPatch && exactPatch.triangle_indices
             ? exactPatch.triangle_indices : []),
+        triangle_keys: new Set(exactPatch && exactPatch.triangle_indices
+            ? exactPatch.triangle_indices.map((triangleIndex) => `${exactPatch.source_signature}:${triangleIndex}`) : []),
         representative_relief_mm: representativeRelief,
     };
     swath.userData.representative_relief_mm = representativeRelief;
     swath.userData.triangle_indices = Array.from(layer.triangle_indices);
+    swath.userData.source_signature = layer.source_signature;
     earlierLayers.push(layer);
     return swath;
 }
@@ -102031,12 +103524,14 @@ parentOccF) {
         // the parent mineral, no per-satellite identity surfaced.
         // PHASE-4-CAVITY-MESH Tranche 4b — wall_anchor is the only
         // positional field on Crystal; legacy fields retired.
-        const _anchor = crystal.wall_anchor || { ringIdx: 0, cellIdx: 0 };
+        const _address = wall?.chemistryAddressForCrystal?.(crystal)
+            || { ringIdx: 0, cellIdx: 0 };
         satMesh.userData = {
             crystal_id: crystal.crystal_id,
             mineral: crystal.mineral,
-            ringIdx: _anchor.ringIdx,
-            cellIdx: _anchor.cellIdx,
+            ringIdx: _address.ringIdx,
+            cellIdx: _address.cellIdx,
+            surfaceAnchorKey: wall?.surfaceAnchorKey?.(crystal),
             isSatellite: true,
             // === HELIX-OVERLAY-FORK ADDITION (v13) =========================
             // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
@@ -102373,7 +103868,7 @@ function _topoCAxisForCrystal(crystal, nx, ny, nz) {
 // v65: replayStep folded in so replay frames bust the cache and pull
 // the historical c_length per crystal. When undefined (live render),
 // the signature reduces to the v64 form so live caching is unchanged.
-function _topoCrystalsSignature(sim, replayStep) {
+function _topoCrystalsSignature(sim, wall, replayStep) {
     if (!sim || !sim.crystals || !sim.crystals.length)
         return '';
     const parts = [];
@@ -102395,9 +103890,8 @@ function _topoCrystalsSignature(sim, replayStep) {
         if (c.dissolved && !c.perimorph_eligible && !(c.c_length_mm > 0.05))
             continue;
         // PHASE-4-CAVITY-MESH Tranche 4b — wall_anchor is the truth.
-        const _a = c.wall_anchor;
-        const _ringKey = _a ? _a.ringIdx : 0;
-        const _cellKey = _a ? _a.cellIdx : 0;
+        const _anchorKey = wall?.surfaceAnchorKey
+            ? wall.surfaceAnchorKey(c) : CavitySurfaceAnchors.key(c.wall_anchor);
         // PHASE-D-HABIT-BIAS: encode growth_environment into the signature
         // so the cache busts when an air-mode crystal's orientation
         // (radial → gravity) flips. 'a' = air, 'f' = fluid (default).
@@ -102419,13 +103913,13 @@ function _topoCrystalsSignature(sim, replayStep) {
                 // when one appears.
                 if (!(c.dissolved && c.perimorph_eligible))
                     continue;
-                parts.push(`${c.crystal_id}:${effectiveMineral}:${c.habit}:cast:${c.c_length_mm.toFixed(2)}:${_ringKey}:${_cellKey}:${_envKey}`);
+                parts.push(`${c.crystal_id}:${effectiveMineral}:${c.habit}:cast:${c.c_length_mm.toFixed(2)}:${_anchorKey}:${_envKey}`);
                 continue;
             }
-            parts.push(`${c.crystal_id}:${effectiveMineral}:${c.habit}:${hist.c_length_mm.toFixed(2)}:${_ringKey}:${_cellKey}:${_envKey}:r${replayStep}`);
+            parts.push(`${c.crystal_id}:${effectiveMineral}:${c.habit}:${hist.c_length_mm.toFixed(2)}:${_anchorKey}:${_envKey}:r${replayStep}`);
             continue;
         }
-        parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${_ringKey}:${_cellKey}:${_envKey}:${c.dissolved ? 'd' : 'a'}`);
+        parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${_anchorKey}:${_envKey}:${c.dissolved ? 'd' : 'a'}`);
     }
     return parts.join('|');
 }
@@ -102458,30 +103952,12 @@ function _o2PlaceBody(crystal, wall, replayStep, ringCount, N, initR) {
     const anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
     if (!anchor)
         return null;
-    let ringIdx = anchor.ringIdx;
-    if (ringIdx == null || ringIdx < 0 || ringIdx >= ringCount)
-        ringIdx = 0;
-    const cellIdx = anchor.cellIdx;
-    if (cellIdx == null)
+    const point = wall.surfacePointForCrystal?.(crystal);
+    const normal = wall.surfaceNormalForCrystal?.(crystal);
+    if (!point || !normal)
         return null;
-    const ring = wall.rings[ringIdx];
-    if (!ring)
-        return null;
-    const cell = ring[cellIdx];
-    if (!cell)
-        return null;
-    const phi = Math.PI * (ringIdx + 0.5) / ringCount;
-    const sinPhi = Math.sin(phi), cosPhi = Math.cos(phi);
-    const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
-    const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0.0;
-    const baseR = cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
-    const radiusMm = (baseR + cell.wall_depth) * polar;
-    const theta = (2 * Math.PI * cellIdx) / N + twist;
-    const ax = radiusMm * sinPhi * Math.cos(theta);
-    const ay = -radiusMm * cosPhi;
-    const az = radiusMm * sinPhi * Math.sin(theta);
-    const len = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
-    const [cAxisX, cAxisY, cAxisZ] = _topoCAxisForCrystal(crystal, -ax / len, -ay / len, -az / len);
+    const [ax, ay, az] = point;
+    const [cAxisX, cAxisY, cAxisZ] = _topoCAxisForCrystal(crystal, normal[0], normal[1], normal[2]);
     const token = _resolveCrystalGeomToken(crystal, crystal.habit);
     const inReplay = (replayStep != null);
     const cLen = Math.max(inReplay ? 0.0 : 2.0, renderC);
@@ -102652,7 +104128,7 @@ function _o2ContactMaterial(mat, state) {
 function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
     if (!sim || !wall || !wall.rings || !wall.rings.length)
         return;
-    const sig = _topoCrystalsSignature(sim, replayStep);
+    const sig = _topoCrystalsSignature(sim, wall, replayStep);
     if (sig === state.crystalsSig)
         return;
     state.crystalsSig = sig;
@@ -102744,38 +104220,27 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
         const _anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
         if (!_anchor)
             continue;
-        let ringIdx = _anchor.ringIdx;
-        if (ringIdx == null || ringIdx < 0 || ringIdx >= ringCount)
-            ringIdx = 0;
-        const cellIdx = _anchor.cellIdx;
-        if (cellIdx == null)
+        // `_anchor` is already authenticated and live-remapped. Reuse it rather
+        // than independently resolving the same crystal for each projection.
+        const chemistry = CavitySurfaceAnchors.chemistryAddress(_anchor);
+        const point = _anchor.position;
+        const normal = _anchor.normal;
+        if (!chemistry || !point || !normal)
             continue;
+        const ringIdx = chemistry.ringIdx;
+        const cellIdx = chemistry.cellIdx;
         const ring = wall.rings[ringIdx];
-        if (!ring)
-            continue;
-        const cell = ring[cellIdx];
-        if (!cell)
+        if (!ring || !ring[cellIdx])
             continue;
         // Anchor point on the cavity wall — same math as
         // _topoBuildCavityGeometry uses, applied to one cell.
-        const phi = Math.PI * (ringIdx + 0.5) / ringCount;
-        const sinPhi = Math.sin(phi);
-        const cosPhi = Math.cos(phi);
-        const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
-        const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0.0;
-        const baseR = cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
-        const radiusMm = (baseR + cell.wall_depth) * polar;
-        const theta = (2 * Math.PI * cellIdx) / N + twist;
-        const ax = radiusMm * sinPhi * Math.cos(theta);
-        const ay = -radiusMm * cosPhi;
-        const az = radiusMm * sinPhi * Math.sin(theta);
+        const [ax, ay, az] = point;
         // Substrate normal: from wall center (the origin, since the
         // cavity is built around 0,0,0) outward through the anchor.
         // c-axis lies along this normal — crystal grows INTO the cavity
         // (toward origin) for fluid environments. Negate so the c-axis
         // points from anchor toward origin.
-        const len = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
-        const nx = -ax / len, ny = -ay / len, nz = -az / len;
+        const [nx, ny, nz] = normal;
         // PHASE-D-HABIT-BIAS — pure helper centralizes the gravity bias.
         // See _topoCAxisForCrystal definition below for the full
         // contract; tests live in tests-js/habit-bias.test.ts.
@@ -103518,6 +104983,7 @@ function _topoSyncCrystalMeshes(state, sim, wall, replayStep) {
             mineral: effectiveMineral,
             ringIdx,
             cellIdx,
+            surfaceAnchorKey: wall.surfaceAnchorKey?.(crystal),
             // === HELIX-OVERLAY-FORK ADDITION (v13) =========================
             // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
             // breadcrumb. Sweep-writes-crystals mode: the helix overlay
@@ -103835,6 +105301,15 @@ function _topoApplyThreeDefaultOnce() {
 // Legacy flat-array snapshot (the v60 schema) is still tolerated for
 // any in-memory state that predates v65: the flat ring is projected
 // across all rings, matching the previous placeholder behavior.
+function _topoRejectReplayWall(synth, reason) {
+    synth._cavityEvolutionLedger = null;
+    delete synth._cavityEvolutionCursor;
+    synth._disableMarchingCubesCavity = true;
+    synth._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
+    synth._activeCavitySurfaceAnchorProvider = null;
+    synth._replayAuthenticationFailure = String(reason instanceof Error ? reason.message : reason || 'unknown replay authentication failure');
+    return synth;
+}
 function _topoSnapshotWall(liveWall, snapshot) {
     if (!liveWall || !liveWall.rings || !liveWall.rings.length)
         return liveWall;
@@ -103843,6 +105318,18 @@ function _topoSnapshotWall(liveWall, snapshot) {
     // Synthetic wall — reuse method shapes from liveWall via Object.assign
     // so polarProfileFactor, ringTwistRadians, etc. still work.
     const synth = Object.assign(Object.create(Object.getPrototypeOf(liveWall) || null), liveWall);
+    // Object.assign intentionally skips WallState's non-enumerable immutable
+    // authored-shape authority. Restore that exact construction receipt before
+    // recomputing ledger identity; otherwise every honest snapshot would appear
+    // to have `authored_shape: null`.
+    if (liveWall._cavity_shape) {
+        Object.defineProperty(synth, '_cavity_shape', {
+            value: liveWall._cavity_shape,
+            writable: false,
+            configurable: false,
+            enumerable: false,
+        });
+    }
     // Never inherit geometry identity or a live mesh. The rings below are a
     // distinct historical surface, so they must take the exact all-cell
     // signature path and build their own WallMesh. Otherwise every replay frame
@@ -103854,6 +105341,8 @@ function _topoSnapshotWall(liveWall, snapshot) {
     // Object.assign inherited the live authority. A historical surface must not
     // expose it until both cursor authentication and depth projection succeed.
     synth._cavityEvolutionLedger = null;
+    synth._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
+    synth._activeCavitySurfaceAnchorProvider = null;
     delete synth._cavityEvolutionCursor;
     // Fail closed by default. Only an authenticated cavity-evolution prefix
     // below may opt a replay frame into the default-off MC comparison path.
@@ -103862,6 +105351,7 @@ function _topoSnapshotWall(liveWall, snapshot) {
     //   * Multi-ring (v65+): { step, rings: [...] } — use directly.
     //   * Legacy flat array (v60..v64): project across all rings.
     let snapRings;
+    const modernSnapshot = !Array.isArray(snapshot);
     if (Array.isArray(snapshot)) {
         snapRings = new Array(ringCount);
         for (let r = 0; r < ringCount; r++)
@@ -103869,29 +105359,55 @@ function _topoSnapshotWall(liveWall, snapshot) {
     }
     else if (snapshot && Array.isArray(snapshot.rings)) {
         snapRings = snapshot.rings;
+        let exactDimensions = snapRings.length === ringCount;
+        for (let r = 0; exactDimensions && r < ringCount; r++) {
+            if (!Object.prototype.hasOwnProperty.call(snapRings, r)
+                || !Array.isArray(snapRings[r]) || snapRings[r].length !== N) {
+                exactDimensions = false;
+                break;
+            }
+            for (let i = 0; i < N; i++) {
+                if (!Object.prototype.hasOwnProperty.call(snapRings[r], i)) {
+                    exactDimensions = false;
+                    break;
+                }
+            }
+        }
+        if (!exactDimensions) {
+            return _topoRejectReplayWall(synth, `replay dimensions must be exactly ${ringCount}x${N}`);
+        }
     }
     else {
-        return liveWall;
+        return _topoRejectReplayWall(synth, 'unsupported or missing replay rings');
     }
     const rings = [];
+    let invalidGeometry = '';
     for (let r = 0; r < ringCount; r++) {
         // Fall through to ring 0 if the snapshot is short on rings — keeps
         // mid-life ring_count migrations from crashing.
-        const sourceRing = snapRings[r] || snapRings[0] || [];
+        const sourceRing = snapRings[r];
         const ring = new Array(N);
         for (let i = 0; i < N; i++) {
             const snap = sourceRing[i] || {};
+            const wallDepth = Number(snap.wall_depth);
+            const baseRadius = Number(snap.base_radius_mm);
+            if (!Number.isFinite(wallDepth)
+                || (modernSnapshot && (!(baseRadius > 0) || !Number.isFinite(baseRadius)))) {
+                invalidGeometry = `non-finite or missing replay geometry at ring ${r}, cell ${i}`;
+            }
             ring[i] = {
-                wall_depth: snap.wall_depth || 0,
+                wall_depth: Number.isFinite(wallDepth) ? wallDepth : 0,
                 crystal_id: snap.crystal_id ?? null,
                 mineral: snap.mineral ?? null,
                 thickness_um: snap.thickness_um || 0,
-                base_radius_mm: snap.base_radius_mm || 0,
+                base_radius_mm: Number.isFinite(baseRadius) ? baseRadius : 0,
             };
         }
         rings[r] = ring;
     }
     synth.rings = rings;
+    if (invalidGeometry)
+        return _topoRejectReplayWall(synth, invalidGeometry);
     const ledger = liveWall.cavityEvolutionLedger ? liveWall.cavityEvolutionLedger() : null;
     const cursor = snapshot && !Array.isArray(snapshot)
         ? snapshot.cavity_evolution_cursor : null;
@@ -103899,23 +105415,82 @@ function _topoSnapshotWall(liveWall, snapshot) {
         ? snapshot.cavity_evolution_signature : null;
     if (ledger && Number.isInteger(cursor) && cursor >= 0 && cursor <= ledger.cursor) {
         try {
-            if (ledger.signatureAt(cursor) !== expectedSignature)
-                return synth;
+            if (ledger.signatureAt(cursor) !== expectedSignature) {
+                throw new Error('replay cavity evolution signature mismatch');
+            }
+            const identity = CavityEvolutionLedger.identityForWall(synth);
+            if (identity.shape !== ledger.shape_identity
+                || identity.tessellation !== ledger.tessellation_identity) {
+                throw new Error('replay cavity shape or tessellation identity mismatch');
+            }
             ledger.assertProjection(synth, cursor);
             synth._cavityEvolutionLedger = ledger;
             synth._cavityEvolutionCursor = cursor;
             synth._disableMarchingCubesCavity = false;
+            // Replay the provider command that was authoritative at this snapshot,
+            // then independently rebuild and compare every identity field. Legacy
+            // snapshots omitted this receipt and therefore remain on canonical
+            // WallMesh; they must never inherit the provider active on `liveWall`.
+            const storedProvider = snapshot?.cavity_surface_provider;
+            if (storedProvider?.kind === 'cavity-field') {
+                const rebuilt = synth.activateCavitySurfaceAnchorProvider({
+                    resolution: storedProvider.resolution,
+                    isovalue: storedProvider.isovalue,
+                    ledgerCursor: cursor,
+                });
+                const identityKeys = [
+                    'kind', 'resolution', 'isovalue', 'field_signature',
+                    'field_snapshot_digest', 'surface_signature',
+                    'surface_buffer_digest', 'cavity_evolution_signature',
+                ];
+                if (identityKeys.some(key => rebuilt[key] !== storedProvider[key])
+                    || rebuilt.cavity_evolution_signature !== expectedSignature) {
+                    throw new Error('replay cavity provider receipt mismatch');
+                }
+            }
+            else if (storedProvider && storedProvider.kind !== 'wall-mesh') {
+                throw new Error('unknown replay cavity provider kind');
+            }
         }
         catch (_error) {
-            // Replay remains on the canonical WallMesh fallback. A corrupt or
-            // incompatible historical frame is evidence to reject, not an excuse
-            // to throw out of rendering or inherit the live ledger.
-            synth._cavityEvolutionLedger = null;
-            delete synth._cavityEvolutionCursor;
-            synth._disableMarchingCubesCavity = true;
+            // A corrupt frame is withheld. Falling back to its untrusted WallMesh
+            // would turn authentication failure into plausible-looking geology.
+            return _topoRejectReplayWall(synth, _error);
         }
     }
+    else if (modernSnapshot) {
+        return _topoRejectReplayWall(synth, 'missing or invalid replay cavity evolution receipt');
+    }
     return synth;
+}
+// One decision boundary shared by canvas and WebGL dispatch. Tests exercise
+// this function directly so failure behavior cannot regress behind renderer or
+// hardware availability branches.
+function _topoReplayRenderDecision(liveWall, snapshot) {
+    if (snapshot && (!liveWall || !Array.isArray(liveWall.rings) || !liveWall.rings.length)) {
+        return Object.freeze({
+            mode: 'corrupt', wall: null,
+            message: 'Replay frame withheld: live cavity authority is unavailable.',
+        });
+    }
+    const wall = snapshot ? _topoSnapshotWall(liveWall, snapshot) : liveWall;
+    if (wall?._replayAuthenticationFailure) {
+        return Object.freeze({
+            mode: 'corrupt', wall,
+            message: `Replay frame withheld: ${wall._replayAuthenticationFailure}.`,
+        });
+    }
+    const provider = wall?.activeCavitySurfaceAnchorProvider?.();
+    return Object.freeze({
+        mode: provider?.receipt?.kind === 'cavity-field' ? 'cavity-field' : 'wall-mesh',
+        wall,
+        message: null,
+    });
+}
+function _topoThreeRenderAuthorityDecision(liveWall, snapshot) {
+    return snapshot
+        ? _topoReplayRenderDecision(liveWall, snapshot)
+        : Object.freeze({ mode: 'wall-mesh', wall: liveWall, message: null });
 }
 // Public render entry. Called from topoRender's branch when
 // _topoUseThreeRenderer is true. Lazily inits on first call; renders
@@ -103937,6 +105512,24 @@ function _topoSnapshotWall(liveWall, snapshot) {
 // undefined, the Three.js path renders LIVE crystal sizes (regular
 // frame).
 function _topoRenderThree(sim, wall, optOverrideSnap, optReplayStep) {
+    // Authenticate a supplied historical frame before renderer/canvas/hardware
+    // checks. A malformed payload must never turn into today's live geology just
+    // because WebGL is absent or initialization exits early.
+    const replayDecision = _topoThreeRenderAuthorityDecision(wall, optOverrideSnap);
+    const renderWall = replayDecision.wall;
+    if (replayDecision.mode === 'corrupt' || renderWall?._replayAuthenticationFailure) {
+        if (_topoThreeState?.cavity)
+            _topoThreeState.cavity.visible = false;
+        if (_topoThreeState?.crystals)
+            _topoThreeState.crystals.visible = false;
+        if (_topoThreeState)
+            _topoThreeState.cavityAuthorityUnrenderable = true;
+        const canvas2d = document.getElementById('topo-canvas');
+        if (canvas2d)
+            _topoPaintPlaceholder(canvas2d, replayDecision.message
+                || `Replay frame withheld: ${renderWall._replayAuthenticationFailure}.`);
+        return false;
+    }
     const canvas = document.getElementById('topo-canvas-three');
     if (!canvas)
         return false;
@@ -103957,12 +105550,12 @@ function _topoRenderThree(sim, wall, optOverrideSnap, optReplayStep) {
     // During replay, build cavity from the snapshot rings so the wall
     // profile reflects the historical step. Force a fresh build each
     // replay frame by invalidating the cached signatures.
-    const renderWall = optOverrideSnap ? _topoSnapshotWall(wall, optOverrideSnap) : wall;
     if (optOverrideSnap) {
         state.cavitySig = null;
         state.crystalsSig = null;
     }
-    _topoBuildCavityGeometry(state, renderWall, sim);
+    if (!_topoBuildCavityGeometry(state, renderWall, sim))
+        return false;
     _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
     _topoApplyCameraFromTilt(state, renderWall);
     // === HELIX-OVERLAY-FORK ADDITION (v0–v17) =========================
@@ -103976,9 +105569,7 @@ function _topoRenderThree(sim, wall, optOverrideSnap, optReplayStep) {
     }
     // === END HELIX-OVERLAY-FORK ADDITION ==============================
     const rendered = _topoRenderPreparedCavityScene(state, () => {
-        const failedDigest = renderWall && renderWall.cavityFieldFor
-            ? renderWall.cavityFieldFor({ resolution: _topoMarchingCubesResolution() }).snapshotDigest
-            : null;
+        const failedDigest = state.cavityFieldContract?.snapshot_digest || null;
         if (failedDigest) {
             if (!state.cavityFieldFailedDigests)
                 state.cavityFieldFailedDigests = new Set();
@@ -103987,10 +105578,22 @@ function _topoRenderThree(sim, wall, optOverrideSnap, optReplayStep) {
             state.cavityFieldFailedDigests.add(failedDigest);
             state.cavityFieldFailedReasons.set(failedDigest, 'cavity-field-shader-link-failed');
         }
+        if (renderWall.activeCavitySurfaceAnchorProvider?.()?.receipt?.kind === 'cavity-field') {
+            state.cavityAuthorityUnrenderable = true;
+            if (state.cavity)
+                state.cavity.visible = false;
+            if (state.crystals)
+                state.crystals.visible = false;
+            return false;
+        }
         state.cavitySig = '';
-        _topoBuildCavityGeometry(state, renderWall, sim);
+        // A failed field shader cannot be replaced by an independently selected MC
+        // shadow extraction in the same fallback. Anchors and the visible wall both
+        // return to canonical WallMesh before the polar shader is compiled.
+        _topoBuildCavityGeometry(state, renderWall, sim, true);
         state.crystalsSig = '';
         _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
+        return true;
     });
     if (!rendered) {
         // Let topoRender continue into its established canvas renderer. Keep the
@@ -104619,7 +106222,11 @@ const _HELIX_CHEM_PARAMS = (function () {
             for (const cr of crys) {
                 if (!cr || cr.mineral !== mineral || cr.dissolved || !cr._morphology)
                     continue;
-                const a = cr.wall_anchor;
+                // Live WallState owns the projection.  The explicit legacy decoder is
+                // retained for read-only archived strips and minimal instrumentation
+                // fixtures that predate topology-independent anchors.
+                const a = w?.chemistryAddressForCrystal?.(cr)
+                    || CavitySurfaceAnchors.chemistryAddress(cr.wall_anchor);
                 if (!a || a.ringIdx !== i)
                     continue;
                 const d = (((a.cellIdx - c) % N) + N) % N;
@@ -105634,13 +107241,14 @@ function _helixHarvestEvents(sim) {
     for (const c of sim.crystals) {
         if (!c)
             continue;
-        const anchor = c.wall_anchor;
-        if (!anchor || anchor.ringIdx == null || anchor.cellIdx == null)
+        const address = sim.wall_state?.chemistryAddressForCrystal?.(c)
+            || CavitySurfaceAnchors.chemistryAddress(c.wall_anchor);
+        if (!address)
             continue;
         // Nucleation marker — one per crystal at its anchor.
         out.push({
-            ringIdx: anchor.ringIdx,
-            cellIdx: anchor.cellIdx,
+            ringIdx: address.ringIdx,
+            cellIdx: address.cellIdx,
             kind: 'nucleation',
             color: 0x55ff66, // green
         });
@@ -105652,8 +107260,8 @@ function _helixHarvestEvents(sim) {
             for (const z of c.zones) {
                 if (z && typeof z.thickness_um === 'number' && z.thickness_um < 0) {
                     out.push({
-                        ringIdx: anchor.ringIdx,
-                        cellIdx: anchor.cellIdx,
+                        ringIdx: address.ringIdx,
+                        cellIdx: address.cellIdx,
                         kind: 'dissolution',
                         color: 0xff5566, // red
                     });

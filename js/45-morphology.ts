@@ -1115,19 +1115,21 @@ function _o1aBaseTipSigma(sim: any, crystal: any): any {
   if (!grid) return null;
   const anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
   if (!anchor) return null;
+  const chemistry = wall.chemistryAddressForCrystal?.(crystal);
+  if (!chemistry) return null;
   const maxD = grid.depth_count - 1;
   if (maxD < 1) return null;
-  const f0 = grid.fluidAt(anchor.ringIdx, anchor.cellIdx, 0);
-  const fD = grid.fluidAt(anchor.ringIdx, anchor.cellIdx, maxD);
+  const f0 = grid.fluidAt(chemistry.ringIdx, chemistry.cellIdx, 0);
+  const fD = grid.fluidAt(chemistry.ringIdx, chemistry.cellIdx, maxD);
   if (!f0 || !fD || f0 === fD) return null;
   const savedF = cond.fluid, savedT = cond.temperature;
   let s0 = NaN, sD = NaN;
   try {
     cond.fluid = f0;
-    cond.temperature = grid.temperatureAt(anchor.ringIdx, anchor.cellIdx, 0);
+    cond.temperature = grid.temperatureAt(chemistry.ringIdx, chemistry.cellIdx, 0);
     try { s0 = fn.call(cond); } catch { s0 = NaN; }
     cond.fluid = fD;
-    cond.temperature = grid.temperatureAt(anchor.ringIdx, anchor.cellIdx, maxD);
+    cond.temperature = grid.temperatureAt(chemistry.ringIdx, chemistry.cellIdx, maxD);
     try { sD = fn.call(cond); } catch { sD = NaN; }
   } finally {
     cond.fluid = savedF;
@@ -1243,8 +1245,9 @@ function surfaceGrowthDescriptor(crystal: any, wall: any, sim?: any): any | null
   if (regime === 'dendritic_film') coverage = Math.max(coverage, 0.72 * maturity);
   coverage = Math.max(0.02, Math.min(0.98, coverage));
 
-  const exactArea = wall && typeof wall.surfaceAreaMm2 === 'function'
-    ? Number(wall.surfaceAreaMm2(sim)) : 0;
+  const exactArea = wall && typeof wall.surfaceAreaForCrystal === 'function'
+    ? Number(wall.surfaceAreaForCrystal(crystal, sim))
+    : (wall && typeof wall.surfaceAreaMm2 === 'function' ? Number(wall.surfaceAreaMm2(sim)) : 0);
   const diameter = wall && typeof wall.meanDiameterMm === 'function'
     ? wall.meanDiameterMm()
     : Number(wall && wall.vug_diameter_mm) || Number(crystal.vug_diameter_mm) || 50;
@@ -1265,7 +1268,8 @@ function surfaceGrowthDescriptor(crystal: any, wall: any, sim?: any): any | null
     void_reach: Math.max(0, Math.min(1, Number(crystal.void_reach) || 0)),
     substrate: crystal.position || 'vug wall',
     area_basis: exactArea > 0
-      ? 'exact WallMesh triangle area'
+      ? (wall?._resolveAnchor?.(crystal)?.source?.kind === 'cavity-field'
+        ? 'exact cavity-field triangle area' : 'exact WallMesh triangle area')
       : 'mean-diameter spherical fallback',
     mass_basis: 'accepted Crystal._volume_mm3; renderer instances are representative only',
   };
@@ -1287,8 +1291,9 @@ function classifySurfaceGrowth(sim: any) {
     }
   }
   // Preserve spatial paragenesis as explicit model evidence. A later layer
-  // lists only earlier surface fabrics whose spherical-cap footprints can
-  // overlap; the renderer refines this to exact shared triangles per sample.
+  // lists only earlier surface fabrics whose connected physical-surface
+  // footprints overlap. Position + source triangle choose the component and
+  // patch; origin-radial direction is not surface identity.
   eligible.sort((a, b) => (Number(a.nucleation_step) - Number(b.nucleation_step))
     || (Number(a.crystal_id) - Number(b.crystal_id)));
   const prior: any[] = [];
@@ -1297,20 +1302,23 @@ function classifySurfaceGrowth(sim: any) {
   for (let i = 0; i < eligible.length; i++) {
     const c = eligible[i];
     const desc = c._surfaceGrowth;
-    const dir = wall && typeof wall.surfaceAnchorDirection === 'function'
-      ? wall.surfaceAnchorDirection(c) : [0, 1, 0];
+    const dir = wall && typeof wall.surfaceNormalForCrystal === 'function'
+      ? wall.surfaceNormalForCrystal(c) : [0, 1, 0];
     const radius = Math.acos(Math.max(-1, Math.min(1, 1 - 2 * desc.coverage_fraction)));
-    const exactPatch = exactMesh && typeof exactMesh.surfacePatch === 'function'
-      ? exactMesh.surfacePatch(dir, desc.coverage_fraction) : null;
+    const exactPatch = wall && typeof wall.surfacePatchForCrystal === 'function'
+      ? wall.surfacePatchForCrystal(c, desc.coverage_fraction, sim) : null;
     const exactTriangles = exactPatch && Array.isArray(exactPatch.triangles)
       ? new Set(exactPatch.triangles.map((triangle: any) => triangle.triangle_index))
       : null;
+    const exactTriangleKeys = exactTriangles
+      ? new Set(Array.from(exactTriangles).map((triangleIndex: any) =>
+        `${exactPatch.source_signature}:${triangleIndex}`)) : null;
     const underlying: number[] = [];
     for (const p of prior) {
-      if (exactTriangles && p.exactTriangles) {
+      if (exactTriangleKeys && p.exactTriangleKeys) {
         let sharesTriangle = false;
-        for (const triangleIndex of exactTriangles) {
-          if (p.exactTriangles.has(triangleIndex)) { sharesTriangle = true; break; }
+        for (const triangleKey of exactTriangleKeys) {
+          if (p.exactTriangleKeys.has(triangleKey)) { sharesTriangle = true; break; }
         }
         if (sharesTriangle) underlying.push(p.crystal.crystal_id);
       } else {
@@ -1323,9 +1331,9 @@ function classifySurfaceGrowth(sim: any) {
     desc.nucleation_step = Number(c.nucleation_step) || 0;
     desc.underlying_surface_crystal_ids = underlying;
     desc.stratigraphy_basis = exactTriangles
-      ? 'exact shared WallMesh triangles'
+      ? 'exact shared authenticated-surface triangles'
       : 'spherical-cap fallback';
-    prior.push({ crystal: c, dir, radius, exactTriangles });
+    prior.push({ crystal: c, dir, radius, exactTriangles, exactTriangleKeys });
   }
 }
 
@@ -1335,8 +1343,7 @@ function _wulffLocalChemistry(sim: any, crystal: any): any {
   const wall = sim.wall_state;
   const anchor = wall?._resolveAnchor?.(crystal);
   const mesh = wall?.meshFor?.(sim);
-  const vertexIdx = anchor
-    ? anchor.ringIdx * wall.cells_per_ring + anchor.cellIdx : -1;
+  const vertexIdx = anchor ? wall.chemistryVertexForCrystal?.(crystal) : -1;
   return {
     fluid: vertexIdx >= 0 ? (mesh?.cells?.[vertexIdx]?.fluid || conditions.fluid) : conditions.fluid,
     temperatureC: vertexIdx >= 0
@@ -1548,7 +1555,7 @@ function classifyMorphologyStep(sim: any) {
       const anchor = sim.wall_state?._resolveAnchor?.(c);
       const mesh = sim.wall_state?.meshFor?.(sim);
       const vertexIdx = anchor
-        ? anchor.ringIdx * sim.wall_state.cells_per_ring + anchor.cellIdx : -1;
+        ? sim.wall_state.chemistryVertexForCrystal?.(c) : -1;
       const localFluid = vertexIdx >= 0 ? mesh?.cells?.[vertexIdx]?.fluid : null;
       const savedFluid = sim.conditions.fluid;
       const savedTemp = sim.conditions.temperature;

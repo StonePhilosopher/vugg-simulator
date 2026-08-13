@@ -21,7 +21,10 @@ declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
 
+const FULL_RUNS = new Map<string, any>();
+
 function runFull(scenarioName: string) {
+  if (FULL_RUNS.has(scenarioName)) return FULL_RUNS.get(scenarioName);
   setSeed(42);
   const { conditions, events, defaultSteps } = SCENARIOS[scenarioName]();
   const sim = new VugSimulator(conditions, events);
@@ -33,10 +36,16 @@ function runFull(scenarioName: string) {
     if (fill > peakFill) peakFill = fill;
     if (fill >= 1.0 && sealedStep === null) sealedStep = i + 1;
   }
-  return { sim, peakFill, sealedStep };
+  const result = { sim, peakFill, sealedStep };
+  FULL_RUNS.set(scenarioName, result);
+  return result;
 }
 
-describe('Proposal D — interlocking textures + single-zone volume clamp', () => {
+// Five distinct full scenario runs are retained because peak fill,
+// replacement history, and private late_interlocking state are absent from
+// the compact commissioning baseline. Repeated seed-42 scenarios reuse one
+// deterministic result.
+describe('Proposal D — interlocking textures + single-zone volume clamp', { timeout: 3_600_000 }, () => {
   describe('sabkha_dolomitization: corrected sulfate replacement does not invent a seal', () => {
     it('peak vugFill remains finite and far below the cavity ceiling', () => {
       const { peakFill } = runFull('sabkha_dolomitization');

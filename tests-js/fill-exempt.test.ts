@@ -19,25 +19,26 @@
 //     borax/mirabilite engines fire while halite/calcite engines are
 //     locked out.
 //
-// What this is NOT testing:
-//   * That borax/mirabilite actually nucleate in searles_lake's 300-step
-//     run. That's a coverage-tool concern (tools/mineral_coverage_check.mjs)
-//     and depends on σ-gates lining up — orthogonal to the fill-cap fix.
-//     A future test could pin that searles_lake's expects_species clears
-//     fully, but it'd be a brittle calibration check that drifts whenever
-//     evaporite chemistry is re-tuned.
+// The end-to-end Searles assertion below reads the authenticated locality-
+// frequency artifact. Its simulations are produced once by science:rebake,
+// bound to the exact runtime/data/producer identity, and independently
+// covered by the aggregate science-evidence receipt.
 
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  currentEvidenceIdentity,
+  loadAuthenticatedEvidenceJson,
+  requireEvidenceScenario,
+} from './authenticated-evidence';
 
 declare const VugSimulator: any;
 declare const VugConditions: any;
 declare const VugWall: any;
 declare const FluidChemistry: any;
 declare const MINERAL_SPEC: any;
-declare const SCENARIOS: any;
 declare const setSeed: any;
 
 // The canonical fill-exempt set (Backlog K). If a future agent adds a
@@ -59,6 +60,11 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const AUTHORED_SPEC = JSON.parse(
   fs.readFileSync(path.join(ROOT, 'data', 'minerals.json'), 'utf8'),
 ).minerals;
+const SIM_VERSION = currentEvidenceIdentity.simVersion;
+const LOCALITY_FREQUENCY = loadAuthenticatedEvidenceJson(
+  `tests-js/baselines/locality_frequency_v${SIM_VERSION}.json`,
+  'locality-frequency',
+);
 
 function makeBareConditions(wallOpts: any = {}) {
   return new VugConditions({
@@ -239,60 +245,23 @@ describe('Backlog K — fill-cap exemption', () => {
     });
   });
 
-  describe('searles_lake scenario end-to-end (smoke)', () => {
-    // The point of Backlog K is for searles_lake to clear its remaining
-    // 2 stale minerals (borax + mirabilite). The full coverage check
-    // lives in tools/mineral_coverage_check.mjs (~10s sweep across
-    // 10 seeds × 24 scenarios). This smoke test asserts the cheap
-    // end of the spectrum: that at least one of borax / mirabilite
-    // shows up in a 300-step searles_lake run on at least one seed in
-    // a tight 5-seed band. If this fails, the fix has regressed even
-    // before the broader sweep runs.
-    it('borax/mirabilite or their dehydration products nucleate in at least one searles_lake run', { timeout: 300000 }, () => {
-      // v161: explicit 60s timeout. The v160 per-voxel diffusion added
-      // ~4-6 ms/step; this multi-seed searles_lake sweep runs comfortably
-      // in isolation (~12s) but tips past the 30s default under parallel
-      // suite CPU contention. Coverage assertion is unaffected — sim
-      // output is byte-identical; purely the heavier per-step cost.
-      //
-      // v84 (2026-05-19): the cap-conservation fix
-      // (_atNucleationCap now counts paramorph_origin) means a borax
-      // that nucleates then dehydrates to tincalconite still consumes
-      // the borax cap budget; the cap doesn't reopen for fresh borax.
-      // With searles_lake's dry-ring conditions, most borax/mirabilite
-      // crystals DO transform to their dehydration products by run-
-      // end. The pin now counts crystals where mineral OR
-      // paramorph_origin is borax / mirabilite — capturing the full
-      // late-evaporite-crust assemblage including post-dehydration
-      // tincalconite + thenardite. Same semantic as the realgar-
-      // origin pin in realgar-orpiment.test.ts.
-      const seeds = [42, 1, 7, 13, 23];
-      let hitSeed: number | null = null;
-      for (const seed of seeds) {
-        setSeed(seed);
-        const scen = SCENARIOS['searles_lake'];
-        if (!scen) continue; // scenario gated/disabled — skip rather than fail
-        const { conditions, events, defaultSteps } = scen();
-        const sim = new VugSimulator(conditions, events);
-        const steps = defaultSteps ?? 300;
-        for (let i = 0; i < steps; i++) sim.run_step();
-        const hasBorax = sim.crystals.some((c: any) =>
-          c.mineral === 'borax' || c.paramorph_origin === 'borax',
-        );
-        const hasMirab = sim.crystals.some((c: any) =>
-          c.mineral === 'mirabilite' || c.paramorph_origin === 'mirabilite',
-        );
-        if (hasBorax || hasMirab) {
-          hitSeed = seed;
-          break;
-        }
+  describe('searles_lake authenticated commissioning evidence', () => {
+    it('pins borax and mirabilite across the standard three-seed ensemble', () => {
+      const searles = requireEvidenceScenario(LOCALITY_FREQUENCY, 'searles_lake');
+      expect(LOCALITY_FREQUENCY.sim_version).toBe(SIM_VERSION);
+      expect(LOCALITY_FREQUENCY.seeds).toEqual([1, 2, 42]);
+      expect(searles?.duration_steps).toBe(300);
+
+      for (const mineral of ['borax', 'mirabilite']) {
+        expect(searles?.occurrences?.[mineral]?.count, `${mineral} frequency`).toBe(3);
+        expect(searles?.occurrences?.[mineral]?.seeds, `${mineral} seeds`).toEqual([1, 2, 42]);
       }
-      // At least 1 of 5 seeds should produce the evaporite crust
-      // (borax/mirabilite-origin) now that fill-exempt unlocks the
-      // path. Was 0/5 before Backlog K (handoff §4: "halite fills
-      // cavity > 95% before borax's rare-event 12% gate fires").
-      expect(hitSeed,
-        'no seed produced borax/mirabilite-origin crystals — Backlog K regressed').not.toBeNull();
+
+      // Dehydration products confirm that the late evaporite material is
+      // allowed to evolve after nucleation, not merely counted at birth.
+      for (const mineral of ['tincalconite', 'thenardite']) {
+        expect(searles?.occurrences?.[mineral]?.count, `${mineral} frequency`).toBe(3);
+      }
     });
   });
 });

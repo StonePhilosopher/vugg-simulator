@@ -591,7 +591,11 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
       let best: any = null, bestSize = -1;
       for (const cr of crys) {
         if (!cr || cr.mineral !== mineral || cr.dissolved || !cr._morphology) continue;
-        const a = cr.wall_anchor;
+        // Live WallState owns the projection.  The explicit legacy decoder is
+        // retained for read-only archived strips and minimal instrumentation
+        // fixtures that predate topology-independent anchors.
+        const a = w?.chemistryAddressForCrystal?.(cr)
+          || CavitySurfaceAnchors.chemistryAddress(cr.wall_anchor);
         if (!a || a.ringIdx !== i) continue;
         const d = (((a.cellIdx - c) % N) + N) % N;
         if (Math.min(d, N - d) > 2) continue;
@@ -1641,13 +1645,14 @@ function _helixHarvestEvents(sim: any): HelixEvent[] {
   const out: HelixEvent[] = [];
   for (const c of sim.crystals) {
     if (!c) continue;
-    const anchor = c.wall_anchor;
-    if (!anchor || anchor.ringIdx == null || anchor.cellIdx == null) continue;
+    const address = sim.wall_state?.chemistryAddressForCrystal?.(c)
+      || CavitySurfaceAnchors.chemistryAddress(c.wall_anchor);
+    if (!address) continue;
 
     // Nucleation marker — one per crystal at its anchor.
     out.push({
-      ringIdx: anchor.ringIdx,
-      cellIdx: anchor.cellIdx,
+      ringIdx: address.ringIdx,
+      cellIdx: address.cellIdx,
       kind: 'nucleation',
       color: 0x55ff66,                   // green
     });
@@ -1660,8 +1665,8 @@ function _helixHarvestEvents(sim: any): HelixEvent[] {
       for (const z of c.zones) {
         if (z && typeof z.thickness_um === 'number' && z.thickness_um < 0) {
           out.push({
-            ringIdx: anchor.ringIdx,
-            cellIdx: anchor.cellIdx,
+            ringIdx: address.ringIdx,
+            cellIdx: address.cellIdx,
             kind: 'dissolution',
             color: 0xff5566,               // red
           });

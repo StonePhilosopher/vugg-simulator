@@ -13,12 +13,16 @@
 // (the bulk view isn't debited by growth budget; the mesh cells are), so a
 // strip series corroborates — it does not duplicate — a bulk-probe series.
 
+import { loadAuthenticatedEvidenceJson, currentEvidenceIdentity } from './authenticated-evidence';
+
 declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
 declare const StripRecorder: any;
 declare const stripDataIndex: any;
 declare const stripDequantize: any;
+declare const MODEL_DIGEST: string;
+declare const scenarioSpecHash: (spec: any) => string;
 
 export interface StripChipSeriesLoc {
   /** sub-strip angular index; omit to average over all angles (skipping nulls). */
@@ -51,6 +55,38 @@ export function recordScenario(
   return rec.finalize();
 }
 
+/** Load the canonical, aggregate-receipted portable story for this SIM. */
+export function loadArchivedScenario(name: string): any {
+  const { simVersion, modelDigest } = currentEvidenceIdentity;
+  const story = loadAuthenticatedEvidenceJson(
+    `archive/strips/v${simVersion}/${name}.json`,
+    'strip-archive',
+  );
+  const scenario = SCENARIOS?.[name];
+  if (typeof scenario !== 'function' || !scenario._json5_spec) {
+    throw new Error(`strip archive scenario is not authored in the current runtime: ${name}`);
+  }
+  const expectedSpecHash = scenarioSpecHash(scenario._json5_spec);
+  if (story.sim_version !== simVersion
+      || story.model_digest !== modelDigest
+      || MODEL_DIGEST !== modelDigest
+      || story.scenario !== name
+      || story.seed !== 42
+      || story.scenario_spec_hash !== expectedSpecHash) {
+    throw new Error(`strip archive identity mismatch for ${name} at SIM ${simVersion}`);
+  }
+  // Preserve the small manifest surface used by older contract assertions.
+  story.manifest = {
+    axes: {
+      steps: story.steps,
+      depth_positions: story.depth_positions,
+      angular_indices: 1,
+      height_positions: 1,
+    },
+  };
+  return story;
+}
+
 function chipIndex(ds: any, chipId: string): { idx: number; meta: any } {
   const idx = ds.manifest.chips.findIndex((c: any) => c.id === chipId);
   if (idx < 0) throw new Error(`strip: chip '${chipId}' not in dataset manifest`);
@@ -73,6 +109,23 @@ function resolveDepth(ds: any, depth: StripChipSeriesLoc['depth']): number {
  * uses the wall (depth 0).
  */
 export function chipSeries(ds: any, chipId: string, loc: StripChipSeriesLoc = {}): Array<number | null> {
+  // Canonical archives store already-dequantized mean-over-angle series. They
+  // retain the wall and center observations used by the contract suite.
+  if (ds?.chips && !ds?.chip_data) {
+    const chip = ds.chips[chipId];
+    if (!chip) throw new Error(`strip archive: chip '${chipId}' not found`);
+    if (loc.angle != null) {
+      throw new Error('portable strip archive contains mean-over-angle series only');
+    }
+    const wantsCenter = loc.depth === 'center'
+      || (typeof loc.depth === 'number' && loc.depth > 0);
+    const selected = wantsCenter ? chip.center : chip.wall;
+    const values = selected === 'same_as_wall' ? chip.wall : selected;
+    if (!Array.isArray(values)) {
+      throw new Error(`strip archive: chip '${chipId}' has no ${wantsCenter ? 'center' : 'wall'} series`);
+    }
+    return values.map((value: any) => value == null ? null : Number(value));
+  }
   const { idx, meta } = chipIndex(ds, chipId);
   const axes = ds.manifest.axes;
   const C = ds.manifest.chips.length;

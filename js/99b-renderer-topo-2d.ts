@@ -166,6 +166,10 @@ function _topoActiveRingForRender(wall) {
 function topoCycleSlice(dir) {
   const sim = topoActiveSim();
   const wall = sim ? sim.wall_state : null;
+
+  // Historical payload authentication precedes shape aggregation and every
+  // empty-state guard. Otherwise a malformed replay can look like a merely
+  // empty frame—or worse, borrow the live wall.
   const n = wall ? wall.ring_count : 0;
   if (n <= 1) {
     // Single-ring sim — no stepper to cycle. Stay aggregated.
@@ -210,6 +214,24 @@ function topoRender(optOverrideSnap?) {
 
   const sim = topoActiveSim();
   const wall = sim ? sim.wall_state : null;
+
+  // Authenticate historical payloads before aggregation or empty-state
+  // handling so malformed replay can never borrow today's live wall.
+  const replayDecision = typeof _topoReplayRenderDecision === 'function'
+    ? _topoReplayRenderDecision(wall, optOverrideSnap)
+    : { mode: 'wall-mesh', wall };
+  if (replayDecision.mode === 'corrupt') {
+    if (typeof _topoSyncThreeCanvasVisibility === 'function') {
+      if (_topoThreeState) {
+        _topoThreeState.cavityAuthorityUnrenderable = true;
+        if (_topoThreeState.cavity) _topoThreeState.cavity.visible = false;
+        if (_topoThreeState.crystals) _topoThreeState.crystals.visible = false;
+      }
+      _topoSyncThreeCanvasVisibility();
+    }
+    _topoPaintPlaceholder(canvas, replayDecision.message);
+    return;
+  }
 
   // v65: snapshots are { step, rings: [...] }. Detect the shape and
   // pull a single ring for the 2D path (which only renders one slice
@@ -335,9 +357,24 @@ function topoRender(optOverrideSnap?) {
   // optReplayStep are forwarded so the Three.js path can rebuild
   // cavity geometry from the historical rings AND size each crystal
   // from its zones[] history up to that step.
-  if (_topoUseThreeRenderer && wall && wall.rings && wall.rings.length) {
+  // Provider authority follows the frame being rendered. Reconstruct replay
+  // walls before dispatch so today's live provider cannot force an old
+  // WallMesh frame into the exact-field placeholder (or vice versa).
+  const renderAuthorityWall = replayDecision.wall;
+  const exactFieldAuthority = renderAuthorityWall?.activeCavitySurfaceAnchorProvider?.();
+  if ((_topoUseThreeRenderer || exactFieldAuthority?.receipt?.kind === 'cavity-field')
+      && wall && wall.rings && wall.rings.length) {
     if (_topoRenderThree(sim, wall, optOverrideSnap, optReplayStep)) {
       _topoSyncThreeCanvasVisibility();
+      return;
+    }
+    if (exactFieldAuthority?.receipt?.kind === 'cavity-field') {
+      // Canvas/polar geometry cannot represent the authoritative re-entrant
+      // field. Be explicit rather than presenting a scientifically different
+      // cavity on hardware that rejected the exact renderer/clip pair.
+      _topoSyncThreeCanvasVisibility();
+      _topoPaintPlaceholder(canvas,
+        'Exact 3D cavity authority is active, but this device cannot render its authenticated field/clip pair. Simulation state is unchanged.');
       return;
     }
   } else if (typeof _topoSyncThreeCanvasVisibility === 'function') {
@@ -493,9 +530,10 @@ function topoRender(optOverrideSnap?) {
       if (!host.enclosed_crystals || !host.enclosed_crystals.length) continue;
       // PHASE-4-CAVITY-MESH Tranche 4b — wall_anchor is the sole
       // positional field; legacy fallback retired.
-      const _hostAnchor = wall._resolveAnchor ? wall._resolveAnchor(host) : null;
-      if (!_hostAnchor) continue;
-      const _hostCenterCell = _hostAnchor.cellIdx;
+      const _hostChemistry = wall.chemistryAddressForCrystal?.(host)
+        || CavitySurfaceAnchors.chemistryAddress(host.wall_anchor);
+      if (!_hostChemistry) continue;
+      const _hostCenterCell = _hostChemistry.cellIdx;
       if (host.dissolved || _hostCenterCell == null) continue;
 
       // Build the host's painted-cell set. Fall back to its center cell

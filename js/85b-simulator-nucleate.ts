@@ -296,13 +296,20 @@ Object.assign(VugSimulator.prototype, {
   // keep the legacy two-step path.
   this._lastNucVertexRing = null;
   this._lastNucPositionOverride = null;
+  this._lastNucInheritedSurfaceAnchor = null;
   const _cellIdx = this._assignWallCell(position, mineral);
   if (this._lastNucPositionOverride) {
     position = this._lastNucPositionOverride;
     crystal.position = position;
   }
-  const _ringIdx = this._assignWallRing(position, mineral);
-  crystal.wall_anchor = this.wall_state._anchorFromRingCell(_ringIdx, _cellIdx);
+  const _ringIdx = this._assignWallRing(position, mineral, _cellIdx);
+  // A host overgrowth shares its host's immutable physical attachment. The
+  // ring/cell pair remains the boundary-chemistry projection only; rebuilding
+  // an anchor from that projection would move barycentric/MC hosts to a
+  // different physical point.
+  crystal.wall_anchor = this._lastNucInheritedSurfaceAnchor
+    || this.wall_state._anchorFromRingCell(_ringIdx, _cellIdx);
+  this._lastNucInheritedSurfaceAnchor = null;
   const _meshAtBirth = this.wall_state.meshFor(this);
   const _vertexAtBirth = _ringIdx * this.wall_state.cells_per_ring + _cellIdx;
   const _localBirthTemperature = temperatureAtMeshVertex(this, _meshAtBirth, _vertexAtBirth);
@@ -533,10 +540,11 @@ Object.assign(VugSimulator.prototype, {
       // outward space, so they neither bury nor are buried.
       const aw = c.a_width_mm || 0;
       if (aw <= 0 || c.c_length_mm <= aw * O3_SELECT_MIN_ASPECT) continue;
-      const a = wall._resolveAnchor ? wall._resolveAnchor(c) : c.wall_anchor;
-      if (!a) continue;
+      const chemistry = wall.chemistryAddressForCrystal?.(c)
+        || CavitySurfaceAnchors.chemistryAddress(c.wall_anchor);
+      if (!chemistry) continue;
       const rec = {
-        c, ri: a.ringIdx | 0, ci: a.cellIdx | 0,
+        c, ri: chemistry.ringIdx | 0, ci: chemistry.cellIdx | 0,
         theta: t.theta, front: o3NormalFrontMm(c), nucStep: c.nucleation_step | 0,
       };
       elig.push(rec);
@@ -1003,9 +1011,12 @@ _installLocalizedNucleationEnvelope() {
   _localNucleationEvaluationAtAnchor(mineral, anchor, args: any[] = []) {
     if (!anchor) return null;
     const wall = this.wall_state;
-    const N = wall?.cells_per_ring | 0;
     const mesh = wall?.meshFor?.(this);
-    const vertexIdx = Number(anchor.ringIdx) * N + Number(anchor.cellIdx);
+    const resolved = anchor.schema === CavitySurfaceAnchors.SCHEMA
+      ? anchor : CavitySurfaceAnchors.upgradeLegacy(anchor, mesh);
+    const chemistry = CavitySurfaceAnchors.chemistryAddress(resolved);
+    if (!chemistry) return null;
+    const vertexIdx = chemistry.vertexIndex;
     const fluid = mesh?.cells?.[vertexIdx]?.fluid;
     const sigmaFn = this.conditions?.[`supersaturation_${mineral}`];
     if (!fluid || typeof sigmaFn !== 'function') return null;
@@ -1021,11 +1032,12 @@ _installLocalizedNucleationEnvelope() {
         sigma: Number.isFinite(sigma) ? sigma : 0,
         temperatureC: this.conditions.temperature,
         fluid,
-        ringIdx: anchor.ringIdx,
-        cellIdx: anchor.cellIdx,
+        ringIdx: chemistry.ringIdx,
+        cellIdx: chemistry.cellIdx,
       };
     } catch (_e) {
-      return { sigma: 0, temperatureC: NaN, fluid, ringIdx: anchor.ringIdx, cellIdx: anchor.cellIdx };
+      return { sigma: 0, temperatureC: NaN, fluid,
+        ringIdx: chemistry.ringIdx, cellIdx: chemistry.cellIdx };
     } finally {
       this._localNucleationDirectEvaluation = savedDirect;
       this.conditions.fluid = savedFluid;
@@ -1045,17 +1057,23 @@ _installLocalizedNucleationEnvelope() {
   }
   if (hostId != null) {
     const host = this.crystals.find(c => c.crystal_id === hostId);
-    // PHASE-1-CAVITY-MESH: read host's cell via _resolveAnchor so this
-    // site keeps working when the legacy fields retire in Phase 4.
+    // Surface-anchor contract: overgrowths inherit the host's projected
+    // chemistry cell explicitly. Physical placement remains the host's
+    // independent surface anchor and is not inferred from this address.
     if (host) {
       const a = this.wall_state._resolveAnchor(host);
-      if (a) {
-        if (!(this.wall_state?.per_vertex_nucleation || this._thermalFieldActivated)) return a.cellIdx;
+      const chemistry = this.wall_state.chemistryAddressForCrystal(host);
+      if (a && chemistry) {
+        if (!(this.wall_state?.per_vertex_nucleation || this._thermalFieldActivated)) {
+          this._lastNucInheritedSurfaceAnchor = a;
+          return chemistry.cellIdx;
+        }
         const local = this._localNucleationEvaluationAtAnchor(mineral, a);
         const sigmaCrit = Number(MINERAL_GATES_REGISTRY?.[mineral]?.sigma_crit);
         const discount = this._sigmaDiscountForPosition(mineral, position);
         if (!Number.isFinite(sigmaCrit) || (local && local.sigma > sigmaCrit * discount)) {
-          return a.cellIdx;
+          this._lastNucInheritedSurfaceAnchor = a;
+          return chemistry.cellIdx;
         }
         const picked = this._perVertexNucleationSample(mineral);
         if (picked) {
@@ -1142,10 +1160,17 @@ _feederProximitySample() {
   if (!prox) return null;                         // no open supply-feeders
   const weights = new Float64Array(R * N);
   let total = 0;
+  const archBias = wall.nucleation_bias || 'uniform';
+  const zoneAllowed = (zone) => archBias === 'uniform'
+    || (archBias === 'walls_only' && zone === 'wall')
+    || (archBias === 'floor_only' && zone === 'floor')
+    || (archBias === 'ceiling_only' && zone === 'ceiling')
+    || (archBias === 'floor_ceiling' && (zone === 'floor' || zone === 'ceiling'));
   for (let r = 0; r < R; r++) {
     const areaW = wall.ringAreaWeight(r);
     for (let c = 0; c < N; c++) {
       const idx = r * N + c;
+      if (!zoneAllowed(wall.surfaceZoneAtVertex?.(r, c, this))) continue;
       const w = areaW * prox[idx];
       weights[idx] = w;
       total += w;
@@ -1238,6 +1263,12 @@ _perVertexNucleationSample(mineral) {
     ? this._fluidSpots.proximityField(N, ringCount) : null;
   const weights = new Float64Array(ringCount * N);
   let total = 0;
+  const archBias = wall.nucleation_bias || 'uniform';
+  const zoneAllowed = (zone) => archBias === 'uniform'
+    || (archBias === 'walls_only' && zone === 'wall')
+    || (archBias === 'floor_only' && zone === 'floor')
+    || (archBias === 'ceiling_only' && zone === 'ceiling')
+    || (archBias === 'floor_ceiling' && (zone === 'floor' || zone === 'ceiling'));
   try {
     this._localNucleationDirectEvaluation = true;
     for (let r = 0; r < ringCount; r++) {
@@ -1246,6 +1277,7 @@ _perVertexNucleationSample(mineral) {
       const areaW = wall.ringAreaWeight(r);
       for (let c = 0; c < N; c++) {
         const idx = r * N + c;
+        if (!zoneAllowed(wall.surfaceZoneAtVertex?.(r, c, this))) continue;
         const cell = mesh.cells[idx];
         const cellFluid = cell ? cell.fluid : null;
         if (!cellFluid) continue;
@@ -1310,7 +1342,8 @@ _runEngineForCrystal(engine, crystal) {
   // this site stops touching wall_ring_index directly. Identity
   // result while wall_anchor and legacy fields are kept in sync.
   const anchor = this.wall_state._resolveAnchor(crystal);
-  const ringIdx = anchor ? anchor.ringIdx : null;
+  const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+  const ringIdx = chemistry ? chemistry.ringIdx : null;
   let savedFluid = null;
   let savedTemp = null;
   if (ringIdx != null && ringIdx >= 0 && ringIdx < this.ring_fluids.length) {
@@ -1326,7 +1359,7 @@ _runEngineForCrystal(engine, crystal) {
     this.conditions.fluid = (cell && cell.fluid)
       ? cell.fluid
       : this.ring_fluids[ringIdx];  // last-resort sentinel; should never hit
-    const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+    const vertexIdx = chemistry.vertexIndex;
     this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
   }
   try {
@@ -1369,7 +1402,7 @@ _finalizeZoneForApplication(crystal, zone) {
 // Phase D v2: per-mineral orientation bias (see ORIENTATION_PREFERENCE
 // module-level table). Spatially neutral minerals stay area-weighted.
 // Mirrors VugSimulator._assign_wall_ring in vugg.py.
-_assignWallRing(position, mineral) {
+_assignWallRing(position, mineral, cellIdx?) {
   // Tranche 6: when _assignWallCell ran the joint σ-weighted sample,
   // it stashed the picked ring on this._lastNucVertexRing. Honor that
   // — both indices come from the same joint draw, so the cell and
@@ -1387,11 +1420,11 @@ _assignWallRing(position, mineral) {
   }
   if (hostId != null) {
     const host = this.crystals.find(c => c.crystal_id === hostId);
-    // PHASE-1-CAVITY-MESH: read host's ring via _resolveAnchor so this
-    // site survives the Phase 4 legacy-field drop.
+    // Surface-anchor contract: inherit the host's projected chemistry ring;
+    // do not treat that lattice address as the physical surface location.
     if (host) {
-      const a = this.wall_state._resolveAnchor(host);
-      if (a) return a.ringIdx;
+      const chemistry = this.wall_state.chemistryAddressForCrystal(host);
+      if (chemistry) return chemistry.ringIdx;
     }
   }
   // Phase D: area-weighted sample (equator gets more nucleations
@@ -1438,7 +1471,12 @@ _assignWallRing(position, mineral) {
   if (archBias !== 'uniform' && n > 1) {
     total = 0;
     for (let k = 0; k < n; k++) {
-      const orient = this.wall_state.ringOrientation(k);
+      // Architecture biases apply to the physical patch normal at the cell
+      // already selected by _assignWallCell.  Ring labels remain a fallback
+      // for direct legacy callers that do not provide a cell.
+      const orient = Number.isInteger(cellIdx)
+        ? this.wall_state.surfaceZoneAtVertex?.(k, cellIdx, this)
+        : this.wall_state.ringOrientation(k);
       const allowed =
         archBias === 'walls_only'   ? (orient === 'wall') :
         archBias === 'floor_only'   ? (orient === 'floor') :
@@ -1482,7 +1520,8 @@ _assignWallRing(position, mineral) {
 
 _dryRunEngineForCrystal(engine, crystal) {
   const anchor = this.wall_state._resolveAnchor(crystal);
-  const ringIdx = anchor ? anchor.ringIdx : null;
+  const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+  const ringIdx = chemistry ? chemistry.ringIdx : null;
   let savedFluid = null;
   let savedTemp = null;
   if (ringIdx != null && ringIdx >= 0 && ringIdx < this.ring_fluids.length) {
@@ -1493,7 +1532,7 @@ _dryRunEngineForCrystal(engine, crystal) {
     this.conditions.fluid = (cell && cell.fluid)
       ? cell.fluid
       : this.ring_fluids[ringIdx];
-    const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+    const vertexIdx = chemistry.vertexIndex;
     this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
   }
   try {
@@ -1518,7 +1557,8 @@ _applyZoneGrowthBudget(crystal, zone) {
   if (!zone) return null;
   const bulkFluidHandle = this.conditions.fluid;
   const anchor = this.wall_state._resolveAnchor(crystal);
-  const ringIdx = anchor ? anchor.ringIdx : null;
+  const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+  const ringIdx = chemistry ? chemistry.ringIdx : null;
   let savedFluid = null;
   let savedTemp = null;
   if (ringIdx != null && ringIdx >= 0 && ringIdx < this.ring_fluids.length) {
@@ -1529,7 +1569,7 @@ _applyZoneGrowthBudget(crystal, zone) {
     this.conditions.fluid = (cell && cell.fluid)
       ? cell.fluid
       : this.ring_fluids[ringIdx];
-    const vertexIdx = anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx;
+    const vertexIdx = chemistry.vertexIndex;
     this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
   }
   try {
@@ -1637,7 +1677,8 @@ _computeGraduatedZones() {
 
     // Identify the cell + fluid this crystal competes within.
     const anchor = this.wall_state._resolveAnchor(crystal);
-    const ringIdx = anchor ? anchor.ringIdx : null;
+    const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+    const ringIdx = chemistry ? chemistry.ringIdx : null;
     let cellFluid = null;
     let cellKey: string;
     if (ringIdx != null && ringIdx >= 0 && ringIdx < this.ring_fluids.length) {
@@ -1652,7 +1693,7 @@ _computeGraduatedZones() {
       // the shared ring fluid, so group identity always matches budget.
       if (cell && cell.fluid) {
         cellFluid = cell.fluid;
-        cellKey = `cell:${anchor.ringIdx}:${anchor.cellIdx}`;
+        cellKey = `cell:${chemistry.vertexIndex}`;
       } else {
         cellFluid = this.ring_fluids[ringIdx];
         cellKey = `ring:${ringIdx}`;
@@ -1673,8 +1714,7 @@ _computeGraduatedZones() {
         const savedFluid = this.conditions.fluid;
         const savedTemp = this.conditions.temperature;
         this.conditions.fluid = cellFluid;
-        const vertexIdx = anchor
-          ? anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx : -1;
+        const vertexIdx = chemistry ? chemistry.vertexIndex : -1;
         this.conditions.temperature = vertexIdx >= 0
           ? temperatureAtMeshVertex(this, this.wall_state.meshFor(this), vertexIdx)
           : savedTemp;
@@ -1691,10 +1731,10 @@ _computeGraduatedZones() {
     if (!cellGroups.has(cellKey)) {
       cellGroups.set(cellKey, { fluid: cellFluid, items: [] });
     }
-    const localTemperature = anchor
+    const localTemperature = chemistry
       ? temperatureAtMeshVertex(
         this, this.wall_state.meshFor(this),
-        anchor.ringIdx * this.wall_state.cells_per_ring + anchor.cellIdx,
+        chemistry.vertexIndex,
       )
       : this.conditions.temperature;
     cellGroups.get(cellKey).items.push({

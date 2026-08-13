@@ -1,4 +1,10 @@
 /** Strict provenance guard shared by strip generators and review tooling. */
+export function canonicalStripRecordedAt(_wallClockMilliseconds) {
+  // Canonical evidence describes deterministic model state. Operational wall
+  // time belongs in command logs, never in an authenticated science artifact.
+  return null;
+}
+
 export function assertStripIdentity(strip, expected) {
   if (!strip || typeof strip !== 'object') {
     throw new Error('[strip-identity] strip testimony is missing or malformed');

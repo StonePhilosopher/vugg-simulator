@@ -30,9 +30,19 @@ describe('memory-bounded full-test workflow', () => {
       help: false,
       batchSize: 4,
       startIndex: 115,
+      selectedFiles: [],
     });
+    expect(parseArgs(['--file', 'tests-js/a.test.ts', '--file', 'tests-js/b.test.ts']))
+      .toEqual({
+        help: false,
+        batchSize: 5,
+        startIndex: 0,
+        selectedFiles: ['tests-js/a.test.ts', 'tests-js/b.test.ts'],
+      });
     expect(() => parseArgs(['--start-index', '-1'])).toThrow('non-negative integer');
     expect(() => parseArgs(['--start-index', '1.5'])).toThrow('non-negative integer');
+    expect(() => parseArgs(['--start-index', '1', '--file', 'tests-js/a.test.ts']))
+      .toThrow('cannot be combined');
   });
 
   it('rejects an empty resume suffix instead of reporting a false green run', () => {

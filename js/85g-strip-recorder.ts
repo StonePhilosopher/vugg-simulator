@@ -351,15 +351,16 @@ class StripRecorder {
       for (let i = this.lastSeenCrystalCount; i < total; i++) {
         const c = sim.crystals[i];
         if (!c || c.nucleation_step !== sim.step) continue;
-        const anchor = c.wall_anchor;
-        const ring = anchor && Number.isFinite(anchor.ringIdx) ? anchor.ringIdx : 0;
-        const cell = anchor && Number.isFinite(anchor.cellIdx) ? anchor.cellIdx : 0;
+        const address = sim.wall_state?.chemistryAddressForCrystal?.(c);
+        const ring = address && Number.isFinite(address.ringIdx) ? address.ringIdx : 0;
+        const cell = address && Number.isFinite(address.cellIdx) ? address.cellIdx : 0;
         this.events.push({
           step: Number(c.nucleation_step),
           sample_index: step,
           ring,
           cell,
           mineral: String(c.mineral),
+          surface_anchor_key: sim.wall_state?.surfaceAnchorKey?.(c),
         });
       }
       this.lastSeenCrystalCount = total;

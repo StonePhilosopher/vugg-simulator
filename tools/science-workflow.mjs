@@ -52,6 +52,7 @@ function verify() {
   // intentionally stronger than `tsc --noEmit` + `build.mjs --check`: dist/ is
   // ignored, so the latter could test stale output or fail on a clean clone.
   run('compile current sources and check bundled index drift', ['tools/build-all.mjs', '--check']);
+  run('aggregate science evidence authentication', ['tools/science-evidence-receipt.mjs', '--check']);
   run('science provenance check', ['tools/gen-science-provenance-manifest.mjs', '--check']);
   run('locality envelope check', ['tools/locality-envelope-audit.mjs', '--check']);
   run('focused science tests (one worker)', [VITEST, 'run', ...SCIENCE_TESTS]);
@@ -62,12 +63,13 @@ function rebake() {
   const cardDir = path.join('archive', 'claim-cards', `v${version}`);
   run('compile and rebuild local game bundle', ['tools/build-all.mjs']);
   run('three-seed locality-frequency receipt', ['tools/gen-locality-frequency-baseline.mjs']);
-  run('canonical seed-42 strip archive', ['tools/gen-strip-archive.mjs', '--force']);
+  run('canonical seed-42 strip archive', ['tools/gen-strip-archive.mjs']);
   run('canonical seed-42 scenario baseline', ['tools/gen-js-baseline.mjs']);
   run('strip digest tripwire', ['tools/gen-strip-digest.mjs']);
   run('byte-bound hostile-review claim cards', [
     'tools/review-claim-card.mjs', '--all', '--version', String(version), '--out', cardDir,
   ]);
+  run('clean-checkout aggregate science evidence receipt', ['tools/science-evidence-receipt.mjs']);
   run('science provenance manifest', ['tools/gen-science-provenance-manifest.mjs']);
   verify();
 }

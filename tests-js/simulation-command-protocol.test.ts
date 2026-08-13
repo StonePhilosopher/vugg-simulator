@@ -5,6 +5,7 @@ declare const makeSimulationStartCommand: (scenarioId: string, seed?: number, ov
 declare const makeSimulationAdvanceCommand: (steps: number) => any;
 declare const makeSimulationCancelCommand: (reason?: string) => any;
 declare const makeSimulationResumeCommand: () => any;
+declare const makeSimulationCavitySurfaceProviderCommand: (kind: any, opts?: any) => any;
 declare const startSimulationCommandRuntime: (command: any) => any;
 declare const applySimulationCommand: (runtime: any, command: any) => any;
 declare const createSimulationCheckpoint: (runtime: any) => any;
@@ -13,6 +14,7 @@ declare const persistSimulationCheckpoint: (checkpoint: any, storage?: any) => a
 declare const recoverPersistedSimulationRuntime: (storage?: any) => any;
 declare const runSimulationProgressively: (runtime: any, steps: number, opts?: any) => Promise<any>;
 declare const simulationStateFingerprint: (runtime: any) => string;
+declare const _topoCavitySurfaceSource: any;
 declare const createSimulationWorkerEndpoint: (send: (message: any) => void) => (message: any) => Promise<void>;
 
 describe('immutable simulation command/checkpoint protocol', () => {
@@ -77,6 +79,42 @@ describe('immutable simulation command/checkpoint protocol', () => {
     const checkpoint = JSON.parse(JSON.stringify(createSimulationCheckpoint(runtime)));
     checkpoint.completedSteps = 999;
     expect(() => restoreSimulationCommandRuntime(checkpoint)).toThrow('checkpoint integrity mismatch');
+  });
+
+  it('commands, fingerprints, and restores explicit cavity-surface authority', () => {
+    expect(() => makeSimulationCavitySurfaceProviderCommand('mystery'))
+      .toThrow(/unsupported cavity surface provider/i);
+    const start = makeSimulationStartCommand('cooling', 42);
+    const runtime = startSimulationCommandRuntime(start);
+    const baseline = simulationStateFingerprint(runtime);
+    const activate = makeSimulationCavitySurfaceProviderCommand(
+      'cavity-field', { resolution: 20, isovalue: 0 },
+    );
+    const result = applySimulationCommand(runtime, activate);
+    expect(result.cavitySurfaceProvider).toMatchObject({
+      kind: 'cavity-field', resolution: 20, isovalue: 0,
+    });
+    expect(simulationStateFingerprint(runtime)).not.toBe(baseline);
+    const restored = restoreSimulationCommandRuntime(
+      JSON.parse(JSON.stringify(createSimulationCheckpoint(runtime))),
+    );
+    expect(simulationStateFingerprint(restored)).toBe(simulationStateFingerprint(runtime));
+    expect(restored.sim.wall_state._cavitySurfaceAnchorProvider)
+      .toEqual(runtime.sim.wall_state._cavitySurfaceAnchorProvider);
+
+    // Presentation capability/fallback is not part of simulation authority.
+    // Reading the exact renderer source cannot change the command-derived state.
+    const beforeRenderRead = simulationStateFingerprint(runtime);
+    const source = _topoCavitySurfaceSource(runtime.sim.wall_state, runtime.sim, false, 48);
+    expect(source.providerAuthority).toBe(true);
+    expect(simulationStateFingerprint(runtime)).toBe(beforeRenderRead);
+    expect(() => restoreSimulationCommandRuntime(
+      JSON.parse(JSON.stringify(createSimulationCheckpoint(runtime))),
+    )).not.toThrow();
+
+    applySimulationCommand(runtime, makeSimulationCavitySurfaceProviderCommand('wall-mesh'));
+    expect(runtime.sim.wall_state._cavitySurfaceAnchorProvider).toEqual({ kind: 'wall-mesh' });
+    expect(simulationStateFingerprint(runtime)).toBe(baseline);
   });
 
   it('fingerprints canonical local chemistry, dedicated RNG streams, and dissolution inventories', () => {

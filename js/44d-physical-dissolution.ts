@@ -281,13 +281,14 @@ function _physicalEtchWithLocalConditions(sim: any, crystal: any, fn: (condition
   const savedFluid = sim.conditions.fluid;
   const savedTemperature = sim.conditions.temperature;
   const anchor = sim.wall_state?._resolveAnchor?.(crystal);
-  const ringIdx = anchor?.ringIdx;
+  const chemistry = sim.wall_state?.chemistryAddressForCrystal?.(crystal);
+  const ringIdx = chemistry?.ringIdx;
   try {
     if (ringIdx != null && ringIdx >= 0 && ringIdx < sim.ring_fluids.length) {
       const mesh = sim.wall_state.meshFor(sim);
       const cell = mesh?.cellOf?.(crystal, sim.wall_state);
       sim.conditions.fluid = cell?.fluid || sim.ring_fluids[ringIdx];
-      const vertexIdx = anchor.ringIdx * sim.wall_state.cells_per_ring + anchor.cellIdx;
+      const vertexIdx = chemistry.vertexIndex;
       sim.conditions.temperature = temperatureAtMeshVertex(sim, mesh, vertexIdx);
     }
     return fn(sim.conditions);

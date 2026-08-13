@@ -132,11 +132,16 @@ describe('evidence-bounded physical etch', () => {
     expect(partlyHealed.healedFraction).toBeLessThan(1);
     expect(partlyHealed.amount).toBeLessThan(etched.amount);
     while (sim.step < (defaultSteps || 160)) sim.run_step();
+    const intermediateEtch = physicalEtchVisualStateAtStep(fluorite, 130);
     const finalEtch = physicalEtchVisualStateAtStep(fluorite, sim.step);
-    expect(finalEtch).toBeTruthy();
-    expect(finalEtch.healedFraction).toBeGreaterThan(partlyHealed.healedFraction);
-    expect(finalEtch.amount).toBeLessThan(partlyHealed.amount);
-    const reliefBuckets = [etched, partlyHealed, finalEtch]
+    expect(intermediateEtch).toBeTruthy();
+    expect(intermediateEtch.healedFraction).toBeGreaterThan(partlyHealed.healedFraction);
+    expect(intermediateEtch.amount).toBeLessThan(partlyHealed.amount);
+    // Accepted regrowth exceeds the removed depth before the final frame, so
+    // exposed pits disappear. The buried phantom boundary remains durable
+    // stratigraphic testimony of the dissolution event.
+    expect(finalEtch).toBeNull();
+    const reliefBuckets = [etched, partlyHealed, intermediateEtch]
       .map(state => _physicalEtchReliefBucket(state.amount));
     expect(new Set(reliefBuckets).size).toBe(3);
     expect(reliefBuckets[0]).toBeGreaterThan(reliefBuckets[1]);

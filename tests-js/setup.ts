@@ -272,6 +272,7 @@ const EXPORTS = [
   'makeSimulationResumeCommand',
   'makeSimulationThermalSourceCommand',
   'makeSimulationThermalFieldCommand',
+  'makeSimulationCavitySurfaceProviderCommand',
   'startSimulationCommandRuntime',
   'applySimulationCommand',
   'createSimulationCheckpoint',
@@ -292,6 +293,7 @@ const EXPORTS = [
   'cavityFormulaExtentVolumeMm3PerKg',
   'CavityScalarField',
   'MarchingCubesExtractor',
+  'CavitySurfaceAnchors',
   'CavityVoxelGrid',  // v158 — PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1
   'Crystal',
   'GrowthZone',
@@ -303,6 +305,7 @@ const EXPORTS = [
   'WATER_STATE_PREFERENCE',
   // Phase D habit-bias helper (99i-renderer-three.ts).
   '_topoCAxisForCrystal',
+  '_topoCrystalsSignature',
   // SIM 246 area-covering aggregate state + deterministic renderer plan.
   'surfaceGrowthRegimeFor',
   'surfaceGrowthDescriptor',

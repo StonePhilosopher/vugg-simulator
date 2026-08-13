@@ -609,7 +609,8 @@ function _topoResetCavityFieldFailures(state: any): void {
 }
 
 function _topoThreeRendererEffective(state = _topoThreeState): boolean {
-  return !!_topoUseThreeRenderer && !(state && state.threeShaderUnusable);
+  return !!(_topoUseThreeRenderer || state?.cavityAuthorityActive)
+    && !(state && (state.threeShaderUnusable || state.cavityAuthorityUnrenderable));
 }
 
 function _topoAttemptEffectiveThree(state: any, attempt: () => boolean): boolean {
@@ -849,16 +850,35 @@ void main() {
 }
 
 // Pure renderer-facing adapter used by both the Three.js path and integration
-// tests. `clipMesh` remains the chemistry/cell topology bridge while MC wall
-// triangles and crystal clipping are paired to the same immutable Cartesian
-// field snapshot. Anchors and multi-chamber evolution remain separate promotion
-// gates; neither is silently inferred from this render-only adapter.
+// tests. `clipMesh` remains the chemistry/cell topology bridge while MC wall,
+// crystal clipping, and explicit anchor authority consume one immutable field /
+// surface pair. The developer shadow flag is still independent while WallMesh
+// owns anchors, but it may never override or suppress an activated provider.
 function _topoCavitySurfaceSource(wall: any, sim: any,
                                   useMarchingCubes = _topoMarchingCubesCavityEnabled(),
                                   resolution = _topoMarchingCubesResolution()): any {
   if (!wall) return null;
   const clipMesh = wall.meshFor ? wall.meshFor(sim) : null;
   if (!clipMesh) return null;
+  const active = wall.activeCavitySurfaceAnchorProvider
+    ? wall.activeCavitySurfaceAnchorProvider() : null;
+  if (active?.receipt?.kind === 'cavity-field') {
+    const field = active.field;
+    const buffers = active.surface;
+    MarchingCubesExtractor.verifyBuffers(buffers);
+    if (!field || field.sig !== active.receipt.field_signature
+        || field.snapshotDigest !== active.receipt.field_snapshot_digest
+        || buffers.sig !== active.receipt.surface_signature
+        || buffers.buffer_digest !== active.receipt.surface_buffer_digest
+        || field.surfaceSignature(active.receipt.isovalue) !== buffers.sig) {
+      throw new Error('active cavity surface authority is not one authenticated field/surface pair');
+    }
+    return {
+      mode: 'marching-cubes', buffers, clipMesh, clipField: field,
+      providerAuthority: true, providerReceipt: active.receipt,
+      sig: `mc-authority|${buffers.sig}|clip-field:${field.snapshotDigest}`,
+    };
+  }
   if (useMarchingCubes && !wall._disableMarchingCubesCavity && wall.cavitySurfaceFor) {
     try {
       const buffers = wall.cavitySurfaceFor({ resolution, isovalue: 0 });
@@ -873,6 +893,7 @@ function _topoCavitySurfaceSource(wall: any, sim: any,
           throw new Error('Marching Cubes wall and clip field are not the same immutable snapshot');
         }
         return { mode: 'marching-cubes', buffers, clipMesh, clipField: field,
+          providerAuthority: false,
           sig: `mc|${buffers.sig}|clip-field:${field.snapshotDigest}` };
       }
       const failure = wall._cavitySurfaceFailure;
@@ -978,14 +999,14 @@ function _topoCompileCavityShaderPrograms(state: any): boolean {
   }
 }
 
-function _topoRenderPreparedCavityScene(state: any, installFallback: () => void): boolean {
+function _topoRenderPreparedCavityScene(state: any, installFallback: () => boolean | void): boolean {
   if (!state || !state.renderer) return false;
   let runnable = _topoCompileCavityShaderPrograms(state);
   if (state.clipUniforms.uCavityClipMode.value === 1 && !runnable) {
     _topoRejectActiveCavityFieldClip(
       state, 'cavity-field-shader-link-failed', undefined, false,
     );
-    installFallback();
+    if (installFallback() === false) return false;
     runnable = _topoCompileCavityShaderPrograms(state);
   }
   // The field failure rebuilds every clipped material as the distinct
@@ -1128,18 +1149,46 @@ function _topoInstallCavityFieldClip(state: any, field: CavityScalarField, surfa
 // triangulation) lives in WallMesh.recompute — same formulas as
 // before, just centralized so future tessellations (icosphere,
 // geodesic, irregular) can swap in without touching this file.
-function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
-  if (!wall || !wall.rings || !wall.rings.length) return;
-  let source = _topoCavitySurfaceSource(wall, sim);
-  if (!source) return;
+function _topoBuildCavityGeometry(state: any, wall: any, sim: any,
+                                  forceWallMesh = false) {
+  if (!wall || !wall.rings || !wall.rings.length) return false;
+  let source: any;
+  try {
+    source = _topoCavitySurfaceSource(
+      wall, sim, forceWallMesh ? false : _topoMarchingCubesCavityEnabled(),
+    );
+  } catch (error) {
+    state.cavityFieldFallbackReason = error instanceof Error ? error.message : String(error);
+    state.cavityAuthorityUnrenderable = true;
+    if (state.cavity) state.cavity.visible = false;
+    if (state.crystals) state.crystals.visible = false;
+    _topoPublishCavityClipReceipt(state);
+    return false;
+  }
+  if (!source) return false;
   if (source.mode === 'marching-cubes'
       && !_topoInstallCavityFieldClip(state, source.clipField, source.buffers)) {
+    if (source.providerAuthority) {
+      // Renderer capability is presentation state, never geological state. An
+      // incapable device withholds the view instead of drawing a different wall
+      // or mutating the deterministic provider command/fingerprint.
+      state.cavityAuthorityUnrenderable = true;
+      if (state.cavity) state.cavity.visible = false;
+      if (state.crystals) state.crystals.visible = false;
+      _topoPublishCavityClipReceipt(state);
+      return false;
+    }
     source = _topoCavitySurfaceSource(wall, sim, false, _topoMarchingCubesResolution());
   }
   const mesh = source.clipMesh;
   const surface = source.buffers;
-  if (source.sig === state.cavitySig) return;
+  if (source.sig === state.cavitySig) return true;
+  state.cavityAuthorityUnrenderable = false;
+  state.cavityAuthorityActive = source.providerAuthority === true;
   state.cavitySig = source.sig;
+  // Crystal placement resolves against the live cavity provider. A surface
+  // revision must invalidate meshes even if size/mineral fields are unchanged.
+  state.crystalsSig = '';
   if (source.mode === 'wall-mesh') _topoDisposeCavityFieldTexture(state);
 
   const ringCount = wall.ring_count;
@@ -1163,8 +1212,8 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
   // just skips the attribute and the material renders un-mapped.
   if (surface.uvs) geom.setAttribute('uv', new THREE.BufferAttribute(surface.uvs.slice(), 2));
   const indexAttr = numVerts > 65535
-    ? new THREE.Uint32BufferAttribute(surface.indices, 1)
-    : new THREE.Uint16BufferAttribute(surface.indices, 1);
+    ? new THREE.Uint32BufferAttribute(surface.indices.slice(), 1)
+    : new THREE.Uint16BufferAttribute(surface.indices.slice(), 1);
   geom.setIndex(indexAttr);
   // The MC path carries scalar-gradient normals. Recomputing them from
   // triangles would discard the shared field oracle and reintroduce seams.
@@ -1333,6 +1382,7 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
   state.clipUniforms.uVugCellTexH.value = ringCount;
   if (prevTex && prevTex.dispose) prevTex.dispose();
   }
+  return true;
 }
 
 // Sync the renderer's drawing-buffer size to the canvas's CSS size and
@@ -4390,14 +4440,16 @@ function _emitSurfaceGrowthSwath(
   const mobile = typeof window !== 'undefined'
     && ((window.innerWidth || 1024) <= 720 || (window.devicePixelRatio || 1) >= 2.5);
   const count = _surfaceGrowthInstanceCount(coverage, mobile);
-  const al = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
+  const anchorNormal = wall?.surfaceNormalForCrystal?.(crystal) || [ax, ay, az];
+  const al = Math.sqrt(anchorNormal[0] * anchorNormal[0]
+    + anchorNormal[1] * anchorNormal[1] + anchorNormal[2] * anchorNormal[2]) || 1;
   const directions = _surfaceGrowthSampleDirections(
-    [ax / al, ay / al, az / al], count, coverage, crystal.crystal_id || 0,
+    [anchorNormal[0] / al, anchorNormal[1] / al, anchorNormal[2] / al],
+    count, coverage, crystal.crystal_id || 0,
   );
-  const wallMesh = wall && typeof wall.meshFor === 'function' ? wall.meshFor(sim) : null;
-  const exactPatch = wallMesh && typeof wallMesh.sampleSurfacePatch === 'function'
-    ? wallMesh.sampleSurfacePatch(
-      [ax / al, ay / al, az / al], count, coverage, crystal.crystal_id || 0,
+  const exactPatch = wall && typeof wall.sampleSurfacePatchForCrystal === 'function'
+    ? wall.sampleSurfacePatchForCrystal(
+      crystal, count, coverage, crystal.crystal_id || 0, sim,
     )
     : null;
 
@@ -4460,8 +4512,9 @@ function _emitSurfaceGrowthSwath(
       : _surfaceGrowthWallPoint(wall, directions[i], ringCount, N, initR);
     let underburdenDisplayMm = 0;
     if (p.triangle_index != null) {
+      const triangleKey = `${exactPatch?.source_signature}:${p.triangle_index}`;
       for (const layer of earlierLayers) {
-        if (layer.triangle_indices.has(p.triangle_index)) {
+        if (layer.triangle_keys.has(triangleKey)) {
           underburdenDisplayMm += layer.representative_relief_mm;
         }
       }
@@ -4584,12 +4637,17 @@ function _emitSurfaceGrowthSwath(
         : canonicalDisplayThickness;
   const layer = {
     crystal_id: crystal.crystal_id,
+    source_signature: exactPatch?.source_signature || null,
     triangle_indices: new Set(exactPatch && exactPatch.triangle_indices
       ? exactPatch.triangle_indices : []),
+    triangle_keys: new Set(exactPatch && exactPatch.triangle_indices
+      ? exactPatch.triangle_indices.map((triangleIndex: number) =>
+        `${exactPatch.source_signature}:${triangleIndex}`) : []),
     representative_relief_mm: representativeRelief,
   };
   swath.userData.representative_relief_mm = representativeRelief;
   swath.userData.triangle_indices = Array.from(layer.triangle_indices);
+  swath.userData.source_signature = layer.source_signature;
   earlierLayers.push(layer);
   return swath;
 }
@@ -4757,12 +4815,14 @@ function _emitClusterSatellites(
     // the parent mineral, no per-satellite identity surfaced.
     // PHASE-4-CAVITY-MESH Tranche 4b — wall_anchor is the only
     // positional field on Crystal; legacy fields retired.
-    const _anchor = crystal.wall_anchor || { ringIdx: 0, cellIdx: 0 };
+    const _address = wall?.chemistryAddressForCrystal?.(crystal)
+      || { ringIdx: 0, cellIdx: 0 };
     satMesh.userData = {
       crystal_id: crystal.crystal_id,
       mineral: crystal.mineral,
-      ringIdx: _anchor.ringIdx,
-      cellIdx: _anchor.cellIdx,
+      ringIdx: _address.ringIdx,
+      cellIdx: _address.cellIdx,
+      surfaceAnchorKey: wall?.surfaceAnchorKey?.(crystal),
       isSatellite: true,
       // === HELIX-OVERLAY-FORK ADDITION (v13) =========================
       // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
@@ -5075,7 +5135,7 @@ function _topoCAxisForCrystal(
 // v65: replayStep folded in so replay frames bust the cache and pull
 // the historical c_length per crystal. When undefined (live render),
 // the signature reduces to the v64 form so live caching is unchanged.
-function _topoCrystalsSignature(sim: any, replayStep?: number): string {
+function _topoCrystalsSignature(sim: any, wall: any, replayStep?: number): string {
   if (!sim || !sim.crystals || !sim.crystals.length) return '';
   const parts: string[] = [];
   for (const c of sim.crystals) {
@@ -5094,9 +5154,8 @@ function _topoCrystalsSignature(sim: any, replayStep?: number): string {
     // the face-realism arc already ships for them).
     if (c.dissolved && !c.perimorph_eligible && !(c.c_length_mm > 0.05)) continue;
     // PHASE-4-CAVITY-MESH Tranche 4b — wall_anchor is the truth.
-    const _a = c.wall_anchor;
-    const _ringKey = _a ? _a.ringIdx : 0;
-    const _cellKey = _a ? _a.cellIdx : 0;
+    const _anchorKey = wall?.surfaceAnchorKey
+      ? wall.surfaceAnchorKey(c) : CavitySurfaceAnchors.key(c.wall_anchor);
     // PHASE-D-HABIT-BIAS: encode growth_environment into the signature
     // so the cache busts when an air-mode crystal's orientation
     // (radial → gravity) flips. 'a' = air, 'f' = fluid (default).
@@ -5117,13 +5176,13 @@ function _topoCrystalsSignature(sim: any, replayStep?: number): string {
         // keep them in the signature so the cache key still busts
         // when one appears.
         if (!(c.dissolved && c.perimorph_eligible)) continue;
-        parts.push(`${c.crystal_id}:${effectiveMineral}:${c.habit}:cast:${c.c_length_mm.toFixed(2)}:${_ringKey}:${_cellKey}:${_envKey}`);
+        parts.push(`${c.crystal_id}:${effectiveMineral}:${c.habit}:cast:${c.c_length_mm.toFixed(2)}:${_anchorKey}:${_envKey}`);
         continue;
       }
-      parts.push(`${c.crystal_id}:${effectiveMineral}:${c.habit}:${hist.c_length_mm.toFixed(2)}:${_ringKey}:${_cellKey}:${_envKey}:r${replayStep}`);
+      parts.push(`${c.crystal_id}:${effectiveMineral}:${c.habit}:${hist.c_length_mm.toFixed(2)}:${_anchorKey}:${_envKey}:r${replayStep}`);
       continue;
     }
-    parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${_ringKey}:${_cellKey}:${_envKey}:${c.dissolved ? 'd' : 'a'}`);
+    parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${_anchorKey}:${_envKey}:${c.dissolved ? 'd' : 'a'}`);
   }
   return parts.join('|');
 }
@@ -5150,24 +5209,13 @@ function _o2PlaceBody(crystal: any, wall: any, replayStep: number | undefined, r
   if (crystal.dissolved && !crystal.perimorph_eligible && !(renderC > 0.05)) return null;
   const anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
   if (!anchor) return null;
-  let ringIdx = anchor.ringIdx;
-  if (ringIdx == null || ringIdx < 0 || ringIdx >= ringCount) ringIdx = 0;
-  const cellIdx = anchor.cellIdx;
-  if (cellIdx == null) return null;
-  const ring = wall.rings[ringIdx]; if (!ring) return null;
-  const cell = ring[cellIdx]; if (!cell) return null;
-  const phi = Math.PI * (ringIdx + 0.5) / ringCount;
-  const sinPhi = Math.sin(phi), cosPhi = Math.cos(phi);
-  const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
-  const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0.0;
-  const baseR = cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
-  const radiusMm = (baseR + cell.wall_depth) * polar;
-  const theta = (2 * Math.PI * cellIdx) / N + twist;
-  const ax = radiusMm * sinPhi * Math.cos(theta);
-  const ay = -radiusMm * cosPhi;
-  const az = radiusMm * sinPhi * Math.sin(theta);
-  const len = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
-  const [cAxisX, cAxisY, cAxisZ] = _topoCAxisForCrystal(crystal, -ax / len, -ay / len, -az / len);
+  const point = wall.surfacePointForCrystal?.(crystal);
+  const normal = wall.surfaceNormalForCrystal?.(crystal);
+  if (!point || !normal) return null;
+  const [ax, ay, az] = point;
+  const [cAxisX, cAxisY, cAxisZ] = _topoCAxisForCrystal(
+    crystal, normal[0], normal[1], normal[2],
+  );
   const token = _resolveCrystalGeomToken(crystal, crystal.habit);
   const inReplay = (replayStep != null);
   const cLen = Math.max(inReplay ? 0.0 : 2.0, renderC);
@@ -5331,7 +5379,7 @@ function _o2ContactMaterial(mat: any, state: any): any {
 // MINERAL_SPEC[mineral].class_color.
 function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: number) {
   if (!sim || !wall || !wall.rings || !wall.rings.length) return;
-  const sig = _topoCrystalsSignature(sim, replayStep);
+  const sig = _topoCrystalsSignature(sim, wall, replayStep);
   if (sig === state.crystalsSig) return;
   state.crystalsSig = sig;
 
@@ -5417,37 +5465,28 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // positional field; _resolveAnchor reads only from it.
     const _anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
     if (!_anchor) continue;
-    let ringIdx = _anchor.ringIdx;
-    if (ringIdx == null || ringIdx < 0 || ringIdx >= ringCount) ringIdx = 0;
-    const cellIdx = _anchor.cellIdx;
-    if (cellIdx == null) continue;
+    // `_anchor` is already authenticated and live-remapped. Reuse it rather
+    // than independently resolving the same crystal for each projection.
+    const chemistry = CavitySurfaceAnchors.chemistryAddress(_anchor);
+    const point = _anchor.position;
+    const normal = _anchor.normal;
+    if (!chemistry || !point || !normal) continue;
+    const ringIdx = chemistry.ringIdx;
+    const cellIdx = chemistry.cellIdx;
 
     const ring = wall.rings[ringIdx];
-    if (!ring) continue;
-    const cell = ring[cellIdx];
-    if (!cell) continue;
+    if (!ring || !ring[cellIdx]) continue;
 
     // Anchor point on the cavity wall — same math as
     // _topoBuildCavityGeometry uses, applied to one cell.
-    const phi = Math.PI * (ringIdx + 0.5) / ringCount;
-    const sinPhi = Math.sin(phi);
-    const cosPhi = Math.cos(phi);
-    const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
-    const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0.0;
-    const baseR = cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
-    const radiusMm = (baseR + cell.wall_depth) * polar;
-    const theta = (2 * Math.PI * cellIdx) / N + twist;
-    const ax = radiusMm * sinPhi * Math.cos(theta);
-    const ay = -radiusMm * cosPhi;
-    const az = radiusMm * sinPhi * Math.sin(theta);
+    const [ax, ay, az] = point;
 
     // Substrate normal: from wall center (the origin, since the
     // cavity is built around 0,0,0) outward through the anchor.
     // c-axis lies along this normal — crystal grows INTO the cavity
     // (toward origin) for fluid environments. Negate so the c-axis
     // points from anchor toward origin.
-    const len = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
-    const nx = -ax / len, ny = -ay / len, nz = -az / len;
+    const [nx, ny, nz] = normal;
     // PHASE-D-HABIT-BIAS — pure helper centralizes the gravity bias.
     // See _topoCAxisForCrystal definition below for the full
     // contract; tests live in tests-js/habit-bias.test.ts.
@@ -6143,6 +6182,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       mineral: effectiveMineral,
       ringIdx,
       cellIdx,
+      surfaceAnchorKey: wall.surfaceAnchorKey?.(crystal),
       // === HELIX-OVERLAY-FORK ADDITION (v13) =========================
       // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
       // breadcrumb. Sweep-writes-crystals mode: the helix overlay
@@ -6450,6 +6490,18 @@ function _topoApplyThreeDefaultOnce() {
 // Legacy flat-array snapshot (the v60 schema) is still tolerated for
 // any in-memory state that predates v65: the flat ring is projected
 // across all rings, matching the previous placeholder behavior.
+function _topoRejectReplayWall(synth: any, reason: any): any {
+  synth._cavityEvolutionLedger = null;
+  delete synth._cavityEvolutionCursor;
+  synth._disableMarchingCubesCavity = true;
+  synth._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
+  synth._activeCavitySurfaceAnchorProvider = null;
+  synth._replayAuthenticationFailure = String(
+    reason instanceof Error ? reason.message : reason || 'unknown replay authentication failure',
+  );
+  return synth;
+}
+
 function _topoSnapshotWall(liveWall: any, snapshot: any): any {
   if (!liveWall || !liveWall.rings || !liveWall.rings.length) return liveWall;
   const ringCount = liveWall.ring_count;
@@ -6457,6 +6509,18 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
   // Synthetic wall — reuse method shapes from liveWall via Object.assign
   // so polarProfileFactor, ringTwistRadians, etc. still work.
   const synth: any = Object.assign(Object.create(Object.getPrototypeOf(liveWall) || null), liveWall);
+  // Object.assign intentionally skips WallState's non-enumerable immutable
+  // authored-shape authority. Restore that exact construction receipt before
+  // recomputing ledger identity; otherwise every honest snapshot would appear
+  // to have `authored_shape: null`.
+  if (liveWall._cavity_shape) {
+    Object.defineProperty(synth, '_cavity_shape', {
+      value: liveWall._cavity_shape,
+      writable: false,
+      configurable: false,
+      enumerable: false,
+    });
+  }
   // Never inherit geometry identity or a live mesh. The rings below are a
   // distinct historical surface, so they must take the exact all-cell
   // signature path and build their own WallMesh. Otherwise every replay frame
@@ -6468,6 +6532,8 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
   // Object.assign inherited the live authority. A historical surface must not
   // expose it until both cursor authentication and depth projection succeed.
   synth._cavityEvolutionLedger = null;
+  synth._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
+  synth._activeCavitySurfaceAnchorProvider = null;
   delete synth._cavityEvolutionCursor;
   // Fail closed by default. Only an authenticated cavity-evolution prefix
   // below may opt a replay frame into the default-off MC comparison path.
@@ -6477,34 +6543,62 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
   //   * Multi-ring (v65+): { step, rings: [...] } — use directly.
   //   * Legacy flat array (v60..v64): project across all rings.
   let snapRings: any[];
+  const modernSnapshot = !Array.isArray(snapshot);
   if (Array.isArray(snapshot)) {
     snapRings = new Array(ringCount);
     for (let r = 0; r < ringCount; r++) snapRings[r] = snapshot;
   } else if (snapshot && Array.isArray(snapshot.rings)) {
     snapRings = snapshot.rings;
+    let exactDimensions = snapRings.length === ringCount;
+    for (let r = 0; exactDimensions && r < ringCount; r++) {
+      if (!Object.prototype.hasOwnProperty.call(snapRings, r)
+          || !Array.isArray(snapRings[r]) || snapRings[r].length !== N) {
+        exactDimensions = false;
+        break;
+      }
+      for (let i = 0; i < N; i++) {
+        if (!Object.prototype.hasOwnProperty.call(snapRings[r], i)) {
+          exactDimensions = false;
+          break;
+        }
+      }
+    }
+    if (!exactDimensions) {
+      return _topoRejectReplayWall(
+        synth, `replay dimensions must be exactly ${ringCount}x${N}`,
+      );
+    }
   } else {
-    return liveWall;
+    return _topoRejectReplayWall(synth, 'unsupported or missing replay rings');
   }
 
   const rings: any[] = [];
+  let invalidGeometry = '';
   for (let r = 0; r < ringCount; r++) {
     // Fall through to ring 0 if the snapshot is short on rings — keeps
     // mid-life ring_count migrations from crashing.
-    const sourceRing = snapRings[r] || snapRings[0] || [];
+    const sourceRing = snapRings[r];
     const ring = new Array(N);
     for (let i = 0; i < N; i++) {
       const snap = sourceRing[i] || {};
+      const wallDepth = Number(snap.wall_depth);
+      const baseRadius = Number(snap.base_radius_mm);
+      if (!Number.isFinite(wallDepth)
+          || (modernSnapshot && (!(baseRadius > 0) || !Number.isFinite(baseRadius)))) {
+        invalidGeometry = `non-finite or missing replay geometry at ring ${r}, cell ${i}`;
+      }
       ring[i] = {
-        wall_depth: snap.wall_depth || 0,
+        wall_depth: Number.isFinite(wallDepth) ? wallDepth : 0,
         crystal_id: snap.crystal_id ?? null,
         mineral: snap.mineral ?? null,
         thickness_um: snap.thickness_um || 0,
-        base_radius_mm: snap.base_radius_mm || 0,
+        base_radius_mm: Number.isFinite(baseRadius) ? baseRadius : 0,
       };
     }
     rings[r] = ring;
   }
   synth.rings = rings;
+  if (invalidGeometry) return _topoRejectReplayWall(synth, invalidGeometry);
   const ledger = liveWall.cavityEvolutionLedger ? liveWall.cavityEvolutionLedger() : null;
   const cursor = snapshot && !Array.isArray(snapshot)
     ? snapshot.cavity_evolution_cursor : null;
@@ -6512,21 +6606,82 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
     ? snapshot.cavity_evolution_signature : null;
   if (ledger && Number.isInteger(cursor) && cursor >= 0 && cursor <= ledger.cursor) {
     try {
-      if (ledger.signatureAt(cursor) !== expectedSignature) return synth;
+      if (ledger.signatureAt(cursor) !== expectedSignature) {
+        throw new Error('replay cavity evolution signature mismatch');
+      }
+      const identity = CavityEvolutionLedger.identityForWall(synth);
+      if (identity.shape !== ledger.shape_identity
+          || identity.tessellation !== ledger.tessellation_identity) {
+        throw new Error('replay cavity shape or tessellation identity mismatch');
+      }
       ledger.assertProjection(synth, cursor);
       synth._cavityEvolutionLedger = ledger;
       synth._cavityEvolutionCursor = cursor;
       synth._disableMarchingCubesCavity = false;
+
+      // Replay the provider command that was authoritative at this snapshot,
+      // then independently rebuild and compare every identity field. Legacy
+      // snapshots omitted this receipt and therefore remain on canonical
+      // WallMesh; they must never inherit the provider active on `liveWall`.
+      const storedProvider = snapshot?.cavity_surface_provider;
+      if (storedProvider?.kind === 'cavity-field') {
+        const rebuilt = synth.activateCavitySurfaceAnchorProvider({
+          resolution: storedProvider.resolution,
+          isovalue: storedProvider.isovalue,
+          ledgerCursor: cursor,
+        });
+        const identityKeys = [
+          'kind', 'resolution', 'isovalue', 'field_signature',
+          'field_snapshot_digest', 'surface_signature',
+          'surface_buffer_digest', 'cavity_evolution_signature',
+        ];
+        if (identityKeys.some(key => rebuilt[key] !== storedProvider[key])
+            || rebuilt.cavity_evolution_signature !== expectedSignature) {
+          throw new Error('replay cavity provider receipt mismatch');
+        }
+      } else if (storedProvider && storedProvider.kind !== 'wall-mesh') {
+        throw new Error('unknown replay cavity provider kind');
+      }
     } catch (_error) {
-      // Replay remains on the canonical WallMesh fallback. A corrupt or
-      // incompatible historical frame is evidence to reject, not an excuse
-      // to throw out of rendering or inherit the live ledger.
-      synth._cavityEvolutionLedger = null;
-      delete synth._cavityEvolutionCursor;
-      synth._disableMarchingCubesCavity = true;
+      // A corrupt frame is withheld. Falling back to its untrusted WallMesh
+      // would turn authentication failure into plausible-looking geology.
+      return _topoRejectReplayWall(synth, _error);
     }
+  } else if (modernSnapshot) {
+    return _topoRejectReplayWall(synth, 'missing or invalid replay cavity evolution receipt');
   }
   return synth;
+}
+
+// One decision boundary shared by canvas and WebGL dispatch. Tests exercise
+// this function directly so failure behavior cannot regress behind renderer or
+// hardware availability branches.
+function _topoReplayRenderDecision(liveWall: any, snapshot: any): any {
+  if (snapshot && (!liveWall || !Array.isArray(liveWall.rings) || !liveWall.rings.length)) {
+    return Object.freeze({
+      mode: 'corrupt', wall: null,
+      message: 'Replay frame withheld: live cavity authority is unavailable.',
+    });
+  }
+  const wall = snapshot ? _topoSnapshotWall(liveWall, snapshot) : liveWall;
+  if (wall?._replayAuthenticationFailure) {
+    return Object.freeze({
+      mode: 'corrupt', wall,
+      message: `Replay frame withheld: ${wall._replayAuthenticationFailure}.`,
+    });
+  }
+  const provider = wall?.activeCavitySurfaceAnchorProvider?.();
+  return Object.freeze({
+    mode: provider?.receipt?.kind === 'cavity-field' ? 'cavity-field' : 'wall-mesh',
+    wall,
+    message: null,
+  });
+}
+
+function _topoThreeRenderAuthorityDecision(liveWall: any, snapshot: any): any {
+  return snapshot
+    ? _topoReplayRenderDecision(liveWall, snapshot)
+    : Object.freeze({ mode: 'wall-mesh', wall: liveWall, message: null });
 }
 
 // Public render entry. Called from topoRender's branch when
@@ -6548,7 +6703,22 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
 // nucleated yet and to sum zone thicknesses up to that step. When
 // undefined, the Three.js path renders LIVE crystal sizes (regular
 // frame).
-function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any, optReplayStep?: number): boolean {
+function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any,
+                          optReplayStep?: number): boolean {
+  // Authenticate a supplied historical frame before renderer/canvas/hardware
+  // checks. A malformed payload must never turn into today's live geology just
+  // because WebGL is absent or initialization exits early.
+  const replayDecision = _topoThreeRenderAuthorityDecision(wall, optOverrideSnap);
+  const renderWall = replayDecision.wall;
+  if (replayDecision.mode === 'corrupt' || renderWall?._replayAuthenticationFailure) {
+    if (_topoThreeState?.cavity) _topoThreeState.cavity.visible = false;
+    if (_topoThreeState?.crystals) _topoThreeState.crystals.visible = false;
+    if (_topoThreeState) _topoThreeState.cavityAuthorityUnrenderable = true;
+    const canvas2d = document.getElementById('topo-canvas') as HTMLCanvasElement | null;
+    if (canvas2d) _topoPaintPlaceholder(canvas2d, replayDecision.message
+      || `Replay frame withheld: ${renderWall._replayAuthenticationFailure}.`);
+    return false;
+  }
   const canvas = document.getElementById('topo-canvas-three') as HTMLCanvasElement | null;
   if (!canvas) return false;
   // Terminal shader failure holds the effective renderer on canvas until the
@@ -6566,12 +6736,11 @@ function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any, optReplayS
   // During replay, build cavity from the snapshot rings so the wall
   // profile reflects the historical step. Force a fresh build each
   // replay frame by invalidating the cached signatures.
-  const renderWall = optOverrideSnap ? _topoSnapshotWall(wall, optOverrideSnap) : wall;
   if (optOverrideSnap) {
     state.cavitySig = null;
     state.crystalsSig = null;
   }
-  _topoBuildCavityGeometry(state, renderWall, sim);
+  if (!_topoBuildCavityGeometry(state, renderWall, sim)) return false;
   _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
   _topoApplyCameraFromTilt(state, renderWall);
   // === HELIX-OVERLAY-FORK ADDITION (v0–v17) =========================
@@ -6585,19 +6754,27 @@ function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any, optReplayS
   }
   // === END HELIX-OVERLAY-FORK ADDITION ==============================
   const rendered = _topoRenderPreparedCavityScene(state, () => {
-    const failedDigest = renderWall && renderWall.cavityFieldFor
-      ? renderWall.cavityFieldFor({ resolution: _topoMarchingCubesResolution() }).snapshotDigest
-      : null;
+    const failedDigest = state.cavityFieldContract?.snapshot_digest || null;
     if (failedDigest) {
       if (!state.cavityFieldFailedDigests) state.cavityFieldFailedDigests = new Set<string>();
       if (!state.cavityFieldFailedReasons) state.cavityFieldFailedReasons = new Map<string, string>();
       state.cavityFieldFailedDigests.add(failedDigest);
       state.cavityFieldFailedReasons.set(failedDigest, 'cavity-field-shader-link-failed');
     }
+    if (renderWall.activeCavitySurfaceAnchorProvider?.()?.receipt?.kind === 'cavity-field') {
+      state.cavityAuthorityUnrenderable = true;
+      if (state.cavity) state.cavity.visible = false;
+      if (state.crystals) state.crystals.visible = false;
+      return false;
+    }
     state.cavitySig = '';
-    _topoBuildCavityGeometry(state, renderWall, sim);
+    // A failed field shader cannot be replaced by an independently selected MC
+    // shadow extraction in the same fallback. Anchors and the visible wall both
+    // return to canonical WallMesh before the polar shader is compiled.
+    _topoBuildCavityGeometry(state, renderWall, sim, true);
     state.crystalsSig = '';
     _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
+    return true;
   });
   if (!rendered) {
     // Let topoRender continue into its established canvas renderer. Keep the

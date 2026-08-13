@@ -9,23 +9,127 @@
 // MC33-style interior ambiguity resolution remains a later production gate.
 
 class MarchingCubesExtractor {
+  // TypedArray payloads cannot be frozen in JavaScript. Keep their owned targets
+  // private and expose read-only proxies: numeric writes and mutating methods
+  // throw, while `.buffer` returns a copy rather than a writable alias. The one
+  // complete digest is therefore authenticated at the immutable extraction
+  // boundary; later verification is O(1) object identity.
+  static #verifiedBuffers: WeakMap<object, any> = new WeakMap();
+  static #readonlyTargets: WeakMap<object, any> = new WeakMap();
+  static #readonlyProxies: WeakMap<object, any> = new WeakMap();
+  static #typedArrayPrototype: any = Object.getPrototypeOf(Float32Array.prototype);
+  static #typedArraySlice: any = MarchingCubesExtractor.#typedArrayPrototype.slice;
+  static #callbackMethods: Map<string, any> = new Map(
+    ['every', 'filter', 'find', 'findIndex', 'findLast', 'findLastIndex', 'forEach',
+      'map', 'reduce', 'reduceRight', 'some'].map(name =>
+      [name, MarchingCubesExtractor.#typedArrayPrototype[name]]),
+  );
+  static #iteratorMethods: Map<PropertyKey, any> = new Map<PropertyKey, any>([
+    [Symbol.iterator, MarchingCubesExtractor.#typedArrayPrototype.values],
+    ['entries', MarchingCubesExtractor.#typedArrayPrototype.entries],
+    ['keys', MarchingCubesExtractor.#typedArrayPrototype.keys],
+    ['values', MarchingCubesExtractor.#typedArrayPrototype.values],
+  ]);
+  static #copyMethods: Map<string, any> = new Map(
+    ['at', 'includes', 'indexOf', 'lastIndexOf', 'join', 'toLocaleString', 'toString']
+      .map(name => [name, MarchingCubesExtractor.#typedArrayPrototype[name]]),
+  );
+
+  static #rawBuffer(values: any): any {
+    return MarchingCubesExtractor.#readonlyTargets.get(values) || values;
+  }
+
+  static #readonlyBuffer(values: any): any {
+    const existing = MarchingCubesExtractor.#readonlyProxies.get(values);
+    if (existing) return existing;
+    const mutators = new Set(['copyWithin', 'fill', 'reverse', 'set', 'sort']);
+    const typedArrayConstructor = values.constructor;
+    const copy = (start?: number, end?: number) => Reflect.apply(
+      MarchingCubesExtractor.#typedArraySlice, values,
+      start == null ? [] : end == null ? [start] : [start, end],
+    );
+    let proxy: any;
+    proxy = new Proxy(values, {
+      get(target, property) {
+        if (typeof property === 'string' && /^(0|[1-9]\d*)$/.test(property)) {
+          return target[Number(property)];
+        }
+        if (property === 'buffer') {
+          return target.buffer.slice(target.byteOffset, target.byteOffset + target.byteLength);
+        }
+        if (property === 'byteOffset') return 0;
+        if (property === 'byteLength' || property === 'length') return target[property];
+        if (property === Symbol.toStringTag) return target.constructor.name;
+        if (property === 'valueOf') return () => proxy;
+        if (property === 'constructor') return typedArrayConstructor;
+        if (property === 'subarray') return (start?: number, end?: number) =>
+          MarchingCubesExtractor.#readonlyBuffer(copy(start, end));
+        if (mutators.has(String(property))) return () => {
+          throw new TypeError('Marching Cubes surface buffers are immutable');
+        };
+        const iteratorMethod = MarchingCubesExtractor.#iteratorMethods.get(property);
+        if (iteratorMethod) {
+          return (...args: any[]) => Reflect.apply(iteratorMethod, target, args);
+        }
+        // Callback-bearing TypedArray methods pass their receiver as an
+        // argument. Execute them on a copy so callbacks cannot capture the
+        // private authoritative target through that argument.
+        const callbackMethod = MarchingCubesExtractor.#callbackMethods.get(String(property));
+        if (callbackMethod) {
+          return (...args: any[]) => Reflect.apply(callbackMethod, copy(), args);
+        }
+        if (property === 'slice') return copy;
+        const copyMethod = MarchingCubesExtractor.#copyMethods.get(String(property));
+        if (copyMethod) {
+          return (...args: any[]) => Reflect.apply(copyMethod, copy(), args);
+        }
+        // Do not Reflect.get arbitrary properties with the authoritative typed
+        // array as receiver. A caller-controlled prototype getter could return
+        // `this.buffer` and escape the raw storage without crossing a proxy trap.
+        return undefined;
+      },
+      set() { throw new TypeError('Marching Cubes surface buffers are immutable'); },
+      defineProperty() { throw new TypeError('Marching Cubes surface buffers are immutable'); },
+      deleteProperty() { throw new TypeError('Marching Cubes surface buffers are immutable'); },
+      setPrototypeOf() { throw new TypeError('Marching Cubes surface buffers are immutable'); },
+      preventExtensions() { throw new TypeError('Marching Cubes surface buffers are immutable'); },
+    });
+    MarchingCubesExtractor.#readonlyTargets.set(proxy, values);
+    MarchingCubesExtractor.#readonlyProxies.set(values, proxy);
+    return proxy;
+  }
+
   static _bufferDigest(surface: any): string {
     const arrays = [surface && surface.positions, surface && surface.normals,
       surface && surface.colors, surface && surface.uvs, surface && surface.indices];
     let joined = '';
     for (const values of arrays) {
-      if (!values || !ArrayBuffer.isView(values)) throw new TypeError('surface buffer is unavailable');
-      const bytes = new Uint8Array(values.buffer, values.byteOffset, values.byteLength);
+      const raw = MarchingCubesExtractor.#rawBuffer(values);
+      if (!raw || !ArrayBuffer.isView(raw)) throw new TypeError('surface buffer is unavailable');
+      const bytes = new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength);
       let hash = 0x811c9dc5;
       for (let i = 0; i < bytes.length; i++) hash = Math.imul(hash ^ bytes[i], 0x01000193) >>> 0;
-      joined += `${values.constructor.name}:${values.byteLength}:${hash.toString(16).padStart(8, '0')}|`;
+      joined += `${raw.constructor.name}:${raw.byteLength}:${hash.toString(16).padStart(8, '0')}|`;
     }
     return joined;
   }
 
   static verifyBuffers(surface: CavitySurfaceBuffers): void {
-    if (!surface || MarchingCubesExtractor._bufferDigest(surface) !== surface.buffer_digest) {
+    if (!surface) throw new Error('Marching Cubes surface buffers changed after extraction');
+    const trusted = MarchingCubesExtractor.#verifiedBuffers.get(surface as any);
+    const buffers = [surface.positions, surface.normals, surface.colors, surface.uvs, surface.indices];
+    const immutableOwned = buffers.every((values: any) =>
+      MarchingCubesExtractor.#readonlyTargets.has(values));
+    if (trusted && immutableOwned && trusted.digest === surface.buffer_digest
+        && buffers.every((values: any, index: number) => values === trusted.buffers[index])) return;
+    if (MarchingCubesExtractor._bufferDigest(surface) !== surface.buffer_digest) {
       throw new Error('Marching Cubes surface buffers changed after extraction');
+    }
+    if (immutableOwned) {
+      MarchingCubesExtractor.#verifiedBuffers.set(surface as any, {
+        digest: surface.buffer_digest,
+        buffers,
+      });
     }
   }
 
@@ -534,11 +638,11 @@ class MarchingCubesExtractor {
     const surfaceBytes = positionBuffer.byteLength + normalBuffer.byteLength
       + colorBuffer.byteLength + uvBuffer.byteLength + indexBuffer.byteLength;
     const result: any = {
-      positions: positionBuffer,
-      normals: normalBuffer,
-      colors: colorBuffer,
-      indices: indexBuffer,
-      uvs: uvBuffer,
+      positions: MarchingCubesExtractor.#readonlyBuffer(positionBuffer),
+      normals: MarchingCubesExtractor.#readonlyBuffer(normalBuffer),
+      colors: MarchingCubesExtractor.#readonlyBuffer(colorBuffer),
+      indices: MarchingCubesExtractor.#readonlyBuffer(indexBuffer),
+      uvs: MarchingCubesExtractor.#readonlyBuffer(uvBuffer),
       sig: field.surfaceSignature(isovalue),
       source_field_signature: field.sig,
       source_field_snapshot_digest: field.snapshotDigest,
@@ -555,8 +659,17 @@ class MarchingCubesExtractor {
         field_bytes: field.sampleByteLength(),
         surface_bytes: surfaceBytes,
       }),
+      topology: Object.freeze({
+        negative_border: field.hasNegativeBorder(isovalue),
+        nonempty: indexBuffer.length >= 3 && positionBuffer.length >= 9,
+        closed_two_manifold: field.hasNegativeBorder(isovalue) && indexBuffer.length >= 3,
+      }),
     };
     result.buffer_digest = MarchingCubesExtractor._bufferDigest(result);
+    MarchingCubesExtractor.#verifiedBuffers.set(result, {
+      digest: result.buffer_digest,
+      buffers: [result.positions, result.normals, result.colors, result.uvs, result.indices],
+    });
     return Object.freeze(result);
   }
 }

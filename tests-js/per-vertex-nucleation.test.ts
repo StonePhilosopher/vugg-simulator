@@ -84,6 +84,31 @@ describe('Tranche 6 — per-vertex nucleation plumbing', () => {
     const sim2 = new VugSimulator(makeConditions({ per_vertex_nucleation: false }), []);
     expect(sim2.wall_state.per_vertex_nucleation).toBe(false);
   });
+
+  it('keeps an MC/barycentric host overgrowth at the host physical attachment', () => {
+    const sim = new VugSimulator(makeConditions({ shape_seed: 42 }), []);
+    const wall = sim.wall_state;
+    wall.activateCavitySurfaceAnchorProvider({ resolution: 20 });
+    const host = sim.nucleate('quartz', 'vug wall', 2);
+    host.wall_anchor = wall.surfaceAnchorFromMarchingCubes(
+      0, [0.2, 0.3, 0.5], { resolution: 20 },
+    );
+    const resolvedHost = wall._resolveAnchor(host);
+    const child = sim.nucleate('calcite', `on quartz #${host.crystal_id}`, 2);
+    const resolvedChild = wall._resolveAnchor(child);
+
+    expect(resolvedChild.source.kind).toBe('cavity-field');
+    expect(resolvedChild.source.signature).toBe(resolvedHost.source.signature);
+    expect(resolvedChild.position).toEqual(resolvedHost.position);
+    expect(resolvedChild.normal).toEqual(resolvedHost.normal);
+    expect(wall.chemistryAddressForCrystal(child))
+      .toEqual(wall.chemistryAddressForCrystal(host));
+    const chemistry = wall.chemistryAddressForCrystal(host);
+    const mesh = wall.meshFor(sim);
+    expect(resolvedHost.position).not.toEqual(Array.from(mesh.positions.slice(
+      chemistry.vertexIndex * 3, chemistry.vertexIndex * 3 + 3,
+    )));
+  });
 });
 
 describe('Tranche 6 — per-vertex σ sampler', () => {
@@ -110,6 +135,20 @@ describe('Tranche 6 — per-vertex σ sampler', () => {
     const sim = new VugSimulator(makeConditions({ per_vertex_nucleation: true }), []);
     sim.run_step();
     expect(sim._perVertexNucleationSample('not_a_real_mineral')).toBeNull();
+  });
+
+  it('composes local saturation weights with the architecture physical-normal filter', () => {
+    const sim = new VugSimulator(makeConditions({
+      architecture: 'basin',
+      per_vertex_nucleation: true,
+    }), []);
+    sim.run_step();
+    setSeed(42);
+    for (let trial = 0; trial < 32; trial++) {
+      const picked = sim._perVertexNucleationSample('calcite');
+      expect(picked).toBeTruthy();
+      expect(sim.wall_state.surfaceZoneAtVertex(picked.ringIdx, picked.cellIdx, sim)).toBe('floor');
+    }
   });
 });
 
