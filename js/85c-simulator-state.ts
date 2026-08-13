@@ -1188,12 +1188,21 @@ _diffuseRingState(rate?) {
     sim: this,
     providerReceipt: cavitySurfaceProvider,
   });
+  const cavityMaterialState = CavityWallMaterialState.create(this.wall_state);
   const waterHistory = this._cavityWaterAppearanceLedger;
   if (!waterHistory || waterHistory !== this.wall_state._cavityWaterAppearanceLedger) {
     throw new Error('cavity water history authority is unavailable');
   }
   const waterHistoryEntry = waterHistory.append(
     this.step, this.wall_state, cnd, cavityAppearance.receipt,
+  );
+  const materialHistory = this._cavityWallMaterialHistoryLedger;
+  if (!materialHistory
+      || materialHistory !== this.wall_state._cavityWallMaterialHistoryLedger) {
+    throw new Error('cavity wall material history authority is unavailable');
+  }
+  const materialHistoryEntry = materialHistory.append(
+    this.step, this.wall_state, cavityMaterialState,
   );
   const snap: any = {
     sim_version: SIM_VERSION,
@@ -1209,6 +1218,10 @@ _diffuseRingState(rate?) {
     cavity_water_history_cursor: waterHistory.cursor,
     cavity_water_history_signature: waterHistory.signature,
     cavity_water_history_entry_digest: waterHistoryEntry.entry_digest,
+    cavity_material_state: { ...cavityMaterialState },
+    cavity_material_history_cursor: materialHistory.cursor,
+    cavity_material_history_signature: materialHistory.signature,
+    cavity_material_history_entry_digest: materialHistoryEntry.entry_digest,
     cavity_production_contract_digest:
       this.wall_state._cavityProductionAuthorityContract?.contract_digest ?? null,
     rings: new Array(ringCount),

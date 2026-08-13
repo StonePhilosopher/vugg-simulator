@@ -133,6 +133,9 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
     uReliefAO: { value: (typeof _wallReliefAOMap === 'function' ? _wallReliefAOMap('scallops') : null) },
     uReliefAORepeat: { value: new THREE.Vector2(5, 5) },
     uReliefAOAmt: { value: 0 },
+    uWallMaterialSpaceEnabled: { value: 0 },
+    uWallMatrixScale: { value: new THREE.Vector2(0.05, 0.05) },
+    uWallReliefScale: { value: new THREE.Vector2(0.1, 0.1) },
   };
   if (typeof _applyWallReliefAO === 'function') _applyWallReliefAO(cavityMat);
   const cavity = new THREE.Mesh(cavityGeom, cavityMat);
@@ -621,24 +624,195 @@ function _applyWallReliefAO(material: any) {
     shader.uniforms.uReliefAO = u.uReliefAO;
     shader.uniforms.uReliefAORepeat = u.uReliefAORepeat;
     shader.uniforms.uReliefAOAmt = u.uReliefAOAmt;
+    shader.uniforms.uWallMaterialSpaceEnabled = u.uWallMaterialSpaceEnabled;
+    shader.uniforms.uWallMatrixScale = u.uWallMatrixScale;
+    shader.uniforms.uWallReliefScale = u.uWallReliefScale;
     shader.vertexShader = shader.vertexShader.replace(
       '#include <common>',
-      '#include <common>\nvarying vec2 vReliefUv;'
+      '#include <common>\nvarying vec2 vReliefUv;\nvarying vec3 vWallMaterialPos;\nvarying vec3 vWallMaterialNormal;\nvarying vec3 vWallNormalBasisX;\nvarying vec3 vWallNormalBasisY;\nvarying vec3 vWallNormalBasisZ;'
     );
     shader.vertexShader = shader.vertexShader.replace(
       '#include <begin_vertex>',
-      '#include <begin_vertex>\n\tvReliefUv = uv;'   // raw uv (unconditionally declared in r163); no vMapUv transform
+      '#include <begin_vertex>\n\tvReliefUv = uv;\n\tvWallMaterialPos = position;\n\tvWallMaterialNormal = normal;\n\tvWallNormalBasisX = normalMatrix * vec3(1.0, 0.0, 0.0);\n\tvWallNormalBasisY = normalMatrix * vec3(0.0, 1.0, 0.0);\n\tvWallNormalBasisZ = normalMatrix * vec3(0.0, 0.0, 1.0);'
     );
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <common>',
-      '#include <common>\nuniform sampler2D uReliefAO;\nuniform vec2 uReliefAORepeat;\nuniform float uReliefAOAmt;\nvarying vec2 vReliefUv;'
+      `#include <common>
+uniform sampler2D uReliefAO;
+uniform vec2 uReliefAORepeat;
+uniform float uReliefAOAmt;
+uniform float uWallMaterialSpaceEnabled;
+uniform vec2 uWallMatrixScale;
+uniform vec2 uWallReliefScale;
+varying vec2 vReliefUv;
+varying vec3 vWallMaterialPos;
+varying vec3 vWallMaterialNormal;
+varying vec3 vWallNormalBasisX;
+varying vec3 vWallNormalBasisY;
+varying vec3 vWallNormalBasisZ;
+vec3 wallTriplanarWeights(vec3 sourceNormal) {
+  vec3 weights = pow(abs(normalize(sourceNormal)), vec3(4.0));
+  return weights / max(weights.x + weights.y + weights.z, 1e-6);
+}
+vec4 wallTriplanarSample(sampler2D sourceMap, vec3 sourcePosition,
+                         vec3 sourceNormal, vec2 physicalScale) {
+  vec3 weights = wallTriplanarWeights(sourceNormal);
+  vec4 alongX = texture2D(sourceMap, vec2(sourcePosition.z, sourcePosition.y) * physicalScale);
+  vec4 alongY = texture2D(sourceMap, vec2(sourcePosition.x, sourcePosition.z) * physicalScale);
+  vec4 alongZ = texture2D(sourceMap, vec2(sourcePosition.x, sourcePosition.y) * physicalScale);
+  return alongX * weights.x + alongY * weights.y + alongZ * weights.z;
+}`
     );
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <map_fragment>',
-      '#include <map_fragment>\n\tfloat _reliefAO = texture2D( uReliefAO, vReliefUv * uReliefAORepeat ).r;\n\tdiffuseColor.rgb *= ( 1.0 - uReliefAOAmt * ( 1.0 - _reliefAO ) );'
+      `#ifdef USE_MAP
+  vec4 sampledDiffuseColor = uWallMaterialSpaceEnabled > 0.5
+    ? wallTriplanarSample(map, vWallMaterialPos, vWallMaterialNormal, uWallMatrixScale)
+    : texture2D(map, vMapUv);
+  diffuseColor *= sampledDiffuseColor;
+#endif
+  float _reliefAO = uWallMaterialSpaceEnabled > 0.5
+    ? wallTriplanarSample(uReliefAO, vWallMaterialPos, vWallMaterialNormal, uWallReliefScale).r
+    : texture2D(uReliefAO, vReliefUv * uReliefAORepeat).r;
+  diffuseColor.rgb *= (1.0 - uReliefAOAmt * (1.0 - _reliefAO));`
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <normal_fragment_maps>',
+      `#if defined(USE_NORMALMAP_TANGENTSPACE)
+  if (uWallMaterialSpaceEnabled > 0.5) {
+    vec3 baseObjectNormal = normalize(vWallMaterialNormal);
+    #ifdef FLAT_SHADED
+      baseObjectNormal = normalize(cross(
+        dFdx(vWallMaterialPos), dFdy(vWallMaterialPos)));
+    #endif
+    vec3 baseViewFromObject = normalize(
+      vWallNormalBasisX * baseObjectNormal.x
+      + vWallNormalBasisY * baseObjectNormal.y
+      + vWallNormalBasisZ * baseObjectNormal.z);
+    if (dot(baseViewFromObject, normal) < 0.0) baseObjectNormal = -baseObjectNormal;
+    vec3 axisSign = step(vec3(0.0), baseObjectNormal) * 2.0 - 1.0;
+    vec3 weights = wallTriplanarWeights(baseObjectNormal);
+    vec3 mapX = texture2D(normalMap, vec2(vWallMaterialPos.z, vWallMaterialPos.y) * uWallReliefScale).xyz * 2.0 - 1.0;
+    vec3 mapY = texture2D(normalMap, vec2(vWallMaterialPos.x, vWallMaterialPos.z) * uWallReliefScale).xyz * 2.0 - 1.0;
+    vec3 mapZ = texture2D(normalMap, vec2(vWallMaterialPos.x, vWallMaterialPos.y) * uWallReliefScale).xyz * 2.0 - 1.0;
+    mapX.xy *= normalScale; mapY.xy *= normalScale; mapZ.xy *= normalScale;
+    // Blend tangent-plane perturbations, not three axis normals. A flat
+    // normal-map texel is exactly zero and therefore preserves the geometric
+    // normal, including the derivative normal used by FLAT_SHADED.
+    vec3 perturbX = vec3(0.0, mapX.y, -axisSign.x * mapX.x);
+    vec3 perturbY = vec3(mapY.x, 0.0, -axisSign.y * mapY.y);
+    vec3 perturbZ = vec3(axisSign.z * mapZ.x, mapZ.y, 0.0);
+    vec3 mappedObjectPerturbation = perturbX * weights.x
+      + perturbY * weights.y + perturbZ * weights.z;
+    vec3 mappedViewPerturbation =
+      vWallNormalBasisX * mappedObjectPerturbation.x
+      + vWallNormalBasisY * mappedObjectPerturbation.y
+      + vWallNormalBasisZ * mappedObjectPerturbation.z;
+    normal = normalize(normal + mappedViewPerturbation);
+  } else {
+    #include <normal_fragment_maps>
+  }
+#else
+  #include <normal_fragment_maps>
+#endif`
     );
   };
   material.needsUpdate = true;
+}
+
+const CAVITY_MATERIAL_SPACE_SCHEMA = 'cavity-material-space-v1';
+
+// CPU mirror of the GLSL perturbation blend. Besides making the coordinate
+// convention reviewable, this pins the most important invariant numerically:
+// a flat normal map leaves every geometric normal unchanged.
+function _topoTriplanarPerturbObjectNormal(baseNormal: number[], maps: any,
+                                            normalScale = [1, 1]): number[] {
+  const length = Math.hypot(baseNormal[0], baseNormal[1], baseNormal[2]);
+  if (!(length > 0) || !Number.isFinite(length)) {
+    throw new RangeError('triplanar normal requires a finite non-zero base normal');
+  }
+  const n = baseNormal.map(value => value / length);
+  const weights = n.map(value => Math.abs(value) ** 4);
+  const weightSum = weights[0] + weights[1] + weights[2] || 1;
+  for (let axis = 0; axis < 3; axis++) weights[axis] /= weightSum;
+  const sign = n.map(value => value < 0 ? -1 : 1);
+  const decode = (value: any): number[] => {
+    const sample = Array.isArray(value) ? value : [0, 0];
+    return [Number(sample[0]) * normalScale[0], Number(sample[1]) * normalScale[1]];
+  };
+  const x = decode(maps?.x), y = decode(maps?.y), z = decode(maps?.z);
+  const perturb = [
+    y[0] * weights[1] + sign[2] * z[0] * weights[2],
+    x[1] * weights[0] + z[1] * weights[2],
+    -sign[0] * x[0] * weights[0] - sign[1] * y[1] * weights[1],
+  ];
+  const out = n.map((value, axis) => value + perturb[axis]);
+  const outLength = Math.hypot(out[0], out[1], out[2]);
+  return out.map(value => value / outLength);
+}
+
+function _topoConfigureCavityWallMaterial(state: any, source: any, wall: any,
+                                           expectedState: any = null): any {
+  const target = state?.cavity;
+  const material = target?.material;
+  if (!material) return null;
+  const materialState = expectedState
+    ? CavityWallMaterialState.assertReceipt(wall, expectedState)
+    : CavityWallMaterialState.create(wall);
+  const litho = materialState.lithology;
+  if (state._matrixLitho !== litho && typeof _matrixSkinTexture === 'function') {
+    state._matrixLitho = litho;
+    material.map = _matrixSkinTexture(litho) || null;
+    material.needsUpdate = true;
+  }
+  const fam = materialState.relief_family;
+  const rep = materialState.relief_repeat;
+  const key = `${fam}|${rep[0]}x${rep[1]}`;
+  const ru = material.userData?.reliefAO;
+  if (state._wallReliefKey !== key) {
+    const famChanged = state._wallReliefFam !== fam;
+    state._wallReliefKey = key;
+    if (famChanged) {
+      state._wallReliefFam = fam;
+      const nrm = typeof _wallReliefNormalMap === 'function'
+        ? _wallReliefNormalMap(fam) : null;
+      material.normalMap = nrm || null;
+      if (nrm && material.normalScale?.set) material.normalScale.set(2.0, 2.0);
+      if (ru && typeof _wallReliefAOMap === 'function') {
+        const ao = _wallReliefAOMap(fam);
+        if (ao) { ru.uReliefAO.value = ao; ru.uReliefAOAmt.value = WALL_RELIEF_AO_AMT; }
+        else ru.uReliefAOAmt.value = 0;
+      }
+    }
+    if (material.normalMap?.repeat?.set) material.normalMap.repeat.set(rep[0], rep[1]);
+    if (ru?.uReliefAORepeat?.value) ru.uReliefAORepeat.value.set(rep[0], rep[1]);
+    material.needsUpdate = true;
+  }
+  const materialSpace = source?.mode === 'marching-cubes';
+  const reliefScale = [
+    rep[0] / materialState.relief_reference_span_mm,
+    rep[1] / materialState.relief_reference_span_mm,
+  ];
+  if (ru) {
+    ru.uWallMaterialSpaceEnabled.value = materialSpace ? 1 : 0;
+    ru.uWallMatrixScale.value.set(
+      materialState.matrix_scale_uv_per_mm[0], materialState.matrix_scale_uv_per_mm[1],
+    );
+    ru.uWallReliefScale.value.set(reliefScale[0], reliefScale[1]);
+  }
+  const receipt = Object.freeze({
+    schema: CAVITY_MATERIAL_SPACE_SCHEMA,
+    mapping: materialSpace ? 'triplanar-object-millimetres' : 'legacy-spherical-uv',
+    blend_exponent: materialSpace ? 4 : null,
+    matrix_scale_uv_per_mm: materialState.matrix_scale_uv_per_mm,
+    relief_scale_uv_per_mm: Object.freeze(reliefScale),
+    lithology: litho,
+    relief_family: fam,
+    material_state_digest: materialState.material_state_digest,
+    source_surface_digest: source?.buffers?.buffer_digest || source?.buffers?.sig || null,
+  });
+  state.cavityMaterialSpaceReceipt = receipt;
+  return receipt;
 }
 
 // PHASE-2-CAVITY-MESH: signature delegates to WallMesh._signature so
@@ -1290,7 +1464,8 @@ function _topoInstallCavityFieldClip(state: any, field: CavityScalarField, surfa
 function _topoBuildCavityGeometry(state: any, wall: any, sim: any,
                                   forceWallMesh = false,
                                   renderConditions: any = sim?.conditions,
-                                  expectedAppearance: any = null) {
+                                  expectedAppearance: any = null,
+                                  expectedMaterialState: any = null) {
   if (!wall || !wall.rings || !wall.rings.length) return false;
   let source: any;
   try {
@@ -1341,6 +1516,15 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any,
     if (state.cavity) state.cavity.visible = false;
     if (state.crystals) state.crystals.visible = false;
     if (state.waterInterface) state.waterInterface.visible = false;
+    return false;
+  }
+  try {
+    _topoConfigureCavityWallMaterial(state, source, wall, expectedMaterialState);
+  } catch (error) {
+    state.cavityFieldFallbackReason = error instanceof Error ? error.message : String(error);
+    state.cavityAuthorityUnrenderable = true;
+    if (state.cavity) state.cavity.visible = false;
+    if (state.crystals) state.crystals.visible = false;
     return false;
   }
   if (source.sig === state.cavitySig) {
@@ -1396,66 +1580,6 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any,
   else target.visible = true;
   if (state.crystals) state.crystals.visible = true;
   _topoPublishCavityClipReceipt(state);
-
-  // MATRIX SKIN (2026-07-06, boss ask): the wall texture that tells you what
-  // kind of matrix hosts this vug. litho = wall.matrix (render-only override,
-  // js/22) ?? wall.composition (the physics field). Textures are built once
-  // per lithology + cached (js/99a _matrixSkinTexture); reassigned only when
-  // the resolved lithology actually changes (scenario switch).
-  if (target.material && typeof _matrixSkinTexture === 'function') {
-    const litho = String(wall.matrix || wall.composition || 'limestone');
-    if (state._matrixLitho !== litho) {
-      state._matrixLitho = litho;
-      const tex = _matrixSkinTexture(litho);
-      target.material.map = tex || null;
-      target.material.needsUpdate = true;
-    }
-  }
-
-  // W-K V1 (wall microtexture) + V1b (albedo depth + FLOW-SCALED scallop length): the GENESIS
-  // relief — a normal map + albedo AO keyed on wall.architecture (dissolution scallops / cleft
-  // striations / basin rind; js/99a), with SCALLOP TILING scaled by the wall's paleo-flow (Curl
-  // 1974: scallop length ∝ 1/velocity → density ∝ velocity). The matrix skin above is the host
-  // lithology as COLOUR; this is the cavity's genesis as SURFACE. Textures cache per family and
-  // reassign only on architecture change; the flow-scaled REPEAT re-applies whenever arch OR the
-  // derived tiling changes (SAME texture, different tiling — no regen). Render-only, byte-identical.
-  if (target.material && typeof _wallReliefNormalMap === 'function') {
-    const arch = String((wall && wall.architecture) || 'pocket');
-    // V1c: the relief family is driven by cavity GENESIS (scallops only for real dissolution walls;
-    // comb/druse/boxwork/botryoidal/smooth otherwise), falling back to architecture when a scenario
-    // hasn't declared genesis yet. Textures cache per FAMILY; scallop tiling still flow-scales (V1b).
-    const fam = (typeof _wallReliefFamily === 'function')
-      ? _wallReliefFamily((wall && wall.genesis), arch)
-      : ((typeof _WALL_RELIEF_FAMILY !== 'undefined' && _WALL_RELIEF_FAMILY[arch]) || 'scallops');
-    const flow = (wall && typeof wall.paleo_flow === 'number') ? wall.paleo_flow : null;
-    const rep = (typeof _wallReliefRepeat === 'function') ? _wallReliefRepeat(fam, flow) : [5, 5];
-    const key = fam + '|' + rep[0] + 'x' + rep[1];
-    if (state._wallReliefKey !== key) {
-      const famChanged = state._wallReliefFam !== fam;
-      state._wallReliefKey = key;
-      const ru = target.material.userData && target.material.userData.reliefAO;
-      if (famChanged) {
-        state._wallReliefFam = fam;
-        const nrm = _wallReliefNormalMap(fam);
-        target.material.normalMap = nrm || null;
-        if (nrm && target.material.normalScale && target.material.normalScale.set) {
-          target.material.normalScale.set(2.0, 2.0);   // solid-wall relief (V1); V1b AO carries it through translucency
-        }
-        if (ru && typeof _wallReliefAOMap === 'function') {
-          const ao = _wallReliefAOMap(fam);
-          if (ao) { ru.uReliefAO.value = ao; ru.uReliefAOAmt.value = WALL_RELIEF_AO_AMT; }
-          else ru.uReliefAOAmt.value = 0;
-        }
-      }
-      // Flow-scaled tiling (Curl speedometer): faster paleo-flow → smaller, denser scallops.
-      // Applied to BOTH the normal map's own repeat AND the AO uniform so the two stay aligned.
-      if (target.material.normalMap && target.material.normalMap.repeat && target.material.normalMap.repeat.set) {
-        target.material.normalMap.repeat.set(rep[0], rep[1]);
-      }
-      if (ru && ru.uReliefAORepeat && ru.uReliefAORepeat.value) ru.uReliefAORepeat.value.set(rep[0], rep[1]);
-      target.material.needsUpdate = true;
-    }
-  }
 
   // Tier 1 C (post-v69): toggle cavity material between smooth Phong-
   // like shading (default) and flat-faceted sphere-union polyhedron
@@ -6865,6 +6989,25 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
       || snapshot?.cavity_surface_provider?.kind === 'cavity-field') {
     return _topoRejectReplayWall(synth, 'exact replay lacks cavity appearance receipt');
   }
+  if (modernSnapshot && SIM_VERSION >= 265) {
+    try {
+      const materialHistory = liveWall._cavityWallMaterialHistoryLedger;
+      if (!(materialHistory instanceof CavityWallMaterialHistoryLedger)) {
+        throw new Error('replay lacks append-only cavity wall material history');
+      }
+      materialHistory.assertSnapshot(synth, snapshot);
+      const storedMaterial = CavityWallMaterialState.assertReceipt(
+        synth, snapshot.cavity_material_state,
+      );
+      // Object.assign inherited today's display-only paleo-flow. Replace it
+      // only after the independent append-only history authenticates the
+      // historical value and its evolution cursor.
+      synth.paleo_flow = storedMaterial.paleo_flow;
+      synth._replayCavityMaterialState = storedMaterial;
+    } catch (error) {
+      return _topoRejectReplayWall(synth, error);
+    }
+  }
   return synth;
 }
 
@@ -6907,6 +7050,7 @@ function _topoReplayRenderDecision(liveWall: any, snapshot: any): any {
     wall,
     conditions: snapshot ? wall?._replayConditions || null : null,
     appearance: snapshot ? wall?._replayCavityAppearance || null : null,
+    materialState: snapshot ? wall?._replayCavityMaterialState || null : null,
     message: null,
   });
 }
@@ -6995,6 +7139,7 @@ function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any,
   }
   if (!_topoBuildCavityGeometry(
     state, renderWall, sim, false, renderConditions, replayDecision.appearance,
+    replayDecision.materialState,
   )) return false;
   _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
   _topoApplyCameraFromTilt(state, renderWall);
@@ -7028,6 +7173,7 @@ function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any,
     // return to canonical WallMesh before the polar shader is compiled.
     _topoBuildCavityGeometry(
       state, renderWall, sim, true, renderConditions, replayDecision.appearance,
+      replayDecision.materialState,
     );
     state.crystalsSig = '';
     _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);

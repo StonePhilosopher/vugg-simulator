@@ -194,6 +194,8 @@ class VugSimulator {
     // dispatch receives the WallState directly.
     this._cavityWaterAppearanceLedger = new CavityWaterAppearanceLedger(this.wall_state);
     this.wall_state._cavityWaterAppearanceLedger = this._cavityWaterAppearanceLedger;
+    this._cavityWallMaterialHistoryLedger = new CavityWallMaterialHistoryLedger(this.wall_state);
+    this.wall_state._cavityWallMaterialHistoryLedger = this._cavityWallMaterialHistoryLedger;
     // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1 (v158) — allocate the
     // cavity interior voxel grid now that the mesh is built and
     // chemistry is bound. d=0 voxels alias the mesh.cells[].fluid
@@ -364,6 +366,8 @@ class VugSimulator {
     wallState.voxelGridFor(this);
     this._cavityWaterAppearanceLedger = new CavityWaterAppearanceLedger(wallState);
     wallState._cavityWaterAppearanceLedger = this._cavityWaterAppearanceLedger;
+    this._cavityWallMaterialHistoryLedger = new CavityWallMaterialHistoryLedger(wallState);
+    wallState._cavityWallMaterialHistoryLedger = this._cavityWallMaterialHistoryLedger;
     this.wall_state_history = [];
     this._creativeInitialAuthoringTransactions ||= [];
     this._creativeInitialAuthoringTransactions.push(receipt);
