@@ -1666,6 +1666,7 @@ function fortressStep(action, payload) {
       stepLineCounts[simStep] = stepLines.length;
       for (const l of stepLines) lines.push(l);
     }
+    if (typeof _saveCommitAction === 'function') _saveCommitAction();
     _fortressPaceLines(lines, lineToStep, stepLineCounts, () => {
       updateFortressInventory();
       updateFortressStatus();
@@ -1677,6 +1678,7 @@ function fortressStep(action, payload) {
   }
 
   // Non-time actions: modify conditions but DON'T advance time.
+  if (typeof _saveCommitAction === 'function') _saveCommitAction();
   // Log what changed so the player can stack multiple changes. No
   // tempo needed — the user already saw the result; just emit one
   // line.
@@ -1958,25 +1960,22 @@ function fortressFinish() {
   // already collected and its save already sealed.
   if (!(typeof _fortressReplaying !== 'undefined' && _fortressReplaying)) {
     const endLines = [];
-    if (typeof collectAllCrystals === 'function') {
-      const res = collectAllCrystals(fortressSim.crystals, () => ({ mode: 'creative' }), { silent: true });
-      if (res && res.count > 0) {
-        const speciesNote = res.newSpecies && res.newSpecies.length
-          ? ` — ${res.newSpecies.length} new species: ${res.newSpecies.join(', ')}`
-          : '';
-        endLines.push(`💎 Collected ${res.count} crystal${res.count === 1 ? '' : 's'} into the Library${speciesNote}.`);
-      } else {
-        endLines.push('💎 Nothing new to collect — the Library already holds this run\'s crystals.');
-      }
-    }
-    let lifetime = null;
-    if (typeof bumpLifetimeStats === 'function') {
-      lifetime = bumpLifetimeStats({ runs_finished: 1 });
-    }
     if (typeof _saveMarkFinished === 'function') {
       const info = _saveMarkFinished();
       if (info) {
-        endLines.push(`💾 Run saved — "${info.name}"${lifetime ? ` · lifetime collected: ${lifetime.crystals_collected}` : ''}.`);
+        if (info.saved) {
+          if (info.count > 0) {
+            const speciesNote = info.newSpecies && info.newSpecies.length
+              ? ` — ${info.newSpecies.length} new species: ${info.newSpecies.join(', ')}`
+              : '';
+            endLines.push(`💎 Collected ${info.count} crystal${info.count === 1 ? '' : 's'} into the Library${speciesNote}.`);
+          } else {
+            endLines.push('💎 Nothing new to collect — the Library already holds this run\'s crystals.');
+          }
+          endLines.push(`💾 Run saved — "${info.name}"${info.lifetime ? ` · lifetime collected: ${info.lifetime.crystals_collected}` : ''}.`);
+        } else {
+          endLines.push('⚠️ Finish transaction incomplete. No unreceipted Library or lifetime change is being presented as complete; the authenticated transaction remains available from Saves for retry.');
+        }
       }
     }
     for (const line of endLines) {

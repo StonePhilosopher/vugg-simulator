@@ -610,7 +610,7 @@ async function runWorkflow(driver, diagnostics) {
     await driver.click(`button[onclick*="startScenarioInCreative('mvt')"]`);
     await driver.waitFor(`window.vugg.fortressSim?.conditions?.wall?.shape_seed === 3`, 'MVT Creative start');
     const state = await driver.evaluate(`(() => {
-      const saves = JSON.parse(localStorage.getItem('vugg-saves-v1') || '[]');
+      const saves = window.loadSaves();
       const active = saves.find(s => s.kind === 'auto' && s.origin?.scenario === 'mvt');
       return {
         scenario: active?.origin?.scenario,
@@ -653,7 +653,55 @@ async function runWorkflow(driver, diagnostics) {
     }
   });
 
-  await check('manual-saves, reloads, and deterministically restores Creative state', async () => {
+  await check('shows storage denial globally during active Creative play and retries durably', async () => {
+    await driver.waitFor(
+      `document.querySelector('.action-btn.act-warm')?.disabled === false`,
+      'Creative action controls after narrative pacing',
+    );
+    await driver.evaluate(`(() => {
+      window.__vuggNativeStorageSetItem = Storage.prototype.setItem;
+      window.__vuggDeniedSaveWrites = 0;
+      Storage.prototype.setItem = function (key, value) {
+        if (key === 'vugg-saves-v1.pending') {
+          window.__vuggDeniedSaveWrites += 1;
+          throw new DOMException('browser storage denial', 'QuotaExceededError');
+        }
+        return window.__vuggNativeStorageSetItem.call(this, key, value);
+      };
+    })()`);
+    await driver.click('.action-btn.act-warm');
+    await driver.waitFor(
+      `window.__vuggDeniedSaveWrites > 0 && /newest changes remain in memory/i.test(window._liveSaveStorageNotice() || '')`,
+      'intercepted autosave denial',
+    );
+    const visibleFailure = await driver.evaluate(`(() => {
+      const banner = document.querySelector('#saves-storage-notice');
+      const rect = banner.getBoundingClientRect();
+      return {
+        display: getComputedStyle(banner).display,
+        width: rect.width,
+        height: rect.height,
+        fortressVisible: getComputedStyle(document.querySelector('#fortress-panel')).display !== 'none',
+        text: banner.textContent || '',
+      };
+    })()`);
+    assert.equal(visibleFailure.fortressVisible, true);
+    assert.notEqual(visibleFailure.display, 'none');
+    assert.ok(visibleFailure.width > 0 && visibleFailure.height > 0, 'global storage banner has no rendered rect');
+    assert.match(visibleFailure.text, /newest changes remain in memory/i);
+    assert.equal(await driver.evaluate(`(() => {
+      Storage.prototype.setItem = window.__vuggNativeStorageSetItem;
+      delete window.__vuggNativeStorageSetItem;
+      delete window.__vuggDeniedSaveWrites;
+      return window._savePersistActive();
+    })()`), true);
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#saves-storage-notice')).display === 'none'`,
+      'storage failure banner clears after durable retry',
+    );
+  });
+
+  await check('manual-saves, recovers corruption, reloads, and restores Creative state', async () => {
     diagnostics.dialog_prompt = MANUAL_SAVE_NAME;
     await driver.click('#mode-saves');
     await driver.waitFor(
@@ -662,9 +710,53 @@ async function runWorkflow(driver, diagnostics) {
     );
     await driver.click('#saves-manual-btn');
     await driver.waitFor(
-      `JSON.parse(localStorage.getItem('vugg-saves-v1') || '[]').some(s => s.kind === 'manual' && s.name === ${JSON.stringify(MANUAL_SAVE_NAME)})`,
+      `window.loadSaves().some(s => s.kind === 'manual' && s.name === ${JSON.stringify(MANUAL_SAVE_NAME)})`,
       'manual save receipt',
     );
+    // Advance the active autosave through the real UI after the named manual
+    // generation. Normal journal publication must rotate that manual-bearing
+    // primary into backup; the recovery probe below may not seed backup itself.
+    await driver.click('#mode-current');
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#fortress-panel')).display !== 'none'`,
+      'Creative panel before backup rotation',
+    );
+    await driver.click('.action-btn.act-warm');
+    await driver.click('#mode-saves');
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#saves-panel')).display !== 'none'`,
+      'Saves panel after genuine backup rotation',
+    );
+    const recovered = await driver.evaluate(`(() => {
+      const primary = JSON.parse(localStorage.getItem('vugg-saves-v1') || 'null');
+      const backup = JSON.parse(localStorage.getItem('vugg-saves-v1.backup') || 'null');
+      const rotation = {
+        primaryGeneration: primary?.generation ?? null,
+        backupGeneration: backup?.generation ?? null,
+        backupDigestValid: !!backup && backup.storage_digest === window._saveEnvelopeDigest(backup),
+        manualInBackup: !!backup && backup.records.some(s => s.kind === 'manual' && s.name === ${JSON.stringify(MANUAL_SAVE_NAME)}),
+      };
+      localStorage.setItem('vugg-saves-v1', '{browser-qa-corruption');
+      localStorage.removeItem('vugg-saves-v1.pending');
+      window.savesRender();
+      const notice = document.querySelector('#saves-storage-notice');
+      const corrupt = JSON.parse(localStorage.getItem('vugg-saves-v1.corrupt') || 'null');
+      const primaryCorrupt = corrupt?.entries?.find(entry => entry.source === 'primary') || null;
+      return {
+        notice: notice?.textContent || '',
+        visible: notice ? getComputedStyle(notice).display !== 'none' : false,
+        quarantined: primaryCorrupt?.raw || null,
+        manualPresent: window.loadSaves().some(s => s.kind === 'manual' && s.name === ${JSON.stringify(MANUAL_SAVE_NAME)}),
+        rotation,
+      };
+    })()`);
+    assert.equal(recovered.rotation.backupGeneration, recovered.rotation.primaryGeneration - 1);
+    assert.equal(recovered.rotation.backupDigestValid, true);
+    assert.equal(recovered.rotation.manualInBackup, true);
+    assert.equal(recovered.visible, true);
+    assert.match(recovered.notice, /Recovered .* from backup/);
+    assert.equal(recovered.quarantined, '{browser-qa-corruption');
+    assert.equal(recovered.manualPresent, true);
     await driver.reload();
     await driver.click('#title-btn-load');
     await driver.waitFor(
