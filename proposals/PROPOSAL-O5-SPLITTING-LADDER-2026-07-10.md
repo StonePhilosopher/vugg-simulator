@@ -461,6 +461,30 @@ player reads size — narration ("grew to X mm"), inventory, score — at consta
 complete: a crystal now splits when the conditions say split (S-b), shows HOW FAR (S-c), and pays for the
 breadth with its length (this).** CI 175/175 green at v226.
 
+## 9f. THE COMPACTION MAGNITUDE, REFINED TO THE SCIENCE (2026-07-14, render-only, zero drift)
+
+A post-ship review flagged that §9e's compaction *amount* was a flat `SPLIT_AXIAL_FLOOR = 0.7` — a plausible
+placeholder, not physics (the mechanism — constant-volume conservation via the a_width formula — was bedrock;
+the 30 % number was a guess). Boss: **"follow the science."** `splitGrowthMult` now derives the axial change
+from the actual aspect-ratio collapse. An ellipsoid of aspect `A = a/c` and volume `V` has
+`c = (6V/π)^(1/3)·A^(−2/3)`, so reorganizing from the parent habit aspect `A₀` to a target aspect `A_target`
+at constant `V` scales `c` by `(A₀/A_target)^(2/3)`; `A_target` interpolates parent-habit → sphere (`A=1`) with
+the split index, and `add_zone`'s `a_width = √(6V/πc)` lands the crystal at exactly `A_target` (proof:
+`c/a = A_target` after the widen). Consequences, all honest geometry: an **acicular needle** (A₀ 0.15)
+collapses hard (mult → `A₀^{2/3}` ≈ **0.28** at spherulite), an **equant rhomb** (0.8) barely moves (**0.86**),
+a **tabular plate** (1.5) *grows* its short c toward equant (**1.31**). This is the [[feedback_bedrock_over_effect_hacks]]
+fix — the arbitrary constant replaced by the geometry that was implied all along.
+
+**Zero drift — a render-only refinement of v226.** `tools/o5-volneutral-census.mjs` (flag-ON B vs committed):
+the aspect fleet is **baseline-IDENTICAL to the shipped v226** (0.7). The drift is driven by *binary*
+O3-aspect / enclosure gate-crossings, and 0.7 and the aspect model trigger the SAME crossings at seed 42 —
+so `{total, active, dissolved, max_um}` is unchanged and **no SIM_VERSION bump** is needed (the S-c posture).
+The *render* does change (shape probe: aragonite spherulite c **−37 %** vs the old −30 %, goethite −33 %,
+more compact — the science). CI 175/175, calibration + strips unchanged. Per the boss's **drift philosophy**
+(2026-07-14): *accuracy-to-life outranks byte-identity; the anti-drift discipline is a forcing function to
+make a change JUSTIFY its cost, not a veto — as the science strengthens, drift is expected.* Here the science
+upgrade justified its cost at the cheapest possible price: zero.
+
 ## Sources (builder-verified 2026-07-10; two passes cross-checked, each flag is per-citation)
 
 **Splitting / spherulite theory** — VERIFIED:

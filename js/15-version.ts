@@ -2290,7 +2290,7 @@
 //          * Roberts A.C., Ansell H.G., Bonardi M. (1980) —
 //            Pararealgar, a new polymorph of AsS, from British
 //            Columbia. Canadian Mineralogist 18:525-527.
-//          * research/research-meta-minerals-pararealgar.md
+//          * research/arcs/research-meta-minerals-pararealgar.md
 //            (canonical research-agent file, May 2026).
 //   v85 — Autunite-group meta- trio (2026-05-19). Closes the
 //        DEHYDRATION_TRANSITIONS coverage on the uranyl-phosphate /
@@ -2411,9 +2411,9 @@
 //          * Pinch W.W. & Wilson W.E. (1977) — Schneeberg/Erzgebirge
 //            monograph (the type-locality reference for all three
 //            parents).
-//          * research/research-autunite.md §Variants for Game §1.
-//          * research/research-torbernite.md §Dehydration Transformation.
-//          * research/research-zeunerite.md §Dehydration Transformation.
+//          * research/minerals/research-autunite.md §Variants for Game §1.
+//          * research/minerals/research-torbernite.md §Dehydration Transformation.
+//          * research/minerals/research-zeunerite.md §Dehydration Transformation.
 //
 //        Workflow note (continuing v83's "follow the science" directive):
 //        scope was originally proposed as cassiterite + lepidolite +
@@ -6280,10 +6280,10 @@
 //
 //          REFERENCES
 //          proposals/PROPOSAL-INITIATIVE-VARIABLE.md (rev 2)
-//          research/INITIATIVE-VARIABLE/01-geochemical-grounding.md
-//          research/INITIATIVE-VARIABLE/03-modifier-calibration.md
-//          research/INITIATIVE-VARIABLE/06-engine-gates-refactor.md
-//          research/INITIATIVE-VARIABLE/07-graduated-competition.md
+//          research/arcs/INITIATIVE-VARIABLE/01-geochemical-grounding.md
+//          research/arcs/INITIATIVE-VARIABLE/03-modifier-calibration.md
+//          research/arcs/INITIATIVE-VARIABLE/06-engine-gates-refactor.md
+//          research/arcs/INITIATIVE-VARIABLE/07-graduated-competition.md
 //
 //          FILES (this commit, the v127 finale)
 //            NEW: js/42-mineral-gates-registry.ts
@@ -6397,7 +6397,7 @@
 //          js/15-version.ts v109 — original cascade-ripple antipattern
 //          js/15-version.ts v124-v126 — empirical cascade probe arc
 //          js/15-version.ts v127 — engine gates + initiative scaffold
-//          research/INITIATIVE-VARIABLE/07-graduated-competition.md
+//          research/arcs/INITIATIVE-VARIABLE/07-graduated-competition.md
 //
 //          Coverage 145 minerals (unchanged). Scenarios 30 (unchanged).
 //
@@ -11896,5 +11896,392 @@
 //        2026-07-14); constant-volume compaction was the key that turned the
 //        keystone's feared flood into bounded ripple. Splitting now costs LENGTH
 //        (shorter c_length in render/narration/inventory/score) at constant mass.
-const SIM_VERSION = 226;
+// v227 — HOSTILE-REVIEW fix-ladder rung 1 (the F science pass): the 16 formerly
+//        F-implicit scenarios get researched per-deposit values (cross-checked
+//        citations; see data/scenarios.json5 per-scenario comments + the
+//        PROPOSAL-HOSTILE-REVIEW-2026-07-14.md ladder). Four confabulated-
+//        fluorite biographies corrected by removing the FUEL, not the score:
+//        tormiq_alpine_cleft (F 10→3, expects_species fluorite promise
+//        withdrawn — the promise was the error), zoned_dripstone_cave (→1),
+//        sicily_solfifera (→2), jeffrey_mine (→2, apophyllite's documented F
+//        stays alive at the gate edge). tn457 (→5) + amethyst_geode (→5) are
+//        REVIEW CORRECTIONS: their lineages genuinely carry F (Dunham zonation;
+//        Kugelfluorit), so fluorite stays eligible-but-marginal. Steps (b)+(c)
+//        of the ladder (explicit-F + default 10→0) were zero-drift; THIS commit
+//        is the attributable bump.
+// v228 — HOSTILE-REVIEW fix-ladder rung 2 (the T-gates): "the T envelope exists
+//        as metadata but is never read at the gate" — measured fleet-wide by
+//        tools/t-envelope-census.mjs (137 declare, 37 unenforced; 58 violating
+//        nucleation events in 15 scenarios at v227), then closed for the
+//        review-flagged set with researched values (4 research passes, opened-
+//        source citations in the gates entries):
+//          quartz     — declared [50,600] enforced as [50,700]; T_max was WRONG
+//                       metadata (pegmatite pocket quartz grows to the wet
+//                       solidus; gem_pegmatite's 617-650°C growth was correct
+//                       and is now legal). Kills cold macro-quartz in 13
+//                       scenarios (sicily 23°C 4×, ultramafic, stalactite,
+//                       GSP, searles, sabkha, colorado_plateau, supergene_ox,
+//                       bisbee/naica/ouro_preto/roughten late stragglers).
+//          arsenopyrite — declared [200,600] enforced AS-IS; the review's
+//                       proposed 250-300 floor REFUTED (Kretschmar & Scott 300
+//                       is thermometer calibration, not crystallization;
+//                       Carlin aspy grows 180-240°C). sulphur_bank's 50-68°C
+//                       aspy dies + its expects promise withdrawn (White &
+//                       Roberson's ore list never had it).
+//          ZnS        — the T>95 "wurtzite field" polymorph reading RETIRED
+//                       (inversion is ~1020°C, Scott & Barnes 1972): sphalerite
+//                       keeps a single T-decay branch (no more "so wurtzite
+//                       wins"); wurtzite = metastable branch ONLY (pH<4 +
+//                       σ≥1 + Fe≥5, T_max 350). Wurtzite extinct at seed 42
+//                       (no scenario reaches pH<4); sunnyside/mvt/reactivated/
+//                       reactive_wall/tn457 ZnS re-deals to sphalerite.
+//          aragonite  — favorability RESTRUCTURED: two selectors (Mg/Ca sigmoid
+//                       re-centered 1.5→1.1 ppm ≈ 1.8 molar; T spring-window
+//                       rise ~45 / close ~90°C — Fouke 2000 Mammoth facies,
+//                       Bogoria ~90-96°C ceiling, Casella 2017 inversion-in-
+//                       days at 175°C), soft selector self-gate, Ω demoted from
+//                       OR-branch to bounded amplifier (no-selector high-Ω is
+//                       the vaterite→calcite cascade, not aragonite), SO4 term
+//                       evaluated and EXCLUDED (Bots 2011: Mg-threshold
+//                       modifier, not independent driver). Kills hot low-Mg
+//                       vein aragonite (elmwood 121, mvt 153, reactivated 151,
+//                       wittichen 156, deccan 201, grimsel 221, reactive_wall
+//                       109, tutorial_mn 97); keeps travertine's vent aragonite
+//                       (documented, Fouke), sabkha, zoned ceiling sort.
+//          selenite   — T_max 80 (Ossorio 2014: primary-gypsum ceiling; the
+//                       42°C equilibrium boundary is survival, not nucleation).
+//          anhydrite  — T_min 100 (direct nucleation only; Voigt & Freyer
+//                       2023); the saline-low-T branch (sabkha replacement
+//                       modeled as nucleation) RETIRED — GSP's 8 cold events
+//                       die + its anhydrite AND detrital-quartz expects
+//                       promises withdrawn.
+//          goethite   — T_max 100 (Diakonov 1994: coarse goethite/hematite
+//                       crossover at 373 K) — grimsel 248°C + deccan 201°C
+//                       "primary" goethite die; gossan/ouro_preto keep.
+//          mimetite   — T_max 80 (uniformly supergene, HoM/Keim & Markl) —
+//                       porphyry's 307°C mimetite dies.
+//          tellurides — calaverite/sylvanite T_max 450/400 → 300 (Cooke &
+//                       McPhail 2001; Cripple Creek 105-159°C; Emperor 200-
+//                       250°C) — porphyry's 378-398°C potassic-core tellurides
+//                       die; epithermal_telluride (≤278°C) untouched.
+//        Broth truth: travertine SiO2 50→54 (USGS Bull. 1444 Table 2); naica
+//        SiO2 KEPT (review's 10-12 lever refuted — Naica cave opal/quartz
+//        documented, Forti & Sanna 2010; water ~25 ppm Si). Initiative note:
+//        gates metadata feeds js/43→44 cation rationing, so the new
+//        T_min/T_max/T_optimal entries are behavior-live beyond the σ gates.
+//        Citation hygiene: "Murowchick & Barnes 1986 Am.Min. 71:1196" and the
+//        review's "Bessinger 2000" both failed verification — see
+//        research/arcs/research-broth-ratio-sphalerite-wurtzite.md appendix.
+//        Ripple recalibrations shipped in the same bump: (1) elmwood's
+//        barite-stage pulse now carries its own SULFATE charge (S floor 106
+//        alongside Ba 28, js/70) — the honestly-stronger sphalerite drained
+//        the shared S pool ~22% and stalled the snowball as dust; feeding S
+//        restores the banding without waking witherite (the Ba-raise
+//        alternative was measured: floor 36 → witherite ×4 — and the MVT
+//        mixing story is truer anyway (barite grows where Ba brine meets
+//        sulfate water)). (2) grow_selenite's 'hourglass (sand inclusions)'
+//        label now requires a non-carbonate wall (js/60) — sand inclusions
+//        need a sand SOURCE; the rung-2 re-deal had landed one on Naica's
+//        limestone pool, which would have painted the iconic water-clear
+//        selenite brown. (3) The schneeberg pharmacolite 3-seed σ-probe is
+//        retired (tests): the wurtzite retirement leaves ORPHANED Zn in some
+//        seeds' cool tails (~225 ppm; sphalerite's S window closed, no Zn
+//        sink fires) which trips pharmacolite's cation-share gate — a real
+//        rung-4 economy signal (BACKLOG §T), not a pharmacolite defect; the
+//        32-seed capability sweep still passes.
+// v229 — HOSTILE-REVIEW fix-ladder rung 3 (the tiger's-eye substrate gate):
+//        "tiger's eye is a BIF-crocidolite pseudomorph, but the nucleation
+//        cascade falls through to a bare 'vug wall' fallback" (js/89
+//        _nuc_tigers_eye). Measured at seed 42 (scratchpad substrate census):
+//        it minted 11 crystals across 4 non-BIF scenarios — bisbee (bare×1),
+//        deccan_zeolite (bare×1 + hematite×2), ouro_preto (bare×3),
+//        radioactive_pegmatite (bare×4) — from generic late silica+Fe+O₂>0.4.
+//        FIX: require a dissolving crocidolite substrate (the framework the
+//        chalcedony replaces); delete the bare-wall fallback AND the standalone
+//        hematite/magnetite "BIF context" branches. Reviewer-reviewed
+//        correction: the rung-3 handoff's "(or BIF Fe-oxide) substrate" prose
+//        was too permissive — deccan fired tiger iron on hematite in a BASALT
+//        AMYGDALE, which is not a BIF; bare iron oxide (an oxidized ore body, a
+//        basalt vug) is not a crocidolite context. Geology (Heaney & Fisher
+//        2003 Am.Min. 88:1, the sim's own cited source) + the offender table
+//        (all four = pure kills) both demand crocidolite-required. Hematite is
+//        kept ONLY as a co-present habit modifier (dissolving croc + banded
+//        hematite → the TIGER IRON assemblage habit).
+//        Census verdict: NO scenario grows crocidolite (jeffrey_mine — the
+//        minerals.json "home" tag for both crocidolite and tigers_eye — is
+//        chrysotile/rodingite: Na 5 + Fe 50, below crocidolite's Na≥30/Fe≥100
+//        gate). So the p=0.65 crocidolite branch is dead code and tiger's eye
+//        is EXTINCT at seed 42 — CORRECT until a Griqualand-West/Hamersley BIF
+//        scenario ships (BACKLOG §T; the scenarios:[jeffrey_mine] tag on
+//        crocidolite/tigers_eye is itself a confabulation to fix there). No
+//        promise decisions: no scenario expects tiger's eye.
+//        Blast radius 4/39 (the four offenders only): 4 tiger's-eye kills, 0
+//        confabulations minted (contrast rung 2's surprise bisbee tiger's eye),
+//        0 legit species lost. Ripples are within-scenario RNG re-deals from
+//        the removed substrate/nucleation draws — bisbee erythrite 2→3 +
+//        native_silver 8→7, deccan thomsonite 6→5, apophyllite/goethite grow
+//        into the freed silica; no expected species zeroed. Capability stays
+//        wired + tested (amphibole-asbestos σ-probes + engine-wiring untouched).
+// v230 — HOSTILE-REVIEW fix-ladder rung 4a (the willemite redox floor): the
+//        first executable bump of the redox/sulfide arc (PROPOSAL-RUNG-4-REDOX-
+//        2026-07-15). Willemite (Zn₂SiO₄, a nonsulfide-Zn phase) leaked into two
+//        hypogene sulfide brines — mvt (×3, O2 0.31-0.33, beside growing
+//        sphalerite+galena+pyrite at Eh +50) and tn457 (×3) — because its O2
+//        floor (0.3) sat BELOW the SO₄/H₂S boundary (O2≈0.4) where barite +
+//        galena legitimately coexist in MVT (a DEFENDED abstraction, Anderson &
+//        Macqueen 1982). Willemite forms only under genuinely OXIDIZING
+//        conditions (supergene weathering, or hypogene-oxidizing REPLACING
+//        sphalerite — never syn-ore with growing sphalerite; Boni & Mondillo
+//        2014, Hitzman et al. 2003), so its floor belongs ABOVE that boundary.
+//        FIX: willemite O2 floor 0.3 → 0.5 (js/39). Blast 2/39 = the two
+//        offenders only; willemite extinct at seed 42 (both, 0 legit collateral)
+//        until a real Skorpion/Vazante nonsulfide-Zn scenario ships — the
+//        tiger's-eye (rung 3) de-confabulation pattern. The barite abstraction
+//        is PRESERVED (mvt/tn457 barite 6→6); the freed Zn feeds sphalerite
+//        (mvt 246→629 µm, tn457 2→3 crystals — the causal-control recovery, cf.
+//        rung 2's sunnyside). Test: zn-supergene Franklin σ-probe O2 0.5→0.6
+//        (off the new floor). PLAN NOTE: the census reframed rung 4 — mvt's Eh
+//        trajectory can't be reduced (Lever A) without killing barite, so the
+//        willemite fix is a gate-floor raise (Lever B class), not a trajectory
+//        change. cerussite (mvt; no redox gate — a competition bug, not redox-
+//        incompatibility) survives this bump and is the next target (Lever C).
+// v231 — HOSTILE-REVIEW fix-ladder rung 4b (the PRIMARY base-metal sulfide
+//        stability ceiling, Lever B): the root-cause partner to 4a. The six
+//        PRIMARY base-metal sulfides — sphalerite, wurtzite (ZnS), pyrite,
+//        marcasite (FeS₂), chalcopyrite (CuFeS₂), galena (PbS) — all gated on
+//        the class-default sulfideRedoxAnoxic(fluid, 1.5) = Eh ≤ +290 mV, ~300
+//        mV too oxidizing, so fresh primary sulfide NUCLEATED up in the
+//        oxidizing supergene zone (supergene_oxidation: sphalerite σ≥1 at Eh
+//        +290, galena ×4 at +131) — where the sulfur is sulfate and no reduced
+//        S exists to build ZnS/PbS. (A relict grain may PERSIST metastably above
+//        the boundary — Sato 1992's "persistency field" — but that is
+//        dissolution, not nucleation; the sim governs relict survival apart.)
+//        FIX: PRIMARY_SULFIDE_CEILING_O2 1.5 → 0.5 (js/20c) — the six gates
+//        tighten to Eh ≤ +100 mV. Threaded through the boxed window the census
+//        measured (tools/sulfide-nucleation-eh-census + primary-sulfide-margin-
+//        probe): ABOVE mvt's +50 SO₄/H₂S barite-coexistence boundary (Anderson
+//        & Macqueen 1982 — the diagnostic MVT assemblage, PRESERVED; tn457 +76,
+//        elmwood +24 all kept), BELOW the +131 supergene leak. Refs: Garrels
+//        1954 GCA 5:153-168; Sato 1992 GCA 56:3133-3156.
+//        PER-CLASS — the census's key catch: the SECONDARY / supergene-
+//        enrichment Cu-sulfides (bornite/chalcocite/covellite, gated 1.8-2.0 =
+//        +345..+375 mV) are LEFT high on purpose; they legitimately nucleate in
+//        the moderately-oxidizing Cu-enrichment blanket (bisbee/roughten_gill,
+//        the "enrichment" half of Sato's oxidation-AND-enrichment title). A
+//        uniform tighten would have killed bisbee's namesake chalcocite/
+//        covellite. The As/Ag/Sb sulfides & sulfosalts keep their bespoke
+//        0.5-1.2 ceilings.
+//        Blast 3/39, ALL oxidizing scenarios with Eh>+100 excursions: the two
+//        intended kills (supergene_oxidation sphalerite +290 + galena +131
+//        leaks) land; CAUSAL CONTROL — the freed Zn feeds smithsonite (2→3) +
+//        aurichalcite, the freed Pb feeds cerussite (4→8) + anglesite (8→12),
+//        all EXPECTS_SPECIES of supergene_oxidation (the spurious primary
+//        sulfides become the correct supergene oxidation products, cf. rung-2
+//        sunnyside, rung-4a willemite→sphalerite). bisbee + roughten_gill:
+//        size-jitter only, NO species lost, Cu-enrichment + primary counts
+//        preserved. mvt/tn457/elmwood byte-identical. Two-commit: 7a7308b named
+//        the ceiling byte-identically; this is the attributable 1.5→0.5.
+// v232 — HOSTILE-REVIEW fix-ladder rung 4c (the cerussite oxidizing gate): the
+//        rung-4a/4b RESIDUE resolved — and the census reframed it a THIRD time.
+//        The proposal called it a "competition veto" (Lever C: gate cerussite when
+//        galena is actively supersaturating). Grepping the carbonate family (js/32)
+//        reframed it: cerussite is the ONLY supergene carbonate MISSING the
+//        carbonateRedoxAvailable oxidizing gate — smithsonite (O2_min 0.2),
+//        malachite (0.3), azurite (1.0), rosasite (0.8), aurichalcite all have it;
+//        cerussite (PbCO3, the Pb analog of smithsonite, forms by galena OXIDATION)
+//        had none, so it minted in reducing hypogene brines regardless of redox.
+//        Not a competition bug — a MISSING GATE (cf. galena's pre-v13 O2 omission,
+//        willemite's rung-4a floor). FIX: O2_min 0.5 (Eh ≥ +100 mV) + the
+//        carbonateRedoxAvailable call (js/32). +100 = galena's rung-4b stability
+//        ceiling: the REDOX PARTITION of Pb — galena below +100, cerussite above.
+//        Census gap wide (spurious mvt -36 / elmwood +24, both beside actively-
+//        growing galena; legit roughten_gill +202 / supergene_oxidation +220..+357,
+//        both cerussite ∈ expects_species). Blast 2/39 = the two spurious scenarios
+//        ONLY: cerussite killed in mvt + elmwood, 0 legit collateral (both expects-
+//        species cerussite scenarios untouched). CAUSAL CONTROL: freed Pb → galena
+//        (mvt 6062→6100µm) + freed CO3 → calcite (mvt 38885→38997); elmwood barite
+//        18→19. mvt's rung-4a sphalerite recovery (629µm) held. Refs: Garrels 1954
+//        GCA 5:153-168, Sato 1992 GCA 56:3133-3156. One commit (single clean gate,
+//        like 4a).
+// v233 — HOSTILE-REVIEW fix-ladder rung 4d (the SIBLING GATES): the census
+//        generalized. The all-species instrument (tools/nucleation-eh-census.mjs,
+//        e201ab9) answered the bridge's "is rung 4 already done?" — NO: the
+//        cerussite pattern repeats on both axes in four species, all fixed by
+//        adopting the SAME measured +100 mV boundary (no new number fitted):
+//        (1) pyromorphite (js/38) — the LAST ungated Pb oxysalt. v193's
+//        vanadinite fix blamed its own missing gate on being "cloned from
+//        pyromorphite (P is always +5, needs no gate)" — the premise WAS the
+//        bug: the anion never needed a gate, the Pb CATION partition did (rung
+//        4c). All 6 roughten_gill crystals nucleated at Eh −150..0 in the
+//        H₂S-buffered primary stage beside actively-nucleating galena. FIX:
+//        O2_min 0.5 + phosphateRedoxAvailable. Gated, roughten_gill re-fires
+//        6 crystals at +252 in its own post-AMD oxidized stage (6→6, max
+//        4650→3361 µm — later births grow less; same promise, right chapter).
+//        (2) molybdenite (js/41) — the porphyry PRIMARY missed by 4b's six:
+//        its bespoke 1.2 (= +252 mV) reproduced the exact leak 4b closed —
+//        3 fresh MoS₂ at +131 in supergene_oxidation's Cu-enrichment window
+//        (O2 0.6), a scenario whose own step-40 event DISSOLVES molybdenite
+//        to feed MoO₄²⁻ → wulfenite. FIX: joins PRIMARY_SULFIDE_CEILING_O2.
+//        porphyry's legit +44 firings byte-identical.
+//        (3) realgar + orpiment (js/41) — same bespoke 1.2: fresh As₄S₄ at
+//        +131 in the same window, carried in baselines as PARAREALGAR (the
+//        js/75 light transform inherits the parent's birth step — check
+//        pararealgar counts when verifying). Orpiment never leaked (max +76)
+//        but shares the chemistry/broths — tightened together so the killed
+//        niche can't re-leak as the S-richer sibling. FIX: bespoke 0.5 both;
+//        all legit As-sulfide firings ≤ +76 kept (sulphur_bank +76 = O2 0.4
+//        exactly, wittichen +69, roughten_gill −150). arsenopyrite left 0.8:
+//        latent by the same argument, but T_min 200 hard-blocks the cold
+//        supergene where it would matter (BACKLOG, with the 1.5 fahlore/
+//        sulfosalts tetrahedrite/tennantite/proustite/pyrargyrite/enargite).
+//        (4) smithsonite (js/32) — the willemite-4a shape: floor 0.2 ≈ 0 mV
+//        sat below the SO₄/HS boundary, letting the supergene Zn carbonate
+//        mint at elmwood@88 Eh +24, ONE step after sphalerite at the same
+//        +24 — Zn double-booked into sulfide + supergene carbonate in one
+//        reduced brine. FIX: 0.2 → 0.5 — the Zn partition mirroring
+//        cerussite's Pb partition (4c): sphalerite below +100, smithsonite
+//        above. Structurally settles the tn457 question (that fluid tops at
+//        +76 → nonsulfide Zn impossible; the old proposal's "tn457
+//        smithsonite/hemimorphite" line was the confabulation, struck).
+//        Blast 3/39 = the three offender scenarios ONLY; lost = exactly the
+//        three offender records (elmwood smithsonite −1, supergene_ox
+//        molybdenite −3 + pararealgar −1); every expects species in all
+//        three still delivers; porphyry/mvt/tn457/bisbee byte-identical.
+//        Re-deal notes: roughten_gill +descloizite ×4 (dust-sized; the real
+//        Caldbeck Cu/Zn-fork vanadate — mottramite 4→5 stays the type-
+//        locality champion), caledonite max 5237→799 µm (pyromorphite now
+//        competes for Pb in the same late oxidized chapter — real
+//        competition, presence held), elmwood barite 19→18 (rung-4c's
+//        gained crystal re-dealt away; count jitter, max identical).
+//        Census AFTER: flagged 0+0 (was 2+2). Two test updates, both
+//        corrected science: boss-edits molybdenite synthetic fluid Eh
+//        100→0 (sat exactly at ehFromO2(0.5)=+99.74 — the same 4b trap its
+//        pyrite/chalcopyrite/galena siblings hit) + elmwood-snowball
+//        smithsonite pin removed (the pin guarded the leak; the guard's own
+//        v228 note: a confabulated crystal is not a headliner to guard).
+//        Instrument-first: e201ab9. Refs: Garrels 1954 GCA 5:153-168; Sato
+//        1992 GCA 56:3133-3156; Boni et al. 2007 Econ Geol 102:441
+//        (descloizite/mottramite Cu-Zn fork).
+// v234 — HOSTILE-REVIEW fix-ladder rung 5 (chloride evaporites re-anchored to
+//        REAL BRINE STRENGTH): the ladder's biggest surface. The v27 halite
+//        gate put σ=1 at Na·Cl = 50,000 ppm² — orders of magnitude under real
+//        saturation — so nearly any Cl-bearing fluid minted salt (tn457 grew
+//        halite ×12 from a 4.5-psu Pb-Zn brine at 0.13× seawater: HALF that
+//        scenario's crystals; travertine ×8 at 0.17×; sabkha sylvite ×4 at
+//        3.4× BEFORE any halite = inverted bittern). The ppm axis cannot
+//        carry saturation (broths are deliberately-abstracted, scenario-
+//        inconsistent sim-scale ppm). FIX (js/33): σ keyed to BRINE STRENGTH
+//        = (salinity/35 psu) × evaporative concentration, in seawater
+//        multiples — halite σ = (BS/10.6)² (Usiglio 1849 onset; Warren 2021),
+//        sylvite σ = (BS/70)² (bittern 70–90×, conservative end); quadratic
+//        kept (IAP of two conserved ions ∝ c²); Na/Cl floors = presence
+//        gates only. bisbee final_drying (js/70j) now RAISES salinity 29.9 →
+//        150 psu with the drying (the review's own lever — its noted
+//        decoupling fixed), so the DEFENDED arid efflorescence fires at
+//        12.9× via the honest mechanism (halite ×4 as a 306 µm dusting;
+//        Onac 2025); sylvite stays out (12.9 ≪ 70). SYLVITE NOW EXTINCT
+//        fleet-wide (max fleet BS 15.4×; "no K-evaporite parent exists" —
+//        the review's verdict) — DEAD-not-stale, returns with a potash
+//        scenario. searles tincalconite: PROMISE WITHDRAWN w/ research —
+//        the old ×8 was a DUST ARTIFACT (borax crowded < 5 µm flush
+//        threshold by σ≈405 spurious halite; immortal specks dry-converting
+//        where grown crystals redissolve); real borax→tincalconite is the
+//        40–50%-RH ambient museum-drawer alteration (OSTI 1850965); measured
+//        0 across 8 seeds; mechanic retained (js/75). RECOVERY: searles
+//        BORAX ×17 to 23.6 mm + mirabilite ×2 — both expects-listed, both
+//        missing pre-fix (the spurious salt ate the nucleation economy;
+//        Searles gets back the mineral it is famous for). Halite now lives
+//        as the real playa cycle: births ONLY in desiccation windows, floods
+//        redissolve (searles 2 active + 18 husks, max 64,672→542 µm; GSP 2 +
+//        17, max 293 mm → 461 µm — crusts, not boulders). MORPHOLOGY
+//        RE-PIN (js/45): the σ-currency change EXPIRED the halide MORPH_TH
+//        band calibration (old edges 10/60/150/800 vs new honest range
+//        1–2.2 → everything would read spiral_smooth forever — the
+//        render-upgrade calibration-expiry law). Fresh morph-sigma-observe
+//        survey: living fleet = ONE plateau at 1.41 (GSP + bisbee) →
+//        smooth band; edges re-pinned 1.5/1.7/1.95/5.0 (both chlorides);
+//        chevron band deliberately unoccupied awaiting a perennial-brine
+//        tenant (bismuth-provisional precedent); searles raw-2.12 spikes
+//        land hopper the day spike salt persists. Blast 6/39 = the six
+//        chloride scenarios exactly; expects: zero lost (tincalconite
+//        withdrawn, not lost); tn457 sphalerite re-dealt 3→1 (max held
+//        2226 µm — one massive crystal, MORE specimen-like). Tests: 9
+//        rebake-mechanical + halide-morphology re-pinned to the new claims
+//        table + tn457 control graduated "smooth"→"extinct". Refs: Usiglio
+//        1849 via Warren 2021; OSTI 1850965; Onac 2025; Lowenstein & Hardie
+//        1985 (chevron canon, display strings kept); DATA-HOSTILE-REVIEW
+//        /refuted/13 (the bisbee lever).
+// v235 — S-SPLIT S1 (barite reads the sulfate pool): the first consumer
+//        migration of the fluid.S sulfate/sulfide split (S0 landed the inert
+//        partition at ab8cd92). grow_barite/supersaturation_barite read
+//        sulfateAvailablePpm; s_f re-anchored ÷40→÷20 for the split branch
+//        ("calibrated against pre-split effective sulfate" — boss framing,
+//        not mercy); wittichen's late meteoric sulfate carved out via
+//        fluid.sulfateInherited (÷40 kept; flag broadcast to per-cell mesh
+//        fluids in _propagateGlobalDelta; fill-dampener + _wallStrangledFor
+//        exemptions) → wittichen barite 153.74 µm EXACT v234 match. Blast
+//        4/39 (elmwood 31→29, mvt 26→28, reactivated 37→33, reactive_wall
+//        33→32), species gained 0 LOST 0. Elmwood snowball honest 2 blades
+//        (was 10 >100µm) — boss eye-checked, pins →≥2 (mechanism guarded,
+//        not the lottery). Refs: Ohmoto & Lasaga 1982 (T-taper anchors),
+//        Machel 2001 (BSR/TSR windows). [History entry added retroactively
+//        at v236 — the S1 commit aeff2fb bumped without one.]
+// v236 — S-SPLIT S2 opening tranche: CELESTINE (the Elmwood blanket). The
+//        second sulfate consumer migrates (research-celestine-elmwood-
+//        2026-07-24.md + tools/celestine-tranche-census.mjs — the census
+//        measured migration-alone killing 5/8 tenants). Five parts, one
+//        commit: (1) supersaturation_celestine reads sulfateAvailablePpm;
+//        (2) s_f ÷40→÷18 (census-measured: reproduces today's live-windows
+//        fleet-wide at honest sulfate; searles 89→300 + GSP 24→30 live
+//        steps = the honest oxidizing-side widening, both Sr-limited at
+//        peak σ 1.15/1.05); (3) elmwood_diagenetic_sr event @72 — Sr floor
+//        10→30, the Hanor 2000 (RiMG 40:193) host-carbonate mechanism
+//        (aragonite→calcite + dolomitization expel Sr into the late brine;
+//        boss-approved, narrow+named, elmwood-only, NO sulfur touched);
+//        (4) Ba-fibrous habit gate ba_ratio>0.25 → 'fibrous_blanket',
+//        checked FIRST in the cascade (impurity habit precedes the σ-ladder
+//        — Sunagawa/Gránásy growth-front splitting by the divalent Ba²⁺
+//        co-ion; census: all σ-ladder tenants have ba_ratio≈0, so only
+//        elmwood/mvt/reactivated/reactive_wall flip, all previously
+//        tabular/bladed) — CORRECTED 2026-07-25 (boss review, issue
+//        StonePhilosopher#1 + first-hand SP2006 re-verification): the
+//        growth-front-splitting MECHANISM claim was an over-reach —
+//        Sánchez-Pastor 2006 shows Ba-rich (Ba,Sr)SO₄ runs TABULAR {001},
+//        Sr-rich ELONGATED {011}, no fibrous mode; the LOCALITY RECORD is
+//        the evidence and ba_ratio is the RECOGNIZER, now GUARDED by
+//        carbonate host (limestone/dolomite) per the boss's
+//        no-naked-Ba-rule ruling; same four flips at seed 42; (5) 'fibrous_blanket' renders as the botryoidal
+//        lateral crust (99a/99c/99i) — the white glue that binds real
+//        Elmwood specimens (#103941; mindat Ba-bearing FIBROUS celestine;
+//        Jensen 1996 Min. Record). _habitAspectRatio carries tabular's 1.5
+//        explicitly (volume-continuity firewall). Refs: Hanor 2000 RiMG
+//        40:193-275; Sunagawa, Crystals (impurity branching); Gránásy et
+//        al. 2005 (spherulite growth-front nucleation).
+// v237: S2 SELENITE MIGRATION (2026-07-27) — the third sulfate consumer off
+//       total fluid.S (barite S1 ÷40→÷20, celestine S2 ÷40→÷18, selenite
+//       ÷50→÷35): supersaturation_selenite reads sulfateAvailablePpm (gate +
+//       σ term; js/40). ÷35 is the census-measured re-anchor
+//       (tools/selenite-tranche-census.mjs) reproducing today's live windows
+//       fleet-wide at the honest sulfate — the un-anchored ÷50 would have
+//       killed radioactive_pegmatite + schneeberg outright (0 live steps,
+//       both legit gypsum settings). No sulfateInherited carve-out branch:
+//       wittichen grows no selenite. 13 tenants; naica (the mindat-licensed
+//       positive control) byte-close at 66 mm; honest shrinks at the
+//       reducing/boundary tenants (sulphur_bank −29%, schneeberg −51%,
+//       bisbee −24%, elmwood −46%). KNOWN RESIDUE (boss ruling 2026-07-27):
+//       elmwood selenite SURVIVES the migration at ~3.7 mm — the S0
+//       pre-registered casualty does not materialize in the live sim (σ live
+//       71-85 steps even at pure ÷50; no divisor kills it without
+//       collateral). The record (mindat Elmwood: no gypsum-family) still says
+//       it shouldn't be there; the kill belongs to a SEPARATE follow-up
+//       mechanism — the Hardie 1967 water-activity gypsum→anhydrite ceiling
+//       (T_max drops ~58°C → ~40-45°C with rising salinity), which closes
+//       exactly elmwood's hot-saline 53-80°C window while sparing naica's
+//       dilute thermal brine. Kept apart deliberately: the migration is a
+//       correction to inherited double-booked S; the ceiling is a new
+//       brine-thermodynamics mechanism — clean strata beat one fused
+//       boulder (boss). elmwood-snowball variety guard KEEPS selenite (it
+//       is still present; the handoff's remove-instruction was conditioned
+//       on the death that didn't happen).
+const SIM_VERSION = 237;
 

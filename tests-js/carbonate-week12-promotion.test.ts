@@ -212,14 +212,21 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 12 — scenario firings on v147 baseli
     expect(active + dissolved).toBe(0);
   });
 
-  it('stalactite_demo now nucleates aragonite (cave aragonite is real per Hill & Forti 1997)', () => {
-    // v147 cascade: aragonite fires in stalactite_demo at cool cave
-    // conditions where omega × favorability crosses sigma_crit. Cave
-    // aragonite IS documented (Carlsbad, Lechuguilla frostwork).
+  it('stalactite_demo grows NO aragonite (v228 — no selector present; cave aragonite lives where its drivers do)', () => {
+    // v228 (hostile-review rung 2) INVERTS the v147 pin. Cave aragonite IS
+    // real (Hill & Forti 1997) — but it grows where its DRIVERS are: high
+    // dripwater Mg/Ca (>~1.1 molar, Wassenburg 2016) ± Sr, which is exactly
+    // what zoned_dripstone_cave models (its ceiling cells, Mg/Ca 4.4, still
+    // fire aragonite — the showcase is byte-identical at v228). THIS demo's
+    // drip is Mg/Ca ≈ 0.03 with Sr=Ba=0 and no spring window: no selector at
+    // all. The v147 firing rode the Ω-term alone (brine-strength SI ≈ 1.9 ×
+    // the old additive omega weight) — the review confirmed it as a defect,
+    // and the v228 selector self-gate kills it even at Ω≈56. The hostile
+    // review's expects here is calcite ONLY.
     const sim = runScenario('stalactite_demo');
     if (!sim) return;
     const { active } = aragoniteCount(sim);
-    expect(active).toBeGreaterThan(0);
+    expect(active).toBe(0);
   });
 
   it('tutorial_travertine nucleates aragonite (Mammoth Hot Springs aragonite is documented)', () => {

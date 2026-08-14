@@ -58,8 +58,8 @@ const MINERAL_GATES_aragonite: MineralGates = {
   fluid_min: { Ca: 30, CO3: 20 },
   pH_min: 6.0, pH_max: 9.0,
   surface_energy: 'low',
-  _sources: ['aragonite engine v17+', 'Folk 1974', 'Morse 1997', 'Burton & Walter 1987', 'Wollast 1990', 'Carlson 1983'],
-  _notes: 'Orthorhombic CaCO3 dimorph. Favored by Mg/Ca > 1.5, T > 50, Ω > 10, trace Sr/Pb/Ba. Pseudohexagonal cyclic twinning. T_max 400°C from Carlson 1983 metastability limit. v147 SI engine: sigma is omega × kinetic_favorability; PWP rate via aragoniteRate (~3× calcite per Burton-Walter 1987 / Wollast 1990).',
+  _sources: ['aragonite engine v17+', 'Folk 1974', 'Morse 1997', 'Burton & Walter 1987 (seawater 5-25°C — see v228 note)', 'Wollast 1990', 'Carlson 1983', 'Fouke et al. 2000 JSR 70:565 (Mammoth facies)', 'Casella et al. 2017 Biogeosciences 14:1461 (inversion kinetics)', 'Wassenburg et al. 2016 GCA (Mg/Ca crossover 1.1 mol/mol)', 'Bots et al. 2011 Geology 39:331 (SO4 evaluated, excluded)'],
+  _notes: 'Orthorhombic CaCO3 dimorph. v228 selectors: Mg/Ca sigmoid centered 1.1 ppm-ratio (~1.8 molar) OR the spring window (T rising ~45°C, closing ~90°C — vent-degassing kinetics; hottest documented primary low-Mg aragonite is ~90-96°C boiling springs). Ω amplifies but cannot select; trace Sr/Pb/Ba boost. Pseudohexagonal cyclic twinning. T_max 400°C from Carlson 1983 metastability limit. v147 SI engine: sigma is omega × kinetic_favorability; PWP rate via aragoniteRate (~3× calcite per Burton-Walter 1987 / Wollast 1990).',
 };
 
 const MINERAL_GATES_dolomite: MineralGates = {
@@ -144,7 +144,18 @@ const MINERAL_GATES_smithsonite: MineralGates = {
   sigma_crit: 1.0,
   T_max: 100, T_optimal: 30,
   fluid_min: { Zn: 20, CO3: 50 },
-  O2_min: 0.2,
+  // rung-4d (SIM 233): 0.2 → 0.5, the willemite-4a shape. A floor below the
+  // SO₄/HS boundary (0.2 ≈ 0 mV) let the supergene Zn carbonate mint at
+  // elmwood@88, Eh +24 — ONE step after sphalerite nucleated at the same
+  // +24 — Zn double-booked into sulfide + supergene carbonate in a single
+  // reduced MVT brine (elmwood expects neither; its Zn is sphalerite). Legit
+  // firings sit at +322/+357 (supergene_oxidation, expects-listed): zero
+  // collateral. 0.5 = the Zn partition, mirroring cerussite's Pb partition
+  // (rung 4c): sphalerite below +100 mV, smithsonite above. Also settles the
+  // tn457 question structurally — that fluid tops out at +76, so nonsulfide
+  // Zn can never co-precipitate there; the old proposal's "tn457 smithsonite"
+  // claim was the confabulation, not the sim.
+  O2_min: 0.5,
   pH_min: 5,
   surface_energy: 'medium',
   _sources: ['smithsonite engine v17+', 'research-smithsonite.md'],
@@ -166,10 +177,11 @@ const MINERAL_GATES_cerussite: MineralGates = {
   sigma_crit: 1.0,
   T_optimal: 30,
   fluid_min: { Pb: 15, CO3: 30 },
+  O2_min: 0.5,
   pH_min: 4.0,
   surface_energy: 'medium',
-  _sources: ['cerussite engine v17+'],
-  _notes: 'PbCO3 supergene Pb carbonate. Substrate pref: dissolving anglesite > dissolving galena > active galena.',
+  _sources: ['cerussite engine v17+', 'Garrels 1954 GCA 5:153-168', 'Sato 1992 GCA 56:3133-3156'],
+  _notes: 'PbCO3 SUPERGENE Pb carbonate — the Pb analog of smithsonite (ZnCO3), forms by galena OXIDATION. O2_min 0.5 (Eh ≥ +100 mV) added rung-4c (SIM 232): cerussite forms ABOVE galena stability (the +100 mV galena ceiling from rung-4b) — the redox partition of Pb, galena below, cerussite above. Before, cerussite ALONE among the supergene carbonates lacked the carbonateRedoxAvailable gate its siblings (smithsonite/malachite/azurite/rosasite/aurichalcite) all have, so it minted in reducing hypogene brines (mvt Eh -36, elmwood +24) beside actively-growing galena. Substrate pref: dissolving anglesite > dissolving galena > active galena.',
 };
 
 const MINERAL_GATES_rosasite: MineralGates = {
@@ -444,19 +456,52 @@ Object.assign(VugConditions.prototype, {
   }
 
   // Step 2: kinetic favorability — same formula regardless of which
-  // omega source feeds in. Mg/Ca preference + T preference + omega
-  // Ostwald step rule + trace boost. Layered on top of thermodynamic
-  // omega per Morse 1997 review.
+  // omega source feeds in. v228 RESTRUCTURE (hostile-review fix ladder,
+  // rung 2). The v147 weighted sum let the T-term SUBSTITUTE for Mg, so
+  // hot low-Mg vein brines (elmwood 121°C @ Mg/Ca 0.18, wittichen 156°C,
+  // grimsel 221°C…) grew aragonite where every such deposit shows calcite.
+  // The physical model is two SELECTORS, either sufficient (an OR):
+  //   1. Mg-poisoning of calcite (works at any T; sigmoid center moved
+  //      1.5 → 1.1 ppm-ratio ≈ 1.8 molar — Wassenburg 2016 cave-dripwater
+  //      crossover 1.1 mol/mol; Folk's classic 1-2 molar band).
+  //   2. The SPRING WINDOW — vent/apron degassing kinetics, T rising
+  //      ~40-45°C (Folk 1994; Fouke 2000: Mammoth vents 71-73°C are
+  //      aragonite, distal 28-30°C calcite) and CLOSING ~90°C (Lake
+  //      Bogoria boiling springs ~90-96°C are the hottest documented
+  //      primary low-Mg aragonite; Casella 2017: aragonite→calcite
+  //      replacement completes in DAYS at 175°C — confined vein fluids
+  //      above ~100°C cannot deliver preserved primary aragonite).
+  //      Burton & Walter 1987's T-effect was measured in SEAWATER at
+  //      5-25°C — the old open-ended T-sigmoid extrapolated it to
+  //      regimes it never covered; T is a proxy for 1-atm degassing
+  //      supersaturation, which a sealed hot vein cannot reach (Jones
+  //      2017 review).
+  // Ω is NOT a selector: with no selector present, high-Ω low-Mg cold
+  // water runs the vaterite→calcite Ostwald cascade, not aragonite —
+  // so Ω acts only as a bounded AMPLIFIER of an existing selector
+  // (De Choudens-Sánchez & González 2009 even find the Ω-sign contested;
+  // don't lean on it). Dissolved SO4 was evaluated and consciously
+  // EXCLUDED: Bots et al. 2011 show SO4 shifts the Mg threshold (the
+  // two are mutually dependent) rather than acting independently —
+  // an additive SO4 term would recreate the exact spurious-driver bug
+  // this restructure removes.
   const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
-  const mg_factor = 1.0 / (1.0 + Math.exp(-(mg_ratio - 1.5) / 0.3));
-  const T_factor = 1.0 / (1.0 + Math.exp(-(this.temperature - 50.0) / 15.0));
+  const mg_factor = 1.0 / (1.0 + Math.exp(-(mg_ratio - 1.1) / 0.3));
+  const T_rise = 1.0 / (1.0 + Math.exp(-(this.temperature - 45.0) / 10.0));
+  const T_fall = 1.0 / (1.0 + Math.exp((this.temperature - 90.0) / 8.0));
+  const T_window = T_rise * T_fall;
   const omega_factor = 1.0 / (1.0 + Math.exp(-(Math.log10(Math.max(omega, 0.01)) - 1.0) / 0.3));
   const trace_sum = this.fluid.Sr + this.fluid.Pb + this.fluid.Ba;
   const trace_ratio = trace_sum / Math.max(this.fluid.Ca, 0.01);
   const trace_factor = 1.0 + 0.3 / (1.0 + Math.exp(-(trace_ratio - 0.01) / 0.005));
 
-  // Weighted sum, not product — Mg/Ca alone is enough at high values.
-  const favorability = (0.70 * mg_factor + 0.20 * T_factor + 0.10 * omega_factor) * trace_factor;
+  // Selector OR (weighted sum), then a soft self-gate: a polymorph
+  // selector must actually be PRESENT — sub-threshold residue from two
+  // absent drivers must not multiply a huge Ω over the nucleation gate
+  // (stalactite_demo's brine-strength Ω≈56 did exactly that pre-v228).
+  const selector = 0.75 * mg_factor + 0.25 * T_window;
+  const selector_gate = 1.0 / (1.0 + Math.exp(-(selector - 0.10) / 0.03));
+  const favorability = selector * selector_gate * (0.8 + 0.2 * omega_factor) * trace_factor;
   return omega * favorability;
 },
 
@@ -473,7 +518,7 @@ Object.assign(VugConditions.prototype, {
   // log(pCO2) ≈ -3.5 univariant boundary at 25°C. Azurite drops back
   // to malachite via the paramorph mechanic in grow_azurite when CO3
   // falls during a run (Bisbee step 225 ev_co2_drop).
-  // See research/research-broth-ratio-malachite-azurite.md.
+  // See research/arcs/research-broth-ratio-malachite-azurite.md.
   let sigma = (this.fluid.Cu / 25.0) * (effectiveCO3(this.fluid, this.temperature) / 100.0) * carbonateRedoxFactor(this.fluid, 1.0);
   if (this.temperature > 50) {
     sigma *= Math.exp(-0.005 * (this.temperature - 50));
@@ -520,7 +565,14 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_cerussite() {
   const g = MINERAL_GATES_cerussite;
-  if (this.fluid.Pb < g.fluid_min!.Pb || effectiveCO3(this.fluid, this.temperature) < g.fluid_min!.CO3) return 0;
+  // rung-4c (SIM 232): the missing oxidizing gate. cerussite is the supergene Pb
+  // carbonate (galena → cerussite by OXIDATION), the Pb analog of smithsonite —
+  // but alone among the supergene carbonates it lacked carbonateRedoxAvailable,
+  // so it minted in reducing hypogene brines (mvt Eh -36, elmwood +24) beside
+  // actively-growing galena. Gated to O2_min 0.5 (Eh ≥ +100 mV = galena's rung-4b
+  // stability ceiling): the redox partition of Pb — galena below +100, cerussite
+  // above. Census gap was wide (spurious -36/+24; legit +202..+357). Garrels 1954.
+  if (this.fluid.Pb < g.fluid_min!.Pb || effectiveCO3(this.fluid, this.temperature) < g.fluid_min!.CO3 || !carbonateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   if (kspSupersatActiveFor('cerussite')) return carbonateEngineSigma('cerussite', this.fluid, this.temperature);
   const pb_f = Math.min(this.fluid.Pb / 40.0, 2.0);
   const co_f = Math.min(effectiveCO3(this.fluid, this.temperature) / 80.0, 1.5);

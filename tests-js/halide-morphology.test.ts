@@ -75,11 +75,16 @@ describe('halide morphology registry entries', () => {
       expect(th.STEP_MACRO_MAX).toBeLessThan(th.HOPPER_MAX);
       expect(typeof th.sigma).toBe('function');
     }
-    // The calibrated halite edges (research doc §2) — re-pin on retune.
-    expect(MORPH_TH.halite.SPIRAL_MAX).toBe(10);
-    expect(MORPH_TH.halite.HOPPER_MAX).toBe(800);
-    expect(MORPH_TH.sylvite.SPIRAL_MAX).toBe(3);
-    expect(MORPH_TH.sylvite.HOPPER_MAX).toBe(60);
+    // The calibrated halite edges — re-pinned rung-5 (SIM 234): the σ
+    // currency changed to (brine_strength/10.6)² (real Usiglio onset), which
+    // expired the leak-era 10/800 calibration (fake σ range 1–385). New
+    // survey: living fleet plateau 1.41 (GSP + bisbee) → smooth band;
+    // persisting spikes (~2.1) → hopper; chevron band deliberately
+    // unoccupied awaiting a perennial-brine tenant.
+    expect(MORPH_TH.halite.SPIRAL_MAX).toBe(1.5);
+    expect(MORPH_TH.halite.HOPPER_MAX).toBe(5.0);
+    expect(MORPH_TH.sylvite.SPIRAL_MAX).toBe(1.5);
+    expect(MORPH_TH.sylvite.HOPPER_MAX).toBe(5.0);
   });
 
   it('NO boundary-layer damping: surfσ ≡ bulkσ at any size (convective brine, Berg effect)', () => {
@@ -92,56 +97,75 @@ describe('halide morphology registry entries', () => {
   });
 
   it('band placement: the survey plateaus land where the claims table says', () => {
+    // rung-5 claims table (new currency; old anchors travertine/tn457 are
+    // EXTINCT — their halite was the leak the currency change killed).
     const th = MORPH_TH.halite;
-    expect(morphRegime(th, 1.15)).toBe('spiral_smooth');   // travertine
-    expect(morphRegime(th, 3.84)).toBe('spiral_smooth');   // tn457
-    expect(morphRegime(th, 8.28)).toBe('spiral_smooth');   // bisbee (legacy rule said hopper)
-    expect(morphRegime(th, 42.6)).toBe('stepped_mild');    // searles baseline → chevron
-    expect(morphRegime(th, 385)).toBe('hopper_skeletal');  // searles spike → raft
+    expect(morphRegime(th, 1.41)).toBe('spiral_smooth');   // GSP crusts + bisbee efflorescence (survey p50 = max)
+    expect(morphRegime(th, 1.6)).toBe('stepped_mild');     // chevron band — unoccupied, awaits a perennial-brine tenant
+    expect(morphRegime(th, 2.12)).toBe('hopper_skeletal'); // searles raw spike (BS 15.4×) — raft, when it persists
+    expect(morphRegime(th, 6.0)).toBe('dendritic');        // extreme efflorescence, reserved
     const ts = MORPH_TH.sylvite;
-    expect(morphRegime(ts, 1.72)).toBe('spiral_smooth');   // bisbee
-    expect(morphRegime(ts, 2.22)).toBe('spiral_smooth');   // searles baseline
-    expect(morphRegime(ts, 20.0)).toBe('hopper_skeletal'); // searles spike
+    expect(morphRegime(ts, 1.05)).toBe('spiral_smooth');   // just past the 70× bittern onset (future potash tenant)
+    expect(morphRegime(ts, 2.5)).toBe('hopper_skeletal');  // strong bittern spike (future potash tenant)
   });
 });
 
 describe('the salt-pan log (searles_lake, seed 42)', () => {
 
-  // Lazy memo — the bundle globals (setSeed etc.) only exist once the
-  // suite setup has run, so the sim cannot be built at module-eval time.
-  let _sim: any = null;
+  // Lazy memos — the bundle globals (setSeed etc.) only exist once the
+  // suite setup has run, so the sims cannot be built at module-eval time.
+  // rung-5: GSP + bisbee joined the fleet-level checks (searles' surviving
+  // crusts are late-born and thin; the grown living halite lives there).
+  let _sim: any = null, _gsp: any = null, _bis: any = null;
   const sim = () => (_sim ||= runScenario('searles_lake'));
+  const gsp = () => (_gsp ||= runScenario('great_salt_plains'));
+  const bis = () => (_bis ||= runScenario('bisbee'));
 
-  it('halite zones stratify by the concentration plateaus — banded AND hopper both present', () => {
-    const mass = regimeMass(sim(), 'halite');
-    // v198 keystone re-realized seed-42 placement; the banded/stepped share
-    // nudged from just-above to just-below 0.05 (0.0489) — still clearly
-    // present, so the "banded present" floor is 0.04 (intent unchanged).
-    expect(share(mass, 'stepped_mild', 'stepped_macro')).toBeGreaterThanOrEqual(0.04);
-    expect(share(mass, 'hopper_skeletal')).toBeGreaterThanOrEqual(0.05);
+  it('the pan log is a grow/dissolve cycle: spike-born salt, flood-dissolved husks (rung-5)', () => {
+    // The leak-era log stratified banded-vs-hopper ZONES because steady
+    // c=1 brine grew salt at fake σ 42.6. Honest currency: halite grows
+    // ONLY in the c=3 desiccation windows (raw σ 2.12) and the floods
+    // redissolve it (js/53 meteoric flush) — the record keeps the husks.
+    // That cycling IS the real playa story (ephemeral crusts, dissolution
+    // pipes); banded/hopper zone stripes return with a perennial-brine
+    // scenario whose salt persists.
+    const halites = sim().crystals.filter((c: any) => c.mineral === 'halite');
+    expect(halites.length).toBeGreaterThanOrEqual(15);
+    const dissolved = halites.filter((c: any) => c.dissolved).length;
+    expect(dissolved / halites.length).toBeGreaterThanOrEqual(0.6);   // most salt redissolves
+    expect(halites.length - dissolved).toBeGreaterThanOrEqual(1);     // late crusts survive to run-end
     // dendrite band deliberately unoccupied, like calcite's fleet
-    expect(share(mass, 'dendritic')).toBe(0);
+    expect(share(regimeMass(sim(), 'halite'), 'dendritic')).toBe(0);
   });
 
-  it('every positive halite zone is tagged, with form cube + finite surf σ', () => {
+  it('every positive halide zone in the living fleet is tagged, form cube + finite surf σ', () => {
+    // Fleet-level: searles' surviving crusts are late and thin; GSP +
+    // bisbee carry the living zone mass at the 1.41 plateau.
     let zones = 0;
-    for (const c of sim().crystals) {
-      if (c.mineral !== 'halite' || c.dissolved) continue;
-      for (const z of c.zones || []) {
-        if (!(z.thickness_um > 0)) continue;
-        zones++;
-        expect(MORPH_REGIMES).toContain(z.morph_regime);
-        expect(z.morph_form).toBe('cube');
-        expect(isFinite(z.morph_surf_sigma)).toBe(true);
+    for (const s of [sim(), gsp(), bis()]) {
+      for (const c of s.crystals) {
+        if (c.mineral !== 'halite' || c.dissolved) continue;
+        for (const z of c.zones || []) {
+          if (!(z.thickness_um > 0)) continue;
+          zones++;
+          expect(MORPH_REGIMES).toContain(z.morph_regime);
+          expect(z.morph_form).toBe('cube');
+          expect(isFinite(z.morph_surf_sigma)).toBe(true);
+        }
       }
     }
     expect(zones).toBeGreaterThan(50);
   });
 
   it('habit is regime-driven cube-family (the memory-less flip is gone)', () => {
+    // rung-5: fleet-level — searles' surviving crusts can be zero-growth
+    // late births (the pan cycle), so the grown-habit witnesses are the
+    // GSP + bisbee living halite; searles actives still count when grown.
     const habits = new Set<string>();
-    for (const c of sim().crystals) {
-      if (c.mineral === 'halite' && !c.dissolved && c.total_growth_um > 0) habits.add(c.habit);
+    for (const s of [sim(), gsp(), bis()]) {
+      for (const c of s.crystals) {
+        if (c.mineral === 'halite' && !c.dissolved && c.total_growth_um > 0) habits.add(c.habit);
+      }
     }
     expect(habits.size).toBeGreaterThan(0);
     for (const h of habits) {
@@ -151,9 +175,14 @@ describe('the salt-pan log (searles_lake, seed 42)', () => {
     expect(habits.has('hopper_growth')).toBe(false);
   });
 
-  it('sylvite hoppers on the spikes too', () => {
-    const mass = regimeMass(sim(), 'sylvite');
-    expect(share(mass, 'hopper_skeletal')).toBeGreaterThan(0);
+  it('sylvite is EXTINCT at seed 42 (rung-5) — the ladder waits for the potash tenant', () => {
+    // Every old sylvite firing was a leak below the 70× bittern onset
+    // (searles 5.1×, bisbee 2.6×, sabkha 3.4×; the review's own verdict:
+    // "no K-evaporite parent exists in this system"). The registry entry
+    // stays, provisional like bismuth's, ready for a Zechstein/Prairie/
+    // Khorat scenario with a genuine bittern stage.
+    expect(sim().crystals.filter((c: any) => c.mineral === 'sylvite').length).toBe(0);
+    expect(morphRegime(MORPH_TH.sylvite, 2.5)).toBe('hopper_skeletal');
   });
 });
 
@@ -172,10 +201,12 @@ describe('the legacy-rule correction (controls)', () => {
     }
   });
 
-  it('tn457 burial halite stays smooth', () => {
+  it('tn457 grows NO halite at all — the control graduates from "smooth" to "extinct" (rung-5)', () => {
+    // The old control asserted tn457's halite stayed smooth; rung-5
+    // revealed the halite ITSELF was the leak (BS 0.13× seawater at
+    // T 68–106°C — half the boss-specimen scenario's crystals were salt).
     const sim = runScenario('tn457_barite_pulses');
-    const mass = regimeMass(sim, 'halite');
-    expect(share(mass, 'spiral_smooth')).toBeCloseTo(1, 6);
+    expect(sim.crystals.filter((c: any) => c.mineral === 'halite').length).toBe(0);
   });
 });
 

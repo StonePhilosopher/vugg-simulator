@@ -551,7 +551,17 @@ function _renderWireframeInstance(ctx, crystal, anchor, sphereRadiusPx,
   const fillAlphaMul  = opts.fillAlphaMul  != null ? opts.fillAlphaMul  : 1.0;
   const prim = _lookupCrystalPrimitive(crystal);
   const cLengthPx = Math.max((crystal.c_length_mm || 0.5) * sizeMul * mmToPx, 3);
-  const aWidthPx  = Math.max((crystal.a_width_mm  || 0.5) * sizeMul * mmToPx, 3);
+  let aWidthPx  = Math.max((crystal.a_width_mm  || 0.5) * sizeMul * mmToPx, 3);
+  // Scalenohedral display-width cap — mirror of the js/99i scale.set
+  // 'scalene' branch (single source of truth: _GEOM_TOKEN_RATIO.scalene;
+  // safe cross-module read — this runs at render time, long after the
+  // bundle loads). The volume-derived a_width_mm reads a≈c on a mature
+  // calcite, flattening the dogtooth into an even-square double pyramid
+  // in this wireframe/topo-3D view (boss eye-check vs Elmwood #103941,
+  // 2026-07-24). Display honors the form; sim-side a_width_mm untouched.
+  if (prim === PRIM_SCALENOHEDRON) {
+    aWidthPx = Math.min(aWidthPx, cLengthPx * _GEOM_TOKEN_RATIO.scalene);
+  }
   // Substrate-perpendicular at this anchor (= inward sphere normal).
   const invR = 1 / (Math.hypot(anchor[0], anchor[1], anchor[2]) || 1);
   const subNormal = [-anchor[0] * invR, -anchor[1] * invR, -anchor[2] * invR];

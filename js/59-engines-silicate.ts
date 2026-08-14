@@ -1472,9 +1472,10 @@ function grow_chrysoprase(crystal, conditions, step) {
 //   chatoyant_pseudomorph (default — gold-brown classic)
 //   hawks_eye (partial oxidation — blue-grey-gold)
 //   tiger_iron (BIF context — banded hematite-jasper-tigers-eye rock)
-// Substrate priority: crocidolite_dissolving (the canonical pseudomorph
-// substrate; high probability) > hematite (BIF context — tiger iron
-// dispatch) > magnetite > wall.
+// Substrate: crocidolite_dissolving ONLY (the pseudomorph framework the
+// chalcedony replaces); co-present hematite bands it into the TIGER IRON
+// assemblage. No bare-wall / bare-Fe-oxide substrate — the nucleation gate
+// (js/89) requires a dissolving crocidolite crystal. rung 3, SIM 229.
 function grow_tigers_eye(crystal, conditions, step) {
   const sigma = conditions.supersaturation_tigers_eye();
   if (sigma < 1.0) {
@@ -1508,8 +1509,9 @@ function grow_tigers_eye(crystal, conditions, step) {
     crystal.habit = 'hawks_eye';
     crystal.dominant_forms = ['blue-grey-gold hawk\'s eye', 'partial oxidation — crocidolite + chalcedony coexist', 'precursor stage to full tiger\'s eye'];
   } else {
-    // No crocidolite substrate — generic chalcedony pseudomorph,
-    // potentially after iron-silicate
+    // Defensive fallback — unreachable since v229: nucleation now requires a
+    // dissolving crocidolite substrate, so every tiger's eye carries
+    // 'crocidolite' in its position. Kept only for replayed pre-v229 saves.
     crystal.habit = 'chatoyant_pseudomorph';
     crystal.dominant_forms = ['gold-brown chatoyant chalcedony', 'fibrous internal texture', 'classic gemstone aesthetic'];
   }

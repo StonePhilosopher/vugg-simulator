@@ -216,13 +216,18 @@ MORPH_TH.calcite = {
 };
 
 // ---- halite + sylvite — second tenant (the upgrade-in-place; bands
-// from proposals/RESEARCH-halide-morphology-2026-06-12.md) ----
+// originally from proposals/RESEARCH-halide-morphology-2026-06-12.md,
+// RE-PINNED rung-5/SIM 234 after the σ-currency change — see below) ----
 // Survey facts (tools/morph-sigma-observe.mjs, seed 42): post-step σ ==
 // in-step σ to 3 figures (concentration-driven; growth barely dents the
 // Na/Cl pool — calcite's 18th-catch thin-film gap does NOT recur), and
-// σ history is QUANTIZED into plateaus by the evaporite concentration
-// driver (searles halite: 42.6 baseline ↔ 385 spike) — so zone tags
-// stratify by wet/dry pulse phase and the crystal records the pan log.
+// σ history is QUANTIZED into plateaus by the salinity × concentration
+// brine-strength driver. The leak-era survey read 42.6 baseline ↔ 385
+// spike at searles; the honest currency reads ONE living plateau (1.41,
+// GSP + bisbee) with searles' raw-2.12 spike growth redissolving in the
+// flood phases — the pan log now records the wet/dry cycle as
+// grow/dissolve husk cycling, not as banded/hopper zone stripes (those
+// return with a perennial-brine tenant).
 //
 // NO boundary-layer damping (SIZE_HALF_UM = Infinity → surfσ = bulk σ):
 // calcite's damping models DIFFUSION-limited growth in still vug fluid
@@ -235,37 +240,54 @@ MORPH_TH.calcite = {
 // crystals into glass. Per-mineral knob by construction.
 //
 // Band edges in HALITE's own post-step sim units (registry contract:
-// never compare across minerals), placed against locality ground truth:
-// searles spikes (385) → hopper rafts, searles baseline (42.6) →
-// chevron/fluid-inclusion-banded cube (Lowenstein & Hardie 1985,
-// Sedimentology 32 — the salt-pan texture canon); bisbee (8.28) /
-// sicily (4.55) / tn457 (3.84) / travertine (1.15) → smooth cubes.
-// Dendrite band (efflorescence crusts) deliberately unoccupied in the
-// fleet, like calcite's.
+// never compare across minerals). rung-5 (SIM 234) RE-PINNED: the σ
+// CURRENCY changed — supersaturation_halite is now (brine_strength/10.6)²
+// against the real Usiglio onset, so the old edges (10/60/150/800,
+// calibrated to the leak-era 1–385 fake range) would have read every
+// honest zone as spiral_smooth forever — the exact calibration-expiry
+// trap the render-upgrade law warns about. Fresh survey
+// (tools/morph-sigma-observe.mjs, seed 42, new currency): the living
+// fleet occupies ONE post-step plateau — GSP + bisbee at σ 1.41 (= BS
+// 12.9×, activity-shaved) — because searles' spike-born crystals (raw σ
+// 2.12 at BS 15.4×) redissolve in the flood phases (the real playa
+// cycle) and only late thin crusts survive. Edges placed so: 1.41 →
+// smooth cube (GSP crusts, bisbee mine-wall efflorescence — the
+// legacy-rule control claim holds); the chevron/banded band [1.5,1.7]
+// is DELIBERATELY UNOCCUPIED awaiting a perennial-brine scenario
+// (Dead-Sea/solar-saltworks type; Lowenstein & Hardie 1985 chevron
+// canon keeps its display string); persisting spike growth (σ ≈ 2.0+)
+// lands in hopper/raft — the searles signature the day spike crystals
+// survive a run's end; dendrite ≥ 5 reserved for extreme efflorescence.
+// (Bismuth-entry precedent: provisional upper bands until the tenant
+// scenario ships.)
 MORPH_TH.halite = {
   SIZE_HALF_UM: Infinity,
   SIZE_DAMP_CAP_UM: Infinity,
-  SPIRAL_MAX: 10.0,      // < this → smooth {100} cube
-  STEP_MILD_MAX: 60.0,   // 10–60 → growth-banded cube (chevron banding)
-  STEP_MACRO_MAX: 150.0, // 60–150 → coarse macrostepped cube
-  HOPPER_MAX: 800.0,     // 150–800 → hopper/skeletal (cavernous faces, rafts)
+  SPIRAL_MAX: 1.5,      // < this → smooth {100} cube (fleet plateau 1.41 lives here)
+  STEP_MILD_MAX: 1.7,   // 1.5–1.7 → chevron-banded cube (unoccupied; awaits perennial brine)
+  STEP_MACRO_MAX: 1.95, // 1.7–1.95 → coarse macrostepped cube
+  HOPPER_MAX: 5.0,      // 1.95–5 → hopper/skeletal (searles raw spikes 2.12 when they persist)
   // ≥ HOPPER_MAX → dendritic (efflorescence crust)
   sigma(conditions: any): number { return conditions.supersaturation_halite(); },
   form(_conditions: any): string { return 'cube'; },
 };
 
-// Sylvite: same physics, its own σ units (searles spikes 20.0 → hopper
-// — the old engine's own 'hopper_cube' call, now banded + remembered;
-// searles baseline 2.22 / bisbee 1.72 → smooth). Legacy in-step flip
-// (>4.0) would have called searles BASELINE zones hopper; the ladder is
-// strictly more honest.
+// Sylvite: same physics, its own σ units — rung-5 (SIM 234) RE-PINNED
+// to the new currency, σ = (brine_strength/70)² against the real
+// bittern onset (70–90× seawater). Sylvite is EXTINCT at seed 42 (no
+// K-evaporite parent in the fleet; the old searles/bisbee/sabkha
+// firings were all leaks below onset), so every band is currently
+// tenantless — edges are PROVISIONAL in the same sense as bismuth's
+// (below): same honest shape as halite's ladder, re-pinned against a
+// measured trajectory the day a potash scenario (Zechstein / Prairie /
+// Khorat) ships a genuine 70×+ bittern stage.
 MORPH_TH.sylvite = {
   SIZE_HALF_UM: Infinity,
   SIZE_DAMP_CAP_UM: Infinity,
-  SPIRAL_MAX: 3.0,
-  STEP_MILD_MAX: 8.0,
-  STEP_MACRO_MAX: 16.0,
-  HOPPER_MAX: 60.0,
+  SPIRAL_MAX: 1.5,
+  STEP_MILD_MAX: 1.7,
+  STEP_MACRO_MAX: 1.95,
+  HOPPER_MAX: 5.0,
   sigma(conditions: any): number { return conditions.supersaturation_sylvite(); },
   form(_conditions: any): string { return 'cube'; },
 };

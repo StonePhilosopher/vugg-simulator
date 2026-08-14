@@ -247,22 +247,37 @@ function splitRung(index: number): string {
   return 'none';
 }
 
-// ── the SIM effect (S-b): axial growth throttle by split index ────────────────
-// A splitting crystal packs the same material into a compact radial/branched form,
-// so its coherent MAX AXIAL EXTENT is less than the single crystal that material
-// would otherwise have built — a spherulite's diameter < the needle's length it
-// replaced (Beck & Andreassen 2010: spherulites REPLACE faceted single crystals
-// above the onset; Sunagawa's morphodrom packs the split/dendritic forms at high
-// driving force). So the per-step axial increment is throttled by the accrued
-// index: 1.0 at the base (no split) down to SPLIT_AXIAL_FLOOR at full spherulite.
-// FLOORED (never arrests — a split crystal keeps growing, just less axially; this
-// is not O3 burial nor O5 masking). Gated by O5_SPLITTING_ENABLED at the js/85
-// call site: flag off → mult is never applied → byte-identical.
-let SPLIT_AXIAL_FLOOR = 0.7;   // spherulite grows its axis at 70% — compact, not arrested
+// ── the SIM effect: axial compaction by the REAL aspect-ratio collapse (v227) ──
+// A splitting crystal reorganizes the SAME material into a more EQUANT form — the
+// radial spherulite (aspect → 1) replacing the faceted needle/blade it consumed
+// (Beck & Andreassen 2010: spherulites REPLACE faceted single crystals above the
+// onset; Shtukenberg 2012 the single→spherulite grade sequence). The axial extent
+// that reorganization implies is NOT a free floor (S-b's arbitrary flat 0.7) — it
+// is FIXED by constant-volume geometry. An ellipsoid of aspect A = a/c and volume
+// V has c = (6V/π)^(1/3) · A^(−2/3); so reorganizing from the parent habit aspect
+// A0 to a target aspect A_target, at CONSTANT V, scales c by (A0/A_target)^(2/3).
+// add_zone re-derives a_width from the same _volume_mm3, so volume is conserved
+// exactly and the crystal LANDS at aspect A_target (proof: after the widen,
+// c/a = A_target). A_target interpolates from the parent habit (index 0, no change)
+// to a SPHERE (A = 1, index 1). Consequences, all honest geometry:
+//   • a needle  (A0 0.15) collapses hard toward equant  → mult 0.28 at spherulite
+//   • an equant rhomb (A0 0.8) barely moves              → mult 0.86 at spherulite
+//   • a tabular plate (A0 1.5) GROWS its short c→equant  → mult 1.31 at spherulite
+// This replaces the flat 0.7 with the science ("follow the science", boss 2026-07-14
+// — accuracy over the arbitrary constant; drift is acceptable when the science
+// justifies the cost). Gated by O5_VOLNEUTRAL_ENABLED at the js/85 + js/99i call
+// sites (flag off → never applied → byte-identical). FLOOR/CEIL are pure SAFETY
+// rails against a pathological c→0 in a_width=√(6V/πc) — never reached in practice
+// (A0∈[0.15,1.5] ⇒ mult∈[0.28,1.31]).
+let SPLIT_AXIAL_FLOOR = 0.1;   // min mult — safety rail, not the calibration
+let SPLIT_AXIAL_CEIL = 2.0;    // max mult — a plate growing toward equant stays bounded
 function setSplitAxialFloor(v: number): void { SPLIT_AXIAL_FLOOR = +v; }
-function splitGrowthMult(index: number): number {
+function splitGrowthMult(index: number, habitAspect: number = 0.5): number {
   const x = Math.max(0, Math.min(1, index || 0));
-  return 1 - (1 - SPLIT_AXIAL_FLOOR) * x;   // 1 at index 0 → SPLIT_AXIAL_FLOOR at index 1
+  const a0 = habitAspect > 0 ? habitAspect : 0.5;   // parent habit aspect a/c
+  const aTarget = a0 + (1 - a0) * x;                 // parent → 1 (equant sphere) with index
+  const mult = Math.pow(a0 / aTarget, 2 / 3);        // constant-V axial scale to reach aTarget
+  return Math.max(SPLIT_AXIAL_FLOOR, Math.min(SPLIT_AXIAL_CEIL, mult));
 }
 
 // impurity_factor = max(film φ, scenario trace, mineral hint). Pure, DOM-free.

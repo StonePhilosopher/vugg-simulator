@@ -92,13 +92,22 @@ const MINERAL_GATES_conichalcite: MineralGates = {
 
 const MINERAL_GATES_mimetite: MineralGates = {
   sigma_crit: 1.0,
-  T_optimal: 80,
+  // v228 (rung 2): T_max 80 — mimetite is uniformly a SUPERGENE oxidation-
+  // zone phase (Handbook of Mineralogy: "a common secondary mineral in the
+  // oxidized zone of arsenic-bearing lead deposits"; Keim & Markl 2015
+  // galena-weathering paragenesis); no hypogene occurrence is documented,
+  // and the quantitative solubility work sits at 5-65°C (Bajda 2010).
+  // Pre-v228 only a soft decay ran above 150°C, so porphyry's step-85
+  // oxidation event minted mimetite at 307°C inside a potassic-core brine.
+  // T_optimal moved 80 → 30 (weathering-zone reality; the old 80 sat AT the
+  // new ceiling and would mis-teach initiative's sweet-spot).
+  T_max: 80, T_optimal: 30,
   fluid_min: { Pb: 5, As: 3, Cl: 2 },
   O2_min: 0.3,
   pH_min: 3.5,
   surface_energy: 'medium',
-  _sources: ['mimetite engine v92+'],
-  _notes: 'Pb5(AsO4)3Cl — apatite-group Pb arsenate. Needs Cl. Substrate-pref galena.',
+  _sources: ['mimetite engine v92+', 'Handbook of Mineralogy — mimetite (supergene occurrence)', 'Keim & Markl 2015 Am. Min. 100:1584 (galena-weathering paragenesis)', 'Bajda 2010 Env. Chem. 7 (solubility 5-55°C)'],
+  _notes: 'Pb5(AsO4)3Cl — apatite-group Pb arsenate. Needs Cl. Substrate-pref galena. v228: hard supergene ceiling 80°C.',
 };
 
 const MINERAL_GATES_austinite: MineralGates = {
@@ -406,8 +415,12 @@ Object.assign(VugConditions.prototype, {
   const g = MINERAL_GATES_mimetite;
   const as_v = arsenateAvailablePpm(this.fluid);
   if (this.fluid.Pb < g.fluid_min!.Pb || as_v < g.fluid_min!.As || this.fluid.Cl < g.fluid_min!.Cl || !arsenateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  // v228 (rung 2): hard supergene ceiling from the gates — replaces the soft
+  // decay above 150°C that let porphyry's 307°C oxidation window mint a
+  // weathering-zone arsenate (oxidizing ≠ supergene; the event raised O2
+  // without dropping T).
+  if (this.temperature > g.T_max!) return 0;
   let sigma = (this.fluid.Pb / 60.0) * (as_v / 25.0) * (this.fluid.Cl / 30.0) * arsenateRedoxFactor(this.fluid, 1.0);
-  if (this.temperature > 150) sigma *= Math.exp(-0.015 * (this.temperature - 150));
   if (this.fluid.pH < 3.5) sigma -= (3.5 - this.fluid.pH) * 0.5;
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'mimetite');
   return Math.max(sigma, 0);

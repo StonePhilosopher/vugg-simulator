@@ -700,6 +700,11 @@ function _habitGeomToken(habit: string): string {
   if (h === 'octahedral' || h === 'octahedron') return 'octahedron';
   if (h.includes('rhombohedral')) return 'rhomb';
   if (h.includes('scalenohedral')) return 'scalene';
+  // S2 celestine tranche (SIM 236): the Ba-fibrous blanket is a wall-spreading
+  // COATING (the Elmwood "glue"), not a needle spray — route to the botryoidal
+  // lateral-crust scaling. MUST precede the generic 'fibrous' → spike check
+  // below, which would otherwise catch the substring and render needles.
+  if (h === 'fibrous_blanket') return 'botryoidal';
   // Wall-spreading crusts — chalcedony, malachite (banded), agate, smithsonite
   // botryoidal, rosasite crusts. Chalcedony is the user-flagged case:
   // microcrystalline silica spreads on the wall like malachite, NOT a quartz
@@ -3680,6 +3685,14 @@ function _emitClusterSatellites(
     const satMesh = new THREE.Mesh(geom, mat);
     if (geomToken === 'cube' || geomToken === 'octahedron' || geomToken === 'rhombic_dodec' || geomToken === 'dodecahedron' || geomToken === 'snowball') {
       satMesh.scale.set(sCLen, sCLen, sCLen);
+    } else if (geomToken === 'scalene') {
+      // Same display-width cap as the parent-mesh 'scalene' scale branch
+      // (2026-07-24): sAWid derives from the parent's volume-derived
+      // a_width_mm, which reads a≈c on mature calcite — without the cap
+      // the cluster's teeth render as even-square gems around a properly
+      // toothed parent.
+      const sATooth = Math.min(sAWid, sCLen * _GEOM_TOKEN_RATIO.scalene);
+      satMesh.scale.set(sATooth, sCLen, sATooth);
     } else {
       satMesh.scale.set(sAWid, sCLen, sAWid);
     }
@@ -3935,7 +3948,7 @@ function _topoHistoricalCrystalSize(crystal: any, replayStep: number): { c_lengt
     totalUm = crystal.total_growth_um;
   }
   if (totalUm <= 0) return null;
-  const c = totalUm / 1000.0;
+  let c = totalUm / 1000.0;
   let a;
   if (crystal.habit === 'prismatic') a = c * 0.4;
   else if (crystal.habit === 'tabular') a = c * 1.5;
@@ -3948,6 +3961,19 @@ function _topoHistoricalCrystalSize(crystal: any, replayStep: number): { c_lengt
         || crystal.habit === 'dendritic_rhombohedral') a = c * 0.8;
   else if (crystal.habit === 'snowball') a = c;
   else a = c * 0.5;
+  // W-K VOL-NEUTRAL (v226) — mirror the live add_zone compaction in the NARRATIVE
+  // REPLAY. Without this a split crystal plays back as its raw needle and then
+  // SNAPS shorter+wider at the live frame (live renderC = the compacted c_length_mm;
+  // this path rebuilt c from raw growth). Per-step index history isn't recorded, so
+  // we apply the FINAL _split.index: the last replay frame then matches the live
+  // render exactly, and earlier frames sit at that same compaction (a mild
+  // approximation — the crystal was already splitting as it grew). Constant volume:
+  // c×m with a÷√m conserves the ellipsoid (c·a²), mirroring add_zone's a_width widen.
+  if (O5_VOLNEUTRAL_ENABLED && crystal._split && crystal._split.index > 0) {
+    const m = splitGrowthMult(crystal._split.index, _habitAspectRatio(crystal.habit));
+    c *= m;
+    a /= Math.sqrt(m);
+  }
   return { c_length_mm: c, a_width_mm: a };
 }
 
@@ -4958,6 +4984,21 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       const crustLat = Math.max(aWid, cLen * 1.5);
       const crustH = Math.min(cLen, crustLat * 0.4);
       mesh.scale.set(crustLat, crustH, crustLat);
+    } else if (token === 'scalene') {
+      // Scalenohedral (dogtooth) — display width CAPPED at the family's
+      // declared aspect (_GEOM_TOKEN_RATIO.scalene = 0.6, already the table's
+      // stated truth but previously consulted only on the visibility-floor
+      // path). a_width_mm is the ellipsoid-volume MEASUREMENT (feeds vug
+      // fill — the js/27 byte-identity keystone), not a shape statement: a
+      // mature calcite that integrated ~900 mm³ reads back a≈c (the elmwood
+      // 19 mm hero measured 13.3 × 11.5 mm, ratio 1.16) and rendered as an
+      // even-square double pyramid. Boss eye-check vs Elmwood #103941
+      // (2026-07-24): dogtooth calcite is "taller than they are wide", and
+      // double-terminated ones are never an even square. Mirror-image of the
+      // botryoidal override above — sim-side dimensions untouched, the
+      // display honors the form.
+      const aTooth = Math.min(aWid, cLen * _GEOM_TOKEN_RATIO.scalene);
+      mesh.scale.set(aTooth, cLen, aTooth);
     } else {
       mesh.scale.set(aWid, cLen, aWid);
     }
@@ -5216,9 +5257,25 @@ function _topoApplyCameraFromTilt(state: any, wall: any) {
   const camX = sy * cx * radius;
   const camY = -sx * radius;
   const camZ = cy * cx * radius;
-  state.camera.position.set(camX, camY, camZ);
+  // PAN (2026-07-24, boss report): _topoPanX/_topoPanY were 2D-canvas offsets
+  // this camera never read — the ✥ pan mode was INERT in the mesh view, and
+  // deep-zoom (where the orbit target is far from what you're looking at) is
+  // exactly where pan is needed. Map the screen-px pan to a camera-space
+  // translation of the WHOLE orbit rig (position + aim move together, so
+  // orbit-after-pan still rotates around what you're looking at). Scaled by
+  // radius so the hand-feel tracks zoom: one screen-height of drag ≈ one
+  // view-height of travel at any zoom level.
+  //   camera right (yaw frame): ( cy, 0, −sy)
+  //   camera true up (pitched): ( sy·sx, cx, cy·sx )   [right × forward]
+  const panScale = radius / 600;
+  const panPx = -_topoPanX * panScale;   // drag right → scene follows cursor
+  const panPy =  _topoPanY * panScale;   // drag down  → scene follows cursor
+  const aimX = cy * panPx + sy * sx * panPy;
+  const aimY =              cx * panPy;
+  const aimZ = -sy * panPx + cy * sx * panPy;
+  state.camera.position.set(camX + aimX, camY + aimY, camZ + aimZ);
   state.camera.up.set(0, 1, 0);
-  state.camera.lookAt(0, 0, 0);
+  state.camera.lookAt(aimX, aimY, aimZ);
   // Light sits on the camera-side of the scene so the front face
   // catches the highlight. Subtle moonlit-cavity vibe, not studio.
   if (state.directional) {

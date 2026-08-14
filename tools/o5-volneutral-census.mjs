@@ -74,19 +74,20 @@ setO5VolNeutral(true);
 const B = runFleet();
 setO5VolNeutral(false);   // leave the module as we found it
 
-// ── flag-OFF byte-identical certificate ───────────────────────────────────────
-// Baseline A (flag off) MUST equal the committed baseline of the CURRENT
-// SIM_VERSION — proof the wiring is inert when off (the record-unread guarantee).
+// ── committed-baseline comparison ─────────────────────────────────────────────
+// The shipped default is flag-ON (v226 onward), so the committed baseline is the
+// COMPACTED fleet. The meaningful regression check is therefore B (flag on) vs
+// committed — does the current compaction match what shipped? (A, flag off, is the
+// uncompacted fleet — it necessarily differs from a flag-on committed baseline.)
 const baselineDir = path.join(ROOT, 'tests-js', 'baselines');
 const versions = fs.readdirSync(baselineDir)
   .map((f) => /^seed42_v(\d+)\.json$/.exec(f)).filter(Boolean)
   .map((m) => Number(m[1])).sort((x, y) => x - y);
 const curV = versions[versions.length - 1];
-let offIdentical = null;
+let onMatchesCommitted = null;
 if (curV != null) {
   const committed = JSON.parse(fs.readFileSync(path.join(baselineDir, `seed42_v${curV}.json`), 'utf8'));
-  // committed keys omit empty scenarios; compare the intersection the summarizer produces.
-  offIdentical = JSON.stringify(committed) === JSON.stringify(sortDeep(A));
+  onMatchesCommitted = JSON.stringify(sortDeep(committed)) === JSON.stringify(sortDeep(B));
 }
 function sortDeep(o) {
   const out = {};
@@ -136,9 +137,9 @@ const nonSplitMoved = all.filter(([, v]) => !v.splitAble);
 
 console.log(`\nW-K VOL-NEUTRAL blast-radius census — seed ${SEED}`);
 console.log(`  constant-volume length-compaction on the SPLIT set (splitGrowthMult, floor ${'0.7'})`);
-console.log(`  ${Object.keys(A).length} scenarios · ${scenariosTouched.size} touched by any change`);
-console.log(`  flag-OFF byte-identical to committed seed42_v${curV}: ${
-  offIdentical == null ? '(no baseline found)' : offIdentical ? '✓ inert-when-off certified' : '✗ FLAG-OFF DRIFTED (wiring not inert!)'}\n`);
+console.log(`  ${Object.keys(A).length} scenarios · ${scenariosTouched.size} touched (flag off → on)`);
+console.log(`  flag-ON (current compaction) matches committed seed42_v${curV}: ${
+  onMatchesCommitted == null ? '(no baseline found)' : onMatchesCommitted ? '✓ baseline-identical to shipped' : '✗ DIFFERS — the compaction moved the baseline (needs a bump + regen)'}\n`);
 
 console.log(`  SPLIT-able minerals moved (allowed — the set may move): ${splitMoved.length}`);
 if (VERBOSE || splitMoved.length) {

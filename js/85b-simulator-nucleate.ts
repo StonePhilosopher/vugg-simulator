@@ -431,6 +431,14 @@ Object.assign(VugSimulator.prototype, {
         propensity = 1.0;  // backward compat — fill_exempt:true ≡ propensity:1.0
       }
     }
+    // S1 (fluid.S sulfate/sulfide split, boss directive 2026-07-23): the late
+    // meteoric-sulfate BARITE generation (fluid.sulfateInherited — wittichen's Barytgänge
+    // stage) nucleates OVER the dendrites/arsenides already filling the vug — a distinct
+    // post-dendrite paragenetic stage, not competition for fresh wall. Fill-exempt it, but
+    // NARROW and NAMED: barite only, and ONLY when the inherited-sulfate flag is set. MVT
+    // barite (mvt/elmwood) never sets the flag, so this is NOT a hidden MVT rescue — those
+    // stay fill-gated and honest-smaller. Restores the district's defining gangue.
+    if (mineral === 'barite' && this.conditions?.fluid?.sulfateInherited) propensity = 1.0;
     const effective = dampener + propensity * (1.0 - dampener);
     if (effective < 1.0 && rng.random() >= effective) return true;
   }
@@ -459,7 +467,14 @@ Object.assign(VugSimulator.prototype, {
   // path until the first step where the whole accessible wall is
   // strangled for a mineral whose bulk-view σ still wants to fire.
   // See _wallStrangledFor for the geological + mechanistic rationale.
-  if (this._wallStrangledFor(mineral)) return true;
+  // S1 (fluid.S sulfate/sulfide split, boss directive 2026-07-23): the SAME narrow+named
+  // exemption as the fill-dampener branch above — the late meteoric-sulfate barite
+  // generation (fluid.sulfateInherited, wittichen's Barytgänge stage) overgrows the
+  // dendrite-strangled wall rather than competing for fresh wall, so it also bypasses the
+  // depletion-halo strangulation gate. Barite-only, flag-gated (no MVT rescue); _wallStrangledFor
+  // is RNG-neutral so skipping it does not shift any other mineral's cascade.
+  const bariteInheritedExempt = mineral === 'barite' && this.conditions?.fluid?.sulfateInherited;
+  if (!bariteInheritedExempt && this._wallStrangledFor(mineral)) return true;
   return false;
 },
 

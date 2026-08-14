@@ -2144,4 +2144,564 @@ nothing more. A vug crystal in this simulator now grows apart, shows its degree 
 smaller along its axis for the breadth it traded — the way a real spherulite is smaller than the needle it
 consumed. The debt the fifteenth hand first wrote down, four hands ago, is paid in full.
 
+### Postscript — the magnitude, refined (same day)
+
+The ship above used a flat `SPLIT_AXIAL_FLOOR = 0.7` for the compaction amount. In the post-ship review the
+boss and I both named it for what it was: the MECHANISM (constant-volume conservation) was bedrock, but the
+30 % NUMBER was an effect-hack magnitude sitting on it. The boss: "follow the science, use the real aspect
+collapse." So `splitGrowthMult` now derives the amount from the geometry that was implied all along — an
+ellipsoid reaching aspect `A_target` at constant volume scales its length by `(A₀/A_target)^(2/3)`, so a
+needle collapses to ~0.28 and an equant rhomb barely moves. And the measurement gave the cleanest possible
+outcome: **zero drift** — the aspect fleet is baseline-identical to the shipped v226, because the cascade
+rides binary gate-crossings that both magnitudes trip the same way. A render-only refinement; the science
+cost nothing.
+
+The mark worth carrying: the boss said **"making it accurate-to-life is more important than making sure it's
+always the same — the reason to avoid drift is that it keeps the science honest by making it justify the cost
+of the change; I always suspected as the science got stronger there would be drift."** This reframes every
+byte-identical / census-bounded / two-commit ritual on this project: they are not a veto on drift, they are
+the FORCING FUNCTION that makes a change earn its churn. A fleet that never moves is a fleet whose science
+stopped improving. Measure the cost, let the science justify it, pay it — and when the accurate model happens
+to cost nothing (as here), take the free win, but never bend the science to keep the number still. Recorded
+as [[feedback_accuracy_over_determinism]]. (Concern #2 — the replay view showing the uncompacted needle —
+was also fixed the same day: `_topoHistoricalCrystalSize` now mirrors the live compaction, `5d8060e`.)
+
 — the builder, eighteenth hand: the crystal paid for its breadth with its length · 2026-07-14
+
+---
+
+## KEYSTONE — the nineteenth hand: the chisel and the bedding planes (2026-07-14, same day, fresh context)
+
+The boss named the next task before the eighteenth hand compacted: a HOSTILE REVIEW — turn
+the adversarial eye on the sim itself and hunt for where it lies about real mineralogy. This
+hand ran it end-to-end in one session: audited the instruments first (Part A), then the
+science (Part B, 39 scenarios × challenge → defend → synthesize, 148 agents, every code
+claim re-verified by hand), committed the findings as a durable stratum, and then — on the
+boss's ordering — paid the first rung of the fix ladder the same day: the leaked fluorine
+default, retired as SIM 227 through a three-step zero-drift ladder. The boss's boss read the
+result and called it "a chisel finding the bedding planes." The phrase is the title because
+it is the method: a hostile review does not swing at the wall; it listens for where the
+stone was always going to part.
+
+### The arc in one breath
+
+Verify the instruments, then believe them: the canary's "missing days" turned out to be a
+publish-path bug (honest NO-CHANGE markers written locally every quiet night, never
+committed — the fossil existed in the sediment but never got exposed in the cliff face),
+not the scheduler everyone suspected. Then the science: 76 confirmed defects clustering
+into ten mechanisms — two-thirds of them one shape, permissive redox/T gates letting a
+mineral's own documented envelope be crossed. Then the first fix: F made explicit at all
+17 silently-inheriting sites (byte-identical 39/39), the class default flipped to zero
+(zero-drift, cold-CI green), and 16 researched per-deposit values shipped as the
+attributable bump. Fluorite now grows in exactly the five scenarios whose literature
+documents it. Then the last unaudited assumption — "canary quiet = healthy" — got its own
+instrument: the creep census, 470 pairs, zero silent walkers. Quiet is now a measurement.
+
+### The marks
+
+1. **Attack the easy narrative first — the gap was in the PUBLISH, not the wake.** Five
+   missing days read as "the scheduler is imperfect," and the evidence said otherwise: the
+   sweep ran all 31/31 nights; the short-circuit branch `return`ed before `publishSpine()`,
+   so no quiet stratum was EVER committed (0 in git, 3 on disk). A hostile review that had
+   accepted the obvious story would have hardened the wrong component. The record's absence
+   and the record's failure are different defects with different fixes — diagnose which
+   before touching either.
+
+2. **The reviewer must also be reviewed.** Two of the review's own confirmed verdicts fell
+   in the fix pass: tn457 is NOT a "fluorine-free deposit" (its orefield produced 2.1 Mt of
+   fluorite — the honest story is Dunham zonation, this vug is outer-zone barite), and
+   amethyst geodes carry documented trace fluorite (Kugelfluorit). The research pass that
+   set the values caught what the review pass had over-claimed, exactly as the defense
+   stage had already killed 31 of 108 objections. Review verdicts are INPUTS to the science,
+   never gospel — every layer of this project's adversarial machinery exists because the
+   layer before it is fallible, including this one.
+
+3. **Causal control is the doctrine made operational.** The boss's boss: drift from better
+   science should INCREASE causal control — "we should be able to move it again on purpose
+   by changing growth conditions, not by patching the scoreboard." Rung 1 is the canonical
+   demonstration: four confabulated fluorites died because their FUEL was removed (broth F
+   set to the researched deposit values), and the one expects_species change (tormiq) was
+   the withdrawal of a promise no source ever supported — the mvt-silver precedent, with the
+   twist that this time the EXPECTATION was the confabulation, not the broth. The
+   expects-mirror test went red on the withdrawal and that was the forcing function working,
+   not failing.
+
+4. **"Unset" must mean "absent" — a non-zero default is a claim every silent call site makes
+   without knowing it.** `F ?? 10.0` put gate-clearing fluorine into sixteen scenarios whose
+   authors never wrote an F. The repair ladder is reusable for the siblings still leaking
+   (Al=3, Ti=0.5, Fe=5, SiO2=500…): make the implicit explicit everywhere (byte-identical,
+   provable), flip the default (now inert), THEN do the science per site. Zero drift until
+   the exact commit where the drift is the point — and that commit carries the citations.
+
+5. **An assumption everyone shares is an instrument nobody has built.** Every "canary quiet =
+   strata healthy" reading assumed drift arrives in alarm-sized jumps. The creep census made
+   the assumption falsifiable and it SURVIVED: zero silent walkers in 470 pairs across the
+   whole record. One watch item: supergene_oxidation/molybdenite at −14.5 cumulative, half a
+   point under the gate, accumulated entirely in sub-alarm steps — if it walks further, only
+   this census will see it. The reassurance is now a number that can be re-earned nightly.
+
+### Diagenesis
+
+This session moved fast because eighteen hands built the ground it ran on. The strip archive
+(boss directive, twelfth-hand era) is the diachronic testimony the claim cards distill; the
+canary is the off-machine witness whose own record made Part A checkable; `_harness.mjs` let
+every probe and census run the SAME pure function the tests vouch; the two-commit ritual and
+the census idiom (O3a, O5a, S-b, vol-neutral) are the shape rung 1's ladder copied; and the
+drift doctrine the eighteenth hand recorded hours earlier is the lens the whole review was
+ground to. The claim-card instrument itself was assembled in an afternoon precisely because
+it only had to FUSE things that already existed — the scenario specs' citations and the
+strips' bells. The review walked halls other hands built and listened for hollow stone.
+
+### The dream, twenty-first telling
+
+The ladder has four rungs left, in the boss's order: T-gates (wire the documented envelopes
+into the nucleation functions — the metadata knows what the runtime forgets), the
+tiger's-eye substrate gate, the redox/sulfide vetoes (the dominant mechanism, the most
+coupled), and the halite/salinity rework (the biggest surface — dilute water should not
+mint salt). Beyond the rungs: the missing engines (magnesite, siegenite, the
+serpentinization-side magnetite), the missing EVENTS — above all Sunnyside's boiling pulse,
+which owes the boss his native-gold-in-quartz, the deposit's namesake and his own
+calibration specimen. And when the leaks are fixed and the cards regenerate sharper, the
+synergy hunt the boss's boss set aside: stop asking "where does the sim lie?" and start
+asking "where does it surprise us truthfully?" The dream is a fleet whose claim cards a
+working mineralogist reads without objection — and then reads again, for pleasure, because
+the biographies are not merely defensible but INTERESTING. The chisel is on the shelf; the
+bedding planes are marked in the proposal. The next hand only has to split them.
+
+— the builder, nineteenth hand: the chisel and the bedding planes · 2026-07-14
+
+## KEYSTONE — the twentieth hand: the unread envelope (2026-07-14, the rung-2 continuation)
+
+The nineteenth hand marked the bedding planes; this hand split the second one. Same day,
+same drift doctrine, one rung of the boss's ladder: the T-gates, SIM 228 (`892dbb8`,
+deployed, clean-tree stamped, 2436/2436).
+
+### The arc in one breath
+
+Census first — `tools/t-envelope-census.mjs` measured the smoking gun instead of assuming
+it (137 minerals declare temperature envelopes, 37 unenforced, 58 violating nucleation
+events in 15 scenarios) — then four research passes turned the review's one-line levers
+into cited values, and one attributable bump enforced them: quartz [50,700], arsenopyrite
+as-declared, the T>95 wurtzite reading retired, aragonite rebuilt on two honest selectors,
+researched ceilings for gypsum/anhydrite/goethite/mimetite/tellurides. Blast radius 27/39.
+Two expects no-shows RECOVERED without touching a single expects line — sunnyside's
+sphalerite and ultramafic's name-giving chrysoprase grew the moment their competitors'
+leaks died. Four promises withdrawn with locality research. The boss's elmwood snowball,
+stalled by the honestly-stronger sphalerite, was re-fed on the sulfate side — the truer
+MVT mixing story — after the Ba-raise alternative was measured and rejected.
+
+### The marks
+
+1. **"Declared" is not "enforced," and neither is "cited" — audit all three.** The
+   envelopes were already researched (v127!) and already punished by initiative in the
+   cation queue, while the σ gates ignored them. The sim knew; the gate never read the
+   memo. And two shipped citations (the sim's M&B 1986 wurtzite page, the review's own
+   Bessinger 2000) failed re-verification — the reviewer got reviewed, three times this
+   rung (arsenopyrite's floor and naica's silica were review errors the research pass
+   caught).
+2. **Enforcement must be per-value, never blanket.** The census found declared values that
+   are themselves bad science (pyrite T_min 100, bornite 80, native_silver 50 — all
+   contradict textbook low-T occurrences). A sweep that "closes all 37 leaks" would have
+   shipped display-vetted numbers as physics. §T holds the remainder with the warning.
+3. **Fix the class's INPUTS and the promises keep themselves.** The two recoveries cost
+   zero scoreboard edits: kill the thief (cold quartz, hot wurtzite) and the documented
+   mineral takes its own silica, its own zinc. Causal control, demonstrated twice.
+4. **Measure the alternative you reject, and write the numbers down.** Roughten's SiO2
+   raise (8.5 µm speck + chrysocolla draining the documented suite) and elmwood's Ba 36
+   (witherite ×4 — the dead aragonite had thinned its CO3 headroom) both live in comments
+   now. The shipped choice is defensible BECAUSE the road not taken has a measured toll.
+5. **Every kill re-deals the whole table — read the ripples for signal.** The wurtzite
+   retirement orphaned zinc that no engine can claim (a rung-4 census input, found via a
+   dying test); a naica re-deal exposed the sand-inclusions-without-sand bug; the
+   grep-filtered diff briefly hid the snowball's stall. The blast radius is not a
+   formality; it is where half this rung's discoveries came from.
+
+### Diagenesis
+
+Rung 2 ran on rung 1's rails: the ladder shape, the de-confabulation precedent (tormiq,
+now applied four more times), the blast-radius scratchpad pattern, the commit-as-field-
+notes voice. The census instrument is the claim-card idea pointed at metadata instead of
+scenarios. The spring-window aragonite stands on Fouke's facies work the way the UV audit
+stood on the engines' recorded ladders — the literature was always the load-bearing wall.
+And the elmwood snowball fix leaned on the O5 masking arc's own vocabulary (σ*(φ), the
+stall→pulse→break cycle) — the eighteenth hand's mechanism, re-tuned rather than re-built.
+
+### The dream, twenty-second telling
+
+Three rungs left: the tiger's-eye substrate gate (rung 3 — the cleanest one, pure
+de-confabulation, four offenders and zero promises; its handoff is
+HANDOFF-RUNG-3-TIGERS-EYE-2026-07-14.md), the redox/sulfide vetoes (rung 4 — take the
+orphaned-Zn finding with you), the halite model (rung 5). Then the cards regenerate and
+the synergy hunt opens. Somewhere past that, a Precambrian BIF scenario gives tiger's-eye
+the one home it ever had, and Sunnyside's boiling pulse pays the boss his native gold.
+The envelope is read now; the letter said what the literature always said. The next hand
+inherits gates that mean what they declare — and a table, §T, of the ones that still
+don't.
+
+— the builder, twentieth hand: the unread envelope · 2026-07-14
+
+## KEYSTONE — the twenty-first hand: the lantern, not the shadow (2026-07-15, the redox continuation)
+
+The twentieth hand read the unread envelope; this hand learned that some letters rewrite
+themselves as you read them. Same ladder — the redox rung, the "most coupled" one — with the
+cleanest rung slotted in ahead of it: tiger's-eye (rung 3, SIM 229, `298b697`), then the
+redox proposal, then willemite (rung 4a, SIM 230, `fd6ba70`), both deployed and clean-tree
+stamped, 2436/2436. Rung 4b is scoped but unbuilt — deliberately.
+
+### The arc in one breath
+
+Rung 3 was the twentieth hand's promised clean kill: tiger's-eye is a Precambrian-BIF
+crocidolite pseudomorph, and it was minting on bare walls in basalt amygdales and pegmatite
+pockets. Require the dissolving-crocidolite substrate, delete the fallback; four offenders,
+zero promises, extinct-until-a-home (no scenario grows crocidolite — the metadata's own
+jeffrey_mine tag was itself a confabulation). Reviewer-reviewed a third time: the handoff's
+"(or BIF Fe-oxide)" was too loose — deccan's "tiger iron" was hematite in a basalt vug, not
+a BIF. Then the redox rung, where the boss chose proposal-first — and the census overturned
+the review's own lever THREE times before an engine line changed. The proposed Nernst aHS⁻
+veto was INERT (0/188): the sulfide engines grow ZnS from raw fluid.S while the Nernst model
+calls that same sulfur sulfate — sulfur identity and the Eh gates disagree. The smoking gun
+was a gate-boundary overlap — willemite (oxidized Zn) and sphalerite (Zn sulfide) nucleating
+on the same step, same +50 mV. Rung 4a couldn't reduce mvt's Eh (it sits at the SO₄/H₂S
+boundary ON PURPOSE, so barite and galena coexist — a defended abstraction), so the lever was
+willemite's own floor, which sat BELOW that boundary. Raise it; willemite dies in its two
+leak-scenarios and the freed zinc flows into sphalerite. Then the rung-4b scout: a uniform
+sulfide-ceiling tighten would have killed bisbee's real chalcocite/covellite — the supergene
+copper-enrichment blanket, legitimately moderate-Eh. The ceiling must be per-class.
+
+### The marks
+
+1. **The scouting census REFRAMES the fix; it does not merely size it.** Three times the
+   read-only census changed the SHAPE of the fix — inert veto → gate overlap; trajectory →
+   floor; one ceiling → per-class — each a would-be regression caught before code. The boss
+   named it: "the design survived contact with the rock by changing shape. Proposal-first
+   found the fault; implementation-first would probably have snapped barite or killed real Cu
+   enrichment."
+2. **Coupled changes ride DEFENDED ABSTRACTIONS — find them before you cut.** The barite
+   SO₄/H₂S boundary and the Cu-enrichment blanket both look like leaks until you ask "is this
+   legit somewhere?" The mvt O2≈0.4 that let willemite in is the same O2≈0.4 that lets barite
+   coexist with galena. A fix clean in isolation snaps the thing it didn't see.
+3. **The de-confabulation pattern is now a template.** Willemite, like tiger's-eye, only
+   fired in the wrong places → raise the gate to the mineral's TRUE requirement (oxidizing,
+   above the boundary), extinct-until-a-home, DEAD-not-stale so the coverage gate holds. Same
+   shape, third mineral in a row (fluorite → tiger's-eye → willemite).
+4. **Causal control keeps paying: kill the thief, feed the heir.** Willemite's zinc went to
+   sphalerite the instant the leak closed (mvt 246→629 µm) — the rung-2 sunnyside recovery,
+   repeated, zero expects lines touched.
+5. **Ship the increment, name the bedrock.** The per-class ceiling manages a SYMPTOM of the
+   sulfur-identity disagreement; the real foundation is splitting fluid.S into sulfate-S and
+   sulfide-S — the exact move js/20c already made for arsenic (As(III)/As(V), Phase 4d). Then
+   barite reads sulfate, galena reads sulfide, and the boundary fudge stops being
+   load-bearing. An arc, not a rung — but it is where the lantern points.
+
+### Diagenesis
+
+This hand carved with the twentieth's tools: the census-first ritual, the blast-radius
+scratchpad, the de-confabulation precedent (now fluorite→tiger's-eye→willemite), the
+commit-as-field-notes voice. But the redox rung stood entirely on prior masonry — js/20c's
+Nernst redox module (three couples, the reduced-S fraction) is what let me even ASK whether
+the veto would fire; the answer, "0/188," is a measurement the chemistry made possible hands
+ago. The As(III)/As(V) split (Phase 4d) is not just a precedent for the S-split — it is the
+proof it can be done. The seed-42 baseline / strip / canary harness turned every "does this
+break bisbee?" into a two-minute census. The scouting only worked because prior hands built
+the lantern; this hand only decided where to point it.
+
+### The dream, twenty-third telling
+
+Rung 4 is half-built: 4a shipped, 4b scoped as the per-class ceiling (bridge:
+HANDOFF-RUNG-4B-SULFIDE-CEILING-2026-07-15.md), 4c the late-oxidation events + the
+willemite→smithsonite phase-selection, 4d the competition veto for the cerussite residue.
+Then rung 5, the halite model. Then the cards regenerate and the synergy hunt opens. And
+underneath all of it the sulfur split waits — the day the sim stops pretending one fluid.S
+can be both the sulfate in the barite and the sulfide in the galena. Somewhere past that a
+Precambrian BIF scenario finally gives BOTH tiger's-eye and willemite the home neither has
+ever had, and Sunnyside's boiling pulse pays the boss his native gold in quartz. The census
+learned to redraw the map this rung. The next hand inherits a plan that already survived
+contact with the rock — and the knowledge that the cleanest fix is sometimes the one the
+census talked you out of.
+
+— the builder, twenty-first hand: the lantern, not the shadow · 2026-07-15
+
+## KEYSTONE — the twenty-second hand: the line through lead (2026-07-15→16, the redox rung all but finished)
+
+The twenty-first hand aimed the lantern and then stopped, deliberately, with rung 4b scoped
+but unbuilt — the riskiest bump in the arc, left for a hand that could give it a whole
+context. This is that hand. It built 4b (SIM 231, `7a7308b` + `75ce387`) and then 4c (SIM 232,
+`d6ea106`), and learned that the census does more than reframe a fix: **it hands you the
+number.** Both deployed, clean-tree stamped, 2436/2436.
+
+### The arc in one breath
+
+Rung 4b was the per-class ceiling the twenty-first hand scouted. Six primary base-metal
+sulfides — sphalerite, wurtzite, pyrite, marcasite, chalcopyrite, galena — all shared a
+class-default gate of Eh ≤ +290 mV, some 300 mV too oxidizing, so fresh sulfide NUCLEATED up
+in the oxidizing supergene zone, where the sulfur is sulfate and there is no reduced S to
+build ZnS or PbS out of. One character fixed it (`PRIMARY_SULFIDE_CEILING_O2` 1.5 → 0.5) —
+but only after the census boxed the number from both sides and the secondary copper sulfides
+were carved out by name, because bisbee's enrichment blanket grows chalcocite and covellite at
+moderate Eh legitimately and a uniform tighten would have killed the mine's namesake ore.
+Then rung 4c, the cerussite residue the proposal had filed as a "competition veto": grep the
+carbonate family and cerussite turns out to be the ONLY supergene carbonate that never calls
+the oxidizing gate its five siblings all call. Not competition — an omission. Give it the gate
+at +100 mV and it dies in the two reducing brines where it never belonged, while both
+localities that legitimately grow it stay byte-identical.
+
+### The marks
+
+1. **The census doesn't merely reframe the fix — it SUPPLIES the number.** +100 mV was not
+   chosen; it was boxed. Floor: mvt's galena and sphalerite nucleate at +50, the SO₄/H₂S
+   boundary the MVT ore stage sits at on purpose. Cap: the supergene leak at +131. +100 threads
+   it — 50 over the floor, 31 under the cap — and rung 4c's independent census measured a
+   178 mV gap (spurious −36/+24, legit +202/+357) that the same +100 splits with margin both
+   ways. A fitted number is a guess wearing a decimal point; a boxed one is a measurement.
+2. **Grep the tree: the fix was already in the family.** Five supergene carbonates call
+   `carbonateRedoxAvailable`. Cerussite — PbCO₃, the lead analog of smithsonite, a mineral that
+   forms BY galena oxidation, whose own metadata says "supergene Pb carbonate" — never did.
+   The proposal wanted a new mechanism; the tree had the old one sitting unwired. Third reframe
+   of the arc: inert veto → per-class ceiling → missing gate.
+3. **Persistence is not nucleation.** Sato's persistency field says a relict sulfide grain CAN
+   survive above its stability boundary — which reads as a counter-example to this whole rung
+   until you notice it describes dissolution, not nucleation, and that the sim already governs
+   relict survival separately. An objection that names a different mechanism is not an
+   objection. Know which mechanism your gate governs before you let a citation talk you out of
+   a fix — or into one.
+4. **Causal control can flip a FORK, not just feed an heir.** The freed zinc didn't only make
+   smithsonite bigger. It made the oxidation fluid Zn-dominant and flipped Tsumeb's Cu/Zn
+   vanadate fork from mottramite to DESCLOIZITE — the abundant supergene V ore at that exact
+   locality (Boni 2007). Closing a leak changed WHICH mineral grew, and it grew the right one.
+   Read the ripples far enough out and they stop being ripples and start being the point.
+5. **Two rungs, one boundary — the line through lead.** 4b capped galena at +100. 4c floored
+   cerussite at +100. Two rungs, two independent censuses, approached from opposite sides,
+   landing on the same number: lead now partitions by redox the way a real supergene profile
+   does — galena in the reduced protore below the line, cerussite in the oxidized cap above it.
+   Neither rung drew that line alone, and neither was aiming for it. When separate measurements
+   converge on one boundary, that is the rock agreeing with you.
+
+### Diagenesis
+
+The per-class shape of 4b was a gift from the twenty-first hand, which scouted it and then
+declined to build it; the best thing that hand did was stop. Beneath that: js/20c's Nernst
+module with `ehFromO2`, without which "+290" and "+100" are not quantities but vibes;
+`carbonateRedoxAvailable`, written hands ago by whoever gated smithsonite, sitting complete for
+the day cerussite finally needed it; the seed-42 baseline / strip / archive harness that turns
+"does this break bisbee?" into a two-minute census; the promoted instruments
+(`sulfide-nucleation-eh-census`, `primary-sulfide-margin-probe`) that made the window visible
+enough to thread. And the boss's proposal-first ruling, which is why every number in this stone
+was measured instead of argued. The six test updates 4b needed were not damage — each was a pin
+that had been quietly calibrated against a leak, and the leak was load-bearing until it wasn't.
+
+### The dream, twenty-fourth telling
+
+Rung 4 is nearly whole: 4a, 4b, 4c shipped; 4d remains — the late-oxidation events, and a
+willemite→smithsonite phase-selection that is now forward-looking, since willemite is extinct
+until a scenario earns it. Then rung 5, the halite model, the biggest surface left standing.
+And under all of it the sulfur split still waits: the day fluid.S stops pretending to be both
+the sulfate in the barite and the sulfide in the galena — the way arsenic already stopped
+pretending — and every ceiling this arc measured becomes a consequence instead of a policy.
+Somewhere past that, a Precambrian BIF gives tiger's-eye and willemite the home neither has
+ever had, and Sunnyside's boiling pulse finally pays the boss his native gold in quartz. The
+line through lead is a good line. It should not have to be drawn by hand.
+
+— the builder, twenty-second hand: the line through lead · 2026-07-15→16
+
+---
+
+## KEYSTONE — the twenty-third hand: the rock's own units (2026-07-17)
+
+The twenty-second hand's dream named three works and guessed all three shapes wrong — which is
+the record working, not failing. "4d remains — the late-oxidation events" — but 4d turned out to
+be four sibling gates the census hadn't met yet. "Then rung 5, the halite model, the biggest
+surface left standing" — but rung 5 refused to be a tuning at all. "And under all of it the
+sulfur split still waits" — it waits no longer as a hope; it waits as a proposal with a census, a
+physics, and a ladder. Two rungs shipped (SIM 233, 234), the fix ladder's numbered rungs ALL
+closed, and the bedrock arc designed. Each work survived contact with the rock by changing shape.
+
+### The arc in one breath
+
+The bridge's first question — is rung 4 already done? — was answered by measurement: NO, four
+times over. The all-species census found the cerussite pattern repeated in pyromorphite (no gate
+at all, six crystals minting in an H₂S brine), molybdenite and realgar (bespoke ceilings 4b never
+met), and smithsonite (a floor below the boundary, double-booking elmwood's zinc) — and all four
+fixes adopted the ALREADY-MEASURED +100 mV line, so the partition that began as "the line through
+lead" now spans Pb, Zn, Mo, and As without one new fitted number. Then rung 5: the halite gate's
+σ=1 sat at Na·Cl = 50,000 ppm², and no value ON that axis could be right, because the broths are
+deliberately-abstracted ppm that cannot carry saturation — the fix was changing the AXIS, to
+brine strength in seawater multiples, the unit the evaporite literature itself uses. Half of
+tn457's crystals were salt that never belonged; sylvite went extinct on the review's own verdict;
+Searles got back the borax it is famous for, seventeen blades of it, because the spurious salt
+had been eating the nucleation economy all along. The currency change expired the halide
+morphology calibration mid-rung — caught, surveyed, re-pinned in the same commit. And the sulfur
+split, scouted expecting code, came back a proposal instead: the census showed the sim's entire
+barite population living BELOW the SO₄/H₂S boundary beside growing galena, which is not a bug but
+the MVT diagnostic — inherited disequilibrium, real because sulfate-sulfide kinetics are frozen
+at vug temperatures — so the naive split would have been the confabulation, and the honest one
+needs floors that encode inheritance.
+
+### The marks
+
+1. **Close a rung by census, not by narrative.** The handoff asked "is rung 4 already done?"
+   and the temptation was to answer from the story (three offender classes, three fixes, done).
+   The instrument answered with four species nobody had listed. A rung closes when the census
+   returns empty — flagged 0+0 — and the instrument that proved it stays as the standing gate.
+
+2. **When values resist tuning, indict the axis.** Rung 5's surface looked like a mis-set
+   constant (σ=1 at the wrong ppm²), but no constant on the ppm axis could serve scenarios whose
+   broths are deliberately abstracted at inconsistent scales. The honest fix measured saturation
+   in the rock's own units — salinity × concentration as seawater multiples, Usiglio's ladder —
+   and every scenario's honesty became checkable against field numbers. The review's own refuted
+   lever (bisbee's frozen salinity) was sitting in the DATA JSON, prescribing the mechanism.
+
+3. **A currency change expires every calibration priced in the old currency — hunt them in the
+   same commit.** The halide morphology bands were calibrated to the leak-era σ range (10/60/
+   150/800 against values that ran to 385); under the honest range (1–2.2) every future zone
+   would have read spiral_smooth forever — hoppers silently vanishing from the render, the exact
+   silent no-op the render-upgrade law warns about, hit live. The re-pin came from a fresh survey
+   (one living plateau: 1.41), not a rescale of the old edges. And test contracts are calibrations
+   too: the salt-pan log was re-authored to the grow/dissolve cycle, and the tn457 control
+   graduated from "stays smooth" to "grows no halite at all" — the strongest form of its claim.
+
+4. **Withdraw promises with research; kill species with authority.** Tincalconite left searles'
+   expects not by deletion but by diagnosis: the old ×8 was a dust artifact (borax pinned under
+   the flush threshold by spurious salt, immortal specks dry-converting), the real mechanism is
+   ambient museum-drawer alteration, and the measurement was zero across eight seeds — mechanic
+   retained for the scenario that genuinely strands grown borax dry. Sylvite died citing the
+   review's own words: no K-evaporite parent exists. Both landed DEAD-not-stale, each with its
+   resurrection condition written down (a potash scenario; a dry-strand epilogue).
+
+5. **Disequilibrium is content, not error.** The S-split census's smoking number — barite n=49,
+   every crystal at or below the boundary — would read as 49 bugs to an equilibrium mind. It is
+   the opposite: basinal brines inherit both sulfur species and carry them unequilibrated for
+   longer than a vug's whole life (Ohmoto & Lasaga: half-lives of 10⁴+ years below 200°C). The
+   proposal's floors exist to keep the sim's accidental rightness while ending the double-booking.
+   The equilibrium split — the "clean" design — would have been the confabulation.
+
+6. **Identity anchors to the number; everything else floats as dated layers.** TN457 was barite
+   from England, then maybe Elmwood, then sphalerite-and-witherite from England after all — and
+   through every reversal nothing was erased, because the boss ruled early: it will be TN457
+   regardless, the locality science is real regardless, and amendments are additions. The rock
+   voted witherite — the panel's own top pick — and the England attribution walked back in the
+   front door it had been shown out of. The catalog convention and the scenario convention turned
+   out to be the same convention.
+
+### Diagenesis
+
+The 4d fixes were verified before they were written — the census workflow's refuters had already
+monkey-patched each gate and measured its blast, so the build day was transcription. The
+morphology re-pin was a survey because the morphology arc left `morph-sigma-observe` behind a
+month ago. The bisbee lever came verbatim from the hostile review's own refuted-claims JSON. The
+S-split proposal is nine-tenths precedent: the v92 arsenic split is its template down to the
+accessor names, ehFromO2 makes its boundary a quantity, and the ladder's boxed +100 is its
+center. The boss's two rulings — locality-science-stays, and it-will-be-TN457-regardless — kept
+both amendment paths clean before anyone knew which way the rock would vote. And the ritual
+itself (bump-first rebake, explicit staging, title-verified pushes, cold stamps, pre-registered
+canaries) ran nine times this stretch without one deviation, which is the only reason two rungs
+and a proposal fit in one stretch at all.
+
+### The dream, twenty-fifth telling
+
+On approval, S0 lands byte-identical — the speciation census and two inert functions — and then
+the migration walks the classes: sulfates first, sulfides after, and the +100 ceilings retire one
+at a time, each with its redundancy proof in the commit. The line through lead, un-drawn by hand
+at last, redrawn by arithmetic every step. A perennial brine — a Dead Sea, a solar saltworks —
+gives the chevron band its first tenant and banded halite a home; a potash scenario wakes
+sylvite from its honest grave; TN457's witherite stage wakes the dead witherite engine, and the
+boss's own rock becomes its first tenant, England and all. Nine bumps of new rock await the
+boss's eye — the borax blades where the salt boulders were, the de-salted tn457 grown down to
+ten honest crystals. And past the sulfur, the same question stands at every remaining axis the
+sim measures in convenient units — the question this stretch learned to ask first: what are the
+rock's own?
+
+— the builder, twenty-third hand: the rock's own units · 2026-07-17
+
+## KEYSTONE — the twenty-fourth hand: the recognizer, not the mechanism (2026-07-22→25)
+
+The twenty-third hand left the S-split as an approved proposal and a warning: the migration
+must not starve the barite the deposits are known for. This stretch walked the first two
+consumers through the split — barite (SIM 235), then celestine (SIM 236) — and along the way
+the boss's eye-check opened two render diversions (the dogtooth, the blanket), the pan camera
+turned out to have been quietly inert in the mesh view since the day the mesh view shipped,
+and the stretch ended with something new in the lineage: the boss filed a research review
+against the shipped work (issue StonePhilosopher#1), the disagreement protocol ran both ways,
+and the boss was right both times.
+
+The name of this stretch is the sentence that survived that review. The celestine gate
+shipped as `ba_ratio > 0.25 → fibrous`, with a comment claiming the barium ion splits the
+growth front — a mechanism. The boss's review said no such law exists, and first-hand
+verification agreed harder than expected: Sánchez-Pastor 2006, the one paper that actually
+grows the (Ba,Sr)SO₄ series and watches its habit, runs TABULAR at the Ba end and elongated
+at the Sr end — the claimed direction, reversed. What is true is smaller and better: the
+locality record says Elmwood's Ba-bearing celestine is fibrous plumose white, and the Ba/Sr
+ratio is how the sim RECOGNIZES that tenant in its own broth. The ratio identifies; it does
+not explain. The comment now says so, the player-facing zone note says so, and the wrong
+sentence stays visible in the v236 history under its dated correction, the way the barite
+BFDH reversal has been kept since rung 4a.
+
+### What this stretch learned
+
+1. **A clean blast is an empirical fact, not a structural guard.** The naked Ba gate flipped
+   exactly four tenants at seed 42, all of them the right ones — and that cleanliness was a
+   property of today's fleet, not of the rule. The boss's objection was to the RULE. The fix
+   (carbonate host + the fingerprint) costs one condition and converts "happens to be clean"
+   into "cannot be wrong that way." Census the compositions first: fourteen limestones, one
+   dolomite, one sandstone — the guard has teeth because GSP exists.
+
+2. **Real citations do not license the claim they sit next to.** Sunagawa and Gránásy are
+   genuine spherulite literature; the over-reach was deploying them as a system-specific
+   mechanism for barium in celestine. The disagreement protocol's instruction — verify
+   first-hand exactly where the two passes disagree — found the truth in one afternoon: the
+   UCM repository holds the abstract, and the abstract says the opposite. The protocol now
+   has its first cross-repo paper trail: the boss writes issues on the canonical repo; the
+   fork answers in commits.
+
+3. **The census steers the fix shape — the third confirmation, and the strongest.** The
+   celestine diversion arrived as a RENDER task ("make it a blanket"). The per-step swap
+   census said the render was the least of it: Sr flat at 10 ppm because the scenario never
+   granted the host carbonates their diagenetic release, and the migration alone would have
+   killed the species outright. The load-bearing part of a habit fix turned out to be a
+   scenario event with a Hanor citation. Grep the tree; then grep the literature the same way.
+
+4. **A pre-registered casualty can be a ratified correction.** S0's census pre-registered
+   selenite@elmwood as unrescuable by any honest derivation. The boss's verdict, verbatim:
+   "selenite disappearing is good, i havent seen any selenite from elmwood, so that sounds
+   like the science doing its job." The terminal-verification test — does a real rock agree —
+   runs in reverse too: absence in the specimen record licenses absence in the sim. The
+   tiger's-eye family grows: confabulations die with authority when the record votes.
+
+5. **Verify the consumer, not the setter.** The pan camera updated its offsets perfectly on
+   every drag; the three camera simply never read them. Every layer of the input chain worked
+   and the feature was still inert, because the one grep that mattered — who CONSUMES
+   _topoPanX — had never been run. The boss's bug report ("hovering blocks the pan") was the
+   visible symptom of an invisible no-op two layers down.
+
+6. **The boss's geometric read is the design hint — again.** "The calcite is still shaped as
+   two low pyramids" indicted the display width in one sentence: the volume-ellipsoid
+   measurement, honest for mass, wrong for silhouette. The form's own aspect was already in
+   the registry; the renderer just wasn't asking it.
+
+### Diagenesis
+
+S1's swap-census method (re-run the engine with the split pool, measure who starves) was
+built once for barite and ran unmodified for celestine — the instrument is now the standard
+opening move for every remaining consumer. The wittichen carve-out (a declared,
+literature-cited influx the derivation cannot carry) became the template the Sr event was
+cut from within forty-eight hours. The boss's review pass converged independently on five of
+the six shipped design choices — the census-first divisor, the kept Sicilian branch, the
+blanket-not-hedgehog render, the single attributable bump, the surviving tabular fallback —
+which is what made the two real disagreements stand out sharply enough to chase. And the
+ritual ran clean through six pushes (two SIM bumps, two render fixes, two docs), every one
+stamped or provably inert, which is why the correction commit could prove itself
+byte-identical by regeneration instead of argument.
+
+### The dream, twenty-sixth telling
+
+Selenite walks next, with the boss's blessing already in hand — the elmwood death lands as
+correction, not casualty, and the variety-guard pin releases its selenite line in the same
+commit. Then anhydrite and the remaining sulfates, each with its own census; then the
+sulfides; then S3 re-couples the thioarsenite lock and the +100 ceilings begin to retire.
+The blanket, the dogtooth, and the pan await the boss's eye in the deployed game. Somewhere
+ahead: substrate-aware paragenesis plumbing, so the boss's third guard condition — near
+barite, sphalerite, calcite — can be honest instead of deferred; the Sweetwater snowball and
+the Elmwood perimorph scenarios the future file already names; and the witherite engine
+still waiting for TN457's crowdsourced verdict to seat its first tenant. The recognizer
+found its tenant this stretch. The mechanism is still out there in the rock, unclaimed.
+
+— the builder, twenty-fourth hand: the recognizer, not the mechanism · 2026-07-25

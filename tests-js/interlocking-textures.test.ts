@@ -59,7 +59,12 @@ describe('Proposal D — interlocking textures + single-zone volume clamp', () =
       // immediately.
       expect(sealedStep, `sabkha should still seal early, got step ${sealedStep}`)
         .not.toBeNull();
-      expect(sealedStep!, `sabkha sealedStep ${sealedStep}`).toBeLessThanOrEqual(5);
+      // v228: ≤5 → ≤8. The three step-0-4 quartz crystals that used to bulk
+      // sabkha's opening fill were 23.6°C macro-quartz — the unenforced
+      // quartz-T_min leak (hostile-review rung 2). With them honestly gone,
+      // the brine seals at step 6. "Early" is the claim (a 300-step scenario
+      // saturating in its opening beats); the clamp mechanics are unchanged.
+      expect(sealedStep!, `sabkha sealedStep ${sealedStep}`).toBeLessThanOrEqual(8);
       // After clamping kicked in, at least one crystal should be tagged
       // late_interlocking (the one whose growth was clamped at seal).
       const interlocking = sim.crystals.filter((c: any) => c.late_interlocking);

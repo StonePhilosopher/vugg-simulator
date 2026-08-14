@@ -625,7 +625,7 @@ class VugSimulator {
         // CONSTANT volume (add_zone re-derives a_width to conserve _volume_mm3).
         // extentMult 1 for non-split OR when the flag is off → byte-identical.
         const extentMult = (O5_VOLNEUTRAL_ENABLED && crystal._split)
-          ? splitGrowthMult(crystal._split.index) : 1;
+          ? splitGrowthMult(crystal._split.index, _habitAspectRatio(crystal.habit)) : 1;
         crystal.add_zone(zone, extentMult);
         // Re-check fill after each crystal grows to prevent >100% overshoot
         if (zone.thickness_um > 0) {

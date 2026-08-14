@@ -122,6 +122,10 @@ function buildRandomScenario(forcedArchetype: string | null, forcedSizeClass?: s
     fluid = new FluidChemistry({
       SiO2: _rU(15, 60), Ca: _rU(180, 350), CO3: _rU(40, 120),
       Fe: _rU(2, 20), Mn: _rU(0.5, 4), S: _rU(90, 180),
+      // F: the one FluidChemistry literal in js/ that omitted F and silently
+      // inherited the class default 10 (hostile review 2026-07-14, rung 1
+      // step b — behavior-preserving before the default flips to 0).
+      F: 10,
       O2: _rU(0.8, 1.8), pH: _rU(6.8, 7.8),
       salinity: _rU(5, 14),
     });

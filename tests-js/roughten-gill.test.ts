@@ -233,9 +233,17 @@ describe('Roughten Gill Mine scenario (v107)', () => {
       expect(hasAsSulfide).toBe(true);
     });
 
-    it('fires quartz (vein gangue throughout)', () => {
+    it('NO quartz — the v228 demotion holds (T_min 50 enforced; the cold quartz was the leak)', () => {
+      // v228 (hostile-review rung 2): the district's quartz-carbonate gangue
+      // is real but PRIMARY (110-130°C), and this scenario's ~15-step hot
+      // stage is silica-starved there (σ 0.54); the quartz this test used to
+      // pin grew at 41-44°C purely through the unenforced quartz T_min. The
+      // expects promise was withdrawn (erythrite-precedent demotion); the
+      // SiO2-raise alternative was measured and rejected (see the scenario's
+      // SiO2 comment). If the primary stage is ever re-architected longer/
+      // hotter (BACKLOG §T), quartz returns hot and this pin inverts back.
       ensureSim();
-      expect(species.has('quartz')).toBe(true);
+      expect(species.has('quartz')).toBe(false);
     });
   });
 

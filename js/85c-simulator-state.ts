@@ -68,6 +68,18 @@ _propagateGlobalDelta(snap) {
       mesh.propagateDelta(preFluid, this._fluidFieldNames, equatorFluid);
     }
   }
+  // S1 (fluid.S sulfate/sulfide split): sulfateInherited is a LATCHED boolean, not a
+  // numeric field, so propagateEventDelta (which diffs _fluidFieldNames) never carries it.
+  // The GROWTH path reads per-cell/voxel fluids (js/85b _runEngineForCrystal), so without
+  // this broadcast a carved-out barite nucleates on the global flag but starves on growth
+  // (the cell fluids still see the split fraction → σ<1). Latch it onto every cell/voxel
+  // fluid here. RNG-neutral; skipped entirely (byte-identical) when the flag is unset.
+  if (this.conditions.fluid.sulfateInherited) {
+    const setFlag = (f) => { if (f) f.sulfateInherited = true; };
+    if (grid && grid.voxels) for (let i = 0; i < grid.voxels.length; i++) setFlag(grid.voxels[i] && grid.voxels[i].fluid);
+    const meshS = this.wall_state.meshFor(this);
+    if (meshS && meshS.cells) for (let i = 0; i < meshS.cells.length; i++) setFlag(meshS.cells[i] && meshS.cells[i].fluid);
+  }
   const deltaT = this.conditions.temperature - preTemp;
   if (deltaT !== 0) {
     for (let k = 0; k < this.ring_temperatures.length; k++) {

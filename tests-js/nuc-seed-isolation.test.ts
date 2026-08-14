@@ -72,7 +72,10 @@ describe('per-mineral nucleation seeds (the keystone)', () => {
   // the run is byte-identical. Under OFF they advance the shared stream → the
   // cascade shifts. We assert BOTH (the OFF case proves the test can detect drift).
   const SCEN = 'supergene_oxidation';
-  const TARGET = 'sphalerite';
+  // rung-4b (SIM 231): sphalerite no longer nucleates in supergene_oxidation (its +290 mV
+  // primary-sulfide leak was gated out), so it can't be the perturbation target here. cerussite
+  // (8 crystals — the freed-Pb supergene heir) fires mid-run and is a robust replacement.
+  const TARGET = 'cerussite';
 
   function signature(seed: number, perturbDraws: number, on: boolean): string {
     const prev = _setNucDerivedSeeds(on);

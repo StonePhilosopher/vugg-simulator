@@ -110,7 +110,12 @@ describe('Arc 1 — activity-correction copy-paste fix (2026-05)', () => {
     // reactive_wall, leaving only porphyry + supergene_oxidation). Post-fix
     // it fires in all 6. Test asserts the floor — 4/6 — to allow chemistry
     // tweaks to redistribute slot competition without failing the test.
-    const candidates = ['mvt', 'porphyry', 'radioactive_pegmatite', 'reactive_wall', 'schneeberg', 'supergene_oxidation'];
+    // rung-4b (SIM 231): supergene_oxidation swapped OUT — galena there was the +131 mV
+    // supergene leak (a primary sulfide spuriously nucleating in the oxidation zone, now
+    // correctly gated out; its Pb goes to cerussite/anglesite instead). roughten_gill (a
+    // genuine Caldbeck hypogene Pb-sulfide vein, 4 galena at seed 42) takes the slot, so
+    // the list stays 6 legit primary-galena scenarios.
+    const candidates = ['mvt', 'porphyry', 'radioactive_pegmatite', 'reactive_wall', 'schneeberg', 'roughten_gill'];
     let firing = 0;
     for (const sc of candidates) {
       setSeed(42);

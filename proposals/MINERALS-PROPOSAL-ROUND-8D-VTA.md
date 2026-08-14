@@ -5,11 +5,11 @@
 **Template reference:** `proposals/vugg-mineral-template.md`
 
 **Source-of-truth research files** (boss's commit `f2939da`):
-- `research/research-descloizite.md`
-- `research/research-mottramite.md`
-- `research/research-raspite.md`
-- `research/research-stolzite.md`
-- `research/research-olivenite.md`
+- `research/minerals/research-descloizite.md`
+- `research/minerals/research-mottramite.md`
+- `research/minerals/research-raspite.md`
+- `research/minerals/research-stolzite.md`
+- `research/minerals/research-olivenite.md`
 
 **Class assignments:**
 - `descloizite` (PbZnVO₄(OH)) — `phosphate` (vanadates fold here per template §1)
@@ -251,11 +251,11 @@ This is the round's pedagogical payoff — Tsumeb in the sim becomes a faithful 
 ## Sources
 
 The boss's research files are the primary specification:
-- `research/research-descloizite.md` (canonical commit `f2939da`)
-- `research/research-mottramite.md`
-- `research/research-raspite.md`
-- `research/research-stolzite.md`
-- `research/research-olivenite.md`
+- `research/minerals/research-descloizite.md` (canonical commit `f2939da`)
+- `research/minerals/research-mottramite.md`
+- `research/minerals/research-raspite.md`
+- `research/minerals/research-stolzite.md`
+- `research/minerals/research-olivenite.md`
 
 Additional references for the implementation reviewer:
 - Strunz, H. (1959). *Tsumeb, seine Erze und Sekundärmineralien*. Vienna: Mineralogical Society. [Tsumeb is the type/master locality for descloizite + mottramite + many other species]

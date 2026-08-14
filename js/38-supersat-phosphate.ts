@@ -75,6 +75,20 @@ const MINERAL_GATES_pyromorphite: MineralGates = {
   sigma_crit: 1.2,
   T_optimal: 40,
   fluid_min: { Pb: 20, P: 2, Cl: 5 },
+  // rung-4d (SIM 233): O2_min added — the LAST ungated Pb oxysalt. The v193
+  // vanadinite comment below explains its own missing gate as "cloned from
+  // pyromorphite (PO4 — P is always +5, needs no gate)" — true for the ANION,
+  // but the CATION partition was the gate all along: Pb5(PO4)3Cl is strictly
+  // supergene (galena → anglesite/cerussite → pyromorphite), so it obeys the
+  // same Pb redox partition as cerussite (rung 4c): galena below +100 mV,
+  // Pb oxysalts above. Census (tools/nucleation-eh-census.mjs): all 6
+  // roughten_gill crystals nucleated at Eh −150..0 inside the H₂S-buffered
+  // primary stage, beside actively-nucleating galena; the legit firing is
+  // supergene_oxidation at +322. Gated, roughten_gill re-fires 6 crystals at
+  // +252 in its own post-AMD oxidized stage — same promise, right chapter.
+  // Every sibling already gates: vanadinite/descloizite/mottramite 0.5,
+  // clinobisvanite 1.0, plumbogummite, mimetite (arsenate family).
+  O2_min: 0.5,
   pH_min: 2.5,
   surface_energy: 'medium',
   _sources: ['pyromorphite engine v17+'],
@@ -324,6 +338,8 @@ Object.assign(VugConditions.prototype, {
   supersaturation_pyromorphite() {
   const g = MINERAL_GATES_pyromorphite;
   if (this.fluid.Pb < g.fluid_min!.Pb || this.fluid.P < g.fluid_min!.P || this.fluid.Cl < g.fluid_min!.Cl) return 0;
+  // rung-4d: the Pb-partition gate (see MINERAL_GATES_pyromorphite comment).
+  if (!phosphateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   const pb_f = Math.min(this.fluid.Pb / 30.0, 1.8);
   const p_f  = Math.min(this.fluid.P / 5.0, 2.0);
   const cl_f = Math.min(this.fluid.Cl / 15.0, 1.3);

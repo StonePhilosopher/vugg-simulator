@@ -22,12 +22,20 @@
 
 const MINERAL_GATES_goethite: MineralGates = {
   sigma_crit: 1.0,
-  T_optimal: 80,
+  // v228 (rung 2): T_max 100 — coarse goethite is stable relative to coarse
+  // hematite only up to 373 K (Diakonov et al. 1994, Eur. J. Mineral. 6:967);
+  // hotter ferric Fe builds HEMATITE, and the ~230-300°C figures in
+  // circulation are dry-heating persistence, not a growth field. Pre-v228
+  // only a soft decay ran above 150°C, so grimsel grew "primary" goethite at
+  // 248°C in a granite cleft (the Aar iron-roses are hematite) and deccan at
+  // 201°C. The 100°C ceiling keeps gossan/supergene goethite and the ~90°C
+  // warm-weathering events (ouro_preto 88.6°C) with headroom.
+  T_max: 100, T_optimal: 80,
   fluid_min: { Fe: 15 },
   O2_min: 0.4,                  // hydroxideRedoxAvailable(fluid, 0.4)
   surface_energy: 'medium',
-  _sources: ['goethite nucleation gate (84-nucleation-hydroxide:17)', 'Cornell & Schwertmann 2003 (iron oxides)'],
-  _notes: 'σ attenuates exponentially above T=150°C (kinetic ceiling). pH < 3 incurs σ penalty but does not gate.',
+  _sources: ['goethite nucleation gate (84-nucleation-hydroxide:17)', 'Cornell & Schwertmann 2003 (iron oxides)', 'Diakonov et al. 1994 Eur. J. Mineral. 6:967 (coarse goethite stable to 373 K)'],
+  _notes: 'v228: hard growth ceiling 100°C (Diakonov 1994) — hotter ferric Fe routes to hematite. pH < 3 incurs σ penalty but does not gate.',
 };
 
 const MINERAL_GATES_lepidocrocite: MineralGates = {
@@ -46,8 +54,11 @@ Object.assign(VugConditions.prototype, {
   supersaturation_goethite() {
   const g = MINERAL_GATES_goethite;
   if (this.fluid.Fe < g.fluid_min!.Fe || !hydroxideRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  // v228 (rung 2): hard ceiling from the gates (Diakonov 1994: coarse
+  // goethite/hematite crossover at 373 K) — replaces the pre-v228 soft decay
+  // above 150°C that still let 200-250°C fluids mint "primary" goethite.
+  if (this.temperature > g.T_max!) return 0;
   let sigma = (this.fluid.Fe / 60.0) * hydroxideRedoxFactor(this.fluid, 1.0);
-  if (this.temperature > 150) sigma *= Math.exp(-0.015 * (this.temperature - 150));
   if (this.fluid.pH < 3.0) sigma -= (3.0 - this.fluid.pH) * 0.5;
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'goethite');
   return Math.max(sigma, 0);

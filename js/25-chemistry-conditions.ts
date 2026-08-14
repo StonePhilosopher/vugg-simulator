@@ -241,7 +241,7 @@ class VugConditions {
 
   // Acanthite (Ag₂S, monoclinic) — the low-T silver sulfide. First Ag mineral
   // in the sim. Hard upper-T gate at 173°C (above that, argentite forms).
-  // Reducing only. Source: research/research-acanthite.md, Petruk et al. 1974.
+  // Reducing only. Source: research/minerals/research-acanthite.md, Petruk et al. 1974.
 
   // Argentite (Ag₂S, cubic) — the high-T silver sulfide. Hard lower-T gate
   // at 173°C (acanthite handles below). Paramorph on cooling — handled in
@@ -253,7 +253,7 @@ class VugConditions {
   // Descloizite (PbZnVO4(OH)) — Zn end of complete solid solution series.
   // Round 9c retrofit (Apr 2026): broth-ratio (50%-gate + sweet-spot)
   // replaces the Round 8d strict-comparison dispatch. See
-  // research/research-broth-ratio-descloizite-mottramite.md.
+  // research/arcs/research-broth-ratio-descloizite-mottramite.md.
 
   // Mottramite (PbCu(VO4)(OH)) — Cu end of complete solid solution series.
   // Round 9c retrofit: same broth-ratio idiom as descloizite.
@@ -265,8 +265,8 @@ class VugConditions {
   // Olivenite (Cu2AsO4(OH)) — Cu end of olivenite-adamite series.
   // Round 9c retrofit (Apr 2026): broth-ratio (50%-gate + sweet-spot)
   // replaces the Round 8d strict-comparison dispatch. See
-  // research/research-broth-ratio-adamite-olivenite.md and
-  // research/research-olivenite.md.
+  // research/arcs/research-broth-ratio-adamite-olivenite.md and
+  // research/minerals/research-olivenite.md.
 
   // Nickeline (NiAs) — high-T pale-copper-red Ni arsenide.
 
@@ -287,7 +287,7 @@ class VugConditions {
 
   // Native silver (Ag⁰) — the Kongsberg wire-silver mineral.
   // First depletion-gate engine in the sim: fires only when S < 2 AND O2 < 0.3.
-  // Source: research/research-native-silver.md, Boyle 1968.
+  // Source: research/minerals/research-native-silver.md, Boyle 1968.
 
   // Scorodite (FeAsO₄·2H₂O) — the arsenic sequestration mineral.
   // Pseudo-octahedral pale blue-green dipyramids; the most common
@@ -319,7 +319,7 @@ class VugConditions {
   // Round 9c retrofit (Apr 2026): broth-ratio (50%-gate + sweet-spot)
   // replaces the Round 8d strict-comparison dispatch. The famous green
   // UV fluorescence requires trace Cu²⁺ activator — pure-Zn adamite is
-  // rare in nature. See research/research-broth-ratio-adamite-olivenite.md.
+  // rare in nature. See research/arcs/research-broth-ratio-adamite-olivenite.md.
 
 
   // Goethite (FeO(OH)) — the ghost mineral, now real.
@@ -352,7 +352,7 @@ class VugConditions {
   // 1986, Mineralogical Magazine 50:43-47). Azurite's higher CO3 floor
   // (≥120 vs malachite ≥20) encodes Vink's log(pCO2) ≈ -3.5 univariant
   // boundary at 25°C. Paramorph drop to malachite when CO3 falls is in
-  // grow_azurite. See research/research-broth-ratio-malachite-azurite.md.
+  // grow_azurite. See research/arcs/research-broth-ratio-malachite-azurite.md.
 
   // Chrysocolla (Cu₂H₂Si₂O₅(OH)₄) — hydrous copper silicate, the cyan
   // enamel of Cu oxidation zones. Strictly low-T, meteoric. Needs

@@ -3,8 +3,16 @@
 // The anchor scenario for epidote (v196): an amphibolite-hosted Himalayan
 // alpine cleft (Gilgit-Baltistan, Pakistan) with an oxidized, low-salinity
 // metamorphic fluid. Epidote is the STAR; byssolite (actinolite), adularia
-// (feldspar), albite, quartz and pink fluorite are the alpine-cleft suite.
+// (feldspar), albite and quartz are the alpine-cleft suite.
 // These pins lock the scenario registration + the epidote-led assemblage.
+//
+// v227 fluorite de-confabulation (hostile review 2026-07-14): the original
+// suite claimed "pink fluorite" — no source supports fluorite at Tormiq
+// (mindat loc-5734; amphibolite carries no F reservoir; Pakistan's pink
+// fluorite is granite/pegmatite country — Chumar Bakhoor). The seed-42
+// fluorite rode the leaked FluidChemistry F=10 default; broth F is now the
+// researched 3 and fluorite's ABSENCE is pinned below, mirroring the
+// NO-halite control.
 
 import { describe, expect, it } from 'vitest';
 
@@ -73,8 +81,12 @@ describe('Tormiq alpine-cleft epidote scenario (v197)', () => {
 
   it('every expects_species fires at seed 42 (no aspirational inflation)', () => {
     const c = counts42();
-    for (const m of ['epidote', 'actinolite', 'quartz', 'feldspar', 'albite', 'fluorite']) {
+    for (const m of ['epidote', 'actinolite', 'quartz', 'feldspar', 'albite']) {
       expect(c[m] || 0, `${m} should fire`).toBeGreaterThan(0);
     }
+  });
+
+  it('NO fluorite — the v227 de-confabulation holds (F=3 starves the gate)', () => {
+    expect(counts42().fluorite || 0).toBe(0);
   });
 });

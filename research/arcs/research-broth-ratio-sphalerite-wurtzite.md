@@ -131,3 +131,33 @@ return sigma_base * metastable_factor
 3. Result improves the MVT and Reactive Wall scenarios specifically — they'll occasionally produce wurtzite in their acid windows, matching real Tri-State + Aachen + Sweetwater paragenesis.
 
 **Risk-managed implementation order:** make the change, run pytest before regenerating baselines. If wurtzite count shifts seed-42 outputs, bump SIM_VERSION, archive `seed42_v10.json`, regenerate `seed42_v11.json`.
+
+---
+
+## CORRECTION APPENDIX (2026-07-14, hostile-review fix ladder rung 2, SIM 228)
+
+Two findings from the rung-2 re-research of this document:
+
+1. **The high-T "equilibrium branch" this doc blessed is RETIRED.** The doc's own
+   Equilibrium section says sphalerite wins below ~1020°C — and the implementation
+   then handed wurtzite the field above 95°C anyway (sphalerite's accelerated decay
+   existed, per its own comment, "so wurtzite wins"). No vug scenario reaches
+   wurtzite's real equilibrium field. v228 keeps ONLY the metastable branch
+   (pH<4 + σ_base≥1 + Fe≥5), now with a T_max 350 ceiling from the VMS/black-smoker
+   acid-assemblage record (~250-300°C typical). At seed 42 this makes wurtzite
+   extinct fleet-wide (no scenario reaches pH<4 with Zn≥10) — mvt, reactivated,
+   reactive_wall, tn457, and sunnyside all re-deal their ZnS to sphalerite, which
+   is what those deposits actually show.
+
+2. **CITATION UNVERIFIED: "Murowchick & Barnes 1986, Am. Mineralogist 71:1196".**
+   The rung-2 research pass could not locate this paper; the real Murowchick &
+   Barnes publications are 1986 GCA 50:2615 (marcasite precipitation) and 1987
+   Am. Min. 72:1241 (pyrite morphology vs supersaturation). The metastable-branch
+   CONDITIONS themselves stand on verified ground — Scott & Barnes 1972 GCA 36:1275
+   (f(S2)-univariant inversion; wurtzite is S-deficient relative to sphalerite) and
+   the nanoscale ZnS surface-energetics work (GCA 340:99, 2023: wurtzite is the
+   low-surface-energy form, favored by rapid high-σ nucleation) — but the M&B
+   volume/page citation above should not be propagated further. The hostile
+   review's own "Bessinger et al. 2000 Econ. Geol. 95:1147" (VMS wurtzite) also
+   failed location; the VMS numbers are independently supported by black-smoker
+   sphalerite-wurtzite assemblage literature.

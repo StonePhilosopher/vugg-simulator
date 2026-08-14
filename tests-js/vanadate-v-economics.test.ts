@@ -112,17 +112,24 @@ describe('v193 — roughten_gill delivers mottramite without disturbing the prim
   });
 });
 
-describe('v193 — mottramite reaches its type-abundance locality (Tsumeb free win)', () => {
-  it('mottramite fires at supergene_oxidation (Boni 2007: abundant around Cu-sulfide bodies)', () => {
-    // v198 keystone (per-mineral nuc seeds): mottramite is a robustly-present
-    // supergene phase — it nucleates + grows across the seed population
-    // (verified: grows at 7/8 of seeds 1,2,3,7,13,99,100; the nuc-seed-isolation
-    // probe shows 100% present). Seed 42 happens to spawn nuclei that don't
-    // accumulate growth, so pin the robust cross-seed behavior rather than the
-    // single seed-42 point (which the re-realization moved).
-    const hits = [1, 2, 3, 7, 13].filter(
-      (s) => alive(runScenario('supergene_oxidation', s), 'mottramite') > 0,
-    ).length;
-    expect(hits, `mottramite grew in ${hits}/5 seeds`).toBeGreaterThanOrEqual(3);
+describe('v193 — the descloizite-group vanadate reaches its type-abundance supergene locality (Boni 2007)', () => {
+  it('the Cu/Zn vanadate suite (mottramite OR descloizite) fires at supergene_oxidation', () => {
+    // Boni 2007: the descloizite-group V ores are abundant around oxidizing Cu(-Zn)-sulfide
+    // bodies (Tsumeb-type). WHICH member forms is set by the fluid's Cu/Zn ratio (the fork
+    // pinned above: Cu-dominant → mottramite, Zn-dominant → descloizite).
+    //
+    // rung-4b (SIM 231, the primary-sulfide ceiling): before, spurious sphalerite nucleated in
+    // this oxidation zone and LOCKED Zn into ZnS, leaving the fluid Cu-dominant → mottramite.
+    // The ceiling corrects that (fresh ZnS can't nucleate in an oxidizing fluid), so Zn stays
+    // dissolved → the fluid is Zn-dominant → the fork now routes to DESCLOIZITE (the freed-Zn
+    // heir — the same causal chain that grew smithsonite here). The scenario is legitimately
+    // Zn-rich: smithsonite (ZnCO3) is one of its expects_species. So pin the GROUP reaching
+    // supergene abundance, not the specific member the Cu/Zn budget happens to select.
+    // (Measured post-4b: descloizite alive 4,4,2,3,3 across these seeds; mottramite 0.)
+    const hits = [1, 2, 3, 7, 13].filter((s) => {
+      const sim = runScenario('supergene_oxidation', s);
+      return alive(sim, 'mottramite') + alive(sim, 'descloizite') > 0;
+    }).length;
+    expect(hits, `descloizite-group grew in ${hits}/5 seeds`).toBeGreaterThanOrEqual(3);
   });
 });

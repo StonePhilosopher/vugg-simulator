@@ -60,7 +60,11 @@ describe('Zn supergene triad — hemimorphite + willemite + hydrozincite (v98)',
 
     it('Franklin-style primary metamorphic (550°C) gives σ > 0', () => {
       const fluid = new FluidChemistry({
-        Zn: 200, SiO2: 200, Mn: 50, O2: 0.5, pH: 7.5,
+        // O2 0.6 (was 0.5, exactly at the rung-4a floor): the Franklin
+        // willemite+franklinite+zincite assemblage is an OXIDIZED one, so it
+        // sits comfortably above the 0.5 floor (SIM 230). Headroom decouples
+        // "Franklin forms" from "0.5 is the exact floor".
+        Zn: 200, SiO2: 200, Mn: 50, O2: 0.6, pH: 7.5,
       });
       const cond = new VugConditions({ temperature: 550, fluid });
       expect(cond.supersaturation_willemite()).toBeGreaterThan(0);

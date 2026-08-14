@@ -5,9 +5,9 @@
 **Template reference:** `proposals/vugg-mineral-template.md`
 
 **Source-of-truth research files** (boss's commit `f2939da`):
-- `research/research-acanthite.md`
-- `research/research-argentite.md`
-- `research/research-native-silver.md`
+- `research/minerals/research-acanthite.md`
+- `research/minerals/research-argentite.md`
+- `research/minerals/research-native-silver.md`
 
 **Class:** `sulfide` (acanthite, argentite) | `native` (native_silver). `class_color` per the 12-class palette — never invent a hex.
 
@@ -191,9 +191,9 @@ This belongs in a new `tests/test_paramorph_transitions.py` file — first param
 ## Sources
 
 The boss's research files are the primary specification. Cite as:
-- `research/research-acanthite.md` (canonical commit `f2939da`)
-- `research/research-argentite.md`
-- `research/research-native-silver.md`
+- `research/minerals/research-acanthite.md` (canonical commit `f2939da`)
+- `research/minerals/research-argentite.md`
+- `research/minerals/research-native-silver.md`
 
 Additional references for the implementation reviewer:
 - Hayba, D.O. & Bethke, P.M. (1985). "Geologic, Mineralogic, and Geochemical Characteristics of Volcanic-Hosted Epithermal Precious-Metal Deposits." *Reviews in Economic Geology* 2: 129–167.

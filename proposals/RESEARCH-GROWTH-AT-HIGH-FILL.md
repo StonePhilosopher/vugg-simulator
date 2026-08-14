@@ -366,7 +366,7 @@ The web searches reached primary sources for each major claim. Notable papers:
 - **Crystal Growth & Design 2018 (Naica selenite paper)** — "Naica's Giant Crystals: Deterioration Scenarios" *Crystal Growth & Design*. 0.01 mm/year growth rate; 500,000-year accumulation. [ACS](https://pubs.acs.org/doi/10.1021/acs.cgd.8b00583)
 - **Pinch & Wilson 1977; Bowell 2010** — Tsumeb succession. The hypogene → galena+gangue sequence. [Bowell 2010 MME](https://www.mme.gov.na/files/publications/c46_GSN%20Comms%2019.%203.%20Bowell%20&%20Mocke_Tsumeb%20Minerals.pdf)
 - **Nature Communications 2022** — "Crystal growth in confinement". Concentration-gradient nucleation localization. [Nature](https://www.nature.com/articles/s41467-022-34330-5)
-- **Spry & Thieben 1996** — "Au-Ag-Te epithermal deposits" *Mineralium Deposita 31*. Cripple Creek native_tellurium paragenesis. (No direct URL — cited in research/research-native-tellurium.md.)
+- **Spry & Thieben 1996** — "Au-Ag-Te epithermal deposits" *Mineralium Deposita 31*. Cripple Creek native_tellurium paragenesis. (No direct URL — cited in research/minerals/research-native-tellurium.md.)
 
 ---
 

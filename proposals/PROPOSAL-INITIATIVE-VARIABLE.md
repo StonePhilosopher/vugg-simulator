@@ -14,7 +14,7 @@
 - **Engine-exported gates** instead of source parsing for σ_crit.
 - **Induction time deferred to v131+** with explicit acknowledgment that graduated growth doesn't capture pre-nucleation delay.
 - **5 concrete calibration assertions** anchor v128 validation against the v125-v126 cascade record.
-- **Science corrections** to research/INITIATIVE-VARIABLE/01-geochemical-grounding.md: BCF regime inversion, quartz/opal ΔH° values, quartz σ_crit homogeneous-vs-heterogeneous distinction, γ_sl vs γ_sv clarification.
+- **Science corrections** to research/arcs/INITIATIVE-VARIABLE/01-geochemical-grounding.md: BCF regime inversion, quartz/opal ΔH° values, quartz σ_crit homogeneous-vs-heterogeneous distinction, γ_sl vs γ_sv clarification.
 
 ---
 
@@ -425,13 +425,13 @@ If any of these fail, modifier values need adjustment in v129. The probe tool (`
 
 ### Stable research artifacts:
 - `proposals/PROPOSAL-INITIATIVE-VARIABLE.md` (this doc)
-- `research/INITIATIVE-VARIABLE/01-geochemical-grounding.md` (corrections rev 2)
-- `research/INITIATIVE-VARIABLE/02-v125-cascade-analysis.md`
-- `research/INITIATIVE-VARIABLE/03-modifier-calibration.md` (rev 2)
-- `research/INITIATIVE-VARIABLE/04-implementation-notes.md` (rev 2)
-- `research/INITIATIVE-VARIABLE/05-open-questions.md` (G-J resolutions added)
-- `research/INITIATIVE-VARIABLE/06-engine-gates-refactor.md` (NEW rev 2)
-- `research/INITIATIVE-VARIABLE/07-graduated-competition.md` (NEW rev 2)
+- `research/arcs/INITIATIVE-VARIABLE/01-geochemical-grounding.md` (corrections rev 2)
+- `research/arcs/INITIATIVE-VARIABLE/02-v125-cascade-analysis.md`
+- `research/arcs/INITIATIVE-VARIABLE/03-modifier-calibration.md` (rev 2)
+- `research/arcs/INITIATIVE-VARIABLE/04-implementation-notes.md` (rev 2)
+- `research/arcs/INITIATIVE-VARIABLE/05-open-questions.md` (G-J resolutions added)
+- `research/arcs/INITIATIVE-VARIABLE/06-engine-gates-refactor.md` (NEW rev 2)
+- `research/arcs/INITIATIVE-VARIABLE/07-graduated-competition.md` (NEW rev 2)
 
 ---
 

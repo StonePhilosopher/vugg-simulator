@@ -53,6 +53,12 @@ function event_wittichen_meteoric_sulfate(c) {
   // silver to acanthite in one stage; 30 leaves the conversion partial,
   // which is the hand-specimen truth (acanthite-coated native silver).
   c.fluid.S = Math.min(30, c.fluid.S + 27);
+  // S1 (fluid.S sulfate/sulfide split, 2026-07-23): this S IS oxidized meteoric SO₄²⁻ —
+  // flag the fluid so the sulfate class reads it in full. Without this, the split partitions
+  // most of the mildly-reducing (Eh ~+70) vein's S to H₂S and barite starves to nothing (the
+  // S0-census pre-registered casualty, confirmed dead in the S1 blast). The carve-out is the
+  // two-pool truth: a meteoric sulfate pulse the single-Eh derivation can't otherwise carry.
+  c.fluid.sulfateInherited = true;
   // v191: broth Ba is 75 (the Barytgänge correction — the gate census
   // proved barite was BARIUM-limited, not oxidation-limited; see the
   // scenario notes). The floor tracks it so earlier-stage nibbling

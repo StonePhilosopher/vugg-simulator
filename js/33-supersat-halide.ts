@@ -26,8 +26,8 @@ const MINERAL_GATES_halite: MineralGates = {
   T_optimal: 25,
   fluid_min: { Na: 5, Cl: 50 },
   surface_energy: 'low',
-  _sources: ['halite engine v27+'],
-  _notes: 'Quadratic in concentration — stays dormant at scenario baseline (c=1), fires when vadose concentration spike kicks in. T > 100 attenuates by 0.7×.',
+  _sources: ['halite engine v27+', 'Usiglio 1849 via Warren 2021 (rung-5 re-anchor)'],
+  _notes: 'rung-5: σ = (brine_strength/10.6)² where brine_strength = (salinity/35)×concentration in seawater multiples; halite onset 10.6× (Usiglio). Na/Cl floors are presence gates only. T > 100 attenuates 0.7×.',
 };
 
 const MINERAL_GATES_atacamite: MineralGates = {
@@ -50,8 +50,8 @@ const MINERAL_GATES_sylvite: MineralGates = {
   T_max: 200,                   // σ attenuates above 100; effectively gated by 200
   fluid_min: { K: 50, Cl: 100 },
   surface_energy: 'low',
-  _sources: ['sylvite engine v63+', 'late-stage potash evaporite literature'],
-  _notes: 'Quadratic in concentration like halite. Mg > 500 suppresses (carnallite competition).',
+  _sources: ['sylvite engine v63+', 'Warren 2021 (bittern 70–90×; rung-5 re-anchor)'],
+  _notes: 'rung-5: σ = (brine_strength/70)² — bittern-stage onset (70–90× seawater, conservative end). EXTINCT at seed 42 until a real potash scenario ships. Mg > 500 suppresses (carnallite competition).',
 };
 
 Object.assign(VugConditions.prototype, {
@@ -87,14 +87,30 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_halite() {
-  // v27 chloride evaporite. Quadratic in concentration so halite
-  // stays dormant at scenario baseline (concentration=1) and fires
-  // sharply when a vadose-transition concentration spike kicks in.
-  // Mirror of supersaturation_halite in vugg.py.
+  // rung-5 (SIM 234): re-anchored from abstracted ppm to REAL brine strength.
+  // The v27 form σ = (Na/100)·(Cl/500)·c² put σ=1 at Na·Cl = 50,000 ppm² —
+  // orders of magnitude below real halite saturation (~1.7×10¹⁰ ppm²) — so
+  // nearly any Cl-bearing fluid fired it: tn457 grew halite ×12 from a
+  // 4.5-psu Pb-Zn vug brine at 0.13× seawater strength (HALF that scenario's
+  // crystals were salt), tutorial_travertine ×8 at 0.17×. The ppm axis CANNOT
+  // carry the saturation decision: broths use deliberately-abstracted,
+  // scenario-inconsistent sim-scale ppm (searles Na 1500 for a real ~110,000
+  // ppm brine; sabkha Na 10,500 near-real — see scenarios.json5's own
+  // convention note). The axis the sim already tracks in REAL units is
+  // BRINE STRENGTH = (salinity/35 psu) × evaporative concentration, in
+  // multiples of seawater. Halite begins at 10.6× seawater (Usiglio 1849;
+  // Warren 2021 Evaporites). σ = (BS/10.6)² — quadratic kept, now for the
+  // honest reason: both conserved ions scale with evaporation, IAP ∝ c².
+  // Census (rung-5 halite-saturation-census): every keeper fires via its
+  // real mechanism — searles drying spikes BS 15.4 (σ 2.12), GSP spikes 12.9
+  // (σ 1.47), bisbee final_drying efflorescence (event salinity, js/70j) —
+  // and every offender (tn457 0.13×, travertine 0.17×, all steady-brine c=1
+  // births) goes to zero. Na/Cl floors remain as PRESENCE gates only.
   const g = MINERAL_GATES_halite;
   if (this.fluid.Na < g.fluid_min!.Na || this.fluid.Cl < g.fluid_min!.Cl) return 0;
   const c = this.fluid.concentration ?? 1.0;
-  let sigma = (this.fluid.Na / 100.0) * (this.fluid.Cl / 500.0) * c * c;
+  const brineStrength = ((this.fluid.salinity ?? 5.0) / 35.0) * c;
+  let sigma = (brineStrength / 10.6) ** 2;
   if (this.temperature > 100) sigma *= 0.7;
   if (this.fluid.pH < 4.0) sigma *= 0.5;
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'halite');
@@ -127,10 +143,25 @@ Object.assign(VugConditions.prototype, {
   // when a vadose-transition concentration spike kicks in. Carnallite
   // competes for K when Mg is high.
   supersaturation_sylvite() {
+    // rung-5 (SIM 234): re-anchored with halite (see supersaturation_halite's
+    // rationale block). Sylvite is a BITTERN-stage salt — the K-Mg chlorides
+    // arrive only after massive halite precipitation, at 70–90× seawater
+    // (Warren 2021; Usiglio's bitterns). σ = (BS/70)², the conservative end.
+    // No current scenario approaches (fleet max BS 15.4 at searles' driest
+    // spike) → sylvite goes EXTINCT at seed 42, and that is CORRECT: the
+    // census showed every firing was spurious — sabkha ×4 at 3.4× BEFORE any
+    // halite (inverted bittern order), searles ×3 at 5.1×, bisbee ×3 at 2.6×
+    // (convicted by the hostile review's own scenario verdict: "sylvite, a
+    // potash evaporite that cannot form at 3× seawater"; its lever: "keep
+    // sylvite gated out entirely — no K-evaporite parent exists in this
+    // system"). DEAD-not-stale, the willemite pattern: sylvite returns when a
+    // real potash scenario (Zechstein / Prairie Evaporite / Khorat) ships
+    // with a genuine 70×+ bittern stage.
     const g = MINERAL_GATES_sylvite;
     if (this.fluid.K < g.fluid_min!.K || this.fluid.Cl < g.fluid_min!.Cl) return 0;
     const c = this.fluid.concentration ?? 1.0;
-    let sigma = (this.fluid.K / 200.0) * (this.fluid.Cl / 800.0) * c * c;
+    const brineStrength = ((this.fluid.salinity ?? 5.0) / 35.0) * c;
+    let sigma = (brineStrength / 70.0) ** 2;
     if (this.temperature > 100) sigma *= Math.exp(-0.02 * (this.temperature - 100));
     if (this.fluid.Mg > 500) sigma *= Math.max(0.4, 1.0 - 0.001 * (this.fluid.Mg - 500));
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'sylvite');

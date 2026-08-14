@@ -505,18 +505,28 @@ function _nuc_tigers_eye(sim) {
   if (sim._atNucleationCap('tigers_eye')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'tigers_eye' && c.active);
   if (existing.length >= 3) return;
-  let pos = 'vug wall';
+  // Tiger's eye is a chalcedony PSEUDOMORPH after crocidolite (asbestiform
+  // riebeckite) — a Precambrian-BIF-only phenomenon (Heaney & Fisher 2003
+  // Am.Min. 88:1, the sim's own cited source). It cannot nucleate on a bare
+  // wall, nor on bare hematite/magnetite: iron oxide alone (a basalt amygdale,
+  // an oxidized ore body) is NOT a BIF crocidolite context — it is the
+  // dissolving crocidolite framework that the chalcedony replaces. So the ONLY
+  // substrate is a dissolving crocidolite crystal; no crocidolite → no tiger's
+  // eye (rung 3, SIM 229 — retires the bare-wall + bare-Fe-oxide fallbacks that
+  // minted it in deccan basalt, bisbee/ouro_preto ore, and pegmatite pockets).
   const dissolving_croc = sim.crystals.filter(c => c.mineral === 'crocidolite' && c.dissolved);
+  if (!dissolving_croc.length || rng.random() >= 0.65) return;
+  // BIF co-context: banded hematite/jasper alongside the dissolving crocidolite
+  // renders the TIGER IRON assemblage; otherwise the classic chatoyant band.
   const active_hem = sim.crystals.filter(c => c.mineral === 'hematite' && c.active);
-  const active_mag = sim.crystals.filter(c => c.mineral === 'magnetite' && c.active);
-  if (dissolving_croc.length && rng.random() < 0.65) pos = `pseudomorph after crocidolite #${dissolving_croc[0].crystal_id} (the canonical tiger's eye paragenesis)`;
-  else if (active_hem.length && rng.random() < 0.45) pos = `with hematite #${active_hem[0].crystal_id} (TIGER IRON BIF context)`;
-  else if (active_mag.length && rng.random() < 0.30) pos = `with magnetite #${active_mag[0].crystal_id} (BIF residual)`;
+  const pos = active_hem.length
+    ? `pseudomorph after crocidolite #${dissolving_croc[0].crystal_id}, banded with hematite #${active_hem[0].crystal_id} (TIGER IRON BIF assemblage)`
+    : `pseudomorph after crocidolite #${dissolving_croc[0].crystal_id} (the canonical tiger's eye paragenesis)`;
   const discount = sim._sigmaDiscountForPosition('tigers_eye', pos);
   if (sigma > 1.2 * discount) {
     if (!existing.length || (sigma > 2.0 && rng.random() < 0.22)) {
       const c = sim.nucleate('tigers_eye', pos, sigma);
-      const variety = pos.includes('hematite') ? 'TIGER IRON' : (pos.includes('crocidolite') ? 'CHATOYANT pseudomorph' : 'chalcedony');
+      const variety = pos.includes('hematite') ? 'TIGER IRON' : 'CHATOYANT pseudomorph';
       sim.log.push(`  ✦ NUCLEATION: 🐅 Tiger's eye #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, O₂=${sim.conditions.fluid.O2.toFixed(1)}) — ${variety}, supergene chalcedony pseudomorph after crocidolite`);
     }
   }

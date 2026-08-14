@@ -381,9 +381,10 @@ describe('Phase 4b sulfide redox helpers', () => {
 
   it('sulfideRedoxAnoxic matches the 18 hard reverse gates', () => {
     expect(snapshotEhDynamicFlag()).toBe(false);   // beforeEach forced flag OFF for this parity block
-    // Sample of thresholds used: 0.5 (acanthite), 0.6 (nickeline),
+    // Sample of thresholds used: 0.5 (acanthite + the six rung-4b PRIMARY
+    // base-metal sulfides via PRIMARY_SULFIDE_CEILING_O2), 0.6 (nickeline),
     // 0.8 (arsenopyrite), 1.0 (stibnite), 1.2 (molybdenite),
-    // 1.5 (most), 1.8 (bornite), 1.9 (chalcocite), 2.0 (covellite)
+    // 1.5 (Ag/Sb/As sulfosalts), 1.8 (bornite), 1.9 (chalcocite), 2.0 (covellite)
     for (const X of [0.5, 0.8, 1.2, 1.5, 1.9]) {
       for (const O2 of [0.0, X - 0.01, X, X + 0.01, 5.0]) {
         const f = new FluidChemistry({ O2 });

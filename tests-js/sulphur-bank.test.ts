@@ -89,11 +89,17 @@ describe('Sulphur Bank Mine — native_sulfur scenario pins (v79)', () => {
         .toBeGreaterThan(0);
     });
 
-    it('arsenopyrite fires (Fe+As+S, the trace As) at seed 42', () => {
+    it('NO arsenopyrite — the v228 de-confabulation holds (T_min 200 enforced)', () => {
+      // v228 (hostile-review rung 2): arsenopyrite is a ≥200°C mineral and is
+      // absent from White & Roberson 1962's own Sulphur Bank ore list — the
+      // 50-68°C growth this test used to pin was the unenforced-T_min leak,
+      // and the expects_species promise was withdrawn (tormiq precedent).
+      // The trace As now reports through the documented low-T phases
+      // (realgar/orpiment/pararealgar), which keep their own pins.
       const { sim } = runFullScenario(42);
       const hits = sim.crystals.filter((c: any) => c.mineral === 'arsenopyrite');
-      expect(hits.length, 'arsenopyrite should fire from the trace As + Fe + S')
-        .toBeGreaterThan(0);
+      expect(hits.length, 'arsenopyrite must NOT fire in a 50-77°C hot spring')
+        .toBe(0);
     });
 
     it('quartz fires (silica from hot-spring SiO₂) at seed 42', () => {

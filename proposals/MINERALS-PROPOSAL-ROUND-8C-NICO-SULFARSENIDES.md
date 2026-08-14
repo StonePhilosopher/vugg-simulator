@@ -5,9 +5,9 @@
 **Template reference:** `proposals/vugg-mineral-template.md`
 
 **Source-of-truth research files** (boss's commit `f2939da`):
-- `research/research-cobaltite.md`
-- `research/research-millerite.md`
-- `research/research-nickeline.md`
+- `research/minerals/research-cobaltite.md`
+- `research/minerals/research-millerite.md`
+- `research/minerals/research-nickeline.md`
 
 **Class:** `sulfide` for `millerite` (NiS), `nickeline` (NiAs is technically an arsenide but classed with sulfides in the 12-class palette since the sim doesn't have a separate arsenide class). `cobaltite` is `sulfide` (CoAsS — sulfarsenide). All three share `class_color: "#7feb13"`.
 
@@ -212,9 +212,9 @@ This is the round's pedagogical signature — the chain reads correctly in the l
 ## Sources
 
 The boss's research files are the primary specification:
-- `research/research-cobaltite.md` (canonical commit `f2939da`)
-- `research/research-millerite.md`
-- `research/research-nickeline.md`
+- `research/minerals/research-cobaltite.md` (canonical commit `f2939da`)
+- `research/minerals/research-millerite.md`
+- `research/minerals/research-nickeline.md`
 
 Additional references for the implementation reviewer:
 - Petruk, W. (1971). "The silver-arsenide deposits of the Cobalt-Gowganda region, Ontario." *Canadian Mineralogist* 11: 1–7. [The classic Cobalt Ontario paragenesis study]

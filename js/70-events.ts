@@ -184,11 +184,47 @@ function event_elmwood_barite_stage(conditions) {
   // σ_barite≈3.2 (capped), and against elmwood's high CO3 (180, the calcite
   // showcase's supply) it spawned WITHERITE (BaCO3) — a species outside elmwood's
   // documented paragenesis — and nudged the golden calcite. A modest floor keeps
-  // barite just above its growth threshold (σ≈1.3–1.5) so it grows a generation
-  // without over-delivering Ba into the carbonate system: witherite stays
-  // subcritical and the calcite crown jewel is untouched.
+  // barite just above its growth threshold so it grows a generation without
+  // over-delivering Ba into the carbonate system: witherite stays subcritical
+  // and the calcite crown jewel is untouched.
+  //
+  // v228 (rung 2) recalibration — the SULFATE side, not more Ba: the SIM 228
+  // ZnS fix made the honey sphalerite honestly STRONGER (the ">95°C so
+  // wurtzite wins" decay is retired), and the stronger base drains the shared
+  // S pool ~22% harder through the pulse window (strip S at step 40: 106 → 83
+  // ppm), leaving σ_barite just UNDER the clay-film break-through — 16 barite
+  // seeds all stalled as dust. Raising the Ba floor instead was MEASURED and
+  // REJECTED (floor 36: snowball back but witherite ×4 — the aragonite death
+  // freed CO3, so witherite's Ba-headroom is now THINNER than when 28 was
+  // tuned; floor 32: neither side happy). The S floor is the honest lever:
+  // σ_barite ∝ Ba·S, σ_witherite ∝ Ba·CO3 — sulfate feeds the snowball and
+  // CANNOT feed the carbonate. It is also the truer story: MVT barite grows
+  // where the Ba brine MIXES with sulfate water, so the stage pulse carrying
+  // its own SO4 charge is the textbook mechanism, not a patch.
   conditions.fluid.Ba = Math.max(conditions.fluid.Ba || 0, 28);
-  return `A barium-rich brine pulse floods the Knox breccia — barite grows a generation on the honey sphalerite (Ba ${conditions.fluid.Ba.toFixed(0)} ppm).`;
+  conditions.fluid.S = Math.max(conditions.fluid.S || 0, 106);
+  return `A barium-sulfate brine pulse floods the Knox breccia — barite grows a generation on the honey sphalerite (Ba ${conditions.fluid.Ba.toFixed(0)}, S ${conditions.fluid.S.toFixed(0)} ppm).`;
+}
+
+// S2 celestine tranche (SIM 236, 2026-07-25; boss-approved Sr 10→30 with the
+// narrowness caution "explicitly conditional on elmwood_diagenetic_sr + late MVT
+// cooling + substrate/coating topology, not a generic 'MVT celestine gets Sr 30'
+// rule" — this handler exists ONLY in elmwood's timeline, step 72, right after
+// the step-70 fault slip and just before the vein cools through 100 °C).
+//
+// THE MECHANISM (Hanor 2000, RiMG 40:193 — the canonical barite-celestine
+// review; full note in research/scenarios/elmwood/research-celestine-elmwood-2026-07-24.md): the
+// vug's host carbonates are Sr-rich — aragonitic limestone carries thousands of
+// ppm Sr that low-Sr calcite cannot hold, so recrystallization + dolomitization
+// EXPEL Sr into the pore brine. The late fault slip drives that Sr-charged
+// diagenetic water into the cooling vug, and the Ba-bearing (barytocelestine)
+// fibrous celestine blanket grows in the late window — the white "glue" that
+// binds real Elmwood specimens (#103941; mindat's fibrous Ba-bearing celestine).
+// A FLOOR (Math.max), not a stacking pulse — the elmwood_barite_stage lesson.
+// No sulfur is touched: the no-meteoric-pulse rule stays intact.
+function event_elmwood_diagenetic_sr(conditions) {
+  conditions.fluid.Sr = Math.max(conditions.fluid.Sr || 0, 30);
+  return `The fault slip drives Sr-charged pore water from the recrystallizing host carbonates into the cooling vug (Sr ${conditions.fluid.Sr.toFixed(0)} ppm) — the celestine stage opens; a white fibrous blanket begins to bind the druse.`;
 }
 
 // A pure film-coat beat: the settling clay / iron-oxide film is carried by the
@@ -214,6 +250,7 @@ function event_film_coat(conditions) {
 const EVENT_REGISTRY = {
   fluid_pulse: event_fluid_pulse,
   elmwood_barite_stage: event_elmwood_barite_stage,
+  elmwood_diagenetic_sr: event_elmwood_diagenetic_sr,
   film_coat: event_film_coat,
   cooling_pulse: event_cooling_pulse,
   tectonic_shock: event_tectonic_shock,

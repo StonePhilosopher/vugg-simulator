@@ -82,8 +82,41 @@ function grow_celestine(crystal, conditions, step) {
   if (rate < 0.1) return null;
 
   const sulfur_context = conditions.fluid.S > 200;
+  // S2 celestine tranche (SIM 236) + boss-review correction (2026-07-25, issue
+  // StonePhilosopher/vugg-simulator#1): the Ba-bearing MVT habit fork, checked FIRST,
+  // GUARDED by carbonate-host context.
+  //
+  // THE EVIDENCE is the LOCALITY RECORD, not a composition→habit law: mindat's Elmwood
+  // celestine is "(Sr,Ba)SO₄, habit: Fibrous, white" (plumose aggregates, originally
+  // called strontianite); Jensen 1996 Min. Record; boss specimen #103941 ("holds the
+  // specimen together like a glue"). ba_ratio is the RECOGNIZER for that tenant — the
+  // barytocelestine composition fingerprints the late carbonate-hosted Ba-Sr brine that
+  // deposits the plumose material. It is NOT the mechanism: Sánchez-Pastor, Pina &
+  // Fernández-Díaz 2006 (Chem. Geol. 225:266, verified first-hand 2026-07-25) show
+  // composition DOES steer (Ba,Sr)SO₄ habit but in their 25 °C system Ba-rich runs
+  // TABULAR {001} and Sr-rich runs ELONGATED {011} — no fibrous mode, no Ba-branching.
+  // Why Elmwood's is plumose is not settled by any source we hold; the earlier
+  // "Ba²⁺ splits the growth front" comment over-reached (Sunagawa/Gránásy impurity
+  // branching is general spherulite literature, not system-specific) and is withdrawn.
+  //
+  // THE GUARD (boss ruling: "guarded by MVT/carbonate/paragenetic context rather than
+  // a universal Ba > threshold rule"): carbonate host rock (limestone/dolomite — the
+  // fleet's carbonate family) + the Ba/Sr fingerprint. At seed 42 this keeps exactly
+  // the four census flips (elmwood/mvt/reactivated/reactive_wall — all limestone) and
+  // structurally excludes any future Ba-rich sandstone/igneous-hosted tenant. An
+  // impurity-recognized habit precedes the σ-ladder below — without the precedence,
+  // elmwood's post-Sr-event σ (~3) would fall into the Madagascar 'nodular' branch
+  // (the tranche census caught this before code). σ-ladder tenants unaffected: every
+  // nodular/Sicilian-fibrous tenant at seed 42 has ba_ratio ≈ 0 (census table).
+  const ba_ratio_habit = conditions.fluid.Ba / Math.max(conditions.fluid.Sr, 0.1);
+  const wallComp = (conditions.wall && conditions.wall.composition) || '';
+  const carbonateHost = wallComp === 'limestone' || wallComp === 'dolomite';
   let habit_note;
-  if (excess > 1.5) {
+  if (ba_ratio_habit > 0.25 && carbonateHost) {
+    crystal.habit = 'fibrous_blanket';
+    crystal.dominant_forms = ['plumose white barian celestine aggregate', 'fibrous blanket on sulfide-carbonate gangue'];
+    habit_note = 'fibrous Ba-bearing celestine — Elmwood-type plumose blanket (barytocelestine; the white glue of the carbonate-hosted druse)';
+  } else if (excess > 1.5) {
     crystal.habit = 'nodular';
     crystal.dominant_forms = ['geodal lining', 'concentric blue crust'];
     habit_note = 'nodular celestine — Madagascar geode lining';
@@ -524,7 +557,26 @@ function grow_selenite(crystal, conditions, step) {
   let fi = false, fi_type = '';
   if (rate > 5 && rng.random() < 0.3) {
     fi = true;
-    fi_type = rng.random() < 0.5 ? 'primary (trapped brine)' : 'hourglass (sand inclusions)';
+    // v228 (rung 2, defer-to-geology fix-when-seen): SAND inclusions need a
+    // PARTICLE SOURCE. Two suppliers exist in the fleet: a clastic wall
+    // (GSP's red-bed sandstone) or an Fe-oxide-rich setting whose weathering
+    // mud is the stain itself (Tsumeb's gossan — wall_Fe 2000 by default;
+    // GSP red beds 3000). A clean LOW-Fe crystalline-carbonate pool sheds
+    // neither: Naica (limestone, wall_Fe 600) traps BRINE when it grows
+    // fast — exactly what real Naica selenite is famous for (fluid
+    // inclusions, water-clear). Pre-v228 the label was a bare 50% roll; the
+    // rung-2 RNG re-deal landed one on Naica and would have painted the
+    // iconic clear pool brown. NOTE: wall.composition DEFAULTS to
+    // 'limestone' (js/22:100 — an unset-means-limestone cousin of the F
+    // leak), which is why the carbonate test alone can't discriminate and
+    // the Fe branch is load-bearing. Both rng draws are kept unconditionally
+    // so the downstream draw sequence is unchanged.
+    const wall = conditions.wall || {};
+    const cleanCarbonateWall =
+      (wall.composition === 'limestone' || wall.composition === 'dolomite' || wall.composition === 'marble')
+      && (wall.wall_Fe_ppm ?? 2000) < 1500;
+    const typeRoll = rng.random() < 0.5;
+    fi_type = (!cleanCarbonateWall && !typeRoll) ? 'hourglass (sand inclusions)' : 'primary (trapped brine)';
   }
 
   let note;

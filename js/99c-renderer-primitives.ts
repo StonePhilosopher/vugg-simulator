@@ -84,19 +84,29 @@ const PRIM_SCALENOHEDRON = {
   // Calcite "dogtooth": doubly-pointed with a zigzag waist. 8 verts,
   // 12 edges. Three upper-mid vertices alternate with three lower-mid
   // around the equator, giving the characteristic facet zigzag.
+  //
+  // Proportions re-cut 2026-07-24 (boss eye-check vs real Elmwood
+  // double-terminated calcites): the old mid-rings at 0.7/0.2 gave two
+  // EQUAL 0.3-tall pyramids — an even-square gem read at a≈c. Real
+  // dogtooth terminations are UNEQUAL: the free-growing tooth is long
+  // and steep, the second termination short. Upper-mids dropped to 0.55
+  // (upper tooth 0.45 tall), lower-mids to 0.15, bottom apex at -0.12
+  // (lower point 0.27 tall — present but visibly shorter; buried anyway
+  // when substrate-attached). Pairs with the _GEOM_TOKEN_RATIO.scalene
+  // display-width cap in js/99d + js/99i.
   vertices: (() => {
     const vs = [
-      [0,  1.0, 0],   // 0 top apex
-      [0, -0.1, 0],   // 1 bottom apex (buried)
+      [0,  1.0, 0],    // 0 top apex — the long tooth
+      [0, -0.12, 0],   // 1 bottom apex — short second termination (buried when attached)
     ];
     const r = 0.45;
     for (let k = 0; k < 3; k++) {
       const a = k * 2 * Math.PI / 3;
-      vs.push([r * Math.cos(a), 0.7, r * Math.sin(a)]);   // 2,3,4 upper-mid
+      vs.push([r * Math.cos(a), 0.55, r * Math.sin(a)]);  // 2,3,4 upper-mid
     }
     for (let k = 0; k < 3; k++) {
       const a = k * 2 * Math.PI / 3 + Math.PI / 3;
-      vs.push([r * Math.cos(a), 0.2, r * Math.sin(a)]);   // 5,6,7 lower-mid
+      vs.push([r * Math.cos(a), 0.15, r * Math.sin(a)]);  // 5,6,7 lower-mid
     }
     return vs;
   })(),
@@ -1138,6 +1148,11 @@ const HABIT_TO_PRIMITIVE = {
   'rhombohedral_or_scalenohedral':  PRIM_RHOMBOHEDRON,
   'rhombohedral_or_tabular_or_botryoidal': PRIM_RHOMBOHEDRON,
   'botryoidal_or_rhombohedral':     PRIM_BOTRYOIDAL,
+  // S2 celestine tranche (SIM 236): the Ba-fibrous Elmwood blanket is a
+  // wall-spreading coating — botryoidal family, NOT the acicular spray the
+  // 99d fuzzy 'fibrous' check would pick. Explicit entry = load-bearing
+  // (same reason as the hopper pair below).
+  'fibrous_blanket':                PRIM_BOTRYOIDAL,
   'scalenohedral':                  PRIM_SCALENOHEDRON,
   'scalenohedral_or_rhombohedral':  PRIM_SCALENOHEDRON,
   // Calcite-morphology arc Phase 2 (2026-06-11): σ-regime habit strings

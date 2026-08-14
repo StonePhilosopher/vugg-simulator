@@ -93,12 +93,20 @@ describe('W-F O5 SPLITTING — splitRung bands + growth throttle', () => {
     expect(splitRung(0.6)).toBe('sheaf');
     expect(splitRung(0.9)).toBe('spherulite');
   });
-  it('splitGrowthMult: 1 at index 0, floor at index 1, monotone decreasing', () => {
-    setSplitAxialFloor(0.7);
-    expect(splitGrowthMult(0)).toBe(1);
-    expect(splitGrowthMult(1)).toBeCloseTo(0.7, 6);
-    expect(splitGrowthMult(0.5)).toBeCloseTo(0.85, 6);
-    expect(splitGrowthMult(0.9)).toBeLessThan(splitGrowthMult(0.3));   // more split → more compact
+  it('splitGrowthMult: constant-volume aspect collapse — needle compacts, equant barely, tabular grows', () => {
+    setSplitAxialFloor(0.1);   // safety rail only (v227); the aspect model is the calibration
+    // index 0 → NO change, whatever the habit aspect (aspect target == parent aspect)
+    expect(splitGrowthMult(0, 0.15)).toBeCloseTo(1, 6);
+    expect(splitGrowthMult(0, 1.5)).toBeCloseTo(1, 6);
+    // index 1 → aspect reaches 1 (equant sphere): mult = (a0/1)^(2/3) = a0^(2/3)
+    expect(splitGrowthMult(1, 0.15)).toBeCloseTo(Math.pow(0.15, 2 / 3), 5);  // acicular needle → ~0.28
+    expect(splitGrowthMult(1, 0.8)).toBeCloseTo(Math.pow(0.8, 2 / 3), 5);    // equant rhomb → ~0.86
+    expect(splitGrowthMult(1, 1.5)).toBeCloseTo(Math.pow(1.5, 2 / 3), 5);    // tabular plate → ~1.31 (GROWS)
+    // a needle compacts MORE with more split; a tabular plate grows MORE — opposite signs
+    expect(splitGrowthMult(0.9, 0.15)).toBeLessThan(splitGrowthMult(0.3, 0.15));
+    expect(splitGrowthMult(0.9, 1.5)).toBeGreaterThan(splitGrowthMult(0.3, 1.5));
+    // default habit aspect 0.5 when unspecified
+    expect(splitGrowthMult(1)).toBeCloseTo(Math.pow(0.5, 2 / 3), 5);
   });
 });
 

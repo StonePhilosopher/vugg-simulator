@@ -14,14 +14,32 @@
 const MINERAL_GATES_sphalerite: MineralGates = {
   sigma_crit: 1.0, T_optimal: 175,
   fluid_min: { Zn: 10, S: 10 }, surface_energy: 'medium',
-  _sources: ['sphalerite engine v17+', 'Karthikeyan et al. 2002'],
-  _notes: '(Zn,Fe)S cubic. Wurtzite dimorph above 95°C.',
+  _sources: ['sphalerite engine v17+', 'Karthikeyan et al. 2002', 'Scott & Barnes 1972 GCA 36:1275 (inversion ~1020°C, f(S2)-univariant)'],
+  // v228 (rung 2): the old note "wurtzite dimorph above 95°C" was the T>95
+  // polymorph-selection lie the hostile review retired — the real inversion
+  // is ~1020°C at 1 bar (f(S2)-dependent), so sphalerite is the equilibrium
+  // ZnS across the ENTIRE hydrothermal range and its σ no longer decays
+  // above 95°C to "hand the field" to wurtzite.
+  _notes: '(Zn,Fe)S cubic — the equilibrium ZnS below ~1000°C (Scott & Barnes 1972). v228: single T-decay branch; no wurtzite handoff.',
 };
 const MINERAL_GATES_wurtzite: MineralGates = {
-  sigma_crit: 1.0, T_optimal: 200,
-  fluid_min: { Zn: 10, S: 10 }, surface_energy: 'medium',
-  _sources: ['wurtzite engine v17+', 'Murowchick & Barnes 1986'],
-  _notes: 'ZnS hexagonal — high-T sphalerite dimorph + low-T metastable (pH<4, Fe>5).',
+  // v228 (rung 2): the high-T "equilibrium" branch is RETIRED — the
+  // sphalerite→wurtzite inversion is ~1020°C (Scott & Barnes 1972), a field
+  // no scenario reaches, so every natural hydrothermal wurtzite is the
+  // METASTABLE kinetic-trap form: acid (pH<4), high supersaturation,
+  // Fe-bearing, S-deficient fluids (Scott & Barnes f(S2) control; nanoscale
+  // surface-energy stabilization, GCA 340:99 2023). Documented natural upper
+  // bound ~300°C in VMS/black-smoker acid assemblages; T_max 350 is the
+  // researched ceiling. CITATION CORRECTION: the prior source line
+  // "Murowchick & Barnes 1986 Am.Min. 71:1196" could not be verified at
+  // re-check (2026-07-14) and appears misattributed (their 1986 paper is
+  // marcasite, GCA 50:2615); the metastable-branch conditions stand on the
+  // verified sources above.
+  sigma_crit: 1.0, T_max: 350, T_optimal: 250,
+  fluid_min: { Zn: 10, S: 10, Fe: 5 }, pH_max: 4.0,
+  surface_energy: 'medium',
+  _sources: ['wurtzite engine v17+', 'Scott & Barnes 1972 GCA 36:1275', 'GCA 340:99 (2023) nanoscale ZnS surface energetics', 'VMS black-smoker wurtzite ~250-300°C (sphalerite-wurtzite assemblages)'],
+  _notes: 'ZnS hexagonal — METASTABLE kinetic-trap polymorph only (v228): pH<4 + σ_base≥1 + Fe≥5, T≤350. Aachen schalenblende / AMD / VMS acid-vent wurtzite. The equilibrium field starts ~1020°C — not a vug regime.',
 };
 const MINERAL_GATES_pyrite: MineralGates = {
   sigma_crit: 1.0, T_min: 100, T_max: 400, T_optimal: 250,
@@ -49,7 +67,7 @@ const MINERAL_GATES_galena: MineralGates = {
 };
 const MINERAL_GATES_molybdenite: MineralGates = {
   sigma_crit: 1.0, T_optimal: 400,
-  fluid_min: { Mo: 3, S: 10 }, O2_max: 1.2,
+  fluid_min: { Mo: 3, S: 10 }, O2_max: 0.5,  // rung-4d: primary ceiling (was bespoke 1.2)
   surface_energy: 'low', _sources: ['molybdenite engine v13+'],
   _notes: 'MoS2 — porphyry Mo sweet spot 300-500°C.',
 };
@@ -84,10 +102,19 @@ const MINERAL_GATES_cobaltite: MineralGates = {
   _notes: 'CoAsS — second-most-diagnostic Schneeberg ore mineral (etymology source for "cobalt").',
 };
 const MINERAL_GATES_arsenopyrite: MineralGates = {
+  // v228 (rung 2): envelope now ENFORCED — pre-v228 sulphur_bank grew
+  // arsenopyrite at 50-68°C in a hot-spring where the As phases are realgar/
+  // orpiment. T_min KEPT at 200 after re-research: Kretschmar & Scott's 300°C
+  // is the geothermometer's CALIBRATION floor (below it the As/S-vs-T read is
+  // unreliable), not a crystallization floor — Carlin-type ore fluids deposit
+  // genuine arsenopyrite at 180-240°C, so the review's proposed 250-300 floor
+  // would have been WORSE than the declared value. Below ~200°C the As budget
+  // shifts to the As-sulfides (realgar/orpiment), which is exactly the gate's
+  // routing.
   sigma_crit: 1.2, T_min: 200, T_max: 600, T_optimal: 400,
   fluid_min: { Fe: 5, As: 3, S: 10 }, O2_max: 0.8, pH_min: 3, pH_max: 6.5,
-  surface_energy: 'medium', _sources: ['arsenopyrite engine v17+', 'Kretschmar & Scott 1976'],
-  _notes: 'FeAsS sulfarsenide — orogenic Au host. Mesothermal 300-500°C sweet spot.',
+  surface_energy: 'medium', _sources: ['arsenopyrite engine v17+', 'Kretschmar & Scott 1976 (geothermometer calibration 300-700°C)', 'Carlin-type fluids 180-240°C deposit arsenopyrite (Mineralium Deposita 46, Shuiyindong)'],
+  _notes: 'FeAsS sulfarsenide — orogenic Au host. Mesothermal 300-500°C sweet spot. v228: envelope hard-enforced; sub-200°C As routes to realgar/orpiment.',
 };
 const MINERAL_GATES_tetrahedrite: MineralGates = {
   sigma_crit: 1.0, T_min: 100, T_max: 400, T_optimal: 250,
@@ -109,13 +136,13 @@ const MINERAL_GATES_cinnabar: MineralGates = {
 };
 const MINERAL_GATES_realgar: MineralGates = {
   sigma_crit: 1.0, T_min: 20, T_max: 250, T_optimal: 115,
-  fluid_min: { As: 5, S: 30 }, O2_max: 1.2, pH_max: 9,
+  fluid_min: { As: 5, S: 30 }, O2_max: 0.5, pH_max: 9,  // rung-4d: SO₄/HS cap (was 1.2)
   surface_energy: 'low', _sources: ['realgar engine v82+'],
   _notes: 'α-As4S4 orange-red monoclinic — hot-spring + epithermal low-T.',
 };
 const MINERAL_GATES_orpiment: MineralGates = {
   sigma_crit: 1.0, T_min: 20, T_max: 280, T_optimal: 130,
-  fluid_min: { As: 8, S: 50 }, O2_max: 1.2, pH_max: 9.5,
+  fluid_min: { As: 8, S: 50 }, O2_max: 0.5, pH_max: 9.5,  // rung-4d: with realgar (was 1.2)
   surface_energy: 'low', _sources: ['orpiment engine v82+'],
   _notes: 'As2S3 golden yellow — Carlin-type + hot-spring habitat. More alkali-tolerant than realgar.',
 };
@@ -149,17 +176,25 @@ const MINERAL_GATES_covellite: MineralGates = {
   surface_energy: 'medium', _sources: ['covellite engine v17+'],
   _notes: 'CuS — indigo-blue iridescent. Low-T supergene.',
 };
+// v228 (rung 2): telluride T_max tightened 450/400 → 300. Au-Ag tellurides
+// are shallow epithermal phases deposited by boiling/vapor Te loss — Acupan
+// modeling puts the HOT end at 250-300°C (Cooke & McPhail 2001 Econ. Geol.
+// 96:109); Cripple Creek Ajax calaverite deposited at 105-159°C; Emperor
+// (Fiji) ~200-250°C (Pals & Spry). The old ceilings let porphyry's 398°C
+// potassic core mint sylvanite at step 0 — right AT its declared T_max —
+// before any Cu sulfide. 300°C keeps every epithermal_telluride firing
+// (hottest event 278°C) and makes the potassic-core tellurides illegal.
 const MINERAL_GATES_calaverite: MineralGates = {
-  sigma_crit: 1.4, T_min: 100, T_max: 450, T_optimal: 275,
+  sigma_crit: 1.4, T_min: 100, T_max: 300, T_optimal: 225,
   fluid_min: { Au: 0.1, Te: 1 }, O2_max: 0.3,
-  surface_energy: 'medium', _sources: ['calaverite engine v17+', 'Saunders 2008 Cripple Creek'],
-  _notes: 'AuTe2 — Cripple Creek bonanza pocket. Ag/Au > 5 routes to sylvanite.',
+  surface_energy: 'medium', _sources: ['calaverite engine v17+', 'Saunders 2008 Cripple Creek', 'Cooke & McPhail 2001 Econ. Geol. 96:109 (telluride window ≤300°C)'],
+  _notes: 'AuTe2 — Cripple Creek bonanza pocket. Ag/Au > 5 routes to sylvanite. v228: T_max 300 (epithermal window).',
 };
 const MINERAL_GATES_sylvanite: MineralGates = {
-  sigma_crit: 1.4, T_min: 80, T_max: 400, T_optimal: 225,
+  sigma_crit: 1.4, T_min: 80, T_max: 300, T_optimal: 200,
   fluid_min: { Au: 0.1, Ag: 0.5, Te: 1 }, O2_max: 0.3,
-  surface_energy: 'medium', _sources: ['sylvanite engine v17+'],
-  _notes: '(Au,Ag)Te2 — photosensitive. Au-Ag co-dominant fluids.',
+  surface_energy: 'medium', _sources: ['sylvanite engine v17+', 'Cooke & McPhail 2001; Pals & Spry (Emperor ~200-250°C)'],
+  _notes: '(Au,Ag)Te2 — photosensitive. Au-Ag co-dominant fluids. v228: T_max 300 (epithermal window).',
 };
 const MINERAL_GATES_hessite: MineralGates = {
   sigma_crit: 1.3, T_min: 50, T_max: 400, T_optimal: 200,
@@ -248,47 +283,52 @@ Object.assign(VugConditions.prototype, {
   // the spurious mottramite Zn-minimum gate (38-supersat-phosphate) was removed:
   // before, gating sphalerite drained Zn to 0 at ~half the seeds and falsely
   // killed mottramite via that bug (98→49); post-fix mottramite holds (98→84).
-  if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
+  if (!sulfideRedoxAnoxic(this.fluid, PRIMARY_SULFIDE_CEILING_O2)) return 0;
   const product = (this.fluid.Zn / 100.0) * (this.fluid.S / 100.0);
-  // Below 95°C: full sigma. Above: accelerated decay (wurtzite field).
-  const T_factor = this.temperature <= 95
-    ? 2.0 * Math.exp(-0.004 * this.temperature)
-    : 2.0 * Math.exp(-0.01 * this.temperature);
+  // v228 (rung 2): single T-decay branch. The pre-v228 accelerated decay
+  // above 95°C existed only "so wurtzite wins" — a polymorph handoff with no
+  // thermodynamic basis (inversion is ~1020°C, Scott & Barnes 1972). Result
+  // of the retirement: sphalerite strengthens in every hot ZnS scenario
+  // (sunnyside 278°C grew WURTZITE while sphalerite — 40% of the real ore —
+  // was an expects_species no-show).
+  const T_factor = 2.0 * Math.exp(-0.004 * this.temperature);
   return product * T_factor;
 },
 
   supersaturation_wurtzite() {
-  // Hexagonal (Zn,Fe)S dimorph of sphalerite. Round 9c retrofit
-  // (Apr 2026): two-branch model. Equilibrium high-T branch (>95°C)
-  // unchanged. Low-T metastable branch added per Murowchick & Barnes
-  // 1986: wurtzite forms below 95°C only when pH<4 AND sigma_base>=1
-  // AND Fe>=5 — the kinetic-trap conditions that produce Aachen-style
-  // schalenblende and AMD wurtzite. See
-  // research/research-broth-ratio-sphalerite-wurtzite.md.
+  // Hexagonal (Zn,Fe)S dimorph of sphalerite. v228 (hostile-review fix
+  // ladder, rung 2): the "equilibrium high-T branch" (>95°C ramp/plateau) is
+  // RETIRED — the real sphalerite-wurtzite inversion sits at ~1020°C at
+  // 1 bar and is f(S2)-univariant (Scott & Barnes 1972 GCA 36:1275), so no
+  // vug scenario ever reaches wurtzite's equilibrium field. What remains is
+  // the METASTABLE branch: kinetic-trap growth in acid (pH<4), genuinely
+  // supersaturated (σ_base≥1), Fe-bearing (≥5) fluids — Aachen-style
+  // schalenblende, AMD wurtzite, VMS acid-vent wurtzite. Natural upper
+  // bound ~300°C (black-smoker sphalerite-wurtzite assemblages); gate
+  // ceiling T_max 350 from the gates entry. Rapid-nucleation preference for
+  // the hexagonal form at high σ is additionally grounded in nanoscale
+  // surface energetics (GCA 340:99, 2023). CITATION NOTE: the branch was
+  // originally hung on "Murowchick & Barnes 1986 Am.Min. 71:1196", which
+  // failed verification at re-check (2026-07-14, rung-2 research pass) —
+  // see research/arcs/research-broth-ratio-sphalerite-wurtzite.md correction
+  // appendix.
   if (this.fluid.Zn < 10 || this.fluid.S < 10) return 0;
-  // v199: sulfide redox gate (see supersaturation_sphalerite). Both branches —
-  // the high-T dimorph and the low-T AMD/schalenblende metastable branch — are
-  // sulfide environments and require anoxic conditions.
-  if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
-  const T = this.temperature;
+  // v199: sulfide redox gate (see supersaturation_sphalerite) — the
+  // metastable branch is still a sulfide environment; anoxic required.
+  if (!sulfideRedoxAnoxic(this.fluid, PRIMARY_SULFIDE_CEILING_O2)) return 0;
+  const g_wz = MINERAL_GATES_wurtzite;
+  if (this.temperature > g_wz.T_max!) return 0;
   const product = (this.fluid.Zn / 100.0) * (this.fluid.S / 100.0);
-  if (T > 95) {
-    let T_factor;
-    if (T < 150) T_factor = (T - 95) / 55.0;
-    else if (T <= 300) T_factor = 1.4;
-    else T_factor = 1.4 * Math.exp(-0.005 * (T - 300));
-    return product * T_factor;
-  }
-  // Low-T metastable branch — all three conditions required.
-  if (this.fluid.pH >= 4.0) return 0;
+  // Metastable kinetic-trap conditions — all three required.
+  if (this.fluid.pH >= g_wz.pH_max!) return 0;
   if (product < 1.0) return 0;
-  if (this.fluid.Fe < 5) return 0;
+  if (this.fluid.Fe < g_wz.fluid_min!.Fe) return 0;
   return product * 0.4;
 },
 
   supersaturation_pyrite() {
   if (this.fluid.Fe < 5 || this.fluid.S < 10) return 0;
-  if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
+  if (!sulfideRedoxAnoxic(this.fluid, PRIMARY_SULFIDE_CEILING_O2)) return 0;
   const product = (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
   // v68: effectiveTemperature is now an identity pass-through after the
   // Mo-flux artifact was removed (canonical 5ecbb42). Kept for forward
@@ -306,7 +346,7 @@ Object.assign(VugConditions.prototype, {
   supersaturation_marcasite() {
   // Orthorhombic FeS2 dimorph of pyrite. pH<5 AND T<240 hard gates.
   if (this.fluid.Fe < 5 || this.fluid.S < 10) return 0;
-  if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
+  if (!sulfideRedoxAnoxic(this.fluid, PRIMARY_SULFIDE_CEILING_O2)) return 0;
   if (this.fluid.pH >= 5.0) return 0;
   if (this.temperature > 240) return 0;
   const product = (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
@@ -317,7 +357,7 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_chalcopyrite() {
   if (this.fluid.Cu < 10 || this.fluid.Fe < 5 || this.fluid.S < 15) return 0;
-  if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
+  if (!sulfideRedoxAnoxic(this.fluid, PRIMARY_SULFIDE_CEILING_O2)) return 0;
   const product = (this.fluid.Cu / 80.0) * (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
   // v68: effectiveTemperature is identity after Mo-flux removal (5ecbb42).
   const eT = this.effectiveTemperature;
@@ -336,7 +376,7 @@ Object.assign(VugConditions.prototype, {
   // sulfide to form under oxidizing conditions (a clear physics bug,
   // surfaced by tools/supersat_drift_audit.py). Now matches vugg.py.
   if (this.fluid.Pb < 5 || this.fluid.S < 10) return 0;
-  if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;  // sulfides can't survive oxidation
+  if (!sulfideRedoxAnoxic(this.fluid, PRIMARY_SULFIDE_CEILING_O2)) return 0;  // sulfides can't survive oxidation
   let sigma = (this.fluid.Pb / 50.0) * (this.fluid.S / 80.0) * sulfideRedoxLinearFactor(this.fluid, 1.5);
   // v68: effectiveTemperature is identity after Mo-flux removal (5ecbb42).
   // Pre-v68 the Mo-flux widened the galena T window; that was a
@@ -362,7 +402,15 @@ Object.assign(VugConditions.prototype, {
   // v13: reconciled to Python (which agent-api already matched). Pre-v13
   // had no O2 gate, allowing the sulfide to form under oxidizing conditions.
   if (this.fluid.Mo < 3 || this.fluid.S < 10) return 0;
-  if (!sulfideRedoxAnoxic(this.fluid, 1.2)) return 0;  // sulfide, needs reducing
+  // rung-4d (SIM 233): bespoke 1.2 (= Eh ≤ +252 mV) → the primary ceiling.
+  // MoS₂ is a PRIMARY hypogene sulfide — THE porphyry Mo mineral — that
+  // rung-4b's six-species tighten missed, and its loose ceiling reproduced
+  // the exact leak 4b closed: 3 fresh MoS₂ nucleations at +131 mV inside
+  // supergene_oxidation's Cu-enrichment window (O2 0.6), a scenario whose
+  // own step-40 event DISSOLVES molybdenite to feed MoO₄²⁻ → wulfenite.
+  // Supergene Mo is Mo(VI) — wulfenite/powellite/ferrimolybdite — never
+  // fresh MoS₂. Legit porphyry firings sit at +44 mV; zero collateral.
+  if (!sulfideRedoxAnoxic(this.fluid, PRIMARY_SULFIDE_CEILING_O2)) return 0;
   let sigma = (this.fluid.Mo / 15.0) * (this.fluid.S / 60.0) * sulfideRedoxLinearFactor(this.fluid, 1.5);
   // v68: effectiveTemperature is identity after Mo-flux removal (5ecbb42).
   const eT = this.effectiveTemperature;
@@ -537,16 +585,17 @@ Object.assign(VugConditions.prototype, {
   const as_iii = arseniteAvailablePpm(this.fluid);
   if (this.fluid.Fe < 5 || as_iii < 3 || this.fluid.S < 10) return 0;
   if (!sulfideRedoxAnoxic(this.fluid, 0.8)) return 0;  // sulfide — needs reducing
+  // v228 (rung 2): hard T envelope from the gates — the pre-v228 soft decay
+  // below 200 (×0.26 at 65°C) still let sulphur_bank's 50-68°C hot spring
+  // clear σ_crit on composition alone. Declared-but-unenforced was the leak.
+  const T = this.temperature;
+  const g_asp = MINERAL_GATES_arsenopyrite;
+  if (T < g_asp.T_min! || T > g_asp.T_max!) return 0;
   let sigma = (this.fluid.Fe / 30.0) * (as_iii / 15.0)
             * (this.fluid.S / 50.0) * sulfideRedoxLinearFactor(this.fluid, 1.5);
   // Mesothermal sweet spot 300-500°C
-  const T = this.temperature;
   if (T >= 300 && T <= 500) {
     sigma *= 1.4;
-  } else if (T < 200) {
-    sigma *= Math.exp(-0.01 * (200 - T));
-  } else if (T > 600) {
-    sigma *= Math.exp(-0.015 * (T - 600));
   }
   // pH window 3-6.5
   if (this.fluid.pH < 3) {
@@ -638,11 +687,21 @@ Object.assign(VugConditions.prototype, {
   // habit; co-deposits with orpiment. Type localities Allchar
   // (Macedonia) + Shimen (China); active hot-spring sites at
   // Yellowstone Norris Geyser Basin + Carbazo Springs + Sulphur Bank
-  // Mine. Engine gates (2026-05-19, v82):
+  // Mine. Engine gates (2026-05-19, v82; redox re-capped rung-4d SIM 233):
   //   As >= 5, S >= 30
-  //   Reducing-to-mixed redox (sulfideRedoxAnoxic threshold 1.2 — broader
-  //     than arsenopyrite's 0.8 because realgar tolerates more O₂ than
-  //     the deeper-anoxic ferrous arsenosulfide).
+  //   Reducing redox: sulfideRedoxAnoxic 0.5 = Eh ≤ +100 mV, the SO₄/HS
+  //     boundary. v82 set 1.2 (+252 mV) as "broader than arsenopyrite's
+  //     0.8" — relative-tolerance framing that let fresh As₄S₄ mint at
+  //     +131 mV in supergene_oxidation's Cu-enrichment window (visible in
+  //     baselines as PARAREALGAR, since the js/75 light transform inherits
+  //     the parent's birth step). Fresh As-sulfide needs REDUCED S; at
+  //     +131 the sim's own boundary says sulfur is sulfate-side, and the
+  //     scenario's As suite is the arsenates (adamite/mimetite/conichalcite,
+  //     all expects-listed — realgar is not). All legit firings sit ≤ +76
+  //     (sulphur_bank +76 = O2 0.4 exactly, wittichen +69, roughten_gill
+  //     primary stage −150): zero collateral. Arsenopyrite keeps 0.8 —
+  //     latent by the same argument, but its T_min 200 hard-blocks the cold
+  //     supergene where it would matter (BACKLOG, with the 1.5 sulfosalts).
   //   pH <= 9 (alkali dissolves it as thioarsenite complex).
   //   T optimum 50-180°C (matches Sulphur Bank's 60-90°C vent regime).
   supersaturation_realgar() {
@@ -652,7 +711,7 @@ Object.assign(VugConditions.prototype, {
   // classified). Not arsenate; reads from the As(III) pool.
   const as_iii = arseniteAvailablePpm(this.fluid);
   if (as_iii < 5 || this.fluid.S < 30) return 0;
-  if (!sulfideRedoxAnoxic(this.fluid, 1.2)) return 0;
+  if (!sulfideRedoxAnoxic(this.fluid, 0.5)) return 0;  // rung-4d: SO₄/HS boundary (see gate block above; was 1.2)
   if (this.fluid.pH > 9) return 0;
   const as_f = Math.min(as_iii / 15.0, 3.0);
   const s_f = Math.min(this.fluid.S / 100.0, 3.0);
@@ -681,7 +740,11 @@ Object.assign(VugConditions.prototype, {
   //            requires As to be present at higher levels)
   //   S >= 50 (more S than realgar; the S/As 3/2 stoichiometry favors
   //            S-rich fluids)
-  //   Reducing-to-mixed redox.
+  //   Reducing redox (rung-4d SIM 233: 0.5 with realgar — same As(III) +
+  //     reduced-S chemistry, same broths; tightened in the same commit so
+  //     the killed realgar niche can't re-leak as its S-richer sibling.
+  //     Orpiment never leaked at seed 42 — max +76 — this is the
+  //     displacement guard, not an offender fix).
   //   pH <= 9.5 (very broad; orpiment is the most alkali-tolerant of
   //              the As-sulfides).
   //   T optimum 60-200°C (slightly hotter than realgar; orpiment is
@@ -691,7 +754,7 @@ Object.assign(VugConditions.prototype, {
   // Orpiment is As₂S₃ — As(III) sulfide. Not arsenate.
   const as_iii = arseniteAvailablePpm(this.fluid);
   if (as_iii < 8 || this.fluid.S < 50) return 0;
-  if (!sulfideRedoxAnoxic(this.fluid, 1.2)) return 0;
+  if (!sulfideRedoxAnoxic(this.fluid, 0.5)) return 0;  // rung-4d: with realgar (see gate block above; was 1.2)
   if (this.fluid.pH > 9.5) return 0;
   const as_f = Math.min(as_iii / 20.0, 3.0);
   const s_f = Math.min(this.fluid.S / 150.0, 3.0);
@@ -819,11 +882,13 @@ Object.assign(VugConditions.prototype, {
     // miss via tools/mineral_coverage_check.mjs.
     let sigma = (this.fluid.Au / 0.2) * (this.fluid.Te / 2.0);
     const T = this.temperature;
-    if (T < 100 || T > 450) return 0;
+    // v228 (rung 2): ceiling 450 → 300 per the gates (Cooke & McPhail 2001:
+    // telluride deposition tops out ~300°C; Cripple Creek calaverite itself
+    // deposited at 105-159°C).
+    if (T < 100 || T > 300) return 0;
     let T_factor = 1.0;
-    if (T >= 200 && T <= 350) T_factor = 1.2;
-    else if (T < 200) T_factor = Math.max(0.4, 0.5 + 0.007 * (T - 100));
-    else T_factor = Math.max(0.4, 1.2 - 0.008 * (T - 350));
+    if (T >= 200) T_factor = 1.2;
+    else T_factor = Math.max(0.4, 0.5 + 0.007 * (T - 100));
     sigma *= T_factor;
     // Sulfide competition — high S favors sulfides over tellurides
     if (this.fluid.S > 50) sigma *= Math.max(0.4, 1.0 - 0.005 * (this.fluid.S - 50));
@@ -847,11 +912,14 @@ Object.assign(VugConditions.prototype, {
     // Au) needs preservation, not amplification.
     let sigma = (this.fluid.Au / 0.2) * (this.fluid.Ag / 5.0) * (this.fluid.Te / 2.0) * 0.7;
     const T = this.temperature;
-    if (T < 80 || T > 400) return 0;
+    // v228 (rung 2): ceiling 400 → 300 per the gates — porphyry's 398°C
+    // potassic core grew sylvanite at step 0, right AT the old declared
+    // T_max, before any Cu sulfide (Emperor/Acupan put the real window at
+    // ~200-300°C).
+    if (T < 80 || T > 300) return 0;
     let T_factor = 1.0;
-    if (T >= 150 && T <= 300) T_factor = 1.2;
-    else if (T < 150) T_factor = Math.max(0.4, 0.5 + 0.007 * (T - 80));
-    else T_factor = Math.max(0.4, 1.2 - 0.008 * (T - 300));
+    if (T >= 150) T_factor = 1.2;
+    else T_factor = Math.max(0.4, 0.5 + 0.007 * (T - 80));
     sigma *= T_factor;
     if (this.fluid.S > 50) sigma *= Math.max(0.4, 1.0 - 0.005 * (this.fluid.S - 50));
     // Calaverite competition — when Au ≫ Ag, calaverite wins
