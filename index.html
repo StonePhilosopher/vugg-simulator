@@ -31,7 +31,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="icon" href="vugg-favicon.svg" type="image/svg+xml">
 <title>🪨 Vugg Simulator</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -44,7 +45,10 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1rem;
+  padding-top: max(1rem, env(safe-area-inset-top));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  padding-left: max(1rem, env(safe-area-inset-left));
 }
 
 h1 {
@@ -109,7 +113,10 @@ h1 {
 }
 
 .simulation-precompute {
-  padding: 1rem;
+  padding-top: max(1rem, env(safe-area-inset-top));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  padding-left: max(1rem, env(safe-area-inset-left));
   color: #d4a843;
   text-align: center;
 }
@@ -1639,8 +1646,8 @@ body.tutorial-active #mode-toggle.tutorial-spotlight { opacity: 1; }
    small, monospace, low-saturation. Fixed so it rides every screen. ---- */
 #settings-btn {
   position: fixed;
-  top: 10px;
-  right: 12px;
+  top: max(10px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
   z-index: 4000;
   background: #1a1a14;
   color: #6a5a30;
@@ -1655,8 +1662,8 @@ body.tutorial-active #mode-toggle.tutorial-spotlight { opacity: 1; }
 #settings-btn:hover { opacity: 1; color: #cbb060; }
 #settings-panel {
   position: fixed;
-  top: 44px;
-  right: 12px;
+  top: max(44px, calc(env(safe-area-inset-top) + 44px));
+  right: max(12px, env(safe-area-inset-right));
   z-index: 4001;
   width: 240px;
   background: #14140f;
@@ -2094,9 +2101,9 @@ details[open] > .sat-class-summary::before { transform: rotate(90deg); }
   position: fixed;
   z-index: 4000;
   pointer-events: none;
-  width: min(430px, calc(100vw - 16px));
+  width: min(430px, calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)));
   max-width: 430px;
-  max-height: calc(100vh - 16px);
+  max-height: calc(100vh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow-y: auto;
   background: linear-gradient(145deg, #191912, #10100a);
   border: 1px solid #5a5030;
@@ -3288,7 +3295,14 @@ footer a:hover {
     letter-spacing: 0.2em;
     white-space: nowrap;
   }
-  .controls { gap: 0.5rem; }
+  .controls { gap: 0.5rem; align-items: stretch; }
+  .controls .control-group { flex: 1 1 100%; min-width: 0; }
+  .controls select,
+  .controls input {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
   #output { font-size: 0.7rem; max-height: 60vh; padding: 0.6rem; }
   /* Simulation playback is a side-by-side narrative/inventory workspace on
      desktop.  On phones the inventory's 100% width used to compete with the
@@ -3304,7 +3318,12 @@ footer a:hover {
     max-width: 100%;
     min-width: 0;
   }
-  body { padding: 0.5rem; }
+  body {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+    padding-right: max(0.5rem, env(safe-area-inset-right));
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    padding-left: max(0.5rem, env(safe-area-inset-left));
+  }
   .fortress-main { flex-direction: column; }
   .inventory-col { width: 100%; }
   .action-grid { flex-direction: column; }
@@ -3316,7 +3335,7 @@ footer a:hover {
     flex: 1 1 8rem;
     width: auto;
     min-width: 0;
-    height: 28px;
+    height: 44px;
     background: transparent;
   }
   .setup-row input[type="range"]::-webkit-slider-runnable-track,
@@ -3333,10 +3352,10 @@ footer a:hover {
   }
   .setup-row input[type="checkbox"],
   .broth-slider-row input[type="checkbox"] {
-    width: 24px;
-    min-width: 24px;
-    height: 24px;
-    flex: 0 0 24px;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
   }
   .setup-row .creative-exact-input { flex: 0 0 5.75rem; width: 5.75rem; }
   .setup-row .range-val { flex: 0 0 4.5rem; min-width: 0; text-align: right; }
@@ -3354,7 +3373,7 @@ footer a:hover {
     grid-column: 2;
     min-width: 0;
     width: 100%;
-    height: 28px;
+    height: 44px;
     background: transparent;
   }
   .broth-slider-row .creative-exact-input { grid-column: 3; width: 5.75rem; }
@@ -3379,6 +3398,20 @@ footer a:hover {
     flex-wrap: wrap;
     justify-content: flex-end;
     border-radius: 12px;
+  }
+}
+
+/* Motion is presentation, never geology.  Respect the operating-system
+   preference without changing simulation timing, step order, or scientific
+   state: only decorative CSS motion is collapsed.  The browser acceptance
+   workflow verifies this against a real reduced-motion media query. */
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
 }
 </style>
@@ -83317,6 +83350,17 @@ async function runSimulation() {
     allLines.push('═'.repeat(70));
     const sim = commandRuntime.sim;
     legendsSim = sim;
+    // Keep the public specimen/debug receipt truthful for runs started through
+    // the visible Simulation controls, not only URL/agent entry points.  Record
+    // the resolved authored shape seed after scenario construction so a blank
+    // override reports the scenario's own cavity identity.
+    if (typeof window !== 'undefined' && window.vugg) {
+        window.vugg._lastRunMeta = {
+            scenario: scenarioName,
+            seed,
+            shape_seed: conditions.wall?.shape_seed ?? null,
+        };
+    }
     // === HELIX-OVERLAY-FORK ADDITION (strip view bedrock, v149+) =====
     // Attach a StripRecorder so this Simulation run is captured. Same
     // pattern as 96-ui-random.ts. Helicoid-as-recorder reframe (Shy's
@@ -88102,6 +88146,12 @@ function hideAllMenuAndModePanels() {
     }
 }
 function openNewGameMenu() {
+    // Opening the menu is a lifecycle boundary, including when the documented
+    // N shortcut interrupts progressive Simulation computation.  Do this before
+    // hiding panels so no invisible run can keep mutating geology or leave its
+    // controls disabled behind the menu.
+    if (typeof cancelSimulationPlayback === 'function')
+        cancelSimulationPlayback();
     hideAllMenuAndModePanels();
     document.body.classList.add('title-on');
     const panel = document.getElementById('new-game-panel');
@@ -93989,6 +94039,35 @@ function _satHoverEl() {
     return el;
 }
 let _satHoverPinnedPill = null;
+function _satSafeAreaInsets() {
+    // CSS env() values are not exposed directly to script. Resolve them through
+    // a zero-size fixed probe so the body-mounted diagnosis respects phone
+    // notches and home-indicator insets in either orientation.
+    const probe = document.createElement('div');
+    probe.setAttribute('aria-hidden', 'true');
+    probe.style.cssText = [
+        'position:fixed', 'visibility:hidden', 'pointer-events:none',
+        'width:0', 'height:0',
+        'padding-top:env(safe-area-inset-top)',
+        'padding-right:env(safe-area-inset-right)',
+        'padding-bottom:env(safe-area-inset-bottom)',
+        'padding-left:env(safe-area-inset-left)',
+    ].join(';');
+    document.body.appendChild(probe);
+    const style = getComputedStyle(probe);
+    const px = (value) => {
+        const parsed = Number.parseFloat(value);
+        return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+    };
+    const insets = {
+        top: px(style.paddingTop),
+        right: px(style.paddingRight),
+        bottom: px(style.paddingBottom),
+        left: px(style.paddingLeft),
+    };
+    probe.remove();
+    return insets;
+}
 function _satHoverShowForPill(pill, pinned = false) {
     if (_satHoverPinnedPill && !pinned)
         return;
@@ -94033,13 +94112,19 @@ function _satHoverShowForPill(pill, pinned = false) {
         pill.setAttribute('aria-describedby', el.id);
     // Position beside the pill; flip left/up when the viewport says no.
     const r = pill.getBoundingClientRect();
+    const safe = _satSafeAreaInsets();
     const pw = el.offsetWidth, ph = el.offsetHeight;
     let x = r.right + 10;
-    if (x + pw > window.innerWidth - 8)
-        x = Math.max(8, r.left - pw - 10);
+    const minX = safe.left + 8;
+    const maxX = window.innerWidth - safe.right - 8;
+    const minY = safe.top + 8;
+    const maxY = window.innerHeight - safe.bottom - 8;
+    if (x + pw > maxX)
+        x = Math.max(minX, r.left - pw - 10);
     let y = r.top;
-    if (y + ph > window.innerHeight - 8)
-        y = Math.max(8, window.innerHeight - ph - 8);
+    if (y + ph > maxY)
+        y = Math.max(minY, maxY - ph);
+    y = Math.max(minY, y);
     el.style.left = `${Math.round(x)}px`;
     el.style.top = `${Math.round(y)}px`;
     if (pinned) {

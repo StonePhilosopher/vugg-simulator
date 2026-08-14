@@ -1,0 +1,1024 @@
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import http from 'node:http';
+import net from 'node:net';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const SIM_VERSION = 266;
+const TEST_SEED = 42;
+const MANUAL_SAVE_NAME = 'Browser QA — seed 42';
+const DEFAULT_TIMEOUT_MS = 20_000;
+const DEBUG_CDP = process.env.VUGG_BROWSER_DEBUG === '1';
+const OWNED_PROCESS_ERRORS = new WeakMap();
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function ownedProcessExited(child) {
+  return !child || OWNED_PROCESS_ERRORS.has(child) || child.exitCode != null || child.signalCode != null;
+}
+
+function spawnOwned(command, args, options) {
+  const child = spawn(command, args, options);
+  // spawn() reports a missing/non-executable binary asynchronously. Retain it
+  // as process state so polling and cleanup fail closed without an unhandled
+  // EventEmitter 'error'.
+  child.once('error', error => OWNED_PROCESS_ERRORS.set(child, error));
+  return child;
+}
+
+function ownedProcessFailure(child) {
+  const spawnError = child && OWNED_PROCESS_ERRORS.get(child);
+  if (spawnError) return spawnError;
+  if (child?.exitCode != null && child.exitCode !== 0) {
+    return new Error(`Owned process ${child.pid || '(unknown pid)'} exited with code ${child.exitCode}`);
+  }
+  return null;
+}
+
+function browserCandidates() {
+  const env = process.env.VUGG_BROWSER_BIN ? [process.env.VUGG_BROWSER_BIN] : [];
+  if (process.platform === 'win32') {
+    return [
+      ...env,
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+      'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+    ];
+  }
+  if (process.platform === 'darwin') {
+    return [
+      ...env,
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+      '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    ];
+  }
+  return [
+    ...env,
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/microsoft-edge',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+  ];
+}
+
+function findBrowser() {
+  const browser = browserCandidates().find(candidate => candidate && existsSync(candidate));
+  if (!browser) {
+    throw new Error(
+      'No Chrome/Edge/Chromium executable found. Set VUGG_BROWSER_BIN to an installed browser.',
+    );
+  }
+  return browser;
+}
+
+async function freePort() {
+  const server = net.createServer();
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  const port = typeof address === 'object' && address ? address.port : null;
+  await new Promise(resolve => server.close(resolve));
+  if (!port) throw new Error('Could not reserve a local port');
+  return port;
+}
+
+async function waitForHttp(url, child, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  const deadline = Date.now() + timeoutMs;
+  let lastError = null;
+  while (Date.now() < deadline) {
+    if (ownedProcessExited(child)) {
+      throw new Error(`Owned process exited early with code ${child.exitCode}`);
+    }
+    try {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (response.ok) return response;
+      lastError = new Error(`HTTP ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+    await delay(50);
+  }
+  throw new Error(`Timed out waiting for ${url}: ${lastError?.message || 'no response'}`);
+}
+
+async function waitForDevToolsPort(profileDir, child, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  const receiptPath = path.join(profileDir, 'DevToolsActivePort');
+  const deadline = Date.now() + timeoutMs;
+  let lastError = null;
+  while (Date.now() < deadline) {
+    if (ownedProcessExited(child)) {
+      throw new Error(`Browser exited early with code ${child.exitCode}`);
+    }
+    try {
+      const lines = (await readFile(receiptPath, 'utf8')).trim().split(/\r?\n/);
+      const port = Number(lines[0]);
+      if (Number.isInteger(port) && port > 0) return port;
+    } catch (error) {
+      lastError = error;
+    }
+    await delay(50);
+  }
+  throw new Error(`Timed out waiting for DevToolsActivePort: ${lastError?.message || 'missing'}`);
+}
+
+async function waitForOwnedExit(child, timeoutMs) {
+  if (ownedProcessExited(child)) return true;
+  return new Promise(resolve => {
+    const timer = setTimeout(() => {
+      child.off('exit', onExit);
+      child.off('error', onExit);
+      resolve(false);
+    }, timeoutMs);
+    const onExit = () => {
+      clearTimeout(timer);
+      child.off('exit', onExit);
+      child.off('error', onExit);
+      resolve(true);
+    };
+    child.once('exit', onExit);
+    child.once('error', onExit);
+  });
+}
+
+async function terminateOwned(child, {
+  tree = false,
+  processSpawner = spawnOwned,
+  treeWaitMs = 5_000,
+  termWaitMs = 3_000,
+  killWaitMs = 5_000,
+} = {}) {
+  if (ownedProcessExited(child)) return;
+  if (tree && process.platform === 'win32' && child.pid) {
+    const failures = [];
+    const killer = processSpawner('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], {
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    if (!(await waitForOwnedExit(killer, treeWaitMs))) {
+      failures.push(new Error(`taskkill did not finish for owned process tree ${child.pid}`));
+      killer.kill('SIGKILL');
+      await waitForOwnedExit(killer, Math.min(2_000, killWaitMs));
+    } else {
+      const killerFailure = ownedProcessFailure(killer);
+      if (killerFailure && !ownedProcessExited(child)) failures.push(killerFailure);
+    }
+    if (!(await waitForOwnedExit(child, treeWaitMs))) {
+      failures.push(new Error(`Owned browser tree root ${child.pid} survived taskkill /T /F`));
+      child.kill('SIGKILL');
+      if (!(await waitForOwnedExit(child, killWaitMs))) {
+        failures.push(new Error(`Owned browser root ${child.pid} survived direct SIGKILL fallback`));
+      }
+    }
+    if (failures.length) {
+      throw new AggregateError(failures, `Could not cleanly terminate owned browser tree ${child.pid}`);
+    }
+    return;
+  }
+
+  child.kill('SIGTERM');
+  if (await waitForOwnedExit(child, termWaitMs)) return;
+  child.kill('SIGKILL');
+  if (!(await waitForOwnedExit(child, killWaitMs))) {
+    throw new Error(`Owned process ${child.pid || '(unknown pid)'} did not exit after termination`);
+  }
+}
+
+async function runCleanupActions(actions) {
+  const failures = [];
+  for (const [label, action] of actions) {
+    try {
+      await action();
+    } catch (error) {
+      failures.push(new Error(`${label}: ${error?.message || error}`, { cause: error }));
+    }
+  }
+  if (failures.length) {
+    throw new AggregateError(failures, 'One or more owned browser-workflow resources failed cleanup');
+  }
+}
+
+function drainOwnedPipe(pipe, diagnostics, key) {
+  if (!pipe) return;
+  pipe.on('data', chunk => {
+    const next = `${diagnostics[key] || ''}${String(chunk)}`;
+    diagnostics[key] = next.slice(-65_536);
+    if (DEBUG_CDP) process.stderr.write(`[${key}] ${String(chunk)}`);
+  });
+}
+
+class CdpClient {
+  constructor(webSocketUrl) {
+    this.ws = new WebSocket(webSocketUrl);
+    this.ws.binaryType = 'arraybuffer';
+    this.nextId = 1;
+    this.pending = new Map();
+    this.listeners = new Map();
+  }
+
+  async open() {
+    await new Promise((resolve, reject) => {
+      this.ws.addEventListener('open', resolve, { once: true });
+      this.ws.addEventListener('error', reject, { once: true });
+    });
+    this.ws.addEventListener('message', event => {
+      if (DEBUG_CDP) {
+        process.stderr.write(`[cdp] received ${typeof event.data}/${event.data?.constructor?.name || 'unknown'}\n`);
+      }
+      void this.#receive(event.data).catch(error => {
+        process.stderr.write(`[cdp] frame decode failed: ${error.message}\n`);
+      });
+    });
+  }
+
+  async #receive(raw) {
+    let text;
+    if (typeof raw === 'string') text = raw;
+    else if (raw instanceof ArrayBuffer) text = new TextDecoder().decode(raw);
+    else if (raw && typeof raw.text === 'function') text = await raw.text();
+    else text = String(raw);
+    const message = JSON.parse(text);
+    if (DEBUG_CDP) {
+      process.stderr.write(`[cdp] message ${message.method || `response:${message.id}`}${message.error ? ` error=${message.error.message}` : ''}\n`);
+    }
+    if (message.id != null) {
+      const pending = this.pending.get(message.id);
+      if (!pending) return;
+      this.pending.delete(message.id);
+      clearTimeout(pending.timer);
+      if (message.error) pending.reject(new Error(message.error.message));
+      else pending.resolve(message.result || {});
+      return;
+    }
+    if (!message.method) return;
+    for (const listener of this.listeners.get(message.method) || []) {
+      try { listener(message.params || {}); } catch { /* diagnostic listener */ }
+    }
+  }
+
+  on(method, listener) {
+    const listeners = this.listeners.get(method) || [];
+    listeners.push(listener);
+    this.listeners.set(method, listeners);
+  }
+
+  send(method, params = {}, sessionId = null) {
+    const id = this.nextId++;
+    const response = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`CDP request timed out: ${method}`));
+      }, DEFAULT_TIMEOUT_MS);
+      this.pending.set(id, { resolve, reject, timer });
+    });
+    const payload = JSON.stringify(sessionId ? { id, method, params, sessionId } : { id, method, params });
+    if (DEBUG_CDP) process.stderr.write(`[cdp] send ${method} (${this.ws.readyState})${sessionId ? ` session=${sessionId}` : ''}\n`);
+    this.ws.send(payload);
+    return response;
+  }
+
+  close() {
+    for (const pending of this.pending.values()) {
+      clearTimeout(pending.timer);
+      pending.reject(new Error('CDP connection closed'));
+    }
+    this.pending.clear();
+    try { this.ws.close(); } catch { /* already closed */ }
+  }
+}
+
+class CdpSession {
+  constructor(client, sessionId) {
+    this.client = client;
+    this.sessionId = sessionId;
+    this.nextId = 1;
+    this.pending = new Map();
+    this.listeners = new Map();
+    client.on('Target.receivedMessageFromTarget', event => {
+      if (event.sessionId !== this.sessionId) return;
+      this.#receive(JSON.parse(event.message));
+    });
+  }
+
+  #receive(message) {
+    if (message.id != null) {
+      const pending = this.pending.get(message.id);
+      if (!pending) return;
+      this.pending.delete(message.id);
+      clearTimeout(pending.timer);
+      if (message.error) pending.reject(new Error(message.error.message));
+      else pending.resolve(message.result || {});
+      return;
+    }
+    if (!message.method) return;
+    for (const listener of this.listeners.get(message.method) || []) {
+      try { listener(message.params || {}); } catch { /* diagnostic listener */ }
+    }
+  }
+
+  on(method, listener) {
+    const listeners = this.listeners.get(method) || [];
+    listeners.push(listener);
+    this.listeners.set(method, listeners);
+  }
+
+  send(method, params = {}) {
+    const id = this.nextId++;
+    const response = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`CDP session request timed out: ${method}`));
+      }, DEFAULT_TIMEOUT_MS);
+      this.pending.set(id, { resolve, reject, timer });
+    });
+    if (DEBUG_CDP) process.stderr.write(`[cdp] nested send ${method}\n`);
+    void this.client.send('Target.sendMessageToTarget', {
+      sessionId: this.sessionId,
+      message: JSON.stringify({ id, method, params }),
+    }).catch(error => {
+      const pending = this.pending.get(id);
+      if (!pending) return;
+      this.pending.delete(id);
+      clearTimeout(pending.timer);
+      pending.reject(error);
+    });
+    return response;
+  }
+}
+
+class BrowserDriver {
+  constructor(client) {
+    this.client = client;
+  }
+
+  async evaluate(expression) {
+    const result = await this.client.send('Runtime.evaluate', {
+      expression,
+      awaitPromise: true,
+      returnByValue: true,
+      userGesture: true,
+    });
+    if (result.exceptionDetails) {
+      const description = result.exceptionDetails.exception?.description
+        || result.exceptionDetails.text
+        || 'browser evaluation failed';
+      throw new Error(description);
+    }
+    return result.result?.value;
+  }
+
+  async waitFor(expression, label, timeoutMs = DEFAULT_TIMEOUT_MS) {
+    const deadline = Date.now() + timeoutMs;
+    let lastError = null;
+    while (Date.now() < deadline) {
+      try {
+        const result = await this.evaluate(expression);
+        if (result) return result;
+      } catch (error) {
+        lastError = error;
+      }
+      await delay(50);
+    }
+    throw new Error(`Timed out waiting for ${label}${lastError ? `: ${lastError.message}` : ''}`);
+  }
+
+  async navigate(url) {
+    await this.client.send('Page.navigate', { url });
+    await this.waitFor(
+      `document.readyState === 'complete' && !!window.vugg && !!window.vugg.SCENARIOS`,
+      `Vugg boot at ${url}`,
+    );
+  }
+
+  async reload() {
+    await this.client.send('Page.reload', { ignoreCache: true });
+    await this.waitFor(
+      `document.readyState === 'complete' && !!window.vugg && !!window.vugg.SCENARIOS`,
+      'Vugg reload',
+    );
+  }
+
+  async setViewport(width, height, mobile = false) {
+    await this.client.send('Emulation.setDeviceMetricsOverride', {
+      width,
+      height,
+      deviceScaleFactor: 1,
+      mobile,
+      screenWidth: width,
+      screenHeight: height,
+    });
+  }
+
+  async setReducedMotion(enabled) {
+    await this.client.send('Emulation.setEmulatedMedia', {
+      media: '',
+      features: [{ name: 'prefers-reduced-motion', value: enabled ? 'reduce' : 'no-preference' }],
+    });
+  }
+
+  async setSafeAreaInsets(insets = { top: 0, right: 0, bottom: 0, left: 0 }) {
+    const authenticatedInsets = {
+      top: insets.top,
+      topMax: insets.top,
+      right: insets.right,
+      rightMax: insets.right,
+      bottom: insets.bottom,
+      bottomMax: insets.bottom,
+      left: insets.left,
+      leftMax: insets.left,
+    };
+    await this.client.send('Emulation.setSafeAreaInsetsOverride', { insets: authenticatedInsets });
+  }
+
+  async setValue(selector, value) {
+    const encodedSelector = JSON.stringify(selector);
+    const encodedValue = JSON.stringify(String(value));
+    return this.evaluate(`(() => {
+      const el = document.querySelector(${encodedSelector});
+      if (!el) throw new Error('missing control: ' + ${encodedSelector});
+      const own = Object.getOwnPropertyDescriptor(el.constructor.prototype, 'value');
+      if (own && own.set) own.set.call(el, ${encodedValue});
+      else el.value = ${encodedValue};
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      return el.value;
+    })()`);
+  }
+
+  async elementRect(selector) {
+    const encoded = JSON.stringify(selector);
+    return this.evaluate(`(() => {
+      const el = document.querySelector(${encoded});
+      if (!el) throw new Error('missing element: ' + ${encoded});
+      el.scrollIntoView({ block: 'center', inline: 'center' });
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) throw new Error('element is not visible: ' + ${encoded});
+      return { x: r.x, y: r.y, width: r.width, height: r.height };
+    })()`);
+  }
+
+  async elementRectByExpression(expression, label) {
+    return this.evaluate(`(() => {
+      const el = (${expression});
+      if (!el) throw new Error(${JSON.stringify(`missing element: ${label}`)});
+      el.scrollIntoView({ block: 'center', inline: 'center' });
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) throw new Error(${JSON.stringify(`element is not visible: ${label}`)});
+      return { x: r.x, y: r.y, width: r.width, height: r.height };
+    })()`);
+  }
+
+  async clickRect(rect) {
+    const x = rect.x + rect.width / 2;
+    const y = rect.y + rect.height / 2;
+    await this.client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+    await this.client.send('Input.dispatchMouseEvent', {
+      type: 'mousePressed', x, y, button: 'left', clickCount: 1,
+    });
+    await this.client.send('Input.dispatchMouseEvent', {
+      type: 'mouseReleased', x, y, button: 'left', clickCount: 1,
+    });
+  }
+
+  async click(selector) {
+    await this.clickRect(await this.elementRect(selector));
+  }
+
+  async clickExpression(expression, label) {
+    await this.clickRect(await this.elementRectByExpression(expression, label));
+  }
+
+  async hover(selector) {
+    const rect = await this.elementRect(selector);
+    await this.client.send('Input.dispatchMouseEvent', {
+      type: 'mouseMoved',
+      x: rect.x + rect.width / 2,
+      y: rect.y + rect.height / 2,
+    });
+  }
+
+  async key(key, code, windowsVirtualKeyCode) {
+    const common = { key, code, windowsVirtualKeyCode, nativeVirtualKeyCode: windowsVirtualKeyCode };
+    await this.client.send('Input.dispatchKeyEvent', { type: 'keyDown', ...common });
+    await this.client.send('Input.dispatchKeyEvent', { type: 'keyUp', ...common });
+  }
+}
+
+function assertBounds(rect, width, height, label) {
+  assert.ok(rect.left >= -1, `${label} crosses viewport left edge`);
+  assert.ok(rect.top >= -1, `${label} crosses viewport top edge`);
+  assert.ok(rect.right <= width + 1, `${label} crosses viewport right edge`);
+  assert.ok(rect.bottom <= height + 1, `${label} crosses viewport bottom edge`);
+}
+
+function assertSafeBounds(rect, width, height, insets, label) {
+  assert.ok(rect.left >= insets.left - 1, `${label} crosses safe-area left edge`);
+  assert.ok(rect.top >= insets.top - 1, `${label} crosses safe-area top edge`);
+  assert.ok(rect.right <= width - insets.right + 1, `${label} crosses safe-area right edge`);
+  assert.ok(rect.bottom <= height - insets.bottom + 1, `${label} crosses safe-area bottom edge`);
+}
+
+async function runWorkflow(driver, diagnostics) {
+  const checks = [];
+  async function check(name, task) {
+    const started = performance.now();
+    await task();
+    checks.push({ name, duration_ms: Math.round(performance.now() - started) });
+    process.stdout.write(`✓ ${name}\n`);
+  }
+
+  const baseUrl = diagnostics.base_url;
+  await driver.setViewport(1280, 720, false);
+  await driver.setReducedMotion(false);
+  await driver.navigate(`${baseUrl}/?v=${SIM_VERSION}&browser_qa=1`);
+
+  await check('boots the exact SIM and lists authored scenarios', async () => {
+    const identity = await driver.evaluate(`({
+      sim: window.vugg.SIM_VERSION,
+      scenarios: window.vugg.listScenarios().filter(x => !x.startsWith('tutorial_')).length,
+      title: document.title,
+    })`);
+    assert.equal(identity.sim, SIM_VERSION);
+    assert.equal(identity.scenarios, 38);
+    assert.match(identity.title, /Vugg/i);
+  });
+
+  await check('cancels a progressive Simulation run through the N shortcut', async () => {
+    await driver.setValue('#scenario', 'cooling');
+    await driver.setValue('#seed', TEST_SEED);
+    await driver.setValue('#shape-seed', '');
+    await driver.setValue('#steps', 120);
+    await driver.click('#btn-grow');
+    await driver.waitFor(`!!document.querySelector('.simulation-precompute')`, 'Simulation precompute');
+    await driver.key('n', 'KeyN', 78);
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#new-game-panel')).display !== 'none'`,
+      'New Game menu after cancellation',
+    );
+    const cancelled = await driver.evaluate(`({
+      step: window.vugg.legendsSim?.step ?? -1,
+      growDisabled: document.querySelector('#btn-grow').disabled,
+    })`);
+    assert.ok(cancelled.step >= 0 && cancelled.step < 120, `cancelled at unexpected step ${cancelled.step}`);
+    assert.equal(cancelled.growDisabled, false);
+    await delay(250);
+    assert.equal(await driver.evaluate(`window.vugg.legendsSim?.step ?? -1`), cancelled.step);
+  });
+
+  await driver.navigate(`${baseUrl}/?v=${SIM_VERSION}&browser_qa=complete`);
+  await check('completes a deterministic short Simulation run', async () => {
+    await driver.setValue('#scenario', 'cooling');
+    await driver.setValue('#seed', TEST_SEED);
+    await driver.setValue('#shape-seed', '');
+    await driver.setValue('#steps', 2);
+    await driver.click('#btn-grow');
+    await driver.waitFor(
+      `window.vugg.legendsSim?.step === 2 && !document.querySelector('.simulation-precompute')`,
+      'short Simulation completion',
+      30_000,
+    );
+    const run = await driver.evaluate(`({
+      step: window.vugg.legendsSim.step,
+      seed: window.vugg._lastRunMeta?.seed,
+      shapeSeed: window.vugg._lastRunMeta?.shape_seed,
+      narrative: document.body.classList.contains('legends-playing'),
+    })`);
+    assert.equal(run.step, 2);
+    assert.equal(run.seed, TEST_SEED);
+    assert.equal(run.shapeSeed, 1, 'blank shape input must preserve cooling\'s authored shape_seed');
+    assert.equal(run.narrative, true);
+    await driver.key('n', 'KeyN', 78);
+  });
+
+  await driver.navigate(`${baseUrl}/?v=${SIM_VERSION}&browser_qa=creative`);
+  await check('selects an authored scenario through the Creative menu at seed 42', async () => {
+    await driver.click('button[onclick="titleNewGame()"]');
+    await driver.clickExpression(
+      `Array.from(document.querySelectorAll('#new-game-panel button')).find(b => b.textContent.includes('Scenarios'))`,
+      'Scenarios menu button',
+    );
+    await driver.click(`button[onclick*="startScenarioInCreative('mvt')"]`);
+    await driver.waitFor(`window.vugg.fortressSim?.conditions?.wall?.shape_seed === 3`, 'MVT Creative start');
+    const state = await driver.evaluate(`(() => {
+      const saves = JSON.parse(localStorage.getItem('vugg-saves-v1') || '[]');
+      const active = saves.find(s => s.kind === 'auto' && s.origin?.scenario === 'mvt');
+      return {
+        scenario: active?.origin?.scenario,
+        seed: active?.origin?.seed,
+        shapeSeed: window.vugg.fortressSim.conditions.wall.shape_seed,
+        step: window.vugg.fortressSim.step,
+      };
+    })()`);
+    assert.deepEqual(state, { scenario: 'mvt', seed: TEST_SEED, shapeSeed: 3, step: 0 });
+  });
+
+  await check('edits live Creative chemistry and advances by button and keyboard', async () => {
+    await driver.setValue('#broth-mn', 42);
+    assert.equal(await driver.evaluate(`window.vugg.fortressSim.conditions.fluid.Mn`), 42);
+    await driver.click('#f-advance');
+    await driver.waitFor(`window.vugg.fortressSim.step === 1`, 'Creative Advance button');
+    await driver.key('s', 'KeyS', 83);
+    await driver.waitFor(`window.vugg.fortressSim.step === 2`, 'Creative S shortcut');
+    await driver.key('s', 'KeyS', 83);
+    await driver.waitFor(`window.vugg.fortressSim.step === 3`, 'third Creative state');
+  });
+
+  await check('shows causal mineral formation evidence on real pointer hover', async () => {
+    await driver.waitFor(`!!document.querySelector('#f-sat-bar .sat-indicator')`, 'mineral saturation pill');
+    await driver.hover('#f-sat-bar .sat-indicator');
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#sat-hover-pop')).display !== 'none'`,
+      'formation diagnosis hover',
+    );
+    const diagnosis = await driver.evaluate(`(() => {
+      const el = document.querySelector('#sat-hover-pop');
+      return {
+        heading: el.querySelector('.nuc-pop-head')?.textContent || '',
+        labels: Array.from(el.querySelectorAll('.nuc-pop-label')).map(x => x.textContent),
+      };
+    })()`);
+    assert.match(diagnosis.heading, /Why did.*form\?/i);
+    for (const required of ['Saturation', 'Calibrated growth budget', 'Temperature gate', 'pH gate', 'Redox gate', 'Substrate', 'Competition']) {
+      assert.ok(diagnosis.labels.includes(required), `formation diagnosis lacks ${required}`);
+    }
+  });
+
+  await check('manual-saves, reloads, and deterministically restores Creative state', async () => {
+    diagnostics.dialog_prompt = MANUAL_SAVE_NAME;
+    await driver.click('#mode-saves');
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#saves-panel')).display !== 'none'`,
+      'Saves panel',
+    );
+    await driver.click('#saves-manual-btn');
+    await driver.waitFor(
+      `JSON.parse(localStorage.getItem('vugg-saves-v1') || '[]').some(s => s.kind === 'manual' && s.name === ${JSON.stringify(MANUAL_SAVE_NAME)})`,
+      'manual save receipt',
+    );
+    await driver.reload();
+    await driver.click('#title-btn-load');
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#saves-panel')).display !== 'none'`,
+      'Saves panel after reload',
+    );
+    await driver.clickExpression(
+      `(() => {
+        const row = Array.from(document.querySelectorAll('.save-row')).find(r => r.querySelector('.save-name')?.textContent === ${JSON.stringify(MANUAL_SAVE_NAME)});
+        return row && Array.from(row.querySelectorAll('button')).find(b => b.textContent === 'Load');
+      })()`,
+      'named save Load button',
+    );
+    await driver.waitFor(`window.vugg.fortressSim?.step === 3`, 'save replay to step 3', 30_000);
+    const restored = await driver.evaluate(`({
+      step: window.vugg.fortressSim.step,
+      mn: window.vugg.fortressSim.conditions.fluid.Mn,
+      shapeSeed: window.vugg.fortressSim.conditions.wall.shape_seed,
+    })`);
+    assert.deepEqual(restored, { step: 3, mn: 42, shapeSeed: 3 });
+  });
+
+  await check('pauses and resumes authenticated wall replay', async () => {
+    const historyLength = await driver.evaluate(`window.vugg.fortressSim.wall_state_history.length`);
+    assert.ok(historyLength >= 3, `wall replay has only ${historyLength} frames`);
+    const authentication = await driver.evaluate(`(() => {
+      const sim = window.vugg.fortressSim;
+      return sim.wall_state_history.map((snapshot, index) => {
+        const decision = _topoReplayRenderDecision(sim.wall_state, snapshot);
+        return { index, mode: decision.mode, message: decision.message || null };
+      });
+    })()`);
+    assert.equal(authentication.length, historyLength);
+    assert.ok(
+      authentication.every(row => row.mode === 'cavity-field' && row.message === null),
+      `restored replay authentication failed: ${JSON.stringify(authentication)}`,
+    );
+    await driver.click('#topo-replay-btn');
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#topo-replay-bar')).display !== 'none'`,
+      'replay controls',
+    );
+    await driver.click('#topo-replay-playpause');
+    const renderedAuthority = await driver.evaluate(`(() => {
+      const sim = window.vugg.fortressSim;
+      const decision = _topoReplayRenderDecision(sim.wall_state, _topoReplayActiveSnap);
+      return {
+        mode: decision.mode,
+        message: decision.message || null,
+        rendererPresent: !!(_topoThreeState && _topoThreeState.cavity),
+        authorityUnrenderable: _topoThreeState
+          ? _topoThreeState.cavityAuthorityUnrenderable === true
+          : null,
+        cavityVisible: _topoThreeState?.cavity?.visible === true,
+      };
+    })()`);
+    assert.equal(renderedAuthority.mode, 'cavity-field');
+    assert.equal(renderedAuthority.message, null);
+    assert.equal(renderedAuthority.rendererPresent, true);
+    assert.equal(renderedAuthority.authorityUnrenderable, false);
+    assert.equal(renderedAuthority.cavityVisible, true);
+    const paused = await driver.evaluate(`document.querySelector('#topo-replay-scrub').value`);
+    await delay(150);
+    assert.equal(await driver.evaluate(`document.querySelector('#topo-replay-scrub').value`), paused);
+    await driver.key(' ', 'Space', 32);
+    await driver.waitFor(
+      `document.querySelector('#topo-replay-scrub').value !== ${JSON.stringify(paused)}`,
+      'Space resumes replay',
+    );
+    await driver.key('Escape', 'Escape', 27);
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#topo-replay-bar')).display === 'none'`,
+      'Escape stops replay',
+    );
+  });
+
+  await check('keeps the active Creative workspace inside a phone viewport', async () => {
+    const safeInsets = { top: 24, right: 12, bottom: 20, left: 12 };
+    await driver.setViewport(390, 844, true);
+    await driver.setSafeAreaInsets(safeInsets);
+    const layout = await driver.evaluate(`({
+      innerWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      advance: (() => { const r = document.querySelector('#f-advance').getBoundingClientRect(); return { width: r.width, height: r.height }; })(),
+    })`);
+    assert.ok(layout.scrollWidth <= layout.innerWidth + 1, `horizontal overflow ${layout.scrollWidth}px > ${layout.innerWidth}px`);
+    assert.ok(layout.advance.width >= 44 && layout.advance.height >= 44, 'Advance touch target is smaller than 44px');
+    await driver.click('#f-sat-bar .sat-indicator');
+    await driver.waitFor(`document.querySelector('#sat-hover-pop')?.classList.contains('is-pinned')`, 'tap-pinned diagnosis');
+    const pop = await driver.evaluate(`(() => {
+      const r = document.querySelector('#sat-hover-pop').getBoundingClientRect();
+      return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+    })()`);
+    assertBounds(pop, 390, 844, 'formation diagnosis');
+    assertSafeBounds(pop, 390, 844, safeInsets, 'formation diagnosis');
+    await driver.click('[data-nuc-pop-close]');
+    await driver.setSafeAreaInsets();
+  });
+
+  await check('honors reduced motion without altering the simulation state', async () => {
+    const before = await driver.evaluate(`window.vugg.fortressSim.step`);
+    await driver.setReducedMotion(true);
+    const motion = await driver.evaluate(`(() => {
+      const style = getComputedStyle(document.querySelector('#f-sat-bar .sat-indicator'));
+      return {
+        matches: matchMedia('(prefers-reduced-motion: reduce)').matches,
+        transitionDuration: style.transitionDuration,
+        animationDuration: style.animationDuration,
+      };
+    })()`);
+    assert.equal(motion.matches, true);
+    const durations = `${motion.transitionDuration},${motion.animationDuration}`
+      .split(',')
+      .map(value => value.trim())
+      .filter(Boolean)
+      .map(value => value.endsWith('ms') ? parseFloat(value) : parseFloat(value) * 1000);
+    assert.ok(durations.every(value => value <= 0.011), `motion durations were not collapsed: ${durations.join(', ')}`);
+    assert.equal(await driver.evaluate(`window.vugg.fortressSim.step`), before);
+  });
+
+  await check('fits title and Creative setup across the responsive viewport matrix', async () => {
+    await driver.setReducedMotion(false);
+    const viewports = [
+      { name: 'narrow portrait', width: 320, height: 568, safe: { top: 0, right: 0, bottom: 0, left: 0 } },
+      { name: 'phone portrait', width: 390, height: 844, safe: { top: 24, right: 12, bottom: 20, left: 12 } },
+      { name: 'phone landscape', width: 844, height: 390, safe: { top: 0, right: 28, bottom: 12, left: 28 } },
+      { name: 'tablet portrait', width: 768, height: 1024, safe: { top: 0, right: 0, bottom: 0, left: 0 } },
+    ];
+    for (const viewport of viewports) {
+      await driver.setViewport(viewport.width, viewport.height, true);
+      await driver.setSafeAreaInsets(viewport.safe);
+      await driver.navigate(`${baseUrl}/?v=${SIM_VERSION}&browser_qa=responsive-${encodeURIComponent(viewport.name)}`);
+      // A navigation may replace the renderer process. Reapply the emulated
+      // display cutout to the new document before measuring CSS env() values.
+      await driver.setSafeAreaInsets(viewport.safe);
+      const layout = await driver.evaluate(`(() => {
+        const safe = ${JSON.stringify(viewport.safe)};
+        const visible = el => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+        const offenders = Array.from(document.querySelectorAll('button, input, select, .title-logo, .controls'))
+          .filter(visible)
+          .map(el => {
+            const r = el.getBoundingClientRect();
+            return { tag: el.id || el.className || el.tagName, left: r.left, right: r.right, width: r.width };
+          })
+          .filter(r => r.left < safe.left - 1 || r.right > innerWidth - safe.right + 1);
+        const bodyStyle = getComputedStyle(document.body);
+        return {
+          width: innerWidth,
+          scrollWidth: document.documentElement.scrollWidth,
+          offenders,
+          padding: {
+            top: parseFloat(bodyStyle.paddingTop), right: parseFloat(bodyStyle.paddingRight),
+            bottom: parseFloat(bodyStyle.paddingBottom), left: parseFloat(bodyStyle.paddingLeft),
+          },
+        };
+      })()`);
+      assert.ok(layout.scrollWidth <= layout.width + 1,
+        `${viewport.name} title overflow ${layout.scrollWidth}px > ${layout.width}px`);
+      assert.deepEqual(layout.offenders, [], `${viewport.name} title has controls outside its safe viewport`);
+      assert.ok(layout.padding.left >= viewport.safe.left && layout.padding.right >= viewport.safe.right,
+        `${viewport.name} body ignores horizontal safe-area insets`);
+      assert.ok(layout.padding.top >= viewport.safe.top && layout.padding.bottom >= viewport.safe.bottom,
+        `${viewport.name} body ignores vertical safe-area insets`);
+    }
+
+    await driver.setViewport(320, 568, true);
+    await driver.setSafeAreaInsets();
+    await driver.navigate(`${baseUrl}/?v=${SIM_VERSION}&browser_qa=responsive-creative-setup`);
+    await driver.click('button[onclick="titleNewGame()"]');
+    await driver.click('button[onclick="menuGo(\'fortress\')"]');
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#fortress-setup')).display !== 'none'`,
+      'Creative setup on narrow phone',
+    );
+    const setup = await driver.evaluate(`(() => {
+      const visible = el => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+      const controls = Array.from(document.querySelectorAll('#fortress-setup input, #fortress-setup select, #fortress-setup button'))
+        .filter(visible)
+        .map(el => {
+          const r = el.getBoundingClientRect();
+          return { id: el.id || el.textContent.trim(), type: el.type || el.tagName, left: r.left, right: r.right, height: r.height };
+        });
+      return {
+        width: innerWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        horizontalOffenders: controls.filter(r => r.left < -1 || r.right > innerWidth + 1),
+        undersized: controls.filter(r => ['range', 'checkbox', 'number', 'button', 'select-one'].includes(r.type) && r.height < 43.5),
+      };
+    })()`);
+    assert.ok(setup.scrollWidth <= setup.width + 1,
+      `Creative setup overflow ${setup.scrollWidth}px > ${setup.width}px`);
+    assert.deepEqual(setup.horizontalOffenders, [], 'Creative setup has clipped controls');
+    assert.deepEqual(setup.undersized, [], 'Creative setup has touch targets below 44px');
+  });
+
+  return checks;
+}
+
+async function main() {
+  const browserPath = findBrowser();
+  const serverPort = await freePort();
+  const profileDir = await mkdtemp(path.join(os.tmpdir(), 'vugg-browser-qa-'));
+  let server = null;
+  let browser = null;
+  let client = null;
+  const diagnostics = {
+    schema: 1,
+    sim_version: SIM_VERSION,
+    seed: TEST_SEED,
+    browser_path: browserPath,
+    base_url: `http://127.0.0.1:${serverPort}`,
+    dialog_prompt: null,
+    dialogs: [],
+    runtime_exceptions: [],
+    severe_log_entries: [],
+    http_errors: [],
+    server_stderr: '',
+    browser_stderr: '',
+  };
+
+  try {
+    server = spawnOwned(process.execPath, ['tools/serve-local.mjs', String(serverPort)], {
+      cwd: ROOT,
+      stdio: ['ignore', 'ignore', 'pipe'],
+      windowsHide: true,
+    });
+    drainOwnedPipe(server.stderr, diagnostics, 'server_stderr');
+    await waitForHttp(`${diagnostics.base_url}/?v=${SIM_VERSION}`, server);
+
+    browser = spawnOwned(browserPath, [
+      '--headless=new',
+      '--remote-debugging-port=0',
+      `--user-data-dir=${profileDir}`,
+      '--no-first-run',
+      '--no-default-browser-check',
+      '--disable-extensions',
+      '--disable-background-networking',
+      '--disable-component-update',
+      '--disable-sync',
+      '--mute-audio',
+      'about:blank',
+    ], {
+      stdio: ['ignore', 'ignore', 'pipe'],
+      windowsHide: true,
+    });
+    drainOwnedPipe(browser.stderr, diagnostics, 'browser_stderr');
+    const devToolsPort = await waitForDevToolsPort(profileDir, browser);
+    const version = await (await fetch(`http://127.0.0.1:${devToolsPort}/json/version`)).json();
+    diagnostics.browser_product = version.Browser;
+    diagnostics.protocol_version = version['Protocol-Version'];
+    client = new CdpClient(version.webSocketDebuggerUrl);
+    await client.open();
+    const { targetId } = await client.send('Target.createTarget', { url: 'about:blank' });
+    const { sessionId } = await client.send('Target.attachToTarget', { targetId });
+    const session = new CdpSession(client, sessionId);
+    await Promise.all([
+      session.send('Page.enable'),
+      session.send('Runtime.enable'),
+      session.send('Log.enable'),
+      session.send('Network.enable'),
+    ]);
+    session.on('Runtime.exceptionThrown', event => {
+      diagnostics.runtime_exceptions.push(
+        event.exceptionDetails?.exception?.description || event.exceptionDetails?.text || 'unknown exception',
+      );
+    });
+    session.on('Log.entryAdded', ({ entry }) => {
+      if (entry?.level !== 'error') return;
+      diagnostics.severe_log_entries.push({
+        text: entry.text || 'unknown log error',
+        url: entry.url || null,
+        source: entry.source || null,
+      });
+    });
+    session.on('Network.responseReceived', ({ response }) => {
+      if (response?.status >= 400) {
+        diagnostics.http_errors.push({ status: response.status, url: response.url });
+      }
+    });
+    session.on('Page.javascriptDialogOpening', event => {
+      const expected = event.type === 'prompt'
+        && event.message === 'Name this save:'
+        && diagnostics.dialog_prompt === MANUAL_SAVE_NAME;
+      diagnostics.dialogs.push({
+        type: event.type,
+        message: event.message,
+        default_prompt: event.defaultPrompt || '',
+        expected,
+      });
+      void session.send('Page.handleJavaScriptDialog', {
+        accept: expected,
+        promptText: expected ? MANUAL_SAVE_NAME : '',
+      });
+      diagnostics.dialog_prompt = null;
+    });
+    await session.send('Page.addScriptToEvaluateOnNewDocument', {
+      source: `
+        Object.defineProperty(Date, 'now', { value: () => ${TEST_SEED}, configurable: true });
+        Object.defineProperty(HTMLMediaElement.prototype, 'play', {
+          value: function () { return Promise.resolve(); }, configurable: true,
+        });
+      `,
+    });
+
+    const driver = new BrowserDriver(session);
+    const checks = await runWorkflow(driver, diagnostics);
+    assert.deepEqual(diagnostics.runtime_exceptions, [], 'uncaught browser exceptions were recorded');
+    assert.deepEqual(diagnostics.severe_log_entries, [], 'severe browser log entries were recorded');
+    assert.deepEqual(diagnostics.http_errors, [], 'HTTP resource errors were recorded');
+    assert.deepEqual(
+      diagnostics.dialogs.map(dialog => ({
+        type: dialog.type,
+        message: dialog.message,
+        expected: dialog.expected,
+      })),
+      [{ type: 'prompt', message: 'Name this save:', expected: true }],
+      'unexpected or missing browser dialog',
+    );
+    process.stdout.write(`${JSON.stringify({
+      ok: true,
+      schema: diagnostics.schema,
+      sim_version: diagnostics.sim_version,
+      seed: diagnostics.seed,
+      browser: diagnostics.browser_product,
+      checks,
+    }, null, 2)}\n`);
+  } finally {
+    if (client && !ownedProcessExited(browser)) {
+      const gracefulClose = client.send('Browser.close').catch(() => null);
+      await Promise.race([gracefulClose, delay(2_000)]);
+      await waitForOwnedExit(browser, 5_000);
+    }
+    await runCleanupActions([
+      ['CDP client', async () => client?.close()],
+      ['browser process', async () => terminateOwned(browser, { tree: true })],
+      ['local server process', async () => terminateOwned(server)],
+      ['temporary browser profile', async () => {
+        await rm(profileDir, { recursive: true, force: true, maxRetries: 4, retryDelay: 150 });
+      }],
+    ]);
+  }
+}
+
+export {
+  ownedProcessExited,
+  runCleanupActions,
+  spawnOwned,
+  terminateOwned,
+  waitForOwnedExit,
+};
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch(error => {
+    console.error(error?.stack || error);
+    process.exitCode = 1;
+  });
+}

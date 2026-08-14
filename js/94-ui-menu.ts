@@ -76,6 +76,11 @@ function hideAllMenuAndModePanels() {
 }
 
 function openNewGameMenu() {
+  // Opening the menu is a lifecycle boundary, including when the documented
+  // N shortcut interrupts progressive Simulation computation.  Do this before
+  // hiding panels so no invisible run can keep mutating geology or leave its
+  // controls disabled behind the menu.
+  if (typeof cancelSimulationPlayback === 'function') cancelSimulationPlayback();
   hideAllMenuAndModePanels();
   document.body.classList.add('title-on');
   const panel = document.getElementById('new-game-panel');

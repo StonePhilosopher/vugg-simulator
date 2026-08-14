@@ -1328,6 +1328,36 @@ function _satHoverEl() {
 
 let _satHoverPinnedPill = null;
 
+function _satSafeAreaInsets(): { top: number; right: number; bottom: number; left: number } {
+  // CSS env() values are not exposed directly to script. Resolve them through
+  // a zero-size fixed probe so the body-mounted diagnosis respects phone
+  // notches and home-indicator insets in either orientation.
+  const probe = document.createElement('div');
+  probe.setAttribute('aria-hidden', 'true');
+  probe.style.cssText = [
+    'position:fixed', 'visibility:hidden', 'pointer-events:none',
+    'width:0', 'height:0',
+    'padding-top:env(safe-area-inset-top)',
+    'padding-right:env(safe-area-inset-right)',
+    'padding-bottom:env(safe-area-inset-bottom)',
+    'padding-left:env(safe-area-inset-left)',
+  ].join(';');
+  document.body.appendChild(probe);
+  const style = getComputedStyle(probe);
+  const px = (value: string): number => {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+  };
+  const insets = {
+    top: px(style.paddingTop),
+    right: px(style.paddingRight),
+    bottom: px(style.paddingBottom),
+    left: px(style.paddingLeft),
+  };
+  probe.remove();
+  return insets;
+}
+
 function _satHoverShowForPill(pill, pinned = false) {
   if (_satHoverPinnedPill && !pinned) return;
   const name = pill.dataset.hlMineral;
@@ -1365,11 +1395,17 @@ function _satHoverShowForPill(pill, pinned = false) {
   if (!pinned) pill.setAttribute('aria-describedby', el.id);
   // Position beside the pill; flip left/up when the viewport says no.
   const r = pill.getBoundingClientRect();
+  const safe = _satSafeAreaInsets();
   const pw = el.offsetWidth, ph = el.offsetHeight;
   let x = r.right + 10;
-  if (x + pw > window.innerWidth - 8) x = Math.max(8, r.left - pw - 10);
+  const minX = safe.left + 8;
+  const maxX = window.innerWidth - safe.right - 8;
+  const minY = safe.top + 8;
+  const maxY = window.innerHeight - safe.bottom - 8;
+  if (x + pw > maxX) x = Math.max(minX, r.left - pw - 10);
   let y = r.top;
-  if (y + ph > window.innerHeight - 8) y = Math.max(8, window.innerHeight - ph - 8);
+  if (y + ph > maxY) y = Math.max(minY, maxY - ph);
+  y = Math.max(minY, y);
   el.style.left = `${Math.round(x)}px`;
   el.style.top = `${Math.round(y)}px`;
   if (pinned) {

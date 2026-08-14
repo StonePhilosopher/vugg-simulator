@@ -7,6 +7,7 @@ declare const CavityWaterAppearance: any;
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const menuSource = fs.readFileSync(path.join(ROOT, 'js', '94-ui-menu.ts'), 'utf8');
 
 afterEach(() => {
   document.getElementById('creative-control-fixture')?.remove();
@@ -737,12 +738,25 @@ describe('responsive and accessible shell contracts', () => {
 
   it('keeps phone buttons and exact-value fields at a 44px touch target', () => {
     expect(html).toMatch(/@media \(max-width: 600px\) \{[\s\S]*?button,[\s\S]*?input\[type="number"\][\s\S]*?min-height:\s*44px/);
+    expect(html).toMatch(/\.setup-row input\[type="range"\]\s*\{[\s\S]*?height:\s*44px/);
+    expect(html).toMatch(/\.setup-row input\[type="checkbox"\],[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px/);
     expect(html).toMatch(/\.topo-zoom-btn\s*\{\s*width:\s*44px;\s*height:\s*44px;/);
     expect(html).toMatch(/\.topo-camera-ctrls\s*\{[\s\S]*?flex-wrap:\s*wrap/);
+  });
+
+  it('reserves operating-system safe areas in either phone orientation', () => {
+    expect(html).toMatch(/viewport-fit=cover/);
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      expect(html).toMatch(new RegExp(`padding-${side}:\\s*max\\([^;]*env\\(safe-area-inset-${side}\\)`));
+    }
   });
 });
 
 describe('Simulation playback lifecycle', () => {
+  it('cancels progressive work before the New Game menu hides it', () => {
+    expect(menuSource).toMatch(/function openNewGameMenu\(\)\s*\{[\s\S]*?cancelSimulationPlayback\(\);[\s\S]*?hideAllMenuAndModePanels\(\);/);
+  });
+
   it('removes a hidden continue gate when playback is cancelled', () => {
     const output = document.createElement('div');
     output.id = 'playback-cancel-fixture';
