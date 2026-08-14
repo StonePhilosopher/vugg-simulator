@@ -206,13 +206,20 @@ single execution ledger for the science-first AAA completion branch.
   AI Dr. Michael Wise hostile-review role returned `SATISFIED` after
   simulation-authority, evidence-reproducibility, and post-bake test-integrity
   rounds.
-  The scalar provider remains default-off pending the production promotion
-  gates below.
-- [ ] Promote Cartesian cavity geometry only after mass-balanced wall evolution
-  joins the now-reconciled authored-mask scalar oracle, then
-  make crystal clipping, surface anchors, replay, matrix materials, and water
-  appearance consume that same topology. Keep the shadow flag default-off
-  until those gates and an optimized performance budget pass.
+  The scalar provider remained default-off until the production promotion below.
+- [x] Promote Cartesian cavity geometry after mass-balanced wall evolution joins
+  the reconciled authored-mask scalar oracle, with crystal clipping, surface
+  anchors, replay, matrix materials, and water appearance consuming the same
+  topology. SIM 266 makes the fixed 48³, zero-isovalue Cartesian contract the
+  default authority before water, chemistry, or nucleation; erosion preflights
+  exact extracted volume and 64³ convergence atomically; replay and unsupported
+  rendering fail closed; and geometry/voxel/thermal/fluid caches are sealed from
+  public mutation. The optimized Bisbee and memory budgets, the complete
+  225-file serial regression sweep, the exact 126-artifact science receipt, 41
+  deterministic strips and 82 claim-card files, zero locality violations, and
+  repeated AI Dr. Wise `SATISFIED` verdicts close the production gate. Evidence:
+  `proposals/PROPOSAL-MARCHING-CUBES-CAVITY.md`,
+  `archive/evidence/v266.json`, and local commit `c5b2622`.
 - [ ] Browser automation for start/run/pause/cancel/save/reload/replay, scenario
   selection, Creative edits, hover diagnosis, keyboard use, and reduced motion.
 - [ ] Responsive UI repair across narrow/tall and landscape phone viewports;

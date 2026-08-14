@@ -1,17 +1,15 @@
 # PROPOSAL: Marching-Cubes Cavity Surfaces
 
-> **Status:** Tranches 0–3 are reviewed, default-off foundations. SIM 263
-> implements and evidence-gates the dissolution-only Tranche 2 foundation:
-> exact closed-`WallMesh` volume, atomic chemistry/geometry commits, one capacity
-> authority, authenticated replay prefixes, and executable pre-run Creative
-> host/size authoring. Tranche 3 now pairs the visible Marching-Cubes wall with
-> the exact same immutable Cartesian scalar snapshot for GPU crystal clipping,
-> with measured R32F support, verified upload bytes, scoped shader-link gates,
-> CPU hit-test parity, and a distinct polar/canvas fallback chain. Focused tests,
-> seed-42 desktop/mobile browser checks, and hostile review are closed; the AI
-> “Dr. Michael Wise” role returned `SATISFIED`. Production promotion,
-> topology-independent anchors, deposition, and production materials remain
-> open. This is not a claim of review by the real scientist.
+> **Status:** Production promotion is complete for the simulator's authenticated
+> star-shaped erosion domain. SIM 266 selects a fixed 48³, zero-isovalue
+> Cartesian cavity contract before water, chemistry, or nucleation, and makes
+> mass-balanced evolution, crystal clipping, topology-independent anchors,
+> replay, triplanar matrix materials, and world-space water appearance consume
+> that authority. Exact v266 evidence, the memory-bounded regression sweep, and
+> hostile review are closed; the AI “Dr. Michael Wise” role returned
+> `SATISFIED`. Deposition and genuinely re-entrant/multi-chamber geological
+> evolution remain explicitly outside the commissioned model domain. This is
+> not a claim of review by the real scientist.
 > **Authored:** 2026-08-10 after reviewing the current `WallState`, `WallMesh`,
 > `CavityVoxelGrid`, and Three.js cavity-clip paths.
 > **Primary goal:** Let Vugg Simulator represent genuinely three-dimensional
@@ -775,7 +773,9 @@ simulation authority.
 - [x] Sampled-input, polar-clip, and rejected-extraction cache behavior is tested.
 - [x] 48³/64³ time, triangle, and typed-buffer memory receipts are recorded.
 - [x] Known gaps are explicit in runtime comments and tests.
-- [ ] Production promotion. This is intentionally blocked by the gates above.
+- [x] Production promotion for the authenticated star-shaped erosion domain;
+      see the SIM 266 record below. Deposition and re-entrant evolution remain
+      separately scoped future mechanisms.
 
 ### AI Dr. Michael Wise hostile review
 
@@ -1007,7 +1007,60 @@ and effective canvas-state defects, then returned the exact verdict
 `SATISFIED`. This is an AI role, not review by the real scientist or
 Smithsonian.
 
-Topology-independent anchors, production triplanar/material mapping, measured
-production performance budgets, deposition, and promotion remain open. Tranche
-3 changes rendering and hit testing only; it does not alter chemistry, scenario
-baselines, RNG consumption, or authored scenario `shape_seed` values.
+At the Tranche 3 stopping point, topology-independent anchors, production
+triplanar/material mapping, measured production performance budgets,
+deposition, and promotion remained open. Tranche 3 itself changed rendering and
+hit testing only; it did not alter chemistry, scenario baselines, RNG
+consumption, or authored scenario `shape_seed` values. Section 18 records the
+later SIM 266 promotion closure.
+
+---
+
+## 18. SIM 266 production-promotion record — 2026-08-14
+
+SIM 266 closes the promotion gates for the simulator's current, explicitly
+star-shaped erosion domain. It does not claim that deposition, undercuts, or
+disconnected chambers have been scientifically commissioned.
+
+1. Every new simulation installs one immutable production contract before
+   water, voxel chemistry, or nucleation can observe the cavity. The contract
+   pins exact-union authored geometry, a run-wide world frame, 48³ scientific
+   resolution, zero isovalue, signed near-zero handling, and a 64³ convergence
+   reference. Renderer quality and hardware cannot alter geological state.
+2. Dissolution solves against the extracted Cartesian volume, preflights a
+   closed two-manifold surface and field agreement, and commits wall chemistry,
+   depth ledger, capacity, and provider bytes atomically. Failure restores the
+   exact prior cell-fluid aliases, revision, ledger, geometry, and provider.
+3. The Freudenthal extractor has deterministic shared topology, connected
+   vertex-link validation, stable normals, immutable private buffers, and
+   fail-closed critical-contact handling. Crystal anchors retain physical
+   triangle/barycentric identity separately from their nearest chemistry
+   address, including host-overgrowth inheritance and historical remapping.
+4. Matrix relief uses authenticated material-space triplanar mapping. Water is
+   a world-space plane measured from the authenticated cavity floor, classifies
+   chemistry and surface color from the same geometry, records historical
+   appearance receipts, and represents a zero-height drained cavity without a
+   false wet pole or interpolated wet patch.
+5. Replay authenticates exact ledger prefixes, authored topology, provider,
+   material state, and water appearance before either renderer receives a
+   historical frame. Corrupt or unsupported frames are explicitly withheld;
+   no live-wall or polar substitute is presented as historical geology.
+6. Private authority records bind authored rings/bubbles, ledger and contract
+   ownership, mesh topology/metrics, voxel identity/order/addressing, thermal
+   geometry, fluid-spot proximity/erosion flux, and derived caches. Public
+   diagnostics return defensive views and cannot mutate physical results.
+7. Production performance avoids repeated full-surface root extraction,
+   reuses exact preflight provider bytes, caches authenticated projections and
+   surface patches, and enforces single-worker RSS budgets. Bisbee's evolved
+   production path and a garbage-collected memory plateau have dedicated tools
+   and regressions.
+
+The final exact-byte rebake produced 41 deterministic strips with normalized
+timestamps, 41 JSON and 41 Markdown claim cards, three v266 science baselines,
+and `archive/evidence/v266.json` authenticating 126 artifacts. `science:verify`
+passed the exact execution/producer graph, 41-scenario provenance, zero locality
+violations, and 40 focused science tests. The complete 225-file serial workflow,
+the Creative/cation/BIF audits, and the final build check passed locally. The
+AI “Dr. Michael Wise” hostile-review role returned `SATISFIED` after the source,
+evidence, replay, authority-boundary, performance, and commissioning audits.
+The implementation and evidence are committed locally at `c5b2622`.
