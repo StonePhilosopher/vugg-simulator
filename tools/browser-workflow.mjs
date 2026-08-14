@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import http from 'node:http';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -15,9 +17,35 @@ const MANUAL_SAVE_NAME = 'Browser QA — seed 42';
 const DEFAULT_TIMEOUT_MS = 20_000;
 const DEBUG_CDP = process.env.VUGG_BROWSER_DEBUG === '1';
 const OWNED_PROCESS_ERRORS = new WeakMap();
+const execFileAsync = promisify(execFile);
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchWithDeadline(url, {
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+  fetcher = globalThis.fetch,
+  options = {},
+  consume = null,
+} = {}) {
+  const controller = new AbortController();
+  let timer = null;
+  const deadline = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error(`Timed out fetching ${url}`));
+    }, timeoutMs);
+  });
+  try {
+    const request = Promise.resolve().then(async () => {
+      const response = await fetcher(url, { ...options, signal: controller.signal });
+      return consume ? consume(response) : response;
+    });
+    return await Promise.race([request, deadline]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 function ownedProcessExited(child) {
@@ -93,7 +121,11 @@ async function freePort() {
   return port;
 }
 
-async function waitForHttp(url, child, timeoutMs = DEFAULT_TIMEOUT_MS) {
+async function waitForHttp(url, child, {
+  expectedNonce = null,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+  fetcher = globalThis.fetch,
+} = {}) {
   const deadline = Date.now() + timeoutMs;
   let lastError = null;
   while (Date.now() < deadline) {
@@ -101,9 +133,26 @@ async function waitForHttp(url, child, timeoutMs = DEFAULT_TIMEOUT_MS) {
       throw new Error(`Owned process exited early with code ${child.exitCode}`);
     }
     try {
-      const response = await fetch(url, { cache: 'no-store' });
-      if (response.ok) return response;
-      lastError = new Error(`HTTP ${response.status}`);
+      const response = await fetchWithDeadline(url, {
+        timeoutMs: Math.max(1, deadline - Date.now()),
+        fetcher,
+        options: { cache: 'no-store' },
+      });
+      if (response.ok) {
+        const actualNonce = response.headers?.get?.('x-vugg-server-nonce') || null;
+        if (expectedNonce && actualNonce !== expectedNonce) {
+          lastError = new Error('owned-server nonce mismatch');
+        } else {
+          // A bind failure can race the first response. Do not accept even a
+          // nonce-matching reply after the owned process has failed.
+          const failure = ownedProcessFailure(child);
+          if (failure) throw failure;
+          if (!ownedProcessExited(child)) return response;
+          lastError = new Error('owned server exited during readiness authentication');
+        }
+      } else {
+        lastError = new Error(`HTTP ${response.status}`);
+      }
     } catch (error) {
       lastError = error;
     }
@@ -112,24 +161,102 @@ async function waitForHttp(url, child, timeoutMs = DEFAULT_TIMEOUT_MS) {
   throw new Error(`Timed out waiting for ${url}: ${lastError?.message || 'no response'}`);
 }
 
-async function waitForDevToolsPort(profileDir, child, timeoutMs = DEFAULT_TIMEOUT_MS) {
+function assertOwnedDevToolsVersion(version, receipt) {
+  assert.equal(
+    version?.webSocketDebuggerUrl,
+    receipt.webSocketDebuggerUrl,
+    'DevTools endpoint did not match the exact owned-profile receipt',
+  );
+}
+
+async function waitForDevToolsReceipt(profileDir, child, timeoutMs = DEFAULT_TIMEOUT_MS) {
   const receiptPath = path.join(profileDir, 'DevToolsActivePort');
   const deadline = Date.now() + timeoutMs;
   let lastError = null;
   while (Date.now() < deadline) {
-    if (ownedProcessExited(child)) {
-      throw new Error(`Browser exited early with code ${child.exitCode}`);
+    const spawnError = child && OWNED_PROCESS_ERRORS.get(child);
+    if (spawnError) throw spawnError;
+    if (child?.exitCode != null && child.exitCode !== 0) {
+      throw new Error(`Browser launcher exited early with code ${child.exitCode}`);
     }
     try {
       const lines = (await readFile(receiptPath, 'utf8')).trim().split(/\r?\n/);
       const port = Number(lines[0]);
-      if (Number.isInteger(port) && port > 0) return port;
+      const browserPath = String(lines[1] || '');
+      if (Number.isSafeInteger(port) && port > 0
+          && /^\/devtools\/browser\/[A-Za-z0-9._-]+$/.test(browserPath)) {
+        return {
+          port,
+          webSocketDebuggerUrl: `ws://127.0.0.1:${port}${browserPath}`,
+        };
+      }
+      lastError = new Error('invalid DevToolsActivePort receipt');
     } catch (error) {
       lastError = error;
     }
     await delay(50);
   }
-  throw new Error(`Timed out waiting for DevToolsActivePort: ${lastError?.message || 'missing'}`);
+  const launcherState = ownedProcessExited(child)
+    ? `launcher exited with code ${child?.exitCode}`
+    : 'launcher remained active';
+  throw new Error(`Timed out waiting for ${receiptPath} (${launcherState}): ${lastError?.message || 'missing'}`);
+}
+
+async function findOwnedProfileProcesses(profileDir, { platform = process.platform } = {}) {
+  if (platform !== 'win32') return [];
+  const command = [
+    '$needle = $env:VUGG_PROFILE_NEEDLE',
+    'Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($needle) } | ForEach-Object { "$($_.ProcessId)|$($_.ParentProcessId)" }',
+  ].join('; ');
+  const { stdout } = await execFileAsync('powershell.exe', [
+    '-NoProfile', '-NonInteractive', '-Command', command,
+  ], {
+    env: { ...process.env, VUGG_PROFILE_NEEDLE: profileDir },
+    windowsHide: true,
+    timeout: 10_000,
+  });
+  return String(stdout).split(/\r?\n/).map(line => {
+    const [pid, parentPid] = line.trim().split('|').map(Number);
+    return Number.isSafeInteger(pid) && pid > 0 && Number.isSafeInteger(parentPid)
+      ? { pid, parentPid }
+      : null;
+  }).filter(Boolean);
+}
+
+async function terminateOwnedProfileProcesses(profileDir, {
+  platform = process.platform,
+  processFinder = findOwnedProfileProcesses,
+  processSpawner = spawnOwned,
+  waitMs = 5_000,
+} = {}) {
+  if (platform !== 'win32') return;
+  const processes = await processFinder(profileDir, { platform });
+  if (!processes.length) return;
+  const ownedPids = new Set(processes.map(entry => entry.pid));
+  const roots = processes.filter(entry => !ownedPids.has(entry.parentPid));
+  const taskkillFailures = [];
+  for (const root of roots) {
+    const killer = processSpawner('taskkill.exe', ['/PID', String(root.pid), '/T', '/F'], {
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    if (!(await waitForOwnedExit(killer, waitMs))) {
+      taskkillFailures.push(new Error(`taskkill did not finish for profile-owned browser tree ${root.pid}`));
+      killer.kill('SIGKILL');
+      await waitForOwnedExit(killer, Math.min(waitMs, 2_000));
+    } else {
+      const failure = ownedProcessFailure(killer);
+      if (failure) taskkillFailures.push(failure);
+    }
+  }
+  await delay(100);
+  const remaining = await processFinder(profileDir, { platform });
+  if (remaining.length) {
+    throw new AggregateError([
+      ...taskkillFailures,
+      new Error(`profile-owned browser processes survived cleanup: ${remaining.map(entry => entry.pid).join(', ')}`),
+    ], `Could not terminate every browser process for owned profile ${profileDir}`);
+  }
 }
 
 async function waitForOwnedExit(child, timeoutMs) {
@@ -218,9 +345,13 @@ function drainOwnedPipe(pipe, diagnostics, key) {
 }
 
 class CdpClient {
-  constructor(webSocketUrl) {
-    this.ws = new WebSocket(webSocketUrl);
+  constructor(webSocketUrl, {
+    WebSocketCtor = globalThis.WebSocket,
+    openTimeoutMs = DEFAULT_TIMEOUT_MS,
+  } = {}) {
+    this.ws = new WebSocketCtor(webSocketUrl);
     this.ws.binaryType = 'arraybuffer';
+    this.openTimeoutMs = openTimeoutMs;
     this.nextId = 1;
     this.pending = new Map();
     this.listeners = new Map();
@@ -228,8 +359,27 @@ class CdpClient {
 
   async open() {
     await new Promise((resolve, reject) => {
-      this.ws.addEventListener('open', resolve, { once: true });
-      this.ws.addEventListener('error', reject, { once: true });
+      let timer = null;
+      const cleanup = () => {
+        if (timer) clearTimeout(timer);
+        this.ws.removeEventListener('open', onOpen);
+        this.ws.removeEventListener('error', onError);
+      };
+      const onOpen = () => {
+        cleanup();
+        resolve();
+      };
+      const onError = event => {
+        cleanup();
+        reject(event instanceof Error ? event : new Error('CDP WebSocket failed to open'));
+      };
+      this.ws.addEventListener('open', onOpen, { once: true });
+      this.ws.addEventListener('error', onError, { once: true });
+      timer = setTimeout(() => {
+        cleanup();
+        try { this.ws.close(); } catch { /* best-effort timeout close */ }
+        reject(new Error('Timed out opening CDP WebSocket'));
+      }, this.openTimeoutMs);
     });
     this.ws.addEventListener('message', event => {
       if (DEBUG_CDP) {
@@ -515,10 +665,10 @@ class BrowserDriver {
 }
 
 function assertBounds(rect, width, height, label) {
-  assert.ok(rect.left >= -1, `${label} crosses viewport left edge`);
-  assert.ok(rect.top >= -1, `${label} crosses viewport top edge`);
-  assert.ok(rect.right <= width + 1, `${label} crosses viewport right edge`);
-  assert.ok(rect.bottom <= height + 1, `${label} crosses viewport bottom edge`);
+  assert.ok(rect.left >= -1, `${label} crosses viewport left edge (${rect.left}px)`);
+  assert.ok(rect.top >= -1, `${label} crosses viewport top edge (${rect.top}px)`);
+  assert.ok(rect.right <= width + 1, `${label} crosses viewport right edge (${rect.right}px > ${width}px)`);
+  assert.ok(rect.bottom <= height + 1, `${label} crosses viewport bottom edge (${rect.bottom}px > ${height}px)`);
 }
 
 function assertSafeBounds(rect, width, height, insets, label) {
@@ -928,6 +1078,7 @@ async function runWorkflow(driver, diagnostics) {
         animationDuration: style.animationDuration,
         scrollWidth: document.documentElement.scrollWidth,
         innerWidth,
+        visualWidth: visualViewport ? visualViewport.width : innerWidth,
         panel: { left: panelRect.left, top: panelRect.top, right: panelRect.right, bottom: panelRect.bottom },
         close: { width: closeRect.width, height: closeRect.height },
       };
@@ -935,8 +1086,11 @@ async function runWorkflow(driver, diagnostics) {
     assert.deepEqual(state.stored, { fontScale: 1.5, motion: 'reduced' });
     assert.equal(state.rootSize, '150%');
     assert.equal(state.rootMotion, 'reduced');
-    assert.ok(state.scrollWidth <= state.innerWidth + 1, '150% text introduced horizontal page overflow');
-    assertBounds(state.panel, 390, 844, 'scaled Settings dialog');
+    assert.ok(
+      state.scrollWidth <= state.visualWidth + 1,
+      `150% text introduced horizontal page overflow (${state.scrollWidth}px > ${state.visualWidth}px)`,
+    );
+    assertBounds(state.panel, state.visualWidth, 844, 'scaled Settings dialog');
     assert.ok(state.close.width >= 44 && state.close.height >= 44, 'Settings Close target is below 44px');
     const durations = `${state.transitionDuration},${state.animationDuration}`
       .split(',')
@@ -1036,6 +1190,7 @@ async function main() {
   const browserPath = findBrowser();
   const serverPort = await freePort();
   const profileDir = await mkdtemp(path.join(os.tmpdir(), 'vugg-browser-qa-'));
+  const serverNonce = randomUUID();
   let server = null;
   let browser = null;
   let client = null;
@@ -1057,15 +1212,19 @@ async function main() {
   try {
     server = spawnOwned(process.execPath, ['tools/serve-local.mjs', String(serverPort)], {
       cwd: ROOT,
+      env: { ...process.env, VUGG_SERVER_NONCE: serverNonce },
       stdio: ['ignore', 'ignore', 'pipe'],
       windowsHide: true,
     });
     drainOwnedPipe(server.stderr, diagnostics, 'server_stderr');
-    await waitForHttp(`${diagnostics.base_url}/?v=${SIM_VERSION}`, server);
+    await waitForHttp(`${diagnostics.base_url}/?v=${SIM_VERSION}`, server, {
+      expectedNonce: serverNonce,
+    });
 
     browser = spawnOwned(browserPath, [
       '--headless=new',
       '--remote-debugging-port=0',
+      '--remote-debugging-address=127.0.0.1',
       `--user-data-dir=${profileDir}`,
       '--no-first-run',
       '--no-default-browser-check',
@@ -1080,8 +1239,16 @@ async function main() {
       windowsHide: true,
     });
     drainOwnedPipe(browser.stderr, diagnostics, 'browser_stderr');
-    const devToolsPort = await waitForDevToolsPort(profileDir, browser);
-    const version = await (await fetch(`http://127.0.0.1:${devToolsPort}/json/version`)).json();
+    const devTools = await waitForDevToolsReceipt(profileDir, browser);
+    const versionUrl = `http://127.0.0.1:${devTools.port}/json/version`;
+    const version = await fetchWithDeadline(versionUrl, {
+      options: { cache: 'no-store' },
+      consume: async response => {
+        if (!response.ok) throw new Error(`DevTools version endpoint returned HTTP ${response.status}`);
+        return response.json();
+      },
+    });
+    assertOwnedDevToolsVersion(version, devTools);
     diagnostics.browser_product = version.Browser;
     diagnostics.protocol_version = version['Protocol-Version'];
     client = new CdpClient(version.webSocketDebuggerUrl);
@@ -1161,7 +1328,7 @@ async function main() {
       checks,
     }, null, 2)}\n`);
   } finally {
-    if (client && !ownedProcessExited(browser)) {
+    if (client) {
       const gracefulClose = client.send('Browser.close').catch(() => null);
       await Promise.race([gracefulClose, delay(2_000)]);
       await waitForOwnedExit(browser, 5_000);
@@ -1169,6 +1336,7 @@ async function main() {
     await runCleanupActions([
       ['CDP client', async () => client?.close()],
       ['browser process', async () => terminateOwned(browser, { tree: true })],
+      ['profile-owned browser processes', async () => terminateOwnedProfileProcesses(profileDir)],
       ['local server process', async () => terminateOwned(server)],
       ['temporary browser profile', async () => {
         await rm(profileDir, { recursive: true, force: true, maxRetries: 4, retryDelay: 150 });
@@ -1178,10 +1346,16 @@ async function main() {
 }
 
 export {
+  assertOwnedDevToolsVersion,
+  CdpClient,
+  fetchWithDeadline,
   ownedProcessExited,
   runCleanupActions,
   spawnOwned,
   terminateOwned,
+  terminateOwnedProfileProcesses,
+  waitForHttp,
+  waitForDevToolsReceipt,
   waitForOwnedExit,
 };
 

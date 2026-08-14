@@ -4,6 +4,7 @@ import path from 'node:path';
 
 const root = path.resolve(process.cwd());
 const port = Number(process.argv[2]) || 8765;
+const serverNonce = String(process.env.VUGG_SERVER_NONCE || '');
 const types = {
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
@@ -30,10 +31,12 @@ http.createServer((request, response) => {
       response.writeHead(error.code === 'ENOENT' ? 404 : 500).end('Not found');
       return;
     }
-    response.writeHead(200, {
+    const headers = {
       'content-type': types[path.extname(target).toLowerCase()] || 'application/octet-stream',
       'cache-control': 'no-store',
-    });
+    };
+    if (serverNonce) headers['x-vugg-server-nonce'] = serverNonce;
+    response.writeHead(200, headers);
     response.end(data);
   });
 }).listen(port, '127.0.0.1', () => {

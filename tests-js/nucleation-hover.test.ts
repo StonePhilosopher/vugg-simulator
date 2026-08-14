@@ -489,7 +489,9 @@ describe('nucleation hover popover (97b) — recipe chips vs live conditions', (
     expect(pop.style.display).toBe('block');
     expect(pill.getAttribute('aria-describedby')).toBe('sat-hover-pop');
     expect(pop.getAttribute('role')).toBe('tooltip');
-    pill.click();
+    const activate = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' });
+    pill.dispatchEvent(activate);
+    expect(activate.defaultPrevented).toBe(true);
     expect(pop.getAttribute('role')).toBe('dialog');
     expect(pop.hasAttribute('aria-modal')).toBe(false);
     expect(pop.classList.contains('is-pinned')).toBe(true);

@@ -1474,9 +1474,20 @@ function _wireFortressSigmaEvents(host) {
     _satHoverHide();
   });
   host.addEventListener('keydown', (ev) => {
+    const pill = ev.target.closest('.sat-indicator[data-hl-mineral]');
+    if ((ev.key === 'Enter' || ev.key === ' ') && pill) {
+      // Do not depend on a browser synthesizing `click` for a focused
+      // button. CDP, assistive technology and embedded WebViews do not all
+      // agree on when that compatibility click fires. Owning the keyboard
+      // activation also lets preventDefault suppress a second toggle.
+      ev.preventDefault();
+      topoToggleLockTarget({ type: 'mineral', value: pill.dataset.hlMineral });
+      if (_satHoverPinnedPill === pill) _satHoverHide(true);
+      else _satHoverShowForPill(pill, true);
+      return;
+    }
     if (ev.key !== 'Escape') return;
     _satHoverHide(true);
-    const pill = ev.target.closest('.sat-indicator[data-hl-mineral]');
     if (pill && typeof pill.blur === 'function') pill.blur();
   });
   // A scroll anywhere (panel column, page) leaves a fixed-position
