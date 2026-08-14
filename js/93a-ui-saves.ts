@@ -54,6 +54,20 @@ const SAVE_COLLECTION_EPOCH = 'event-cursor-v1';
 const SAVE_STORAGE_FORMAT = 2;
 const SAVE_QUARANTINE_FORMAT = 1;
 const SAVE_QUARANTINE_LIMIT = 8;
+const LOCAL_EXPORT_SCHEMA = 'vugg-local-backup-v1';
+const LOCAL_IMPORT_PENDING_KEY = 'vugg-local-import-v1.pending';
+const LOCAL_IMPORT_CLOSED_SCHEMA = 'vugg-local-import-closed-v1';
+const LOCAL_EXPORT_KEYS = Object.freeze([
+  SAVES_KEY,
+  SAVES_PENDING_KEY,
+  SAVES_BACKUP_KEY,
+  SAVES_CORRUPT_KEY,
+  'vugg-crystals-v1',
+  'vugg-crystals-v1.corrupt',
+  STATS_KEY,
+  STATS_CORRUPT_KEY,
+  'vugg-settings-v1',
+]);
 // Autosaves beyond this count prune oldest-first (manual saves never
 // auto-prune — the player curated those).
 const MAX_AUTOSAVES = 8;
@@ -85,6 +99,221 @@ function _liveFortressSim() { return (typeof fortressSim !== 'undefined') ? fort
 function _liveFortressActive() { return (typeof fortressActive !== 'undefined') ? !!fortressActive : false; }
 function _liveSaveActiveRecord() { return _saveActiveRecord; }
 function _liveSaveStorageNotice() { return _saveStorageNotice; }
+
+function _saveLocalExportDigest(payload) {
+  return sha256HexUtf8(JSON.stringify({
+    schema: payload.schema,
+    sim_version: payload.sim_version,
+    model_digest_sha256: payload.model_digest_sha256,
+    storage: payload.storage,
+  }));
+}
+
+function _saveBuildLocalExport() {
+  const storage = {};
+  for (const key of LOCAL_EXPORT_KEYS) storage[key] = localStorage.getItem(key);
+  const payload: any = {
+    schema: LOCAL_EXPORT_SCHEMA,
+    sim_version: (typeof SIM_VERSION !== 'undefined') ? SIM_VERSION : null,
+    model_digest_sha256: (typeof MODEL_DIGEST !== 'undefined')
+      ? sha256HexUtf8(MODEL_DIGEST)
+      : null,
+    storage,
+  };
+  payload.backup_sha256 = _saveLocalExportDigest(payload);
+  return payload;
+}
+
+function _saveAssertLocalExport(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)
+      || payload.schema !== LOCAL_EXPORT_SCHEMA
+      || !payload.storage || typeof payload.storage !== 'object' || Array.isArray(payload.storage)
+      || typeof payload.backup_sha256 !== 'string'
+      || payload.backup_sha256 !== _saveLocalExportDigest(payload)) {
+    throw new Error('local backup envelope failed authentication');
+  }
+  const keys = Object.keys(payload.storage).sort();
+  if (JSON.stringify(keys) !== JSON.stringify([...LOCAL_EXPORT_KEYS].sort())) {
+    throw new Error('local backup contains missing or unknown storage keys');
+  }
+  for (const key of LOCAL_EXPORT_KEYS) {
+    if (payload.storage[key] !== null && typeof payload.storage[key] !== 'string') {
+      throw new Error(`local backup key ${key} is not a string or null`);
+    }
+  }
+  const savesRaw = payload.storage[SAVES_KEY];
+  if (savesRaw != null) _saveParseCandidate(savesRaw, 'local backup primary');
+  for (const key of [SAVES_PENDING_KEY, SAVES_BACKUP_KEY]) {
+    const raw = payload.storage[key];
+    if (raw != null) _saveParseCandidate(raw, `local backup ${key}`);
+  }
+  const libraryRaw = payload.storage['vugg-crystals-v1'];
+  if (libraryRaw != null) {
+    const records = JSON.parse(libraryRaw);
+    if (!Array.isArray(records)) throw new Error('local backup Library is not an array');
+    const ids = new Set();
+    for (const record of records) {
+      if (!record || typeof record !== 'object' || typeof record.id !== 'string'
+          || !record.id || ids.has(record.id)) {
+        throw new Error('local backup Library contains a missing or duplicate specimen id');
+      }
+      ids.add(record.id);
+    }
+  }
+  const statsRaw = payload.storage[STATS_KEY];
+  if (statsRaw != null) {
+    const stats = JSON.parse(statsRaw);
+    if (!stats || typeof stats !== 'object' || Array.isArray(stats)
+        || !Number.isSafeInteger(stats.crystals_collected) || stats.crystals_collected < 0
+        || !Number.isSafeInteger(stats.runs_finished) || stats.runs_finished < 0) {
+      throw new Error('local backup lifetime statistics have an invalid shape');
+    }
+    for (const name of ['applied_finish_ids', 'applied_collection_ids']) {
+      const ids = stats[name] || [];
+      if (!Array.isArray(ids) || ids.some(id => typeof id !== 'string' || !id)
+          || new Set(ids).size !== ids.length) {
+        throw new Error(`local backup lifetime statistics contain invalid ${name}`);
+      }
+    }
+  }
+  const settingsRaw = payload.storage['vugg-settings-v1'];
+  if (settingsRaw != null) {
+    const settings = JSON.parse(settingsRaw);
+    if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+      throw new Error('local backup Settings payload is invalid');
+    }
+  }
+  return true;
+}
+
+function _saveFinishLocalImportInMemory(message) {
+  _saveNoteReset();
+  _saveStorageGeneration = 0;
+  loadSaves();
+  if (message) _saveSetStorageNotice(message);
+  if (typeof _displayApply === 'function') _displayApply();
+  if (typeof savesRender === 'function') savesRender();
+  if (typeof libraryRender === 'function') libraryRender();
+}
+
+function _saveCleanupLocalImportCloseMarker() {
+  try {
+    localStorage.removeItem(LOCAL_IMPORT_PENDING_KEY);
+    if (localStorage.getItem(LOCAL_IMPORT_PENDING_KEY) !== null) {
+      throw new Error('browser storage retained the inert close marker');
+    }
+    return true;
+  } catch (error) {
+    _saveWriteFailure(`Local backup data was authenticated and committed, but browser storage could not remove its inert close marker (${error && (error as any).message ? (error as any).message : error}). The old import cannot replay; cleanup will be retried after storage access is restored.`);
+    return false;
+  }
+}
+
+function _saveApplyLocalExport(payload, { fromRecovery = false } = {}) {
+  _saveAssertLocalExport(payload);
+  const journalRaw = JSON.stringify(payload);
+  const closedRaw = JSON.stringify({
+    schema: LOCAL_IMPORT_CLOSED_SCHEMA,
+    backup_sha256: payload.backup_sha256,
+  });
+  const previous = new Map();
+  for (const key of LOCAL_EXPORT_KEYS) previous.set(key, localStorage.getItem(key));
+  try {
+    if (!fromRecovery) {
+      localStorage.setItem(LOCAL_IMPORT_PENDING_KEY, journalRaw);
+      if (localStorage.getItem(LOCAL_IMPORT_PENDING_KEY) !== journalRaw) {
+        throw new Error('local import journal failed readback');
+      }
+    }
+    for (const key of LOCAL_EXPORT_KEYS) {
+      const value = payload.storage[key];
+      if (value == null) localStorage.removeItem(key);
+      else localStorage.setItem(key, value);
+      if (localStorage.getItem(key) !== value) throw new Error(`local import readback failed for ${key}`);
+    }
+    // Close the intent by replacing it with an inert, digest-labelled marker
+    // BEFORE trying to remove the key. A browser that silently ignores
+    // removeItem can no longer replay the old import over newer player data.
+    localStorage.setItem(LOCAL_IMPORT_PENDING_KEY, closedRaw);
+    if (localStorage.getItem(LOCAL_IMPORT_PENDING_KEY) !== closedRaw) {
+      throw new Error('local import close marker failed readback');
+    }
+  } catch (error) {
+    for (const [key, value] of previous) {
+      try {
+        if (value == null) localStorage.removeItem(key);
+        else localStorage.setItem(key, value);
+      } catch (_rollbackError) { /* best effort; journal remains for restart recovery */ }
+    }
+    _saveWriteFailure(`Local backup import did not complete (${error && (error as any).message ? (error as any).message : error}). Previous in-browser data was restored where storage allowed; the authenticated import journal was retained for recovery.`);
+    return false;
+  }
+
+  if (!_saveCleanupLocalImportCloseMarker()) {
+    _saveFinishLocalImportInMemory(null);
+    return false;
+  }
+  _saveFinishLocalImportInMemory('Local backup imported and authenticated. Saves, Library, statistics, recovery bytes, and Settings were restored on this device.');
+  return true;
+}
+
+function _saveRecoverLocalImportJournal() {
+  let raw = null;
+  try { raw = localStorage.getItem(LOCAL_IMPORT_PENDING_KEY); }
+  catch (_error) { return false; }
+  if (!raw) return false;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.schema === LOCAL_IMPORT_CLOSED_SCHEMA) {
+      return _saveCleanupLocalImportCloseMarker();
+    }
+    return _saveApplyLocalExport(parsed, { fromRecovery: true });
+  } catch (error) {
+    _saveWriteFailure(`A pending local import journal failed authentication and was not applied (${error && (error as any).message ? (error as any).message : error}).`);
+    return false;
+  }
+}
+
+function exportVuggLocalData() {
+  const payload = _saveBuildLocalExport();
+  const blob = new Blob([`${JSON.stringify(payload, null, 2)}\n`], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `vugg-local-backup-v${payload.sim_version ?? 'unknown'}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+  _saveSetStorageNotice('Local backup exported. It stayed on this device; Vugg Simulator sent no telemetry.');
+}
+
+async function importVuggLocalDataFile(input) {
+  const file = input?.files?.[0];
+  const importButton = (typeof document !== 'undefined')
+    ? document.getElementById('saves-import-btn')
+    : null;
+  if (!file) {
+    if (input) input.value = '';
+    if (importButton instanceof HTMLElement) importButton.focus();
+    return false;
+  }
+  try {
+    const payload = JSON.parse(await file.text());
+    _saveAssertLocalExport(payload);
+    const confirmed = typeof confirm !== 'function' || confirm(
+      'Replace this browser\'s Vugg saves, Library, lifetime statistics, recovery bytes, and Settings with the authenticated backup? Export the current data first if you may want it later.',
+    );
+    if (!confirmed) return false;
+    return _saveApplyLocalExport(payload);
+  } catch (error) {
+    _saveSetStorageNotice(`Local backup import was rejected before any data changed (${error && (error as any).message ? (error as any).message : error}).`, true);
+    return false;
+  } finally {
+    input.value = '';
+    if (importButton instanceof HTMLElement) importButton.focus();
+  }
+}
 
 function _saveSetStorageNotice(message, writeFailure = false) {
   _saveStorageNotice = message || null;
@@ -494,10 +723,10 @@ function _saveRecordShapeReason(rec) {
   }
   if (rec.kind !== 'auto' && rec.kind !== 'manual') return 'record kind is invalid';
   if (rec.status !== 'in-progress' && rec.status !== 'finishing' && rec.status !== 'finished') return 'record status is invalid';
-  if (rec.format >= 2 && rec.status !== 'in-progress' && rec.finish_transaction == null) {
+  if (rec.format === SAVE_FORMAT && rec.status !== 'in-progress' && rec.finish_transaction == null) {
     return 'terminal record is missing its finish transaction';
   }
-  if (rec.format >= 2 && rec.status === 'in-progress' && rec.finish_transaction != null) {
+  if (rec.format === SAVE_FORMAT && rec.status === 'in-progress' && rec.finish_transaction != null) {
     return 'in-progress record carries an impossible finish transaction';
   }
   if (!rec.origin || typeof rec.origin !== 'object') return 'record origin is missing';
@@ -1152,10 +1381,12 @@ function _saveScenarioSpecHash(origin) {
 // Scientific recipes use the same fail-closed identity invariant as strips.
 // Keep this pure so the load gate and Saves-menu label share one verdict.
 function _saveReplayCompatibility(rec) {
-  if (!rec || (rec.format !== 2 && rec.format !== SAVE_FORMAT)) {
+  if (!rec || rec.format !== SAVE_FORMAT) {
     return {
       ok: false,
-      reason: `This save uses format v${rec && rec.format}; this build reads v${SAVE_FORMAT}. It can't be restored.`,
+      reason: rec && rec.format === 2
+        ? 'This legacy format-v2 recipe is preserved for export and diagnosis, but cannot be replay-authenticated by the v3 event-receipt model. Replay is blocked rather than accepting a self-consistent v3-to-v2 downgrade.'
+        : `This save uses format v${rec && rec.format}; this build reads v${SAVE_FORMAT}. It can't be restored.`,
     };
   }
   const shapeReason = _saveRecordShapeReason(rec);
@@ -1163,14 +1394,6 @@ function _saveReplayCompatibility(rec) {
     return {
       ok: false,
       reason: `Save schema authentication failed: ${shapeReason}. Replay is blocked.`,
-    };
-  }
-  if (rec.format === 2 && rec.run_id == null
-      && (!Array.isArray(rec.collection_receipts) || rec.collection_receipts.length === 0)
-      && (rec.collected || []).length > 0) {
-    return {
-      ok: false,
-      reason: 'This format-v2 save contains pre-event collection mappings with no action cursor or authenticated receipt. The recipe is preserved for diagnosis, but replay is blocked rather than promoting unverifiable specimen ownership.',
     };
   }
   const nowV = (typeof SIM_VERSION !== 'undefined') ? SIM_VERSION : null;
@@ -1627,15 +1850,6 @@ function loadSaveById(id) {
         },
       );
     }
-    if (rec.format === 2 && rec.status !== 'finished') {
-      // The v2 recipe was authenticated before this one-way migration. From
-      // this adoption forward v3 makes run lineage and event-cursor receipts
-      // mandatory, so a modern record cannot fall back into the weak bridge.
-      rec.format = SAVE_FORMAT;
-      rec.run_id = rec.run_id || rec.id;
-      rec.collection_epoch = SAVE_COLLECTION_EPOCH;
-      rec.collection_receipts = rec.collection_receipts || [];
-    }
     // Re-mark crystals already in the Library (crystal order is
     // deterministic under replay, so index pairing is stable).
     if (rec.status === 'finished') {
@@ -1853,3 +2067,8 @@ function savesRender() {
     listEl.appendChild(row);
   }
 }
+
+// An import is an explicit local transaction. If the tab/browser died between
+// its journal write and final readback, finish that exact authenticated intent
+// before any UI starts treating a partial generation as current.
+_saveRecoverLocalImportJournal();

@@ -220,27 +220,65 @@ single execution ledger for the science-first AAA completion branch.
   repeated AI Dr. Wise `SATISFIED` verdicts close the production gate. Evidence:
   `proposals/PROPOSAL-MARCHING-CUBES-CAVITY.md`,
   `archive/evidence/v266.json`, and local commit `c5b2622`.
-- [ ] Browser automation for start/run/pause/cancel/save/reload/replay, scenario
+- [x] Browser automation for start/run/pause/cancel/save/reload/replay, scenario
   selection, Creative edits, hover diagnosis, keyboard use, and reduced motion.
-- [ ] Responsive UI repair across narrow/tall and landscape phone viewports;
+  `tools/browser-workflow.mjs` now authenticates every restored replay frame,
+  requires a visible production cavity, records the exact save-name dialog,
+  exercises the causal formation-diagnosis pointer path, and owns browser,
+  server, profile, stderr, timeout, and Windows process-tree cleanup. Evidence:
+  `tests-js/browser-workflow-cleanup.test.ts` and the local 11/11 workflow receipt.
+- [x] Responsive UI repair across narrow/tall and landscape phone viewports;
   touch targets, safe-area insets, no clipped controls, readable overlays.
-- [ ] Performance and memory budgets with repeatable traces; no orphaned local
-  server or worker processes.
-- [ ] Save migration, corrupt-save recovery, deterministic replay digests, and
-  crash-safe local persistence.
-- [ ] Progression/tutorial pass that teaches causal geology while preserving the
-  complete Creative laboratory.
-- [ ] Accessible audiovisual controls, captioned/visual event equivalents,
-  contrast/focus audits, and scalable text.
-- [ ] Scenario-authoring validation, preview, deterministic fixture generation,
-  provenance fields, and content regression receipts.
+  The browser matrix covers 320x568, 390x844, 844x390, and 768x1024 title,
+  setup, and live-workspace states; it checks viewport fit, 44 px controls,
+  safe-area reapplication, and overlay readability.
+- [x] Performance and memory budgets with repeatable traces; no orphaned local
+  server or worker processes. Evidence: `tools/bisbee-production-budget.mjs`,
+  `tools/cavity-production-memory-budget.mjs`, the production cavity benchmark
+  suite, the memory-bounded `tools/test-workflow.mjs` watchdog, and the browser
+  workflow's failure-path cleanup regressions.
+- [x] Save migration, corrupt-save recovery, deterministic replay digests, and
+  crash-safe local persistence. Format-v3 recipes fail closed, legacy v1/v2
+  bytes remain exportable but cannot masquerade as current replay, and
+  generation journals, quarantine, finish/collection WALs, local export/import,
+  inert import-close markers, Library provenance, and lifetime counters are
+  authenticated and idempotent. Evidence: `js/93a-ui-saves.ts` and
+  `tests-js/fortress-saves.test.ts`.
+- [x] Progression/tutorial pass that teaches causal geology while preserving the
+  complete Creative laboratory. Grand Tour steps now point at the live causal
+  formation diagnosis, action/follow-up triggers are linted, and the full
+  Creative lever surface remains available. Evidence: `js/70a-tutorial-overlay.ts`,
+  `tools/tutorial-lint.mjs`, and the browser workflow.
+- [x] Accessible audiovisual controls, captioned/visual event equivalents,
+  contrast/focus audits, and scalable text. The local settings contract includes
+  100/125/150% text, explicit reduced motion, keyboard-safe dialogs and backup
+  import, visible tutorial announcements, and visual equivalents for scientific
+  audio. Evidence: `tools/accessibility-audit.mjs`,
+  `tests-js/settings-accessibility.test.ts`, and the responsive browser matrix.
+- [x] Scenario-authoring validation, preview, deterministic fixture generation,
+  provenance fields, and content regression receipts. The tool validates exact
+  runtime fluid fields and authored domains, citations, claims, exclusions,
+  event order, pressure, and every authored `shape_seed`; previews use seed 42
+  by default, bind the exact signed-int32 seed and execution/producer/runtime
+  identities, and re-execute the trusted current source before acceptance.
+  Evidence: `tools/scenario-authoring.mjs` and
+  `tests-js/scenario-authoring.test.ts`.
 
 ## P4 — release systems that can be prepared locally
 
-- [ ] Versioned content packs, changelog/migration policy, telemetry-free local
-  diagnostics, export/import, and stewardship documentation.
-- [ ] Production asset manifest, level-of-detail policy, audio mix states, and
-  art-direction briefs for the remaining human-made assets.
+- [x] Versioned content packs, changelog/migration policy, telemetry-free local
+  diagnostics, export/import, and stewardship documentation. Evidence:
+  `release/content-pack-manifest.json`, `CHANGELOG.md`,
+  `docs/RELEASE-MIGRATION-POLICY.md`, `docs/LOCAL-DIAGNOSTICS.md`,
+  `docs/SCIENTIFIC-STEWARDSHIP.md`, and `tools/local-diagnostics.mjs`.
+- [x] Production asset manifest, level-of-detail policy, audio mix states, and
+  art-direction briefs for the remaining human-made assets. The manifest reads
+  save, scientific cavity, presentation LOD, and audio values from the immutable
+  `RELEASE_RUNTIME_CONTRACT` executed by the built game; media rights and final
+  human art remain explicit external gates. Evidence:
+  `release/asset-manifest.json`, `tools/release-audit.mjs`,
+  `tests-js/release-systems.test.ts`, and
+  `docs/ASSET-LOD-AUDIO-ART-DIRECTION.md`.
 
 ## External gates — evidence can be prepared, certification cannot be invented
 

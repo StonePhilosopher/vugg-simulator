@@ -572,6 +572,7 @@ const EXPORTS = [
   'musicSetVolume',
   'musicSetContext',
   'initSettingsUI',
+  'importVuggLocalDataFile', // async declarations are not auto-harvested
   'musicDebugState',  // v-music gain-path fix (2026-06-10) — probe surface
 ];
 

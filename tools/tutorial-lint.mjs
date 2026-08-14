@@ -66,6 +66,10 @@ function findDoubleSlash(str) {
 }
 
 const idExists = (id) => html.includes(`id="${id}"`);
+const runtimeAnchorIds = new Set([
+  'narrative-speed-cluster',
+  'sat-hover-pop',
+]);
 
 let errors = 0, warnings = 0;
 const scenarios = Object.entries(doc.scenarios || {}).filter(([, s]) => s.tutorial);
@@ -111,13 +115,31 @@ for (const [id, spec] of scenarios) {
     }
     const anchor = st.anchor || '';
     if (/^#[\w-]+$/.test(anchor)) {
-      if (!idExists(anchor.slice(1))) {
+      if (!idExists(anchor.slice(1)) && !runtimeAnchorIds.has(anchor.slice(1))) {
         // Soft: some anchors are created at runtime (#helix-legend).
         console.warn(`[tutorial-lint] ${id} step[${i}]: anchor ${anchor} has no static id in index.html (runtime-created, or a typo — engine falls back to #topo-panel)`);
         warnings++;
       }
     }
   });
+
+  if (id === 'tutorial_first_crystal') {
+    const diagnosisIdx = steps.findIndex(st => st.action?.event === 'click'
+      && st.action?.selector === '#f-sat-bar .sat-indicator');
+    if (diagnosisIdx < 0) {
+      console.error('[tutorial-lint] tutorial_first_crystal: Grand Tour must require the player to open a mineral formation diagnosis');
+      errors++;
+    } else {
+      const explanation = steps[diagnosisIdx + 1];
+      const text = explanation?.text || '';
+      const requiredConcepts = ['saturation', 'limiting reagents', 'temperature', 'pH', 'redox', 'substrate', 'competition'];
+      const missing = requiredConcepts.filter(term => !text.toLowerCase().includes(term.toLowerCase()));
+      if (explanation?.anchor !== '#sat-hover-pop' || missing.length) {
+        console.error(`[tutorial-lint] tutorial_first_crystal: formation diagnosis follow-up must anchor to #sat-hover-pop and teach every causal group (missing: ${missing.join(', ') || 'anchor'})`);
+        errors++;
+      }
+    }
+  }
 
   if (!quiet) {
     console.log(`[tutorial-lint] ${id}: ${steps.length} steps — ${seq.join(' · ')}`);

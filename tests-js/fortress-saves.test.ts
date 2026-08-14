@@ -45,6 +45,11 @@ declare function _saveReplayCompatibility(rec: any): { ok: boolean; reason: stri
 declare function _liveSaveStorageNotice(): string | null;
 declare function _liveSaveActiveRecord(): any;
 declare function _savePersistActive(): boolean;
+declare function _saveBuildLocalExport(): any;
+declare function _saveLocalExportDigest(payload: any): string;
+declare function _saveAssertLocalExport(payload: any): boolean;
+declare function _saveApplyLocalExport(payload: any, opts?: any): boolean;
+declare function _saveRecoverLocalImportJournal(): boolean;
 declare function _saveBuildFinishTransaction(): any;
 declare function _saveMarkFinished(): { name: string; saved: boolean } | null;
 declare function deleteSaveById(id: string): boolean | void;
@@ -266,7 +271,10 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     expect(_saveReplayCompatibility(records[0])).toMatchObject({ ok: false });
     expect(records[1].recipe_digest).toMatch(/^[0-9a-f]{64}$/);
     expect(records[1].replay_integrity).toBe('migrated-v2-identity-only');
-    expect(_saveReplayCompatibility(records[1])).toEqual({ ok: true, reason: '' });
+    expect(_saveReplayCompatibility(records[1])).toMatchObject({
+      ok: false,
+      reason: expect.stringMatching(/format-v2.*preserved.*replay.*blocked/i),
+    });
 
     const envelope = JSON.parse(localStorage.getItem('vugg-saves-v1') || 'null');
     expect(envelope).toMatchObject({ storage_format: 2, generation: 0 });
@@ -280,13 +288,12 @@ describe('fortress save system (93a) — event-sourced replay', () => {
       replay_integrity: 'migrated-v2-identity-only',
     });
     expect(_saveReplayCompatibility(secondRead.find(record => record.id === 'legacy-v2')))
-      .toEqual({ ok: true, reason: '' });
+      .toMatchObject({ ok: false });
   });
 
-  it('preserves but refuses a rehashed v3-to-v2 downgrade with an unreceipted collection map', () => {
+  it('preserves but refuses a fully rehashed v3-to-v2 downgrade even when no collection exists', () => {
     const modern = minimalSave('no-downgrade');
     modern.format = 2;
-    modern.collected = [[0, 'forged-pre-event-specimen']];
     delete modern.run_id;
     delete modern.collection_epoch;
     delete modern.collection_receipts;
@@ -294,11 +301,32 @@ describe('fortress save system (93a) — event-sourced replay', () => {
 
     expect(_saveReplayCompatibility(modern)).toMatchObject({
       ok: false,
-      reason: expect.stringMatching(/pre-event collection mappings.*replay is blocked/i),
+      reason: expect.stringMatching(/format-v2.*self-consistent v3-to-v2 downgrade/i),
     });
     expect(persistSaves([modern])).toBe(true);
     expect(loadSaves()).toHaveLength(1);
     expect(_saveReplayCompatibility(loadSaves()[0])).toMatchObject({ ok: false });
+  });
+
+  it('preserves a pre-WAL terminal v2 recipe without inventing a finish transaction', () => {
+    const legacyFinished = minimalSave('legacy-finished-v2', {
+      format: 2,
+      status: 'finished',
+    });
+    delete legacyFinished.run_id;
+    delete legacyFinished.collection_epoch;
+    delete legacyFinished.collection_receipts;
+    delete legacyFinished.finish_transaction;
+    legacyFinished.recipe_digest = _saveRecipeDigest(legacyFinished);
+
+    expect(persistSaves([legacyFinished])).toBe(true);
+    const preserved = loadSaves().find(record => record.id === legacyFinished.id);
+    expect(preserved).toMatchObject({ format: 2, status: 'finished' });
+    expect(preserved.finish_transaction).toBeUndefined();
+    expect(_saveReplayCompatibility(preserved)).toMatchObject({
+      ok: false,
+      reason: expect.stringMatching(/format-v2.*preserved/i),
+    });
   });
 
   it('rejects a rehashed format-v3 finished record after its finish transaction is removed', () => {
@@ -375,6 +403,177 @@ describe('fortress save system (93a) — event-sourced replay', () => {
       '{bad-primary', '{bad-pending', '{bad-backup',
     ]);
     expect(loadSaves().map(record => record.id)).toEqual(['clean-recovery']);
+  });
+
+  it('exports and restores one checksum-bound, telemetry-free local data generation', () => {
+    expect(persistSaves([minimalSave('backup-save')])).toBe(true);
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([
+      { id: 'backup-specimen', mineral: 'quartz', name: 'Backup quartz', zones: [] },
+    ]));
+    localStorage.setItem('vugg-stats-v1', JSON.stringify({
+      crystals_collected: 7,
+      runs_finished: 2,
+      applied_finish_ids: ['finish-1'],
+      applied_collection_ids: ['collect-1'],
+    }));
+    localStorage.setItem('vugg-settings-v1', JSON.stringify({
+      display: { fontScale: 1.5, motion: 'reduced' },
+    }));
+    const backup = _saveBuildLocalExport();
+    expect(_saveAssertLocalExport(backup)).toBe(true);
+    expect(backup.backup_sha256).toBe(_saveLocalExportDigest(backup));
+
+    localStorage.setItem('vugg-crystals-v1', '[]');
+    localStorage.setItem('vugg-stats-v1', JSON.stringify({
+      crystals_collected: 0,
+      runs_finished: 0,
+      applied_finish_ids: [],
+      applied_collection_ids: [],
+    }));
+    localStorage.removeItem('vugg-settings-v1');
+    expect(_saveApplyLocalExport(backup)).toBe(true);
+    expect(loadSaves().map(record => record.id)).toEqual(['backup-save']);
+    expect(loadCrystals()).toEqual([
+      { id: 'backup-specimen', mineral: 'quartz', name: 'Backup quartz', zones: [] },
+    ]);
+    expect(loadLifetimeStats()).toEqual({ crystals_collected: 7, runs_finished: 2 });
+    expect(JSON.parse(localStorage.getItem('vugg-settings-v1') as string).display)
+      .toEqual({ fontScale: 1.5, motion: 'reduced' });
+    expect(localStorage.getItem('vugg-local-import-v1.pending')).toBeNull();
+  });
+
+  it('rejects both checksum tampering and a rehashed malformed Library before writes', () => {
+    const backup = _saveBuildLocalExport();
+    const tampered = structuredClone(backup);
+    tampered.storage['vugg-settings-v1'] = JSON.stringify({ display: { fontScale: 1.5 } });
+    expect(() => _saveAssertLocalExport(tampered)).toThrow(/failed authentication/i);
+
+    const malformed = structuredClone(backup);
+    malformed.storage['vugg-crystals-v1'] = JSON.stringify([
+      { id: 'same' }, { id: 'same' },
+    ]);
+    malformed.backup_sha256 = _saveLocalExportDigest(malformed);
+    expect(() => _saveAssertLocalExport(malformed)).toThrow(/duplicate specimen id/i);
+  });
+
+  it('rolls back an interrupted import and resumes its exact journal after storage recovers', () => {
+    expect(persistSaves([minimalSave('import-target')])).toBe(true);
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'target-crystal' }]));
+    localStorage.setItem('vugg-stats-v1', JSON.stringify({
+      crystals_collected: 1,
+      runs_finished: 1,
+      applied_finish_ids: [],
+      applied_collection_ids: [],
+    }));
+    const backup = _saveBuildLocalExport();
+
+    expect(persistSaves([minimalSave('prior-save')])).toBe(true);
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'prior-crystal' }]));
+    const previousPrimary = localStorage.getItem('vugg-saves-v1');
+    const previousLibrary = localStorage.getItem('vugg-crystals-v1');
+    const nativeSetItem = Storage.prototype.setItem;
+    let denied = false;
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (key, value) {
+      if (key === 'vugg-crystals-v1' && !denied) {
+        denied = true;
+        throw new DOMException('simulated import interruption', 'QuotaExceededError');
+      }
+      return nativeSetItem.call(this, key, value);
+    });
+    try {
+      expect(_saveApplyLocalExport(backup)).toBe(false);
+    } finally {
+      setItem.mockRestore();
+    }
+    expect(localStorage.getItem('vugg-saves-v1')).toBe(previousPrimary);
+    expect(localStorage.getItem('vugg-crystals-v1')).toBe(previousLibrary);
+    expect(localStorage.getItem('vugg-local-import-v1.pending')).not.toBeNull();
+
+    expect(_saveRecoverLocalImportJournal()).toBe(true);
+    expect(loadSaves().map(record => record.id)).toEqual(['import-target']);
+    expect(loadCrystals().map(record => record.id)).toEqual(['target-crystal']);
+    expect(loadLifetimeStats()).toEqual({ crystals_collected: 1, runs_finished: 1 });
+    expect(localStorage.getItem('vugg-local-import-v1.pending')).toBeNull();
+  });
+
+  it('never replays an old import when browser storage silently retains the close marker', () => {
+    expect(persistSaves([minimalSave('silent-remove-target')])).toBe(true);
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'imported-crystal' }]));
+    const backup = _saveBuildLocalExport();
+
+    const nativeRemoveItem = Storage.prototype.removeItem;
+    const removeItem = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(function (key) {
+      if (key === 'vugg-local-import-v1.pending') return;
+      return nativeRemoveItem.call(this, key);
+    });
+    try {
+      expect(_saveApplyLocalExport(backup)).toBe(false);
+      expect(loadCrystals().map(record => record.id)).toEqual(['imported-crystal']);
+      expect(JSON.parse(localStorage.getItem('vugg-local-import-v1.pending') as string))
+        .toMatchObject({ schema: 'vugg-local-import-closed-v1', backup_sha256: backup.backup_sha256 });
+      expect(_liveSaveStorageNotice()).toMatch(/inert close marker/i);
+    } finally {
+      removeItem.mockRestore();
+    }
+
+    // New player data written after the reported cleanup failure must survive
+    // restart recovery; the retained value is a tombstone, not import intent.
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'newer-player-crystal' }]));
+    expect(_saveRecoverLocalImportJournal()).toBe(true);
+    expect(loadCrystals().map(record => record.id)).toEqual(['newer-player-crystal']);
+    expect(localStorage.getItem('vugg-local-import-v1.pending')).toBeNull();
+  });
+
+  it('reports throwing close-marker cleanup as post-commit and never mislabels changed data', () => {
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'throw-remove-imported' }]));
+    const removeBackup = _saveBuildLocalExport();
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'throw-remove-prior' }]));
+
+    const nativeRemoveItem = Storage.prototype.removeItem;
+    const removeItem = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(function (key) {
+      if (key === 'vugg-local-import-v1.pending') {
+        throw new DOMException('simulated cleanup denial', 'SecurityError');
+      }
+      return nativeRemoveItem.call(this, key);
+    });
+    try {
+      expect(_saveApplyLocalExport(removeBackup)).toBe(false);
+      expect(loadCrystals().map(record => record.id)).toEqual(['throw-remove-imported']);
+      expect(_liveSaveStorageNotice()).toMatch(/authenticated and committed.*inert close marker/i);
+    } finally {
+      removeItem.mockRestore();
+    }
+    expect(JSON.parse(localStorage.getItem('vugg-local-import-v1.pending') as string))
+      .toMatchObject({ schema: 'vugg-local-import-closed-v1' });
+    expect(_saveRecoverLocalImportJournal()).toBe(true);
+
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'throw-readback-imported' }]));
+    const readbackBackup = _saveBuildLocalExport();
+    localStorage.setItem('vugg-crystals-v1', JSON.stringify([{ id: 'throw-readback-prior' }]));
+    let pendingRemoved = false;
+    let readbackThrew = false;
+    const removeForReadback = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(function (key) {
+      const result = nativeRemoveItem.call(this, key);
+      if (key === 'vugg-local-import-v1.pending') pendingRemoved = true;
+      return result;
+    });
+    const nativeGetItem = Storage.prototype.getItem;
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(function (key) {
+      if (key === 'vugg-local-import-v1.pending' && pendingRemoved && !readbackThrew) {
+        readbackThrew = true;
+        throw new DOMException('simulated cleanup readback denial', 'SecurityError');
+      }
+      return nativeGetItem.call(this, key);
+    });
+    try {
+      expect(_saveApplyLocalExport(readbackBackup)).toBe(false);
+      expect(loadCrystals().map(record => record.id)).toEqual(['throw-readback-imported']);
+      expect(_liveSaveStorageNotice()).toMatch(/authenticated and committed.*inert close marker/i);
+    } finally {
+      getItem.mockRestore();
+      removeForReadback.mockRestore();
+    }
+    expect(localStorage.getItem('vugg-local-import-v1.pending')).toBeNull();
   });
 
   it('never auto-prunes an unresolved finishing journal after its live session is gone', () => {
@@ -1189,7 +1388,7 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     prompt.mockRestore();
   });
 
-  it('one-way migrates only an uncollected pre-run-id v2 recipe into the v3 event epoch', () => {
+  it('preserves an uncollected pre-run-id v2 recipe without promoting it into the v3 event epoch', () => {
     const legacy = minimalSave('safe-v2-import', { format: 2, kind: 'auto' });
     delete legacy.run_id;
     delete legacy.collection_epoch;
@@ -1197,19 +1396,11 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     legacy.recipe_digest = _saveRecipeDigest(legacy);
     expect(persistSaves([legacy])).toBe(true);
 
-    expect(loadSaveById(legacy.id)).toBe(true);
-    expect(_liveSaveActiveRecord()).toMatchObject({
-      id: legacy.id,
-      run_id: legacy.id,
-      format: 3,
-      collection_epoch: 'event-cursor-v1',
-      collection_receipts: [],
-      collected: [],
-    });
+    expect(loadSaveById(legacy.id)).toBe(false);
+    expect(_liveSaveActiveRecord()).toBeNull();
     expect(loadSaves().find(record => record.id === legacy.id)).toMatchObject({
-      format: 3,
-      run_id: legacy.id,
-      collection_epoch: 'event-cursor-v1',
+      format: 2,
+      collected: [],
     });
   });
 

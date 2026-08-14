@@ -4632,6 +4632,8 @@ function _clusterSatelliteCount(crystal: any, pattern: ClusterPattern, cLenOverr
 // The physical coverage/thickness/volume record is crystal._surfaceGrowth (js/45).
 const SURFACE_GROWTH_INSTANCE_CAP_DESKTOP = 128;
 const SURFACE_GROWTH_INSTANCE_CAP_MOBILE = 56;
+const SURFACE_GROWTH_MOBILE_MAX_WIDTH_CSS_PX = 720;
+const SURFACE_GROWTH_MOBILE_MIN_DEVICE_PIXEL_RATIO = 2.5;
 
 function _surfaceGrowthInstanceCount(coverage: number, mobile = false): number {
   const cap = mobile ? SURFACE_GROWTH_INSTANCE_CAP_MOBILE : SURFACE_GROWTH_INSTANCE_CAP_DESKTOP;
@@ -4728,7 +4730,8 @@ function _emitSurfaceGrowthSwath(
   const coverage = Math.max(0.005, Math.min(0.98,
     record.coverage_fraction * Math.sqrt(replayMaturity)));
   const mobile = typeof window !== 'undefined'
-    && ((window.innerWidth || 1024) <= 720 || (window.devicePixelRatio || 1) >= 2.5);
+    && ((window.innerWidth || 1024) <= SURFACE_GROWTH_MOBILE_MAX_WIDTH_CSS_PX
+      || (window.devicePixelRatio || 1) >= SURFACE_GROWTH_MOBILE_MIN_DEVICE_PIXEL_RATIO);
   const count = _surfaceGrowthInstanceCount(coverage, mobile);
   const anchorNormal = wall?.surfaceNormalForCrystal?.(crystal) || [ax, ay, az];
   const al = Math.sqrt(anchorNormal[0] * anchorNormal[0]

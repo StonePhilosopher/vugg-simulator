@@ -110,6 +110,10 @@ function showCallout(opts) {
   }
   const tooltipEl = document.createElement('div');
   tooltipEl.className = 'tutorial-callout';
+  tooltipEl.setAttribute('role', 'region');
+  tooltipEl.setAttribute('aria-label', 'Tutorial guidance');
+  tooltipEl.setAttribute('aria-live', 'polite');
+  tooltipEl.setAttribute('aria-atomic', 'true');
 
   const textEl = document.createElement('div');
   textEl.className = 'tutorial-callout-text';
@@ -147,6 +151,7 @@ function showCallout(opts) {
     const skipEl = document.createElement('button');
     skipEl.className = 'tutorial-callout-skip';
     skipEl.title = 'Skip tutorial';
+    skipEl.setAttribute('aria-label', 'Skip tutorial');
     skipEl.textContent = '✕';
     skipEl.addEventListener('click', (e) => {
       e.stopPropagation();

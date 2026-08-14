@@ -529,7 +529,8 @@ let _stripSonifyHandle: StripSonifyHandle | null = null;
 
 // Master volume (0..1). The slider sets this; it persists between plays
 // and is applied live to any in-progress performance.
-let _stripSonifyMasterVolume = 0.7;
+const STRIP_SONIFY_DEFAULT_MASTER_VOLUME = 0.7;
+let _stripSonifyMasterVolume = STRIP_SONIFY_DEFAULT_MASTER_VOLUME;
 
 // Is a sonification currently playing?
 function stripSonifyIsPlaying(): boolean { return _stripSonifyHandle !== null; }

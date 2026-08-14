@@ -120,6 +120,9 @@ const PRODUCER_ENTRIES = Object.freeze({
   'claim-cards': ['tools/review-claim-card.mjs', 'tools/_harness.mjs'],
   'science-provenance': ['tools/gen-science-provenance-manifest.mjs'],
   'science-receipt': ['tools/science-evidence-receipt.mjs'],
+  'scenario-authoring': ['tools/scenario-authoring.mjs'],
+  'release-audit': ['tools/release-audit.mjs'],
+  'local-diagnostics': ['tools/local-diagnostics.mjs'],
 });
 
 function localImportSpecifiers(source) {

@@ -12,6 +12,10 @@ const CAVITY_PRODUCTION_VOLUME_MODEL = 'cartesian-field-freudenthal-volume-v2';
 const CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION = 48;
 const CAVITY_PRODUCTION_REFERENCE_RESOLUTION = 64;
 const CAVITY_PRODUCTION_ISOVALUE = 0;
+// Presentation hardware never changes these scientific geometry parameters.
+// Kept as an executed runtime value so release receipts cannot substitute a
+// prose-only claim about player quality controls.
+const CAVITY_PRODUCTION_PLAYER_QUALITY_CONTROL = false;
 const CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS = 0.75;
 const CAVITY_PRODUCTION_MAX_VOLUME_CONVERGENCE_FRACTION = 0.02;
 const CAVITY_PRODUCTION_CONTRACT_CACHE_LIMIT = 128;

@@ -633,7 +633,7 @@ async function runWorkflow(driver, diagnostics) {
     await driver.waitFor(`window.vugg.fortressSim.step === 3`, 'third Creative state');
   });
 
-  await check('shows causal mineral formation evidence on real pointer hover', async () => {
+  await check('shows causal mineral formation evidence by pointer and keyboard', async () => {
     await driver.waitFor(`!!document.querySelector('#f-sat-bar .sat-indicator')`, 'mineral saturation pill');
     await driver.hover('#f-sat-bar .sat-indicator');
     await driver.waitFor(
@@ -651,6 +651,33 @@ async function runWorkflow(driver, diagnostics) {
     for (const required of ['Saturation', 'Calibrated growth budget', 'Temperature gate', 'pH gate', 'Redox gate', 'Substrate', 'Competition']) {
       assert.ok(diagnosis.labels.includes(required), `formation diagnosis lacks ${required}`);
     }
+    await driver.evaluate(`document.querySelector('#f-sat-bar .sat-indicator').focus()`);
+    await driver.key('Enter', 'Enter', 13);
+    await driver.waitFor(
+      `document.querySelector('#sat-hover-pop')?.classList.contains('is-pinned')
+        && document.activeElement?.matches('[data-nuc-pop-close]')`,
+      'keyboard-pinned formation diagnosis with focused Close control',
+    );
+    const keyboardState = await driver.evaluate(`(() => {
+      const pill = document.querySelector('#f-sat-bar .sat-indicator');
+      const dialog = document.querySelector('#sat-hover-pop');
+      return {
+        role: dialog?.getAttribute('role'),
+        expanded: pill?.getAttribute('aria-expanded'),
+        controls: pill?.getAttribute('aria-controls'),
+      };
+    })()`);
+    assert.deepEqual(keyboardState, {
+      role: 'dialog',
+      expanded: 'true',
+      controls: 'sat-hover-pop',
+    });
+    await driver.key('Escape', 'Escape', 27);
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#sat-hover-pop')).display === 'none'
+        && document.activeElement?.matches('#f-sat-bar .sat-indicator')`,
+      'Escape closes diagnosis and restores mineral focus',
+    );
   });
 
   await check('shows storage denial globally during active Creative play and retries durably', async () => {
@@ -875,6 +902,56 @@ async function runWorkflow(driver, diagnostics) {
       .map(value => value.endsWith('ms') ? parseFloat(value) : parseFloat(value) * 1000);
     assert.ok(durations.every(value => value <= 0.011), `motion durations were not collapsed: ${durations.join(', ')}`);
     assert.equal(await driver.evaluate(`window.vugg.fortressSim.step`), before);
+  });
+
+  await check('persists accessible text scale and explicit motion controls without changing geology', async () => {
+    await driver.setReducedMotion(false);
+    const before = await driver.evaluate(`window.vugg.fortressSim.step`);
+    await driver.click('#settings-btn');
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#settings-panel')).display !== 'none'
+        && document.activeElement?.id === 'settings-close'`,
+      'Settings dialog and initial focus',
+    );
+    await driver.setValue('#settings-text-scale', 1.5);
+    await driver.setValue('#settings-motion', 'reduced');
+    const state = await driver.evaluate(`(() => {
+      const root = JSON.parse(localStorage.getItem('vugg-settings-v1') || '{}');
+      const style = getComputedStyle(document.querySelector('#f-sat-bar .sat-indicator'));
+      const panelRect = document.querySelector('#settings-panel').getBoundingClientRect();
+      const closeRect = document.querySelector('#settings-close').getBoundingClientRect();
+      return {
+        stored: root.display,
+        rootSize: document.documentElement.style.fontSize,
+        rootMotion: document.documentElement.dataset.vuggMotion,
+        transitionDuration: style.transitionDuration,
+        animationDuration: style.animationDuration,
+        scrollWidth: document.documentElement.scrollWidth,
+        innerWidth,
+        panel: { left: panelRect.left, top: panelRect.top, right: panelRect.right, bottom: panelRect.bottom },
+        close: { width: closeRect.width, height: closeRect.height },
+      };
+    })()`);
+    assert.deepEqual(state.stored, { fontScale: 1.5, motion: 'reduced' });
+    assert.equal(state.rootSize, '150%');
+    assert.equal(state.rootMotion, 'reduced');
+    assert.ok(state.scrollWidth <= state.innerWidth + 1, '150% text introduced horizontal page overflow');
+    assertBounds(state.panel, 390, 844, 'scaled Settings dialog');
+    assert.ok(state.close.width >= 44 && state.close.height >= 44, 'Settings Close target is below 44px');
+    const durations = `${state.transitionDuration},${state.animationDuration}`
+      .split(',')
+      .map(value => value.trim())
+      .filter(Boolean)
+      .map(value => value.endsWith('ms') ? parseFloat(value) : parseFloat(value) * 1000);
+    assert.ok(durations.every(value => value <= 0.011), `explicit reduced motion did not collapse CSS motion: ${durations.join(', ')}`);
+    assert.equal(await driver.evaluate(`window.vugg.fortressSim.step`), before);
+    await driver.key('Escape', 'Escape', 27);
+    await driver.waitFor(
+      `getComputedStyle(document.querySelector('#settings-panel')).display === 'none'
+        && document.activeElement?.id === 'settings-btn'`,
+      'Settings Escape close and focus restoration',
+    );
+    await driver.evaluate(`displaySetFontScale(1); displaySetMotion('system')`);
   });
 
   await check('fits title and Creative setup across the responsive viewport matrix', async () => {
