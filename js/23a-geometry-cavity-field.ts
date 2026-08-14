@@ -36,6 +36,12 @@ interface CavitySurfaceBuffers {
   metrics?: {
     field_build_ms?: number;
     extraction_ms: number;
+    polygonize_ms?: number;
+    manifold_ms?: number;
+    normal_material_ms?: number;
+    packing_authentication_ms?: number;
+    packing_ms?: number;
+    buffer_authentication_ms?: number;
     triangle_count: number;
     vertex_count: number;
     field_bytes: number;
@@ -97,6 +103,10 @@ interface CavitySurfaceAgreementMetrics {
 // mutate the field used to extract the paired wall surface.
 const CAVITY_FIELD_VALUES = new WeakMap<object, Float32Array>();
 const CAVITY_FIELD_UPLOAD_STATE = new WeakMap<object, any>();
+// Lexical capability shared only with the adjacent extractor source. Public
+// callers still receive copies/proxies and cannot mutate canonical samples.
+const CAVITY_FIELD_EXTRACTOR_ACCESS = Object.freeze({});
+let cavityFieldExtractorValuesInternal: (field: any) => Float32Array;
 
 class CavityScalarField {
   [key: string]: any;
@@ -380,31 +390,37 @@ class CavityScalarField {
     const c0 = Math.floor(cellFloat) % N;
     const c1 = (c0 + 1) % N;
     const tc = cellFloat - Math.floor(cellFloat);
-    const ringDepth = (ring: number): number => {
-      const a = depths[ring * N + c0];
-      const b = depths[ring * N + c1];
-      return a + (b - a) * tc;
-    };
-    const meanRingDepth = (ring: number): number => {
-      let sum = 0;
-      for (let c = 0; c < N; c++) sum += depths[ring * N + c];
-      return sum / N;
-    };
+    const ringMeans = evolution.ring_mean_depths_mm;
+    const depth0 = depths[c0] + (depths[c1] - depths[c0]) * tc;
     const ringFloat = phi * R / Math.PI - 0.5;
     let rawDepth = 0;
     if (ringFloat <= 0) {
       const t = Math.max(0, ringFloat + 0.5) * 2;
-      const pole = meanRingDepth(0);
-      rawDepth = pole + (ringDepth(0) - pole) * t;
+      let pole = ringMeans?.length === R ? ringMeans[0] : 0;
+      if (!ringMeans || ringMeans.length !== R) {
+        for (let c = 0; c < N; c++) pole += depths[c];
+        pole /= N;
+      }
+      rawDepth = pole + (depth0 - pole) * t;
     } else if (ringFloat >= R - 1) {
       const t = Math.max(0, Math.min(1, (ringFloat - (R - 1)) * 2));
-      const edge = ringDepth(R - 1);
-      rawDepth = edge + (meanRingDepth(R - 1) - edge) * t;
+      const base = (R - 1) * N;
+      const edge = depths[base + c0] + (depths[base + c1] - depths[base + c0]) * tc;
+      let pole = ringMeans?.length === R ? ringMeans[R - 1] : 0;
+      if (!ringMeans || ringMeans.length !== R) {
+        for (let c = 0; c < N; c++) pole += depths[base + c];
+        pole /= N;
+      }
+      rawDepth = edge + (pole - edge) * t;
     } else {
       const r0 = Math.floor(ringFloat);
       const r1 = Math.min(R - 1, r0 + 1);
       const tr = ringFloat - r0;
-      rawDepth = ringDepth(r0) + (ringDepth(r1) - ringDepth(r0)) * tr;
+      const base0 = r0 * N;
+      const base1 = r1 * N;
+      const depthR0 = depths[base0 + c0] + (depths[base0 + c1] - depths[base0 + c0]) * tc;
+      const depthR1 = depths[base1 + c0] + (depths[base1 + c1] - depths[base1 + c0]) * tc;
+      rawDepth = depthR0 + (depthR1 - depthR0) * tr;
     }
     const polar = _cavityPolarProfileFactor(shape, phi);
     const offset = rawDepth * polar;
@@ -574,10 +590,11 @@ class CavityScalarField {
       fieldMin = [-deformedRadius, -deformedRadius, -deformedRadius];
       fieldMax = [deformedRadius, deformedRadius, deformedRadius];
     }
+    let maxEvolutionDepth = 0;
     if (evolution) {
-      const maxDepth = Number(Array.from(evolution.depths_mm || [])
+      maxEvolutionDepth = Number(Array.from(evolution.depths_mm || [])
         .reduce((maximum: number, value: any) => Math.max(maximum, Number(value) || 0), 0));
-      const paddingDepth = maxDepth * CavityScalarField._maxRadialScale(shape);
+      const paddingDepth = maxEvolutionDepth * CavityScalarField._maxRadialScale(shape);
       fieldMin = fieldMin.map(value => value - paddingDepth);
       fieldMax = fieldMax.map(value => value + paddingDepth);
     }
@@ -615,16 +632,103 @@ class CavityScalarField {
       origin = [center[0] - half, center[1] - half, center[2] - half];
     }
     const values = new Float32Array(resolution * resolution * resolution);
+    const worldX = new Float64Array(resolution);
+    const worldY = new Float64Array(resolution);
+    const worldZ = new Float64Array(resolution);
+    for (let index = 0; index < resolution; index++) {
+      worldX[index] = origin[0] + index * spacingMm;
+      worldY[index] = origin[1] + index * spacingMm;
+      worldZ[index] = origin[2] + index * spacingMm;
+    }
+    // A cursor-zero ledger is scientifically meaningful provenance, but its
+    // all-zero depth projection is the identity map. Do not execute spherical
+    // evolution interpolation for every voxel when it cannot change a sample.
+    let samplingEvolution = maxEvolutionDepth > 0 ? evolution : null;
+    if (samplingEvolution) {
+      const ringMeans = new Float64Array(samplingEvolution.ring_count);
+      for (let ring = 0; ring < samplingEvolution.ring_count; ring++) {
+        let sum = 0;
+        const base = ring * samplingEvolution.cells_per_ring;
+        for (let cell = 0; cell < samplingEvolution.cells_per_ring; cell++) {
+          sum += Number(samplingEvolution.depths_mm[base + cell]);
+        }
+        ringMeans[ring] = sum / samplingEvolution.cells_per_ring;
+      }
+      samplingEvolution = { ...samplingEvolution, ring_mean_depths_mm: ringMeans };
+    }
+    const identityBase = CavityScalarField._isIdentityShape(shape);
+    const fastRadialBase = !samplingEvolution
+      && shape.polar_amplitudes.every(amplitude => amplitude === 0)
+      && shape.twist_amplitudes.every(amplitude => amplitude === 0);
+    const fastElongation = Math.max(0, Math.min(0.85, shape.elongation));
+    const fastFlatten = shape.polar_flatten > 0
+      ? Math.max(0.05, Math.min(1, shape.polar_flatten)) : 0;
+    const fastCollapse = shape.polar_collapse > 0 ? shape.polar_collapse : 0;
     let offset = 0;
     for (let z = 0; z < resolution; z++) {
-      const wz = origin[2] + z * spacingMm;
+      const wz = worldZ[z];
       for (let y = 0; y < resolution; y++) {
-        const wy = origin[1] + y * spacingMm;
+        const wy = worldY[y];
         for (let x = 0; x < resolution; x++) {
-          const wx = origin[0] + x * spacingMm;
-          const value = CavityScalarField._evolvedShapeValueValidated(
-            bubbles, shape, evolution, wx, wy, wz,
-          );
+          const wx = worldX[x];
+          let value: number;
+          if (identityBase && !samplingEvolution) {
+            // Same arithmetic as bubbleUnionValue, kept in the hot loop to
+            // avoid 110,592 validation/function round trips at 48^3.
+            value = -Infinity;
+            for (let bubbleIndex = 0; bubbleIndex < bubbles.length; bubbleIndex++) {
+              const bubble = bubbles[bubbleIndex];
+              const dx = wx - bubble[0];
+              const dy = wy - bubble[1];
+              const dz = wz - bubble[2];
+              const sphere = bubble[3] - Math.sqrt(dx * dx + dy * dy + dz * dz);
+              if (sphere > value) value = sphere;
+            }
+          } else if (fastRadialBase) {
+            // With no twist/Fourier terms the inverse radial map has a direct
+            // Cartesian form. This is algebraically the same authored zero set
+            // without round-tripping every voxel through atan2/sin/cos.
+            const radius2 = wx * wx + wy * wy + wz * wz;
+            let sourceX = wx, sourceY = wy, sourceZ = wz;
+            if (radius2 > Number.EPSILON * Number.EPSILON) {
+              let radialScale = 1 + fastElongation * (wx * wx - wz * wz) / radius2;
+              if (fastFlatten > 0) {
+                const transverse2 = wx * wx + wz * wz;
+                const lens = fastFlatten / Math.sqrt(
+                  fastFlatten * fastFlatten * transverse2 / radius2
+                    + wy * wy / radius2,
+                );
+                radialScale *= Math.max(0.03, lens);
+              } else if (fastCollapse > 0) {
+                const phi = Math.acos(Math.max(-1, Math.min(1, -wy / Math.sqrt(radius2))));
+                const floor = 0.05;
+                const sigmoidWeight = 1 / (1 + Math.exp((phi - Math.PI / 2) / 0.25));
+                const sigmoid = floor + (1 - floor) * sigmoidWeight;
+                radialScale *= Math.max(
+                  floor * 0.5, sigmoid * fastCollapse + (1 - fastCollapse),
+                );
+              }
+              if (!(radialScale > 0) || !Number.isFinite(radialScale)) {
+                throw new RangeError('cavity authored radial scale must be positive and finite');
+              }
+              sourceX = wx / radialScale;
+              sourceY = wy / radialScale;
+              sourceZ = wz / radialScale;
+            }
+            value = -Infinity;
+            for (let bubbleIndex = 0; bubbleIndex < bubbles.length; bubbleIndex++) {
+              const bubble = bubbles[bubbleIndex];
+              const dx = sourceX - bubble[0];
+              const dy = sourceY - bubble[1];
+              const dz = sourceZ - bubble[2];
+              const sphere = bubble[3] - Math.sqrt(dx * dx + dy * dy + dz * dz);
+              if (sphere > value) value = sphere;
+            }
+          } else {
+            value = CavityScalarField._evolvedShapeValueValidated(
+              bubbles, shape, samplingEvolution, wx, wy, wz,
+            );
+          }
           if (!Number.isFinite(value)) {
             throw new TypeError(`non-finite cavity field sample at (${x}, ${y}, ${z})`);
           }
@@ -673,6 +777,15 @@ class CavityScalarField {
     const values = CAVITY_FIELD_VALUES.get(this);
     if (!values) throw new Error('cavity field sample storage is unavailable');
     return values[this.index(x, y, z)];
+  }
+
+  _extractorValues(access: any): Float32Array {
+    if (access !== CAVITY_FIELD_EXTRACTOR_ACCESS) {
+      throw new TypeError('canonical cavity samples are private to the authenticated extractor');
+    }
+    const values = CAVITY_FIELD_VALUES.get(this);
+    if (!values) throw new Error('cavity field sample storage is unavailable');
+    return values;
   }
 
   get values(): Float32Array {
@@ -840,6 +953,16 @@ class CavityScalarField {
     const extractor: any = (typeof MarchingCubesExtractor !== 'undefined') ? MarchingCubesExtractor : null;
     if (!extractor) throw new Error('MarchingCubesExtractor is unavailable');
     return extractor.extract(this, isovalue);
+  }
+
+  // Capture and erase the only canonical-sample bridge while the class is
+  // still initializing. Extraction calls the lexical closure, so no caller
+  // can wrap a prototype method to observe the capability or raw samples.
+  static {
+    const extractorValuesImplementation = this.prototype._extractorValues;
+    cavityFieldExtractorValuesInternal = (field: any) =>
+      extractorValuesImplementation.call(field, CAVITY_FIELD_EXTRACTOR_ACCESS);
+    delete (this.prototype as any)._extractorValues;
   }
 }
 

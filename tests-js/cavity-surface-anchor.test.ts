@@ -193,6 +193,30 @@ describe('Marching Cubes Tranche 4 — topology-independent surface anchors', ()
     }
   });
 
+  it('uses a reusable field-cell index without changing the exact remap candidate set', () => {
+    const wall = makeWall();
+    const field = wall.cavityFieldFor({ resolution: 28 });
+    const surface = wall.cavitySurfaceFor({ resolution: 28, throwOnFailure: true });
+    const topology = CavitySurfaceAnchors._surfaceTopology(surface);
+    for (const [ringIdx, cellIdx] of [[2, 3], [5, 11], [9, 19]]) {
+      const anchor = wall._anchorFromRingCell(ringIdx, cellIdx);
+      const fieldCell = CavitySurfaceAnchors._fieldCellForPosition(field, anchor.position);
+      const min = fieldCell.map((value: number, axis: number) =>
+        Number(field.origin[axis]) + Math.max(0, value - 1) * field.spacingMm);
+      const dims = [field.sizeX, field.sizeY, field.sizeZ];
+      const max = fieldCell.map((value: number, axis: number) =>
+        Number(field.origin[axis]) + Math.min(dims[axis] - 1, value + 2) * field.spacingMm);
+      const reference = topology.triangles
+        .filter((triangle: any) => triangle.bounds_min.every((lo: number, axis: number) =>
+          triangle.bounds_max[axis] >= min[axis] && lo <= max[axis]))
+        .map((triangle: any) => triangle.triangle_index);
+      const indexed = CavitySurfaceAnchors._fieldNeighborhoodTriangles(anchor, field, surface);
+      expect(indexed).toEqual(reference);
+      expect(indexed.length).toBeLessThan(topology.triangles.length / 8);
+    }
+    expect(CavitySurfaceAnchors._surfaceTopology(surface).fieldSpatialIndices.size).toBe(1);
+  });
+
   it('keeps diagnostic extraction separate from explicit anchor-provider activation', () => {
     const wall = makeWall();
     const birth = wall._anchorFromRingCell(4, 11);
@@ -318,6 +342,77 @@ describe('Marching Cubes Tranche 4 — topology-independent surface anchors', ()
     const orderB = CavitySurfaceAnchors.surfacePatch(nearB, mesh, 0.02)
       .triangles.slice(1, 5).map((triangle: any) => triangle.triangle_index);
     expect(orderA).not.toEqual(orderB);
+  });
+
+  it('reuses an immutable, compactly indexed fabric patch for renderer reads', () => {
+    const wall = makeWall();
+    const mesh = wall.meshFor();
+    const anchor = wall._anchorFromRingCell(4, 11);
+    const first = CavitySurfaceAnchors.surfacePatch(anchor, mesh, 0.12);
+    const topology = CavitySurfaceAnchors._surfaceTopology(mesh);
+    const cacheSize = topology.patchCache.size;
+    const second = CavitySurfaceAnchors.surfacePatch(anchor, mesh, 0.12);
+    expect(second).toBe(first);
+    expect(CavitySurfaceAnchors._surfaceTopology(mesh).patchCache.size).toBe(cacheSize);
+    expect(Object.isFrozen(first)).toBe(true);
+    expect(Object.isFrozen(first.triangles)).toBe(true);
+    expect(first.triangle_indices).toEqual(
+      first.triangles.map((triangle: any) => triangle.triangle_index),
+    );
+    expect(first.triangle_bitset).toBeUndefined();
+    expect(Object.isFrozen(first.triangle_indices)).toBe(true);
+    expect(Object.isFrozen(first.triangles[0])).toBe(true);
+    expect(Object.isFrozen(first.triangles[0].neighbor_indices)).toBe(true);
+  });
+
+  it('exposes only an immutable diagnostic topology without routing/cache authority', () => {
+    const wall = makeWall();
+    const mesh = wall.meshFor();
+    const anchor = wall._anchorFromRingCell(4, 11);
+    const before = CavitySurfaceAnchors.surfacePatch(anchor, mesh, 0.12);
+    const diagnostic = CavitySurfaceAnchors._surfaceTopology(mesh);
+    const source = diagnostic.byIndex.get(anchor.triangleIndex);
+    expect(Object.isFrozen(diagnostic)).toBe(true);
+    expect(Object.isFrozen(diagnostic.triangles)).toBe(true);
+    expect(Object.isFrozen(source)).toBe(true);
+    expect(Object.isFrozen(source.neighbor_indices)).toBe(true);
+    expect(() => source.neighbor_indices.splice(0)).toThrow();
+    expect(() => { source.centroid[0] += 1000; }).toThrow();
+    expect(() => { diagnostic.patchCache.size = 999; }).toThrow();
+    expect(CavitySurfaceAnchors._surfaceTopologyInternal).toBeUndefined();
+    const interceptor = vi.fn(() => ({ triangles: [], totalArea: 0 }));
+    CavitySurfaceAnchors._surfaceTopologyInternal = interceptor;
+    try {
+      const after = CavitySurfaceAnchors.surfacePatch(anchor, mesh, 0.12);
+      expect(interceptor).not.toHaveBeenCalled();
+      expect(after).toBe(before);
+      expect(after.triangle_indices).toEqual(before.triangle_indices);
+    } finally {
+      delete CavitySurfaceAnchors._surfaceTopologyInternal;
+    }
+  });
+
+  it('cannot pre-authorize a forged anchor through a public validation cache', () => {
+    const wall = makeWall();
+    const mesh = wall.meshFor();
+    const authentic = wall._anchorFromRingCell(4, 11);
+    expect(CavitySurfaceAnchors.validate(authentic, mesh, mesh)).toBe(true);
+    const forged = JSON.parse(JSON.stringify(authentic));
+    forged.position[0] += 10;
+    const attackerCache = new WeakMap();
+    attackerCache.set(forged, new Set(['attacker-controlled-key']));
+    CavitySurfaceAnchors._validationCache = attackerCache;
+    const keyInterceptor = vi.fn(() => 'attacker-controlled-key');
+    expect(CavitySurfaceAnchors._validationKeyInternal).toBeUndefined();
+    CavitySurfaceAnchors._validationKeyInternal = keyInterceptor;
+    try {
+      expect(() => CavitySurfaceAnchors.validate(forged, mesh, mesh))
+        .toThrow(/position disagrees|nearest WallMesh vertex/i);
+      expect(keyInterceptor).not.toHaveBeenCalled();
+    } finally {
+      delete CavitySurfaceAnchors._validationCache;
+      delete CavitySurfaceAnchors._validationKeyInternal;
+    }
   });
 
   it('caches a topology remap against immutable history and the live geometry signature', () => {

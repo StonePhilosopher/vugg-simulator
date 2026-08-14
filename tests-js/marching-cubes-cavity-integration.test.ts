@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 declare const WallState: any;
 declare const MarchingCubesExtractor: any;
+declare const CavitySurfaceAnchors: any;
 declare const THREE: any;
 declare const setSeed: any;
 declare const _liveRng: any;
@@ -401,6 +402,44 @@ describe('Marching Cubes cavity renderer shadow integration', () => {
     expect(source.buffers.positions[7]).toBe(protectedValue);
     expect(() => MarchingCubesExtractor.verifyBuffers(source.buffers)).not.toThrow();
     expect(_topoCavitySurfaceSource(wall, undefined, true, 24).mode).toBe('marching-cubes');
+  });
+
+  it('does not carry private field or adjacency capabilities through replaceable methods', () => {
+    const wall = makeWall();
+    const field = wall.cavityFieldFor({ resolution: 24 });
+    const fieldPrototype = Object.getPrototypeOf(field);
+    expect(fieldPrototype._extractorValues).toBeUndefined();
+    expect(MarchingCubesExtractor._anchorTopologyData).toBeUndefined();
+    let capturedValues: any = null;
+    let capturedTopology: any = null;
+    const fieldInterceptor = vi.fn(() => {
+      capturedValues = field.values;
+      return capturedValues;
+    });
+    const topologyInterceptor = vi.fn((surface: any) => {
+      capturedTopology = { positions: surface.positions, indices: surface.indices };
+      return capturedTopology;
+    });
+    fieldPrototype._extractorValues = fieldInterceptor;
+    MarchingCubesExtractor._anchorTopologyData = topologyInterceptor;
+    const protectedSample = field.valueAt(4, 5, 6);
+    try {
+      const surface = MarchingCubesExtractor.extract(field, 0);
+      const anchor = wall._anchorFromRingCell(4, 11);
+      const patch = CavitySurfaceAnchors.surfacePatch(anchor, surface, 0.08);
+      expect(patch.triangles.length).toBeGreaterThan(0);
+      expect(fieldInterceptor).not.toHaveBeenCalled();
+      expect(topologyInterceptor).not.toHaveBeenCalled();
+      expect(capturedValues).toBeNull();
+      expect(capturedTopology).toBeNull();
+      const publicCopy = field.values;
+      publicCopy.fill(1e6);
+      expect(field.valueAt(4, 5, 6)).toBe(protectedSample);
+      expect(() => MarchingCubesExtractor.verifyBuffers(surface)).not.toThrow();
+    } finally {
+      delete fieldPrototype._extractorValues;
+      delete MarchingCubesExtractor._anchorTopologyData;
+    }
   });
 
   it('does not expose authoritative bytes through caller-controlled prototype getters', () => {

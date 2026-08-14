@@ -1297,8 +1297,6 @@ function classifySurfaceGrowth(sim: any) {
   eligible.sort((a, b) => (Number(a.nucleation_step) - Number(b.nucleation_step))
     || (Number(a.crystal_id) - Number(b.crystal_id)));
   const prior: any[] = [];
-  const exactMesh = wall && typeof wall.meshFor === 'function'
-    ? wall.meshFor(sim) : null;
   for (let i = 0; i < eligible.length; i++) {
     const c = eligible[i];
     const desc = c._surfaceGrowth;
@@ -1307,19 +1305,33 @@ function classifySurfaceGrowth(sim: any) {
     const radius = Math.acos(Math.max(-1, Math.min(1, 1 - 2 * desc.coverage_fraction)));
     const exactPatch = wall && typeof wall.surfacePatchForCrystal === 'function'
       ? wall.surfacePatchForCrystal(c, desc.coverage_fraction, sim) : null;
-    const exactTriangles = exactPatch && Array.isArray(exactPatch.triangles)
-      ? new Set(exactPatch.triangles.map((triangle: any) => triangle.triangle_index))
+    const exactTriangleIndices = exactPatch && Array.isArray(exactPatch.triangles)
+      ? (Array.isArray(exactPatch.triangle_indices)
+        ? exactPatch.triangle_indices
+        : exactPatch.triangles.map((triangle: any) => triangle.triangle_index))
       : null;
-    const exactTriangleKeys = exactTriangles
-      ? new Set(Array.from(exactTriangles).map((triangleIndex: any) =>
-        `${exactPatch.source_signature}:${triangleIndex}`)) : null;
+    let exactTriangleBitset: Uint32Array | null = null;
+    if (exactTriangleIndices) {
+      let triangleCount = 0;
+      for (const triangleIndex of exactTriangleIndices) {
+        triangleCount = Math.max(triangleCount, Number(triangleIndex) + 1);
+      }
+      exactTriangleBitset = new Uint32Array(Math.ceil(triangleCount / 32));
+      for (const triangleIndex of exactTriangleIndices) {
+        exactTriangleBitset[triangleIndex >>> 5] |= (1 << (triangleIndex & 31)) >>> 0;
+      }
+    }
     const underlying: number[] = [];
     for (const p of prior) {
-      if (exactTriangleKeys && p.exactTriangleKeys) {
-        let sharesTriangle = false;
-        for (const triangleKey of exactTriangleKeys) {
-          if (p.exactTriangleKeys.has(triangleKey)) { sharesTriangle = true; break; }
-        }
+      if (exactTriangleIndices && exactTriangleBitset
+          && p.exactTriangleIndices && p.exactTriangleBitset
+          && exactPatch.source_signature === p.sourceSignature) {
+        const probe = exactTriangleIndices.length <= p.exactTriangleIndices.length
+          ? exactTriangleIndices : p.exactTriangleIndices;
+        const targetBitset = probe === exactTriangleIndices
+          ? p.exactTriangleBitset : exactTriangleBitset;
+        const sharesTriangle = probe.some((triangleIndex: number) =>
+          !!(targetBitset[triangleIndex >>> 5] & ((1 << (triangleIndex & 31)) >>> 0)));
         if (sharesTriangle) underlying.push(p.crystal.crystal_id);
       } else {
         const dot = dir[0] * p.dir[0] + dir[1] * p.dir[1] + dir[2] * p.dir[2];
@@ -1330,10 +1342,15 @@ function classifySurfaceGrowth(sim: any) {
     desc.stratigraphic_index = i;
     desc.nucleation_step = Number(c.nucleation_step) || 0;
     desc.underlying_surface_crystal_ids = underlying;
-    desc.stratigraphy_basis = exactTriangles
+    desc.stratigraphy_basis = exactTriangleIndices
       ? 'exact shared authenticated-surface triangles'
       : 'spherical-cap fallback';
-    prior.push({ crystal: c, dir, radius, exactTriangles, exactTriangleKeys });
+    prior.push({
+      crystal: c, dir, radius,
+      sourceSignature: exactPatch?.source_signature,
+      exactTriangleIndices,
+      exactTriangleBitset,
+    });
   }
 }
 

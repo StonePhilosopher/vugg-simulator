@@ -8,6 +8,9 @@
 // topology ambiguity, so this construction is closed and crack-free without a
 // 256-row case table or the unresolved MC33 cases in the former prototype.
 
+const CAVITY_SURFACE_ANCHOR_ACCESS = Object.freeze({});
+let cavitySurfaceAnchorTopologyInternal: (surface: CavitySurfaceBuffers) => any;
+
 class MarchingCubesExtractor {
   // TypedArray payloads cannot be frozen in JavaScript. Keep their owned targets
   // private and expose read-only proxies: numeric writes and mutating methods
@@ -17,6 +20,7 @@ class MarchingCubesExtractor {
   static #verifiedBuffers: WeakMap<object, any> = new WeakMap();
   static #readonlyTargets: WeakMap<object, any> = new WeakMap();
   static #readonlyProxies: WeakMap<object, any> = new WeakMap();
+  static #anchorTopology: WeakMap<object, any> = new WeakMap();
   static #typedArrayPrototype: any = Object.getPrototypeOf(Float32Array.prototype);
   static #typedArraySlice: any = MarchingCubesExtractor.#typedArrayPrototype.slice;
   static #callbackMethods: Map<string, any> = new Map(
@@ -102,14 +106,32 @@ class MarchingCubesExtractor {
   static _bufferDigest(surface: any): string {
     const arrays = [surface && surface.positions, surface && surface.normals,
       surface && surface.colors, surface && surface.uvs, surface && surface.indices];
-    let joined = '';
+    let joined = 'cavity-surface-buffers-v2|';
     for (const values of arrays) {
       const raw = MarchingCubesExtractor.#rawBuffer(values);
       if (!raw || !ArrayBuffer.isView(raw)) throw new TypeError('surface buffer is unavailable');
       const bytes = new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength);
-      let hash = 0x811c9dc5;
-      for (let i = 0; i < bytes.length; i++) hash = Math.imul(hash ^ bytes[i], 0x01000193) >>> 0;
-      joined += `${raw.constructor.name}:${raw.byteLength}:${hash.toString(16).padStart(8, '0')}|`;
+      let hashA = 0x811c9dc5;
+      let hashB = 0x9e3779b9;
+      let offset = 0;
+      for (; offset + 4 <= bytes.length; offset += 4) {
+        const word = (bytes[offset]
+          | (bytes[offset + 1] << 8)
+          | (bytes[offset + 2] << 16)
+          | (bytes[offset + 3] << 24)) >>> 0;
+        hashA = Math.imul(hashA ^ word, 0x01000193) >>> 0;
+        hashB = (Math.imul(hashB ^ word, 0x85ebca6b) + 0x27d4eb2f) >>> 0;
+      }
+      let tail = 0;
+      for (let shift = 0; offset < bytes.length; offset++, shift += 8) {
+        tail |= bytes[offset] << shift;
+      }
+      if (bytes.length & 3) {
+        hashA = Math.imul(hashA ^ tail, 0x01000193) >>> 0;
+        hashB = (Math.imul(hashB ^ tail, 0x85ebca6b) + 0x27d4eb2f) >>> 0;
+      }
+      joined += `${raw.constructor.name}:${raw.byteLength}:`
+        + `${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}|`;
     }
     return joined;
   }
@@ -131,6 +153,16 @@ class MarchingCubesExtractor {
         buffers,
       });
     }
+  }
+
+  static _anchorTopologyData(surface: CavitySurfaceBuffers, access: any): any {
+    if (access !== CAVITY_SURFACE_ANCHOR_ACCESS) {
+      throw new TypeError('Cartesian surface adjacency is private to authenticated anchors');
+    }
+    MarchingCubesExtractor.verifyBuffers(surface);
+    const topology = MarchingCubesExtractor.#anchorTopology.get(surface as any);
+    if (!topology) throw new Error('Cartesian surface adjacency is unavailable');
+    return topology;
   }
 
   // Exact enclosed volume of the authenticated indexed surface.  This is the
@@ -413,13 +445,40 @@ class MarchingCubesExtractor {
     }
     if (!Number.isFinite(isovalue)) throw new TypeError('Marching Cubes isovalue must be finite');
     const started = CavityScalarField._nowMs();
-    const positions: number[] = [];
-    const normals: number[] = [];
-    const colors: number[] = [];
-    const uvs: number[] = [];
-    const indices: number[] = [];
-    const vertexByGridEdge = new Map<number, number>();
     const gridVertexCount = field.sizeX * field.sizeY * field.sizeZ;
+    let positions = new Float64Array(gridVertexCount);
+    let uvs = new Float32Array(gridVertexCount);
+    let indices = new Uint32Array(gridVertexCount);
+    let positionLength = 0;
+    let uvLength = 0;
+    let indexLength = 0;
+    const growFloat64 = (values: any, required: number): any => {
+      if (required <= values.length) return values;
+      const grown = new Float64Array(Math.max(required, values.length * 2));
+      grown.set(values);
+      return grown;
+    };
+    const growFloat32 = (values: any, required: number): any => {
+      if (required <= values.length) return values;
+      const grown = new Float32Array(Math.max(required, values.length * 2));
+      grown.set(values);
+      return grown;
+    };
+    const growUint32 = (values: any, required: number): any => {
+      if (required <= values.length) return values;
+      const grown = new Uint32Array(Math.max(required, values.length * 2));
+      grown.set(values);
+      return grown;
+    };
+    const vertexByGridEdge = new Map<number, number>();
+    const fieldValues = cavityFieldExtractorValuesInternal(field);
+    const strideY = field.sizeX;
+    const strideZ = field.sizeX * field.sizeY;
+    // Reused scratch removes millions of tiny arrays/closures from a 64^3
+    // extraction while preserving the exact tetrahedron and corner order.
+    const cornerValues = new Float64Array(8);
+    const insideCorners = new Int8Array(4);
+    const outsideCorners = new Int8Array(4);
     const boundsCenter = [
       (field.bounds.min[0] + field.bounds.max[0]) * 0.5,
       (field.bounds.min[1] + field.bounds.max[1]) * 0.5,
@@ -469,11 +528,14 @@ class MarchingCubesExtractor {
       let u = Math.atan2(dz, dx) / (2 * Math.PI);
       if (u < 0) u += 1;
       const v = Math.acos(Math.max(-1, Math.min(1, -dy / radius))) / Math.PI;
-      const index = positions.length / 3;
-      positions.push(wx, wy, wz);
-      normals.push(0, 0, 0);
-      colors.push(0, 0, 0);
-      uvs.push(u, v);
+      const index = positionLength / 3;
+      positions = growFloat64(positions, positionLength + 3);
+      positions[positionLength++] = wx;
+      positions[positionLength++] = wy;
+      positions[positionLength++] = wz;
+      uvs = growFloat32(uvs, uvLength + 2);
+      uvs[uvLength++] = u;
+      uvs[uvLength++] = v;
       vertexByGridEdge.set(key, index);
       return index;
     };
@@ -495,50 +557,75 @@ class MarchingCubesExtractor {
       // indistinguishable from zero at double precision; Float32 collapse is
       // independently caught by the final face and manifold verification.
       if (!(area2 > Number.EPSILON * field.spacingMm * field.spacingMm * 64)) return;
-      indices.push(a, b, c);
+      indices = growUint32(indices, indexLength + 3);
+      indices[indexLength++] = a;
+      indices[indexLength++] = b;
+      indices[indexLength++] = c;
     };
 
     for (let z = 0; z < field.sizeZ - 1; z++) {
+      const zBase = z * strideZ;
       for (let y = 0; y < field.sizeY - 1; y++) {
-        for (let x = 0; x < field.sizeX - 1; x++) {
-          const cornerValues = MarchingCubesExtractor.CORNERS.map((corner) =>
-            field.valueAt(x + corner[0], y + corner[1], z + corner[2]));
-          // Simulation of simplicity: an authored/sample value can land
-          // exactly on the isovalue. Treat it as a tiny positive value in every
-          // incident tetrahedron for classification only, so topology never
-          // depends on traversal order; positions remain on the true zero set.
-          const topologyValues = cornerValues.map(value => value === isovalue
-            ? isovalue + field.spacingMm * 1e-5 : value);
-          const allInside = topologyValues.every(value => value > isovalue);
-          const allOutside = topologyValues.every(value => value <= isovalue);
-          if (allInside || allOutside) continue;
+        let base = zBase + y * strideY;
+        for (let x = 0; x < field.sizeX - 1; x++, base++) {
+          cornerValues[0] = fieldValues[base];
+          cornerValues[1] = fieldValues[base + 1];
+          cornerValues[2] = fieldValues[base + strideY + 1];
+          cornerValues[3] = fieldValues[base + strideY];
+          cornerValues[4] = fieldValues[base + strideZ];
+          cornerValues[5] = fieldValues[base + strideZ + 1];
+          cornerValues[6] = fieldValues[base + strideZ + strideY + 1];
+          cornerValues[7] = fieldValues[base + strideZ + strideY];
+          // Simulation of simplicity classifies an exact isovalue sample as
+          // positive in every incident tetrahedron. Geometry still uses the
+          // original canonical Float32 value below.
+          let cubeMask = 0;
+          for (let corner = 0; corner < 8; corner++) {
+            if (cornerValues[corner] >= isovalue) cubeMask |= 1 << corner;
+          }
+          if (cubeMask === 0 || cubeMask === 255) continue;
 
-          for (const tetrahedron of MarchingCubesExtractor.TETRAHEDRA) {
-            const inside = tetrahedron.filter(corner => topologyValues[corner] > isovalue);
-            if (inside.length === 0 || inside.length === 4) continue;
-            const outside = tetrahedron.filter(corner => topologyValues[corner] <= isovalue);
-            const vertex = (a: number, b: number) => {
-              // Simulation of simplicity changes only the symbolic sign of an
-              // exact-zero sample. Geometry remains on the original,
-              // authenticated field bytes consumed by CPU and GPU clipping.
-              return vertexForSegment(x, y, z, a, b, cornerValues);
-            };
-            if (inside.length === 1) {
-              const center = inside[0];
-              addTriangle(vertex(center, outside[0]), vertex(center, outside[1]),
-                vertex(center, outside[2]));
-            } else if (inside.length === 3) {
-              const center = outside[0];
-              addTriangle(vertex(center, inside[0]), vertex(center, inside[1]),
-                vertex(center, inside[2]));
+          for (let tetraIndex = 0; tetraIndex < MarchingCubesExtractor.TETRAHEDRA.length;
+              tetraIndex++) {
+            const tetrahedron = MarchingCubesExtractor.TETRAHEDRA[tetraIndex];
+            let insideCount = 0;
+            let outsideCount = 0;
+            for (let tetraCorner = 0; tetraCorner < 4; tetraCorner++) {
+              const corner = tetrahedron[tetraCorner];
+              if (cubeMask & (1 << corner)) insideCorners[insideCount++] = corner;
+              else outsideCorners[outsideCount++] = corner;
+            }
+            if (insideCount === 0 || insideCount === 4) continue;
+            if (insideCount === 1) {
+              const center = insideCorners[0];
+              addTriangle(
+                vertexForSegment(x, y, z, center, outsideCorners[0], cornerValues as any),
+                vertexForSegment(x, y, z, center, outsideCorners[1], cornerValues as any),
+                vertexForSegment(x, y, z, center, outsideCorners[2], cornerValues as any),
+              );
+            } else if (insideCount === 3) {
+              const center = outsideCorners[0];
+              addTriangle(
+                vertexForSegment(x, y, z, center, insideCorners[0], cornerValues as any),
+                vertexForSegment(x, y, z, center, insideCorners[1], cornerValues as any),
+                vertexForSegment(x, y, z, center, insideCorners[2], cornerValues as any),
+              );
             } else {
               // The four cut edges form the cycle a-b-d-c. They are coplanar in
               // the shared piecewise-linear field; stable a-d splitting is
               // deterministic and requires no scalar or gradient probe.
-              const a = vertex(inside[0], outside[0]);
-              const b = vertex(inside[0], outside[1]);
-              const c = vertex(inside[1], outside[0]);
-              const d = vertex(inside[1], outside[1]);
+              const a = vertexForSegment(
+                x, y, z, insideCorners[0], outsideCorners[0], cornerValues as any,
+              );
+              const b = vertexForSegment(
+                x, y, z, insideCorners[0], outsideCorners[1], cornerValues as any,
+              );
+              const c = vertexForSegment(
+                x, y, z, insideCorners[1], outsideCorners[0], cornerValues as any,
+              );
+              const d = vertexForSegment(
+                x, y, z, insideCorners[1], outsideCorners[1], cornerValues as any,
+              );
               addTriangle(a, b, d);
               addTriangle(a, d, c);
             }
@@ -546,13 +633,17 @@ class MarchingCubesExtractor {
         }
       }
     }
+    const polygonizeMs = CavityScalarField._nowMs() - started;
+    const manifoldStarted = CavityScalarField._nowMs();
+    let authenticatedNeighborTriangles: Int32Array | null = null;
+    let authenticatedNeighborCounts: Uint8Array | null = null;
 
     // A complete rock-negative border promises a closed cavity surface. Verify
     // the promise independently of the extractor construction and fail closed
     // on any future regression in face compatibility or tetra triangulation.
     if (field.hasNegativeBorder(isovalue)) {
-      const triangleCount = indices.length / 3;
-      const vertexCount = positions.length / 3;
+      const triangleCount = indexLength / 3;
+      const vertexCount = positionLength / 3;
       if (vertexCount * vertexCount > Number.MAX_SAFE_INTEGER) {
         throw new RangeError('Cartesian surface is too large for exact numeric edge authentication');
       }
@@ -576,7 +667,7 @@ class MarchingCubesExtractor {
         neighborInverts[a * 3 + aSlot] = invert ? 1 : 0;
         neighborInverts[b * 3 + bSlot] = invert ? 1 : 0;
       };
-      for (let i = 0; i < indices.length; i += 3) {
+      for (let i = 0; i < indexLength; i += 3) {
         const triangle = i / 3;
         for (let edge = 0; edge < 3; edge++) {
           const a = indices[i + edge];
@@ -661,13 +752,18 @@ class MarchingCubesExtractor {
           for (const triangle of component) flipTriangle(triangle);
         }
       }
+      authenticatedNeighborTriangles = neighborTriangles;
+      authenticatedNeighborCounts = neighborCounts;
     }
+    const manifoldMs = CavityScalarField._nowMs() - manifoldStarted;
+    const normalMaterialStarted = CavityScalarField._nowMs();
 
     // One topology-derived smooth-normal pass after final winding. This is
     // equivalent to standard indexed-mesh normal generation and avoids six
     // scalar samples per vertex plus multiple field probes per triangle.
-    normals.fill(0);
-    for (let offset = 0; offset < indices.length; offset += 3) {
+    const normals = new Float64Array(positionLength);
+    const colors = new Float64Array(positionLength);
+    for (let offset = 0; offset < indexLength; offset += 3) {
       const a = indices[offset], b = indices[offset + 1], c = indices[offset + 2];
       const ax = positions[a * 3], ay = positions[a * 3 + 1], az = positions[a * 3 + 2];
       const abx = positions[b * 3] - ax;
@@ -685,7 +781,7 @@ class MarchingCubesExtractor {
         normals[vertex * 3 + 2] += nz;
       }
     }
-    for (let vertex = 0; vertex < positions.length / 3; vertex++) {
+    for (let vertex = 0; vertex < positionLength / 3; vertex++) {
       const offset = vertex * 3;
       const length = Math.hypot(normals[offset], normals[offset + 1], normals[offset + 2]);
       if (!(length > 1e-12) || !Number.isFinite(length)) {
@@ -697,26 +793,37 @@ class MarchingCubesExtractor {
       const color = MarchingCubesExtractor._surfaceColor(normals[offset + 1]);
       colors[offset] = color[0]; colors[offset + 1] = color[1]; colors[offset + 2] = color[2];
     }
+    const normalMaterialMs = CavityScalarField._nowMs() - normalMaterialStarted;
+    const packingAuthenticationStarted = CavityScalarField._nowMs();
 
-    const positionBuffer = new Float32Array(positions);
+    const positionBuffer = new Float32Array(positions.subarray(0, positionLength));
     const normalBuffer = new Float32Array(normals);
     const colorBuffer = new Float32Array(colors);
-    const uvBuffer = new Float32Array(uvs);
+    const uvBuffer = uvs.slice(0, uvLength);
     const indexBuffer = positionBuffer.length / 3 > 65535
-      ? new Uint32Array(indices)
-      : new Uint16Array(indices);
-    const extractionMs = CavityScalarField._nowMs() - started;
+      ? indices.slice(0, indexLength)
+      : new Uint16Array(indices.subarray(0, indexLength));
+    const packingMs = CavityScalarField._nowMs() - packingAuthenticationStarted;
+    const bufferAuthenticationStarted = CavityScalarField._nowMs();
     const surfaceBytes = positionBuffer.byteLength + normalBuffer.byteLength
       + colorBuffer.byteLength + uvBuffer.byteLength + indexBuffer.byteLength;
-    const result: any = {
+    const readonlyBuffers = {
       positions: MarchingCubesExtractor.#readonlyBuffer(positionBuffer),
       normals: MarchingCubesExtractor.#readonlyBuffer(normalBuffer),
       colors: MarchingCubesExtractor.#readonlyBuffer(colorBuffer),
       indices: MarchingCubesExtractor.#readonlyBuffer(indexBuffer),
       uvs: MarchingCubesExtractor.#readonlyBuffer(uvBuffer),
+    };
+    const bufferDigest = MarchingCubesExtractor._bufferDigest(readonlyBuffers);
+    const bufferAuthenticationMs = CavityScalarField._nowMs() - bufferAuthenticationStarted;
+    const packingAuthenticationMs = CavityScalarField._nowMs() - packingAuthenticationStarted;
+    const extractionMs = CavityScalarField._nowMs() - started;
+    const result: any = {
+      ...readonlyBuffers,
       sig: field.surfaceSignature(isovalue),
       source_field_signature: field.sig,
       source_field_snapshot_digest: field.snapshotDigest,
+      buffer_digest: bufferDigest,
       isovalue,
       bounds: Object.freeze({
         min: Object.freeze(field.bounds.min.slice()) as any,
@@ -725,6 +832,12 @@ class MarchingCubesExtractor {
       metrics: Object.freeze({
         field_build_ms: field.metrics.field_build_ms || 0,
         extraction_ms: extractionMs,
+        polygonize_ms: polygonizeMs,
+        manifold_ms: manifoldMs,
+        normal_material_ms: normalMaterialMs,
+        packing_authentication_ms: packingAuthenticationMs,
+        packing_ms: packingMs,
+        buffer_authentication_ms: bufferAuthenticationMs,
         triangle_count: indexBuffer.length / 3,
         vertex_count: positionBuffer.length / 3,
         field_bytes: field.sampleByteLength(),
@@ -736,11 +849,28 @@ class MarchingCubesExtractor {
         closed_two_manifold: field.hasNegativeBorder(isovalue) && indexBuffer.length >= 3,
       }),
     };
-    result.buffer_digest = MarchingCubesExtractor._bufferDigest(result);
     MarchingCubesExtractor.#verifiedBuffers.set(result, {
       digest: result.buffer_digest,
       buffers: [result.positions, result.normals, result.colors, result.uvs, result.indices],
     });
+    if (authenticatedNeighborTriangles && authenticatedNeighborCounts) {
+      MarchingCubesExtractor.#anchorTopology.set(result, {
+        neighbor_triangles: authenticatedNeighborTriangles,
+        neighbor_counts: authenticatedNeighborCounts,
+        positions: MarchingCubesExtractor.#rawBuffer(result.positions),
+        indices: MarchingCubesExtractor.#rawBuffer(result.indices),
+      });
+    }
     return Object.freeze(result);
+  }
+
+  // Capture and erase the raw adjacency/buffer bridge before the class is
+  // observable. Surface anchors call only the lexical closure, never a
+  // replaceable static method carrying the capability.
+  static {
+    const anchorTopologyImplementation = this._anchorTopologyData;
+    cavitySurfaceAnchorTopologyInternal = (surface: CavitySurfaceBuffers) =>
+      anchorTopologyImplementation.call(this, surface, CAVITY_SURFACE_ANCHOR_ACCESS);
+    delete (this as any)._anchorTopologyData;
   }
 }

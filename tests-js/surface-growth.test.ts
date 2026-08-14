@@ -140,6 +140,32 @@ describe('SIM 246 area-covering surface-growth fabrics', () => {
     expect(druse._surfaceGrowth.stratigraphy_basis).toBe('exact shared authenticated-surface triangles');
   });
 
+  it('cannot poison cached patch membership to alter surface stratigraphy', () => {
+    const wall = new WallState({ cells_per_ring: 48, ring_count: 12, vug_diameter_mm: 60 });
+    const lining = crystal('chalcedony', 'banded_agate', 'coating', {
+      crystal_id: 102, nucleation_step: 3,
+    });
+    const druse = crystal('quartz', 'rock_crystal_druse', 'coating', {
+      crystal_id: 109, nucleation_step: 12,
+    });
+    lining.wall_anchor = wall._anchorFromRingCell(6, 12);
+    druse.wall_anchor = wall._anchorFromRingCell(6, 14);
+    const sim = { step: 20, wall_state: wall, crystals: [druse, lining] };
+    classifySurfaceGrowth(sim);
+    const patch = wall.surfacePatchForCrystal(
+      lining, lining._surfaceGrowth.coverage_fraction, sim,
+    );
+    const before = druse._surfaceGrowth.underlying_surface_crystal_ids.slice();
+    expect(patch.triangle_bitset).toBeUndefined();
+    expect(Object.isFrozen(patch.triangle_indices)).toBe(true);
+    expect(() => { patch.triangle_indices[0] = Number.MAX_SAFE_INTEGER; }).toThrow();
+    expect(() => { patch.triangles[0].triangle_index = Number.MAX_SAFE_INTEGER; }).toThrow();
+    expect(() => { patch.triangles[0].neighbor_indices.length = 0; }).toThrow();
+    classifySurfaceGrowth(sim);
+    expect(druse._surfaceGrowth.underlying_surface_crystal_ids).toEqual(before);
+    expect(before).toContain(102);
+  });
+
   it('normalizes coincident WallMesh and MC layers onto one live surface for stratigraphy', () => {
     const wall = new WallState({
       cells_per_ring: 48, ring_count: 12, vug_diameter_mm: 60, shape_seed: 42,

@@ -35,14 +35,30 @@ interface CavitySurfaceAnchorV1 {
   readonly cellIdx?: number;
 }
 
+// Routing, spatial indices, and path/cache state are simulation authority.
+// Keep them behind a lexical capability instead of exposing a mutable static
+// WeakMap or returning the live cache through the diagnostic API.
+const CAVITY_SURFACE_TOPOLOGY_ACCESS = Object.freeze({});
+const CAVITY_SURFACE_TOPOLOGY_CACHE: WeakMap<object, any> = new WeakMap();
+const CAVITY_SURFACE_VALIDATION_ACCESS = Object.freeze({});
+const CAVITY_SURFACE_VALIDATION_CACHE: WeakMap<object, Set<string>> = new WeakMap();
+let cavitySurfaceTopologyInternal: (surface: any) => any;
+let cavitySurfaceValidationKeyInternal: (
+  anchor: any, surface: any, mesh: any, field: any, allowStaleChemistry: boolean,
+) => string;
+
 class CavitySurfaceAnchors {
   static readonly SCHEMA = 'cavity-surface-anchor-v1';
   static readonly MAPPING = 'nearest-wall-mesh-vertex-v1';
-  static _surfaceTopologyCache: WeakMap<object, any> = new WeakMap();
-  static _validationCache: WeakMap<object, Set<string>> = new WeakMap();
-
-  static _validationKey(anchor: any, surface: any, mesh: any, field: any,
-                        allowStaleChemistry: boolean): string {
+  // Cache repeated morphology/renderer reads without allowing a long run of
+  // changing coverages to retain an unbounded number of triangle objects.
+  static readonly PATCH_CACHE_TRIANGLE_BUDGET = 100000;
+  static readonly SURFACE_PATH_CACHE_LIMIT = 32;
+  static _validationKeyInternal(anchor: any, surface: any, mesh: any, field: any,
+                                allowStaleChemistry: boolean, access: any): string {
+    if (access !== CAVITY_SURFACE_VALIDATION_ACCESS) {
+      throw new Error('surface-anchor validation cache authority is private');
+    }
     return [
       anchor?.source?.kind, anchor?.source?.signature, anchor?.source?.fieldSignature,
       anchor?.source?.snapshotDigest, anchor?.source?.bufferDigest, anchor?.source?.isovalue,
@@ -381,7 +397,8 @@ class CavitySurfaceAnchors {
       const dy = candidate.point[1] - point[1];
       const dz = candidate.point[2] - point[2];
       const distance2 = dx * dx + dy * dy + dz * dz;
-      if (!best || distance2 < best.distance2) {
+      if (!best || distance2 < best.distance2
+          || (distance2 === best.distance2 && triangleIndex < best.triangleIndex)) {
         best = { triangleIndex, barycentric: candidate.barycentric, point: candidate.point, distance2 };
       }
     }
@@ -401,25 +418,68 @@ class CavitySurfaceAnchors {
     const dims = [field.sizeX, field.sizeY, field.sizeZ];
     const max = fieldCell.map((value: number, axis: number) =>
       Number(field.origin[axis]) + Math.min(dims[axis] - 1, value + 2) * spacing);
-    const positions = surface?.positions;
-    const indices = surface?.indices;
-    if (!positions || !indices) return [];
-    const candidates: number[] = [];
-    for (let triangleIndex = 0; triangleIndex < indices.length / 3; triangleIndex++) {
-      const t = CavitySurfaceAnchors._triangle(surface, triangleIndex);
-      let overlaps = true;
-      for (let axis = 0; axis < 3; axis++) {
-        const lo = Math.min(
-          positions[t.ia * 3 + axis], positions[t.ib * 3 + axis], positions[t.ic * 3 + axis],
-        );
-        const hi = Math.max(
-          positions[t.ia * 3 + axis], positions[t.ib * 3 + axis], positions[t.ic * 3 + axis],
-        );
-        if (hi < min[axis] || lo > max[axis]) { overlaps = false; break; }
+    if (!surface?.positions || !surface?.indices) return [];
+    const topology = cavitySurfaceTopologyInternal(surface);
+    const frameKey = [field.sig || field.snapshotDigest || 'field',
+      ...field.origin, field.spacingMm, field.sizeX, field.sizeY, field.sizeZ].join(':');
+    let spatial = topology.fieldSpatialIndices.get(frameKey);
+    if (!spatial) {
+      const cellSizeX = field.sizeX - 1;
+      const cellSizeY = field.sizeY - 1;
+      const cellSizeZ = field.sizeZ - 1;
+      const bins = new Map<number, number[]>();
+      const clampCell = (value: number, size: number) =>
+        Math.max(0, Math.min(size - 1, value));
+      for (const triangle of topology.triangles) {
+        const lower = triangle.bounds_min.map((value: number, axis: number) =>
+          clampCell(Math.ceil((value - Number(field.origin[axis])) / spacing - 1),
+            [cellSizeX, cellSizeY, cellSizeZ][axis]));
+        const upper = triangle.bounds_max.map((value: number, axis: number) =>
+          clampCell(Math.floor((value - Number(field.origin[axis])) / spacing),
+            [cellSizeX, cellSizeY, cellSizeZ][axis]));
+        for (let z = lower[2]; z <= upper[2]; z++) {
+          for (let y = lower[1]; y <= upper[1]; y++) {
+            for (let x = lower[0]; x <= upper[0]; x++) {
+              const key = x + cellSizeX * (y + cellSizeY * z);
+              const bin = bins.get(key);
+              if (bin) bin.push(triangle.triangle_index);
+              else bins.set(key, [triangle.triangle_index]);
+            }
+          }
+        }
       }
-      if (overlaps) candidates.push(triangleIndex);
+      spatial = { bins, cellSizeX, cellSizeY, cellSizeZ };
+      // A surface is authenticated to one field frame in production. Keep the
+      // map for explicit historical/regrid callers, but bound stale frames.
+      topology.fieldSpatialIndices.set(frameKey, spatial);
+      while (topology.fieldSpatialIndices.size > 3) {
+        topology.fieldSpatialIndices.delete(topology.fieldSpatialIndices.keys().next().value);
+      }
     }
-    return candidates;
+    const clampCell = (value: number, size: number) =>
+      Math.max(0, Math.min(size - 1, value));
+    const lower = min.map((value: number, axis: number) =>
+      clampCell(Math.ceil((value - Number(field.origin[axis])) / spacing - 1),
+        [spatial.cellSizeX, spatial.cellSizeY, spatial.cellSizeZ][axis]));
+    const upper = max.map((value: number, axis: number) =>
+      clampCell(Math.floor((value - Number(field.origin[axis])) / spacing),
+        [spatial.cellSizeX, spatial.cellSizeY, spatial.cellSizeZ][axis]));
+    const candidateSet = new Set<number>();
+    for (let z = lower[2]; z <= upper[2]; z++) {
+      for (let y = lower[1]; y <= upper[1]; y++) {
+        for (let x = lower[0]; x <= upper[0]; x++) {
+          const key = x + spatial.cellSizeX * (y + spatial.cellSizeY * z);
+          for (const triangleIndex of spatial.bins.get(key) || []) candidateSet.add(triangleIndex);
+        }
+      }
+    }
+    // Preserve the exact old AABB definition and global lowest-index tie rule;
+    // the index changes only how candidates are discovered.
+    return Array.from(candidateSet).sort((a, b) => a - b).filter((triangleIndex) => {
+      const triangle = topology.byIndex.get(triangleIndex);
+      return triangle && triangle.bounds_min.every((lo: number, axis: number) =>
+        triangle.bounds_max[axis] >= min[axis] && lo <= max[axis]);
+    });
   }
 
   static _fieldCellForPosition(field: any, position: any): [number, number, number] {
@@ -476,10 +536,10 @@ class CavitySurfaceAnchors {
     if (anchor.source?.kind === 'cavity-field' && surface) {
       MarchingCubesExtractor.verifyBuffers(surface);
     }
-    const validationKey = CavitySurfaceAnchors._validationKey(
+    const validationKey = cavitySurfaceValidationKeyInternal(
       anchor, surface, mesh, field, !!opts.allowStaleChemistry,
     );
-    const cachedValidations = CavitySurfaceAnchors._validationCache.get(anchor);
+    const cachedValidations = CAVITY_SURFACE_VALIDATION_CACHE.get(anchor);
     if (cachedValidations?.has(validationKey)) return true;
     const position = CavitySurfaceAnchors._tuple3(anchor.position, 'surface anchor position');
     const normal = CavitySurfaceAnchors._unit(anchor.normal, 'surface anchor normal');
@@ -583,7 +643,7 @@ class CavitySurfaceAnchors {
     }
     const validations = cachedValidations || new Set<string>();
     validations.add(validationKey);
-    CavitySurfaceAnchors._validationCache.set(anchor, validations);
+    CAVITY_SURFACE_VALIDATION_CACHE.set(anchor, validations);
     return true;
   }
 
@@ -592,19 +652,28 @@ class CavitySurfaceAnchors {
       : CavitySurfaceAnchors._geometrySignature(surface));
   }
 
-  static _surfaceTopology(surface: any): any {
+  static _surfaceTopologyInternal(surface: any, access: any): any {
+    if (access !== CAVITY_SURFACE_TOPOLOGY_ACCESS) {
+      throw new Error('surface topology authority is private');
+    }
     if (!surface?.positions || !surface?.indices) {
       throw new TypeError('surface patch requires indexed position buffers');
     }
     const signature = CavitySurfaceAnchors._surfaceSignature(surface);
-    const cached = CavitySurfaceAnchors._surfaceTopologyCache.get(surface);
+    const cached = CAVITY_SURFACE_TOPOLOGY_CACHE.get(surface);
     if (cached?.signature === signature) return cached;
+    const extractorTopology = surface.source_field_signature
+      ? cavitySurfaceAnchorTopologyInternal(surface)
+      : null;
+    const positionBuffer = extractorTopology?.positions || surface.positions;
+    const indexBuffer = extractorTopology?.indices || surface.indices;
     const triangles: any[] = [];
-    const edgeOwners = new Map<string, number[]>();
+    const edgeOwners = extractorTopology ? null : new Map<string, number[]>();
     let totalArea = 0;
-    for (let triangleIndex = 0; triangleIndex < surface.indices.length / 3; triangleIndex++) {
-      const t = CavitySurfaceAnchors._triangle(surface, triangleIndex);
-      const p = surface.positions;
+    for (let triangleIndex = 0; triangleIndex < indexBuffer.length / 3; triangleIndex++) {
+      const offset = triangleIndex * 3;
+      const t = { ia: indexBuffer[offset], ib: indexBuffer[offset + 1], ic: indexBuffer[offset + 2] };
+      const p = positionBuffer;
       const ax = p[t.ia * 3], ay = p[t.ia * 3 + 1], az = p[t.ia * 3 + 2];
       const bx = p[t.ib * 3], by = p[t.ib * 3 + 1], bz = p[t.ib * 3 + 2];
       const cx = p[t.ic * 3], cy = p[t.ic * 3 + 1], cz = p[t.ic * 3 + 2];
@@ -629,109 +698,326 @@ class CavitySurfaceAnchors {
         triangle_index: triangleIndex, ia: t.ia, ib: t.ib, ic: t.ic,
         area_mm2: length / 2,
         centroid: [(ax + bx + cx) / 3, (ay + by + cy) / 3, (az + bz + cz) / 3],
+        bounds_min: [Math.min(ax, bx, cx), Math.min(ay, by, cy), Math.min(az, bz, cz)],
+        bounds_max: [Math.max(ax, bx, cx), Math.max(ay, by, cy), Math.max(az, bz, cz)],
         void_normal: [-cross[0] / length, -cross[1] / length, -cross[2] / length],
         neighbor_indices: [] as number[],
       };
       triangles.push(triangle);
       totalArea += triangle.area_mm2;
-      for (const [u, v] of [[t.ia, t.ib], [t.ib, t.ic], [t.ic, t.ia]]) {
-        const key = u < v ? `${u}:${v}` : `${v}:${u}`;
-        const owners = edgeOwners.get(key);
-        if (owners) owners.push(triangleIndex); else edgeOwners.set(key, [triangleIndex]);
+      if (edgeOwners) {
+        for (const [u, v] of [[t.ia, t.ib], [t.ib, t.ic], [t.ic, t.ia]]) {
+          const key = u < v ? `${u}:${v}` : `${v}:${u}`;
+          const owners = edgeOwners.get(key);
+          if (owners) owners.push(triangleIndex); else edgeOwners.set(key, [triangleIndex]);
+        }
       }
     }
     const byIndex = new Map(triangles.map(triangle => [triangle.triangle_index, triangle]));
-    for (const owners of edgeOwners.values()) {
-      for (let i = 0; i < owners.length; i++) for (let j = i + 1; j < owners.length; j++) {
-        byIndex.get(owners[i])?.neighbor_indices.push(owners[j]);
-        byIndex.get(owners[j])?.neighbor_indices.push(owners[i]);
+    if (extractorTopology) {
+      for (const triangle of triangles) {
+        const count = extractorTopology.neighbor_counts[triangle.triangle_index];
+        for (let slot = 0; slot < count; slot++) {
+          triangle.neighbor_indices.push(
+            extractorTopology.neighbor_triangles[triangle.triangle_index * 3 + slot],
+          );
+        }
+      }
+    } else if (edgeOwners) {
+      for (const owners of edgeOwners.values()) {
+        for (let i = 0; i < owners.length; i++) for (let j = i + 1; j < owners.length; j++) {
+          byIndex.get(owners[i])?.neighbor_indices.push(owners[j]);
+          byIndex.get(owners[j])?.neighbor_indices.push(owners[i]);
+        }
       }
     }
+    const triangleCapacity = indexBuffer.length / 3;
+    const edgeMidpoints = new Float64Array(triangleCapacity * 9);
+    const edgeCrossings = new Float64Array(triangleCapacity * 3);
     for (const triangle of triangles) {
       triangle.neighbor_indices = Array.from(
         new Set<number>(triangle.neighbor_indices as number[]),
       ).sort((a: number, b: number) => a - b);
+      for (let slot = 0; slot < triangle.neighbor_indices.length; slot++) {
+        const index = triangle.neighbor_indices[slot];
+        const neighbor = byIndex.get(index);
+        let first = -1, second = -1;
+        for (const vertex of [triangle.ia, triangle.ib, triangle.ic]) {
+          if (vertex === neighbor.ia || vertex === neighbor.ib || vertex === neighbor.ic) {
+            if (first < 0) first = vertex;
+            else second = vertex;
+          }
+        }
+        if (first < 0 || second < 0) {
+          throw new Error('surface topology neighbors must share one edge');
+        }
+        const edgeOffset = triangle.triangle_index * 9 + slot * 3;
+        const mx = (positionBuffer[first * 3] + positionBuffer[second * 3]) / 2;
+        const my = (positionBuffer[first * 3 + 1] + positionBuffer[second * 3 + 1]) / 2;
+        const mz = (positionBuffer[first * 3 + 2] + positionBuffer[second * 3 + 2]) / 2;
+        edgeMidpoints[edgeOffset] = mx;
+        edgeMidpoints[edgeOffset + 1] = my;
+        edgeMidpoints[edgeOffset + 2] = mz;
+        edgeCrossings[triangle.triangle_index * 3 + slot] = Math.hypot(
+          triangle.centroid[0] - mx, triangle.centroid[1] - my, triangle.centroid[2] - mz,
+        ) + Math.hypot(
+          neighbor.centroid[0] - mx, neighbor.centroid[1] - my, neighbor.centroid[2] - mz,
+        );
+      }
     }
-    const topology = { signature, triangles, byIndex, totalArea };
-    CavitySurfaceAnchors._surfaceTopologyCache.set(surface, topology);
+    const topology = {
+      signature, triangles, byIndex, totalArea,
+      triangleCapacity,
+      edgeMidpoints,
+      edgeCrossings,
+      fieldSpatialIndices: new Map<string, any>(),
+      patchCache: new Map<string, any>(),
+      patchCacheTriangleWeight: 0,
+      pathCache: new Map<string, any>(),
+    };
+    CAVITY_SURFACE_TOPOLOGY_CACHE.set(surface, topology);
     return topology;
   }
 
+  // Tests and diagnostics may inspect an immutable value snapshot, never the
+  // maps, typed buffers, adjacency arrays, or path/cache objects used to route
+  // physical surface growth.
+  static _surfaceTopology(surface: any): any {
+    const topology = cavitySurfaceTopologyInternal(surface);
+    const triangles = topology.triangles.map((triangle: any) => Object.freeze({
+      triangle_index: triangle.triangle_index,
+      ia: triangle.ia, ib: triangle.ib, ic: triangle.ic,
+      area_mm2: triangle.area_mm2,
+      centroid: Object.freeze(triangle.centroid.slice()),
+      bounds_min: Object.freeze(triangle.bounds_min.slice()),
+      bounds_max: Object.freeze(triangle.bounds_max.slice()),
+      void_normal: Object.freeze(triangle.void_normal.slice()),
+      neighbor_indices: Object.freeze(triangle.neighbor_indices.slice()),
+    }));
+    const immutableTriangles = Object.freeze(triangles);
+    const publicByIndex = new Map<number, any>(
+      triangles.map((triangle: any) => [triangle.triangle_index, triangle]),
+    );
+    return Object.freeze({
+      signature: topology.signature,
+      triangles: immutableTriangles,
+      byIndex: Object.freeze({
+        size: publicByIndex.size,
+        get: (index: number) => publicByIndex.get(index),
+      }),
+      totalArea: topology.totalArea,
+      triangleCapacity: topology.triangleCapacity,
+      fieldSpatialIndices: Object.freeze({ size: topology.fieldSpatialIndices.size }),
+      patchCache: Object.freeze({ size: topology.patchCache.size }),
+      patchCacheTriangleWeight: topology.patchCacheTriangleWeight,
+      pathCache: Object.freeze({ size: topology.pathCache.size }),
+    });
+  }
+
   static surfaceAreaMm2(surface: any): number {
-    return CavitySurfaceAnchors._surfaceTopology(surface).totalArea;
+    return cavitySurfaceTopologyInternal(surface).totalArea;
+  }
+
+  static _patchCacheRead(topology: any, key: string): any {
+    const entry = topology.patchCache.get(key);
+    if (!entry) return null;
+    topology.patchCache.delete(key);
+    topology.patchCache.set(key, entry);
+    return entry.patch;
+  }
+
+  static _patchCacheWrite(topology: any, key: string, patch: any): any {
+    const weight = patch.triangles.length;
+    const prior = topology.patchCache.get(key);
+    if (prior) {
+      topology.patchCacheTriangleWeight -= prior.weight;
+      topology.patchCache.delete(key);
+    }
+    topology.patchCache.set(key, { patch, weight });
+    topology.patchCacheTriangleWeight += weight;
+    while (topology.patchCache.size > 1
+        && topology.patchCacheTriangleWeight > CavitySurfaceAnchors.PATCH_CACHE_TRIANGLE_BUDGET) {
+      const oldestKey = topology.patchCache.keys().next().value;
+      const oldest = topology.patchCache.get(oldestKey);
+      topology.patchCache.delete(oldestKey);
+      topology.patchCacheTriangleWeight -= oldest.weight;
+    }
+    return patch;
+  }
+
+  static _frontierLess(a: any, b: any): boolean {
+    return a.distance_mm < b.distance_mm
+      || (a.distance_mm === b.distance_mm
+        && a.triangle.triangle_index < b.triangle.triangle_index);
+  }
+
+  static _frontierPush(heap: any[], entry: any): void {
+    let index = heap.length;
+    heap.push(entry);
+    while (index > 0) {
+      const parent = (index - 1) >> 1;
+      if (!CavitySurfaceAnchors._frontierLess(heap[index], heap[parent])) break;
+      [heap[index], heap[parent]] = [heap[parent], heap[index]];
+      index = parent;
+    }
+  }
+
+  static _frontierPop(heap: any[]): any {
+    const first = heap[0];
+    const last = heap.pop();
+    if (heap.length && last) {
+      heap[0] = last;
+      let index = 0;
+      while (true) {
+        const left = index * 2 + 1;
+        const right = left + 1;
+        let next = index;
+        if (left < heap.length && CavitySurfaceAnchors._frontierLess(heap[left], heap[next])) next = left;
+        if (right < heap.length && CavitySurfaceAnchors._frontierLess(heap[right], heap[next])) next = right;
+        if (next === index) break;
+        [heap[index], heap[next]] = [heap[next], heap[index]];
+        index = next;
+      }
+    }
+    return first;
+  }
+
+  static _surfacePathState(topology: any, pathKey: string, start: any, point: number[]): any {
+    let state = topology.pathCache.get(pathKey);
+    if (state) {
+      topology.pathCache.delete(pathKey);
+      topology.pathCache.set(pathKey, state);
+      return state;
+    }
+    const bestDistance = new Float64Array(topology.triangleCapacity);
+    bestDistance.fill(Infinity);
+    bestDistance[start.triangle_index] = 0;
+    state = {
+      start_triangle_index: start.triangle_index,
+      point: point.slice(),
+      visited: new Uint8Array(topology.triangleCapacity),
+      bestDistance,
+      frontier: [] as any[],
+      order: [] as any[],
+      cumulativeArea: [] as number[],
+      area_mm2: 0,
+    };
+    CavitySurfaceAnchors._frontierPush(state.frontier, {
+      triangle: start, distance_mm: 0,
+    });
+    topology.pathCache.set(pathKey, state);
+    while (topology.pathCache.size > CavitySurfaceAnchors.SURFACE_PATH_CACHE_LIMIT) {
+      topology.pathCache.delete(topology.pathCache.keys().next().value);
+    }
+    return state;
   }
 
   static surfacePatch(anchor: any, surface: any, targetCoverage: number): any {
-    const topology = CavitySurfaceAnchors._surfaceTopology(surface);
+    const topology = cavitySurfaceTopologyInternal(surface);
     const coverage = Math.max(0, Math.min(1, Number(targetCoverage) || 0));
     const targetArea = topology.totalArea * coverage;
     const start = topology.byIndex.get(anchor?.triangleIndex);
-    if (!start || !(targetArea > 0)) {
-      return { source_signature: topology.signature, coverage_fraction: coverage, area_mm2: 0, triangles: [] };
-    }
     const point = CavitySurfaceAnchors._tuple3(
       anchor.position, 'surface patch anchor position',
     );
-    const sharedEdgeMidpoint = (a: any, b: any): number[] => {
-      const aVertices = [a.ia, a.ib, a.ic];
-      const bVertices = new Set([b.ia, b.ib, b.ic]);
-      const shared = aVertices.filter(vertex => bVertices.has(vertex));
-      if (shared.length !== 2) throw new Error('surface topology neighbors must share one edge');
-      const p = surface.positions;
-      return [0, 1, 2].map(axis =>
-        (p[shared[0] * 3 + axis] + p[shared[1] * 3 + axis]) / 2);
-    };
-    const crossingDistance = (a: any, b: any, origin: number[]) => {
-      const midpoint = sharedEdgeMidpoint(a, b);
-      return Math.hypot(origin[0] - midpoint[0], origin[1] - midpoint[1], origin[2] - midpoint[2])
-        + Math.hypot(b.centroid[0] - midpoint[0], b.centroid[1] - midpoint[1],
-          b.centroid[2] - midpoint[2]);
-    };
-    const selected: any[] = [], visited = new Set<number>(), queued = new Set<number>();
-    const bestDistance = new Map<number, number>([[start.triangle_index, 0]]);
-    const frontier: any[] = [{ triangle: start, distance_mm: 0 }]; queued.add(start.triangle_index);
-    let remaining = targetArea;
-    while (remaining > 1e-12 && frontier.length) {
-      frontier.sort((a, b) => a.distance_mm - b.distance_mm
-        || a.triangle.triangle_index - b.triangle.triangle_index);
-      const current = frontier.shift();
+    const cacheKey = [start?.triangle_index ?? 'missing', coverage.toPrecision(17),
+      ...point.map((value: number) => value.toPrecision(17))].join(':');
+    const pathKey = [start?.triangle_index ?? 'missing',
+      ...point.map((value: number) => value.toPrecision(17))].join(':');
+    const cached = CavitySurfaceAnchors._patchCacheRead(topology, cacheKey);
+    if (cached) return cached;
+    if (!start || !(targetArea > 0)) {
+      return CavitySurfaceAnchors._patchCacheWrite(topology, cacheKey, Object.freeze({
+        source_signature: topology.signature,
+        coverage_fraction: coverage,
+        area_mm2: 0,
+        triangles: Object.freeze([]),
+        triangle_indices: Object.freeze([]),
+      }));
+    }
+    const path = CavitySurfaceAnchors._surfacePathState(topology, pathKey, start, point);
+    while (path.area_mm2 < targetArea - 1e-12 && path.frontier.length) {
+      const current = CavitySurfaceAnchors._frontierPop(path.frontier);
       const triangle = current.triangle;
-      queued.delete(triangle.triangle_index);
-      if (visited.has(triangle.triangle_index)) continue;
-      visited.add(triangle.triangle_index);
-      const weight = Math.min(triangle.area_mm2, remaining);
-      selected.push({ ...triangle, weight_mm2: weight, surface_distance_mm: current.distance_mm });
-      remaining -= weight;
-      for (const index of triangle.neighbor_indices) {
-        if (visited.has(index)) continue;
+      if (path.visited[triangle.triangle_index]) continue;
+      const authoritativeDistance = path.bestDistance[triangle.triangle_index];
+      if (current.distance_mm > authoritativeDistance + 1e-12) continue;
+      path.visited[triangle.triangle_index] = 1;
+      path.order.push({ triangle, distance_mm: current.distance_mm });
+      path.area_mm2 += triangle.area_mm2;
+      path.cumulativeArea.push(path.area_mm2);
+      for (let slot = 0; slot < triangle.neighbor_indices.length; slot++) {
+        const index = triangle.neighbor_indices[slot];
+        if (path.visited[index]) continue;
         const neighbor = topology.byIndex.get(index);
         if (!neighbor) continue;
         // The first crossing begins at the authoritative barycentric birth
         // point, not at the source triangle centroid. Later crossings route
         // through each shared edge, so folded-near Euclidean triangles cannot
         // shortcut the surface graph.
-        const origin = triangle.triangle_index === start.triangle_index
-          ? point : triangle.centroid;
+        const edgeOffset = triangle.triangle_index * 9 + slot * 3;
+        const mx = topology.edgeMidpoints[edgeOffset];
+        const my = topology.edgeMidpoints[edgeOffset + 1];
+        const mz = topology.edgeMidpoints[edgeOffset + 2];
         const candidateDistance = current.distance_mm
-          + crossingDistance(triangle, neighbor, origin);
-        const priorDistance = bestDistance.get(index);
-        if (priorDistance != null && candidateDistance >= priorDistance - 1e-12) continue;
-        bestDistance.set(index, candidateDistance);
-        if (queued.has(index)) {
-          const queuedEntry = frontier.find(entry => entry.triangle.triangle_index === index);
-          if (queuedEntry) queuedEntry.distance_mm = candidateDistance;
-        } else {
-          frontier.push({ triangle: neighbor, distance_mm: candidateDistance });
-          queued.add(index);
-        }
+          + (triangle.triangle_index === start.triangle_index
+            ? Math.hypot(
+              point[0] - mx, point[1] - my, point[2] - mz,
+            ) + Math.hypot(
+              neighbor.centroid[0] - mx,
+              neighbor.centroid[1] - my,
+              neighbor.centroid[2] - mz,
+            )
+            : topology.edgeCrossings[triangle.triangle_index * 3 + slot]);
+        const priorDistance = path.bestDistance[index];
+        if (candidateDistance >= priorDistance - 1e-12) continue;
+        path.bestDistance[index] = candidateDistance;
+        // Lazy duplicates avoid O(frontier) decrease-key scans. Stale entries
+        // are discarded against bestDistance when popped.
+        CavitySurfaceAnchors._frontierPush(path.frontier, {
+          triangle: neighbor, distance_mm: candidateDistance,
+        });
       }
     }
-    return {
+    let selectedCount = 0;
+    if (path.cumulativeArea.length) {
+      let low = 0, high = path.cumulativeArea.length - 1;
+      while (low < high) {
+        const middle = (low + high) >> 1;
+        if (path.cumulativeArea[middle] < targetArea - 1e-12) low = middle + 1;
+        else high = middle;
+      }
+      selectedCount = low + 1;
+    }
+    const selected: any[] = new Array(selectedCount);
+    let remaining = targetArea;
+    for (let index = 0; index < selectedCount; index++) {
+      const entry = path.order[index];
+      const weight = Math.min(entry.triangle.area_mm2, Math.max(0, remaining));
+      // Never expose the mutable internal triangle as a prototype. Every
+      // nested value in a public patch is an immutable copy.
+      selected[index] = Object.freeze({
+        triangle_index: entry.triangle.triangle_index,
+        ia: entry.triangle.ia, ib: entry.triangle.ib, ic: entry.triangle.ic,
+        area_mm2: entry.triangle.area_mm2,
+        centroid: Object.freeze(entry.triangle.centroid.slice()),
+        bounds_min: Object.freeze(entry.triangle.bounds_min.slice()),
+        bounds_max: Object.freeze(entry.triangle.bounds_max.slice()),
+        void_normal: Object.freeze(entry.triangle.void_normal.slice()),
+        neighbor_indices: Object.freeze(entry.triangle.neighbor_indices.slice()),
+        weight_mm2: weight,
+        surface_distance_mm: entry.distance_mm,
+      });
+      remaining -= weight;
+    }
+    const triangleIndices = selected.map(triangle => triangle.triangle_index);
+    return CavitySurfaceAnchors._patchCacheWrite(topology, cacheKey, Object.freeze({
       source_signature: topology.signature,
       coverage_fraction: coverage,
       area_mm2: targetArea - Math.max(0, remaining),
-      triangles: selected,
-    };
+      triangles: Object.freeze(selected),
+      triangle_indices: Object.freeze(triangleIndices),
+    }));
   }
 
   static _sampleUnit(seed: number, index: number, channel: number): number {
@@ -790,5 +1076,25 @@ class CavitySurfaceAnchors {
       `b:${anchor.barycentric.map(f).join(',')}`,
       `c:${anchor.chemistry.vertexIndex}`,
     ].join('|');
+  }
+
+  // Capture the two authority-bearing implementations into lexical closures
+  // during class initialization, before the class can be observed, then erase
+  // their temporary bootstrap properties. Authorized calls never cross a
+  // writable/replaceable public method and cannot leak either capability.
+  static {
+    const topologyImplementation = this._surfaceTopologyInternal;
+    const validationKeyImplementation = this._validationKeyInternal;
+    cavitySurfaceTopologyInternal = (surface: any) => topologyImplementation.call(
+      this, surface, CAVITY_SURFACE_TOPOLOGY_ACCESS,
+    );
+    cavitySurfaceValidationKeyInternal = (
+      anchor: any, surface: any, mesh: any, field: any, allowStaleChemistry: boolean,
+    ) => validationKeyImplementation.call(
+      this, anchor, surface, mesh, field, allowStaleChemistry,
+      CAVITY_SURFACE_VALIDATION_ACCESS,
+    );
+    delete (this as any)._surfaceTopologyInternal;
+    delete (this as any)._validationKeyInternal;
   }
 }

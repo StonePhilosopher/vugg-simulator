@@ -30575,6 +30575,10 @@ class WallMesh {
 // mutate the field used to extract the paired wall surface.
 const CAVITY_FIELD_VALUES = new WeakMap();
 const CAVITY_FIELD_UPLOAD_STATE = new WeakMap();
+// Lexical capability shared only with the adjacent extractor source. Public
+// callers still receive copies/proxies and cannot mutate canonical samples.
+const CAVITY_FIELD_EXTRACTOR_ACCESS = Object.freeze({});
+let cavityFieldExtractorValuesInternal;
 class CavityScalarField {
     constructor(opts) {
         const sizeX = Number(opts && opts.sizeX);
@@ -30840,34 +30844,41 @@ class CavityScalarField {
         const c0 = Math.floor(cellFloat) % N;
         const c1 = (c0 + 1) % N;
         const tc = cellFloat - Math.floor(cellFloat);
-        const ringDepth = (ring) => {
-            const a = depths[ring * N + c0];
-            const b = depths[ring * N + c1];
-            return a + (b - a) * tc;
-        };
-        const meanRingDepth = (ring) => {
-            let sum = 0;
-            for (let c = 0; c < N; c++)
-                sum += depths[ring * N + c];
-            return sum / N;
-        };
+        const ringMeans = evolution.ring_mean_depths_mm;
+        const depth0 = depths[c0] + (depths[c1] - depths[c0]) * tc;
         const ringFloat = phi * R / Math.PI - 0.5;
         let rawDepth = 0;
         if (ringFloat <= 0) {
             const t = Math.max(0, ringFloat + 0.5) * 2;
-            const pole = meanRingDepth(0);
-            rawDepth = pole + (ringDepth(0) - pole) * t;
+            let pole = ringMeans?.length === R ? ringMeans[0] : 0;
+            if (!ringMeans || ringMeans.length !== R) {
+                for (let c = 0; c < N; c++)
+                    pole += depths[c];
+                pole /= N;
+            }
+            rawDepth = pole + (depth0 - pole) * t;
         }
         else if (ringFloat >= R - 1) {
             const t = Math.max(0, Math.min(1, (ringFloat - (R - 1)) * 2));
-            const edge = ringDepth(R - 1);
-            rawDepth = edge + (meanRingDepth(R - 1) - edge) * t;
+            const base = (R - 1) * N;
+            const edge = depths[base + c0] + (depths[base + c1] - depths[base + c0]) * tc;
+            let pole = ringMeans?.length === R ? ringMeans[R - 1] : 0;
+            if (!ringMeans || ringMeans.length !== R) {
+                for (let c = 0; c < N; c++)
+                    pole += depths[base + c];
+                pole /= N;
+            }
+            rawDepth = edge + (pole - edge) * t;
         }
         else {
             const r0 = Math.floor(ringFloat);
             const r1 = Math.min(R - 1, r0 + 1);
             const tr = ringFloat - r0;
-            rawDepth = ringDepth(r0) + (ringDepth(r1) - ringDepth(r0)) * tr;
+            const base0 = r0 * N;
+            const base1 = r1 * N;
+            const depthR0 = depths[base0 + c0] + (depths[base0 + c1] - depths[base0 + c0]) * tc;
+            const depthR1 = depths[base1 + c0] + (depths[base1 + c1] - depths[base1 + c0]) * tc;
+            rawDepth = depthR0 + (depthR1 - depthR0) * tr;
         }
         const polar = _cavityPolarProfileFactor(shape, phi);
         const offset = rawDepth * polar;
@@ -31025,10 +31036,11 @@ class CavityScalarField {
             fieldMin = [-deformedRadius, -deformedRadius, -deformedRadius];
             fieldMax = [deformedRadius, deformedRadius, deformedRadius];
         }
+        let maxEvolutionDepth = 0;
         if (evolution) {
-            const maxDepth = Number(Array.from(evolution.depths_mm || [])
+            maxEvolutionDepth = Number(Array.from(evolution.depths_mm || [])
                 .reduce((maximum, value) => Math.max(maximum, Number(value) || 0), 0));
-            const paddingDepth = maxDepth * CavityScalarField._maxRadialScale(shape);
+            const paddingDepth = maxEvolutionDepth * CavityScalarField._maxRadialScale(shape);
             fieldMin = fieldMin.map(value => value - paddingDepth);
             fieldMax = fieldMax.map(value => value + paddingDepth);
         }
@@ -31066,14 +31078,102 @@ class CavityScalarField {
             origin = [center[0] - half, center[1] - half, center[2] - half];
         }
         const values = new Float32Array(resolution * resolution * resolution);
+        const worldX = new Float64Array(resolution);
+        const worldY = new Float64Array(resolution);
+        const worldZ = new Float64Array(resolution);
+        for (let index = 0; index < resolution; index++) {
+            worldX[index] = origin[0] + index * spacingMm;
+            worldY[index] = origin[1] + index * spacingMm;
+            worldZ[index] = origin[2] + index * spacingMm;
+        }
+        // A cursor-zero ledger is scientifically meaningful provenance, but its
+        // all-zero depth projection is the identity map. Do not execute spherical
+        // evolution interpolation for every voxel when it cannot change a sample.
+        let samplingEvolution = maxEvolutionDepth > 0 ? evolution : null;
+        if (samplingEvolution) {
+            const ringMeans = new Float64Array(samplingEvolution.ring_count);
+            for (let ring = 0; ring < samplingEvolution.ring_count; ring++) {
+                let sum = 0;
+                const base = ring * samplingEvolution.cells_per_ring;
+                for (let cell = 0; cell < samplingEvolution.cells_per_ring; cell++) {
+                    sum += Number(samplingEvolution.depths_mm[base + cell]);
+                }
+                ringMeans[ring] = sum / samplingEvolution.cells_per_ring;
+            }
+            samplingEvolution = { ...samplingEvolution, ring_mean_depths_mm: ringMeans };
+        }
+        const identityBase = CavityScalarField._isIdentityShape(shape);
+        const fastRadialBase = !samplingEvolution
+            && shape.polar_amplitudes.every(amplitude => amplitude === 0)
+            && shape.twist_amplitudes.every(amplitude => amplitude === 0);
+        const fastElongation = Math.max(0, Math.min(0.85, shape.elongation));
+        const fastFlatten = shape.polar_flatten > 0
+            ? Math.max(0.05, Math.min(1, shape.polar_flatten)) : 0;
+        const fastCollapse = shape.polar_collapse > 0 ? shape.polar_collapse : 0;
         let offset = 0;
         for (let z = 0; z < resolution; z++) {
-            const wz = origin[2] + z * spacingMm;
+            const wz = worldZ[z];
             for (let y = 0; y < resolution; y++) {
-                const wy = origin[1] + y * spacingMm;
+                const wy = worldY[y];
                 for (let x = 0; x < resolution; x++) {
-                    const wx = origin[0] + x * spacingMm;
-                    const value = CavityScalarField._evolvedShapeValueValidated(bubbles, shape, evolution, wx, wy, wz);
+                    const wx = worldX[x];
+                    let value;
+                    if (identityBase && !samplingEvolution) {
+                        // Same arithmetic as bubbleUnionValue, kept in the hot loop to
+                        // avoid 110,592 validation/function round trips at 48^3.
+                        value = -Infinity;
+                        for (let bubbleIndex = 0; bubbleIndex < bubbles.length; bubbleIndex++) {
+                            const bubble = bubbles[bubbleIndex];
+                            const dx = wx - bubble[0];
+                            const dy = wy - bubble[1];
+                            const dz = wz - bubble[2];
+                            const sphere = bubble[3] - Math.sqrt(dx * dx + dy * dy + dz * dz);
+                            if (sphere > value)
+                                value = sphere;
+                        }
+                    }
+                    else if (fastRadialBase) {
+                        // With no twist/Fourier terms the inverse radial map has a direct
+                        // Cartesian form. This is algebraically the same authored zero set
+                        // without round-tripping every voxel through atan2/sin/cos.
+                        const radius2 = wx * wx + wy * wy + wz * wz;
+                        let sourceX = wx, sourceY = wy, sourceZ = wz;
+                        if (radius2 > Number.EPSILON * Number.EPSILON) {
+                            let radialScale = 1 + fastElongation * (wx * wx - wz * wz) / radius2;
+                            if (fastFlatten > 0) {
+                                const transverse2 = wx * wx + wz * wz;
+                                const lens = fastFlatten / Math.sqrt(fastFlatten * fastFlatten * transverse2 / radius2
+                                    + wy * wy / radius2);
+                                radialScale *= Math.max(0.03, lens);
+                            }
+                            else if (fastCollapse > 0) {
+                                const phi = Math.acos(Math.max(-1, Math.min(1, -wy / Math.sqrt(radius2))));
+                                const floor = 0.05;
+                                const sigmoidWeight = 1 / (1 + Math.exp((phi - Math.PI / 2) / 0.25));
+                                const sigmoid = floor + (1 - floor) * sigmoidWeight;
+                                radialScale *= Math.max(floor * 0.5, sigmoid * fastCollapse + (1 - fastCollapse));
+                            }
+                            if (!(radialScale > 0) || !Number.isFinite(radialScale)) {
+                                throw new RangeError('cavity authored radial scale must be positive and finite');
+                            }
+                            sourceX = wx / radialScale;
+                            sourceY = wy / radialScale;
+                            sourceZ = wz / radialScale;
+                        }
+                        value = -Infinity;
+                        for (let bubbleIndex = 0; bubbleIndex < bubbles.length; bubbleIndex++) {
+                            const bubble = bubbles[bubbleIndex];
+                            const dx = sourceX - bubble[0];
+                            const dy = sourceY - bubble[1];
+                            const dz = sourceZ - bubble[2];
+                            const sphere = bubble[3] - Math.sqrt(dx * dx + dy * dy + dz * dz);
+                            if (sphere > value)
+                                value = sphere;
+                        }
+                    }
+                    else {
+                        value = CavityScalarField._evolvedShapeValueValidated(bubbles, shape, samplingEvolution, wx, wy, wz);
+                    }
                     if (!Number.isFinite(value)) {
                         throw new TypeError(`non-finite cavity field sample at (${x}, ${y}, ${z})`);
                     }
@@ -31120,6 +31220,15 @@ class CavityScalarField {
         if (!values)
             throw new Error('cavity field sample storage is unavailable');
         return values[this.index(x, y, z)];
+    }
+    _extractorValues(access) {
+        if (access !== CAVITY_FIELD_EXTRACTOR_ACCESS) {
+            throw new TypeError('canonical cavity samples are private to the authenticated extractor');
+        }
+        const values = CAVITY_FIELD_VALUES.get(this);
+        if (!values)
+            throw new Error('cavity field sample storage is unavailable');
+        return values;
     }
     get values() {
         const values = CAVITY_FIELD_VALUES.get(this);
@@ -31283,6 +31392,14 @@ class CavityScalarField {
             throw new Error('MarchingCubesExtractor is unavailable');
         return extractor.extract(this, isovalue);
     }
+    // Capture and erase the only canonical-sample bridge while the class is
+    // still initializing. Extraction calls the lexical closure, so no caller
+    // can wrap a prototype method to observe the capability or raw samples.
+    static {
+        const extractorValuesImplementation = this.prototype._extractorValues;
+        cavityFieldExtractorValuesInternal = (field) => extractorValuesImplementation.call(field, CAVITY_FIELD_EXTRACTOR_ACCESS);
+        delete this.prototype._extractorValues;
+    }
 }
 // A one-shot ownership boundary for Three.js's lazy Data3DTexture upload.
 // Renderer code receives the bytes only inside consume(), then must call
@@ -31346,6 +31463,8 @@ class CavityFieldTextureUpload {
 // the same in both neighboring cubes. Tetrahedra have no face or interior
 // topology ambiguity, so this construction is closed and crack-free without a
 // 256-row case table or the unresolved MC33 cases in the former prototype.
+const CAVITY_SURFACE_ANCHOR_ACCESS = Object.freeze({});
+let cavitySurfaceAnchorTopologyInternal;
 class MarchingCubesExtractor {
     // TypedArray payloads cannot be frozen in JavaScript. Keep their owned targets
     // private and expose read-only proxies: numeric writes and mutating methods
@@ -31355,6 +31474,7 @@ class MarchingCubesExtractor {
     static #verifiedBuffers = new WeakMap();
     static #readonlyTargets = new WeakMap();
     static #readonlyProxies = new WeakMap();
+    static #anchorTopology = new WeakMap();
     static #typedArrayPrototype = Object.getPrototypeOf(Float32Array.prototype);
     static #typedArraySlice = MarchingCubesExtractor.#typedArrayPrototype.slice;
     static #callbackMethods = new Map(['every', 'filter', 'find', 'findIndex', 'findLast', 'findLastIndex', 'forEach',
@@ -31437,16 +31557,33 @@ class MarchingCubesExtractor {
     static _bufferDigest(surface) {
         const arrays = [surface && surface.positions, surface && surface.normals,
             surface && surface.colors, surface && surface.uvs, surface && surface.indices];
-        let joined = '';
+        let joined = 'cavity-surface-buffers-v2|';
         for (const values of arrays) {
             const raw = MarchingCubesExtractor.#rawBuffer(values);
             if (!raw || !ArrayBuffer.isView(raw))
                 throw new TypeError('surface buffer is unavailable');
             const bytes = new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength);
-            let hash = 0x811c9dc5;
-            for (let i = 0; i < bytes.length; i++)
-                hash = Math.imul(hash ^ bytes[i], 0x01000193) >>> 0;
-            joined += `${raw.constructor.name}:${raw.byteLength}:${hash.toString(16).padStart(8, '0')}|`;
+            let hashA = 0x811c9dc5;
+            let hashB = 0x9e3779b9;
+            let offset = 0;
+            for (; offset + 4 <= bytes.length; offset += 4) {
+                const word = (bytes[offset]
+                    | (bytes[offset + 1] << 8)
+                    | (bytes[offset + 2] << 16)
+                    | (bytes[offset + 3] << 24)) >>> 0;
+                hashA = Math.imul(hashA ^ word, 0x01000193) >>> 0;
+                hashB = (Math.imul(hashB ^ word, 0x85ebca6b) + 0x27d4eb2f) >>> 0;
+            }
+            let tail = 0;
+            for (let shift = 0; offset < bytes.length; offset++, shift += 8) {
+                tail |= bytes[offset] << shift;
+            }
+            if (bytes.length & 3) {
+                hashA = Math.imul(hashA ^ tail, 0x01000193) >>> 0;
+                hashB = (Math.imul(hashB ^ tail, 0x85ebca6b) + 0x27d4eb2f) >>> 0;
+            }
+            joined += `${raw.constructor.name}:${raw.byteLength}:`
+                + `${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}|`;
         }
         return joined;
     }
@@ -31468,6 +31605,16 @@ class MarchingCubesExtractor {
                 buffers,
             });
         }
+    }
+    static _anchorTopologyData(surface, access) {
+        if (access !== CAVITY_SURFACE_ANCHOR_ACCESS) {
+            throw new TypeError('Cartesian surface adjacency is private to authenticated anchors');
+        }
+        MarchingCubesExtractor.verifyBuffers(surface);
+        const topology = MarchingCubesExtractor.#anchorTopology.get(surface);
+        if (!topology)
+            throw new Error('Cartesian surface adjacency is unavailable');
+        return topology;
     }
     // Exact enclosed volume of the authenticated indexed surface.  This is the
     // same oriented-tetrahedron integral used by WallMesh, applied to the actual
@@ -31743,13 +31890,43 @@ class MarchingCubesExtractor {
         if (!Number.isFinite(isovalue))
             throw new TypeError('Marching Cubes isovalue must be finite');
         const started = CavityScalarField._nowMs();
-        const positions = [];
-        const normals = [];
-        const colors = [];
-        const uvs = [];
-        const indices = [];
-        const vertexByGridEdge = new Map();
         const gridVertexCount = field.sizeX * field.sizeY * field.sizeZ;
+        let positions = new Float64Array(gridVertexCount);
+        let uvs = new Float32Array(gridVertexCount);
+        let indices = new Uint32Array(gridVertexCount);
+        let positionLength = 0;
+        let uvLength = 0;
+        let indexLength = 0;
+        const growFloat64 = (values, required) => {
+            if (required <= values.length)
+                return values;
+            const grown = new Float64Array(Math.max(required, values.length * 2));
+            grown.set(values);
+            return grown;
+        };
+        const growFloat32 = (values, required) => {
+            if (required <= values.length)
+                return values;
+            const grown = new Float32Array(Math.max(required, values.length * 2));
+            grown.set(values);
+            return grown;
+        };
+        const growUint32 = (values, required) => {
+            if (required <= values.length)
+                return values;
+            const grown = new Uint32Array(Math.max(required, values.length * 2));
+            grown.set(values);
+            return grown;
+        };
+        const vertexByGridEdge = new Map();
+        const fieldValues = cavityFieldExtractorValuesInternal(field);
+        const strideY = field.sizeX;
+        const strideZ = field.sizeX * field.sizeY;
+        // Reused scratch removes millions of tiny arrays/closures from a 64^3
+        // extraction while preserving the exact tetrahedron and corner order.
+        const cornerValues = new Float64Array(8);
+        const insideCorners = new Int8Array(4);
+        const outsideCorners = new Int8Array(4);
         const boundsCenter = [
             (field.bounds.min[0] + field.bounds.max[0]) * 0.5,
             (field.bounds.min[1] + field.bounds.max[1]) * 0.5,
@@ -31798,11 +31975,14 @@ class MarchingCubesExtractor {
             if (u < 0)
                 u += 1;
             const v = Math.acos(Math.max(-1, Math.min(1, -dy / radius))) / Math.PI;
-            const index = positions.length / 3;
-            positions.push(wx, wy, wz);
-            normals.push(0, 0, 0);
-            colors.push(0, 0, 0);
-            uvs.push(u, v);
+            const index = positionLength / 3;
+            positions = growFloat64(positions, positionLength + 3);
+            positions[positionLength++] = wx;
+            positions[positionLength++] = wy;
+            positions[positionLength++] = wz;
+            uvs = growFloat32(uvs, uvLength + 2);
+            uvs[uvLength++] = u;
+            uvs[uvLength++] = v;
             vertexByGridEdge.set(key, index);
             return index;
         };
@@ -31825,49 +32005,63 @@ class MarchingCubesExtractor {
             // independently caught by the final face and manifold verification.
             if (!(area2 > Number.EPSILON * field.spacingMm * field.spacingMm * 64))
                 return;
-            indices.push(a, b, c);
+            indices = growUint32(indices, indexLength + 3);
+            indices[indexLength++] = a;
+            indices[indexLength++] = b;
+            indices[indexLength++] = c;
         };
         for (let z = 0; z < field.sizeZ - 1; z++) {
+            const zBase = z * strideZ;
             for (let y = 0; y < field.sizeY - 1; y++) {
-                for (let x = 0; x < field.sizeX - 1; x++) {
-                    const cornerValues = MarchingCubesExtractor.CORNERS.map((corner) => field.valueAt(x + corner[0], y + corner[1], z + corner[2]));
-                    // Simulation of simplicity: an authored/sample value can land
-                    // exactly on the isovalue. Treat it as a tiny positive value in every
-                    // incident tetrahedron for classification only, so topology never
-                    // depends on traversal order; positions remain on the true zero set.
-                    const topologyValues = cornerValues.map(value => value === isovalue
-                        ? isovalue + field.spacingMm * 1e-5 : value);
-                    const allInside = topologyValues.every(value => value > isovalue);
-                    const allOutside = topologyValues.every(value => value <= isovalue);
-                    if (allInside || allOutside)
+                let base = zBase + y * strideY;
+                for (let x = 0; x < field.sizeX - 1; x++, base++) {
+                    cornerValues[0] = fieldValues[base];
+                    cornerValues[1] = fieldValues[base + 1];
+                    cornerValues[2] = fieldValues[base + strideY + 1];
+                    cornerValues[3] = fieldValues[base + strideY];
+                    cornerValues[4] = fieldValues[base + strideZ];
+                    cornerValues[5] = fieldValues[base + strideZ + 1];
+                    cornerValues[6] = fieldValues[base + strideZ + strideY + 1];
+                    cornerValues[7] = fieldValues[base + strideZ + strideY];
+                    // Simulation of simplicity classifies an exact isovalue sample as
+                    // positive in every incident tetrahedron. Geometry still uses the
+                    // original canonical Float32 value below.
+                    let cubeMask = 0;
+                    for (let corner = 0; corner < 8; corner++) {
+                        if (cornerValues[corner] >= isovalue)
+                            cubeMask |= 1 << corner;
+                    }
+                    if (cubeMask === 0 || cubeMask === 255)
                         continue;
-                    for (const tetrahedron of MarchingCubesExtractor.TETRAHEDRA) {
-                        const inside = tetrahedron.filter(corner => topologyValues[corner] > isovalue);
-                        if (inside.length === 0 || inside.length === 4)
-                            continue;
-                        const outside = tetrahedron.filter(corner => topologyValues[corner] <= isovalue);
-                        const vertex = (a, b) => {
-                            // Simulation of simplicity changes only the symbolic sign of an
-                            // exact-zero sample. Geometry remains on the original,
-                            // authenticated field bytes consumed by CPU and GPU clipping.
-                            return vertexForSegment(x, y, z, a, b, cornerValues);
-                        };
-                        if (inside.length === 1) {
-                            const center = inside[0];
-                            addTriangle(vertex(center, outside[0]), vertex(center, outside[1]), vertex(center, outside[2]));
+                    for (let tetraIndex = 0; tetraIndex < MarchingCubesExtractor.TETRAHEDRA.length; tetraIndex++) {
+                        const tetrahedron = MarchingCubesExtractor.TETRAHEDRA[tetraIndex];
+                        let insideCount = 0;
+                        let outsideCount = 0;
+                        for (let tetraCorner = 0; tetraCorner < 4; tetraCorner++) {
+                            const corner = tetrahedron[tetraCorner];
+                            if (cubeMask & (1 << corner))
+                                insideCorners[insideCount++] = corner;
+                            else
+                                outsideCorners[outsideCount++] = corner;
                         }
-                        else if (inside.length === 3) {
-                            const center = outside[0];
-                            addTriangle(vertex(center, inside[0]), vertex(center, inside[1]), vertex(center, inside[2]));
+                        if (insideCount === 0 || insideCount === 4)
+                            continue;
+                        if (insideCount === 1) {
+                            const center = insideCorners[0];
+                            addTriangle(vertexForSegment(x, y, z, center, outsideCorners[0], cornerValues), vertexForSegment(x, y, z, center, outsideCorners[1], cornerValues), vertexForSegment(x, y, z, center, outsideCorners[2], cornerValues));
+                        }
+                        else if (insideCount === 3) {
+                            const center = outsideCorners[0];
+                            addTriangle(vertexForSegment(x, y, z, center, insideCorners[0], cornerValues), vertexForSegment(x, y, z, center, insideCorners[1], cornerValues), vertexForSegment(x, y, z, center, insideCorners[2], cornerValues));
                         }
                         else {
                             // The four cut edges form the cycle a-b-d-c. They are coplanar in
                             // the shared piecewise-linear field; stable a-d splitting is
                             // deterministic and requires no scalar or gradient probe.
-                            const a = vertex(inside[0], outside[0]);
-                            const b = vertex(inside[0], outside[1]);
-                            const c = vertex(inside[1], outside[0]);
-                            const d = vertex(inside[1], outside[1]);
+                            const a = vertexForSegment(x, y, z, insideCorners[0], outsideCorners[0], cornerValues);
+                            const b = vertexForSegment(x, y, z, insideCorners[0], outsideCorners[1], cornerValues);
+                            const c = vertexForSegment(x, y, z, insideCorners[1], outsideCorners[0], cornerValues);
+                            const d = vertexForSegment(x, y, z, insideCorners[1], outsideCorners[1], cornerValues);
                             addTriangle(a, b, d);
                             addTriangle(a, d, c);
                         }
@@ -31875,12 +32069,16 @@ class MarchingCubesExtractor {
                 }
             }
         }
+        const polygonizeMs = CavityScalarField._nowMs() - started;
+        const manifoldStarted = CavityScalarField._nowMs();
+        let authenticatedNeighborTriangles = null;
+        let authenticatedNeighborCounts = null;
         // A complete rock-negative border promises a closed cavity surface. Verify
         // the promise independently of the extractor construction and fail closed
         // on any future regression in face compatibility or tetra triangulation.
         if (field.hasNegativeBorder(isovalue)) {
-            const triangleCount = indices.length / 3;
-            const vertexCount = positions.length / 3;
+            const triangleCount = indexLength / 3;
+            const vertexCount = positionLength / 3;
             if (vertexCount * vertexCount > Number.MAX_SAFE_INTEGER) {
                 throw new RangeError('Cartesian surface is too large for exact numeric edge authentication');
             }
@@ -31904,7 +32102,7 @@ class MarchingCubesExtractor {
                 neighborInverts[a * 3 + aSlot] = invert ? 1 : 0;
                 neighborInverts[b * 3 + bSlot] = invert ? 1 : 0;
             };
-            for (let i = 0; i < indices.length; i += 3) {
+            for (let i = 0; i < indexLength; i += 3) {
                 const triangle = i / 3;
                 for (let edge = 0; edge < 3; edge++) {
                     const a = indices[i + edge];
@@ -31994,12 +32192,17 @@ class MarchingCubesExtractor {
                         flipTriangle(triangle);
                 }
             }
+            authenticatedNeighborTriangles = neighborTriangles;
+            authenticatedNeighborCounts = neighborCounts;
         }
+        const manifoldMs = CavityScalarField._nowMs() - manifoldStarted;
+        const normalMaterialStarted = CavityScalarField._nowMs();
         // One topology-derived smooth-normal pass after final winding. This is
         // equivalent to standard indexed-mesh normal generation and avoids six
         // scalar samples per vertex plus multiple field probes per triangle.
-        normals.fill(0);
-        for (let offset = 0; offset < indices.length; offset += 3) {
+        const normals = new Float64Array(positionLength);
+        const colors = new Float64Array(positionLength);
+        for (let offset = 0; offset < indexLength; offset += 3) {
             const a = indices[offset], b = indices[offset + 1], c = indices[offset + 2];
             const ax = positions[a * 3], ay = positions[a * 3 + 1], az = positions[a * 3 + 2];
             const abx = positions[b * 3] - ax;
@@ -32017,7 +32220,7 @@ class MarchingCubesExtractor {
                 normals[vertex * 3 + 2] += nz;
             }
         }
-        for (let vertex = 0; vertex < positions.length / 3; vertex++) {
+        for (let vertex = 0; vertex < positionLength / 3; vertex++) {
             const offset = vertex * 3;
             const length = Math.hypot(normals[offset], normals[offset + 1], normals[offset + 2]);
             if (!(length > 1e-12) || !Number.isFinite(length)) {
@@ -32031,25 +32234,36 @@ class MarchingCubesExtractor {
             colors[offset + 1] = color[1];
             colors[offset + 2] = color[2];
         }
-        const positionBuffer = new Float32Array(positions);
+        const normalMaterialMs = CavityScalarField._nowMs() - normalMaterialStarted;
+        const packingAuthenticationStarted = CavityScalarField._nowMs();
+        const positionBuffer = new Float32Array(positions.subarray(0, positionLength));
         const normalBuffer = new Float32Array(normals);
         const colorBuffer = new Float32Array(colors);
-        const uvBuffer = new Float32Array(uvs);
+        const uvBuffer = uvs.slice(0, uvLength);
         const indexBuffer = positionBuffer.length / 3 > 65535
-            ? new Uint32Array(indices)
-            : new Uint16Array(indices);
-        const extractionMs = CavityScalarField._nowMs() - started;
+            ? indices.slice(0, indexLength)
+            : new Uint16Array(indices.subarray(0, indexLength));
+        const packingMs = CavityScalarField._nowMs() - packingAuthenticationStarted;
+        const bufferAuthenticationStarted = CavityScalarField._nowMs();
         const surfaceBytes = positionBuffer.byteLength + normalBuffer.byteLength
             + colorBuffer.byteLength + uvBuffer.byteLength + indexBuffer.byteLength;
-        const result = {
+        const readonlyBuffers = {
             positions: MarchingCubesExtractor.#readonlyBuffer(positionBuffer),
             normals: MarchingCubesExtractor.#readonlyBuffer(normalBuffer),
             colors: MarchingCubesExtractor.#readonlyBuffer(colorBuffer),
             indices: MarchingCubesExtractor.#readonlyBuffer(indexBuffer),
             uvs: MarchingCubesExtractor.#readonlyBuffer(uvBuffer),
+        };
+        const bufferDigest = MarchingCubesExtractor._bufferDigest(readonlyBuffers);
+        const bufferAuthenticationMs = CavityScalarField._nowMs() - bufferAuthenticationStarted;
+        const packingAuthenticationMs = CavityScalarField._nowMs() - packingAuthenticationStarted;
+        const extractionMs = CavityScalarField._nowMs() - started;
+        const result = {
+            ...readonlyBuffers,
             sig: field.surfaceSignature(isovalue),
             source_field_signature: field.sig,
             source_field_snapshot_digest: field.snapshotDigest,
+            buffer_digest: bufferDigest,
             isovalue,
             bounds: Object.freeze({
                 min: Object.freeze(field.bounds.min.slice()),
@@ -32058,6 +32272,12 @@ class MarchingCubesExtractor {
             metrics: Object.freeze({
                 field_build_ms: field.metrics.field_build_ms || 0,
                 extraction_ms: extractionMs,
+                polygonize_ms: polygonizeMs,
+                manifold_ms: manifoldMs,
+                normal_material_ms: normalMaterialMs,
+                packing_authentication_ms: packingAuthenticationMs,
+                packing_ms: packingMs,
+                buffer_authentication_ms: bufferAuthenticationMs,
                 triangle_count: indexBuffer.length / 3,
                 vertex_count: positionBuffer.length / 3,
                 field_bytes: field.sampleByteLength(),
@@ -32069,12 +32289,27 @@ class MarchingCubesExtractor {
                 closed_two_manifold: field.hasNegativeBorder(isovalue) && indexBuffer.length >= 3,
             }),
         };
-        result.buffer_digest = MarchingCubesExtractor._bufferDigest(result);
         MarchingCubesExtractor.#verifiedBuffers.set(result, {
             digest: result.buffer_digest,
             buffers: [result.positions, result.normals, result.colors, result.uvs, result.indices],
         });
+        if (authenticatedNeighborTriangles && authenticatedNeighborCounts) {
+            MarchingCubesExtractor.#anchorTopology.set(result, {
+                neighbor_triangles: authenticatedNeighborTriangles,
+                neighbor_counts: authenticatedNeighborCounts,
+                positions: MarchingCubesExtractor.#rawBuffer(result.positions),
+                indices: MarchingCubesExtractor.#rawBuffer(result.indices),
+            });
+        }
         return Object.freeze(result);
+    }
+    // Capture and erase the raw adjacency/buffer bridge before the class is
+    // observable. Surface anchors call only the lexical closure, never a
+    // replaceable static method carrying the capability.
+    static {
+        const anchorTopologyImplementation = this._anchorTopologyData;
+        cavitySurfaceAnchorTopologyInternal = (surface) => anchorTopologyImplementation.call(this, surface, CAVITY_SURFACE_ANCHOR_ACCESS);
+        delete this._anchorTopologyData;
     }
 }
 
@@ -32086,12 +32321,26 @@ class MarchingCubesExtractor {
 // A crystal is attached to a physical point and local substrate normal, not
 // to a latitude/longitude address or a transient triangle number. See
 // proposals/PROPOSAL-CAVITY-SURFACE-ANCHORS-2026-08-12.md.
+// Routing, spatial indices, and path/cache state are simulation authority.
+// Keep them behind a lexical capability instead of exposing a mutable static
+// WeakMap or returning the live cache through the diagnostic API.
+const CAVITY_SURFACE_TOPOLOGY_ACCESS = Object.freeze({});
+const CAVITY_SURFACE_TOPOLOGY_CACHE = new WeakMap();
+const CAVITY_SURFACE_VALIDATION_ACCESS = Object.freeze({});
+const CAVITY_SURFACE_VALIDATION_CACHE = new WeakMap();
+let cavitySurfaceTopologyInternal;
+let cavitySurfaceValidationKeyInternal;
 class CavitySurfaceAnchors {
     static { this.SCHEMA = 'cavity-surface-anchor-v1'; }
     static { this.MAPPING = 'nearest-wall-mesh-vertex-v1'; }
-    static { this._surfaceTopologyCache = new WeakMap(); }
-    static { this._validationCache = new WeakMap(); }
-    static _validationKey(anchor, surface, mesh, field, allowStaleChemistry) {
+    // Cache repeated morphology/renderer reads without allowing a long run of
+    // changing coverages to retain an unbounded number of triangle objects.
+    static { this.PATCH_CACHE_TRIANGLE_BUDGET = 100000; }
+    static { this.SURFACE_PATH_CACHE_LIMIT = 32; }
+    static _validationKeyInternal(anchor, surface, mesh, field, allowStaleChemistry, access) {
+        if (access !== CAVITY_SURFACE_VALIDATION_ACCESS) {
+            throw new Error('surface-anchor validation cache authority is private');
+        }
         return [
             anchor?.source?.kind, anchor?.source?.signature, anchor?.source?.fieldSignature,
             anchor?.source?.snapshotDigest, anchor?.source?.bufferDigest, anchor?.source?.isovalue,
@@ -32416,7 +32665,8 @@ class CavitySurfaceAnchors {
             const dy = candidate.point[1] - point[1];
             const dz = candidate.point[2] - point[2];
             const distance2 = dx * dx + dy * dy + dz * dz;
-            if (!best || distance2 < best.distance2) {
+            if (!best || distance2 < best.distance2
+                || (distance2 === best.distance2 && triangleIndex < best.triangleIndex)) {
                 best = { triangleIndex, barycentric: candidate.barycentric, point: candidate.point, distance2 };
             }
         }
@@ -32435,26 +32685,61 @@ class CavitySurfaceAnchors {
         const min = fieldCell.map((value, axis) => Number(field.origin[axis]) + Math.max(0, value - 1) * spacing);
         const dims = [field.sizeX, field.sizeY, field.sizeZ];
         const max = fieldCell.map((value, axis) => Number(field.origin[axis]) + Math.min(dims[axis] - 1, value + 2) * spacing);
-        const positions = surface?.positions;
-        const indices = surface?.indices;
-        if (!positions || !indices)
+        if (!surface?.positions || !surface?.indices)
             return [];
-        const candidates = [];
-        for (let triangleIndex = 0; triangleIndex < indices.length / 3; triangleIndex++) {
-            const t = CavitySurfaceAnchors._triangle(surface, triangleIndex);
-            let overlaps = true;
-            for (let axis = 0; axis < 3; axis++) {
-                const lo = Math.min(positions[t.ia * 3 + axis], positions[t.ib * 3 + axis], positions[t.ic * 3 + axis]);
-                const hi = Math.max(positions[t.ia * 3 + axis], positions[t.ib * 3 + axis], positions[t.ic * 3 + axis]);
-                if (hi < min[axis] || lo > max[axis]) {
-                    overlaps = false;
-                    break;
+        const topology = cavitySurfaceTopologyInternal(surface);
+        const frameKey = [field.sig || field.snapshotDigest || 'field',
+            ...field.origin, field.spacingMm, field.sizeX, field.sizeY, field.sizeZ].join(':');
+        let spatial = topology.fieldSpatialIndices.get(frameKey);
+        if (!spatial) {
+            const cellSizeX = field.sizeX - 1;
+            const cellSizeY = field.sizeY - 1;
+            const cellSizeZ = field.sizeZ - 1;
+            const bins = new Map();
+            const clampCell = (value, size) => Math.max(0, Math.min(size - 1, value));
+            for (const triangle of topology.triangles) {
+                const lower = triangle.bounds_min.map((value, axis) => clampCell(Math.ceil((value - Number(field.origin[axis])) / spacing - 1), [cellSizeX, cellSizeY, cellSizeZ][axis]));
+                const upper = triangle.bounds_max.map((value, axis) => clampCell(Math.floor((value - Number(field.origin[axis])) / spacing), [cellSizeX, cellSizeY, cellSizeZ][axis]));
+                for (let z = lower[2]; z <= upper[2]; z++) {
+                    for (let y = lower[1]; y <= upper[1]; y++) {
+                        for (let x = lower[0]; x <= upper[0]; x++) {
+                            const key = x + cellSizeX * (y + cellSizeY * z);
+                            const bin = bins.get(key);
+                            if (bin)
+                                bin.push(triangle.triangle_index);
+                            else
+                                bins.set(key, [triangle.triangle_index]);
+                        }
+                    }
                 }
             }
-            if (overlaps)
-                candidates.push(triangleIndex);
+            spatial = { bins, cellSizeX, cellSizeY, cellSizeZ };
+            // A surface is authenticated to one field frame in production. Keep the
+            // map for explicit historical/regrid callers, but bound stale frames.
+            topology.fieldSpatialIndices.set(frameKey, spatial);
+            while (topology.fieldSpatialIndices.size > 3) {
+                topology.fieldSpatialIndices.delete(topology.fieldSpatialIndices.keys().next().value);
+            }
         }
-        return candidates;
+        const clampCell = (value, size) => Math.max(0, Math.min(size - 1, value));
+        const lower = min.map((value, axis) => clampCell(Math.ceil((value - Number(field.origin[axis])) / spacing - 1), [spatial.cellSizeX, spatial.cellSizeY, spatial.cellSizeZ][axis]));
+        const upper = max.map((value, axis) => clampCell(Math.floor((value - Number(field.origin[axis])) / spacing), [spatial.cellSizeX, spatial.cellSizeY, spatial.cellSizeZ][axis]));
+        const candidateSet = new Set();
+        for (let z = lower[2]; z <= upper[2]; z++) {
+            for (let y = lower[1]; y <= upper[1]; y++) {
+                for (let x = lower[0]; x <= upper[0]; x++) {
+                    const key = x + spatial.cellSizeX * (y + spatial.cellSizeY * z);
+                    for (const triangleIndex of spatial.bins.get(key) || [])
+                        candidateSet.add(triangleIndex);
+                }
+            }
+        }
+        // Preserve the exact old AABB definition and global lowest-index tie rule;
+        // the index changes only how candidates are discovered.
+        return Array.from(candidateSet).sort((a, b) => a - b).filter((triangleIndex) => {
+            const triangle = topology.byIndex.get(triangleIndex);
+            return triangle && triangle.bounds_min.every((lo, axis) => triangle.bounds_max[axis] >= min[axis] && lo <= max[axis]);
+        });
     }
     static _fieldCellForPosition(field, position) {
         if (!field?.origin || !(field.spacingMm > 0)
@@ -32500,8 +32785,8 @@ class CavitySurfaceAnchors {
         if (anchor.source?.kind === 'cavity-field' && surface) {
             MarchingCubesExtractor.verifyBuffers(surface);
         }
-        const validationKey = CavitySurfaceAnchors._validationKey(anchor, surface, mesh, field, !!opts.allowStaleChemistry);
-        const cachedValidations = CavitySurfaceAnchors._validationCache.get(anchor);
+        const validationKey = cavitySurfaceValidationKeyInternal(anchor, surface, mesh, field, !!opts.allowStaleChemistry);
+        const cachedValidations = CAVITY_SURFACE_VALIDATION_CACHE.get(anchor);
         if (cachedValidations?.has(validationKey))
             return true;
         const position = CavitySurfaceAnchors._tuple3(anchor.position, 'surface anchor position');
@@ -32600,27 +32885,36 @@ class CavitySurfaceAnchors {
         }
         const validations = cachedValidations || new Set();
         validations.add(validationKey);
-        CavitySurfaceAnchors._validationCache.set(anchor, validations);
+        CAVITY_SURFACE_VALIDATION_CACHE.set(anchor, validations);
         return true;
     }
     static _surfaceSignature(surface) {
         return String(surface?.source_field_signature ? surface?.sig
             : CavitySurfaceAnchors._geometrySignature(surface));
     }
-    static _surfaceTopology(surface) {
+    static _surfaceTopologyInternal(surface, access) {
+        if (access !== CAVITY_SURFACE_TOPOLOGY_ACCESS) {
+            throw new Error('surface topology authority is private');
+        }
         if (!surface?.positions || !surface?.indices) {
             throw new TypeError('surface patch requires indexed position buffers');
         }
         const signature = CavitySurfaceAnchors._surfaceSignature(surface);
-        const cached = CavitySurfaceAnchors._surfaceTopologyCache.get(surface);
+        const cached = CAVITY_SURFACE_TOPOLOGY_CACHE.get(surface);
         if (cached?.signature === signature)
             return cached;
+        const extractorTopology = surface.source_field_signature
+            ? cavitySurfaceAnchorTopologyInternal(surface)
+            : null;
+        const positionBuffer = extractorTopology?.positions || surface.positions;
+        const indexBuffer = extractorTopology?.indices || surface.indices;
         const triangles = [];
-        const edgeOwners = new Map();
+        const edgeOwners = extractorTopology ? null : new Map();
         let totalArea = 0;
-        for (let triangleIndex = 0; triangleIndex < surface.indices.length / 3; triangleIndex++) {
-            const t = CavitySurfaceAnchors._triangle(surface, triangleIndex);
-            const p = surface.positions;
+        for (let triangleIndex = 0; triangleIndex < indexBuffer.length / 3; triangleIndex++) {
+            const offset = triangleIndex * 3;
+            const t = { ia: indexBuffer[offset], ib: indexBuffer[offset + 1], ic: indexBuffer[offset + 2] };
+            const p = positionBuffer;
             const ax = p[t.ia * 3], ay = p[t.ia * 3 + 1], az = p[t.ia * 3 + 2];
             const bx = p[t.ib * 3], by = p[t.ib * 3 + 1], bz = p[t.ib * 3 + 2];
             const cx = p[t.ic * 3], cy = p[t.ic * 3 + 1], cz = p[t.ic * 3 + 2];
@@ -32648,80 +32942,251 @@ class CavitySurfaceAnchors {
                 triangle_index: triangleIndex, ia: t.ia, ib: t.ib, ic: t.ic,
                 area_mm2: length / 2,
                 centroid: [(ax + bx + cx) / 3, (ay + by + cy) / 3, (az + bz + cz) / 3],
+                bounds_min: [Math.min(ax, bx, cx), Math.min(ay, by, cy), Math.min(az, bz, cz)],
+                bounds_max: [Math.max(ax, bx, cx), Math.max(ay, by, cy), Math.max(az, bz, cz)],
                 void_normal: [-cross[0] / length, -cross[1] / length, -cross[2] / length],
                 neighbor_indices: [],
             };
             triangles.push(triangle);
             totalArea += triangle.area_mm2;
-            for (const [u, v] of [[t.ia, t.ib], [t.ib, t.ic], [t.ic, t.ia]]) {
-                const key = u < v ? `${u}:${v}` : `${v}:${u}`;
-                const owners = edgeOwners.get(key);
-                if (owners)
-                    owners.push(triangleIndex);
-                else
-                    edgeOwners.set(key, [triangleIndex]);
+            if (edgeOwners) {
+                for (const [u, v] of [[t.ia, t.ib], [t.ib, t.ic], [t.ic, t.ia]]) {
+                    const key = u < v ? `${u}:${v}` : `${v}:${u}`;
+                    const owners = edgeOwners.get(key);
+                    if (owners)
+                        owners.push(triangleIndex);
+                    else
+                        edgeOwners.set(key, [triangleIndex]);
+                }
             }
         }
         const byIndex = new Map(triangles.map(triangle => [triangle.triangle_index, triangle]));
-        for (const owners of edgeOwners.values()) {
-            for (let i = 0; i < owners.length; i++)
-                for (let j = i + 1; j < owners.length; j++) {
-                    byIndex.get(owners[i])?.neighbor_indices.push(owners[j]);
-                    byIndex.get(owners[j])?.neighbor_indices.push(owners[i]);
+        if (extractorTopology) {
+            for (const triangle of triangles) {
+                const count = extractorTopology.neighbor_counts[triangle.triangle_index];
+                for (let slot = 0; slot < count; slot++) {
+                    triangle.neighbor_indices.push(extractorTopology.neighbor_triangles[triangle.triangle_index * 3 + slot]);
                 }
+            }
         }
+        else if (edgeOwners) {
+            for (const owners of edgeOwners.values()) {
+                for (let i = 0; i < owners.length; i++)
+                    for (let j = i + 1; j < owners.length; j++) {
+                        byIndex.get(owners[i])?.neighbor_indices.push(owners[j]);
+                        byIndex.get(owners[j])?.neighbor_indices.push(owners[i]);
+                    }
+            }
+        }
+        const triangleCapacity = indexBuffer.length / 3;
+        const edgeMidpoints = new Float64Array(triangleCapacity * 9);
+        const edgeCrossings = new Float64Array(triangleCapacity * 3);
         for (const triangle of triangles) {
             triangle.neighbor_indices = Array.from(new Set(triangle.neighbor_indices)).sort((a, b) => a - b);
+            for (let slot = 0; slot < triangle.neighbor_indices.length; slot++) {
+                const index = triangle.neighbor_indices[slot];
+                const neighbor = byIndex.get(index);
+                let first = -1, second = -1;
+                for (const vertex of [triangle.ia, triangle.ib, triangle.ic]) {
+                    if (vertex === neighbor.ia || vertex === neighbor.ib || vertex === neighbor.ic) {
+                        if (first < 0)
+                            first = vertex;
+                        else
+                            second = vertex;
+                    }
+                }
+                if (first < 0 || second < 0) {
+                    throw new Error('surface topology neighbors must share one edge');
+                }
+                const edgeOffset = triangle.triangle_index * 9 + slot * 3;
+                const mx = (positionBuffer[first * 3] + positionBuffer[second * 3]) / 2;
+                const my = (positionBuffer[first * 3 + 1] + positionBuffer[second * 3 + 1]) / 2;
+                const mz = (positionBuffer[first * 3 + 2] + positionBuffer[second * 3 + 2]) / 2;
+                edgeMidpoints[edgeOffset] = mx;
+                edgeMidpoints[edgeOffset + 1] = my;
+                edgeMidpoints[edgeOffset + 2] = mz;
+                edgeCrossings[triangle.triangle_index * 3 + slot] = Math.hypot(triangle.centroid[0] - mx, triangle.centroid[1] - my, triangle.centroid[2] - mz) + Math.hypot(neighbor.centroid[0] - mx, neighbor.centroid[1] - my, neighbor.centroid[2] - mz);
+            }
         }
-        const topology = { signature, triangles, byIndex, totalArea };
-        CavitySurfaceAnchors._surfaceTopologyCache.set(surface, topology);
+        const topology = {
+            signature, triangles, byIndex, totalArea,
+            triangleCapacity,
+            edgeMidpoints,
+            edgeCrossings,
+            fieldSpatialIndices: new Map(),
+            patchCache: new Map(),
+            patchCacheTriangleWeight: 0,
+            pathCache: new Map(),
+        };
+        CAVITY_SURFACE_TOPOLOGY_CACHE.set(surface, topology);
         return topology;
     }
+    // Tests and diagnostics may inspect an immutable value snapshot, never the
+    // maps, typed buffers, adjacency arrays, or path/cache objects used to route
+    // physical surface growth.
+    static _surfaceTopology(surface) {
+        const topology = cavitySurfaceTopologyInternal(surface);
+        const triangles = topology.triangles.map((triangle) => Object.freeze({
+            triangle_index: triangle.triangle_index,
+            ia: triangle.ia, ib: triangle.ib, ic: triangle.ic,
+            area_mm2: triangle.area_mm2,
+            centroid: Object.freeze(triangle.centroid.slice()),
+            bounds_min: Object.freeze(triangle.bounds_min.slice()),
+            bounds_max: Object.freeze(triangle.bounds_max.slice()),
+            void_normal: Object.freeze(triangle.void_normal.slice()),
+            neighbor_indices: Object.freeze(triangle.neighbor_indices.slice()),
+        }));
+        const immutableTriangles = Object.freeze(triangles);
+        const publicByIndex = new Map(triangles.map((triangle) => [triangle.triangle_index, triangle]));
+        return Object.freeze({
+            signature: topology.signature,
+            triangles: immutableTriangles,
+            byIndex: Object.freeze({
+                size: publicByIndex.size,
+                get: (index) => publicByIndex.get(index),
+            }),
+            totalArea: topology.totalArea,
+            triangleCapacity: topology.triangleCapacity,
+            fieldSpatialIndices: Object.freeze({ size: topology.fieldSpatialIndices.size }),
+            patchCache: Object.freeze({ size: topology.patchCache.size }),
+            patchCacheTriangleWeight: topology.patchCacheTriangleWeight,
+            pathCache: Object.freeze({ size: topology.pathCache.size }),
+        });
+    }
     static surfaceAreaMm2(surface) {
-        return CavitySurfaceAnchors._surfaceTopology(surface).totalArea;
+        return cavitySurfaceTopologyInternal(surface).totalArea;
+    }
+    static _patchCacheRead(topology, key) {
+        const entry = topology.patchCache.get(key);
+        if (!entry)
+            return null;
+        topology.patchCache.delete(key);
+        topology.patchCache.set(key, entry);
+        return entry.patch;
+    }
+    static _patchCacheWrite(topology, key, patch) {
+        const weight = patch.triangles.length;
+        const prior = topology.patchCache.get(key);
+        if (prior) {
+            topology.patchCacheTriangleWeight -= prior.weight;
+            topology.patchCache.delete(key);
+        }
+        topology.patchCache.set(key, { patch, weight });
+        topology.patchCacheTriangleWeight += weight;
+        while (topology.patchCache.size > 1
+            && topology.patchCacheTriangleWeight > CavitySurfaceAnchors.PATCH_CACHE_TRIANGLE_BUDGET) {
+            const oldestKey = topology.patchCache.keys().next().value;
+            const oldest = topology.patchCache.get(oldestKey);
+            topology.patchCache.delete(oldestKey);
+            topology.patchCacheTriangleWeight -= oldest.weight;
+        }
+        return patch;
+    }
+    static _frontierLess(a, b) {
+        return a.distance_mm < b.distance_mm
+            || (a.distance_mm === b.distance_mm
+                && a.triangle.triangle_index < b.triangle.triangle_index);
+    }
+    static _frontierPush(heap, entry) {
+        let index = heap.length;
+        heap.push(entry);
+        while (index > 0) {
+            const parent = (index - 1) >> 1;
+            if (!CavitySurfaceAnchors._frontierLess(heap[index], heap[parent]))
+                break;
+            [heap[index], heap[parent]] = [heap[parent], heap[index]];
+            index = parent;
+        }
+    }
+    static _frontierPop(heap) {
+        const first = heap[0];
+        const last = heap.pop();
+        if (heap.length && last) {
+            heap[0] = last;
+            let index = 0;
+            while (true) {
+                const left = index * 2 + 1;
+                const right = left + 1;
+                let next = index;
+                if (left < heap.length && CavitySurfaceAnchors._frontierLess(heap[left], heap[next]))
+                    next = left;
+                if (right < heap.length && CavitySurfaceAnchors._frontierLess(heap[right], heap[next]))
+                    next = right;
+                if (next === index)
+                    break;
+                [heap[index], heap[next]] = [heap[next], heap[index]];
+                index = next;
+            }
+        }
+        return first;
+    }
+    static _surfacePathState(topology, pathKey, start, point) {
+        let state = topology.pathCache.get(pathKey);
+        if (state) {
+            topology.pathCache.delete(pathKey);
+            topology.pathCache.set(pathKey, state);
+            return state;
+        }
+        const bestDistance = new Float64Array(topology.triangleCapacity);
+        bestDistance.fill(Infinity);
+        bestDistance[start.triangle_index] = 0;
+        state = {
+            start_triangle_index: start.triangle_index,
+            point: point.slice(),
+            visited: new Uint8Array(topology.triangleCapacity),
+            bestDistance,
+            frontier: [],
+            order: [],
+            cumulativeArea: [],
+            area_mm2: 0,
+        };
+        CavitySurfaceAnchors._frontierPush(state.frontier, {
+            triangle: start, distance_mm: 0,
+        });
+        topology.pathCache.set(pathKey, state);
+        while (topology.pathCache.size > CavitySurfaceAnchors.SURFACE_PATH_CACHE_LIMIT) {
+            topology.pathCache.delete(topology.pathCache.keys().next().value);
+        }
+        return state;
     }
     static surfacePatch(anchor, surface, targetCoverage) {
-        const topology = CavitySurfaceAnchors._surfaceTopology(surface);
+        const topology = cavitySurfaceTopologyInternal(surface);
         const coverage = Math.max(0, Math.min(1, Number(targetCoverage) || 0));
         const targetArea = topology.totalArea * coverage;
         const start = topology.byIndex.get(anchor?.triangleIndex);
-        if (!start || !(targetArea > 0)) {
-            return { source_signature: topology.signature, coverage_fraction: coverage, area_mm2: 0, triangles: [] };
-        }
         const point = CavitySurfaceAnchors._tuple3(anchor.position, 'surface patch anchor position');
-        const sharedEdgeMidpoint = (a, b) => {
-            const aVertices = [a.ia, a.ib, a.ic];
-            const bVertices = new Set([b.ia, b.ib, b.ic]);
-            const shared = aVertices.filter(vertex => bVertices.has(vertex));
-            if (shared.length !== 2)
-                throw new Error('surface topology neighbors must share one edge');
-            const p = surface.positions;
-            return [0, 1, 2].map(axis => (p[shared[0] * 3 + axis] + p[shared[1] * 3 + axis]) / 2);
-        };
-        const crossingDistance = (a, b, origin) => {
-            const midpoint = sharedEdgeMidpoint(a, b);
-            return Math.hypot(origin[0] - midpoint[0], origin[1] - midpoint[1], origin[2] - midpoint[2])
-                + Math.hypot(b.centroid[0] - midpoint[0], b.centroid[1] - midpoint[1], b.centroid[2] - midpoint[2]);
-        };
-        const selected = [], visited = new Set(), queued = new Set();
-        const bestDistance = new Map([[start.triangle_index, 0]]);
-        const frontier = [{ triangle: start, distance_mm: 0 }];
-        queued.add(start.triangle_index);
-        let remaining = targetArea;
-        while (remaining > 1e-12 && frontier.length) {
-            frontier.sort((a, b) => a.distance_mm - b.distance_mm
-                || a.triangle.triangle_index - b.triangle.triangle_index);
-            const current = frontier.shift();
+        const cacheKey = [start?.triangle_index ?? 'missing', coverage.toPrecision(17),
+            ...point.map((value) => value.toPrecision(17))].join(':');
+        const pathKey = [start?.triangle_index ?? 'missing',
+            ...point.map((value) => value.toPrecision(17))].join(':');
+        const cached = CavitySurfaceAnchors._patchCacheRead(topology, cacheKey);
+        if (cached)
+            return cached;
+        if (!start || !(targetArea > 0)) {
+            return CavitySurfaceAnchors._patchCacheWrite(topology, cacheKey, Object.freeze({
+                source_signature: topology.signature,
+                coverage_fraction: coverage,
+                area_mm2: 0,
+                triangles: Object.freeze([]),
+                triangle_indices: Object.freeze([]),
+            }));
+        }
+        const path = CavitySurfaceAnchors._surfacePathState(topology, pathKey, start, point);
+        while (path.area_mm2 < targetArea - 1e-12 && path.frontier.length) {
+            const current = CavitySurfaceAnchors._frontierPop(path.frontier);
             const triangle = current.triangle;
-            queued.delete(triangle.triangle_index);
-            if (visited.has(triangle.triangle_index))
+            if (path.visited[triangle.triangle_index])
                 continue;
-            visited.add(triangle.triangle_index);
-            const weight = Math.min(triangle.area_mm2, remaining);
-            selected.push({ ...triangle, weight_mm2: weight, surface_distance_mm: current.distance_mm });
-            remaining -= weight;
-            for (const index of triangle.neighbor_indices) {
-                if (visited.has(index))
+            const authoritativeDistance = path.bestDistance[triangle.triangle_index];
+            if (current.distance_mm > authoritativeDistance + 1e-12)
+                continue;
+            path.visited[triangle.triangle_index] = 1;
+            path.order.push({ triangle, distance_mm: current.distance_mm });
+            path.area_mm2 += triangle.area_mm2;
+            path.cumulativeArea.push(path.area_mm2);
+            for (let slot = 0; slot < triangle.neighbor_indices.length; slot++) {
+                const index = triangle.neighbor_indices[slot];
+                if (path.visited[index])
                     continue;
                 const neighbor = topology.byIndex.get(index);
                 if (!neighbor)
@@ -32730,31 +33195,66 @@ class CavitySurfaceAnchors {
                 // point, not at the source triangle centroid. Later crossings route
                 // through each shared edge, so folded-near Euclidean triangles cannot
                 // shortcut the surface graph.
-                const origin = triangle.triangle_index === start.triangle_index
-                    ? point : triangle.centroid;
+                const edgeOffset = triangle.triangle_index * 9 + slot * 3;
+                const mx = topology.edgeMidpoints[edgeOffset];
+                const my = topology.edgeMidpoints[edgeOffset + 1];
+                const mz = topology.edgeMidpoints[edgeOffset + 2];
                 const candidateDistance = current.distance_mm
-                    + crossingDistance(triangle, neighbor, origin);
-                const priorDistance = bestDistance.get(index);
-                if (priorDistance != null && candidateDistance >= priorDistance - 1e-12)
+                    + (triangle.triangle_index === start.triangle_index
+                        ? Math.hypot(point[0] - mx, point[1] - my, point[2] - mz) + Math.hypot(neighbor.centroid[0] - mx, neighbor.centroid[1] - my, neighbor.centroid[2] - mz)
+                        : topology.edgeCrossings[triangle.triangle_index * 3 + slot]);
+                const priorDistance = path.bestDistance[index];
+                if (candidateDistance >= priorDistance - 1e-12)
                     continue;
-                bestDistance.set(index, candidateDistance);
-                if (queued.has(index)) {
-                    const queuedEntry = frontier.find(entry => entry.triangle.triangle_index === index);
-                    if (queuedEntry)
-                        queuedEntry.distance_mm = candidateDistance;
-                }
-                else {
-                    frontier.push({ triangle: neighbor, distance_mm: candidateDistance });
-                    queued.add(index);
-                }
+                path.bestDistance[index] = candidateDistance;
+                // Lazy duplicates avoid O(frontier) decrease-key scans. Stale entries
+                // are discarded against bestDistance when popped.
+                CavitySurfaceAnchors._frontierPush(path.frontier, {
+                    triangle: neighbor, distance_mm: candidateDistance,
+                });
             }
         }
-        return {
+        let selectedCount = 0;
+        if (path.cumulativeArea.length) {
+            let low = 0, high = path.cumulativeArea.length - 1;
+            while (low < high) {
+                const middle = (low + high) >> 1;
+                if (path.cumulativeArea[middle] < targetArea - 1e-12)
+                    low = middle + 1;
+                else
+                    high = middle;
+            }
+            selectedCount = low + 1;
+        }
+        const selected = new Array(selectedCount);
+        let remaining = targetArea;
+        for (let index = 0; index < selectedCount; index++) {
+            const entry = path.order[index];
+            const weight = Math.min(entry.triangle.area_mm2, Math.max(0, remaining));
+            // Never expose the mutable internal triangle as a prototype. Every
+            // nested value in a public patch is an immutable copy.
+            selected[index] = Object.freeze({
+                triangle_index: entry.triangle.triangle_index,
+                ia: entry.triangle.ia, ib: entry.triangle.ib, ic: entry.triangle.ic,
+                area_mm2: entry.triangle.area_mm2,
+                centroid: Object.freeze(entry.triangle.centroid.slice()),
+                bounds_min: Object.freeze(entry.triangle.bounds_min.slice()),
+                bounds_max: Object.freeze(entry.triangle.bounds_max.slice()),
+                void_normal: Object.freeze(entry.triangle.void_normal.slice()),
+                neighbor_indices: Object.freeze(entry.triangle.neighbor_indices.slice()),
+                weight_mm2: weight,
+                surface_distance_mm: entry.distance_mm,
+            });
+            remaining -= weight;
+        }
+        const triangleIndices = selected.map(triangle => triangle.triangle_index);
+        return CavitySurfaceAnchors._patchCacheWrite(topology, cacheKey, Object.freeze({
             source_signature: topology.signature,
             coverage_fraction: coverage,
             area_mm2: targetArea - Math.max(0, remaining),
-            triangles: selected,
-        };
+            triangles: Object.freeze(selected),
+            triangle_indices: Object.freeze(triangleIndices),
+        }));
     }
     static _sampleUnit(seed, index, channel) {
         let x = ((Number(seed) | 0) ^ Math.imul((index + 1) | 0, 0x9e3779b1)
@@ -32822,6 +33322,18 @@ class CavitySurfaceAnchors {
             `b:${anchor.barycentric.map(f).join(',')}`,
             `c:${anchor.chemistry.vertexIndex}`,
         ].join('|');
+    }
+    // Capture the two authority-bearing implementations into lexical closures
+    // during class initialization, before the class can be observed, then erase
+    // their temporary bootstrap properties. Authorized calls never cross a
+    // writable/replaceable public method and cannot leak either capability.
+    static {
+        const topologyImplementation = this._surfaceTopologyInternal;
+        const validationKeyImplementation = this._validationKeyInternal;
+        cavitySurfaceTopologyInternal = (surface) => topologyImplementation.call(this, surface, CAVITY_SURFACE_TOPOLOGY_ACCESS);
+        cavitySurfaceValidationKeyInternal = (anchor, surface, mesh, field, allowStaleChemistry) => validationKeyImplementation.call(this, anchor, surface, mesh, field, allowStaleChemistry, CAVITY_SURFACE_VALIDATION_ACCESS);
+        delete this._surfaceTopologyInternal;
+        delete this._validationKeyInternal;
     }
 }
 
@@ -50057,8 +50569,6 @@ function classifySurfaceGrowth(sim) {
     eligible.sort((a, b) => (Number(a.nucleation_step) - Number(b.nucleation_step))
         || (Number(a.crystal_id) - Number(b.crystal_id)));
     const prior = [];
-    const exactMesh = wall && typeof wall.meshFor === 'function'
-        ? wall.meshFor(sim) : null;
     for (let i = 0; i < eligible.length; i++) {
         const c = eligible[i];
         const desc = c._surfaceGrowth;
@@ -50067,21 +50577,32 @@ function classifySurfaceGrowth(sim) {
         const radius = Math.acos(Math.max(-1, Math.min(1, 1 - 2 * desc.coverage_fraction)));
         const exactPatch = wall && typeof wall.surfacePatchForCrystal === 'function'
             ? wall.surfacePatchForCrystal(c, desc.coverage_fraction, sim) : null;
-        const exactTriangles = exactPatch && Array.isArray(exactPatch.triangles)
-            ? new Set(exactPatch.triangles.map((triangle) => triangle.triangle_index))
+        const exactTriangleIndices = exactPatch && Array.isArray(exactPatch.triangles)
+            ? (Array.isArray(exactPatch.triangle_indices)
+                ? exactPatch.triangle_indices
+                : exactPatch.triangles.map((triangle) => triangle.triangle_index))
             : null;
-        const exactTriangleKeys = exactTriangles
-            ? new Set(Array.from(exactTriangles).map((triangleIndex) => `${exactPatch.source_signature}:${triangleIndex}`)) : null;
+        let exactTriangleBitset = null;
+        if (exactTriangleIndices) {
+            let triangleCount = 0;
+            for (const triangleIndex of exactTriangleIndices) {
+                triangleCount = Math.max(triangleCount, Number(triangleIndex) + 1);
+            }
+            exactTriangleBitset = new Uint32Array(Math.ceil(triangleCount / 32));
+            for (const triangleIndex of exactTriangleIndices) {
+                exactTriangleBitset[triangleIndex >>> 5] |= (1 << (triangleIndex & 31)) >>> 0;
+            }
+        }
         const underlying = [];
         for (const p of prior) {
-            if (exactTriangleKeys && p.exactTriangleKeys) {
-                let sharesTriangle = false;
-                for (const triangleKey of exactTriangleKeys) {
-                    if (p.exactTriangleKeys.has(triangleKey)) {
-                        sharesTriangle = true;
-                        break;
-                    }
-                }
+            if (exactTriangleIndices && exactTriangleBitset
+                && p.exactTriangleIndices && p.exactTriangleBitset
+                && exactPatch.source_signature === p.sourceSignature) {
+                const probe = exactTriangleIndices.length <= p.exactTriangleIndices.length
+                    ? exactTriangleIndices : p.exactTriangleIndices;
+                const targetBitset = probe === exactTriangleIndices
+                    ? p.exactTriangleBitset : exactTriangleBitset;
+                const sharesTriangle = probe.some((triangleIndex) => !!(targetBitset[triangleIndex >>> 5] & ((1 << (triangleIndex & 31)) >>> 0)));
                 if (sharesTriangle)
                     underlying.push(p.crystal.crystal_id);
             }
@@ -50095,10 +50616,15 @@ function classifySurfaceGrowth(sim) {
         desc.stratigraphic_index = i;
         desc.nucleation_step = Number(c.nucleation_step) || 0;
         desc.underlying_surface_crystal_ids = underlying;
-        desc.stratigraphy_basis = exactTriangles
+        desc.stratigraphy_basis = exactTriangleIndices
             ? 'exact shared authenticated-surface triangles'
             : 'spherical-cap fallback';
-        prior.push({ crystal: c, dir, radius, exactTriangles, exactTriangleKeys });
+        prior.push({
+            crystal: c, dir, radius,
+            sourceSignature: exactPatch?.source_signature,
+            exactTriangleIndices,
+            exactTriangleBitset,
+        });
     }
 }
 function _wulffLocalChemistry(sim, crystal) {
@@ -95848,6 +96374,108 @@ function _topoPaintPlaceholder(canvas, text) {
         ctx.fillText(text, cx, cy);
     }
 }
+function _topoCavityFieldCrossSectionReceipt(activeProvider, appearance, wall, conditions, sim = null) {
+    const field = activeProvider?.field;
+    const surface = activeProvider?.surface;
+    const provider = activeProvider?.receipt;
+    const currentProvider = wall?.activeCavitySurfaceAnchorProvider?.();
+    if (!currentProvider || currentProvider !== activeProvider
+        || currentProvider.field !== field || currentProvider.surface !== surface
+        || currentProvider.receipt !== provider) {
+        throw new Error('CPU cavity cross-section requires the wall exact current active provider');
+    }
+    if (!field || !surface || provider?.kind !== 'cavity-field'
+        || provider.field_signature !== field.sig
+        || provider.field_snapshot_digest !== field.snapshotDigest
+        || provider.surface_signature !== surface.sig
+        || provider.surface_buffer_digest !== surface.buffer_digest) {
+        throw new Error('CPU cavity cross-section requires one authenticated field/provider pair');
+    }
+    MarchingCubesExtractor.verifyBuffers(surface);
+    const authenticatedAppearance = CavityWaterAppearance.assertReceipt(wall, conditions, appearance, { activeProvider, providerReceipt: provider, surface, sim }).receipt;
+    const requestedPlane = Math.round((0 - field.origin[2]) / field.spacingMm);
+    const zIndex = Math.max(0, Math.min(field.sizeZ - 1, requestedPlane));
+    const payload = {
+        schema: 'cavity-field-cross-section-v1',
+        presentation: 'capability-independent-cpu-sampled-cross-section',
+        field_signature: field.sig,
+        field_snapshot_digest: field.snapshotDigest,
+        surface_signature: surface.sig,
+        surface_buffer_digest: surface.buffer_digest,
+        source_evolution_signature: provider.cavity_evolution_signature ?? null,
+        axis: 'z',
+        grid_index: zIndex,
+        plane_world_mm: field.origin[2] + zIndex * field.spacingMm,
+        dimensions: [field.sizeX, field.sizeY],
+        origin_xy_mm: [field.origin[0], field.origin[1]],
+        spacing_mm: field.spacingMm,
+        isovalue: surface.isovalue,
+        appearance_digest: authenticatedAppearance.appearance_digest,
+        appearance_source_geometry_digest: authenticatedAppearance.source_geometry_digest,
+        appearance_source_provider_kind: authenticatedAppearance.source_provider_kind,
+        appearance_source_evolution_signature: authenticatedAppearance.source_evolution_signature,
+        water_plane_y_mm: authenticatedAppearance.explicit_surface
+            ? authenticatedAppearance.water_plane_y_mm : null,
+        crystal_policy: 'withheld-with-explicit-label-without-authenticated-cpu-field-clipping',
+    };
+    payload.receipt_digest = CavityEvolutionLedger.digest(payload);
+    CavityEvolutionLedger._deepFreeze(payload);
+    return payload;
+}
+function _topoRenderCavityFieldCrossSection(ctx, cssW, cssH, activeProvider, appearance, wall, conditions, sim = null) {
+    if (!ctx || !(cssW > 0) || !(cssH > 0))
+        return false;
+    let receipt;
+    try {
+        receipt = _topoCavityFieldCrossSectionReceipt(activeProvider, appearance, wall, conditions, sim);
+    }
+    catch (_error) {
+        return false;
+    }
+    const field = activeProvider.field;
+    const margin = 24;
+    const labelHeight = 32;
+    const plotWidth = Math.max(1, cssW - margin * 2);
+    const plotHeight = Math.max(1, cssH - margin * 2 - labelHeight);
+    const scale = Math.min(plotWidth / Math.max(1, field.sizeX - 1), plotHeight / Math.max(1, field.sizeY - 1));
+    const drawWidth = scale * Math.max(1, field.sizeX - 1);
+    const drawHeight = scale * Math.max(1, field.sizeY - 1);
+    const left = (cssW - drawWidth) / 2;
+    const top = margin + (plotHeight - drawHeight) / 2;
+    ctx.save?.();
+    ctx.fillStyle = '#120f0d';
+    ctx.fillRect(0, 0, cssW, cssH);
+    const waterPlane = receipt.water_plane_y_mm;
+    const isovalue = receipt.isovalue;
+    for (let y = 0; y < field.sizeY; y++) {
+        const worldY = field.origin[1] + y * field.spacingMm;
+        const screenY = top + (field.sizeY - 1 - y) * scale;
+        for (let x = 0; x < field.sizeX; x++) {
+            const value = field.valueAt(x, y, receipt.grid_index);
+            if (value > isovalue) {
+                ctx.fillStyle = waterPlane != null && worldY <= waterPlane
+                    ? 'rgba(63, 137, 184, 0.88)' : 'rgba(25, 31, 34, 0.96)';
+            }
+            else {
+                ctx.fillStyle = 'rgba(91, 62, 39, 0.98)';
+            }
+            ctx.fillRect(left + x * scale - scale * 0.52, screenY - scale * 0.52, Math.max(1, scale * 1.04), Math.max(1, scale * 1.04));
+        }
+    }
+    ctx.strokeStyle = 'rgba(230, 197, 139, 0.88)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(left, top, drawWidth, drawHeight);
+    ctx.fillStyle = '#eadfc9';
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Authenticated Cartesian z=${receipt.plane_world_mm.toFixed(2)} mm cross-section`, cssW / 2, cssH - 21);
+    ctx.fillStyle = '#b9aa91';
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.fillText('Crystals withheld: this device lacks authenticated 3D field clipping', cssW / 2, cssH - 7);
+    ctx.restore?.();
+    ctx.canvas._cavityFieldCrossSectionReceipt = receipt;
+    return true;
+}
 // Phase B (Tier 1.5) — per-vertex 3D projection helper.
 // Maps a world-space point (relative to the scene origin) to a screen-
 // space point via Yaw → Pitch rotation + perspective. Replaces the
@@ -96194,11 +96822,22 @@ function topoRender(optOverrideSnap) {
             return;
         }
         if (exactFieldAuthority?.receipt?.kind === 'cavity-field') {
-            // Canvas/polar geometry cannot represent the authoritative re-entrant
-            // field. Be explicit rather than presenting a scientifically different
-            // cavity on hardware that rejected the exact renderer/clip pair.
+            // A CPU sample of the same authenticated scalar field is truthful on
+            // hardware that cannot compile the 3-D clipping shader. It is explicitly
+            // a cross-section and withholds crystals rather than drawing a polar lie.
+            let fallbackAppearance = replayDecision.appearance || null;
+            if (!fallbackAppearance) {
+                try {
+                    fallbackAppearance = CavityWaterAppearance.create(replayDecision.wall, renderSim.conditions, { sim: renderSim, activeProvider: exactFieldAuthority }).receipt;
+                }
+                catch (_error) {
+                    fallbackAppearance = null;
+                }
+            }
             _topoSyncThreeCanvasVisibility();
-            _topoPaintPlaceholder(canvas, 'Exact 3D cavity authority is active, but this device cannot render its authenticated field/clip pair. Simulation state is unchanged.');
+            if (_topoRenderCavityFieldCrossSection(ctx, cssW, cssH, exactFieldAuthority, fallbackAppearance, replayDecision.wall, renderSim.conditions, renderSim))
+                return;
+            _topoPaintPlaceholder(canvas, 'Exact 3D cavity authority is active, but this device cannot render either its authenticated 3D field/clip pair or CPU cross-section. Simulation state is unchanged.');
             return;
         }
     }

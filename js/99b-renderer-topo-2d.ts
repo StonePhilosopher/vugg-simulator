@@ -36,6 +36,126 @@ function _topoPaintPlaceholder(canvas, text) {
   }
 }
 
+function _topoCavityFieldCrossSectionReceipt(activeProvider: any, appearance: any,
+                                             wall: any, conditions: any,
+                                             sim: any = null): any {
+  const field = activeProvider?.field;
+  const surface = activeProvider?.surface;
+  const provider = activeProvider?.receipt;
+  const currentProvider = wall?.activeCavitySurfaceAnchorProvider?.();
+  if (!currentProvider || currentProvider !== activeProvider
+      || currentProvider.field !== field || currentProvider.surface !== surface
+      || currentProvider.receipt !== provider) {
+    throw new Error('CPU cavity cross-section requires the wall exact current active provider');
+  }
+  if (!field || !surface || provider?.kind !== 'cavity-field'
+      || provider.field_signature !== field.sig
+      || provider.field_snapshot_digest !== field.snapshotDigest
+      || provider.surface_signature !== surface.sig
+      || provider.surface_buffer_digest !== surface.buffer_digest) {
+    throw new Error('CPU cavity cross-section requires one authenticated field/provider pair');
+  }
+  MarchingCubesExtractor.verifyBuffers(surface);
+  const authenticatedAppearance = CavityWaterAppearance.assertReceipt(
+    wall, conditions, appearance,
+    { activeProvider, providerReceipt: provider, surface, sim },
+  ).receipt;
+  const requestedPlane = Math.round((0 - field.origin[2]) / field.spacingMm);
+  const zIndex = Math.max(0, Math.min(field.sizeZ - 1, requestedPlane));
+  const payload: any = {
+    schema: 'cavity-field-cross-section-v1',
+    presentation: 'capability-independent-cpu-sampled-cross-section',
+    field_signature: field.sig,
+    field_snapshot_digest: field.snapshotDigest,
+    surface_signature: surface.sig,
+    surface_buffer_digest: surface.buffer_digest,
+    source_evolution_signature: provider.cavity_evolution_signature ?? null,
+    axis: 'z',
+    grid_index: zIndex,
+    plane_world_mm: field.origin[2] + zIndex * field.spacingMm,
+    dimensions: [field.sizeX, field.sizeY],
+    origin_xy_mm: [field.origin[0], field.origin[1]],
+    spacing_mm: field.spacingMm,
+    isovalue: surface.isovalue,
+    appearance_digest: authenticatedAppearance.appearance_digest,
+    appearance_source_geometry_digest: authenticatedAppearance.source_geometry_digest,
+    appearance_source_provider_kind: authenticatedAppearance.source_provider_kind,
+    appearance_source_evolution_signature:
+      authenticatedAppearance.source_evolution_signature,
+    water_plane_y_mm: authenticatedAppearance.explicit_surface
+      ? authenticatedAppearance.water_plane_y_mm : null,
+    crystal_policy: 'withheld-with-explicit-label-without-authenticated-cpu-field-clipping',
+  };
+  payload.receipt_digest = CavityEvolutionLedger.digest(payload);
+  CavityEvolutionLedger._deepFreeze(payload);
+  return payload;
+}
+
+function _topoRenderCavityFieldCrossSection(ctx: any, cssW: number, cssH: number,
+                                            activeProvider: any, appearance: any,
+                                            wall: any, conditions: any,
+                                            sim: any = null): boolean {
+  if (!ctx || !(cssW > 0) || !(cssH > 0)) return false;
+  let receipt: any;
+  try {
+    receipt = _topoCavityFieldCrossSectionReceipt(
+      activeProvider, appearance, wall, conditions, sim,
+    );
+  } catch (_error) {
+    return false;
+  }
+  const field = activeProvider.field;
+  const margin = 24;
+  const labelHeight = 32;
+  const plotWidth = Math.max(1, cssW - margin * 2);
+  const plotHeight = Math.max(1, cssH - margin * 2 - labelHeight);
+  const scale = Math.min(
+    plotWidth / Math.max(1, field.sizeX - 1),
+    plotHeight / Math.max(1, field.sizeY - 1),
+  );
+  const drawWidth = scale * Math.max(1, field.sizeX - 1);
+  const drawHeight = scale * Math.max(1, field.sizeY - 1);
+  const left = (cssW - drawWidth) / 2;
+  const top = margin + (plotHeight - drawHeight) / 2;
+  ctx.save?.();
+  ctx.fillStyle = '#120f0d';
+  ctx.fillRect(0, 0, cssW, cssH);
+  const waterPlane = receipt.water_plane_y_mm;
+  const isovalue = receipt.isovalue;
+  for (let y = 0; y < field.sizeY; y++) {
+    const worldY = field.origin[1] + y * field.spacingMm;
+    const screenY = top + (field.sizeY - 1 - y) * scale;
+    for (let x = 0; x < field.sizeX; x++) {
+      const value = field.valueAt(x, y, receipt.grid_index);
+      if (value > isovalue) {
+        ctx.fillStyle = waterPlane != null && worldY <= waterPlane
+          ? 'rgba(63, 137, 184, 0.88)' : 'rgba(25, 31, 34, 0.96)';
+      } else {
+        ctx.fillStyle = 'rgba(91, 62, 39, 0.98)';
+      }
+      ctx.fillRect(left + x * scale - scale * 0.52, screenY - scale * 0.52,
+        Math.max(1, scale * 1.04), Math.max(1, scale * 1.04));
+    }
+  }
+  ctx.strokeStyle = 'rgba(230, 197, 139, 0.88)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(left, top, drawWidth, drawHeight);
+  ctx.fillStyle = '#eadfc9';
+  ctx.font = '12px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(
+    `Authenticated Cartesian z=${receipt.plane_world_mm.toFixed(2)} mm cross-section`,
+    cssW / 2, cssH - 21,
+  );
+  ctx.fillStyle = '#b9aa91';
+  ctx.font = '10px system-ui, sans-serif';
+  ctx.fillText('Crystals withheld: this device lacks authenticated 3D field clipping',
+    cssW / 2, cssH - 7);
+  ctx.restore?.();
+  ctx.canvas._cavityFieldCrossSectionReceipt = receipt;
+  return true;
+}
+
 // Phase B (Tier 1.5) — per-vertex 3D projection helper.
 // Maps a world-space point (relative to the scene origin) to a screen-
 // space point via Yaw → Pitch rotation + perspective. Replaces the
@@ -381,12 +501,27 @@ function topoRender(optOverrideSnap?) {
       return;
     }
     if (exactFieldAuthority?.receipt?.kind === 'cavity-field') {
-      // Canvas/polar geometry cannot represent the authoritative re-entrant
-      // field. Be explicit rather than presenting a scientifically different
-      // cavity on hardware that rejected the exact renderer/clip pair.
+      // A CPU sample of the same authenticated scalar field is truthful on
+      // hardware that cannot compile the 3-D clipping shader. It is explicitly
+      // a cross-section and withholds crystals rather than drawing a polar lie.
+      let fallbackAppearance = replayDecision.appearance || null;
+      if (!fallbackAppearance) {
+        try {
+          fallbackAppearance = CavityWaterAppearance.create(
+            replayDecision.wall, renderSim.conditions,
+            { sim: renderSim, activeProvider: exactFieldAuthority },
+          ).receipt;
+        } catch (_error) {
+          fallbackAppearance = null;
+        }
+      }
       _topoSyncThreeCanvasVisibility();
+      if (_topoRenderCavityFieldCrossSection(
+        ctx, cssW, cssH, exactFieldAuthority, fallbackAppearance,
+        replayDecision.wall, renderSim.conditions, renderSim,
+      )) return;
       _topoPaintPlaceholder(canvas,
-        'Exact 3D cavity authority is active, but this device cannot render its authenticated field/clip pair. Simulation state is unchanged.');
+        'Exact 3D cavity authority is active, but this device cannot render either its authenticated 3D field/clip pair or CPU cross-section. Simulation state is unchanged.');
       return;
     }
   } else if (typeof _topoSyncThreeCanvasVisibility === 'function') {
