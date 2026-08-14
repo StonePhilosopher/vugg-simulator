@@ -18,6 +18,65 @@
 
 const CAVITY_EVOLUTION_SCHEMA = 1;
 
+// Append-only ledgers admit one immutable depth projection per cursor. Keep
+// those canonical arrays behind a lexical WeakMap so stable authentication can
+// compare against them without allocating and replaying the complete history.
+// Public `materialize()` still returns a defensive copy.
+const CAVITY_LEDGER_DEPTH_PROJECTIONS = new WeakMap<object, Float64Array[]>();
+const CAVITY_LEDGER_PRIVATE_STATE = new WeakMap<object, {
+  entries: any[];
+  signatures: string[];
+  signature: string;
+  generation: number;
+}>();
+
+function _cavityLedgerPrivateState(ledger: any): any {
+  const state = CAVITY_LEDGER_PRIVATE_STATE.get(ledger);
+  if (!state) throw new TypeError('unrecognized cavity evolution ledger');
+  return state;
+}
+
+// Exact internal head used by production geometry seals and transactions.
+// Returning a fresh frozen scalar receipt cannot expose the mutable arrays.
+function _cavityLedgerAuthorityHead(ledger: any, cursor?: number): any {
+  const state = _cavityLedgerPrivateState(ledger);
+  const effectiveCursor = cursor == null ? state.entries.length : Number(cursor);
+  if (!Number.isInteger(effectiveCursor) || effectiveCursor < 0
+      || effectiveCursor > state.entries.length) {
+    throw new RangeError('cavity evolution cursor is out of range');
+  }
+  return Object.freeze({
+    cursor: effectiveCursor,
+    head_cursor: state.entries.length,
+    signature: state.signatures[effectiveCursor],
+    generation: state.generation,
+  });
+}
+
+function _cavityLedgerDepthProjection(ledger: any, cursor: number): Float64Array {
+  const state = _cavityLedgerPrivateState(ledger);
+  if (!Number.isInteger(cursor) || cursor < 0 || cursor > state.entries.length) {
+    throw new RangeError('cavity evolution cursor is out of range');
+  }
+  let projections = CAVITY_LEDGER_DEPTH_PROJECTIONS.get(ledger);
+  if (!projections) {
+    projections = [new Float64Array(ledger.baseline_depths_mm)];
+    CAVITY_LEDGER_DEPTH_PROJECTIONS.set(ledger, projections);
+  }
+  for (let eventIndex = projections.length - 1; eventIndex < cursor; eventIndex++) {
+    const depths = new Float64Array(projections[eventIndex]);
+    for (const delta of state.entries[eventIndex].vertex_deltas) {
+      const current = depths[delta.vertex_index];
+      if (Math.abs(current - delta.old_depth_mm) > 1e-10) {
+        throw new RangeError('cavity evolution ledger has a broken depth chain');
+      }
+      depths[delta.vertex_index] = delta.new_depth_mm;
+    }
+    projections.push(depths);
+  }
+  return projections[cursor];
+}
+
 interface CavityMolarVolumeReceipt {
   mineral: string;
   formula: string;
@@ -99,8 +158,6 @@ class CavityEvolutionLedger {
       throw new RangeError('cavity evolution baseline depths must be a finite non-empty array');
     }
     this.baseline_depths_mm = Object.freeze(baseline.slice());
-    this._entries = [];
-    this._signatures = [];
     this.base_state_digest = 'cavity-evolution-base:' + CavityEvolutionLedger.digest({
       schema: this.schema,
       model: this.model,
@@ -109,9 +166,17 @@ class CavityEvolutionLedger {
       baseline_kind: this.baseline_kind,
       baseline_depths_mm: baseline,
     });
-    this._signature = this.base_state_digest;
-    this._signatures.push(this._signature);
+    CAVITY_LEDGER_PRIVATE_STATE.set(this, {
+      entries: [],
+      signatures: [this.base_state_digest],
+      signature: this.base_state_digest,
+      generation: 0,
+    });
     for (const entry of (opts.entries || [])) this.append(entry);
+    // All evolving state lives in the lexical WeakMap. Freezing the public
+    // shell prevents shadow properties from intercepting authority methods or
+    // changing the immutable shape/tessellation identity.
+    Object.freeze(this);
   }
 
   static _canonical(value: any): any {
@@ -202,15 +267,14 @@ class CavityEvolutionLedger {
 
   // Consumers receive a frozen snapshot so the append-only chain cannot be
   // mutated by pushing, popping, or replacing an entry outside this authority.
-  get entries(): readonly any[] { return Object.freeze(this._entries.slice()); }
-  get signature(): string { return this._signature; }
-  get cursor(): number { return this._entries.length; }
+  get entries(): readonly any[] {
+    return Object.freeze(_cavityLedgerPrivateState(this).entries.slice());
+  }
+  get signature(): string { return _cavityLedgerPrivateState(this).signature; }
+  get cursor(): number { return _cavityLedgerPrivateState(this).entries.length; }
 
   signatureAt(cursor: number): string {
-    if (!Number.isInteger(cursor) || cursor < 0 || cursor > this._entries.length) {
-      throw new RangeError('cavity evolution cursor is out of range');
-    }
-    return this._signatures[cursor];
+    return _cavityLedgerAuthorityHead(this, cursor).signature;
   }
 
   _depthProjectionDigest(depths: ArrayLike<number>): string {
@@ -225,6 +289,7 @@ class CavityEvolutionLedger {
   }
 
   _validateEntry(entry: any): any {
+    const state = _cavityLedgerPrivateState(this);
     const copy = CavityEvolutionLedger._clone(entry);
     if (copy.schema !== CAVITY_EVOLUTION_SCHEMA
         || copy.model !== this.model
@@ -235,10 +300,10 @@ class CavityEvolutionLedger {
         || copy.tessellation_identity !== this.tessellation_identity) {
       throw new RangeError('cavity evolution entry belongs to another shape or tessellation');
     }
-    if (copy.event_id !== this._entries.length + 1 || !Number.isInteger(copy.event_id)) {
+    if (copy.event_id !== state.entries.length + 1 || !Number.isInteger(copy.event_id)) {
       throw new RangeError('cavity evolution event_id must be monotonic');
     }
-    if (copy.pre_state_digest !== this._signature) {
+    if (copy.pre_state_digest !== state.signature) {
       throw new RangeError('cavity evolution pre-state digest mismatch');
     }
     if (!Number.isInteger(copy.step) || copy.step < 0 || !copy.chemistry_transaction_id) {
@@ -333,8 +398,8 @@ class CavityEvolutionLedger {
       }
       CavityProductionAuthority.validateAuthorityReceipt(authority, {
         entry: copy,
-        previousAuthority: this._entries.length
-          ? this._entries[this._entries.length - 1].geometry_authority : null,
+        previousAuthority: state.entries.length
+          ? state.entries[state.entries.length - 1].geometry_authority : null,
         expectedOldDepthDigest: this._depthProjectionDigest(priorDepths),
         expectedNewDepthDigest: this._depthProjectionDigest(nextDepths),
       });
@@ -345,6 +410,7 @@ class CavityEvolutionLedger {
   }
 
   append(entry: any): any {
+    const state = _cavityLedgerPrivateState(this);
     const copy = this._validateEntry(entry);
     const suppliedDigest = copy.entry_digest == null ? null : String(copy.entry_digest);
     const computedDigest = CavityEvolutionLedger.digest(copy);
@@ -353,34 +419,22 @@ class CavityEvolutionLedger {
     }
     copy.entry_digest = computedDigest;
     const frozen = CavityEvolutionLedger._deepFreeze(copy);
-    this._entries.push(frozen);
-    this._signature = 'cavity-evolution:v1:' + CavityEvolutionLedger.digest({
-      prior: this._signature,
+    state.entries.push(frozen);
+    state.signature = 'cavity-evolution:v1:' + CavityEvolutionLedger.digest({
+      prior: state.signature,
       entry: copy.entry_digest,
     });
-    this._signatures.push(this._signature);
+    state.signatures.push(state.signature);
+    state.generation++;
     return frozen;
   }
 
-  materialize(cursor = this._entries.length): Float64Array {
-    if (!Number.isInteger(cursor) || cursor < 0 || cursor > this._entries.length) {
-      throw new RangeError('cavity evolution cursor is out of range');
-    }
-    const depths = new Float64Array(this.baseline_depths_mm);
-    for (let eventIndex = 0; eventIndex < cursor; eventIndex++) {
-      for (const delta of this._entries[eventIndex].vertex_deltas) {
-        const current = depths[delta.vertex_index];
-        if (Math.abs(current - delta.old_depth_mm) > 1e-10) {
-          throw new RangeError('cavity evolution ledger has a broken depth chain');
-        }
-        depths[delta.vertex_index] = delta.new_depth_mm;
-      }
-    }
-    return depths;
+  materialize(cursor = _cavityLedgerPrivateState(this).entries.length): Float64Array {
+    return new Float64Array(_cavityLedgerDepthProjection(this, cursor));
   }
 
-  assertProjection(wall: any, cursor = this._entries.length): true {
-    const expected = this.materialize(cursor);
+  assertProjection(wall: any, cursor = _cavityLedgerPrivateState(this).entries.length): true {
+    const expected = _cavityLedgerDepthProjection(this, cursor);
     let index = 0;
     for (const ring of wall.rings || []) {
       for (const cell of ring) {
@@ -429,7 +483,7 @@ class CavityEvolutionLedger {
       for (let i = 0; i < weights.length; i++) deltas[i] = lambda * weights[i];
       return { volume: mesh.closedVolumeWithDepthDeltasMm3(wall, deltas), deltas };
     };
-    const surfaceArea = Math.max(Number(mesh.surface_area_mm2) || 0, 1e-12);
+    const surfaceArea = Math.max(_wallMeshSurfaceAreaInternal(mesh), 1e-12);
     // Every candidate vertex is p + lambda*q. The oriented tetrahedron
     // volume is therefore exactly cubic in lambda. Four full-mesh samples
     // identify that polynomial; the remaining root iterations are scalar and
@@ -544,7 +598,7 @@ class CavityEvolutionLedger {
 
   commitEntry(wall: any, entry: any): any {
     this.assertProjection(wall);
-    const preSignature = this._signature;
+    const state = _cavityLedgerPrivateState(this);
     const frozen = this.append(entry);
     const applied: any[] = [];
     try {
@@ -561,15 +615,19 @@ class CavityEvolutionLedger {
       return frozen;
     } catch (error) {
       for (let i = applied.length - 1; i >= 0; i--) applied[i].target.wall_depth = applied[i].old;
-      this._entries.pop();
-      this._signatures.pop();
-      this._signature = preSignature;
+      state.entries.pop();
+      state.signatures.pop();
+      state.signature = state.signatures[state.signatures.length - 1];
+      state.generation++;
+      const projections = CAVITY_LEDGER_DEPTH_PROJECTIONS.get(this);
+      if (projections) projections.length = state.entries.length + 1;
       throw error;
     }
   }
 
   rollbackLast(wall: any, eventId: number): void {
-    const entry = this._entries[this._entries.length - 1];
+    const state = _cavityLedgerPrivateState(this);
+    const entry = state.entries[state.entries.length - 1];
     if (!entry || entry.event_id !== eventId) throw new RangeError('cannot roll back a non-tail cavity event');
     for (let i = entry.vertex_deltas.length - 1; i >= 0; i--) {
       const delta = entry.vertex_deltas[i];
@@ -577,9 +635,12 @@ class CavityEvolutionLedger {
       const cell = delta.vertex_index % wall.cells_per_ring;
       wall.rings[ring][cell].wall_depth = delta.old_depth_mm;
     }
-    this._entries.pop();
-    this._signatures.pop();
-    this._signature = this._signatures[this._signatures.length - 1];
+    state.entries.pop();
+    state.signatures.pop();
+    state.signature = state.signatures[state.signatures.length - 1];
+    state.generation++;
+    const projections = CAVITY_LEDGER_DEPTH_PROJECTIONS.get(this);
+    if (projections) projections.length = state.entries.length + 1;
   }
 
   toJSON(): any {
@@ -591,7 +652,7 @@ class CavityEvolutionLedger {
       baseline_kind: this.baseline_kind,
       baseline_disclosure: this.baseline_disclosure,
       baseline_depths_mm: this.baseline_depths_mm,
-      entries: this._entries,
+      entries: _cavityLedgerPrivateState(this).entries,
     });
   }
 }

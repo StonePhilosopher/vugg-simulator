@@ -3,6 +3,7 @@ import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import {
   CHILD_HEAP_LIMIT_MB,
+  DEFAULT_TEST_BATCH_SIZE,
   MAX_BATCH_RSS_BYTES,
   MAX_CONSECUTIVE_RSS_FAILURES,
   collectTestFiles,
@@ -23,6 +24,8 @@ describe('memory-bounded full-test workflow', () => {
     expect(files.every((file) => file.startsWith('tests-js/') && file.endsWith('.test.ts'))).toBe(true);
     expect(partitionTests(files, 5).flat()).toEqual(files);
     expect(partitionTests(files, 5).every((batch) => batch.length <= 5)).toBe(true);
+    expect(DEFAULT_TEST_BATCH_SIZE).toBe(1);
+    expect(partitionTests(files).every((batch) => batch.length === 1)).toBe(true);
   });
 
   it('parses a deterministic sorted-file resume index and rejects unsafe values', () => {
@@ -35,7 +38,7 @@ describe('memory-bounded full-test workflow', () => {
     expect(parseArgs(['--file', 'tests-js/a.test.ts', '--file', 'tests-js/b.test.ts']))
       .toEqual({
         help: false,
-        batchSize: 5,
+        batchSize: 1,
         startIndex: 0,
         selectedFiles: ['tests-js/a.test.ts', 'tests-js/b.test.ts'],
       });

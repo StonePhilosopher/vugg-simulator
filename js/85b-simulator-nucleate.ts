@@ -1125,7 +1125,8 @@ _installLocalizedNucleationEnvelope() {
   // following _assignWallRing honors it. Returns null (→ legacy uniform pick,
   // byte-identical) when off / no supply-feeders. (The 2c.2 column-only bias this
   // supersedes did NOT cluster — a feeder is a 2-D patch, not a thin stripe.)
-  if (fluidSpotsDepositionFor(this) && this._fluidSpots && !this._fluidSpots.isEmpty) {
+  if (fluidSpotsDepositionFor(this) && this._fluidSpots
+      && !_fluidSpotIsEmptyInternal(this._fluidSpots)) {
     const picked = this._feederProximitySample();
     if (picked) {
       this._lastNucVertexRing = picked.ringIdx;
@@ -1156,7 +1157,7 @@ _feederProximitySample() {
   const R = wall.ring_count | 0;
   const N = wall.cells_per_ring | 0;
   if (R < 1 || N < 1) return null;
-  const prox = this._fluidSpots.proximityField(N, R);
+  const prox = _fluidSpotProximityInternal(this._fluidSpots, N, R);
   if (!prox) return null;                         // no open supply-feeders
   const weights = new Float64Array(R * N);
   let total = 0;
@@ -1259,8 +1260,9 @@ _perVertexNucleationSample(mineral) {
   // supply-feeders concentrates nucleation around its vents with the SAME decaying
   // halo the geometry-only _feederProximitySample uses. null (→ no multiply,
   // byte-identical) when the flag is off or there are no open supply-feeders.
-  const prox = (fluidSpotsDepositionFor(this) && this._fluidSpots && !this._fluidSpots.isEmpty)
-    ? this._fluidSpots.proximityField(N, ringCount) : null;
+  const prox = (fluidSpotsDepositionFor(this) && this._fluidSpots
+      && !_fluidSpotIsEmptyInternal(this._fluidSpots))
+    ? _fluidSpotProximityInternal(this._fluidSpots, N, ringCount) : null;
   const weights = new Float64Array(ringCount * N);
   let total = 0;
   const archBias = wall.nucleation_bias || 'uniform';

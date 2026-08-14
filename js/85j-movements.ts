@@ -782,7 +782,7 @@ class MovementController {
     const m = this.movements[i];
     if (typeof m.originCell === 'number') return m.originCell | 0;
     const field = sim && sim._fluidSpots;
-    const open = field && !field.isEmpty ? field.openSpots() : [];
+    const open = field && !_fluidSpotIsEmptyInternal(field) ? field.openSpots() : [];
     if (open && open.length) {
       const ws = sim && sim.wall_state;
       const N = (ws && ws.cells_per_ring) | 0;

@@ -49,6 +49,104 @@
 // Default depth count — boss-firm at 4 slices. Consumers wanting more
 // resolution call sampleFluid() with fractional depth.
 const _CAVITY_VOXEL_DEPTH_COUNT = 4;
+type CavityVoxelGridAuthority = Readonly<{
+  mesh: any;
+  ringCount: number;
+  cellsPerRing: number;
+  depthCount: number;
+  voxelCount: number;
+  publicVoxels: CavityVoxelLike[];
+  voxels: ReadonlyArray<CavityVoxelLike>;
+}>;
+const CAVITY_VOXEL_GRID_AUTHORITY = new WeakMap<object, CavityVoxelGridAuthority>();
+const _bindCavityVoxelGridMeshInternal = (grid: any, mesh: any): void => {
+  const ringCount = Number(grid?.ring_count);
+  const cellsPerRing = Number(grid?.cells_per_ring);
+  const depthCount = Number(grid?.depth_count);
+  if (!Number.isInteger(ringCount) || ringCount < 1
+      || !Number.isInteger(cellsPerRing) || cellsPerRing < 1
+      || !Number.isInteger(depthCount) || depthCount < 1) {
+    throw new Error('cavity voxel grid commissioned dimensions must be positive integers');
+  }
+  const voxelCount = ringCount * cellsPerRing * depthCount;
+  if (!Number.isSafeInteger(voxelCount) || !Array.isArray(grid?.voxels)
+      || grid.voxels.length !== voxelCount) {
+    throw new Error('cavity voxel grid storage does not match its commissioned dimensions');
+  }
+  const exactMesh = mesh || null;
+  const exactVoxels = grid.voxels as CavityVoxelLike[];
+  const existing = CAVITY_VOXEL_GRID_AUTHORITY.get(grid);
+  if (existing && (existing.mesh !== exactMesh
+      || existing.ringCount !== ringCount
+      || existing.cellsPerRing !== cellsPerRing
+      || existing.depthCount !== depthCount
+      || existing.voxelCount !== voxelCount
+      || existing.publicVoxels !== exactVoxels)) {
+    throw new Error('cavity voxel grid construction authority is immutable');
+  }
+  if (existing) {
+    grid._mesh = exactMesh;
+    return;
+  }
+  for (let index = 0; index < voxelCount; index++) {
+    const voxel = exactVoxels[index];
+    const depthIdx = index % depthCount;
+    const cellIdx = Math.floor(index / depthCount) % cellsPerRing;
+    const ringIdx = Math.floor(index / (cellsPerRing * depthCount));
+    if (!voxel || voxel.ringIdx !== ringIdx || voxel.cellIdx !== cellIdx
+        || voxel.depthIdx !== depthIdx) {
+      throw new Error('cavity voxel grid address order does not match its commissioned dimensions');
+    }
+    // Voxel contents remain mutable physical state. Their address never does:
+    // targeted events and transport derive locality from this commissioned
+    // order, not caller-writable metadata.
+    Object.defineProperties(voxel, {
+      ringIdx: { value: ringIdx, enumerable: true, writable: false, configurable: false },
+      cellIdx: { value: cellIdx, enumerable: true, writable: false, configurable: false },
+      depthIdx: { value: depthIdx, enumerable: true, writable: false, configurable: false },
+    });
+  }
+  Object.freeze(exactVoxels);
+  Object.defineProperty(grid, 'voxels', {
+    value: exactVoxels,
+    enumerable: true,
+    writable: false,
+    configurable: false,
+  });
+  const physicalVoxels = Object.freeze(exactVoxels.slice());
+  CAVITY_VOXEL_GRID_AUTHORITY.set(grid, Object.freeze({
+    mesh: exactMesh,
+    ringCount,
+    cellsPerRing,
+    depthCount,
+    voxelCount,
+    publicVoxels: exactVoxels,
+    voxels: physicalVoxels,
+  }));
+  grid._mesh = mesh || null;
+};
+const _cavityVoxelGridAuthorityInternal = (grid: any): CavityVoxelGridAuthority => {
+  const authority = CAVITY_VOXEL_GRID_AUTHORITY.get(grid);
+  if (!authority) {
+    throw new Error('cavity voxel grid has no commissioned construction authority');
+  }
+  if (grid._mesh !== authority.mesh) {
+    throw new Error('cavity voxel grid diagnostic mesh disagrees with its construction authority');
+  }
+  if (grid.ring_count !== authority.ringCount
+      || grid.cells_per_ring !== authority.cellsPerRing
+      || grid.depth_count !== authority.depthCount) {
+    throw new Error('cavity voxel grid dimensions disagree with their construction authority');
+  }
+  if (grid.voxels !== authority.publicVoxels
+      || grid.voxels.length !== authority.voxelCount) {
+    throw new Error('cavity voxel grid storage disagrees with its construction authority');
+  }
+  return authority;
+};
+const _cavityVoxelGridMeshInternal = (grid: any): any => (
+  _cavityVoxelGridAuthorityInternal(grid).mesh
+);
 
 // v160 (Phase 2b) — asymmetric diffusion stepping cadence. The boundary
 // slabs (d=0 wall + d=1 near-wall buffer) diffuse EVERY step; the deep
@@ -182,7 +280,7 @@ class CavityVoxelGrid {
     // Stash the mesh reference so diffuse() can delegate to it (v158
     // implementation). Phase 2 retires this when diffuse goes truly
     // per-voxel.
-    grid.bindMesh(mesh);
+    _bindCavityVoxelGridMeshInternal(grid, mesh);
     return grid;
   }
 
@@ -190,11 +288,12 @@ class CavityVoxelGrid {
 
   // O(1) flat-array index for (r, c, d). Returns -1 if out of range.
   _index(r: number, c: number, d: number): number {
-    if (r < 0 || r >= this.ring_count) return -1;
-    if (c < 0 || c >= this.cells_per_ring) return -1;
-    if (d < 0 || d >= this.depth_count) return -1;
-    return r * this.cells_per_ring * this.depth_count
-         + c * this.depth_count
+    const authority = _cavityVoxelGridAuthorityInternal(this);
+    if (r < 0 || r >= authority.ringCount) return -1;
+    if (c < 0 || c >= authority.cellsPerRing) return -1;
+    if (d < 0 || d >= authority.depthCount) return -1;
+    return r * authority.cellsPerRing * authority.depthCount
+         + c * authority.depthCount
          + d;
   }
 
@@ -203,7 +302,8 @@ class CavityVoxelGrid {
   // Get the voxel at (r, c, d). Returns null if out of range.
   voxelAt(r: number, c: number, d: number): CavityVoxelLike | null {
     const i = this._index(r, c, d);
-    return (i >= 0) ? this.voxels[i] : null;
+    const authority = _cavityVoxelGridAuthorityInternal(this);
+    return (i >= 0) ? authority.voxels[i] : null;
   }
 
   // Get the boundary-layer voxel for wall cell (r, c). Convenience for
@@ -231,7 +331,8 @@ class CavityVoxelGrid {
   // voxel is missing.
   sampleFluid(r: number, c: number, depth: number, field: string): number {
     if (!Number.isFinite(depth)) return NaN;
-    const maxD = this.depth_count - 1;
+    const authority = _cavityVoxelGridAuthorityInternal(this);
+    const maxD = authority.depthCount - 1;
     if (depth < 0) depth = 0;
     if (depth > maxD) depth = maxD;
     const d0 = Math.floor(depth);
@@ -313,12 +414,12 @@ class CavityVoxelGrid {
   _diffuseFull(rate: number, fieldNames: string[]): void {
     if (!(rate > 0)) return;
     if (!fieldNames || !fieldNames.length) return;
-    if (!this.voxels || !this.voxels.length) return;
-
-    const R = this.ring_count;
-    const N = this.cells_per_ring;
-    const D = this.depth_count;
-    const total = R * N * D;
+    const authority = _cavityVoxelGridAuthorityInternal(this);
+    const R = authority.ringCount;
+    const N = authority.cellsPerRing;
+    const D = authority.depthCount;
+    const total = authority.voxelCount;
+    const voxels = authority.voxels;
     const F = fieldNames.length;
 
     // Asymmetric stepping (see _DIFFUSE_DEEP_EVERY). dHi is the deepest
@@ -363,7 +464,7 @@ class CavityVoxelGrid {
       // Skip slabs deeper than this step's dHi (i % D === depthIdx). On
       // shallow steps this skips d=2,d=3 — the bulk of the per-step work.
       if ((i % D) > dHi) continue;
-      const fluid = this.voxels[i].fluid;
+      const fluid = voxels[i].fluid;
       if (!fluid) continue;
       const base = i * F;
       for (let k = 0; k < F; k++) {
@@ -410,7 +511,7 @@ class CavityVoxelGrid {
         const cBase = rBase + c * D;
         for (let d = 0; d <= dHi; d++) {
           const i = cBase + d;
-          const fluid = this.voxels[i].fluid;
+          const fluid = voxels[i].fluid;
           if (!fluid) continue;
           const selfBase = i * F;
 
@@ -506,8 +607,8 @@ class CavityVoxelGrid {
     target: string = 'all',
     replaceFields: string[] = [],
   ): void {
-    if (!this.voxels || !this.voxels.length) return;
     if (!preFluid || !fieldNames || !fieldNames.length) return;
+    const authority = _cavityVoxelGridAuthorityInternal(this);
 
     // Pre-compute per-field deltas; ignore unchanged fields.
     const deltas: number[] = [];
@@ -530,26 +631,29 @@ class CavityVoxelGrid {
     // semantics. Unknown spatial targets fail closed: silently treating a
     // misspelled or unimplemented target as `all` would turn a localized
     // geochemical boundary into a cavity-wide fluid replacement.
-    const total = this.voxels.length;
-    const R = this.ring_count;
-    const D = this.depth_count;
-    const N = this.cells_per_ring;
+    const total = authority.voxelCount;
+    const R = authority.ringCount;
+    const D = authority.depthCount;
+    const N = authority.cellsPerRing;
+    const voxels = authority.voxels;
     for (let i = 0; i < total; i++) {
-      const v = this.voxels[i];
+      const v = voxels[i];
       if (!v || !v.fluid) continue;
+      const depthIdx = i % D;
+      const ringIdx = Math.floor(i / (N * D));
       let hit = false;
       switch (target) {
         case 'all':
           hit = true;
           break;
         case 'boundary':
-          hit = (v.depthIdx === 0);
+          hit = (depthIdx === 0);
           break;
         case 'top':
-          hit = (v.ringIdx === R - 1);
+          hit = (ringIdx === R - 1);
           break;
         case 'bottom':
-          hit = (v.ringIdx === 0);
+          hit = (ringIdx === 0);
           break;
         default:
           hit = false;
@@ -586,6 +690,8 @@ class CavityVoxelGrid {
   // tests and probes occasionally need the underlying mesh handle).
   // Set once at construction by fromWallState.
   bindMesh(mesh: any): void {
+    // Compatibility/diagnostic handle only. Construction authority is bound by
+    // fromWallState through an inaccessible lexical capability.
     this._mesh = mesh;
   }
 }

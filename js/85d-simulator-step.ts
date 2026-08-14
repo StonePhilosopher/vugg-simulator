@@ -104,7 +104,8 @@ Object.assign(VugSimulator.prototype, {
       // uplift / aquifer recharge breaches them back open. Every coupling
       // (2b erosion, 2c.1 origin, 2c.2b clustering) filters on spot.open, so this
       // flip propagates for free. No directive / no spots → no-op (byte-identical).
-      if (event.spots && this._fluidSpots && !this._fluidSpots.isEmpty) {
+      if (event.spots && this._fluidSpots
+          && !_fluidSpotIsEmptyInternal(this._fluidSpots)) {
         const dir = (typeof event.spots === 'string') ? { action: event.spots } : event.spots;
         const pred = dir.kind != null ? dir.kind : undefined;
         const toggled = dir.action === 'breach'

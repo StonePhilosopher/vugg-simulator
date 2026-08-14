@@ -10,6 +10,22 @@
 
 const CAVITY_SURFACE_ANCHOR_ACCESS = Object.freeze({});
 let cavitySurfaceAnchorTopologyInternal: (surface: CavitySurfaceBuffers) => any;
+let cavityFieldVolumeInternal: (field: CavityScalarField, isovalue: number) => any;
+// Float32 samples whose signed magnitude is below spacing/4096 are an
+// ill-conditioned representation of a grid-scale zero crossing. Push them to
+// that minimum magnitude without changing sign. This is one coherent scalar
+// field in every incident tetrahedron, keeps sub-voxel caps representable after
+// Float32 position packing, and is identical in the full and volume-only
+// evaluators. The independent agreement receipt bounds the actual displacement;
+// true exact-zero critical contacts still fail closed below.
+const CAVITY_NEAR_ZERO_SCALAR_FLOOR_FRACTION = 1 / 4096;
+const _cavityRegularizedScalar = (value: number, isovalue: number,
+                                  spacingMm: number): number => {
+  const delta = value - isovalue;
+  const floor = spacingMm * CAVITY_NEAR_ZERO_SCALAR_FLOOR_FRACTION;
+  if (Math.abs(delta) >= floor) return value;
+  return isovalue + (delta >= 0 ? floor : -floor);
+};
 
 class MarchingCubesExtractor {
   // TypedArray payloads cannot be frozen in JavaScript. Keep their owned targets
@@ -329,7 +345,14 @@ class MarchingCubesExtractor {
     // renderer, replay, and receipts. Re-sampling rounded world coordinates can
     // leave a few scalar micrometres of residual even when the unrounded
     // tetrahedral point is algebraically on the zero plane.
-    const zeroTolerance = Math.max(1e-6, field.spacingMm * 2e-5);
+    // Float32 packing and the model-versioned near-zero scalar floor are both
+    // part of the authoritative surface. Twice the lift is the authenticated
+    // numerical-zero envelope; the measured residual is separately receipted
+    // and must remain inside it.
+    const zeroTolerance = Math.max(
+      1e-6,
+      field.spacingMm * CAVITY_NEAR_ZERO_SCALAR_FLOOR_FRACTION * 2,
+    );
     const maxSearchDistance = field.spacingMm * 1.5;
     const searchSteps = 24;
     let sampleCount = 0;
@@ -439,6 +462,168 @@ class MarchingCubesExtractor {
     });
   }
 
+  // Lean transaction-root evaluator. It traverses the identical Freudenthal
+  // tetrahedra as `extract`, applies the same simulation-of-simplicity sign
+  // rule, segment interpolation, deterministic two-two split, double-precision
+  // degeneracy threshold, and Float32 coordinate packing. It deliberately
+  // omits vertex maps, manifold adjacency, normals, UVs, colors, and buffers;
+  // those are built once for the accepted state. Local field-side orientation
+  // makes the signed tetrahedron sum equal to the final consistently oriented
+  // closed surface while avoiding a topology graph for rejected candidates.
+  static _volumeOnlyForField(field: CavityScalarField, isovalue = 0): any {
+    if (!(field instanceof CavityScalarField)) {
+      throw new TypeError('Cartesian volume evaluation requires a CavityScalarField');
+    }
+    if (!Number.isFinite(isovalue)) throw new TypeError('Cartesian isovalue must be finite');
+    if (!field.hasNegativeBorder(isovalue)) {
+      throw new RangeError('Cartesian volume evaluation requires a negative field border');
+    }
+    const fieldValues = cavityFieldExtractorValuesInternal(field);
+    const strideY = field.sizeX;
+    const strideZ = field.sizeX * field.sizeY;
+    const gridVertexCount = field.sizeX * field.sizeY * field.sizeZ;
+    const cornerValues = new Float64Array(8);
+    const insideCorners = new Int8Array(4);
+    const outsideCorners = new Int8Array(4);
+    const pointA = new Float64Array(7);
+    const pointB = new Float64Array(7);
+    const pointC = new Float64Array(7);
+    const pointD = new Float64Array(7);
+    let signedSixVolume = 0;
+    let triangleCount = 0;
+
+    const pointForSegment = (out: Float64Array, cellX: number, cellY: number,
+                             cellZ: number, cornerA: number, cornerB: number): void => {
+      const ca = MarchingCubesExtractor.CORNERS[cornerA];
+      const cb = MarchingCubesExtractor.CORNERS[cornerB];
+      const ax = cellX + ca[0], ay = cellY + ca[1], az = cellZ + ca[2];
+      const bx = cellX + cb[0], by = cellY + cb[1], bz = cellZ + cb[2];
+      const gridA = field.index(ax, ay, az);
+      const gridB = field.index(bx, by, bz);
+      const rawValueA = cornerValues[cornerA];
+      const rawValueB = cornerValues[cornerB];
+      const valueA = _cavityRegularizedScalar(rawValueA, isovalue, field.spacingMm);
+      const valueB = _cavityRegularizedScalar(rawValueB, isovalue, field.spacingMm);
+      const lowGrid = Math.min(gridA, gridB);
+      const highGrid = Math.max(gridA, gridB);
+      out[6] = gridVertexCount + lowGrid * gridVertexCount + highGrid;
+      const denominator = valueB - valueA;
+      if (!Number.isFinite(denominator) || denominator === 0) {
+        throw new Error(`invalid Cartesian volume interpolation on ${out[6]}`);
+      }
+      const t = Math.max(0, Math.min(1, (isovalue - valueA) / denominator));
+      const gx = cellX + ca[0] + (cb[0] - ca[0]) * t;
+      const gy = cellY + ca[1] + (cb[1] - ca[1]) * t;
+      const gz = cellZ + ca[2] + (cb[2] - ca[2]) * t;
+      out[0] = field.origin[0] + gx * field.spacingMm;
+      out[1] = field.origin[1] + gy * field.spacingMm;
+      out[2] = field.origin[2] + gz * field.spacingMm;
+      if (!Number.isFinite(out[0]) || !Number.isFinite(out[1])
+          || !Number.isFinite(out[2])) {
+        throw new Error(`non-finite Cartesian volume vertex on ${out[6]}`);
+      }
+      out[3] = Math.fround(out[0]);
+      out[4] = Math.fround(out[1]);
+      out[5] = Math.fround(out[2]);
+    };
+
+    const addTriangle = (a: Float64Array, b: Float64Array, c: Float64Array,
+                         insideX: number, insideY: number, insideZ: number): void => {
+      if (a[6] === b[6] || b[6] === c[6] || c[6] === a[6]) return;
+      const abx = b[0] - a[0], aby = b[1] - a[1], abz = b[2] - a[2];
+      const acx = c[0] - a[0], acy = c[1] - a[1], acz = c[2] - a[2];
+      const crossX = aby * acz - abz * acy;
+      const crossY = abz * acx - abx * acz;
+      const crossZ = abx * acy - aby * acx;
+      const area2 = Math.hypot(crossX, crossY, crossZ);
+      if (!(area2 > Number.EPSILON * field.spacingMm * field.spacingMm * 64)) return;
+      // Positive field values are the cavity interior. The production
+      // extractor ultimately orients every closed component outward, so flip
+      // a locally inward triangle before integrating its packed coordinates.
+      const inward = crossX * (insideX - a[0])
+        + crossY * (insideY - a[1]) + crossZ * (insideZ - a[2]) > 0;
+      const q = inward ? c : b;
+      const r = inward ? b : c;
+      signedSixVolume += a[3] * (q[4] * r[5] - q[5] * r[4])
+        + a[4] * (q[5] * r[3] - q[3] * r[5])
+        + a[5] * (q[3] * r[4] - q[4] * r[3]);
+      triangleCount++;
+    };
+
+    for (let z = 0; z < field.sizeZ - 1; z++) {
+      const zBase = z * strideZ;
+      for (let y = 0; y < field.sizeY - 1; y++) {
+        let base = zBase + y * strideY;
+        for (let x = 0; x < field.sizeX - 1; x++, base++) {
+          cornerValues[0] = fieldValues[base];
+          cornerValues[1] = fieldValues[base + 1];
+          cornerValues[2] = fieldValues[base + strideY + 1];
+          cornerValues[3] = fieldValues[base + strideY];
+          cornerValues[4] = fieldValues[base + strideZ];
+          cornerValues[5] = fieldValues[base + strideZ + 1];
+          cornerValues[6] = fieldValues[base + strideZ + strideY + 1];
+          cornerValues[7] = fieldValues[base + strideZ + strideY];
+          let cubeMask = 0;
+          for (let corner = 0; corner < 8; corner++) {
+            if (cornerValues[corner] >= isovalue) cubeMask |= 1 << corner;
+          }
+          if (cubeMask === 0 || cubeMask === 255) continue;
+          for (const tetrahedron of MarchingCubesExtractor.TETRAHEDRA) {
+            let insideCount = 0;
+            let outsideCount = 0;
+            let insideGridX = 0, insideGridY = 0, insideGridZ = 0;
+            for (let tetraCorner = 0; tetraCorner < 4; tetraCorner++) {
+              const corner = tetrahedron[tetraCorner];
+              if (cubeMask & (1 << corner)) {
+                insideCorners[insideCount++] = corner;
+                const coordinate = MarchingCubesExtractor.CORNERS[corner];
+                insideGridX += x + coordinate[0];
+                insideGridY += y + coordinate[1];
+                insideGridZ += z + coordinate[2];
+              } else outsideCorners[outsideCount++] = corner;
+            }
+            if (insideCount === 0 || insideCount === 4) continue;
+            const insideX = field.origin[0]
+              + (insideGridX / insideCount) * field.spacingMm;
+            const insideY = field.origin[1]
+              + (insideGridY / insideCount) * field.spacingMm;
+            const insideZ = field.origin[2]
+              + (insideGridZ / insideCount) * field.spacingMm;
+            if (insideCount === 1) {
+              const center = insideCorners[0];
+              pointForSegment(pointA, x, y, z, center, outsideCorners[0]);
+              pointForSegment(pointB, x, y, z, center, outsideCorners[1]);
+              pointForSegment(pointC, x, y, z, center, outsideCorners[2]);
+              addTriangle(pointA, pointB, pointC, insideX, insideY, insideZ);
+            } else if (insideCount === 3) {
+              const center = outsideCorners[0];
+              pointForSegment(pointA, x, y, z, center, insideCorners[0]);
+              pointForSegment(pointB, x, y, z, center, insideCorners[1]);
+              pointForSegment(pointC, x, y, z, center, insideCorners[2]);
+              addTriangle(pointA, pointB, pointC, insideX, insideY, insideZ);
+            } else {
+              pointForSegment(pointA, x, y, z, insideCorners[0], outsideCorners[0]);
+              pointForSegment(pointB, x, y, z, insideCorners[0], outsideCorners[1]);
+              pointForSegment(pointC, x, y, z, insideCorners[1], outsideCorners[0]);
+              pointForSegment(pointD, x, y, z, insideCorners[1], outsideCorners[1]);
+              addTriangle(pointA, pointB, pointD, insideX, insideY, insideZ);
+              addTriangle(pointA, pointD, pointC, insideX, insideY, insideZ);
+            }
+          }
+        }
+      }
+    }
+    const volume = Math.abs(signedSixVolume) / 6;
+    if (!(volume > 0) || !Number.isFinite(volume) || triangleCount < 4) {
+      throw new RangeError('Cartesian volume-only surface is empty or invalid');
+    }
+    return Object.freeze({ volume_mm3: volume, triangle_count: triangleCount });
+  }
+
+  static closedVolumeForField(field: CavityScalarField, isovalue = 0): number {
+    return cavityFieldVolumeInternal(field, isovalue).volume_mm3;
+  }
+
   static extract(field: CavityScalarField, isovalue = 0): CavitySurfaceBuffers {
     if (!(field instanceof CavityScalarField)) {
       throw new TypeError('MarchingCubesExtractor.extract requires a CavityScalarField');
@@ -471,6 +656,9 @@ class MarchingCubesExtractor {
       return grown;
     };
     const vertexByGridEdge = new Map<number, number>();
+    const discardedDegenerateTriangles: Array<{
+      a: number; b: number; c: number; area2: number;
+    }> = [];
     const fieldValues = cavityFieldExtractorValuesInternal(field);
     const strideY = field.sizeX;
     const strideZ = field.sizeX * field.sizeY;
@@ -484,6 +672,24 @@ class MarchingCubesExtractor {
       (field.bounds.min[1] + field.bounds.max[1]) * 0.5,
       (field.bounds.min[2] + field.bounds.max[2]) * 0.5,
     ];
+    let nearZeroRegularizedVertexCount = 0;
+
+    // A zero-gradient exact-zero sample is a genuine critical contact, not a
+    // regular wall crossing. Regularizing it would invent a microscopic neck
+    // between tangent components, so detect and reject it before polygonizing.
+    for (let z = 1; z < field.sizeZ - 1; z++) {
+      for (let y = 1; y < field.sizeY - 1; y++) {
+        for (let x = 1; x < field.sizeX - 1; x++) {
+          if (fieldValues[field.index(x, y, z)] !== isovalue) continue;
+          const world = field.worldPosition(x, y, z);
+          const gradient = field.gradientWorld(world[0], world[1], world[2]);
+          const length = Math.hypot(gradient[0], gradient[1], gradient[2]);
+          if (!(length > 1e-10) || !Number.isFinite(length)) {
+            throw new Error(`Cartesian exact-zero critical point at ${x}:${y}:${z} has no unique physical surface normal`);
+          }
+        }
+      }
+    }
 
     const vertexForSegment = (cellX: number, cellY: number, cellZ: number,
                               cornerA: number, cornerB: number,
@@ -494,24 +700,21 @@ class MarchingCubesExtractor {
       const bx = cellX + cb[0], by = cellY + cb[1], bz = cellZ + cb[2];
       const gridA = field.index(ax, ay, az);
       const gridB = field.index(bx, by, bz);
-      const valueA = cornerValues[cornerA];
-      const valueB = cornerValues[cornerB];
-      // A root exactly on a grid sample belongs to every incident segment.
-      // Canonicalize that endpoint as one vertex rather than minting duplicate
-      // segment vertices that would make an otherwise closed surface non-manifold.
-      const endpointRoot = valueA === isovalue ? gridA : valueB === isovalue ? gridB : -1;
+      const rawValueA = cornerValues[cornerA];
+      const rawValueB = cornerValues[cornerB];
+      const valueA = _cavityRegularizedScalar(rawValueA, isovalue, field.spacingMm);
+      const valueB = _cavityRegularizedScalar(rawValueB, isovalue, field.spacingMm);
       const lowGrid = Math.min(gridA, gridB);
       const highGrid = Math.max(gridA, gridB);
-      const key = endpointRoot >= 0 ? endpointRoot
-        : gridVertexCount + lowGrid * gridVertexCount + highGrid;
+      const key = gridVertexCount + lowGrid * gridVertexCount + highGrid;
       const cached = vertexByGridEdge.get(key);
       if (cached != null) return cached;
       const denominator = valueB - valueA;
       if (!Number.isFinite(denominator) || denominator === 0) {
         throw new Error(`invalid Cartesian isosurface interpolation on ${key}`);
       }
-      const t = endpointRoot === gridA ? 0 : endpointRoot === gridB ? 1
-        : Math.max(0, Math.min(1, (isovalue - valueA) / denominator));
+      const t = Math.max(0, Math.min(1, (isovalue - valueA) / denominator));
+      if (valueA !== rawValueA || valueB !== rawValueB) nearZeroRegularizedVertexCount++;
       // Every segment is an edge of one Freudenthal tetrahedron. The field is
       // linear on that tetrahedron, so this secant is the authoritative root.
       const gx = cellX + ca[0] + (cb[0] - ca[0]) * t;
@@ -556,7 +759,10 @@ class MarchingCubesExtractor {
       // opened pinholes at large world scales. Reject only facets that are
       // indistinguishable from zero at double precision; Float32 collapse is
       // independently caught by the final face and manifold verification.
-      if (!(area2 > Number.EPSILON * field.spacingMm * field.spacingMm * 64)) return;
+      if (!(area2 > Number.EPSILON * field.spacingMm * field.spacingMm * 64)) {
+        discardedDegenerateTriangles.push({ a, b, c, area2 });
+        return;
+      }
       indices = growUint32(indices, indexLength + 3);
       indices[indexLength++] = a;
       indices[indexLength++] = b;
@@ -656,6 +862,9 @@ class MarchingCubesExtractor {
       neighborTriangles.fill(-1);
       const neighborInverts = new Uint8Array(triangleCount * 3);
       const neighborCounts = new Uint8Array(triangleCount);
+      const firstIncidentTriangle = new Int32Array(vertexCount);
+      firstIncidentTriangle.fill(-1);
+      const incidentTriangleCounts = new Uint32Array(vertexCount);
       const connect = (a: number, b: number, invert: boolean): void => {
         const aSlot = neighborCounts[a]++;
         const bSlot = neighborCounts[b]++;
@@ -669,12 +878,20 @@ class MarchingCubesExtractor {
       };
       for (let i = 0; i < indexLength; i += 3) {
         const triangle = i / 3;
+        const a = indices[i], b = indices[i + 1], c = indices[i + 2];
+        if (a === b || b === c || c === a) {
+          throw new Error(`non-manifold Cartesian surface triangle ${triangle} repeats a vertex`);
+        }
+        for (const vertex of [a, b, c]) {
+          if (firstIncidentTriangle[vertex] < 0) firstIncidentTriangle[vertex] = triangle;
+          incidentTriangleCounts[vertex]++;
+        }
         for (let edge = 0; edge < 3; edge++) {
-          const a = indices[i + edge];
-          const b = indices[i + ((edge + 1) % 3)];
-          const low = Math.min(a, b), high = Math.max(a, b);
+          const edgeA = indices[i + edge];
+          const edgeB = indices[i + ((edge + 1) % 3)];
+          const low = Math.min(edgeA, edgeB), high = Math.max(edgeA, edgeB);
           const key = low * vertexCount + high;
-          const direction = a < b ? 1 : -1;
+          const direction = edgeA < edgeB ? 1 : -1;
           const prior = edgeUses.get(key);
           if (prior == null) {
             edgeUses.set(key, direction * (triangle + 1));
@@ -691,7 +908,53 @@ class MarchingCubesExtractor {
       for (const [key, use] of edgeUses) {
         if (use !== 0) {
           const low = Math.floor(key / vertexCount), high = key % vertexCount;
-          throw new Error(`non-manifold Cartesian surface edge ${low}:${high} has one incident triangle`);
+          const discarded = discardedDegenerateTriangles.filter(triangle =>
+            (triangle.a === low || triangle.b === low || triangle.c === low)
+            && (triangle.a === high || triangle.b === high || triangle.c === high));
+          const gridEdgeForVertex = (target: number): number | null => {
+            for (const [gridEdge, vertex] of vertexByGridEdge) {
+              if (vertex === target) return gridEdge;
+            }
+            return null;
+          };
+          const detail = discarded.length ? `; discarded incident facets ${discarded.map(triangle =>
+            `${triangle.a}:${triangle.b}:${triangle.c}@area2=${triangle.area2}`
+            + `@gridEdges=${gridEdgeForVertex(triangle.a)},${gridEdgeForVertex(triangle.b)},${gridEdgeForVertex(triangle.c)}`
+          ).join('|')}` : '';
+          throw new Error(`non-manifold Cartesian surface edge ${low}:${high} has one incident triangle${detail}`);
+        }
+      }
+
+      // Edge incidence alone is insufficient for a two-manifold: two closed
+      // sheets may touch at one vertex while every edge still has exactly two
+      // incident faces. Authenticate that every referenced vertex has one
+      // connected edge-linked fan. Across all vertices this visits only the
+      // three triangle incidences and their bounded neighbor slots.
+      const visitStamp = new Uint32Array(triangleCount);
+      for (let vertex = 0; vertex < vertexCount; vertex++) {
+        const expected = incidentTriangleCounts[vertex];
+        if (!expected) continue;
+        const stamp = vertex + 1;
+        const queue = [firstIncidentTriangle[vertex]];
+        visitStamp[queue[0]] = stamp;
+        let visited = 0;
+        while (queue.length) {
+          const triangle = queue.pop()!;
+          visited++;
+          const base = triangle * 3;
+          for (let slot = 0; slot < neighborCounts[triangle]; slot++) {
+            const neighbor = neighborTriangles[base + slot];
+            if (visitStamp[neighbor] === stamp) continue;
+            const neighborOffset = neighbor * 3;
+            if (indices[neighborOffset] !== vertex
+                && indices[neighborOffset + 1] !== vertex
+                && indices[neighborOffset + 2] !== vertex) continue;
+            visitStamp[neighbor] = stamp;
+            queue.push(neighbor);
+          }
+        }
+        if (visited !== expected) {
+          throw new Error(`non-manifold Cartesian surface vertex ${vertex} has a disconnected link`);
         }
       }
 
@@ -758,11 +1021,45 @@ class MarchingCubesExtractor {
     const manifoldMs = CavityScalarField._nowMs() - manifoldStarted;
     const normalMaterialStarted = CavityScalarField._nowMs();
 
+    // Segment roots can be minted before a locally ambiguous tetrahedral face
+    // is rejected from the final triangle loops. Such roots are not geometry:
+    // compact every unreferenced vertex before normals, buffers, and receipts.
+    // This preserves triangle order/adjacency while ensuring each published
+    // position has an incident authenticated face.
+    const preCompactionVertexCount = positionLength / 3;
+    const usedVertices = new Uint8Array(preCompactionVertexCount);
+    for (let offset = 0; offset < indexLength; offset++) usedVertices[indices[offset]] = 1;
+    const remap = new Int32Array(preCompactionVertexCount);
+    remap.fill(-1);
+    let compactVertexCount = 0;
+    for (let vertex = 0; vertex < preCompactionVertexCount; vertex++) {
+      if (!usedVertices[vertex]) continue;
+      remap[vertex] = compactVertexCount;
+      if (compactVertexCount !== vertex) {
+        positions[compactVertexCount * 3] = positions[vertex * 3];
+        positions[compactVertexCount * 3 + 1] = positions[vertex * 3 + 1];
+        positions[compactVertexCount * 3 + 2] = positions[vertex * 3 + 2];
+        uvs[compactVertexCount * 2] = uvs[vertex * 2];
+        uvs[compactVertexCount * 2 + 1] = uvs[vertex * 2 + 1];
+      }
+      compactVertexCount++;
+    }
+    for (let offset = 0; offset < indexLength; offset++) {
+      const compact = remap[indices[offset]];
+      if (compact < 0) throw new Error('Cartesian triangle references an unused vertex');
+      indices[offset] = compact;
+    }
+    const discardedVertexCount = preCompactionVertexCount - compactVertexCount;
+    positionLength = compactVertexCount * 3;
+    uvLength = compactVertexCount * 2;
+
     // One topology-derived smooth-normal pass after final winding. This is
     // equivalent to standard indexed-mesh normal generation and avoids six
     // scalar samples per vertex plus multiple field probes per triangle.
     const normals = new Float64Array(positionLength);
     const colors = new Float64Array(positionLength);
+    let gradientNormalCount = 0;
+    let creaseNormalCount = 0;
     for (let offset = 0; offset < indexLength; offset += 3) {
       const a = indices[offset], b = indices[offset + 1], c = indices[offset + 2];
       const ax = positions[a * 3], ay = positions[a * 3 + 1], az = positions[a * 3 + 2];
@@ -783,9 +1080,81 @@ class MarchingCubesExtractor {
     }
     for (let vertex = 0; vertex < positionLength / 3; vertex++) {
       const offset = vertex * 3;
-      const length = Math.hypot(normals[offset], normals[offset + 1], normals[offset + 2]);
+      let length = Math.hypot(normals[offset], normals[offset + 1], normals[offset + 2]);
       if (!(length > 1e-12) || !Number.isFinite(length)) {
-        throw new Error(`undefined Cartesian isosurface normal at vertex ${vertex}`);
+        // At a legitimate symmetric saddle, consistently wound incident-face
+        // normals may cancel. Prefer the implicit gradient; if the sphere-union
+        // max field is non-differentiable at a genuine crease, validate that
+        // the vertex link is one connected fan and use its lowest-index face.
+        // Two tangent components have disconnected fans and remain rejected.
+        const x = positions[offset], y = positions[offset + 1], z = positions[offset + 2];
+        const gradient = field.gradientWorld(x, y, z);
+        const gradientLength = Math.hypot(gradient[0], gradient[1], gradient[2]);
+        const incidentTriangles: number[] = [];
+        let faceNormal: [number, number, number] | null = null;
+        let faceLength = 0;
+        for (let triangleOffset = 0; triangleOffset < indexLength; triangleOffset += 3) {
+          const a = indices[triangleOffset];
+          const b = indices[triangleOffset + 1];
+          const c = indices[triangleOffset + 2];
+          if (a !== vertex && b !== vertex && c !== vertex) continue;
+          incidentTriangles.push(triangleOffset / 3);
+          if (faceNormal) continue;
+          const ax = positions[a * 3], ay = positions[a * 3 + 1], az = positions[a * 3 + 2];
+          const abx = positions[b * 3] - ax;
+          const aby = positions[b * 3 + 1] - ay;
+          const abz = positions[b * 3 + 2] - az;
+          const acx = positions[c * 3] - ax;
+          const acy = positions[c * 3 + 1] - ay;
+          const acz = positions[c * 3 + 2] - az;
+          const nx = aby * acz - abz * acy;
+          const ny = abz * acx - abx * acz;
+          const nz = abx * acy - aby * acx;
+          const candidateLength = Math.hypot(nx, ny, nz);
+          const minimumFacetArea2 = Number.EPSILON
+            * field.spacingMm * field.spacingMm * 64;
+          if (!(candidateLength > minimumFacetArea2)
+              || !Number.isFinite(candidateLength)) continue;
+          faceNormal = [nx, ny, nz];
+          faceLength = candidateLength;
+        }
+        if (!faceNormal || !incidentTriangles.length) {
+          throw new Error(`undefined Cartesian isosurface normal at vertex ${vertex}: no incident non-degenerate face`);
+        }
+        if (gradientLength > 1e-12 && Number.isFinite(gradientLength)) {
+          const orientation = gradient[0] * faceNormal[0]
+            + gradient[1] * faceNormal[1] + gradient[2] * faceNormal[2] >= 0 ? 1 : -1;
+          normals[offset] = gradient[0] * orientation;
+          normals[offset + 1] = gradient[1] * orientation;
+          normals[offset + 2] = gradient[2] * orientation;
+          length = gradientLength;
+          gradientNormalCount++;
+        } else {
+          if (!authenticatedNeighborTriangles || !authenticatedNeighborCounts) {
+            throw new Error(`undefined Cartesian isosurface normal at vertex ${vertex}: no authenticated vertex link`);
+          }
+          const incident = new Set(incidentTriangles);
+          const visited = new Set<number>();
+          const queue = [incidentTriangles[0]];
+          while (queue.length) {
+            const triangle = queue.pop()!;
+            if (visited.has(triangle)) continue;
+            visited.add(triangle);
+            const base = triangle * 3;
+            for (let slot = 0; slot < authenticatedNeighborCounts[triangle]; slot++) {
+              const neighbor = authenticatedNeighborTriangles[base + slot];
+              if (incident.has(neighbor) && !visited.has(neighbor)) queue.push(neighbor);
+            }
+          }
+          if (visited.size !== incidentTriangles.length) {
+            throw new Error(`Cartesian critical point has a disconnected vertex link at ${vertex}`);
+          }
+          normals[offset] = faceNormal[0];
+          normals[offset + 1] = faceNormal[1];
+          normals[offset + 2] = faceNormal[2];
+          length = faceLength;
+          creaseNormalCount++;
+        }
       }
       normals[offset] /= length;
       normals[offset + 1] /= length;
@@ -835,6 +1204,11 @@ class MarchingCubesExtractor {
         polygonize_ms: polygonizeMs,
         manifold_ms: manifoldMs,
         normal_material_ms: normalMaterialMs,
+        discarded_unreferenced_vertex_count: discardedVertexCount,
+        near_zero_regularized_vertex_count: nearZeroRegularizedVertexCount,
+        near_zero_scalar_floor_fraction: CAVITY_NEAR_ZERO_SCALAR_FLOOR_FRACTION,
+        gradient_resolved_normal_count: gradientNormalCount,
+        crease_resolved_normal_count: creaseNormalCount,
         packing_authentication_ms: packingAuthenticationMs,
         packing_ms: packingMs,
         buffer_authentication_ms: bufferAuthenticationMs,
@@ -869,8 +1243,12 @@ class MarchingCubesExtractor {
   // replaceable static method carrying the capability.
   static {
     const anchorTopologyImplementation = this._anchorTopologyData;
+    const volumeImplementation = this._volumeOnlyForField;
     cavitySurfaceAnchorTopologyInternal = (surface: CavitySurfaceBuffers) =>
       anchorTopologyImplementation.call(this, surface, CAVITY_SURFACE_ANCHOR_ACCESS);
+    cavityFieldVolumeInternal = (field: CavityScalarField, isovalue: number) =>
+      volumeImplementation.call(this, field, isovalue);
     delete (this as any)._anchorTopologyData;
+    delete (this as any)._volumeOnlyForField;
   }
 }

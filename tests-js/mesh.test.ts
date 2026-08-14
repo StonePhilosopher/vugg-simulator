@@ -21,6 +21,7 @@ declare const FluidChemistry: any;
 declare const VugWall: any;
 declare const WallState: any;
 declare const WallMesh: any;
+declare const CavitySurfaceAnchors: any;
 
 describe('cavity-mesh Phase 2 — WallMesh builds + recomputes correctly', () => {
   it('default tessellation has ring_count × cells_per_ring + 2 vertices', () => {
@@ -87,7 +88,7 @@ describe('cavity-mesh Phase 2 — WallMesh builds + recomputes correctly', () =>
 
   it('invalidates exact geometry when any wall cell changes, including formerly unsampled cells', () => {
     const wall = new WallState({ cells_per_ring: 48, ring_count: 12 });
-    const meshA = WallMesh.fromWallState(wall);
+    const meshA = wall.meshFor();
     const sigA = meshA.sig;
     const revisionA = wall._geometry_revision;
     expect(sigA).toContain(`rev:${revisionA}`);
@@ -103,7 +104,7 @@ describe('cavity-mesh Phase 2 — WallMesh builds + recomputes correctly', () =>
     // Cell 1 was outside the old eight-cells-per-ring checksum.
     wall.rings[3][1].wall_depth += 4.0;
     expect(wall._geometry_revision).toBe(revisionA + 1);
-    meshA.recomputeIfStale(wall);
+    expect(wall.meshFor()).toBe(meshA);
     const sigB = meshA.sig;
     expect(sigB).not.toBe(sigA);
     expect(meshA.surfaceAreaMm2()).not.toBeCloseTo(beforeArea, 8);
@@ -116,12 +117,15 @@ describe('cavity-mesh Phase 2 — WallMesh builds + recomputes correctly', () =>
     expect(meshA.sig).toBe(sigB);
   });
 
-  it('recomputeIfStale is a no-op when the wall is unchanged', () => {
+  it('keeps the authenticated rebuild bridge private and is a no-op when unchanged', () => {
     const wall = new WallState({ cells_per_ring: 120, ring_count: 16 });
-    const mesh = WallMesh.fromWallState(wall);
+    const mesh = wall.meshFor();
     const sig0 = mesh.sig;
     const firstX = mesh.positions[0];
-    expect(mesh.recomputeIfStale(wall)).toBe(false);
+    expect((Object.getPrototypeOf(mesh) as any)._recomputeSurfaceMetrics).toBeUndefined();
+    expect((Object.getPrototypeOf(mesh) as any).recompute).toBeUndefined();
+    expect((Object.getPrototypeOf(mesh) as any).recomputeIfStale).toBeUndefined();
+    expect(wall.meshFor()).toBe(mesh);
     expect(mesh.sig).toBe(sig0);
     expect(mesh.positions[0]).toBe(firstX);
   });
@@ -194,6 +198,102 @@ describe('cavity-mesh Phase 2 — WallMesh builds + recomputes correctly', () =>
       expect(Math.hypot(p.nx, p.ny, p.nz)).toBeCloseTo(1, 10);
       expect(p.x * p.nx + p.y * p.ny + p.z * p.nz).toBeLessThan(0);
     }
+  });
+
+  it('keeps physical surface caches private from diagnostic-copy poisoning', () => {
+    const wall = new WallState({
+      cells_per_ring: 48, ring_count: 12, vug_diameter_mm: 70,
+      primary_bubbles: 4, secondary_bubbles: 8, shape_seed: 2718,
+    });
+    const mesh = wall.meshFor();
+    const ringIdx = 6, cellIdx = 7, vertex = ringIdx * mesh.cellsPerRing + cellIdx;
+    const baselineZone = wall.surfaceZoneAtVertex(ringIdx, cellIdx);
+    const baselineVolume = wall._cellCavityVolAtVertexMm3(vertex);
+    const baselineArea = wall.surfaceAreaMm2();
+    const baselineAnchor = CavitySurfaceAnchors.fromWallMeshVertex(mesh, vertex);
+    const baselinePatch = mesh.sampleSurfacePatch([1, 0, 0], 24, 0.12, 77);
+    const baselinePatchJson = JSON.stringify(baselinePatch);
+    let bridgeIntercepted = 0;
+    const bridgeNames = [
+      '_wallMeshSurfaceStateInternal', '_wallMeshCellSurfaceAreasInternal',
+      '_wallMeshTopologyInternal',
+      '_wallMeshSurfaceAreaInternal', '_wallMeshCellSurfaceAreaInternal',
+      '_wallMeshVoidNormalInternal', '_wallMeshIncidentTriangleInternal',
+      '_wallMeshThermalGeometryInternal', '_resetWallMeshGeodesicState',
+    ];
+    for (const name of bridgeNames) {
+      (globalThis as any)[name] = () => { bridgeIntercepted++; return null; };
+    }
+
+    mesh.cellSurfaceAreasMm2().fill(0);
+    const normalCopy = mesh.voidNormalAtVertex(vertex);
+    if (normalCopy) normalCopy.fill(99);
+    const incidentCopy = mesh.incidentTriangleForVertex(vertex);
+    if (incidentCopy) incidentCopy.barycentric.fill(99);
+    if (baselinePatch.triangles[0]) {
+      baselinePatch.triangles[0].area_mm2 = 0;
+      baselinePatch.triangles[0].centroid_dir.fill(99);
+      baselinePatch.triangles[0].outward_normal.fill(99);
+      baselinePatch.triangles[0].neighbor_indices.length = 0;
+    }
+
+    // These legacy-looking properties and method names are deliberately
+    // ordinary public data now; physics must never consult them.
+    mesh._surfaceTriangles = [];
+    mesh._voidNormalsByVertex = new Float32Array(mesh.numInterior * 3);
+    mesh._cellSurfaceAreas = new Float64Array(mesh.numInterior);
+    mesh._cellSurfaceAreasSig = mesh.sig;
+    mesh._incidentTriangleByVertex = [];
+    mesh.surface_area_mm2 = 0;
+    mesh.surfaceAreaMm2 = () => 1;
+    mesh.cellSurfaceAreaAtVertexMm2 = () => 0;
+    mesh.cellSurfaceAreasMm2 = () => new Float64Array(mesh.numInterior);
+    mesh.voidNormalAtVertex = () => [0, -1, 0];
+    mesh.incidentTriangleForVertex = () => null;
+    mesh.surfacePatch = () => ({ area_mm2: 0, triangles: [] });
+
+    expect(wall.surfaceZoneAtVertex(ringIdx, cellIdx)).toBe(baselineZone);
+    expect(wall._cellCavityVolAtVertexMm3(vertex)).toBe(baselineVolume);
+    expect(wall.surfaceAreaMm2()).toBe(baselineArea);
+    expect(CavitySurfaceAnchors.fromWallMeshVertex(mesh, vertex)).toEqual(baselineAnchor);
+    expect(JSON.stringify(mesh.sampleSurfacePatch([1, 0, 0], 24, 0.12, 77)))
+      .toBe(baselinePatchJson);
+    expect(bridgeIntercepted).toBe(0);
+    for (const name of bridgeNames) delete (globalThis as any)[name];
+  });
+
+  it('restores canonical triangle topology before a legitimate wall recompute', () => {
+    const make = () => new WallState({
+      cells_per_ring: 48, ring_count: 12, vug_diameter_mm: 70,
+      primary_bubbles: 4, secondary_bubbles: 8, shape_seed: 31415,
+    });
+    const poisonedWall = make(), controlWall = make();
+    const poisonedMesh = poisonedWall.meshFor(), controlMesh = controlWall.meshFor();
+    const canonicalIndices = poisonedMesh.indices.slice();
+    poisonedMesh.indices.fill(0);
+    poisonedWall.rings[3][1].wall_depth += 4;
+    controlWall.rings[3][1].wall_depth += 4;
+    expect(poisonedWall.meshFor()).toBe(poisonedMesh);
+    controlWall.meshFor();
+    expect(poisonedMesh.indices).toEqual(canonicalIndices);
+    expect(poisonedMesh.indices).toEqual(controlMesh.indices);
+    expect(Array.from(poisonedMesh.cellSurfaceAreasMm2()))
+      .toEqual(Array.from(controlMesh.cellSurfaceAreasMm2()));
+    expect(poisonedMesh.sampleSurfacePatch([1, 0, 0], 24, 0.12, 77))
+      .toEqual(controlMesh.sampleSurfacePatch([1, 0, 0], 24, 0.12, 77));
+  });
+
+  it('rejects public dimension poisoning before lazy physical-area assembly', () => {
+    const wall = new WallState({ cells_per_ring: 48, ring_count: 12 });
+    const mesh = wall.meshFor();
+    const canonicalCount = mesh.numInterior;
+    mesh.numInterior = canonicalCount + 2;
+    expect(() => mesh.cellSurfaceAreasMm2()).toThrow(/canonical topology/i);
+    expect(() => wall._cellCavityVolAtVertexMm3(0)).toThrow(/canonical topology/i);
+    mesh.numInterior = 1;
+    expect(() => wall.meshFor()).toThrow(/canonical topology/i);
+    mesh.numInterior = canonicalCount;
+    expect(mesh.cellSurfaceAreasMm2()).toHaveLength(canonicalCount);
   });
 
   it('maxRadiusByRing reflects per-ring max distance', () => {

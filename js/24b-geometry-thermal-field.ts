@@ -38,17 +38,18 @@ interface ThermalSourceSpec {
   provenance?: string;
 }
 
-function _thermalClamp(value: number, lo: number, hi: number): number {
+const _thermalClamp = (value: number, lo: number, hi: number): number => {
   return Math.max(lo, Math.min(hi, value));
-}
+};
 
-function normalizeThermalSourceSpec(spec: any, grid: any, fallbackId = 'thermal-source'): ThermalSourceSpec | null {
+const normalizeThermalSourceSpec = (spec: any, grid: any, fallbackId = 'thermal-source'): ThermalSourceSpec | null => {
   if (!grid || !spec) return null;
   const temperature = Number(spec.temperature_C ?? spec.temperatureC ?? spec.temperature);
   if (!Number.isFinite(temperature)) return null;
-  const R = Math.max(1, Number(grid.ring_count) | 0);
-  const N = Math.max(1, Number(grid.cells_per_ring) | 0);
-  const D = Math.max(1, Number(grid.depth_count) | 0);
+  const gridAuthority = _cavityVoxelGridAuthorityInternal(grid);
+  const R = gridAuthority.ringCount;
+  const N = gridAuthority.cellsPerRing;
+  const D = gridAuthority.depthCount;
   let ringIdx = Number(spec.ringIdx ?? spec.ring ?? 0) | 0;
   let cellIdx = Number(spec.cellIdx ?? spec.column ?? 0) | 0;
   if (Number.isFinite(Number(spec.cell)) && spec.ringIdx == null && spec.ring == null) {
@@ -86,13 +87,13 @@ function normalizeThermalSourceSpec(spec: any, grid: any, fallbackId = 'thermal-
       ? { end_step: Math.max(0, Number(rawEndStep) | 0) } : {}),
     ...(spec.provenance ? { provenance: String(spec.provenance) } : {}),
   };
-}
+};
 
-function _thermalSourceActive(source: ThermalSourceSpec, step: number): boolean {
+const _thermalSourceActive = (source: ThermalSourceSpec, step: number): boolean => {
   if (source.start_step != null && step < source.start_step) return false;
   if (source.end_step != null && step >= source.end_step) return false;
   return true;
-}
+};
 
 // Geometry-aware control-volume proxies. The surface share of each wall
 // vertex is assembled from the exact renderer triangles (one triangle's area
@@ -101,26 +102,28 @@ function _thermalSourceActive(source: ThermalSourceSpec, step: number): boolean 
 // fractions. This is still a dimensionless mesh model—not a calibrated cubic-
 // millimetre fluid inventory—but it removes the false equal-volume assumption
 // at polar cells and across radial depth.
-function _thermalControlVolumeWeights(grid: any): Float64Array {
-  const R = Math.max(1, Number(grid?.ring_count) | 0);
-  const N = Math.max(1, Number(grid?.cells_per_ring) | 0);
-  const D = Math.max(1, Number(grid?.depth_count) | 0);
-  const total = R * N * D;
-  const mesh = grid?._mesh || null;
-  const cacheKey = `${R}|${N}|${D}|${mesh?.sig || 'no-mesh'}|${Number(mesh?.surface_area_mm2) || 0}`;
-  if (grid?._thermalControlVolumeCache?.key === cacheKey) {
-    return grid._thermalControlVolumeCache.weights;
+const THERMAL_CONTROL_VOLUME_STATE = new WeakMap<object, {
+  ringCount: number; cellsPerRing: number; depthCount: number;
+  mesh: any; surfaceIdentity: any; weights: Float64Array;
+}>();
+
+const _thermalControlVolumeWeights = (grid: any): Float64Array => {
+  const gridAuthority = _cavityVoxelGridAuthorityInternal(grid);
+  const R = gridAuthority.ringCount;
+  const N = gridAuthority.cellsPerRing;
+  const D = gridAuthority.depthCount;
+  const total = gridAuthority.voxelCount;
+  const mesh = gridAuthority.mesh;
+  const physicalGeometry = mesh ? _wallMeshThermalGeometryInternal(mesh) : null;
+  const cached = THERMAL_CONTROL_VOLUME_STATE.get(grid);
+  if (cached?.ringCount === R && cached.cellsPerRing === N && cached.depthCount === D
+      && cached.mesh === mesh && cached.surfaceIdentity === physicalGeometry?.surfaceIdentity) {
+    return cached.weights;
   }
 
   const surfaceShares = new Float64Array(R * N);
-  const triangles = Array.isArray(mesh?._surfaceTriangles) ? mesh._surfaceTriangles : [];
-  for (const triangle of triangles) {
-    const ids = [triangle.ia, triangle.ib, triangle.ic]
-      .filter((index: number) => index >= 0 && index < R * N);
-    const area = Number(triangle.area_mm2);
-    if (!ids.length || !(area > 0)) continue;
-    const share = area / ids.length;
-    for (const index of ids) surfaceShares[index] += share;
+  if (physicalGeometry?.cellSurfaceAreasMm2?.length === R * N) {
+    surfaceShares.set(physicalGeometry.cellSurfaceAreasMm2);
   }
   let surfaceTotal = 0;
   for (const value of surfaceShares) surfaceTotal += value;
@@ -141,11 +144,9 @@ function _thermalControlVolumeWeights(grid: any): Float64Array {
     for (let c = 0; c < N; c++) {
       const surfaceIndex = r * N + c;
       let radius = 1;
-      if (mesh?.positions && surfaceIndex * 3 + 2 < mesh.positions.length) {
-        const x = Number(mesh.positions[surfaceIndex * 3]) || 0;
-        const y = Number(mesh.positions[surfaceIndex * 3 + 1]) || 0;
-        const z = Number(mesh.positions[surfaceIndex * 3 + 2]) || 0;
-        radius = Math.sqrt(x * x + y * y + z * z) || 1;
+      if (physicalGeometry?.radialDistancesMm
+          && surfaceIndex < physicalGeometry.radialDistancesMm.length) {
+        radius = Number(physicalGeometry.radialDistancesMm[surfaceIndex]) || 1;
       }
       for (let d = 0; d < D; d++) {
         const outer = (D - d) / D;
@@ -163,15 +164,19 @@ function _thermalControlVolumeWeights(grid: any): Float64Array {
   if (weightTotal > 0) {
     for (let i = 0; i < weights.length; i++) weights[i] /= weightTotal;
   }
-  grid._thermalControlVolumeCache = { key: cacheKey, weights };
+  THERMAL_CONTROL_VOLUME_STATE.set(grid, {
+    ringCount: R, cellsPerRing: N, depthCount: D,
+    mesh, surfaceIdentity: physicalGeometry?.surfaceIdentity || null, weights,
+  });
   return weights;
-}
+};
 
-function _thermalSourcePath(source: ThermalSourceSpec, grid: any): Array<[number, number, number]> {
+const _thermalSourcePath = (source: ThermalSourceSpec, grid: any): Array<[number, number, number]> => {
   const out: Array<[number, number, number]> = [];
-  const R = grid.ring_count | 0;
-  const N = grid.cells_per_ring | 0;
-  const D = grid.depth_count | 0;
+  const gridAuthority = _cavityVoxelGridAuthorityInternal(grid);
+  const R = gridAuthority.ringCount;
+  const N = gridAuthority.cellsPerRing;
+  const D = gridAuthority.depthCount;
   const r = source.ringIdx, c = source.cellIdx, d = source.depthIdx;
   if (source.flow_direction === 'toward_center') {
     for (let k = d + 1; k < D; k++) out.push([r, c, k]);
@@ -187,16 +192,16 @@ function _thermalSourcePath(source: ThermalSourceSpec, grid: any): Array<[number
     for (let k = r - 1; k >= 0; k--) out.push([k, c, d]);
   }
   return out;
-}
+};
 
 Object.assign(CavityVoxelGrid.prototype, {
   controlVolumeWeights(): Float64Array {
-    return _thermalControlVolumeWeights(this);
+    return new Float64Array(_thermalControlVolumeWeights(this));
   },
 
   controlVolumeWeightAt(r: number, c: number, d: number): number {
     const index = this._index(r, c, d);
-    return index >= 0 ? this.controlVolumeWeights()[index] : NaN;
+    return index >= 0 ? _thermalControlVolumeWeights(this)[index] : NaN;
   },
 
   temperatureAt(r: number, c: number, d: number): number {
@@ -217,13 +222,18 @@ Object.assign(CavityVoxelGrid.prototype, {
 
   propagateTemperatureDelta(deltaC: number, target: string = 'all'): number {
     if (!Number.isFinite(deltaC) || deltaC === 0) return 0;
+    const gridAuthority = _cavityVoxelGridAuthorityInternal(this);
     let changed = 0;
-    for (const voxel of this.voxels || []) {
+    for (let index = 0; index < gridAuthority.voxelCount; index++) {
+      const voxel = gridAuthority.voxels[index];
       if (!voxel || !Number.isFinite(voxel.temperature)) continue;
+      const depthIdx = index % gridAuthority.depthCount;
+      const ringIdx = Math.floor(index
+        / (gridAuthority.cellsPerRing * gridAuthority.depthCount));
       const hit = target === 'all'
-        || (target === 'boundary' && voxel.depthIdx === 0)
-        || (target === 'top' && voxel.ringIdx === this.ring_count - 1)
-        || (target === 'bottom' && voxel.ringIdx === 0);
+        || (target === 'boundary' && depthIdx === 0)
+        || (target === 'top' && ringIdx === gridAuthority.ringCount - 1)
+        || (target === 'bottom' && ringIdx === 0);
       if (!hit) continue;
       voxel.temperature = _thermalClamp(
         voxel.temperature + deltaC, THERMAL_FIELD_MIN_C, THERMAL_FIELD_MAX_C,
@@ -240,10 +250,11 @@ Object.assign(CavityVoxelGrid.prototype, {
   // fracture pulse may then heat all cells.
   applyAmbientThermalStep(coolingDeltaC: number, ambientC: number, pulseDeltaC = 0): number {
     if (!Number.isFinite(ambientC)) return 0;
+    const gridAuthority = _cavityVoxelGridAuthorityInternal(this);
     const cooling = Math.min(0, Number(coolingDeltaC) || 0);
     const pulse = Math.max(0, Number(pulseDeltaC) || 0);
     let changed = 0;
-    for (const voxel of this.voxels || []) {
+    for (const voxel of gridAuthority.voxels) {
       if (!voxel || !Number.isFinite(voxel.temperature)) continue;
       const prior = voxel.temperature;
       const cooled = prior > ambientC ? Math.max(ambientC, prior + cooling) : prior;
@@ -256,11 +267,11 @@ Object.assign(CavityVoxelGrid.prototype, {
   },
 
   temperatureMean(): number {
-    if (!this.voxels?.length) return NaN;
-    const weights = this.controlVolumeWeights();
+    const gridAuthority = _cavityVoxelGridAuthorityInternal(this);
+    const weights = _thermalControlVolumeWeights(this);
     let sum = 0, weightTotal = 0;
-    for (let i = 0; i < this.voxels.length; i++) {
-      const voxel = this.voxels[i];
+    for (let i = 0; i < gridAuthority.voxelCount; i++) {
+      const voxel = gridAuthority.voxels[i];
       if (!voxel || !Number.isFinite(voxel.temperature)) continue;
       sum += voxel.temperature * weights[i];
       weightTotal += weights[i];
@@ -269,11 +280,12 @@ Object.assign(CavityVoxelGrid.prototype, {
   },
 
   boundaryTemperatureMeans(): number[] {
-    const means = new Array(this.ring_count).fill(0);
-    const weightTotals = new Array(this.ring_count).fill(0);
-    const weights = this.controlVolumeWeights();
-    for (let r = 0; r < this.ring_count; r++) {
-      for (let c = 0; c < this.cells_per_ring; c++) {
+    const gridAuthority = _cavityVoxelGridAuthorityInternal(this);
+    const means = new Array(gridAuthority.ringCount).fill(0);
+    const weightTotals = new Array(gridAuthority.ringCount).fill(0);
+    const weights = _thermalControlVolumeWeights(this);
+    for (let r = 0; r < gridAuthority.ringCount; r++) {
+      for (let c = 0; c < gridAuthority.cellsPerRing; c++) {
         const t = this.temperatureAt(r, c, 0);
         if (!Number.isFinite(t)) continue;
         const weight = weights[this._index(r, c, 0)];
@@ -290,23 +302,26 @@ Object.assign(CavityVoxelGrid.prototype, {
   // updates, conserving the volume-weighted thermal-state proxy exactly.
   // Rock coupling and authored sources are open boundaries and are receipted.
   advanceTemperatureField(options: any = {}): any {
-    const total = this.voxels?.length || 0;
-    if (!total) return null;
+    const gridAuthority = _cavityVoxelGridAuthorityInternal(this);
+    const total = gridAuthority.voxelCount;
+    const voxels = gridAuthority.voxels;
     const beforeMean = this.temperatureMean();
     const conduction = _thermalClamp(
       Number(options.conduction_fraction_per_step ?? 0.05) || 0,
       0, THERMAL_CONDUCTION_MAX,
     );
     const old = new Float64Array(total);
-    const weights = this.controlVolumeWeights();
+    const weights = _thermalControlVolumeWeights(this);
     let min = Infinity, max = -Infinity;
     for (let i = 0; i < total; i++) {
-      const value = Number(this.voxels[i]?.temperature);
+      const value = Number(voxels[i]?.temperature);
       old[i] = Number.isFinite(value) ? value : beforeMean;
       min = Math.min(min, old[i]);
       max = Math.max(max, old[i]);
     }
-    const R = this.ring_count, N = this.cells_per_ring, D = this.depth_count;
+    const R = gridAuthority.ringCount;
+    const N = gridAuthority.cellsPerRing;
+    const D = gridAuthority.depthCount;
     const ND = N * D;
     if (conduction > 0 && max - min > 1e-12) {
       const energyDelta = new Float64Array(total);
@@ -329,7 +344,7 @@ Object.assign(CavityVoxelGrid.prototype, {
         }
       }
       for (let i = 0; i < total; i++) {
-        this.voxels[i].temperature = old[i] + energyDelta[i] / weights[i];
+        voxels[i].temperature = old[i] + energyDelta[i] / weights[i];
       }
     }
 
@@ -347,9 +362,9 @@ Object.assign(CavityVoxelGrid.prototype, {
           const target = _thermalClamp(
             authoredTarget, THERMAL_FIELD_MIN_C, THERMAL_FIELD_MAX_C,
           );
-          const prior = this.voxels[i].temperature;
+          const prior = voxels[i].temperature;
           const next = prior + rockCoupling * (target - prior);
-          this.voxels[i].temperature = next;
+          voxels[i].temperature = next;
           rockControlVolumeDeltaC += weights[i] * (next - prior);
         }
       }
@@ -363,7 +378,7 @@ Object.assign(CavityVoxelGrid.prototype, {
     // as a convex weighted update. IDs are provenance only: renaming or
     // reordering otherwise identical sources cannot change the field.
     const sourceBase = new Float64Array(total);
-    for (let i = 0; i < total; i++) sourceBase[i] = this.voxels[i].temperature;
+    for (let i = 0; i < total; i++) sourceBase[i] = voxels[i].temperature;
     const contributions: Array<Array<{
       sourceIndex: number; weight: number; target: number; coupling: boolean;
     }>> = Array.from({ length: total }, () => []);
@@ -371,7 +386,7 @@ Object.assign(CavityVoxelGrid.prototype, {
     const flatIndex = (r: number, c: number, d: number) => r * ND + c * D + d;
     for (const source of sources) {
       const originIndex = flatIndex(source.ringIdx, source.cellIdx, source.depthIdx);
-      if (!this.voxels[originIndex]) continue;
+      if (!voxels[originIndex]) continue;
       const sourceIndex = receiptDrafts.length;
       const beta = source.coupling_fraction_per_step;
       if (beta > 0) contributions[originIndex].push({
@@ -379,7 +394,7 @@ Object.assign(CavityVoxelGrid.prototype, {
       });
       const path = _thermalSourcePath(source, this)
         .map(([r, c, d]) => flatIndex(r, c, d))
-        .filter((index: number) => !!this.voxels[index]);
+        .filter((index: number) => !!voxels[index]);
       const advectiveWeight = source.advection_fraction_per_step;
       const conditionedOrigin = sourceBase[originIndex]
         + beta * (source.temperature_C - sourceBase[originIndex]);
@@ -415,7 +430,7 @@ Object.assign(CavityVoxelGrid.prototype, {
         if (term.coupling) receipt.sourceCouplingControlVolumeDeltaC += volumeAttributed;
         else receipt.advectionControlVolumeDeltaC += volumeAttributed;
       }
-      this.voxels[i].temperature = _thermalClamp(
+      voxels[i].temperature = _thermalClamp(
         sourceBase[i] + delta, THERMAL_FIELD_MIN_C, THERMAL_FIELD_MAX_C,
       );
     }

@@ -148,7 +148,9 @@ class CavityWaterAppearance {
       throw new RangeError('cavity water tint requires paired position/color buffers');
     }
     const colors = new Float32Array(base);
-    if (!receipt?.explicit_surface) return colors;
+    // A floor-clamped water plane encloses no fluid.  Tinting the coincident
+    // pole vertex would interpolate a false wet patch across adjacent faces.
+    if (!receipt?.explicit_surface || receipt.fully_drained === true) return colors;
     const water = [0.43, 0.74, 0.96];
     const plane = Number(receipt.water_plane_y_mm);
     for (let offset = 0; offset < positions.length; offset += 3) {
@@ -199,7 +201,12 @@ class CavityWaterAppearance {
             ringMin = Math.min(ringMin, y);
             ringMax = Math.max(ringMax, y);
           }
-          states[ring] = ringMax <= plane + epsilon ? 'submerged'
+          // A plane clamped exactly to the cavity floor contains zero water
+          // volume.  Do not let the degenerate south-pole ring count as
+          // submerged merely because all of its coincident vertices equal the
+          // plane; drainage-to-floor events mean the entire cavity is vadose.
+          states[ring] = effectiveHeight <= epsilon ? 'vadose'
+            : ringMax <= plane + epsilon ? 'submerged'
             : ringMin >= plane - epsilon ? 'vadose' : 'meniscus';
         }
         cached = { key, states: Object.freeze(states) };

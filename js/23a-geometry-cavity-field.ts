@@ -13,10 +13,10 @@
 // latitude twist used by WallMesh. The authenticated cavity-evolution ledger
 // is then projected as a continuous radial offset over theta seams and pole
 // caps. It does not mutate chemistry, crystals, wall cells, or simulation RNG.
-// IMPORTANT PROMOTION GATE: that projection is deliberately star-shaped; it
-// cannot encode undercuts or multiple wall crossings on one ray. The field
-// remains a default-off renderer comparison until 3-D clipping, anchors,
-// materials, ambiguity handling, and performance share the same authority.
+// SCIENTIFIC SCOPE: that projection is deliberately star-shaped; it cannot
+// encode undercuts or multiple wall crossings on one ray. Since v266 the fixed
+// zero-isovalue 48^3 lattice is the production authority for this declared
+// connected radial-erosion model; re-entrant transport remains out of scope.
 
 interface CavitySurfaceBuffers {
   positions: Float32Array;
@@ -39,6 +39,9 @@ interface CavitySurfaceBuffers {
     polygonize_ms?: number;
     manifold_ms?: number;
     normal_material_ms?: number;
+    discarded_unreferenced_vertex_count?: number;
+    gradient_resolved_normal_count?: number;
+    crease_resolved_normal_count?: number;
     packing_authentication_ms?: number;
     packing_ms?: number;
     buffer_authentication_ms?: number;
@@ -512,6 +515,76 @@ class CavityScalarField {
       : 'adaptive';
   }
 
+  // Derive the deterministic sampling lattice without allocating or sampling
+  // the field. Production authority needs this before its first extraction;
+  // keeping the derivation here prevents a throwaway 48^3 build merely to
+  // discover bounds that are already an analytic function of authored shape.
+  static frameForBubbles(input: any, opts: any = {}): any {
+    const bubbles = CavityScalarField._validatedBubbles(input);
+    const shape = CavityScalarField._validatedShape(opts.shape || {});
+    const resolution = CavityScalarField._resolution(opts.resolution);
+    const fixedFrame = CavityScalarField._validatedFrame(opts.frame, resolution);
+    if (fixedFrame) return fixedFrame;
+
+    const rawMin = [Infinity, Infinity, Infinity];
+    const rawMax = [-Infinity, -Infinity, -Infinity];
+    for (const [cx, cy, cz, radius] of bubbles) {
+      rawMin[0] = Math.min(rawMin[0], cx - radius);
+      rawMin[1] = Math.min(rawMin[1], cy - radius);
+      rawMin[2] = Math.min(rawMin[2], cz - radius);
+      rawMax[0] = Math.max(rawMax[0], cx + radius);
+      rawMax[1] = Math.max(rawMax[1], cy + radius);
+      rawMax[2] = Math.max(rawMax[2], cz + radius);
+    }
+    let fieldMin = rawMin.slice();
+    let fieldMax = rawMax.slice();
+    if (!CavityScalarField._isIdentityShape(shape)) {
+      let maxSourceRadius = 0;
+      for (const [cx, cy, cz, radius] of bubbles) {
+        maxSourceRadius = Math.max(maxSourceRadius, Math.hypot(cx, cy, cz) + radius);
+      }
+      const deformedRadius = maxSourceRadius * CavityScalarField._maxRadialScale(shape);
+      fieldMin = [-deformedRadius, -deformedRadius, -deformedRadius];
+      fieldMax = [deformedRadius, deformedRadius, deformedRadius];
+    }
+    const evolution = opts.evolution || null;
+    if (evolution) {
+      const maxEvolutionDepth = Number(Array.from(evolution.depths_mm || [])
+        .reduce((maximum: number, value: any) => Math.max(maximum, Number(value) || 0), 0));
+      const paddingDepth = maxEvolutionDepth * CavityScalarField._maxRadialScale(shape);
+      fieldMin = fieldMin.map(value => value - paddingDepth);
+      fieldMax = fieldMax.map(value => value + paddingDepth);
+    }
+    const extent = [
+      fieldMax[0] - fieldMin[0],
+      fieldMax[1] - fieldMin[1],
+      fieldMax[2] - fieldMin[2],
+    ];
+    const largestExtent = Math.max(extent[0], extent[1], extent[2]);
+    if (!(largestExtent > 0) || !Number.isFinite(largestExtent)) {
+      throw new RangeError('cavity bubble bounds must have positive finite extent');
+    }
+    let padding = 0.05 * largestExtent;
+    let spacingMm = (largestExtent + 2 * padding) / (resolution - 1);
+    for (let index = 0; index < 4; index++) {
+      padding = Math.max(2 * spacingMm, 0.05 * largestExtent);
+      spacingMm = (largestExtent + 2 * padding) / (resolution - 1);
+    }
+    const center = [
+      (fieldMin[0] + fieldMax[0]) * 0.5,
+      (fieldMin[1] + fieldMax[1]) * 0.5,
+      (fieldMin[2] + fieldMax[2]) * 0.5,
+    ];
+    const half = spacingMm * (resolution - 1) * 0.5;
+    return Object.freeze({
+      dimensions: Object.freeze([resolution, resolution, resolution]),
+      origin_mm: Object.freeze([
+        center[0] - half, center[1] - half, center[2] - half,
+      ]),
+      spacing_mm: spacingMm,
+    });
+  }
+
   static signatureFor(wall: any, resolution = 48, ledgerCursor?: number,
                       frame?: any): string {
     const bubbles = CavityScalarField._validatedBubbles(wall && wall.bubbles);
@@ -562,75 +635,17 @@ class CavityScalarField {
     const shape = CavityScalarField._validatedShape(opts.shape || {});
     const evolution = opts.evolution || null;
     const resolution = CavityScalarField._resolution(opts.resolution);
-    const fixedFrame = CavityScalarField._validatedFrame(opts.frame, resolution);
-
-    const rawMin = [Infinity, Infinity, Infinity];
-    const rawMax = [-Infinity, -Infinity, -Infinity];
-    for (const [cx, cy, cz, radius] of bubbles) {
-      rawMin[0] = Math.min(rawMin[0], cx - radius);
-      rawMin[1] = Math.min(rawMin[1], cy - radius);
-      rawMin[2] = Math.min(rawMin[2], cz - radius);
-      rawMax[0] = Math.max(rawMax[0], cx + radius);
-      rawMax[1] = Math.max(rawMax[1], cy + radius);
-      rawMax[2] = Math.max(rawMax[2], cz + radius);
-    }
-    let fieldMin = rawMin.slice();
-    let fieldMax = rawMax.slice();
-    if (!CavityScalarField._isIdentityShape(shape)) {
-      // Radial deformation is centered at the authored cavity origin. A
-      // sphere's farthest possible source point is |center| + radius; multiply
-      // that by the analytic maximum deformation to get a conservative cubic
-      // envelope. It is intentionally conservative so twist, flattening, and
-      // future nonzero Fourier profiles can never clip the zero set.
-      let maxSourceRadius = 0;
-      for (const [cx, cy, cz, radius] of bubbles) {
-        maxSourceRadius = Math.max(maxSourceRadius, Math.hypot(cx, cy, cz) + radius);
-      }
-      const deformedRadius = maxSourceRadius * CavityScalarField._maxRadialScale(shape);
-      fieldMin = [-deformedRadius, -deformedRadius, -deformedRadius];
-      fieldMax = [deformedRadius, deformedRadius, deformedRadius];
-    }
     let maxEvolutionDepth = 0;
+    const suppliedFrame = CavityScalarField._validatedFrame(opts.frame, resolution);
+    const samplingFrame = CavityScalarField.frameForBubbles(bubbles, {
+      resolution, shape, evolution, frame: opts.frame,
+    });
     if (evolution) {
       maxEvolutionDepth = Number(Array.from(evolution.depths_mm || [])
         .reduce((maximum: number, value: any) => Math.max(maximum, Number(value) || 0), 0));
-      const paddingDepth = maxEvolutionDepth * CavityScalarField._maxRadialScale(shape);
-      fieldMin = fieldMin.map(value => value - paddingDepth);
-      fieldMax = fieldMax.map(value => value + paddingDepth);
     }
-    let spacingMm: number;
-    let origin: [number, number, number];
-    if (fixedFrame) {
-      spacingMm = fixedFrame.spacing_mm;
-      origin = fixedFrame.origin_mm.slice() as [number, number, number];
-    } else {
-      const extent = [
-        fieldMax[0] - fieldMin[0],
-        fieldMax[1] - fieldMin[1],
-        fieldMax[2] - fieldMin[2],
-      ];
-      const largestExtent = Math.max(extent[0], extent[1], extent[2]);
-      if (!(largestExtent > 0) || !Number.isFinite(largestExtent)) {
-        throw new RangeError('cavity bubble bounds must have positive finite extent');
-      }
-
-      // Diagnostic/adaptive fields retain the historic moving envelope. A
-      // production authority instead supplies `fixedFrame`, captured before
-      // time begins, so erosion cannot resample untouched geology.
-      let padding = 0.05 * largestExtent;
-      spacingMm = (largestExtent + 2 * padding) / (resolution - 1);
-      for (let i = 0; i < 4; i++) {
-        padding = Math.max(2 * spacingMm, 0.05 * largestExtent);
-        spacingMm = (largestExtent + 2 * padding) / (resolution - 1);
-      }
-      const center = [
-        (fieldMin[0] + fieldMax[0]) * 0.5,
-        (fieldMin[1] + fieldMax[1]) * 0.5,
-        (fieldMin[2] + fieldMax[2]) * 0.5,
-      ];
-      const half = spacingMm * (resolution - 1) * 0.5;
-      origin = [center[0] - half, center[1] - half, center[2] - half];
-    }
+    const spacingMm = samplingFrame.spacing_mm;
+    const origin = samplingFrame.origin_mm.slice() as [number, number, number];
     const values = new Float32Array(resolution * resolution * resolution);
     const worldX = new Float64Array(resolution);
     const worldY = new Float64Array(resolution);
@@ -746,7 +761,7 @@ class CavityScalarField {
       sourceBubbles: bubbles,
       sourceShape: shape,
       sourceEvolution: evolution,
-      sig: opts.sig || `cavity-field:v5|${resolution}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${CavityScalarField._sourceHash([CavityScalarField._shapeNumbers(shape)])}|e:${evolution ? evolution.signature : 'none'}|f:${CavityScalarField._frameSignature(fixedFrame, resolution)}`,
+      sig: opts.sig || `cavity-field:v5|${resolution}^3|b:${CavityScalarField._sourceHash(bubbles)}|s:${CavityScalarField._sourceHash([CavityScalarField._shapeNumbers(shape)])}|e:${evolution ? evolution.signature : 'none'}|f:${CavityScalarField._frameSignature(suppliedFrame, resolution)}`,
     });
     field.metrics.field_build_ms = CavityScalarField._nowMs() - started;
     if (!field.hasNegativeBorder(0)) {
@@ -802,7 +817,7 @@ class CavityScalarField {
 
   surfaceSignature(isovalue = 0): string {
     if (!Number.isFinite(isovalue)) throw new TypeError('cavity surface isovalue must be finite');
-    return `${this.sig}|snapshot:${this.snapshotDigest}|freudenthal-tetra-plane-auth:v2|iso:${isovalue}`;
+    return `${this.sig}|snapshot:${this.snapshotDigest}|freudenthal-tetra-plane-auth:v3|near-zero-floor:1/4096|iso:${isovalue}`;
   }
 
   // One CPU/GPU mapping contract for the Tranche-3 clip texture. Data3DTexture

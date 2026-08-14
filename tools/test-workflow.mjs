@@ -17,7 +17,10 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const VITEST = path.join(ROOT, 'node_modules', 'vitest', 'vitest.mjs');
 const execFileAsync = promisify(execFile);
-export const DEFAULT_TEST_BATCH_SIZE = 5;
+// Production Cartesian fixtures can each retain a complete 48/64 extraction.
+// One file per child keeps worst-case suites below the workstation budget and
+// returns every jsdom/surface cache to the OS before loading the next file.
+export const DEFAULT_TEST_BATCH_SIZE = 1;
 export const CHILD_HEAP_LIMIT_MB = 1536;
 export const MAX_BATCH_RSS_BYTES = 2 * 1024 * 1024 * 1024;
 export const RSS_POLL_INTERVAL_MS = 1000;

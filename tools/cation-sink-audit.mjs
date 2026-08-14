@@ -15,6 +15,8 @@
  * Usage: node tools/cation-sink-audit.mjs [scenario] [seed] [--check]
  */
 
+import { createHash } from 'node:crypto';
+
 import { loadSimBundle } from './_harness.mjs';
 import {
   auditTrajectoryIntegrityFailures,
@@ -23,6 +25,7 @@ import {
 
 const {
   SIM_VERSION,
+  MODEL_DIGEST,
   SCENARIOS,
   VugSimulator,
   setSeed,
@@ -36,6 +39,19 @@ const {
     'arsenateAvailablePpm',
     'arsenateCompetingCationMolarFraction',
   ],
+});
+
+const MODEL_DIGEST_SHA256 = createHash('sha256').update(MODEL_DIGEST).digest('hex');
+// Historical commissioning: the pre-Cartesian SIM 259 trajectory ended at
+// 0.618402. SIM 266 deliberately moved water, chemistry, and nucleation onto
+// the exact Cartesian surface/volume authority, yielding the value below while
+// preserving the five-crystal assemblage and every zero-Zn mass check.
+const SCHNEEBERG_SEED42_COMMISSIONING = Object.freeze({
+  sim_version: 266,
+  model_digest_sha256: 'abf6dc3d3379a3f97d97c6a70fc5759544bbe0d4a1f0de63f2940f2172ce3300',
+  pharmacolite_crystals: 5,
+  final_pharmacolite_Ca_molar_fraction_proxy: 0.583286436592987,
+  proxy_tolerance: 5e-7,
 });
 
 const scenarioId = process.argv[2] || 'schneeberg';
@@ -218,6 +234,7 @@ const compactTrajectory = trajectory.filter((row, index) => {
 const receipt = {
   audit: 'analytical-cation-sink-receipt-v1',
   sim_version: SIM_VERSION,
+  model_digest_sha256: MODEL_DIGEST_SHA256,
   scenario: scenarioId,
   seed,
   steps,
@@ -283,14 +300,30 @@ if (check) {
       `final pharmacolite Ca molar proxy ${receipt.result.final_pharmacolite_Ca_molar_fraction_proxy} < 0.3`,
     );
   }
-  if (seed === 42 && receipt.result.pharmacolite_crystals !== 5) {
-    failures.push(`seed 42 pharmacolite count ${receipt.result.pharmacolite_crystals}, expected exactly 5`);
-  }
-  if (seed === 42
-      && Math.abs(receipt.result.final_pharmacolite_Ca_molar_fraction_proxy - 0.618402) > 5e-7) {
-    failures.push(
-      `seed 42 final Ca molar proxy ${receipt.result.final_pharmacolite_Ca_molar_fraction_proxy}, expected 0.618402 ± 5e-7`,
-    );
+  if (seed === 42) {
+    const commissioned = SCHNEEBERG_SEED42_COMMISSIONING;
+    if (SIM_VERSION !== commissioned.sim_version
+        || MODEL_DIGEST_SHA256 !== commissioned.model_digest_sha256) {
+      failures.push(
+        `seed 42 has no commissioning checkpoint for SIM ${SIM_VERSION} model ${MODEL_DIGEST_SHA256}`,
+      );
+    } else {
+      if (receipt.result.pharmacolite_crystals !== commissioned.pharmacolite_crystals) {
+        failures.push(
+          `seed 42 pharmacolite count ${receipt.result.pharmacolite_crystals}, `
+          + `expected exactly ${commissioned.pharmacolite_crystals}`,
+        );
+      }
+      if (Math.abs(receipt.result.final_pharmacolite_Ca_molar_fraction_proxy
+          - commissioned.final_pharmacolite_Ca_molar_fraction_proxy)
+          > commissioned.proxy_tolerance) {
+        failures.push(
+          `seed 42 final Ca molar proxy ${receipt.result.final_pharmacolite_Ca_molar_fraction_proxy}, `
+          + `expected ${commissioned.final_pharmacolite_Ca_molar_fraction_proxy} `
+          + `± ${commissioned.proxy_tolerance}`,
+        );
+      }
+    }
   }
   if (failures.length) {
     console.error(`[cation-sink-audit] FAIL SIM ${SIM_VERSION} ${scenarioId} seed ${seed}`);

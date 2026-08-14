@@ -46,7 +46,17 @@ describe('localized thermal field', () => {
   it('uses unequal geometry-aware volumes and conserves their weighted thermal proxy', () => {
     const sim = makeSim();
     const grid = sim.wall_state.voxelGridFor(sim);
+    let bridgeIntercepted = 0;
+    const bridgeNames = [
+      '_thermalControlVolumeWeights', '_cavityVoxelGridAuthorityInternal',
+      '_cavityVoxelGridMeshInternal',
+      '_wallMeshThermalGeometryInternal',
+    ];
+    for (const name of bridgeNames) {
+      (globalThis as any)[name] = () => { bridgeIntercepted++; return null; };
+    }
     const weights = grid.controlVolumeWeights();
+    const authenticatedWeights = new Float64Array(weights);
     expect(Array.from(weights).reduce((sum: number, value: any) => sum + value, 0))
       .toBeCloseTo(1, 12);
     expect(grid.controlVolumeWeightAt(8, 60, 0))
@@ -58,9 +68,74 @@ describe('localized thermal field', () => {
       return sum + (grid.voxels[index].ringIdx === 8 ? Number(value) : 0);
     }, 0);
     expect(equatorRingWeight).toBeGreaterThan(polarRingWeight);
+    const referenceWeight = grid.controlVolumeWeightAt(8, 60, 0);
+    weights.fill(0);
+    grid._thermalControlVolumeCache = {
+      key: 'forged', weights: new Float64Array(authenticatedWeights.length),
+    };
+    grid.controlVolumeWeights = () => new Float64Array(authenticatedWeights.length);
+    expect(grid.controlVolumeWeightAt(8, 60, 0)).toBe(referenceWeight);
+
+    // A first-time thermal assembly must likewise ignore WallMesh cache-shaped
+    // public data and build from its lexical physical geometry receipt.
+    const poisonedSim = makeSim();
+    const poisonedMesh = poisonedSim.wall_state.meshFor(poisonedSim);
+    poisonedMesh._surfaceTriangles = [];
+    poisonedMesh._cellSurfaceAreas = new Float64Array(poisonedMesh.numInterior);
+    poisonedMesh._cellSurfaceAreasSig = poisonedMesh.sig;
+    poisonedMesh._voidNormalsByVertex = new Float32Array(poisonedMesh.numInterior * 3);
+    poisonedMesh.surface_area_mm2 = 0;
+    const poisonedGrid = poisonedSim.wall_state.voxelGridFor(poisonedSim);
+    expect(Array.from(poisonedGrid.controlVolumeWeights()))
+      .toEqual(Array.from(authenticatedWeights));
+
+    const exactMesh = grid._mesh;
+    const foreignSim = makeSim('reactive_wall');
+    grid._mesh = foreignSim.wall_state.meshFor(foreignSim);
+    expect(() => grid.temperatureMean()).toThrow(/diagnostic mesh.*construction authority/i);
+    grid._mesh = exactMesh;
+
+    // The voxel grid's commissioned R x N x D address system is physical
+    // authority, not mutable metadata. A same-product R/N swap preserves the
+    // array length but must never be reinterpreted as a different grid.
+    const exactDimensions = {
+      ringCount: grid.ring_count,
+      cellsPerRing: grid.cells_per_ring,
+      depthCount: grid.depth_count,
+    };
+    grid.ring_count = exactDimensions.cellsPerRing;
+    grid.cells_per_ring = exactDimensions.ringCount;
+    expect(() => grid.temperatureMean()).toThrow(/dimensions.*construction authority/i);
+    grid.ring_count = exactDimensions.ringCount;
+    grid.cells_per_ring = exactDimensions.cellsPerRing;
+    grid.depth_count = 0;
+    expect(() => grid.temperatureMean()).toThrow(/dimensions.*construction authority/i);
+    grid.depth_count = exactDimensions.depthCount;
+    grid.cells_per_ring = -exactDimensions.cellsPerRing;
+    expect(() => grid.controlVolumeWeightAt(0, 0, 0))
+      .toThrow(/dimensions.*construction authority/i);
+    grid.cells_per_ring = exactDimensions.cellsPerRing;
+    const exactVoxels = grid.voxels;
+    expect(() => { grid.voxels = grid.voxels.slice().reverse(); }).toThrow();
+    expect(grid.voxels).toBe(exactVoxels);
+    expect(() => {
+      const first = grid.voxels[0];
+      grid.voxels[0] = grid.voxels[1];
+      grid.voxels[1] = first;
+    }).toThrow();
+    expect(grid.voxels[0].ringIdx).toBe(0);
+    expect(() => { grid.voxels[0].ringIdx = 1; }).toThrow();
+    expect(() => { grid.voxels[0].depthIdx = 3; }).toThrow();
+    expect(() => grid.voxels.pop()).toThrow();
+
     const baseline = grid.temperatureMean();
     grid.voxelAt(8, 60, 1).temperature = baseline + 500;
     const before = grid.temperatureMean();
+    let expectedBefore = 0;
+    for (let i = 0; i < grid.voxels.length; i++) {
+      expectedBefore += grid.voxels[i].temperature * authenticatedWeights[i];
+    }
+    expect(before).toBeCloseTo(expectedBefore, 10);
     const receipt = grid.advanceTemperatureField({
       step: 1,
       conduction_fraction_per_step: 0.1,
@@ -71,6 +146,31 @@ describe('localized thermal field', () => {
     expect(Math.abs(receipt.conductionControlVolumeResidualC)).toBeLessThan(1e-8);
     expect(grid.voxelAt(8, 60, 1).temperature).toBeLessThan(baseline + 500);
     expect(grid.voxelAt(8, 60, 2).temperature).toBeGreaterThan(baseline);
+    expect(bridgeIntercepted).toBe(0);
+    for (const name of bridgeNames) delete (globalThis as any)[name];
+  });
+
+  it('invalidates thermal weights by private surface identity, not renderer signatures', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.reactive_wall();
+    conditions.fluid.pH = 4;
+    const sim = new VugSimulator(conditions, events);
+    const grid = sim.wall_state.voxelGridFor(sim);
+    const mesh = sim.wall_state.meshFor(sim);
+    const before = Array.from(grid.controlVolumeWeights());
+    const oldGeometrySig = mesh.geometry_sig;
+    const oldSig = mesh.sig;
+    const oldPublicArea = mesh.surface_area_mm2;
+    sim.wall_state.rings[8][60].wall_depth += 4;
+    sim.wall_state.meshFor(sim);
+    expect(sim.wall_state.voxelGridFor(sim)).toBe(grid);
+    mesh.geometry_sig = oldGeometrySig;
+    mesh.sig = oldSig;
+    mesh.surface_area_mm2 = oldPublicArea;
+    const after = Array.from(grid.controlVolumeWeights());
+    expect(after).not.toEqual(before);
+    expect(after.reduce((sum: number, value: any) => sum + Number(value), 0))
+      .toBeCloseTo(1, 12);
   });
 
   it('forms a bounded gradient downstream of an explicit heat boundary', () => {

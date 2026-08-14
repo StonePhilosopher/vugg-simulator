@@ -103,6 +103,27 @@ class VugSimulator {
       // back to conditions.wall.
       size_class: this.conditions.wall.size_class,
     });
+    // The Cartesian zero-isosurface is the production geometry/mass authority
+    // from the first observable simulator state. Failure is constructor-fatal:
+    // a scientifically unsupported authored shape must never continue under a
+    // silent WallMesh capacity fallback.
+    const _initialCavityAuthority = this.wall_state.enableProductionCavityAuthority();
+    const _initialCavityDiameter = this.conditions.wall.initializeCavityCapacity(
+      _initialCavityAuthority.initial_volume_mm3, CAVITY_PRODUCTION_VOLUME_MODEL,
+    );
+    this.wall_state.updateCapacity(
+      _initialCavityAuthority.initial_volume_mm3, _initialCavityDiameter,
+    );
+    this._cavityProductionStartupReceipt = Object.freeze({
+      schema: 'cavity-production-startup-v1',
+      production_contract_digest: _initialCavityAuthority.contract.contract_digest,
+      shape_identity: _initialCavityAuthority.contract.shape_identity,
+      tessellation_identity: _initialCavityAuthority.contract.tessellation_identity,
+      baseline_volume_mm3: _initialCavityAuthority.initial_volume_mm3,
+      field_snapshot_digest: _initialCavityAuthority.provider.field_snapshot_digest,
+      surface_buffer_digest: _initialCavityAuthority.provider.surface_buffer_digest,
+      provider_kind: _initialCavityAuthority.provider.kind,
+    });
     // Convert any legacy authored ring coordinate into the one canonical
     // physical state: millimetres above the nominal cavity floor.
     this.conditions.bindCavityWaterGeometry?.(this.wall_state);
@@ -177,7 +198,19 @@ class VugSimulator {
     // 85c-simulator-state.ts:152-168). cells[i] is the same WallCell
     // object as wall.rings[r][c], so legacy ring reads see the binding.
     const _initialMesh = this.wall_state.meshFor(this);
-    if (_initialMesh && _initialMesh.closedVolumeMm3) {
+    const _productionContract = this.wall_state._cavityProductionAuthorityContract;
+    if (_productionContract) {
+      CavityProductionAuthority.assertContract(this.wall_state, _productionContract);
+      const _productionLedger = this.wall_state.cavityEvolutionLedger();
+      if (!_productionLedger || _productionLedger.cursor !== 0
+          || _productionLedger.model !== CAVITY_PRODUCTION_VOLUME_MODEL
+          || this.conditions.wall.cavity_capacity_basis !== CAVITY_PRODUCTION_VOLUME_MODEL
+          || Math.abs(Number(this.conditions.wall.cavity_capacity_volume_mm3)
+            - Number(_productionContract.baseline_volume_mm3))
+            > Math.max(1e-9, Number(_productionContract.baseline_volume_mm3) * 1e-10)) {
+        throw new Error('late chemistry bootstrap cannot alter Cartesian cavity authority');
+      }
+    } else if (_initialMesh && _initialMesh.closedVolumeMm3) {
       const initialCapacity = _initialMesh.closedVolumeMm3();
       this.wall_state.initializeCavityEvolutionLedger();
       const equivalentDiameter = this.conditions.wall.initializeCavityCapacity(
@@ -327,6 +360,15 @@ class VugSimulator {
   }
 
   enableProductionCavityAuthority() {
+    if (this.wall_state?._cavityProductionAuthorityContract) {
+      const enabled = this.wall_state.enableProductionCavityAuthority();
+      return Object.freeze({
+        contract: enabled.contract,
+        provider: enabled.provider,
+        exact_capacity_volume_mm3: Number(this.conditions.wall.cavity_capacity_volume_mm3),
+        exact_equivalent_diameter_mm: Number(this.conditions.wall.vug_diameter_mm),
+      });
+    }
     if (!this.canReauthorInitialHostGeometry()) {
       throw new RangeError('production cavity authority must be selected before time or crystallization');
     }
@@ -351,24 +393,62 @@ class VugSimulator {
     const oldWaterHeight = this.conditions.fluid_surface_height_mm;
     const waterFraction = oldWaterHeight == null ? null
       : Math.min(1, Math.max(0, Number(oldWaterHeight) / oldSpan));
-    const receipt = wallState.reauthorInitialEquivalentDiameterMm(value, this);
-    const exactDiameter = wall.initializeCavityCapacity(
-      receipt.exact_capacity_volume_mm3, 'canonical_closed_wallmesh',
-    );
-    wall.authored_vug_diameter_mm = Number(value);
-    wallState.updateCapacity(receipt.exact_capacity_volume_mm3, exactDiameter);
-    const mesh = wallState.meshFor(this);
-    if (waterFraction != null) {
-      const newSpan = CavityWaterAppearance.verticalSpanForWall(wallState);
-      this.conditions.fluid_surface_height_mm = waterFraction * newSpan;
+    const externalSnapshot = {
+      cavity_capacity_volume_mm3: wall.cavity_capacity_volume_mm3,
+      initial_cavity_capacity_volume_mm3: wall.initial_cavity_capacity_volume_mm3,
+      cavity_capacity_basis: wall.cavity_capacity_basis,
+      initial_vug_diameter_mm: wall.initial_vug_diameter_mm,
+      vug_diameter_mm: wall.vug_diameter_mm,
+      authored_vug_diameter_mm: wall.authored_vug_diameter_mm,
+      fluidSurfaceHeightMm: this.conditions._fluidSurfaceHeightMm,
+      pendingFluidSurfaceRing: this.conditions._pendingFluidSurfaceRing,
+      waterLedger: this._cavityWaterAppearanceLedger,
+      materialLedger: this._cavityWallMaterialHistoryLedger,
+      wallWaterLedger: wallState._cavityWaterAppearanceLedger,
+      wallMaterialLedger: wallState._cavityWallMaterialHistoryLedger,
+      wallHistory: this.wall_state_history,
+    };
+    let receipt;
+    try {
+      receipt = wallState.reauthorInitialEquivalentDiameterMm(value, this, {
+        onInstalled: (installedReceipt) => {
+          const exactDiameter = wall.initializeCavityCapacity(
+            installedReceipt.exact_capacity_volume_mm3, CAVITY_PRODUCTION_VOLUME_MODEL,
+          );
+          wall.authored_vug_diameter_mm = Number(value);
+          wallState.updateCapacity(installedReceipt.exact_capacity_volume_mm3, exactDiameter);
+          if (waterFraction != null) {
+            const newSpan = CavityWaterAppearance.verticalSpanForWall(wallState);
+            this.conditions.fluid_surface_height_mm = waterFraction * newSpan;
+          }
+          const mesh = wallState.meshFor(this);
+          if (mesh?.bindRingChemistry) {
+            mesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
+          }
+          wallState.voxelGridFor(this);
+          this._cavityWaterAppearanceLedger = new CavityWaterAppearanceLedger(wallState);
+          wallState._cavityWaterAppearanceLedger = this._cavityWaterAppearanceLedger;
+          this._cavityWallMaterialHistoryLedger = new CavityWallMaterialHistoryLedger(wallState);
+          wallState._cavityWallMaterialHistoryLedger = this._cavityWallMaterialHistoryLedger;
+          this.wall_state_history = [];
+        },
+      });
+    } catch (error) {
+      wall.cavity_capacity_volume_mm3 = externalSnapshot.cavity_capacity_volume_mm3;
+      wall.initial_cavity_capacity_volume_mm3 = externalSnapshot.initial_cavity_capacity_volume_mm3;
+      wall.cavity_capacity_basis = externalSnapshot.cavity_capacity_basis;
+      wall.initial_vug_diameter_mm = externalSnapshot.initial_vug_diameter_mm;
+      wall.vug_diameter_mm = externalSnapshot.vug_diameter_mm;
+      wall.authored_vug_diameter_mm = externalSnapshot.authored_vug_diameter_mm;
+      this.conditions._fluidSurfaceHeightMm = externalSnapshot.fluidSurfaceHeightMm;
+      this.conditions._pendingFluidSurfaceRing = externalSnapshot.pendingFluidSurfaceRing;
+      this._cavityWaterAppearanceLedger = externalSnapshot.waterLedger;
+      this._cavityWallMaterialHistoryLedger = externalSnapshot.materialLedger;
+      wallState._cavityWaterAppearanceLedger = externalSnapshot.wallWaterLedger;
+      wallState._cavityWallMaterialHistoryLedger = externalSnapshot.wallMaterialLedger;
+      this.wall_state_history = externalSnapshot.wallHistory;
+      throw error;
     }
-    if (mesh?.bindRingChemistry) mesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
-    wallState.voxelGridFor(this);
-    this._cavityWaterAppearanceLedger = new CavityWaterAppearanceLedger(wallState);
-    wallState._cavityWaterAppearanceLedger = this._cavityWaterAppearanceLedger;
-    this._cavityWallMaterialHistoryLedger = new CavityWallMaterialHistoryLedger(wallState);
-    wallState._cavityWallMaterialHistoryLedger = this._cavityWallMaterialHistoryLedger;
-    this.wall_state_history = [];
     this._creativeInitialAuthoringTransactions ||= [];
     this._creativeInitialAuthoringTransactions.push(receipt);
     return true;

@@ -259,7 +259,8 @@ class CavitySurfaceAnchors {
     const oneHotVertex = bary[0] > 1 - 1e-9 ? triangle.ia
       : bary[1] > 1 - 1e-9 ? triangle.ib
       : bary[2] > 1 - 1e-9 ? triangle.ic : -1;
-    const averaged = oneHotVertex >= 0 ? mesh.voidNormalAtVertex?.(oneHotVertex) : null;
+    const averaged = oneHotVertex >= 0
+      ? _wallMeshVoidNormalInternal(mesh, oneHotVertex) : null;
     if (averaged) anchor.normal = CavitySurfaceAnchors._unit(
       averaged, 'WallMesh vertex normal',
     );
@@ -271,7 +272,7 @@ class CavitySurfaceAnchors {
     if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= mesh?.numInterior) {
       throw new RangeError('WallMesh surface anchor requires an interior vertex');
     }
-    const incident = mesh.incidentTriangleForVertex?.(vertexIndex);
+    const incident = _wallMeshIncidentTriangleInternal(mesh, vertexIndex);
     if (!incident) throw new RangeError('WallMesh vertex has no incident surface triangle');
     return CavitySurfaceAnchors.fromWallMeshTriangle(
       mesh, incident.triangleIndex, incident.barycentric, vertexIndex,
@@ -632,7 +633,8 @@ class CavitySurfaceAnchors {
         const oneHotVertex = bary[0] > 1 - 1e-9 ? CavitySurfaceAnchors._triangle(surface, anchor.triangleIndex).ia
           : bary[1] > 1 - 1e-9 ? CavitySurfaceAnchors._triangle(surface, anchor.triangleIndex).ib
           : bary[2] > 1 - 1e-9 ? CavitySurfaceAnchors._triangle(surface, anchor.triangleIndex).ic : -1;
-        const averaged = oneHotVertex >= 0 ? mesh.voidNormalAtVertex?.(oneHotVertex) : null;
+        const averaged = oneHotVertex >= 0
+          ? _wallMeshVoidNormalInternal(mesh, oneHotVertex) : null;
         if (averaged) authenticated = CavitySurfaceAnchors._unit(averaged, 'WallMesh vertex normal');
       }
       if (Math.hypot(
@@ -643,6 +645,10 @@ class CavitySurfaceAnchors {
     }
     const validations = cachedValidations || new Set<string>();
     validations.add(validationKey);
+    // One anchor may be remapped through hundreds of erosion prefixes. Keep a
+    // small deterministic recent-history window rather than every historical
+    // digest string for the lifetime of the crystal.
+    while (validations.size > 4) validations.delete(validations.values().next().value);
     CAVITY_SURFACE_VALIDATION_CACHE.set(anchor, validations);
     return true;
   }
@@ -773,6 +779,8 @@ class CavitySurfaceAnchors {
       fieldSpatialIndices: new Map<string, any>(),
       patchCache: new Map<string, any>(),
       patchCacheTriangleWeight: 0,
+      indexPatchCache: new Map<string, any>(),
+      indexPatchCacheTriangleWeight: 0,
       pathCache: new Map<string, any>(),
     };
     CAVITY_SURFACE_TOPOLOGY_CACHE.set(surface, topology);
@@ -810,6 +818,8 @@ class CavitySurfaceAnchors {
       fieldSpatialIndices: Object.freeze({ size: topology.fieldSpatialIndices.size }),
       patchCache: Object.freeze({ size: topology.patchCache.size }),
       patchCacheTriangleWeight: topology.patchCacheTriangleWeight,
+      indexPatchCache: Object.freeze({ size: topology.indexPatchCache.size }),
+      indexPatchCacheTriangleWeight: topology.indexPatchCacheTriangleWeight,
       pathCache: Object.freeze({ size: topology.pathCache.size }),
     });
   }
@@ -898,7 +908,8 @@ class CavitySurfaceAnchors {
       visited: new Uint8Array(topology.triangleCapacity),
       bestDistance,
       frontier: [] as any[],
-      order: [] as any[],
+      order: [] as number[],
+      orderDistances: [] as number[],
       cumulativeArea: [] as number[],
       area_mm2: 0,
     };
@@ -910,6 +921,48 @@ class CavitySurfaceAnchors {
       topology.pathCache.delete(topology.pathCache.keys().next().value);
     }
     return state;
+  }
+
+  static _advanceSurfacePath(topology: any, path: any, start: any,
+                             point: number[], targetArea: number): void {
+    while (path.area_mm2 < targetArea - 1e-12 && path.frontier.length) {
+      const current = CavitySurfaceAnchors._frontierPop(path.frontier);
+      const triangle = current.triangle;
+      if (path.visited[triangle.triangle_index]) continue;
+      const authoritativeDistance = path.bestDistance[triangle.triangle_index];
+      if (current.distance_mm > authoritativeDistance + 1e-12) continue;
+      path.visited[triangle.triangle_index] = 1;
+      path.order.push(triangle.triangle_index);
+      path.orderDistances.push(current.distance_mm);
+      path.area_mm2 += triangle.area_mm2;
+      path.cumulativeArea.push(path.area_mm2);
+      for (let slot = 0; slot < triangle.neighbor_indices.length; slot++) {
+        const index = triangle.neighbor_indices[slot];
+        if (path.visited[index]) continue;
+        const neighbor = topology.byIndex.get(index);
+        if (!neighbor) continue;
+        const edgeOffset = triangle.triangle_index * 9 + slot * 3;
+        const mx = topology.edgeMidpoints[edgeOffset];
+        const my = topology.edgeMidpoints[edgeOffset + 1];
+        const mz = topology.edgeMidpoints[edgeOffset + 2];
+        const candidateDistance = current.distance_mm
+          + (triangle.triangle_index === start.triangle_index
+            ? Math.hypot(
+              point[0] - mx, point[1] - my, point[2] - mz,
+            ) + Math.hypot(
+              neighbor.centroid[0] - mx,
+              neighbor.centroid[1] - my,
+              neighbor.centroid[2] - mz,
+            )
+            : topology.edgeCrossings[triangle.triangle_index * 3 + slot]);
+        const priorDistance = path.bestDistance[index];
+        if (candidateDistance >= priorDistance - 1e-12) continue;
+        path.bestDistance[index] = candidateDistance;
+        CavitySurfaceAnchors._frontierPush(path.frontier, {
+          triangle: neighbor, distance_mm: candidateDistance,
+        });
+      }
+    }
   }
 
   static surfacePatch(anchor: any, surface: any, targetCoverage: number): any {
@@ -936,49 +989,7 @@ class CavitySurfaceAnchors {
       }));
     }
     const path = CavitySurfaceAnchors._surfacePathState(topology, pathKey, start, point);
-    while (path.area_mm2 < targetArea - 1e-12 && path.frontier.length) {
-      const current = CavitySurfaceAnchors._frontierPop(path.frontier);
-      const triangle = current.triangle;
-      if (path.visited[triangle.triangle_index]) continue;
-      const authoritativeDistance = path.bestDistance[triangle.triangle_index];
-      if (current.distance_mm > authoritativeDistance + 1e-12) continue;
-      path.visited[triangle.triangle_index] = 1;
-      path.order.push({ triangle, distance_mm: current.distance_mm });
-      path.area_mm2 += triangle.area_mm2;
-      path.cumulativeArea.push(path.area_mm2);
-      for (let slot = 0; slot < triangle.neighbor_indices.length; slot++) {
-        const index = triangle.neighbor_indices[slot];
-        if (path.visited[index]) continue;
-        const neighbor = topology.byIndex.get(index);
-        if (!neighbor) continue;
-        // The first crossing begins at the authoritative barycentric birth
-        // point, not at the source triangle centroid. Later crossings route
-        // through each shared edge, so folded-near Euclidean triangles cannot
-        // shortcut the surface graph.
-        const edgeOffset = triangle.triangle_index * 9 + slot * 3;
-        const mx = topology.edgeMidpoints[edgeOffset];
-        const my = topology.edgeMidpoints[edgeOffset + 1];
-        const mz = topology.edgeMidpoints[edgeOffset + 2];
-        const candidateDistance = current.distance_mm
-          + (triangle.triangle_index === start.triangle_index
-            ? Math.hypot(
-              point[0] - mx, point[1] - my, point[2] - mz,
-            ) + Math.hypot(
-              neighbor.centroid[0] - mx,
-              neighbor.centroid[1] - my,
-              neighbor.centroid[2] - mz,
-            )
-            : topology.edgeCrossings[triangle.triangle_index * 3 + slot]);
-        const priorDistance = path.bestDistance[index];
-        if (candidateDistance >= priorDistance - 1e-12) continue;
-        path.bestDistance[index] = candidateDistance;
-        // Lazy duplicates avoid O(frontier) decrease-key scans. Stale entries
-        // are discarded against bestDistance when popped.
-        CavitySurfaceAnchors._frontierPush(path.frontier, {
-          triangle: neighbor, distance_mm: candidateDistance,
-        });
-      }
-    }
+    CavitySurfaceAnchors._advanceSurfacePath(topology, path, start, point, targetArea);
     let selectedCount = 0;
     if (path.cumulativeArea.length) {
       let low = 0, high = path.cumulativeArea.length - 1;
@@ -992,21 +1003,21 @@ class CavitySurfaceAnchors {
     const selected: any[] = new Array(selectedCount);
     let remaining = targetArea;
     for (let index = 0; index < selectedCount; index++) {
-      const entry = path.order[index];
-      const weight = Math.min(entry.triangle.area_mm2, Math.max(0, remaining));
+      const triangle = topology.byIndex.get(path.order[index]);
+      const weight = Math.min(triangle.area_mm2, Math.max(0, remaining));
       // Never expose the mutable internal triangle as a prototype. Every
       // nested value in a public patch is an immutable copy.
       selected[index] = Object.freeze({
-        triangle_index: entry.triangle.triangle_index,
-        ia: entry.triangle.ia, ib: entry.triangle.ib, ic: entry.triangle.ic,
-        area_mm2: entry.triangle.area_mm2,
-        centroid: Object.freeze(entry.triangle.centroid.slice()),
-        bounds_min: Object.freeze(entry.triangle.bounds_min.slice()),
-        bounds_max: Object.freeze(entry.triangle.bounds_max.slice()),
-        void_normal: Object.freeze(entry.triangle.void_normal.slice()),
-        neighbor_indices: Object.freeze(entry.triangle.neighbor_indices.slice()),
+        triangle_index: triangle.triangle_index,
+        ia: triangle.ia, ib: triangle.ib, ic: triangle.ic,
+        area_mm2: triangle.area_mm2,
+        centroid: Object.freeze(triangle.centroid.slice()),
+        bounds_min: Object.freeze(triangle.bounds_min.slice()),
+        bounds_max: Object.freeze(triangle.bounds_max.slice()),
+        void_normal: Object.freeze(triangle.void_normal.slice()),
+        neighbor_indices: Object.freeze(triangle.neighbor_indices.slice()),
         weight_mm2: weight,
-        surface_distance_mm: entry.distance_mm,
+        surface_distance_mm: path.orderDistances[index],
       });
       remaining -= weight;
     }
@@ -1018,6 +1029,66 @@ class CavitySurfaceAnchors {
       triangles: Object.freeze(selected),
       triangle_indices: Object.freeze(triangleIndices),
     }));
+  }
+
+  // Stratigraphy needs only exact triangle membership, not thousands of
+  // copied centroids/bounds/normals per crystal per step. Share the same
+  // authenticated shortest-path state as the renderer-facing patch builder,
+  // but return one compact immutable index receipt.
+  static surfacePatchIndexReceipt(anchor: any, surface: any, targetCoverage: number): any {
+    const topology = cavitySurfaceTopologyInternal(surface);
+    const coverage = Math.max(0, Math.min(1, Number(targetCoverage) || 0));
+    const targetArea = topology.totalArea * coverage;
+    const start = topology.byIndex.get(anchor?.triangleIndex);
+    const point = CavitySurfaceAnchors._tuple3(
+      anchor.position, 'surface patch anchor position',
+    );
+    const cacheKey = [start?.triangle_index ?? 'missing', coverage.toPrecision(17),
+      ...point.map((value: number) => value.toPrecision(17))].join(':');
+    const cachedEntry = topology.indexPatchCache.get(cacheKey);
+    if (cachedEntry) {
+      topology.indexPatchCache.delete(cacheKey);
+      topology.indexPatchCache.set(cacheKey, cachedEntry);
+      return cachedEntry.receipt;
+    }
+    const pathKey = [start?.triangle_index ?? 'missing',
+      ...point.map((value: number) => value.toPrecision(17))].join(':');
+    let indices: number[] = [];
+    if (start && targetArea > 0) {
+      const path = CavitySurfaceAnchors._surfacePathState(
+        topology, pathKey, start, point,
+      );
+      CavitySurfaceAnchors._advanceSurfacePath(topology, path, start, point, targetArea);
+      let selectedCount = 0;
+      if (path.cumulativeArea.length) {
+        let low = 0, high = path.cumulativeArea.length - 1;
+        while (low < high) {
+          const middle = (low + high) >> 1;
+          if (path.cumulativeArea[middle] < targetArea - 1e-12) low = middle + 1;
+          else high = middle;
+        }
+        selectedCount = low + 1;
+      }
+      indices = path.order.slice(0, selectedCount);
+    }
+    const receipt = Object.freeze({
+      source_signature: topology.signature,
+      coverage_fraction: coverage,
+      area_mm2: start && targetArea > 0 ? targetArea : 0,
+      triangle_capacity: topology.triangleCapacity,
+      triangle_indices: Object.freeze(indices),
+    });
+    topology.indexPatchCache.set(cacheKey, { receipt, weight: indices.length });
+    topology.indexPatchCacheTriangleWeight += indices.length;
+    while (topology.indexPatchCache.size > 1
+        && topology.indexPatchCacheTriangleWeight
+          > CavitySurfaceAnchors.PATCH_CACHE_TRIANGLE_BUDGET) {
+      const oldestKey = topology.indexPatchCache.keys().next().value;
+      const oldest = topology.indexPatchCache.get(oldestKey);
+      topology.indexPatchCache.delete(oldestKey);
+      topology.indexPatchCacheTriangleWeight -= oldest.weight;
+    }
+    return receipt;
   }
 
   static _sampleUnit(seed: number, index: number, channel: number): number {

@@ -1017,6 +1017,10 @@ function _fortressBeginCustomFromParams(params, seedOverride?) {
   updateFortressStatus();
   updateFortressInventory();
   syncBrothSliders();
+  // The commissioned Cartesian cavity is already authoritative at step zero.
+  // Render it now so Creative authors can inspect the initial condition before
+  // the first geological action changes water, chemistry, or wall geometry.
+  if (typeof topoRender === 'function') topoRender();
   // Autosave opens AFTER the slider sync so the recording's broth
   // baseline is the state the first action will actually see.
   if (typeof _saveNoteBegin === 'function') {

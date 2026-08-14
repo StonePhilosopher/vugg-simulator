@@ -212,6 +212,34 @@ describe('Creative chemistry control contract', () => {
     expect((document.getElementById('broth-fe') as HTMLInputElement).value).toBe('375');
   });
 
+  it('renders the commissioned Creative cavity before the first geological step', () => {
+    const fixture = document.createElement('div');
+    fixture.id = 'creative-control-fixture';
+    const panel = document.createElement('section');
+    panel.id = 'topo-panel';
+    panel.style.display = 'block';
+    const canvas = document.createElement('canvas');
+    canvas.id = 'topo-canvas';
+    canvas.getContext = () => null;
+    const label = document.createElement('span');
+    label.id = 'topo-slice-label';
+    panel.append(canvas, label);
+    fixture.appendChild(panel);
+    document.body.appendChild(fixture);
+
+    // Browser entry switches to Creative before calling the scenario helper;
+    // reproduce that mode gate so topoActiveSim resolves the new simulator.
+    (globalThis as any).switchMode('fortress');
+    (globalThis as any).fortressBeginFromScenario('cooling', 42);
+    const sim = (globalThis as any)._liveFortressSim();
+    expect(sim.step).toBe(0);
+    expect(sim.wall_state.activeCavitySurfaceAnchorProvider().receipt)
+      .toMatchObject({ kind: 'cavity-field', resolution: 48, isovalue: 0 });
+    // `_topoUpdateSliceLabel` runs inside topoRender before any canvas/WebGL
+    // dependency, so this is a non-spy proof that Begin rendered step zero.
+    expect(label.textContent).toBe('All slices');
+  });
+
   it('reconfigures every live control copy when stale or duplicate DOM survives a rerender', () => {
     const parsed = new DOMParser().parseFromString(html, 'text/html');
     const fixture = document.createElement('div');
@@ -408,7 +436,12 @@ describe('Creative chemistry control contract', () => {
     expect(sim.conditions.wall.vug_diameter_mm).toBeCloseTo(240, 6);
     expect(sim.wall_state.vug_diameter_mm).toBeCloseTo(240, 6);
     expect(sim.conditions.wall.cavity_capacity_volume_mm3)
-      .toBeCloseTo(sim.wall_state.meshFor(sim).closedVolumeMm3(), 5);
+      .toBeCloseTo(
+        sim.wall_state.activeCavitySurfaceAnchorProvider().receipt.authoritative_volume_mm3,
+        5,
+      );
+    expect(sim.conditions.wall.cavity_capacity_basis)
+      .toBe('cartesian-field-freudenthal-volume-v2');
     expect(sim.wall_state.cavityEvolutionLedger().cursor).toBe(0);
     expect(sim.conditions.wall.thickness_mm).toBe(2400);
     expect(sim.conditions.wall.host_formula_inventory_initial_mmolkg)

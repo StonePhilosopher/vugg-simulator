@@ -88,11 +88,9 @@ describe('Tranche 6 — per-vertex nucleation plumbing', () => {
   it('keeps an MC/barycentric host overgrowth at the host physical attachment', () => {
     const sim = new VugSimulator(makeConditions({ shape_seed: 42 }), []);
     const wall = sim.wall_state;
-    wall.activateCavitySurfaceAnchorProvider({ resolution: 20 });
+    expect(wall.activeCavitySurfaceAnchorProvider()?.receipt.kind).toBe('cavity-field');
     const host = sim.nucleate('quartz', 'vug wall', 2);
-    host.wall_anchor = wall.surfaceAnchorFromMarchingCubes(
-      0, [0.2, 0.3, 0.5], { resolution: 20 },
-    );
+    host.wall_anchor = wall.surfaceAnchorFromMarchingCubes(0, [0.2, 0.3, 0.5]);
     const resolvedHost = wall._resolveAnchor(host);
     const child = sim.nucleate('calcite', `on quartz #${host.crystal_id}`, 2);
     const resolvedChild = wall._resolveAnchor(child);

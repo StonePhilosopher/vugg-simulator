@@ -184,6 +184,7 @@ function fortressBeginFromStarterFluid(presetId, seedOverride?) {
   updateFortressStatus();
   updateFortressInventory();
   if (typeof syncBrothSliders === 'function') syncBrothSliders();
+  if (typeof topoRender === 'function') topoRender();
   // Autosave opens AFTER the slider sync (broth baseline = what the
   // first action will see). See 93a-ui-saves.ts.
   if (typeof _saveNoteBegin === 'function') {
@@ -262,6 +263,7 @@ function fortressBeginFromScenario(scenarioName, seedOverride?) {
   updateFortressStatus();
   updateFortressInventory();
   if (typeof syncBrothSliders === 'function') syncBrothSliders();
+  if (typeof topoRender === 'function') topoRender();
   // Autosave opens AFTER the slider sync (broth baseline = what the
   // first action will see). See 93a-ui-saves.ts.
   if (typeof _saveNoteBegin === 'function') {

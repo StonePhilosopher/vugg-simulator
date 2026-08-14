@@ -338,14 +338,18 @@ function applySimulationCommand(runtime: any, command: any): any {
         && command.kind !== 'cavity-field-production') {
       throw new RangeError(`unsupported cavity surface provider '${String(command.kind)}'`);
     }
-    const result = command.kind === 'cavity-field-production'
-      ? runtime.sim.enableProductionCavityAuthority()
-      : command.kind === 'cavity-field'
-      ? runtime.sim.wall_state.activateCavitySurfaceAnchorProvider({
-        resolution: command.resolution, isovalue: command.isovalue,
-      })
-      : runtime.sim.wall_state.deactivateCavitySurfaceAnchorProvider();
-    _simulationAppendCommand(runtime, command);
+    if (command.kind !== 'cavity-field-production') {
+      // Since v266 topology is immutable production state, not an action. Keep
+      // decoding these legacy command shapes so rejection is explicit, but do
+      // not mutate the provider, command log, RNG, or fingerprint.
+      throw new RangeError(
+        'Cartesian production cavity authority is fixed before nucleation; '
+        + `provider '${command.kind}' cannot replace it`,
+      );
+    }
+    const result = runtime.sim.enableProductionCavityAuthority();
+    // Compatibility no-op only. New checkpoints start with the authority
+    // already installed and therefore never depend on replaying this command.
     return {
       status: runtime.status,
       step: runtime.sim.step,

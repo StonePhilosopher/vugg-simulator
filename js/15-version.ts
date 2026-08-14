@@ -12902,7 +12902,23 @@
 // interface, deterministic fingerprints, and replay all consume that one
 // physical state. This changes vadose reaction history and therefore requires
 // a real simulation/evidence identity bump.
-const SIM_VERSION = 265;
+// v266 (August 2026): the fixed Cartesian cavity is now constructor-time
+// production authority for every scenario and Creative run, before legacy
+// water conversion, chemistry binding, or nucleation. The exact extracted
+// volume—not WallMesh—initializes capacity and remains the atomic dissolution
+// ledger authority. Creative diameter edits uniformly scale authored geometry,
+// preserve physical water fraction, and recommission contract, ledger,
+// provider, chemistry, and replay histories as one rollback-capable action.
+// Arbitrary-resolution/isovalue and WallMesh provider commands are rejected
+// without changing command history or fingerprints; the old production-enable
+// command is an idempotent compatibility no-op. Commissioning uses one analytic
+// fixed-frame 48^3 extraction plus its independent 64^3 convergence reference,
+// with exact immutable-contract reuse across repeated runs of the same authored
+// shape. The acceptance corpus covers all 41 scenario shape_seed values and a
+// deterministic stratification of the full Creative architecture/bubble/seed/
+// diameter domain. This changes capacity, anchoring, surface fabrics, water,
+// dissolution, and downstream paragenesis, so all v266 evidence is rebaked.
+const SIM_VERSION = 266;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12924,9 +12940,9 @@ const MODEL_DIGEST = [
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
   'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',
   'surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4',
-  'surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+explicit-pinned-provider-command+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v6',
-  'cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-shadow-v3',
-  'cavity-authority:opt-in-fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+exact-volume-transaction+atomic-preflight+64-convergence+field-agreement+semantic-receipt+authenticated-replay-v1',
+  'surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7',
+  'cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4',
+  'cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v3',
   'water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1',
   'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
   'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
@@ -12934,7 +12950,7 @@ const MODEL_DIGEST = [
   'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3',
   'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
   'sulphur-bank-HgS:zoned-association-not-S0-substrate-v1',
-  'wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Float32-WallMesh-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+prerun-creative-authoring-v3',
+  'wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4',
   'sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2',
   'calcite-Mn:manganocalcite-excess<1.2-v1',
   'HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3',

@@ -52,6 +52,28 @@ describe('authenticated world-space cavity water appearance', () => {
     }
   });
 
+  it('treats a water plane at the exact cavity floor as zero-volume drainage', () => {
+    const c = conditions({ fluid_surface_ring: 0 });
+    const sim = new VugSimulator(c, []);
+    expect(c.fluid_surface_height_mm).toBe(0);
+    for (let ring = 0; ring < sim.wall_state.ring_count; ring++) {
+      expect(c.ringWaterState(ring, sim.wall_state.ring_count)).toBe('vadose');
+    }
+    const active = sim.wall_state.activeCavitySurfaceAnchorProvider();
+    const appearance = CavityWaterAppearance.create(sim.wall_state, c, {
+      activeProvider: active,
+      providerReceipt: active.receipt,
+      surface: active.surface,
+      sim,
+    });
+    expect(appearance.receipt.fully_drained).toBe(true);
+    const base = new Float32Array(active.surface.colors);
+    const rendered = CavityWaterAppearance.colorsForSurface(
+      active.surface, appearance.receipt,
+    );
+    expect(new Uint8Array(rendered.buffer)).toEqual(new Uint8Array(base.buffer));
+  });
+
   it('preserves an explicitly authored millimetre height instead of reinterpreting it as rings', () => {
     const c = conditions({ fluid_surface_height_mm: 2 });
     const sim = new VugSimulator(c, []);
@@ -195,7 +217,7 @@ describe('authenticated world-space cavity water appearance', () => {
     // canonical height, never today's mutable equivalent diameter.
     sim.wall_state.vug_diameter_mm *= 1.5;
     const decision = _topoReplayRenderDecision(sim.wall_state, snapshot);
-    expect(decision.mode).toBe('wall-mesh');
+    expect(decision.mode).toBe('cavity-field');
     expect(decision.conditions.fluid_surface_height_mm).toBe(10);
     expect(decision.appearance.appearance_digest)
       .toBe(snapshot.cavity_appearance.appearance_digest);

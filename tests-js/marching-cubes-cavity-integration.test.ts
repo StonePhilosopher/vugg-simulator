@@ -459,13 +459,17 @@ describe('Marching Cubes cavity renderer shadow integration', () => {
     }
   });
 
-  it('places every extracted edge vertex on the sampled zero set', () => {
+  it('places every extracted edge vertex inside the authenticated numerical-zero envelope', () => {
     const wall = makeWall();
     const field = wall.cavityFieldFor({ resolution: 24 });
     const surface = wall.cavitySurfaceFor({ resolution: 24 });
+    const zeroTolerance = Math.max(
+      1e-6,
+      field.spacingMm * surface.metrics.near_zero_scalar_floor_fraction * 2,
+    );
     for (let i = 0; i < surface.positions.length; i += 3) {
       const value = field.sampleWorld(surface.positions[i], surface.positions[i + 1], surface.positions[i + 2]);
-      expect(Math.abs(value)).toBeLessThan(field.spacingMm * 2e-5);
+      expect(Math.abs(value)).toBeLessThanOrEqual(zeroTolerance);
     }
   });
 

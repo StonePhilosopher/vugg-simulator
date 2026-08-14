@@ -81,7 +81,7 @@ describe('immutable simulation command/checkpoint protocol', () => {
     expect(() => restoreSimulationCommandRuntime(checkpoint)).toThrow('checkpoint integrity mismatch');
   });
 
-  it('commands, fingerprints, and restores explicit cavity-surface authority', () => {
+  it('rejects obsolete topology commands without mutating state or checkpoint history', () => {
     expect(() => makeSimulationCavitySurfaceProviderCommand('mystery'))
       .toThrow(/unsupported cavity surface provider/i);
     const start = makeSimulationStartCommand('cooling', 42);
@@ -90,17 +90,20 @@ describe('immutable simulation command/checkpoint protocol', () => {
     const activate = makeSimulationCavitySurfaceProviderCommand(
       'cavity-field', { resolution: 20, isovalue: 0 },
     );
-    const result = applySimulationCommand(runtime, activate);
-    expect(result.cavitySurfaceProvider).toMatchObject({
-      kind: 'cavity-field', resolution: 20, isovalue: 0,
+    const baselineLog = JSON.stringify(runtime.commandLog);
+    expect(() => applySimulationCommand(runtime, activate))
+      .toThrow(/fixed before nucleation/i);
+    expect(runtime.sim.wall_state.cavitySurfaceAnchorProviderReceipt()).toMatchObject({
+      kind: 'cavity-field', resolution: 48, isovalue: 0,
     });
-    expect(simulationStateFingerprint(runtime)).not.toBe(baseline);
+    expect(simulationStateFingerprint(runtime)).toBe(baseline);
+    expect(JSON.stringify(runtime.commandLog)).toBe(baselineLog);
     const restored = restoreSimulationCommandRuntime(
       JSON.parse(JSON.stringify(createSimulationCheckpoint(runtime))),
     );
     expect(simulationStateFingerprint(restored)).toBe(simulationStateFingerprint(runtime));
-    expect(restored.sim.wall_state._cavitySurfaceAnchorProvider)
-      .toEqual(runtime.sim.wall_state._cavitySurfaceAnchorProvider);
+    expect(restored.sim.wall_state.cavitySurfaceAnchorProviderReceipt())
+      .toEqual(runtime.sim.wall_state.cavitySurfaceAnchorProviderReceipt());
 
     // Presentation capability/fallback is not part of simulation authority.
     // Reading the exact renderer source cannot change the command-derived state.
@@ -112,13 +115,17 @@ describe('immutable simulation command/checkpoint protocol', () => {
       JSON.parse(JSON.stringify(createSimulationCheckpoint(runtime))),
     )).not.toThrow();
 
-    applySimulationCommand(runtime, makeSimulationCavitySurfaceProviderCommand('wall-mesh'));
-    expect(runtime.sim.wall_state._cavitySurfaceAnchorProvider).toEqual({ kind: 'wall-mesh' });
+    expect(() => applySimulationCommand(
+      runtime, makeSimulationCavitySurfaceProviderCommand('wall-mesh'),
+    )).toThrow(/fixed before nucleation/i);
     expect(simulationStateFingerprint(runtime)).toBe(baseline);
+    expect(JSON.stringify(runtime.commandLog)).toBe(baselineLog);
   });
 
-  it('selects the pinned production cavity only before time and restores its contract', () => {
+  it('treats the legacy production-selection command as an idempotent compatibility no-op', () => {
     const runtime = startSimulationCommandRuntime(makeSimulationStartCommand('cooling', 42));
+    const baseline = simulationStateFingerprint(runtime);
+    const baselineLog = JSON.stringify(runtime.commandLog);
     const command = makeSimulationCavitySurfaceProviderCommand(
       'cavity-field-production', { resolution: 8, isovalue: 0.5 },
     );
@@ -130,7 +137,7 @@ describe('immutable simulation command/checkpoint protocol', () => {
       contract: {
         scientific_resolution: 48,
         isovalue: 0,
-        volume_model: 'cartesian-field-freudenthal-volume-v1',
+        volume_model: 'cartesian-field-freudenthal-volume-v2',
       },
       provider: {
         kind: 'cavity-field',
@@ -138,7 +145,9 @@ describe('immutable simulation command/checkpoint protocol', () => {
         isovalue: 0,
       },
     });
-    const fingerprint = simulationStateFingerprint(runtime);
+    expect(simulationStateFingerprint(runtime)).toBe(baseline);
+    expect(JSON.stringify(runtime.commandLog)).toBe(baselineLog);
+    const fingerprint = baseline;
     const restored = restoreSimulationCommandRuntime(
       JSON.parse(JSON.stringify(createSimulationCheckpoint(runtime))),
     );
@@ -147,11 +156,15 @@ describe('immutable simulation command/checkpoint protocol', () => {
       .toEqual(runtime.sim.wall_state._cavityProductionAuthorityContract);
     expect(() => applySimulationCommand(
       runtime, makeSimulationCavitySurfaceProviderCommand('wall-mesh'),
-    )).toThrow(/cannot switch topology/i);
+    )).toThrow(/fixed before nucleation/i);
 
     const late = startSimulationCommandRuntime(makeSimulationStartCommand('cooling', 42));
     applySimulationCommand(late, makeSimulationAdvanceCommand(1));
-    expect(() => applySimulationCommand(late, command)).toThrow(/before time/i);
+    const lateFingerprint = simulationStateFingerprint(late);
+    const lateLog = JSON.stringify(late.commandLog);
+    expect(() => applySimulationCommand(late, command)).not.toThrow();
+    expect(simulationStateFingerprint(late)).toBe(lateFingerprint);
+    expect(JSON.stringify(late.commandLog)).toBe(lateLog);
   });
 
   it('fingerprints canonical local chemistry, dedicated RNG streams, and dissolution inventories', () => {

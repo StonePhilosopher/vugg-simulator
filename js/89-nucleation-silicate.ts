@@ -610,7 +610,7 @@ function _localTigerIronPhase(sim, substrate) {
   const mesh = wall?.meshFor?.(sim);
   if (!origin || !mesh) return null;
   const source = wall.chemistryVertexForCrystal(substrate);
-  const distances = source >= 0 ? mesh.geodesicDistancesFrom(source) : null;
+  const distances = source >= 0 ? _wallMeshGeodesicDistancesInternal(mesh, source) : null;
   if (!distances) return null;
   // "Banded with" means the iron phase occupies the immediately adjacent
   // surface patch.  cell_arc_mm is an equatorial mean and is too wide near a

@@ -31,10 +31,10 @@
 // gracefully if Three.js is unavailable (CDN blocked, file://, etc.).
 
 let _topoUseThreeRenderer = true;
-// Development-only renderer shadow path for the Cartesian cavity field.
-// Default off. Enable locally with ?mc_cavity=1 (optional ?mc_resolution=64)
-// or through _topoSetMarchingCubesCavity() in the debug console. This is not
-// a geological/Creative control: chemistry and anchors still use WallMesh.
+// Diagnostic override for the production Cartesian cavity renderer. The
+// scientific authority itself is fixed at zero-isovalue 48^3 since v266;
+// query/debug switches may force a truthful fallback or comparison view but
+// cannot change chemistry, anchors, booked volume, or model resolution.
 let _topoMarchingCubesCavityOverride: boolean | null = null;
 let _topoMarchingCubesResolutionOverride: number | null = null;
 // Has the default-on initialization run yet? On the FIRST topoRender
@@ -6908,6 +6908,11 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
       synth._cavityEvolutionLedger = ledger;
       synth._cavityEvolutionCursor = cursor;
       synth._disableMarchingCubesCavity = false;
+      if (synth._cavityProductionAuthorityContract) {
+        _installHistoricalWallProductionAuthorityOwnership(
+          synth, liveWall, ledger, cursor,
+        );
+      }
 
       // Replay the provider command that was authoritative at this snapshot,
       // then independently rebuild and compare every identity field. Legacy
@@ -6933,9 +6938,16 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
           'production_contract_digest',
           'authoritative_volume_mm3', 'max_field_agreement_voxels',
         ];
-        if (identityKeys.some(key => rebuilt[key] !== storedProvider[key])
-            || rebuilt.cavity_evolution_signature !== expectedSignature) {
-          throw new Error('replay cavity provider receipt mismatch');
+        const mismatchedKeys = identityKeys.filter(
+          key => rebuilt[key] !== storedProvider[key],
+        );
+        if (rebuilt.cavity_evolution_signature !== expectedSignature) {
+          mismatchedKeys.push('expected_evolution_signature');
+        }
+        if (mismatchedKeys.length) {
+          throw new Error('replay cavity provider receipt mismatch: '
+            + mismatchedKeys.map(key => `${key}=${String(rebuilt[key])}`
+              + ` (stored ${String(storedProvider[key])})`).join(', '));
         }
       } else if (storedProvider && storedProvider.kind !== 'wall-mesh') {
         throw new Error('unknown replay cavity provider kind');

@@ -27,6 +27,170 @@
 // indexed by vertex. For Phase 2 the mesh is READ-ONLY: it pulls from
 // rings[r][c] each rebuild. The engine still writes to ring cells.
 
+// Assigned synchronously immediately after the class definition, then the raw
+// prototype bridge is deleted. Physical shielding can share the canonical LRU
+// distances without exposing a mutable typed-array capability to callers.
+let _wallMeshGeodesicDistancesInternal:
+  (mesh: WallMesh, sourceVertex: number) => Float64Array;
+let _wallMeshRecomputeSurfaceMetricsInternal:
+  (mesh: WallMesh) => void;
+let _wallMeshRecomputeInternal:
+  (mesh: WallMesh, wall: any, sim?: any) => void;
+let _wallMeshRecomputeIfStaleInternal:
+  (mesh: WallMesh, wall: any, sim?: any) => boolean;
+let _wallMeshSurfacePatchInternal:
+  (mesh: WallMesh, anchorDirection: any, targetCoverage: number) => any;
+const WALL_MESH_GEODESIC_STATE = new WeakMap<object, any>();
+const WALL_MESH_SURFACE_STATE = new WeakMap<object, any>();
+const WALL_MESH_TOPOLOGY_STATE = new WeakMap<object, any>();
+
+const _wallMeshTopologyInternal = (mesh: any): any => {
+  const topology = WALL_MESH_TOPOLOGY_STATE.get(mesh);
+  if (!topology
+      || mesh.ringCount !== topology.ringCount
+      || mesh.cellsPerRing !== topology.cellsPerRing
+      || mesh.numInterior !== topology.numInterior
+      || mesh.southIdx !== topology.southIdx
+      || mesh.northIdx !== topology.northIdx) {
+    throw new Error('WallMesh physical reader requires its authenticated canonical topology');
+  }
+  return topology;
+};
+
+const _emptyWallMeshSurfaceState = (numInterior = 0): any => {
+  return {
+    surfaceAreaMm2: 0,
+    triangles: Object.freeze([]),
+    voidNormals: new Float32Array(Math.max(0, numInterior) * 3),
+    incidentTriangles: Object.freeze([]),
+    radialDistancesMm: new Float64Array(Math.max(0, numInterior)),
+    cellSurfaceAreasMm2: null,
+  };
+};
+
+const _wallMeshSurfaceStateInternal = (mesh: any): any => {
+  _wallMeshTopologyInternal(mesh);
+  const state = WALL_MESH_SURFACE_STATE.get(mesh);
+  if (!state) throw new Error('WallMesh physical surface authority is unavailable');
+  return state;
+};
+
+const _wallMeshCellSurfaceAreasInternal = (mesh: any): Float64Array => {
+  const state = _wallMeshSurfaceStateInternal(mesh);
+  const topology = _wallMeshTopologyInternal(mesh);
+  if (state.cellSurfaceAreasMm2) return state.cellSurfaceAreasMm2;
+  const areas = new Float64Array(topology.numInterior);
+  for (const triangle of state.triangles) {
+    const ids = [triangle.ia, triangle.ib, triangle.ic];
+    const interior = ids.filter((id) => id < topology.numInterior);
+    for (const id of interior) areas[id] += triangle.area_mm2 / 3;
+    const poleCount = 3 - interior.length;
+    if (poleCount && interior.length) {
+      const share = (triangle.area_mm2 / 3) * poleCount / interior.length;
+      for (const id of interior) areas[id] += share;
+    }
+  }
+  const sum = areas.reduce((acc, value) => acc + value, 0);
+  const tolerance = Math.max(1e-9, Math.abs(state.surfaceAreaMm2) * 1e-10);
+  if (Math.abs(sum - state.surfaceAreaMm2) > tolerance) {
+    throw new RangeError('wall-cell surface areas do not close to the rendered mesh area');
+  }
+  state.cellSurfaceAreasMm2 = areas;
+  return areas;
+};
+
+const _wallMeshSurfaceAreaInternal = (mesh: any): number => {
+  return Number(_wallMeshSurfaceStateInternal(mesh).surfaceAreaMm2) || 0;
+};
+
+const _wallMeshCellSurfaceAreaInternal = (mesh: any, vertexIndex: number): number => {
+  const topology = _wallMeshTopologyInternal(mesh);
+  if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= topology.numInterior) {
+    return 0;
+  }
+  return Number(_wallMeshCellSurfaceAreasInternal(mesh)[vertexIndex]) || 0;
+};
+
+const _wallMeshVoidNormalInternal = (mesh: any, vertexIndex: number): [number, number, number] | null => {
+  const topology = _wallMeshTopologyInternal(mesh);
+  if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= topology.numInterior) return null;
+  const normals = _wallMeshSurfaceStateInternal(mesh).voidNormals;
+  const base = vertexIndex * 3;
+  return [normals[base], normals[base + 1], normals[base + 2]];
+};
+
+const _wallMeshIncidentTriangleInternal = (mesh: any, vertexIndex: number): any => {
+  const topology = _wallMeshTopologyInternal(mesh);
+  if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= topology.numInterior) return null;
+  const receipt = _wallMeshSurfaceStateInternal(mesh).incidentTriangles[vertexIndex];
+  return receipt ? {
+    triangleIndex: receipt.triangleIndex,
+    barycentric: receipt.barycentric.slice(),
+  } : null;
+};
+
+// Trusted thermal consumers receive the immutable geometry pass, never public
+// renderer buffers or replaceable diagnostic cache look-alikes.
+const _wallMeshThermalGeometryInternal = (mesh: any): any => {
+  const state = _wallMeshSurfaceStateInternal(mesh);
+  return {
+    surfaceAreaMm2: state.surfaceAreaMm2,
+    cellSurfaceAreasMm2: _wallMeshCellSurfaceAreasInternal(mesh),
+    radialDistancesMm: state.radialDistancesMm,
+    surfaceIdentity: state,
+  };
+};
+
+const _resetWallMeshGeodesicState = (mesh: any): any => {
+  if (!mesh?.positions || !mesh?.indices) {
+    throw new TypeError('WallMesh geodesic authority requires source geometry');
+  }
+  const state = {
+    cache: new Map<number, Float64Array>(),
+    adjacency: null,
+    // Shielding paths are derived from an immutable private snapshot of the
+    // geometry pass. Renderer buffers remain public for GPU upload, but later
+    // writes to them cannot change physical dissolution exposure.
+    positions: new Float32Array(mesh.positions),
+    indices: Uint32Array.from(mesh.indices),
+  };
+  WALL_MESH_GEODESIC_STATE.set(mesh, state);
+  return state;
+};
+
+const _bindWallMeshTopologyInternal = (mesh: any): void => {
+  const indices = Uint32Array.from(mesh.indices || []);
+  WALL_MESH_TOPOLOGY_STATE.set(mesh, Object.freeze({
+    ringCount: mesh.ringCount,
+    cellsPerRing: mesh.cellsPerRing,
+    numInterior: mesh.numInterior,
+    southIdx: mesh.southIdx,
+    northIdx: mesh.northIdx,
+    indices,
+  }));
+};
+
+const _restoreWallMeshTopologyInternal = (
+  mesh: any, ringCount: number, cellsPerRing: number,
+): void => {
+  const topology = WALL_MESH_TOPOLOGY_STATE.get(mesh);
+  if (!topology
+      || topology.ringCount !== ringCount
+      || topology.cellsPerRing !== cellsPerRing
+      || topology.numInterior !== ringCount * cellsPerRing
+      || mesh.ringCount !== topology.ringCount
+      || mesh.cellsPerRing !== topology.cellsPerRing
+      || mesh.numInterior !== topology.numInterior
+      || mesh.southIdx !== topology.southIdx
+      || mesh.northIdx !== topology.northIdx) {
+    throw new Error('WallMesh recompute requires its authenticated canonical topology');
+  }
+  // Renderer indices are upload-facing public data. A legitimate geology
+  // rebuild always restores them from the private construction snapshot before
+  // deriving physical area, normals, paths, or control volumes.
+  mesh.indices = Array.from(topology.indices);
+};
+
 class WallMesh {
   // Dynamic dataclass-style fields — runtime untouched, matches the
   // pattern of WallState / Crystal / WallCell.
@@ -109,8 +273,7 @@ class WallMesh {
     // representative placement, so an irregular vug is not silently
     // replaced by a mean-diameter sphere.
     this.surface_area_mm2 = 0;
-    this._surfaceTriangles = [];
-    this._voidNormalsByVertex = null;
+    WALL_MESH_SURFACE_STATE.set(this, _emptyWallMeshSurfaceState());
   }
 
   // ---- Factory ----
@@ -173,6 +336,7 @@ class WallMesh {
     // north cap fan. Same winding the legacy renderer used so
     // outward-facing normals stay outward after migration.
     mesh._buildIndices(ringCount, N);
+    _bindWallMeshTopologyInternal(mesh);
 
     // Allocate dynamic buffers + run the first geometry pass.
     mesh.positions = new Float32Array(numVerts * 3);
@@ -197,7 +361,7 @@ class WallMesh {
     mesh.uvs[mesh.southIdx * 2 + 1] = 0.0;
     mesh.uvs[mesh.northIdx * 2 + 0] = 0.5;
     mesh.uvs[mesh.northIdx * 2 + 1] = 1.0;
-    mesh.recompute(wall, sim);
+    _wallMeshRecomputeInternal(mesh, wall, sim);
     // PROPOSAL-CAVITY-MESH Phase 4 Tranche 4c — cells[i] is now a
     // direct REFERENCE to wall.rings[r][c] (the WallCell object).
     // Same storage, two access patterns: wall.rings[r][c].fluid and
@@ -478,7 +642,7 @@ class WallMesh {
     let totalArea = 0;
     if (!positions || !indices) {
       this.surface_area_mm2 = 0;
-      this._surfaceTriangles = triangles;
+      WALL_MESH_SURFACE_STATE.set(this, _emptyWallMeshSurfaceState(this.numInterior));
       return;
     }
     for (let offset = 0; offset + 2 < indices.length; offset += 3) {
@@ -553,7 +717,6 @@ class WallMesh {
       }
     });
     this.surface_area_mm2 = totalArea;
-    this._surfaceTriangles = triangles;
     const voidNormals = new Float32Array(this.numInterior * 3);
     for (const triangle of triangles) {
       for (const vertexIndex of [triangle.ia, triangle.ib, triangle.ic]) {
@@ -574,12 +737,33 @@ class WallMesh {
       voidNormals[base + 1] /= length;
       voidNormals[base + 2] /= length;
     }
-    this._voidNormalsByVertex = voidNormals;
-    this._incidentTriangleByVertex = incidentTriangleByVertex;
-    this._cellSurfaceAreasSig = null;
-    this._cellSurfaceAreas = null;
-    this._geodesicCache = new Map();
-    this._geodesicAdjacency = null;
+    const radialDistances = new Float64Array(this.numInterior);
+    for (let vertexIndex = 0; vertexIndex < this.numInterior; vertexIndex++) {
+      const base = vertexIndex * 3;
+      radialDistances[vertexIndex] = Math.hypot(
+        positions[base], positions[base + 1], positions[base + 2],
+      );
+    }
+    for (const triangle of triangles) {
+      Object.freeze(triangle.centroid_dir);
+      Object.freeze(triangle.outward_normal);
+      Object.freeze(triangle.neighbor_indices);
+      Object.freeze(triangle);
+    }
+    for (const receipt of incidentTriangleByVertex) {
+      if (!receipt) continue;
+      Object.freeze(receipt.barycentric);
+      Object.freeze(receipt);
+    }
+    WALL_MESH_SURFACE_STATE.set(this, {
+      surfaceAreaMm2: totalArea,
+      triangles: Object.freeze(triangles),
+      voidNormals,
+      incidentTriangles: Object.freeze(incidentTriangleByVertex),
+      radialDistancesMm: radialDistances,
+      cellSurfaceAreasMm2: null,
+    });
+    _resetWallMeshGeodesicState(this);
   }
 
   // Exact enclosed volume of the closed triangle surface consumed by the
@@ -611,62 +795,18 @@ class WallMesh {
   // one-third share is split equally between the two adjacent cap vertices.
   // The returned areas therefore sum exactly to surface_area_mm2.
   cellSurfaceAreasMm2(): Float64Array {
-    if (this._cellSurfaceAreas && this._cellSurfaceAreasSig === this.sig) {
-    return new Float64Array(this._cellSurfaceAreas);
-  }
-
-    const areas = new Float64Array(this.numInterior);
-    const p = this.positions;
-    for (let offset = 0; offset + 2 < this.indices.length; offset += 3) {
-      const ids = [this.indices[offset], this.indices[offset + 1], this.indices[offset + 2]];
-      const a = ids[0] * 3, b = ids[1] * 3, c = ids[2] * 3;
-      const abx = p[b] - p[a], aby = p[b + 1] - p[a + 1], abz = p[b + 2] - p[a + 2];
-      const acx = p[c] - p[a], acy = p[c + 1] - p[a + 1], acz = p[c + 2] - p[a + 2];
-      const nx = aby * acz - abz * acy;
-      const ny = abz * acx - abx * acz;
-      const nz = abx * acy - aby * acx;
-      const area = 0.5 * Math.hypot(nx, ny, nz);
-      if (!(area > 0) || !Number.isFinite(area)) continue;
-      const interior = ids.filter((id) => id < this.numInterior);
-      for (const id of interior) areas[id] += area / 3;
-      const poleCount = 3 - interior.length;
-      if (poleCount && interior.length) {
-        const share = (area / 3) * poleCount / interior.length;
-        for (const id of interior) areas[id] += share;
-      }
-    }
-    const sum = areas.reduce((acc, value) => acc + value, 0);
-    const tolerance = Math.max(1e-9, Math.abs(this.surface_area_mm2) * 1e-10);
-    if (Math.abs(sum - this.surface_area_mm2) > tolerance) {
-      throw new RangeError('wall-cell surface areas do not close to the rendered mesh area');
-    }
-    this._cellSurfaceAreas = new Float64Array(areas);
-    this._cellSurfaceAreasSig = this.sig;
-    return areas;
+    return new Float64Array(_wallMeshCellSurfaceAreasInternal(this));
   }
 
   // Hot-path scalar accessor. The bulk method above intentionally returns a
   // defensive copy; growth/local-fill code that needs one vertex must not
   // allocate and copy all ~1,920 areas for every crystal on every step.
   cellSurfaceAreaAtVertexMm2(vertexIndex: number): number {
-    if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= this.numInterior) {
-      return 0;
-    }
-    if (!this._cellSurfaceAreas || this._cellSurfaceAreasSig !== this.sig) {
-      this.cellSurfaceAreasMm2();
-    }
-    return Number(this._cellSurfaceAreas?.[vertexIndex]) || 0;
+    return _wallMeshCellSurfaceAreaInternal(this, vertexIndex);
   }
 
   incidentTriangleForVertex(vertexIndex: number): any {
-    if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= this.numInterior) {
-      return null;
-    }
-    const receipt = this._incidentTriangleByVertex?.[vertexIndex];
-    return receipt ? {
-      triangleIndex: receipt.triangleIndex,
-      barycentric: receipt.barycentric.slice(),
-    } : null;
+    return _wallMeshIncidentTriangleInternal(this, vertexIndex);
   }
 
   // Candidate geometry for a sparse/dense set of raw WallCell depth deltas.
@@ -735,18 +875,23 @@ class WallMesh {
   // by geometry signature and source vertex; erosion invalidates the cache via
   // _recomputeSurfaceMetrics().
   geodesicDistancesFrom(sourceVertex: number): Float64Array {
-    return new Float64Array(this._geodesicDistancesFromInternal(sourceVertex));
+    return new Float64Array(_wallMeshGeodesicDistancesInternal(this, sourceVertex));
   }
 
   _geodesicDistancesFromInternal(sourceVertex: number): Float64Array {
     if (!Number.isInteger(sourceVertex) || sourceVertex < 0 || sourceVertex >= this.numInterior) {
       throw new RangeError('geodesic source must be an interior wall vertex');
     }
-    if (!this._geodesicCache) this._geodesicCache = new Map();
-    const cached = this._geodesicCache.get(sourceVertex);
-    if (cached) return cached;
+    const geodesic = WALL_MESH_GEODESIC_STATE.get(this)
+      || _resetWallMeshGeodesicState(this);
+    const cached = geodesic.cache.get(sourceVertex);
+    if (cached) {
+      geodesic.cache.delete(sourceVertex);
+      geodesic.cache.set(sourceVertex, cached);
+      return cached;
+    }
     const vertexCount = this.numInterior + 2;
-    if (!this._geodesicAdjacency) {
+    if (!geodesic.adjacency) {
       const adjacency: Array<Map<number, number>> = Array.from(
         { length: vertexCount }, () => new Map<number, number>(),
       );
@@ -754,9 +899,9 @@ class WallMesh {
         if (a === b) return;
         const ai = a * 3, bi = b * 3;
         const length = Math.hypot(
-          this.positions[ai] - this.positions[bi],
-          this.positions[ai + 1] - this.positions[bi + 1],
-          this.positions[ai + 2] - this.positions[bi + 2],
+          geodesic.positions[ai] - geodesic.positions[bi],
+          geodesic.positions[ai + 1] - geodesic.positions[bi + 1],
+          geodesic.positions[ai + 2] - geodesic.positions[bi + 2],
         );
         const prior = adjacency[a].get(b);
         if (prior == null || length < prior) {
@@ -764,11 +909,13 @@ class WallMesh {
           adjacency[b].set(a, length);
         }
       };
-      for (let offset = 0; offset + 2 < this.indices.length; offset += 3) {
-        const a = this.indices[offset], b = this.indices[offset + 1], c = this.indices[offset + 2];
+      for (let offset = 0; offset + 2 < geodesic.indices.length; offset += 3) {
+        const a = geodesic.indices[offset];
+        const b = geodesic.indices[offset + 1];
+        const c = geodesic.indices[offset + 2];
         addEdge(a, b); addEdge(b, c); addEdge(c, a);
       }
-      this._geodesicAdjacency = adjacency.map(edges => Array.from(edges.entries()));
+      geodesic.adjacency = adjacency.map(edges => Array.from(edges.entries()));
     }
     const distances = new Float64Array(vertexCount);
     distances.fill(Infinity);
@@ -809,7 +956,7 @@ class WallMesh {
       if (!item) break;
       const distance = item[0], current = item[1];
       if (distance !== distances[current]) continue;
-      for (const [neighbor, length] of this._geodesicAdjacency[current]) {
+      for (const [neighbor, length] of geodesic.adjacency[current]) {
         const candidate = distance + length;
         if (candidate < distances[neighbor]) {
           distances[neighbor] = candidate;
@@ -821,8 +968,15 @@ class WallMesh {
     if (Array.from(interior).some(value => !Number.isFinite(value))) {
       throw new RangeError('wall mesh geodesic graph is disconnected');
     }
-    this._geodesicCache.set(sourceVertex, new Float64Array(interior));
-    return this._geodesicCache.get(sourceVertex);
+    geodesic.cache.set(sourceVertex, new Float64Array(interior));
+    // A wall can accumulate thousands of distinct crystal sources. Retain a
+    // deterministic working set rather than one full 1,920-distance array for
+    // every source ever observed (~30 MiB per mesh at the former maximum).
+    while (geodesic.cache.size > 64) {
+      const oldest = geodesic.cache.keys().next().value;
+      geodesic.cache.delete(oldest);
+    }
+    return geodesic.cache.get(sourceVertex);
   }
 
   verticesWithinGeodesicRadius(sourceVertex: number, radiusMm: number): number[] {
@@ -830,7 +984,7 @@ class WallMesh {
     if (!(radius >= 0) || !Number.isFinite(radius)) {
       throw new RangeError('geodesic radius must be finite and non-negative');
     }
-    const distances = this._geodesicDistancesFromInternal(sourceVertex);
+    const distances = _wallMeshGeodesicDistancesInternal(this, sourceVertex);
     const vertices: number[] = [];
     for (let index = 0; index < distances.length; index++) {
       if (distances[index] <= radius + 1e-10) vertices.push(index);
@@ -842,22 +996,15 @@ class WallMesh {
     if (!Number.isInteger(targetVertex) || targetVertex < 0 || targetVertex >= this.numInterior) {
       throw new RangeError('geodesic target must be an interior wall vertex');
     }
-    return this._geodesicDistancesFromInternal(sourceVertex)[targetVertex];
+    return _wallMeshGeodesicDistancesInternal(this, sourceVertex)[targetVertex];
   }
 
   surfaceAreaMm2() {
-    return Number(this.surface_area_mm2) || 0;
+    return _wallMeshSurfaceAreaInternal(this);
   }
 
   voidNormalAtVertex(vertexIndex: number): [number, number, number] | null {
-    if (!Number.isInteger(vertexIndex) || vertexIndex < 0 || vertexIndex >= this.numInterior
-        || !this._voidNormalsByVertex) return null;
-    const base = vertexIndex * 3;
-    return [
-      this._voidNormalsByVertex[base],
-      this._voidNormalsByVertex[base + 1],
-      this._voidNormalsByVertex[base + 2],
-    ];
+    return _wallMeshVoidNormalInternal(this, vertexIndex);
   }
 
   // Select the closest triangle swath around an anchor direction until its
@@ -868,11 +1015,12 @@ class WallMesh {
     const al = Math.sqrt(raw[0] * raw[0] + raw[1] * raw[1] + raw[2] * raw[2]) || 1;
     const anchor = [raw[0] / al, raw[1] / al, raw[2] / al];
     const coverage = Math.max(0, Math.min(1, Number(targetCoverage) || 0));
-    const targetArea = this.surfaceAreaMm2() * coverage;
-    if (!(targetArea > 0) || !this._surfaceTriangles.length) {
+    const surfaceState = _wallMeshSurfaceStateInternal(this);
+    const targetArea = surfaceState.surfaceAreaMm2 * coverage;
+    if (!(targetArea > 0) || !surfaceState.triangles.length) {
       return { anchor, coverage_fraction: coverage, area_mm2: 0, triangles: [] };
     }
-    const ranked = this._surfaceTriangles.map((t) => ({
+    const ranked = surfaceState.triangles.map((t) => ({
       triangle: t,
       score: t.centroid_dir[0] * anchor[0]
         + t.centroid_dir[1] * anchor[1]
@@ -912,7 +1060,15 @@ class WallMesh {
       if (visited.has(index)) continue;
       visited.add(index);
       const weight = Math.min(item.triangle.area_mm2, remaining);
-      selected.push({ ...item.triangle, weight_mm2: weight });
+      selected.push({
+        triangle_index: item.triangle.triangle_index,
+        ia: item.triangle.ia, ib: item.triangle.ib, ic: item.triangle.ic,
+        area_mm2: item.triangle.area_mm2,
+        centroid_dir: item.triangle.centroid_dir.slice(),
+        outward_normal: item.triangle.outward_normal.slice(),
+        neighbor_indices: item.triangle.neighbor_indices.slice(),
+        weight_mm2: weight,
+      });
       remaining -= weight;
       for (const neighborIndex of item.triangle.neighbor_indices || []) {
         enqueue(rankedByIndex.get(neighborIndex));
@@ -942,7 +1098,7 @@ class WallMesh {
   // direction. Desktop/mobile can request different counts without changing
   // the patch, area, mass, or layer identity.
   sampleSurfacePatch(anchorDirection, count, targetCoverage, seed) {
-    const patch = this.surfacePatch(anchorDirection, targetCoverage);
+    const patch = _wallMeshSurfacePatchInternal(this, anchorDirection, targetCoverage);
     const n = Math.max(0, Number(count) | 0);
     const samples: any[] = [];
     if (!n || !(patch.area_mm2 > 0) || !patch.triangles.length || !this.positions) {
@@ -1026,9 +1182,10 @@ class WallMesh {
 
   // ---- Recompute (cheap when stale, no-op when fresh) ----
   recomputeIfStale(wall, sim?) {
+    _wallMeshTopologyInternal(this);
     const sig = WallMesh._signature(wall, sim);
     if (sig === this.sig) return false;
-    this.recompute(wall, sim);
+    _wallMeshRecomputeInternal(this, wall, sim);
     return true;
   }
 
@@ -1042,6 +1199,7 @@ class WallMesh {
     const ring0 = wall.rings[0];
     const N = ring0 ? ring0.length : 0;
     if (!N || ringCount < 1) return;
+    _restoreWallMeshTopologyInternal(this, ringCount, N);
     const initR = wall.initial_radius_mm || 25;
 
     // Color palette — must match the renderer's palette exactly.
@@ -1175,8 +1333,40 @@ class WallMesh {
     if (northR2 > maxR2) maxR2 = northR2;
 
     this.max_radius_mm = Math.sqrt(maxR2);
-    this._recomputeSurfaceMetrics();
+    _wallMeshRecomputeSurfaceMetricsInternal(this);
     this.geometry_sig = WallMesh._signature(wall, null);
     this.sig = WallMesh._signature(wall, sim);
   }
+}
+
+{
+  const geodesicImplementation = (WallMesh.prototype as any)._geodesicDistancesFromInternal;
+  const surfaceMetricsImplementation = (WallMesh.prototype as any)._recomputeSurfaceMetrics;
+  const recomputeImplementation = (WallMesh.prototype as any).recompute;
+  const recomputeIfStaleImplementation = (WallMesh.prototype as any).recomputeIfStale;
+  const surfacePatchImplementation = (WallMesh.prototype as any).surfacePatch;
+  if (typeof geodesicImplementation !== 'function') {
+    throw new Error('WallMesh geodesic authority bridge is unavailable');
+  }
+  if (typeof surfaceMetricsImplementation !== 'function'
+      || typeof recomputeImplementation !== 'function'
+      || typeof recomputeIfStaleImplementation !== 'function'
+      || typeof surfacePatchImplementation !== 'function') {
+    throw new Error('WallMesh authenticated rebuild bridge is unavailable');
+  }
+  _wallMeshGeodesicDistancesInternal = (mesh: WallMesh, sourceVertex: number) =>
+    (_wallMeshTopologyInternal(mesh), geodesicImplementation.call(mesh, sourceVertex));
+  _wallMeshRecomputeSurfaceMetricsInternal = (mesh: WallMesh) =>
+    surfaceMetricsImplementation.call(mesh);
+  _wallMeshRecomputeInternal = (mesh: WallMesh, wall: any, sim?: any) =>
+    recomputeImplementation.call(mesh, wall, sim);
+  _wallMeshRecomputeIfStaleInternal = (mesh: WallMesh, wall: any, sim?: any) =>
+    recomputeIfStaleImplementation.call(mesh, wall, sim);
+  _wallMeshSurfacePatchInternal = (mesh: WallMesh, anchorDirection: any, targetCoverage: number) =>
+    surfacePatchImplementation.call(mesh, anchorDirection, targetCoverage);
+  delete (WallMesh.prototype as any)._geodesicDistancesFromInternal;
+  delete (WallMesh.prototype as any)._recomputeSurfaceMetrics;
+  delete (WallMesh.prototype as any).recompute;
+  delete (WallMesh.prototype as any).recomputeIfStale;
+  delete (WallMesh.prototype as any).surfacePatch;
 }

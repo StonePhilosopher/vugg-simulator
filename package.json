@@ -23,6 +23,8 @@
     "pretest": "node tools/narrative-workflow.mjs --check && tsc -p tsconfig.json",
     "test": "node tools/test-workflow.mjs",
     "test:direct": "vitest run",
+    "test:bisbee-budget": "node tools/bisbee-production-budget.mjs",
+    "test:cavity-memory-budget": "node --expose-gc tools/cavity-production-memory-budget.mjs",
     "test:watch": "vitest",
     "ci": "npm run typecheck && npm run build:check && npm run audit:creative && npm run audit:cations && npm run audit:bif && npm run audit:science && npm run audit:localities && npm test"
   },

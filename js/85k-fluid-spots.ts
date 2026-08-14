@@ -39,8 +39,8 @@ const _SPOTS_SALT = 0x53504f54;
 // positive control. Mirrors the EH_DYNAMIC_ENABLED pattern (20c). The exported
 // global is a load-time snapshot; read the LIVE value via fluidSpotsDecayEnabled().
 let _FLUID_SPOTS_DECAY_ENABLED = true;
-function setFluidSpotsDecayEnabled(enabled: boolean): void { _FLUID_SPOTS_DECAY_ENABLED = !!enabled; }
-function fluidSpotsDecayEnabled(): boolean { return _FLUID_SPOTS_DECAY_ENABLED; }
+const setFluidSpotsDecayEnabled = (enabled: boolean): void => { _FLUID_SPOTS_DECAY_ENABLED = !!enabled; };
+const fluidSpotsDecayEnabled = (): boolean => _FLUID_SPOTS_DECAY_ENABLED;
 
 // Phase 2c.2b coupling — DEPOSITION CLUSTERING is PER-SCENARIO OPT-IN, not global.
 // When active for a sim, nucleation PLACEMENT clusters toward open supply-feeders
@@ -65,16 +65,16 @@ function fluidSpotsDecayEnabled(): boolean { return _FLUID_SPOTS_DECAY_ENABLED; 
 // Restore to null after a forced run. Read the resolved per-sim value via
 // fluidSpotsDepositionFor(sim).
 let _FLUID_SPOTS_DEPOSITION_OVERRIDE: boolean | null = null;
-function setFluidSpotsDepositionEnabled(enabled: boolean | null): void {
+const setFluidSpotsDepositionEnabled = (enabled: boolean | null): void => {
   _FLUID_SPOTS_DEPOSITION_OVERRIDE = (enabled === null || enabled === undefined) ? null : !!enabled;
-}
-function fluidSpotsDepositionOverride(): boolean | null { return _FLUID_SPOTS_DEPOSITION_OVERRIDE; }
+};
+const fluidSpotsDepositionOverride = (): boolean | null => _FLUID_SPOTS_DEPOSITION_OVERRIDE;
 // Resolve whether deposition clustering is active for a given sim: the master
 // override wins when set, else the sim's per-scenario opt-in (default false).
-function fluidSpotsDepositionFor(sim: any): boolean {
+const fluidSpotsDepositionFor = (sim: any): boolean => {
   if (_FLUID_SPOTS_DEPOSITION_OVERRIDE !== null) return _FLUID_SPOTS_DEPOSITION_OVERRIDE;
   return !!(sim && sim._fluidSpotsDeposition);
-}
+};
 
 // Phase 2c.2b — the per-cell PROXIMITY-DECAY clustering parameters (the model
 // that ACTUALLY clusters, superseding the 2c.2 column-bias that didn't — see the
@@ -88,13 +88,13 @@ function fluidSpotsDepositionFor(sim: any): boolean {
 // resets them (each sim builds a fresh FluidSpotField, so a new run picks them up).
 let _DEPOSITION_PEAK_K = 12;
 let _DEPOSITION_LAMBDA = 2.5;
-function setDepositionClustering(peakK: number, lambda: number): void {
+const setDepositionClustering = (peakK: number, lambda: number): void => {
   if (typeof peakK === 'number' && peakK >= 0) _DEPOSITION_PEAK_K = peakK;
   if (typeof lambda === 'number' && lambda > 0) _DEPOSITION_LAMBDA = lambda;
-}
-function depositionClustering(): { peakK: number; lambda: number } {
+};
+const depositionClustering = (): { peakK: number; lambda: number } => {
   return { peakK: _DEPOSITION_PEAK_K, lambda: _DEPOSITION_LAMBDA };
-}
+};
 
 type FluidSpotKind = 'crack' | 'geyser' | 'hotspot';
 
@@ -114,9 +114,9 @@ interface FluidSpot {
 
 // A dedicated deterministic PRNG for the spot set, derived from the cavity seed.
 // Reuses _mulberry32 (22-geometry-wall.ts) — resume-safe, independent of `rng`.
-function _makeSpotRng(vuggSeed: number, salt: number = _SPOTS_SALT): () => number {
+const _makeSpotRng = (vuggSeed: number, salt: number = _SPOTS_SALT): (() => number) => {
   return _mulberry32((((vuggSeed | 0) ^ salt) >>> 0));
-}
+};
 
 const _SPOT_KINDS: FluidSpotKind[] = ['crack', 'geyser', 'hotspot'];
 
@@ -139,7 +139,7 @@ const _KIND_DEFAULTS: Record<FluidSpotKind, { supply: number; decayBonus: number
 //     count               fixed spot count (overrides the distribution)
 //     minCount, maxCount  clamp the seeded distribution
 //     kinds               restrict to a subset of kinds
-function _seedFluidSpots(shapeSeed: number, cellCount: number, opts: any = {}): FluidSpot[] {
+const _seedFluidSpots = (shapeSeed: number, cellCount: number, opts: any = {}): FluidSpot[] => {
   const n = Math.max(0, cellCount | 0);
   if (n === 0) return [];
   const rng = _makeSpotRng(shapeSeed);
@@ -199,47 +199,132 @@ function _seedFluidSpots(shapeSeed: number, cellCount: number, opts: any = {}): 
     spots.push({ cell, kind, open: true, supply: d.supply, decayBonus: d.decayBonus });
   }
   return spots;
-}
+};
 
 // A lightweight holder for a sim's spot set + the queries the future couplings
 // (2b-2d) will use. An EMPTY set is a total no-op — every accessor returns the
 // neutral value, so a cavity with zero spots behaves exactly as today.
+const FLUID_SPOT_FIELD_STATE = new WeakMap<object, any>();
+const _fluidSpotStateInternal = (field: any): any => {
+  const state = FLUID_SPOT_FIELD_STATE.get(field);
+  if (!state) throw new Error('fluid-spot field authority is unavailable');
+  return state;
+};
+const _fluidSpotIsEmptyInternal = (field: any): boolean =>
+  !field || _fluidSpotStateInternal(field).spots.length === 0;
+
+const _fluidSpotErosionFluxInternal = (field: any, mesh: any): Float64Array | null => {
+  if (!mesh || _fluidSpotIsEmptyInternal(field)) return null;
+  const topology = _wallMeshTopologyInternal(mesh);
+  const vertexCount = topology.numInterior;
+  if (!(vertexCount > 0)) return null;
+  const state = _fluidSpotStateInternal(field);
+  const feeders = state.spots.filter((s: FluidSpot) => s.open && s.decayBonus > 1
+    && Number.isInteger(s.cell) && s.cell >= 0 && s.cell < vertexCount);
+  if (!feeders.length) return null;
+  const openIdentity = feeders.map((s: FluidSpot) => [s.cell, s.decayBonus]);
+  const geometry = _wallMeshThermalGeometryInternal(mesh);
+  const sig = JSON.stringify(openIdentity);
+  if (state.erosionFluxCache && state.erosionFluxSig === sig
+      && state.erosionSurfaceIdentity === geometry.surfaceIdentity) return state.erosionFluxCache;
+  const areas = _wallMeshCellSurfaceAreasInternal(mesh);
+  const meanCellScaleMm = Math.sqrt(
+    Math.max(1e-12, _wallMeshSurfaceAreaInternal(mesh)) / Math.max(1, vertexCount),
+  );
+  const lambdaMm = Math.max(meanCellScaleMm * 2.5, 1e-9);
+  const out = new Float64Array(vertexCount);
+  out.fill(1);
+  for (const feeder of feeders) {
+    const distances = _wallMeshGeodesicDistancesInternal(mesh, feeder.cell);
+    for (let i = 0; i < out.length; i++) {
+      if (!(areas[i] > 0)) continue;
+      const value = 1 + (feeder.decayBonus - 1) * Math.exp(-distances[i] / lambdaMm);
+      if (value > out[i]) out[i] = value;
+    }
+  }
+  state.erosionFluxCache = out;
+  state.erosionFluxSig = sig;
+  state.erosionSurfaceIdentity = geometry.surfaceIdentity;
+  return out;
+};
+
+const _fluidSpotProximityInternal = (
+  field: any, cellsPerRing: number, ringCount: number,
+): Float64Array | null => {
+  const N = cellsPerRing | 0;
+  const R = ringCount | 0;
+  if (N <= 0 || R <= 0 || _fluidSpotIsEmptyInternal(field)) return null;
+  const state = _fluidSpotStateInternal(field);
+  const feeders = state.spots.filter((s: FluidSpot) => s.open && s.supply > 1);
+  if (!feeders.length) return null;
+  const feederIdentity = feeders.map((s: FluidSpot) => [s.cell, s.supply]);
+  const sig = `${N}|${R}|${_DEPOSITION_PEAK_K}|${_DEPOSITION_LAMBDA}|${JSON.stringify(feederIdentity)}`;
+  if (state.proxCache && state.proxSig === sig) return state.proxCache;
+  const weights = new Float64Array(N * R);
+  for (let r = 0; r < R; r++) {
+    for (let c = 0; c < N; c++) {
+      let boost = 0;
+      for (const feeder of feeders) {
+        const fr = (feeder.cell / N) | 0, fc = feeder.cell % N;
+        const dCol = Math.abs(c - fc);
+        const distance = Math.abs(r - fr) + Math.min(dCol, N - dCol);
+        const candidate = (feeder.supply - 1) * _DEPOSITION_PEAK_K
+          * Math.exp(-distance / _DEPOSITION_LAMBDA);
+        if (candidate > boost) boost = candidate;
+      }
+      weights[r * N + c] = 1 + boost;
+    }
+  }
+  state.proxCache = weights;
+  state.proxSig = sig;
+  return weights;
+};
+
+const _fluidSpotMatchingInternal = (field: any, pred: any, wantOpen: boolean): FluidSpot[] =>
+  _fluidSpotStateInternal(field).spots.filter((s: FluidSpot) => s.open === wantOpen && (
+    pred == null ? true
+      : typeof pred === 'string' ? s.kind === pred
+        : typeof pred === 'function' ? !!pred({ ...s }) : true));
+
 class FluidSpotField {
   spots: FluidSpot[];
-  private _byCell: Map<number, FluidSpot>;
-  private _proxCache: Float64Array | null;   // 2c.2b proximityField memo
-  private _proxSig: string;
-  private _erosionFluxCache: Float64Array | null;
-  private _erosionFluxSig: string;
 
   constructor(spots: FluidSpot[] | undefined) {
-    this.spots = Array.isArray(spots) ? spots : [];
-    this._byCell = new Map();
-    for (const s of this.spots) this._byCell.set(s.cell, s);
-    this._proxCache = null;
-    this._proxSig = '';
-    this._erosionFluxCache = null;
-    this._erosionFluxSig = '';
+    const ownedSpots = (Array.isArray(spots) ? spots : []).map(s => ({ ...s }));
+    const byCell = new Map<number, FluidSpot>();
+    for (const spot of ownedSpots) byCell.set(spot.cell, spot);
+    const state = {
+      spots: ownedSpots, byCell,
+      proxCache: null, proxSig: '', erosionFluxCache: null, erosionFluxSig: '',
+      erosionSurfaceIdentity: null,
+    };
+    FLUID_SPOT_FIELD_STATE.set(this, state);
+    Object.defineProperty(this, 'spots', {
+      enumerable: true,
+      configurable: false,
+      get: () => state.spots.map((spot: FluidSpot) => ({ ...spot })),
+    });
   }
 
-  get isEmpty(): boolean { return this.spots.length === 0; }
+  get isEmpty(): boolean { return _fluidSpotIsEmptyInternal(this); }
 
   // The open spots — the live fluid sources this step (Phase 2c/2d). All seeded
   // open in 2a; 2d toggles `open` via events.
   openSpots(): FluidSpot[] {
-    return this.spots.filter(s => s.open);
+    return _fluidSpotStateInternal(this).spots
+      .filter((s: FluidSpot) => s.open).map((s: FluidSpot) => ({ ...s }));
   }
 
   // Wall-decay multiplier at a cell (Phase 2b). 1.0 (neutral) unless an OPEN
   // spot sits on the cell. Safe for any cell index when the set is empty.
   decayMultiplierAt(cell: number): number {
-    const s = this._byCell.get(cell);
+    const s = _fluidSpotStateInternal(this).byCell.get(cell);
     return (s && s.open) ? s.decayBonus : 1.0;
   }
 
   // Local deposition / supersaturation bias at a cell (Phase 2c). 1.0 neutral.
   supplyAt(cell: number): number {
-    const s = this._byCell.get(cell);
+    const s = _fluidSpotStateInternal(this).byCell.get(cell);
     return (s && s.open) ? s.supply : 1.0;
   }
 
@@ -249,33 +334,8 @@ class FluidSpotField {
   // the actual triangle mesh. No open feeder returns null so the caller uses
   // the diffuse pathway alone. This is the sole feeder authority for dissolution.
   erosionFluxField(mesh: any): Float64Array | null {
-    if (!mesh || !(mesh.numInterior > 0) || this.isEmpty) return null;
-    const feeders = this.spots.filter(s => s.open && s.decayBonus > 1
-      && Number.isInteger(s.cell) && s.cell >= 0 && s.cell < mesh.numInterior);
-    if (!feeders.length) return null;
-    const openIdentity = feeders.map(s => [s.cell, s.decayBonus]);
-    const sig = String(mesh.sig || 'mesh') + '|erosion|' + JSON.stringify(openIdentity);
-    if (this._erosionFluxCache && this._erosionFluxSig === sig) {
-      return new Float64Array(this._erosionFluxCache);
-    }
-    const areas = mesh.cellSurfaceAreasMm2();
-    const meanCellScaleMm = Math.sqrt(
-      Math.max(1e-12, Number(mesh.surface_area_mm2) || 0) / Math.max(1, mesh.numInterior),
-    );
-    const lambdaMm = Math.max(meanCellScaleMm * 2.5, 1e-9);
-    const out = new Float64Array(mesh.numInterior);
-    out.fill(1);
-    for (const feeder of feeders) {
-      const distances = mesh.geodesicDistancesFrom(feeder.cell);
-      for (let i = 0; i < out.length; i++) {
-        if (!(areas[i] > 0)) continue;
-        const value = 1 + (feeder.decayBonus - 1) * Math.exp(-distances[i] / lambdaMm);
-        if (value > out[i]) out[i] = value;
-      }
-    }
-    this._erosionFluxCache = new Float64Array(out);
-    this._erosionFluxSig = sig;
-    return out;
+    const flux = _fluidSpotErosionFluxInternal(this, mesh);
+    return flux ? new Float64Array(flux) : null;
   }
 
   // Phase 2c.2 — historic per-COLUMN DEPOSITION weights. Weight = MAX supply
@@ -287,10 +347,10 @@ class FluidSpotField {
   // compatibility query. Returns a length-cellsPerRing array or null.
   columnSupplyWeights(cellsPerRing: number): number[] | null {
     const N = cellsPerRing | 0;
-    if (N <= 0 || this.isEmpty) return null;
+    if (N <= 0 || _fluidSpotIsEmptyInternal(this)) return null;
     let any = false;
     const w = new Array(N).fill(1.0);
-    for (const s of this.spots) {
+    for (const s of _fluidSpotStateInternal(this).spots) {
       if (!s.open || !(s.supply > 1)) continue;
       const col = ((s.cell % N) + N) % N;
       if (s.supply > w[col]) { w[col] = s.supply; any = true; }
@@ -311,30 +371,8 @@ class FluidSpotField {
   // supply-feeders (caller falls through → byte-identical). Cached per
   // (N, ringCount, PEAK_K, LAMBDA); spots are static within a run (2d will toggle).
   proximityField(cellsPerRing: number, ringCount: number): Float64Array | null {
-    const N = cellsPerRing | 0;
-    const R = ringCount | 0;
-    if (N <= 0 || R <= 0 || this.isEmpty) return null;
-    const feeders = this.spots.filter(s => s.open && s.supply > 1);
-    if (!feeders.length) return null;
-    const sig = `${N}|${R}|${_DEPOSITION_PEAK_K}|${_DEPOSITION_LAMBDA}`;
-    if (this._proxCache && this._proxSig === sig) return this._proxCache;
-    const w = new Float64Array(N * R);
-    for (let r = 0; r < R; r++) {
-      for (let c = 0; c < N; c++) {
-        let boost = 0;
-        for (const f of feeders) {
-          const fr = (f.cell / N) | 0, fc = f.cell % N;
-          const dCol = Math.abs(c - fc);
-          const dist = Math.abs(r - fr) + Math.min(dCol, N - dCol);
-          const b = (f.supply - 1) * _DEPOSITION_PEAK_K * Math.exp(-dist / _DEPOSITION_LAMBDA);
-          if (b > boost) boost = b;
-        }
-        w[r * N + c] = 1 + boost;
-      }
-    }
-    this._proxCache = w;
-    this._proxSig = sig;
-    return w;
+    const proximity = _fluidSpotProximityInternal(this, cellsPerRing, ringCount);
+    return proximity ? new Float64Array(proximity) : null;
   }
 
   // Phase 2d — open/close spots over a vug's life, driven by events (a fracture
@@ -348,29 +386,27 @@ class FluidSpotField {
   // open-set, so a toggle MUST invalidate it or a sealed feeder would keep
   // clustering from the stale cache. _byCell/openSpots read `open` live; the
   // proximity and erosion-flux memos are both invalidated explicitly.
-  private _matchSpots(pred: any, wantOpen: boolean): FluidSpot[] {
-    return this.spots.filter(s => s.open === wantOpen && (
-      pred == null ? true :
-      typeof pred === 'string' ? s.kind === pred :
-      typeof pred === 'function' ? !!pred(s) : true));
-  }
   sealSpots(pred?: any): FluidSpot[] {
-    const hit = this._matchSpots(pred, true);
+    const hit = _fluidSpotMatchingInternal(this, pred, true);
     for (const s of hit) s.open = false;
     if (hit.length) {
-      this._proxCache = null;
-      this._erosionFluxCache = null;
+      const state = _fluidSpotStateInternal(this);
+      state.proxCache = null;
+      state.erosionFluxCache = null;
+      state.erosionSurfaceIdentity = null;
     }
-    return hit;
+    return hit.map(s => ({ ...s }));
   }
   breachSpots(pred?: any): FluidSpot[] {
-    const hit = this._matchSpots(pred, false);
+    const hit = _fluidSpotMatchingInternal(this, pred, false);
     for (const s of hit) s.open = true;
     if (hit.length) {
-      this._proxCache = null;
-      this._erosionFluxCache = null;
+      const state = _fluidSpotStateInternal(this);
+      state.proxCache = null;
+      state.erosionFluxCache = null;
+      state.erosionSurfaceIdentity = null;
     }
-    return hit;
+    return hit.map(s => ({ ...s }));
   }
 }
 
@@ -378,7 +414,7 @@ class FluidSpotField {
 // drives outcome) using mesh.numInterior cells; falls back to the run seed if no
 // shape_seed. Reads an optional scenario `fluid_spots` config. Phase 2a: the
 // field is built + stored but NOTHING reads it → sim-neutral.
-function _createFluidSpotField(sim: any): FluidSpotField {
+const _createFluidSpotField = (sim: any): FluidSpotField => {
   // The BUILT + cached mesh and the cavity shape_seed both live on `wall_state`
   // (the runtime WallState), NOT on `conditions.wall` (the VugWall config) — the
   // constructor builds the mesh via `this.wall_state.meshFor(this)`. Read both
@@ -396,4 +432,4 @@ function _createFluidSpotField(sim: any): FluidSpotField {
   const opts = (sim && sim.conditions && sim.conditions._scenario)
     ? (sim.conditions._scenario.fluid_spots || {}) : {};
   return new FluidSpotField(_seedFluidSpots(vuggSeed, cellCount, opts));
-}
+};

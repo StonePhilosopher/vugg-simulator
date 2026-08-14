@@ -152,7 +152,7 @@ describe('Cartesian cavity material-space mapping', () => {
 
     sim.wall_state.paleo_flow = 5;
     const replay = _topoReplayRenderDecision(sim.wall_state, snapshot);
-    expect(replay.mode).toBe('wall-mesh');
+    expect(replay.mode).toBe('cavity-field');
     expect(replay.wall.paleo_flow).toBe(0.1);
     expect(replay.materialState.relief_repeat).toEqual([3, 3]);
 
@@ -183,7 +183,7 @@ describe('Cartesian cavity material-space mapping', () => {
     expect(snapshot.cavity_material_state.paleo_flow).toBe(0);
     expect(snapshot.cavity_material_state.relief_repeat).toEqual([5, 5]);
     const replay = _topoReplayRenderDecision(sim.wall_state, snapshot);
-    expect(replay.mode).toBe('wall-mesh');
+    expect(replay.mode).toBe('cavity-field');
     expect(replay.materialState.paleo_flow).toBe(0);
   });
 });

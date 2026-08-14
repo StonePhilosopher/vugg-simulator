@@ -1,19 +1,30 @@
 // ============================================================
 // js/23d-geometry-cavity-production-authority.ts
 // ============================================================
-// Mass/geometry preflight for promoting the Cartesian cavity.  This remains an
-// opt-in authority until the remaining ambiguity, material, water, and browser
-// performance gates close.  Its core rule is already production-shaped:
+// Mass/geometry preflight and immutable production contract for the Cartesian
+// cavity. Since v266 every simulator selects this authority before water,
+// chemistry, or nucleation can observe geometry. Its core rule is:
 // chemistry may commit only after the exact extracted surface for the proposed
 // wall depths exists, is a closed two-manifold, and encloses the booked volume.
 
 const CAVITY_PRODUCTION_AUTHORITY_SCHEMA = 'cavity-production-authority-v1';
-const CAVITY_PRODUCTION_VOLUME_MODEL = 'cartesian-field-freudenthal-volume-v1';
+const CAVITY_PRODUCTION_VOLUME_MODEL = 'cartesian-field-freudenthal-volume-v2';
 const CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION = 48;
 const CAVITY_PRODUCTION_REFERENCE_RESOLUTION = 64;
 const CAVITY_PRODUCTION_ISOVALUE = 0;
 const CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS = 0.75;
 const CAVITY_PRODUCTION_MAX_VOLUME_CONVERGENCE_FRACTION = 0.02;
+const CAVITY_PRODUCTION_CONTRACT_CACHE_LIMIT = 128;
+// Exact scientific contracts are immutable and depend only on the authenticated
+// authored geometry/depth identity plus the model constants above. Reusing one
+// avoids repeating the 48^3/64^3 commissioning proof when a scenario is replayed
+// with another game seed; the live field is still independently extracted and
+// byte-authenticated before it becomes that WallState's provider.
+const CAVITY_PRODUCTION_CONTRACT_CACHE = new Map<string, any>();
+// An erosion plan is an in-process capability, not merely a digest-bearing
+// JSON object. Only the exact frozen plan returned by preview may reuse its
+// measured 48^3 surface and 64^3 convergence proof at commit time.
+const CAVITY_PRODUCTION_EROSION_PLANS = new WeakMap<object, any>();
 
 class CavityProductionAuthority {
   static _closes(actual: any, expected: any, scale: any = 1): boolean {
@@ -73,7 +84,12 @@ class CavityProductionAuthority {
       throw new RangeError('Cartesian cavity geometry authority volume semantics do not close');
     }
     if (!Number.isInteger(receipt.field_build_and_extract_evaluations)
-        || receipt.field_build_and_extract_evaluations < 2) {
+        || receipt.field_build_and_extract_evaluations !== 2
+        || !Number.isInteger(receipt.volume_only_field_evaluations)
+        || receipt.volume_only_field_evaluations < 1
+        || receipt.full_surface_extract_evaluations?.production_48 !== 1
+        || receipt.full_surface_extract_evaluations?.reference_64 !== 1
+        || receipt.full_surface_extract_evaluations?.provider_install !== 0) {
       throw new RangeError('Cartesian cavity geometry authority evaluation count is invalid');
     }
     const agreement = receipt.agreement;
@@ -82,6 +98,9 @@ class CavityProductionAuthority {
         || agreement.barycentric_subdivisions < 1
         || !(Number(agreement.numerical_zero_tolerance) > 0)
         || agreement.unresolved_sample_count !== 0
+        || !(Number(agreement.max_field_residual) >= 0)
+        || Number(agreement.max_field_residual)
+          > Number(agreement.numerical_zero_tolerance)
         || !(Number(agreement.max_normal_root_distance_voxels) >= 0)
         || Number(agreement.max_normal_root_distance_voxels)
           > CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS
@@ -242,9 +261,13 @@ class CavityProductionAuthority {
     );
     const isovalue = opts.isovalue == null ? CAVITY_PRODUCTION_ISOVALUE : Number(opts.isovalue);
     if (!Number.isFinite(isovalue)) throw new TypeError('Cartesian cavity isovalue must be finite');
-    const field = CavityProductionAuthority._fieldForDepths(wall, depths, {
+    const field = opts.field || CavityProductionAuthority._fieldForDepths(wall, depths, {
       resolution, frame: opts.frame || null,
     });
+    if (!(field instanceof CavityScalarField) || field.sizeX !== resolution
+        || field.sizeY !== resolution || field.sizeZ !== resolution) {
+      throw new RangeError('Cartesian cavity surface state received a foreign field');
+    }
     const surface = field.extract(isovalue);
     MarchingCubesExtractor.verifyBuffers(surface);
     if (!field.hasNegativeBorder(isovalue)
@@ -256,6 +279,7 @@ class CavityProductionAuthority {
     const agreement = opts.measureAgreement
       ? MarchingCubesExtractor.measureImplicitAgreement(field, surface, 2) : null;
     if (agreement && (agreement.unresolved_sample_count !== 0
+        || agreement.max_field_residual > agreement.numerical_zero_tolerance
         || agreement.max_normal_root_distance_voxels
           > CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS)) {
       throw new RangeError(`Cartesian cavity surface exceeds the field-agreement tolerance: ${JSON.stringify({
@@ -347,6 +371,11 @@ class CavityProductionAuthority {
         || expectedAgreement.unresolved_sample_count
           !== agreement.unresolved_sample_count
         || !CavityProductionAuthority._closes(
+          expectedAgreement.max_field_residual,
+          agreement.max_field_residual,
+          Math.max(agreement.numerical_zero_tolerance, 1e-12),
+        )
+        || !CavityProductionAuthority._closes(
           expectedAgreement.max_normal_root_distance_voxels,
           agreement.max_normal_root_distance_voxels,
           1,
@@ -354,6 +383,7 @@ class CavityProductionAuthority {
         || expectedAgreement.maximum_allowed_voxels
           !== CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS
         || agreement.unresolved_sample_count !== 0
+        || agreement.max_field_residual > agreement.numerical_zero_tolerance
         || agreement.max_normal_root_distance_voxels
           > CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS) {
       throw new RangeError('Cartesian cavity field-agreement evidence was not reproduced');
@@ -406,13 +436,16 @@ class CavityProductionAuthority {
   }
 
   static assertContract(wall: any, contract: any): true {
+    _assertWallProductionAuthorityOwnership(wall, contract);
+    const identity = CavityEvolutionLedger.identityForWall(wall);
     if (!contract || contract.schema !== CAVITY_PRODUCTION_AUTHORITY_SCHEMA
         || contract.volume_model !== CAVITY_PRODUCTION_VOLUME_MODEL
         || contract.scientific_resolution !== CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION
         || contract.isovalue !== CAVITY_PRODUCTION_ISOVALUE
         || !(contract.baseline_volume_convergence?.relative_difference
           <= CAVITY_PRODUCTION_MAX_VOLUME_CONVERGENCE_FRACTION)
-        || contract.shape_identity !== CavityEvolutionLedger.identityForWall(wall).shape
+        || contract.shape_identity !== identity.shape
+        || contract.tessellation_identity !== identity.tessellation
         || contract.contract_digest
           !== CavityEvolutionLedger.digest(CavityProductionAuthority._contractPayload(contract))) {
       throw new RangeError('invalid or foreign Cartesian cavity production contract');
@@ -423,18 +456,38 @@ class CavityProductionAuthority {
 
   static createContract(wall: any): any {
     const depths = CavityProductionAuthority._depthsFromWall(wall);
-    const bootstrap = CavityProductionAuthority._surfaceState(wall, depths, {
-      resolution: CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION,
+    const identity = CavityEvolutionLedger.identityForWall(wall);
+    const depthDigest = CavityProductionAuthority._depthDigest(wall, depths);
+    const cacheKey = CavityEvolutionLedger.digest({
+      schema: CAVITY_PRODUCTION_AUTHORITY_SCHEMA,
+      volume_model: CAVITY_PRODUCTION_VOLUME_MODEL,
+      scientific_resolution: CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION,
+      reference_resolution: CAVITY_PRODUCTION_REFERENCE_RESOLUTION,
       isovalue: CAVITY_PRODUCTION_ISOVALUE,
+      max_agreement_voxels: CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS,
+      max_volume_convergence_fraction: CAVITY_PRODUCTION_MAX_VOLUME_CONVERGENCE_FRACTION,
+      shape_identity: identity.shape,
+      tessellation_identity: identity.tessellation,
+      depth_projection_digest: depthDigest,
     });
-    const frame = Object.freeze({
-      dimensions: Object.freeze([
-        CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION,
-        CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION,
-        CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION,
-      ]),
-      origin_mm: Object.freeze(bootstrap.field.origin.slice()),
-      spacing_mm: bootstrap.field.spacingMm,
+    const cached = CAVITY_PRODUCTION_CONTRACT_CACHE.get(cacheKey);
+    if (cached) {
+      // Refresh insertion order so the bounded cache is deterministic LRU.
+      CAVITY_PRODUCTION_CONTRACT_CACHE.delete(cacheKey);
+      CAVITY_PRODUCTION_CONTRACT_CACHE.set(cacheKey, cached);
+      CavityProductionAuthority.assertContract(wall, cached);
+      return cached;
+    }
+    const evolution = {
+      ring_count: wall.ring_count,
+      cells_per_ring: wall.cells_per_ring,
+      depths_mm: depths,
+      signature: depthDigest,
+    };
+    const frame = CavityScalarField.frameForBubbles(wall.bubbles, {
+      resolution: CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION,
+      shape: CavityScalarField.shapeFor(wall),
+      evolution,
     });
     const initial = CavityProductionAuthority._surfaceState(wall, depths, {
       resolution: CAVITY_PRODUCTION_SCIENTIFIC_RESOLUTION,
@@ -452,7 +505,8 @@ class CavityProductionAuthority {
       isovalue: CAVITY_PRODUCTION_ISOVALUE,
       frame,
       frame_policy: 'immutable run-wide world-space lattice; erosion outside its negative border fails before commit',
-      shape_identity: CavityEvolutionLedger.identityForWall(wall).shape,
+      shape_identity: identity.shape,
+      tessellation_identity: identity.tessellation,
       baseline_depth_projection_digest: initial.depth_projection_digest,
       baseline_field_snapshot_digest: initial.field.snapshotDigest,
       baseline_surface_buffer_digest: initial.surface.buffer_digest,
@@ -464,15 +518,25 @@ class CavityProductionAuthority {
         barycentric_subdivisions: initial.agreement.barycentric_subdivisions,
         numerical_zero_tolerance: initial.agreement.numerical_zero_tolerance,
         unresolved_sample_count: initial.agreement.unresolved_sample_count,
+        max_field_residual: initial.agreement.max_field_residual,
         max_normal_root_distance_voxels: initial.agreement.max_normal_root_distance_voxels,
         maximum_allowed_voxels: CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS,
       }),
       authority_scope: 'connected star-shaped radial erosion bridge; no disconnected chambers, re-entrant transport, or deposition claim',
       quality_policy: 'scientific resolution and zero isovalue are model state, never renderer or hardware quality knobs',
+      commissioning_evaluations: Object.freeze({
+        production_field_build_and_extract: 1,
+        reference_field_build_and_extract: 1,
+      }),
     };
     payload.contract_digest = CavityEvolutionLedger.digest(payload);
     CavityEvolutionLedger._deepFreeze(payload);
     CavityProductionAuthority.assertContract(wall, payload);
+    CAVITY_PRODUCTION_CONTRACT_CACHE.set(cacheKey, payload);
+    while (CAVITY_PRODUCTION_CONTRACT_CACHE.size > CAVITY_PRODUCTION_CONTRACT_CACHE_LIMIT) {
+      const oldest = CAVITY_PRODUCTION_CONTRACT_CACHE.keys().next().value;
+      CAVITY_PRODUCTION_CONTRACT_CACHE.delete(oldest);
+    }
     return payload;
   }
 
@@ -496,8 +560,9 @@ class CavityProductionAuthority {
     if (!ledger || ledger.model !== CAVITY_PRODUCTION_VOLUME_MODEL) {
       throw new RangeError('Cartesian surface is not backed by its production evolution ledger');
     }
-    const cursor = ledgerCursor == null ? ledger.cursor : Number(ledgerCursor);
-    if (!Number.isInteger(cursor) || cursor < 0 || cursor > ledger.cursor) {
+    const ledgerHead = _cavityLedgerAuthorityHead(ledger);
+    const cursor = ledgerCursor == null ? ledgerHead.head_cursor : Number(ledgerCursor);
+    if (!Number.isInteger(cursor) || cursor < 0 || cursor > ledgerHead.head_cursor) {
       throw new RangeError('Cartesian surface production cursor is invalid');
     }
     const authority = cursor === 0 ? {
@@ -526,7 +591,26 @@ class CavityProductionAuthority {
     if (Math.abs(volume - Number(authority.new_volume_mm3)) > tolerance) {
       throw new RangeError('Cartesian surface volume differs from its mass-authority receipt');
     }
-    const depths = ledger.materialize(cursor);
+    if (cursor === 0) {
+      // Exact snapshot, extracted-buffer, and closed-volume equality above bind
+      // this live provider to the immutable commissioning evidence. Repeating
+      // the 64^3 extraction here would prove the same bytes a second time and
+      // made every scenario construction pay reference-resolution cost twice.
+      return Object.freeze({
+        volume_mm3: volume,
+        agreement: Object.freeze({
+          schema: contract.agreement_gate.metric_schema,
+          barycentric_subdivisions: contract.agreement_gate.barycentric_subdivisions,
+          numerical_zero_tolerance: contract.agreement_gate.numerical_zero_tolerance,
+          unresolved_sample_count: contract.agreement_gate.unresolved_sample_count,
+          max_field_residual: contract.agreement_gate.max_field_residual,
+          max_normal_root_distance_voxels:
+            contract.agreement_gate.max_normal_root_distance_voxels,
+          maximum_allowed_voxels: contract.agreement_gate.maximum_allowed_voxels,
+        }),
+      });
+    }
+    const depths = new Float64Array(_cavityLedgerDepthProjection(ledger, cursor));
     const evidence = CavityProductionAuthority._assertMeasuredEvidence(
       wall,
       depths,
@@ -565,9 +649,19 @@ class CavityProductionAuthority {
     if (!(maxWeight > 0)) throw new RangeError('Cartesian cavity erosion has no exposed surface');
     for (let index = 0; index < weights.length; index++) weights[index] /= maxWeight;
 
-    const oldState = CavityProductionAuthority._surfaceState(
-      wall, currentDepths, { resolution, isovalue, frame },
-    );
+    const ledger = wall.cavityEvolutionLedger?.();
+    const active = wall.activeCavitySurfaceAnchorProvider?.();
+    if (!ledger || !active || active.receipt?.kind !== 'cavity-field') {
+      throw new Error('Cartesian erosion requires the sealed live production provider');
+    }
+    const oldState = Object.freeze({
+      field: active.field,
+      surface: active.surface,
+      volume_mm3: MarchingCubesExtractor.closedVolumeMm3(active.surface),
+      surface_area_mm2: MarchingCubesExtractor.surfaceAreaMm2(active.surface),
+      depth_projection_digest: CavityProductionAuthority._depthDigest(wall, currentDepths),
+      agreement: null,
+    });
     const desiredVolume = oldState.volume_mm3 + target;
     const maxCoordinate = Math.max(
       ...oldState.surface.bounds.min.map(Math.abs),
@@ -581,16 +675,23 @@ class CavityProductionAuthority {
       oldState.volume_mm3 * 1e-10,
       oldState.surface_area_mm2 * float32UlpMm * 8,
     );
-    let evaluations = 1;
+    let volumeOnlyEvaluations = 0;
     const candidate = (lambda: number): any => {
       const depths = new Float64Array(currentDepths.length);
       for (let index = 0; index < depths.length; index++) {
         depths[index] = currentDepths[index] + lambda * weights[index];
       }
-      const state = CavityProductionAuthority._surfaceState(
-        wall, depths, { resolution, isovalue, frame },
+      const field = CavityProductionAuthority._fieldForDepths(
+        wall, depths, { resolution, frame },
       );
-      evaluations++;
+      const volumeEvidence = cavityFieldVolumeInternal(field, isovalue);
+      const state = Object.freeze({
+        field,
+        volume_mm3: volumeEvidence.volume_mm3,
+        triangle_count: volumeEvidence.triangle_count,
+        depth_projection_digest: CavityProductionAuthority._depthDigest(wall, depths),
+      });
+      volumeOnlyEvaluations++;
       return { lambda, depths, state };
     };
 
@@ -613,10 +714,7 @@ class CavityProductionAuthority {
         ? low.lambda + (desiredVolume - low.state.volume_mm3)
           * (high.lambda - low.lambda) / denominator
         : (low.lambda + high.lambda) * 0.5;
-      const span = high.lambda - low.lambda;
-      if (!(nextLambda > low.lambda && nextLambda < high.lambda)
-          || nextLambda < low.lambda + span * 0.05
-          || nextLambda > high.lambda - span * 0.05) {
+      if (!(nextLambda > low.lambda && nextLambda < high.lambda)) {
         nextLambda = (low.lambda + high.lambda) * 0.5;
       }
       const next = candidate(nextLambda);
@@ -633,11 +731,14 @@ class CavityProductionAuthority {
         + ' exceeds tolerance ' + tolerance + ' for target ' + target);
     }
     const finalState = CavityProductionAuthority._surfaceState(
-      wall, solved.depths, { resolution, isovalue, frame, measureAgreement: true },
+      wall, solved.depths, {
+        resolution, isovalue, frame, measureAgreement: true, field: solved.state.field,
+      },
     );
-    if (finalState.field.snapshotDigest !== solved.state.field.snapshotDigest
-        || finalState.surface.buffer_digest !== solved.state.surface.buffer_digest) {
-      throw new RangeError('Cartesian cavity final agreement gate changed the solved surface');
+    if (finalState.field !== solved.state.field
+        || Math.abs(finalState.volume_mm3 - solved.state.volume_mm3)
+          > Math.max(1e-9, Math.abs(finalState.volume_mm3) * 1e-12)) {
+      throw new RangeError('Cartesian cavity volume-only evaluator differs from final surface');
     }
     const convergence = CavityProductionAuthority._convergenceReceipt(
       wall, solved.depths, finalState, frame,
@@ -664,37 +765,44 @@ class CavityProductionAuthority {
       old_field_snapshot_digest: oldState.field.snapshotDigest,
       new_field_snapshot_digest: solved.state.field.snapshotDigest,
       old_surface_buffer_digest: oldState.surface.buffer_digest,
-      new_surface_buffer_digest: solved.state.surface.buffer_digest,
+      new_surface_buffer_digest: finalState.surface.buffer_digest,
       old_volume_mm3: oldState.volume_mm3,
       new_volume_mm3: solved.state.volume_mm3,
       target_volume_delta_mm3_per_kg: target,
       achieved_volume_delta_mm3_per_kg: achieved,
       volume_residual_mm3_per_kg: residual,
       volume_tolerance_mm3_per_kg: tolerance,
-      field_build_and_extract_evaluations: evaluations,
+      field_build_and_extract_evaluations: 2,
+      volume_only_field_evaluations: volumeOnlyEvaluations,
+      full_surface_extract_evaluations: {
+        production_48: 1,
+        reference_64: 1,
+        provider_install: 0,
+      },
       agreement: {
         schema: finalState.agreement.schema,
         barycentric_subdivisions: finalState.agreement.barycentric_subdivisions,
         numerical_zero_tolerance: finalState.agreement.numerical_zero_tolerance,
         unresolved_sample_count: finalState.agreement.unresolved_sample_count,
+        max_field_residual: finalState.agreement.max_field_residual,
         max_normal_root_distance_voxels: finalState.agreement.max_normal_root_distance_voxels,
         maximum_allowed_voxels: CAVITY_PRODUCTION_MAX_AGREEMENT_VOXELS,
       },
       volume_convergence: convergence,
-      topology: 'negative-border closed orientable Freudenthal two-manifold; exact-zero samples use deterministic simulation of simplicity',
+      topology: 'negative-border closed orientable Freudenthal two-manifold; signed near-zero samples use a deterministic spacing/4096 scalar floor; exact-zero zero-gradient critical contacts fail closed',
     };
     receipt.receipt_digest = CavityEvolutionLedger.digest(receipt);
     CavityEvolutionLedger._deepFreeze(receipt);
-    const ledger = wall.cavityEvolutionLedger?.();
     CavityProductionAuthority.validateAuthorityReceipt(receipt, {
-      previousAuthority: ledger?.cursor
-        ? ledger.entries[ledger.cursor - 1]?.geometry_authority : null,
+      previousAuthority: _cavityLedgerAuthorityHead(ledger).head_cursor
+        ? ledger.entries[_cavityLedgerAuthorityHead(ledger).head_cursor - 1]?.geometry_authority
+        : null,
       expectedOldDepthDigest: oldState.depth_projection_digest,
       expectedNewDepthDigest: solved.state.depth_projection_digest,
       contract,
       wall,
     });
-    return Object.freeze({
+    const plan = Object.freeze({
       target_volume_delta_mm3_per_kg: target,
       achieved_volume_delta_mm3_per_kg: achieved,
       volume_residual_mm3_per_kg: residual,
@@ -704,13 +812,57 @@ class CavityProductionAuthority {
       vertex_deltas: Object.freeze(vertexDeltas.map(delta => Object.freeze(delta))),
       authority_receipt: receipt,
     });
+    const priorHead = _cavityLedgerAuthorityHead(ledger);
+    const oldAgreement = priorHead.head_cursor === 0 ? {
+      max_normal_root_distance_voxels:
+        contract.agreement_gate.max_normal_root_distance_voxels,
+    } : ledger.entries[priorHead.head_cursor - 1].geometry_authority.agreement;
+    CAVITY_PRODUCTION_EROSION_PLANS.set(plan, Object.freeze({
+      wall,
+      contract,
+      ledger,
+      prior_cursor: priorHead.head_cursor,
+      prior_signature: priorHead.signature,
+      prior_ledger_generation: priorHead.generation,
+      prior_generation: _wallPrivateGeometryGeneration(wall),
+      old_state: oldState,
+      old_agreement: oldAgreement,
+      final_state: finalState,
+      final_depths: new Float64Array(solved.depths),
+      receipt,
+    }));
+    return plan;
   }
 
-  static verifyCommitted(wall: any, receipt: any, contract: any): any {
+  static assertPlanReady(wall: any, plan: any, contract: any): true {
+    const capability = CAVITY_PRODUCTION_EROSION_PLANS.get(plan);
+    const ledger = wall?.cavityEvolutionLedger?.();
+    const active = wall?.activeCavitySurfaceAnchorProvider?.();
+    const ledgerHead = ledger ? _cavityLedgerAuthorityHead(ledger) : null;
+    if (!capability || capability.wall !== wall || capability.contract !== contract
+        || capability.ledger !== ledger || capability.receipt !== plan?.authority_receipt
+        || ledgerHead?.head_cursor !== capability.prior_cursor
+        || ledgerHead?.signature !== capability.prior_signature
+        || ledgerHead?.generation !== capability.prior_ledger_generation
+        || _wallPrivateGeometryGeneration(wall) !== capability.prior_generation
+        || active?.field !== capability.old_state.field
+        || active?.surface !== capability.old_state.surface
+        || CavityProductionAuthority._depthDigest(
+          wall, CavityProductionAuthority._depthsFromWall(wall),
+        ) !== capability.receipt.old_depth_projection_digest) {
+      throw new RangeError('Cartesian cavity erosion plan is stale, cloned, or foreign');
+    }
+    return true;
+  }
+
+  static verifyCommitted(wall: any, planOrReceipt: any, contract: any): any {
     CavityProductionAuthority.assertContract(wall, contract);
     const ledger = wall.cavityEvolutionLedger?.();
-    const cursor = ledger?.cursor || 0;
+    const ledgerHead = ledger ? _cavityLedgerAuthorityHead(ledger) : null;
+    const cursor = ledgerHead?.head_cursor || 0;
     const entry = cursor ? ledger.entries[cursor - 1] : null;
+    const capability = CAVITY_PRODUCTION_EROSION_PLANS.get(planOrReceipt);
+    const receipt = capability ? capability.receipt : planOrReceipt;
     CavityProductionAuthority.validateAuthorityReceipt(receipt, {
       entry,
       previousAuthority: cursor > 1 ? ledger.entries[cursor - 2]?.geometry_authority : null,
@@ -722,6 +874,34 @@ class CavityProductionAuthority {
     if (CavityProductionAuthority._depthDigest(wall, depths)
         !== receipt.new_depth_projection_digest) {
       throw new RangeError('committed wall depths differ from the Cartesian cavity preflight');
+    }
+    if (capability) {
+      if (capability.wall !== wall || capability.contract !== contract
+          || capability.ledger !== ledger || cursor !== capability.prior_cursor + 1
+          || entry?.geometry_authority?.receipt_digest !== receipt.receipt_digest
+          || _wallPrivateGeometryGeneration(wall)
+            !== capability.prior_generation + planOrReceipt.vertex_deltas.length
+          || CavityProductionAuthority._depthDigest(wall, capability.final_depths)
+            !== receipt.new_depth_projection_digest) {
+        throw new RangeError('committed Cartesian cavity differs from its exact erosion plan');
+      }
+      MarchingCubesExtractor.verifyBuffers(capability.final_state.surface);
+      const volume = MarchingCubesExtractor.closedVolumeMm3(capability.final_state.surface);
+      const tolerance = Math.max(1e-9, Number(receipt.volume_tolerance_mm3_per_kg) || 0);
+      if (capability.final_state.field.snapshotDigest !== receipt.new_field_snapshot_digest
+          || capability.final_state.surface.buffer_digest !== receipt.new_surface_buffer_digest
+          || Math.abs(volume - Number(receipt.new_volume_mm3)) > tolerance) {
+        throw new RangeError('preflighted Cartesian provider bytes changed before installation');
+      }
+      const active = _installPreauthenticatedWallProductionProvider(
+        wall, capability.final_state,
+        { volume_mm3: volume, agreement: receipt.agreement }, cursor,
+      );
+      return Object.freeze({
+        field: active.field,
+        surface: active.surface,
+        verified_receipt_digest: receipt.receipt_digest,
+      });
     }
     const state = CavityProductionAuthority._surfaceState(wall, depths, {
       resolution: contract.scientific_resolution,
@@ -743,5 +923,24 @@ class CavityProductionAuthority {
       surface: state.surface,
       verified_receipt_digest: suppliedDigest,
     });
+  }
+
+  static rollbackCommitted(wall: any, plan: any, contract: any): void {
+    const capability = CAVITY_PRODUCTION_EROSION_PLANS.get(plan);
+    const ledger = wall?.cavityEvolutionLedger?.();
+    const ledgerHead = ledger ? _cavityLedgerAuthorityHead(ledger) : null;
+    if (!capability || capability.wall !== wall || capability.contract !== contract
+        || capability.ledger !== ledger || ledgerHead?.head_cursor !== capability.prior_cursor
+        || ledgerHead?.signature !== capability.prior_signature
+        || CavityProductionAuthority._depthDigest(
+          wall, CavityProductionAuthority._depthsFromWall(wall),
+        ) !== capability.receipt.old_depth_projection_digest) {
+      throw new RangeError('cannot restore a foreign Cartesian cavity erosion plan');
+    }
+    _installPreauthenticatedWallProductionProvider(
+      wall, capability.old_state,
+      { volume_mm3: capability.old_state.volume_mm3,
+        agreement: capability.old_agreement }, ledgerHead.head_cursor,
+    );
   }
 }

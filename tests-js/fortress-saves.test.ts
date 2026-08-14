@@ -41,8 +41,10 @@ declare function collectAllCrystals(crystals: any[], metaFn: any, opts?: any): {
 declare function _libraryProgressHTML(opts?: any): string;
 declare function setBrothValue(key: string, sliderVal: string): void;
 declare function updateCarbonateBoundaryReadout(): void;
+declare function simulationStateFingerprint(sim: any): string;
 declare const MODEL_DIGEST: string;
 declare const SCENARIOS: Record<string, any>;
+declare const CavityWaterAppearance: any;
 
 // Real broth sliders so the recording has something genuine to capture.
 // Held by module-scoped references — setup.ts's DOM stub wraps
@@ -253,6 +255,34 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     expect(loadSaveById(manual.id)).toBe(true);
     expect(_liveFortressSim().conditions.fluid.Fe).toBe(120);
   });
+
+  it('round-trips a pending Creative diameter as the same production authority', () => {
+    ensureSlider('diameter', '5', '5000', '50');
+    ensureSlider('water', '0', '1000', '1000');
+    fortressBeginFromScenario('cooling', 42);
+    const sim = _liveFortressSim();
+    setBrothValue('water', '450');
+    setBrothValue('diameter', '125');
+    const before = simulationStateFingerprint(sim);
+    const beforeContract = sim.wall_state._cavityProductionAuthorityContract.contract_digest;
+    const beforeWaterFraction = sim.conditions.fluid_surface_height_mm
+      / CavityWaterAppearance.verticalSpanForWall(sim.wall_state);
+    const manual = _saveManualNamed('production diameter replay probe');
+    expect(manual.pending_broth).toEqual({ water: '450', diameter: '125' });
+
+    fortressReset();
+    ensureSlider('diameter', '5', '5000', '50').value = '50';
+    expect(loadSaveById(manual.id)).toBe(true);
+    const replay = _liveFortressSim();
+    expect(simulationStateFingerprint(replay)).toBe(before);
+    expect(replay.wall_state._cavityProductionAuthorityContract.contract_digest)
+      .toBe(beforeContract);
+    expect(replay.conditions.wall.cavity_capacity_basis)
+      .toBe('cartesian-field-freudenthal-volume-v2');
+    expect(replay.conditions.fluid_surface_height_mm
+      / CavityWaterAppearance.verticalSpanForWall(replay.wall_state))
+      .toBeCloseTo(beforeWaterFraction, 10);
+  }, 60_000);
 
   it('round-trips every Creative chemistry lever through live UI → save → replay', () => {
     const expected = ensureAllChemistrySliders();

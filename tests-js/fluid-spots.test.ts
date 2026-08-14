@@ -195,6 +195,34 @@ describe('fluid-spots — 2c.2b proximityField (per-cell clustering halo, pure)'
     expect(closed.proximityField(N, R)).toBeNull();
     expect(new FluidSpotField([]).proximityField(N, R)).toBeNull();
   });
+
+  it('returns defensive proximity copies and ignores public cache/global-bridge poisoning', () => {
+    const cell = 8 * N + 60;
+    const field = new FluidSpotField([
+      { cell, kind: 'geyser', open: true, supply: 1.8, decayBonus: 1.2 },
+    ]);
+    const baseline = field.proximityField(N, R)!;
+    const expected = Array.from(baseline);
+    baseline.fill(0);
+    field._proxCache = new Float64Array(N * R);
+    field._proxSig = `${N}|${R}|forged`;
+    const diagnosticSpots = field.spots;
+    diagnosticSpots[0].supply = 99;
+    let intercepted = 0;
+    for (const name of [
+      '_fluidSpotStateInternal', '_fluidSpotProximityInternal',
+      '_fluidSpotIsEmptyInternal',
+    ]) {
+      (globalThis as any)[name] = () => { intercepted++; return null; };
+    }
+    expect(Array.from(field.proximityField(N, R)!)).toEqual(expected);
+    expect(field.spots[0].supply).toBe(1.8);
+    expect(intercepted).toBe(0);
+    for (const name of [
+      '_fluidSpotStateInternal', '_fluidSpotProximityInternal',
+      '_fluidSpotIsEmptyInternal',
+    ]) delete (globalThis as any)[name];
+  });
 });
 
 describe('fluid-spots — 2c.2b deposition CLUSTERING (per-cell, render-visible)', () => {

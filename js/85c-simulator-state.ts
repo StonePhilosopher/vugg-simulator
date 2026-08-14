@@ -1303,11 +1303,14 @@ _diffuseRingState(rate?) {
   _wallSurfaceAttackState() {
   const wall = this.conditions.wall;
   const mesh = this.wall_state.meshFor(this);
-  if (!mesh || !(mesh.numInterior > 0)) throw new Error('wall attack requires the canonical WallMesh');
-  const areas = mesh.cellSurfaceAreasMm2();
-  const coverage = new Float64Array(mesh.numInterior);
-  const pHValues = new Float64Array(mesh.numInterior);
-  for (let i = 0; i < mesh.numInterior; i++) {
+  if (!mesh) throw new Error('wall attack requires the canonical WallMesh');
+  const topology = _wallMeshTopologyInternal(mesh);
+  const vertexCount = topology.numInterior;
+  if (!(vertexCount > 0)) throw new Error('wall attack requires the canonical WallMesh');
+  const areas = _wallMeshCellSurfaceAreasInternal(mesh);
+  const coverage = new Float64Array(vertexCount);
+  const pHValues = new Float64Array(vertexCount);
+  for (let i = 0; i < vertexCount; i++) {
     const local = mesh.cells[i] && mesh.cells[i].fluid;
     pHValues[i] = Number.isFinite(local && local.pH)
       ? Number(local.pH) : Number(this.conditions.fluid.pH);
@@ -1321,12 +1324,17 @@ _diffuseRingState(rate?) {
     if (!crystal || crystal.dissolved) continue;
     const anchor = this.wall_state._resolveAnchor(crystal);
     if (!anchor) continue;
-    const source = this.wall_state.chemistryVertexForCrystal(crystal);
-    if (source < 0 || source >= mesh.numInterior) continue;
-    const distances = mesh.geodesicDistancesFrom(source);
+    // The physical anchor was authenticated above; derive its chemistry
+    // projection directly instead of resolving the same crystal a second time.
+    const source = CavitySurfaceAnchors.chemistryAddress(anchor)?.vertexIndex ?? -1;
+    if (source < 0 || source >= vertexCount) continue;
+    // This consumer is synchronous and read-only, so use the mesh-private
+    // cached distances rather than allocating a defensive 1,920-value copy for
+    // every crystal on every wall attack.
+    const distances = _wallMeshGeodesicDistancesInternal(mesh, source);
     const footprintRadiusMm = Math.max(0, this.wall_state.footprintArcMm(crystal) / 2);
     const acid = MINERAL_SPEC[crystal.mineral]?.acid_dissolution;
-    for (let i = 0; i < mesh.numInterior; i++) {
+    for (let i = 0; i < vertexCount; i++) {
       const threshold = acid && acid.pH_threshold;
       const resistant = acid == null || threshold == null || pHValues[i] >= threshold;
       if (!resistant) continue;
@@ -1338,9 +1346,10 @@ _diffuseRingState(rate?) {
     }
   }
 
-  const feederFlux = fluidSpotsDecayEnabled() && this._fluidSpots && !this._fluidSpots.isEmpty
-    ? this._fluidSpots.erosionFluxField(mesh) : null;
-  const vertexWeights = new Float64Array(mesh.numInterior);
+  const feederFlux = fluidSpotsDecayEnabled() && this._fluidSpots
+      && !_fluidSpotIsEmptyInternal(this._fluidSpots)
+    ? _fluidSpotErosionFluxInternal(this._fluidSpots, mesh) : null;
+  const vertexWeights = new Float64Array(vertexCount);
   const blocked = new Set<number>();
   let totalArea = 0;
   let exposedArea = 0;
@@ -1348,7 +1357,7 @@ _diffuseRingState(rate?) {
   let attemptedWeightedRate = 0;
   let acceptedWeightedRate = 0;
   let partialCells = 0;
-  for (let i = 0; i < mesh.numInterior; i++) {
+  for (let i = 0; i < vertexCount; i++) {
     const area = areas[i];
     const exposure = Math.max(0, Math.min(1, 1 - coverage[i]));
     const flux = feederFlux ? feederFlux[i] : 1;
@@ -1382,7 +1391,7 @@ _diffuseRingState(rate?) {
       exposed_area_fraction: totalArea > 0 ? exposedArea / totalArea : 0,
       fully_blocked_cells: blocked.size,
       partially_covered_cells: partialCells,
-      total_cells: mesh.numInterior,
+      total_cells: vertexCount,
       diffuse_fluid_pathway: true,
       feeder_model: feederFlux ? 'open-spot geodesic flux halo' : 'none',
       local_pH_basis: 'pre-attack WallCell fluid, bulk fallback',

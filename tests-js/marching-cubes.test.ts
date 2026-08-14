@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 declare const CavityScalarField: any;
 declare const MarchingCubesExtractor: any;
+declare const WallState: any;
 
 function fixtureField(size: number, sampler: (x: number, y: number, z: number) => number) {
   const values = new Float32Array(size * size * size);
@@ -70,6 +71,25 @@ function componentCount(surface: any) {
 }
 
 describe('MarchingCubesExtractor — indexed deterministic topology', () => {
+  it('resolves the starter-fluid seed-41 symmetric saddle deterministically', () => {
+    const wall = new WallState({
+      vug_diameter_mm: 50,
+      ring_count: 16,
+      cells_per_ring: 120,
+      primary_bubbles: 3,
+      secondary_bubbles: 5,
+      shape_seed: 41,
+      architecture: 'pocket',
+    });
+    wall.initializeCavityEvolutionLedger();
+    const enabled = wall.enableProductionCavityAuthority();
+    expect(enabled.contract.baseline_volume_convergence.reference_surface_buffer_digest)
+      .toBeTruthy();
+    expect(enabled.provider.kind).toBe('cavity-field');
+    expect(Array.from(wall.activeCavitySurfaceAnchorProvider().surface.normals)
+      .every(Number.isFinite)).toBe(true);
+  });
+
   it('emits no triangles for empty or full cubes', () => {
     expect(MarchingCubesExtractor.extract(fixtureField(2, () => -1)).indices.length).toBe(0);
     expect(MarchingCubesExtractor.extract(fixtureField(2, () => +1)).indices.length).toBe(0);
@@ -125,6 +145,8 @@ describe('MarchingCubesExtractor — indexed deterministic topology', () => {
     const field = CavityScalarField.fromBubbles([[-8, 0, 0, 4], [8, 0, 0, 4]], { resolution: 32, sig: 'two-spheres' });
     const surface = field.extract();
     expect(componentCount(surface)).toBe(2);
+    expect(MarchingCubesExtractor.closedVolumeForField(field, 0))
+      .toBeCloseTo(MarchingCubesExtractor.closedVolumeMm3(surface), 9);
   });
 
   it('closes a deliberately ambiguous shared-face saddle without cracks', () => {
@@ -147,13 +169,20 @@ describe('MarchingCubesExtractor — indexed deterministic topology', () => {
       const value = field.sampleWorld(
         surface.positions[index], surface.positions[index + 1], surface.positions[index + 2],
       );
-      expect(Math.abs(value)).toBeLessThanOrEqual(field.spacingMm * 2e-5);
+      expect(Math.abs(value)).toBeLessThanOrEqual(field.spacingMm * 3e-4);
       if (value === 0) exactZeroVertices++;
     }
+    // Ordinary edge interpolation may still land exactly on the analytic zero
+    // set; the metric below proves exact-zero *grid endpoints* took the bounded
+    // simulation-of-simplicity path instead of collapsing to one vertex.
     expect(exactZeroVertices).toBeGreaterThan(0);
+    expect(surface.metrics.near_zero_regularized_vertex_count).toBeGreaterThan(0);
+    expect(surface.metrics.near_zero_scalar_floor_fraction).toBe(1 / 4096);
     const agreement = MarchingCubesExtractor.measureImplicitAgreement(field, surface, 2);
     expect(agreement.unresolved_sample_count).toBe(0);
-    expect(agreement.max_normal_root_distance_voxels).toBe(0);
+    expect(agreement.max_normal_root_distance_voxels).toBeLessThan(1e-3);
+    expect(MarchingCubesExtractor.closedVolumeForField(field, 0))
+      .toBeCloseTo(MarchingCubesExtractor.closedVolumeMm3(surface), 9);
   });
 
   it('resolves the former trilinear interior ambiguity as a closed tetrahedral surface', () => {
@@ -171,7 +200,23 @@ describe('MarchingCubesExtractor — indexed deterministic topology', () => {
       [[-4, 0, 0, 4], [4, 0, 0, 4]],
       { resolution: 17, sig: 'tangent-critical-point' },
     );
-    expect(() => field.extract()).toThrow(/undefined.*normal|critical point/i);
+    expect(() => field.extract()).toThrow(/undefined.*normal|critical point|non-manifold.*disconnected/i);
+  });
+
+  it('rejects unequal tangent components whose shared vertex has two disconnected links', () => {
+    const field = CavityScalarField.fromBubbles(
+      [[-4, 0, 0, 4], [2, 0, 0, 2]],
+      {
+        resolution: 21,
+        sig: 'unequal-tangent-disconnected-vertex-link',
+        frame: {
+          origin_mm: [-10, -10, -10],
+          spacing_mm: 1,
+          dimensions: [21, 21, 21],
+        },
+      },
+    );
+    expect(() => field.extract()).toThrow(/critical point|non-manifold.*vertex.*disconnected link/i);
   });
 
   it('resolves the former locally folded face against the shared tetrahedral field', () => {

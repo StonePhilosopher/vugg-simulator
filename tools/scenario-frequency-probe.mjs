@@ -44,7 +44,14 @@ for (const scenario of requestedScenarios) {
     const sim = new VugSimulator(conditions, events);
     const firstSteps = new Map();
     for (let i = 0; i < defaultSteps; i++) {
-      sim.run_step();
+      try {
+        sim.run_step();
+      } catch (error) {
+        throw new Error(
+          `${scenario} seed ${seed} failed while advancing authored step ${i + 1}`,
+          { cause: error },
+        );
+      }
       for (const crystal of sim.crystals) {
         const mineral = String(crystal?.mineral || '');
         if (mineral && !firstSteps.has(mineral)) firstSteps.set(mineral, Number(sim.step));

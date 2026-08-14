@@ -166,7 +166,18 @@ describe('mass-balanced cavity evolution authority', () => {
     expect(Array.from(loaded.materialize())).toEqual(Array.from(f.ledger.materialize()));
     expect(Object.isFrozen(loaded.entries[0].fluid_receipt)).toBe(true);
     expect(Object.isFrozen(loaded.entries)).toBe(true);
+    expect(Object.isFrozen(loaded)).toBe(true);
+    expect((loaded as any)._entries).toBeUndefined();
     expect(() => loaded.entries.push({ fabricated: true })).toThrow();
+    const beforeStep = loaded.entries[0].step;
+    const beforeSignature = loaded.signature;
+    const beforeDepths = Array.from(loaded.materialize());
+    expect(() => { (loaded as any)._entries = [{ ...loaded.entries[0], step: 999 }]; })
+      .toThrow();
+    expect(() => { (loaded as any).signatureAt = () => 'forged'; }).toThrow();
+    expect(loaded.entries[0].step).toBe(beforeStep);
+    expect(loaded.signature).toBe(beforeSignature);
+    expect(Array.from(loaded.materialize())).toEqual(beforeDepths);
     const digestTamper = f.ledger.toJSON();
     digestTamper.entries[0].fluid_receipt.after.Ca += 1;
     expect(() => CavityEvolutionLedger.fromJSON(digestTamper)).toThrow('entry digest mismatch');
@@ -259,6 +270,112 @@ describe('mass-balanced cavity evolution authority', () => {
     expect({ Ca: sim.conditions.fluid.Ca, CO3: sim.conditions.fluid.CO3 }).toEqual(beforeFluid);
   });
 
+  it('keeps geodesic shielding unchanged when public copies and injected bridges are poisoned', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.reactive_wall();
+    conditions.fluid.pH = 4;
+    const sim = new VugSimulator(conditions, events);
+    sim._fluidSpots = new FluidSpotField([{
+      cell: 8 * sim.wall_state.cells_per_ring + 60,
+      kind: 'geyser', open: true, supply: 1.8, decayBonus: 1.6,
+    }]);
+    sim.crystals = [{
+      crystal_id: 998,
+      mineral: 'quartz',
+      dissolved: false,
+      total_growth_um: 600,
+      wall_spread: 0.18,
+      wall_anchor: { ringIdx: 8, cellIdx: 60 },
+    }];
+    const before = sim._wallSurfaceAttackState();
+    const mesh = before.mesh;
+    const source = 8 * mesh.cellsPerRing + 60;
+    expect((Object.getPrototypeOf(mesh) as any)._geodesicDistancesFromInternal)
+      .toBeUndefined();
+    expect((Object.getPrototypeOf(mesh) as any)._recomputeSurfaceMetrics)
+      .toBeUndefined();
+    expect((Object.getPrototypeOf(mesh) as any).recompute).toBeUndefined();
+    expect((Object.getPrototypeOf(mesh) as any).recomputeIfStale).toBeUndefined();
+    expect(mesh._geodesicCache).toBeUndefined();
+    expect(mesh._geodesicAdjacency).toBeUndefined();
+    mesh.geodesicDistancesFrom(source).fill(0);
+    mesh._geodesicCache = new Map([[source, new Float64Array(mesh.numInterior)]]);
+    mesh._geodesicAdjacency = Array.from(
+      { length: mesh.numInterior + 2 }, () => [[0, 0]],
+    );
+    let intercepted = 0;
+    mesh._geodesicDistancesFromInternal = () => {
+      intercepted++;
+      return new Float64Array(mesh.numInterior);
+    };
+    let resetIntercepted = 0;
+    mesh._recomputeSurfaceMetrics = () => { resetIntercepted++; };
+    const publicFlux = sim._fluidSpots.erosionFluxField(mesh);
+    expect(publicFlux).not.toBeNull();
+    publicFlux.fill(0);
+    sim._fluidSpots._erosionFluxCache = new Float64Array(mesh.numInterior);
+    sim._fluidSpots._erosionFluxSig = mesh.sig;
+    let feederIntercepted = 0;
+    sim._fluidSpots.erosionFluxField = () => {
+      feederIntercepted++;
+      return new Float64Array(mesh.numInterior);
+    };
+    for (const name of [
+      '_fluidSpotStateInternal', '_fluidSpotErosionFluxInternal',
+      '_fluidSpotIsEmptyInternal',
+    ]) {
+      (globalThis as any)[name] = () => { feederIntercepted++; return null; };
+    }
+    const after = sim._wallSurfaceAttackState();
+    expect(intercepted).toBe(0);
+    expect(resetIntercepted).toBe(0);
+    expect(feederIntercepted).toBe(0);
+    expect(after.receipt.digest).toBe(before.receipt.digest);
+    expect(Array.from(after.coverage)).toEqual(Array.from(before.coverage));
+    expect(Array.from(after.vertexWeights)).toEqual(Array.from(before.vertexWeights));
+
+    // Renderer buffers are intentionally public for GPU upload. If they are
+    // altered, anchor authentication must fail closed; the private geodesic
+    // source snapshot must never turn the forged positions into shielding.
+    const publicPositions = new Float32Array(mesh.positions);
+    mesh.positions[source * 3] += 0.001;
+    mesh._recomputeSurfaceMetrics();
+    expect(resetIntercepted).toBe(1);
+    const afterResetAttempt = sim._wallSurfaceAttackState();
+    expect(afterResetAttempt.receipt.digest).toBe(before.receipt.digest);
+    expect(Array.from(afterResetAttempt.coverage)).toEqual(Array.from(before.coverage));
+    mesh.positions.set(publicPositions);
+    mesh.positions.fill(0);
+    expect(() => sim._wallSurfaceAttackState())
+      .toThrow(/nearest WallMesh vertex|surface anchor/i);
+    mesh.positions.set(publicPositions);
+    for (const name of [
+      '_fluidSpotStateInternal', '_fluidSpotErosionFluxInternal',
+      '_fluidSpotIsEmptyInternal',
+    ]) delete (globalThis as any)[name];
+  });
+
+  it('invalidates private feeder flux by surface identity after a wall revision', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.reactive_wall();
+    conditions.fluid.pH = 4;
+    const sim = new VugSimulator(conditions, events);
+    sim._fluidSpots = new FluidSpotField([{
+      cell: 8 * sim.wall_state.cells_per_ring + 60,
+      kind: 'geyser', open: true, supply: 1.8, decayBonus: 1.6,
+    }]);
+    const mesh = sim.wall_state.meshFor(sim);
+    const before = Array.from(sim._fluidSpots.erosionFluxField(mesh));
+    const oldGeometrySig = mesh.geometry_sig;
+    const oldSig = mesh.sig;
+    sim.wall_state.rings[8][60].wall_depth += 4;
+    sim.wall_state.meshFor(sim);
+    mesh.geometry_sig = oldGeometrySig;
+    mesh.sig = oldSig;
+    const after = Array.from(sim._fluidSpots.erosionFluxField(mesh));
+    expect(after).not.toEqual(before);
+  });
+
   it('includes wall depths and the evolution ledger in deterministic fingerprints', () => {
     setSeed(42);
     const { conditions, events } = SCENARIOS.reactive_wall();
@@ -280,59 +397,70 @@ describe('mass-balanced cavity evolution authority', () => {
     sim.step = 1;
     sim._repaintWallState();
     const first = sim.wall_state_history[sim.wall_state_history.length - 1];
-    expect(first.cavity_surface_provider).toEqual({ kind: 'wall-mesh' });
-    sim.wall_state.activateCavitySurfaceAnchorProvider({ resolution: 20, isovalue: 0 });
+    expect(first.cavity_surface_provider).toMatchObject({
+      kind: 'cavity-field',
+      resolution: 48,
+      isovalue: 0,
+      cavity_evolution_signature: expect.any(String),
+      production_contract_digest:
+        sim.wall_state._cavityProductionAuthorityContract.contract_digest,
+    });
     sim.dissolve_wall();
     sim.step = 2;
     sim._repaintWallState();
     const second = sim.wall_state_history[sim.wall_state_history.length - 1];
-    expect(second.cavity_surface_provider.kind).toBe('cavity-field');
+    expect(second.cavity_surface_provider).toMatchObject({
+      kind: 'cavity-field', resolution: 48, isovalue: 0,
+    });
     const ledger = sim.wall_state.cavityEvolutionLedger();
 
-    // Make the live authority deliberately differ from both frames. Replay
-    // must follow each snapshot's recorded command, never today's wall.
-    sim.wall_state.deactivateCavitySurfaceAnchorProvider();
-
+    // The live authority is now at cursor 2. Historical reconstruction must
+    // follow the cursor-1 receipt rather than today's field/surface caches.
     expect(first.cavity_evolution_cursor).toBe(1);
     expect(first.cavity_evolution_signature).toBe(ledger.signatureAt(1));
     const replayWall = _topoSnapshotWall(sim.wall_state, first);
     expect(replayWall._disableMarchingCubesCavity, replayWall._replayAuthenticationFailure)
       .toBe(false);
     expect(replayWall._cavityEvolutionCursor).toBe(1);
-    expect(replayWall._cavitySurfaceAnchorProvider).toEqual({ kind: 'wall-mesh' });
-    expect(replayWall._activeCavitySurfaceAnchorProvider).toBeNull();
+    expect(replayWall._cavitySurfaceAnchorProvider).toEqual(first.cavity_surface_provider);
+    expect(replayWall.activeCavitySurfaceAnchorProvider().receipt)
+      .toEqual(first.cavity_surface_provider);
     expect(ledger.assertProjection(replayWall, 1)).toBe(true);
-    expect(replayWall.cavityFieldFor({ resolution: 20 }).sig)
-      .toContain(ledger.signatureAt(1));
-    const historicalNoCursorReceipt = replayWall.activateCavitySurfaceAnchorProvider({
-      resolution: 20,
-      isovalue: 0,
-    });
-    expect(historicalNoCursorReceipt.field_signature).toContain(ledger.signatureAt(1));
+    expect(replayWall.cavityFieldFor().sig)
+      .toBe(first.cavity_surface_provider.field_signature);
+    const historicalNoCursorReceipt = replayWall.activateCavitySurfaceAnchorProvider();
+    expect(historicalNoCursorReceipt.field_signature)
+      .toBe(first.cavity_surface_provider.field_signature);
     expect(historicalNoCursorReceipt.cavity_evolution_signature).toBe(ledger.signatureAt(1));
     expect(replayWall.activeCavitySurfaceAnchorProvider().receipt)
       .toEqual(historicalNoCursorReceipt);
 
     // The public helper options must authenticate field + surface against one
-    // requested historical prefix even while the live wall default is head 2.
+    // requested historical prefix even while the shared ledger head is 2.
+    // The replay wall's authenticated cursor remains pinned at 1 throughout;
+    // clearing it would truthfully ask production authority for the head while
+    // presenting cursor-1 depths and must fail closed.
     const explicitCursorWall = _topoSnapshotWall(sim.wall_state, first);
-    explicitCursorWall._cavityEvolutionCursor = null;
     const historicalHelperAnchor = explicitCursorWall.surfaceAnchorFromMarchingCubes(
-      0, [0.2, 0.3, 0.5], { resolution: 20, ledgerCursor: 1 },
+      0, [0.2, 0.3, 0.5], { ledgerCursor: 1 },
     );
-    expect(historicalHelperAnchor.source.fieldSignature).toContain(ledger.signatureAt(1));
-    expect(historicalHelperAnchor.source.fieldSignature).not.toContain(ledger.signatureAt(2));
+    expect(historicalHelperAnchor.source.fieldSignature)
+      .toBe(first.cavity_surface_provider.field_signature);
+    expect(historicalHelperAnchor.source.fieldSignature)
+      .not.toBe(second.cavity_surface_provider.field_signature);
     const historicalRemap = explicitCursorWall.remapSurfaceAnchorToMarchingCubes(
-      explicitCursorWall._anchorFromRingCell(4, 11), { resolution: 20, ledgerCursor: 1 },
+      explicitCursorWall._anchorFromRingCell(4, 11), { ledgerCursor: 1 },
     );
-    expect(historicalRemap.source.fieldSignature).toContain(ledger.signatureAt(1));
+    expect(historicalRemap.source.fieldSignature)
+      .toBe(first.cavity_surface_provider.field_signature);
 
     const exactReplayWall = _topoSnapshotWall(sim.wall_state, second);
     const exactReplayProvider = exactReplayWall.activeCavitySurfaceAnchorProvider();
     expect(exactReplayProvider.receipt).toEqual(second.cavity_surface_provider);
     expect(exactReplayProvider.receipt.cavity_evolution_signature)
       .toBe(ledger.signatureAt(2));
-    expect(sim.wall_state.cavitySurfaceAnchorProviderReceipt()).toEqual({ kind: 'wall-mesh' });
+    expect(sim.wall_state.cavitySurfaceAnchorProviderReceipt())
+      .toEqual(second.cavity_surface_provider);
 
     const providerTampered = JSON.parse(JSON.stringify(second));
     providerTampered.cavity_surface_provider.field_signature = 'tampered';
@@ -341,6 +469,13 @@ describe('mass-balanced cavity evolution authority', () => {
     expect(providerFallback._activeCavitySurfaceAnchorProvider).toBeNull();
     expect(providerFallback._cavitySurfaceAnchorProvider).toEqual({ kind: 'wall-mesh' });
     expect(_topoReplayRenderDecision(sim.wall_state, providerTampered).mode).toBe('corrupt');
+
+    const contractTampered = JSON.parse(JSON.stringify(second));
+    contractTampered.cavity_surface_provider.production_contract_digest = 'tampered';
+    expect(_topoReplayRenderDecision(sim.wall_state, contractTampered)).toMatchObject({
+      mode: 'corrupt',
+      message: expect.stringContaining('Replay frame withheld'),
+    });
 
     const tampered = { ...first, cavity_evolution_signature: 'tampered' };
     const fallbackWall = _topoSnapshotWall(sim.wall_state, tampered);
@@ -365,7 +500,7 @@ describe('mass-balanced cavity evolution authority', () => {
       message: expect.stringContaining('Replay frame withheld'),
     });
 
-    expect(_topoReplayRenderDecision(sim.wall_state, first).mode).toBe('wall-mesh');
+    expect(_topoReplayRenderDecision(sim.wall_state, first).mode).toBe('cavity-field');
     expect(_topoReplayRenderDecision(sim.wall_state, second).mode).toBe('cavity-field');
 
     for (const malformed of [{ step: 1 }, { step: 1, rings: null }, { rings: {} }]) {
@@ -408,6 +543,6 @@ describe('mass-balanced cavity evolution authority', () => {
     expect(_topoThreeRenderAuthorityDecision.length).toBe(2);
     expect(bound.wall).not.toBe(sim.wall_state);
     expect(bound.wall._cavityEvolutionCursor).toBe(1);
-    expect(bound.mode).toBe('wall-mesh');
+    expect(bound.mode).toBe('cavity-field');
   });
 });

@@ -1303,17 +1303,20 @@ function classifySurfaceGrowth(sim: any) {
     const dir = wall && typeof wall.surfaceNormalForCrystal === 'function'
       ? wall.surfaceNormalForCrystal(c) : [0, 1, 0];
     const radius = Math.acos(Math.max(-1, Math.min(1, 1 - 2 * desc.coverage_fraction)));
-    const exactPatch = wall && typeof wall.surfacePatchForCrystal === 'function'
-      ? wall.surfacePatchForCrystal(c, desc.coverage_fraction, sim) : null;
-    const exactTriangleIndices = exactPatch && Array.isArray(exactPatch.triangles)
-      ? (Array.isArray(exactPatch.triangle_indices)
-        ? exactPatch.triangle_indices
-        : exactPatch.triangles.map((triangle: any) => triangle.triangle_index))
-      : null;
+    const exactPatch = wall
+      && typeof wall.surfacePatchIndexReceiptForCrystal === 'function'
+      ? wall.surfacePatchIndexReceiptForCrystal(c, desc.coverage_fraction, sim)
+      : wall && typeof wall.surfacePatchForCrystal === 'function'
+        ? wall.surfacePatchForCrystal(c, desc.coverage_fraction, sim) : null;
+    const exactTriangleIndices = exactPatch && Array.isArray(exactPatch.triangle_indices)
+      ? exactPatch.triangle_indices
+      : exactPatch && Array.isArray(exactPatch.triangles)
+        ? exactPatch.triangles.map((triangle: any) => triangle.triangle_index)
+        : null;
     let exactTriangleBitset: Uint32Array | null = null;
     if (exactTriangleIndices) {
-      let triangleCount = 0;
-      for (const triangleIndex of exactTriangleIndices) {
+      let triangleCount = Number(exactPatch.triangle_capacity) || 0;
+      if (!(triangleCount > 0)) for (const triangleIndex of exactTriangleIndices) {
         triangleCount = Math.max(triangleCount, Number(triangleIndex) + 1);
       }
       exactTriangleBitset = new Uint32Array(Math.ceil(triangleCount / 32));
@@ -1326,12 +1329,14 @@ function classifySurfaceGrowth(sim: any) {
       if (exactTriangleIndices && exactTriangleBitset
           && p.exactTriangleIndices && p.exactTriangleBitset
           && exactPatch.source_signature === p.sourceSignature) {
-        const probe = exactTriangleIndices.length <= p.exactTriangleIndices.length
-          ? exactTriangleIndices : p.exactTriangleIndices;
-        const targetBitset = probe === exactTriangleIndices
-          ? p.exactTriangleBitset : exactTriangleBitset;
-        const sharesTriangle = probe.some((triangleIndex: number) =>
-          !!(targetBitset[triangleIndex >>> 5] & ((1 << (triangleIndex & 31)) >>> 0)));
+        const words = Math.min(exactTriangleBitset.length, p.exactTriangleBitset.length);
+        let sharesTriangle = false;
+        for (let word = 0; word < words; word++) {
+          if ((exactTriangleBitset[word] & p.exactTriangleBitset[word]) !== 0) {
+            sharesTriangle = true;
+            break;
+          }
+        }
         if (sharesTriangle) underlying.push(p.crystal.crystal_id);
       } else {
         const dot = dir[0] * p.dir[0] + dir[1] * p.dir[1] + dir[2] * p.dir[2];
