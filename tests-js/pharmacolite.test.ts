@@ -99,74 +99,12 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
     });
   });
 
-  describe('schneeberg integration — Jáchymov/Schneeberg type-locality signature', () => {
-    // v97 (2026-05-19): the schneeberg-integration assertions are
-    // SKIPPED. The pharmacolite engine itself is unchanged from v88
-    // and the direct-chemistry gate tests above still pass — what
-    // broke was the schneeberg SIMULATION reaching the conditions
-    // where pharmacolite peaks.
-    //
-    // What happened across v93-v97: each new mineral commit added
-    // more arsenate consumers (austinite/legrandite/koettigite/duftite/
-    // bayldonite in v97) plus more Ag-sulfosalt consumers (proustite/
-    // pyrargyrite in v96). The schneeberg scenario's As + Cu + Pb
-    // fluid budget now feeds those competitors before pharmacolite
-    // gets its turn — the cation-share gate Ca/(Ca+Cu+Co+Ni+Pb+Zn)
-    // doesn't reach 0.3 at the Ca-depleting late-phase moment that
-    // used to fire pharmacolite.
-    //
-    // The geology is REAL — Jachymov / Schneeberg DO produce
-    // pharmacolite — but the simulator's coarse fluid bookkeeping
-    // doesn't preserve the spatial separation that lets pharmacolite
-    // form in a Ca-rich micro-environment while duftite forms in a
-    // Pb+Cu pocket nearby. This is a known simulator limitation,
-    // not a bug in the pharmacolite engine.
-    //
-    // Future path forward:
-    //   1. Add a schneeberg sub-phase with explicit Ca-rich pulse
-    //      (the cobaltbloom-bearing pharmacolite-precipitating
-    //      "second-stage" surge described in Ondrus et al. 2003)
-    //   2. OR refactor pharmacolite to use a local Ca-vs-competitor
-    //      ratio that's less sensitive to global cascade depletion
-    //   3. OR add a "late-stage Ca-injection" event in schneeberg
-    //      scenarios.json5 events
-    //
-    // The pharmacolite spec entry, engine, growth path, and direct
-    // chemistry assertions all remain correct. Only the scenario-
-    // integration tests are skipped pending one of the above fixes.
-    //
-    // Direct chemistry verification (still active above):
-    //   * sigma > 0.5 at Ca:competitors > 3:1 with As=50, pH=6.5
-    //   * cation-share gate trips correctly at ratios < 0.3
-    //   * engine returns 0 outside the T 5-50°C window
-
-    // v99 (2026-05-19): RESTORED from v97 skip. Adding coffinite +
-    // uranophane in v99 produced a beneficial RNG cascade that
-    // unblocked pharmacolite in schneeberg — uranophane consumes
-    // U + Ca + SiO2 at the same paragenetic moment that pharmacolite
-    // would have been suppressed by Cu/Pb arsenates, freeing the
-    // Ca/(Ca+competitors) ratio. The original peak-sigma > 0.3 and
-    // 1/N seeds gates are restored; the seed sample stays widened
-    // from v96 (8 seeds) to absorb residual cascade variance.
-    // v228 (hostile-review rung 2): the 3-seed σ-probe is RETIRED. Its two
-    // prior retunes (v99, v135) already showed it measures the schneeberg
-    // cascade lottery, not the engine, and the SIM 228 wurtzite retirement
-    // finished it: at seeds {42, 1, 7} the tail now carries ORPHANED Zn
-    // (~225 ppm at seed 1 — wurtzite used to consume it; sphalerite's S
-    // window has closed by then, S≈9 < its floor 10), which inflates the
-    // competing-cation pool and trips pharmacolite's Ca-share gate (caFrac
-    // 0.09-0.26 < 0.3) for the whole cool window. That is a real cross-
-    // coupling signal for the rung-4 redox/economy census (logged in
-    // BACKLOG §T — orphaned-Zn should route to adamite/smithsonite, not
-    // linger as a phantom competitor), not a pharmacolite defect. The
-    // 32-seed "at least one pharmacolite crystal appears" sweep below is
-    // the stronger capability pin and still passes; the direct chemistry
-    // assertions above pin the engine math.
-
-    // Widened-seed coverage lives in pharmacolite-seeds.test.ts so the
-    // ~44s 32-seed sweep can run on its own worker (see that file for
-    // v136→v214 widen + timeout history).
   });
+
+  // schneeberg integration history (v97 skip → v99 restore → v228 σ-probe
+  // retirement → widened-seed coverage) lives with the active pin in
+  // pharmacolite-seeds.test.ts — extracted so the ~44s 32-seed sweep
+  // can run on its own worker.
 
   describe('cation-share gate — pharmacolite vs conichalcite/erythrite/annabergite', () => {
     it('high Cu (Bisbee-style) blocks pharmacolite, fires conichalcite path', () => {
