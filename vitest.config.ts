@@ -13,10 +13,15 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['tests-js/**/*.test.ts'],
     setupFiles: ['tests-js/setup.ts'],
-    // Run bundle setup once per file rather than per test — eval is
-    // expensive (~109 module concat + jsdom init).
+    // Reuse workers across files. setup.ts caches the concatenated
+    // source string per worker and re-`Function()`s per file so mutable
+    // sim state stays isolated without re-walking dist/.
     isolate: false,
-    // Generous default; the calibration sweep test runs 20 scenarios.
+    // forks is the vitest 4 default; keep it explicit — jsdom + the
+    // Function()-eval harness are happier in child processes than in
+    // worker_threads (prior pool experiments; see HANDOFF-STRIP).
+    pool: 'forks',
+    // Generous default; the calibration sweep test runs many scenarios.
     // v175 (2026-06-03): doubled both. The strip recorder now also captures
     // the depletion-FLOOR channel (per-bin min for ion chips at the wall),
     // ~25% more chip reads when recording. Long recording-heavy scenarios

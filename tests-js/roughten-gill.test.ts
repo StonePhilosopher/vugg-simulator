@@ -73,41 +73,10 @@ describe('Roughten Gill Mine scenario (v107)', () => {
       expect(species.has('proustite')).toBe(true);
     });
 
-    // 2026-06-10 timeout bump (90s → 150s), same shape as pharmacolite's
-    // v160 bump: this 16-seed × 200-step loop runs in well under the
-    // budget in ISOLATION (whole file 56 s), but under parallel suite
-    // load wall time inflates ~2-3.5×, leaving zero headroom at 90 s —
-    // it red-lined the moment the §1.4 snapshot projection added ~2.6 s
-    // per seed-sample test (the 14th catch in CATCHES.md). 150 s gives
-    // the same ~3.5× headroom pharmacolite gets.
-    it('fires sphalerite as Zn primary across the seed sample', { timeout: 150000 }, () => {
-      // v138 retune: phosphate twin_laws batch (autunite + zeunerite +
-      // uranospinite + pyromorphite + vanadinite + descloizite +
-      // mottramite + clinobisvanite) added 8 new rng.random() draws
-      // per nucleation, shifting the RNG cascade. At seed 42 the cascade
-      // pushed sphalerite below its nucleation gate in roughten_gill;
-      // empirically sphalerite fires at seeds 3 (3 crystals) and 2024
-      // (1 crystal) within an 8-seed sample.
-      //
-      // Converted from single-seed assertion to a widened-seed coverage
-      // check (16 seeds, ≥1 fires) preserving the scientific intent:
-      // sphalerite IS the documented Zn primary at Caldbeck Fells per
-      // Cooper & Stanley 1990 + Bridges 2011, and the assertion that
-      // it CAN fire somewhere in the broader seed space remains true.
-      // Other Zn primaries (wurtzite, smithsonite, hemimorphite) don't
-      // fire at Caldbeck Fells in any seed I tested at v138, so the
-      // either-or pattern (v137 meta-autunite-trio) doesn't apply here.
-      let anyHit = 0;
-      const seeds = [42, 1, 7, 13, 99, 2024, 17, 3, 5, 11, 23, 47, 71, 137, 211, 313];
-      for (const seed of seeds) {
-        const s = runScenario('roughten_gill', seed);
-        const sph = s.crystals.filter((c: any) => c.mineral === 'sphalerite').length;
-        if (sph > 0) anyHit++;
-      }
-      expect(anyHit,
-        `expected at least 1/${seeds.length} roughten_gill seeds to fire sphalerite; got ${anyHit}/${seeds.length}`)
-        .toBeGreaterThan(0);
-    });
+    // Widened-seed coverage for sphalerite + brochantite lives in
+    // roughten-gill-sphalerite-seeds.test.ts and
+    // roughten-gill-brochantite-seeds.test.ts so the two ~28s sweeps
+    // can run on separate workers.
 
     it('fires native_silver from the Ag-in-galena reservoir', () => {
       ensureSim();
@@ -137,31 +106,6 @@ describe('Roughten Gill Mine scenario (v107)', () => {
     it('fires cerussite (Pb-CO3 — v109 tune gain, restored under graduated competition v128e)', () => {
       ensureSim();
       expect(species.has('cerussite')).toBe(true);
-    });
-
-    // 2026-06-10: 90s → 150s, same rationale as the sphalerite test above.
-    it('fires brochantite across the seed sample (Cu-SO4 supergene — v109 tune gain)', { timeout: 150000 }, () => {
-      // v140 retune: sulfate twin_laws batch (celestine + anglesite +
-      // anhydrite + jarosite + alunite + brochantite + antlerite +
-      // mirabilite + thenardite) added 9 new rng.random() draws per
-      // nucleation. At seed 42, the cascade pushed brochantite below
-      // its nucleation gate in roughten_gill. The science is unchanged
-      // — brochantite IS the Chuquicamata-style supergene Cu-sulfate
-      // documented at Caldbeck Fells per Cooper & Stanley 1990 — but
-      // the seed-42 RNG path now happens to displace it.
-      //
-      // Converted from single-seed assertion to widened-seed coverage
-      // (16 seeds, ≥1 fires). Same pattern v138 used for sphalerite
-      // in this same scenario.
-      let anyHit = 0;
-      const seeds = [42, 1, 7, 13, 99, 2024, 17, 3, 5, 11, 23, 47, 71, 137, 211, 313];
-      for (const seed of seeds) {
-        const s = runScenario('roughten_gill', seed);
-        if (s.crystals.some((c: any) => c.mineral === 'brochantite')) anyHit++;
-      }
-      expect(anyHit,
-        `expected at least 1/${seeds.length} roughten_gill seeds to fire brochantite; got ${anyHit}/${seeds.length}`)
-        .toBeGreaterThan(0);
     });
 
     // v133 (2026-05-22) RNG-cascade displacement: the iconic-twins batch

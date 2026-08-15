@@ -11,7 +11,7 @@
  * PASSIVE. Annotates, always exits 0. It is not a gate and must not become
  * one: the findings below are already in the archive and cannot be un-shipped,
  * so a tool that exited 1 on them would be red forever and get switched off.
- * The gate is tests-js/calibration.test.ts.
+ * The gate is tests-js/calibration-shard-*.test.ts.
  *
  * WHAT IT ANSWERS
  *
@@ -83,7 +83,7 @@ if (PAIR !== -1) {
       }
     }
   }
-  console.log('\n(passive instrument — reports, never fails. The gate is tests-js/calibration.test.ts.)');
+  console.log('\n(passive instrument — reports, never fails. The gate is tests-js/calibration-shard-*.test.ts.)');
   process.exit(0);
 }
 
@@ -169,4 +169,4 @@ if (KINDS) {
   }
 }
 
-console.log('\n(passive instrument — reports, never fails. The gate is tests-js/calibration.test.ts.)');
+console.log('\n(passive instrument — reports, never fails. The gate is tests-js/calibration-shard-*.test.ts.)');
