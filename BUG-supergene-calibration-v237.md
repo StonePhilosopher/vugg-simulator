@@ -1,6 +1,9 @@
 # Bug: SIM 237 `supergene_oxidation` calibration mismatch blocks green CI
 
-**Status:** Open — deterministic locally; root cause not yet established.
+**Status:** Root cause established with differential evidence (2026-08-15,
+see Evidence Update below): Node/V8-runtime-dependent numeric path —
+hypothesis 2. The baseline is correct for the runtime that generated it.
+Remaining work is the CI Node pin + provenance stamping, then PR #4.
 
 **Discovered:** 2026-08-14 while reviewing PR #4 (GitHub Actions CI).
 
@@ -80,8 +83,11 @@ These are hypotheses, not conclusions.
    Node 22 runner.
 2. Generate the live seed-42 summary into a temporary file; do **not** overwrite
    the committed baseline.
-3. Compare the first divergent step/RNG draw between the committed v237 state
-   and current `main`, focusing on duftite and erythrite nucleation.
+3. Compare the first divergent step/σ evaluation between the SAME commit run
+   under the two Node runtimes (24.15.0 vs 22.23.2), focusing on duftite and
+   erythrite nucleation. [Corrected 2026-08-15 — the original step compared
+   commits, but the 8d4b664 worktree experiment plus the Evidence Update
+   below establish the divergence axis is the runtime, not the commit.]
 4. Audit the baseline-generation procedure and exact build state used for
    `8d4b664`; later-commit bisection is unnecessary unless another environment
    can first make `8d4b664` pass against its own baseline.
@@ -98,17 +104,29 @@ npm run build
 npx vitest run tests-js/calibration.test.ts -t supergene_oxidation
 ```
 
-To compare a freshly generated baseline safely:
+To compare a freshly generated baseline safely — corrected 2026-08-15. The
+original snippet regenerated IN PLACE in the working checkout (contradicting
+investigation rule 2 above): a crash between the overwrite and the
+`git restore` left a silently dirty tree carrying a wrong-for-this-runtime
+baseline, and restoring after the diff destroyed the regenerated evidence
+artifact. Run the regeneration in a scratch worktree instead, keep BOTH
+artifacts, and remove the worktree when done:
 
 ```bash
-cp tests-js/baselines/seed42_v237.json /tmp/seed42_v237.committed.json
+git worktree add /tmp/vugg-basegen HEAD
+cd /tmp/vugg-basegen
+npm ci && npm run build
 node tools/gen-js-baseline.mjs
-diff -u /tmp/seed42_v237.committed.json tests-js/baselines/seed42_v237.json
-git restore tests-js/baselines/seed42_v237.json
+node --version > /tmp/seed42_v237.regen.node-version
+cp tests-js/baselines/seed42_v237.json /tmp/seed42_v237.regen.json
+cd - && git worktree remove --force /tmp/vugg-basegen
+diff -u tests-js/baselines/seed42_v237.json /tmp/seed42_v237.regen.json
 ```
 
-Do not run the final `git restore` if unrelated user edits touch that baseline;
-use a clean temporary worktree instead.
+The committed baseline is never touched; the regenerated file plus the Node
+version that produced it survive in /tmp as the experiment record. (On the
+Windows canonical machine run this from Git Bash, or substitute a real temp
+directory for /tmp; PowerShell has no /tmp.)
 
 ## Acceptance criteria
 
@@ -118,3 +136,48 @@ use a clean temporary worktree instead.
 - `npm run ci` passes from a clean checkout under the Node version pinned by
   the GitHub Actions workflow.
 - Only then should PR #4 be merged.
+
+## Evidence Update — 2026-08-15 (canonical Windows machine, the baseline's birthplace)
+
+The missing half of the differential, recorded from the machine that
+generated `seed42_v237.json`:
+
+- **Node v24.15.0, Windows 11** (this repo's primary dev machine, where every
+  baseline in the v169→v237 lineage was baked).
+- `8d4b664` (the v237 commit itself) ran the FULL suite green here on
+  2026-07-27: cold-CI stamp `GREEN — 8d4b664 verified 2026-07-27T22:24:08.127Z
+  (468s, sim v237)`.
+- 2026-08-15, at `ed2dd72` (identical engine — only docs commits since
+  8d4b664): `npx vitest run tests-js/calibration.test.ts -t supergene_oxidation`
+  → **1 passed, 5.95 s**. The doc's `-t` repro filter works as written.
+- The reporting environment (Node v22.23.2, clean worktree at the same
+  commit) fails the same test deterministically with the duftite 8→9 /
+  erythrite 5→4 flip.
+
+Same commit + same baseline + green-on-24 / red-on-22 scores the hypotheses:
+
+1. ~~Baseline generated from a different built bundle or source state~~ —
+   **refuted**: the baseline agrees byte-for-byte with the runtime that
+   generated it; a stale-build baseline would disagree with both runtimes.
+2. **Node/runtime-dependent numeric path — confirmed by differential.**
+   V8's Math.* low-bit behavior differs across majors (Node 22 = V8 12.x,
+   Node 24 = V8 13.x); a σ sitting within float-noise of a nucleation gate
+   flips once, and the competition cascade re-deals the rest (one extra
+   duftite consumes Cu/As → one fewer erythrite; sizes ripple through the
+   shared broth). The count changes ARE floating-point in origin but not
+   "jitter" — one deterministic threshold flip per runtime, then determinism
+   within each runtime, exactly as both machines observe.
+3. Baseline-gen vs vitest harness mismatch — moot: `tools/gen-js-baseline.mjs`
+   deliberately mirrors `tests-js/setup.ts` (jsdom + bundle eval), same
+   runtime both sides.
+
+**Resolution path:** pin PR #4's GitHub Actions to the baseline lineage's
+runtime — Node 24 (record the exact version the workflow resolves; 24.15.0
+here today). Add a runtime-provenance line (node version + platform) to the
+baseline generator's output header and to `.ci-stamp.json` so the next
+cross-runtime flip identifies itself in one read instead of one
+investigation. Regenerating the baseline under Node 22 instead would merely
+move the red X to the machine every baseline was born on. A longer-term
+option — quantizing σ-vs-gate comparisons so sub-1e-12 margins can't flip —
+is an engine change with fleet-wide blast radius and belongs to its own
+proposal if wanted.
