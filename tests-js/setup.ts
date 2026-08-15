@@ -476,13 +476,16 @@ const EXPORTS = [
   'musicDebugState',  // v-music gain-path fix (2026-06-10) — probe surface
 ];
 
-// Bundle-load gate. Module-scoped `let` is NOT enough: vitest re-imports
-// setup.ts for every test file even with `isolate: false`, so a module
-// flag resets. The same worker process IS reused, so a globalThis flag
-// survives across files in that worker — turning ~180 evals into
-// ~maxWorkers evals. Without this, each file pays ~0.5–1.5s of
-// concat+Function()+scenario bootstrap.
-const BUNDLE_READY_KEY = '__vuggTestBundleReady';
+// Bundle source cache. Vitest re-imports setup.ts every file even with
+// `isolate: false`, so a module-local flag never survived. We DO cache the
+// concatenated source + export-name list on globalThis (and prefer the
+// pretest-written dist/.test-bundle.js) so workers don't re-walk ~150
+// files — but we ALWAYS re-`Function()` eval. Skipping eval reused the
+// same closures across files and leaked mutable sim state (flag setters,
+// rng, calibration knobs), which made isolate:false actually sticky and
+// broke calibration / strip-digest / occlusion pins under parallel load.
+const BUNDLE_SRC_KEY = '__vuggTestBundleSrc';
+const BUNDLE_NAMES_KEY = '__vuggTestBundleNames';
 
 // Load the vendored Three.js module into the test global scope so the
 // 99i renderer's geometry builders (which reference THREE.BufferGeometry,
@@ -538,36 +541,34 @@ function autoDeriveExportNames(files: string[]): string[] {
 
 async function loadBundle() {
   // Always reinstall the cheap stubs — jsdom may be fresh per file even
-  // when the process (and our eval'd exports) are reused.
+  // when the process (and our cached source string) are reused.
   installFetchMock();
   installDomStub();
-  if ((globalThis as any)[BUNDLE_READY_KEY]) return;
   await installThreeGlobal();
-  const files = walkDistSorted();
-  if (!files.length) {
-    throw new Error(
-      `[setup] dist/ is empty — run \`npx tsc -p tsconfig.json\` (or \`npm run build\`) before \`npm test\``,
-    );
-  }
-  // Prefer the pretest-written concat cache (one read) over walking
-  // ~150 dist/ files on every worker's first file.
-  const concatCache = path.join(DIST, '.test-bundle.js');
-  let concatenated: string;
-  let autoDerived: string[];
-  if (fs.existsSync(concatCache)) {
-    concatenated = fs.readFileSync(concatCache, 'utf8');
-    // Still need names for the export object; prefer the sibling cache
-    // written alongside the concat, else scan dist/.
+
+  let concatenated: string | undefined = (globalThis as any)[BUNDLE_SRC_KEY];
+  let autoDerived: string[] | undefined = (globalThis as any)[BUNDLE_NAMES_KEY];
+
+  if (!concatenated || !autoDerived) {
+    const files = walkDistSorted();
+    if (!files.length) {
+      throw new Error(
+        `[setup] dist/ is empty — run \`npx tsc -p tsconfig.json\` (or \`npm run build\`) before \`npm test\``,
+      );
+    }
+    const concatCache = path.join(DIST, '.test-bundle.js');
     const namesCache = path.join(DIST, '.test-bundle-exports.json');
-    if (fs.existsSync(namesCache)) {
+    if (fs.existsSync(concatCache) && fs.existsSync(namesCache)) {
+      concatenated = fs.readFileSync(concatCache, 'utf8');
       autoDerived = JSON.parse(fs.readFileSync(namesCache, 'utf8'));
     } else {
+      concatenated = files.map(f => fs.readFileSync(f, 'utf8')).join('\n\n');
       autoDerived = autoDeriveExportNames(files);
     }
-  } else {
-    concatenated = files.map(f => fs.readFileSync(f, 'utf8')).join('\n\n');
-    autoDerived = autoDeriveExportNames(files);
+    (globalThis as any)[BUNDLE_SRC_KEY] = concatenated;
+    (globalThis as any)[BUNDLE_NAMES_KEY] = autoDerived;
   }
+
   // Epilogue: inject a setSeed helper that reassigns the bundle's
   // global `rng` from outside — the bundle never exposed one because
   // the UI handlers set `rng = new SeededRandom(seed)` inline. Tests
@@ -590,6 +591,9 @@ async function loadBundle() {
   const ALL_EXPORTS = Array.from(new Set([...EXPORTS, ...autoDerived]));
   const exportObject = '{' + ALL_EXPORTS.map(n => `${n}: typeof ${n} !== 'undefined' ? ${n} : undefined`).join(', ') + '}';
   const body = `${concatenated}\n${epilogue}\n;return ${exportObject};`;
+  // Fresh Function() every file — preserves per-file closure isolation
+  // (mutable flags / rng / calibration knobs) while the source string
+  // above is reused across files in this worker.
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const fn = new Function(body);
   const exports = fn();
@@ -598,7 +602,6 @@ async function loadBundle() {
       (globalThis as any)[name] = exports[name];
     }
   }
-  (globalThis as any)[BUNDLE_READY_KEY] = true;
 }
 
 // ---- Wait for scenarios ----
