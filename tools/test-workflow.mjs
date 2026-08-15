@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Memory-bounded full Vitest workflow.
  *

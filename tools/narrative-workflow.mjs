@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Generate and audit the Markdown narrative manifest.
  *

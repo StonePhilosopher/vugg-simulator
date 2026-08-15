@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Fast locality/species-contract audit over the canonical archived claim cards.
  *

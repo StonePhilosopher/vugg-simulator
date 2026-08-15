@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Persist and verify the clean-checkout authentication root for canonical
  * science evidence. Per-scenario checkpoint receipts remain local resumability
