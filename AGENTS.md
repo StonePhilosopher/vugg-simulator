@@ -36,6 +36,11 @@ this section only records the non-obvious startup/run caveats.
 
 ### Testing
 
+- Use **Node 24** (current calibration authority). The committed SIM 237
+  `seed42_v237.json` baseline matches Node 24 and fails under Node 20/22/23
+  (`supergene_oxidation` count changes, not just size jitter). See
+  [BUG-supergene-calibration-v237.md](BUG-supergene-calibration-v237.md).
+  Do not rebake that baseline under another runtime.
 - `npm test` runs the full vitest suite (~176 files, 2400+ assertions) and is
   **slow (~12 minutes)** because it evals the whole bundle in jsdom per file.
   Use `npx vitest run tests-js/<file>.test.ts` to iterate on a single file.
