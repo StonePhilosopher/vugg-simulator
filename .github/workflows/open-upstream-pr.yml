@@ -20,7 +20,8 @@ concurrency:
 
 jobs:
   open-upstream-pr:
-    if: github.repository == 'jtatum/vugg-simulator'
+    # Missing secret must not fail the check — that SHA is what lands upstream.
+    if: github.repository == 'jtatum/vugg-simulator' && secrets.UPSTREAM_PR_TOKEN != ''
     runs-on: ubuntu-latest
     steps:
       - name: Open PR on StonePhilosopher/vugg-simulator
@@ -31,8 +32,8 @@ jobs:
           set -euo pipefail
 
           if [ -z "${GH_TOKEN}" ]; then
-            echo "::error::UPSTREAM_PR_TOKEN is not set. Add James's classic PAT (public_repo) under Settings → Secrets and variables → Actions."
-            exit 1
+            echo "UPSTREAM_PR_TOKEN is not set; skipping upstream PR."
+            exit 0
           fi
 
           existing="$(gh pr list \
