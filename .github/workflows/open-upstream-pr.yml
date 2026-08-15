@@ -5,6 +5,8 @@
 # repository secret UPSTREAM_PR_TOKEN under this fork's
 # Settings → Secrets and variables → Actions. The Cursor GitHub App never
 # sees that token and never needs access to the upstream repo.
+# If the secret is unset the job succeeds (no-op) so this check cannot
+# fail CI on StonePhilosopher.
 name: Open upstream PR
 
 on:
@@ -20,8 +22,6 @@ concurrency:
 
 jobs:
   open-upstream-pr:
-    # Missing secret must not fail the check — that SHA is what lands upstream.
-    if: github.repository == 'jtatum/vugg-simulator' && secrets.UPSTREAM_PR_TOKEN != ''
     runs-on: ubuntu-latest
     steps:
       - name: Open PR on StonePhilosopher/vugg-simulator
@@ -31,7 +31,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -z "${GH_TOKEN}" ]; then
+          if [ -z "${GH_TOKEN:-}" ]; then
             echo "UPSTREAM_PR_TOKEN is not set; skipping upstream PR."
             exit 0
           fi
