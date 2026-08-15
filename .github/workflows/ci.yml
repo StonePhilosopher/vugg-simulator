@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 24 is the current calibration authority. The committed SIM 237
+      # baseline matches Node 24 and fails under Node 20/22/23; see
+      # BUG-supergene-calibration-v237.md. Do not pin CI to Node 22 or rebake
+      # the baseline under another runtime.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run ci
