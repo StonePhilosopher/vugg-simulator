@@ -99,8 +99,6 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
     });
   });
 
-  });
-
   // schneeberg integration history (v97 skip → v99 restore → v228 σ-probe
   // retirement → widened-seed coverage) lives with the active pin in
   // pharmacolite-seeds.test.ts — extracted so the ~44s 32-seed sweep
