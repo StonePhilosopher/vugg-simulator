@@ -476,7 +476,13 @@ const EXPORTS = [
   'musicDebugState',  // v-music gain-path fix (2026-06-10) — probe surface
 ];
 
-let _bundleLoaded = false;
+// Bundle-load gate. Module-scoped `let` is NOT enough: vitest re-imports
+// setup.ts for every test file even with `isolate: false`, so a module
+// flag resets. The same worker process IS reused, so a globalThis flag
+// survives across files in that worker — turning ~180 evals into
+// ~maxWorkers evals. Without this, each file pays ~0.5–1.5s of
+// concat+Function()+scenario bootstrap.
+const BUNDLE_READY_KEY = '__vuggTestBundleReady';
 
 // Load the vendored Three.js module into the test global scope so the
 // 99i renderer's geometry builders (which reference THREE.BufferGeometry,
@@ -531,8 +537,11 @@ function autoDeriveExportNames(files: string[]): string[] {
 }
 
 async function loadBundle() {
-  if (_bundleLoaded) return;
+  // Always reinstall the cheap stubs — jsdom may be fresh per file even
+  // when the process (and our eval'd exports) are reused.
   installFetchMock();
+  installDomStub();
+  if ((globalThis as any)[BUNDLE_READY_KEY]) return;
   await installThreeGlobal();
   const files = walkDistSorted();
   if (!files.length) {
@@ -540,16 +549,25 @@ async function loadBundle() {
       `[setup] dist/ is empty — run \`npx tsc -p tsconfig.json\` (or \`npm run build\`) before \`npm test\``,
     );
   }
-  // Pre-populate jsdom with a minimal DOM stub so the bundle's
-  // top-level UI wiring (addEventListener calls keyed off
-  // getElementById) doesn't throw. We don't need the DOM to actually
-  // work — just to not crash on null.X. Override getElementById /
-  // querySelector to fall back to a no-op mock element so missing
-  // ids return SOMETHING.
-  installDomStub();
-  const concatenated = files
-    .map(f => fs.readFileSync(f, 'utf8'))
-    .join('\n\n');
+  // Prefer the pretest-written concat cache (one read) over walking
+  // ~150 dist/ files on every worker's first file.
+  const concatCache = path.join(DIST, '.test-bundle.js');
+  let concatenated: string;
+  let autoDerived: string[];
+  if (fs.existsSync(concatCache)) {
+    concatenated = fs.readFileSync(concatCache, 'utf8');
+    // Still need names for the export object; prefer the sibling cache
+    // written alongside the concat, else scan dist/.
+    const namesCache = path.join(DIST, '.test-bundle-exports.json');
+    if (fs.existsSync(namesCache)) {
+      autoDerived = JSON.parse(fs.readFileSync(namesCache, 'utf8'));
+    } else {
+      autoDerived = autoDeriveExportNames(files);
+    }
+  } else {
+    concatenated = files.map(f => fs.readFileSync(f, 'utf8')).join('\n\n');
+    autoDerived = autoDeriveExportNames(files);
+  }
   // Epilogue: inject a setSeed helper that reassigns the bundle's
   // global `rng` from outside — the bundle never exposed one because
   // the UI handlers set `rng = new SeededRandom(seed)` inline. Tests
@@ -569,7 +587,6 @@ async function loadBundle() {
   `;
   // EXPORTS ∪ auto-derived names — dedupe via Set. Explicit list comes
   // first so its ordering is preserved in the literal (cosmetic only).
-  const autoDerived = autoDeriveExportNames(files);
   const ALL_EXPORTS = Array.from(new Set([...EXPORTS, ...autoDerived]));
   const exportObject = '{' + ALL_EXPORTS.map(n => `${n}: typeof ${n} !== 'undefined' ? ${n} : undefined`).join(', ') + '}';
   const body = `${concatenated}\n${epilogue}\n;return ${exportObject};`;
@@ -581,7 +598,7 @@ async function loadBundle() {
       (globalThis as any)[name] = exports[name];
     }
   }
-  _bundleLoaded = true;
+  (globalThis as any)[BUNDLE_READY_KEY] = true;
 }
 
 // ---- Wait for scenarios ----

@@ -12,7 +12,7 @@
  *      catastrophic drops are red flags.
  *   5. Commit the new baseline alongside the SIM_VERSION-bump commit.
  *
- * The companion test suite (tests-js/calibration.test.ts) reads the
+ * The companion test suite (tests-js/calibration-shard-*.test.ts) reads the
  * baseline matching the current SIM_VERSION and asserts every scenario
  * still produces the same per-mineral counts. CI fails if a chemistry
  * change shifts seed-42 output without updating the baseline — exactly

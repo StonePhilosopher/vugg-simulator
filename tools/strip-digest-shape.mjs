@@ -1,6 +1,6 @@
 // tools/strip-digest-shape.mjs — pure strip-digest computation, SHARED by the
 // generator (tools/gen-strip-digest.mjs, Node) and the tripwire test
-// (tests-js/strip-digest.test.ts, vitest). One source of truth for the digest
+// (tests-js/strip-digest-shard-*.test.ts, vitest). One source of truth for the digest
 // shape so the two can never drift apart.
 //
 // WHAT THE DIGEST IS. A compact, human-diffable fingerprint of a scenario's

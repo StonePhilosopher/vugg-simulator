@@ -8,9 +8,10 @@
     "build": "node tools/build-all.mjs",
     "build:check": "node tools/build-all.mjs --check",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "pretest": "tsc -p tsconfig.json",
+    "pretest": "tsc -p tsconfig.json && node tools/prep-test-bundle.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:quick": "vitest run --exclude 'tests-js/strip-digest-shard-*.test.ts' --exclude 'tests-js/calibration-shard-*.test.ts' --exclude 'tests-js/stale-mineral-retunes.test.ts' --exclude 'tests-js/pharmacolite.test.ts' --exclude 'tests-js/roughten-gill.test.ts'",
     "ci": "npm run typecheck && npm run build:check && npm test"
   },
   "devDependencies": {
