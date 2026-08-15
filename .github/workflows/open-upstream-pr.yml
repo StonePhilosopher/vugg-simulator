@@ -1,0 +1,58 @@
+# Open a PR from this fork into StonePhilosopher/vugg-simulator whenever a
+# cursor/** branch is pushed.
+#
+# Auth is James's classic PAT (scope: public_repo), stored once as the
+# repository secret UPSTREAM_PR_TOKEN under this fork's
+# Settings → Secrets and variables → Actions. The Cursor GitHub App never
+# sees that token and never needs access to the upstream repo.
+name: Open upstream PR
+
+on:
+  push:
+    branches:
+      - 'cursor/**'
+
+permissions: {}
+
+concurrency:
+  group: open-upstream-pr-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  open-upstream-pr:
+    if: github.repository == 'jtatum/vugg-simulator'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open PR on StonePhilosopher/vugg-simulator
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_PR_TOKEN }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error::UPSTREAM_PR_TOKEN is not set. Add James's classic PAT (public_repo) under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+          existing="$(gh pr list \
+            --repo StonePhilosopher/vugg-simulator \
+            --head "jtatum:${GITHUB_REF_NAME}" \
+            --base main \
+            --state open \
+            --json number \
+            --jq 'length')"
+
+          if [ "${existing}" != "0" ]; then
+            echo "PR already exists; skipping."
+            exit 0
+          fi
+
+          # --title/--body are required: gh will not prompt in Actions.
+          title="$(printf '%s\n' "${COMMIT_MESSAGE}" | head -n1)"
+          gh pr create \
+            --repo StonePhilosopher/vugg-simulator \
+            --head "jtatum:${GITHUB_REF_NAME}" \
+            --base main \
+            --title "${title}" \
+            --body "${COMMIT_MESSAGE}"
