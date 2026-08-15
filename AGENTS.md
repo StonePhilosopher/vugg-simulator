@@ -41,7 +41,3 @@ this section only records the non-obvious startup/run caveats.
   Use `npx vitest run tests-js/<file>.test.ts` to iterate on a single file.
 - `npm run typecheck` and `npm run build:check` are fast and are the quickest
   regression guards.
-- Known baseline drift: `tests-js/calibration.test.ts` fails on this
-  environment with small floating-point deltas in `max_um` values vs the
-  committed seed-42 baseline (all other 175 files pass). Treat as a
-  pre-existing baseline mismatch, not a regression you introduced.
