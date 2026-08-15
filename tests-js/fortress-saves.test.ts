@@ -350,13 +350,17 @@ describe('fortress save system (93a) — event-sourced replay', () => {
     const generationOne = localStorage.getItem('vugg-saves-v1');
     expect(persistSaves([first, minimalSave('second')])).toBe(true);
     const generationTwo = localStorage.getItem('vugg-saves-v1');
+    const generationOneEnvelope = JSON.parse(generationOne as string);
+    const generationTwoEnvelope = JSON.parse(generationTwo as string);
+    expect(generationTwoEnvelope.generation).toBe(generationOneEnvelope.generation + 1);
     localStorage.setItem('vugg-saves-v1', generationOne as string);
     localStorage.setItem('vugg-saves-v1.pending', generationTwo as string);
     localStorage.removeItem('vugg-saves-v1.backup');
 
     expect(loadSaves().map(record => record.id)).toEqual(['first', 'second']);
     expect(localStorage.getItem('vugg-saves-v1.pending')).toBeNull();
-    expect(JSON.parse(localStorage.getItem('vugg-saves-v1') as string).generation).toBe(2);
+    expect(JSON.parse(localStorage.getItem('vugg-saves-v1') as string).generation)
+      .toBe(generationTwoEnvelope.generation);
     expect(_liveSaveStorageNotice()).toMatch(/pending journal/);
   });
 

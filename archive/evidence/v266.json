@@ -3,8 +3,8 @@
   "sim_version": 266,
   "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4|cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v3|water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite-v6|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary-v2|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation+null-confining-pressure-v3|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2|save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+water-height+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v5",
   "canonical_seed": 42,
-  "browser_bundle_sha256": "6cda3c7a06ab2c5ca8fd0c4365bd719ca73e9316e87e617534e6d57d5581dd46",
-  "execution_set_sha256": "101e04a886ceb3519ac05d7693830e9278e4f30b9b7b19730f0ce9928df91205",
+  "browser_bundle_sha256": "405fa33ec8fd5e8f963f4c5c1deed704a58a60a16cb0dfa9990c6b03b41b67c0",
+  "execution_set_sha256": "06a9729d8ba7c98664aebb54597e382078b93023d5bd97794e23e3a99bca3b9a",
   "node_runtime": {
     "schema": "vugg-evidence-node-runtime-v1",
     "node": "24.15.0",
@@ -16,13 +16,13 @@
   },
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
   "producer_contracts": {
-    "seed42-baseline": "f7be8e12eeb984d423e697c623cd93e93c120c70f4bfafc432928e987c86a23a",
-    "strip-archive": "ad924e57ed58ff4ee92ffd3532a88089746bf32122bc7a3abebcf790a6e7160e",
-    "locality-frequency": "1ce84af09dac246a97bf75d6838cc8062f198ef694dc47f0aadd25d68fb1537a",
-    "strip-digest": "c558cd9f7154c283bb38aed0d3af27c129830a108c73e0c6e8fb2de7608a8ea5",
-    "claim-cards": "23c7615bd972df0cd54ed5510f17b534a360cacc43dfe1ab9df46464df73c370",
-    "science-provenance": "e1c88b01b96b8cabf1bbdc37b9dcecd276a8aaa4a2d304ed66717d9a9e78eee7",
-    "science-receipt": "f41af57585351b85888773f1cb9246481ff324da592ae35d4b6ba1d9f105de62"
+    "seed42-baseline": "bd6cf5af84ac09e4b6c8e58fdbabee4def0f2e9492c4f20b31cfa6fe736e3e00",
+    "strip-archive": "a03d69d9f8fe1e87e564ad6c68492ec350f6d5105c3f0f028573964e8646d9af",
+    "locality-frequency": "af66e0e38b71f48fb1d907f53a8af2e2c2b750672c2de5b173c4c3caabbd323e",
+    "strip-digest": "00a598855a0bda783058088dd1a565a952ef00d5340286f2d730d7ae67736f1f",
+    "claim-cards": "f495947195c7314327bb138c2334b28934dfd01ca9c8dc8fa33bac131f425064",
+    "science-provenance": "e215b1d6b742a7a522807db28b9918c928e2009bb210750151882d2d174a1df9",
+    "science-receipt": "0688d96b5aaefb1e19ef3bae5bd6a9e7ddf4f8778b9d64ab5b4ccbd7bca56632"
   },
   "artifacts": {
     "archive/claim-cards/v266/amethyst_geode.json": "d5958555603b4c6e45385c584d83286786ee3025e59e18868a557b97182cb335",
@@ -95,8 +95,8 @@
     "archive/claim-cards/v266/tn457_barite_pulses.md": "6ef88d56e9d702634ca5b60b6fb9d513cdfad15bd42b022016cbfcb99ddd6cd2",
     "archive/claim-cards/v266/tormiq_alpine_cleft.json": "1c78fd7d977456bce0fa0332835c618371a06fa19eb9ab2cf850cd4d8946d229",
     "archive/claim-cards/v266/tormiq_alpine_cleft.md": "725c0345a6d9d3601854d0646ba67681d6f9cb6f3d9213e717c7da2e249e03ec",
-    "archive/claim-cards/v266/tutorial_first_crystal.json": "edb939c79c007d86a9907ee23eded41e12a75f72da86daaa112dcf203fa2baf4",
-    "archive/claim-cards/v266/tutorial_first_crystal.md": "1d75b5ad778ad8d83010612e10d717e459ebccb42ec466d9516c25c448148898",
+    "archive/claim-cards/v266/tutorial_first_crystal.json": "995ca08ada822b536898ed219b4da8e29a276cf24b1a1b4a33dc2f27c7fd1ebd",
+    "archive/claim-cards/v266/tutorial_first_crystal.md": "35849195986a209a35dce7b4423295344294342134acb1a32dc86edf31078541",
     "archive/claim-cards/v266/tutorial_mn_calcite.json": "dc4dc6a9441ad47c334fc9fb846e984248ba029ad9f6b773c016483aaeef684e",
     "archive/claim-cards/v266/tutorial_mn_calcite.md": "f99fcb9a819f502d5489d3cc9453020d11170b46c26d02d31b0bcf2704b7e5d4",
     "archive/claim-cards/v266/tutorial_travertine.json": "287b007e1de0d8588fd85ab02dae620b9d14bf8f72c4906f74b95e06dbf2cf34",
@@ -142,13 +142,13 @@
     "archive/strips/v266/supergene_oxidation.json": "dd0742bb6ae04bad0a783845d18c73b53ea0913c9c72f13f98e297c30cfe2ef4",
     "archive/strips/v266/tn457_barite_pulses.json": "efd1f9cfa0e215e0cb005990e9152626884c5abc65070a79ade1df4e6f4c49dc",
     "archive/strips/v266/tormiq_alpine_cleft.json": "facf8b56afba7a34da4c5d4dedf874e82686768cec0a16ef0e7874078efc8b82",
-    "archive/strips/v266/tutorial_first_crystal.json": "44bef9a5481d434da09d9ee9143695f9b896422c503a64a0f544bad3e8905942",
+    "archive/strips/v266/tutorial_first_crystal.json": "93acb8c1197c3946a14dc7dd1a64fc12d41aac0006a31af9d2dbdfd9054bbc35",
     "archive/strips/v266/tutorial_mn_calcite.json": "70e2778ce75d484b47fed67cc3cfb855217f894fe92a4bf9359a54ad947d1fba",
     "archive/strips/v266/tutorial_travertine.json": "e258113c20d7f680d45e59df2bbafb0231d5bd4f225174f03f981ce4a0500479",
     "archive/strips/v266/ultramafic_supergene.json": "fae3bb8a95f774c31cc10549f59621366c205c9fafe425880fe45bdf989a79f0",
     "archive/strips/v266/wittichen.json": "c5e20ca2be2265e172d2bbd44e481fdd3037d1eefa020be94bafa286cc3079f2",
     "archive/strips/v266/zoned_dripstone_cave.json": "d6e3a4accb7898a49f4202c40f6077191d8cb7c2c7f5ef098a90b4fe0cf3e1dd",
-    "tests-js/baselines/locality_frequency_v266.json": "955c2f063fa0bd934875cb0f93ece72c554cb91bfaa619694e1d15588ec2e5ae",
+    "tests-js/baselines/locality_frequency_v266.json": "5c008918dd3b5e29e91d104b9b97a0d606e0f7c4791e0b215050c76abe8eb9f0",
     "tests-js/baselines/seed42_v266.json": "9404a03a053c3c0f872c3741b3de0d5c86280ad070b700c06192d854637968d0",
     "tests-js/baselines/strip_digest_v266.json": "36deee24b4dd83326b016513233ae9dde836cab209a8d80232330f56c29afc37"
   }
