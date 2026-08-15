@@ -10,4 +10,10 @@ npm run build
 npm test
 ```
 
+GitHub Actions CI (`npm run ci`) runs on **Node 24**, which is the current
+calibration authority for the committed SIM 237 baselines. Node 20/22/23 fail
+the `supergene_oxidation` seed-42 check against that baseline; do not rebake
+it under another runtime. See
+[BUG-supergene-calibration-v237.md](BUG-supergene-calibration-v237.md).
+
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the build pipeline and design notes.
