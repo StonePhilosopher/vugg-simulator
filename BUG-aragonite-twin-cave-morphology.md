@@ -1,17 +1,21 @@
 # Bug Report: Twinned Cave Aragonite Renders as Smooth Pseudo-Hex Column (Wrong)
 
-**Status:** ✅ RESOLVED 2026-05-28. Air-mode aragonite now routes to
-`aragonite_frostwork` in BOTH renderers regardless of twin state. The
-Three.js override (99i `_resolveCrystalGeomToken`) dropped its `!twinned`
-condition; the wireframe gained the parallel branch (99d
-`_lookupCrystalPrimitive`) + a new `PRIM_ARAGONITE_FROSTWORK` 2D primitive
-(99c) — the wireframe had never received the v156 frostwork at all, so it
-was routing air-mode aragonite to the dripstone icicle (non-twinned) or
-the pseudo-hex twin column (twinned), both wrong. Tests updated
-(aragonite-pseudohex-twin{,-three}, habit-bias). Renderer-only; sim
-baseline byte-identical (no SIM_VERSION bump — consistent with the recent
-renderer/UI-only commits). The proper-fix sequence below was followed
-verbatim; kept for the reasoning + reference trail.
+**Status:** ✅ RESOLVED 2026-05-28. **Re-verified 2026-08-15** — still
+closed in current `js/` (paths were already post-flatten; no
+`projects/vugg-simulator/web/index.html` cite). Air-mode aragonite routes
+to `aragonite_frostwork` in BOTH renderers regardless of twin state. The
+Three.js override (`js/99i-renderer-three.ts` `_resolveCrystalGeomToken`)
+dropped its `!twinned` condition; the wireframe gained the parallel branch
+(`js/99d-renderer-wireframe.ts` `_lookupCrystalPrimitive`) + a new
+`PRIM_ARAGONITE_FROSTWORK` 2D primitive (`js/99c-renderer-primitives.ts`) —
+the wireframe had never received the v156 frostwork at all, so it was
+routing air-mode aragonite to the dripstone icicle (non-twinned) or the
+pseudo-hex twin column (twinned), both wrong. Tests still green
+2026-08-15: `aragonite-pseudohex-twin{,-three}` (31 passed) assert
+twinned air-mode → frostwork. Renderer-only; sim baseline byte-identical
+(no SIM_VERSION bump — consistent with the recent renderer/UI-only
+commits). The proper-fix sequence below was followed verbatim; kept for
+the reasoning + reference trail.
 
 **Date:** 2026-05-27
 **Reported by:** Boss (called out scoping decision as model-vs-science gap during v156 commit review)
