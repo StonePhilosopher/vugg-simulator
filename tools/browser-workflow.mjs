@@ -11,7 +11,7 @@ import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SIM_VERSION = 266;
+const SIM_VERSION = 267;
 const TEST_SEED = 42;
 const MANUAL_SAVE_NAME = 'Browser QA — seed 42';
 const DEFAULT_TIMEOUT_MS = 20_000;

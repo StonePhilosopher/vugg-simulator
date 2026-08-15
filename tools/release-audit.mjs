@@ -204,9 +204,9 @@ function assertExactJson(file, expected) {
   if (actual !== expectedRaw) throw new Error(`${path.relative(ROOT, file)} is missing or stale; run npm run gen:release`);
 }
 
-function assertReleaseDocuments() {
+function assertReleaseDocuments(simVersion) {
   const requirements = new Map([
-    ['CHANGELOG.md', ['SIM 266', 'External gates']],
+    ['CHANGELOG.md', [`SIM ${simVersion}`, 'External gates']],
     ['docs/RELEASE-MIGRATION-POLICY.md', ['content pack', 'format v2', 'SIM_VERSION']],
     ['docs/SCIENTIFIC-STEWARDSHIP.md', ['follow the science', 'AI Dr. Michael Wise', 'correction']],
     ['docs/LOCAL-DIAGNOSTICS.md', ['diagnostics:local', 'no network', 'local backup']],
@@ -233,7 +233,7 @@ async function main() {
     assertExactJson(CONTENT_MANIFEST, content);
     assertExactJson(ASSET_MANIFEST, assets);
   }
-  assertReleaseDocuments();
+  assertReleaseDocuments(content.packs[0].compatibility.sim_version);
   console.error(`[release-audit] PASS: ${content.packs[0].counts.scenarios} scenarios, ${content.packs[0].counts.minerals} minerals, ${content.packs[0].counts.narratives} narratives, ${assets.assets.length} receipted assets; local P4 manifests and policies are current`);
 }
 

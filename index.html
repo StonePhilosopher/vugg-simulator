@@ -5344,6 +5344,14 @@ function maxSizeCm(mineral) {
     const entry = MINERAL_SPEC[mineral];
     return entry ? entry.max_size_cm : null;
 }
+function crystalAtAuthoredSizeCap(crystal) {
+    if (!crystal)
+        return false;
+    const capCm = maxSizeCm(crystal.mineral);
+    const totalGrowthUm = Number(crystal.total_growth_um);
+    return capCm != null && Number.isFinite(totalGrowthUm)
+        && totalGrowthUm / 10000 >= capCm;
+}
 
 // ── 04-narrative-manifest.generated.js ──
 
@@ -8290,7 +8298,7 @@ function scenarioSpecHash(spec) {
 //          For a dissolution zone (c shrinks):
 //            crystal._volume_mm3 *= (c_new / c_old)³
 //
-//        get_vug_fill simply sums crystal._volume_mm3 across active
+//        get_vug_fill simply sums crystal._volume_mm3 across non-dissolved
 //        crystals — no reinterpretation through current habit. The
 //        single source of truth lives on the crystal, frozen as growth
 //        deposits it. Geologically: this is what real zoned crystals
@@ -19621,7 +19629,22 @@ function scenarioSpecHash(spec) {
 // deterministic stratification of the full Creative architecture/bubble/seed/
 // diameter domain. This changes capacity, anchoring, surface fabrics, water,
 // dissolution, and downstream paragenesis, so all v266 evidence is rebaked.
-const SIM_VERSION = 266;
+// v267 (August 2026): cavity sealing is now a repeatable physical transition,
+// not a lifetime UI latch. If accepted dissolution restores more than 5% of
+// the authenticated cavity volume, `_vug_sealed` re-arms immediately; a later
+// same-step or later-step refill can seal and testify again. The hysteresis
+// prevents numerical chatter at 100% while preserving dissolution/reseal
+// histories in saves and replay. Physical fill and idle inventory now count
+// every non-dissolved solid, including buried or world-record-capped crystals.
+// The authored size cap suppresses positive zones but leaves exposed solids
+// chemically available for later dissolution. Chalcanthite's special
+// water-solubility decay is booked through the local CuSO4 inventory ledger as
+// a real negative zone so chemistry, volume, length, width, and seal state move
+// together. A zero-volume fresh nucleus is likewise
+// never reported as an empty vug. These changes can alter deterministic
+// chemistry/replay/log output, so this is an explicit identity bump rather
+// than a silent patch inside v266 evidence.
+const SIM_VERSION = 267;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -19653,6 +19676,8 @@ const MODEL_DIGEST = [
     'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
     'sulphur-bank-HgS:zoned-association-not-S0-substrate-v1',
     'wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4',
+    'solid-occupancy:all-nondissolved+positive-only-size-cap+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-local-CuSO4-decay-v2',
+    'cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2',
     'sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2',
     'calcite-Mn:manganocalcite-excess<1.2-v1',
     'HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3',
@@ -19666,7 +19691,7 @@ const MODEL_DIGEST = [
     'beryl:K36-postHF-recovery-v1',
     'halite:vadose-propensity0.8-v1',
     'borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1',
-    'competition:accepted-axial-timescale+formula-weighted-budget-v3',
+    'competition:accepted-axial-timescale+formula-weighted-budget+single-evaluation-full-fill-negative-v4',
     'thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3',
     'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
     'scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite-v6',
@@ -38152,6 +38177,30 @@ function _habitAspectRatio(habit) {
 // V = (4/3)π × (c/2) × (a/2)² = (π/6) × aRatio² × c³.
 function _habitVolCoeff(aRatio) {
     return (Math.PI / 6) * aRatio * aRatio;
+}
+/**
+ * Physical solid inventory is independent of whether a crystal can continue
+ * growing. Growth eligibility, burial, enclosure, and authored size caps do
+ * not remove matter from the cavity. Only a fully dissolved crystal has no
+ * solid volume.
+ */
+function _crystalSolidVolumeMm3(crystal) {
+    if (!crystal || crystal.dissolved === true)
+        return 0;
+    if (typeof crystal._volume_mm3 === 'number' && Number.isFinite(crystal._volume_mm3)) {
+        return Math.max(0, crystal._volume_mm3);
+    }
+    // Backward-compatible projection for legacy snapshots/tests that predate
+    // zone-integrated volume. Keep the same habit interpretation historically
+    // used by get_vug_fill rather than trusting a renderer-side size cap.
+    const totalGrowthUm = Number(crystal.total_growth_um);
+    if (Number.isFinite(totalGrowthUm)) {
+        const cMm = Math.max(0, totalGrowthUm / 1000);
+        return _habitVolCoeff(_habitAspectRatio(crystal.habit)) * Math.pow(cMm, 3);
+    }
+    const cMm = Math.max(0, Number(crystal.c_length_mm) || 0);
+    const aMm = Math.max(0, Number(crystal.a_width_mm) || 0);
+    return (Math.PI / 6) * cMm * aMm * aMm;
 }
 class GrowthZone {
     constructor(opts = {}) {
@@ -70226,6 +70275,47 @@ class VugSimulator {
         this._creativeInitialAuthoringTransactions.push(receipt);
         return true;
     }
+    /**
+     * A seal is a geological state transition, not a lifetime latch.  Wall
+     * dissolution can restore aggregate open volume after a cavity has filled;
+     * use hysteresis so numerical jitter around 100% does not spam seal events,
+     * while a materially reopened cavity can later seal and testify again.
+     */
+    _resetVugSealIfReopened(vugFill, openSystem = false) {
+        if (!this._vug_sealed)
+            return false;
+        if (!openSystem && (!Number.isFinite(vugFill) || vugFill >= 0.95))
+            return false;
+        this._vug_sealed = false;
+        return true;
+    }
+    /** Recompute physical occupancy and immediately re-arm a reopened seal. */
+    _refreshVugFillAndSeal(openSystem = false) {
+        const fill = openSystem ? 0 : this.get_vug_fill();
+        this._resetVugSealIfReopened(fill, openSystem);
+        return fill;
+    }
+    /** Emit one testimony record for each distinct volumetric sealing event. */
+    _sealVugIfFilled(vugFill) {
+        if (!(vugFill >= 1.0) || this._vug_sealed)
+            return false;
+        this._vug_sealed = true;
+        const mineralVols = {};
+        for (const crystal of this.crystals) {
+            if (!crystal || crystal.dissolved === true)
+                continue;
+            const volume = _crystalSolidVolumeMm3(crystal);
+            mineralVols[crystal.mineral] = (mineralVols[crystal.mineral] || 0) + volume;
+        }
+        const sorted = Object.entries(mineralVols).sort((a, b) => b[1] - a[1]);
+        const dominant = sorted[0] ? sorted[0][0] : 'mineral';
+        let sealMsg = `🪨 VUG SEALED — cavity completely filled after ${this.step} steps`;
+        if (sorted.length) {
+            sealMsg += ` — dominant: ${dominant}${sorted.length > 1 ? `, with ${sorted.slice(1).map(s => s[0]).join(', ')}` : ''}`;
+        }
+        this.log.push(sealMsg);
+        return true;
+    }
     run_step() {
         this.log = [];
         this.step++;
@@ -70320,26 +70410,12 @@ class VugSimulator {
         // fill-halt / high-fill dampener in the growth loop — growth stays rate-limited by
         // chemistry, not by pocket space. Default false → every other scenario unchanged.
         const openSystem = !!(this.conditions.wall && this.conditions.wall.open_system);
-        const vugFill = openSystem ? 0 : this.get_vug_fill();
-        if (vugFill >= 1.0 && !this._vug_sealed) {
-            this._vug_sealed = true;
-            // Determine dominant mineral
-            const mineralVols = {};
-            for (const c of this.crystals) {
-                if (!c.active)
-                    continue;
-                const a = c.c_length_mm / 2, b = c.a_width_mm / 2;
-                const v = (4 / 3) * Math.PI * a * b * b;
-                mineralVols[c.mineral] = (mineralVols[c.mineral] || 0) + v;
-            }
-            const sorted = Object.entries(mineralVols).sort((a, b) => b[1] - a[1]);
-            const dominant = sorted[0] ? sorted[0][0] : 'mineral';
-            let sealMsg = `🪨 VUG SEALED — cavity completely filled after ${this.step} steps`;
-            if (sorted.length) {
-                sealMsg += ` — dominant: ${dominant}${sorted.length > 1 ? `, with ${sorted.slice(1).map(s => s[0]).join(', ')}` : ''}`;
-            }
-            this.log.push(sealMsg);
-        }
+        const vugFill = this._refreshVugFillAndSeal(openSystem);
+        // A dissolution-opened cavity is physically unsealed again.  Re-arm the
+        // transition before the start/end-of-step seal checks so a later refill
+        // produces a second truthful seal event.  The 95% threshold supplies
+        // hysteresis below the hard 100% closure boundary.
+        this._sealVugIfFilled(vugFill);
         // Phase 4c.2/4c.3a — sync Eh⇄O2 BEFORE the engines read it. With
         // EH_DYNAMIC_ENABLED on, the redox helpers derive their O2 from
         // fluid.Eh (o2FromEh), so the two must be consistent at engine-read
@@ -70408,7 +70484,13 @@ class VugSimulator {
                 const engine = MINERAL_ENGINES[crystal.mineral];
                 if (!engine)
                     continue;
-                const zone = this._runEngineForCrystal(engine, crystal);
+                // Graduated competition already evaluated this engine exactly once in
+                // pass 1. Preserve its null/negative result at full fill just as the
+                // normal-fill branch does; a second call would consume RNG twice and
+                // bias stochastic dissolution.
+                const zone = this._graduatedZones && this._graduatedZones.has(crystal.crystal_id)
+                    ? this._graduatedZones.get(crystal.crystal_id)
+                    : this._runEngineForCrystal(engine, crystal);
                 if (zone && zone.thickness_um < 0
                     && crystal._physicalEtchAppliedStep === this.step)
                     continue;
@@ -70426,7 +70508,7 @@ class VugSimulator {
                         this._finalizeZoneForApplication(crystal, zone);
                         this._applyZoneGrowthBudget(crystal, zone);
                         crystal.add_zone(zone);
-                        currentFill = openSystem ? 0 : this.get_vug_fill();
+                        currentFill = this._refreshVugFillAndSeal(openSystem);
                         this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
                     }
                     else if (crystal.total_growth_um > 1e-9) {
@@ -70446,12 +70528,11 @@ class VugSimulator {
             // which would prevent the world-record cap from ever firing on
             // those crystals and let total_growth_um run unbounded.
             const capCm = maxSizeCm(crystal.mineral);
-            const cLengthForCap = crystal.total_growth_um / 1000.0;
-            if (capCm != null && cLengthForCap / 10.0 >= capCm) {
-                crystal.active = false;
-                this.log.push(`  ⛔ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: reached size cap (${capCm} cm = 2× world record) — growth halts`);
-                continue;
+            const sizeCapped = crystalAtAuthoredSizeCap(crystal);
+            if (sizeCapped && !crystal._size_capped) {
+                this.log.push(`  ⛔ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: reached size cap (${capCm} cm = 2× world record) — positive growth halts; dissolution remains possible`);
             }
+            crystal._size_capped = sizeCapped;
             const engine = MINERAL_ENGINES[crystal.mineral];
             if (!engine)
                 continue;
@@ -70488,6 +70569,11 @@ class VugSimulator {
             // one-step negative candidate as well would count the pulse twice.
             if (zone && zone.thickness_um < 0
                 && crystal._physicalEtchAppliedStep === this.step)
+                continue;
+            // A world-record cap constrains new precipitation, not the existence or
+            // reactivity of the solid. Engines still run so later acid/redox changes
+            // can return the capped crystal's booked inventory.
+            if (zone && zone.thickness_um > 0 && sizeCapped)
                 continue;
             if (zone) {
                 // Texture state is committed only after the formula-pool cap confirms
@@ -70728,10 +70814,10 @@ class VugSimulator {
                 crystal.add_zone(zone, extentMult);
                 // Re-check fill after each crystal grows to prevent >100% overshoot
                 if (zone.thickness_um > 0) {
-                    currentFill = openSystem ? 0 : this.get_vug_fill();
+                    currentFill = this._refreshVugFillAndSeal(openSystem);
                 }
                 if (zone.thickness_um < 0) {
-                    currentFill = openSystem ? 0 : this.get_vug_fill();
+                    currentFill = this._refreshVugFillAndSeal(openSystem);
                     this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
                 }
                 else if (Math.abs(zone.thickness_um) > 0.5) {
@@ -70872,8 +70958,11 @@ class VugSimulator {
         // Water-solubility metastability — Round 8e (Apr 2026). Chalcanthite
         // re-dissolves when fluid.salinity < 4 OR fluid.pH > 5. The geological
         // truth: every chalcanthite is a temporary victory over entropy.
+        let chalcanthiteVolumeChanged = false;
         for (const crystal of this.crystals) {
-            if (crystal.mineral !== 'chalcanthite' || crystal.dissolved || !crystal.active)
+            // Growth eligibility is not a dissolution shield. A genuinely buried
+            // crystal is protected; an exposed size-capped solid is not.
+            if (crystal.mineral !== 'chalcanthite' || crystal.dissolved || crystal._buried)
                 continue;
             if (this.conditions.fluid.salinity < 4.0 || this.conditions.fluid.pH > 5.0) {
                 // 40%/step decay, with a 0.5-µm absolute floor below which we
@@ -70881,10 +70970,22 @@ class VugSimulator {
                 let dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.4);
                 if (crystal.total_growth_um < 0.5)
                     dissolved_um = crystal.total_growth_um;
-                crystal.total_growth_um -= dissolved_um;
-                crystal.c_length_mm = Math.max(crystal.total_growth_um / 1000.0, 0);
-                this.conditions.fluid.Cu += dissolved_um * 0.5;
-                this.conditions.fluid.S += dissolved_um * 0.5;
+                if (!(dissolved_um > 0))
+                    continue;
+                const decayZone = new GrowthZone({
+                    step: this.step,
+                    temperature: this.conditions.temperature,
+                    thickness_um: -dissolved_um,
+                    growth_rate: -dissolved_um,
+                    dissolutionMode: 'low_salinity',
+                    note: `water-solubility decay (salinity ${this.conditions.fluid.salinity.toFixed(1)}, pH ${this.conditions.fluid.pH.toFixed(1)})`,
+                });
+                // dissolved_um is already the accepted per-step loss; do not apply the
+                // geological time multiplier a second time.
+                decayZone._time_scaled = true;
+                this._applyZoneGrowthBudget(crystal, decayZone);
+                crystal.add_zone(decayZone);
+                chalcanthiteVolumeChanged = true;
                 if (crystal.total_growth_um <= 0) {
                     crystal.dissolved = true;
                     crystal.active = false;
@@ -70899,25 +71000,11 @@ class VugSimulator {
                 }
             }
         }
-        // Check for vug seal after growth loop (may cross 1.0 during crystal growth)
-        if (currentFill >= 1.0 && !this._vug_sealed) {
-            this._vug_sealed = true;
-            const mineralVols = {};
-            for (const c of this.crystals) {
-                if (!c.active)
-                    continue;
-                const a = c.c_length_mm / 2, b = c.a_width_mm / 2;
-                const v = (4 / 3) * Math.PI * a * b * b;
-                mineralVols[c.mineral] = (mineralVols[c.mineral] || 0) + v;
-            }
-            const sorted = Object.entries(mineralVols).sort((a, b) => b[1] - a[1]);
-            const dominant = sorted[0] ? sorted[0][0] : 'mineral';
-            let sealMsg = `🪨 VUG SEALED — cavity completely filled after ${this.step} steps`;
-            if (sorted.length) {
-                sealMsg += ` — dominant: ${dominant}${sorted.length > 1 ? `, with ${sorted.slice(1).map(s => s[0]).join(', ')}` : ''}`;
-            }
-            this.log.push(sealMsg);
+        if (chalcanthiteVolumeChanged) {
+            currentFill = this._refreshVugFillAndSeal(openSystem);
         }
+        // Check for vug seal after growth loop (may cross 1.0 during crystal growth)
+        this._sealVugIfFilled(currentFill);
         // ---- Radiation damage processing ----
         const active_uraninite = this.crystals.filter(c => c.mineral === 'uraninite' && c.active);
         if (active_uraninite.length) {
@@ -73406,6 +73493,13 @@ Object.assign(VugSimulator.prototype, {
                     out.set(crystal.crystal_id, null);
                 continue;
             }
+            // Capped solids still run their engine so negative zones can dissolve and
+            // return local inventory. Positive candidates do not enter competition or
+            // consume another crystal's share of the fluid budget.
+            if (crystalAtAuthoredSizeCap(crystal)) {
+                out.set(crystal.crystal_id, null);
+                continue;
+            }
             // Identify the cell + fluid this crystal competes within.
             const anchor = this.wall_state._resolveAnchor(crystal);
             const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
@@ -74978,7 +75072,7 @@ Object.assign(VugSimulator.prototype, {
             return 0;
         let crystalVol = 0;
         for (const c of this.crystals) {
-            if (!c.active)
+            if (c.dissolved === true)
                 continue;
             // 2026-05-18 habit-stability fix: use the crystal's zone-integrated
             // _volume_mm3 (set by Crystal.add_zone per shell at the habit aspect
@@ -74997,27 +75091,7 @@ Object.assign(VugSimulator.prototype, {
             // fallback uses total_growth_um (uncapped chemistry-tracked size)
             // because v59 capped c_length_mm at vug_radius and reading it would
             // underreport big crystals (BUG-CRYSTALS-CLIP-VUG-WALL.md Tier-2).
-            if (typeof c._volume_mm3 === 'number') {
-                crystalVol += c._volume_mm3;
-                continue;
-            }
-            const cMm = c.total_growth_um / 1000;
-            let aMm;
-            if (c.habit === 'prismatic')
-                aMm = cMm * 0.4;
-            else if (c.habit === 'tabular')
-                aMm = cMm * 1.5;
-            else if (c.habit === 'acicular')
-                aMm = cMm * 0.15;
-            else if (c.habit === 'rhombohedral')
-                aMm = cMm * 0.8;
-            else if (c.habit === 'snowball')
-                aMm = cMm;
-            else
-                aMm = cMm * 0.5;
-            const a = cMm / 2;
-            const b = aMm / 2;
-            crystalVol += (4 / 3) * Math.PI * a * b * b;
+            crystalVol += _crystalSolidVolumeMm3(c);
         }
         return crystalVol / vugVol;
     },
@@ -103870,6 +103944,66 @@ function idleAppendLog(logEl, text, className) {
         logEl.removeChild(logEl.lastChild);
     }
 }
+/**
+ * The pie is a volume diagram, but its caption is an inventory statement.
+ * A just-nucleated crystal has zero booked volume until its first accepted
+ * growth zone, so deriving the caption from visible pie slices can falsely
+ * call a populated cavity "empty".  Keep the volume percentage where it is
+ * meaningful and fall back to crystal counts for sub-pixel nuclei.
+ */
+function _idlePieMineralLabel(crystals, slices) {
+    const counts = new Map();
+    for (const crystal of Array.isArray(crystals) ? crystals : []) {
+        if (!crystal || crystal.dissolved === true)
+            continue;
+        const mineral = String(crystal.mineral || '').trim();
+        if (!mineral)
+            continue;
+        counts.set(mineral, (counts.get(mineral) || 0) + 1);
+    }
+    if (!counts.size)
+        return 'empty vug';
+    const pctByMineral = new Map();
+    const orderedMinerals = [];
+    for (const slice of Array.isArray(slices) ? slices : []) {
+        const mineral = String(slice?.label || '');
+        if (mineral === 'open' || !counts.has(mineral) || pctByMineral.has(mineral))
+            continue;
+        const pct = Number(slice?.pct);
+        pctByMineral.set(mineral, Number.isFinite(pct) ? Math.max(0, pct) : 0);
+        orderedMinerals.push(mineral);
+    }
+    for (const mineral of counts.keys()) {
+        if (!pctByMineral.has(mineral)) {
+            pctByMineral.set(mineral, 0);
+            orderedMinerals.push(mineral);
+        }
+    }
+    return orderedMinerals.map((mineral) => {
+        const pct = pctByMineral.get(mineral) || 0;
+        if (pct >= 0.1)
+            return `${mineral} ${pct.toFixed(1)}%`;
+        const count = counts.get(mineral) || 0;
+        return count === 1
+            ? `${mineral} microcrystal`
+            : `${count} ${mineral} microcrystals`;
+    }).join(' · ');
+}
+function _idlePieSolidVolumes(crystals) {
+    const mineralVolumes = {};
+    let totalCrystalVolume = 0;
+    for (const crystal of Array.isArray(crystals) ? crystals : []) {
+        if (!crystal || crystal.dissolved === true)
+            continue;
+        const volume = _crystalSolidVolumeMm3(crystal);
+        const mineral = String(crystal.mineral || '').trim();
+        if (!mineral)
+            continue;
+        mineralVolumes[mineral] = (mineralVolumes[mineral] || 0) + volume;
+        totalCrystalVolume += volume;
+    }
+    return { mineralVolumes, totalCrystalVolume };
+}
 function idleDrawPie() {
     if (!idleSim)
         return;
@@ -103885,18 +104019,7 @@ function idleDrawPie() {
     const vugRadius = vugDiam / 2;
     const vugVolume = (4 / 3) * Math.PI * Math.pow(vugRadius, 3);
     // Estimate crystal volumes — approximate as ellipsoids
-    const mineralVolumes = {};
-    let totalCrystalVolume = 0;
-    for (const crystal of idleSim.crystals) {
-        if (!crystal.active)
-            continue;
-        const a = crystal.c_length_mm / 2; // semi-major
-        const b = crystal.a_width_mm / 2; // semi-minor
-        const vol = (4 / 3) * Math.PI * a * b * b; // prolate ellipsoid
-        const mineral = crystal.mineral;
-        mineralVolumes[mineral] = (mineralVolumes[mineral] || 0) + vol;
-        totalCrystalVolume += vol;
-    }
+    const { mineralVolumes, totalCrystalVolume } = _idlePieSolidVolumes(idleSim.crystals);
     const rawFillPct = (totalCrystalVolume / vugVolume) * 100;
     const fillPct = Math.min(100, rawFillPct);
     const openPct = Math.max(0, 100 - fillPct);
@@ -103952,11 +104075,7 @@ function idleDrawPie() {
     // Update label
     const labelEl = document.getElementById('idle-pie-label');
     if (labelEl) {
-        const mineralList = slices
-            .filter(s => s.label !== 'open' && s.pct > 0.001)
-            .map(s => s.pct >= 0.1 ? `${s.label} ${s.pct.toFixed(1)}%` : `${s.label} microcrystals`)
-            .join(' · ');
-        labelEl.textContent = mineralList || 'empty vug';
+        labelEl.textContent = _idlePieMineralLabel(idleSim.crystals, slices);
         labelEl.style.color = '';
         // Agate is a recorded banded-chalcedony fabric, not a fill-percentage
         // nickname for macrocrystalline quartz.

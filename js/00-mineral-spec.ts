@@ -172,3 +172,11 @@ function maxSizeCm(mineral) {
   const entry = MINERAL_SPEC[mineral];
   return entry ? entry.max_size_cm : null;
 }
+
+function crystalAtAuthoredSizeCap(crystal) {
+  if (!crystal) return false;
+  const capCm = maxSizeCm(crystal.mineral);
+  const totalGrowthUm = Number(crystal.total_growth_um);
+  return capCm != null && Number.isFinite(totalGrowthUm)
+    && totalGrowthUm / 10000 >= capCm;
+}

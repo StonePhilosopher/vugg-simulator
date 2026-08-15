@@ -471,6 +471,46 @@ class VugSimulator {
     return true;
   }
 
+  /**
+   * A seal is a geological state transition, not a lifetime latch.  Wall
+   * dissolution can restore aggregate open volume after a cavity has filled;
+   * use hysteresis so numerical jitter around 100% does not spam seal events,
+   * while a materially reopened cavity can later seal and testify again.
+   */
+  _resetVugSealIfReopened(vugFill: number, openSystem = false) {
+    if (!this._vug_sealed) return false;
+    if (!openSystem && (!Number.isFinite(vugFill) || vugFill >= 0.95)) return false;
+    this._vug_sealed = false;
+    return true;
+  }
+
+  /** Recompute physical occupancy and immediately re-arm a reopened seal. */
+  _refreshVugFillAndSeal(openSystem = false) {
+    const fill = openSystem ? 0 : this.get_vug_fill();
+    this._resetVugSealIfReopened(fill, openSystem);
+    return fill;
+  }
+
+  /** Emit one testimony record for each distinct volumetric sealing event. */
+  _sealVugIfFilled(vugFill: number) {
+    if (!(vugFill >= 1.0) || this._vug_sealed) return false;
+    this._vug_sealed = true;
+    const mineralVols: Record<string, number> = {};
+    for (const crystal of this.crystals) {
+      if (!crystal || crystal.dissolved === true) continue;
+      const volume = _crystalSolidVolumeMm3(crystal);
+      mineralVols[crystal.mineral] = (mineralVols[crystal.mineral] || 0) + volume;
+    }
+    const sorted = Object.entries(mineralVols).sort((a, b) => b[1] - a[1]);
+    const dominant = sorted[0] ? sorted[0][0] : 'mineral';
+    let sealMsg = `🪨 VUG SEALED — cavity completely filled after ${this.step} steps`;
+    if (sorted.length) {
+      sealMsg += ` — dominant: ${dominant}${sorted.length > 1 ? `, with ${sorted.slice(1).map(s => s[0]).join(', ')}` : ''}`;
+    }
+    this.log.push(sealMsg);
+    return true;
+  }
+
   run_step() {
     this.log = [];
     this.step++;
@@ -566,26 +606,13 @@ class VugSimulator {
     // fill-halt / high-fill dampener in the growth loop — growth stays rate-limited by
     // chemistry, not by pocket space. Default false → every other scenario unchanged.
     const openSystem = !!(this.conditions.wall && this.conditions.wall.open_system);
-    const vugFill = openSystem ? 0 : this.get_vug_fill();
+    const vugFill = this._refreshVugFillAndSeal(openSystem);
 
-    if (vugFill >= 1.0 && !this._vug_sealed) {
-      this._vug_sealed = true;
-      // Determine dominant mineral
-      const mineralVols: Record<string, number> = {};
-      for (const c of this.crystals) {
-        if (!c.active) continue;
-        const a = c.c_length_mm / 2, b = c.a_width_mm / 2;
-        const v = (4/3) * Math.PI * a * b * b;
-        mineralVols[c.mineral] = (mineralVols[c.mineral] || 0) + v;
-      }
-      const sorted = Object.entries(mineralVols).sort((a,b) => b[1] - a[1]);
-      const dominant = sorted[0] ? sorted[0][0] : 'mineral';
-      let sealMsg = `🪨 VUG SEALED — cavity completely filled after ${this.step} steps`;
-      if (sorted.length) {
-        sealMsg += ` — dominant: ${dominant}${sorted.length > 1 ? `, with ${sorted.slice(1).map(s=>s[0]).join(', ')}` : ''}`;
-      }
-      this.log.push(sealMsg);
-    }
+    // A dissolution-opened cavity is physically unsealed again.  Re-arm the
+    // transition before the start/end-of-step seal checks so a later refill
+    // produces a second truthful seal event.  The 95% threshold supplies
+    // hysteresis below the hard 100% closure boundary.
+    this._sealVugIfFilled(vugFill);
 
     // Phase 4c.2/4c.3a — sync Eh⇄O2 BEFORE the engines read it. With
     // EH_DYNAMIC_ENABLED on, the redox helpers derive their O2 from
@@ -658,7 +685,13 @@ class VugSimulator {
       if (currentFill >= 1.0) {
         const engine = MINERAL_ENGINES[crystal.mineral];
         if (!engine) continue;
-        const zone = this._runEngineForCrystal(engine, crystal);
+        // Graduated competition already evaluated this engine exactly once in
+        // pass 1. Preserve its null/negative result at full fill just as the
+        // normal-fill branch does; a second call would consume RNG twice and
+        // bias stochastic dissolution.
+        const zone = this._graduatedZones && this._graduatedZones.has(crystal.crystal_id)
+          ? this._graduatedZones.get(crystal.crystal_id)
+          : this._runEngineForCrystal(engine, crystal);
         if (zone && zone.thickness_um < 0
             && crystal._physicalEtchAppliedStep === this.step) continue;
         if (zone && Number(zone.thickness_um) === 0 && zone.state_overprint) {
@@ -675,7 +708,7 @@ class VugSimulator {
             this._finalizeZoneForApplication(crystal, zone);
             this._applyZoneGrowthBudget(crystal, zone);
             crystal.add_zone(zone);
-            currentFill = openSystem ? 0 : this.get_vug_fill();
+            currentFill = this._refreshVugFillAndSeal(openSystem);
             this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
           } else if (crystal.total_growth_um > 1e-9) {
             // Several legacy engines optimistically set dissolved=true while
@@ -694,12 +727,11 @@ class VugSimulator {
       // which would prevent the world-record cap from ever firing on
       // those crystals and let total_growth_um run unbounded.
       const capCm = maxSizeCm(crystal.mineral);
-      const cLengthForCap = crystal.total_growth_um / 1000.0;
-      if (capCm != null && cLengthForCap / 10.0 >= capCm) {
-        crystal.active = false;
-        this.log.push(`  ⛔ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: reached size cap (${capCm} cm = 2× world record) — growth halts`);
-        continue;
+      const sizeCapped = crystalAtAuthoredSizeCap(crystal);
+      if (sizeCapped && !crystal._size_capped) {
+        this.log.push(`  ⛔ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: reached size cap (${capCm} cm = 2× world record) — positive growth halts; dissolution remains possible`);
       }
+      crystal._size_capped = sizeCapped;
       const engine = MINERAL_ENGINES[crystal.mineral];
       if (!engine) continue;
       // v128 graduated competition: consume the pre-computed scaled zone
@@ -734,6 +766,10 @@ class VugSimulator {
       // one-step negative candidate as well would count the pulse twice.
       if (zone && zone.thickness_um < 0
           && crystal._physicalEtchAppliedStep === this.step) continue;
+      // A world-record cap constrains new precipitation, not the existence or
+      // reactivity of the solid. Engines still run so later acid/redox changes
+      // can return the capped crystal's booked inventory.
+      if (zone && zone.thickness_um > 0 && sizeCapped) continue;
       if (zone) {
         // Texture state is committed only after the formula-pool cap confirms
         // that some positive solid was actually accepted.
@@ -964,10 +1000,10 @@ class VugSimulator {
         crystal.add_zone(zone, extentMult);
         // Re-check fill after each crystal grows to prevent >100% overshoot
         if (zone.thickness_um > 0) {
-          currentFill = openSystem ? 0 : this.get_vug_fill();
+          currentFill = this._refreshVugFillAndSeal(openSystem);
         }
         if (zone.thickness_um < 0) {
-          currentFill = openSystem ? 0 : this.get_vug_fill();
+          currentFill = this._refreshVugFillAndSeal(openSystem);
           this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
         } else if (Math.abs(zone.thickness_um) > 0.5) {
           this.log.push(`  ▲ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: ${crystal.describe_latest_zone()}`);
@@ -1118,17 +1154,31 @@ class VugSimulator {
     // Water-solubility metastability — Round 8e (Apr 2026). Chalcanthite
     // re-dissolves when fluid.salinity < 4 OR fluid.pH > 5. The geological
     // truth: every chalcanthite is a temporary victory over entropy.
+    let chalcanthiteVolumeChanged = false;
     for (const crystal of this.crystals) {
-      if (crystal.mineral !== 'chalcanthite' || crystal.dissolved || !crystal.active) continue;
+      // Growth eligibility is not a dissolution shield. A genuinely buried
+      // crystal is protected; an exposed size-capped solid is not.
+      if (crystal.mineral !== 'chalcanthite' || crystal.dissolved || crystal._buried) continue;
       if (this.conditions.fluid.salinity < 4.0 || this.conditions.fluid.pH > 5.0) {
         // 40%/step decay, with a 0.5-µm absolute floor below which we
         // collapse to full dissolution (asymptotic decay otherwise).
         let dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.4);
         if (crystal.total_growth_um < 0.5) dissolved_um = crystal.total_growth_um;
-        crystal.total_growth_um -= dissolved_um;
-        crystal.c_length_mm = Math.max(crystal.total_growth_um / 1000.0, 0);
-        this.conditions.fluid.Cu += dissolved_um * 0.5;
-        this.conditions.fluid.S += dissolved_um * 0.5;
+        if (!(dissolved_um > 0)) continue;
+        const decayZone = new GrowthZone({
+          step: this.step,
+          temperature: this.conditions.temperature,
+          thickness_um: -dissolved_um,
+          growth_rate: -dissolved_um,
+          dissolutionMode: 'low_salinity',
+          note: `water-solubility decay (salinity ${this.conditions.fluid.salinity.toFixed(1)}, pH ${this.conditions.fluid.pH.toFixed(1)})`,
+        });
+        // dissolved_um is already the accepted per-step loss; do not apply the
+        // geological time multiplier a second time.
+        decayZone._time_scaled = true;
+        this._applyZoneGrowthBudget(crystal, decayZone);
+        crystal.add_zone(decayZone);
+        chalcanthiteVolumeChanged = true;
         if (crystal.total_growth_um <= 0) {
           crystal.dissolved = true;
           crystal.active = false;
@@ -1146,25 +1196,12 @@ class VugSimulator {
         }
       }
     }
+    if (chalcanthiteVolumeChanged) {
+      currentFill = this._refreshVugFillAndSeal(openSystem);
+    }
 
     // Check for vug seal after growth loop (may cross 1.0 during crystal growth)
-    if (currentFill >= 1.0 && !this._vug_sealed) {
-      this._vug_sealed = true;
-      const mineralVols: Record<string, number> = {};
-      for (const c of this.crystals) {
-        if (!c.active) continue;
-        const a = c.c_length_mm / 2, b = c.a_width_mm / 2;
-        const v = (4/3) * Math.PI * a * b * b;
-        mineralVols[c.mineral] = (mineralVols[c.mineral] || 0) + v;
-      }
-      const sorted = Object.entries(mineralVols).sort((a,b) => b[1] - a[1]);
-      const dominant = sorted[0] ? sorted[0][0] : 'mineral';
-      let sealMsg = `🪨 VUG SEALED — cavity completely filled after ${this.step} steps`;
-      if (sorted.length) {
-        sealMsg += ` — dominant: ${dominant}${sorted.length > 1 ? `, with ${sorted.slice(1).map(s=>s[0]).join(', ')}` : ''}`;
-      }
-      this.log.push(sealMsg);
-    }
+    this._sealVugIfFilled(currentFill);
     // ---- Radiation damage processing ----
     const active_uraninite = this.crystals.filter(c => c.mineral === 'uraninite' && c.active);
     if (active_uraninite.length) {

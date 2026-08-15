@@ -25,13 +25,19 @@ and the exact-execution evidence receipt.
 - Versioned content and asset manifests, telemetry-free local diagnostics,
   release/migration policy, scientific stewardship policy, and external-gate
   evidence protocols.
+- A memory-bounded full-suite runner that checks the complete project identity
+  between batches. Resume checkpoints are explicitly untrusted operator
+  conveniences and cannot issue an uninterrupted full-suite PASS.
 
 ### Scientific identity
 
-- The tranche intentionally retains **SIM 266** and its existing
-  `MODEL_DIGEST`: these changes repair presentation, persistence, authoring,
-  and release evidence without retuning geological equations or authored
-  physical inputs.
+- The tranche is commissioned as **SIM 267**. It preserves the SIM 266
+  Cartesian authority while correcting physical solid inventory and a
+  replayable state transition: every non-dissolved solid occupies volume,
+  and a cavity reopened below 95% fill by dissolution can later seal again.
+  `MODEL_DIGEST` names both changes explicitly.
+- Idle mode now reports fresh zero-volume nuclei and inactive capped/buried
+  solids without treating dissolved crystals as booked pie-chart volume.
 - The exact-browser/execution science receipt must be freshly rebaked after
   the source tree is quiescent. A matching SIM number alone is never treated
   as proof that old evidence executed these bytes.
@@ -42,6 +48,25 @@ and the exact-execution evidence receipt.
   mineralogist/geochemist, final-art, rights, store, legal, privacy, and
   deployment reviews remain human work. They are not certified by this local
   tranche.
+
+## SIM 267 — repeatable cavity seal lifecycle
+
+- Re-armed `_vug_sealed` after authenticated dissolution creates more than 5%
+  aggregate open capacity, including same-step dissolve/refill sequences, with
+  hysteresis below the hard 100% closure boundary.
+- Counted buried and size-capped non-dissolved crystals in authoritative fill,
+  dominant-mineral testimony, and the idle volume/inventory display.
+- Booked chalcanthite's special water-solubility loss through its accepted zone
+  history and local Cu/sulfate ledger so chemistry, axial extent, width, solid
+  volume, and seal state remain coherent.
+- Changed the authored world-record cap to reject only positive growth zones;
+  capped exposed solids can still dissolve and return their local inventory.
+- Reused graduated competition's first negative candidate at full fill, keeping
+  stochastic dissolution to one engine/RNG evaluation per crystal and step.
+- Preserved seed 42, every authored scenario `shape_seed`, and the commissioned
+  Schneeberg five-pharmacolite/zero-Zn trajectory exactly.
+- Separated the idle-mode volume diagram from its physical-solid inventory
+  caption, closing the false “empty vug” report for new nuclei.
 
 ## SIM 266 — Cartesian production cavity
 

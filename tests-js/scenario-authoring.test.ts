@@ -12,6 +12,8 @@ import {
   validateScenarioDocument,
 } from '../tools/scenario-authoring.mjs';
 
+declare const SIM_VERSION: number;
+
 function sourceDocuments() {
   const root = process.cwd();
   const scenarios = parseScenarioDocument(readFileSync(join(root, 'data', 'scenarios.json5'), 'utf8'));
@@ -63,7 +65,7 @@ describe('scenario authoring workflow', () => {
     expect(replay).toEqual(first);
     await expect(assertScenarioPreviewReceipt(first)).resolves.toBe(true);
     expect(first.identity).toMatchObject({
-      sim_version: 266,
+      sim_version: SIM_VERSION,
       scenario: 'cooling',
       seed: 42,
       shape_seed: 1,

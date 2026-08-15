@@ -86,6 +86,32 @@ function _habitVolCoeff(aRatio: number): number {
   return (Math.PI / 6) * aRatio * aRatio;
 }
 
+/**
+ * Physical solid inventory is independent of whether a crystal can continue
+ * growing. Growth eligibility, burial, enclosure, and authored size caps do
+ * not remove matter from the cavity. Only a fully dissolved crystal has no
+ * solid volume.
+ */
+function _crystalSolidVolumeMm3(crystal: any): number {
+  if (!crystal || crystal.dissolved === true) return 0;
+  if (typeof crystal._volume_mm3 === 'number' && Number.isFinite(crystal._volume_mm3)) {
+    return Math.max(0, crystal._volume_mm3);
+  }
+
+  // Backward-compatible projection for legacy snapshots/tests that predate
+  // zone-integrated volume. Keep the same habit interpretation historically
+  // used by get_vug_fill rather than trusting a renderer-side size cap.
+  const totalGrowthUm = Number(crystal.total_growth_um);
+  if (Number.isFinite(totalGrowthUm)) {
+    const cMm = Math.max(0, totalGrowthUm / 1000);
+    return _habitVolCoeff(_habitAspectRatio(crystal.habit)) * Math.pow(cMm, 3);
+  }
+
+  const cMm = Math.max(0, Number(crystal.c_length_mm) || 0);
+  const aMm = Math.max(0, Number(crystal.a_width_mm) || 0);
+  return (Math.PI / 6) * cMm * aMm * aMm;
+}
+
 class GrowthZone {
   // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;

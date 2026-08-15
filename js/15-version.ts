@@ -1584,7 +1584,7 @@
 //          For a dissolution zone (c shrinks):
 //            crystal._volume_mm3 *= (c_new / c_old)³
 //
-//        get_vug_fill simply sums crystal._volume_mm3 across active
+//        get_vug_fill simply sums crystal._volume_mm3 across non-dissolved
 //        crystals — no reinterpretation through current habit. The
 //        single source of truth lives on the crystal, frozen as growth
 //        deposits it. Geologically: this is what real zoned crystals
@@ -12918,7 +12918,22 @@
 // deterministic stratification of the full Creative architecture/bubble/seed/
 // diameter domain. This changes capacity, anchoring, surface fabrics, water,
 // dissolution, and downstream paragenesis, so all v266 evidence is rebaked.
-const SIM_VERSION = 266;
+// v267 (August 2026): cavity sealing is now a repeatable physical transition,
+// not a lifetime UI latch. If accepted dissolution restores more than 5% of
+// the authenticated cavity volume, `_vug_sealed` re-arms immediately; a later
+// same-step or later-step refill can seal and testify again. The hysteresis
+// prevents numerical chatter at 100% while preserving dissolution/reseal
+// histories in saves and replay. Physical fill and idle inventory now count
+// every non-dissolved solid, including buried or world-record-capped crystals.
+// The authored size cap suppresses positive zones but leaves exposed solids
+// chemically available for later dissolution. Chalcanthite's special
+// water-solubility decay is booked through the local CuSO4 inventory ledger as
+// a real negative zone so chemistry, volume, length, width, and seal state move
+// together. A zero-volume fresh nucleus is likewise
+// never reported as an empty vug. These changes can alter deterministic
+// chemistry/replay/log output, so this is an explicit identity bump rather
+// than a silent patch inside v266 evidence.
+const SIM_VERSION = 267;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12951,6 +12966,8 @@ const MODEL_DIGEST = [
   'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
   'sulphur-bank-HgS:zoned-association-not-S0-substrate-v1',
   'wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4',
+  'solid-occupancy:all-nondissolved+positive-only-size-cap+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-local-CuSO4-decay-v2',
+  'cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2',
   'sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2',
   'calcite-Mn:manganocalcite-excess<1.2-v1',
   'HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3',
@@ -12964,7 +12981,7 @@ const MODEL_DIGEST = [
   'beryl:K36-postHF-recovery-v1',
   'halite:vadose-propensity0.8-v1',
   'borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1',
-  'competition:accepted-axial-timescale+formula-weighted-budget-v3',
+  'competition:accepted-axial-timescale+formula-weighted-budget+single-evaluation-full-fill-negative-v4',
   'thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3',
   'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
   'scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite-v6',

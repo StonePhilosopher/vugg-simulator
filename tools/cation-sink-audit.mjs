@@ -45,10 +45,13 @@ const MODEL_DIGEST_SHA256 = createHash('sha256').update(MODEL_DIGEST).digest('he
 // Historical commissioning: the pre-Cartesian SIM 259 trajectory ended at
 // 0.618402. SIM 266 deliberately moved water, chemistry, and nucleation onto
 // the exact Cartesian surface/volume authority, yielding the value below while
-// preserving the five-crystal assemblage and every zero-Zn mass check.
+// preserving the five-crystal assemblage and every zero-Zn mass check. SIM 267
+// corrects solid occupancy, size-cap dissolution, and seal/reopen transitions;
+// this commissioning receipt verifies that those changes preserve the complete
+// analytical-cation trajectory rather than assuming it.
 const SCHNEEBERG_SEED42_COMMISSIONING = Object.freeze({
-  sim_version: 266,
-  model_digest_sha256: 'abf6dc3d3379a3f97d97c6a70fc5759544bbe0d4a1f0de63f2940f2172ce3300',
+  sim_version: 267,
+  model_digest_sha256: '7b40ad5945180bc4db46c80addd60f548238106d0431b48c54ae9c76b9d295c2',
   pharmacolite_crystals: 5,
   final_pharmacolite_Ca_molar_fraction_proxy: 0.583286436592987,
   proxy_tolerance: 5e-7,

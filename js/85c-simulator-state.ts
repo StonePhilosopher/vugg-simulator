@@ -1409,7 +1409,7 @@ _diffuseRingState(rate?) {
   if (vugVol <= 0) return 0;
   let crystalVol = 0;
   for (const c of this.crystals) {
-    if (!c.active) continue;
+    if (c.dissolved === true) continue;
     // 2026-05-18 habit-stability fix: use the crystal's zone-integrated
     // _volume_mm3 (set by Crystal.add_zone per shell at the habit aspect
     // ratio AS-OF-EACH-ZONE). Previously this function recomputed the
@@ -1427,21 +1427,7 @@ _diffuseRingState(rate?) {
     // fallback uses total_growth_um (uncapped chemistry-tracked size)
     // because v59 capped c_length_mm at vug_radius and reading it would
     // underreport big crystals (BUG-CRYSTALS-CLIP-VUG-WALL.md Tier-2).
-    if (typeof c._volume_mm3 === 'number') {
-      crystalVol += c._volume_mm3;
-      continue;
-    }
-    const cMm = c.total_growth_um / 1000;
-    let aMm;
-    if (c.habit === 'prismatic') aMm = cMm * 0.4;
-    else if (c.habit === 'tabular') aMm = cMm * 1.5;
-    else if (c.habit === 'acicular') aMm = cMm * 0.15;
-    else if (c.habit === 'rhombohedral') aMm = cMm * 0.8;
-    else if (c.habit === 'snowball') aMm = cMm;
-    else aMm = cMm * 0.5;
-    const a = cMm / 2;
-    const b = aMm / 2;
-    crystalVol += (4 / 3) * Math.PI * a * b * b;
+    crystalVol += _crystalSolidVolumeMm3(c);
   }
   return crystalVol / vugVol;
 },

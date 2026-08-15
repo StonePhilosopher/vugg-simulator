@@ -1,5 +1,16 @@
 # Bug Report: Vug Fill > 100% — Seal Not Reset + No Crystal Size Cap
 
+**Status:** ✅ RESOLVED 2026-08-15 against SIM 267. The universal authored
+size cap and exact fill/capacity accounting already closed the runaway-growth
+failure. The remaining lifecycle defect is now closed too: a cavity that falls
+below 95% fill after dissolution re-arms `_vug_sealed`, so a later physical
+refill—including within the same step—produces a new seal transition. Fill
+counts every non-dissolved solid even when growth is capped or buried, and
+the cap blocks positive growth rather than later dissolution. Chalcanthite
+decay now reduces booked solid volume and returns exact local Cu/sulfate.
+Regression:
+`tests-js/vug-fill-seal-reset.test.ts`.
+
 **Date:** 2026-04-14
 **Reported by:** Professor (screenshot showing fluorite at 321,248%)
 **Severity:** Core simulation accuracy

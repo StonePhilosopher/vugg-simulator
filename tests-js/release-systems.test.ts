@@ -8,6 +8,7 @@ import {
 import { buildLocalDiagnosticReceipt } from '../tools/local-diagnostics.mjs';
 
 declare const RELEASE_RUNTIME_CONTRACT: any;
+declare const SIM_VERSION: number;
 
 describe('local release systems', () => {
   it('reproduces exact versioned content and asset manifests', async () => {
@@ -19,7 +20,7 @@ describe('local release systems', () => {
     expect(content.packs[0]).toMatchObject({
       id: 'core',
       content_version: '1.0.0',
-      compatibility: { sim_version: 266, save_format: RELEASE_RUNTIME_CONTRACT.save_format },
+      compatibility: { sim_version: SIM_VERSION, save_format: RELEASE_RUNTIME_CONTRACT.save_format },
       counts: { scenarios: 41, minerals: 184, narratives: 94 },
     });
     expect(assets.renderer_lod_contract.scientific_authority)
@@ -62,7 +63,7 @@ describe('local release systems', () => {
         absolute_paths_included: false,
       },
       identity: {
-        sim_version: 266,
+        sim_version: SIM_VERSION,
         model_digest_sha256: expect.stringMatching(/^[0-9a-f]{64}$/),
         browser_bundle_sha256: expect.stringMatching(/^[0-9a-f]{64}$/),
         runtime_execution_sha256: expect.stringMatching(/^[0-9a-f]{64}$/),

@@ -1,5 +1,15 @@
 # Bug Report: Crystals Exist But Pie Chart Label Shows "empty vug"
 
+**Status:** ✅ RESOLVED 2026-08-15 against SIM 267. The volume pie remains
+volume-derived, while its inventory caption now derives species/counts from
+all non-dissolved solids, including inactive capped/buried crystals. A
+zero-volume nucleus is therefore reported as
+a microcrystal rather than an empty cavity. Regression:
+`tests-js/idle-pie-label.test.ts`.
+
+The 2026-08-15 canonical-main audit correctly found the issue still open on
+that line; it was closed here after PR #5 was integrated into the SIM 267 work.
+
 **Date:** 2026-04-13
 **Reported by:** Professor
 **Severity:** UI — incorrect display

@@ -1,5 +1,10 @@
 # Bug Report: deccan_zeolite scenario doesn't fire apophyllite (its namesake mineral)
 
+**Status:** ✅ RESOLVED and re-verified 2026-08-15 against SIM 266. Stage III
+uses the +600 ppm SiO₂ pulse in `js/70h-deccan-zeolite.ts`; the scenario
+contract expects apophyllite, and authenticated seed-42 evidence records its
+first appearance at step 110.
+
 **Date:** 2026-05-02
 **Surfaced by:** v18 scenario species-expectation work (commit `2d977fa`)
 **Severity:** Scenario fails its design intent — anchor mineral never nucleates
@@ -67,16 +72,12 @@ The 800 ppm threshold is research-backed (apophyllite is silica-rich, 8 SiO₂ p
 
 ## Verification after fix
 
-Run the scenario at seed-42 and check apophyllite count > 0:
+The Python commands below belonged to the retired pre-browser harness and are
+kept only as historical root-cause context. Current verification is Node-only:
+
 ```bash
-python -c "
-import random, vugg
-random.seed(42)
-result = vugg.SCENARIOS['deccan_zeolite']()
-sim = vugg.VugSimulator(result[0], result[1])
-for _ in range(result[2]): sim.run_step()
-print('apophyllite:', sum(1 for c in sim.crystals if c.mineral == 'apophyllite'))
-"
+npm test -- --file tests-js/deccan-paragenesis.test.ts
+npm test -- --file tests-js/scenario-expectation-contracts.test.ts
 ```
 
 Then add `apophyllite` to `expects_species` in `data/scenarios.json5`:
@@ -84,7 +85,8 @@ Then add `apophyllite` to `expects_species` in `data/scenarios.json5`:
 "expects_species": ["hematite", "quartz", "magnetite", "apophyllite"],
 ```
 
-Then `tests/test_scenario_expectations.py::test_scenario_fires_expected_species[deccan_zeolite]` will codify the fix and prevent future regression.
+The Node scenario-contract test and authenticated seed-42 evidence codify the
+fix and prevent future regression.
 
 ## Related: the "bloody apophyllite" phantom inclusion mechanic
 

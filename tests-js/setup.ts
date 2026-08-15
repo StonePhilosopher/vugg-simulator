@@ -209,6 +209,7 @@ const EXPORTS = [
   'getSimulationTimeScale',
   'setSimulationTimeScale',
   'MINERAL_SPEC',
+  'maxSizeCm',
   'MINERAL_ENGINES',
   'MINERAL_GATES_REGISTRY',  // v127 — per-mineral nucleation gates (sigma_crit, T/pH/O2/fluid_min, surface_energy)
   'aragoniteCoSelector',
@@ -259,6 +260,8 @@ const EXPORTS = [
   'grow_native_sulfur',
   'sphaleriteGermaniumUptake',
   'MINERAL_GAME_COLORS',
+  '_idlePieMineralLabel',
+  '_idlePieSolidVolumes',
   'crystalColor',
   'zoneColor',
   'SCENARIOS',

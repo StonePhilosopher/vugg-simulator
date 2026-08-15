@@ -6,9 +6,17 @@
  * single long-lived Node process can retain enough jsdom/simulator state to
  * become unfriendly to a workstation. Run small batches sequentially so every
  * child exits and returns its heap to the OS before the next batch begins.
+ *
+ * The checkpoint is deliberately an UNTRUSTED local operator convenience. It
+ * limits lost workstation time after an interruption, but a plain local JSON
+ * file cannot attest that its recorded batches really ran. Only one process
+ * that starts at file zero, observes one unchanged project identity after
+ * every batch, and reaches the end may publish an uninterrupted PASS record.
+ * Even that record is a local test result, not cryptographic release evidence.
  */
 
 import { execFile, spawn as spawnChild } from 'node:child_process';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -27,6 +35,175 @@ export const RSS_POLL_INTERVAL_MS = 1000;
 export const MAX_CONSECUTIVE_RSS_FAILURES = 2;
 export const TERMINATION_GRACE_MS = 2000;
 export const HARD_KILL_GRACE_MS = 2000;
+export const TEST_CHECKPOINT_SCHEMA = 2;
+export const TEST_CHECKPOINT_TRUST = 'untrusted-operator-convenience';
+export const TEST_CHECKPOINT_PATH = path.join(
+  ROOT, '.local-evidence', 'test-workflow-checkpoint-v2.json',
+);
+export const TEST_REPORT_PATH = path.join(
+  ROOT, '.local-evidence', 'test-workflow-last-pass-v2.json',
+);
+export const TEST_RESUME_REPORT_PATH = path.join(
+  ROOT, '.local-evidence', 'test-workflow-last-operator-resume-v2.json',
+);
+
+// These are generated dependency/operator/cache stores, never project inputs.
+// Everything else under the repository root is included, including docs,
+// CHANGELOG, media, proposals, research, untracked source, and ignored dist.
+const TEST_IDENTITY_EXCLUDED_DIRECTORIES = new Set([
+  '.git',
+  '.local-evidence',
+  '.pytest_cache',
+  '.review-cards',
+  '.strip-diffs',
+  '__pycache__',
+  'node_modules',
+]);
+const TEST_IDENTITY_EXCLUDED_ROOT_FILES = new Set(['.ci-stamp.json']);
+
+function collectFilesRecursively(root) {
+  const found = [];
+  const visit = (absolute, relative) => {
+    for (const entry of fs.readdirSync(absolute, { withFileTypes: true })
+      .sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0)) {
+      const childAbsolute = path.join(absolute, entry.name);
+      const childRelative = relative
+        ? path.join(relative, entry.name).replaceAll('\\', '/')
+        : entry.name;
+      if (entry.isDirectory()) {
+        if (!TEST_IDENTITY_EXCLUDED_DIRECTORIES.has(entry.name)) {
+          visit(childAbsolute, childRelative);
+        }
+      }
+      else if (entry.isFile()) found.push(childRelative);
+    }
+  };
+  visit(root, '');
+  return found;
+}
+
+export function collectTestIdentityFiles(root = ROOT) {
+  return collectFilesRecursively(root)
+    .filter(relative => !TEST_IDENTITY_EXCLUDED_ROOT_FILES.has(relative))
+    .sort();
+}
+
+export function testWorkflowIdentity({
+  root = ROOT,
+  identityFiles = collectTestIdentityFiles(root),
+  runtime = {
+    node: process.versions.node,
+    v8: process.versions.v8,
+    platform: process.platform,
+    arch: process.arch,
+  },
+} = {}) {
+  const hash = crypto.createHash('sha256');
+  hash.update(`test-workflow-identity-v${TEST_CHECKPOINT_SCHEMA}\0`);
+  hash.update(`${JSON.stringify(runtime)}\0`);
+  for (const relative of identityFiles) {
+    const bytes = fs.readFileSync(path.join(root, relative));
+    hash.update(`${relative}\0${bytes.length}\0`);
+    hash.update(bytes);
+    hash.update('\0');
+  }
+  return Object.freeze({
+    schema: TEST_CHECKPOINT_SCHEMA,
+    sha256: hash.digest('hex'),
+    file_count: identityFiles.length,
+    runtime: Object.freeze({ ...runtime }),
+  });
+}
+
+export function readTestCheckpoint({
+  checkpointPath = TEST_CHECKPOINT_PATH,
+  identity,
+  allFiles,
+} = {}) {
+  if (!fs.existsSync(checkpointPath)) return null;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(checkpointPath, 'utf8'));
+    if (parsed?.schema !== TEST_CHECKPOINT_SCHEMA) return null;
+    if (parsed?.trust !== TEST_CHECKPOINT_TRUST) return null;
+    if (parsed?.identity?.sha256 !== identity?.sha256) return null;
+    if (!Array.isArray(parsed.completed_files) || !Array.isArray(parsed.batches)) return null;
+    if (parsed.completed_files.length > allFiles.length) return null;
+    for (let index = 0; index < parsed.completed_files.length; index++) {
+      if (parsed.completed_files[index] !== allFiles[index]) return null;
+    }
+    if (parsed.batches.flatMap(batch => batch.files || []).join('\0')
+      !== parsed.completed_files.join('\0')) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function writeJsonAtomic(filePath, value) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  const temporary = `${filePath}.${process.pid}.tmp`;
+  fs.writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+  fs.renameSync(temporary, filePath);
+}
+
+export function makeTestCheckpoint({ identity, completedFiles = [], batches = [] } = {}) {
+  return {
+    schema: TEST_CHECKPOINT_SCHEMA,
+    trust: TEST_CHECKPOINT_TRUST,
+    full_suite_pass: false,
+    identity,
+    completed_files: [...completedFiles],
+    batches: batches.map(batch => ({
+      files: [...batch.files],
+      peak_rss_bytes: batch.peak_rss_bytes,
+    })),
+  };
+}
+
+export function makeTestCompletionReport({
+  identity,
+  completedFiles = [],
+  batches = [],
+  uninterrupted = false,
+} = {}) {
+  return {
+    ...makeTestCheckpoint({ identity, completedFiles, batches }),
+    status: uninterrupted ? 'pass' : 'operator-resume-complete',
+    full_suite_pass: uninterrupted,
+    trust: uninterrupted
+      ? 'local-uninterrupted-result-not-independent-attestation'
+      : TEST_CHECKPOINT_TRUST,
+  };
+}
+
+export function assertTestWorkflowIdentityUnchanged(expected, options = {}) {
+  const current = testWorkflowIdentity(options);
+  if (current.sha256 !== expected?.sha256) {
+    throw new Error(
+      `project identity changed during the test run (${expected?.sha256 || 'missing'} -> ${current.sha256}); no batch receipt or PASS was published`,
+    );
+  }
+  return current;
+}
+
+export function automaticTestRunPlan({ allFiles, resumed = null } = {}) {
+  if (!Array.isArray(allFiles) || !allFiles.length) throw new Error('no test files discovered');
+  const completedFiles = resumed ? [...resumed.completed_files] : [];
+  const completedBatches = resumed ? [...resumed.batches] : [];
+  if (completedFiles.length === allFiles.length) {
+    throw new Error(
+      'untrusted operator checkpoint already claims every file; refusing a zero-test PASS—rerun with --fresh',
+    );
+  }
+  const resumeIndex = completedFiles.length;
+  return {
+    completedFiles,
+    completedBatches,
+    resumeIndex,
+    files: selectResumeFiles(allFiles, resumeIndex),
+    uninterrupted: resumeIndex === 0,
+  };
+}
 
 export function collectTestFiles(directory = path.join(ROOT, 'tests-js')) {
   const found = [];
@@ -237,13 +414,15 @@ export async function runVitestBatch({
 export function parseArgs(argv) {
   let batchSize = DEFAULT_TEST_BATCH_SIZE;
   let startIndex = 0;
+  let fresh = false;
   const selectedFiles = [];
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
     if (arg === '--batch-size') batchSize = Number(argv[++index]);
     else if (arg === '--start-index') startIndex = Number(argv[++index]);
     else if (arg === '--file') selectedFiles.push(String(argv[++index] || '').replaceAll('\\', '/'));
-    else if (arg === '--help') return { help: true, batchSize, startIndex, selectedFiles };
+    else if (arg === '--fresh') fresh = true;
+    else if (arg === '--help') return { help: true, batchSize, startIndex, selectedFiles, fresh };
     else throw new Error(`unknown argument: ${arg}`);
   }
   if (!Number.isInteger(startIndex) || startIndex < 0) {
@@ -253,13 +432,15 @@ export function parseArgs(argv) {
   if (selectedFiles.length && startIndex !== 0) {
     throw new Error('--file and --start-index cannot be combined');
   }
-  return { help: false, batchSize, startIndex, selectedFiles };
+  return { help: false, batchSize, startIndex, selectedFiles, fresh };
 }
 
 export async function runTestWorkflow({
   batchSize = DEFAULT_TEST_BATCH_SIZE,
   files = collectTestFiles(),
   batchRunner = runVitestBatch,
+  assertStable = null,
+  onBatchPass = null,
 } = {}) {
   const batches = partitionTests(files, batchSize);
   console.log(`[test-workflow] ${files.length} files in ${batches.length} sequential batch(es) of at most ${batchSize}`);
@@ -288,9 +469,20 @@ export async function runTestWorkflow({
       console.error(`[test-workflow] FAIL in batch ${index + 1}/${batches.length} (peak ${peakMb} MB RSS)`);
       return result.status ?? 1;
     }
+    if (assertStable) await assertStable({
+      batch: [...batch],
+      batchIndex: index,
+      batchCount: batches.length,
+    });
     console.log(`[test-workflow] batch ${index + 1}/${batches.length} PASS (peak ${peakMb} MB RSS)`);
+    if (onBatchPass) await onBatchPass({
+      batch: [...batch],
+      batchIndex: index,
+      batchCount: batches.length,
+      peakRssBytes: result.peakRssBytes,
+    });
   }
-  console.log(`\n[test-workflow] PASS: ${files.length} files across ${batches.length} memory-bounded batches`);
+  console.log(`\n[test-workflow] COMPLETE: ${files.length} files across ${batches.length} memory-bounded batches`);
   return 0;
 }
 
@@ -300,24 +492,74 @@ if (invokedDirectly) {
   try {
     const args = parseArgs(process.argv.slice(2));
     if (args.help) {
-      console.log('node tools/test-workflow.mjs [--batch-size N] [--start-index N] [--file tests-js/name.test.ts ...]');
+      console.log('node tools/test-workflow.mjs [--fresh] [--batch-size N] [--start-index N] [--file tests-js/name.test.ts ...]');
     } else {
       const allFiles = collectTestFiles();
       for (const file of args.selectedFiles) {
         if (!allFiles.includes(file)) throw new Error(`selected test file is not registered: ${file}`);
       }
+      const automaticCheckpoint = !args.selectedFiles.length && args.startIndex === 0;
+      const identity = automaticCheckpoint ? testWorkflowIdentity() : null;
+      if (automaticCheckpoint && args.fresh && fs.existsSync(TEST_CHECKPOINT_PATH)) {
+        fs.unlinkSync(TEST_CHECKPOINT_PATH);
+      }
+      const resumed = automaticCheckpoint && !args.fresh
+        ? readTestCheckpoint({ identity, allFiles })
+        : null;
+      const plan = automaticCheckpoint
+        ? automaticTestRunPlan({ allFiles, resumed })
+        : null;
+      const completedFiles = plan ? plan.completedFiles : [];
+      const completedBatches = plan ? plan.completedBatches : [];
+      const resumeIndex = plan ? plan.resumeIndex : args.startIndex;
       const files = args.selectedFiles.length
         ? [...new Set(args.selectedFiles)]
-        : selectResumeFiles(allFiles, args.startIndex);
+        : plan ? plan.files : selectResumeFiles(allFiles, resumeIndex);
       if (args.startIndex > 0) {
         console.log(`[test-workflow] resuming at sorted file index ${args.startIndex} of ${allFiles.length}`);
       } else if (args.selectedFiles.length) {
         console.log(`[test-workflow] selected ${files.length} exact test file(s)`);
+      } else if (resumeIndex > 0) {
+        console.log(`[test-workflow] UNTRUSTED operator checkpoint resumes at sorted file index ${resumeIndex} of ${allFiles.length}`);
+        console.log('[test-workflow] resumed batches cannot publish a full-suite PASS; use --fresh for one uninterrupted run');
       }
-      process.exitCode = await runTestWorkflow({
+      if (automaticCheckpoint) {
+        assertTestWorkflowIdentityUnchanged(identity);
+        writeJsonAtomic(TEST_CHECKPOINT_PATH, makeTestCheckpoint({
+          identity, completedFiles, batches: completedBatches,
+        }));
+      }
+      const status = files.length ? await runTestWorkflow({
         batchSize: args.batchSize,
         files,
-      });
+        assertStable: automaticCheckpoint
+          ? () => assertTestWorkflowIdentityUnchanged(identity)
+          : null,
+        onBatchPass: automaticCheckpoint ? ({ batch, peakRssBytes }) => {
+          completedFiles.push(...batch);
+          completedBatches.push({ files: batch, peak_rss_bytes: peakRssBytes });
+          writeJsonAtomic(TEST_CHECKPOINT_PATH, makeTestCheckpoint({
+            identity, completedFiles, batches: completedBatches,
+          }));
+        } : null,
+      }) : 0;
+      if (automaticCheckpoint && status === 0 && completedFiles.length === allFiles.length) {
+        assertTestWorkflowIdentityUnchanged(identity);
+        const uninterrupted = plan.uninterrupted;
+        const reportPath = uninterrupted ? TEST_REPORT_PATH : TEST_RESUME_REPORT_PATH;
+        writeJsonAtomic(reportPath, makeTestCompletionReport({
+          identity, completedFiles, batches: completedBatches, uninterrupted,
+        }));
+        fs.unlinkSync(TEST_CHECKPOINT_PATH);
+        if (uninterrupted) {
+          console.log(`[test-workflow] UNINTERRUPTED PASS: ${allFiles.length} files under one unchanged project identity`);
+          console.log(`[test-workflow] local result (not independent attestation): ${path.relative(ROOT, reportPath)}`);
+        } else {
+          console.log(`[test-workflow] OPERATOR RESUME COMPLETE: ${allFiles.length} prefix/suffix records under one unchanged project identity`);
+          console.log('[test-workflow] no full-suite PASS was issued; rerun with --fresh for one uninterrupted result');
+        }
+      }
+      process.exitCode = status;
     }
   } catch (error) {
     console.error(`[test-workflow] FAIL: ${error.message}`);

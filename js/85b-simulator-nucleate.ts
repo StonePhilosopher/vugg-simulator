@@ -1677,6 +1677,14 @@ _computeGraduatedZones() {
       continue;
     }
 
+    // Capped solids still run their engine so negative zones can dissolve and
+    // return local inventory. Positive candidates do not enter competition or
+    // consume another crystal's share of the fluid budget.
+    if (crystalAtAuthoredSizeCap(crystal)) {
+      out.set(crystal.crystal_id, null);
+      continue;
+    }
+
     // Identify the cell + fluid this crystal competes within.
     const anchor = this.wall_state._resolveAnchor(crystal);
     const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
