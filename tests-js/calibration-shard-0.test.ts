@@ -1,4 +1,4 @@
-// Calibration sweep shard 0/4 — see calibration-lib.ts for why this is sharded.
+// Calibration sweep shard 0/8 — see calibration-lib.ts for why this is sharded.
 import { describe, expect, it } from 'vitest';
 import { runScenario, scenarioNames } from './helpers';
 import {
@@ -23,7 +23,6 @@ describe(`calibration sweep — seed 42 vs JS baseline (shard ${SHARD}/${CALIBRA
       expect(summarize(sim)).toEqual(baseline[name]);
     });
   }
-  // Coverage check lives on shard 0 only (once per suite).
   it('baseline + runtime SCENARIOS cover the same set', () => {
     expect(scenarioNames().sort()).toEqual(Object.keys(baseline).sort());
   });

@@ -11,7 +11,8 @@
     "pretest": "tsc -p tsconfig.json && node tools/prep-test-bundle.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:quick": "vitest run --exclude 'tests-js/strip-digest-shard-*.test.ts' --exclude 'tests-js/calibration-shard-*.test.ts' --exclude 'tests-js/stale-mineral-retunes.test.ts' --exclude 'tests-js/pharmacolite.test.ts' --exclude 'tests-js/roughten-gill.test.ts'",
+    "test:quick": "vitest run --exclude 'tests-js/strip-digest-*.test.ts' --exclude 'tests-js/calibration-shard-*.test.ts' --exclude 'tests-js/stale-mineral-retunes.test.ts' --exclude 'tests-js/pharmacolite-seeds.test.ts' --exclude 'tests-js/roughten-gill-*-seeds.test.ts'",
+    "test:parallel": "node tools/test-parallel.mjs",
     "ci": "npm run typecheck && npm run build:check && npm test"
   },
   "devDependencies": {

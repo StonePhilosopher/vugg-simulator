@@ -9,7 +9,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASELINES = path.join(ROOT, 'tests-js', 'baselines');
 
-export const CALIBRATION_SHARD_COUNT = 4;
+/** Finer than 4: more files → better work-stealing when scenario costs differ. */
+export const CALIBRATION_SHARD_COUNT = 8;
 
 export function readSimVersion(): number {
   try {

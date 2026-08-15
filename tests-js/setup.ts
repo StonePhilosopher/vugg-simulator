@@ -22,6 +22,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { beforeAll } from 'vitest';
 
@@ -476,16 +477,16 @@ const EXPORTS = [
   'musicDebugState',  // v-music gain-path fix (2026-06-10) — probe surface
 ];
 
-// Bundle source cache. Vitest re-imports setup.ts every file even with
-// `isolate: false`, so a module-local flag never survived. We DO cache the
-// concatenated source + export-name list on globalThis (and prefer the
-// pretest-written dist/.test-bundle.js) so workers don't re-walk ~150
-// files — but we ALWAYS re-`Function()` eval. Skipping eval reused the
-// same closures across files and leaked mutable sim state (flag setters,
-// rng, calibration knobs), which made isolate:false actually sticky and
-// broke calibration / strip-digest / occlusion pins under parallel load.
+// Bundle source + compiled-script cache. Vitest re-imports setup.ts every
+// file even with `isolate: false`, so a module-local flag never survived.
+// We cache the concatenated source and a vm.Script on globalThis so each
+// worker compiles the ~4.5 MB bundle once, then runInNewContext per file
+// for fresh `let` closures (flag setters / rng) — same isolation as
+// re-`Function()`, without re-parsing.
 const BUNDLE_SRC_KEY = '__vuggTestBundleSrc';
 const BUNDLE_NAMES_KEY = '__vuggTestBundleNames';
+const BUNDLE_SCRIPT_KEY = '__vuggTestBundleScript';
+const BUNDLE_EXPORTS_KEY = '__vuggTestBundleAllExports';
 
 // Load the vendored Three.js module into the test global scope so the
 // 99i renderer's geometry builders (which reference THREE.BufferGeometry,
@@ -541,13 +542,15 @@ function autoDeriveExportNames(files: string[]): string[] {
 
 async function loadBundle() {
   // Always reinstall the cheap stubs — jsdom may be fresh per file even
-  // when the process (and our cached source string) are reused.
+  // when the process (and our cached script) are reused.
   installFetchMock();
   installDomStub();
   await installThreeGlobal();
 
   let concatenated: string | undefined = (globalThis as any)[BUNDLE_SRC_KEY];
   let autoDerived: string[] | undefined = (globalThis as any)[BUNDLE_NAMES_KEY];
+  let script: vm.Script | undefined = (globalThis as any)[BUNDLE_SCRIPT_KEY];
+  let ALL_EXPORTS: string[] | undefined = (globalThis as any)[BUNDLE_EXPORTS_KEY];
 
   if (!concatenated || !autoDerived) {
     const files = walkDistSorted();
@@ -569,35 +572,118 @@ async function loadBundle() {
     (globalThis as any)[BUNDLE_NAMES_KEY] = autoDerived;
   }
 
-  // Epilogue: inject a setSeed helper that reassigns the bundle's
-  // global `rng` from outside — the bundle never exposed one because
-  // the UI handlers set `rng = new SeededRandom(seed)` inline. Tests
-  // need a stable handle to do the same, so we make one here. Lives
-  // inside the IIFE scope so it can mutate `let rng`.
-  const epilogue = `
-    function setSeed(seed) {
-      rng = new SeededRandom(seed | 0);
-    }
-    // v181 — live handle to the bundle's \`let rng\`. The exported \`rng\`
-    // global is a one-time load snapshot that goes STALE the moment
-    // setSeed reassigns the inner binding; tests asserting shared-stream
-    // neutrality (thermal-stream.test.ts) need the current instance.
-    function _liveRng() {
-      return rng;
-    }
-  `;
-  // EXPORTS ∪ auto-derived names — dedupe via Set. Explicit list comes
-  // first so its ordering is preserved in the literal (cosmetic only).
-  const ALL_EXPORTS = Array.from(new Set([...EXPORTS, ...autoDerived]));
-  const exportObject = '{' + ALL_EXPORTS.map(n => `${n}: typeof ${n} !== 'undefined' ? ${n} : undefined`).join(', ') + '}';
-  const body = `${concatenated}\n${epilogue}\n;return ${exportObject};`;
-  // Fresh Function() every file — preserves per-file closure isolation
-  // (mutable flags / rng / calibration knobs) while the source string
-  // above is reused across files in this worker.
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
-  const fn = new Function(body);
-  const exports = fn();
-  for (const name of ALL_EXPORTS) {
+  if (!script || !ALL_EXPORTS) {
+    // Epilogue: inject a setSeed helper that reassigns the bundle's
+    // global `rng` from outside — the bundle never exposed one because
+    // the UI handlers set `rng = new SeededRandom(seed)` inline. Tests
+    // need a stable handle to do the same, so we make one here. Lives
+    // inside the script scope so it can mutate `let rng`.
+    const epilogue = `
+      function setSeed(seed) {
+        rng = new SeededRandom(seed | 0);
+      }
+      // v181 — live handle to the bundle's \`let rng\`. The exported \`rng\`
+      // global is a one-time load snapshot that goes STALE the moment
+      // setSeed reassigns the inner binding; tests asserting shared-stream
+      // neutrality (thermal-stream.test.ts) need the current instance.
+      function _liveRng() {
+        return rng;
+      }
+    `;
+    ALL_EXPORTS = Array.from(new Set([...EXPORTS, ...autoDerived]));
+    const exportObject = '{' + ALL_EXPORTS.map(n => `${n}: typeof ${n} !== 'undefined' ? ${n} : undefined`).join(', ') + '}';
+    // Assign into the context rather than `return` — vm.Script has no
+    // return value from runInContext.
+    const body = `${concatenated}\n${epilogue}\n;__vuggExports = ${exportObject};`;
+    script = new vm.Script(body, { filename: 'vugg-test-bundle.js' });
+    (globalThis as any)[BUNDLE_SCRIPT_KEY] = script;
+    (globalThis as any)[BUNDLE_EXPORTS_KEY] = ALL_EXPORTS;
+  }
+
+  // Fresh context per file → fresh `let` closures (no cross-file leak of
+  // flag setters / rng), while the compiled Script is reused.
+  const context: Record<string, any> = {
+    console,
+    Math,
+    Date,
+    Array,
+    Object,
+    String,
+    Number,
+    Boolean,
+    Error,
+    TypeError,
+    RangeError,
+    JSON,
+    Map,
+    Set,
+    WeakMap,
+    WeakSet,
+    Promise,
+    Symbol,
+    Proxy,
+    Reflect,
+    RegExp,
+    parseInt,
+    parseFloat,
+    isNaN,
+    isFinite,
+    encodeURIComponent,
+    decodeURIComponent,
+    encodeURI,
+    decodeURI,
+    Uint8Array,
+    Int8Array,
+    Uint16Array,
+    Int16Array,
+    Uint32Array,
+    Int32Array,
+    Float32Array,
+    Float64Array,
+    ArrayBuffer,
+    DataView,
+    TextEncoder,
+    TextDecoder,
+    URL,
+    URLSearchParams,
+    atob: (globalThis as any).atob?.bind?.(globalThis) ?? (globalThis as any).atob,
+    btoa: (globalThis as any).btoa?.bind?.(globalThis) ?? (globalThis as any).btoa,
+    setTimeout,
+    clearTimeout,
+    setInterval,
+    clearInterval,
+    queueMicrotask,
+    performance: globalThis.performance,
+    fetch: (globalThis as any).fetch,
+    document: (globalThis as any).document,
+    window: (globalThis as any).window ?? globalThis,
+    localStorage: (globalThis as any).localStorage,
+    sessionStorage: (globalThis as any).sessionStorage,
+    navigator: (globalThis as any).navigator,
+    location: (globalThis as any).location,
+    history: (globalThis as any).history,
+    HTMLElement: (globalThis as any).HTMLElement,
+    Element: (globalThis as any).Element,
+    Node: (globalThis as any).Node,
+    Event: (globalThis as any).Event,
+    CustomEvent: (globalThis as any).CustomEvent,
+    MutationObserver: (globalThis as any).MutationObserver,
+    requestAnimationFrame: (globalThis as any).requestAnimationFrame ?? ((cb: any) => setTimeout(cb, 16)),
+    cancelAnimationFrame: (globalThis as any).cancelAnimationFrame ?? clearTimeout,
+    Response: (globalThis as any).Response,
+    Headers: (globalThis as any).Headers,
+    Request: (globalThis as any).Request,
+    THREE: (globalThis as any).THREE,
+    __vuggExports: undefined,
+  };
+  context.globalThis = context;
+  context.self = context;
+  context.global = context;
+  vm.createContext(context);
+  script.runInContext(context);
+
+  const exports = context.__vuggExports || {};
+  for (const name of ALL_EXPORTS!) {
     if (exports[name] !== undefined) {
       (globalThis as any)[name] = exports[name];
     }

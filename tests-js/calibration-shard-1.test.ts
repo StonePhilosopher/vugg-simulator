@@ -1,4 +1,4 @@
-// Calibration sweep shard 1/4 — see calibration-lib.ts for why this is sharded.
+// Calibration sweep shard 1/8 — see calibration-lib.ts for why this is sharded.
 import { describe, expect, it } from 'vitest';
 import { runScenario } from './helpers';
 import {

@@ -163,57 +163,9 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
     // the stronger capability pin and still passes; the direct chemistry
     // assertions above pin the engine math.
 
-    it('at least one pharmacolite crystal appears across the seed sample', { timeout: 240000 }, () => {
-      // v214 timeout bump (150s → 240s): this 32-seed × ~200-step sweep is
-      // CONTENTION-bound, not logic-bound — schneeberg output is byte-identical
-      // (the v214 open_system change is great_salt_plains-only), but that change
-      // grows great_salt_plains' selenite 3× (open plain) + adds an extended
-      // 330-step selenite test, so the parallel suite runs hotter and this
-      // borderline sweep tipped past 150 s (185 s observed in CI). The assertion
-      // is unchanged and still passes given time. Same remedy as the bumps below.
-      // v160 timeout bump (90s → 150s): the per-voxel 3D diffusion adds
-      // ~4-6 ms/step, so this 32-seed × ~200-step loop runs ~43 s in
-      // isolation but tips past 90 s under parallel suite CPU contention.
-      // The assertion itself is fine — pharmacolite forms in ~24 of the
-      // first 80 seeds under v160 (probed) — this is purely the heavier
-      // diffusion cost making the seed sweep slower. Same "bump the
-      // timeout" remedy as v137.
-      //
-      // v137 retune: sulfide twin_laws batch perturbed the RNG cascade
-      // further and the v136 16-seed sample flaked under parallel
-      // test-suite execution (test timed out at 30s default). Widened
-      // to 32 seeds + explicit 90s timeout for robustness.
-      //
-      // Earlier history:
-      //   v136: widened from 8 to 16 seeds. Silicate batch #2 pushed
-      //         pharmacolite below detection in the original 8-seed
-      //         sample; coverage check restored.
-      //   v137: widened from 16 to 32 seeds + bumped timeout. Sulfide
-      //         batch's 16 new twin_laws entries cascade through every
-      //         schneeberg run, shifting WHICH earlier Co/Ni arsenides
-      //         consume Ca/As before pharmacolite can fire.
-      //
-      // The cascade isn't a chemistry change — pharmacolite's
-      // nucleation gates are unchanged. The RNG perturbation just
-      // shifts which earlier minerals consume cations first.
-      // Pharmacolite is documented as a Jáchymov/Schneeberg type-
-      // locality signature; the assertion that it CAN fire somewhere
-      // in the broader seed space remains scientifically meaningful.
-      let anyHit = 0;
-      const seeds = [
-        42, 1, 7, 13, 99, 2024, 17, 3, 5, 11, 23, 47, 71, 137, 211, 313,
-        401, 503, 617, 727, 829, 941, 1031, 1129, 1223, 1327, 1429, 1523,
-        1627, 1721, 1823, 1931,
-      ];
-      for (const seed of seeds) {
-        const { sim } = runSchneeberg(seed);
-        const ph = sim.crystals.filter((c: any) => c.mineral === 'pharmacolite');
-        if (ph.length > 0) anyHit++;
-      }
-      expect(anyHit,
-        `expected at least 1/${seeds.length} schneeberg seeds to fire pharmacolite; got ${anyHit}/${seeds.length}`)
-        .toBeGreaterThan(0);
-    });
+    // Widened-seed coverage lives in pharmacolite-seeds.test.ts so the
+    // ~44s 32-seed sweep can run on its own worker (see that file for
+    // v136→v214 widen + timeout history).
   });
 
   describe('cation-share gate — pharmacolite vs conichalcite/erythrite/annabergite', () => {

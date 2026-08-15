@@ -1,4 +1,4 @@
-// Calibration sweep shard 3/8 — see calibration-lib.ts for why this is sharded.
+// Calibration sweep shard 5/8 — see calibration-lib.ts for why this is sharded.
 import { describe, expect, it } from 'vitest';
 import { runScenario } from './helpers';
 import {
@@ -8,7 +8,7 @@ import {
   summarize,
 } from './calibration-lib';
 
-const SHARD = 3;
+const SHARD = 5;
 const { version, baseline } = loadBaseline();
 
 describe(`calibration sweep — seed 42 vs JS baseline (shard ${SHARD}/${CALIBRATION_SHARD_COUNT})`, () => {

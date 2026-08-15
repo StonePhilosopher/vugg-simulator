@@ -1,15 +1,21 @@
-// Shared helpers for the sharded strip-digest tripwire.
-// One file used to run all ~12 recordings sequentially (~several minutes on
-// a single worker). Sharding fans them across workers.
+// Shared helpers for the strip-digest tripwire.
+// One file per scenario (strip-digest-<name>.test.ts) so vitest can
+// work-steal across workers — the old 4 shards were badly unbalanced
+// (shard 1 ~57s vs shard 0 ~35s) because long recordings serialized
+// inside a single file.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
+import { recordScenario } from './strip-helpers';
+import { stripDigestForDataset } from '../tools/strip-digest-shape.mjs';
+
+declare const stripDataIndex: any;
+declare const stripDequantize: any;
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASELINES = path.join(ROOT, 'tests-js', 'baselines');
-
-export const STRIP_DIGEST_SHARD_COUNT = 4;
 
 export function readSimVersion(): number {
   try {
@@ -31,12 +37,25 @@ export function loadDigest(): { version: number; digest: any | null } {
   }
 }
 
-export function digestScenariosForShard(
-  digest: { scenarios: Record<string, any> },
-  shard: number,
-  shardCount = STRIP_DIGEST_SHARD_COUNT,
-): string[] {
-  return Object.keys(digest.scenarios)
-    .sort()
-    .filter((_, i) => i % shardCount === shard);
+/** Register the tripwire for one curated scenario. */
+export function registerStripDigestScenario(name: string): void {
+  const { version, digest } = loadDigest();
+  describe(`strip chemistry-trajectory tripwire — ${name}`, () => {
+    if (!digest) {
+      it(`(no strip_digest_v${version}.json — run tools/gen-strip-digest.mjs)`, () => {
+        expect(true).toBe(true);
+      });
+      return;
+    }
+    if (!digest.scenarios[name]) {
+      it.skip(`${name} not in strip_digest_v${version}.json`, () => {});
+      return;
+    }
+    it(`matches the recorded chemistry trajectory`, () => {
+      const deps = { stripDataIndex, stripDequantize };
+      const ds = recordScenario(name);
+      if (!ds) return;
+      expect(stripDigestForDataset(ds, deps)).toEqual(digest.scenarios[name]);
+    }, 120000);
+  });
 }

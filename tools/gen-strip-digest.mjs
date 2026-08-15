@@ -3,7 +3,7 @@
  * tools/gen-strip-digest.mjs — write the strip-view chemistry-trajectory
  * tripwire baseline to tests-js/baselines/strip_digest_v<N>.json.
  *
- * Companion to tests-js/strip-digest-shard-*.test.ts (the tripwire) the way
+ * Companion to tests-js/strip-digest-*.test.ts (the tripwire) the way
  * gen-js-baseline.mjs is to calibration-shard-*.test.ts. Records each curated
  * scenario through the StripRecorder, reduces the per-cell chemistry
  * trajectory to a compact digest (per key chip: {min,max,samples[8]} at

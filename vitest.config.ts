@@ -13,10 +13,9 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['tests-js/**/*.test.ts'],
     setupFiles: ['tests-js/setup.ts'],
-    // Reuse workers across files. Combined with the source-string cache
-    // in setup.ts, each worker avoids re-walking dist/; each file still
-    // re-evals so mutable sim state stays isolated (skipping eval leaked
-    // flag setters / rng across files and broke pins under load).
+    // Reuse workers across files. setup.ts compiles the bundle once per
+    // worker (vm.Script) and runInNewContext per file so mutable sim
+    // state stays isolated without re-parsing 4.5 MB each time.
     isolate: false,
     // forks is the vitest 4 default; keep it explicit — jsdom + the
     // Function()-eval harness are happier in child processes than in
