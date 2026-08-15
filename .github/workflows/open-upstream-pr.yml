@@ -38,7 +38,7 @@ jobs:
 
           existing="$(gh pr list \
             --repo StonePhilosopher/vugg-simulator \
-            --head "jtatum:${GITHUB_REF_NAME}" \
+            --head "${GITHUB_REF_NAME}" \
             --base main \
             --state open \
             --json number \
@@ -51,9 +51,22 @@ jobs:
 
           # --title/--body are required: gh will not prompt in Actions.
           title="$(printf '%s\n' "${COMMIT_MESSAGE}" | head -n1)"
-          gh pr create \
+          set +e
+          output="$(gh pr create \
             --repo StonePhilosopher/vugg-simulator \
             --head "jtatum:${GITHUB_REF_NAME}" \
             --base main \
             --title "${title}" \
-            --body "${COMMIT_MESSAGE}"
+            --body "${COMMIT_MESSAGE}" 2>&1)"
+          status=$?
+          set -e
+
+          echo "${output}"
+          if [ "${status}" -eq 0 ]; then
+            exit 0
+          fi
+          if echo "${output}" | grep -qi 'already exists'; then
+            echo "PR already exists; skipping."
+            exit 0
+          fi
+          exit "${status}"
