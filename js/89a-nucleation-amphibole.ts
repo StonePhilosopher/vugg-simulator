@@ -19,7 +19,7 @@
 
 function _nuc_tremolite(sim) {
   const sigma = sim.conditions.supersaturation_tremolite();
-  if (sigma < MINERAL_GATES_tremolite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_tremolite.sigma_crit) return;
   if (sim._atNucleationCap('tremolite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'tremolite' && c.active);
   if (existing.length >= 4) return;
@@ -42,7 +42,7 @@ function _nuc_tremolite(sim) {
 
 function _nuc_actinolite(sim) {
   const sigma = sim.conditions.supersaturation_actinolite();
-  if (sigma < MINERAL_GATES_actinolite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_actinolite.sigma_crit) return;
   if (sim._atNucleationCap('actinolite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'actinolite' && c.active);
   if (existing.length >= 4) return;
@@ -66,7 +66,7 @@ function _nuc_actinolite(sim) {
 
 function _nuc_anthophyllite(sim) {
   const sigma = sim.conditions.supersaturation_anthophyllite();
-  if (sigma < MINERAL_GATES_anthophyllite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_anthophyllite.sigma_crit) return;
   if (sim._atNucleationCap('anthophyllite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'anthophyllite' && c.active);
   if (existing.length >= 3) return;
@@ -87,7 +87,7 @@ function _nuc_anthophyllite(sim) {
 
 function _nuc_amosite(sim) {
   const sigma = sim.conditions.supersaturation_amosite();
-  if (sigma < MINERAL_GATES_amosite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_amosite.sigma_crit) return;
   if (sim._atNucleationCap('amosite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'amosite' && c.active);
   if (existing.length >= 3) return;
@@ -107,7 +107,7 @@ function _nuc_amosite(sim) {
 
 function _nuc_crocidolite(sim) {
   const sigma = sim.conditions.supersaturation_crocidolite();
-  if (sigma < MINERAL_GATES_crocidolite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_crocidolite.sigma_crit) return;
   if (sim._atNucleationCap('crocidolite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'crocidolite' && c.active);
   if (existing.length >= 3) return;
@@ -120,7 +120,7 @@ function _nuc_crocidolite(sim) {
   if (sigma > 1.2 * discount) {
     if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
       const c = sim.nucleate('crocidolite', pos, sigma);
-      sim.log.push(`  ✦ NUCLEATION: 🟦 Crocidolite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, O2=${sim.conditions.fluid.O2.toFixed(2)}) — "BLUE ASBESTOS" riebeckite-asbestiform variety (Wittenoom Australia + Northern Cape SA); tiger's eye precursor when O2 rises`);
+      sim.log.push(`  ✦ NUCLEATION: 🟦 Crocidolite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, O2=${sim.conditions.fluid.O2.toFixed(2)}) — "BLUE ASBESTOS" riebeckite-asbestiform variety (Wittenoom Australia + Northern Cape SA); required fibrous substrate for the selected tiger's-eye origin model`);
     }
   }
 }

@@ -1,8 +1,6 @@
 // ============================================================
 // js/15-version.ts — SIM_VERSION + per-bump engine-drift history
 // ============================================================
-// JS counterpart of vugg/version.py — currently sits at v17 while Python has progressed past v30. Drift documented in BACKLOG; future "JS catch-up" rounds land here.
-//
 // Phase B4 of PROPOSAL-MODULAR-REFACTOR. SCRIPT-mode TS — top-level decls
 // stay global so call sites in 99-legacy-bundle.ts keep working.
 
@@ -10,7 +8,7 @@
 // SIM VERSION
 // ============================================================
 // Monotonic version tag bumped by any change that could shift seed-42
-// output for any scenario. Mirrors SIM_VERSION in vugg.py.
+// output for any scenario. This TypeScript runtime is authoritative.
 //   v1 — pre-audit: generic FluidChemistry defaults, Mg=0 in most scenarios
 //   v2 — scenario-chemistry audit (Apr 2026): every scenario anchored to a
 //        named locality with cited fluid values; locality_chemistry.json
@@ -1586,7 +1584,7 @@
 //          For a dissolution zone (c shrinks):
 //            crystal._volume_mm3 *= (c_new / c_old)³
 //
-//        get_vug_fill simply sums crystal._volume_mm3 across active
+//        get_vug_fill simply sums crystal._volume_mm3 across non-dissolved
 //        crystals — no reinterpretation through current habit. The
 //        single source of truth lives on the crystal, frozen as growth
 //        deposits it. Geologically: this is what real zoned crystals
@@ -2574,7 +2572,8 @@
 //        pharmacolite Ca-only). The classic Jáchymov / Schneeberg /
 //        Cobalt-Ontario five-element-vein bloom; radiating "starburst
 //        of white needles" habit is the diagnostic field marker.
-//        Per research-pharmacolite.md (boss canonical 2026-05).
+//        Provenance retrospectively reconciled in SIM259; see
+//        research/arcs/research-cation-sinks-orphan-solutes-2026-08-08.md.
 //
 //        Cation-share gate (anti-competitor logic):
 //          Ca/(Ca+Cu+Pb+Zn+Co+Ni) > 0.3 enforces "pharmacolite gets
@@ -2640,14 +2639,14 @@
 //        seed42_v88.json captures the schneeberg + supergene_oxidation
 //        drift; other 24 scenarios byte-identical to v87.
 //
-//        References (from research-pharmacolite.md):
+//        References (retrospectively reconciled in
+//        research/arcs/research-cation-sinks-orphan-solutes-2026-08-08.md):
 //          * Stromeyer F. (1819) — Riegelsdorf type-locality description
 //            (the original pharmacolite name from Greek "pharmakon"
 //            for the As-poisoning property).
 //          * Anthony J.W. et al. — Handbook of Mineralogy Vol. IV.
-//          * research/research-pharmacolite.md (canonical research-agent
-//            file, May 2026 — boss research drop fetched after v85
-//            surfaced the gap).
+//          * SIM259 cation-sink receipt above replaces the unavailable
+//            May 2026 working-note path formerly recorded here.
 //   v89 — Cassiterite + Sn fluid field (2026-05-19). Tetragonal tin
 //        dioxide SnO₂ — primary tin ore, the mineral that built the
 //        Bronze Age. Per research-cassiterite.md (boss canonical
@@ -5262,17 +5261,15 @@
 //                                                  asbestos per Frank
 //                                                  et al. 2002
 //
-//            1 silicate-class pseudomorph mineral:
-//              tigers_eye     SiO2 chalcedony pseudomorph AFTER
-//                              crocidolite. THE famous gold-brown
-//                              chatoyant gemstone. Three habits:
-//                              chatoyant_pseudomorph (gold-brown classic),
-//                              hawks_eye (partial-oxidation blue-gold
-//                              intermediate), tiger_iron (BIF-banded with
-//                              hematite + jasper layers). Per Heaney &
-//                              Fisher 2003 Am.Min. 88:1 — modern
-//                              mechanism is crocidolite REPLACEMENT,
-//                              not crocidolite-inclusions-in-quartz.
+//            1 silicate-class aggregate (retrospective SIM 260 correction):
+//              tigers_eye     Originally shipped here under the settled
+//                              pseudomorph interpretation. That description
+//                              and its citation were wrong. Heaney & Fisher
+//                              (2003, Geology 31:323-326) reject replacement
+//                              and propose synchronous antitaxial crack-seal
+//                              growth; Gutzmer et al. (2004, Geology 32:e44)
+//                              argue for later surficial alteration of older
+//                              crocidolite. SIM 260 executes both hypotheses.
 //
 //          NEW AMPHIBOLE CLASS — files js/39a-supersat-amphibole.ts,
 //          js/59a-engines-amphibole.ts, js/89a-nucleation-amphibole.ts.
@@ -5314,9 +5311,9 @@
 //          marble_contact_metamorphism and jeffrey_mine). Crocidolite
 //          + amosite need BIF-style chemistry (high Fe, Na for
 //          crocidolite); may fire in scenarios with the right
-//          chemistry. Tiger's eye needs crocidolite_dissolving as
-//          substrate, so likely fires only after crocidolite is
-//          established. Will document actual drift in commit message
+//          chemistry. Historical v116 note: tiger's eye used the cosmetic
+//          crocidolite_dissolving flag. SIM 260 retires that shortcut in
+//          favor of model-specific booked growth/alteration receipts.
 //          after baseline regen.
 //
 //          TESTS:
@@ -5340,7 +5337,9 @@
 //              chemistry of South African crocidolite. Int. J. Occup.
 //              Environ. Health 8:38.
 //            * Heaney PJ & Fisher DM (2003) New interpretation of the
-//              origin of tiger's-eye. American Mineralogist 88:1-14.
+//              origin of tiger's-eye. Geology 31(4):323-326.
+//            * Gutzmer J, Beukes NJ & Cairncross B (2004) Comment.
+//              Geology 32(1):e44 (e45 is the separate H&F reply).
 //            * Cairncross B & Beukes NJ (2013) on Northern Cape diamond
 //              + gemstone routes.
 //            * Anthony Handbook v.IIB Single-Chain Silicates.
@@ -6469,7 +6468,7 @@
 //            conichalcite  CaCu(AsO4)(OH)           P3, supergene_oxidation 4×
 //            duftite       PbCu(AsO4)(OH)           P3, doubly cascade-prone
 //            pyrolusite    MnO2                     P5, 350% Mn budget shift
-//            tigers_eye    SiO2 (chalcedony pseudo) P5, paired with crocidolite paramorph
+//            tigers_eye    SiO2-rich aggregate      P5, older label corrected in SIM 260
 //
 //          ALGORITHMIC CONFIRMATION
 //          The v128 graduated-competition algorithm now has TWO empirical
@@ -6897,8 +6896,8 @@
 //            chrysoprase   — microcrystalline chalcedony (Ni-bearing)
 //            opal          — amorphous (opal-A) or nano-crystalline (opal-CT/C);
 //                            no crystal structure to twin
-//            tigers_eye    — chalcedony pseudomorph after crocidolite —
-//                            fibrous parallel-aligned, no euhedral form
+//            tigers_eye    — fibrous quartz-crocidolite aggregate —
+//                            parallel-aligned, no euhedral whole-specimen form
 //            chrysotile    — fibrous serpentine asbestos; no individual
 //                            euhedra
 //            coffinite     — fracture-replacement / colloform / sooty —
@@ -11349,8 +11348,9 @@
 //        IS A FLEET-WIDE CHANGE: pegmatite-hosted quartz now develops smoky colour
 //        (gem_pegmatite, radioactive_pegmatite, etc.) — geologically correct, colour
 //        only (radiation_damage), no assemblage shift. morion color_rule added.
-//        TESSIN (grow_quartz, alpine-gated): the steep-rhombohedron z{011} face
-//        development (Tessiner Habitus) on cleft quartz. + narrators (js/92i).
+//        TESSIN (grow_quartz, alpine-gated): steep {h0-il} rhombohedra such as
+//        {40-41}/{30-31} dominate over the prism on cleft quartz. + narrators
+//        (js/92i). The earlier z{011} label was corrected in August 2026.
 //        FENSTER + GWINDEL deliberately NOT shipped: fenster has no honest fleet home
 //        (quartz sigma is silica ABUNDANCE not a skeletalization driver — an occupied
 //        band would mislabel slow pegmatites; the 644b267 content-block finding
@@ -11362,9 +11362,9 @@
 //        history — all crystals in one cleft share the same fluid (same
 //        seals/breaches), so a v206-style "continuous vs resorbed" discriminator
 //        is geologically wrong. The gwindel's distinction is CRYSTALLOGRAPHIC: a
-//        progressive a-axis TWIST accumulated over prolonged growth under the
-//        cleft's syn-growth tectonic shear (D2/D3). The sim has no shear FIELD,
-//        so — exactly as it treats twinning — gwindel is a habit variant:
+//        progressive a-axis TWIST incorporated during growth by a screw-dislocation
+//        structure in one crystal. The earlier syn-growth-shear explanation was
+//        retired by v208. As with twinning, the sim represents it as a habit variant:
 //        js/45 classifyQuartzGwindel designates the LARGEST, longest-grown cleft
 //        showpiece (twist deg ∝ growth duration), independent of and taking
 //        render precedence over its sceptre record. js/99i _makeGwindelGeom =
@@ -12002,16 +12002,16 @@
 //        correction: the rung-3 handoff's "(or BIF Fe-oxide) substrate" prose
 //        was too permissive — deccan fired tiger iron on hematite in a BASALT
 //        AMYGDALE, which is not a BIF; bare iron oxide (an oxidized ore body, a
-//        basalt vug) is not a crocidolite context. Geology (Heaney & Fisher
-//        2003 Am.Min. 88:1, the sim's own cited source) + the offender table
-//        (all four = pure kills) both demand crocidolite-required. Hematite is
+//        basalt vug) is not a crocidolite context. The BIF/crocidolite
+//        substrate requirement + the offender table (all four = pure kills)
+//        both demand crocidolite-required. Hematite is
 //        kept ONLY as a co-present habit modifier (dissolving croc + banded
 //        hematite → the TIGER IRON assemblage habit).
 //        Census verdict: NO scenario grows crocidolite (jeffrey_mine — the
 //        minerals.json "home" tag for both crocidolite and tigers_eye — is
 //        chrysotile/rodingite: Na 5 + Fe 50, below crocidolite's Na≥30/Fe≥100
 //        gate). So the p=0.65 crocidolite branch is dead code and tiger's eye
-//        is EXTINCT at seed 42 — CORRECT until a Griqualand-West/Hamersley BIF
+//        is EXTINCT at seed 42 — intentionally blocked until a real BIF
 //        scenario ships (BACKLOG §T; the scenarios:[jeffrey_mine] tag on
 //        crocidolite/tigers_eye is itself a confabulation to fix there). No
 //        promise decisions: no scenario expects tiger's eye.
@@ -12283,5 +12283,720 @@
 //       boulder (boss). elmwood-snowball variety guard KEEPS selenite (it
 //       is still present; the handoff's remove-instruction was conditioned
 //       on the death that didn't happen).
-const SIM_VERSION = 237;
+// v238 — SCIENCE-FIRST HOSTILE-REVIEW TRANCHE 1 (2026-08-05): model
+//       identity now matches the behavior players actually run. Corrects the
+//       Hacker et al. calcite/aragonite polynomial sign and carries its +/-1
+//       kbar uncertainty; separates cavity-fluid pressure from optional
+//       rock/confining pressure for the uncertainty-aware Pattison Al2SiO5
+//       grid; makes sabkha flood/evap chemistry absolute replacement rather
+//       than replace-as-delta; and turns Creative dissolved Ge into a labelled
+//       empirical, mass-accounted sphalerite tracer (Kd 1708 +/-157 at 200 C,
+//       structural cap, accepted-zone debit + dissolution return). Adds the
+//       semantic MODEL_DIGEST to saves, strips, agent output, and claim cards
+//       so a same-version scientific-model mismatch is visible rather than
+//       silently replayed. Pressure, confining-pressure, stress, and phase-field
+//       decisions are now explicit in adversarial claim cards. Baseline and
+//       strip artifacts rebaked only after the focused correction tests passed.
+// v239 — HOSTILE-REVIEW ROUND 3 CONSERVATION + SCENARIO RECONCILIATION
+//       (2026-08-05). Growth engines now execute transactionally: legacy direct
+//       fluid mutations are measured and rolled back, then the simulator debits
+//       only the FINAL accepted thickness after time scaling, competition,
+//       burial/fill damping, and cavity clamps. The 0.004 accepted-zone unit
+//       coefficient preserves v238's default-timescale mass while making time
+//       scale proportional instead of quintuple-booked. Positive zones store
+//       their exact solid inventory; dissolution removes chronological LIFO
+//       shells and returns precisely that inventory, including shell-specific
+//       Ge, with a 5 µm resolvable-solid floor. Engine-only supplements such as
+//       chromophores and redox effects are replayed once at accepted scale.
+//       This retires hundreds of hidden double-debits and the empirical
+//       dissolution-rate mass source. Reviewer-driven reconciliation: Bisbee's
+//       barren reducing pulse is genuinely low-S and restores wire native Cu;
+//       halite has high (0.8) vadose-efflorescence propensity; beryl-family K is
+//       re-measured at 36 under the new ledger; one locally supersaturated
+//       post-HF recovery generation can nucleate on freshly exposed wall.
+//       Enclosure-aware tests now distinguish extant inclusions and weathered
+//       cores from full dissolution; morphology and O2 renderer contracts test
+//       their mechanisms instead of stale seed-specific population accidents.
+//       Searles borax/tincalconite was re-opened when exact partial dissolution
+//       left real grown borax remnants rather than the old all-or-nothing husks.
+//       Primary phase-system evidence overturns v234's too-narrow museum-drawer
+//       reading: the pure Na-borate transition is 60.8 C, saturated NaCl-
+//       Na-borate lowers it to 39.6 C, and natural Searles material includes
+//       both brine-contact crystals and borax replacements. The 55 C saline
+//       summer therefore produces tincalconite by an executed phase boundary;
+//       reversible high-humidity hydration remains explicitly out of model.
+// v240 — HOSTILE-REVIEW ROUND 4 COMPETITION CONSERVATION (2026-08-05).
+//       Graduated competition now budgets the physical candidate thickness
+//       after simulation time scaling, matching the accepted-zone ledger. The
+//       former raw-thickness budget could understate demand by 5x at the default
+//       clock and accept more solid than the available fluid could supply.
+//       Allocation scales both thickness and recorded growth rate. Formation
+//       diagnosis also uses effective bare-wall OR substrate-assisted
+//       eligibility for historical verdicts and labels host-dependent support.
+//       Engine-side crystal mutations now stage with the fluid dry-run and commit
+//       only for a positive accepted zone; rejected candidates cannot leak habit,
+//       trace, film, or interlocking state. Supplemental trace uptake records the
+//       actual clamped debit, so later dissolution cannot return unavailable mass.
+//       Diagnostic uncertainty and observer-only qualifications are visible on
+//       touch/focus as well as hover. Event-sourced saves now fail closed before
+//       replay unless SIM version, model digest, and authored scenario hash match.
+//       Calcite Mn/Fe solid ppm now convert to atoms/formula and join the exact
+//       accepted-shell ledger; repeated acid dissolution returns only remaining
+//       inventory. Arsenopyrite Au narration and oxidation likewise read/return
+//       the remaining accepted Au inventory rather than replaying zone labels.
+// v241 — HOSTILE-REVIEW ROUND 5 MOLE-CORRECT LEDGER + CAUSAL DIAGNOSIS
+//       (2026-08-05). Formula stoichiometry is now dimensionally explicit:
+//       accepted micrometres carry mmol formula/kg, converted to each species'
+//       mg/kg debit by its formula coefficient and molar mass. Competition and
+//       the final pool cap spend that same mass-weighted demand, so a 1:1
+//       CaCO3 zone removes equal moles rather than equal ppm masses. If any
+//       mandatory species is limiting, the whole zone and its growth rate shrink
+//       together before crystal mutations commit; trace substitutions remain
+//       optional and dissolve from the exact accepted shell inventory.
+//       Nucleation equality is consistently non-forming (sigma <= sigma_crit),
+//       and diagnostic data attributes preserve full floating-point thresholds.
+//       The Creative mineral explainer now probes the registered production
+//       nucleator on an isolated simulator clone: repeat thresholds, active and
+//       total caps, family priority, and effective stochastic birth draws are
+//       reported instead of inferred from the supersaturation number alone.
+//       Read-traced one-lever counterfactuals expose engine-specific blockers
+//       such as hydrozincite's SiO2/S/Cu ratios. Nucleation floors are separated
+//       from formula-limited supported growth, and raw-CO3 engine routes share
+//       one canonical availability helper with the panel. The pressure ledger
+//       now records the implemented confining-pressure control and the bounded
+//       Pattison/Hacker uncertainty behavior rather than describing them as
+//       future work. The corrected ledger exposed Shigar's 140 mm authored
+//       cavity sealing before its documented late F-rich topaz pulse; a
+//       source-bounded 220 mm cavity restores the staged six-phase pocket by
+//       the physical space lever rather than a species-scoreboard exception.
+// v242 — HOSTILE-REVIEW ROUND 6 MODEL-BOUNDARY CORRECTION (2026-08-05).
+//       The formula-ratio ledger is now named and disclosed everywhere as a
+//       calibrated stoichiometric axial-growth budget proxy. Its fixed
+//       mmol-formula/kg-per-axial-µm basis preserves formula mole ratios and
+//       exact closure of booked shell inventory, but does not scale with grain
+//       size, habit, density, or rendered shell volume and therefore is not a
+//       physical extensive mass-conservation calculation. The Creative setup,
+//       mineral-formation diagnosis, control audit, claim cards, identifiers,
+//       warnings, and tests use that bounded claim. The pinned diagnosis keeps
+//       its accessible dialog label, sticky 44 px Close control, Escape support,
+//       and focus restoration, but is explicitly nonmodal (no false aria-modal
+//       promise). Schneeberg now records bismuthinite's intentional SIM 241
+//       disappearance without a species-specific retune.
+// v243 — HOSTILE-REVIEW ROUND 7 PHASE IDENTITY + SULFUR RESERVOIRS
+//       (2026-08-06). Generic silica now selects a real phase before
+//       saturation and nucleation: opal owns the 5-100 C hydrated/amorphous
+//       window and quartz owns the 100-700 C crystalline window. A quartz
+//       crystal can no longer nucleate cold and be cosmetically relabelled
+//       opal or chalcedony; existing quartz below its kinetic window pauses
+//       unless its actual quartz equilibrium ratio is undersaturated.
+//       Dissolved sulfur is split into independently conserved sulfide and
+//       sulfate reservoirs plus a separate elemental-S precursor. Sulfide,
+//       sulfate, and native-sulfur minerals debit only their corresponding
+//       reservoir, closing the former one-pool double spend. Sulphur Bank now
+//       executes H2S + 1/2 O2 -> S0 + H2O with explicit sulfur/oxygen closure
+//       and no invented proton source. Sicily is a separate anoxic microbial/
+//       inherited-S0 path; BSR transfers sulfate to reduced sulfur and adds
+//       carbonate alkalinity without borrowing the oxic hot-spring mechanism.
+//       Creative Mode exposes all three reservoir levers and the native-S
+//       pathway in setup and live editing. The fluid-pressure envelope reaches
+//       0.001 kbar so surface scenarios are representable without range clipping.
+// v244 — HOSTILE-REVIEW ROUND 8 PHASE SELECTION + LOCALITY CLOSURE
+//       (2026-08-06). Gypsum/anhydrite now share one authoritative CaSO4
+//       evaluator: explicit sulfate-pool SI, Hardie water-activity boundary,
+//       pressure shift, kinetic gates, limiting reagents, and competition all
+//       feed nucleation, growth, and the Creative diagnosis. Low-temperature
+//       sabkha anhydrite can arise only by mass-balanced gypsum dehydration;
+//       primary high-temperature anhydrite stays distinct. Replacement
+//       preserves formula extent, transfers structural water, updates volume/
+//       porosity, and is replayable. Sulfur-event propagation is an atomic
+//       voxel transaction, so a depleted local reactant cannot clamp the debit
+//       while receiving the full product credit; boundary fluxes are measured
+//       from realized canonical inventory. Native-S oxidative dissolution now
+//       returns sulfate with explicit O2 closure. Shipped scenarios declare a
+//       host wall; limestone and dolomite dissolution release formula-correct
+//       Ca:Mg:C inventories with closure. Tsumeb is explicitly dolomite-hosted.
+//       Sunnyside reconciles its USGS sequence/provenance and retains primary
+//       chalcopyrite, Au, and Mn-substituting calcite across the tested seeds.
+//       Sicily executes methane-driven SD-AOM at 1 C:1 S, earns positive
+//       calcite SI across the tested envelope, keeps residual sulfate, and
+//       reports reaction testimony separately from mineral outcomes. Naica
+//       now uses published Ca/SO4 concentrations and crosses slightly into
+//       positive gypsum SI; Great Salt Plains uses measured wet/dry brine
+//       concentrations and crosses saturation only during the dry phase.
+//       Creative setup and live Na/Cl ranges expose those natural evaporite
+//       concentrations without clipping.
+// v245 — HOSTILE-REVIEW ROUND 9 DECLARED BOUNDARIES + OXIDATION CLOSURE
+//       (2026-08-06). Native-sulfur oxidation is now exercised through the
+//       production engine in both open-interface and closed-fluid modes: open
+//       reactions declare their O2 import, closed reactions stop at the
+//       available O2 inventory, sulfur closes between S0 and sulfate, and H+
+//       yield is labelled diagnostic because the simulator does not conserve
+//       a hydrogen inventory or mutate pH from that yield. Tellurium no longer
+//       inherits sulfur's oxidative etch mode. Spatial sulfur propagation is
+//       declaration-driven: authored additions and replacements are tested
+//       against their declared amount or target, while unannounced residuals
+//       fail closed instead of being laundered into inferred boundary flux.
+//       Sulphur Bank's H2S recharge and Sicily/sabkha sulfur events declare
+//       their sources explicitly. Sulphur Bank cinnabar is no longer assigned
+//       an invented native-sulfur substrate: the documented vertical zoning
+//       is represented as association, not epitaxy. Sicily's SD-AOM carbon is tracked alongside
+//       wall-carbon release in a whole-scenario carbon ledger; its carbonate-
+//       buffer events now repartition existing dissolved inorganic carbon and
+//       adjust pH without inventing carbonate mass.
+// v246 — HOSTILE-REVIEW ROUND 10 FIRST-CLASS CHALCEDONY (2026-08-06).
+//       Generic silica now has three independently saturated phases. USGS
+//       Fournier relations provide temperature-dependent amorphous-silica and
+//       chalcedony equilibria; quartz retains its separate equilibrium. The
+//       selector applies Ostwald stepping: opal while amorphous silica is
+//       supersaturated, chalcedony after opal falls below equilibrium, then
+//       quartz after chalcedony is depleted (or above the 200 C chalcedony
+//       field). Chalcedony has its own production nucleator, Creative diagnosis,
+//       low-surface-energy gate, accepted-shell SiO2 ledger, growth engine, and
+//       length-fast microfibrous aggregation record. Seven or more accepted
+//       layers in a basalt cavity or oscillatory fluid produce a real banded-
+//       agate fabric; a quartz-filled vug is never cosmetically renamed agate.
+//       Opal-to-chalcedony and chalcedony-to-quartz maturation are explicit
+//       solution-mediated dissolution/reprecipitation: exact booked SiO2 is
+//       returned before the next phase spends it. Structural water remains
+//       diagnostic because the simulator has no conserved H2O inventory.
+//       Deccan and Ametista do Sul now require the chalcedony they describe,
+//       while still permitting later inward-growing quartz. A documented
+//       shallow limestone/carbonate-water discriminator keeps Mammoth's 54 ppm
+//       silica travertine fluid out of the silica-deposition route, and that
+//       surface scenario disables the generic fracture-driven silica pulse.
+//       Area-covering aggregates now persist their physical fabric and booked
+//       volume: chalcedony/agate becomes a laminated lining, appropriate
+//       hematite/Cu-carbonate/Mn-oxide habits become crusts, quartz and calcite
+//       coating variants become euhedral druse, and only genuinely fibrous
+//       asbestos habits become mats.  Deterministic renderer instances spread
+//       that one mass-booked aggregate over its wall footprint; they never add
+//       crystals or spend chemistry, and mobile uses a lower representative LOD.
+// v247 — HOSTILE-REVIEW ROUND 11 EXECUTED CLAIM CONTRACTS (2026-08-06).
+//       Manning quartz pressure corrections now fail closed outside their
+//       published 300-450 C, 0.5-4.4 kbar density grid; sub-0.5-kbar Creative
+//       diagnostics explicitly fall back to the legacy temperature relation
+//       instead of displaying an exact pressure with a hidden 0.5-kbar clamp.
+//       Calcite catalog crust habits route to actual botryoidal crust geometry,
+//       while druzy_crust remains euhedral druse. Deccan's executed sequence is
+//       pulse-locked: chalcedony, hematite, quartz, Stage-II zeolites/calcite,
+//       then apophyllite; late opal is chemically excluded. Scenario promises
+//       now distinguish deterministic, statistical, and aspirational tiers.
+//       Claim cards fail any deterministic no-show and include solid-state
+//       transformation testimony, so pharmacolite->haidingerite and realgar->
+//       pararealgar count as delivered products without being mislabeled as
+//       nucleations. Mine-specific negative evidence can suppress a phase only
+//       in that scenario and appears in Creative's causal diagnosis. Sweetwater
+//       therefore retains dissolved Ba/Sr tracers but excludes unrecorded
+//       barite/celestine/gypsum/Fe-Mn carbonates/Ag2S. Tsumeb's documented
+//       gypsum is delivered by an explicit oxidized-sulfate dry-season recharge.
+// v248 — HOSTILE-REVIEW ROUND 12 LOCALITY-SPECIFIC PARAGENESIS (2026-08-06).
+//       Deccan now executes a sourced Savda–Nashik archetype rather than a
+//       generalized zeolite story: silica lining, scolecite + mesolite first,
+//       heulandite + stilbite next, and apophyllite last. Authored
+//       nucleation windows are first-class scenario controls, are enforced by
+//       the production nucleator, and appear as causal blockers in Creative's
+//       live formation diagnosis. Thomsonite and chabazite remain available in
+//       the global engine but are explicitly excluded from this one archetype;
+//       their metadata no longer universalizes a Deccan-wide order. Tsumeb no
+//       longer promises pharmacolite or its deterministic haidingerite product:
+//       neither appears in the current Mindat locality record nor Harvard's
+//       searchable Tsumeb catalog. Scenario exclusions now also block a
+//       solid-state transformation whose target lacks locality support, without
+//       disabling that chemically valid transition elsewhere or in Creative.
+//       Mineral-library scenario associations obey the same exclusions, so
+//       “Grows in” never advertises a phase the scenario blocks. Strip format
+//       v5 separates each actual simulator/event step from its zero-based tensor
+//       sample index; archives, claim cards, and displayed row labels therefore
+//       use the same step coordinates as scenario events and hover diagnosis.
+// v249 — EXACT SURFACE FABRICS + Mn-OXIDE PHASE FAMILY (2026-08-07).
+//       The renderer now integrates the actual irregular WallMesh triangle
+//       area, samples the exact coated triangle patch, and derives physical
+//       mean thickness from the single booked Crystal volume. Representative
+//       instances no longer coexist with a duplicate trophy-sized parent;
+//       they are raycastable and later coatings sit above earlier overlapping
+//       layers using explicit nucleation-step stratigraphy. Desktop/mobile LOD
+//       changes only representative count, never physical area, mass or layer
+//       relief. Manganese coatings split into first-class birnessite,
+//       romanechite and todorokite phases. Ba and Mg are mass-booked structural
+//       selectors for the 2x3 and 3x3 tunnel oxides; low-T hydrous films route
+//       to birnessite, while pyrolusite remains a crystalline high-Eh
+//       endmember. Dendritic Mn films receive a flattened wall-tangent branch
+//       grammar, never the old free-standing needle/trophy representation.
+// v250 — HOSTILE-REVIEW EXACTNESS CLOSURE (2026-08-07).
+//       Every wall-cell radius now participates in the shared mesh/renderer
+//       invalidation identity, so exact area, patch samples, and derived
+//       thickness cannot remain stale after an off-stride dissolution edit.
+//       Production WallCells advance an exact mutation-time geometry revision
+//       (O(1) cache reads); plain snapshot walls retain the all-cell hash
+//       fallback. The formerly 529 s Sabkha digest replay returns to 31 s.
+//       Surface stratigraphy is testified only from shared exact WallMesh
+//       triangles; the spherical fallback is explicitly labelled possible.
+//       Todorokite no longer precipitates from bare wall or at 25 C: production
+//       requires a grown, booked birnessite precursor at 95-200 C, transforms
+//       it in place, preserves its Mn inventory, and books exchanged Mg at the
+//       1:6 formula ratio. Executed vendored-Three integration tests now prove
+//       finite instance matrices, raycast hits, single scene representation,
+//       overlap relief, flattened dendrites, and mobile/desktop relief parity.
+// v251 — CONSERVED CARBONATE BOUNDARY (2026-08-08).
+//       Opt-in scenarios now carry separate DIC, reduced carbonate alkalinity,
+//       headspace CO2, solid carbon, and open-boundary import/export inventories.
+//       pH is solved from the carbonate system; closed steps conserve carbon,
+//       vents target an authored pCO2, root failures do not mutate state, and
+//       only explicit calcite/aragonite transfers close v1 solid carbon. The
+//       fully mixed v1 spatial contract is restricted to equal-volume wet
+//       voxels and records uncertainty instead of implying brine/high-P support.
+//       tutorial_travertine is migrated from fixed-percent/fixed-pH pulses and
+//       gains a field-by-field Mammoth benchmark receipt. Creative setup/live
+//       controls, event-sourced saves, and strip testimony preserve the ledger.
+//       Hostile-review closure adds atomic charge/recharge/titration, separate
+//       replacement-water import/export legs, accepted-zone transfer receipts,
+//       a bulk-handle guard, and visible blocked/failure diagnostics.
+// v252 — REACTION-SPECIFIC Ksp PRESSURE GRIDS (2026-08-08).
+//       Five exact carbonate dissolutions (calcite, aragonite, ordered
+//       dolomite, siderite, rhodochrosite) and three exact sulfate
+//       dissolutions (anhydrite, barite, celestine) now consume offline-
+//       generated SUPCRTBL delta-logK grids. Reaktoro 2.13 computes standard
+//       molal reaction Gibbs energies on a 10-800 C / 0.001-4.4 kbar grid;
+//       runtime bilinear interpolation is limited to each existing Ksp(T)
+//       evidence envelope and rejects low-density/missing cells. Nucleation,
+//       PWP net growth/dissolution, CaSO4 replacement, strip SI, and Creative
+//       diagnosis share the correction. Gypsum and absent/mixed endmembers are
+//       explicitly unsupported rather than assigned a constant reaction-volume
+//       or family-proxy correction.
+//
+//       Pressure-aware fleet reconciliation also exposed a pre-existing
+//       aragonite-selector leak: the 45-90 C open-spring window was active in
+//       sealed MVT veins. That kinetic selector is now restricted to <=0.10
+//       kbar; Mg poisoning and the high-pressure stable field remain available
+//       at depth. Sweetwater retains hydrothermal dolomite after a small,
+//       near-neutral wall-buffering recalibration (final pH ~7.02), while
+//       reactive_wall and generic mvt no longer mint low-Mg cooling-vein
+//       aragonite. Seed-42 drift vs v251 is confined to mvt (one 6.6-um
+//       aragonite removed) and the intended sabkha redistribution (70 -> 53
+//       crystals, ordered dolomite 1 -> 4).
+// v253 — PHYSICAL DISSOLUTION OVERPRINTS (2026-08-08).
+//       Etch directives now require a face-matched, validity-bounded rate model
+//       and raw thermodynamic Ω. The first executable model is Godinho et al.
+//       (2012)'s {100} fluorite retreat at 21 C, pH 3.6, I=0.05 M, and
+//       <=468 h. It is explicitly a bounded extrapolation: the simulator's
+//       fixed-pH NaCl analogue and closed return path differ from the source
+//       NaClO4/HClO4 bath renewed every 48 h, and systematic uncertainty is
+//       unquantified. Only Cama's fluorite far-field affinity boundary
+//       (ΔG<=-7 kcal/mol) transfers—not its {111} rate or a face multiplier.
+//       WATEQ4F speciation keeps gameplay sigma separate from Ω. The direct
+//       rate accepts only a flat cubic surface; stepped/hopper states fail
+//       closed. Geometry uses the renderer's isometric cube rather than the
+//       legacy a/c=0.5 axes; no 5-um resolution snap can add unintegrated loss.
+//       Pore relief is a player-labelled 250x schematic of two assumed
+//       pre-existing pores per face while mass and silhouette remain physical.
+//       Creative exposes direct duration in days with a 19.5-day evidence max.
+//       Seed-42 fleet drift vs v252 is confined to reactivated_fluorite_vein:
+//       all five expected minerals remain present; the eligible smooth cubic
+//       fluorite is 4.64 mm rather than the former stepped 9.01 mm crystal,
+//       with barite 36→28, celestine 7→5, and chalcedony 6→3. The other 38
+//       scenario baselines are identical. The 12-scenario compact chemistry
+//       digest is numerically identical after version/digest normalization.
+// v254 — CONSERVED ATMOSPHERIC CARBON ONLY (2026-08-08).
+//       The fixed-DIC/pH-only atmospheric fallback is retired. Open CO2
+//       reservoirs now fail closed without an explicit conserved DIC + reduced
+//       alkalinity boundary, and Creative always constructs that boundary from
+//       the player's authored initial DIC/pH pair. Sabkha now declares its
+//       initial inventory and executes each flood/evap endmember as a 100%
+//       replacement-water transaction with separate carbon import/export and
+//       explicit reduced alkalinity. Its 35-250 per mil brines retain the
+//       salinity_model_missing flag: carbonate results there are qualitative,
+//       not falsely activity-corrected. Tutorial travertine's formerly implicit
+//       initial inventory is now pinned in scenarios.json5. The regenerated
+//       seed-42 fleet confirms drift in sabkha only (1/39 stories): the same six
+//       mineral species survive, ordered dolomite remains 4 crystals and grows
+//       163 -> 170 um, while threshold-scale partitioning shifts HMC 27 -> 25
+//       and calcite 5 -> 15 (total nuclei 53 -> 61). The largest carbonate-SI
+//       shift is 0.063 log Omega; all other scenario stories are unchanged.
+// v255 — ZONE-RESOLVED HMC SOLID SOLUTION (2026-08-08).
+//       The fixed 10 mol% Mg HMC proxy and linear Ksp ramp are retired.
+//       Candidate shells use aqueous molar Mg/Ca and Mucci's measured,
+//       parent-fluid-bounded D_Mg anchors, then evaluate the nondefective
+//       calcite/Ca0.5Mg0.5CO3 subregular component activities documented by
+//       Busenberg-Plummer, Glynn-Reardon, and PHREEQC. Unsupported parent
+//       compositions produce a named coverage gap, never a false absence
+//       verdict. The standard-seawater proxy is Mg/Ca 4.5-6, 30-40 per mil,
+//       and 5-40 C; the high-ratio plateau is restricted to the measured
+//       Mg/Ca 7.5-20 seawater-matrix interval at 25 C. Creative renders those
+//       gaps as unknown, without a numeric sigma or blocked/undersaturated
+//       verdict, whether HMC never formed or formed earlier. The documented
+//       25 C miscibility gap spans the HMC range, so
+//       the calculation is explicitly a metastable fixed-composition kinetic
+//       screen, not stable homogeneous equilibrium. Every accepted shell
+//       records x, activities, uncertainty, and its exact Ca(1-x)Mg(x)CO3
+//       formula; the booked-inventory ledger returns that shell composition
+//       during dissolution. Crystal `_mg_content` is now only the remaining-
+//       shell thickness-weighted summary. Creative's formation explanation
+//       reports the same live partition/activity calculation and limiting
+//       formula. Rosasite and aurichalcite remain honest Tier-C observers: no
+//       unmeasured aqueous-to-solid Cu/Zn partition relation is invented.
+//       Seed-42 fleet drift is confined to 3/39 scenarios, all removing an
+//       unsupported HMC interpretation: sabkha 61→37 crystals and 6→5 species
+//       (HMC 25→0; calcite 15→18; dolomite 4→2), ultramafic supergene 27→24
+//       and 6→5 (four zero-growth HMC nuclei removed), and zoned dripstone
+//       cave 13→9 and 4→3 (HMC 4→0). No expected species disappeared; the
+//       remaining small size/count shifts are deterministic RNG cascade. The
+//       12-scenario compact chemistry digest is numerically identical after
+//       version/model-digest normalization. Full strip comparison confines
+//       direct model drift to SI_HMC in all three stories (max about 1.01 log
+//       Omega); the cave also carries small mass-balance cascade in HCO3
+//       (0.738 mg/L max) and CO3 (0.013 mg/L max), plus one display-ordinal
+//       calcite-morph sample shift.
+//
+// v256 — Localized LTE thermal field and local decision closure (August 2026).
+//       Every cavity voxel now carries temperature. Conservative six-neighbor
+//       conduction, explicit rock exchange, and order-independent authored
+//       boundary/advection sources evolve the field with geometry-weighted
+//       finite-volume receipts; exchange fractions remain dimensionless
+//       pending a calibrated voxel length and step duration. Nucleation
+//       pre-gates scan every active local chemistry/temperature state,
+//       site selection records local temperature and sigma, growth,
+//       morphology, Wulff-form integrals, dissolution, phase replacement,
+//       HMC composition, and Mn-oxide transformation consume the crystal's
+//       own boundary state. Creative global temperature actions translate the
+//       entire canonical field, while localized sources and pause/resume are
+//       immutable replay commands included in state fingerprints. The live
+//       formation explanation reports the exact maximum cell and probes the
+//       actual production nucleator in that same local context. Habit choice
+//       is evaluated after anchor selection, but its random draw is reserved at
+//       the legacy pre-anchor point so seeded RNG ordering is preserved. All
+//       authored scenario shapes still use scenarios.json5 shape_seed values
+//       and deterministic test runs still default to seed 42. Hostile-review
+//       closeout makes absent aragonite selectors exactly zero (logistic tails
+//       can weight evidence but cannot invent it), replaces the unconditional
+//       25 C thermostat with an authored one-way far-field equilibrium, and
+//       books speleothem-aragonite Sr uptake at Wassenburg et al.'s measured
+//       D_Sr=1.38+/-0.53. Zoned-cave dissolved Sr is scaled from primary
+//       dripwater Sr/Ca data rather than solid-speleo ppm, removing the
+//       unlicensed strontianite branch. Seed-42 baseline comparison moves 7/39
+//       scenarios: bisbee 218->215 crystals, deccan 30->29 (aragonite removed),
+//       elmwood 27->26 (aragonite removed), great_salt_plains 77->65,
+//       roughten_gill 85->81 (descloizite removed), sulphur_bank 46->45, and
+//       supergene_oxidation 111->110 (alunite removed). No species is gained.
+//       The aragonite losses are the intended hard-selector correction; the
+//       remaining count/species changes are deterministic consequences of
+//       local temperature and revised Sr inventory and remain exposed in the
+//       v256 baseline, 39-story archive, 12-story digest, and claim cards.
+//
+// v257 — Roughton Gill mine-specific reconciliation (August 2026).
+//       Replaces the inherited linarite-centric, carbonate-deficient story
+//       with Bridges et al. (2011): a sustained 110–130 C quartz-carbonate
+//       primary stage carrying galena + chalcopyrite + sphalerite, followed by
+//       explicit meteoric replacement, conserved sulfide-to-sulfate oxidation,
+//       separately audited open-fluid carbon replacements, calcite/dolomite-
+//       gangue carbon release, dominant malachite + cerussite, documented
+//       aurichalcite/rosasite, silica-fed hemimorphite, and the
+//       pyromorphite/plumbogummite cap. Rare
+//       linarite/caledonite/leadhillite remain aspirational rather than headline
+//       promises. Mine-grain exclusions block unsupported As sulfides, ruby
+//       silver, turquoise, wrong V phases, and unsupported Ca/Zn arsenate or
+//       siderite sinks without disabling those engines in Creative mode.
+//       Hostile-review closure adds a hard step-215, older-pyromorphite parent
+//       requirement for the terminal plumbogummite pseudomorph and generic
+//       source receipts for the upgradient Cu/Zn/metal and wall-silica imports.
+//
+// v258 — Executed weathering/vadose histories (August 2026).
+//       Scenario-authored epilogues now expose explicit drainage, oxygen, CO2,
+//       and light boundaries and record their per-step effects. The vadose
+//       transition applies to every 3-D voxel above the water surface, preserves
+//       dissolved sulfur instead of deleting 70%, receipts atmospheric O2, and
+//       fails closed on unknown spatial targets. Wittichen's ambient epilogue
+//       requires accepted same-site Co-arsenide dissolution before erythrite or
+//       cobalt-bearing aragonite can nucleate; accepted aragonite shells book Co
+//       at DCo=0.1 inside the measured 20–30 C selector domain. Naica records
+//       mine drainage and recharge without inventing residual-brine thenardite
+//       or transplanting the distinct Cueva de las Velas oxide facies.
+//       Seed-42 baseline review changes numerical receipts in 10/39 scenarios:
+//       Naica loses thenardite; Wittichen gains the executed supergene suite;
+//       six other drying tenants change counts under the all-depth, sulfur-
+//       conserving boundary; Roughton Gill and the zoned cave retain identical
+//       inventories/counts while small maximum-size receipts move. Searles'
+//       final borax label disappears because all eight surviving parents carry
+//       the executed borax-to-tincalconite history, not because borax failed to
+//       precipitate (max sigma about 37). Oxygen receipts itemize canonical
+//       voxel ppm-equivalents separately from compatibility ring mirrors.
+//
+// v259 — Cation-sink and köttigite reconciliation (August 2026).
+//       The historical Schneeberg orphan-Zn symptom is closed at its actual
+//       source: negative zones may return only inventory booked into accepted
+//       positive shells. A canonical seed-42, all-voxel receipt proves that a
+//       scenario with no authored Zn source never mints Zn across every finite
+//       control volume at every step. Pharmacolite's competition selector now
+//       converts analytical mass ppm to a disclosed dissolved-cation molar
+//       proxy rather than calling a mass ratio a cation share. All 48
+//       analytical Creative fields retain
+//       executable gameplay consumers. Köttigite is no longer used as a
+//       scoreboard sink: Ciesielczuk et al. (2020) corrects its selector from
+//       pH 6–8 to pH < 3 and the erythrite–köttigite solid solution replaces
+//       absolute Co/Ni trace blockers with a bounded molar dissolved-cation
+//       proxy (not a crystal-site calculation) and an evidence-bounded 5 mol%
+//       Ni ceiling. Bowell
+//       (2014) restricts Tsumeb köttigite to the third-zone Level 44 zinc
+//       pocket, so the authored first-stage gossan enforces a scenario-local
+//       exclusion rather than precipitating outside its locality envelope.
+//
+// v260 — Asbestos Hills BIF and tiger's-eye origin-model correction
+//       (August 2026). Retires the false claim that Heaney & Fisher (2003)
+//       established pseudomorphic replacement; their Geology paper instead
+//       argues for synchronous antitaxial quartz-crocidolite crack-seal
+//       growth. A paired scenario executes the competing field model of
+//       Gutzmer, Beukes & Cairncross (2004): an older crocidolite seam later
+//       silicified and oxidized near the planation surface, not a pseudomorph
+//       sensu stricto. Production nucleation requires grown active
+//       crocidolite for crack-seal or an accepted oxidative negative zone for
+//       surficial alteration. Bare wall, bare iron oxide, random substrate
+//       rolls, and cosmetic dissolved flags cannot unlock tiger's-eye. Both
+//       hypotheses ship as named real-locality scenarios with independent
+//       shape seeds (2003/2004) and seed-42 regressions. Creative mode gains
+//       the same origin selector plus a BIF host, and the renderer gains a
+//       dedicated chert/jasper/hematite/magnetite banded skin. Follow-up
+//       hostile review makes the physical BIF host mandatory, requires exact
+//       booked Na-Fe-Si substrate receipts, and fails unknown model ids closed.
+//       Later crack-seal oxidation is a cumulative zero-thickness Fe-state
+//       overprint whose O2 debit closes against a declared meteoric boundary;
+//       it never adds post-growth SiO2. Partial extent remains hawk's-eye and
+//       oxygen replenishment can complete the gold-brown state. HF is required
+//       for acid framework loss, and tiger iron requires a local exposed iron
+//       phase rather than distant hematite elsewhere in the vug.
+//
+// v261 — Fleet locality-envelope reconciliation (August 2026). Converts the
+//       passive claim-card "surprises" list into a strict, archived-strip
+//       science gate with deterministic/statistical/aspirational/excluded
+//       tiers and optional first-appearance windows. Bingham's step-85
+//       exhumation now drops the oxidized cap to shallow pressure and 35->25 C
+//       and permanently ends magmatic reheating, so supergene malachite cannot
+//       nucleate at the previous ~244 C artifact. The current district-wide
+//       Bisbee inventory removes unsupported Co/Ni loading and excludes
+//       amosite, arsenopyrite, millerite, realgar/pararealgar, erythrite,
+//       annabergite, and halite. Final drying no longer invents a 150 psu
+//       brine solely to force NaCl. Current archived products must now be
+//       explicitly classified or the fast locality audit fails CI. Shared
+//       beryl/corundum dispatchers now enforce the selected endmember's own
+//       exclusion, four-tier positive licence, paragenetic window, and causal
+//       event prerequisite. A bounded seed-1/2/42 receipt distinguishes truly
+//       stochastic products from deterministic and aspirational tiers. Claim
+//       cards/manifests are SHA-256-bound to their exact strip bytes, and absent
+//       rock pressure remains null in executed testimony rather than Number(null)=0.
+//       Three-seed evidence now distinguishes deterministic headline promises,
+//       deterministic accessories with retained rationales, genuinely stochastic
+//       products, and current aspirations. Wittichen's authored cooling movement
+//       reaches its step-170 exhumation boundary and ambient thermal pulses remain
+//       disabled, removing a ten-step false-reheating window that created late
+//       high-temperature accessory phases outside the scenario's paragenesis.
+//
+// v262 — Authored Cartesian cavity-shape reconciliation (August 2026).
+//       The default-off Marching Cubes scalar oracle now composes the exact
+//       seeded bubble union with the same construction-time elongation,
+//       cleft-lens, basin-collapse, and latitude-twist masks as WallMesh.
+//       Those masks are frozen after WallState construction so the baked
+//       radial cells and scalar cache cannot diverge through live mutation.
+//       The inherited longitude-only elongation is regularized as the smooth
+//       spherical quadrupole sin²(phi)·cos(2 theta): authored equatorial aspect
+//       ratios are preserved while both poles have one continuous limit.
+//       Canonical WallMesh pole caps now raycast the authored bubble union onto
+//       the same analytic zero set instead of sitting inside it by a lat-long
+//       half-step approximation. This changes tabular/cleft surface geometry
+//       and exact wall area, so the simulation identity and evidence fleet are
+//       deliberately rebaked rather than mislabeled as render-only.
+//
+// v263 — Atomic, mass/volume-balanced cavity evolution (August 2026).
+//       Carbonate-host dissolution is now one preview/commit transaction from
+//       pre-attack local pH and fractional full-surface crystal shielding,
+//       through physical-distance feeder flux, accepted formula extent, and
+//       cited standard-state calcite/dolomite molar volume, to the exact
+//       enclosed-volume change of the canonical Float32 WallMesh. One capacity
+//       authority drives an equivalent-sphere diameter; the old ring-0 erosion
+//       and longitude-column redistribution paths are removed. Every accepted
+//       change appends an immutable, digest-chained event with chemistry,
+//       exposure, inventory, target/achieved volume, renderer-quantization
+//       tolerance, and ordered sparse vertex deltas. Replay authenticates a
+//       ledger prefix; state fingerprints include both the chain and all wall
+//       depths. The Cartesian shadow field projects that replayable evolution
+//       continuously across theta seams and pole caps, but remains explicitly
+//       star-shaped and default-off pending exact 3-D crystal clipping,
+//       topology-independent anchors, production materials, and performance
+//       promotion. This closes only formula extent versus crystalline
+//       standard-state solid volume per 1 kg solvent reference—not actual
+//       cavity fluid mass, P-T-dependent rock volume, bulk phase fraction,
+//       porosity, Fe/Mn, charge, energy, or spatial solute transport.
+//       Deposition is deferred until a named phase and stoichiometric aqueous
+//       withdrawal can share the same transaction.
+//       Hostile-review correction pins the USGS values to their actual 26 C
+//       table reference and records the reported +/-0.015 (calcite) and
+//       +/-0.029 cm3/mol (dolomite) uncertainty. Append/load now enforce the
+//       depth chain plus extent-volume, residual, capacity, and derived-
+//       diameter identities before exposing a ledger. Replay catches any
+//       projection mismatch and remains on canonical WallMesh. Creative
+//       diameter, thickness, and host composition are executable pre-run
+//       authoring controls; after history begins they lock instead of
+//       rewriting capacity or host inventory retroactively.
+//       Evidence receipt: the Node-only science rebake passed all 41 scenarios
+//       at seeds 1, 2, and 42 with 236 provenance citations, zero unclassified
+//       locality results, zero locality-envelope violations, and 40 focused
+//       science tests. The complete automated workflow passed 212 test files
+//       across 43 strictly sequential batches; one test thread, file
+//       parallelism disabled, 2 GB RSS ceiling, observed maximum 1.704 GB.
+//       Seed-42 browser QA passed Sweetwater at 1280x720 and 390x844 with zero
+//       horizontal overflow, controls in bounds, wall and formation explanation
+//       visible, and no page warning or error. The AI “Dr. Michael Wise”
+//       hostile-review role returned the exact verdict SATISFIED after the four
+//       corrections above. This records an AI role, not review by the real
+//       scientist or Smithsonian. Marching Cubes remains default-off pending
+//       the separately listed production-promotion gates.
+//
+// v264 — Topology-independent cavity surface anchors (August 2026).
+//       Every newly nucleated crystal now records a physical millimetre
+//       position, void-facing local normal, authenticated triangle and
+//       barycentric source receipt, and a separately named nearest-WallMesh
+//       chemistry projection. WallMesh and the default-off Marching Cubes
+//       extraction emit the same `cavity-surface-anchor-v1` contract; field
+//       anchors additionally commit to scalar signature, immutable snapshot
+//       digest, buffer digest, isovalue, and source field cell. Deterministic
+//       closest-triangle remapping survives re-extraction without treating a
+//       transient triangle index as identity. Legacy ring/cell fixtures upgrade
+//       only at the WallState boundary and are never emitted by new crystals.
+//       Local fluid, temperature, water state, competition, and voxel access
+//       now request the chemistry projection explicitly; renderer transforms,
+//       morphology, hit-test keys, command fingerprints, and strip testimony
+//       consume physical anchor identity. Crystal occupancy and local-fill
+//       volume now spread over shortest-path WallMesh footprints and exact
+//       per-vertex triangle areas instead of a same-latitude slice and
+//       mean-sphere wedge. That scientific correction can change shielding,
+//       crowding, dissolution, and subsequent paragenesis, so v264 is a real
+//       simulation-identity bump with an automated evidence rebake.
+//       Architecture-level nucleation filters also resolve the actual local
+//       void-facing surface normal at the selected cell. This prevents a
+//       rough cleft-face ring from admitting a physically rim-facing patch;
+//       per-vertex and feeder-weighted joint samplers use the same filter.
+//       The correction intentionally changes seed-42 cleft placement and is
+//       included in the v264 digest/evidence rather than hidden as UI drift.
+//       Local browser QA also caught and repaired a narrow-screen playback
+//       defect: at <=600px the narrative and inventory now stack at full width
+//       instead of collapsing the narrative beside a 100%-wide inventory.
+//       Hostile review tightened the receipt before closure: validation now
+//       proves every source digest, reconstructed point/normal, nearest
+//       chemistry vertex, and position-derived scalar cell; regridding never
+//       reuses an old grid-frame tuple. Derived live remaps are WeakMap-cached
+//       without rewriting birth history, and surface-fabric overlap keys pair
+//       the authenticated source signature with the triangle index. These
+//       Provider commands and replay frames also preserve the exact field,
+//       evolution cursor, shape, tessellation, and renderer authority. Failed
+//       authentication is withheld explicitly rather than rendered through a
+//       plausible WallMesh substitute. These rules are represented by
+//       surface-anchor digest v6. Host overgrowths retain the host's immutable
+//       physical attachment instead of reconstructing it from the shared
+//       chemistry voxel, and historical helper calls bind field + surface to
+//       one explicit ledger cursor. Canonical evidence is timestamp-free and
+//       binds exact dist/browser bytes, fetched science data, producer
+//       contracts, and every published artifact through a clean-clone receipt.
+// v265 (August 2026): production Cartesian cavity transactions now preflight
+// and book the exact closed Freudenthal surface volume on one immutable 48^3
+// world frame, with independent 64^3 convergence and replay/provider receipts.
+// Water state is an actual millimetre height above the authenticated current
+// cavity floor. Legacy ring events convert at the WallState boundary;
+// spherical chemistry bands, extracted-wall tint, the field-clipped water
+// interface, deterministic fingerprints, and replay all consume that one
+// physical state. This changes vadose reaction history and therefore requires
+// a real simulation/evidence identity bump.
+// v266 (August 2026): the fixed Cartesian cavity is now constructor-time
+// production authority for every scenario and Creative run, before legacy
+// water conversion, chemistry binding, or nucleation. The exact extracted
+// volume—not WallMesh—initializes capacity and remains the atomic dissolution
+// ledger authority. Creative diameter edits uniformly scale authored geometry,
+// preserve physical water fraction, and recommission contract, ledger,
+// provider, chemistry, and replay histories as one rollback-capable action.
+// Arbitrary-resolution/isovalue and WallMesh provider commands are rejected
+// without changing command history or fingerprints; the old production-enable
+// command is an idempotent compatibility no-op. Commissioning uses one analytic
+// fixed-frame 48^3 extraction plus its independent 64^3 convergence reference,
+// with exact immutable-contract reuse across repeated runs of the same authored
+// shape. The acceptance corpus covers all 41 scenario shape_seed values and a
+// deterministic stratification of the full Creative architecture/bubble/seed/
+// diameter domain. This changes capacity, anchoring, surface fabrics, water,
+// dissolution, and downstream paragenesis, so all v266 evidence is rebaked.
+// v267 (August 2026): cavity sealing is now a repeatable physical transition,
+// not a lifetime UI latch. If accepted dissolution restores more than 5% of
+// the authenticated cavity volume, `_vug_sealed` re-arms immediately; a later
+// same-step or later-step refill can seal and testify again. The hysteresis
+// prevents numerical chatter at 100% while preserving dissolution/reseal
+// histories in saves and replay. Physical fill and idle inventory now count
+// every non-dissolved solid, including buried or world-record-capped crystals.
+// The authored size cap suppresses positive zones but leaves exposed solids
+// chemically available for later dissolution. Chalcanthite's special
+// water-solubility decay is booked through the local CuSO4 inventory ledger as
+// a real negative zone so chemistry, volume, length, width, and seal state move
+// together. A zero-volume fresh nucleus is likewise
+// never reported as an empty vug. These changes can alter deterministic
+// chemistry/replay/log output, so this is an explicit identity bump rather
+// than a silent patch inside v266 evidence.
+const SIM_VERSION = 267;
+
+// Human-auditable semantic identity for the load-bearing scientific choices.
+// SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
+// a saved recipe, strip, or machine-readable result used. Update it whenever
+// any token's meaning changes, even if a developer forgets a version bump—the
+// mismatch guards then fail loudly instead of allowing provenance drift.
+const MODEL_DIGEST = [
+  'Pfluid:kbar-0.001..4.4',
+  'Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1',
+  'aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5',
+  'aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1',
+  'aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2',
+  'CaCO3:Hacker05-negative-linear+/-1kbar',
+  'Prock:Pattison92-AndSil-16+/-3barC',
+  'stress:instant-resolved-shear-stable-grain-v2',
+  'event-fluid:absolute-replace-v1',
+  'carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2',
+  'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
+  'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
+  'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',
+  'surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4',
+  'surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7',
+  'cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4',
+  'cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v3',
+  'water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1',
+  'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
+  'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
+  'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
+  'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3',
+  'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
+  'sulphur-bank-HgS:zoned-association-not-S0-substrate-v1',
+  'wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4',
+  'solid-occupancy:all-nondissolved+positive-only-size-cap+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-local-CuSO4-decay-v2',
+  'cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2',
+  'sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2',
+  'calcite-Mn:manganocalcite-excess<1.2-v1',
+  'HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3',
+  'CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1',
+  'growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7',
+  'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',
+  'dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3',
+  'fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3',
+  'carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge-v2',
+  'engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3',
+  'beryl:K36-postHF-recovery-v1',
+  'halite:vadose-propensity0.8-v1',
+  'borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1',
+  'competition:accepted-axial-timescale+formula-weighted-budget+single-evaluation-full-fill-negative-v4',
+  'thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3',
+  'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
+  'scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite-v6',
+  'bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3',
+  'bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3',
+  'tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1',
+  'wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary-v2',
+  'weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2',
+  'cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2',
+  'koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3',
+  'roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3',
+  'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation+null-confining-pressure-v3',
+  'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
+  'transition-locality-exclusion:target-gated-v1',
+  'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2',
+  'save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+water-height+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v5',
+].join('|');
 

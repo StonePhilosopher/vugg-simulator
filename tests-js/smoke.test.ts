@@ -5,8 +5,12 @@ import { describe, expect, it } from 'vitest';
 import { scenarioNames } from './helpers';
 
 declare const SIM_VERSION: any;
+declare const MODEL_DIGEST: any;
 declare const MINERAL_SPEC: any;
 declare const MINERAL_ENGINES: any;
+declare const PARAMORPH_TRANSITIONS: any;
+declare const DEHYDRATION_TRANSITIONS: any;
+declare const LIGHT_TRANSITIONS: any;
 declare const SCENARIOS: any;
 declare const VugSimulator: any;
 declare const FluidChemistry: any;
@@ -16,6 +20,13 @@ describe('smoke — bundle loaded', () => {
     expect(typeof SIM_VERSION).toBe('number');
     expect(Number.isInteger(SIM_VERSION)).toBe(true);
     expect(SIM_VERSION).toBeGreaterThan(0);
+  });
+
+  it('scientific model identity is explicit and load-bearing', () => {
+    expect(typeof MODEL_DIGEST).toBe('string');
+    expect(MODEL_DIGEST).toContain('CaCO3:Hacker05');
+    expect(MODEL_DIGEST).toContain('Prock:Pattison92');
+    expect(MODEL_DIGEST).toContain('sphalerite-Ge:Belissont');
   });
 
   it('VugSimulator + FluidChemistry classes available', () => {
@@ -33,18 +44,28 @@ describe('smoke — bundle loaded', () => {
     expect(keys.length).toBeGreaterThan(80);
   });
 
-  it('every mineral in MINERAL_SPEC has an engine (hard requirement)', () => {
-    // One-directional: a spec entry without an engine means scenarios
-    // that summon that mineral will silently no-op — a real bug. The
+  it('every mineral in MINERAL_SPEC has a formation path (hard requirement)', () => {
+    // A spec entry needs either a primary nucleation/growth engine or an
+    // explicit transformation path. Transformation-only products such as
+    // pararealgar and the meta-autunite trio must not receive fictional
+    // primary engines merely to satisfy a registry-parity assertion. The
     // reverse direction (engines without spec) is a known longstanding
     // drift around the evaporite minerals (borax / halite / mirabilite
     // / thenardite / tincalconite have engines but no spec entry yet)
     // and is logged below as informational, not asserted.
     const specMinerals = new Set(Object.keys(MINERAL_SPEC));
     const engineMinerals = new Set(Object.keys(MINERAL_ENGINES));
-    const specsWithoutEngines: string[] = [];
-    for (const m of specMinerals) if (!engineMinerals.has(m)) specsWithoutEngines.push(m);
-    expect(specsWithoutEngines.sort()).toEqual([]);
+    const transitionProducts = new Set<string>();
+    for (const table of [PARAMORPH_TRANSITIONS, DEHYDRATION_TRANSITIONS, LIGHT_TRANSITIONS]) {
+      for (const transition of Object.values(table || {}) as any[]) {
+        if (Array.isArray(transition) && transition[0]) transitionProducts.add(transition[0]);
+      }
+    }
+    const specsWithoutFormationPath: string[] = [];
+    for (const m of specMinerals) {
+      if (!engineMinerals.has(m) && !transitionProducts.has(m)) specsWithoutFormationPath.push(m);
+    }
+    expect(specsWithoutFormationPath.sort()).toEqual([]);
   });
 
   it('engines without spec entries — informational, listed for visibility', () => {

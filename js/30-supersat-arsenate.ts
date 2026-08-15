@@ -75,8 +75,11 @@ const MINERAL_GATES_pharmacolite: MineralGates = {
   O2_min: 0.3,
   pH_min: 5.5, pH_max: 7.5,
   surface_energy: 'low',
-  _sources: ['pharmacolite engine v92+', 'research-pharmacolite.md'],
-  _notes: 'CaHAsO4·2H2O — Ca-only hydrated arsenate, five-element-vein supergene bloom (Jáchymov/Schneeberg/Cobalt-Ontario).',
+  _sources: [
+    'pharmacolite engine v92+',
+    'research/arcs/research-cation-sinks-orphan-solutes-2026-08-08.md',
+  ],
+  _notes: 'CaHAsO4·2H2O — Ca-only hydrated arsenate, five-element-vein supergene bloom (Jáchymov/Schneeberg/Cobalt-Ontario). SIM259 uses a calibrated dissolved-cation mole proxy across Ca/Cu/Pb/Zn/Co/Ni after mass-ppm conversion; it is not equilibrium arsenate allocation, speciation, or site occupancy.',
 };
 
 const MINERAL_GATES_conichalcite: MineralGates = {
@@ -137,10 +140,13 @@ const MINERAL_GATES_koettigite: MineralGates = {
   T_min: 5, T_max: 35, T_optimal: 20,
   fluid_min: { Zn: 50, As: 10 },
   O2_min: 0.5,
-  pH_min: 6.0, pH_max: 8.0,
+  pH_min: 0.0, pH_max: 3.0,
   surface_energy: 'low',
-  _sources: ['koettigite engine v97+'],
-  _notes: 'Zn3(AsO4)2·8H2O — vivianite-group Zn end (8 H2O fragile, hard T cap). Co > 10 or Ni > 10 suppress.',
+  _sources: [
+    'Ciesielczuk et al. 2020, Minerals 10, 548, doi:10.3390/min10060548',
+    'Hill 1979, American Mineralogist 64, 376–382',
+  ],
+  _notes: 'Zn3(AsO4)2·8H2O — acidic pH < 3 vivianite-group Zn end. A bounded dissolved-cation mole proxy (not a site-occupancy model) requires Zn majority; Co may substitute extensively, while Ni is capped at 5 mol% from type-material evidence.',
 };
 
 const MINERAL_GATES_duftite: MineralGates = {
@@ -164,6 +170,29 @@ const MINERAL_GATES_bayldonite: MineralGates = {
   _sources: ['bayldonite engine v97+'],
   _notes: 'PbCu3(AsO4)2(OH)2 — apple-green Cu-enriched Pb-Cu arsenate. Cu/Pb > 2 required.',
 };
+
+// Dissolved analytical fields are stored as mass ppm. Any comparison called a
+// cation fraction must therefore convert each field to amount of substance.
+// This remains a calibrated competition proxy, not an equilibrium speciation
+// or arsenate-allocation model.
+const ARSENATE_COMPETITION_CATION_MOLAR_MASS_G_MOL: Record<string, number> = {
+  Ca: 40.078,
+  Cu: 63.546,
+  Pb: 207.2,
+  Zn: 65.38,
+  Co: 58.933,
+  Ni: 58.693,
+};
+
+function arsenateCompetingCationMolarFraction(fluid: any, target: string): number {
+  const moles = Object.fromEntries(Object.entries(ARSENATE_COMPETITION_CATION_MOLAR_MASS_G_MOL)
+    .map(([element, molarMass]) => [
+      element,
+      Math.max(0, Number(fluid?.[element]) || 0) / molarMass,
+    ]));
+  const total = Object.values(moles).reduce((sum, value) => sum + Number(value), 0);
+  return total > 0 ? (Number(moles[target]) || 0) / total : 0;
+}
 
 Object.assign(VugConditions.prototype, {
   supersaturation_olivenite() {
@@ -293,8 +322,8 @@ Object.assign(VugConditions.prototype, {
   // Jáchymov/Schneeberg/Cobalt-Ontario silver-cobalt-arsenic-district
   // weathering bloom; forms when arsenic-rich primary phases (cobaltite,
   // nickeline, native_arsenic, arsenopyrite) oxidize in carbonate-
-  // buffered groundwater that supplies Ca. Per research-pharmacolite.md
-  // (boss canonical 2026-05).
+  // buffered groundwater that supplies Ca. SIM259 calibration and audit:
+  // research/arcs/research-cation-sinks-orphan-solutes-2026-08-08.md.
   //
   // Cation anti-gates (research §Inhibiting elements): high Cu routes
   // to conichalcite, high Pb to mimetite, high Zn to adamite, high Co
@@ -321,17 +350,14 @@ Object.assign(VugConditions.prototype, {
   if (!arsenateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
   if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
-  // Cation-share gate: Ca must dominate the cation pool. The
-  // denominator includes the major competing cations from the
-  // arsenate-fork minerals. Pharmacolite gets the share of the
-  // arsenate budget proportional to its cation share.
-  const competing = this.fluid.Cu + this.fluid.Pb + this.fluid.Zn
-                  + this.fluid.Co + this.fluid.Ni;
-  const total_cations = this.fluid.Ca + competing;
-  const ca_fraction = this.fluid.Ca / total_cations;
-  if (ca_fraction < 0.3) return 0;  // strongly competed-out
-  // Note: the cation-share check above is a binary gate (block when
-  // Ca-share < 0.3). We do NOT multiply sigma by ca_fraction in
+  // Molar dissolved-cation competition proxy: convert mass ppm to moles
+  // before comparing Ca with the Cu/Pb/Zn/Co/Ni arsenate forks. The 0.3
+  // cutoff is a disclosed calibrated selector, not a claim that this ratio
+  // predicts equilibrium arsenate allocation or solid-site occupancy.
+  const caMolarFraction = arsenateCompetingCationMolarFraction(this.fluid, 'Ca');
+  if (caMolarFraction < 0.3) return 0;  // strongly competed-out
+  // Note: the molar-fraction check above is a binary gate. We do NOT
+  // multiply sigma by caMolarFraction in
   // addition — that double-dampened the engine in early calibration
   // (typical schneeberg-late chemistry gave sigma ~ 0.24, below the
   // 1.0 nucleation threshold). Now sigma scales on the absolute Ca/As
@@ -340,7 +366,7 @@ Object.assign(VugConditions.prototype, {
   const as_f = Math.min(as_v / 15, 2.5);
   const ox_f = arsenateRedoxFactor(this.fluid, 1.0, 2.0);
   let sigma = ca_f * as_f * ox_f;
-  if (ca_fraction >= 0.6) sigma *= 1.3;  // strong Ca-dominance bonus
+  if (caMolarFraction >= 0.6) sigma *= 1.3;  // strong Ca-dominance bonus
   const T = this.temperature;
   let T_factor;
   if (T >= 15 && T <= 35) T_factor = 1.2;
@@ -436,7 +462,7 @@ Object.assign(VugConditions.prototype, {
 // Gebhard 1999 paragenesis):
 //   austinite      Ca:Zn ~1:1, Cu < Zn (pH 6.5-8.0)
 //   legrandite     Zn-rich, Ca < 20 ppm, mildly acidic (pH 4.5-6.5)
-//   koettigite     Zn >> (Co+Ni), very damp, T < 35 (pH 6-8)
+//   koettigite     Zn-majority dissolved-cation proxy, acidic pH < 3, T < 35
 //   duftite        Pb:Cu near 1:1 (pH 5.5-7.5)
 //   bayldonite     Pb:Cu near 1:3 / Cu-enriched (pH 5-7)
 //
@@ -489,21 +515,35 @@ Object.assign(VugConditions.prototype, {
   },
 
   supersaturation_koettigite() {
-    // Zn3(AsO4)2·8H2O — vivianite group, Zn end-member. 8H2O fragile.
+    // Zn3(AsO4)2·8H2O — acidic vivianite-group Zn end-member.
+    // Ciesielczuk et al. (2020) place köttigite stability below pH 3 and
+    // document an extensive erythrite–köttigite solid solution. Hill (1979)
+    // found significant Co and Ni in type Schneeberg material. Accordingly,
+    // convert ppm mass to dissolved-cation moles before classifying the end
+    // member. This is a bounded solution-chemistry proxy, not a prediction of
+    // crystal-site occupancy; fluid-to-solid partition coefficients are not
+    // available here.
+    // Co participates in the documented broad erythrite-köttigite series. Ni
+    // is minor in type material (~0.14 apfu, 4.7% of M sites; Hill 1979), and
+    // Ciesielczuk et al. found no significant köttigite-Ni substitution, so
+    // bound Ni at 5 mol% rather than treating it like Co.
     const g = MINERAL_GATES_koettigite;
     const as_v = arsenateAvailablePpm(this.fluid);
     if (this.fluid.Zn < g.fluid_min!.Zn || as_v < g.fluid_min!.As) return 0;
     if (this.fluid.O2 < g.O2_min!) return 0;
     if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
-    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
-    if (this.fluid.Co > 10) return 0;  // erythrite wins
-    if (this.fluid.Ni > 10) return 0;  // annabergite wins
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH >= g.pH_max!) return 0;
+    const znMoles = this.fluid.Zn / 65.38;
+    const coMoles = this.fluid.Co / 58.933;
+    const niMoles = this.fluid.Ni / 58.693;
+    const dissolvedCationMoles = znMoles + coMoles + niMoles;
+    const znMolarFraction = znMoles / Math.max(dissolvedCationMoles, 1e-12);
+    const niMolarFraction = niMoles / Math.max(dissolvedCationMoles, 1e-12);
+    if (znMolarFraction <= 0.5) return 0;
+    if (niMolarFraction > 0.05) return 0;
     const zn_f = Math.min(this.fluid.Zn / 80.0, 2.0);
     const as_f = Math.min(as_v / 20.0, 1.8);
     let sigma = zn_f * as_f;
-    const pH = this.fluid.pH;
-    if (pH >= 6.5 && pH <= 7.5) sigma *= 1.3;
-    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 7.0) * 0.5);
     if (this.temperature > 25) sigma *= Math.max(0.3, 1.0 - (this.temperature - 25) * 0.07);
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'koettigite');
     return Math.max(sigma, 0);

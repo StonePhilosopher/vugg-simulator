@@ -1,0 +1,99 @@
+# CLAIM CARD — sicily_solfifera  (v252, seed 42, 200 steps)
+
+**Anchor:** Cianciana / Caltanissetta district, Agrigento province, Sicily — Solfifera Series (Messinian, 6-5.3 Ma). The canonical sedimentary BSR native-sulfur deposit. World's primary sulfur production center 1860s-1950s, when the Sicilian fields supplied ~80% of global elemental sulfur. Type for 'bacterial-mediated sedimentary sulfur' per Ziegenbalg et al. 2010.
+**Deposit:** Sedimentary native sulfur associated with anaerobic microbial sulfate reduction of Messinian gypsum and hydrocarbons. This is deliberately distinct from Sulphur Bank's oxic hot-spring interface: the vug inherits a separately sourced elemental-S reservoir produced over geological time in sulfur-bearing carbonate, while in-run BSR transfers sulfate to reduced sulfur and raises carbonate alkalinity. Mineable S° crystallizes with secondary carbonates in the Solfifera Series. Co-products: calcite cement, residual selenite, and celestine from gypsum-derived Sr trace.
+**Initial:** 30 °C, 0.001 kbar, wall=irregular
+**Model digest:** Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1|aragonite-selector:Mg+shallowP<=0.10kbar-spring+highPstable-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1
+**Scenario spec hash:** 1f2478de5e903807c88a5a46e0ebd155b7e8aa209b82e29d12e95010ae71eea7
+
+## Model boundary: calibrated growth budget
+  - Kind: calibrated stoichiometric axial-growth budget proxy
+  - Basis: 0.00008 mmol formula/kg solvent per accepted axial micrometre
+  - Preserves: formula mole ratios and exact closure of booked inventory on dissolution
+  - Limitation: not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume
+
+## Expectation contract
+**Deterministic (4):** native_sulfur, calcite, selenite, celestine
+**Statistical (0):** (none)
+**Aspirational (0):** (none)
+**Locality exclusions (0):** (none)
+
+**Cited sources:**
+  - Ziegenbalg S.B., Brunner B., Birgel D., Voigt M., Strauss H., Peckmann J. (2010) — Formation of secondary carbonates and native sulphur in sulphate-rich Messinian strata, Sicily. Sedimentary Geology 227: 37-50.
+  - Rouwendaal E.A. et al. (2025) — An Anaerobic Microbial Community Mediates Epigenetic Native Sulfur and Carbonate Formation During Replacement of Messinian Gypsum at Monte Palco, Sicily. Geobiology. doi:10.1111/gbi.70015.
+  - Manzi V., Lugli S., Roveri M., Schreiber B.C. (2009) — A new facies model for the Upper Gypsum of Sicily (Italy): chronological and palaeoenvironmental constraints. Sedimentology 56: 1937-1960.
+  - Garcia-Veigas J., Ortí F., Rosell L., Ayora C., Rouchy J.M., Lugli S. (1995) — The Messinian salt of the Mediterranean: geochemical study of the salt from the central Sicily basin. Bulletin Société Géologique de France 166: 699-710.
+  - Decima A., Wezel F.C. (1971) — Osservazioni sulle evaporiti messiniane della Sicilia centro-meridionale. Rivista Mineraria Siciliana 22 (130-132): 172-187.
+  - Aharon P. (2000) — Microbial processes and products fueled by hydrocarbons at submarine seeps. Microbial Sediments (Springer): 270-281. (Sulfur-isotope evidence for BSR in Sicilian Solfifera Series.)
+  - Wikipedia — Sicilian sulfur mining (history + production figures 1860-1950).
+
+## Paragenetic order as grown (4 species)
+| # | mineral | first step | nucleations | transformations | pathway |
+|--|--|--|--|--|--|
+| 1 | native_sulfur | 1 | 4 | 0 | nucleation |
+| 2 | celestine | 5 | 6 | 0 | nucleation |
+| 3 | selenite | 15 | 1 | 0 | nucleation |
+| 4 | calcite | 60 | 1 | 0 | nucleation |
+
+**Surprises (present but absent from all authored expectation tiers):** (none)
+**Deterministic no-shows:** (none)
+**Statistical no-shows (non-failing):** (none)
+**Aspirational no-shows (non-failing):** (none)
+**Excluded-locality appearances (failing):** (none)
+
+## Environment trajectory (first → last, [min,max])
+  - T: 29.528 → 29.528 °C  [29.528, 29.528]
+  - pH: 6.118 → 6.504   [6.008, 6.614]
+  - Eh: -192.126 → -192.126 mV  [-192.126, -192.126]
+  - salinity: 4.724 → 4.724 psu  [4.724, 4.724]
+  - O2: 0.039 → 0.039 mg/L  [0.039, 0.039]
+  - concentration: 0.984 → 0.984 ×  [0.984, 0.984]
+
+## Saturation drivers
+  - SI_calcite: -1.575 → 0.315  [-1.575, 0.315]
+  - SI_aragonite: -1.764 → 0.189  [-1.764, 0.189]
+  - SI_dolomite: -3.906 → -0.378  [-3.906, -0.378]
+  - SI_HMC: -2.709 → -0.819  [-2.709, -0.819]
+  - SI_siderite: -1.386 → 0.189  [-1.386, 0.252]
+  - SI_selenite: -0.063 → -0.378  [-8, 0.126]
+  - SI_anhydrite: -0.252 → -0.567  [-8, -0.063]
+  - SI_barite: -8 → -8  [-8, -8]
+  - SI_celestine: 0.378 → -0.063  [-8, 0.504]
+
+## Authored pressure/stress/phase context (claim, not run testimony)
+  - Fluid pressure: 0.001 kbar — cavity-fluid pressure; never silently substituted for rock pressure or differential stress
+  - Rock pressure: unspecified kbar — unspecified; metamorphic phase field is reported unconstrained
+  - Calcite/aragonite boundary: 2.953 kbar; secure aragonite=false
+  - Al2SiO5: unconstrained (nominal n/a) — Rock/confining pressure is not specified; fluid pressure cannot substitute for it.
+  - Gypsum/anhydrite pure-water boundary: 58.01 °C; initial a_w=0.997 ±0.010 (calibrated-proxy)
+  - Ksp pressure rule: reaction-specific SUPCRTBL delta-logK grid; bilinear only inside density and per-reaction temperature masks; no constant reaction-volume proxy
+    - calcite: reference-pressure; active=true; ΔlogK=0; At the 1-bar reference pressure; the generated pressure correction is zero.
+    - aragonite: reference-pressure; active=true; ΔlogK=0; At the 1-bar reference pressure; the generated pressure correction is zero.
+    - dolomite: reference-pressure; active=true; ΔlogK=0; At the 1-bar reference pressure; the generated pressure correction is zero.
+    - siderite: reference-pressure; active=true; ΔlogK=0; At the 1-bar reference pressure; the generated pressure correction is zero.
+    - rhodochrosite: reference-pressure; active=true; ΔlogK=0; At the 1-bar reference pressure; the generated pressure correction is zero.
+    - anhydrite: reference-pressure; active=true; ΔlogK=0; At the 1-bar reference pressure; the generated pressure correction is zero.
+    - barite: reference-pressure; active=true; ΔlogK=0; At the 1-bar reference pressure; the generated pressure correction is zero.
+    - celestine: reference-pressure; active=true; ΔlogK=0; At the 1-bar reference pressure; the generated pressure correction is zero.
+    - selenite: unsupported-reaction; active=false; ΔlogK=0; Gypsum is absent from the SUPCRTBL solid-species set; the Hardie water-activity/temperature phase selector remains active, but no Ksp pressure correction is fabricated.
+  - Differential stress: no authored stress event.
+
+## Executed pressure/stress/phase testimony (archived run)
+**Source:** archived executed run state; not reconstructed from scenario definition
+  - Fluid pressure: 0.001 → 0.001 kbar [0.001, 0.001], n=200
+  - Rock/confining pressure: 0 → 0 kbar [0, 0], n=200
+  - Temperature: 30 → 30 °C [30, 30], n=200
+  - Secure aragonite assessment: 0/200 executed steps; first={"boundary_kbar":2.95252654,"secure_aragonite":false}, last={"boundary_kbar":2.95252654,"secure_aragonite":false}
+  - Al2SiO5 executed phase counts: {"unconstrained":200}; first=unconstrained, last=unconstrained
+  - Executed stress: no stress event recorded by the run.
+  - Mineral transformations: none executed.
+  - Conserved carbonate boundary: not enabled for this archived run.
+
+## Scenario notes (author's own rationale)
+> Anchor: Sicilian Solfifera Series, Cianciana / Caltanissetta. Microbial sulfate reduction of Messinian gypsum and hydrocarbons produced secondary carbonate and native sulfur under anoxic conditions. Ziegenbalg et al. (2010) establish the microbial sulfate-reduction association; Rouwendaal et al. (2025) demonstrate that molecular O₂ is not required at Monte Palco. The simulator therefore carries inherited microbial S° separately from sulfate and sulfide instead of reusing the Sulphur Bank oxic-interface mechanism.
+
+> Engine mode: this scenario fires the BSR-near-surface peak of the v80 bimodal pH factor (peaks at 2.5 Sulphur-Bank-style and 6.0 Sicily-style). The pH = 6.0 initial condition is dead-center on the BSR peak. The engine's metal_sum ≤ 100 gate fits Sicilian fluid — Messinian marls are clean (metal_sum ≈ 25, dominated by trace Fe).
+
+> Co-product routes are evaluated, not asserted: SD-AOM transfers gypsum-derived sulfate to reduced sulfur and methane-derived DIC at a strict 1 C : 1 S molar ratio; the authoritative saturation/kinetic evaluators then decide whether calcite, residual selenite, celestine, or aragonite actually forms. Across the calibrated Sicily envelope, calcite records the methane-carbonate replacement route while residual sulfate remains available to gypsum and celestine.
+
+> Wall composition: 'limestone' — Sicily IS literally hosted in calcite/gypsum matrix. The Solfifera Series sits on the Trubi Formation (Pliocene pelagic chalk) and is interbedded with limestone marls. The wall's dissolve() releases Ca + CO₃ which models the actual gypsum/calcite matrix dissolution. reactivity = 0.5 keeps the buffer gentle so pH stays in the BSR window.

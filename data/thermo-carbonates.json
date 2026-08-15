@@ -49,6 +49,10 @@
       "Robie_Hemingway_1995": "Robie & Hemingway (1995) USGS Bull. 2131. Calorimetric standard.",
       "Bischoff_Mackenzie_Bishop_1987": "Bischoff, Mackenzie & Bishop (1987) Geochim. Cosmochim. Acta 51:1413-1423. Stabilities of synthetic magnesian calcites in aqueous solution: comparison with biogenic materials. (v146 prep correction: earlier entry listed authors as Bischoff-Bishop-Mackenzie and journal as Am. Mineral. 72:1316-1326 — both wrong per the published record. The one 1987 paper by these authors covers BOTH synthetic stability AND biogenic comparison, was in GCA, not Am. Min.)",
       "Morse_Mackenzie_1990": "Morse & Mackenzie (1990) Geochemistry of Sedimentary Carbonates, Elsevier. HMC chapter.",
+      "Busenberg_Plummer_1989": "Busenberg & Plummer (1989) Geochim. Cosmochim. Acta 53:1189-1208. Subregular thermodynamics of magnesian-calcite solid solutions.",
+      "Glynn_Reardon_1990": "Glynn & Reardon (1990) Am. J. Sci. 290:164-201. Solid-solution/aqueous-solution activity theory.",
+      "Mucci_1987": "Mucci (1987) Geochim. Cosmochim. Acta 51:1977-1984. Temperature dependence of Mg partitioning into calcite overgrowths.",
+      "Mucci_Morse_1983": "Mucci & Morse (1983) Geochim. Cosmochim. Acta 47:217-233. Mg and Sr incorporation into calcite overgrowths; D_Mg depends on parent Mg/Ca below the high-ratio plateau.",
       "Davis_2000": "Davis, Dove & De Yoreo (2000) Science 290:1134-1137. Mg poisoning of calcite step edges.",
       "Schindler_1978": "Schindler et al. (1978). Hydrozincite Ksp.",
       "Stronach_Sharpe_1996": "Stronach & Sharpe (1996). Cu-basic carbonates."
@@ -467,21 +471,24 @@
   "rosasite": {
     "formula": "(Cu,Zn)2(CO3)(OH)2",
     "thermodynamics": {
-      "deltaGf_kJ_mol": null,
+      "deltaGf_kJ_mol": -1100,
       "deltaHf_kJ_mol": null,
       "S_J_mol_K": null,
-      "logKsp_25C": null,
+      "logKsp_25C": -36.400,
       "logKsp_fit": {
-        "form": "estimated_from_endmembers",
-        "endmember_malachite_fraction": 0.5,
-        "endmember_smithsonite_fraction": 0.5,
-        "notes": "Variable composition between Cu and Zn endpoints; thermodynamic data tracks the dominant cation. For sim purposes, treat as malachite × (Cu fraction) + smithsonite × (Zn fraction) ideal mixture."
+        "form": "constant_25C_only",
+        "representative_stoichiometry": { "Cu": 1.3, "Zn": 0.7, "CO3": 1, "OH": 2 },
+        "reported_compositions": ["Cu1.16Zn0.84(CO3)(OH)2", "Cu1.4Zn0.6(CO3)(OH)2"],
+        "notes": "Alwan et al. (1980) report Ksp=3.98e-37 for natural rosasite; Kaluza et al. (2024) reproduce that value for two reported compositions. The simulator uses the midpoint Cu1.3Zn0.7 only for an observer calculation. No solid-solution activity model or temperature correction is claimed."
       },
-      "valid_T_range_C": [0, 100],
-      "sources": [],
-      "databases_agree": [],
-      "confidence_tier": "D",
-      "notes": "No direct thermodynamic data published. (Cu,Zn) mixed carbonate with continuous solid solution between rosasite (Cu-rich) and aurichalcite (Zn-rich). For Phase 1: treat as malachite-smithsonite ideal mixture, flag the mineral as tier-D in narrator footnotes. THIS IS A REAL DATABASE GAP — surface in audit report."
+      "valid_T_range_C": [25, 25],
+      "sources": [
+        "Alwan, Thomas & Williams (1980), Transition Metal Chemistry 5:3-5, doi:10.1007/BF01396855",
+        "Kaluza et al. (2024), Industrial & Engineering Chemistry Research 63:14333-14351, doi:10.1021/acs.iecr.4c01616"
+      ],
+      "databases_agree": ["Alwan1980", "Kaluza2024-literature-table"],
+      "confidence_tier": "C",
+      "notes": "A direct 25°C Ksp and sample-specific ΔGf (-1100 kJ/mol) exist, closing the former no-data Tier-D claim. Confidence remains C because rosasite is a variable-composition mixed Cu-Zn hydroxycarbonate and no defensible activity-composition or temperature model is implemented. The values are observer/provenance data only; nucleation remains the disclosed empirical composition/temperature gate."
     },
     "kinetics": {
       "rate_law": "calcite_pwp_scaled",
@@ -498,21 +505,29 @@
   "aurichalcite": {
     "formula": "(Zn,Cu)5(CO3)2(OH)6",
     "thermodynamics": {
-      "deltaGf_kJ_mol": null,
+      "deltaGf_kJ_mol": -2766,
       "deltaHf_kJ_mol": null,
       "S_J_mol_K": null,
-      "logKsp_25C": null,
+      "logKsp_25C": -76.16,
       "logKsp_fit": {
-        "form": "estimated_from_endmembers",
-        "endmember_hydrozincite_fraction": 0.7,
-        "endmember_malachite_fraction_pair": 0.3,
-        "notes": "Zn-dominant analog of rosasite. Approximate as hydrozincite-malachite mixture proportioned by cation ratio."
+        "form": "constant_25C_only",
+        "representative_stoichiometry": { "Zn": 2.9, "Cu": 2.1, "CO3": 2, "OH": 6 },
+        "reported_logKsp": {
+          "synthetic_Zn2.9Cu2.1_25C": -76.16,
+          "natural_Zn2.27Cu2.73_25C": -90.10,
+          "synthetic_Zn2.9Cu2.1_45C": -79.05,
+          "synthetic_Zn2.9Cu2.1_65C": -82.19
+        },
+        "notes": "Kaluza et al. (2024) fitted logKsp=-76.16 at 25°C for synthetic Zn2.9Cu2.1 aurichalcite and found strong temperature/model dependence; their literature table gives -90.10 for a different natural composition from Alwan et al. (1980). The simulator exposes the 2024 Zn-rich composition as an observer with a conflict warning, never as an engine constant."
       },
-      "valid_T_range_C": [0, 100],
-      "sources": [],
-      "databases_agree": [],
-      "confidence_tier": "D",
-      "notes": "No direct thermodynamic data. Variable composition. Continuous solid solution with rosasite on the Zn-rich end. For Phase 1: treat as hydrozincite-dominant mixture. ANOTHER REAL DATABASE GAP — surface in audit report."
+      "valid_T_range_C": [25, 65],
+      "sources": [
+        "Alwan, Thomas & Williams (1980), Transition Metal Chemistry 5:3-5, doi:10.1007/BF01396855",
+        "Kaluza et al. (2024), Industrial & Engineering Chemistry Research 63:14333-14351, doi:10.1021/acs.iecr.4c01616"
+      ],
+      "databases_agree": ["CONFLICT: composition/model-dependent spread of about 14 log units at 25C"],
+      "confidence_tier": "C",
+      "notes": "Direct measurements and a sample-specific ΔGf (-2766 kJ/mol) now exist, closing the former no-data Tier-D claim, but they are not interchangeable: composition and the aqueous speciation/activity model dominate the fitted Ksp. The 25°C synthetic Zn2.9Cu2.1 value is observer-only and is explicitly labelled a disputed composition-specific proxy. The empirical engine remains active until a solid-solution model is validated."
     },
     "kinetics": {
       "rate_law": "calcite_pwp_scaled",
@@ -534,17 +549,25 @@
       "S_J_mol_K": null,
       "logKsp_25C": "function_of_mg_content",
       "logKsp_fit": {
-        "form": "mg_content_linear",
-        "logKsp_at_x0": -8.48,
-        "delta_logKsp_per_mol_pct_Mg": 0.10,
+        "form": "subregular_calcite_disordered_dolomite",
+        "components": ["calcite", "Ca0.5Mg0.5CO3"],
+        "guggenheim_kJ_mol": [12.593, 4.70],
+        "guggenheim_nondimensional_25C": [5.08, 1.90],
+        "miscibility_gap_component2_25C": [0.0428, 0.9991],
+        "partition_DMg_temperature_anchors": [[5, 0.0121], [25, 0.0172], [40, 0.0271]],
+        "partition_DMg_high_ratio_25C": 0.0123,
+        "partition_composition_domains": {
+          "standard_seawater_proxy": { "molar_Mg_Ca": [4.5, 6.0], "salinity_per_mil": [30, 40], "temperature_C": [5, 40] },
+          "high_ratio_plateau_25C": { "molar_Mg_Ca": [7.5, 20.0], "salinity_per_mil": [30, 40], "temperature_C": 25 }
+        },
         "valid_mg_content_range": [0.0, 0.30],
-        "notes": "Mg substitution destabilizes the calcite lattice → Ksp increases ~0.1 log unit per mol-% Mg incorporated. At x=0.05 (5% Mg): logKsp ≈ -8.0. At x=0.30 (30% Mg): logKsp ≈ -5.5 (approaching disordered dolomite stability)."
+        "notes": "Nonideal component activities follow the 25 C PHREEQC/Glynn subregular calcite-Ca0.5Mg0.5CO3 example. Its documented 25 C miscibility gap contains the promoted HMC range, so this is a metastable fixed-composition kinetic saturation screen, never a stable-equilibrium claim. Away from 25 C, holding the dimensional interaction parameters constant and dividing by RT is explicitly a bounded activity-model extrapolation. Mucci's temperature series is applied only to a standard-seawater ratio+salinity proxy; the separate Mucci-Morse high-Mg/Ca plateau is restricted to the measured molar Mg/Ca 7.5-20, seawater-like solution matrix, and 25 C. Other parent fluids return unsupported instead of extrapolating."
       },
       "valid_T_range_C": [0, 60],
-      "sources": ["Bischoff_Mackenzie_Bishop_1987", "Morse_Mackenzie_1990"],
+      "sources": ["Busenberg_Plummer_1989", "Glynn_Reardon_1990", "Mucci_1987", "Mucci_Morse_1983", "Bischoff_Mackenzie_Bishop_1987", "Morse_Mackenzie_1990"],
       "databases_agree": [],
       "confidence_tier": "B",
-      "notes": "HMC is a continuum, not a discrete phase. Mg content x is per-crystal state (crystal.mg_content). Ksp scales linearly with mol-% Mg over the valid range. Above x=0.30, structure tilts toward dolomite. Bischoff, Mackenzie & Bishop 1987 (GCA 51:1413-1423) is the canonical synthesis-Mg-calcite solubility reference (it also covers biogenic comparison — one paper, two strands). Morse & Mackenzie 1990 'Geochemistry of Sedimentary Carbonates' (Elsevier Developments in Sedimentology 48) consolidates. NEW MINERAL — to be added to data/minerals.json via vugg-add-mineral in Week 11."
+      "notes": "HMC is a continuum, not a discrete pure phase. Each accepted zone records its Mg mole fraction, aqueous molar Mg/Ca, parent-fluid domain, solid component activities, and phase-stability status. The promoted activity calculation is a metastable fixed-composition branch inside the model's documented 25 C miscibility gap, used only as a kinetic saturation screen. Natural defect density and transport remain explicit uncertainties. The measured partition domains produce x below 0.30; higher-ratio parent fluids are unresolved rather than clipped into a fabricated HMC composition."
     },
     "kinetics": {
       "rate_law": "calcite_pwp_with_mg_inhibition",

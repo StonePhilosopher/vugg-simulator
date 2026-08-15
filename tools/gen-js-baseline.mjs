@@ -29,12 +29,38 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadSimBundle } from './_harness.mjs';
+import { evidenceBundleDigest } from './locality-frequency-checkpoint.mjs';
+import { nodeRuntimeDigest, producerContractDigest, runtimeExecutionDigest } from './evidence-runtime.mjs';
+import {
+  evidenceIdentity,
+  loadScenarioReceipt,
+  prepareEvidenceCheckpointDirectory,
+  scenarioReceipt,
+  scenarioSpecHash,
+  writeJsonAtomic,
+} from './scenario-evidence-checkpoint.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const BASELINES = path.join(ROOT, 'tests-js', 'baselines');
 
-const { SIM_VERSION, SCENARIOS, VugSimulator, setSeed } =
+const args = process.argv.slice(2);
+const fresh = args.includes('--fresh');
+for (const arg of args) {
+  if (arg !== '--fresh') throw new Error(`unknown argument: ${arg}`);
+}
+
+const { SIM_VERSION, MODEL_DIGEST, SCENARIOS, VugSimulator, setSeed } =
   await loadSimBundle({ toolName: 'gen-baseline' });
+const checkpointDir = prepareEvidenceCheckpointDirectory(ROOT, evidenceIdentity({
+  kind: 'seed42-baseline',
+  simVersion: SIM_VERSION,
+  modelDigest: MODEL_DIGEST,
+  bundleDigest: evidenceBundleDigest(ROOT),
+  executionDigest: runtimeExecutionDigest(ROOT),
+  producerDigest: producerContractDigest(ROOT, 'seed42-baseline'),
+  runtimeDigest: nodeRuntimeDigest(),
+  seed: 42,
+}), { fresh });
 
 // --- Run every scenario at seed 42 + summarize ---
 
@@ -66,17 +92,32 @@ function runScenario(name, seed = 42) {
   return sim;
 }
 
-const baseline = {};
 const names = Object.keys(SCENARIOS).sort();
+const outPath = path.join(BASELINES, `seed42_v${SIM_VERSION}.json`);
+const baseline = {};
 for (const name of names) {
+  const { defaultSteps } = SCENARIOS[name]();
+  const expected = {
+    id: name,
+    specHash: scenarioSpecHash(SCENARIOS[name]._json5_spec),
+    durationSteps: defaultSteps ?? 100,
+    seed: 42,
+  };
+  const checkpointPath = path.join(checkpointDir, `${name}.json`);
+  const checkpoint = loadScenarioReceipt(checkpointPath, expected);
+  if (checkpoint?.payload !== undefined) {
+    baseline[name] = checkpoint.payload;
+    const total = Object.values(baseline[name]).reduce((n, value) => n + Number(value.total || 0), 0);
+    console.log(`  ${name.padEnd(36)} ${String(total).padStart(3)} crystals, ${String(Object.keys(baseline[name]).length).padStart(2)} species [resumed]`);
+    continue;
+  }
   const sim = runScenario(name, 42);
   baseline[name] = summarize(sim);
+  writeJsonAtomic(checkpointPath, scenarioReceipt({ ...expected, payload: baseline[name] }));
   const total = sim.crystals.length;
   const minerals = Object.keys(baseline[name]).length;
   console.log(`  ${name.padEnd(36)} ${String(total).padStart(3)} crystals, ${String(minerals).padStart(2)} species`);
 }
 
-if (!fs.existsSync(BASELINES)) fs.mkdirSync(BASELINES, { recursive: true });
-const outPath = path.join(BASELINES, `seed42_v${SIM_VERSION}.json`);
-fs.writeFileSync(outPath, JSON.stringify(baseline, null, 2) + '\n');
+writeJsonAtomic(outPath, baseline);
 console.log(`\n[gen-baseline] wrote ${path.relative(ROOT, outPath)} (${names.length} scenarios)`);

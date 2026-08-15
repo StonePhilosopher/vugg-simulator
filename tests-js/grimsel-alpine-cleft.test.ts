@@ -41,7 +41,12 @@ function quartz42(): any[] {
   return sim ? sim.crystals.filter((c: any) => c.mineral === 'quartz') : [];
 }
 
-describe('Grimsel alpine-cleft smoky sceptre quartz (v206)', () => {
+// A current exact seed-42 run is intentionally retained because the compact
+// commissioning baseline records assemblage/frequency, not the internal
+// sceptre, gwindel, colour-centre, and Tessin morphology state asserted here.
+// The topology-independent cavity/thermal calculation measures about 20–30
+// minutes on the supported single-worker desktop path.
+describe('Grimsel alpine-cleft smoky sceptre quartz (v206)', { timeout: 3_600_000 }, () => {
   it('scenario is registered', () => {
     expect(SCENARIOS.grimsel_alpine_cleft).toBeTypeOf('function');
   });
@@ -99,8 +104,14 @@ describe('Grimsel alpine-cleft smoky sceptre quartz (v206)', () => {
   });
 
   it('TESSIN: cleft quartz carries the steep-rhombohedron face development', () => {
-    const tessin = quartz42().filter((c) => (c.dominant_forms || []).some((f: string) => f.includes('steep rhombohedron')));
+    const tessin = quartz42().filter((c) =>
+      (c.dominant_forms || []).some((f: string) => f.includes('{40-41}/{30-31}')),
+    );
     expect(tessin.length).toBeGreaterThan(0);
+    for (const crystal of tessin) {
+      expect(crystal.dominant_forms).toContain('steep {40-41}/{30-31} rhombohedra dominant');
+      expect(crystal.dominant_forms.join(' ')).not.toContain('z{011}');
+    }
   });
 
   it('every expects_species fires at seed 42', () => {

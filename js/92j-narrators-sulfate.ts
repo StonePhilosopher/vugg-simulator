@@ -14,24 +14,21 @@ Object.assign(VugSimulator.prototype, {
   _narrate_anglesite(c) {
   // Prose lives in narratives/anglesite.md.
   const parts = [`Anglesite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-  parts.push(narrative_blurb('anglesite') || 'PbSO₄ — orthorhombic lead sulfate, brilliant adamantine luster. Intermediate step in the galena → anglesite → cerussite oxidation sequence. Named for Anglesey, the Welsh island where the type specimens were found in the 1830s.');
+  parts.push(narrative_blurb('anglesite'));
   if ((c.position || '').includes('galena')) {
-    parts.push(narrative_variant('anglesite', 'on_galena') || 'This crystal grew directly on a dissolving galena — the classic pseudomorphic relationship.');
+    parts.push(narrative_variant('anglesite', 'on_galena'));
   }
   if (c.zones.some(z => (z.note || '').includes('→ cerussite'))) {
-    parts.push(narrative_variant('anglesite', 'converting_to_cerussite') || "Converting to cerussite.");
+    parts.push(narrative_variant('anglesite', 'converting_to_cerussite'));
   }
   if (c.dissolved) {
-    // dissolved-fallback shortened slightly to avoid ’ mismatch in fallback text
-    parts.push(narrative_variant('anglesite', 'dissolved') || 'The crystal has dissolved. If the pocket\u2019s chemistry continues to evolve the released Pb²⁺ will find a new home — cerussite if carbonate is present, pyromorphite if phosphate arrives.');
+    parts.push(narrative_variant('anglesite', 'dissolved'));
   }
   return parts.filter(p => p).join(' ');
 },
 
   _narrate_barite(c) {
-  // Prose lives in narratives/barite.md. JS narrator added in this
-  // commit to close a JS-side gap (Python had a narrator; JS dispatch
-  // would silently emit nothing for barite).
+  // Prose lives in narratives/barite.md; all habit branches are canonical here.
   const parts = [`Barite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
   parts.push(narrative_blurb('barite'));
   if (c.habit === 'tabular') parts.push(narrative_variant('barite', 'tabular'));
@@ -68,7 +65,11 @@ Object.assign(VugSimulator.prototype, {
   const parts = [`Anhydrite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
   parts.push(narrative_blurb('anhydrite'));
   if (c.habit === 'massive_granular') {
-    parts.push(narrative_variant('anhydrite', c.c_length_mm < 100 ? 'massive_granular_sabkha' : 'massive_granular_porphyry'));
+    if (c.c_length_mm < 100) {
+      parts.push(narrative_variant('anhydrite', 'massive_granular_sabkha'));
+    } else {
+      parts.push(narrative_variant('anhydrite', 'massive_granular_porphyry'));
+    }
   } else if (c.habit === 'prismatic') {
     parts.push(narrative_variant('anhydrite', 'prismatic'));
   } else if (c.habit === 'fibrous') {
@@ -165,54 +166,49 @@ Object.assign(VugSimulator.prototype, {
 },
 
   _narrate_selenite(c) {
-  // Prose lives in narratives/selenite.md. JS canonical with Python
-  // branches added (cathedral_blade habit, swallowtail_twin variant,
-  // dissolved variant). User direction 2026-04-30: keep JS poetry,
-  // fold Python branches on top.
+  // Prose lives in narratives/selenite.md, including cathedral-blade,
+  // swallowtail-twin, and dissolved variants.
   const parts = [`Selenite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-  parts.push(narrative_variant('selenite', 'epigraph') || 'The crystal that grows when everything else is ending.');
+  parts.push(narrative_variant('selenite', 'epigraph'));
   if (c.habit === 'rosette') {
-    parts.push(narrative_variant('selenite', 'rosette') || 'Desert rose form — lenticular plates radiating from a center, trapping sand between the blades. Not a flower, but a crystal that grew through sand, incorporating the ground into itself.');
+    parts.push(narrative_variant('selenite', 'rosette'));
   } else if (c.habit && c.habit.includes('fibrous')) {
-    parts.push(narrative_variant('selenite', 'fibrous') || "Satin spar habit — parallel fibers with a chatoyant sheen that catches light like cat's-eye. The crystals grew in a confined vein, forced into alignment by the narrow space.");
+    parts.push(narrative_variant('selenite', 'fibrous'));
   } else if (c.habit === 'cathedral_blade') {
     parts.push(narrative_variant('selenite', 'cathedral_blade'));
   } else {
-    parts.push(narrative_variant('selenite', 'blades_default', { mm: c.c_length_mm.toFixed(1) }) || `Transparent blades (${c.c_length_mm.toFixed(1)} mm) with perfect cleavage — so clear you can read through them. Selenite is named for Selene, the moon, for its soft pearly luster.`);
+    parts.push(narrative_variant('selenite', 'blades_default', { mm: c.c_length_mm.toFixed(1) }));
   }
   if (c.position.includes('pyrite') || c.position.includes('chalcopyrite')) {
-    parts.push(narrative_variant('selenite', 'on_sulfide') || 'It nucleated on an oxidized sulfide surface — the sulfur that once locked up iron now combines with calcium as sulfate. Gypsum is the gravestone of pyrite. The same sulfur, a different life.');
+    parts.push(narrative_variant('selenite', 'on_sulfide'));
   }
   if (c.twinned && (c.twin_law || '').includes('swallowtail')) {
-    parts.push(narrative_variant('selenite', 'swallowtail_twin', { twin_law: c.twin_law }) || `Swallow-tail twinned (${c.twin_law}) — two blades meeting at an acute angle, like a bird frozen in flight. One of the most recognizable twin forms in mineralogy.`);
+    parts.push(narrative_variant('selenite', 'swallowtail_twin', { twin_law: c.twin_law }));
   }
   if (c.c_length_mm > 10) {
-    parts.push(narrative_variant('selenite', 'giant_naica') || 'Large selenite crystals are among the biggest in nature — the Cave of Crystals in Naica, Mexico holds selenite beams 11 meters long, grown over 500,000 years in water just 2°C above saturation. Patience beyond patience.');
+    parts.push(narrative_variant('selenite', 'giant_naica'));
   }
   // Hourglass selenite — clay/sand/iron trapped on the low-T fast-growing sectors
   // (js/45 _seleniteHourglassParams; render js/99i). The Great Salt Plains signature.
   if (c._sectorZoned && c._sectorZoned.kind === 'gypsum_hourglass') {
     const hg = c._sectorZoned;
     if (hg.flooded) {
-      parts.push(narrative_variant('selenite', 'hourglass_flooded') || 'Sediment-flooded — clay, sand, and iron oxide swept into the growing crystal so densely that later overgrowth buried the interior in solid reddish-to-chocolate brown. The hourglass is still in there, lost under the flood. The Great Salt Plains way: a crystal grown through wet, iron-stained soil.');
+      parts.push(narrative_variant('selenite', 'hourglass_flooded'));
     } else {
-      parts.push(narrative_variant('selenite', 'hourglass') || 'An hourglass inside the blade — fine clay and sand, stained amber by soil iron oxide, trapped on the fast-growing terminal sectors as a sandglass of inclusions pinched at the waist. The signature of the Great Salt Plains of Oklahoma, the only place on Earth selenite grows this way. The interior records which faces were growing, and keeps that order even as the outer shape changes.');
+      parts.push(narrative_variant('selenite', 'hourglass'));
     }
     if (hg.steps >= 2) {
-      parts.push(narrative_variant('selenite', 'hourglass_stepped') || 'It grew in pulses — flood and evaporation, season after season — so the blade steps down toward its tip in terraces, like a stepped pyramid, while the hourglass within holds its ordered shape through every step.');
+      parts.push(narrative_variant('selenite', 'hourglass_stepped'));
     }
   }
   if (c.dissolved) {
     parts.push(narrative_variant('selenite', 'dissolved'));
   }
-  parts.push(narrative_variant('selenite', 'epilogue_tail') || "Selenite forms in the last stage of a vug's life — when the fluid cools, the sulfides oxidize, and the water begins to evaporate. It is the epilogue crystal.");
+  parts.push(narrative_variant('selenite', 'epilogue_tail'));
   return parts.filter(p => p).join(' ');
 },
 
-  // Tier 1 A port (post-v69): mirabilite + thenardite were on the
-  // BACKLOG.md L34 list of 5 unported narrators after the Python tree
-  // deletion 2026-05-07. Authored fresh from data/minerals.json
-  // descriptions. The pair share a chemistry (Na₂SO₄) and a phase
+  // Mirabilite and thenardite share a chemistry (Na₂SO₄) and a phase
   // boundary at 32.4°C — narrators reference each other where the
   // paramorph relationship matters.
   _narrate_mirabilite(c) {

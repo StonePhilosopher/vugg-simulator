@@ -71,15 +71,33 @@ function applyParamorphTransitions(crystal, T, step) {
 // per the Handbook of Mineralogy "Formed by dehydration of pharmacolite"
 // citation. Threshold 30 steps matches pharmacolite's efflorescent
 // reputation (between borax's 25 and the autunite-group's 40). T_max
-// 80°C is the documented onset of dehydration (research-pharmacolite.md).
+// 80°C is the documented onset of dehydration; provenance reconciled in
+// research/arcs/research-cation-sinks-orphan-solutes-2026-08-08.md.
 const DEHYDRATION_TRANSITIONS = {
-  borax: ['tincalconite', 25, 1.5, 75.0],
+  // Pure Na2B4O7-H2O transition: 60.8 C. A halite-saturated
+  // NaCl-Na2B4O7 solution lowers it to 39.6 C (Bowser 1964; Christ,
+  // Truesdell & Jones 1967). The saturated-brine branch is selected
+  // explicitly below rather than inventing an unsupported continuous
+  // salt-composition polynomial.
+  borax: ['tincalconite', 25, 1.5, 60.8],
   mirabilite: ['thenardite', 30, 1.5, 32.4],
   autunite: ['meta-autunite', 40, 1.0, 80.0],
   torbernite: ['metatorbernite', 40, 1.0, 75.0],
   zeunerite: ['metazeunerite', 40, 1.0, 75.0],
   pharmacolite: ['haidingerite', 30, 1.0, 80.0],
 };
+
+const BORAX_TINCALCONITE_SALINE_TRANSITION_C = 39.6;
+const BORAX_TINCALCONITE_HALITE_SATURATION_SW_MULT = 10.6;
+
+function boraxTincalconiteHeatThreshold(ringFluid) {
+  const concentration = Math.max(0, Number(ringFluid?.concentration) || 1.0);
+  const salinity = Math.max(0, Number(ringFluid?.salinity) || 0.0);
+  const brineStrength = (salinity / 35.0) * concentration;
+  return brineStrength >= BORAX_TINCALCONITE_HALITE_SATURATION_SW_MULT
+    ? BORAX_TINCALCONITE_SALINE_TRANSITION_C
+    : DEHYDRATION_TRANSITIONS.borax[3];
+}
 
 function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step) {
   // v28: convert a hydrated mineral in place when its host ring has
@@ -91,7 +109,10 @@ function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step
   const spec = DEHYDRATION_TRANSITIONS[crystal.mineral];
   if (!spec) return null;
   const [newMineral, thresholdSteps, concMin, Tmax] = spec;
-  const isHot = T >= Tmax;
+  const heatThreshold = crystal.mineral === 'borax'
+    ? boraxTincalconiteHeatThreshold(ringFluid)
+    : Tmax;
+  const isHot = T >= heatThreshold;
   let isDry;
   if (ringWaterState === 'vadose') isDry = true;
   else if (ringWaterState === 'meniscus') isDry = ringFluid.concentration >= concMin;
@@ -102,6 +123,8 @@ function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step
       crystal.mineral = newMineral;
       crystal.paramorph_origin = old;
       if (step != null) crystal.paramorph_step = step;
+      crystal.dehydration_driver = 'temperature';
+      crystal.dehydration_threshold_C = heatThreshold;
       return [old, newMineral];
     }
     return null;
@@ -113,10 +136,208 @@ function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step
       crystal.mineral = newMineral;
       crystal.paramorph_origin = old;
       if (step != null) crystal.paramorph_step = step;
+      crystal.dehydration_driver = 'dry-exposure';
       return [old, newMineral];
     }
   }
   return null;
+}
+
+// ============================================================
+// CaSO4 DISSOLUTION-REPRECIPITATION REPLACEMENT
+// ============================================================
+
+const GYPSUM_MOLAR_VOLUME_CM3_MOL = 73.9;
+const ANHYDRITE_MOLAR_VOLUME_CM3_MOL = 46.1;
+
+type CaSO4PhaseTransitionRecord = {
+  step: number | null;
+  from: 'selenite' | 'anhydrite';
+  to: 'selenite' | 'anhydrite';
+  driver: 'gypsum-to-anhydrite-replacement' | 'anhydrite-rehydration';
+  waterTransferMmolKg: number;
+  formulaAmountMmolKg: number;
+  boundaryC: number;
+  uncertaintyC: number;
+  waterActivity: number;
+  sourceSI: number;
+  productSI: number;
+  caBeforePpm: number;
+  caAfterPpm: number;
+  sulfateBeforePpm: number;
+  sulfateAfterPpm: number;
+};
+
+// Replacement preserves the existing external envelope and every booked Ca/S
+// shell. Structural water is tracked separately: positive means released to
+// solvent, negative means consumed from solvent. The formula amount uses the
+// same disclosed axial mmol/kg proxy as the growth ledger.
+function applyCaSO4PhaseTransition(
+  crystal: any,
+  fluid: any,
+  temperatureC: number,
+  fluidPressureKbar: number,
+  step: number | null,
+): CaSO4PhaseTransitionRecord | null {
+  if (!crystal?.active || crystal.dissolved) return null;
+  if (crystal.mineral !== 'selenite' && crystal.mineral !== 'anhydrite') return null;
+  if (!(Number(crystal.total_growth_um) > 0)) return null;
+
+  const evaluation = evaluateCaSO4System(fluid, temperatureC, fluidPressureKbar);
+  const from = crystal.mineral as 'selenite' | 'anhydrite';
+  const to = from === 'selenite' ? 'anhydrite' : 'selenite';
+  const admissible = from === 'selenite'
+    ? evaluation.gypsumToAnhydriteAdmissible
+    : evaluation.anhydriteToGypsumAdmissible;
+  if (!admissible) return null;
+
+  const sulfateBeforePpm = typeof sulfateAvailablePpm === 'function'
+    ? sulfateAvailablePpm(fluid, temperatureC)
+    : Math.max(0, Number(fluid?.S) || 0);
+  const caBeforePpm = Math.max(0, Number(fluid?.Ca) || 0);
+  const formulaAmountMmolKg = Number(crystal.total_growth_um)
+    * STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM;
+  const waterTransferMmolKg = (from === 'selenite' ? 2 : -2) * formulaAmountMmolKg;
+
+  crystal.mineral = to;
+  // Compatibility fields keep old saves/replay consumers functional. This is
+  // explicitly a replacement, not asserted to be a solid-state paramorph.
+  crystal.paramorph_origin = from;
+  if (step != null) crystal.paramorph_step = step;
+  crystal.phase_transition_origin = from;
+  crystal.phase_transition_step = step;
+  crystal.phase_transition_driver = from === 'selenite'
+    ? 'gypsum-to-anhydrite-replacement'
+    : 'anhydrite-rehydration';
+  crystal._ca_so4_hydration_water_mmolkg =
+    Number(crystal._ca_so4_hydration_water_mmolkg || 0) + waterTransferMmolKg;
+  crystal._ca_so4_solid_volume_ratio = to === 'anhydrite'
+    ? ANHYDRITE_MOLAR_VOLUME_CM3_MOL / GYPSUM_MOLAR_VOLUME_CM3_MOL
+    : 1;
+  crystal._ca_so4_replacement_porosity_fraction = to === 'anhydrite'
+    ? 1 - crystal._ca_so4_solid_volume_ratio
+    : 0;
+  crystal._ca_so4_pseudomorphic_envelope_preserved = true;
+
+  const record: CaSO4PhaseTransitionRecord = {
+    step,
+    from,
+    to,
+    driver: crystal.phase_transition_driver,
+    waterTransferMmolKg,
+    formulaAmountMmolKg,
+    boundaryC: evaluation.phase.boundaryC,
+    uncertaintyC: evaluation.phase.uncertaintyC,
+    waterActivity: evaluation.phase.waterActivity.value,
+    sourceSI: from === 'selenite' ? evaluation.gypsumSI : evaluation.anhydriteSI,
+    productSI: to === 'selenite' ? evaluation.gypsumSI : evaluation.anhydriteSI,
+    caBeforePpm,
+    caAfterPpm: Math.max(0, Number(fluid?.Ca) || 0),
+    sulfateBeforePpm,
+    sulfateAfterPpm: typeof sulfateAvailablePpm === 'function'
+      ? sulfateAvailablePpm(fluid, temperatureC)
+      : Math.max(0, Number(fluid?.S) || 0),
+  };
+  (crystal.phase_transition_history ||= []).push(record);
+  return record;
+}
+
+// ============================================================
+// BIRNESSITE -> TODOROKITE Mg-EXCHANGE / TUNNEL TRANSFORMATION
+// ============================================================
+
+const MN_ATOMIC_MASS_G_MOL = 54.938044;
+const MG_ATOMIC_MASS_G_MOL = 24.305;
+const TODOROKITE_MG_MASS_PER_MN_MASS = MG_ATOMIC_MASS_G_MOL / (6 * MN_ATOMIC_MASS_G_MOL);
+
+function applyBirnessiteTodorokiteTransition(
+  crystal: any,
+  fluid: any,
+  temperatureC: number,
+  step: number | null,
+): any | null {
+  if (!crystal?.active || crystal.dissolved || crystal.mineral !== 'birnessite') return null;
+  if (!(Number(crystal.total_growth_um) > 0)) return null;
+  if (temperatureC < MINERAL_GATES_todorokite.T_min!
+      || temperatureC > MINERAL_GATES_todorokite.T_max!) return null;
+
+  // Framework Mn is already in the accepted solid ledger. Preserve it rather
+  // than spending the fluid for a second crystal; only exchanged structural
+  // Mg is newly booked, at the 1 Mg : 6 Mn formula mass ratio.
+  const bookedMnPpm = remainingBookedInventory(crystal, 'Mn');
+  if (!(bookedMnPpm > 0)) return null;
+  const requiredMgPpm = bookedMnPpm * TODOROKITE_MG_MASS_PER_MN_MASS;
+  const mgBeforePpm = Math.max(0, Number(fluid?.Mg) || 0);
+  if (mgBeforePpm + 1e-12 < requiredMgPpm) return null;
+
+  for (const zone of (crystal.zones || [])) {
+    if (!(zone && Number(zone.thickness_um) > 0)) continue;
+    const remaining = Number.isFinite(Number(zone._remaining_solid_um))
+      ? Math.max(0, Number(zone._remaining_solid_um))
+      : Math.max(0, Number(zone.thickness_um) || 0);
+    if (!(remaining > 0)) continue;
+    const mnPerUm = Number(zone._budget_inventory_per_um?.Mn) || 0;
+    if (!(mnPerUm > 0)) continue;
+    zone._budget_inventory_per_um ||= {};
+    zone._budget_inventory_per_um.Mg = (Number(zone._budget_inventory_per_um.Mg) || 0)
+      + mnPerUm * TODOROKITE_MG_MASS_PER_MN_MASS;
+  }
+  fluid.Mg = Math.max(0, mgBeforePpm - requiredMgPpm);
+
+  const from = 'birnessite';
+  const to = 'todorokite';
+  crystal.mineral = to;
+  // Compatibility fields preserve replay and source-cap behavior. This is a
+  // solution-mediated layer-to-tunnel transformation, not a paramorph.
+  crystal.paramorph_origin = from;
+  if (step != null) crystal.paramorph_step = step;
+  crystal.phase_transition_origin = from;
+  crystal.phase_transition_step = step;
+  crystal.phase_transition_driver = 'Mg-exchanged-birnessite-to-todorokite';
+  crystal.habit = 'dendritic_mine_coating';
+  crystal.vector = 'coating';
+  crystal.dominant_forms = [
+    'wall-parallel branching mine dendrites',
+    '3x3 tunnel oxide after Mg exchange into a booked birnessite precursor',
+  ];
+  crystal.position = `in-place after birnessite #${crystal.crystal_id} (Mg-exchanged tunnel transformation)`;
+  crystal._todorokite_transition_mg_ppm = requiredMgPpm;
+
+  const record = {
+    step,
+    from,
+    to,
+    driver: crystal.phase_transition_driver,
+    bookedMnPreservedPpm: bookedMnPpm,
+    structuralMgBookedPpm: requiredMgPpm,
+    mgBeforePpm,
+    mgAfterPpm: fluid.Mg,
+    temperatureC,
+    modelBoundary: 'in-place booked-solid proxy for Mg exchange and layer-to-tunnel reorganization; structural water and Mn(III) ordering are not conserved state variables',
+  };
+  (crystal.phase_transition_history ||= []).push(record);
+  return record;
+}
+
+// Replay helper supports repeated sabkha hydration/dehydration cycles. Legacy
+// one-shot paramorph/dehydration records continue through the fallback.
+function mineralAtReplayStep(crystal: any, replayStep: number | null): string {
+  if (replayStep == null) return crystal.mineral;
+  const history = Array.isArray(crystal.phase_transition_history)
+    ? crystal.phase_transition_history
+    : [];
+  if (history.length) {
+    let mineral = history[0].from;
+    for (const transition of history) {
+      if (transition.step != null && replayStep >= transition.step) mineral = transition.to;
+    }
+    return mineral;
+  }
+  return crystal.paramorph_step != null
+    && replayStep < crystal.paramorph_step
+    && crystal.paramorph_origin
+    ? crystal.paramorph_origin
+    : crystal.mineral;
 }
 
 // ============================================================

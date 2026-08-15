@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * tools/twin-law-check.mjs — Tier 1 structural sanity check for twin_laws data.
  *

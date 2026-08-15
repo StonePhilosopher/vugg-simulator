@@ -32,7 +32,7 @@ declare const VugConditions: any;
 
 declare const CARBONATE_KSP_ACTIVE_PER_MINERAL: Record<string, boolean>;
 declare const kspSupersatActiveFor: (mineralId: string) => boolean;
-declare const carbonateOmega: (m: string, f: any, T: number) => number;
+declare const carbonateOmega: (m: string, f: any, T: number, mgContent?: number, pressureKbar?: number) => number;
 declare const dolomiteRate: (f: any, T: number, f_ord: number) => number;
 declare const pwpRateToSimMicronsPerStep: (m: string, mol: number) => number;
 
@@ -48,7 +48,7 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 10 — dolomite engine promotion (v145
     const f = new FluidChemistry({ Ca: 400, Mg: 800, CO3: 300, pH: 8.5 });
     const cond = new VugConditions({ temperature: 25, fluid: f });
     const sigma = cond.supersaturation_dolomite();
-    const omega = carbonateOmega('dolomite', f, 25);
+    const omega = carbonateOmega('dolomite', f, 25, 0, cond.pressure);
     expect(Number.isFinite(sigma)).toBe(true);
     expect(Number.isFinite(omega)).toBe(true);
     expect(sigma).toBeCloseTo(omega, 5);

@@ -63,7 +63,7 @@ function grow_scorodite(crystal, conditions, step) {
 
 function grow_pharmacolite(crystal, conditions, step) {
   // CaHAsO₄·2H₂O — monoclinic Ca-only hydrated arsenate. Per
-  // research-pharmacolite.md (boss canonical 2026-05). The
+    // research/arcs/research-cation-sinks-orphan-solutes-2026-08-08.md. The
   // diagnostic radiating/stellate acicular habit ("starbursts of
   // white needles") is the field marker; this engine builds toward
   // that habit when σ is high and falls back to powdery efflorescent
@@ -137,7 +137,7 @@ function grow_pharmacolite(crystal, conditions, step) {
     else if (pos.includes('nickeline')) habit_note += ' — alongside nickeline weathering products';
   }
 
-  // Mass balance: Ca + As consumed
+  // Growth budget: Ca + As consumed
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
   conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.012, 0);
 
@@ -211,7 +211,7 @@ function grow_conichalcite(crystal, conditions, step) {
     else if (pos.includes('native_copper')) habit_note += ' — alongside native copper';
   }
 
-  // Mass balance: Ca, Cu, As all consumed; OH from H2O/pH buffer.
+  // Growth budget: Ca, Cu, As all consumed; OH from H2O/pH buffer.
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
   conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.015, 0);
   conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.010, 0);
@@ -413,7 +413,7 @@ function grow_adamite(crystal, conditions, step) {
   else if (cuInCrystal > 0.1) colorNote = 'green (cuprian) — dimmed under UV';
   else colorNote = 'yellow-green — UV-FLUORESCENT lime-green 💚 (trace uranyl, the Mapimí classic)';
 
-  // Phase 1d: growth debits owned by the wrapper (applyMassBalance).
+  // Phase 1d: growth debits owned by the wrapper (applyStoichiometricGrowthBudget).
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe: conditions.fluid.Fe * 0.01, trace_Cu: cuInCrystal, note: `${crystal.habit}, ${colorNote}` });
 }
 
@@ -453,7 +453,7 @@ function grow_mimetite(crystal, conditions, step) {
   else if (conditions.fluid.Pb > 100) colorNote = 'bright yellow-orange';
   else colorNote = 'pale yellow';
 
-  // Phase 1d: growth debits owned by the wrapper (applyMassBalance).
+  // Phase 1d: growth debits owned by the wrapper (applyStoichiometricGrowthBudget).
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe: conditions.fluid.Fe * 0.02, note: `${crystal.habit}, ${colorNote}` });
 }
 

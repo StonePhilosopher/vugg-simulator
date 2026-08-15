@@ -1,0 +1,293 @@
+{
+  "scenario": "ultramafic_supergene",
+  "sim_version": 246,
+  "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-pressure+booked-transition+chemistry-competition-v4|surface-growth:mass-booked-area+lining+crust+asbestos+druse-representatives-v1|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "17ee765375feeacb7fb343e73cfb7d4bcc41d32cd6991a4f0f3171cf6cbf3f0a",
+  "strip_steps": 200,
+  "claim": {
+    "anchor": "Marlborough chrysoprase deposits, Queensland, Australia — Ni-laterite weathering of Late-Devonian Marlborough Block ophiolitic peridotite. Type aesthetic: apple-green chrysoprase nodules + magnesite veinlets in saprolite over serpentinized harzburgite.",
+    "description": "Tropical-to-temperate Ni-laterite weathering of ultramafic protolith. Olivine + pyroxene break down to serpentine, releasing Ni + Mg + SiO2 to slow alkaline groundwater that percolates through fractures and crystallizes chrysoprase (Ni-bearing chalcedony) as fracture-fill, with magnesite + calcite + chalcedony as the cogenetic gangue suite. The signature green color comes from nano-inclusions of Ni-phyllosilicate (pimelite/willemseite/kerolite) trapped within the chalcedony fabric — a composite color, not a lattice color.",
+    "expects_species": [
+      "chrysoprase",
+      "quartz",
+      "calcite"
+    ],
+    "sources": [
+      "Sachanbiński et al. 2001 — chrysoprase nano-inclusion structure (Ni-clay in chalcedony)",
+      "Witkowski 2007 — chrysoprase color-cause confirmation",
+      "Garnier et al. 2008 — Goro Ni-laterite hydrology + supergene Ni mobility",
+      "Cluzel & Vigier 2008 — New Caledonia ultramafic weathering geochemistry",
+      "Marlborough Mine Queensland production records — modern Ni-rich chrysoprase reference"
+    ],
+    "initial_temperature_C": 30,
+    "initial_pressure_kbar": 0.05,
+    "wall_architecture": "irregular",
+    "notes": [
+      "Anchor: Marlborough chrysoprase deposits (Queensland) — modern world reference for gem-grade chrysoprase. Late Devonian (380-360 Ma) Marlborough Block serpentinite + dunite is the protolith; Cenozoic weathering produced the saprolite + Ni-laterite + chrysoprase chemistry (Sachanbiński et al. 2001 documents the nano-inclusion structure).",
+      "Mechanic: olivine weathering releases Ni²⁺ + Mg²⁺ + Si(OH)₄ to seasonal groundwater. As the wet season ends, evaporation concentrates the brine and silica deposits as fibrous chalcedony in fractures, with Ni nano-inclusions trapped during deposition. The classic Marlborough green chrysoprase hosts ~0.4-4 wt% NiO bulk; the actual Ni is in pimelite/willemseite/kerolite nano-clay particles inside the SiO2 fabric.",
+      "Why Ni=200, Mg=300: ultramafic regolith ground waters carry tens to hundreds of ppm Ni and hundreds of ppm Mg in active weathering profiles (Garnier et al. 2008 Goro Ni-laterite hydrology; Cluzel & Vigier 2008 New Caledonia). 200 / 300 sim-ppm puts both well above chrysoprase's Ni≥50 + Mg≥50 thresholds while staying realistic. SiO2=200 keeps it above chrysoprase's SiO2≥100 gate without forcing macroscopic quartz nucleation."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-pressure+booked-transition+chemistry-competition-v4|surface-growth:mass-booked-area+lining+crust+asbestos+druse-representatives-v1|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 0.05,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.95252654,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 58.735,
+          "initial_water_activity": {
+            "value": 0.9994,
+            "salinityPpt": 1,
+            "naclWeightPercentEquivalent": 0.1,
+            "uncertainty": 0.01,
+            "status": "calibrated-proxy",
+            "note": "NaCl-equivalent interpolation of Chirife & Resnik (1984) consensus values; natural multicomponent-brine composition remains the dominant uncertainty."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 6,
+    "paragenetic_order": [
+      {
+        "mineral": "dolomite",
+        "first_step": 0,
+        "events": 9
+      },
+      {
+        "mineral": "opal",
+        "first_step": 0,
+        "events": 5
+      },
+      {
+        "mineral": "chrysoprase",
+        "first_step": 33,
+        "events": 3
+      },
+      {
+        "mineral": "goethite",
+        "first_step": 129,
+        "events": 2
+      },
+      {
+        "mineral": "calcite",
+        "first_step": 174,
+        "events": 4
+      },
+      {
+        "mineral": "HMC",
+        "first_step": 174,
+        "events": 4
+      }
+    ],
+    "surprises_not_in_expects": [
+      "dolomite",
+      "opal",
+      "goethite",
+      "HMC"
+    ],
+    "expected_no_shows": [
+      "quartz"
+    ],
+    "environment": {
+      "T": {
+        "first": 29.528,
+        "last": 23.622,
+        "min": 23.622,
+        "max": 29.528,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 8.488,
+        "last": 9.976,
+        "min": 7.992,
+        "max": 9.976,
+        "units": ""
+      },
+      "Eh": {
+        "first": 289.764,
+        "last": 303.937,
+        "min": 289.764,
+        "max": 322.835,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 0.787,
+        "last": 0.787,
+        "min": 0.787,
+        "max": 0.787,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 1.496,
+        "last": 1.614,
+        "min": 1.496,
+        "max": 1.772,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 2.992,
+        "min": 0.984,
+        "max": 2.992,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": 0.063,
+        "last": 1.323,
+        "min": -0.504,
+        "max": 1.323,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -0.063,
+        "last": 1.197,
+        "min": -0.63,
+        "max": 1.197,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": 1.449,
+        "last": 4.031,
+        "min": 0.378,
+        "max": 4.031,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -0.819,
+        "last": 0.441,
+        "min": -1.386,
+        "max": 0.441,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 2.016,
+        "last": 3.78,
+        "min": 1.953,
+        "max": 3.78,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -3.15,
+        "last": -3.276,
+        "min": -3.591,
+        "max": -3.15,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -3.339,
+        "last": -3.465,
+        "min": -3.843,
+        "max": -3.339,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 200,
+      "fluid_pressure_kbar": {
+        "first": 0.05,
+        "last": 0.05,
+        "min": 0.05,
+        "max": 0.05,
+        "samples": 200
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 200
+      },
+      "temperature_C": {
+        "first": 28.260894354712217,
+        "last": 25,
+        "min": 25,
+        "max": 28.260894354712217,
+        "samples": 200
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.965038602582306,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 200
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 58.735
+        },
+        "last": {
+          "pure_water_boundary_C": 58.735
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

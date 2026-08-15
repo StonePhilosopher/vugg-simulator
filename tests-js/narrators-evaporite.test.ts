@@ -182,9 +182,10 @@ describe('Tier 1 A — evaporite narrator ports', () => {
       expect(story.toLowerCase()).toContain('borax');
     });
 
-    it('stability-claim branch fires when not dissolved (won\'t re-hydrate)', () => {
+    it('states the reversible high-humidity boundary without overclaiming permanence', () => {
       const story = callNarrator('tincalconite', makeCrystalStub('tincalconite', 'pseudomorph'));
-      expect(story.toLowerCase()).toContain('re-hydrate');
+      expect(story.toLowerCase()).toContain('hydrate back');
+      expect(story.toLowerCase()).toContain('does not yet replay');
     });
   });
 });

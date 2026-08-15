@@ -1,0 +1,264 @@
+{
+  "scenario": "great_salt_plains",
+  "sim_version": 241,
+  "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:mmol-formula-to-mgkg+proportional-poolcap+trace-ledger-v5|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:physical-timescale+mass-weighted-budget-v2|diagnosis:production-nucleator+causal-supersat+route-capacity-v3|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "7e99203f59f6fde18f92a7c826819bfb1d74554d21333a0b3541bd04e72afa81",
+  "strip_steps": 250,
+  "claim": {
+    "anchor": "Salt Plains National Wildlife Refuge, Alfalfa County, Oklahoma — a 65-km² salt flat on the Permian red beds (Flowerpot Shale / Cedar Hills Sandstone). The ONLY place on Earth selenite grows the iron-stained 'hourglass' habit. The hourglass selenite is the Oklahoma state crystal; the refuge is the public crystal-digging locality.",
+    "description": "Gypsum-saturated, salt-saturated groundwater wicks up through red-bed sand and evaporates just under a thin salt crust. Wet/dry seasonal cycling grows selenite in fast bursts that trap clay, sand, and Permian iron oxide on the terminal growth sectors — the visible hourglass — and step the blade outward each dry season. The iron-flooded crystals go solid reddish-to-chocolate brown.",
+    "expects_species": [
+      "selenite",
+      "halite",
+      "celestine"
+    ],
+    "sources": [
+      "U.S. Fish & Wildlife Service — Salt Plains National Wildlife Refuge, selenite crystal digging (formation mechanism: gypsum-saturated groundwater evaporating under a salt crust; clay/sand/iron-oxide inclusions form the hourglass)",
+      "Oklahoma Geological Survey / Oklahoma Historical Society — Great Salt Plains; hourglass selenite as the Oklahoma state crystal",
+      "Ham W.E. (1961) Oklahoma Geological Survey — geology of the Salt Plains / Permian red-bed evaporites of northwestern Oklahoma"
+    ],
+    "initial_temperature_C": 28,
+    "initial_pressure_kbar": 0.05,
+    "wall_architecture": "basin",
+    "notes": [
+      "QUARTZ + ANHYDRITE WITHDRAWN from expects_species (v228, hostile-review rung 2). Quartz: the Salt Plains quartz is DETRITAL — wind/water-blown sand mechanically trapped in the growing selenite (it IS the hourglass inclusion source, which the render already models via the growth-zone sediment record); the broth's SiO2:30 was always a silt proxy, and the sim's chemistry engines were precipitating authigenic quartz from it at 23-27°C, which real kinetics forbid (v228 enforces quartz's T_min 50). Anhydrite: the near-surface crust precipitates halite + selenite ONLY; anhydrite belongs to the deep Permian source beds the brine dissolves, and direct anhydrite nucleation below ~100°C is kinetically impossible (Ossorio 2014, Voigt & Freyer 2023) — the pre-v228 events fired through a saline-low-T branch that modeled REPLACEMENT-after-gypsum as direct nucleation. Both promises were mechanism confabulations, not missing minerals. Celestine kept (documented in the OK evaporite suite) but flagged unverified as a SURFACE precipitate at this locality by the rung-2 pass.",
+      "USFWS Salt Plains NWR + Oklahoma Geological Survey: selenite forms just under a wafer-thin salt crust where gypsum-saturated saline groundwater reaches the surface and evaporates. Fine sand + clay are mechanically included on the fast-growing sectors, producing the hourglass shape; iron oxide in the red-bed soil gives the reddish-to-chocolate-brown colour. This hourglass habit is found NOWHERE else in the world.",
+      "Showcase for the crystal-face-realism arc's hourglass-selenite render (2026-06-22): low-T (<45°C) sediment-laden fast growth → js/45 _seleniteHourglassParams tags the blade gypsum_hourglass; the repeated wet/dry fast-growth pulses drive the stepped-growth ziggurat (steps≥2); accumulated trace_Fe deepens the amber → chocolate brown and floods the heavily-included blades to solid brown. The render machinery already shipped SIM-neutral; this scenario is where it is the centerpiece.",
+      "Initial broth: gypsum-saturated (Ca 120, S 120) salt-saturated (Na 700, Cl 700) oxidized surface brine at 28°C, near-neutral pH 7.6, iron-bearing (Fe 4) with suspended silt (SiO2 30). The DRY events (gsp_dry) spike Ca/S to 150 + concentrate Fe → fast selenite bursts that trap sediment; the WET events (gsp_wet) dilute to Ca/S 35 (σ<1) so growth pauses between pulses. Five wet/dry cycles over 250 steps.",
+      "Halite is a co-product (the literal salt crust of the Salt Plains); minor goethite/iron-oxide staining is geologically the same iron that colours the hourglass. The star is selenite."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:mmol-formula-to-mgkg+proportional-poolcap+trace-ledger-v5|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:physical-timescale+mass-weighted-budget-v2|diagnosis:production-nucleator+causal-supersat+route-capacity-v3|save-identity:version+model+scenario-fail-closed-v1",
+      "fluid_pressure": {
+        "initial_kbar": 0.05,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.9669281400000003,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 58.735,
+          "initial_water_activity": {
+            "value": 0.892,
+            "salinityPpt": 150,
+            "naclWeightPercentEquivalent": 15,
+            "uncertainty": 0.01,
+            "status": "calibrated-proxy",
+            "note": "NaCl-equivalent interpolation of Chirife & Resnik (1984) consensus values; natural multicomponent-brine composition remains the dominant uncertainty."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 3,
+    "paragenetic_order": [
+      {
+        "mineral": "selenite",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "celestine",
+        "first_step": 4,
+        "events": 4
+      },
+      {
+        "mineral": "halite",
+        "first_step": 53,
+        "events": 19
+      }
+    ],
+    "surprises_not_in_expects": [],
+    "expected_no_shows": [],
+    "environment": {
+      "T": {
+        "first": 26.575,
+        "last": 23.622,
+        "min": 23.622,
+        "max": 32.48,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 7.606,
+        "last": 7.606,
+        "min": 7.606,
+        "max": 7.606,
+        "units": ""
+      },
+      "Eh": {
+        "first": 303.937,
+        "last": 299.213,
+        "min": 251.969,
+        "max": 322.835,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 150.394,
+        "last": 150.394,
+        "min": 150.394,
+        "max": 150.394,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 1.614,
+        "last": 1.575,
+        "min": 1.22,
+        "max": 1.772,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 2.992,
+        "min": 0.984,
+        "max": 2.992,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -1.008,
+        "last": -1.197,
+        "min": -1.953,
+        "max": -0.819,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -1.134,
+        "last": -1.323,
+        "min": -2.079,
+        "max": -0.945,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -2.457,
+        "last": -2.709,
+        "min": -3.402,
+        "max": -2.142,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -2.079,
+        "last": -2.268,
+        "min": -2.898,
+        "max": -1.953,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 0.063,
+        "last": 0,
+        "min": -0.567,
+        "max": 0.189,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -1.134,
+        "last": -0.945,
+        "min": -2.835,
+        "max": -0.819,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -1.197,
+        "last": -1.071,
+        "min": -2.961,
+        "max": -0.945,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -0.756,
+        "last": -0.504,
+        "min": -1.575,
+        "max": -0.504,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 250,
+      "fluid_pressure_kbar": {
+        "first": 0.05,
+        "last": 0.05,
+        "min": 0.05,
+        "max": 0.05,
+        "samples": 250
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 250
+      },
+      "temperature_C": {
+        "first": 26.260894354712217,
+        "last": 25,
+        "min": 25,
+        "max": 31.765822053607554,
+        "samples": 250
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.9796071567242537,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 250
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 58.735
+        },
+        "last": {
+          "pure_water_boundary_C": 58.735
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

@@ -39,7 +39,7 @@ const hourglass = (sim: any) =>
 
 describe('hourglass selenite (Great Salt Plains clay/Fe sector zoning)', () => {
   it('a cool sediment-laden scenario grows visible-hourglass selenite, tagged + well-formed', () => {
-    const sim = run('supergene_oxidation', 42);
+    const sim = run('great_salt_plains', 42);
     expect(sim).toBeTruthy();
     const hg = hourglass(sim);
     expect(hg.length).toBeGreaterThan(0);
@@ -51,16 +51,9 @@ describe('hourglass selenite (Great Salt Plains clay/Fe sector zoning)', () => {
   });
 
   it('an iron-rich oxidation setting stains the blade hard (well above the amber end)', () => {
-    // supergene_oxidation: iron from sulfide oxidation drives the stain intensity
-    // high. RE-TRUED at SIM 221 (O4b): the old pin required the FLOODED variant at
-    // seed 42, but flooding here was always a coin flip on how the run's Fe pulses
-    // overlap the blades' growth (v221 sweep: 5/12 seeds flood at 0.95, the rest
-    // land 0.63–0.73) — the pre-O4b seed-42 flood was weather from the phantom-
-    // enclosure RNG stream, not a property of the setting. The genre claim this
-    // test keeps: supergene iron stains HARD. The flooded VARIANT keeps its own
-    // showcase pins below on great_salt_plains' red-mud flood (step 265), which
-    // reaches it by mechanism, not luck.
-    const sim = run('supergene_oxidation', 42);
+    // This texture belongs to the measured Ca-SO4 brine beneath Oklahoma red
+    // beds. A generic oxidized ore scenario is not a gypsum positive control.
+    const sim = run('great_salt_plains', 42, 330);
     const hg = hourglass(sim);
     expect(hg.length).toBeGreaterThan(0);
     expect(Math.max(...hg.map((c: any) => c._sectorZoned.intensity))).toBeGreaterThan(0.55);

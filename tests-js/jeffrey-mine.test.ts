@@ -59,27 +59,39 @@ describe('Jeffrey Mine scenario (v115)', () => {
   });
 
   describe('expects_species declaration matches the rodingite suite', () => {
-    it('declares the canonical rodingite minerals as aspirational targets', () => {
+    it('separates deterministic headlines, statistical pectolite, and aspirational magnetite', () => {
       const scenSpec = JSON.parse(
         fs.readFileSync(path.join(ROOT, 'data', 'scenarios.json5'), 'utf8')
           .replace(/\/\/[^\n]*/g, '')
           .replace(/\/\*[\s\S]*?\*\//g, '')
           .replace(/,(\s*[}\]])/g, '$1')
       );
-      const expects = scenSpec.scenarios.jeffrey_mine.expects_species;
+      const contract = scenSpec.scenarios.jeffrey_mine;
+      const expects = contract.expects_species;
       expect(Array.isArray(expects)).toBe(true);
       // The headline rodingite suite — what the scenario AIMS for.
-      // Some are aspirational at v115 (calibration tune target for v116).
+      // v261 reserves this list for all-seed deterministic headline promises.
       expect(expects).toContain('chrysotile');
       expect(expects).toContain('vesuvianite');
       expect(expects).toContain('grossular');
       expect(expects).toContain('diopside');
       expect(expects).toContain('datolite');
-      expect(expects).toContain('pectolite');
+      expect(expects).not.toContain('pectolite');
       expect(expects).toContain('wollastonite');
       expect(expects).toContain('prehnite');
       expect(expects).toContain('brucite');
       expect(expects).toContain('awaruite');
+      // Pectolite is documented and licensed, but the v261 three-seed receipt
+      // observes it in only 2/3 seeds. Do not overstate that variable delivery
+      // as a deterministic headline promise.
+      expect(contract.statistical_species).toContainEqual(expect.objectContaining({
+        mineral: 'pectolite',
+        reason: expect.stringMatching(/two of the three evidence seeds/i),
+      }));
+      expect(contract.aspirational_species).toContainEqual(expect.objectContaining({
+        mineral: 'magnetite',
+        reason: expect.stringMatching(/absent from the release seed audit/i),
+      }));
     });
   });
 

@@ -1,0 +1,5191 @@
+{
+  "sim_version": 253,
+  "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1|aragonite-selector:Mg+shallowP<=0.10kbar-spring+highPstable-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario-fail-closed-v1",
+  "seed": 42,
+  "scenarios": {
+    "sabkha_dolomitization": {
+      "steps": 260,
+      "depth_positions": 4,
+      "chips": {
+        "SI_calcite": {
+          "wall": {
+            "min": -0.063,
+            "max": 3.717,
+            "samples": [
+              1.701,
+              -0.063,
+              -0.063,
+              -0.063,
+              3.591,
+              3.591,
+              3.654,
+              3.654
+            ]
+          },
+          "center": {
+            "min": -0.189,
+            "max": 2.898,
+            "samples": [
+              1.134,
+              -0.189,
+              -0.189,
+              -0.189,
+              2.772,
+              2.772,
+              2.835,
+              2.772
+            ]
+          }
+        },
+        "SI_dolomite": {
+          "wall": {
+            "min": 0.693,
+            "max": 8,
+            "samples": [
+              4.283,
+              0.756,
+              0.756,
+              0.693,
+              8,
+              8,
+              8,
+              8
+            ]
+          },
+          "center": {
+            "min": 0.504,
+            "max": 6.614,
+            "samples": [
+              3.213,
+              0.504,
+              0.504,
+              0.504,
+              6.425,
+              6.425,
+              6.488,
+              6.488
+            ]
+          }
+        },
+        "SI_aragonite": {
+          "wall": {
+            "min": -0.189,
+            "max": 3.591,
+            "samples": [
+              1.575,
+              -0.189,
+              -0.189,
+              -0.189,
+              3.465,
+              3.465,
+              3.528,
+              3.465
+            ]
+          },
+          "center": {
+            "min": -0.315,
+            "max": 2.709,
+            "samples": [
+              1.008,
+              -0.315,
+              -0.315,
+              -0.315,
+              2.646,
+              2.646,
+              2.646,
+              2.646
+            ]
+          }
+        },
+        "pH": {
+          "wall": {
+            "min": 8.102,
+            "max": 9.26,
+            "samples": [
+              8.874,
+              8.102,
+              8.102,
+              8.102,
+              9.26,
+              9.26,
+              9.26,
+              9.26
+            ]
+          },
+          "center": {
+            "min": 7.992,
+            "max": 8.378,
+            "samples": [
+              8.323,
+              7.992,
+              7.992,
+              7.992,
+              8.378,
+              8.378,
+              8.378,
+              8.378
+            ]
+          }
+        },
+        "DIC": {
+          "wall": {
+            "min": 53.15,
+            "max": 797.244,
+            "samples": [
+              301.181,
+              53.15,
+              53.15,
+              53.15,
+              797.244,
+              797.244,
+              797.244,
+              797.244
+            ]
+          },
+          "center": {
+            "min": 53.15,
+            "max": 797.244,
+            "samples": [
+              301.181,
+              53.15,
+              53.15,
+              53.15,
+              797.244,
+              797.244,
+              797.244,
+              797.244
+            ]
+          }
+        },
+        "f_ord": {
+          "wall": {
+            "min": 0,
+            "max": 0.819,
+            "samples": [
+              0,
+              0.134,
+              0.35,
+              0.512,
+              0.634,
+              0.724,
+              0.791,
+              0.819
+            ]
+          },
+          "center": {
+            "min": 0,
+            "max": 0.819,
+            "samples": [
+              0,
+              0.134,
+              0.35,
+              0.512,
+              0.634,
+              0.724,
+              0.791,
+              0.819
+            ]
+          }
+        },
+        "concentration": {
+          "wall": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          },
+          "center": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          }
+        },
+        "SI_selenite": {
+          "wall": {
+            "min": 0.315,
+            "max": 1.953,
+            "samples": [
+              0.504,
+              0.315,
+              0.315,
+              0.315,
+              1.953,
+              1.953,
+              1.953,
+              1.953
+            ]
+          },
+          "center": {
+            "min": 0.315,
+            "max": 1.953,
+            "samples": [
+              0.504,
+              0.315,
+              0.315,
+              0.315,
+              1.953,
+              1.953,
+              1.953,
+              1.953
+            ]
+          }
+        },
+        "SI_anhydrite": {
+          "wall": {
+            "min": 0.063,
+            "max": 1.953,
+            "samples": [
+              0.315,
+              0.063,
+              0.063,
+              0.063,
+              1.953,
+              1.953,
+              1.953,
+              1.953
+            ]
+          },
+          "center": {
+            "min": 0.063,
+            "max": 1.953,
+            "samples": [
+              0.315,
+              0.063,
+              0.063,
+              0.063,
+              1.953,
+              1.953,
+              1.953,
+              1.953
+            ]
+          }
+        },
+        "SI_barite": {
+          "wall": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          }
+        },
+        "SI_celestine": {
+          "wall": {
+            "min": 0.693,
+            "max": 2.583,
+            "samples": [
+              0.945,
+              0.693,
+              0.693,
+              0.693,
+              2.583,
+              2.583,
+              2.583,
+              2.583
+            ]
+          },
+          "center": {
+            "min": 0.693,
+            "max": 2.583,
+            "samples": [
+              0.945,
+              0.693,
+              0.693,
+              0.693,
+              2.583,
+              2.583,
+              2.583,
+              2.583
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": 3.008,
+            "max": 4,
+            "samples": [
+              3.008,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "bismuth_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        }
+      }
+    },
+    "reactive_wall": {
+      "steps": 120,
+      "depth_positions": 4,
+      "chips": {
+        "SI_calcite": {
+          "wall": {
+            "min": -4.535,
+            "max": 0.945,
+            "samples": [
+              0.315,
+              -1.764,
+              -0.063,
+              0.063,
+              0.063,
+              0.121,
+              0.882,
+              0.693
+            ]
+          },
+          "center": {
+            "min": -4.535,
+            "max": 0.945,
+            "samples": [
+              0.315,
+              -1.764,
+              -0.063,
+              0.063,
+              0.063,
+              0.126,
+              0.882,
+              0.693
+            ]
+          }
+        },
+        "SI_dolomite": {
+          "wall": {
+            "min": -8,
+            "max": 1.134,
+            "samples": [
+              0.252,
+              -3.843,
+              -0.441,
+              -0.192,
+              -0.189,
+              -0.189,
+              1.134,
+              1.071
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": 1.134,
+            "samples": [
+              0.252,
+              -3.843,
+              -0.441,
+              -0.189,
+              -0.189,
+              -0.189,
+              1.134,
+              1.071
+            ]
+          }
+        },
+        "SI_aragonite": {
+          "wall": {
+            "min": -4.661,
+            "max": 0.819,
+            "samples": [
+              0.189,
+              -1.827,
+              -0.126,
+              -0.063,
+              0,
+              0,
+              0.756,
+              0.567
+            ]
+          },
+          "center": {
+            "min": -4.661,
+            "max": 0.819,
+            "samples": [
+              0.189,
+              -1.827,
+              -0.126,
+              -0.063,
+              0,
+              0,
+              0.756,
+              0.567
+            ]
+          }
+        },
+        "pH": {
+          "wall": {
+            "min": 4.189,
+            "max": 7,
+            "samples": [
+              7,
+              5.677,
+              6.614,
+              6.614,
+              6.614,
+              6.559,
+              7,
+              7
+            ]
+          },
+          "center": {
+            "min": 4.189,
+            "max": 7,
+            "samples": [
+              7,
+              5.677,
+              6.614,
+              6.614,
+              6.614,
+              6.559,
+              7,
+              7
+            ]
+          }
+        },
+        "DIC": {
+          "wall": {
+            "min": 194.882,
+            "max": 425.197,
+            "samples": [
+              194.882,
+              283.465,
+              283.465,
+              372.047,
+              372.047,
+              425.197,
+              425.197,
+              425.197
+            ]
+          },
+          "center": {
+            "min": 194.882,
+            "max": 425.197,
+            "samples": [
+              194.882,
+              283.465,
+              283.465,
+              372.047,
+              372.047,
+              425.197,
+              425.197,
+              425.197
+            ]
+          }
+        },
+        "f_ord": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "center": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "concentration": {
+          "wall": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          },
+          "center": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          }
+        },
+        "SI_selenite": {
+          "wall": {
+            "min": -1.701,
+            "max": -1.071,
+            "samples": [
+              -1.701,
+              -1.449,
+              -1.449,
+              -1.26,
+              -1.26,
+              -1.197,
+              -1.071,
+              -1.071
+            ]
+          },
+          "center": {
+            "min": -1.701,
+            "max": -1.071,
+            "samples": [
+              -1.701,
+              -1.449,
+              -1.449,
+              -1.26,
+              -1.26,
+              -1.197,
+              -1.071,
+              -1.071
+            ]
+          }
+        },
+        "SI_anhydrite": {
+          "wall": {
+            "min": -1.701,
+            "max": -1.197,
+            "samples": [
+              -1.701,
+              -1.512,
+              -1.449,
+              -1.323,
+              -1.26,
+              -1.197,
+              -1.197,
+              -1.197
+            ]
+          },
+          "center": {
+            "min": -1.701,
+            "max": -1.197,
+            "samples": [
+              -1.701,
+              -1.512,
+              -1.449,
+              -1.323,
+              -1.26,
+              -1.197,
+              -1.197,
+              -1.197
+            ]
+          }
+        },
+        "SI_barite": {
+          "wall": {
+            "min": 0.756,
+            "max": 1.764,
+            "samples": [
+              0.756,
+              0.945,
+              0.945,
+              1.134,
+              1.134,
+              1.197,
+              1.449,
+              1.764
+            ]
+          },
+          "center": {
+            "min": 0.756,
+            "max": 1.764,
+            "samples": [
+              0.756,
+              0.945,
+              0.945,
+              1.134,
+              1.134,
+              1.197,
+              1.449,
+              1.764
+            ]
+          }
+        },
+        "SI_celestine": {
+          "wall": {
+            "min": -1.26,
+            "max": -0.756,
+            "samples": [
+              -1.26,
+              -1.071,
+              -1.008,
+              -0.882,
+              -0.882,
+              -0.882,
+              -0.819,
+              -0.819
+            ]
+          },
+          "center": {
+            "min": -1.26,
+            "max": -0.756,
+            "samples": [
+              -1.26,
+              -1.071,
+              -1.008,
+              -0.882,
+              -0.882,
+              -0.882,
+              -0.819,
+              -0.819
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 1.008,
+            "samples": [
+              1.008,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "bismuth_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": 1.008,
+            "max": 2,
+            "samples": [
+              null,
+              null,
+              null,
+              2,
+              2,
+              2,
+              2,
+              1.008
+            ]
+          }
+        }
+      }
+    },
+    "cooling": {
+      "steps": 100,
+      "depth_positions": 4,
+      "chips": {
+        "SI_calcite": {
+          "wall": {
+            "min": -1.512,
+            "max": -1.26,
+            "samples": [
+              -1.512,
+              -1.512,
+              -1.449,
+              -1.386,
+              -1.323,
+              -1.323,
+              -1.26,
+              -1.26
+            ]
+          },
+          "center": {
+            "min": -1.512,
+            "max": -1.26,
+            "samples": [
+              -1.512,
+              -1.512,
+              -1.449,
+              -1.386,
+              -1.323,
+              -1.323,
+              -1.26,
+              -1.26
+            ]
+          }
+        },
+        "SI_dolomite": {
+          "wall": {
+            "min": -4.346,
+            "max": -3.843,
+            "samples": [
+              -4.346,
+              -4.283,
+              -4.22,
+              -4.157,
+              -4.031,
+              -3.969,
+              -3.906,
+              -3.843
+            ]
+          },
+          "center": {
+            "min": -4.346,
+            "max": -3.843,
+            "samples": [
+              -4.346,
+              -4.283,
+              -4.22,
+              -4.157,
+              -4.031,
+              -3.969,
+              -3.906,
+              -3.843
+            ]
+          }
+        },
+        "SI_aragonite": {
+          "wall": {
+            "min": -1.638,
+            "max": -1.323,
+            "samples": [
+              -1.638,
+              -1.575,
+              -1.575,
+              -1.512,
+              -1.449,
+              -1.386,
+              -1.386,
+              -1.323
+            ]
+          },
+          "center": {
+            "min": -1.638,
+            "max": -1.323,
+            "samples": [
+              -1.638,
+              -1.575,
+              -1.575,
+              -1.512,
+              -1.449,
+              -1.386,
+              -1.386,
+              -1.323
+            ]
+          }
+        },
+        "pH": {
+          "wall": {
+            "min": 6.78,
+            "max": 6.78,
+            "samples": [
+              6.78,
+              6.78,
+              6.78,
+              6.78,
+              6.78,
+              6.78,
+              6.78,
+              6.78
+            ]
+          },
+          "center": {
+            "min": 6.78,
+            "max": 6.78,
+            "samples": [
+              6.78,
+              6.78,
+              6.78,
+              6.78,
+              6.78,
+              6.78,
+              6.78,
+              6.78
+            ]
+          }
+        },
+        "DIC": {
+          "wall": {
+            "min": 35.433,
+            "max": 35.433,
+            "samples": [
+              35.433,
+              35.433,
+              35.433,
+              35.433,
+              35.433,
+              35.433,
+              35.433,
+              35.433
+            ]
+          },
+          "center": {
+            "min": 35.433,
+            "max": 35.433,
+            "samples": [
+              35.433,
+              35.433,
+              35.433,
+              35.433,
+              35.433,
+              35.433,
+              35.433,
+              35.433
+            ]
+          }
+        },
+        "f_ord": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "center": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "concentration": {
+          "wall": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          },
+          "center": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          }
+        },
+        "SI_selenite": {
+          "wall": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          }
+        },
+        "SI_anhydrite": {
+          "wall": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          }
+        },
+        "SI_barite": {
+          "wall": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          }
+        },
+        "SI_celestine": {
+          "wall": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "bismuth_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        }
+      }
+    },
+    "mvt": {
+      "steps": 120,
+      "depth_positions": 4,
+      "chips": {
+        "SI_calcite": {
+          "wall": {
+            "min": -1.197,
+            "max": 1.008,
+            "samples": [
+              0.378,
+              0.63,
+              1.005,
+              0.378,
+              -0.315,
+              -0.189,
+              -0.315,
+              0
+            ]
+          },
+          "center": {
+            "min": -1.197,
+            "max": 1.008,
+            "samples": [
+              0.378,
+              0.63,
+              1.008,
+              0.378,
+              -0.315,
+              -0.189,
+              -0.315,
+              0
+            ]
+          }
+        },
+        "SI_dolomite": {
+          "wall": {
+            "min": -3.15,
+            "max": 0.756,
+            "samples": [
+              0.252,
+              0.63,
+              0.756,
+              -0.129,
+              -1.509,
+              -1.323,
+              -1.323,
+              -0.945
+            ]
+          },
+          "center": {
+            "min": -3.15,
+            "max": 0.756,
+            "samples": [
+              0.252,
+              0.63,
+              0.756,
+              -0.126,
+              -1.512,
+              -1.323,
+              -1.323,
+              -0.945
+            ]
+          }
+        },
+        "SI_aragonite": {
+          "wall": {
+            "min": -1.323,
+            "max": 0.945,
+            "samples": [
+              0.315,
+              0.567,
+              0.882,
+              0.252,
+              -0.441,
+              -0.315,
+              -0.378,
+              -0.126
+            ]
+          },
+          "center": {
+            "min": -1.323,
+            "max": 0.945,
+            "samples": [
+              0.315,
+              0.567,
+              0.882,
+              0.252,
+              -0.441,
+              -0.315,
+              -0.378,
+              -0.126
+            ]
+          }
+        },
+        "pH": {
+          "wall": {
+            "min": 6.173,
+            "max": 7.22,
+            "samples": [
+              7.22,
+              7.22,
+              7.22,
+              6.89,
+              6.504,
+              6.504,
+              6.614,
+              6.614
+            ]
+          },
+          "center": {
+            "min": 6.173,
+            "max": 7.22,
+            "samples": [
+              7.22,
+              7.22,
+              7.22,
+              6.89,
+              6.504,
+              6.504,
+              6.614,
+              6.614
+            ]
+          }
+        },
+        "DIC": {
+          "wall": {
+            "min": 248.031,
+            "max": 248.031,
+            "samples": [
+              248.031,
+              248.031,
+              248.031,
+              248.031,
+              248.031,
+              248.031,
+              248.031,
+              248.031
+            ]
+          },
+          "center": {
+            "min": 248.031,
+            "max": 248.031,
+            "samples": [
+              248.031,
+              248.031,
+              248.031,
+              248.031,
+              248.031,
+              248.031,
+              248.031,
+              248.031
+            ]
+          }
+        },
+        "f_ord": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "center": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "concentration": {
+          "wall": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          },
+          "center": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          }
+        },
+        "SI_selenite": {
+          "wall": {
+            "min": -8,
+            "max": -0.882,
+            "samples": [
+              -8,
+              -8,
+              -0.945,
+              -1.071,
+              -1.262,
+              -1.323,
+              -1.953,
+              -1.449
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -0.882,
+            "samples": [
+              -8,
+              -8,
+              -0.945,
+              -1.071,
+              -1.26,
+              -1.323,
+              -1.953,
+              -1.449
+            ]
+          }
+        },
+        "SI_anhydrite": {
+          "wall": {
+            "min": -8,
+            "max": -1.008,
+            "samples": [
+              -8,
+              -8,
+              -1.071,
+              -1.134,
+              -1.386,
+              -1.449,
+              -2.016,
+              -1.575
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -1.008,
+            "samples": [
+              -8,
+              -8,
+              -1.071,
+              -1.134,
+              -1.386,
+              -1.449,
+              -2.016,
+              -1.575
+            ]
+          }
+        },
+        "SI_barite": {
+          "wall": {
+            "min": -8,
+            "max": 1.512,
+            "samples": [
+              -8,
+              -8,
+              1.386,
+              1.008,
+              0.63,
+              0.693,
+              -0.126,
+              0.63
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": 1.512,
+            "samples": [
+              -8,
+              -8,
+              1.386,
+              1.008,
+              0.63,
+              0.693,
+              -0.126,
+              0.63
+            ]
+          }
+        },
+        "SI_celestine": {
+          "wall": {
+            "min": -8,
+            "max": -0.63,
+            "samples": [
+              -8,
+              -8,
+              -0.693,
+              -0.756,
+              -1.008,
+              -1.071,
+              -1.701,
+              -1.197
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -0.63,
+            "samples": [
+              -8,
+              -8,
+              -0.693,
+              -0.756,
+              -1.008,
+              -1.071,
+              -1.701,
+              -1.197
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 1.008,
+            "samples": [
+              1.008,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "bismuth_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "fluorite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              null,
+              null,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 4,
+            "samples": [
+              null,
+              null,
+              1.008,
+              1.008,
+              4,
+              4,
+              4,
+              4
+            ]
+          }
+        }
+      }
+    },
+    "tutorial_travertine": {
+      "steps": 60,
+      "depth_positions": 4,
+      "chips": {
+        "SI_calcite": {
+          "wall": {
+            "min": 0.063,
+            "max": 1.953,
+            "samples": [
+              0.189,
+              0.063,
+              0.504,
+              1.26,
+              1.008,
+              1.89,
+              1.701,
+              1.575
+            ]
+          },
+          "center": {
+            "min": 0.063,
+            "max": 1.953,
+            "samples": [
+              0.189,
+              0.063,
+              0.504,
+              1.26,
+              1.008,
+              1.89,
+              1.701,
+              1.575
+            ]
+          }
+        },
+        "SI_dolomite": {
+          "wall": {
+            "min": -0.567,
+            "max": 3.087,
+            "samples": [
+              -0.441,
+              -0.567,
+              0.189,
+              1.701,
+              1.323,
+              3.024,
+              2.709,
+              2.394
+            ]
+          },
+          "center": {
+            "min": -0.567,
+            "max": 3.087,
+            "samples": [
+              -0.441,
+              -0.567,
+              0.189,
+              1.701,
+              1.323,
+              3.024,
+              2.709,
+              2.394
+            ]
+          }
+        },
+        "SI_aragonite": {
+          "wall": {
+            "min": 0,
+            "max": 1.827,
+            "samples": [
+              0.063,
+              0,
+              0.378,
+              1.134,
+              0.882,
+              1.764,
+              1.575,
+              1.386
+            ]
+          },
+          "center": {
+            "min": 0,
+            "max": 1.827,
+            "samples": [
+              0.063,
+              0,
+              0.378,
+              1.134,
+              0.882,
+              1.764,
+              1.575,
+              1.386
+            ]
+          }
+        },
+        "pH": {
+          "wall": {
+            "min": 6.504,
+            "max": 8.268,
+            "samples": [
+              6.504,
+              6.559,
+              6.89,
+              7.551,
+              7.496,
+              8.268,
+              8.213,
+              8.213
+            ]
+          },
+          "center": {
+            "min": 6.504,
+            "max": 8.268,
+            "samples": [
+              6.504,
+              6.559,
+              6.89,
+              7.551,
+              7.496,
+              8.268,
+              8.213,
+              8.213
+            ]
+          }
+        },
+        "DIC": {
+          "wall": {
+            "min": 301.181,
+            "max": 513.78,
+            "samples": [
+              496.063,
+              513.78,
+              372.047,
+              318.898,
+              318.898,
+              301.181,
+              301.181,
+              301.181
+            ]
+          },
+          "center": {
+            "min": 301.181,
+            "max": 513.78,
+            "samples": [
+              496.063,
+              513.78,
+              372.047,
+              318.898,
+              318.898,
+              301.181,
+              301.181,
+              301.181
+            ]
+          }
+        },
+        "f_ord": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "center": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "concentration": {
+          "wall": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          },
+          "center": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          }
+        },
+        "SI_selenite": {
+          "wall": {
+            "min": -1.575,
+            "max": -1.512,
+            "samples": [
+              -1.575,
+              -1.575,
+              -1.512,
+              -1.512,
+              -1.512,
+              -1.512,
+              -1.512,
+              -1.512
+            ]
+          },
+          "center": {
+            "min": -1.575,
+            "max": -1.512,
+            "samples": [
+              -1.575,
+              -1.575,
+              -1.512,
+              -1.512,
+              -1.512,
+              -1.512,
+              -1.512,
+              -1.512
+            ]
+          }
+        },
+        "SI_anhydrite": {
+          "wall": {
+            "min": -1.701,
+            "max": -1.575,
+            "samples": [
+              -1.638,
+              -1.638,
+              -1.638,
+              -1.575,
+              -1.638,
+              -1.575,
+              -1.638,
+              -1.701
+            ]
+          },
+          "center": {
+            "min": -1.701,
+            "max": -1.575,
+            "samples": [
+              -1.638,
+              -1.638,
+              -1.638,
+              -1.575,
+              -1.638,
+              -1.575,
+              -1.638,
+              -1.701
+            ]
+          }
+        },
+        "SI_barite": {
+          "wall": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          }
+        },
+        "SI_celestine": {
+          "wall": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 1.008,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              1.008,
+              1.008,
+              1.008
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "bismuth_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        }
+      }
+    },
+    "searles_lake": {
+      "steps": 300,
+      "depth_positions": 4,
+      "chips": {
+        "SI_calcite": {
+          "wall": {
+            "min": 0.63,
+            "max": 1.008,
+            "samples": [
+              0.63,
+              0.63,
+              0.63,
+              0.819,
+              0.63,
+              0.63,
+              0.63,
+              0.63
+            ]
+          },
+          "center": {
+            "min": 0.567,
+            "max": 1.008,
+            "samples": [
+              0.63,
+              0.63,
+              0.63,
+              0.819,
+              0.567,
+              0.567,
+              0.567,
+              0.567
+            ]
+          }
+        },
+        "SI_dolomite": {
+          "wall": {
+            "min": 1.764,
+            "max": 2.583,
+            "samples": [
+              1.827,
+              1.89,
+              1.827,
+              2.268,
+              1.827,
+              1.827,
+              1.827,
+              1.827
+            ]
+          },
+          "center": {
+            "min": 1.638,
+            "max": 2.52,
+            "samples": [
+              1.827,
+              1.827,
+              1.827,
+              2.205,
+              1.764,
+              1.701,
+              1.701,
+              1.701
+            ]
+          }
+        },
+        "SI_aragonite": {
+          "wall": {
+            "min": 0.504,
+            "max": 0.882,
+            "samples": [
+              0.504,
+              0.504,
+              0.504,
+              0.693,
+              0.504,
+              0.504,
+              0.504,
+              0.504
+            ]
+          },
+          "center": {
+            "min": 0.441,
+            "max": 0.882,
+            "samples": [
+              0.504,
+              0.504,
+              0.504,
+              0.63,
+              0.441,
+              0.441,
+              0.441,
+              0.441
+            ]
+          }
+        },
+        "pH": {
+          "wall": {
+            "min": 9.48,
+            "max": 9.48,
+            "samples": [
+              9.48,
+              9.48,
+              9.48,
+              9.48,
+              9.48,
+              9.48,
+              9.48,
+              9.48
+            ]
+          },
+          "center": {
+            "min": 9.48,
+            "max": 9.48,
+            "samples": [
+              9.48,
+              9.48,
+              9.48,
+              9.48,
+              9.48,
+              9.48,
+              9.48,
+              9.48
+            ]
+          }
+        },
+        "DIC": {
+          "wall": {
+            "min": 88.583,
+            "max": 88.583,
+            "samples": [
+              88.583,
+              88.583,
+              88.583,
+              88.583,
+              88.583,
+              88.583,
+              88.583,
+              88.583
+            ]
+          },
+          "center": {
+            "min": 88.583,
+            "max": 88.583,
+            "samples": [
+              88.583,
+              88.583,
+              88.583,
+              88.583,
+              88.583,
+              88.583,
+              88.583,
+              88.583
+            ]
+          }
+        },
+        "f_ord": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "center": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "concentration": {
+          "wall": {
+            "min": 0.984,
+            "max": 2.992,
+            "samples": [
+              0.984,
+              2.992,
+              0.984,
+              2.992,
+              2.992,
+              2.992,
+              0.984,
+              2.992
+            ]
+          },
+          "center": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          }
+        },
+        "SI_selenite": {
+          "wall": {
+            "min": -2.016,
+            "max": -1.575,
+            "samples": [
+              -1.638,
+              -1.827,
+              -1.764,
+              -1.701,
+              -1.701,
+              -1.764,
+              -1.575,
+              -1.575
+            ]
+          },
+          "center": {
+            "min": -1.638,
+            "max": -1.386,
+            "samples": [
+              -1.638,
+              -1.638,
+              -1.638,
+              -1.512,
+              -1.449,
+              -1.386,
+              -1.449,
+              -1.386
+            ]
+          }
+        },
+        "SI_anhydrite": {
+          "wall": {
+            "min": -2.205,
+            "max": -1.638,
+            "samples": [
+              -1.764,
+              -1.953,
+              -1.89,
+              -1.827,
+              -1.827,
+              -1.89,
+              -1.701,
+              -1.701
+            ]
+          },
+          "center": {
+            "min": -1.764,
+            "max": -1.449,
+            "samples": [
+              -1.764,
+              -1.764,
+              -1.764,
+              -1.638,
+              -1.575,
+              -1.512,
+              -1.575,
+              -1.512
+            ]
+          }
+        },
+        "SI_barite": {
+          "wall": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          }
+        },
+        "SI_celestine": {
+          "wall": {
+            "min": -0.945,
+            "max": -0.441,
+            "samples": [
+              -0.504,
+              -0.756,
+              -0.63,
+              -0.567,
+              -0.567,
+              -0.693,
+              -0.504,
+              -0.504
+            ]
+          },
+          "center": {
+            "min": -0.504,
+            "max": -0.252,
+            "samples": [
+              -0.504,
+              -0.504,
+              -0.504,
+              -0.441,
+              -0.378,
+              -0.315,
+              -0.315,
+              -0.252
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": 1.008,
+            "max": 2,
+            "samples": [
+              1.008,
+              1.008,
+              2,
+              2,
+              2,
+              2,
+              2,
+              2
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": 3.008,
+            "max": 3.008,
+            "samples": [
+              null,
+              null,
+              3.008,
+              3.008,
+              3.008,
+              3.008,
+              3.008,
+              3.008
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "bismuth_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        }
+      }
+    },
+    "wittichen": {
+      "steps": 160,
+      "depth_positions": 4,
+      "chips": {
+        "SI_calcite": {
+          "wall": {
+            "min": -3.339,
+            "max": 0.756,
+            "samples": [
+              -3.339,
+              -2.709,
+              -2.709,
+              -2.709,
+              -2.142,
+              -1.512,
+              -1.134,
+              0.756
+            ]
+          },
+          "center": {
+            "min": -3.339,
+            "max": 0.756,
+            "samples": [
+              -3.339,
+              -2.709,
+              -2.709,
+              -2.709,
+              -2.142,
+              -1.512,
+              -1.134,
+              0.756
+            ]
+          }
+        },
+        "SI_dolomite": {
+          "wall": {
+            "min": -7.622,
+            "max": -0.882,
+            "samples": [
+              -6.551,
+              -5.354,
+              -5.354,
+              -5.354,
+              -6.425,
+              -5.039,
+              -4.346,
+              -0.882
+            ]
+          },
+          "center": {
+            "min": -7.622,
+            "max": -0.882,
+            "samples": [
+              -6.551,
+              -5.354,
+              -5.354,
+              -5.354,
+              -6.425,
+              -5.039,
+              -4.346,
+              -0.882
+            ]
+          }
+        },
+        "SI_aragonite": {
+          "wall": {
+            "min": -3.402,
+            "max": 0.63,
+            "samples": [
+              -3.402,
+              -2.835,
+              -2.835,
+              -2.835,
+              -2.268,
+              -1.638,
+              -1.26,
+              0.63
+            ]
+          },
+          "center": {
+            "min": -3.402,
+            "max": 0.63,
+            "samples": [
+              -3.402,
+              -2.835,
+              -2.835,
+              -2.835,
+              -2.268,
+              -1.638,
+              -1.26,
+              0.63
+            ]
+          }
+        },
+        "pH": {
+          "wall": {
+            "min": 6.283,
+            "max": 7.386,
+            "samples": [
+              6.283,
+              6.614,
+              6.614,
+              6.614,
+              6.614,
+              6.614,
+              6.614,
+              7.386
+            ]
+          },
+          "center": {
+            "min": 6.283,
+            "max": 7.386,
+            "samples": [
+              6.283,
+              6.614,
+              6.614,
+              6.614,
+              6.614,
+              6.614,
+              6.614,
+              7.386
+            ]
+          }
+        },
+        "DIC": {
+          "wall": {
+            "min": 53.15,
+            "max": 141.732,
+            "samples": [
+              53.15,
+              53.15,
+              53.15,
+              53.15,
+              53.15,
+              53.15,
+              53.15,
+              141.732
+            ]
+          },
+          "center": {
+            "min": 53.15,
+            "max": 141.732,
+            "samples": [
+              53.15,
+              53.15,
+              53.15,
+              53.15,
+              53.15,
+              53.15,
+              53.15,
+              141.732
+            ]
+          }
+        },
+        "f_ord": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "center": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "concentration": {
+          "wall": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          },
+          "center": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          }
+        },
+        "SI_selenite": {
+          "wall": {
+            "min": -8,
+            "max": -1.134,
+            "samples": [
+              -5.669,
+              -5.48,
+              -4.976,
+              -4.472,
+              -8,
+              -2.709,
+              -1.26,
+              -1.134
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -1.134,
+            "samples": [
+              -5.669,
+              -5.48,
+              -4.976,
+              -4.472,
+              -8,
+              -2.709,
+              -1.26,
+              -1.134
+            ]
+          }
+        },
+        "SI_anhydrite": {
+          "wall": {
+            "min": -8,
+            "max": -1.575,
+            "samples": [
+              -5.291,
+              -5.102,
+              -4.661,
+              -5.354,
+              -8,
+              -3.213,
+              -1.764,
+              -1.575
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -1.575,
+            "samples": [
+              -5.291,
+              -5.102,
+              -4.661,
+              -5.354,
+              -8,
+              -3.213,
+              -1.764,
+              -1.575
+            ]
+          }
+        },
+        "SI_barite": {
+          "wall": {
+            "min": -8,
+            "max": 1.071,
+            "samples": [
+              -3.78,
+              -3.528,
+              -2.961,
+              -3.339,
+              -8,
+              -0.693,
+              1.008,
+              1.071
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": 1.071,
+            "samples": [
+              -3.78,
+              -3.528,
+              -2.961,
+              -3.339,
+              -8,
+              -0.693,
+              1.008,
+              1.071
+            ]
+          }
+        },
+        "SI_celestine": {
+          "wall": {
+            "min": -8,
+            "max": -1.764,
+            "samples": [
+              -5.417,
+              -5.228,
+              -4.724,
+              -4.22,
+              -8,
+              -3.213,
+              -1.764,
+              -1.827
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -1.764,
+            "samples": [
+              -5.417,
+              -5.228,
+              -4.724,
+              -4.22,
+              -8,
+              -3.213,
+              -1.764,
+              -1.827
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 1.008,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              0
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "bismuth_morph": {
+          "wall": {
+            "min": 0,
+            "max": 4,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              4,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        }
+      }
+    },
+    "elmwood": {
+      "steps": 200,
+      "depth_positions": 4,
+      "chips": {
+        "SI_calcite": {
+          "wall": {
+            "min": 0.693,
+            "max": 2.583,
+            "samples": [
+              0.693,
+              0.756,
+              0.756,
+              1.89,
+              2.331,
+              2.142,
+              1.764,
+              1.827
+            ]
+          },
+          "center": {
+            "min": 0.693,
+            "max": 2.583,
+            "samples": [
+              0.693,
+              0.756,
+              0.756,
+              1.89,
+              2.331,
+              2.142,
+              1.764,
+              1.827
+            ]
+          }
+        },
+        "SI_dolomite": {
+          "wall": {
+            "min": 0.496,
+            "max": 4.157,
+            "samples": [
+              0.567,
+              0.504,
+              0.504,
+              2.583,
+              3.906,
+              3.78,
+              3.087,
+              3.276
+            ]
+          },
+          "center": {
+            "min": 0.501,
+            "max": 4.157,
+            "samples": [
+              0.567,
+              0.504,
+              0.504,
+              2.583,
+              3.906,
+              3.78,
+              3.087,
+              3.276
+            ]
+          }
+        },
+        "SI_aragonite": {
+          "wall": {
+            "min": 0.567,
+            "max": 2.457,
+            "samples": [
+              0.567,
+              0.63,
+              0.693,
+              1.764,
+              2.205,
+              2.079,
+              1.638,
+              1.764
+            ]
+          },
+          "center": {
+            "min": 0.567,
+            "max": 2.457,
+            "samples": [
+              0.567,
+              0.63,
+              0.693,
+              1.764,
+              2.205,
+              2.079,
+              1.638,
+              1.764
+            ]
+          }
+        },
+        "pH": {
+          "wall": {
+            "min": 7.11,
+            "max": 8.433,
+            "samples": [
+              7.11,
+              7.11,
+              7.11,
+              7.717,
+              8.268,
+              8.323,
+              8.047,
+              8.213
+            ]
+          },
+          "center": {
+            "min": 7.11,
+            "max": 8.433,
+            "samples": [
+              7.11,
+              7.11,
+              7.11,
+              7.717,
+              8.268,
+              8.323,
+              8.047,
+              8.213
+            ]
+          }
+        },
+        "DIC": {
+          "wall": {
+            "min": 177.165,
+            "max": 761.811,
+            "samples": [
+              177.165,
+              177.165,
+              177.165,
+              496.063,
+              726.378,
+              726.378,
+              673.228,
+              620.079
+            ]
+          },
+          "center": {
+            "min": 177.165,
+            "max": 761.811,
+            "samples": [
+              177.165,
+              177.165,
+              177.165,
+              496.063,
+              726.378,
+              726.378,
+              673.228,
+              620.079
+            ]
+          }
+        },
+        "f_ord": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "center": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "concentration": {
+          "wall": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          },
+          "center": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          }
+        },
+        "SI_selenite": {
+          "wall": {
+            "min": -8,
+            "max": -0.819,
+            "samples": [
+              -8,
+              -0.819,
+              -0.819,
+              -0.882,
+              -0.882,
+              -0.895,
+              -0.882,
+              -0.882
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -0.819,
+            "samples": [
+              -8,
+              -0.819,
+              -0.819,
+              -0.882,
+              -0.882,
+              -0.882,
+              -0.882,
+              -0.882
+            ]
+          }
+        },
+        "SI_anhydrite": {
+          "wall": {
+            "min": -8,
+            "max": -0.945,
+            "samples": [
+              -8,
+              -0.945,
+              -0.945,
+              -1.008,
+              -1.071,
+              -1.134,
+              -1.134,
+              -1.197
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -0.945,
+            "samples": [
+              -8,
+              -0.945,
+              -0.945,
+              -1.008,
+              -1.071,
+              -1.134,
+              -1.134,
+              -1.197
+            ]
+          }
+        },
+        "SI_barite": {
+          "wall": {
+            "min": -8,
+            "max": 2.205,
+            "samples": [
+              -8,
+              1.575,
+              1.638,
+              1.764,
+              1.89,
+              2.016,
+              2.142,
+              2.205
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": 2.205,
+            "samples": [
+              -8,
+              1.575,
+              1.638,
+              1.764,
+              1.89,
+              2.016,
+              2.142,
+              2.205
+            ]
+          }
+        },
+        "SI_celestine": {
+          "wall": {
+            "min": -8,
+            "max": -0.315,
+            "samples": [
+              -8,
+              -0.756,
+              -0.756,
+              -0.378,
+              -0.378,
+              -0.441,
+              -0.441,
+              -0.441
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -0.315,
+            "samples": [
+              -8,
+              -0.756,
+              -0.756,
+              -0.378,
+              -0.378,
+              -0.441,
+              -0.441,
+              -0.441
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 2,
+            "samples": [
+              1.008,
+              0,
+              0,
+              1.008,
+              2,
+              1.008,
+              1.008,
+              1.008
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "bismuth_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "fluorite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 1.008,
+            "samples": [
+              null,
+              1.008,
+              1.008,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              null,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    },
+    "supergene_oxidation": {
+      "steps": 200,
+      "depth_positions": 4,
+      "chips": {
+        "SI_calcite": {
+          "wall": {
+            "min": -4.535,
+            "max": -0.315,
+            "samples": [
+              -0.945,
+              -0.63,
+              -0.756,
+              -1.071,
+              -2.205,
+              -2.583,
+              -2.961,
+              -2.142
+            ]
+          },
+          "center": {
+            "min": -4.535,
+            "max": -0.315,
+            "samples": [
+              -0.945,
+              -0.63,
+              -0.756,
+              -1.071,
+              -2.205,
+              -2.583,
+              -2.961,
+              -2.142
+            ]
+          }
+        },
+        "SI_dolomite": {
+          "wall": {
+            "min": -8,
+            "max": -0.819,
+            "samples": [
+              -2.835,
+              -1.512,
+              -1.701,
+              -2.709,
+              -4.976,
+              -5.606,
+              -6.047,
+              -4.409
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -0.819,
+            "samples": [
+              -2.835,
+              -1.512,
+              -1.701,
+              -2.709,
+              -4.976,
+              -5.606,
+              -6.047,
+              -4.409
+            ]
+          }
+        },
+        "SI_aragonite": {
+          "wall": {
+            "min": -4.661,
+            "max": -0.441,
+            "samples": [
+              -1.071,
+              -0.759,
+              -0.882,
+              -1.197,
+              -2.331,
+              -2.709,
+              -3.087,
+              -2.268
+            ]
+          },
+          "center": {
+            "min": -4.661,
+            "max": -0.441,
+            "samples": [
+              -1.071,
+              -0.756,
+              -0.882,
+              -1.197,
+              -2.331,
+              -2.709,
+              -3.087,
+              -2.268
+            ]
+          }
+        },
+        "pH": {
+          "wall": {
+            "min": 4.685,
+            "max": 6.89,
+            "samples": [
+              6.78,
+              6.614,
+              6.559,
+              6.173,
+              5.512,
+              5.181,
+              4.85,
+              5.126
+            ]
+          },
+          "center": {
+            "min": 4.685,
+            "max": 6.89,
+            "samples": [
+              6.78,
+              6.614,
+              6.559,
+              6.173,
+              5.512,
+              5.181,
+              4.85,
+              5.126
+            ]
+          }
+        },
+        "DIC": {
+          "wall": {
+            "min": 106.299,
+            "max": 1807.087,
+            "samples": [
+              106.299,
+              389.764,
+              389.764,
+              389.764,
+              389.764,
+              617.864,
+              1133.858,
+              1807.087
+            ]
+          },
+          "center": {
+            "min": 106.299,
+            "max": 1807.087,
+            "samples": [
+              106.299,
+              389.764,
+              389.764,
+              389.764,
+              389.764,
+              620.079,
+              1133.858,
+              1807.087
+            ]
+          }
+        },
+        "f_ord": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "center": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "concentration": {
+          "wall": {
+            "min": 0.984,
+            "max": 2.992,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              2.992,
+              2.992,
+              2.992,
+              2.992,
+              2.992
+            ]
+          },
+          "center": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          }
+        },
+        "SI_selenite": {
+          "wall": {
+            "min": -1.449,
+            "max": 0.126,
+            "samples": [
+              -1.449,
+              -0.882,
+              -0.945,
+              0,
+              0,
+              0,
+              0.063,
+              0.126
+            ]
+          },
+          "center": {
+            "min": -1.449,
+            "max": 0.126,
+            "samples": [
+              -1.449,
+              -0.882,
+              -0.945,
+              0,
+              0,
+              0,
+              0.063,
+              0.126
+            ]
+          }
+        },
+        "SI_anhydrite": {
+          "wall": {
+            "min": -1.701,
+            "max": -0.126,
+            "samples": [
+              -1.638,
+              -1.197,
+              -1.197,
+              -0.252,
+              -0.252,
+              -0.252,
+              -0.189,
+              -0.126
+            ]
+          },
+          "center": {
+            "min": -1.701,
+            "max": -0.126,
+            "samples": [
+              -1.638,
+              -1.197,
+              -1.197,
+              -0.252,
+              -0.252,
+              -0.252,
+              -0.189,
+              -0.126
+            ]
+          }
+        },
+        "SI_barite": {
+          "wall": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          }
+        },
+        "SI_celestine": {
+          "wall": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "bismuth_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        }
+      }
+    },
+    "naica_geothermal": {
+      "steps": 320,
+      "depth_positions": 4,
+      "chips": {
+        "SI_calcite": {
+          "wall": {
+            "min": -0.945,
+            "max": -0.567,
+            "samples": [
+              -0.567,
+              -0.567,
+              -0.567,
+              -0.567,
+              -0.567,
+              -0.567,
+              -0.819,
+              -0.945
+            ]
+          },
+          "center": {
+            "min": -0.945,
+            "max": -0.567,
+            "samples": [
+              -0.567,
+              -0.567,
+              -0.567,
+              -0.567,
+              -0.567,
+              -0.567,
+              -0.882,
+              -0.945
+            ]
+          }
+        },
+        "SI_dolomite": {
+          "wall": {
+            "min": -2.772,
+            "max": -2.079,
+            "samples": [
+              -2.079,
+              -2.079,
+              -2.079,
+              -2.079,
+              -2.142,
+              -2.142,
+              -2.52,
+              -2.772
+            ]
+          },
+          "center": {
+            "min": -2.835,
+            "max": -2.079,
+            "samples": [
+              -2.079,
+              -2.079,
+              -2.079,
+              -2.079,
+              -2.142,
+              -2.142,
+              -2.646,
+              -2.835
+            ]
+          }
+        },
+        "SI_aragonite": {
+          "wall": {
+            "min": -1.071,
+            "max": -0.693,
+            "samples": [
+              -0.693,
+              -0.693,
+              -0.693,
+              -0.693,
+              -0.693,
+              -0.693,
+              -0.945,
+              -1.071
+            ]
+          },
+          "center": {
+            "min": -1.071,
+            "max": -0.693,
+            "samples": [
+              -0.693,
+              -0.693,
+              -0.693,
+              -0.693,
+              -0.693,
+              -0.693,
+              -1.008,
+              -1.071
+            ]
+          }
+        },
+        "pH": {
+          "wall": {
+            "min": 7.22,
+            "max": 7.22,
+            "samples": [
+              7.22,
+              7.22,
+              7.22,
+              7.22,
+              7.22,
+              7.22,
+              7.22,
+              7.22
+            ]
+          },
+          "center": {
+            "min": 7.22,
+            "max": 7.22,
+            "samples": [
+              7.22,
+              7.22,
+              7.22,
+              7.22,
+              7.22,
+              7.22,
+              7.22,
+              7.22
+            ]
+          }
+        },
+        "DIC": {
+          "wall": {
+            "min": 17.717,
+            "max": 17.717,
+            "samples": [
+              17.717,
+              17.717,
+              17.717,
+              17.717,
+              17.717,
+              17.717,
+              17.717,
+              17.717
+            ]
+          },
+          "center": {
+            "min": 17.717,
+            "max": 17.717,
+            "samples": [
+              17.717,
+              17.717,
+              17.717,
+              17.717,
+              17.717,
+              17.717,
+              17.717,
+              17.717
+            ]
+          }
+        },
+        "f_ord": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "center": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "concentration": {
+          "wall": {
+            "min": 0.984,
+            "max": 2.992,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              2.992,
+              0.984
+            ]
+          },
+          "center": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          }
+        },
+        "SI_selenite": {
+          "wall": {
+            "min": -0.315,
+            "max": 0.063,
+            "samples": [
+              0.063,
+              0.063,
+              0.063,
+              0.063,
+              0.063,
+              0.063,
+              -0.126,
+              -0.063
+            ]
+          },
+          "center": {
+            "min": 0.063,
+            "max": 0.063,
+            "samples": [
+              0.063,
+              0.063,
+              0.063,
+              0.063,
+              0.063,
+              0.063,
+              0.063,
+              0.063
+            ]
+          }
+        },
+        "SI_anhydrite": {
+          "wall": {
+            "min": -0.567,
+            "max": -0.126,
+            "samples": [
+              -0.126,
+              -0.126,
+              -0.126,
+              -0.126,
+              -0.126,
+              -0.126,
+              -0.378,
+              -0.315
+            ]
+          },
+          "center": {
+            "min": -0.252,
+            "max": -0.126,
+            "samples": [
+              -0.126,
+              -0.126,
+              -0.126,
+              -0.126,
+              -0.126,
+              -0.126,
+              -0.189,
+              -0.252
+            ]
+          }
+        },
+        "SI_barite": {
+          "wall": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          }
+        },
+        "SI_celestine": {
+          "wall": {
+            "min": -0.651,
+            "max": -0.189,
+            "samples": [
+              -0.189,
+              -0.189,
+              -0.192,
+              -0.197,
+              -0.21,
+              -0.252,
+              -0.441,
+              -0.381
+            ]
+          },
+          "center": {
+            "min": -0.315,
+            "max": -0.189,
+            "samples": [
+              -0.189,
+              -0.189,
+              -0.189,
+              -0.189,
+              -0.197,
+              -0.252,
+              -0.252,
+              -0.315
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "bismuth_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        }
+      }
+    },
+    "sicily_solfifera": {
+      "steps": 200,
+      "depth_positions": 4,
+      "chips": {
+        "SI_calcite": {
+          "wall": {
+            "min": -1.575,
+            "max": 0.315,
+            "samples": [
+              -1.575,
+              -0.063,
+              0,
+              -0.504,
+              0.252,
+              -0.378,
+              0.315,
+              0.315
+            ]
+          },
+          "center": {
+            "min": -1.575,
+            "max": 0.315,
+            "samples": [
+              -1.575,
+              -0.063,
+              0,
+              -0.504,
+              0.252,
+              -0.378,
+              0.315,
+              0.315
+            ]
+          }
+        },
+        "SI_dolomite": {
+          "wall": {
+            "min": -3.906,
+            "max": -0.378,
+            "samples": [
+              -3.906,
+              -1.008,
+              -1.008,
+              -1.89,
+              -0.441,
+              -1.764,
+              -0.378,
+              -0.378
+            ]
+          },
+          "center": {
+            "min": -3.906,
+            "max": -0.378,
+            "samples": [
+              -3.906,
+              -1.008,
+              -1.008,
+              -1.89,
+              -0.441,
+              -1.764,
+              -0.378,
+              -0.378
+            ]
+          }
+        },
+        "SI_aragonite": {
+          "wall": {
+            "min": -1.764,
+            "max": 0.189,
+            "samples": [
+              -1.764,
+              -0.252,
+              -0.189,
+              -0.63,
+              0.126,
+              -0.504,
+              0.189,
+              0.189
+            ]
+          },
+          "center": {
+            "min": -1.764,
+            "max": 0.189,
+            "samples": [
+              -1.764,
+              -0.252,
+              -0.189,
+              -0.63,
+              0.126,
+              -0.504,
+              0.189,
+              0.189
+            ]
+          }
+        },
+        "pH": {
+          "wall": {
+            "min": 6.008,
+            "max": 6.614,
+            "samples": [
+              6.118,
+              6.504,
+              6.504,
+              6.063,
+              6.504,
+              6.063,
+              6.504,
+              6.504
+            ]
+          },
+          "center": {
+            "min": 6.008,
+            "max": 6.614,
+            "samples": [
+              6.118,
+              6.504,
+              6.504,
+              6.063,
+              6.504,
+              6.063,
+              6.504,
+              6.504
+            ]
+          }
+        },
+        "DIC": {
+          "wall": {
+            "min": 88.583,
+            "max": 1009.843,
+            "samples": [
+              88.583,
+              549.213,
+              549.213,
+              1009.843,
+              1009.843,
+              1009.843,
+              1009.843,
+              1009.843
+            ]
+          },
+          "center": {
+            "min": 88.583,
+            "max": 1009.843,
+            "samples": [
+              88.583,
+              549.213,
+              549.213,
+              1009.843,
+              1009.843,
+              1009.843,
+              1009.843,
+              1009.843
+            ]
+          }
+        },
+        "f_ord": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "center": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "concentration": {
+          "wall": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          },
+          "center": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          }
+        },
+        "SI_selenite": {
+          "wall": {
+            "min": -8,
+            "max": 0.126,
+            "samples": [
+              -0.063,
+              -0.315,
+              0,
+              -8,
+              -0.378,
+              -0.378,
+              -0.378,
+              -0.378
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": 0.126,
+            "samples": [
+              -0.063,
+              -0.315,
+              0,
+              -8,
+              -0.378,
+              -0.378,
+              -0.378,
+              -0.378
+            ]
+          }
+        },
+        "SI_anhydrite": {
+          "wall": {
+            "min": -8,
+            "max": -0.063,
+            "samples": [
+              -0.252,
+              -0.504,
+              -0.189,
+              -8,
+              -0.567,
+              -0.567,
+              -0.567,
+              -0.567
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -0.063,
+            "samples": [
+              -0.252,
+              -0.504,
+              -0.189,
+              -8,
+              -0.567,
+              -0.567,
+              -0.567,
+              -0.567
+            ]
+          }
+        },
+        "SI_barite": {
+          "wall": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          }
+        },
+        "SI_celestine": {
+          "wall": {
+            "min": -8,
+            "max": 0.504,
+            "samples": [
+              0.378,
+              0.063,
+              0.315,
+              -8,
+              -0.063,
+              -0.063,
+              -0.063,
+              -0.063
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": 0.504,
+            "samples": [
+              0.378,
+              0.063,
+              0.315,
+              -8,
+              -0.063,
+              -0.063,
+              -0.063,
+              -0.063
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              null,
+              null,
+              null,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "bismuth_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        }
+      }
+    },
+    "sulphur_bank": {
+      "steps": 200,
+      "depth_positions": 4,
+      "chips": {
+        "SI_calcite": {
+          "wall": {
+            "min": -8,
+            "max": -2.268,
+            "samples": [
+              -8,
+              -8,
+              -4.094,
+              -3.024,
+              -4.157,
+              -5.102,
+              -2.394,
+              -2.583
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -2.268,
+            "samples": [
+              -8,
+              -8,
+              -4.094,
+              -3.024,
+              -4.157,
+              -5.102,
+              -2.394,
+              -2.583
+            ]
+          }
+        },
+        "SI_dolomite": {
+          "wall": {
+            "min": -8,
+            "max": -4.661,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -6.11,
+              -8,
+              -8,
+              -4.913,
+              -5.228
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -4.661,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -6.11,
+              -8,
+              -8,
+              -4.913,
+              -5.228
+            ]
+          }
+        },
+        "SI_aragonite": {
+          "wall": {
+            "min": -8,
+            "max": -2.331,
+            "samples": [
+              -8,
+              -8,
+              -4.22,
+              -3.15,
+              -4.283,
+              -5.291,
+              -2.52,
+              -2.709
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -2.331,
+            "samples": [
+              -8,
+              -8,
+              -4.22,
+              -3.15,
+              -4.283,
+              -5.291,
+              -2.52,
+              -2.709
+            ]
+          }
+        },
+        "pH": {
+          "wall": {
+            "min": 1.709,
+            "max": 6.559,
+            "samples": [
+              1.874,
+              2.205,
+              5.512,
+              6.173,
+              5.457,
+              5.181,
+              6.559,
+              6.504
+            ]
+          },
+          "center": {
+            "min": 1.709,
+            "max": 6.559,
+            "samples": [
+              1.874,
+              2.205,
+              5.512,
+              6.173,
+              5.457,
+              5.181,
+              6.559,
+              6.504
+            ]
+          }
+        },
+        "DIC": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "center": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "f_ord": {
+          "wall": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "center": {
+            "min": 0,
+            "max": 0,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "concentration": {
+          "wall": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          },
+          "center": {
+            "min": 0.984,
+            "max": 0.984,
+            "samples": [
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984,
+              0.984
+            ]
+          }
+        },
+        "SI_selenite": {
+          "wall": {
+            "min": -8,
+            "max": -7.417,
+            "samples": [
+              -8,
+              -8,
+              -7.984,
+              -7.748,
+              -7.549,
+              -7.457,
+              -7.42,
+              -7.433
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -7.706,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -7.961,
+              -7.879,
+              -7.782,
+              -7.706
+            ]
+          }
+        },
+        "SI_anhydrite": {
+          "wall": {
+            "min": -8,
+            "max": -7.467,
+            "samples": [
+              -8,
+              -8,
+              -7.99,
+              -7.782,
+              -7.591,
+              -7.58,
+              -7.483,
+              -7.507
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -7.756,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -7.969,
+              -7.919,
+              -7.819,
+              -7.764
+            ]
+          }
+        },
+        "SI_barite": {
+          "wall": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          }
+        },
+        "SI_celestine": {
+          "wall": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          },
+          "center": {
+            "min": -8,
+            "max": -8,
+            "samples": [
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8,
+              -8
+            ]
+          }
+        },
+        "calcite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "halite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "sylvite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "bismuth_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "fluorite_morph": {
+          "wall": {
+            "min": null,
+            "max": null,
+            "samples": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        "pyrite_morph": {
+          "wall": {
+            "min": 0,
+            "max": 4,
+            "samples": [
+              null,
+              null,
+              2,
+              4,
+              4,
+              4,
+              4,
+              4
+            ]
+          }
+        }
+      }
+    }
+  }
+}

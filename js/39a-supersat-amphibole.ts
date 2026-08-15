@@ -40,11 +40,10 @@
 // asbestiform habit dispatch via the grow engine; the supersat layer
 // only gates on chemistry + T/pH.
 //
-// Tiger's eye (chalcedony pseudomorph after crocidolite — the famous
-// gold-brown chatoyant gemstone variety) ships in the silicate class
-// (js/39/59/89), NOT here. Tiger's eye is structurally chalcedony
-// (microcrystalline SiO2) preserving the crocidolite fiber-bundle
-// pseudomorph; engine reads crocidolite_dissolving substrate.
+// Tiger's eye ships in the silicate class (js/39/59/89), NOT here. SIM 260
+// represents both the Heaney-Fisher synchronous antitaxial crack-seal model
+// and the Gutzmer-Beukes-Cairncross older-crocidolite/surficial-alteration
+// model. Neither is described here as settled pseudomorphic replacement.
 //
 // REFERENCES:
 //   * Hawthorne FC et al. (2012) Am. Min. 97:2031 — IMA nomenclature
@@ -104,12 +103,12 @@ const MINERAL_GATES_amosite: MineralGates = {
 
 const MINERAL_GATES_crocidolite: MineralGates = {
   sigma_crit: 1.0,
-  T_min: 100, T_max: 400, T_optimal: 275,
+  T_min: 150, T_max: 450, T_optimal: 300,
   fluid_min: { Na: 30, Fe: 100, SiO2: 200 },
   pH_min: 7.0, pH_max: 11.0,
   surface_energy: 'medium',
-  _sources: ['amphibole engine v116', 'Frank et al. 2002', 'Wittenoom + Northern Cape literature'],
-  _notes: '"Blue asbestos" riebeckite-asbestiform variety. BIF-hosted. Ca > 50 routes to calcic amphibole. Tiger\'s eye precursor on supergene oxidation.',
+  _sources: ['amphibole engine v116', 'Miyano & Klein 1983 DOI 10.11456/shigenchishitsu1951.33.213', 'Wittenoom + Northern Cape literature'],
+  _notes: '"Blue asbestos" riebeckite-asbestiform variety. Precambrian BIF-hosted 150-450 C lower-temperature stability family. Ca > 50 routes to calcic amphibole. Crocidolite participates in both published tiger-eye origin hypotheses.',
 };
 
 Object.assign(VugConditions.prototype, {
@@ -237,8 +236,9 @@ Object.assign(VugConditions.prototype, {
   // CROCIDOLITE Na2Fe2+3Fe3+2Si8O22(OH)2 — "BLUE ASBESTOS." Riebeckite
   // asbestiform variety. BIF-hosted (banded-iron-formation): Wittenoom
   // + Hamersley + Mount Brockman Western Australia; Northern Cape SA
-  // (Mt. Brockman is the type for the chatoyant variety that produces
-  // tiger's eye via supergene oxidation). Crocidolite is the most
+  // (classic chatoyant aggregates occur in these BIF terranes). The
+  // quartz-crocidolite relationship is model-dependent in SIM 260.
+  // Crocidolite is the most
   // carcinogenic of the asbestos minerals (Frank et al. 2002; lawsuits
   // closed the Wittenoom town in 1966). The most distinctive color
   // in the family: deep blue to lavender-blue to slate-blue; partial
@@ -255,11 +255,12 @@ Object.assign(VugConditions.prototype, {
     const fe_f = Math.min(this.fluid.Fe / 200.0, 2.0);
     const si_f = Math.min(this.fluid.SiO2 / 300.0, 1.5);
     let sigma = na_f * fe_f * si_f;
-    // T sweet spot 200-350°C (low-grade BIF metamorphism)
+    // T sweet spot 200-350°C within Miyano & Klein's 150-450°C
+    // low-to-medium-temperature amphibole-asbestos stability family.
     const T = this.temperature;
     if (T >= 200 && T <= 350) sigma *= 1.3;
-    else if (T < 200) sigma *= Math.max(0.4, (T - 100) / 100 + 0.4);
-    else sigma *= Math.max(0.4, 1.0 - (T - 350) / 50);
+    else if (T < 200) sigma *= Math.max(0.4, (T - 150) / 50 + 0.4);
+    else sigma *= Math.max(0.4, 1.0 - (T - 350) / 100);
     const pH = this.fluid.pH;
     if (pH >= 8.0 && pH <= 10.0) sigma *= 1.2;
     else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 9.0) * 0.3);

@@ -198,23 +198,20 @@ function _nuc_stibnite(sim) {
 // both fire). The nucleation threshold σ > 1.0 follows the same
 // canonical lower-tier gate used by pyrite/marcasite/galena.
 //
-// Substrate preference: cinnabar at Sulphur Bank often nucleates on
-// or alongside native_sulfur (both products of the H₂S + O₂ mixing
-// zone). At Almadén the substrate is typically quartz veining. The
-// nucleation handler weights these accordingly.
+// Sulphur Bank is a zoned hot-spring Hg deposit, not evidence for an
+// epitaxial native-sulfur substrate. USGS Bull. 922-L reports cinnabar
+// films on cracks in less-altered basalt, while thoroughly opalized rock
+// contains sulfur but little cinnabar; USGS Bull. 1693 likewise places
+// native sulfur above the palaeo-water table and cinnabar in sinter and
+// fracture coatings. Quartz remains a defensible physical substrate.
 function _nuc_cinnabar(sim) {
   const sigma_cb = sim.conditions.supersaturation_cinnabar();
   const existing_cb = sim.crystals.filter(c => c.mineral === 'cinnabar' && c.active);
   if (sigma_cb > MINERAL_GATES_cinnabar.sigma_crit && !sim._atNucleationCap('cinnabar')) {
     if (!existing_cb.length || (sigma_cb > 1.8 && rng.random() < 0.2)) {
       let pos = 'vug wall';
-      const active_ns = sim.crystals.filter(c => c.mineral === 'native_sulfur' && c.active);
       const active_qtz_cb = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
-      // Substrate preference: native_sulfur > quartz > wall.
-      // At Sulphur Bank, cinnabar and native_sulfur are co-deposited
-      // in the same mixing zone, so substrate association is real.
-      if (active_ns.length && rng.random() < 0.4) pos = `on native_sulfur #${active_ns[0].crystal_id}`;
-      else if (active_qtz_cb.length && rng.random() < 0.3) pos = `on quartz #${active_qtz_cb[0].crystal_id}`;
+      if (active_qtz_cb.length && rng.random() < 0.3) pos = `on quartz #${active_qtz_cb[0].crystal_id}`;
       const c = sim.nucleate('cinnabar', pos, sigma_cb);
       sim.log.push(`  ✦ NUCLEATION: Cinnabar #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_cb.toFixed(2)}, Hg=${sim.conditions.fluid.Hg.toFixed(1)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
     }
@@ -426,7 +423,7 @@ function _nuc_covellite(sim) {
 
 function _nuc_skutterudite(sim) {
   const sigma = sim.conditions.supersaturation_skutterudite();
-  if (sigma < MINERAL_GATES_skutterudite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_skutterudite.sigma_crit) return;
   if (sim._atNucleationCap('skutterudite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'skutterudite' && c.active);
   if (existing.length >= 2) return;
@@ -444,7 +441,7 @@ function _nuc_skutterudite(sim) {
 
 function _nuc_safflorite(sim) {
   const sigma = sim.conditions.supersaturation_safflorite();
-  if (sigma < MINERAL_GATES_safflorite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_safflorite.sigma_crit) return;
   if (sim._atNucleationCap('safflorite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'safflorite' && c.active);
   if (existing.length >= 2) return;
@@ -462,7 +459,7 @@ function _nuc_safflorite(sim) {
 
 function _nuc_rammelsbergite(sim) {
   const sigma = sim.conditions.supersaturation_rammelsbergite();
-  if (sigma < MINERAL_GATES_rammelsbergite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_rammelsbergite.sigma_crit) return;
   if (sim._atNucleationCap('rammelsbergite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'rammelsbergite' && c.active);
   if (existing.length >= 2) return;
@@ -478,7 +475,7 @@ function _nuc_rammelsbergite(sim) {
 
 function _nuc_loellingite(sim) {
   const sigma = sim.conditions.supersaturation_loellingite();
-  if (sigma < MINERAL_GATES_loellingite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_loellingite.sigma_crit) return;
   if (sim._atNucleationCap('loellingite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'loellingite' && c.active);
   if (existing.length >= 2) return;
@@ -500,7 +497,7 @@ function _nuc_loellingite(sim) {
 // fracture surfaces. RNG-cascade guard via sigma < 1.0 early-out.
 function _nuc_metacinnabar(sim) {
   const sigma = sim.conditions.supersaturation_metacinnabar();
-  if (sigma < MINERAL_GATES_metacinnabar.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_metacinnabar.sigma_crit) return;
   if (sim._atNucleationCap('metacinnabar')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'metacinnabar' && c.active);
   if (existing.length >= 3) return;
@@ -523,7 +520,7 @@ function _nuc_metacinnabar(sim) {
 
 function _nuc_proustite(sim) {
   const sigma = sim.conditions.supersaturation_proustite();
-  if (sigma < MINERAL_GATES_proustite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_proustite.sigma_crit) return;
   if (sim._atNucleationCap('proustite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'proustite' && c.active);
   if (existing.length >= 2) return;
@@ -543,7 +540,7 @@ function _nuc_proustite(sim) {
 
 function _nuc_pyrargyrite(sim) {
   const sigma = sim.conditions.supersaturation_pyrargyrite();
-  if (sigma < MINERAL_GATES_pyrargyrite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_pyrargyrite.sigma_crit) return;
   if (sim._atNucleationCap('pyrargyrite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'pyrargyrite' && c.active);
   if (existing.length >= 2) return;
@@ -567,7 +564,7 @@ function _nuc_pyrargyrite(sim) {
 // RNG-cascade guard: early-out if sigma < 1.0 BEFORE substrate picks.
 function _nuc_enargite(sim) {
   const sigma = sim.conditions.supersaturation_enargite();
-  if (sigma < MINERAL_GATES_enargite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_enargite.sigma_crit) return;
   if (sim._atNucleationCap('enargite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'enargite' && c.active);
   if (existing.length) return;  // primary stage — one nucleation per phase

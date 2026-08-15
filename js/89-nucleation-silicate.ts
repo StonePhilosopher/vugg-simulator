@@ -15,10 +15,44 @@ function _nuc_quartz(sim) {
   const existing_quartz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
   if (sigma_q > MINERAL_GATES_quartz.sigma_crit && existing_quartz.length < 3 && !sim._atNucleationCap('quartz')) {
     if (!existing_quartz.length || (sigma_q > 2.0 && rng.random() < 0.3)) {
-      const c = sim.nucleate('quartz', 'vug wall', sigma_q);
+      const substrate = typeof executableSubstrateCandidates === 'function'
+        ? executableSubstrateCandidates('quartz', sim.crystals)[0]
+        : null;
+      const chalcedony = substrate?.host || null;
+      const pos = chalcedony ? `chalcedony #${chalcedony.crystal_id}` : 'vug wall';
+      const c = sim.nucleate('quartz', pos, sigma_q);
+      sim.conditions._stableQuartzExposed = true;
       sim.log.push(`  ✦ NUCLEATION: Quartz #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_q.toFixed(2)})`);
     }
   }
+}
+
+function _nuc_chalcedony(sim) {
+  // Do not run the generic silica succession backwards. Once stable quartz is
+  // exposed, a later cooling step may make the remaining fluid supersaturated
+  // with respect to chalcedony, but it should feed/overgrow the lower-solubility
+  // quartz rather than create a fresh metastable chalcedony generation.
+  const exposedQuartz = sim.crystals.some(
+    c => c.mineral === 'quartz' && c.active && !c.dissolved,
+  );
+  if (exposedQuartz) return;
+  const sigma = sim.conditions.supersaturation_chalcedony();
+  if (sigma <= MINERAL_GATES_chalcedony.sigma_crit) return;
+  if (sim._atNucleationCap('chalcedony')) return;
+  const existing = sim.crystals.filter(c => c.mineral === 'chalcedony' && c.active);
+  if (existing.length >= 4) return;
+  if (existing.length && !(sigma > 1.8 && rng.random() < 0.22)) return;
+
+  // Opal is the natural precursor substrate when an amorphous-silica pulse
+  // matures. Otherwise chalcedony starts as a fibrous veneer on the cavity wall.
+  const opal = sim.crystals.find(c => c.mineral === 'opal' && c.active && !c.dissolved);
+  const pos = opal ? `opal #${opal.crystal_id}` : 'vug wall';
+  const c = sim.nucleate('chalcedony', pos, sigma);
+  sim.log.push(
+    `  ✦ NUCLEATION: Chalcedony #${c.crystal_id} on ${c.position} ` +
+    `(T=${sim.conditions.temperature.toFixed(0)}°C, σch=${sigma.toFixed(2)}) — ` +
+    'a first-class length-fast microfibrous SiO2 aggregate, not a quartz display label',
+  );
 }
 function _nuc_apophyllite(sim) {
   const sigma_ap = sim.conditions.supersaturation_apophyllite();
@@ -85,10 +119,14 @@ function _nuc_chrysocolla(sim) {
   if (sim._atNucleationCap('chrysocolla')) return;
   // Pick substrate first, then σ-check with discount.
   let pos = 'vug wall';
-  const active_azr_chry = sim.crystals.filter(c => c.mineral === 'azurite' && c.active);
-  const dissolving_azr_chry = sim.crystals.filter(c => c.mineral === 'azurite' && c.dissolved);
-  const active_cpr_chry = sim.crystals.filter(c => c.mineral === 'cuprite' && c.active);
-  const active_nc_chry = sim.crystals.filter(c => c.mineral === 'native_copper' && c.active);
+  const active_azr_chry = sim.crystals.filter(c => c.mineral === 'azurite' && c.active
+    && engineExecutableSubstrateRoute(c, 'chrysocolla').executable);
+  const dissolving_azr_chry = sim.crystals.filter(c => c.mineral === 'azurite' && c.dissolved
+    && engineExecutableSubstrateRoute(c, 'chrysocolla').executable);
+  const active_cpr_chry = sim.crystals.filter(c => c.mineral === 'cuprite' && c.active
+    && engineExecutableSubstrateRoute(c, 'chrysocolla').executable);
+  const active_nc_chry = sim.crystals.filter(c => c.mineral === 'native_copper' && c.active
+    && engineExecutableSubstrateRoute(c, 'chrysocolla').executable);
   if (dissolving_azr_chry.length && rng.random() < 0.6) pos = `pseudomorph after azurite #${dissolving_azr_chry[0].crystal_id}`;
   else if (active_azr_chry.length && rng.random() < 0.3) pos = `on azurite #${active_azr_chry[0].crystal_id}`;
   else if (active_cpr_chry.length && rng.random() < 0.5) pos = `on cuprite #${active_cpr_chry[0].crystal_id}`;
@@ -144,14 +182,50 @@ function _nuc_spodumene(sim) {
   const existing_qtz_ber = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
   const existing_feld_ber = sim.crystals.filter(c => c.mineral === 'feldspar' && c.active);
   for (const [species, sigma_bf, threshold] of beryl_family_candidates) {
+    // This family shares the spodumene dispatcher, so the outer dispatcher
+    // cannot infer which beryl endmember is about to fire. Enforce every
+    // per-species scenario contract at the actual candidate boundary.
+    if (_scenarioSpeciesExclusion(sim, species)
+        || _scenarioPositiveLicenseBlock(sim, species)
+        || _scenarioNucleationWindowBlock(sim, species)
+        || _scenarioNucleationPrerequisiteBlock(sim, species)) continue;
     if (sigma_bf <= threshold) continue;
-    if (sim._atNucleationCap(species)) continue;
     const existing_sp = sim.crystals.filter(c => c.mineral === species && c.active);
-    if (existing_sp.length && !(sigma_bf > threshold + 0.7 && rng.random() < 0.15)) continue;
-    let pos = 'vug wall';
-    if (existing_qtz_ber.length && rng.random() < 0.4) {
+    // Etching can clear old growth surfaces and a neutralised, still-
+    // supersaturated fluid can then lay down a distinct second generation.
+    // That recovery generation is a reaction-history result, not a lottery:
+    // permit one after an exposed member records dissolution and the fluid
+    // has left the HF attack window. Ordinary repeat nucleation retains the
+    // original stochastic rule.
+    let recoveryGeneration = false;
+    let recoveryHost = null;
+    if (existing_sp.length && sim.conditions.fluid.pH >= 3.0) {
+      let latestEtch = -1;
+      for (const crystal of sim.crystals) {
+        if (crystal.mineral !== species) continue;
+        for (const zone of crystal.zones || []) {
+          if (zone.thickness_um < 0 && (zone.step ?? -1) >= latestEtch) {
+            latestEtch = zone.step ?? -1;
+            recoveryHost = crystal;
+          }
+        }
+      }
+      recoveryGeneration = latestEtch >= 0
+        && !sim.crystals.some(c => c.mineral === species && c.nucleation_step > latestEtch)
+        && !sim._wallStrangledFor(species);
+    }
+    // The ordinary cap counts exposed wall nuclei. A recovery nucleus is
+    // hosted on a pre-existing etched crystal, so it does not claim another
+    // wall site and may create the single documented second generation.
+    if (!recoveryGeneration && sim._atNucleationCap(species)) continue;
+    if (existing_sp.length && !recoveryGeneration
+        && !(sigma_bf > threshold + 0.7 && rng.random() < 0.15)) continue;
+    let pos = recoveryGeneration && recoveryHost
+      ? 'fresh vug wall exposed by HF etching (post-etch second generation)'
+      : 'vug wall';
+    if (!recoveryGeneration && existing_qtz_ber.length && rng.random() < 0.4) {
       pos = `on quartz #${existing_qtz_ber[0].crystal_id}`;
-    } else if (existing_feld_ber.length && rng.random() < 0.4) {
+    } else if (!recoveryGeneration && existing_feld_ber.length && rng.random() < 0.4) {
       pos = `on feldspar #${existing_feld_ber[0].crystal_id}`;
     }
     const c = sim.nucleate(species, pos, sigma_bf);
@@ -180,6 +254,12 @@ function _nuc_spodumene(sim) {
     ['corundum', sim.conditions.supersaturation_corundum(), MINERAL_GATES_corundum.sigma_crit],
   ];
   for (const [species, sigma_cf, threshold] of corundum_family_candidates) {
+    // Ruby, sapphire, and corundum also share this dispatcher. Apply the
+    // selected endmember's locality contract before it can nucleate.
+    if (_scenarioSpeciesExclusion(sim, species)
+        || _scenarioPositiveLicenseBlock(sim, species)
+        || _scenarioNucleationWindowBlock(sim, species)
+        || _scenarioNucleationPrerequisiteBlock(sim, species)) continue;
     if (sigma_cf <= threshold) continue;
     if (sim._atNucleationCap(species)) continue;
     const existing_sp = sim.crystals.filter(c => c.mineral === species && c.active);
@@ -350,7 +430,7 @@ function _nuc_chrysoprase(sim) {
 // systems. RNG-cascade guard via sigma < 1.0 early-out.
 function _nuc_opal(sim) {
   const sigma = sim.conditions.supersaturation_opal();
-  if (sigma < MINERAL_GATES_opal.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_opal.sigma_crit) return;
   if (sim._atNucleationCap('opal')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'opal' && c.active);
   if (existing.length >= 5) return;  // sinter mound = many opal crystals
@@ -375,7 +455,7 @@ function _nuc_opal(sim) {
 
 function _nuc_coffinite(sim) {
   const sigma = sim.conditions.supersaturation_coffinite();
-  if (sigma < MINERAL_GATES_coffinite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_coffinite.sigma_crit) return;
   if (sim._atNucleationCap('coffinite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'coffinite' && c.active);
   if (existing.length >= 2) return;
@@ -390,7 +470,7 @@ function _nuc_coffinite(sim) {
 
 function _nuc_uranophane(sim) {
   const sigma = sim.conditions.supersaturation_uranophane();
-  if (sigma < MINERAL_GATES_uranophane.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_uranophane.sigma_crit) return;
   if (sim._atNucleationCap('uranophane')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'uranophane' && c.active);
   if (existing.length >= 3) return;
@@ -411,7 +491,7 @@ function _nuc_uranophane(sim) {
 
 function _nuc_hemimorphite(sim) {
   const sigma = sim.conditions.supersaturation_hemimorphite();
-  if (sigma < MINERAL_GATES_hemimorphite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_hemimorphite.sigma_crit) return;
   if (sim._atNucleationCap('hemimorphite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'hemimorphite' && c.active);
   if (existing.length >= 3) return;
@@ -428,7 +508,7 @@ function _nuc_hemimorphite(sim) {
 
 function _nuc_willemite(sim) {
   const sigma = sim.conditions.supersaturation_willemite();
-  if (sigma < MINERAL_GATES_willemite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_willemite.sigma_crit) return;
   if (sim._atNucleationCap('willemite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'willemite' && c.active);
   if (existing.length >= 3) return;
@@ -448,7 +528,7 @@ function _nuc_dioptase(sim) {
   // byte-identical for non-Cu-Si scenarios. The 1.0 floor is below the
   // 1.2 nucleation threshold so we still allow substrate picking when
   // there's a real chance to fire.
-  if (sigma < MINERAL_GATES_dioptase.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_dioptase.sigma_crit) return;
   if (sim._atNucleationCap('dioptase')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'dioptase' && c.active);
   let pos = 'vug wall';
@@ -471,7 +551,7 @@ function _nuc_dioptase(sim) {
 
 function _nuc_shattuckite(sim) {
   const sigma = sim.conditions.supersaturation_shattuckite();
-  if (sigma < MINERAL_GATES_shattuckite.sigma_crit) return;  // RNG-cascade guard (see _nuc_dioptase comment)
+  if (sigma <= MINERAL_GATES_shattuckite.sigma_crit) return; // RNG-cascade guard (see _nuc_dioptase comment)
   if (sim._atNucleationCap('shattuckite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'shattuckite' && c.active);
   let pos = 'vug wall';
@@ -495,39 +575,103 @@ function _nuc_shattuckite(sim) {
   }
 }
 
-// v116 (2026-05-20): Tiger's eye — chalcedony pseudomorph after
-// crocidolite. Substrate priority: crocidolite_dissolving (canonical
-// pseudomorph substrate, p=0.65) > hematite (BIF tiger-iron context,
-// p=0.45) > magnetite > wall.
+function _hasAcceptedOxidativeCrocidoliteAlteration(crystal) {
+  return crystal?.mineral === 'crocidolite' &&
+    (crystal.zones || []).some(zone => {
+      const returned = zone?._returned_budget_inventory;
+      return zone?.thickness_um < 0
+        && zone?.dissolutionMode === 'oxidative'
+        && Number(returned?.Na) > 0
+        && Number(returned?.Fe) > 0
+        && Number(returned?.SiO2) > 0;
+    });
+}
+
+function _hasAcceptedCrocidoliteGrowth(crystal) {
+  return crystal?.mineral === 'crocidolite'
+    && crystal.active && !crystal.dissolved
+    && (crystal.zones || []).some(zone => {
+      const booked = zone?._budget_inventory_per_um;
+      return zone?.thickness_um > 0
+        && Number(booked?.Na) > 0
+        && Number(booked?.Fe) > 0
+        && Number(booked?.SiO2) > 0;
+    });
+}
+
+function _isBandedIronFormationHost(sim) {
+  const wall = sim?.conditions?.wall || {};
+  return wall.composition === 'banded_iron_formation';
+}
+
+function _localTigerIronPhase(sim, substrate) {
+  const wall = sim?.wall_state;
+  const origin = wall?._resolveAnchor?.(substrate);
+  const mesh = wall?.meshFor?.(sim);
+  if (!origin || !mesh) return null;
+  const source = wall.chemistryVertexForCrystal(substrate);
+  const distances = source >= 0 ? _wallMeshGeodesicDistancesInternal(mesh, source) : null;
+  if (!distances) return null;
+  // "Banded with" means the iron phase occupies the immediately adjacent
+  // surface patch.  cell_arc_mm is an equatorial mean and is too wide near a
+  // pole, where several ring cells can fit inside that arc.  Use the closest
+  // non-zero geodesic chemistry spacing at the actual substrate instead.  It
+  // preserves one-patch locality while remaining metric and topology-neutral.
+  let localRadiusMm = Infinity;
+  for (let vertex = 0; vertex < mesh.numInterior; vertex++) {
+    const distance = distances[vertex];
+    if (distance > 1e-10 && distance < localRadiusMm) localRadiusMm = distance;
+  }
+  if (!Number.isFinite(localRadiusMm)) return null;
+  const toleranceMm = Math.max(1e-10, localRadiusMm * 1e-9);
+  return sim.crystals.find(crystal => {
+    if (!['hematite', 'jasper'].includes(crystal?.mineral)) return false;
+    if (!crystal.active || crystal.dissolved || crystal._buried || crystal.enclosed_by != null) return false;
+    const anchor = wall._resolveAnchor(crystal);
+    const target = wall.chemistryVertexForCrystal(crystal);
+    return !!anchor && target >= 0 && distances[target] <= localRadiusMm + toleranceMm;
+  }) || null;
+}
+
+// Tiger's-eye origin is implemented as two explicitly named literature
+// models. Heaney & Fisher (2003) requires grown, still-present crocidolite
+// in a synchronous antitaxial crack-seal vein. Gutzmer, Beukes & Cairncross
+// (2004) requires an accepted oxidative loss zone in an older crocidolite
+// seam before later silica can grow. Neither model permits bare-wall or
+// bare-iron-oxide tiger's eye.
 function _nuc_tigers_eye(sim) {
+  if (!_isBandedIronFormationHost(sim)) return;
   const sigma = sim.conditions.supersaturation_tigers_eye();
-  if (sigma < MINERAL_GATES_tigers_eye.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_tigers_eye.sigma_crit) return;
   if (sim._atNucleationCap('tigers_eye')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'tigers_eye' && c.active);
   if (existing.length >= 3) return;
-  // Tiger's eye is a chalcedony PSEUDOMORPH after crocidolite (asbestiform
-  // riebeckite) — a Precambrian-BIF-only phenomenon (Heaney & Fisher 2003
-  // Am.Min. 88:1, the sim's own cited source). It cannot nucleate on a bare
-  // wall, nor on bare hematite/magnetite: iron oxide alone (a basalt amygdale,
-  // an oxidized ore body) is NOT a BIF crocidolite context — it is the
-  // dissolving crocidolite framework that the chalcedony replaces. So the ONLY
-  // substrate is a dissolving crocidolite crystal; no crocidolite → no tiger's
-  // eye (rung 3, SIM 229 — retires the bare-wall + bare-Fe-oxide fallbacks that
-  // minted it in deccan basalt, bisbee/ouro_preto ore, and pegmatite pockets).
-  const dissolving_croc = sim.crystals.filter(c => c.mineral === 'crocidolite' && c.dissolved);
-  if (!dissolving_croc.length || rng.random() >= 0.65) return;
-  // BIF co-context: banded hematite/jasper alongside the dissolving crocidolite
-  // renders the TIGER IRON assemblage; otherwise the classic chatoyant band.
-  const active_hem = sim.crystals.filter(c => c.mineral === 'hematite' && c.active);
-  const pos = active_hem.length
-    ? `pseudomorph after crocidolite #${dissolving_croc[0].crystal_id}, banded with hematite #${active_hem[0].crystal_id} (TIGER IRON BIF assemblage)`
-    : `pseudomorph after crocidolite #${dissolving_croc[0].crystal_id} (the canonical tiger's eye paragenesis)`;
+  const model = tigerEyeOriginModel(sim.conditions);
+  if (!model) return;
+  const crackSeal = model === 'antitaxial_crack_seal';
+  const substrates = sim.crystals.filter(c => {
+    if (c.mineral !== 'crocidolite') return false;
+    if (crackSeal) return _hasAcceptedCrocidoliteGrowth(c);
+    return _hasAcceptedOxidativeCrocidoliteAlteration(c);
+  });
+  if (!substrates.length) return;
+
+  const substrate = substrates[0];
+  const localIronPhase = _localTigerIronPhase(sim, substrate);
+  const modelToken = crackSeal ? 'model=antitaxial-crack-seal' : 'model=surficial-alteration';
+  const substrateText = crackSeal
+    ? `synchronous with crocidolite #${substrate.crystal_id}`
+    : `after accepted oxidative alteration of crocidolite #${substrate.crystal_id}`;
+  const pos = localIronPhase
+    ? `${substrateText}, banded with ${localIronPhase.mineral} #${localIronPhase.crystal_id} (${modelToken}; TIGER IRON BIF assemblage)`
+    : `${substrateText} (${modelToken})`;
   const discount = sim._sigmaDiscountForPosition('tigers_eye', pos);
   if (sigma > 1.2 * discount) {
     if (!existing.length || (sigma > 2.0 && rng.random() < 0.22)) {
       const c = sim.nucleate('tigers_eye', pos, sigma);
-      const variety = pos.includes('hematite') ? 'TIGER IRON' : 'CHATOYANT pseudomorph';
-      sim.log.push(`  ✦ NUCLEATION: 🐅 Tiger's eye #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, O₂=${sim.conditions.fluid.O2.toFixed(1)}) — ${variety}, supergene chalcedony pseudomorph after crocidolite`);
+      const variety = localIronPhase ? 'TIGER IRON' : 'CHATOYANT quartz-crocidolite aggregate';
+      const interpretation = crackSeal ? 'antitaxial crack-seal interpretation' : 'surficial-alteration interpretation';
+      sim.log.push(`  ✦ NUCLEATION: 🐅 Tiger's eye #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, O₂=${sim.conditions.fluid.O2.toFixed(1)}) — ${variety}, ${interpretation}`);
     }
   }
 }
@@ -539,7 +683,7 @@ function _nuc_tigers_eye(sim) {
 // RNG-cascade-guarded.
 function _nuc_chrysotile(sim) {
   const sigma = sim.conditions.supersaturation_chrysotile();
-  if (sigma < MINERAL_GATES_chrysotile.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_chrysotile.sigma_crit) return;
   if (sim._atNucleationCap('chrysotile')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'chrysotile' && c.active);
   if (existing.length >= 5) return;  // host-matrix mineral; allow many
@@ -560,7 +704,7 @@ function _nuc_chrysotile(sim) {
 // minerals. All RNG-cascade-guarded.
 function _nuc_pectolite(sim) {
   const sigma = sim.conditions.supersaturation_pectolite();
-  if (sigma < MINERAL_GATES_pectolite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_pectolite.sigma_crit) return;
   if (sim._atNucleationCap('pectolite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'pectolite' && c.active);
   if (existing.length >= 4) return;
@@ -587,7 +731,7 @@ function _nuc_pectolite(sim) {
 
 function _nuc_wollastonite(sim) {
   const sigma = sim.conditions.supersaturation_wollastonite();
-  if (sigma < MINERAL_GATES_wollastonite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_wollastonite.sigma_crit) return;
   if (sim._atNucleationCap('wollastonite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'wollastonite' && c.active);
   if (existing.length >= 4) return;
@@ -609,7 +753,7 @@ function _nuc_wollastonite(sim) {
 
 function _nuc_prehnite(sim) {
   const sigma = sim.conditions.supersaturation_prehnite();
-  if (sigma < MINERAL_GATES_prehnite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_prehnite.sigma_crit) return;
   if (sim._atNucleationCap('prehnite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'prehnite' && c.active);
   if (existing.length >= 4) return;
@@ -641,7 +785,7 @@ function _nuc_prehnite(sim) {
 // so this only consumes RNG in oxidized Ca-Al-Fe-Si fluids).
 function _nuc_epidote(sim) {
   const sigma = sim.conditions.supersaturation_epidote();
-  if (sigma < MINERAL_GATES_epidote.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sigma <= MINERAL_GATES_epidote.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('epidote')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'epidote' && c.active);
   if (existing.length >= 5) return;
@@ -669,10 +813,10 @@ function _nuc_epidote(sim) {
 // v205 (2026-06-19): titanite (sphene) — Aar/Grimsel alpine-cleft Ti-nesosilicate.
 // LATE phase: substrate priority quartz > adularia(feldspar) > epidote > calcite
 // > wall (the alpine-cleft paragenesis — wedge crystals perched on the quartz
-// druse). Cap 3 (minor accessory). RNG-cascade-guarded at sigma < sigma_crit.
+// druse). Cap 3 (minor accessory). RNG-cascade-guarded at sigma <= sigma_crit.
 function _nuc_titanite(sim) {
   const sigma = sim.conditions.supersaturation_titanite();
-  if (sigma < MINERAL_GATES_titanite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sigma <= MINERAL_GATES_titanite.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('titanite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'titanite' && c.active);
   if (existing.length >= 3) return;
@@ -704,7 +848,7 @@ function _nuc_titanite(sim) {
 // calcite > wall. Both RNG-cascade-guarded at sigma < 1.0 early-out.
 function _nuc_grossular(sim) {
   const sigma = sim.conditions.supersaturation_grossular();
-  if (sigma < MINERAL_GATES_grossular.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_grossular.sigma_crit) return;
   if (sim._atNucleationCap('grossular')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'grossular' && c.active);
   if (existing.length >= 4) return;
@@ -731,7 +875,7 @@ function _nuc_grossular(sim) {
 
 function _nuc_diopside(sim) {
   const sigma = sim.conditions.supersaturation_diopside();
-  if (sigma < MINERAL_GATES_diopside.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_diopside.sigma_crit) return;
   if (sim._atNucleationCap('diopside')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'diopside' && c.active);
   if (existing.length >= 4) return;
@@ -763,7 +907,7 @@ function _nuc_diopside(sim) {
 // sigma < 1.0 early-out.
 function _nuc_vesuvianite(sim) {
   const sigma = sim.conditions.supersaturation_vesuvianite();
-  if (sigma < MINERAL_GATES_vesuvianite.sigma_crit) return;  // RNG-cascade guard
+  if (sigma <= MINERAL_GATES_vesuvianite.sigma_crit) return; // RNG-cascade guard
   if (sim._atNucleationCap('vesuvianite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'vesuvianite' && c.active);
   if (existing.length >= 4) return;
@@ -797,7 +941,7 @@ function _nuc_vesuvianite(sim) {
 // sigma < 1.0 early-out.
 function _nuc_datolite(sim) {
   const sigma = sim.conditions.supersaturation_datolite();
-  if (sigma < MINERAL_GATES_datolite.sigma_crit) return;  // RNG-cascade guard — keeps non-datolite scenarios byte-identical
+  if (sigma <= MINERAL_GATES_datolite.sigma_crit) return; // RNG-cascade guard — keeps non-datolite scenarios byte-identical
   if (sim._atNucleationCap('datolite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'datolite' && c.active);
   if (existing.length >= 3) return;
@@ -833,10 +977,10 @@ function _nuc_datolite(sim) {
 // quartz veneer) is the primary nucleation surface (turnstone/Pune: stilbite
 // "crystallized on a microcrystalline silicate layer already deposited on the
 // basalt host"), then intergrowth with heulandite, then late calcite /
-// apophyllite. RNG-cascade-guarded at sigma < sigma_crit.
+// apophyllite. RNG-cascade-guarded at sigma <= sigma_crit.
 function _nuc_stilbite(sim) {
   const sigma = sim.conditions.supersaturation_stilbite();
-  if (sigma < MINERAL_GATES_stilbite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sigma <= MINERAL_GATES_stilbite.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('stilbite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'stilbite' && c.active);
   if (existing.length >= 5) return;
@@ -863,7 +1007,7 @@ function _nuc_stilbite(sim) {
 // priority; intergrows with stilbite. RNG-cascade-guarded.
 function _nuc_heulandite(sim) {
   const sigma = sim.conditions.supersaturation_heulandite();
-  if (sigma < MINERAL_GATES_heulandite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sigma <= MINERAL_GATES_heulandite.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('heulandite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'heulandite' && c.active);
   if (existing.length >= 5) return;
@@ -885,13 +1029,13 @@ function _nuc_heulandite(sim) {
   }
 }
 
-// v202 (2026-06-17): Thomsonite — the EARLIEST amygdule zeolite (most aluminous,
-// Si/Al~1). Nucleates on the fresh cavity surface: early calcite > silica veneer
-// > smectite-lined wall. The later natrolite group + sheet zeolites nucleate ON
-// thomsonite. RNG-cascade-guarded.
+// v202 (2026-06-17): Thomsonite — a low-Si, highly aluminous amygdule zeolite.
+// Relative order varies by locality; authored scenarios provide any claimed
+// paragenetic window. Substrate preferences are morphological, not chronology.
+// RNG-cascade-guarded.
 function _nuc_thomsonite(sim) {
   const sigma = sim.conditions.supersaturation_thomsonite();
-  if (sigma < MINERAL_GATES_thomsonite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sigma <= MINERAL_GATES_thomsonite.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('thomsonite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'thomsonite' && c.active);
   if (existing.length >= 5) return;
@@ -907,7 +1051,7 @@ function _nuc_thomsonite(sim) {
     // at a LOWER sigma threshold than the projecting zeolites.
     if (!existing.length || (sigma > 1.4 && rng.random() < 0.30)) {
       const c = sim.nucleate('thomsonite', pos, sigma);
-      sim.log.push(`  ✦ NUCLEATION: 👁️ Thomsonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — concentric "eye" Na-Ca zeolite, earliest Deccan cavity phase`);
+      sim.log.push(`  ✦ NUCLEATION: 👁️ Thomsonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — concentric "eye" Na-Ca zeolite; relative order is locality-dependent`);
     }
   }
 }
@@ -919,7 +1063,7 @@ function _nuc_thomsonite(sim) {
 // their substrate logic.)
 function _nuc_scolecite(sim) {
   const sigma = sim.conditions.supersaturation_scolecite();
-  if (sigma < MINERAL_GATES_scolecite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sigma <= MINERAL_GATES_scolecite.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('scolecite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'scolecite' && c.active);
   if (existing.length >= 5) return;
@@ -945,7 +1089,7 @@ function _nuc_scolecite(sim) {
 // group substrate priority; co-deposits with scolecite. RNG-cascade-guarded.
 function _nuc_mesolite(sim) {
   const sigma = sim.conditions.supersaturation_mesolite();
-  if (sigma < MINERAL_GATES_mesolite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sigma <= MINERAL_GATES_mesolite.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('mesolite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'mesolite' && c.active);
   if (existing.length >= 5) return;
@@ -967,13 +1111,13 @@ function _nuc_mesolite(sim) {
   }
 }
 
-// v203 (2026-06-17): Chabazite — the LATE, intermediate-Si amygdule zeolite.
-// A perching phase: nucleates on the earlier zeolite lining (sheet zeolites
-// stilbite/heulandite, then the fibrous group), then calcite, then wall.
-// RNG-cascade-guarded. (Last in the silicate iterator — paragenetically late.)
+// v203 (2026-06-17): Chabazite — an intermediate-Si amygdule zeolite.
+// Substrate selection favors existing zeolite surfaces, but relative order is
+// locality-dependent and belongs to the authored scenario contract.
+// RNG-cascade-guarded.
 function _nuc_chabazite(sim) {
   const sigma = sim.conditions.supersaturation_chabazite();
-  if (sigma < MINERAL_GATES_chabazite.sigma_crit) return;   // RNG-cascade guard — DO NOT MOVE
+  if (sigma <= MINERAL_GATES_chabazite.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('chabazite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'chabazite' && c.active);
   if (existing.length >= 5) return;
@@ -988,12 +1132,13 @@ function _nuc_chabazite(sim) {
   if (sigma > 1.2 * discount) {
     if (!existing.length || (sigma > 2.0 && rng.random() < 0.20)) {
       const c = sim.nucleate('chabazite', pos, sigma);
-      sim.log.push(`  ✦ NUCLEATION: ⬜ Chabazite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — rhombohedral pseudo-cube zeolite, late Deccan cavity phase`);
+      sim.log.push(`  ✦ NUCLEATION: ⬜ Chabazite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, Na=${sim.conditions.fluid.Na.toFixed(0)}, Al=${sim.conditions.fluid.Al.toFixed(1)}, SiO₂=${sim.conditions.fluid.SiO2.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — rhombohedral pseudo-cube zeolite; relative order is locality-dependent`);
     }
   }
 }
 
 function _nucleateClass_silicate(sim) {
+  _runNuc(sim, _nuc_chalcedony);
   _runNuc(sim, _nuc_quartz);
   _runNuc(sim, _nuc_apophyllite);
   _runNuc(sim, _nuc_feldspar);

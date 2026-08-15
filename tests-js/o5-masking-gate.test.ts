@@ -26,6 +26,10 @@ function freshSim() {
   return new VugSimulator(scen.conditions, scen.events);
 }
 
+const FILM_SCENARIOS = ['reactivated_fluorite_vein', 'radioactive_pegmatite',
+  'roughten_gill', 'bisbee', 'supergene_oxidation'];
+const horizonCounts = new Map<string, number>();
+
 describe('W-F O5b — the masking gate is live', () => {
   beforeEach(() => { setO5MaskingEnabled(true); setSigmaStarK(1.0); });
   afterEach(() => { setO5MaskingEnabled(true); setSigmaStarK(1.0); });   // ship state
@@ -77,33 +81,33 @@ describe('W-F O5b — the masking gate is live', () => {
     }
   });
 
-  it('THE INVARIANT — a masked_horizon is a positive-growth phantom, never a dissolution surface', () => {
-    // Sweep the film-carrying scenarios; every masked_horizon zone fleet-wide
-    // must be positive-thickness and not is_phantom (that is the whole point —
-    // "dusted and buried", not "etched and healed").
-    const filmScenarios = ['reactivated_fluorite_vein', 'radioactive_pegmatite',
-      'roughten_gill', 'bisbee', 'supergene_oxidation'];
+  it.each(FILM_SCENARIOS)('THE INVARIANT in %s — masked_horizon is positive growth, never dissolution', { timeout: 900_000 }, (name) => {
+    // Every masked_horizon zone must be positive-thickness and not is_phantom
+    // ("dusted and buried", not "etched and healed"). Each full scenario gets
+    // its own timer so synchronous histories cannot consume a shared budget.
     let horizonsSeen = 0;
-    for (const name of filmScenarios) {
-      if (!SCENARIOS[name]) continue;
-      setSeed(42);
-      const scen = SCENARIOS[name]();
-      const sim = new VugSimulator(scen.conditions, scen.events);
-      const steps = scen.defaultSteps ?? 100;
-      for (let i = 0; i < steps; i++) sim.run_step();
-      for (const c of sim.crystals) {
-        if (!c || !c.zones) continue;
-        for (const z of c.zones) {
-          if (z.masked_horizon) {
-            horizonsSeen++;
-            expect(z.thickness_um, `${name} #${c.crystal_id} masked_horizon must be positive`).toBeGreaterThan(0);
-            expect(!!z.is_phantom, `${name} #${c.crystal_id} masked_horizon must not be a dissolution phantom`).toBe(false);
-          }
+    setSeed(42);
+    const scen = SCENARIOS[name]();
+    const sim = new VugSimulator(scen.conditions, scen.events);
+    const steps = scen.defaultSteps ?? 100;
+    for (let i = 0; i < steps; i++) sim.run_step();
+    for (const c of sim.crystals) {
+      if (!c || !c.zones) continue;
+      for (const z of c.zones) {
+        if (z.masked_horizon) {
+          horizonsSeen++;
+          expect(z.thickness_um, `${name} #${c.crystal_id} masked_horizon must be positive`).toBeGreaterThan(0);
+          expect(!!z.is_phantom, `${name} #${c.crystal_id} masked_horizon must not be a dissolution phantom`).toBe(false);
         }
       }
     }
+    horizonCounts.set(name, horizonsSeen);
+  });
+
+  it('the masking gate produces at least one horizon across the film-carrying fleet', () => {
     // The gate is live; at least one horizon should exist somewhere in the film
     // scenarios (documents that the mechanic actually fires, not just compiles).
+    const horizonsSeen = [...horizonCounts.values()].reduce((sum, count) => sum + count, 0);
     expect(horizonsSeen).toBeGreaterThan(0);
   });
 

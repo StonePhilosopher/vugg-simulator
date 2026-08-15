@@ -283,7 +283,7 @@ describe('CavityVoxelGrid — Phase 1 (v158) data model', () => {
       // _diffuseFull is a real 3D Laplacian, but the Laplacian of a
       // uniform field is zero — and the per-field variance skip short-
       // circuits the whole pass — so a freshly-allocated grid (every
-      // voxel at the bulk broth) stays put. (Once engine mass-balance
+      // voxel at the bulk broth) stays put. (Once engine growth-budget
       // creates a gradient, diffusion DOES move the interior — see the
       // v160 radial-replenishment test below.)
       for (let i = 0; i < 5; i++) {
@@ -302,7 +302,7 @@ describe('CavityVoxelGrid — Phase 1 (v158) data model', () => {
       const grid = sim.wall_state.voxelGridFor(sim);
       const r = 8, c = 60;
       const reservoir = grid.voxelAt(r, c, 1).fluid.Ca;  // d=1 near-wall buffer (= bulk)
-      // Simulate mass-balance consumption: deplete the d=0 wall cell.
+      // Simulate growth-budget consumption: deplete the d=0 wall cell.
       grid.voxelAt(r, c, 0).fluid.Ca = reservoir * 0.1;
       const before = grid.voxelAt(r, c, 0).fluid.Ca;
       for (let i = 0; i < 4; i++) grid.diffuse(0.1, ['Ca'], sim.ring_temperatures);

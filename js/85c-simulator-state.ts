@@ -24,13 +24,196 @@ function _replayStride(step: number): number {
   return 729;
 }
 
+function _canonicalSpatialFluids(sim: any): any[] {
+  const grid = sim?.wall_state?.voxelGridFor?.(sim);
+  if (grid?.voxels) return grid.voxels.map((voxel: any) => voxel?.fluid).filter(Boolean);
+  const mesh = sim?.wall_state?.meshFor?.(sim);
+  return (mesh?.cells || []).map((cell: any) => cell?.fluid).filter(Boolean);
+}
+
+function _spatialSulfurState(sim: any): any {
+  const fluids = _canonicalSpatialFluids(sim);
+  const totals = fluids.map((fluid: any) => sulfurSystemTotalPpm(fluid));
+  return { count: totals.length, totals, totalPpm: totals.reduce((a: number, b: number) => a + b, 0) };
+}
+
+function _spatialCarbonState(sim: any): any {
+  const fluids = _canonicalSpatialFluids(sim);
+  const totals = fluids.map((fluid: any) => Math.max(0, Number(fluid?.CO3) || 0));
+  return { count: totals.length, totals, totalPpm: totals.reduce((a: number, b: number) => a + b, 0) };
+}
+
+function _ledgerTolerance(value: number): number {
+  return Math.max(1e-7, Math.abs(value) * 1e-9);
+}
+
 Object.assign(VugSimulator.prototype, {
+  _replaceFullyMixedCarbonateFluid() {
+    if (!this._carbonateBoundaryState) return false;
+    const source = this.conditions?.fluid;
+    if (!source) return false;
+    const fluids = _canonicalSpatialFluids(this);
+    for (const fluid of fluids) {
+      fluid.CO3 = source.CO3;
+      fluid.pH = source.pH;
+    }
+    for (const fluid of (this.ring_fluids || [])) {
+      if (!fluid) continue;
+      fluid.CO3 = source.CO3;
+      fluid.pH = source.pH;
+    }
+    this._carbonateBoundaryState.lastDICMolKg = dicPpmToMolKg(source.CO3);
+    this._carbonateBoundaryState.lastBulkDICPpm = source.CO3;
+    return fluids.length > 0;
+  },
+
+  _prepareCarbonateBoundarySpatialState() {
+    const state = this._carbonateBoundaryState;
+    const config = this.conditions?._scenario?.carbonate_boundary;
+    if (!state || !config) return false;
+    // Initialization and configuration failures cannot be repaired by a
+    // subsequent zero-residual voxel audit. Keep these distinct from the
+    // recoverable spatial/receipt blocks below, which a later clean step may
+    // legitimately clear.
+    if (state.permanentBlocked || state.initializationBlocked || state.configurationBlocked) {
+      state.permanentBlocked = true;
+      state.blocked = true;
+      return false;
+    }
+    const receipts = Array.isArray(this.conditions._pending_carbonate_boundary_transfers)
+      ? this.conditions._pending_carbonate_boundary_transfers.slice() : [];
+    delete this.conditions._pending_carbonate_boundary_transfers;
+    const pendingViolation = this.conditions._pending_carbonate_boundary_violation || null;
+    delete this.conditions._pending_carbonate_boundary_violation;
+    let fullyFlooded = false;
+    try {
+      fullyFlooded = CavityWaterAppearance.create(this.wall_state, this.conditions, {
+        sim: this,
+      }).receipt.fully_submerged;
+    } catch (error) {
+      state.blocked = true;
+      const tx = {
+        ok: false,
+        kind: 'spatial_boundary_unsupported',
+        step: this.step,
+        error: 'cavity_water_authority_unavailable',
+        detail: error instanceof Error ? error.message : String(error),
+      };
+      const prior = state.transactions?.[state.transactions.length - 1];
+      if (!prior || prior.kind !== tx.kind || prior.error !== tx.error || prior.step !== tx.step) {
+        (state.transactions ||= []).push(tx);
+      }
+      return false;
+    }
+    if (!fullyFlooded || config.spatial_model !== 'equal_volume_fully_mixed') {
+      state.blocked = true;
+      const tx = {
+        ok: false,
+        kind: 'spatial_boundary_unsupported',
+        step: this.step,
+        error: fullyFlooded ? 'unsupported_spatial_model' : 'partially_flooded_boundary_deferred',
+      };
+      const prior = state.transactions?.[state.transactions.length - 1];
+      if (!prior || prior.kind !== tx.kind || prior.error !== tx.error || prior.step !== tx.step) {
+        (state.transactions ||= []).push(tx);
+      }
+      return false;
+    }
+    const fluids = _canonicalSpatialFluids(this);
+    if (!fluids.length) {
+      state.blocked = true;
+      (state.transactions ||= []).push({
+        ok: false, kind: 'spatial_boundary_unsupported', step: this.step, error: 'no_canonical_fluids',
+      });
+      return false;
+    }
+    // Cavity voxels currently represent equal control volumes. The v1 spatial
+    // contract is therefore an unweighted arithmetic mean over every fully wet
+    // canonical voxel. Partial wetting is rejected above.
+    const meanCO3 = fluids.reduce(
+      (sum: number, f: any) => sum + Math.max(0, Number(f.CO3) || 0), 0,
+    ) / fluids.length;
+    const meanPH = fluids.reduce(
+      (sum: number, f: any) => sum + (Number.isFinite(f.pH) ? Number(f.pH) : 7), 0,
+    ) / fluids.length;
+    const observedDIC = dicPpmToMolKg(meanCO3);
+    const previous = Math.max(0, Number(state.lastDICMolKg) || 0);
+    const delta = observedDIC - previous;
+    const declaredSimpleCarbonates = Array.isArray(config.simple_carbonate_phases)
+      ? config.simple_carbonate_phases
+      : Array.isArray(config.simple_caco3_phases) ? config.simple_caco3_phases : [];
+    const allowed = declaredSimpleCarbonates.filter((mineral: string) =>
+      SIMPLE_CARBONATE_TRANSFER_MINERALS.includes(mineral));
+    const receiptDelta = receipts.reduce(
+      (sum: number, receipt: any) => sum
+        + (Number(receipt.localAqueousCarbonDeltaPpm) || 0)
+          / (1000 * CARBONATE_SURROGATE_G_MOL * fluids.length),
+      0,
+    );
+    const residual = delta - receiptDelta;
+    const expectedBulkDeltaPpm = receipts.reduce(
+      (sum: number, receipt: any) => sum + (receipt.touchedBulkFluidHandle
+        ? Number(receipt.localAqueousCarbonDeltaPpm) || 0 : 0),
+      0,
+    );
+    const lastBulkPpm = Number.isFinite(state.lastBulkDICPpm)
+      ? Number(state.lastBulkDICPpm) : dicMolKgToPpm(previous);
+    const observedBulkPpm = Math.max(0, Number(this.conditions.fluid?.CO3) || 0);
+    const bulkResidualPpm = observedBulkPpm - lastBulkPpm - expectedBulkDeltaPpm;
+    const receiptMineralsSupported = receipts.every((receipt: any) =>
+      receipt?.schema === 'accepted-carbonate-transfer-v1'
+      && allowed.includes(String(receipt.mineral)),
+    );
+    const matchTolerance = Math.max(1e-15, Math.abs(previous) * 1e-12, Math.abs(delta) * 1e-10);
+    const bulkTolerancePpm = Math.max(1e-7, Math.abs(lastBulkPpm) * 1e-12);
+    if (pendingViolation || !receiptMineralsSupported || Math.abs(residual) > matchTolerance
+        || Math.abs(bulkResidualPpm) > bulkTolerancePpm) {
+      const tx = {
+        ok: false,
+        kind: 'solid_transfer_unresolved',
+        note: `step ${this.step}: observed spatial DIC delta does not match accepted-zone receipts`,
+        observedAqueousCarbonDeltaMolKg: delta,
+        receiptedAqueousCarbonDeltaMolKg: receiptDelta,
+        residualAqueousCarbonDeltaMolKg: residual,
+        observedBulkDICPpm: observedBulkPpm,
+        receiptedBulkDICDeltaPpm: expectedBulkDeltaPpm,
+        residualBulkDICPpm: bulkResidualPpm,
+        receipts,
+        attemptedKind: pendingViolation?.attemptedKind,
+        field: pendingViolation?.field,
+        error: pendingViolation?.error || (receiptMineralsSupported
+          ? 'unreceipted_DIC_change' : 'unsupported_carbonate_phase_receipt'),
+      };
+      (state.transactions ||= []).push(tx);
+      state.blocked = true;
+      return false;
+    }
+    for (const receipt of receipts) {
+      const receiptMolKg = (Number(receipt.localAqueousCarbonDeltaPpm) || 0)
+        / (1000 * CARBONATE_SURROGATE_G_MOL * fluids.length);
+      recordSimpleCarbonateSolidTransferState(
+        state,
+        receiptMolKg,
+        String(receipt.mineral),
+        `step ${this.step}: accepted zone ${receipt.crystalId ?? '?'} (${receipt.acceptedThicknessUm} um)`,
+      );
+    }
+    state.blocked = false;
+    this.conditions.fluid.CO3 = meanCO3;
+    this.conditions.fluid.pH = meanPH;
+    state.lastBulkDICPpm = meanCO3;
+    return true;
+  },
+
   // Phase C v1: snapshot conditions.fluid + temperature before a
 // global-mutating block (events, wall dissolution, ambient cooling).
 // Pair with _propagateGlobalDelta to apply the same delta to all
-// non-equator rings. Mirrors VugSimulator._snapshot_global in vugg.py.
+// non-equator rings.
 _snapshotGlobal() {
-  return [_cloneFluid(this.conditions.fluid), this.conditions.temperature];
+  const sulfurState = this.conditions.fluid.sulfurPoolsExplicit
+    ? _spatialSulfurState(this) : null;
+  const carbonState = this._carbonLedgerEnabled ? _spatialCarbonState(this) : null;
+  return [_cloneFluid(this.conditions.fluid), this.conditions.temperature, sulfurState, carbonState];
 },
 
   // Phase C v1 (comment trued 2026-06-10): apply the delta between
@@ -44,8 +227,21 @@ _snapshotGlobal() {
 // consumer, now captures a projection of the cells instead
 // (_ringFluidMeans, review §1.4). The equator ring is aliased to
 // conditions.fluid so it already reflects the new value.
-_propagateGlobalDelta(snap) {
-  const [preFluid, preTemp] = snap;
+_propagateGlobalDelta(snap, options: any = {}) {
+  const [preFluid, preTemp, preSulfurState, preCarbonState] = snap;
+  const sulfurDeclarations = Array.isArray(this.conditions._pending_sulfur_boundary_declarations)
+    ? this.conditions._pending_sulfur_boundary_declarations.slice() : [];
+  const carbonDeclarations = Array.isArray(this.conditions._pending_carbon_ledger_declarations)
+    ? this.conditions._pending_carbon_ledger_declarations.slice() : [];
+  const fluidBoundaryDeclarations = Array.isArray(this.conditions._pending_fluid_boundary_declarations)
+    ? this.conditions._pending_fluid_boundary_declarations.slice() : [];
+  delete this.conditions._pending_sulfur_boundary_declarations;
+  delete this.conditions._pending_carbon_ledger_declarations;
+  delete this.conditions._pending_fluid_boundary_declarations;
+  const replaceFields = Array.isArray(this.conditions._pending_fluid_replace_fields)
+    ? this.conditions._pending_fluid_replace_fields.slice()
+    : [];
+  delete this.conditions._pending_fluid_replace_fields;
   const equator = Math.floor(this.wall_state.ring_count / 2);
   const equatorFluid = this.ring_fluids[equator];  // = conditions.fluid (aliased)
   // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 2a (v159) — voxel grid is
@@ -60,12 +256,15 @@ _propagateGlobalDelta(snap) {
   // Defensive fallback to mesh.propagateDelta when the voxel grid
   // isn't available (headless test harnesses without CavityVoxelGrid).
   const grid = this.wall_state.voxelGridFor(this);
+  const mesh = this.wall_state.meshFor(this);
+  const explicitSulfurActive = !!(
+    preFluid.sulfurPoolsExplicit || this.conditions.fluid.sulfurPoolsExplicit
+  );
   if (grid && typeof grid.propagateEventDelta === 'function') {
-    grid.propagateEventDelta(preFluid, this._fluidFieldNames, equatorFluid);
+    grid.propagateEventDelta(preFluid, this._fluidFieldNames, equatorFluid, 'all', replaceFields);
   } else {
-    const mesh = this.wall_state.meshFor(this);
     if (mesh && typeof mesh.propagateDelta === 'function') {
-      mesh.propagateDelta(preFluid, this._fluidFieldNames, equatorFluid);
+      mesh.propagateDelta(preFluid, this._fluidFieldNames, equatorFluid, replaceFields);
     }
   }
   // S1 (fluid.S sulfate/sulfide split): sulfateInherited is a LATCHED boolean, not a
@@ -80,13 +279,233 @@ _propagateGlobalDelta(snap) {
     const meshS = this.wall_state.meshFor(this);
     if (meshS && meshS.cells) for (let i = 0; i < meshS.cells.length; i++) setFlag(meshS.cells[i] && meshS.cells[i].fluid);
   }
+  // The explicit sulfur-reservoir mode is also a non-numeric latch. Initial
+  // scenario clones already carry it; this broadcast additionally covers a
+  // creative/event fluid converted to explicit pools at runtime.
+  if (this.conditions.fluid.sulfurPoolsExplicit) {
+    const copySulfurFlags = (f) => {
+      if (!f) return;
+      f.sulfurPoolsExplicit = true;
+      f.nativeSulfurPathway = this.conditions.fluid.nativeSulfurPathway;
+      syncExplicitSulfurTotal(f);
+    };
+    if (grid && grid.voxels) for (let i = 0; i < grid.voxels.length; i++) copySulfurFlags(grid.voxels[i] && grid.voxels[i].fluid);
+    const meshSulfur = this.wall_state.meshFor(this);
+    if (meshSulfur && meshSulfur.cells) for (let i = 0; i < meshSulfur.cells.length; i++) copySulfurFlags(meshSulfur.cells[i] && meshSulfur.cells[i].fluid);
+  }
+  // Declaration-driven sulfur audit. Internal pool transfers have an expected
+  // net boundary flux of exactly zero. Additions and brine replacements are
+  // computed from their authored transaction records and the PRE-event spatial
+  // state; an unexplained residual is never re-labelled as a boundary source.
+  if (explicitSulfurActive) {
+    const before = preSulfurState || _spatialSulfurState(this);
+    const after = _spatialSulfurState(this);
+    let declaredImportsPpm = 0;
+    let declaredExportsPpm = 0;
+    let declaredBulkNetPpm = 0;
+    for (const declaration of sulfurDeclarations) {
+      if (declaration.kind === 'addition') {
+        const amount = Math.max(0, Number(declaration.amountPpmPerFluid) || 0);
+        declaredImportsPpm += amount * before.count;
+        declaredBulkNetPpm += amount;
+      } else if (declaration.kind === 'replacement') {
+        const target = ['S_sulfide', 'S_sulfate', 'S_elemental'].reduce(
+          (sum, key) => sum + Math.max(0, Number(declaration.targets?.[key]) || 0),
+          0,
+        );
+        for (const prior of before.totals) {
+          const delta = target - prior;
+          if (delta >= 0) declaredImportsPpm += delta;
+          else declaredExportsPpm -= delta;
+        }
+        declaredBulkNetPpm += target - sulfurSystemTotalPpm(preFluid);
+      }
+    }
+    const expectedNetPpm = declaredImportsPpm - declaredExportsPpm;
+    const actualNetPpm = after.totalPpm - before.totalPpm;
+    const bulkNetPpm = sulfurSystemTotalPpm(this.conditions.fluid)
+      - sulfurSystemTotalPpm(preFluid);
+    const poolChanged = ['S_sulfide', 'S_sulfate', 'S_elemental'].some(
+      key => (Number(this.conditions.fluid[key]) || 0) !== (Number(preFluid[key]) || 0),
+    );
+    const errorPpm = actualNetPpm - expectedNetPpm;
+    const bulkDeclarationErrorPpm = bulkNetPpm - declaredBulkNetPpm;
+    const tolerancePpm = _ledgerTolerance(Math.max(before.totalPpm, after.totalPpm));
+    const closed = Math.abs(errorPpm) <= tolerancePpm
+      && Math.abs(bulkDeclarationErrorPpm) <= _ledgerTolerance(before.count ? before.totalPpm / before.count : 0);
+    if (poolChanged || sulfurDeclarations.length) {
+      const transaction = {
+        step: Number(this.step) || 0,
+        declarations: sulfurDeclarations,
+        kind: sulfurDeclarations.length ? 'declared_boundary' : 'internal_transfer',
+        beforePpm: before.totalPpm,
+        afterPpm: after.totalPpm,
+        declaredImportsPpm,
+        declaredExportsPpm,
+        expectedNetPpm,
+        actualNetPpm,
+        errorPpm,
+        bulkDeclarationErrorPpm,
+        tolerancePpm,
+        closed,
+      };
+      (this._sulfurBoundaryTransactions ||= []).push(transaction);
+      if (!closed) (this._sulfurPropagationViolations ||= []).push(transaction);
+    }
+    this._sulfurBoundaryImportsPpm = (this._sulfurBoundaryImportsPpm || 0) + declaredImportsPpm;
+    this._sulfurBoundaryExportsPpm = (this._sulfurBoundaryExportsPpm || 0) + declaredExportsPpm;
+  }
+
+  // Opt-in scenario carbon audit: methane-derived carbonate, wall release,
+  // and external imports are distinct declared sources. Internal pH/
+  // speciation changes must leave the total-DIC proxy unchanged.
+  if (this._carbonLedgerEnabled && preCarbonState) {
+    const after = _spatialCarbonState(this);
+    const count = preCarbonState.count;
+    let expectedNetPpm = 0;
+    let declaredImportsPpm = 0;
+    let declaredExportsPpm = 0;
+    let declaredBulkNetPpm = 0;
+    let replacementImportsPpm = 0;
+    for (const declaration of carbonDeclarations) {
+      if (declaration.kind === 'addition') {
+        const amount = Math.max(0, Number(declaration.carbonatePpmPerFluid) || 0);
+        const spatial = amount * count;
+        expectedNetPpm += spatial;
+        declaredImportsPpm += spatial;
+        declaredBulkNetPpm += amount;
+        if (declaration.category === 'methane_import') this._carbonMethaneImportsPpm += spatial;
+        else if (declaration.category === 'wall_release') this._carbonWallReleasePpm += spatial;
+        else this._carbonExternalImportsPpm += spatial;
+      } else if (declaration.kind === 'replacement') {
+        const target = Math.max(0, Number(declaration.targetCarbonatePpm) || 0);
+        for (const prior of preCarbonState.totals) {
+          const delta = target - prior;
+          if (delta >= 0) {
+            declaredImportsPpm += delta;
+            replacementImportsPpm += delta;
+          }
+          else declaredExportsPpm -= delta;
+        }
+        const replacementNet = (target * count) - preCarbonState.totalPpm;
+        expectedNetPpm += replacementNet;
+        declaredBulkNetPpm += target - Math.max(0, Number(preFluid.CO3) || 0);
+      }
+    }
+    this._carbonExternalImportsPpm += replacementImportsPpm;
+    this._carbonExportsPpm += declaredExportsPpm;
+    const actualNetPpm = after.totalPpm - preCarbonState.totalPpm;
+    const bulkNetPpm = Math.max(0, Number(this.conditions.fluid.CO3) || 0)
+      - Math.max(0, Number(preFluid.CO3) || 0);
+    const errorPpm = actualNetPpm - expectedNetPpm;
+    const bulkDeclarationErrorPpm = bulkNetPpm - declaredBulkNetPpm;
+    const tolerancePpm = _ledgerTolerance(Math.max(preCarbonState.totalPpm, after.totalPpm));
+    const closed = Math.abs(errorPpm) <= tolerancePpm
+      && Math.abs(bulkDeclarationErrorPpm) <= _ledgerTolerance(count ? preCarbonState.totalPpm / count : 0);
+    if (bulkNetPpm !== 0 || carbonDeclarations.length) {
+      const transaction = {
+        step: Number(this.step) || 0,
+        declarations: carbonDeclarations,
+        beforePpm: preCarbonState.totalPpm,
+        afterPpm: after.totalPpm,
+        expectedNetPpm,
+        declaredImportsPpm,
+        declaredExportsPpm,
+        actualNetPpm,
+        errorPpm,
+        bulkDeclarationErrorPpm,
+        tolerancePpm,
+        closed,
+      };
+      this._carbonSourceTransactions.push(transaction);
+      if (!closed) this._carbonPropagationViolations.push(transaction);
+    }
+  }
+  if (fluidBoundaryDeclarations.length) {
+    const declaredFields = new Set<string>();
+    const declaredAdditions: Record<string, number> = {};
+    const declaredReplacementTargets: Record<string, number> = {};
+    const expectedAfterByField: Record<string, number> = {};
+    for (const declaration of fluidBoundaryDeclarations) {
+      for (const [field, raw] of Object.entries(declaration.fields || {})) {
+        const value = Math.max(0, Number(raw) || 0);
+        declaredFields.add(field);
+        if (!(field in expectedAfterByField)) {
+          expectedAfterByField[field] = Math.max(0, Number(preFluid[field]) || 0);
+        }
+        if (declaration.kind === 'addition') {
+          declaredAdditions[field] = (declaredAdditions[field] || 0) + value;
+          expectedAfterByField[field] += value;
+        } else if (declaration.kind === 'replacement') {
+          declaredReplacementTargets[field] = value;
+          expectedAfterByField[field] = value;
+        }
+      }
+    }
+    const fields = Array.from(declaredFields).sort();
+    const testimony = fields.map(field => {
+      const before = Math.max(0, Number(preFluid[field]) || 0);
+      const after = Math.max(0, Number(this.conditions.fluid[field]) || 0);
+      const declaredAddition = declaredAdditions[field] || 0;
+      const declaredReplacementTarget = field in declaredReplacementTargets
+        ? declaredReplacementTargets[field] : null;
+      const declaredDelta = expectedAfterByField[field] - before;
+      const declaredImports = Math.max(0, declaredDelta);
+      const declaredExports = Math.max(0, -declaredDelta);
+      const actualDelta = after - before;
+      const error = actualDelta - declaredDelta;
+      const tolerance = _ledgerTolerance(Math.max(before, after));
+      return { field, before, after, declaredAddition, declaredReplacementTarget,
+        declaredDelta, declaredImports, declaredExports, actualDelta, error, tolerance,
+        closed: Math.abs(error) <= tolerance };
+    });
+    const transaction = {
+      step: Number(this.step) || 0,
+      declarations: fluidBoundaryDeclarations,
+      testimony,
+      closed: testimony.every(row => row.closed),
+    };
+    this._fluidBoundaryTransactions.push(transaction);
+    if (!transaction.closed) this._fluidBoundaryViolations.push(transaction);
+  }
   const deltaT = this.conditions.temperature - preTemp;
-  if (deltaT !== 0) {
-    for (let k = 0; k < this.ring_temperatures.length; k++) {
-      if (k === equator) {
-        this.ring_temperatures[k] = this.conditions.temperature;
-      } else {
-        this.ring_temperatures[k] += deltaT;
+  const ambientStep = options?.ambientThermalStep;
+  const hasAmbientThermalDelta = ambientStep
+    && ((Number(ambientStep.coolingDeltaC) || 0) !== 0
+      || (Number(ambientStep.pulseDeltaC) || 0) !== 0);
+  if (deltaT !== 0 || hasAmbientThermalDelta) {
+    const localAmbientStep = ambientStep
+      && Number.isFinite(Number(ambientStep.ambientTemperatureC))
+      && typeof grid?.applyAmbientThermalStep === 'function';
+    if (localAmbientStep) {
+      grid.applyAmbientThermalStep(
+        Number(ambientStep.coolingDeltaC) || 0,
+        Number(ambientStep.ambientTemperatureC),
+        Number(ambientStep.pulseDeltaC) || 0,
+      );
+      const boundaryMeans = grid.boundaryTemperatureMeans?.() || [];
+      for (let k = 0; k < this.ring_temperatures.length; k++) {
+        if (Number.isFinite(boundaryMeans[k])) this.ring_temperatures[k] = boundaryMeans[k];
+      }
+      const volumeMean = grid.temperatureMean?.();
+      if (Number.isFinite(volumeMean)) this.conditions.temperature = volumeMean;
+    } else if (grid && typeof grid.propagateTemperatureDelta === 'function') {
+      grid.propagateTemperatureDelta(deltaT, 'all');
+    }
+    if (!localAmbientStep) {
+      for (let k = 0; k < this.ring_temperatures.length; k++) {
+        if (k === equator) {
+          this.ring_temperatures[k] = this.conditions.temperature;
+        } else if (ambientStep && Number.isFinite(Number(ambientStep.ambientTemperatureC))) {
+          const ambient = Number(ambientStep.ambientTemperatureC);
+          const cooling = Math.min(0, Number(ambientStep.coolingDeltaC) || 0);
+          const pulse = Math.max(0, Number(ambientStep.pulseDeltaC) || 0);
+          const prior = this.ring_temperatures[k];
+          const cooled = prior > ambient ? Math.max(ambient, prior + cooling) : prior;
+          this.ring_temperatures[k] = cooled + pulse;
+        } else {
+          this.ring_temperatures[k] += deltaT;
+        }
       }
     }
   }
@@ -100,7 +519,6 @@ _propagateGlobalDelta(snap) {
 // snap fluid_surface_ring above ring_count get clamped here on the
 // next step (so events can write a sentinel like 1e6 to mean
 // "fill to ceiling" without needing to know ring_count themselves).
-// Mirror of VugSimulator._apply_water_level_drift in vugg.py.
 _applyWaterLevelDrift() {
   let s = this.conditions.fluid_surface_ring;
   if (s === null || s === undefined) return 0;
@@ -123,13 +541,19 @@ _applyWaterLevelDrift() {
 // stays reducing while the now-exposed ceiling oxidizes — matches
 // real-world supergene paragenesis (galena → cerussite, chalcopyrite
 // → malachite/azurite, pyrite → limonite, all in the air zone).
-// Mirror of VugSimulator._apply_vadose_oxidation_override in vugg.py.
 _applyVadoseOxidationOverride() {
   const n = this.wall_state.ring_count;
-  const newSurface = this.conditions.fluid_surface_ring;
-  const oldSurface = this._prevFluidSurfaceRing;
-  this._prevFluidSurfaceRing = newSurface;
-  if (newSurface === null || newSurface === undefined) return [];
+  const oldStates = Array.isArray(this._prevCavityWaterStates)
+    && this._prevCavityWaterStates.length === n
+    ? this._prevCavityWaterStates.slice()
+    : new Array(n).fill('submerged');
+  // This deliberately fails closed when production Cartesian authority is
+  // unavailable. Chemistry must not continue from a WallMesh substitute.
+  const newStates = Array.from(
+    { length: n }, (_, ring) => this.conditions.ringWaterState(ring, n),
+  );
+  this._prevFluidSurfaceHeightMm = this.conditions.fluid_surface_height_mm;
+  this._prevCavityWaterStates = newStates;
   // v161: handle BOTH water-level directions in one pass. Drying (wet→vadose)
   // oxidizes + evaporatively concentrates; rewetting (vadose→wet) re-dilutes.
   // Previously this early-returned whenever the surface rose, which made the
@@ -150,22 +574,66 @@ _applyVadoseOxidationOverride() {
   const mesh = this.wall_state.meshFor
     ? this.wall_state.meshFor(this)
     : null;
+  const grid = this.wall_state.voxelGridFor
+    ? this.wall_state.voxelGridFor(this)
+    : null;
   const cellsPerRing = this.wall_state.cells_per_ring || 0;
+  // Only the normalized config stored by the semantic validator may alter the
+  // drying boundary. A malformed declaration therefore falls back to the
+  // ordinary vadose behavior; raw authored values never partly activate.
+  const weatheringState = this._weatheringEpilogueState;
+  const weatheringCfg = weatheringState?.valid ? weatheringState.config : null;
+  const weatheringActive = !!weatheringCfg && weatheringEpilogueActive(this);
+  const targetResidualO2 = weatheringActive
+    ? weatheringCfg.oxygen.target_residual_ppm
+    : 1.8;
+  const concentrationFactor = weatheringActive
+    ? weatheringCfg.drainage.concentration_factor
+    : EVAPORATIVE_CONCENTRATION_FACTOR;
   const becameVadose = [];
   const rewetted = [];
+  const exposureRows: any[] = [];
+  const applyDryingBoundary = (fluid: any) => {
+    if (!fluid) return null;
+    const oxygenBefore = Math.max(0, Number(fluid.O2) || 0);
+    const sulfurBefore = fluid.sulfurPoolsExplicit
+      ? sulfurSystemTotalPpm(fluid)
+      : Math.max(0, Number(fluid.S) || 0);
+    // Open-air exposure supplies dissolved oxygen up to the authored residual.
+    // Sulfur is never deleted here. Legacy one-pool fluids retain their total;
+    // explicit-pool reactions must use a separately balanced redox transfer.
+    fluid.O2 = Math.max(oxygenBefore, targetResidualO2);
+    fluid.concentration *= concentrationFactor;
+    const sulfurAfter = fluid.sulfurPoolsExplicit
+      ? sulfurSystemTotalPpm(fluid)
+      : Math.max(0, Number(fluid.S) || 0);
+    return {
+      oxygenBeforePpm: oxygenBefore,
+      oxygenImportedPpm: fluid.O2 - oxygenBefore,
+      oxygenAfterPpm: fluid.O2,
+      sulfurBeforePpm: sulfurBefore,
+      sulfurAfterPpm: sulfurAfter,
+      sulfurClosed: Math.abs(sulfurAfter - sulfurBefore) <= _ledgerTolerance(sulfurBefore),
+    };
+  };
   for (let r = 0; r < n; r++) {
-    const was = VugConditions._classifyWaterState(oldSurface, r, n);
-    const now = VugConditions._classifyWaterState(newSurface, r, n);
+    const was = oldStates[r];
+    const now = newStates[r];
     if (now === 'vadose' && was !== 'vadose') {
-      // Apply oxidation override to every cell in this ring.
-      if (mesh && mesh.cells && cellsPerRing > 0) {
+      // Canonical 3-D path: every depth voxel in the exposed ring receives
+      // the same atmospheric boundary. d=0 aliases the wall mesh, so this also
+      // updates every visible wall cell without double-applying the factor.
+      const canonicalRows: any[] = [];
+      if (grid?.voxels?.length) {
+        for (const voxel of grid.voxels) {
+          if (voxel?.ringIdx !== r || !voxel.fluid) continue;
+          const row = applyDryingBoundary(voxel.fluid);
+          if (row) canonicalRows.push(row);
+        }
+      } else if (mesh && mesh.cells && cellsPerRing > 0) {
         for (let c = 0; c < cellsPerRing; c++) {
-          const cell = mesh.cells[r * cellsPerRing + c];
-          if (!cell || !cell.fluid) continue;
-          if (cell.fluid.O2 < 1.8) cell.fluid.O2 = 1.8;
-          cell.fluid.S *= 0.3;
-          // v27 evaporative concentration boost (mirror of vugg.py).
-          cell.fluid.concentration *= EVAPORATIVE_CONCENTRATION_FACTOR;
+          const row = applyDryingBoundary(mesh.cells[r * cellsPerRing + c]?.fluid);
+          if (row) canonicalRows.push(row);
         }
       }
       // ALSO update ring_fluids[r] so nucleation gates see the vadose
@@ -186,14 +654,26 @@ _applyVadoseOxidationOverride() {
       // conditions.fluid — the engine sees the boost without further
       // plumbing.
       const rf = this.ring_fluids[r];
-      if (rf) {
-        if (rf.O2 < 1.8) rf.O2 = 1.8;
-        rf.S *= 0.3;
-        rf.concentration *= EVAPORATIVE_CONCENTRATION_FACTOR;
-      }
+      const ringRow = applyDryingBoundary(rf);
+      const allRows = ringRow ? [...canonicalRows, ringRow] : canonicalRows;
+      exposureRows.push({
+        ring: r,
+        canonicalFluidCount: canonicalRows.length,
+        compatibilityMirrorCount: ringRow ? 1 : 0,
+        oxygenImportedCanonicalPpmEquivalent: canonicalRows.reduce(
+          (sum, row) => sum + row.oxygenImportedPpm, 0,
+        ),
+        oxygenImportedCompatibilityMirrorPpm: ringRow?.oxygenImportedPpm || 0,
+        sulfurBeforePpmEquivalent: allRows.reduce(
+          (sum, row) => sum + row.sulfurBeforePpm, 0,
+        ),
+        sulfurAfterPpmEquivalent: allRows.reduce(
+          (sum, row) => sum + row.sulfurAfterPpm, 0,
+        ),
+        sulfurClosed: allRows.every(row => row.sulfurClosed),
+      });
       becameVadose.push(r);
-    } else if (was === 'vadose' && now !== 'vadose'
-               && oldSurface !== null && oldSurface !== undefined) {
+    } else if (was === 'vadose' && now !== 'vadose') {
       // v161 rewetting: a freshwater flood (searles fresh_pulse, naica /
       // aquifer recharge) reflooded this ring. Reset the evaporative
       // `concentration` multiplier to baseline 1.0 — the dissolved load
@@ -203,11 +683,14 @@ _applyVadoseOxidationOverride() {
       // NOT un-oxidize (O2) or restore S: air-exposure mineral reactions
       // (sulfide→oxide supergene paragenesis) persist through reflooding;
       // only the soluble evaporite load dilutes.
-      if (mesh && mesh.cells && cellsPerRing > 0) {
+      if (grid?.voxels?.length) {
+        for (const voxel of grid.voxels) {
+          if (voxel?.ringIdx === r && voxel.fluid) voxel.fluid.concentration = 1.0;
+        }
+      } else if (mesh && mesh.cells && cellsPerRing > 0) {
         for (let c = 0; c < cellsPerRing; c++) {
           const cell = mesh.cells[r * cellsPerRing + c];
-          if (!cell || !cell.fluid) continue;
-          cell.fluid.concentration = 1.0;
+          if (cell?.fluid) cell.fluid.concentration = 1.0;
         }
       }
       const rf = this.ring_fluids[r];
@@ -219,6 +702,20 @@ _applyVadoseOxidationOverride() {
     this.log.push(
       `  💧 Rewetting: rings ${rewetted.join(',')} reflooded — brine dilutes, `
       + `evaporative concentration resets to baseline 1.0×`);
+  }
+  if (becameVadose.length || rewetted.length) {
+    (this._vadoseExposureTransactions ||= []).push({
+      schema: 'vadose-boundary-receipt-v2',
+      step: this.step,
+      becameVadose: [...becameVadose],
+      rewetted: [...rewetted],
+      targetResidualO2Ppm: targetResidualO2,
+      concentrationFactor,
+      oxygenAccounting: 'canonical voxel ppm-equivalents; compatibility ring mirrors itemized separately',
+      sulfurHandling: 'total-preserved; no implicit redox deletion',
+      rings: exposureRows,
+      closed: exposureRows.every(row => row.sulfurClosed),
+    });
   }
   return becameVadose;
 },
@@ -252,11 +749,11 @@ _diffuseRingState(rate?) {
   // mesh.diffuse(). Maintains pre-v158 behavior in those paths.
   const grid = this.wall_state.voxelGridFor(this);
   if (grid && typeof grid.diffuse === 'function') {
-    grid.diffuse(rate, this._fluidFieldNames, this.ring_temperatures);
+    grid.diffuse(rate, this._fluidFieldNames);
   } else {
     const mesh = this.wall_state.meshFor(this);
     if (mesh && typeof mesh.diffuse === 'function') {
-      mesh.diffuse(rate, this._fluidFieldNames, this.ring_temperatures);
+      mesh.diffuse(rate, this._fluidFieldNames);
     }
   }
 },
@@ -281,7 +778,7 @@ _diffuseRingState(rate?) {
   },
 
   // Get the boundary-layer voxel (d=0) for wall cell (r, c). Engine
-  // mass-balance lands here in Phase 2+; in v158 the d=0 voxel is
+  // growth-budget lands here in Phase 2+; in v158 the d=0 voxel is
   // aliased to wall.mesh.cells[r*N+c].fluid via [FIRM] B, so reading
   // through this and reading through mesh.cellOf() return the same
   // fluid object.
@@ -309,6 +806,138 @@ _diffuseRingState(rate?) {
       ? this.wall_state.voxelGridFor(this)
       : null;
     return grid ? grid.sampleFluid(r, c, depth, field) : NaN;
+  },
+
+  temperatureAtVoxel(r, c, d) {
+    const grid = this.wall_state?.voxelGridFor?.(this);
+    return grid?.temperatureAt ? grid.temperatureAt(r, c, d) : NaN;
+  },
+
+  sampleVoxelTemperature(r, c, depth) {
+    const grid = this.wall_state?.voxelGridFor?.(this);
+    return grid?.sampleTemperature ? grid.sampleTemperature(r, c, depth) : NaN;
+  },
+
+  configureThermalField(spec: any = {}) {
+    this.conditions._scenario ||= {};
+    const scenario: any = this.conditions._scenario;
+    const prior: any = scenario.thermal_field || {};
+    const finite = (value, fallback) => value !== null && value !== '' && value !== undefined
+      && Number.isFinite(Number(value)) ? Number(value) : fallback;
+    scenario.thermal_field = {
+      enabled: spec.enabled !== false,
+      conduction_fraction_per_step: Math.max(0, Math.min(
+        1 / 6,
+        finite(spec.conduction_fraction_per_step,
+          prior.conduction_fraction_per_step ?? this.inter_ring_diffusion_rate),
+      )),
+      wall_coupling_fraction_per_step: Math.max(0, Math.min(
+        1,
+        finite(spec.wall_coupling_fraction_per_step,
+          prior.wall_coupling_fraction_per_step ?? 0.02),
+      )),
+    };
+    if (spec.wall_rock_thermal_buffer_C === null || spec.wall_rock_thermal_buffer_C === '') {
+      delete scenario.wall_rock_thermal_buffer_C;
+    } else if (Number.isFinite(Number(spec.wall_rock_thermal_buffer_C))) {
+      scenario.wall_rock_thermal_buffer_C = Math.max(-273.15, Math.min(
+        2000, Number(spec.wall_rock_thermal_buffer_C),
+      ));
+    }
+    // Activation records that a canonical spatial field has been configured;
+    // enabled/paused is a separate transport switch. Pausing retains the
+    // field and its sources without making command order change semantics.
+    this._thermalFieldActivated = true;
+    return {
+      ...scenario.thermal_field,
+      wall_rock_thermal_buffer_C: scenario.wall_rock_thermal_buffer_C ?? null,
+    };
+  },
+
+  setThermalSource(spec) {
+    const grid = this.wall_state?.voxelGridFor?.(this);
+    this._thermalSources ||= [];
+    let fallbackId = String(spec?.id || '');
+    if (!fallbackId) {
+      do {
+        this._thermalSourceCounter = (Number(this._thermalSourceCounter) || 0) + 1;
+        fallbackId = `thermal-${this._thermalSourceCounter}`;
+      } while (this._thermalSources.some(source => source.id === fallbackId));
+    }
+    const normalized = normalizeThermalSourceSpec(
+      spec, grid, fallbackId,
+    );
+    if (!normalized) return null;
+    const index = this._thermalSources.findIndex(source => source.id === normalized.id);
+    if (index >= 0) this._thermalSources[index] = normalized;
+    else this._thermalSources.push(normalized);
+    this._thermalSources.sort((a, b) => a.id.localeCompare(b.id));
+    this._thermalFieldActivated = true;
+    return normalized;
+  },
+
+  removeThermalSource(id) {
+    const before = this._thermalSources?.length || 0;
+    this._thermalSources = (this._thermalSources || []).filter(source => source.id !== String(id));
+    return before - this._thermalSources.length;
+  },
+
+  clearThermalSources() {
+    const count = this._thermalSources?.length || 0;
+    this._thermalSources = [];
+    return count;
+  },
+
+  _advanceThermalField() {
+    const grid = this.wall_state?.voxelGridFor?.(this);
+    if (!grid?.advanceTemperatureField) return null;
+    const scenario = this.conditions?._scenario || {};
+    const config = scenario.thermal_field || {};
+    if (config.enabled === false) return null;
+    const hasSources = Array.isArray(this._thermalSources) && this._thermalSources.length > 0;
+    const hasRockBoundary = scenario.wall_rock_thermal_buffer_C != null;
+    // A source-free uniform field needs no work and remains byte-identical.
+    if (!this._thermalFieldActivated && !hasSources && !hasRockBoundary) return null;
+    const receipt = grid.advanceTemperatureField({
+      step: this.step,
+      sources: this._thermalSources,
+      scenario,
+      mesh: this.wall_state.meshFor(this),
+      conduction_fraction_per_step:
+        config.conduction_fraction_per_step ?? this.inter_ring_diffusion_rate,
+      wall_coupling_fraction_per_step: config.wall_coupling_fraction_per_step ?? 0.02,
+    });
+    if (!receipt) return null;
+    const means = grid.boundaryTemperatureMeans();
+    for (let r = 0; r < this.ring_temperatures.length; r++) {
+      if (Number.isFinite(means[r])) this.ring_temperatures[r] = means[r];
+    }
+    const mean = grid.temperatureMean();
+    if (Number.isFinite(mean)) this.conditions.temperature = mean;
+    this._thermalFieldReceipts ||= [];
+    this._thermalFieldReceipts.push(receipt);
+    return receipt;
+  },
+
+  setGlobalTemperature(valueC) {
+    const next = Math.max(-273.15, Math.min(2000, Number(valueC)));
+    if (!Number.isFinite(next)) return this.conditions.temperature;
+    const prior = Number(this.conditions.temperature);
+    const delta = Number.isFinite(prior) ? next - prior : 0;
+    this.conditions.temperature = next;
+    const grid = this.wall_state?.voxelGridFor?.(this);
+    if (grid?.propagateTemperatureDelta && delta !== 0) {
+      grid.propagateTemperatureDelta(delta, 'all');
+      const means = grid.boundaryTemperatureMeans();
+      for (let r = 0; r < this.ring_temperatures.length; r++) {
+        if (Number.isFinite(means[r])) this.ring_temperatures[r] = means[r];
+      }
+    } else if (Array.isArray(this.ring_temperatures)) {
+      for (let r = 0; r < this.ring_temperatures.length; r++) {
+        this.ring_temperatures[r] = next;
+      }
+    }
+    return next;
   },
 
   // ====================================================================
@@ -463,7 +1092,10 @@ _diffuseRingState(rate?) {
   _repaintWallState() {
   // Rebuild ring-0 occupancy from the crystal list. Cheap (~120 × ~20)
   // and keeps per-cell thickness consistent with dissolution / enclosure.
-  this.wall_state.updateDiameter(this.conditions.wall.vug_diameter_mm);
+  this.wall_state.updateCapacity(
+    this.conditions.wall.cavity_capacity_volume_mm3,
+    this.conditions.wall.vug_diameter_mm,
+  );
   this.wall_state.clear();
   // Paint smallest-first so biggest crystals win overlaps — that's
   // what a viewer would see from outside the vug.
@@ -546,8 +1178,52 @@ _diffuseRingState(rate?) {
   // 99i-renderer-three.ts.
   const ringCount = this.wall_state.ring_count;
   const cnd = this.conditions;
+  // Provider selection is part of the scientific replay timeline, not a live
+  // renderer preference. Capture the exact authenticated receipt at this step
+  // so a later replay cannot inherit whichever provider happens to be active.
+  const cavitySurfaceProvider = this.wall_state.cavitySurfaceAnchorProviderReceipt
+    ? this.wall_state.cavitySurfaceAnchorProviderReceipt()
+    : { kind: 'wall-mesh' };
+  const cavityAppearance = CavityWaterAppearance.create(this.wall_state, cnd, {
+    sim: this,
+    providerReceipt: cavitySurfaceProvider,
+  });
+  const cavityMaterialState = CavityWallMaterialState.create(this.wall_state);
+  const waterHistory = this._cavityWaterAppearanceLedger;
+  if (!waterHistory || waterHistory !== this.wall_state._cavityWaterAppearanceLedger) {
+    throw new Error('cavity water history authority is unavailable');
+  }
+  const waterHistoryEntry = waterHistory.append(
+    this.step, this.wall_state, cnd, cavityAppearance.receipt,
+  );
+  const materialHistory = this._cavityWallMaterialHistoryLedger;
+  if (!materialHistory
+      || materialHistory !== this.wall_state._cavityWallMaterialHistoryLedger) {
+    throw new Error('cavity wall material history authority is unavailable');
+  }
+  const materialHistoryEntry = materialHistory.append(
+    this.step, this.wall_state, cavityMaterialState,
+  );
   const snap: any = {
+    sim_version: SIM_VERSION,
     step: this.step,
+    cavity_evolution_cursor: this.wall_state.cavityEvolutionLedger
+      && this.wall_state.cavityEvolutionLedger()
+      ? this.wall_state.cavityEvolutionLedger().cursor : null,
+    cavity_evolution_signature: this.wall_state.cavityEvolutionLedger
+      && this.wall_state.cavityEvolutionLedger()
+      ? this.wall_state.cavityEvolutionLedger().signature : null,
+    cavity_surface_provider: { ...cavitySurfaceProvider },
+    cavity_appearance: { ...cavityAppearance.receipt },
+    cavity_water_history_cursor: waterHistory.cursor,
+    cavity_water_history_signature: waterHistory.signature,
+    cavity_water_history_entry_digest: waterHistoryEntry.entry_digest,
+    cavity_material_state: { ...cavityMaterialState },
+    cavity_material_history_cursor: materialHistory.cursor,
+    cavity_material_history_signature: materialHistory.signature,
+    cavity_material_history_entry_digest: materialHistoryEntry.entry_digest,
+    cavity_production_contract_digest:
+      this.wall_state._cavityProductionAuthorityContract?.contract_digest ?? null,
     rings: new Array(ringCount),
     conditions: {
       temperature: cnd.temperature,
@@ -556,6 +1232,8 @@ _diffuseRingState(rate?) {
       flow_rate: cnd.flow_rate,
       vug_diameter_mm: cnd.wall.vug_diameter_mm,
       total_dissolved_mm: cnd.wall.total_dissolved_mm,
+      cavity_capacity_volume_mm3: cnd.wall.cavity_capacity_volume_mm3,
+      fluid_surface_height_mm: cnd.fluid_surface_height_mm,
       fluid_surface_ring: cnd.fluid_surface_ring,
       // Full fluid clone — fortress-status reads f.Cu / f.Fe / etc.
       // for the per-mineral "needs" hints, and the brief explicitly
@@ -581,6 +1259,17 @@ _diffuseRingState(rate?) {
     // store is untouched. See _ringFluidMeans for the full rationale.
     ring_fluids: this._ringFluidMeans ? this._ringFluidMeans() : null,
     ring_temperatures: this.ring_temperatures ? this.ring_temperatures.slice() : null,
+    boundary_temperatures: (() => {
+      const grid = this.wall_state?.voxelGridFor?.(this);
+      if (!grid?.temperatureAt) return null;
+      const out = new Array(this.wall_state.ring_count * this.wall_state.cells_per_ring);
+      for (let r = 0; r < this.wall_state.ring_count; r++) {
+        for (let c = 0; c < this.wall_state.cells_per_ring; c++) {
+          out[r * this.wall_state.cells_per_ring + c] = grid.temperatureAt(r, c, 0);
+        }
+      }
+      return out;
+    })(),
     // === END HELIX-OVERLAY-FORK ADDITION ==============================
     // === HELIX-OVERLAY-FORK ADDITION (Week 3 carbonate) ===============
     // f_ord chip in the Carbonate System legend section reads cycle
@@ -611,36 +1300,116 @@ _diffuseRingState(rate?) {
   this.wall_state_history.push(snap);
 },
 
-  _wallCellsBlockedByCrystals() {
-  // Which ring-0 cells are shielded from wall dissolution. A cell
-  // blocks when it holds a non-dissolved crystal whose mineral is
-  // stable at the current pH — either permanently acid-stable
-  // (acid_dissolution == null, e.g. uraninite/molybdenite) or the
-  // current pH is above its threshold.
-  const ph = this.conditions.fluid.pH;
-  const byId = new Map<number, any>(this.crystals.map(c => [c.crystal_id, c]));
-  const blocked = new Set();
-  const ring0 = this.wall_state.rings[0];
-  for (let i = 0; i < ring0.length; i++) {
-    const cell = ring0[i];
-    if (cell.crystal_id == null) continue;
-    const crystal = byId.get(cell.crystal_id);
-    if (!crystal || crystal.dissolved) continue;
-    const acid = MINERAL_SPEC[crystal.mineral]?.acid_dissolution;
-    if (acid == null) { blocked.add(i); continue; }
-    const threshold = acid.pH_threshold;
-    if (threshold == null || ph >= threshold) blocked.add(i);
+  _wallSurfaceAttackState() {
+  const wall = this.conditions.wall;
+  const mesh = this.wall_state.meshFor(this);
+  if (!mesh) throw new Error('wall attack requires the canonical WallMesh');
+  const topology = _wallMeshTopologyInternal(mesh);
+  const vertexCount = topology.numInterior;
+  if (!(vertexCount > 0)) throw new Error('wall attack requires the canonical WallMesh');
+  const areas = _wallMeshCellSurfaceAreasInternal(mesh);
+  const coverage = new Float64Array(vertexCount);
+  const pHValues = new Float64Array(vertexCount);
+  for (let i = 0; i < vertexCount; i++) {
+    const local = mesh.cells[i] && mesh.cells[i].fluid;
+    pHValues[i] = Number.isFinite(local && local.pH)
+      ? Number(local.pH) : Number(this.conditions.fluid.pH);
   }
-  return blocked;
+
+  // Fractional union of every acid-resistant footprint. Unlike the paint
+  // buffer, this does not discard overlapping or smaller crystals. Distances
+  // are shortest paths over the live triangle mesh, and stability reads the
+  // target cell's pre-attack local pH.
+  for (const crystal of this.crystals) {
+    if (!crystal || crystal.dissolved) continue;
+    const anchor = this.wall_state._resolveAnchor(crystal);
+    if (!anchor) continue;
+    // The physical anchor was authenticated above; derive its chemistry
+    // projection directly instead of resolving the same crystal a second time.
+    const source = CavitySurfaceAnchors.chemistryAddress(anchor)?.vertexIndex ?? -1;
+    if (source < 0 || source >= vertexCount) continue;
+    // This consumer is synchronous and read-only, so use the mesh-private
+    // cached distances rather than allocating a defensive 1,920-value copy for
+    // every crystal on every wall attack.
+    const distances = _wallMeshGeodesicDistancesInternal(mesh, source);
+    const footprintRadiusMm = Math.max(0, this.wall_state.footprintArcMm(crystal) / 2);
+    const acid = MINERAL_SPEC[crystal.mineral]?.acid_dissolution;
+    for (let i = 0; i < vertexCount; i++) {
+      const threshold = acid && acid.pH_threshold;
+      const resistant = acid == null || threshold == null || pHValues[i] >= threshold;
+      if (!resistant) continue;
+      const cellRadius = Math.max(1e-9, Math.sqrt(Math.max(0, areas[i]) / Math.PI));
+      const fraction = i === source ? 1 : Math.max(0, Math.min(1,
+        (footprintRadiusMm + cellRadius - distances[i]) / (2 * cellRadius),
+      ));
+      if (fraction > 0) coverage[i] = 1 - (1 - coverage[i]) * (1 - fraction);
+    }
+  }
+
+  const feederFlux = fluidSpotsDecayEnabled() && this._fluidSpots
+      && !_fluidSpotIsEmptyInternal(this._fluidSpots)
+    ? _fluidSpotErosionFluxInternal(this._fluidSpots, mesh) : null;
+  const vertexWeights = new Float64Array(vertexCount);
+  const blocked = new Set<number>();
+  let totalArea = 0;
+  let exposedArea = 0;
+  let fluxArea = 0;
+  let attemptedWeightedRate = 0;
+  let acceptedWeightedRate = 0;
+  let partialCells = 0;
+  for (let i = 0; i < vertexCount; i++) {
+    const area = areas[i];
+    const exposure = Math.max(0, Math.min(1, 1 - coverage[i]));
+    const flux = feederFlux ? feederFlux[i] : 1;
+    const localAcidStrength = Math.max(0, 5.5 - pHValues[i]);
+    const localRate = wall.dissolutionRateMm(localAcidStrength);
+    vertexWeights[i] = exposure * flux * localRate;
+    totalArea += area;
+    exposedArea += area * exposure;
+    fluxArea += area * flux;
+    attemptedWeightedRate += area * flux * localRate;
+    acceptedWeightedRate += area * flux * localRate * exposure;
+    if (exposure <= 1e-12) blocked.add(i);
+    else if (exposure < 1 - 1e-12) partialCells++;
+  }
+  const attemptedRate = fluxArea > 0 ? attemptedWeightedRate / fluxArea : 0;
+  const acceptedRate = fluxArea > 0 ? acceptedWeightedRate / fluxArea : 0;
+  const digest = CavityEvolutionLedger.digest({
+    areas: Array.from(areas),
+    coverage: Array.from(coverage),
+    pre_attack_pH: Array.from(pHValues),
+    feeder_flux: feederFlux ? Array.from(feederFlux) : null,
+    diffuse_fluid_pathway: true,
+  });
+  return {
+    mesh, areas, coverage, pHValues, feederFlux, vertexWeights, blocked,
+    attemptedRate, acceptedRate,
+    receipt: {
+      digest,
+      total_surface_area_mm2: totalArea,
+      exposed_surface_area_mm2: exposedArea,
+      exposed_area_fraction: totalArea > 0 ? exposedArea / totalArea : 0,
+      fully_blocked_cells: blocked.size,
+      partially_covered_cells: partialCells,
+      total_cells: vertexCount,
+      diffuse_fluid_pathway: true,
+      feeder_model: feederFlux ? 'open-spot geodesic flux halo' : 'none',
+      local_pH_basis: 'pre-attack WallCell fluid, bulk fallback',
+      overlap_model: 'fractional footprint union',
+    },
+  };
+},
+
+  _wallCellsBlockedByCrystals() {
+  return this._wallSurfaceAttackState().blocked;
 },
 
   get_vug_fill() {
-  const vugR = this.conditions.wall.vug_diameter_mm / 2;
-  const vugVol = (4 / 3) * Math.PI * Math.pow(vugR, 3);
+  const vugVol = Number(this.conditions.wall.cavity_capacity_volume_mm3);
   if (vugVol <= 0) return 0;
   let crystalVol = 0;
   for (const c of this.crystals) {
-    if (!c.active) continue;
+    if (c.dissolved === true) continue;
     // 2026-05-18 habit-stability fix: use the crystal's zone-integrated
     // _volume_mm3 (set by Crystal.add_zone per shell at the habit aspect
     // ratio AS-OF-EACH-ZONE). Previously this function recomputed the
@@ -658,21 +1427,7 @@ _diffuseRingState(rate?) {
     // fallback uses total_growth_um (uncapped chemistry-tracked size)
     // because v59 capped c_length_mm at vug_radius and reading it would
     // underreport big crystals (BUG-CRYSTALS-CLIP-VUG-WALL.md Tier-2).
-    if (typeof c._volume_mm3 === 'number') {
-      crystalVol += c._volume_mm3;
-      continue;
-    }
-    const cMm = c.total_growth_um / 1000;
-    let aMm;
-    if (c.habit === 'prismatic') aMm = cMm * 0.4;
-    else if (c.habit === 'tabular') aMm = cMm * 1.5;
-    else if (c.habit === 'acicular') aMm = cMm * 0.15;
-    else if (c.habit === 'rhombohedral') aMm = cMm * 0.8;
-    else if (c.habit === 'snowball') aMm = cMm;
-    else aMm = cMm * 0.5;
-    const a = cMm / 2;
-    const b = aMm / 2;
-    crystalVol += (4 / 3) * Math.PI * a * b * b;
+    crystalVol += _crystalSolidVolumeMm3(c);
   }
   return crystalVol / vugVol;
 },
@@ -680,7 +1435,7 @@ _diffuseRingState(rate?) {
   // When a big crystal grows past an adjacent smaller one that's stopped
 // growing, the smaller crystal becomes an inclusion inside the bigger
 // one. Classic "Sweetwater mechanism" — pyrite first, then calcite
-// grows around it. Ports check_enclosure from vugg.py 1:1.
+// grows around it.
 _check_enclosure() {
   for (const grower of this.crystals) {
     if (!grower.active || grower.c_length_mm < 0.5) continue;
@@ -797,8 +1552,7 @@ _check_enclosure() {
 },
 
   // When the host crystal is dissolving back past the point it enclosed
-// a neighbor, the neighbor is freed. Ports check_liberation from
-// vugg.py 1:1.
+// a neighbor, the neighbor is freed.
 _check_liberation() {
   for (const host of this.crystals) {
     if (!host.enclosed_crystals.length) continue;
@@ -859,65 +1613,50 @@ _check_liberation() {
   _applyOpenAtmosphereEquilibration() {
     const scen = this.conditions && this.conditions._scenario;
     if (!scen) return;
-    if (typeof isOpenAtMeshVertex !== 'function') return;
-    if (typeof equilibratePHtoPCO2 !== 'function') return;
-    if (typeof atmosphericPCO2AtMeshVertex !== 'function') return;
-
-    // Phase 1 uses scalar resolution (passing null mesh + vertex 0).
-    // The resolver shortcuts on scalars without touching the mesh.
-    // When a scenario writes per-region or per-vertex form, this loop
-    // will need the actual mesh — Phase 1c work.
-    const open = isOpenAtMeshVertex(scen, null, 0);
-    if (!open) return;
-    const target = atmosphericPCO2AtMeshVertex(scen, null, 0);
-
-    // Global conditions fluid — sets the baseline subsequent
-    // _propagateGlobalDelta loops would see.
-    const cnd = this.conditions;
-    if (cnd && cnd.fluid) {
-      const newPH = equilibratePHtoPCO2(cnd.fluid, cnd.temperature, target);
-      if (typeof newPH === 'number' && isFinite(newPH)) {
-        cnd.fluid.pH = newPH;
+    // Conserved boundary v1 is the only atmospheric-carbon path. Reconcile
+    // intervening carbonate precipitation/
+    // dissolution at the CaCO3 stoichiometric alkalinity ratio, then solve the
+    // declared open or closed gas boundary. Only the global concentration is
+    // changed here; run_step wraps this call in the canonical event-delta
+    // propagation path so every voxel receives the same per-kg transaction.
+    if (scen.carbonate_boundary && this._carbonateBoundaryState) {
+      const state = this._carbonateBoundaryState;
+      if (state.blocked) return;
+      const fluid = this.conditions.fluid;
+      const T = this.conditions.temperature;
+      if (state.mode === 'open') {
+        equilibrateOpenCarbonateBoundaryState(
+          state,
+          fluid,
+          T,
+          state.targetPCO2Bar,
+          `step ${this.step}: continuous open boundary`,
+        );
+      } else {
+        equilibrateClosedCarbonateBoundaryState(
+          state,
+          fluid,
+          T,
+          `step ${this.step}: closed aqueous-headspace equilibration`,
+        );
       }
+      state.uncertainties = carbonateBoundaryUncertainties(
+        fluid,
+        T,
+        this.conditions.pressure,
+        state.targetPCO2Bar,
+      );
+      // This v1 is a declared fully mixed control volume. Replace, rather than
+      // delta-shift, DIC and pH in every equal-volume voxel so a single shared
+      // pCO2/alkalinity state is not broadcast over hidden local offsets.
+      this.conditions._pending_fluid_replace_fields = Array.from(new Set([
+        ...(this.conditions._pending_fluid_replace_fields || []),
+        'CO3', 'pH',
+      ]));
+      return;
     }
-
-    // Per-ring fluids — the engines read ring_fluids directly for
-    // ring-aware supersat. Each ring sees its own equilibration at
-    // its own temperature (the atmosphere is well-mixed for Phase 1;
-    // T differences across rings can shift the equilibrium pH).
-    if (this.ring_fluids) {
-      for (let r = 0; r < this.ring_fluids.length; r++) {
-        const f = this.ring_fluids[r];
-        if (!f) continue;
-        const T = this.ring_temperatures
-          ? (this.ring_temperatures[r] != null ? this.ring_temperatures[r] : cnd.temperature)
-          : cnd.temperature;
-        const newPH = equilibratePHtoPCO2(f, T, target);
-        if (typeof newPH === 'number' && isFinite(newPH)) {
-          f.pH = newPH;
-        }
-      }
-    }
-
-    // Per-vertex mesh cells — Tranche 4a un-aliased per-vertex fluids,
-    // so ring-level mutation doesn't reach them. Walk the mesh and
-    // equilibrate each cell's own fluid.
-    const mesh = this.wall_state && this.wall_state.meshFor
-      ? this.wall_state.meshFor(this)
-      : null;
-    if (mesh && mesh.cells) {
-      for (let i = 0; i < mesh.cells.length; i++) {
-        const cell = mesh.cells[i];
-        if (!cell || !cell.fluid) continue;
-        const ringIdx = cell.temperature_ring;
-        const T = (this.ring_temperatures && ringIdx >= 0 && ringIdx < this.ring_temperatures.length)
-          ? this.ring_temperatures[ringIdx]
-          : cnd.temperature;
-        const newPH = equilibratePHtoPCO2(cell.fluid, T, target);
-        if (typeof newPH === 'number' && isFinite(newPH)) {
-          cell.fluid.pH = newPH;
-        }
-      }
-    }
+    // Fail closed. Standard closed scenarios may omit this controller, but an
+    // open reservoir never falls back to the retired fixed-DIC/pH-only path.
+    return;
   },
 });

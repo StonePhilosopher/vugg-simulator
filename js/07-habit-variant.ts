@@ -23,7 +23,16 @@
 // `localFill` is optional and defaults to undefined when fill info isn't
 // available (legacy call paths, library/preview rendering). When absent,
 // the fill scoring is skipped — backward compatible.
-function selectHabitVariant(mineral, sigma, temperature, spaceConstrained, localFill) {
+function reserveHabitVariantDraw(mineral) {
+  const entry = MINERAL_SPEC[mineral];
+  if (!entry) return null;
+  const variants = (entry.habit_variants || []).filter(v => v && typeof v === 'object');
+  return variants.length ? rng.random() : null;
+}
+
+function selectHabitVariant(
+  mineral, sigma, temperature, spaceConstrained, localFill, reservedDraw = null,
+) {
   const entry = MINERAL_SPEC[mineral];
   if (!entry) return null;
   const variants = (entry.habit_variants || []).filter(v => v && typeof v === 'object');
@@ -91,7 +100,8 @@ function selectHabitVariant(mineral, sigma, temperature, spaceConstrained, local
   });
   const total = weights.reduce((a, b) => a + b, 0);
   if (total <= 0) return variants[0];
-  let r = rng.random() * total;
+  const unitDraw = Number.isFinite(reservedDraw) ? reservedDraw : rng.random();
+  let r = unitDraw * total;
   for (let i = 0; i < variants.length; i++) {
     r -= weights[i];
     if (r <= 0) return variants[i];

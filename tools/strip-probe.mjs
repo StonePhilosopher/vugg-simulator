@@ -13,7 +13,7 @@
  * CavityVoxelGrid interior slices). This is the PER-CELL / per-voxel chemistry
  * store — NOT the ring-bulk `ring_fluids[equator]` that several bespoke
  * scenario probes (e.g. carbonate-week7-reactive-wall) sample. The two stores
- * can legitimately differ (the bulk view isn't debited by mass balance; the
+ * can legitimately differ (the bulk view isn't debited by growth budget; the
  * mesh cells are). So read this tool's output as "what the per-cell recording
  * shows," and corroborate against the bulk probes rather than assuming they
  * match.

@@ -11,9 +11,8 @@
 //   2. THE SALT-PAN LOG (seed 42 searles_lake): halite zones stratify
 //      by the concentration plateaus — banded-cube mass AND hopper mass
 //      both ≥5%; every positive zone carries tags; morph_form 'cube'.
-//   3. THE LEGACY-RULE CORRECTION: bisbee halite (post-step σ 8.28,
-//      which the old in-step σ>5 flip called hopper_growth) is 100%
-//      spiral_smooth + end habit 'cubic'. tn457 likewise smooth.
+//   3. LOCALITY FIREWALL: Bisbee is not a halite tenant. The morphology
+//      calibration is carried by documented salt-pan scenarios only.
 //   4. HABIT ALPHABET + ASPECT FIREWALL: regime habits are cube-family
 //      strings carrying the SAME _habitAspectRatio as 'cubic' (0.5 —
 //      the default the legacy strings always landed on); a rename must
@@ -37,12 +36,17 @@ declare const CALCITE_MORPH_DISPLAY: any;
 declare const _habitAspectRatio: any;
 declare const _HELIX_CHEM_PARAMS: any;
 
+const scenarioCache = new Map<string, any>();
+
 function runScenario(name: string, seed = 42, steps?: number) {
+  const key = `${name}:${seed}:${steps ?? 'default'}`;
+  if (scenarioCache.has(key)) return scenarioCache.get(key);
   setSeed(seed);
   const { conditions, events, defaultSteps } = SCENARIOS[name]();
   const sim = new VugSimulator(conditions, events);
   const n = steps ?? defaultSteps ?? 100;
   for (let i = 0; i < n; i++) sim.run_step();
+  scenarioCache.set(key, sim);
   return sim;
 }
 
@@ -78,7 +82,7 @@ describe('halide morphology registry entries', () => {
     // The calibrated halite edges — re-pinned rung-5 (SIM 234): the σ
     // currency changed to (brine_strength/10.6)² (real Usiglio onset), which
     // expired the leak-era 10/800 calibration (fake σ range 1–385). New
-    // survey: living fleet plateau 1.41 (GSP + bisbee) → smooth band;
+    // survey: Great Salt Plains' living plateau 1.41 → smooth band;
     // persisting spikes (~2.1) → hopper; chevron band deliberately
     // unoccupied awaiting a perennial-brine tenant.
     expect(MORPH_TH.halite.SPIRAL_MAX).toBe(1.5);
@@ -100,7 +104,7 @@ describe('halide morphology registry entries', () => {
     // rung-5 claims table (new currency; old anchors travertine/tn457 are
     // EXTINCT — their halite was the leak the currency change killed).
     const th = MORPH_TH.halite;
-    expect(morphRegime(th, 1.41)).toBe('spiral_smooth');   // GSP crusts + bisbee efflorescence (survey p50 = max)
+    expect(morphRegime(th, 1.41)).toBe('spiral_smooth');   // Great Salt Plains crusts (survey p50 = max)
     expect(morphRegime(th, 1.6)).toBe('stepped_mild');     // chevron band — unoccupied, awaits a perennial-brine tenant
     expect(morphRegime(th, 2.12)).toBe('hopper_skeletal'); // searles raw spike (BS 15.4×) — raft, when it persists
     expect(morphRegime(th, 6.0)).toBe('dendritic');        // extreme efflorescence, reserved
@@ -114,12 +118,11 @@ describe('the salt-pan log (searles_lake, seed 42)', () => {
 
   // Lazy memos — the bundle globals (setSeed etc.) only exist once the
   // suite setup has run, so the sims cannot be built at module-eval time.
-  // rung-5: GSP + bisbee joined the fleet-level checks (searles' surviving
-  // crusts are late-born and thin; the grown living halite lives there).
-  let _sim: any = null, _gsp: any = null, _bis: any = null;
+  // Great Salt Plains joins the fleet checks because Searles' surviving
+  // crusts are late-born and thin.
+  let _sim: any = null, _gsp: any = null;
   const sim = () => (_sim ||= runScenario('searles_lake'));
   const gsp = () => (_gsp ||= runScenario('great_salt_plains'));
-  const bis = () => (_bis ||= runScenario('bisbee'));
 
   it('the pan log is a grow/dissolve cycle: spike-born salt, flood-dissolved husks (rung-5)', () => {
     // The leak-era log stratified banded-vs-hopper ZONES because steady
@@ -131,18 +134,28 @@ describe('the salt-pan log (searles_lake, seed 42)', () => {
     // scenario whose salt persists.
     const halites = sim().crystals.filter((c: any) => c.mineral === 'halite');
     expect(halites.length).toBeGreaterThanOrEqual(15);
-    const dissolved = halites.filter((c: any) => c.dissolved).length;
-    expect(dissolved / halites.length).toBeGreaterThanOrEqual(0.6);   // most salt redissolves
-    expect(halites.length - dissolved).toBeGreaterThanOrEqual(1);     // late crusts survive to run-end
+    const etched = halites.filter((c: any) =>
+      (c.zones || []).some((z: any) => z.thickness_um < 0));
+    const dissolved = halites.filter((c: any) => c.dissolved);
+    const weatheredRemnants = etched.filter((c: any) => !c.dissolved && c.total_growth_um > 0);
+    // Fresh-water pulses attack most seasonal crusts, but exact shell
+    // accounting distinguishes a weathered core from complete removal.
+    expect(etched.length / halites.length).toBeGreaterThanOrEqual(0.6);
+    expect(dissolved.length).toBeGreaterThanOrEqual(1);
+    expect(weatheredRemnants.length).toBeGreaterThanOrEqual(1);
     // dendrite band deliberately unoccupied, like calcite's fleet
     expect(share(regimeMass(sim(), 'halite'), 'dendritic')).toBe(0);
   });
 
+  it('builds the canonical Great Salt Plains fleet witness independently', () => {
+    expect(gsp().crystals).toBeInstanceOf(Array);
+  }, 300000);
+
   it('every positive halide zone in the living fleet is tagged, form cube + finite surf σ', () => {
-    // Fleet-level: searles' surviving crusts are late and thin; GSP +
-    // bisbee carry the living zone mass at the 1.41 plateau.
+    // Searles' surviving crusts are late and thin; Great Salt Plains carries
+    // the living zone mass at the 1.41 plateau.
     let zones = 0;
-    for (const s of [sim(), gsp(), bis()]) {
+    for (const s of [sim(), gsp()]) {
       for (const c of s.crystals) {
         if (c.mineral !== 'halite' || c.dissolved) continue;
         for (const z of c.zones || []) {
@@ -158,11 +171,10 @@ describe('the salt-pan log (searles_lake, seed 42)', () => {
   });
 
   it('habit is regime-driven cube-family (the memory-less flip is gone)', () => {
-    // rung-5: fleet-level — searles' surviving crusts can be zero-growth
-    // late births (the pan cycle), so the grown-habit witnesses are the
-    // GSP + bisbee living halite; searles actives still count when grown.
+    // Searles' surviving crusts can be zero-growth late births (the pan
+    // cycle), so Great Salt Plains supplies the living habit witness.
     const habits = new Set<string>();
-    for (const s of [sim(), gsp(), bis()]) {
+    for (const s of [sim(), gsp()]) {
       for (const c of s.crystals) {
         if (c.mineral === 'halite' && !c.dissolved && c.total_growth_um > 0) habits.add(c.habit);
       }
@@ -188,17 +200,13 @@ describe('the salt-pan log (searles_lake, seed 42)', () => {
 
 describe('the legacy-rule correction (controls)', () => {
 
-  it('bisbee halite is smooth cube — the old in-step σ>5 flip called this hopper', () => {
-    const sim = runScenario('bisbee');
-    const mass = regimeMass(sim, 'halite');
-    const total = Object.values(mass).reduce((a, b) => a + b, 0);
-    expect(total).toBeGreaterThan(0);
-    expect(share(mass, 'spiral_smooth')).toBeCloseTo(1, 6);
-    for (const c of sim.crystals) {
-      if (c.mineral === 'halite' && !c.dissolved && c.total_growth_um > 0) {
-        expect(c.habit).toBe('cubic');
-      }
-    }
+  it('Bisbee final drying does not invent salt mass to make a halite tenant', () => {
+    const { conditions, events } = SCENARIOS.bisbee();
+    const drying = events.find((event: any) => event.step === 305);
+    const before = conditions.fluid.salinity;
+    drying.apply_fn(conditions);
+    expect(conditions.fluid.salinity).toBe(before);
+    expect(conditions._scenario.excluded_species.halite).toMatch(/do not document halite/i);
   });
 
   it('tn457 grows NO halite at all — the control graduates from "smooth" to "extinct" (rung-5)', () => {

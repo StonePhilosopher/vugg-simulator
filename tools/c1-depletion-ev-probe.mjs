@@ -7,7 +7,7 @@
 // THE FRAMING (established this session by reading the code, not asserting):
 //   RATE already reads LOCAL. _runEngineForCrystal (js/85b) swaps
 //   conditions.fluid → the crystal's own cell.fluid before the engine runs,
-//   and applyMassBalance debits that same cell. So growth THICKNESS already
+//   and applyStoichiometricGrowthBudget debits that same cell. So growth THICKNESS already
 //   responds to local depletion, and diffusion (js/24 _diffuseFull) spreads
 //   the halo.
 //   FORM still reads BULK. Both form classifiers run at the restored bulk

@@ -86,6 +86,32 @@ function _habitVolCoeff(aRatio: number): number {
   return (Math.PI / 6) * aRatio * aRatio;
 }
 
+/**
+ * Physical solid inventory is independent of whether a crystal can continue
+ * growing. Growth eligibility, burial, enclosure, and authored size caps do
+ * not remove matter from the cavity. Only a fully dissolved crystal has no
+ * solid volume.
+ */
+function _crystalSolidVolumeMm3(crystal: any): number {
+  if (!crystal || crystal.dissolved === true) return 0;
+  if (typeof crystal._volume_mm3 === 'number' && Number.isFinite(crystal._volume_mm3)) {
+    return Math.max(0, crystal._volume_mm3);
+  }
+
+  // Backward-compatible projection for legacy snapshots/tests that predate
+  // zone-integrated volume. Keep the same habit interpretation historically
+  // used by get_vug_fill rather than trusting a renderer-side size cap.
+  const totalGrowthUm = Number(crystal.total_growth_um);
+  if (Number.isFinite(totalGrowthUm)) {
+    const cMm = Math.max(0, totalGrowthUm / 1000);
+    return _habitVolCoeff(_habitAspectRatio(crystal.habit)) * Math.pow(cMm, 3);
+  }
+
+  const cMm = Math.max(0, Number(crystal.c_length_mm) || 0);
+  const aMm = Math.max(0, Number(crystal.a_width_mm) || 0);
+  return (Math.PI / 6) * cMm * aMm * aMm;
+}
+
 class GrowthZone {
   // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;
@@ -100,6 +126,45 @@ class GrowthZone {
     this.trace_Ti = opts.trace_Ti ?? 0;
     this.trace_Pb = opts.trace_Pb ?? 0;
     this.trace_Au = opts.trace_Au ?? 0;  // invisible-gold trace (arsenopyrite)
+    this.trace_Ge = opts.trace_Ge ?? 0;  // solid-zone Ge estimate (sphalerite)
+    this.trace_Sr = opts.trace_Sr ?? 0;  // measured aragonite Sr partitioning
+    this.trace_Co = opts.trace_Co ?? 0;  // measured Co-bearing aragonite partitioning
+    // Optional trace-element formula-unit coefficients. applyStoichiometricGrowthBudget uses
+    // these only after a positive zone is accepted, so dry-run competition
+    // cannot consume solute. Unlike decorative trace labels, this closes the
+    // fluid-to-solid inventory loop for empirically modelled trace uptake.
+    if (opts.trace_stoichiometry) {
+      this.trace_stoichiometry = { ...opts.trace_stoichiometry };
+    }
+    // Major-element formula coefficients may vary from shell to shell in a
+    // solid solution.  The accepted-zone budget consumes this exact formula,
+    // and dissolution later returns the inventory that was actually booked.
+    // A shallow numeric map is sufficient and keeps the serialized zone
+    // record independent from the caller's mutable object.
+    if (opts.formula_stoichiometry) {
+      this.formula_stoichiometry = { ...opts.formula_stoichiometry };
+    }
+    // Scientific provenance for a compositionally variable shell.  Preserve
+    // nested component/activity maps because the Creative-mode explanation
+    // and save/replay inspection use them as an immutable formation receipt.
+    if (opts.solid_solution) {
+      this.solid_solution = {
+        ...opts.solid_solution,
+        componentMoleFractions: opts.solid_solution.componentMoleFractions
+          ? { ...opts.solid_solution.componentMoleFractions } : undefined,
+        activityCoefficients: opts.solid_solution.activityCoefficients
+          ? { ...opts.solid_solution.activityCoefficients } : undefined,
+        componentActivities: opts.solid_solution.componentActivities
+          ? { ...opts.solid_solution.componentActivities } : undefined,
+        guggenheimKJMol: Array.isArray(opts.solid_solution.guggenheimKJMol)
+          ? [...opts.solid_solution.guggenheimKJMol] : opts.solid_solution.guggenheimKJMol,
+        guggenheimDimensionless: Array.isArray(opts.solid_solution.guggenheimDimensionless)
+          ? [...opts.solid_solution.guggenheimDimensionless]
+          : opts.solid_solution.guggenheimDimensionless,
+      };
+    }
+    if (opts.sr_partition) this.sr_partition = { ...opts.sr_partition };
+    if (opts.co_partition) this.co_partition = { ...opts.co_partition };
     this.fluid_inclusion = opts.fluid_inclusion ?? false;
     this.inclusion_type = opts.inclusion_type ?? '';
     this.note = opts.note ?? '';
@@ -109,7 +174,7 @@ class GrowthZone {
     this.dissolution_depth_um = opts.dissolution_depth_um ?? 0.0;
     // Phase 1e completion: which dissolution mode the engine chose
     // (e.g. 'oxidative' | 'acid' | 'polymorph' | 'inversion' | 'low_co3' | 'thermal'
-    // | 'dehydration'). Read by applyMassBalance to dispatch the credit
+    // | 'dehydration'). Read by applyStoichiometricGrowthBudget to dispatch the credit
     // through MINERAL_DISSOLUTION_RATES[mineral].__modes[mode]. Optional —
     // single-mode (legacy) entries don't need it; the wrapper falls
     // through to the first declared mode when missing.
@@ -249,6 +314,10 @@ class Crystal {
     this.dissolved = false;
     this.phantom_surfaces = [];
     this.phantom_count = 0;
+    // Evidence-bounded physical dissolution receipts. Each accepted event
+    // points to its negative zone and records rate/envelope, volume retreat,
+    // solution return, and later surface healing state.
+    this.etch_history = opts.etch_history ?? [];
     // Enclosure: crystals this one has swallowed, and the host that
     // swallowed this one (if any). Drives the topo map's inclusion
     // dots and the Sweetwater-style narration.
@@ -270,12 +339,29 @@ class Crystal {
     // O5_MASKING_ENABLED, false until O5b. Cleared when the fluid grows through
     // the film (O5b) or, for a coats_front film, on liberation.
     this._film = opts._film ?? null;
+    // _surfaceGrowth is assigned post-growth by classifySurfaceGrowth (js/45)
+    // only for area-covering aggregate fabrics. It stores physical wall coverage,
+    // booked aggregate volume and derived mean thickness. The renderer may repeat
+    // representative microgeometry, but those instances never enter this Crystal's
+    // accepted-zone inventory or _volume_mm3 mass basis.
+    if (opts._surfaceGrowth) this._surfaceGrowth = opts._surfaceGrowth;
     // Paramorph tracking — set by applyParamorphTransitions when the crystal
     // crosses a phase-transition T (Round 8a-2: argentite → acanthite at 173°C).
     // Stores the *original* (pre-transition) mineral name so library + narrator
     // can flag the cubic-acanthite-after-argentite case.
     this.paramorph_origin = opts.paramorph_origin ?? null;
     this.paramorph_step = opts.paramorph_step ?? null;
+    // CaSO4 replacement is a dissolution-reprecipitation phase change, not a
+    // simple paramorph. Keep an ordered history because sabkha flood/evap
+    // cycles can reverse it repeatedly; replay uses the history directly.
+    this.phase_transition_origin = opts.phase_transition_origin ?? null;
+    this.phase_transition_step = opts.phase_transition_step ?? null;
+    this.phase_transition_driver = opts.phase_transition_driver ?? null;
+    this.phase_transition_history = opts.phase_transition_history ?? [];
+    this._ca_so4_hydration_water_mmolkg = opts._ca_so4_hydration_water_mmolkg ?? 0;
+    this._ca_so4_solid_volume_ratio = opts._ca_so4_solid_volume_ratio ?? 1;
+    this._ca_so4_replacement_porosity_fraction = opts._ca_so4_replacement_porosity_fraction ?? 0;
+    this._ca_so4_pseudomorphic_envelope_preserved = opts._ca_so4_pseudomorphic_envelope_preserved ?? false;
     // v28 dehydration tracking — counts steps in a dry environment
     // for crystals listed in DEHYDRATION_TRANSITIONS.
     this.dry_exposure_steps = opts.dry_exposure_steps ?? 0;
@@ -304,8 +390,14 @@ class Crystal {
 
   add_zone(zone, extentMult = 1) {
     // Apply time compression — more geological time per step = thicker zones
-    zone.thickness_um *= timeScale;
-    zone.growth_rate *= timeScale;
+    // The simulator's accepted-zone path finalizes this before growth budget and
+    // marks it `_time_scaled`. Direct callers and legacy saves still get the
+    // historical scaling here, exactly once.
+    if (!zone._time_scaled) {
+      zone.thickness_um *= timeScale;
+      zone.growth_rate *= timeScale;
+      zone._time_scaled = true;
+    }
     // Detect phantom boundaries
     if (zone.thickness_um < 0) {
       zone.is_phantom = true;
@@ -351,6 +443,16 @@ class Crystal {
       // as the cube of the linear dimension. Clamp at 0 if total dissolves.
       const scale = Math.max(0, cNew_mm / cOld_mm);
       this._volume_mm3 *= scale * scale * scale;
+    }
+    if (zone.thickness_um < 0) {
+      // `dissolved` means no solid remains; a shallow weathering/etch zone is
+      // not allowed to make a still-positive crystal disappear from occupancy,
+      // substrate, rendering, or future growth systems.
+      this.dissolved = this.total_growth_um <= 1e-9;
+      this.partially_dissolved = !this.dissolved;
+      if (this.dissolved) this.active = false;
+    } else if (zone.thickness_um > 0 && this.total_growth_um > 1e-9) {
+      this.dissolved = false;
     }
     this.c_length_mm = cNew_mm;
     // W-K VOL-NEUTRAL (measurement): compact the AXIAL extent at CONSTANT volume.
@@ -415,6 +517,7 @@ class Crystal {
     if (z.trace_Mn > 0.5) traces.push(`Mn ${z.trace_Mn.toFixed(1)}`);
     if (z.trace_Ti > 0.1) traces.push(`Ti ${z.trace_Ti.toFixed(2)}`);
     if (z.trace_Al > 1) traces.push(`Al ${z.trace_Al.toFixed(1)}`);
+    if (z.trace_Ge > 0.1) traces.push(`Ge ${z.trace_Ge.toFixed(1)}`);
     if (traces.length) parts.push(`traces: ${traces.join(', ')} ppm`);
     if (z.fluid_inclusion) parts.push(`fluid inclusion (${z.inclusion_type})`);
     if (z.note) parts.push(z.note);

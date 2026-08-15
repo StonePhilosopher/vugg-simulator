@@ -112,6 +112,8 @@ describe('cavity-mesh Phase 4 Tranche 1 — mesh.cells[] container', () => {
     const mesh = sim.wall_state.meshFor(sim);
     expect(mesh.cellOf(null, sim.wall_state)).toBeNull();
     expect(mesh.cellOf({}, sim.wall_state)).toBeNull();
+    expect(sim.wall_state.chemistryAddressForCrystal({})).toBeNull();
+    expect(sim.wall_state.chemistryVertexForCrystal({})).toBe(-1);
   });
 
   it('per-crystal growth swap reads cell.fluid (end-to-end integration)', () => {

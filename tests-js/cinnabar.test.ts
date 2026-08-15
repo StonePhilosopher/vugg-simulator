@@ -53,8 +53,9 @@ describe('Cinnabar (HgS) — v81 mineral addition', () => {
 
   describe('supersaturation_cinnabar gates', () => {
     function sigmaAt(opts: any): number {
-      const fluid = new FluidChemistry(opts);
-      const cond = new VugConditions({ temperature: opts.T ?? 75, fluid });
+      const { T, ...fluidOpts } = opts;
+      const fluid = new FluidChemistry(fluidOpts);
+      const cond = new VugConditions({ temperature: T ?? 75, fluid });
       return cond.supersaturation_cinnabar();
     }
 
@@ -125,26 +126,28 @@ describe('Cinnabar (HgS) — v81 mineral addition', () => {
     });
   });
 
-  describe('substrate preference: cinnabar nucleates on native_sulfur', () => {
-    // The geological story: cinnabar + native_sulfur co-deposit in the
-    // same H₂S + O₂ mixing zone at Sulphur Bank. The nucleation handler
-    // weights native_sulfur as a substrate (40% chance when available).
-    // We can't pin a specific count but we can verify it happens at
-    // least sometimes across multiple seeds.
-    it('at least one cinnabar nucleates on native_sulfur across 3 seeds', () => {
-      let onSulfur = 0;
+  describe('Sulphur Bank zoning: association is not sulfur epitaxy', () => {
+    // USGS Bull. 922-L records cinnabar films on fractures in less-altered
+    // basalt, whereas thoroughly opalized sulfurous rock contains little
+    // cinnabar. USGS Bull. 1693 similarly separates native sulfur above the
+    // palaeo-water table from cinnabar disseminations and fracture coatings.
+    // Preserve the real association without inventing an S0 substrate.
+    it('co-produces cinnabar and native sulfur without false sulfur-substrate labels', () => {
+      let cinnabar = 0;
+      let nativeSulfur = 0;
+      let falseSulfurSubstrates = 0;
       for (const seed of [42, 1, 7]) {
         const { sim } = runSulphurBank(seed);
         const cb = sim.crystals.filter((c: any) => c.mineral === 'cinnabar');
-        for (const c of cb) {
-          if ((c.position || '').includes('native_sulfur')) {
-            onSulfur++;
-          }
-        }
+        const ns = sim.crystals.filter((c: any) => c.mineral === 'native_sulfur');
+        cinnabar += cb.length;
+        nativeSulfur += ns.length;
+        falseSulfurSubstrates += cb.filter((c: any) =>
+          (c.position || '').includes('native_sulfur')).length;
       }
-      expect(onSulfur,
-        `expected at least one cinnabar on native_sulfur across 3 seeds; got ${onSulfur}`)
-        .toBeGreaterThan(0);
+      expect(cinnabar).toBeGreaterThan(0);
+      expect(nativeSulfur).toBeGreaterThan(0);
+      expect(falseSulfurSubstrates).toBe(0);
     });
   });
 

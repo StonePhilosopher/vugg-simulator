@@ -5,7 +5,7 @@
 // morphology-2026-06-12.md §4; judge: tools/wittichen-dendrite-observe
 // (8/8 seeds at ship time). The contracts pinned here are the seed-42
 // claims-table slice of the judge's contract + the movement shape +
-// the aspirational-expects honesty.
+// the executed weathering-history honesty.
 
 import { describe, expect, it } from 'vitest';
 
@@ -61,12 +61,19 @@ describe('wittichen five-element vein (v189)', () => {
     expect(alive('native_arsenic').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('the silver tarnish story: native silver grows, then sulfidizes to acanthite', () => {
+  it('the silver tarnish story is recorded before exposed acanthite weathers', () => {
     // native_silver crystals exist in the record (grew on the shock)…
     const agAll = sim().crystals.filter((c: any) => c.mineral === 'native_silver' && c.total_growth_um > 0);
     expect(agAll.length).toBeGreaterThanOrEqual(1);
-    // …and the meteoric-sulfate stage converted the standing crop
-    expect(alive('acanthite').length).toBeGreaterThanOrEqual(1);
+    // …and the meteoric-sulfate stage converted the standing crop. The later
+    // vadose epilogue is allowed to dissolve that exposed tarnish, so the
+    // contract is the executed growth→oxidative-retreat history, not an
+    // ahistorical final alive flag.
+    const acanthite = sim().crystals.filter((c: any) => c.mineral === 'acanthite');
+    expect(acanthite.some((c: any) => c.zones.some((z: any) => z.thickness_um > 0))).toBe(true);
+    expect(acanthite.some((c: any) => c.zones.some(
+      (z: any) => z.thickness_um < 0 && z.step >= 170,
+    ))).toBe(true);
   });
 
   it('carbonate gangue seals the vein (the cross-section specimen)', () => {
@@ -90,23 +97,26 @@ describe('wittichen five-element vein (v189)', () => {
     expect(alive('halite').length).toBe(0);
   });
 
-  it('the barite stage delivers (v191, the Barytgänge correction) and erythrite is honestly absent', () => {
+  it('barite survives and the executed weathering tail earns erythrite + cobalt aragonite', () => {
     // _json5_spec is attached to the scenario CALLABLE, not its return
     // value (js/70-events.ts scenario loader convention).
     //
     // v191: the gate census (tools/wittichen-sulfate-probe.mjs) proved
     // barite was BARIUM-limited, not oxidation-limited — Ba 24→75 (the
     // district is the Barytgänge) opens the stage at σ ~1.5 with the
-    // living arsenide suite untouched. Erythrite is DEMOTED from
-    // expects by measurement: its gate needs T ≤ 50°C and this sealed-
-    // vein story ends at ~150°C — the cobalt bloom is post-exhumation
-    // weathering, a future weathering-epilogue client, not a tune
-    // target.
+    // living arsenide suite intact. The post-vein 25°C boundary now makes the
+    // old deferred weathering clients executable, but only after local parent
+    // dissolution has returned their required inventory.
     const spec = (SCENARIOS.wittichen as any)._json5_spec || {};
     const expects = spec.expects_species || [];
     expect(expects).toContain('barite');
-    expect(expects).not.toContain('erythrite');
+    expect(expects).toContain('erythrite');
+    expect(expects).toContain('aragonite');
     expect(alive('barite').length).toBeGreaterThanOrEqual(1);
-    expect(alive('erythrite').length).toBe(0);
+    expect(alive('erythrite').length).toBeGreaterThanOrEqual(1);
+    const cobaltAragonite = alive('aragonite').find((c: any) =>
+      c.weathering_precursor_receipt && c.zones.some((z: any) => z.co_partition));
+    expect(cobaltAragonite).toBeTruthy();
+    expect(cobaltAragonite.position).toMatch(/on weathering (skutterudite|safflorite|cobaltite) #/);
   });
 });

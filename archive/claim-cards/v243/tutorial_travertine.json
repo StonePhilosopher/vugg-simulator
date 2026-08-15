@@ -1,0 +1,266 @@
+{
+  "scenario": "tutorial_travertine",
+  "sim_version": 243,
+  "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1|sulfur-ledger:sulfide+sulfate+elemental-independent+pathway-gated-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "456c278bbceeaf05c67dbaef8d512b8421f753bfdea16aa2ec5221a0f78e6621",
+  "strip_steps": 60,
+  "claim": {
+    "anchor": "Mammoth Hot Springs (Yellowstone) — travertine is the canonical CO₂-degas calcite",
+    "description": "Tutorial 3: How CO₂ Builds a Calcite Crust. CO₂-rich groundwater rises into a hot-spring pool, loses CO₂ as gas, and every pH step multiplies calcite's supersaturation until crust plates every available surface. The same mechanism that grows speleothems in caves and travertine terraces at hot springs.",
+    "expects_species": [
+      "calcite"
+    ],
+    "sources": [
+      "Mammoth Hot Springs, Yellowstone NP — type locality for actively-forming travertine",
+      "Pentecost A. (2005), Travertine — comprehensive review of CO₂-degas calcite",
+      "Stumm & Morgan, Aquatic Chemistry (3rd ed.), Bjerrum partition + Henry's-Law CO₂"
+    ],
+    "initial_temperature_C": 70,
+    "initial_pressure_kbar": 0.05,
+    "wall_architecture": null,
+    "notes": [
+      "Tutorial scenario for PROPOSAL-GEOLOGICAL-ACCURACY Phase 3. Showcases the CO₂-degas → pH rise → calcite supersaturates cascade. Player presses Advance through three degassing pulses (steps 10, 25, 40) and watches calcite go from a barely-viable trickle to massive precipitation purely via pH change — no temperature drop, no mineral mixing, no fluid pulse adds Ca.",
+      "REWORKED 2026-07-07 (tutorial-parity pass): legacy 8-beat sim-step script rebuilt in the Grand Tour's engine-v2 vocabulary — continue-step framing on the σ forecast, Begin ⏎ handoff, sim-step beats riding the pulses, then the INVERSE EXPERIMENT: the 🧪 acid verbs unlock and the player runs the cascade backwards, watching σ(calcite) fall (the cave-dissolution lesson for free). Broth + events byte-identical. TEXT RE-TRUED against the observed run: the old script's claims ('Ca 200 ppm', 'calcite isn't growing yet', 'crossed the line at step 20') predate the Ca 200→350 recalibration — measured seed run shows σ(calcite) 1.61 at t0 (one crystal creeping from step ~2) and pulse 1 multiplying σ 1.34→5.04, so the lesson is narrated as barely-viable-trickle → multiplication, which is also the truer Mammoth story (vent water arrives near saturation; degassing drives the plating downstream).",
+      "Initial fluid is high-DIC (CO3 = 500 ppm = ~10 mmol/kg DIC, typical of CO₂-charged hot-spring source water) at moderately acidic pH 6.5 (the pH at which most DIC sits as H₂CO₃* and HCO₃⁻; <0.1% is CO₃²⁻). At the current Ca = 350 ppm calibration, calcite starts MARGINAL (σ ≈ 1.6, a bare trickle of growth) rather than subsaturated — the pre-recalibration 'Ca = 200, stays subsaturated' description was stale; the pulses do the real work either way.",
+      "Each `co2_degas` event removes 30% of the DIC (CO₂ leaves as gas) and raises pH by 0.5 units. The CO₃²⁻ fraction of DIC grows ~10× per pH unit (Bjerrum partition). After three degassing pulses, pH ~ 8 and calcite is wildly supersaturated; players see calcite nucleate and grow steadily through the back half of the run.",
+      "Geological reference: Mammoth Hot Springs (Yellowstone, USA), Pamukkale (Turkey), Pancake Hot Springs (CA). All build travertine via this exact cascade. Cave flowstone uses the same chemistry but with cooler fluid and lower flow."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1|sulfur-ledger:sulfide+sulfate+elemental-independent+pathway-gated-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 0.05,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.70481454,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 58.735,
+          "initial_water_activity": {
+            "value": 0.9964,
+            "salinityPpt": 6,
+            "naclWeightPercentEquivalent": 0.6,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 2,
+    "paragenetic_order": [
+      {
+        "mineral": "calcite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "aragonite",
+        "first_step": 24,
+        "events": 1
+      }
+    ],
+    "surprises_not_in_expects": [
+      "aragonite"
+    ],
+    "expected_no_shows": [],
+    "environment": {
+      "T": {
+        "first": 67.913,
+        "last": 64.961,
+        "min": 47.244,
+        "max": 73.819,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 6.504,
+        "last": 7.331,
+        "min": 6.504,
+        "max": 7.992,
+        "units": ""
+      },
+      "Eh": {
+        "first": -201.575,
+        "last": -201.575,
+        "min": -201.575,
+        "max": -201.575,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 6.299,
+        "last": 6.299,
+        "min": 6.299,
+        "max": 6.299,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": 0.189,
+        "last": 0.756,
+        "min": 0.063,
+        "max": 1.575,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": 0.063,
+        "last": 0.63,
+        "min": -0.063,
+        "max": 1.449,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -0.441,
+        "last": 0.693,
+        "min": -0.693,
+        "max": 2.205,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -1.26,
+        "last": -0.693,
+        "min": -1.26,
+        "max": 0.063,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 0.693,
+        "last": 1.764,
+        "min": 0.567,
+        "max": 2.016,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -0.945,
+        "last": -0.882,
+        "min": -0.945,
+        "max": -0.882,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -1.008,
+        "last": -1.008,
+        "min": -1.071,
+        "max": -0.945,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 60,
+      "fluid_pressure_kbar": {
+        "first": 0.05,
+        "last": 0.05,
+        "min": 0.05,
+        "max": 0.05,
+        "samples": 60
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 60
+      },
+      "temperature_C": {
+        "first": 68.26089435471222,
+        "last": 63.648194680828595,
+        "min": 48.239491288270806,
+        "max": 73.69096292895264,
+        "samples": 60
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.713987519743353,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.739020557213663,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 60
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 58.735
+        },
+        "last": {
+          "pure_water_boundary_C": 58.735
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

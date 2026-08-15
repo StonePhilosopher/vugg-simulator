@@ -365,11 +365,12 @@ let randomSim = null;
 let randomSimArchetype = null;
 let randomSimSeed = null;
 
-function runRandomVugg() {
+async function runRandomVugg() {
   // Narrative-tempo Phase 2: bail if a narrative is currently playing
   // so the Generate button is a no-op during an in-flight reveal. The
   // `running` flag lives in 91-ui-legends.ts and is the shared lock.
   if (typeof running !== 'undefined' && running) return;
+  await waitForNarrativesReady();
   const out = document.getElementById('random-output');
   if (!out) return;
   const seedRaw = document.getElementById('random-seed').value.trim();

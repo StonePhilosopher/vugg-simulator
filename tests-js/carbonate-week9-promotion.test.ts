@@ -58,8 +58,9 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 9 — calcite engine promotion (v144)'
     const f = new FluidChemistry({ Ca: 200, CO3: 150, pH: 8.0 });
     const cond = new VugConditions({ temperature: 25, fluid: f });
     const sigma = cond.supersaturation_calcite();
-    const omega = carbonateOmega('calcite', f, 25);
-    // Note: cond holds its own fluid copy; we read from the same shape.
+    const omega = carbonateOmega('calcite', f, 25, 0, cond.pressure);
+    // Note: cond holds its own fluid copy; we read from the same shape and
+    // the same explicit pressure correction.
     // The dispatcher returns carbonateEngineSigma which calls carbonateOmega.
     // Should be within a small tolerance (Davies activity for identical
     // fluid shape — no fluid mutation between the two calls).

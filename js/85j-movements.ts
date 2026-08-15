@@ -46,7 +46,7 @@ const _MOVEMENT_SALT = 0x4d4f5645;
 // A dedicated deterministic PRNG for movements, derived from the vugg seed.
 // Reuses _mulberry32 (defined in 22-geometry-wall.ts) — resume-safe, and
 // independent of the shared `rng` cascade. Returns a () => [0,1) function.
-function _makeMovementRng(vuggSeed: number, salt: number = _MOVEMENT_SALT): () => number {
+function _makeMovementRng(vuggSeed: number, salt: number = _MOVEMENT_SALT): StatefulRandom {
   return _mulberry32((((vuggSeed | 0) ^ salt) >>> 0));
 }
 
@@ -129,7 +129,375 @@ function _makeNucRng(sharedState: number, mineralKey: string, step: number): See
 //
 // fn.name is "_nuc_<mineral>"; the build is a non-minifying concat (148 modules)
 // and tsc/vitest preserve names, so the key is stable across runtimes.
+const _NUCLEATION_PROBE_REGISTRY: Record<string, (sim: any) => void> = {};
+let _REGISTER_NUCLEATORS_ONLY = false;
+
+const _NUCLEATION_PROBE_ALIASES: Record<string, string[]> = {
+  // These dispatchers intentionally evaluate several siblings in one
+  // production function so priority and shared-pool competition stay atomic.
+  _nuc_spodumene: [
+    'spodumene', 'emerald', 'morganite', 'heliodor', 'aquamarine', 'beryl',
+    'ruby', 'sapphire', 'corundum',
+  ],
+  _nuc_stolzite: ['stolzite', 'raspite'],
+};
+
+function _registerNucleatorForProbe(fn: (sim: any) => void, aliases: string[] | null = null): void {
+  if (typeof fn !== 'function') return;
+  const inferred = fn.name.startsWith('_nuc_') ? fn.name.slice(5) : '';
+  const names = aliases || _NUCLEATION_PROBE_ALIASES[fn.name] || (inferred ? [inferred] : []);
+  for (const name of names) _NUCLEATION_PROBE_REGISTRY[name] = fn;
+}
+
+interface ProductionNucleationDecisionProbe {
+  available: boolean;
+  deterministicEligible: boolean;
+  stochastic: boolean;
+  randomDraws: number;
+  source: string | null;
+  attempts: Array<{ mineral: string; position: string; sigma: number }>;
+  competingBirth: string | null;
+  error?: string;
+}
+
+interface ProductionNucleationDecisionAssessment {
+  available: boolean;
+  eligible: boolean;
+  stochasticBirth: boolean;
+  effectiveDrawProbability: number | null;
+  randomDraws: number;
+  source: string | null;
+  competingBirth: string | null;
+  blockers: string[];
+}
+
+function _scenarioSpeciesExclusion(sim: any, name: string): string | null {
+  const reason = sim?.conditions?._scenario?.excluded_species?.[name];
+  return typeof reason === 'string' && reason.trim() ? reason.trim() : null;
+}
+
+function _scenarioPositiveLicenseBlock(sim: any, name: string): string | null {
+  const scenarioId = sim?.conditions?._scenario?.id;
+  if (!scenarioId) return null; // Creative/custom broth: every engine remains available.
+  const spec = (typeof MINERAL_SPEC !== 'undefined') ? MINERAL_SPEC?.[name] : null;
+  if (!spec?._requires_scenario_license) return null;
+  const scenario = sim.conditions._scenario;
+  const tierMinerals = (entries: any): string[] => (Array.isArray(entries) ? entries : [])
+    .map((entry: any) => (typeof entry === 'string' ? entry : entry?.mineral))
+    .filter((mineral: any) => typeof mineral === 'string' && mineral.length > 0);
+  const licensed = new Set([
+    ...tierMinerals(scenario.expects_species),
+    ...tierMinerals(scenario.deterministic_species),
+    ...tierMinerals(scenario.statistical_species),
+    ...tierMinerals(scenario.aspirational_species),
+  ]);
+  if (licensed.has(name)) return null;
+  return `no positive four-tier locality license for ${name} in ${scenarioId}; chemistry alone does not prove occurrence (Creative mode remains unrestricted)`;
+}
+
+function _scenarioNucleationWindowBlock(sim: any, name: string): string | null {
+  const window = sim?.conditions?._scenario?.nucleation_windows?.[name];
+  if (!window || typeof window !== 'object') return null;
+  // VugSimulator increments `step` before applying events and nucleating, so
+  // its live step number already matches the authored event declarations.
+  // Do not add one here: that would open a window one cycle before its pulse.
+  const authoredStep = Number(sim?.step) || 0;
+  const start = Number(window.start_step);
+  const end = Number(window.end_step);
+  if (Number.isFinite(start) && authoredStep < start) {
+    return `authored paragenesis opens at step ${start} (current step ${authoredStep})`;
+  }
+  if (Number.isFinite(end) && authoredStep > end) {
+    return `authored paragenesis closed after step ${end} (current step ${authoredStep})`;
+  }
+  return null;
+}
+
+function _scenarioNucleationPrerequisiteBlock(sim: any, name: string): string | null {
+  const scenario = sim?.conditions?._scenario;
+  const prerequisite = scenario?.nucleation_prerequisites?.[name];
+  if (!prerequisite || typeof prerequisite !== 'object') return null;
+  const requiredEvents = Array.isArray(prerequisite.event_types)
+    ? prerequisite.event_types.map(String).filter(Boolean) : [];
+  const executed = new Set(Array.isArray(scenario.executed_event_types)
+    ? scenario.executed_event_types.map(String) : []);
+  const missing = requiredEvents.filter((eventType: string) => !executed.has(eventType));
+  if (!missing.length) return null;
+  return `causal paragenesis requires executed event history: ${missing.join(', ')}`;
+}
+
+// Read-only best-case execution of the actual production nucleator. Every RNG
+// draw returns zero, which passes the codebase's Bernoulli gates while leaving
+// all deterministic sigma, active/total, cap, host, and priority predicates
+// untouched. No live RNG, crystal, fluid, log, or counter state is mutated.
+// This makes the hover panel answer whether production CAN call nucleate() now,
+// then separately disclose that the real path still contains stochastic draws.
+function _productionProbeDeepClone(value: any): any {
+  if (value == null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(_productionProbeDeepClone);
+  const clone = Object.create(Object.getPrototypeOf(value));
+  for (const key of Object.keys(value)) clone[key] = _productionProbeDeepClone(value[key]);
+  return clone;
+}
+
+function productionNucleationDecisionProbe(
+  name: string,
+  sim: any,
+  options: { randomValue?: number; targetSigma?: number; crystalMode?: 'current' | 'inactive-target' | 'remove-target' } = {},
+): ProductionNucleationDecisionProbe {
+  const fn = _NUCLEATION_PROBE_REGISTRY[name];
+  const unavailable: ProductionNucleationDecisionProbe = {
+    available: false,
+    deterministicEligible: false,
+    stochastic: false,
+    randomDraws: 0,
+    source: fn?.name || null,
+    attempts: [],
+    competingBirth: null,
+  };
+  if (!fn || !sim || !Array.isArray(sim.crystals) || !sim.conditions
+      || typeof sim._atNucleationCap !== 'function') return unavailable;
+
+  const attempts: Array<{ mineral: string; position: string; sigma: number }> = [];
+  const probe = Object.assign(Object.create(Object.getPrototypeOf(sim)), sim);
+  const crystalMode = options.crystalMode || 'current';
+  probe.crystals = sim.crystals
+    .filter((cr: any) => crystalMode !== 'remove-target' || cr.mineral !== name)
+    .map((cr: any) => {
+      const copy = _productionProbeDeepClone(cr);
+      if (crystalMode === 'inactive-target' && cr.mineral === name) copy.active = false;
+      return copy;
+    });
+  probe.conditions = _productionProbeDeepClone(sim.conditions);
+  // Local nucleation helpers resolve through wall_state.meshFor(). Give the
+  // observer a private chemistry mesh as well as private bulk conditions;
+  // phase-changing probes (notably birnessite -> todorokite) may legitimately
+  // debit their clone but can never reach a live wall-cell fluid.
+  const liveWall = sim.wall_state;
+  const liveMesh = liveWall?.meshFor?.(sim);
+  if (liveWall && liveMesh?.cells) {
+    const probeMesh = Object.assign(Object.create(Object.getPrototypeOf(liveMesh)), liveMesh);
+    probeMesh.cells = liveMesh.cells.map((cell: any) => ({
+      ...cell,
+      fluid: _productionProbeDeepClone(cell?.fluid),
+    }));
+    probe.wall_state = Object.assign(Object.create(Object.getPrototypeOf(liveWall)), liveWall);
+    probe.wall_state.meshFor = () => probeMesh;
+  }
+  if (Number.isFinite(options.targetSigma)) {
+    probe.conditions[`supersaturation_${name}`] = () => Number(options.targetSigma);
+  }
+  probe.log = [];
+  probe.crystal_counter = Number(sim.crystal_counter) || probe.crystals.length;
+  const mineralBeforeProbe = probe.crystals.map((cr: any) => cr?.mineral);
+  probe.nucleate = (mineral: string, position = 'vug wall', sigma = 1) => {
+    const birth = { mineral, position, sigma: Number(sigma), crystal_id: ++probe.crystal_counter };
+    attempts.push({ mineral, position, sigma: Number(sigma) });
+    const fake: any = {
+      ...birth,
+      active: true,
+      dissolved: false,
+      enclosed_by: null,
+      zones: [],
+      total_growth_um: 0,
+      habit: 'probe',
+      dominant_forms: [],
+    };
+    probe.crystals.push(fake);
+    return fake;
+  };
+
+  const saved = rng;
+  let randomDraws = 0;
+  const probeRng = new SeededRandom(0);
+  const randomValue = Math.max(0, Math.min(0.999999999, Number(options.randomValue) || 0));
+  const fixed = () => { randomDraws++; return randomValue; };
+  probeRng.random = fixed;
+  probeRng.next = fixed;
+  probeRng.uniform = (lo: number, hi: number) => { randomDraws++; return lo + randomValue * (hi - lo); };
+  rng = probeRng;
+  try {
+    fn(probe);
+  } catch (error) {
+    return {
+      ...unavailable,
+      available: true,
+      randomDraws,
+      source: fn.name,
+      attempts,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  } finally {
+    rng = saved;
+  }
+  const deterministicEligible = attempts.some(attempt => attempt.mineral === name)
+    || probe.crystals.some((cr: any, index: number) => cr?.mineral === name
+      && mineralBeforeProbe[index] != null && mineralBeforeProbe[index] !== name);
+  const competing = attempts.find(attempt => attempt.mineral !== name)?.mineral || null;
+  return {
+    available: true,
+    deterministicEligible,
+    stochastic: deterministicEligible && randomDraws > 0,
+    randomDraws,
+    source: fn.name,
+    attempts,
+    competingBirth: deterministicEligible ? null : competing,
+  };
+}
+
+// Explain the deterministic and stochastic parts of the production decision
+// by counterfactually rerunning that same nucleator against cloned state. This
+// avoids maintaining a second handwritten table of quartz-style repeat gates.
+function assessProductionNucleationDecision(
+  name: string,
+  sim: any,
+  sigma: number,
+  sigmaCrit: number,
+): ProductionNucleationDecisionAssessment {
+  const localityExclusion = _scenarioSpeciesExclusion(sim, name);
+  if (localityExclusion) {
+    return {
+      available: true,
+      eligible: false,
+      stochasticBirth: false,
+      effectiveDrawProbability: null,
+      randomDraws: 0,
+      source: 'scenario-locality exclusion',
+      competingBirth: null,
+      blockers: [`locality evidence excludes this phase: ${localityExclusion}`],
+    };
+  }
+  const licenseBlock = _scenarioPositiveLicenseBlock(sim, name);
+  if (licenseBlock) {
+    return {
+      available: true,
+      eligible: false,
+      stochasticBirth: false,
+      effectiveDrawProbability: null,
+      randomDraws: 0,
+      source: 'scenario locality license',
+      competingBirth: null,
+      blockers: [licenseBlock],
+    };
+  }
+  const scenarioWindowBlock = _scenarioNucleationWindowBlock(sim, name);
+  if (scenarioWindowBlock) {
+    return {
+      available: true,
+      eligible: false,
+      stochasticBirth: false,
+      effectiveDrawProbability: null,
+      randomDraws: 0,
+      source: 'scenario paragenetic window',
+      competingBirth: null,
+      blockers: [scenarioWindowBlock],
+    };
+  }
+  const scenarioPrerequisiteBlock = _scenarioNucleationPrerequisiteBlock(sim, name);
+  if (scenarioPrerequisiteBlock) {
+    return {
+      available: true,
+      eligible: false,
+      stochasticBirth: false,
+      effectiveDrawProbability: null,
+      randomDraws: 0,
+      source: 'scenario causal paragenesis',
+      competingBirth: null,
+      blockers: [scenarioPrerequisiteBlock],
+    };
+  }
+  const requiredSubstrate = (typeof MINERAL_GATES_REGISTRY !== 'undefined')
+    ? MINERAL_GATES_REGISTRY?.[name]?.required_substrate : null;
+  if (requiredSubstrate) {
+    const candidates = typeof executableSubstrateCandidates === 'function'
+      ? executableSubstrateCandidates(name, sim.crystals || []) : [];
+    if (!candidates.some((candidate: any) => candidate.host?.mineral === requiredSubstrate)) {
+      return {
+        available: true,
+        eligible: false,
+        stochasticBirth: false,
+        effectiveDrawProbability: null,
+        randomDraws: 0,
+        source: 'required transformation precursor',
+        competingBirth: null,
+        blockers: [`requires an active exposed ${requiredSubstrate} precursor; fluid supersaturation alone cannot create ${name}`],
+      };
+    }
+  }
+  const best = productionNucleationDecisionProbe(name, sim, { randomValue: 0 });
+  const result: ProductionNucleationDecisionAssessment = {
+    available: best.available,
+    eligible: best.deterministicEligible,
+    stochasticBirth: false,
+    effectiveDrawProbability: null,
+    randomDraws: best.randomDraws,
+    source: best.source,
+    competingBirth: best.competingBirth,
+    blockers: [],
+  };
+  if (!best.available) return result;
+
+  if (best.deterministicEligible) {
+    const worst = productionNucleationDecisionProbe(name, sim, { randomValue: 0.999999999 });
+    result.stochasticBirth = !worst.deterministicEligible;
+    if (result.stochasticBirth) {
+      let lo = 0, hi = 1;
+      for (let i = 0; i < 24; i++) {
+        const mid = (lo + hi) / 2;
+        const trial = productionNucleationDecisionProbe(name, sim, { randomValue: mid });
+        if (trial.deterministicEligible) lo = mid;
+        else hi = mid;
+      }
+      result.effectiveDrawProbability = Math.round(lo * 1000) / 1000;
+    }
+    return result;
+  }
+
+  const active = sim.crystals.filter((cr: any) => cr?.mineral === name && cr.active && !cr.dissolved).length;
+  const total = sim.crystals.filter((cr: any) => cr?.mineral === name).length;
+  const inactiveTarget = productionNucleationDecisionProbe(name, sim, {
+    randomValue: 0,
+    crystalMode: 'inactive-target',
+  });
+  const removedTarget = productionNucleationDecisionProbe(name, sim, {
+    randomValue: 0,
+    crystalMode: 'remove-target',
+  });
+  if (inactiveTarget.deterministicEligible) {
+    result.blockers.push(`active-crystal rule blocks at ${active} active (${total} total)`);
+  } else if (removedTarget.deterministicEligible) {
+    result.blockers.push(`total/history rule blocks at ${total} recorded crystal${total === 1 ? '' : 's'}`);
+  }
+
+  const high = Math.max(Number(sigma) + 32, Number(sigmaCrit) + 32, 32);
+  const highProbe = productionNucleationDecisionProbe(name, sim, { randomValue: 0, targetSigma: high });
+  if (sigma > sigmaCrit && highProbe.deterministicEligible) {
+    let lo = Math.max(Number(sigma) || 0, Number(sigmaCrit) || 0), hi = high;
+    for (let i = 0; i < 28; i++) {
+      const mid = (lo + hi) / 2;
+      const trial = productionNucleationDecisionProbe(name, sim, { randomValue: 0, targetSigma: mid });
+      if (trial.deterministicEligible) hi = mid;
+      else lo = mid;
+    }
+    result.blockers.push(`repeat/secondary saturation rule requires σ > ${hi.toFixed(3)}`);
+  }
+  if (best.competingBirth) {
+    result.blockers.push(`${best.competingBirth} takes the shared family-priority slot first`);
+  }
+  if (!result.blockers.length) {
+    result.blockers.push('another deterministic production predicate blocks this nucleator');
+  }
+  return result;
+}
+
 function _runNuc(sim: any, fn: (sim: any) => void): void {
+  _registerNucleatorForProbe(fn);
+  if (_REGISTER_NUCLEATORS_ONLY) return;
+  const inferred = fn.name.startsWith('_nuc_') ? fn.name.slice(5) : '';
+  if (inferred && _scenarioSpeciesExclusion(sim, inferred)) return;
+  if (inferred && _scenarioPositiveLicenseBlock(sim, inferred)) return;
+  if (inferred && _scenarioNucleationWindowBlock(sim, inferred)) return;
+  if (inferred && _scenarioNucleationPrerequisiteBlock(sim, inferred)) return;
   if (!NUC_DERIVED_SEEDS) { fn(sim); return; }
   const saved = rng;
   rng = _makeNucRng(sim._nucSharedState | 0, fn.name, sim.step | 0);
@@ -268,7 +636,11 @@ function _movementSetField(conditions: any, path: string, value: number): void {
   const parts = path.split('.');
   let o = conditions;
   for (let i = 0; i < parts.length - 1; i++) { if (o == null) return; o = o[parts[i]]; }
-  if (o != null) o[parts[parts.length - 1]] = value;
+  if (o != null) {
+    o[parts[parts.length - 1]] = path === 'pressure'
+      ? clampFluidPressureKbar(value)
+      : value;
+  }
 }
 
 // The controller holds the parsed movements + the dedicated rng + per-movement
@@ -277,11 +649,14 @@ function _movementSetField(conditions: any, path: string, value: number): void {
 // number — this is what keeps the dark scaffold byte-identical.
 class MovementController {
   movements: MovementSpec[];
-  rng: () => number;
+  rng: StatefulRandom;
   _state: { base: number; ou: number; started: boolean; originCell: number }[];
 
   constructor(movements: MovementSpec[] | undefined, vuggSeed: number) {
-    this.movements = Array.isArray(movements) ? movements : [];
+    // Own the list. Creative mode can append a trajectory while older ones are
+    // already active; sharing the scenario array would make a push happen
+    // twice when the controller is updated explicitly.
+    this.movements = Array.isArray(movements) ? movements.slice() : [];
     this.rng = _makeMovementRng(vuggSeed);
     // originCell -1 = unresolved; resolved once at first window activation for
     // origin:'cell' movements (Phase 2c), then pinned (stable across steps).
@@ -289,6 +664,14 @@ class MovementController {
   }
 
   get isEmpty(): boolean { return this.movements.length === 0; }
+
+  // Append without rebuilding the controller. Rebuilding would restart the
+  // dedicated RNG stream and discard captured baselines / OU texture for every
+  // trajectory that was already under way.
+  addMovement(movement: MovementSpec): void {
+    this.movements.push(movement);
+    this._state.push({ base: 0, ou: 0, started: false, originCell: -1 });
+  }
 
   // Phase 4c.3a — is any movement driving `field` active at this step? Used by
   // the sim's _syncRedoxEh to flip the redox sync to Eh-CANONICAL (Eh→O2) for
@@ -352,6 +735,20 @@ class MovementController {
       if (typeof m.clampMin === 'number') value = Math.max(m.clampMin, value);
       if (typeof m.clampMax === 'number') value = Math.min(m.clampMax, value);
 
+      if (conditions?._carbonateBoundaryState
+          && (m.field === 'fluid.CO3' || m.field === 'fluid.pH')) {
+        conditions._pending_carbonate_boundary_violation = {
+          kind: 'movement_boundary_violation',
+          attemptedKind: 'movement',
+          field: m.field,
+          step,
+          error: m.field === 'fluid.CO3'
+            ? 'movement_DIC_requires_explicit_recharge'
+            : 'movement_pH_requires_explicit_alkalinity_capacity',
+        };
+        continue;
+      }
+
       // SPATIAL origin (Phase 2c): instead of SETTING the bulk field (global),
       // pin ONE seeded origin cell's per-vertex fluid to `value` — a fixed-
       // composition feeder — and let the step-end _diffuseRingState carry it
@@ -385,7 +782,7 @@ class MovementController {
     const m = this.movements[i];
     if (typeof m.originCell === 'number') return m.originCell | 0;
     const field = sim && sim._fluidSpots;
-    const open = field && !field.isEmpty ? field.openSpots() : [];
+    const open = field && !_fluidSpotIsEmptyInternal(field) ? field.openSpots() : [];
     if (open && open.length) {
       const ws = sim && sim.wall_state;
       const N = (ws && ws.cells_per_ring) | 0;

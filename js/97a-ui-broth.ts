@@ -1,16 +1,10 @@
 // ============================================================
 // js/97a-ui-broth.ts — UI — Broth control panel
 // ============================================================
-// Extracted verbatim from the legacy bundle. SCRIPT-mode TS — top-level
-// decls stay global so cross-file references resolve at runtime.
-//
-// Phase B11 of PROPOSAL-MODULAR-REFACTOR.
-
-// ============================================================
-// BROTH CONTROL PANEL
-// ============================================================
+// SCRIPT-mode TS: top-level declarations stay global for cross-file use.
 
 let brothSnapshots = [];
+let _carbonateBoundaryControlNotice = '';
 
 function toggleBrothPanel() {
   const toggle = document.getElementById('broth-toggle');
@@ -19,74 +13,618 @@ function toggleBrothPanel() {
   body.classList.toggle('open');
 }
 
-// Map slider ids to sim state paths
-const BROTH_MAP = {
-  temp:  { get: () => fortressSim.conditions.temperature,     set: v => fortressSim.conditions.temperature = v,     fmt: v => v.toFixed(0) + ' °C',  parse: v => parseFloat(v) },
-  sio2:  { get: () => fortressSim.conditions.fluid.SiO2,      set: v => fortressSim.conditions.fluid.SiO2 = v,      fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  ca:    { get: () => fortressSim.conditions.fluid.Ca,         set: v => fortressSim.conditions.fluid.Ca = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  co3:   { get: () => fortressSim.conditions.fluid.CO3,        set: v => fortressSim.conditions.fluid.CO3 = v,        fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  ph:    { get: () => fortressSim.conditions.fluid.pH,         set: v => fortressSim.conditions.fluid.pH = v,         fmt: v => v.toFixed(1),           parse: v => parseFloat(v) / 10, toSlider: v => Math.round(v * 10) },
-  fe:    { get: () => fortressSim.conditions.fluid.Fe,         set: v => fortressSim.conditions.fluid.Fe = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  mn:    { get: () => fortressSim.conditions.fluid.Mn,         set: v => fortressSim.conditions.fluid.Mn = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  cu:    { get: () => fortressSim.conditions.fluid.Cu,         set: v => fortressSim.conditions.fluid.Cu = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  zn:    { get: () => fortressSim.conditions.fluid.Zn,         set: v => fortressSim.conditions.fluid.Zn = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  s:     { get: () => fortressSim.conditions.fluid.S,          set: v => fortressSim.conditions.fluid.S = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  f:     { get: () => fortressSim.conditions.fluid.F,          set: v => fortressSim.conditions.fluid.F = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  o2:    { get: () => fortressSim.conditions.fluid.O2,         set: v => fortressSim.conditions.fluid.O2 = v,         fmt: v => v.toFixed(1),           parse: v => parseFloat(v) / 10, toSlider: v => Math.round(v * 10) },
-  flow:  { get: () => fortressSim.conditions.flow_rate,        set: v => fortressSim.conditions.flow_rate = v,        fmt: v => v.toFixed(1),           parse: v => parseFloat(v) / 10, toSlider: v => Math.round(v * 10) },
-  u:     { get: () => fortressSim.conditions.fluid.U,          set: v => fortressSim.conditions.fluid.U = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  pb:    { get: () => fortressSim.conditions.fluid.Pb,         set: v => fortressSim.conditions.fluid.Pb = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  mo:    { get: () => fortressSim.conditions.fluid.Mo,         set: v => fortressSim.conditions.fluid.Mo = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  al:    { get: () => fortressSim.conditions.fluid.Al,         set: v => fortressSim.conditions.fluid.Al = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  k:     { get: () => fortressSim.conditions.fluid.K,          set: v => fortressSim.conditions.fluid.K = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  na:    { get: () => fortressSim.conditions.fluid.Na,         set: v => fortressSim.conditions.fluid.Na = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  mg:    { get: () => fortressSim.conditions.fluid.Mg,         set: v => fortressSim.conditions.fluid.Mg = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  ba:    { get: () => fortressSim.conditions.fluid.Ba,         set: v => fortressSim.conditions.fluid.Ba = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  sr:    { get: () => fortressSim.conditions.fluid.Sr,         set: v => fortressSim.conditions.fluid.Sr = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  cr:    { get: () => fortressSim.conditions.fluid.Cr,         set: v => fortressSim.conditions.fluid.Cr = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  p:     { get: () => fortressSim.conditions.fluid.P,          set: v => fortressSim.conditions.fluid.P = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  as:    { get: () => fortressSim.conditions.fluid.As,         set: v => fortressSim.conditions.fluid.As = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  v:     { get: () => fortressSim.conditions.fluid.V,          set: v => fortressSim.conditions.fluid.V = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  w:     { get: () => fortressSim.conditions.fluid.W,          set: v => fortressSim.conditions.fluid.W = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  ag:    { get: () => fortressSim.conditions.fluid.Ag,         set: v => fortressSim.conditions.fluid.Ag = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  bi:    { get: () => fortressSim.conditions.fluid.Bi,         set: v => fortressSim.conditions.fluid.Bi = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  sb:    { get: () => fortressSim.conditions.fluid.Sb,         set: v => fortressSim.conditions.fluid.Sb = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  ni:    { get: () => fortressSim.conditions.fluid.Ni,         set: v => fortressSim.conditions.fluid.Ni = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  co:    { get: () => fortressSim.conditions.fluid.Co,         set: v => fortressSim.conditions.fluid.Co = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  b:     { get: () => fortressSim.conditions.fluid.B,          set: v => fortressSim.conditions.fluid.B = v,          fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  li:    { get: () => fortressSim.conditions.fluid.Li,         set: v => fortressSim.conditions.fluid.Li = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  be:    { get: () => fortressSim.conditions.fluid.Be,         set: v => fortressSim.conditions.fluid.Be = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  cl:    { get: () => fortressSim.conditions.fluid.Cl,         set: v => fortressSim.conditions.fluid.Cl = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  te:    { get: () => fortressSim.conditions.fluid.Te,         set: v => fortressSim.conditions.fluid.Te = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  se:    { get: () => fortressSim.conditions.fluid.Se,         set: v => fortressSim.conditions.fluid.Se = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
-  ge:    { get: () => fortressSim.conditions.fluid.Ge,         set: v => fortressSim.conditions.fluid.Ge = v,         fmt: v => v.toFixed(0) + ' ppm',  parse: v => parseFloat(v) },
+// Map slider ids to canonical sim state. Fluid entries are generated from the
+// same registry as setup, so setup/live/save coverage cannot drift apart.
+const BROTH_MAP: Record<string, any> = {
+  temp: {
+    path: 'temperature',
+    get: () => fortressSim.conditions.temperature,
+    set: v => { fortressSim.setGlobalTemperature(v); },
+    fmt: v => v.toFixed(1) + ' °C',
+    parse: v => parseFloat(v),
+    toSlider: v => v,
+  },
+  pressure: {
+    path: 'pressure',
+    get: () => fortressSim.conditions.pressure,
+    set: v => { fortressSim.conditions.pressure = clampFluidPressureKbar(v); },
+    fmt: v => v.toFixed(3) + ' kbar fluid',
+    parse: v => parseFloat(v) / 100,
+    toSlider: v => v * 100,
+  },
+  confining_pressure: {
+    path: 'wall.confining_pressure_kbar',
+    get: () => fortressSim.conditions.wall.confining_pressure_kbar,
+    set: v => {
+      fortressSim.conditions.wall.confining_pressure_kbar = Number.isFinite(v)
+        ? Math.max(0.01, v) : null;
+    },
+    fmt: v => Number.isFinite(v) ? v.toFixed(2) + ' kbar rock' : 'unspecified',
+    parse: v => parseFloat(v) / 100,
+    // An HTML range cannot display null. Park its thumb at the neutral setup
+    // default, but keep the readout explicit and do not write that value into
+    // physics until the player actually emits an input event.
+    toSlider: v => Number.isFinite(v) ? v * 100 : 150,
+  },
+  flow: {
+    path: 'flow_rate',
+    get: () => fortressSim.conditions.flow_rate,
+    set: v => { fortressSim.conditions.flow_rate = v; },
+    fmt: v => v.toFixed(1),
+    parse: v => parseFloat(v) / 10,
+    toSlider: v => v * 10,
+  },
+  water: {
+    path: 'fluid_surface_height_percent',
+    get: () => {
+      const surface = fortressSim.conditions.fluid_surface_height_mm;
+      const span = Math.max(
+        1e-12, CavityWaterAppearance.verticalSpanForWall(fortressSim.wall_state),
+      );
+      return surface == null ? 100 : 100 * surface / span;
+    },
+    set: v => {
+      const pct = Math.max(0, Math.min(100, v));
+      fortressSim.conditions.fluid_surface_height_mm
+        = CavityWaterAppearance.verticalSpanForWall(fortressSim.wall_state) * pct / 100;
+    },
+    fmt: v => v.toFixed(1) + '% cavity height',
+    parse: v => parseFloat(v) / 10,
+    toSlider: v => v * 10,
+  },
+  porosity: {
+    path: 'porosity',
+    get: () => fortressSim.conditions.porosity,
+    set: v => { fortressSim.conditions.porosity = Math.max(0, Math.min(1, v)); },
+    fmt: v => (v * 100).toFixed(0) + '%',
+    parse: v => parseFloat(v) / 100,
+    toSlider: v => v * 100,
+  },
+  cooling: {
+    path: 'wall.cooling_rate',
+    get: () => fortressSim.conditions.wall.cooling_rate,
+    set: v => { fortressSim.conditions.wall.cooling_rate = Math.max(0, v); },
+    fmt: v => v.toFixed(1) + ' °C/step',
+    parse: v => parseFloat(v) / 10,
+    toSlider: v => v * 10,
+  },
+  ambient: {
+    path: 'wall.ambient_temperature_C',
+    get: () => fortressSim.conditions.wall.ambient_temperature_C ?? 25,
+    set: v => { fortressSim.conditions.wall.ambient_temperature_C = Math.max(-50, Math.min(1200, v)); },
+    fmt: v => v.toFixed(1) + ' °C equilibrium',
+    parse: v => parseFloat(v),
+    toSlider: v => v,
+  },
+  reactivity: {
+    path: 'wall.reactivity',
+    get: () => fortressSim.conditions.wall.reactivity,
+    set: v => { fortressSim.conditions.wall.reactivity = Math.max(0, v); },
+    fmt: v => v.toFixed(1) + '×',
+    parse: v => parseFloat(v) / 10,
+    toSlider: v => v * 10,
+  },
+  diameter: {
+    path: 'wall.vug_diameter_mm',
+    get: () => fortressSim.conditions.wall.vug_diameter_mm,
+    set: v => fortressSim.reauthorInitialCavityEquivalentDiameterMm(Math.max(1, v)),
+    fmt: v => v.toFixed(0) + ' mm',
+    parse: v => parseFloat(v),
+    toSlider: v => v,
+  },
+  thickness: {
+    path: 'wall.thickness_mm',
+    get: () => fortressSim.conditions.wall.thickness_mm,
+    set: v => fortressSim.reauthorInitialHostThicknessMm(Math.max(0, v)),
+    fmt: v => v.toFixed(0) + ' mm',
+    parse: v => parseFloat(v),
+    toSlider: v => v,
+  },
+  wall_fe: {
+    path: 'wall.wall_Fe_ppm',
+    get: () => fortressSim.conditions.wall.wall_Fe_ppm,
+    set: v => { fortressSim.conditions.wall.wall_Fe_ppm = Math.max(0, v); },
+    fmt: v => v.toFixed(0) + ' ppm',
+    parse: v => parseFloat(v),
+    toSlider: v => v,
+  },
+  wall_mn: {
+    path: 'wall.wall_Mn_ppm',
+    get: () => fortressSim.conditions.wall.wall_Mn_ppm,
+    set: v => { fortressSim.conditions.wall.wall_Mn_ppm = Math.max(0, v); },
+    fmt: v => v.toFixed(0) + ' ppm',
+    parse: v => parseFloat(v),
+    toSlider: v => v,
+  },
+  wall_mg: {
+    path: 'wall.wall_Mg_ppm',
+    get: () => fortressSim.conditions.wall.wall_Mg_ppm,
+    set: v => { fortressSim.conditions.wall.wall_Mg_ppm = Math.max(0, v); },
+    fmt: v => v.toFixed(0) + ' ppm',
+    parse: v => parseFloat(v),
+    toSlider: v => v,
+  },
+  diffusion: {
+    path: 'inter_ring_diffusion_rate',
+    get: () => fortressSim.inter_ring_diffusion_rate,
+    set: v => {
+      const rate = Math.max(0, Math.min(1, v));
+      fortressSim.inter_ring_diffusion_rate = rate;
+      fortressSim.conditions.wall.inter_ring_diffusion_rate = rate;
+    },
+    fmt: v => v.toFixed(2) + '/step',
+    parse: v => parseFloat(v) / 100,
+    toSlider: v => v * 100,
+  },
+  gamma: {
+    path: 'wall.gamma_host',
+    get: () => fortressSim.conditions.wall.gamma_host,
+    set: v => { fortressSim.conditions.wall.gamma_host = Math.max(0, Math.min(1, v)); },
+    fmt: v => v.toFixed(2),
+    parse: v => parseFloat(v) / 100,
+    toSlider: v => v * 100,
+  },
+  pco2: {
+    path: '_scenario.atmospheric_pCO2_bar',
+    get: () => fortressSim.conditions._scenario?.atmospheric_pCO2_bar ?? 4.2e-4,
+    set: v => {
+      fortressSim.conditions._scenario ||= {};
+      fortressSim.conditions._scenario.atmospheric_pCO2_bar = v;
+      if (fortressSim._carbonateBoundaryState) {
+        fortressSim._carbonateBoundaryState.targetPCO2Bar = v;
+      }
+    },
+    fmt: v => v.toExponential(2) + ' bar',
+    parse: v => Math.pow(10, parseFloat(v) / 100),
+    toSlider: v => Math.log10(Math.max(1e-6, v)) * 100,
+  },
+  carbon_headspace: {
+    path: '_scenario.carbonate_boundary.headspace_L_per_kg_water',
+    get: () => fortressSim._carbonateBoundaryState?.headspaceLKg
+      ?? fortressSim.conditions._scenario?.carbonate_boundary?.headspace_L_per_kg_water
+      ?? 1,
+    set: v => {
+      const volume = Math.max(0, v);
+      fortressSim.conditions._scenario ||= {};
+      if (fortressSim.conditions._scenario.carbonate_boundary) {
+        fortressSim.conditions._scenario.carbonate_boundary.headspace_L_per_kg_water = volume;
+      }
+      if (fortressSim._carbonateBoundaryState) fortressSim._carbonateBoundaryState.headspaceLKg = volume;
+    },
+    fmt: v => v.toFixed(2) + ' L/kg',
+    parse: v => parseFloat(v) / 100,
+    toSlider: v => v * 100,
+  },
+  carbon_alkalinity: {
+    path: '_carbonateBoundaryState.reducedAlkalinityEqKg',
+    get: () => fortressSim._carbonateBoundaryState?.reducedAlkalinityEqKg
+      ?? reducedCarbonateAlkalinityEqKg(
+        dicPpmToMolKg(fortressSim.conditions.fluid.CO3),
+        fortressSim.conditions.fluid.pH,
+        fortressSim.conditions.temperature,
+      ),
+    set: v => {
+      const state = fortressSim._carbonateBoundaryState;
+      if (!state) {
+        _carbonateBoundaryControlNotice = 'Reduced alkalinity requires the conserved carbon solver.';
+        return false;
+      }
+      if (!fortressSim._prepareCarbonateBoundarySpatialState() || state.blocked) {
+        _carbonateBoundaryControlNotice = 'Alkalinity edit rejected: reconcile the blocked carbonate state first.';
+        return false;
+      }
+      const tx = setCarbonateBoundaryReducedAlkalinityState(
+        state, fortressSim.conditions.fluid, fortressSim.conditions.temperature, v,
+        'Creative reduced-alkalinity titration',
+      );
+      if (!tx?.ok) {
+        _carbonateBoundaryControlNotice = `Alkalinity edit rejected: ${tx?.error || 'solve failed'}.`;
+        return false;
+      }
+      fortressSim._replaceFullyMixedCarbonateFluid();
+      _carbonateBoundaryControlNotice = `Applied ${tx.alkalinityChangeEqKg >= 0 ? 'base' : 'acid'} capacity: reduced alkalinity changed by ${(tx.alkalinityChangeEqKg * 1000).toFixed(3)} meq/kg; pH was solved from the new inventory.`;
+      return true;
+    },
+    fmt: v => (v * 1000).toFixed(3) + ' meq/kg',
+    parse: v => parseFloat(v) / 100000,
+    toSlider: v => v * 100000,
+    exact: {
+      label: 'Reduced carbonate alkalinity', unit: 'eq/kg',
+      min: -0.005, max: 0.05, step: 0.00001,
+      rawMin: -500, rawMax: 5000, rawStep: 1,
+    },
+  },
+  host: {
+    path: 'wall.composition',
+    get: () => fortressSim.conditions.wall.composition,
+    set: v => fortressSim.reauthorInitialHostComposition(v),
+    fmt: v => String(v),
+    parse: v => String(v),
+    toSlider: v => String(v),
+    valid: v => typeof v === 'string' && v.length > 0,
+  },
+  open_atmosphere: {
+    path: '_scenario.open_to_atmosphere',
+    get: () => !!fortressSim.conditions._scenario?.open_to_atmosphere,
+    set: v => {
+      fortressSim.conditions._scenario ||= {};
+      fortressSim.conditions._scenario.open_to_atmosphere = !!v;
+      if (fortressSim.conditions._scenario.carbonate_boundary) {
+        fortressSim.conditions._scenario.carbonate_boundary.mode = v ? 'open' : 'closed';
+      }
+      if (fortressSim._carbonateBoundaryState) {
+        fortressSim._carbonateBoundaryState.mode = v ? 'open' : 'closed';
+      }
+    },
+    fmt: v => v ? 'open' : 'closed',
+    parse: v => String(v) === '1',
+    toSlider: v => v ? '1' : '0',
+    valid: v => typeof v === 'boolean',
+  },
+  open_system: {
+    path: 'wall.open_system',
+    get: () => !!fortressSim.conditions.wall.open_system,
+    set: v => { fortressSim.conditions.wall.open_system = !!v; },
+    fmt: v => v ? 'open' : 'finite cavity',
+    parse: v => String(v) === '1',
+    toSlider: v => v ? '1' : '0',
+    valid: v => typeof v === 'boolean',
+  },
+  open_spring: {
+    path: 'wall.open_spring',
+    get: () => !!fortressSim.conditions.wall.open_spring,
+    set: v => { fortressSim.conditions.wall.open_spring = !!v; },
+    fmt: v => v ? 'open spring/vent apron' : 'sealed/non-spring',
+    parse: v => String(v) === '1',
+    toSlider: v => v ? '1' : '0',
+    valid: v => typeof v === 'boolean',
+  },
+  is_lit: {
+    path: 'wall.is_lit',
+    get: () => fortressSim.wall_state?.is_lit !== false,
+    set: v => {
+      const exposed = !!v;
+      fortressSim.conditions.wall.is_lit = exposed;
+      if (fortressSim.wall_state) fortressSim.wall_state.is_lit = exposed;
+    },
+    fmt: v => v ? 'light-exposed' : 'dark cavity',
+    parse: v => String(v) === '1',
+    toSlider: v => v ? '1' : '0',
+    valid: v => typeof v === 'boolean',
+  },
+  graphitic: {
+    path: 'wall.graphitic',
+    get: () => !!fortressSim.conditions.wall.graphitic,
+    set: v => { fortressSim.conditions.wall.graphitic = !!v; },
+    fmt: v => v ? 'graphitic' : 'non-graphitic',
+    parse: v => String(v) === '1',
+    toSlider: v => v ? '1' : '0',
+    valid: v => typeof v === 'boolean',
+  },
+  thermal_pulses: {
+    path: 'wall.thermal_pulses',
+    get: () => !!fortressSim.conditions.wall.thermal_pulses,
+    set: v => { fortressSim.conditions.wall.thermal_pulses = !!v; },
+    fmt: v => v ? 'enabled' : 'disabled',
+    parse: v => String(v) === '1',
+    toSlider: v => v ? '1' : '0',
+    valid: v => typeof v === 'boolean',
+  },
+  sulfur_explicit: {
+    path: 'fluid.sulfurPoolsExplicit',
+    get: () => !!fortressSim.conditions.fluid.sulfurPoolsExplicit,
+    set: v => {
+      const fluid = fortressSim.conditions.fluid;
+      if (v) ensureExplicitSulfurPools(fluid, fortressSim.conditions.temperature);
+      else fluid.sulfurPoolsExplicit = false;
+    },
+    fmt: v => v ? 'explicit reservoirs' : 'legacy bulk proxy',
+    parse: v => String(v) === '1',
+    toSlider: v => v ? '1' : '0',
+    valid: v => typeof v === 'boolean',
+  },
+  native_sulfur_pathway: {
+    path: 'fluid.nativeSulfurPathway',
+    get: () => fortressSim.conditions.fluid.nativeSulfurPathway || 'none',
+    set: v => {
+      const fluid = fortressSim.conditions.fluid;
+      fluid.nativeSulfurPathway = v === 'none' ? null : v;
+      if (v !== 'none') fluid.sulfurPoolsExplicit = true;
+    },
+    fmt: v => String(v || 'none').replaceAll('_', ' '),
+    parse: v => String(v),
+    toSlider: v => String(v || 'none'),
+    valid: v => ['none', 'oxidative_interface', 'oxidative_closed_fluid', 'anaerobic_microbial_inherited'].includes(String(v)),
+  },
 };
+
+for (const [prop, control] of Object.entries(CREATIVE_CHEMISTRY_CONTROLS)) {
+  const decimals = control.decimals ?? 0;
+  BROTH_MAP[control.liveKey] = {
+    path: `fluid.${prop}`,
+    get: () => fortressSim.conditions.fluid[prop],
+    set: v => {
+      const fluid = fortressSim.conditions.fluid;
+      const boundary = fortressSim._carbonateBoundaryState;
+      if (prop === 'pH' && boundary) {
+        _carbonateBoundaryControlNotice = 'pH is derived while the conserved carbon solver is on. Adjust reduced alkalinity, DIC recharge, gas pCO2, or headspace instead.';
+        return false;
+      }
+      if (prop === 'CO3' && boundary) {
+        if (!fortressSim._prepareCarbonateBoundarySpatialState() || boundary.blocked) {
+          _carbonateBoundaryControlNotice = 'DIC recharge rejected: reconcile the blocked carbonate state first.';
+          return false;
+        }
+        const tx = rechargeCarbonateBoundaryState(
+          boundary,
+          fluid,
+          fortressSim.conditions.temperature,
+          1,
+          dicPpmToMolKg(v),
+          boundary.reducedAlkalinityEqKg,
+          'Creative full-volume DIC recharge',
+        );
+        if (!tx?.ok) {
+          _carbonateBoundaryControlNotice = `DIC recharge rejected: ${tx?.error || 'solve failed'}.`;
+          return false;
+        }
+        fortressSim._replaceFullyMixedCarbonateFluid();
+        _carbonateBoundaryControlNotice = `DIC control executed as 100% replacement-water recharge: exported ${(tx.boundaryExportMolKg * 1000).toFixed(3)} and imported ${(tx.boundaryImportMolKg * 1000).toFixed(3)} mmol C/kg at the current authored alkalinity.`;
+        return true;
+      }
+      fluid[prop] = v;
+      if (prop === 'S_sulfide' || prop === 'S_sulfate' || prop === 'S_elemental') {
+        fluid.sulfurPoolsExplicit = true;
+        syncExplicitSulfurTotal(fluid);
+      } else if (prop === 'S' && fluid.sulfurPoolsExplicit) {
+        const dissolvedBefore = Math.max(0, fluid.S_sulfide) + Math.max(0, fluid.S_sulfate);
+        if (dissolvedBefore > 0) {
+          const scale = Math.max(0, v) / dissolvedBefore;
+          fluid.S_sulfide *= scale;
+          fluid.S_sulfate *= scale;
+        } else {
+          fluid.S_sulfide = Math.max(0, v);
+        }
+        syncExplicitSulfurTotal(fluid);
+      }
+      return true;
+    },
+    fmt: v => `${v.toFixed(decimals)}${control.unit ? ` ${control.unit}` : ''}`,
+    parse: v => parseFloat(v) / control.scale,
+    toSlider: v => v * control.scale,
+    exact: {
+      label: control.label,
+      unit: control.unit,
+      min: control.min,
+      max: control.max,
+      step: control.step,
+      rawMin: control.min * control.scale,
+      rawMax: control.max * control.scale,
+      rawStep: control.step * control.scale,
+    },
+  };
+}
+
+function _brothExactBounds(key: string, m: any, slider: HTMLInputElement) {
+  if (m.exact) return m.exact;
+  const rawMin = Number(slider.min);
+  const rawMax = Number(slider.max);
+  const rawStep = Number(slider.step || 1);
+  const min = m.parse(rawMin);
+  const max = m.parse(rawMax);
+  const next = m.parse(Math.min(rawMax, rawMin + rawStep));
+  return {
+    label: slider.closest('.broth-slider-row')?.querySelector('label')?.textContent?.trim() || key,
+    unit: '',
+    min: Math.min(min, max),
+    max: Math.max(min, max),
+    step: key === 'pco2' ? 'any' : Math.abs(next - min) || 'any',
+    rawMin,
+    rawMax,
+    rawStep,
+  };
+}
+
+function _brothExactString(value: any, step: number | 'any') {
+  if (!Number.isFinite(value)) return '';
+  if (step === 'any') return Number(value).toPrecision(8).replace(/(?:\.0+|(?:(\.\d*?)0+))(?=e|$)/, '$1');
+  const decimals = Math.min(10, Math.max(0, Math.ceil(-Math.log10(step))));
+  return Number(value).toFixed(decimals);
+}
+
+function installBrothExactInputs() {
+  for (const [key, mEntry] of Object.entries(BROTH_MAP)) {
+    const m = mEntry as any;
+    const id = 'broth-' + key;
+    const sliders = Array.from(document.querySelectorAll(`input[type="range"][id="${id}"]`)) as HTMLInputElement[];
+    const byId = document.getElementById(id);
+    if (sliders.length === 0 && byId instanceof HTMLInputElement && byId.type === 'range') sliders.push(byId);
+    for (const slider of sliders) {
+      if (m.exact) {
+        // Chemistry bounds are canonical registry data. This also eliminates the
+        // old live/setup range drift (for example Fe 200 vs 500 ppm).
+        slider.min = String(m.exact.rawMin);
+        slider.max = String(m.exact.rawMax);
+        slider.step = String(m.exact.rawStep);
+      }
+      const bounds = _brothExactBounds(key, m, slider);
+      m._exactBounds = bounds;
+      const exactId = id + '-exact';
+      const sibling = slider.nextElementSibling;
+      const rowExact = slider.closest('.broth-slider-row')?.querySelector(`input[id="${exactId}"]`);
+      const exact = sibling instanceof HTMLInputElement && sibling.id === exactId
+        ? sibling
+        : rowExact instanceof HTMLInputElement
+          ? rowExact
+          : document.createElement('input');
+      const isNew = !exact.isConnected;
+      exact.type = 'number';
+      exact.id = exactId;
+      exact.className = 'creative-exact-input broth-exact-input';
+      exact.inputMode = bounds.step === 1 ? 'numeric' : 'decimal';
+      exact.min = String(bounds.min);
+      exact.max = String(bounds.max);
+      exact.step = String(bounds.step);
+      exact.setAttribute('aria-label', `Exact ${bounds.label}${bounds.unit ? ` (${bounds.unit})` : ''}`);
+      exact.title = `Enter the exact physical value${bounds.unit ? ` in ${bounds.unit}` : ''}`;
+      if (isNew) slider.insertAdjacentElement('afterend', exact);
+      if (exact.dataset.brothExactBound !== '1') {
+        exact.dataset.brothExactBound = '1';
+        exact.addEventListener('change', () => setBrothExactValue(key, exact.value));
+        exact.addEventListener('keydown', event => {
+          if (event.key !== 'Enter') return;
+          event.preventDefault();
+          setBrothExactValue(key, exact.value);
+          exact.blur();
+        });
+      }
+    }
+  }
+}
+
+function setBrothExactValue(key: string, exactText: string) {
+  if (!fortressSim || !fortressActive) return;
+  const m = BROTH_MAP[key];
+  const exact = document.getElementById('broth-' + key + '-exact') as HTMLInputElement | null;
+  const value = Number(exactText);
+  const bounds = m?._exactBounds;
+  if (!m || !Number.isFinite(value) || !bounds) {
+    if (exact) exact.value = _brothExactString(m?.get?.(), bounds?.step ?? 'any');
+    return;
+  }
+  const clamped = Math.max(bounds.min, Math.min(bounds.max, value));
+  const sliderValue = m.toSlider ? m.toSlider(clamped) : clamped;
+  setBrothValue(key, String(sliderValue));
+  syncBrothSliders();
+}
+
+function filterBrothControls(query: string) {
+  const words = query.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
+  const groups = Array.from(document.querySelectorAll('#broth-body .broth-group')) as HTMLElement[];
+  for (const group of groups) {
+    const label = group.querySelector('.broth-group-label')?.textContent?.toLocaleLowerCase() || '';
+    const groupMatch = words.length > 0 && words.every(word => label.includes(word));
+    const rows = Array.from(group.querySelectorAll('.broth-slider-row')) as HTMLElement[];
+    let shown = 0;
+    for (const row of rows) {
+      const haystack = `${row.textContent || ''} ${row.title || ''}`.toLocaleLowerCase();
+      const match = words.length === 0 || groupMatch || words.every(word => haystack.includes(word));
+      row.hidden = !match;
+      if (match) shown++;
+    }
+    group.hidden = words.length > 0 && rows.length > 0 && shown === 0;
+  }
+}
+
+// Only actual player edits belong in the event-sourced save. Synchronizing the
+// UI from the sim is an observer operation and must never become a geological
+// write-back path.
+let _brothPendingPlayerChanges: Record<string, string> = {};
+
+function _isBrothValueValid(mapping, value) {
+  return mapping?.valid ? !!mapping.valid(value) : Number.isFinite(value);
+}
+
+function _consumeBrothPlayerChanges() {
+  const out = _brothPendingPlayerChanges;
+  _brothPendingPlayerChanges = {};
+  return out;
+}
+
+function _peekBrothPlayerChanges() {
+  return Object.assign({}, _brothPendingPlayerChanges);
+}
+
+function _clearBrothPlayerChanges() {
+  _brothPendingPlayerChanges = {};
+}
 
 function setBrothValue(key, sliderVal) {
   if (!fortressSim || !fortressActive) return;
   const m = BROTH_MAP[key];
+  if (!m) return;
   const realVal = m.parse(sliderVal);
-  m.set(realVal);
-  document.getElementById('broth-' + key + '-val').textContent = m.fmt(realVal);
-  // Also update the status bar live
+  if (!_isBrothValueValid(m, realVal)) return;
+  const applied = m.set(realVal);
+  if (applied === false) {
+    updateCarbonateBoundaryReadout();
+    syncBrothSliders();
+    return;
+  }
+  _brothPendingPlayerChanges[key] = String(sliderVal);
+  const valueEl = document.getElementById('broth-' + key + '-val');
+  if (valueEl) valueEl.textContent = m.fmt(realVal);
+  const exact = document.getElementById('broth-' + key + '-exact') as HTMLInputElement | null;
+  if (exact) exact.value = _brothExactString(realVal, m._exactBounds?.step ?? 'any');
   updateFortressStatus();
+  updateCarbonateBoundaryReadout();
+  // Persist the edit even if the player saves or leaves before taking another
+  // geological action. The next action still consumes it into that action's
+  // event delta, preserving deterministic replay order.
+  if (typeof _savePersistActive === 'function') _savePersistActive();
 }
 
 function syncBrothSliders() {
   if (!fortressSim) return;
+  installBrothExactInputs();
   for (const [key, mEntry] of Object.entries(BROTH_MAP)) {
     const m = mEntry as any;
     const val = m.get();
-    const sliderVal = m.toSlider ? m.toSlider(val) : Math.round(val);
-    const slider = document.getElementById('broth-' + key);
+    const sliderVal = m.toSlider ? m.toSlider(val) : val;
+    const slider = document.getElementById('broth-' + key) as HTMLInputElement | null;
     if (slider) {
-      // Clamp to slider range
-      const clamped = Math.max(parseFloat(slider.min), Math.min(parseFloat(slider.max), sliderVal));
-      slider.value = clamped;
+      // Browsers may visually clamp a value outside an HTML range. This echo is
+      // never fed back to physics unless the player emits an input event.
+      slider.value = String(sliderVal);
+      const initialHostLocked = (key === 'diameter' || key === 'thickness' || key === 'host')
+        && !fortressSim.canReauthorInitialHostGeometry();
+      slider.disabled = (key === 'ph' && !!fortressSim._carbonateBoundaryState)
+        || initialHostLocked;
+      if (key === 'ph' && fortressSim._carbonateBoundaryState) {
+        slider.title = 'Derived by the conserved carbonate solve; adjust reduced alkalinity to change pH.';
+      } else if (initialHostLocked) {
+        slider.title = 'Initial-condition authoring is locked after the first geological step, crystal, or wall-evolution receipt.';
+      }
     }
     const valEl = document.getElementById('broth-' + key + '-val');
     if (valEl) valEl.textContent = m.fmt(val);
+    const exact = document.getElementById('broth-' + key + '-exact') as HTMLInputElement | null;
+    if (exact) {
+      exact.value = _brothExactString(val, m._exactBounds?.step ?? 'any');
+      exact.disabled = (key === 'ph' && !!fortressSim._carbonateBoundaryState)
+        || ((key === 'diameter' || key === 'thickness' || key === 'host')
+          && !fortressSim.canReauthorInitialHostGeometry());
+    }
   }
+  if (typeof refreshCreativeGeologyEditors === 'function') refreshCreativeGeologyEditors();
+  updateCarbonateBoundaryReadout();
+}
+
+function updateCarbonateBoundaryReadout() {
+  const el = document.getElementById('carbonate-boundary-readout');
+  if (!el) return;
+  const state = fortressSim?._carbonateBoundaryState;
+  if (!state) {
+    el.textContent = 'BLOCKED · conserved carbonate state is unavailable. Open CO₂ exchange and direct pH/DIC edits are disabled.';
+    return;
+  }
+  const fluid = fortressSim.conditions.fluid;
+  const dic = dicPpmToMolKg(fluid.CO3) * 1000;
+  const gas = Math.max(0, Number(state.headspaceCO2MolKg) || 0) * 1000;
+  const imports = Math.max(0, Number(state.boundaryImportMolKg) || 0) * 1000;
+  const exports = Math.max(0, Number(state.boundaryExportMolKg) || 0) * 1000;
+  const flags = !state.blocked && Array.isArray(state.uncertainties) && state.uncertainties.length
+    ? ` Uncertainty: ${state.uncertainties.join(', ')}.`
+    : state.blocked ? '' : ' Within the v1 dilute-water envelope.';
+  el.textContent = `${state.mode.toUpperCase()} carbon boundary · DIC ${dic.toFixed(3)} mmol C/kg · `
+    + `headspace CO₂ ${gas.toFixed(3)} mmol/kg in ${state.headspaceLKg.toFixed(2)} L/kg · `
+    + `reduced alkalinity ${(state.reducedAlkalinityEqKg * 1000).toFixed(3)} meq/kg · `
+    + `imports ${imports.toFixed(3)}, exports ${exports.toFixed(3)} mmol C/kg.${flags}`;
+  if (state.blocked) {
+    const latestFailure = [...(state.transactions || [])].reverse().find((tx: any) => tx?.ok === false);
+    el.textContent = `BLOCKED · ${el.textContent} Failure: ${latestFailure?.error || latestFailure?.kind || 'unresolved carbonate transaction'}${latestFailure?.attemptedKind ? ` (${latestFailure.attemptedKind})` : ''}.`;
+  }
+  if (_carbonateBoundaryControlNotice) el.textContent += ` ${_carbonateBoundaryControlNotice}`;
 }
 
 function takeBrothSnapshot() {
@@ -95,12 +633,9 @@ function takeBrothSnapshot() {
   if (!name) return;
 
   const snapshot = { name };
-  for (const [key, m] of Object.entries(BROTH_MAP)) {
-    snapshot[key] = m.get();
-  }
+  for (const [key, m] of Object.entries(BROTH_MAP)) snapshot[key] = (m as any).get();
   brothSnapshots.push(snapshot);
 
-  // Add button to snapshot row
   const row = document.getElementById('broth-snapshots');
   const btn = document.createElement('button');
   btn.className = 'broth-preset-btn';
@@ -115,15 +650,18 @@ function restoreBrothSnapshot(idx) {
   if (!fortressSim || !fortressActive) return;
   const snap = brothSnapshots[idx];
   if (!snap) return;
-  for (const [key, m] of Object.entries(BROTH_MAP)) {
-    if (snap[key] !== undefined) m.set(snap[key]);
+  for (const [key, mEntry] of Object.entries(BROTH_MAP)) {
+    const m = mEntry as any;
+    if (snap[key] === undefined) continue;
+    m.set(snap[key]);
+    const sliderValue = m.toSlider ? m.toSlider(snap[key]) : snap[key];
+    _brothPendingPlayerChanges[key] = String(sliderValue);
   }
   syncBrothSliders();
   updateFortressStatus();
+  if (typeof _savePersistActive === 'function') _savePersistActive();
 }
 
-// Handle Escape key for zone modal
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeZoneModal();
 });
-

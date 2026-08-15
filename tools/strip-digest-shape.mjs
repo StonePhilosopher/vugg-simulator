@@ -174,6 +174,24 @@ function reduceSeries(s) {
   return { min: round3(min), max: round3(max), samples };
 }
 
+/** Reduce one authenticated strip-story archive without replaying geology. */
+export function stripDigestForStory(story) {
+  const D = Number(story?.depth_positions) || 1;
+  const out = { steps: Number(story?.steps) || 0, depth_positions: D, chips: {} };
+  for (const chip of STRIP_DIGEST_CHIPS) {
+    const source = story?.chips?.[chip];
+    if (!source || !Array.isArray(source.wall)) continue;
+    const sparse = STRIP_DIGEST_SPARSE_MAX_CHIPS.has(chip);
+    const entry = { wall: reduceSeries(source.wall) };
+    if (D > 1 && !sparse) {
+      const center = source.center === 'same_as_wall' ? source.wall : source.center;
+      if (Array.isArray(center)) entry.center = reduceSeries(center);
+    }
+    out.chips[chip] = entry;
+  }
+  return out;
+}
+
 /**
  * Compute the digest for one finalized StripDataset.
  * @param {object} ds   finalized StripDataset (manifest + chip_data)

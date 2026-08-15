@@ -87,12 +87,14 @@ function event_grimsel_seal_2(c) {
 }
 
 function event_grimsel_breach_2(c) {
-  // D3 re-opening (~289 °C): the coolest fresh pulse, SiO₂ → 1.9×eq (σ≈1.9) →
-  // the tallest cap (gen-3). Slightly stronger than breach 1 — the coolest
-  // pulse is the most supersaturated (the cap-grows-cooler rule).
-  c.fluid.SiO2 = _grimselSiO2ForSigma(c, 1.9);
+  // D3 re-opening (~289 °C): the coolest fresh pulse, SiO₂ → 2.5×eq
+  // (σ≈2.5) → the tallest cap (gen-3). The higher activity is an authored
+  // fluid recharge, not a pressure bypass: eq is still evaluated at the live
+  // Manning-corrected P-T state. It restores quartz as the volumetric main
+  // stage after pressure made the D1 water able to retain much more silica.
+  c.fluid.SiO2 = _grimselSiO2ForSigma(c, 2.5);
   c.flow_rate = 0.4;
-  return `Cleft re-opens (D3) — coolest fresh pulse, SiO₂ → ${c.fluid.SiO2.toFixed(0)} (σ≈1.9) → tallest sceptre cap. T ${c.temperature.toFixed(0)}°C.`;
+  return `Cleft re-opens (D3) — coolest fresh pulse, SiO₂ → ${c.fluid.SiO2.toFixed(0)} (σ≈2.5) → tallest sceptre cap. T ${c.temperature.toFixed(0)}°C.`;
 }
 
 function event_grimsel_late_carbonate(c) {

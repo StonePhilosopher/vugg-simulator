@@ -1,0 +1,8513 @@
+{
+  "schema": "vugg-locality-frequency-baseline-v1",
+  "sim_version": 264,
+  "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+explicit-pinned-provider-command+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v6|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-shadow-v3|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Float32-WallMesh-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+prerun-creative-authoring-v3|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite-v6|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary-v2|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation+null-confining-pressure-v3|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2|save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v4",
+  "seeds": [
+    1,
+    2,
+    42
+  ],
+  "scenarios": {
+    "amethyst_geode": {
+      "locality_frequency_spec_hash": "cc35627cf666783bbb3dfb5d640272cc0d14589cd7828028d026ee2224954504",
+      "duration_steps": 240,
+      "occurrences": {
+        "chalcedony": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 18,
+            "2": 18,
+            "42": 18
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "chalcedony",
+            "quartz"
+          ],
+          "first_steps": {
+            "chalcedony": 1,
+            "quartz": 18
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "chalcedony",
+            "quartz"
+          ],
+          "first_steps": {
+            "chalcedony": 1,
+            "quartz": 18
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "chalcedony",
+            "quartz"
+          ],
+          "first_steps": {
+            "chalcedony": 1,
+            "quartz": 18
+          }
+        }
+      ]
+    },
+    "asbestos_hills_crack_seal": {
+      "locality_frequency_spec_hash": "1f68ac8d27645e1d3e3065eb48f1b0ddd23ce938a518da1337cba9f5ec271b8e",
+      "duration_steps": 110,
+      "occurrences": {
+        "amosite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "crocidolite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "goethite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 58,
+            "2": 58,
+            "42": 58
+          }
+        },
+        "hematite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 58,
+            "2": 58,
+            "42": 58
+          }
+        },
+        "magnetite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "opal": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 58,
+            "2": 58,
+            "42": 58
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 28,
+            "2": 28,
+            "42": 28
+          }
+        },
+        "siderite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "tigers_eye": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 2,
+            "2": 2,
+            "42": 2
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "amosite",
+            "crocidolite",
+            "goethite",
+            "hematite",
+            "magnetite",
+            "opal",
+            "quartz",
+            "siderite",
+            "tigers_eye"
+          ],
+          "first_steps": {
+            "amosite": 1,
+            "crocidolite": 1,
+            "goethite": 58,
+            "hematite": 58,
+            "magnetite": 1,
+            "opal": 58,
+            "quartz": 28,
+            "siderite": 1,
+            "tigers_eye": 2
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "amosite",
+            "crocidolite",
+            "goethite",
+            "hematite",
+            "magnetite",
+            "opal",
+            "quartz",
+            "siderite",
+            "tigers_eye"
+          ],
+          "first_steps": {
+            "amosite": 1,
+            "crocidolite": 1,
+            "goethite": 58,
+            "hematite": 58,
+            "magnetite": 1,
+            "opal": 58,
+            "quartz": 28,
+            "siderite": 1,
+            "tigers_eye": 2
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "amosite",
+            "crocidolite",
+            "goethite",
+            "hematite",
+            "magnetite",
+            "opal",
+            "quartz",
+            "siderite",
+            "tigers_eye"
+          ],
+          "first_steps": {
+            "amosite": 1,
+            "crocidolite": 1,
+            "goethite": 58,
+            "hematite": 58,
+            "magnetite": 1,
+            "opal": 58,
+            "quartz": 28,
+            "siderite": 1,
+            "tigers_eye": 2
+          }
+        }
+      ]
+    },
+    "asbestos_hills_surficial_alteration": {
+      "locality_frequency_spec_hash": "f2f73f8c2593256bb1292346437333c3e60da940954834687f4fbd14cc9dd55a",
+      "duration_steps": 120,
+      "occurrences": {
+        "amosite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "crocidolite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "goethite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 58,
+            "2": 58,
+            "42": 58
+          }
+        },
+        "hematite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 58,
+            "2": 58,
+            "42": 58
+          }
+        },
+        "lepidocrocite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 82,
+            "2": 82,
+            "42": 82
+          }
+        },
+        "magnetite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "opal": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 58,
+            "2": 58,
+            "42": 58
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 28,
+            "2": 28,
+            "42": 28
+          }
+        },
+        "siderite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "tigers_eye": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 59,
+            "2": 59,
+            "42": 59
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "amosite",
+            "crocidolite",
+            "goethite",
+            "hematite",
+            "lepidocrocite",
+            "magnetite",
+            "opal",
+            "quartz",
+            "siderite",
+            "tigers_eye"
+          ],
+          "first_steps": {
+            "amosite": 1,
+            "crocidolite": 1,
+            "goethite": 58,
+            "hematite": 58,
+            "lepidocrocite": 82,
+            "magnetite": 1,
+            "opal": 58,
+            "quartz": 28,
+            "siderite": 1,
+            "tigers_eye": 59
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "amosite",
+            "crocidolite",
+            "goethite",
+            "hematite",
+            "lepidocrocite",
+            "magnetite",
+            "opal",
+            "quartz",
+            "siderite",
+            "tigers_eye"
+          ],
+          "first_steps": {
+            "amosite": 1,
+            "crocidolite": 1,
+            "goethite": 58,
+            "hematite": 58,
+            "lepidocrocite": 82,
+            "magnetite": 1,
+            "opal": 58,
+            "quartz": 28,
+            "siderite": 1,
+            "tigers_eye": 59
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "amosite",
+            "crocidolite",
+            "goethite",
+            "hematite",
+            "lepidocrocite",
+            "magnetite",
+            "opal",
+            "quartz",
+            "siderite",
+            "tigers_eye"
+          ],
+          "first_steps": {
+            "amosite": 1,
+            "crocidolite": 1,
+            "goethite": 58,
+            "hematite": 58,
+            "lepidocrocite": 82,
+            "magnetite": 1,
+            "opal": 58,
+            "quartz": 28,
+            "siderite": 1,
+            "tigers_eye": 59
+          }
+        }
+      ]
+    },
+    "bisbee": {
+      "locality_frequency_spec_hash": "ddf9a8fdc26dbc6eeb5358a1e4123d3cf91fd3844967da4b7a1bbeb8f72d2ba7",
+      "duration_steps": 340,
+      "occurrences": {
+        "acanthite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 65,
+            "2": 65,
+            "42": 65
+          }
+        },
+        "albite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "alunite": {
+          "count": 2,
+          "seeds": [
+            1,
+            2
+          ],
+          "first_steps": {
+            "1": 98,
+            "2": 96
+          }
+        },
+        "argentite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 6,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "atacamite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 81,
+            "2": 76,
+            "42": 84
+          }
+        },
+        "azurite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 180,
+            "2": 180,
+            "42": 180
+          }
+        },
+        "bornite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 95,
+            "2": 95,
+            "42": 95
+          }
+        },
+        "brochantite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 75,
+            "2": 79,
+            "42": 84
+          }
+        },
+        "chalcedony": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 65,
+            "2": 65,
+            "42": 65
+          }
+        },
+        "chalcocite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 65,
+            "2": 65,
+            "42": 65
+          }
+        },
+        "chalcopyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "chrysocolla": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 73,
+            "2": 73,
+            "42": 73
+          }
+        },
+        "covellite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 65,
+            "2": 65,
+            "42": 65
+          }
+        },
+        "cuprite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 74,
+            "2": 74,
+            "42": 74
+          }
+        },
+        "dioptase": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 265,
+            "2": 266,
+            "42": 265
+          }
+        },
+        "feldspar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "galena": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 65,
+            "2": 65,
+            "42": 65
+          }
+        },
+        "goethite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 73,
+            "2": 73,
+            "42": 73
+          }
+        },
+        "hematite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 75,
+            "2": 75,
+            "42": 75
+          }
+        },
+        "jarosite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 95,
+            "2": 98,
+            "42": 96
+          }
+        },
+        "lepidocrocite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 156,
+            "2": 156,
+            "42": 156
+          }
+        },
+        "malachite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 88,
+            "2": 88,
+            "42": 88
+          }
+        },
+        "marcasite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 65,
+            "2": 65,
+            "42": 65
+          }
+        },
+        "mimetite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 235,
+            "2": 237,
+            "42": 240
+          }
+        },
+        "native_copper": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 129,
+            "2": 129,
+            "42": 129
+          }
+        },
+        "native_gold": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 120,
+            "2": 120,
+            "42": 120
+          }
+        },
+        "native_silver": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 130,
+            "2": 127,
+            "42": 132
+          }
+        },
+        "opal": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 89,
+            "2": 89,
+            "42": 89
+          }
+        },
+        "pyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "tennantite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "tetrahedrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "turquoise": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 112,
+            "2": 90,
+            "42": 91
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "acanthite",
+            "albite",
+            "alunite",
+            "argentite",
+            "atacamite",
+            "azurite",
+            "bornite",
+            "brochantite",
+            "chalcedony",
+            "chalcocite",
+            "chalcopyrite",
+            "chrysocolla",
+            "covellite",
+            "cuprite",
+            "dioptase",
+            "feldspar",
+            "galena",
+            "goethite",
+            "hematite",
+            "jarosite",
+            "lepidocrocite",
+            "malachite",
+            "marcasite",
+            "mimetite",
+            "native_copper",
+            "native_gold",
+            "native_silver",
+            "opal",
+            "pyrite",
+            "tennantite",
+            "tetrahedrite",
+            "turquoise"
+          ],
+          "first_steps": {
+            "acanthite": 65,
+            "albite": 1,
+            "alunite": 98,
+            "argentite": 6,
+            "atacamite": 81,
+            "azurite": 180,
+            "bornite": 95,
+            "brochantite": 75,
+            "chalcedony": 65,
+            "chalcocite": 65,
+            "chalcopyrite": 1,
+            "chrysocolla": 73,
+            "covellite": 65,
+            "cuprite": 74,
+            "dioptase": 265,
+            "feldspar": 1,
+            "galena": 65,
+            "goethite": 73,
+            "hematite": 75,
+            "jarosite": 95,
+            "lepidocrocite": 156,
+            "malachite": 88,
+            "marcasite": 65,
+            "mimetite": 235,
+            "native_copper": 129,
+            "native_gold": 120,
+            "native_silver": 130,
+            "opal": 89,
+            "pyrite": 1,
+            "tennantite": 1,
+            "tetrahedrite": 1,
+            "turquoise": 112
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "acanthite",
+            "albite",
+            "alunite",
+            "argentite",
+            "atacamite",
+            "azurite",
+            "bornite",
+            "brochantite",
+            "chalcedony",
+            "chalcocite",
+            "chalcopyrite",
+            "chrysocolla",
+            "covellite",
+            "cuprite",
+            "dioptase",
+            "feldspar",
+            "galena",
+            "goethite",
+            "hematite",
+            "jarosite",
+            "lepidocrocite",
+            "malachite",
+            "marcasite",
+            "mimetite",
+            "native_copper",
+            "native_gold",
+            "native_silver",
+            "opal",
+            "pyrite",
+            "tennantite",
+            "tetrahedrite",
+            "turquoise"
+          ],
+          "first_steps": {
+            "acanthite": 65,
+            "albite": 1,
+            "alunite": 96,
+            "argentite": 1,
+            "atacamite": 76,
+            "azurite": 180,
+            "bornite": 95,
+            "brochantite": 79,
+            "chalcedony": 65,
+            "chalcocite": 65,
+            "chalcopyrite": 1,
+            "chrysocolla": 73,
+            "covellite": 65,
+            "cuprite": 74,
+            "dioptase": 266,
+            "feldspar": 1,
+            "galena": 65,
+            "goethite": 73,
+            "hematite": 75,
+            "jarosite": 98,
+            "lepidocrocite": 156,
+            "malachite": 88,
+            "marcasite": 65,
+            "mimetite": 237,
+            "native_copper": 129,
+            "native_gold": 120,
+            "native_silver": 127,
+            "opal": 89,
+            "pyrite": 1,
+            "tennantite": 1,
+            "tetrahedrite": 1,
+            "turquoise": 90
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "acanthite",
+            "albite",
+            "argentite",
+            "atacamite",
+            "azurite",
+            "bornite",
+            "brochantite",
+            "chalcedony",
+            "chalcocite",
+            "chalcopyrite",
+            "chrysocolla",
+            "covellite",
+            "cuprite",
+            "dioptase",
+            "feldspar",
+            "galena",
+            "goethite",
+            "hematite",
+            "jarosite",
+            "lepidocrocite",
+            "malachite",
+            "marcasite",
+            "mimetite",
+            "native_copper",
+            "native_gold",
+            "native_silver",
+            "opal",
+            "pyrite",
+            "tennantite",
+            "tetrahedrite",
+            "turquoise"
+          ],
+          "first_steps": {
+            "acanthite": 65,
+            "albite": 1,
+            "argentite": 1,
+            "atacamite": 84,
+            "azurite": 180,
+            "bornite": 95,
+            "brochantite": 84,
+            "chalcedony": 65,
+            "chalcocite": 65,
+            "chalcopyrite": 1,
+            "chrysocolla": 73,
+            "covellite": 65,
+            "cuprite": 74,
+            "dioptase": 265,
+            "feldspar": 1,
+            "galena": 65,
+            "goethite": 73,
+            "hematite": 75,
+            "jarosite": 96,
+            "lepidocrocite": 156,
+            "malachite": 88,
+            "marcasite": 65,
+            "mimetite": 240,
+            "native_copper": 129,
+            "native_gold": 120,
+            "native_silver": 132,
+            "opal": 89,
+            "pyrite": 1,
+            "tennantite": 1,
+            "tetrahedrite": 1,
+            "turquoise": 91
+          }
+        }
+      ]
+    },
+    "chiastolite_hornfels": {
+      "locality_frequency_spec_hash": "4799709de96ef13bc1e341ca103c2a37c75735aa6e7cb01c3ca6fe31fb344980",
+      "duration_steps": 120,
+      "occurrences": {
+        "albite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "andalusite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "feldspar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "albite",
+            "andalusite",
+            "feldspar"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "andalusite": 1,
+            "feldspar": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "albite",
+            "andalusite",
+            "feldspar"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "andalusite": 1,
+            "feldspar": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "albite",
+            "andalusite",
+            "feldspar"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "andalusite": 1,
+            "feldspar": 1
+          }
+        }
+      ]
+    },
+    "colorado_plateau": {
+      "locality_frequency_spec_hash": "5c78699b8aa76bf9fa1a92d52997192bd5e39d496585c5f97b62727ee65acb86",
+      "duration_steps": 180,
+      "occurrences": {
+        "carnotite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 103,
+            "2": 105,
+            "42": 104
+          }
+        },
+        "opal": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "tyuyamunite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "uranophane": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "carnotite",
+            "opal",
+            "tyuyamunite",
+            "uranophane"
+          ],
+          "first_steps": {
+            "carnotite": 103,
+            "opal": 1,
+            "tyuyamunite": 1,
+            "uranophane": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "carnotite",
+            "opal",
+            "tyuyamunite",
+            "uranophane"
+          ],
+          "first_steps": {
+            "carnotite": 105,
+            "opal": 1,
+            "tyuyamunite": 1,
+            "uranophane": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "carnotite",
+            "opal",
+            "tyuyamunite",
+            "uranophane"
+          ],
+          "first_steps": {
+            "carnotite": 104,
+            "opal": 1,
+            "tyuyamunite": 1,
+            "uranophane": 1
+          }
+        }
+      ]
+    },
+    "cooling": {
+      "locality_frequency_spec_hash": "0576bb2283855b4d9952f80ef44573ba12acc2398fece1ea6e482cf5d8acbe89",
+      "duration_steps": 100,
+      "occurrences": {
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 13,
+            "2": 13,
+            "42": 13
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "quartz"
+          ],
+          "first_steps": {
+            "quartz": 13
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "quartz"
+          ],
+          "first_steps": {
+            "quartz": 13
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "quartz"
+          ],
+          "first_steps": {
+            "quartz": 13
+          }
+        }
+      ]
+    },
+    "deccan_zeolite": {
+      "locality_frequency_spec_hash": "4bdd45b557cdaf5898c8b0cbbeba081a4b38ff714d9ebab777ae41006c90827f",
+      "duration_steps": 200,
+      "occurrences": {
+        "albite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 70,
+            "2": 70,
+            "42": 70
+          }
+        },
+        "apophyllite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 110,
+            "2": 110,
+            "42": 110
+          }
+        },
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 70,
+            "2": 70,
+            "42": 70
+          }
+        },
+        "chalcedony": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 21
+          }
+        },
+        "feldspar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 110,
+            "2": 110,
+            "42": 110
+          }
+        },
+        "goethite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 160,
+            "2": 160,
+            "42": 160
+          }
+        },
+        "hematite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 35,
+            "2": 35,
+            "42": 35
+          }
+        },
+        "heulandite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 90,
+            "2": 90,
+            "42": 90
+          }
+        },
+        "mesolite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 86,
+            "2": 86,
+            "42": 87
+          }
+        },
+        "pectolite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 70,
+            "2": 70,
+            "42": 70
+          }
+        },
+        "prehnite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 110,
+            "2": 110,
+            "42": 110
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 55,
+            "2": 55,
+            "42": 55
+          }
+        },
+        "scolecite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 70,
+            "2": 70,
+            "42": 70
+          }
+        },
+        "stilbite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 90,
+            "2": 90,
+            "42": 90
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "albite",
+            "apophyllite",
+            "calcite",
+            "chalcedony",
+            "feldspar",
+            "goethite",
+            "hematite",
+            "heulandite",
+            "mesolite",
+            "pectolite",
+            "prehnite",
+            "quartz",
+            "scolecite",
+            "stilbite"
+          ],
+          "first_steps": {
+            "albite": 70,
+            "apophyllite": 110,
+            "calcite": 70,
+            "chalcedony": 20,
+            "feldspar": 110,
+            "goethite": 160,
+            "hematite": 35,
+            "heulandite": 90,
+            "mesolite": 86,
+            "pectolite": 70,
+            "prehnite": 110,
+            "quartz": 55,
+            "scolecite": 70,
+            "stilbite": 90
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "albite",
+            "apophyllite",
+            "calcite",
+            "chalcedony",
+            "feldspar",
+            "goethite",
+            "hematite",
+            "heulandite",
+            "mesolite",
+            "pectolite",
+            "prehnite",
+            "quartz",
+            "scolecite",
+            "stilbite"
+          ],
+          "first_steps": {
+            "albite": 70,
+            "apophyllite": 110,
+            "calcite": 70,
+            "chalcedony": 20,
+            "feldspar": 110,
+            "goethite": 160,
+            "hematite": 35,
+            "heulandite": 90,
+            "mesolite": 86,
+            "pectolite": 70,
+            "prehnite": 110,
+            "quartz": 55,
+            "scolecite": 70,
+            "stilbite": 90
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "albite",
+            "apophyllite",
+            "calcite",
+            "chalcedony",
+            "feldspar",
+            "goethite",
+            "hematite",
+            "heulandite",
+            "mesolite",
+            "pectolite",
+            "prehnite",
+            "quartz",
+            "scolecite",
+            "stilbite"
+          ],
+          "first_steps": {
+            "albite": 70,
+            "apophyllite": 110,
+            "calcite": 70,
+            "chalcedony": 21,
+            "feldspar": 110,
+            "goethite": 160,
+            "hematite": 35,
+            "heulandite": 90,
+            "mesolite": 87,
+            "pectolite": 70,
+            "prehnite": 110,
+            "quartz": 55,
+            "scolecite": 70,
+            "stilbite": 90
+          }
+        }
+      ]
+    },
+    "elmwood": {
+      "locality_frequency_spec_hash": "1a49a068bda641034cff8eecfdf3b87491dc9cde3be46d45b681a180d54f702f",
+      "duration_steps": 200,
+      "occurrences": {
+        "barite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 16,
+            "2": 16,
+            "42": 16
+          }
+        },
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "celestine": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 73,
+            "2": 73,
+            "42": 86
+          }
+        },
+        "chalcedony": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 126,
+            "2": 126,
+            "42": 126
+          }
+        },
+        "fluorite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 15,
+            "2": 15,
+            "42": 15
+          }
+        },
+        "galena": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 15,
+            "2": 15,
+            "42": 15
+          }
+        },
+        "pyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 15,
+            "2": 15,
+            "42": 15
+          }
+        },
+        "sphalerite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 15,
+            "2": 15,
+            "42": 15
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "barite",
+            "calcite",
+            "celestine",
+            "chalcedony",
+            "fluorite",
+            "galena",
+            "pyrite",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "barite": 16,
+            "calcite": 1,
+            "celestine": 73,
+            "chalcedony": 126,
+            "fluorite": 15,
+            "galena": 15,
+            "pyrite": 15,
+            "sphalerite": 15
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "barite",
+            "calcite",
+            "celestine",
+            "chalcedony",
+            "fluorite",
+            "galena",
+            "pyrite",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "barite": 16,
+            "calcite": 1,
+            "celestine": 73,
+            "chalcedony": 126,
+            "fluorite": 15,
+            "galena": 15,
+            "pyrite": 15,
+            "sphalerite": 15
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "barite",
+            "calcite",
+            "celestine",
+            "chalcedony",
+            "fluorite",
+            "galena",
+            "pyrite",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "barite": 16,
+            "calcite": 1,
+            "celestine": 86,
+            "chalcedony": 126,
+            "fluorite": 15,
+            "galena": 15,
+            "pyrite": 15,
+            "sphalerite": 15
+          }
+        }
+      ]
+    },
+    "epithermal_telluride": {
+      "locality_frequency_spec_hash": "384f397ca24477af8fc47ca2e22445a34421a0cc1bdd94c66b79f8cbca45ee67",
+      "duration_steps": 180,
+      "occurrences": {
+        "albite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "calaverite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 3,
+            "42": 5
+          }
+        },
+        "feldspar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "hessite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 5,
+            "2": 1,
+            "42": 5
+          }
+        },
+        "native_silver": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 3,
+            "42": 28
+          }
+        },
+        "native_tellurium": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 7,
+            "2": 3,
+            "42": 1
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 22,
+            "2": 22,
+            "42": 21
+          }
+        },
+        "sylvanite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 8,
+            "2": 13,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "albite",
+            "calaverite",
+            "feldspar",
+            "hessite",
+            "native_silver",
+            "native_tellurium",
+            "quartz",
+            "sylvanite"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "calaverite": 20,
+            "feldspar": 1,
+            "hessite": 5,
+            "native_silver": 1,
+            "native_tellurium": 7,
+            "quartz": 22,
+            "sylvanite": 8
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "albite",
+            "calaverite",
+            "feldspar",
+            "hessite",
+            "native_silver",
+            "native_tellurium",
+            "quartz",
+            "sylvanite"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "calaverite": 3,
+            "feldspar": 1,
+            "hessite": 1,
+            "native_silver": 3,
+            "native_tellurium": 3,
+            "quartz": 22,
+            "sylvanite": 13
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "albite",
+            "calaverite",
+            "feldspar",
+            "hessite",
+            "native_silver",
+            "native_tellurium",
+            "quartz",
+            "sylvanite"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "calaverite": 5,
+            "feldspar": 1,
+            "hessite": 5,
+            "native_silver": 28,
+            "native_tellurium": 1,
+            "quartz": 21,
+            "sylvanite": 1
+          }
+        }
+      ]
+    },
+    "gem_pegmatite": {
+      "locality_frequency_spec_hash": "0e795dff0a14bca643aab59514513e036e72f875e990ab7b3170450f87a3f919",
+      "duration_steps": 230,
+      "occurrences": {
+        "albite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "cassiterite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 6,
+            "42": 6
+          }
+        },
+        "feldspar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "lepidolite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "spodumene": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "tourmaline": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "albite",
+            "cassiterite",
+            "feldspar",
+            "lepidolite",
+            "quartz",
+            "spodumene",
+            "tourmaline"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "cassiterite": 1,
+            "feldspar": 1,
+            "lepidolite": 1,
+            "quartz": 1,
+            "spodumene": 1,
+            "tourmaline": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "albite",
+            "cassiterite",
+            "feldspar",
+            "lepidolite",
+            "quartz",
+            "spodumene",
+            "tourmaline"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "cassiterite": 6,
+            "feldspar": 1,
+            "lepidolite": 1,
+            "quartz": 1,
+            "spodumene": 1,
+            "tourmaline": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "albite",
+            "cassiterite",
+            "feldspar",
+            "lepidolite",
+            "quartz",
+            "spodumene",
+            "tourmaline"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "cassiterite": 6,
+            "feldspar": 1,
+            "lepidolite": 1,
+            "quartz": 1,
+            "spodumene": 1,
+            "tourmaline": 1
+          }
+        }
+      ]
+    },
+    "great_salt_plains": {
+      "locality_frequency_spec_hash": "c722a22d0249e92ca03cd21d26d4bffabe0adc16d6847ddff044e9d9c2a38b0c",
+      "duration_steps": 250,
+      "occurrences": {
+        "halite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 47,
+            "2": 45,
+            "42": 54
+          }
+        },
+        "selenite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "halite",
+            "selenite"
+          ],
+          "first_steps": {
+            "halite": 47,
+            "selenite": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "halite",
+            "selenite"
+          ],
+          "first_steps": {
+            "halite": 45,
+            "selenite": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "halite",
+            "selenite"
+          ],
+          "first_steps": {
+            "halite": 54,
+            "selenite": 1
+          }
+        }
+      ]
+    },
+    "grimsel_alpine_cleft": {
+      "locality_frequency_spec_hash": "ab926a5a184a11b59534239e185d2aa013cf49387d97a15465e5f6d4499e7993",
+      "duration_steps": 200,
+      "occurrences": {
+        "albite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "apatite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 9,
+            "2": 4,
+            "42": 12
+          }
+        },
+        "apophyllite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 157,
+            "2": 157,
+            "42": 157
+          }
+        },
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 165,
+            "2": 165,
+            "42": 165
+          }
+        },
+        "epidote": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 54,
+            "2": 54,
+            "42": 54
+          }
+        },
+        "feldspar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "fluorite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 165,
+            "2": 165,
+            "42": 165
+          }
+        },
+        "hematite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 90,
+            "2": 90,
+            "42": 90
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 22,
+            "2": 22,
+            "42": 22
+          }
+        },
+        "titanite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "albite",
+            "apatite",
+            "apophyllite",
+            "calcite",
+            "epidote",
+            "feldspar",
+            "fluorite",
+            "hematite",
+            "quartz",
+            "titanite"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "apatite": 9,
+            "apophyllite": 157,
+            "calcite": 165,
+            "epidote": 54,
+            "feldspar": 1,
+            "fluorite": 165,
+            "hematite": 90,
+            "quartz": 22,
+            "titanite": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "albite",
+            "apatite",
+            "apophyllite",
+            "calcite",
+            "epidote",
+            "feldspar",
+            "fluorite",
+            "hematite",
+            "quartz",
+            "titanite"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "apatite": 4,
+            "apophyllite": 157,
+            "calcite": 165,
+            "epidote": 54,
+            "feldspar": 1,
+            "fluorite": 165,
+            "hematite": 90,
+            "quartz": 22,
+            "titanite": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "albite",
+            "apatite",
+            "apophyllite",
+            "calcite",
+            "epidote",
+            "feldspar",
+            "fluorite",
+            "hematite",
+            "quartz",
+            "titanite"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "apatite": 12,
+            "apophyllite": 157,
+            "calcite": 165,
+            "epidote": 54,
+            "feldspar": 1,
+            "fluorite": 165,
+            "hematite": 90,
+            "quartz": 22,
+            "titanite": 1
+          }
+        }
+      ]
+    },
+    "jeffrey_mine": {
+      "locality_frequency_spec_hash": "beb63806755b1d6c0ef9e5bb72e16f6a0ccb9608e408f649c95f49372c699f03",
+      "duration_steps": 200,
+      "occurrences": {
+        "actinolite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 25,
+            "2": 25,
+            "42": 25
+          }
+        },
+        "albite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 140,
+            "2": 140,
+            "42": 140
+          }
+        },
+        "awaruite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "brucite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 25,
+            "2": 25,
+            "42": 25
+          }
+        },
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "chrysotile": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 25,
+            "2": 25,
+            "42": 25
+          }
+        },
+        "datolite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 182,
+            "2": 174,
+            "42": 170
+          }
+        },
+        "diopside": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "dolomite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "grossular": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 25,
+            "2": 25,
+            "42": 25
+          }
+        },
+        "pectolite": {
+          "count": 2,
+          "seeds": [
+            2,
+            42
+          ],
+          "first_steps": {
+            "2": 140,
+            "42": 144
+          }
+        },
+        "prehnite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 42,
+            "2": 41,
+            "42": 41
+          }
+        },
+        "rhodochrosite": {
+          "count": 2,
+          "seeds": [
+            2,
+            42
+          ],
+          "first_steps": {
+            "2": 140,
+            "42": 164
+          }
+        },
+        "siderite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 100,
+            "2": 113,
+            "42": 140
+          }
+        },
+        "titanite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 106,
+            "2": 147,
+            "42": 170
+          }
+        },
+        "vesuvianite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "wollastonite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 56,
+            "2": 60,
+            "42": 50
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "actinolite",
+            "albite",
+            "awaruite",
+            "brucite",
+            "calcite",
+            "chrysotile",
+            "datolite",
+            "diopside",
+            "dolomite",
+            "grossular",
+            "prehnite",
+            "siderite",
+            "titanite",
+            "vesuvianite",
+            "wollastonite"
+          ],
+          "first_steps": {
+            "actinolite": 25,
+            "albite": 140,
+            "awaruite": 1,
+            "brucite": 25,
+            "calcite": 1,
+            "chrysotile": 25,
+            "datolite": 182,
+            "diopside": 1,
+            "dolomite": 1,
+            "grossular": 25,
+            "prehnite": 42,
+            "siderite": 100,
+            "titanite": 106,
+            "vesuvianite": 1,
+            "wollastonite": 56
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "actinolite",
+            "albite",
+            "awaruite",
+            "brucite",
+            "calcite",
+            "chrysotile",
+            "datolite",
+            "diopside",
+            "dolomite",
+            "grossular",
+            "pectolite",
+            "prehnite",
+            "rhodochrosite",
+            "siderite",
+            "titanite",
+            "vesuvianite",
+            "wollastonite"
+          ],
+          "first_steps": {
+            "actinolite": 25,
+            "albite": 140,
+            "awaruite": 1,
+            "brucite": 25,
+            "calcite": 1,
+            "chrysotile": 25,
+            "datolite": 174,
+            "diopside": 1,
+            "dolomite": 1,
+            "grossular": 25,
+            "pectolite": 140,
+            "prehnite": 41,
+            "rhodochrosite": 140,
+            "siderite": 113,
+            "titanite": 147,
+            "vesuvianite": 1,
+            "wollastonite": 60
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "actinolite",
+            "albite",
+            "awaruite",
+            "brucite",
+            "calcite",
+            "chrysotile",
+            "datolite",
+            "diopside",
+            "dolomite",
+            "grossular",
+            "pectolite",
+            "prehnite",
+            "rhodochrosite",
+            "siderite",
+            "titanite",
+            "vesuvianite",
+            "wollastonite"
+          ],
+          "first_steps": {
+            "actinolite": 25,
+            "albite": 140,
+            "awaruite": 1,
+            "brucite": 25,
+            "calcite": 1,
+            "chrysotile": 25,
+            "datolite": 170,
+            "diopside": 1,
+            "dolomite": 1,
+            "grossular": 25,
+            "pectolite": 144,
+            "prehnite": 41,
+            "rhodochrosite": 164,
+            "siderite": 140,
+            "titanite": 170,
+            "vesuvianite": 1,
+            "wollastonite": 50
+          }
+        }
+      ]
+    },
+    "marble_contact_metamorphism": {
+      "locality_frequency_spec_hash": "f652ecb94d088e874104c22542b3932264d4ec0dcae4e4dde17c800246017425",
+      "duration_steps": 180,
+      "occurrences": {
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 150,
+            "2": 150,
+            "42": 150
+          }
+        },
+        "ruby": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 20
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "calcite",
+            "ruby"
+          ],
+          "first_steps": {
+            "calcite": 150,
+            "ruby": 20
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "calcite",
+            "ruby"
+          ],
+          "first_steps": {
+            "calcite": 150,
+            "ruby": 20
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "calcite",
+            "ruby"
+          ],
+          "first_steps": {
+            "calcite": 150,
+            "ruby": 20
+          }
+        }
+      ]
+    },
+    "mvt": {
+      "locality_frequency_spec_hash": "020ecffad09dbbc83be88ed60ad30c02be1e593a6091a992b1a886d32206fea8",
+      "duration_steps": 120,
+      "occurrences": {
+        "barite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 21
+          }
+        },
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "fluorite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 20
+          }
+        },
+        "galena": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 20
+          }
+        },
+        "greenockite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 26,
+            "2": 27,
+            "42": 22
+          }
+        },
+        "pyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 20
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 29,
+            "2": 29,
+            "42": 28
+          }
+        },
+        "sphalerite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 20
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "barite",
+            "calcite",
+            "fluorite",
+            "galena",
+            "greenockite",
+            "pyrite",
+            "quartz",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "barite": 20,
+            "calcite": 1,
+            "fluorite": 20,
+            "galena": 20,
+            "greenockite": 26,
+            "pyrite": 20,
+            "quartz": 29,
+            "sphalerite": 20
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "barite",
+            "calcite",
+            "fluorite",
+            "galena",
+            "greenockite",
+            "pyrite",
+            "quartz",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "barite": 20,
+            "calcite": 1,
+            "fluorite": 20,
+            "galena": 20,
+            "greenockite": 27,
+            "pyrite": 20,
+            "quartz": 29,
+            "sphalerite": 20
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "barite",
+            "calcite",
+            "fluorite",
+            "galena",
+            "greenockite",
+            "pyrite",
+            "quartz",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "barite": 21,
+            "calcite": 1,
+            "fluorite": 20,
+            "galena": 20,
+            "greenockite": 22,
+            "pyrite": 20,
+            "quartz": 28,
+            "sphalerite": 20
+          }
+        }
+      ]
+    },
+    "naica_geothermal": {
+      "locality_frequency_spec_hash": "b45fd5128c698509debf65debd953a40cca8f123cbf5ca2e9c5f567486ce3550",
+      "duration_steps": 320,
+      "occurrences": {
+        "celestine": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 8,
+            "2": 5,
+            "42": 5
+          }
+        },
+        "selenite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "celestine",
+            "selenite"
+          ],
+          "first_steps": {
+            "celestine": 8,
+            "selenite": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "celestine",
+            "selenite"
+          ],
+          "first_steps": {
+            "celestine": 5,
+            "selenite": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "celestine",
+            "selenite"
+          ],
+          "first_steps": {
+            "celestine": 5,
+            "selenite": 1
+          }
+        }
+      ]
+    },
+    "ouro_preto": {
+      "locality_frequency_spec_hash": "b9b8cfe35fb98219bbbcf3756b212a0ca4cde37df59e476ca7d15b359d6130dd",
+      "duration_steps": 260,
+      "occurrences": {
+        "albite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "feldspar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "goethite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 200,
+            "2": 200,
+            "42": 200
+          }
+        },
+        "hematite": {
+          "count": 1,
+          "seeds": [
+            1
+          ],
+          "first_steps": {
+            "1": 240
+          }
+        },
+        "lepidocrocite": {
+          "count": 2,
+          "seeds": [
+            1,
+            42
+          ],
+          "first_steps": {
+            "1": 240,
+            "42": 240
+          }
+        },
+        "opal": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 200,
+            "2": 200,
+            "42": 200
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 82,
+            "2": 82,
+            "42": 83
+          }
+        },
+        "topaz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 35,
+            "2": 35,
+            "42": 35
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "albite",
+            "feldspar",
+            "goethite",
+            "hematite",
+            "lepidocrocite",
+            "opal",
+            "quartz",
+            "topaz"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "feldspar": 1,
+            "goethite": 200,
+            "hematite": 240,
+            "lepidocrocite": 240,
+            "opal": 200,
+            "quartz": 82,
+            "topaz": 35
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "albite",
+            "feldspar",
+            "goethite",
+            "opal",
+            "quartz",
+            "topaz"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "feldspar": 1,
+            "goethite": 200,
+            "opal": 200,
+            "quartz": 82,
+            "topaz": 35
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "albite",
+            "feldspar",
+            "goethite",
+            "lepidocrocite",
+            "opal",
+            "quartz",
+            "topaz"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "feldspar": 1,
+            "goethite": 200,
+            "lepidocrocite": 240,
+            "opal": 200,
+            "quartz": 83,
+            "topaz": 35
+          }
+        }
+      ]
+    },
+    "porphyry": {
+      "locality_frequency_spec_hash": "c7a37f0e7b1dabd8fba21fbffce30d7a2ae6092c430f9dabd82f00ae97e3d740",
+      "duration_steps": 120,
+      "occurrences": {
+        "acanthite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 85,
+            "2": 85,
+            "42": 85
+          }
+        },
+        "albite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "anglesite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 85,
+            "2": 85,
+            "42": 85
+          }
+        },
+        "argentite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 6,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "arsenopyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 7,
+            "2": 1,
+            "42": 4
+          }
+        },
+        "bismuthinite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "brochantite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 87,
+            "2": 86,
+            "42": 85
+          }
+        },
+        "chalcopyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 25,
+            "2": 25,
+            "42": 25
+          }
+        },
+        "chrysocolla": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 85,
+            "2": 85,
+            "42": 85
+          }
+        },
+        "feldspar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "ferrimolybdite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 85,
+            "2": 95,
+            "42": 88
+          }
+        },
+        "galena": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 25,
+            "2": 25,
+            "42": 25
+          }
+        },
+        "goethite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 85,
+            "2": 85,
+            "42": 85
+          }
+        },
+        "hematite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 85,
+            "2": 85,
+            "42": 85
+          }
+        },
+        "magnetite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 60,
+            "2": 60,
+            "42": 60
+          }
+        },
+        "malachite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 85,
+            "2": 85,
+            "42": 85
+          }
+        },
+        "molybdenite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 45,
+            "2": 45,
+            "42": 45
+          }
+        },
+        "opal": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 85,
+            "2": 85,
+            "42": 85
+          }
+        },
+        "pyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 25,
+            "2": 25,
+            "42": 25
+          }
+        },
+        "stibnite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 24,
+            "2": 24,
+            "42": 23
+          }
+        },
+        "tennantite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 25,
+            "2": 25,
+            "42": 25
+          }
+        },
+        "tetrahedrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 25,
+            "2": 25,
+            "42": 25
+          }
+        },
+        "titanite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 18,
+            "2": 18,
+            "42": 18
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "acanthite",
+            "albite",
+            "anglesite",
+            "argentite",
+            "arsenopyrite",
+            "bismuthinite",
+            "brochantite",
+            "chalcopyrite",
+            "chrysocolla",
+            "feldspar",
+            "ferrimolybdite",
+            "galena",
+            "goethite",
+            "hematite",
+            "magnetite",
+            "malachite",
+            "molybdenite",
+            "opal",
+            "pyrite",
+            "stibnite",
+            "tennantite",
+            "tetrahedrite",
+            "titanite"
+          ],
+          "first_steps": {
+            "acanthite": 85,
+            "albite": 1,
+            "anglesite": 85,
+            "argentite": 6,
+            "arsenopyrite": 7,
+            "bismuthinite": 1,
+            "brochantite": 87,
+            "chalcopyrite": 25,
+            "chrysocolla": 85,
+            "feldspar": 1,
+            "ferrimolybdite": 85,
+            "galena": 25,
+            "goethite": 85,
+            "hematite": 85,
+            "magnetite": 60,
+            "malachite": 85,
+            "molybdenite": 45,
+            "opal": 85,
+            "pyrite": 25,
+            "stibnite": 24,
+            "tennantite": 25,
+            "tetrahedrite": 25,
+            "titanite": 18
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "acanthite",
+            "albite",
+            "anglesite",
+            "argentite",
+            "arsenopyrite",
+            "bismuthinite",
+            "brochantite",
+            "chalcopyrite",
+            "chrysocolla",
+            "feldspar",
+            "ferrimolybdite",
+            "galena",
+            "goethite",
+            "hematite",
+            "magnetite",
+            "malachite",
+            "molybdenite",
+            "opal",
+            "pyrite",
+            "stibnite",
+            "tennantite",
+            "tetrahedrite",
+            "titanite"
+          ],
+          "first_steps": {
+            "acanthite": 85,
+            "albite": 1,
+            "anglesite": 85,
+            "argentite": 1,
+            "arsenopyrite": 1,
+            "bismuthinite": 1,
+            "brochantite": 86,
+            "chalcopyrite": 25,
+            "chrysocolla": 85,
+            "feldspar": 1,
+            "ferrimolybdite": 95,
+            "galena": 25,
+            "goethite": 85,
+            "hematite": 85,
+            "magnetite": 60,
+            "malachite": 85,
+            "molybdenite": 45,
+            "opal": 85,
+            "pyrite": 25,
+            "stibnite": 24,
+            "tennantite": 25,
+            "tetrahedrite": 25,
+            "titanite": 18
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "acanthite",
+            "albite",
+            "anglesite",
+            "argentite",
+            "arsenopyrite",
+            "bismuthinite",
+            "brochantite",
+            "chalcopyrite",
+            "chrysocolla",
+            "feldspar",
+            "ferrimolybdite",
+            "galena",
+            "goethite",
+            "hematite",
+            "magnetite",
+            "malachite",
+            "molybdenite",
+            "opal",
+            "pyrite",
+            "stibnite",
+            "tennantite",
+            "tetrahedrite",
+            "titanite"
+          ],
+          "first_steps": {
+            "acanthite": 85,
+            "albite": 1,
+            "anglesite": 85,
+            "argentite": 1,
+            "arsenopyrite": 4,
+            "bismuthinite": 1,
+            "brochantite": 85,
+            "chalcopyrite": 25,
+            "chrysocolla": 85,
+            "feldspar": 1,
+            "ferrimolybdite": 88,
+            "galena": 25,
+            "goethite": 85,
+            "hematite": 85,
+            "magnetite": 60,
+            "malachite": 85,
+            "molybdenite": 45,
+            "opal": 85,
+            "pyrite": 25,
+            "stibnite": 23,
+            "tennantite": 25,
+            "tetrahedrite": 25,
+            "titanite": 18
+          }
+        }
+      ]
+    },
+    "pulse": {
+      "locality_frequency_spec_hash": "e14cedffa947c0d288396d870c1263e91ade7104de414595aab2c112d1d497f1",
+      "duration_steps": 100,
+      "occurrences": {
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 40,
+            "2": 40,
+            "42": 40
+          }
+        },
+        "rhodochrosite": {
+          "count": 1,
+          "seeds": [
+            42
+          ],
+          "first_steps": {
+            "42": 71
+          }
+        },
+        "siderite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 40,
+            "2": 40,
+            "42": 40
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "quartz",
+            "siderite"
+          ],
+          "first_steps": {
+            "quartz": 40,
+            "siderite": 40
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "quartz",
+            "siderite"
+          ],
+          "first_steps": {
+            "quartz": 40,
+            "siderite": 40
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "quartz",
+            "rhodochrosite",
+            "siderite"
+          ],
+          "first_steps": {
+            "quartz": 40,
+            "rhodochrosite": 71,
+            "siderite": 40
+          }
+        }
+      ]
+    },
+    "radioactive_pegmatite": {
+      "locality_frequency_spec_hash": "e82e48fd71a16389ecdba0ee2178be787ccde0e9702266a2df23613a6883b812",
+      "duration_steps": 120,
+      "occurrences": {
+        "albite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "cassiterite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 6,
+            "42": 6
+          }
+        },
+        "feldspar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "lepidolite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "morganite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "opal": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 94,
+            "2": 94,
+            "42": 94
+          }
+        },
+        "plumbogummite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 107,
+            "2": 107,
+            "42": 107
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "spodumene": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "topaz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 20
+          }
+        },
+        "tourmaline": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "uraninite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "albite",
+            "cassiterite",
+            "feldspar",
+            "lepidolite",
+            "morganite",
+            "opal",
+            "plumbogummite",
+            "quartz",
+            "spodumene",
+            "topaz",
+            "tourmaline",
+            "uraninite"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "cassiterite": 1,
+            "feldspar": 1,
+            "lepidolite": 1,
+            "morganite": 1,
+            "opal": 94,
+            "plumbogummite": 107,
+            "quartz": 1,
+            "spodumene": 1,
+            "topaz": 20,
+            "tourmaline": 1,
+            "uraninite": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "albite",
+            "cassiterite",
+            "feldspar",
+            "lepidolite",
+            "morganite",
+            "opal",
+            "plumbogummite",
+            "quartz",
+            "spodumene",
+            "topaz",
+            "tourmaline",
+            "uraninite"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "cassiterite": 6,
+            "feldspar": 1,
+            "lepidolite": 1,
+            "morganite": 1,
+            "opal": 94,
+            "plumbogummite": 107,
+            "quartz": 1,
+            "spodumene": 1,
+            "topaz": 20,
+            "tourmaline": 1,
+            "uraninite": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "albite",
+            "cassiterite",
+            "feldspar",
+            "lepidolite",
+            "morganite",
+            "opal",
+            "plumbogummite",
+            "quartz",
+            "spodumene",
+            "topaz",
+            "tourmaline",
+            "uraninite"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "cassiterite": 6,
+            "feldspar": 1,
+            "lepidolite": 1,
+            "morganite": 1,
+            "opal": 94,
+            "plumbogummite": 107,
+            "quartz": 1,
+            "spodumene": 1,
+            "topaz": 20,
+            "tourmaline": 1,
+            "uraninite": 1
+          }
+        }
+      ]
+    },
+    "reactivated_fluorite_vein": {
+      "locality_frequency_spec_hash": "01c0d02b315a5682f56923683e5adbb8bf1a0d2b06fe4dbd4b20c5e6f916a7ad",
+      "duration_steps": 160,
+      "occurrences": {
+        "acanthite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 20
+          }
+        },
+        "barite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 21
+          }
+        },
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "celestine": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 38,
+            "2": 23,
+            "42": 23
+          }
+        },
+        "chalcedony": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 61,
+            "2": 62,
+            "42": 60
+          }
+        },
+        "fluorite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 20
+          }
+        },
+        "galena": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 20
+          }
+        },
+        "greenockite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 26,
+            "2": 27,
+            "42": 22
+          }
+        },
+        "native_silver": {
+          "count": 2,
+          "seeds": [
+            1,
+            2
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 3
+          }
+        },
+        "pyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 20
+          }
+        },
+        "rhodochrosite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "siderite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "sphalerite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 20
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "acanthite",
+            "barite",
+            "calcite",
+            "celestine",
+            "chalcedony",
+            "fluorite",
+            "galena",
+            "greenockite",
+            "native_silver",
+            "pyrite",
+            "rhodochrosite",
+            "siderite",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "acanthite": 20,
+            "barite": 20,
+            "calcite": 1,
+            "celestine": 38,
+            "chalcedony": 61,
+            "fluorite": 20,
+            "galena": 20,
+            "greenockite": 26,
+            "native_silver": 1,
+            "pyrite": 20,
+            "rhodochrosite": 1,
+            "siderite": 1,
+            "sphalerite": 20
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "acanthite",
+            "barite",
+            "calcite",
+            "celestine",
+            "chalcedony",
+            "fluorite",
+            "galena",
+            "greenockite",
+            "native_silver",
+            "pyrite",
+            "rhodochrosite",
+            "siderite",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "acanthite": 20,
+            "barite": 20,
+            "calcite": 1,
+            "celestine": 23,
+            "chalcedony": 62,
+            "fluorite": 20,
+            "galena": 20,
+            "greenockite": 27,
+            "native_silver": 3,
+            "pyrite": 20,
+            "rhodochrosite": 1,
+            "siderite": 1,
+            "sphalerite": 20
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "acanthite",
+            "barite",
+            "calcite",
+            "celestine",
+            "chalcedony",
+            "fluorite",
+            "galena",
+            "greenockite",
+            "pyrite",
+            "rhodochrosite",
+            "siderite",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "acanthite": 20,
+            "barite": 21,
+            "calcite": 1,
+            "celestine": 23,
+            "chalcedony": 60,
+            "fluorite": 20,
+            "galena": 20,
+            "greenockite": 22,
+            "pyrite": 20,
+            "rhodochrosite": 1,
+            "siderite": 1,
+            "sphalerite": 20
+          }
+        }
+      ]
+    },
+    "reactive_wall": {
+      "locality_frequency_spec_hash": "8631a67eb0ea239c071d0f404d7965f2a48994f1332d4234d6c2334ec66fd975",
+      "duration_steps": 120,
+      "occurrences": {
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "dolomite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 90,
+            "2": 90,
+            "42": 90
+          }
+        },
+        "galena": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 40,
+            "2": 40,
+            "42": 40
+          }
+        },
+        "marcasite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 40,
+            "2": 40,
+            "42": 40
+          }
+        },
+        "pyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 41,
+            "2": 41,
+            "42": 41
+          }
+        },
+        "sphalerite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 15,
+            "2": 15,
+            "42": 15
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "calcite",
+            "dolomite",
+            "galena",
+            "marcasite",
+            "pyrite",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "calcite": 1,
+            "dolomite": 90,
+            "galena": 40,
+            "marcasite": 40,
+            "pyrite": 41,
+            "sphalerite": 15
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "calcite",
+            "dolomite",
+            "galena",
+            "marcasite",
+            "pyrite",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "calcite": 1,
+            "dolomite": 90,
+            "galena": 40,
+            "marcasite": 40,
+            "pyrite": 41,
+            "sphalerite": 15
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "calcite",
+            "dolomite",
+            "galena",
+            "marcasite",
+            "pyrite",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "calcite": 1,
+            "dolomite": 90,
+            "galena": 40,
+            "marcasite": 40,
+            "pyrite": 41,
+            "sphalerite": 15
+          }
+        }
+      ]
+    },
+    "roughten_gill": {
+      "locality_frequency_spec_hash": "826e637ea25b155d271be1199c3fb44b00b0016bbb1c151ee623eece121d5404",
+      "duration_steps": 240,
+      "occurrences": {
+        "acanthite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 14,
+            "2": 18,
+            "42": 8
+          }
+        },
+        "anglesite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 60,
+            "2": 60,
+            "42": 60
+          }
+        },
+        "aurichalcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 120,
+            "2": 119,
+            "42": 121
+          }
+        },
+        "azurite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 140,
+            "2": 140,
+            "42": 140
+          }
+        },
+        "brochantite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 63,
+            "2": 62,
+            "42": 72
+          }
+        },
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 25,
+            "2": 25,
+            "42": 25
+          }
+        },
+        "cerussite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 100,
+            "2": 100,
+            "42": 100
+          }
+        },
+        "chalcocite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "chalcopyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "chrysocolla": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 180,
+            "2": 180,
+            "42": 180
+          }
+        },
+        "galena": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "hemimorphite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 180,
+            "2": 180,
+            "42": 180
+          }
+        },
+        "malachite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 100,
+            "2": 100,
+            "42": 100
+          }
+        },
+        "mimetite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 180,
+            "2": 180,
+            "42": 180
+          }
+        },
+        "mottramite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 147,
+            "2": 146,
+            "42": 148
+          }
+        },
+        "plumbogummite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 215,
+            "2": 215,
+            "42": 215
+          }
+        },
+        "pyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "pyromorphite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 100,
+            "2": 100,
+            "42": 100
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "rosasite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 144,
+            "2": 147,
+            "42": 150
+          }
+        },
+        "smithsonite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 105,
+            "2": 104,
+            "42": 107
+          }
+        },
+        "sphalerite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "tennantite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "tetrahedrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "acanthite",
+            "anglesite",
+            "aurichalcite",
+            "azurite",
+            "brochantite",
+            "calcite",
+            "cerussite",
+            "chalcocite",
+            "chalcopyrite",
+            "chrysocolla",
+            "galena",
+            "hemimorphite",
+            "malachite",
+            "mimetite",
+            "mottramite",
+            "plumbogummite",
+            "pyrite",
+            "pyromorphite",
+            "quartz",
+            "rosasite",
+            "smithsonite",
+            "sphalerite",
+            "tennantite",
+            "tetrahedrite"
+          ],
+          "first_steps": {
+            "acanthite": 14,
+            "anglesite": 60,
+            "aurichalcite": 120,
+            "azurite": 140,
+            "brochantite": 63,
+            "calcite": 25,
+            "cerussite": 100,
+            "chalcocite": 1,
+            "chalcopyrite": 1,
+            "chrysocolla": 180,
+            "galena": 1,
+            "hemimorphite": 180,
+            "malachite": 100,
+            "mimetite": 180,
+            "mottramite": 147,
+            "plumbogummite": 215,
+            "pyrite": 1,
+            "pyromorphite": 100,
+            "quartz": 1,
+            "rosasite": 144,
+            "smithsonite": 105,
+            "sphalerite": 1,
+            "tennantite": 1,
+            "tetrahedrite": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "acanthite",
+            "anglesite",
+            "aurichalcite",
+            "azurite",
+            "brochantite",
+            "calcite",
+            "cerussite",
+            "chalcocite",
+            "chalcopyrite",
+            "chrysocolla",
+            "galena",
+            "hemimorphite",
+            "malachite",
+            "mimetite",
+            "mottramite",
+            "plumbogummite",
+            "pyrite",
+            "pyromorphite",
+            "quartz",
+            "rosasite",
+            "smithsonite",
+            "sphalerite",
+            "tennantite",
+            "tetrahedrite"
+          ],
+          "first_steps": {
+            "acanthite": 18,
+            "anglesite": 60,
+            "aurichalcite": 119,
+            "azurite": 140,
+            "brochantite": 62,
+            "calcite": 25,
+            "cerussite": 100,
+            "chalcocite": 1,
+            "chalcopyrite": 1,
+            "chrysocolla": 180,
+            "galena": 1,
+            "hemimorphite": 180,
+            "malachite": 100,
+            "mimetite": 180,
+            "mottramite": 146,
+            "plumbogummite": 215,
+            "pyrite": 1,
+            "pyromorphite": 100,
+            "quartz": 1,
+            "rosasite": 147,
+            "smithsonite": 104,
+            "sphalerite": 1,
+            "tennantite": 1,
+            "tetrahedrite": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "acanthite",
+            "anglesite",
+            "aurichalcite",
+            "azurite",
+            "brochantite",
+            "calcite",
+            "cerussite",
+            "chalcocite",
+            "chalcopyrite",
+            "chrysocolla",
+            "galena",
+            "hemimorphite",
+            "malachite",
+            "mimetite",
+            "mottramite",
+            "plumbogummite",
+            "pyrite",
+            "pyromorphite",
+            "quartz",
+            "rosasite",
+            "smithsonite",
+            "sphalerite",
+            "tennantite",
+            "tetrahedrite"
+          ],
+          "first_steps": {
+            "acanthite": 8,
+            "anglesite": 60,
+            "aurichalcite": 121,
+            "azurite": 140,
+            "brochantite": 72,
+            "calcite": 25,
+            "cerussite": 100,
+            "chalcocite": 1,
+            "chalcopyrite": 1,
+            "chrysocolla": 180,
+            "galena": 1,
+            "hemimorphite": 180,
+            "malachite": 100,
+            "mimetite": 180,
+            "mottramite": 148,
+            "plumbogummite": 215,
+            "pyrite": 1,
+            "pyromorphite": 100,
+            "quartz": 1,
+            "rosasite": 150,
+            "smithsonite": 107,
+            "sphalerite": 1,
+            "tennantite": 1,
+            "tetrahedrite": 1
+          }
+        }
+      ]
+    },
+    "sabkha_dolomitization": {
+      "locality_frequency_spec_hash": "0645009c65a38212d628c8a195a1b11b49140c1bef4ea902e1857b03f6da8cf4",
+      "duration_steps": 260,
+      "occurrences": {
+        "anhydrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 20
+          }
+        },
+        "aragonite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "celestine": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 8,
+            "2": 5,
+            "42": 5
+          }
+        },
+        "dolomite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "selenite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "anhydrite",
+            "aragonite",
+            "calcite",
+            "celestine",
+            "dolomite",
+            "selenite"
+          ],
+          "first_steps": {
+            "anhydrite": 20,
+            "aragonite": 1,
+            "calcite": 1,
+            "celestine": 8,
+            "dolomite": 1,
+            "selenite": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "anhydrite",
+            "aragonite",
+            "calcite",
+            "celestine",
+            "dolomite",
+            "selenite"
+          ],
+          "first_steps": {
+            "anhydrite": 20,
+            "aragonite": 1,
+            "calcite": 1,
+            "celestine": 5,
+            "dolomite": 1,
+            "selenite": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "anhydrite",
+            "aragonite",
+            "calcite",
+            "celestine",
+            "dolomite",
+            "selenite"
+          ],
+          "first_steps": {
+            "anhydrite": 20,
+            "aragonite": 1,
+            "calcite": 1,
+            "celestine": 5,
+            "dolomite": 1,
+            "selenite": 1
+          }
+        }
+      ]
+    },
+    "schneeberg": {
+      "locality_frequency_spec_hash": "2452eb10e0485d4936559dd637bcda288fad17f7daea303786cb50196ab6b6d6",
+      "duration_steps": 160,
+      "occurrences": {
+        "acanthite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 75,
+            "2": 75,
+            "42": 75
+          }
+        },
+        "annabergite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 105,
+            "2": 105,
+            "42": 105
+          }
+        },
+        "argentite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 6,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "arsenopyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 7,
+            "2": 1,
+            "42": 4
+          }
+        },
+        "autunite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 126,
+            "2": 127,
+            "42": 131
+          }
+        },
+        "brochantite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 90,
+            "2": 90,
+            "42": 90
+          }
+        },
+        "cassiterite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 6,
+            "42": 6
+          }
+        },
+        "chrysocolla": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 88,
+            "2": 88,
+            "42": 88
+          }
+        },
+        "cobaltite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 11,
+            "2": 2,
+            "42": 4
+          }
+        },
+        "cuprite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 90,
+            "2": 90,
+            "42": 90
+          }
+        },
+        "dioptase": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 91,
+            "2": 91,
+            "42": 91
+          }
+        },
+        "erythrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 105,
+            "2": 105,
+            "42": 105
+          }
+        },
+        "feldspar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "goethite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 110,
+            "2": 110,
+            "42": 110
+          }
+        },
+        "metatorbernite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 149,
+            "2": 149,
+            "42": 149
+          }
+        },
+        "metazeunerite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 152,
+            "2": 149,
+            "42": 149
+          }
+        },
+        "morganite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "native_arsenic": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 40,
+            "2": 39,
+            "42": 37
+          }
+        },
+        "native_bismuth": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 70,
+            "2": 70,
+            "42": 70
+          }
+        },
+        "native_silver": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 77,
+            "2": 70,
+            "42": 71
+          }
+        },
+        "naumannite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 69,
+            "2": 72,
+            "42": 70
+          }
+        },
+        "nickeline": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 9,
+            "2": 4,
+            "42": 4
+          }
+        },
+        "opal": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 89,
+            "2": 89,
+            "42": 89
+          }
+        },
+        "pararealgar": {
+          "count": 2,
+          "seeds": [
+            1,
+            2
+          ],
+          "first_steps": {
+            "1": 129,
+            "2": 129
+          }
+        },
+        "pharmacolite": {
+          "count": 2,
+          "seeds": [
+            1,
+            42
+          ],
+          "first_steps": {
+            "1": 145,
+            "42": 145
+          }
+        },
+        "proustite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 21,
+            "2": 20,
+            "42": 21
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "realgar": {
+          "count": 2,
+          "seeds": [
+            1,
+            2
+          ],
+          "first_steps": {
+            "1": 70,
+            "2": 70
+          }
+        },
+        "spodumene": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "tennantite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 20
+          }
+        },
+        "topaz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 7,
+            "2": 7,
+            "42": 7
+          }
+        },
+        "torbernite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 92,
+            "2": 93,
+            "42": 94
+          }
+        },
+        "turquoise": {
+          "count": 2,
+          "seeds": [
+            2,
+            42
+          ],
+          "first_steps": {
+            "2": 90,
+            "42": 91
+          }
+        },
+        "uraninite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "uranophane": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 105,
+            "2": 105,
+            "42": 105
+          }
+        },
+        "uranospinite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 151,
+            "2": 146,
+            "42": 145
+          }
+        },
+        "zeunerite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 113,
+            "2": 105,
+            "42": 110
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "acanthite",
+            "annabergite",
+            "argentite",
+            "arsenopyrite",
+            "autunite",
+            "brochantite",
+            "cassiterite",
+            "chrysocolla",
+            "cobaltite",
+            "cuprite",
+            "dioptase",
+            "erythrite",
+            "feldspar",
+            "goethite",
+            "metatorbernite",
+            "metazeunerite",
+            "morganite",
+            "native_arsenic",
+            "native_bismuth",
+            "native_silver",
+            "naumannite",
+            "nickeline",
+            "opal",
+            "pararealgar",
+            "pharmacolite",
+            "proustite",
+            "quartz",
+            "realgar",
+            "spodumene",
+            "tennantite",
+            "topaz",
+            "torbernite",
+            "uraninite",
+            "uranophane",
+            "uranospinite",
+            "zeunerite"
+          ],
+          "first_steps": {
+            "acanthite": 75,
+            "annabergite": 105,
+            "argentite": 6,
+            "arsenopyrite": 7,
+            "autunite": 126,
+            "brochantite": 90,
+            "cassiterite": 1,
+            "chrysocolla": 88,
+            "cobaltite": 11,
+            "cuprite": 90,
+            "dioptase": 91,
+            "erythrite": 105,
+            "feldspar": 1,
+            "goethite": 110,
+            "metatorbernite": 149,
+            "metazeunerite": 152,
+            "morganite": 1,
+            "native_arsenic": 40,
+            "native_bismuth": 70,
+            "native_silver": 77,
+            "naumannite": 69,
+            "nickeline": 9,
+            "opal": 89,
+            "pararealgar": 129,
+            "pharmacolite": 145,
+            "proustite": 21,
+            "quartz": 1,
+            "realgar": 70,
+            "spodumene": 1,
+            "tennantite": 20,
+            "topaz": 7,
+            "torbernite": 92,
+            "uraninite": 1,
+            "uranophane": 105,
+            "uranospinite": 151,
+            "zeunerite": 113
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "acanthite",
+            "annabergite",
+            "argentite",
+            "arsenopyrite",
+            "autunite",
+            "brochantite",
+            "cassiterite",
+            "chrysocolla",
+            "cobaltite",
+            "cuprite",
+            "dioptase",
+            "erythrite",
+            "feldspar",
+            "goethite",
+            "metatorbernite",
+            "metazeunerite",
+            "morganite",
+            "native_arsenic",
+            "native_bismuth",
+            "native_silver",
+            "naumannite",
+            "nickeline",
+            "opal",
+            "pararealgar",
+            "proustite",
+            "quartz",
+            "realgar",
+            "spodumene",
+            "tennantite",
+            "topaz",
+            "torbernite",
+            "turquoise",
+            "uraninite",
+            "uranophane",
+            "uranospinite",
+            "zeunerite"
+          ],
+          "first_steps": {
+            "acanthite": 75,
+            "annabergite": 105,
+            "argentite": 1,
+            "arsenopyrite": 1,
+            "autunite": 127,
+            "brochantite": 90,
+            "cassiterite": 6,
+            "chrysocolla": 88,
+            "cobaltite": 2,
+            "cuprite": 90,
+            "dioptase": 91,
+            "erythrite": 105,
+            "feldspar": 1,
+            "goethite": 110,
+            "metatorbernite": 149,
+            "metazeunerite": 149,
+            "morganite": 1,
+            "native_arsenic": 39,
+            "native_bismuth": 70,
+            "native_silver": 70,
+            "naumannite": 72,
+            "nickeline": 4,
+            "opal": 89,
+            "pararealgar": 129,
+            "proustite": 20,
+            "quartz": 1,
+            "realgar": 70,
+            "spodumene": 1,
+            "tennantite": 20,
+            "topaz": 7,
+            "torbernite": 93,
+            "turquoise": 90,
+            "uraninite": 1,
+            "uranophane": 105,
+            "uranospinite": 146,
+            "zeunerite": 105
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "acanthite",
+            "annabergite",
+            "argentite",
+            "arsenopyrite",
+            "autunite",
+            "brochantite",
+            "cassiterite",
+            "chrysocolla",
+            "cobaltite",
+            "cuprite",
+            "dioptase",
+            "erythrite",
+            "feldspar",
+            "goethite",
+            "metatorbernite",
+            "metazeunerite",
+            "morganite",
+            "native_arsenic",
+            "native_bismuth",
+            "native_silver",
+            "naumannite",
+            "nickeline",
+            "opal",
+            "pharmacolite",
+            "proustite",
+            "quartz",
+            "spodumene",
+            "tennantite",
+            "topaz",
+            "torbernite",
+            "turquoise",
+            "uraninite",
+            "uranophane",
+            "uranospinite",
+            "zeunerite"
+          ],
+          "first_steps": {
+            "acanthite": 75,
+            "annabergite": 105,
+            "argentite": 1,
+            "arsenopyrite": 4,
+            "autunite": 131,
+            "brochantite": 90,
+            "cassiterite": 6,
+            "chrysocolla": 88,
+            "cobaltite": 4,
+            "cuprite": 90,
+            "dioptase": 91,
+            "erythrite": 105,
+            "feldspar": 1,
+            "goethite": 110,
+            "metatorbernite": 149,
+            "metazeunerite": 149,
+            "morganite": 1,
+            "native_arsenic": 37,
+            "native_bismuth": 70,
+            "native_silver": 71,
+            "naumannite": 70,
+            "nickeline": 4,
+            "opal": 89,
+            "pharmacolite": 145,
+            "proustite": 21,
+            "quartz": 1,
+            "spodumene": 1,
+            "tennantite": 20,
+            "topaz": 7,
+            "torbernite": 94,
+            "turquoise": 91,
+            "uraninite": 1,
+            "uranophane": 105,
+            "uranospinite": 145,
+            "zeunerite": 110
+          }
+        }
+      ]
+    },
+    "searles_lake": {
+      "locality_frequency_spec_hash": "dc1885aefca0eecbe304eeb5d1a1593f33247b0c88eee222f65355ff23a3fd0d",
+      "duration_steps": 300,
+      "occurrences": {
+        "borax": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 35,
+            "2": 92,
+            "42": 36
+          }
+        },
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "celestine": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 8,
+            "2": 5,
+            "42": 5
+          }
+        },
+        "halite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 36,
+            "2": 45,
+            "42": 32
+          }
+        },
+        "mirabilite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 96,
+            "2": 30,
+            "42": 31
+          }
+        },
+        "thenardite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 67,
+            "2": 60,
+            "42": 60
+          }
+        },
+        "tincalconite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 60,
+            "2": 66,
+            "42": 60
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "borax",
+            "calcite",
+            "celestine",
+            "halite",
+            "mirabilite",
+            "thenardite",
+            "tincalconite"
+          ],
+          "first_steps": {
+            "borax": 35,
+            "calcite": 1,
+            "celestine": 8,
+            "halite": 36,
+            "mirabilite": 96,
+            "thenardite": 67,
+            "tincalconite": 60
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "borax",
+            "calcite",
+            "celestine",
+            "halite",
+            "mirabilite",
+            "thenardite",
+            "tincalconite"
+          ],
+          "first_steps": {
+            "borax": 92,
+            "calcite": 1,
+            "celestine": 5,
+            "halite": 45,
+            "mirabilite": 30,
+            "thenardite": 60,
+            "tincalconite": 66
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "borax",
+            "calcite",
+            "celestine",
+            "halite",
+            "mirabilite",
+            "thenardite",
+            "tincalconite"
+          ],
+          "first_steps": {
+            "borax": 36,
+            "calcite": 1,
+            "celestine": 5,
+            "halite": 32,
+            "mirabilite": 31,
+            "thenardite": 60,
+            "tincalconite": 60
+          }
+        }
+      ]
+    },
+    "shigar_pegmatite": {
+      "locality_frequency_spec_hash": "1f02e5cdcf493438c6b90dbd73bac68deef9ba4b9a328d9c4dd0b07df1437e12",
+      "duration_steps": 70,
+      "occurrences": {
+        "albite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "aquamarine": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 32,
+            "2": 32,
+            "42": 32
+          }
+        },
+        "feldspar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "topaz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 48,
+            "2": 48,
+            "42": 48
+          }
+        },
+        "tourmaline": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 12,
+            "2": 12,
+            "42": 12
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "albite",
+            "aquamarine",
+            "feldspar",
+            "quartz",
+            "topaz",
+            "tourmaline"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "aquamarine": 32,
+            "feldspar": 1,
+            "quartz": 1,
+            "topaz": 48,
+            "tourmaline": 12
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "albite",
+            "aquamarine",
+            "feldspar",
+            "quartz",
+            "topaz",
+            "tourmaline"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "aquamarine": 32,
+            "feldspar": 1,
+            "quartz": 1,
+            "topaz": 48,
+            "tourmaline": 12
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "albite",
+            "aquamarine",
+            "feldspar",
+            "quartz",
+            "topaz",
+            "tourmaline"
+          ],
+          "first_steps": {
+            "albite": 1,
+            "aquamarine": 32,
+            "feldspar": 1,
+            "quartz": 1,
+            "topaz": 48,
+            "tourmaline": 12
+          }
+        }
+      ]
+    },
+    "sicily_solfifera": {
+      "locality_frequency_spec_hash": "6bee081d029a6e5c65995459eca4345bb9de5a7ba8b1694c12d3a3214aa62698",
+      "duration_steps": 200,
+      "occurrences": {
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 60,
+            "2": 60,
+            "42": 60
+          }
+        },
+        "celestine": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 8,
+            "2": 5,
+            "42": 5
+          }
+        },
+        "native_sulfur": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 18,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "selenite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 15,
+            "2": 15,
+            "42": 15
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "calcite",
+            "celestine",
+            "native_sulfur",
+            "selenite"
+          ],
+          "first_steps": {
+            "calcite": 60,
+            "celestine": 8,
+            "native_sulfur": 18,
+            "selenite": 15
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "calcite",
+            "celestine",
+            "native_sulfur",
+            "selenite"
+          ],
+          "first_steps": {
+            "calcite": 60,
+            "celestine": 5,
+            "native_sulfur": 1,
+            "selenite": 15
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "calcite",
+            "celestine",
+            "native_sulfur",
+            "selenite"
+          ],
+          "first_steps": {
+            "calcite": 60,
+            "celestine": 5,
+            "native_sulfur": 1,
+            "selenite": 15
+          }
+        }
+      ]
+    },
+    "stalactite_demo": {
+      "locality_frequency_spec_hash": "f1c9d66b43a43171e2cc3158d44903d8f9242b14c1f60844478cdedaa7acad26",
+      "duration_steps": 100,
+      "occurrences": {
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 2,
+            "2": 20,
+            "42": 11
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "calcite"
+          ],
+          "first_steps": {
+            "calcite": 2
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "calcite"
+          ],
+          "first_steps": {
+            "calcite": 20
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "calcite"
+          ],
+          "first_steps": {
+            "calcite": 11
+          }
+        }
+      ]
+    },
+    "sulphur_bank": {
+      "locality_frequency_spec_hash": "4199895eff9cc8916649d942fadcd10a2832404ef1e7cd910356a468ab4be53c",
+      "duration_steps": 200,
+      "occurrences": {
+        "chalcedony": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 34,
+            "2": 63,
+            "42": 32
+          }
+        },
+        "cinnabar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "marcasite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "metacinnabar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "native_sulfur": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 28,
+            "2": 31,
+            "42": 28
+          }
+        },
+        "opal": {
+          "count": 1,
+          "seeds": [
+            42
+          ],
+          "first_steps": {
+            "42": 93
+          }
+        },
+        "orpiment": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "pararealgar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 60,
+            "2": 60,
+            "42": 60
+          }
+        },
+        "pyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 53,
+            "2": 60,
+            "42": 32
+          }
+        },
+        "realgar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "chalcedony",
+            "cinnabar",
+            "marcasite",
+            "metacinnabar",
+            "native_sulfur",
+            "orpiment",
+            "pararealgar",
+            "pyrite",
+            "realgar"
+          ],
+          "first_steps": {
+            "chalcedony": 34,
+            "cinnabar": 1,
+            "marcasite": 1,
+            "metacinnabar": 1,
+            "native_sulfur": 28,
+            "orpiment": 1,
+            "pararealgar": 60,
+            "pyrite": 53,
+            "realgar": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "chalcedony",
+            "cinnabar",
+            "marcasite",
+            "metacinnabar",
+            "native_sulfur",
+            "orpiment",
+            "pararealgar",
+            "pyrite",
+            "realgar"
+          ],
+          "first_steps": {
+            "chalcedony": 63,
+            "cinnabar": 1,
+            "marcasite": 1,
+            "metacinnabar": 1,
+            "native_sulfur": 31,
+            "orpiment": 1,
+            "pararealgar": 60,
+            "pyrite": 60,
+            "realgar": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "chalcedony",
+            "cinnabar",
+            "marcasite",
+            "metacinnabar",
+            "native_sulfur",
+            "opal",
+            "orpiment",
+            "pararealgar",
+            "pyrite",
+            "realgar"
+          ],
+          "first_steps": {
+            "chalcedony": 32,
+            "cinnabar": 1,
+            "marcasite": 1,
+            "metacinnabar": 1,
+            "native_sulfur": 28,
+            "opal": 93,
+            "orpiment": 1,
+            "pararealgar": 60,
+            "pyrite": 32,
+            "realgar": 1
+          }
+        }
+      ]
+    },
+    "sunnyside_american_tunnel": {
+      "locality_frequency_spec_hash": "f0b11b3525142fff2bc9f8097bb0610cd37a4dda43003cafdd8c3c19f1f04c0d",
+      "duration_steps": 200,
+      "occurrences": {
+        "argentite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 6,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "arsenopyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 7,
+            "2": 1,
+            "42": 4
+          }
+        },
+        "calaverite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 3,
+            "42": 5
+          }
+        },
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 150,
+            "2": 150,
+            "42": 150
+          }
+        },
+        "chalcopyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "fluorite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 110,
+            "2": 110,
+            "42": 110
+          }
+        },
+        "galena": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "native_gold": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 30,
+            "2": 30,
+            "42": 30
+          }
+        },
+        "proustite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 7,
+            "2": 7,
+            "42": 7
+          }
+        },
+        "pyrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 110,
+            "2": 110,
+            "42": 110
+          }
+        },
+        "rhodochrosite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 30,
+            "2": 30,
+            "42": 30
+          }
+        },
+        "siderite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 7,
+            "2": 7,
+            "42": 7
+          }
+        },
+        "sphalerite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "sylvanite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 8,
+            "2": 13,
+            "42": 1
+          }
+        },
+        "tennantite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "tetrahedrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "argentite",
+            "arsenopyrite",
+            "calaverite",
+            "calcite",
+            "chalcopyrite",
+            "fluorite",
+            "galena",
+            "native_gold",
+            "proustite",
+            "pyrite",
+            "quartz",
+            "rhodochrosite",
+            "siderite",
+            "sphalerite",
+            "sylvanite",
+            "tennantite",
+            "tetrahedrite"
+          ],
+          "first_steps": {
+            "argentite": 6,
+            "arsenopyrite": 7,
+            "calaverite": 20,
+            "calcite": 150,
+            "chalcopyrite": 1,
+            "fluorite": 110,
+            "galena": 1,
+            "native_gold": 30,
+            "proustite": 7,
+            "pyrite": 1,
+            "quartz": 110,
+            "rhodochrosite": 30,
+            "siderite": 7,
+            "sphalerite": 1,
+            "sylvanite": 8,
+            "tennantite": 1,
+            "tetrahedrite": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "argentite",
+            "arsenopyrite",
+            "calaverite",
+            "calcite",
+            "chalcopyrite",
+            "fluorite",
+            "galena",
+            "native_gold",
+            "proustite",
+            "pyrite",
+            "quartz",
+            "rhodochrosite",
+            "siderite",
+            "sphalerite",
+            "sylvanite",
+            "tennantite",
+            "tetrahedrite"
+          ],
+          "first_steps": {
+            "argentite": 1,
+            "arsenopyrite": 1,
+            "calaverite": 3,
+            "calcite": 150,
+            "chalcopyrite": 1,
+            "fluorite": 110,
+            "galena": 1,
+            "native_gold": 30,
+            "proustite": 7,
+            "pyrite": 1,
+            "quartz": 110,
+            "rhodochrosite": 30,
+            "siderite": 7,
+            "sphalerite": 1,
+            "sylvanite": 13,
+            "tennantite": 1,
+            "tetrahedrite": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "argentite",
+            "arsenopyrite",
+            "calaverite",
+            "calcite",
+            "chalcopyrite",
+            "fluorite",
+            "galena",
+            "native_gold",
+            "proustite",
+            "pyrite",
+            "quartz",
+            "rhodochrosite",
+            "siderite",
+            "sphalerite",
+            "sylvanite",
+            "tennantite",
+            "tetrahedrite"
+          ],
+          "first_steps": {
+            "argentite": 1,
+            "arsenopyrite": 4,
+            "calaverite": 5,
+            "calcite": 150,
+            "chalcopyrite": 1,
+            "fluorite": 110,
+            "galena": 1,
+            "native_gold": 30,
+            "proustite": 7,
+            "pyrite": 1,
+            "quartz": 110,
+            "rhodochrosite": 30,
+            "siderite": 7,
+            "sphalerite": 1,
+            "sylvanite": 1,
+            "tennantite": 1,
+            "tetrahedrite": 1
+          }
+        }
+      ]
+    },
+    "supergene_oxidation": {
+      "locality_frequency_spec_hash": "680d156710b0db8a4e6b37da9f034eca0ce1b3aeb48f8fe23c993be52aac2df7",
+      "duration_steps": 200,
+      "occurrences": {
+        "adamite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "anglesite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "annabergite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 95,
+            "2": 95,
+            "42": 95
+          }
+        },
+        "aurichalcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 3,
+            "2": 33,
+            "42": 24
+          }
+        },
+        "azurite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 18,
+            "2": 18,
+            "42": 18
+          }
+        },
+        "brochantite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 7,
+            "2": 3,
+            "42": 3
+          }
+        },
+        "caledonite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 70,
+            "2": 70,
+            "42": 70
+          }
+        },
+        "cerussite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "chalcocite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 55,
+            "2": 55,
+            "42": 55
+          }
+        },
+        "conichalcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 3,
+            "2": 1,
+            "42": 2
+          }
+        },
+        "covellite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 55,
+            "2": 55,
+            "42": 55
+          }
+        },
+        "cuprite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 55,
+            "2": 55,
+            "42": 55
+          }
+        },
+        "descloizite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 131,
+            "2": 134,
+            "42": 139
+          }
+        },
+        "duftite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "erythrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 95,
+            "2": 95,
+            "42": 95
+          }
+        },
+        "ferrimolybdite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 13,
+            "2": 3,
+            "42": 4
+          }
+        },
+        "goethite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "jarosite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 135,
+            "2": 16,
+            "42": 5
+          }
+        },
+        "lepidocrocite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 20,
+            "2": 20,
+            "42": 20
+          }
+        },
+        "malachite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "mimetite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "olivenite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 76,
+            "2": 72,
+            "42": 75
+          }
+        },
+        "plumbogummite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 115,
+            "2": 115,
+            "42": 115
+          }
+        },
+        "powellite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 6,
+            "2": 10,
+            "42": 13
+          }
+        },
+        "pyromorphite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 115,
+            "2": 115,
+            "42": 115
+          }
+        },
+        "raspite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 40,
+            "2": 37,
+            "42": 84
+          }
+        },
+        "scorodite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 11,
+            "2": 5,
+            "42": 8
+          }
+        },
+        "selenite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 70,
+            "2": 70,
+            "42": 70
+          }
+        },
+        "smithsonite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 13,
+            "2": 13,
+            "42": 13
+          }
+        },
+        "stolzite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 6,
+            "2": 3,
+            "42": 2
+          }
+        },
+        "vanadinite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 130,
+            "2": 130,
+            "42": 130
+          }
+        },
+        "wulfenite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "adamite",
+            "anglesite",
+            "annabergite",
+            "aurichalcite",
+            "azurite",
+            "brochantite",
+            "caledonite",
+            "cerussite",
+            "chalcocite",
+            "conichalcite",
+            "covellite",
+            "cuprite",
+            "descloizite",
+            "duftite",
+            "erythrite",
+            "ferrimolybdite",
+            "goethite",
+            "jarosite",
+            "lepidocrocite",
+            "malachite",
+            "mimetite",
+            "olivenite",
+            "plumbogummite",
+            "powellite",
+            "pyromorphite",
+            "raspite",
+            "scorodite",
+            "selenite",
+            "smithsonite",
+            "stolzite",
+            "vanadinite",
+            "wulfenite"
+          ],
+          "first_steps": {
+            "adamite": 1,
+            "anglesite": 1,
+            "annabergite": 95,
+            "aurichalcite": 3,
+            "azurite": 18,
+            "brochantite": 7,
+            "caledonite": 70,
+            "cerussite": 1,
+            "chalcocite": 55,
+            "conichalcite": 3,
+            "covellite": 55,
+            "cuprite": 55,
+            "descloizite": 131,
+            "duftite": 1,
+            "erythrite": 95,
+            "ferrimolybdite": 13,
+            "goethite": 1,
+            "jarosite": 135,
+            "lepidocrocite": 20,
+            "malachite": 1,
+            "mimetite": 1,
+            "olivenite": 76,
+            "plumbogummite": 115,
+            "powellite": 6,
+            "pyromorphite": 115,
+            "raspite": 40,
+            "scorodite": 11,
+            "selenite": 70,
+            "smithsonite": 13,
+            "stolzite": 6,
+            "vanadinite": 130,
+            "wulfenite": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "adamite",
+            "anglesite",
+            "annabergite",
+            "aurichalcite",
+            "azurite",
+            "brochantite",
+            "caledonite",
+            "cerussite",
+            "chalcocite",
+            "conichalcite",
+            "covellite",
+            "cuprite",
+            "descloizite",
+            "duftite",
+            "erythrite",
+            "ferrimolybdite",
+            "goethite",
+            "jarosite",
+            "lepidocrocite",
+            "malachite",
+            "mimetite",
+            "olivenite",
+            "plumbogummite",
+            "powellite",
+            "pyromorphite",
+            "raspite",
+            "scorodite",
+            "selenite",
+            "smithsonite",
+            "stolzite",
+            "vanadinite",
+            "wulfenite"
+          ],
+          "first_steps": {
+            "adamite": 1,
+            "anglesite": 1,
+            "annabergite": 95,
+            "aurichalcite": 33,
+            "azurite": 18,
+            "brochantite": 3,
+            "caledonite": 70,
+            "cerussite": 1,
+            "chalcocite": 55,
+            "conichalcite": 1,
+            "covellite": 55,
+            "cuprite": 55,
+            "descloizite": 134,
+            "duftite": 1,
+            "erythrite": 95,
+            "ferrimolybdite": 3,
+            "goethite": 1,
+            "jarosite": 16,
+            "lepidocrocite": 20,
+            "malachite": 1,
+            "mimetite": 1,
+            "olivenite": 72,
+            "plumbogummite": 115,
+            "powellite": 10,
+            "pyromorphite": 115,
+            "raspite": 37,
+            "scorodite": 5,
+            "selenite": 70,
+            "smithsonite": 13,
+            "stolzite": 3,
+            "vanadinite": 130,
+            "wulfenite": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "adamite",
+            "anglesite",
+            "annabergite",
+            "aurichalcite",
+            "azurite",
+            "brochantite",
+            "caledonite",
+            "cerussite",
+            "chalcocite",
+            "conichalcite",
+            "covellite",
+            "cuprite",
+            "descloizite",
+            "duftite",
+            "erythrite",
+            "ferrimolybdite",
+            "goethite",
+            "jarosite",
+            "lepidocrocite",
+            "malachite",
+            "mimetite",
+            "olivenite",
+            "plumbogummite",
+            "powellite",
+            "pyromorphite",
+            "raspite",
+            "scorodite",
+            "selenite",
+            "smithsonite",
+            "stolzite",
+            "vanadinite",
+            "wulfenite"
+          ],
+          "first_steps": {
+            "adamite": 1,
+            "anglesite": 1,
+            "annabergite": 95,
+            "aurichalcite": 24,
+            "azurite": 18,
+            "brochantite": 3,
+            "caledonite": 70,
+            "cerussite": 1,
+            "chalcocite": 55,
+            "conichalcite": 2,
+            "covellite": 55,
+            "cuprite": 55,
+            "descloizite": 139,
+            "duftite": 1,
+            "erythrite": 95,
+            "ferrimolybdite": 4,
+            "goethite": 1,
+            "jarosite": 5,
+            "lepidocrocite": 20,
+            "malachite": 1,
+            "mimetite": 1,
+            "olivenite": 75,
+            "plumbogummite": 115,
+            "powellite": 13,
+            "pyromorphite": 115,
+            "raspite": 84,
+            "scorodite": 8,
+            "selenite": 70,
+            "smithsonite": 13,
+            "stolzite": 2,
+            "vanadinite": 130,
+            "wulfenite": 1
+          }
+        }
+      ]
+    },
+    "tn457_barite_pulses": {
+      "locality_frequency_spec_hash": "21af727b043c2143114b7598db96bd7b89e5c319a62cfc4dc18a87af9387207e",
+      "duration_steps": 110,
+      "occurrences": {
+        "barite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 8,
+            "2": 7,
+            "42": 8
+          }
+        },
+        "sphalerite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "barite",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "barite": 8,
+            "sphalerite": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "barite",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "barite": 7,
+            "sphalerite": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "barite",
+            "sphalerite"
+          ],
+          "first_steps": {
+            "barite": 8,
+            "sphalerite": 1
+          }
+        }
+      ]
+    },
+    "tormiq_alpine_cleft": {
+      "locality_frequency_spec_hash": "8d43ba21158a4b85df1e6dce87e75a5df339ccdd5c2fe495900a090ca363c2fa",
+      "duration_steps": 200,
+      "occurrences": {
+        "actinolite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 110,
+            "2": 110,
+            "42": 110
+          }
+        },
+        "albite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "epidote": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "feldspar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 80,
+            "2": 96,
+            "42": 81
+          }
+        },
+        "titanite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "actinolite",
+            "albite",
+            "epidote",
+            "feldspar",
+            "quartz",
+            "titanite"
+          ],
+          "first_steps": {
+            "actinolite": 110,
+            "albite": 1,
+            "epidote": 1,
+            "feldspar": 1,
+            "quartz": 80,
+            "titanite": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "actinolite",
+            "albite",
+            "epidote",
+            "feldspar",
+            "quartz",
+            "titanite"
+          ],
+          "first_steps": {
+            "actinolite": 110,
+            "albite": 1,
+            "epidote": 1,
+            "feldspar": 1,
+            "quartz": 96,
+            "titanite": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "actinolite",
+            "albite",
+            "epidote",
+            "feldspar",
+            "quartz",
+            "titanite"
+          ],
+          "first_steps": {
+            "actinolite": 110,
+            "albite": 1,
+            "epidote": 1,
+            "feldspar": 1,
+            "quartz": 81,
+            "titanite": 1
+          }
+        }
+      ]
+    },
+    "tutorial_first_crystal": {
+      "locality_frequency_spec_hash": "58d57797871dea9c4de3848b71a20261a5e1f13b9c1fa9d7584897bd1643d36e",
+      "duration_steps": 30,
+      "occurrences": {
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "quartz"
+          ],
+          "first_steps": {
+            "quartz": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "quartz"
+          ],
+          "first_steps": {
+            "quartz": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "quartz"
+          ],
+          "first_steps": {
+            "quartz": 1
+          }
+        }
+      ]
+    },
+    "tutorial_mn_calcite": {
+      "locality_frequency_spec_hash": "8832e0bc82536b363bc2a29a36883e3c3d5a02f5b580208e1ec0e000bfe63eec",
+      "duration_steps": 30,
+      "occurrences": {
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "quartz": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "rhodochrosite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "siderite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "calcite",
+            "quartz",
+            "rhodochrosite",
+            "siderite"
+          ],
+          "first_steps": {
+            "calcite": 1,
+            "quartz": 1,
+            "rhodochrosite": 1,
+            "siderite": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "calcite",
+            "quartz",
+            "rhodochrosite",
+            "siderite"
+          ],
+          "first_steps": {
+            "calcite": 1,
+            "quartz": 1,
+            "rhodochrosite": 1,
+            "siderite": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "calcite",
+            "quartz",
+            "rhodochrosite",
+            "siderite"
+          ],
+          "first_steps": {
+            "calcite": 1,
+            "quartz": 1,
+            "rhodochrosite": 1,
+            "siderite": 1
+          }
+        }
+      ]
+    },
+    "tutorial_travertine": {
+      "locality_frequency_spec_hash": "3fd1c255a617033af487cfce1b115d9811f0d5108278352d05c8129c8dd290b7",
+      "duration_steps": 60,
+      "occurrences": {
+        "aragonite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 10,
+            "2": 10,
+            "42": 10
+          }
+        },
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "aragonite",
+            "calcite"
+          ],
+          "first_steps": {
+            "aragonite": 10,
+            "calcite": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "aragonite",
+            "calcite"
+          ],
+          "first_steps": {
+            "aragonite": 10,
+            "calcite": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "aragonite",
+            "calcite"
+          ],
+          "first_steps": {
+            "aragonite": 10,
+            "calcite": 1
+          }
+        }
+      ]
+    },
+    "ultramafic_supergene": {
+      "locality_frequency_spec_hash": "8f5f232d3da44f8d68f7cd4d475a8819ce0d15f79c92d770f5671f5830cff5d3",
+      "duration_steps": 200,
+      "occurrences": {
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 175,
+            "2": 175,
+            "42": 175
+          }
+        },
+        "chrysoprase": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 7,
+            "2": 18,
+            "42": 34
+          }
+        },
+        "dolomite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        },
+        "goethite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 130,
+            "2": 130,
+            "42": 130
+          }
+        },
+        "opal": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "calcite",
+            "chrysoprase",
+            "dolomite",
+            "goethite",
+            "opal"
+          ],
+          "first_steps": {
+            "calcite": 175,
+            "chrysoprase": 7,
+            "dolomite": 1,
+            "goethite": 130,
+            "opal": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "calcite",
+            "chrysoprase",
+            "dolomite",
+            "goethite",
+            "opal"
+          ],
+          "first_steps": {
+            "calcite": 175,
+            "chrysoprase": 18,
+            "dolomite": 1,
+            "goethite": 130,
+            "opal": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "calcite",
+            "chrysoprase",
+            "dolomite",
+            "goethite",
+            "opal"
+          ],
+          "first_steps": {
+            "calcite": 175,
+            "chrysoprase": 34,
+            "dolomite": 1,
+            "goethite": 130,
+            "opal": 1
+          }
+        }
+      ]
+    },
+    "wittichen": {
+      "locality_frequency_spec_hash": "a6c8339b78192969f186c9ef504ff35c1ddc4a23b5ad3acc9a2fcdd969114125",
+      "duration_steps": 220,
+      "occurrences": {
+        "acanthite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 135,
+            "2": 137,
+            "42": 141
+          }
+        },
+        "annabergite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 170,
+            "2": 170,
+            "42": 170
+          }
+        },
+        "aragonite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 171,
+            "2": 171,
+            "42": 171
+          }
+        },
+        "barite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 151,
+            "2": 134,
+            "42": 141
+          }
+        },
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 142,
+            "2": 142,
+            "42": 142
+          }
+        },
+        "chalcedony": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 170,
+            "2": 170,
+            "42": 170
+          }
+        },
+        "erythrite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 171,
+            "2": 171,
+            "42": 171
+          }
+        },
+        "haidingerite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 206,
+            "2": 201,
+            "42": 201
+          }
+        },
+        "native_arsenic": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 2,
+            "2": 1,
+            "42": 5
+          }
+        },
+        "native_bismuth": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 77,
+            "2": 77,
+            "42": 77
+          }
+        },
+        "native_silver": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 77,
+            "2": 70,
+            "42": 71
+          }
+        },
+        "nickeline": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 9,
+            "2": 4,
+            "42": 4
+          }
+        },
+        "pharmacolite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 177,
+            "2": 172,
+            "42": 172
+          }
+        },
+        "proustite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 134,
+            "2": 134,
+            "42": 134
+          }
+        },
+        "realgar": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 134,
+            "2": 134,
+            "42": 134
+          }
+        },
+        "safflorite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 35,
+            "2": 35,
+            "42": 35
+          }
+        },
+        "skutterudite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "acanthite",
+            "annabergite",
+            "aragonite",
+            "barite",
+            "calcite",
+            "chalcedony",
+            "erythrite",
+            "haidingerite",
+            "native_arsenic",
+            "native_bismuth",
+            "native_silver",
+            "nickeline",
+            "pharmacolite",
+            "proustite",
+            "realgar",
+            "safflorite",
+            "skutterudite"
+          ],
+          "first_steps": {
+            "acanthite": 135,
+            "annabergite": 170,
+            "aragonite": 171,
+            "barite": 151,
+            "calcite": 142,
+            "chalcedony": 170,
+            "erythrite": 171,
+            "haidingerite": 206,
+            "native_arsenic": 2,
+            "native_bismuth": 77,
+            "native_silver": 77,
+            "nickeline": 9,
+            "pharmacolite": 177,
+            "proustite": 134,
+            "realgar": 134,
+            "safflorite": 35,
+            "skutterudite": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "acanthite",
+            "annabergite",
+            "aragonite",
+            "barite",
+            "calcite",
+            "chalcedony",
+            "erythrite",
+            "haidingerite",
+            "native_arsenic",
+            "native_bismuth",
+            "native_silver",
+            "nickeline",
+            "pharmacolite",
+            "proustite",
+            "realgar",
+            "safflorite",
+            "skutterudite"
+          ],
+          "first_steps": {
+            "acanthite": 137,
+            "annabergite": 170,
+            "aragonite": 171,
+            "barite": 134,
+            "calcite": 142,
+            "chalcedony": 170,
+            "erythrite": 171,
+            "haidingerite": 201,
+            "native_arsenic": 1,
+            "native_bismuth": 77,
+            "native_silver": 70,
+            "nickeline": 4,
+            "pharmacolite": 172,
+            "proustite": 134,
+            "realgar": 134,
+            "safflorite": 35,
+            "skutterudite": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "acanthite",
+            "annabergite",
+            "aragonite",
+            "barite",
+            "calcite",
+            "chalcedony",
+            "erythrite",
+            "haidingerite",
+            "native_arsenic",
+            "native_bismuth",
+            "native_silver",
+            "nickeline",
+            "pharmacolite",
+            "proustite",
+            "realgar",
+            "safflorite",
+            "skutterudite"
+          ],
+          "first_steps": {
+            "acanthite": 141,
+            "annabergite": 170,
+            "aragonite": 171,
+            "barite": 141,
+            "calcite": 142,
+            "chalcedony": 170,
+            "erythrite": 171,
+            "haidingerite": 201,
+            "native_arsenic": 5,
+            "native_bismuth": 77,
+            "native_silver": 71,
+            "nickeline": 4,
+            "pharmacolite": 172,
+            "proustite": 134,
+            "realgar": 134,
+            "safflorite": 35,
+            "skutterudite": 1
+          }
+        }
+      ]
+    },
+    "zoned_dripstone_cave": {
+      "locality_frequency_spec_hash": "3cbd7ee21035f9198e98da60d84b98e22739ecf2cd06a70d5db68eb96e23d20d",
+      "duration_steps": 150,
+      "occurrences": {
+        "aragonite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 18,
+            "2": 14,
+            "42": 15
+          }
+        },
+        "calcite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 2,
+            "2": 20,
+            "42": 11
+          }
+        },
+        "dolomite": {
+          "count": 3,
+          "seeds": [
+            1,
+            2,
+            42
+          ],
+          "first_steps": {
+            "1": 1,
+            "2": 1,
+            "42": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "seed": 1,
+          "species": [
+            "aragonite",
+            "calcite",
+            "dolomite"
+          ],
+          "first_steps": {
+            "aragonite": 18,
+            "calcite": 2,
+            "dolomite": 1
+          }
+        },
+        {
+          "seed": 2,
+          "species": [
+            "aragonite",
+            "calcite",
+            "dolomite"
+          ],
+          "first_steps": {
+            "aragonite": 14,
+            "calcite": 20,
+            "dolomite": 1
+          }
+        },
+        {
+          "seed": 42,
+          "species": [
+            "aragonite",
+            "calcite",
+            "dolomite"
+          ],
+          "first_steps": {
+            "aragonite": 15,
+            "calcite": 11,
+            "dolomite": 1
+          }
+        }
+      ]
+    }
+  }
+}

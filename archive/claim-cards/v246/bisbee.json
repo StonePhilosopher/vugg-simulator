@@ -1,0 +1,484 @@
+{
+  "scenario": "bisbee",
+  "sim_version": 246,
+  "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-pressure+booked-transition+chemistry-competition-v4|surface-growth:mass-booked-area+lining+crust+asbestos+druse-representatives-v1|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "5e725d79305df3d921fced7f9913191263f2b2fda9a80a04d0410f346d081cd8",
+  "strip_steps": 340,
+  "claim": {
+    "anchor": "Bisbee, Arizona — Warren Mining District, Cochise County. Laramide quartz-monzonite porphyry intruding Paleozoic Escabrosa Limestone + Abrigo Formation. Major Cu-Ag-Au district (~8 Mt Cu, ~25 Moz Ag, ~3 Moz Au historically).",
+    "description": "Classic copper porphyry with world-class oxidation zone. Complete Cu paragenesis from primary sulfides through supergene enrichment to the cyan-blue chrysocolla finale. Centerpiece mechanic: azurite ↔ malachite ↔ chrysocolla cascade tracking pCO2 evolution.",
+    "expects_species": [
+      "chalcopyrite",
+      "malachite",
+      "azurite",
+      "chrysocolla",
+      "brochantite"
+    ],
+    "sources": [
+      "Graeme, Graeme & Graeme 2019 — modern Bisbee monograph",
+      "Bryant 1968 — Warren District geology",
+      "Crane 1911 — early Bisbee geology",
+      "Vink 1986 — azurite ↔ malachite pCO2 thermodynamics",
+      "Mote et al. 2001 — supergene chrysocolla geochemistry"
+    ],
+    "initial_temperature_C": 400,
+    "initial_pressure_kbar": 1,
+    "wall_architecture": "irregular",
+    "notes": [
+      "Anchor: Bisbee, Arizona — Warren Mining District, Cochise County. Host: combo Laramide quartz-monzonite porphyry intruded into Paleozoic Escabrosa Limestone + Abrigo Formation. In the sim this is represented as a limestone wall (the pH buffer, the CO3 source for azurite) with scenario events that inject dissolved SiO2 from the surrounding silicate matrix weathering — the supply path for late chrysocolla.",
+      "Centerpiece mechanic: the azurite → malachite → chrysocolla cascade. Azurite dominates at high pCO2 (event 6, CO3 >= 120 ppm). A pCO2-drop event (event 7) dissolves azurite and fires malachite. A silica-seep event (event 8) dissolves malachite-without-silica and fires chrysocolla pseudomorphs on the remaining azurite crystals. Three carbonate/silicate phases recording three different groundwater chemistries, each one freezing a different step of the Cochise County monsoon.",
+      "Chemistry-audit gap-fill pass (Apr 2026): Ag=40 (Bisbee was a major Ag producer ~25 Moz; argentiferous galena + tetrahedrite + argentite + minor native Ag per Graeme et al. 2019). Mg=50 (Escabrosa Limestone host dolomitic in places; brief-required non-zero baseline). P=5 (enables pyromorphite given Pb+Cl already populated). Sb=5 (tetrahedrite trace; completes the Sb-As-Bi greisen triplet). Au=3 (Bisbee ~3 Moz historically — Cu-Au porphyry; native gold + auriferous chalcocite per Graeme 2019).",
+      "Round 8c-1 additions (Apr 2026): Co=80, Ni=70 — Bisbee's deep primary sulfide assemblage includes minor Co/Ni-bearing sulfarsenide phases (cobaltite + nickeline + safflorite) per Graeme et al. 2019, citing Bryant 1968. Activates dormant Co/Ni pools for the new sulfarsenide engines and feeds the existing erythrite + annabergite supergene arsenates further down the cascade.",
+      "MINDAT VALID-SPECIES REFERENCE (boss-supplied screenshots, 2026-07-25 — COPPER QUEEN MINE, Bisbee; 56 valid, 2 TL: Chalcoalumite + Paramelaconite. NB the first capture attempt hit the WARREN TOWNSITE page — 6 species, no copper — the trap is recorded in the bridge: the sub-locality must be the ORE BODY, not the townsite): Alabandite, Allophane, Anglesite, Antigorite, Antlerite, Aragonite, Aurichalcite, Azurite, Bornite, Brochantite, Brucite, Calcite, Carbonatecyanotrichite, Chalcanthite, Chalcoalumite (TL), Chalcocite, Chalcopyrite, 'Chlorite Gp', Chrysocolla, 'Clinochrysotile', Connellite, Copiapite, Coquimbite, Cuprite (var. Chalcotrichite), Cyanotrichite, Delafossite, Felsőbányaite, Gibbsite, Goethite, Gypsum (var. SELENITE), Halloysite, Hoganite, Hydrobasaluminite, Kaolinite, Kornelite, 'Limonite', Magnetite, Malachite, Meionite, Muscovite (var. Sericite), Native Copper, Native Silver, Paramelaconite (TL), Paratacamite, Pyrite, Quartz, Rhomboclase, Rosasite, Römerite, Rozenite, Siderite, Spangolite, Sphalerite, Stevensite, Tenorite, Tremolite, Uraninite, Voltaite, Wollastonite. THE DESIGN QUESTION THIS LIST RAISES — SPATIAL GRAIN: the scenario anchors to the DISTRICT (Warren Mining District, Graeme et al. 2019 defenses in the notes above) but this list is ONE MINE. Several sim species unlisted at CQ are licensed elsewhere in the district or by Graeme — flags below mean 'not at Copper Queen', and the BOSS ADJUDICATES whether the scenario is CQ-grained or district-grained before anything dies. Verdicts vs seed-42 v236 (30 sim species): LICENSED ✓ 13: azurite, bornite, brochantite, chalcocite, chalcopyrite, chrysocolla, cuprite, goethite, malachite, native_copper, native_silver, pyrite, selenite (Gypsum var. — the selenite census's FIFTH yes/no: elmwood NO / picher YES / sweetwater NO / tsumeb YES / copper queen YES). FLAGS (unlisted at CQ): ATACAMITE ×4 @34 mm — CQ lists PARAtacamite, the polymorph twist (adjudicate: swap species or district-license?); COVELLITE ×4 (enrichment-blanket species; CQ is the oxide-zone-famous mine — plausibly licensed at other shafts); ACANTHITE ×4 (Native Silver listed, acanthite not — the discrete-Ag-species pattern's THIRD appearance after mvt-v195 + sweetwater); DIOPTASE ×4; MIMETITE ×2; ERYTHRITE ×3 + ANNABERGITE ×1 (the bloom pair AGAIN — Graeme-defended via Bryant 1968 in the note above, so literature-vs-list, not clean confabulation); TURQUOISE ×4 — famous 'Bisbee Blue' is LAVENDER PIT material, not CQ (the sharpest spatial-grain example on the sheet); NATIVE_GOLD ×4 (commodity list says Gold, species list lacks it — commodity ≠ species entry); HALITE ×4 (the rung-5 final_drying mechanic; no Bisbee halite record); OPAL ×5; albite/feldspar (host-rock, unlisted); arsenopyrite, marcasite, tennantite/tetrahedrite (0-growth dust). LICENSED-BUT-UNFIRED candidates: PARAMELACONITE (TL here — Cu oxide the sim lacks), chalcoalumite (TL) + the Al-sulfate suite (cyanotrichite/hydrobasaluminite), the post-mining Fe-sulfate efflorescence suite (copiapite/coquimbite/römerite/rozenite/voltaite/rhomboclase), spangolite, connellite, rosasite, aurichalcite, anglesite, tenorite, delafossite, SIDERITE (listed here + sim doesn't grow it at bisbee — the inverse of the MVT-family siderite flag: the Fe-carbonate story is per-locality, not a global over-fire), hoganite (natural Cu ACETATE — post-mining organics, a curiosity), uraninite."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-pressure+booked-transition+chemistry-competition-v4|surface-growth:mass-booked-area+lining+crust+asbestos+druse-representatives-v1|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 1,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 3.5915905399999994,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 72.7,
+          "initial_water_activity": {
+            "value": 0.983,
+            "salinityPpt": 30,
+            "naclWeightPercentEquivalent": 3,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 38,
+    "paragenetic_order": [
+      {
+        "mineral": "albite",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "argentite",
+        "first_step": 0,
+        "events": 4
+      },
+      {
+        "mineral": "chalcopyrite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "feldspar",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "pyrite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "tennantite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "tetrahedrite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "arsenopyrite",
+        "first_step": 3,
+        "events": 4
+      },
+      {
+        "mineral": "millerite",
+        "first_step": 3,
+        "events": 4
+      },
+      {
+        "mineral": "amosite",
+        "first_step": 38,
+        "events": 1
+      },
+      {
+        "mineral": "acanthite",
+        "first_step": 64,
+        "events": 1
+      },
+      {
+        "mineral": "chalcedony",
+        "first_step": 64,
+        "events": 4
+      },
+      {
+        "mineral": "chalcocite",
+        "first_step": 64,
+        "events": 5
+      },
+      {
+        "mineral": "covellite",
+        "first_step": 64,
+        "events": 4
+      },
+      {
+        "mineral": "galena",
+        "first_step": 64,
+        "events": 1
+      },
+      {
+        "mineral": "marcasite",
+        "first_step": 64,
+        "events": 1
+      },
+      {
+        "mineral": "realgar",
+        "first_step": 64,
+        "events": 1
+      },
+      {
+        "mineral": "siderite",
+        "first_step": 66,
+        "events": 2
+      },
+      {
+        "mineral": "chrysocolla",
+        "first_step": 71,
+        "events": 5
+      },
+      {
+        "mineral": "malachite",
+        "first_step": 71,
+        "events": 1
+      },
+      {
+        "mineral": "goethite",
+        "first_step": 72,
+        "events": 1
+      },
+      {
+        "mineral": "cuprite",
+        "first_step": 73,
+        "events": 1
+      },
+      {
+        "mineral": "hematite",
+        "first_step": 74,
+        "events": 1
+      },
+      {
+        "mineral": "opal",
+        "first_step": 77,
+        "events": 21
+      },
+      {
+        "mineral": "atacamite",
+        "first_step": 83,
+        "events": 4
+      },
+      {
+        "mineral": "brochantite",
+        "first_step": 83,
+        "events": 9
+      },
+      {
+        "mineral": "turquoise",
+        "first_step": 90,
+        "events": 4
+      },
+      {
+        "mineral": "bornite",
+        "first_step": 94,
+        "events": 3
+      },
+      {
+        "mineral": "native_gold",
+        "first_step": 119,
+        "events": 5
+      },
+      {
+        "mineral": "native_copper",
+        "first_step": 128,
+        "events": 1
+      },
+      {
+        "mineral": "native_silver",
+        "first_step": 131,
+        "events": 2
+      },
+      {
+        "mineral": "lepidocrocite",
+        "first_step": 155,
+        "events": 37
+      },
+      {
+        "mineral": "erythrite",
+        "first_step": 165,
+        "events": 29
+      },
+      {
+        "mineral": "azurite",
+        "first_step": 179,
+        "events": 4
+      },
+      {
+        "mineral": "annabergite",
+        "first_step": 188,
+        "events": 40
+      },
+      {
+        "mineral": "mimetite",
+        "first_step": 239,
+        "events": 3
+      },
+      {
+        "mineral": "dioptase",
+        "first_step": 264,
+        "events": 5
+      },
+      {
+        "mineral": "halite",
+        "first_step": 326,
+        "events": 2
+      }
+    ],
+    "surprises_not_in_expects": [
+      "albite",
+      "argentite",
+      "feldspar",
+      "pyrite",
+      "tennantite",
+      "tetrahedrite",
+      "arsenopyrite",
+      "millerite",
+      "amosite",
+      "acanthite",
+      "chalcedony",
+      "chalcocite",
+      "covellite",
+      "galena",
+      "marcasite",
+      "realgar",
+      "siderite",
+      "goethite",
+      "cuprite",
+      "hematite",
+      "opal",
+      "atacamite",
+      "turquoise",
+      "bornite",
+      "native_gold",
+      "native_copper",
+      "native_silver",
+      "lepidocrocite",
+      "erythrite",
+      "annabergite",
+      "mimetite",
+      "dioptase",
+      "halite"
+    ],
+    "expected_no_shows": [],
+    "environment": {
+      "T": {
+        "first": 398.622,
+        "last": 23.622,
+        "min": 23.622,
+        "max": 398.622,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 5.291,
+        "last": 6.504,
+        "min": 4.795,
+        "max": 7.386,
+        "units": ""
+      },
+      "Eh": {
+        "first": -149.606,
+        "last": 275.591,
+        "min": -187.402,
+        "max": 318.11,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 29.921,
+        "last": 150.394,
+        "min": 29.921,
+        "max": 150.394,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 0.039,
+        "last": 1.378,
+        "min": 0.039,
+        "max": 1.772,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 2.992,
+        "min": 0.984,
+        "max": 2.992,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -6.11,
+        "last": -2.399,
+        "min": -6.11,
+        "max": -0.252,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -6.173,
+        "last": -2.583,
+        "min": -6.173,
+        "max": -0.378,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -8,
+        "last": -4.787,
+        "min": -8,
+        "max": -0.386,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -7.748,
+        "last": -3.407,
+        "min": -7.748,
+        "max": -1.26,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": -2.457,
+        "last": 0.189,
+        "min": -2.457,
+        "max": 2.394,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -2.394,
+        "min": -8,
+        "max": -1.134,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -2.52,
+        "min": -8,
+        "max": -1.323,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 340,
+      "fluid_pressure_kbar": {
+        "first": 1,
+        "last": 1,
+        "min": 1,
+        "max": 1,
+        "samples": 340
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 340
+      },
+      "temperature_C": {
+        "first": 398.2608943547122,
+        "last": 25,
+        "min": 25,
+        "max": 398.2608943547122,
+        "samples": 340
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 3.5732160863219935,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 340
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 72.7
+        },
+        "last": {
+          "pure_water_boundary_C": 72.7
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

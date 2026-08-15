@@ -1,7 +1,10 @@
 // ============================================================
 // js/05-narratives.ts — Narrative-template loader
 // ============================================================
-// Frontmatter-aware Markdown loader for per-species narrators. Pre-fetches every entry of _NARRATIVE_MANIFEST in parallel; renderer code reads synchronously from _NARRATIVE_CACHE via narrative_blurb / narrative_closing / narrative_variant.
+// Frontmatter-aware Markdown loader for per-species narrators. Pre-fetches
+// every entry of the generated _NARRATIVE_MANIFEST in parallel; renderer code
+// reads synchronously from _NARRATIVE_CACHE via narrative_blurb,
+// narrative_closing, and narrative_variant.
 //
 // Phase B3 of PROPOSAL-MODULAR-REFACTOR. SCRIPT-mode TS (no import/export);
 // every top-level declaration is a global available to later modules.
@@ -10,21 +13,13 @@
 // ============================================================
 // NARRATIVE TEMPLATES — narratives/<species>.md
 // ============================================================
-// Mirrors the Python-side narrative loader. Per-species prose lives
-// in narratives/<species>.md as markdown files with frontmatter +
-// named variant sections. JS pre-fetches the files at startup;
-// narrator methods read synchronously from the cache.
-//
-// Phase 1 (this commit, 2026-04-30): chalcopyrite proof-of-concept.
-// Phase 2 (deferred): the remaining 88 species, after the design
-// proves out per
-// proposals/TASK-BRIEF-NARRATIVE-READABILITY.md (boss expansion).
+// Per-species prose lives in narratives/<species>.md as Markdown files with
+// frontmatter and named variant sections. tools/narrative-workflow.mjs derives
+// the manifest from data/minerals.json + the directory contents and rejects
+// missing sections or stale inline fallbacks before a build can ship.
 
 const _NARRATIVE_CACHE = {};
-// Phase-1 manifest — extend as more species migrate. When all 89 are
-// extracted the manifest can become a generated index file fetched
-// once at startup.
-const _NARRATIVE_MANIFEST = ['chalcopyrite', 'sphalerite', 'aurichalcite', 'dolomite', 'rosasite', 'azurite', 'calcite', 'aragonite', 'siderite', 'rhodochrosite', 'cerussite', 'smithsonite', 'malachite', 'pyrite', 'galena', 'marcasite', 'hematite', 'molybdenite', 'bornite', 'chalcocite', 'covellite', 'cuprite', 'native_copper', 'native_gold', 'native_silver', 'magnetite', 'lepidocrocite', 'goethite', 'barite', 'celestine', 'anhydrite', 'jarosite', 'alunite', 'brochantite', 'antlerite', 'chalcanthite', 'scorodite', 'ferrimolybdite', 'fluorite', 'pyromorphite', 'vanadinite', 'mimetite', 'descloizite', 'mottramite', 'selenite', 'adamite', 'olivenite', 'erythrite', 'annabergite', 'torbernite', 'zeunerite', 'carnotite', 'autunite', 'uranospinite', 'tyuyamunite', 'wulfenite', 'raspite', 'stolzite', 'beryl', 'emerald', 'aquamarine', 'morganite', 'heliodor', 'corundum', 'ruby', 'sapphire', 'albite', 'apophyllite', 'uraninite', 'anglesite', 'tetrahedrite', 'tennantite', 'nickeline', 'millerite', 'cobaltite', 'stibnite', 'arsenopyrite', 'bismuthinite', 'feldspar', 'native_bismuth', 'clinobisvanite', 'acanthite', 'argentite', 'native_tellurium', 'native_sulfur', 'native_arsenic', 'wurtzite', 'spodumene', 'chrysocolla', 'quartz', 'topaz', 'tourmaline', 'halite'];
+let NARRATIVES_READY = false;
 
 function _parseNarrative(text) {
   // Strip frontmatter (--- block at top).
@@ -57,17 +52,59 @@ async function _loadNarrative(species) {
       if (!r.ok) continue;
       const text = await r.text();
       _NARRATIVE_CACHE[species] = _parseNarrative(text);
-      return;
+      return { species, loaded: true, path: p };
     } catch (e) { /* try next */ }
   }
-  console.warn(`[narratives] ${species}.md fetch failed — narrator will fall back to inline string`);
+  console.error(`[narratives] ${species}.md fetch failed — canonical prose is unavailable`);
   _NARRATIVE_CACHE[species] = {};
+  return { species, loaded: false, path: null };
 }
 
-// Kick off all manifest fetches in parallel.
-Promise.all(_NARRATIVE_MANIFEST.map(_loadNarrative))
-  .then(() => console.info(`[narratives] loaded ${_NARRATIVE_MANIFEST.length} species`))
-  .catch(err => console.error(`[narratives] manifest load failed: ${err && err.message}`));
+// Kick off all manifest fetches in parallel and expose a deterministic,
+// fail-closed readiness receipt. Simulation entry points await this promise;
+// the VugSimulator constructor independently asserts readiness so a direct
+// programmatic caller cannot bypass the gate.
+const NARRATIVES_READY_PROMISE = Promise.all(_NARRATIVE_MANIFEST.map(_loadNarrative))
+  .then(results => {
+    const failed = results.filter(result => !result.loaded).map(result => result.species);
+    const receipt = Object.freeze({
+      expected: _NARRATIVE_MANIFEST.length,
+      loaded: results.length - failed.length,
+      failed: Object.freeze(failed),
+    });
+    if (failed.length) {
+      const error: any = new Error(
+        `[narratives] ${failed.length}/${results.length} canonical files failed: ${failed.join(', ')}`,
+      );
+      error.name = 'NarrativePreloadError';
+      error.receipt = receipt;
+      console.error(error.message);
+      throw error;
+    }
+    NARRATIVES_READY = true;
+    console.info(`[narratives] loaded ${results.length} species`);
+    return receipt;
+  });
+
+function narrativesReady() {
+  return NARRATIVES_READY;
+}
+
+async function waitForNarrativesReady() {
+  const receipt = await NARRATIVES_READY_PROMISE;
+  if (!NARRATIVES_READY) {
+    throw new Error('[narratives] canonical prose preload did not reach ready state');
+  }
+  return receipt;
+}
+
+function assertNarrativesReady() {
+  if (!NARRATIVES_READY) {
+    throw new Error(
+      '[narratives] simulation startup blocked until all canonical prose is available',
+    );
+  }
+}
 
 function _narrative_interp(template, ctx) {
   return template.replace(/\{(\w+)\}/g, (_, key) =>
@@ -76,7 +113,6 @@ function _narrative_interp(template, ctx) {
 }
 
 function narrative_blurb(species, ctx?) {
-  // Boss-design schema (2026-04-30): blurb may contain {key} placeholders.
   const sections = _NARRATIVE_CACHE[species];
   const template = sections && sections.blurb;
   if (!template) return '';
@@ -84,7 +120,6 @@ function narrative_blurb(species, ctx?) {
 }
 
 function narrative_closing(species, ctx?) {
-  // Boss-design schema (2026-04-30): `## closing` always emits at end.
   const sections = _NARRATIVE_CACHE[species];
   const template = sections && sections.closing;
   if (!template) return '';
@@ -98,4 +133,3 @@ function narrative_variant(species, variant, ctx?) {
   if (!template) return '';
   return _narrative_interp(template, ctx || {});
 }
-

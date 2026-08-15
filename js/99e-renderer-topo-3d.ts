@@ -7,7 +7,8 @@
 
 //     ambiguous when the disc is tilted.
 function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
-                             cx, cy, mmToPx, maxT, arcStep, N, viewW, viewH) {
+                             cx, cy, mmToPx, maxT, arcStep, N, viewW, viewH,
+                             appearanceReceipt = null) {
   const F = 1200;  // perspective focal length, matches tier-1's CSS perspective(1200px)
   const ringCount = wall.ring_count;
   // Spherical cavity profile (renderer-only for now — the engine's
@@ -59,43 +60,25 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
     paintItems.push({ kind: 'ring', meta, sortZ: meta.projZ });
   }
 
-  // v24 water line. If conditions.fluid_surface_ring is set, the
-  // meniscus sits at φ = π·s/ringCount along the polar axis. Build a
-  // 64-segment polyline tracing the cavity outline at that latitude,
-  // pre-projected to screen, and sort the disc as a single paint item
-  // at its centre's projected z. Polar profile + per-cell wall depth
-  // are folded in so the water line wobbles with the cavity shape.
+  // The canvas tier consumes the same authenticated Cartesian plane as
+  // chemistry and Three.js. Intersecting the actual WallMesh avoids inventing
+  // a spherical latitude from equivalent diameter on asymmetric cavities.
   let waterDisc = null;
-  if (sim && sim.conditions
-      && sim.conditions.fluid_surface_ring != null
-      && ringCount > 1) {
-    const s = sim.conditions.fluid_surface_ring;
-    const sClamped = Math.max(0, Math.min(ringCount, s));
-    const phiW = Math.PI * sClamped / ringCount;
-    const polarW = wall.polarProfileFactor ? wall.polarProfileFactor(phiW) : 1.0;
-    const rrfW = Math.sin(phiW) * polarW;
-    const wzW = -Math.cos(phiW) * sphereRadiusPx;
-    const twistW = wall.ringTwistRadians ? wall.ringTwistRadians(phiW) : 0.0;
-    // Sample N_W points around θ. Use the same per-cell base_radius
-    // ring0 carries — without per-ring radius variation in the engine
-    // this is the best the renderer has for "what shape is the cavity
-    // at this height". Wall_depth on ring0 also folds in.
-    const N_W = 64;
-    const pts = new Array(N_W);
-    for (let j = 0; j < N_W; j++) {
-      const theta = (2 * Math.PI * j) / N_W + twistW;
-      // Sample ring0's per-cell radius at the matching θ index.
-      const cellIdx = Math.floor((j / N_W) * N) % N;
-      const cell = ring0[cellIdx];
-      const baseR = cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
-      const rPx = (baseR + cell.wall_depth) * mmToPx * rrfW;
-      const wx = rPx * Math.cos(theta);
-      const wy = rPx * Math.sin(theta);
-      pts[j] = [wx, wy, wzW];
-    }
+  if (appearanceReceipt?.explicit_surface
+      && !appearanceReceipt.fully_submerged
+      && !appearanceReceipt.fully_drained) {
+    const surface = wall.meshFor?.(sim);
+    const planeY = Number(appearanceReceipt.water_plane_y_mm);
+    const rawSegments = CavityWaterAppearance.planeSegments(surface, planeY);
+    const segments = rawSegments.map((segment) => segment.map((point) => [
+      point[0] * mmToPx, point[2] * mmToPx, point[1] * mmToPx,
+    ]));
+    const wzW = planeY * mmToPx;
     const projZW = _topoProject3D(0, 0, wzW, _topoTiltX, _topoTiltY, F)[2];
-    waterDisc = { points: pts, sortZ: projZW };
-    paintItems.push({ kind: 'water', disc: waterDisc, sortZ: projZW });
+    waterDisc = { segments, sortZ: projZW };
+    if (segments.length) {
+      paintItems.push({ kind: 'water', disc: waterDisc, sortZ: projZW });
+    }
   }
   if (sim && sim.crystals) {
     for (const crystal of sim.crystals) {
@@ -104,8 +87,10 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
       // positional field; _resolveAnchor reads only from it.
       const _anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
       if (!_anchor) continue;
-      const ringIdx = _anchor.ringIdx;
-      const cellIdx = _anchor.cellIdx;
+      const address = wall.chemistryAddressForCrystal?.(crystal);
+      if (!address) continue;
+      const ringIdx = address.ringIdx;
+      const cellIdx = address.cellIdx;
       if (ringIdx == null || cellIdx == null) continue;
       const meta = ringMeta[ringIdx];
       if (!meta) continue;
@@ -173,7 +158,7 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
       ? sim.conditions.ringWaterState(ringIdx, ringCount)
       : 'submerged';
     const isSubmerged = wstate === 'submerged'
-      && sim && sim.conditions && sim.conditions.fluid_surface_ring != null;
+      && sim && sim.conditions && sim.conditions.fluid_surface_height_mm != null;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     for (let i = 0; i < N; i++) {
@@ -237,23 +222,19 @@ function _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR,
   // straddling the disc's z (single sortZ for the whole disc), but
   // reads correctly at typical tilt angles.
   function renderWaterDisc(disc) {
-    const proj = projAt(0); // wz baked into points already
-    const screen = disc.points.map(([wx, wy, wz]) => {
-      const [px, py] = _topoProject3D(wx, wy, wz, _topoTiltX, _topoTiltY, F);
-      return [cx + px, cy + py];
-    });
-    if (!screen.length) return;
-    ctx.beginPath();
-    ctx.moveTo(screen[0][0], screen[0][1]);
-    for (let j = 1; j < screen.length; j++) {
-      ctx.lineTo(screen[j][0], screen[j][1]);
-    }
-    ctx.closePath();
+    if (!disc.segments?.length) return;
     ctx.save();
-    ctx.fillStyle = 'rgba(86, 170, 240, 0.22)';
-    ctx.fill();
     ctx.strokeStyle = 'rgba(140, 220, 255, 0.95)';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.75;
+    ctx.beginPath();
+    for (const segment of disc.segments) {
+      const screen = segment.map(([wx, wy, wz]) => {
+        const [px, py] = _topoProject3D(wx, wy, wz, _topoTiltX, _topoTiltY, F);
+        return [cx + px, cy + py];
+      });
+      ctx.moveTo(screen[0][0], screen[0][1]);
+      ctx.lineTo(screen[1][0], screen[1][1]);
+    }
     ctx.stroke();
     ctx.restore();
   }
@@ -411,6 +392,8 @@ function _topoHitTest(ev) {
   // us pixel-accurate per-crystal hits across any orbit angle, free
   // of the inverse-projection math the canvas-vector path needs.
   if (typeof _topoUseThreeRenderer !== 'undefined' && _topoUseThreeRenderer
+      && (typeof _topoThreeRendererEffective !== 'function'
+        || _topoThreeRendererEffective())
       && typeof _topoHitTestThree === 'function') {
     return _topoHitTestThree(ev);
   }

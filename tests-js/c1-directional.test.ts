@@ -65,6 +65,27 @@ describe('O1a — _o1aBaseTipSigma null-safety (headless, no voxel grid)', () =>
     expect(_o1aBaseTipSigma(null, { mineral: 'calcite' })).toBeNull();
     expect(_o1aBaseTipSigma({ conditions: {} }, { mineral: 'calcite' })).toBeNull();
   });
+
+  it('uses each endpoint voxel temperature instead of one ring mean', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.mvt();
+    const sim = new VugSimulator(conditions, events);
+    const crystal = sim.nucleate('todorokite', 'vug wall', 2);
+    const anchor = crystal.wall_anchor;
+    const grid = sim.wall_state.voxelGridFor(sim);
+    for (const depth of [0, grid.depth_count - 1]) {
+      Object.assign(grid.fluidAt(anchor.ringIdx, anchor.cellIdx, depth), {
+        Mn: 8, Mg: 100, O2: 1.4, Eh: 200, pH: 8, Fe: 1, SiO2: 40,
+        Ba: 5, K: 10, Pb: 1, Na: 30, Ca: 30,
+      });
+    }
+    grid.voxelAt(anchor.ringIdx, anchor.cellIdx, 0).temperature = 25;
+    grid.voxelAt(anchor.ringIdx, anchor.cellIdx, grid.depth_count - 1).temperature = 155;
+    sim.ring_temperatures[anchor.ringIdx] = 25;
+    const sigma = _o1aBaseTipSigma(sim, crystal);
+    expect(sigma.s0).toBe(0);
+    expect(sigma.sD).toBeGreaterThan(1);
+  });
 });
 
 describe('O1b — neighbour shadow from the crowd', () => {

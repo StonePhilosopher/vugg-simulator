@@ -35,7 +35,7 @@
 //                              (calcite: Mg/T → scalenohedral).
 //
 // Basis rule (18th catch — the basis ports WITH the thresholds): the
-// pass runs at the END of run_step, AFTER growth + mass balance +
+// pass runs at the END of run_step, AFTER growth + growth budget +
 // diffusion, so zones are classified from the POST-STEP σ. The first
 // calcite draft classified inside grow_calcite from the IN-STEP
 // (pre-growth) σ; the --engine agreement check exposed 0% agreement on
@@ -168,6 +168,14 @@ MORPH_TH.calcite = {
   // over-steepened the dripstone family toward dendrite, against
   // ground truth.
   MG_BUNCH: 0.4,
+  // A vadose drip film is not a well-mixed cavity voxel. Its crystal surface
+  // is supplied through a thin, rapidly depleted moving film, so only a
+  // bounded fraction of the voxel-scale supersaturation excess reaches the
+  // interface morphology classifier. The 0.10 factor preserves the observed
+  // stepped stalactite regime while still allowing exceptional pulses to enter
+  // hopper/dendritic bands; it is a dimensionless transport calibration, not a
+  // claim about film thickness or SI mass-transfer rates.
+  AIR_FILM_EXCESS_FACTOR: 0.10,
   // C0 — the calcite σ lever (boss stone #1, SIM 217, 2026-07-06): sustained
   // textbook-Ω above this in SUBAQUEOUS growth → scalenohedral, independent of
   // Mg/T. DIRECTION from the literature: González, Carpenter & Lohmann 1992
@@ -195,6 +203,11 @@ MORPH_TH.calcite = {
   // KEEP THE THRESHOLDS IN SYNC with tools/calcite-morphology-map.mjs
   // (the transparent bench — its --engine mode cross-checks this table).
   sigma(conditions: any): number { return conditions.supersaturation_calcite(); },
+  environmentSigma(_conditions: any, crystal: any, sigma: number): number {
+    return crystal?.growth_environment === 'air'
+      ? 1 + (sigma - 1) * MORPH_TH.calcite.AIR_FILM_EXCESS_FACTOR
+      : sigma;
+  },
   effSigmaMult(conditions: any): number {
     const f = conditions.fluid;
     const mgRatio = (f.Mg || 0) / Math.max(1e-6, f.Ca || 0);
@@ -363,17 +376,19 @@ MORPH_TH.fluorite = {
 };
 
 // ---- pyrite — fifth tenant (striations ARE step bunching) ----
-// Survey: 6 scenarios, σ 1.2–3.84, CONTINUOUS within-scenario
-// distributions (unlike the halide plateaus) → pyrite crystals are
-// ZONED smooth↔striated as the fluid wanders. The striations on pyrite
+// SIM 244 accepted-ledger survey: Sunnyside is tightly grouped at 3.26;
+// MVT and Sulphur Bank retain much higher diffusion-limited rinds. Band
+// edges deliberately separate Sunnyside's coarse striations from those
+// truly skeletal high-driving-force end members.
+// The continuous within-crystal distributions make pyrite ZONED as the
+// fluid wanders. The striations on pyrite
 // faces ({100} and {210} both) are oscillatory combination-growth step
 // bunching — the literal physical phenomenon the stepped bands model
 // (Murowchick & Barnes 1987: T + saturation control pyrite morphology).
-// Claims: sunnyside/elmwood/reactive_wall (σ 1.2–1.5) smooth — small
-// early euhedra; mvt (p50 1.59, max 3.27) MIXED smooth↔striated;
-// reactivated vein (2.44–3.49) + sulphur_bank (2.47–3.84) striated→
-// coarse — vein and hot-spring pyrite is striated, the glassy
-// unstriated cube is the EXCEPTION in nature (Navajún's fame).
+// Claims: Sunnyside is the lower-instability, coarsely striated end-member and
+// never reaches skeletal/dendritic bands; MVT records a smooth core,
+// striated transition, and diffusion-limited rind; Sulphur Bank's
+// very-high-sigma history is dominated by unstable aggregate growth.
 // FORM is T-driven in grow_pyrite (>300 cube / 200–300 pyritohedron /
 // 100–200 combo / <100 framboidal-micro) — the form hook mirrors it;
 // the regime overlays 'striated_' onto the euhedral forms only.
@@ -382,9 +397,9 @@ MORPH_TH.pyrite = {
   SIZE_DAMP_CAP_UM: Infinity,
   SPIRAL_MAX: 1.6,       // < this → smooth euhedra (the Navajún glass)
   STEP_MILD_MAX: 2.4,    // fine striations
-  STEP_MACRO_MAX: 3.2,   // coarse striations / stepped composite faces
-  HOPPER_MAX: 4.2,       // skeletal pyrite (fleet max 3.84 — just unoccupied)
-  // ≥ 4.2 → dendritic (marcasite-territory crusts; unoccupied)
+  STEP_MACRO_MAX: 3.5,   // coarse striations / stepped composite faces
+  HOPPER_MAX: 4.2,       // skeletal transition
+  // ≥ 4.2 → dendritic/aggregate instability (MVT + Sulphur Bank rinds)
   sigma(conditions: any): number { return conditions.supersaturation_pyrite(); },
   form(conditions: any): string {
     const T = conditions.temperature;
@@ -397,16 +412,15 @@ MORPH_TH.pyrite = {
 
 // ---- native copper + native gold — sixth/seventh tenants (the
 // conflation sweep that closes the boss's list) ----
-// Copper (bisbee, the only home): σ rides the v186 −400 mV pulse —
-// measured ramp 1.0 → 2.09 (peak EXACTLY at the pulse center, step
-// 133) → 0; the crystal then dissolves in the azurite-era oxidation
-// (the Cornish trees survive as casts — grows-then-dies is the correct
-// geology, like schneeberg's bismuth). Bands on the measured ramp: the
-// σ ceiling IS the dendrite moment (the bismuth activity-ceiling
-// lesson). The legacy dispatch was ALREADY Sunagawa-ascending
+// Copper (bisbee, the only home): the low-S pulse gives a measured
+// ramp to σ=1.707 at step 133, then oxidation etches a 10 µm rim and a
+// later supergene host encloses the surviving metal core. The resulting
+// mostly wire/fine-stepped bands match modest driving force; higher
+// thresholds remain available to a future Keweenaw-style high-σ case.
+// The legacy dispatch was ALREADY Sunagawa-ascending
 // (crystal → wire → arborescent) except massive_sheet at top — a
 // fissure-fill aggregate TEXTURE (Keweenaw), not interface morphology,
-// and dead code at current calibration (needs σ>2.5; fleet max 2.09).
+// and dead code at current calibration.
 MORPH_TH.native_copper = {
   SIZE_HALF_UM: Infinity,
   SIZE_DAMP_CAP_UM: Infinity,
@@ -543,7 +557,8 @@ function _qzSumPositive(zones: any[], lo: number, hi: number): number {
 // the sim never grows a wide head; the classifier decides it. `route` records
 // which mechanism made the boundary ('corrosion' = resorbed surface, grimsel's
 // clean reference; 'masking' = a prism film frosted the sides and the tip renewed
-// wider — the ELO twin, mass-conserving).
+// wider — the non-corrosive ELO masking counterpart. capFrac is a render-driving
+// axial-length fraction, not a physical solid-mass or volume calculation).
 function _qzTagSceptre(c: any, zones: any[], capStart: number, boundaryStep: any,
                        stem: number, cap: number, route: string): void {
   const capFrac = cap / (stem + cap);
@@ -577,8 +592,10 @@ function classifyQuartzSceptre(sim: any) {
       // dominant masked_horizon (O5b breakthrough). A foreign film frosted the
       // prism faces (phi_prism > phi_term); the arrested crystal then renewed a
       // wider termination through the film — Takahashi & Sunagawa 2004's ELO,
-      // the mass-conserving twin of corrosion ("dusted and buried" vs "etched and
-      // healed"). The masked_horizon zone is POSITIVE growth (the first renewed
+      // the non-corrosive masking counterpart to corrosion ("dusted and buried"
+      // vs "etched and healed"). This classifier only tags the renderer; it does
+      // not calculate or claim conserved solid mass. The masked_horizon zone is
+      // POSITIVE growth (the first renewed
       // layer), so it is the BASE of the cap: stem before it, cap from it onward.
       // A termination / uniform film (phi_prism ≤ phi_term — EVERY coats_front
       // film today, js/85c) is NOT a sceptre: it is a buried horizon (the elmwood
@@ -598,16 +615,15 @@ function classifyQuartzSceptre(sim: any) {
 }
 
 // ---- Quartz gwindel — the alpine-fissure-EXCLUSIVE twisted column ----
-// A gwindel is a stack of subparallel quartz individuals progressively rotated
-// about the a-axis — a flattened, twisted lamellar column, essentially exclusive
-// to alpine-type tension fissures (the Swiss Central Alps / Grimsel / Furka are
-// the world type region). KEY: a gwindel is NOT distinguished from an ordinary
-// (or sceptre) cleft quartz by its FLUID history — all the crystals in one cleft
-// share the same fluid, so they all record the same seals/breaches. The gwindel's
-// distinction is CRYSTALLOGRAPHIC: a progressive a-axis TWIST that accumulates
-// over prolonged growth under the cleft's syn-growth tectonic shear (the D2/D3
-// rotating stress field). The sim has no shear FIELD, so — exactly as it treats
-// twinning — we designate the gwindel as a habit variant: the LARGEST, longest-
+// A gwindel is one quartz crystal with a continuous lattice twist about an
+// a-axis — a flattened, twisted column essentially exclusive to alpine-type
+// tension fissures (the Swiss Central Alps / Grimsel / Furka are the world type
+// region). KEY: it is NOT distinguished from an ordinary (or sceptre) cleft
+// quartz by its FLUID history — all crystals in one cleft share the same fluid
+// and record the same seals/breaches. Its distinction is CRYSTALLOGRAPHIC: a
+// growth-incorporated screw-dislocation structure, not stacked individuals or
+// tectonic shear deformation. The sim represents that growth structure as a
+// habit variant: the LARGEST, longest-
 // grown cleft showpiece (twist ∝ its growth duration), independent of and taking
 // render precedence over its crack-seal sceptre record. PURE tagging; runs AFTER
 // the sceptre pass. A Grimsel cleft thus shows a twisted gwindel showpiece beside
@@ -667,40 +683,16 @@ function classifyDeformation(sim: any) {
   }
 }
 
-// POST-GROWTH ETCH overprint (crystal-face-realism arc §2, 2026-06-22) — the etched/
-// dissolved habit (rounded edges + corners, frosted faces, in the limit a negative
-// crystal; Sangwal 1987 Etching of Crystals) is imposed on a FINISHED crystal by a
-// later UNDERSATURATED fluid — the same post-growth-overprint shape as deformation, not
-// a grow-integrate field. WHY declarative and not a passive read of existing resorption:
-// the etch-pit-probe census (tools/etch-pit-probe.mjs) found the engine's dissolution
-// is BINARY — a crystal either survives ~intact (resorbed frac ~0.00) or fully
-// dissolves and DROPS from the scene (js/99i: dissolved crystals aren't rendered) — so
-// there is NO population of substantially-etched survivors to read. The etched look is
-// therefore declared as an overprint: a scenario event carries an `etch` directive
-// {amount,minerals,style}; apply_events (js/85d) records it on sim._etchEvents WITH the
-// step it fired; this pass (post-growth, like classifyDeformation) tags surviving
-// crystals that had ALREADY grown by that step. PURE tagging — crystal._etch is a RENDER
-// tag; the engine baseline is untouched (gen-baseline serialises only counts/sizes), so
-// this is byte-identical. Tag-once (idempotent). Geologically: reactivated veins corrode
-// their early generation when a cooler fresh fluid reopens the conduit.
-const ETCH_MIN_UM = 100;   // skip nucleation-only specks — need a body to round
+// PHYSICAL ETCH surface classifier (SIM 253). Accepted negative zones and
+// crystal.etch_history are the source of truth. `_etch` is now only a derived
+// render cache: positive regrowth progressively heals the exposed pits while
+// the negative zone and phantom boundary remain permanently inspectable.
 function classifyEtch(sim: any) {
-  const evs = sim._etchEvents;
-  if (!evs || !evs.length) return;
-  for (const ev of evs) {
-    const mins = (ev && ev.minerals) || null;
-    const style = (ev && ev.style) || 'rounded';
-    const amount = (ev && typeof ev.amount === 'number') ? ev.amount : 0.5;
-    for (const c of sim.crystals) {
-      if (!c || c.dissolved || c._etch) continue;
-      if (mins && mins.indexOf(c.mineral) < 0) continue;
-      if ((c.total_growth_um || 0) < ETCH_MIN_UM) continue;
-      // must have existed (grown) BEFORE the etching fluid returned
-      let firstStep: any = null;
-      for (const z of (c.zones || [])) { if ((z.thickness_um || 0) > 0) { firstStep = z.step; break; } }
-      if (firstStep == null || firstStep >= ev.step) continue;
-      c._etch = { kind: style, amount, atStep: ev.step };
-    }
+  for (const crystal of (sim?.crystals || [])) {
+    if (!crystal) continue;
+    const exposed = physicalEtchVisualStateAtStep(crystal);
+    if (exposed) crystal._etch = exposed;
+    else delete crystal._etch;
   }
 }
 
@@ -1123,21 +1115,280 @@ function _o1aBaseTipSigma(sim: any, crystal: any): any {
   if (!grid) return null;
   const anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
   if (!anchor) return null;
+  const chemistry = wall.chemistryAddressForCrystal?.(crystal);
+  if (!chemistry) return null;
   const maxD = grid.depth_count - 1;
   if (maxD < 1) return null;
-  const f0 = grid.fluidAt(anchor.ringIdx, anchor.cellIdx, 0);
-  const fD = grid.fluidAt(anchor.ringIdx, anchor.cellIdx, maxD);
+  const f0 = grid.fluidAt(chemistry.ringIdx, chemistry.cellIdx, 0);
+  const fD = grid.fluidAt(chemistry.ringIdx, chemistry.cellIdx, maxD);
   if (!f0 || !fD || f0 === fD) return null;
-  const rt = sim.ring_temperatures || [];
-  const temp = (anchor.ringIdx >= 0 && anchor.ringIdx < rt.length) ? rt[anchor.ringIdx] : cond.temperature;
   const savedF = cond.fluid, savedT = cond.temperature;
-  cond.temperature = temp;
   let s0 = NaN, sD = NaN;
-  cond.fluid = f0; try { s0 = fn.call(cond); } catch { s0 = NaN; }
-  cond.fluid = fD; try { sD = fn.call(cond); } catch { sD = NaN; }
-  cond.fluid = savedF; cond.temperature = savedT;
+  try {
+    cond.fluid = f0;
+    cond.temperature = grid.temperatureAt(chemistry.ringIdx, chemistry.cellIdx, 0);
+    try { s0 = fn.call(cond); } catch { s0 = NaN; }
+    cond.fluid = fD;
+    cond.temperature = grid.temperatureAt(chemistry.ringIdx, chemistry.cellIdx, maxD);
+    try { sD = fn.call(cond); } catch { sD = NaN; }
+  } finally {
+    cond.fluid = savedF;
+    cond.temperature = savedT;
+  }
   if (!Number.isFinite(s0) || !Number.isFinite(sD)) return null;
   return { s0, sD };
+}
+
+// AREA-COVERING SURFACE GROWTH (SIM 246, 2026-08-06)
+// ----------------------------------------------------
+// One Crystal record can represent an aggregate made of millions of sub-visible
+// crystallites. Treating that record as one museum-scale free crystal is especially
+// misleading for wall-lining chalcedony, botryoidal/earthy crusts, asbestos mats and
+// quartz/calcite druse. This classifier records the aggregate's areal geometry while
+// leaving its accepted-zone inventory authoritative:
+//
+//   booked_volume_mm3 = Crystal._volume_mm3 (never multiplied by render instances)
+//   covered_area_mm2  = cavity area x coverage_fraction
+//   mean_thickness_um = booked volume / covered area
+//
+// The Three.js renderer consumes this record as representative instancing. It may use
+// a visibility floor for sub-pixel grains, but the record makes the physical thickness
+// and the display-only nature of those representatives auditable. No fluid, growth,
+// volume or RNG state is mutated here.
+//
+// Scientific boundaries:
+//   * wall-lining chalcedony is a radially fibrous lining, not a quartz point;
+//   * botryoidal/earthy habits are coalesced crusts;
+//   * the six commercial asbestos minerals form fibrous mats only when the persisted
+//     habit is actually fibrous/asbestiform;
+//   * a quartz/calcite carpet requires the coating vector selected at nucleation -- a
+//     large projecting prism/rhomb is never relabelled "druse" after the fact;
+//   * pyrolusite is never given a dendritic film. Potter & Rossman (1979) showed the
+//     familiar Mn-oxide dendrites/coatings are commonly birnessite/romanechite-family
+//     material, not pyrolusite. Only its own massive-sooty/botryoidal habits qualify.
+const SURFACE_GROWTH_ASBESTOS = new Set([
+  'chrysotile', 'tremolite', 'actinolite', 'anthophyllite', 'amosite', 'crocidolite',
+]);
+
+// "Massive" alone is not an areal fabric: a massive aggregate can still be a
+// compact projecting body.  Banded non-silica aggregates (notably malachite)
+// are crusts, while laminated linings are reserved for chalcedony/agate and an
+// explicitly authored wall-lining habit.
+const SURFACE_GROWTH_CRUST_HABIT = /botryoid|mammillary|reniform|colloform|crust|coat|encrust|earthy|sooty|ochre|banded|sinter|film|blanket/i;
+const SURFACE_GROWTH_LINING_HABIT = /chalcedony|agate|wall.?lining/i;
+const SURFACE_GROWTH_DRUSE_HABIT = /drus|druz/i;
+const SURFACE_GROWTH_MN_FAMILY = new Set(['birnessite', 'romanechite', 'todorokite']);
+
+function surfaceGrowthRegimeFor(crystal: any): string | null {
+  if (!crystal || crystal.dissolved || !(crystal.total_growth_um > 0)) return null;
+  const mineral = String(crystal.mineral || '').toLowerCase();
+  const habit = String(crystal.habit || '').toLowerCase();
+  const vector = String(crystal.vector || '').toLowerCase();
+
+  if (SURFACE_GROWTH_ASBESTOS.has(mineral) && /fibrous|asbestiform/.test(habit)) {
+    return 'fibrous_mat';
+  }
+  if (SURFACE_GROWTH_MN_FAMILY.has(mineral) && /dendrit|arborescent/.test(habit)) {
+    return 'dendritic_film';
+  }
+  if (mineral === 'todorokite' && /fibrous|felted/.test(habit)) {
+    return 'fibrous_mat';
+  }
+  if (mineral === 'chalcedony' || SURFACE_GROWTH_LINING_HABIT.test(habit)) {
+    return 'laminated_lining';
+  }
+  // Calcite's production catalog distinguishes botryoidal/travertine crusts
+  // from druzy_crust.  Test the authored habit before the generic coating
+  // vector so an areal nucleation vector cannot turn a travertine rind into
+  // an invented carpet of euhedral rhombs.
+  if (mineral === 'calcite') {
+    if (SURFACE_GROWTH_DRUSE_HABIT.test(habit)) return 'euhedral_druse';
+    if (SURFACE_GROWTH_CRUST_HABIT.test(habit) || vector === 'coating') {
+      return 'botryoidal_crust';
+    }
+    return null;
+  }
+  if (mineral === 'quartz'
+      && (vector === 'coating' || SURFACE_GROWTH_DRUSE_HABIT.test(habit))) {
+    return 'euhedral_druse';
+  }
+  if (vector === 'coating' && SURFACE_GROWTH_DRUSE_HABIT.test(habit)) {
+    return 'euhedral_druse';
+  }
+  if (mineral === 'pyrolusite') {
+    return /massive_sooty|botryoidal_reniform/.test(habit)
+      ? 'botryoidal_crust'
+      : null;
+  }
+  if (vector === 'coating' || SURFACE_GROWTH_CRUST_HABIT.test(habit)) {
+    return 'botryoidal_crust';
+  }
+  return null;
+}
+
+function surfaceGrowthDescriptor(crystal: any, wall: any, sim?: any): any | null {
+  const regime = surfaceGrowthRegimeFor(crystal);
+  if (!regime) return null;
+  const spread = Math.max(0.02, Math.min(0.99, Number(crystal.wall_spread) || 0.5));
+  // Aggregate fabrics establish lateral continuity early. Maturity controls
+  // completion of the target footprint, not a fictitious linear radius.
+  const maturityScaleUm = regime === 'laminated_lining' ? 75
+    : regime === 'dendritic_film' ? 110
+    : regime === 'fibrous_mat' ? 180
+    : regime === 'euhedral_druse' ? 350 : 250;
+  const maturity = 1 - Math.exp(-Math.max(0, crystal.total_growth_um) / maturityScaleUm);
+  let coverage = spread * (0.28 + 0.72 * maturity);
+  // Asbestos "mat" is an areal fabric by definition. Chrysotile's older fibrous
+  // catalog row used wall_spread=0.55 because it pre-dated a surface renderer;
+  // keep that honest without rewriting its chemistry or axial volume.
+  if (regime === 'fibrous_mat') coverage = Math.max(coverage, 0.65 * maturity);
+  if (regime === 'dendritic_film') coverage = Math.max(coverage, 0.72 * maturity);
+  coverage = Math.max(0.02, Math.min(0.98, coverage));
+
+  const exactArea = wall && typeof wall.surfaceAreaForCrystal === 'function'
+    ? Number(wall.surfaceAreaForCrystal(crystal, sim))
+    : (wall && typeof wall.surfaceAreaMm2 === 'function' ? Number(wall.surfaceAreaMm2(sim)) : 0);
+  const diameter = wall && typeof wall.meanDiameterMm === 'function'
+    ? wall.meanDiameterMm()
+    : Number(wall && wall.vug_diameter_mm) || Number(crystal.vug_diameter_mm) || 50;
+  const radius = Math.max(0.5, diameter / 2);
+  const cavityArea = exactArea > 0 ? exactArea : 4 * Math.PI * radius * radius;
+  const coveredArea = Math.max(1e-9, cavityArea * coverage);
+  const bookedVolume = Math.max(0, Number(crystal._volume_mm3) || 0);
+  const meanThicknessUm = bookedVolume / coveredArea * 1000;
+
+  return {
+    regime,
+    coverage_fraction: coverage,
+    cavity_area_mm2: cavityArea,
+    covered_area_mm2: coveredArea,
+    mean_thickness_um: meanThicknessUm,
+    booked_volume_mm3: bookedVolume,
+    wall_spread: spread,
+    void_reach: Math.max(0, Math.min(1, Number(crystal.void_reach) || 0)),
+    substrate: crystal.position || 'vug wall',
+    area_basis: exactArea > 0
+      ? (wall?._resolveAnchor?.(crystal)?.source?.kind === 'cavity-field'
+        ? 'exact cavity-field triangle area' : 'exact WallMesh triangle area')
+      : 'mean-diameter spherical fallback',
+    mass_basis: 'accepted Crystal._volume_mm3; renderer instances are representative only',
+  };
+}
+
+function classifySurfaceGrowth(sim: any) {
+  const wall = sim && sim.wall_state;
+  if (!sim || !sim.crystals) return;
+  const eligible: any[] = [];
+  for (const c of sim.crystals) {
+    if (!c) continue;
+    const desc = surfaceGrowthDescriptor(c, wall, sim);
+    if (desc) {
+      desc.at_step = sim.step;
+      c._surfaceGrowth = desc;
+      eligible.push(c);
+    } else if (c._surfaceGrowth) {
+      delete c._surfaceGrowth;
+    }
+  }
+  // Preserve spatial paragenesis as explicit model evidence. A later layer
+  // lists only earlier surface fabrics whose connected physical-surface
+  // footprints overlap. Position + source triangle choose the component and
+  // patch; origin-radial direction is not surface identity.
+  eligible.sort((a, b) => (Number(a.nucleation_step) - Number(b.nucleation_step))
+    || (Number(a.crystal_id) - Number(b.crystal_id)));
+  const prior: any[] = [];
+  for (let i = 0; i < eligible.length; i++) {
+    const c = eligible[i];
+    const desc = c._surfaceGrowth;
+    const dir = wall && typeof wall.surfaceNormalForCrystal === 'function'
+      ? wall.surfaceNormalForCrystal(c) : [0, 1, 0];
+    const radius = Math.acos(Math.max(-1, Math.min(1, 1 - 2 * desc.coverage_fraction)));
+    const exactPatch = wall
+      && typeof wall.surfacePatchIndexReceiptForCrystal === 'function'
+      ? wall.surfacePatchIndexReceiptForCrystal(c, desc.coverage_fraction, sim)
+      : wall && typeof wall.surfacePatchForCrystal === 'function'
+        ? wall.surfacePatchForCrystal(c, desc.coverage_fraction, sim) : null;
+    const exactTriangleIndices = exactPatch && Array.isArray(exactPatch.triangle_indices)
+      ? exactPatch.triangle_indices
+      : exactPatch && Array.isArray(exactPatch.triangles)
+        ? exactPatch.triangles.map((triangle: any) => triangle.triangle_index)
+        : null;
+    let exactTriangleBitset: Uint32Array | null = null;
+    if (exactTriangleIndices) {
+      let triangleCount = Number(exactPatch.triangle_capacity) || 0;
+      if (!(triangleCount > 0)) for (const triangleIndex of exactTriangleIndices) {
+        triangleCount = Math.max(triangleCount, Number(triangleIndex) + 1);
+      }
+      exactTriangleBitset = new Uint32Array(Math.ceil(triangleCount / 32));
+      for (const triangleIndex of exactTriangleIndices) {
+        exactTriangleBitset[triangleIndex >>> 5] |= (1 << (triangleIndex & 31)) >>> 0;
+      }
+    }
+    const underlying: number[] = [];
+    for (const p of prior) {
+      if (exactTriangleIndices && exactTriangleBitset
+          && p.exactTriangleIndices && p.exactTriangleBitset
+          && exactPatch.source_signature === p.sourceSignature) {
+        const words = Math.min(exactTriangleBitset.length, p.exactTriangleBitset.length);
+        let sharesTriangle = false;
+        for (let word = 0; word < words; word++) {
+          if ((exactTriangleBitset[word] & p.exactTriangleBitset[word]) !== 0) {
+            sharesTriangle = true;
+            break;
+          }
+        }
+        if (sharesTriangle) underlying.push(p.crystal.crystal_id);
+      } else {
+        const dot = dir[0] * p.dir[0] + dir[1] * p.dir[1] + dir[2] * p.dir[2];
+        const distance = Math.acos(Math.max(-1, Math.min(1, dot)));
+        if (distance <= radius + p.radius) underlying.push(p.crystal.crystal_id);
+      }
+    }
+    desc.stratigraphic_index = i;
+    desc.nucleation_step = Number(c.nucleation_step) || 0;
+    desc.underlying_surface_crystal_ids = underlying;
+    desc.stratigraphy_basis = exactTriangleIndices
+      ? 'exact shared authenticated-surface triangles'
+      : 'spherical-cap fallback';
+    prior.push({
+      crystal: c, dir, radius,
+      sourceSignature: exactPatch?.source_signature,
+      exactTriangleIndices,
+      exactTriangleBitset,
+    });
+  }
+}
+
+function _wulffLocalChemistry(sim: any, crystal: any): any {
+  const conditions = sim?.conditions;
+  if (!conditions) return null;
+  const wall = sim.wall_state;
+  const anchor = wall?._resolveAnchor?.(crystal);
+  const mesh = wall?.meshFor?.(sim);
+  const vertexIdx = anchor ? wall.chemistryVertexForCrystal?.(crystal) : -1;
+  return {
+    fluid: vertexIdx >= 0 ? (mesh?.cells?.[vertexIdx]?.fluid || conditions.fluid) : conditions.fluid,
+    temperatureC: vertexIdx >= 0
+      ? temperatureAtMeshVertex(sim, mesh, vertexIdx) : conditions.temperature,
+  };
+}
+
+function _wulffSigmaAtLocalChemistry(sim: any, mineral: string, local: any): number {
+  const conditions = sim?.conditions;
+  const fn = conditions?.[`supersaturation_${mineral}`];
+  if (!conditions || typeof fn !== 'function' || !local?.fluid) return NaN;
+  const savedFluid = conditions.fluid, savedTemp = conditions.temperature;
+  try {
+    conditions.fluid = local.fluid;
+    conditions.temperature = local.temperatureC;
+    const sigma = Number(fn.call(conditions));
+    return Number.isFinite(sigma) ? sigma : NaN;
+  } catch (_e) {
+    return NaN;
+  } finally {
+    conditions.fluid = savedFluid;
+    conditions.temperature = savedTemp;
+  }
 }
 
 function classifyWulffForm(sim: any) {
@@ -1150,6 +1401,7 @@ function classifyWulffForm(sim: any) {
   for (const c of sim.crystals) {
     if (!c || c.dissolved) continue;
     const m = c.mineral;
+    const localChemistry = _wulffLocalChemistry(sim, c);
     // rung 4a.7 — wulfenite Pb:Mo growth integral. Accumulated BEFORE the size/tag gates so the
     // sub-30µm nucleus growth is in ⟨r⟩ from zone one, and RE-derived for already-tagged crystals
     // so the form keeps integrating its water history (js/99i re-reads biasC + growthFrac through
@@ -1159,7 +1411,7 @@ function classifyWulffForm(sim: any) {
     // wulfenite first; rung 4a.8 moved that to the shared tagged-crystal site below, fleet-wide.)
     if (m === 'wulfenite' && wulfeniteOn) {
       const z = c.zones && c.zones.length ? c.zones[c.zones.length - 1] : null;
-      const f = sim.conditions.fluid;
+      const f = localChemistry?.fluid || sim.conditions.fluid;
       if (z && z.step === sim.step && z.thickness_um > 0 && f && f.Mo > 0) {
         const r = (f.Pb / WULFENITE_PBMO.M_PB) / (f.Mo / WULFENITE_PBMO.M_MO);   // molar Pb:MoO4
         const acc = c._wulffPbMo || (c._wulffPbMo = { rG: 0, G: 0 });
@@ -1168,18 +1420,17 @@ function classifyWulffForm(sim: any) {
       }
     }
     // C0 (SIM 217): calcite joins as the second chemically-exact tenant — a
-    // growth-weighted Ω integral (post-step bulk σ, the 18th-catch basis this
-    // classifier already runs on), PLUS molar Ca:CO₃ recorded-but-unconsumed
+    // growth-weighted Ω integral at the crystal's boundary cell, PLUS molar
+    // Ca:CO₃ recorded-but-unconsumed
     // (the B5-era lever, pre-registered — the probe showed sim-r carries no
     // genre signal yet). READ-only on fluid, no RNG → byte-identical baselines;
     // the biasC map (wulffCalciteOmegaBias) consumes Ω̄ live, so the tooth
     // steepens as hot supersaturated water keeps feeding it.
     if (m === 'calcite' && calciteOn) {
       const z = c.zones && c.zones.length ? c.zones[c.zones.length - 1] : null;
-      const f = sim.conditions.fluid;
+      const f = localChemistry?.fluid || sim.conditions.fluid;
       if (z && z.step === sim.step && z.thickness_um > 0 && f) {
-        let om = NaN;
-        try { om = sim.conditions.supersaturation_calcite(); } catch { om = NaN; }
+        const om = _wulffSigmaAtLocalChemistry(sim, 'calcite', localChemistry);
         if (Number.isFinite(om)) {
           const acc = c._wulffCalInt || (c._wulffCalInt = { oG: 0, rG: 0, rW: 0, G: 0 });
           acc.oG += om * z.thickness_um; acc.G += z.thickness_um;
@@ -1317,19 +1568,40 @@ function classifyWulffForm(sim: any) {
 function classifyMorphologyStep(sim: any) {
   for (const mineral in MORPH_TH) {
     const th = MORPH_TH[mineral];
-    let sigma;
-    try { sigma = th.sigma(sim.conditions); } catch (_e) { continue; }
-    if (!isFinite(sigma) || sigma < 1.0) continue;
-    const mult = th.effSigmaMult ? th.effSigmaMult(sim.conditions) : 1;
-    // C0: a tenant may declare formPerCrystal — its form hook then re-evaluates
-    // per crystal (calcite: the subaqueous gate reads growth_environment).
-    // Everyone else keeps the once-per-mineral evaluation.
-    const form0 = (th.form && !th.formPerCrystal) ? th.form(sim.conditions) : null;
+    // Every growing crystal is evaluated at its own boundary cell. Form hooks
+    // run in that same local chemistry/temperature context.
     for (const c of sim.crystals) {
       if (!c || c.mineral !== mineral || c.dissolved) continue;
       const z = c.zones.length ? c.zones[c.zones.length - 1] : null;
       if (!z || z.step !== sim.step || z.thickness_um <= 0) continue;
-      const form = th.formPerCrystal && th.form ? th.form(sim.conditions, c) : form0;
+      const anchor = sim.wall_state?._resolveAnchor?.(c);
+      const mesh = sim.wall_state?.meshFor?.(sim);
+      const vertexIdx = anchor
+        ? sim.wall_state.chemistryVertexForCrystal?.(c) : -1;
+      const localFluid = vertexIdx >= 0 ? mesh?.cells?.[vertexIdx]?.fluid : null;
+      const savedFluid = sim.conditions.fluid;
+      const savedTemp = sim.conditions.temperature;
+      let sigma = NaN, mult = 1, form = null;
+      try {
+        if (localFluid) sim.conditions.fluid = localFluid;
+        if (vertexIdx >= 0) {
+          sim.conditions.temperature = temperatureAtMeshVertex(sim, mesh, vertexIdx);
+        }
+        sigma = th.sigma(sim.conditions);
+        if (isFinite(sigma) && th.environmentSigma) {
+          sigma = th.environmentSigma(sim.conditions, c, sigma);
+        }
+        if (isFinite(sigma) && sigma >= 1.0) {
+          mult = th.effSigmaMult ? th.effSigmaMult(sim.conditions) : 1;
+          form = th.form ? th.form(sim.conditions, c) : null;
+        }
+      } catch (_e) {
+        sigma = NaN;
+      } finally {
+        sim.conditions.fluid = savedFluid;
+        sim.conditions.temperature = savedTemp;
+      }
+      if (!isFinite(sigma) || sigma < 1.0) continue;
       // Size BEFORE this zone — the map tool's sizeAcc semantics.
       const sizeBefore = Math.max(0, c.total_growth_um - z.thickness_um);
       const surf = morphSurfaceSigma(th, sigma, sizeBefore) * mult;

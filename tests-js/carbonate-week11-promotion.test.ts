@@ -13,9 +13,10 @@
 //   - HMC is in MINERAL_ENGINES + MINERAL_GATES_REGISTRY
 //   - HMC flag is on; supersaturation_HMC returns omega from SI engine
 //   - PWP rate via HMCRate (with Davis 2000 Mg-poisoning baked in)
-//   - Per-crystal mg_content state is set at nucleation from fluid Mg/Ca
-//   - HMC fires in Mg-rich scenarios (sabkha, cave, ultramafic supergene)
-//   - HMC does NOT fire in low-Mg scenarios (calcite-only territory)
+//   - Per-zone Mg composition is set from molar fluid Mg/Ca and D_Mg(T)
+//   - HMC can fire only inside the measured standard-seawater or high-ratio
+//     parent-fluid domains; cave, ultramafic, and evaporative-brine gaps are
+//     explicitly unresolved rather than interpreted as presence/absence
 //
 // References (verified during W11 prep):
 //   - Bischoff, Mackenzie & Bishop 1987 GCA 51:1413 (solubility scaling)
@@ -39,6 +40,7 @@ declare const carbonateOmega: (m: string, f: any, T: number, mg_content?: number
 declare const carbonateSaturationIndex: (m: string, f: any, T: number, mg_content?: number) => number;
 declare const HMCRate: (f: any, T: number, mg_content: number) => number;
 declare const pwpRateToSimMicronsPerStep: (m: string, mol: number) => number;
+declare const hmcCompositionFromFluid: (fluid: any, T: number) => any;
 
 describe('PROPOSAL-CARBONATE-GEOCHEM Week 11 — HMC mineral add + SI promotion (v146)', () => {
   it('HMC is wired into MINERAL_ENGINES', () => {
@@ -65,12 +67,14 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 11 — HMC mineral add + SI promotion 
 });
 
 describe('PROPOSAL-CARBONATE-GEOCHEM Week 11 — supersaturation_HMC engine', () => {
-  it('hard gate fires below Mg/Ca = 0.5 (HMC needs Mg present)', () => {
-    // Low-Mg calcite-only fluid — HMC should return 0.
+  it('low-Mg/Ca parent fluid returns an explicit partition-model coverage gap', () => {
     const f = new FluidChemistry({ Ca: 200, Mg: 10, CO3: 150, pH: 8.0 });
     const cond = new VugConditions({ temperature: 25, fluid: f });
-    // Mg/Ca = 0.05, below the 0.5 threshold
     expect(cond.supersaturation_HMC()).toBe(0);
+    expect(cond._hmcCompositionAssessment.compositionDomainSupported).toBe(false);
+    expect(cond._hmcCompositionAssessment.compositionDomainStatus)
+      .toBe('low_MgCa_composition_dependent_DMg_unresolved');
+    expect(cond._hmcCompositionAssessment.validHMCComposition).toBeNull();
   });
 
   it('hard gate fires above T_max = 60°C (HMC is a low-T phase)', () => {
@@ -88,24 +92,27 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 11 — supersaturation_HMC engine', ()
 
   it('returns omega from SI engine when flag is on', () => {
     // Marine-like Mg-rich brine: omega should be moderate-to-high.
-    const f = new FluidChemistry({ Ca: 400, Mg: 1200, CO3: 200, pH: 8.2 });
+    const f = new FluidChemistry({ Ca: 400, Mg: 1200, CO3: 200, pH: 8.2, salinity: 35 });
     const cond = new VugConditions({ temperature: 25, fluid: f });
     const sigma = cond.supersaturation_HMC();
     // sigma is omega (numeric value); check it matches the SI engine call
-    const omega = carbonateOmega('HMC', f, 25, 0.10);
+    const composition = hmcCompositionFromFluid(f, 25);
+    const omega = carbonateOmega('HMC', f, 25, composition.mgMoleFraction);
     expect(sigma).toBeCloseTo(omega, 5);
     expect(sigma).toBeGreaterThan(1.0);  // moderately supersaturated
   });
 
-  it('SI engine HMC omega depends on mg_content (Ksp scales with x)', () => {
-    // Same fluid, three mg_content values; omega should DECREASE as
-    // x rises (more soluble HMC = lower omega at same IAP).
+  it('SI engine HMC omega follows the non-monotonic subregular activity model', () => {
+    // A subregular solid solution can have an interior activity maximum;
+    // composition dependence is real but is not a fabricated monotonic Ksp ramp.
     const f = new FluidChemistry({ Ca: 400, Mg: 800, CO3: 200, pH: 8.0 });
     const omega_pure = carbonateOmega('HMC', f, 25, 0.0);   // pure calcite
     const omega_5pct = carbonateOmega('HMC', f, 25, 0.05);
     const omega_20pct = carbonateOmega('HMC', f, 25, 0.20);
-    expect(omega_pure).toBeGreaterThan(omega_5pct);
-    expect(omega_5pct).toBeGreaterThan(omega_20pct);
+    expect(omega_5pct).not.toBeCloseTo(omega_pure, 4);
+    expect(omega_20pct).not.toBeCloseTo(omega_5pct, 4);
+    expect(omega_5pct).toBeGreaterThan(omega_pure);
+    expect(omega_20pct).toBeLessThan(omega_5pct);
   });
 });
 
@@ -175,59 +182,44 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 11 — scenario firings', () => {
     return { active, total, max_um };
   }
 
-  it('sabkha_dolomitization nucleates HMC (the Kim 2023 disordered precursor)', () => {
-    // Sabkha is the Kim 2023 headline scenario — HMC is supposed to
-    // be the disordered intermediate that progressively orders into
-    // dolomite. v146 baseline: 4 HMC crystals @ 0.8 µm (microcrystalline
-    // cement / dolomicrite scale, geologically right).
-    const sim = runScenario('sabkha_dolomitization');
-    if (!sim) return;
-    const { active } = HMCCount(sim);
-    expect(active).toBeGreaterThan(0);
+  it('sabkha reports supported tidal seawater and unsupported evaporative-brine partition domains', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.sabkha_dolomitization();
+    const sim = new VugSimulator(conditions, events);
+    for (let i = 0; i < 11; i++) sim.run_step();
+    expect(sim._hmc_composition_coverage.compositionDomainSupported).toBe(true);
+    expect(sim._hmc_composition_coverage.compositionDomainStatus)
+      .toBe('standard_seawater_ratio_salinity_proxy');
+    for (let i = 11; i < 21; i++) sim.run_step();
+    expect(sim._hmc_composition_coverage.compositionDomainSupported).toBe(false);
+    expect(sim._hmc_composition_coverage.compositionDomainStatus)
+      .toBe('standard_ratio_but_nonseawater_salinity_unresolved');
   });
 
-  it('zoned_dripstone_cave nucleates HMC (Mg-rich cave waters)', () => {
-    // Cave dripstone has elevated Mg from limestone wallrock; HMC is
-    // a documented cave-cement phase. v146: 4 HMC @ 2097 µm.
+  it('zoned_dripstone_cave records an unsupported HMC parent-fluid domain, not an absence verdict', () => {
+    // This scenario is authored for calcite/aragonite spatial sorting and does
+    // not list HMC in expects_species. Its bulk broth mass Mg/Ca looked high to
+    // the retired proxy. At low molar Mg/Ca, D_Mg is composition-dependent,
+    // so the bounded model must say "unresolved," not "low-Mg calcite."
     const sim = runScenario('zoned_dripstone_cave');
     if (!sim) return;
-    const { active, max_um } = HMCCount(sim);
-    expect(active).toBeGreaterThan(0);
-    expect(max_um).toBeGreaterThan(100);  // visible cement
+    const { active, total } = HMCCount(sim);
+    expect(sim._hmc_composition_coverage.compositionDomainSupported).toBe(false);
+    expect(sim._hmc_composition_coverage.validHMCComposition).toBeNull();
+    expect(sim._last_hmc_coverage_log).toContain('low_MgCa_composition_dependent_DMg_unresolved');
+    expect(active).toBe(0);
+    expect(total).toBe(0);
   });
 
-  it('ultramafic_supergene nucleates HMC (serpentinization releases Mg)', () => {
-    // Serpentinization of olivine/pyroxene releases Mg + Ca; HMC cement
-    // is the expected carbonate phase.
-    const sim = runScenario('ultramafic_supergene');
-    if (!sim) return;
-    const { active } = HMCCount(sim);
-    expect(active).toBeGreaterThan(0);
-  });
-
-  it('low-Mg scenarios do NOT nucleate HMC', () => {
-    // Calcite-only scenarios should not fire HMC (Mg/Ca below
-    // gate threshold).
+  it('unsupported low-Mg scenarios do not fabricate an HMC composition', () => {
     for (const name of ['tutorial_travertine', 'tutorial_mn_calcite', 'cooling']) {
       const sim = runScenario(name);
       if (!sim) continue;
       const { active, total } = HMCCount(sim);
+      expect(sim._hmc_composition_coverage.compositionDomainSupported).toBe(false);
       expect(active).toBe(0);
       expect(total).toBe(0);
     }
   });
 
-  it('HMC crystal carries mg_content state (set from fluid Mg/Ca at nucleation)', () => {
-    // The defining feature of the W11 add: per-crystal composition
-    // state. Every HMC crystal should have _mg_content set.
-    const sim = runScenario('sabkha_dolomitization');
-    if (!sim) return;
-    const hmcs = sim.crystals.filter((c: any) => c.mineral === 'HMC');
-    expect(hmcs.length).toBeGreaterThan(0);
-    for (const c of hmcs) {
-      expect(typeof c._mg_content).toBe('number');
-      expect(c._mg_content).toBeGreaterThanOrEqual(0.04);
-      expect(c._mg_content).toBeLessThanOrEqual(0.30);
-    }
-  });
 });

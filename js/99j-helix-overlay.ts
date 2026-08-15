@@ -267,7 +267,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
   // chemistry chip, which made them read from a NOW-VESTIGIAL backing
   // store. Post-Tranche-2+ of PROPOSAL-CAVITY-MESH the live chemistry
   // lives in mesh.cells[ri * cells_per_ring + c].fluid — per-vertex
-  // clones that receive event chemistry + engine mass-balance + Laplacian
+  // clones that receive event chemistry + engine growth-budget + Laplacian
   // diffusion. ring_fluids[] still exists; events still write to
   // ring_fluids[equator] via the alias to conditions.fluid; but no other
   // ring receives any chemistry update.
@@ -322,6 +322,23 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     return (s.ring_fluids || [])[ri];
   };
 
+  const _chipTemperature = (s: any, w: any, ri: number, c: number): number => {
+    if (s && typeof s.sampleVoxelTemperature === 'function') {
+      const value = s.sampleVoxelTemperature(ri, c | 0, _stripChipReadDepth);
+      if (Number.isFinite(value)) return value;
+    }
+    const N = (w?.cells_per_ring | 0) || 120;
+    const recorded = s?.boundary_temperatures?.[ri * N + (c | 0)];
+    if (Number.isFinite(recorded)) return recorded;
+    const ring = (s?.ring_temperatures || [])[ri];
+    return Number.isFinite(ring) ? ring : 25;
+  };
+
+  const _chipPressureKbar = (s: any): number => {
+    const value = Number(s?.pressure ?? s?.conditions?.pressure);
+    return Number.isFinite(value) ? value : 0.001;
+  };
+
   // Primary
   params.push({
     id: 'wall', label: 'wall distance', fullName: _HELIX_FULL_NAMES.wall,
@@ -356,7 +373,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
   // Specials
   params.push({ id: 'T',        label: 'temperature', fullName: _HELIX_FULL_NAMES.T,        min: 0,    max: 750,  color: 0xff5544,
     system: 'special', units: '°C',
-    read: (s, w, i, c) => (s.ring_temperatures || [])[i] });
+    read: (s, w, i, c) => _chipTemperature(s, w, i, c) });
   params.push({ id: 'pH',       label: 'pH',          fullName: _HELIX_FULL_NAMES.pH,       min: 0,    max: 14,   color: 0x9966ee,
     system: 'special', units: '',
     read: (s, w, i, c) => (_chipFluid(s, w, i, c) || {}).pH });
@@ -424,10 +441,10 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
   const _readSI = (mineralId: string) => (s: any, w: any, i: number, c: number) => {
     const f = _chipFluid(s, w, i, c);
     if (!f) return null;
-    const T = (s.ring_temperatures || [])[i];
+    const T = _chipTemperature(s, w, i, c);
     const T_use = (typeof T === 'number') ? T : 25;
     if (typeof carbonateSaturationIndex !== 'function') return null;
-    const si = carbonateSaturationIndex(mineralId, f, T_use);
+    const si = carbonateSaturationIndex(mineralId, f, T_use, 0, _chipPressureKbar(s));
     return isFinite(si) ? si : _SI_CHIP_FLOOR;
   };
 
@@ -444,7 +461,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     read: (s, w, i, c) => {
       const f = _chipFluid(s, w, i, c);
       if (!f || typeof f.CO3 !== 'number' || f.CO3 <= 0) return null;
-      const T = (s.ring_temperatures || [])[i];
+      const T = _chipTemperature(s, w, i, c);
       const T_use = (typeof T === 'number') ? T : 25;
       if (typeof bjerrumFractions !== 'function') return null;
       const pH = (typeof f.pH === 'number') ? f.pH : 7.0;
@@ -458,7 +475,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     read: (s, w, i, c) => {
       const f = _chipFluid(s, w, i, c);
       if (!f || typeof f.CO3 !== 'number' || f.CO3 <= 0) return null;
-      const T = (s.ring_temperatures || [])[i];
+      const T = _chipTemperature(s, w, i, c);
       const T_use = (typeof T === 'number') ? T : 25;
       if (typeof bjerrumFractions !== 'function') return null;
       const pH = (typeof f.pH === 'number') ? f.pH : 7.0;
@@ -472,7 +489,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     read: (s, w, i, c) => {
       const f = _chipFluid(s, w, i, c);
       if (!f) return null;
-      const T = (s.ring_temperatures || [])[i];
+      const T = _chipTemperature(s, w, i, c);
       const T_use = (typeof T === 'number') ? T : 25;
       if (typeof carbonateIonPpm !== 'function') return null;
       return carbonateIonPpm(f, T_use);
@@ -503,10 +520,10 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     read: (s, w, i, c) => {
       const f = _chipFluid(s, w, i, c);
       if (!f) return null;
-      const T = (s.ring_temperatures || [])[i];
+      const T = _chipTemperature(s, w, i, c);
       const T_use = (typeof T === 'number') ? T : 25;
       if (typeof carbonateSaturationIndex !== 'function') return null;
-      const si = carbonateSaturationIndex('HMC', f, T_use, _HMC_DEFAULT_MG);
+      const si = carbonateSaturationIndex('HMC', f, T_use, _HMC_DEFAULT_MG, _chipPressureKbar(s));
       return isFinite(si) ? si : _SI_CHIP_FLOOR;  // v166 floor-clamp; cf. _readSI
     },
   });
@@ -523,7 +540,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     read: (s, w, i, c) => {
       const f = _chipFluid(s, w, i, c);
       if (!f) return null;
-      const T = (s.ring_temperatures || [])[i];
+      const T = _chipTemperature(s, w, i, c);
       const T_use = (typeof T === 'number') ? T : 25;
       if (typeof equilibriumPCO2 !== 'function') return null;
       return equilibriumPCO2(f, T_use);
@@ -574,7 +591,11 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
       let best: any = null, bestSize = -1;
       for (const cr of crys) {
         if (!cr || cr.mineral !== mineral || cr.dissolved || !cr._morphology) continue;
-        const a = cr.wall_anchor;
+        // Live WallState owns the projection.  The explicit legacy decoder is
+        // retained for read-only archived strips and minimal instrumentation
+        // fixtures that predate topology-independent anchors.
+        const a = w?.chemistryAddressForCrystal?.(cr)
+          || CavitySurfaceAnchors.chemistryAddress(cr.wall_anchor);
         if (!a || a.ringIdx !== i) continue;
         const d = (((a.cellIdx - c) % N) + N) % N;
         if (Math.min(d, N - d) > 2) continue;
@@ -631,9 +652,9 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     const _readSulfateSI = (mineralId: string) => (s: any, w: any, i: number, c: number) => {
       const f = _chipFluid(s, w, i, c);
       if (!f) return null;
-      const T = (s.ring_temperatures || [])[i];
+      const T = _chipTemperature(s, w, i, c);
       const T_use = (typeof T === 'number') ? T : 25;
-      const si = sulfateSaturationIndex(mineralId, f, T_use);
+      const si = sulfateSaturationIndex(mineralId, f, T_use, _chipPressureKbar(s));
       return isFinite(si) ? si : _SI_CHIP_FLOOR;
     };
     params.push({
@@ -742,6 +763,7 @@ function _helixSimAtSnap(sim: any, snap: any): any {
   return {
     ring_fluids: snap.ring_fluids || sim.ring_fluids,
     ring_temperatures: snap.ring_temperatures || sim.ring_temperatures,
+    boundary_temperatures: snap.boundary_temperatures || null,
     // Week 3 — expose _dol_cycle_count so the f_ord chip can read
     // it from the snap (not the live conditions). Replay-correct.
     _dol_cycle_count: (snap._dol_cycle_count != null)
@@ -1623,13 +1645,14 @@ function _helixHarvestEvents(sim: any): HelixEvent[] {
   const out: HelixEvent[] = [];
   for (const c of sim.crystals) {
     if (!c) continue;
-    const anchor = c.wall_anchor;
-    if (!anchor || anchor.ringIdx == null || anchor.cellIdx == null) continue;
+    const address = sim.wall_state?.chemistryAddressForCrystal?.(c)
+      || CavitySurfaceAnchors.chemistryAddress(c.wall_anchor);
+    if (!address) continue;
 
     // Nucleation marker — one per crystal at its anchor.
     out.push({
-      ringIdx: anchor.ringIdx,
-      cellIdx: anchor.cellIdx,
+      ringIdx: address.ringIdx,
+      cellIdx: address.cellIdx,
       kind: 'nucleation',
       color: 0x55ff66,                   // green
     });
@@ -1642,8 +1665,8 @@ function _helixHarvestEvents(sim: any): HelixEvent[] {
       for (const z of c.zones) {
         if (z && typeof z.thickness_um === 'number' && z.thickness_um < 0) {
           out.push({
-            ringIdx: anchor.ringIdx,
-            cellIdx: anchor.cellIdx,
+            ringIdx: address.ringIdx,
+            cellIdx: address.cellIdx,
             kind: 'dissolution',
             color: 0xff5566,               // red
           });

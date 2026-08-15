@@ -1,5 +1,10 @@
 # BACKLOG — Vugg Simulator
 
+> **2026-08-08 execution note:** historical “open” labels below are not reliable
+> current state. The authoritative, reconciled execution list is
+> [`OPEN-IMPROVEMENTS-LEDGER-2026-08-08.md`](OPEN-IMPROVEMENTS-LEDGER-2026-08-08.md).
+> Keep this file as provenance; add or close active work in the reconciled ledger.
+
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
 > ## 🔬 THE WISE REVIEW (2026-08-05) — **second hostile review, pegmatite/mineralogy lens — `PROPOSAL-HOSTILE-REVIEW-WISE-2026-08-05.md`, fix ladder AWAITS BOSS ORDER**
@@ -15,6 +20,33 @@ Living list of open work items, captured from session conversations so context s
 > Dauphiné-as-{001} + trapiche-as-twin-law data bugs. Saves conceded: cascade discipline,
 > honest flux gates, shigar as the model scenario, the data self-audit culture. Proposed
 > ladder §5 (prose → one-liners → Cruzeiro rescue → T-tranche → species debt → Cs/Ta infra).
+
+> ## SESSION STATE (2026-08-05) — SCIENCE-FIRST AAA / DR. WISE HOSTILE LOOP ACTIVE
+>
+> Current authority: `proposals/HOSTILE-REVIEW-LOOP-DR-WISE-2026-08-05.md` and
+> `proposals/PLAN-AAA-SCIENCE-FIRST.md`. Round 1 was not satisfied. Its pressure,
+> phase-field, model-identity, Ge mass-balance, sabkha replacement, instantaneous-stress,
+> mobile exact-control, gypsum water-activity, mixed Cu-Zn carbonate, and claim-disclosure
+> findings have been implemented. Thermodynamic Tier D is now 0/15 carbonates; rosasite
+> and aurichalcite remain honestly Tier C and observer-only. All authored Creative chemistry
+> controls are live, registry-backed, searchable, and paired with exact numeric entry.
+>
+> **NEXT:** complete full-suite/baseline/claim-card checks and real 320/360/390/430 px browser
+> QA, then return the entire tree to the independent Dr. Wise AI hostile reviewer. The loop
+> ends only on a fresh “satisfied” verdict with no unresolved science, correctness, mobile,
+> gameplay, or provenance findings. This review role is not a claim of personal Smithsonian
+> endorsement.
+
+> ## SESSION STATE (2026-08-06) — SIM 243 PHASE-IDENTITY / SULFUR TRANCHE
+>
+> The post-SIM-242 hostile review returned NOT SATISFIED. Its first two blocking findings
+> are corrected in SIM 243: quartz/opal are selected as separate phases before nucleation,
+> and sulfur now has independently conserved sulfide, sulfate, and elemental reservoirs.
+> Sulphur Bank uses a closed H2S oxidation reaction with no synthetic acid; Sicily uses a
+> separate anoxic microbial/inherited-S° path. Creative setup and live editing expose the
+> three sulfur reservoirs and pathway selection. Surface fluid pressure now reaches
+> 0.001 kbar. **NEXT:** land the authoritative gypsum/anhydrite selector and replacement
+> path, then reconcile Sunnyside and Tsumeb before another independent Dr. Wise AI review.
 
 > ## 🗿 SESSION STATE (2026-07-27) — **S2 SELENITE ✅ SIM 237 · elmwood selenite = KNOWN RESIDUE · NEXT = the Hardie ceiling (own commit)**
 >
@@ -3496,6 +3528,9 @@ Deferred to a future round:
 - **anthraxolite** (solid hydrocarbon) — already partially implemented via Herkimer narrative; could be a real inclusion mineral
 
 ### Class 2 — pressure-gated polymorphs (making `VugConditions.pressure` a real supersaturation driver instead of cosmetic)
+
+> **Science packet landed 2026-08-05**: `research/arcs/research-pressure-science-2026-08-05.md` — the full sourced basis for pressure (ΔV°r Ksp corrections, Manning silica density model, Al₂SiO₅ boundary routing with Pattison anchor + linearized slopes, boiling/decompression event model, the stress_pulse/valve_rupture split replacing `P += 0.5` twinning, staged plan A/B/C). The Al₂SiO₅ trio below plugs into that packet's §4.5 routing function; note the in-game 4.4 kbar ceiling sits 0.1 kbar under the Pattison triple point, so all three polymorphs are selectable in-range. Coesite/stishovite confirmed unreachable (<20 kbar ceiling by a factor of 5).
+
 - **kyanite** (Al₂SiO₅, high-P) — blue-blade gem
 - **andalusite** (Al₂SiO₅, low-P) — chiastolite cross-pattern gem
 - **sillimanite** (Al₂SiO₅, high-T) — completes the classic Al₂SiO₅ phase-diagram triangle

@@ -35,10 +35,11 @@
 // guards, and play() rejections/throws are swallowed into the unlock
 // path. SIM-NEUTRAL: no engine code touched, no RNG, no baselines.
 
-const _MUSIC_TRACKS: Record<string, string> = {
+const MUSIC_DEFAULT_VOLUME = 0.25;
+const _MUSIC_TRACKS: Readonly<Record<string, string>> = Object.freeze({
   title: 'Vugg Simulator.mp3',
   building: 'salt-circuit.mp3',
-};
+});
 
 const _VUGG_SETTINGS_KEY = 'vugg-settings-v1';
 
@@ -128,7 +129,9 @@ function musicGetSettings(): { enabled: boolean, volume: number } {
     enabled: (m.enabled !== undefined) ? !!m.enabled : true,
     // Default 0.25 (boss 2026-06-10: half the original 0.5 — the music
     // sits under the game, not on top of it).
-    volume: (typeof m.volume === 'number' && isFinite(m.volume)) ? Math.max(0, Math.min(1, m.volume)) : 0.25,
+    volume: (typeof m.volume === 'number' && isFinite(m.volume))
+      ? Math.max(0, Math.min(1, m.volume))
+      : MUSIC_DEFAULT_VOLUME,
   };
 }
 

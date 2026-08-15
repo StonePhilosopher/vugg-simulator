@@ -109,26 +109,35 @@ describe('C0 — wulffCalciteOmegaBias (the render rider law)', () => {
 // ============================================================
 
 describe('C0 — fleet genre outcomes (seed 42, the sweep census)', () => {
-  it('THE ONE FLIP: deccan calcite is now the iconic Deccan golden dogtooth', () => {
-    // The sweep found exactly one form flip fleet-wide: deccan id 8, rhomb →
-    // scalenohedral (late-step Ω > 12 after T fell below 200). Deccan trap
-    // cavities are one of Earth's classic dogtooth-calcite localities — the
-    // flip is a genre IMPROVEMENT, locked here.
+  it('Deccan records a dominant dogtooth stage before its late rhombohedral cap', () => {
+    // Form is a history, not one final label. The Deccan calcite spends most
+    // of its accepted shell growth above the supersaturation dogtooth fence,
+    // then records a late rhombohedral cap as the residual water depletes.
     const sim = runScenario('deccan_zeolite');
     const cals = calcitesOf(sim);
     expect(cals.length).toBeGreaterThan(0);
-    expect(cals.some((c: any) => String(c.habit).indexOf('scaleno') >= 0),
-      'deccan lost its dogtooth').toBe(true);
+    const positive = cals.flatMap((c: any) =>
+      c.zones.filter((z: any) => z.thickness_um > 0));
+    const dogtoothMass = positive.filter((z: any) => z.morph_form === 'scalenohedral')
+      .reduce((sum: number, z: any) => sum + z.thickness_um, 0);
+    const rhombMass = positive.filter((z: any) => z.morph_form === 'rhombohedral')
+      .reduce((sum: number, z: any) => sum + z.thickness_um, 0);
+    expect(dogtoothMass).toBeGreaterThan(rhombMass);
+    expect(rhombMass).toBeGreaterThan(0);
   });
 
-  it('nailhead genres HOLD: the Pennine-style vein + wittichen + travertine stay rhombohedral', () => {
-    for (const name of ['reactivated_fluorite_vein', 'wittichen', 'tutorial_travertine']) {
+  it('nailhead genres hold while Mammoth records a travertine crust rather than cabinet spar', () => {
+    for (const name of ['reactivated_fluorite_vein', 'wittichen']) {
       const cals = calcitesOf(runScenario(name));
       expect(cals.length, `${name} grew no calcite`).toBeGreaterThan(0);
       for (const c of cals) {
         expect(String(c.habit).indexOf('scaleno'), `${name} id${c.crystal_id} flipped to dogtooth`).toBe(-1);
       }
     }
+    const travertine = calcitesOf(runScenario('tutorial_travertine'));
+    expect(travertine.length, 'tutorial_travertine grew no calcite').toBeGreaterThan(0);
+    expect(travertine.every((c: any) => c.habit === 'travertine_crust')).toBe(true);
+    expect(travertine.every((c: any) => c._depositional_fabric === 'carbonate travertine')).toBe(true);
   });
 
   it('the air gate HOLDS in the field: stalactites at drip-film Ω (~1500) stay rhombohedral', () => {
@@ -168,17 +177,12 @@ describe('C0 — fleet genre outcomes (seed 42, the sweep census)', () => {
     }
   });
 
-  it('the σ-earned narrator annotation exists on the deccan flip', () => {
-    // deccan id 8 is the first crystal whose scalenohedral word came from the σ
-    // branch alone (Mg 0.044, final-step T < 200) — its dominant_forms must say
-    // so instead of mislabeling the reason as Mg.
+  it('the Deccan zone stack records the supersaturation form transition', () => {
     const sim = runScenario('deccan_zeolite');
-    const dog = calcitesOf(sim).filter((c: any) => c.habit === 'scalenohedral');
-    expect(dog.length).toBeGreaterThan(0);
-    for (const c of dog) {
-      const forms = (c.dominant_forms || []).join('|');
-      expect(forms.indexOf('Mg-elongated'), `id${c.crystal_id} mislabels the fence branch`).toBe(-1);
-      expect(forms.indexOf('σ-grown'), `id${c.crystal_id} missing the σ-grown annotation`).toBeGreaterThanOrEqual(0);
-    }
+    const forms = calcitesOf(sim).flatMap((c: any) =>
+      c.zones.filter((z: any) => z.thickness_um > 0).map((z: any) => z.morph_form));
+    expect(forms).toContain('scalenohedral');
+    expect(forms).toContain('rhombohedral');
+    expect(forms.indexOf('scalenohedral')).toBeLessThan(forms.lastIndexOf('rhombohedral'));
   });
 });

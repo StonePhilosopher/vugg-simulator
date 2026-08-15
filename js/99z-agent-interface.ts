@@ -206,6 +206,7 @@ function _agentSpecimenJSON(simOverride?: any): any {
   return {
     ok: true,
     sim_version: (typeof SIM_VERSION !== 'undefined') ? SIM_VERSION : null,
+    model_digest: (typeof MODEL_DIGEST !== 'undefined') ? MODEL_DIGEST : null,
     scenario: meta.scenario || null,
     seed: meta.seed != null ? meta.seed : null,
     shape_seed: meta.shape_seed != null ? meta.shape_seed : null,
@@ -392,10 +393,22 @@ function _agentExposeWindow(): void {
     defineGetter('MINERAL_ENGINES', () => (typeof MINERAL_ENGINES !== 'undefined' ? MINERAL_ENGINES : null));
     defineGetter('MINERAL_SPEC', () => (typeof MINERAL_SPEC !== 'undefined' ? MINERAL_SPEC : null));
     defineGetter('SIM_VERSION', () => (typeof SIM_VERSION !== 'undefined' ? SIM_VERSION : null));
+    defineGetter('MODEL_DIGEST', () => (typeof MODEL_DIGEST !== 'undefined' ? MODEL_DIGEST : null));
     defineGetter('fortressSim', () => (typeof fortressSim !== 'undefined' ? fortressSim : null));
     defineGetter('legendsSim', () => (typeof legendsSim !== 'undefined' ? legendsSim : null));
     defineGetter('idleSim', () => (typeof idleSim !== 'undefined' ? idleSim : null));
     defineGetter('rng', () => (typeof rng !== 'undefined' ? rng : null));
+    defineGetter('cavityClipCapability', () =>
+      (typeof _topoCavityClipCapabilityReceipt === 'function'
+        ? _topoCavityClipCapabilityReceipt() : null));
+
+    v.setMarchingCubesCavity = function (enabled: boolean, resolution = 48) {
+      if (typeof _topoSetMarchingCubesCavity !== 'function') return null;
+      _topoSetMarchingCubesCavity(enabled, resolution);
+      if (typeof topoRender === 'function') topoRender();
+      return typeof _topoCavityClipCapabilityReceipt === 'function'
+        ? _topoCavityClipCapabilityReceipt() : null;
+    };
 
     v.startScenario = function (name: string, opts: any) {
       opts = opts || {};
@@ -451,6 +464,8 @@ async function _agentBootFromURL(): Promise<void> {
   const scenario = params.get('scenario');
   const mode = params.get('mode') || 'play';
   if (!scenario && mode === 'play') return;  // nothing to do
+
+  await waitForNarrativesReady();
 
   // Wait for scenarios.json5 to populate. Poll the flag the loader
   // in 70-events.ts sets when fetch completes.
@@ -544,7 +559,7 @@ async function _agentBootFromURL(): Promise<void> {
       if (steps != null) setVal('steps', String(steps));
     }
     if (typeof runSimulation === 'function') {
-      runSimulation();
+      await runSimulation();
     }
     return;
   }

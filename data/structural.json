@@ -395,6 +395,24 @@
     "lattice": { "a": 8.378 },
     "_source": "Anthony Handbook v.III chromite entry; FeCr2O4 spinel-group, isostructural with MgAl2O4 spinel + Fe3O4 magnetite"
   },
+  "birnessite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 5.15, "b": 2.84, "c": 7.16, "beta": 100.5 },
+    "_source": "Representative 7-Å birnessite layer cell only; natural birnessite is compositionally/stacking-disordered and may be triclinic or hexagonal. Post 1999 PNAS 96:3447. Renderer treats it as an aggregate, not a faceted single crystal."
+  },
+  "romanechite": {
+    "system": "monoclinic",
+    "space_group": "C2/m",
+    "lattice": { "a": 13.929, "b": 2.8459, "c": 9.678, "beta": 92.39 },
+    "_source": "Turner & Post 1988 American Mineralogist 73:1155-1161; hydrated Ba-Mn oxide with 2x3 tunnels."
+  },
+  "todorokite": {
+    "system": "monoclinic",
+    "space_group": "P2/m",
+    "lattice": { "a": 9.75, "b": 2.84, "c": 9.56, "beta": 94.6 },
+    "_source": "Representative todorokite 3x3 tunnel cell; natural material is commonly defective/intergrown. Post 1999 PNAS 96:3447; Golden, Chen & Dixon 1986 Science 231:717."
+  },
   "pyrolusite": {
     "system": "tetragonal",
     "space_group": "P4_2/mnm",

@@ -31,6 +31,12 @@
 // gracefully if Three.js is unavailable (CDN blocked, file://, etc.).
 
 let _topoUseThreeRenderer = true;
+// Diagnostic override for the production Cartesian cavity renderer. The
+// scientific authority itself is fixed at zero-isovalue 48^3 since v266;
+// query/debug switches may force a truthful fallback or comparison view but
+// cannot change chemistry, anchors, booked volume, or model resolution.
+let _topoMarchingCubesCavityOverride: boolean | null = null;
+let _topoMarchingCubesResolutionOverride: number | null = null;
 // Has the default-on initialization run yet? On the FIRST topoRender
 // where Three.js is actually available, we force drag mode to 'rotate'
 // and color the toggle button. Done as one-shot so subsequent renders
@@ -52,6 +58,7 @@ let _topoThreeState: any = null;
 // first enable attempt — the script tag's async load might still be
 // in flight at boot.
 let _topoThreeUnavailable = false;
+const _CAVITY_R32F_PROBE_CACHE = new WeakMap<object, any>();
 
 function _topoThreeAvailable(): boolean {
   return typeof THREE !== 'undefined' && THREE && THREE.WebGLRenderer;
@@ -126,6 +133,9 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
     uReliefAO: { value: (typeof _wallReliefAOMap === 'function' ? _wallReliefAOMap('scallops') : null) },
     uReliefAORepeat: { value: new THREE.Vector2(5, 5) },
     uReliefAOAmt: { value: 0 },
+    uWallMaterialSpaceEnabled: { value: 0 },
+    uWallMatrixScale: { value: new THREE.Vector2(0.05, 0.05) },
+    uWallReliefScale: { value: new THREE.Vector2(0.1, 0.1) },
   };
   if (typeof _applyWallReliefAO === 'function') _applyWallReliefAO(cavityMat);
   const cavity = new THREE.Mesh(cavityGeom, cavityMat);
@@ -184,6 +194,15 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
       uVugCellRadii: { value: null as any },  // THREE.DataTexture
       uVugCellTexW: { value: 0 },  // = N (cellsPerRing)
       uVugCellTexH: { value: 0 },  // = ringCount
+      // Tranche 3 Cartesian clip. Mode 0 is the canonical polar path;
+      // mode 1 samples the exact immutable field snapshot paired with the MC
+      // wall. A mixed wall/clip pair is never installed.
+      uCavityClipMode: { value: 0 },
+      uCavityField: { value: null as any },
+      uCavityFieldDimensions: { value: new THREE.Vector3(1, 1, 1) },
+      uCavityFieldWorldScale: { value: new THREE.Vector3(1, 1, 1) },
+      uCavityFieldWorldBias: { value: new THREE.Vector3(0, 0, 0) },
+      uCavityFieldIsovalue: { value: 0 },
       // === HELIX-OVERLAY-FORK ADDITION (v19) =========================
       // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
       // breadcrumb. Per-fragment "helix skin" on crystal materials:
@@ -204,6 +223,28 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
       // === END HELIX-OVERLAY-FORK ADDITION ===========================
     },
   };
+  // A lost WebGL context invalidates both the lazy Three.js upload and the raw
+  // capability probe. Keep the Cartesian wall/clip pair fail-closed until the
+  // restored context has independently passed the probe and upload receipt.
+  canvas.addEventListener('webglcontextlost', (event: Event) => {
+    event.preventDefault();
+    const state = _topoThreeState;
+    if (!state || state.renderer !== renderer) return;
+    _topoHandleCavityContextLost(state);
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    const state = _topoThreeState;
+    if (!state || state.renderer !== renderer) return;
+    _topoResetCavityFieldFailures(state);
+    state.cavityFieldFallbackReason = null;
+    state.cavityFieldCapabilityReceipt = null;
+    state.cavitySig = '';
+    state.crystalsSig = '';
+    if (state.crystals) state.crystals.visible = true;
+    if (typeof requestAnimationFrame === 'function' && typeof topoRender === 'function') {
+      requestAnimationFrame(() => topoRender());
+    }
+  });
   return _topoThreeState;
 }
 
@@ -231,17 +272,37 @@ function _topoInitThree(canvas: HTMLCanvasElement): any {
 //      used until the texture is built (first frame). Generous in
 //      asymmetric cavities — leaks "brighter saturated" patches
 //      where corners stick past the local cell.
-function _applyCavityClip(material: any, clipUniforms: any) {
+function _applyCavityClip(material: any, clipUniforms: any, opts: any = {}) {
+  // This capability is a compile-time shader variant. If sampler3D fails to
+  // link, fallback must build a different polar-only program which contains no
+  // 3-D sampler declaration or sample instruction.
+  const useCavityField = Number(clipUniforms?.uCavityClipMode?.value || 0) === 1;
+  const useHelix = opts.helix !== false;
+  const shaderVariant = (useCavityField
+    ? 'field-r32f-freudenthal-v2' : 'polar-r32f-free-v1')
+    + (useHelix ? '|helix' : '|no-helix');
+  if (!material.userData) material.userData = {};
+  material.userData.vuggCavityClipVariant = shaderVariant;
+  material.customProgramCacheKey = () => `vugg-cavity-clip:${shaderVariant}`;
   material.onBeforeCompile = (shader: any) => {
-    shader.uniforms.uVugRadius = clipUniforms.uVugRadius;
-    shader.uniforms.uVugCenter = clipUniforms.uVugCenter;
-    shader.uniforms.uVugRingCount = clipUniforms.uVugRingCount;
-    shader.uniforms.uVugRadiiByRing = clipUniforms.uVugRadiiByRing;
-    shader.uniforms.uVugCellRadii = clipUniforms.uVugCellRadii;
-    shader.uniforms.uVugCellTexW = clipUniforms.uVugCellTexW;
-    shader.uniforms.uVugCellTexH = clipUniforms.uVugCellTexH;
+    if (useCavityField) {
+      shader.uniforms.uCavityField = clipUniforms.uCavityField;
+      shader.uniforms.uCavityFieldDimensions = clipUniforms.uCavityFieldDimensions;
+      shader.uniforms.uCavityFieldWorldScale = clipUniforms.uCavityFieldWorldScale;
+      shader.uniforms.uCavityFieldWorldBias = clipUniforms.uCavityFieldWorldBias;
+      shader.uniforms.uCavityFieldIsovalue = clipUniforms.uCavityFieldIsovalue;
+    } else {
+      shader.uniforms.uVugRadius = clipUniforms.uVugRadius;
+      shader.uniforms.uVugCenter = clipUniforms.uVugCenter;
+      shader.uniforms.uVugRingCount = clipUniforms.uVugRingCount;
+      shader.uniforms.uVugRadiiByRing = clipUniforms.uVugRadiiByRing;
+      shader.uniforms.uVugCellRadii = clipUniforms.uVugCellRadii;
+      shader.uniforms.uVugCellTexW = clipUniforms.uVugCellTexW;
+      shader.uniforms.uVugCellTexH = clipUniforms.uVugCellTexH;
+    }
     // === HELIX-OVERLAY-FORK ADDITION (v19) =========================
-    shader.uniforms.uHelixEnabled = clipUniforms.uHelixEnabled;
+    shader.uniforms.uHelixEnabled = useHelix
+      ? clipUniforms.uHelixEnabled : { value: 0 };
     shader.uniforms.uHelixSweep   = clipUniforms.uHelixSweep;
     shader.uniforms.uHelixYCenter = clipUniforms.uHelixYCenter;
     shader.uniforms.uHelixYSpan   = clipUniforms.uHelixYSpan;
@@ -252,9 +313,23 @@ function _applyCavityClip(material: any, clipUniforms: any) {
       '#include <common>',
       '#include <common>\nvarying vec3 vCavityWorldPos;'
     );
+    // `transformed` is only object-local after <begin_vertex>. Three applies
+    // batching and instanceMatrix inside <project_vertex>, so derive the clip
+    // position with the same transform order after morphing/skinning/
+    // displacement have already changed `transformed`. This is required for
+    // InstancedMesh surface films and ordinary crystal meshes to clip in the
+    // same world frame.
     shader.vertexShader = shader.vertexShader.replace(
-      '#include <begin_vertex>',
-      '#include <begin_vertex>\nvCavityWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;'
+      '#include <project_vertex>',
+      `#include <project_vertex>
+vec4 _cavityClipWorld = vec4( transformed, 1.0 );
+#ifdef USE_BATCHING
+  _cavityClipWorld = batchingMatrix * _cavityClipWorld;
+#endif
+#ifdef USE_INSTANCING
+  _cavityClipWorld = instanceMatrix * _cavityClipWorld;
+#endif
+vCavityWorldPos = ( modelMatrix * _cavityClipWorld ).xyz;`
     );
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <common>',
@@ -267,6 +342,64 @@ uniform float uVugRadiiByRing[${_MAX_CLIP_RINGS}];
 uniform sampler2D uVugCellRadii;
 uniform float uVugCellTexW;
 uniform float uVugCellTexH;
+uniform int uCavityClipMode;
+uniform sampler3D uCavityField;
+uniform vec3 uCavityFieldDimensions;
+uniform vec3 uCavityFieldWorldScale;
+uniform vec3 uCavityFieldWorldBias;
+uniform float uCavityFieldIsovalue;
+${useCavityField ? `
+float cavityFieldGridValue(vec3 gridIndex) {
+  return texture(uCavityField,
+    (gridIndex + vec3(0.5)) / uCavityFieldDimensions).r;
+}
+
+float cavityFreudenthalValue(vec3 gridPosition) {
+  vec3 base = min(floor(gridPosition), uCavityFieldDimensions - vec3(2.0));
+  base = max(base, vec3(0.0));
+  vec3 t = gridPosition - base;
+  vec3 pCorner;
+  vec3 pqCorner;
+  float tp;
+  float tq;
+  float tr;
+  if (t.x >= t.y) {
+    if (t.y >= t.z) {
+      pCorner = base + vec3(1.0, 0.0, 0.0);
+      pqCorner = base + vec3(1.0, 1.0, 0.0);
+      tp = t.x; tq = t.y; tr = t.z;
+    } else if (t.x >= t.z) {
+      pCorner = base + vec3(1.0, 0.0, 0.0);
+      pqCorner = base + vec3(1.0, 0.0, 1.0);
+      tp = t.x; tq = t.z; tr = t.y;
+    } else {
+      pCorner = base + vec3(0.0, 0.0, 1.0);
+      pqCorner = base + vec3(1.0, 0.0, 1.0);
+      tp = t.z; tq = t.x; tr = t.y;
+    }
+  } else {
+    if (t.x >= t.z) {
+      pCorner = base + vec3(0.0, 1.0, 0.0);
+      pqCorner = base + vec3(1.0, 1.0, 0.0);
+      tp = t.y; tq = t.x; tr = t.z;
+    } else if (t.y >= t.z) {
+      pCorner = base + vec3(0.0, 1.0, 0.0);
+      pqCorner = base + vec3(0.0, 1.0, 1.0);
+      tp = t.y; tq = t.z; tr = t.x;
+    } else {
+      pCorner = base + vec3(0.0, 0.0, 1.0);
+      pqCorner = base + vec3(0.0, 1.0, 1.0);
+      tp = t.z; tq = t.y; tr = t.x;
+    }
+  }
+  float c000 = cavityFieldGridValue(base);
+  float cp = cavityFieldGridValue(pCorner);
+  float cpq = cavityFieldGridValue(pqCorner);
+  float c111 = cavityFieldGridValue(base + vec3(1.0));
+  return c000 * (1.0 - tp) + cp * (tp - tq)
+    + cpq * (tq - tr) + c111 * tr;
+}
+` : ''}
 // === HELIX-OVERLAY-FORK ADDITION (v19) — helix skin uniforms =====
 uniform float uHelixEnabled;
 uniform float uHelixSweep;
@@ -314,11 +447,51 @@ float cavityHullRadiusAt(vec3 worldPos) {
   return mix(uVugRadiiByRing[i0], uVugRadiiByRing[i1], t);
 }`
     );
+    // Remove the unused capability from the source itself. This is what makes
+    // the polar fallback safe on a WebGL2 driver that rejects sampler3D.
+    if (useCavityField) {
+      for (const declaration of [
+        'uniform vec3 uVugCenter;\n',
+        'uniform float uVugRadius;\n',
+        'uniform int uVugRingCount;\n',
+        `uniform float uVugRadiiByRing[${_MAX_CLIP_RINGS}];\n`,
+        'uniform sampler2D uVugCellRadii;\n',
+        'uniform float uVugCellTexW;\n',
+        'uniform float uVugCellTexH;\n',
+        'uniform int uCavityClipMode;\n',
+      ]) shader.fragmentShader = shader.fragmentShader.replace(declaration, '');
+      const helperStart = shader.fragmentShader.indexOf('// Per-cell cavity hull lookup.');
+      const helperEnd = helperStart >= 0
+        ? shader.fragmentShader.indexOf('\n}', helperStart) : -1;
+      if (helperStart >= 0 && helperEnd >= 0) {
+        shader.fragmentShader = shader.fragmentShader.slice(0, helperStart)
+          + shader.fragmentShader.slice(helperEnd + 2);
+      }
+    } else {
+      for (const declaration of [
+        'uniform int uCavityClipMode;\n',
+        'uniform sampler3D uCavityField;\n',
+        'uniform vec3 uCavityFieldDimensions;\n',
+        'uniform vec3 uCavityFieldWorldScale;\n',
+        'uniform vec3 uCavityFieldWorldBias;\n',
+        'uniform float uCavityFieldIsovalue;\n',
+      ]) shader.fragmentShader = shader.fragmentShader.replace(declaration, '');
+    }
+    const cavityDiscard = useCavityField
+      ? `vec3 _cavityTexCoord = vCavityWorldPos * uCavityFieldWorldScale
+    + uCavityFieldWorldBias;
+  vec3 _cavityGridPosition = _cavityTexCoord * uCavityFieldDimensions - vec3(0.5);
+  // The affine map addresses texel centres. Test the actual lattice bounds,
+  // not [0,1], which includes a half-voxel unauthenticated halo.
+  if (any(lessThan(_cavityGridPosition, vec3(0.0)))
+      || any(greaterThan(_cavityGridPosition, uCavityFieldDimensions - vec3(1.0)))) discard;
+  if (cavityFreudenthalValue(_cavityGridPosition) < uCavityFieldIsovalue) discard;`
+      : `float _vugHullR = cavityHullRadiusAt(vCavityWorldPos);
+  if (length(vCavityWorldPos - uVugCenter) > _vugHullR) discard;`;
     shader.fragmentShader = shader.fragmentShader.replace(
       'void main() {',
       `void main() {
-  float _vugHullR = cavityHullRadiusAt(vCavityWorldPos);
-  if (length(vCavityWorldPos - uVugCenter) > _vugHullR) discard;
+  ${cavityDiscard}
   // === HELIX-OVERLAY-FORK ADDITION (v19) — per-fragment helix skin ====
   // Each surface point on the crystal computes its own age relative to
   // the helicoid leading edge AT THAT Y. The leading-edge world angle
@@ -359,6 +532,71 @@ float cavityHullRadiusAt(vec3 worldPos) {
   material.needsUpdate = true;
 }
 
+function _topoSyncCavityWaterAppearance(state: any, source: any,
+                                        appearance: any): void {
+  if (!state?.cavity || !source?.buffers || !appearance?.receipt) return;
+  const receipt = appearance.receipt;
+  if (state.cavityAppearanceSig !== receipt.appearance_digest) {
+    const colors = CavityWaterAppearance.colorsForSurface(source.buffers, receipt);
+    const colorAttribute = state.cavity.geometry?.getAttribute?.('color');
+    if (!colorAttribute || colorAttribute.array.length !== colors.length) {
+      throw new RangeError('cavity appearance color buffer differs from geometry');
+    }
+    colorAttribute.array.set(colors);
+    colorAttribute.needsUpdate = true;
+    state.cavityAppearanceSig = receipt.appearance_digest;
+  } else return;
+
+  const showInterface = receipt.explicit_surface
+    && !receipt.fully_submerged && !receipt.fully_drained;
+  if (!showInterface) {
+    if (state.waterInterface) state.waterInterface.visible = false;
+    return;
+  }
+  const clipVariant = Number(state.clipUniforms?.uCavityClipMode?.value || 0) === 1
+    ? 'field' : 'polar';
+  if (!state.waterInterface || state.waterInterfaceClipVariant !== clipVariant) {
+    if (state.waterInterface) {
+      state.scene.remove(state.waterInterface);
+      state.waterInterface.geometry?.dispose?.();
+      state.waterInterface.material?.dispose?.();
+    }
+    const material = new THREE.MeshPhysicalMaterial({
+      color: 0x56aaf0,
+      roughness: 0.16,
+      metalness: 0,
+      transmission: 0.18,
+      transparent: true,
+      opacity: 0.28,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    _applyCavityClip(material, state.clipUniforms, { helix: false });
+    const water = new THREE.Mesh(new THREE.BufferGeometry(), material);
+    water.name = 'authenticated-cavity-water-interface';
+    water.renderOrder = 1;
+    water.raycast = function() {};
+    state.scene.add(water);
+    state.waterInterface = water;
+    state.waterInterfaceClipVariant = clipVariant;
+  }
+  const min = receipt.bounds_min_mm;
+  const max = receipt.bounds_max_mm;
+  const width = Math.max(Number(max[0]) - Number(min[0]), 1e-9);
+  const depth = Math.max(Number(max[2]) - Number(min[2]), 1e-9);
+  const geometry = new THREE.PlaneGeometry(width, depth, 1, 1);
+  geometry.rotateX(-Math.PI / 2);
+  const previous = state.waterInterface.geometry;
+  state.waterInterface.geometry = geometry;
+  previous?.dispose?.();
+  state.waterInterface.position.set(
+    (Number(min[0]) + Number(max[0])) * 0.5,
+    Number(receipt.water_plane_y_mm),
+    (Number(min[2]) + Number(max[2])) * 0.5,
+  );
+  state.waterInterface.visible = true;
+}
+
 // W-K V1b (wall depth THROUGH translucency, 2026-07-07): the cavity wall's genesis
 // relief as ALBEDO ambient occlusion. V1 gave the wall a normal map (js/99a
 // _wallReliefNormalMap), but a normal map only perturbs LIGHTING — washed out by the
@@ -386,24 +624,195 @@ function _applyWallReliefAO(material: any) {
     shader.uniforms.uReliefAO = u.uReliefAO;
     shader.uniforms.uReliefAORepeat = u.uReliefAORepeat;
     shader.uniforms.uReliefAOAmt = u.uReliefAOAmt;
+    shader.uniforms.uWallMaterialSpaceEnabled = u.uWallMaterialSpaceEnabled;
+    shader.uniforms.uWallMatrixScale = u.uWallMatrixScale;
+    shader.uniforms.uWallReliefScale = u.uWallReliefScale;
     shader.vertexShader = shader.vertexShader.replace(
       '#include <common>',
-      '#include <common>\nvarying vec2 vReliefUv;'
+      '#include <common>\nvarying vec2 vReliefUv;\nvarying vec3 vWallMaterialPos;\nvarying vec3 vWallMaterialNormal;\nvarying vec3 vWallNormalBasisX;\nvarying vec3 vWallNormalBasisY;\nvarying vec3 vWallNormalBasisZ;'
     );
     shader.vertexShader = shader.vertexShader.replace(
       '#include <begin_vertex>',
-      '#include <begin_vertex>\n\tvReliefUv = uv;'   // raw uv (unconditionally declared in r163); no vMapUv transform
+      '#include <begin_vertex>\n\tvReliefUv = uv;\n\tvWallMaterialPos = position;\n\tvWallMaterialNormal = normal;\n\tvWallNormalBasisX = normalMatrix * vec3(1.0, 0.0, 0.0);\n\tvWallNormalBasisY = normalMatrix * vec3(0.0, 1.0, 0.0);\n\tvWallNormalBasisZ = normalMatrix * vec3(0.0, 0.0, 1.0);'
     );
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <common>',
-      '#include <common>\nuniform sampler2D uReliefAO;\nuniform vec2 uReliefAORepeat;\nuniform float uReliefAOAmt;\nvarying vec2 vReliefUv;'
+      `#include <common>
+uniform sampler2D uReliefAO;
+uniform vec2 uReliefAORepeat;
+uniform float uReliefAOAmt;
+uniform float uWallMaterialSpaceEnabled;
+uniform vec2 uWallMatrixScale;
+uniform vec2 uWallReliefScale;
+varying vec2 vReliefUv;
+varying vec3 vWallMaterialPos;
+varying vec3 vWallMaterialNormal;
+varying vec3 vWallNormalBasisX;
+varying vec3 vWallNormalBasisY;
+varying vec3 vWallNormalBasisZ;
+vec3 wallTriplanarWeights(vec3 sourceNormal) {
+  vec3 weights = pow(abs(normalize(sourceNormal)), vec3(4.0));
+  return weights / max(weights.x + weights.y + weights.z, 1e-6);
+}
+vec4 wallTriplanarSample(sampler2D sourceMap, vec3 sourcePosition,
+                         vec3 sourceNormal, vec2 physicalScale) {
+  vec3 weights = wallTriplanarWeights(sourceNormal);
+  vec4 alongX = texture2D(sourceMap, vec2(sourcePosition.z, sourcePosition.y) * physicalScale);
+  vec4 alongY = texture2D(sourceMap, vec2(sourcePosition.x, sourcePosition.z) * physicalScale);
+  vec4 alongZ = texture2D(sourceMap, vec2(sourcePosition.x, sourcePosition.y) * physicalScale);
+  return alongX * weights.x + alongY * weights.y + alongZ * weights.z;
+}`
     );
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <map_fragment>',
-      '#include <map_fragment>\n\tfloat _reliefAO = texture2D( uReliefAO, vReliefUv * uReliefAORepeat ).r;\n\tdiffuseColor.rgb *= ( 1.0 - uReliefAOAmt * ( 1.0 - _reliefAO ) );'
+      `#ifdef USE_MAP
+  vec4 sampledDiffuseColor = uWallMaterialSpaceEnabled > 0.5
+    ? wallTriplanarSample(map, vWallMaterialPos, vWallMaterialNormal, uWallMatrixScale)
+    : texture2D(map, vMapUv);
+  diffuseColor *= sampledDiffuseColor;
+#endif
+  float _reliefAO = uWallMaterialSpaceEnabled > 0.5
+    ? wallTriplanarSample(uReliefAO, vWallMaterialPos, vWallMaterialNormal, uWallReliefScale).r
+    : texture2D(uReliefAO, vReliefUv * uReliefAORepeat).r;
+  diffuseColor.rgb *= (1.0 - uReliefAOAmt * (1.0 - _reliefAO));`
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <normal_fragment_maps>',
+      `#if defined(USE_NORMALMAP_TANGENTSPACE)
+  if (uWallMaterialSpaceEnabled > 0.5) {
+    vec3 baseObjectNormal = normalize(vWallMaterialNormal);
+    #ifdef FLAT_SHADED
+      baseObjectNormal = normalize(cross(
+        dFdx(vWallMaterialPos), dFdy(vWallMaterialPos)));
+    #endif
+    vec3 baseViewFromObject = normalize(
+      vWallNormalBasisX * baseObjectNormal.x
+      + vWallNormalBasisY * baseObjectNormal.y
+      + vWallNormalBasisZ * baseObjectNormal.z);
+    if (dot(baseViewFromObject, normal) < 0.0) baseObjectNormal = -baseObjectNormal;
+    vec3 axisSign = step(vec3(0.0), baseObjectNormal) * 2.0 - 1.0;
+    vec3 weights = wallTriplanarWeights(baseObjectNormal);
+    vec3 mapX = texture2D(normalMap, vec2(vWallMaterialPos.z, vWallMaterialPos.y) * uWallReliefScale).xyz * 2.0 - 1.0;
+    vec3 mapY = texture2D(normalMap, vec2(vWallMaterialPos.x, vWallMaterialPos.z) * uWallReliefScale).xyz * 2.0 - 1.0;
+    vec3 mapZ = texture2D(normalMap, vec2(vWallMaterialPos.x, vWallMaterialPos.y) * uWallReliefScale).xyz * 2.0 - 1.0;
+    mapX.xy *= normalScale; mapY.xy *= normalScale; mapZ.xy *= normalScale;
+    // Blend tangent-plane perturbations, not three axis normals. A flat
+    // normal-map texel is exactly zero and therefore preserves the geometric
+    // normal, including the derivative normal used by FLAT_SHADED.
+    vec3 perturbX = vec3(0.0, mapX.y, -axisSign.x * mapX.x);
+    vec3 perturbY = vec3(mapY.x, 0.0, -axisSign.y * mapY.y);
+    vec3 perturbZ = vec3(axisSign.z * mapZ.x, mapZ.y, 0.0);
+    vec3 mappedObjectPerturbation = perturbX * weights.x
+      + perturbY * weights.y + perturbZ * weights.z;
+    vec3 mappedViewPerturbation =
+      vWallNormalBasisX * mappedObjectPerturbation.x
+      + vWallNormalBasisY * mappedObjectPerturbation.y
+      + vWallNormalBasisZ * mappedObjectPerturbation.z;
+    normal = normalize(normal + mappedViewPerturbation);
+  } else {
+    #include <normal_fragment_maps>
+  }
+#else
+  #include <normal_fragment_maps>
+#endif`
     );
   };
   material.needsUpdate = true;
+}
+
+const CAVITY_MATERIAL_SPACE_SCHEMA = 'cavity-material-space-v1';
+
+// CPU mirror of the GLSL perturbation blend. Besides making the coordinate
+// convention reviewable, this pins the most important invariant numerically:
+// a flat normal map leaves every geometric normal unchanged.
+function _topoTriplanarPerturbObjectNormal(baseNormal: number[], maps: any,
+                                            normalScale = [1, 1]): number[] {
+  const length = Math.hypot(baseNormal[0], baseNormal[1], baseNormal[2]);
+  if (!(length > 0) || !Number.isFinite(length)) {
+    throw new RangeError('triplanar normal requires a finite non-zero base normal');
+  }
+  const n = baseNormal.map(value => value / length);
+  const weights = n.map(value => Math.abs(value) ** 4);
+  const weightSum = weights[0] + weights[1] + weights[2] || 1;
+  for (let axis = 0; axis < 3; axis++) weights[axis] /= weightSum;
+  const sign = n.map(value => value < 0 ? -1 : 1);
+  const decode = (value: any): number[] => {
+    const sample = Array.isArray(value) ? value : [0, 0];
+    return [Number(sample[0]) * normalScale[0], Number(sample[1]) * normalScale[1]];
+  };
+  const x = decode(maps?.x), y = decode(maps?.y), z = decode(maps?.z);
+  const perturb = [
+    y[0] * weights[1] + sign[2] * z[0] * weights[2],
+    x[1] * weights[0] + z[1] * weights[2],
+    -sign[0] * x[0] * weights[0] - sign[1] * y[1] * weights[1],
+  ];
+  const out = n.map((value, axis) => value + perturb[axis]);
+  const outLength = Math.hypot(out[0], out[1], out[2]);
+  return out.map(value => value / outLength);
+}
+
+function _topoConfigureCavityWallMaterial(state: any, source: any, wall: any,
+                                           expectedState: any = null): any {
+  const target = state?.cavity;
+  const material = target?.material;
+  if (!material) return null;
+  const materialState = expectedState
+    ? CavityWallMaterialState.assertReceipt(wall, expectedState)
+    : CavityWallMaterialState.create(wall);
+  const litho = materialState.lithology;
+  if (state._matrixLitho !== litho && typeof _matrixSkinTexture === 'function') {
+    state._matrixLitho = litho;
+    material.map = _matrixSkinTexture(litho) || null;
+    material.needsUpdate = true;
+  }
+  const fam = materialState.relief_family;
+  const rep = materialState.relief_repeat;
+  const key = `${fam}|${rep[0]}x${rep[1]}`;
+  const ru = material.userData?.reliefAO;
+  if (state._wallReliefKey !== key) {
+    const famChanged = state._wallReliefFam !== fam;
+    state._wallReliefKey = key;
+    if (famChanged) {
+      state._wallReliefFam = fam;
+      const nrm = typeof _wallReliefNormalMap === 'function'
+        ? _wallReliefNormalMap(fam) : null;
+      material.normalMap = nrm || null;
+      if (nrm && material.normalScale?.set) material.normalScale.set(2.0, 2.0);
+      if (ru && typeof _wallReliefAOMap === 'function') {
+        const ao = _wallReliefAOMap(fam);
+        if (ao) { ru.uReliefAO.value = ao; ru.uReliefAOAmt.value = WALL_RELIEF_AO_AMT; }
+        else ru.uReliefAOAmt.value = 0;
+      }
+    }
+    if (material.normalMap?.repeat?.set) material.normalMap.repeat.set(rep[0], rep[1]);
+    if (ru?.uReliefAORepeat?.value) ru.uReliefAORepeat.value.set(rep[0], rep[1]);
+    material.needsUpdate = true;
+  }
+  const materialSpace = source?.mode === 'marching-cubes';
+  const reliefScale = [
+    rep[0] / materialState.relief_reference_span_mm,
+    rep[1] / materialState.relief_reference_span_mm,
+  ];
+  if (ru) {
+    ru.uWallMaterialSpaceEnabled.value = materialSpace ? 1 : 0;
+    ru.uWallMatrixScale.value.set(
+      materialState.matrix_scale_uv_per_mm[0], materialState.matrix_scale_uv_per_mm[1],
+    );
+    ru.uWallReliefScale.value.set(reliefScale[0], reliefScale[1]);
+  }
+  const receipt = Object.freeze({
+    schema: CAVITY_MATERIAL_SPACE_SCHEMA,
+    mapping: materialSpace ? 'triplanar-object-millimetres' : 'legacy-spherical-uv',
+    blend_exponent: materialSpace ? 4 : null,
+    matrix_scale_uv_per_mm: materialState.matrix_scale_uv_per_mm,
+    relief_scale_uv_per_mm: Object.freeze(reliefScale),
+    lithology: litho,
+    relief_family: fam,
+    material_state_digest: materialState.material_state_digest,
+    source_surface_digest: source?.buffers?.buffer_digest || source?.buffers?.sig || null,
+  });
+  state.cavityMaterialSpaceReceipt = receipt;
+  return receipt;
 }
 
 // PHASE-2-CAVITY-MESH: signature delegates to WallMesh._signature so
@@ -420,19 +829,628 @@ function _topoCavitySignature(wall: any, sim: any): string {
   if (!wall.rings || !wall.rings.length) return '';
   const ring0 = wall.rings[0];
   const N = ring0 ? ring0.length : 0;
-  let depthSum = 0;
+  if (Number.isSafeInteger(wall._geometry_revision)) {
+    return `${wall.ring_count}|${N}|rev:${wall._geometry_revision}`;
+  }
+  let hashA = 0x811c9dc5;
+  let hashB = 0x9e3779b9;
+  const scratch = new DataView(new ArrayBuffer(8));
   for (let r = 0; r < wall.rings.length; r++) {
     const ring = wall.rings[r];
     if (!ring) continue;
-    const stride = Math.max(1, Math.floor(N / 8));
-    for (let c = 0; c < N; c += stride) {
+    for (let c = 0; c < N; c++) {
       const cell = ring[c];
       if (!cell) continue;
-      depthSum += (cell.base_radius_mm + cell.wall_depth) * (r * 31 + c);
+      const radius = (Number(cell.base_radius_mm) || 0) + (Number(cell.wall_depth) || 0);
+      scratch.setFloat64(0, radius, true);
+      for (let byte = 0; byte < 8; byte++) {
+        const value = scratch.getUint8(byte);
+        hashA = Math.imul(hashA ^ value, 0x01000193) >>> 0;
+        hashB = (Math.imul(hashB ^ value, 0x85ebca6b) + 0x27d4eb2f) >>> 0;
+      }
     }
   }
-  const surf = sim && sim.conditions ? sim.conditions.fluid_surface_ring : null;
-  return `${wall.ring_count}|${N}|${depthSum.toFixed(2)}|${surf}`;
+  return `${wall.ring_count}|${N}|${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
+}
+
+function _topoMarchingCubesCavityEnabled(): boolean {
+  if (_topoMarchingCubesCavityOverride != null) return _topoMarchingCubesCavityOverride;
+  if (typeof window === 'undefined' || !window.location) return false;
+  try {
+    const value = new URLSearchParams(window.location.search || '').get('mc_cavity');
+    return value === '1' || value === 'true' || value === 'on';
+  } catch (_) {
+    return false;
+  }
+}
+
+function _topoMarchingCubesResolution(): number {
+  if (_topoMarchingCubesResolutionOverride != null) return _topoMarchingCubesResolutionOverride;
+  if (typeof window !== 'undefined' && window.location) {
+    try {
+      const raw = Number(new URLSearchParams(window.location.search || '').get('mc_resolution'));
+      if (Number.isFinite(raw) && raw >= 8 && raw <= 128) return Math.round(raw);
+    } catch (_) { /* retain the measured 48^3 default */ }
+  }
+  return 48;
+}
+
+function _topoSetMarchingCubesCavity(enabled: boolean, resolution = 48): void {
+  const parsed = Math.round(Number(resolution));
+  if (!Number.isFinite(parsed) || parsed < 8 || parsed > 128) {
+    throw new RangeError('Marching Cubes cavity resolution must be from 8 through 128');
+  }
+  // Validate the complete request before changing either override. A rejected
+  // debug command must not accidentally enable the shadow renderer.
+  _topoMarchingCubesCavityOverride = !!enabled;
+  _topoMarchingCubesResolutionOverride = parsed;
+  if (_topoThreeState) {
+    // This is also the explicit operator retry after a driver/context change.
+    // A frame loop alone must never hammer a previously rejected snapshot.
+    _topoResetCavityFieldFailures(_topoThreeState);
+    _topoThreeState.cavityFieldFallbackReason = null;
+    _topoThreeState.cavityFieldCapabilityReceipt = null;
+    _topoThreeState.cavitySig = '';
+  }
+}
+
+function _topoResetCavityFieldFailures(state: any): void {
+  if (!state) return;
+  const gl = state.renderer && state.renderer.getContext && state.renderer.getContext();
+  if (gl) _CAVITY_R32F_PROBE_CACHE.delete(gl);
+  if (state.cavityFieldFailedDigests) state.cavityFieldFailedDigests.clear();
+  if (state.cavityFieldFailedReasons) state.cavityFieldFailedReasons.clear();
+  // This function is called only for explicit operator retry and restored
+  // context. Those are the two events allowed to re-arm a terminally failed
+  // Three shader path; animation frames must remain on canvas.
+  state.threeShaderUnusable = false;
+}
+
+function _topoThreeRendererEffective(state = _topoThreeState): boolean {
+  return !!(_topoUseThreeRenderer || state?.cavityAuthorityActive)
+    && !(state && (state.threeShaderUnusable || state.cavityAuthorityUnrenderable));
+}
+
+function _topoAttemptEffectiveThree(state: any, attempt: () => boolean): boolean {
+  if (state && state.threeShaderUnusable) return false;
+  return attempt();
+}
+
+function _topoCavityClipCapabilityReceipt(state = _topoThreeState): any {
+  const renderer = state && state.renderer;
+  const gl = renderer && typeof renderer.getContext === 'function' ? renderer.getContext() : null;
+  if (!gl) {
+    return Object.freeze({
+      schema: 'cavity-clip-capability-v2',
+      available: false,
+      reason: 'webgl-context-unavailable',
+    });
+  }
+  const isWebGL2 = typeof WebGL2RenderingContext !== 'undefined'
+    && gl instanceof WebGL2RenderingContext;
+  const floatLinear = !!gl.getExtension('OES_texture_float_linear');
+  const r32fProbe = isWebGL2 ? _topoProbeCavityR32F(gl, renderer) : {
+    passed: false,
+    reason: 'webgl2-required',
+  };
+  const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+  const vertexPrecision = gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT);
+  const fragmentPrecision = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+  const maxTextureSize = Number(gl.getParameter(gl.MAX_3D_TEXTURE_SIZE) || 0);
+  const maxTextureUnits = Number(gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS) || 0);
+  const requiredTextureUnits = 4;
+  const highpAvailable = !!(vertexPrecision && vertexPrecision.precision > 0
+    && fragmentPrecision && fragmentPrecision.precision > 0);
+  const dimensions = state && state.cavityFieldContract
+    ? state.cavityFieldContract.dimensions : null;
+  const resolutionFits = !!(dimensions && dimensions.every((value: number) => value <= maxTextureSize));
+  const supported = isWebGL2 && r32fProbe.passed
+    && maxTextureSize > 0 && maxTextureUnits >= requiredTextureUnits && highpAvailable
+    && (!dimensions || resolutionFits);
+  return Object.freeze({
+    schema: 'cavity-clip-capability-v2',
+    available: supported,
+    reason: supported ? 'r32f-nearest-freudenthal-sampling-supported' : (
+      !isWebGL2 ? 'webgl2-required'
+        : !r32fProbe.passed ? `r32f-probe-failed:${r32fProbe.reason}`
+          : !resolutionFits && dimensions ? 'field-exceeds-max-3d-texture-size'
+            : !highpAvailable ? 'highp-float-required'
+              : 'insufficient-texture-units'
+    ),
+    webgl_version: String(gl.getParameter(gl.VERSION) || ''),
+    shading_language_version: String(gl.getParameter(gl.SHADING_LANGUAGE_VERSION) || ''),
+    vendor: debugInfo ? String(gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '') : null,
+    renderer: debugInfo ? String(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '') : null,
+    max_3d_texture_size: maxTextureSize,
+    max_fragment_texture_units: maxTextureUnits,
+    required_fragment_texture_units: requiredTextureUnits,
+    oes_texture_float_linear: floatLinear,
+    r32f_sampling_probe: { ...r32fProbe },
+    vertex_highp_precision_bits: vertexPrecision ? vertexPrecision.precision : 0,
+    fragment_highp_precision_bits: fragmentPrecision ? fragmentPrecision.precision : 0,
+    field_dimensions: dimensions ? Array.from(dimensions) : null,
+    field_resolution_fits: dimensions ? resolutionFits : null,
+    active_clip_mode: state && state.clipUniforms
+      ? Number(state.clipUniforms.uCavityClipMode.value || 0) : 0,
+    field_snapshot_digest: state && state.cavityFieldContract
+      ? state.cavityFieldContract.snapshot_digest : null,
+    upload_receipt: state && state.cavityFieldUploadReceipt
+      ? { ...state.cavityFieldUploadReceipt } : null,
+    fallback_reason: state && state.cavityFieldFallbackReason
+      ? String(state.cavityFieldFallbackReason) : null,
+  });
+}
+
+function _topoPublishCavityClipReceipt(state: any, receipt?: any): void {
+  const canvas = state && state.renderer && state.renderer.domElement;
+  if (!canvas || !canvas.dataset) return;
+  try {
+    const base = receipt || state.cavityFieldCapabilityReceipt
+      || _topoCavityClipCapabilityReceipt(state);
+    const contract = state.cavityFieldContract;
+    canvas.dataset.cavityClipReceipt = JSON.stringify({
+      ...base,
+      field_dimensions: contract ? Array.from(contract.dimensions) : null,
+      field_resolution_fits: contract && base.max_3d_texture_size != null
+        ? contract.dimensions.every((value: number) => value <= base.max_3d_texture_size)
+        : null,
+      active_clip_mode: state.clipUniforms
+        ? Number(state.clipUniforms.uCavityClipMode.value || 0) : 0,
+      field_snapshot_digest: contract ? contract.snapshot_digest : null,
+      upload_receipt: state.cavityFieldUploadReceipt
+        ? { ...state.cavityFieldUploadReceipt } : null,
+      fallback_reason: state.cavityFieldFallbackReason
+        ? String(state.cavityFieldFallbackReason) : null,
+    });
+  } catch (_) {
+    canvas.dataset.cavityClipReceipt = JSON.stringify({
+      schema: 'cavity-clip-capability-v2',
+      available: false,
+      reason: 'receipt-serialization-failed',
+    });
+  }
+}
+
+function _topoHandleCavityContextLost(state: any): void {
+  if (!state) return;
+  state.cavityFieldFallbackReason = 'webgl-context-lost';
+  state.cavityFieldCapabilityReceipt = null;
+  _topoDisposeCavityFieldTexture(state);
+  state.cavitySig = '';
+  state.crystalsSig = '';
+  if (state.cavity) state.cavity.visible = false;
+  if (state.crystals) state.crystals.visible = false;
+  _topoPublishCavityClipReceipt(state, Object.freeze({
+    schema: 'cavity-clip-capability-v2',
+    available: false,
+    reason: 'webgl-context-lost',
+  }));
+}
+
+function _topoProbeCavityR32F(gl: any, renderer?: any): any {
+  if (!gl || typeof gl.createTexture !== 'function') {
+    return Object.freeze({ passed: false, reason: 'invalid-context' });
+  }
+  const cached = _CAVITY_R32F_PROBE_CACHE.get(gl);
+  if (cached) return cached;
+  let volume: any = null;
+  let target: any = null;
+  let framebuffer: any = null;
+  let vertexShader: any = null;
+  let fragmentShader: any = null;
+  let program: any = null;
+  const finish = (receipt: any) => {
+    try { if (program) gl.deleteProgram(program); } catch (_) {}
+    try { if (vertexShader) gl.deleteShader(vertexShader); } catch (_) {}
+    try { if (fragmentShader) gl.deleteShader(fragmentShader); } catch (_) {}
+    try { if (framebuffer) gl.deleteFramebuffer(framebuffer); } catch (_) {}
+    try { if (volume) gl.deleteTexture(volume); } catch (_) {}
+    try { if (target) gl.deleteTexture(target); } catch (_) {}
+    try { if (renderer && typeof renderer.resetState === 'function') renderer.resetState(); } catch (_) {}
+    const frozen = Object.freeze(receipt);
+    _CAVITY_R32F_PROBE_CACHE.set(gl, frozen);
+    return frozen;
+  };
+  try {
+    const compile = (type: number, source: string) => {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        throw new Error(String(gl.getShaderInfoLog(shader) || 'shader-compile-failed'));
+      }
+      return shader;
+    };
+    vertexShader = compile(gl.VERTEX_SHADER, `#version 300 es
+void main() {
+  vec2 p = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}`);
+    fragmentShader = compile(gl.FRAGMENT_SHADER, `#version 300 es
+precision highp float;
+precision highp sampler3D;
+uniform sampler3D uVolume;
+out vec4 outColor;
+float gridValue(vec3 gridIndex) {
+  return texture(uVolume, (gridIndex + vec3(0.5)) / vec3(2.0)).r;
+}
+void main() {
+  float px = gl_FragCoord.x;
+  float value = px < 1.0 ? gridValue(vec3(0.0, 0.0, 0.0))
+    : px < 2.0 ? gridValue(vec3(1.0, 0.0, 0.0))
+    : px < 3.0 ? gridValue(vec3(0.0, 1.0, 0.0))
+    : px < 4.0 ? gridValue(vec3(0.0, 0.0, 1.0))
+    : 0.25 * gridValue(vec3(0.0, 0.0, 0.0))
+      + 0.5 * gridValue(vec3(1.0, 0.0, 1.0))
+      + 0.25 * gridValue(vec3(1.0, 1.0, 1.0));
+  outColor = vec4(value, value, value, 1.0);
+}`);
+    program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      throw new Error(String(gl.getProgramInfoLog(program) || 'program-link-failed'));
+    }
+
+    // x-fastest asymmetric landmarks: x + 2y + 4z, normalized by 7.
+    // Four texel centres independently pin all three positive axes; the fifth
+    // pins manual Freudenthal weighting using nearest texel-centre reads.
+    const samples = new Float32Array([0, 1 / 7, 2 / 7, 3 / 7, 4 / 7, 5 / 7, 6 / 7, 1]);
+    gl.activeTexture(gl.TEXTURE0);
+    volume = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_3D, volume);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+    gl.texImage3D(gl.TEXTURE_3D, 0, gl.R32F, 2, 2, 2, 0, gl.RED, gl.FLOAT, samples);
+
+    target = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, target);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 5, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    framebuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, target, 0);
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+      throw new Error('probe-framebuffer-incomplete');
+    }
+    gl.viewport(0, 0, 5, 1);
+    gl.useProgram(program);
+    gl.uniform1i(gl.getUniformLocation(program, 'uVolume'), 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    const pixels = new Uint8Array(5 * 4);
+    gl.readPixels(0, 0, 5, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    const expected = [0, 36, 73, 146, 155];
+    const observed = [pixels[0], pixels[4], pixels[8], pixels[12], pixels[16]];
+    const errors = observed.map((value, index) => Math.abs(value - expected[index]));
+    const maxError = Math.max(...errors);
+    const glError = gl.getError();
+    return finish({
+      passed: glError === gl.NO_ERROR && maxError <= 2,
+      reason: glError === gl.NO_ERROR ? (maxError <= 2 ? 'ok' : 'sample-mismatch') : `gl-error-${glError}`,
+      format: 'R32F',
+      filter: 'NEAREST',
+      interpolation: 'freudenthal-piecewise-linear-v1',
+      sample_coordinates: [
+        [0.25, 0.25, 0.25], [0.75, 0.25, 0.25], [0.25, 0.75, 0.25],
+        [0.25, 0.25, 0.75], [0.625, 0.375, 0.625],
+      ],
+      expected_red_u8: expected,
+      observed_red_u8: observed,
+      absolute_error_u8: errors,
+      max_absolute_error_u8: maxError,
+    });
+  } catch (error) {
+    return finish({
+      passed: false,
+      reason: error instanceof Error ? error.message : String(error),
+      format: 'R32F',
+      filter: 'NEAREST',
+      interpolation: 'freudenthal-piecewise-linear-v1',
+    });
+  }
+}
+
+// Pure renderer-facing adapter used by both the Three.js path and integration
+// tests. `clipMesh` remains the chemistry/cell topology bridge while MC wall,
+// crystal clipping, and explicit anchor authority consume one immutable field /
+// surface pair. The developer shadow flag is still independent while WallMesh
+// owns anchors, but it may never override or suppress an activated provider.
+function _topoCavitySurfaceSource(wall: any, sim: any,
+                                  useMarchingCubes = _topoMarchingCubesCavityEnabled(),
+                                  resolution = _topoMarchingCubesResolution()): any {
+  if (!wall) return null;
+  const clipMesh = wall.meshFor ? wall.meshFor(sim) : null;
+  if (!clipMesh) return null;
+  const active = wall.activeCavitySurfaceAnchorProvider
+    ? wall.activeCavitySurfaceAnchorProvider() : null;
+  if (active?.receipt?.kind === 'cavity-field') {
+    const field = active.field;
+    const buffers = active.surface;
+    MarchingCubesExtractor.verifyBuffers(buffers);
+    if (!field || field.sig !== active.receipt.field_signature
+        || field.snapshotDigest !== active.receipt.field_snapshot_digest
+        || buffers.sig !== active.receipt.surface_signature
+        || buffers.buffer_digest !== active.receipt.surface_buffer_digest
+        || field.surfaceSignature(active.receipt.isovalue) !== buffers.sig) {
+      throw new Error('active cavity surface authority is not one authenticated field/surface pair');
+    }
+    return {
+      mode: 'marching-cubes', buffers, clipMesh, clipField: field,
+      providerAuthority: true, providerReceipt: active.receipt,
+      sig: `mc-authority|${buffers.sig}|clip-field:${field.snapshotDigest}`,
+    };
+  }
+  if (wall._cavityProductionAuthorityContract) {
+    throw new Error('production cavity authority is unavailable: '
+      + (wall._cavitySurfaceAuthorityFailure || 'authenticated surface missing'));
+  }
+  if (useMarchingCubes && !wall._disableMarchingCubesCavity && wall.cavitySurfaceFor) {
+    try {
+      const buffers = wall.cavitySurfaceFor({ resolution, isovalue: 0 });
+      if (buffers) {
+        MarchingCubesExtractor.verifyBuffers(buffers);
+        // clipMesh.sig may change for wall_depth even though the authored base MC
+        // buffers stay cached. Include it so clip uniforms refresh without
+        // paying for a byte-identical field/extraction rebuild.
+        const field = wall.cavityFieldFor({ resolution });
+        if (!field || field.snapshotDigest !== buffers.source_field_snapshot_digest
+            || field.surfaceSignature(buffers.isovalue) !== buffers.sig) {
+          throw new Error('Marching Cubes wall and clip field are not the same immutable snapshot');
+        }
+        return { mode: 'marching-cubes', buffers, clipMesh, clipField: field,
+          providerAuthority: false,
+          sig: `mc|${buffers.sig}|clip-field:${field.snapshotDigest}` };
+      }
+      const failure = wall._cavitySurfaceFailure;
+      if (failure && !failure.reported) {
+        failure.reported = true;
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn('[marching-cubes] shadow surface rejected; using WallMesh', failure.error);
+        }
+      }
+    } catch (error) {
+      // Malformed field inputs also fail closed to the canonical renderer.
+      // Expected extraction rejections are cached/reported above.
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[marching-cubes] shadow surface rejected; using WallMesh', error);
+      }
+    }
+  }
+  return { mode: 'wall-mesh', buffers: clipMesh, clipMesh, clipField: null,
+    sig: `wall-mesh|${clipMesh.sig}` };
+}
+
+function _topoDisposeCavityFieldTexture(state: any): void {
+  const texture = state && state.clipUniforms && state.clipUniforms.uCavityField.value;
+  const wasFieldVariant = !!(state && state.clipUniforms
+    && state.clipUniforms.uCavityClipMode.value === 1);
+  if (texture && texture.dispose) texture.dispose();
+  if (state && state.clipUniforms) {
+    state.clipUniforms.uCavityField.value = null;
+    state.clipUniforms.uCavityClipMode.value = 0;
+  }
+  if (state) {
+    state.cavityFieldContract = null;
+    state.cavityFieldUploadReceipt = null;
+    state.cavityFieldCapabilityReceipt = null;
+    state.cavityClipField = null;
+    if (wasFieldVariant) state.crystalsSig = '';
+  }
+}
+
+function _topoRejectActiveCavityFieldClip(
+  state: any, reason: string, texture?: any, scheduleFallback = true,
+): void {
+  if (!state) return;
+  const digest = state.cavityFieldContract && state.cavityFieldContract.snapshot_digest;
+  state.cavityFieldFallbackReason = String(reason || 'cavity-field-clip-rejected');
+  if (digest) {
+    if (!state.cavityFieldFailedDigests) state.cavityFieldFailedDigests = new Set<string>();
+    if (!state.cavityFieldFailedReasons) state.cavityFieldFailedReasons = new Map<string, string>();
+    state.cavityFieldFailedDigests.add(digest);
+    state.cavityFieldFailedReasons.set(digest, state.cavityFieldFallbackReason);
+  }
+  if (state.clipUniforms) state.clipUniforms.uCavityClipMode.value = 0;
+  state.cavityClipField = null;
+  state.cavitySig = '';
+  if (state.cavity) state.cavity.visible = false;
+  if (state.crystals) state.crystals.visible = false;
+  if (texture && texture.dispose) texture.dispose();
+  _topoPublishCavityClipReceipt(state);
+  if (scheduleFallback && typeof requestAnimationFrame === 'function' && typeof topoRender === 'function') {
+    requestAnimationFrame(() => topoRender());
+  }
+}
+
+function _topoCavityShaderProgramsRunnable(programs: any[]): boolean {
+  if (!Array.isArray(programs)) return false;
+  for (const program of programs) {
+    const diagnostics = program && program.diagnostics;
+    if (diagnostics && diagnostics.runnable === false) return false;
+  }
+  return true;
+}
+
+function _topoCompileCavityShaderPrograms(state: any): boolean {
+  const renderer = state && state.renderer;
+  if (!renderer || typeof renderer.compile !== 'function') return false;
+  try {
+    const materials = renderer.compile(state.scene, state.camera);
+    if (!materials || typeof materials[Symbol.iterator] !== 'function') return false;
+    const programs: any[] = [];
+    for (const material of materials) {
+      if (!material?.userData?.vuggCavityClipVariant) continue;
+      const properties = renderer.properties && typeof renderer.properties.get === 'function'
+        ? renderer.properties.get(material) : null;
+      const materialPrograms = properties && properties.programs;
+      if (materialPrograms && typeof materialPrograms.values === 'function') {
+        for (const program of materialPrograms.values()) programs.push(program);
+      } else if (properties && properties.currentProgram) {
+        programs.push(properties.currentProgram);
+      } else {
+        return false;
+      }
+    }
+    // Three defers link diagnostics until its first uniform/attribute access.
+    // Force that access during compile, before any cavity-clipped draw is
+    // permitted. Only programs owned by current traversed, tagged materials
+    // participate; stale/unrelated renderer.info programs cannot poison it.
+    for (const program of programs) {
+      if (program && typeof program.getUniforms === 'function') program.getUniforms();
+    }
+    return _topoCavityShaderProgramsRunnable(programs);
+  } catch (_) {
+    return false;
+  }
+}
+
+function _topoRenderPreparedCavityScene(state: any, installFallback: () => boolean | void): boolean {
+  if (!state || !state.renderer) return false;
+  let runnable = _topoCompileCavityShaderPrograms(state);
+  if (state.clipUniforms.uCavityClipMode.value === 1 && !runnable) {
+    _topoRejectActiveCavityFieldClip(
+      state, 'cavity-field-shader-link-failed', undefined, false,
+    );
+    if (installFallback() === false) return false;
+    runnable = _topoCompileCavityShaderPrograms(state);
+  }
+  // The field failure rebuilds every clipped material as the distinct
+  // polar-r32f-free shader variant. Validate that fallback too. If even the
+  // canonical polar program is unrunnable, the caller must use canvas 2-D;
+  // never draw a known-bad WebGL program.
+  if (!runnable) {
+    state.cavityFieldFallbackReason = 'polar-cavity-shader-link-failed';
+    state.threeShaderUnusable = true;
+    _topoPublishCavityClipReceipt(state);
+    return false;
+  }
+  state.threeShaderUnusable = false;
+  state.renderer.render(state.scene, state.camera);
+  return true;
+}
+
+function _topoInstallCavityFieldClip(state: any, field: CavityScalarField, surface: any): boolean {
+  if (!state || !field || !surface) return false;
+  const contract = field.textureContract(surface.isovalue);
+  if (state.cavityFieldFailedDigests
+      && state.cavityFieldFailedDigests.has(contract.snapshot_digest)) {
+    state.cavityFieldFallbackReason = state.cavityFieldFailedReasons
+      && state.cavityFieldFailedReasons.get(contract.snapshot_digest)
+      || 'previous-field-install-failed';
+    _topoPublishCavityClipReceipt(state);
+    return false;
+  }
+  if (state.cavityFieldContract
+      && state.cavityFieldContract.snapshot_digest === contract.snapshot_digest
+      && state.cavityFieldContract.isovalue === contract.isovalue
+      && state.clipUniforms.uCavityField.value
+      && state.clipUniforms.uCavityClipMode.value === 1) {
+    return true;
+  }
+  if (!state.cavityFieldContract
+      || state.cavityFieldContract.snapshot_digest !== contract.snapshot_digest
+      || state.cavityFieldContract.isovalue !== contract.isovalue) {
+    state.cavityFieldUploadReceipt = null;
+  }
+  state.cavityFieldContract = contract;
+  const capability = _topoCavityClipCapabilityReceipt(state);
+  state.cavityFieldCapabilityReceipt = capability;
+  if (!capability.available) {
+    state.cavityFieldFallbackReason = capability.reason;
+    if (!state.cavityFieldFailedDigests) state.cavityFieldFailedDigests = new Set<string>();
+    if (!state.cavityFieldFailedReasons) state.cavityFieldFailedReasons = new Map<string, string>();
+    state.cavityFieldFailedDigests.add(contract.snapshot_digest);
+    state.cavityFieldFailedReasons.set(contract.snapshot_digest, capability.reason);
+    _topoDisposeCavityFieldTexture(state);
+    _topoPublishCavityClipReceipt(state, capability);
+    return false;
+  }
+  const upload = field.createTextureUpload(surface.isovalue);
+  let texture: any = null;
+  try {
+    upload.consume((values: Float32Array) => {
+      texture = new THREE.Data3DTexture(
+        values,
+        contract.dimensions[0], contract.dimensions[1], contract.dimensions[2],
+      );
+    });
+  } catch (error) {
+    state.cavityFieldFallbackReason = `texture-construction-failed:${
+      error instanceof Error ? error.message : String(error)}`;
+    if (!state.cavityFieldFailedDigests) state.cavityFieldFailedDigests = new Set<string>();
+    if (!state.cavityFieldFailedReasons) state.cavityFieldFailedReasons = new Map<string, string>();
+    state.cavityFieldFailedDigests.add(contract.snapshot_digest);
+    state.cavityFieldFailedReasons.set(contract.snapshot_digest, state.cavityFieldFallbackReason);
+    _topoDisposeCavityFieldTexture(state);
+    _topoPublishCavityClipReceipt(state);
+    return false;
+  }
+  if (!texture) return false;
+  const previous = state.clipUniforms.uCavityField.value;
+  texture.format = THREE.RedFormat;
+  texture.type = THREE.FloatType;
+  texture.internalFormat = 'R32F';
+  texture.minFilter = THREE.NearestFilter;
+  texture.magFilter = THREE.NearestFilter;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.wrapR = THREE.ClampToEdgeWrapping;
+  texture.generateMipmaps = false;
+  texture.unpackAlignment = 1;
+  texture.needsUpdate = true;
+  // Force the lazy Three upload before publishing either half of the MC/field
+  // pair. A constructor, allocation, byte-integrity, or GL error falls back to
+  // WallMesh while the previous pair is still untouched.
+  try {
+    const uploadGl = state.renderer && state.renderer.getContext
+      ? state.renderer.getContext() : null;
+    if (!state.renderer || typeof state.renderer.initTexture !== 'function' || !uploadGl) {
+      throw new Error('forced GPU texture initialization is unavailable');
+    }
+    let priorError = uploadGl.NO_ERROR;
+    for (let i = 0; i < 16; i++) {
+      priorError = uploadGl.getError();
+      if (priorError === uploadGl.NO_ERROR) break;
+    }
+    if (priorError !== uploadGl.NO_ERROR) {
+      throw new Error(`WebGL error state could not be cleared (${priorError})`);
+    }
+    state.renderer.initTexture(texture);
+    const glError = uploadGl.getError();
+    if (glError !== uploadGl.NO_ERROR) {
+      throw new Error(`R32F cavity texture GPU upload failed (GL error ${glError})`);
+    }
+    state.cavityFieldUploadReceipt = upload.verifyAfterUpload();
+  } catch (error) {
+    state.cavityFieldFallbackReason = error instanceof Error ? error.message : String(error);
+    if (!state.cavityFieldFailedDigests) state.cavityFieldFailedDigests = new Set<string>();
+    if (!state.cavityFieldFailedReasons) state.cavityFieldFailedReasons = new Map<string, string>();
+    state.cavityFieldFailedDigests.add(contract.snapshot_digest);
+    state.cavityFieldFailedReasons.set(contract.snapshot_digest, state.cavityFieldFallbackReason);
+    texture.dispose();
+    _topoDisposeCavityFieldTexture(state);
+    _topoPublishCavityClipReceipt(state, capability);
+    return false;
+  }
+  const wasFieldVariant = state.clipUniforms.uCavityClipMode.value === 1;
+  state.clipUniforms.uCavityField.value = texture;
+  if (!state.clipUniforms.uCavityFieldDimensions) {
+    state.clipUniforms.uCavityFieldDimensions = { value: new THREE.Vector3() };
+  }
+  state.clipUniforms.uCavityFieldDimensions.value.fromArray(contract.dimensions);
+  state.clipUniforms.uCavityFieldWorldScale.value.fromArray(contract.world_to_texture_scale);
+  state.clipUniforms.uCavityFieldWorldBias.value.fromArray(contract.world_to_texture_bias);
+  state.clipUniforms.uCavityFieldIsovalue.value = contract.isovalue;
+  state.clipUniforms.uCavityClipMode.value = 1;
+  if (!wasFieldVariant) state.crystalsSig = '';
+  state.cavityClipField = field;
+  state.cavityFieldFallbackReason = null;
+  _topoPublishCavityClipReceipt(state, capability);
+  if (previous && previous !== texture && previous.dispose) previous.dispose();
+  return true;
 }
 
 // PHASE-2-CAVITY-MESH: cavity geometry now sources from WallMesh
@@ -443,19 +1461,91 @@ function _topoCavitySignature(wall: any, sim: any): string {
 // triangulation) lives in WallMesh.recompute — same formulas as
 // before, just centralized so future tessellations (icosphere,
 // geodesic, irregular) can swap in without touching this file.
-function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
-  if (!wall || !wall.rings || !wall.rings.length) return;
-  const mesh = wall.meshFor ? wall.meshFor(sim) : null;
-  if (!mesh) return;
-  if (mesh.sig === state.cavitySig) return;
-  state.cavitySig = mesh.sig;
+function _topoBuildCavityGeometry(state: any, wall: any, sim: any,
+                                  forceWallMesh = false,
+                                  renderConditions: any = sim?.conditions,
+                                  expectedAppearance: any = null,
+                                  expectedMaterialState: any = null) {
+  if (!wall || !wall.rings || !wall.rings.length) return false;
+  let source: any;
+  try {
+    source = _topoCavitySurfaceSource(
+      wall, sim, forceWallMesh ? false : _topoMarchingCubesCavityEnabled(),
+    );
+  } catch (error) {
+    state.cavityFieldFallbackReason = error instanceof Error ? error.message : String(error);
+    state.cavityAuthorityUnrenderable = true;
+    if (state.cavity) state.cavity.visible = false;
+    if (state.crystals) state.crystals.visible = false;
+    _topoPublishCavityClipReceipt(state);
+    return false;
+  }
+  if (!source) return false;
+  if (source.mode === 'marching-cubes'
+      && !_topoInstallCavityFieldClip(state, source.clipField, source.buffers)) {
+    if (source.providerAuthority) {
+      // Renderer capability is presentation state, never geological state. An
+      // incapable device withholds the view instead of drawing a different wall
+      // or mutating the deterministic provider command/fingerprint.
+      state.cavityAuthorityUnrenderable = true;
+      if (state.cavity) state.cavity.visible = false;
+      if (state.crystals) state.crystals.visible = false;
+      _topoPublishCavityClipReceipt(state);
+      return false;
+    }
+    source = _topoCavitySurfaceSource(wall, sim, false, _topoMarchingCubesResolution());
+  }
+  const mesh = source.clipMesh;
+  const surface = source.buffers;
+  let appearance: any;
+  try {
+    appearance = CavityWaterAppearance.create(wall, renderConditions, {
+      activeProvider: source.providerAuthority
+        ? wall.activeCavitySurfaceAnchorProvider?.() : null,
+      providerReceipt: source.providerReceipt || { kind: 'wall-mesh' },
+      surface,
+      sim,
+    });
+    if (expectedAppearance
+        && appearance.receipt.appearance_digest !== expectedAppearance.appearance_digest) {
+      throw new RangeError('rendered cavity appearance differs from authenticated replay');
+    }
+  } catch (error) {
+    state.cavityFieldFallbackReason = error instanceof Error ? error.message : String(error);
+    state.cavityAuthorityUnrenderable = true;
+    if (state.cavity) state.cavity.visible = false;
+    if (state.crystals) state.crystals.visible = false;
+    if (state.waterInterface) state.waterInterface.visible = false;
+    return false;
+  }
+  try {
+    _topoConfigureCavityWallMaterial(state, source, wall, expectedMaterialState);
+  } catch (error) {
+    state.cavityFieldFallbackReason = error instanceof Error ? error.message : String(error);
+    state.cavityAuthorityUnrenderable = true;
+    if (state.cavity) state.cavity.visible = false;
+    if (state.crystals) state.crystals.visible = false;
+    return false;
+  }
+  if (source.sig === state.cavitySig) {
+    _topoSyncCavityWaterAppearance(state, source, appearance);
+    return true;
+  }
+  state.cavityAuthorityUnrenderable = false;
+  state.cavityAuthorityActive = source.providerAuthority === true;
+  state.cavitySig = source.sig;
+  state.cavityAppearanceSig = '';
+  // Crystal placement resolves against the live cavity provider. A surface
+  // revision must invalidate meshes even if size/mineral fields are unchanged.
+  state.crystalsSig = '';
+  if (source.mode === 'wall-mesh') _topoDisposeCavityFieldTexture(state);
 
   const ringCount = wall.ring_count;
   const ring0 = wall.rings[0];
   const N = ring0 ? ring0.length : 0;
   if (!N || ringCount < 1) return;
 
-  const numVerts = mesh.numInterior + 2;
+  const numVerts = surface.positions.length / 3;
   const geom = new THREE.BufferGeometry();
   // mesh.positions / mesh.colors / mesh.normals are Float32Arrays the
   // mesh owns and rebuilds in-place; copy-on-write into the
@@ -463,84 +1553,33 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
   // geometry's data behind Three.js's back. The slice() costs
   // ~75 KB per cavity rebuild at the default 16×120 resolution
   // (≈ once per dissolution event), which is well under the budget.
-  geom.setAttribute('position', new THREE.BufferAttribute(mesh.positions.slice(), 3));
-  geom.setAttribute('color', new THREE.BufferAttribute(mesh.colors.slice(), 3));
-  geom.setAttribute('normal', new THREE.BufferAttribute(mesh.normals.slice(), 3));
+  geom.setAttribute('position', new THREE.BufferAttribute(surface.positions.slice(), 3));
+  geom.setAttribute('color', new THREE.BufferAttribute(surface.colors.slice(), 3));
+  geom.setAttribute('normal', new THREE.BufferAttribute(surface.normals.slice(), 3));
   // MATRIX SKIN (2026-07-06): static lat-long texture coords (js/23) so the
   // per-lithology wall skin can map. Guarded — an old cached mesh without uvs
   // just skips the attribute and the material renders un-mapped.
-  if (mesh.uvs) geom.setAttribute('uv', new THREE.BufferAttribute(mesh.uvs.slice(), 2));
+  if (surface.uvs) geom.setAttribute('uv', new THREE.BufferAttribute(surface.uvs.slice(), 2));
   const indexAttr = numVerts > 65535
-    ? new THREE.Uint32BufferAttribute(mesh.indices, 1)
-    : new THREE.Uint16BufferAttribute(mesh.indices, 1);
+    ? new THREE.Uint32BufferAttribute(surface.indices.slice(), 1)
+    : new THREE.Uint16BufferAttribute(surface.indices.slice(), 1);
   geom.setIndex(indexAttr);
-  geom.computeVertexNormals();  // overwrite the placeholder normals with
-                                // mesh-aware ones for proper shading
+  // The MC path carries scalar-gradient normals. Recomputing them from
+  // triangles would discard the shared field oracle and reintroduce seams.
+  if (source.mode === 'wall-mesh') {
+    geom.computeVertexNormals();  // legacy mesh placeholders need this pass
+  }
 
   const target = state.cavity;
   const prev = target.geometry;
   target.geometry = geom;
   if (prev && prev.dispose) prev.dispose();
-
-  // MATRIX SKIN (2026-07-06, boss ask): the wall texture that tells you what
-  // kind of matrix hosts this vug. litho = wall.matrix (render-only override,
-  // js/22) ?? wall.composition (the physics field). Textures are built once
-  // per lithology + cached (js/99a _matrixSkinTexture); reassigned only when
-  // the resolved lithology actually changes (scenario switch).
-  if (target.material && typeof _matrixSkinTexture === 'function') {
-    const litho = String(wall.matrix || wall.composition || 'limestone');
-    if (state._matrixLitho !== litho) {
-      state._matrixLitho = litho;
-      const tex = _matrixSkinTexture(litho);
-      target.material.map = tex || null;
-      target.material.needsUpdate = true;
-    }
-  }
-
-  // W-K V1 (wall microtexture) + V1b (albedo depth + FLOW-SCALED scallop length): the GENESIS
-  // relief — a normal map + albedo AO keyed on wall.architecture (dissolution scallops / cleft
-  // striations / basin rind; js/99a), with SCALLOP TILING scaled by the wall's paleo-flow (Curl
-  // 1974: scallop length ∝ 1/velocity → density ∝ velocity). The matrix skin above is the host
-  // lithology as COLOUR; this is the cavity's genesis as SURFACE. Textures cache per family and
-  // reassign only on architecture change; the flow-scaled REPEAT re-applies whenever arch OR the
-  // derived tiling changes (SAME texture, different tiling — no regen). Render-only, byte-identical.
-  if (target.material && typeof _wallReliefNormalMap === 'function') {
-    const arch = String((wall && wall.architecture) || 'pocket');
-    // V1c: the relief family is driven by cavity GENESIS (scallops only for real dissolution walls;
-    // comb/druse/boxwork/botryoidal/smooth otherwise), falling back to architecture when a scenario
-    // hasn't declared genesis yet. Textures cache per FAMILY; scallop tiling still flow-scales (V1b).
-    const fam = (typeof _wallReliefFamily === 'function')
-      ? _wallReliefFamily((wall && wall.genesis), arch)
-      : ((typeof _WALL_RELIEF_FAMILY !== 'undefined' && _WALL_RELIEF_FAMILY[arch]) || 'scallops');
-    const flow = (wall && typeof wall.paleo_flow === 'number') ? wall.paleo_flow : null;
-    const rep = (typeof _wallReliefRepeat === 'function') ? _wallReliefRepeat(fam, flow) : [5, 5];
-    const key = fam + '|' + rep[0] + 'x' + rep[1];
-    if (state._wallReliefKey !== key) {
-      const famChanged = state._wallReliefFam !== fam;
-      state._wallReliefKey = key;
-      const ru = target.material.userData && target.material.userData.reliefAO;
-      if (famChanged) {
-        state._wallReliefFam = fam;
-        const nrm = _wallReliefNormalMap(fam);
-        target.material.normalMap = nrm || null;
-        if (nrm && target.material.normalScale && target.material.normalScale.set) {
-          target.material.normalScale.set(2.0, 2.0);   // solid-wall relief (V1); V1b AO carries it through translucency
-        }
-        if (ru && typeof _wallReliefAOMap === 'function') {
-          const ao = _wallReliefAOMap(fam);
-          if (ao) { ru.uReliefAO.value = ao; ru.uReliefAOAmt.value = WALL_RELIEF_AO_AMT; }
-          else ru.uReliefAOAmt.value = 0;
-        }
-      }
-      // Flow-scaled tiling (Curl speedometer): faster paleo-flow → smaller, denser scallops.
-      // Applied to BOTH the normal map's own repeat AND the AO uniform so the two stay aligned.
-      if (target.material.normalMap && target.material.normalMap.repeat && target.material.normalMap.repeat.set) {
-        target.material.normalMap.repeat.set(rep[0], rep[1]);
-      }
-      if (ru && ru.uReliefAORepeat && ru.uReliefAORepeat.value) ru.uReliefAORepeat.value.set(rep[0], rep[1]);
-      target.material.needsUpdate = true;
-    }
-  }
+  // An asynchronous upload failure hides both consumers for one fail-closed
+  // frame. A completed rebuild restores the selected wall display and crystals.
+  if (typeof _topoApplyWallDisplay === 'function') _topoApplyWallDisplay(state);
+  else target.visible = true;
+  if (state.crystals) state.crystals.visible = true;
+  _topoPublishCavityClipReceipt(state);
 
   // Tier 1 C (post-v69): toggle cavity material between smooth Phong-
   // like shading (default) and flat-faceted sphere-union polyhedron
@@ -602,6 +1641,7 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
   // PHASE-2-CAVITY-MESH: read straight from mesh.positions — same
   // vertex layout (row-major (r, c)) as before, just lives on the
   // mesh now.
+  if (source.mode === 'wall-mesh') {
   const meshPositions: Float32Array = mesh.positions;
   const cellRadiiBuf = new Float32Array(ringCount * N);
   for (let r = 0; r < ringCount; r++) {
@@ -630,6 +1670,9 @@ function _topoBuildCavityGeometry(state: any, wall: any, sim: any) {
   state.clipUniforms.uVugCellTexW.value = N;
   state.clipUniforms.uVugCellTexH.value = ringCount;
   if (prevTex && prevTex.dispose) prevTex.dispose();
+  }
+  _topoSyncCavityWaterAppearance(state, source, appearance);
+  return true;
 }
 
 // Sync the renderer's drawing-buffer size to the canvas's CSS size and
@@ -1309,19 +2352,19 @@ function _makeBentPrism(bend: number): any {
   return geom;
 }
 
-// Etched / dissolution-sculpted cube (crystal-face-realism arc §2, 2026-06-22). A
-// returning UNDERSATURATED fluid rounds a finished crystal's edges + corners (Sangwal
-// 1987, Etching of Crystals); on an isometric habit (fluorite / galena cube) the corners
-// — the highest-energy sites — round first, the classic etched/dissolved fluorite look.
-// Built from a SUBDIVIDED box whose vertices are lerped toward a sphere: corners (the
-// farthest from centre) move the most, face-centres barely move, so the cube keeps flat
-// faces but gains rounded etched edges + corners. `round` 0 = sharp, ~0.5 = strongly
-// dissolved. Gated in the mesh-sync hook on crystal._etch + the cube token; paired with a
-// frosted (high-roughness) material. Lead-with-rounding — reads better than literal pits
-// at thumbnail scale (the §2 design note). A low-poly box can't round (its 8 corners are
-// equidistant → a uniform lerp just shrinks it), hence the SEG subdivision.
-function _makeEtchedCube(round: number): any {
-  const t = Math.max(0.0, Math.min(0.85, round || 0.3));
+// Dissolution-sculpted {100} fluorite cube. Godinho et al. (2012) report that
+// near-{100} top surfaces remain comparatively flat while pre-existing pores
+// evolve into cubic pits bounded by {100} walls at 90 degrees. The accepted
+// receipt selects that morphology. Crystal scale carries measured volume loss.
+// The two deterministic pores per face are an explicitly RECEIPTED schematic
+// defect assumption, not inferred natural-crystal defect density; their relief
+// is vertically exaggerated 250× so sub-micrometre retreat can be inspected.
+// The player-facing zone panel states that magnification and the physical
+// silhouette remains unchanged by this overlay. The optional round parameter
+// exists only for old cosmetic save tags and is zero for physical {100} receipts.
+function _makeEtchedCube(round: number, pitStrength: number = 0.5, morphology = ''): any {
+  const t = Math.max(0.0, Math.min(0.85, round ?? 0.3));
+  const pitAmp = Math.max(0, Math.min(1, pitStrength || 0));
   const SEG = 12;
   const geom = new THREE.BoxGeometry(0.8, 0.8, 0.8, SEG, SEG, SEG);
   const pos = geom.attributes.position;
@@ -1329,14 +2372,46 @@ function _makeEtchedCube(round: number): any {
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
     const r = Math.hypot(x, y, z) || 1e-6;
-    pos.setXYZ(i,
-      x * (1 - t) + (x / r) * R * t,
-      y * (1 - t) + (y / r) * R * t,
-      z * (1 - t) + (z / r) * R * t);
+    let nx = x * (1 - t) + (x / r) * R * t;
+    let ny = y * (1 - t) + (y / r) * R * t;
+    let nz = z * (1 - t) + (z / r) * R * t;
+    // Deterministic cubic pits on the original cube faces. A broad flat floor
+    // and narrow transition approximate the observed 90-degree {100} walls at
+    // this deliberately low mesh resolution.
+    const ax = Math.abs(x), ay = Math.abs(y), az = Math.abs(z);
+    let u = 0, v = 0, axis = 0;
+    if (ax >= ay && ax >= az) { axis = 1; u = y / 0.4; v = z / 0.4; }
+    else if (ay >= ax && ay >= az) { axis = 2; u = x / 0.4; v = z / 0.4; }
+    else { axis = 3; u = x / 0.4; v = y / 0.4; }
+    const crater = (cx: number, cy: number, radius: number) => {
+      if (morphology.includes('cubic-{100}-pits')) {
+        const squareRadius = Math.max(Math.abs(u - cx), Math.abs(v - cy)) / radius;
+        if (squareRadius <= 0.62) return 1;
+        return squareRadius < 1 ? (1 - squareRadius) / 0.38 : 0;
+      }
+      const normalized = Math.hypot(u - cx, v - cy) / radius;
+      return normalized < 1 ? Math.pow(1 - normalized, 1.35) : 0;
+    };
+    const pit = Math.min(1,
+      crater(-0.35, 0.20, 0.38) + crater(0.30, -0.28, 0.30));
+    const inset = 0.055 * pitAmp * pit;
+    if (axis === 1) nx -= Math.sign(nx || x) * inset;
+    else if (axis === 2) ny -= Math.sign(ny || y) * inset;
+    else nz -= Math.sign(nz || z) * inset;
+    pos.setXYZ(i, nx, ny, nz);
   }
   pos.needsUpdate = true;
   geom.computeVertexNormals();
   return geom;
+}
+
+// Preserve progressive healing in the geometry cache. A 0.1 bucket collapsed
+// the seed-42 etched (0.1036), first-healed (0.0854), and final (0.0658)
+// surfaces into one identical mesh. Thousandth-resolution keeps replay depth
+// within 0.0005 of the receipt-derived 250× schematic magnitude.
+function _physicalEtchReliefBucket(intensity: number): number {
+  const bounded = Math.max(0, Math.min(1, Number(intensity) || 0));
+  return Math.round(bounded * 1000) / 1000;
 }
 
 // Calcite cleavage rhombohedron — 6 rhombic faces, 8 vertices, 3-fold
@@ -3549,6 +4624,327 @@ function _clusterSatelliteCount(crystal: any, pattern: ClusterPattern, cLenOverr
 // a-axis tangentially around the substrate normal, scaled to 0.4-0.8×
 // parent, tilted up to ±11° off the parent's c-axis. Satellites are
 // added to state.crystals alongside the parent.
+// AREA-COVERING SURFACE GROWTH (SIM 246)
+// ---------------------------------------
+// A surface-growth Crystal is one mass-booked aggregate, not N extra crystals.
+// The instance cloud below is therefore representative geometry: one draw call,
+// no additions to sim.crystals, no extra accepted volume, and a hard mobile cap.
+// The physical coverage/thickness/volume record is crystal._surfaceGrowth (js/45).
+const SURFACE_GROWTH_INSTANCE_CAP_DESKTOP = 128;
+const SURFACE_GROWTH_INSTANCE_CAP_MOBILE = 56;
+const SURFACE_GROWTH_MOBILE_MAX_WIDTH_CSS_PX = 720;
+const SURFACE_GROWTH_MOBILE_MIN_DEVICE_PIXEL_RATIO = 2.5;
+
+function _surfaceGrowthInstanceCount(coverage: number, mobile = false): number {
+  const cap = mobile ? SURFACE_GROWTH_INSTANCE_CAP_MOBILE : SURFACE_GROWTH_INSTANCE_CAP_DESKTOP;
+  return Math.max(12, Math.min(cap, Math.round(12 + coverage * (cap - 12))));
+}
+
+// Equal-area deterministic points inside a spherical cap. `center` is the
+// outward wall direction; cap area / whole-sphere area is exactly `coverage`.
+// The golden-angle azimuth avoids both grid seams and random clumping.
+function _surfaceGrowthSampleDirections(
+  center: [number, number, number], count: number, coverage: number, seed = 0,
+): Array<[number, number, number]> {
+  let [cx, cy, cz] = center;
+  const cl = Math.sqrt(cx * cx + cy * cy + cz * cz) || 1;
+  cx /= cl; cy /= cl; cz /= cl;
+  const ref = Math.abs(cy) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+  let t1x = ref[1] * cz - ref[2] * cy;
+  let t1y = ref[2] * cx - ref[0] * cz;
+  let t1z = ref[0] * cy - ref[1] * cx;
+  const tl = Math.sqrt(t1x * t1x + t1y * t1y + t1z * t1z) || 1;
+  t1x /= tl; t1y /= tl; t1z /= tl;
+  const t2x = cy * t1z - cz * t1y;
+  const t2y = cz * t1x - cx * t1z;
+  const t2z = cx * t1y - cy * t1x;
+  const cov = Math.max(0.001, Math.min(0.999, coverage));
+  const cosEdge = 1 - 2 * cov;
+  const phase = ((seed * 0.6180339887498949) % 1 + 1) % 1 * Math.PI * 2;
+  const golden = Math.PI * (3 - Math.sqrt(5));
+  const out: Array<[number, number, number]> = [];
+  for (let i = 0; i < count; i++) {
+    const u = (i + 0.5) / count;
+    const cosA = 1 - u * (1 - cosEdge);
+    const sinA = Math.sqrt(Math.max(0, 1 - cosA * cosA));
+    const az = phase + i * golden;
+    const ca = Math.cos(az), sa = Math.sin(az);
+    out.push([
+      cx * cosA + (t1x * ca + t2x * sa) * sinA,
+      cy * cosA + (t1y * ca + t2y * sa) * sinA,
+      cz * cosA + (t1z * ca + t2z * sa) * sinA,
+    ]);
+  }
+  return out;
+}
+
+function _surfaceGrowthWallPoint(
+  wall: any, dir: [number, number, number], ringCount: number, N: number, initR: number,
+): any {
+  let [dx, dy, dz] = dir;
+  const dl = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+  dx /= dl; dy /= dl; dz /= dl;
+  const phi = Math.acos(Math.max(-1, Math.min(1, -dy)));
+  const ringIdx = Math.max(0, Math.min(ringCount - 1,
+    Math.round((phi / Math.PI) * ringCount - 0.5)));
+  const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1;
+  const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0;
+  let theta = Math.atan2(dz, dx) - twist;
+  while (theta < 0) theta += 2 * Math.PI;
+  while (theta >= 2 * Math.PI) theta -= 2 * Math.PI;
+  const cellIdx = Math.max(0, Math.min(N - 1, Math.floor(theta / (2 * Math.PI) * N)));
+  const cell = wall.rings[ringIdx] && wall.rings[ringIdx][cellIdx];
+  const baseR = cell && cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
+  const radius = (baseR + (cell ? cell.wall_depth : 0)) * polar;
+  return {
+    x: radius * dx, y: radius * dy, z: radius * dz,
+    // Cavity-facing normal points inward.
+    nx: -dx, ny: -dy, nz: -dz,
+    ringIdx, cellIdx, radius,
+  };
+}
+
+// Single-representation gate used by production sync and executed Three.js
+// integration tests. A surface aggregate owns one instanced swath; adding its
+// legacy trophy parent as well would depict one booked solid twice.
+function _addCrystalParentRepresentation(state: any, crystal: any, mesh: any): boolean {
+  if (crystal?._surfaceGrowth) return false;
+  state.crystals.add(mesh);
+  return true;
+}
+
+function _emitSurfaceGrowthSwath(
+  state: any, crystal: any, parentMat: any,
+  ax: number, ay: number, az: number,
+  wall: any, ringCount: number, N: number, initR: number,
+  renderC: number,
+  sim: any,
+  earlierLayers: any[],
+): any {
+  const record = crystal && crystal._surfaceGrowth;
+  if (!record || !(record.coverage_fraction > 0) || !wall || !wall.rings) return null;
+  const liveC = Math.max(1e-9, Number(crystal.c_length_mm) || 0);
+  // Replay grows the footprint from the historical size rather than painting
+  // the final shell on the first frame.
+  const replayMaturity = Math.max(0.02, Math.min(1, renderC / liveC));
+  const coverage = Math.max(0.005, Math.min(0.98,
+    record.coverage_fraction * Math.sqrt(replayMaturity)));
+  const mobile = typeof window !== 'undefined'
+    && ((window.innerWidth || 1024) <= SURFACE_GROWTH_MOBILE_MAX_WIDTH_CSS_PX
+      || (window.devicePixelRatio || 1) >= SURFACE_GROWTH_MOBILE_MIN_DEVICE_PIXEL_RATIO);
+  const count = _surfaceGrowthInstanceCount(coverage, mobile);
+  const anchorNormal = wall?.surfaceNormalForCrystal?.(crystal) || [ax, ay, az];
+  const al = Math.sqrt(anchorNormal[0] * anchorNormal[0]
+    + anchorNormal[1] * anchorNormal[1] + anchorNormal[2] * anchorNormal[2]) || 1;
+  const directions = _surfaceGrowthSampleDirections(
+    [anchorNormal[0] / al, anchorNormal[1] / al, anchorNormal[2] / al],
+    count, coverage, crystal.crystal_id || 0,
+  );
+  const exactPatch = wall && typeof wall.sampleSurfacePatchForCrystal === 'function'
+    ? wall.sampleSurfacePatchForCrystal(
+      crystal, count, coverage, crystal.crystal_id || 0, sim,
+    )
+    : null;
+
+  let key = '__surface_patch_lowpoly';
+  let geom = state.geomCache.get(key);
+  if (!geom) {
+    geom = new THREE.SphereGeometry(0.5, 8, 5);
+    state.geomCache.set(key, geom);
+  }
+  if (record.regime === 'euhedral_druse') {
+    key = crystal.mineral === 'calcite' ? '__surface_calcite_tooth' : '__surface_quartz_point';
+    geom = state.geomCache.get(key);
+    if (!geom) {
+      geom = _buildHabitGeom(crystal.mineral === 'calcite' ? 'scalene' : 'prism');
+      state.geomCache.set(key, geom);
+    }
+  } else if (record.regime === 'fibrous_mat') {
+    key = '__surface_fiber';
+    geom = state.geomCache.get(key);
+    if (!geom) { geom = _buildHabitGeom('spike'); state.geomCache.set(key, geom); }
+  } else if (record.regime === 'dendritic_film') {
+    // A wall dendrite is a branching two-dimensional film, not a forest of
+    // pyrolusite needles. Reuse the deterministic tree skeleton, then flatten
+    // it into the local tangent plane below.
+    geom = _getDendriteTreeGeom(state, crystal);
+  }
+
+  const mat = parentMat.clone();
+  mat.roughness = record.regime === 'fibrous_mat' ? 0.72
+    : record.regime === 'dendritic_film' ? 0.78
+    : record.regime === 'laminated_lining' ? 0.82 : Math.max(0.48, mat.roughness || 0.5);
+  if (record.regime === 'laminated_lining' && mat.transparent) {
+    mat.opacity = Math.max(0.46, mat.opacity || 0);
+  }
+  _applyCavityClip(mat, state.clipUniforms);
+
+  const swath = new THREE.InstancedMesh(geom, mat, count);
+  const dummy = new THREE.Object3D();
+  const up = new THREE.Vector3(0, 1, 0);
+  const axis = new THREE.Vector3();
+  const normal = new THREE.Vector3();
+  const lateral = new THREE.Vector3();
+  const basis = new THREE.Matrix4();
+  const cavityR = Math.max(1, Number(state.clipUniforms?.uVugRadius?.value) || initR);
+  const fallbackArea = 4 * Math.PI * cavityR * cavityR * coverage;
+  const representedArea = exactPatch && exactPatch.area_mm2 > 0
+    ? exactPatch.area_mm2
+    : (Number(record.cavity_area_mm2) > 0
+      ? Number(record.cavity_area_mm2) * coverage
+      : fallbackArea);
+  const areaPerRepresentative = representedArea / count;
+  const patchRadius = Math.max(0.22, Math.sqrt(areaPerRepresentative / Math.PI) * 1.08);
+  const trueThicknessMm = Math.max(0, Number(record.mean_thickness_um) || 0) / 1000;
+  const displayThickness = Math.max(0.06, Math.min(patchRadius * 0.45,
+    trueThicknessMm > 0 ? Math.max(trueThicknessMm, 0.06) : 0.06));
+
+  for (let i = 0; i < count; i++) {
+    const p = exactPatch && exactPatch.samples && exactPatch.samples[i]
+      ? exactPatch.samples[i]
+      : _surfaceGrowthWallPoint(wall, directions[i], ringCount, N, initR);
+    let underburdenDisplayMm = 0;
+    if (p.triangle_index != null) {
+      const triangleKey = `${exactPatch?.source_signature}:${p.triangle_index}`;
+      for (const layer of earlierLayers) {
+        if (layer.triangle_keys.has(triangleKey)) {
+          underburdenDisplayMm += layer.representative_relief_mm;
+        }
+      }
+    }
+    const h = Math.abs(Math.sin((crystal.crystal_id + 1) * 17.17 + i * 9.73)) % 1;
+    if (record.regime === 'euhedral_druse') {
+      const height = Math.max(0.24, Math.min(1.6, patchRadius * (0.28 + 0.22 * h)));
+      const width = height * (crystal.mineral === 'calcite' ? 0.42 : 0.28);
+      axis.set(p.nx, p.ny, p.nz);
+      dummy.quaternion.setFromUnitVectors(up, axis);
+      dummy.rotateY(h * Math.PI * 2);
+      dummy.position.set(
+        p.x + p.nx * (underburdenDisplayMm + height * 0.5),
+        p.y + p.ny * (underburdenDisplayMm + height * 0.5),
+        p.z + p.nz * (underburdenDisplayMm + height * 0.5),
+      );
+      dummy.scale.set(width, height, width);
+    } else if (record.regime === 'dendritic_film') {
+      // Build a right-handed local frame with tree +Y along the wall tangent
+      // and tree +Z along the cavity-facing normal, then crush Z to a genuine
+      // film. This retains the branch silhouette across a wide swath without
+      // inventing free-standing museum-scale Mn crystals.
+      let tx = -p.nz, ty = 0, tz = p.nx;
+      let tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+      if (tl < 1e-6) { tx = 1; ty = 0; tz = 0; tl = 1; }
+      tx /= tl; ty /= tl; tz /= tl;
+      const spin = h * Math.PI * 1.2 - Math.PI * 0.6;
+      const bx = p.ny * tz - p.nz * ty;
+      const by = p.nz * tx - p.nx * tz;
+      const bz = p.nx * ty - p.ny * tx;
+      axis.set(
+        tx * Math.cos(spin) + bx * Math.sin(spin),
+        ty * Math.cos(spin) + by * Math.sin(spin),
+        tz * Math.cos(spin) + bz * Math.sin(spin),
+      ).normalize();
+      normal.set(p.nx, p.ny, p.nz).normalize();
+      lateral.crossVectors(axis, normal).normalize();
+      basis.makeBasis(lateral, axis, normal);
+      dummy.quaternion.setFromRotationMatrix(basis);
+      const length = Math.max(0.65, Math.min(3.2, patchRadius * (1.0 + h * 0.6)));
+      const filmRelief = Math.max(0.035, Math.min(0.10, displayThickness));
+      dummy.position.set(
+        p.x + p.nx * (underburdenDisplayMm + filmRelief * 0.5),
+        p.y + p.ny * (underburdenDisplayMm + filmRelief * 0.5),
+        p.z + p.nz * (underburdenDisplayMm + filmRelief * 0.5),
+      );
+      dummy.scale.set(length * 0.58, length, filmRelief);
+    } else if (record.regime === 'fibrous_mat') {
+      // Slip-/felt-fibre representation: lay each bundle in the local tangent
+      // plane instead of making a forest of needles normal to the wall.
+      let tx = -p.nz, ty = 0, tz = p.nx;
+      let tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+      if (tl < 1e-6) { tx = 1; ty = 0; tz = 0; tl = 1; }
+      tx /= tl; ty /= tl; tz /= tl;
+      const bx = p.ny * tz - p.nz * ty;
+      const by = p.nz * tx - p.nx * tz;
+      const bz = p.nx * ty - p.ny * tx;
+      const spin = h * Math.PI * 0.7 - Math.PI * 0.35;
+      axis.set(tx * Math.cos(spin) + bx * Math.sin(spin),
+        ty * Math.cos(spin) + by * Math.sin(spin),
+        tz * Math.cos(spin) + bz * Math.sin(spin)).normalize();
+      const length = Math.max(0.45, Math.min(2.4, patchRadius * (0.8 + h * 0.5)));
+      const width = Math.max(0.035, Math.min(0.11, length * 0.055));
+      dummy.quaternion.setFromUnitVectors(up, axis);
+      dummy.position.set(
+        p.x + p.nx * (underburdenDisplayMm + width),
+        p.y + p.ny * (underburdenDisplayMm + width),
+        p.z + p.nz * (underburdenDisplayMm + width),
+      );
+      dummy.scale.set(width, length, width);
+    } else {
+      const lateral = patchRadius * (record.regime === 'laminated_lining' ? 2.2 : 1.55);
+      const relief = record.regime === 'botryoidal_crust'
+        ? Math.max(displayThickness, patchRadius * (0.30 + h * 0.18))
+        : displayThickness;
+      axis.set(p.nx, p.ny, p.nz);
+      dummy.quaternion.setFromUnitVectors(up, axis);
+      dummy.position.set(
+        p.x + p.nx * (underburdenDisplayMm + relief * 0.5),
+        p.y + p.ny * (underburdenDisplayMm + relief * 0.5),
+        p.z + p.nz * (underburdenDisplayMm + relief * 0.5),
+      );
+      dummy.scale.set(lateral, relief, lateral);
+    }
+    dummy.updateMatrix();
+    swath.setMatrixAt(i, dummy.matrix);
+  }
+  swath.instanceMatrix.needsUpdate = true;
+  if (typeof swath.computeBoundingSphere === 'function') swath.computeBoundingSphere();
+  swath.renderOrder = (record.regime === 'laminated_lining' ? 0.55 : 0.8)
+    + Math.min(0.1, Number(record.stratigraphic_index || 0) * 0.001);
+  swath.userData = {
+    surfaceGrowth: true,
+    crystal_id: crystal.crystal_id,
+    mineral: crystal.mineral,
+    regime: record.regime,
+    coverage_fraction: coverage,
+    physical_mean_thickness_um: record.mean_thickness_um,
+    representative_only: true,
+    area_basis: record.area_basis,
+    stratigraphic_index: record.stratigraphic_index,
+  };
+  state.crystals.add(swath);
+  // Canonical desktop-density relief is intentionally independent of mobile
+  // LOD; subsequent layers therefore sit on the same depicted substrate on
+  // every viewport even when this layer uses fewer representatives.
+  const canonicalCount = _surfaceGrowthInstanceCount(coverage, false);
+  const canonicalPatchRadius = Math.max(0.22,
+    Math.sqrt(representedArea / canonicalCount / Math.PI) * 1.08);
+  const canonicalDisplayThickness = Math.max(0.06, Math.min(canonicalPatchRadius * 0.45,
+    trueThicknessMm > 0 ? Math.max(trueThicknessMm, 0.06) : 0.06));
+  const representativeRelief = record.regime === 'botryoidal_crust'
+    ? Math.max(canonicalDisplayThickness, canonicalPatchRadius * 0.38)
+    : record.regime === 'euhedral_druse'
+      ? Math.max(0.24, Math.min(1.6, canonicalPatchRadius * 0.39))
+      : record.regime === 'fibrous_mat'
+        ? Math.max(0.035, Math.min(0.11, canonicalPatchRadius * 0.055))
+        : record.regime === 'dendritic_film'
+          ? Math.max(0.035, Math.min(0.10, canonicalDisplayThickness))
+        : canonicalDisplayThickness;
+  const layer = {
+    crystal_id: crystal.crystal_id,
+    source_signature: exactPatch?.source_signature || null,
+    triangle_indices: new Set(exactPatch && exactPatch.triangle_indices
+      ? exactPatch.triangle_indices : []),
+    triangle_keys: new Set(exactPatch && exactPatch.triangle_indices
+      ? exactPatch.triangle_indices.map((triangleIndex: number) =>
+        `${exactPatch.source_signature}:${triangleIndex}`) : []),
+    representative_relief_mm: representativeRelief,
+  };
+  swath.userData.representative_relief_mm = representativeRelief;
+  swath.userData.triangle_indices = Array.from(layer.triangle_indices);
+  swath.userData.source_signature = layer.source_signature;
+  earlierLayers.push(layer);
+  return swath;
+}
+
 function _emitClusterSatellites(
   state: any, crystal: any, geom: any, mat: any,
   ax: number, ay: number, az: number,
@@ -3712,12 +5108,14 @@ function _emitClusterSatellites(
     // the parent mineral, no per-satellite identity surfaced.
     // PHASE-4-CAVITY-MESH Tranche 4b — wall_anchor is the only
     // positional field on Crystal; legacy fields retired.
-    const _anchor = crystal.wall_anchor || { ringIdx: 0, cellIdx: 0 };
+    const _address = wall?.chemistryAddressForCrystal?.(crystal)
+      || { ringIdx: 0, cellIdx: 0 };
     satMesh.userData = {
       crystal_id: crystal.crystal_id,
       mineral: crystal.mineral,
-      ringIdx: _anchor.ringIdx,
-      cellIdx: _anchor.cellIdx,
+      ringIdx: _address.ringIdx,
+      cellIdx: _address.cellIdx,
+      surfaceAnchorKey: wall?.surfaceAnchorKey?.(crystal),
       isSatellite: true,
       // === HELIX-OVERLAY-FORK ADDITION (v13) =========================
       // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
@@ -3923,11 +5321,9 @@ function _topoParseColor(s: string): any {
 // or had no positive size by replayStep (in which case the caller skips
 // rendering it entirely so replay shows growth order).
 //
-// Caps the historical total at the live total_growth_um so a
-// dissolution event later in life can't accidentally inflate replay
-// size for steps past dissolution. Negative-thickness phantom zones
-// (dissolution) already net into the running sum, so the same
-// accumulator handles both growth and dissolution paths.
+// Negative-thickness zones net directly into the historical sum. Do not cap
+// an earlier frame to the smaller live total: that erased the larger
+// pre-dissolution body and made sharp → etched → healed replay impossible.
 //
 // Habit ratio mirrors Crystal.add_zone in 27-geometry-crystal.ts; if
 // either file shifts the habit:a_ratio table, both sites need to move
@@ -3944,9 +5340,6 @@ function _topoHistoricalCrystalSize(crystal: any, replayStep: number): { c_lengt
     zoneCount++;
   }
   if (zoneCount === 0) return null;
-  if (crystal.total_growth_um != null && totalUm > crystal.total_growth_um) {
-    totalUm = crystal.total_growth_um;
-  }
   if (totalUm <= 0) return null;
   let c = totalUm / 1000.0;
   let a;
@@ -4035,7 +5428,7 @@ function _topoCAxisForCrystal(
 // v65: replayStep folded in so replay frames bust the cache and pull
 // the historical c_length per crystal. When undefined (live render),
 // the signature reduces to the v64 form so live caching is unchanged.
-function _topoCrystalsSignature(sim: any, replayStep?: number): string {
+function _topoCrystalsSignature(sim: any, wall: any, replayStep?: number): string {
   if (!sim || !sim.crystals || !sim.crystals.length) return '';
   const parts: string[] = [];
   for (const c of sim.crystals) {
@@ -4054,9 +5447,8 @@ function _topoCrystalsSignature(sim: any, replayStep?: number): string {
     // the face-realism arc already ships for them).
     if (c.dissolved && !c.perimorph_eligible && !(c.c_length_mm > 0.05)) continue;
     // PHASE-4-CAVITY-MESH Tranche 4b — wall_anchor is the truth.
-    const _a = c.wall_anchor;
-    const _ringKey = _a ? _a.ringIdx : 0;
-    const _cellKey = _a ? _a.cellIdx : 0;
+    const _anchorKey = wall?.surfaceAnchorKey
+      ? wall.surfaceAnchorKey(c) : CavitySurfaceAnchors.key(c.wall_anchor);
     // PHASE-D-HABIT-BIAS: encode growth_environment into the signature
     // so the cache busts when an air-mode crystal's orientation
     // (radial → gravity) flips. 'a' = air, 'f' = fluid (default).
@@ -4071,23 +5463,19 @@ function _topoCrystalsSignature(sim: any, replayStep?: number): string {
       // before the paramorph transition (argentite at step < paramorph_step).
       // Folding into the signature ensures the cache busts the moment
       // the replay timeline crosses paramorph_step.
-      const effectiveMineral = (c.paramorph_step != null
-                                 && replayStep < c.paramorph_step
-                                 && c.paramorph_origin)
-        ? c.paramorph_origin
-        : c.mineral;
+      const effectiveMineral = mineralAtReplayStep(c, replayStep);
       if (!hist) {
         // Perimorph casts persist at live size as hollow shells —
         // keep them in the signature so the cache key still busts
         // when one appears.
         if (!(c.dissolved && c.perimorph_eligible)) continue;
-        parts.push(`${c.crystal_id}:${effectiveMineral}:${c.habit}:cast:${c.c_length_mm.toFixed(2)}:${_ringKey}:${_cellKey}:${_envKey}`);
+        parts.push(`${c.crystal_id}:${effectiveMineral}:${c.habit}:cast:${c.c_length_mm.toFixed(2)}:${_anchorKey}:${_envKey}`);
         continue;
       }
-      parts.push(`${c.crystal_id}:${effectiveMineral}:${c.habit}:${hist.c_length_mm.toFixed(2)}:${_ringKey}:${_cellKey}:${_envKey}:r${replayStep}`);
+      parts.push(`${c.crystal_id}:${effectiveMineral}:${c.habit}:${hist.c_length_mm.toFixed(2)}:${_anchorKey}:${_envKey}:r${replayStep}`);
       continue;
     }
-    parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${_ringKey}:${_cellKey}:${_envKey}:${c.dissolved ? 'd' : 'a'}`);
+    parts.push(`${c.crystal_id}:${c.mineral}:${c.habit}:${c.c_length_mm.toFixed(2)}:${_anchorKey}:${_envKey}:${c.dissolved ? 'd' : 'a'}`);
   }
   return parts.join('|');
 }
@@ -4114,24 +5502,13 @@ function _o2PlaceBody(crystal: any, wall: any, replayStep: number | undefined, r
   if (crystal.dissolved && !crystal.perimorph_eligible && !(renderC > 0.05)) return null;
   const anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
   if (!anchor) return null;
-  let ringIdx = anchor.ringIdx;
-  if (ringIdx == null || ringIdx < 0 || ringIdx >= ringCount) ringIdx = 0;
-  const cellIdx = anchor.cellIdx;
-  if (cellIdx == null) return null;
-  const ring = wall.rings[ringIdx]; if (!ring) return null;
-  const cell = ring[cellIdx]; if (!cell) return null;
-  const phi = Math.PI * (ringIdx + 0.5) / ringCount;
-  const sinPhi = Math.sin(phi), cosPhi = Math.cos(phi);
-  const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
-  const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0.0;
-  const baseR = cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
-  const radiusMm = (baseR + cell.wall_depth) * polar;
-  const theta = (2 * Math.PI * cellIdx) / N + twist;
-  const ax = radiusMm * sinPhi * Math.cos(theta);
-  const ay = -radiusMm * cosPhi;
-  const az = radiusMm * sinPhi * Math.sin(theta);
-  const len = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
-  const [cAxisX, cAxisY, cAxisZ] = _topoCAxisForCrystal(crystal, -ax / len, -ay / len, -az / len);
+  const point = wall.surfacePointForCrystal?.(crystal);
+  const normal = wall.surfaceNormalForCrystal?.(crystal);
+  if (!point || !normal) return null;
+  const [ax, ay, az] = point;
+  const [cAxisX, cAxisY, cAxisZ] = _topoCAxisForCrystal(
+    crystal, normal[0], normal[1], normal[2],
+  );
   const token = _resolveCrystalGeomToken(crystal, crystal.habit);
   const inReplay = (replayStep != null);
   const cLen = Math.max(inReplay ? 0.0 : 2.0, renderC);
@@ -4217,7 +5594,7 @@ function _o4InclusionLocalPos(
 // hides it (honest, the O4a contract). Non-raycastable — a band is an internal
 // feature, not a hit target, so hovers fall through to the host shell.
 // Render-only: no crystal mutated, no sim state touched (byte-identical).
-function _o5EmitMaskedBands(hostMesh: any, crystal: any): void {
+function _o5EmitMaskedBands(hostMesh: any, crystal: any, state?: any): void {
   if (!hostMesh || !hostMesh.geometry) return;
   const bands = maskedHorizonBands(crystal);
   if (!bands.length) return;
@@ -4234,6 +5611,7 @@ function _o5EmitMaskedBands(hostMesh: any, crystal: any): void {
       depthWrite: false,
       side: THREE.DoubleSide,
     });
+    if (state && state.clipUniforms) _applyCavityClip(bandMat, state.clipUniforms);
     const bandMesh = new THREE.Mesh(hostMesh.geometry, bandMat);
     bandMesh.scale.setScalar(f);
     // PHANTOMS SHARE THE BASE (boss observation on the ametrine reference
@@ -4294,7 +5672,7 @@ function _o2ContactMaterial(mat: any, state: any): any {
 // MINERAL_SPEC[mineral].class_color.
 function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: number) {
   if (!sim || !wall || !wall.rings || !wall.rings.length) return;
-  const sig = _topoCrystalsSignature(sim, replayStep);
+  const sig = _topoCrystalsSignature(sim, wall, replayStep);
   if (sig === state.crystalsSig) return;
   state.crystalsSig = sig;
 
@@ -4337,6 +5715,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
   // _pendingInclusions holds the guests to place.
   const _hostMeshById: Map<any, any> = new Map();
   const _pendingInclusions: any[] = [];
+  const _surfaceLayers: any[] = [];
 
   for (const crystal of sim.crystals) {
     if (!crystal) continue;
@@ -4379,37 +5758,28 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // positional field; _resolveAnchor reads only from it.
     const _anchor = wall._resolveAnchor ? wall._resolveAnchor(crystal) : null;
     if (!_anchor) continue;
-    let ringIdx = _anchor.ringIdx;
-    if (ringIdx == null || ringIdx < 0 || ringIdx >= ringCount) ringIdx = 0;
-    const cellIdx = _anchor.cellIdx;
-    if (cellIdx == null) continue;
+    // `_anchor` is already authenticated and live-remapped. Reuse it rather
+    // than independently resolving the same crystal for each projection.
+    const chemistry = CavitySurfaceAnchors.chemistryAddress(_anchor);
+    const point = _anchor.position;
+    const normal = _anchor.normal;
+    if (!chemistry || !point || !normal) continue;
+    const ringIdx = chemistry.ringIdx;
+    const cellIdx = chemistry.cellIdx;
 
     const ring = wall.rings[ringIdx];
-    if (!ring) continue;
-    const cell = ring[cellIdx];
-    if (!cell) continue;
+    if (!ring || !ring[cellIdx]) continue;
 
     // Anchor point on the cavity wall — same math as
     // _topoBuildCavityGeometry uses, applied to one cell.
-    const phi = Math.PI * (ringIdx + 0.5) / ringCount;
-    const sinPhi = Math.sin(phi);
-    const cosPhi = Math.cos(phi);
-    const polar = wall.polarProfileFactor ? wall.polarProfileFactor(phi) : 1.0;
-    const twist = wall.ringTwistRadians ? wall.ringTwistRadians(phi) : 0.0;
-    const baseR = cell.base_radius_mm > 0 ? cell.base_radius_mm : initR;
-    const radiusMm = (baseR + cell.wall_depth) * polar;
-    const theta = (2 * Math.PI * cellIdx) / N + twist;
-    const ax = radiusMm * sinPhi * Math.cos(theta);
-    const ay = -radiusMm * cosPhi;
-    const az = radiusMm * sinPhi * Math.sin(theta);
+    const [ax, ay, az] = point;
 
     // Substrate normal: from wall center (the origin, since the
     // cavity is built around 0,0,0) outward through the anchor.
     // c-axis lies along this normal — crystal grows INTO the cavity
     // (toward origin) for fluid environments. Negate so the c-axis
     // points from anchor toward origin.
-    const len = Math.sqrt(ax * ax + ay * ay + az * az) || 1;
-    const nx = -ax / len, ny = -ay / len, nz = -az / len;
+    const [nx, ny, nz] = normal;
     // PHASE-D-HABIT-BIAS — pure helper centralizes the gravity bias.
     // See _topoCAxisForCrystal definition below for the full
     // contract; tests live in tests-js/habit-bias.test.ts.
@@ -4478,23 +5848,26 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     let isWulffWulfenite = false;  // wulfenite Wulff tabular plate → isotropic scale by plate diameter (rung 4a.3)
     let isWulffBarite = false;  // barite Wulff RECTANGULAR tabular plate → isotropic scale by plate diameter (rung 4a.4)
     let isWulffTitanite = false;  // titanite Wulff monoclinic sphenoid WEDGE → isotropic scale by diameter (rung 4a.6)
-    // ETCHED crystal — post-growth dissolution overprint (crystal-face realism arc §2,
-    // 2026-06-22). The sim tags crystal._etch when a scenario etch event corroded a
-    // crystal that had ALREADY grown (js/45 classifyEtch; reactivated_fluorite_vein's
-    // breach reopens the conduit and a cooler undersaturated fluid rounds the gen-1
-    // fluorite + galena). Runs FIRST — BEFORE the terrace/hopper render — because
-    // corrosion ROUNDS AWAY fine growth relief: an etched stepped cube becomes a rounded
-    // dissolved blob, not a fresh ziggurat. Gated on the cube token (the isometric
-    // fluorite/galena tenant). Cached per rounding bucket; the matOpts block frosts the
-    // surface. A replay before the etch step keeps the sharp (un-etched) crystal.
+    // PHYSICAL ETCH — the accepted receipt selects a measured face-specific
+    // surface morphology. It runs before growth terraces because dissolution
+    // relief is the exposed surface at that replay step; later positive zones
+    // progressively bury it. The current {100} fluorite model produces
+    // cubic pits with near-90° {100} sidewalls and no corner rounding. Pit
+    // depth is a receipt-labelled 250× schematic overlay of assumed
+    // pre-existing pores; mass and silhouette dimensions remain physical.
     let isEtched = false;
-    if (crystal._etch && token === 'cube'
-        && (replayStep == null || replayStep >= crystal._etch.atStep)) {
-      const round = Math.max(0.18, Math.min(0.6, 0.18 + (crystal._etch.amount || 0.5) * 0.5));
-      const q = Math.round(round * 100) / 100;   // quantize for cache reuse
-      const key = '__etched_cube_' + q;
+    const physicalEtch = typeof physicalEtchVisualStateAtStep === 'function'
+      ? physicalEtchVisualStateAtStep(crystal, replayStep) : crystal._etch;
+    if (physicalEtch && token === 'cube') {
+      const intensity = Math.max(0, Math.min(1, physicalEtch.amount || 0));
+      const morphology = String(physicalEtch.morphology || 'unresolved');
+      const round = morphology.includes('cubic-{100}-pits')
+        ? 0 : Math.max(0.08, Math.min(0.6, 0.08 + intensity * 0.52));
+      const q = Math.round(round * 100) / 100;
+      const pq = _physicalEtchReliefBucket(intensity);
+      const key = `__etched_cube_${q}_pit_${pq}_${morphology}`;
       geom = state.geomCache.get(key);
-      if (!geom) { geom = _makeEtchedCube(round); state.geomCache.set(key, geom); }
+      if (!geom) { geom = _makeEtchedCube(round, pq, morphology); state.geomCache.set(key, geom); }
       isEtched = true;
     }
     // CALCITE e-TWIN — post-growth mechanical-twin overprint (deformation arc §5.3 tenant,
@@ -4871,13 +6244,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // want the ORIGINAL mineral's color/material (pre-cooled argentite
     // looks different from acanthite), so swap to paramorph_origin
     // when replayStep < paramorph_step.
-    let effectiveMineral = crystal.mineral;
-    if (replayStep != null
-        && crystal.paramorph_step != null
-        && replayStep < crystal.paramorph_step
-        && crystal.paramorph_origin) {
-      effectiveMineral = crystal.paramorph_origin;
-    }
+    const effectiveMineral = mineralAtReplayStep(crystal, replayStep);
 
     // Material — the ONE optics builder (Depth-A, RESEARCH-optical-realism-2026-07-02.md §4.2).
     // All the former inline assembly (class_color, class metalness/roughness heuristics, the
@@ -5108,6 +6475,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       mineral: effectiveMineral,
       ringIdx,
       cellIdx,
+      surfaceAnchorKey: wall.surfaceAnchorKey?.(crystal),
       // === HELIX-OVERLAY-FORK ADDITION (v13) =========================
       // See proposals/HELIX-OVERLAY-FORK-CHANGES.md for the full
       // breadcrumb. Sweep-writes-crystals mode: the helix overlay
@@ -5121,7 +6489,19 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
       // === END HELIX-OVERLAY-FORK ADDITION ===========================
     };
 
-    state.crystals.add(mesh);
+    // An aggregate surface fabric is represented by its swath, not by the old
+    // trophy-sized parent body as well. Keeping both would visually double one
+    // booked Crystal and contradict the mass ledger.
+    _addCrystalParentRepresentation(state, crystal, mesh);
+    // A booked aggregate can occupy a broad wall swath even though it is one
+    // Crystal record. Emit one instanced representative layer; it neither adds
+    // simulation entities nor multiplies the accepted mineral volume.
+    if (!isInclusion && crystal._surfaceGrowth) {
+      _emitSurfaceGrowthSwath(
+        state, crystal, mat, ax, ay, az,
+        wall, ringCount, N, initR, renderC, sim, _surfaceLayers,
+      );
+    }
     // W-F O4a — register every crystal as a possible host, and defer inclusion
     // placement to pass 2 (the host mesh may build later in this same loop).
     _hostMeshById.set(crystal.crystal_id, mesh);
@@ -5134,7 +6514,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // concentric shell at its recorded radial depth. Free-standing crystals
     // only — an engulfed guest (O4a) is a tiny grain inside a host, its own
     // internal bands invisible and not worth the meshes. Render-only.
-    if (!isInclusion) _o5EmitMaskedBands(mesh, crystal);
+    if (!isInclusion) _o5EmitMaskedBands(mesh, crystal, state);
 
     // Phase E5b: emit cluster satellites around this parent. Same
     // geometry + material; inherits parent userData so hit-tests
@@ -5142,7 +6522,7 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
     // geomToken selects a per-habit cluster pattern (acicular spray,
     // tabular rosette, prismatic forest, cubic carpet, etc.). An engulfed
     // inclusion has no free druse spray, so it opts out (W-F O4a).
-    if (!isInclusion) {
+    if (!isInclusion && !crystal._surfaceGrowth) {
       _emitClusterSatellites(state, crystal, geom, mat, ax, ay, az, nx, ny, nz, cLen, aWid, token, wall, ringCount, N, initR, occF);
     }
   }
@@ -5177,6 +6557,21 @@ function _topoSyncCrystalMeshes(state: any, sim: any, wall: any, replayStep?: nu
 // Cached raycaster + NDC vector — both reusable across calls,
 // avoiding per-pointer-move allocations.
 const _topoThreeRaycaster: { ray?: any; ndc?: any } = {};
+
+function _topoSelectVisibleCavityHit(intersects: any[], clipField: any, isovalue = 0): any {
+  if (!Array.isArray(intersects) || !intersects.length) return null;
+  if (!clipField || typeof clipField.sampleTextureWorld !== 'function') return intersects[0];
+  const iso = Number(isovalue);
+  if (!Number.isFinite(iso)) throw new TypeError('cavity hit-test isovalue must be finite');
+  for (const candidate of intersects) {
+    const point = candidate && candidate.point;
+    if (!point) continue;
+    const value = clipField.sampleTextureWorld(point.x, point.y, point.z);
+    // The shader retains the equality case (`discard` is strictly below iso).
+    if (value >= iso) return candidate;
+  }
+  return null;
+}
 
 // Three.js hit-test. Resolves a screen-space pointer to a
 // `{ mineral, isInclusion, cell }` triple shaped like the canvas-
@@ -5215,8 +6610,12 @@ function _topoHitTestThree(ev: any): any {
     false,  // crystals are flat meshes, no recursion needed
   );
   if (!intersects.length) return null;
-  // First hit = nearest crystal (intersectObjects returns by distance).
-  const hit = intersects[0];
+  // Raycaster sees the undiscarded CPU triangles. Mirror the active scalar
+  // clip on each distance-sorted hit and skip GPU-discarded candidates.
+  const clipField = _topoThreeState.cavityClipField;
+  const clipIso = Number(_topoThreeState.clipUniforms.uCavityFieldIsovalue.value || 0);
+  const hit = _topoSelectVisibleCavityHit(intersects, clipField, clipIso);
+  if (!hit) return null;
   const data = hit.object && hit.object.userData;
   if (!data || !data.mineral) return null;
   // Synthesize a cell-like object so _topoTooltipFromEvent's existing
@@ -5384,6 +6783,18 @@ function _topoApplyThreeDefaultOnce() {
 // Legacy flat-array snapshot (the v60 schema) is still tolerated for
 // any in-memory state that predates v65: the flat ring is projected
 // across all rings, matching the previous placeholder behavior.
+function _topoRejectReplayWall(synth: any, reason: any): any {
+  synth._cavityEvolutionLedger = null;
+  delete synth._cavityEvolutionCursor;
+  synth._disableMarchingCubesCavity = true;
+  synth._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
+  synth._activeCavitySurfaceAnchorProvider = null;
+  synth._replayAuthenticationFailure = String(
+    reason instanceof Error ? reason.message : reason || 'unknown replay authentication failure',
+  );
+  return synth;
+}
+
 function _topoSnapshotWall(liveWall: any, snapshot: any): any {
   if (!liveWall || !liveWall.rings || !liveWall.rings.length) return liveWall;
   const ringCount = liveWall.ring_count;
@@ -5391,40 +6802,276 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
   // Synthetic wall — reuse method shapes from liveWall via Object.assign
   // so polarProfileFactor, ringTwistRadians, etc. still work.
   const synth: any = Object.assign(Object.create(Object.getPrototypeOf(liveWall) || null), liveWall);
+  // Object.assign intentionally skips WallState's non-enumerable immutable
+  // authored-shape authority. Restore that exact construction receipt before
+  // recomputing ledger identity; otherwise every honest snapshot would appear
+  // to have `authored_shape: null`.
+  if (liveWall._cavity_shape) {
+    Object.defineProperty(synth, '_cavity_shape', {
+      value: liveWall._cavity_shape,
+      writable: false,
+      configurable: false,
+      enumerable: false,
+    });
+  }
+  // Never inherit geometry identity or a live mesh. The rings below are a
+  // distinct historical surface, so they must take the exact all-cell
+  // signature path and build their own WallMesh. Otherwise every replay frame
+  // can silently render the live wall's cached vertices.
+  delete synth._geometry_revision;
+  delete synth._mesh;
+  delete synth._cavityField;
+  delete synth._cavitySurface;
+  // Object.assign inherited the live authority. A historical surface must not
+  // expose it until both cursor authentication and depth projection succeed.
+  synth._cavityEvolutionLedger = null;
+  synth._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
+  synth._activeCavitySurfaceAnchorProvider = null;
+  delete synth._cavityEvolutionCursor;
+  // Fail closed by default. Only an authenticated cavity-evolution prefix
+  // below may opt a replay frame into the default-off MC comparison path.
+  synth._disableMarchingCubesCavity = true;
 
   // Detect snapshot shape:
   //   * Multi-ring (v65+): { step, rings: [...] } — use directly.
   //   * Legacy flat array (v60..v64): project across all rings.
   let snapRings: any[];
+  const modernSnapshot = !Array.isArray(snapshot);
   if (Array.isArray(snapshot)) {
     snapRings = new Array(ringCount);
     for (let r = 0; r < ringCount; r++) snapRings[r] = snapshot;
   } else if (snapshot && Array.isArray(snapshot.rings)) {
     snapRings = snapshot.rings;
+    let exactDimensions = snapRings.length === ringCount;
+    for (let r = 0; exactDimensions && r < ringCount; r++) {
+      if (!Object.prototype.hasOwnProperty.call(snapRings, r)
+          || !Array.isArray(snapRings[r]) || snapRings[r].length !== N) {
+        exactDimensions = false;
+        break;
+      }
+      for (let i = 0; i < N; i++) {
+        if (!Object.prototype.hasOwnProperty.call(snapRings[r], i)) {
+          exactDimensions = false;
+          break;
+        }
+      }
+    }
+    if (!exactDimensions) {
+      return _topoRejectReplayWall(
+        synth, `replay dimensions must be exactly ${ringCount}x${N}`,
+      );
+    }
   } else {
-    return liveWall;
+    return _topoRejectReplayWall(synth, 'unsupported or missing replay rings');
   }
 
   const rings: any[] = [];
+  let invalidGeometry = '';
   for (let r = 0; r < ringCount; r++) {
     // Fall through to ring 0 if the snapshot is short on rings — keeps
     // mid-life ring_count migrations from crashing.
-    const sourceRing = snapRings[r] || snapRings[0] || [];
+    const sourceRing = snapRings[r];
     const ring = new Array(N);
     for (let i = 0; i < N; i++) {
       const snap = sourceRing[i] || {};
+      const wallDepth = Number(snap.wall_depth);
+      const baseRadius = Number(snap.base_radius_mm);
+      if (!Number.isFinite(wallDepth)
+          || (modernSnapshot && (!(baseRadius > 0) || !Number.isFinite(baseRadius)))) {
+        invalidGeometry = `non-finite or missing replay geometry at ring ${r}, cell ${i}`;
+      }
       ring[i] = {
-        wall_depth: snap.wall_depth || 0,
+        wall_depth: Number.isFinite(wallDepth) ? wallDepth : 0,
         crystal_id: snap.crystal_id ?? null,
         mineral: snap.mineral ?? null,
         thickness_um: snap.thickness_um || 0,
-        base_radius_mm: snap.base_radius_mm || 0,
+        base_radius_mm: Number.isFinite(baseRadius) ? baseRadius : 0,
       };
     }
     rings[r] = ring;
   }
   synth.rings = rings;
+  if (invalidGeometry) return _topoRejectReplayWall(synth, invalidGeometry);
+  const ledger = liveWall.cavityEvolutionLedger ? liveWall.cavityEvolutionLedger() : null;
+  const cursor = snapshot && !Array.isArray(snapshot)
+    ? snapshot.cavity_evolution_cursor : null;
+  const expectedSignature = snapshot && !Array.isArray(snapshot)
+    ? snapshot.cavity_evolution_signature : null;
+  if (ledger && Number.isInteger(cursor) && cursor >= 0 && cursor <= ledger.cursor) {
+    try {
+      if (ledger.signatureAt(cursor) !== expectedSignature) {
+        throw new Error('replay cavity evolution signature mismatch');
+      }
+      const identity = CavityEvolutionLedger.identityForWall(synth);
+      if (identity.shape !== ledger.shape_identity
+          || identity.tessellation !== ledger.tessellation_identity) {
+        throw new Error('replay cavity shape or tessellation identity mismatch');
+      }
+      ledger.assertProjection(synth, cursor);
+      synth._cavityEvolutionLedger = ledger;
+      synth._cavityEvolutionCursor = cursor;
+      synth._disableMarchingCubesCavity = false;
+      if (synth._cavityProductionAuthorityContract) {
+        _installHistoricalWallProductionAuthorityOwnership(
+          synth, liveWall, ledger, cursor,
+        );
+      }
+
+      // Replay the provider command that was authoritative at this snapshot,
+      // then independently rebuild and compare every identity field. Legacy
+      // snapshots omitted this receipt and therefore remain on canonical
+      // WallMesh; they must never inherit the provider active on `liveWall`.
+      const storedProvider = snapshot?.cavity_surface_provider;
+      if (storedProvider?.kind === 'cavity-field') {
+        const productionContract = synth._cavityProductionAuthorityContract;
+        const storedContractDigest = snapshot?.cavity_production_contract_digest ?? null;
+        if ((productionContract?.contract_digest ?? null) !== storedContractDigest
+            || (storedProvider.production_contract_digest ?? null) !== storedContractDigest) {
+          throw new Error('replay cavity production contract mismatch');
+        }
+        const rebuilt = synth.activateCavitySurfaceAnchorProvider({
+          resolution: storedProvider.resolution,
+          isovalue: storedProvider.isovalue,
+          ledgerCursor: cursor,
+        });
+        const identityKeys = [
+          'kind', 'resolution', 'isovalue', 'field_signature',
+          'field_snapshot_digest', 'surface_signature',
+          'surface_buffer_digest', 'cavity_evolution_signature',
+          'production_contract_digest',
+          'authoritative_volume_mm3', 'max_field_agreement_voxels',
+        ];
+        const mismatchedKeys = identityKeys.filter(
+          key => rebuilt[key] !== storedProvider[key],
+        );
+        if (rebuilt.cavity_evolution_signature !== expectedSignature) {
+          mismatchedKeys.push('expected_evolution_signature');
+        }
+        if (mismatchedKeys.length) {
+          throw new Error('replay cavity provider receipt mismatch: '
+            + mismatchedKeys.map(key => `${key}=${String(rebuilt[key])}`
+              + ` (stored ${String(storedProvider[key])})`).join(', '));
+        }
+      } else if (storedProvider && storedProvider.kind !== 'wall-mesh') {
+        throw new Error('unknown replay cavity provider kind');
+      }
+    } catch (_error) {
+      // A corrupt frame is withheld. Falling back to its untrusted WallMesh
+      // would turn authentication failure into plausible-looking geology.
+      return _topoRejectReplayWall(synth, _error);
+    }
+  } else if (modernSnapshot) {
+    return _topoRejectReplayWall(synth, 'missing or invalid replay cavity evolution receipt');
+  }
+  const storedAppearance = snapshot && !Array.isArray(snapshot)
+    ? snapshot.cavity_appearance : null;
+  // Current runtime policy is trusted; a snapshot's own version field is not.
+  // Every modern object frame rendered by v265+ must authenticate against the
+  // live wall's append-only history. Only the explicit legacy flat-array shape
+  // remains outside this contract.
+  const requiresWaterHistory = modernSnapshot && SIM_VERSION >= 265;
+  if (requiresWaterHistory) {
+    try {
+      const waterHistory = liveWall._cavityWaterAppearanceLedger;
+      if (!(waterHistory instanceof CavityWaterAppearanceLedger)) {
+        throw new Error('replay lacks append-only cavity water history');
+      }
+      waterHistory.assertSnapshot(synth, snapshot);
+    } catch (error) {
+      return _topoRejectReplayWall(synth, error);
+    }
+  }
+  if (storedAppearance) {
+    try {
+      const replayConditions = CavityWaterAppearance.replayConditions(
+        snapshot.conditions, synth,
+      );
+      const active = synth.activeCavitySurfaceAnchorProvider?.();
+      const surface = active?.surface || synth.meshFor?.();
+      const appearance = CavityWaterAppearance.assertReceipt(
+        synth, replayConditions, storedAppearance, {
+          activeProvider: active,
+          providerReceipt: snapshot.cavity_surface_provider,
+          surface,
+        },
+      );
+      synth._replayCavityAppearance = appearance.receipt;
+      synth._replayConditions = replayConditions;
+    } catch (error) {
+      return _topoRejectReplayWall(synth, error);
+    }
+  } else if (requiresWaterHistory
+      || snapshot?.cavity_surface_provider?.kind === 'cavity-field') {
+    return _topoRejectReplayWall(synth, 'exact replay lacks cavity appearance receipt');
+  }
+  if (modernSnapshot && SIM_VERSION >= 265) {
+    try {
+      const materialHistory = liveWall._cavityWallMaterialHistoryLedger;
+      if (!(materialHistory instanceof CavityWallMaterialHistoryLedger)) {
+        throw new Error('replay lacks append-only cavity wall material history');
+      }
+      materialHistory.assertSnapshot(synth, snapshot);
+      const storedMaterial = CavityWallMaterialState.assertReceipt(
+        synth, snapshot.cavity_material_state,
+      );
+      // Object.assign inherited today's display-only paleo-flow. Replace it
+      // only after the independent append-only history authenticates the
+      // historical value and its evolution cursor.
+      synth.paleo_flow = storedMaterial.paleo_flow;
+      synth._replayCavityMaterialState = storedMaterial;
+    } catch (error) {
+      return _topoRejectReplayWall(synth, error);
+    }
+  }
   return synth;
+}
+
+// One decision boundary shared by canvas and WebGL dispatch. Tests exercise
+// this function directly so failure behavior cannot regress behind renderer or
+// hardware availability branches.
+function _topoReplayRenderDecision(liveWall: any, snapshot: any): any {
+  if (snapshot && (!liveWall || !Array.isArray(liveWall.rings) || !liveWall.rings.length)) {
+    return Object.freeze({
+      mode: 'corrupt', wall: null,
+      message: 'Replay frame withheld: live cavity authority is unavailable.',
+    });
+  }
+  const wall = snapshot ? _topoSnapshotWall(liveWall, snapshot) : liveWall;
+  if (wall?._replayAuthenticationFailure) {
+    return Object.freeze({
+      mode: 'corrupt', wall,
+      message: `Replay frame withheld: ${wall._replayAuthenticationFailure}.`,
+    });
+  }
+  let provider = null;
+  try {
+    provider = wall?.activeCavitySurfaceAnchorProvider?.();
+  } catch (error) {
+    return Object.freeze({
+      mode: 'corrupt', wall,
+      message: `Cavity frame withheld: ${error instanceof Error ? error.message : String(error)}.`,
+    });
+  }
+  if (wall?._cavityProductionAuthorityContract
+      && provider?.receipt?.kind !== 'cavity-field') {
+    return Object.freeze({
+      mode: 'corrupt', wall,
+      message: `Cavity frame withheld: ${wall._cavitySurfaceAuthorityFailure
+        || 'production Cartesian surface authority is unavailable'}.`,
+    });
+  }
+  return Object.freeze({
+    mode: provider?.receipt?.kind === 'cavity-field' ? 'cavity-field' : 'wall-mesh',
+    wall,
+    conditions: snapshot ? wall?._replayConditions || null : null,
+    appearance: snapshot ? wall?._replayCavityAppearance || null : null,
+    materialState: snapshot ? wall?._replayCavityMaterialState || null : null,
+    message: null,
+  });
+}
+
+function _topoThreeRenderAuthorityDecision(liveWall: any, snapshot: any): any {
+  return _topoReplayRenderDecision(liveWall, snapshot);
 }
 
 // Public render entry. Called from topoRender's branch when
@@ -5446,26 +7093,69 @@ function _topoSnapshotWall(liveWall: any, snapshot: any): any {
 // nucleated yet and to sum zone thicknesses up to that step. When
 // undefined, the Three.js path renders LIVE crystal sizes (regular
 // frame).
-function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any, optReplayStep?: number): boolean {
+function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any,
+                          optReplayStep?: number): boolean {
+  // Authenticate a supplied historical frame before renderer/canvas/hardware
+  // checks. A malformed payload must never turn into today's live geology just
+  // because WebGL is absent or initialization exits early.
+  const replayDecision = _topoThreeRenderAuthorityDecision(wall, optOverrideSnap);
+  const renderWall = replayDecision.wall;
+  if (replayDecision.mode === 'corrupt' || renderWall?._replayAuthenticationFailure) {
+    if (_topoThreeState?.cavity) _topoThreeState.cavity.visible = false;
+    if (_topoThreeState?.crystals) _topoThreeState.crystals.visible = false;
+    if (_topoThreeState) _topoThreeState.cavityAuthorityUnrenderable = true;
+    const canvas2d = document.getElementById('topo-canvas') as HTMLCanvasElement | null;
+    if (canvas2d) _topoPaintPlaceholder(canvas2d, replayDecision.message
+      || `Replay frame withheld: ${renderWall._replayAuthenticationFailure}.`);
+    return false;
+  }
   const canvas = document.getElementById('topo-canvas-three') as HTMLCanvasElement | null;
   if (!canvas) return false;
+  // Terminal shader failure holds the effective renderer on canvas until the
+  // explicit retry/context-restore lifecycle clears it. Avoid recompiling the
+  // same known-bad program on every animation frame.
+  if (!_topoAttemptEffectiveThree(_topoThreeState, () => true)) return false;
   if (!_topoThreeAvailable()) {
     _topoThreeUnavailable = true;
     return false;
   }
   const state = _topoInitThree(canvas);
   if (!state) return false;
+  let renderConditions = sim?.conditions;
+  if (optOverrideSnap) {
+    try {
+      renderConditions = replayDecision.conditions
+        || CavityWaterAppearance.replayConditions(
+          Array.isArray(optOverrideSnap)
+            ? { fluid_surface_height_mm: null, fluid_surface_ring: null }
+            : optOverrideSnap.conditions,
+          renderWall,
+        );
+    } catch (error) {
+      state.cavityAuthorityUnrenderable = true;
+      if (state.cavity) state.cavity.visible = false;
+      if (state.crystals) state.crystals.visible = false;
+      if (state.waterInterface) state.waterInterface.visible = false;
+      _topoPaintPlaceholder(
+        document.getElementById('topo-canvas') as HTMLCanvasElement,
+        `Replay frame withheld: ${error instanceof Error ? error.message : String(error)}.`,
+      );
+      return false;
+    }
+  }
   _topoApplyThreeDefaultOnce();
   _topoSyncThreeSize(state, canvas);
   // During replay, build cavity from the snapshot rings so the wall
   // profile reflects the historical step. Force a fresh build each
   // replay frame by invalidating the cached signatures.
-  const renderWall = optOverrideSnap ? _topoSnapshotWall(wall, optOverrideSnap) : wall;
   if (optOverrideSnap) {
     state.cavitySig = null;
     state.crystalsSig = null;
   }
-  _topoBuildCavityGeometry(state, renderWall, sim);
+  if (!_topoBuildCavityGeometry(
+    state, renderWall, sim, false, renderConditions, replayDecision.appearance,
+    replayDecision.materialState,
+  )) return false;
   _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
   _topoApplyCameraFromTilt(state, renderWall);
   // === HELIX-OVERLAY-FORK ADDITION (v0–v17) =========================
@@ -5478,7 +7168,46 @@ function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any, optReplayS
     _topoHelixOverlayDraw(state, sim, renderWall);
   }
   // === END HELIX-OVERLAY-FORK ADDITION ==============================
-  state.renderer.render(state.scene, state.camera);
+  const rendered = _topoRenderPreparedCavityScene(state, () => {
+    const failedDigest = state.cavityFieldContract?.snapshot_digest || null;
+    if (failedDigest) {
+      if (!state.cavityFieldFailedDigests) state.cavityFieldFailedDigests = new Set<string>();
+      if (!state.cavityFieldFailedReasons) state.cavityFieldFailedReasons = new Map<string, string>();
+      state.cavityFieldFailedDigests.add(failedDigest);
+      state.cavityFieldFailedReasons.set(failedDigest, 'cavity-field-shader-link-failed');
+    }
+    if (renderWall.activeCavitySurfaceAnchorProvider?.()?.receipt?.kind === 'cavity-field') {
+      state.cavityAuthorityUnrenderable = true;
+      if (state.cavity) state.cavity.visible = false;
+      if (state.crystals) state.crystals.visible = false;
+      return false;
+    }
+    state.cavitySig = '';
+    // A failed field shader cannot be replaced by an independently selected MC
+    // shadow extraction in the same fallback. Anchors and the visible wall both
+    // return to canonical WallMesh before the polar shader is compiled.
+    _topoBuildCavityGeometry(
+      state, renderWall, sim, true, renderConditions, replayDecision.appearance,
+      replayDecision.materialState,
+    );
+    state.crystalsSig = '';
+    _topoSyncCrystalMeshes(state, sim, renderWall, optReplayStep);
+    return true;
+  });
+  if (!rendered) {
+    // Let topoRender continue into its established canvas renderer. Keep the
+    // user's renderer preference intact so a later explicit retry can restore
+    // Three after a context/driver change.
+    if (state.cavity) state.cavity.visible = false;
+    if (state.crystals) state.crystals.visible = false;
+    _topoSyncThreeCanvasVisibility();
+    _topoPublishCavityClipReceipt(state);
+    return false;
+  }
+  // Three uploads Data3DTexture lazily during render. Publish after the draw so
+  // the DOM receipt observed by browser automation includes verification of
+  // the exact bytes retained until the GPU consumed them.
+  _topoPublishCavityClipReceipt(state);
   return true;
 }
 
@@ -5486,11 +7215,11 @@ function _topoRenderThree(sim: any, wall: any, optOverrideSnap?: any, optReplayS
 // the toggle button and topoRender (so an off→on→off cycle leaves the
 // DOM in a coherent state regardless of which path triggered the
 // change).
-function _topoSyncThreeCanvasVisibility() {
+function _topoSyncThreeCanvasVisibility(state = _topoThreeState) {
   const c2 = document.getElementById('topo-canvas') as HTMLCanvasElement | null;
   const c3 = document.getElementById('topo-canvas-three') as HTMLCanvasElement | null;
   if (!c2 || !c3) return;
-  if (_topoUseThreeRenderer) {
+  if (_topoThreeRendererEffective(state)) {
     c3.style.display = 'block';
     c2.style.visibility = 'hidden';  // keep layout but don't paint
   } else {
@@ -5515,6 +7244,13 @@ function topoToggleThreeRenderer() {
     return;
   }
   _topoUseThreeRenderer = !_topoUseThreeRenderer;
+  if (_topoUseThreeRenderer && _topoThreeState?.threeShaderUnusable) {
+    // An intentional offâ†’on toggle is an operator retry, equivalent to the
+    // debug retry and a restored context. Re-arm once; ordinary frames cannot.
+    _topoResetCavityFieldFailures(_topoThreeState);
+    _topoThreeState.cavitySig = '';
+    _topoThreeState.crystalsSig = '';
+  }
   const btn = document.getElementById('topo-three-btn');
   if (btn) (btn as HTMLElement).style.color = _topoUseThreeRenderer ? '#f0c050' : '';
   // Force rotate mode on enable so the existing pointer handlers

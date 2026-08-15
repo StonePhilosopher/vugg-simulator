@@ -4,7 +4,7 @@
 // the per-cell competition key had collapsed to per-ring since v128c, yet
 // fixing it produced ZERO seed-42 baseline drift across all 31 scenarios.
 // The hypothesis that explains both facts: rationing essentially never
-// binds at current MASS_BALANCE_SCALE — per-step demands are tiny against
+// binds at the current formula-amount calibration — per-step demands are tiny against
 // cell fluid pools, so allocation factors sit at 1.0 and the group key is
 // (today) latent. This probe turns that hypothesis into a number.
 //

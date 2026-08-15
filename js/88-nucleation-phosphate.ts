@@ -256,33 +256,42 @@ function _nuc_turquoise(sim) {
 
 // v108 (2026-05-20): plumbogummite PbAl3(PO4)2(OH)5·H2O — Pb-Al-PO4
 // supergene endmember, type Roughten Gill (Hartley 1882). Substrate
-// priority encodes the documented pseudomorph paragenesis: pyromorphite
-// (the iconic substrate, cobalt-blue crust on hexagonal-prism outlines)
+// priority encodes the documented encrustation paragenesis: pyromorphite
+// (the iconic substrate, cobalt-blue crust over hexagonal prisms)
 // > mimetite (less common; same hex-prism mechanism) > cerussite /
 // anglesite (Pb supergene matrix) > galena_dissolving (oxidized
-// cores) > wall (fallback). Fires LATE in the supergene sequence —
-// must wait for pyromorphite to nucleate first.
+// cores) > wall (fallback). Roughton Gill's authored nucleation window and
+// scenario-local parent check enforce its late pyromorphite-first sequence;
+// the alternate documented substrates remain reachable elsewhere.
 //
 // RNG-CASCADE GUARD: sigma < 1.0 early-out BEFORE substrate-pick
 // rng.random() calls (critical — see v93 lesson). Adding plumbogummite
 // must not perturb scenarios where Al + P + Pb don't coincide.
 function _nuc_plumbogummite(sim) {
   const sigma = sim.conditions.supersaturation_plumbogummite();
-  if (sigma < MINERAL_GATES_plumbogummite.sigma_crit) return;                       // RNG-cascade guard — DO NOT MOVE
+  if (sigma <= MINERAL_GATES_plumbogummite.sigma_crit) return;                      // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('plumbogummite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'plumbogummite' && c.active);
   const total = sim.crystals.filter(c => c.mineral === 'plumbogummite').length;
   if (existing.length >= 3 || total >= 5) return;
   let pos = 'vug wall';
-  const parent_pyromorphite = sim.crystals.filter(c => c.mineral === 'pyromorphite' && c.active);
+  const isRoughtonGill = sim.conditions?._scenario?.id === 'roughten_gill';
+  const parent_pyromorphite = sim.crystals.filter(c =>
+    c.mineral === 'pyromorphite' && c.active
+      && (!isRoughtonGill || c.nucleation_step < sim.step));
+  // The mine-specific contract is a late crust on an older pyromorphite. This
+  // is not a universal plumbogummite law: mimetite, Pb-supergene substrates,
+  // and bare-wall crusts remain valid catalog routes in other settings.
+  if (isRoughtonGill && !parent_pyromorphite.length) return;
   const parent_mimetite = sim.crystals.filter(c => c.mineral === 'mimetite' && c.active);
   const parent_cerussite = sim.crystals.filter(c => c.mineral === 'cerussite' && c.active);
   const parent_anglesite = sim.crystals.filter(c => c.mineral === 'anglesite' && c.active);
   const parent_galena = sim.crystals.filter(c => c.mineral === 'galena' && c.dissolved);
-  if (parent_pyromorphite.length && rng.random() < 0.65) {
-    pos = `pseudomorph after pyromorphite #${parent_pyromorphite[0].crystal_id} (cobalt-blue crust on hexagonal-prism outline — Roughten Gill cabinet aesthetic)`;
+  if (parent_pyromorphite.length
+      && ((isRoughtonGill && !existing.length) || rng.random() < 0.65)) {
+    pos = `encrusting pyromorphite #${parent_pyromorphite[0].crystal_id} (cobalt-blue botryoidal overgrowth; green parent remains active)`;
   } else if (parent_mimetite.length && rng.random() < 0.45) {
-    pos = `pseudomorph after mimetite #${parent_mimetite[0].crystal_id} (less common Roughten Gill substrate)`;
+    pos = `encrusting mimetite #${parent_mimetite[0].crystal_id} (less common documented substrate)`;
   } else if (parent_cerussite.length && rng.random() < 0.35) {
     pos = `on cerussite #${parent_cerussite[0].crystal_id} (Pb supergene matrix)`;
   } else if (parent_anglesite.length && rng.random() < 0.25) {
@@ -296,7 +305,7 @@ function _nuc_plumbogummite(sim) {
       const c = sim.nucleate('plumbogummite', pos, sigma);
       const f = sim.conditions.fluid;
       const habit_preview = pos.includes('pyromorphite') || pos.includes('mimetite')
-        ? 'pseudomorph (cobalt-blue crust)'
+        ? 'encrusting overgrowth (cobalt-blue crust)'
         : 'botryoidal mammillary';
       sim.log.push(`  ✦ NUCLEATION: 💙 Plumbogummite #${c.crystal_id} (${habit_preview}) on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${f.Pb.toFixed(0)} Al=${f.Al.toFixed(1)} P=${f.P.toFixed(1)} ppm — Roughten Gill type locality mineral)`);
     }

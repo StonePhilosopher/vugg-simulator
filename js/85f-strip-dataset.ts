@@ -85,7 +85,12 @@
 // floor=level for the rest, so the shadow is zero-width where there's no
 // depletion. BACKWARD COMPAT: v2 datasets have no floor_data — readers treat a
 // missing floor_data as "no depletion shadow" and render the level alone.
-const _STRIP_FORMAT_VERSION = 3;
+// format_version 4 (2026-08-05): preserves executed pressure/phase and
+// differential-stress testimony in downloaded files.  It also adds an exact
+// scenario-spec fingerprint to the manifest.  v1-v3 remain readable.
+// format_version 5 (2026-08-06): sparse events expose the simulator/event
+// step and carry `sample_index` separately for the zero-based tensor frame.
+const _STRIP_FORMAT_VERSION = 5;
 const _STRIP_NULL_BYTE = 255;       // reserved value meaning "no data"
 const _STRIP_MAX_DATA_BYTE = 254;   // chip values map to [0, 254]
 
@@ -107,10 +112,24 @@ interface StripChipMeta {
 // the viewer can route the marker to the correct angular sub-strip on
 // demand.
 interface StripNucleationEvent {
-  step: number;          // sim step index
+  step: number;          // actual VugSimulator/event step (starts at 1)
+  sample_index?: number; // zero-based chip_data frame; absent in legacy strips
   ring: number;          // 0 to height_positions-1
   cell: number;          // 0 to 119 (native angular cell index)
   mineral: string;       // mineral id
+  surface_anchor_key?: string; // physical identity; ring/cell is chemistry projection
+}
+
+// A phase delivered by alteration of an existing crystal. It must remain
+// separate from nucleation testimony so a review can see both the product and
+// its parentage.
+interface StripTransformationEvent {
+  step: number;          // actual VugSimulator transformation step
+  sample_index?: number; // zero-based chip_data frame; absent in legacy strips
+  crystal_id: number | string | null;
+  from: string;
+  to: string;
+  mechanism: string;
 }
 
 // The manifest — JSON-serializable. Header tells the reader what's in
@@ -118,7 +137,9 @@ interface StripNucleationEvent {
 interface StripManifest {
   format_version: number;       // _STRIP_FORMAT_VERSION
   sim_version: number;          // SIM_VERSION at time of recording
+  model_digest?: string;        // semantic scientific-model identity
   scenario_id: string;
+  scenario_spec_hash?: string;  // SHA-256(JSON.stringify(authored spec))
   seed: number;
   recorded_at: number;          // unix ms
   duration_steps: number;       // total step count actually captured
@@ -145,6 +166,13 @@ interface StripDataset {
   // The depletion FLOOR — chip_data is the level, floor_data is how far the
   // most-depleted cell in the bin drops below it. Absent on v1/v2 datasets.
   floor_data?: Uint8Array;
+  // Executed scientific testimony captured after each run step. Unlike the
+  // scenario definition, these are observations of the run that actually
+  // produced chip_data and nucleation_events.
+  pressure_phase_testimony?: any[];
+  stress_event_testimony?: any[];
+  transformation_event_testimony?: StripTransformationEvent[];
+  carbonate_boundary_testimony?: any[];
 }
 
 // ============================================================
@@ -236,6 +264,8 @@ function stripAllocateData(
 //   [events_json_length bytes: utf-8 JSON nucleation events array]
 //   [format_version 3 ONLY: 4 bytes floor_data_length (LE uint32) + that many
 //                           floor bytes; length 0 means "no floor channel"]
+//   [format_version >= 4: 4 bytes testimony_json_length (LE uint32)
+//                         + UTF-8 JSON executed testimony]
 //   [remainder: chip_data uint8 bytes]
 //
 // The floor section is keyed off manifest.format_version (read first on
@@ -256,8 +286,16 @@ async function stripSerialize(
   const writeFloor = (ds.manifest.format_version || 0) >= 3;
   const floorBytes: Uint8Array | null = (writeFloor && ds.floor_data) ? ds.floor_data : null;
   const floorSection = writeFloor ? (4 + (floorBytes ? floorBytes.length : 0)) : 0;
+  const writeTestimony = (ds.manifest.format_version || 0) >= 4;
+  const testimonyBytes = writeTestimony ? enc.encode(JSON.stringify({
+    pressure_phase_testimony: ds.pressure_phase_testimony || [],
+    stress_event_testimony: ds.stress_event_testimony || [],
+    transformation_event_testimony: ds.transformation_event_testimony || [],
+    carbonate_boundary_testimony: ds.carbonate_boundary_testimony || [],
+  })) : null;
+  const testimonySection = testimonyBytes ? 4 + testimonyBytes.length : 0;
 
-  const headerSize = 4 + manifestBytes.length + 4 + eventsBytes.length + floorSection;
+  const headerSize = 4 + manifestBytes.length + 4 + eventsBytes.length + floorSection + testimonySection;
   const buf = new Uint8Array(headerSize + ds.chip_data.length);
   const dv = new DataView(buf.buffer);
   let offset = 0;
@@ -268,6 +306,10 @@ async function stripSerialize(
   if (writeFloor) {
     dv.setUint32(offset, floorBytes ? floorBytes.length : 0, true); offset += 4;
     if (floorBytes) { buf.set(floorBytes, offset); offset += floorBytes.length; }
+  }
+  if (testimonyBytes) {
+    dv.setUint32(offset, testimonyBytes.length, true); offset += 4;
+    buf.set(testimonyBytes, offset); offset += testimonyBytes.length;
   }
   buf.set(ds.chip_data, offset);
 
@@ -315,9 +357,34 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
     const floorLen = dv.getUint32(offset, true); offset += 4;
     if (floorLen > 0) { floor_data = buf.slice(offset, offset + floorLen); offset += floorLen; }
   }
+  let pressure_phase_testimony: any[] | undefined;
+  let stress_event_testimony: any[] | undefined;
+  let transformation_event_testimony: StripTransformationEvent[] | undefined;
+  let carbonate_boundary_testimony: any[] | undefined;
+  if ((manifest.format_version || 0) >= 4) {
+    const testimonyLen = dv.getUint32(offset, true); offset += 4;
+    const testimony = JSON.parse(
+      dec.decode(buf.subarray(offset, offset + testimonyLen))
+    );
+    offset += testimonyLen;
+    pressure_phase_testimony = Array.isArray(testimony.pressure_phase_testimony)
+      ? testimony.pressure_phase_testimony : [];
+    stress_event_testimony = Array.isArray(testimony.stress_event_testimony)
+      ? testimony.stress_event_testimony : [];
+    transformation_event_testimony = Array.isArray(testimony.transformation_event_testimony)
+      ? testimony.transformation_event_testimony : [];
+    carbonate_boundary_testimony = Array.isArray(testimony.carbonate_boundary_testimony)
+      ? testimony.carbonate_boundary_testimony : [];
+  }
   const chip_data = buf.slice(offset);
-  return floor_data ? { manifest, chip_data, nucleation_events, floor_data }
-                    : { manifest, chip_data, nucleation_events };
+  return {
+    manifest, chip_data, nucleation_events,
+    ...(floor_data ? { floor_data } : {}),
+    ...(pressure_phase_testimony ? { pressure_phase_testimony } : {}),
+    ...(stress_event_testimony ? { stress_event_testimony } : {}),
+    ...(transformation_event_testimony ? { transformation_event_testimony } : {}),
+    ...(carbonate_boundary_testimony ? { carbonate_boundary_testimony } : {}),
+  };
 }
 
 // === END HELIX-OVERLAY-FORK ADDITION ==================================

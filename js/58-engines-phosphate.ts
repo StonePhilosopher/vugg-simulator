@@ -13,17 +13,17 @@
 // Pb-Al-PO4 alunite-supergroup supergene endmember. Type locality
 // Roughten Gill, Caldbeck Fells (Hartley 1882; Förtsch 1967 type-
 // material correction). Headline cabinet aesthetic: cobalt-blue /
-// sky-blue / lavender / turquoise botryoidal crusts pseudomorphing
+// sky-blue / lavender / turquoise botryoidal crusts encrusting
 // pyromorphite (the cobalt-blue mass draping green hexagonal
 // pyromorphite prisms — world-standard Roughten Gill specimen).
 //
 // Habit dispatch:
-//   pseudomorph_after_pyromorphite — on pyromorphite substrate
+//   encrusting_pyromorphite — on pyromorphite substrate
 //     (the iconic Roughten Gill specimen; cobalt-blue botryoidal
 //     crust preserves the hexagonal-prism outline of underlying
 //     pyromorphite, often with residual green pyromorphite tips
 //     visible through the blue crust)
-//   pseudomorph_after_mimetite — on mimetite substrate (less common
+//   encrusting_mimetite — on mimetite substrate (less common
 //     but documented; same mechanism)
 //   botryoidal_mammillary — default crust on vug wall / cerussite /
 //     anglesite / galena substrate; concentric layers
@@ -53,22 +53,22 @@ function grow_plumbogummite(crystal, conditions, step) {
 
   let habit_note;
   if (on_pyromorphite) {
-    crystal.habit = 'pseudomorph_after_pyromorphite';
+    crystal.habit = 'encrusting_pyromorphite';
     crystal.dominant_forms = [
-      'cobalt-blue botryoidal crust on hexagonal-prism outlines',
-      'preserves pyromorphite host morphology',
-      'residual green pyromorphite tips may project through',
+      'cobalt-blue botryoidal crust over hexagonal prisms',
+      'follows the pyromorphite substrate surface',
+      'active green pyromorphite tips may project through',
     ];
-    crystal._variety = 'pseudomorph_pyromorphite';
-    habit_note = 'pseudomorph after pyromorphite — the iconic Roughten Gill cabinet aesthetic';
+    crystal._variety = 'encrusting_pyromorphite';
+    habit_note = 'encrusting overgrowth on pyromorphite — the Roughton Gill cabinet aesthetic';
   } else if (on_mimetite) {
-    crystal.habit = 'pseudomorph_after_mimetite';
+    crystal.habit = 'encrusting_mimetite';
     crystal.dominant_forms = [
-      'cobalt-blue crust on mimetite hexagonal-prism outlines',
-      'less common but documented Roughten Gill substrate',
+      'cobalt-blue crust over mimetite hexagonal prisms',
+      'less common documented substrate',
     ];
-    crystal._variety = 'pseudomorph_mimetite';
-    habit_note = 'pseudomorph after mimetite — Roughten Gill secondary habit';
+    crystal._variety = 'encrusting_mimetite';
+    habit_note = 'encrusting overgrowth on mimetite';
   } else if (excess < 0.3) {
     crystal.habit = 'crystallized_rhombohedral';
     crystal.dominant_forms = [
@@ -99,7 +99,7 @@ function grow_plumbogummite(crystal, conditions, step) {
     color_note = `lavender-to-white (pure Pb-Al-PO4 — rare among Roughten Gill specimens)`;
   }
 
-  // Mass balance: Pb + Al + P are the primary debits
+  // Growth budget: Pb + Al + P are the primary debits
   f.Pb = Math.max(f.Pb - rate * 0.025, 0);
   f.Al = Math.max(f.Al - rate * 0.015, 0);
   f.P  = Math.max(f.P  - rate * 0.008, 0);

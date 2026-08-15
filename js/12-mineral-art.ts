@@ -24,7 +24,7 @@ const MINERAL_THUMBS = {
 
 // Game colors for each mineral (used in charts, inventory tinting)
 const MINERAL_GAME_COLORS = {
-  quartz: '#e8e8e8', calcite: '#ffd699', fluorite: '#b088dd',
+  quartz: '#e8e8e8', chalcedony: '#b9d7d9', calcite: '#ffd699', fluorite: '#b088dd',
   pyrite: '#c8b830', chalcopyrite: '#c89830', galena: '#a0a0a0', molybdenite: '#707888',
   hematite: '#b04040', malachite: '#2e8b57', sphalerite: '#cc8844',
   goethite: '#8b6914', uraninite: '#44dd44', smithsonite: '#88bbcc',

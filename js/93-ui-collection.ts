@@ -15,17 +15,62 @@
 // directly on its card; the title-screen Load Game button opens
 // the Library.
 const CRYSTAL_KEY = 'vugg-crystals-v1';
+const CRYSTAL_CORRUPT_KEY = 'vugg-crystals-v1.corrupt';
+
+function loadCrystalsStrict() {
+  let raw = null;
+  try {
+    raw = localStorage.getItem(CRYSTAL_KEY);
+    if (!raw) return { ok: true, records: [], raw: null, error: '' };
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) throw new Error('Library payload is not an array');
+    const ids = new Set();
+    for (const record of parsed) {
+      if (!record || typeof record !== 'object' || typeof record.id !== 'string'
+          || !record.id || ids.has(record.id)) {
+        throw new Error('Library contains a missing or duplicate specimen id');
+      }
+      ids.add(record.id);
+    }
+    return { ok: true, records: parsed, raw, error: '' };
+  } catch (e) {
+    return {
+      ok: false,
+      records: null,
+      raw,
+      error: e && (e as any).message ? (e as any).message : String(e),
+    };
+  }
+}
+
+function quarantineCrystalStorage(raw, reason) {
+  if (typeof raw !== 'string') return false;
+  try {
+    const existing = localStorage.getItem(CRYSTAL_CORRUPT_KEY);
+    if (existing) {
+      try {
+        const parsed = JSON.parse(existing);
+        if (parsed && parsed.raw === raw) return true;
+      } catch (_e) { /* Replace an unreadable quarantine with the current bytes. */ }
+    }
+    const receipt = {
+      captured_at: new Date().toISOString(),
+      reason: String(reason || 'Library authentication failed'),
+      raw,
+    };
+    localStorage.setItem(CRYSTAL_CORRUPT_KEY, JSON.stringify(receipt));
+    const verified = JSON.parse(localStorage.getItem(CRYSTAL_CORRUPT_KEY) || 'null');
+    return !!verified && verified.raw === raw;
+  } catch (_e) {
+    return false;
+  }
+}
 
 function loadCrystals() {
-  try {
-    const raw = localStorage.getItem(CRYSTAL_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    console.warn('crystal collection parse failed:', e);
-    return [];
-  }
+  const strict = loadCrystalsStrict();
+  if (strict.ok) return strict.records;
+  console.warn('crystal collection parse failed:', strict.error);
+  return [];
 }
 function persistCrystals(items) {
   try { localStorage.setItem(CRYSTAL_KEY, JSON.stringify(items)); return true; }
@@ -64,6 +109,8 @@ function buildCrystalRecord(crystal, meta) {
     trace_Ti: z.trace_Ti || 0,
     trace_Pb: z.trace_Pb || 0,
     trace_Cu: z.trace_Cu || 0,
+    trace_Ge: z.trace_Ge || 0,
+    trace_stoichiometry: z.trace_stoichiometry ? { ...z.trace_stoichiometry } : undefined,
     fluid_inclusion: !!z.fluid_inclusion,
     inclusion_type: z.inclusion_type || '',
     note: z.note || '',
@@ -88,6 +135,11 @@ function buildCrystalRecord(crystal, meta) {
       scenario: meta.scenario || null,
       archetype: meta.archetype || null,
       seed: meta.seed ?? null,
+      // Creative saves need individual-specimen provenance, not merely a
+      // science-identical crystal projection, to prove pre-collection during
+      // an authenticated finish replay.
+      run_id: (typeof meta.run_id === 'string' && meta.run_id) ? meta.run_id : null,
+      crystal_index: Number.isSafeInteger(meta.crystal_index) ? meta.crystal_index : null,
       nucleation_step: crystal.nucleation_step,
       nucleation_temp: +crystal.nucleation_temp.toFixed(1),
     },
@@ -168,6 +220,26 @@ function collectCrystal(crystal, meta) {
   const chosen = prompt(`Name this ${crystal.mineral}:`, defaultName);
   if (chosen === null) return false; // cancelled
   rec.name = chosen.trim() || defaultName;
+
+  // Creative collection is a three-store transaction (save mapping, Library,
+  // lifetime counter). The save layer journals it before any other store
+  // moves, then applies/replays it idempotently by stable run provenance.
+  if (rec.source?.run_id && typeof _saveCommitCreativeCollection === 'function') {
+    const committed = _saveCommitCreativeCollection([{ crystal, record: rec }]);
+    if (!committed.ok) {
+      alert('Collection is waiting in the save journal because local storage could not commit every receipt. Retry Collect or reload this save after storage is available.');
+      return false;
+    }
+    if (typeof libraryRender === 'function' && document.getElementById('library-panel') &&
+        document.getElementById('library-panel').style.display !== 'none') {
+      libraryRender();
+    }
+    refreshTitleLoadButton();
+    const isNewSpecies = committed.newSpecies.includes(rec.mineral);
+    const newMsg = isNewSpecies ? `\n\nðŸ†• First ${rec.mineral} in your collection â€” a species unlocked.` : '';
+    alert(`Collected "${rec.name}".${newMsg}`);
+    return true;
+  }
 
   const already = uniqueCollectedMinerals();
   const items = loadCrystals();
@@ -251,7 +323,14 @@ function collectFromFortress(crystalIdx, ev) {
   if (ev) ev.stopPropagation();
   if (!fortressSim) return;
   const crystal = fortressSim.crystals[crystalIdx];
-  if (collectCrystal(crystal, { mode: 'creative' })) updateFortressInventory();
+  const runId = (typeof _liveSaveActiveRecord === 'function')
+    ? (_liveSaveActiveRecord()?.run_id || _liveSaveActiveRecord()?.id)
+    : null;
+  if (collectCrystal(crystal, {
+    mode: 'creative',
+    run_id: runId,
+    crystal_index: crystalIdx,
+  })) updateFortressInventory();
 }
 function collectFromRandom(crystalIdx, ev) {
   if (ev) ev.stopPropagation();
@@ -324,6 +403,31 @@ function collectAllCrystals(crystals, metaFn, opts?: { silent?: boolean }) {
     }
   }
 
+  if (records.length && records.every(({ rec }) => rec.source?.run_id)
+      && typeof _saveCommitCreativeCollection === 'function') {
+    const committed = _saveCommitCreativeCollection(records.map(({ crystal, rec }) => ({
+      crystal,
+      record: rec,
+    })));
+    if (!committed.ok) {
+      alert('Collection is waiting in the save journal because local storage could not commit every receipt. Retry Collect or reload this save after storage is available.');
+      return { count: 0, newSpecies: [] };
+    }
+    if (typeof libraryRender === 'function'
+        && document.getElementById('library-panel')
+        && document.getElementById('library-panel').style.display !== 'none') {
+      libraryRender();
+    }
+    refreshTitleLoadButton();
+    if (!silent) {
+      const speciesNote = committed.newSpecies.length
+        ? `\n\nðŸ†• ${committed.newSpecies.length} new species unlocked: ${committed.newSpecies.join(', ')}.`
+        : '';
+      alert(`Collected ${committed.count} crystal${committed.count === 1 ? '' : 's'}.${speciesNote}`);
+    }
+    return committed;
+  }
+
   if (!persistCrystals(items)) {
     alert('Could not save — localStorage is full or unavailable.');
     return { count: 0, newSpecies: [] };
@@ -379,8 +483,14 @@ function collectAllFromLegends() {
 }
 function collectAllFromFortress() {
   if (!fortressSim) return;
-  const meta = { mode: 'creative' };
-  if (collectAllCrystals(fortressSim.crystals, () => meta).count > 0) {
+  const runId = (typeof _liveSaveActiveRecord === 'function')
+    ? (_liveSaveActiveRecord()?.run_id || _liveSaveActiveRecord()?.id)
+    : null;
+  if (collectAllCrystals(fortressSim.crystals, crystal => ({
+    mode: 'creative',
+    run_id: runId,
+    crystal_index: fortressSim.crystals.indexOf(crystal),
+  })).count > 0) {
     updateFortressInventory();
   }
 }

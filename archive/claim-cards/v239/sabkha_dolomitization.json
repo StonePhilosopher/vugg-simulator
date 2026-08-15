@@ -1,0 +1,278 @@
+{
+  "scenario": "sabkha_dolomitization",
+  "sim_version": 239,
+  "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:accepted-zone-stoich-ledger-v3|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-supplement-v1|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1",
+  "scenario_spec_hash": "42ac7b6032433821497eeb5d188c2807539f9ebe9a66308d4b81f3a68048fa4c",
+  "strip_steps": 260,
+  "claim": {
+    "anchor": "Coorong lagoon system (South Australia) and Persian Gulf sabkhas. The classic natural laboratory for direct-from-solution dolomite formation per Kim, Sun et al. 2023 (Science 382:915).",
+    "description": "Cycling-brine sabkha producing ORDERED dolomite at ambient T via the Kim 2023 mechanism. Twelve flood/evap pulses over 240 steps drive Ω across the dolomite saturation boundary repeatedly — the cyclic Ω modulation that's needed to produce ordered dolomite at surface T.",
+    "expects_species": [
+      "dolomite",
+      "anhydrite",
+      "selenite"
+    ],
+    "sources": [
+      "Kim, Sun et al. 2023 (Science 382:915) — cyclic Ω modulation produces ordered dolomite at ambient T",
+      "Coorong lagoon (South Australia) + Persian Gulf sabkhas — natural laboratory anchors"
+    ],
+    "initial_temperature_C": 25,
+    "initial_pressure_kbar": 0.05,
+    "wall_architecture": "basin",
+    "notes": [
+      "Surface T (~25°C), high-Mg evaporative brine, seasonal flood-evaporate cycles. Per Kim, Sun et al. (2023, Science 382:915), exactly this kind of cyclic Ω modulation is what's needed to produce ordered dolomite at ambient T.",
+      "The acid-pulse-and-relax style of reactive_wall produces only DISORDERED HMC because the dissolution events are too aggressive (full dissolution rather than gentle surface etch). Sabkha tidal pumping is the right kind of cycling — gentle, frequent, repeated.",
+      "Twelve flood/evap pairs over 240 steps produce ~12 dissolution-precipitation cycles. With N0=10 in the f_ord formula, this reaches ORDERED (f_ord > 0.7) by mid-scenario. The result: true ordered dolomite, the geological prize the Kim 2023 paper made accessible.",
+      "Schema note: the original Python/JS implementations used factory functions `make_flood(idx)` and `make_evap(idx)` to bake the cycle index into each handler's narrator string. Per the Phase 2 migration, we use one flood handler and one evap handler reused across all 12 cycles (the supergene_acidification precedent — same handler, multiple Event entries pointing to it). Cycle number is preserved via the event `name` field ('Tidal Flood #1', 'Evaporation #1', etc.) instead of an in-handler f-string."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:accepted-zone-stoich-ledger-v3|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-supplement-v1|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1",
+      "fluid_pressure": {
+        "initial_kbar": 0.05,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 58.735,
+          "initial_water_activity": {
+            "value": 0.919,
+            "salinityPpt": 120,
+            "naclWeightPercentEquivalent": 12,
+            "uncertainty": 0.01,
+            "status": "calibrated-proxy",
+            "note": "NaCl-equivalent interpolation of Chirife & Resnik (1984) consensus values; natural multicomponent-brine composition remains the dominant uncertainty."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 5,
+    "paragenetic_order": [
+      {
+        "mineral": "aragonite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "calcite",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "dolomite",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "HMC",
+        "first_step": 0,
+        "events": 6
+      },
+      {
+        "mineral": "selenite",
+        "first_step": 0,
+        "events": 2
+      }
+    ],
+    "surprises_not_in_expects": [
+      "aragonite",
+      "calcite",
+      "HMC"
+    ],
+    "expected_no_shows": [
+      "anhydrite"
+    ],
+    "environment": {
+      "T": {
+        "first": 23.622,
+        "last": 23.622,
+        "min": 23.622,
+        "max": 26.575,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 8.874,
+        "last": 9.26,
+        "min": 8.102,
+        "max": 9.26,
+        "units": ""
+      },
+      "Eh": {
+        "first": 289.764,
+        "last": 289.764,
+        "min": 289.764,
+        "max": 289.764,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 119.685,
+        "last": 119.685,
+        "min": 119.685,
+        "max": 119.685,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 1.496,
+        "last": 1.496,
+        "min": 1.496,
+        "max": 1.496,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": 1.764,
+        "last": 2.772,
+        "min": 0,
+        "max": 2.772,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": 1.575,
+        "last": 2.646,
+        "min": -0.189,
+        "max": 2.646,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": 4.346,
+        "last": 6.425,
+        "min": 0.819,
+        "max": 6.488,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": 0.819,
+        "last": 1.827,
+        "min": -0.945,
+        "max": 1.89,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 2.079,
+        "last": 2.961,
+        "min": 0.567,
+        "max": 3.024,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": 0.504,
+        "last": 0.693,
+        "min": 0.252,
+        "max": 0.693,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": 0.315,
+        "last": 0.567,
+        "min": 0.126,
+        "max": 0.567,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": 0.945,
+        "last": 1.197,
+        "min": 0.693,
+        "max": 1.197,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 260,
+      "fluid_pressure_kbar": {
+        "first": 0.05,
+        "last": 0.05,
+        "min": 0.05,
+        "max": 0.05,
+        "samples": 260
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 260
+      },
+      "temperature_C": {
+        "first": 25,
+        "last": 25,
+        "min": 25,
+        "max": 26.79753743512556,
+        "samples": 260
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 260
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 58.735
+        },
+        "last": {
+          "pure_water_boundary_C": 58.735
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

@@ -34,8 +34,9 @@ function _nuc_barite(sim) {
     pos = `on pyrite #${active_py_brt[0].crystal_id}`;
     snowball = true;
   }
-  // σ-discount via Q1c paragenesis table (barite has 0.7× entries on
-  // sphalerite/galena/pyrite hosts).
+  // σ-discount via Q1c paragenesis table. Sphalerite and galena have
+  // executable 0.7× routes; pyrite remains a narrative snowball host but
+  // carries no discount because no documented table entry is registered.
   const discount = sim._sigmaDiscountForPosition('barite', pos);
   if (sigma_brt <= MINERAL_GATES_barite.sigma_crit * discount) return;
   // Free-wall barite stays gated at low probability (~one nucleation
@@ -267,7 +268,7 @@ function _nuc_anglesite(sim) {
 
 function _nuc_linarite(sim) {
   const sigma = sim.conditions.supersaturation_linarite();
-  if (sigma < MINERAL_GATES_linarite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_linarite.sigma_crit) return;
   if (sim._atNucleationCap('linarite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'linarite' && c.active);
   if (existing.length >= 2) return;
@@ -286,7 +287,7 @@ function _nuc_linarite(sim) {
 
 function _nuc_caledonite(sim) {
   const sigma = sim.conditions.supersaturation_caledonite();
-  if (sigma < MINERAL_GATES_caledonite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_caledonite.sigma_crit) return;
   if (sim._atNucleationCap('caledonite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'caledonite' && c.active);
   if (existing.length >= 2) return;
@@ -303,7 +304,7 @@ function _nuc_caledonite(sim) {
 
 function _nuc_leadhillite(sim) {
   const sigma = sim.conditions.supersaturation_leadhillite();
-  if (sigma < MINERAL_GATES_leadhillite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_leadhillite.sigma_crit) return;
   if (sim._atNucleationCap('leadhillite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'leadhillite' && c.active);
   if (existing.length >= 2) return;

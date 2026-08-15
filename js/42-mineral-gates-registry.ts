@@ -98,6 +98,9 @@ const MINERAL_GATES_REGISTRY: Record<string, MineralGates> = {
   sapphire: MINERAL_GATES_sapphire,
   rutile: MINERAL_GATES_rutile,
   chromite: MINERAL_GATES_chromite,
+  birnessite: MINERAL_GATES_birnessite,
+  romanechite: MINERAL_GATES_romanechite,
+  todorokite: MINERAL_GATES_todorokite,
   pyrolusite: MINERAL_GATES_pyrolusite,
   brucite: MINERAL_GATES_brucite,
 
@@ -119,6 +122,7 @@ const MINERAL_GATES_REGISTRY: Record<string, MineralGates> = {
 
   // ---- Silicate (js/39-supersat-silicate.ts) ----
   quartz: MINERAL_GATES_quartz,
+  chalcedony: MINERAL_GATES_chalcedony,
   feldspar: MINERAL_GATES_feldspar,
   apophyllite: MINERAL_GATES_apophyllite,
   albite: MINERAL_GATES_albite,

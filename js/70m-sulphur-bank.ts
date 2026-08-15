@@ -10,14 +10,15 @@
 // Mechanism (White & Roberson 1962, USGS PP 432-A):
 //   1. Hot reduced fluid rises from depth carrying H₂S, CO₂, Hg⁰ vapor
 //      + minor metals.
-//   2. Near surface, H₂S meets atmospheric O₂ → oxidizes to H₂SO₄
-//      (acid mixing zone) and elemental S (the synproportionation
-//      reaction: 2 H₂S + O₂ → 2 S° + 2 H₂O).
+//   2. Near surface, partial oxidation transfers reduced sulfur into
+//      elemental S: 2 H₂S + O₂ → 2 S° + 2 H₂O. This branch produces
+//      no H+; measured source-fluid acidity is carried independently.
 //   3. Native sulfur precipitates from the acidic, partially-oxidized
 //      hot fluid in cavities + on vent walls.
 //
 // Engine fit: supersaturation_native_sulfur in js/36-supersat-native.ts
-// gates on (S ≥ 100, O₂ in [0.1, 0.7], pH ≤ 5, metal_sum ≤ 100, T 20-95°C
+// gates on (S_elemental ≥ 100, O₂ in [0.1, 0.7], pH ≤ 5,
+// metal_sum ≤ 100, T 20-95°C
 // optimal). Sulphur Bank fluid matches all five.
 //
 // 3 handlers — fresh H₂S pulse, surface O₂ ingress, late cooling.
@@ -32,7 +33,7 @@ function event_sulphur_bank_h2s_recharge(c) {
   // (recovery = 0.1 × min(flow/1.0, 2.0) per step). Higher
   // flow_rates would push pH up faster than the recharge pushes it
   // down, defeating the synproportionation window.
-  c.fluid.S += 150;            // bring total back near 500 ppm
+  declareSulfurBoundaryAddition(c, 'sulfide', 150, 'Sulphur Bank deep H2S recharge');
   c.fluid.Fe += 5;             // minor Fe co-pulse (pyrite/marcasite contribution)
   c.fluid.As += 2;             // trace As (Sulphur Bank ores carry minor arsenopyrite/realgar)
   c.fluid.pH = Math.max(1.5, c.fluid.pH - 1.0);  // hard acidification — H₂S overwhelms recovery
@@ -50,12 +51,9 @@ function event_sulphur_bank_surface_oxidation(c) {
   //
   // O₂ pinned to 0.4 = the peak of nativeRedoxTent(peakO2=0.4).
   // This is the synproportionation sweet spot.
-  c.fluid.O2 = 0.40;
-  // Some S consumed as it converts to H₂SO₄ (further acidifies).
-  c.fluid.S = Math.max(150, c.fluid.S * 0.85);
-  c.fluid.pH = Math.max(1.5, c.fluid.pH - 0.5);
+  const reaction = oxidizeReducedSulfurToElemental(c.fluid, 0.20, 0.40);
   c.flow_rate = 0.3;
-  return `Atmospheric O₂ ingress at the vent. O₂ pins to ${c.fluid.O2.toFixed(2)} — the synproportionation peak. pH drops to ${c.fluid.pH.toFixed(1)} as H₂SO₄ forms. Native sulfur precipitates from H₂S + ½O₂ → S° + H₂O.`;
+  return `Atmospheric O₂ ingress transfers ${reaction.sulfurTransferredPpm.toFixed(1)} ppm reduced S into an elemental-S precursor pool. The open boundary imports ${reaction.oxygenImportedPpm.toFixed(1)} ppm O₂-equivalent and consumes ${reaction.oxygenConsumedPpm.toFixed(1)} ppm, leaving O₂=${c.fluid.O2.toFixed(2)}. H₂S + ½O₂ → S° + H₂O produces no H⁺; source-fluid acidity remains ${c.fluid.pH.toFixed(1)}.`;
 }
 
 function event_sulphur_bank_cooling(c) {

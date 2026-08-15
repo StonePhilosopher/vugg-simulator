@@ -33,7 +33,9 @@ declare const _makeWulffGeom: any;
 declare const wulffWulfenitePbMoBias: any;
 declare const WULFENITE_PBMO: any;
 
-function run(scenarioName: string, seed = 42) {
+const scenarioCache = new Map<string, any>();
+
+function runFresh(scenarioName: string, seed = 42) {
   setSeed(seed);
   const scen = SCENARIOS[scenarioName];
   if (!scen) return null;
@@ -41,7 +43,26 @@ function run(scenarioName: string, seed = 42) {
   const sim = new VugSimulator(conditions, events);
   const steps = defaultSteps ?? 200;
   for (let i = 0; i < steps; i++) sim.run_step();
-  return sim;
+  // Preserve only fields this render-contract suite observes. Seven complete
+  // simulator graphs retained together exceed a gigabyte without adding
+  // coverage; the compact projection is immutable test evidence.
+  return {
+    crystals: sim.crystals.map((crystal: any) => ({
+      mineral: crystal.mineral,
+      dissolved: crystal.dissolved,
+      total_growth_um: crystal.total_growth_um,
+      habit: crystal.habit,
+      crystal_id: crystal.crystal_id,
+      _wulffForm: crystal._wulffForm ? { ...crystal._wulffForm } : undefined,
+      _wulffPbMo: crystal._wulffPbMo ? { ...crystal._wulffPbMo } : undefined,
+    })),
+  };
+}
+
+function run(scenarioName: string, seed = 42) {
+  const key = `${scenarioName}:${seed}`;
+  if (!scenarioCache.has(key)) scenarioCache.set(key, runFresh(scenarioName, seed));
+  return scenarioCache.get(key);
 }
 
 const wulffed = (sim: any) => sim.crystals.filter((c: any) => c._wulffForm && !c.dissolved);
@@ -108,7 +129,7 @@ describe('Wulff form tag (central-distance arc Phase 4 rung 4a.1)', () => {
 
   it('determinism — two identical runs produce byte-identical biasC (no rng)', () => {
     const a = run('sunnyside_american_tunnel');
-    const b = run('sunnyside_american_tunnel');
+    const b = runFresh('sunnyside_american_tunnel');
     const fa = wulffed(a).map((c: any) => `${c.crystal_id}:${c._wulffForm.biasC}`).sort();
     const fb = wulffed(b).map((c: any) => `${c.crystal_id}:${c._wulffForm.biasC}`).sort();
     expect(fa.length).toBeGreaterThan(0);
@@ -338,16 +359,22 @@ describe('wulfenite Pb:Mo habit lever (rung 4a.7)', () => {
 // in; its late-stage (wittichen_meteoric_sulfate) barite grows bladed. The a≠b rectangle is a kernel
 // property (wulff-geometry.test.ts), not a classifier one.
 describe('Wulff form tag — barite tenant (rung 4a.4)', () => {
-  it('wittichen (wall.wulff_barite) tags its bladed vein barite, biasC in the bladed band', () => {
+  it('wittichen tags each mixed barite habit in its matching Wulff band', () => {
     const sim = run('wittichen');
     expect(sim).toBeTruthy();
     const tagged = wulffed(sim).filter((c: any) => c.mineral === 'barite');
-    expect(tagged.length).toBeGreaterThan(0);            // the late-oxidation bladed barite
+    expect(tagged.length).toBeGreaterThan(0);
+    expect(tagged.some((c: any) => c._wulffForm.bladed)).toBe(true);
+    expect(tagged.some((c: any) => !c._wulffForm.bladed)).toBe(true);
     for (const c of tagged) {
       expect(c._wulffForm.tabular).toBe(true);           // tabular-family plate (signals the diameter scale)
-      // bladed band [1.9,3.0] (aspect ≈ 4.5–6.9 — a thin divergent blade; from the orthorhombic sweep)
-      expect(c._wulffForm.biasC).toBeGreaterThanOrEqual(1.9);
-      expect(c._wulffForm.biasC).toBeLessThanOrEqual(3.0);
+      if (c._wulffForm.bladed) {
+        expect(c._wulffForm.biasC).toBeGreaterThanOrEqual(1.9);
+        expect(c._wulffForm.biasC).toBeLessThanOrEqual(3.0);
+      } else {
+        expect(c._wulffForm.biasC).toBeGreaterThanOrEqual(1.3);
+        expect(c._wulffForm.biasC).toBeLessThanOrEqual(2.2);
+      }
       expect(_makeWulffGeom(wulffFaceSetForMineral('barite', c._wulffForm.growthFrac, 0, c._wulffForm.biasC))).toBeTruthy();
     }
   });

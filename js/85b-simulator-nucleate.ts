@@ -8,6 +8,238 @@
 //
 // Phase B20 of PROPOSAL-MODULAR-REFACTOR.
 
+// Growth engines predate the central stoichiometric ledger. A number of them
+// still contain direct `fluid.X -= ...` chemistry and immediate crystal habit /
+// flag assignments. Both are unsafe in the graduated-competition dry run:
+// rejected candidates must change neither fluid nor the pre-existing solid.
+// Treat every engine call as a transaction, stage the candidate effects on the
+// returned zone, restore live state immediately, and commit only after the
+// final accepted thickness is known.
+function _cloneEngineTransactionValue(value: any, seen = new WeakMap()): any {
+  if (value == null || typeof value !== 'object') return value;
+  if (seen.has(value)) return seen.get(value);
+  if (Array.isArray(value)) {
+    const copy: any[] = [];
+    seen.set(value, copy);
+    for (const item of value) copy.push(_cloneEngineTransactionValue(item, seen));
+    return copy;
+  }
+  const proto = Object.getPrototypeOf(value);
+  if (proto === Object.prototype || proto === null) {
+    const copy: Record<string, any> = {};
+    seen.set(value, copy);
+    for (const key of Object.keys(value)) {
+      copy[key] = _cloneEngineTransactionValue(value[key], seen);
+    }
+    return copy;
+  }
+  // Engine mutations are plain scalar/array/object fields. Preserve class
+  // instances (notably historic GrowthZone entries) by identity.
+  return value;
+}
+
+function _engineTransactionValuesEqual(a: any, b: any): boolean {
+  if (Object.is(a, b)) return true;
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length && a.every((value, i) => _engineTransactionValuesEqual(value, b[i]));
+  }
+  if (a && b && typeof a === 'object' && typeof b === 'object'
+      && (Object.getPrototypeOf(a) === Object.prototype || Object.getPrototypeOf(a) === null)
+      && (Object.getPrototypeOf(b) === Object.prototype || Object.getPrototypeOf(b) === null)) {
+    const aKeys = Object.keys(a), bKeys = Object.keys(b);
+    return aKeys.length === bKeys.length
+      && aKeys.every(key => Object.prototype.hasOwnProperty.call(b, key)
+        && _engineTransactionValuesEqual(a[key], b[key]));
+  }
+  return false;
+}
+
+function _snapshotEngineCrystalState(crystal: any): Record<string, any> {
+  const snapshot: Record<string, any> = {};
+  if (!crystal || typeof crystal !== 'object') return snapshot;
+  for (const key of Object.keys(crystal)) {
+    snapshot[key] = _cloneEngineTransactionValue(crystal[key]);
+  }
+  return snapshot;
+}
+
+function _stageAndRestoreEngineCrystalMutations(crystal: any, before: Record<string, any>) {
+  const staged: Record<string, { exists: boolean; value?: any }> = {};
+  if (!crystal || typeof crystal !== 'object') return staged;
+  const after = _snapshotEngineCrystalState(crystal);
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+  for (const key of keys) {
+    const existedBefore = Object.prototype.hasOwnProperty.call(before, key);
+    const existsAfter = Object.prototype.hasOwnProperty.call(after, key);
+    if (existedBefore === existsAfter
+        && (!existsAfter || _engineTransactionValuesEqual(before[key], after[key]))) continue;
+    staged[key] = existsAfter
+      ? { exists: true, value: _cloneEngineTransactionValue(after[key]) }
+      : { exists: false };
+    if (existedBefore) crystal[key] = _cloneEngineTransactionValue(before[key]);
+    else delete crystal[key];
+  }
+  return staged;
+}
+
+function _applyAcceptedCrystalMutations(crystal: any, zone: any) {
+  if (!zone) return;
+  const staged = zone._engine_crystal_mutations;
+  const thickness = Number(zone.thickness_um);
+  const accepted = Number.isFinite(thickness)
+    && (thickness !== 0 || (thickness === 0 && !!zone.state_overprint));
+  if (accepted && staged && crystal) {
+    for (const key of Object.keys(staged)) {
+      const mutation = staged[key];
+      if (mutation.exists) crystal[key] = _cloneEngineTransactionValue(mutation.value);
+      else delete crystal[key];
+    }
+  }
+  if (accepted && zone._clear_film_on_accept && crystal) crystal._film = null;
+  delete zone._engine_crystal_mutations;
+  delete zone._clear_film_on_accept;
+}
+
+function _runEngineFluidTransaction(engine, crystal, conditions, step) {
+  const fluid = conditions && conditions.fluid;
+  const before: Record<string, any> = {};
+  if (fluid) {
+    for (const key of Object.keys(fluid)) before[key] = fluid[key];
+  }
+  const beforeCrystal = _snapshotEngineCrystalState(crystal);
+
+  let zone: any = null;
+  try {
+    zone = engine(crystal, conditions, step);
+    if (zone && Number.isFinite(Number(zone.thickness_um)) && Number(zone.thickness_um) !== 0) {
+      const candidateMagnitude = Math.abs(Number(zone.thickness_um));
+      const perCandidateUm: Record<string, number> = {};
+      const keys = new Set([...Object.keys(before), ...Object.keys(fluid || {})]);
+      for (const key of keys) {
+        const oldValue = before[key];
+        const newValue = fluid && fluid[key];
+        if (typeof oldValue !== 'number' || typeof newValue !== 'number') continue;
+        const delta = newValue - oldValue;
+        if (Number.isFinite(delta) && Math.abs(delta) > 1e-15) {
+          perCandidateUm[key] = delta / candidateMagnitude;
+        }
+      }
+      if (Object.keys(perCandidateUm).length) {
+        zone._engine_fluid_delta_per_candidate_um = perCandidateUm;
+        zone._engine_candidate_thickness_um = Number(zone.thickness_um);
+      }
+    } else if (zone && Number(zone.thickness_um) === 0 && zone.state_overprint) {
+      const absoluteDeltas: Record<string, number> = {};
+      const keys = new Set([...Object.keys(before), ...Object.keys(fluid || {})]);
+      for (const key of keys) {
+        const oldValue = before[key];
+        const newValue = fluid && fluid[key];
+        if (typeof oldValue !== 'number' || typeof newValue !== 'number') continue;
+        const delta = newValue - oldValue;
+        if (Number.isFinite(delta) && Math.abs(delta) > 1e-15) absoluteDeltas[key] = delta;
+      }
+      if (Object.keys(absoluteDeltas).length) {
+        zone._engine_state_fluid_deltas = absoluteDeltas;
+      }
+    }
+    return zone;
+  } finally {
+    const crystalMutations = _stageAndRestoreEngineCrystalMutations(crystal, beforeCrystal);
+    if (zone && Object.keys(crystalMutations).length) {
+      zone._engine_crystal_mutations = crystalMutations;
+    }
+    // Restore all pre-existing fields and remove any ad-hoc field the engine
+    // created. FluidChemistry normally declares every field, but deleting new
+    // keys makes the transaction invariant explicit and future-proof.
+    if (fluid) {
+      for (const key of Object.keys(fluid)) {
+        if (!Object.prototype.hasOwnProperty.call(before, key)) delete fluid[key];
+      }
+      for (const key of Object.keys(before)) fluid[key] = before[key];
+    }
+  }
+}
+
+function _ledgerSpeciesForAcceptedZone(crystal, zone): Set<string> {
+  if (!zone || !crystal) return new Set();
+  if (zone.thickness_um > 0) {
+    return new Set(Object.keys(MINERAL_STOICHIOMETRY[crystal.mineral] || {}));
+  }
+  const exact = new Set<string>();
+  for (const historic of (crystal.zones || [])) {
+    if (!(historic && historic.thickness_um > 0)) continue;
+    for (const species of Object.keys(historic._budget_inventory_per_um || {})) exact.add(species);
+  }
+  const entry: any = MINERAL_DISSOLUTION_RATES[crystal.mineral];
+  if (!entry) return exact;
+  if (!entry.__modes) {
+    for (const species of Object.keys(entry)) exact.add(species);
+    return exact;
+  }
+  const modes = entry.__modes || {};
+  const mode = (zone.dissolutionMode && modes[zone.dissolutionMode])
+    || modes[Object.keys(modes)[0]];
+  for (const species of Object.keys((mode && (mode.rates || mode.constants)) || {})) exact.add(species);
+  return exact;
+}
+
+function _applyAcceptedEngineFluidDeltas(crystal, zone, conditions) {
+  const stateDeltas = zone && zone._engine_state_fluid_deltas;
+  const stateFluid = conditions && conditions.fluid;
+  if (stateDeltas && stateFluid && zone.state_overprint && Number(zone.thickness_um) === 0) {
+    zone._state_overprint_fluid_delta_actual = {};
+    for (const species of Object.keys(stateDeltas)) {
+      if (typeof stateFluid[species] !== 'number') continue;
+      const floor = species === 'pH' ? 0.5 : 0;
+      const beforeApplied = stateFluid[species];
+      stateFluid[species] = Math.max(floor, beforeApplied + Number(stateDeltas[species]));
+      zone._state_overprint_fluid_delta_actual[species] = stateFluid[species] - beforeApplied;
+    }
+    delete zone._engine_state_fluid_deltas;
+    return;
+  }
+  const deltas = zone && zone._engine_fluid_delta_per_candidate_um;
+  const fluid = conditions && conditions.fluid;
+  if (!deltas || !fluid || !Number.isFinite(Number(zone.thickness_um))) return;
+  const acceptedMagnitude = Math.abs(Number(zone.thickness_um));
+  if (!(acceptedMagnitude > 0)) return;
+  const ledgerSpecies = _ledgerSpeciesForAcceptedZone(crystal, zone);
+  for (const species of Object.keys(deltas)) {
+    // Formula/dissolution species belong exclusively to applyStoichiometricGrowthBudget.
+    // Everything else is a supplementary reaction term (pH, redox proxy,
+    // chromophore/trace capture, invisible-gold release, etc.).
+    if (ledgerSpecies.has(species) || typeof fluid[species] !== 'number') continue;
+    const delta = Number(deltas[species]) * acceptedMagnitude;
+    if (!Number.isFinite(delta) || delta === 0) continue;
+    if (delta < 0) {
+      const floor = species === 'pH' ? 0.5 : 0;
+      const beforeApplied = fluid[species];
+      fluid[species] = Math.max(floor, fluid[species] + delta);
+      const actualConsumed = Math.max(0, beforeApplied - fluid[species]);
+      zone._supplement_uptake_actual ||= {};
+      zone._supplement_uptake_actual[species] = actualConsumed;
+      const requestedConsumed = Math.max(0, -delta);
+      if (actualConsumed + 1e-12 < requestedConsumed) {
+        zone._supplement_uptake_limited ||= {};
+        zone._supplement_uptake_limited[species] = {
+          requested: requestedConsumed,
+          actual: actualConsumed,
+        };
+      }
+      // Negative supplementary element deltas are trace/chromophore uptake.
+      // Store the amount actually removed so later dissolution can return it.
+      if (zone.thickness_um > 0 && !['pH', 'O2', 'Eh', 'salinity', 'concentration'].includes(species)) {
+        const consumed = actualConsumed / acceptedMagnitude;
+        zone._budget_inventory_per_um ||= {};
+        zone._budget_inventory_per_um[species] =
+          (zone._budget_inventory_per_um[species] || 0) + consumed;
+      }
+    } else {
+      fluid[species] += delta;
+    }
+  }
+}
+
 Object.assign(VugSimulator.prototype, {
   nucleate(mineral, position = 'vug wall', sigma = 1.0) {
   this.crystal_counter++;
@@ -26,25 +258,16 @@ Object.assign(VugSimulator.prototype, {
     position,
     vug_diameter_mm: vugDiameterAtBirth,
   });
-
-  // Pick a growth-vector variant from the spec. Its name sets the habit
-  // and its wall_spread/void_reach/vector populate the topo-map
-  // footprint. Falls back to legacy defaults below if the mineral has
-  // no variant objects in the spec.
-  const variant = selectHabitVariant(
-    mineral, sigma, this.conditions.temperature, this._spaceIsCrowded(),
-    // Proposal B (2026-05): pass current vugFill so habit variants can
-    // gate on it. Stashed by check_nucleation each step. Undefined for
-    // legacy non-step nucleations (preview/library) — selectHabitVariant
-    // skips the fill scoring branch when undefined.
-    this._currentVugFill,
+  // Stable unresolved lattice orientation used by later differential-stress
+  // pulses. It is born with the crystal and never depends on event time.
+  crystal._stress_orientation_unit = _stressOrientationUnit(
+    Number(this._nucSharedState || 0), crystal.crystal_id,
   );
-  if (variant) {
-    crystal.habit = variant.name || crystal.habit;
-    crystal.wall_spread = Number(variant.wall_spread ?? 0.5);
-    crystal.void_reach = Number(variant.void_reach ?? 0.5);
-    crystal.vector = variant.vector || 'equant';
-  }
+
+  // Reserve the habit draw at the legacy pre-anchor point so default seeded
+  // scenarios retain their RNG stream. The draw is applied only after the
+  // anchor exists, when its local sigma and temperature are knowable.
+  const _habitVariantDraw = reserveHabitVariantDraw(mineral);
 
   // Anchor on the wall. Crystals that nucleated on another crystal
   // (position "on <mineral> #<id>") inherit the host's cell + ring
@@ -72,9 +295,46 @@ Object.assign(VugSimulator.prototype, {
   // ring + cell come from the same joint sample. Default-off scenarios
   // keep the legacy two-step path.
   this._lastNucVertexRing = null;
+  this._lastNucPositionOverride = null;
+  this._lastNucInheritedSurfaceAnchor = null;
   const _cellIdx = this._assignWallCell(position, mineral);
-  const _ringIdx = this._assignWallRing(position, mineral);
-  crystal.wall_anchor = this.wall_state._anchorFromRingCell(_ringIdx, _cellIdx);
+  if (this._lastNucPositionOverride) {
+    position = this._lastNucPositionOverride;
+    crystal.position = position;
+  }
+  const _ringIdx = this._assignWallRing(position, mineral, _cellIdx);
+  // A host overgrowth shares its host's immutable physical attachment. The
+  // ring/cell pair remains the boundary-chemistry projection only; rebuilding
+  // an anchor from that projection would move barycentric/MC hosts to a
+  // different physical point.
+  crystal.wall_anchor = this._lastNucInheritedSurfaceAnchor
+    || this.wall_state._anchorFromRingCell(_ringIdx, _cellIdx);
+  this._lastNucInheritedSurfaceAnchor = null;
+  const _meshAtBirth = this.wall_state.meshFor(this);
+  const _vertexAtBirth = _ringIdx * this.wall_state.cells_per_ring + _cellIdx;
+  const _localBirthTemperature = temperatureAtMeshVertex(this, _meshAtBirth, _vertexAtBirth);
+  const _localBirthEvaluation = this._localNucleationEvaluationAtAnchor(
+    mineral, crystal.wall_anchor,
+  );
+  const _localBirthSigma = Number.isFinite(_localBirthEvaluation?.sigma)
+    ? _localBirthEvaluation.sigma : sigma;
+  crystal.nucleation_temp = _localBirthTemperature;
+  crystal.nucleation_sigma = _localBirthSigma;
+  // Pick the growth-vector variant only after the site exists, so temperature-
+  // and saturation-gated habits see the same local boundary voxel as
+  // nucleation and growth. The selector consumes the draw reserved before
+  // site selection, preserving legacy RNG ordering while applying it to the
+  // scientifically correct local birth state.
+  const variant = selectHabitVariant(
+    mineral, _localBirthSigma, _localBirthTemperature,
+    this._spaceIsCrowded(), this._currentVugFill, _habitVariantDraw,
+  );
+  if (variant) {
+    crystal.habit = variant.name || crystal.habit;
+    crystal.wall_spread = Number(variant.wall_spread ?? 0.5);
+    crystal.void_reach = Number(variant.void_reach ?? 0.5);
+    crystal.vector = variant.vector || 'equant';
+  }
 
   // v24 water-level: stamp growth_environment from the ring's
   // water state. Submerged or meniscus = wet = 'fluid'; vadose
@@ -280,10 +540,11 @@ Object.assign(VugSimulator.prototype, {
       // outward space, so they neither bury nor are buried.
       const aw = c.a_width_mm || 0;
       if (aw <= 0 || c.c_length_mm <= aw * O3_SELECT_MIN_ASPECT) continue;
-      const a = wall._resolveAnchor ? wall._resolveAnchor(c) : c.wall_anchor;
-      if (!a) continue;
+      const chemistry = wall.chemistryAddressForCrystal?.(c)
+        || CavitySurfaceAnchors.chemistryAddress(c.wall_anchor);
+      if (!chemistry) continue;
       const rec = {
-        c, ri: a.ringIdx | 0, ci: a.cellIdx | 0,
+        c, ri: chemistry.ringIdx | 0, ci: chemistry.cellIdx | 0,
         theta: t.theta, front: o3NormalFrontMm(c), nucStep: c.nucleation_step | 0,
       };
       elig.push(rec);
@@ -486,7 +747,7 @@ Object.assign(VugSimulator.prototype, {
 // the nucleation threshold across a 3D halo. New nuclei can't form
 // where the wall is depleted — the classic "alpha crystal" exclusion-
 // zone texture. v160's per-voxel 3D diffusion makes these halos real
-// spatial objects: mass balance debits the d=0 wall cell; diffusion
+// spatial objects: growth budget debits the d=0 wall cell; diffusion
 // spreads the depletion laterally across the wall mesh and radially
 // inward, while the interior reservoir (d=1,2,3) replenishes from the
 // other side. Strangulation occurs only where consumption outpaces the
@@ -494,7 +755,7 @@ Object.assign(VugSimulator.prototype, {
 //
 // Why the gate is needed: each nucleation engine's σ-gate reads the
 // BULK view (conditions.fluid = ring_fluids[equator]), which is NOT
-// debited by mass balance — it's the flow-fed cavity average. So an
+// debited by growth budget — it's the flow-fed cavity average. So an
 // engine can decide "the average chemistry favors mineral X" while
 // EVERY accessible wall cell is locally strangled below σ_crit. This
 // gate samples the per-cell wall chemistry (the boundary voxels, via
@@ -552,22 +813,23 @@ _wallStrangledFor(mineral) {
   if (ringCount < 1 || N < 1) return false;
   if (mesh.cells.length < ringCount * N) return false;
 
-  const ringTemps = this.ring_temperatures || [];
   // Swap conditions.fluid + .temperature to per-cell values inside the
   // loop, restore in finally — same pattern as _perVertexNucleationSample
   // and _runEngineForCrystal.
   const savedFluid = this.conditions.fluid;
   const savedTemp = this.conditions.temperature;
+  const savedDirectEvaluation = !!this._localNucleationDirectEvaluation;
   let anyClears = false;
   try {
+    this._localNucleationDirectEvaluation = true;
     for (let r = 0; r < ringCount && !anyClears; r++) {
-      const tempR = (r < ringTemps.length) ? ringTemps[r] : savedTemp;
-      this.conditions.temperature = tempR;
       for (let c = 0; c < N; c++) {
-        const cell = mesh.cells[r * N + c];
+        const vertexIdx = r * N + c;
+        const cell = mesh.cells[vertexIdx];
         const cellFluid = cell ? cell.fluid : null;
         if (!cellFluid) continue;
         this.conditions.fluid = cellFluid;
+        this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
         let sigma = 0;
         try {
           sigma = sigmaFn.call(this.conditions);
@@ -588,10 +850,115 @@ _wallStrangledFor(mineral) {
       }
     }
   } finally {
+    this._localNucleationDirectEvaluation = savedDirectEvaluation;
     this.conditions.fluid = savedFluid;
     this.conditions.temperature = savedTemp;
   }
   return !anyClears;  // strangled when no cell cleared σ_crit
+},
+
+// Whenever local wall chemistry or the canonical thermal field is active, the
+// traditional bulk supersaturation pre-gates must not veto a viable wall cell.
+// This temporary envelope replaces each supersaturation method only for the
+// check_nucleation transaction. Each wrapper returns the maximum finite local
+// sigma, while the later per-vertex sampler calls the captured production
+// method directly and chooses among the actual eligible cells. A run bypasses
+// the envelope only when neither spatial contract is active.
+_installLocalizedNucleationEnvelope() {
+  const wall = this.wall_state;
+  if (!(wall?.per_vertex_nucleation || this._thermalFieldActivated)) return null;
+  const mesh = wall?.meshFor?.(this);
+  const grid = wall?.voxelGridFor?.(this);
+  const ringCount = wall?.ring_count | 0;
+  const N = wall?.cells_per_ring | 0;
+  if (!mesh?.cells?.length || !grid || ringCount < 1 || N < 1) return null;
+
+  let minT = Infinity, maxT = -Infinity;
+  const boundaryTemperatures: Array<{ vertexIdx: number; temperatureC: number }> = [];
+  for (let r = 0; r < ringCount; r++) {
+    for (let c = 0; c < N; c++) {
+      const value = grid.temperatureAt(r, c, 0);
+      if (!Number.isFinite(value)) continue;
+      minT = Math.min(minT, value);
+      maxT = Math.max(maxT, value);
+      boundaryTemperatures.push({ vertexIdx: r * N + c, temperatureC: value });
+    }
+  }
+  // Temperature is only one part of the local state. Even a completely
+  // uniform thermal field can carry authored zonation or local depletion, so
+  // an honest maximum must include every boundary cell whenever either local
+  // chemistry or the canonical spatial thermal field is active.
+  const candidateVertices = boundaryTemperatures;
+  if (!candidateVertices.length) return null;
+
+  const conditions = this.conditions;
+  const minerals = Object.keys(
+    typeof MINERAL_GATES_REGISTRY !== 'undefined' ? MINERAL_GATES_REGISTRY : {},
+  ).sort();
+  const restores: Array<() => void> = [];
+  const cache = new Map<string, number>();
+  this._localizedNucleationPeaks = {};
+  for (const mineral of minerals) {
+    const methodName = `supersaturation_${mineral}`;
+    const original = conditions[methodName];
+    if (typeof original !== 'function') continue;
+    const priorOwnDescriptor = Object.getOwnPropertyDescriptor(conditions, methodName);
+    const sim = this;
+    conditions[methodName] = function (...args: any[]) {
+      if (sim._localNucleationDirectEvaluation || sim._localNucleationEnvelopeEvaluating) {
+        return original.apply(conditions, args);
+      }
+      const key = `${methodName}:${JSON.stringify(args)}`;
+      if (cache.has(key)) return cache.get(key);
+      const savedFluid = conditions.fluid;
+      const savedTemp = conditions.temperature;
+      let best = -Infinity;
+      let bestVertex = -1;
+      try {
+        sim._localNucleationEnvelopeEvaluating = true;
+        // The local envelope is a boundary-state maximum, not max(bulk,
+        // boundary). Bulk conditions are a UI/event control surface and may be
+        // chemically unlike every accessible wall cell.
+        for (const candidate of candidateVertices) {
+          const vertexIdx = candidate.vertexIdx;
+          const fluid = mesh.cells[vertexIdx]?.fluid;
+          if (!fluid) continue;
+          conditions.fluid = fluid;
+          conditions.temperature = temperatureAtMeshVertex(sim, mesh, vertexIdx);
+          let sigma = 0;
+          try { sigma = Number(original.apply(conditions, args)); } catch (_e) { sigma = 0; }
+          if (Number.isFinite(sigma) && sigma > best) {
+            best = sigma;
+            bestVertex = vertexIdx;
+          }
+        }
+      } finally {
+        sim._localNucleationEnvelopeEvaluating = false;
+        conditions.fluid = savedFluid;
+        conditions.temperature = savedTemp;
+      }
+      const result = Number.isFinite(best) ? best : 0;
+      cache.set(key, result);
+      if (bestVertex >= 0) {
+        sim._localizedNucleationPeaks[mineral] = {
+          sigma: result,
+          ringIdx: Math.floor(bestVertex / N),
+          cellIdx: bestVertex % N,
+          temperatureC: grid.temperatureAt(Math.floor(bestVertex / N), bestVertex % N, 0),
+        };
+      }
+      return result;
+    };
+    restores.push(() => {
+      if (priorOwnDescriptor) Object.defineProperty(conditions, methodName, priorOwnDescriptor);
+      else delete conditions[methodName];
+    });
+  }
+  return () => {
+    for (let i = restores.length - 1; i >= 0; i--) restores[i]();
+    this._localNucleationEnvelopeEvaluating = false;
+    this._localNucleationDirectEvaluation = false;
+  };
 },
 
   // Q1a paragenesis hook — consult MINERAL_PARAGENESIS substrate-
@@ -629,7 +996,53 @@ _wallStrangledFor(mineral) {
   _sigmaDiscountForPosition(mineral, position) {
     const parsed = parsePositionHost(position, this.crystals);
     if (!parsed) return 1.0;
-    return paragenesisDiscount(parsed.hostMineral, mineral);
+    const discount = engineExecutableSubstrateDiscount(parsed.hostMineral, mineral);
+    if (!(this.wall_state?.per_vertex_nucleation || this._thermalFieldActivated)) return discount;
+    const anchor = this.wall_state?._resolveAnchor?.(parsed.host);
+    const local = this._localNucleationEvaluationAtAnchor(mineral, anchor);
+    const sigmaCrit = Number(MINERAL_GATES_REGISTRY?.[mineral]?.sigma_crit);
+    // A catalytic discount belongs to the host surface, not to a remote hot
+    // spot. If this host's own local state does not clear the discounted gate,
+    // remove the discount; a genuinely viable bare-wall maximum may still fire.
+    if (Number.isFinite(sigmaCrit) && !(local?.sigma > sigmaCrit * discount)) return 1.0;
+    return discount;
+  },
+
+  _localNucleationEvaluationAtAnchor(mineral, anchor, args: any[] = []) {
+    if (!anchor) return null;
+    const wall = this.wall_state;
+    const mesh = wall?.meshFor?.(this);
+    const resolved = anchor.schema === CavitySurfaceAnchors.SCHEMA
+      ? anchor : CavitySurfaceAnchors.upgradeLegacy(anchor, mesh);
+    const chemistry = CavitySurfaceAnchors.chemistryAddress(resolved);
+    if (!chemistry) return null;
+    const vertexIdx = chemistry.vertexIndex;
+    const fluid = mesh?.cells?.[vertexIdx]?.fluid;
+    const sigmaFn = this.conditions?.[`supersaturation_${mineral}`];
+    if (!fluid || typeof sigmaFn !== 'function') return null;
+    const savedFluid = this.conditions.fluid;
+    const savedTemp = this.conditions.temperature;
+    const savedDirect = !!this._localNucleationDirectEvaluation;
+    try {
+      this._localNucleationDirectEvaluation = true;
+      this.conditions.fluid = fluid;
+      this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
+      const sigma = Number(sigmaFn.apply(this.conditions, args));
+      return {
+        sigma: Number.isFinite(sigma) ? sigma : 0,
+        temperatureC: this.conditions.temperature,
+        fluid,
+        ringIdx: chemistry.ringIdx,
+        cellIdx: chemistry.cellIdx,
+      };
+    } catch (_e) {
+      return { sigma: 0, temperatureC: NaN, fluid,
+        ringIdx: chemistry.ringIdx, cellIdx: chemistry.cellIdx };
+    } finally {
+      this._localNucleationDirectEvaluation = savedDirect;
+      this.conditions.fluid = savedFluid;
+      this.conditions.temperature = savedTemp;
+    }
   },
 
   _assignWallCell(position, mineral) {
@@ -644,11 +1057,31 @@ _wallStrangledFor(mineral) {
   }
   if (hostId != null) {
     const host = this.crystals.find(c => c.crystal_id === hostId);
-    // PHASE-1-CAVITY-MESH: read host's cell via _resolveAnchor so this
-    // site keeps working when the legacy fields retire in Phase 4.
+    // Surface-anchor contract: overgrowths inherit the host's projected
+    // chemistry cell explicitly. Physical placement remains the host's
+    // independent surface anchor and is not inferred from this address.
     if (host) {
       const a = this.wall_state._resolveAnchor(host);
-      if (a) return a.cellIdx;
+      const chemistry = this.wall_state.chemistryAddressForCrystal(host);
+      if (a && chemistry) {
+        if (!(this.wall_state?.per_vertex_nucleation || this._thermalFieldActivated)) {
+          this._lastNucInheritedSurfaceAnchor = a;
+          return chemistry.cellIdx;
+        }
+        const local = this._localNucleationEvaluationAtAnchor(mineral, a);
+        const sigmaCrit = Number(MINERAL_GATES_REGISTRY?.[mineral]?.sigma_crit);
+        const discount = this._sigmaDiscountForPosition(mineral, position);
+        if (!Number.isFinite(sigmaCrit) || (local && local.sigma > sigmaCrit * discount)) {
+          this._lastNucInheritedSurfaceAnchor = a;
+          return chemistry.cellIdx;
+        }
+        const picked = this._perVertexNucleationSample(mineral);
+        if (picked) {
+          this._lastNucVertexRing = picked.ringIdx;
+          this._lastNucPositionOverride = 'vug wall (local chemistry; proposed remote substrate ineligible)';
+          return picked.cellIdx;
+        }
+      }
     }
   }
   // Tranche 6 of PROPOSAL-CAVITY-MESH §14: per-vertex nucleation. When
@@ -672,7 +1105,7 @@ _wallStrangledFor(mineral) {
     mineral &&
     typeof mineral === 'string' &&
     this.wall_state &&
-    this.wall_state.per_vertex_nucleation
+    (this.wall_state.per_vertex_nucleation || this._thermalFieldActivated)
   ) {
     const picked = this._perVertexNucleationSample(mineral);
     if (picked) {
@@ -692,7 +1125,8 @@ _wallStrangledFor(mineral) {
   // following _assignWallRing honors it. Returns null (→ legacy uniform pick,
   // byte-identical) when off / no supply-feeders. (The 2c.2 column-only bias this
   // supersedes did NOT cluster — a feeder is a 2-D patch, not a thin stripe.)
-  if (fluidSpotsDepositionFor(this) && this._fluidSpots && !this._fluidSpots.isEmpty) {
+  if (fluidSpotsDepositionFor(this) && this._fluidSpots
+      && !_fluidSpotIsEmptyInternal(this._fluidSpots)) {
     const picked = this._feederProximitySample();
     if (picked) {
       this._lastNucVertexRing = picked.ringIdx;
@@ -723,14 +1157,21 @@ _feederProximitySample() {
   const R = wall.ring_count | 0;
   const N = wall.cells_per_ring | 0;
   if (R < 1 || N < 1) return null;
-  const prox = this._fluidSpots.proximityField(N, R);
+  const prox = _fluidSpotProximityInternal(this._fluidSpots, N, R);
   if (!prox) return null;                         // no open supply-feeders
   const weights = new Float64Array(R * N);
   let total = 0;
+  const archBias = wall.nucleation_bias || 'uniform';
+  const zoneAllowed = (zone) => archBias === 'uniform'
+    || (archBias === 'walls_only' && zone === 'wall')
+    || (archBias === 'floor_only' && zone === 'floor')
+    || (archBias === 'ceiling_only' && zone === 'ceiling')
+    || (archBias === 'floor_ceiling' && (zone === 'floor' || zone === 'ceiling'));
   for (let r = 0; r < R; r++) {
     const areaW = wall.ringAreaWeight(r);
     for (let c = 0; c < N; c++) {
       const idx = r * N + c;
+      if (!zoneAllowed(wall.surfaceZoneAtVertex?.(r, c, this))) continue;
       const w = areaW * prox[idx];
       weights[idx] = w;
       total += w;
@@ -798,6 +1239,8 @@ _perVertexNucleationSample(mineral) {
   // sigma-panel UI use.
   const sigmaFn = this.conditions[`supersaturation_${mineral}`];
   if (typeof sigmaFn !== 'function') return null;
+  const sigmaCrit = Number(MINERAL_GATES_REGISTRY?.[mineral]?.sigma_crit);
+  const localThreshold = Number.isFinite(sigmaCrit) ? Math.max(1, sigmaCrit) : 1;
 
   // Per-vertex chemistry lives on the WallMesh. The mesh is built
   // in the simulator constructor and re-baked on dissolution events
@@ -807,37 +1250,41 @@ _perVertexNucleationSample(mineral) {
   const mesh = wall.meshFor ? wall.meshFor(this) : null;
   if (!mesh || !mesh.cells || mesh.cells.length < ringCount * N) return null;
 
-  // Pull the per-ring temperature array. ring_temperatures is
-  // allocated in the simulator constructor with one slot per ring;
-  // engines + events mutate it during cooling/thermal pulses.
-  const ringTemps = this.ring_temperatures || [];
-
   // Save conditions.fluid + .temperature once; swap inside the loop.
   const savedFluid = this.conditions.fluid;
   const savedTemp = this.conditions.temperature;
+  const savedDirectEvaluation = !!this._localNucleationDirectEvaluation;
 
   // Phase 2c.2b — DEPOSITION CLUSTERING: multiply the per-cell σ weight by the
   // feeder proximity halo (proximityField), so a per-vertex scenario with open
   // supply-feeders concentrates nucleation around its vents with the SAME decaying
   // halo the geometry-only _feederProximitySample uses. null (→ no multiply,
   // byte-identical) when the flag is off or there are no open supply-feeders.
-  const prox = (fluidSpotsDepositionFor(this) && this._fluidSpots && !this._fluidSpots.isEmpty)
-    ? this._fluidSpots.proximityField(N, ringCount) : null;
+  const prox = (fluidSpotsDepositionFor(this) && this._fluidSpots
+      && !_fluidSpotIsEmptyInternal(this._fluidSpots))
+    ? _fluidSpotProximityInternal(this._fluidSpots, N, ringCount) : null;
   const weights = new Float64Array(ringCount * N);
   let total = 0;
+  const archBias = wall.nucleation_bias || 'uniform';
+  const zoneAllowed = (zone) => archBias === 'uniform'
+    || (archBias === 'walls_only' && zone === 'wall')
+    || (archBias === 'floor_only' && zone === 'floor')
+    || (archBias === 'ceiling_only' && zone === 'ceiling')
+    || (archBias === 'floor_ceiling' && (zone === 'floor' || zone === 'ceiling'));
   try {
+    this._localNucleationDirectEvaluation = true;
     for (let r = 0; r < ringCount; r++) {
-      const tempR = (r < ringTemps.length) ? ringTemps[r] : savedTemp;
-      this.conditions.temperature = tempR;
       // sin(φ) area weight — depends only on the ring, hoist out of the
       // cell loop. This is the polar-thinning correction (see header).
       const areaW = wall.ringAreaWeight(r);
       for (let c = 0; c < N; c++) {
         const idx = r * N + c;
+        if (!zoneAllowed(wall.surfaceZoneAtVertex?.(r, c, this))) continue;
         const cell = mesh.cells[idx];
         const cellFluid = cell ? cell.fluid : null;
         if (!cellFluid) continue;
         this.conditions.fluid = cellFluid;
+        this.conditions.temperature = temperatureAtMeshVertex(this, mesh, idx);
         let sigma = 0;
         try {
           sigma = sigmaFn.call(this.conditions);
@@ -846,14 +1293,15 @@ _perVertexNucleationSample(mineral) {
           // returning early on missing fields) → treat as σ=0.
           sigma = 0;
         }
-        if (!Number.isFinite(sigma) || sigma <= 1) continue;
-        let w = areaW * (sigma - 1) * (sigma - 1);
+        if (!Number.isFinite(sigma) || sigma <= localThreshold) continue;
+        let w = areaW * (sigma - localThreshold) * (sigma - localThreshold);
         if (prox) w *= prox[idx];
         weights[idx] = w;
         total += w;
       }
     }
   } finally {
+    this._localNucleationDirectEvaluation = savedDirectEvaluation;
     this.conditions.fluid = savedFluid;
     this.conditions.temperature = savedTemp;
   }
@@ -887,17 +1335,17 @@ _perVertexNucleationSample(mineral) {
 // conditions.fluid + temperature to the crystal's ring's values
 // for the duration of the call. Engines never see ring_fluids
 // directly — they observe "the fluid" via conditions, the same
-// interface as before. Mass-balance side effects (consumption,
-// byproduct release) hit ring_fluids[k] because that's the object
-// swapped in. Restore globals afterward so subsequent code (events,
-// narrators, log) sees the bulk-fluid view. Mirrors the equivalent
-// try/finally block in VugSimulator.run_step (vugg.py).
+// interface as before. This method only computes the candidate zone. The
+// growth loop finalizes time scaling, burial/fill damping, and cavity clamps
+// before `_applyZoneGrowthBudget` debits or credits the accepted thickness.
+// Restore globals afterward so subsequent code sees the bulk-fluid view.
 _runEngineForCrystal(engine, crystal) {
   // PHASE-1-CAVITY-MESH: read ringIdx through the anchor helper so
   // this site stops touching wall_ring_index directly. Identity
   // result while wall_anchor and legacy fields are kept in sync.
   const anchor = this.wall_state._resolveAnchor(crystal);
-  const ringIdx = anchor ? anchor.ringIdx : null;
+  const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+  const ringIdx = chemistry ? chemistry.ringIdx : null;
   let savedFluid = null;
   let savedTemp = null;
   if (ringIdx != null && ringIdx >= 0 && ringIdx < this.ring_fluids.length) {
@@ -913,39 +1361,41 @@ _runEngineForCrystal(engine, crystal) {
     this.conditions.fluid = (cell && cell.fluid)
       ? cell.fluid
       : this.ring_fluids[ringIdx];  // last-resort sentinel; should never hit
-    this.conditions.temperature = this.ring_temperatures[ringIdx];
+    const vertexIdx = chemistry.vertexIndex;
+    this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
   }
   try {
-    const zone = engine(crystal, this.conditions, this.step);
-    // PROPOSAL-GEOLOGICAL-ACCURACY Phase 1 — mass-balance hook.
-    // Each precipitation zone debits the per-ring fluid by stoichiometry
-    // (per MINERAL_STOICHIOMETRY in 19-mineral-stoichiometry.ts).
-    // Returns the list of species that just depleted to zero so we can
-    // narrate the event to the player.
-    if (zone) {
-      const depleted = applyMassBalance(crystal, zone, this.conditions);
-      if (depleted && depleted.length) {
-        const ringTag = ringIdx != null && ringIdx >= 0
-          ? ` in ring ${ringIdx}`
-          : '';
-        for (const species of depleted) {
-          this.log.push(
-            `  ⛔ ${species} depleted${ringTag} — ` +
-            `${capitalize(crystal.mineral)} #${crystal.crystal_id} growth halts`
-          );
-        }
-      }
-    }
-    return zone;
+    return _runEngineFluidTransaction(engine, crystal, this.conditions, this.step);
   } finally {
     if (savedFluid != null) {
       this.conditions.fluid = savedFluid;
     }
     if (savedTemp != null) {
-      this.ring_temperatures[ringIdx] = this.conditions.temperature;
       this.conditions.temperature = savedTemp;
     }
   }
+},
+
+// Freeze the physical thickness that will actually reach Crystal.add_zone.
+// Growth budget must consume this value, never the engine's pre-clock candidate.
+_finalizeZoneForApplication(crystal, zone) {
+  if (!zone || zone._time_scaled) return zone;
+  zone.thickness_um = Number(zone.thickness_um) || 0;
+  zone.growth_rate = Number(zone.growth_rate) || 0;
+  zone.thickness_um *= timeScale;
+  zone.growth_rate *= timeScale;
+  if (zone.thickness_um < 0 && crystal && Number.isFinite(crystal.total_growth_um)) {
+    const totalSolid = Math.max(0, crystal.total_growth_um);
+    zone.thickness_um = Math.max(zone.thickness_um, -totalSolid);
+    const remainingSolid = totalSolid + zone.thickness_um;
+    if (remainingSolid > 1e-9 && remainingSolid <= MIN_RESOLVABLE_SOLID_THICKNESS_UM) {
+      zone.thickness_um = -totalSolid;
+      zone.note = `${zone.note || 'dissolution'} [sub-resolution remainder consumed]`;
+    }
+    if (zone.growth_rate < zone.thickness_um) zone.growth_rate = zone.thickness_um;
+  }
+  zone._time_scaled = true;
+  return zone;
 },
 
   // Phase C v1: pick a ring for a nucleating crystal. Host-substrate
@@ -954,7 +1404,7 @@ _runEngineForCrystal(engine, crystal) {
 // Phase D v2: per-mineral orientation bias (see ORIENTATION_PREFERENCE
 // module-level table). Spatially neutral minerals stay area-weighted.
 // Mirrors VugSimulator._assign_wall_ring in vugg.py.
-_assignWallRing(position, mineral) {
+_assignWallRing(position, mineral, cellIdx?) {
   // Tranche 6: when _assignWallCell ran the joint σ-weighted sample,
   // it stashed the picked ring on this._lastNucVertexRing. Honor that
   // — both indices come from the same joint draw, so the cell and
@@ -972,11 +1422,11 @@ _assignWallRing(position, mineral) {
   }
   if (hostId != null) {
     const host = this.crystals.find(c => c.crystal_id === hostId);
-    // PHASE-1-CAVITY-MESH: read host's ring via _resolveAnchor so this
-    // site survives the Phase 4 legacy-field drop.
+    // Surface-anchor contract: inherit the host's projected chemistry ring;
+    // do not treat that lattice address as the physical surface location.
     if (host) {
-      const a = this.wall_state._resolveAnchor(host);
-      if (a) return a.ringIdx;
+      const chemistry = this.wall_state.chemistryAddressForCrystal(host);
+      if (chemistry) return chemistry.ringIdx;
     }
   }
   // Phase D: area-weighted sample (equator gets more nucleations
@@ -1023,7 +1473,12 @@ _assignWallRing(position, mineral) {
   if (archBias !== 'uniform' && n > 1) {
     total = 0;
     for (let k = 0; k < n; k++) {
-      const orient = this.wall_state.ringOrientation(k);
+      // Architecture biases apply to the physical patch normal at the cell
+      // already selected by _assignWallCell.  Ring labels remain a fallback
+      // for direct legacy callers that do not provide a cell.
+      const orient = Number.isInteger(cellIdx)
+        ? this.wall_state.surfaceZoneAtVertex?.(k, cellIdx, this)
+        : this.wall_state.ringOrientation(k);
       const allowed =
         archBias === 'walls_only'   ? (orient === 'wall') :
         archBias === 'floor_only'   ? (orient === 'floor') :
@@ -1051,7 +1506,7 @@ _assignWallRing(position, mineral) {
 // v128 graduated-competition support
 // ============================================================
 // _dryRunEngineForCrystal — same per-cell swap as _runEngineForCrystal,
-// but DOES NOT call applyMassBalance. The engine reads cell.fluid +
+// but DOES NOT call applyStoichiometricGrowthBudget. The engine reads cell.fluid +
 // cell.temperature; the returned zone is the "desired" growth that
 // would happen at zero competition. Used by _computeGraduatedZones
 // during pass 1.
@@ -1059,7 +1514,7 @@ _assignWallRing(position, mineral) {
 // IMPORTANT: like _runEngineForCrystal, this temporarily swaps
 // conditions.fluid / .temperature for the per-cell view. The engine
 // may dereference fluid fields; we don't mutate the cell fluid
-// because mass balance is the only mutation path and we skip it.
+// because growth budget is the only mutation path and we skip it.
 //
 // Returns the engine's zone (or null). Callers should not treat the
 // returned zone as mutable shared state — it's a fresh object per
@@ -1067,7 +1522,8 @@ _assignWallRing(position, mineral) {
 
 _dryRunEngineForCrystal(engine, crystal) {
   const anchor = this.wall_state._resolveAnchor(crystal);
-  const ringIdx = anchor ? anchor.ringIdx : null;
+  const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+  const ringIdx = chemistry ? chemistry.ringIdx : null;
   let savedFluid = null;
   let savedTemp = null;
   if (ringIdx != null && ringIdx >= 0 && ringIdx < this.ring_fluids.length) {
@@ -1078,32 +1534,33 @@ _dryRunEngineForCrystal(engine, crystal) {
     this.conditions.fluid = (cell && cell.fluid)
       ? cell.fluid
       : this.ring_fluids[ringIdx];
-    this.conditions.temperature = this.ring_temperatures[ringIdx];
+    const vertexIdx = chemistry.vertexIndex;
+    this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
   }
   try {
-    return engine(crystal, this.conditions, this.step);
+    return _runEngineFluidTransaction(engine, crystal, this.conditions, this.step);
   } finally {
     if (savedFluid != null) {
       this.conditions.fluid = savedFluid;
     }
     if (savedTemp != null) {
-      this.ring_temperatures[ringIdx] = this.conditions.temperature;
       this.conditions.temperature = savedTemp;
     }
   }
 },
 
-// _applyZoneMassBalance — apply mass balance for a pre-computed zone
-// (one that came from _dryRunEngineForCrystal × graduated scaling).
-// Mirrors the per-cell swap of _runEngineForCrystal so applyMassBalance
-// hits cell.fluid, then restores.
+// _applyZoneGrowthBudget — apply growth budget for the finalized zone that will
+// be appended unchanged. Mirrors the per-cell swap of _runEngineForCrystal so
+// applyStoichiometricGrowthBudget hits cell.fluid, then restores.
 //
-// Returns the depletion list from applyMassBalance (or null).
+// Returns the depletion list from applyStoichiometricGrowthBudget (or null).
 
-_applyZoneMassBalance(crystal, zone) {
+_applyZoneGrowthBudget(crystal, zone) {
   if (!zone) return null;
+  const bulkFluidHandle = this.conditions.fluid;
   const anchor = this.wall_state._resolveAnchor(crystal);
-  const ringIdx = anchor ? anchor.ringIdx : null;
+  const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+  const ringIdx = chemistry ? chemistry.ringIdx : null;
   let savedFluid = null;
   let savedTemp = null;
   if (ringIdx != null && ringIdx >= 0 && ringIdx < this.ring_fluids.length) {
@@ -1114,16 +1571,38 @@ _applyZoneMassBalance(crystal, zone) {
     this.conditions.fluid = (cell && cell.fluid)
       ? cell.fluid
       : this.ring_fluids[ringIdx];
-    this.conditions.temperature = this.ring_temperatures[ringIdx];
+    const vertexIdx = chemistry.vertexIndex;
+    this.conditions.temperature = temperatureAtMeshVertex(this, mesh, vertexIdx);
   }
   try {
-    return applyMassBalance(crystal, zone, this.conditions);
+    this.conditions._carbonateBoundaryBulkFluid = bulkFluidHandle;
+    const depleted = applyStoichiometricGrowthBudget(crystal, zone, this.conditions);
+    finalizeAragoniteSrPartitionReceipt(crystal, zone);
+    // applyStoichiometricGrowthBudget may shrink a requested zone to the formula amount the
+    // local mg/kg reservoirs can actually supply. Commit engine-side habit /
+    // state mutations only after that final accepted thickness is known.
+    _applyAcceptedCrystalMutations(crystal, zone);
+    const returnedAu = Number(zone._returned_budget_inventory?.Au) || 0;
+    if (zone.thickness_um < 0 && crystal.mineral === 'arsenopyrite' && returnedAu > 0) {
+      zone.note = `${zone.note || 'oxidative dissolution'} (returns ${returnedAu.toFixed(6)} ppm-equivalent Au from remaining solid inventory)`;
+    }
+    _applyAcceptedEngineFluidDeltas(crystal, zone, this.conditions);
+    if (depleted && depleted.length) {
+      const ringTag = ringIdx != null && ringIdx >= 0 ? ` in ring ${ringIdx}` : '';
+      for (const species of depleted) {
+        this.log.push(
+          `  ⛔ ${species} depleted${ringTag} — ` +
+          `${capitalize(crystal.mineral)} #${crystal.crystal_id} growth halts`
+        );
+      }
+    }
+    return depleted;
   } finally {
+    delete this.conditions._carbonateBoundaryBulkFluid;
     if (savedFluid != null) {
       this.conditions.fluid = savedFluid;
     }
     if (savedTemp != null) {
-      this.ring_temperatures[ringIdx] = this.conditions.temperature;
       this.conditions.temperature = savedTemp;
     }
   }
@@ -1132,7 +1611,7 @@ _applyZoneMassBalance(crystal, zone) {
 // _computeGraduatedZones — pass 1 of v128 graduated competition.
 //
 // For each active crystal:
-//   1. Run engine in dry-run mode (no mass balance) to get its desired
+//   1. Run engine in dry-run mode (no growth budget) to get its desired
 //      zone.thickness_um and σ
 //   2. Compute its initiative score via js/43-initiative.ts
 //   3. Group by per-cell anchor (with ring fallback)
@@ -1153,10 +1632,10 @@ _computeGraduatedZones() {
   const cellGroups = new Map();
   // out is the public return; we populate it here for crystals whose
   // dry-run didn't produce positive thickness (negative = dissolution,
-  // null/zero = no growth). Those entries don't go through rationing —
-  // they pass through to pass 2 as-is so the growth loop knows the
-  // engine was already called for them and not to re-invoke it.
-  // (Re-invoking would double-consume RNG vs v127, breaking determinism.)
+  // null/ordinary zero = no growth). Those entries don't go through rationing.
+  // Deterministic zero-thickness state overprints are the one explicit
+  // exception: pass 2 re-evaluates them sequentially against the then-current
+  // local reagent reservoir, and their engine branch consumes no RNG.
   const out = new Map();
 
   for (const crystal of this.crystals) {
@@ -1164,9 +1643,11 @@ _computeGraduatedZones() {
     const engine = MINERAL_ENGINES[crystal.mineral];
     if (!engine) continue;
 
-    // Dry-run the engine to get its desired zone. The engine is called
-    // EXACTLY ONCE per crystal per step — same as v127. Pass 2 will
-    // consume this stored zone instead of calling the engine again.
+    // Dry-run the engine to get its desired zone. Precipitation,
+    // dissolution, and ordinary no-growth results are called exactly once
+    // per crystal per step. RNG-free state overprints are the documented
+    // exception: pass 2 re-evaluates them against the actual sequential
+    // local reagent reservoir before committing the receipt.
     const dryZone = this._dryRunEngineForCrystal(engine, crystal);
     if (!dryZone) {
       // Engine returned null (no zone produced). Pass 2 needs to know
@@ -1187,13 +1668,27 @@ _computeGraduatedZones() {
       continue;
     }
     if (dryZone.thickness_um === 0) {
+      // A reaction overprint is deliberately outside precipitation
+      // competition. Do not reuse its dry-run fluid delta: another overprint
+      // in the same cell may consume O2 first. Leaving it absent makes pass 2
+      // re-evaluate the deterministic (RNG-free) reaction against the actual
+      // sequential local reservoir before committing state and receipt.
+      if (!dryZone.state_overprint) out.set(crystal.crystal_id, null);
+      continue;
+    }
+
+    // Capped solids still run their engine so negative zones can dissolve and
+    // return local inventory. Positive candidates do not enter competition or
+    // consume another crystal's share of the fluid budget.
+    if (crystalAtAuthoredSizeCap(crystal)) {
       out.set(crystal.crystal_id, null);
       continue;
     }
 
     // Identify the cell + fluid this crystal competes within.
     const anchor = this.wall_state._resolveAnchor(crystal);
-    const ringIdx = anchor ? anchor.ringIdx : null;
+    const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+    const ringIdx = chemistry ? chemistry.ringIdx : null;
     let cellFluid = null;
     let cellKey: string;
     if (ringIdx != null && ringIdx >= 0 && ringIdx < this.ring_fluids.length) {
@@ -1208,7 +1703,7 @@ _computeGraduatedZones() {
       // the shared ring fluid, so group identity always matches budget.
       if (cell && cell.fluid) {
         cellFluid = cell.fluid;
-        cellKey = `cell:${anchor.ringIdx}:${anchor.cellIdx}`;
+        cellKey = `cell:${chemistry.vertexIndex}`;
       } else {
         cellFluid = this.ring_fluids[ringIdx];
         cellKey = `ring:${ringIdx}`;
@@ -1229,7 +1724,10 @@ _computeGraduatedZones() {
         const savedFluid = this.conditions.fluid;
         const savedTemp = this.conditions.temperature;
         this.conditions.fluid = cellFluid;
-        this.conditions.temperature = ringIdx != null ? this.ring_temperatures[ringIdx] : savedTemp;
+        const vertexIdx = chemistry ? chemistry.vertexIndex : -1;
+        this.conditions.temperature = vertexIdx >= 0
+          ? temperatureAtMeshVertex(this, this.wall_state.meshFor(this), vertexIdx)
+          : savedTemp;
         try {
           sigma = sigmaFn.call(this.conditions);
         } finally {
@@ -1243,7 +1741,15 @@ _computeGraduatedZones() {
     if (!cellGroups.has(cellKey)) {
       cellGroups.set(cellKey, { fluid: cellFluid, items: [] });
     }
-    cellGroups.get(cellKey).items.push({ crystal, zone: dryZone, sigma, initiative: 0 });
+    const localTemperature = chemistry
+      ? temperatureAtMeshVertex(
+        this, this.wall_state.meshFor(this),
+        chemistry.vertexIndex,
+      )
+      : this.conditions.temperature;
+    cellGroups.get(cellKey).items.push({
+      crystal, zone: dryZone, sigma, initiative: 0, localTemperature,
+    });
   }
 
   // Per-cell: compute initiatives + rationing (`out` already has
@@ -1270,7 +1776,11 @@ _computeGraduatedZones() {
     // crystal of that mineral in the cell).
     const initiativeByMineral: Record<string, number> = {};
     for (const mineral of Object.keys(sigmaByMineral)) {
-      const r = computeInitiative(mineral, sigmaByMineral[mineral], this.conditions, activeMinerals);
+      const representative = items.find(it => it.crystal.mineral === mineral);
+      const r = computeInitiative(
+        mineral, sigmaByMineral[mineral],
+        { temperature: representative?.localTemperature }, activeMinerals,
+      );
       initiativeByMineral[mineral] = r.finalInitiative;
     }
     for (const it of items) {
@@ -1282,12 +1792,19 @@ _computeGraduatedZones() {
     const runs: any[] = [];
     const noStoich: any[] = [];
     for (const it of items) {
+      // Competition rations the same physical thickness that the accepted-zone
+      // ledger will debit. Engine zones are still in raw per-step units here;
+      // _finalizeZoneForApplication multiplies them by timeScale later. Budgeting
+      // the raw value would understate demand by timeScale and could create more
+      // solid than the available fluid can supply.
+      const physicalCandidateThickness = it.zone.thickness_um * timeScale;
       const r = buildCrystalDryRun(
         it.crystal.crystal_id,
         it.crystal.mineral,
         it.sigma,
         it.initiative,
-        it.zone.thickness_um,
+        physicalCandidateThickness,
+        group.fluid,
       );
       if (r) runs.push(r);
       else noStoich.push(it);
@@ -1328,6 +1845,9 @@ _computeGraduatedZones() {
         // Scale the dry-run zone. Clone to avoid sharing state.
         const scaled = Object.assign({}, it.zone);
         scaled.thickness_um = it.zone.thickness_um * scaling;
+        if (typeof it.zone.growth_rate === 'number') {
+          scaled.growth_rate = it.zone.growth_rate * scaling;
+        }
         out.set(it.crystal.crystal_id, scaled);
       }
     }

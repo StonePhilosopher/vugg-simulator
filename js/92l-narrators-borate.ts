@@ -8,12 +8,8 @@
 //
 // Minerals (2): borax, tincalconite.
 //
-// Tier 1 A port (post-v69) — these were on the BACKLOG.md L34 list of
-// 5 unported narrators after the Python tree deletion 2026-05-07.
-// Authored fresh from the data/minerals.json description blocks
-// (canonical pin per stored memory feedback_narrative_canonical_richer
-// — when JS and Python diverged the richer narrator wins, and here JS
-// is the only runtime so the JS author sets the canon).
+// Borate narrator logic is authored from the canonical data/minerals.json
+// descriptions; these species have not yet moved their prose to Markdown.
 //
 // The two minerals share an unusual property: borax self-destructs in
 // dry air over weeks, losing 5 of its 10 water molecules and becoming
@@ -55,7 +51,7 @@ Object.assign(VugSimulator.prototype, {
     if (c.dissolved) {
       parts.push("Dissolved — tincalconite is still water-soluble (less than borax, since it has fewer water molecules to give up to the solvent), so a wet pulse takes it. Whatever Na and B the brine reabsorbs may re-crystallize as borax if the local humidity comes up and the equilibrium swings back, but the original crystal won't reassemble — the historical specimen is gone.");
     } else {
-      parts.push("Stable in any humidity from here on out — once dehydrated, tincalconite doesn't re-hydrate back to borax in normal conditions. The pentahydrate sits at a local minimum on the Na₂B₄O₇–H₂O phase surface that takes either deep burial or geological time to escape from. Museum drawer specimens are forever as long as they stay dry.");
+      parts.push("Stable while it stays on the dry side of the borax–tincalconite water-activity boundary. Controlled-humidity X-ray experiments show that tincalconite can hydrate back toward borax at high relative humidity; the current simulator records the dehydration half-cycle but does not yet replay reversible humidity cycling. Treat the preserved white pseudomorph as a dry-state snapshot, not an irreversible endpoint.");
     }
 
     return parts.filter(p => p).join(' ');

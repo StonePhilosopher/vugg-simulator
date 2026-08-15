@@ -117,19 +117,21 @@ describe('calcite morphology classifier (Phase 0)', () => {
     let checked = 0;
     for (let i = 0; i < 60; i++) {
       sim.run_step();
-      let sigmaPost: number;
-      try { sigmaPost = sim.conditions.supersaturation_calcite(); } catch (_e) { continue; }
-      if (!isFinite(sigmaPost) || sigmaPost < 1.0) continue;
       // Phase 4: the Mg bunching term rides the recompute too (post-step
       // Mg:Ca, same basis as σ).
-      const mg = (sim.conditions.fluid.Mg || 0) / Math.max(1e-6, sim.conditions.fluid.Ca || 0);
-      const mgBunch = 1 + CALCITE_MORPH_TH.MG_BUNCH * Math.min(mg, 1);
       for (const c of sim.crystals) {
         if (!c || c.mineral !== 'calcite' || c.dissolved || !c.zones.length) continue;
         const z = c.zones[c.zones.length - 1];
         if (z.step !== sim.step || z.thickness_um <= 0) continue;
+        const local = sim._localNucleationEvaluationAtAnchor('calcite', c.wall_anchor);
+        if (!local || !isFinite(local.sigma) || local.sigma < 1.0) continue;
+        const mg = (local.fluid.Mg || 0) / Math.max(1e-6, local.fluid.Ca || 0);
+        const mgBunch = 1 + CALCITE_MORPH_TH.MG_BUNCH * Math.min(mg, 1);
+        const interfaceSigma = c.growth_environment === 'air'
+          ? 1 + (local.sigma - 1) * CALCITE_MORPH_TH.AIR_FILM_EXCESS_FACTOR
+          : local.sigma;
         const sizeBefore = Math.max(0, c.total_growth_um - z.thickness_um);
-        const expected = calciteMorphRegime(calciteSurfaceSigma(sigmaPost, sizeBefore) * mgBunch);
+        const expected = calciteMorphRegime(calciteSurfaceSigma(interfaceSigma, sizeBefore) * mgBunch);
         expect(z.morph_regime).toBe(expected);
         expect(c._morphology.regime).toBe(expected);
         checked++;
@@ -190,13 +192,16 @@ describe('calcite morphology instruments (Phase 1)', () => {
       expect(/macrostep|growth steps/.test(forms)).toBe(true);
     }
 
-    // sabkha is hopper/skeletal 100%: its calcite ends hoppered.
+    // Sabkha calcite now sees extreme supersaturation after the authoritative
+    // sulfate ledger drains the shared Ca pool. It belongs at the terminal
+    // diffusion-limited end of the Sunagawa ladder, not the milder hopper
+    // band that the pre-v244 double-precipitation pathway happened to create.
     const sabkha = runScenario('sabkha_dolomitization');
     const sabkhaCal = sabkha.crystals.filter((c: any) => c.mineral === 'calcite' && !c.dissolved && c._morphology);
     expect(sabkhaCal.length).toBeGreaterThan(0);
     for (const c of sabkhaCal) {
-      expect(String(c.habit).startsWith('hopper_')).toBe(true);
-      expect((c.dominant_forms || []).join(' ')).toContain('hopper');
+      expect(c.habit).toBe('dendritic_scalenohedral');
+      expect((c.dominant_forms || []).join(' ')).toMatch(/dendrit|branch/i);
     }
 
     // mvt is smooth-spar (98%, and the stepped sliver is the tiny CORE,
@@ -280,13 +285,16 @@ describe('calcite morphology instruments (Phase 1)', () => {
       expect(reliefSpan).toBeLessThanOrEqual(0.15);              // phantom core, not a stepped rim
     }
 
-    // sabkha is hopper/skeletal 100%: the apex hollows into a funnel.
+    // The dendritic exterior retains a small hopper core in its zone walk,
+    // but the final band must not be rendered as a hopper funnel.
     const sabkha = runScenario('sabkha_dolomitization');
     const sabCal = sabkha.crystals.find((c: any) => c.mineral === 'calcite' && !c.dissolved && c.total_growth_um > 0);
     expect(sabCal).toBeTruthy();
     const sabTerr = calciteTerraceBands(sabCal);
+    expect(sabCal.habit).toBe('dendritic_scalenohedral');
     expect(sabTerr).toBeTruthy();
-    expect(sabTerr.hopperTip).toBe(true);
+    expect(sabTerr.hopperTip).toBe(false);
+    expect(sabTerr.knots[sabTerr.knots.length - 1].regime).toBe('dendritic');
   });
 
   it('Phase 4 (SIM 187): the Mg axis — form elongation + bunching bias', () => {
@@ -302,7 +310,7 @@ describe('calcite morphology instruments (Phase 1)', () => {
     // Fleet: the Mg-dominated waters wear scalenohedral-family habits.
     const sabkha = runScenario('sabkha_dolomitization');   // Mg:Ca ≈ 3.3
     const sabCal = sabkha.crystals.find((c: any) => c.mineral === 'calcite' && !c.dissolved && c._morphology);
-    expect(sabCal.habit).toBe('hopper_scalenohedral');
+    expect(sabCal.habit).toBe('dendritic_scalenohedral');
 
     const ultra = runScenario('ultramafic_supergene');     // Mg:Ca ≈ 10
     const ultraCal = ultra.crystals.filter((c: any) => c.mineral === 'calcite' && !c.dissolved && c._morphology);

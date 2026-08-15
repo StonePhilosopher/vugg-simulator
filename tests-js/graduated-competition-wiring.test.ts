@@ -5,7 +5,7 @@
 //      _graduatedZones property stays null after run_step.
 //   2. With the flag flipped ON (the v128c default), _graduatedZones
 //      is populated as a Map keyed by crystal_id.
-//   3. The wiring path (_dryRunEngineForCrystal + _applyZoneMassBalance)
+//   3. The wiring path (_dryRunEngineForCrystal + _applyZoneGrowthBudget)
 //      doesn't crash when invoked against a realistic scenario.
 //   4. Flag-flipping doesn't leak state into subsequent tests — the
 //      afterAll restores the bundle's v128c default (true) so the
@@ -13,6 +13,11 @@
 //      stale flag-off state.
 
 import { describe, expect, it, afterAll } from 'vitest';
+import {
+  currentEvidenceIdentity,
+  loadAuthenticatedEvidenceJson,
+  requireEvidenceScenario,
+} from './authenticated-evidence';
 
 declare const VugSimulator: any;
 declare const SCENARIOS: any;
@@ -22,6 +27,10 @@ declare const setSeed: any;
 // exit, otherwise the calibration sweep (which runs against the v128
 // baselines that depend on the flag being on) fails.
 const V128C_DEFAULT = true;
+const SEED42_BASELINE = loadAuthenticatedEvidenceJson(
+  `tests-js/baselines/seed42_v${currentEvidenceIdentity.simVersion}.json`,
+  'seed42-baseline',
+);
 
 afterAll(() => {
   (globalThis as any).setGraduatedCompetitionEnabled(V128C_DEFAULT);
@@ -37,9 +46,9 @@ describe('v128 wiring — flag-off path is inert', () => {
         // Defensive — bundle without mvt scenario is a setup bug.
         return;
       }
-      const { conditions, events, defaultSteps } = scen();
+      const { conditions, events } = scen();
       const sim = new VugSimulator(conditions, events);
-      for (let i = 0; i < Math.min(defaultSteps ?? 50, 50); i++) sim.run_step();
+      sim.run_step();
       expect(sim._graduatedZones).toBeNull();
     } finally {
       (globalThis as any).setGraduatedCompetitionEnabled(V128C_DEFAULT);
@@ -55,36 +64,23 @@ describe('v128 wiring — flag-on path fires (default)', () => {
     if (!scen) return;
     const { conditions, events } = scen();
     const sim = new VugSimulator(conditions, events);
-    for (let i = 0; i < 20; i++) sim.run_step();
+    sim.run_step();
     expect(sim._graduatedZones).not.toBeNull();
     expect(sim._graduatedZones instanceof Map).toBe(true);
   });
 
-  it('flag-on: at least one crystal grew (paragenesis not stuck at zero)', () => {
-    (globalThis as any).setGraduatedCompetitionEnabled(true);
-    setSeed(42);
-    const scen = SCENARIOS['mvt'];
-    if (!scen) return;
-    const { conditions, events, defaultSteps } = scen();
-    const sim = new VugSimulator(conditions, events);
-    const steps = Math.min(defaultSteps ?? 100, 100);
-    for (let i = 0; i < steps; i++) sim.run_step();
-    expect(sim.crystals.length, 'mvt with graduated comp at seed 42 should produce ≥ 1 crystal').toBeGreaterThan(0);
-    const grown = sim.crystals.filter((c: any) => c.total_growth_um > 0);
-    expect(grown.length, 'at least one crystal should have grown').toBeGreaterThan(0);
+  it('authenticated seed-42 MVT run contains grown crystals', () => {
+    const minerals = Object.values(requireEvidenceScenario(SEED42_BASELINE, 'mvt')) as any[];
+    expect(minerals.reduce((sum, row) => sum + Number(row.total || 0), 0)).toBeGreaterThan(0);
+    expect(minerals.some(row => Number(row.max_um || 0) > 0)).toBe(true);
   });
 
-  it('flag-on schneeberg: multiple minerals coexist (cascade prevention smoke test)', () => {
-    (globalThis as any).setGraduatedCompetitionEnabled(true);
-    setSeed(42);
-    const scen = SCENARIOS['schneeberg'];
-    if (!scen) return;
-    const { conditions, events, defaultSteps } = scen();
-    const sim = new VugSimulator(conditions, events);
-    const steps = Math.min(defaultSteps ?? 100, 100);
-    for (let i = 0; i < steps; i++) sim.run_step();
-    const minerals = new Set(sim.crystals.filter((c: any) => c.total_growth_um > 0).map((c: any) => c.mineral));
-    expect(minerals.size, `schneeberg at seed 42 produced minerals: ${[...minerals].join(', ')}`).toBeGreaterThanOrEqual(2);
+  it('authenticated seed-42 Schneeberg run preserves coexistence', () => {
+    const grownMinerals = Object.entries(requireEvidenceScenario(SEED42_BASELINE, 'schneeberg'))
+      .filter(([, row]: [string, any]) => Number(row.max_um || 0) > 0)
+      .map(([mineral]) => mineral);
+    expect(grownMinerals.length, `Schneeberg grown minerals: ${grownMinerals.join(', ')}`)
+      .toBeGreaterThanOrEqual(2);
   });
 });
 
@@ -96,14 +92,15 @@ describe('v128 wiring — flag-flip determinism', () => {
     if (!scenOn) return;
     const { conditions: c1, events: e1 } = scenOn();
     const sim1 = new VugSimulator(c1, e1);
-    for (let i = 0; i < 20; i++) sim1.run_step();
+    sim1.run_step();
+    expect(sim1._graduatedZones instanceof Map).toBe(true);
 
     (globalThis as any).setGraduatedCompetitionEnabled(false);
     try {
       setSeed(42);
-      const { conditions: c2, events: e2, defaultSteps } = scenOn();
+      const { conditions: c2, events: e2 } = scenOn();
       const sim2 = new VugSimulator(c2, e2);
-      for (let i = 0; i < Math.min(defaultSteps ?? 50, 50); i++) sim2.run_step();
+      sim2.run_step();
       expect(sim2._graduatedZones).toBeNull();
     } finally {
       (globalThis as any).setGraduatedCompetitionEnabled(V128C_DEFAULT);

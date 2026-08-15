@@ -1,0 +1,142 @@
+# CLAIM CARD — roughten_gill  (v260, seed 42, 240 steps)
+
+**Anchor:** Roughten Gill Mine, Caldbeck Fells, Lake District, Cumbria, England. Polymetallic Pb-Cu fissure-vein deposit in Eycott Volcanic Group + Carrock Fell Intrusive Complex (granophyre footwall + gabbro hangingwall). Worked 1700s-1894 for lead + minor copper, dumps reworked for barite post-1894; classic specimen-collector locality. TYPE LOCALITY for plumbogummite (Hartley 1882; Förtsch 1967 corrected type material to plumbogummite-hinsdalite-hidalgoite mix-crystal). Per Cooper & Stanley (1990) 'Minerals of the English Lake District: Caldbeck Fells' + the Russell Society multi-part review (Bridges et al. 2011 Part 3).
+**Deposit:** Roughton Gill Mine reconstructed from the mine-specific Bridges et al. (2011) study: a sustained 110-130°C primary stage deposits quartz-dominant gangue with significant dolomite/calcite and galena + chalcopyrite + sphalerite, followed by meteoric dilution and deep oxidation. Dissolving carbonate gangue buffers the supergene water so malachite and cerussite dominate rather than the older simulator's linarite-centered sulfate sequence. Later volcanic-wall weathering supplies reactive silica to oxidizing sphalerite and grows hemimorphite; phosphate-bearing drainage produces pyromorphite followed by type-locality plumbogummite as an encrusting overgrowth. Rare genuine linarite, caledonite and leadhillite remain possible but are no longer advertised as dominant deterministic stages.
+**Initial:** 130 °C, 0.5 kbar, wall=tabular
+**Model digest:** Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5|scenario-contracts:deterministic+statistical+aspirational+locality-exclusions+windows-v2|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation-v2|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+full-zone-ledgers-fail-closed-v3
+**Scenario spec hash:** 27904bc7b260cdcd89b037bcf78f810cadfb2101c5c5df7eabda676f3b15037a
+
+## Model boundary: calibrated growth budget
+  - Kind: calibrated stoichiometric axial-growth budget proxy
+  - Basis: 0.00008 mmol formula/kg solvent per accepted axial micrometre
+  - Preserves: formula mole ratios and exact closure of booked inventory on dissolution
+  - Limitation: not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume
+
+## Expectation contract
+**Deterministic (12):** quartz, calcite, galena, sphalerite, chalcopyrite, cerussite, malachite, aurichalcite, rosasite, hemimorphite, pyromorphite, plumbogummite
+**Statistical (0):** (none)
+**Aspirational (6):** dolomite — Documented significant primary gangue but subject to the simulator's independently calibrated dolomite kinetic barrier.; mimetite — Documented minor campylite component; arsenate-rich pyromorphite is substantially more common than true mimetite.; native_silver — Extremely rare documented specimen; most Ag resides in galena or minute sulfosalt inclusions and should not be forced as a common discrete phase.; linarite — Genuine but fairly rare at Roughton Gill; many celebrated labels belong to adjacent Caldbeck localities or dump alteration.; caledonite — Genuine but exceptionally scarce: the mine-specific review records only a handful of specimens.; leadhillite — Genuine but very rare under the mine's carbonate-buffered weathering conditions.
+**Locality exclusions (11):** realgar — No primary As-sulfide occurrence is supported by the mine-specific Roughton Gill review; arsenic is minor and chiefly expressed in oxidized Pb arsenate/phosphate chemistry.; pararealgar — No primary As-sulfide occurrence is supported by the mine-specific Roughton Gill review.; orpiment — No primary As-sulfide occurrence is supported by the mine-specific Roughton Gill review.; proustite — The documented silver is chiefly in galena/minute inclusions, native silver is extremely rare, and the mine-specific record does not support a deterministic ruby-silver phase.; turquoise — The Roughton Gill mine record does not support turquoise; phosphate is routed to pyromorphite and the plumbogummite-group overprint.; vanadinite — The mine-specific record does not support vanadinite at Roughton Gill; trace V is retained only to permit documented Caldbeck mottramite where competition allows.; descloizite — The Roughton Gill mine record supports mottramite rather than the Zn-dominant descloizite endmember.; siderite — The mine-specific primary gangue is quartz with significant calcite and dolomite; the Roughton Gill phase inventory does not support a deterministic siderite gangue.; haidingerite — The mine-specific inventory does not support this Ca arsenate; oxidized arsenic is routed to the documented Pb and Cu arsenate/phosphate suite.; pharmacolite — The mine-specific inventory does not support this Ca arsenate; extensive seed-42 nucleation would be a false locality signal.; koettigite — The mine-specific inventory does not support this Zn arsenate; abundant Zn weathering is represented by documented hemimorphite, rosasite and aurichalcite.
+
+**Cited sources:**
+  - Cooper M.P. & Stanley C.J. (1990) — Minerals of the English Lake District: Caldbeck Fells. Natural History Museum, London. ISBN 0-565-01102-2. THE canonical multi-volume monograph with per-mine paragenetic detail for every Caldbeck locality.
+  - Bridges T.F., Green D.I., Rumsey M.S. & Leppington C.M. (2011) — A review of the mineralisation at the Roughton Gill Mines, Caldbeck Fells, Cumbria: Part 3 - Roughton Gill Mine. Journal of the Russell Society 14: 3-23. The modern definitive paper on Roughten Gill specifically.
+  - Green D.I., Bridges T.F., Rumsey M.S., Leppington C.M. & Tindle A.G. (2008) — A review of the mineralogy of the Roughton Gill Mines, Caldbeck Fells, Cumbria: Part 2 - The Roughton Gill South Vein on Balliway Rigg. Journal of the Russell Society 11: 3-28.
+  - Rumsey M.S. et al. (2008) — A review of the mineralization at Red Gill Mine, Caldbeck Fells, Cumbria, England. Journal of the Russell Society 11: 29-47. Adjacent-mine comparison only; its carbonate-deficient interpretation is not transferred to Roughton Gill against the mine-specific Bridges et al. evidence.
+  - Symes R.F. & Young B.R. (2008) — Minerals of Northern England. British Geological Survey / National Museums Scotland. ISBN 978-1-905267-01-9. Regional context for Caldbeck within the broader Northern English mining heritage.
+  - Förtsch E.B. (1967) — Plumbogummite from Roughten Gill, Cumberland. Mineralogical Magazine 36 (280): 530-538. DOI 10.1180/minmag.1967.036.280.07. Critical re-examination of Hartley's 1882 type material — demonstrated it is a plumbogummite-hinsdalite-hidalgoite mix-crystal by X-ray + IR + optical methods.
+  - Hartley J. (1882) — On plumbogummite from Roughten Gill, Cumberland. Mineralogical Magazine 5: 21-23. Original type description of plumbogummite from the type locality.
+  - Russell A. (1925) — On the occurrence of plumbogummite at Roughten Gill, Cumberland. Mineralogical Magazine 20: 257-264. Russell's Caldbeck mineralogy work.
+  - Russell A. (1986) — A review of the mineralization of the English Lake District. Mineralogical Magazine 50: 587-600.
+  - Pluth J.J., Steele I.M., Kampf A.R. & Green D.I. (2005) — Redgillite, Cu6(OH)10(SO4).H2O, a new mineral from Caldbeck Fells, Cumbria, England: description and crystal structure. Mineralogical Magazine 69: 973-980. Redgillite is a Caldbeck type-locality species (Red Gill, adjacent); flagged for future add-mineral.
+  - Stanley C.J., Symes R.F. & Jones G.C. (1991) — Nickeloan mottramite and a chemical and structural study of the descloizite group of minerals. Mineralogical Magazine 55: 121-126. Caldbeck mottramite chemistry.
+  - Goldring D. (1991) — Cumbria's Underground Heritage. Historical mining context for the Caldbeck Fells district + Roughten Gill working history.
+  - British Geological Survey Earthwise — Mineralization in the Lake District. Fluid-inclusion T 110-130°C, K-Ar wallrock alteration ages 360-330 Ma, sulfur partly from Carboniferous evaporites, Ag-in-galena ~838 ppm.
+  - Research dossier 2026-05-20 — internal research-agent compilation anchoring the scenario broth on Cooper & Stanley 1990 + Russell Society three-part review + BGS Earthwise.
+
+## Paragenetic order as grown (30 species)
+| # | mineral | first step | nucleations | transformations | pathway |
+|--|--|--|--|--|--|
+| 1 | bornite | 1 | 3 | 0 | nucleation |
+| 2 | chalcocite | 1 | 5 | 0 | nucleation |
+| 3 | chalcopyrite | 1 | 3 | 0 | nucleation |
+| 4 | galena | 1 | 4 | 0 | nucleation |
+| 5 | pyrite | 1 | 1 | 0 | nucleation |
+| 6 | quartz | 1 | 1 | 0 | nucleation |
+| 7 | sphalerite | 1 | 1 | 0 | nucleation |
+| 8 | tennantite | 1 | 1 | 0 | nucleation |
+| 9 | tetrahedrite | 1 | 1 | 0 | nucleation |
+| 10 | acanthite | 8 | 4 | 0 | nucleation |
+| 11 | calcite | 25 | 1 | 0 | nucleation |
+| 12 | anglesite | 60 | 1 | 0 | nucleation |
+| 13 | brochantite | 72 | 10 | 0 | nucleation |
+| 14 | cerussite | 100 | 4 | 0 | nucleation |
+| 15 | malachite | 100 | 1 | 0 | nucleation |
+| 16 | pyromorphite | 100 | 6 | 0 | nucleation |
+| 17 | smithsonite | 107 | 1 | 0 | nucleation |
+| 18 | conichalcite | 117 | 4 | 0 | nucleation |
+| 19 | aurichalcite | 121 | 4 | 0 | nucleation |
+| 20 | azurite | 140 | 1 | 0 | nucleation |
+| 21 | olivenite | 142 | 4 | 0 | nucleation |
+| 22 | mottramite | 148 | 3 | 0 | nucleation |
+| 23 | rosasite | 150 | 4 | 0 | nucleation |
+| 24 | adamite | 180 | 1 | 0 | nucleation |
+| 25 | chrysocolla | 180 | 5 | 0 | nucleation |
+| 26 | duftite | 180 | 2 | 0 | nucleation |
+| 27 | hemimorphite | 180 | 3 | 0 | nucleation |
+| 28 | mimetite | 180 | 2 | 0 | nucleation |
+| 29 | opal | 185 | 5 | 0 | nucleation |
+| 30 | plumbogummite | 215 | 3 | 0 | nucleation |
+
+**Surprises (present but absent from all authored expectation tiers):** bornite, chalcocite, pyrite, tennantite, tetrahedrite, acanthite, anglesite, brochantite, smithsonite, conichalcite, azurite, olivenite, mottramite, adamite, chrysocolla, duftite, opal
+**Deterministic no-shows:** (none)
+**Statistical no-shows (non-failing):** (none)
+**Aspirational no-shows (non-failing):** dolomite, native_silver, linarite, caledonite, leadhillite
+**Excluded-locality appearances (failing):** (none)
+
+## Environment trajectory (first → last, [min,max])
+  - T: 129.98763888888888 → 20 °C  [20, 129.98763888888888] (raw_simulation_state)
+  - pH: 6.1 → 6.008   [4.87, 6.599999999999998] (raw_simulation_state)
+  - Eh: -150.10299956639813 → 251.67249841904993 mV  [-150.10299956639813, 322.1090020413224] (raw_simulation_state)
+  - salinity: 8 → 3 psu  [3, 8] (raw_simulation_state)
+  - O2: 0.05 → 1.2 mg/L  [0.05, 1.8] (raw_simulation_state)
+  - concentration: 1 → 3 ×  [1, 3] (raw_simulation_state)
+
+## Saturation drivers
+  - SI_calcite: -0.693 → -2.646  [-4.409, 0.252]
+  - SI_aragonite: -0.819 → -2.772  [-4.472, 0.126]
+  - SI_dolomite: -2.457 → -5.354  [-8, -0.693]
+  - SI_HMC: -0.693 → -2.205  [-3.969, 0.194]
+  - SI_siderite: 0.315 → -2.016  [-3.717, 1.194]
+  - SI_selenite: -8 → -1.386  [-8, -1.323]
+  - SI_anhydrite: -8 → -2.016  [-8, -1.953]
+  - SI_barite: -8 → -8  [-8, -8]
+  - SI_celestine: -8 → -8  [-8, -8]
+
+## Authored pressure/stress/phase context (claim, not run testimony)
+  - Fluid pressure: 0.5 kbar — cavity-fluid pressure; never silently substituted for rock pressure or differential stress
+  - Rock pressure: unspecified kbar — unspecified; metamorphic phase field is reported unconstrained
+  - Calcite/aragonite boundary: 2.477 kbar; secure aragonite=false
+  - Al2SiO5: unconstrained (nominal n/a) — Rock/confining pressure is not specified; fluid pressure cannot substitute for it.
+  - Gypsum/anhydrite pure-water boundary: 65.35 °C; initial a_w=0.995 ±0.020 (temperature-extrapolation)
+  - Ksp pressure rule: reaction-specific SUPCRTBL delta-logK grid; bilinear only inside density and per-reaction temperature masks; no constant reaction-volume proxy
+    - calcite: outside-temperature-envelope; active=false; ΔlogK=0; Pressure correction inactive outside this reaction's 10-90 C promoted Ksp(T) envelope; no extrapolation.
+    - aragonite: outside-temperature-envelope; active=false; ΔlogK=0; Pressure correction inactive outside this reaction's 10-90 C promoted Ksp(T) envelope; no extrapolation.
+    - dolomite: active; active=true; ΔlogK=0.89288431; SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.893 relative to 1 bar at the same temperature.
+    - siderite: active; active=true; ΔlogK=0.45130703; SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.451 relative to 1 bar at the same temperature.
+    - rhodochrosite: active; active=true; ΔlogK=0.42689177; SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.427 relative to 1 bar at the same temperature.
+    - anhydrite: active; active=true; ΔlogK=0.36352698; SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.364 relative to 1 bar at the same temperature.
+    - barite: active; active=true; ΔlogK=0.347842324; SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.348 relative to 1 bar at the same temperature.
+    - celestine: active; active=true; ΔlogK=0.36033788; SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.360 relative to 1 bar at the same temperature.
+    - selenite: unsupported-reaction; active=false; ΔlogK=0; Gypsum is absent from the SUPCRTBL solid-species set; the Hardie water-activity/temperature phase selector remains active, but no Ksp pressure correction is fabricated.
+  - Differential stress: no authored stress event.
+
+## Executed pressure/stress/phase testimony (archived run)
+**Source:** archived executed run state; not reconstructed from scenario definition
+  - Fluid pressure: 0.5 → 0.5 kbar [0.5, 0.5], n=240
+  - Rock/confining pressure: 0 → 0 kbar [0, 0], n=240
+  - Temperature: 129.98763888888888 → 20 °C [20, 129.98763888888888], n=240
+  - Secure aragonite assessment: 0/240 executed steps; first={"boundary_kbar":2.4772756268893517,"secure_aragonite":false}, last={"boundary_kbar":3.0264545399999996,"secure_aragonite":false}
+  - Al2SiO5 executed phase counts: {"unconstrained":240}; first=unconstrained, last=unconstrained
+  - Executed stress: no stress event recorded by the run.
+  - Mineral transformations: none executed.
+  - Conserved carbonate boundary: not enabled for this archived run.
+
+## Scenario notes (author's own rationale)
+> Anchor: Roughten Gill Mine, Caldbeck Fells, Cumbria. The Caldbeck Fells district occupies the northern Skiddaw inlier; Roughten Gill itself sits on the southern flank of Balliway Rigg (NY 304 344). Host is the Ordovician Eycott Volcanic Group (basaltic-andesitic to rhyolitic lavas + tuffs — NOT Borrowdale Volcanic Group, a common error in derivative literature). The South Vein cuts a NE-SW normal fault juxtaposing the Carrock Fell Intrusive Complex's Iron Crag Microgranite (Carrock Granophyre, U-Pb zircon 452.4 ± 3.1 Ma) against gabbro of the same complex. Caldbeck Fells district hosts ~175 valid mineral species — the greatest mineralogical diversity per unit area in the British Isles per Bridges et al. 2011 + Cooper & Stanley 1990.
+
+> Type locality for plumbogummite PbAl3(PO4)2(OH)5·H2O (Hartley 1882). Förtsch (1967) showed the type material is a plumbogummite-hinsdalite-hidalgoite mix-crystal. The simulator records a late Pb-Al-P plumbogummite crust encrusting older, still-active pyromorphite; it does not claim a replacement reaction that the engine does not execute.
+
+> SIM 257 reconciliation: Bridges et al. (2011), the mine-specific study, replaces the former district-level inference. Quartz is the dominant gangue with significant dolomite/calcite; galena, chalcopyrite and sphalerite are the main primary ores. Supergene malachite and cerussite dominate because carbonate minerals keep pH, carbonate activity and pCO2 comparatively high. Linarite is fairly rare, caledonite is known from only a few specimens, and leadhillite is very rare; they remain possible but are not deterministic scenario headlines.
+
+> Host rock remains silicate (basalt is the closest supported proxy), but the vein itself contains significant carbonate gangue. The step-140 carbon input is therefore explicitly booked as calcite/dolomite-gangue dissolution, not misattributed to the volcanic host or created by a pH-only change.
+
+> Fluid chemistry per BGS Earthwise Lake District + Russell Society Caldbeck papers: T 110-130°C primary (cooler than Pennine-Yorkshire 150-250°C bracket; calibrated to the Lake District lower bound); salinity 15-30 wt% NaCl-eq basinal brine (scenario broth at 8 wt% as scaled simulator value); Ag-in-galena ~838 ppm (the 'lattice silver' reservoir liberated during supergene oxidation produces the native_silver flakes documented at Roughten Gill); native antimony + Sb-sulphosalt inclusions in galena are diagnostic. Sulfur partly sourced from Carboniferous evaporites per BGS sulfur-isotope work.
+
+> Specimen hierarchy per Bridges et al. (2011): locally arsenate-rich pyromorphite and later encrusting plumbogummite are flagship Pb products; malachite + cerussite dominate ordinary weathering; hemimorphite is abundant from sphalerite oxidation plus silica released by extensive wall-rock weathering. Rosasite is very common and aurichalcite is not rare. Native silver is an exceptional one-specimen-scale occurrence, while acanthite is mainly a post-collection alteration product.
+
+> Catalog gaps retained for future work: hinsdalite + hidalgoite in the type mix, beudantite/corkite, mattheddleite, scotlandite, and several hydrated Cu sulfates. Those absent engines are not simulated by relabeling a different phase.
+
+> Negative evidence is mine-grain and phase-specific. Realgar, pararealgar, orpiment, proustite, turquoise, vanadinite, descloizite, siderite, haidingerite, pharmacolite and koettigite are excluded from this authored scenario; the same mineral engines remain available in documented localities and Creative mode.
+
+> MINDAT VALID-SPECIES REFERENCE (boss-supplied screenshots, 2026-07-27 — 'Roughton Gill Mine, Roughton Gill, Caldbeck, Allerdale, Cumbria, England, UK', mine-grain per the boss's methodology; 68 valid + 1 erroneous (Parahopeite); full transcription incl. mindat's '?' uncertain markers in research/scenarios/roughten_gill/citations-mindat-roughten-gill-2026-07-27.md; commodities Lead + Silver; rock types Gabbro + Gossan). WHAT THE LIST VOTES ON (vs seed-42 v236 sim output, 27 species): (a) LICENSED 21/27 — acanthite, anglesite, aurichalcite, brochantite, caledonite, cerussite, chalcocite, chrysocolla, covellite, galena (+ Ag-bearing var.!), leadhillite, linarite, mottramite, plumbogummite (TL!), pyrite, pyromorphite, rosasite, selenite (Gypsum valid — cross-mine selenite tally 6-YES/2-NO), sphalerite, tennantite ('Tennantite-Tetrahedrite Series' carries mindat's ? marker), tetrahedrite. The SILVER species are legit here (Native Silver + Acanthite + Ag-bearing galena all valid, commodity Silver) — the counter-case to Tri-State's Ag-poor fingerprint; the discrete-Ag over-fire pattern does NOT apply to this locality's acanthite. (b) NOT ON THE LIST — census flags: VANADINITE (×6, 5.4 mm — the BIG one; the v109 tune note already says 'vanadinite wrong for Caldbeck, route V to mottramite' and halved V 12→6, but the suppression under-delivers: vanadinite still outgrows mottramite 5380 vs 615 µm; the sheet corroborates the in-repo intent — a tune/gate follow-up candidate), PARAREALGAR ×6 + ORPIMENT (As at Caldbeck is ARSENATE — mimetite/campylite, olivenite?, carminite? — not sulfide; matches the v228 note's compositional complaint, As-should-ride-the-sulfosalt-sink, rung-4 territory), PROUSTITE ×2 (the 4th instance of the cross-mine discrete-Ag-species pattern — the documented Ag here is native silver + acanthite + lattice Ag, not Ag-sulfosalts), TURQUOISE ×4 (unlisted; the legit P-sink is plumbogummite/pyromorphite), DESCLOIZITE ×4 0-µm dust (the 4d re-deal called it 'the real Caldbeck Cu/Zn fork' — this mine's sheet lists only mottramite; dust-level, watch not act). (c) EXPECTS NO-SHOWS CORROBORATED: chalcopyrite, calcite, mimetite (+ var. Campylite — the barrel-shaped classic), native_silver are all VALID on the sheet — the promises are right, the delivery is the gap (tuning targets, not de-confabulations). (d) documented-unfired depth: azurite, malachite, smithsonite, hemimorphite, cuprite, cinnabar, erythrite, wulfenite, langite, serpierite, susannite?, scotlandite + the alunite-supergroup tail already noted as add-mineral candidates; aragonite + dolomite + baryte gangue. (e) mindat's '?' markers recorded verbatim in the transcription — uncertain entries vote weakly in either direction.

@@ -15,7 +15,7 @@ Object.assign(VugSimulator.prototype, {
   const sigma_c = c.supersaturation_calcite();
   let wall_info = '';
   if (c.wall.total_dissolved_mm > 0) {
-    wall_info = ` │ Vug: ${c.wall.vug_diameter_mm.toFixed(0)}mm (+${c.wall.total_dissolved_mm.toFixed(1)})`;
+    wall_info = ` │ Vug equivalent D: ${c.wall.vug_diameter_mm.toFixed(2)}mm (ΔV ${c.wall.host_volume_removed_mm3_per_kg.toFixed(2)}mm³/kg)`;
   }
   return `═══ Step ${String(this.step).padStart(3)} │ T=${this.conditions.temperature.toFixed(1).padStart(6)}°C │ P=${c.pressure.toFixed(2)} kbar │ pH=${c.fluid.pH.toFixed(1)} │ σ(Qz)=${sigma_q.toFixed(2)} σ(Cal)=${sigma_c.toFixed(2)}${wall_info} │ Fluid: ${c.fluid.describe()}`;
 },
@@ -33,13 +33,15 @@ Object.assign(VugSimulator.prototype, {
   // Vug wall stats if dissolution occurred
   const w = this.conditions.wall;
   if (w.total_dissolved_mm > 0) {
-    const orig_diam = w.vug_diameter_mm - w.total_dissolved_mm * 2;
+    const orig_diam = w.initial_vug_diameter_mm;
     lines.push('');
     lines.push('VUG CAVITY');
     lines.push(`  Host rock: ${w.composition}`);
     lines.push(`  Original diameter: ${orig_diam.toFixed(0)} mm`);
     lines.push(`  Final diameter: ${w.vug_diameter_mm.toFixed(0)} mm`);
-    lines.push(`  Total wall dissolved: ${w.total_dissolved_mm.toFixed(1)} mm`);
+    lines.push(`  Capacity gained: ${w.host_volume_removed_mm3_per_kg.toFixed(3)} mm³ per 1 kg solvent reference`);
+    lines.push(`  Calibrated reaction-path depth: ${w.total_dissolved_mm.toFixed(3)} mm`);
+    lines.push('  Volume uses standard-state crystalline calcite/dolomite; it is not a sealed-cavity fluid-mass claim.');
     lines.push('  The acid made the room. The room grew the crystals.');
   }
 

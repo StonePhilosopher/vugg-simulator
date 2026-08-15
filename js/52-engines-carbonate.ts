@@ -90,16 +90,8 @@ function grow_calcite(crystal, conditions, step) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(8.0, crystal.total_growth_um * 0.15);
-      // RECYCLING: Ca, CO3, and trace elements return to fluid
-      // Phase 1e: Ca + CO3 (major species) credits via MINERAL_DISSOLUTION_RATES.calcite.
-      // Mn and Fe trace credits stay inline below — they're zone-data-driven, not rate-scaled.
-      if (crystal.zones.length) {
-        const recentZones = crystal.zones.slice(-3);
-        const avg_mn = recentZones.reduce((s, z) => s + z.trace_Mn, 0) / recentZones.length;
-        const avg_fe = recentZones.reduce((s, z) => s + z.trace_Fe, 0) / recentZones.length;
-        conditions.fluid.Mn += avg_mn * 0.5;
-        conditions.fluid.Fe += avg_fe * 0.5;
-      }
+      // Ca, CO3, and the trace Mn/Fe actually incorporated by each accepted
+      // shell return only through the common remaining-inventory ledger.
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -119,7 +111,7 @@ function grow_calcite(crystal, conditions, step) {
   const excess = sigma - 1.0;
   let rate;
   if (kspSupersatActiveFor('calcite')) {
-    const pwp_mol = calciteRate(conditions.fluid, conditions.temperature);
+    const pwp_mol = calciteRate(conditions.fluid, conditions.temperature, conditions.pressure);
     rate = pwpRateToSimMicronsPerStep('calcite', pwp_mol) * rng.uniform(0.8, 1.2);
     // PWP under-supersat (omega < 1) yields negative rate, which is
     // dissolution territory — but we already handled the sigma < 1
@@ -183,7 +175,25 @@ function grow_calcite(crystal, conditions, step) {
   // trajectory contract as the Mg branch (the v187 lesson).
   const morphFormT = calciteMorphForm(morphMgRatio, conditions.temperature, sigma, crystal.growth_environment !== 'air');
   const morphRegime = (crystal._morphology && crystal._morphology.regime) || null;
-  if (is_manganocalcite && excess < 0.4) {
+  const depositionalRegime = typeof conditions.silica_depositional_regime === 'function'
+    ? conditions.silica_depositional_regime()
+    : null;
+  const isTravertineWater = depositionalRegime?.phase === 'carbonate-travertine water'
+    && conditions._calciteDepositionalMode === 'travertine';
+  // The heterogeneous calcite nucleation gate is Ω>1.5, so the historical
+  // excess<0.4 branch (Ω<1.4) was unreachable for a newly nucleated
+  // manganocalcite. The near-threshold window below remains slow relative to
+  // strongly supersaturated spar while overlapping the actual nucleation gate.
+  if (isTravertineWater) {
+    // Mammoth is a CO2-degassing terrace deposit: the product is a laminated,
+    // microcrystalline calcite crust (with microbial/flow fabrics), not a vug-
+    // projecting rhombohedral or dogtooth cabinet crystal. The water-type
+    // discriminator is shared with the silica competition panel, while the
+    // executed CO2-degas/reheat event supplies the depositional-pathway gate.
+    crystal.habit = 'travertine_crust';
+    crystal.dominant_forms = ['laminated microcrystalline calcite terrace crust', 'flow-normal surface coating'];
+    crystal._depositional_fabric = 'carbonate travertine';
+  } else if (is_manganocalcite && excess < 1.2) {
     crystal.habit = 'botryoidal_manganocalcite';
     crystal.dominant_forms = ['cauliflower botryoidal mass', 'mammillary surface', 'cryptocrystalline interior'];
     crystal._variety = 'manganocalcite';
@@ -265,6 +275,13 @@ function grow_calcite(crystal, conditions, step) {
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe, trace_Mn,
+    // Zone trace values are solid mass ppm. Convert mass fraction to atoms per
+    // CaCO3 formula unit: ppm*1e-6*(M_calcite/M_element), then debit/return the
+    // exact accepted shell inventory (M_calcite=100.0869 g/mol).
+    trace_stoichiometry: {
+      Mn: trace_Mn * 1e-6 * (100.0869 / 54.938044),
+      Fe: trace_Fe * 1e-6 * (100.0869 / 55.845),
+    },
     fluid_inclusion: fi, inclusion_type: fi_type, note,
     ca_from_wall: ca_wall_fraction,
     ca_from_fluid: ca_fluid_fraction,
@@ -323,7 +340,7 @@ function grow_aragonite(crystal, conditions, step) {
   // gate as W9-W11. Empirical 5.5 × excess fallback stays.
   let rate;
   if (kspSupersatActiveFor('aragonite')) {
-    const pwp_mol = aragoniteRate(conditions.fluid, conditions.temperature);
+    const pwp_mol = aragoniteRate(conditions.fluid, conditions.temperature, conditions.pressure);
     rate = pwpRateToSimMicronsPerStep('aragonite', pwp_mol) * rng.uniform(0.7, 1.3);
     if (rate < 0) rate = 0;
   } else {
@@ -350,29 +367,65 @@ function grow_aragonite(crystal, conditions, step) {
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
-  let note = `${crystal.habit} CaCO₃`;
-  const sr_uptake = conditions.fluid.Sr * 0.15;
+  const srPartition = aragoniteSrPartitioning(conditions.fluid);
+  const coPartition = aragoniteCoPartitioning(
+    conditions.fluid, conditions.temperature,
+  );
   const pb_uptake = conditions.fluid.Pb * 0.10;
-  if (sr_uptake > 0.5 || pb_uptake > 0.5) {
-    note += ' (Sr+Pb scavenged: aragonite hosts what calcite can\'t)';
+
+  // Secondary cobalt aragonite commonly forms crusts/rounded aggregates in
+  // weathered Co ores. Set the actual fabric before composing the zone note so
+  // the recorded history and the rendered habit cannot disagree.
+  if (coPartition.formulaCoefficientCo > 0
+      && conditions.temperature >= 20 && conditions.temperature <= 30) {
+    crystal.habit = 'botryoidal_crust';
+    crystal.dominant_forms = ['pink botryoidal coating', 'radiating microcrystalline aragonite'];
+  }
+
+  let note = `${crystal.habit} CaCO₃`;
+  if (srPartition.formulaCoefficientSr > 0 || pb_uptake > 0.5) {
+    note += ` (Sr partitioned at D=${srPartition.distributionCoefficient.toFixed(2)} from local dripwater`;
+    if (pb_uptake > 0.5) note += '; Pb association observed but not mass-partition calibrated';
+    note += ')';
   }
   if (conditions.fluid.Mg > 0) {
-    const mg_ratio = conditions.fluid.Mg / Math.max(conditions.fluid.Ca, 0.01);
-    if (mg_ratio > 1.5) {
-      note += ` — Mg/Ca=${mg_ratio.toFixed(1)}, calcite is poisoned here`;
+    const mg_ratio_molar = (conditions.fluid.Mg / 24.305)
+      / Math.max(conditions.fluid.Ca / 40.078, 1e-12);
+    if (mg_ratio_molar >= 1.1) {
+      note += ` — molar Mg/Ca=${mg_ratio_molar.toFixed(1)}, calcite is poisoned here`;
     }
+  }
+  if (coPartition.formulaCoefficientCo > 0) {
+    note += ` — Co-bearing aragonite (equilibrium DCo=${coPartition.distributionCoefficient.toFixed(2)}, `
+      + `effective booked DCo=${coPartition.effectiveBookedDistributionCoefficient.toFixed(2)}, `
+      + `${coPartition.targetSolidCoPpm.toFixed(0)} ppm target shell Co; exact accepted uptake booked)`;
+  }
+
+  const traceStoichiometry: Record<string, number> = {};
+  if (srPartition.formulaCoefficientSr > 0) {
+    traceStoichiometry.Sr = srPartition.formulaCoefficientSr;
+  }
+  if (coPartition.formulaCoefficientCo > 0) {
+    traceStoichiometry.Co = coPartition.formulaCoefficientCo;
   }
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe, trace_Mn,
+    trace_Sr: srPartition.targetSolidSrPpm,
+    trace_Co: coPartition.targetSolidCoPpm,
+    trace_stoichiometry: Object.keys(traceStoichiometry).length
+      ? traceStoichiometry : undefined,
+    sr_partition: srPartition,
+    co_partition: coPartition,
     note,
   });
 }
 
 function grow_dolomite(crystal, conditions, step) {
-  // Kim 2023 kinetics — see Python grow_dolomite for full citation.
+  // Kim 2023 cyclic-omega kinetics. The executable ordering model and its
+  // citations live in the TypeScript carbonate kinetics/runtime modules.
   // Cycling required for true ordered dolomite; phantom_count tracks cycles.
   const sigma = conditions.supersaturation_dolomite();
   if (sigma < 1.0) {
@@ -402,6 +455,14 @@ function grow_dolomite(crystal, conditions, step) {
   }
 
   const excess = sigma - 1.0;
+  // Habit thresholds must live on the same dimensionless scale after the
+  // dolomite engine's empirical-sigma -> textbook-omega promotion. Raw omega
+  // at first nucleation is >=10, so comparing (omega - 1) to the legacy 1.2
+  // threshold made every newly nucleated hydrothermal dolomite "massive" and
+  // erased the documented saddle/baroque habit. Normalize by the executable
+  // nucleation barrier for morphology only; equilibrium and PWP growth retain
+  // the unmodified omega above.
+  const morphologyExcess = sigma / Math.max(MINERAL_GATES_dolomite.sigma_crit, 1e-9) - 1.0;
   // Kim 2023: ordering fraction f_ord ramps with FLUID-LEVEL cycle count.
   // Tracking at the fluid level captures the geological insight that an
   // oscillatory environment ratchets ordering across all dolomite nuclei,
@@ -418,7 +479,7 @@ function grow_dolomite(crystal, conditions, step) {
   // base_rate formula stays as the fallback path.
   let rate;
   if (kspSupersatActiveFor('dolomite')) {
-    const pwp_mol = dolomiteRate(conditions.fluid, conditions.temperature, f_ord);
+    const pwp_mol = dolomiteRate(conditions.fluid, conditions.temperature, f_ord, conditions.pressure);
     rate = pwpRateToSimMicronsPerStep('dolomite', pwp_mol) * rng.uniform(0.7, 1.3);
     if (rate < 0) rate = 0;
   } else {
@@ -426,10 +487,16 @@ function grow_dolomite(crystal, conditions, step) {
     rate = base_rate * (0.30 + 0.70 * f_ord);
   }
 
-  if (conditions.temperature > 200 && excess < 0.5) {
+  // Saddle/baroque curvature is a rough-growth defect that requires the
+  // ~50-60 C critical roughening regime (Gregg & Sibley 1984). Saturation
+  // alone must not give an ambient sabkha or cave dolomite curved faces.
+  if (conditions.temperature < 50) {
+    crystal.habit = 'coarse_rhomb';
+    crystal.dominant_forms = ['planar rhombohedral {104}', 'ambient-temperature dolomite'];
+  } else if (conditions.temperature > 200 && morphologyExcess < 0.5) {
     crystal.habit = 'coarse_rhomb';
     crystal.dominant_forms = ['coarse rhombohedral {104}', 'transparent to white textbook crystals'];
-  } else if (excess > 1.2) {
+  } else if (morphologyExcess > 1.2) {
     crystal.habit = 'massive';
     crystal.dominant_forms = ['massive granular', 'white to gray sugary aggregate'];
   } else {
@@ -461,10 +528,15 @@ function grow_dolomite(crystal, conditions, step) {
 // v146 (Week 11): HMC (High-Magnesium Calcite) — disordered
 // Ca(1-x)Mg(x)CO3 with x ≈ 0.05-0.30. Kinetic precursor to ordered
 // dolomite per Kim 2023; persists as metastable Mg-rich calcite
-// intermediate without cycling. The mg_content is per-crystal state,
-// set at nucleation from fluid Mg/Ca (Mucci-Morse 1983 partitioning).
+// intermediate without cycling. Every accepted shell derives its own
+// composition from aqueous molar Mg/Ca and Mucci's measured D_Mg(T), then
+// records nonideal calcite/disordered-dolomite component activities.
 function grow_HMC(crystal, conditions, step) {
-  const sigma = conditions.supersaturation_HMC();
+  const composition = hmcCompositionFromFluid(conditions.fluid, conditions.temperature);
+  crystal._hmc_growth_composition_assessment = { ...composition };
+  const mg_content = composition.mgMoleFraction;
+  const sigma = composition.compositionDomainSupported && composition.validHMCComposition
+    ? conditions.supersaturation_HMC(mg_content) : 0;
   if (sigma < 1.0) {
     // Acid dissolution — HMC dissolves more readily than calcite due
     // to higher Ksp of the Mg-substituted lattice (Bischoff-Mackenzie-
@@ -481,10 +553,6 @@ function grow_HMC(crystal, conditions, step) {
     return null;
   }
 
-  // Read crystal's stored mg_content (set at nucleation). If absent
-  // (legacy data), default to 0.10 — a representative marine HMC value.
-  const mg_content = typeof crystal._mg_content === 'number' ? crystal._mg_content : 0.10;
-
   // Growth rate dispatch — v146 Week 11: when HMC SI flag is on,
   // delegate the rate to PWP kinetics via HMCRate (which is calcite
   // PWP with Mg-poisoning sigmoid already baked in per Davis 2000).
@@ -493,7 +561,7 @@ function grow_HMC(crystal, conditions, step) {
   const excess = sigma - 1.0;
   let rate;
   if (kspSupersatActiveFor('HMC')) {
-    const pwp_mol = HMCRate(conditions.fluid, conditions.temperature, mg_content);
+    const pwp_mol = HMCRate(conditions.fluid, conditions.temperature, mg_content, conditions.pressure);
     rate = pwpRateToSimMicronsPerStep('calcite', pwp_mol) * rng.uniform(0.7, 1.3);  // calcite Vm; close enough for Mg-substituted lattice
     if (rate < 0) rate = 0;
   } else {
@@ -524,10 +592,22 @@ function grow_HMC(crystal, conditions, step) {
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
-    trace_Mg: conditions.fluid.Mg * 0.04,  // crystal Mg trace (small relative to lattice Mg)
+    formula_stoichiometry: { Ca: 1 - mg_content, Mg: mg_content, CO3: 1 },
+    solid_solution: {
+      ...hmcSolidSolutionAssessment(mg_content, conditions.temperature),
+      partitionModel: composition.model,
+      aqueousMgCaMolarRatio: composition.aqueousMgCaMolarRatio,
+      distributionCoefficient: composition.distributionCoefficient,
+      temperatureStatus: composition.temperatureStatus,
+      compositionDomainStatus: composition.compositionDomainStatus,
+      compositionDomainSupported: composition.compositionDomainSupported,
+      unconstrainedMgMoleFraction: composition.unconstrainedMgMoleFraction,
+      clampedAtPromotedHMCMaximum: composition.clampedAtPromotedHMCMaximum,
+      uncertainty: composition.uncertainty,
+    },
     trace_Fe: conditions.fluid.Fe * 0.06,
     trace_Mn: conditions.fluid.Mn * 0.04,
-    note: `${crystal.habit}${prov_note} — disordered Ca-Mg carbonate (x = ${mg_content.toFixed(2)}); will recrystallize to LMC over geological time without cycling, or to ordered dolomite under Kim 2023 cyclic-Ω mechanism`,
+    note: `${crystal.habit}${prov_note} — disordered Ca-Mg carbonate shell (x = ${mg_content.toFixed(3)}, D_Mg=${composition.distributionCoefficient.toFixed(4)}); will recrystallize to LMC over geological time without cycling, or to ordered dolomite under Kim 2023 cyclic-Ω mechanism`,
   });
 }
 
@@ -693,7 +773,7 @@ function grow_malachite(crystal, conditions, step) {
   } else if (crystal.habit === 'fibrous/acicular') {
   }
 
-  // Phase 1d: Cu consumption owned by the wrapper (applyMassBalance).
+  // Phase 1d: Cu consumption owned by the wrapper (applyStoichiometricGrowthBudget).
 
   let color_note;
   if (zone_count >= 20) {
@@ -750,7 +830,7 @@ function grow_smithsonite(crystal, conditions, step) {
   if (crystal.habit === 'botryoidal' || crystal.habit === 'botryoidal/stalactitic') {
   }
 
-  // Phase 1d: Zn/CO3 consumption owned by the wrapper (applyMassBalance).
+  // Phase 1d: Zn/CO3 consumption owned by the wrapper (applyStoichiometricGrowthBudget).
 
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
@@ -903,7 +983,8 @@ function grow_azurite(crystal, conditions, step) {
   const rate = 3.0 * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.1) return null;
   let color_note;
-  if (excess > 1.0) { crystal.habit = 'azurite_sun'; crystal.dominant_forms = ['radiating flat disc', 'azurite-sun in fracture']; color_note = 'deep blue azurite-sun — radiating disc habit in narrow fracture'; }
+  if (crystal.vector === 'coating') { crystal.habit = 'crystalline_crust'; crystal.dominant_forms = ['fine-grained blue coating', 'coalesced crystalline crust']; color_note = 'blue crystalline crust — fine azurite aggregates spread across the supergene cavity wall'; }
+  else if (excess > 1.0) { crystal.habit = 'azurite_sun'; crystal.dominant_forms = ['radiating flat disc', 'azurite-sun in fracture']; color_note = 'deep blue azurite-sun — radiating disc habit in narrow fracture'; }
   else if (excess > 0.4) { crystal.habit = 'rosette_bladed'; crystal.dominant_forms = ['radiating bladed crystals', 'rosette']; color_note = 'deep blue rosette of radiating blades'; }
   else { crystal.habit = 'deep_blue_prismatic'; crystal.dominant_forms = ['monoclinic prismatic', 'deep azure/midnight blue']; color_note = 'deep azure-blue monoclinic prism'; }
   conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.025, 0);

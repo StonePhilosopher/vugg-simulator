@@ -23,6 +23,7 @@
 // `node tools/sync-spec.js` — the drift checker will flag mismatches.
 const MINERAL_SPEC_FALLBACK = {
   quartz: { formula: "SiO2", nucleation_sigma: 1.0, max_size_cm: 1200, growth_rate_mult: 0.3, thermal_decomp_C: 1713, fluorescence: { activator: "Al", threshold_ppm: 5, color: "weak_blue_LW" }, twin_laws: [{ name: "Dauphine", probability: 0.15 }], acid_dissolution: { pH_threshold: 4.0, requires: { F: 20 } } },
+  chalcedony: { formula: "SiO2", nucleation_sigma: 1.12, max_size_cm: 100, growth_rate_mult: 0.45, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0, requires: { F: 20 } } },
   calcite: { formula: "CaCO3", nucleation_sigma: 1.0, max_size_cm: 2000, growth_rate_mult: 1.0, thermal_decomp_C: 840, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "orange_red", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "c_twin", probability: 0.10 }], acid_dissolution: { pH_threshold: 5.5 } },
   aragonite: { formula: "CaCO3", nucleation_sigma: 1.0, max_size_cm: 30, growth_rate_mult: 0.5, thermal_decomp_C: 450, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "orange_yellow", quencher: { species: "Fe", threshold_ppm: 10 } }, twin_laws: [{ name: "cyclic_sextet", probability: 0.40 }], acid_dissolution: { pH_threshold: 5.5 } },
   rhodochrosite: { formula: "MnCO3", nucleation_sigma: 1.0, max_size_cm: 25, growth_rate_mult: 0.5, thermal_decomp_C: 600, fluorescence: { activator: "intrinsic", color: "red_pink_LW" }, twin_laws: [{ name: "polysynthetic", probability: 0.02 }], acid_dissolution: { pH_threshold: 5.5 } },
@@ -151,7 +152,12 @@ async function _loadSpec(paths) {
 }
 _loadSpec(['./data/minerals.json', '../data/minerals.json', '/data/minerals.json'])
   .then(({ doc, path }) => {
-    MINERAL_SPEC = doc.minerals;
+    // Preserve object identity. UI helpers and the jsdom test harness may
+    // already hold a reference to the fallback object while this fetch is
+    // in flight; replacing the binding leaves those consumers permanently
+    // stale. Updating in place makes the canonical dataset live everywhere.
+    for (const key of Object.keys(MINERAL_SPEC)) delete MINERAL_SPEC[key];
+    Object.assign(MINERAL_SPEC, doc.minerals);
     MINERAL_SPEC_READY = true;
     console.info(`[spec] loaded ${Object.keys(MINERAL_SPEC).length} minerals from ${path}`);
     _specListeners.splice(0).forEach(cb => { try { cb(MINERAL_SPEC); } catch (e) { console.error(e); } });
@@ -165,4 +171,12 @@ _loadSpec(['./data/minerals.json', '../data/minerals.json', '/data/minerals.json
 function maxSizeCm(mineral) {
   const entry = MINERAL_SPEC[mineral];
   return entry ? entry.max_size_cm : null;
+}
+
+function crystalAtAuthoredSizeCap(crystal) {
+  if (!crystal) return false;
+  const capCm = maxSizeCm(crystal.mineral);
+  const totalGrowthUm = Number(crystal.total_growth_um);
+  return capCm != null && Number.isFinite(totalGrowthUm)
+    && totalGrowthUm / 10000 >= capCm;
 }

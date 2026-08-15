@@ -35,7 +35,7 @@ describe('W-F O5 amethyst geode — the masking sceptre grows and renders amethy
     setSeed(42);
     const scen = SCENARIOS['amethyst_geode']();
     const sim = new VugSimulator(scen.conditions, scen.events);
-    const steps = scen.duration_steps ?? 110;
+    const steps = scen.defaultSteps ?? 150;
     for (let i = 0; i < steps; i++) sim.run_step();
     return sim;
   };
@@ -50,16 +50,19 @@ describe('W-F O5 amethyst geode — the masking sceptre grows and renders amethy
     expect(masking[0].habit).toBe('scepter_overgrowth');
   });
 
-  it('the celadonite horizon is prism-dominant; the goethite stain is NOT a sceptre', () => {
+  it('the celadonite horizon is prism-dominant; the late goethite stain remains a non-growing surface film', () => {
     const sim = run();
     const q = sim.crystals.find((c: any) => c && c.mineral === 'quartz' && c._sceptre);
     const horizons = (q.zones || []).filter((z: any) => z.masked_horizon);
     const celadonite = horizons.find((z: any) => z.film_mineral === 'celadonite');
-    const goethite = horizons.find((z: any) => z.film_mineral === 'iron oxide');
     expect(celadonite).toBeTruthy();
     expect(celadonite.masked_phi_prism).toBeGreaterThan(celadonite.masked_phi_term);   // prism-dominant → trigger
-    expect(goethite).toBeTruthy();
-    expect(goethite.masked_phi_prism).toBeLessThanOrEqual(goethite.masked_phi_term);    // uniform → buried, not a sceptre
+    // Once the declared cooling path falls below 100°C, crystalline quartz
+    // pauses instead of cosmetically becoming chalcedony/opal. The uniform
+    // goethite film therefore remains exposed rather than being falsely buried
+    // inside a new low-temperature quartz growth zone.
+    expect(q._film?.mineral).toBe('iron oxide');
+    expect(q._film?.phi_prism).toBeLessThanOrEqual(q._film?.phi_term);
   });
 
   it('the sceptre quartz renders AMETHYST via the D1b resolver', () => {

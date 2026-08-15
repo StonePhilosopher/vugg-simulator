@@ -12,8 +12,8 @@
 //                              octahedral habit per Bosze & Rakovan 2002)
 //   Stage 5   Manganocalcite cap — bright Mn²⁺-fluorescent calcite
 //
-// LABELING NOTE: dealer labels reading "Standard Mine, Silverton" are
-// conflation; actual deposit is Sunnyside-American Tunnel.
+// LABELING NOTE: "Standard Mine, Silverton" identifies Sunnyside output
+// from the Standard Metals lease / American Tunnel production window.
 
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
+declare const carbonateSaturationIndex: any;
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -61,10 +62,11 @@ describe('Sunnyside-American Tunnel scenario (v105)', () => {
       }
     }
 
-    it('fires primary sulfides (pyrite, galena)', () => {
+    it('fires primary sulfides (pyrite, galena, chalcopyrite)', () => {
       ensureSim();
       expect(species.has('pyrite')).toBe(true);
       expect(species.has('galena')).toBe(true);
+      expect(species.has('chalcopyrite')).toBe(true);
     });
 
     it('fires a Zn-sulfide (sphalerite OR wurtzite — high-T polymorph)', () => {
@@ -93,42 +95,63 @@ describe('Sunnyside-American Tunnel scenario (v105)', () => {
       expect(species.has('fluorite')).toBe(true);
     });
 
-    it('fires calcite (Stage VI manganocalcite cap) — soft assertion, v144', () => {
+    it('fires Mn-substituting calcite in the Stage VI cap', () => {
       ensureSim();
-      // v144 (Week 9 calcite SI engine promotion): the empirical engine
-      // was producing 1 calcite crystal at max_um = 35.9 (a thread-fine
-      // 36-micron crystal — barely above the noise floor). PWP under
-      // Sunnyside's late-stage conditions (T~175°C cooling, moderate
-      // Ca/CO3, pH ~5.5-6) doesn't quite reach the omega > 1.5 sigma_crit
-      // threshold. The empirical engine's omega-equivalent at Sunnyside
-      // peak was 1.05 — actually thermodynamically marginal.
-      //
-      // GEOLOGICAL REALITY: manganocalcite at Sunnyside IS rare. The
-      // boss has 1 manganocalcite specimen from ~20 Silverton/Sunnyside
-      // cabinet pieces; the headline mineral is rhodochrosite (15 of 20).
-      // The v143 thread-fine 36-µm calcite was empirical engine noise,
-      // not a real Stage VI cap.
-      //
-      // The Stage VI carbonate cap is REPRESENTED by rhodochrosite firing
-      // (assertion above) — geochemically the manganocarbonate phase that
-      // closes the paragenesis. Calcite is a sometimes-companion.
-      //
-      // Phase 1c (carbonate engine arc): if a more aggressive Stage VI
-      // CO2-degas pulse / broth tune brings omega above 1.5 reliably,
-      // tighten this back to .toBe(true).
-      if (species.has('calcite')) {
-        // Calcite did fire — pass. Manganocalcite cap is present.
-        expect(species.has('calcite')).toBe(true);
-      } else {
-        // Calcite didn't fire — record but don't fail. Rhodochrosite
-        // (asserted above) carries the Stage VI signature.
-        expect(species.has('rhodochrosite')).toBe(true);
+      const calcites = sim.crystals.filter((c: any) => c.mineral === 'calcite');
+      expect(calcites.length).toBeGreaterThan(0);
+      expect(calcites.some((c: any) => c._variety === 'manganocalcite')).toBe(true);
+      const mnZones = calcites.flatMap((c: any) => c.zones || [])
+        .filter((zone: any) => zone.thickness_um > 0 && zone.trace_stoichiometry?.Mn > 0);
+      expect(mnZones.length).toBeGreaterThan(0);
+      expect(mnZones.every((zone: any) => zone._budget_inventory_per_um?.Mn > 0)).toBe(true);
+    });
+
+    it('forms native gold from a formula-debited Au reservoir', () => {
+      ensureSim();
+      const gold = sim.crystals.filter((c: any) => c.mineral === 'native_gold');
+      expect(gold.length).toBeGreaterThan(0);
+      const growthZones = gold.flatMap((c: any) => c.zones || [])
+        .filter((zone: any) => zone.thickness_um > 0);
+      expect(growthZones.length).toBeGreaterThan(0);
+      expect(growthZones.every((zone: any) => zone._budget_inventory_per_um?.Au > 0)).toBe(true);
+    });
+
+    it('fires quartz in the documented Stage VI quartz-fluorite pulse', () => {
+      ensureSim();
+      expect(species.has('quartz')).toBe(true);
+    });
+  });
+
+  describe('multi-seed retained-species envelope', () => {
+    it('retains chalcopyrite, native gold, and manganocalcite across five seeds', () => {
+      for (const seed of [1, 7, 19, 42, 99]) {
+        const sim = runScenario('sunnyside_american_tunnel', seed);
+        for (const mineral of ['chalcopyrite', 'native_gold', 'calcite']) {
+          const growth = sim.crystals
+            .filter((c: any) => c.mineral === mineral)
+            .flatMap((c: any) => c.zones || [])
+            .reduce((sum: number, zone: any) => sum + Math.max(0, zone.thickness_um || 0), 0);
+          expect(growth, `seed ${seed}: ${mineral} positive growth`).toBeGreaterThan(0);
+        }
+        expect(sim.crystals.some((c: any) => c.mineral === 'calcite'
+          && c._variety === 'manganocalcite')).toBe(true);
       }
     });
 
-    it('fires quartz (ongoing through all stages)', () => {
-      ensureSim();
-      expect(species.has('quartz')).toBe(true);
+    it('crosses positive authoritative calcite SI only in the terminal carbonate stage', () => {
+      setSeed(42);
+      const { conditions, events, defaultSteps } = SCENARIOS.sunnyside_american_tunnel();
+      const sim = new VugSimulator(conditions, events);
+      let preCapMaxSI = -Infinity;
+      let capMaxSI = -Infinity;
+      for (let i = 0; i < (defaultSteps ?? 200); i++) {
+        sim.run_step();
+        const si = carbonateSaturationIndex('calcite', sim.conditions.fluid, sim.conditions.temperature);
+        if (sim.step < 150) preCapMaxSI = Math.max(preCapMaxSI, si);
+        else capMaxSI = Math.max(capMaxSI, si);
+      }
+      expect(preCapMaxSI).toBeLessThanOrEqual(0);
+      expect(capMaxSI).toBeGreaterThan(0);
     });
   });
 
@@ -187,6 +210,12 @@ describe('Sunnyside-American Tunnel scenario (v105)', () => {
       expect(expects).toContain('calcite');
       expect(expects).toContain('pyrite');
       expect(expects).toContain('galena');
+      expect(expects).toContain('chalcopyrite');
+      expect(expects).toContain('native_gold');
+
+      const description = scenSpec.scenarios.sunnyside_american_tunnel.description;
+      expect(description).toContain('Standard Metals Corporation');
+      expect(description).not.toContain('dealer-conflation');
     });
   });
 });

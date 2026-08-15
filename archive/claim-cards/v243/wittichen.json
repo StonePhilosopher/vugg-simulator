@@ -1,0 +1,326 @@
+{
+  "scenario": "wittichen",
+  "sim_version": 243,
+  "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1|sulfur-ledger:sulfide+sulfate+elemental-independent+pathway-gated-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "9e8801be38edae5a68b9dcd3f6595287b87c7a064a9f50bd90542a858a6c9d31",
+  "strip_steps": 160,
+  "claim": {
+    "anchor": "Kloster Wittichen, Schwarzwald (Black Forest), Baden-Württemberg, Germany — the classic Bi-Co-Ni-Ag-As-(Ba) five-element vein district; cobalt-pigment + silver mining boom 1730s–40s around the convent. Sophia and Johann-Georg veins.",
+    "description": "A five-element vein in granite basement: hot, saline, SULFUR-STARVED brine carries Bi + Co + Ni + Ag + As. S ~3 ppm is load-bearing — bismuthinite and acanthite never gate open, so the metals stay NATIVE and arsenides are the metal sinks. Hot stage grows skutterudite + nickeline rosettes (320–420°C); cooling brings the fluid into bismuth's window; then the deposit-defining REDUCING SHOCK (hydrocarbon influx along the fault — the declared fluid.Eh pulse) slams native-metal σ to its structural ceiling and bismuth precipitates as ARBORESCENT DENDRITES, safflorite riming the fresh branches (its T window overlaps the shock). Late meteoric water brings oxidized sulfate (barite stage) and carbonate gangue seals the dendrites into the vein — the cross-section hand specimen of the class.",
+    "expects_species": [
+      "skutterudite",
+      "nickeline",
+      "safflorite",
+      "native_bismuth",
+      "native_arsenic",
+      "native_silver",
+      "proustite",
+      "acanthite",
+      "calcite",
+      "barite"
+    ],
+    "sources": [
+      "Kissin S.A. 1992, Canadian Mineralogist 30 — Five-element (Ni-Co-As-Ag-Bi) veins: the deposit-class review",
+      "Burisch M., Walter B.F., Gerdes A., Lanz M., Markl G. 2017, Geology 45 — Methane and the origin of five-element veins (the hydrocarbon reduction trigger)",
+      "Scharrer M., Kreissl S., Markl G. 2019, Ore Geology Reviews — The mineralogical variability of hydrothermal native element-arsenide associations",
+      "Staude S., Bons P.D., Markl G. 2012, Mineralium Deposita 47 — Schwarzwald hydrothermal veins: fluid inclusion record, 20-26 wt% NaCl basement brines",
+      "Markl G. et al. 2016 — Cobalt (Ontario) arsenide zoning, X_As 0.96-0.99 (the skutterudite engine's anchor citation)",
+      "Kloster Wittichen district history — cobalt-blue pigment + silver boom, 1730s-1740s (shape_seed 1736)"
+    ],
+    "initial_temperature_C": 340,
+    "initial_pressure_kbar": 0.9,
+    "wall_architecture": "tabular",
+    "notes": [
+      "Anchor + mechanism: Kissin 1992 (Canadian Mineralogist 30) defines the five-element class; Burisch et al. 2017 (Geology 45) ties the native-metal stage to methane/hydrocarbon influx — fluid inclusions in Schwarzwald five-element veins carry CH4 exactly at the dendrite stage, and the reduction is fast (hours-to-days), which is WHY the metals dendrite. Scharrer, Kreissl & Markl 2019 (Ore Geology Reviews) survey the assemblage diversity; Staude et al. 2012 (Mineralium Deposita 47) give the Schwarzwald basement-brine fluid-inclusion record (20–26 wt% NaCl, 150–340°C) this broth is anchored on.",
+      "The redox shock is a DECLARED fluid.Eh movement (event-subsumption discipline, v185/v186): base −20 mV (mildly reducing basement brine), ONE deep pulse (amp −320) at u=0.58 (the CH4 influx; width ~8 steps; measured floor ~−253 mV at seed 42), and a late oxidizing trend (+95 ease — meteoric tail, tuned DOWN from +140 which dissolved the arsenide suite; a stronger late-oxidation finger was tried and reverted for the same reason — barite/erythrite are the documented aspirational casualties of arsenide survival). The wittichen_hydrocarbon_influx event at the pulse center is NARRATIVE-ONLY (no fluid writes).",
+      "Engine fit: this is the morphology registry's dendrite-band tenant (MORPH_TH.native_bismuth, SIM 188 — RESEARCH-bismuth-morphology-2026-06-12.md). At the shock, Bi σ ≈ bi_f 3.0 × s_mask 0.96 × red_f 1.5 × T_f 1.0 ≈ 4.3 — the dendritic band (≥3.8) of a scale structurally capped at ~4.5. Pre-shock cooling-stage Bi sits in the feathery bands; post-shock regrowth heals feathery over the dendrites, so the zone stack RECORDS the shock (the narrator's healed-over paragraph + the bismuth_morph strip chip slamming 0→4 on the pulse). Skutterudite + safflorite get their FIRST scenario home here (both were expects-orphans fleet-wide).",
+      "Wallrock: 'pegmatite' composition as the granite proxy (inert silicate — Wittichen veins cut Triberg granite; the carbonate gangue arrives in the FLUID via the late CO3 event, not from wall dissolution). Architecture tabular (vein-bounded), pocket size class, shape_seed 1736 (the cobalt-boom decade).",
+      "Calibration target: the hand specimen is silver-white dendritic Bi embedded in white carbonate with gray arsenide rims, read in cross-section. MEASURED at seeds 42-45 (calibration session, 2026-06-12): native_bismuth 3-5 alive with 45-49% DENDRITIC zone mass (the shock recorded); skutterudite 2 + safflorite 2 + nickeline 4 + native_arsenic 4 all ALIVE; native_silver grows then sulfidizes to acanthite 4 at the meteoric-sulfate stage (the tarnish story — hand-specimen Wittichen silver is acanthite-coated); proustite 2 (ruby silver); calcite + aragonite gangue. Bi band edges re-pinned against this trajectory (js/45 — the activity correction at salinity 24 compresses the structural ~4.5 ceiling to ~2.4 measured).",
+      "BARITE DELIVERED (v191, gate-census tune): the v189 'aspirational barite' diagnosis was WRONG about the mechanism — the gate census (tools/wittichen-sulfate-probe.mjs) measured every gate component PASSING from step ~133 (Ba✓ S✓ redox✓ pH✓ T✓) with σ plateaued at 0.60: barite never needed more OXIDATION, it needed more BARIUM (ba_f 24/30 × s_f 30/40 × the salinity-24 activity penalty ≈ 0.59 pinned σ under 1 forever). The locality is the authority: Wittichen's veins are literally Barytgänge — barite-gangue veins, the district's defining gangue — so Ba 24 was unjustifiably shy. Ba 75 (still modest for a heavy-spar district) puts the barite stage at σ 1.47–1.55 from the meteoric beat on: barite 2/6/3 crystals at seeds 42/43/44, NO witherite (the BaCO3 competitor never gates), and the living suite intact at all probed seeds. No Eh change — the reverted +100 oxidation finger stays reverted.",
+      "ERYTHRITE DEMOTED from expects (v191, measured): the cobalt bloom's gate needs T ≤ 50°C (MINERAL_GATES_erythrite — weathering-zone physics) and this scenario's T trajectory ends at ~150°C, so erythrite is STRUCTURALLY out-of-window in a sealed-vein story, not tuning-shy. The real Wittichen erythrite the 1730s miners followed formed during post-Variscan exhumation weathering, long after the vein sealed; modeling it honestly needs a vadose/weathering EPILOGUE (drain + cool to ~20°C + spatially-partial oxidation), which contradicts this scenario's closing beat (carbonate seals the vug at ~150°C). If a weathering-epilogue mechanic ever lands (the schneeberg step-110 vadose pattern, made spatially partial), erythrite is its first client — logged in BACKLOG, not in expects.",
+      "ARAGONITE DEMOTED from expects (v228, hostile-review rung 2 — the erythrite precedent, exactly): Wittichen aragonite is REAL but it is the SUPERGENE phase — mindat's cobalt-bearing aragonite (Co²⁺-in-CaCO3) is recorded from Wittichen as a secondary phase over oxidizing Co-arsenides (Staude et al. 2012 describe the supergene alteration suite), not a 156°C vein gangue. Pre-v228 the aragonite favorability's open-ended T-term grew it at step 141 / ~156°C — precisely the hot low-Mg vein confabulation the v228 spring-window ceiling (~90°C, Casella 2017 inversion kinetics) retires; at Mg/Ca 0.04 and a T floor of ~150°C the phase is structurally out-of-window for this sealed-vein story. The vein's primary CaCO3 gangue is CALCITE (kept). Same weathering-epilogue mechanic that owes erythrite its home owes the cobaltoan pink aragonite — second client, logged in BACKLOG."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1|sulfur-ledger:sulfide+sulfate+elemental-independent+pathway-gated-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 0.9,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 3.0415585399999996,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 71.23,
+          "initial_water_activity": {
+            "value": 0.9866,
+            "salinityPpt": 24,
+            "naclWeightPercentEquivalent": 2.4,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 11,
+    "paragenetic_order": [
+      {
+        "mineral": "skutterudite",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "nickeline",
+        "first_step": 3,
+        "events": 4
+      },
+      {
+        "mineral": "native_arsenic",
+        "first_step": 4,
+        "events": 4
+      },
+      {
+        "mineral": "safflorite",
+        "first_step": 32,
+        "events": 2
+      },
+      {
+        "mineral": "native_silver",
+        "first_step": 70,
+        "events": 4
+      },
+      {
+        "mineral": "native_bismuth",
+        "first_step": 73,
+        "events": 3
+      },
+      {
+        "mineral": "proustite",
+        "first_step": 133,
+        "events": 2
+      },
+      {
+        "mineral": "realgar",
+        "first_step": 133,
+        "events": 1
+      },
+      {
+        "mineral": "acanthite",
+        "first_step": 140,
+        "events": 4
+      },
+      {
+        "mineral": "barite",
+        "first_step": 140,
+        "events": 3
+      },
+      {
+        "mineral": "calcite",
+        "first_step": 141,
+        "events": 1
+      }
+    ],
+    "surprises_not_in_expects": [
+      "realgar"
+    ],
+    "expected_no_shows": [],
+    "environment": {
+      "T": {
+        "first": 339.567,
+        "last": 147.638,
+        "min": 147.638,
+        "max": 339.567,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 6.283,
+        "last": 7.386,
+        "min": 6.283,
+        "max": 7.386,
+        "units": ""
+      },
+      "Eh": {
+        "first": -22.047,
+        "last": 77.165,
+        "min": -281.89,
+        "max": 77.165,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 23.622,
+        "last": 23.622,
+        "min": 23.622,
+        "max": 23.622,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 0.157,
+        "last": 0.394,
+        "min": 0,
+        "max": 0.394,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -3.339,
+        "last": 0.756,
+        "min": -3.339,
+        "max": 0.756,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -3.402,
+        "last": 0.63,
+        "min": -3.402,
+        "max": 0.63,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -6.551,
+        "last": 0.693,
+        "min": -6.551,
+        "max": 0.693,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -5.039,
+        "last": -1.008,
+        "min": -5.039,
+        "max": -1.008,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": -1.575,
+        "last": 1.764,
+        "min": -1.575,
+        "max": 1.764,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -2.268,
+        "last": -1.134,
+        "min": -2.268,
+        "max": -1.134,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -1.827,
+        "last": -0.945,
+        "min": -2.079,
+        "max": -0.945,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -0.315,
+        "last": 1.638,
+        "min": -0.315,
+        "max": 1.638,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -1.953,
+        "last": -1.197,
+        "min": -2.079,
+        "max": -1.134,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 160,
+      "fluid_pressure_kbar": {
+        "first": 0.9,
+        "last": 0.9,
+        "min": 0.9,
+        "max": 0.9,
+        "samples": 160
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 160
+      },
+      "temperature_C": {
+        "first": 339.9778271484375,
+        "last": 148.28306720627472,
+        "min": 148.28306720627472,
+        "max": 339.9778271484375,
+        "samples": 160
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 3.0413872177406542,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.4422526325923366,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 160
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 71.23
+        },
+        "last": {
+          "pure_water_boundary_C": 71.23
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

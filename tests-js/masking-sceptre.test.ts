@@ -11,7 +11,12 @@
 // The render (js/99i _makeSceptreHexPrism) is driven entirely by capFrac, so these
 // pins on the classifier's verdict are what a preview eye-check then confirms.
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 declare const classifyQuartzSceptre: any;
 
@@ -31,6 +36,20 @@ function quartz(zoneSpecs: Array<[number] | [number, any]>): any {
 }
 
 describe('W-F O5 masking sceptre — classifier route B (prism-dominant masked_horizon)', () => {
+  it('bounds active copy as a renderer-only non-corrosive counterpart, never physical mass conservation', () => {
+    const activeSources = [
+      'data/scenarios.json5',
+      'js/45-morphology.ts',
+      'js/92i-narrators-silicate.ts',
+    ].map(file => fs.readFileSync(path.join(ROOT, file), 'utf8'));
+    for (const source of activeSources) {
+      expect(source.toLowerCase()).not.toContain('mass-conserving twin');
+      expect(source.toLowerCase()).not.toContain('mass conserving twin');
+    }
+    expect(activeSources.join('\n')).toContain('non-corrosive masking counterpart');
+    expect(activeSources.join('\n')).toContain('does not calculate or claim conserved solid mass');
+  });
+
   it('a prism-dominant masked_horizon with a real stem + cap is a MASKING sceptre', () => {
     // 300µm stem → breakthrough zone (masked, prism-dominant) → 250µm more cap.
     const c = quartz([

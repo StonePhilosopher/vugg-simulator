@@ -41,6 +41,8 @@ interface MineralGates {
   pH_max?: number;
   O2_min?: number;
   O2_max?: number;
+  // Executable precursor/host required even above the fluid-only sigma gate.
+  required_substrate?: string;
   surface_energy: 'very_low' | 'low' | 'medium' | 'high' | 'very_high';
   _sources?: string[];
   _notes?: string;

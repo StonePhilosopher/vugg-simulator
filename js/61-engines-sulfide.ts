@@ -9,9 +9,60 @@
 //
 // Phase B8 of PROPOSAL-MODULAR-REFACTOR.
 
+// Ge uptake in sphalerite is deliberately an EMPIRICAL tracer model, not a
+// claimed equilibrium calculation. Belissont's hydrothermal partitioning
+// experiments measured Kd(Ge, sphalerite/fluid) = 1708 +/- 157 at 200°C;
+// at <=150°C essentially the whole experimental dissolved Ge inventory was
+// scavenged, so Kd could not be resolved. Liu et al. (GCA 342, 2023) then
+// showed Ge(IV) can enter sphalerite with or without Cu and warned that the
+// thermodynamic properties needed to calculate aqueous Ge solubility are not
+// available. We therefore use the measured 200°C Kd as a labelled proxy and
+// cap it at an experimentally demonstrated >3 mol% structural envelope. The
+// cap is 22,000 ppm by mass (about 3 mol% Ge on the Zn site). This is a
+// sensitivity/control model for Creative mode, not a universal ore-grade
+// predictor. See research/arcs/research-ge-sphalerite-2026-08-05.md.
+const SPHALERITE_GE_KD_200C = 1708;
+const SPHALERITE_GE_KD_1SIGMA = 157;
+const SPHALERITE_GE_SOLID_CAP_PPM = 22000;
+const SPHALERITE_FORMULA_MASS_G_MOL = 97.44;
+const GE_ATOMIC_MASS_G_MOL = 72.63;
+
+function sphaleriteGermaniumUptake(fluidGePpm: number) {
+  const aqueousGePpm = Math.max(0, Number(fluidGePpm) || 0);
+  const solidGePpm = Math.min(
+    SPHALERITE_GE_SOLID_CAP_PPM,
+    aqueousGePpm * SPHALERITE_GE_KD_200C,
+  );
+  // Convert a solid mass fraction to approximate Ge atoms per ZnS formula
+  // unit. This coefficient plugs into the same formula-unit growth-budget
+  // scale as the major-element stoichiometry; no separate magic sink.
+  const gePerFormulaUnit = solidGePpm * 1e-6
+    * (SPHALERITE_FORMULA_MASS_G_MOL / GE_ATOMIC_MASS_G_MOL);
+  return { aqueousGePpm, solidGePpm, gePerFormulaUnit };
+}
+
 function grow_sphalerite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_sphalerite();
-  if (sigma < 1.0) return null;
+  if (sigma < 1.0) {
+    // Oxidative weathering is the reachable return path for ZnS and its
+    // lattice-bound trace inventory. The growth-budget wrapper credits Zn + S
+    // from the dissolution table and returns Ge from recorded positive zones.
+    // Require a strongly oxidized replacement fluid. The coarse O2 proxy at
+    // 1.0-1.2 is already enough to close the sulfide growth gate, but using
+    // that same boundary for destruction erased preserved primary sphalerite
+    // during mildly oxidizing late pulses. O2 >= 2.5 separates actual
+    // weathering/flush conditions from mere cessation of new ZnS growth.
+    if (crystal.total_growth_um > 0 && conditions.fluid.O2 >= 2.5) {
+      const dissolved_um = Math.min(3.0, crystal.total_growth_um * 0.10);
+      return new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -dissolved_um, growth_rate: -dissolved_um,
+        dissolutionMode: 'oxidative',
+        note: `oxidative dissolution (O2=${conditions.fluid.O2.toFixed(2)}) — Zn, S, and recorded lattice traces returned to fluid`,
+      });
+    }
+    return null;
+  }
 
   const excess = sigma - 1.0;
   let rate = 6.0 * excess * rng.uniform(0.7, 1.3);
@@ -28,6 +79,11 @@ function grow_sphalerite(crystal, conditions, step) {
   else if (Fe_mol_percent > 3) color_note = 'honey/amber';
   else color_note = 'pale yellow (cleiophane — gem quality)';
 
+  const ge = sphaleriteGermaniumUptake(conditions.fluid.Ge);
+  const ge_note = ge.solidGePpm > 0
+    ? `; Ge ${ge.solidGePpm.toFixed(0)} ppm solid proxy (Kd ${SPHALERITE_GE_KD_200C} +/- ${SPHALERITE_GE_KD_1SIGMA} at 200 C; empirical/extrapolated)`
+    : '';
+
   // Twin rolling moved to nucleation (Round 9 bug fix Apr 2026).
 
   return new GrowthZone({
@@ -42,7 +98,9 @@ function grow_sphalerite(crystal, conditions, step) {
     // carbonate-family coefficient (aragonite/dolomite/siderite). Refs:
     // Frondel 1941, Cook & Ciobanu 2007 Joplin manganblende.
     trace_Mn: conditions.fluid.Mn * 0.05,
-    note: `color: ${color_note}, Fe: ${Fe_mol_percent.toFixed(1)} mol%`
+    trace_Ge: ge.solidGePpm,
+    trace_stoichiometry: ge.gePerFormulaUnit > 0 ? { Ge: ge.gePerFormulaUnit } : undefined,
+    note: `color: ${color_note}, Fe: ${Fe_mol_percent.toFixed(1)} mol%${ge_note}`
   });
 }
 
@@ -381,23 +439,15 @@ function grow_arsenopyrite(crystal, conditions, step) {
 
   if (sigma < 1.0) {
     // Oxidation-dissolution: arsenopyrite + O₂ + H₂O →
-    //   Fe³⁺ + AsO₄³⁻ + H₂SO₄. Releases trapped Au back to fluid.
+    //   Fe³⁺ + AsO₄³⁻ + H₂SO₄. The common accepted-shell
+    // ledger returns the exact remaining trapped Au with Fe/As/S.
     if (crystal.total_growth_um > 3 && conditions.fluid.O2 > 0.5) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(4.0, crystal.total_growth_um * 0.12);
       // Phase 1e: Fe + As + S credits via MINERAL_DISSOLUTION_RATES.arsenopyrite.
-      // pH stays inline — it's an activity adjustment, not a mass-balance credit.
+      // pH stays inline — it's an activity adjustment, not a growth-budget credit.
       conditions.fluid.pH = Math.max(2.0, conditions.fluid.pH - dissolved_um * 0.02);
-      // Release 12% of zone-summed trapped invisible-gold per step.
-      const total_trapped_au = (crystal.zones || []).reduce((sum, z) => sum + (z.trace_Au || 0), 0);
-      const released_au = total_trapped_au * 0.12;
-      if (released_au > 0) {
-        conditions.fluid.Au += released_au;
-      }
       let note_str = 'oxidation — arsenopyrite → Fe³⁺ + AsO₄³⁻ + H₂SO₄';
-      if (released_au > 0.005) {
-        note_str += ` (releases ${released_au.toFixed(3)} ppm trapped Au — supergene enrichment)`;
-      }
       return new GrowthZone({
         step, temperature: conditions.temperature,
         thickness_um: -dissolved_um, growth_rate: -dissolved_um,
@@ -669,7 +719,7 @@ function grow_stibnite(crystal, conditions, step) {
   else if (excess > 0.5) { crystal.habit = 'radiating_spray'; crystal.dominant_forms = ['radiating bladed spray', 'sword-blade aggregate']; color_note = 'radiating spray of steel-gray blades'; }
   else { crystal.habit = 'elongated_prism_blade'; crystal.dominant_forms = ['elongated {110} prism', 'sword-blade terminations', 'brilliant metallic luster']; color_note = 'elongated sword-blade — the Ichinokawa habit (lead-gray metallic)'; }
   f.Sb = Math.max(f.Sb - rate * 0.025, 0);
-  f.S = Math.max(f.S - rate * 0.018, 0);
+  // Formula S is booked once by the accepted-zone stoichiometric ledger.
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 
@@ -715,7 +765,7 @@ function grow_realgar(crystal, conditions, step) {
     crystal.dominant_forms = ['elongated {110} prism', 'orange-red resinous crystal'];
     color_note = `orange-red prismatic realgar — Allchar habit (T=${T.toFixed(0)}°C)`;
   }
-  // Growth-zone As + S debit handled by applyMassBalance via
+  // Growth-zone As + S debit handled by applyStoichiometricGrowthBudget via
   // MINERAL_STOICHIOMETRY.realgar = { As: 1, S: 1 }.
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -761,7 +811,7 @@ function grow_orpiment(crystal, conditions, step) {
     crystal.dominant_forms = ['{010} foliated plates', 'gilded book-form'];
     color_note = 'foliated golden plates — the iconic aurum-pigmentum habit';
   }
-  // Growth-zone As + S debit handled by applyMassBalance via
+  // Growth-zone As + S debit handled by applyStoichiometricGrowthBudget via
   // MINERAL_STOICHIOMETRY.orpiment = { As: 2, S: 3 }.
   return new GrowthZone({
     step, temperature: conditions.temperature,
@@ -814,10 +864,10 @@ function grow_cinnabar(crystal, conditions, step) {
     crystal.dominant_forms = ['stout rhombohedron', 'red trigonal prism'];
     color_note = `red rhombohedral cinnabar (T=${T.toFixed(0)}°C)`;
   }
-  // Growth-zone Hg + S debit handled by applyMassBalance via
+  // Growth-zone Hg + S debit handled by applyStoichiometricGrowthBudget via
   // MINERAL_STOICHIOMETRY.cinnabar = { Hg: 1, S: 1 }. The wrapper
-  // applies the scaled debit (MASS_BALANCE_SCALE × thickness ×
-  // stoich) at runtime — no inline f.Hg / f.S decrements needed.
+  // converts formula amount × thickness × stoich × species molar mass
+  // at runtime — no inline f.Hg / f.S decrements needed.
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
@@ -846,7 +896,7 @@ function grow_bismuthinite(crystal, conditions, step) {
   else if (excess > 1.0) { crystal.habit = 'radiating_cluster'; crystal.dominant_forms = ['radiating cluster', 'needle bundle']; color_note = 'radiating cluster of fine bismuthinite needles'; }
   else { crystal.habit = 'acicular_needle'; crystal.dominant_forms = ['acicular {110} needles', 'lead-gray with iridescent tarnish']; color_note = `acicular needles (low-T form, T=${T.toFixed(0)}°C) — iridescent tarnish develops`; }
   f.Bi = Math.max(f.Bi - rate * 0.030, 0);
-  f.S = Math.max(f.S - rate * 0.018, 0);
+  // Formula S is booked by the accepted-zone stoichiometric ledger.
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 
@@ -873,7 +923,7 @@ function grow_bornite(crystal, conditions, step) {
   const trace_Fe = f.Fe * 0.02;
   f.Cu = Math.max(f.Cu - rate * 0.03, 0);
   f.Fe = Math.max(f.Fe - rate * 0.008, 0);
-  f.S = Math.max(f.S - rate * 0.018, 0);
+  // Formula S is booked by the accepted-zone stoichiometric ledger.
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, trace_Fe, note: color_note });
 }
 
@@ -912,7 +962,7 @@ function grow_chalcocite(crystal, conditions, step) {
     color_note = 'dark gray metallic tabular';
   }
   f.Cu = Math.max(f.Cu - rate * 0.04, 0);
-  f.S = Math.max(f.S - rate * 0.018, 0);
+  // Formula S is booked by the accepted-zone stoichiometric ledger.
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 
@@ -936,7 +986,7 @@ function grow_covellite(crystal, conditions, step) {
   else if (f.O2 > 0.5 && f.O2 < 1.2) { crystal.habit = 'iridescent_coating'; crystal.dominant_forms = ['iridescent cleavage {0001}', 'purple-green thin-film interference']; color_note = `indigo-blue with iridescent purple-green tarnish (near oxidation boundary, O₂ ${f.O2.toFixed(1)})`; }
   else { crystal.habit = 'hex_plate'; crystal.dominant_forms = ['{0001} hexagonal basal plate', 'perfect basal cleavage — peels like mica']; color_note = 'indigo-blue hexagonal plate — the only common blue mineral'; }
   f.Cu = Math.max(f.Cu - rate * 0.03, 0);
-  f.S = Math.max(f.S - rate * 0.03, 0);
+  // Formula S is booked by the accepted-zone stoichiometric ledger.
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 
@@ -1025,7 +1075,7 @@ function grow_metacinnabar(crystal, conditions, step) {
     crystal.dominant_forms = ['fine-grained disseminated'];
   }
   conditions.fluid.Hg = Math.max(conditions.fluid.Hg - rate * 0.025, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.012, 0);
+  // Formula S is booked by the accepted-zone stoichiometric ledger.
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: `metacinnabar (β-HgS) ${crystal.habit}, IRON-BLACK metallic (CONTRAST with cinnabar's scarlet — diagnostic visual marker)` });
 }
 
@@ -1038,7 +1088,7 @@ function grow_metacinnabar(crystal, conditions, step) {
 // mantles → Fe-rich loellingite outermost rims as fluid evolves.
 
 function _grow_arsenide_common(crystal, conditions, sigma, rate, mineral) {
-  // Shared mass-balance: As(III) consumed; specific cation per mineral.
+  // Shared growth-budget: As(III) consumed; specific cation per mineral.
   conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.030, 0);
   if (mineral === 'skutterudite') {
     conditions.fluid.Co = Math.max(conditions.fluid.Co - rate * 0.015, 0);
@@ -1264,7 +1314,7 @@ function grow_proustite(crystal, conditions, step) {
   }
   conditions.fluid.Ag = Math.max(conditions.fluid.Ag - rate * 0.020, 0);
   conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.008, 0);
-  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.020, 0);
+  // Formula S is booked by the accepted-zone stoichiometric ledger.
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
@@ -1308,7 +1358,7 @@ function grow_pyrargyrite(crystal, conditions, step) {
   }
   conditions.fluid.Ag = Math.max(conditions.fluid.Ag - rate * 0.020, 0);
   if (conditions.fluid.Sb !== undefined) conditions.fluid.Sb = Math.max(conditions.fluid.Sb - rate * 0.008, 0);
-  conditions.fluid.S  = Math.max(conditions.fluid.S  - rate * 0.020, 0);
+  // Formula S is booked by the accepted-zone stoichiometric ledger.
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
@@ -1370,7 +1420,7 @@ function grow_enargite(crystal, conditions, step) {
 
   conditions.fluid.Cu = Math.max(conditions.fluid.Cu - rate * 0.030, 0);
   conditions.fluid.As = Math.max(conditions.fluid.As - rate * 0.010, 0);
-  conditions.fluid.S = Math.max(conditions.fluid.S - rate * 0.040, 0);
+  // Formula S is booked by the accepted-zone stoichiometric ledger.
 
   return new GrowthZone({
     step, temperature: conditions.temperature,

@@ -28,6 +28,12 @@ declare const stripDataIndex: any;
 declare const stripAllocateData: any;
 declare const stripSerialize: any;
 declare const stripDeserialize: any;
+declare const stripStoredRecordFromDataset: any;
+declare const stripDatasetFromStoredRecord: any;
+declare const _stripRenderStepSVG: any;
+declare const sha256HexUtf8: any;
+declare const scenarioSpecHash: any;
+declare const MODEL_DIGEST: string;
 declare const StripRecorder: any;
 declare const SCENARIOS: any;
 declare const VugSimulator: any;
@@ -208,6 +214,81 @@ describe('strip dataset — serialization round-trip', () => {
     }
   });
 
+  it('round-trips v4 executed testimony and exact scientific identity', async () => {
+    const manifest = {
+      format_version: 4, sim_version: 239, model_digest: 'model-A',
+      scenario_id: 'mvt', scenario_spec_hash: 'spec-A', seed: 4242,
+      recorded_at: 9, duration_steps: 1,
+      axes: { steps: 1, angular_indices: 1, height_positions: 1 },
+      chips: [{ id: 'pH', label: 'pH', system: 'special', range: [4, 11] as [number, number], units: '', color: 0x9966ee }],
+    };
+    const ds = {
+      manifest,
+      chip_data: new Uint8Array([127]),
+      nucleation_events: [],
+      floor_data: new Uint8Array([101]),
+      pressure_phase_testimony: [{ step: 0, fluid_pressure_kbar: 1.4 }],
+      stress_event_testimony: [{ event_id: 'stress-1', outcome: 'twinned' }],
+      transformation_event_testimony: [{ step: 0, crystal_id: 7, from: 'realgar', to: 'pararealgar', mechanism: 'light exposure' }],
+      carbonate_boundary_testimony: [{ step: 0, mode: 'closed', dic_mol_kg: 0.0083 }],
+    };
+    const reload = await stripDeserialize(await stripSerialize(ds, false));
+    expect(reload.manifest).toMatchObject({
+      model_digest: 'model-A', scenario_id: 'mvt', scenario_spec_hash: 'spec-A',
+    });
+    expect(reload.pressure_phase_testimony).toEqual(ds.pressure_phase_testimony);
+    expect(reload.stress_event_testimony).toEqual(ds.stress_event_testimony);
+    expect(reload.transformation_event_testimony).toEqual(ds.transformation_event_testimony);
+    expect(reload.carbonate_boundary_testimony).toEqual(ds.carbonate_boundary_testimony);
+  });
+
+  it('round-trips v5 actual event steps separately from zero-based sample indices', async () => {
+    const manifest = {
+      format_version: 5, sim_version: 248, model_digest: 'model-v5',
+      scenario_id: 'deccan_zeolite', scenario_spec_hash: 'spec-v5', seed: 42,
+      recorded_at: 10, duration_steps: 1,
+      axes: { steps: 1, angular_indices: 1, height_positions: 1 },
+      chips: [{ id: 'pH', label: 'pH', system: 'special', range: [4, 11] as [number, number], units: '', color: 0x9966ee }],
+    };
+    const ds = {
+      manifest,
+      chip_data: new Uint8Array([127]),
+      nucleation_events: [{ step: 1, sample_index: 0, ring: 0, cell: 3, mineral: 'chalcedony' }],
+      floor_data: new Uint8Array([101]),
+      pressure_phase_testimony: [{ step: 1, sample_index: 0, fluid_pressure_kbar: 0.2 }],
+      stress_event_testimony: [],
+      transformation_event_testimony: [{ step: 1, sample_index: 0, crystal_id: 7, from: 'gypsum', to: 'anhydrite', mechanism: 'dehydration' }],
+      carbonate_boundary_testimony: [{ step: 1, sample_index: 0, mode: 'open', boundary_export_mol_kg: 0.001 }],
+    };
+    const reload = await stripDeserialize(await stripSerialize(ds, false));
+    expect(reload.nucleation_events[0]).toMatchObject({ step: 1, sample_index: 0 });
+    expect(reload.pressure_phase_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0 });
+    expect(reload.transformation_event_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0 });
+    expect(reload.carbonate_boundary_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0, mode: 'open' });
+  });
+
+  it('uses a Node-compatible SHA-256 fingerprint for authored scenario specs', () => {
+    expect(sha256HexUtf8('abc')).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+    const spec = SCENARIOS.cooling._json5_spec;
+    expect(scenarioSpecHash(spec)).toBe(SCENARIOS.cooling._scenario_spec_hash);
+  });
+
+  it('preserves all evidence through the exact IndexedDB record codecs', () => {
+    const scenario = SCENARIOS.mvt();
+    const recorder = new StripRecorder(new VugSimulator(scenario.conditions, scenario.events), { duration_steps: 1 });
+    const ds = recorder.finalize();
+    ds.pressure_phase_testimony = [{ step: 0, fluid_pressure_kbar: 1.4 }];
+    ds.stress_event_testimony = [{ event_id: 'stress-storage' }];
+    ds.transformation_event_testimony = [{ step: 0, crystal_id: 8, from: 'pharmacolite', to: 'haidingerite', mechanism: 'dry-exposure' }];
+    ds.carbonate_boundary_testimony = [{ step: 0, mode: 'closed', reduced_alkalinity_eq_kg: 0.01 }];
+    const reload = stripDatasetFromStoredRecord(stripStoredRecordFromDataset(ds));
+    expect(reload.pressure_phase_testimony).toEqual(ds.pressure_phase_testimony);
+    expect(reload.stress_event_testimony).toEqual(ds.stress_event_testimony);
+    expect(reload.transformation_event_testimony).toEqual(ds.transformation_event_testimony);
+    expect(reload.carbonate_boundary_testimony).toEqual(ds.carbonate_boundary_testimony);
+    expect(reload.manifest.scenario_spec_hash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
   it('a v3 dataset with no floor_data, and a v2 dataset, both deserialize without a floor channel', async () => {
     const base = {
       sim_version: 175, scenario_id: 'nofloor', seed: 42, recorded_at: 8, duration_steps: 1,
@@ -226,6 +307,36 @@ describe('strip dataset — serialization round-trip', () => {
   });
 });
 
+describe('strip viewer — event-step testimony', () => {
+  const base = {
+    sim_version: 248, scenario_id: 'legacy', seed: 42, recorded_at: 0,
+    duration_steps: 1,
+    axes: { steps: 1, angular_indices: 1, height_positions: 1 },
+    chips: [],
+  };
+
+  it('shows legacy zero-based marker frames as the one-based film-row step', () => {
+    const legacy = {
+      manifest: { ...base, format_version: 4 },
+      chip_data: new Uint8Array(),
+      nucleation_events: [{ step: 0, ring: 0, cell: 0, mineral: 'legacy_calcite' }],
+    };
+    const svg = _stripRenderStepSVG(legacy, 0, 100, 50);
+    expect(svg).toContain('legacy_calcite @ step 1');
+    expect(svg).not.toContain('legacy_calcite @ step 0');
+  });
+
+  it('keeps the actual v5 event step while placing it by sample_index', () => {
+    const current = {
+      manifest: { ...base, format_version: 5 },
+      chip_data: new Uint8Array(),
+      nucleation_events: [{ step: 7, sample_index: 0, ring: 0, cell: 0, mineral: 'current_calcite' }],
+    };
+    const svg = _stripRenderStepSVG(current, 0, 100, 50);
+    expect(svg).toContain('current_calcite @ step 7');
+  });
+});
+
 describe('strip recorder — instrumentation', () => {
   let scen: any, sim: any, recorder: any;
   beforeAll(() => {
@@ -238,7 +349,10 @@ describe('strip recorder — instrumentation', () => {
 
   it('builds a manifest with all helicoid chips', () => {
     const m = recorder.getManifest();
-    expect(m.format_version).toBe(3);  // v2 added the depth axis; v3 added the depletion-floor channel
+    expect(m.format_version).toBe(5);  // v5 separates simulator step from tensor sample index
+    expect(m.model_digest).toBe(MODEL_DIGEST);
+    expect(m.scenario_id).toBe('cooling');
+    expect(m.scenario_spec_hash).toMatch(/^[0-9a-f]{64}$/);
     expect(m.axes.steps).toBe(5);
     expect(m.axes.angular_indices).toBe(24);
     expect(m.axes.height_positions).toBe(16);
@@ -373,5 +487,28 @@ describe('strip recorder — instrumentation', () => {
     expect(kCa).toBeGreaterThanOrEqual(0);
     const idx = stripDataIndex(0, 0, ring, kCa, axes, chipCount, 0);
     expect(ds.floor_data[idx]).toBeLessThan(ds.chip_data[idx]);
+  });
+
+  it('archives executed carbonate-boundary inventories and the last transaction', () => {
+    setSeed(42);
+    const travertine = SCENARIOS.tutorial_travertine();
+    const simC = new VugSimulator(travertine.conditions, travertine.events);
+    const rec = new StripRecorder(simC, { duration_steps: 1 });
+    simC._stripRecorder = rec;
+    simC.run_step();
+    const ds = rec.finalize();
+    expect(ds.carbonate_boundary_testimony).toHaveLength(1);
+    expect(ds.carbonate_boundary_testimony[0]).toMatchObject({
+      step: 1,
+      sample_index: 0,
+      mode: 'closed',
+      blocked: false,
+    });
+    expect(ds.carbonate_boundary_testimony[0].dic_mol_kg).toBeGreaterThan(0);
+    expect(ds.carbonate_boundary_testimony[0].reduced_alkalinity_eq_kg).toBeGreaterThan(0);
+    expect(ds.carbonate_boundary_testimony[0].last_transaction).toMatchObject({
+      ok: true,
+      kind: 'closed',
+    });
   });
 });

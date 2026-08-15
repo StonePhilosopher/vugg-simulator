@@ -24,11 +24,26 @@ const MINERAL_GATES_quartz: MineralGates = {
   // barrier (β-quartz grows, inverts on cooling). Pre-v228 the declared 600
   // was both unenforced AND wrong: gem_pegmatite grew geologically-correct
   // quartz at 617-650°C in violation of its own metadata.
-  T_min: 50, T_max: 700, T_optimal: 300,
+  T_min: 100, T_max: 700, T_optimal: 300,
   fluid_min: { SiO2: 50 },
   surface_energy: 'high',
   _sources: ['quartz engine v17+', 'Rimstidt & Barnes 1980 GCA 44:1683', 'Brantley et al. 2008', 'London 2008 (Pegmatites) — pocket quartz to the wet-granite solidus', 'Frontiers Earth Sci. 10:976588 (2022) — Pikes Peak quartz 700-660°C'],
-  _notes: 'SiO2 trigonal. ΔH° = +22 kJ/mol — strongly T-sensitive (corrected v127). σ_crit 1.2 is the heterogeneous value vug nucleation uses; homogeneous σ_crit is 6-20+. v228: envelope hard-enforced — T<50 is opal/chalcedony territory; T_max 700 = wet granite solidus.',
+  _notes: 'SiO2 trigonal. ΔH° = +22 kJ/mol — strongly T-sensitive (corrected v127). σ_crit 1.2 is the heterogeneous value vug nucleation uses; homogeneous σ_crit is 6-20+. SIM 246: quartz is the least-soluble generic silica phase. At 100-200°C it becomes selectable only after fluid falls below chalcedony saturation; above 200°C it owns the crystalline route. T_max 700 = wet granite solidus.',
+};
+
+const MINERAL_GATES_chalcedony: MineralGates = {
+  sigma_crit: CHALCEDONY_NUCLEATION_SIGMA,
+  T_min: 0, T_max: 200, T_optimal: 80,
+  fluid_min: { SiO2: 8 },
+  pH_min: 3.0, pH_max: 10.0,
+  surface_energy: 'low',
+  _sources: [
+    'Fournier 1977 USGS silica geothermometer: T=1032/(4.69-log SiO2)-273.15',
+    'Fournier 1981 / USGS OFR 84-690: chalcedony solubility valid 0-250 C',
+    'Reed & Mariner 2007: chalcedony-to-quartz transition near 200 C',
+    'Heaney & Davis 1995 Science 269:1562-1565: self-organized agate microtextures',
+  ],
+  _notes: 'Cryptocrystalline fibrous SiO2 aggregate. Its own equilibrium, not quartz solubility or a display label, controls saturation. Ostwald stepping admits chalcedony only after opal is undersaturated and before the fluid falls to quartz-only saturation. A documented carbonate-water competition regime prevents Mammoth-type limestone-hosted travertine water from spuriously depositing a silica lining. Repeated accepted growth zones can build a physically recorded banded-agate fabric.',
 };
 
 const MINERAL_GATES_feldspar: MineralGates = {
@@ -47,8 +62,8 @@ const MINERAL_GATES_apophyllite: MineralGates = {
   fluid_min: { K: 5, Ca: 30, SiO2: 800, F: 2 },
   pH_min: 7.0, pH_max: 10.0,
   surface_energy: 'low',
-  _sources: ['apophyllite engine v17+'],
-  _notes: 'KCa4Si8O20(F,OH)·8H2O — zeolite-facies sheet silicate. Pressure ≤ 0.5 kbar required.',
+  _sources: ['apophyllite engine v17+', 'Geiger et al. 2019 calorimetry', 'Pietroasa magnesian-skarn occurrence (Minerals 13:1362, 2023)', 'research-pressure-science-2026-08-05 §4.6'],
+  _notes: 'KCa4Si8O20(F,OH)·8H2O — zeolite-facies sheet silicate. No measured P–T stability diagram supports the retired 0.5-kbar wall. Temperature and chemistry are hard gates; pressure applies only an occurrence-based soft rarity weighting above 1.5 kbar.',
 };
 
 const MINERAL_GATES_albite: MineralGates = {
@@ -162,18 +177,18 @@ const MINERAL_GATES_andalusite: MineralGates = {
   fluid_min: { Al: 15, SiO2: 50 },
   pH_min: 4.0, pH_max: 9.0,
   surface_energy: 'high',
-  _sources: ['andalusite engine (crystal-face realism arc 2026-06-21)', 'Holdaway 1971 Am.J.Sci 271:97 (Al2SiO5 triple point ~500°C/0.4GPa)', 'research-andalusite dossier'],
+  _sources: ['andalusite engine (crystal-face realism arc 2026-06-21)', 'Pattison 1992 (Al2SiO5 triple point 550°C/4.5±0.5 kbar)', 'research-pressure-science-2026-08-05 §4.5', 'research-andalusite dossier'],
   _notes: 'Al2SiO5 — orthorhombic LOW-PRESSURE polymorph (Pnnm; kyanite=HP, sillimanite=HT). The SILICA-SATURATED complement of corundum. Index mineral of low-P contact-metamorphic aluminous metapelites (hornfels). Peraluminous gate (Na+K low, B<1) keeps it out of pegmatite/skarn scenarios → fleet byte-identical. Chiastolite (the carbon-cross variety) when the host is graphitic.',
 };
 
 const MINERAL_GATES_opal: MineralGates = {
   sigma_crit: 0.8,                          // v131 (2026-05-21): literature value per Iler 1979 — heterogeneous σ_crit range 0.5-1.0, midpoint 0.8. Was 1.0 (v101 engine-matched calibration); v127 engine-gates refactor surfaced the engine/literature mismatch as a v129 calibration target.
   T_min: 5, T_max: 100, T_optimal: 40,
-  fluid_min: { SiO2: 200 },
+  fluid_min: { SiO2: 75 },
   pH_min: 6.5, pH_max: 10.0,
   surface_energy: 'very_low',
   _sources: ['opal engine v101+', 'Jones & Segnit 1971', 'Iler 1979', 'Fournier 1977 Geothermics 5:41'],
-  _notes: 'SiO2·nH2O amorphous-to-CT mineraloid. γ_sl ~0.05-0.10 J/m² (very_low — lowest in catalog). ΔH° corrected to +14 kJ/mol (v127 science fix). Geyser sinter at 30-85°C optimum. σ_crit set to 0.8 per Iler 1979 heterogeneous nucleation midpoint (v131 calibration); was 1.0 v101-v130 (engine-matched, pre-literature-grounding).',
+  _notes: 'SiO2·nH2O amorphous-to-CT mineraloid. γ_sl ~0.05-0.10 J/m² (very_low — lowest in catalog). SIM 246 replaces the former fixed 200 ppm shortcut with the temperature-dependent Fournier amorphous-silica equilibrium; 75 ppm is only the absolute modeled low-temperature floor. Geyser sinter at 30-85°C optimum. σ_crit 0.8 is the heterogeneous midpoint.',
 };
 
 const MINERAL_GATES_coffinite: MineralGates = {
@@ -255,13 +270,18 @@ const MINERAL_GATES_chrysoprase: MineralGates = {
 
 const MINERAL_GATES_tigers_eye: MineralGates = {
   sigma_crit: 1.0,
-  T_min: 20, T_max: 200, T_optimal: 65,
+  // Union of two published origin hypotheses. The method below applies the
+  // model-specific envelope; this broad range is not one phase field.
+  T_min: 5, T_max: 450, T_optimal: 65,
   fluid_min: { SiO2: 200, Fe: 30 },
-  O2_min: 0.4,
-  pH_min: 5.5, pH_max: 9.5,
+  pH_min: 5.5, pH_max: 11.0,
   surface_energy: 'low',
-  _sources: ['tigers_eye engine v116+', 'Cairncross & Beukes 2013', 'Heaney & Fisher 2003'],
-  _notes: 'SiO2 after crocidolite — chalcedony pseudomorph. Gold-brown chatoyant from Fe3+ trace + preserved fiber framework.',
+  _sources: [
+    'Heaney & Fisher 2003, Geology 31:323-326, DOI 10.1130/0091-7613(2003)031<0323:NIOTOO>2.0.CO;2',
+    'Gutzmer, Beukes & Cairncross 2004, Geology 32:e44, DOI 10.1130/0091-7613-32.1.e44',
+    'Miyano & Klein 1983, Mining Geology 33:213-222, DOI 10.11456/shigenchishitsu1951.33.213',
+  ],
+  _notes: 'Hypothesis pair, not a settled pseudomorph claim: synchronous antitaxial quartz-crocidolite crack-seal growth versus surficial silicification/oxidation of older crocidolite with texture preserved (not pseudomorphic sensu stricto). Production nucleation enforces the corresponding substrate history.',
 };
 
 const MINERAL_GATES_chrysotile: MineralGates = {
@@ -444,11 +464,12 @@ const MINERAL_GATES_mesolite: MineralGates = {
   _notes: 'Na2Ca2Al6Si9O30·8H2O — orthorhombic Fdd2 with a GIANT b-axis (~56.6 A, the ordered 1-natrolite:2-scolecite layer stack). The ordered Na-Ca intermediate — needs BOTH Na and Ca (0.2<=Na/(Na+Ca)<=0.8). Finest hair-like/cottony fibrous tufts. Twin {010}/{100} (secondary vs scolecite). The mixed-cation gate is the discriminator from scolecite (Ca-only) + natrolite (Na-only).',
 };
 
-// v202 (2026-06-17): Thomsonite — the EARLIEST, most-aluminous amygdule zeolite.
+// v202 (2026-06-17): Thomsonite — a low-Si, highly aluminous amygdule zeolite.
 // NaCa2Al5Si5O20·6H2O, Si/Al~1 (the LOWEST silica of the common amygdule
-// zeolites; cf. natrolite-group ~1.5, sheet zeolites ~2.7-3.5). First zeolite in
-// the Deccan cavity sequence (smectite -> calcite -> THOMSONITE -> natrolite ->
-// analcime -> scolecite/mesolite -> sheets). THE DISCRIMINATOR is SILICA
+// zeolites; cf. natrolite-group ~1.5, sheet zeolites ~2.7-3.5). Its relative
+// order is locality-dependent; authored scenarios supply specific paragenetic
+// windows rather than treating one cavity sequence as universal. THE
+// DISCRIMINATOR is SILICA
 // ACTIVITY, not Na/Ca: thomsonite is favored at LOW silica (high Al relative to
 // Si); the natrolite-group Na/Ca fork does NOT cleanly separate it from mesolite
 // (both are Na-Ca; thomsonite is just more-Ca + lower-Si). So the engine gives
@@ -466,14 +487,14 @@ const MINERAL_GATES_thomsonite: MineralGates = {
   pH_min: 7.0, pH_max: 10.5,
   surface_energy: 'low',
   _sources: ['thomsonite engine v202', 'Anthony et al. Handbook of Mineralogy (thomsonite-Ca)', 'Wise & Tschernich 1978 Can.Mineral. 16:487', 'Coombs et al. 1997 Can.Mineral. 35:1571'],
-  _notes: 'NaCa2Al5Si5O20·6H2O — orthorhombic Pncn (Pbmn disordered), pseudotetragonal. The most-aluminous (Si/Al~1) + earliest amygdule zeolite. Famous "thomsonite eyes" — concentric botryoidal nodules (Lake Superior gem / lintonite green variety). Soft low-silica preference is the discriminator from the higher-Si natrolite group. Twin {110}.',
+  _notes: 'NaCa2Al5Si5O20·6H2O — orthorhombic Pncn (Pbmn disordered), pseudotetragonal. A highly aluminous (Si/Al~1) amygdule zeolite whose relative order is locality-dependent. Famous "thomsonite eyes" — concentric botryoidal nodules (Lake Superior gem / lintonite green variety). Soft low-silica preference is the discriminator from the higher-Si natrolite group. Twin {110}.',
 };
 
-// v203 (2026-06-17): Chabazite — the LATE, intermediate-Si amygdule zeolite.
+// v203 (2026-06-17): Chabazite — an intermediate-Si amygdule zeolite.
 // Ca2Al2Si4O12·6H2O (chabazite-Ca), Si/Al~2 — intermediate between the fibrous
 // group/thomsonite (~1-1.5) and the sheet zeolites stilbite/heulandite
-// (~2.7-3.5). A LATE perching phase in the cavity sequence (...stilbite ->
-// heulandite -> apophyllite -> CHABAZITE -> mordenite -> late calcite). Cation-
+// (~2.7-3.5). Its position is locality-dependent, so scenarios—not this global
+// engine—supply any claimed paragenetic order. Cation-
 // FLEXIBLE: the extra-framework cation runs Ca > Na > K in frequency, and K is
 // NOT required (chabazite-Ca is the basalt-amygdule default; K-dominance is a
 // rare special case). So the engine gates on a JOINT (Ca+Na+K) charge budget
@@ -490,34 +511,81 @@ const MINERAL_GATES_chabazite: MineralGates = {
   pH_min: 7.0, pH_max: 10.5,
   surface_energy: 'low',
   _sources: ['chabazite engine v203', 'Passaglia & Sheppard 2001 RiMG 45:69', 'Coombs et al. 1997 Can.Mineral. 35:1571', 'Calligaris et al. 1982 Zeolites (R-3m)'],
-  _notes: 'Ca2Al2Si4O12·6H2O — trigonal R-3m, hex cell a13.83 c15.02. Intermediate Si/Al~2; LATE perching amygdule phase. Cation-flexible Ca>Na>K (K NOT required); chabazite-Ca is the amygdule default. Rhombohedral pseudo-cube + phacolite penetration twins. Looks like calcite but {1011} cleavage is POOR (calcite perfect) + no effervescence + harder (4-5 vs 3) + lighter (2.1 vs 2.71).',
+  _notes: 'Ca2Al2Si4O12·6H2O — trigonal R-3m, hex cell a13.83 c15.02. Intermediate Si/Al~2; its relative amygdule order is locality-dependent. Cation-flexible Ca>Na>K (K NOT required); chabazite-Ca is the amygdule default. Rhombohedral pseudo-cube + phacolite penetration twins. Looks like calcite but {1011} cleavage is POOR (calcite perfect) + no effervescence + harder (4-5 vs 3) + lighter (2.1 vs 2.71).',
 };
 
+function tigerEyeOriginModel(conditions) {
+  const authored = conditions?._scenario?.tiger_eye_origin_model;
+  if (authored == null || authored === '') return 'surficial_alteration';
+  if (authored === 'antitaxial_crack_seal' || authored === 'surficial_alteration') return authored;
+  return null;
+}
+
+function tigerEyeCrackSealOxidationStage(conditions) {
+  if (tigerEyeOriginModel(conditions) !== 'antitaxial_crack_seal') return false;
+  if (conditions._scenario?.tiger_eye_stage === 'post_growth_oxidation') return true;
+  const T = Number(conditions.temperature);
+  const pH = Number(conditions.fluid?.pH);
+  const O2 = Number(conditions.fluid?.O2);
+  // Creative mode has no scripted event clock. Moving a previously selected
+  // crack-seal system into this measured surface envelope is therefore the
+  // executable geological lever that advances it into its later overprint.
+  return T >= 5 && T <= 100 && pH >= 5.5 && pH <= 9.5 && O2 >= 0.4;
+}
+
 Object.assign(VugConditions.prototype, {
+  quartz_equilibrium_ratio() {
+  const eq = this.silica_equilibrium(this.effectiveTemperature);
+  if (eq <= 0) return 0;
+  const reactiveSilica = typeof this.fluid.reactiveSilicaPpm === 'function'
+    ? this.fluid.reactiveSilicaPpm()
+    : this.fluid.SiO2;
+  let sigma = reactiveSilica / eq;
+  if (this.fluid.pH < 4.0 && this.fluid.F > 20) {
+    const hf_attack = (4.0 - this.fluid.pH) * (this.fluid.F / 50.0) * 0.3;
+    sigma -= hf_attack;
+  }
+  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'quartz');
+  return Math.max(sigma, 0);
+},
+
   supersaturation_quartz() {
   // v228 (rung 2): enforce the declared T envelope — the review's smoking gun
-  // #3 was that quartz's gates metadata (T_min 50, v127) was never read here,
+  // #3 was that quartz's gates metadata (formerly T_min 50, now 100) was never read here,
   // so 13 scenarios grew macro-quartz at 23-47°C where silica kinetics only
-  // permit opal/chalcedony (sicily's most-fired phase was quartz, at 23°C).
+  // permit macrocrystalline quartz (sicily's most-fired phase was quartz, at 23°C).
   // Prograde solubility makes this leak SYSTEMATIC: eq(T) falls as T falls,
   // so cold water reads as MORE supersaturated — thermodynamically true,
   // kinetically meaningless. The hard gate is the kinetic truth; sub-floor
   // silica routes to the opal engine (its window already owns 5-100°C).
   const g = MINERAL_GATES_quartz;
+  if (this.silica_precipitate_phase() !== 'quartz') return 0;
   if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
-  const eq = this.silica_equilibrium(this.effectiveTemperature);
-  if (eq <= 0) return 0;
-  let sigma = this.fluid.SiO2 / eq;
-
-  // HF attack on quartz: low pH + high F = dissolution
-  if (this.fluid.pH < 4.0 && this.fluid.F > 20) {
-    const hf_attack = (4.0 - this.fluid.pH) * (this.fluid.F / 50.0) * 0.3;
-    sigma -= hf_attack;
-  }
-
-  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'quartz');
-  return Math.max(sigma, 0);
+  return this.quartz_equilibrium_ratio();
 },
+
+  chalcedony_equilibrium_ratio() {
+    const eq = this.chalcedony_equilibrium(this.effectiveTemperature);
+    if (eq <= 0) return 0;
+    const reactiveSilica = typeof this.fluid.reactiveSilicaPpm === 'function'
+      ? this.fluid.reactiveSilicaPpm()
+      : this.fluid.SiO2;
+    let sigma = reactiveSilica / eq;
+    if (this.fluid.pH < 4.0 && this.fluid.F > 20) {
+      const hfAttack = (4.0 - this.fluid.pH) * (this.fluid.F / 50.0) * 0.3;
+      sigma -= hfAttack;
+    }
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'chalcedony');
+    return Math.max(sigma, 0);
+  },
+
+  supersaturation_chalcedony() {
+    const g = MINERAL_GATES_chalcedony;
+    if (this.silica_precipitate_phase() !== 'chalcedony') return 0;
+    if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
+    if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
+    return this.chalcedony_equilibrium_ratio();
+  },
 
   supersaturation_feldspar() {
   // K-feldspar (sanidine/orthoclase/microcline polymorphs).
@@ -545,7 +613,6 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.K < 5 || this.fluid.Ca < 30 || this.fluid.SiO2 < 800 || this.fluid.F < 2) return 0;
   if (this.temperature < 50 || this.temperature > 250) return 0;
   if (this.fluid.pH < 7.0 || this.fluid.pH > 10.0) return 0;
-  if (this.pressure > 0.5) return 0;
   const product = (this.fluid.K / 30.0) * (this.fluid.Ca / 100.0) * (this.fluid.SiO2 / 1500.0) * (this.fluid.F / 8.0);
   let T_factor;
   if (this.temperature >= 100 && this.temperature <= 200) T_factor = 1.4;
@@ -553,6 +620,7 @@ Object.assign(VugConditions.prototype, {
   else T_factor = 0.6;
   const pH_factor = (this.fluid.pH >= 7.5 && this.fluid.pH <= 9.0) ? 1.2 : 0.8;
   let sigma = product * T_factor * pH_factor;
+  sigma *= apophyllitePressureFactor(this.pressure);
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'apophyllite');
   return sigma;
 },
@@ -764,6 +832,11 @@ Object.assign(VugConditions.prototype, {
     if (f.pH < 4 || f.pH > 9) return 0;
     const T = this.temperature;
     if (T < 400 || T > 700) return 0;                // low-P contact-metamorphic window
+    const phase = al2sio5StablePolymorph(T, this.wall?.confining_pressure_kbar);
+    // Missing/uncertain rock pressure cannot honestly hard-block andalusite.
+    // Once the field is securely kyanite or sillimanite, suppress this engine;
+    // those alternative polymorph engines remain explicitly unimplemented.
+    if (phase === 'kyanite' || phase === 'sillimanite') return 0;
     const al_f = Math.min(f.Al / 30.0, 2.0);
     const si_f = Math.min(f.SiO2 / 200.0, 1.5);
     let sigma = al_f * si_f;
@@ -836,17 +909,25 @@ Object.assign(VugConditions.prototype, {
   // regime). High SiO2 supersaturation required (> 200 ppm — Fournier
   // 1977 Geothermics 5:41 amorphous silica solubility curve).
   //
-  // NOTE: separate from the existing grow_quartz polymorph dispatch
-  // (which can label a quartz crystal mineral_display='opal' at very
-  // low T). This standalone opal engine fires nucleation as opal-A
-  // directly, with a higher growth rate and the diagenesis-ladder
-  // mechanic flagged for future POLYMORPH_DIAGENESIS expansion.
+  // SIM 246: opal is the highest-solubility first step. Once amorphous silica
+  // is undersaturated, the selector can route the same fluid to first-class
+  // chalcedony and eventually quartz rather than relabelling either phase.
+  opal_equilibrium_ratio() {
+    const eq = this.opal_equilibrium(this.effectiveTemperature);
+    if (eq <= 0) return 0;
+    const reactiveSilica = typeof this.fluid.reactiveSilicaPpm === 'function'
+      ? this.fluid.reactiveSilicaPpm()
+      : this.fluid.SiO2;
+    let sigma = Math.min(reactiveSilica / eq, 6.0);
+    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'opal');
+    return Math.max(sigma, 0);
+  },
+
   supersaturation_opal() {
-    if (this.fluid.SiO2 < 200) return 0;
+    if (this.silica_precipitate_phase() !== 'opal') return 0;
     if (this.temperature < 5 || this.temperature > 100) return 0;
     if (this.fluid.pH < 6.5 || this.fluid.pH > 10.0) return 0;
-    const si_f = Math.min(this.fluid.SiO2 / 400.0, 3.0);
-    let sigma = si_f;
+    let sigma = this.opal_equilibrium_ratio();
     const T = this.temperature;
     // Sweet spot 30-85°C (geyser sinter regime, Yellowstone /
     // Steamboat Springs / Sulphur Bank / Wairakei NZ)
@@ -857,7 +938,6 @@ Object.assign(VugConditions.prototype, {
     const pH = this.fluid.pH;
     if (pH >= 7.0 && pH <= 9.0) sigma *= 1.2;
     else sigma *= Math.max(0.6, 1.0 - Math.abs(pH - 8.0) * 0.3);
-    if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'opal');
     return Math.max(sigma, 0);
   },
 
@@ -1063,47 +1143,54 @@ Object.assign(VugConditions.prototype, {
     return Math.max(sigma, 0);
   },
 
-  // v116 (2026-05-20): Tiger's eye — chalcedony pseudomorph AFTER
-  // crocidolite. The famous gold-brown chatoyant gemstone variety;
-  // Cu2+-bearing chalcedony fibers preserve the crocidolite-asbestos
-  // fiber-bundle morphology, producing the characteristic silky-chatoyant
-  // cat's-eye effect. Type-locality Northern Cape South Africa BIF
-  // (Hamersley + Mt. Brockman + Asbestos Hills); also Wittenoom WA,
-  // Cherokee NC. Three habit variants:
-  //   chatoyant_pseudomorph (default) — fully oxidized; gold-brown
-  //                                      classic gemstone aesthetic
-  //   hawks_eye (partial)             — crocidolite + chalcedony coexist;
-  //                                      blue-grey-gold intermediate
-  //   tiger_iron (BIF context)        — hematite + jasper + tiger's eye
-  //                                      banded; the BIF assemblage rock
-  // Geological process: supergene oxidation of crocidolite Fe2+ to Fe3+
-  // releases the Na, replaces the silicate fiber framework with
-  // microcrystalline SiO2 (chalcedony), with Fe3+ trace giving the
-  // gold-brown chatoyant color. Engine reads crocidolite_dissolving
-  // substrate; pure-SiO2 alternative path (Fe ≥ 50 + O2 > 0.5 + low T)
-  // captures the "tiger iron" BIF context.
-  // Refs: Cairncross B & Beukes NJ (2013) "The Northern Cape diamond
-  // route — geology + gemstones." Geological Society of South Africa;
-  // Heaney PJ & Fisher DM (2003) Am. Min. 88:1-14 "New interpretation
-  // of the origin of tiger's-eye."
+  // SIM 260: Tiger's eye carries the published origin dispute as executable
+  // geology. Heaney & Fisher (2003, Geology 31:323-326) explicitly REJECT
+  // pseudomorphic quartz replacement and interpret synchronous antitaxial
+  // quartz+crocidolite crack-seal growth. Gutzmer, Beukes & Cairncross (2004,
+  // Geology 32:e44) instead use field relationships to argue for an older
+  // crocidolite seam followed by surficial silicification and partial
+  // oxidation; they call it alteration preserving texture, not a pseudomorph
+  // sensu stricto. The scenario/Creative selector chooses the boundary. The
+  // production nucleator separately proves the required substrate history.
   supersaturation_tigers_eye() {
+    const wall = this.wall || {};
+    // `matrix` is a renderer-only skin; physics reads authored composition.
+    if (wall.composition !== 'banded_iron_formation') return 0;
     if (this.fluid.SiO2 < 200 || this.fluid.Fe < 30) return 0;
-    if (this.temperature < 20 || this.temperature > 200) return 0;
-    if (this.fluid.pH < 5.5 || this.fluid.pH > 9.5) return 0;
-    // OXIDIZING required — the supergene weathering condition
-    if (this.fluid.O2 < 0.4) return 0;
+    const model = tigerEyeOriginModel(this);
+    if (!model) return 0;
+    const crackSeal = model === 'antitaxial_crack_seal';
+    const oxidationStage = tigerEyeCrackSealOxidationStage(this);
+    // Heaney & Fisher's later oxidation is a colour/Fe-state overprint of
+    // existing synchronous fabric, not another quartz-precipitation stage.
+    // The growth engine records that overprint with zero framework thickness.
+    if (oxidationStage) return 0;
+    if (crackSeal && !oxidationStage) {
+      // Miyano & Klein's lower-T amphibole-asbestos stability family.
+      // Oxygen is not a reactant in the synchronous vein-fill step.
+      if (this.temperature < 150 || this.temperature > 450) return 0;
+      if (this.fluid.pH < 7.0 || this.fluid.pH > 11.0) return 0;
+      if (this.fluid.O2 >= 0.6) return 0;
+    } else {
+      // Surface oxidation applies to the alteration model. The 5-100 C bound is a
+      // disclosed near-surface kinetic proxy, not locality thermometry.
+      if (this.temperature < 5 || this.temperature > 100) return 0;
+      if (this.fluid.pH < 5.5 || this.fluid.pH > 9.5) return 0;
+      if (this.fluid.O2 < 0.4) return 0;
+    }
     const si_f = Math.min(this.fluid.SiO2 / 400.0, 2.0);
     const fe_f = Math.min(this.fluid.Fe / 80.0, 2.0);
     let sigma = si_f * fe_f;
-    // T sweet spot 30-100°C (surface-supergene weathering of BIF)
     const T = this.temperature;
-    if (T >= 30 && T <= 100) sigma *= 1.3;
-    else if (T < 30) sigma *= Math.max(0.4, T / 30);
-    else sigma *= Math.max(0.4, 1.0 - (T - 100) / 100);
-    // pH sweet spot 6.5-8.0
+    if (crackSeal && !oxidationStage) {
+      if (T >= 200 && T <= 350) sigma *= 1.3;
+      else sigma *= 0.85;
+    } else if (T >= 30 && T <= 80) sigma *= 1.3;
+    else sigma *= 0.8;
     const pH = this.fluid.pH;
-    if (pH >= 6.5 && pH <= 8.0) sigma *= 1.2;
-    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - 7.25) * 0.3);
+    const pHCenter = crackSeal && !oxidationStage ? 9.0 : 7.25;
+    if (Math.abs(pH - pHCenter) <= 0.75) sigma *= 1.2;
+    else sigma *= Math.max(0.5, 1.0 - Math.abs(pH - pHCenter) * 0.3);
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'tigers_eye');
     return Math.max(sigma, 0);
   },
@@ -1371,7 +1458,7 @@ Object.assign(VugConditions.prototype, {
     return Math.max(sigma, 0);
   },
 
-  // v202 (2026-06-17): Thomsonite — the earliest, most-aluminous amygdule
+  // v202 (2026-06-17): Thomsonite — a low-Si, highly aluminous amygdule
   // zeolite. Ca-dominant + Na-essential-minor + high Al; the discriminator from
   // the natrolite group is a SOFT low-silica preference (not Na/Ca, not a hard
   // ceiling). See MINERAL_GATES_thomsonite.
@@ -1410,9 +1497,9 @@ Object.assign(VugConditions.prototype, {
     return Math.max(sigma, 0);
   },
 
-  // v203 (2026-06-17): Chabazite — the late, intermediate-Si amygdule zeolite.
+  // v203 (2026-06-17): Chabazite — an intermediate-Si amygdule zeolite.
   // Cation-flexible (Ca>Na>K, K NOT required); Ca-dominant chabazite-Ca is the
-  // amygdule default. Late/cool T sweet spot. See MINERAL_GATES_chabazite.
+  // amygdule default. Cool T sweet spot. See MINERAL_GATES_chabazite.
   supersaturation_chabazite() {
     const g = MINERAL_GATES_chabazite;
     if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.Al < g.fluid_min!.Al
@@ -1426,7 +1513,7 @@ Object.assign(VugConditions.prototype, {
     const al_f = Math.min(this.fluid.Al / 12.0, 2.0);
     const si_f = Math.min(this.fluid.SiO2 / 500.0, 1.5);   // intermediate Si/Al~2
     let sigma = ca_f * al_f * si_f;
-    // T sweet spot 50-110 (LATE, cool amygdule phase)
+    // T sweet spot 50-110 (cool amygdule phase; relative order is local)
     const T = this.temperature;
     if (T >= 50 && T <= 110) sigma *= 1.3;
     else if (T < 50) sigma *= Math.max(0.4, (T - 40) / 10 * 0.6 + 0.4);
@@ -1487,7 +1574,7 @@ Object.assign(VugConditions.prototype, {
   // cleft fluids. No redox gate (Ti4+ is fO2-insensitive). T sweet spot is the
   // alpine-cleft / hydrothermal band 250-450°C (late, low-T on quartz); the
   // wide [150,700] window also admits the hotter magmatic/metamorphic type at
-  // attenuated σ. Mass balance debits Ti, so a Ti-trace fluid self-limits to a
+  // attenuated σ. Growth budget debits Ti, so a Ti-trace fluid self-limits to a
   // few crystals — the correct "minor accessory" footprint.
   supersaturation_titanite() {
     const g = MINERAL_GATES_titanite;

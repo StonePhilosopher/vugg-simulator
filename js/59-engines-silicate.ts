@@ -10,7 +10,10 @@
 // Phase B8 of PROPOSAL-MODULAR-REFACTOR.
 
 function grow_quartz(crystal, conditions, step) {
-  const sigma = conditions.supersaturation_quartz();
+  const selectedPhase = conditions.silica_precipitate_phase();
+  const sigma = selectedPhase === 'quartz'
+    ? conditions.supersaturation_quartz()
+    : conditions.quartz_equilibrium_ratio();
 
   // Smoky / morion colour centres (Rossman 1994, Rev. Mineral. 29:433) —
   // Al³⁺→Si⁴⁺ substitution PLUS a natural γ-dose from the radiogenic felsic
@@ -42,11 +45,15 @@ function grow_quartz(crystal, conditions, step) {
     }
   }
 
+  // A pre-existing quartz crystal below the quartz kinetic window pauses
+  // while quartz-saturated and dissolves only against quartz equilibrium.
+  if (selectedPhase !== 'quartz' && sigma >= 1.0) return null;
+
   if (sigma < 1.0) {
     if (crystal.total_growth_um > 10) {
       crystal.dissolved = true;
       const dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.1);
-      // Phase 1e: SiO2 credit handled by applyMassBalance via MINERAL_DISSOLUTION_RATES.quartz.
+      // Phase 1e: SiO2 credit handled by applyStoichiometricGrowthBudget via MINERAL_DISSOLUTION_RATES.quartz.
 
       // Determine dissolution type
       let note;
@@ -78,6 +85,9 @@ function grow_quartz(crystal, conditions, step) {
   // suppressing mid-T growth. See vugg.py grow_quartz comment for full
   // rationale and the look-up table.
   rate *= Math.exp(-1000.0 / (conditions.temperature + 273.15)) * 8.27;
+  // A chalcedony lining remains a spatial substrate only. It does not create
+  // an unmeasured rate multiplier; saturation, temperature, and the shared
+  // reactive-silica ledger control the successor quartz growth rate.
   rate *= rng.uniform(0.7, 1.3);
 
   if (rate < 0.1) return null;
@@ -121,17 +131,6 @@ function grow_quartz(crystal, conditions, step) {
       crystal.dominant_forms = ['m{100}', 'r{101}', 'z{011} dominant'];
       if (excess > 1.0) crystal.habit = 'scepter overgrowth possible';
     }
-  } else if (polymorph === 'chalcedony') {
-    crystal.habit = 'chalcedony (microcrystalline)';
-    crystal.dominant_forms = ['fibrous aggregates', 'botryoidal'];
-    crystal.mineral_display = 'chalcedony';
-    // Chalcedony grows faster than crystalline quartz due to disordered structure
-    rate *= 1.5;
-  } else { // opal
-    crystal.habit = 'opal (amorphous silica)';
-    crystal.dominant_forms = ['botryoidal', 'colloform'];
-    crystal.mineral_display = 'opal';
-    rate *= 2.0; // amorphous precipitates fastest
   }
 
   // Dauphiné twinning: occurs during β→α quartz inversion at 573°C,
@@ -155,8 +154,8 @@ function grow_quartz(crystal, conditions, step) {
     }
   }
 
-  // Tessin habit (Tessiner Habitus) — the alpine-cleft face development: the
-  // steep rhombohedron z{011}/{h0hl} dominates the prism m{100}, giving
+  // Tessin habit (Tessiner Habitus) — the alpine-cleft face development:
+  // steep {h0-il} rhombohedra such as {40-41}/{30-31} dominate over the prism, giving
   // slender, sharply-tapered, pseudo-pyramidal terminations. Set for granite-
   // cleft α-quartz (pegmatite host + CO₂, cooler than ~360 °C). The sceptre
   // classifier (js/45) may later re-label the OVERALL habit to
@@ -168,18 +167,13 @@ function grow_quartz(crystal, conditions, step) {
     if (polymorph === 'alpha-quartz' && wc === 'pegmatite'
         && (conditions.fluid.CO3 || 0) > 15 && conditions.temperature < 360) {
       crystal.habit = 'Tessin';
-      crystal.dominant_forms = ['z{011} steep rhombohedron dominant', 'subordinate m{100} prism', 'slender tapered termination'];
+      crystal.dominant_forms = ['steep {40-41}/{30-31} rhombohedra dominant', 'subordinate m{10-10} prism', 'slender tapered termination'];
     }
   }
 
   let note = '';
   // Polymorph-specific growth notes
-  if (polymorph === 'opal') {
-    note = 'amorphous silica precipitating — colloidal deposition';
-  } else if (polymorph === 'chalcedony') {
-    note = 'chalcedony — fibrous microcrystalline growth';
-    if (excess > 1.5) note += ', rapid banding possible';
-  } else if (polymorph === 'beta-quartz') {
+  if (polymorph === 'beta-quartz') {
     note = 'β-quartz crystallizing — hexagonal bipyramids, will invert to α on cooling';
   } else if (polymorph === 'tridymite') {
     note = 'tridymite crystallizing — high-T silica polymorph, thin hexagonal plates';
@@ -270,7 +264,7 @@ function grow_feldspar(crystal, conditions, step) {
   crystal.mineral_display = polymorph;
 
   // Phase 1d: K/Na/Al/SiO2 consumption owned by the wrapper
-  // (applyMassBalance, per MINERAL_STOICHIOMETRY['feldspar']).
+  // (applyStoichiometricGrowthBudget, per MINERAL_STOICHIOMETRY['feldspar']).
   // Note: feldspar is K-only per v17 reconciliation; the K-or-Na fork
   // here was a pre-v17 artifact. Albite (Na-feldspar) has its own
   // engine + stoichiometry entry.
@@ -419,24 +413,156 @@ function grow_chrysocolla(crystal, conditions, step) {
   return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: rate, growth_rate: rate, note: color_note });
 }
 
+// SIM 246: first-class cryptocrystalline silica. Chalcedony is an aggregate
+// of length-fast microfibres (commonly quartz + moganite), not a quartz habit
+// label. Repeated accepted shells store their own silica activity and fabric;
+// basalt-cavity or strongly oscillatory stacks become genuine banded agate.
+function grow_chalcedony(crystal, conditions, step) {
+  const selectedPhase = conditions.silica_precipitate_phase();
+  const sigma = selectedPhase === 'chalcedony'
+    ? conditions.supersaturation_chalcedony()
+    : conditions.chalcedony_equilibrium_ratio();
+
+  // Metastable chalcedony-to-quartz maturation is represented as
+  // solution-mediated dissolution/reprecipitation. The negative shell returns
+  // its exact booked SiO2 inventory; quartz subsequently debits that same
+  // reservoir. No untracked solid is renamed in place.
+  if (selectedPhase === 'quartz' && crystal.total_growth_um > 0) {
+    // Inside the 100-200 C metastable overlap, an established fibrous lining
+    // can persist beside inward-growing quartz for geologic time. Re-equilibrate
+    // only above that overlap; selecting inward quartz does not erase the agate
+    // lining that supplied its substrate.
+    if (conditions.temperature <= 200) return null;
+    const d = Math.min(2.0, Math.max(0.4, crystal.total_growth_um * 0.04));
+    const zone = new GrowthZone({
+      step, temperature: conditions.temperature,
+      thickness_um: -d, growth_rate: -d,
+      dissolutionMode: 'silica_recrystallization',
+      note: `solution-mediated maturation to quartz at ${conditions.temperature.toFixed(0)}°C — chalcedony dissolves before quartz reprecipitates`,
+    });
+    zone._silica_transition = {
+      from: 'chalcedony', to: 'quartz', pathway: 'solution_mediated',
+      tracked_inventory: 'SiO2 exact booked-shell return',
+    };
+    return zone;
+  }
+
+  // An opal-forming fluid is also supersaturated with respect to chalcedony,
+  // but Ostwald's step rule gives the less ordered phase the kinetic lead.
+  // Existing chalcedony therefore persists without stealing opal's new growth.
+  if (selectedPhase === 'opal' && sigma >= 1.0) return null;
+  if (selectedPhase !== 'chalcedony' && sigma >= 1.0) return null;
+
+  if (sigma < 1.0) {
+    if (crystal.total_growth_um <= 0) return null;
+    const hfAttack = conditions.fluid.pH < 4 && conditions.fluid.F > 20;
+    // Ordinary low-T undersaturation is kinetically too slow to erase an
+    // established agate lining over one vug run. HF attack remains active;
+    // high-temperature maturation is handled by the explicit branch above.
+    if (!hfAttack && conditions.temperature <= 200) return null;
+    const d = Math.min(2.5, Math.max(0.3, crystal.total_growth_um * 0.08));
+    return new GrowthZone({
+      step, temperature: conditions.temperature,
+      thickness_um: -d, growth_rate: -d,
+      note: hfAttack
+        ? 'HF-assisted chalcedony dissolution — the microfibrous SiO2 lining is etched back'
+        : 'chalcedony undersaturation — outer microfibrous shell redissolves',
+    });
+  }
+
+  const excess = sigma - 1.0;
+  let rate = 2.6 * Math.pow(Math.max(excess, 0), 0.72);
+  const T = conditions.temperature;
+  const kinetic = T < 20 ? 0.45 + T / 50 : T <= 120 ? 1.0 : Math.max(0.55, 1.0 - (T - 120) / 220);
+  rate *= kinetic * rng.uniform(0.82, 1.18);
+  rate = Math.min(rate, 8.0);
+  if (rate < 0.1) return null;
+
+  const priorPositive = crystal.zones.filter(z => z.thickness_um > 0);
+  const priorSigma = priorPositive
+    .map(z => Number(z.silica_sigma))
+    .filter(v => Number.isFinite(v));
+  const contrast = priorSigma.length
+    ? Math.max(...priorSigma, sigma) - Math.min(...priorSigma, sigma)
+    : 0;
+  const sigmaSeries = [...priorSigma, sigma];
+  const directionalMoves = sigmaSeries.slice(1)
+    .map((value, i) => value - sigmaSeries[i])
+    .filter(delta => Math.abs(delta) >= 0.03)
+    .map(delta => Math.sign(delta));
+  let oscillationReversals = 0;
+  for (let i = 1; i < directionalMoves.length; i++) {
+    if (directionalMoves[i] !== directionalMoves[i - 1]) oscillationReversals++;
+  }
+  const layerNumber = priorPositive.length + 1;
+
+  let microfabric = 'length-fast fibrous chalcedony wall lining';
+  if (layerNumber >= 7 && contrast >= 0.18 && oscillationReversals >= 1) {
+    crystal.habit = 'banded_agate';
+    crystal.dominant_forms = ['alternating length-fast chalcedony fibre bands', 'cryptocrystalline concentric wall layers'];
+    crystal.mineral_display = 'agate (banded chalcedony)';
+    crystal._aggregation_stage = 'self-organized banded agate';
+    microfabric = 'oscillatory length-fast/normal-fibrous chalcedony band';
+  } else if (layerNumber >= 3 || excess > 0.7) {
+    crystal.habit = 'botryoidal_chalcedony';
+    crystal.dominant_forms = ['radiating fibrous spherulites', 'botryoidal cryptocrystalline crust'];
+    crystal.mineral_display = 'chalcedony';
+    crystal._aggregation_stage = 'intergrown fibrous spherulites';
+    microfabric = 'radiating fibrous spherulitic layer';
+  } else {
+    crystal.habit = 'fibrous_chalcedony_lining';
+    crystal.dominant_forms = ['length-fast microfibres normal to substrate', 'thin cryptocrystalline wall veneer'];
+    crystal.mineral_display = 'chalcedony';
+    crystal._aggregation_stage = 'wall-nucleated fibrous veneer';
+  }
+  crystal._silica_phase = 'chalcedony';
+  crystal._silica_sigma_contrast = contrast;
+  crystal._silica_oscillation_reversals = oscillationReversals;
+
+  const ironStained = conditions.fluid.Fe > 20;
+  const colorNote = ironStained ? 'iron-stained gray-red' : 'translucent blue-gray to white';
+  const zone = new GrowthZone({
+    step, temperature: T, thickness_um: rate, growth_rate: rate,
+    trace_Fe: conditions.fluid.Fe * 0.002,
+    note: `${colorNote} chalcedony — ${microfabric}; σch=${sigma.toFixed(2)}`,
+  });
+  zone.silica_sigma = sigma;
+  zone.silica_ppm = conditions.fluid.SiO2;
+  zone.microfabric = microfabric;
+  zone.layer_number = layerNumber;
+  return zone;
+}
+
 // v101 (2026-05-19): Opal SiO2·nH2O — amorphous-to-short-range-
 // ordered silica mineraloid. Forms hot-spring sinter aprons, botryoidal
 // fillings, replacement of organics (opalized wood). Diagenesis-ladder
 // flagged via crystal._diagenesis_stage for future POLYMORPH_DIAGENESIS
 // implementation (opal-A → opal-CT → opal-C → chalcedony → quartz).
 function grow_opal(crystal, conditions, step) {
+  const selectedPhase = conditions.silica_precipitate_phase();
   const sigma = conditions.supersaturation_opal();
   if (sigma < 1.0) {
     if (crystal.total_growth_um > 5 && conditions.fluid.pH < 5.0) {
-      crystal.dissolved = true;
       const d = Math.min(3.0, crystal.total_growth_um * 0.12);
       return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — opal redissolves to silicic acid` });
     }
-    if (crystal.total_growth_um > 5 && conditions.temperature > 150) {
-      // High-T diagenesis: opal recrystallizes to chalcedony/quartz
-      crystal.dissolved = true;
-      const d = Math.min(2.0, crystal.total_growth_um * 0.05);
-      return new GrowthZone({ step, temperature: conditions.temperature, thickness_um: -d, growth_rate: -d, dissolutionMode: 'diagenesis', note: `diagenesis to chalcedony/quartz > 150°C — opal-A → opal-CT → opal-C → chalcedony → quartz ladder` });
+    if (crystal.total_growth_um > 0 && (selectedPhase === 'chalcedony' || selectedPhase === 'quartz')) {
+      // Explicit solution-mediated maturation: exact booked SiO2 is returned
+      // before the selected crystalline phase spends it. Structural water is
+      // disclosed but remains outside the simulator's conserved inventories.
+      const d = Math.min(2.0, Math.max(0.4, crystal.total_growth_um * 0.05));
+      const zone = new GrowthZone({
+        step, temperature: conditions.temperature,
+        thickness_um: -d, growth_rate: -d,
+        dissolutionMode: 'silica_recrystallization',
+        note: `solution-mediated opal maturation to ${selectedPhase} — opal dissolves and returns tracked SiO2 before reprecipitation`,
+      });
+      zone._silica_transition = {
+        from: 'opal', to: selectedPhase, pathway: 'solution_mediated',
+        tracked_inventory: 'SiO2 exact booked-shell return',
+        structural_water: 'diagnostic only — no conserved H2O inventory',
+      };
+      return zone;
     }
     return null;
   }
@@ -784,7 +910,7 @@ function grow_lepidolite(crystal, conditions, step) {
   const trace_Fe = f.Fe * 0.005;
   const trace_Al = f.Al * 0.010;
 
-  // Mass balance: Li + K + Al + SiO2 + F all consumed; Mn modestly
+  // Growth budget: Li + K + Al + SiO2 + F all consumed; Mn modestly
   // sequestered in octahedral sites for the purple variety.
   f.Li = Math.max(f.Li - rate * 0.030, 0);
   f.K  = Math.max(f.K  - rate * 0.012, 0);
@@ -885,7 +1011,13 @@ function grow_spodumene(crystal, conditions, step) {
 // baseline diff. The dev hook exists for
 // tools/shigar-aqua-growth-probe.mjs to sweep K closed-loop; nothing
 // in the sim itself calls it.
-let BERYL_FAMILY_GROWTH_K = 25;
+// The accepted-zone mass ledger (SIM 239) removed engines' duplicate
+// direct fluid debits. Re-running the closed-loop Shigar probe at the new
+// accounting boundary showed K=25 producing a 13.58 mm star; K=36 restores
+// the pre-registered >=20 mm showpiece (20.55 mm) without changing either
+// Be inventory or the sigma ceiling. This is a kinetics re-calibration,
+// not a mass subsidy: the central ledger remains the sole conserved debit.
+let BERYL_FAMILY_GROWTH_K = 36;
 function setBerylFamilyGrowthK(v) { BERYL_FAMILY_GROWTH_K = +v; }
 
 function _beryl_family_habit_forms(T) {
@@ -1464,28 +1596,115 @@ function grow_chrysoprase(crystal, conditions, step) {
   });
 }
 
-// v116 (2026-05-20): Tiger's eye — chalcedony pseudomorph AFTER
-// crocidolite. The supergene oxidation of crocidolite-asbestos fiber
-// bundles, with chalcedony replacing the silicate framework while
-// Fe2+ → Fe3+ provides the gold-brown chatoyant color. Three habits
-// cover the gemstone family:
-//   chatoyant_pseudomorph (default — gold-brown classic)
-//   hawks_eye (partial oxidation — blue-grey-gold)
-//   tiger_iron (BIF context — banded hematite-jasper-tigers-eye rock)
-// Substrate: crocidolite_dissolving ONLY (the pseudomorph framework the
-// chalcedony replaces); co-present hematite bands it into the TIGER IRON
-// assemblage. No bare-wall / bare-Fe-oxide substrate — the nucleation gate
-// (js/89) requires a dissolving crocidolite crystal. rung 3, SIM 229.
+// Tiger's eye follows the player-selected literature interpretation:
+// synchronous antitaxial quartz-crocidolite crack-seal growth followed by
+// oxidation (Heaney & Fisher 2003), or alteration of an older crocidolite
+// seam during near-surface silicification/oxidation (Gutzmer et al. 2004).
 function grow_tigers_eye(crystal, conditions, step) {
+  const selectedModel = tigerEyeOriginModel(conditions);
+  if (!selectedModel) return null;
+  const pos = crystal.position || '';
+  const with_hematite = pos.includes('hematite') || pos.includes('jasper');
+  const crackSeal = pos.includes('model=antitaxial-crack-seal') ||
+    selectedModel === 'antitaxial_crack_seal';
+  const alteration = pos.includes('model=surficial-alteration') ||
+    selectedModel === 'surficial_alteration';
+  const crackSealOxidation = crackSeal && tigerEyeCrackSealOxidationStage(conditions);
+
+  if (crackSealOxidation) {
+    if (crystal.total_growth_um <= 5) return null;
+    // Crocidolite contains three ferrous Fe atoms out of five total Fe. Use
+    // that 0.6 fraction as a declared chromophore proxy for Fe already booked
+    // into the synchronous aggregate, then debit O2 for
+    // 4 FeO + O2 -> 2 Fe2O3. This changes state and colour, not SiO2 mass.
+    const bookedFe = remainingBookedInventory(crystal, 'Fe');
+    const ferrousFe = bookedFe * 0.6;
+    const previousOxidizedFe = Math.min(
+      ferrousFe,
+      Math.max(0, Number(crystal._tiger_eye_oxidation_state?.oxidized_fe_ppm_equivalent) || 0),
+    );
+    const remainingFerrousFe = Math.max(0, ferrousFe - previousOxidizedFe);
+    const oxygenRequired = remainingFerrousFe * (8.0 / 55.845);
+    const oxygenBefore = Math.max(0, Number(conditions.fluid.O2) || 0);
+    const oxygenConsumed = Math.min(oxygenBefore, oxygenRequired);
+    if (!(bookedFe > 0) || !(remainingFerrousFe > 0) || !(oxygenConsumed > 0)) return null;
+    conditions.fluid.O2 = Math.max(0, oxygenBefore - oxygenConsumed);
+    conditions.fluid.Eh = ehFromO2(conditions.fluid.O2);
+    const oxidizedThisStep = oxygenConsumed / (8.0 / 55.845);
+    const cumulativeOxidizedFe = Math.min(ferrousFe, previousOxidizedFe + oxidizedThisStep);
+    const cumulativeFraction = ferrousFe > 0 ? cumulativeOxidizedFe / ferrousFe : 0;
+    const colourState = cumulativeFraction >= 0.9
+      ? 'gold_brown_tigers_eye'
+      : cumulativeFraction >= 0.15
+        ? 'mixed_blue_gold_hawks_eye_transition'
+        : 'blue_grey_weakly_oxidized';
+    const receipt = {
+      process: 'post_growth_fe_oxidation_colour_overprint',
+      step,
+      framework_growth_um: 0,
+      booked_fe_ppm_equivalent: bookedFe,
+      assumed_ferrous_fraction: 0.6,
+      previous_oxidized_fe_ppm_equivalent: previousOxidizedFe,
+      oxidized_fe_this_step_ppm_equivalent: oxidizedThisStep,
+      oxidized_fe_ppm_equivalent: cumulativeOxidizedFe,
+      remaining_ferrous_fe_ppm_equivalent: Math.max(0, ferrousFe - cumulativeOxidizedFe),
+      oxygen_before: oxygenBefore,
+      oxygen_required: oxygenRequired,
+      oxygen_consumed: oxygenConsumed,
+      oxygen_after: conditions.fluid.O2,
+      incremental_ferrous_oxidation_fraction: remainingFerrousFe > 0
+        ? oxidizedThisStep / remainingFerrousFe : 0,
+      modeled_ferrous_oxidation_fraction: cumulativeFraction,
+      colour_state: colourState,
+      gold_brown_threshold_fraction: 0.9,
+      reaction_basis: '4 FeO + O2 -> 2 Fe2O3; Fe-state proxy only',
+    };
+    if (cumulativeFraction >= 0.9) {
+      crystal.habit = 'oxidized_crack_seal_chatoyant';
+      crystal.dominant_forms = [
+        'gold-brown chatoyant antitaxial vein',
+        'quartz columns crossed by crocidolite microfibre bands',
+        'later oxidation colours preserved crack-seal fabric',
+      ];
+    } else if (cumulativeFraction >= 0.15) {
+      crystal.habit = 'partly_oxidized_crack_seal_hawks_eye';
+      crystal.dominant_forms = [
+        'mixed blue-gold chatoyant antitaxial vein',
+        'preserved crocidolite microfibre bands',
+        'partial Fe oxidation advancing toward tiger\'s-eye colour',
+      ];
+    } else {
+      crystal.habit = 'antitaxial_crack_seal';
+      crystal.dominant_forms = [
+        'blue-grey quartz-crocidolite crack-seal vein',
+        'crocidolite microfibre bands crossing quartz columns',
+        'weak initial oxidation overprint',
+      ];
+    }
+    crystal._tiger_eye_oxidation_state = receipt;
+    const overprint = new GrowthZone({
+      step,
+      temperature: conditions.temperature,
+      thickness_um: 0,
+      growth_rate: 0,
+      note: `post-growth Fe-oxidation colour overprint; ${oxygenConsumed.toFixed(4)} O2 units booked; cumulative Fe-state fraction ${cumulativeFraction.toFixed(3)} (${colourState}); existing crack-seal framework preserved with zero new SiO2 thickness`,
+    });
+    overprint.state_overprint = 'tiger_eye_fe_oxidation_colour';
+    overprint.oxidation_receipt = receipt;
+    return overprint;
+  }
+
   const sigma = conditions.supersaturation_tigers_eye();
   if (sigma < 1.0) {
-    if (crystal.total_growth_um > 5 && conditions.fluid.pH < 4.0) {
+    if (crystal.total_growth_um > 5
+        && conditions.fluid.pH < 4.0
+        && conditions.fluid.F > 20) {
       crystal.dissolved = true;
       const d = Math.min(2.0, crystal.total_growth_um * 0.06);
       return new GrowthZone({
         step, temperature: conditions.temperature,
-        thickness_um: -d, growth_rate: -d, dissolutionMode: 'acid',
-        note: `acid dissolution (pH ${conditions.fluid.pH.toFixed(1)}) — tiger's eye chalcedony framework breaks down; Fe³⁺ released to limonite/goethite`,
+        thickness_um: -d, growth_rate: -d, dissolutionMode: 'hf',
+        note: `HF-assisted dissolution (pH ${conditions.fluid.pH.toFixed(1)}, F ${conditions.fluid.F.toFixed(0)}) — SiO2 framework inventory returned; no unbooked Fe-oxide product is asserted`,
       });
     }
     return null;
@@ -1494,26 +1713,26 @@ function grow_tigers_eye(crystal, conditions, step) {
   const rate = 2.5 * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.1) return null;
 
-  // Habit dispatch — substrate-driven primary
-  const pos = crystal.position || '';
-  const after_crocidolite = pos.includes('crocidolite');
-  const with_hematite = pos.includes('hematite') || pos.includes('jasper');
+  const oxidized = !crackSeal && (conditions.fluid.O2 >= 0.4 ||
+    conditions._scenario?.tiger_eye_stage === 'post_growth_oxidation');
 
-  if (with_hematite) {
+  if (crackSeal && oxidized) {
+    crystal.habit = 'oxidized_crack_seal_chatoyant';
+    crystal.dominant_forms = ['gold-brown chatoyant antitaxial vein', 'quartz columns crossed by crocidolite microfibre bands', 'later oxidation colours preserved crack-seal fabric'];
+  } else if (crackSeal) {
+    crystal.habit = 'antitaxial_crack_seal';
+    crystal.dominant_forms = ['blue-grey quartz-crocidolite crack-seal vein', 'crocidolite microfibre bands crossing quartz columns', 'synchronous mineral growth'];
+  } else if (alteration && with_hematite) {
     crystal.habit = 'tiger_iron';
-    crystal.dominant_forms = ['banded TIGER IRON', 'hematite-jasper-chalcedony BIF assemblage', 'centimeter-scale interlayered red-black-gold bands', 'Northern Cape SA + Hamersley WA type'];
-  } else if (after_crocidolite && excess > 1.0 && conditions.fluid.O2 > 0.6) {
-    crystal.habit = 'chatoyant_pseudomorph';
-    crystal.dominant_forms = ['gold-brown chatoyant chalcedony pseudomorph after crocidolite', 'silky cat\'s-eye effect from preserved fiber bundles', 'classic tiger\'s eye gemstone aesthetic'];
-  } else if (after_crocidolite) {
-    crystal.habit = 'hawks_eye';
-    crystal.dominant_forms = ['blue-grey-gold hawk\'s eye', 'partial oxidation — crocidolite + chalcedony coexist', 'precursor stage to full tiger\'s eye'];
+    crystal.dominant_forms = ['banded tiger iron', 'hematite-jasper-quartz BIF assemblage', 'interlayered red-black-gold bands'];
+  } else if (alteration) {
+    crystal.habit = 'alteration_preserved_fabric';
+    crystal.dominant_forms = ['gold-brown chatoyant alteration band', 'quartz preserving the orientation of older crocidolite seams', 'near-surface silicification and oxidation fabric'];
   } else {
-    // Defensive fallback — unreachable since v229: nucleation now requires a
-    // dissolving crocidolite substrate, so every tiger's eye carries
-    // 'crocidolite' in its position. Kept only for replayed pre-v229 saves.
-    crystal.habit = 'chatoyant_pseudomorph';
-    crystal.dominant_forms = ['gold-brown chatoyant chalcedony', 'fibrous internal texture', 'classic gemstone aesthetic'];
+    // Defensive compatibility path for saves authored before the origin-model
+    // selector existed. New nucleation always stamps a named model.
+    crystal.habit = 'alteration_preserved_fabric';
+    crystal.dominant_forms = ['gold-brown chatoyant quartz', 'fibrous internal texture', 'legacy save interpreted as alteration fabric'];
   }
 
   // Color dispatch — Fe-oxidation state drives color
@@ -1526,7 +1745,7 @@ function grow_tigers_eye(crystal, conditions, step) {
     color_note = 'mixed blue-gold (hawk\'s eye intermediate)';
   }
 
-  // Mass-balance — pure SiO2 framework
+  // Growth-budget — pure SiO2 framework
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.045, 0);
   // Fe trace incorporation into chalcedony
   conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.005, 0);
@@ -1535,7 +1754,7 @@ function grow_tigers_eye(crystal, conditions, step) {
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe: conditions.fluid.Fe * 0.01,
-    note: `tiger's eye ${crystal.habit}, ${color_note}; microcrystalline SiO2 (chalcedony) with preserved crocidolite fiber pseudomorph, H 7, chatoyant silky luster`,
+    note: `tiger's eye ${crystal.habit}, ${color_note}; SiO2-rich chatoyant quartz-crocidolite aggregate following the named ${crackSeal ? 'antitaxial crack-seal' : 'surficial-alteration'} model; H 7, silky luster`,
   });
 }
 
@@ -1590,7 +1809,7 @@ function grow_chrysotile(crystal, conditions, step) {
     crystal.dominant_forms = ['platy texture (lizardite-similar)', 'low-relief serpentine coating'];
   }
 
-  // Mass-balance debits — Mg3 Si2
+  // Growth-budget debits — Mg3 Si2
   conditions.fluid.Mg = Math.max(conditions.fluid.Mg - rate * 0.040, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.030, 0);
 
@@ -1656,7 +1875,7 @@ function grow_pectolite(crystal, conditions, step) {
   else if (pos.includes('vesuvianite')) substrate_flavor = ' with vesuvianite — late rodingite assemblage';
   else if (pos.includes('calcite')) substrate_flavor = ' on calcite — late skarn/amygdale';
 
-  // Mass-balance debits — Na Ca2 Si3
+  // Growth-budget debits — Na Ca2 Si3
   conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.012, 0);
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.045, 0);
@@ -1716,7 +1935,7 @@ function grow_wollastonite(crystal, conditions, step) {
   else if (pos.includes('diopside')) substrate_flavor = ' with diopside — rodingite Ca-Mg-Si trio';
   else if (pos.includes('calcite')) substrate_flavor = ' on calcite — skarn limestone contact';
 
-  // Mass-balance debits — Ca Si (simplest stoichiometry)
+  // Growth-budget debits — Ca Si (simplest stoichiometry)
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.030, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.050, 0);
 
@@ -1791,7 +2010,7 @@ function grow_prehnite(crystal, conditions, step) {
   else if (pos.includes('grossular')) substrate_flavor = ' with grossular — rodingite Ca-Al silicate suite';
   else if (pos.includes('diopside')) substrate_flavor = ' with diopside — rodingite contact';
 
-  // Mass-balance debits — Ca2 Al2 Si3
+  // Growth-budget debits — Ca2 Al2 Si3
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.025, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.018, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.040, 0);
@@ -1860,7 +2079,7 @@ function grow_stilbite(crystal, conditions, step) {
   else if (pos.includes('heulandite')) substrate_flavor = ' intergrown with heulandite';
   else if (pos.includes('apophyllite')) substrate_flavor = ' with apophyllite';
 
-  // Mass-balance debits — Na Ca4 Al9 Si27 (silica-heavy framework)
+  // Growth-budget debits — Na Ca4 Al9 Si27 (silica-heavy framework)
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.018, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.012, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.050, 0);
@@ -1928,7 +2147,7 @@ function grow_heulandite(crystal, conditions, step) {
   else if (pos.includes('stilbite')) substrate_flavor = ' intergrown with stilbite';
   else if (pos.includes('apophyllite')) substrate_flavor = ' with apophyllite';
 
-  // Mass-balance debits — Ca Al2 Si7 (very silica-heavy framework)
+  // Growth-budget debits — Ca Al2 Si7 (very silica-heavy framework)
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.014, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.055, 0);
@@ -1990,7 +2209,7 @@ function grow_scolecite(crystal, conditions, step) {
   else if (pos.includes('mesolite')) substrate_flavor = ' intergrown with mesolite';
   else if (pos.includes('calcite')) substrate_flavor = ' on calcite';
 
-  // Mass-balance debits — Ca Al2 Si3 (low-Si framework)
+  // Growth-budget debits — Ca Al2 Si3 (low-Si framework)
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.016, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.030, 0);
@@ -2050,7 +2269,7 @@ function grow_mesolite(crystal, conditions, step) {
   else if (pos.includes('scolecite')) substrate_flavor = ' intergrown with scolecite';
   else if (pos.includes('calcite')) substrate_flavor = ' on calcite';
 
-  // Mass-balance debits — Na2 Ca2 Al6 Si9 (low-Si framework, Na+Ca)
+  // Growth-budget debits — Na2 Ca2 Al6 Si9 (low-Si framework, Na+Ca)
   conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.012, 0);
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.012, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.018, 0);
@@ -2119,7 +2338,7 @@ function grow_thomsonite(crystal, conditions, step) {
   else if (pos.includes('chalcedony') || pos.includes('quartz')) substrate_flavor = ' on the silica veneer';
   else if (pos.includes('wall')) substrate_flavor = ' direct on the smectite-lined vug wall';
 
-  // Mass-balance debits — Na Ca2 Al5 Si5 (most-aluminous, low-Si framework)
+  // Growth-budget debits — Na Ca2 Al5 Si5 (most-aluminous, low-Si framework)
   conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.008, 0);
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.016, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.020, 0);
@@ -2183,7 +2402,7 @@ function grow_chabazite(crystal, conditions, step) {
   else if (pos.includes('scolecite') || pos.includes('mesolite') || pos.includes('thomsonite')) substrate_flavor = ' perched on the earlier fibrous zeolites';
   else if (pos.includes('calcite')) substrate_flavor = ' with calcite';
 
-  // Mass-balance debits — Ca Al2 Si4 (per-Ca, intermediate-Si framework)
+  // Growth-budget debits — Ca Al2 Si4 (per-Ca, intermediate-Si framework)
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.016, 0);
   conditions.fluid.Na = Math.max(conditions.fluid.Na - rate * 0.004, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.014, 0);
@@ -2256,7 +2475,7 @@ function grow_epidote(crystal, conditions, step) {
   else if (pos.includes('magnetite')) substrate_flavor = ' on magnetite — the Fe-oxide redox partner';
   else if (pos.includes('calcite')) substrate_flavor = ' with calcite — late cooling stage';
 
-  // Mass-balance debits — Ca2 (Al,Fe)3 Si3
+  // Growth-budget debits — Ca2 (Al,Fe)3 Si3
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.022, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.012, 0);
   conditions.fluid.Fe = Math.max(conditions.fluid.Fe - rate * 0.010, 0);
@@ -2276,7 +2495,7 @@ function grow_epidote(crystal, conditions, step) {
 // ∥{001} (low excess). COLOR is a trace-cation dispatch (NOT a σ gate, per the
 // vugg-add-mineral trace pattern): Cr → the prized chrome-green alpine variety;
 // Fe-rich → brown-black common type; else honey-yellow with the adamantine
-// "fire" (high dispersion). Mass balance CaTiSiO5 (1:1:1) — Ti debit self-limits.
+// "fire" (high dispersion). Growth budget CaTiSiO5 (1:1:1) — Ti debit self-limits.
 function grow_titanite(crystal, conditions, step) {
   const sigma = conditions.supersaturation_titanite();
   if (sigma < 1.0) {
@@ -2321,7 +2540,7 @@ function grow_titanite(crystal, conditions, step) {
   else if (pos.includes('epidote')) substrate_flavor = ' with epidote — the Ca-Ti-Fe cleft suite';
   else if (pos.includes('calcite')) substrate_flavor = ' with calcite — late cooling stage';
 
-  // Mass-balance debits — CaTiSiO5 (1:1:1); Ti is trace so this self-limits
+  // Growth-budget debits — CaTiSiO5 (1:1:1); Ti is trace so this self-limits
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.015, 0);
   conditions.fluid.Ti = Math.max(conditions.fluid.Ti - rate * 0.015, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.020, 0);
@@ -2404,7 +2623,7 @@ function grow_grossular(crystal, conditions, step) {
   else if (pos.includes('wollastonite')) substrate_flavor = ' with wollastonite — late skarn assemblage';
   else if (pos.includes('calcite')) substrate_flavor = ' on calcite — skarn limestone contact';
 
-  // Mass-balance debits — Ca3 Al2 Si3
+  // Growth-budget debits — Ca3 Al2 Si3
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.035, 0);
   conditions.fluid.Al = Math.max(conditions.fluid.Al - rate * 0.020, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.040, 0);
@@ -2487,7 +2706,7 @@ function grow_diopside(crystal, conditions, step) {
   else if (pos.includes('serpentine') || pos.includes('chrysotile')) substrate_flavor = ' in serpentinite matrix — Jeffrey rodingite host';
   else if (pos.includes('calcite')) substrate_flavor = ' on calcite — skarn limestone contact';
 
-  // Mass-balance debits — Ca Mg Si2
+  // Growth-budget debits — Ca Mg Si2
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.025, 0);
   conditions.fluid.Mg = Math.max(conditions.fluid.Mg - rate * 0.015, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.045, 0);
@@ -2586,7 +2805,7 @@ function grow_vesuvianite(crystal, conditions, step) {
   else if (pos.includes('calcite')) substrate_flavor = ' on calcite — skarn / rodingite contact';
   else if (pos.includes('magnetite')) substrate_flavor = ' on magnetite — rodingite Fe-Mg oxide substrate';
 
-  // Mass-balance debits — formula Ca10(Mg,Fe)2Al4(SiO4)5(Si2O7)2(OH)4
+  // Growth-budget debits — formula Ca10(Mg,Fe)2Al4(SiO4)5(Si2O7)2(OH)4
   // ~ Ca10 Mg2 Al4 Si9 — debit proportionally
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.040, 0);
   conditions.fluid.Mg = Math.max(conditions.fluid.Mg - rate * 0.012, 0);
@@ -2696,7 +2915,7 @@ function grow_datolite(crystal, conditions, step) {
   else if (on_native_copper) substrate_flavor = ' with native copper — Keweenaw signature';
   else substrate_flavor = '';
 
-  // Mass-balance debits — formula CaB(SiO4)(OH)
+  // Growth-budget debits — formula CaB(SiO4)(OH)
   conditions.fluid.Ca = Math.max(conditions.fluid.Ca - rate * 0.020, 0);
   conditions.fluid.B = Math.max(conditions.fluid.B - rate * 0.005, 0);
   conditions.fluid.SiO2 = Math.max(conditions.fluid.SiO2 - rate * 0.030, 0);
