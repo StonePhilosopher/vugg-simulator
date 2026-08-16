@@ -7,6 +7,33 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🧪 THE INTEGRATION REVIEW (2026-08-15) — **third hostile review, inheritance lens — `PROPOSAL-HOSTILE-REVIEW-SIM267-INTEGRATION-2026-08-15.md`**
+>
+> Reviewed the GTP `aaa-roadmap-completion` branch (SIM 237→267, 42 commits) as it merged onto
+> canonical main. Asked not "is the science right" but "can this be inherited": does it merge, does
+> it build cold, does it prove what it says. Merge was clean — 6 markdown conflicts, ZERO source
+> conflicts; the 1339-commit divergence is an artefact of a re-merged parallel history.
+>
+> **F1 HIGH ✅ FIXED (`fd8b3f0`)** — four gates red at the tip (release/science/localities/evidence);
+> the SIM 267 evidence bake never finished. `ci` chains with `&&` so the last three were never
+> reached, and **`audit:evidence` is invoked by neither `ci` nor `pretest`**. Rebake moved only 4
+> receipt files — all 82 claim cards, 41 strips and 3 baselines came back BYTE-IDENTICAL, so this
+> was bookkeeping, not drift; no SIM bump owed.
+> **F2 HIGH ✅ FIXED (`ebe41bd`)** — a `#!` on line 1 of four tools that tests import made those test
+> files unparseable under vite's SSR transform; the suite aborted at file 20/232, hiding three more
+> (including the runner's own tests).
+> **F3 MEDIUM (documented)** — producer digests hash the producer's import closure, so a rebake must
+> follow source edits, never precede them.
+> **F4 LOW, OPEN** — `tigerEyeOriginModel()` defaults to `surficial_alteration` when a scenario omits
+> the key: an undeclared future BIF scenario silently inherits a hypothesis. One-line fix (`return
+> null`); costs a full ~3.5 h rebake cycle because it touches `js/`, so batch it.
+>
+> Saves conceded: baselines strictly additive (285→347, none deleted/modified), `baseline-diff.mjs`
+> untouched, citations verified real (Heaney & Fisher 2003; Post 1999; Turner & Post 1988; Golden/
+> Chen/Dixon 1986; Johnson OGS OF3-2019), tiger's eye obeys rung 3 with a paired hypothesis test,
+> 8,070 assertions and no hollow tests. Verified green at `fd8b3f0`: CI 12/12 + 232-file
+> UNINTERRUPTED PASS + `science-evidence` 126 artifacts. **NOT PUSHED — awaits boss order.**
+
 > ## 🔬 THE WISE REVIEW (2026-08-05) — **second hostile review, pegmatite/mineralogy lens — `PROPOSAL-HOSTILE-REVIEW-WISE-2026-08-05.md`, fix ladder AWAITS BOSS ORDER**
 >
 > 23 findings (7 high, all hand-verified at `8d4b664`), aimed where the July review didn't
