@@ -7,15 +7,30 @@ declare const CavityWaterAppearance: any;
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const BUNDLE_START_MARKER = '// === BUILD:bundle:start ===';
+const BUNDLE_END_MARKER = '// === BUILD:bundle:end ===';
+const bundleStart = html.indexOf(BUNDLE_START_MARKER);
+const bundleEnd = html.indexOf(BUNDLE_END_MARKER, bundleStart);
+if (bundleStart < 0 || bundleEnd < bundleStart) {
+  throw new Error('generated index bundle markers are missing');
+}
+// DOM assertions exercise authored controls and styles, not the generated
+// multi-megabyte executable. Parsing the complete embedded file-data bundle
+// for every assertion retained redundant script-text DOMs and could exhaust
+// the bounded Vitest worker without adding coverage.
+const htmlShell = html.slice(0, bundleStart)
+  + `${BUNDLE_START_MARKER}\n${BUNDLE_END_MARKER}`
+  + html.slice(bundleEnd + BUNDLE_END_MARKER.length);
 const menuSource = fs.readFileSync(path.join(ROOT, 'js', '94-ui-menu.ts'), 'utf8');
 
 afterEach(() => {
   document.getElementById('creative-control-fixture')?.remove();
+  (globalThis as any).fortressReset?.();
 });
 
 describe('Creative chemistry control contract', () => {
   it('registers every visible setup chemistry slider exactly once', () => {
-    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const parsed = new DOMParser().parseFromString(htmlShell, 'text/html');
     const visibleIds = Array.from(
       parsed.querySelectorAll('#creative-chemistry-controls input[type="range"][id^="f-"]'),
     )
@@ -77,7 +92,7 @@ describe('Creative chemistry control contract', () => {
   });
 
   it('uses the same complete fluid registry for setup and live editing', () => {
-    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const parsed = new DOMParser().parseFromString(htmlShell, 'text/html');
     const registry = (globalThis as any).CREATIVE_CHEMISTRY_CONTROLS;
     const expectedLiveIds = Object.values(registry)
       .map((entry: any) => `broth-${entry.liveKey}`)
@@ -150,7 +165,7 @@ describe('Creative chemistry control contract', () => {
   });
 
   it('pairs every Creative setup slider with an exact physical-value input', () => {
-    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const parsed = new DOMParser().parseFromString(htmlShell, 'text/html');
     const fixture = document.createElement('div');
     fixture.id = 'creative-control-fixture';
     fixture.appendChild(document.importNode(parsed.getElementById('fortress-setup')!, true));
@@ -175,7 +190,7 @@ describe('Creative chemistry control contract', () => {
   });
 
   it('search recognizes full chemistry names and hides non-matches', () => {
-    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const parsed = new DOMParser().parseFromString(htmlShell, 'text/html');
     const fixture = document.createElement('div');
     fixture.id = 'creative-control-fixture';
     fixture.appendChild(document.importNode(parsed.getElementById('fortress-setup')!, true));
@@ -189,7 +204,7 @@ describe('Creative chemistry control contract', () => {
   });
 
   it('edits every live chemistry range exactly without old live-range clipping', () => {
-    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const parsed = new DOMParser().parseFromString(htmlShell, 'text/html');
     const fixture = document.createElement('div');
     fixture.id = 'creative-control-fixture';
     const sourceBody = parsed.getElementById('broth-body')!;
@@ -242,7 +257,7 @@ describe('Creative chemistry control contract', () => {
   });
 
   it('reconfigures every live control copy when stale or duplicate DOM survives a rerender', () => {
-    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const parsed = new DOMParser().parseFromString(htmlShell, 'text/html');
     const fixture = document.createElement('div');
     fixture.id = 'creative-control-fixture';
     const sourceBody = parsed.getElementById('broth-body')!;
@@ -266,7 +281,7 @@ describe('Creative chemistry control contract', () => {
   });
 
   it('represents every authored starting value without HTML range clipping', () => {
-    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const parsed = new DOMParser().parseFromString(htmlShell, 'text/html');
     const registry = (globalThis as any).CREATIVE_CHEMISTRY_CONTROLS;
     const scenarios = (globalThis as any).SCENARIOS;
 
@@ -471,7 +486,7 @@ describe('Creative chemistry control contract', () => {
   });
 
   it('does not expose the retired fixed-DIC carbon-solver-off path', () => {
-    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const parsed = new DOMParser().parseFromString(htmlShell, 'text/html');
     expect(parsed.getElementById('f-carbon-boundary')).toBeNull();
     expect(parsed.getElementById('broth-carbon_boundary')).toBeNull();
     expect(html).not.toContain('open (legacy if solver off)');
@@ -688,7 +703,7 @@ describe('Creative chemistry control contract', () => {
 
 describe('responsive and accessible shell contracts', () => {
   it('makes every title mode card a native keyboard-operable control', () => {
-    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const parsed = new DOMParser().parseFromString(htmlShell, 'text/html');
     const cards = parsed.querySelectorAll('.title-modes button.title-mode-card');
     expect(cards).toHaveLength(6);
     for (const card of Array.from(cards)) {
@@ -700,7 +715,7 @@ describe('responsive and accessible shell contracts', () => {
   });
 
   it('keeps all Begin choices inside the New Game panel', () => {
-    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const parsed = new DOMParser().parseFromString(htmlShell, 'text/html');
     const panel = parsed.getElementById('new-game-panel');
     expect(panel).not.toBeNull();
     expect(panel?.textContent).toContain('Or jump straight in.');
@@ -709,7 +724,7 @@ describe('responsive and accessible shell contracts', () => {
   });
 
   it('gives symbol-only topology controls accessible names', () => {
-    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const parsed = new DOMParser().parseFromString(htmlShell, 'text/html');
     const symbolButtons = parsed.querySelectorAll(
       '.topo-zoom-ctrls button, .topo-slice-ctrls button, .topo-camera-ctrls button, #topo-replay-btn, #topo-replay-bar button',
     );
@@ -720,7 +735,7 @@ describe('responsive and accessible shell contracts', () => {
   });
 
   it('associates every Creative setup input with its visible label', () => {
-    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const parsed = new DOMParser().parseFromString(htmlShell, 'text/html');
     const controls = parsed.querySelectorAll('#fortress-setup input[id], #fortress-setup select[id]');
     expect(controls.length).toBeGreaterThan(0);
     for (const control of Array.from(controls)) {

@@ -6,6 +6,10 @@
   `index.html` or `dist/`. Run `npm run build` to regenerate them.
 - Serve the repository root with the Node-only server:
   `node tools/serve-local.mjs 8765`.
+- The generated `index.html` also embeds the canonical scenario, mineral,
+  thermo, and narrative inputs so double-clicking it remains a complete
+  offline `file://` build. HTTP serving remains the preferred development
+  path because browser diagnostics and cache behavior are clearer there.
 - Python launchers and Python test paths are retired and must not be restored.
 - Simulation tests default to seed 42. Scenario cavities use the authored
   `shape_seed` in `data/scenarios.json5`.

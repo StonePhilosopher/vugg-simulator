@@ -49,6 +49,18 @@ and the exact-execution evidence receipt.
   deployment reviews remain human work. They are not certified by this local
   tranche.
 
+### Fixed
+
+- Restored the generated single-file build's offline `file://` contract. The
+  exact scenario, mineral, thermo, and narrative inputs are now embedded with
+  a deterministic receipt, so the Simulation selector, Scenarios picker, Zen
+  selector, tutorials, and canonical science data load when `index.html` is
+  opened directly as well as when the repository is served over HTTP.
+- Kept the full Creative-control regression inside its existing memory budget
+  by parsing the authored HTML shell rather than twelve redundant copies of
+  the generated executable, and by releasing each completed Creative run.
+  All 34 control, physics, responsive, and accessibility assertions remain.
+
 ## SIM 267 — repeatable cavity seal lifecycle
 
 - Re-armed `_vug_sealed` after authenticated dissolution creates more than 5%

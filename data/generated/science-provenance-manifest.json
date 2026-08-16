@@ -126,9 +126,9 @@
   },
   "science_evidence": {
     "path": "archive/evidence/v267.json",
-    "sha256": "6f42fd88e729d48e65c4bc97b51255e47c41331c64fd58171a4eda2091f6e91b",
+    "sha256": "14e38bc60e6281d55646cbb8bb73b02cebc81a08e49f98f8c871291db606aa40",
     "schema": "vugg-science-evidence-receipt-v1",
-    "browser_bundle_sha256": "2aea477cf088c0ddeed9fe56b378e6e29d4fb63859eff435635f773c0d4fa07b",
+    "browser_bundle_sha256": "d35e2aa27b2a87e0384ea110ca1b823a10227298457783b0a5edf8fde0a9bc5f",
     "execution_set_sha256": "ab14a3a1c4648ae711f89831680d6aff65e52c4973f1f128fc6dd12a52ef1d8d",
     "node_runtime": {
       "schema": "vugg-evidence-node-runtime-v1",
@@ -141,13 +141,13 @@
     },
     "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
     "producer_contracts": {
-      "seed42-baseline": "bd6cf5af84ac09e4b6c8e58fdbabee4def0f2e9492c4f20b31cfa6fe736e3e00",
-      "strip-archive": "a03d69d9f8fe1e87e564ad6c68492ec350f6d5105c3f0f028573964e8646d9af",
-      "locality-frequency": "af66e0e38b71f48fb1d907f53a8af2e2c2b750672c2de5b173c4c3caabbd323e",
-      "strip-digest": "00a598855a0bda783058088dd1a565a952ef00d5340286f2d730d7ae67736f1f",
+      "seed42-baseline": "238c87a3693bcda2294babe3f9ec2675708bfcf629f1bb2b5dce63c0f3002a69",
+      "strip-archive": "2fad53aab98b002009bfc5278d64fc0491028fa79b9307f7b4dddae0ac807b7d",
+      "locality-frequency": "5ba63d68aea192d8739315f7a7b7b9aa09cb74e3b75381ba82416926ed1ff825",
+      "strip-digest": "b02aa62e4cd4bc11ba22f81db546f6c3f60e28fb428666d2fe3285dd854b301f",
       "claim-cards": "f495947195c7314327bb138c2334b28934dfd01ca9c8dc8fa33bac131f425064",
-      "science-provenance": "e215b1d6b742a7a522807db28b9918c928e2009bb210750151882d2d174a1df9",
-      "science-receipt": "0688d96b5aaefb1e19ef3bae5bd6a9e7ddf4f8778b9d64ab5b4ccbd7bca56632"
+      "science-provenance": "03dd44069978e65016bc5eff15601dbfaf6b05e0ee887a76589ee48f95970b4e",
+      "science-receipt": "65cf87420c1aead3274cb045e9cc36b04e4111f8457d2b65ea38469a82105f31"
     },
     "artifact_count": 126
   },
