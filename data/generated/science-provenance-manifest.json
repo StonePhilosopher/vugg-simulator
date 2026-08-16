@@ -44,7 +44,7 @@
     "reproducibility": {
       "verifier": {
         "path": "tools/check-pressure-grid.mjs",
-        "sha256": "692542e29634d4acd8b1ea5042e661494ea507bda699e4a006326563f02f0760"
+        "sha256": "b2b67e68eee378cac65f6f07d7695570adbf115776d714f16e11697aaff7d30f"
       },
       "command": "npm run check:pressure-grid",
       "runtime": "Node.js/TypeScript only"
@@ -126,10 +126,10 @@
   },
   "science_evidence": {
     "path": "archive/evidence/v267.json",
-    "sha256": "6f42fd88e729d48e65c4bc97b51255e47c41331c64fd58171a4eda2091f6e91b",
+    "sha256": "e88a9c017913c05e3b54fba901046c55aab0b9756adcdf2c36325aa00fecdfbf",
     "schema": "vugg-science-evidence-receipt-v1",
-    "browser_bundle_sha256": "2aea477cf088c0ddeed9fe56b378e6e29d4fb63859eff435635f773c0d4fa07b",
-    "execution_set_sha256": "ab14a3a1c4648ae711f89831680d6aff65e52c4973f1f128fc6dd12a52ef1d8d",
+    "browser_bundle_sha256": "abc6112e1c5593707995bb5c6267c7d1dbf2d9c3d388bbfa80ee9303e45a388b",
+    "execution_set_sha256": "71dcfd4fdf27b7f731eec3c2a7d6a8a238470a778e9312f6bcfd37d2d937f37d",
     "node_runtime": {
       "schema": "vugg-evidence-node-runtime-v1",
       "node": "24.15.0",
@@ -141,13 +141,13 @@
     },
     "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
     "producer_contracts": {
-      "seed42-baseline": "bd6cf5af84ac09e4b6c8e58fdbabee4def0f2e9492c4f20b31cfa6fe736e3e00",
-      "strip-archive": "a03d69d9f8fe1e87e564ad6c68492ec350f6d5105c3f0f028573964e8646d9af",
-      "locality-frequency": "af66e0e38b71f48fb1d907f53a8af2e2c2b750672c2de5b173c4c3caabbd323e",
-      "strip-digest": "00a598855a0bda783058088dd1a565a952ef00d5340286f2d730d7ae67736f1f",
-      "claim-cards": "f495947195c7314327bb138c2334b28934dfd01ca9c8dc8fa33bac131f425064",
-      "science-provenance": "e215b1d6b742a7a522807db28b9918c928e2009bb210750151882d2d174a1df9",
-      "science-receipt": "0688d96b5aaefb1e19ef3bae5bd6a9e7ddf4f8778b9d64ab5b4ccbd7bca56632"
+      "seed42-baseline": "6e6626227ed9ab5499be9e11a8e841efce449030c68357412135ba3b302b3985",
+      "strip-archive": "dca294fcf2e50cb7e4c7eb2dff9ed01b4fad94c91b007d9e5c143c26255885b2",
+      "locality-frequency": "e4fc101db8f13ff79eb9012d66a15ad3f9631657e3b33545a7a880fbe6ca53bf",
+      "strip-digest": "76eda5ed2833f78a4a0cb6b4b4520639c11427741c9efb7d83a36bcf5ee64c7e",
+      "claim-cards": "485a5bbeaa8b269494f090dfb2e002d72884c6bdf04f22fe6d3360cb285f6cfc",
+      "science-provenance": "d63efc0b4aa2bc7ed7fa39e666ff29a99bcce2e5b3ca509766c1e99bdb3408cc",
+      "science-receipt": "6f9d9ebb70186501911a54e893f51b31bceffe9e2f89ab11dc96ae7e8a8cfbe6"
     },
     "artifact_count": 126
   },
