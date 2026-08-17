@@ -191,6 +191,15 @@
   .note { font-size: 12.5px; color: var(--ink-soft); margin: 0; }
   .desc { font-size: 13px; color: var(--ink-soft); margin: 0 0 13px; max-width: 46ch; }
 
+  .key { border: 1px solid var(--rule); background: var(--surface); padding: 11px 13px; margin: 12px 0 0; }
+  .key h3 { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase;
+            color: var(--ink-faint); margin: 0 0 7px; font-weight: 400; }
+  .keyrow { display: grid; grid-template-columns: 40px auto; gap: 3px 10px; align-items: center;
+            font-family: var(--mono); font-size: 10.5px; margin-bottom: 4px; }
+  .keyrow:last-child { margin-bottom: 0; }
+  .keyrow b { font-weight: 600; }
+  .keyrow i { font-style: normal; color: var(--ink-soft); }
+  .keyrow em { font-style: normal; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
   .legend { display: flex; flex-wrap: wrap; gap: 5px 16px; margin: 14px 0 0; font-family: var(--mono); font-size: 10px; color: var(--ink-soft); }
   .legend span { display: inline-flex; align-items: center; gap: 5px; }
   .swatch { width: 9px; height: 9px; display: inline-block; }
@@ -218,6 +227,10 @@
     <button id="k-either" aria-pressed="true">either</button>
     <button id="k-presence" aria-pressed="true">presence</button>
     <button id="reset">clear</button>
+  </div>
+  <div class="key" id="keyline">
+    <h3>What a chord means &mdash; the state the gate demands of the earlier crystal</h3>
+    <div id="keyrows"></div>
   </div>
   <div class="legend" id="legend"></div>
 
@@ -488,6 +501,24 @@ document.getElementById('tally').innerHTML = [
   [c.substrate, 'substrate'], [c.replaces, 'replaces'],
   [FLOW.nodes.length - new Set(FLOW.edges.flatMap(e => [e.from, e.to])).size, 'unlinked'],
 ].map(([n, l]) => `<div><b>${n}</b><span>${l}</span></div>`).join('');
+/* The plate has always drawn four chord styles and two selection colours; it had
+   no key, which made the dashed and dotted ones unreadable. */
+const CHORD_KEY = [
+  ['substrate', 'hub', false, 'must be PRESENT', 'the precursor stands in the vug and the new crystal grows on it'],
+  ['replaces', 'feeds', false, 'must be DISSOLVING', 'the precursor breaks down and hands over its ingredients'],
+  ['either', 'hub', '3 2', 'present OR dissolving', 'the gate accepts the precursor in either state'],
+  ['presence', 'hub', '1 3', 'merely counted', 'the gate counts the precursor without testing its state'],
+];
+const chordSample = (token, dash) => `<svg width="40" height="10" aria-hidden="true">`
+  + `<line x1="1" y1="5" x2="39" y2="5" stroke="var(--${token})" stroke-width="1.6"`
+  + (dash ? ` stroke-dasharray="${dash}"` : '') + ' /></svg>';
+document.getElementById('keyrows').innerHTML = CHORD_KEY
+  .map(([kind, token, dash, short, gloss]) => `<div class="keyrow">${chordSample(token, dash)}
+    <span><b>${kind}</b> &mdash; <i>${short}</i>: ${gloss} <em>(${FLOW.counts[kind]})</em></span></div>`).join('')
+  + `<div class="keyrow">${chordSample('needs', false)}
+    <span><b>on selection</b> &mdash; <i>needs</i>: chords into the chosen species, the crystals it requires</span></div>`
+  + `<div class="keyrow">${chordSample('feeds', false)}
+    <span><b>on selection</b> &mdash; <i>feeds</i>: chords out of it, the crystals it makes possible</span></div>`;
 document.getElementById('legend').innerHTML = CLASS_ORDER
   .map(([cls, ids]) => `<span><i class="swatch" style="background:${cssVar(cls)}"></i>${cls} <i style="color:var(--ink-faint);font-style:normal">${ids.length}</i></span>`)
   .join('');
