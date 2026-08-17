@@ -15,11 +15,14 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DATA = path.join(ROOT, 'data', 'generated', 'crystal-flow-tree.json');
-const TEMPLATE = path.join(ROOT, 'tools', 'crystal-flow-page.template.html');
 const MARKER = '/*__FLOW_DATA__*/null';
 
-const outFlag = process.argv.indexOf('--out');
-const OUT = path.resolve(ROOT, outFlag >= 0 ? process.argv[outFlag + 1] : 'docs/crystal-flow-tree.html');
+const flag = (name, fallback) => {
+  const i = process.argv.indexOf(name);
+  return i >= 0 ? process.argv[i + 1] : fallback;
+};
+const TEMPLATE = path.resolve(ROOT, flag('--template', 'tools/crystal-flow-page.template.html'));
+const OUT = path.resolve(ROOT, flag('--out', 'docs/crystal-flow-tree.html'));
 
 function gitDescribe() {
   try {

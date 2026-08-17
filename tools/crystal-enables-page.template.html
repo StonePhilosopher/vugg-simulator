@@ -1,0 +1,388 @@
+<title>What Enables What</title>
+<style>
+  :root {
+    --ground: #E9EBE8; --surface: #F5F7F3; --sunk: #DEE1DC;
+    --ink: #191D1A; --ink-soft: #5D6763; --ink-faint: #8A928D;
+    --rule: #C6CBC4; --rule-soft: #D6DAD3;
+    --focus: #3E6B80; --up: #2E6E8E; --down: #B4632F; --mutual: #8A5BA6;
+    --wire: #9AA39C;
+
+    --cls-silicate:#7C8FA8; --cls-sulfide:#A98D42; --cls-phosphate:#4F9280;
+    --cls-carbonate:#B08A5E; --cls-oxide:#A8635C; --cls-sulfate:#8C7FAD;
+    --cls-arsenate:#A85F8B; --cls-native:#B5912F; --cls-molybdate:#C0752A;
+    --cls-amphibole:#4E6B52; --cls-halide:#7E5BA6; --cls-hydroxide:#9A7433;
+    --cls-borate:#7C9098;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#0F1211; --surface:#161A18; --sunk:#0A0D0C;
+      --ink:#E2E7E2; --ink-soft:#98A29C; --ink-faint:#6B746F;
+      --rule:#2B322E; --rule-soft:#222825;
+      --focus:#74A6BE; --up:#6FB4D4; --down:#DE9257; --mutual:#B287D0;
+      --wire:#4A534D;
+      --cls-silicate:#93A6BE; --cls-sulfide:#C7A957; --cls-phosphate:#5FB29B;
+      --cls-carbonate:#CBA271; --cls-oxide:#C67C74; --cls-sulfate:#A79ACA;
+      --cls-arsenate:#C77AA6; --cls-native:#D2AC42; --cls-molybdate:#DE8F40;
+      --cls-amphibole:#6F9074; --cls-halide:#9A78C4; --cls-hydroxide:#BC9142;
+      --cls-borate:#94A9B2;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0F1211; --surface:#161A18; --sunk:#0A0D0C;
+    --ink:#E2E7E2; --ink-soft:#98A29C; --ink-faint:#6B746F;
+    --rule:#2B322E; --rule-soft:#222825;
+    --focus:#74A6BE; --up:#6FB4D4; --down:#DE9257; --mutual:#B287D0;
+    --wire:#4A534D;
+    --cls-silicate:#93A6BE; --cls-sulfide:#C7A957; --cls-phosphate:#5FB29B;
+    --cls-carbonate:#CBA271; --cls-oxide:#C67C74; --cls-sulfate:#A79ACA;
+    --cls-arsenate:#C77AA6; --cls-native:#D2AC42; --cls-molybdate:#DE8F40;
+    --cls-amphibole:#6F9074; --cls-halide:#9A78C4; --cls-hydroxide:#BC9142;
+    --cls-borate:#94A9B2;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--ground); color: var(--ink); font-family: var(--serif); line-height:1.55; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 40px 24px 72px; }
+  header { border-bottom: 1px solid var(--rule); padding-bottom: 18px; margin-bottom: 20px; }
+  .eyebrow { font-family: var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 10px; }
+  h1 { font-size: clamp(26px,4vw,40px); line-height:1.1; margin:0 0 10px; font-weight:600; text-wrap:balance; }
+  .standfirst { margin:0; max-width:66ch; color:var(--ink-soft); font-size:15.5px; }
+
+  .tally { display:flex; flex-wrap:wrap; margin:20px 0 0; border:1px solid var(--rule); background:var(--surface); }
+  .tally div { flex:1 1 104px; padding:10px 13px; border-right:1px solid var(--rule-soft); }
+  .tally div:last-child { border-right:0; }
+  .tally b { display:block; font-family:var(--mono); font-size:19px; font-variant-numeric:tabular-nums; font-weight:600; }
+  .tally span { font-family:var(--mono); font-size:9.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-faint); }
+
+  .controls { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:22px 0 10px; }
+  input[type="search"] { font-family:var(--mono); font-size:12.5px; padding:7px 10px; min-width:200px; background:var(--surface); color:var(--ink); border:1px solid var(--rule); border-radius:0; }
+  button { font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; padding:7px 11px; background:var(--surface); color:var(--ink-soft); border:1px solid var(--rule); cursor:pointer; border-radius:0; }
+  button:hover { color:var(--ink); }
+  button.root { border-color: currentColor; }
+  input:focus-visible, button:focus-visible, .n:focus-visible { outline:2px solid var(--focus); outline-offset:1px; }
+  .hint { font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); }
+
+  .chartbox { border:1px solid var(--rule); background:var(--surface); overflow-x:auto; }
+  svg { display:block; height:auto; }
+
+  .lane { fill: none; stroke: var(--rule-soft); stroke-width:1; }
+  .lanelabel { font-family:var(--mono); font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; fill:var(--ink-faint); }
+
+  .w { fill:none; stroke:var(--wire); stroke-width:.7; opacity:.30; }
+  .w.mut { stroke:var(--mutual); stroke-dasharray:3 2; opacity:.55; }
+  svg.sel .w { opacity:.06; }
+  svg.sel .w.down { stroke:var(--down); stroke-width:1.4; opacity:.95; }
+  svg.sel .w.up { stroke:var(--up); stroke-width:1.4; opacity:.95; }
+
+  .n { cursor:pointer; }
+  .n rect { fill: var(--surface); stroke: var(--rule); stroke-width:.8; }
+  .n .bar { stroke:none; }
+  .n text { font-family:var(--mono); font-size:8.2px; fill:var(--ink-soft); dominant-baseline:middle; }
+  svg.sel .n rect { opacity:.25; }
+  svg.sel .n text { opacity:.25; }
+  svg.sel .n.on rect { opacity:1; }
+  svg.sel .n.on text { opacity:1; fill:var(--ink); }
+  .n.pick rect { stroke:var(--ink); stroke-width:1.6; }
+  .n.hit rect { stroke:var(--focus); stroke-width:1.6; }
+
+  .stage { display:grid; grid-template-columns:minmax(0,1fr) 292px; gap:24px; align-items:start; }
+  @media (max-width:920px){ .stage { grid-template-columns:minmax(0,1fr); } }
+  aside { border:1px solid var(--rule); background:var(--surface); padding:15px 16px; }
+  aside h2 { font-size:17px; margin:0 0 2px; font-weight:600; }
+  .formula { font-family:var(--mono); font-size:12px; color:var(--ink-soft); margin:0 0 10px; }
+  .chip { display:inline-block; font-family:var(--mono); font-size:9.5px; letter-spacing:.09em; text-transform:uppercase; padding:2px 7px; border:1px solid currentColor; margin:0 0 12px; }
+  .rel h3 { font-family:var(--mono); font-size:9.5px; letter-spacing:.11em; text-transform:uppercase; margin:0 0 5px; padding-bottom:3px; border-bottom:1px solid var(--rule-soft); }
+  .rel h3.up { color:var(--up); } .rel h3.down { color:var(--down); }
+  .rel ul { list-style:none; margin:0 0 13px; padding:0; font-family:var(--mono); font-size:11px; }
+  .rel li { padding:1.5px 0; }
+  .rel li button { all:unset; cursor:pointer; font-family:var(--mono); font-size:11px; border-bottom:1px dotted var(--rule); }
+  .rel li button:hover { color:var(--focus); }
+  .rel li i { color:var(--ink-faint); font-style:normal; font-size:9.5px; }
+  .desc { font-size:13px; color:var(--ink-soft); margin:0 0 12px; }
+  .big { font-family:var(--mono); font-size:26px; font-weight:600; font-variant-numeric:tabular-nums; margin:0; }
+  .biglabel { font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 12px; }
+
+  .legend { display:flex; flex-wrap:wrap; gap:5px 16px; margin:10px 0 0; font-family:var(--mono); font-size:10px; color:var(--ink-soft); }
+  .legend span { display:inline-flex; align-items:center; gap:5px; }
+  .swatch { width:9px; height:9px; display:inline-block; }
+  footer { margin-top:36px; border-top:1px solid var(--rule); padding-top:16px; }
+  footer p { font-size:12.5px; color:var(--ink-soft); max-width:76ch; margin:0 0 9px; }
+  code { font-family:var(--mono); font-size:11.5px; background:var(--sunk); padding:1px 4px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow" id="stamp">Vugg Simulator</p>
+    <h1>What enables what</h1>
+    <p class="standfirst">Read left to right. A species can only appear once something in the column before it is
+      already there &mdash; either standing in the vug as a substrate, or dissolving and handing over its ingredients.
+      Five species start the whole cascade, because they need no other crystal at all.</p>
+    <div class="tally" id="tally"></div>
+  </header>
+
+  <div class="controls">
+    <input type="search" id="search" placeholder="find a species&hellip;" aria-label="Find a species" autocomplete="off" />
+    <span class="hint">or start from a root:</span>
+    <span id="roots"></span>
+    <button id="reset">clear</button>
+  </div>
+
+  <div class="stage">
+    <div>
+      <div class="chartbox"><svg id="chart" role="img"
+        aria-label="Left-to-right flow chart of which mineral species enable which others"></svg></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <aside id="panel"></aside>
+  </div>
+
+  <footer>
+    <p><b>What an arrow means.</b> It is a gate condition in the nucleation engine, not a guess about paragenesis.
+      A solid wire means the source must be <em>present</em> (substrate) or <em>dissolving</em> (replacement) before
+      the target can nucleate. Dashed violet means the two enable <em>each other</em> &mdash; five real mutual pairs
+      exist, and they are drawn as they are rather than cut to force a tidy chart.</p>
+    <p><b>Columns are dependency depth</b>, computed as the longest path from a root. A species sits in column
+      <i>n</i> because the deepest chain reaching it is <i>n</i> steps long &mdash; so a column is a floor, not a
+      schedule. Nothing here says two species in one column grow at the same time.</p>
+    <p><b>The 28 species not shown</b> take part in no crystal-to-crystal gate at all: they answer to broth chemistry,
+      temperature and redox alone. Absence from this chart is not absence from the simulator.</p>
+    <p id="prov"></p>
+  </footer>
+</div>
+
+<script>
+const FLOW = /*__FLOW_DATA__*/null;
+const NODE = new Map(FLOW.nodes.map(n => [n.id, n]));
+const pretty = id => id.replace(/_/g, ' ');
+const esc = v => String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const cssVar = c => `var(--cls-${c})`;
+
+/* ---------- graph ---------- */
+const out = new Map(), inn = new Map();
+const touch = (m, k, v) => { if (!m.has(k)) m.set(k, new Set()); m.get(k).add(v); };
+for (const e of FLOW.edges) { touch(out, e.from, e.to); touch(inn, e.to, e.from); }
+const involved = new Set(FLOW.edges.flatMap(e => [e.from, e.to]));
+const kids = id => [...(out.get(id) || [])];
+const dads = id => [...(inn.get(id) || [])];
+
+/* Mutual pairs are real: two species that each gate the other. Find them
+   honestly instead of silently deleting one direction to force a clean DAG. */
+const MUTUAL = new Set();
+for (const e of FLOW.edges) if ((out.get(e.to) || new Set()).has(e.from)) MUTUAL.add(`${e.from}>${e.to}`);
+
+/* Longest-path layering over the acyclic part. */
+const acyclic = e => !MUTUAL.has(`${e.from}>${e.to}`) || e.from < e.to;
+const dagOut = new Map();
+for (const e of FLOW.edges) {
+  if (MUTUAL.has(`${e.from}>${e.to}`) && !acyclic(e)) continue;
+  touch(dagOut, e.from, e.to);
+}
+const layer = new Map([...involved].map(id => [id, 0]));
+for (let pass = 0; pass < involved.size; pass++) {
+  let moved = false;
+  for (const f of involved) for (const t of (dagOut.get(f) || [])) {
+    if (layer.get(t) < layer.get(f) + 1) { layer.set(t, layer.get(f) + 1); moved = true; }
+  }
+  if (!moved) break;
+}
+const depth = Math.max(...layer.values());
+const lanes = Array.from({ length: depth + 1 }, () => []);
+for (const id of involved) lanes[layer.get(id)].push(id);
+for (const lane of lanes) lane.sort((a, b) => (NODE.get(a).class).localeCompare(NODE.get(b).class) || a.localeCompare(b));
+
+/* Barycentre sweeps: order each column by the mean position of its neighbours,
+   which is what stops 365 wires from reading as a hairball. */
+const orderOf = new Map();
+const reindex = () => lanes.forEach(l => l.forEach((id, i) => orderOf.set(id, i)));
+reindex();
+const mean = (id, side) => {
+  const nb = (side === 'up' ? dads(id) : kids(id)).filter(x => orderOf.has(x));
+  if (!nb.length) return orderOf.get(id);
+  return nb.reduce((s, x) => s + orderOf.get(x), 0) / nb.length;
+};
+for (let sweep = 0; sweep < 14; sweep++) {
+  for (let l = 1; l <= depth; l++) {
+    const key = new Map(lanes[l].map(id => [id, mean(id, 'up')]));
+    lanes[l].sort((a, b) => key.get(a) - key.get(b)); reindex();
+  }
+  for (let l = depth - 1; l >= 0; l--) {
+    const key = new Map(lanes[l].map(id => [id, mean(id, 'down')]));
+    lanes[l].sort((a, b) => key.get(a) - key.get(b)); reindex();
+  }
+}
+
+/* ---------- geometry ---------- */
+const BOX_W = 86, BOX_H = 15, ROW = 20, COL = 132, PAD_X = 26, PAD_TOP = 40, PAD_BOT = 22;
+const widest = Math.max(...lanes.map(l => l.length));
+const W = PAD_X * 2 + depth * COL + BOX_W;
+const H = PAD_TOP + widest * ROW + PAD_BOT;
+const at = new Map();
+lanes.forEach((lane, l) => {
+  const top = PAD_TOP + (widest - lane.length) * ROW / 2;
+  lane.forEach((id, i) => at.set(id, { x: PAD_X + l * COL, y: top + i * ROW, l }));
+});
+
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('chart');
+svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+svg.setAttribute('width', W);
+const mk = (t, a) => { const el = document.createElementNS(NS, t); for (const k in a) el.setAttribute(k, a[k]); return el; };
+
+/* lane headers */
+const laneG = mk('g', {});
+lanes.forEach((lane, l) => {
+  const x = PAD_X + l * COL;
+  const t = mk('text', { class: 'lanelabel', x, y: 18 });
+  t.textContent = l === 0 ? 'needs nothing' : `step ${l}`;
+  laneG.appendChild(t);
+  const c = mk('text', { class: 'lanelabel', x, y: 29, opacity: '.7' });
+  c.textContent = `${lane.length}`;
+  laneG.appendChild(c);
+});
+svg.appendChild(laneG);
+
+/* wires */
+const wireG = mk('g', {});
+const wires = [];
+for (const e of FLOW.edges) {
+  const a = at.get(e.from), b = at.get(e.to);
+  if (!a || !b) continue;
+  const mut = MUTUAL.has(`${e.from}>${e.to}`);
+  const x1 = a.x + BOX_W, y1 = a.y + BOX_H / 2, x2 = b.x, y2 = b.y + BOX_H / 2;
+  let d;
+  if (x2 >= x1) {
+    const dx = Math.max(26, (x2 - x1) * 0.5);
+    d = `M${x1},${y1}C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
+  } else {
+    // a wire that runs backwards: bow it clear of the boxes it passes
+    const lift = 12 + Math.abs(y2 - y1) * 0.25;
+    d = `M${a.x},${y1}C${a.x - 40},${y1 - lift} ${x2 + BOX_W + 40},${y2 - lift} ${x2 + BOX_W},${y2}`;
+  }
+  const p = mk('path', { class: `w${mut ? ' mut' : ''}`, d });
+  wireG.appendChild(p);
+  wires.push({ from: e.from, to: e.to, kind: e.kind, mut, el: p });
+}
+svg.appendChild(wireG);
+
+/* boxes */
+const boxG = mk('g', {});
+const boxEl = new Map();
+for (const [id, p] of at) {
+  const n = NODE.get(id);
+  const g = mk('g', { class: 'n', tabindex: '0', role: 'button' });
+  g.appendChild(mk('title', {})).textContent = `${pretty(id)} - ${n.class}`;
+  g.appendChild(mk('rect', { x: p.x, y: p.y, width: BOX_W, height: BOX_H }));
+  g.appendChild(mk('rect', { class: 'bar', x: p.x, y: p.y, width: 2.5, height: BOX_H, fill: cssVar(n.class) }));
+  const t = mk('text', { x: p.x + 6, y: p.y + BOX_H / 2 + 0.5 });
+  t.textContent = pretty(id);
+  g.appendChild(t);
+  g.addEventListener('mouseenter', () => show(id));
+  g.addEventListener('mouseleave', () => { if (picked) show(picked, true); else clearSel(); });
+  g.addEventListener('click', () => pick(id));
+  g.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); pick(id); } });
+  boxG.appendChild(g);
+  boxEl.set(id, g);
+}
+svg.appendChild(boxG);
+
+/* ---------- cascade ---------- */
+function walk(id, dir) {
+  const seen = new Set(), stack = [id];
+  while (stack.length) {
+    const v = stack.pop();
+    for (const w of (dir === 'down' ? kids(v) : dads(v))) if (!seen.has(w)) { seen.add(w); stack.push(w); }
+  }
+  seen.delete(id);
+  return seen;
+}
+let picked = null;
+function show(id, isPick) {
+  const down = walk(id, 'down'), up = walk(id, 'up');
+  const live = new Set([id, ...down, ...up]);
+  svg.classList.add('sel');
+  for (const w of wires) {
+    w.el.classList.remove('down', 'up');
+    const dOK = (w.from === id || down.has(w.from)) && down.has(w.to);
+    const uOK = (w.to === id || up.has(w.to)) && up.has(w.from);
+    if (dOK) w.el.classList.add('down'); else if (uOK) w.el.classList.add('up');
+  }
+  for (const [mid, g] of boxEl) {
+    g.classList.toggle('on', live.has(mid));
+    g.classList.toggle('pick', mid === id);
+  }
+  panel.innerHTML = card(id, down, up);
+}
+function pick(id) { picked = id; show(id, true); }
+function clearSel() {
+  svg.classList.remove('sel');
+  for (const w of wires) w.el.classList.remove('down', 'up');
+  for (const g of boxEl.values()) g.classList.remove('on', 'pick');
+  panel.innerHTML = resting();
+}
+
+/* ---------- panel ---------- */
+const panel = document.getElementById('panel');
+const ROOTS = lanes[0].slice();
+function resting() {
+  const rank = [...involved].map(id => [id, walk(id, 'down').size])
+    .sort((a, b) => b[1] - a[1]).slice(0, 8);
+  return `<h2>The cascade</h2>
+    <p class="desc">Hover a box to light its whole chain &mdash; everything upstream that had to exist first, and
+      everything downstream it makes possible. Click to pin.</p>
+    <div class="rel"><h3 class="down">Longest reach</h3><ul>${
+      rank.map(([id, n]) => `<li><button data-go="${id}">${pretty(id)}</button> <i>enables ${n}</i></li>`).join('')
+    }</ul></div>
+    <p class="desc">Two species carry most of the catalogue on their backs. Neither needs another crystal to start.</p>`;
+}
+function card(id, down, up) {
+  const n = NODE.get(id);
+  const direct = kids(id), needs = dads(id);
+  const li = (arr) => arr.length
+    ? `<ul>${arr.sort().map(x => `<li><button data-go="${x}">${pretty(x)}</button>${
+        MUTUAL.has(`${id}>${x}`) || MUTUAL.has(`${x}>${id}`) ? ' <i>mutual</i>' : ''}</li>`).join('')}</ul>`
+    : `<ul><li><i>none</i></li></ul>`;
+  return `<h2>${pretty(id)}</h2>
+    <p class="formula">${esc(n.formula)}</p>
+    <p class="chip" style="color:${cssVar(n.class)}">${esc(n.class)}</p>
+    <p class="big">${down.size}</p><p class="biglabel">species it enables, in total</p>
+    <div class="rel">
+      <h3 class="down">Enables directly &middot; ${direct.length}</h3>${li(direct)}
+      <h3 class="up">Needs first &middot; ${needs.length}</h3>${li(needs)}
+    </div>
+    <p class="desc">${up.size} species must be possible before it; it opens the way for ${down.size}.</p>`;
+}
+panel.addEventListener('click', ev => { const g = ev.target.closest('[data-go]'); if (g) pick(g.dataset.go); });
+
+/* ---------- chrome ---------- */
+document.getElementById('roots').innerHTML = ROOTS
+  .map(id => `<button class="root" data-go="${id}" style="color:${cssVar(NODE.get(id).class)}">${pretty(id)}</button>`).join(' ');
+document.getElementById('roots').addEventListener('click', ev => { const g = ev.target.closest('[data-go]'); if (g) pick(g.dataset.go); });
+document.getElementById('reset').addEventListener('click', () => { picked = null; clearSel(); search.value = ''; mark(''); });
+const search = document.getElementById('search');
+const mark = q => { const t = q.trim().toLowerCase().replace(/ /g, '_');
+  for (const [id, g] of boxEl) g.classList.toggle('hit', !!t && id.includes(t)); };
+search.addEventListener('input', () => mark(search.value));
+search.addEventListener('keydown', ev => {
+  if (ev.key !== 'Enter') return;
+  const t = search.value.trim().toLowerCase().replace(/ /g, '_');
+  const f = [...at.keys()].find(id => id.includes(t));
+  if (f) pick(f);
+});
+svg.addEventListener('click', ev => { if (!ev.target.closest('.n')) { picked = null; clearSel(); } });
+
+const mutualPairs = new Set([...MUTUAL].map(k => k.split('>').sort().join('/')));
+document.getElementById('tally').innerHTML = [
+  [involved.size, 'in the chain'], [ROOTS.length, 'need nothing'], [depth, 'steps deep'],
+  [FLOW.edges.length, 'arrows'], [mutualPairs.size, 'mutual pairs'],
+  [FLOW.nodes.length - involved.size, 'unlinked'],
+].map(([n, l]) => `<div><b>${n}</b><span>${l}</span></div>`).join('');
+const seenClasses = [...new Set([...involved].map(id => NODE.get(id).class))].sort();
+document.getElementById('legend').innerHTML = seenClasses
+  .map(c => `<span><i class="swatch" style="background:${cssVar(c)}"></i>${c}</span>`).join('');
+document.getElementById('prov').textContent = FLOW._provenance || '';
+document.getElementById('stamp').textContent = FLOW._stamp || 'Vugg Simulator';
+clearSel();
+</script>
