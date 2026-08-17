@@ -521,6 +521,7 @@ function sulfurReducedFraction(fluid: any, T: number): number {
 function sulfideAvailablePpm(fluid: any, T: number): number {
   if (!fluid || typeof fluid.S !== 'number') return 0;
   if (fluid.sulfurPoolsExplicit) return Math.max(0, Number(fluid.S_sulfide) || 0);
+  if (fluid.sulfateInherited) return 0;
   return fluid.S * sulfurReducedFraction(fluid, T);
 }
 

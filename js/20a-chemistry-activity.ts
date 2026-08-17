@@ -36,10 +36,9 @@
 //     migration in each supersaturation_<mineral>. Phase 2b.
 //
 // Conventions / known simplifications:
-//   - S is treated as SO₄²⁻ (charge -2) by default; the v17 model
-//     conflates sulfide and sulfate into one fluid field. Phase 4 (Eh)
-//     splits this. For now, sulfides see the wrong charge for their
-//     anion contribution to Q; this is a known calibration handle.
+//   - Legacy one-pool S is treated as SO₄²⁻ (charge -2). Explicit fluids
+//     carry separate S_sulfide/S_sulfate/S_elemental reservoirs; the total-S
+//     observer is excluded from ionic strength to prevent double counting.
 //   - Fe is treated as Fe²⁺ (charge +2). Same Phase 4 reframe — the
 //     Fe²⁺/Fe³⁺ couple becomes explicit.
 //   - As is treated as AsO₄³⁻ (oxidizing arsenate) by default; reducing

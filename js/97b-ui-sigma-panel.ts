@@ -359,6 +359,12 @@ function _formationAvailableAmount(name: string, species: string, c: any): numbe
   if (species === 'As' && spec?.class === 'arsenate' && typeof arsenateAvailablePpm === 'function') {
     try { return arsenateAvailablePpm(f); } catch (_e) { /* raw fallback below */ }
   }
+  if (species === 'S' && spec?.class === 'sulfate' && typeof sulfateAvailablePpm === 'function') {
+    try { return sulfateAvailablePpm(f, c?.temperature); } catch (_e) { /* raw fallback below */ }
+  }
+  if (species === 'S' && spec?.class === 'sulfide' && typeof sulfideAvailablePpm === 'function') {
+    try { return sulfideAvailablePpm(f, c?.temperature); } catch (_e) { /* raw fallback below */ }
+  }
   const raw = f[species];
   return (typeof raw === 'number' && Number.isFinite(raw)) ? raw : 0;
 }
@@ -926,15 +932,18 @@ function _buildMineralFormationExplanation(
     }
   }
   const capacities = stoich ? Object.entries(stoich).map(([species, coefficient]) => {
-    const raw = species === 'SiO2' && typeof c.fluid.reactiveSilicaPpm === 'function'
+    const reservoirSpecies = typeof stoichiometricReservoirSpecies === 'function'
+      ? stoichiometricReservoirSpecies(name, species, c.fluid)
+      : species;
+    const raw = reservoirSpecies === 'SiO2' && typeof c.fluid.reactiveSilicaPpm === 'function'
       ? c.fluid.reactiveSilicaPpm()
-      : Number(c.fluid[species]);
+      : Number(c.fluid[reservoirSpecies]);
     const available = Number.isFinite(raw) ? Math.max(0, raw) : 0;
     const demandPerUm = typeof stoichiometricBudgetDebitPpmPerUm === 'function'
-      ? stoichiometricBudgetDebitPpmPerUm(species, Number(coefficient))
+      ? stoichiometricBudgetDebitPpmPerUm(reservoirSpecies, Number(coefficient))
       : 0;
     return {
-      species,
+      species: reservoirSpecies,
       available,
       demandPerUm,
       capacityUm: demandPerUm > 0 ? available / demandPerUm : Infinity,

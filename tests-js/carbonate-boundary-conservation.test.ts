@@ -557,3 +557,50 @@ describe('sabkha conserved open-boundary integration', () => {
     expect(state.transactions.some((tx: any) => tx.ok === false)).toBe(false);
   }, 300_000);
 });
+
+describe('SCI-01 carbonate boundary edge cases', () => {
+  it('uses the solved closed-boundary pCO2 for uncertainty flags', () => {
+    const conditions = inertOpenBoundaryConditions((config: any) => ({
+      ...config,
+      mode: 'closed',
+      target_pCO2_bar: 5,
+    }));
+    const sim = new VugSimulator(conditions, []);
+    sim.run_step();
+    expect(sim._carbonateBoundaryState.targetPCO2Bar).toBe(5);
+    expect(sim._carbonateBoundaryState.lastSolvedPCO2Bar).toBeLessThan(1);
+    expect(sim._carbonateBoundaryState.uncertainties).not.toContain('gas_nonideality_missing');
+  });
+
+  it('honors an explicit zero pure-CO2 charge without importing the default', () => {
+    const fluid = new FluidChemistry({ CO3: 500, pH: 7.2, salinity: 0 });
+    const state = createCarbonateBoundaryState(fluid, 25, { headspace_L_per_kg_water: 1 });
+    const before = state.lastDICMolKg + state.headspaceCO2MolKg;
+    const context = { fluid, temperature: 25, _carbonateBoundaryState: state };
+    const narrative = EVENT_REGISTRY.co2_charge(context, { carbon_mol_per_kg: 0 });
+    const after = state.lastDICMolKg + state.headspaceCO2MolKg;
+
+    expect(state.transactions.at(-1)).toMatchObject({
+      ok: true,
+      kind: 'charge',
+      boundaryImportMolKg: 0,
+    });
+    expect(state.boundaryImportMolKg).toBe(0);
+    expect(after).toBeCloseTo(before, 12);
+    expect(narrative).toContain('0.000 mmol C/kg');
+  });
+
+  it('labels a reverse-direction degas solve as carbon import rather than venting', () => {
+    const fluid = new FluidChemistry({ CO3: 50, pH: 8.5, salinity: 0 });
+    const state = createCarbonateBoundaryState(fluid, 25, { headspace_L_per_kg_water: 1 });
+    const context = { fluid, temperature: 25, _carbonateBoundaryState: state };
+    const narrative = EVENT_REGISTRY.co2_degas(context, { target_pCO2_bar: 1 });
+    const tx = state.transactions.at(-1);
+
+    expect(tx.boundaryDeltaMolKg).toBeGreaterThan(0);
+    expect(state.boundaryImportMolKg).toBeGreaterThan(0);
+    expect(narrative).toContain('charging rather than venting');
+    expect(narrative).toContain('imports');
+    expect(narrative).not.toContain('system exports');
+  });
+});

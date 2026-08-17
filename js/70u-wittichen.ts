@@ -49,9 +49,10 @@ function event_wittichen_hydrocarbon_influx(c) {
 }
 
 function event_wittichen_meteoric_sulfate(c) {
-  // S +27 (not the +37 first tried): 40 ppm sulfidized ALL the native
-  // silver to acanthite in one stage; 30 leaves the conversion partial,
-  // which is the hand-specimen truth (acanthite-coated native silver).
+  // S +27 (not the +37 first tried): this is an oxidized meteoric sulfate
+  // charge for the documented barite gangue. It must not be treated as a
+  // reduced-sulfur source for acanthite, proustite, or realgar. Those phases
+  // require a separately authored sulfide-generating pathway.
   c.fluid.S = Math.min(30, c.fluid.S + 27);
   // S1 (fluid.S sulfate/sulfide split, 2026-07-23): this S IS oxidized meteoric SO₄²⁻ —
   // flag the fluid so the sulfate class reads it in full. Without this, the split partitions
@@ -65,7 +66,7 @@ function event_wittichen_meteoric_sulfate(c) {
   // can't starve the barite stage.
   c.fluid.Ba = Math.max(c.fluid.Ba, 70);
   c.temperature = Math.min(c.temperature, 170);
-  return `Meteoric water reaches the vein — oxidized sulfate arrives (S ${c.fluid.S.toFixed(0)} ppm, T ${c.temperature.toFixed(0)}°C). The barite stage opens; the arsenide stage is over; the silver begins to tarnish.`;
+  return `Meteoric water reaches the vein — oxidized sulfate arrives (S ${c.fluid.S.toFixed(0)} ppm, T ${c.temperature.toFixed(0)}°C). The barite stage opens; the arsenide stage is over. Native silver remains unsulfidized unless an independent reduced-sulfur source exists.`;
 }
 
 function event_wittichen_carbonate_gangue(c) {

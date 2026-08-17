@@ -133,7 +133,8 @@ Object.assign(VugConditions.prototype, {
     if (this.fluid.pH > 7.0) sigma *= Math.max(0.2, 1.0 - 0.25 * (this.fluid.pH - 7.0));
     if (this.fluid.pH < 5.0) sigma *= Math.max(0.3, 1.0 - 0.3 * (5.0 - this.fluid.pH));
     if (this.fluid.CO3 > 100) sigma *= Math.max(0.3, 1.0 - 0.005 * (this.fluid.CO3 - 100));
-    if (this.fluid.S > 100) sigma *= Math.max(0.4, 1.0 - 0.003 * (this.fluid.S - 100));
+    const sulfatePpm = sulfateAvailablePpm(this.fluid, this.temperature);
+    if (sulfatePpm > 100) sigma *= Math.max(0.4, 1.0 - 0.003 * (sulfatePpm - 100));
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'atacamite');
     return Math.max(sigma, 0);
   },

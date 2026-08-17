@@ -277,14 +277,14 @@ const MINERAL_GATES_enargite: MineralGates = {
 
 Object.assign(VugConditions.prototype, {
   supersaturation_sphalerite() {
-  if (this.fluid.Zn < 10 || this.fluid.S < 10) return 0;
+  if (this.fluid.Zn < 10 || sulfideAvailablePpm(this.fluid, this.temperature) < 10) return 0;
   // v199: sulfide redox gate — ZnS can't survive oxidation (the last sibling of
   // galena's v13 O2-gate omission; redox-gate census b81cf7d). Shippable now that
   // the spurious mottramite Zn-minimum gate (38-supersat-phosphate) was removed:
   // before, gating sphalerite drained Zn to 0 at ~half the seeds and falsely
   // killed mottramite via that bug (98→49); post-fix mottramite holds (98→84).
   if (!sulfideRedoxAnoxic(this.fluid, PRIMARY_SULFIDE_CEILING_O2)) return 0;
-  const product = (this.fluid.Zn / 100.0) * (this.fluid.S / 100.0);
+  const product = (this.fluid.Zn / 100.0) * (sulfideAvailablePpm(this.fluid, this.temperature) / 100.0);
   // v228 (rung 2): single T-decay branch. The pre-v228 accelerated decay
   // above 95°C existed only "so wurtzite wins" — a polymorph handoff with no
   // thermodynamic basis (inversion is ~1020°C, Scott & Barnes 1972). Result
@@ -312,13 +312,13 @@ Object.assign(VugConditions.prototype, {
   // failed verification at re-check (2026-07-14, rung-2 research pass) —
   // see research/arcs/research-broth-ratio-sphalerite-wurtzite.md correction
   // appendix.
-  if (this.fluid.Zn < 10 || this.fluid.S < 10) return 0;
+  if (this.fluid.Zn < 10 || sulfideAvailablePpm(this.fluid, this.temperature) < 10) return 0;
   // v199: sulfide redox gate (see supersaturation_sphalerite) — the
   // metastable branch is still a sulfide environment; anoxic required.
   if (!sulfideRedoxAnoxic(this.fluid, PRIMARY_SULFIDE_CEILING_O2)) return 0;
   const g_wz = MINERAL_GATES_wurtzite;
   if (this.temperature > g_wz.T_max!) return 0;
-  const product = (this.fluid.Zn / 100.0) * (this.fluid.S / 100.0);
+  const product = (this.fluid.Zn / 100.0) * (sulfideAvailablePpm(this.fluid, this.temperature) / 100.0);
   // Metastable kinetic-trap conditions — all three required.
   if (this.fluid.pH >= g_wz.pH_max!) return 0;
   if (product < 1.0) return 0;
@@ -327,9 +327,9 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_pyrite() {
-  if (this.fluid.Fe < 5 || this.fluid.S < 10) return 0;
+  if (this.fluid.Fe < 5 || sulfideAvailablePpm(this.fluid, this.temperature) < 10) return 0;
   if (!sulfideRedoxAnoxic(this.fluid, PRIMARY_SULFIDE_CEILING_O2)) return 0;
-  const product = (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
+  const product = (this.fluid.Fe / 50.0) * (sulfideAvailablePpm(this.fluid, this.temperature) / 80.0);
   // v68: effectiveTemperature is now an identity pass-through after the
   // Mo-flux artifact was removed (canonical 5ecbb42). Kept for forward
   // compat with the Python mirror.
@@ -345,20 +345,20 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_marcasite() {
   // Orthorhombic FeS2 dimorph of pyrite. pH<5 AND T<240 hard gates.
-  if (this.fluid.Fe < 5 || this.fluid.S < 10) return 0;
+  if (this.fluid.Fe < 5 || sulfideAvailablePpm(this.fluid, this.temperature) < 10) return 0;
   if (!sulfideRedoxAnoxic(this.fluid, PRIMARY_SULFIDE_CEILING_O2)) return 0;
   if (this.fluid.pH >= 5.0) return 0;
   if (this.temperature > 240) return 0;
-  const product = (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
+  const product = (this.fluid.Fe / 50.0) * (sulfideAvailablePpm(this.fluid, this.temperature) / 80.0);
   const pH_factor = Math.min(1.4, (5.0 - this.fluid.pH) / 1.2);
   const T_factor = this.temperature < 150 ? 1.2 : 0.6;
   return product * pH_factor * T_factor * sulfideRedoxLinearFactor(this.fluid, 1.5);
 },
 
   supersaturation_chalcopyrite() {
-  if (this.fluid.Cu < 10 || this.fluid.Fe < 5 || this.fluid.S < 15) return 0;
+  if (this.fluid.Cu < 10 || this.fluid.Fe < 5 || sulfideAvailablePpm(this.fluid, this.temperature) < 15) return 0;
   if (!sulfideRedoxAnoxic(this.fluid, PRIMARY_SULFIDE_CEILING_O2)) return 0;
-  const product = (this.fluid.Cu / 80.0) * (this.fluid.Fe / 50.0) * (this.fluid.S / 80.0);
+  const product = (this.fluid.Cu / 80.0) * (this.fluid.Fe / 50.0) * (sulfideAvailablePpm(this.fluid, this.temperature) / 80.0);
   // v68: effectiveTemperature is identity after Mo-flux removal (5ecbb42).
   const eT = this.effectiveTemperature;
   // Chalcopyrite: main porphyry window 300-500°C, ~90% deposits before 400°C (Seo et al. 2012)
@@ -375,9 +375,9 @@ Object.assign(VugConditions.prototype, {
   // v13: reconciled to Python — pre-v13 had no O2 gate, allowing the
   // sulfide to form under oxidizing conditions (a clear physics bug,
   // surfaced by tools/supersat_drift_audit.py). Now matches vugg.py.
-  if (this.fluid.Pb < 5 || this.fluid.S < 10) return 0;
+  if (this.fluid.Pb < 5 || sulfideAvailablePpm(this.fluid, this.temperature) < 10) return 0;
   if (!sulfideRedoxAnoxic(this.fluid, PRIMARY_SULFIDE_CEILING_O2)) return 0;  // sulfides can't survive oxidation
-  let sigma = (this.fluid.Pb / 50.0) * (this.fluid.S / 80.0) * sulfideRedoxLinearFactor(this.fluid, 1.5);
+  let sigma = (this.fluid.Pb / 50.0) * (sulfideAvailablePpm(this.fluid, this.temperature) / 80.0) * sulfideRedoxLinearFactor(this.fluid, 1.5);
   // v68: effectiveTemperature is identity after Mo-flux removal (5ecbb42).
   // Pre-v68 the Mo-flux widened the galena T window; that was a
   // simulation artifact with no geological basis.
@@ -401,7 +401,7 @@ Object.assign(VugConditions.prototype, {
   supersaturation_molybdenite() {
   // v13: reconciled to Python (which agent-api already matched). Pre-v13
   // had no O2 gate, allowing the sulfide to form under oxidizing conditions.
-  if (this.fluid.Mo < 3 || this.fluid.S < 10) return 0;
+  if (this.fluid.Mo < 3 || sulfideAvailablePpm(this.fluid, this.temperature) < 10) return 0;
   // rung-4d (SIM 233): bespoke 1.2 (= Eh ≤ +252 mV) → the primary ceiling.
   // MoS₂ is a PRIMARY hypogene sulfide — THE porphyry Mo mineral — that
   // rung-4b's six-species tighten missed, and its loose ceiling reproduced
@@ -411,7 +411,7 @@ Object.assign(VugConditions.prototype, {
   // Supergene Mo is Mo(VI) — wulfenite/powellite/ferrimolybdite — never
   // fresh MoS₂. Legit porphyry firings sit at +44 mV; zero collateral.
   if (!sulfideRedoxAnoxic(this.fluid, PRIMARY_SULFIDE_CEILING_O2)) return 0;
-  let sigma = (this.fluid.Mo / 15.0) * (this.fluid.S / 60.0) * sulfideRedoxLinearFactor(this.fluid, 1.5);
+  let sigma = (this.fluid.Mo / 15.0) * (sulfideAvailablePpm(this.fluid, this.temperature) / 60.0) * sulfideRedoxLinearFactor(this.fluid, 1.5);
   // v68: effectiveTemperature is identity after Mo-flux removal (5ecbb42).
   const eT = this.effectiveTemperature;
   if (eT < 150) {
@@ -424,11 +424,11 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_acanthite() {
-  if (this.fluid.Ag < 0.5 || this.fluid.S < 5) return 0;
+  if (this.fluid.Ag < 0.5 || sulfideAvailablePpm(this.fluid, this.temperature) < 5) return 0;
   if (this.temperature > 173) return 0;
   if (!sulfideRedoxAnoxic(this.fluid, 0.5)) return 0;
   const ag_f = Math.min(this.fluid.Ag / 2.5, 2.5);
-  const s_f  = Math.min(this.fluid.S  / 25.0, 2.5);
+  const s_f  = Math.min(sulfideAvailablePpm(this.fluid, this.temperature)  / 25.0, 2.5);
   let sigma = ag_f * s_f;
   const T = this.temperature;
   let T_factor;
@@ -451,11 +451,11 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_argentite() {
-  if (this.fluid.Ag < 0.5 || this.fluid.S < 5) return 0;
+  if (this.fluid.Ag < 0.5 || sulfideAvailablePpm(this.fluid, this.temperature) < 5) return 0;
   if (this.temperature <= 173) return 0;
   if (!sulfideRedoxAnoxic(this.fluid, 0.5)) return 0;
   const ag_f = Math.min(this.fluid.Ag / 2.5, 2.5);
-  const s_f  = Math.min(this.fluid.S  / 25.0, 2.5);
+  const s_f  = Math.min(sulfideAvailablePpm(this.fluid, this.temperature)  / 25.0, 2.5);
   let sigma = ag_f * s_f;
   const T = this.temperature;
   let T_factor;
@@ -515,7 +515,7 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_millerite() {
-  if (this.fluid.Ni < 50 || this.fluid.S < 30) return 0;
+  if (this.fluid.Ni < 50 || sulfideAvailablePpm(this.fluid, this.temperature) < 30) return 0;
   if (!sulfideRedoxAnoxic(this.fluid, 0.6)) return 0;
   // v92 As-state split: this "high As blocks millerite" inhibition
   // gate is about As(III) competing for the Ni cation (routes to
@@ -523,7 +523,7 @@ Object.assign(VugConditions.prototype, {
   // formation, so the check reads arseniteAvailablePpm.
   if (arseniteAvailablePpm(this.fluid) > 30.0 && this.temperature > 200) return 0;
   const ni_f = Math.min(this.fluid.Ni / 80.0, 2.5);
-  const s_f  = Math.min(this.fluid.S  / 60.0, 2.5);
+  const s_f  = Math.min(sulfideAvailablePpm(this.fluid, this.temperature)  / 60.0, 2.5);
   const red_f = sulfideRedoxLinearFactor(this.fluid, 1.0, 1.5, 0.4);
   let sigma = ni_f * s_f * red_f;
   const T = this.temperature;
@@ -557,11 +557,11 @@ Object.assign(VugConditions.prototype, {
   // v92 As-state split: As(III) ppm via arseniteAvailablePpm. Cobaltite
   // is CoAsS (sulfarsenide); As is in the As(III)/As(-I) state.
   const as_iii_cob = arseniteAvailablePpm(this.fluid);
-  if (this.fluid.Co < 20 || as_iii_cob < 30 || this.fluid.S < 20) return 0;
+  if (this.fluid.Co < 20 || as_iii_cob < 30 || sulfideAvailablePpm(this.fluid, this.temperature) < 20) return 0;
   if (!sulfideRedoxAnoxic(this.fluid, 0.5)) return 0;
   const co_f = Math.min(this.fluid.Co / 25.0, 3.0);
   const as_f = Math.min(as_iii_cob / 35.0, 3.0);
-  const s_f  = Math.min(this.fluid.S  / 25.0, 3.0);
+  const s_f  = Math.min(sulfideAvailablePpm(this.fluid, this.temperature)  / 25.0, 3.0);
   const red_f = sulfideRedoxLinearFactor(this.fluid, 1.0, 1.5, 0.4);
   let sigma = co_f * as_f * s_f * red_f;
   const T = this.temperature;
@@ -583,7 +583,7 @@ Object.assign(VugConditions.prototype, {
   // not As(V). In supergene-oxidized fluids As is As(V) and arsenopyrite
   // properly returns 0 — geologically correct.
   const as_iii = arseniteAvailablePpm(this.fluid);
-  if (this.fluid.Fe < 5 || as_iii < 3 || this.fluid.S < 10) return 0;
+  if (this.fluid.Fe < 5 || as_iii < 3 || sulfideAvailablePpm(this.fluid, this.temperature) < 10) return 0;
   if (!sulfideRedoxAnoxic(this.fluid, 0.8)) return 0;  // sulfide — needs reducing
   // v228 (rung 2): hard T envelope from the gates — the pre-v228 soft decay
   // below 200 (×0.26 at 65°C) still let sulphur_bank's 50-68°C hot spring
@@ -592,7 +592,7 @@ Object.assign(VugConditions.prototype, {
   const g_asp = MINERAL_GATES_arsenopyrite;
   if (T < g_asp.T_min! || T > g_asp.T_max!) return 0;
   let sigma = (this.fluid.Fe / 30.0) * (as_iii / 15.0)
-            * (this.fluid.S / 50.0) * sulfideRedoxLinearFactor(this.fluid, 1.5);
+            * (sulfideAvailablePpm(this.fluid, this.temperature) / 50.0) * sulfideRedoxLinearFactor(this.fluid, 1.5);
   // Mesothermal sweet spot 300-500°C
   if (T >= 300 && T <= 500) {
     sigma *= 1.4;
@@ -608,11 +608,11 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_tetrahedrite() {
-  if (this.fluid.Cu < 10 || this.fluid.Sb < 3 || this.fluid.S < 10) return 0;
+  if (this.fluid.Cu < 10 || this.fluid.Sb < 3 || sulfideAvailablePpm(this.fluid, this.temperature) < 10) return 0;
   if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
   if (this.fluid.pH < 3.0 || this.fluid.pH > 7.0) return 0;
   if (this.temperature < 100 || this.temperature > 400) return 0;
-  const product = (this.fluid.Cu / 40.0) * (this.fluid.Sb / 15.0) * (this.fluid.S / 40.0);
+  const product = (this.fluid.Cu / 40.0) * (this.fluid.Sb / 15.0) * (sulfideAvailablePpm(this.fluid, this.temperature) / 40.0);
   let T_factor;
   if (this.temperature >= 200 && this.temperature <= 300) T_factor = 1.3;
   else if ((this.temperature >= 150 && this.temperature < 200) || (this.temperature > 300 && this.temperature <= 350)) T_factor = 1.0;
@@ -625,11 +625,11 @@ Object.assign(VugConditions.prototype, {
   // Tennantite is Cu₁₂As₄S₁₃ (sulfosalt); As(III) in trigonal pyramidal
   // [AsS₃]³⁻ groups. Not arsenate.
   const as_iii = arseniteAvailablePpm(this.fluid);
-  if (this.fluid.Cu < 10 || as_iii < 3 || this.fluid.S < 10) return 0;
+  if (this.fluid.Cu < 10 || as_iii < 3 || sulfideAvailablePpm(this.fluid, this.temperature) < 10) return 0;
   if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
   if (this.fluid.pH < 3.0 || this.fluid.pH > 7.0) return 0;
   if (this.temperature < 100 || this.temperature > 400) return 0;
-  const product = (this.fluid.Cu / 40.0) * (as_iii / 15.0) * (this.fluid.S / 40.0);
+  const product = (this.fluid.Cu / 40.0) * (as_iii / 15.0) * (sulfideAvailablePpm(this.fluid, this.temperature) / 40.0);
   let T_factor;
   if (this.temperature >= 150 && this.temperature <= 300) T_factor = 1.3;
   else if ((this.temperature >= 100 && this.temperature < 150) || (this.temperature > 300 && this.temperature <= 350)) T_factor = 1.0;
@@ -659,11 +659,11 @@ Object.assign(VugConditions.prototype, {
   // a co-product in both canonical native_sulfur deposit types.
   supersaturation_cinnabar() {
   if (this.fluid.Hg < 1.0) return 0;
-  if (this.fluid.S < 50) return 0;
+  if (sulfideAvailablePpm(this.fluid, this.temperature) < 50) return 0;
   if (this.fluid.O2 > 1.0) return 0;
   if (this.fluid.pH > 9) return 0;
   const hg_f = Math.min(this.fluid.Hg / 5.0, 4.0);
-  const s_f = Math.min(this.fluid.S / 100.0, 3.0);
+  const s_f = Math.min(sulfideAvailablePpm(this.fluid, this.temperature) / 100.0, 3.0);
   // Eh window: mildly reducing optimal, fully oxic shuts the engine.
   // Sulfide redox helper hits 1.0 at the engine's preferred Eh and
   // tapers as conditions become more oxic. Cinnabar is the most
@@ -710,11 +710,11 @@ Object.assign(VugConditions.prototype, {
   // cage with formal oxidation state +2 (commonly reduced-side
   // classified). Not arsenate; reads from the As(III) pool.
   const as_iii = arseniteAvailablePpm(this.fluid);
-  if (as_iii < 5 || this.fluid.S < 30) return 0;
+  if (as_iii < 5 || sulfideAvailablePpm(this.fluid, this.temperature) < 30) return 0;
   if (!sulfideRedoxAnoxic(this.fluid, 0.5)) return 0;  // rung-4d: SO₄/HS boundary (see gate block above; was 1.2)
   if (this.fluid.pH > 9) return 0;
   const as_f = Math.min(as_iii / 15.0, 3.0);
-  const s_f = Math.min(this.fluid.S / 100.0, 3.0);
+  const s_f = Math.min(sulfideAvailablePpm(this.fluid, this.temperature) / 100.0, 3.0);
   // Eh window: mildly reducing optimal. Sulfide-redox helper at the
   // engine's preferred Eh; tolerance broader than arsenopyrite.
   const eh_f = sulfideRedoxLinearFactor(this.fluid, 1.5);
@@ -753,11 +753,11 @@ Object.assign(VugConditions.prototype, {
   // v92 As-state split: As(III) ppm via arseniteAvailablePpm.
   // Orpiment is As₂S₃ — As(III) sulfide. Not arsenate.
   const as_iii = arseniteAvailablePpm(this.fluid);
-  if (as_iii < 8 || this.fluid.S < 50) return 0;
+  if (as_iii < 8 || sulfideAvailablePpm(this.fluid, this.temperature) < 50) return 0;
   if (!sulfideRedoxAnoxic(this.fluid, 0.5)) return 0;  // rung-4d: with realgar (see gate block above; was 1.2)
   if (this.fluid.pH > 9.5) return 0;
   const as_f = Math.min(as_iii / 20.0, 3.0);
-  const s_f = Math.min(this.fluid.S / 150.0, 3.0);
+  const s_f = Math.min(sulfideAvailablePpm(this.fluid, this.temperature) / 150.0, 3.0);
   const eh_f = sulfideRedoxLinearFactor(this.fluid, 1.5);
   let sigma = as_f * s_f * eh_f;
   const T = this.temperature;
@@ -772,9 +772,9 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_stibnite() {
-  if (this.fluid.Sb < 10 || this.fluid.S < 15 || !sulfideRedoxAnoxic(this.fluid, 1.0)) return 0;
+  if (this.fluid.Sb < 10 || sulfideAvailablePpm(this.fluid, this.temperature) < 15 || !sulfideRedoxAnoxic(this.fluid, 1.0)) return 0;
   const sb_f = Math.min(this.fluid.Sb / 20.0, 2.0);
-  const s_f  = Math.min(this.fluid.S / 40.0, 1.5);
+  const s_f  = Math.min(sulfideAvailablePpm(this.fluid, this.temperature) / 40.0, 1.5);
   let sigma = sb_f * s_f;
   const T = this.temperature;
   let T_factor;
@@ -799,9 +799,9 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_bismuthinite() {
-  if (this.fluid.Bi < 5 || this.fluid.S < 15 || !sulfideRedoxAnoxic(this.fluid, 1.0)) return 0;
+  if (this.fluid.Bi < 5 || sulfideAvailablePpm(this.fluid, this.temperature) < 15 || !sulfideRedoxAnoxic(this.fluid, 1.0)) return 0;
   const bi_f = Math.min(this.fluid.Bi / 20.0, 2.0);
-  const s_f  = Math.min(this.fluid.S / 50.0, 1.5);
+  const s_f  = Math.min(sulfideAvailablePpm(this.fluid, this.temperature) / 50.0, 1.5);
   let sigma = bi_f * s_f;
   const T = this.temperature;
   let T_factor;
@@ -817,12 +817,12 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_bornite() {
-  if (this.fluid.Cu < 25 || this.fluid.Fe < 8 || this.fluid.S < 20 || !sulfideRedoxAnoxic(this.fluid, 1.8)) return 0;
+  if (this.fluid.Cu < 25 || this.fluid.Fe < 8 || sulfideAvailablePpm(this.fluid, this.temperature) < 20 || !sulfideRedoxAnoxic(this.fluid, 1.8)) return 0;
   const cu_fe_ratio = this.fluid.Cu / Math.max(this.fluid.Fe, 1);
   if (cu_fe_ratio < 2.0) return 0;
   const cu_f = Math.min(this.fluid.Cu / 80.0, 2.0);
   const fe_f = Math.min(this.fluid.Fe / 30.0, 1.3);
-  const s_f  = Math.min(this.fluid.S / 60.0, 1.5);
+  const s_f  = Math.min(sulfideAvailablePpm(this.fluid, this.temperature) / 60.0, 1.5);
   let sigma = cu_f * fe_f * s_f;
   const T = this.temperature;
   let T_factor;
@@ -838,9 +838,9 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_chalcocite() {
-  if (this.fluid.Cu < 30 || this.fluid.S < 15 || !sulfideRedoxAnoxic(this.fluid, 1.9)) return 0;
+  if (this.fluid.Cu < 30 || sulfideAvailablePpm(this.fluid, this.temperature) < 15 || !sulfideRedoxAnoxic(this.fluid, 1.9)) return 0;
   const cu_f = Math.min(this.fluid.Cu / 60.0, 2.0);
-  const s_f  = Math.min(this.fluid.S / 50.0, 1.5);
+  const s_f  = Math.min(sulfideAvailablePpm(this.fluid, this.temperature) / 50.0, 1.5);
   let sigma = cu_f * s_f;
   if (this.temperature > 150) sigma *= Math.exp(-0.03 * (this.temperature - 150));
   sigma *= sulfideRedoxLinearFactor(this.fluid, 1.4, 1.0, 0.3);
@@ -850,9 +850,9 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_covellite() {
-  if (this.fluid.Cu < 20 || this.fluid.S < 25 || !sulfideRedoxAnoxic(this.fluid, 2.0)) return 0;
+  if (this.fluid.Cu < 20 || sulfideAvailablePpm(this.fluid, this.temperature) < 25 || !sulfideRedoxAnoxic(this.fluid, 2.0)) return 0;
   const cu_f = Math.min(this.fluid.Cu / 50.0, 2.0);
-  const s_f  = Math.min(this.fluid.S / 60.0, 1.8);
+  const s_f  = Math.min(sulfideAvailablePpm(this.fluid, this.temperature) / 60.0, 1.8);
   let sigma = cu_f * s_f;
   if (this.temperature > 100) sigma *= Math.exp(-0.03 * (this.temperature - 100));
   sigma *= sulfideRedoxTent(this.fluid, 0.8, 1.3, 1.0, 0.3);
@@ -891,7 +891,7 @@ Object.assign(VugConditions.prototype, {
     else T_factor = Math.max(0.4, 0.5 + 0.007 * (T - 100));
     sigma *= T_factor;
     // Sulfide competition — high S favors sulfides over tellurides
-    if (this.fluid.S > 50) sigma *= Math.max(0.4, 1.0 - 0.005 * (this.fluid.S - 50));
+    if (sulfideAvailablePpm(this.fluid, this.temperature) > 50) sigma *= Math.max(0.4, 1.0 - 0.005 * (sulfideAvailablePpm(this.fluid, this.temperature) - 50));
     // Sylvanite competition — when Ag is comparable to Au, sylvanite wins
     if (this.fluid.Ag > this.fluid.Au * 5) sigma *= 0.5;
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'calaverite');
@@ -921,7 +921,7 @@ Object.assign(VugConditions.prototype, {
     if (T >= 150) T_factor = 1.2;
     else T_factor = Math.max(0.4, 0.5 + 0.007 * (T - 80));
     sigma *= T_factor;
-    if (this.fluid.S > 50) sigma *= Math.max(0.4, 1.0 - 0.005 * (this.fluid.S - 50));
+    if (sulfideAvailablePpm(this.fluid, this.temperature) > 50) sigma *= Math.max(0.4, 1.0 - 0.005 * (sulfideAvailablePpm(this.fluid, this.temperature) - 50));
     // Calaverite competition — when Au ≫ Ag, calaverite wins
     if (this.fluid.Au > this.fluid.Ag * 0.5) sigma *= 0.7;
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'sylvanite');
@@ -951,7 +951,7 @@ Object.assign(VugConditions.prototype, {
     else T_factor = Math.max(0.4, 1.2 - 0.006 * (T - 250));
     sigma *= T_factor;
     // Sulfide competition — acanthite (Ag2S) wins when S >> Te
-    if (this.fluid.S > 30) sigma *= Math.max(0.4, 1.0 - 0.01 * (this.fluid.S - 30));
+    if (sulfideAvailablePpm(this.fluid, this.temperature) > 30) sigma *= Math.max(0.4, 1.0 - 0.01 * (sulfideAvailablePpm(this.fluid, this.temperature) - 30));
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'hessite');
     return Math.max(sigma, 0);
   },
@@ -981,7 +981,7 @@ Object.assign(VugConditions.prototype, {
     else if (T < 100) T_factor = Math.max(0.4, 0.5 + 0.01 * (T - 50));
     else T_factor = Math.max(0.4, 1.2 - 0.005 * (T - 200));
     sigma *= T_factor;
-    if (this.fluid.S > 30) sigma *= Math.max(0.4, 1.0 - 0.01 * (this.fluid.S - 30));
+    if (sulfideAvailablePpm(this.fluid, this.temperature) > 30) sigma *= Math.max(0.4, 1.0 - 0.01 * (sulfideAvailablePpm(this.fluid, this.temperature) - 30));
     // Hessite competition — when Te > Se, hessite wins
     if (this.fluid.Te > this.fluid.Se) sigma *= 0.6;
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'naumannite');
@@ -1002,7 +1002,7 @@ Object.assign(VugConditions.prototype, {
     else T_factor = Math.max(0.4, 1.2 - 0.005 * (T - 250));
     sigma *= T_factor;
     // Galena competition — high S forms PbS instead
-    if (this.fluid.S > 30) sigma *= Math.max(0.3, 1.0 - 0.015 * (this.fluid.S - 30));
+    if (sulfideAvailablePpm(this.fluid, this.temperature) > 30) sigma *= Math.max(0.3, 1.0 - 0.015 * (sulfideAvailablePpm(this.fluid, this.temperature) - 30));
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'clausthalite');
     return Math.max(sigma, 0);
   },
@@ -1012,9 +1012,9 @@ Object.assign(VugConditions.prototype, {
   // sphalerite oxidation releasing Cd that re-precipitates against
   // residual sulfide.
   supersaturation_greenockite() {
-    if (this.fluid.Cd < 0.5 || this.fluid.S < 5) return 0;
+    if (this.fluid.Cd < 0.5 || sulfideAvailablePpm(this.fluid, this.temperature) < 5) return 0;
     if (this.fluid.O2 > 0.5) return 0;
-    let sigma = (this.fluid.Cd / 1.5) * (this.fluid.S / 30.0);
+    let sigma = (this.fluid.Cd / 1.5) * (sulfideAvailablePpm(this.fluid, this.temperature) / 30.0);
     const T = this.temperature;
     if (T < 25 || T > 250) return 0;
     let T_factor = 1.0;
@@ -1032,9 +1032,9 @@ Object.assign(VugConditions.prototype, {
   // CdS — cubic (sphalerite-structure) low-T polymorph. <100°C kinetically
   // favored. Always powdery — no discrete crystals.
   supersaturation_hawleyite() {
-    if (this.fluid.Cd < 0.5 || this.fluid.S < 5) return 0;
+    if (this.fluid.Cd < 0.5 || sulfideAvailablePpm(this.fluid, this.temperature) < 5) return 0;
     if (this.fluid.O2 > 0.5) return 0;
-    let sigma = (this.fluid.Cd / 1.5) * (this.fluid.S / 30.0);
+    let sigma = (this.fluid.Cd / 1.5) * (sulfideAvailablePpm(this.fluid, this.temperature) / 30.0);
     const T = this.temperature;
     if (T < 5 || T > 100) return 0;
     let T_factor = 1.0;
@@ -1083,12 +1083,12 @@ Object.assign(VugConditions.prototype, {
   // Refs: White & Roberson 1962 GSA SP 73 (Sulphur Bank); Bailey 1959
   // USGS Bull. 1148; Dickson & Tunell 1959 Am. J. Sci. 257:341.
   supersaturation_metacinnabar() {
-    if (this.fluid.Hg < 1.0 || this.fluid.S < 50) return 0;
+    if (this.fluid.Hg < 1.0 || sulfideAvailablePpm(this.fluid, this.temperature) < 50) return 0;
     if (this.fluid.O2 > 0.8) return 0;  // strict — metacinnabar oxidizes faster than cinnabar
     if (this.temperature < 5 || this.temperature > 200) return 0;  // strict low-T
     if (this.fluid.pH < 1.0 || this.fluid.pH > 6.5) return 0;  // acidic-sulfide regime
     const hg_f = Math.min(this.fluid.Hg / 5.0, 4.0);
-    const s_f = Math.min(this.fluid.S / 100.0, 3.0);
+    const s_f = Math.min(sulfideAvailablePpm(this.fluid, this.temperature) / 100.0, 3.0);
     let sigma = hg_f * s_f;
     const T = this.temperature;
     // Sweet spot 60-90°C (Sulphur Bank hot-spring vents); strongly
@@ -1135,7 +1135,7 @@ Object.assign(VugConditions.prototype, {
     // chemistry shows X_As = 0.96-0.99 (Markl et al. 2016).
     const as_iii = arseniteAvailablePpm(this.fluid);
     if (this.fluid.Co < 5 || as_iii < 30) return 0;
-    if (this.fluid.S > 5) return 0;  // No sulfur tolerance
+    if (sulfideAvailablePpm(this.fluid, this.temperature) > 5) return 0;  // No sulfur tolerance
     if (!sulfideRedoxAnoxic(this.fluid, 0.5)) return 0;  // VERY reducing
     if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
     if (this.temperature < 280 || this.temperature > 500) return 0;
@@ -1159,7 +1159,7 @@ Object.assign(VugConditions.prototype, {
     // skutterudite has crystallized.
     const as_iii = arseniteAvailablePpm(this.fluid);
     if (this.fluid.Co < 5 || as_iii < 15) return 0;
-    if (this.fluid.S > 15) return 0;  // ~0.9 wt% S in solid tolerance
+    if (sulfideAvailablePpm(this.fluid, this.temperature) > 15) return 0;  // ~0.9 wt% S in solid tolerance
     if (!sulfideRedoxAnoxic(this.fluid, 1.0)) return 0;
     if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
     if (this.temperature < 200 || this.temperature > 380) return 0;
@@ -1185,7 +1185,7 @@ Object.assign(VugConditions.prototype, {
     // gersdorffite (NiAsS, not in catalog).
     const as_iii = arseniteAvailablePpm(this.fluid);
     if (this.fluid.Ni < 5 || as_iii < 15) return 0;
-    if (this.fluid.S > 20) return 0;
+    if (sulfideAvailablePpm(this.fluid, this.temperature) > 20) return 0;
     if (!sulfideRedoxAnoxic(this.fluid, 1.0)) return 0;
     if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
     if (this.temperature < 250 || this.temperature > 420) return 0;
@@ -1210,7 +1210,7 @@ Object.assign(VugConditions.prototype, {
     // proxy for "below the loellingite-arsenopyrite boundary."
     const as_iii = arseniteAvailablePpm(this.fluid);
     if (this.fluid.Fe < 10 || as_iii < 15) return 0;
-    if (this.fluid.S > 1) return 0;  // Sharp arsenopyrite boundary
+    if (sulfideAvailablePpm(this.fluid, this.temperature) > 1) return 0;  // Sharp arsenopyrite boundary
     if (!sulfideRedoxAnoxic(this.fluid, 1.2)) return 0;
     if (this.fluid.pH < 5.0 || this.fluid.pH > 7.5) return 0;
     if (this.temperature < 150 || this.temperature > 450) return 0;
@@ -1255,7 +1255,7 @@ Object.assign(VugConditions.prototype, {
     // Ag3AsS3 — the As-end ruby silver. Scarlet-vermilion to cochineal
     // red, photodecomposes (museum specimens kept in dark).
     const as_iii = arseniteAvailablePpm(this.fluid);
-    if (this.fluid.Ag < 0.1 || as_iii < 1 || this.fluid.S < 10) return 0;
+    if (this.fluid.Ag < 0.1 || as_iii < 1 || sulfideAvailablePpm(this.fluid, this.temperature) < 10) return 0;
     if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
     if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
     if (this.temperature < 100 || this.temperature > 350) return 0;
@@ -1265,7 +1265,7 @@ Object.assign(VugConditions.prototype, {
     if (x_as < 0.5) return 0;  // below 0.5 → pyrargyrite field
     const ag_f = Math.min(this.fluid.Ag / 2.0, 3.0);
     const as_f = Math.min(as_iii / 15.0, 2.5);
-    const s_f  = Math.min(this.fluid.S / 100.0, 2.0);
+    const s_f  = Math.min(sulfideAvailablePpm(this.fluid, this.temperature) / 100.0, 2.0);
     let sigma = ag_f * as_f * s_f;
     // X_As preference: above 0.7 = pure proustite, sweet spot
     if (x_as >= 0.7) sigma *= 1.4;
@@ -1286,7 +1286,7 @@ Object.assign(VugConditions.prototype, {
     // than As in most epithermal Ag systems).
     const as_iii = arseniteAvailablePpm(this.fluid);
     const sb = this.fluid.Sb || 0;
-    if (this.fluid.Ag < 0.1 || sb < 1 || this.fluid.S < 10) return 0;
+    if (this.fluid.Ag < 0.1 || sb < 1 || sulfideAvailablePpm(this.fluid, this.temperature) < 10) return 0;
     if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
     if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
     if (this.temperature < 100 || this.temperature > 320) return 0;
@@ -1295,7 +1295,7 @@ Object.assign(VugConditions.prototype, {
     if (x_as > 0.5) return 0;  // above 0.5 → proustite field
     const ag_f = Math.min(this.fluid.Ag / 2.0, 3.0);
     const sb_f = Math.min(sb / 15.0, 2.5);
-    const s_f  = Math.min(this.fluid.S / 100.0, 2.0);
+    const s_f  = Math.min(sulfideAvailablePpm(this.fluid, this.temperature) / 100.0, 2.0);
     let sigma = ag_f * sb_f * s_f;
     // X_As preference: below 0.3 = pure pyrargyrite, sweet spot
     if (x_as <= 0.3) sigma *= 1.4;
@@ -1311,14 +1311,14 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_enargite() {
     const as_iii = arseniteAvailablePpm(this.fluid);
-    if (this.fluid.Cu < 20 || as_iii < 5 || this.fluid.S < 100) return 0;
+    if (this.fluid.Cu < 20 || as_iii < 5 || sulfideAvailablePpm(this.fluid, this.temperature) < 100) return 0;
     if (!sulfideRedoxAnoxic(this.fluid, 1.5)) return 0;
     if (this.fluid.pH > 4.5) return 0;  // high-sulfidation = acidic
     if (this.temperature < 200 || this.temperature > 500) return 0;
     // Sulfidation-state proxy: high S + low pH → high f(S₂)
-    const sulfidation_proxy = Math.log10(this.fluid.S + 1) - this.fluid.pH;
+    const sulfidation_proxy = Math.log10(sulfideAvailablePpm(this.fluid, this.temperature) + 1) - this.fluid.pH;
     if (sulfidation_proxy < 0.5) return 0;  // tennantite field instead
-    const product = (this.fluid.Cu / 60.0) * (as_iii / 20.0) * (this.fluid.S / 200.0);
+    const product = (this.fluid.Cu / 60.0) * (as_iii / 20.0) * (sulfideAvailablePpm(this.fluid, this.temperature) / 200.0);
     let T_factor;
     if (this.temperature >= 250 && this.temperature <= 400) T_factor = 1.3;
     else if (this.temperature < 250) T_factor = Math.max(0.4, 1.0 - (250 - this.temperature) / 100);

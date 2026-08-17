@@ -112,6 +112,7 @@ class StripRecorder {
   private transformationEventTestimony: StripTransformationEvent[];
   private seenTransformationKeys: Set<string>;
   private carbonateBoundaryTestimony: any[];
+  private sulfurLedgerTestimony: any[];
 
   constructor(sim: any, opts?: {
     angular_indices?: number,
@@ -195,6 +196,7 @@ class StripRecorder {
     this.transformationEventTestimony = [];
     this.seenTransformationKeys = new Set();
     this.carbonateBoundaryTestimony = [];
+    this.sulfurLedgerTestimony = [];
   }
 
   // ---- chip classification helpers ----------------------------------
@@ -438,11 +440,18 @@ class StripRecorder {
         boundary_import_mol_kg: Number(carbon.boundaryImportMolKg),
         boundary_export_mol_kg: Number(carbon.boundaryExportMolKg),
         target_pco2_bar: Number(carbon.targetPCO2Bar),
+        solved_pco2_bar: Number(carbon.lastSolvedPCO2Bar),
         blocked: !!carbon.blocked,
         uncertainties: Array.isArray(carbon.uncertainties) ? [...carbon.uncertainties] : [],
         transaction_count: transactions.length,
         last_transaction: last ? JSON.parse(JSON.stringify(last)) : null,
       });
+    }
+    if (sim?.conditions?.fluid?.sulfurPoolsExplicit) {
+      this.sulfurLedgerTestimony.push(JSON.parse(JSON.stringify({
+        ...simulatorSulfurLedgerSnapshot(sim),
+        sample_index: step,
+      })));
     }
     const stressEvents = Array.isArray(sim?._stressEvents) ? sim._stressEvents : [];
     for (let i = this.lastSeenStressEventCount; i < stressEvents.length; i++) {
@@ -490,6 +499,7 @@ class StripRecorder {
       stress_event_testimony: this.stressEventTestimony,
       transformation_event_testimony: this.transformationEventTestimony,
       carbonate_boundary_testimony: this.carbonateBoundaryTestimony,
+      sulfur_ledger_testimony: this.sulfurLedgerTestimony,
     };
   }
 

@@ -12933,7 +12933,18 @@
 // never reported as an empty vug. These changes can alter deterministic
 // chemistry/replay/log output, so this is an explicit identity bump rather
 // than a silent patch inside v266 evidence.
-const SIM_VERSION = 267;
+// v268 (August 2026): sulfur-bearing supersaturation is now driven by the
+// chemically admissible sulfur reservoir. Sulfates read S_sulfate and
+// sulfides/sulfosalts read S_sulfide for every threshold, factor, ratio, and
+// sulfur-competition term; a large wrong-valence pool can affect ionic
+// strength but cannot supply or inflate the wrong phase. The generated strip
+// testimony records dissolved reservoirs and booked solid sulfur by mineral
+// and reservoir, so phase identity and whole-system closure are visible
+// together. Closed carbonate uncertainty flags use solved rather than target
+// pCO2, an explicit zero CO2 charge remains zero, and reverse open-boundary
+// flow is narrated as import instead of venting. These corrections alter
+// nucleation and paragenesis and therefore require new evidence identity.
+const SIM_VERSION = 268;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12950,7 +12961,7 @@ const MODEL_DIGEST = [
   'Prock:Pattison92-AndSil-16+/-3barC',
   'stress:instant-resolved-shear-stable-grain-v2',
   'event-fluid:absolute-replace-v1',
-  'carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed-v2',
+  'carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3',
   'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
   'silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5',
@@ -12962,7 +12973,7 @@ const MODEL_DIGEST = [
   'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
   'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
   'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
-  'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3',
+  'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+phase-resolved-testimony-v4',
   'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
   'sulphur-bank-HgS:zoned-association-not-S0-substrate-v1',
   'wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4',
@@ -12976,7 +12987,7 @@ const MODEL_DIGEST = [
   'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',
   'dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3',
   'fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3',
-  'carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge-v2',
+  'carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3',
   'engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3',
   'beryl:K36-postHF-recovery-v1',
   'halite:vadose-propensity0.8-v1',
@@ -12984,11 +12995,11 @@ const MODEL_DIGEST = [
   'competition:accepted-axial-timescale+formula-weighted-budget+single-evaluation-full-fill-negative-v4',
   'thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3',
   'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
-  'scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite-v6',
+  'scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite+valence-correct-reconciliation-v7',
   'bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3',
   'bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3',
   'tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1',
-  'wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary-v2',
+  'wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary+oxidized-sulfate-does-not-sulfidize-silver-v3',
   'weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2',
   'cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2',
   'koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3',

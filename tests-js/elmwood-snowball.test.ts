@@ -121,13 +121,15 @@ describe('W-F O5 — the Elmwood barite snowball (SIM 223)', () => {
     // Elmwood's locality record does not license gypsum/selenite. The old
     // positive pin was an artefact of the pre-v244 split CaSO4 pathways.
     expect(bySpecies(sim, 'selenite').length, 'no undocumented Elmwood gypsum').toBe(0);
-    expect(bySpecies(sim, 'galena').length, 'documented galena remains in the assemblage')
-      .toBeGreaterThan(0);
-    // SIM 261 locality reconciliation: siderite was an old generic-MVT
-    // confabulation. It is absent from the audited Elmwood-Gordonsville
-    // inventory and is now an explicit negative-evidence contract, while
-    // galena remains a documented deterministic accessory.
+    // SIM 268: galena and pyrite remain locality-licensed possibilities, but
+    // the valence-correct three-seed fluid path does not promise them. The
+    // former positive galena pin was sustained by combined-S admission.
+    expect(bySpecies(sim, 'galena').length, 'no sulfate-fed Elmwood galena').toBe(0);
+    expect(bySpecies(sim, 'pyrite').length, 'no sulfate-fed Elmwood pyrite').toBe(0);
+    // SIM 261/268 locality reconciliation: neither siderite nor discrete
+    // strontianite occurs in the audited Elmwood-Gordonsville inventory.
     expect(bySpecies(sim, 'siderite').length, 'no undocumented Elmwood siderite').toBe(0);
+    expect(bySpecies(sim, 'strontianite').length, 'no undocumented Elmwood strontianite').toBe(0);
   });
 
   it('no runaway new species — witherite (BaCO3) does not take over the beloved assemblage', () => {

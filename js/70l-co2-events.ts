@@ -55,10 +55,15 @@ function event_co2_degas(c, eventSpec: any = {}) {
     if (!tx?.ok) {
       return `CO₂ vent paused: the carbonate boundary solve failed (${tx?.error || 'unknown error'}); fluid state was not mutated.`;
     }
-    const exported = Math.max(0, -tx.boundaryDeltaMolKg) * 1000;
+    const boundaryDelta = Number(tx.boundaryDeltaMolKg) || 0;
+    const transferred = Math.abs(boundaryDelta) * 1000;
+    const direction = boundaryDelta <= 0 ? 'exports' : 'imports';
+    const process = boundaryDelta <= 0
+      ? 'vents'
+      : 'equilibrates in the reverse direction (CO₂ charging rather than venting)';
     return (
-      `COâ‚‚ vents to an authored ${target.toExponential(2)} bar boundary. ` +
-      `The solved carbonate system exports ${exported.toFixed(3)} mmol C/kg; ` +
+      `COâ‚‚ ${process} at an authored ${target.toExponential(2)} bar boundary. ` +
+      `The solved carbonate system ${direction} ${transferred.toFixed(3)} mmol C/kg; ` +
       `pH becomes ${c.fluid.pH.toFixed(2)} and DIC becomes ` +
       `${(tx.after.dicMolKg * 1000).toFixed(3)} mmol C/kg. Reduced carbonate ` +
       `alkalinity is conserved; no fixed pH increment or boiling claim is used.`
@@ -100,12 +105,17 @@ function event_co2_degas_with_reheat(c, eventSpec: any = {}) {
       return `Heated CO₂ vent paused: the carbonate boundary solve failed (${tx?.error || 'unknown error'}); fluid state was not mutated.`;
     }
     c.temperature = reheatT;
-    c._calciteDepositionalMode = 'travertine';
-    const exported = Math.max(0, -tx.boundaryDeltaMolKg) * 1000;
+    const boundaryDelta = Number(tx.boundaryDeltaMolKg) || 0;
+    if (boundaryDelta <= 0) c._calciteDepositionalMode = 'travertine';
+    const transferred = Math.abs(boundaryDelta) * 1000;
+    const direction = boundaryDelta <= 0 ? 'leaves' : 'enters';
+    const process = boundaryDelta <= 0
+      ? 'vents toward'
+      : 'equilibrates in reverse toward';
     return (
       `Geothermal heat restores ${oldT.toFixed(1)} â†’ ${c.temperature.toFixed(1)}Â°C; ` +
-      `the water then vents toward ${target.toExponential(2)} bar pCOâ‚‚. ` +
-      `${exported.toFixed(3)} mmol C/kg leaves the aqueous+headspace system; ` +
+      `the water then ${process} ${target.toExponential(2)} bar pCOâ‚‚. ` +
+      `${transferred.toFixed(3)} mmol C/kg ${direction} the aqueous+headspace system; ` +
       `the conserved-alkalinity solve gives pH ${c.fluid.pH.toFixed(2)} and ` +
       `DIC ${(tx.after.dicMolKg * 1000).toFixed(3)} mmol C/kg. This is heat ` +
       `recharge, not an undeclared replacement-water or boiling shortcut.`
@@ -131,11 +141,17 @@ function event_co2_charge(c, eventSpec: any = {}) {
       boundary, dicPpmToMolKg(c.fluid.CO3), 'pre-charge DIC audit',
     );
     if (unresolved) return 'CO₂ charge paused: DIC changed without a declared boundary or simple-CaCO₃ transaction.';
-    const chargeMolKg = Math.max(
-      0,
-      Number(eventSpec.carbon_mol_per_kg)
-        || dicPpmToMolKg(Number(eventSpec.dic_as_co3_ppm) || 100),
-    );
+    const hasMolarCharge = Object.prototype.hasOwnProperty.call(eventSpec, 'carbon_mol_per_kg');
+    const hasPpmCharge = Object.prototype.hasOwnProperty.call(eventSpec, 'dic_as_co3_ppm');
+    const authoredCharge = hasMolarCharge
+      ? Number(eventSpec.carbon_mol_per_kg)
+      : hasPpmCharge
+        ? dicPpmToMolKg(Number(eventSpec.dic_as_co3_ppm))
+        : dicPpmToMolKg(100);
+    if (!Number.isFinite(authoredCharge)) {
+      return 'CO₂ charge refused: the authored carbon charge must be finite; no chemistry was mutated.';
+    }
+    const chargeMolKg = Math.max(0, authoredCharge);
     const oldPH = c.fluid.pH;
     const tx = chargeCarbonateBoundaryState(
       boundary,

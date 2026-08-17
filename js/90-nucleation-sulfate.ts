@@ -47,7 +47,7 @@ function _nuc_barite(sim) {
   const c = sim.nucleate('barite', pos, sigma_brt);
   if (snowball) c.habit = 'snowball';
   const tag = snowball ? ' (snowball seed)' : '';
-  sim.log.push(`  ✦ NUCLEATION: ⚪ Barite #${c.crystal_id} on ${c.position}${tag} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_brt.toFixed(2)}, Ba=${sim.conditions.fluid.Ba.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, O₂=${sim.conditions.fluid.O2.toFixed(2)}) — heavy spar, MVT gangue`);
+  sim.log.push(`  ✦ NUCLEATION: ⚪ Barite #${c.crystal_id} on ${c.position}${tag} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_brt.toFixed(2)}, Ba=${sim.conditions.fluid.Ba.toFixed(0)}, S=${sulfateAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)}, O₂=${sim.conditions.fluid.O2.toFixed(2)}) — heavy spar, MVT gangue`);
 
   // Celestine nucleation — the Sr sequestration mineral; pale celestial
   // blue. Substrate priority: existing barite (celestobarite-barytocelestine
@@ -63,7 +63,7 @@ function _nuc_celestine(sim) {
         pos = `on barite #${active_brt_cel[0].crystal_id} (celestobarite-barytocelestine pair)`;
       }
       const c = sim.nucleate('celestine', pos, sigma_cel);
-      sim.log.push(`  ✦ NUCLEATION: 🟦 Celestine #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_cel.toFixed(2)}, Sr=${sim.conditions.fluid.Sr.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, O₂=${sim.conditions.fluid.O2.toFixed(2)}) — pale celestial blue, Sr sulfate`);
+      sim.log.push(`  ✦ NUCLEATION: 🟦 Celestine #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_cel.toFixed(2)}, Sr=${sim.conditions.fluid.Sr.toFixed(0)}, S=${sulfateAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)}, O₂=${sim.conditions.fluid.O2.toFixed(2)}) — pale celestial blue, Sr sulfate`);
     }
   }
 
@@ -136,7 +136,7 @@ function _nuc_brochantite(sim) {
         pos = `on chalcocite #${active_chc_brn[0].crystal_id}`;
       }
       const c = sim.nucleate('brochantite', pos, sigma_brn_sulf);
-      sim.log.push(`  ✦ NUCLEATION: 🟢 Brochantite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_brn_sulf.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — emerald-green Cu sulfate`);
+      sim.log.push(`  ✦ NUCLEATION: 🟢 Brochantite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_brn_sulf.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, S=${sulfateAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — emerald-green Cu sulfate`);
     }
   }
 
@@ -156,7 +156,7 @@ function _nuc_antlerite(sim) {
         pos = `on dissolving chalcocite #${diss_chc_ant[0].crystal_id}`;
       }
       const c = sim.nucleate('antlerite', pos, sigma_ant);
-      sim.log.push(`  ✦ NUCLEATION: 🟢 Antlerite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_ant.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — dry-acid Chuquicamata Cu sulfate`);
+      sim.log.push(`  ✦ NUCLEATION: 🟢 Antlerite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_ant.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, S=${sulfateAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — dry-acid Chuquicamata Cu sulfate`);
     }
   }
 
@@ -174,7 +174,7 @@ function _nuc_anhydrite(sim) {
         pos = `near chalcopyrite #${active_cp_anh[0].crystal_id} (porphyry deep-brine paragenesis)`;
       }
       const c = sim.nucleate('anhydrite', pos, sigma_anh);
-      sim.log.push(`  ✦ NUCLEATION: ⚪ Anhydrite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_anh.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, salinity=${sim.conditions.fluid.salinity.toFixed(0)}‰)`);
+      sim.log.push(`  ✦ NUCLEATION: ⚪ Anhydrite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_anh.toFixed(2)}, Ca=${sim.conditions.fluid.Ca.toFixed(0)}, S=${sulfateAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)}, salinity=${sim.conditions.fluid.salinity.toFixed(0)}‰)`);
     }
   }
 
@@ -235,7 +235,7 @@ function _nuc_chalcanthite(sim) {
       if (dissolving_brh_cha.length && rng.random() < 0.5) pos = `on brochantite #${dissolving_brh_cha[0].crystal_id}`;
       else if (dissolving_atl_cha.length && rng.random() < 0.4) pos = `on antlerite #${dissolving_atl_cha[0].crystal_id}`;
       const c = sim.nucleate('chalcanthite', pos, sigma_cha);
-      sim.log.push(`  ✦ NUCLEATION: Chalcanthite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_cha.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}, salinity=${sim.conditions.fluid.salinity.toFixed(1)})`);
+      sim.log.push(`  ✦ NUCLEATION: Chalcanthite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_cha.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, S=${sulfateAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}, salinity=${sim.conditions.fluid.salinity.toFixed(1)})`);
     }
   }
 
@@ -252,7 +252,7 @@ function _nuc_anglesite(sim) {
       if (dissolving_gal.length && rng.random() < 0.6) pos = `on galena #${dissolving_gal[0].crystal_id}`;
       else if (active_gal_ang.length && rng.random() < 0.4) pos = `on galena #${active_gal_ang[0].crystal_id}`;
       const c = sim.nucleate('anglesite', pos, sigma_ang);
-      sim.log.push(`  ✦ NUCLEATION: Anglesite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_ang.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+      sim.log.push(`  ✦ NUCLEATION: Anglesite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_ang.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, S=${sulfateAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)})`);
     }
   }
 
@@ -282,7 +282,7 @@ function _nuc_linarite(sim) {
   else if (cc.length && rng.random() < 0.35) pos = `on chalcocite #${cc[0].crystal_id}`;
   else if (cer.length && rng.random() < 0.30) pos = `on cerussite #${cer[0].crystal_id}`;
   const c = sim.nucleate('linarite', pos, sigma);
-  sim.log.push(`  ✦ NUCLEATION: 🟦 Linarite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)}) — deep azure Pb-Cu sulfate-hydroxide`);
+  sim.log.push(`  ✦ NUCLEATION: 🟦 Linarite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, S=${sulfateAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)}) — deep azure Pb-Cu sulfate-hydroxide`);
 }
 
 function _nuc_caledonite(sim) {
@@ -299,7 +299,7 @@ function _nuc_caledonite(sim) {
   else if (ang.length && rng.random() < 0.40) pos = `with anglesite #${ang[0].crystal_id}`;
   else if (gal.length && rng.random() < 0.30) pos = `on partially-oxidized galena #${gal[0].crystal_id}`;
   const c = sim.nucleate('caledonite', pos, sigma);
-  sim.log.push(`  ✦ NUCLEATION: 🟢 Caledonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, CO₃/SO₄=${(sim.conditions.fluid.CO3/Math.max(sim.conditions.fluid.S,1)).toFixed(2)}) — blue-green Pb-Cu carbonate-sulfate`);
+  sim.log.push(`  ✦ NUCLEATION: 🟢 Caledonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, CO₃/SO₄=${(sim.conditions.fluid.CO3 / Math.max(sulfateAvailablePpm(sim.conditions.fluid, sim.conditions.temperature), 1)).toFixed(2)}) — blue-green Pb-Cu carbonate-sulfate`);
 }
 
 function _nuc_leadhillite(sim) {
@@ -316,7 +316,7 @@ function _nuc_leadhillite(sim) {
   else if (ang.length && rng.random() < 0.45) pos = `on anglesite #${ang[0].crystal_id}`;
   else if (gal.length && rng.random() < 0.30) pos = `with galena #${gal[0].crystal_id}`;
   const c = sim.nucleate('leadhillite', pos, sigma);
-  sim.log.push(`  ✦ NUCLEATION: ⬜ Leadhillite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}) — pearly hexagonal-looking Pb sulfate-carbonate`);
+  sim.log.push(`  ✦ NUCLEATION: ⬜ Leadhillite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Pb=${sim.conditions.fluid.Pb.toFixed(0)}, CO₃=${sim.conditions.fluid.CO3.toFixed(0)}, S=${sulfateAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)}) — pearly hexagonal-looking Pb sulfate-carbonate`);
 }
 
 function _nucleateClass_sulfate(sim) {

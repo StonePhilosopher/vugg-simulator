@@ -303,7 +303,7 @@ Object.assign(VugConditions.prototype, {
   // fe_suppr=0.8). Lower floor 0.0 (not 0.4 as the pre-audit code had —
   // a 0.4 floor would re-create the structural problem the gate softening
   // was designed to fix).
-  const s_suppr = Math.max(0.0, 1.0 - this.fluid.S / 60.0);
+  const s_suppr = Math.max(0.0, 1.0 - sulfideAvailablePpm(this.fluid, this.temperature) / 60.0);
   const fe_suppr = Math.max(0.0, 1.0 - this.fluid.Fe / 200.0);
   let sigma = as_f * red_f * s_suppr * fe_suppr;
   const T = this.temperature;
@@ -354,7 +354,7 @@ Object.assign(VugConditions.prototype, {
   if (!nativeRedoxAnoxic(this.fluid, g.O2_max!)) return 0;
   const ag_f = Math.min(this.fluid.Ag / 2.0, 4.0);
   const red_f = nativeRedoxLinearFactor(this.fluid, 1.0, 2.5, 0.3);
-  const s_f = Math.max(0.0, 1.0 - this.fluid.S / 50.0);
+  const s_f = Math.max(0.0, 1.0 - sulfideAvailablePpm(this.fluid, this.temperature) / 50.0);
   let sigma = ag_f * red_f * s_f;
   const T = this.temperature;
   let T_factor;
@@ -406,7 +406,7 @@ Object.assign(VugConditions.prototype, {
   // matching the "S present but partitioned to arsenide phases locally"
   // geology). At porphyry S=60 → s_mask=0.25 → mostly gated out. At
   // ultra-low-S environments (S<5) → s_mask≈0.94 (essentially passthrough).
-  const s_mask = Math.max(0.0, 1.0 - this.fluid.S / 80.0);
+  const s_mask = Math.max(0.0, 1.0 - sulfideAvailablePpm(this.fluid, this.temperature) / 80.0);
   const red_f = nativeRedoxLinearFactor(this.fluid, 1.0, 1.5, 0.4);
   let sigma = bi_f * s_mask * red_f;
   const T = this.temperature;
@@ -424,7 +424,7 @@ Object.assign(VugConditions.prototype, {
   supersaturation_native_gold() {
   if (this.fluid.Au < MINERAL_GATES_native_gold.fluid_min!.Au) return 0;
   const au_f = Math.min(this.fluid.Au / 1.0, 4.0);
-  const s_f = Math.max(0.2, 1.0 - this.fluid.S / 200.0);
+  const s_f = Math.max(0.2, 1.0 - sulfideAvailablePpm(this.fluid, this.temperature) / 200.0);
   let sigma = au_f * s_f;
   const T = this.temperature;
   let T_factor;
@@ -465,7 +465,7 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.Cu < g.fluid_min!.Cu || !nativeRedoxAnoxic(this.fluid, g.O2_max!)) return 0;
   const cu_f = Math.min(this.fluid.Cu / 80.0, 2.5);
   const red_f = nativeRedoxLinearFactor(this.fluid, 1.0, 2.0, 0.4);
-  const s_f = Math.max(0.0, 1.0 - this.fluid.S / 60.0);
+  const s_f = Math.max(0.0, 1.0 - sulfideAvailablePpm(this.fluid, this.temperature) / 60.0);
   let sigma = cu_f * red_f * s_f;
   const T = this.temperature;
   let T_factor;
@@ -507,7 +507,7 @@ Object.assign(VugConditions.prototype, {
     if (!nativeRedoxAnoxic(this.fluid, g.O2_max!)) return 0;
     // S > 5 strongly suppresses — sulfide preference (millerite +
     // pentlandite + heazlewoodite take the Ni)
-    if (this.fluid.S > 5) return 0;
+    if (sulfideAvailablePpm(this.fluid, this.temperature) > 5) return 0;
     const ni_f = Math.min(this.fluid.Ni / 100.0, 2.0);
     const fe_f = Math.min(this.fluid.Fe / 50.0, 2.0);
     const red_f = nativeRedoxLinearFactor(this.fluid, 1.0, 1.8, 0.5);

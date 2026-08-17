@@ -31,11 +31,11 @@ and the exact-execution evidence receipt.
 
 ### Scientific identity
 
-- The tranche is commissioned as **SIM 267**. It preserves the SIM 266
-  Cartesian authority while correcting physical solid inventory and a
-  replayable state transition: every non-dissolved solid occupies volume,
-  and a cavity reopened below 95% fill by dissolution can later seal again.
-  `MODEL_DIGEST` names both changes explicitly.
+- The tranche is commissioned as **SIM 268**. It preserves SIM 267's
+  Cartesian solid/seal authority while separating sulfate, sulfide, and
+  elemental-sulfur admission throughout the supersaturation engines. Carbon
+  boundary uncertainty and zero/reverse-flow edge cases are corrected in the
+  same scientific identity. `MODEL_DIGEST` names these changes explicitly.
 - Idle mode now reports fresh zero-volume nuclei and inactive capped/buried
   solids without treating dissolved crystals as booked pie-chart volume.
 - The exact-browser/execution science receipt must be freshly rebaked after
@@ -51,6 +51,15 @@ and the exact-execution evidence receipt.
 
 ### Fixed
 
+- Replaced combined-total-sulfur admission in sulfur-bearing saturation
+  engines with the chemically appropriate sulfate or sulfide reservoir. Large
+  wrong-valence pools can no longer admit or inflate the wrong mineral family.
+- Added phase-resolved sulfur-ledger testimony to canonical strip evidence,
+  and reconciled locality promises that had depended on the former combined-S
+  behavior without inventing new sulfur sources.
+- Bound closed-carbonate uncertainty to solved rather than target pCO2,
+  preserved an explicit zero CO2 charge, and made reverse boundary flow report
+  import rather than narrating degassing.
 - Restored the generated single-file build's offline `file://` contract. The
   exact scenario, mineral, thermo, and narrative inputs are now embedded with
   a deterministic receipt, so the Simulation selector, Scenarios picker, Zen
@@ -60,6 +69,18 @@ and the exact-execution evidence receipt.
   by parsing the authored HTML shell rather than twelve redundant copies of
   the generated executable, and by releasing each completed Creative run.
   All 34 control, physics, responsive, and accessibility assertions remain.
+
+## SIM 268 — sulfur valence authority and carbon boundary truth
+
+- Routed every sulfate/sulfide admission gate, factor, ratio, and competing
+  sulfur term through the matching valence-specific reservoir.
+- Added wrong-valence negative controls and generated per-phase sulfur
+  testimony that closes against booked solid sulfur and the aqueous ledger.
+- Retired unsupported sulfate-fed Pb/Ag/As sulfide promises in Bisbee,
+  Elmwood, Schneeberg, and Wittichen; explicitly licensed or excluded newly
+  revealed products using locality evidence.
+- Corrected solved-pCO2 uncertainty, explicit-zero CO2 charge handling, and
+  reverse-flow event narration.
 
 ## SIM 267 — repeatable cavity seal lifecycle
 

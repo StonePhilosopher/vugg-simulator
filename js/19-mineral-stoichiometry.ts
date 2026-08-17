@@ -1176,6 +1176,51 @@ function bookedSolidSulfurPpm(crystals: any[]): number {
   return total;
 }
 
+function bookedSolidSulfurTestimony(crystals: any[]): any {
+  const reservoirTotals: Record<string, number> = {
+    sulfide: 0,
+    sulfate: 0,
+    elemental: 0,
+    unclassified: 0,
+  };
+  const phaseTotals = new Map<string, { mineral: string, reservoir: string, bookedSolidPpm: number }>();
+  const reservoirForKey = (key: string): string => {
+    if (key === 'S_sulfide') return 'sulfide';
+    if (key === 'S_sulfate') return 'sulfate';
+    if (key === 'S_elemental') return 'elemental';
+    return 'unclassified';
+  };
+  for (const crystal of (crystals || [])) {
+    const mineral = String(crystal?.mineral || 'unknown');
+    for (const zone of (crystal?.zones || [])) {
+      if (!(zone && zone.thickness_um > 0)) continue;
+      const remaining = Number.isFinite(Number(zone._remaining_solid_um))
+        ? Math.max(0, Number(zone._remaining_solid_um))
+        : Math.max(0, Number(zone.thickness_um) || 0);
+      for (const key of ['S', 'S_sulfide', 'S_sulfate', 'S_elemental']) {
+        const bookedSolidPpm = remaining
+          * Math.max(0, Number(zone._budget_inventory_per_um?.[key]) || 0);
+        if (!(bookedSolidPpm > 0)) continue;
+        const reservoir = reservoirForKey(key);
+        reservoirTotals[reservoir] += bookedSolidPpm;
+        const phaseKey = `${reservoir}\0${mineral}`;
+        const row = phaseTotals.get(phaseKey) || { mineral, reservoir, bookedSolidPpm: 0 };
+        row.bookedSolidPpm += bookedSolidPpm;
+        phaseTotals.set(phaseKey, row);
+      }
+    }
+  }
+  return {
+    reservoirs: reservoirTotals,
+    phases: Array.from(phaseTotals.values()).sort((a, b) => (
+      a.reservoir < b.reservoir ? -1
+        : a.reservoir > b.reservoir ? 1
+          : a.mineral < b.mineral ? -1
+            : a.mineral > b.mineral ? 1 : 0
+    )),
+  };
+}
+
 function bookedSolidCarbonPpm(crystals: any[]): number {
   let total = 0;
   for (const crystal of (crystals || [])) {
@@ -1203,6 +1248,13 @@ function simulatorSulfurLedgerSnapshot(sim: any): any {
     (sum: number, fluid: any) => sum + sulfurSystemTotalPpm(fluid),
     0,
   );
+  const fluidReservoirPpm = fluids.reduce((totals: any, fluid: any) => {
+    totals.sulfide += Math.max(0, Number(fluid?.S_sulfide) || 0);
+    totals.sulfate += Math.max(0, Number(fluid?.S_sulfate) || 0);
+    totals.elemental += Math.max(0, Number(fluid?.S_elemental) || 0);
+    return totals;
+  }, { sulfide: 0, sulfate: 0, elemental: 0 });
+  const solidTestimony = bookedSolidSulfurTestimony(sim?.crystals || []);
   const solidPpm = bookedSolidSulfurPpm(sim?.crystals || []);
   const initialPpm = Math.max(0, Number(sim?._sulfurLedgerInitialPpm) || 0);
   const importsPpm = Math.max(0, Number(sim?._sulfurBoundaryImportsPpm) || 0);
@@ -1213,19 +1265,32 @@ function simulatorSulfurLedgerSnapshot(sim: any): any {
   const propagationViolations = Array.isArray(sim?._sulfurPropagationViolations)
     ? sim._sulfurPropagationViolations.length : 0;
   const tolerancePpm = Math.max(1e-7, Math.abs(expectedPpm) * 1e-9);
+  const testifiedFluidPpm: number = (Object.values(fluidReservoirPpm) as any[])
+    .reduce<number>((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
+  const testifiedSolidPpm: number = (Object.values(solidTestimony.reservoirs) as any[])
+    .reduce<number>((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
+  const testimonyErrorPpm = testifiedFluidPpm + testifiedSolidPpm - actualPpm;
+  const testimonyClosed = Math.abs(testimonyErrorPpm) <= tolerancePpm;
   return {
     step: Number(sim?.step) || 0,
     initialPpm,
     importsPpm,
     exportsPpm,
     fluidPpm,
+    fluidReservoirPpm,
     solidPpm,
+    solidReservoirPpm: solidTestimony.reservoirs,
+    phaseIdentity: solidTestimony.phases,
     expectedPpm,
     actualPpm,
     errorPpm,
+    testimonyErrorPpm,
     tolerancePpm,
     propagationViolations,
-    closed: Math.abs(errorPpm) <= tolerancePpm && propagationViolations === 0,
+    testimonyClosed,
+    closed: Math.abs(errorPpm) <= tolerancePpm
+      && propagationViolations === 0
+      && testimonyClosed,
   };
 }
 

@@ -515,6 +515,7 @@ function createCarbonateBoundaryState(fluid: any, T_celsius: number, opts: any =
     mode: opts.mode === 'open' ? 'open' : 'closed',
     headspaceLKg,
     targetPCO2Bar: Math.max(1e-12, Number(opts.target_pCO2_bar) || pCO2Bar || 4.2e-4),
+    lastSolvedPCO2Bar: pCO2Bar,
     reducedAlkalinityEqKg: authoredAlkalinity,
     headspaceCO2MolKg,
     boundaryImportMolKg: 0,
@@ -550,6 +551,9 @@ function _recordCarbonateBoundaryTransaction(state: any, tx: any): any {
     state.lastDICMolKg = tx.after.dicMolKg;
     state.headspaceCO2MolKg = tx.after.headspaceCO2MolKg;
     state.lastBulkDICPpm = dicMolKgToPpm(tx.after.dicMolKg);
+    if (Number.isFinite(tx.after?.pCO2Bar)) {
+      state.lastSolvedPCO2Bar = Number(tx.after.pCO2Bar);
+    }
   }
   return tx;
 }

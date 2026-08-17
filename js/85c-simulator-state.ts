@@ -1644,7 +1644,9 @@ _check_liberation() {
         fluid,
         T,
         this.conditions.pressure,
-        state.targetPCO2Bar,
+        Number.isFinite(state.lastSolvedPCO2Bar)
+          ? state.lastSolvedPCO2Bar
+          : state.targetPCO2Bar,
       );
       // This v1 is a declared fully mixed control volume. Replace, rather than
       // delta-shift, DIC and pH in every equal-volume voxel so a single shared

@@ -231,6 +231,7 @@ describe('strip dataset — serialization round-trip', () => {
       stress_event_testimony: [{ event_id: 'stress-1', outcome: 'twinned' }],
       transformation_event_testimony: [{ step: 0, crystal_id: 7, from: 'realgar', to: 'pararealgar', mechanism: 'light exposure' }],
       carbonate_boundary_testimony: [{ step: 0, mode: 'closed', dic_mol_kg: 0.0083 }],
+      sulfur_ledger_testimony: [{ step: 0, closed: true, phaseIdentity: [{ mineral: 'pyrite', reservoir: 'sulfide' }] }],
     };
     const reload = await stripDeserialize(await stripSerialize(ds, false));
     expect(reload.manifest).toMatchObject({
@@ -240,6 +241,7 @@ describe('strip dataset — serialization round-trip', () => {
     expect(reload.stress_event_testimony).toEqual(ds.stress_event_testimony);
     expect(reload.transformation_event_testimony).toEqual(ds.transformation_event_testimony);
     expect(reload.carbonate_boundary_testimony).toEqual(ds.carbonate_boundary_testimony);
+    expect(reload.sulfur_ledger_testimony).toEqual(ds.sulfur_ledger_testimony);
   });
 
   it('round-trips v5 actual event steps separately from zero-based sample indices', async () => {
@@ -259,12 +261,14 @@ describe('strip dataset — serialization round-trip', () => {
       stress_event_testimony: [],
       transformation_event_testimony: [{ step: 1, sample_index: 0, crystal_id: 7, from: 'gypsum', to: 'anhydrite', mechanism: 'dehydration' }],
       carbonate_boundary_testimony: [{ step: 1, sample_index: 0, mode: 'open', boundary_export_mol_kg: 0.001 }],
+      sulfur_ledger_testimony: [{ step: 1, sample_index: 0, closed: true }],
     };
     const reload = await stripDeserialize(await stripSerialize(ds, false));
     expect(reload.nucleation_events[0]).toMatchObject({ step: 1, sample_index: 0 });
     expect(reload.pressure_phase_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0 });
     expect(reload.transformation_event_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0 });
     expect(reload.carbonate_boundary_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0, mode: 'open' });
+    expect(reload.sulfur_ledger_testimony?.[0]).toMatchObject({ step: 1, sample_index: 0, closed: true });
   });
 
   it('uses a Node-compatible SHA-256 fingerprint for authored scenario specs', () => {
@@ -281,11 +285,13 @@ describe('strip dataset — serialization round-trip', () => {
     ds.stress_event_testimony = [{ event_id: 'stress-storage' }];
     ds.transformation_event_testimony = [{ step: 0, crystal_id: 8, from: 'pharmacolite', to: 'haidingerite', mechanism: 'dry-exposure' }];
     ds.carbonate_boundary_testimony = [{ step: 0, mode: 'closed', reduced_alkalinity_eq_kg: 0.01 }];
+    ds.sulfur_ledger_testimony = [{ step: 0, closed: true, fluidReservoirPpm: { sulfide: 10, sulfate: 20, elemental: 0 } }];
     const reload = stripDatasetFromStoredRecord(stripStoredRecordFromDataset(ds));
     expect(reload.pressure_phase_testimony).toEqual(ds.pressure_phase_testimony);
     expect(reload.stress_event_testimony).toEqual(ds.stress_event_testimony);
     expect(reload.transformation_event_testimony).toEqual(ds.transformation_event_testimony);
     expect(reload.carbonate_boundary_testimony).toEqual(ds.carbonate_boundary_testimony);
+    expect(reload.sulfur_ledger_testimony).toEqual(ds.sulfur_ledger_testimony);
     expect(reload.manifest.scenario_spec_hash).toMatch(/^[0-9a-f]{64}$/);
   });
 

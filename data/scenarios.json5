@@ -396,13 +396,16 @@
       "description": "The stepped-calcite showcase (calcite-morphology arc Phase 5). A waning MVT system: NaCl-CaCl2-MgCl2 basinal brine drops honey sphalerite, then fluorite + barite, and as the system cools, episodic brine expulsions (seismic pumping) drive an oscillating carbonate supply — the sigma curve crosses the stepped band again and again, and the late golden scalenohedral calcite records every pulse as a macrostep terrace. Watch them build.",
       "expects_species": ["sphalerite", "fluorite", "barite", "calcite"],
       "deterministic_species": [
-        { "mineral": "galena", "reason": "Documented Elmwood-Gordonsville ore mineral and a valid early MVT sulfide accessory." },
-        { "mineral": "pyrite", "reason": "Documented in the Elmwood regional inventory; non-diagnostic beside the characteristic sphalerite-calcite association." },
         { "mineral": "celestine", "reason": "Documented at Elmwood, including Ba-bearing celestine, and compatible with the scenario's sulfate-brine stage." },
         { "mineral": "chalcedony", "reason": "The audited Elmwood inventory includes quartz and silica; microcrystalline silica is allowed as subordinate late gangue rather than a headline promise." }
       ],
+      "aspirational_species": [
+        { "mineral": "galena", "reason": "Galena is documented at Elmwood-Gordonsville, but the valence-correct SIM 268 brine does not deliver a reproducible Pb-sulfide window in the three-seed evidence panel." },
+        { "mineral": "pyrite", "reason": "Pyrite is documented in the Elmwood regional inventory, but it is not produced by the present valence-correct sulfur trajectory." }
+      ],
       "excluded_species": {
-        "siderite": "Not documented in the audited Elmwood-Gordonsville inventory; the stepped-calcite variety model cannot be allowed to manufacture an Fe-carbonate locality claim."
+        "siderite": "Not documented in the audited Elmwood-Gordonsville inventory; the stepped-calcite variety model cannot be allowed to manufacture an Fe-carbonate locality claim.",
+        "strontianite": "The audited Elmwood-Gordonsville inventory documents strontium-bearing barite and barium-bearing celestine, but not discrete strontianite; Sr must remain in the documented sulfate family here."
       },
       "duration_steps": 200,
       "notes": [
@@ -1539,7 +1542,6 @@
         { "mineral": "chalcedony", "reason": "Microcrystalline quartz is a plausible silica lining/host for Bisbee copper silicates during the uplift and supergene stages.", "first_step_min": 65 },
         { "mineral": "chalcocite", "reason": "District-documented supergene enrichment sulfide and the authored replacement-blanket product.", "first_step_min": 65 },
         { "mineral": "covellite", "reason": "District-documented Cu sulfide in the supergene enrichment assemblage.", "first_step_min": 65 },
-        { "mineral": "galena", "reason": "District-documented Pb sulfide accessory exposed as the primary ore is weathered.", "first_step_min": 65 },
         { "mineral": "marcasite", "reason": "District-documented Fe sulfide; retained as an accessory at the hypogene-to-weathering transition.", "first_step_min": 65 },
         { "mineral": "acanthite", "reason": "District-documented Ag2S phase produced when the early argentite parent crosses its low-temperature inversion.", "first_step_min": 65 },
         { "mineral": "goethite", "reason": "District-documented iron oxyhydroxide in the oxidized and post-mining assemblages.", "first_step_min": 65 },
@@ -1562,7 +1564,8 @@
         { "mineral": "alunite", "reason": "The live district and post-mining inventories document alunite; the corrected-geometry run delivers it in two of the three evidence seeds during the acidic oxidation stage.", "first_step_min": 65 }
       ],
       "aspirational_species": [
-        { "mineral": "siderite", "reason": "Siderite is documented district-wide and as a Bisbee post-mining product, but the corrected mass-balanced cavity path does not deliver it in the three-seed panel; it remains a documented possibility, not a deterministic promise.", "first_step_min": 65 }
+        { "mineral": "siderite", "reason": "Siderite is documented district-wide and as a Bisbee post-mining product, but the corrected mass-balanced cavity path does not deliver it in the three-seed panel; it remains a documented possibility, not a deterministic promise.", "first_step_min": 65 },
+        { "mineral": "galena", "reason": "Galena is documented in the Warren District, but the former late PbS occurrence depended on oxic sulfate being treated as sulfide. The valence-correct trajectory supplies no reproducible Pb-sulfide window, so it is a documented possibility rather than a deterministic product." }
       ],
       "excluded_species": {
         "amosite": "The current district-wide 300+ species inventory does not document amosite, and the Fe-Mg amphibole asbestos belongs to metamorphosed iron formations rather than this porphyry-carbonate-replacement system.",
@@ -2600,12 +2603,12 @@
       ],
       "statistical_species": [
         { "mineral": "pharmacolite", "reason": "A hydrated Ca arsenate is geologically appropriate in the Schneeberg oxidation suite, but it occurs in only two of the three evidence seeds." },
-        { "mineral": "turquoise", "reason": "A plausible minor Cu-Al phosphate in the phosphate-bearing supergene assemblage; observed in two of three evidence seeds." },
-        { "mineral": "realgar", "reason": "The Handbook of Mineralogy records fine realgar from Schneeberg; the modeled low-temperature As-sulfide appears in two of the three evidence seeds.", "first_step_max": 110 },
-        { "mineral": "pararealgar", "reason": "A light-exposed vadose alteration product of realgar is possible only after the step-110 exhumation and appears in two of the three evidence seeds.", "first_step_min": 110 }
+        { "mineral": "turquoise", "reason": "A plausible minor Cu-Al phosphate in the phosphate-bearing supergene assemblage; observed in two of three evidence seeds." }
       ],
       "aspirational_species": [
-        { "mineral": "haidingerite", "reason": "A possible pharmacolite dehydration product, but no executed conversion appeared in the release seed audit for Schneeberg." }
+        { "mineral": "haidingerite", "reason": "A possible pharmacolite dehydration product, but no executed conversion appeared in the release seed audit for Schneeberg." },
+        { "mineral": "realgar", "reason": "The Handbook of Mineralogy records fine realgar from Schneeberg, but the SIM 268 valence-correct trajectory supplies no reproducible reduced-sulfur window for it.", "first_step_max": 110 },
+        { "mineral": "pararealgar", "reason": "A light-exposed alteration product remains possible only where a realgar parent exists; the present valence-correct trajectory produces neither parent nor product.", "first_step_min": 110 }
       ],
       "duration_steps": 160,
       "movements": [
@@ -2802,13 +2805,17 @@
     "wittichen": {
       "anchor": "Kloster Wittichen, Schwarzwald (Black Forest), Baden-Württemberg, Germany — the classic Bi-Co-Ni-Ag-As-(Ba) five-element vein district; cobalt-pigment + silver mining boom 1730s–40s around the convent. Sophia and Johann-Georg veins.",
       "description": "A five-element vein in granite basement: hot, saline, SULFUR-STARVED brine carries Bi + Co + Ni + Ag + As. S ~3 ppm is load-bearing — bismuthinite and acanthite never gate open, so the metals stay NATIVE and arsenides are the metal sinks. Hot stage grows skutterudite + nickeline rosettes; the deposit-defining REDUCING SHOCK precipitates arborescent bismuth, then barite + calcite gangue seal the vein. A distinct post-vein epilogue exhumates and partly drains the cavity: only vadose wall voxels oxidize Co arsenides, returning booked Co + As for erythrite and ambient cobalt-bearing aragonite while the submerged floor preserves the hypogene suite.",
-      "expects_species": ["skutterudite", "nickeline", "safflorite", "native_bismuth", "native_arsenic", "native_silver", "proustite", "acanthite", "calcite", "barite", "erythrite", "aragonite"],
+      "expects_species": ["skutterudite", "nickeline", "safflorite", "native_bismuth", "native_arsenic", "native_silver", "calcite", "barite", "erythrite", "aragonite"],
       "deterministic_species": [
-        { "mineral": "realgar", "reason": "A plausible subordinate As-sulfide during the late sulfur-bearing overprint of the five-element vein." },
         { "mineral": "annabergite", "reason": "A classic Ni-arsenate bloom in the oxidized five-element-vein assemblage." },
         { "mineral": "chalcedony", "reason": "A subordinate low-temperature silica lining during the post-vein weathering interval." },
         { "mineral": "pharmacolite", "reason": "A plausible hydrated Ca arsenate accessory in the oxidized arsenide-vein epilogue." },
         { "mineral": "haidingerite", "reason": "A plausible less-hydrated Ca arsenate product late in the weathering sequence." }
+      ],
+      "aspirational_species": [
+        { "mineral": "proustite", "reason": "Ruby silver is documented in five-element vein districts, but this authored S-starved trajectory contains no independently sourced reduced-sulfur pulse sufficient to form it." },
+        { "mineral": "acanthite", "reason": "Acanthite-coated silver is geologically possible, but oxidized meteoric sulfate cannot directly sulfidize native silver; no such conversion is claimed without an authored sulfate-reduction pathway." },
+        { "mineral": "realgar", "reason": "Realgar is a plausible district accessory, but the valence-correct trajectory does not deliver a reduced-sulfur As-sulfide window." }
       ],
       "duration_steps": 220,
       "carbon_ledger": true,
@@ -2817,7 +2824,7 @@
         "The redox shock is a DECLARED fluid.Eh movement (event-subsumption discipline, v185/v186): base −20 mV (mildly reducing basement brine), ONE deep pulse (amp −320) at u=0.58 (the CH4 influx; width ~8 steps; measured floor ~−253 mV at seed 42), and a late oxidizing trend (+95 ease — meteoric tail, tuned DOWN from +140 which dissolved the arsenide suite; a stronger late-oxidation finger was tried and reverted for the same reason — barite/erythrite are the documented aspirational casualties of arsenide survival). The wittichen_hydrocarbon_influx event at the pulse center is NARRATIVE-ONLY (no fluid writes).",
         "Engine fit: this is the morphology registry's dendrite-band tenant (MORPH_TH.native_bismuth, SIM 188 — RESEARCH-bismuth-morphology-2026-06-12.md). At the shock, Bi σ ≈ bi_f 3.0 × s_mask 0.96 × red_f 1.5 × T_f 1.0 ≈ 4.3 — the dendritic band (≥3.8) of a scale structurally capped at ~4.5. Pre-shock cooling-stage Bi sits in the feathery bands; post-shock regrowth heals feathery over the dendrites, so the zone stack RECORDS the shock (the narrator's healed-over paragraph + the bismuth_morph strip chip slamming 0→4 on the pulse). Skutterudite + safflorite get their FIRST scenario home here (both were expects-orphans fleet-wide).",
         "Wallrock: 'pegmatite' composition as the granite proxy (inert silicate — Wittichen veins cut Triberg granite; the carbonate gangue arrives in the FLUID via the late CO3 event, not from wall dissolution). Architecture tabular (vein-bounded), pocket size class, shape_seed 1736 (the cobalt-boom decade).",
-        "Calibration target: the hand specimen is silver-white dendritic Bi embedded in white carbonate with gray arsenide rims, read in cross-section. MEASURED at seeds 42-45 (calibration session, 2026-06-12): native_bismuth 3-5 alive with 45-49% DENDRITIC zone mass (the shock recorded); skutterudite 2 + safflorite 2 + nickeline 4 + native_arsenic 4 all ALIVE; native_silver grows then sulfidizes to acanthite 4 at the meteoric-sulfate stage (the tarnish story — hand-specimen Wittichen silver is acanthite-coated); proustite 2 (ruby silver); calcite + aragonite gangue. Bi band edges re-pinned against this trajectory (js/45 — the activity correction at salinity 24 compresses the structural ~4.5 ceiling to ~2.4 measured).",
+        "Calibration target: the hand specimen is silver-white dendritic Bi embedded in white carbonate with gray arsenide rims, read in cross-section. The valence-correct SIM 268 audit preserves the native-metal and arsenide assemblage but retires the old acanthite/proustite scorecard: the late pulse is explicitly sulfate, not reduced sulfur, so it grows barite without inventing a silver-sulfide reaction. Acanthite and proustite remain documented possibilities pending an independently sourced sulfide pathway. Bi band edges remain pinned against the measured morphology trajectory (js/45 — the activity correction at salinity 24 compresses the structural ~4.5 ceiling to ~2.4 measured).",
         "BARITE DELIVERED (v191, gate-census tune): the v189 'aspirational barite' diagnosis was WRONG about the mechanism — the gate census (tools/wittichen-sulfate-probe.mjs) measured every gate component PASSING from step ~133 (Ba✓ S✓ redox✓ pH✓ T✓) with σ plateaued at 0.60: barite never needed more OXIDATION, it needed more BARIUM (ba_f 24/30 × s_f 30/40 × the salinity-24 activity penalty ≈ 0.59 pinned σ under 1 forever). The locality is the authority: Wittichen's veins are literally Barytgänge — barite-gangue veins, the district's defining gangue — so Ba 24 was unjustifiably shy. Ba 75 (still modest for a heavy-spar district) puts the barite stage at σ 1.47–1.55 from the meteoric beat on: barite 2/6/3 crystals at seeds 42/43/44, NO witherite (the BaCO3 competitor never gates), and the living suite intact at all probed seeds. No Eh change — the reverted +100 oxidation finger stays reverted.",
         "WEATHERING EPILOGUE EXECUTED: step 170 is a new post-vein boundary, not a retuned hydrothermal tail. T falls to 25°C, pressure to 0.001 kbar, the water table to 2 mm, and the buried-stage thermal-pulse generator stops. The 3-D vadose boundary raises O2 only above that surface and preserves total dissolved sulfur. Erythrite cannot nucleate until a same-site Co arsenide has actually dissolved and returned both Co and As through the accepted-shell LIFO budget. Sophia Mine occurrence evidence supports the erythrite bloom; Staude et al. 2012 supports the district's final supergene arsenate/carbonate/sulfate stage but is not misquoted as naming erythrite.",
         "COBALT ARAGONITE EXECUTED WITH AN EVIDENCE DOMAIN: Barber et al. 1975 measured calcite poisoning from 5e-4 M Co at 25°C and mostly aragonite by 3e-3 M; González-López et al. 2018 constrains the Co/Ca pathway, and Brazier & Mavromatis 2022 supplies equilibrium DCo≈0.1 at 25°C. The selector is unavailable during the 150–340°C vein stage and above the 1e-2 M amorphous-only limit. Accepted pink aragonite shells debit their trace Co and attach only to a weathering Co-arsenide that has returned booked Co. Wittichen occurrence is locality evidence; no direct observed substrate texture is attributed to Staude et al."
@@ -4277,6 +4284,9 @@
       "anchor": "Cianciana / Caltanissetta district, Agrigento province, Sicily — Solfifera Series (Messinian, 6-5.3 Ma). The canonical sedimentary BSR native-sulfur deposit. World's primary sulfur production center 1860s-1950s, when the Sicilian fields supplied ~80% of global elemental sulfur. Type for 'bacterial-mediated sedimentary sulfur' per Ziegenbalg et al. 2010.",
       "description": "Sedimentary native sulfur associated with anaerobic microbial sulfate reduction of Messinian gypsum and hydrocarbons. This is deliberately distinct from Sulphur Bank's oxic hot-spring interface: the vug inherits a separately sourced elemental-S reservoir produced over geological time in sulfur-bearing carbonate, while in-run BSR transfers sulfate to reduced sulfur and raises carbonate alkalinity. Mineable S° crystallizes with secondary carbonates in the Solfifera Series. Co-products: calcite cement, residual selenite, and celestine from gypsum-derived Sr trace.",
       "expects_species": ["native_sulfur", "calcite", "selenite", "celestine"],
+      "deterministic_species": [
+        { "mineral": "strontianite", "reason": "Historical Solfifera descriptions place strontium both as sulfate in gypsum and as carbonate in limestone; the modeled BSR carbonate-alkalinity route reproducibly realizes that subordinate Sr-carbonate sink." }
+      ],
       "duration_steps": 200,
       "notes": [
         "Anchor: Sicilian Solfifera Series, Cianciana / Caltanissetta. Microbial sulfate reduction of Messinian gypsum and hydrocarbons produced secondary carbonate and native sulfur under anoxic conditions. Ziegenbalg et al. (2010) establish the microbial sulfate-reduction association; Rouwendaal et al. (2025) demonstrate that molecular O₂ is not required at Monte Palco. The simulator therefore carries inherited microbial S° separately from sulfate and sulfide instead of reusing the Sulphur Bank oxic-interface mechanism.",
@@ -4418,7 +4428,8 @@
         { "mineral": "arsenopyrite", "reason": "A plausible early high-temperature As sulfide in the primary Sunnyside ore stage." },
         { "mineral": "calaverite", "reason": "A minor Au telluride compatible with the district's Au-Ag-Te inventory, subordinate to native gold." },
         { "mineral": "proustite", "reason": "A minor ruby-silver sulfosalt permitted in the Ag-bearing primary stage." },
-        { "mineral": "siderite", "reason": "A subordinate Fe-carbonate accessory during the transition into the late Mn-carbonate stages." }
+        { "mineral": "siderite", "reason": "A subordinate Fe-carbonate accessory during the transition into the late Mn-carbonate stages." },
+        { "mineral": "native_silver", "reason": "USGS Folio 120 documents wire silver in the Sunnyside Extension mine; the modeled Sunnyside system reproduces it as a subordinate Ag-bearing accessory rather than a headline phase." }
       ],
       "duration_steps": 200,
       "notes": [
@@ -4481,6 +4492,7 @@
         { "step": 150, "type": "sunnyside_stage_vi_manganocalcite_cap", "name": "Stage VI Carbonate Cap",               "description": "CO2 loss raises calcite SI; inventory determines whether Mn-bearing calcite forms" }
       ],
       "sources": [
+        "Ransome F.L. (1901) — Economic Geology of the Silverton Quadrangle / USGS Geologic Atlas Folio 120: wire silver documented in the Sunnyside Extension mine.",
         "Burbank W.S. & Luedke R.G. (1968) — Geology and Ore Deposits of the Eureka and Adjoining Districts, San Juan Mountains, Colorado. USGS Professional Paper 535.",
         "Casadevall T. & Ohmoto H. (1977) — Sunnyside Mine, Eureka mining district, San Juan County, Colorado; geochemistry of gold and base metal ore deposition in a volcanic environment. Economic Geology 72: 1285-1320. DOI 10.2113/gsecongeo.72.7.1285.",
         "Burbank W.S. (1933) — Geology and Ore Deposits of the South Silverton Mining Area, San Juan County, Colorado. USGS Professional Paper 378-A.",
