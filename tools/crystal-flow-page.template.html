@@ -261,6 +261,9 @@
 
 <script>
 const FLOW = /*__FLOW_DATA__*/null;
+// The plate charts the legacy chord kinds only. Transformation edges (kind: null)
+// arrived with the strict/growth split and are drawn on The Hard Skeleton page.
+FLOW.edges = FLOW.edges.filter(e => e.kind);
 
 const CLASS_ORDER = Object.entries(FLOW.classes)
   .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
@@ -497,7 +500,9 @@ svg.addEventListener('click', ev => { if (!ev.target.closest('.leaf')) { picked 
 /* ---- chrome ---- */
 const c = FLOW.counts;
 document.getElementById('tally').innerHTML = [
-  [c.minerals, 'species'], [c.classes, 'classes'], [c.edges, 'chords'],
+  // count what is DRAWN, not what the extractor holds: the plate filters to the
+  // legacy kinds, so c.edges would over-report by the transformation edges.
+  [c.minerals, 'species'], [c.classes, 'classes'], [FLOW.edges.length, 'chords'],
   [c.substrate, 'substrate'], [c.replaces, 'replaces'],
   [FLOW.nodes.length - new Set(FLOW.edges.flatMap(e => [e.from, e.to])).size, 'unlinked'],
 ].map(([n, l]) => `<div><b>${n}</b><span>${l}</span></div>`).join('');

@@ -49,6 +49,11 @@
   * { box-sizing: border-box; }
   body { margin:0; background: var(--ground); color: var(--ink); font-family: var(--serif); line-height:1.55; -webkit-font-smoothing: antialiased; }
   .wrap { max-width: 1240px; margin: 0 auto; padding: 40px 24px 72px; }
+  .superseded { border: 1px solid var(--down); border-left-width: 4px; background: var(--surface);
+    padding: 12px 15px; margin: 0 0 22px; font-size: 13.5px; color: var(--ink-soft); max-width: 78ch; }
+  .superseded b { color: var(--ink); }
+  .superseded i { font-style: italic; }
+  .superseded a { color: var(--down); }
   header { border-bottom: 1px solid var(--rule); padding-bottom: 18px; margin-bottom: 20px; }
   .eyebrow { font-family: var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 10px; }
   h1 { font-size: clamp(26px,4vw,40px); line-height:1.1; margin:0 0 10px; font-weight:600; text-wrap:balance; }
@@ -138,6 +143,14 @@
 </style>
 
 <div class="wrap">
+  <div class="superseded">
+    <b>Corrected &mdash; read this first.</b> The columns below are <i>reachable relationships</i>, not dependencies.
+    A later measurement ran every scenario and read where each crystal actually nucleated: <b>129 of 137 species
+    were observed growing on the bare wall</b>, so almost none of these arrows is a requirement. The whole engine
+    contains <b>one</b> required prerequisite and <b>eleven</b> transformations. Treat "steps deep" here as how far a
+    chain of preferences can be followed, and see <a href="crystal-causation.html">The Hard Skeleton</a> for the
+    twelve edges that genuinely block or transform.
+  </div>
   <header>
     <p class="eyebrow" id="stamp">Vugg Simulator</p>
     <h1>What enables what</h1>
@@ -186,6 +199,11 @@
 
 <script>
 const FLOW = /*__FLOW_DATA__*/null;
+// This page predates the strict/growth split and knows only the legacy kinds.
+// The extractor now also emits transformation edges (kind: null); they belong to
+// The Hard Skeleton, and drawing them here would add unstyled wires and quietly
+// move this chart's counts.
+FLOW.edges = FLOW.edges.filter(e => e.kind);
 const NODE = new Map(FLOW.nodes.map(n => [n.id, n]));
 const pretty = id => id.replace(/_/g, ' ');
 const esc = v => String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
