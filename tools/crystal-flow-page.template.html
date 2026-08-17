@@ -1,0 +1,500 @@
+<title>Vugg Crystal Flow Plate</title>
+<style>
+  :root {
+    --ground: #E9EBE8;
+    --surface: #F5F7F3;
+    --sunk: #DEE1DC;
+    --ink: #191D1A;
+    --ink-soft: #5D6763;
+    --ink-faint: #8A928D;
+    --rule: #C6CBC4;
+    --rule-soft: #D6DAD3;
+    --focus: #3E6B80;
+    --needs: #2E6E8E;
+    --feeds: #B4632F;
+    --hub: #7E877F;
+
+    --cls-silicate:  #7C8FA8;
+    --cls-sulfide:   #A98D42;
+    --cls-phosphate: #4F9280;
+    --cls-carbonate: #B08A5E;
+    --cls-oxide:     #A8635C;
+    --cls-sulfate:   #8C7FAD;
+    --cls-arsenate:  #A85F8B;
+    --cls-native:    #B5912F;
+    --cls-molybdate: #C0752A;
+    --cls-amphibole: #4E6B52;
+    --cls-halide:    #7E5BA6;
+    --cls-hydroxide: #9A7433;
+    --cls-borate:    #7C9098;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0F1211;
+      --surface: #161A18;
+      --sunk: #0A0D0C;
+      --ink: #E2E7E2;
+      --ink-soft: #98A29C;
+      --ink-faint: #6B746F;
+      --rule: #2B322E;
+      --rule-soft: #222825;
+      --focus: #74A6BE;
+      --needs: #6FB4D4;
+      --feeds: #DE9257;
+      --hub: #6C756E;
+
+      --cls-silicate:  #93A6BE;
+      --cls-sulfide:   #C7A957;
+      --cls-phosphate: #5FB29B;
+      --cls-carbonate: #CBA271;
+      --cls-oxide:     #C67C74;
+      --cls-sulfate:   #A79ACA;
+      --cls-arsenate:  #C77AA6;
+      --cls-native:    #D2AC42;
+      --cls-molybdate: #DE8F40;
+      --cls-amphibole: #6F9074;
+      --cls-halide:    #9A78C4;
+      --cls-hydroxide: #BC9142;
+      --cls-borate:    #94A9B2;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0F1211;
+    --surface: #161A18;
+    --sunk: #0A0D0C;
+    --ink: #E2E7E2;
+    --ink-soft: #98A29C;
+    --ink-faint: #6B746F;
+    --rule: #2B322E;
+    --rule-soft: #222825;
+    --focus: #74A6BE;
+    --needs: #6FB4D4;
+    --feeds: #DE9257;
+    --hub: #6C756E;
+
+    --cls-silicate:  #93A6BE;
+    --cls-sulfide:   #C7A957;
+    --cls-phosphate: #5FB29B;
+    --cls-carbonate: #CBA271;
+    --cls-oxide:     #C67C74;
+    --cls-sulfate:   #A79ACA;
+    --cls-arsenate:  #C77AA6;
+    --cls-native:    #D2AC42;
+    --cls-molybdate: #DE8F40;
+    --cls-amphibole: #6F9074;
+    --cls-halide:    #9A78C4;
+    --cls-hydroxide: #BC9142;
+    --cls-borate:    #94A9B2;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 40px 24px 72px; }
+
+  header { border-bottom: 1px solid var(--rule); padding-bottom: 18px; margin-bottom: 22px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--ink-faint); margin: 0 0 10px;
+  }
+  h1 { font-size: clamp(26px, 4vw, 40px); line-height: 1.1; margin: 0 0 10px; font-weight: 600; text-wrap: balance; }
+  .standfirst { margin: 0; max-width: 64ch; color: var(--ink-soft); font-size: 15.5px; }
+
+  .tally { display: flex; flex-wrap: wrap; gap: 0; margin: 20px 0 0; border: 1px solid var(--rule); background: var(--surface); }
+  .tally div { flex: 1 1 108px; padding: 10px 13px; border-right: 1px solid var(--rule-soft); }
+  .tally div:last-child { border-right: 0; }
+  .tally b { display: block; font-family: var(--mono); font-size: 19px; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .tally span { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--ink-faint); }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 22px 0 6px; }
+  input[type="search"] {
+    font-family: var(--mono); font-size: 12.5px; padding: 7px 10px; min-width: 210px;
+    background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 0;
+  }
+  input[type="search"]:focus-visible, button:focus-visible, .leaf:focus-visible {
+    outline: 2px solid var(--focus); outline-offset: 1px;
+  }
+  button {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 7px 11px; background: var(--surface); color: var(--ink-soft);
+    border: 1px solid var(--rule); cursor: pointer; border-radius: 0;
+  }
+  button[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+  button:hover { color: var(--ink); }
+
+  .stage { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 26px; align-items: start; margin-top: 16px; }
+  @media (max-width: 900px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+
+  .plate { background: var(--surface); border: 1px solid var(--rule); overflow-x: auto; }
+  svg { display: block; width: 100%; height: auto; touch-action: manipulation; }
+
+  .edge { fill: none; stroke-linecap: round; pointer-events: none; }
+  .edge.substrate { stroke: var(--hub); stroke-width: 0.55; opacity: 0.30; }
+  .edge.replaces  { stroke: var(--feeds); stroke-width: 0.6; opacity: 0.34; }
+  .edge.either    { stroke: var(--hub); stroke-width: 0.55; opacity: 0.26; stroke-dasharray: 3 2; }
+  .edge.presence  { stroke: var(--hub); stroke-width: 0.5; opacity: 0.22; stroke-dasharray: 1 3; }
+  .edge.hidden { display: none; }
+  svg.picked .edge { opacity: 0.05; }
+  svg.picked .edge.in  { stroke: var(--needs); stroke-width: 1.5; opacity: 0.95; stroke-dasharray: none; }
+  svg.picked .edge.out { stroke: var(--feeds); stroke-width: 1.5; opacity: 0.95; stroke-dasharray: none; }
+
+  .leaf { cursor: pointer; }
+  .leaf text {
+    font-family: var(--mono); font-size: 6.6px; letter-spacing: 0.01em;
+    fill: var(--ink-soft); dominant-baseline: middle;
+  }
+  .leaf .node { r: 1.9; }
+  svg.picked .leaf text { fill: var(--ink-faint); opacity: 0.35; }
+  svg.picked .leaf.lit text { fill: var(--ink); opacity: 1; font-weight: 700; }
+  svg.picked .leaf.lit .node { r: 3.1; }
+  svg.picked .leaf.dim .node { opacity: 0.18; }
+  .leaf.hit text { fill: var(--ink); font-weight: 700; }
+  .arc-label {
+    font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.13em; text-transform: uppercase;
+    fill: var(--ink-faint); dominant-baseline: middle;
+  }
+  .hub-label { font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; fill: var(--ink-faint); text-anchor: middle; }
+
+  aside { border: 1px solid var(--rule); background: var(--surface); padding: 15px 16px; }
+  aside h2 { font-size: 17px; margin: 0 0 2px; font-weight: 600; }
+  .formula { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); margin: 0 0 12px; }
+  .chip {
+    display: inline-block; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.09em;
+    text-transform: uppercase; padding: 2px 7px; border: 1px solid currentColor; margin: 0 0 12px;
+  }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0 0 14px; font-family: var(--mono); font-size: 11.5px; }
+  dt { color: var(--ink-faint); letter-spacing: 0.06em; text-transform: uppercase; font-size: 9.5px; padding-top: 2px; }
+  dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .rel h3 {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.11em; text-transform: uppercase;
+    margin: 0 0 5px; padding-bottom: 3px; border-bottom: 1px solid var(--rule-soft);
+  }
+  .rel h3.needs { color: var(--needs); }
+  .rel h3.feeds { color: var(--feeds); }
+  .rel ul { list-style: none; margin: 0 0 13px; padding: 0; font-family: var(--mono); font-size: 11px; }
+  .rel li { padding: 1.5px 0; }
+  .rel li button {
+    all: unset; cursor: pointer; font-family: var(--mono); font-size: 11px;
+    border-bottom: 1px dotted var(--rule); text-transform: none; letter-spacing: 0;
+  }
+  .rel li button:hover { color: var(--focus); }
+  .rel li i { color: var(--ink-faint); font-style: normal; font-size: 9.5px; }
+  .note { font-size: 12.5px; color: var(--ink-soft); margin: 0; }
+  .desc { font-size: 13px; color: var(--ink-soft); margin: 0 0 13px; max-width: 46ch; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 5px 16px; margin: 14px 0 0; font-family: var(--mono); font-size: 10px; color: var(--ink-soft); }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .swatch { width: 9px; height: 9px; display: inline-block; }
+
+  footer { margin-top: 40px; border-top: 1px solid var(--rule); padding-top: 16px; }
+  footer p { font-size: 12.5px; color: var(--ink-soft); max-width: 74ch; margin: 0 0 9px; }
+  code { font-family: var(--mono); font-size: 11.5px; background: var(--sunk); padding: 1px 4px; }
+  @media (prefers-reduced-motion: no-preference) { .edge, .leaf text, .leaf .node { transition: opacity 140ms linear, stroke-width 140ms linear; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow" id="stamp">Vugg Simulator &middot; mineral catalogue</p>
+    <h1>Every crystal, and what it needs to exist</h1>
+    <p class="standfirst">All species the simulator can grow, arranged by chemistry class, with the dependencies
+      the <em>engine actually enforces</em> drawn as chords through the hub. These are gate conditions read out of the
+      nucleation code &mdash; not paragenetic folklore.</p>
+    <div class="tally" id="tally"></div>
+  </header>
+
+  <div class="controls">
+    <input type="search" id="search" placeholder="find a species&hellip;" aria-label="Find a species" autocomplete="off" />
+    <button id="k-substrate" aria-pressed="true">substrate</button>
+    <button id="k-replaces" aria-pressed="true">replaces</button>
+    <button id="k-either" aria-pressed="true">either</button>
+    <button id="k-presence" aria-pressed="true">presence</button>
+    <button id="reset">clear</button>
+  </div>
+  <div class="legend" id="legend"></div>
+
+  <div class="stage">
+    <div class="plate"><svg id="plate" viewBox="76 70 856 856" role="img"
+      aria-label="Radial plate of every mineral species, grouped by chemistry class, with dependency chords"></svg></div>
+    <aside id="panel"></aside>
+  </div>
+
+  <footer>
+    <p><b>How the chords were found.</b> Each nucleation engine (<code>js/80</code>&ndash;<code>js/91</code>) tests the
+      crystals already in the vug before it will seed a new one. Every one of those tests was read and classified by
+      the state it demands: <code>c.active</code> means the precursor must be <em>present</em> (substrate);
+      <code>c.dissolved</code> means it must be <em>breaking down</em> (replaces); both means either will do; a bare
+      count means mere presence. A reference is attributed to the nearest preceding gate marker, because several
+      functions gate more than one species in a single body.</p>
+    <p><b>What was left out, and why.</b> Of <span id="seen"></span> mineral comparisons in those files,
+      <span id="used"></span> became chords. <span id="self"></span> were self-references &mdash; a species counting its own
+      crystals, which is growth bookkeeping rather than a relation. Exactly one could not be attributed:
+      <code>c.mineral === 'serpentine'</code> in the diopside gate, an alternative that can never match because no
+      such species exists in the catalogue and nothing nucleates it. The <code>chrysotile</code> alternative beside it
+      carries the logic, so the disjunct is dead rather than harmful.</p>
+    <p><b>Read the isolated rim with care.</b> A species with no chords is not unreachable &mdash; it simply answers to broth
+      chemistry, temperature and redox alone, with no other crystal named in its gate.</p>
+    <p id="prov" class="note"></p>
+  </footer>
+</div>
+
+<script>
+const FLOW = /*__FLOW_DATA__*/null;
+
+const CLASS_ORDER = Object.entries(FLOW.classes)
+  .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+const NODE = new Map(FLOW.nodes.map(n => [n.id, n]));
+const pretty = id => id.replace(/_/g, ' ');
+const esc = v => String(v == null ? '' : v)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const cssVar = cls => `var(--cls-${cls})`;
+
+/* ---- radial layout: leaves on the rim, class arcs inside, fluid at the hub ---- */
+const CX = 500, CY = 500, R_LEAF = 352, R_CLASS = 150, R_LABEL = 362, R_ARC = 128;
+const GAP = 1.5 * Math.PI / 180;
+const total = FLOW.nodes.length;
+const span = Math.PI * 2 - GAP * CLASS_ORDER.length;
+const step = span / total;
+
+const pos = new Map();      // mineral id -> {a, x, y}
+const classAt = new Map();  // class -> {a, x, y, a0, a1}
+let cursor = -Math.PI / 2 + GAP / 2;
+for (const [cls, ids] of CLASS_ORDER) {
+  const sorted = [...ids].sort();
+  const a0 = cursor;
+  for (let i = 0; i < sorted.length; i++) {
+    const a = cursor + (i + 0.5) * step;
+    pos.set(sorted[i], { a, x: CX + Math.cos(a) * R_LEAF, y: CY + Math.sin(a) * R_LEAF, cls });
+  }
+  cursor += sorted.length * step;
+  const a1 = cursor;
+  const mid = (a0 + a1) / 2;
+  classAt.set(cls, { a: mid, x: CX + Math.cos(mid) * R_CLASS, y: CY + Math.sin(mid) * R_CLASS, a0, a1 });
+  cursor += GAP;
+}
+
+/* ---- hierarchical edge bundling: route each chord along the tree, then relax it ---- */
+const BETA = 0.76;
+function bundle(from, to) {
+  const a = pos.get(from), b = pos.get(to);
+  const ca = classAt.get(a.cls), cb = classAt.get(b.cls);
+  const raw = a.cls === b.cls
+    ? [a, ca, { x: CX + (ca.x - CX) * 0.55, y: CY + (ca.y - CY) * 0.55 }, cb, b]
+    : [a, ca, { x: CX, y: CY }, cb, b];
+  const n = raw.length, p0 = raw[0], pn = raw[n - 1];
+  return raw.map((p, i) => {
+    const t = i / (n - 1);
+    return {
+      x: BETA * p.x + (1 - BETA) * (p0.x + t * (pn.x - p0.x)),
+      y: BETA * p.y + (1 - BETA) * (p0.y + t * (pn.y - p0.y)),
+    };
+  });
+}
+function spline(pts) {
+  let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(i - 1, 0)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(i + 2, pts.length - 1)];
+    const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+    d += `C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+  }
+  return d;
+}
+
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('plate');
+const make = (tag, attrs) => {
+  const el = document.createElementNS(NS, tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+};
+
+/* class arcs */
+const arcs = make('g', {});
+for (const [cls, box] of classAt) {
+  const { a0, a1 } = box;
+  const large = a1 - a0 > Math.PI ? 1 : 0;
+  arcs.appendChild(make('path', {
+    d: `M${CX + Math.cos(a0) * R_ARC},${CY + Math.sin(a0) * R_ARC}`
+     + `A${R_ARC},${R_ARC} 0 ${large} 1 ${CX + Math.cos(a1) * R_ARC},${CY + Math.sin(a1) * R_ARC}`,
+    fill: 'none', stroke: cssVar(cls), 'stroke-width': 3.5, opacity: 0.9,
+  }));
+  const mid = box.a, deg = mid * 180 / Math.PI, flip = deg > 90 || deg < -90;
+  const lr = R_ARC - 11;
+  const label = make('text', {
+    class: 'arc-label',
+    transform: `translate(${CX + Math.cos(mid) * lr},${CY + Math.sin(mid) * lr}) rotate(${flip ? deg + 180 : deg})`,
+    'text-anchor': flip ? 'start' : 'end',
+    fill: cssVar(cls),
+  });
+  label.textContent = cls;
+  arcs.appendChild(label);
+}
+svg.appendChild(arcs);
+
+/* chords */
+const edgeLayer = make('g', {});
+const byMineral = new Map();
+FLOW.edges.forEach((e, i) => {
+  if (!pos.has(e.from) || !pos.has(e.to)) return;
+  const path = make('path', { class: `edge ${e.kind}`, d: spline(bundle(e.from, e.to)) });
+  edgeLayer.appendChild(path);
+  e._el = path;
+  for (const id of [e.from, e.to]) {
+    if (!byMineral.has(id)) byMineral.set(id, []);
+    byMineral.get(id).push(e);
+  }
+});
+svg.appendChild(edgeLayer);
+
+/* leaves */
+const leafLayer = make('g', {});
+const leafEl = new Map();
+for (const [id, p] of pos) {
+  const g = make('g', { class: 'leaf', tabindex: '0', role: 'button' });
+  g.appendChild(make('title', {})).textContent = `${pretty(id)} \u2014 ${p.cls}`;
+  g.appendChild(make('circle', { class: 'node', cx: p.x, cy: p.y, r: 1.9, fill: cssVar(p.cls) }));
+  const deg = p.a * 180 / Math.PI, flip = deg > 90 || deg < -90;
+  const t = make('text', {
+    transform: `translate(${CX + Math.cos(p.a) * R_LABEL},${CY + Math.sin(p.a) * R_LABEL}) rotate(${flip ? deg + 180 : deg})`,
+    'text-anchor': flip ? 'end' : 'start',
+  });
+  t.textContent = pretty(id);
+  g.appendChild(t);
+  g.addEventListener('mouseenter', () => preview(id));
+  // Leaving a hovered species must restore the PINNED one, not strand the panel
+  // on whatever the cursor last brushed past.
+  g.addEventListener('mouseleave', () => { if (picked) restore(); else clear(); });
+  g.addEventListener('click', () => select(id));
+  g.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); select(id); } });
+  leafLayer.appendChild(g);
+  leafEl.set(id, g);
+}
+svg.appendChild(leafLayer);
+
+const hub = make('text', { class: 'hub-label', x: CX, y: CY + 3 });
+hub.textContent = 'the fluid';
+svg.appendChild(hub);
+
+/* ---- selection ---- */
+let picked = null;
+function paint(id) {
+  svg.classList.add('picked');
+  for (const e of FLOW.edges) { if (e._el) e._el.classList.remove('in', 'out'); }
+  for (const g of leafEl.values()) g.classList.remove('lit', 'dim');
+  const touching = byMineral.get(id) || [];
+  const kin = new Set([id]);
+  for (const e of touching) {
+    if (e._el) e._el.classList.add(e.to === id ? 'in' : 'out');
+    kin.add(e.from); kin.add(e.to);
+  }
+  for (const [mid, g] of leafEl) g.classList.add(kin.has(mid) ? 'lit' : 'dim');
+}
+function clear() {
+  svg.classList.remove('picked');
+  for (const e of FLOW.edges) if (e._el) e._el.classList.remove('in', 'out');
+  for (const g of leafEl.values()) g.classList.remove('lit', 'dim');
+  panel.innerHTML = restingPanel();
+}
+const preview = id => { paint(id); panel.innerHTML = card(id); };
+function select(id) { picked = id; paint(id); panel.innerHTML = card(id); }
+function restore() { paint(picked); panel.innerHTML = card(picked); }
+
+/* ---- side panel ---- */
+const panel = document.getElementById('panel');
+function restingPanel() {
+  const top = [...byMineral.entries()]
+    .map(([id, es]) => [id, es.filter(e => e.from === id).length])
+    .filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  return `<h2>The plate</h2>
+    <p class="desc">Hover any species on the rim to see what it needs and what it feeds. Click to pin it.</p>
+    <div class="rel"><h3 class="feeds">Most depended upon</h3><ul>${
+      top.map(([id, n]) => `<li><button data-go="${id}">${pretty(id)}</button> <i>${n} dependents</i></li>`).join('')
+    }</ul></div>
+    <p class="note">These are the species other gates name most often \u2014 the scaffolding the rest of the catalogue is built on.</p>`;
+}
+function card(id) {
+  const n = NODE.get(id);
+  const es = byMineral.get(id) || [];
+  const inc = es.filter(e => e.to === id), out = es.filter(e => e.from === id);
+  const ions = Object.entries(n.requires || {});
+  const row = (k, v) => v == null || v === '' || (Array.isArray(v) && !v.length) ? '' : `<dt>${k}</dt><dd>${esc(v)}</dd>`;
+  const list = (arr, dir) => arr.length
+    ? `<ul>${arr.map(e => {
+        const other = dir === 'in' ? e.from : e.to;
+        return `<li><button data-go="${other}">${pretty(other)}</button> <i>${e.kind}</i></li>`;
+      }).join('')}</ul>`
+    : `<ul><li><i>none \u2014 grows from the broth alone</i></li></ul>`;
+  return `<h2>${pretty(id)}</h2>
+    <p class="formula">${esc(n.formula)}</p>
+    <p class="chip" style="color:${cssVar(n.class)}">${n.class}</p>
+    ${n.description ? `<p class="desc">${esc(n.description)}</p>` : ''}
+    <dl>
+      ${row('T range', n.t_range_c ? `${n.t_range_c[0]}\u2013${n.t_range_c[1]} \u00B0C` : '')}
+      ${row('T optimum', n.t_optimum_c != null ? `${n.t_optimum_c} \u00B0C` : '')}
+      ${row('Redox', n.redox)}
+      ${row('Habit', n.habit)}
+      ${row('Max size', n.max_size_cm != null ? `${n.max_size_cm} cm` : '')}
+      ${row('Needs ions', ions.length ? ions.map(([k, v]) => `${k} \u2265 ${v}`).join(', ') : '')}
+      ${row('Traces', (n.traces || []).join(', '))}
+      ${row('Scenarios', (n.scenarios || []).map(pretty).join(', '))}
+    </dl>
+    <div class="rel">
+      <h3 class="needs">Needs present \u00B7 ${inc.length}</h3>${list(inc, 'in')}
+      <h3 class="feeds">Enables \u00B7 ${out.length}</h3>${list(out, 'out')}
+    </div>`;
+}
+panel.addEventListener('click', ev => {
+  const go = ev.target.closest('[data-go]');
+  if (go) select(go.dataset.go);
+});
+
+/* ---- controls ---- */
+for (const kind of ['substrate', 'replaces', 'either', 'presence']) {
+  const btn = document.getElementById('k-' + kind);
+  btn.addEventListener('click', () => {
+    const on = btn.getAttribute('aria-pressed') === 'true';
+    btn.setAttribute('aria-pressed', String(!on));
+    for (const e of FLOW.edges) if (e.kind === kind && e._el) e._el.classList.toggle('hidden', on);
+  });
+}
+document.getElementById('reset').addEventListener('click', () => { picked = null; clear(); search.value = ''; hits(''); });
+const search = document.getElementById('search');
+function hits(q) {
+  const term = q.trim().toLowerCase();
+  for (const [id, g] of leafEl) g.classList.toggle('hit', !!term && id.includes(term.replace(/ /g, '_')));
+}
+search.addEventListener('input', () => hits(search.value));
+search.addEventListener('keydown', ev => {
+  if (ev.key !== 'Enter') return;
+  const term = search.value.trim().toLowerCase().replace(/ /g, '_');
+  const found = [...pos.keys()].find(id => id.includes(term));
+  if (found) select(found);
+});
+svg.addEventListener('click', ev => { if (!ev.target.closest('.leaf')) { picked = null; clear(); } });
+
+/* ---- chrome ---- */
+const c = FLOW.counts;
+document.getElementById('tally').innerHTML = [
+  [c.minerals, 'species'], [c.classes, 'classes'], [c.edges, 'chords'],
+  [c.substrate, 'substrate'], [c.replaces, 'replaces'],
+  [FLOW.nodes.length - new Set(FLOW.edges.flatMap(e => [e.from, e.to])).size, 'unlinked'],
+].map(([n, l]) => `<div><b>${n}</b><span>${l}</span></div>`).join('');
+document.getElementById('legend').innerHTML = CLASS_ORDER
+  .map(([cls, ids]) => `<span><i class="swatch" style="background:${cssVar(cls)}"></i>${cls} <i style="color:var(--ink-faint);font-style:normal">${ids.length}</i></span>`)
+  .join('');
+document.getElementById('seen').textContent = c.references_seen;
+document.getElementById('used').textContent = c.references_used;
+document.getElementById('self').textContent = c.references_seen - c.references_used - c.unattributed;
+document.getElementById('prov').textContent = FLOW._provenance || '';
+document.getElementById('stamp').textContent = FLOW._stamp || 'Vugg Simulator \u00B7 mineral catalogue';
+clear();
+</script>
