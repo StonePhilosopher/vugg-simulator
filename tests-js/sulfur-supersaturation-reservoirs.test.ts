@@ -9,6 +9,7 @@ declare const Crystal: any;
 declare const applyStoichiometricGrowthBudget: any;
 declare const simulatorSulfurLedgerSnapshot: any;
 declare const sulfurSystemTotalPpm: any;
+declare const declareSulfurBoundaryAddition: any;
 declare const SCENARIOS: any;
 declare const VugSimulator: any;
 declare const StripRecorder: any;
@@ -158,4 +159,49 @@ describe('valence-specific sulfur supersaturation authority', () => {
       elemental: expect.any(Number),
     });
   });
+
+  it.each([0, 50])(
+    'commissions a closed explicit ledger from an authenticated %s ppm legacy-S boundary',
+    (legacySulfurPpm) => {
+    setSeed(42);
+    const conditions = new VugConditions({
+      temperature: 50,
+      fluid: new FluidChemistry({
+        S: legacySulfurPpm, Ca: 100, O2: 1.5, pH: 6, salinity: 2,
+      }),
+    });
+    const sim = new VugSimulator(conditions, []);
+    const snap = sim._snapshotGlobal({ captureLegacySulfur: true });
+    declareSulfurBoundaryAddition(
+      sim.conditions,
+      'sulfate',
+      350,
+      'test legacy-to-explicit sulfate recharge',
+    );
+    sim._propagateGlobalDelta(snap);
+
+    const count = sim.wall_state.voxelGridFor(sim).voxels.length;
+    const transaction = sim._sulfurBoundaryTransactions.at(-1);
+    const ledger = simulatorSulfurLedgerSnapshot(sim);
+    expect(transaction, JSON.stringify(transaction, null, 2)).toMatchObject({
+      activation: true,
+      activationBaselinePresent: true,
+      declaredImportsPpm: 350 * count,
+      closed: true,
+    });
+    expect(ledger.activation).toMatchObject({
+      step: 0,
+      kind: 'legacy_combined_to_explicit_reservoirs',
+      fluidInitialPpm: legacySulfurPpm * count,
+      solidInitialPpm: 0,
+      declaredImportsPpm: 350 * count,
+      closed: true,
+    });
+    expect(ledger).toMatchObject({
+      propagationViolations: 0,
+      testimonyClosed: true,
+      closed: true,
+    });
+    },
+  );
 });

@@ -20,6 +20,7 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const NODE = process.execPath;
 const VITEST = path.join(ROOT, 'node_modules', 'vitest', 'vitest.mjs');
 const SCIENCE_TESTS = [
+  'tests-js/artifact-identity.test.ts',
   'tests-js/scenario-expectation-contracts.test.ts',
   'tests-js/locality-envelope-audit.test.ts',
   'tests-js/claim-cards.test.ts',

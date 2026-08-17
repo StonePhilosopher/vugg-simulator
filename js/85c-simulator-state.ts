@@ -209,8 +209,9 @@ Object.assign(VugSimulator.prototype, {
 // global-mutating block (events, wall dissolution, ambient cooling).
 // Pair with _propagateGlobalDelta to apply the same delta to all
 // non-equator rings.
-_snapshotGlobal() {
+_snapshotGlobal(options: any = {}) {
   const sulfurState = this.conditions.fluid.sulfurPoolsExplicit
+    || options.captureLegacySulfur
     ? _spatialSulfurState(this) : null;
   const carbonState = this._carbonLedgerEnabled ? _spatialCarbonState(this) : null;
   return [_cloneFluid(this.conditions.fluid), this.conditions.temperature, sulfurState, carbonState];
@@ -260,11 +261,21 @@ _propagateGlobalDelta(snap, options: any = {}) {
   const explicitSulfurActive = !!(
     preFluid.sulfurPoolsExplicit || this.conditions.fluid.sulfurPoolsExplicit
   );
+  const activatingExplicitSulfur = !preFluid.sulfurPoolsExplicit
+    && !!this.conditions.fluid.sulfurPoolsExplicit;
+  // During first activation, the post-event pools already contain the
+  // valence split of the pre-existing legacy `S`.  Project the PRE snapshot
+  // through that same split before calculating numeric deltas; otherwise the
+  // propagation helper mistakes the inherited inventory for a new import and
+  // credits it a second time in every voxel.
+  const propagationPreFluid = activatingExplicitSulfur
+    ? ensureExplicitSulfurPools(_cloneFluid(preFluid), Number(preTemp) || 25)
+    : preFluid;
   if (grid && typeof grid.propagateEventDelta === 'function') {
-    grid.propagateEventDelta(preFluid, this._fluidFieldNames, equatorFluid, 'all', replaceFields);
+    grid.propagateEventDelta(propagationPreFluid, this._fluidFieldNames, equatorFluid, 'all', replaceFields);
   } else {
     if (mesh && typeof mesh.propagateDelta === 'function') {
-      mesh.propagateDelta(preFluid, this._fluidFieldNames, equatorFluid, replaceFields);
+      mesh.propagateDelta(propagationPreFluid, this._fluidFieldNames, equatorFluid, replaceFields);
     }
   }
   // S1 (fluid.S sulfate/sulfide split): sulfateInherited is a LATCHED boolean, not a
@@ -331,8 +342,32 @@ _propagateGlobalDelta(snap, options: any = {}) {
     const errorPpm = actualNetPpm - expectedNetPpm;
     const bulkDeclarationErrorPpm = bulkNetPpm - declaredBulkNetPpm;
     const tolerancePpm = _ledgerTolerance(Math.max(before.totalPpm, after.totalPpm));
-    const closed = Math.abs(errorPpm) <= tolerancePpm
+    const hasAuthenticatedActivationBaseline = !activatingExplicitSulfur || !!preSulfurState;
+    const closed = hasAuthenticatedActivationBaseline
+      && Math.abs(errorPpm) <= tolerancePpm
       && Math.abs(bulkDeclarationErrorPpm) <= _ledgerTolerance(before.count ? before.totalPpm / before.count : 0);
+    if (activatingExplicitSulfur) {
+      const solidInitialPpm = bookedSolidSulfurPpm(this.crystals || []);
+      this._sulfurLedgerInitialPpm = before.totalPpm + solidInitialPpm;
+      this._sulfurBoundaryImportsPpm = 0;
+      this._sulfurBoundaryExportsPpm = 0;
+      this._sulfurBoundaryTransactions = [];
+      this._sulfurPropagationViolations = [];
+      this._sulfurLedgerActivation = {
+        step: Number(this.step) || 0,
+        kind: 'legacy_combined_to_explicit_reservoirs',
+        fluidInitialPpm: before.totalPpm,
+        solidInitialPpm,
+        declaredImportsPpm,
+        declaredExportsPpm,
+        beforeCount: before.count,
+        afterCount: after.count,
+        propagationErrorPpm: errorPpm,
+        bulkDeclarationErrorPpm,
+        tolerancePpm,
+        closed,
+      };
+    }
     if (poolChanged || sulfurDeclarations.length) {
       const transaction = {
         step: Number(this.step) || 0,
@@ -347,6 +382,8 @@ _propagateGlobalDelta(snap, options: any = {}) {
         errorPpm,
         bulkDeclarationErrorPpm,
         tolerancePpm,
+        activation: activatingExplicitSulfur,
+        activationBaselinePresent: hasAuthenticatedActivationBaseline,
         closed,
       };
       (this._sulfurBoundaryTransactions ||= []).push(transaction);

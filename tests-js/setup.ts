@@ -410,6 +410,7 @@ const EXPORTS = [
   'sulfurSystemTotalPpm',
   'ensureExplicitSulfurPools',
   'addSulfurToPool',
+  'declareSulfurBoundaryAddition',
   'debitSulfurPool',
   'oxidizeReducedSulfurToElemental',
   'bacterialReduceSulfate',

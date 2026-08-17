@@ -273,6 +273,15 @@ class VugSimulator {
     this._sulfurBoundaryTransactions = [];
     this._sulfurPropagationViolations = [];
     this._sulfurLedgerHistory = [];
+    this._sulfurLedgerActivation = this.conditions.fluid.sulfurPoolsExplicit
+      ? {
+        step: 0,
+        kind: 'constructor_explicit_reservoirs',
+        fluidInitialPpm: this._sulfurLedgerInitialPpm,
+        solidInitialPpm: 0,
+        closed: true,
+      }
+      : null;
     // Authored scenarios may opt into a strict whole-scenario carbon ledger.
     // Methane-derived carbon, formula-balanced wall release, fluid DIC, and
     // booked carbonate solids remain separate terms. Keep Sicily enabled for
@@ -530,7 +539,11 @@ class VugSimulator {
     // non-equator rings — otherwise a global event pulse never reaches
     // the rings where crystals are actually growing. Same wrap on
     // dissolve_wall and ambient_cooling.
-    let snap = this._snapshotGlobal();
+    // Capture a legacy combined-S spatial baseline at the event boundary. An
+    // authored event may commission explicit valence reservoirs mid-run; that
+    // transition must retain the exact pre-conversion inventory rather than
+    // silently starting its ledger after the event.
+    let snap = this._snapshotGlobal({ captureLegacySulfur: true });
     this.apply_events();
     this._propagateGlobalDelta(snap);
     // Some authored events replace the pore fluid rather than mixing a delta

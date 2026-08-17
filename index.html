@@ -19708,7 +19708,16 @@ function scenarioSpecHash(spec) {
 // pCO2, an explicit zero CO2 charge remains zero, and reverse open-boundary
 // flow is narrated as import instead of venting. These corrections alter
 // nucleation and paragenesis and therefore require new evidence identity.
-const SIM_VERSION = 268;
+// v269 (August 2026): the phase-resolved sulfur testimony is now retained by
+// canonical strip archives and claim cards instead of stopping at the live
+// recorder. The artifact gate exposed a mid-run legacy-S activation defect:
+// projecting an already-present combined inventory into explicit reservoirs
+// also treated that inherited inventory as a fresh numeric delta. Production
+// now authenticates the pre-conversion spatial fluid + booked solid baseline,
+// applies only declared boundary sulfur, and records the activation receipt.
+// Correcting that double credit changes the Supergene seed-42 trajectory, so
+// the failed v268 candidate remains immutable and this is a real version bump.
+const SIM_VERSION = 269;
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
 // a saved recipe, strip, or machine-readable result used. Update it whenever
@@ -19736,7 +19745,7 @@ const MODEL_DIGEST = [
     'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
     'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
     'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
-    'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+phase-resolved-testimony-v4',
+    'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+authenticated-midrun-activation+phase-resolved-testimony-v5',
     'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
     'sulphur-bank-HgS:zoned-association-not-S0-substrate-v1',
     'wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4',
@@ -21120,6 +21129,7 @@ function simulatorSulfurLedgerSnapshot(sim) {
         testimonyErrorPpm,
         tolerancePpm,
         propagationViolations,
+        activation: sim?._sulfurLedgerActivation || null,
         testimonyClosed,
         closed: Math.abs(errorPpm) <= tolerancePpm
             && propagationViolations === 0
@@ -66519,12 +66529,7 @@ function event_supergene_dry_spell(c) {
     // by nucleation with a modest margin after exact wall-release accounting.
     // This is an authored 1 kg-solvent-reference recharge, not cavity volume.
     c.fluid.Ca += 350;
-    if (typeof addSulfurToPool === 'function') {
-        addSulfurToPool(c.fluid, 'sulfate', 350, c.temperature);
-    }
-    else {
-        c.fluid.S += 350;
-    }
+    declareSulfurBoundaryAddition(c, 'sulfate', 350, 'Tsumeb dry-season dolomite-sulfate recharge');
     c.fluid.O2 = 1.5;
     c.temperature = 50;
     c.flow_rate = 0.3;
@@ -70265,6 +70270,15 @@ class VugSimulator {
         this._sulfurBoundaryTransactions = [];
         this._sulfurPropagationViolations = [];
         this._sulfurLedgerHistory = [];
+        this._sulfurLedgerActivation = this.conditions.fluid.sulfurPoolsExplicit
+            ? {
+                step: 0,
+                kind: 'constructor_explicit_reservoirs',
+                fluidInitialPpm: this._sulfurLedgerInitialPpm,
+                solidInitialPpm: 0,
+                closed: true,
+            }
+            : null;
         // Authored scenarios may opt into a strict whole-scenario carbon ledger.
         // Methane-derived carbon, formula-balanced wall release, fluid DIC, and
         // booked carbonate solids remain separate terms. Keep Sicily enabled for
@@ -70505,7 +70519,11 @@ class VugSimulator {
         // non-equator rings — otherwise a global event pulse never reaches
         // the rings where crystals are actually growing. Same wrap on
         // dissolve_wall and ambient_cooling.
-        let snap = this._snapshotGlobal();
+        // Capture a legacy combined-S spatial baseline at the event boundary. An
+        // authored event may commission explicit valence reservoirs mid-run; that
+        // transition must retain the exact pre-conversion inventory rather than
+        // silently starting its ledger after the event.
+        let snap = this._snapshotGlobal({ captureLegacySulfur: true });
         this.apply_events();
         this._propagateGlobalDelta(snap);
         // Some authored events replace the pore fluid rather than mixing a delta
@@ -74030,8 +74048,9 @@ Object.assign(VugSimulator.prototype, {
     // global-mutating block (events, wall dissolution, ambient cooling).
     // Pair with _propagateGlobalDelta to apply the same delta to all
     // non-equator rings.
-    _snapshotGlobal() {
+    _snapshotGlobal(options = {}) {
         const sulfurState = this.conditions.fluid.sulfurPoolsExplicit
+            || options.captureLegacySulfur
             ? _spatialSulfurState(this) : null;
         const carbonState = this._carbonLedgerEnabled ? _spatialCarbonState(this) : null;
         return [_cloneFluid(this.conditions.fluid), this.conditions.temperature, sulfurState, carbonState];
@@ -74078,12 +74097,22 @@ Object.assign(VugSimulator.prototype, {
         const grid = this.wall_state.voxelGridFor(this);
         const mesh = this.wall_state.meshFor(this);
         const explicitSulfurActive = !!(preFluid.sulfurPoolsExplicit || this.conditions.fluid.sulfurPoolsExplicit);
+        const activatingExplicitSulfur = !preFluid.sulfurPoolsExplicit
+            && !!this.conditions.fluid.sulfurPoolsExplicit;
+        // During first activation, the post-event pools already contain the
+        // valence split of the pre-existing legacy `S`.  Project the PRE snapshot
+        // through that same split before calculating numeric deltas; otherwise the
+        // propagation helper mistakes the inherited inventory for a new import and
+        // credits it a second time in every voxel.
+        const propagationPreFluid = activatingExplicitSulfur
+            ? ensureExplicitSulfurPools(_cloneFluid(preFluid), Number(preTemp) || 25)
+            : preFluid;
         if (grid && typeof grid.propagateEventDelta === 'function') {
-            grid.propagateEventDelta(preFluid, this._fluidFieldNames, equatorFluid, 'all', replaceFields);
+            grid.propagateEventDelta(propagationPreFluid, this._fluidFieldNames, equatorFluid, 'all', replaceFields);
         }
         else {
             if (mesh && typeof mesh.propagateDelta === 'function') {
-                mesh.propagateDelta(preFluid, this._fluidFieldNames, equatorFluid, replaceFields);
+                mesh.propagateDelta(propagationPreFluid, this._fluidFieldNames, equatorFluid, replaceFields);
             }
         }
         // S1 (fluid.S sulfate/sulfide split): sulfateInherited is a LATCHED boolean, not a
@@ -74158,8 +74187,32 @@ Object.assign(VugSimulator.prototype, {
             const errorPpm = actualNetPpm - expectedNetPpm;
             const bulkDeclarationErrorPpm = bulkNetPpm - declaredBulkNetPpm;
             const tolerancePpm = _ledgerTolerance(Math.max(before.totalPpm, after.totalPpm));
-            const closed = Math.abs(errorPpm) <= tolerancePpm
+            const hasAuthenticatedActivationBaseline = !activatingExplicitSulfur || !!preSulfurState;
+            const closed = hasAuthenticatedActivationBaseline
+                && Math.abs(errorPpm) <= tolerancePpm
                 && Math.abs(bulkDeclarationErrorPpm) <= _ledgerTolerance(before.count ? before.totalPpm / before.count : 0);
+            if (activatingExplicitSulfur) {
+                const solidInitialPpm = bookedSolidSulfurPpm(this.crystals || []);
+                this._sulfurLedgerInitialPpm = before.totalPpm + solidInitialPpm;
+                this._sulfurBoundaryImportsPpm = 0;
+                this._sulfurBoundaryExportsPpm = 0;
+                this._sulfurBoundaryTransactions = [];
+                this._sulfurPropagationViolations = [];
+                this._sulfurLedgerActivation = {
+                    step: Number(this.step) || 0,
+                    kind: 'legacy_combined_to_explicit_reservoirs',
+                    fluidInitialPpm: before.totalPpm,
+                    solidInitialPpm,
+                    declaredImportsPpm,
+                    declaredExportsPpm,
+                    beforeCount: before.count,
+                    afterCount: after.count,
+                    propagationErrorPpm: errorPpm,
+                    bulkDeclarationErrorPpm,
+                    tolerancePpm,
+                    closed,
+                };
+            }
             if (poolChanged || sulfurDeclarations.length) {
                 const transaction = {
                     step: Number(this.step) || 0,
@@ -74174,6 +74227,8 @@ Object.assign(VugSimulator.prototype, {
                     errorPpm,
                     bulkDeclarationErrorPpm,
                     tolerancePpm,
+                    activation: activatingExplicitSulfur,
+                    activationBaselinePresent: hasAuthenticatedActivationBaseline,
                     closed,
                 };
                 (this._sulfurBoundaryTransactions ||= []).push(transaction);

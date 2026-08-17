@@ -167,11 +167,66 @@ function sampleStats(samples, key) {
   };
 }
 
+function buildSulfurLedgerTestimony(samples) {
+  const ledger = Array.isArray(samples) ? samples : [];
+  const phases = new Map();
+  let maxAbsBalanceErrorPpm = 0;
+  let maxAbsTestimonyErrorPpm = 0;
+  let closedSampleCount = 0;
+  for (const sample of ledger) {
+    maxAbsBalanceErrorPpm = Math.max(
+      maxAbsBalanceErrorPpm,
+      Math.abs(Number(sample?.errorPpm) || 0),
+    );
+    maxAbsTestimonyErrorPpm = Math.max(
+      maxAbsTestimonyErrorPpm,
+      Math.abs(Number(sample?.testimonyErrorPpm) || 0),
+    );
+    if (sample?.closed === true && sample?.testimonyClosed === true) closedSampleCount++;
+    for (const phase of (Array.isArray(sample?.phaseIdentity) ? sample.phaseIdentity : [])) {
+      const mineral = String(phase?.mineral || '');
+      const reservoir = String(phase?.reservoir || '');
+      if (!mineral || !reservoir) continue;
+      const key = `${reservoir}\0${mineral}`;
+      const existing = phases.get(key) || {
+        mineral,
+        reservoir,
+        max_booked_solid_ppm: 0,
+      };
+      existing.max_booked_solid_ppm = Math.max(
+        existing.max_booked_solid_ppm,
+        Math.max(0, Number(phase?.bookedSolidPpm) || 0),
+      );
+      phases.set(key, existing);
+    }
+  }
+  const first = ledger[0] || null;
+  const last = ledger.at(-1) || null;
+  return {
+    source: 'archived phase-resolved sulfur ledger; exact samples are authenticated by the strip SHA-256',
+    sample_count: ledger.length,
+    closed_sample_count: closedSampleCount,
+    all_closed: ledger.length ? closedSampleCount === ledger.length : null,
+    max_abs_balance_error_ppm: maxAbsBalanceErrorPpm,
+    max_abs_testimony_error_ppm: maxAbsTestimonyErrorPpm,
+    first_fluid_reservoir_ppm: first?.fluidReservoirPpm ?? null,
+    last_fluid_reservoir_ppm: last?.fluidReservoirPpm ?? null,
+    first_solid_reservoir_ppm: first?.solidReservoirPpm ?? null,
+    last_solid_reservoir_ppm: last?.solidReservoirPpm ?? null,
+    activation: first?.activation ?? null,
+    phase_identities: Array.from(phases.values()).sort((a, b) => (
+      a.reservoir.localeCompare(b.reservoir) || a.mineral.localeCompare(b.mineral)
+    )),
+    samples: ledger,
+  };
+}
+
 function buildExecutedScienceTestimony(strip) {
   const pressurePhase = strip.executed_testimony?.pressure_phase || [];
   const stressEvents = strip.executed_testimony?.stress_events || [];
   const transformations = strip.executed_testimony?.transformations || [];
   const carbonateBoundary = strip.executed_testimony?.carbonate_boundary || [];
+  const sulfurLedger = strip.executed_testimony?.sulfur_ledger || [];
   const al2Counts = {};
   let aragoniteSecureSteps = 0;
   for (const sample of pressurePhase) {
@@ -207,6 +262,7 @@ function buildExecutedScienceTestimony(strip) {
       last: carbonateBoundary.at(-1) ?? null,
       samples: carbonateBoundary,
     },
+    sulfur_ledger: buildSulfurLedgerTestimony(sulfurLedger),
   };
 }
 
@@ -422,6 +478,29 @@ export function renderMarkdown(card) {
       + `blocked=${last.blocked}; failed latest transactions=${failed}; uncertainties=${JSON.stringify(last.uncertainties || [])}`);
   } else {
     L.push('  - Conserved carbonate boundary: not enabled for this archived run.');
+  }
+  const sulfur = ex.sulfur_ledger;
+  L.push('');
+  L.push('## Sulfur reservoir identity and conservation (archived run)');
+  L.push(`**Source:** ${sulfur.source}`);
+  if (sulfur.sample_count) {
+    if (sulfur.activation) {
+      L.push(`  - Ledger activation: step ${sulfur.activation.step}, kind=${sulfur.activation.kind}, `
+        + `closed=${sulfur.activation.closed}; initial fluid=${sulfur.activation.fluidInitialPpm} ppm; `
+        + `initial solid=${sulfur.activation.solidInitialPpm} ppm.`);
+    }
+    L.push(`  - Closure: ${sulfur.closed_sample_count}/${sulfur.sample_count} samples; `
+      + `all_closed=${sulfur.all_closed}; max |balance error|=${sulfur.max_abs_balance_error_ppm} ppm; `
+      + `max |testimony error|=${sulfur.max_abs_testimony_error_ppm} ppm.`);
+    L.push(`  - Fluid reservoirs (sulfide/sulfate/elemental), first → last: `
+      + `${JSON.stringify(sulfur.first_fluid_reservoir_ppm)} → ${JSON.stringify(sulfur.last_fluid_reservoir_ppm)}.`);
+    L.push(`  - Solid reservoirs, first → last: `
+      + `${JSON.stringify(sulfur.first_solid_reservoir_ppm)} → ${JSON.stringify(sulfur.last_solid_reservoir_ppm)}.`);
+    L.push(`  - Phase identities: ${sulfur.phase_identities.length
+      ? sulfur.phase_identities.map((phase) => `${phase.mineral}→${phase.reservoir}`).join(', ')
+      : '(no sulfur-bearing solid booked)'}.`);
+  } else {
+    L.push('  - Sulfur ledger: explicit valence-resolved sulfur pools were not enabled for this scenario.');
   }
   L.push('');
   L.push(`## Scenario notes (author's own rationale)`);

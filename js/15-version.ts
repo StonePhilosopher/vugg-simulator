@@ -12944,7 +12944,16 @@
 // pCO2, an explicit zero CO2 charge remains zero, and reverse open-boundary
 // flow is narrated as import instead of venting. These corrections alter
 // nucleation and paragenesis and therefore require new evidence identity.
-const SIM_VERSION = 268;
+// v269 (August 2026): the phase-resolved sulfur testimony is now retained by
+// canonical strip archives and claim cards instead of stopping at the live
+// recorder. The artifact gate exposed a mid-run legacy-S activation defect:
+// projecting an already-present combined inventory into explicit reservoirs
+// also treated that inherited inventory as a fresh numeric delta. Production
+// now authenticates the pre-conversion spatial fluid + booked solid baseline,
+// applies only declared boundary sulfur, and records the activation receipt.
+// Correcting that double credit changes the Supergene seed-42 trajectory, so
+// the failed v268 candidate remains immutable and this is a real version bump.
+const SIM_VERSION = 269;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12973,7 +12982,7 @@ const MODEL_DIGEST = [
   'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
   'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
   'CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1',
-  'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+phase-resolved-testimony-v4',
+  'sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+authenticated-midrun-activation+phase-resolved-testimony-v5',
   'native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1',
   'sulphur-bank-HgS:zoned-association-not-S0-substrate-v1',
   'wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4',

@@ -1287,6 +1287,7 @@ function simulatorSulfurLedgerSnapshot(sim: any): any {
     testimonyErrorPpm,
     tolerancePpm,
     propagationViolations,
+    activation: sim?._sulfurLedgerActivation || null,
     testimonyClosed,
     closed: Math.abs(errorPpm) <= tolerancePpm
       && propagationViolations === 0

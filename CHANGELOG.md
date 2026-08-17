@@ -31,7 +31,10 @@ and the exact-execution evidence receipt.
 
 ### Scientific identity
 
-- The tranche is commissioned as **SIM 268**. It preserves SIM 267's
+- The tranche is commissioned as **SIM 269**. SIM 268 separated sulfate,
+  sulfide, and elemental-sulfur admission; SIM 269 preserves that repair while
+  authenticating the full evidence path and correcting mid-run reservoir
+  activation. It preserves SIM 267's
   Cartesian solid/seal authority while separating sulfate, sulfide, and
   elemental-sulfur admission throughout the supersaturation engines. Carbon
   boundary uncertainty and zero/reverse-flow edge cases are corrected in the
@@ -54,9 +57,14 @@ and the exact-execution evidence receipt.
 - Replaced combined-total-sulfur admission in sulfur-bearing saturation
   engines with the chemically appropriate sulfate or sulfide reservoir. Large
   wrong-valence pools can no longer admit or inflate the wrong mineral family.
-- Added phase-resolved sulfur-ledger testimony to canonical strip evidence,
-  and reconciled locality promises that had depended on the former combined-S
-  behavior without inventing new sulfur sources.
+- Added phase-resolved sulfur-ledger testimony to canonical strip archives and
+  hostile-review claim cards, with every exact sample covered by the aggregate
+  evidence receipt; reconciled locality promises that had depended on the
+  former combined-S behavior without inventing new sulfur sources.
+- Authenticated mid-run migration from the legacy combined-sulfur shell into
+  explicit valence reservoirs, including the Tsumeb dry-season sulfate import,
+  so a late ledger activation begins from the exact spatial fluid and booked
+  solid inventory instead of reporting an unexplained balance discontinuity.
 - Bound closed-carbonate uncertainty to solved rather than target pCO2,
   preserved an explicit zero CO2 charge, and made reverse boundary flow report
   import rather than narrating degassing.
@@ -69,6 +77,19 @@ and the exact-execution evidence receipt.
   by parsing the authored HTML shell rather than twelve redundant copies of
   the generated executable, and by releasing each completed Creative run.
   All 34 control, physics, responsive, and accessibility assertions remain.
+
+## SIM 269 — authenticated sulfur testimony and activation
+
+- Exported every phase-resolved sulfur-ledger sample through canonical strip
+  archives and hostile-review claim cards; the aggregate evidence receipt now
+  authenticates those exact bytes.
+- Commissioned legacy combined-S → explicit-reservoir transitions from the
+  exact pre-event spatial fluid and booked-solid inventory, then applied only
+  declared boundary additions. This removes a first-activation sulfur double
+  credit exposed by the new Supergene artifact gate.
+- Added authoritative artifact tests for reservoir fields, named phase
+  identities, continuous sample coverage, conservation closure, card
+  presentation, strip hashes, and aggregate evidence authentication.
 
 ## SIM 268 — sulfur valence authority and carbon boundary truth
 
