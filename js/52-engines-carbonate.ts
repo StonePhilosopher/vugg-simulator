@@ -389,8 +389,7 @@ function grow_aragonite(crystal, conditions, step) {
     note += ')';
   }
   if (conditions.fluid.Mg > 0) {
-    const mg_ratio_molar = (conditions.fluid.Mg / 24.305)
-      / Math.max(conditions.fluid.Ca / 40.078, 1e-12);
+    const mg_ratio_molar = aqueousMgCaMolarRatio(conditions.fluid);
     if (mg_ratio_molar >= 1.1) {
       note += ` — molar Mg/Ca=${mg_ratio_molar.toFixed(1)}, calcite is poisoned here`;
     }

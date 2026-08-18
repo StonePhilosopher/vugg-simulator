@@ -24,6 +24,7 @@ declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
 declare const carbonateSaturationIndex: any;
+declare const simulatorCarbonLedgerSnapshot: any;
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -100,10 +101,27 @@ describe('Sunnyside-American Tunnel scenario (v105)', () => {
       const calcites = sim.crystals.filter((c: any) => c.mineral === 'calcite');
       expect(calcites.length).toBeGreaterThan(0);
       expect(calcites.some((c: any) => c._variety === 'manganocalcite')).toBe(true);
+      expect(calcites.some((c: any) => c._variety === 'manganocalcite'
+        && c.habit === 'botryoidal_manganocalcite')).toBe(true);
       const mnZones = calcites.flatMap((c: any) => c.zones || [])
         .filter((zone: any) => zone.thickness_um > 0 && zone.trace_stoichiometry?.Mn > 0);
       expect(mnZones.length).toBeGreaterThan(0);
       expect(mnZones.every((zone: any) => zone._budget_inventory_per_um?.Mn > 0)).toBe(true);
+    });
+
+    it('books each carbonate-bearing recharge and closes the carbon ledger', () => {
+      ensureSim();
+      expect(sim._carbonSourceTransactions.map((row: any) => row.step)).toEqual([30, 70, 150]);
+      expect(sim._carbonSourceTransactions.every((row: any) => row.closed)).toBe(true);
+      expect(sim._carbonSourceTransactions.map((row: any) => row.declarations[0].source)).toEqual([
+        'Sunnyside Stage V carbonate-bearing cooling-fluid recharge',
+        'Sunnyside Stage V Mn-carbonate-bearing fluid recharge',
+        'Sunnyside Stage VI terminal carbonate-bearing pulse',
+      ]);
+      expect(simulatorCarbonLedgerSnapshot(sim)).toMatchObject({
+        closed: true,
+        propagationViolations: 0,
+      });
     });
 
     it('forms native gold from a formula-debited Au reservoir', () => {

@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { fileBundleAssetDigest, fileBundleAssetFiles } from './file-bundle-assets.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SIM_VERSION = 267;
+const SIM_VERSION = 271;
 const FILE_BUNDLE_ASSET_COUNT = fileBundleAssetFiles(ROOT).length;
 const FILE_BUNDLE_ASSET_SHA256 = fileBundleAssetDigest(ROOT);
 const TEST_SEED = 42;

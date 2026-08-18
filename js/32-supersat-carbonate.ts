@@ -361,7 +361,7 @@ Object.assign(VugConditions.prototype, {
   }
 
   // Mg poisoning of calcite growth steps — sigmoid centered on Mg/Ca=2
-  const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
+  const mg_ratio = aqueousMgCaMolarRatio(this.fluid);
   const mg_inhibition = 1.0 / (1.0 + Math.exp(-(mg_ratio - 2.0) / 0.5));
   sigma *= (1.0 - 0.85 * mg_inhibition);
 
@@ -395,7 +395,7 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.Mg < g.fluid_min!.Mg || this.fluid.Ca < g.fluid_min!.Ca || effectiveCO3(this.fluid, this.temperature) < g.fluid_min!.CO3) return 0;
   if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
   if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
-  const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
+  const mg_ratio = aqueousMgCaMolarRatio(this.fluid);
   if (mg_ratio < 0.3 || mg_ratio > 30.0) return 0;
   if (kspSupersatActiveFor('dolomite')) return carbonateEngineSigma('dolomite', this.fluid, this.temperature, 0, this.pressure);
   const eq = 200.0 * Math.exp(-0.005 * this.temperature);

@@ -129,6 +129,15 @@ const SPECIES_PROPERTIES: Record<string, { charge: number; molarMass: number; no
   Ge:   { charge: 0, molarMass:  72.63, note: 'as Ge(OH)₄⁰' },
 };
 
+// Carbonate Mg/Ca selectors are published as molar ratios, whereas the
+// simulator stores dissolved inventories as mass-based ppm (mg/kg solvent).
+function aqueousMgCaMolarRatio(fluid: any): number {
+  const caPpm = Math.max(0, Number(fluid?.Ca) || 0);
+  const mgPpm = Math.max(0, Number(fluid?.Mg) || 0);
+  if (!(caPpm > 0)) return mgPpm > 0 ? Infinity : 0;
+  return (mgPpm / 24.305) / (caPpm / 40.078);
+}
+
 // Convert ppm (mg solute per kg solvent, dilute approximation) → molality
 // (mol per kg solvent). For ppm = 200, MM = 40.08 (Ca):
 // m = 200 × 10⁻³ g/kg / 40.08 g/mol = 5.0 × 10⁻³ mol/kg ≈ 5 mmol/kg.

@@ -722,7 +722,7 @@ function _buildMineralFormationExplanation(
   }];
   if ((name === 'rosasite' || name === 'aurichalcite')
       && typeof mixedCarbonateThermoAssessment === 'function') {
-    const thermo = mixedCarbonateThermoAssessment(name, c.fluid, c.temperature);
+    const thermo = mixedCarbonateThermoAssessment(name, c.fluid, c.temperature, c.pressure);
     if (Number.isFinite(thermo.saturationIndex)) {
       satChips.push({
         text: `literature SI ${_formationNumber(thermo.saturationIndex)} · Tier ${thermo.confidence} observer`,
@@ -970,9 +970,25 @@ function _buildMineralFormationExplanation(
   const tNeed = hasTMin && hasTMax
     ? `${gate!.T_min}–${gate!.T_max}°C`
     : hasTMin ? `≥ ${gate!.T_min}°C` : hasTMax ? `≤ ${gate!.T_max}°C` : 'no explicit cutoff';
+  const temperatureChips: FormationDiagnosticChip[] = [
+    { text: `${_formationNumber(T, 0)}°C · ${tNeed}`, met: (!hasTMin && !hasTMax) || tMet },
+  ];
+  if (typeof sulfateThermoTemperatureAssessment === 'function'
+      && ['selenite', 'gypsum', 'anhydrite', 'barite', 'celestine'].indexOf(name) >= 0) {
+    const fit = sulfateThermoTemperatureAssessment(name, T);
+    const range = fit.validTemperatureC;
+    temperatureChips.push({
+      text: range
+        ? `sulfate K(T) fit ${range[0]}–${range[1]}°C · ${fit.status}`
+        : `sulfate K(T) fit · ${fit.status}`,
+      met: fit.supported,
+      status: fit.supported ? 'observer' : 'uncertain',
+      note: fit.note,
+    });
+  }
   groups.push({
     label: 'Temperature gate',
-    chips: [{ text: `${_formationNumber(T, 0)}°C · ${tNeed}`, met: (!hasTMin && !hasTMax) || tMet }],
+    chips: temperatureChips,
   });
 
   const pressureChips = _formationPressureChips(name, c);

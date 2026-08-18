@@ -5,7 +5,7 @@ declare const CavityWaterAppearance: any;
 declare const dicPpmToMolKg: (ppm: number) => number;
 declare const dicMolKgToPpm: (molKg: number) => number;
 declare const pureWaterDensityKgM3: (t: number) => number;
-declare const pKwWater: (temperatureC: number) => number;
+declare const pKwWater: (temperatureC: number, fluidPressureKbar?: number) => number;
 declare const reducedCarbonateAlkalinityEqKg: (dic: number, pH: number, t: number) => number;
 declare const solvePHForReducedCarbonateAlkalinity: (dic: number, alk: number, t: number) => number;
 declare const createConservedCarbonateBoundaryConfig: (fluid: any, t: number, opts?: any) => any;

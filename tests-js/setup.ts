@@ -442,6 +442,7 @@ const EXPORTS = [
   'CARBONATE_SPECIATION_ACTIVE',
   'bjerrumFractions',
   'carbonateIonPpm',
+  'aqueousMgCaMolarRatio',
   'effectiveCO3',
   'equilibriumPCO2',
   'dicPpmToMolKg',
@@ -517,6 +518,7 @@ const EXPORTS = [
   // Week 6 PWP kinetic engine (52b-engines-carbonate-kinetics.ts).
   'pwpForwardRate',
   'pwpNetRate',
+  'pwpProductionNetRate',
   'pwpRateToSimMicronsPerStep',
   'setPWPCalibrationFactor',
   'aragoniteKineticallyFavoredOver',

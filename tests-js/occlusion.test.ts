@@ -41,13 +41,13 @@ const occluded = (sim: any) =>
 
 describe('substrate occlusion tag (central-distance arc Phase 2)', () => {
   it('DORMANT for scenarios that did not opt in — a non-opted calcite scenario tags nothing', () => {
-    const sim = run('marble_contact_metamorphism');   // grows calcite, no occlusion flag
+    const sim = run('zoned_dripstone_cave');   // grows calcite, no occlusion flag
     expect(sim).toBeTruthy();
     expect(occluded(sim).length).toBe(0);
   });
 
   it('the tag is ABSENT (undefined) on untagged crystals — no serialized output widens', () => {
-    const sim = run('marble_contact_metamorphism');
+    const sim = run('zoned_dripstone_cave');
     expect(sim).toBeTruthy();
     for (const c of sim.crystals) expect(c._occlusion).toBeUndefined();
   });

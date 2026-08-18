@@ -12953,7 +12953,32 @@
 // applies only declared boundary sulfur, and records the activation receipt.
 // Correcting that double credit changes the Supergene seed-42 trajectory, so
 // the failed v268 candidate remains immutable and this is a real version bump.
-const SIM_VERSION = 269;
+// v270 (August 2026): SCI-02 replaces the four simple-sulfate constant-ΔH
+// approximations with the exact five-coefficient analytical K(T) expressions
+// published in the cited USGS PHREEQC wateq4f database. This closes multi-log
+// high-temperature SI errors, including the production anhydrite admission
+// gate. Reaction-specific SUPCRTBL pressure corrections now hold the nearest
+// fitted temperature edge instead of discontinuously dropping to zero outside
+// it; the receipt records both requested and evaluated temperature. Carbonate
+// kinetics use PHREEQC's finite-at-zero PWP Ω^(2/3) affinity term, Mg/Ca poisoning
+// and preference compare molar rather than mass ratios, and hydroxycarbonate SI
+// uses the existing temperature-dependent Marshall-Franck pKw. Strip evidence
+// labels FluidChemistry concentrations as their actual ppm (mg/kg solvent)
+// basis and carbonate partitions as CO3-equivalent mass, never mg/L. These
+// changes alter thermodynamic gates, rates, and archived SI trajectories and
+// therefore require a new simulation and evidence identity.
+// v271 (August 2026): the raw PHREEQC/PWP diagnostic remains exactly
+// r_forward*(Omega^(2/3)-1), but production no longer extrapolates that
+// calcite-dissolution relation without limit through the simulator's extreme
+// supersaturations. Production carbonate rates hold the dimensionless
+// positive affinity through a monotone reaction-plus-transport resistance
+// closure A/(1+A), matching the law's finite far-under limit with an
+// explicitly disclosed transport/applicability ceiling. This prevents one
+// frozen fluid snapshot from producing a cavity-filling carbonate zone while
+// preserving the cited relation throughout its admitted envelope. Because
+// carbonate growth trajectories change relative to the failed v270 candidate,
+// this requires a new simulation and evidence identity.
+const SIM_VERSION = 271;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12962,7 +12987,11 @@ const SIM_VERSION = 269;
 // mismatch guards then fail loudly instead of allowing provenance drift.
 const MODEL_DIGEST = [
   'Pfluid:kbar-0.001..4.4',
-  'Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1',
+  'Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+continuous-temperature-edge-hold+no-pressure-extrapolation-v2',
+  'sulfate-Ksp:USGS-PHREEQC-wateq4f-analytic5+explicit-temperature-envelope-v1',
+  'carbonate-rate:PWP-omega2over3-raw+production-positive-affinity-series-resistance-Aover1plusA+molarMgCa+pKwTP-hydroxycarbonates-v2',
+  'chemistry-evidence:ppm-mgkg-solvent+carbonate-equivalent-mass-labels-v1',
+  'SCI02-locality:PHREEQC-SUPCRTBL-anhydrite-classification+ledgered-carbonate-pulses-v1',
   'aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5',
   'aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1',
   'aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2',

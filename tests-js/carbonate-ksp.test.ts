@@ -49,6 +49,7 @@ declare const getCarbonateLogKsp: (mineralId: string, T_C: number, mg_content?: 
 declare const hmcSolidSolutionAssessment: (mg_content: number, T_C: number) => any;
 declare const bjerrumFractions: (pH: number, T_C: number) => { H2CO3: number; HCO3: number; CO3: number };
 declare const carbonateIonPpm: (fluid: any, T_C: number) => number;
+declare const pKwWater: (T_C: number, fluidPressureKbar?: number) => number;
 
 describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — flag mechanism', () => {
   it('CARBONATE_KSP_ACTIVE is true since v144 (Week 9 calcite promotion)', () => {
@@ -318,6 +319,36 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — OH-bearing carbonates respond to
     expect(Number.isFinite(SI_neut)).toBe(true);
     expect(Number.isFinite(SI_alk)).toBe(true);
     expect(SI_alk - SI_neut).toBeGreaterThan(6);
+  });
+
+  it('malachite SI uses temperature-dependent pKw rather than a fixed 25 C value', () => {
+    const f = new FluidChemistry({ Cu: 30, CO3: 100, pH: 7.5, O2: 2 });
+    const coldT = 25;
+    const warmT = 60;
+    const observed = carbonateSaturationIndex('malachite', f, warmT)
+      - carbonateSaturationIndex('malachite', f, coldT);
+    const co3Term = Math.log10(carbonateIonPpm(f, warmT) / carbonateIonPpm(f, coldT));
+    const ohTerm = 2 * (pKwWater(coldT, 0.001) - pKwWater(warmT, 0.001));
+    const kspTerm = -(getCarbonateLogKsp('malachite', warmT)
+      - getCarbonateLogKsp('malachite', coldT));
+    expect(observed).toBeCloseTo(co3Term + ohTerm + kspTerm, 10);
+    expect(ohTerm).toBeGreaterThan(1);
+  });
+
+  it('hydroxycarbonate SI uses Marshall-Franck pKw(T,P) with authenticated water density', () => {
+    expect(pKwWater(25, 0.001)).toBeCloseTo(13.994907007, 8);
+    expect(pKwWater(100, 0.001)).toBeCloseTo(12.264565476, 8);
+    expect(pKwWater(100, 4.4)).toBeCloseTo(11.280754733, 8);
+
+    const fluid = new FluidChemistry({ Zn: 80, CO3: 250, pH: 8.5, O2: 2 });
+    const shallow = carbonateSaturationIndex('hydrozincite', fluid, 100, 0, 0.001);
+    const deep = carbonateSaturationIndex('hydrozincite', fluid, 100, 0, 4.4);
+    expect(deep - shallow).toBeCloseTo(
+      6 * (pKwWater(100, 0.001) - pKwWater(100, 4.4)),
+      9,
+    );
+    expect(deep).toBeGreaterThan(shallow + 5);
+    expect(Number.isNaN(pKwWater(100, 9))).toBe(true); // no pressure extrapolation
   });
 });
 

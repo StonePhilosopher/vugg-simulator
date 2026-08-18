@@ -51,7 +51,7 @@ describe('evidence-bounded physical etch', () => {
     expect(outOfEnvelope.receipts[0].rejection).toBe('outside_rate_model_envelope');
     expect(fluorite.total_growth_um).toBe(before.size);
     const unsupported = applyPhysicalEtchDirective(sim, {
-      minerals: ['galena'], duration_days: 1,
+      minerals: ['calcite'], duration_days: 1,
     }, 117);
     expect(unsupported.considered).toBeGreaterThan(0);
     expect(unsupported.accepted).toBe(0);
@@ -132,20 +132,19 @@ describe('evidence-bounded physical etch', () => {
     expect(partlyHealed.healedFraction).toBeLessThan(1);
     expect(partlyHealed.amount).toBeLessThan(etched.amount);
     while (sim.step < (defaultSteps || 160)) sim.run_step();
-    const intermediateEtch = physicalEtchVisualStateAtStep(fluorite, 130);
+    const fullyHealed = physicalEtchVisualStateAtStep(fluorite, 120);
     const finalEtch = physicalEtchVisualStateAtStep(fluorite, sim.step);
-    expect(intermediateEtch).toBeTruthy();
-    expect(intermediateEtch.healedFraction).toBeGreaterThan(partlyHealed.healedFraction);
-    expect(intermediateEtch.amount).toBeLessThan(partlyHealed.amount);
-    // Accepted regrowth exceeds the removed depth before the final frame, so
-    // exposed pits disappear. The buried phantom boundary remains durable
+    // Accepted regrowth exceeds the 0.265 µm removed depth on the second
+    // post-wash step in the commissioned v270 trajectory, so the exposed
+    // pits disappear promptly. The buried phantom boundary remains durable
     // stratigraphic testimony of the dissolution event.
+    expect(fullyHealed).toBeNull();
+    // The fully overgrown state persists through the final frame.
     expect(finalEtch).toBeNull();
-    const reliefBuckets = [etched, partlyHealed, intermediateEtch]
+    const reliefBuckets = [etched, partlyHealed]
       .map(state => _physicalEtchReliefBucket(state.amount));
-    expect(new Set(reliefBuckets).size).toBe(3);
+    expect(new Set(reliefBuckets).size).toBe(2);
     expect(reliefBuckets[0]).toBeGreaterThan(reliefBuckets[1]);
-    expect(reliefBuckets[1]).toBeGreaterThan(reliefBuckets[2]);
     expect(Math.abs(reliefBuckets[0] - etched.amount)).toBeLessThanOrEqual(0.0005);
     expect(fluorite.phantom_count).toBeGreaterThan(0);
     expect(fluorite.zones.some((zone: any) => /phantom boundary/.test(zone.note || ''))).toBe(true);

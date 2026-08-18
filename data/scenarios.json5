@@ -229,7 +229,8 @@
       "deterministic_species": [
         { "mineral": "pyrite", "reason": "Documented at the Picher Field locality and a legitimate accessory sulfide in the reducing Tri-State brine." },
         { "mineral": "greenockite", "reason": "Documented at Picher and independently supported by Cd-bearing Tri-State sphalerite; a minor CdS accessory rather than a deterministic headline." },
-        { "mineral": "quartz", "reason": "Documented Picher gangue and a valid late silica product, but subordinate to the defining carbonate-fluorite-barite assemblage." }
+        { "mineral": "quartz", "reason": "Documented Picher gangue and a valid late silica product, but subordinate to the defining carbonate-fluorite-barite assemblage." },
+        { "mineral": "anhydrite", "reason": "The corrected PHREEQC analytical K(T) path reproducibly resolves a trace Ca-sulfate accessory in all three evidence seeds. This is transparent model classification, not promotion of anhydrite as a defining Picher locality claim; gypsum/selenite remains the documented Ca-sulfate occurrence." }
       ],
       "excluded_species": {
         "rhodochrosite": "Not documented in the audited Picher Field inventory; dissolved Mn does not establish an Mn-carbonate occurrence.",
@@ -397,7 +398,8 @@
       "expects_species": ["sphalerite", "fluorite", "barite", "calcite"],
       "deterministic_species": [
         { "mineral": "celestine", "reason": "Documented at Elmwood, including Ba-bearing celestine, and compatible with the scenario's sulfate-brine stage." },
-        { "mineral": "chalcedony", "reason": "The audited Elmwood inventory includes quartz and silica; microcrystalline silica is allowed as subordinate late gangue rather than a headline promise." }
+        { "mineral": "chalcedony", "reason": "The audited Elmwood inventory includes quartz and silica; microcrystalline silica is allowed as subordinate late gangue rather than a headline promise." },
+        { "mineral": "anhydrite", "reason": "The corrected PHREEQC analytical K(T) path reproducibly resolves a minor hot-brine Ca-sulfate accessory in all three evidence seeds. It is classified as modeled accessory chemistry, not advertised as an Elmwood specimen occurrence." }
       ],
       "aspirational_species": [
         { "mineral": "galena", "reason": "Galena is documented at Elmwood-Gordonsville, but the valence-correct SIM 268 brine does not deliver a reproducible Pb-sulfide window in the three-seed evidence panel." },
@@ -549,7 +551,8 @@
         { "mineral": "pyrite", "reason": "A common accessory sulfide in the modeled fault-vein paragenesis." },
         { "mineral": "greenockite", "reason": "A minor CdS sink associated with sphalerite-bearing basinal brines; reproducibly delivered across all three evidence seeds but not a defining vein signature." },
         { "mineral": "celestine", "reason": "A subordinate Sr-sulfate response to the sulfate-bearing brine, competing with barite." },
-        { "mineral": "chalcedony", "reason": "Late microcrystalline silica is plausible after cool-fluid reactivation and is treated as accessory gangue." }
+        { "mineral": "chalcedony", "reason": "Late microcrystalline silica is plausible after cool-fluid reactivation and is treated as accessory gangue." },
+        { "mineral": "anhydrite", "reason": "The corrected PHREEQC analytical K(T) path reproducibly resolves a minor Ca-sulfate phase in the hot sulfate-bearing first generation across all three evidence seeds; it is an accessory model result, not a headline North Pennine occurrence claim." }
       ],
       "statistical_species": [
         { "mineral": "native_silver", "reason": "Rare free silver occurs in the broader Northern Pennine Orefield, but it is not a defining Weardale fluorite-vein phase; the modeled Ag-bearing reactivation fluid produces it in only part of the seed panel." }
@@ -810,13 +813,16 @@
     "marble_contact_metamorphism": {
       "anchor": "Mogok Stone Tract, Mandalay Region, Burma — type locality for marble-hosted ruby + 2000+-year source of 'pigeon's blood' rubies",
       "description": "Marble-hosted contact metamorphic vug — Al-rich, SiO2-undersaturated skarn fluid drives corundum-family (ruby/sapphire) paragenesis.",
-      "expects_species": ["calcite", "ruby"],
+      "expects_species": ["ruby"],
+      "aspirational_species": [
+        { "mineral": "calcite", "reason": "Calcite is the solid marble host, not a promised free-fluid precipitate. Under the bounded 3 kbar carbonate pressure model the authored fluid remains calcite-undersaturated; a future wall-mineral representation should expose the host fabric without inventing an aqueous calcite druse." }
+      ],
       "duration_steps": 180,
       "notes": [
         "Anchored to the Mogok Stone Tract: dolomitic marble of the Mogok Metamorphic Belt was regionally metamorphosed during the Himalayan orogeny (~30 Ma) to amphibolite-to-granulite grade, then intruded by leucogranite dykes at 17-22 Ma that drove contact metamorphic ruby/sapphire/spinel crystallization in skarn envelopes.",
         "Chemistry signature: SiO2 undersaturation (the defining corundum-family constraint). Al and Ca are high, SiO2 is low — opposite of every other scenario in the sim. When SiO2 is scarce, Al3+ cannot form feldspar/mica/Al2SiO5 polymorphs and instead crystallizes as pure corundum; with Cr trace from adjacent ultramafic country rock, ruby forms; with Fe+Ti, blue sapphire; with Fe alone, yellow sapphire.",
         "Thermal regime: 500 → 700 → 500 → 350°C over 180 steps. Phase 1 (initial warmup): contact metamorphic pulse approaches; marble starts to fluid-saturate. Phase 2 (700°C peak, step 20): corundum family nucleates; Cr partitions to ruby, Fe+Ti to blue sapphire. Phase 3 (retrograde cooling, step 60, 700→500°C): main growth window; fluid migrates along skarn bleaching front. Phase 4 (fracture seal, step 150): system closes.",
-        "v184 thermal_pulses:false (PEGMATITE-SHAPE, T-rollout close-out): the events anchor the single-intrusion arc (700@20, 500@60) and the default ambient drift correctly carries the 500→350 retrograde slope — but the random ambient pulses had no geological home here (the scenario models ONE leucogranite contact episode; designed reheats belong in events) and their Fe riders (+2-15 ppm) poison the chromophore budget this scenario exists to control (Cr→ruby vs Fe/Ti→blue vs Fe-alone→yellow partitioning at a wall with deliberately Fe-poor 200 ppm). Dark-observed clean at 3 seeds (tools/t-story-observe.mjs): expects (calcite, ruby) intact, retrograde end honest (403→303).",
+        "v184 thermal_pulses:false (PEGMATITE-SHAPE, T-rollout close-out): the events anchor the single-intrusion arc (700@20, 500@60) and the default ambient drift correctly carries the 500→350 retrograde slope — but the random ambient pulses had no geological home here (the scenario models ONE leucogranite contact episode; designed reheats belong in events) and their Fe riders (+2-15 ppm) poison the chromophore budget this scenario exists to control (Cr→ruby vs Fe/Ti→blue vs Fe-alone→yellow partitioning at a wall with deliberately Fe-poor 200 ppm). SIM 270 reconciles the old contradictory calcite expectation with the sentence below: ruby remains the free-grown promise; calcite is the marble wall mineral and must not be forced from an undersaturated fluid. Retrograde end remains honest (403→303).",
         "Wall composition is 'limestone' as a proxy for dolomitic marble — sim currently models limestone + pegmatite + basalt; marble is the metamorphosed limestone end-member, closest fit available."
       ],
       "initial": {
@@ -874,11 +880,11 @@
         { "step": 20,  "type": "marble_peak_metamorphism", "name": "Peak Metamorphism", "description": "Leucogranite intrusion at contact" },
         { "step": 60,  "type": "marble_retrograde_cooling", "name": "Retrograde Cooling", "description": "Slow cooling, main ruby growth window" },
         { "step": 150, "type": "marble_fracture_seal", "name": "Fracture Seal", "description": "System closes" },
-        { "step": 165, "type": "marble_tectonic_strain", "name": "Orogenic Strain — e-twin Lamellae", "description": "Continued Himalayan shortening glides the already-grown marble calcite on its e-twin plane {01-12} — parallel mechanical-twin lamellae, the Ferrill paleostress gauge; the ruby is spared",
+        { "step": 165, "type": "marble_tectonic_strain", "name": "Orogenic Strain — e-twin Lamellae", "description": "Continued Himalayan shortening can glide any exposed free calcite on its e-twin plane {01-12} — parallel mechanical-twin lamellae, the Ferrill paleostress gauge; the ruby is spared. In the canonical SIM 270 run the calcite host remains in the wall, so this directive is safely dormant.",
           // POST-GROWTH e-twin OVERPRINT (crystal-face-realism arc, calcite e-twin tenant).
           // Mogok marble was regionally deformed in the Himalayan orogeny (~30 Ma); the
-          // calcite (grown by the step-150 seal) twins on {01-12} (Ferrill 2004 Type I-IV;
-          // Burkhard 1993; Turner 1953). minerals:['calcite'] — only the calcite twins;
+          // exposed free calcite twins on {01-12} (Ferrill 2004 Type I-IV; Burkhard
+          // 1993; Turner 1953). minerals:['calcite'] — only calcite can be tagged;
           // corundum (ruby) is twin-resistant and spared. INERT directive (no fluid/T
           // change) → assemblage byte-identical. style:'etwin' → classifyDeformation tags
           // _deformation.kind='etwin'; js/99i renders the parallel lamellae.
@@ -961,6 +967,9 @@
       "anchor": "Sweetwater Mine (Reynolds County, MO), Viburnum Trend Pb-Zn district. Host: Upper Cambrian Bonneterre Dolomite/dolostone.",
       "description": "Acid-into-carbonate paragenesis — repeated acid pulses dissolve the Bonneterre dolostone wall, then pH recovery drives supersaturation and growth bursts. Sphalerite-galena-marcasite with dolomite-calcite gangue; Ba and Sr remain dissolved brine tracers at this mine.",
       "expects_species": ["sphalerite", "pyrite", "dolomite", "calcite", "galena", "marcasite"],
+      "deterministic_species": [
+        { "mineral": "anhydrite", "reason": "The corrected PHREEQC analytical K(T) path reproducibly resolves a trace hot-brine Ca-sulfate accessory in all three evidence seeds. This classification exposes the modeled phase without claiming it as a documented Sweetwater headline mineral; the separately excluded gypsum/selenite interpretation remains unchanged." }
+      ],
       "excluded_species": {
         "acanthite": "Sweetwater records Ag chiefly as trace lattice substitution in galena; no discrete Ag2S phase is documented in the mine species record.",
         "barite": "The high-Ba value is a fluid-inclusion brine tracer, not evidence for precipitated barite at Sweetwater.",
@@ -2810,7 +2819,8 @@
         { "mineral": "annabergite", "reason": "A classic Ni-arsenate bloom in the oxidized five-element-vein assemblage." },
         { "mineral": "chalcedony", "reason": "A subordinate low-temperature silica lining during the post-vein weathering interval." },
         { "mineral": "pharmacolite", "reason": "A plausible hydrated Ca arsenate accessory in the oxidized arsenide-vein epilogue." },
-        { "mineral": "haidingerite", "reason": "A plausible less-hydrated Ca arsenate product late in the weathering sequence." }
+        { "mineral": "haidingerite", "reason": "A plausible less-hydrated Ca arsenate product late in the weathering sequence." },
+        { "mineral": "anhydrite", "reason": "The corrected PHREEQC analytical K(T) path reproducibly resolves a trace Ca-sulfate accessory from the late sulfate-bearing vein fluid across all three evidence seeds. It remains subordinate to documented barite and is not presented as a defining Wittichen specimen phase." }
       ],
       "aspirational_species": [
         { "mineral": "proustite", "reason": "Ruby silver is documented in five-element vein districts, but this authored S-starved trajectory contains no independently sourced reduced-sulfur pulse sufficient to form it." },
@@ -3035,6 +3045,7 @@
         { "mineral": "apophyllite", "reason": "A subordinate late hydrous Ca-K silicate permitted in the coolest cleft-fluid stage." }
       ],
       "duration_steps": 200,
+      "carbon_ledger": true,
       "notes": [
         "Anchor: Mullis, Dubessy, Poty & O'Neil 1994 (Geochim. Cosmochim. Acta 58:2239-2267) — fissure-quartz fluid inclusions along a Central-Alps geotraverse (dilute, oxidizing, H2O-CO2 epizone). Retrograde P-T-t: Mullis 1996 (Schweiz. Mineral. Petrogr. Mitt. 76:159-164) quartz forms ~450-550C cooling to ~200C at 0.3-0.45 GPa; Gnos, Mullis & Bergemann 2025 (Swiss J. Geosci. 118:12) tie the Grimsel cleft path to D1 (~450C/440MPa, ~14.6 Ma) -> D2 (~385C/325MPa) -> D3 (~330->300C/230MPa) deformation stages. Poty 1969 (PhD thesis, Univ. Nancy) measured fissure quartz at 350-420C. Citations web-verified 2026-06-19 per the cross-check discipline.",
         "T story = a DECLARED temperature movement (retrograde 450->200C trend, no texture, the naica v182 idiom) + thermal_pulses:false + cooling_rate:0.4 (an open feeder advects heat -> slow cooling, not random magmatic re-warm pulses). The events are the chemistry BEATS that compose with it (SiO2 sawtooth + Fe/CO3 stage pulses on different fields -> no same-field clobber).",
@@ -3119,7 +3130,7 @@
         { "step": 90,  "type": "grimsel_oxide_roses",    "name": "Iron-Rose Stage",         "description": "Hematite Fe3+ rosettes (Eisenrosen) perch on the quartz" },
         { "step": 115, "type": "grimsel_seal_2",         "name": "Fissure Re-seals",        "description": "Second seal; silica drops; second growth hiatus" },
         { "step": 135, "type": "grimsel_breach_2",       "name": "Cleft Re-opens (D3)",     "description": "Coolest fresh pulse; highest supersaturation; tallest sceptre cap" },
-        { "step": 165, "type": "grimsel_late_carbonate", "name": "Late Carbonate Stage",    "description": "CO2 + Ca close the cleft: calcite + fluorite + apatite + titanite wedges" }
+        { "step": 165, "type": "grimsel_late_carbonate", "name": "Late Carbonate Stage",    "description": "A ledgered CO2-bearing cleft-fluid recharge supplies DIC; calcite + fluorite + apatite + titanite wedges close the cleft" }
       ],
       "sources": [
         "Mullis, Dubessy, Poty & O'Neil 1994, Geochim. Cosmochim. Acta 58(10):2239-2267 — fissure-quartz fluid inclusions, Central Alps geotraverse",
@@ -4432,6 +4443,7 @@
         { "mineral": "native_silver", "reason": "USGS Folio 120 documents wire silver in the Sunnyside Extension mine; the modeled Sunnyside system reproduces it as a subordinate Ag-bearing accessory rather than a headline phase." }
       ],
       "duration_steps": 200,
+      "carbon_ledger": true,
       "notes": [
         "Anchor: Sunnyside Mine / American Tunnel, Silverton caldera, San Juan County, Colorado. The Silverton caldera nests inside the older San Juan caldera, both in the Oligocene San Juan Volcanic Field. Crystal Lake Tuff erupted at 27.5 Ma collapsing the Silverton caldera; resurgent doming reopened the ring-fracture system; mineralization peaked ~22.5 Ma (Lake City caldera granite porphyry intrusion). Two K-Ar sericite events bracket the hydrothermal history at 22.5 Ma (district-wide propylitic) and 21 Ma (focused sericite). References: Burbank & Luedke 1968 USGS PP 535 (canonical district geology); Casadevall & Ohmoto 1977 Econ. Geol. 72:1285 (the six-stage Sunnyside paragenesis + fluid inclusion data).",
         "Labeling note (CORRECTED v106 2026-05-20): specimens labeled 'Standard Mine, Silverton' refer to Sunnyside mine material from the Standard Metals Corporation lease period (1959-1978). Standard Metals leased Sunnyside in 1959, drove the American Tunnel from the Gold King portal at Gladstone, and operated until the June 4 1978 Lake Emma disaster (surface lake drained into upper workings; mine flooded; lease ended). The label is accurate to a 19-year production window and identifies the operator — the '[Operator] Mine' convention is well-attested (Hecla Mine for Sunshine material, Anaconda Mine for various Butte properties, etc.). The v105 commit originally described this as 'dealer-conflation' with the unrelated Standard Mine in Gunnison County (Ruby District near Crested Butte) — that interpretation was wrong; corrected here. The Silverton-Standard label is its own legitimate provenance anchor referencing Standard Metals' tenure. Casadevall & Ohmoto 1977 Econ. Geol. 72:1285, the canonical Sunnyside paragenesis paper, studied Standard-Metals-era ore (the paper precedes the 1978 disaster by one year), so the simulator's science anchor and the boss's specimens come from the same operating window.",
@@ -4489,7 +4501,7 @@
         { "step":  30, "type": "sunnyside_cooling_transition",          "name": "Primary Cooling",                     "description": "Stage I-IV chemistry closes; inventory determines retained sulfides and Au-quartz" },
         { "step":  70, "type": "sunnyside_stage_v_mn_carbonate",        "name": "Stage V Mn-Carbonate Pulse",           "description": "Conditions favor pale-pink Ca-bearing rhodochrosite" },
         { "step": 110, "type": "sunnyside_stage_vi_fluoride_pulse",     "name": "Stage VI Fluoride + REE Pulse",        "description": "F-Y pulse opens the octahedral REE-fluorite route" },
-        { "step": 150, "type": "sunnyside_stage_vi_manganocalcite_cap", "name": "Stage VI Carbonate Cap",               "description": "CO2 loss raises calcite SI; inventory determines whether Mn-bearing calcite forms" }
+        { "step": 150, "type": "sunnyside_stage_vi_manganocalcite_cap", "name": "Stage VI Carbonate Cap",               "description": "A ledgered carbonate-bearing terminal pulse plus CO2 loss raises calcite SI; inventory determines whether Mn-bearing calcite forms" }
       ],
       "sources": [
         "Ransome F.L. (1901) — Economic Geology of the Silverton Quadrangle / USGS Geologic Atlas Folio 120: wire silver documented in the Sunnyside Extension mine.",
@@ -4631,6 +4643,7 @@
         }
       },
       "events": [
+        { "step":  55, "type": "roughten_gill_primary_carbonate_peak", "name": "Primary Carbonate-Gangue Pulse", "description": "A ledgered carbonate-rich ore-fluid pulse permits documented calcite gangue before meteoric replacement" },
         { "step":  60, "type": "roughten_gill_primary_lockup",           "name": "Primary Ore Stage Closes",      "description": "After sustained 110-130°C quartz-carbonate + base-metal deposition, cool meteoric water replaces the waning brine" },
         { "step": 100, "type": "roughten_gill_deep_weathering",           "name": "Deep Oxidation Seep",            "description": "Oxygenated drainage transfers residual sulfide sulfur to sulfate and carries Pb-Zn-Cu from upgradient weathering ore" },
         { "step": 140, "type": "roughten_gill_carbonate_buffering",       "name": "Carbonate Gangue Buffers Acid",  "description": "Calcite/dolomite gangue releases carbon while carbonate-buffered drainage imports Cu from weathering ore, restoring pH and favoring dominant malachite + cerussite" },
@@ -4669,7 +4682,6 @@
       "description": "Rodingite metasomatic assemblage in the Jeffrey Mine pit. The fluid evolution walks the broth through five stages: (1) Serpentinization onset — olivine + pyroxene hydration releases Mg + Si + Ni + Fe to a hyperalkaline (pH 10.5-11.2), strongly reducing (O2 < 0.1) fluid at T 380→340°C. Chrysotile + brucite + magnetite + awaruite fire as the serpentinization byproducts. (2) Mafic dike alteration begins — the alkaline serpentinizing fluid invades cross-cutting mafic dikes (basalt-to-gabbro composition), releasing Ca + Al + Si from dike plagioclase + clinopyroxene. Trace Cr from chromite enables chrome varieties. Grossular + diopside fire as the high-T garnet + clinopyroxene endmember pair. (3) Mid-rodingite — vesuvianite stage. Trace Cu (1-4 ppm) from background chalcopyrite enables CYPRINE — the world-reference Jeffrey aesthetic per Bernardini 1981. Sky-blue cyprine vesuvianite at 1-5 ppm Cu, deep-azure cyprine > 5 ppm. (4) Late Ca-silicates — Na rises (from late-stage albitization of dike feldspar); pectolite spray-radiating habit on grossular substrate fires. Wollastonite acicular sprays. Prehnite pale-green botryoidal (Fe³⁺ trace). (5) Terminal datolite — trace B (from late hydrothermal fluid concentration) drives datolite gemmy_vitreous_terminated on prehnite/wollastonite substrate. Final-stage cabinet aesthetic; colorless to pale-yellow gemmy datolite crystals. The KEY DISCRIMINATOR vs. all other scenarios is the hyperalkaline pH (10-12) — rodingite is the alkaline outlier in the simulator's catalog (most other scenarios run pH 4-8).",
       "expects_species": ["chrysotile", "brucite", "awaruite", "grossular", "diopside", "vesuvianite", "wollastonite", "prehnite", "datolite", "calcite"],
       "deterministic_species": [
-        { "mineral": "dolomite", "reason": "A plausible carbonate accessory in the Jeffrey rodingite-serpentinite system, subordinate to the Ca-silicate assemblage." },
         { "mineral": "actinolite", "reason": "A documented-style amphibole accessory at rodingite/serpentinite contacts during mafic-dike alteration." },
         { "mineral": "albite", "reason": "The authored late albitization stage explicitly supplies Na and licenses albite as a subordinate product." },
         { "mineral": "siderite", "reason": "A minor Fe-carbonate accessory permitted during late carbonate sealing." },
@@ -4680,6 +4692,7 @@
         { "mineral": "rhodochrosite", "reason": "A minor Mn-carbonate accessory permitted after terminal carbonate enrichment; observed in two of three evidence seeds." }
       ],
       "aspirational_species": [
+        { "mineral": "dolomite", "reason": "A plausible carbonate accessory in a rodingite-serpentinite system, but the corrected SIM 270 PHREEQC/SUPCRTBL trajectory remains below the commissioned heterogeneous-nucleation gate; no cited Jeffrey-specific occurrence justifies tuning the fluid to force it." },
         { "mineral": "magnetite", "reason": "Canonical serpentinization byproduct, but absent from the release seed audit; the redox/Fe partition needs an executed magnetite window before this becomes deterministic." }
       ],
       "duration_steps": 200,

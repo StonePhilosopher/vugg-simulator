@@ -6,8 +6,8 @@
       "id": "core",
       "content_version": "1.0.0",
       "compatibility": {
-        "sim_version": 269,
-        "model_digest_sha256": "c33a79eb461faf1cab9548c66f777a50531e47cb9d45f2bdd3a44f6484cf5541",
+        "sim_version": 271,
+        "model_digest_sha256": "39f3486231d58abc9cc9a8e54edd44fa7c3e5d234d4b63bc88d513bf916b23fc",
         "save_format": 3
       },
       "counts": {
@@ -15,8 +15,8 @@
         "minerals": 184,
         "narratives": 94
       },
-      "browser_bundle_sha256": "066813ea28ff46b6323fa45f3b943bc6e58d6773247723db80505a79e273b676",
-      "runtime_execution_sha256": "aad5060e3d18b2db82e32b52efe517a024d6d875a852916595824d2e94e88822",
+      "browser_bundle_sha256": "5dad51052abe0a2b123635cd4f647f6435028b1719dabc473ec5d8795952bc19",
+      "runtime_execution_sha256": "728549a836f1fdf5f71e793855c00b60a16daf37a45bdb26842766a376fa1d64",
       "source_files": [
         {
           "path": "data/locality_chemistry.json",
@@ -35,8 +35,8 @@
         },
         {
           "path": "data/scenarios.json5",
-          "bytes": 494436,
-          "sha256": "373eeb44ed5238370f1b1d51f7989f6a7035d850414529e067f4484b8f4ad439"
+          "bytes": 497178,
+          "sha256": "c006a46e584ce7b1559333bf414a4ce4b8f140001d78b757ec5444886633788f"
         },
         {
           "path": "data/structural.json",
@@ -50,8 +50,8 @@
         },
         {
           "path": "data/thermo-sulfates.json",
-          "bytes": 9740,
-          "sha256": "e57c932abc2f92ae4d5e333853505d621ebf18a3462ec9b9f0da8c015eb6fde1"
+          "bytes": 8540,
+          "sha256": "3d3caa6316e18a4a15a58350d10edd5f66dc92e930c32029c2b3b15df4118751"
         },
         {
           "path": "narratives/acanthite.md",
@@ -528,5 +528,5 @@
   ],
   "producer_contract_sha256": "f842a35442b4b0b3a473ccf003dca704225b6bd7ee395b9eec0acb4c21ee2db2",
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
-  "catalog_sha256": "1aca19874d9bcefdd4bd5eface432e40319b82f234d12af800b02423f440d5d0"
+  "catalog_sha256": "a2f1ca0061894e202387b5fb7c2613baa5bc5da5298693aefb289a0f5bed4100"
 }

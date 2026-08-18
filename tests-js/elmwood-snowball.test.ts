@@ -95,8 +95,13 @@ describe('W-F O5 — the Elmwood barite snowball (SIM 223)', () => {
 
   it('THE VARIETY GUARD — the golden calcite + fluorite + sphalerite base all survive', () => {
     const sim = runElmwood();
-    // The crown jewel: the giant golden scalenohedral calcite, ~19 mm, must hold.
-    expect(maxUm(sim, 'calcite') / 1000, 'golden calcite intact').toBeGreaterThan(17);
+    // The crown jewel remains a centimetre-scale golden scalenohedron. SIM 271
+    // replaces the unbounded positive-affinity continuation of the diagnostic
+    // PWP expression with the disclosed series-resistance production closure;
+    // the old ~19 mm / >17 mm pin therefore no longer represents the corrected
+    // rate model (seed 42 now resolves 14.293 mm). Keep a conservative 12 mm
+    // specimen-scale guard rather than retuning chemistry to recover old growth.
+    expect(maxUm(sim, 'calcite') / 1000, 'golden calcite intact').toBeGreaterThan(12);
     // The other headliners of the "variety of cool stuff": all present + sized.
     expect(maxUm(sim, 'fluorite') / 1000, 'purple fluorite intact').toBeGreaterThan(18);
     // v228 (hostile-review rung 2): the old `aragonite > 40mm` line guarded the

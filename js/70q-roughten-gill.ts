@@ -39,6 +39,26 @@ function _roughtenOxidizeSulfideToSulfate(c, requestedPpm) {
   return transferred;
 }
 
+function event_roughten_gill_primary_carbonate_peak(c) {
+  // Bridges et al. describe significant calcite/dolomite with the primary
+  // quartz gangue. The corrected PHREEQC/SUPCRTBL path needs the carbonate-
+  // rich end of that ore fluid before the stage-60 meteoric replacement;
+  // book it as an external boundary pulse instead of altering Ksp or the
+  // heterogeneous-nucleation gate to force the occurrence.
+  const carbonateTarget = 1200;
+  const carbonateAdded = Math.max(0, carbonateTarget - c.fluid.CO3);
+  c.fluid.CO3 += carbonateAdded;
+  c.fluid.pH = Math.max(c.fluid.pH, 6.6);
+  declareCarbonLedgerAddition(
+    c,
+    'external_import',
+    'Roughton Gill primary carbonate-gangue ore fluid',
+    carbonateAdded,
+  );
+  c.flow_rate = Math.max(c.flow_rate, 0.3);
+  return `A late primary carbonate-gangue pulse imports ${carbonateAdded.toFixed(0)} ppm CO3-equivalent DIC before ore-stage lockup. At pH ${c.fluid.pH.toFixed(1)}, the documented calcite gangue can nucleate without weakening the corrected thermodynamic gate.`;
+}
+
 function event_roughten_gill_primary_lockup(c) {
   // Sixty simulated steps at 130→115°C give the documented quartz-carbonate
   // gangue and base-metal sulfides time to form. The transition is an open

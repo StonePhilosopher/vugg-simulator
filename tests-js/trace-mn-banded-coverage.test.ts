@@ -110,9 +110,11 @@ describe('Per-zone trace_Mn coverage audit (v119)', () => {
     // Calcite exercises the shared carbonate-zone schema here. Mineral-
     // specific carbonate chemistry and Mn partition coefficients have their
     // own engine suites; this guard is deliberately structural.
-    const sim = observeScenario('mvt', 4);
-    // Calcite always fires in mvt. Pick any one calcite zone — must
-    // have trace_Mn field present (even if value is 0).
+    // The Mn-calcite tutorial is the authored causal fixture for the shared
+    // carbonate zone schema. MVT no longer promises a free calcite druse in
+    // its first four steps under the corrected thermodynamic path.
+    const sim = observeScenario('tutorial_mn_calcite', 12);
+    // Pick any one calcite zone — it must retain the trace_Mn field.
     const calcites = sim.crystals.filter((c: any) => c.mineral === 'calcite');
     expect(calcites.length).toBeGreaterThan(0);
     const cZones = calcites[0].zones.filter((z: any) => z.thickness_um > 0);

@@ -12,16 +12,19 @@
 //   - getSulfateLogKsp(mineralId, T_celsius)  → log10(Ksp) at T
 //   - getSulfateKsp(mineralId, T_celsius)     → Ksp itself
 //   - getSulfateData(mineralId)               → full record (audit / UI)
+//   - sulfateThermoTemperatureAssessment(...) → explicit fit-domain receipt
 //   - getSulfateThermoTier(mineralId)         → 'A' | 'B' | 'C' | 'D' | 'conflict' | 'unknown'
 //   - listSulfatesAtTier(tier)                → array of mineralIds
 //   - sulfatesReady(cb)                       → notify when fetch completes
 //   - sulfateThermoCoverage()                 → tier counts (for thermo-coverage-check)
 //
-// T-dependence uses the same van't Hoff form as 20c:
-//   logKsp(T) = logKsp_25C − (ΔH_diss/(2.303·R))·(1/T_K − 1/298.15)
-// where R = 8.31446e-3 kJ/(mol·K). Sign convention matches 20c —
-// ΔH_diss positive = endothermic dissolution (K rises with T;
-// barite!), negative = retrograde (anhydrite, celestine, gypsum).
+// T-dependence uses PHREEQC's cited five-coefficient analytical form:
+//   logKsp(T) = A1 + A2·TK + A3/TK + A4·log10(TK) + A5/TK²
+// The constant-ΔH van't Hoff form is retained only as an explicit fallback
+// for future entries that do not publish analytical coefficients.  The four
+// production/observer sulfate records below all carry the exact wateq4f.dat
+// coefficients, because the approximation is not valid over the simulator's
+// hydrothermal temperature range.
 //
 // All four canonical values verified 2026-05-30 against the publicly
 // distributed PHREEQC wateq4f.dat (USGS, github.com/usgs-coupled/
@@ -40,7 +43,12 @@ type ThermoSulfateEntry = {
   formula: string,
   thermodynamics: {
     logKsp_25C?: number,
-    logKsp_fit?: { form?: string, deltaH_diss_kJ_mol?: number, _notes_fit?: string },
+    logKsp_fit?: {
+      form?: string,
+      analytic?: [number, number, number, number, number],
+      deltaH_diss_kJ_mol?: number,
+      _notes_fit?: string,
+    },
     valid_T_range_C?: [number, number],
     sources?: string[],
     databases_agree?: string[],
@@ -64,7 +72,8 @@ const THERMO_SULFATES_FALLBACK: ThermoSulfatesDoc = {
     formula: 'CaSO4·2H2O',
     thermodynamics: {
       logKsp_25C: -4.58,
-      logKsp_fit: { form: 'vanthoff', deltaH_diss_kJ_mol: -0.456 },
+      logKsp_fit: { form: 'analytic', analytic: [68.2401, 0, -3221.51, -25.0627, 0], deltaH_diss_kJ_mol: -0.456 },
+      valid_T_range_C: [0, 60],
       confidence_tier: 'A',
     },
   },
@@ -72,7 +81,8 @@ const THERMO_SULFATES_FALLBACK: ThermoSulfatesDoc = {
     formula: 'CaSO4',
     thermodynamics: {
       logKsp_25C: -4.36,
-      logKsp_fit: { form: 'vanthoff', deltaH_diss_kJ_mol: -7.155 },
+      logKsp_fit: { form: 'analytic', analytic: [197.52, 0, -8669.8, -69.835, 0], deltaH_diss_kJ_mol: -7.155 },
+      valid_T_range_C: [0, 300],
       confidence_tier: 'A',
     },
   },
@@ -80,7 +90,8 @@ const THERMO_SULFATES_FALLBACK: ThermoSulfatesDoc = {
     formula: 'BaSO4',
     thermodynamics: {
       logKsp_25C: -9.97,
-      logKsp_fit: { form: 'vanthoff', deltaH_diss_kJ_mol: 26.57 },
+      logKsp_fit: { form: 'analytic', analytic: [136.035, 0, -7680.41, -48.595, 0], deltaH_diss_kJ_mol: 26.57 },
+      valid_T_range_C: [0, 300],
       confidence_tier: 'A',
     },
   },
@@ -88,7 +99,8 @@ const THERMO_SULFATES_FALLBACK: ThermoSulfatesDoc = {
     formula: 'SrSO4',
     thermodynamics: {
       logKsp_25C: -6.63,
-      logKsp_fit: { form: 'vanthoff', deltaH_diss_kJ_mol: -4.339 },
+      logKsp_fit: { form: 'analytic', analytic: [-14805.9622, -2.4660924, 756968.533, 5436.3588, -40553604], deltaH_diss_kJ_mol: -4.339 },
+      valid_T_range_C: [0, 200],
       confidence_tier: 'A',
     },
   },
@@ -146,19 +158,72 @@ function getSulfateThermoTier(mineralId: string): SulfateThermoTier {
   return (entry.thermodynamics.confidence_tier as SulfateThermoTier) || 'unknown';
 }
 
+type SulfateThermoTemperatureAssessment = {
+  mineral: string;
+  temperatureC: number;
+  validTemperatureC: readonly [number, number] | null;
+  supported: boolean;
+  status: 'inside-fit-envelope' | 'outside-fit-envelope' | 'invalid-input' | 'missing-thermodynamics';
+  note: string;
+};
+
+function sulfateThermoTemperatureAssessment(
+  mineralId: string,
+  T_celsius: number,
+): SulfateThermoTemperatureAssessment {
+  const mineral = mineralId === 'gypsum' ? 'selenite' : mineralId;
+  const temperatureC = Number(T_celsius);
+  const entry = getSulfateData(mineral);
+  const range = entry?.thermodynamics?.valid_T_range_C || null;
+  if (!entry || !entry.thermodynamics || !range) {
+    return {
+      mineral, temperatureC, validTemperatureC: null, supported: false,
+      status: 'missing-thermodynamics',
+      note: 'No declared sulfate thermodynamic temperature envelope is available.',
+    };
+  }
+  if (!Number.isFinite(temperatureC)) {
+    return {
+      mineral, temperatureC, validTemperatureC: range, supported: false,
+      status: 'invalid-input', note: 'Temperature must be finite.',
+    };
+  }
+  const inside = temperatureC >= range[0] && temperatureC <= range[1];
+  return {
+    mineral, temperatureC, validTemperatureC: range, supported: inside,
+    status: inside ? 'inside-fit-envelope' : 'outside-fit-envelope',
+    note: inside
+      ? `Temperature lies inside the declared ${range[0]}-${range[1]} C sulfate K(T) envelope.`
+      : `Temperature lies outside the declared ${range[0]}-${range[1]} C sulfate K(T) envelope; SI and phase admission fail closed rather than extrapolating the analytical expression.`,
+  };
+}
+
 // log10(Ksp) at temperature T (°C). Returns NaN if mineral missing or
 // thermodynamics not parseable. In practice the four canonical sulfates
 // (selenite/anhydrite/barite/celestine) always return a real number
 // even pre-fetch (fallback covers them).
 function getSulfateLogKsp(mineralId: string, T_celsius: number): number {
-  const entry = getSulfateData(mineralId);
+  const mineral = mineralId === 'gypsum' ? 'selenite' : mineralId;
+  const validity = sulfateThermoTemperatureAssessment(mineral, T_celsius);
+  if (!validity.supported) return NaN;
+  const entry = getSulfateData(mineral);
   if (!entry || !entry.thermodynamics) return NaN;
   const thermo = entry.thermodynamics;
   if (typeof thermo.logKsp_25C !== 'number') return NaN;
   const logKsp_25C = thermo.logKsp_25C;
 
-  // T-correction via van't Hoff. Same form + sign convention as 20c.
+  // Exact PHREEQC analytical expression.  Do not replace this with a
+  // constant-ΔH approximation: anhydrite and celestine curvature is large
+  // enough to reverse archived saturation classifications at high T.
   const fit = thermo.logKsp_fit;
+  if (fit && fit.form === 'analytic' && Array.isArray(fit.analytic) && fit.analytic.length === 5) {
+    const T_K = T_celsius + 273.15;
+    if (!(T_K > 0) || !fit.analytic.every(Number.isFinite)) return NaN;
+    const [A1, A2, A3, A4, A5] = fit.analytic;
+    return A1 + A2 * T_K + A3 / T_K + A4 * Math.log10(T_K) + A5 / (T_K * T_K);
+  }
+
+  // Explicit fallback for a future entry that has no analytical fit.
   if (fit && fit.form === 'vanthoff' && typeof fit.deltaH_diss_kJ_mol === 'number') {
     const T_K = T_celsius + 273.15;
     if (T_K <= 0) return logKsp_25C;

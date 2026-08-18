@@ -31,14 +31,20 @@ and the exact-execution evidence receipt.
 
 ### Scientific identity
 
-- The tranche is commissioned as **SIM 269**. SIM 268 separated sulfate,
-  sulfide, and elemental-sulfur admission; SIM 269 preserves that repair while
-  authenticating the full evidence path and correcting mid-run reservoir
-  activation. It preserves SIM 267's
+- The tranche is commissioned as **SIM 271**. SIM 268 separated sulfate,
+  sulfide, and elemental-sulfur admission; SIM 269 authenticated that repair
+  through the full evidence path and corrected mid-run reservoir activation.
+  SIM 270 replaces the former constant-enthalpy sulfate approximations with
+  the cited PHREEQC analytical K(T) expressions, removes fitted-temperature
+  pressure discontinuities, and corrects the associated carbonate kinetics,
+  molar-ratio, pKw, and evidence-unit seams. It preserves SIM 267's
   Cartesian solid/seal authority while separating sulfate, sulfide, and
   elemental-sulfur admission throughout the supersaturation engines. Carbon
   boundary uncertainty and zero/reverse-flow edge cases are corrected in the
-  same scientific identity. `MODEL_DIGEST` names these changes explicitly.
+  same scientific identity. SIM 271 keeps the cited raw PWP diagnostic but
+  adds the explicit production transport/applicability ceiling needed when a
+  single simulator step samples extreme supersaturation without PHREEQC-style
+  reaction integration. `MODEL_DIGEST` names these changes explicitly.
 - Idle mode now reports fresh zero-volume nuclei and inactive capped/buried
   solids without treating dissolved crystals as booked pie-chart volume.
 - The exact-browser/execution science receipt must be freshly rebaked after
@@ -77,6 +83,50 @@ and the exact-execution evidence receipt.
   by parsing the authored HTML shell rather than twelve redundant copies of
   the generated executable, and by releasing each completed Creative run.
   All 34 control, physics, responsive, and accessibility assertions remain.
+
+## SIM 271 — bounded production use of the raw PWP affinity
+
+- Preserved the exact precipitation-positive PHREEQC/PWP diagnostic
+  `r_forward * (omega^(2/3) - 1)`, including its finite far-under-saturation
+  behavior required by SCI-02.
+- Separated production growth from that diagnostic and bounded its
+  positive dimensionless affinity with the monotone series-resistance form
+  `A / (1 + A)`, where `A = omega^(2/3) - 1`. The asymptotic ceiling is an
+  explicit transport/applicability closure for Vugg Simulator's frozen-fluid,
+  one-zone-per-step update—not a claim that the PWP dissolution experiments
+  measured unlimited precipitation at extreme supersaturation.
+- Added wrong-domain controls proving the raw diagnostic remains exact, the
+  admitted envelope is unchanged, and extreme supersaturation cannot create a
+  single cavity-filling dolomite zone.
+
+## SIM 270 — PHREEQC sulfate thermodynamics and continuous pressure authority
+
+- Replaced the four sulfate constant-enthalpy K(T) approximations with the
+  exact five-coefficient analytical expressions published in the USGS
+  PHREEQC `wateq4f.dat` database, with explicit per-phase temperature
+  envelopes and fail-closed out-of-envelope saturation/admission.
+- Removed reaction-grid pressure jumps at fitted temperature edges by holding
+  the nearest authenticated SUPCRTBL correction, while retaining the strict
+  prohibition on pressure extrapolation and surfacing the evaluated edge in
+  the player-facing formation diagnosis.
+- Replaced the unbounded far-under-saturation PWP surrogate with the bounded
+  PHREEQC omega-to-the-two-thirds affinity term; converted Mg/Ca selectors and
+  poisoning factors from stored mass ppm to molar ratios.
+- Evaluated hydroxycarbonate OH activity with temperature- and pressure-aware
+  water pKw, failing closed where the authenticated water state is absent.
+- Corrected chemistry evidence labels to ppm by mass (mg/kg solvent), with
+  carbonate partitions explicitly identified as CO3-equivalent mass rather
+  than falsely labeled mg/L.
+- Reconciled two stale scenario contracts exposed by the corrected physics:
+  Mogok calcite remains the marble wall mineral rather than an invented free
+  druse, and undocumented Jeffrey dolomite is aspirational while its corrected
+  trajectory remains below the heterogeneous-nucleation threshold.
+- Reconciled the corrected locality envelope without weakening thermodynamics:
+  five reproducible anhydrite results are classified explicitly as modeled
+  accessories, while documented calcite in Grimsel, Roughton Gill, and
+  Sunnyside is restored by cited, open-boundary carbonate-bearing fluid pulses.
+  Every new DIC input is an exact carbon-ledger transaction; the Sunnyside
+  terminal branch remains the low-excess botryoidal manganocalcite path.
 
 ## SIM 269 — authenticated sulfur testimony and activation
 

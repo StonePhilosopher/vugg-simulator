@@ -21,6 +21,9 @@ declare const FluidChemistry: any;
 
 declare const pwpForwardRate: (mineralId: string, fluid: any, T_C: number) => number;
 declare const pwpNetRate: (mineralId: string, fluid: any, T_C: number, mg_content?: number) => number;
+declare const pwpProductionNetRate: (mineralId: string, fluid: any, T_C: number, mg_content?: number) => number;
+declare const carbonateOmega: (mineralId: string, fluid: any, T_C: number, mg_content?: number) => number;
+declare const aqueousMgCaMolarRatio: (fluid: any) => number;
 declare const pwpRateToSimMicronsPerStep: (mineralId: string, mol_per_cm2_s: number) => number;
 declare const setPWPCalibrationFactor: (factor: number) => void;
 declare const aragoniteKineticallyFavoredOver: (fluid: any, T_C: number) => boolean;
@@ -74,6 +77,46 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 6 — net rate sign convention', () =>
     expect(r).toBeLessThan(0);
   });
 
+  it('uses the bounded PWP omega^(2/3) affinity term far below saturation', () => {
+    const f = new FluidChemistry({ Ca: 0, CO3: 0, pH: 4 });
+    const forward = pwpForwardRate('calcite', f, 25);
+    const net = pwpNetRate('calcite', f, 25);
+    expect(forward).toBeGreaterThan(0);
+    expect(carbonateOmega('calcite', f, 25)).toBe(0);
+    expect(net).toBeCloseTo(-forward, 15);
+    expect(Math.abs(net)).toBeLessThanOrEqual(forward);
+  });
+
+  it('matches the PHREEQC/PWP omega^(2/3) relation away from equilibrium', () => {
+    const f = new FluidChemistry({ Ca: 800, CO3: 500, pH: 8.5 });
+    const forward = pwpForwardRate('calcite', f, 25);
+    const omega = carbonateOmega('calcite', f, 25);
+    expect(pwpNetRate('calcite', f, 25))
+      .toBeCloseTo(forward * (Math.pow(omega, 2 / 3) - 1), 15);
+  });
+
+  it('keeps the raw PHREEQC diagnostic while transport-bounding production at extreme supersaturation', () => {
+    const f = new FluidChemistry({ Ca: 800, CO3: 500, pH: 8.5 });
+    const forward = pwpForwardRate('calcite', f, 25);
+    const raw = pwpNetRate('calcite', f, 25);
+    const production = pwpProductionNetRate('calcite', f, 25);
+    expect(raw).toBeGreaterThan(forward);
+    expect(production).toBeGreaterThan(0);
+    expect(production).toBeLessThan(forward);
+    expect(production).toBeGreaterThan(forward * 0.90);
+    expect(production).toBeLessThan(raw);
+  });
+
+  it('retains the raw relation to first order near equilibrium', () => {
+    const f = new FluidChemistry({ Ca: 40, CO3: 40, pH: 8.3 });
+    const raw = pwpNetRate('calcite', f, 25);
+    const production = pwpProductionNetRate('calcite', f, 25);
+    expect(Math.abs(raw)).toBeLessThanOrEqual(pwpForwardRate('calcite', f, 25));
+    expect(production).toBeGreaterThan(0);
+    expect(production).toBeLessThan(raw);
+    expect(production / raw).toBeGreaterThan(0.95);
+  });
+
   it('net rate ≈ 0 at calcite equilibrium fluid', () => {
     // Back-calculated calcite-saturated fluid from Week 2 tests.
     const f = new FluidChemistry({ Ca: 40, CO3: 40, pH: 8.3 });
@@ -114,6 +157,14 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 6 — Mg poisoning of calcite', () => 
     expect(factor).toBeGreaterThanOrEqual(0.15);
   });
 
+  it('converts mass ppm to molar Mg/Ca before applying the poisoning threshold', () => {
+    // 140/100 = 1.4 by mass, but (140/24.305)/(100/40.078) = 2.31 mol/mol.
+    // The old ppm/ppm comparison incorrectly treated this as below threshold.
+    const f = new FluidChemistry({ Ca: 100, Mg: 140 });
+    expect(aqueousMgCaMolarRatio(f)).toBeCloseTo(2.3086, 3);
+    expect(mgPoisoningFactor(f)).toBeLessThan(0.5);
+  });
+
   it('mgPoisoningFactor floors at ~0.15 (85% max inhibition)', () => {
     const f = new FluidChemistry({ Ca: 100, Mg: 10000 });
     const factor = mgPoisoningFactor(f);
@@ -142,6 +193,13 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 6 — aragonite metastability', () => 
 
   it('aragonite kinetically favored at Mg/Ca > 4 AND T > 30 (Folk 1974)', () => {
     const f = new FluidChemistry({ Ca: 100, Mg: 500 });
+    expect(aragoniteKineticallyFavoredOver(f, 40)).toBe(true);
+  });
+
+  it('uses molar rather than mass Mg/Ca for the aragonite preference gate', () => {
+    // Mass ratio 3.0, molar ratio 4.95: scientifically above the gate.
+    const f = new FluidChemistry({ Ca: 100, Mg: 300 });
+    expect(aqueousMgCaMolarRatio(f)).toBeGreaterThan(4);
     expect(aragoniteKineticallyFavoredOver(f, 40)).toBe(true);
   });
 });

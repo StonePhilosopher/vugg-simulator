@@ -54,10 +54,9 @@
 //   - CO3^2- activity: carbonateIonPpm(fluid, T) * ppm-to-molality
 //     * raw daviesLogGamma(-2, I)
 //   - Cation activity: ppm/molarMass * raw daviesLogGamma(z, I)
-//   - OH- activity: 10^(pH-14) * raw daviesLogGamma(-1, I)
-//   - Kw assumed = 1e-14 (25 C value). T-dependence is real but small
-//     in the 0-100 C band relevant here; refinement deferred to a
-//     possible Phase 2 activity model upgrade.
+//   - OH- activity: 10^(pH-pKw(T,P)) * raw daviesLogGamma(-1, I)
+//     with Marshall-Franck water ionization and authenticated IAPWS-95/
+//     SUPCRTBL density. Unsupported water states fail closed.
 //
 // PER-MINERAL IAP STOICHIOMETRY (the eight Ca/Mg/Fe/Mn/Zn/Pb/Ba/Sr
 // monocarbonates + dolomite + HMC + three OH-bearing supergene Cu/Zn
@@ -241,15 +240,14 @@ function _logActivityCO3(fluid: any, T: number, I: number): number {
   return Math.log10(m) + daviesLogGamma(-2, I);
 }
 
-// log10 a(OH-) at the fluid's pH. Uses Kw = 1e-14 (25 C value);
-// T-dependence of Kw is real (pKw drops from 14.0 at 25 C to ~13.0
-// at 100 C per Marshall & Franck 1981) but the effect on SI for OH-
-// bearing carbonates is small at the temperatures these minerals form
-// (typically <60 C in supergene settings). Documented as a known
-// approximation; refinement deferred to Phase 2.
-function _logActivityOH(fluid: any, I: number): number {
+// log10 a(OH-) at the fluid's pH and temperature. pKwWater is the same
+// Marshall-Franck/Kell reduced model used by the conserved carbonate boundary,
+// so hydroxycarbonate SI cannot silently retain a fixed 25 C pKw.
+function _logActivityOH(fluid: any, T: number, I: number, fluidPressureKbar = 0.001): number {
   const pH = typeof fluid.pH === 'number' ? fluid.pH : 7.0;
-  const m_OH = Math.pow(10, pH - 14.0);
+  const pKw = typeof pKwWater === 'function' ? pKwWater(T, fluidPressureKbar) : NaN;
+  if (!Number.isFinite(pKw)) return -Infinity;
+  const m_OH = Math.pow(10, pH - pKw);
   if (m_OH <= 0) return -Infinity;
   return Math.log10(m_OH) + daviesLogGamma(-1, I);
 }
@@ -336,13 +334,13 @@ function saturationIndex_HMC(fluid: any, T: number, mg_content: number): number 
 
 // Malachite Cu2(CO3)(OH)2.
 // IAP = a(Cu^2+)^2 * a(CO3^2-) * a(OH^-)^2.
-function saturationIndex_malachite(fluid: any, T: number): number {
+function saturationIndex_malachite(fluid: any, T: number, fluidPressureKbar = 0.001): number {
   const I = ionicStrength(fluid);
   const logA_Cu = _logActivityCation(fluid, 'Cu', I);
   if (!isFinite(logA_Cu)) return NaN;
   const logA_CO3 = _logActivityCO3(fluid, T, I);
   if (!isFinite(logA_CO3)) return NaN;
-  const logA_OH = _logActivityOH(fluid, I);
+  const logA_OH = _logActivityOH(fluid, T, I, fluidPressureKbar);
   if (!isFinite(logA_OH)) return NaN;
   const logIAP = 2 * logA_Cu + logA_CO3 + 2 * logA_OH;
   const logKsp = getCarbonateLogKsp('malachite', T);
@@ -352,13 +350,13 @@ function saturationIndex_malachite(fluid: any, T: number): number {
 
 // Azurite Cu3(CO3)2(OH)2.
 // IAP = a(Cu^2+)^3 * a(CO3^2-)^2 * a(OH^-)^2.
-function saturationIndex_azurite(fluid: any, T: number): number {
+function saturationIndex_azurite(fluid: any, T: number, fluidPressureKbar = 0.001): number {
   const I = ionicStrength(fluid);
   const logA_Cu = _logActivityCation(fluid, 'Cu', I);
   if (!isFinite(logA_Cu)) return NaN;
   const logA_CO3 = _logActivityCO3(fluid, T, I);
   if (!isFinite(logA_CO3)) return NaN;
-  const logA_OH = _logActivityOH(fluid, I);
+  const logA_OH = _logActivityOH(fluid, T, I, fluidPressureKbar);
   if (!isFinite(logA_OH)) return NaN;
   const logIAP = 3 * logA_Cu + 2 * logA_CO3 + 2 * logA_OH;
   const logKsp = getCarbonateLogKsp('azurite', T);
@@ -368,13 +366,13 @@ function saturationIndex_azurite(fluid: any, T: number): number {
 
 // Hydrozincite Zn5(CO3)2(OH)6.
 // IAP = a(Zn^2+)^5 * a(CO3^2-)^2 * a(OH^-)^6.
-function saturationIndex_hydrozincite(fluid: any, T: number): number {
+function saturationIndex_hydrozincite(fluid: any, T: number, fluidPressureKbar = 0.001): number {
   const I = ionicStrength(fluid);
   const logA_Zn = _logActivityCation(fluid, 'Zn', I);
   if (!isFinite(logA_Zn)) return NaN;
   const logA_CO3 = _logActivityCO3(fluid, T, I);
   if (!isFinite(logA_CO3)) return NaN;
-  const logA_OH = _logActivityOH(fluid, I);
+  const logA_OH = _logActivityOH(fluid, T, I, fluidPressureKbar);
   if (!isFinite(logA_OH)) return NaN;
   const logIAP = 5 * logA_Zn + 2 * logA_CO3 + 6 * logA_OH;
   const logKsp = getCarbonateLogKsp('hydrozincite', T);
@@ -395,12 +393,13 @@ function _SI_mixedCuZnHydroxyCarbonate(
   nuZn: number,
   nuCO3: number,
   nuOH: number,
+  fluidPressureKbar = 0.001,
 ): number {
   const I = ionicStrength(fluid);
   const logA_Cu = _logActivityCation(fluid, 'Cu', I);
   const logA_Zn = _logActivityCation(fluid, 'Zn', I);
   const logA_CO3 = _logActivityCO3(fluid, T, I);
-  const logA_OH = _logActivityOH(fluid, I);
+  const logA_OH = _logActivityOH(fluid, T, I, fluidPressureKbar);
   if (![logA_Cu, logA_Zn, logA_CO3, logA_OH].every(Number.isFinite)) return NaN;
   const logKsp = getCarbonateLogKsp(mineralId, T);
   if (!isFinite(logKsp)) return NaN;
@@ -408,12 +407,12 @@ function _SI_mixedCuZnHydroxyCarbonate(
     + nuCO3 * logA_CO3 + nuOH * logA_OH - logKsp;
 }
 
-function saturationIndex_rosasite(fluid: any, T: number): number {
-  return _SI_mixedCuZnHydroxyCarbonate('rosasite', fluid, T, 1.3, 0.7, 1, 2);
+function saturationIndex_rosasite(fluid: any, T: number, fluidPressureKbar = 0.001): number {
+  return _SI_mixedCuZnHydroxyCarbonate('rosasite', fluid, T, 1.3, 0.7, 1, 2, fluidPressureKbar);
 }
 
-function saturationIndex_aurichalcite(fluid: any, T: number): number {
-  return _SI_mixedCuZnHydroxyCarbonate('aurichalcite', fluid, T, 2.1, 2.9, 2, 6);
+function saturationIndex_aurichalcite(fluid: any, T: number, fluidPressureKbar = 0.001): number {
+  return _SI_mixedCuZnHydroxyCarbonate('aurichalcite', fluid, T, 2.1, 2.9, 2, 6, fluidPressureKbar);
 }
 
 interface MixedCarbonateThermoAssessment {
@@ -430,10 +429,11 @@ function mixedCarbonateThermoAssessment(
   mineralId: 'rosasite' | 'aurichalcite',
   fluid: any,
   T_C: number,
+  fluidPressureKbar = 0.001,
 ): MixedCarbonateThermoAssessment {
   const saturationIndex = mineralId === 'rosasite'
-    ? saturationIndex_rosasite(fluid, T_C)
-    : saturationIndex_aurichalcite(fluid, T_C);
+    ? saturationIndex_rosasite(fluid, T_C, fluidPressureKbar)
+    : saturationIndex_aurichalcite(fluid, T_C, fluidPressureKbar);
   const calibrated = Math.abs(T_C - 25) < 0.5;
   return {
     mineral: mineralId,
@@ -480,11 +480,11 @@ function carbonateSaturationIndex(
     case 'cerussite':     baseSI = saturationIndex_cerussite(fluid, T_C); break;
     case 'witherite':     baseSI = saturationIndex_witherite(fluid, T_C); break;
     case 'strontianite':  baseSI = saturationIndex_strontianite(fluid, T_C); break;
-    case 'malachite':     baseSI = saturationIndex_malachite(fluid, T_C); break;
-    case 'azurite':       baseSI = saturationIndex_azurite(fluid, T_C); break;
-    case 'hydrozincite':  baseSI = saturationIndex_hydrozincite(fluid, T_C); break;
-    case 'rosasite':      baseSI = saturationIndex_rosasite(fluid, T_C); break;
-    case 'aurichalcite':  baseSI = saturationIndex_aurichalcite(fluid, T_C); break;
+    case 'malachite':     baseSI = saturationIndex_malachite(fluid, T_C, fluidPressureKbar); break;
+    case 'azurite':       baseSI = saturationIndex_azurite(fluid, T_C, fluidPressureKbar); break;
+    case 'hydrozincite':  baseSI = saturationIndex_hydrozincite(fluid, T_C, fluidPressureKbar); break;
+    case 'rosasite':      baseSI = saturationIndex_rosasite(fluid, T_C, fluidPressureKbar); break;
+    case 'aurichalcite':  baseSI = saturationIndex_aurichalcite(fluid, T_C, fluidPressureKbar); break;
     default:              return NaN;
   }
   if (!Number.isFinite(baseSI)) return baseSI;
