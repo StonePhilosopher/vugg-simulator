@@ -159,15 +159,38 @@ describe('locality-envelope audit — verifies under the declared rule', () => {
     expect(stripErrors(plantFleet('\r\n', { policy: HASH_POLICY_RAW }))).toEqual([]);
   });
 
-  it('names a policy disagreement instead of reporting it as digest drift', () => {
+  it('names a policy disagreement INSTEAD OF reporting it as digest drift', () => {
+    // "Instead of" is the whole claim, and the first version of this test only
+    // checked the presence of the policy error — so it passed while the audit
+    // was also emitting both drift errors, and the comment in the tool was a
+    // claim rather than a behaviour. Absence is the half that carries the
+    // meaning here.
     const fleet = plantFleet('\r\n');
     const cardPath = path.join(fleet.root, 'archive', 'claim-cards', 'v99', 'demo.json');
     const card = JSON.parse(fs.readFileSync(cardPath, 'utf8'));
     card.hash_policy = HASH_POLICY_RAW;
     fs.writeFileSync(cardPath, JSON.stringify(card, null, 2) + '\n');
-    const errors = auditFleet({ root: fleet.root, version: fleet.version })
+
+    const errors: string[] = auditFleet({ root: fleet.root, version: fleet.version })
       .results.flatMap((r: any) => r.errors);
-    expect(errors.some((e: string) => e.includes('hash policy'))).toBe(true);
+    const policyErrors = errors.filter(e => e.includes('hash policy'));
+    expect(policyErrors).toHaveLength(1);
+    expect(policyErrors[0]).toContain('not comparable');
+    // 1. the seam is named, and named exactly once
+    expect(errors.filter(e => e.includes('claim-card strip digest differs'))).toEqual([]);
+    // 2. neither drift error is emitted merely because the rules differ
+    expect(errors.filter(e => e.includes(STRIP_ERROR))).toEqual([]);
+  });
+
+  it('resumes digest checking once the rules agree again', () => {
+    // The negative control for the branch above: skipping on disagreement must
+    // not become skipping in general. A guard that stopped comparing digests
+    // altogether would satisfy the previous test perfectly.
+    expect(stripErrors(plantFleet('\r\n', { corruptStrip: true })).length).toBe(1);
+    const agreeing = plantFleet('\r\n');
+    const errors: string[] = auditFleet({ root: agreeing.root, version: agreeing.version })
+      .results.flatMap((r: any) => r.errors);
+    expect(errors.filter(e => e.includes('hash policy'))).toEqual([]);
   });
 });
 

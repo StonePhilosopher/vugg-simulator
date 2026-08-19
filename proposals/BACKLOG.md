@@ -48,6 +48,23 @@ Living list of open work items, captured from session conversations so context s
 > a real reverted raw read (read and hash sit ~1800 chars apart). Replaced by "no bare Buffer
 > read in these 8 files", paren-balanced, with the `hash-policy.mjs` exemption asserted so the
 > rule cannot go vacuous. Still open: `audit:cations`, red on Codex's branch on its own account.
+>
+> **PASS FOUR (blocking repair, on review).** The audit emitted the policy-disagreement error AND
+> both digest-drift errors, so "names it INSTEAD OF misleading drift" was a comment, not a
+> behaviour — and the test only asserted the error's PRESENCE, never the drift errors' absence,
+> so it could not test the half that carried the meaning. Digest comparison is now conditional on
+> compatible policies; the test asserts both directions plus a control that digest checking
+> RESUMES when the rules agree. Mutant (emit unconditionally) → 1 RED, exactly that test.
+> **No rebake:** `locality-envelope-audit.mjs` is in no producer identity closure (measured), and
+> `audit:evidence`/`audit:science`/`audit:localities`/`build:check` all still PASS with receipts
+> untouched.
+>
+> **CARRIED AS KNOWN DEBT, not fixed here:** (a) "binary untouched" means binary *by git's
+> NUL-in-first-8000 heuristic*, not a general classifier; (b) the 8-file source guard is a curated
+> tripwire — aliases, streams, destructured imports and future consumers walk past it; (c) **the
+> receipt is host-bound on a different axis** — `node_runtime_sha256` binds platform/Node/V8/ICU,
+> so these Windows/Node-24 receipts read **47/48** on a clean Linux/Node-22 verify. The repair is
+> to split *is the content current* from *was this the recorded environment*.
 > **A NUMBER WITHDRAWN** — an earlier pass reported a clean "canonical CRLF vs Codex LF" platform
 > split, 126/126 each way. That was an `else if` in my own script: for an LF file the raw and
 > normalised hashes are the same hash, so the normalised column could only read zero.

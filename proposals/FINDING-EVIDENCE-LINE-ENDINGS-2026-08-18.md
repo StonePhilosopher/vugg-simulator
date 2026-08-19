@@ -135,11 +135,16 @@ visible from either caller.
 
 **Binary is not negotiable.** `release-audit` receipts `.mp3`, `.jpg`, `.png` and `.svg` through
 the same function as `data/*.json`; normalising an audio file would corrupt the very identity the
-receipt exists to pin. Detection is git's own heuristic — a NUL byte within the first 8000 —
-because agreeing with the tool that decides the on-disk endings is the only self-consistent
-choice. Verified on the real asset, not only on a fixture: the `.mp3` receipt records 4 104 477
-bytes, exactly its size on disk, while `data/minerals.json` fell from 965 779 to 946 683 — a drop
-of 19 096, exactly its CR count.
+receipt exists to pin. Verified on the real asset, not only on a fixture: the `.mp3` receipt
+records 4 104 477 bytes, exactly its size on disk, while `data/minerals.json` fell from 965 779
+to 946 683 — a drop of 19 096, exactly its CR count.
+
+**State the contract exactly, though.** "Binary untouched" means *binary according to git's
+heuristic — a NUL byte within the first 8000*. That is a deliberate choice (agreeing with the
+tool that decides the on-disk endings is the only self-consistent one) and it is not a general
+binary classifier. A payload with no NUL in its first 8 KB and CRLF-looking byte pairs later
+would be normalised. Nothing in the current asset set is of that shape, and every entry was
+checked against its on-disk size; a stricter classifier is available later if the set grows.
 
 ### What the tests hold
 
@@ -205,6 +210,31 @@ there is no reason to hold a Buffer except to hash it — measured, every one ha
 rule cannot go vacuous by everything ceasing to read files. Paren-balanced, because
 `fs.readFileSync(path.join(a, b), 'utf8')` defeats a naive `\([^)]*\)` — an error that made
 an intermediate count report four bare reads that were all correctly encoded.
+
+**And it is a curated tripwire, not a proof.** It watches eight named files for one spelling.
+An alias (`const read = fs.readFileSync`), a stream, a destructured `import { readFileSync }`,
+a helper in a ninth file, or a future consumer added to the chain all walk straight past it.
+It is worth having because it is the only instrument that can cover
+`gen-science-provenance-manifest.mjs` at all — that file has no invoked-directly guard, so a
+test importing it would run the whole generator — but it should be read as "no known caller
+takes the raw path", never as "no caller can".
+
+### KNOWN DEBT: the receipt is host-bound, and that is a different axis
+
+The policy makes a receipt independent of a checkout's **line endings**. It does not make it
+independent of the **machine**. `nodeRuntimeIdentity()` records platform, arch, Node, V8, ICU
+and locale, and `node_runtime_sha256` binds them, so the receipts committed here name
+**Windows / Node 24**. A clean Linux / Node 22 verification of this branch reports **47 of 48**
+for exactly that reason: the content is current, the execution environment is not the one that
+was recorded.
+
+That is not a hash-policy defect and this work does not claim to have fixed it — it is carried
+deliberately as known debt. The repair, when someone takes it, is to separate the two questions
+the receipt currently answers with one number: *is the content current* (portable) and *was this
+produced by the recorded environment* (host-specific, and only reproducible on that host).
+Until then, "verifies clean" carries an unstated precondition, and an unstated precondition is
+the same family of defect as the one this document is about — a number that is true on the
+machine that made it and quietly means something else anywhere else.
 
 ---
 

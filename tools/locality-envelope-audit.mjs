@@ -92,14 +92,25 @@ export function auditCard(card, manifestScenario, {
     if (card.scenario !== manifestScenario.id) fail(`scenario identity differs from science manifest (${manifestScenario.id})`);
     const manifestStripSha = manifestScenario.archive?.strip_sha256;
     if (!manifestStripSha || !/^[a-f0-9]{64}$/.test(manifestStripSha)) fail('science manifest lacks a valid strip SHA-256');
-    // Named before the digests are compared: two hashes of the same file under
-    // two rules are simply different numbers, and reporting that as "digest
-    // differs" would send the next reader hunting for content drift.
-    if (cardPolicy && manifestPolicy && cardPolicy !== manifestPolicy) {
-      fail(`claim card hash policy ${cardPolicy} differs from science manifest ${manifestPolicy}`);
+    // INSTEAD OF, not in addition to. Two hashes of the same file under two
+    // rules are simply different numbers, so once the rules disagree the digest
+    // comparisons below are not merely noisy — they are unanswerable, and
+    // emitting them would send the next reader hunting for content drift that
+    // does not exist. An earlier version reported the disagreement AND both
+    // drift errors, which made this comment a claim rather than a behaviour;
+    // the test now asserts the absence, not only the presence.
+    //
+    // Nothing passes silently: the disagreement is itself an error, so the
+    // fleet audit still fails and the digests are re-checked once the rules
+    // agree again.
+    const policiesAgree = !cardPolicy || !manifestPolicy || cardPolicy === manifestPolicy;
+    if (!policiesAgree) {
+      fail(`claim card hash policy ${cardPolicy} differs from science manifest ${manifestPolicy}`
+        + ' — strip digests are not comparable until they agree');
+    } else {
+      if (card.strip_sha256 !== manifestStripSha) fail('claim-card strip digest differs from science manifest');
+      if (actualStripSha256 !== manifestStripSha) fail('archived strip bytes differ from pinned SHA-256');
     }
-    if (card.strip_sha256 !== manifestStripSha) fail('claim-card strip digest differs from science manifest');
-    if (actualStripSha256 !== manifestStripSha) fail('archived strip bytes differ from pinned SHA-256');
     if (frequencyScenario?.locality_frequency_spec_hash !== manifestScenario.locality_frequency_spec_hash) {
       fail('multi-seed frequency receipt differs from current behavioral scenario contract');
     }
