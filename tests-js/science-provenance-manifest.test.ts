@@ -59,7 +59,7 @@ describe('generated science/provenance manifest', () => {
 
     const evidenceBytes = fs.readFileSync(path.join(ROOT, manifest.science_evidence.path));
     expect(manifest.science_evidence).toMatchObject({
-      schema: 'vugg-science-evidence-receipt-v1',
+      schema: 'vugg-science-evidence-receipt-v2',
       browser_bundle_sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       execution_set_sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       node_runtime: {

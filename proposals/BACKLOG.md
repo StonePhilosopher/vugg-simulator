@@ -24,8 +24,17 @@ Living list of open work items, captured from session conversations so context s
 > **FIXED** — `tools/file-bundle-assets.mjs` normalises CRLF→LF before embedding and hashing
 > (schema v1→v2), because Codex's new file:// bundle puts those bytes INSIDE the committed
 > artifact and `build:check` is the first gate of `ci`. Mutation-tested: 3 tests red without it.
-> **NOT FIXED, boss's call** — `evidence-runtime.mjs` still hashes raw bytes, so these receipts
-> describe this checkout's mixture. Changing it changes what every archived receipt means.
+> **PASS TWO, on boss review** — the right seam was to VERSION the hashing policy, not to change
+> it. `tools/hash-policy.mjs` is now the single authority: text LF-normalised before it is hashed
+> **or counted**, binary passed through untouched (git's NUL heuristic — `release-audit` receipts
+> `.mp3` through the same function as `data/*.json`), every receipt carries `hash_policy`, and a
+> receipt without one is read as **raw** so archived receipts stay legible under the rule that made
+> them. Evidence schemas bumped so a pre-policy digest cannot collide with a post-policy one.
+> The review named two remaining sites; **there were three** — `sha256File` lives in
+> `scenario-evidence-checkpoint.mjs` and is what actually hashes the 126 artifacts.
+> `.gitattributes` added as defence in depth, and says in its own header that it is not the
+> authority. Mutation-tested one mutant per guard: drop the binary exemption → 1 RED; answer an
+> absent policy with today's rule → 1 RED.
 > **A NUMBER WITHDRAWN** — an earlier pass reported a clean "canonical CRLF vs Codex LF" platform
 > split, 126/126 each way. That was an `else if` in my own script: for an LF file the raw and
 > normalised hashes are the same hash, so the normalised column could only read zero.

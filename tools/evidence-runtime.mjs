@@ -2,12 +2,18 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildFileBundlePrelude, fileBundleAssetFiles } from './file-bundle-assets.mjs';
+import { CURRENT_HASH_POLICY, bytesForHash, sha256Bytes } from './hash-policy.mjs';
 
 const START_MARKER = '// === BUILD:bundle:start ===';
 const END_MARKER = '// === BUILD:bundle:end ===';
 
-export const EVIDENCE_EXECUTION_SCHEMA = 'vugg-evidence-execution-set-v1';
-export const EVIDENCE_PRODUCER_SCHEMA = 'vugg-evidence-producer-contract-v2';
+// Both schemas bumped when hashing moved from raw working-tree bytes to the
+// declared LF-normalised policy. The schema string is folded into the digest,
+// so a v2 execution digest and a v1 one CANNOT collide even where the files are
+// byte-identical — which is the point: a receipt from before the policy existed
+// must be legible as such rather than quietly comparable to one from after.
+export const EVIDENCE_EXECUTION_SCHEMA = 'vugg-evidence-execution-set-v2';
+export const EVIDENCE_PRODUCER_SCHEMA = 'vugg-evidence-producer-contract-v3';
 export const EVIDENCE_NODE_RUNTIME_SCHEMA = 'vugg-evidence-node-runtime-v1';
 
 export function nodeRuntimeIdentity() {
@@ -76,13 +82,16 @@ export function assertIndexMatchesDist(root) {
   return true;
 }
 
-function hashFileSet(root, schema, files) {
+function hashFileSet(root, schema, files, policy = CURRENT_HASH_POLICY) {
   const hash = crypto.createHash('sha256');
   hash.update(`${schema}\0`);
   for (const file of files) {
     const relative = path.relative(root, file).replaceAll('\\', '/');
     hash.update(`${relative.length}:${relative}\0`);
-    const bytes = fs.readFileSync(file);
+    // Length AND content both come from the policy. Taking the count from the
+    // raw file while hashing normalised bytes would put a checkout-dependent
+    // number inside a checkout-independent digest.
+    const bytes = bytesForHash(file, policy);
     hash.update(`${bytes.length}:`);
     hash.update(bytes);
     hash.update('\0');
@@ -90,9 +99,9 @@ function hashFileSet(root, schema, files) {
   return hash.digest('hex');
 }
 
-export function browserBundleDigest(root) {
+export function browserBundleDigest(root, policy = CURRENT_HASH_POLICY) {
   assertIndexMatchesDist(root);
-  return crypto.createHash('sha256').update(fs.readFileSync(path.join(root, 'index.html'))).digest('hex');
+  return sha256Bytes(bytesForHash(path.join(root, 'index.html'), policy));
 }
 
 export function runtimeDependencyFiles(root) {
@@ -104,9 +113,9 @@ export function runtimeDependencyFiles(root) {
   return files.sort((a, b) => a.localeCompare(b));
 }
 
-export function runtimeExecutionDigest(root) {
+export function runtimeExecutionDigest(root, policy = CURRENT_HASH_POLICY) {
   assertIndexMatchesDist(root);
-  return hashFileSet(root, EVIDENCE_EXECUTION_SCHEMA, runtimeDependencyFiles(root));
+  return hashFileSet(root, EVIDENCE_EXECUTION_SCHEMA, runtimeDependencyFiles(root), policy);
 }
 
 const PRODUCER_ENTRIES = Object.freeze({
@@ -161,6 +170,6 @@ export function producerContractFiles(root, kind) {
   return files.sort((a, b) => a.localeCompare(b));
 }
 
-export function producerContractDigest(root, kind) {
-  return hashFileSet(root, `${EVIDENCE_PRODUCER_SCHEMA}:${kind}`, producerContractFiles(root, kind));
+export function producerContractDigest(root, kind, policy = CURRENT_HASH_POLICY) {
+  return hashFileSet(root, `${EVIDENCE_PRODUCER_SCHEMA}:${kind}`, producerContractFiles(root, kind), policy);
 }

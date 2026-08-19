@@ -1,5 +1,6 @@
 {
-  "schema": "vugg-production-asset-manifest-v1",
+  "schema": "vugg-production-asset-manifest-v2",
+  "hash_policy": "vugg-hash-policy-lf-normalised-v1",
   "asset_pack_version": "1.0.0",
   "distribution_status": "development-assets-human-clearance-required",
   "assets": [
@@ -24,8 +25,8 @@
     {
       "id": "favicon",
       "path": "vugg-favicon.svg",
-      "bytes": 516,
-      "sha256": "87f358c95714aa884e84c05408f6320e31fbf26fb7712fb1e98cd1b70128779b",
+      "bytes": 509,
+      "sha256": "68d1d1042ae8b1edd6a5efcb6fa608f61a92fb9e4cb0b4b1f947003a29ea4b0d",
       "delivery": "runtime-vector",
       "role": "browser identity",
       "rights_status": "human-rights-clearance-required"
@@ -173,5 +174,5 @@
     "human art direction and final mineral-image coverage beyond the four current thumbnails",
     "physical-device audio loudness, clipping, interruption, and accessibility review"
   ],
-  "asset_manifest_sha256": "343d1707cb2344c38fcaa5f232dc27c95bcdba62cc375ecde700e8838652c954"
+  "asset_manifest_sha256": "7f36ef9c4b6a5295dbf4cb49feb56e8cc0b3b6ae4c3e4e63fc6e98035b3b96ba"
 }

@@ -10,18 +10,28 @@ import {
   producerContractDigest,
   runtimeExecutionDigest,
 } from './evidence-runtime.mjs';
+import { CURRENT_HASH_POLICY, bytesForHash } from './hash-policy.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CONTENT_MANIFEST = path.join(ROOT, 'release', 'content-pack-manifest.json');
 const ASSET_MANIFEST = path.join(ROOT, 'release', 'asset-manifest.json');
-export const CONTENT_PACK_SCHEMA = 'vugg-content-pack-catalog-v1';
-export const ASSET_PACK_SCHEMA = 'vugg-production-asset-manifest-v1';
+export const CONTENT_PACK_SCHEMA = 'vugg-content-pack-catalog-v2';
+export const ASSET_PACK_SCHEMA = 'vugg-production-asset-manifest-v2';
 export const RELEASE_RUNTIME_CONTRACT_SCHEMA = 'vugg-release-runtime-contract-v1';
 
 const compareCodePoint = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 const sha256 = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
-const fileReceipt = relative => {
-  const bytes = fs.readFileSync(path.join(ROOT, relative));
+/**
+ * Both the digest AND the byte count come from the declared policy. This path
+ * receipts `data/*.json` and the runtime `.mp3` assets through the same
+ * function, so the binary exemption in tools/hash-policy.mjs is load-bearing
+ * here and nowhere else: normalising an audio file would corrupt the identity
+ * the receipt exists to pin. The count matters as much as the hash — one asset
+ * was recorded at 12 564 bytes on one checkout and 12 375 on another, a
+ * difference of 189, which was exactly its line count.
+ */
+const fileReceipt = (relative, policy = CURRENT_HASH_POLICY) => {
+  const bytes = bytesForHash(path.join(ROOT, relative), policy);
   return { path: relative.replaceAll('\\', '/'), bytes: bytes.length, sha256: sha256(bytes) };
 };
 
@@ -87,9 +97,14 @@ export async function buildContentPackManifest(bundle = null) {
     .sort(compareCodePoint);
   const sourceFiles = [...CONTENT_FILES, ...narrativeFiles]
     .sort(compareCodePoint)
-    .map(fileReceipt);
+    // NOT `.map(fileReceipt)` — map passes (value, index, array), so the index
+    // arrives as the policy argument and every receipt is hashed under policy
+    // `0`. It failed loudly only because bytesForHash refuses an unrecognised
+    // policy instead of quietly falling back to a default.
+    .map(relative => fileReceipt(relative));
   const manifest = {
     schema: CONTENT_PACK_SCHEMA,
+    hash_policy: CURRENT_HASH_POLICY,
     catalog_version: '1.0.0',
     packs: [{
       id: 'core',
@@ -129,6 +144,7 @@ export function buildAssetManifest(runtimeContract) {
   const audio = runtimeContract.audio_mix_states;
   const manifest = {
     schema: ASSET_PACK_SCHEMA,
+    hash_policy: CURRENT_HASH_POLICY,
     asset_pack_version: '1.0.0',
     distribution_status: 'development-assets-human-clearance-required',
     assets: ASSETS.map(([id, relative, delivery, role, rightsStatus]) => ({

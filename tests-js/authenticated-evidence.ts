@@ -16,7 +16,7 @@ import {
 } from '../tools/evidence-runtime.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const RECEIPT_SCHEMA = 'vugg-science-evidence-receipt-v1';
+const RECEIPT_SCHEMA = 'vugg-science-evidence-receipt-v2';
 
 type ProducerKind =
   | 'seed42-baseline'

@@ -1,18 +1,26 @@
 # FINDING — the evidence chain binds a checkout's line endings, not committed content
 
-**Status:** measured; the build gate is fixed, the evidence gate is NOT. One decision is
-open and it belongs to the boss, not to an integrator.
+**Status:** measured, and repaired in two passes. Pass one fixed the build gate and deliberately
+stopped short of changing what a receipt means. The boss's review sent it back with the right
+seam — **version the hashing policy** — so pass two normalises text in all three producing paths,
+declares the rule in every receipt, keeps archived receipts legible under the rule that made them,
+and only then bakes. `.gitattributes` is defence in depth and says so in its own header.
 **Date:** 2026-08-18. Found while integrating Codex's `b62d85f` (SIM 271, sulfur valence
 authority) onto canonical `main` at `420bf22`.
+
+**Read §0 before §3.** The mechanism is not the one this document originally claimed, and the
+number that claimed it is left in rather than deleted.
 
 ---
 
 ## 0. What is actually established
 
-`tools/evidence-runtime.mjs` hashes **raw working-tree bytes**. This repository has **no
-`.gitattributes`**, and this workstation runs `core.autocrlf=true`. So git stores every one
-of these files with **LF** and writes **CRLF** only to the files a given checkout actually
-materialises — leaving a working tree that is not uniform and never was:
+*This section describes the tree as found. §3 describes the repair.*
+
+Every evidence path hashed **raw working-tree bytes**. The repository had **no `.gitattributes`**,
+and this workstation runs `core.autocrlf=true`. So git stores every one of these files with **LF**
+and writes **CRLF** only to the files a given checkout actually materialises — leaving a working
+tree that is not uniform and never was:
 
 ```
 narratives/            3 of 94 files carry CRLF, 91 do not
@@ -95,43 +103,76 @@ above fell into, one level up.
 
 ---
 
-## 3. What was NOT fixed, and why
+## 3. The full inventory, and the versioned repair
 
-`tools/evidence-runtime.mjs` still hashes raw bytes. The receipts baked for this merge therefore
-describe **this checkout's mixture**, and the next machine to materialise those files differently
-will disagree with them again.
+The first pass fixed the bundle and stopped, on the reasoning that changing what a receipt means
+was the boss's call. It was — and the call came back: **version the hashing policy, normalise text
+in every producing path, keep archived receipts legible under the rule that made them, and only
+then bake.** That is what is now in the tree.
 
-`tools/release-audit.mjs` is a **third site** with the same shape — `fileReceipt()` reads raw
-bytes and records both `sha256` and `bytes`. Regenerating `release/content-pack-manifest.json`
-on this tree moved one asset from `bytes: 12564` to `12375`: 189 bytes, which is exactly its
-line count. A byte *length* that changes with the checkout is the same defect wearing a second
-costume, and it is the more legible one — nobody expects a file to have two sizes.
+The review named two remaining sites. There were three. `sha256File` does not live in
+`evidence-runtime.mjs` at all — it lives in `tools/scenario-evidence-checkpoint.mjs`, and it is
+the function behind **both** the 126 artifact hashes in every science receipt **and**
+`gen-strip-archive`'s per-story `artifactSha256`. It is the widest of the three and the least
+visible from either caller.
 
-Three reasons for stopping short, in order of weight:
+| site | what it hashed | now |
+|---|---|---|
+| `tools/evidence-runtime.mjs` | execution set, producer contracts, browser bundle | policy-aware; both schemas bumped |
+| `tools/scenario-evidence-checkpoint.mjs` | the 126 artifacts, strip-story receipts | policy-aware |
+| `tools/release-audit.mjs` | content + asset manifests, **including byte counts** | policy-aware; both schemas bumped |
 
-1. **It changes what a receipt means.** Every archived receipt (v264 … v271) was baked under the
-   old definition. That is the project's core discipline, and the call is the boss's.
-2. **I could verify the rebake but not the consequences.** A full cold suite is 3 h 28 m; a change
-   to evidence semantics deserves one, and it did not fit inside this integration.
-3. **It is not this merge's defect.** The mechanism predates both branches. This merge is simply
-   the first thing to stand where it is visible, because merging is what materialises new files.
+`tools/hash-policy.mjs` is the single authority:
+
+- `HASH_POLICY_RAW` — `vugg-hash-policy-raw-bytes-v0`, the historical rule nobody ever declared.
+- `HASH_POLICY_LF` — `vugg-hash-policy-lf-normalised-v1`, current: text normalised before it is
+  hashed *or counted*, binary untouched.
+- Receipts now carry `hash_policy`. A receipt without one is read as **raw**, never as current —
+  answering absence with today's rule would convict every archived receipt of drift it never had.
+- Both evidence schemas were bumped (`execution-set-v1→v2`, `producer-contract-v2→v3`, and the
+  receipt itself `v1→v2`). The schema string is folded into the digest, so a pre-policy digest and
+  a post-policy one **cannot collide even where the files are identical** — which is the point.
+
+**Binary is not negotiable.** `release-audit` receipts `.mp3`, `.jpg`, `.png` and `.svg` through
+the same function as `data/*.json`; normalising an audio file would corrupt the very identity the
+receipt exists to pin. Detection is git's own heuristic — a NUL byte within the first 8000 —
+because agreeing with the tool that decides the on-disk endings is the only self-consistent
+choice. Verified on the real asset, not only on a fixture: the `.mp3` receipt records 4 104 477
+bytes, exactly its size on disk, while `data/minerals.json` fell from 965 779 to 946 683 — a drop
+of 19 096, exactly its CR count.
+
+### What the tests hold
+
+`tests-js/hash-policy.test.ts`, 9 assertions, all against planted fixtures rather than repository
+files — a test that hashed real files would only ever measure whichever endings this machine has,
+which is the defect one level up. Every fixture pair is guarded as *different on disk* first, so
+no assertion can pass by accident.
+
+**Mutation-tested, one mutant per guard:**
+
+| mutant | result |
+|---|---|
+| remove the binary exemption | 1 RED — *passes binary bytes through byte-for-byte* |
+| answer an absent `hash_policy` with the current rule | 1 RED — *reads a receipt with no declared policy as raw* |
+
+### One bug this caught in itself
+
+`fileReceipt` was called as `.map(fileReceipt)`. `Array.prototype.map` passes `(value, index,
+array)`, so the **array index arrived as the policy argument** and every content receipt would
+have been hashed under policy `0`. It failed loudly and immediately — `bytesForHash` refuses an
+unrecognised policy rather than falling back to a default. Had the parameter defaulted silently
+on a bad value, that pass would have produced a complete, plausible, wrong manifest. An
+instrument that refuses is worth more than one that copes.
 
 ---
 
-## 4. The proposed fix
+## 4. `.gitattributes`: defence in depth, explicitly subordinate
 
-Exactly the pattern already proved on the bundle: normalise CRLF → LF in the one place
-`evidence-runtime.mjs` turns a text artifact into bytes, then rebake. Receipts would then bind
-**committed content** — the bytes that are in the repository, not the bytes a particular clone
-happened to land.
-
-Cheaper alternative, and strictly weaker: commit a `.gitattributes` with `* text=auto eol=lf`.
-It makes fresh clones consistent but does nothing for a file a tool writes with the other ending,
-so the hash stays a property of the working tree rather than of the commit. Prefer the
-normaliser; the two are not exclusive.
-
-Either way the rebake must run **after** the change, never before — the same sequencing note
-`ebe41bd` left behind for producer digests.
+Added, with `* text=auto eol=lf` plus explicit `binary` for the image/audio/font types. It is
+written into the file itself that it is **not the authority**: it has no effect on a file a *tool*
+writes with the other ending, and none at all on a tree checked out before it existed. Both of
+those happened here. It reduces how often the two forms diverge; the policy is what makes the
+divergence stop mattering. If they ever disagree, the policy is right.
 
 ---
 

@@ -17,6 +17,7 @@ import {
   producerContractDigest,
   runtimeExecutionDigest,
 } from './evidence-runtime.mjs';
+import { CURRENT_HASH_POLICY, policyOfReceipt } from './hash-policy.mjs';
 import {
   assertEvidenceCheckpointDirectory,
   evidenceIdentity,
@@ -42,7 +43,7 @@ import {
 } from './strip-digest-shape.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-export const SCIENCE_EVIDENCE_RECEIPT_SCHEMA = 'vugg-science-evidence-receipt-v1';
+export const SCIENCE_EVIDENCE_RECEIPT_SCHEMA = 'vugg-science-evidence-receipt-v2';
 export const SCIENCE_EVIDENCE_PRODUCERS = Object.freeze([
   'seed42-baseline', 'strip-archive', 'locality-frequency', 'strip-digest',
   'claim-cards', 'science-provenance', 'science-receipt',
@@ -69,14 +70,21 @@ export function scienceEvidenceArtifactFiles(root, version, scenarioNames) {
   return files.sort((a, b) => relative(root, a).localeCompare(relative(root, b)));
 }
 
-export function artifactHashMap(root, files) {
-  return Object.fromEntries(files.map(file => [relative(root, file), sha256File(file)]));
+export function artifactHashMap(root, files, policy = CURRENT_HASH_POLICY) {
+  return Object.fromEntries(files.map(file => [relative(root, file), sha256File(file, policy)]));
 }
 
-export function verifyArtifactHashMap(root, artifacts) {
+/**
+ * Verifies under the policy the RECEIPT declares, not under today's. A receipt
+ * baked before policies existed names none and is checked as raw bytes; reading
+ * it under the current rule would convict it of drift it never had. This is
+ * what "preserve old archived receipts under their historical schema" means in
+ * code rather than in prose.
+ */
+export function verifyArtifactHashMap(root, artifacts, policy = CURRENT_HASH_POLICY) {
   for (const [name, expected] of Object.entries(artifacts || {})) {
     const file = path.join(root, name);
-    if (!fs.existsSync(file) || sha256File(file) !== expected) {
+    if (!fs.existsSync(file) || sha256File(file, policy) !== expected) {
       throw new Error(`published science artifact hash mismatch: ${name}`);
     }
   }
@@ -87,6 +95,9 @@ export function buildScienceEvidenceReceipt({ root, simVersion, modelDigest, sce
   const files = scienceEvidenceArtifactFiles(root, simVersion, scenarioNames);
   return {
     schema: SCIENCE_EVIDENCE_RECEIPT_SCHEMA,
+    // Declared, not assumed. Every hash below this line was produced under it,
+    // and a verifier reads it back rather than guessing (tools/hash-policy.mjs).
+    hash_policy: CURRENT_HASH_POLICY,
     sim_version: Number(simVersion),
     model_digest: String(modelDigest),
     canonical_seed: 42,
@@ -196,8 +207,9 @@ async function main() {
     if (!fs.existsSync(output) || fs.readFileSync(output, 'utf8') !== encoded) {
       throw new Error(`stale science evidence receipt: ${relative(ROOT, output)}`);
     }
-    verifyArtifactHashMap(ROOT, receipt.artifacts);
-    console.log(`[science-evidence] PASS: ${Object.keys(receipt.artifacts).length} artifacts, exact execution + producers`);
+    verifyArtifactHashMap(ROOT, receipt.artifacts, policyOfReceipt(receipt));
+    console.log(`[science-evidence] PASS: ${Object.keys(receipt.artifacts).length} artifacts, `
+      + `exact execution + producers, hash policy ${policyOfReceipt(receipt)}`);
   } else {
     verifyLocalEvidenceReceipts({
       root: ROOT, simVersion: SIM_VERSION, modelDigest: MODEL_DIGEST, scenarios: SCENARIOS,

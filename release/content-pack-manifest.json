@@ -1,5 +1,6 @@
 {
-  "schema": "vugg-content-pack-catalog-v1",
+  "schema": "vugg-content-pack-catalog-v2",
+  "hash_policy": "vugg-hash-policy-lf-normalised-v1",
   "catalog_version": "1.0.0",
   "packs": [
     {
@@ -15,13 +16,13 @@
         "minerals": 184,
         "narratives": 94
       },
-      "browser_bundle_sha256": "f09f30bd17854c8a725c54ba08180c3aad28d3c11d5b4101a25b3d90e665d0a9",
-      "runtime_execution_sha256": "90e39960ad34116ea86c1de343a3df2eb569b091f70b1b8637f1ea1ab4358b66",
+      "browser_bundle_sha256": "8b84aa046855eedcbb64f5531266d9465d8bc4e673f2fac63776dde7df193535",
+      "runtime_execution_sha256": "e7b4b515cf25f8b7304ac2e613bd4336de06ab638b7073586929712876bc8fba",
       "source_files": [
         {
           "path": "data/locality_chemistry.json",
-          "bytes": 97110,
-          "sha256": "d2c595310450a6e0a53bfa2dd113af74bddd0fb8e858077864063d3dd966fdb0"
+          "bytes": 95857,
+          "sha256": "218ce865e92b640827de8d74a9826fdde1409bf3c5c3c5fbceaec4f5562ffe67"
         },
         {
           "path": "data/mindat-species-refs.json5",
@@ -30,28 +31,28 @@
         },
         {
           "path": "data/minerals.json",
-          "bytes": 965779,
-          "sha256": "1ce0bf92755b36bd0adbb7a64359bfb7ce755b1db52066a74473f55a8b7f1245"
+          "bytes": 946683,
+          "sha256": "7d49c357a641f14da1dd53dc3f737834c234c39b3fc49851e7565fee86bcdcf0"
         },
         {
           "path": "data/scenarios.json5",
-          "bytes": 498488,
-          "sha256": "8866127ee2ed9cd165ecda724bc819a1b569be014fbeb6326630e42bd4a7aca5"
+          "bytes": 492891,
+          "sha256": "ae768d5b344836fe04ff0f6c639e8ad80eb79254bdb803265a8c5ddffd195a5a"
         },
         {
           "path": "data/structural.json",
-          "bytes": 44232,
-          "sha256": "9b993ed9b040278b40bb4db123b99a90ac4aafc4be99d6be770568ce724cfece"
+          "bytes": 43235,
+          "sha256": "cdb7cfe05484c64769bf0a4f7592438567f825986fd41882049e78e5996ecf86"
         },
         {
           "path": "data/thermo-carbonates.json",
-          "bytes": 37507,
-          "sha256": "987bd08320b71b51efe4f6a80fea493c98d68275c33a920cfbe4e73cc5922a5f"
+          "bytes": 36919,
+          "sha256": "3da8e8a8deb19285d380fb1a872e50b5aa31c0043d5e18487539f9743f32272d"
         },
         {
           "path": "data/thermo-sulfates.json",
-          "bytes": 8562,
-          "sha256": "46a014a897eee5e176ddbbe485e7ff0c667518c7391bd58113678dc312a36ac6"
+          "bytes": 8440,
+          "sha256": "7384518fa87184c99c8a30a289bea224d54df1a114eb4e4463ef8a55c53431a0"
         },
         {
           "path": "narratives/acanthite.md",
@@ -60,8 +61,8 @@
         },
         {
           "path": "narratives/adamite.md",
-          "bytes": 2546,
-          "sha256": "e3205826504fac6624015c3c645d7411a012cd9bd399376e67d8aa285794b4da"
+          "bytes": 2494,
+          "sha256": "812f66e601db3814c99fa85e7d9587a9dfe3f9db235e7392b57cc84482f09fde"
         },
         {
           "path": "narratives/albite.md",
@@ -250,8 +251,8 @@
         },
         {
           "path": "narratives/feldspar.md",
-          "bytes": 3679,
-          "sha256": "c8af4edaa04c85a692579a18df6d12e2bfb2ded8d2001ab0b4c5f31171836535"
+          "bytes": 3591,
+          "sha256": "ac626f5fb404dafa77974a3e26cad3de7cd8d739337189bb7dd8269fff1e4a0e"
         },
         {
           "path": "narratives/ferrimolybdite.md",
@@ -395,8 +396,8 @@
         },
         {
           "path": "narratives/quartz.md",
-          "bytes": 3154,
-          "sha256": "e430b03a9cd9ada3f3e58e96063fb4a04013a462f89b960562c93c6c16e55191"
+          "bytes": 3089,
+          "sha256": "8808fa737af30b74f05f30ef41dc8e606fd777f57552ecf09df4d9e3322acf3e"
         },
         {
           "path": "narratives/raspite.md",
@@ -526,7 +527,7 @@
       ]
     }
   ],
-  "producer_contract_sha256": "00936fd42a8435e71bef160ec8f938600b4c4c50b3f478793f0070236751b0e2",
+  "producer_contract_sha256": "718a2caaec70103978d89aed0afd233c0bdcb7fc0f824663b8f12de5982e4bdd",
   "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
-  "catalog_sha256": "5fec5c6143b339f7729db427368250e1868f3c2b1cf9e2a3888c2fbe7eb3f706"
+  "catalog_sha256": "27bebcf9de5ce6159f3d854d9ecca15e3c2eaa3d073b38c43e8c6d50a05e0783"
 }

@@ -2,6 +2,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { CURRENT_HASH_POLICY, bytesForHash } from './hash-policy.mjs';
+
 export const EVIDENCE_CHECKPOINT_SCHEMA = 'vugg-scenario-evidence-checkpoint-v2';
 export const SCENARIO_RECEIPT_SCHEMA = 'vugg-scenario-evidence-receipt-v1';
 
@@ -100,8 +102,15 @@ export function sha256Bytes(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
-export function sha256File(file) {
-  return sha256Bytes(fs.readFileSync(file));
+/**
+ * Hashes under a declared policy rather than "whatever is on disk". This is the
+ * function behind the 126 artifact hashes in every science evidence receipt AND
+ * behind `gen-strip-archive`'s per-story `artifactSha256`, so it is the widest
+ * of the raw-byte sites — wider than it looks from either caller. See
+ * tools/hash-policy.mjs for why the rule is versioned instead of just changed.
+ */
+export function sha256File(file, policy = CURRENT_HASH_POLICY) {
+  return sha256Bytes(bytesForHash(file, policy));
 }
 
 export function scenarioSpecHash(spec) {

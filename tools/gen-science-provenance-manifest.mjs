@@ -194,7 +194,8 @@ function inspectScienceEvidenceReceipt(errors, version, modelDigest) {
       errors.push(`aggregate science evidence producer mismatch: ${kind}`);
     }
   }
-  try { verifyArtifactHashMap(ROOT, receipt.artifacts); }
+  // The receipt's own policy, not today's — see tools/hash-policy.mjs.
+  try { verifyArtifactHashMap(ROOT, receipt.artifacts, policyOfReceipt(receipt)); }
   catch (error) { errors.push(error.message); }
   return {
     path: path.relative(ROOT, receiptPath).replaceAll('\\', '/'),

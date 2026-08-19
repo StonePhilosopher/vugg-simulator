@@ -13,9 +13,17 @@
  * working-tree bytes, so the recorded hash is a function of checkout history.
  *
  * That stayed invisible while each line baked and verified on its own machine.
- * It became visible the first time two lines merged — canonical's v267 matched
- * raw CRLF bytes 126 of 126, Codex's v271 matched LF-normalised bytes 126 of
- * 126, with nothing in between.
+ * It became visible the first time two lines merged, because materialising files
+ * that were not there before is exactly what a merge does: `audit:science`
+ * rejected Codex's own `archive/claim-cards/v271/amethyst_geode.json`, whose
+ * receipt recorded the git blob's hash while this disk held a freshly checked
+ * out copy carrying 498 CR bytes.
+ *
+ * WITHDRAWN — an earlier draft of this header stated as fact that "canonical's
+ * v267 matched raw CRLF bytes 126 of 126 and Codex's v271 matched LF-normalised
+ * 126 of 126", and read it as a clean split between two operating systems. That
+ * was a counting artifact of the throwaway script that produced it, not a
+ * measurement, for exactly the reason set out below. No such split was observed.
  *
  * THE TRAP THIS TOOL HAD TO CLIMB OUT OF: a file already stored with LF hashes
  * the same either way, so "raw matched" proves nothing about it — the two
