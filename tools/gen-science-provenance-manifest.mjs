@@ -25,6 +25,7 @@ import {
   producerContractDigest,
   runtimeExecutionDigest,
 } from './evidence-runtime.mjs';
+import { policyOfReceipt } from './hash-policy.mjs';
 import {
   SCIENCE_EVIDENCE_PRODUCERS,
   SCIENCE_EVIDENCE_RECEIPT_SCHEMA,

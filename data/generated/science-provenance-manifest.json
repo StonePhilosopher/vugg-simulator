@@ -44,7 +44,7 @@
     "reproducibility": {
       "verifier": {
         "path": "tools/check-pressure-grid.mjs",
-        "sha256": "692542e29634d4acd8b1ea5042e661494ea507bda699e4a006326563f02f0760"
+        "sha256": "b2b67e68eee378cac65f6f07d7695570adbf115776d714f16e11697aaff7d30f"
       },
       "command": "npm run check:pressure-grid",
       "runtime": "Node.js/TypeScript only"
@@ -126,10 +126,10 @@
   },
   "science_evidence": {
     "path": "archive/evidence/v271.json",
-    "sha256": "fe11fe33b50ba505e0fb7f5fd5eaaed125bfeac6065c5e9b24182d0cb1eb4441",
-    "schema": "vugg-science-evidence-receipt-v1",
-    "browser_bundle_sha256": "5dad51052abe0a2b123635cd4f647f6435028b1719dabc473ec5d8795952bc19",
-    "execution_set_sha256": "728549a836f1fdf5f71e793855c00b60a16daf37a45bdb26842766a376fa1d64",
+    "sha256": "e93a194e0c117cdd9355615e63c2ad658a0d3ad68799433cfc6937fb75bd137f",
+    "schema": "vugg-science-evidence-receipt-v2",
+    "browser_bundle_sha256": "8b84aa046855eedcbb64f5531266d9465d8bc4e673f2fac63776dde7df193535",
+    "execution_set_sha256": "e7b4b515cf25f8b7304ac2e613bd4336de06ab638b7073586929712876bc8fba",
     "node_runtime": {
       "schema": "vugg-evidence-node-runtime-v1",
       "node": "24.15.0",
@@ -141,13 +141,13 @@
     },
     "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
     "producer_contracts": {
-      "seed42-baseline": "238c87a3693bcda2294babe3f9ec2675708bfcf629f1bb2b5dce63c0f3002a69",
-      "strip-archive": "0fdfc683a4589104d3b6ec3350742a642d68e2764a2836c10a5edb2467f8fbb8",
-      "locality-frequency": "5ba63d68aea192d8739315f7a7b7b9aa09cb74e3b75381ba82416926ed1ff825",
-      "strip-digest": "b02aa62e4cd4bc11ba22f81db546f6c3f60e28fb428666d2fe3285dd854b301f",
-      "claim-cards": "32a383b3bd305d6ed4876d8e4c22784f722259e0b843109e26274fac28485efe",
-      "science-provenance": "03dd44069978e65016bc5eff15601dbfaf6b05e0ee887a76589ee48f95970b4e",
-      "science-receipt": "65cf87420c1aead3274cb045e9cc36b04e4111f8457d2b65ea38469a82105f31"
+      "seed42-baseline": "4bba61ba3a63fe8816ebcc42d17953d3178105bcc6720cf0655d5811aa031f2c",
+      "strip-archive": "c84f9577e882a621eac1aafbb08d418a3a718839cecfb84554c0e0bb5001ab6a",
+      "locality-frequency": "8ffb321180bc16b85a5fa49eddc30aacfa1bb2d89c4ed155c2d8c57fad5066ad",
+      "strip-digest": "4ff5c3770e4d242ba18c9d931a191feef031207d277c890ef144279aa74f0f3d",
+      "claim-cards": "c47a23e0c3d8ea3e0ef1b2712216fd7ee8322e112232d8b552ed8c7d395d85f6",
+      "science-provenance": "9aa61cd273e679d76e5ac2a3b00ce42b953e184f8bb0381b5f24c76abaf9d609",
+      "science-receipt": "645efe376f3e2abb05ec6da106d3701296dd127fd68ee6e36be64ffde7bc09ce"
     },
     "artifact_count": 126
   },
