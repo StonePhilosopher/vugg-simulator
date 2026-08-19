@@ -8,15 +8,17 @@
 // with _deformation.kind='etwin'; js/99i _makeTwinnedCalcite bakes the parallel lamellae.
 // CHEMICALLY INERT → byte-identical fleet (the v208 precedent).
 //
-// Pins: marble_contact_metamorphism's step-165 orogenic strain twins the grown calcite;
-// the tag is well-formed (kind, atStep=165, amount); ONLY calcite is twinned (the ruby is
-// spared); a scenario with no etwin directive tags nothing (no-op).
+// Pins: marble_contact_metamorphism's step-165 directive twins a qualifying free calcite;
+// the tag is well-formed (kind, atStep=165, amount); ONLY calcite is eligible (ruby is
+// spared); the canonical SIM 270 run remains dormant because its calcite is the marble
+// wall, not an invented aqueous crystal; a scenario with no directive tags nothing.
 
 import { describe, expect, it } from 'vitest';
 
 declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
+declare const classifyDeformation: any;
 
 function run(scenarioName: string, seed = 42) {
   setSeed(seed);
@@ -33,37 +35,37 @@ const etwinned = (sim: any) =>
   sim.crystals.filter((c: any) => c._deformation && c._deformation.kind === 'etwin' && !c.dissolved);
 
 describe('calcite mechanical e-twin overprint (Mogok marble orogenic strain)', () => {
-  it('the step-165 strain twins the already-grown marble calcite — tagged + well-formed', () => {
+  it('the authored step-165 directive twins only pre-existing free calcite', () => {
+    const { events } = SCENARIOS.marble_contact_metamorphism();
+    const authored = events.find((e: any) => e.step === 165);
+    expect(authored.deformation).toEqual({
+      style: 'etwin', magnitude: 0.7, minerals: ['calcite'],
+    });
+
+    const calcite: any = {
+      mineral: 'calcite', dissolved: false, total_growth_um: 1000,
+      zones: [{ step: 40, thickness_um: 1000 }],
+    };
+    const ruby: any = {
+      mineral: 'ruby', dissolved: false, total_growth_um: 1000,
+      zones: [{ step: 40, thickness_um: 1000 }],
+    };
+    const sim: any = {
+      crystals: [calcite, ruby],
+      _deformationEvents: [{ step: authored.step, ...authored.deformation }],
+    };
+    classifyDeformation(sim);
+
+    expect(calcite._deformation).toEqual({ kind: 'etwin', amount: 0.7, atStep: 165 });
+    expect(ruby._deformation).toBeUndefined();
+  });
+
+  it('canonical Mogok keeps calcite in the marble wall, so the free-crystal directive is dormant', () => {
     const sim = run('marble_contact_metamorphism', 42);
     expect(sim).toBeTruthy();
-    const tw = etwinned(sim);
-    expect(tw.length).toBeGreaterThan(0);
-    expect(tw.every((c: any) => c.mineral === 'calcite')).toBe(true);
-    for (const c of tw) {
-      expect(c._deformation.atStep).toBe(165);             // the orogenic-strain step
-      expect(c._deformation.amount).toBeGreaterThan(0);
-      expect(c._deformation.amount).toBeLessThanOrEqual(1);
-    }
-  });
-
-  it('only calcite is twinned — the ruby (twin-resistant corundum) is spared', () => {
-    const sim = run('marble_contact_metamorphism', 42);
-    const nonCalciteTwinned = sim.crystals.filter(
-      (c: any) => c._deformation && c._deformation.kind === 'etwin' && c.mineral !== 'calcite');
-    expect(nonCalciteTwinned.length).toBe(0);
-    // ruby specifically must never carry the etwin tag
-    const ruby = sim.crystals.filter((c: any) => c.mineral === 'ruby');
-    for (const c of ruby) expect(c._deformation && c._deformation.kind === 'etwin').toBeFalsy();
-  });
-
-  it('twinned calcite grew BEFORE the strain step (it existed to be twinned)', () => {
-    const sim = run('marble_contact_metamorphism', 42);
-    for (const c of etwinned(sim)) {
-      let firstStep: any = null;
-      for (const z of (c.zones || [])) { if ((z.thickness_um || 0) > 0) { firstStep = z.step; break; } }
-      expect(firstStep).not.toBeNull();
-      expect(firstStep).toBeLessThan(165);
-    }
+    expect(sim.crystals.some((c: any) => c.mineral === 'calcite')).toBe(false);
+    expect(etwinned(sim)).toEqual([]);
+    expect(sim.crystals.some((c: any) => c.mineral === 'ruby' && !c.dissolved)).toBe(true);
   });
 
   it('a scenario with no etwin directive tags nothing (no-op → byte-identical)', () => {

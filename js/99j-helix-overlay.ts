@@ -145,7 +145,7 @@ type ChemParam = {
   //           'carbonate'|'sulfate'|'halide'|'ion'). Drives the strip-view
   //           selector and helicoid legend section. (Adding a group =
   //           also add it to the `systems` array in 99k-strip-view.ts.)
-  //   units:  display unit (e.g. '°C', 'log Ω', 'mg/L', 'ppm'). Read by
+  //   units:  display unit (e.g. '°C', 'log Ω', 'ppm (mg/kg solvent)'). Read by
   //           strip-view tooltips + the dataset manifest's per-chip
   //           units field.
   system?: 'wall' | 'special' | 'carbonate' | 'sulfate' | 'halide' | 'native' | 'sulfide' | 'ion',
@@ -166,7 +166,7 @@ const _HELIX_FULL_NAMES: { [id: string]: string } = {
   pH:       'pH (acidity, 0–14)',
   Eh:       'Eh (redox potential, mV)',
   salinity: 'Salinity (TDS, ppt)',
-  O2:       'Dissolved O₂ (mg/L)',
+  O2:       'Dissolved O₂ (ppm by mass; mg/kg solvent)',
   concentration: 'Evaporative concentration (×, vadose-drying multiplier)',
   SiO2:     'Silica (dissolved SiO₂)',
   Ca:       'Calcium',
@@ -215,10 +215,10 @@ const _HELIX_FULL_NAMES: { [id: string]: string } = {
   // Ksp(T) (20c), and SI engine (32b) all shipped in Weeks 1-2 as
   // observer-only reads. The chip itself is the symbol; hover shows
   // the full name + unit per the v24 tooltip convention.
-  DIC:           'Dissolved Inorganic Carbon (total, mg/L)',
-  CO2aq:        'Dissolved CO₂ (H₂CO₃*, mg/L)',
-  HCO3:         'Bicarbonate (HCO₃⁻, mg/L)',
-  CO3_2:        'Carbonate ion (CO₃²⁻, mg/L)',
+  DIC:           'Dissolved Inorganic Carbon (ppm as CO₃ equivalent; mg/kg solvent)',
+  CO2aq:        'Dissolved CO₂ fraction (ppm as CO₃ equivalent; mg/kg solvent)',
+  HCO3:         'Bicarbonate fraction (ppm as CO₃ equivalent; mg/kg solvent)',
+  CO3_2:        'Carbonate-ion fraction (ppm as CO₃ equivalent; mg/kg solvent)',
   SI_calcite:   'Saturation index — calcite (log Ω)',
   SI_aragonite: 'Saturation index — aragonite (log Ω)',
   SI_dolomite:  'Saturation index — dolomite (log Ω)',
@@ -384,7 +384,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
     system: 'special', units: 'psu',
     read: (s, w, i, c) => (_chipFluid(s, w, i, c) || {}).salinity });
   params.push({ id: 'O2',       label: 'O2',          fullName: _HELIX_FULL_NAMES.O2,       min: 0,    max: 10,   color: 0xaaccff,
-    system: 'special', units: 'mg/L',
+    system: 'special', units: 'ppm (mg/kg solvent)',
     read: (s, w, i, c) => (_chipFluid(s, w, i, c) || {}).O2 });
   // v161 evaporite driver: the per-cell `concentration` multiplier (default
   // 1.0, ×EVAPORATIVE_CONCENTRATION_FACTOR per wet→vadose drying in
@@ -451,13 +451,13 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
   params.push({
     id: 'DIC', label: 'DIC', fullName: _HELIX_FULL_NAMES.DIC,
     min: 0, max: 4500, color: 0xC9A875,
-    system: 'carbonate', units: 'mg/L',
+    system: 'carbonate', units: 'ppm as CO₃ eq. (mg/kg solvent)',
     read: (s, w, i, c) => (_chipFluid(s, w, i, c) || {}).CO3,
   });
   params.push({
     id: 'CO2aq', label: 'CO₂', fullName: _HELIX_FULL_NAMES.CO2aq,
     min: 0, max: 500, color: 0xF5E5A0,
-    system: 'carbonate', units: 'mg/L',
+    system: 'carbonate', units: 'ppm as CO₃ eq. (mg/kg solvent)',
     read: (s, w, i, c) => {
       const f = _chipFluid(s, w, i, c);
       if (!f || typeof f.CO3 !== 'number' || f.CO3 <= 0) return null;
@@ -471,7 +471,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
   params.push({
     id: 'HCO3', label: 'HCO₃', fullName: _HELIX_FULL_NAMES.HCO3,
     min: 0, max: 4500, color: 0x6B96D9,
-    system: 'carbonate', units: 'mg/L',
+    system: 'carbonate', units: 'ppm as CO₃ eq. (mg/kg solvent)',
     read: (s, w, i, c) => {
       const f = _chipFluid(s, w, i, c);
       if (!f || typeof f.CO3 !== 'number' || f.CO3 <= 0) return null;
@@ -485,7 +485,7 @@ const _HELIX_CHEM_PARAMS: ChemParam[] = (function() {
   params.push({
     id: 'CO3_2', label: 'CO₃²⁻', fullName: _HELIX_FULL_NAMES.CO3_2,
     min: 0, max: 80, color: 0x4A7FE0,
-    system: 'carbonate', units: 'mg/L',
+    system: 'carbonate', units: 'ppm as CO₃ eq. (mg/kg solvent)',
     read: (s, w, i, c) => {
       const f = _chipFluid(s, w, i, c);
       if (!f) return null;

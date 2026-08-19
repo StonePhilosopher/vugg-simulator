@@ -170,8 +170,8 @@ describe('Wulff form tag (central-distance arc Phase 4 rung 4a.1)', () => {
 // rung 4a.2 — the calcite tenant (the first NON-cubic Wulff tenant). Same opt-in/byte-identity
 // contract as fluorite; the {104} rhombohedron↔{21-31} scalenohedron habit knob is the new piece.
 describe('Wulff form tag — calcite tenant (rung 4a.2)', () => {
-  it('DORMANT — marble grows scalenohedral calcite but did NOT opt in → tags nothing', () => {
-    const sim = run('marble_contact_metamorphism');
+  it('DORMANT — zoned cave grows calcite but did NOT opt in → tags nothing', () => {
+    const sim = run('zoned_dripstone_cave');
     expect(sim).toBeTruthy();
     expect(sim.crystals.some((c: any) => c.mineral === 'calcite')).toBe(true);   // it DOES grow calcite
     expect(sim.crystals.filter((c: any) => c.mineral === 'calcite' && c._wulffForm).length).toBe(0);

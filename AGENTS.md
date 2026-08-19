@@ -12,11 +12,18 @@ this section only records the non-obvious startup/run caveats.
 - `index.html` is **generated** from `js/**/*.ts` by `npm run build`. Edit
   files under `js/`, never `index.html` directly.
 - The page fetches `data/*.json` (minerals, structural, thermo-*, scenarios,
-  narratives) at runtime via **relative paths**, so it must be served over
-  HTTP from the repo root — opening `index.html` via `file://` will not work.
-  Serve it with the Node-only server: `node tools/serve-local.mjs 8765`, then
-  open `http://localhost:8765/index.html`. (Python launchers are retired; do
-  not restore them.)
+  narratives) at runtime via **relative paths**. Serve the repo root over HTTP
+  with the Node-only server: `node tools/serve-local.mjs 8765`, then open
+  `http://localhost:8765/index.html`. (Python launchers are retired; do not
+  restore them.)
+- `file://` **does** work: the generated `index.html` embeds the canonical
+  scenario, mineral, thermo, and narrative inputs and installs a `fetch` shim
+  that serves them, but only when `location.protocol === 'file:'` — over HTTP
+  the shim is inert and the loaders read from disk as usual
+  (`tools/file-bundle-assets.mjs`, pinned by `tests-js/file-url-bundle.test.ts`).
+  So double-clicking `index.html` is a complete offline build. HTTP serving is
+  still the preferred development path: browser diagnostics and cache behaviour
+  are clearer there.
 - Non-fatal console noise: the JSON loaders (`js/00-mineral-spec.ts`,
   `js/20c`/`20d`) try several candidate paths (`./data/…`, `../data/…`,
   `/data/…`) and stop at the first hit, so a stray 404 for a fallback path in

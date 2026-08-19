@@ -283,6 +283,24 @@ describe('nucleation hover popover (97b) — recipe chips vs live conditions', (
     expect(pressure.note).toContain('reference-only');
   });
 
+  it('surfaces a sulfate K(T) fit-envelope failure instead of presenting extrapolated SI', () => {
+    const c = {
+      temperature: 350, pressure: 3,
+      fluid: { Ca: 1200, S_sulfate: 1200, S_sulfide: 0, pH: 7, O2: 1, Eh: ehFromO2(1) },
+      supersaturation_anhydrite() { return 0; },
+    };
+    const why = _buildMineralFormationExplanation('anhydrite', c, { conditions: c, crystals: [] }, 0);
+    const fit = group(why.groups, 'Temperature gate').chips.find(
+      (chip: any) => chip.text.includes('sulfate K(T) fit'),
+    );
+    expect(fit).toMatchObject({ met: false, status: 'uncertain' });
+    expect(fit.text).toContain('0–300°C');
+    expect(fit.text).toContain('outside-fit-envelope');
+    expect(fit.note).toContain('fail closed');
+    expect(_nucleationHoverHTML('anhydrite', c, { conditions: c, crystals: [] }, 0))
+      .toContain('outside-fit-envelope');
+  });
+
   it('renders the calcite/aragonite experimental boundary band as neutral uncertainty', () => {
     const c = {
       temperature: 25, pressure: 3.5,

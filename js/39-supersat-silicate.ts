@@ -980,7 +980,7 @@ Object.assign(VugConditions.prototype, {
     if (this.temperature < 5 || this.temperature > 60) return 0;
     if (this.fluid.pH < 5.0 || this.fluid.pH > 8.0) return 0;
     if (this.fluid.CO3 > 60) return 0;  // high CO3 → liebigie/andersonite
-    if (this.fluid.S > 1000) return 0;  // high SO4 → johannite/zippeite
+    if (sulfateAvailablePpm(this.fluid, this.temperature) > 1000) return 0;  // high SO4 → johannite/zippeite
     if (this.fluid.P > 5) return 0;     // P → autunite/torbernite
     const u_f  = Math.min(this.fluid.U / 3.0, 2.5);
     const ca_f = Math.min(this.fluid.Ca / 40.0, 2.0);
@@ -1101,7 +1101,7 @@ Object.assign(VugConditions.prototype, {
     if (this.fluid.pH < 7.5 || this.fluid.pH > 9.5) return 0;
     if (this.fluid.CO3 > 30) return 0;
     if (this.fluid.Cl > 1000) return 0;
-    if (this.fluid.S > 500 && this.fluid.O2 > 0.5) return 0;  // sulfate-rich → brochantite/antlerite competition
+    if (sulfateAvailablePpm(this.fluid, this.temperature) > 500 && this.fluid.O2 > 0.5) return 0;  // sulfate-rich → brochantite/antlerite competition
     const cu_f = Math.min(this.fluid.Cu / 30.0, 2.5);
     const si_f = Math.min(this.fluid.SiO2 / 60.0, 2.0);
     let sigma = cu_f * si_f;

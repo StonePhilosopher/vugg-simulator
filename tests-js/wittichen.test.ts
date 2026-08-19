@@ -13,6 +13,7 @@ declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
 declare const MORPH_REGIMES: any;
+declare const sulfideAvailablePpm: any;
 
 function runScenario(name: string, seed = 42, steps?: number) {
   setSeed(seed);
@@ -61,19 +62,20 @@ describe('wittichen five-element vein (v189)', () => {
     expect(alive('native_arsenic').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('the silver tarnish story is recorded before exposed acanthite weathers', () => {
-    // native_silver crystals exist in the record (grew on the shock)…
+  it('does not turn an oxidized meteoric sulfate pulse into silver sulfide', () => {
+    // Native silver records the reducing shock.
     const agAll = sim().crystals.filter((c: any) => c.mineral === 'native_silver' && c.total_growth_um > 0);
     expect(agAll.length).toBeGreaterThanOrEqual(1);
-    // …and the meteoric-sulfate stage converted the standing crop. The later
-    // vadose epilogue is allowed to dissolve that exposed tarnish, so the
-    // contract is the executed growth→oxidative-retreat history, not an
-    // ahistorical final alive flag.
-    const acanthite = sim().crystals.filter((c: any) => c.mineral === 'acanthite');
-    expect(acanthite.some((c: any) => c.zones.some((z: any) => z.thickness_um > 0))).toBe(true);
-    expect(acanthite.some((c: any) => c.zones.some(
-      (z: any) => z.thickness_um < 0 && z.step >= 170,
-    ))).toBe(true);
+    // The step-134 charge is explicitly sulfate. Without an independently
+    // authored sulfate-reduction/H2S pathway it cannot admit Ag2S or As-S
+    // phases, even though the combined total-S shell becomes large.
+    for (const mineral of ['acanthite', 'proustite', 'realgar']) {
+      expect(sim().crystals.some((c: any) => (
+        c.mineral === mineral && c.zones.some((z: any) => z.thickness_um > 0)
+      )), mineral).toBe(false);
+    }
+    expect(sim().conditions.fluid.sulfateInherited).toBe(true);
+    expect(sulfideAvailablePpm(sim().conditions.fluid, sim().conditions.temperature)).toBe(0);
   });
 
   it('carbonate gangue seals the vein (the cross-section specimen)', () => {

@@ -150,19 +150,22 @@ describe('strip chemistry contract — mvt (hot, low-Mg carbonate start)', () =>
   let ds: any;
   beforeAll(() => { ds = loadArchivedScenario('mvt'); });
 
-  it('starts carbonate-supersaturated with calcite favored; SI declines on cooling', () => {
+  it('starts carbonate-supersaturated but admits calcite, not kinetically blocked dolomite', () => {
     if (!ds) return;
     const cal = chipSeries(ds, 'SI_calcite', { depth: 'wall' });
     const dol = chipSeries(ds, 'SI_dolomite', { depth: 'wall' });
-    // Observed start after the pressure-grid correction: SI_calcite ~+0.38,
-    // SI_dolomite ~+0.25. The authored Ca-rich, low-Mg MVT brine therefore
-    // favors calcite. Positive dolomite SI without direct precipitation is the
-    // expected kinetic "dolomite problem", not evidence that dolomite should
-    // outrank calcite. Both indices subsequently decline as the system cools.
-    expect(series.first(cal)!).toBeGreaterThan(0);                  // starts supersaturated
-    expect(series.first(dol)!).toBeGreaterThan(0);                  // thermodynamically supersaturated
-    expect(series.first(cal)!).toBeGreaterThan(series.first(dol)!); // low-Mg brine favors calcite
-    expect(series.last(cal)!).toBeLessThan(series.first(cal)!);     // declines on cooling
+    // SIM 271's corrected carbonate/pressure path starts at SI_calcite ~+0.13
+    // and SI_dolomite ~+0.25. Those log(IAP/K) values belong to reactions with
+    // different stoichiometry, so their numerical ordering is not a phase-
+    // preference test. The scientifically meaningful distinction is kinetic:
+    // dolomite remains below its explicit omega=10 admission threshold
+    // (SI=1), while calcite crosses its lower barrier and nucleates at step 5.
+    expect(series.first(cal)!).toBeGreaterThan(0);
+    expect(series.first(dol)!).toBeGreaterThan(0);
+    expect(series.first(dol)!).toBeLessThan(1);
+    expect(ds.nucleation_events.some((event: any) => event.mineral === 'calcite')).toBe(true);
+    expect(ds.nucleation_events.some((event: any) => event.mineral === 'dolomite')).toBe(false);
+    expect(series.last(cal)!).toBeLessThan(series.first(cal)!);
   });
 });
 

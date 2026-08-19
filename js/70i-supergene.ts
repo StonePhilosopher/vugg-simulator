@@ -51,11 +51,12 @@ function event_supergene_dry_spell(c) {
   // by nucleation with a modest margin after exact wall-release accounting.
   // This is an authored 1 kg-solvent-reference recharge, not cavity volume.
   c.fluid.Ca += 350;
-  if (typeof addSulfurToPool === 'function') {
-    addSulfurToPool(c.fluid, 'sulfate', 350, c.temperature);
-  } else {
-    c.fluid.S += 350;
-  }
+  declareSulfurBoundaryAddition(
+    c,
+    'sulfate',
+    350,
+    'Tsumeb dry-season dolomite-sulfate recharge',
+  );
   c.fluid.O2 = 1.5;
   c.temperature = 50;
   c.flow_rate = 0.3;

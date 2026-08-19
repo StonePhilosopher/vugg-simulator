@@ -1,0 +1,498 @@
+{
+  "schema": "vugg-claim-card-v2",
+  "scenario": "amethyst_geode",
+  "sim_version": 270,
+  "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+continuous-temperature-edge-hold+no-pressure-extrapolation-v2|sulfate-Ksp:USGS-PHREEQC-wateq4f-analytic5+explicit-temperature-envelope-v1|carbonate-rate:PWP-omega2over3-bounded+molarMgCa+pKwTP-hydroxycarbonates-v1|chemistry-evidence:ppm-mgkg-solvent+carbonate-equivalent-mass-labels-v1|SCI02-locality:PHREEQC-SUPCRTBL-anhydrite-classification+ledgered-carbonate-pulses-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4|cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v3|water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+authenticated-midrun-activation+phase-resolved-testimony-v5|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4|solid-occupancy:all-nondissolved+positive-only-size-cap+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-local-CuSO4-decay-v2|cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget+single-evaluation-full-fill-negative-v4|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite+valence-correct-reconciliation-v7|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary+oxidized-sulfate-does-not-sulfidize-silver-v3|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation+null-confining-pressure-v3|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2|save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+water-height+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v5",
+  "scenario_spec_hash": "b94a7df7d612eb1e7b66e6d05e930cd458a45b146cfab6cd50722c48b2520f7e",
+  "strip_steps": 240,
+  "strip_sha256": "c0a9f8cc1cf4dfdd50c1188846dda36fdddfdd17d8da17820a6066a96e509535",
+  "claim": {
+    "anchor": "Ametista do Sul, Rio Grande do Sul, Brazil — amethyst geodes in the Serra Geral Formation high-Ti basalt (Paraná Continental Flood Basalt Province, Lower Cretaceous ~134 Ma)",
+    "description": "A Brazilian amethyst geode. A basalt gas cavity fills inward — celadonite rim → agate → clear quartz → amethyst. Mid-growth a green celadonite film frosts the amethyst prism faces; the tip renews a wider cap THROUGH the film — a MASKING SCEPTRE (the non-corrosive masking counterpart to grimsel's corrosion sceptre). Goethite staining at the base.",
+    "expects_species": [
+      "chalcedony",
+      "quartz"
+    ],
+    "expectation_contract": {
+      "deterministic": [
+        {
+          "mineral": "chalcedony",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "quartz",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        }
+      ],
+      "deterministic_headline": [
+        "chalcedony",
+        "quartz"
+      ],
+      "deterministic_accessory": [],
+      "statistical": [],
+      "aspirational": []
+    },
+    "excluded_species": {},
+    "sources": [
+      "Gilg H.A., Morteani G., Kostitsyn Y., Preinfalk C., Gatter I., Strieder A.J. (2003) — Genesis of amethyst geodes in basaltic rocks of the Serra Geral Formation (Ametista do Sul, Rio Grande do Sul, Brazil): a fluid inclusion, REE, oxygen, carbon, and Sr isotope study on basalt, quartz, and calcite. Mineralium Deposita 38: 1009-1025. Geode structure celadonite→agate→quartz→amethyst; LOW-T (<100°C, prob <50°C) low-salinity sedimentary-brine model.",
+      "Amethyst geodes in the basaltic flow from Triz quarry at Ametista do Sul (Rio Grande do Sul, Brazil): magmatic source of silica for the amethyst crystallizations. Geological Magazine 144(4): 731. Primary amethyst fluid inclusions 152-238°C; magmatic silica source — the high-T camp the scenario's warm nucleation phase reflects.",
+      "Rossman G.R. (1994) — Colored varieties of the silica minerals. Reviews in Mineralogy 29: 433-468. Amethyst = Fe³⁺ colour centre activated by natural γ-irradiation (the same Rossman already cited by the js/59 smoky/morion Al-centre path).",
+      "Proust D. & Fontan F. (2007) — Brazilian amethyst-geode late-stage mineralogy (the same Proust & Fontan cited in minerals.json for the amethyst-pocket late euhedral / lepidocrocite-patina sequence).",
+      "Takahashi K. & Sunagawa I. (2004) — sceptre quartz by epitaxial-like overgrowth (ELO) after a masking film: the masking-sceptre mechanism, distinct from corrosion-then-regeneration."
+    ],
+    "initial_temperature_C": 160,
+    "initial_pressure_kbar": 0.3,
+    "wall_architecture": null,
+    "notes": [
+      "Anchor: Ametista do Sul, Rio Grande do Sul — the classic Brazilian amethyst-geode district, hosted in a ~40-50 m subhorizontal high-Ti basalt flow of the Serra Geral Formation (Paraná flood basalts, Lower Cretaceous ~134 Ma). Geode structure INWARD: celadonite rim → agate/chalcedony → colourless quartz → amethyst (Gilg et al. 2003).",
+      "Formation temperature is genuinely debated in the literature and the scenario bridges the two camps. Monophase liquid inclusions with low ice-melting depressions argue a LOW-T, low-salinity fluid (<100°C, probably <50°C — a sedimentary-brine / paleo-aquifer model; Gilg et al. 2003). Primary inclusions in the amethyst itself yield 152-238°C with a MAGMATIC silica source (Triz-quarry study, Geol. Mag. 144:731). The scenario holds the early agate/quartz/amethyst stage near 160°C through step 190, then cools to ~70°C by step 240 for the celadonite/goethite overprint. This stages the two measured temperature populations instead of averaging them into one continuous ambiguous ramp.",
+      "AMETHYST COLOUR is Fe³⁺ substituting for Si⁴⁺, activated by a natural γ-dose (Rossman 1994). The Serra Geral basalt is mafic — low K/U/Th per unit time — but the geode has sat in it for ~134 Ma, so its integrated background dose tips the Fe centres to amethyst (NOT the granite-hosted morion of a Grimsel cleft). wall.gamma_host=0.23 is the normalized long-residence integrated dose, not an instantaneous U-Th assay; over the longer warm growth stage it lands radiation_damage in the amethyst band (>0.1, <0.3). Every other basalt scenario leaves gamma_host unset and receives no such long-residence dose.",
+      "THE SILICA PHASE SEQUENCE IS EXECUTED: the early 320 ppm fluid is above the temperature-dependent chalcedony equilibrium and builds a real accepted-shell agate lining. At step 18, solution aging/depletion lowers dissolved SiO2 beneath the fresh-chalcedony nucleation barrier while keeping quartz supersaturated; chalcedony stops and inward euhedral quartz nucleates. This is the same T-SiO2 window a player can reproduce in Creative Mode, not a scenario-only phase flag.",
+      "THE MASKING SCEPTRE: the celadonite (green K-Fe mica-clay) that rims these geodes also settles on the growing amethyst as a film. A partial, PRISM-dominant celadonite dusting (prism 0.18, term 0.04 — frosts gaps across the {10-10} prism, largely spares the tip) arrests the sides; these coverages keep the calibrated σ*(φ) barrier below the independently calculated chalcedony/quartz solubility ratio at 160°C. The Quartz-Window Renewal can therefore cross the film barrier while remaining below the fresh-chalcedony nucleation threshold, and the tip renews a wider {10-11}-capped termination THROUGH the film — a masking-route sceptre (classifyQuartzSceptre js/45; Takahashi & Sunagawa 2004 ELO). grimsel stays the clean CORROSION-sceptre reference; this is the non-corrosive masking counterpart. The renderer widens the cap from a length fraction and does not calculate or claim conserved solid mass.",
+      "The late iron-oxide film is the diagnostic base staining — a termination/uniform film (prism 0.3, term 0.3), NOT a second sceptre; real Brazilian points are commonly goethite/hematite-stained at the matrix contact."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+continuous-temperature-edge-hold+no-pressure-extrapolation-v2|sulfate-Ksp:USGS-PHREEQC-wateq4f-analytic5+explicit-temperature-envelope-v1|carbonate-rate:PWP-omega2over3-bounded+molarMgCa+pKwTP-hydroxycarbonates-v1|chemistry-evidence:ppm-mgkg-solvent+carbonate-equivalent-mass-labels-v1|SCI02-locality:PHREEQC-SUPCRTBL-anhydrite-classification+ledgered-carbonate-pulses-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4|cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v3|water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+authenticated-midrun-activation+phase-resolved-testimony-v5|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4|solid-occupancy:all-nondissolved+positive-only-size-cap+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-local-CuSO4-decay-v2|cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget+single-evaluation-full-fill-negative-v4|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite+valence-correct-reconciliation-v7|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary+oxidized-sulfate-does-not-sulfidize-silver-v3|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation+null-confining-pressure-v3|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2|save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+water-height+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v5",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 0.3,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.4282625400000004,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 62.41,
+          "initial_water_activity": {
+            "value": 0.9976,
+            "salinityPpt": 4,
+            "naclWeightPercentEquivalent": 0.4,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "pressure_ksp_grid": {
+        "rule": "reaction-specific SUPCRTBL delta-logK grid; bilinear only inside density and per-reaction temperature masks; no constant reaction-volume proxy",
+        "assessments": {
+          "calcite": {
+            "mineral": "calcite",
+            "temperatureC": 160,
+            "evaluatedTemperatureC": 90,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.271155145,
+            "waterDensityGcm3": 0.978267995,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Calcite = Ca+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              90
+            ],
+            "note": "Requested 160 C is outside this reaction's 10-90 C fitted envelope; the nearest 90 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "aragonite": {
+            "mineral": "aragonite",
+            "temperatureC": 160,
+            "evaluatedTemperatureC": 90,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.2597098,
+            "waterDensityGcm3": 0.978267995,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Aragonite = Ca+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              90
+            ],
+            "note": "Requested 160 C is outside this reaction's 10-90 C fitted envelope; the nearest 90 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "dolomite": {
+            "mineral": "dolomite",
+            "temperatureC": 160,
+            "evaluatedTemperatureC": 160,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.5731662069999999,
+            "waterDensityGcm3": 0.922798228,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Dolomite,ordered = Ca+2 + Mg+2 + 2 CO3-2",
+            "usableTemperatureC": [
+              10,
+              250
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.573 relative to 1 bar at the same temperature."
+          },
+          "siderite": {
+            "mineral": "siderite",
+            "temperatureC": 160,
+            "evaluatedTemperatureC": 160,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.290365261,
+            "waterDensityGcm3": 0.922798228,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Siderite = Fe+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.290 relative to 1 bar at the same temperature."
+          },
+          "rhodochrosite": {
+            "mineral": "rhodochrosite",
+            "temperatureC": 160,
+            "evaluatedTemperatureC": 160,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.27618642499999996,
+            "waterDensityGcm3": 0.922798228,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Rhodochrosite = Mn+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.276 relative to 1 bar at the same temperature."
+          },
+          "anhydrite": {
+            "mineral": "anhydrite",
+            "temperatureC": 160,
+            "evaluatedTemperatureC": 160,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.23545540499999998,
+            "waterDensityGcm3": 0.922798228,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Anhydrite = Ca+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              300
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.235 relative to 1 bar at the same temperature."
+          },
+          "barite": {
+            "mineral": "barite",
+            "temperatureC": 160,
+            "evaluatedTemperatureC": 160,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.22405668699999998,
+            "waterDensityGcm3": 0.922798228,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Barite = Ba+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              300
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.224 relative to 1 bar at the same temperature."
+          },
+          "celestine": {
+            "mineral": "celestine",
+            "temperatureC": 160,
+            "evaluatedTemperatureC": 160,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.23317184099999996,
+            "waterDensityGcm3": 0.922798228,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Celestite = Sr+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.233 relative to 1 bar at the same temperature."
+          },
+          "selenite": {
+            "mineral": "selenite",
+            "temperatureC": 160,
+            "evaluatedTemperatureC": 160,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0,
+            "waterDensityGcm3": null,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": false,
+            "active": false,
+            "status": "unsupported-reaction",
+            "reaction": null,
+            "usableTemperatureC": null,
+            "note": "Gypsum is absent from the SUPCRTBL solid-species set; the Hardie water-activity/temperature phase selector remains active, but no Ksp pressure correction is fabricated."
+          }
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 2,
+    "paragenetic_order": [
+      {
+        "mineral": "chalcedony",
+        "first_step": 1,
+        "events": 2,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "quartz",
+        "first_step": 18,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      }
+    ],
+    "surprises_not_in_expects": [],
+    "expected_no_shows": [],
+    "statistical_no_shows": [],
+    "aspirational_no_shows": [],
+    "excluded_species_appearances": [],
+    "environment": {
+      "T": {
+        "first": 160,
+        "last": 68.36745435471276,
+        "min": 68.36745435471276,
+        "max": 160,
+        "units": "°C",
+        "source": "raw_simulation_state"
+      },
+      "pH": {
+        "first": 7.2,
+        "last": 7.2,
+        "min": 7.2,
+        "max": 7.2,
+        "units": "",
+        "source": "raw_simulation_state"
+      },
+      "Eh": {
+        "first": 75.5149978319906,
+        "last": 75.5149978319906,
+        "min": 75.5149978319906,
+        "max": 75.5149978319906,
+        "units": "mV",
+        "source": "raw_simulation_state"
+      },
+      "salinity": {
+        "first": 4,
+        "last": 4,
+        "min": 4,
+        "max": 4,
+        "units": "psu",
+        "source": "raw_simulation_state"
+      },
+      "O2": {
+        "first": 0.4,
+        "last": 0.4,
+        "min": 0.4,
+        "max": 0.4,
+        "units": "ppm (mg/kg solvent)",
+        "source": "raw_simulation_state"
+      },
+      "concentration": {
+        "first": 1,
+        "last": 1,
+        "min": 1,
+        "max": 1,
+        "units": "×",
+        "source": "raw_simulation_state"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -1.386,
+        "last": -1.26,
+        "min": -1.386,
+        "max": -0.945,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -1.449,
+        "last": -1.323,
+        "min": -1.512,
+        "max": -1.071,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -2.646,
+        "last": -2.646,
+        "min": -2.646,
+        "max": -2.331,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -1.071,
+        "last": -1.008,
+        "min": -1.071,
+        "max": -0.756,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 1.386,
+        "last": 1.323,
+        "min": 1.323,
+        "max": 1.575,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 240,
+      "fluid_pressure_kbar": {
+        "first": 0.3,
+        "last": 0.3,
+        "min": 0.3,
+        "max": 0.3,
+        "samples": 240
+      },
+      "confining_pressure_kbar": null,
+      "temperature_C": {
+        "first": 160,
+        "last": 68.36745435471276,
+        "min": 68.36745435471276,
+        "max": 160,
+        "samples": 240
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.4282625400000004,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.7134212897794736,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 240
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 62.41
+        },
+        "last": {
+          "pure_water_boundary_C": 62.41
+        }
+      },
+      "stress_events": [],
+      "transformations": [],
+      "carbonate_boundary": {
+        "sample_count": 0,
+        "first": null,
+        "last": null,
+        "samples": []
+      },
+      "sulfur_ledger": {
+        "source": "archived phase-resolved sulfur ledger; exact samples are authenticated by the strip SHA-256",
+        "sample_count": 0,
+        "closed_sample_count": 0,
+        "all_closed": null,
+        "max_abs_balance_error_ppm": 0,
+        "max_abs_testimony_error_ppm": 0,
+        "first_fluid_reservoir_ppm": null,
+        "last_fluid_reservoir_ppm": null,
+        "first_solid_reservoir_ppm": null,
+        "last_solid_reservoir_ppm": null,
+        "activation": null,
+        "phase_identities": [],
+        "samples": []
+      }
+    }
+  }
+}

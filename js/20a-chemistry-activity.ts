@@ -36,10 +36,9 @@
 //     migration in each supersaturation_<mineral>. Phase 2b.
 //
 // Conventions / known simplifications:
-//   - S is treated as SO₄²⁻ (charge -2) by default; the v17 model
-//     conflates sulfide and sulfate into one fluid field. Phase 4 (Eh)
-//     splits this. For now, sulfides see the wrong charge for their
-//     anion contribution to Q; this is a known calibration handle.
+//   - Legacy one-pool S is treated as SO₄²⁻ (charge -2). Explicit fluids
+//     carry separate S_sulfide/S_sulfate/S_elemental reservoirs; the total-S
+//     observer is excluded from ionic strength to prevent double counting.
 //   - Fe is treated as Fe²⁺ (charge +2). Same Phase 4 reframe — the
 //     Fe²⁺/Fe³⁺ couple becomes explicit.
 //   - As is treated as AsO₄³⁻ (oxidizing arsenate) by default; reducing
@@ -129,6 +128,15 @@ const SPECIES_PROPERTIES: Record<string, { charge: number; molarMass: number; no
   B:    { charge: 0, molarMass:  10.81, note: 'as B(OH)₃⁰ at pH<9' },
   Ge:   { charge: 0, molarMass:  72.63, note: 'as Ge(OH)₄⁰' },
 };
+
+// Carbonate Mg/Ca selectors are published as molar ratios, whereas the
+// simulator stores dissolved inventories as mass-based ppm (mg/kg solvent).
+function aqueousMgCaMolarRatio(fluid: any): number {
+  const caPpm = Math.max(0, Number(fluid?.Ca) || 0);
+  const mgPpm = Math.max(0, Number(fluid?.Mg) || 0);
+  if (!(caPpm > 0)) return mgPpm > 0 ? Infinity : 0;
+  return (mgPpm / 24.305) / (caPpm / 40.078);
+}
 
 // Convert ppm (mg solute per kg solvent, dilute approximation) → molality
 // (mol per kg solvent). For ppm = 200, MM = 40.08 (Ca):

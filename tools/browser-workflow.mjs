@@ -9,9 +9,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
+import { fileBundleAssetDigest, fileBundleAssetFiles } from './file-bundle-assets.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SIM_VERSION = 267;
+const SIM_VERSION = 271;
+const FILE_BUNDLE_ASSET_COUNT = fileBundleAssetFiles(ROOT).length;
+const FILE_BUNDLE_ASSET_SHA256 = fileBundleAssetDigest(ROOT);
 const TEST_SEED = 42;
 const MANUAL_SAVE_NAME = 'Browser QA — seed 42';
 const DEFAULT_TIMEOUT_MS = 20_000;
@@ -696,10 +699,20 @@ async function runWorkflow(driver, diagnostics) {
     const identity = await driver.evaluate(`({
       sim: window.vugg.SIM_VERSION,
       scenarios: window.vugg.listScenarios().filter(x => !x.startsWith('tutorial_')).length,
+      scenario_options: document.querySelectorAll('#scenario option').length,
+      scenario_panel_buttons: document.querySelectorAll('#scenarios-panel-groups button').length,
+      file_bundle: window.__VUGG_FILE_BUNDLE_RECEIPT || null,
       title: document.title,
     })`);
     assert.equal(identity.sim, SIM_VERSION);
     assert.equal(identity.scenarios, 38);
+    assert.equal(identity.scenario_options, 38);
+    assert.equal(identity.scenario_panel_buttons, 45);
+    assert.deepEqual(identity.file_bundle, {
+      schema: 'vugg-file-bundle-assets-v1',
+      asset_count: FILE_BUNDLE_ASSET_COUNT,
+      sha256: FILE_BUNDLE_ASSET_SHA256,
+    });
     assert.match(identity.title, /Vugg/i);
   });
 

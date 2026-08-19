@@ -66,6 +66,7 @@ interface StripStoredRecord {
   stress_event_testimony?: any[];
   transformation_event_testimony?: StripTransformationEvent[];
   carbonate_boundary_testimony?: any[];
+  sulfur_ledger_testimony?: any[];
 }
 
 interface StripListEntry {
@@ -99,6 +100,7 @@ function stripStoredRecordFromDataset(ds: StripDataset): StripStoredRecord {
     ...(ds.stress_event_testimony ? { stress_event_testimony: ds.stress_event_testimony } : {}),
     ...(ds.transformation_event_testimony ? { transformation_event_testimony: ds.transformation_event_testimony } : {}),
     ...(ds.carbonate_boundary_testimony ? { carbonate_boundary_testimony: ds.carbonate_boundary_testimony } : {}),
+    ...(ds.sulfur_ledger_testimony ? { sulfur_ledger_testimony: ds.sulfur_ledger_testimony } : {}),
   };
 }
 
@@ -112,6 +114,7 @@ function stripDatasetFromStoredRecord(rec: StripStoredRecord): StripDataset {
     ...(rec.stress_event_testimony ? { stress_event_testimony: rec.stress_event_testimony } : {}),
     ...(rec.transformation_event_testimony ? { transformation_event_testimony: rec.transformation_event_testimony } : {}),
     ...(rec.carbonate_boundary_testimony ? { carbonate_boundary_testimony: rec.carbonate_boundary_testimony } : {}),
+    ...(rec.sulfur_ledger_testimony ? { sulfur_ledger_testimony: rec.sulfur_ledger_testimony } : {}),
   };
 }
 

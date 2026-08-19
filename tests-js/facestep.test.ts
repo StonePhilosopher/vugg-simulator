@@ -11,7 +11,7 @@
 // The tag is GATED on wall.directional_steps. Only elmwood sets it (Phase 1), so every
 // OTHER scenario stays dormant → byte-identical (cold-ci's calibration baseline is the
 // hard byte-identity gate; _faceStep never touches counts/sizes/chemistry). Pins:
-//   (1) dormancy — a calcite scenario that did NOT opt in (marble) tags nothing;
+//   (1) dormancy — a free-calcite scenario that did NOT opt in tags nothing;
 //   (2) the tag is absent (undefined) on untagged crystals (no serialized output widens);
 //   (3) Phase 1 — elmwood (real opt-in) tags its stepped calcite with steppedFaceSet:'up';
 //   (4) only calcite is ever tagged.
@@ -43,13 +43,13 @@ const steppedCalcite = (sim: any) =>
 
 describe('directional face-step tag (central-distance arc)', () => {
   it('DORMANT for scenarios that did not opt in — a non-opted calcite scenario tags nothing', () => {
-    const sim = run('marble_contact_metamorphism');   // grows calcite, no directional_steps flag
+    const sim = run('zoned_dripstone_cave');   // grows calcite, no directional_steps flag
     expect(sim).toBeTruthy();
     expect(faceStepped(sim).length).toBe(0);
   });
 
   it('the tag is ABSENT (undefined) on untagged crystals — no serialized output widens', () => {
-    const sim = run('marble_contact_metamorphism');
+    const sim = run('zoned_dripstone_cave');
     expect(sim).toBeTruthy();
     for (const c of sim.crystals) expect(c._faceStep).toBeUndefined();
   });

@@ -28,7 +28,7 @@ function canonicalEvidence(): Evidence {
   const { conditions, events, defaultSteps } = SCENARIOS.roughten_gill();
   const sim = new VugSimulator(conditions, events);
   const stages = new Map<number, any>();
-  const watchedSteps = new Set([59, 60, 99, 100, 139, 140, 179, 180, 214, 215, defaultSteps]);
+  const watchedSteps = new Set([54, 55, 59, 60, 99, 100, 139, 140, 179, 180, 214, 215, defaultSteps]);
   for (let i = 0; i < defaultSteps; i++) {
     sim.run_step();
     if (watchedSteps.has(sim.step)) {
@@ -58,13 +58,14 @@ function crystals(sim: any, mineral: string) {
 }
 
 describe('Roughton Gill mine-specific scenario', () => {
-  it('preserves the historical id, authored shape seed, duration, and five-stage sequence', () => {
+  it('preserves the historical id, authored shape seed, duration, and six-stage sequence', () => {
     expect(typeof SCENARIOS.roughten_gill).toBe('function');
     const { conditions, defaultSteps } = SCENARIOS.roughten_gill();
     const spec = SCENARIOS.roughten_gill._json5_spec;
     expect(conditions.wall.shape_seed).toBe(1882);
     expect(defaultSteps).toBe(240);
     expect(spec.events.map((event: any) => [event.step, event.type])).toEqual([
+      [55, 'roughten_gill_primary_carbonate_peak'],
       [60, 'roughten_gill_primary_lockup'],
       [100, 'roughten_gill_deep_weathering'],
       [140, 'roughten_gill_carbonate_buffering'],
@@ -142,14 +143,20 @@ describe('Roughton Gill mine-specific scenario', () => {
 
   it('books carbonate-gangue release and both fluid replacements in a closed carbon ledger', { timeout: 300_000 }, () => {
     const { sim, stages } = canonicalEvidence();
+    expect(stages.get(54).CO3).toBeLessThan(1200);
+    expect(stages.get(55).CO3).toBeGreaterThan(1100);
     expect(stages.get(139).CO3).toBeCloseTo(150, 8);
     expect(stages.get(140).CO3).toBeCloseTo(295, 8);
     expect(stages.get(179).CO3).toBeCloseTo(295, 8);
     expect(stages.get(180).CO3).toBeCloseTo(120, 8);
     const transactions = sim._carbonSourceTransactions;
-    expect(transactions.map((row: any) => row.step)).toEqual([60, 140, 180]);
+    expect(transactions.map((row: any) => row.step)).toEqual([55, 60, 140, 180]);
     expect(transactions.every((row: any) => row.closed)).toBe(true);
-    expect(transactions[1].declarations).toEqual([expect.objectContaining({
+    expect(transactions[0].declarations).toEqual([expect.objectContaining({
+      kind: 'addition', category: 'external_import',
+      source: 'Roughton Gill primary carbonate-gangue ore fluid',
+    })]);
+    expect(transactions[2].declarations).toEqual([expect.objectContaining({
       kind: 'addition', category: 'wall_release', carbonatePpmPerFluid: 145,
     })]);
     const ledger = simulatorCarbonLedgerSnapshot(sim);

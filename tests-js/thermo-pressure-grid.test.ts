@@ -53,21 +53,53 @@ describe('SUPCRTBL pressure-grid artifact', () => {
     ]).size).toBe(3);
   });
 
-  it('interpolates only inside the grid and each promoted reaction envelope', () => {
+  it('interpolates pressure only inside the grid and holds temperature edges continuously', () => {
     const p1 = thermoPressureLogKCorrection('calcite', 25, 1);
     const p2 = thermoPressureLogKCorrection('calcite', 25, 2);
     const midway = thermoPressureLogKCorrection('calcite', 25, 1.5);
     expect(midway).toBeCloseTo((p1 + p2) / 2, 8);
-    expect(thermoPressureAssessment('calcite', 100, 4.4)).toMatchObject({
-      active: false,
-      status: 'outside-temperature-envelope',
-      correctionLog10K: 0,
+    const hotCalcite = thermoPressureAssessment('calcite', 100, 4.4);
+    expect(hotCalcite).toMatchObject({
+      active: true,
+      status: 'temperature-clamped-to-envelope',
+      temperatureC: 100,
+      evaluatedTemperatureC: 90,
+      temperatureClamped: true,
     });
+    expect(hotCalcite.correctionLog10K)
+      .toBeCloseTo(thermoPressureLogKCorrection('calcite', 90, 4.4), 12);
     expect(thermoPressureAssessment('barite', 25, 9)).toMatchObject({
       active: false,
       status: 'outside-pressure-grid',
       correctionLog10K: 0,
     });
+  });
+
+  it('has no correction jump at either fitted temperature edge for every reaction', () => {
+    const artifact = JSON.parse(fs.readFileSync(
+      path.join(process.cwd(), 'data', 'generated', 'thermo-pressure-grid.json'),
+      'utf8',
+    ));
+    for (const [mineral, reaction] of Object.entries<any>(artifact.payload.reactions)) {
+      const [lo, hi] = reaction.usable_temperature_C;
+      const atLo = thermoPressureAssessment(mineral, lo, 4.4);
+      const belowLo = thermoPressureAssessment(mineral, lo - 1e-6, 4.4);
+      const farBelowLo = thermoPressureAssessment(mineral, lo - 100, 4.4);
+      const atHi = thermoPressureAssessment(mineral, hi, 4.4);
+      const aboveHi = thermoPressureAssessment(mineral, hi + 1e-6, 4.4);
+      const farAboveHi = thermoPressureAssessment(mineral, hi + 100, 4.4);
+
+      expect(atLo.active, `${mineral} lower edge`).toBe(true);
+      expect(atHi.active, `${mineral} upper edge`).toBe(true);
+      expect(belowLo.status, `${mineral} below lower edge`).toBe('temperature-clamped-to-envelope');
+      expect(aboveHi.status, `${mineral} above upper edge`).toBe('temperature-clamped-to-envelope');
+      expect(belowLo.evaluatedTemperatureC).toBe(lo);
+      expect(aboveHi.evaluatedTemperatureC).toBe(hi);
+      expect(belowLo.correctionLog10K).toBeCloseTo(atLo.correctionLog10K, 12);
+      expect(farBelowLo.correctionLog10K).toBeCloseTo(atLo.correctionLog10K, 12);
+      expect(aboveHi.correctionLog10K).toBeCloseTo(atHi.correctionLog10K, 12);
+      expect(farAboveHi.correctionLog10K).toBeCloseTo(atHi.correctionLog10K, 12);
+    }
   });
 
   it('fails closed for absent and mixed endmembers', () => {

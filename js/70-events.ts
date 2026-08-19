@@ -488,7 +488,8 @@ const EVENT_REGISTRY = {
   // Carrock Fell intrusive contact; type locality for plumbogummite. The
   // mine-specific reconstruction follows carbonate-buffered weathering,
   // not the former linarite-centered district generalization. See
-  // js/70q-roughten-gill.ts for the five stage-transition handlers.
+  // js/70q-roughten-gill.ts for the six stage-transition handlers.
+  roughten_gill_primary_carbonate_peak: event_roughten_gill_primary_carbonate_peak,
   roughten_gill_primary_lockup: event_roughten_gill_primary_lockup,
   roughten_gill_deep_weathering: event_roughten_gill_deep_weathering,
   roughten_gill_carbonate_buffering: event_roughten_gill_carbonate_buffering,

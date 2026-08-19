@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
+declare const simulatorCarbonLedgerSnapshot: any;
 
 function run(scenarioName: string, seed = 42) {
   setSeed(seed);
@@ -119,5 +120,23 @@ describe('Grimsel alpine-cleft smoky sceptre quartz (v206)', { timeout: 3_600_00
     for (const m of ['quartz', 'feldspar', 'titanite', 'hematite', 'fluorite', 'apatite', 'calcite']) {
       expect(c[m] || 0, `${m} should fire`).toBeGreaterThan(0);
     }
+  });
+
+  it('books the late carbonate-bearing recharge and closes the carbon ledger', () => {
+    const sim = sim42();
+    expect(sim._carbonSourceTransactions).toHaveLength(1);
+    expect(sim._carbonSourceTransactions[0]).toMatchObject({
+      step: 165,
+      closed: true,
+      declarations: [expect.objectContaining({
+        kind: 'addition',
+        category: 'external_import',
+        source: 'Grimsel late CO2-bearing cleft-fluid recharge',
+      })],
+    });
+    expect(simulatorCarbonLedgerSnapshot(sim)).toMatchObject({
+      closed: true,
+      propagationViolations: 0,
+    });
   });
 });

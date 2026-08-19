@@ -26,6 +26,7 @@
 import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildFileBundlePrelude } from "./file-bundle-assets.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const BUILD_DIR = join(ROOT, "dist");
@@ -104,7 +105,7 @@ if (!files.length) {
 }
 
 const html = readFileSync(INDEX, "utf8");
-const body = concatModules(files);
+const body = `${buildFileBundlePrelude(ROOT)}\n\n${concatModules(files)}`;
 const next = rebuild(html, body);
 
 if (process.argv.includes("--check")) {

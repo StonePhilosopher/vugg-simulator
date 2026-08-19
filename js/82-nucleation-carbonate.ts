@@ -66,7 +66,7 @@ function _nuc_aragonite(sim) {
     const existing_hem_a = sim.crystals.filter(c => c.mineral === 'hematite' && c.active);
     if (!weathering.parent && existing_goe_a.length && rng.random() < 0.4) pos = `on goethite #${existing_goe_a[0].crystal_id}`;
     else if (!weathering.parent && existing_hem_a.length && rng.random() < 0.3) pos = `on hematite #${existing_hem_a[0].crystal_id}`;
-    const mg_ratio = sim.conditions.fluid.Mg / Math.max(sim.conditions.fluid.Ca, 0.01);
+    const mg_ratio = aqueousMgCaMolarRatio(sim.conditions.fluid);
     const c = sim.nucleate('aragonite', pos, sigma_arag);
     if (weathering.required) {
       c.weathering_precursor_receipt = {
@@ -76,7 +76,7 @@ function _nuc_aragonite(sim) {
         releasedInventory: { ...weathering.released },
       };
     }
-    sim.log.push(`  ✦ NUCLEATION: Aragonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, Mg/Ca=${mg_ratio.toFixed(2)}, σ=${sigma_arag.toFixed(2)})`);
+    sim.log.push(`  ✦ NUCLEATION: Aragonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, molar Mg/Ca=${mg_ratio.toFixed(2)}, σ=${sigma_arag.toFixed(2)})`);
   }
 
   // Dolomite nucleation — Ca-Mg carbonate, needs both cations + T > 50°C.
@@ -88,9 +88,9 @@ function _nuc_dolomite(sim) {
     let pos = 'vug wall';
     const existing_cal_d = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
     if (existing_cal_d.length && rng.random() < 0.4) pos = `on calcite #${existing_cal_d[0].crystal_id}`;
-    const mg_ratio = sim.conditions.fluid.Mg / Math.max(sim.conditions.fluid.Ca, 0.01);
+    const mg_ratio = aqueousMgCaMolarRatio(sim.conditions.fluid);
     const c = sim.nucleate('dolomite', pos, sigma_dol);
-    sim.log.push(`  ✦ NUCLEATION: Dolomite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, Mg/Ca=${mg_ratio.toFixed(2)}, σ=${sigma_dol.toFixed(2)})`);
+    sim.log.push(`  ✦ NUCLEATION: Dolomite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, molar Mg/Ca=${mg_ratio.toFixed(2)}, σ=${sigma_dol.toFixed(2)})`);
   }
 
   // HMC nucleation — disordered Mg-substituted calcite, the Kim 2023

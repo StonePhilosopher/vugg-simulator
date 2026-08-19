@@ -105,6 +105,30 @@ describe('adversarial claim-card fleet', () => {
         .toEqual(strip.executed_testimony?.carbonate_boundary || []);
       expect(executed.carbonate_boundary.sample_count, `${scenario}: carbonate-boundary sample count`)
         .toBe(spec.carbonate_boundary ? strip.steps : 0);
+      const sulfurSamples = strip.executed_testimony?.sulfur_ledger || [];
+      expect(executed.sulfur_ledger.samples, `${scenario}: sulfur-ledger testimony`)
+        .toEqual(sulfurSamples);
+      expect(executed.sulfur_ledger.sample_count, `${scenario}: sulfur-ledger sample count`)
+        .toBe(sulfurSamples.length);
+      expect(executed.sulfur_ledger.closed_sample_count, `${scenario}: sulfur-ledger closure count`)
+        .toBe(sulfurSamples.filter((sample: any) => sample.closed && sample.testimonyClosed).length);
+      expect(executed.sulfur_ledger.all_closed, `${scenario}: sulfur-ledger closure`)
+        .toBe(sulfurSamples.length ? true : null);
+      if (sulfurSamples.length) {
+        expect(executed.sulfur_ledger.activation, `${scenario}: sulfur-ledger activation`)
+          .toEqual(sulfurSamples[0].activation);
+        expect(executed.sulfur_ledger.first_fluid_reservoir_ppm)
+          .toEqual(sulfurSamples[0].fluidReservoirPpm);
+        expect(executed.sulfur_ledger.last_solid_reservoir_ppm)
+          .toEqual(sulfurSamples.at(-1).solidReservoirPpm);
+        for (const phase of executed.sulfur_ledger.phase_identities) {
+          expect(phase).toMatchObject({
+            mineral: expect.any(String),
+            reservoir: expect.stringMatching(/^(sulfide|sulfate|elemental|unclassified)$/),
+            max_booked_solid_ppm: expect.any(Number),
+          });
+        }
+      }
       expect(Object.keys(card.testimony.saturation_indices).sort(), `${scenario}: SI cards`)
         .toEqual(Object.keys(strip.chips).filter(key => key.startsWith('SI_')).sort());
 
@@ -131,6 +155,13 @@ describe('adversarial claim-card fleet', () => {
         expect(markdown, `${scenario}: authored section`).toContain('Authored pressure/stress/phase context');
         expect(markdown, `${scenario}: executed section`).toContain('Executed pressure/stress/phase testimony');
         expect(markdown, `${scenario}: carbonate testimony`).toContain('Conserved carbonate boundary:');
+        expect(markdown, `${scenario}: sulfur testimony`).toContain('Sulfur reservoir identity and conservation');
+        if (sulfurSamples.length) {
+          expect(markdown, `${scenario}: sulfur activation rendered`).toContain('Ledger activation: step');
+          expect(markdown, `${scenario}: sulfur closure rendered`)
+            .toContain(`Closure: ${sulfurSamples.length}/${sulfurSamples.length} samples; all_closed=true`);
+          expect(markdown, `${scenario}: sulfur reservoirs rendered`).toContain('Fluid reservoirs (sulfide/sulfate/elemental)');
+        }
         if (scenario === 'sabkha_dolomitization') {
           expect(markdown).toContain('salinity: 120 → 250 psu  [35, 250]');
           expect(markdown).toContain('quantized display range [0, 200] clipped, raw executed state reported');

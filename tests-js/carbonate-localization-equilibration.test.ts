@@ -288,17 +288,26 @@ describe('PROPOSAL-CARBONATE-GEOCHEM — conserved run_step wiring', () => {
     expect(sim.run_step().join('\n')).toContain('Carbonate boundary BLOCKED');
   });
 
-  it('the conserved sabkha solve replaces DIC and pH across canonical fluid cells', () => {
+  it('the conserved sabkha boundary replaces DIC and pH across canonical fluid cells before local reaction', () => {
     setSeed(42);
     const scn = SCENARIOS && SCENARIOS.sabkha_dolomitization;
     if (!scn) return;
     const { conditions, events } = scn();
     const sim = new VugSimulator(conditions, events);
-    sim.run_step();
+    // Exercise the exact run_step boundary seam without subsequently running
+    // mineral growth.  Once the step continues, local calcite/aragonite/
+    // dolomite/selenite growth is expected to debit the individual chemistry
+    // voxels by different amounts; that physical localization is not evidence
+    // that the fully mixed atmospheric solve failed.
+    expect(sim._prepareCarbonateBoundarySpatialState()).toBe(true);
+    const boundarySnap = sim._snapshotGlobal();
+    sim._applyOpenAtmosphereEquilibration();
+    sim._propagateGlobalDelta(boundarySnap);
     const grid = sim.wall_state.voxelGridFor(sim);
     expect(grid.voxels.length).toBeGreaterThan(0);
     const localDIC = grid.voxels.map((voxel: any) => voxel.fluid.CO3);
-    expect(Math.max(...localDIC) - Math.min(...localDIC)).toBeLessThan(0.05);
+    expect(Math.max(...localDIC) - Math.min(...localDIC)).toBeLessThan(1e-9);
+    expect(localDIC.every((dic: number) => Math.abs(dic - conditions.fluid.CO3) < 1e-9)).toBe(true);
     expect(grid.voxels.every((voxel: any) =>
       Math.abs(voxel.fluid.pH - conditions.fluid.pH) < 1e-9)).toBe(true);
   });

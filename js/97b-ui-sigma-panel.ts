@@ -359,6 +359,12 @@ function _formationAvailableAmount(name: string, species: string, c: any): numbe
   if (species === 'As' && spec?.class === 'arsenate' && typeof arsenateAvailablePpm === 'function') {
     try { return arsenateAvailablePpm(f); } catch (_e) { /* raw fallback below */ }
   }
+  if (species === 'S' && spec?.class === 'sulfate' && typeof sulfateAvailablePpm === 'function') {
+    try { return sulfateAvailablePpm(f, c?.temperature); } catch (_e) { /* raw fallback below */ }
+  }
+  if (species === 'S' && spec?.class === 'sulfide' && typeof sulfideAvailablePpm === 'function') {
+    try { return sulfideAvailablePpm(f, c?.temperature); } catch (_e) { /* raw fallback below */ }
+  }
   const raw = f[species];
   return (typeof raw === 'number' && Number.isFinite(raw)) ? raw : 0;
 }
@@ -716,7 +722,7 @@ function _buildMineralFormationExplanation(
   }];
   if ((name === 'rosasite' || name === 'aurichalcite')
       && typeof mixedCarbonateThermoAssessment === 'function') {
-    const thermo = mixedCarbonateThermoAssessment(name, c.fluid, c.temperature);
+    const thermo = mixedCarbonateThermoAssessment(name, c.fluid, c.temperature, c.pressure);
     if (Number.isFinite(thermo.saturationIndex)) {
       satChips.push({
         text: `literature SI ${_formationNumber(thermo.saturationIndex)} · Tier ${thermo.confidence} observer`,
@@ -926,15 +932,18 @@ function _buildMineralFormationExplanation(
     }
   }
   const capacities = stoich ? Object.entries(stoich).map(([species, coefficient]) => {
-    const raw = species === 'SiO2' && typeof c.fluid.reactiveSilicaPpm === 'function'
+    const reservoirSpecies = typeof stoichiometricReservoirSpecies === 'function'
+      ? stoichiometricReservoirSpecies(name, species, c.fluid)
+      : species;
+    const raw = reservoirSpecies === 'SiO2' && typeof c.fluid.reactiveSilicaPpm === 'function'
       ? c.fluid.reactiveSilicaPpm()
-      : Number(c.fluid[species]);
+      : Number(c.fluid[reservoirSpecies]);
     const available = Number.isFinite(raw) ? Math.max(0, raw) : 0;
     const demandPerUm = typeof stoichiometricBudgetDebitPpmPerUm === 'function'
-      ? stoichiometricBudgetDebitPpmPerUm(species, Number(coefficient))
+      ? stoichiometricBudgetDebitPpmPerUm(reservoirSpecies, Number(coefficient))
       : 0;
     return {
-      species,
+      species: reservoirSpecies,
       available,
       demandPerUm,
       capacityUm: demandPerUm > 0 ? available / demandPerUm : Infinity,
@@ -961,9 +970,25 @@ function _buildMineralFormationExplanation(
   const tNeed = hasTMin && hasTMax
     ? `${gate!.T_min}–${gate!.T_max}°C`
     : hasTMin ? `≥ ${gate!.T_min}°C` : hasTMax ? `≤ ${gate!.T_max}°C` : 'no explicit cutoff';
+  const temperatureChips: FormationDiagnosticChip[] = [
+    { text: `${_formationNumber(T, 0)}°C · ${tNeed}`, met: (!hasTMin && !hasTMax) || tMet },
+  ];
+  if (typeof sulfateThermoTemperatureAssessment === 'function'
+      && ['selenite', 'gypsum', 'anhydrite', 'barite', 'celestine'].indexOf(name) >= 0) {
+    const fit = sulfateThermoTemperatureAssessment(name, T);
+    const range = fit.validTemperatureC;
+    temperatureChips.push({
+      text: range
+        ? `sulfate K(T) fit ${range[0]}–${range[1]}°C · ${fit.status}`
+        : `sulfate K(T) fit · ${fit.status}`,
+      met: fit.supported,
+      status: fit.supported ? 'observer' : 'uncertain',
+      note: fit.note,
+    });
+  }
   groups.push({
     label: 'Temperature gate',
-    chips: [{ text: `${_formationNumber(T, 0)}°C · ${tNeed}`, met: (!hasTMin && !hasTMax) || tMet }],
+    chips: temperatureChips,
   });
 
   const pressureChips = _formationPressureChips(name, c);

@@ -99,13 +99,23 @@ function event_grimsel_breach_2(c) {
 
 function event_grimsel_late_carbonate(c) {
   // Late, low-T (~241 °C → 200 °C): the fissure fluid turns carbonate-bearing;
-  // CO₂ + Ca → calcite seals the paragenesis, with late fluorite + apatite +
-  // the wedge titanite (Ca-Ti-Si) that have been waiting on the cooling tail.
+  // a fresh CO₂-bearing cleft-fluid recharge supplies dissolved inorganic
+  // carbon, then continued cooling/neutralization admits calcite. This is an
+  // open-boundary import, not carbon manufactured by a pH change. Late
+  // fluorite + apatite + wedge titanite (Ca-Ti-Si) share the cooling tail.
   // SiO₂ left at the breach-2 level (no seal) so a final quartz generation
   // grows out as it cools.
-  c.fluid.CO3 = Math.min(c.fluid.CO3 + 120, 160);
+  const carbonateTarget = 1800;
+  const carbonateAdded = Math.max(0, carbonateTarget - c.fluid.CO3);
+  c.fluid.CO3 += carbonateAdded;
+  declareCarbonLedgerAddition(
+    c,
+    'external_import',
+    'Grimsel late CO2-bearing cleft-fluid recharge',
+    carbonateAdded,
+  );
   c.fluid.F = Math.min(c.fluid.F + 14, 28);
-  c.fluid.pH = Math.min(c.fluid.pH + 1.3, 8.3);   // CO₂ degassing drives the late fluid alkaline → calcite
+  c.fluid.pH = Math.min(c.fluid.pH + 1.3, 8.3);
   c.flow_rate = 0.2;
-  return `Late carbonate stage — CO₃ → ${c.fluid.CO3.toFixed(0)}, F → ${c.fluid.F.toFixed(0)}, pH → ${c.fluid.pH.toFixed(1)}: calcite + fluorite + apatite + titanite wedges close the cleft. T ${c.temperature.toFixed(0)}°C.`;
+  return `Late carbonate-bearing recharge imports ${carbonateAdded.toFixed(0)} ppm CO₃-equivalent DIC (total ${c.fluid.CO3.toFixed(0)}), while F reaches ${c.fluid.F.toFixed(0)} ppm and pH ${c.fluid.pH.toFixed(1)}. Cooling fluid can now close the cleft with calcite + fluorite + apatite + titanite wedges. T ${c.temperature.toFixed(0)}°C.`;
 }

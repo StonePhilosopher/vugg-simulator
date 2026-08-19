@@ -361,7 +361,7 @@ Object.assign(VugConditions.prototype, {
   }
 
   // Mg poisoning of calcite growth steps — sigmoid centered on Mg/Ca=2
-  const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
+  const mg_ratio = aqueousMgCaMolarRatio(this.fluid);
   const mg_inhibition = 1.0 / (1.0 + Math.exp(-(mg_ratio - 2.0) / 0.5));
   sigma *= (1.0 - 0.85 * mg_inhibition);
 
@@ -395,7 +395,7 @@ Object.assign(VugConditions.prototype, {
   if (this.fluid.Mg < g.fluid_min!.Mg || this.fluid.Ca < g.fluid_min!.Ca || effectiveCO3(this.fluid, this.temperature) < g.fluid_min!.CO3) return 0;
   if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
   if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
-  const mg_ratio = this.fluid.Mg / Math.max(this.fluid.Ca, 0.01);
+  const mg_ratio = aqueousMgCaMolarRatio(this.fluid);
   if (mg_ratio < 0.3 || mg_ratio > 30.0) return 0;
   if (kspSupersatActiveFor('dolomite')) return carbonateEngineSigma('dolomite', this.fluid, this.temperature, 0, this.pressure);
   const eq = 200.0 * Math.exp(-0.005 * this.temperature);
@@ -774,7 +774,8 @@ Object.assign(VugConditions.prototype, {
     else T_factor = Math.max(0.4, 1.2 - 0.008 * (T - 150));
     sigma *= T_factor;
     if (this.fluid.pH < 6.0) sigma *= Math.max(0.2, 1.0 - 0.35 * (6.0 - this.fluid.pH));
-    if (this.fluid.S > 50) sigma *= Math.max(0.4, 1.0 - 0.005 * (this.fluid.S - 50));
+    const sulfatePpm = sulfateAvailablePpm(this.fluid, this.temperature);
+    if (sulfatePpm > 50) sigma *= Math.max(0.4, 1.0 - 0.005 * (sulfatePpm - 50));
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'strontianite');
     return Math.max(sigma, 0);
   },
@@ -797,7 +798,8 @@ Object.assign(VugConditions.prototype, {
     else T_factor = Math.max(0.4, 1.2 - 0.008 * (T - 150));
     sigma *= T_factor;
     if (this.fluid.pH < 6.0) sigma *= Math.max(0.2, 1.0 - 0.35 * (6.0 - this.fluid.pH));
-    if (this.fluid.S > 50) sigma *= Math.max(0.4, 1.0 - 0.005 * (this.fluid.S - 50));
+    const sulfatePpm = sulfateAvailablePpm(this.fluid, this.temperature);
+    if (sulfatePpm > 50) sigma *= Math.max(0.4, 1.0 - 0.005 * (sulfatePpm - 50));
     if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'witherite');
     return Math.max(sigma, 0);
   },
@@ -818,7 +820,7 @@ Object.assign(VugConditions.prototype, {
     if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     if (this.fluid.SiO2 > 50) return 0;  // hemimorphite wins above
     // High sulfate → gypsum + Zn-sulfates win
-    if (this.fluid.S > 100 && this.fluid.O2 > 0.5) return 0;
+    if (sulfateAvailablePpm(this.fluid, this.temperature) > 100 && this.fluid.O2 > 0.5) return 0;
     // Cu suppresses → aurichalcite (Zn-Cu carbonate-hydroxide) wins
     const cu_frac = this.fluid.Cu / Math.max(this.fluid.Cu + this.fluid.Zn, 0.001);
     if (cu_frac > 0.15) return 0;

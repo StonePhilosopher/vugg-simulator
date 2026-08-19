@@ -229,14 +229,43 @@ function pureWaterDensityKgM3(T_celsius: number): number {
 }
 
 // Marshall & Franck 1981 (JPCRD 10:295, doi:10.1063/1.555643), T in
-// kelvin and density in g/cm3. Returns -log10(Kw). At 25 C ~=13.99 and
-// at 90 C ~=12.43. The reduced v1 model treats 10^-pH as molal H+
+// kelvin and density in g/cm3. Returns -log10(Kw). At 25 C/1 bar
+// ~=13.99 and at 100 C/1 bar ~=12.26. Pressure-aware calls obtain water
+// density from the authenticated IAPWS-95/SUPCRTBL grid; an unsupported
+// high-pressure water state fails closed rather than using atmospheric
+// density. The reduced v1 model treats 10^-pH as molal H+
 // activity under an explicitly declared ideal-dilute 1 mol/kg standard-state
 // approximation; it does not mix an unlabelled activity with concentration.
-function pKwWater(T_celsius: number): number {
-  const t = Math.max(0, Math.min(90, Number(T_celsius) || 0));
+function pKwWater(T_celsius: number, fluidPressureKbar?: number): number {
+  const requestedT = Number(T_celsius);
+  if (!Number.isFinite(requestedT)) return NaN;
+  // One-argument calls are the already-commissioned reduced carbonate-
+  // boundary model: atmospheric Kell density, deliberately held at its
+  // 0-90 C v1 envelope. Hydroxycarbonate SI passes P explicitly below.
+  if (fluidPressureKbar == null) {
+    const t = Math.max(0, Math.min(90, requestedT));
+    const TK = t + 273.15;
+    const densityGcm3 = pureWaterDensityKgM3(t) / 1000;
+    const logKw = -4.098 - 3245.2 / TK + 2.2362e5 / (TK * TK)
+      - 3.984e7 / (TK * TK * TK)
+      + (13.957 - 1262.3 / TK + 8.5641e5 / (TK * TK)) * Math.log10(densityGcm3);
+    return -logKw;
+  }
+  const pressure = Number(fluidPressureKbar);
+  if (!Number.isFinite(pressure)) return NaN;
+  let t = requestedT;
+  let densityGcm3 = NaN;
+  if (typeof thermoWaterDensityGcm3 === 'function') {
+    densityGcm3 = thermoWaterDensityGcm3(t, pressure);
+  }
+  // The 0-10 C atmospheric margin retains the disclosed Kell density
+  // fallback. Never use it for a non-reference P.
+  if (!Number.isFinite(densityGcm3)) {
+    if (Math.abs(pressure - 0.001) > 1e-12) return NaN;
+    t = Math.max(0, Math.min(90, requestedT));
+    densityGcm3 = pureWaterDensityKgM3(t) / 1000;
+  }
   const TK = t + 273.15;
-  const densityGcm3 = pureWaterDensityKgM3(t) / 1000;
   const logKw = -4.098 - 3245.2 / TK + 2.2362e5 / (TK * TK)
     - 3.984e7 / (TK * TK * TK)
     + (13.957 - 1262.3 / TK + 8.5641e5 / (TK * TK)) * Math.log10(densityGcm3);
@@ -515,6 +544,7 @@ function createCarbonateBoundaryState(fluid: any, T_celsius: number, opts: any =
     mode: opts.mode === 'open' ? 'open' : 'closed',
     headspaceLKg,
     targetPCO2Bar: Math.max(1e-12, Number(opts.target_pCO2_bar) || pCO2Bar || 4.2e-4),
+    lastSolvedPCO2Bar: pCO2Bar,
     reducedAlkalinityEqKg: authoredAlkalinity,
     headspaceCO2MolKg,
     boundaryImportMolKg: 0,
@@ -550,6 +580,9 @@ function _recordCarbonateBoundaryTransaction(state: any, tx: any): any {
     state.lastDICMolKg = tx.after.dicMolKg;
     state.headspaceCO2MolKg = tx.after.headspaceCO2MolKg;
     state.lastBulkDICPpm = dicMolKgToPpm(tx.after.dicMolKg);
+    if (Number.isFinite(tx.after?.pCO2Bar)) {
+      state.lastSolvedPCO2Bar = Number(tx.after.pCO2Bar);
+    }
   }
   return tx;
 }

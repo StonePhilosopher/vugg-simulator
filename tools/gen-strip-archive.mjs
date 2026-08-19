@@ -211,6 +211,12 @@ function archiveScenario(name, seed = 42) {
       stress_events: ds.stress_event_testimony || [],
       transformations: ds.transformation_event_testimony || [],
       carbonate_boundary: ds.carbonate_boundary_testimony || [],
+      // Keep the phase-resolved sulfur account in the canonical story.  The
+      // recorder owns the live testimony, but the archive is the authenticated
+      // scientific artifact reviewed off-machine.  Dropping this projection
+      // would leave conservation green in memory while making reservoir
+      // identity and wrong-valence controls invisible in published evidence.
+      sulfur_ledger: ds.sulfur_ledger_testimony || [],
     },
   };
   return assertStripIdentity(story, {

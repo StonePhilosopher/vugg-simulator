@@ -6,13 +6,17 @@
 // from Reaktoro 2.13.0 + SUPCRTBL.  It contains delta-log10(K) relative to
 // 1 bar at the same temperature, so the game's existing evidence-backed
 // Ksp(T) curves remain the reference calibration.  Runtime interpolation is
-// bounded: no pressure or temperature extrapolation, no interpolation across
-// a water-density mask, and no proxy reaction for an absent solid species.
+// bounded: no pressure extrapolation, no interpolation across a water-density
+// mask, and no proxy reaction for an absent solid species. Outside a
+// reaction's fitted temperature envelope the nearest fitted edge correction
+// is held constant. This bounded edge hold is continuous and deliberately
+// avoids both unconstrained temperature extrapolation and an unphysical jump
+// to zero pressure effect.
 
 type ThermoPressureStatus =
   | 'active'
   | 'reference-pressure'
-  | 'outside-temperature-envelope'
+  | 'temperature-clamped-to-envelope'
   | 'outside-pressure-grid'
   | 'masked-low-density'
   | 'unsupported-reaction'
@@ -25,6 +29,8 @@ type ThermoPressureAssessment = {
   active: boolean;
   status: ThermoPressureStatus;
   temperatureC: number;
+  evaluatedTemperatureC: number;
+  temperatureClamped: boolean;
   fluidPressureKbar: number;
   correctionLog10K: number;
   waterDensityGcm3: number | null;
@@ -70,6 +76,65 @@ function _thermoGridBilinear(
   return low + ft * (high - low);
 }
 
+type ThermoWaterDensityAssessment = {
+  temperatureC: number;
+  fluidPressureKbar: number;
+  active: boolean;
+  status: 'active' | 'outside-grid' | 'masked-low-density' | 'invalid-input';
+  waterDensityGcm3: number | null;
+  sourceModel: string;
+  note: string;
+};
+
+// Shared water-state authority for pressure-sensitive aqueous quantities such
+// as Kw. Unlike a mineral reaction correction, this uses the requested T/P
+// directly: no reaction-envelope edge hold and no pressure/T extrapolation.
+function thermoWaterDensityAssessment(
+  temperatureC: number,
+  fluidPressureKbar: number,
+): ThermoWaterDensityAssessment {
+  const temperature = Number(temperatureC);
+  const pressure = Number(fluidPressureKbar);
+  const grid = THERMO_PRESSURE_GRID;
+  const base = {
+    temperatureC: temperature,
+    fluidPressureKbar: pressure,
+    waterDensityGcm3: null,
+    sourceModel: grid.model_id,
+  };
+  if (!Number.isFinite(temperature) || !Number.isFinite(pressure)) {
+    return {
+      ...base, active: false, status: 'invalid-input',
+      note: 'Temperature and fluid pressure must both be finite.',
+    };
+  }
+  const tb = _thermoGridBracket(grid.temperature_axis_C, temperature);
+  const pb = _thermoGridBracket(grid.pressure_axis_kbar, pressure);
+  if (!tb || !pb) {
+    return {
+      ...base, active: false, status: 'outside-grid',
+      note: `Water density is not extrapolated beyond ${grid.temperature_axis_C[0]}-${grid.temperature_axis_C[grid.temperature_axis_C.length - 1]} C and ${grid.pressure_axis_kbar[0]}-${grid.pressure_axis_kbar[grid.pressure_axis_kbar.length - 1]} kbar.`,
+    };
+  }
+  const density = _thermoGridBilinear(grid.water_density_g_cm3, tb, pb);
+  if (density == null) {
+    return {
+      ...base, active: false, status: 'masked-low-density',
+      note: `Water density is withheld where any interpolation corner is below ${grid.validity.water_density_min_g_cm3} g/cm3.`,
+    };
+  }
+  return {
+    ...base, active: true, status: 'active', waterDensityGcm3: density,
+    note: 'Bilinear IAPWS-95/SUPCRTBL water-density interpolation inside the authenticated grid.',
+  };
+}
+
+function thermoWaterDensityGcm3(temperatureC: number, fluidPressureKbar: number): number {
+  const assessment = thermoWaterDensityAssessment(temperatureC, fluidPressureKbar);
+  return assessment.active && assessment.waterDensityGcm3 != null
+    ? assessment.waterDensityGcm3 : NaN;
+}
+
 function thermoPressureAssessment(
   mineralId: string,
   temperatureC: number,
@@ -85,6 +150,8 @@ function thermoPressureAssessment(
   const base = {
     mineral,
     temperatureC: temperature,
+    evaluatedTemperatureC: temperature,
+    temperatureClamped: false,
     fluidPressureKbar: pressure,
     correctionLog10K: 0,
     waterDensityGcm3: null,
@@ -109,27 +176,27 @@ function thermoPressureAssessment(
   }
 
   const usable = reaction.usable_temperature_C as readonly [number, number];
-  if (temperature < usable[0] || temperature > usable[1]) {
-    return {
-      ...base, supported: true, active: false, status: 'outside-temperature-envelope',
-      reaction: reaction.equation, usableTemperatureC: usable,
-      note: `Pressure correction inactive outside this reaction's ${usable[0]}-${usable[1]} C promoted Ksp(T) envelope; no extrapolation.`,
-    };
-  }
-  const tb = _thermoGridBracket(grid.temperature_axis_C, temperature);
+  const evaluatedTemperature = Math.max(usable[0], Math.min(usable[1], temperature));
+  const temperatureClamped = evaluatedTemperature !== temperature;
+  const evaluatedBase = {
+    ...base,
+    evaluatedTemperatureC: evaluatedTemperature,
+    temperatureClamped,
+  };
+  const tb = _thermoGridBracket(grid.temperature_axis_C, evaluatedTemperature);
   const pb = _thermoGridBracket(grid.pressure_axis_kbar, pressure);
   if (!pb) {
     return {
-      ...base, supported: true, active: false, status: 'outside-pressure-grid',
+      ...evaluatedBase, supported: true, active: false, status: 'outside-pressure-grid',
       reaction: reaction.equation, usableTemperatureC: usable,
       note: `Pressure correction inactive outside the ${grid.pressure_axis_kbar[0]}-${grid.pressure_axis_kbar[grid.pressure_axis_kbar.length - 1]} kbar SUPCRTBL grid; no extrapolation.`,
     };
   }
   if (!tb) {
     return {
-      ...base, supported: true, active: false, status: 'outside-temperature-envelope',
+      ...evaluatedBase, supported: true, active: false, status: 'invalid-input',
       reaction: reaction.equation, usableTemperatureC: usable,
-      note: 'Temperature is outside the generated SUPCRTBL grid; no extrapolation.',
+      note: 'The reaction temperature envelope is outside the generated SUPCRTBL grid.',
     };
   }
 
@@ -137,7 +204,7 @@ function thermoPressureAssessment(
   const correction = _thermoGridBilinear(reaction.delta_log10_K_from_1bar, tb, pb);
   if (density == null || correction == null) {
     return {
-      ...base, supported: true, active: false, status: 'masked-low-density',
+      ...evaluatedBase, supported: true, active: false, status: 'masked-low-density',
       reaction: reaction.equation, usableTemperatureC: usable,
       note: `Grid cell crosses a water-density value below ${grid.validity.water_density_min_g_cm3} g/cm3; pressure correction is masked rather than interpolated through the near-critical low-density region.`,
     };
@@ -145,17 +212,21 @@ function thermoPressureAssessment(
 
   const atReference = Math.abs(pressure - grid.reference_pressure_kbar) < 1e-12;
   return {
-    ...base,
+    ...evaluatedBase,
     supported: true,
     active: true,
-    status: atReference ? 'reference-pressure' : 'active',
+    status: temperatureClamped
+      ? 'temperature-clamped-to-envelope'
+      : (atReference ? 'reference-pressure' : 'active'),
     correctionLog10K: correction,
     waterDensityGcm3: density,
     reaction: reaction.equation,
     usableTemperatureC: usable,
-    note: atReference
-      ? 'At the 1-bar reference pressure; the generated pressure correction is zero.'
-      : `SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by ${correction >= 0 ? '+' : ''}${correction.toFixed(3)} relative to 1 bar at the same temperature.`,
+    note: temperatureClamped
+      ? `Requested ${temperature} C is outside this reaction's ${usable[0]}-${usable[1]} C fitted envelope; the nearest ${evaluatedTemperature} C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary.`
+      : (atReference
+        ? 'At the 1-bar reference pressure; the generated pressure correction is zero.'
+        : `SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by ${correction >= 0 ? '+' : ''}${correction.toFixed(3)} relative to 1 bar at the same temperature.`),
   };
 }
 

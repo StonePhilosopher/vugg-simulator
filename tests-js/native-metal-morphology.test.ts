@@ -55,7 +55,7 @@ describe('native copper + gold morphology (the conflation sweep)', () => {
     expect(morphRegime(MORPH_TH.native_gold, 1.35)).toBe('spiral_smooth');
   });
 
-  it('THE CAST STORY: the Bisbee pulse grows wire copper, then oxidises and buries its surviving core', () => {
+  it('THE CAST STORY: the Bisbee pulse grows stepped copper, wanes to a smooth termination, then is oxidised and buried', () => {
     const cu = bisbee().crystals.filter((c: any) => c.mineral === 'native_copper' && c.total_growth_um > 0);
     expect(cu.length).toBeGreaterThanOrEqual(1);
     // The oxidation front etches a rim; exact shell accounting retains the
@@ -72,7 +72,13 @@ describe('native copper + gold morphology (the conflation sweep)', () => {
     }
     expect(tot).toBeGreaterThan(0);
     expect(stepped / tot).toBeGreaterThan(0.8);
-    for (const c of cu) expect(c.habit).toBe('wire_copper');
+    for (const c of cu) {
+      const positive = c.zones.filter((z: any) => z.thickness_um > 0);
+      expect(positive.at(-1)?.morph_regime).toBe('spiral_smooth');
+      // `habit` describes the exposed terminal form; the zone ledger above
+      // retains the much larger stepped/arborescent pulse beneath it.
+      expect(c.habit).toBe('cubic_dodecahedral');
+    }
   });
 
   it('THE CONFLATION FIX: bisbee gold is spongy/dendritic, never nugget; the legacy texture strings are retired from dispatch', () => {

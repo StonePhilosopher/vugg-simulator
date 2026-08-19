@@ -31,16 +31,21 @@
 //
 // k4 isn't a free parameter — it's derived from k1..k3 + Ksp so the
 // net rate is exactly zero when the fluid is at calcite equilibrium.
-// This module implements the equivalent form:
+// This module exposes the PHREEQC/PWP affinity form (with the sign
+// reversed so positive means precipitation in the simulator):
 //
 //   r_forward = k1·a(H⁺) + k2·a(H₂CO₃*) + k3
-//   r_net     = r_forward · (1 − 1/Ω)
+//   r_net     = r_forward · (Ω^(2/3) − 1)
 //
 // At equilibrium Ω=1, so r_net=0. Above equilibrium (Ω>1), r_net is
 // positive (precipitation, by the sim's "rate>0 grows" convention).
-// Below (Ω<1), r_net is negative (dissolution). This form is
-// equivalent to PWP at equilibrium and a standard simulator-friendly
-// approximation across the practical Ω range (Morse 1983; Lasaga 1998).
+// Below (Ω<1), r_net is negative (dissolution) and approaches the finite
+// limit -r_forward as Ω approaches zero. This is the same saturation-ratio
+// exponent used by the USGS PHREEQC calcite RATES implementation. PWP is a
+// calcite-dissolution law; its precipitation-positive continuation grows
+// without bound at large Ω. The simulator therefore keeps the raw relation
+// available for diagnosis but routes production growth through the explicit
+// transport/applicability closure documented beside pwpProductionNetRate.
 //
 // T-dependence per Arrhenius:  k(T) = k(298)·exp(−Ea/R·(1/T − 1/298))
 // Activation energies: Palandri & Kharaka 2004 (USGS OFR 2004-1068)
@@ -158,7 +163,7 @@ function _activityH2CO3(fluid: any, T_C: number): number {
   return DIC_molal * f.H2CO3;
 }
 
-// Ca²⁺ and HCO3⁻ activities aren't needed by the (1 − 1/Ω) reverse-
+// Ca²⁺ and HCO3⁻ activities aren't needed by the bounded PWP reverse-
 // rate form: the reverse contribution is encapsulated in Ω, which
 // carbonateOmega already computes with proper Davies corrections.
 // Kept here as a future hook if the full four-term PWP with explicit
@@ -182,7 +187,11 @@ function pwpForwardRate(mineralId: string, fluid: any, T_C: number): number {
   return p.scale * Math.max(0, r);
 }
 
-// Net rate via detailed balance: r_net = r_forward · (1 − 1/Ω).
+// Net precipitation-positive rate from the PWP/PHREEQC calcite relation:
+//   r_net = r_forward · (Ω^(2/3) − 1)
+// PHREEQC writes the dissolution-positive equivalent as
+// r_forward·(1 - SR^(2/3)). This is bounded at -r_forward as Ω→0;
+// the retired (1 - 1/Ω) expression diverged far below saturation.
 // At Ω=1 (equilibrium) r_net=0; Ω>1 (supersaturated) r_net>0
 // (precipitation); Ω<1 (undersaturated) r_net<0 (dissolution).
 // Returns mol/(cm²·s) with sign.
@@ -196,15 +205,46 @@ function pwpNetRate(
   if (!fluid) return 0;
   const r_forward = pwpForwardRate(mineralId, fluid, T_C);
   if (r_forward <= 0) return 0;
-  if (typeof carbonateOmega !== 'function') return r_forward;
+  if (typeof carbonateOmega !== 'function') return 0;
   const omega = carbonateOmega(mineralId, fluid, T_C, mg_content, fluidPressureKbar);
-  if (!isFinite(omega) || omega <= 0) {
-    // No omega available — return forward rate (assumes far-from-
-    // equilibrium dissolution regime, e.g., dropping fresh acid into
-    // limestone).
-    return r_forward;
-  }
-  return r_forward * (1 - 1 / omega);
+  if (!isFinite(omega)) return 0;
+  return r_forward * (Math.pow(Math.max(0, omega), 2 / 3) - 1);
+}
+
+// Production closure for the reduced, one-update-per-step simulator.
+//
+// PHREEQC integrates the raw PWP expression while solution composition and
+// reactive surface area evolve. Vugg Simulator instead evaluates one fluid
+// snapshot and converts it to an axial zone in a single step. Extrapolating
+// Ω^(2/3)-1 through the simulator's deliberately extreme supersaturations
+// therefore creates an unphysical, effectively infinite transport supply
+// (for example, a single Sabkha dolomite zone could fill the cavity).
+//
+// Preserve the cited raw law in pwpNetRate. For its positive continuation,
+// combine reaction and transport resistances in series: if A is the raw
+// dimensionless affinity, A_transport = A/(1+A). This is monotone (so Ksp and
+// solid-solution differences remain observable), agrees to first order as
+// A approaches zero, and approaches but never exceeds r_forward. The
+// undersaturated limb is already naturally bounded by PHREEQC and remains
+// exact. This is an explicit simulator-scale transport/applicability limit,
+// not a claim that PWP measured precipitation at extreme Ω.
+function pwpProductionNetRate(
+  mineralId: string,
+  fluid: any,
+  T_C: number,
+  mg_content: number = 0,
+  fluidPressureKbar: number = 0.001,
+): number {
+  if (!fluid) return 0;
+  const r_forward = pwpForwardRate(mineralId, fluid, T_C);
+  if (!(r_forward > 0) || typeof carbonateOmega !== 'function') return 0;
+  const omega = carbonateOmega(mineralId, fluid, T_C, mg_content, fluidPressureKbar);
+  if (!isFinite(omega)) return 0;
+  const rawAffinity = Math.pow(Math.max(0, omega), 2 / 3) - 1;
+  const boundedAffinity = rawAffinity > 0
+    ? rawAffinity / (1 + rawAffinity)
+    : rawAffinity;
+  return r_forward * boundedAffinity;
 }
 
 // Conversion: mol/(cm²·s) → µm/sim-step.
@@ -278,7 +318,7 @@ function pwpRateToSimMicronsPerStep(mineralId: string, mol_per_cm2_s: number): n
 function aragoniteKineticallyFavoredOver(fluid: any, T_C: number): boolean {
   if (!fluid || typeof fluid.Ca !== 'number' || fluid.Ca <= 0) return false;
   if (typeof fluid.Mg !== 'number') return false;
-  const mg_ratio = fluid.Mg / fluid.Ca;
+  const mg_ratio = aqueousMgCaMolarRatio(fluid);
   return mg_ratio > 4.0 && T_C > 30;
 }
 
@@ -287,8 +327,7 @@ function aragoniteKineticallyFavoredOver(fluid: any, T_C: number): boolean {
 // Sigmoid centered on Mg/Ca = 2.
 function mgPoisoningFactor(fluid: any): number {
   if (!fluid || typeof fluid.Ca !== 'number' || fluid.Ca <= 0.01) return 1.0;
-  const mg = typeof fluid.Mg === 'number' ? fluid.Mg : 0;
-  const mg_ratio = mg / fluid.Ca;
+  const mg_ratio = aqueousMgCaMolarRatio(fluid);
   const inhibition = 1.0 / (1.0 + Math.exp(-(mg_ratio - 2.0) / 0.5));
   return Math.max(0.15, 1.0 - 0.85 * inhibition);
 }
@@ -297,9 +336,9 @@ function mgPoisoningFactor(fluid: any): number {
 // Per-mineral net-rate functions
 // =============================================================
 
-// Calcite — full PWP × Mg-poisoning kinetic modifier.
+// Calcite — transport-bounded production PWP × Mg-poisoning modifier.
 function calciteRate(fluid: any, T_C: number, fluidPressureKbar: number = 0.001): number {
-  const raw = pwpNetRate('calcite', fluid, T_C, 0, fluidPressureKbar);
+  const raw = pwpProductionNetRate('calcite', fluid, T_C, 0, fluidPressureKbar);
   return raw * mgPoisoningFactor(fluid);
 }
 
@@ -308,7 +347,7 @@ function calciteRate(fluid: any, T_C: number, fluidPressureKbar: number = 0.001)
 // rate stays available but the supersat path would prefer calcite —
 // the polymorph decision is left to the dispatch layer.
 function aragoniteRate(fluid: any, T_C: number, fluidPressureKbar: number = 0.001): number {
-  return pwpNetRate('aragonite', fluid, T_C, 0, fluidPressureKbar);
+  return pwpProductionNetRate('aragonite', fluid, T_C, 0, fluidPressureKbar);
 }
 
 // Dolomite — Kim 2023 cyclic-Ω modulation gate. Without cycling
@@ -321,7 +360,7 @@ function aragoniteRate(fluid: any, T_C: number, fluidPressureKbar: number = 0.00
 function dolomiteRate(fluid: any, T_C: number, f_ord: number, fluidPressureKbar: number = 0.001): number {
   const f = Math.max(0, Math.min(1, f_ord));
   const gate = 0.30 + 0.70 * f;
-  return pwpNetRate('dolomite', fluid, T_C, 0, fluidPressureKbar) * gate;
+  return pwpProductionNetRate('dolomite', fluid, T_C, 0, fluidPressureKbar) * gate;
 }
 
 // HMC — calcite PWP with Mg poisoning already baked in. mg_content
@@ -333,7 +372,7 @@ function HMCRate(
   mg_content: number = 0.10,
   fluidPressureKbar: number = 0.001,
 ): number {
-  const raw = pwpNetRate('HMC', fluid, T_C, mg_content, fluidPressureKbar);
+  const raw = pwpProductionNetRate('HMC', fluid, T_C, mg_content, fluidPressureKbar);
   return raw * mgPoisoningFactor(fluid);
 }
 
@@ -344,7 +383,7 @@ function HMCRate(
 // check is geochemical-feasibility and lives in the empirical
 // engine's hard gates per Week 2's dispatcher placement).
 function familyAnalogRate(mineralId: string, fluid: any, T_C: number, fluidPressureKbar: number = 0.001): number {
-  return pwpNetRate(mineralId, fluid, T_C, 0, fluidPressureKbar);
+  return pwpProductionNetRate(mineralId, fluid, T_C, 0, fluidPressureKbar);
 }
 function sideriteRate(fluid: any, T_C: number, fluidPressureKbar: number = 0.001): number { return familyAnalogRate('siderite', fluid, T_C, fluidPressureKbar); }
 function rhodochrositeRate(fluid: any, T_C: number, fluidPressureKbar: number = 0.001): number { return familyAnalogRate('rhodochrosite', fluid, T_C, fluidPressureKbar); }
