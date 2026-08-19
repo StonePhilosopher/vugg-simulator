@@ -184,11 +184,27 @@ Worth recording, because it is the reassuring half and it was measured the same 
   through untouched.
 - Exactly **four files were changed by both sides** — the four conflicts. So no file anywhere in
   590 changed files was silently auto-merged into a hybrid.
-- All **41 v271 strips** re-baked on this machine reproduce Codex's content byte-for-byte.
+- Everything the final bake rewrote reproduces Codex's content exactly: **0 of 41** strips,
+  **0 of 41** claim-card JSONs, **0 of 41** claim-card MDs, **0 of 3** baselines differ.
 
-**The science is portable. Only the receipts are not.** That is a narrow defect wearing an
+**The science is portable. Only the receipts were not.** That is a narrow defect wearing an
 alarming costume, and it is worth saying plainly before anyone reads the rest of this document
 and concludes the simulator disagrees with itself across machines. It does not.
+
+### The whole finding, in one diffstat
+
+After the bake, `git status` reported all 126 artifacts as modified. Every one of them
+**vanished on staging** — normalisation on `git add` produced the identical blob in each case.
+What survived was two receipts and a one-line import.
+
+```
+ archive/evidence/v271.json                      | 21 +++++++++++----------
+ data/generated/science-provenance-manifest.json | 24 ++++++++++++------------
+ tools/gen-science-provenance-manifest.mjs       |  1 +
+```
+
+126 files that differ on disk and are *the same file in the repository*. Everything above is a
+consequence of hashing the first sentence instead of the second.
 
 ---
 
