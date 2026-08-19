@@ -10,7 +10,7 @@
     "test": "echo '{\"cmd\":\"help\"}' | node vugg-agent.js"
   },
   "dependencies": {
-    "canvas": "^2.11.0"
+    "canvas": "^3.2.2"
   },
   "author": "🪨✍️ (StonePhilosopher) with Professor",
   "license": "MIT"
