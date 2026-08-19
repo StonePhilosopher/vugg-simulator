@@ -47,6 +47,14 @@ this section only records the non-obvious startup/run caveats.
 
 ## Verification
 
+- Use **Node 24** for anything that compares against committed baselines or
+  receipts — it is the calibration-authority runtime (every baseline in the
+  v169→v271 lineage was baked on it; current: `seed42_v271.json`, merged with
+  the SIM-270/271 receipts in `cb9830c`). The committed `supergene_oxidation`
+  seed-42 check is green under Node 24 and flips deterministic counts under
+  Node 20/22/23 (measured at v237 — duftite 8→9, erythrite 5→4; see
+  `BUG-supergene-calibration-v237.md`). Never rebake a baseline or receipt
+  under another runtime, and never rebake from CI.
 - `npm test` runs one test file and one worker per child with an RSS watchdog.
   Do not replace it with an unbounded all-files Vitest command.
 - Run one exact file with `npm test -- --file tests-js/name.test.ts`.

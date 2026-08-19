@@ -183,3 +183,15 @@ move the red X to the machine every baseline was born on. A longer-term
 option — quantizing σ-vs-gate comparisons so sub-1e-12 margins can't flip —
 is an engine change with fleet-wide blast radius and belongs to its own
 proposal if wanted.
+
+**Adapted-PR-#4 status — 2026-08-19.** The Node 24 pin landed as
+`.github/workflows/ci.yml` (receipt audits + the `supergene_oxidation`
+sentinel against the current `seed42_v271.json`; no bake step exists in the
+workflow), and `.ci-stamp.json` now records `platform` alongside the `node`
+version it already carried. The baseline-generator header line is **deferred
+to the next `SIM_VERSION` bump**: `tools/gen-js-baseline.mjs` is the
+digest-pinned `seed42-baseline` producer (`PRODUCER_ENTRIES` in
+`tools/evidence-runtime.mjs`), so editing it outside a bake would stale the
+just-baked receipts and force the full rebake this integration pass is
+contractually barred from. The next bump rebakes anyway; add the header
+there for free.

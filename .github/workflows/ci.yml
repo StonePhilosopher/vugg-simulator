@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 24 is the calibration-authority runtime: every committed seed-42
+      # baseline in the v169->v271 lineage was baked on it. The recorded
+      # differential (green on Node 24; deterministic duftite 8->9 /
+      # erythrite 5->4 count flips on Node 20/22/23, measured at v237) lives
+      # in BUG-supergene-calibration-v237.md. Do not pin another major here,
+      # and do not add any bake/regenerate step: this workflow VALIDATES the
+      # committed science, it never redefines it.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Runtime provenance
+        run: |
+          node --version
+          npm --version
+          uname -a
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      # Real build first (dist/ is gitignored and the test harness evals the
+      # built bundle), then the generated-artifact drift check.
+      - run: npm run build
+      - run: npm run build:check
+
+      # Science validation against COMMITTED receipts and manifests —
+      # check-only, no bake. These pass cross-platform because evidence
+      # hashing LF-normalises text (tools/hash-policy.mjs, policy v1); this
+      # job doubles as the standing cross-OS proof of that portability.
+      - run: npm run audit:science
+      - run: npm run audit:evidence
+      - run: npm run audit:release
+      - run: npm run audit:localities
+      - run: npm run audit:scenarios
+      - run: npm run audit:narratives
+      - run: npm run audit:tutorials
+      - run: npm run audit:a11y
+      - run: npm run audit:creative
+      - run: npm run audit:bif
+      # audit:cations is deliberately ABSENT: SCHNEEBERG_SEED42_COMMISSIONING
+      # pins SIM 267 and re-commissioning at SIM 271 is an open maintainer
+      # decision (measured RED on 2026-08-19: "seed 42 has no commissioning
+      # checkpoint for SIM 271"). Restore it the moment that checkpoint is
+      # re-commissioned.
+
+      # Calibration-authority sentinel: the one scenario with a documented
+      # cross-runtime differential, checked against the CURRENT committed
+      # baseline (tests-js/baselines/seed42_v271.json). 220 s on the
+      # canonical Windows box; the generous job timeout is for this step.
+      # The full 232-file suite is NOT run here — a cold run is ~3.5 h under
+      # tools/test-workflow.mjs and belongs to the foreman-controlled local
+      # workflow, not a shared runner.
+      - run: npx vitest run tests-js/calibration.test.ts -t supergene_oxidation
+
+      # agent-api surface (PR #7): the lockfile install must succeed without
+      # rewriting the lockfile, and the CLI must answer.
+      - run: npm ci --prefix agent-api
+      - name: agent-api help smoke
+        run: |
+          printf '{"cmd":"help"}\n' | node agent-api/vugg-agent.js | grep -q '"ok":true'
+          git diff --exit-code agent-api/package-lock.json

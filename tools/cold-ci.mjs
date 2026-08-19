@@ -13,7 +13,7 @@
  * On every run it writes `.ci-stamp.json` (gitignored) at the repo root:
  *
  *   { commit, dirty, verdict: "green"|"red", exitCode,
- *     startedAt, finishedAt, durationSec, node, simVersion }
+ *     startedAt, finishedAt, durationSec, node, platform, simVersion }
  *
  * The next session (or the vugg-session-start skill) reads the stamp
  * first: if `commit` matches HEAD, the tree is clean, and the verdict is
@@ -86,6 +86,7 @@ const stamp = {
   finishedAt: new Date().toISOString(),
   durationSec: Math.round((Date.now() - t0) / 1000),
   node: process.version,
+  platform: `${process.platform}-${process.arch}`,
   simVersion,
 };
 fs.writeFileSync(STAMP, JSON.stringify(stamp, null, 2) + '\n');
