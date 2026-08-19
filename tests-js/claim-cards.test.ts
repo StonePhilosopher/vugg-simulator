@@ -36,7 +36,7 @@ describe('adversarial claim-card fleet', () => {
         const card = JSON.parse(fs.readFileSync(path.join(outDir, `${scenario}.json`), 'utf8'));
 
       expect(card, `${scenario}: identity`).toMatchObject({
-        schema: 'vugg-claim-card-v2',
+        schema: 'vugg-claim-card-v3',
         scenario,
         sim_version: SIM_VERSION,
         model_digest: MODEL_DIGEST,

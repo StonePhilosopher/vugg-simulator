@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * tools/evidence-lineending-census.mjs — which bytes does a receipt actually describe?
  *

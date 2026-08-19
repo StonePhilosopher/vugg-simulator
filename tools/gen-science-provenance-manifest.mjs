@@ -25,7 +25,7 @@ import {
   producerContractDigest,
   runtimeExecutionDigest,
 } from './evidence-runtime.mjs';
-import { policyOfReceipt } from './hash-policy.mjs';
+import { CURRENT_HASH_POLICY, bytesForHash, policyOfReceipt } from './hash-policy.mjs';
 import {
   SCIENCE_EVIDENCE_PRODUCERS,
   SCIENCE_EVIDENCE_RECEIPT_SCHEMA,
@@ -86,7 +86,7 @@ function inspectArchive(errors, id, specHash, version, modelDigest) {
   let strip;
   let raw;
   try {
-    raw = fs.readFileSync(archivePath);
+    raw = bytesForHash(archivePath, CURRENT_HASH_POLICY);
     strip = JSON.parse(raw.toString('utf8'));
   }
   catch (error) {
@@ -118,7 +118,7 @@ function inspectLocalityFrequencyReceipt(errors, version, modelDigest, scenarioF
   let receipt;
   let raw;
   try {
-    raw = fs.readFileSync(receiptPath);
+    raw = bytesForHash(receiptPath, CURRENT_HASH_POLICY);
     receipt = JSON.parse(raw.toString('utf8'));
   } catch (error) {
     errors.push(`unreadable multi-seed locality receipt (${error.message})`);
@@ -170,7 +170,7 @@ function inspectScienceEvidenceReceipt(errors, version, modelDigest) {
   let receipt;
   let raw;
   try {
-    raw = fs.readFileSync(receiptPath);
+    raw = bytesForHash(receiptPath, CURRENT_HASH_POLICY);
     receipt = JSON.parse(raw.toString('utf8'));
   } catch (error) {
     errors.push(`unreadable aggregate science evidence receipt (${error.message})`);
@@ -270,7 +270,7 @@ try {
     reproducibility: {
       verifier: {
         path: path.relative(ROOT, pressureVerifierPath).replaceAll('\\', '/'),
-        sha256: sha256(fs.readFileSync(pressureVerifierPath)),
+        sha256: sha256(bytesForHash(pressureVerifierPath, CURRENT_HASH_POLICY)),
       },
       command: 'npm run check:pressure-grid',
       runtime: 'Node.js/TypeScript only',
@@ -401,7 +401,9 @@ if (errors.length) {
 }
 
 const manifest = {
-  schema: 'vugg-science-provenance-manifest-v5',
+  schema: 'vugg-science-provenance-manifest-v6',
+  // v6 declares the rule behind every file hash and byte identity below.
+  hash_policy: CURRENT_HASH_POLICY,
   sim_version: SIM_VERSION,
   model_digest: MODEL_DIGEST,
   canonical_run_seed: 42,

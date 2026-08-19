@@ -19,7 +19,7 @@ const manifest = JSON.parse(fs.readFileSync(
 describe('generated science/provenance manifest', () => {
   it('is tied to the current model and complete authored fleet', () => {
     expect(manifest).toMatchObject({
-      schema: 'vugg-science-provenance-manifest-v5',
+      schema: 'vugg-science-provenance-manifest-v6',
       sim_version: SIM_VERSION,
       model_digest: MODEL_DIGEST,
       canonical_run_seed: 42,
