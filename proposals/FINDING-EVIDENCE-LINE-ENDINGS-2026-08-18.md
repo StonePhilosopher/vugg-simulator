@@ -166,6 +166,48 @@ instrument that refuses is worth more than one that copes.
 
 ---
 
+### One authority is not the same as every consumer walking through it
+
+Pass two ended with "the policy has one authority", and that sentence was true and
+insufficient. A second review census found three more raw working-tree hashes still live
+on the receipt chain:
+
+| consumer | what it raw-hashed | why it is not a diagnostic |
+|---|---|---|
+| `tools/review-claim-card.mjs` | `strip_sha256` on every card | a **bake output**; the manifest records it and the locality audit compares against it |
+| `tools/gen-science-provenance-manifest.mjs` | strips, locality receipt, aggregate receipt, pressure verifier | a **bake output** |
+| `tools/locality-envelope-audit.mjs` | the frequency baseline and every strip, at verify time | a **canonical verifier** |
+
+All three now route through the policy. Claim cards declare it and bump to
+`vugg-claim-card-v3`; the manifest declares it at `v6`; the audit reads whichever policy
+the artifact *it is checking* declares, and names a card/manifest policy disagreement
+explicitly rather than letting it surface as "strip digest differs" — two hashes of one
+file under two rules are simply different numbers, and calling that digest drift sends the
+next reader hunting for content changes that do not exist.
+
+`stripBytesForCard`/`cardStripDigest` are exported so the bytes a card is *built* from and
+the bytes it *pins* come from one function. `gen-science-provenance-manifest.mjs` has no
+invoked-directly guard, so importing it would run the whole generator — it is covered by a
+source guard instead, and the test file says so rather than letting the coverage look
+uniform.
+
+### The guard was broken, and only mutation testing said so
+
+That source guard shipped looking for a bare read within 400 characters of a hash.
+Reintroducing a real raw read — the exact defect it exists to catch — left **all 18 tests
+green**. The read and its hash sit about 1800 characters apart. The 400 was a guess, and a
+guessed window is a guard that reports clean because it did not look far enough.
+
+The replacement needs no distance heuristic: `fs.readFileSync(p)` returns a **Buffer**,
+`fs.readFileSync(p, 'utf8')` returns a string for parsing, and across these eight files
+there is no reason to hold a Buffer except to hash it — measured, every one has zero.
+`hash-policy.mjs` has two, because that is its job, and the exemption is *asserted* so the
+rule cannot go vacuous by everything ceasing to read files. Paren-balanced, because
+`fs.readFileSync(path.join(a, b), 'utf8')` defeats a naive `\([^)]*\)` — an error that made
+an intermediate count report four bare reads that were all correctly encoded.
+
+---
+
 ## 4. `.gitattributes`: defence in depth, explicitly subordinate
 
 Added, with `* text=auto eol=lf` plus explicit `binary` for the image/audio/font types. It is

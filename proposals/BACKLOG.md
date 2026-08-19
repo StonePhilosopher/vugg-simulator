@@ -35,6 +35,19 @@ Living list of open work items, captured from session conversations so context s
 > `.gitattributes` added as defence in depth, and says in its own header that it is not the
 > authority. Mutation-tested one mutant per guard: drop the binary exemption → 1 RED; answer an
 > absent policy with today's rule → 1 RED.
+>
+> **PASS THREE — every CONSUMER routed.** "One authority" was true and insufficient: a second
+> census found three more raw hashes on the chain — `review-claim-card.mjs` (`strip_sha256`),
+> `gen-science-provenance-manifest.mjs` (4 identities), `locality-envelope-audit.mjs` (frequency
+> baseline + every strip at verify time). Two are bake OUTPUTS, one is a canonical VERIFIER.
+> Cards → `vugg-claim-card-v3`, manifest → `v6`, audit reads each artifact's DECLARED policy.
+> Full rebake required (not a resume): `scenario-evidence-checkpoint.mjs` is in all three
+> expensive import closures, so every checkpoint key moved. **`science:rebake` PASS**; science
+> unmoved — 41/41 cards differ by `schema`+`hash_policy` ONLY, 0 differ with those set aside.
+> **The source guard was broken and only mutation testing said so** — its 400-char window missed
+> a real reverted raw read (read and hash sit ~1800 chars apart). Replaced by "no bare Buffer
+> read in these 8 files", paren-balanced, with the `hash-policy.mjs` exemption asserted so the
+> rule cannot go vacuous. Still open: `audit:cations`, red on Codex's branch on its own account.
 > **A NUMBER WITHDRAWN** — an earlier pass reported a clean "canonical CRLF vs Codex LF" platform
 > split, 126/126 each way. That was an `else if` in my own script: for an LF file the raw and
 > normalised hashes are the same hash, so the normalised column could only read zero.
