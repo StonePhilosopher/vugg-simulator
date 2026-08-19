@@ -1,0 +1,262 @@
+{
+  "scenario": "tutorial_first_crystal",
+  "sim_version": 242,
+  "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "7be55ede493c3e4b1f9fa14bf7d7619e66ffd33468fc6e430808c91f4c8f374f",
+  "strip_steps": 30,
+  "claim": {
+    "anchor": "(tutorial scaffold — generic silica-rich broth)",
+    "description": "Tutorial 1: The Grand Tour + First Crystal. A guided top-down walk of the whole interface, then grow a quartz and watch what happens when conditions drift out of its growth window.",
+    "expects_species": [
+      "quartz"
+    ],
+    "sources": [
+      "(tutorial scaffold — no published source)"
+    ],
+    "initial_temperature_C": 180,
+    "initial_pressure_kbar": 1,
+    "wall_architecture": null,
+    "notes": [
+      "Tutorial scenario. Designed for the guided first-time-player experience. REWORKED 2026-07-04 (the Grand Tour): the overlay script now opens with a top-down tour of the screen (title, quick-nav, Wall Profile viewers ending on the helicoid manifold, the σ nucleating/dormant readout, action panel, log, inventory) before handing off to the original arc — simple silica-rich broth, quartz nucleates within a few steps at 180°C, then a scripted temperature drop at step 8 pulls T well out of quartz's growth window. The intended player learning is: (1) what every part of the screen is, (2) clicking Advance moves time, (3) crystals need conditions in the right range, (4) when the conditions drift, growth stops.",
+      "Surfaced in the New Game Menu under Tutorials. Not anchored to a real locality — it's a teaching scaffold. Sandbox-testable as a normal scenario (the overlay only engages via startTutorial).",
+      "Broth shape mirrors FLUID_PRESETS.silica (the existing 'Silica-rich' starter fluid) so the lesson generalizes to that picker entry."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 1,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.4196065399999998,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 72.7,
+          "initial_water_activity": {
+            "value": 0.997,
+            "salinityPpt": 5,
+            "naclWeightPercentEquivalent": 0.5,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 2,
+    "paragenetic_order": [
+      {
+        "mineral": "quartz",
+        "first_step": 0,
+        "events": 3
+      },
+      {
+        "mineral": "opal",
+        "first_step": 8,
+        "events": 5
+      }
+    ],
+    "surprises_not_in_expects": [
+      "opal"
+    ],
+    "expected_no_shows": [],
+    "environment": {
+      "T": {
+        "first": 177.165,
+        "last": 85.63,
+        "min": 76.772,
+        "max": 177.165,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 6.504,
+        "last": 6.559,
+        "min": 6.228,
+        "max": 6.559,
+        "units": ""
+      },
+      "Eh": {
+        "first": -201.575,
+        "last": -201.575,
+        "min": -201.575,
+        "max": -201.575,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 4.724,
+        "last": 4.724,
+        "min": 4.724,
+        "max": 4.724,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -1.197,
+        "last": -0.315,
+        "min": -1.197,
+        "max": -0.252,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -1.323,
+        "last": -0.441,
+        "min": -1.323,
+        "max": -0.378,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -2.961,
+        "last": -1.89,
+        "min": -2.961,
+        "max": -1.827,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -2.961,
+        "last": -2.016,
+        "min": -2.961,
+        "max": -2.016,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 0.315,
+        "last": 1.008,
+        "min": 0.315,
+        "max": 1.071,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 30,
+      "fluid_pressure_kbar": {
+        "first": 1,
+        "last": 1,
+        "min": 1,
+        "max": 1,
+        "samples": 30
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 30
+      },
+      "temperature_C": {
+        "first": 178.2608943547122,
+        "last": 86.47533014202487,
+        "min": 77.06000078618524,
+        "max": 178.2608943547122,
+        "samples": 30
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.4195970419362336,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.6251169085117416,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 30
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 72.7
+        },
+        "last": {
+          "pure_water_boundary_C": 72.7
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

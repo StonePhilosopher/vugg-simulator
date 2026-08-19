@@ -9,47 +9,21 @@
 //      tests-js/baselines/seed42_v<N>.json.
 //   4. Diff against the previous baseline; commit the new one if the
 //      shifts are intentional and within the band you'd defend.
-// The test below auto-loads the baseline matching the current
-// SIM_VERSION. If a baseline doesn't exist for the current version,
-// the test SKIPS (loud green dot is a feature: someone bumped a
-// version without writing a baseline; CI flags it but doesn't fail).
+// The test below authenticates the baseline matching the current built
+// SIM_VERSION. Missing, stale, or tampered evidence fails closed.
 //
 // Mirror of vugg-simulator's old Python tests/baselines/seed42_v*.json
 // regression sweep, ported to the JS runtime that actually ships.
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { currentEvidenceIdentity, loadAuthenticatedEvidenceJson } from './authenticated-evidence';
 import { runScenario, scenarioNames } from './helpers';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const BASELINES = path.join(ROOT, 'tests-js', 'baselines');
-
-// Read SIM_VERSION from the source file directly rather than from the
-// bundle global. The describe-block runs at file-import time, before
-// setup.ts's beforeAll has eval'd the bundle — so `globalThis.SIM_VERSION`
-// is still undefined when we'd want it. Parsing the source is robust
-// across both timings.
-function readSimVersion(): number {
-  try {
-    const src = fs.readFileSync(path.join(ROOT, 'js', '15-version.ts'), 'utf8');
-    const m = src.match(/^const SIM_VERSION = (\d+);/m);
-    return m ? Number(m[1]) : 0;
-  } catch {
-    return 0;
-  }
-}
-
-function loadBaseline(): { version: number; baseline: Record<string, any> | null } {
-  const version = readSimVersion();
-  const file = path.join(BASELINES, `seed42_v${version}.json`);
-  try {
-    return { version, baseline: JSON.parse(fs.readFileSync(file, 'utf8')) };
-  } catch {
-    return { version, baseline: null };
-  }
-}
+const version = currentEvidenceIdentity.simVersion;
+const baseline = loadAuthenticatedEvidenceJson(
+  `tests-js/baselines/seed42_v${version}.json`,
+  'seed42-baseline',
+) as Record<string, any>;
 
 function summarize(sim: any): Record<string, any> {
   const out: Record<string, any> = {};
@@ -70,20 +44,19 @@ function summarize(sim: any): Record<string, any> {
   return sorted;
 }
 
-const { version, baseline } = loadBaseline();
+// SIM 264 commissioning measured the heaviest canonical seed-42 locality
+// (Tsumeb/supergene_oxidation) at about 570 s on this host. Keep a finite hang
+// detector, but size it above a complete authenticated authored scenario.
+const CALIBRATION_SCENARIO_TIMEOUT_MS = 900_000;
 
 describe('calibration sweep — seed 42 vs JS baseline', () => {
-  if (!baseline) {
-    it.skip(`baseline missing for SIM_VERSION ${version} — run \`node tools/gen-js-baseline.mjs\` to generate`, () => {});
-    return;
-  }
   // Iterate over the baseline's known scenarios so the test set is
   // stable even if scenarioNames() comes back empty (e.g. transient
   // bundle init issue). Cross-check that the runtime registry has
   // the same set as the baseline as a separate assertion below.
   const baselineScenarios = Object.keys(baseline).sort();
   for (const name of baselineScenarios) {
-    it(`${name} matches baseline`, () => {
+    it(`${name} matches baseline`, { timeout: CALIBRATION_SCENARIO_TIMEOUT_MS }, () => {
       const sim = runScenario(name, { seed: 42 });
       expect(sim).toBeTruthy();  // SCENARIOS must include every baseline name
       const got = summarize(sim);

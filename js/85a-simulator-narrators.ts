@@ -24,7 +24,7 @@ Object.assign(VugSimulator.prototype, {
     const names = twinned.map(c => `${c.mineral} #${c.crystal_id}`);
     return ` The stress may have induced twinning in ${names.join(', ')}. Twin planes formed as the crystal lattice accommodated the sudden strain — a record of the event frozen in the structure.`;
   }
-  return ' No visible twinning resulted, but the pressure change altered subsequent growth conditions.';
+  return ' No visible mechanical twinning resulted; isotropic fluid pressure was unchanged.';
 },
 
   _narrate_collectors_view() {

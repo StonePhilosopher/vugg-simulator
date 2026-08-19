@@ -32,7 +32,8 @@ The cavity machinery is real: `_buildProfile3D` (js/22:784-905) builds a determi
 SPHERE-UNION (primary + secondaries + tertiaries, mulberry32(shape_seed)), with per-scenario
 knobs (vug_diameter/size_class, bubble counts, shape_seed) and five ARCHITECTURE archetypes
 (spherical / irregular / tabular / pocket / basin) carrying elongation (tabular: equatorial
-1+0.55·cos2θ) and polar_collapse (basin sigmoid). Dissolution recedes the wall per-cell
+`1+0.55·cos(2θ)`, superseded in SIM 262 by the pole-regular spherical form
+`1+0.55·sin²(φ)·cos(2θ)`) and polar_collapse (basin sigmoid). Dissolution recedes the wall per-cell
 (erodeCells adds wall_depth; the mesh signature rebuilds; acid-shielding by crystal footprints
 and feeder-column lopsidedness already work). That is a solid foundation. The gaps:
 

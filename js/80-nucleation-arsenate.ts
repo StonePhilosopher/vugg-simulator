@@ -78,18 +78,32 @@ function _nuc_mimetite(sim) {
   // Erythrite nucleation — the cobalt bloom, low-T oxidation of Co arsenides.
 }
 function _nuc_erythrite(sim) {
-  const sigma_ery = sim.conditions.supersaturation_erythrite();
+  const weathering = weatheringNucleationContext(sim, 'erythrite');
+  if (weathering.required && !weathering.eligible) return;
+  const sigma_ery = weathering.required
+    ? weathering.localSigma
+    : sim.conditions.supersaturation_erythrite();
   const existing_ery = sim.crystals.filter(c => c.mineral === 'erythrite' && c.active);
   if (sigma_ery > MINERAL_GATES_erythrite.sigma_crit && !existing_ery.length && !sim._atNucleationCap('erythrite')) {
-    let pos = 'vug wall';
+    let pos = weathering.parent
+      ? `on weathering ${weathering.parent.mineral} #${weathering.parent.crystal_id}`
+      : 'vug wall';
     const existing_goe_e = sim.crystals.filter(c => c.mineral === 'goethite' && c.active);
     const existing_adam_e = sim.crystals.filter(c => c.mineral === 'adamite' && c.active);
-    if (existing_goe_e.length && rng.random() < 0.5) {
+    if (!weathering.parent && existing_goe_e.length && rng.random() < 0.5) {
       pos = `on goethite #${existing_goe_e[0].crystal_id}`;
-    } else if (existing_adam_e.length && rng.random() < 0.3) {
+    } else if (!weathering.parent && existing_adam_e.length && rng.random() < 0.3) {
       pos = `on adamite #${existing_adam_e[0].crystal_id}`;
     }
     const c = sim.nucleate('erythrite', pos, sigma_ery);
+    if (weathering.required) {
+      c.weathering_precursor_receipt = {
+        schema: 'weathering-precursor-v1',
+        parentCrystalId: weathering.parent.crystal_id,
+        parentMineral: weathering.parent.mineral,
+        releasedInventory: { ...weathering.released },
+      };
+    }
     sim.log.push(`  ✦ NUCLEATION: Erythrite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_ery.toFixed(2)})`);
   }
 
@@ -131,7 +145,7 @@ function _nuc_olivenite(sim) {
 function _nuc_pharmacolite(sim) {
   // CaHAsO₄·2H₂O — Ca-only hydrated arsenate. The Jáchymov/Schneeberg/
   // Cobalt-Ontario five-element-vein supergene bloom. Per
-  // research-pharmacolite.md §Paragenetic Position: "Forms after
+    // SIM259 cation-sink receipt, paragenetic reconciliation: "Forms after
   // primary arsenides oxidize, releasing arsenic into supergene
   // fluids. Forms before more stable arsenates including conichalcite,
   // erythrite, annabergite". Substrate priority encodes that ordering:
@@ -214,7 +228,7 @@ function _nuc_conichalcite(sim) {
 
 function _nuc_austinite(sim) {
   const sigma = sim.conditions.supersaturation_austinite();
-  if (sigma < MINERAL_GATES_austinite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_austinite.sigma_crit) return;
   if (sim._atNucleationCap('austinite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'austinite' && c.active);
   if (existing.length >= 2) return;
@@ -231,7 +245,7 @@ function _nuc_austinite(sim) {
 
 function _nuc_legrandite(sim) {
   const sigma = sim.conditions.supersaturation_legrandite();
-  if (sigma < MINERAL_GATES_legrandite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_legrandite.sigma_crit) return;
   if (sim._atNucleationCap('legrandite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'legrandite' && c.active);
   if (existing.length >= 2) return;
@@ -248,7 +262,7 @@ function _nuc_legrandite(sim) {
 
 function _nuc_koettigite(sim) {
   const sigma = sim.conditions.supersaturation_koettigite();
-  if (sigma < MINERAL_GATES_koettigite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_koettigite.sigma_crit) return;
   if (sim._atNucleationCap('koettigite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'koettigite' && c.active);
   if (existing.length >= 2) return;
@@ -265,7 +279,7 @@ function _nuc_koettigite(sim) {
 
 function _nuc_duftite(sim) {
   const sigma = sim.conditions.supersaturation_duftite();
-  if (sigma < MINERAL_GATES_duftite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_duftite.sigma_crit) return;
   if (sim._atNucleationCap('duftite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'duftite' && c.active);
   if (existing.length >= 2) return;
@@ -284,7 +298,7 @@ function _nuc_duftite(sim) {
 
 function _nuc_bayldonite(sim) {
   const sigma = sim.conditions.supersaturation_bayldonite();
-  if (sigma < MINERAL_GATES_bayldonite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_bayldonite.sigma_crit) return;
   if (sim._atNucleationCap('bayldonite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'bayldonite' && c.active);
   if (existing.length >= 2) return;

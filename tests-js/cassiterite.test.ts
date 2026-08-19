@@ -24,6 +24,11 @@
 //   * Other scenarios stay byte-identical (Sn=0 default).
 
 import { describe, expect, it } from 'vitest';
+import {
+  currentEvidenceIdentity,
+  loadAuthenticatedEvidenceJson,
+  requireEvidenceScenario,
+} from './authenticated-evidence';
 
 declare const VugSimulator: any;
 declare const VugConditions: any;
@@ -31,7 +36,12 @@ declare const FluidChemistry: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
 
-function runScenario(scenarioName: string, seed: number) {
+const SEED42_BASELINE = loadAuthenticatedEvidenceJson(
+  `tests-js/baselines/seed42_v${currentEvidenceIdentity.simVersion}.json`,
+  'seed42-baseline',
+);
+
+function runScenarioFresh(scenarioName: string, seed: number) {
   setSeed(seed);
   const { conditions, events, defaultSteps } = SCENARIOS[scenarioName]();
   const sim = new VugSimulator(conditions, events);
@@ -43,6 +53,22 @@ function runScenario(scenarioName: string, seed: number) {
     if (s > maxSigma) maxSigma = s;
   }
   return { sim, maxSigma };
+}
+
+// Scenario histories are deterministic for a (scenario, simulation-seed)
+// pair. Most assertions below only inspect them, so execute each pair once.
+// Tests that deliberately mutate the completed simulator use
+// runScenarioFresh() instead.
+const scenarioCache = new Map<string, ReturnType<typeof runScenarioFresh>>();
+
+function runScenario(scenarioName: string, seed: number) {
+  const key = `${scenarioName}:${seed}`;
+  let result = scenarioCache.get(key);
+  if (!result) {
+    result = runScenarioFresh(scenarioName, seed);
+    scenarioCache.set(key, result);
+  }
+  return result;
 }
 
 describe('Cassiterite — SnO₂ engine (v89)', () => {
@@ -67,8 +93,9 @@ describe('Cassiterite — SnO₂ engine (v89)', () => {
 
   describe('supersaturation_cassiterite gate correctness', () => {
     function sigmaAt(opts: any): number {
-      const fluid = new FluidChemistry(opts);
-      const cond = new VugConditions({ temperature: opts.T ?? 500, fluid });
+      const { T, ...fluidOpts } = opts;
+      const fluid = new FluidChemistry(fluidOpts);
+      const cond = new VugConditions({ temperature: T ?? 500, fluid });
       return cond.supersaturation_cassiterite();
     }
 
@@ -239,7 +266,7 @@ describe('Cassiterite — SnO₂ engine (v89)', () => {
       // Force-create scenario where cassiterite exists, then drop pH —
       // should still be present at end (no acid path in grow_cassiterite).
       setSeed(42);
-      const { sim } = runScenario('schneeberg', 42);
+      const { sim } = runScenarioFresh('schneeberg', 42);
       const initialCas = sim.crystals.filter((c: any) => c.mineral === 'cassiterite');
       if (initialCas.length === 0) return; // covered by integration tests
       // Crank pH down; should still be intact
@@ -259,7 +286,7 @@ describe('Cassiterite — SnO₂ engine (v89)', () => {
 
     it('does not thermally decompose at high T (no thermal_decomp path)', () => {
       setSeed(42);
-      const { sim } = runScenario('schneeberg', 42);
+      const { sim } = runScenarioFresh('schneeberg', 42);
       const initialCas = sim.crystals.filter((c: any) => c.mineral === 'cassiterite');
       if (initialCas.length === 0) return;
       // Crank T well above 700°C — should still survive (no thermal decomp)
@@ -275,24 +302,15 @@ describe('Cassiterite — SnO₂ engine (v89)', () => {
 
   describe('other scenarios — Sn=0 default keeps byte-identical', () => {
     it('sulphur_bank: zero cassiterite (Sn=0 default)', () => {
-      setSeed(42);
-      const { sim } = runScenario('sulphur_bank', 42);
-      const cas = sim.crystals.filter((c: any) => c.mineral === 'cassiterite');
-      expect(cas.length).toBe(0);
+      expect(requireEvidenceScenario(SEED42_BASELINE, 'sulphur_bank').cassiterite).toBeUndefined();
     });
 
     it('supergene_oxidation: zero cassiterite (Sn=0 default)', () => {
-      setSeed(42);
-      const { sim } = runScenario('supergene_oxidation', 42);
-      const cas = sim.crystals.filter((c: any) => c.mineral === 'cassiterite');
-      expect(cas.length).toBe(0);
+      expect(requireEvidenceScenario(SEED42_BASELINE, 'supergene_oxidation').cassiterite).toBeUndefined();
     });
 
     it('bisbee: zero cassiterite (Sn=0 default)', () => {
-      setSeed(42);
-      const { sim } = runScenario('bisbee', 42);
-      const cas = sim.crystals.filter((c: any) => c.mineral === 'cassiterite');
-      expect(cas.length).toBe(0);
+      expect(requireEvidenceScenario(SEED42_BASELINE, 'bisbee').cassiterite).toBeUndefined();
     });
   });
 
@@ -322,6 +340,6 @@ describe('Cassiterite — SnO₂ engine (v89)', () => {
       expect(twinCount,
         `expected at least 1 elbow twin across ${totalCount} cassiterite samples (p=0.30); got ${twinCount}`)
         .toBeGreaterThan(0);
-    }, 120000);
+    }, 300000);
   });
 });

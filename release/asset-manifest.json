@@ -1,0 +1,178 @@
+{
+  "schema": "vugg-production-asset-manifest-v2",
+  "hash_policy": "vugg-hash-policy-lf-normalised-v1",
+  "asset_pack_version": "1.0.0",
+  "distribution_status": "development-assets-human-clearance-required",
+  "assets": [
+    {
+      "id": "music-title",
+      "path": "Vugg Simulator.mp3",
+      "bytes": 4104477,
+      "sha256": "5950fc1b0210ce0d1b91e241403c95ca15bc9645cd27cd805a3226c91ddfcbb6",
+      "delivery": "runtime-audio",
+      "role": "title music context",
+      "rights_status": "human-rights-clearance-required"
+    },
+    {
+      "id": "music-building",
+      "path": "salt-circuit.mp3",
+      "bytes": 3589590,
+      "sha256": "8cab3a299081d59e6713abbd0a7189cf1021a2faf13230b425546920e0a96e17",
+      "delivery": "runtime-audio",
+      "role": "simulation, Library, and Record Player music context",
+      "rights_status": "human-rights-clearance-required"
+    },
+    {
+      "id": "favicon",
+      "path": "vugg-favicon.svg",
+      "bytes": 509,
+      "sha256": "68d1d1042ae8b1edd6a5efcb6fa608f61a92fb9e4cb0b4b1f947003a29ea4b0d",
+      "delivery": "runtime-vector",
+      "role": "browser identity",
+      "rights_status": "human-rights-clearance-required"
+    },
+    {
+      "id": "mineral-thumb-calcite",
+      "path": "photos/thumbs/calcite.jpg",
+      "bytes": 2164,
+      "sha256": "fd3a202fcf4f1aa6b5bb739a0a2b525cf730bf95bbac44795e1e8cd2b1f53251",
+      "delivery": "runtime-image",
+      "role": "Library thumbnail",
+      "rights_status": "human-rights-clearance-required"
+    },
+    {
+      "id": "mineral-thumb-fluorite",
+      "path": "photos/thumbs/fluorite.jpg",
+      "bytes": 3182,
+      "sha256": "3394805ff531b5c60df52ee5b776a9d5e3f55d72e22fc97d4d96f304a2f5ae7f",
+      "delivery": "runtime-image",
+      "role": "Library thumbnail",
+      "rights_status": "human-rights-clearance-required"
+    },
+    {
+      "id": "mineral-thumb-malachite",
+      "path": "photos/thumbs/malachite.jpg",
+      "bytes": 3734,
+      "sha256": "981ca03ab3dd426f0e409e0f8bdba23d98b6b1cb51922b6d83d69680bdebd5db",
+      "delivery": "runtime-image",
+      "role": "Library thumbnail",
+      "rights_status": "human-rights-clearance-required"
+    },
+    {
+      "id": "mineral-thumb-quartz",
+      "path": "photos/thumbs/quartz.jpg",
+      "bytes": 1884,
+      "sha256": "bbdb0a2d9966a1f46b3507313767870a7da869fa845d9b160548f62946a1d613",
+      "delivery": "runtime-image",
+      "role": "Library thumbnail",
+      "rights_status": "human-rights-clearance-required"
+    },
+    {
+      "id": "three-js",
+      "path": "tools/three.module.js",
+      "bytes": 1268830,
+      "sha256": "ca330dc6b8e6a0a88a0b707e40a5191110c3e86842c7c6431a7a7a2e972f08f5",
+      "delivery": "runtime-library",
+      "role": "WebGL renderer",
+      "rights_status": "SPDX-MIT-in-file"
+    },
+    {
+      "id": "source-calcite",
+      "path": "photos/source/calcite.jpg",
+      "bytes": 990195,
+      "sha256": "e020be70e1feb2186a6249b382a786519a5d19448042daccd8ba983625f75588",
+      "delivery": "source-only-image",
+      "role": "thumbnail source",
+      "rights_status": "human-rights-clearance-required"
+    },
+    {
+      "id": "source-fluorite",
+      "path": "photos/source/fluorite.jpg",
+      "bytes": 867140,
+      "sha256": "d4d8fa7f24bcf2bb5ea80cbd18700d78797f5892b1d11086a379d12e6e481090",
+      "delivery": "source-only-image",
+      "role": "thumbnail source",
+      "rights_status": "human-rights-clearance-required"
+    },
+    {
+      "id": "source-malachite",
+      "path": "photos/source/malachite.jpg",
+      "bytes": 1249751,
+      "sha256": "bbfd2a34f9f4e9aaeef91a764d561e2d80e260984875a7ba255640f52c16c029",
+      "delivery": "source-only-image",
+      "role": "thumbnail source",
+      "rights_status": "human-rights-clearance-required"
+    },
+    {
+      "id": "source-quartz",
+      "path": "photos/source/quartz.jpg",
+      "bytes": 224947,
+      "sha256": "782b27a5184e7f5212a7e8a86c99e3fbb8d1888d70d5b6a5880ea948f411583b",
+      "delivery": "source-only-image",
+      "role": "thumbnail source",
+      "rights_status": "human-rights-clearance-required"
+    },
+    {
+      "id": "source-title-art",
+      "path": "photos/source/title-art.png",
+      "bytes": 1554848,
+      "sha256": "2dd53a5164388f5d0138947129175f3a118808b3fa5f17f05373978c988e4e28",
+      "delivery": "source-only-image",
+      "role": "title-art source",
+      "rights_status": "human-rights-clearance-required"
+    },
+    {
+      "id": "title-art-reference",
+      "path": "title-art-reference.png",
+      "bytes": 1554848,
+      "sha256": "2dd53a5164388f5d0138947129175f3a118808b3fa5f17f05373978c988e4e28",
+      "delivery": "reference-only-image",
+      "role": "art-direction reference",
+      "rights_status": "human-rights-clearance-required"
+    }
+  ],
+  "renderer_lod_contract": {
+    "scientific_authority": {
+      "field_resolution": 48,
+      "convergence_reference_resolution": 64,
+      "isovalue": 0,
+      "player_quality_control": false
+    },
+    "presentation": {
+      "mobile_classification": {
+        "operator": "OR",
+        "max_width_css_px": 720,
+        "min_device_pixel_ratio": 2.5
+      },
+      "surface_growth_instance_cap_mobile": 56,
+      "surface_growth_instance_cap_desktop": 128
+    }
+  },
+  "audio_mix_states": {
+    "title": {
+      "source_asset": "music-title",
+      "default_gain": 0.25,
+      "loops": true
+    },
+    "building": {
+      "source_asset": "music-building",
+      "default_gain": 0.25,
+      "loops": true
+    },
+    "strip_view": {
+      "source_asset": null,
+      "music_gain": 0,
+      "sonifier_default_master_gain": 0.7
+    },
+    "muted": {
+      "source_asset": null,
+      "gain": 0
+    }
+  },
+  "human_completion_gates": [
+    "rights and license review for every non-library media asset",
+    "human art direction and final mineral-image coverage beyond the four current thumbnails",
+    "physical-device audio loudness, clipping, interruption, and accessibility review"
+  ],
+  "asset_manifest_sha256": "7f36ef9c4b6a5295dbf4cb49feb56e8cc0b3b6ae4c3e4e63fc6e98035b3b96ba"
+}

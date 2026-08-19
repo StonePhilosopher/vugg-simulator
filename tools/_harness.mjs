@@ -39,7 +39,10 @@ import { JSDOM } from 'jsdom';
 const HARNESS_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 // Base export set — what every tool needs.
-const BASE_EXPORTS = ['SIM_VERSION', 'SCENARIOS', 'VugSimulator', 'setSeed', 'SeededRandom'];
+const BASE_EXPORTS = [
+  'SIM_VERSION', 'MODEL_DIGEST', 'SCENARIOS', 'VugSimulator', 'setSeed', 'SeededRandom',
+  'simulationStateFingerprint', 'FLUID_CHEMISTRY_INPUT_FIELDS', 'RELEASE_RUNTIME_CONTRACT',
+];
 
 let _loaded = null;  // memoize across multiple calls in the same process
 
@@ -63,17 +66,29 @@ export async function loadSimBundle(opts = {}) {
   // call it twice (e.g. via re-import), don't redo the expensive eval.
   if (_loaded) {
     const exportNames = [...BASE_EXPORTS, ...extraExports];
+    const missing = exportNames.filter(n => !Object.prototype.hasOwnProperty.call(_loaded, n));
+    if (missing.length) {
+      throw new Error(`[${toolName}] memoized simulation bundle did not capture requested export(s): ${missing.join(', ')}; request the complete export set on the first load`);
+    }
     const out = {};
     for (const n of exportNames) out[n] = _loaded[n];
     return out;
   }
 
-  // 1. JSDOM
+  // 1. Own a JSDOM only in standalone tools; reuse Vitest's configured DOM.
+  const ownsBrowserGlobals = !(globalThis.window && globalThis.document && globalThis.localStorage);
+  if (ownsBrowserGlobals) {
   const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', { url: 'http://localhost' });
   globalThis.window = dom.window;
   globalThis.document = dom.window.document;
   globalThis.localStorage = dom.window.localStorage;
   globalThis.sessionStorage = dom.window.sessionStorage;
+  // UI audit tools append real controls and dispatch the same events as the
+  // browser. Expose constructors used by bundle-side instanceof checks.
+  globalThis.HTMLElement = dom.window.HTMLElement;
+  globalThis.HTMLInputElement = dom.window.HTMLInputElement;
+  globalThis.HTMLSelectElement = dom.window.HTMLSelectElement;
+  globalThis.Event = dom.window.Event;
 
   // 2. fetch mock — read from disk relative to the repo root
   globalThis.fetch = async (url) => {
@@ -105,6 +120,7 @@ export async function loadSimBundle(opts = {}) {
   document.getElementById = (id) => realGetById(id) || stub();
   document.querySelector = () => stub();
   document.querySelectorAll = () => [];
+  }
 
   // 4. Walk dist/ and concat
   const DIST = path.join(HARNESS_ROOT, 'dist');
@@ -123,6 +139,10 @@ export async function loadSimBundle(opts = {}) {
   const expr = '{ ' + exportNames.map(n => `${n}: typeof ${n} !== 'undefined' ? ${n} : undefined`).join(', ') + ' }';
   const fn = new Function(`${concat}\n${epilogue}\n;return ${expr};`);
   const exports = fn();
+  const unresolved = exportNames.filter(n => exports[n] === undefined);
+  if (unresolved.length) {
+    throw new Error(`[${toolName}] simulation bundle does not define requested export(s): ${unresolved.join(', ')}`);
+  }
 
   // Mirror chosen exports to globalThis so tools can still reference
   // them as free identifiers (matches the pre-extraction pattern).

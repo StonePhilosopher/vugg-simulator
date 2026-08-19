@@ -79,6 +79,11 @@ describe('Shigar Valley aquamarine pegmatite scenario (v216)', () => {
       expect(species.has('tourmaline')).toBe(true);
     });
 
+    it('fires topaz after the F-rich late-pocket pulse', () => {
+      ensureSim();
+      expect(species.has('topaz')).toBe(true);
+    });
+
     it('fires the feldspar story (microcline wall zone + cleavelandite albitization)', () => {
       ensureSim();
       expect(species.has('feldspar')).toBe(true);
@@ -130,14 +135,14 @@ describe('Shigar Valley aquamarine pegmatite scenario (v216)', () => {
     });
   });
 
-  describe('Door 1 stature pins — the size DISTRIBUTION is the claim (SIM 219)', () => {
+  describe('mole-correct stature pins — the size DISTRIBUTION is the claim (SIM 241)', () => {
     // expects_species checks PRESENCE; these check STATURE (the Door 4
     // move, landed early on the scenario that motivated it). The Shigar
     // signature is a right-tailed size distribution: a showpiece star on
     // the cleavelandite shelf AND the small "New Hampshire fry" — you can
     // find 0.6 mm beryls anywhere; what makes Shigar Shigar is the tail.
-    // Numbers from tools/shigar-aqua-growth-probe.mjs at seed 42, SIM 219
-    // (K 25 + Be wallet ~118). If a chemistry change moves these, re-run
+    // Numbers from tools/shigar-ledger-probe.mjs at seed 42, SIM 241
+    // (220 mm cavity + Be wallet ~118). If a chemistry change moves these, re-run
     // the probe and re-pin deliberately — don't fight to preserve them.
     let sim: any;
     let aquas: any[];
@@ -161,9 +166,10 @@ describe('Shigar Valley aquamarine pegmatite scenario (v216)', () => {
       expect(aquas[0].c_length_mm).toBeGreaterThanOrEqual(20);
     });
 
-    it('the New Hampshire fry survives: at least one aqua stays ≤ 0.5 mm', () => {
+    it('a small late companion survives beside the showpiece: at least one stays ≤ 2 mm', () => {
       ensureSim();
-      expect(aquas[aquas.length - 1].c_length_mm).toBeLessThanOrEqual(0.5);
+      expect(aquas[aquas.length - 1].c_length_mm).toBeGreaterThan(0.5);
+      expect(aquas[aquas.length - 1].c_length_mm).toBeLessThanOrEqual(2.0);
     });
 
     it('the etch is sculpture, not consumption: star loses ≤ 5% of grown length', () => {
@@ -181,6 +187,7 @@ describe('Shigar Valley aquamarine pegmatite scenario (v216)', () => {
       ensureSim();
       const runt = aquas[aquas.length - 1];
       expect(runt.nucleation_step).toBeGreaterThan(58); // hf_etch fires at 58
+      expect(runt.position).toMatch(/fresh vug wall exposed by HF etching/);
       const etchZones = runt.zones.filter((z: any) => z.thickness_um < 0);
       expect(etchZones.length).toBe(0);
     });

@@ -5,8 +5,8 @@
 // The Ca-without-Cu sibling of conichalcite; closes the supergene
 // Ca-arsenate cation triangle (olivenite Cu-only / conichalcite Ca-Cu /
 // pharmacolite Ca-only). Classic Jáchymov / Schneeberg / Cobalt-Ontario
-// five-element-vein bloom. Per research-pharmacolite.md (boss
-// canonical 2026-05).
+// five-element-vein bloom. Provenance and the molar competition proxy are
+// reconciled in the SIM259 cation-sink research receipt.
 //
 // What this catches:
 //   * Engine gates (Ca, As, redox, pH, T window, cation-share gate).
@@ -27,6 +27,7 @@ declare const VugConditions: any;
 declare const FluidChemistry: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
+declare function arsenateCompetingCationMolarFraction(fluid: any, target: string): number;
 
 function runSchneeberg(seed: number) {
   setSeed(seed);
@@ -45,8 +46,9 @@ function runSchneeberg(seed: number) {
 describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
   describe('supersaturation_pharmacolite gate correctness', () => {
     function sigmaAt(opts: any): number {
-      const fluid = new FluidChemistry(opts);
-      const cond = new VugConditions({ temperature: opts.T ?? 25, fluid });
+      const { T, ...fluidOpts } = opts;
+      const fluid = new FluidChemistry(fluidOpts);
+      const cond = new VugConditions({ temperature: T ?? 25, fluid });
       return cond.supersaturation_pharmacolite();
     }
 
@@ -74,10 +76,22 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
       expect(sigmaAt({ Ca: 100, As: 50, O2: 1.5, pH: 6.5, T: 60 })).toBe(0);
     });
 
-    it('returns 0 when cation-share gate fails (Cu/Co/Ni/Pb/Zn dominate)', () => {
-      // Ca=20, competitor sum = 100 → ratio = 0.17 < 0.3
+    it('returns 0 when the molar cation-competition proxy fails', () => {
       expect(sigmaAt({ Ca: 20, As: 50, Cu: 50, Co: 30, Ni: 20, O2: 1.5, pH: 6.5, T: 25 }))
         .toBe(0);
+    });
+
+    it('converts mass ppm to cation moles instead of comparing raw masses', () => {
+      const fluid = new FluidChemistry({
+        Ca: 40.078, Pb: 100, As: 50, O2: 1.5, pH: 6.5,
+      });
+      // Raw-mass Ca share is only 0.286 and the old dimensional error blocked
+      // it. In amount-of-substance units, 1 mmol Ca competes with 0.483 mmol
+      // Pb, so the disclosed molar proxy is about 0.674 and remains eligible.
+      expect(40.078 / (40.078 + 100)).toBeLessThan(0.3);
+      expect(arsenateCompetingCationMolarFraction(fluid, 'Ca')).toBeCloseTo(0.6744, 3);
+      expect(new VugConditions({ temperature: 25, fluid })
+        .supersaturation_pharmacolite()).toBeGreaterThan(0);
     });
 
     it('fires σ > 0.5 at schneeberg-late-style Ca-rich Cu-poor chemistry', () => {
@@ -163,7 +177,7 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
     // the stronger capability pin and still passes; the direct chemistry
     // assertions above pin the engine math.
 
-    it('at least one pharmacolite crystal appears across the seed sample', { timeout: 240000 }, () => {
+    it('at least one pharmacolite crystal appears across the seed sample', { timeout: 300000 }, () => {
       // v214 timeout bump (150s → 240s): this 32-seed × ~200-step sweep is
       // CONTENTION-bound, not logic-bound — schneeberg output is byte-identical
       // (the v214 open_system change is great_salt_plains-only), but that change
@@ -199,7 +213,7 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
       // Pharmacolite is documented as a Jáchymov/Schneeberg type-
       // locality signature; the assertion that it CAN fire somewhere
       // in the broader seed space remains scientifically meaningful.
-      let anyHit = 0;
+      let hitSeed: number | null = null;
       const seeds = [
         42, 1, 7, 13, 99, 2024, 17, 3, 5, 11, 23, 47, 71, 137, 211, 313,
         401, 503, 617, 727, 829, 941, 1031, 1129, 1223, 1327, 1429, 1523,
@@ -208,11 +222,14 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
       for (const seed of seeds) {
         const { sim } = runSchneeberg(seed);
         const ph = sim.crystals.filter((c: any) => c.mineral === 'pharmacolite');
-        if (ph.length > 0) anyHit++;
+        if (ph.length > 0) {
+          hitSeed = seed;
+          break;
+        }
       }
-      expect(anyHit,
-        `expected at least 1/${seeds.length} schneeberg seeds to fire pharmacolite; got ${anyHit}/${seeds.length}`)
-        .toBeGreaterThan(0);
+      expect(hitSeed,
+        `expected at least 1/${seeds.length} schneeberg seeds to fire pharmacolite; no sampled seed fired`)
+        .not.toBeNull();
     });
   });
 
@@ -220,7 +237,7 @@ describe('Pharmacolite — Ca-only arsenate engine (v88)', () => {
     it('high Cu (Bisbee-style) blocks pharmacolite, fires conichalcite path', () => {
       const fluid = new FluidChemistry({ Ca: 100, As: 50, Cu: 400, O2: 1.5, pH: 6.5 });
       const cond = new VugConditions({ temperature: 25, fluid });
-      // Cation share Ca/(Ca+Cu+...) = 100/500 = 0.2 < 0.3 → blocked
+      // Molar Ca share remains below the calibrated 0.3 threshold.
       expect(cond.supersaturation_pharmacolite()).toBe(0);
     });
 

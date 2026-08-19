@@ -8,6 +8,7 @@
 
 const MINERAL_ENGINES = {
   quartz: grow_quartz,
+  chalcedony: grow_chalcedony,
   calcite: grow_calcite,
   aragonite: grow_aragonite,
   siderite: grow_siderite,
@@ -261,6 +262,9 @@ const MINERAL_ENGINES = {
   // textbook "dendritic pyrolusite" is actually cryptomelane.
   // First dogfood test of the vugg-add-mineral skill (~/.claude/skills/
   // vugg-add-mineral/SKILL.md).
+  birnessite: grow_birnessite,
+  romanechite: grow_romanechite,
+  todorokite: grow_todorokite,
   pyrolusite: grow_pyrolusite,
   // v108 (2026-05-20): plumbogummite PbAl3(PO4)2(OH)5·H2O —
   // trigonal alunite-supergroup Pb-Al-PO4 supergene endmember.
@@ -391,11 +395,9 @@ const MINERAL_ENGINES = {
   // files (js/39a / 59a / 89a) per Hawthorne et al. 2012 supergroup
   // nomenclature.
   //
-  // Tiger's eye = chalcedony pseudomorph AFTER crocidolite (supergene
-  // oxidation of Fe2+ → Fe3+; the famous chatoyant gemstone). Lives
-  // in silicate class since structurally chalcedony. Three habit
-  // variants: chatoyant_pseudomorph (gold-brown classic), hawks_eye
-  // (partial oxidation), tiger_iron (BIF-banded with hematite+jasper).
+  // Tiger's eye is an SiO2-rich quartz-crocidolite aggregate. The silicate
+  // engine executes either synchronous antitaxial crack-seal growth or later
+  // surficial alteration of an older crocidolite seam; the model is explicit.
   tremolite: grow_tremolite,
   actinolite: grow_actinolite,
   anthophyllite: grow_anthophyllite,

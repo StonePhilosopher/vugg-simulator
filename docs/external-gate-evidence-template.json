@@ -1,0 +1,37 @@
+{
+  "schema": "vugg-external-release-evidence-v1",
+  "candidate": {
+    "git_commit": null,
+    "browser_bundle_sha256": null,
+    "runtime_execution_sha256": null,
+    "content_catalog_sha256": null,
+    "asset_manifest_sha256": null,
+    "science_evidence_receipt_sha256": null
+  },
+  "gates": {
+    "physical_devices_and_assistive_technology": {
+      "status": "pending",
+      "reviewers": [],
+      "evidence_files": [],
+      "findings": []
+    },
+    "representative_player_causality": {
+      "status": "pending",
+      "reviewers": [],
+      "evidence_files": [],
+      "findings": []
+    },
+    "real_mineralogist_geochemist": {
+      "status": "pending",
+      "reviewers": [],
+      "evidence_files": [],
+      "findings": []
+    },
+    "art_rights_privacy_legal_store_deployment": {
+      "status": "pending",
+      "reviewers": [],
+      "evidence_files": [],
+      "findings": []
+    }
+  }
+}

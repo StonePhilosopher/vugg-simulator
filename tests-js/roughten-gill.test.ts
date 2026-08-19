@@ -1,271 +1,222 @@
-// tests-js/roughten-gill.test.ts — v107 scenario tests.
+// SIM 257 Roughton Gill mine-specific reconciliation.
 //
-// Caldbeck Fells / Roughten Gill Mine (Cumbria, England). Polymetallic
-// Pb-Cu fissure-vein in Eycott Volcanic Group + Carrock Fell Intrusive
-// Complex. Type locality for plumbogummite (Hartley 1882; plumbogummite
-// not yet wired in the catalog — flagged as v108 add-mineral).
-//
-// References:
-//   * Cooper M.P. & Stanley C.J. (1990) Minerals of the English Lake
-//     District: Caldbeck Fells
-//   * Bridges et al. (2011) JRS 14:3 — modern Roughten Gill paper
-//   * Russell A. (1925) MinMag 20:257 — plumbogummite revisited
-//   * Förtsch (1967) MinMag 36:530 — plumbogummite type-material
-//     correction (plumbogummite-hinsdalite-hidalgoite mix-crystal)
+// Bridges et al. (2011) is the mine-grain authority: quartz-dominant gangue
+// with significant calcite/dolomite; galena, chalcopyrite and sphalerite as
+// primary ores; carbonate-buffered malachite + cerussite weathering; abundant
+// hemimorphite; pyromorphite and type-locality plumbogummite. The canonical
+// scientific contract is seed 42 with the authored shape_seed 1882.
 
 import { describe, expect, it } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
+declare function simulatorSulfurLedgerSnapshot(sim: any): any;
+declare function simulatorCarbonLedgerSnapshot(sim: any): any;
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+type Evidence = {
+  sim: any;
+  stages: Map<number, any>;
+  present: Set<string>;
+};
 
-function runScenario(scenarioName: string, seed = 42) {
-  setSeed(seed);
-  const scen = SCENARIOS[scenarioName];
-  if (!scen) return null;
-  const { conditions, events, defaultSteps } = scen();
+let canonical: Evidence | null = null;
+
+function canonicalEvidence(): Evidence {
+  if (canonical) return canonical;
+  setSeed(42);
+  const { conditions, events, defaultSteps } = SCENARIOS.roughten_gill();
   const sim = new VugSimulator(conditions, events);
-  const steps = defaultSteps ?? 200;
-  for (let i = 0; i < steps; i++) sim.run_step();
-  return sim;
+  const stages = new Map<number, any>();
+  const watchedSteps = new Set([54, 55, 59, 60, 99, 100, 139, 140, 179, 180, 214, 215, defaultSteps]);
+  for (let i = 0; i < defaultSteps; i++) {
+    sim.run_step();
+    if (watchedSteps.has(sim.step)) {
+      const f = sim.conditions.fluid;
+      stages.set(sim.step, {
+        temperature: sim.conditions.temperature,
+        pH: f.pH,
+        O2: f.O2,
+        CO3: f.CO3,
+        SiO2: f.SiO2,
+        Cu: f.Cu,
+        Cl: f.Cl,
+        S: f.S,
+        S_sulfide: f.S_sulfide,
+        S_sulfate: f.S_sulfate,
+        fluid_surface_ring: sim.conditions.fluid_surface_ring,
+      });
+    }
+  }
+  canonical = { sim, stages, present: new Set(sim.crystals.map((c: any) => c.mineral)) };
+  return canonical;
 }
 
-describe('Roughten Gill Mine scenario (v107)', () => {
-  describe('scenario is registered + fires', () => {
-    it('SCENARIOS.roughten_gill exists', () => {
-      expect(typeof SCENARIOS.roughten_gill).toBe('function');
-    });
+function crystals(sim: any, mineral: string) {
+  return sim.crystals.filter((crystal: any) =>
+    crystal.mineral === mineral && !crystal.dissolved && crystal.total_growth_um > 0);
+}
 
-    it('runs to completion and produces crystals', () => {
-      const sim = runScenario('roughten_gill');
-      expect(sim).not.toBeNull();
-      expect(sim.crystals.length).toBeGreaterThan(0);
-    });
+describe('Roughton Gill mine-specific scenario', () => {
+  it('preserves the historical id, authored shape seed, duration, and six-stage sequence', () => {
+    expect(typeof SCENARIOS.roughten_gill).toBe('function');
+    const { conditions, defaultSteps } = SCENARIOS.roughten_gill();
+    const spec = SCENARIOS.roughten_gill._json5_spec;
+    expect(conditions.wall.shape_seed).toBe(1882);
+    expect(defaultSteps).toBe(240);
+    expect(spec.events.map((event: any) => [event.step, event.type])).toEqual([
+      [55, 'roughten_gill_primary_carbonate_peak'],
+      [60, 'roughten_gill_primary_lockup'],
+      [100, 'roughten_gill_deep_weathering'],
+      [140, 'roughten_gill_carbonate_buffering'],
+      [180, 'roughten_gill_silica_zinc_weathering'],
+      [215, 'roughten_gill_plumbogummite_cap'],
+    ]);
+    expect(spec.movements).toEqual([expect.objectContaining({
+      field: 'temperature', startStep: 0, endStep: 60, base: 130,
+    })]);
+    expect(conditions._scenario.carbon_ledger).toBe(true);
   });
 
-  describe('paragenesis — what actually fires at seed 42 (not aspirational)', () => {
-    let sim: any;
-    let species: Set<string>;
-
-    function ensureSim() {
-      if (!sim) {
-        sim = runScenario('roughten_gill');
-        species = new Set(sim.crystals.map((c: any) => c.mineral));
+  it('delivers the documented primary assemblage inside the 110-130 C ore stage', { timeout: 300_000 }, () => {
+    const { sim } = canonicalEvidence();
+    for (const mineral of ['quartz', 'calcite', 'galena', 'sphalerite', 'chalcopyrite']) {
+      const formed = crystals(sim, mineral);
+      expect(formed.length, `${mineral} must form at seed 42`).toBeGreaterThan(0);
+      expect(Math.max(...formed.map((crystal: any) => crystal.nucleation_step)), `${mineral} timing`)
+        .toBeLessThanOrEqual(59);
+      for (const crystal of formed) {
+        expect(crystal.nucleation_temp, `${mineral} nucleation temperature`)
+          .toBeGreaterThanOrEqual(110);
+        expect(crystal.nucleation_temp, `${mineral} nucleation temperature`)
+          .toBeLessThanOrEqual(130);
       }
     }
+  });
 
-    it('fires primary sulfides (galena + pyrite)', () => {
-      ensureSim();
-      expect(species.has('galena')).toBe(true);
-      expect(species.has('pyrite')).toBe(true);
-    });
+  it('delivers the carbonate-buffered and silica-rich supergene hierarchy at seed 42', { timeout: 300_000 }, () => {
+    const { sim, present } = canonicalEvidence();
+    for (const mineral of [
+      'malachite', 'cerussite', 'aurichalcite', 'rosasite', 'hemimorphite',
+      'pyromorphite', 'plumbogummite',
+    ]) {
+      expect(crystals(sim, mineral).length, `${mineral} must grow`).toBeGreaterThan(0);
+    }
+    expect(Math.min(...crystals(sim, 'malachite').map((c: any) => c.nucleation_step)))
+      .toBeGreaterThanOrEqual(100);
+    expect(Math.min(...crystals(sim, 'cerussite').map((c: any) => c.nucleation_step)))
+      .toBeGreaterThanOrEqual(100);
+    expect(Math.min(...crystals(sim, 'rosasite').map((c: any) => c.nucleation_step)))
+      .toBeGreaterThanOrEqual(140);
+    expect(Math.min(...crystals(sim, 'hemimorphite').map((c: any) => c.nucleation_step)))
+      .toBeGreaterThanOrEqual(180);
+    const firstPyromorphite = Math.min(...crystals(sim, 'pyromorphite')
+      .map((c: any) => c.nucleation_step));
+    const firstPlumbogummite = Math.min(...crystals(sim, 'plumbogummite')
+      .map((c: any) => c.nucleation_step));
+    expect(firstPlumbogummite).toBeGreaterThan(firstPyromorphite);
+    expect(firstPlumbogummite).toBeGreaterThanOrEqual(215);
+    const firstOvergrowth = crystals(sim, 'plumbogummite')
+      .sort((a: any, b: any) => a.nucleation_step - b.nucleation_step)[0];
+    expect(String(firstOvergrowth.position)).toContain('encrusting pyromorphite');
+    expect(firstOvergrowth.habit).toBe('encrusting_pyromorphite');
+    const parentId = Number(String(firstOvergrowth.position).match(/pyromorphite #(\d+)/)?.[1]);
+    const parent = sim.crystals.find((crystal: any) => crystal.crystal_id === parentId);
+    expect(parent).toMatchObject({ mineral: 'pyromorphite', active: true, dissolved: false });
+    expect(parent.nucleation_step).toBeLessThan(firstOvergrowth.nucleation_step);
+    for (const rare of ['linarite', 'caledonite', 'leadhillite']) {
+      expect(present.has(rare), `${rare} is genuine but not a deterministic headline`).toBe(false);
+    }
+  });
 
-    it('fires Ag-sulfosalts (tetrahedrite + tennantite + proustite — Caldbeck Ag-suite)', () => {
-      ensureSim();
-      expect(species.has('tetrahedrite')).toBe(true);
-      expect(species.has('tennantite')).toBe(true);
-      // proustite as the Ag-As ruby silver — Caldbeck galena is Ag-rich
-      expect(species.has('proustite')).toBe(true);
-    });
-
-    // 2026-06-10 timeout bump (90s → 150s), same shape as pharmacolite's
-    // v160 bump: this 16-seed × 200-step loop runs in well under the
-    // budget in ISOLATION (whole file 56 s), but under parallel suite
-    // load wall time inflates ~2-3.5×, leaving zero headroom at 90 s —
-    // it red-lined the moment the §1.4 snapshot projection added ~2.6 s
-    // per seed-sample test (the 14th catch in CATCHES.md). 150 s gives
-    // the same ~3.5× headroom pharmacolite gets.
-    it('fires sphalerite as Zn primary across the seed sample', { timeout: 150000 }, () => {
-      // v138 retune: phosphate twin_laws batch (autunite + zeunerite +
-      // uranospinite + pyromorphite + vanadinite + descloizite +
-      // mottramite + clinobisvanite) added 8 new rng.random() draws
-      // per nucleation, shifting the RNG cascade. At seed 42 the cascade
-      // pushed sphalerite below its nucleation gate in roughten_gill;
-      // empirically sphalerite fires at seeds 3 (3 crystals) and 2024
-      // (1 crystal) within an 8-seed sample.
-      //
-      // Converted from single-seed assertion to a widened-seed coverage
-      // check (16 seeds, ≥1 fires) preserving the scientific intent:
-      // sphalerite IS the documented Zn primary at Caldbeck Fells per
-      // Cooper & Stanley 1990 + Bridges 2011, and the assertion that
-      // it CAN fire somewhere in the broader seed space remains true.
-      // Other Zn primaries (wurtzite, smithsonite, hemimorphite) don't
-      // fire at Caldbeck Fells in any seed I tested at v138, so the
-      // either-or pattern (v137 meta-autunite-trio) doesn't apply here.
-      let anyHit = 0;
-      const seeds = [42, 1, 7, 13, 99, 2024, 17, 3, 5, 11, 23, 47, 71, 137, 211, 313];
-      for (const seed of seeds) {
-        const s = runScenario('roughten_gill', seed);
-        const sph = s.crystals.filter((c: any) => c.mineral === 'sphalerite').length;
-        if (sph > 0) anyHit++;
-      }
-      expect(anyHit,
-        `expected at least 1/${seeds.length} roughten_gill seeds to fire sphalerite; got ${anyHit}/${seeds.length}`)
-        .toBeGreaterThan(0);
-    });
-
-    it('fires native_silver from the Ag-in-galena reservoir', () => {
-      ensureSim();
-      // ~838 ppm Ag in primary galena per BGS Earthwise + Bridges 2011;
-      // supergene oxidation liberates the lattice silver as native flakes
-      // in quartz-calcite microcavities. Acanthite forms as the
-      // post-collection tarnish — also fires here.
-      expect(species.has('native_silver') || species.has('acanthite')).toBe(true);
-    });
-
-    it('fires pyromorphite (Pb-PO4 supergene)', () => {
-      ensureSim();
-      expect(species.has('pyromorphite')).toBe(true);
-    });
-
-    it('fires anglesite (Pb-SO4 from pyrite-oxidation acid window)', () => {
-      ensureSim();
-      expect(species.has('anglesite')).toBe(true);
-    });
-
-    // v128c (graduated competition algorithm) initially dropped the four
-    // v109-era minerals because Pb budget rationing didn't yet have their
-    // stoichiometry to compete against. v128e (this commit's predecessor)
-    // added stoichiometry for caledonite + plumbogummite + duftite +
-    // proustite, restoring them to the paragenesis. The v109 explicit-
-    // mineral assertions are back.
-    it('fires cerussite (Pb-CO3 — v109 tune gain, restored under graduated competition v128e)', () => {
-      ensureSim();
-      expect(species.has('cerussite')).toBe(true);
-    });
-
-    // 2026-06-10: 90s → 150s, same rationale as the sphalerite test above.
-    it('fires brochantite across the seed sample (Cu-SO4 supergene — v109 tune gain)', { timeout: 150000 }, () => {
-      // v140 retune: sulfate twin_laws batch (celestine + anglesite +
-      // anhydrite + jarosite + alunite + brochantite + antlerite +
-      // mirabilite + thenardite) added 9 new rng.random() draws per
-      // nucleation. At seed 42, the cascade pushed brochantite below
-      // its nucleation gate in roughten_gill. The science is unchanged
-      // — brochantite IS the Chuquicamata-style supergene Cu-sulfate
-      // documented at Caldbeck Fells per Cooper & Stanley 1990 — but
-      // the seed-42 RNG path now happens to displace it.
-      //
-      // Converted from single-seed assertion to widened-seed coverage
-      // (16 seeds, ≥1 fires). Same pattern v138 used for sphalerite
-      // in this same scenario.
-      let anyHit = 0;
-      const seeds = [42, 1, 7, 13, 99, 2024, 17, 3, 5, 11, 23, 47, 71, 137, 211, 313];
-      for (const seed of seeds) {
-        const s = runScenario('roughten_gill', seed);
-        if (s.crystals.some((c: any) => c.mineral === 'brochantite')) anyHit++;
-      }
-      expect(anyHit,
-        `expected at least 1/${seeds.length} roughten_gill seeds to fire brochantite; got ${anyHit}/${seeds.length}`)
-        .toBeGreaterThan(0);
-    });
-
-    // v133 (2026-05-22) RNG-cascade displacement: the iconic-twins batch
-    // added growth-trigger twin laws to quartz (Brazil + Japan), galena
-    // (spinel-law), and bumped fluorite + pyrite penetration probabilities.
-    // Every nucleation of those minerals now consumes additional RNG
-    // draws, shifting downstream substrate-affinity rolls. At seed 42
-    // v133, caledonite + plumbogummite + duftite no longer reach
-    // nucleation in roughten_gill (they fired at v128e-v132). Proustite
-    // is unaffected and still fires strongly (6 crystals at 407µm max).
-    //
-    // The science is unchanged — these are real Caldbeck supergene
-    // minerals — but the seed-42 RNG path now happens to displace them.
-    // Converting the three explicit assertions into a single "v109-era
-    // coverage" check that requires at least 4 of the 7 documented
-    // type-district minerals to fire. This preserves the calibration
-    // intent (paragenetic richness at Caldbeck) while not pinning to
-    // a specific seed-42 outcome that's volatile to RNG cascades from
-    // unrelated downstream additions.
-    it('fires proustite (Ag-As ruby silver — Caldbeck Ag-suite, robust to v133 cascade)', () => {
-      ensureSim();
-      expect(species.has('proustite')).toBe(true);
-    });
-
-    it('fires at least 3 of the 7 v109-era Caldbeck principals (paragenetic coverage check)', () => {
-      ensureSim();
-      // The seven minerals v109 explicitly tuned for at Caldbeck:
-      // cerussite, brochantite, anglesite (oxidation products),
-      // caledonite, plumbogummite, duftite (rare Pb-Cu mixed species),
-      // proustite (Ag-As ruby silver).
-      //
-      // History:
-      //   v133: brochantite + 3 others (cerussite, anglesite, proustite)
-      //         still firing at 4-of-7. Threshold pinned at 4.
-      //   v140: sulfate twin_laws batch pushed brochantite below
-      //         nucleation at seed 42. Firing 3-of-7 (cerussite,
-      //         anglesite, proustite). Threshold lowered to 3.
-      //
-      // The science is unchanged — all 7 are real Caldbeck supergene
-      // minerals — but the seed-42 RNG path successively displaces
-      // them with each unrelated downstream cascade. The 3-of-7
-      // floor preserves the calibration intent (paragenetic richness
-      // at Caldbeck) without pinning to a specific seed-42 outcome.
-      // Brochantite has its own widened-seed coverage assertion
-      // above; this test is the coarser-grained paragenetic check.
-      const v109Principals = [
-        'cerussite', 'brochantite', 'anglesite',
-        'caledonite', 'plumbogummite', 'duftite',
-        'proustite',
-      ];
-      const firing = v109Principals.filter(m => species.has(m));
-      expect(firing.length).toBeGreaterThanOrEqual(3);
-    });
-
-    it('SUPPRESSES dioptase (geologically wrong for Caldbeck — v109 tune)', () => {
-      ensureSim();
-      // dioptase was an extra firing in v107 (Cu-silicate from Cu+SiO2
-      // co-occurrence at supergene). v109 dropped SiO2 to suppress.
-      // Cu-silicate at Caldbeck is not documented per Cooper & Stanley.
-      expect(species.has('dioptase')).toBe(false);
-    });
-
-    it('fires As-sulfides (orpiment / pararealgar / arsenopyrite from primary As-rich fluid)', () => {
-      ensureSim();
-      // The As-rich primary fluid (As=12, from tetrahedrite-tennantite source)
-      // produces As-sulfides at low-T supergene. Realistic for Caldbeck
-      // tennantite-rich veins.
-      const hasAsSulfide = species.has('orpiment') || species.has('pararealgar') || species.has('arsenopyrite');
-      expect(hasAsSulfide).toBe(true);
-    });
-
-    it('NO quartz — the v228 demotion holds (T_min 50 enforced; the cold quartz was the leak)', () => {
-      // v228 (hostile-review rung 2): the district's quartz-carbonate gangue
-      // is real but PRIMARY (110-130°C), and this scenario's ~15-step hot
-      // stage is silica-starved there (σ 0.54); the quartz this test used to
-      // pin grew at 41-44°C purely through the unenforced quartz T_min. The
-      // expects promise was withdrawn (erythrite-precedent demotion); the
-      // SiO2-raise alternative was measured and rejected (see the scenario's
-      // SiO2 comment). If the primary stage is ever re-architected longer/
-      // hotter (BACKLOG §T), quartz returns hot and this pin inverts back.
-      ensureSim();
-      expect(species.has('quartz')).toBe(false);
+  it('transfers sulfur internally at oxidation and closes the boundary ledger', { timeout: 300_000 }, () => {
+    const { sim, stages } = canonicalEvidence();
+    expect(stages.get(99)).toMatchObject({ S_sulfide: 35, S_sulfate: 5, S: 40 });
+    expect(stages.get(100)).toMatchObject({ S_sulfide: 5, S_sulfate: 35, S: 40 });
+    const transaction = sim._sulfurBoundaryTransactions.find((row: any) => row.step === 100);
+    expect(transaction).toMatchObject({ kind: 'internal_transfer', expectedNetPpm: 0, closed: true });
+    expect(simulatorSulfurLedgerSnapshot(sim)).toMatchObject({
+      closed: true,
+      propagationViolations: 0,
     });
   });
 
-  describe('expects_species declaration matches JSON5 spec', () => {
-    it('scenario declares Pb-Cu supergene principals (aspirational; v109 tune candidate)', () => {
-      const scenSpec = JSON.parse(
-        fs.readFileSync(path.join(ROOT, 'data', 'scenarios.json5'), 'utf8')
-          .replace(/\/\/[^\n]*/g, '')
-          .replace(/\/\*[\s\S]*?\*\//g, '')
-          .replace(/,(\s*[}\]])/g, '$1')
-      );
-      const expects = scenSpec.scenarios.roughten_gill.expects_species;
-      expect(Array.isArray(expects)).toBe(true);
-      // The headline minerals — v100 trio in type-district + classic
-      // Caldbeck supergene. Some are aspirational at v107 (v109 tuning
-      // target). The declaration tracks what the scenario AIMS for.
-      expect(expects).toContain('galena');
-      expect(expects).toContain('pyromorphite');
-      expect(expects).toContain('linarite');
-      expect(expects).toContain('caledonite');
-      expect(expects).toContain('leadhillite');
-      expect(expects).toContain('native_silver');
-    });
+  it('books carbonate-gangue release and both fluid replacements in a closed carbon ledger', { timeout: 300_000 }, () => {
+    const { sim, stages } = canonicalEvidence();
+    expect(stages.get(54).CO3).toBeLessThan(1200);
+    expect(stages.get(55).CO3).toBeGreaterThan(1100);
+    expect(stages.get(139).CO3).toBeCloseTo(150, 8);
+    expect(stages.get(140).CO3).toBeCloseTo(295, 8);
+    expect(stages.get(179).CO3).toBeCloseTo(295, 8);
+    expect(stages.get(180).CO3).toBeCloseTo(120, 8);
+    const transactions = sim._carbonSourceTransactions;
+    expect(transactions.map((row: any) => row.step)).toEqual([55, 60, 140, 180]);
+    expect(transactions.every((row: any) => row.closed)).toBe(true);
+    expect(transactions[0].declarations).toEqual([expect.objectContaining({
+      kind: 'addition', category: 'external_import',
+      source: 'Roughton Gill primary carbonate-gangue ore fluid',
+    })]);
+    expect(transactions[2].declarations).toEqual([expect.objectContaining({
+      kind: 'addition', category: 'wall_release', carbonatePpmPerFluid: 145,
+    })]);
+    const ledger = simulatorCarbonLedgerSnapshot(sim);
+    expect(ledger.wallReleasePpm).toBeGreaterThan(0);
+    expect(ledger).toMatchObject({ closed: true, propagationViolations: 0 });
+  });
+
+  it('attributes every authored metal/silica import or export and closes signed boundary receipts', { timeout: 300_000 }, () => {
+    const { sim, stages } = canonicalEvidence();
+    expect(sim._fluidBoundaryViolations).toEqual([]);
+    expect(sim._fluidBoundaryTransactions.map((row: any) => row.step)).toEqual([60, 100, 140, 180, 215]);
+    expect(sim._fluidBoundaryTransactions.every((row: any) => row.closed)).toBe(true);
+    const bufferedCu = sim._fluidBoundaryTransactions.find((row: any) => row.step === 140);
+    expect(bufferedCu.declarations).toEqual([expect.objectContaining({
+      kind: 'addition',
+      source: 'Roughton Gill carbonate-buffered upgradient Cu-weathering drainage',
+      fields: { Cu: 80 },
+    })]);
+    expect(bufferedCu.testimony).toEqual([expect.objectContaining({
+      field: 'Cu', before: 70, after: 150, declaredAddition: 80,
+      declaredDelta: 80, declaredImports: 80, declaredExports: 0,
+      actualDelta: 80, closed: true,
+    })]);
+    expect(stages.get(179).Cu).toBe(150);
+    expect(stages.get(180).Cu).toBe(70);
+    const silicaSeep = sim._fluidBoundaryTransactions.find((row: any) => row.step === 180);
+    expect(silicaSeep.declarations).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'replacement',
+        source: 'Roughton Gill silica-rich Zn-weathering seep replacement',
+        fields: { Cu: 70 },
+      }),
+    ]));
+    expect(silicaSeep.testimony).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        field: 'Cu', before: 150, after: 70, declaredReplacementTarget: 70,
+        declaredDelta: -80, declaredImports: 0, declaredExports: 80,
+        actualDelta: -80, closed: true,
+      }),
+    ]));
+  });
+
+  it('keeps mine-specific exclusions absent while global mineral engines remain available', { timeout: 300_000 }, () => {
+    const { present } = canonicalEvidence();
+    const spec = SCENARIOS.roughten_gill._json5_spec;
+    for (const mineral of Object.keys(spec.excluded_species)) {
+      expect(present.has(mineral), `${mineral} violates Roughton Gill negative evidence`).toBe(false);
+    }
+  });
+
+  it('makes every deterministic promise true at canonical seed 42 and keeps aspirations disjoint', { timeout: 300_000 }, () => {
+    const { present } = canonicalEvidence();
+    const spec = SCENARIOS.roughten_gill._json5_spec;
+    for (const mineral of spec.expects_species) {
+      expect(present.has(mineral), `${mineral} deterministic promise`).toBe(true);
+    }
+    const expected = new Set(spec.expects_species);
+    for (const entry of spec.aspirational_species) {
+      expect(expected.has(entry.mineral), entry.mineral).toBe(false);
+      expect(entry.reason).toMatch(/\S/);
+    }
   });
 });

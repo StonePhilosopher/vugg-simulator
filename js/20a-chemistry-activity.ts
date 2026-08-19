@@ -36,10 +36,9 @@
 //     migration in each supersaturation_<mineral>. Phase 2b.
 //
 // Conventions / known simplifications:
-//   - S is treated as SO₄²⁻ (charge -2) by default; the v17 model
-//     conflates sulfide and sulfate into one fluid field. Phase 4 (Eh)
-//     splits this. For now, sulfides see the wrong charge for their
-//     anion contribution to Q; this is a known calibration handle.
+//   - Legacy one-pool S is treated as SO₄²⁻ (charge -2). Explicit fluids
+//     carry separate S_sulfide/S_sulfate/S_elemental reservoirs; the total-S
+//     observer is excluded from ionic strength to prevent double counting.
 //   - Fe is treated as Fe²⁺ (charge +2). Same Phase 4 reframe — the
 //     Fe²⁺/Fe³⁺ couple becomes explicit.
 //   - As is treated as AsO₄³⁻ (oxidizing arsenate) by default; reducing
@@ -101,10 +100,17 @@ const SPECIES_PROPERTIES: Record<string, { charge: number; molarMass: number; no
   Be: { charge: +2, molarMass:   9.01 },
   Li: { charge: +1, molarMass:   6.94 },
   Ti: { charge: +2, molarMass:  47.87, note: 'as TiO²⁺' },
+  Cd: { charge: +2, molarMass: 112.41 },
+  Hg: { charge: +2, molarMass: 200.59 },
+  Sn: { charge: +4, molarMass: 118.71 },
+  Y:  { charge: +3, molarMass:  88.91 },
 
   // Major anions
   CO3: { charge: -2, molarMass: 60.01, note: 'CO₃²⁻; Phase 3 splits DIC by Bjerrum' },
-  S:   { charge: -2, molarMass: 32.07, note: 'SO₄²⁻ default; Phase 4 splits sulfide/sulfate' },
+  S:   { charge: -2, molarMass: 32.07, note: 'legacy total sulfur; explicit fluids use the three reservoirs below' },
+  S_sulfide:   { charge: -1, molarMass: 32.07, note: 'reduced sulfur as H₂S/HS⁻; effective mixed-species charge' },
+  S_sulfate:   { charge: -2, molarMass: 32.07, note: 'oxidized sulfur tracked as sulfur mass in SO₄²⁻ equivalents' },
+  S_elemental: { charge:  0, molarMass: 32.07, note: 'neutral suspended or colloidal elemental sulfur precursor' },
   F:   { charge: -1, molarMass: 19.00 },
   Cl:  { charge: -1, molarMass: 35.45 },
   P:   { charge: -3, molarMass: 30.97, note: 'as PO₄³⁻; element mass' },
@@ -123,6 +129,15 @@ const SPECIES_PROPERTIES: Record<string, { charge: number; molarMass: number; no
   Ge:   { charge: 0, molarMass:  72.63, note: 'as Ge(OH)₄⁰' },
 };
 
+// Carbonate Mg/Ca selectors are published as molar ratios, whereas the
+// simulator stores dissolved inventories as mass-based ppm (mg/kg solvent).
+function aqueousMgCaMolarRatio(fluid: any): number {
+  const caPpm = Math.max(0, Number(fluid?.Ca) || 0);
+  const mgPpm = Math.max(0, Number(fluid?.Mg) || 0);
+  if (!(caPpm > 0)) return mgPpm > 0 ? Infinity : 0;
+  return (mgPpm / 24.305) / (caPpm / 40.078);
+}
+
 // Convert ppm (mg solute per kg solvent, dilute approximation) → molality
 // (mol per kg solvent). For ppm = 200, MM = 40.08 (Ca):
 // m = 200 × 10⁻³ g/kg / 40.08 g/mol = 5.0 × 10⁻³ mol/kg ≈ 5 mmol/kg.
@@ -138,6 +153,9 @@ function ionicStrength(fluid: any): number {
   for (const species in SPECIES_PROPERTIES) {
     const props = SPECIES_PROPERTIES[species];
     if (props.charge === 0) continue;
+    // `S` is an observer for explicit-pool fluids. Counting it as well as
+    // S_sulfide and S_sulfate would double the sulfur contribution.
+    if (species === 'S' && fluid?.sulfurPoolsExplicit) continue;
     const m = ppmToMolality(fluid[species], props.molarMass);
     I += 0.5 * m * props.charge * props.charge;
   }
@@ -181,6 +199,73 @@ function speciesActivity(fluid: any, species: string, I?: number): number {
   const I_eff = I !== undefined ? I : ionicStrength(fluid);
   const logGamma = daviesLogGamma(props.charge, I_eff);
   return m * Math.pow(10, logGamma);
+}
+
+// Water activity for hydrate equilibria, represented as an explicitly
+// NaCl-equivalent proxy from the simulator's bulk salinity (per mille by
+// mass). Chirife & Resnik (1984) tabulated Pitzer/experimental consensus
+// values at 0.5 wt% intervals; they report agreement within 0.0007 at 25 C
+// and within 0.002 from 15-50 C. Total natural brine salinity is not
+// literally NaCl, so the assessment exposes that composition uncertainty.
+// Above NaCl saturation (26 wt%) the last measured slope is transparently
+// extrapolated over the Creative-mode range.
+const _NACL_WATER_ACTIVITY_15_50C: number[] = [
+  1.000,
+  0.997,0.994,0.991,0.989,0.986,0.983,0.980,0.977,0.973,0.970,
+  0.967,0.964,0.960,0.957,0.954,0.950,0.946,0.943,0.939,0.935,
+  0.931,0.927,0.923,0.919,0.915,0.911,0.906,0.902,0.897,0.892,
+  0.888,0.883,0.878,0.873,0.867,0.862,0.857,0.851,0.845,0.839,
+  0.833,0.827,0.821,0.815,0.808,0.802,0.795,0.788,0.781,0.774,
+  0.766,0.759,
+];
+
+type WaterActivityAssessment = {
+  value: number;
+  salinityPpt: number;
+  naclWeightPercentEquivalent: number;
+  uncertainty: number;
+  status: 'calibrated-proxy' | 'temperature-extrapolation' | 'composition-extrapolation';
+  note: string;
+};
+
+function waterActivityAssessment(fluid: any, temperatureC = 25): WaterActivityAssessment {
+  const salinityPpt = Math.max(0, Number(fluid?.salinity) || 0);
+  const wtPercent = salinityPpt / 10;
+  const lastIndex = _NACL_WATER_ACTIVITY_15_50C.length - 1;
+  const tablePosition = wtPercent * 2;
+  let value: number;
+  if (tablePosition <= lastIndex) {
+    const lo = Math.max(0, Math.floor(tablePosition));
+    const hi = Math.min(lastIndex, Math.ceil(tablePosition));
+    const fraction = tablePosition - lo;
+    value = _NACL_WATER_ACTIVITY_15_50C[lo]
+      + fraction * (_NACL_WATER_ACTIVITY_15_50C[hi] - _NACL_WATER_ACTIVITY_15_50C[lo]);
+  } else {
+    const lastSlopePerWtPercent = (
+      _NACL_WATER_ACTIVITY_15_50C[lastIndex]
+      - _NACL_WATER_ACTIVITY_15_50C[lastIndex - 1]
+    ) / 0.5;
+    value = _NACL_WATER_ACTIVITY_15_50C[lastIndex]
+      + lastSlopePerWtPercent * (wtPercent - 26);
+  }
+  value = Math.max(0.55, Math.min(1, value));
+
+  const temperatureExtrapolated = temperatureC < 15 || temperatureC > 50;
+  const compositionExtrapolated = wtPercent > 26;
+  const status = compositionExtrapolated
+    ? 'composition-extrapolation'
+    : temperatureExtrapolated ? 'temperature-extrapolation' : 'calibrated-proxy';
+  const uncertainty = compositionExtrapolated ? 0.05 : temperatureExtrapolated ? 0.02 : 0.01;
+  const note = compositionExtrapolated
+    ? 'NaCl-equivalent last-slope extrapolation above 26 wt%; real multicomponent bittern composition can shift a_w materially.'
+    : temperatureExtrapolated
+      ? 'NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied.'
+      : 'NaCl-equivalent interpolation of Chirife & Resnik (1984) consensus values; natural multicomponent-brine composition remains the dominant uncertainty.';
+  return { value, salinityPpt, naclWeightPercentEquivalent: wtPercent, uncertainty, status, note };
+}
+
+function waterActivity(fluid: any, temperatureC = 25): number {
+  return waterActivityAssessment(fluid, temperatureC).value;
 }
 
 // Q = ∏ᵢ aᵢ^νᵢ where νᵢ comes from MINERAL_STOICHIOMETRY. Returns Q in

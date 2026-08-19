@@ -275,6 +275,97 @@ function paragenesisDiscount(hostMineral: string, nucleatingMineral: string): nu
   return typeof factor === 'number' ? factor : 1.0;
 }
 
+// Executable heterogeneous-nucleation routes. This is deliberately narrower
+// than the literature/paragenesis table above: a documented association does
+// not affect gameplay until a nucleation function can actually select that
+// host AND calls `_sigmaDiscountForPosition` before its threshold decision.
+// The hover diagnosis and simulator enforcement both read this registry, so
+// the UI cannot advertise an unimplemented catalytic path.
+//
+// Source call sites:
+//   82-nucleation-carbonate: malachite, smithsonite, azurite
+//   89-nucleation-silicate: chrysocolla
+//   90-nucleation-sulfate: barite
+const ENGINE_EXECUTABLE_SUBSTRATE_ROUTES: Record<string, Set<string>> = {
+  // Solution-mediated agate maturation: quartz may inherit the exposed
+  // chalcedony lining as a spatial host, but receives no invented sigma
+  // discount or growth-rate multiplier from that association.
+  quartz: new Set(['chalcedony']),
+  malachite: new Set(['chalcopyrite']),
+  smithsonite: new Set(['sphalerite']),
+  azurite: new Set(['cuprite']),
+  chrysocolla: new Set(['azurite', 'cuprite', 'native_copper']),
+  barite: new Set(['sphalerite', 'galena']),
+  // Required transformation precursor, not merely an association or a
+  // catalytic discount: production converts this booked layer in place.
+  todorokite: new Set(['birnessite']),
+};
+
+function engineExecutableSubstrateDiscount(
+  hostMineral: string,
+  nucleatingMineral: string,
+): number {
+  const routes = ENGINE_EXECUTABLE_SUBSTRATE_ROUTES[nucleatingMineral];
+  if (!routes || !routes.has(hostMineral)) return 1.0;
+  return paragenesisDiscount(hostMineral, nucleatingMineral);
+}
+
+// Todorokite is not licensed as a bare-wall precipitate in this model. Its
+// production route is an in-place Mg exchange / layer-to-tunnel
+// reorganization of an already-grown birnessite solid. Keep the full solid
+// eligibility rule here, beside the executable substrate registry, so the
+// nucleator, production counterfactual, and Creative hover diagnosis all use
+// the same predicate instead of independently approximating "precursor".
+function isTodorokiteBirnessitePrecursor(host: any): boolean {
+  return !!host
+    && host.mineral === 'birnessite'
+    && !!host.active
+    && !host.dissolved
+    && host.enclosed_by == null
+    && Number(host.total_growth_um) > 0
+    && typeof remainingBookedInventory === 'function'
+    && remainingBookedInventory(host, 'Mn') > 0;
+}
+
+function engineExecutableSubstrateRoute(host: any, nucleatingMineral: string) {
+  if (!host) return { executable: false, label: 'missing host' };
+  const routes = ENGINE_EXECUTABLE_SUBSTRATE_ROUTES[nucleatingMineral];
+  if (!routes || !routes.has(host.mineral)) {
+    return { executable: false, label: 'unregistered host', discount: 1.0 };
+  }
+  const discount = engineExecutableSubstrateDiscount(host.mineral, nucleatingMineral);
+
+  // Replacement engines intentionally nucleate on the exposed reaction
+  // surface left by a dissolving precursor. These predicates mirror the
+  // production selectors in 82/89; other routes require a living exposed host.
+  let executable = false;
+  if (nucleatingMineral === 'malachite' && host.mineral === 'chalcopyrite') {
+    executable = true; // production's active_cp_all deliberately means all records
+  } else if (nucleatingMineral === 'smithsonite' && host.mineral === 'sphalerite') {
+    executable = true; // fresh or oxidized sphalerite
+  } else if (nucleatingMineral === 'chrysocolla' && host.mineral === 'azurite') {
+    executable = !!host.active || !!host.dissolved;
+  } else if (nucleatingMineral === 'todorokite' && host.mineral === 'birnessite') {
+    executable = isTodorokiteBirnessitePrecursor(host);
+  } else {
+    executable = !!host.active && !host.dissolved && host.enclosed_by == null;
+  }
+  const label = host.dissolved
+    ? 'dissolved replacement surface'
+    : (host.active ? 'active exposed host' : 'recorded precursor surface');
+  return { executable, label, discount };
+}
+
+function executableSubstrateCandidates(nucleatingMineral: string, crystals: any[]) {
+  const candidates: Array<{ host: any; discount: number; label: string }> = [];
+  for (const host of (crystals || [])) {
+    const route = engineExecutableSubstrateRoute(host, nucleatingMineral);
+    if (!route.executable) continue;
+    candidates.push({ host, discount: route.discount, label: route.label });
+  }
+  return candidates;
+}
+
 // Pick a substrate for a nucleating mineral, weighted by available
 // hosts and their per-pair discount factors. Pure helper — called by
 // VugSimulator._pickSubstrate which threads the live crystal list +

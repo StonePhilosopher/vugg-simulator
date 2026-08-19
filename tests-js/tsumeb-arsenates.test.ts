@@ -8,7 +8,7 @@
 //
 //   austinite     CaZn(AsO4)(OH)        Ca:Zn ~1:1, Cu < Zn, pH 6.5-8
 //   legrandite    Zn2(AsO4)(OH)·H2O     Zn-rich, Ca-free, mildly acidic
-//   koettigite    Zn3(AsO4)2·8H2O       vivianite-group Zn end, T < 35
+//   koettigite    Zn3(AsO4)2·8H2O       Zn-majority, pH < 3, T < 35
 //   duftite       PbCu(AsO4)(OH)        Pb:Cu ~1:1, pH 5.5-7.5
 //   bayldonite    PbCu3(AsO4)2(OH)2     Pb:Cu ~1:3 (Cu-enriched)
 //
@@ -24,7 +24,8 @@
 //
 // What this catches:
 //   * All five engines exist and fire at appropriate conditions.
-//   * Cation-ratio forks work (Cu vs Zn, Pb vs Cu, Co/Ni vs Zn).
+//   * Cation-ratio forks work (Cu vs Zn, Pb vs Cu, Zn-majority solid solution).
+//   * Köttigite requires pH < 3; near-neutral Tsumeb first-zone fluid is blocked.
 //   * Strict T cap on koettigite (8 H2O is fragile, T < 35).
 //   * Oxidizing-only — all blocked under reducing conditions.
 
@@ -78,26 +79,59 @@ describe('Tsumeb arsenate suite (v97)', () => {
     });
   });
 
-  describe('Koettigite — vivianite-group Zn end, sharp T cap', () => {
-    it('Zn-rich cool damp fluid (T=20, no Co/Ni) gives σ > 0', () => {
+  describe('Koettigite — acidic vivianite-group Zn end, sharp T cap', () => {
+    it('Zn-rich cool acidic fluid gives σ > 0', () => {
       const fluid = new FluidChemistry({
-        Zn: 100, As: 30, Co: 0, Ni: 0, O2: 1.0, pH: 7.0,
+        Zn: 100, As: 30, Co: 0, Ni: 0, O2: 1.0, pH: 2.5,
       });
       const cond = new VugConditions({ temperature: 20, fluid });
       expect(cond.supersaturation_koettigite()).toBeGreaterThan(0);
     });
 
-    it('Co > 10 blocks (erythrite wins the vivianite-group slot)', () => {
+    it('substantial Co substitution and type-material-scale Ni remain compatible with the Zn end member', () => {
       const fluid = new FluidChemistry({
-        Zn: 100, As: 30, Co: 50, Ni: 0, O2: 1.0, pH: 7.0,
+        Zn: 100, As: 30, Co: 20, Ni: 4, O2: 1.0, pH: 2.5,
+      });
+      const cond = new VugConditions({ temperature: 20, fluid });
+      expect(cond.supersaturation_koettigite()).toBeGreaterThan(0);
+    });
+
+    it('molar Co majority blocks the Zn end member even when ppm masses look close', () => {
+      const fluid = new FluidChemistry({
+        Zn: 65.38, As: 30, Co: 64.83, Ni: 0, O2: 1.0, pH: 2.5,
       });
       const cond = new VugConditions({ temperature: 20, fluid });
       expect(cond.supersaturation_koettigite()).toBe(0);
     });
 
+    it('allows Ni at the bounded-proxy 5 mol% boundary but blocks higher Ni', () => {
+      const atBoundary = new FluidChemistry({
+        Zn: 65.38, As: 30, Co: 58.933 * 0.8,
+        Ni: 58.693 * (1.8 / 19), O2: 1.0, pH: 2.5,
+      });
+      const aboveBoundary = new FluidChemistry({
+        Zn: 65.38, As: 30, Co: 58.933 * 0.8,
+        Ni: 58.693 * 0.1, O2: 1.0, pH: 2.5,
+      });
+      expect(new VugConditions({ temperature: 20, fluid: atBoundary })
+        .supersaturation_koettigite()).toBeGreaterThan(0);
+      expect(new VugConditions({ temperature: 20, fluid: aboveBoundary })
+        .supersaturation_koettigite()).toBe(0);
+    });
+
+    it('pH 3 and near-neutral fluid are outside the documented stability field', () => {
+      for (const pH of [3.0, 7.0]) {
+        const fluid = new FluidChemistry({
+          Zn: 100, As: 30, Co: 0, Ni: 0, O2: 1.0, pH,
+        });
+        const cond = new VugConditions({ temperature: 20, fluid });
+        expect(cond.supersaturation_koettigite(), `pH ${pH}`).toBe(0);
+      }
+    });
+
     it('T > 35 blocks (8 H2O dehydrates)', () => {
       const fluid = new FluidChemistry({
-        Zn: 100, As: 30, Co: 0, Ni: 0, O2: 1.0, pH: 7.0,
+        Zn: 100, As: 30, Co: 0, Ni: 0, O2: 1.0, pH: 2.5,
       });
       const cond = new VugConditions({ temperature: 50, fluid });
       expect(cond.supersaturation_koettigite()).toBe(0);

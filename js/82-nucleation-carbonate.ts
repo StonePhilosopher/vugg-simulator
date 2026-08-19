@@ -46,7 +46,11 @@ function _nuc_calcite(sim) {
   // Aragonite nucleation — Mg/Ca + T + Ω + trace Sr/Pb/Ba favorability.
 }
 function _nuc_aragonite(sim) {
-  const sigma_arag = sim.conditions.supersaturation_aragonite();
+  const weathering = weatheringNucleationContext(sim, 'aragonite');
+  if (weathering.required && !weathering.eligible) return;
+  const sigma_arag = weathering.required
+    ? weathering.localSigma
+    : sim.conditions.supersaturation_aragonite();
   const existing_arag = sim.crystals.filter(c => c.mineral === 'aragonite' && c.active);
   const air_mode = !!(sim.conditions.wall && sim.conditions.wall.air_mode_default);
   // Air-mode path matches calcite above. See _AIR_MODE_NUCLEATION_PROB
@@ -55,14 +59,24 @@ function _nuc_aragonite(sim) {
     ? (rng.random() < _AIR_MODE_NUCLEATION_PROB)
     : !existing_arag.length;
   if (sigma_arag > MINERAL_GATES_aragonite.sigma_crit && gateClear && !sim._atNucleationCap('aragonite')) {
-    let pos = 'vug wall';
+    let pos = weathering.parent
+      ? `on weathering ${weathering.parent.mineral} #${weathering.parent.crystal_id}`
+      : 'vug wall';
     const existing_goe_a = sim.crystals.filter(c => c.mineral === 'goethite' && c.active);
     const existing_hem_a = sim.crystals.filter(c => c.mineral === 'hematite' && c.active);
-    if (existing_goe_a.length && rng.random() < 0.4) pos = `on goethite #${existing_goe_a[0].crystal_id}`;
-    else if (existing_hem_a.length && rng.random() < 0.3) pos = `on hematite #${existing_hem_a[0].crystal_id}`;
-    const mg_ratio = sim.conditions.fluid.Mg / Math.max(sim.conditions.fluid.Ca, 0.01);
+    if (!weathering.parent && existing_goe_a.length && rng.random() < 0.4) pos = `on goethite #${existing_goe_a[0].crystal_id}`;
+    else if (!weathering.parent && existing_hem_a.length && rng.random() < 0.3) pos = `on hematite #${existing_hem_a[0].crystal_id}`;
+    const mg_ratio = aqueousMgCaMolarRatio(sim.conditions.fluid);
     const c = sim.nucleate('aragonite', pos, sigma_arag);
-    sim.log.push(`  ✦ NUCLEATION: Aragonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, Mg/Ca=${mg_ratio.toFixed(2)}, σ=${sigma_arag.toFixed(2)})`);
+    if (weathering.required) {
+      c.weathering_precursor_receipt = {
+        schema: 'weathering-precursor-v1',
+        parentCrystalId: weathering.parent.crystal_id,
+        parentMineral: weathering.parent.mineral,
+        releasedInventory: { ...weathering.released },
+      };
+    }
+    sim.log.push(`  ✦ NUCLEATION: Aragonite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, molar Mg/Ca=${mg_ratio.toFixed(2)}, σ=${sigma_arag.toFixed(2)})`);
   }
 
   // Dolomite nucleation — Ca-Mg carbonate, needs both cations + T > 50°C.
@@ -74,17 +88,51 @@ function _nuc_dolomite(sim) {
     let pos = 'vug wall';
     const existing_cal_d = sim.crystals.filter(c => c.mineral === 'calcite' && c.active);
     if (existing_cal_d.length && rng.random() < 0.4) pos = `on calcite #${existing_cal_d[0].crystal_id}`;
-    const mg_ratio = sim.conditions.fluid.Mg / Math.max(sim.conditions.fluid.Ca, 0.01);
+    const mg_ratio = aqueousMgCaMolarRatio(sim.conditions.fluid);
     const c = sim.nucleate('dolomite', pos, sigma_dol);
-    sim.log.push(`  ✦ NUCLEATION: Dolomite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, Mg/Ca=${mg_ratio.toFixed(2)}, σ=${sigma_dol.toFixed(2)})`);
+    sim.log.push(`  ✦ NUCLEATION: Dolomite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, molar Mg/Ca=${mg_ratio.toFixed(2)}, σ=${sigma_dol.toFixed(2)})`);
   }
 
   // HMC nucleation — disordered Mg-substituted calcite, the Kim 2023
   // precursor to ordered dolomite.
 }
 function _nuc_HMC(sim) {
-  const sigma_hmc = sim.conditions.supersaturation_HMC();
-  if (sigma_hmc < MINERAL_GATES_HMC.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
+  let localCandidate: any = null;
+  if (sim.wall_state?.per_vertex_nucleation || sim._thermalFieldActivated) {
+    const wall = sim.wall_state;
+    const mesh = wall?.meshFor?.(sim);
+    const N = wall?.cells_per_ring | 0;
+    for (let vertexIdx = 0; mesh?.cells && vertexIdx < mesh.cells.length; vertexIdx++) {
+      const anchor = { ringIdx: Math.floor(vertexIdx / N), cellIdx: vertexIdx % N };
+      const local = sim._localNucleationEvaluationAtAnchor('HMC', anchor);
+      if (!local?.fluid) continue;
+      const candidateComposition = hmcCompositionFromFluid(local.fluid, local.temperatureC);
+      if (!candidateComposition.compositionDomainSupported
+          || !candidateComposition.validHMCComposition) continue;
+      const evaluated = sim._localNucleationEvaluationAtAnchor(
+        'HMC', anchor, [candidateComposition.mgMoleFraction],
+      );
+      if (!localCandidate || evaluated.sigma > localCandidate.sigma) {
+        localCandidate = { ...evaluated, composition: candidateComposition, anchor };
+      }
+    }
+  }
+  let composition = localCandidate?.composition || hmcCompositionFromFluid(
+    sim.conditions.fluid, sim.conditions.temperature,
+  );
+  sim._hmc_composition_coverage = { ...composition };
+  if (!composition.compositionDomainSupported) {
+    const fingerprint = `${composition.compositionDomainStatus}|${composition.temperatureStatus}`;
+    if (sim._last_hmc_coverage_log !== fingerprint) {
+      sim._last_hmc_coverage_log = fingerprint;
+      sim.log.push(`  ◇ HMC COMPOSITION UNRESOLVED: molar Mg/Ca=${composition.aqueousMgCaMolarRatio.toFixed(2)}, salinity=${Number.isFinite(composition.salinityPerMil) ? composition.salinityPerMil.toFixed(1) : 'unknown'}‰, T=${sim.conditions.temperature.toFixed(1)}°C lies outside the measured partition domain (${composition.compositionDomainStatus}); no HMC presence or absence verdict is inferred.`);
+    }
+    return;
+  }
+  if (!composition.validHMCComposition) return;
+  let sigma_hmc = localCandidate?.sigma
+    ?? sim.conditions.supersaturation_HMC(composition.mgMoleFraction);
+  if (sigma_hmc <= MINERAL_GATES_HMC.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('HMC')) return;
   const existing_hmc = sim.crystals.filter(c => c.mineral === 'HMC' && c.active);
   // Allow multiple HMC crystals (it's a cement-phase mineral, often
@@ -98,16 +146,24 @@ function _nuc_HMC(sim) {
   const existing_arg_h = sim.crystals.filter(c => c.mineral === 'aragonite' && c.active);
   if (existing_cal_h.length && rng.random() < 0.45) pos = `on calcite #${existing_cal_h[0].crystal_id}`;
   else if (existing_arg_h.length && rng.random() < 0.35) pos = `on aragonite #${existing_arg_h[0].crystal_id}`;
-  // Compute crystal._mg_content from fluid Mg/Ca at nucleation time
-  // per Mucci-Morse 1983 partitioning. Empirical linear approximation
-  // calibrated for marine/sabkha conditions:
-  //   mg_content ≈ 0.05 + 0.02 × (Mg/Ca - 1), capped at 0.30
-  // At Mg/Ca=1: 5% Mg. At Mg/Ca=5: 13%. At Mg/Ca=15: 30%.
-  const mg_ratio = sim.conditions.fluid.Mg / Math.max(sim.conditions.fluid.Ca, 0.01);
-  const mg_content = Math.max(0.04, Math.min(0.30, 0.05 + 0.02 * (mg_ratio - 1.0)));
   const c = sim.nucleate('HMC', pos, sigma_hmc);
-  c._mg_content = mg_content;  // per-crystal state for grow_HMC + SI engine
-  sim.log.push(`  ✦ NUCLEATION: ⚪ HMC #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, Mg/Ca=${mg_ratio.toFixed(2)}, x=${mg_content.toFixed(2)} mol Mg, σ=${sigma_hmc.toFixed(2)}) — disordered Mg-calcite intermediate, kinetic precursor to ordered dolomite per Kim 2023`);
+  const actualLocal = sim._localNucleationEvaluationAtAnchor('HMC', c.wall_anchor);
+  if (actualLocal?.fluid) {
+    const actualComposition = hmcCompositionFromFluid(actualLocal.fluid, actualLocal.temperatureC);
+    if (actualComposition.compositionDomainSupported && actualComposition.validHMCComposition) {
+      composition = actualComposition;
+      const actualSigma = sim._localNucleationEvaluationAtAnchor(
+        'HMC', c.wall_anchor, [composition.mgMoleFraction],
+      );
+      if (Number.isFinite(actualSigma?.sigma)) sigma_hmc = actualSigma.sigma;
+    }
+  }
+  c._solid_solution_model = 'calcite_disordered_dolomite_subregular_v1';
+  c._mg_content = composition.mgMoleFraction;
+  c._hmc_nucleation_composition = { ...composition };
+  const birthT = Number.isFinite(actualLocal?.temperatureC)
+    ? actualLocal.temperatureC : sim.conditions.temperature;
+  sim.log.push(`  ✦ NUCLEATION: ⚪ HMC #${c.crystal_id} on ${c.position} (T=${birthT.toFixed(0)}°C, molar Mg/Ca=${composition.aqueousMgCaMolarRatio.toFixed(2)}, x=${composition.mgMoleFraction.toFixed(3)} Mg, σ=${sigma_hmc.toFixed(2)}) — measured-partition composition with nonideal calcite–dolomite component activities`);
 
   // Siderite nucleation — Fe carbonate, brown rhomb. Reducing only.
 }
@@ -149,8 +205,10 @@ function _nuc_malachite(sim) {
   if (existing_mal.length || total_mal >= 3 || sim._atNucleationCap('malachite')) return;
   let pos = 'vug wall';
   // Preference for chalcopyrite surface (classic oxidation paragenesis!)
-  const dissolving_cp = sim.crystals.filter(c => c.mineral === 'chalcopyrite' && c.dissolved);
-  const active_cp_all = sim.crystals.filter(c => c.mineral === 'chalcopyrite');
+  const dissolving_cp = sim.crystals.filter(c => c.mineral === 'chalcopyrite' && c.dissolved
+    && engineExecutableSubstrateRoute(c, 'malachite').executable);
+  const active_cp_all = sim.crystals.filter(c => c.mineral === 'chalcopyrite'
+    && engineExecutableSubstrateRoute(c, 'malachite').executable);
   if (dissolving_cp.length && rng.random() < 0.7) {
     pos = `on chalcopyrite #${dissolving_cp[0].crystal_id}`;
   } else if (active_cp_all.length && rng.random() < 0.4) {
@@ -174,8 +232,10 @@ function _nuc_smithsonite(sim) {
   // Pick substrate first (preserve narrative qualifiers), then σ-check
   // with paragenesis discount for the chosen host.
   let pos = 'vug wall';
-  const dissolved_sph = sim.crystals.filter(c => c.mineral === 'sphalerite' && c.dissolved);
-  const any_sph = sim.crystals.filter(c => c.mineral === 'sphalerite');
+  const dissolved_sph = sim.crystals.filter(c => c.mineral === 'sphalerite' && c.dissolved
+    && engineExecutableSubstrateRoute(c, 'smithsonite').executable);
+  const any_sph = sim.crystals.filter(c => c.mineral === 'sphalerite'
+    && engineExecutableSubstrateRoute(c, 'smithsonite').executable);
   if (dissolved_sph.length && rng.random() < 0.7) {
     pos = `on sphalerite #${dissolved_sph[0].crystal_id} (oxidized)`;
   } else if (any_sph.length && rng.random() < 0.3) {
@@ -300,7 +360,7 @@ function _nuc_witherite(sim) {
 // + cave-floor paragenesis (Iglesiente Sardinia + Mežica Slovenia).
 function _nuc_hydrozincite(sim) {
   const sigma = sim.conditions.supersaturation_hydrozincite();
-  if (sigma < MINERAL_GATES_hydrozincite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_hydrozincite.sigma_crit) return;
   if (sim._atNucleationCap('hydrozincite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'hydrozincite' && c.active);
   if (existing.length >= 3) return;
@@ -319,7 +379,10 @@ function _nucleateClass_carbonate(sim) {
   _runNuc(sim, _nuc_calcite);
   _runNuc(sim, _nuc_aragonite);
   _runNuc(sim, _nuc_dolomite);
-  _nuc_HMC(sim);  // v146 Week 11 — disordered Mg-calcite, Kim 2023 precursor
+  _registerNucleatorForProbe(_nuc_HMC, ['HMC']);
+  if (!_REGISTER_NUCLEATORS_ONLY) {
+    _nuc_HMC(sim);  // v146 Week 11 — disordered Mg-calcite, Kim 2023 precursor
+  }
   _runNuc(sim, _nuc_siderite);
   _runNuc(sim, _nuc_rhodochrosite);
   _runNuc(sim, _nuc_malachite);

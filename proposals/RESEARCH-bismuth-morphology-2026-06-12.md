@@ -5,18 +5,23 @@ the arc's working assumption, so this note leads with the finding.
 
 ## §1 The survey finding: bismuth is (correctly) almost dead in the fleet
 
-`tools/morph-sigma-observe.mjs --minerals native_bismuth`: **zero
-surviving crystals fleet-wide at seed 42.** Schneeberg (its only real
-home): exactly 1 crystal per seed (42–45), which then DISSOLVES; σ ≥ 1
-on only 15/160 steps, **max 1.32**.
+`tools/morph-sigma-observe.mjs --minerals native_bismuth` originally
+reported **zero surviving crystals fleet-wide at seed 42**, but that
+result depended on a state bug: the engine marked a crystal dissolved
+when it emitted its first shallow etch zone. With accepted-zone solid
+accounting, Schneeberg (its only real home) has exactly 1 crystal at seed
+42: it is oxidatively etched, then enclosed by feldspar with a positive
+primary Bi core remaining. σ ≥ 1 on only 15/160 steps, **max 1.32**.
 
-This is not a bug — it is the scenario telling the truth. Schneeberg
-(the vugg scenario) models the URANIUM-WEATHERING stage of the
-Erzgebirge story: the v185 declared Eh movement runs a reducing plateau
-(−200 mV) → meteoric flood → +290 mV swing. Primary Bi grows quietly on
-the plateau and is then destroyed by oxidation (bismite/bismutite —
-grow_native_bismuth's O₂>0.8 dissolution branch). Reducing→oxidizing is
-the WEATHERING direction.
+Schneeberg models the URANIUM-WEATHERING stage of the Erzgebirge story:
+the v185 declared Eh movement runs a reducing plateau (−200 mV) →
+meteoric flood → +290 mV swing. Primary Bi grows quietly on the plateau
+and is then attacked by oxidation (bismite/bismutite —
+grow_native_bismuth's O₂>0.8 dissolution branch). At seed 42, feldspar
+encloses the partially etched grain and shields its primary core from
+continued fluid access. Reducing→oxidizing remains the WEATHERING
+direction; "fully destroyed" was an invalid inference from the old
+boolean, not from the zone thicknesses.
 
 **The dendrite shock needs the OPPOSITE sign**: an oxidized,
 metal-charged brine hit by a sudden REDUCING pulse (the five-element
@@ -107,8 +112,9 @@ completes the texture the codebase started building:
 
 1. **Engine commit (SIM bump + schneeberg rebake)**: MORPH_TH.native_bismuth
    + corrected grow_native_bismuth dispatch + aspect entries + chip +
-   narrator (92f) + tests. Fleet consequence: schneeberg's brief Bi life
-   is smooth-band massive (its natural truth) until it weathers away.
+   narrator (92f) + tests. Fleet consequence: Schneeberg's brief exposed
+   Bi growth is smooth-band massive; oxidation etches it and feldspar
+   enclosure preserves the remaining core at seed 42.
 2. **Scenario commit (`wittichen`)**: the five-element vein above —
    dendrite tenant + arsenide de-orphaning + the showcase. Judge tool +
    multi-seed gate, elmwood pattern.

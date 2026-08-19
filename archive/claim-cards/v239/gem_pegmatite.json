@@ -1,0 +1,300 @@
+{
+  "scenario": "gem_pegmatite",
+  "sim_version": 239,
+  "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:accepted-zone-stoich-ledger-v3|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-supplement-v1|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1",
+  "scenario_spec_hash": "8c9d7bf20652add1cacc53053972f84aaf98388381d0a9f8a91775b759aade81",
+  "strip_steps": 230,
+  "claim": {
+    "anchor": "Cruzeiro mine, São José da Safira, Doce Valley, Minas Gerais (Variant A — Brasiliano-age miarolitic gem pegmatite, 700-450 Ma).",
+    "description": "Miarolitic cavity in a complex zoned pegmatite. The residual pocket where incompatible elements (Be, B, Li, F) accumulate beyond belief, then cross saturation in cascade — schorl → beryl → spodumene + elbaite → late topaz, with kaolinization of the microcline walls at the end.",
+    "expects_species": [
+      "tourmaline",
+      "spodumene",
+      "topaz",
+      "feldspar",
+      "albite",
+      "lepidolite",
+      "cassiterite"
+    ],
+    "sources": [
+      "Morteani et al. 2002 — fluid chemistry of Brazilian gem pegmatites",
+      "Cassedanne 1991 — Cruzeiro mine paragenesis",
+      "Proctor 1985 — Cruzeiro tourmaline + beryl mineralogy",
+      "London 2008 — pegmatite fluid Al partition (~150 ppm upper bound)"
+    ],
+    "initial_temperature_C": 650,
+    "initial_pressure_kbar": 3,
+    "wall_architecture": null,
+    "notes": [
+      "Cruzeiro is the type-locality for fine schorl-elbaite tourmaline + smoky quartz pockets, with documented beryl, spodumene, lepidolite, and accessory apatite. Brasiliano-age (Neoproterozoic) pegmatite field cutting Macaúbas Group meta-sediments. Morteani et al. 2002 covers fluid chemistry; Cassedanne (1991) and Proctor (1985) cover the Cruzeiro-specific paragenesis.",
+      "Thermal regime: 650 → 300°C over ~230 steps in three phases. Phase 1 (650-550°C): wall-zone crystallization (microcline, quartz, early schorl). Phase 2 (550-400°C): main pocket growth — beryl finally nucleates when Be crosses threshold; spodumene when Li crosses; schorl transitions to elbaite as Fe depletes and Li accumulates. Phase 3 (400-300°C): late hydrothermal — topaz if F survives, then kaolinization of microcline walls.",
+      "Saturation cascade mechanic: there is no explicit 'nucleate beryl now' command. Each mineral's supersaturation formula reads the current fluid, and the nucleation gates fire in order naturally as chemistry evolves — microcline first (K-feldspar = feldspar here), then the Be/Li/B gates cross as incompatible elements build up.",
+      "v183 thermal_pulses:false — the PEGMATITE-SHAPE T story (contrast naica's v182 movement): all eight events SET temperature (620→560→500→450→420→360→320→300), so the three-phase curve is already fully event-anchored and a declared movement would clobber it. The fix is silencing the ambient noise around it: a sealed miarolitic pocket has no fracture-valve hot injections (the pocket IS the isolated residual chamber), the pulses' Fe riders (+2-15 ppm) directly fight the li_phase event's documented Fe depletion (Fe→5 is what turns schorl into elbaite), and a late pulse was re-warming the ended system to ~476°C against the design's 300°C floor (dark-observed, tools/t-story-observe.mjs: end T 476→276 with the flag; assemblage and crystal counts IDENTICAL at 3 seeds — the v181 dedicated thermal stream means a thermal-regime change no longer re-rolls the nucleation cascade). Topaz remains aspirational at seed 42 (absent in BASE too — its tuning is a separate vugg-tune-scenario arc; the honest T floor can only help it).",
+      "Audit gap-fills (Apr 2026): P=8 (pegmatite residual P; enables Cruzeiro accessory apatite per Cassedanne 1991). Mg=5 (brief-required non-zero baseline; pegmatite pocket fluids are Mg-poor since Mg partitions strongly into outer-shell biotite/chlorite during pegmatite differentiation)."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:accepted-zone-stoich-ledger-v3|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-supplement-v1|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1",
+      "fluid_pressure": {
+        "initial_kbar": 3,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 7.743390539999999,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 102.1,
+          "initial_water_activity": {
+            "value": 0.9964,
+            "salinityPpt": 6,
+            "naclWeightPercentEquivalent": 0.6,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 8,
+    "paragenetic_order": [
+      {
+        "mineral": "albite",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "emerald",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "feldspar",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "lepidolite",
+        "first_step": 0,
+        "events": 3
+      },
+      {
+        "mineral": "quartz",
+        "first_step": 0,
+        "events": 3
+      },
+      {
+        "mineral": "spodumene",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "tourmaline",
+        "first_step": 0,
+        "events": 3
+      },
+      {
+        "mineral": "cassiterite",
+        "first_step": 5,
+        "events": 4
+      }
+    ],
+    "surprises_not_in_expects": [
+      "emerald",
+      "quartz"
+    ],
+    "expected_no_shows": [
+      "topaz"
+    ],
+    "environment": {
+      "T": {
+        "first": 649.606,
+        "last": 277.559,
+        "min": 277.559,
+        "max": 649.606,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 6.78,
+        "last": 4.409,
+        "min": 3.528,
+        "max": 7,
+        "units": ""
+      },
+      "Eh": {
+        "first": -74.016,
+        "last": -74.016,
+        "min": -74.016,
+        "max": -74.016,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 6.299,
+        "last": 6.299,
+        "min": 6.299,
+        "max": 6.299,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 0.118,
+        "last": 0.118,
+        "min": 0.118,
+        "max": 0.118,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -3.78,
+        "last": -8,
+        "min": -8,
+        "max": -3.402,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -3.906,
+        "last": -8,
+        "min": -8,
+        "max": -3.528,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -7.181,
+        "last": -8,
+        "min": -8,
+        "max": -6.425,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -5.48,
+        "last": -8,
+        "min": -8,
+        "max": -5.102,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": -0.441,
+        "last": -5.417,
+        "min": -7.118,
+        "max": -0.063,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 230,
+      "fluid_pressure_kbar": {
+        "first": 3,
+        "last": 3,
+        "min": 3,
+        "max": 3,
+        "samples": 230
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 230
+      },
+      "temperature_C": {
+        "first": 648.2608943547123,
+        "last": 276.1096062884666,
+        "min": 276.1096062884666,
+        "max": 648.2608943547123,
+        "samples": 230
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 7.7041468185785416,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.6458322675189927,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "andalusite": 135,
+          "unconstrained": 95
+        },
+        "first": {
+          "phase": "andalusite",
+          "nominalPhase": "andalusite",
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Ky-Sil line; uncertainty propagates Pattison triple-point T and P bounds."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 102.1
+        },
+        "last": {
+          "pure_water_boundary_C": 102.1
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

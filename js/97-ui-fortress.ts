@@ -38,7 +38,7 @@ const FLUID_PRESETS = {
   silica: {
     label: 'Silica-rich',
     desc: 'Test recipe — high silica (600 ppm SiO₂), moderate Ca, low metals. Quartz-dominant growth. Generic; not anchored to a locality.',
-    fluid: { SiO2: 600, Ca: 150, CO3: 100, Fe: 8, Mn: 3, Ti: 0.8, Al: 4, F: 10, Zn: 0, S: 0, Cu: 0, O2: 0, pH: 6.5, salinity: 5.0 }
+    fluid: { SiO2: 600, Ca: 150, CO3: 100, Fe: 8, Mn: 3, Ti: 0.1, Al: 4, F: 10, Zn: 0, S: 0, Cu: 0, O2: 0, pH: 6.5, salinity: 5.0 }
   },
   carbonate: {
     label: 'Carbonate',
@@ -47,7 +47,7 @@ const FLUID_PRESETS = {
   },
   mvt: {
     label: 'MVT Brine (synced to scenario_mvt)',
-    desc: 'Mirrors scenario_mvt. Edit the scenario in vugg.py / index.html to change this preset.',
+    desc: 'Mirrors scenario_mvt. Edit data/scenarios.json5 to change this preset.',
     get fluid() { return _scenarioFluidParams('mvt'); }
   },
   clean: {
@@ -90,11 +90,775 @@ let fortressActive = false;
 let fortressLogLines = [];
 let selectedPreset = 'silica';
 
+// Canonical Creative setup control registry. Every visible chemistry
+// slider must appear here: preset sync, DOM reads, saves, and contract
+// tests all use this single mapping so a control cannot silently become
+// decorative. Bounds and step are in canonical physical units, not slider
+// coordinates. `scale` is only the reversible adapter used by range inputs.
+// Keeping precision here lets setup, live editing, exact-number inputs, saves,
+// and audits share one scientific contract.
+type CreativeChemistryEvidence = {
+  // Durable code/data locations that define the lever's scientific meaning.
+  // These are model provenance, not a claim that every calibration is a
+  // primary-literature equilibrium model.
+  provenance: string[];
+  coupling: string;
+  consumers: string[];
+  probe: {
+      kind: 'stoichiometric-capacity' | 'germanium-partition' | 'yttrium-fluorite'
+      | 'oxygen-redox' | 'salinity-water-activity' | 'ph-carbonate-speciation'
+      | 'sulfur-reservoir' | 'reactive-silica-fraction';
+    representativeMineral?: string;
+    coefficient?: number;
+  };
+};
+
+type CreativeChemistryControlBase = {
+  id: string;
+  liveKey: string;
+  label: string;
+  group: 'major' | 'trace' | 'ligand' | 'redox' | 'physical';
+  min: number;
+  max: number;
+  step: number;
+  scale: number;
+  unit: string;
+  decimals?: number;
+};
+
+type CreativeChemistryControl = CreativeChemistryControlBase & {
+  evidence: CreativeChemistryEvidence;
+};
+
+function _chemistryControl(
+  id: string,
+  liveKey: string,
+  label: string,
+  max: number,
+  group: CreativeChemistryControlBase['group'],
+  scale = 1,
+  unit = 'ppm',
+  decimals?: number,
+): CreativeChemistryControlBase {
+  return { id, liveKey, label, group, min: 0, max, step: 1 / scale, scale, unit, decimals };
+}
+
+const _CREATIVE_CHEMISTRY_CONTROL_BASES: Record<string, CreativeChemistryControlBase> = {
+  SiO2:_chemistryControl('f-sio2','sio2','SiO₂',20000,'major'),
+  reactiveSilicaFraction:_chemistryControl('f-reactive-silica','reactive-silica','Reactive SiO₂ fraction',1,'physical',100,'fraction',2),
+  Ca:_chemistryControl('f-ca','ca','Ca',5000,'major'),
+  CO3:_chemistryControl('f-co3','co3','CO₃',5000,'major'),
+  F:_chemistryControl('f-f','f','F',1000,'ligand'),
+  Al:_chemistryControl('f-al','al','Al',1000,'trace'),
+  Fe:_chemistryControl('f-fe','fe','Fe',500,'trace'),
+  Mn:_chemistryControl('f-mn','mn','Mn',500,'trace'),
+  Cu:_chemistryControl('f-cu','cu','Cu',500,'trace'),
+  S:_chemistryControl('f-s','s','S',5000,'ligand'),
+  S_sulfide:_chemistryControl('f-s-sulfide','s-sulfide','S(-II)',5000,'redox'),
+  S_sulfate:_chemistryControl('f-s-sulfate','s-sulfate','S(VI)',5000,'redox'),
+  S_elemental:_chemistryControl('f-s-elemental','s-elemental','S°',5000,'redox'),
+  U:_chemistryControl('f-u','u','U',500,'trace'),
+  Pb:_chemistryControl('f-pb','pb','Pb',500,'trace'),
+  Mo:_chemistryControl('f-mo','mo','Mo',500,'trace'),
+  Zn:_chemistryControl('f-zn','zn','Zn',1000,'trace'),
+  Mg:_chemistryControl('f-mg','mg','Mg',5000,'major'),
+  Na:_chemistryControl('f-na','na','Na',150000,'major'),
+  K:_chemistryControl('f-k','k','K',1000,'major'),
+  Ba:_chemistryControl('f-ba','ba','Ba',1000,'trace'),
+  Sr:_chemistryControl('f-sr','sr','Sr',1000,'trace'),
+  Cr:_chemistryControl('f-cr','cr','Cr',500,'trace'),
+  P:_chemistryControl('f-p','p','P',1000,'trace'),
+  As:_chemistryControl('f-as','as','As',500,'trace'),
+  Cl:_chemistryControl('f-cl','cl','Cl',200000,'ligand'),
+  V:_chemistryControl('f-v','v','V',100,'trace'),
+  W:_chemistryControl('f-w','w','W',100,'trace'),
+  Ag:_chemistryControl('f-ag','ag','Ag',100,'trace'),
+  Bi:_chemistryControl('f-bi','bi','Bi',100,'trace'),
+  Sb:_chemistryControl('f-sb','sb','Sb',100,'trace'),
+  Ni:_chemistryControl('f-ni','ni','Ni',500,'trace'),
+  Co:_chemistryControl('f-co','co','Co',100,'trace'),
+  B:_chemistryControl('f-b','b','B',200,'trace'),
+  Li:_chemistryControl('f-li','li','Li',100,'trace'),
+  Be:_chemistryControl('f-be','be','Be',50,'trace'),
+  Te:_chemistryControl('f-te','te','Te',50,'trace'),
+  Se:_chemistryControl('f-se','se','Se',50,'trace'),
+  Ge:_chemistryControl('f-ge','ge','Ge',50,'trace'),
+  Au:_chemistryControl('f-au','au','Au',500,'trace'),
+  Cd:_chemistryControl('f-cd','cd','Cd',500,'trace'),
+  Hg:_chemistryControl('f-hg','hg','Hg',500,'trace'),
+  Sn:_chemistryControl('f-sn','sn','Sn',500,'trace'),
+  Ti:_chemistryControl('f-ti','ti','Ti',100,'trace',10,'ppm',1),
+  Y:_chemistryControl('f-y','y','Y',100,'trace',10,'ppm',1),
+  O2:_chemistryControl('f-o2','o2','O₂',10,'redox',10,'',1),
+  salinity:_chemistryControl('f-salinity','salinity','Salinity',300,'physical',10,'‰',1),
+  pH:_chemistryControl('f-ph','ph','pH',14,'major',10,'',1),
+};
+
+function _creativeChemistryEvidence(field: string): CreativeChemistryEvidence {
+  if (field === 'S_sulfide' || field === 'S_sulfate' || field === 'S_elemental') {
+    const reservoir = field.replace('S_', '');
+    return {
+      provenance: [
+        'js/20c-chemistry-redox.ts: explicit sulfur-reservoir ledger',
+        'js/19-mineral-stoichiometry.ts:stoichiometricReservoirSpecies',
+      ],
+      coupling: `${field} is an independently conserved sulfur oxidation-state reservoir; sulfur-bearing mineral growth debits only the matching pool.`,
+      consumers: [
+        `debitSulfurPool:${reservoir}`,
+        'stoichiometricReservoirSpecies',
+        field === 'S_elemental' ? 'supersaturation_native_sulfur' : `${reservoir}AvailablePpm`,
+      ],
+      probe: { kind: 'sulfur-reservoir' },
+    };
+  }
+  const stoichiometricConsumers = Object.entries(MINERAL_STOICHIOMETRY)
+    .filter(([, formula]) => Number(formula[field]) > 0)
+    .map(([mineral]) => mineral)
+    .sort();
+  const representativeMineral = stoichiometricConsumers[0];
+  if (representativeMineral) {
+    const coefficient = Number(MINERAL_STOICHIOMETRY[representativeMineral][field]);
+    return {
+      provenance: [
+        `js/19-mineral-stoichiometry.ts:MINERAL_STOICHIOMETRY.${representativeMineral}.${field}`,
+        'data/minerals.json: mineral formula and locality evidence records',
+      ],
+      coupling: `${field} participates in the ${STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE.kind} and is booked/returned by applyStoichiometricGrowthBudget. It preserves ${STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE.preserves}; ${STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE.limitation}.`,
+      consumers: [
+        ...stoichiometricConsumers.map(mineral => `MINERAL_STOICHIOMETRY.${mineral}`),
+        'applyStoichiometricGrowthBudget',
+        '_buildMineralFormationExplanation:limiting-reagents',
+      ],
+      probe: { kind: 'stoichiometric-capacity', representativeMineral, coefficient },
+    };
+  }
+
+  const special: Record<string, CreativeChemistryEvidence> = {
+    reactiveSilicaFraction: {
+      provenance: [
+        'js/20-chemistry-fluid.ts:reactiveSilicaPpm/addReactiveSilica/debitReactiveSilica',
+        'js/25-chemistry-conditions.ts:silica_precipitate_phase',
+      ],
+      coupling: 'Separates dissolved/reactive silica from suspended or detrital analytical SiO2; generic silica saturation and every SiO2 growth debit can use only the reactive inventory.',
+      consumers: ['FluidChemistry.reactiveSilicaPpm', 'silica_precipitate_phase', 'supersaturation_opal/chalcedony/quartz', 'applyStoichiometricGrowthBudget:SiO2'],
+      probe: { kind: 'reactive-silica-fraction' },
+    },
+    Ge: {
+      provenance: [
+        'js/61-engines-sulfide.ts:sphaleriteGermaniumUptake',
+        'research/arcs/research-ge-sphalerite-2026-08-05.md',
+      ],
+      coupling: 'Fluid Ge partitions into a capped sphalerite growth-zone inventory and returns on oxidative dissolution.',
+      consumers: ['grow_sphalerite', 'sphaleriteGermaniumUptake', 'applyStoichiometricGrowthBudget:trace_Ge'],
+      probe: { kind: 'germanium-partition' },
+    },
+    Y: {
+      provenance: [
+        'js/53-engines-halide.ts:grow_fluorite',
+        'Bosze & Rakovan (2002), Geochimica et Cosmochimica Acta 66:997',
+      ],
+      coupling: 'Y changes fluorite {100}/{111} habit, visible zoning, trace inventory, and is consumed during growth.',
+      consumers: ['grow_fluorite:REE habit', 'grow_fluorite:trace_Y', 'FluoriteMorphology.form'],
+      probe: { kind: 'yttrium-fluorite' },
+    },
+    O2: {
+      provenance: [
+        'js/20c-chemistry-redox.ts:ehFromO2',
+        'js/85c-simulator-state.ts:_syncRedoxEh',
+      ],
+      coupling: 'The legacy dissolved-O₂ proxy maps monotonically to canonical Eh before redox-gated engines run.',
+      consumers: ['ehFromO2', '_syncRedoxEh', 'redox availability and rate helpers'],
+      probe: { kind: 'oxygen-redox' },
+    },
+    salinity: {
+      provenance: [
+        'js/20a-chemistry-activity.ts:waterActivityAssessment',
+        'js/33-supersat-halide.ts: brine-strength calibration',
+      ],
+      coupling: 'Salinity changes ionic activity, water activity, and evaporite brine strength.',
+      consumers: ['waterActivityAssessment', 'activityCorrectionFactor', 'supersaturation_halite'],
+      probe: { kind: 'salinity-water-activity' },
+    },
+    pH: {
+      provenance: [
+        'js/20b-chemistry-carbonate-system.ts:bjerrumFractions',
+        'js/20c-chemistry-redox.ts: pH-dependent redox/speciation helpers',
+      ],
+      coupling: 'pH changes carbonate speciation and the pH gates/rates used across mineral engines.',
+      consumers: ['bjerrumFractions', 'effectiveCarbonate', 'MINERAL_GATES pH windows'],
+      probe: { kind: 'ph-carbonate-speciation' },
+    },
+  };
+  return special[field] || {
+    provenance: [],
+    coupling: '',
+    consumers: [],
+    probe: { kind: 'stoichiometric-capacity' },
+  };
+}
+
+const CREATIVE_CHEMISTRY_CONTROLS: Record<string, CreativeChemistryControl> = Object.fromEntries(
+  Object.entries(_CREATIVE_CHEMISTRY_CONTROL_BASES).map(([field, control]) => [
+    field,
+    { ...control, evidence: _creativeChemistryEvidence(field) },
+  ]),
+);
+
+type CreativeChemistryCausalProbe = {
+  field: string;
+  input_value: number;
+  fluid_value: number;
+  route: string;
+  signal: number;
+  consumer_mutated: boolean;
+  forward_route?: string;
+  forward_signal?: number;
+  forward_observed?: boolean;
+  details?: Record<string, any>;
+};
+
+function _creativeStoichiometricForwardProbe(field: string, value: number) {
+  const minerals = Object.entries(MINERAL_STOICHIOMETRY)
+    .filter(([, formula]) => Number(formula[field]) > 0)
+    .map(([mineral]) => mineral)
+    .sort();
+  let signal = 0;
+  let observations = 0;
+  const routes = new Set<string>();
+  const scenarios = (typeof SCENARIOS !== 'undefined') ? Object.entries(SCENARIOS) : [];
+  for (let scenarioIndex = 0; scenarioIndex < scenarios.length; scenarioIndex++) {
+    const [scenarioId, makeScenario]: any = scenarios[scenarioIndex];
+    let base;
+    try { base = makeScenario().conditions; } catch (_error) { continue; }
+    const fluid = new FluidChemistry({ ...base.fluid, [field]: value });
+    const conditions: any = new VugConditions({
+      temperature: base.temperature,
+      pressure: base.pressure,
+      fluid,
+      wall: base.wall,
+    });
+    conditions._scenario = base._scenario;
+    conditions._scenario_id = base._scenario_id;
+    for (let mineralIndex = 0; mineralIndex < minerals.length; mineralIndex++) {
+      const mineral = minerals[mineralIndex];
+      const method = `supersaturation_${mineral}`;
+      const consumer = conditions[method];
+      if (typeof consumer !== 'function') continue;
+      let sigma;
+      try { sigma = Number(consumer.call(conditions)); } catch (_error) { continue; }
+      if (!Number.isFinite(sigma)) continue;
+      // Non-negative, capped log response avoids one extremely supersaturated
+      // mineral drowning out the rest while retaining deterministic sensitivity.
+      const bounded = Math.max(0, Math.min(1e12, sigma));
+      const weight = 1 + (((scenarioIndex * 31) + (mineralIndex * 17)) % 97) / 1000;
+      signal += Math.log1p(bounded) * weight;
+      observations += 1;
+      routes.add(`${scenarioId}.${method}`);
+    }
+  }
+  return {
+    route: `VugConditions.supersaturation fleet (${routes.size} scenario/mineral routes)`,
+    signal,
+    observed: observations > 0,
+    observations,
+    routes: Array.from(routes),
+  };
+}
+
+// Execute one Creative chemistry value through a production gameplay consumer.
+// This is deliberately heavier than a coefficient lookup: the hostile-review
+// gate and CI use it to prove that canonical FluidChemistry state reaches the
+// same engine/mass/speciation path a live run uses.
+function creativeChemistryCausalProbe(field: string, value: number): CreativeChemistryCausalProbe {
+  const control = CREATIVE_CHEMISTRY_CONTROLS[field];
+  if (!control || !Number.isFinite(value)) {
+    return { field, input_value: value, fluid_value: NaN, route: 'invalid', signal: NaN, consumer_mutated: false };
+  }
+  // Exercise the exact reversible range-input adapter before constructing the
+  // canonical fluid object. This is the non-DOM half of both setup and live UI.
+  const rawSliderValue = Number(value) * control.scale;
+  const decodedValue = rawSliderValue / control.scale;
+  const inputFluid = new FluidChemistry({ [field]: decodedValue });
+  const probe = control.evidence.probe;
+  if (probe.kind === 'stoichiometric-capacity') {
+    const mineral = String(probe.representativeMineral);
+    // Supply every *other* mandatory formula reservoir generously. The probe
+    // varies one Creative lever at a time; leaving its co-reagents at constructor
+    // defaults would make the whole formula cap at zero and falsely report every
+    // lever as inert under the mole-correct all-or-nothing ledger.
+    const formula = MINERAL_STOICHIOMETRY[mineral] || {};
+    const fixtureFluid: Record<string, number> = { [field]: decodedValue };
+    for (const species of Object.keys(formula)) {
+      if (species !== field) fixtureFluid[species] = 1e6;
+    }
+    const massFluid = new FluidChemistry(fixtureFluid);
+    const crystal = { mineral, zones: [] };
+    const zone = { thickness_um: 1, growth_rate: 1 };
+    const before = Number(massFluid[field]);
+    applyStoichiometricGrowthBudget(crystal, zone, { fluid: massFluid });
+    const after = Number(massFluid[field]);
+    const forward = _creativeStoichiometricForwardProbe(field, decodedValue);
+    return {
+      field, input_value: value, fluid_value: before,
+      route: `applyStoichiometricGrowthBudget:${mineral}`,
+      signal: before - after,
+      consumer_mutated: after !== before,
+      forward_route: forward.route,
+      forward_signal: forward.signal,
+      forward_observed: forward.observed,
+      details: {
+        mineral, before, after, accepted_thickness_um: zone.thickness_um,
+        forward_observations: forward.observations,
+        forward_routes: forward.routes,
+      },
+    };
+  }
+  if (probe.kind === 'sulfur-reservoir') {
+    const pool = field === 'S_elemental' ? 'elemental' : field === 'S_sulfate' ? 'sulfate' : 'sulfide';
+    const fluid = new FluidChemistry({
+      sulfurPoolsExplicit: true,
+      S_sulfide: field === 'S_sulfide' ? decodedValue : 0,
+      S_sulfate: field === 'S_sulfate' ? decodedValue : 0,
+      S_elemental: field === 'S_elemental' ? decodedValue : 0,
+      nativeSulfurPathway: field === 'S_elemental' ? 'anaerobic_microbial_inherited' : null,
+      O2: 0.02,
+      pH: 6,
+    });
+    const before = Number(fluid[field]);
+    const available = field === 'S_sulfide'
+      ? sulfideAvailablePpm(fluid, 25)
+      : field === 'S_sulfate'
+        ? sulfateAvailablePpm(fluid, 25)
+        : elementalSulfurAvailablePpm(fluid);
+    debitSulfurPool(fluid, pool as any, Math.min(1, available));
+    const after = Number(fluid[field]);
+    return {
+      field, input_value: value, fluid_value: before,
+      route: `debitSulfurPool:${pool}`,
+      signal: before - after,
+      consumer_mutated: after !== before,
+      forward_route: field === 'S_elemental'
+        ? 'VugConditions.supersaturation_native_sulfur:S_elemental'
+        : field === 'S_sulfate'
+          ? 'VugConditions.supersaturation_barite:sulfateAvailablePpm'
+          : 'VugConditions.supersaturation_sphalerite:sulfideAvailablePpm',
+      forward_signal: available,
+      forward_observed: Number.isFinite(available),
+      details: { pool, before, after, available },
+    };
+  }
+  if (probe.kind === 'germanium-partition') {
+    const fluid = new FluidChemistry({ Zn: 1000, S: 1000, Ge: decodedValue, O2: 0, pH: 6.5 });
+    const conditions = new VugConditions({ temperature: 200, pressure: 1.5, fluid });
+    conditions.supersaturation_sphalerite = () => 2;
+    const crystal: any = { mineral: 'sphalerite', total_growth_um: 0, zones: [] };
+    const before = fluid.Ge;
+    const zone = grow_sphalerite(crystal, conditions, 0);
+    if (zone) applyStoichiometricGrowthBudget(crystal, zone, conditions);
+    const after = fluid.Ge;
+    return {
+      field, input_value: value, fluid_value: before,
+      route: 'grow_sphalerite→applyStoichiometricGrowthBudget:trace_Ge',
+      signal: Number(zone?.trace_Ge || 0) + (before - after),
+      consumer_mutated: !!zone && (Number(zone.trace_Ge || 0) > 0 || after !== before),
+      forward_route: 'grow_sphalerite:trace_Ge',
+      forward_signal: Number(zone?.trace_Ge || 0),
+      forward_observed: !!zone,
+      details: { before, after, trace_Ge: zone?.trace_Ge ?? null, trace_stoichiometry: zone?.trace_stoichiometry ?? null },
+    };
+  }
+  if (probe.kind === 'yttrium-fluorite') {
+    const fluid = new FluidChemistry({ Ca: 1000, F: 100, Y: decodedValue, pH: 7, Fe: 0, Mn: 0 });
+    const conditions = new VugConditions({ temperature: 150, pressure: 1.5, fluid });
+    conditions.supersaturation_fluorite = () => 2;
+    const crystal: any = { mineral: 'fluorite', total_growth_um: 0, zones: [] };
+    const before = fluid.Y;
+    const zone = grow_fluorite(crystal, conditions, 0);
+    if (zone) applyStoichiometricGrowthBudget(crystal, zone, conditions);
+    const after = fluid.Y;
+    return {
+      field, input_value: value, fluid_value: before,
+      route: 'grow_fluorite:{111}-habit+trace-zone+Y-debit',
+      signal: Number(zone?.trace_Y || 0) + (crystal._ree_substitution ? 1 : 0) + (before - after),
+      consumer_mutated: !!zone && (after !== before || !!crystal._ree_substitution),
+      forward_route: 'grow_fluorite:{111}-habit+trace_Y',
+      forward_signal: Number(zone?.trace_Y || 0) + (crystal._ree_substitution ? 1 : 0),
+      forward_observed: !!zone,
+      details: { before, after, habit: crystal.habit, trace_Y: zone?.trace_Y ?? null },
+    };
+  }
+  if (probe.kind === 'oxygen-redox') {
+    const fluid = new FluidChemistry({ O2: decodedValue });
+    const conditions = new VugConditions({ fluid, wall: new VugWall() });
+    const sim: any = new VugSimulator(conditions, []);
+    // Deliberately dirty the derived observer so the probe demonstrates that
+    // the simulator synchronization route performed the write; the
+    // FluidChemistry constructor otherwise initializes Eh consistently.
+    fluid.Eh = -999;
+    const before = fluid.Eh;
+    sim._syncRedoxEh(false);
+    return {
+      field, input_value: value, fluid_value: fluid.O2,
+      route: 'VugSimulator._syncRedoxEh:O2→Eh',
+      signal: Number(fluid.Eh),
+      consumer_mutated: fluid.Eh !== before,
+      forward_route: 'VugSimulator._syncRedoxEh:O2→Eh',
+      forward_signal: Number(fluid.Eh),
+      forward_observed: Number.isFinite(fluid.Eh),
+      details: { before_Eh: before, after_Eh: fluid.Eh },
+    };
+  }
+  if (probe.kind === 'salinity-water-activity') {
+    const fluid = new FluidChemistry({ salinity: decodedValue, Na: 20000, Cl: 20000, pH: 7 });
+    fluid.concentration = 20;
+    const conditions = new VugConditions({ temperature: 25, fluid });
+    const sigma = Number(conditions.supersaturation_halite());
+    return {
+      field, input_value: value, fluid_value: fluid.salinity,
+      route: 'VugConditions.supersaturation_halite:brine-strength',
+      signal: sigma,
+      consumer_mutated: Number.isFinite(sigma),
+      forward_route: 'VugConditions.supersaturation_halite:brine-strength',
+      forward_signal: sigma,
+      forward_observed: Number.isFinite(sigma),
+      details: { halite_sigma: sigma, water_activity: waterActivityAssessment(fluid, 25).value },
+    };
+  }
+  if (probe.kind === 'ph-carbonate-speciation') {
+    const fluid = new FluidChemistry({ pH: decodedValue, Ca: 500, CO3: 500, salinity: 5 });
+    const conditions = new VugConditions({ temperature: 25, fluid });
+    const sigma = Number(conditions.supersaturation_calcite());
+    return {
+      field, input_value: value, fluid_value: fluid.pH,
+      route: 'VugConditions.supersaturation_calcite:carbonate-speciation',
+      signal: sigma,
+      consumer_mutated: Number.isFinite(sigma),
+      forward_route: 'VugConditions.supersaturation_calcite:carbonate-speciation',
+      forward_signal: sigma,
+      forward_observed: Number.isFinite(sigma),
+      details: { calcite_sigma: sigma, carbonate_fraction: bjerrumFractions(fluid.pH, 25).CO3 },
+    };
+  }
+  if (probe.kind === 'reactive-silica-fraction') {
+    const fluid = new FluidChemistry({ SiO2: 400, reactiveSilicaFraction: decodedValue, pH: 7 });
+    const conditions = new VugConditions({ temperature: 150, pressure: 1.5, fluid });
+    const reactive = fluid.reactiveSilicaPpm();
+    const sigma = Number(conditions.supersaturation_chalcedony())
+      + Number(conditions.supersaturation_quartz());
+    return {
+      field, input_value: value, fluid_value: fluid.reactiveSilicaFraction,
+      route: 'FluidChemistry.reactiveSilicaPpm',
+      signal: reactive,
+      consumer_mutated: reactive > 0,
+      forward_route: 'VugConditions.supersaturation_chalcedony/quartz',
+      forward_signal: sigma,
+      forward_observed: Number.isFinite(sigma),
+      details: { total_SiO2_ppm: fluid.SiO2, reactive_SiO2_ppm: reactive },
+    };
+  }
+  return { field, input_value: value, fluid_value: inputFluid[field], route: 'unimplemented', signal: NaN, consumer_mutated: false };
+}
+
+// Backward-compatible scalar facade. New audits inspect the structured route
+// and mutation evidence above rather than treating a changing number as proof.
+function creativeChemistryCausalSignal(field: string, value: number): number {
+  return creativeChemistryCausalProbe(field, value).signal;
+}
+
+// Full-name aliases make expert search useful without requiring players to
+// remember whether a compact row says “German.”, “Ge”, or “germanium”.
+const CREATIVE_CHEMISTRY_SEARCH_ALIASES: Record<string, string> = {
+  SiO2:'silica silicon dioxide total analytical bulk',
+  reactiveSilicaFraction:'silica dissolved reactive silicic acid h4sio4 suspended particulate detrital fraction',
+  Ca:'calcium', CO3:'carbonate carbon dioxide inorganic carbon DIC',
+  F:'fluorine fluoride', Al:'aluminum aluminium', Fe:'iron', Mn:'manganese', Cu:'copper',
+  S:'sulfur sulphur dissolved total bulk',
+  S_sulfide:'sulfur sulphur sulfide reduced hs h2s minus ii',
+  S_sulfate:'sulfur sulphur sulfate oxidized so4 plus vi',
+  S_elemental:'sulfur sulphur native elemental s0 zero',
+  U:'uranium', Pb:'lead', Mo:'molybdenum', Zn:'zinc',
+  Mg:'magnesium', Na:'sodium', K:'potassium', Ba:'barium', Sr:'strontium', Cr:'chromium chrome',
+  P:'phosphorus phosphate', As:'arsenic', Cl:'chlorine chloride', V:'vanadium', W:'tungsten',
+  Ag:'silver', Bi:'bismuth', Sb:'antimony', Ni:'nickel', Co:'cobalt', B:'boron', Li:'lithium',
+  Be:'beryllium', Te:'tellurium', Se:'selenium', Ge:'germanium', Au:'gold', Cd:'cadmium',
+  Hg:'mercury', Sn:'tin', Ti:'titanium', Y:'yttrium', O2:'oxygen redox',
+  salinity:'salt brine salinity', pH:'acid acidity alkaline alkalinity pH',
+};
+
+type CreativeExactTransform = {
+  label: string;
+  unit: string;
+  step: number | 'any';
+  fromSlider: (raw: number) => number;
+  toSlider: (physical: number) => number;
+  format?: (physical: number) => string;
+};
+
+const _CREATIVE_SETUP_EXACT_TRANSFORMS: Record<string, CreativeExactTransform> = {
+  'f-temp': { label:'temperature', unit:'°C', step:1, fromSlider:v=>v, toSlider:v=>v },
+  'f-pressure': { label:'fluid pressure', unit:'kbar', step:0.001, fromSlider:v=>v/100, toSlider:v=>v*100 },
+  'f-confining-pressure': { label:'rock pressure', unit:'kbar', step:0.01, fromSlider:v=>v/100, toSlider:v=>v*100 },
+  'f-vug-diameter': { label:'cavity diameter', unit:'mm', step:1, fromSlider:v=>v, toSlider:v=>v },
+  'f-host-thickness': { label:'host thickness', unit:'mm', step:10, fromSlider:v=>v, toSlider:v=>v },
+  'f-wall-reactivity': { label:'wall reactivity', unit:'×', step:0.1, fromSlider:v=>v/10, toSlider:v=>v*10 },
+  'f-cooling-rate': { label:'cooling rate', unit:'°C/step', step:0.1, fromSlider:v=>v/10, toSlider:v=>v*10 },
+  'f-ambient-temperature': { label:'far-field equilibrium temperature', unit:'°C', step:1, fromSlider:v=>v, toSlider:v=>v },
+  'f-flow-rate': { label:'flow rate', unit:'', step:0.1, fromSlider:v=>v/10, toSlider:v=>v*10 },
+  'f-water-table': { label:'water-table height', unit:'%', step:0.1, fromSlider:v=>v/10, toSlider:v=>v*10 },
+  'f-porosity': { label:'connected porosity', unit:'%', step:1, fromSlider:v=>v, toSlider:v=>v },
+  'f-diffusion-rate': { label:'inter-zone diffusion rate', unit:'/step', step:0.01, fromSlider:v=>v/100, toSlider:v=>v*100 },
+  'f-wall-fe': { label:'host Fe', unit:'ppm', step:10, fromSlider:v=>v, toSlider:v=>v },
+  'f-wall-mn': { label:'host Mn', unit:'ppm', step:10, fromSlider:v=>v, toSlider:v=>v },
+  'f-wall-mg': { label:'host Mg', unit:'ppm', step:10, fromSlider:v=>v, toSlider:v=>v },
+  'f-gamma-host': { label:'host gamma', unit:'', step:0.01, fromSlider:v=>v/100, toSlider:v=>v*100 },
+  'f-primary-bubbles': { label:'primary voids', unit:'', step:1, fromSlider:v=>v, toSlider:v=>v },
+  'f-secondary-bubbles': { label:'secondary voids', unit:'', step:1, fromSlider:v=>v, toSlider:v=>v },
+  'f-shape-seed': { label:'shape seed', unit:'', step:1, fromSlider:v=>v, toSlider:v=>v },
+  'f-pco2': {
+    label:'gas CO₂ partial pressure', unit:'bar', step:'any',
+    fromSlider:v=>Math.pow(10,v/100),
+    toSlider:v=>Math.log10(Math.max(1e-6,v))*100,
+    format:v=>v.toExponential(3),
+  },
+  'f-carbon-headspace': {
+    label:'carbonate headspace volume', unit:'L/kg water', step:0.01,
+    fromSlider:v=>v/100,
+    toSlider:v=>v*100,
+  },
+};
+
+function _creativeExactString(value: number, transform: CreativeExactTransform) {
+  if (transform.format) return transform.format(value);
+  if (transform.step === 'any') return String(value);
+  const decimals = Math.max(0, Math.ceil(-Math.log10(transform.step)));
+  return value.toFixed(decimals);
+}
+
+function _syncCreativeSetupExactInput(slider: HTMLInputElement) {
+  const exact = document.getElementById(slider.id + '-exact') as HTMLInputElement | null;
+  const transform = (slider as any)._creativeExactTransform as CreativeExactTransform | undefined;
+  if (!(exact instanceof HTMLInputElement) || !transform) return;
+  const raw = Number(slider.value);
+  if (Number.isFinite(raw)) exact.value = _creativeExactString(transform.fromSlider(raw), transform);
+}
+
+function installCreativeSetupExactInputs() {
+  const chemistryById = new Map(
+    Object.values(CREATIVE_CHEMISTRY_CONTROLS).map(control => [control.id, control]),
+  );
+  const setup = document.getElementById('fortress-setup');
+  if (!setup) return;
+  for (const slider of Array.from(setup.querySelectorAll('input[type="range"]')) as HTMLInputElement[]) {
+    if (document.getElementById(slider.id + '-exact') instanceof HTMLInputElement) continue;
+    const chemistry = chemistryById.get(slider.id);
+    let transform = _CREATIVE_SETUP_EXACT_TRANSFORMS[slider.id];
+    if (chemistry) {
+      slider.min = String(chemistry.min * chemistry.scale);
+      slider.max = String(chemistry.max * chemistry.scale);
+      slider.step = String(chemistry.step * chemistry.scale);
+      transform = {
+        label: chemistry.label,
+        unit: chemistry.unit,
+        step: chemistry.step,
+        fromSlider: value => value / chemistry.scale,
+        toSlider: value => value * chemistry.scale,
+      };
+      const row = slider.closest('.setup-row') as HTMLElement | null;
+      if (row) row.dataset.chemistryGroup = chemistry.group;
+    }
+    if (!transform) continue;
+
+    const exact = document.createElement('input');
+    exact.type = 'number';
+    exact.id = slider.id + '-exact';
+    exact.className = 'creative-exact-input';
+    exact.inputMode = transform.step === 1 ? 'numeric' : 'decimal';
+    exact.step = String(transform.step);
+    exact.min = String(transform.fromSlider(Number(slider.min)));
+    exact.max = String(transform.fromSlider(Number(slider.max)));
+    exact.setAttribute('aria-label', `Exact ${transform.label} (${transform.unit || 'canonical units'})`);
+    exact.title = `Exact ${transform.label}${transform.unit ? ` in ${transform.unit}` : ''}`;
+    (slider as any)._creativeExactTransform = transform;
+    slider.insertAdjacentElement('afterend', exact);
+    slider.addEventListener('input', () => _syncCreativeSetupExactInput(slider));
+    const commitExactValue = () => {
+      let physical = Number(exact.value);
+      const physicalMin = Number(exact.min);
+      const physicalMax = Number(exact.max);
+      if (!Number.isFinite(physical)) {
+        _syncCreativeSetupExactInput(slider);
+        return;
+      }
+      physical = Math.max(physicalMin, Math.min(physicalMax, physical));
+      slider.value = String(transform.toSlider(physical));
+      slider.dispatchEvent(new Event('input', { bubbles: true }));
+      _syncCreativeSetupExactInput(slider);
+    };
+    exact.addEventListener('change', commitExactValue);
+    exact.addEventListener('keydown', event => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      commitExactValue();
+      exact.blur();
+    });
+    _syncCreativeSetupExactInput(slider);
+  }
+}
+
+function filterCreativeSetupChemistry(query: string) {
+  const words = query.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
+  for (const [property, control] of Object.entries(CREATIVE_CHEMISTRY_CONTROLS)) {
+    const slider = document.getElementById(control.id);
+    const row = slider?.closest('.setup-row') as HTMLElement | null;
+    if (!row) continue;
+    const aliases = CREATIVE_CHEMISTRY_SEARCH_ALIASES[property] || '';
+    const haystack = `${property} ${control.label} ${control.group} ${aliases} ${row.textContent || ''}`.toLocaleLowerCase();
+    row.hidden = words.length > 0 && !words.every(word => haystack.includes(word));
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', installCreativeSetupExactInputs, { once: true });
+} else {
+  installCreativeSetupExactInputs();
+}
+
+function syncCreativeChemistryControls(fluidParams: Record<string, any>) {
+  for (const [prop, control] of Object.entries(CREATIVE_CHEMISTRY_CONTROLS)) {
+    const slider = document.getElementById(control.id) as HTMLInputElement | null;
+    const value = Number(fluidParams[prop] ?? 0);
+    if (!slider || !Number.isFinite(value)) continue;
+    slider.value = String(value * control.scale);
+    _syncCreativeSetupExactInput(slider);
+    const valueEl = document.getElementById(control.id + '-val');
+    if (valueEl) {
+      const shown = control.decimals != null ? value.toFixed(control.decimals) : String(value);
+      valueEl.textContent = `${shown}${control.unit ? ` ${control.unit}` : ''}`;
+    }
+  }
+  const explicit = document.getElementById('f-sulfur-explicit') as HTMLInputElement | null;
+  if (explicit) explicit.checked = !!fluidParams.sulfurPoolsExplicit;
+  const pathway = document.getElementById('f-native-sulfur-pathway') as HTMLSelectElement | null;
+  if (pathway) pathway.value = fluidParams.nativeSulfurPathway || 'none';
+}
+
+function readCreativeChemistryControls(base: Record<string, any> = {}) {
+  const fluidParams = Object.assign({}, base);
+  for (const [prop, control] of Object.entries(CREATIVE_CHEMISTRY_CONTROLS)) {
+    const slider = document.getElementById(control.id) as HTMLInputElement | null;
+    if (!slider) continue;
+    const value = parseFloat(slider.value) / control.scale;
+    if (Number.isFinite(value)) fluidParams[prop] = value;
+  }
+  const explicit = document.getElementById('f-sulfur-explicit') as HTMLInputElement | null;
+  const pathway = document.getElementById('f-native-sulfur-pathway') as HTMLSelectElement | null;
+  if (explicit || Object.prototype.hasOwnProperty.call(base, 'sulfurPoolsExplicit')) {
+    fluidParams.sulfurPoolsExplicit = explicit
+      ? !!explicit.checked
+      : !!base.sulfurPoolsExplicit;
+  }
+  if (pathway || Object.prototype.hasOwnProperty.call(base, 'nativeSulfurPathway')) {
+    fluidParams.nativeSulfurPathway = pathway?.value && pathway.value !== 'none'
+      ? pathway.value
+      : null;
+  }
+  return fluidParams;
+}
+
+function _creativeControlNumber(id: string, scale = 1, fallback = 0) {
+  const el = document.getElementById(id) as HTMLInputElement | null;
+  const value = el ? parseFloat(el.value) / scale : NaN;
+  return Number.isFinite(value) ? value : fallback;
+}
+
+// Geological controls define the cavity, host, and boundary conditions.
+// They stay separate from the fluid recipe because Replenish restores only
+// source fluid; it must not quietly replace the host rock or water table.
+function readCreativeGeologicalControls(baseWall: Record<string, any> = {}) {
+  const wallOpts = Object.assign({}, baseWall);
+  const composition = (document.getElementById('f-host-composition') as HTMLSelectElement | null)?.value;
+  const architecture = (document.getElementById('f-architecture') as HTMLSelectElement | null)?.value;
+  if (composition) wallOpts.composition = composition;
+  if (architecture) wallOpts.architecture = architecture;
+  wallOpts.vug_diameter_mm = _creativeControlNumber('f-vug-diameter', 1, wallOpts.vug_diameter_mm ?? 50);
+  wallOpts.thickness_mm = _creativeControlNumber('f-host-thickness', 1, wallOpts.thickness_mm ?? 500);
+  wallOpts.confining_pressure_kbar = _creativeControlNumber(
+    'f-confining-pressure', 100, wallOpts.confining_pressure_kbar ?? 1.5,
+  );
+  wallOpts.wall_Fe_ppm = _creativeControlNumber('f-wall-fe', 1, wallOpts.wall_Fe_ppm ?? 2000);
+  wallOpts.wall_Mn_ppm = _creativeControlNumber('f-wall-mn', 1, wallOpts.wall_Mn_ppm ?? 500);
+  wallOpts.wall_Mg_ppm = _creativeControlNumber('f-wall-mg', 1, wallOpts.wall_Mg_ppm ?? 1000);
+  wallOpts.reactivity = _creativeControlNumber('f-wall-reactivity', 10, wallOpts.reactivity ?? 1);
+  wallOpts.cooling_rate = _creativeControlNumber('f-cooling-rate', 10, wallOpts.cooling_rate ?? 1.5);
+  wallOpts.ambient_temperature_C = _creativeControlNumber(
+    'f-ambient-temperature', 1, wallOpts.ambient_temperature_C ?? 25,
+  );
+  wallOpts.inter_ring_diffusion_rate = _creativeControlNumber('f-diffusion-rate', 100, wallOpts.inter_ring_diffusion_rate ?? 0.05);
+  wallOpts.primary_bubbles = Math.round(_creativeControlNumber('f-primary-bubbles', 1, wallOpts.primary_bubbles ?? 3));
+  wallOpts.secondary_bubbles = Math.round(_creativeControlNumber('f-secondary-bubbles', 1, wallOpts.secondary_bubbles ?? 6));
+  wallOpts.shape_seed = Math.round(_creativeControlNumber('f-shape-seed', 1, wallOpts.shape_seed ?? 0));
+  wallOpts.gamma_host = _creativeControlNumber('f-gamma-host', 100, wallOpts.gamma_host ?? 0);
+  wallOpts.graphitic = !!(document.getElementById('f-graphitic') as HTMLInputElement | null)?.checked;
+  wallOpts.open_system = !!(document.getElementById('f-open-system') as HTMLInputElement | null)?.checked;
+  wallOpts.open_spring = !!(document.getElementById('f-open-spring') as HTMLInputElement | null)?.checked;
+  wallOpts.is_lit = !!(document.getElementById('f-is-lit') as HTMLInputElement | null)?.checked;
+  wallOpts.thermal_pulses = !!(document.getElementById('f-thermal-pulses') as HTMLInputElement | null)?.checked;
+  // Alpine-cleft behavior is a consequence of cleft architecture rather
+  // than a second unexplained switch for the same geological setting.
+  wallOpts.alpine_cleft = architecture === 'cleft';
+
+  return {
+    wallOpts,
+    conditionOpts: {
+      flow_rate: _creativeControlNumber('f-flow-rate', 10, 1),
+      porosity: _creativeControlNumber('f-porosity', 100, 0),
+    },
+    initialWaterTablePct: _creativeControlNumber('f-water-table', 10, 100),
+    scenarioOpts: (() => {
+      const open = !!(document.getElementById('f-open-atmosphere') as HTMLInputElement | null)?.checked;
+      const pCO2 = Math.pow(10, _creativeControlNumber('f-pco2', 100, -3.38));
+      const tigerEyeOriginModel =
+        (document.getElementById('f-tiger-eye-model') as HTMLSelectElement | null)?.value ||
+        'surficial_alteration';
+      return {
+        open_to_atmosphere: open,
+        atmospheric_pCO2_bar: pCO2,
+        tiger_eye_origin_model: tigerEyeOriginModel,
+        carbonate_boundary: {
+          mode: open ? 'open' : 'closed',
+          spatial_model: 'equal_volume_fully_mixed',
+          simple_carbonate_phases: ['calcite', 'aragonite', 'dolomite', 'HMC'],
+          target_pCO2_bar: pCO2,
+          headspace_L_per_kg_water: _creativeControlNumber('f-carbon-headspace', 100, 1),
+          initialization: 'creative_explicit_initial_DIC_plus_pH_to_reduced_alkalinity',
+        },
+      };
+    })(),
+  };
+}
+
 // Snapshot of the starting fluid recipe captured at fortressBegin time.
 // Used by fortressStep('replenish') to reset the broth — represents the
 // host rock leaching its starting chemistry back into the cavity. Cleared
 // in fortressReset.
 let _fortressInitialFluidParams = null;
+
+function _creativePresetWallDefaults(preset: string) {
+  if (preset === 'mvt') {
+    return { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 40, wall_Fe_ppm: 3000, wall_Mn_ppm: 800, wall_Mg_ppm: 1000 };
+  }
+  if (preset === 'carbonate') {
+    return { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 30, wall_Fe_ppm: 1500, wall_Mn_ppm: 600, wall_Mg_ppm: 800 };
+  }
+  return { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 50, wall_Fe_ppm: 2000, wall_Mn_ppm: 500, wall_Mg_ppm: 1000 };
+}
+
+function _setCreativeSetupNumber(id: string, value: number, eventName = 'input') {
+  const el = document.getElementById(id) as HTMLInputElement | null;
+  if (!el) return;
+  el.value = String(value);
+  el.dispatchEvent(new Event(eventName));
+}
 
 function selectPreset(preset) {
   selectedPreset = preset;
@@ -102,64 +866,40 @@ function selectPreset(preset) {
     btn.classList.toggle('selected', btn.dataset.preset === preset);
   });
   document.getElementById('preset-desc').textContent = FLUID_PRESETS[preset].desc;
-  // Sync ALL element sliders to preset values
+  // Sync every registered chemistry slider to the canonical preset.
   const f = FLUID_PRESETS[preset].fluid;
-  const allElements = [
-    'Fe','Mn','Cu','S','U','Pb','Mo','Zn','Mg','Na','K','Ba','Sr','Cr',
-    'P','As','Cl','V','W','Ag','Bi','Sb','Ni','Co','B','Li','Be','Te','Se','Ge'
-  ];
-  const idMap = {
-    Fe:'f-fe',Mn:'f-mn',Cu:'f-cu',S:'f-s',U:'f-u',Pb:'f-pb',Mo:'f-mo',
-    Zn:'f-zn',Mg:'f-mg',Na:'f-na',K:'f-k',Ba:'f-ba',Sr:'f-sr',Cr:'f-cr',
-    P:'f-p',As:'f-as',Cl:'f-cl',V:'f-v',W:'f-w',Ag:'f-ag',Bi:'f-bi',
-    Sb:'f-sb',Ni:'f-ni',Co:'f-co',B:'f-b',Li:'f-li',Be:'f-be',
-    Te:'f-te',Se:'f-se',Ge:'f-ge'
-  };
-  for (const el of allElements) {
-    const val = f[el] || 0;
-    const id = idMap[el];
-    const slider = document.getElementById(id);
-    if (slider) {
-      slider.value = val;
-      document.getElementById(id + '-val').textContent = val + ' ppm';
-    }
-  }
-  document.getElementById('f-ph').value = Math.round(f.pH * 10);
-  document.getElementById('f-ph-val').textContent = f.pH.toFixed(1);
+  syncCreativeChemistryControls(f);
+  // These presets historically carry authored host inventories and cavity
+  // diameters too. Keep those defaults visible in the exact controls so the
+  // setup panel cannot silently replace them at Begin.
+  const wall = _creativePresetWallDefaults(preset);
+  _setCreativeSetupNumber('f-vug-diameter', wall.vug_diameter_mm);
+  _setCreativeSetupNumber('f-host-thickness', wall.thickness_mm);
+  _setCreativeSetupNumber('f-wall-fe', wall.wall_Fe_ppm);
+  _setCreativeSetupNumber('f-wall-mn', wall.wall_Mn_ppm);
+  _setCreativeSetupNumber('f-wall-mg', wall.wall_Mg_ppm);
+  const sizeClass = document.getElementById('f-size-class') as HTMLSelectElement | null;
+  if (sizeClass) sizeClass.value = 'preset';
 }
 
-function fortressBegin() {
+async function fortressBegin() {
+  await waitForNarrativesReady();
   // Resolution phase: read every setup control into plain params, then
   // hand off to _fortressBeginCustomFromParams. The split exists for the
   // save system (93a-ui-saves.ts): a save stores the RESOLVED params, and
   // restoring one re-enters below the DOM reads — same construction path,
   // no dependence on what the setup sliders happen to show today.
   const temp = parseFloat(document.getElementById('f-temp').value);
-  const pressure = parseFloat(document.getElementById('f-pressure').value) / 10;
+  const pressure = clampFluidPressureKbar(parseFloat(document.getElementById('f-pressure').value) / 100);
   const presetData = FLUID_PRESETS[selectedPreset];
-  const fluidParams = Object.assign({}, presetData.fluid);
-  // Override with slider values
-  // Read all setup sliders — hooked and unhooked alike
-  const setupSliders = {
-    Fe:'f-fe', Mn:'f-mn', Cu:'f-cu', S:'f-s', U:'f-u', Pb:'f-pb', Mo:'f-mo',
-    Zn:'f-zn', Mg:'f-mg', Na:'f-na', K:'f-k', Ba:'f-ba', Sr:'f-sr', Cr:'f-cr',
-    P:'f-p', As:'f-as', Cl:'f-cl', V:'f-v', W:'f-w', Ag:'f-ag', Bi:'f-bi',
-    Sb:'f-sb', Ni:'f-ni', Co:'f-co', B:'f-b', Li:'f-li', Be:'f-be',
-    Te:'f-te', Se:'f-se', Ge:'f-ge'
-  };
-  for (const [prop, id] of Object.entries(setupSliders)) {
-    const el = document.getElementById(id);
-    if (el) fluidParams[prop] = parseFloat(el.value);
-  }
-  fluidParams.pH = parseFloat(document.getElementById('f-ph').value) / 10;
+  // Start from the full preset recipe, then let every registered visible
+  // chemistry control override its canonical FluidChemistry property.
+  const fluidParams = readCreativeChemistryControls(presetData.fluid);
 
-  // Initialize wall based on preset
-  let wallOpts: any = { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 50, wall_Fe_ppm: 2000, wall_Mn_ppm: 500, wall_Mg_ppm: 1000 };
-  if (selectedPreset === 'mvt') {
-    wallOpts = { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 40, wall_Fe_ppm: 3000, wall_Mn_ppm: 800, wall_Mg_ppm: 1000 };
-  } else if (selectedPreset === 'carbonate') {
-    wallOpts = { composition: 'limestone', thickness_mm: 500, vug_diameter_mm: 30, wall_Fe_ppm: 1500, wall_Mn_ppm: 600, wall_Mg_ppm: 800 };
-  }
+  // Initialize wall based on preset. selectPreset mirrors these values into
+  // the exact setup controls, while this remains the non-DOM source of truth
+  // for save replay and headless construction.
+  const wallOpts: any = _creativePresetWallDefaults(selectedPreset);
   // Read the wall-reactivity slider (Creative-mode only). Range 0-20
   // in slider units → 0.0-2.0× multiplier on dissolution rate.
   // See VugWall.dissolve and VugWall constructor for the full table.
@@ -191,8 +931,13 @@ function fortressBegin() {
       wallOpts.vug_diameter_mm = mm;
     }
   }
+  const geological = readCreativeGeologicalControls(wallOpts);
   _fortressBeginCustomFromParams({
-    temp, pressure, fluidParams, wallOpts,
+    temp, pressure, fluidParams,
+    wallOpts: geological.wallOpts,
+    conditionOpts: geological.conditionOpts,
+    scenarioOpts: geological.scenarioOpts,
+    initialWaterTablePct: geological.initialWaterTablePct,
     presetLabel: presetData.label,
   });
 }
@@ -214,9 +959,31 @@ function _fortressBeginCustomFromParams(params, seedOverride?) {
   _fortressInitialFluidParams = Object.assign({}, fluidParams);
   const fluid = new FluidChemistry(fluidParams);
   const wall = new VugWall(Object.assign({}, wallOpts));
-  const conditions = new VugConditions({ temperature: temp, pressure, fluid, wall });
+  const conditions = new VugConditions(Object.assign(
+    { temperature: temp, pressure, fluid, wall },
+    params.conditionOpts || {},
+  ));
+  conditions._scenario = Object.assign({}, params.scenarioOpts || {});
+  const requestedBoundary = conditions._scenario.carbonate_boundary || {};
+  conditions._scenario.carbonate_boundary = createConservedCarbonateBoundaryConfig(
+    fluid,
+    temp,
+    {
+      ...requestedBoundary,
+      mode: conditions._scenario.open_to_atmosphere ? 'open' : 'closed',
+      target_pCO2_bar: conditions._scenario.atmospheric_pCO2_bar
+        ?? requestedBoundary.target_pCO2_bar,
+      initialization: requestedBoundary.initialization
+        || 'creative_explicit_initial_DIC_plus_pH_to_reduced_alkalinity',
+    },
+  );
 
   fortressSim = new VugSimulator(conditions, []);
+  if (Number.isFinite(params.initialWaterTablePct)) {
+    const pct = Math.max(0, Math.min(100, params.initialWaterTablePct));
+    conditions.fluid_surface_height_mm
+      = CavityWaterAppearance.verticalSpanForWall(fortressSim.wall_state) * pct / 100;
+  }
   // HELIX-OVERLAY-FORK ADDITION (strip view v154+): attach recorder.
   if (typeof _attachStripRecorderToSim === 'function') {
     _attachStripRecorderToSim(fortressSim, 'fortress_custom', 'Fortress — custom setup');
@@ -236,7 +1003,7 @@ function _fortressBeginCustomFromParams(params, seedOverride?) {
   logEl.innerHTML = '';
   const initLines = [
     `🏰 Creative Mode — Your Vug Awaits`,
-    `   Temperature: ${temp.toFixed(0)}°C | Pressure: ${pressure.toFixed(1)} kbar`,
+    `   Temperature: ${temp.toFixed(0)}°C | Fluid pressure: ${pressure.toFixed(2)} kbar`,
     `   Fluid: ${params.presetLabel || 'custom recipe'} — ${fluid.describe()}`,
     `═`.repeat(60),
     ``,
@@ -250,6 +1017,10 @@ function _fortressBeginCustomFromParams(params, seedOverride?) {
   updateFortressStatus();
   updateFortressInventory();
   syncBrothSliders();
+  // The commissioned Cartesian cavity is already authoritative at step zero.
+  // Render it now so Creative authors can inspect the initial condition before
+  // the first geological action changes water, chemistry, or wall geometry.
+  if (typeof topoRender === 'function') topoRender();
   // Autosave opens AFTER the slider sync so the recording's broth
   // baseline is the state the first action will actually see.
   if (typeof _saveNoteBegin === 'function') {
@@ -266,24 +1037,6 @@ function _fortressBeginCustomFromParams(params, seedOverride?) {
 // Backward-compat: legacy action ids ('silica', 'metals', 'brine',
 // 'fluorine', 'copper', 'oxidize', 'tectonic') still resolve to sensible
 // new behaviors so anything calling fortressStep('silica') keeps working.
-
-// Apply twinning to existing crystals — shared between 'shock' (catastrophic)
-// and 'tap' (light tremor; lower probability).
-function _applyShockTwinning(prob) {
-  if (!fortressSim) return;
-  for (const crystal of fortressSim.crystals) {
-    if (!crystal.twinned && crystal.zones.length > 2 && rng.random() < prob) {
-      crystal.twinned = true;
-      if (crystal.mineral === 'quartz') crystal.twin_law = 'Dauphiné';
-      else if (crystal.mineral === 'calcite') crystal.twin_law = 'c-twin {001}';
-      else if (crystal.mineral === 'sphalerite') crystal.twin_law = 'spinel-law {111}';
-      else if (crystal.mineral === 'fluorite') crystal.twin_law = 'penetration twin {111}';
-      else if (crystal.mineral === 'pyrite') crystal.twin_law = 'iron cross {110}';
-      else if (crystal.mineral === 'chalcopyrite') crystal.twin_law = 'penetration twin {112}';
-      else if (crystal.mineral === 'hematite') crystal.twin_law = 'penetration twin {001}';
-    }
-  }
-}
 
 // Lower fluid_surface_ring by `delta` rings (ratchet to 0). Returns the
 // applied delta. Vadose oxidation kicks in via _applyVadoseOxidationOverride
@@ -419,30 +1172,58 @@ function _fortressPaceLines(lines: string[], lineToStep: Record<number, number>,
   );
 }
 
+function _fortressCarbonateRecharge(
+  replacementFraction: number,
+  incomingDICPpm: number,
+  incomingPH: number,
+  note: string,
+): any {
+  const state = fortressSim?._carbonateBoundaryState;
+  if (!state) return null;
+  if (!fortressSim._prepareCarbonateBoundarySpatialState() || state.blocked) {
+    return { ok: false, error: 'carbonate_boundary_blocked_or_unreconciled' };
+  }
+  const incomingDIC = dicPpmToMolKg(incomingDICPpm);
+  const incomingAlkalinity = reducedCarbonateAlkalinityEqKg(
+    incomingDIC, incomingPH, fortressSim.conditions.temperature,
+  );
+  const tx = rechargeCarbonateBoundaryState(
+    state,
+    fortressSim.conditions.fluid,
+    fortressSim.conditions.temperature,
+    replacementFraction,
+    incomingDIC,
+    incomingAlkalinity,
+    note,
+  );
+  if (tx?.ok) fortressSim._replaceFullyMixedCarbonateFluid();
+  return tx;
+}
+
+function _fortressCarbonateTitrate(targetPH: number, note: string): any {
+  const state = fortressSim?._carbonateBoundaryState;
+  if (!state) return null;
+  if (!fortressSim._prepareCarbonateBoundarySpatialState() || state.blocked) {
+    return { ok: false, error: 'carbonate_boundary_blocked_or_unreconciled' };
+  }
+  const tx = titrateCarbonateBoundaryToPHState(
+    state, fortressSim.conditions.fluid, fortressSim.conditions.temperature, targetPH, note,
+  );
+  if (tx?.ok) fortressSim._replaceFullyMixedCarbonateFluid();
+  return tx;
+}
+
 function fortressStep(action, payload) {
   if (!fortressSim || !fortressActive) return;
 
   const c = fortressSim.conditions;
   let actionDesc = '';
 
-  // Apply current broth slider values to sim state before processing
-  // (sliders are live-bound via oninput; this is a belt-and-suspenders
-  // re-sync in case any manual slider changes haven't fired yet).
-  // Finite guard: a detached/blank slider parses to NaN — never write
-  // that into the broth (headless drives run without the slider DOM).
-  if (fortressSim) {
-    for (const [key, m] of Object.entries(BROTH_MAP)) {
-      const slider = document.getElementById('broth-' + key);
-      if (!slider) continue;
-      const v = (m as any).parse((slider as HTMLInputElement).value);
-      if (Number.isFinite(v)) (m as any).set(v);
-    }
-  }
-
+  // Broth inputs write through on their own input events. Never treat a
+  // synchronized slider echo as authority over geological state.
   // Save system (93a-ui-saves.ts): record the verb + any broth-slider
-  // changes since the last action into the run's rolling autosave.
-  // Sits AFTER the re-sync so the recording reads the same slider state
-  // the physics just consumed. No-ops during replay.
+  // changes the player actually made since the last action. No-ops during
+  // replay; synchronized slider echoes are never recorded as interventions.
   if (typeof _saveRecordAction === 'function') _saveRecordAction(action, payload);
 
   // Track whether this action advances time and how many ticks.
@@ -462,19 +1243,19 @@ function fortressStep(action, payload) {
 
     // ── 2. TEMPERATURE — gentle/large pairs ──
     case 'warm':
-      c.temperature = Math.min(c.temperature + 5, 600);
+      fortressSim.setGlobalTemperature(Math.min(c.temperature + 5, 900));
       actionDesc = '🌤️ Warm +5°C → ' + c.temperature.toFixed(0) + '°C';
       break;
     case 'heat':
-      c.temperature = Math.min(c.temperature + 25, 600);
+      fortressSim.setGlobalTemperature(Math.min(c.temperature + 25, 900));
       actionDesc = '🔥 Heat +25°C → ' + c.temperature.toFixed(0) + '°C';
       break;
     case 'cool':
-      c.temperature = Math.max(c.temperature - 5, 25);
+      fortressSim.setGlobalTemperature(Math.max(c.temperature - 5, 0));
       actionDesc = '🌬️ Cool −5°C → ' + c.temperature.toFixed(0) + '°C';
       break;
     case 'quench':
-      c.temperature = Math.max(c.temperature - 25, 25);
+      fortressSim.setGlobalTemperature(Math.max(c.temperature - 25, 0));
       actionDesc = '❄️ Quench −25°C → ' + c.temperature.toFixed(0) + '°C';
       break;
 
@@ -486,8 +1267,17 @@ function fortressStep(action, payload) {
       c.flow_rate = Math.max(c.flow_rate, 1.5);
       c.fluid.SiO2 *= 0.85;
       c.fluid.Ca *= 1.10;
-      c.fluid.CO3 *= 1.08;
-      c.fluid.pH = Math.min(c.fluid.pH + 0.1, 10.0);
+      if (fortressSim._carbonateBoundaryState) {
+        const tx = _fortressCarbonateRecharge(
+          0.10, c.fluid.CO3 * 1.8, Math.min(c.fluid.pH + 0.1, 10), 'Creative seep recharge',
+        );
+        _carbonateBoundaryControlNotice = tx?.ok
+          ? 'Seep executed as 10% replacement-water recharge with separate carbon import/export.'
+          : `Seep carbonate recharge rejected: ${tx?.error || 'unknown error'}.`;
+      } else {
+        c.fluid.CO3 *= 1.08;
+        c.fluid.pH = Math.min(c.fluid.pH + 0.1, 10.0);
+      }
       actionDesc = `💧 Seep — fresh fluid trickles in${rise ? `, water level +${rise.toFixed(1)}` : ''}`;
       break;
     }
@@ -497,8 +1287,17 @@ function fortressStep(action, payload) {
       c.flow_rate = 5.0;
       c.fluid.SiO2 *= 0.6;
       c.fluid.Ca *= 1.3;
-      c.fluid.CO3 *= 1.2;
-      c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
+      if (fortressSim._carbonateBoundaryState) {
+        const tx = _fortressCarbonateRecharge(
+          0.30, c.fluid.CO3 * (5 / 3), Math.min(c.fluid.pH + 0.3, 10), 'Creative flood recharge',
+        );
+        _carbonateBoundaryControlNotice = tx?.ok
+          ? 'Flood executed as 30% replacement-water recharge with separate carbon import/export.'
+          : `Flood carbonate recharge rejected: ${tx?.error || 'unknown error'}.`;
+      } else {
+        c.fluid.CO3 *= 1.2;
+        c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
+      }
       actionDesc = `🌊 Flood — fresh fluid pulse, silica diluted, carbonates refreshed${rise ? `, water level +${rise.toFixed(1)}` : ''}`;
       break;
     }
@@ -518,31 +1317,61 @@ function fortressStep(action, payload) {
       c.flow_rate = Math.max(c.flow_rate * 0.2, 0.05);
       c.fluid.O2 = Math.max(c.fluid.O2, 1.5);
       // Concentrate solubles (skip pH; that's set by speciation, not bulk).
-      const concSpecies = ['Ca', 'Mg', 'Na', 'K', 'Cl', 'SO4', 'CO3', 'B', 'F', 'Sr'];
+      const concSpecies = ['Ca', 'Mg', 'Na', 'K', 'Cl', 'S', 'B', 'F', 'Sr'];
+      if (!fortressSim._carbonateBoundaryState) concSpecies.push('CO3');
       for (const sp of concSpecies) {
         if (typeof c.fluid[sp] === 'number') c.fluid[sp] *= 1.4;
       }
-      c.temperature = Math.max(c.temperature - 10, 25);
+      fortressSim.setGlobalTemperature(Math.max(c.temperature - 10, 25));
+      if (fortressSim._carbonateBoundaryState) {
+        const state = fortressSim._carbonateBoundaryState;
+        if (!state.uncertainties.includes('water_mass_change_not_modeled')) {
+          state.uncertainties.push('water_mass_change_not_modeled');
+        }
+        _carbonateBoundaryControlNotice = 'Evaporation held the conserved carbonate inventory fixed because changing the one-kg-water control-volume basis is not yet supported.';
+      }
       actionDesc = `☀️ Evaporate — water level −${drop.toFixed(1)}, brine concentrates ×1.4, sulfides oxidize`;
       break;
     }
 
     // ── 4. pH — tweak/shift pairs in both directions ──
     case 'tweak_acidify':
-      c.fluid.pH = Math.max(c.fluid.pH - 0.3, 2.0);
+      if (fortressSim._carbonateBoundaryState) {
+        const tx = _fortressCarbonateTitrate(Math.max(c.fluid.pH - 0.3, 2), 'Creative gentle acid titration');
+        _carbonateBoundaryControlNotice = tx?.ok
+          ? `Strong-acid capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
+          : `Acid titration rejected: ${tx?.error || 'unknown error'}.`;
+      } else c.fluid.pH = Math.max(c.fluid.pH - 0.3, 2.0);
       actionDesc = `🧪 Tweak pH −0.3 → ${c.fluid.pH.toFixed(1)}`;
       break;
     case 'shift_acidify':
     case 'acidify': // legacy alias — fortressStep('acidify') still works
-      actionDesc = '🧪 ' + event_acidify(c);
+      if (fortressSim._carbonateBoundaryState) {
+        const tx = _fortressCarbonateTitrate(Math.max(c.fluid.pH - 2, 2), 'Creative strong acid titration');
+        _carbonateBoundaryControlNotice = tx?.ok
+          ? `Strong-acid capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
+          : `Acid titration rejected: ${tx?.error || 'unknown error'}.`;
+        actionDesc = tx?.ok ? `🧪 Acid titration → pH ${c.fluid.pH.toFixed(2)}` : '🧪 Acid titration rejected';
+      } else actionDesc = '🧪 ' + event_acidify(c);
       break;
     case 'tweak_alkalinize':
-      c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
+      if (fortressSim._carbonateBoundaryState) {
+        const tx = _fortressCarbonateTitrate(Math.min(c.fluid.pH + 0.3, 10), 'Creative gentle base titration');
+        _carbonateBoundaryControlNotice = tx?.ok
+          ? `Strong-base capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
+          : `Base titration rejected: ${tx?.error || 'unknown error'}.`;
+      } else c.fluid.pH = Math.min(c.fluid.pH + 0.3, 10.0);
       actionDesc = `⚗️ Tweak pH +0.3 → ${c.fluid.pH.toFixed(1)}`;
       break;
     case 'shift_alkalinize':
     case 'alkalinize': // legacy alias
-      actionDesc = '⚗️ ' + event_alkalinize(c);
+      if (fortressSim._carbonateBoundaryState) {
+        const tx = _fortressCarbonateTitrate(Math.min(c.fluid.pH + 2, 10), 'Creative strong base titration');
+        _carbonateBoundaryControlNotice = tx?.ok
+          ? `Strong-base capacity changed; pH solved to ${c.fluid.pH.toFixed(2)}.`
+          : `Base titration rejected: ${tx?.error || 'unknown error'}.`;
+        actionDesc = tx?.ok ? `⚗️ Base titration → pH ${c.fluid.pH.toFixed(2)}` : '⚗️ Base titration rejected';
+      } else actionDesc = '⚗️ ' + event_alkalinize(c);
       break;
 
     // ── 5. REPLENISH — host rock leaches the starting recipe back in ──
@@ -561,9 +1390,23 @@ function fortressStep(action, payload) {
       let touched = 0;
       for (const [k, v] of Object.entries(_fortressInitialFluidParams)) {
         if (typeof v === 'number' && typeof c.fluid[k] === 'number') {
+          if (fortressSim._carbonateBoundaryState && (k === 'CO3' || k === 'pH')) continue;
           c.fluid[k] = v;
           touched++;
         }
+      }
+      if (fortressSim._carbonateBoundaryState) {
+        const incomingDIC = Number(_fortressInitialFluidParams.CO3);
+        const incomingPH = Number(_fortressInitialFluidParams.pH);
+        const tx = _fortressCarbonateRecharge(
+          1,
+          Number.isFinite(incomingDIC) ? incomingDIC : c.fluid.CO3,
+          Number.isFinite(incomingPH) ? incomingPH : c.fluid.pH,
+          'Creative host-rock replenish recharge',
+        );
+        _carbonateBoundaryControlNotice = tx?.ok
+          ? 'Replenish executed as full replacement-water recharge with explicit incoming DIC and reduced alkalinity.'
+          : `Replenish carbonate recharge rejected: ${tx?.error || 'unknown error'}.`;
       }
       actionDesc = `🥣 Replenish — host rock leaches ${touched} species back to starting values; pH → ${c.fluid.pH.toFixed(1)}`;
       break;
@@ -580,10 +1423,19 @@ function fortressStep(action, payload) {
       }
       const sp = String(payload.species);
       const amount = Number(payload.ppm) || 50;
+      if (sp === 'CO3' && fortressSim._carbonateBoundaryState) {
+        actionDesc = 'DIC injection refused: choose pure CO2 charge or replacement-water recharge so alkalinity and the carbon boundary are explicit.';
+        _carbonateBoundaryControlNotice = actionDesc;
+        break;
+      }
       if (typeof c.fluid[sp] !== 'number') {
         actionDesc = `💉 Unknown species '${sp}' — no change`;
       } else {
-        c.fluid[sp] = (c.fluid[sp] || 0) + amount;
+        if (sp === 'SiO2' && typeof c.fluid.addReactiveSilica === 'function') {
+          c.fluid.addReactiveSilica(amount);
+        } else {
+          c.fluid[sp] = (c.fluid[sp] || 0) + amount;
+        }
         actionDesc = `💉 Inject ${sp} +${amount} ppm → ${c.fluid[sp].toFixed(0)} ppm`;
       }
       break;
@@ -593,7 +1445,8 @@ function fortressStep(action, payload) {
     // saved keyboard macros) working. Each routes through inject_species
     // semantics where possible.
     case 'silica':
-      c.fluid.SiO2 += 400;
+      if (typeof c.fluid.addReactiveSilica === 'function') c.fluid.addReactiveSilica(400);
+      else c.fluid.SiO2 += 400;
       c.fluid.Al += 2;
       c.fluid.Ti += 0.3;
       actionDesc = '🔮 Silica injected — SiO₂ +400 ppm (now ' + c.fluid.SiO2.toFixed(0) + ')';
@@ -606,7 +1459,7 @@ function fortressStep(action, payload) {
     case 'brine':
       c.fluid.Zn += 150;
       c.fluid.S += 120;
-      c.temperature -= 10;
+      fortressSim.setGlobalTemperature(c.temperature - 10);
       actionDesc = '⚗️ Brine mixed — Zn +150, S +120 ppm, T −10°C (mixing)';
       break;
     case 'fluorine':
@@ -618,33 +1471,175 @@ function fortressStep(action, payload) {
       c.fluid.Cu = 120.0;
       c.fluid.Fe += 40;
       c.fluid.S += 80;
-      c.fluid.SiO2 += 200;
+      if (typeof c.fluid.addReactiveSilica === 'function') c.fluid.addReactiveSilica(200);
+      else c.fluid.SiO2 += 200;
       c.fluid.O2 = 0.3;
-      c.temperature = Math.min(c.temperature + 30, 600);
+      fortressSim.setGlobalTemperature(Math.min(c.temperature + 30, 600));
       c.flow_rate = 4.0;
       actionDesc = `🟠 Copper injection — Cu ${c.fluid.Cu.toFixed(0)} ppm, Fe +40, S +80, reducing. T → ${c.temperature.toFixed(0)}°C`;
       break;
     case 'oxidize': // legacy alias — same intent as drain
       c.fluid.O2 = 1.8;
       c.fluid.S *= 0.3;
-      c.temperature = Math.max(c.temperature - 40, 25);
+      fortressSim.setGlobalTemperature(Math.max(c.temperature - 40, 25));
       _lowerWaterLevel(2);
       actionDesc = `🟡 Oxidation — O₂ → ${c.fluid.O2.toFixed(1)}, sulfur depleted. T → ${c.temperature.toFixed(0)}°C. Sulfides unstable!`;
       break;
 
-    // ── 6. SEISMIC — tap (gentle) / shock (catastrophic) ──
-    case 'tap':
-      c.pressure += 0.1;
-      _applyShockTwinning(0.04);
-      actionDesc = '👆 Tap — small tremor, P +0.1 kbar. Fresh fracture surfaces; minor twinning chance.';
+    // ── 6. SEISMIC — differential stress, never isotropic pressure ──
+    case 'tap': {
+      const stress = applyDifferentialStressPulse(fortressSim, 25);
+      actionDesc = `👆 Tap — 25 MPa differential-stress pulse; fluid pressure unchanged. ${stress.twinned.length} mechanically twinned crystal${stress.twinned.length === 1 ? '' : 's'}.`;
       break;
+    }
     case 'shock':
-    case 'tectonic': // legacy alias
-      c.pressure += 0.5;
-      c.temperature += 15;
-      _applyShockTwinning(0.15);
-      actionDesc = '⚡ Shock — catastrophic fracture. P +0.5 kbar, T +15°C. Crystals stressed!';
+    case 'tectonic': { // legacy alias
+      fortressSim.setGlobalTemperature(c.temperature + 15);
+      const stress = applyDifferentialStressPulse(fortressSim, 50);
+      actionDesc = `⚡ Shock — 50 MPa differential-stress pulse, T +15°C; fluid pressure unchanged. ${stress.twinned.length} mechanically twinned crystal${stress.twinned.length === 1 ? '' : 's'}.`;
       break;
+    }
+    case 'stress_pulse': {
+      const sigma = Math.max(0, Number(payload?.sigmaDiffMpa) || 0);
+      const stress = applyDifferentialStressPulse(fortressSim, sigma);
+      actionDesc = `Instantaneous differential-stress pulse — ${sigma.toFixed(1)} MPa; fluid pressure unchanged; ${stress.twinned.length} mechanical twin response${stress.twinned.length === 1 ? '' : 's'}. No creep/duration law is implied.`;
+      break;
+    }
+    case 'decompress': {
+      const before = c.pressure;
+      const delta = Math.max(0, Number(payload?.deltaKbar) || 0);
+      c.pressure = clampFluidPressureKbar(before - delta);
+      actionDesc = `Isothermal decompression — fluid pressure ${before.toFixed(2)} → ${c.pressure.toFixed(2)} kbar. Volatile flashing is not inferred without conserved gas pools.`;
+      break;
+    }
+
+    // ── 7. ADVANCED GEOLOGICAL HISTORY ──
+    case 'schedule_movement': {
+      const spec = normalizeCreativeMovementSpec(payload, fortressSim.step);
+      if (!spec) {
+        actionDesc = 'Trajectory ignored — choose a field and finite amount/target.';
+        break;
+      }
+      if (fortressSim._carbonateBoundaryState
+          && (spec.field === 'fluid.CO3' || spec.field === 'fluid.pH')) {
+        actionDesc = spec.field === 'fluid.CO3'
+          ? 'DIC trajectory refused — schedule explicit replacement-water recharge with incoming DIC and reduced alkalinity.'
+          : 'pH trajectory refused — schedule a reduced-alkalinity/strong-acid-base trajectory so pH remains solved.';
+        _carbonateBoundaryControlNotice = actionDesc;
+        break;
+      }
+      c._scenario ||= {};
+      c._scenario.movements ||= [];
+      c._scenario.movements.push(spec);
+      if (fortressSim._movements && typeof fortressSim._movements.addMovement === 'function') {
+        fortressSim._movements.addMovement(spec);
+      } else {
+        fortressSim._movements = _createMovementController(fortressSim);
+      }
+      actionDesc = `Trajectory scheduled — ${spec.field}, steps ${spec.startStep}–${spec.endStep - 1}, ${spec.origin}`;
+      break;
+    }
+    case 'clear_movements':
+      c._scenario ||= {};
+      c._scenario.movements = [];
+      fortressSim._movements = _createMovementController(fortressSim);
+      actionDesc = 'All scheduled trajectories cleared.';
+      break;
+    case 'configure_feeders': {
+      c._scenario ||= {};
+      const config = {
+        count: Math.max(0, Math.floor(Number(payload?.count) || 0)),
+        kinds: Array.isArray(payload?.kinds) ? payload.kinds : undefined,
+        spots: Array.isArray(payload?.spots) ? payload.spots : undefined,
+        deposition: !!payload?.deposition,
+      };
+      c._scenario.fluid_spots = config;
+      fortressSim._fluidSpots = _createFluidSpotField(fortressSim);
+      fortressSim._fluidSpotsDeposition = config.deposition;
+      const n = fortressSim._fluidSpots.spots.length;
+      actionDesc = `Feeder network rebuilt — ${n} point source${n === 1 ? '' : 's'}; deposition clustering ${config.deposition ? 'on' : 'off'}`;
+      break;
+    }
+    case 'toggle_feeders': {
+      const command = payload?.action === 'breach' ? 'breach' : 'seal';
+      const kind = payload?.kind || undefined;
+      const toggled = command === 'breach'
+        ? fortressSim._fluidSpots?.breachSpots(kind)
+        : fortressSim._fluidSpots?.sealSpots(kind);
+      actionDesc = `${command === 'breach' ? 'Breached' : 'Sealed'} ${toggled?.length || 0} ${kind || 'point'} feeder${toggled?.length === 1 ? '' : 's'}`;
+      break;
+    }
+    case 'set_thermal_source': {
+      const source = fortressSim.setThermalSource(payload);
+      actionDesc = source
+        ? `Thermal boundary ${source.id} set at cell ${source.ringIdx * fortressSim.wall_state.cells_per_ring + source.cellIdx}, depth ${source.depthIdx}: ${source.temperature_C.toFixed(1)}°C, ${source.flow_direction}. Exchange coefficients are fractions per simulation step, not SI rates.`
+        : 'Thermal source ignored — provide a finite source temperature.';
+      break;
+    }
+    case 'configure_thermal_field': {
+      const config = fortressSim.configureThermalField(payload || {});
+      actionDesc = `Thermal transport ${config.enabled ? 'enabled' : 'paused'}: conduction ${config.conduction_fraction_per_step.toFixed(4)}/step, wall exchange ${config.wall_coupling_fraction_per_step.toFixed(4)}/step, rock boundary ${config.wall_rock_thermal_buffer_C == null ? 'none' : `${config.wall_rock_thermal_buffer_C.toFixed(1)}°C`}. Coefficients are dimensionless until voxel length and step duration are calibrated.`;
+      break;
+    }
+    case 'remove_thermal_source': {
+      const removed = fortressSim.removeThermalSource(payload?.id);
+      actionDesc = removed
+        ? `Thermal boundary ${payload?.id} removed; its existing heat remains and relaxes by conduction.`
+        : `No thermal boundary named ${payload?.id || '(blank)'} was present.`;
+      break;
+    }
+    case 'clear_thermal_sources': {
+      const removed = fortressSim.clearThermalSources();
+      actionDesc = `${removed} localized thermal boundar${removed === 1 ? 'y' : 'ies'} removed; stored heat remains and relaxes by conduction.`;
+      break;
+    }
+    case 'set_zone_chemistry': {
+      const changed = applyCreativeZoneChemistry(fortressSim, payload);
+      actionDesc = changed
+        ? `${payload?.clear ? 'Cleared' : 'Set'} ${payload?.zone}.${payload?.field} across ${changed} mesh cells; spatial nucleation ${c.wall.zone_chemistry ? 'enabled' : 'disabled'}`
+        : 'Spatial chemistry edit ignored — select a valid zone, field, and value.';
+      break;
+    }
+    case 'apply_deformation': {
+      fortressSim._deformationEvents ||= [];
+      const magnitude = Math.max(0, Math.min(1, Number(payload?.magnitude) || 0));
+      fortressSim._deformationEvents.push({
+        step: fortressSim.step,
+        style: payload?.style || 'bend',
+        magnitude,
+        minerals: Array.isArray(payload?.minerals) && payload.minerals.length ? payload.minerals : null,
+      });
+      actionDesc = `Visual deformation reconstruction — ${payload?.style || 'bend'}, magnitude ${magnitude.toFixed(2)}; render tag only, with no strain-time or mass law implied.`;
+      break;
+    }
+    case 'apply_etch': {
+      fortressSim._etchEvents ||= [];
+      const durationDays = Number(payload?.duration_days);
+      const directive = {
+        step: fortressSim.step,
+        duration_days: durationDays,
+        minerals: Array.isArray(payload?.minerals) && payload.minerals.length ? payload.minerals : null,
+        physical: true,
+      };
+      fortressSim._etchEvents.push(directive);
+      const result = applyPhysicalEtchDirective(fortressSim, directive, fortressSim.step);
+      fortressSim._lastPhysicalEtch = result;
+      actionDesc = `Physical etch — model-derived morphology, ${Number.isFinite(result.durationDays) ? result.durationDays.toFixed(2) : 'invalid'} days: `
+        + `${result.accepted}/${result.considered} exposed crystals retreated, `
+        + `${result.totalAxialLossUm.toFixed(1)} µm axial-equivalent solid removed; exact booked shell inventory returned. `
+        + `Accepted relief is a labelled 250× schematic pore overlay while mass and silhouette stay physical. `
+        + `${result.rejected ? `${result.rejected} target(s) lacked a flat cubic surface or were outside the bounded rate/affinity envelope.` : ''}`;
+      break;
+    }
+    case 'apply_film': {
+      const mineral = String(payload?.mineral || 'chlorite');
+      const prism = Math.max(0, Math.min(1, Number(payload?.prism) || 0));
+      const term = Math.max(0, Math.min(1, Number(payload?.term) || 0));
+      const filter = Array.isArray(payload?.minerals) && payload.minerals.length ? payload.minerals : null;
+      const dusted = applyFilmDusting(fortressSim.crystals, mineral, term, prism, fortressSim.step, filter);
+      actionDesc = `Foreign film — ${mineral} coated ${dusted} crystal${dusted === 1 ? '' : 's'} (prism ${prism.toFixed(2)}, term ${term.toFixed(2)})`;
+      break;
+    }
   }
 
   const logEl = document.getElementById('fortress-log');
@@ -671,16 +1666,19 @@ function fortressStep(action, payload) {
       stepLineCounts[simStep] = stepLines.length;
       for (const l of stepLines) lines.push(l);
     }
+    if (typeof _saveCommitAction === 'function') _saveCommitAction();
     _fortressPaceLines(lines, lineToStep, stepLineCounts, () => {
       updateFortressInventory();
       updateFortressStatus();
       syncBrothSliders();
+      if (typeof refreshCreativeGeologyEditors === 'function') refreshCreativeGeologyEditors();
       if (typeof _maybeAdvanceTutorial === 'function') _maybeAdvanceTutorial();
     });
     return;
   }
 
   // Non-time actions: modify conditions but DON'T advance time.
+  if (typeof _saveCommitAction === 'function') _saveCommitAction();
   // Log what changed so the player can stack multiple changes. No
   // tempo needed — the user already saw the result; just emit one
   // line.
@@ -694,6 +1692,7 @@ function fortressStep(action, payload) {
   logEl.scrollTop = 0;
   updateFortressStatus();
   syncBrothSliders();
+  if (typeof refreshCreativeGeologyEditors === 'function') refreshCreativeGeologyEditors();
   if (typeof topoRender === 'function') topoRender();
   // Drive the tutorial state machine after each action. Reads
   // fortressSim.step internally — no-op when no tutorial is active.
@@ -763,7 +1762,7 @@ function updateFortressStatus() {
 
   document.getElementById('f-step-num').textContent = stepDisplay;
   document.getElementById('f-stat-temp').textContent = c.temperature.toFixed(1) + '°C';
-  document.getElementById('f-stat-press').textContent = c.pressure.toFixed(2) + ' kbar';
+  document.getElementById('f-stat-press').textContent = c.pressure.toFixed(2) + ' kbar fluid';
   document.getElementById('f-stat-ph').textContent = c.fluid.pH.toFixed(1);
   document.getElementById('f-stat-flow').textContent = c.flow_rate.toFixed(1);
 
@@ -771,7 +1770,7 @@ function updateFortressStatus() {
   const vugContainer = document.getElementById('f-stat-vug-container');
   if (c.wall.total_dissolved_mm > 0) {
     vugContainer.style.display = '';
-    document.getElementById('f-stat-vug').textContent = `${c.wall.vug_diameter_mm.toFixed(0)}mm (+${c.wall.total_dissolved_mm.toFixed(1)})`;
+    document.getElementById('f-stat-vug').textContent = `${c.wall.vug_diameter_mm.toFixed(2)}mm eq. D (ΔV ${c.wall.host_volume_removed_mm3_per_kg.toFixed(2)}mm³/kg)`;
   } else {
     vugContainer.style.display = 'none';
   }
@@ -961,25 +1960,22 @@ function fortressFinish() {
   // already collected and its save already sealed.
   if (!(typeof _fortressReplaying !== 'undefined' && _fortressReplaying)) {
     const endLines = [];
-    if (typeof collectAllCrystals === 'function') {
-      const res = collectAllCrystals(fortressSim.crystals, () => ({ mode: 'creative' }), { silent: true });
-      if (res && res.count > 0) {
-        const speciesNote = res.newSpecies && res.newSpecies.length
-          ? ` — ${res.newSpecies.length} new species: ${res.newSpecies.join(', ')}`
-          : '';
-        endLines.push(`💎 Collected ${res.count} crystal${res.count === 1 ? '' : 's'} into the Library${speciesNote}.`);
-      } else {
-        endLines.push('💎 Nothing new to collect — the Library already holds this run\'s crystals.');
-      }
-    }
-    let lifetime = null;
-    if (typeof bumpLifetimeStats === 'function') {
-      lifetime = bumpLifetimeStats({ runs_finished: 1 });
-    }
     if (typeof _saveMarkFinished === 'function') {
       const info = _saveMarkFinished();
       if (info) {
-        endLines.push(`💾 Run saved — "${info.name}"${lifetime ? ` · lifetime collected: ${lifetime.crystals_collected}` : ''}.`);
+        if (info.saved) {
+          if (info.count > 0) {
+            const speciesNote = info.newSpecies && info.newSpecies.length
+              ? ` — ${info.newSpecies.length} new species: ${info.newSpecies.join(', ')}`
+              : '';
+            endLines.push(`💎 Collected ${info.count} crystal${info.count === 1 ? '' : 's'} into the Library${speciesNote}.`);
+          } else {
+            endLines.push('💎 Nothing new to collect — the Library already holds this run\'s crystals.');
+          }
+          endLines.push(`💾 Run saved — "${info.name}"${info.lifetime ? ` · lifetime collected: ${info.lifetime.crystals_collected}` : ''}.`);
+        } else {
+          endLines.push('⚠️ Finish transaction incomplete. No unreceipted Library or lifetime change is being presented as complete; the authenticated transaction remains available from Saves for retry.');
+        }
       }
     }
     for (const line of endLines) {
@@ -1007,6 +2003,8 @@ function fortressReset() {
   const brothBody = document.getElementById('broth-body');
   if (brothToggle) brothToggle.classList.remove('open');
   if (brothBody) brothBody.classList.remove('open');
+  document.getElementById('creative-geology-toggle')?.classList.remove('open');
+  document.getElementById('creative-geology-body')?.classList.remove('open');
   // Clear snapshot buttons (keep the 📸 button)
   const snapRow = document.getElementById('broth-snapshots');
   if (snapRow) {
@@ -1029,8 +2027,8 @@ function fortressReset() {
   // Reset sliders
   document.getElementById('f-temp').value = 300;
   document.getElementById('f-temp-val').textContent = '300°C';
-  document.getElementById('f-pressure').value = 15;
-  document.getElementById('f-pressure-val').textContent = '1.5 kbar';
+  document.getElementById('f-pressure').value = 150;
+  document.getElementById('f-pressure-val').textContent = '1.50 kbar fluid';
   document.getElementById('f-ph').value = 65;
   document.getElementById('f-ph-val').textContent = '6.5';
   selectPreset('silica');

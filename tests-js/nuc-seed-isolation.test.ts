@@ -31,6 +31,12 @@ function seq(rng: any, n = 8): number[] {
   return out;
 }
 
+// The two integration assertions deliberately execute four matched histories:
+// clean/perturbed with private streams enabled, then the same legacy control
+// with shared streams. Cerussite first nucleates at step 1 in the authenticated
+// seed-42 strip, so a 40-step horizon contains the perturbation and 39 later
+// opportunities for any shared-stream cascade while avoiding a redundant full
+// 200-step commissioning run.
 describe('per-mineral nucleation seeds (the keystone)', () => {
   // The flag is a bundle-global shared across every test in this worker. Leaving
   // it OFF would run the legacy cascade for later test files and fail their
@@ -76,6 +82,7 @@ describe('per-mineral nucleation seeds (the keystone)', () => {
   // primary-sulfide leak was gated out), so it can't be the perturbation target here. cerussite
   // (8 crystals — the freed-Pb supergene heir) fires mid-run and is a robust replacement.
   const TARGET = 'cerussite';
+  const KEYSTONE_STEPS = 40;
 
   function signature(seed: number, perturbDraws: number, on: boolean): string {
     const prev = _setNucDerivedSeeds(on);
@@ -92,7 +99,7 @@ describe('per-mineral nucleation seeds (the keystone)', () => {
       setSeed(seed);
       const spec = SCENARIOS[SCEN]();
       const sim = new VugSimulator(spec.conditions, spec.events);
-      const steps = spec.defaultSteps ?? 200;
+      const steps = Math.min(spec.defaultSteps ?? KEYSTONE_STEPS, KEYSTONE_STEPS);
       for (let i = 0; i < steps; i++) sim.run_step();
       return sim.crystals
         .map((c: any) => `${c.mineral}:${c.nucleation_step}:${c.position}:${Math.round(c.total_growth_um)}`)
@@ -104,13 +111,13 @@ describe('per-mineral nucleation seeds (the keystone)', () => {
     }
   }
 
-  it('ON: perturbing one mineral changes NOTHING else in the run', () => {
+  it('ON: perturbing one mineral changes NOTHING else in the run', { timeout: 900_000 }, () => {
     const clean = signature(42, 0, true);
     const perturbed = signature(42, 5, true);
     expect(perturbed).toBe(clean);
   });
 
-  it('OFF (legacy shared stream): the same perturbation DOES shift the cascade (teeth)', () => {
+  it('OFF (legacy shared stream): the same perturbation DOES shift the cascade (teeth)', { timeout: 900_000 }, () => {
     const clean = signature(42, 0, false);
     const perturbed = signature(42, 5, false);
     expect(perturbed).not.toBe(clean);

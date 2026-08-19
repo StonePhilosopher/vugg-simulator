@@ -1,0 +1,1947 @@
+{
+  "seeds": [
+    42
+  ],
+  "runs": 41,
+  "scenarios": 41,
+  "counts": {
+    "observed": 137,
+    "escaping": 129,
+    "bound": 8
+  },
+  "species": [
+    {
+      "mineral": "calcite",
+      "observed": 104,
+      "bare": 104,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "deccan_zeolite",
+        "elmwood",
+        "grimsel_alpine_cleft",
+        "jeffrey_mine",
+        "marble_contact_metamorphism",
+        "mvt",
+        "reactivated_fluorite_vein",
+        "reactive_wall",
+        "roughten_gill",
+        "sabkha_dolomitization",
+        "searles_lake",
+        "sicily_solfifera",
+        "stalactite_demo",
+        "sunnyside_american_tunnel",
+        "tutorial_mn_calcite",
+        "tutorial_travertine",
+        "ultramafic_supergene",
+        "wittichen",
+        "zoned_dripstone_cave"
+      ]
+    },
+    {
+      "mineral": "opal",
+      "observed": 69,
+      "bare": 59,
+      "onCrystal": 10,
+      "escapes": true,
+      "hosts": {
+        "pyrite": 5,
+        "cinnabar": 3,
+        "native_sulfur": 2
+      },
+      "scenarios": [
+        "asbestos_hills_crack_seal",
+        "asbestos_hills_surficial_alteration",
+        "bisbee",
+        "colorado_plateau",
+        "ouro_preto",
+        "porphyry",
+        "radioactive_pegmatite",
+        "schneeberg",
+        "sulphur_bank",
+        "ultramafic_supergene"
+      ]
+    },
+    {
+      "mineral": "barite",
+      "observed": 66,
+      "bare": 13,
+      "onCrystal": 53,
+      "escapes": true,
+      "hosts": {
+        "sphalerite": 32,
+        "galena": 14,
+        "pyrite": 7
+      },
+      "scenarios": [
+        "elmwood",
+        "mvt",
+        "reactivated_fluorite_vein",
+        "tn457_barite_pulses",
+        "wittichen"
+      ]
+    },
+    {
+      "mineral": "halite",
+      "observed": 46,
+      "bare": 46,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "great_salt_plains",
+        "searles_lake"
+      ]
+    },
+    {
+      "mineral": "quartz",
+      "observed": 44,
+      "bare": 40,
+      "onCrystal": 4,
+      "escapes": true,
+      "hosts": {
+        "chalcedony": 4
+      },
+      "scenarios": [
+        "amethyst_geode",
+        "asbestos_hills_crack_seal",
+        "asbestos_hills_surficial_alteration",
+        "cooling",
+        "deccan_zeolite",
+        "epithermal_telluride",
+        "gem_pegmatite",
+        "grimsel_alpine_cleft",
+        "mvt",
+        "ouro_preto",
+        "pulse",
+        "radioactive_pegmatite",
+        "roughten_gill",
+        "schneeberg",
+        "shigar_pegmatite",
+        "sunnyside_american_tunnel",
+        "tormiq_alpine_cleft",
+        "tutorial_first_crystal",
+        "tutorial_mn_calcite"
+      ]
+    },
+    {
+      "mineral": "celestine",
+      "observed": 41,
+      "bare": 38,
+      "onCrystal": 3,
+      "escapes": true,
+      "hosts": {
+        "barite": 3
+      },
+      "scenarios": [
+        "elmwood",
+        "naica_geothermal",
+        "reactivated_fluorite_vein",
+        "sabkha_dolomitization",
+        "searles_lake",
+        "sicily_solfifera"
+      ]
+    },
+    {
+      "mineral": "lepidocrocite",
+      "observed": 37,
+      "bare": 37,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "asbestos_hills_surficial_alteration",
+        "bisbee",
+        "ouro_preto",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "acanthite",
+      "observed": 26,
+      "bare": 21,
+      "onCrystal": 5,
+      "escapes": true,
+      "hosts": {
+        "galena": 5
+      },
+      "scenarios": [
+        "bisbee",
+        "porphyry",
+        "reactivated_fluorite_vein",
+        "roughten_gill",
+        "schneeberg",
+        "wittichen"
+      ]
+    },
+    {
+      "mineral": "brochantite",
+      "observed": 26,
+      "bare": 24,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "chalcocite": 2
+      },
+      "scenarios": [
+        "bisbee",
+        "porphyry",
+        "roughten_gill",
+        "schneeberg",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "albite",
+      "observed": 23,
+      "bare": 13,
+      "onCrystal": 10,
+      "escapes": true,
+      "hosts": {
+        "feldspar": 9,
+        "quartz": 1
+      },
+      "scenarios": [
+        "bisbee",
+        "chiastolite_hornfels",
+        "deccan_zeolite",
+        "epithermal_telluride",
+        "gem_pegmatite",
+        "grimsel_alpine_cleft",
+        "jeffrey_mine",
+        "ouro_preto",
+        "porphyry",
+        "radioactive_pegmatite",
+        "shigar_pegmatite",
+        "tormiq_alpine_cleft"
+      ]
+    },
+    {
+      "mineral": "galena",
+      "observed": 23,
+      "bare": 11,
+      "onCrystal": 12,
+      "escapes": true,
+      "hosts": {
+        "sphalerite": 12
+      },
+      "scenarios": [
+        "bisbee",
+        "elmwood",
+        "mvt",
+        "porphyry",
+        "reactivated_fluorite_vein",
+        "reactive_wall",
+        "roughten_gill",
+        "sunnyside_american_tunnel"
+      ]
+    },
+    {
+      "mineral": "feldspar",
+      "observed": 22,
+      "bare": 17,
+      "onCrystal": 5,
+      "escapes": true,
+      "hosts": {
+        "quartz": 5
+      },
+      "scenarios": [
+        "bisbee",
+        "chiastolite_hornfels",
+        "deccan_zeolite",
+        "epithermal_telluride",
+        "gem_pegmatite",
+        "grimsel_alpine_cleft",
+        "ouro_preto",
+        "porphyry",
+        "radioactive_pegmatite",
+        "schneeberg",
+        "shigar_pegmatite",
+        "tormiq_alpine_cleft"
+      ]
+    },
+    {
+      "mineral": "dolomite",
+      "observed": 21,
+      "bare": 17,
+      "onCrystal": 4,
+      "escapes": true,
+      "hosts": {
+        "calcite": 4
+      },
+      "scenarios": [
+        "jeffrey_mine",
+        "reactive_wall",
+        "sabkha_dolomitization",
+        "ultramafic_supergene",
+        "zoned_dripstone_cave"
+      ]
+    },
+    {
+      "mineral": "chalcedony",
+      "observed": 20,
+      "bare": 20,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "amethyst_geode",
+        "bisbee",
+        "deccan_zeolite",
+        "elmwood",
+        "reactivated_fluorite_vein",
+        "sulphur_bank",
+        "wittichen"
+      ]
+    },
+    {
+      "mineral": "chrysocolla",
+      "observed": 20,
+      "bare": 15,
+      "onCrystal": 5,
+      "escapes": true,
+      "hosts": {
+        "cuprite": 4,
+        "azurite": 1
+      },
+      "scenarios": [
+        "bisbee",
+        "porphyry",
+        "roughten_gill",
+        "schneeberg"
+      ]
+    },
+    {
+      "mineral": "dioptase",
+      "observed": 18,
+      "bare": 12,
+      "onCrystal": 6,
+      "escapes": true,
+      "hosts": {
+        "chrysocolla": 6
+      },
+      "scenarios": [
+        "bisbee",
+        "schneeberg"
+      ]
+    },
+    {
+      "mineral": "tourmaline",
+      "observed": 17,
+      "bare": 4,
+      "onCrystal": 13,
+      "escapes": true,
+      "hosts": {
+        "quartz": 10,
+        "feldspar": 3
+      },
+      "scenarios": [
+        "gem_pegmatite",
+        "radioactive_pegmatite",
+        "shigar_pegmatite"
+      ]
+    },
+    {
+      "mineral": "thenardite",
+      "observed": 16,
+      "bare": 16,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "searles_lake"
+      ]
+    },
+    {
+      "mineral": "chalcocite",
+      "observed": 14,
+      "bare": 8,
+      "onCrystal": 6,
+      "escapes": true,
+      "hosts": {
+        "chalcopyrite": 5,
+        "bornite": 1
+      },
+      "scenarios": [
+        "bisbee",
+        "roughten_gill",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "native_silver",
+      "observed": 13,
+      "bare": 12,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "native_copper": 1
+      },
+      "scenarios": [
+        "bisbee",
+        "epithermal_telluride",
+        "schneeberg",
+        "wittichen"
+      ]
+    },
+    {
+      "mineral": "topaz",
+      "observed": 13,
+      "bare": 10,
+      "onCrystal": 3,
+      "escapes": true,
+      "hosts": {
+        "quartz": 3
+      },
+      "scenarios": [
+        "ouro_preto",
+        "radioactive_pegmatite",
+        "schneeberg",
+        "shigar_pegmatite"
+      ]
+    },
+    {
+      "mineral": "cassiterite",
+      "observed": 12,
+      "bare": 1,
+      "onCrystal": 11,
+      "escapes": true,
+      "hosts": {
+        "tourmaline": 6,
+        "feldspar": 2,
+        "topaz": 2,
+        "quartz": 1
+      },
+      "scenarios": [
+        "gem_pegmatite",
+        "radioactive_pegmatite",
+        "schneeberg"
+      ]
+    },
+    {
+      "mineral": "arsenopyrite",
+      "observed": 12,
+      "bare": 9,
+      "onCrystal": 3,
+      "escapes": true,
+      "hosts": {
+        "pyrite": 3
+      },
+      "scenarios": [
+        "porphyry",
+        "schneeberg",
+        "sunnyside_american_tunnel"
+      ]
+    },
+    {
+      "mineral": "pyromorphite",
+      "observed": 12,
+      "bare": 7,
+      "onCrystal": 5,
+      "escapes": true,
+      "hosts": {
+        "cerussite": 5
+      },
+      "scenarios": [
+        "roughten_gill",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "goethite",
+      "observed": 11,
+      "bare": 10,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "hematite": 1
+      },
+      "scenarios": [
+        "asbestos_hills_crack_seal",
+        "asbestos_hills_surficial_alteration",
+        "bisbee",
+        "deccan_zeolite",
+        "ouro_preto",
+        "porphyry",
+        "schneeberg",
+        "supergene_oxidation",
+        "ultramafic_supergene"
+      ]
+    },
+    {
+      "mineral": "jarosite",
+      "observed": 10,
+      "bare": 10,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "bisbee",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "titanite",
+      "observed": 10,
+      "bare": 4,
+      "onCrystal": 6,
+      "escapes": true,
+      "hosts": {
+        "feldspar": 5,
+        "calcite": 1
+      },
+      "scenarios": [
+        "grimsel_alpine_cleft",
+        "jeffrey_mine",
+        "porphyry",
+        "tormiq_alpine_cleft"
+      ]
+    },
+    {
+      "mineral": "epidote",
+      "observed": 10,
+      "bare": 3,
+      "onCrystal": 7,
+      "escapes": true,
+      "hosts": {
+        "feldspar": 5,
+        "quartz": 2
+      },
+      "scenarios": [
+        "grimsel_alpine_cleft",
+        "tormiq_alpine_cleft"
+      ]
+    },
+    {
+      "mineral": "greenockite",
+      "observed": 10,
+      "bare": 5,
+      "onCrystal": 5,
+      "escapes": true,
+      "hosts": {
+        "sphalerite": 5
+      },
+      "scenarios": [
+        "mvt",
+        "reactivated_fluorite_vein"
+      ]
+    },
+    {
+      "mineral": "anhydrite",
+      "observed": 10,
+      "bare": 10,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "sabkha_dolomitization"
+      ]
+    },
+    {
+      "mineral": "pyrite",
+      "observed": 9,
+      "bare": 8,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "sphalerite": 1
+      },
+      "scenarios": [
+        "bisbee",
+        "elmwood",
+        "mvt",
+        "porphyry",
+        "reactivated_fluorite_vein",
+        "reactive_wall",
+        "roughten_gill",
+        "sulphur_bank",
+        "sunnyside_american_tunnel"
+      ]
+    },
+    {
+      "mineral": "covellite",
+      "observed": 9,
+      "bare": 4,
+      "onCrystal": 5,
+      "escapes": true,
+      "hosts": {
+        "chalcocite": 5
+      },
+      "scenarios": [
+        "bisbee",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "native_gold",
+      "observed": 9,
+      "bare": 4,
+      "onCrystal": 5,
+      "escapes": true,
+      "hosts": {
+        "pyrite": 3,
+        "chalcocite": 1,
+        "bornite": 1
+      },
+      "scenarios": [
+        "bisbee",
+        "sunnyside_american_tunnel"
+      ]
+    },
+    {
+      "mineral": "azurite",
+      "observed": 9,
+      "bare": 6,
+      "onCrystal": 3,
+      "escapes": true,
+      "hosts": {
+        "cuprite": 3
+      },
+      "scenarios": [
+        "bisbee",
+        "roughten_gill",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "anglesite",
+      "observed": 9,
+      "bare": 6,
+      "onCrystal": 3,
+      "escapes": true,
+      "hosts": {
+        "galena": 3
+      },
+      "scenarios": [
+        "porphyry",
+        "roughten_gill",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "ferrimolybdite",
+      "observed": 9,
+      "bare": 6,
+      "onCrystal": 3,
+      "escapes": true,
+      "hosts": {
+        "molybdenite": 3
+      },
+      "scenarios": [
+        "porphyry",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "native_sulfur",
+      "observed": 9,
+      "bare": 7,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "selenite": 1,
+        "celestine": 1
+      },
+      "scenarios": [
+        "sicily_solfifera",
+        "sulphur_bank"
+      ]
+    },
+    {
+      "mineral": "scorodite",
+      "observed": 9,
+      "bare": 9,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "sphalerite",
+      "observed": 8,
+      "bare": 8,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "elmwood",
+        "mvt",
+        "reactivated_fluorite_vein",
+        "reactive_wall",
+        "roughten_gill",
+        "sunnyside_american_tunnel",
+        "tn457_barite_pulses"
+      ]
+    },
+    {
+      "mineral": "plumbogummite",
+      "observed": 8,
+      "bare": 4,
+      "onCrystal": 4,
+      "escapes": true,
+      "hosts": {
+        "pyromorphite": 4
+      },
+      "scenarios": [
+        "radioactive_pegmatite",
+        "roughten_gill",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "cerussite",
+      "observed": 8,
+      "bare": 8,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "roughten_gill",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "aurichalcite",
+      "observed": 8,
+      "bare": 8,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "roughten_gill",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "nickeline",
+      "observed": 8,
+      "bare": 8,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "schneeberg",
+        "wittichen"
+      ]
+    },
+    {
+      "mineral": "tincalconite",
+      "observed": 8,
+      "bare": 8,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "searles_lake"
+      ]
+    },
+    {
+      "mineral": "siderite",
+      "observed": 7,
+      "bare": 6,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "pyrite": 1
+      },
+      "scenarios": [
+        "asbestos_hills_crack_seal",
+        "asbestos_hills_surficial_alteration",
+        "jeffrey_mine",
+        "pulse",
+        "reactivated_fluorite_vein",
+        "sunnyside_american_tunnel",
+        "tutorial_mn_calcite"
+      ]
+    },
+    {
+      "mineral": "turquoise",
+      "observed": 7,
+      "bare": 7,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "bisbee",
+        "schneeberg"
+      ]
+    },
+    {
+      "mineral": "mimetite",
+      "observed": 7,
+      "bare": 3,
+      "onCrystal": 4,
+      "escapes": true,
+      "hosts": {
+        "galena": 4
+      },
+      "scenarios": [
+        "bisbee",
+        "roughten_gill",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "actinolite",
+      "observed": 7,
+      "bare": 4,
+      "onCrystal": 3,
+      "escapes": true,
+      "hosts": {
+        "diopside": 2,
+        "grossular": 1
+      },
+      "scenarios": [
+        "jeffrey_mine",
+        "tormiq_alpine_cleft"
+      ]
+    },
+    {
+      "mineral": "aragonite",
+      "observed": 7,
+      "bare": 6,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "skutterudite": 1
+      },
+      "scenarios": [
+        "sabkha_dolomitization",
+        "tutorial_travertine",
+        "wittichen",
+        "zoned_dripstone_cave"
+      ]
+    },
+    {
+      "mineral": "native_arsenic",
+      "observed": 7,
+      "bare": 7,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "schneeberg",
+        "wittichen"
+      ]
+    },
+    {
+      "mineral": "pharmacolite",
+      "observed": 7,
+      "bare": 5,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "nickeline": 1,
+        "annabergite": 1
+      },
+      "scenarios": [
+        "schneeberg",
+        "wittichen"
+      ]
+    },
+    {
+      "mineral": "amosite",
+      "observed": 6,
+      "bare": 4,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "magnetite": 2
+      },
+      "scenarios": [
+        "asbestos_hills_crack_seal",
+        "asbestos_hills_surficial_alteration"
+      ]
+    },
+    {
+      "mineral": "crocidolite",
+      "observed": 6,
+      "bare": 2,
+      "onCrystal": 4,
+      "escapes": true,
+      "hosts": {
+        "magnetite": 4
+      },
+      "scenarios": [
+        "asbestos_hills_crack_seal",
+        "asbestos_hills_surficial_alteration"
+      ]
+    },
+    {
+      "mineral": "tigers_eye",
+      "observed": 6,
+      "bare": 0,
+      "onCrystal": 6,
+      "escapes": false,
+      "hosts": {
+        "crocidolite": 6
+      },
+      "scenarios": [
+        "asbestos_hills_crack_seal",
+        "asbestos_hills_surficial_alteration"
+      ]
+    },
+    {
+      "mineral": "hematite",
+      "observed": 6,
+      "bare": 3,
+      "onCrystal": 3,
+      "escapes": true,
+      "hosts": {
+        "quartz": 3
+      },
+      "scenarios": [
+        "asbestos_hills_crack_seal",
+        "asbestos_hills_surficial_alteration",
+        "bisbee",
+        "deccan_zeolite",
+        "grimsel_alpine_cleft",
+        "porphyry"
+      ]
+    },
+    {
+      "mineral": "uranophane",
+      "observed": 6,
+      "bare": 4,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "uraninite": 2
+      },
+      "scenarios": [
+        "colorado_plateau",
+        "schneeberg"
+      ]
+    },
+    {
+      "mineral": "spodumene",
+      "observed": 6,
+      "bare": 2,
+      "onCrystal": 4,
+      "escapes": true,
+      "hosts": {
+        "quartz": 4
+      },
+      "scenarios": [
+        "gem_pegmatite",
+        "radioactive_pegmatite",
+        "schneeberg"
+      ]
+    },
+    {
+      "mineral": "lepidolite",
+      "observed": 6,
+      "bare": 1,
+      "onCrystal": 5,
+      "escapes": true,
+      "hosts": {
+        "spodumene": 4,
+        "quartz": 1
+      },
+      "scenarios": [
+        "gem_pegmatite",
+        "radioactive_pegmatite"
+      ]
+    },
+    {
+      "mineral": "apatite",
+      "observed": 6,
+      "bare": 6,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "grimsel_alpine_cleft"
+      ]
+    },
+    {
+      "mineral": "uraninite",
+      "observed": 6,
+      "bare": 6,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "radioactive_pegmatite",
+        "schneeberg"
+      ]
+    },
+    {
+      "mineral": "proustite",
+      "observed": 6,
+      "bare": 5,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "native_silver": 1
+      },
+      "scenarios": [
+        "schneeberg",
+        "sunnyside_american_tunnel",
+        "wittichen"
+      ]
+    },
+    {
+      "mineral": "cinnabar",
+      "observed": 6,
+      "bare": 6,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "sulphur_bank"
+      ]
+    },
+    {
+      "mineral": "pararealgar",
+      "observed": 6,
+      "bare": 6,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "sulphur_bank"
+      ]
+    },
+    {
+      "mineral": "orpiment",
+      "observed": 6,
+      "bare": 3,
+      "onCrystal": 3,
+      "escapes": true,
+      "hosts": {
+        "realgar": 3
+      },
+      "scenarios": [
+        "sulphur_bank"
+      ]
+    },
+    {
+      "mineral": "vanadinite",
+      "observed": 6,
+      "bare": 3,
+      "onCrystal": 3,
+      "escapes": true,
+      "hosts": {
+        "goethite": 3
+      },
+      "scenarios": [
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "tennantite",
+      "observed": 5,
+      "bare": 4,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "chalcopyrite": 1
+      },
+      "scenarios": [
+        "bisbee",
+        "porphyry",
+        "roughten_gill",
+        "schneeberg",
+        "sunnyside_american_tunnel"
+      ]
+    },
+    {
+      "mineral": "andalusite",
+      "observed": 5,
+      "bare": 5,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "chiastolite_hornfels"
+      ]
+    },
+    {
+      "mineral": "tyuyamunite",
+      "observed": 5,
+      "bare": 5,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "colorado_plateau"
+      ]
+    },
+    {
+      "mineral": "pectolite",
+      "observed": 5,
+      "bare": 3,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "calcite": 1,
+        "grossular": 1
+      },
+      "scenarios": [
+        "deccan_zeolite",
+        "jeffrey_mine"
+      ]
+    },
+    {
+      "mineral": "prehnite",
+      "observed": 5,
+      "bare": 1,
+      "onCrystal": 4,
+      "escapes": true,
+      "hosts": {
+        "grossular": 2,
+        "calcite": 1,
+        "diopside": 1
+      },
+      "scenarios": [
+        "deccan_zeolite",
+        "jeffrey_mine"
+      ]
+    },
+    {
+      "mineral": "fluorite",
+      "observed": 5,
+      "bare": 5,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "elmwood",
+        "grimsel_alpine_cleft",
+        "mvt",
+        "reactivated_fluorite_vein",
+        "sunnyside_american_tunnel"
+      ]
+    },
+    {
+      "mineral": "native_tellurium",
+      "observed": 5,
+      "bare": 5,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "epithermal_telluride"
+      ]
+    },
+    {
+      "mineral": "selenite",
+      "observed": 5,
+      "bare": 5,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "great_salt_plains",
+        "naica_geothermal",
+        "sicily_solfifera",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "rhodochrosite",
+      "observed": 5,
+      "bare": 5,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "jeffrey_mine",
+        "pulse",
+        "reactivated_fluorite_vein",
+        "sunnyside_american_tunnel",
+        "tutorial_mn_calcite"
+      ]
+    },
+    {
+      "mineral": "morganite",
+      "observed": 5,
+      "bare": 1,
+      "onCrystal": 4,
+      "escapes": true,
+      "hosts": {
+        "feldspar": 3,
+        "quartz": 1
+      },
+      "scenarios": [
+        "radioactive_pegmatite",
+        "schneeberg"
+      ]
+    },
+    {
+      "mineral": "aquamarine",
+      "observed": 5,
+      "bare": 1,
+      "onCrystal": 4,
+      "escapes": true,
+      "hosts": {
+        "quartz": 2,
+        "feldspar": 2
+      },
+      "scenarios": [
+        "shigar_pegmatite"
+      ]
+    },
+    {
+      "mineral": "chalcopyrite",
+      "observed": 4,
+      "bare": 4,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "bisbee",
+        "porphyry",
+        "roughten_gill",
+        "sunnyside_american_tunnel"
+      ]
+    },
+    {
+      "mineral": "tetrahedrite",
+      "observed": 4,
+      "bare": 0,
+      "onCrystal": 4,
+      "escapes": false,
+      "hosts": {
+        "chalcopyrite": 4
+      },
+      "scenarios": [
+        "bisbee",
+        "porphyry",
+        "roughten_gill",
+        "sunnyside_american_tunnel"
+      ]
+    },
+    {
+      "mineral": "atacamite",
+      "observed": 4,
+      "bare": 4,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "bisbee"
+      ]
+    },
+    {
+      "mineral": "malachite",
+      "observed": 4,
+      "bare": 2,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "chalcopyrite": 2
+      },
+      "scenarios": [
+        "bisbee",
+        "porphyry",
+        "roughten_gill",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "carnotite",
+      "observed": 4,
+      "bare": 4,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "colorado_plateau"
+      ]
+    },
+    {
+      "mineral": "stilbite",
+      "observed": 4,
+      "bare": 2,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "quartz": 2
+      },
+      "scenarios": [
+        "deccan_zeolite"
+      ]
+    },
+    {
+      "mineral": "heulandite",
+      "observed": 4,
+      "bare": 0,
+      "onCrystal": 4,
+      "escapes": false,
+      "hosts": {
+        "quartz": 2,
+        "stilbite": 2
+      },
+      "scenarios": [
+        "deccan_zeolite"
+      ]
+    },
+    {
+      "mineral": "sylvanite",
+      "observed": 4,
+      "bare": 2,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "calaverite": 2
+      },
+      "scenarios": [
+        "epithermal_telluride",
+        "sunnyside_american_tunnel"
+      ]
+    },
+    {
+      "mineral": "calaverite",
+      "observed": 4,
+      "bare": 4,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "epithermal_telluride",
+        "sunnyside_american_tunnel"
+      ]
+    },
+    {
+      "mineral": "vesuvianite",
+      "observed": 4,
+      "bare": 1,
+      "onCrystal": 3,
+      "escapes": true,
+      "hosts": {
+        "grossular": 2,
+        "diopside": 1
+      },
+      "scenarios": [
+        "jeffrey_mine"
+      ]
+    },
+    {
+      "mineral": "diopside",
+      "observed": 4,
+      "bare": 2,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "calcite": 2
+      },
+      "scenarios": [
+        "jeffrey_mine"
+      ]
+    },
+    {
+      "mineral": "grossular",
+      "observed": 4,
+      "bare": 0,
+      "onCrystal": 4,
+      "escapes": false,
+      "hosts": {
+        "diopside": 2,
+        "wollastonite": 2
+      },
+      "scenarios": [
+        "jeffrey_mine"
+      ]
+    },
+    {
+      "mineral": "bismuthinite",
+      "observed": 4,
+      "bare": 4,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "porphyry"
+      ]
+    },
+    {
+      "mineral": "rosasite",
+      "observed": 4,
+      "bare": 4,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "roughten_gill"
+      ]
+    },
+    {
+      "mineral": "cobaltite",
+      "observed": 4,
+      "bare": 3,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "arsenopyrite": 1
+      },
+      "scenarios": [
+        "schneeberg"
+      ]
+    },
+    {
+      "mineral": "native_bismuth",
+      "observed": 4,
+      "bare": 4,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "schneeberg",
+        "wittichen"
+      ]
+    },
+    {
+      "mineral": "metazeunerite",
+      "observed": 4,
+      "bare": 3,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "torbernite": 1
+      },
+      "scenarios": [
+        "schneeberg"
+      ]
+    },
+    {
+      "mineral": "autunite",
+      "observed": 4,
+      "bare": 4,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "schneeberg"
+      ]
+    },
+    {
+      "mineral": "uranospinite",
+      "observed": 4,
+      "bare": 3,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "zeunerite": 1
+      },
+      "scenarios": [
+        "schneeberg"
+      ]
+    },
+    {
+      "mineral": "argentite",
+      "observed": 4,
+      "bare": 2,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "galena": 2
+      },
+      "scenarios": [
+        "sunnyside_american_tunnel"
+      ]
+    },
+    {
+      "mineral": "conichalcite",
+      "observed": 4,
+      "bare": 2,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "scorodite": 1,
+        "malachite": 1
+      },
+      "scenarios": [
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "stolzite",
+      "observed": 4,
+      "bare": 4,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "powellite",
+      "observed": 4,
+      "bare": 4,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "olivenite",
+      "observed": 4,
+      "bare": 2,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "malachite": 2
+      },
+      "scenarios": [
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "raspite",
+      "observed": 4,
+      "bare": 4,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "descloizite",
+      "observed": 4,
+      "bare": 4,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "magnetite",
+      "observed": 3,
+      "bare": 3,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "asbestos_hills_crack_seal",
+        "asbestos_hills_surficial_alteration",
+        "porphyry"
+      ]
+    },
+    {
+      "mineral": "marcasite",
+      "observed": 3,
+      "bare": 3,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "bisbee",
+        "reactive_wall",
+        "sulphur_bank"
+      ]
+    },
+    {
+      "mineral": "cuprite",
+      "observed": 3,
+      "bare": 2,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "chalcocite": 1
+      },
+      "scenarios": [
+        "bisbee",
+        "schneeberg",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "bornite",
+      "observed": 3,
+      "bare": 2,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "chalcopyrite": 1
+      },
+      "scenarios": [
+        "bisbee"
+      ]
+    },
+    {
+      "mineral": "hessite",
+      "observed": 3,
+      "bare": 3,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "epithermal_telluride"
+      ]
+    },
+    {
+      "mineral": "awaruite",
+      "observed": 3,
+      "bare": 3,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "jeffrey_mine"
+      ]
+    },
+    {
+      "mineral": "datolite",
+      "observed": 3,
+      "bare": 1,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "vesuvianite": 2
+      },
+      "scenarios": [
+        "jeffrey_mine"
+      ]
+    },
+    {
+      "mineral": "molybdenite",
+      "observed": 3,
+      "bare": 1,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "pyrite": 2
+      },
+      "scenarios": [
+        "porphyry"
+      ]
+    },
+    {
+      "mineral": "mottramite",
+      "observed": 3,
+      "bare": 3,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "roughten_gill"
+      ]
+    },
+    {
+      "mineral": "hemimorphite",
+      "observed": 3,
+      "bare": 1,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "smithsonite": 2
+      },
+      "scenarios": [
+        "roughten_gill"
+      ]
+    },
+    {
+      "mineral": "erythrite",
+      "observed": 3,
+      "bare": 2,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "skutterudite": 1
+      },
+      "scenarios": [
+        "schneeberg",
+        "supergene_oxidation",
+        "wittichen"
+      ]
+    },
+    {
+      "mineral": "annabergite",
+      "observed": 3,
+      "bare": 1,
+      "onCrystal": 2,
+      "escapes": true,
+      "hosts": {
+        "erythrite": 2
+      },
+      "scenarios": [
+        "schneeberg",
+        "supergene_oxidation",
+        "wittichen"
+      ]
+    },
+    {
+      "mineral": "metacinnabar",
+      "observed": 3,
+      "bare": 3,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "sulphur_bank"
+      ]
+    },
+    {
+      "mineral": "chrysoprase",
+      "observed": 3,
+      "bare": 3,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "ultramafic_supergene"
+      ]
+    },
+    {
+      "mineral": "haidingerite",
+      "observed": 3,
+      "bare": 0,
+      "onCrystal": 3,
+      "escapes": false,
+      "hosts": {
+        "native_arsenic": 2,
+        "nickeline": 1
+      },
+      "scenarios": [
+        "wittichen"
+      ]
+    },
+    {
+      "mineral": "apophyllite",
+      "observed": 2,
+      "bare": 1,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "hematite": 1
+      },
+      "scenarios": [
+        "deccan_zeolite",
+        "grimsel_alpine_cleft"
+      ]
+    },
+    {
+      "mineral": "stibnite",
+      "observed": 2,
+      "bare": 2,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "porphyry"
+      ]
+    },
+    {
+      "mineral": "smithsonite",
+      "observed": 2,
+      "bare": 1,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "sphalerite": 1
+      },
+      "scenarios": [
+        "roughten_gill",
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "naumannite",
+      "observed": 2,
+      "bare": 2,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "schneeberg"
+      ]
+    },
+    {
+      "mineral": "mirabilite",
+      "observed": 2,
+      "bare": 2,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "searles_lake"
+      ]
+    },
+    {
+      "mineral": "duftite",
+      "observed": 2,
+      "bare": 0,
+      "onCrystal": 2,
+      "escapes": false,
+      "hosts": {
+        "mimetite": 1,
+        "malachite": 1
+      },
+      "scenarios": [
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "caledonite",
+      "observed": 2,
+      "bare": 2,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "skutterudite",
+      "observed": 2,
+      "bare": 2,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "wittichen"
+      ]
+    },
+    {
+      "mineral": "safflorite",
+      "observed": 2,
+      "bare": 1,
+      "onCrystal": 1,
+      "escapes": true,
+      "hosts": {
+        "skutterudite": 1
+      },
+      "scenarios": [
+        "wittichen"
+      ]
+    },
+    {
+      "mineral": "native_copper",
+      "observed": 1,
+      "bare": 1,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "bisbee"
+      ]
+    },
+    {
+      "mineral": "scolecite",
+      "observed": 1,
+      "bare": 0,
+      "onCrystal": 1,
+      "escapes": false,
+      "hosts": {
+        "quartz": 1
+      },
+      "scenarios": [
+        "deccan_zeolite"
+      ]
+    },
+    {
+      "mineral": "mesolite",
+      "observed": 1,
+      "bare": 1,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "deccan_zeolite"
+      ]
+    },
+    {
+      "mineral": "brucite",
+      "observed": 1,
+      "bare": 1,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "jeffrey_mine"
+      ]
+    },
+    {
+      "mineral": "chrysotile",
+      "observed": 1,
+      "bare": 1,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "jeffrey_mine"
+      ]
+    },
+    {
+      "mineral": "wollastonite",
+      "observed": 1,
+      "bare": 0,
+      "onCrystal": 1,
+      "escapes": false,
+      "hosts": {
+        "grossular": 1
+      },
+      "scenarios": [
+        "jeffrey_mine"
+      ]
+    },
+    {
+      "mineral": "ruby",
+      "observed": 1,
+      "bare": 1,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "marble_contact_metamorphism"
+      ]
+    },
+    {
+      "mineral": "metatorbernite",
+      "observed": 1,
+      "bare": 1,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "schneeberg"
+      ]
+    },
+    {
+      "mineral": "adamite",
+      "observed": 1,
+      "bare": 1,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "wulfenite",
+      "observed": 1,
+      "bare": 1,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "supergene_oxidation"
+      ]
+    },
+    {
+      "mineral": "realgar",
+      "observed": 1,
+      "bare": 1,
+      "onCrystal": 0,
+      "escapes": true,
+      "hosts": {},
+      "scenarios": [
+        "wittichen"
+      ]
+    }
+  ]
+}

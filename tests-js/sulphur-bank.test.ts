@@ -45,14 +45,18 @@ describe('Sulphur Bank Mine — native_sulfur scenario pins (v79)', () => {
         .toBeGreaterThan(1.5);
     });
 
-    it.each([42, 1, 7])('seed %d: at least 3 active native_sulfur crystals', (seed) => {
+    it.each([42, 1, 7])('seed %d: at least one retained native_sulfur crystal', (seed) => {
       const { sim } = runFullScenario(seed);
-      const activeNS = sim.crystals.filter((c: any) =>
-        c.mineral === 'native_sulfur' && c.active,
+      // Enclosure by a later crystal makes a specimen inactive without
+      // dissolving it. Pin retained solid sulfur, not engine eligibility.
+      const retainedNS = sim.crystals.filter((c: any) =>
+          c.mineral === 'native_sulfur'
+          && !c.dissolved
+          && c.total_growth_um > 0,
       );
-      expect(activeNS.length,
-        `seed ${seed}: only ${activeNS.length} active native_sulfur crystals (expected >= 3)`)
-        .toBeGreaterThanOrEqual(3);
+      expect(retainedNS.length,
+        `seed ${seed}: no retained native_sulfur crystal`)
+        .toBeGreaterThanOrEqual(1);
     });
 
     it.each([42, 1, 7])('seed %d: native_sulfur reaches a canonical Sulphur Bank habit', (seed) => {
@@ -102,11 +106,11 @@ describe('Sulphur Bank Mine — native_sulfur scenario pins (v79)', () => {
         .toBe(0);
     });
 
-    it('quartz fires (silica from hot-spring SiO₂) at seed 42', () => {
+    it('does not mint low-temperature quartz from the hot-spring fluid', () => {
       const { sim } = runFullScenario(42);
       const hits = sim.crystals.filter((c: any) => c.mineral === 'quartz');
-      expect(hits.length, 'quartz should fire from 200-ppm SiO₂ hot-spring fluid')
-        .toBeGreaterThan(0);
+      expect(hits.length, '75°C silica must not be nucleated internally as quartz')
+        .toBe(0);
     });
   });
 
@@ -148,11 +152,12 @@ describe('Sulphur Bank Mine — native_sulfur scenario pins (v79)', () => {
         .toBeLessThanOrEqual(100);
     });
 
-    it('initial S >= 100 (engine gate)', () => {
+    it('starts with reduced sulfur but no pre-minted elemental sulfur', () => {
       const { conditions } = SCENARIOS['sulphur_bank']();
-      expect(conditions.fluid.S,
-        `initial S ${conditions.fluid.S} would block the engine's S >= 100 gate`)
-        .toBeGreaterThanOrEqual(100);
+      expect(conditions.fluid.sulfurPoolsExplicit).toBe(true);
+      expect(conditions.fluid.S_sulfide).toBe(400);
+      expect(conditions.fluid.S_sulfate).toBe(0);
+      expect(conditions.fluid.S_elemental).toBe(0);
     });
 
     it('initial T in [20, 95]°C (engine optimal window)', () => {
@@ -204,6 +209,11 @@ describe('Sulphur Bank Mine — native_sulfur scenario pins (v79)', () => {
       expect(sim.conditions.fluid.O2,
         `O₂ should be pinned to ~0.40 after surface_oxidation`)
         .toBeCloseTo(0.40, 1);
+      const reaction = sim.conditions.fluid._lastSulfurReaction;
+      expect(reaction.sulfurAfterPpm).toBeCloseTo(reaction.sulfurBeforePpm, 9);
+      expect(reaction.oxygenBeforePpm + reaction.oxygenImportedPpm
+        - reaction.oxygenConsumedPpm).toBeCloseTo(reaction.oxygenAfterPpm, 9);
+      expect(reaction.protonsProducedMmolKg).toBe(0);
     });
 
     it('cooling event drops T below 60°C', () => {

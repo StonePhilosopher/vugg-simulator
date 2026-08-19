@@ -10,8 +10,8 @@
 //      build.mjs concatenates them, eval the result inside an IIFE,
 //      and bind the resulting class / function names to the global
 //      scope so test files can reference them by name.
-//   3. Wait for the async _loadScenariosJSON5() the bundle kicks off
-//      at startup to finish populating SCENARIOS.
+//   3. Wait for scenarios, the canonical mineral spec, and every generated
+//      Markdown narrative entry. Tests never race startup fetches.
 //
 // Architecture note: SCRIPT-mode TypeScript (no import/export) means
 // top-level `let`/`const`/`function` declarations are scoped to the
@@ -202,9 +202,25 @@ function installDomStub() {
 
 const EXPORTS = [
   'SIM_VERSION',
+  'MODEL_DIGEST',
+  'sha256HexUtf8',
+  'scenarioSpecHash',
+  'remainingBookedInventory',
+  'getSimulationTimeScale',
+  'setSimulationTimeScale',
   'MINERAL_SPEC',
+  'maxSizeCm',
   'MINERAL_ENGINES',
   'MINERAL_GATES_REGISTRY',  // v127 — per-mineral nucleation gates (sigma_crit, T/pH/O2/fluid_min, surface_energy)
+  'aragoniteCoSelector',
+  'aragoniteCoPartitioning',
+  'validateWeatheringEpilogueConfig',
+  'activateWeatheringEpilogueIfDue',
+  'weatheringEpilogueActive',
+  'weatheringLightAtCrystal',
+  'weatheringNucleationContext',
+  '_nuc_erythrite',
+  '_nuc_quartz',
   // v127 initiative scaffold (read-only — does not affect growth in v127, lands in v128 graduated competition).
   'baseInitiative',
   'temperatureInitiativeModifier',
@@ -231,20 +247,57 @@ const EXPORTS = [
   'setGraduatedWinnerTakesFrac',
   'computeGraduatedAllocations',
   'buildCrystalDryRun',
-  // MASS_BALANCE_SCALE is referenced by buildCrystalDryRun lookup.
-  'MASS_BALANCE_SCALE',
+  'STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM',
+  'STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE',
   'MINERAL_STOICHIOMETRY',
+  'SPECIES_PROPERTIES',
+  'stoichiometricBudgetDebitPpmPerUm',
+  'applyStoichiometricGrowthBudget',
+  'bookedSolidSulfurPpm',
+  'bookedSolidCarbonPpm',
+  'simulatorSulfurLedgerSnapshot',
+  'simulatorCarbonLedgerSnapshot',
+  'grow_native_sulfur',
+  'sphaleriteGermaniumUptake',
   'MINERAL_GAME_COLORS',
+  '_idlePieMineralLabel',
+  '_idlePieSolidVolumes',
   'crystalColor',
   'zoneColor',
   'SCENARIOS',
   'VugSimulator',
+  // SIM 251 P0 deterministic orchestration.  `async function` declarations
+  // are deliberately listed because the source harvester below only derives
+  // synchronous function declarations.
+  'makeSimulationStartCommand',
+  'makeSimulationAdvanceCommand',
+  'makeSimulationCancelCommand',
+  'makeSimulationResumeCommand',
+  'makeSimulationThermalSourceCommand',
+  'makeSimulationThermalFieldCommand',
+  'makeSimulationCavitySurfaceProviderCommand',
+  'startSimulationCommandRuntime',
+  'applySimulationCommand',
+  'createSimulationCheckpoint',
+  'restoreSimulationCommandRuntime',
+  'persistSimulationCheckpoint',
+  'recoverPersistedSimulationRuntime',
+  'runSimulationProgressively',
+  'simulationStateFingerprint',
+  'createSimulationWorkerEndpoint',
   'VugConditions',
   'FluidChemistry',
   'VugWall',
   'WallState',
   'WallCell',
   'WallMesh',
+  'CavityEvolutionLedger',
+  'cavityMolarVolume',
+  'cavityFormulaExtentVolumeMm3PerKg',
+  'CavityScalarField',
+  'MarchingCubesExtractor',
+  'CavitySurfaceAnchors',
+  'CavityProductionAuthority',
   'CavityVoxelGrid',  // v158 — PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1
   'Crystal',
   'GrowthZone',
@@ -256,6 +309,13 @@ const EXPORTS = [
   'WATER_STATE_PREFERENCE',
   // Phase D habit-bias helper (99i-renderer-three.ts).
   '_topoCAxisForCrystal',
+  '_topoCrystalsSignature',
+  // SIM 246 area-covering aggregate state + deterministic renderer plan.
+  'surfaceGrowthRegimeFor',
+  'surfaceGrowthDescriptor',
+  'classifySurfaceGrowth',
+  '_surfaceGrowthInstanceCount',
+  '_surfaceGrowthSampleDirections',
   // Habit-variant picker (07-habit-variant.ts) — Proposal B (2026-05)
   // added a 5th `localFill` parameter.
   'selectHabitVariant',
@@ -342,6 +402,19 @@ const EXPORTS = [
   // Phase 4b sulfate-class helpers (20c-chemistry-redox.ts).
   'sulfateRedoxAvailable',
   'sulfateRedoxFactor',
+  'sulfurReducedFraction',
+  'sulfideAvailablePpm',
+  'sulfateAvailablePpm',
+  'elementalSulfurAvailablePpm',
+  'syncExplicitSulfurTotal',
+  'sulfurSystemTotalPpm',
+  'ensureExplicitSulfurPools',
+  'addSulfurToPool',
+  'declareSulfurBoundaryAddition',
+  'debitSulfurPool',
+  'oxidizeReducedSulfurToElemental',
+  'bacterialReduceSulfate',
+  'stoichiometricReservoirSpecies',
   // Phase 4b hydroxide-class helpers (20c-chemistry-redox.ts).
   'hydroxideRedoxAvailable',
   'hydroxideRedoxFactor',
@@ -369,13 +442,36 @@ const EXPORTS = [
   'CARBONATE_SPECIATION_ACTIVE',
   'bjerrumFractions',
   'carbonateIonPpm',
+  'aqueousMgCaMolarRatio',
   'effectiveCO3',
   'equilibriumPCO2',
+  'dicPpmToMolKg',
+  'dicMolKgToPpm',
+  'pureWaterDensityKgM3',
+  'pKwWater',
+  'reducedCarbonateAlkalinityEqKg',
+  'solvePHForReducedCarbonateAlkalinity',
+  'solvePHForReducedCarbonateAlkalinityResult',
+  'solveOpenCarbonateBoundary',
+  'solveClosedCarbonateBoundary',
+  'carbonateBoundaryUncertainties',
+  'createCarbonateBoundaryState',
+  'equilibrateClosedCarbonateBoundaryState',
+  'equilibrateOpenCarbonateBoundaryState',
+  'chargeCarbonateBoundaryState',
+  'rechargeCarbonateBoundaryState',
+  'setCarbonateBoundaryReducedAlkalinityState',
+  'titrateCarbonateBoundaryToPHState',
+  'recordSimpleCaCO3SolidTransferState',
+  'recordSimpleCarbonateSolidTransferState',
+  'recordUnresolvedCarbonateTransferState',
   'getCarbonateLogKsp',
   'getCarbonateKsp',
   'getCarbonateData',
   'getCarbonateThermoTier',
   'getCarbonateKineticTier',
+  'hmcSolidSolutionAssessment',
+  'hmcCompositionFromFluid',
   'listCarbonatesAtTier',
   'carbonateThermoCoverage',
   // Week 2 SI engine + flag mechanism (32b).
@@ -404,6 +500,12 @@ const EXPORTS = [
   'sulfatesReady',
   'sulfateSaturationIndex',
   'sulfateOmega',
+  'evaluateCaSO4System',
+  'waterActivityAssessment',
+  'waterActivity',
+  'gypsumAnhydritePhaseAssessment',
+  'applyCaSO4PhaseTransition',
+  'mineralAtReplayStep',
   // Week 4 — wall-mesh localization resolvers + per-vertex accessors
   // + Henry's-Law pH equilibration (20d-localization-resolvers.ts).
   'fluidAtMeshVertex',
@@ -416,6 +518,7 @@ const EXPORTS = [
   // Week 6 PWP kinetic engine (52b-engines-carbonate-kinetics.ts).
   'pwpForwardRate',
   'pwpNetRate',
+  'pwpProductionNetRate',
   'pwpRateToSimMicronsPerStep',
   'setPWPCalibrationFactor',
   'aragoniteKineticallyFavoredOver',
@@ -464,6 +567,8 @@ const EXPORTS = [
   'stripAllocateData',
   'stripSerialize',
   'stripDeserialize',
+  'stripStoredRecordFromDataset',
+  'stripDatasetFromStoredRecord',
   'StripRecorder',
   // v-music (2026-06-09, js/08-music.ts) — background music engine +
   // persisted audio settings. SIM-NEUTRAL UI subsystem.
@@ -473,6 +578,7 @@ const EXPORTS = [
   'musicSetVolume',
   'musicSetContext',
   'initSettingsUI',
+  'importVuggLocalDataFile', // async declarations are not auto-harvested
   'musicDebugState',  // v-music gain-path fix (2026-06-10) — probe surface
 ];
 
@@ -603,7 +709,40 @@ async function waitForScenarios(timeoutMs = 5000): Promise<void> {
   );
 }
 
+async function waitForMineralSpec(timeoutMs = 5000): Promise<void> {
+  const expected = JSON.parse(fs.readFileSync(path.join(DATA, 'minerals.json'), 'utf8'));
+  const expectedCount = Object.keys(expected.minerals || {}).length;
+  const t0 = Date.now();
+  while (Date.now() - t0 < timeoutMs) {
+    const spec = (globalThis as any).MINERAL_SPEC;
+    if (spec && Object.keys(spec).length === expectedCount) return;
+    await new Promise(r => setTimeout(r, 50));
+  }
+  throw new Error(
+    `[setup] MINERAL_SPEC never reached the canonical ${expectedCount}-mineral dataset within ${timeoutMs}ms`,
+  );
+}
+
+async function waitForNarratives(): Promise<void> {
+  const ready = (globalThis as any).NARRATIVES_READY_PROMISE;
+  if (!ready || typeof ready.then !== 'function') {
+    throw new Error('[setup] NARRATIVES_READY_PROMISE is absent from the compiled bundle');
+  }
+  const receipt = await ready;
+  const failed = Array.isArray(receipt?.failed) ? receipt.failed : [];
+  if (
+    !(globalThis as any).narrativesReady?.()
+    || !Number.isInteger(receipt?.expected)
+    || receipt.loaded !== receipt.expected
+    || failed.length
+  ) {
+    throw new Error(
+      `[setup] narrative preload incomplete: ${receipt?.loaded ?? 0}/${receipt?.expected ?? 0}; failed=${failed.join(',')}`,
+    );
+  }
+}
+
 beforeAll(async () => {
   await loadBundle();
-  await waitForScenarios();
+  await Promise.all([waitForScenarios(), waitForMineralSpec(), waitForNarratives()]);
 });

@@ -48,7 +48,7 @@ const COLOUR_LEXICON: { [name: string]: string } = {
   chalk_white: '#f2efe8', pearly_white: '#efece5', white_powdery: '#f2f0ea',
   white_spray: '#f0ede6', white_flesh: '#eaddce', white_pink_zoned: '#ecdcd6',
   white_pale_green: '#e2e6da', white_pale_blue_green: '#dde8e2', common_white_brown: '#e6ddce',
-  gray_to_white: '#dcdad2', white_to_pale_yellow: '#eee9d2',
+  gray_to_white: '#dcdad2', blue_gray_white: '#b9cdd0', white_to_pale_yellow: '#eee9d2',
   // --- yellows / golds ---
   pale_yellow: '#e2cb6a', yellow: '#e6d23a', bright_yellow: '#eedc2a', lemon_yellow: '#edea45',
   canary_yellow: '#e9d92c', rich_yellow: '#e8b722', golden_yellow: '#e2b32a', straw_yellow: '#ddca7a',
@@ -79,7 +79,8 @@ const COLOUR_LEXICON: { [name: string]: string } = {
   // --- metallic greys / silvers (sulfides, natives, oxides) ---
   lead_gray: '#74767c', lead_gray_metallic: '#73767c', lead_steel_gray: '#6d7076', lead_tin_white: '#b7b3a8',
   steel_gray: '#5c5d63', iron_gray: '#5f6167', gray_black: '#3f3f45', dark_gray_black: '#34343a',
-  iron_black: '#27272b', black: '#232326', black_metallic: '#2b2b2e', black_ferberite: '#2a2723',
+  iron_black: '#27272b', steel_black: '#292a2d', brownish_black: '#332d29',
+  black: '#232326', black_metallic: '#2b2b2e', black_ferberite: '#2a2723',
   specular_metallic_gray: '#5a5b5f', silver_gray_metallic: '#8a8d94', silver_white: '#cfcdc6',
   silver_white_fresh: '#cbcabf', silver_white_metallic: '#c9c6bd', silvery_metallic: '#bcbcc2',
   tin_white: '#c2c0b6', tin_white_iridescent: '#bdbcc0', bronze_fresh: '#a06a44', copper_red_fresh: '#bb6a34',

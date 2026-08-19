@@ -13,8 +13,9 @@
 //      grow_native_bismuth calls with stub conditions.
 //   3. SCHNEEBERG TRUTH (seed 42): Bi nucleates on the reducing
 //      plateau, zones tag spiral_smooth (σ ≤ 1.32), and the v185
-//      oxidation swing then DESTROYS it — both halves correct geology.
-//      Upper bands stay unoccupied until `wittichen` lands.
+//      oxidation swing etches it before feldspar enclosure shields the
+//      surviving primary core. Upper bands stay unoccupied until
+//      `wittichen` lands.
 //   4. ASPECT FIREWALL + INSTRUMENTS: new habit strings carry the
 //      legacy default 0.5; bismuth_morph chip under the new 'native'
 //      legend group; per-mineral display labels.
@@ -116,14 +117,19 @@ describe('the corrected ladder (anti-Sunagawa regression pin)', () => {
   });
 });
 
-describe('schneeberg truth (seed 42) — grows on the plateau, dies in the swing', () => {
+describe('schneeberg truth (seed 42) — grows, weathers, then survives as an inclusion', () => {
 
-  it('Bi nucleates, tags smooth-band zones, and is destroyed by oxidation', () => {
+  it('Bi nucleates, tags smooth-band zones, is oxidatively etched, and retains a shielded core', () => {
     const sim = runScenario('schneeberg');
     const bi = sim.crystals.filter((c: any) => c.mineral === 'native_bismuth');
     expect(bi.length).toBeGreaterThan(0);
-    // the weathering stage destroys it — correct geology, pinned
-    expect(bi.filter((c: any) => !c.dissolved).length).toBe(0);
+    // The old engine set dissolved=true as soon as it emitted one shallow
+    // negative zone. The accepted-zone ledger exposes the actual history:
+    // oxidation removes an outer shell, then feldspar enclosure cuts the
+    // grain off from further fluid attack. A positive shielded core remains.
+    expect(bi.every((c: any) => c.zones.some((z: any) => z.thickness_um < 0))).toBe(true);
+    expect(bi.every((c: any) => c.total_growth_um > 0 && !c.dissolved)).toBe(true);
+    expect(bi.every((c: any) => c.enclosed_by != null && !c.active)).toBe(true);
     // every positive zone that was classified sits in the SMOOTH band
     // (plateau σ ≤ 1.32 — upper bands unoccupied until wittichen)
     for (const c of bi) {

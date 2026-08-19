@@ -12,8 +12,7 @@
 
 Object.assign(VugSimulator.prototype, {
   _narrate_wulfenite(c) {
-  // Prose lives in narratives/wulfenite.md. JS canonical for poetic
-  // framings; gains acid_dissolution dispatch (Python had it).
+  // Prose lives in narratives/wulfenite.md, including acid dissolution.
   // Standardized opening to mm-pattern; the "collector's prize" line
   // is folded into the merged blurb.
   const parts = [`Wulfenite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
@@ -24,18 +23,18 @@ Object.assign(VugSimulator.prototype, {
       // (2026-06-10 review §2.4: wulfenite does NOT require discrete
       // molybdenite — Red Cloud and Mežica have none; Mo commonly arrives
       // as trace Mo in galena or the wallrock.)
-      parts.push(narrative_variant('wulfenite', 'on_oxidized_galena') || 'It nucleated on the ghost of oxidized galena — the lead source. The molybdate half needs no molybdenite parent: at famous wulfenite localities like Red Cloud and Mežica there is none, and the Mo arrives as a trace passenger in the galena and wallrock, concentrated by oxidation into MoO₄²⁻.');
+      parts.push(narrative_variant('wulfenite', 'on_oxidized_galena'));
     } else {
-      parts.push(narrative_variant('wulfenite', 'on_galena') || 'It grew on galena, drawing lead from the same source mineral. A secondary generation claiming the primary mineral as its substrate.');
+      parts.push(narrative_variant('wulfenite', 'on_galena'));
     }
   }
   const lastZone = c.zones.length ? c.zones[c.zones.length - 1] : null;
   if (lastZone && lastZone.note) {
-    if (lastZone.note.includes('honey')) parts.push(narrative_variant('wulfenite', 'color_honey') || 'Honey-orange and translucent — light passes through the plates like stained glass.');
-    else if (lastZone.note.includes('red')) parts.push(narrative_variant('wulfenite', 'color_red_cloud') || 'Red-orange from chromium traces — the sought-after "Red Cloud" variety.');
+    if (lastZone.note.includes('honey')) parts.push(narrative_variant('wulfenite', 'color_honey'));
+    else if (lastZone.note.includes('red')) parts.push(narrative_variant('wulfenite', 'color_red_cloud'));
   }
   if (c.twinned) {
-    parts.push(narrative_variant('wulfenite', 'twinned', { twin_law: c.twin_law }) || `Penetration twinned (${c.twin_law}) — two plates interpenetrating at right angles, forming a cross or butterfly shape.`);
+    parts.push(narrative_variant('wulfenite', 'twinned', { twin_law: c.twin_law }));
   }
   if (c.dissolved) parts.push(narrative_variant('wulfenite', 'acid_dissolution'));
   return parts.filter(p => p).join(' ');
@@ -44,16 +43,16 @@ Object.assign(VugSimulator.prototype, {
   _narrate_raspite(c) {
   // Prose lives in narratives/raspite.md.
   const parts = [`Raspite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-  parts.push(narrative_blurb('raspite') || "PbWO₄ — monoclinic lead tungstate, RARE. Same composition as stolzite but a different crystal system; stolzite (tetragonal) is favored ~90% of the time. Honey-yellow tabular crystals with perfect {100} cleavage. Type locality: Broken Hill, NSW, Australia.");
+  parts.push(narrative_blurb('raspite'));
   return parts.filter(p => p).join(' ');
 },
 
   _narrate_stolzite(c) {
   // Prose lives in narratives/stolzite.md.
   const parts = [`Stolzite #${c.crystal_id} grew to ${c.c_length_mm.toFixed(1)} mm.`];
-  parts.push(narrative_blurb('stolzite') || "PbWO₄ — tetragonal lead tungstate, the lead analog of scheelite. Honey-yellow to orange-yellow Mohs 2.5-3 tetragonal crystals; the dominant PbWO₄ polymorph (~90% over raspite). Type locality: Cínovec (Czech Republic). Broken Hill (Australia) and Tsumeb (Namibia) produce museum specimens.");
-  if (c.habit === 'dipyramidal') parts.push(narrative_variant('stolzite', 'dipyramidal') || 'Dipyramidal — {101} faces, Broken Hill / Tsumeb display habit.');
-  else parts.push(narrative_variant('stolzite', 'tabular_default') || 'Tabular — {001} plates, late-stage habit.');
+  parts.push(narrative_blurb('stolzite'));
+  if (c.habit === 'dipyramidal') parts.push(narrative_variant('stolzite', 'dipyramidal'));
+  else parts.push(narrative_variant('stolzite', 'tabular_default'));
   return parts.filter(p => p).join(' ');
 },
 

@@ -11,7 +11,7 @@ calls run in lex-sorted order; `function` declarations are hoisted bundle-
 wide and can be defined anywhere.
 
 See the parent project's [ARCHITECTURE.md](../ARCHITECTURE.md) for the
-build pipeline, the three-runtimes-on-purpose framing, and the canonical-
+build pipeline, the two-runtimes-on-purpose framing, and the canonical-
 source table for non-code facts (mineral spec, scenarios, locality
 chemistry, etc.).
 
@@ -34,8 +34,12 @@ Optional extras:
 |---------------------------------|----------------------------------------------|
 | `js/8x-nucleation-<class>.ts`   | mineral has its own nucleation gate logic    |
 | `js/92x-narrators-<class>.ts`   | per-mineral `_narrate_<name>(c)` prose       |
-| `js/05-narratives.ts` (manifest)| add `<name>` so `narratives/<name>.md` is fetched |
-| `narratives/<name>.md`          | the actual prose (frontmatter + variants)    |
+| `narratives/<name>.md`          | canonical prose; the build generates the manifest |
+
+`npm run build` regenerates `js/04-narrative-manifest.generated.ts` from
+`data/minerals.json` plus the Markdown directory. `npm run audit:narratives`
+checks file/frontmatter/section references, requires literal exhaustive variant
+branches, and rejects direct, identifier-mediated, or named inline fallback drift.
 
 **Adding a new scenario** (≤ 2 file touches typically):
 
@@ -85,7 +89,8 @@ visible to later files.
 | Prefix | File                       | What lives here                           |
 |--------|----------------------------|-------------------------------------------|
 | 00     | `00-mineral-spec.ts`       | `MINERAL_SPEC` (live + fallback) + `onSpecReady` + `maxSizeCm` |
-| 05     | `05-narratives.ts`         | per-species narrative loader (`narrative_blurb` / `_closing` / `_variant`); `_NARRATIVE_MANIFEST` lists every species whose `narratives/<name>.md` is fetched |
+| 04     | `04-narrative-manifest.generated.ts` | generated Markdown-narrative manifest; never hand-edit |
+| 05     | `05-narratives.ts`         | fail-closed per-species loader + startup readiness gate (`NARRATIVES_READY_PROMISE`) |
 | 07     | `07-habit-variant.ts`      | `selectHabitVariant(mineral, sigma, T, spaceConstrained)` |
 | 10     | `10-seeded-random.ts`      | `SeededRandom` class (Mulberry32 PRNG)    |
 | 12     | `12-mineral-art.ts`        | `MINERAL_ASCII` / `MINERAL_THUMBS` / `MINERAL_GAME_COLORS` |
@@ -106,7 +111,10 @@ visible to later files.
 | 20c    | `20c-chemistry-redox.ts`   | Nernst-equation redox infrastructure (Eh / pe) |
 | 20d    | `20d-localization-resolvers.ts` | wall-mesh localization — resolve a crystal/cell to its local fluid sample |
 | 22     | `22-geometry-wall.ts`      | `VugWall` + `WallCell` + `WallState` + the bubble-merge profile init helpers |
-| 23     | `23-geometry-wall-mesh.ts` | `WallMesh` — per-vertex cavity surface mesh (`mesh.cells[]`, the live fluid store) |
+| 22a    | `22a-geometry-cavity-evolution.ts` | immutable carbonate-dissolution ledger: formula extent ↔ cited standard-state solid volume ↔ exact closed-`WallMesh` volume change |
+| 23     | `23-geometry-wall-mesh.ts` | `WallMesh` — canonical Float32 cavity surface, exact enclosed-volume/surface-area authority, geodesics, and live per-vertex fluid store |
+| 23a    | `23a-geometry-cavity-field.ts` | deterministic Cartesian shadow field: exact bubble union + authored radial masks + replayable star-shaped ledger projection |
+| 23b    | `23b-geometry-marching-cubes.ts` | indexed Marching Cubes extraction with shared-face asymptotic decider |
 | 24     | `24-geometry-voxel-grid.ts` | `CavityVoxelGrid` — interior 3D fluid store ((r,c,d) voxels) + `_diffuseFull` 3D diffusion |
 | 25     | `25-chemistry-conditions.ts` | `VugConditions` class (T/P/fluid/wall/ring fields + small helpers like `effective_temperature`, `silica_equilibrium`, `ring_water_state`) |
 | 26     | `26-mineral-paragenesis.ts` | substrate-affinity + paragenesis tables (which minerals seed on which) |

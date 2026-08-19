@@ -1,5 +1,9 @@
 # Bug Report: Twinned Cave Aragonite Renders as Smooth Pseudo-Hex Column (Wrong)
 
+**Re-verified 2026-08-15 against SIM 266:** still resolved in both
+renderers. `aragonite-pseudohex-twin{,-three}` retain the air-mode
+frostwork and fluid-mode pseudo-hexagonal twin distinction.
+
 **Status:** ✅ RESOLVED 2026-05-28. **Re-verified 2026-08-15** — still
 closed in current `js/` (paths were already post-flatten; no
 `projects/vugg-simulator/web/index.html` cite). Air-mode aragonite routes

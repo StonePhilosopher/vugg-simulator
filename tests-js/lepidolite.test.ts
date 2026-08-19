@@ -42,8 +42,9 @@ function runGemPegmatite(seed: number) {
 describe('Lepidolite — Li-mica engine (v86)', () => {
   describe('supersaturation_lepidolite gate correctness', () => {
     function sigmaAt(opts: any): number {
-      const fluid = new FluidChemistry(opts);
-      const cond = new VugConditions({ temperature: opts.T ?? 450, fluid });
+      const { T, ...fluidOpts } = opts;
+      const fluid = new FluidChemistry(fluidOpts);
+      const cond = new VugConditions({ temperature: T ?? 450, fluid });
       return cond.supersaturation_lepidolite();
     }
 

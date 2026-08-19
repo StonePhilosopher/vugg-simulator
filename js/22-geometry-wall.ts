@@ -108,6 +108,12 @@ class VugWall {
     // unlisted flag from scenarios.json5 is silently dropped.
     this.matrix = opts.matrix ?? null;
     this.thickness_mm = opts.thickness_mm ?? 500.0;
+    // Metamorphic ROCK/confining pressure. This is intentionally separate
+    // from VugConditions.pressure (cavity-fluid pressure). null means the
+    // rock phase field is unknown and must be reported as unconstrained.
+    this.confining_pressure_kbar = Number.isFinite(opts.confining_pressure_kbar)
+      ? Math.max(0.01, Number(opts.confining_pressure_kbar))
+      : null;
     // Size-class cascade: vug < pocket < cave. Each tier maps to a
     // literature-anchored vug_diameter_mm range. Explicit override
     // wins (every shipped scenario sets vug_diameter_mm directly, so
@@ -116,6 +122,15 @@ class VugWall {
     // generation, size_class alone is the natural interface.
     this.size_class = (opts.size_class as SizeClass) ?? null;
     this.vug_diameter_mm = _resolveVugDiameter(opts);
+    this.authored_vug_diameter_mm = opts.authored_vug_diameter_mm ?? this.vug_diameter_mm;
+    this.initial_vug_diameter_mm = opts.initial_vug_diameter_mm ?? this.vug_diameter_mm;
+    const authoredRadius = this.vug_diameter_mm / 2;
+    const authoredSphereVolume = (4 / 3) * Math.PI * authoredRadius * authoredRadius * authoredRadius;
+    this.cavity_capacity_volume_mm3 = opts.cavity_capacity_volume_mm3 ?? authoredSphereVolume;
+    this.initial_cavity_capacity_volume_mm3 = opts.initial_cavity_capacity_volume_mm3
+      ?? this.cavity_capacity_volume_mm3;
+    this.cavity_capacity_basis = opts.cavity_capacity_basis ?? 'authored_sphere_reference';
+    this.host_volume_removed_mm3_per_kg = opts.host_volume_removed_mm3_per_kg ?? 0;
     this.total_dissolved_mm = opts.total_dissolved_mm ?? 0.0;
     // W-K V1b (paleo-flow scallops): a dissolution-rate-weighted running sum of the flow_rate
     // active WHILE the wall was dissolving. Curl 1974 — scallop length ∝ 1/velocity, and scallops
@@ -130,6 +145,25 @@ class VugWall {
     this.wall_Mn_ppm = opts.wall_Mn_ppm ?? 500.0;
     this.wall_Mg_ppm = opts.wall_Mg_ppm ?? 1000.0;
     this.ca_from_wall_total = opts.ca_from_wall_total ?? 0.0;
+    // Carbonate-host inventory uses the simulator's calibrated Ca release
+    // (15 ppm-equivalent per mm) as its formula-extent scale. Limestone is
+    // CaCO3; dolomite is CaMg(CO3)2. Tracking formula extent separately from
+    // fluid species lets every dissolution call prove wall loss = fluid gain.
+    const hostFormulaExtentPerMm = (this.composition === 'limestone' || this.composition === 'dolomite')
+      ? 15.0 / 40.078 : 0;
+    this.host_formula_inventory_initial_mmolkg =
+      (this.thickness_mm + this.total_dissolved_mm) * hostFormulaExtentPerMm;
+    this.host_formula_released_mmolkg = opts.host_formula_released_mmolkg
+      ?? this.total_dissolved_mm * hostFormulaExtentPerMm;
+    this.host_release_totals = opts.host_release_totals ?? {
+      Ca: this.host_formula_released_mmolkg * 40.078,
+      Mg: this.composition === 'dolomite'
+        ? this.host_formula_released_mmolkg * 24.305 : 0,
+      CO3: this.host_formula_released_mmolkg * 60.009
+        * (this.composition === 'dolomite' ? 2 : 1),
+    };
+    this.host_release_ledger = Array.isArray(opts.host_release_ledger)
+      ? opts.host_release_ledger.slice() : [];
     // Phase-1 naturalistic void shape (visual only — growth engines
     // still read meanDiameterMm). Two-stage bubble-merge model:
     //   Stage 1 — primary void: a few large bubbles (radii 40–70% of
@@ -290,6 +324,12 @@ class VugWall {
     // geometry). Default false → every existing scenario keeps its fill-and-seal
     // behaviour (byte-identical).
     this.open_system = !!opts.open_system;
+    // Explicit open spring/vent-apron boundary. This is a geological process
+    // selector for low-Mg aragonite, not a synonym for shallow pressure: a
+    // sealed vein and an open degassing terrace can share P-T coordinates but
+    // not nucleation kinetics. Default false keeps ordinary caves and veins
+    // outside the spring route unless the scenario or Creative player opts in.
+    this.open_spring = !!opts.open_spring;
     // v179 (2026-06-09): per-scenario ambient cooling rate, °C/step (default
     // 1.5 — the historical hard-coded value in ambient_cooling, 85d). The
     // reactivated_fluorite_vein exposed the gap: it is the first HOT scenario
@@ -305,6 +345,15 @@ class VugWall {
     // always-draw pattern keeps that stream's cursor rate-independent.)
     this.cooling_rate = (typeof opts.cooling_rate === 'number' && isFinite(opts.cooling_rate) && opts.cooling_rate >= 0)
       ? opts.cooling_rate : 1.5;
+    // Temperature of the far-field environment that passive cooling approaches.
+    // This is a boundary condition, not an implicit 25 C thermostat: cold caves,
+    // playas, and shallow aquifers may be stably colder than room temperature.
+    // null preserves the historical 25 C target for un-authored warm systems;
+    // ambient_cooling is one-way and therefore never warms a colder fluid.
+    this.ambient_temperature_C = (typeof opts.ambient_temperature_C === 'number'
+      && isFinite(opts.ambient_temperature_C))
+      ? Math.max(-50, Math.min(1200, opts.ambient_temperature_C))
+      : null;
     // Alpine-cleft (Zerrkluft) flag — Grimsel/Aar Swiss tension fissures. Opts
     // in to the quartz GWINDEL habit (js/45 classifyQuartzGwindel; SIM 207) and
     // the Tessin/sceptre cleft idiom. Default false (no effect elsewhere).
@@ -392,58 +441,359 @@ class VugWall {
     this.wulff_titanite = !!opts.wulff_titanite;
   }
 
-  dissolve(acid_strength, fluid) {
-    // Gate by composition first — silicate walls are inert regardless
-    // of reactivity (real silicate dissolution at sim T-P-time scales
-    // is geologically negligible).
+  static diameterForCapacityMm3(volumeMm3) {
+    const volume = Number(volumeMm3);
+    if (!(volume > 0) || !Number.isFinite(volume)) {
+      throw new RangeError('cavity capacity must be positive and finite');
+    }
+    return 2 * Math.cbrt((3 * volume) / (4 * Math.PI));
+  }
+
+  initializeCavityCapacity(volumeMm3, basis = 'canonical_closed_wallmesh') {
+    const diameter = VugWall.diameterForCapacityMm3(volumeMm3);
+    this.cavity_capacity_volume_mm3 = Number(volumeMm3);
+    this.initial_cavity_capacity_volume_mm3 = Number(volumeMm3);
+    this.cavity_capacity_basis = basis;
+    this.initial_vug_diameter_mm = diameter;
+    this.vug_diameter_mm = diameter;
+    return diameter;
+  }
+
+  reauthorInitialThicknessMm(thicknessMm) {
+    const thickness = Number(thicknessMm);
+    if (!(thickness >= 0) || !Number.isFinite(thickness)) {
+      throw new RangeError('initial host thickness must be finite and non-negative');
+    }
+    if (this.total_dissolved_mm !== 0 || this.host_formula_released_mmolkg !== 0
+        || this.host_release_ledger.length !== 0) {
+      throw new RangeError('host thickness can only be reauthored before dissolution history exists');
+    }
+    const hostFormulaExtentPerMm = (this.composition === 'limestone' || this.composition === 'dolomite')
+      ? 15.0 / 40.078 : 0;
+    this.thickness_mm = thickness;
+    this.host_formula_inventory_initial_mmolkg = thickness * hostFormulaExtentPerMm;
+    this.host_formula_released_mmolkg = 0;
+    this.host_release_totals = { Ca: 0, Mg: 0, CO3: 0 };
+    return Object.freeze({
+      transaction_type: 'creative_initial_host_thickness',
+      thickness_mm: thickness,
+      initial_formula_inventory_mmolkg: this.host_formula_inventory_initial_mmolkg,
+      scope: 'pre-run authored initial condition; no dissolution or deposition event',
+    });
+  }
+
+  reauthorInitialComposition(composition) {
+    const value = String(composition || '').trim();
+    if (!value) throw new RangeError('initial host composition must be named');
+    if (this.total_dissolved_mm !== 0 || this.host_formula_released_mmolkg !== 0
+        || this.host_release_ledger.length !== 0) {
+      throw new RangeError('host composition can only be reauthored before dissolution history exists');
+    }
+    this.composition = value;
+    const hostFormulaExtentPerMm = (value === 'limestone' || value === 'dolomite')
+      ? 15.0 / 40.078 : 0;
+    this.host_formula_inventory_initial_mmolkg = this.thickness_mm * hostFormulaExtentPerMm;
+    this.host_formula_released_mmolkg = 0;
+    this.host_release_totals = { Ca: 0, Mg: 0, CO3: 0 };
+    return Object.freeze({
+      transaction_type: 'creative_initial_host_composition',
+      composition: value,
+      initial_formula_inventory_mmolkg: this.host_formula_inventory_initial_mmolkg,
+      scope: 'pre-run authored initial condition; no replacement reaction is claimed',
+    });
+  }
+
+  dissolutionRateMm(acidStrength) {
+    const acidRate = Math.max(0, Number(acidStrength) || 0) * 0.5 * this.reactivity;
+    const diffuseWaterRate = Math.max(0, this.reactivity - 1) * 0.05;
+    return Math.min(Math.max(0, this.thickness_mm), Math.min(acidRate + diffuseWaterRate, 2));
+  }
+
+  // Pure preview. The simulator may provide surface-integrated attempted and
+  // accepted calibrated rates derived from pre-attack local pH, shielding, and
+  // feeder flux. Direct callers use the bulk-fluid full-exposure path.
+  previewDissolve(acidStrength, fluid, opts: any = {}) {
     if (this.composition !== 'limestone' && this.composition !== 'dolomite') {
-      return { dissolved: false };
+      return { dissolved: false, rejection: 'non_carbonate_host' };
+    }
+    const defaultRate = this.dissolutionRateMm(acidStrength);
+    let attemptedRate = opts.attempted_rate_mm == null
+      ? defaultRate : Number(opts.attempted_rate_mm);
+    let acceptedRate = opts.accepted_rate_mm == null
+      ? attemptedRate : Number(opts.accepted_rate_mm);
+    if (![attemptedRate, acceptedRate].every(Number.isFinite)
+        || attemptedRate < 0 || acceptedRate < 0 || acceptedRate > attemptedRate + 1e-12) {
+      throw new RangeError('wall dissolution attempted/accepted rates are invalid');
+    }
+    attemptedRate = Math.min(attemptedRate, this.thickness_mm, 2);
+    acceptedRate = Math.min(acceptedRate, attemptedRate, this.thickness_mm);
+    if (!(acceptedRate > 0)) {
+      return { dissolved: false, rejection: 'zero_accepted_extent', attempted_rate_mm: attemptedRate };
+    }
+    const formula = this.composition === 'dolomite' ? 'CaMg(CO3)2' : 'CaCO3';
+    const mineral = this.composition === 'dolomite' ? 'dolomite' : 'calcite';
+    const carbonateCoefficient = this.composition === 'dolomite' ? 2 : 1;
+    const attemptedFormulaExtent = attemptedRate * (15 / 40.078);
+    const acceptedFormulaExtent = acceptedRate * (15 / 40.078);
+    const molarVolume = cavityMolarVolume(
+      mineral, opts.temperature_C, opts.pressure_kbar, this.composition,
+    );
+    const targetVolume = cavityFormulaExtentVolumeMm3PerKg(acceptedFormulaExtent, molarVolume);
+    const caReleased = acceptedFormulaExtent * 40.078;
+    const mgReleased = this.composition === 'dolomite' ? acceptedFormulaExtent * 24.305 : 0;
+    const co3Released = acceptedFormulaExtent * carbonateCoefficient * 60.009;
+    const feReleased = acceptedRate * (this.wall_Fe_ppm / 1000) * 0.5;
+    const mnReleased = acceptedRate * (this.wall_Mn_ppm / 1000) * 0.5;
+    const pHBefore = Number(fluid.pH);
+    return Object.freeze({
+      dissolved: true,
+      composition: this.composition,
+      formula,
+      mineral,
+      attempted_rate_mm: attemptedRate,
+      rate_mm: acceptedRate,
+      attempted_formula_extent_mmolkg: attemptedFormulaExtent,
+      formula_extent_mmolkg: acceptedFormulaExtent,
+      molar_volume: molarVolume,
+      target_volume_delta_mm3_per_kg: targetVolume,
+      ca_released: caReleased,
+      mg_released: mgReleased,
+      co3_released: co3Released,
+      fe_released: feReleased,
+      mn_released: mnReleased,
+      ph_before: pHBefore,
+      ph_after: Math.min(8.5, pHBefore + acceptedRate * 0.8),
+    });
+  }
+
+  // Commit host, bulk fluid, exact geometry, capacity, and paired ledgers as
+  // one rollback-capable transaction. All fallible preview/validation work is
+  // complete before entry; a caught write failure restores every touched field.
+  commitDissolvePreview(preview, fluid, opts: any = {}) {
+    if (!preview || !preview.dissolved) return preview || { dissolved: false };
+    const wallState = opts.wall_state || null;
+    const geometryPlan = opts.geometry_plan || null;
+    const evolutionLedger = wallState && wallState.cavityEvolutionLedger
+      ? wallState.cavityEvolutionLedger() : null;
+    if ((geometryPlan && !evolutionLedger) || (!geometryPlan && evolutionLedger)) {
+      throw new RangeError('wall dissolution geometry plan/ledger authority mismatch');
+    }
+    if (this.cavity_capacity_basis === 'canonical_closed_wallmesh' && !geometryPlan) {
+      throw new RangeError('canonical cavity capacity cannot change outside its WallMesh ledger');
+    }
+    const oldCapacity = Number(this.cavity_capacity_volume_mm3);
+    const newCapacity = geometryPlan
+      ? oldCapacity + Number(geometryPlan.achieved_volume_delta_mm3_per_kg)
+      : oldCapacity + preview.target_volume_delta_mm3_per_kg;
+    if (geometryPlan) {
+      const volumeTolerance = Math.max(1e-8, preview.target_volume_delta_mm3_per_kg * 1e-8);
+      const capacityTolerance = Math.max(
+        1e-7,
+        oldCapacity * 1e-10,
+        Number(geometryPlan.volume_tolerance_mm3_per_kg) || 0,
+      );
+      if (Math.abs(geometryPlan.target_volume_delta_mm3_per_kg
+          - preview.target_volume_delta_mm3_per_kg) > volumeTolerance
+          || Math.abs(geometryPlan.old_capacity_volume_mm3 - oldCapacity)
+            > capacityTolerance) {
+        throw new RangeError('wall dissolution capacity/geometry preview mismatch: target '
+          + geometryPlan.target_volume_delta_mm3_per_kg + ' vs '
+          + preview.target_volume_delta_mm3_per_kg + '; old '
+          + geometryPlan.old_capacity_volume_mm3 + ' vs ' + oldCapacity);
+      }
+    }
+    const oldDiameter = this.vug_diameter_mm;
+    const newDiameter = VugWall.diameterForCapacityMm3(newCapacity);
+    const transactionId = 'host-dissolution-' + (this.host_release_ledger.length + 1);
+    const remainingFormulaMmolKg = (this.thickness_mm - preview.rate_mm) * (15 / 40.078);
+    const releasedAfter = this.host_formula_released_mmolkg + preview.formula_extent_mmolkg;
+    const inventoryErrorMmolKg = this.host_formula_inventory_initial_mmolkg
+      - remainingFormulaMmolKg - releasedAfter;
+    const fluidBefore = {
+      pH: Number(fluid.pH), Ca: Number(fluid.Ca), Mg: Number(fluid.Mg),
+      CO3: Number(fluid.CO3), Fe: Number(fluid.Fe), Mn: Number(fluid.Mn),
+    };
+    const fluidAfter = {
+      pH: preview.ph_after,
+      Ca: fluidBefore.Ca + preview.ca_released,
+      Mg: fluidBefore.Mg + preview.mg_released,
+      CO3: fluidBefore.CO3 + preview.co3_released,
+      Fe: fluidBefore.Fe + preview.fe_released,
+      Mn: fluidBefore.Mn + preview.mn_released,
+    };
+    if (!Object.values(fluidBefore).every(Number.isFinite)
+        || !Object.values(fluidAfter).every(Number.isFinite)
+        || Math.abs(inventoryErrorMmolKg) > 1e-9) {
+      throw new RangeError('wall dissolution chemistry preview failed finite/inventory closure');
+    }
+    const transaction: any = {
+      transaction_id: transactionId,
+      composition: this.composition,
+      formula: preview.formula,
+      attempted_rate_mm: preview.attempted_rate_mm,
+      rate_mm: preview.rate_mm,
+      attempted_formula_extent_mmolkg: preview.attempted_formula_extent_mmolkg,
+      formula_extent_mmolkg: preview.formula_extent_mmolkg,
+      solvent_reference_kg: 1,
+      fluid_delta_ppm: { Ca: preview.ca_released, Mg: preview.mg_released, CO3: preview.co3_released },
+      expected_ppm: { Ca: preview.ca_released, Mg: preview.mg_released, CO3: preview.co3_released },
+      remaining_formula_mmolkg: remainingFormulaMmolKg,
+      inventory_error_mmolkg: inventoryErrorMmolKg,
+      closed: Math.abs(inventoryErrorMmolKg) <= 1e-9,
+      closure_scope: 'carbonate formula extent and Ca/Mg/CO3 release only',
+    };
+
+    let evolutionEntry: any = null;
+    if (geometryPlan) {
+      evolutionEntry = {
+        schema: CAVITY_EVOLUTION_SCHEMA,
+        model: evolutionLedger.model,
+        transaction_type: 'carbonate_host_dissolution',
+        shape_identity: evolutionLedger.shape_identity,
+        tessellation_identity: evolutionLedger.tessellation_identity,
+        event_id: evolutionLedger.cursor + 1,
+        chemistry_transaction_id: transactionId,
+        step: Math.max(0, Math.floor(Number(opts.step) || 0)),
+        pre_state_digest: evolutionLedger.signature,
+        attempted_formula_extent_mmolkg: preview.attempted_formula_extent_mmolkg,
+        accepted_formula_extent_mmolkg: preview.formula_extent_mmolkg,
+        solvent_reference_kg: 1,
+        mineral: preview.mineral,
+        formula: preview.formula,
+        molar_volume: preview.molar_volume,
+        target_volume_delta_mm3_per_kg: geometryPlan.target_volume_delta_mm3_per_kg,
+        achieved_volume_delta_mm3_per_kg: geometryPlan.achieved_volume_delta_mm3_per_kg,
+        volume_residual_mm3_per_kg: geometryPlan.volume_residual_mm3_per_kg,
+        volume_tolerance_mm3_per_kg: geometryPlan.volume_tolerance_mm3_per_kg,
+        old_capacity_volume_mm3: oldCapacity,
+        new_capacity_volume_mm3: newCapacity,
+        old_equivalent_diameter_mm: oldDiameter,
+        new_equivalent_diameter_mm: newDiameter,
+        exposure: opts.exposure_receipt,
+        vertex_deltas: geometryPlan.vertex_deltas,
+        geometry_authority: geometryPlan.authority_receipt || null,
+        fluid_receipt: { before: fluidBefore, after: fluidAfter },
+        host_inventory_receipt: {
+          initial_formula_mmolkg: this.host_formula_inventory_initial_mmolkg,
+          released_before_mmolkg: this.host_formula_released_mmolkg,
+          released_after_mmolkg: releasedAfter,
+          remaining_after_mmolkg: remainingFormulaMmolKg,
+          residual_mmolkg: inventoryErrorMmolKg,
+        },
+        scientific_scope: {
+          closed: geometryPlan.authority_receipt
+            ? 'carbonate formula extent to standard-state crystalline volume and preflighted Cartesian extracted-surface volume per 1 kg solvent reference'
+            : 'carbonate formula extent to standard-state crystalline volume per 1 kg solvent reference',
+          not_closed: [
+            'actual cavity fluid mass', 'P-T-dependent molar volume',
+            'bulk-rock phase fraction and porosity', 'Fe/Mn inventories',
+            'acid-base charge balance', 'energy', 'spatial solute release',
+          ],
+        },
+      };
     }
 
-    // Acid attack — scales with acid strength × reactivity.
-    const acid_rate = Math.max(0.0, acid_strength) * 0.5 * this.reactivity;
-
-    // Water-only baseline — fires regardless of pH but slow. Only
-    // meaningful when reactivity > 1.0 (Creative-mode slider above
-    // default). Models accelerated CO2-charged-groundwater dissolution.
-    const water_rate = Math.max(0.0, this.reactivity - 1.0) * 0.05;
-
-    let rate_mm = Math.min(acid_rate + water_rate, 2.0);
-    if (rate_mm <= 0.0) return { dissolved: false };
-    if (this.thickness_mm < rate_mm) rate_mm = this.thickness_mm;
-
-    this.thickness_mm -= rate_mm;
-    this.total_dissolved_mm += rate_mm;
-    this.vug_diameter_mm += rate_mm * 2;
-
-    const ca_released = rate_mm * 15.0;
-    const co3_released = rate_mm * 12.0;
-    const fe_released = rate_mm * (this.wall_Fe_ppm / 1000.0) * 0.5;
-    const mn_released = rate_mm * (this.wall_Mn_ppm / 1000.0) * 0.5;
-    const ph_recovery = rate_mm * 0.8;
-
-    const ph_before = fluid.pH;
-    fluid.Ca += ca_released;
-    fluid.CO3 += co3_released;
-    fluid.Fe += fe_released;
-    fluid.Mn += mn_released;
-    fluid.pH += ph_recovery;
-    fluid.pH = Math.min(fluid.pH, 8.5);
-
-    this.ca_from_wall_total += ca_released;
-
+    const wallSnapshot = {
+      thickness_mm: this.thickness_mm,
+      total_dissolved_mm: this.total_dissolved_mm,
+      vug_diameter_mm: this.vug_diameter_mm,
+      cavity_capacity_volume_mm3: this.cavity_capacity_volume_mm3,
+      host_volume_removed_mm3_per_kg: this.host_volume_removed_mm3_per_kg,
+      ca_from_wall_total: this.ca_from_wall_total,
+      host_formula_released_mmolkg: this.host_formula_released_mmolkg,
+      host_release_totals: { ...this.host_release_totals },
+      ledger_length: this.host_release_ledger.length,
+    };
+    let geometryCommitted = false;
+    try {
+      if (evolutionEntry) {
+        if (geometryPlan.authority_receipt) {
+          CavityProductionAuthority.assertPlanReady(
+            wallState, geometryPlan, wallState._cavityProductionAuthorityContract,
+          );
+        }
+        evolutionLedger.commitEntry(wallState, evolutionEntry);
+        geometryCommitted = true;
+        if (geometryPlan.authority_receipt) {
+          CavityProductionAuthority.verifyCommitted(
+            wallState,
+            geometryPlan,
+            wallState._cavityProductionAuthorityContract,
+          );
+        }
+      }
+      this.thickness_mm -= preview.rate_mm;
+      this.total_dissolved_mm += preview.rate_mm;
+      this.cavity_capacity_volume_mm3 = newCapacity;
+      this.host_volume_removed_mm3_per_kg += geometryPlan
+        ? geometryPlan.achieved_volume_delta_mm3_per_kg
+        : preview.target_volume_delta_mm3_per_kg;
+      this.vug_diameter_mm = newDiameter;
+      fluid.Ca = fluidAfter.Ca;
+      fluid.Mg = fluidAfter.Mg;
+      fluid.CO3 = fluidAfter.CO3;
+      fluid.Fe = fluidAfter.Fe;
+      fluid.Mn = fluidAfter.Mn;
+      fluid.pH = fluidAfter.pH;
+      this.ca_from_wall_total += preview.ca_released;
+      this.host_formula_released_mmolkg = releasedAfter;
+      this.host_release_totals.Ca += preview.ca_released;
+      this.host_release_totals.Mg += preview.mg_released;
+      this.host_release_totals.CO3 += preview.co3_released;
+      this.host_release_ledger.push(transaction);
+      if (wallState) {
+        wallState.updateCapacity(newCapacity, newDiameter);
+        for (const delta of geometryPlan.vertex_deltas) {
+          const ring = Math.floor(delta.vertex_index / wallState.cells_per_ring);
+          const cell = delta.vertex_index % wallState.cells_per_ring;
+          const state = wallState.rings[ring][cell];
+          const radius = state.base_radius_mm + state.wall_depth;
+          if (radius > wallState.max_seen_radius_mm) wallState.max_seen_radius_mm = radius;
+        }
+      }
+    } catch (error) {
+      if (geometryCommitted) {
+        evolutionLedger.rollbackLast(wallState, evolutionEntry.event_id);
+        if (geometryPlan.authority_receipt) {
+          CavityProductionAuthority.rollbackCommitted(
+            wallState, geometryPlan, wallState._cavityProductionAuthorityContract,
+          );
+        }
+      }
+      this.thickness_mm = wallSnapshot.thickness_mm;
+      this.total_dissolved_mm = wallSnapshot.total_dissolved_mm;
+      this.vug_diameter_mm = wallSnapshot.vug_diameter_mm;
+      this.cavity_capacity_volume_mm3 = wallSnapshot.cavity_capacity_volume_mm3;
+      this.host_volume_removed_mm3_per_kg = wallSnapshot.host_volume_removed_mm3_per_kg;
+      this.ca_from_wall_total = wallSnapshot.ca_from_wall_total;
+      this.host_formula_released_mmolkg = wallSnapshot.host_formula_released_mmolkg;
+      this.host_release_totals = wallSnapshot.host_release_totals;
+      this.host_release_ledger.length = wallSnapshot.ledger_length;
+      for (const key of Object.keys(fluidBefore)) fluid[key] = fluidBefore[key];
+      if (wallState) wallState.updateCapacity(oldCapacity, oldDiameter);
+      throw error;
+    }
     return {
-      dissolved: true,
-      rate_mm,
-      ca_released,
-      co3_released,
-      fe_released,
-      mn_released,
-      ph_before,
-      ph_after: fluid.pH,
+      ...preview,
       vug_diameter: this.vug_diameter_mm,
       total_dissolved: this.total_dissolved_mm,
+      cavity_capacity_volume_mm3: this.cavity_capacity_volume_mm3,
+      achieved_volume_delta_mm3_per_kg: geometryPlan
+        ? geometryPlan.achieved_volume_delta_mm3_per_kg
+        : preview.target_volume_delta_mm3_per_kg,
+      volume_residual_mm3_per_kg: geometryPlan
+        ? geometryPlan.volume_residual_mm3_per_kg : 0,
+      volume_tolerance_mm3_per_kg: geometryPlan
+        ? geometryPlan.volume_tolerance_mm3_per_kg : 0,
+      host_transaction: transaction,
+      cavity_evolution_entry: evolutionLedger
+        ? evolutionLedger.entries[evolutionLedger.entries.length - 1] : null,
     };
+  }
+
+  dissolve(acid_strength, fluid) {
+    const preview = this.previewDissolve(acid_strength, fluid);
+    return preview.dissolved ? this.commitDissolvePreview(preview, fluid) : preview;
   }
 
   // W-K V1b: the dissolution-rate-weighted mean flow_rate the scallops equilibrated to, or null
@@ -458,9 +808,46 @@ class VugWall {
 // the renderer walks the cells in order and draws a line whose color and
 // thickness come from the crystal occupying that cell.
 class WallCell {
-  // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;
-  constructor() {
+  constructor(geometryOwner: any = null) {
+    // v250 exact mesh invalidation: geometry writes mark the owning wall
+    // dirty at mutation time. The public properties remain enumerable so
+    // saves, snapshots, Object.keys(), and object spread keep the historical
+    // WallCell shape. Plain snapshot cells are handled by WallMesh's exact
+    // all-cell hash fallback.
+    let wallDepth = 0;
+    let baseRadiusMm = 0;
+    // Capture the lexical authority, not the writable `_touchGeometry`
+    // compatibility method. Replacing a public method cannot suppress the
+    // private mutation generation used by production-provider seals.
+    const touchGeometry = () => {
+      _advanceWallPrivateGeometryGeneration(geometryOwner);
+      if (geometryOwner) {
+        const current = Number.isSafeInteger(geometryOwner._geometry_revision)
+          ? geometryOwner._geometry_revision : 0;
+        geometryOwner._geometry_revision = current + 1;
+      }
+    };
+    Object.defineProperty(this, 'wall_depth', {
+      enumerable: true,
+      configurable: true,
+      get: () => wallDepth,
+      set: (value) => {
+        if (Object.is(wallDepth, value)) return;
+        wallDepth = value;
+        touchGeometry();
+      },
+    });
+    Object.defineProperty(this, 'base_radius_mm', {
+      enumerable: true,
+      configurable: true,
+      get: () => baseRadiusMm,
+      set: (value) => {
+        if (Object.is(baseRadiusMm, value)) return;
+        baseRadiusMm = value;
+        touchGeometry();
+      },
+    });
     this.wall_depth = 0;       // dissolution depth, mm (negative = eroded)
     this.crystal_id = null;    // id of the crystal occupying this cell
     this.mineral = null;       // mineral name for class_color lookup
@@ -515,21 +902,229 @@ class WallCell {
 // Dissolution is per-cell: cells covered by acid-resistant crystals
 // shield their slice, so unblocked cells erode faster — the wall ends
 // up shaped like the deposit history rather than a perfect circle.
-// Minimal mulberry32 PRNG — 32-bit seed in, [0,1) out. Same seed always
-// produces the same stream. Used so JS + Python produce *different*
-// concrete bubble placements (their RNGs don't share streams) but both
-// are deterministic per their own shape_seed. For exact cross-runtime
-// shape parity we'd mirror Python's Mersenne Twister; Phase 1 only
-// requires reproducibility within a runtime.
-function _mulberry32(seed) {
+// Minimal state-reporting mulberry32 PRNG — 32-bit seed in, [0,1) out.
+// Same seed always produces the same stream. The callable's `.state` getter
+// exposes its cursor for deterministic fingerprints/checkpoints; assigning the
+// state restores that cursor without consuming a draw. This preserves the
+// exact historical sequence while making hidden future state auditable.
+type StatefulRandom = (() => number) & { state: number };
+function _mulberry32(seed): StatefulRandom {
   let s = (seed | 0) >>> 0;
-  return function() {
+  const next: any = function() {
     s = (s + 0x6d2b79f5) >>> 0;
     let t = s;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+  Object.defineProperty(next, 'state', {
+    enumerable: true,
+    configurable: false,
+    get: () => s >>> 0,
+    set: (value: number) => { s = (Number(value) | 0) >>> 0; },
+  });
+  return next as StatefulRandom;
+}
+
+// Production geometry authentication is deliberately kept outside every
+// public WallState property.  `_geometry_revision` remains a useful renderer
+// diagnostic, but callers can assign it; it must never be the capability that
+// admits a physical surface.  WallCell setters advance this lexical generation
+// directly, and a provider seal is reusable only while every exact authority
+// object and the append-only ledger head are unchanged.
+const WALL_PRIVATE_GEOMETRY_GENERATION = new WeakMap<object, number>();
+const WALL_PRODUCTION_PROVIDER_SEALS = new WeakMap<object, any>();
+const WALL_PRODUCTION_AUTHORITY_OWNERSHIP = new WeakMap<object, any>();
+const WALL_PRODUCTION_COMMISSIONING = new WeakSet<object>();
+
+function _wallProductionAuthorityOwnership(wall: any): any {
+  return WALL_PRODUCTION_AUTHORITY_OWNERSHIP.get(wall) || null;
+}
+
+function _bindWallProductionAuthorityOwnership(wall: any, contract: any,
+                                               ledger: any,
+                                               historical = false): any {
+  if (!wall || !contract || !ledger || !Array.isArray(wall.bubbles)
+      || !Array.isArray(wall.rings)) {
+    throw new TypeError('production cavity ownership binding is incomplete');
+  }
+  const ownership = Object.freeze({
+    contract,
+    ledger,
+    bubbles: wall.bubbles,
+    rings: wall.rings,
+    ring_count: wall.ring_count,
+    cells_per_ring: wall.cells_per_ring,
+    shape_seed: wall.shape_seed,
+    architecture: wall.architecture,
+    cavity_shape: wall._cavity_shape,
+    historical: !!historical,
+  });
+  WALL_PRODUCTION_AUTHORITY_OWNERSHIP.set(wall, ownership);
+  return ownership;
+}
+
+function _assertWallProductionAuthorityOwnership(wall: any, contract?: any): true {
+  if (WALL_PRODUCTION_COMMISSIONING.has(wall)) return true;
+  const ownership = _wallProductionAuthorityOwnership(wall);
+  if (!ownership || ownership.contract !== (contract || wall?._cavityProductionAuthorityContract)
+      || ownership.contract !== wall?._cavityProductionAuthorityContract
+      || ownership.ledger !== wall?.cavityEvolutionLedger?.()
+      || ownership.bubbles !== wall?.bubbles || ownership.rings !== wall?.rings
+      || ownership.ring_count !== wall?.ring_count
+      || ownership.cells_per_ring !== wall?.cells_per_ring
+      || ownership.shape_seed !== wall?.shape_seed
+      || ownership.architecture !== wall?.architecture
+      || ownership.cavity_shape !== wall?._cavity_shape) {
+    throw new RangeError('production cavity ownership differs from its commissioned authority');
+  }
+  return true;
+}
+
+// Historical render walls are immutable projections, not alternative live
+// simulations. This explicit lexical installer verifies the live owner and
+// ledger prefix before binding the snapshot's own frozen ring containers.
+function _installHistoricalWallProductionAuthorityOwnership(
+  historicalWall: any, liveWall: any, ledger: any, cursor: number,
+): any {
+  const contract = liveWall?._cavityProductionAuthorityContract;
+  _assertWallProductionAuthorityOwnership(liveWall, contract);
+  if (!historicalWall || historicalWall._cavityProductionAuthorityContract !== contract
+      || ledger !== liveWall.cavityEvolutionLedger?.()) {
+    throw new RangeError('historical cavity ownership has a foreign live authority');
+  }
+  _cavityLedgerDepthProjection(ledger, cursor);
+  historicalWall.bubbles = Object.freeze((historicalWall.bubbles || []).map(
+    (bubble: any[]) => Object.freeze(Array.from(bubble, Number)),
+  ));
+  historicalWall.rings = Object.freeze((historicalWall.rings || []).map(
+    (ring: any[]) => Object.freeze(ring.slice()),
+  ));
+  return _bindWallProductionAuthorityOwnership(
+    historicalWall, contract, ledger, true,
+  );
+}
+
+function _wallPrivateGeometryGeneration(wall: any): number {
+  return WALL_PRIVATE_GEOMETRY_GENERATION.get(wall) || 0;
+}
+
+function _advanceWallPrivateGeometryGeneration(wall: any): void {
+  if (!wall || (typeof wall !== 'object' && typeof wall !== 'function')) return;
+  WALL_PRIVATE_GEOMETRY_GENERATION.set(
+    wall, _wallPrivateGeometryGeneration(wall) + 1,
+  );
+  WALL_PRODUCTION_PROVIDER_SEALS.delete(wall);
+}
+
+function _sealWallProductionProvider(wall: any, active: any,
+                                     effectiveCursor?: number): any {
+  const contract = wall && wall._cavityProductionAuthorityContract;
+  const ledger = wall && wall.cavityEvolutionLedger?.();
+  if (!contract || !ledger || !active || active.receipt?.kind !== 'cavity-field') {
+    WALL_PRODUCTION_PROVIDER_SEALS.delete(wall);
+    return null;
+  }
+  const cursor = effectiveCursor == null
+    ? (wall._cavityEvolutionCursor == null
+      ? _cavityLedgerAuthorityHead(ledger).head_cursor
+      : Number(wall._cavityEvolutionCursor))
+    : Number(effectiveCursor);
+  const ledgerHead = _cavityLedgerAuthorityHead(ledger, cursor);
+  const ownership = _wallProductionAuthorityOwnership(wall);
+  _assertWallProductionAuthorityOwnership(wall, contract);
+  const seal = Object.freeze({
+    generation: _wallPrivateGeometryGeneration(wall),
+    contract,
+    ownership,
+    ledger,
+    cursor,
+    ledger_generation: ledgerHead.generation,
+    ledger_signature: ledgerHead.signature,
+    bubbles: wall.bubbles,
+    rings: wall.rings,
+    ring_count: wall.ring_count,
+    cells_per_ring: wall.cells_per_ring,
+    shape_seed: wall.shape_seed,
+    architecture: wall.architecture,
+    cavity_shape: wall._cavity_shape,
+    active,
+    field: active.field,
+    surface: active.surface,
+    receipt: active.receipt,
+  });
+  WALL_PRODUCTION_PROVIDER_SEALS.set(wall, seal);
+  return seal;
+}
+
+function _wallProductionProviderSealMatches(wall: any, active: any): boolean {
+  const seal = WALL_PRODUCTION_PROVIDER_SEALS.get(wall);
+  if (!seal || seal.active !== active || seal.field !== active?.field
+      || seal.surface !== active?.surface || seal.receipt !== active?.receipt
+      || seal.generation !== _wallPrivateGeometryGeneration(wall)
+      || seal.contract !== wall._cavityProductionAuthorityContract
+      || seal.ownership !== _wallProductionAuthorityOwnership(wall)
+      || seal.bubbles !== wall.bubbles || seal.rings !== wall.rings
+      || seal.ring_count !== wall.ring_count
+      || seal.cells_per_ring !== wall.cells_per_ring
+      || seal.shape_seed !== wall.shape_seed
+      || seal.architecture !== wall.architecture
+      || seal.cavity_shape !== wall._cavity_shape) return false;
+  try {
+    _assertWallProductionAuthorityOwnership(wall, seal.contract);
+  } catch (_error) {
+    return false;
+  }
+  const ledger = wall.cavityEvolutionLedger?.();
+  if (ledger !== seal.ledger) return false;
+  const head = _cavityLedgerAuthorityHead(ledger);
+  const cursor = wall._cavityEvolutionCursor == null ? head.head_cursor
+    : Number(wall._cavityEvolutionCursor);
+  const cursorHead = _cavityLedgerAuthorityHead(ledger, cursor);
+  return cursor === seal.cursor
+    && cursorHead.generation === seal.ledger_generation
+    && cursorHead.signature === seal.ledger_signature;
+}
+
+// CavityProductionAuthority calls this only after a capability-bound erosion
+// plan has authenticated the committed ledger/depth state.  Keeping the
+// installation bridge lexical prevents an arbitrary receipt from turning
+// supplied buffers into live simulation authority.
+function _installPreauthenticatedWallProductionProvider(wall: any, state: any,
+                                                        authentication: any,
+                                                        ledgerCursor?: number): any {
+  const contract = wall._cavityProductionAuthorityContract;
+  const ledger = wall.cavityEvolutionLedger?.();
+  const cursor = ledgerCursor == null
+    ? (ledger ? _cavityLedgerAuthorityHead(ledger).head_cursor : null)
+    : Number(ledgerCursor);
+  if (!contract || !ledger || !state?.field || !state?.surface
+      || !authentication || !Number.isFinite(authentication.volume_mm3)) {
+    throw new Error('preauthenticated Cartesian provider installation is incomplete');
+  }
+  const receipt = Object.freeze({
+    kind: 'cavity-field',
+    resolution: state.field.sizeX,
+    isovalue: Number(state.surface.isovalue),
+    field_signature: state.field.sig,
+    field_snapshot_digest: state.field.snapshotDigest,
+    surface_signature: state.surface.sig,
+    surface_buffer_digest: state.surface.buffer_digest,
+    cavity_evolution_signature: _cavityLedgerAuthorityHead(ledger, cursor).signature,
+    production_contract_digest: contract.contract_digest,
+    authoritative_volume_mm3: Number(authentication.volume_mm3),
+    max_field_agreement_voxels:
+      Number(authentication.agreement?.max_normal_root_distance_voxels),
+  });
+  const active = Object.freeze({ field: state.field, surface: state.surface, receipt });
+  wall._cavityField = state.field;
+  wall._cavitySurface = state.surface;
+  wall._cavitySurfaceFailure = null;
+  wall._cavitySurfaceAuthorityFailure = null;
+  wall._activeCavitySurfaceAnchorProvider = active;
+  wall._cavitySurfaceAnchorProvider = receipt;
+  _sealWallProductionProvider(wall, active, cursor);
+  return active;
 }
 
 // Bubble size ranges as fractions of vug_diameter_mm (the canonical
@@ -566,7 +1161,9 @@ interface ArchetypeConfig {
   twist_amp_scale: number;     // multiplier on _buildTwistProfile's ±0.4 base
   // Slice B: anisotropic equator stretch. 0 = circular cross-section,
   // higher = more elongated along the +x axis. Per-cell radius is
-  // multiplied by (1 + elongation × cos(2θ)). Capped at 0.85 in the
+  // multiplied by (1 + elongation × sin²φ × cos(2θ)). The sin²φ term
+  // preserves the authored equatorial aspect while making longitude vanish
+  // continuously at both poles, where θ is undefined. Capped at 0.85 in the
   // builder to avoid degenerate (zero-radius) directions.
   elongation: number;
   // Slice B: top-hemisphere collapse for basins. >0 enables the sigmoid
@@ -685,10 +1282,78 @@ function _raycastUnion3D(spheres, dx, dy, dz) {
   return wall;
 }
 
+// One authored radial-deformation oracle shared by the canonical WallMesh and
+// the Cartesian cavity field. `theta` is the pre-twist longitude used when the
+// bubble union was raycast; `phi` follows the simulator convention (south pole
+// 0, north pole pi). Keeping these formulas outside either representation
+// prevents a future architecture edit from moving the visible shell without
+// moving its scalar zero set.
+function _cavityElongationFactor(shape, phi, theta) {
+  const elong = Math.max(0, Math.min(0.85, Number(shape && shape.elongation) || 0));
+  const sinPhi = Math.sin(phi);
+  return 1 + elong * sinPhi * sinPhi * Math.cos(2 * theta);
+}
+
+function _cavityPolarProfileFactor(shape, phi) {
+  let fourier = 1.0;
+  const amplitudes = Array.isArray(shape && shape.polar_amplitudes)
+    ? shape.polar_amplitudes : [];
+  const phases = Array.isArray(shape && shape.polar_phases)
+    ? shape.polar_phases : [];
+  for (let n = 0; n < amplitudes.length; n++) {
+    fourier += amplitudes[n] * Math.cos((n + 1) * phi + phases[n]);
+  }
+  const flatten = Number(shape && shape.polar_flatten) || 0;
+  if (flatten > 0) {
+    const q = Math.max(0.05, Math.min(1.0, flatten));
+    const s = Math.sin(phi), c = Math.cos(phi);
+    const lens = q / Math.sqrt(q * q * s * s + c * c);
+    return Math.max(0.03, fourier * lens);
+  }
+  const collapse = Number(shape && shape.polar_collapse) || 0;
+  if (collapse > 0) {
+    const floor = 0.05;
+    const sigma = 0.25;
+    const sigmoidWeight = 1.0 / (1.0 + Math.exp((phi - Math.PI / 2) / sigma));
+    const sigmoid = floor + (1.0 - floor) * sigmoidWeight;
+    const blended = fourier * sigmoid * collapse + fourier * (1 - collapse);
+    return Math.max(floor * 0.5, blended);
+  }
+  return Math.max(0.5, fourier);
+}
+
+function _cavityTwistRadians(shape, phi) {
+  let twist = 0.0;
+  const amplitudes = Array.isArray(shape && shape.twist_amplitudes)
+    ? shape.twist_amplitudes : [];
+  const phases = Array.isArray(shape && shape.twist_phases)
+    ? shape.twist_phases : [];
+  for (let n = 0; n < amplitudes.length; n++) {
+    twist += amplitudes[n] * Math.cos((n + 1) * phi + phases[n]);
+  }
+  return twist;
+}
+
+function _cavityRadialScale(shape, phi, sourceTheta) {
+  return _cavityElongationFactor(shape, phi, sourceTheta)
+    * _cavityPolarProfileFactor(shape, phi);
+}
+
 class WallState {
   // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;
   constructor(opts: any = {}) {
+    // Mutation-time exact cache invalidation: the two position-affecting
+    // WallCell setters advance this monotonic revision.
+    this._geometry_revision = 0;
+    WALL_PRIVATE_GEOMETRY_GENERATION.set(this, 0);
+    this._cavityEvolutionLedger = null;
+    // Cached extraction is diagnostic/render state. Only this explicit switch
+    // can promote the Cartesian surface to live anchor authority.
+    this._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
+    this._activeCavitySurfaceAnchorProvider = null;
+    this._cavityProductionAuthorityContract = null;
+    this._cavitySurfaceAuthorityFailure = null;
     this.cells_per_ring = opts.cells_per_ring ?? 120;
     // Phase 1 of PROPOSAL-3D-SIMULATION: 16 vertically-stacked rings as
     // the new default. Engine still operates on ring[0] only — rings 1..15
@@ -697,6 +1362,8 @@ class WallState {
     this.ring_count = opts.ring_count ?? 16;
     this.vug_diameter_mm = opts.vug_diameter_mm ?? 50.0;
     this.initial_radius_mm = opts.initial_radius_mm ?? (this.vug_diameter_mm / 2);
+    this.cavity_capacity_volume_mm3 = opts.cavity_capacity_volume_mm3
+      ?? (4 / 3) * Math.PI * Math.pow(this.vug_diameter_mm / 2, 3);
     this.ring_spacing_mm = opts.ring_spacing_mm ?? 1.0;
     // PROPOSAL-HOST-ROCK Mechanic 5: archetype controls bubble counts,
     // polar/twist amplitude scaling, and nucleation_bias. Default
@@ -785,7 +1452,7 @@ class WallState {
     this.rings = [];
     for (let r = 0; r < this.ring_count; r++) {
       const ring = [];
-      for (let c = 0; c < this.cells_per_ring; c++) ring.push(new WallCell());
+      for (let c = 0; c < this.cells_per_ring; c++) ring.push(new WallCell(this));
       this.rings.push(ring);
     }
     // Bake per-cell base_radius_mm from the 3D sphere-union profile.
@@ -813,6 +1480,44 @@ class WallState {
     for (let n = 0; n < this.polar_amplitudes.length; n++) this.polar_amplitudes[n] = 0;
     for (let n = 0; n < this.twist_amplitudes.length; n++) this.twist_amplitudes[n] = 0;
 
+    // Architecture masks are authored construction inputs, not live sliders.
+    // Elongation is already baked into base_radius_mm, while the polar/twist
+    // terms are applied by consumers; allowing either half to mutate later
+    // would split WallMesh and the Cartesian scalar oracle. Freeze one semantic
+    // snapshot and make the public compatibility fields read-only so a caller
+    // must construct a new WallState to author a different cavity shape.
+    const polarAmplitudes = Object.freeze(this.polar_amplitudes.slice());
+    const polarPhases = Object.freeze(this.polar_phases.slice());
+    const twistAmplitudes = Object.freeze(this.twist_amplitudes.slice());
+    const twistPhases = Object.freeze(this.twist_phases.slice());
+    const cavityShape = Object.freeze({
+      elongation: this.elongation,
+      polar_flatten: this.polar_flatten,
+      polar_collapse: this.polar_collapse,
+      polar_amplitudes: polarAmplitudes,
+      polar_phases: polarPhases,
+      twist_amplitudes: twistAmplitudes,
+      twist_phases: twistPhases,
+    });
+    // Internal scalar-renderer authority is deliberately non-enumerable: save
+    // payloads keep the long-standing public authored fields without a second,
+    // redundant copy of the same construction-time state.
+    Object.defineProperty(this, '_cavity_shape', {
+      value: cavityShape,
+      writable: false,
+      configurable: false,
+      enumerable: false,
+    });
+    Object.defineProperties(this, {
+      elongation: { value: this.elongation, writable: false, configurable: false, enumerable: true },
+      polar_flatten: { value: this.polar_flatten, writable: false, configurable: false, enumerable: true },
+      polar_collapse: { value: this.polar_collapse, writable: false, configurable: false, enumerable: true },
+      polar_amplitudes: { value: polarAmplitudes, writable: false, configurable: false, enumerable: true },
+      polar_phases: { value: polarPhases, writable: false, configurable: false, enumerable: true },
+      twist_amplitudes: { value: twistAmplitudes, writable: false, configurable: false, enumerable: true },
+      twist_phases: { value: twistPhases, writable: false, configurable: false, enumerable: true },
+    });
+
     // Monotonic scale reference for the renderer. Starts generously
     // (2× the largest base radius — or 2× initial_radius_mm for a
     // default-round vug) so the view doesn't zoom in on enlargement,
@@ -822,6 +1527,14 @@ class WallState {
       for (const c of ring)
         if (c.base_radius_mm > maxBase) maxBase = c.base_radius_mm;
     this.max_seen_radius_mm = maxBase * 2;
+  }
+
+  _touchGeometry() {
+    _advanceWallPrivateGeometryGeneration(this);
+    const current = Number.isSafeInteger(this._geometry_revision)
+      ? this._geometry_revision
+      : 0;
+    this._geometry_revision = current + 1;
   }
 
   // 2026-05-11 — true 3D sphere-union cavity geometry. Replaces the
@@ -949,17 +1662,19 @@ class WallState {
     }
 
     // ---- Anisotropic stretch (elongation, tabular archetype) ----
-    // Same per-cell stretch the 2D builder applied, but here it acts
-    // on the equatorial plane only (theta direction). Floor sphere
-    // is still untouched in y — that's the right behavior for a
-    // "tabular fracture pocket viewed end-on."
+    // Same equatorial stretch the 2D builder applies, continued over the
+    // sphere as the smooth quadrupole sin²(phi)·cos(2 theta). The taper to
+    // zero at both poles is required because longitude is undefined there;
+    // retaining full cos(2 theta) produced a discontinuous, folded axis.
     const elong = Math.max(0, Math.min(0.85, this.elongation ?? 0));
     if (elong > 0) {
       sumRaw = 0;
       for (let r = 0; r < M; r++) {
         for (let c = 0; c < N; c++) {
           const theta = 2 * Math.PI * c / N;
-          const stretched = rawRadii[r * N + c] * (1 + elong * Math.cos(2 * theta));
+          const phi = Math.PI * (r + 0.5) / M;
+          const stretched = rawRadii[r * N + c]
+            * _cavityElongationFactor(this, phi, theta);
           rawRadii[r * N + c] = stretched;
           sumRaw += stretched;
         }
@@ -1059,7 +1774,7 @@ class WallState {
     if (elong > 0) {
       for (let i = 0; i < N; i++) {
         const theta = 2 * Math.PI * i / N;
-        rawRadii[i] *= (1 + elong * Math.cos(2 * theta));
+        rawRadii[i] *= _cavityElongationFactor(this, Math.PI / 2, theta);
       }
     }
 
@@ -1106,44 +1821,7 @@ class WallState {
   // (polar_collapse ∈ [0, 1]) controls how aggressively the top
   // collapses; 1 = full basin pinch, 0 = legacy Fourier-only.
   polarProfileFactor(phi) {
-    let fourier = 1.0;
-    for (let n = 0; n < this.polar_amplitudes.length; n++) {
-      fourier += this.polar_amplitudes[n] * Math.cos((n + 1) * phi + this.polar_phases[n]);
-    }
-    // W-K V0: planar-lens flattening (cleft archetype). The exact
-    // oblate-spheroid radial profile normalized to equator = 1:
-    //   f(φ) = q / sqrt(q²·sin²φ + cos²φ),  q = polar_flatten
-    // f(π/2) = 1 (equatorial rim untouched), f(0) = f(π) = q (the two
-    // flat faces at q× the in-plane radius). Bypasses the 0.5 legacy
-    // floor deliberately — the lens NEEDS to go below it; its own floor
-    // only guards a degenerate q. Applied at consumers (mesh, renderers,
-    // clip texture, anchors) like polar_collapse, so SIM-side ring-0
-    // radii keep the unflattened chemistry geometry — same contract as
-    // basin.
-    const flatten = this.polar_flatten ?? 0;
-    if (flatten > 0) {
-      const q = Math.max(0.05, Math.min(1.0, flatten));
-      const s = Math.sin(phi), c = Math.cos(phi);
-      const lens = q / Math.sqrt(q * q * s * s + c * c);
-      return Math.max(0.03, fourier * lens);
-    }
-    const collapse = this.polar_collapse ?? 0;
-    if (collapse > 0) {
-      // Sigmoid: 1.0 at south (phi=0), ~0.05 at north (phi=π),
-      // transitioning around equator (phi=π/2). Sigma=0.25 sets the
-      // transition width — softer than a step so basin walls don't
-      // create a sharp ring at the meniscus.
-      const FLOOR = 0.05;
-      const sigma = 0.25;
-      const s = 1.0 / (1.0 + Math.exp((phi - Math.PI / 2) / sigma));
-      const sigmoid = FLOOR + (1.0 - FLOOR) * s;
-      // Lerp Fourier toward sigmoid by collapse strength. Keep the
-      // Fourier jitter on the south half (where it stays ~full radius)
-      // so the floor has texture; the multiplication preserves that.
-      const blended = fourier * sigmoid * collapse + fourier * (1 - collapse);
-      return Math.max(FLOOR * 0.5, blended);
-    }
-    return Math.max(0.5, fourier);
+    return _cavityPolarProfileFactor(this._cavity_shape || this, phi);
   }
 
   // Phase F: per-latitude twist profile. Three harmonics with
@@ -1168,11 +1846,7 @@ class WallState {
   // angle on its ring; the equatorial bubble-merge bumps spiral up the
   // cavity wall rather than stacking in vertical columns.
   ringTwistRadians(phi) {
-    let twist = 0.0;
-    for (let n = 0; n < this.twist_amplitudes.length; n++) {
-      twist += this.twist_amplitudes[n] * Math.cos((n + 1) * phi + this.twist_phases[n]);
-    }
-    return twist;
+    return _cavityTwistRadians(this._cavity_shape || this, phi);
   }
 
   // Wall arc length for one cell — uses current mean radius (per-cell
@@ -1204,7 +1878,228 @@ class WallState {
     return 2 * sum / ring0.length;
   }
 
-  updateDiameter(newDiameter) { this.vug_diameter_mm = newDiameter; }
+  // Exact area of the current irregular tessellated cavity wall. The
+  // mean-diameter sphere remains a bootstrap fallback only when WallMesh is
+  // unavailable (for example, an intentionally tiny headless fixture).
+  surfaceAreaMm2(sim?) {
+    const mesh = this.meshFor(sim);
+    const exact = mesh ? _wallMeshSurfaceAreaInternal(mesh) : 0;
+    if (exact > 0) return exact;
+    const radius = Math.max(0.5, this.meanDiameterMm() / 2);
+    return 4 * Math.PI * radius * radius;
+  }
+
+  // Unit vector from the cavity centre to a crystal's authored anchor. It
+  // includes the same ring twist used by WallMesh, making the descriptor and
+  // renderer select the same physical wall patch.
+  surfaceAnchorDirection(crystal) {
+    const point = this.surfacePointForCrystal(crystal);
+    if (!point) return [0, 1, 0];
+    const length = Math.hypot(point[0], point[1], point[2]) || 1;
+    return [point[0] / length, point[1] / length, point[2] / length];
+  }
+
+  updateCapacity(volumeMm3, equivalentDiameterMm?) {
+    const volume = Number(volumeMm3);
+    if (!(volume > 0) || !Number.isFinite(volume)) throw new RangeError('WallState capacity is invalid');
+    const derivedDiameter = VugWall.diameterForCapacityMm3(volume);
+    if (equivalentDiameterMm != null) {
+      const suppliedDiameter = Number(equivalentDiameterMm);
+      const tolerance = Math.max(1e-10, derivedDiameter * 1e-10);
+      if (!Number.isFinite(suppliedDiameter)
+          || Math.abs(suppliedDiameter - derivedDiameter) > tolerance) {
+        throw new RangeError('WallState equivalent diameter must be derived from capacity');
+      }
+    }
+    this.cavity_capacity_volume_mm3 = volume;
+    this.vug_diameter_mm = derivedDiameter;
+  }
+
+  // Creative mode may reauthor the initial equivalent-volume diameter only
+  // before time, crystals, or erosion exist. Scale the complete authored
+  // closed surface and its source bubbles together, then recompute the exact
+  // Float32 WallMesh capacity and start a fresh authored-initial ledger.
+  reauthorInitialEquivalentDiameterMm(equivalentDiameterMm, sim?, opts: any = {}) {
+    const requestedDiameter = Number(equivalentDiameterMm);
+    if (!(requestedDiameter > 0) || !Number.isFinite(requestedDiameter)) {
+      throw new RangeError('initial equivalent cavity diameter must be positive and finite');
+    }
+    const ledger = this.cavityEvolutionLedger();
+    if (!ledger || ledger.cursor !== 0) {
+      throw new RangeError('initial cavity diameter can only be reauthored before evolution history exists');
+    }
+    ledger.assertProjection(this);
+    const cells = this.rings.flat();
+    if (cells.some(cell => Math.abs(Number(cell.wall_depth) || 0) > 1e-12)) {
+      throw new RangeError('initial cavity diameter cannot be reauthored after wall evolution');
+    }
+    const productionContract = this._cavityProductionAuthorityContract;
+    if (productionContract) CavityProductionAuthority.assertContract(this, productionContract);
+    const snapshot = {
+      base: cells.map(cell => Number(cell.base_radius_mm)),
+      cellChemistry: cells.map(cell => Object.freeze({
+        fluid: cell.fluid,
+        temperature_ring: cell.temperature_ring,
+      })),
+      bubbles: this.bubbles,
+      rings: this.rings,
+      initial_radius_mm: this.initial_radius_mm,
+      max_seen_radius_mm: this.max_seen_radius_mm,
+      geometryRevision: this._geometry_revision,
+      privateGeometryGeneration: _wallPrivateGeometryGeneration(this),
+      productionProviderSeal: WALL_PRODUCTION_PROVIDER_SEALS.get(this) || null,
+      productionAuthorityOwnership: _wallProductionAuthorityOwnership(this),
+      vug_diameter_mm: this.vug_diameter_mm,
+      cavity_capacity_volume_mm3: this.cavity_capacity_volume_mm3,
+      ledger: this._cavityEvolutionLedger,
+      productionContract: this._cavityProductionAuthorityContract,
+      field: this._cavityField,
+      surface: this._cavitySurface,
+      surfaceFailure: this._cavitySurfaceFailure,
+      surfaceAuthorityFailure: this._cavitySurfaceAuthorityFailure,
+      provider: this._cavitySurfaceAnchorProvider,
+      activeProvider: this._activeCavitySurfaceAnchorProvider,
+      mesh: this._mesh,
+      voxelGrid: this._voxelGrid,
+      evolutionCursor: this._cavityEvolutionCursor,
+    };
+    const targetCapacity = (4 / 3) * Math.PI * Math.pow(requestedDiameter / 2, 3);
+    const scaleGeometry = (scale) => {
+      if (!(scale > 0) || !Number.isFinite(scale)) throw new RangeError('invalid cavity authoring scale');
+      for (const cell of cells) cell.base_radius_mm *= scale;
+      this.bubbles = (this.bubbles || []).map(bubble => Object.freeze([
+        bubble[0] * scale,
+        bubble[1] * scale,
+        bubble[2] * scale,
+        bubble[3] * scale,
+      ]));
+      this.initial_radius_mm *= scale;
+      this.max_seen_radius_mm *= scale;
+    };
+    try {
+      let exactCapacity;
+      let exactDiameter;
+      let enabled = null;
+      if (productionContract) {
+        // Uniformly scale every dimensional authored source, then commission a
+        // fresh immutable lattice/ledger/provider as one transaction. The
+        // zero-isosurface volume is homogeneous under this scale, so one exact
+        // cubic correction suffices; the resulting extraction is still checked.
+        scaleGeometry(Math.cbrt(targetCapacity / productionContract.baseline_volume_mm3));
+        this._cavityProductionAuthorityContract = null;
+        this._cavityEvolutionLedger = null;
+        this._cavityField = null;
+        this._cavitySurface = null;
+        this._cavitySurfaceFailure = null;
+        this._cavitySurfaceAuthorityFailure = null;
+        this._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
+        this._activeCavitySurfaceAnchorProvider = null;
+        this._cavityEvolutionCursor = null;
+        this._mesh = null;
+        this._voxelGrid = null;
+        enabled = this.enableProductionCavityAuthority();
+        exactCapacity = Number(enabled.initial_volume_mm3);
+        exactDiameter = VugWall.diameterForCapacityMm3(exactCapacity);
+        const volumeTolerance = Math.max(1e-7, targetCapacity * 2e-6);
+        if (Math.abs(exactCapacity - targetCapacity) > volumeTolerance) {
+          throw new RangeError('Cartesian cavity scale did not close against requested equivalent volume');
+        }
+      } else {
+        const mesh = this.meshFor(sim);
+        if (!mesh || typeof mesh.closedVolumeMm3 !== 'function') {
+          throw new RangeError('initial cavity reauthoring requires the canonical closed WallMesh');
+        }
+        for (let iteration = 0; iteration < 4; iteration++) {
+          const currentCapacity = this.meshFor(sim).closedVolumeMm3();
+          const correction = Math.cbrt(targetCapacity / currentCapacity);
+          if (Math.abs(correction - 1) <= 1e-10) break;
+          scaleGeometry(correction);
+        }
+        exactCapacity = this.meshFor(sim).closedVolumeMm3();
+        exactDiameter = VugWall.diameterForCapacityMm3(exactCapacity);
+        this._cavityEvolutionLedger = CavityEvolutionLedger.forWall(this);
+        this._cavityField = null;
+        this._cavitySurface = null;
+        this._cavitySurfaceFailure = null;
+        this._voxelGrid = null;
+      }
+      this.cavity_capacity_volume_mm3 = exactCapacity;
+      this.vug_diameter_mm = exactDiameter;
+      const receipt = Object.freeze({
+        transaction_type: 'creative_initial_cavity_scale',
+        requested_equivalent_diameter_mm: requestedDiameter,
+        exact_equivalent_diameter_mm: exactDiameter,
+        exact_capacity_volume_mm3: exactCapacity,
+        volume_model: productionContract
+          ? CAVITY_PRODUCTION_VOLUME_MODEL : 'canonical_closed_wallmesh',
+        shape_identity: this._cavityEvolutionLedger.shape_identity,
+        tessellation_identity: this._cavityEvolutionLedger.tessellation_identity,
+        prior_production_contract_digest: productionContract?.contract_digest || null,
+        production_contract_digest: enabled?.contract?.contract_digest || null,
+        field_snapshot_digest: enabled?.provider?.field_snapshot_digest || null,
+        surface_buffer_digest: enabled?.provider?.surface_buffer_digest || null,
+        scope: 'pre-run authored initial condition; no erosion or deposition event',
+      });
+      if (typeof opts.onInstalled === 'function') opts.onInstalled(receipt);
+      return receipt;
+    } catch (error) {
+      for (let index = 0; index < cells.length; index++) {
+        cells[index].base_radius_mm = snapshot.base[index];
+        // WallMesh cells are the WallState's live WallCell objects. A failed
+        // post-install callback may already have rebound their chemistry, so
+        // pointer restoration of the old mesh/voxel grid is insufficient:
+        // restore the exact boundary-fluid aliases and temperature addresses.
+        cells[index].fluid = snapshot.cellChemistry[index].fluid;
+        cells[index].temperature_ring = snapshot.cellChemistry[index].temperature_ring;
+      }
+      this.bubbles = snapshot.bubbles;
+      this.rings = snapshot.rings;
+      this.initial_radius_mm = snapshot.initial_radius_mm;
+      this.max_seen_radius_mm = snapshot.max_seen_radius_mm;
+      this.vug_diameter_mm = snapshot.vug_diameter_mm;
+      this.cavity_capacity_volume_mm3 = snapshot.cavity_capacity_volume_mm3;
+      this._cavityEvolutionLedger = snapshot.ledger;
+      this._cavityProductionAuthorityContract = snapshot.productionContract;
+      this._cavityField = snapshot.field;
+      this._cavitySurface = snapshot.surface;
+      this._cavitySurfaceFailure = snapshot.surfaceFailure;
+      this._cavitySurfaceAuthorityFailure = snapshot.surfaceAuthorityFailure;
+      this._cavitySurfaceAnchorProvider = snapshot.provider;
+      this._activeCavitySurfaceAnchorProvider = snapshot.activeProvider;
+      this._mesh = snapshot.mesh;
+      this._voxelGrid = snapshot.voxelGrid;
+      this._cavityEvolutionCursor = snapshot.evolutionCursor;
+      // Base-radius restoration legitimately touches the monotonic revision;
+      // roll both public diagnostics and the lexical authority generation back
+      // last so a rejected authoring transaction is genuinely unobservable.
+      this._geometry_revision = snapshot.geometryRevision;
+      WALL_PRIVATE_GEOMETRY_GENERATION.set(this, snapshot.privateGeometryGeneration);
+      if (snapshot.productionProviderSeal) {
+        WALL_PRODUCTION_PROVIDER_SEALS.set(this, snapshot.productionProviderSeal);
+      } else {
+        WALL_PRODUCTION_PROVIDER_SEALS.delete(this);
+      }
+      if (snapshot.productionAuthorityOwnership) {
+        WALL_PRODUCTION_AUTHORITY_OWNERSHIP.set(
+          this, snapshot.productionAuthorityOwnership,
+        );
+      } else {
+        WALL_PRODUCTION_AUTHORITY_OWNERSHIP.delete(this);
+      }
+      throw error;
+    }
+  }
+
+  initializeCavityEvolutionLedger(opts: any = {}) {
+    if (this._cavityEvolutionLedger) return this._cavityEvolutionLedger;
+    const Ledger: any = (typeof CavityEvolutionLedger !== 'undefined')
+      ? CavityEvolutionLedger : null;
+    if (!Ledger) throw new Error('CavityEvolutionLedger is unavailable');
+    this._cavityEvolutionLedger = Ledger.forWall(this, opts);
+    return this._cavityEvolutionLedger;
+  }
+
+  cavityEvolutionLedger() { return this._cavityEvolutionLedger; }
 
   // PHASE-2-CAVITY-MESH (PROPOSAL-CAVITY-MESH §6): lazy accessor that
   // returns a WallMesh built from this WallState. First access pays the
@@ -1238,9 +2133,344 @@ class WallState {
       if (!WM) return null;
       this._mesh = WM.fromWallState(this, sim);
     } else {
-      this._mesh.recomputeIfStale(this, sim);
+      _wallMeshRecomputeIfStaleInternal(this._mesh, this, sim);
     }
     return this._mesh;
+  }
+
+  // Marching-Cubes cavity migration, Tranches 0/1: renderer-only scalar
+  // volume and extracted shadow surface. These caches deliberately coexist
+  // with WallMesh; mesh.cells[] remains the canonical chemistry/wall store.
+  // The v3 field composes the authored elongation/polar/twist deformation with
+  // the bubble union and authenticated mass-balanced evolution-ledger prefix.
+    // Since v266 the fixed-frame path is production authority; unpinned fields
+    // remain available only on standalone diagnostic WallState fixtures.
+  cavityFieldFor(opts: any = {}) {
+    const CF: any = (typeof CavityScalarField !== 'undefined') ? CavityScalarField : null;
+    if (!CF) return null;
+    const production = this._cavityProductionAuthorityContract;
+    const resolution = production
+      ? production.scientific_resolution
+      : opts && opts.resolution != null ? opts.resolution : 48;
+    if (production && opts && opts.resolution != null
+        && Number(opts.resolution) !== production.scientific_resolution) {
+      throw new RangeError('production cavity resolution is pinned by the scientific contract');
+    }
+    const ledgerCursor = opts && opts.ledgerCursor != null
+      ? opts.ledgerCursor : this._cavityEvolutionCursor;
+    if (production
+        && _wallProductionProviderSealMatches(
+          this, this._activeCavitySurfaceAnchorProvider,
+        )) {
+      const ledger = this.cavityEvolutionLedger?.();
+      const effectiveCursor = ledgerCursor == null ? ledger?.cursor : Number(ledgerCursor);
+      const active = this._activeCavitySurfaceAnchorProvider;
+      if (effectiveCursor === (this._cavityEvolutionCursor == null
+        ? ledger?.cursor : Number(this._cavityEvolutionCursor))
+          && active?.receipt?.resolution === resolution) return active.field;
+    }
+    if (production) CavityProductionAuthority.assertContract(this, production);
+    const frame = production ? production.frame : null;
+    const sig = CF.signatureFor(this, resolution, ledgerCursor, frame);
+    if (!this._cavityField || this._cavityField.sig !== sig) {
+      this._cavityField = CF.fromWallState(this, { resolution, ledgerCursor, frame });
+      this._cavitySurface = null;
+      this._cavitySurfaceFailure = null;
+    }
+    return this._cavityField;
+  }
+
+  cavitySurfaceFor(opts: any = {}) {
+    const production = this._cavityProductionAuthorityContract;
+    if (production
+        && _wallProductionProviderSealMatches(
+          this, this._activeCavitySurfaceAnchorProvider,
+        )) {
+      const ledger = this.cavityEvolutionLedger?.();
+      const requestedCursor = opts && opts.ledgerCursor != null
+        ? Number(opts.ledgerCursor) : this._cavityEvolutionCursor == null
+          ? ledger?.cursor : Number(this._cavityEvolutionCursor);
+      const requestedResolution = opts && opts.resolution != null
+        ? Number(opts.resolution) : production.scientific_resolution;
+      const requestedIsovalue = opts && opts.isovalue != null
+        ? Number(opts.isovalue) : production.isovalue;
+      const active = this._activeCavitySurfaceAnchorProvider;
+      if (requestedCursor === (this._cavityEvolutionCursor == null
+        ? ledger?.cursor : Number(this._cavityEvolutionCursor))
+          && requestedResolution === active?.receipt?.resolution
+          && requestedIsovalue === active?.receipt?.isovalue) return active.surface;
+    }
+    const field = this.cavityFieldFor(opts);
+    if (!field) return null;
+    const isovalue = production
+      ? production.isovalue
+      : opts && opts.isovalue != null ? Number(opts.isovalue) : 0;
+    if (production && opts && opts.isovalue != null
+        && Number(opts.isovalue) !== production.isovalue) {
+      throw new RangeError('production cavity isovalue is pinned by the scientific contract');
+    }
+    const sig = field.surfaceSignature(isovalue);
+    if (this._cavitySurfaceFailure && this._cavitySurfaceFailure.sig === sig) {
+      if (opts && opts.throwOnFailure) throw this._cavitySurfaceFailure.error;
+      return null;
+    }
+    if (!this._cavitySurface || this._cavitySurface.sig !== sig) {
+      try {
+        this._cavitySurface = field.extract(isovalue);
+        this._cavitySurfaceFailure = null;
+      } catch (error) {
+        // Negative-result cache: a known interior ambiguity must not pay for
+        // the same failed extraction on every render frame. Renderer callers
+        // receive null and fall back; diagnostics may request the cached error.
+        this._cavitySurfaceFailure = { sig, error, reported: false };
+        if (opts && opts.throwOnFailure) throw error;
+        return null;
+      }
+    }
+    try {
+      MarchingCubesExtractor.verifyBuffers(this._cavitySurface);
+    } catch (error) {
+      // Typed arrays cannot be frozen. Treat a mutated cached extraction like
+      // any other rejected surface and cache the negative result by signature.
+      this._cavitySurface = null;
+      this._cavitySurfaceFailure = { sig, error, reported: false };
+      if (opts && opts.throwOnFailure) throw error;
+      return null;
+    }
+    return this._cavitySurface;
+  }
+
+  activateCavitySurfaceAnchorProvider(opts: any = {}) {
+    const production = this._cavityProductionAuthorityContract;
+    if (production) CavityProductionAuthority.assertContract(this, production);
+    const resolution = production
+      ? production.scientific_resolution : opts.resolution == null ? 48 : opts.resolution;
+    const evolution = this.cavityEvolutionLedger?.();
+    const ledgerCursor = evolution
+      ? (opts.ledgerCursor != null ? Number(opts.ledgerCursor)
+        : this._cavityEvolutionCursor != null ? Number(this._cavityEvolutionCursor)
+          : evolution.cursor)
+      : null;
+    const isovalue = production ? production.isovalue
+      : opts.isovalue == null ? 0 : Number(opts.isovalue);
+    // Production transactions install the exact preflight field/surface. Use
+    // that same depth-projection identity for initial activation and replay,
+    // rather than extracting identical bytes under a second v5 live-cache
+    // signature. Historical receipts can then authenticate exact identities,
+    // not merely coincidentally equal buffer digests.
+    const productionState = production ? CavityProductionAuthority._surfaceState(
+      this,
+      new Float64Array(_cavityLedgerDepthProjection(evolution, ledgerCursor)),
+      { resolution, isovalue, frame: production.frame },
+    ) : null;
+    const field = productionState?.field
+      || this.cavityFieldFor({ resolution, ledgerCursor });
+    const surface = productionState?.surface || this.cavitySurfaceFor({
+      resolution, ledgerCursor, isovalue, throwOnFailure: true,
+    });
+    if (!field || !surface) throw new Error('cannot activate an unavailable cavity surface provider');
+    if (productionState) {
+      this._cavityField = field;
+      this._cavitySurface = surface;
+      this._cavitySurfaceFailure = null;
+    }
+    MarchingCubesExtractor.verifyBuffers(surface);
+    if (!field.hasNegativeBorder(surface.isovalue)
+        || surface.topology?.negative_border !== true
+        || surface.topology?.nonempty !== true
+        || surface.topology?.closed_two_manifold !== true
+        || !(surface.metrics?.triangle_count > 0)
+        || !(surface.metrics?.vertex_count > 0)) {
+      throw new Error('cannot activate an empty, open, or unauthenticated cavity surface provider');
+    }
+    const productionAuthentication = production
+      ? CavityProductionAuthority.authenticateSurface(
+        this, field, surface, production, ledgerCursor,
+      ) : null;
+    const receipt = Object.freeze({
+      kind: 'cavity-field',
+      resolution: field.sizeX,
+      isovalue: Number(surface.isovalue),
+      field_signature: field.sig,
+      field_snapshot_digest: field.snapshotDigest,
+      surface_signature: surface.sig,
+      surface_buffer_digest: surface.buffer_digest,
+      cavity_evolution_signature: evolution ? evolution.signatureAt(ledgerCursor) : null,
+      production_contract_digest: production ? production.contract_digest : null,
+      authoritative_volume_mm3: productionAuthentication
+        ? productionAuthentication.volume_mm3 : null,
+      max_field_agreement_voxels: productionAuthentication
+        ? productionAuthentication.agreement.max_normal_root_distance_voxels : null,
+    });
+    // Pin the exact explicitly activated objects. Later diagnostics may replace
+    // `_cavityField/_cavitySurface`; they cannot change simulation authority.
+    this._activeCavitySurfaceAnchorProvider = Object.freeze({ field, surface, receipt });
+    this._cavitySurfaceAnchorProvider = receipt;
+    if (production) {
+      _sealWallProductionProvider(
+        this, this._activeCavitySurfaceAnchorProvider, ledgerCursor,
+      );
+    }
+    return receipt;
+  }
+
+  _activeCavitySurfaceProviderForCurrentGeometry() {
+    const active = this._activeCavitySurfaceAnchorProvider;
+    if (!active || active.receipt?.kind !== 'cavity-field') return null;
+    if (this._cavityProductionAuthorityContract
+        && _wallProductionProviderSealMatches(this, active)) return active;
+    try {
+      // Replay walls pin an authenticated historical ledger prefix. Compare
+      // and, if necessary, rebuild against that cursor rather than silently
+      // upgrading a historical provider to the live ledger head.
+      const ledgerCursor = this._cavityEvolutionCursor;
+      const production = this._cavityProductionAuthorityContract;
+      if (production) CavityProductionAuthority.assertContract(this, production);
+      const expected = CavityScalarField.signatureFor(
+        this, active.receipt.resolution, ledgerCursor, production ? production.frame : null,
+      );
+      const evolution = this.cavityEvolutionLedger?.();
+      const effectiveCursor = evolution
+        ? (ledgerCursor == null ? evolution.cursor : Number(ledgerCursor)) : null;
+      const expectedEvolutionSignature = evolution
+        ? evolution.signatureAt(effectiveCursor) : null;
+      if (expected === active.receipt.field_signature
+          && active.receipt.cavity_evolution_signature === expectedEvolutionSignature
+          && active.receipt.production_contract_digest
+            === (production ? production.contract_digest : null)) {
+        MarchingCubesExtractor.verifyBuffers(active.surface);
+        return active;
+      }
+      // Explicit field authority follows authenticated wall evolution at the
+      // same resolution/isovalue. Production extraction was preflighted before
+      // the chemistry commit; an impossible rebuild is withheld below rather
+      // than silently changing geological topology.
+      this.activateCavitySurfaceAnchorProvider({
+        resolution: active.receipt.resolution,
+        isovalue: active.receipt.isovalue,
+        ledgerCursor,
+      });
+      return this._activeCavitySurfaceAnchorProvider;
+    } catch (_error) {
+      if (this._cavityProductionAuthorityContract) {
+        this._cavitySurfaceAuthorityFailure = _error instanceof Error
+          ? _error.message : String(_error);
+        return null;
+      }
+      this.deactivateCavitySurfaceAnchorProvider();
+      return null;
+    }
+  }
+
+  cavitySurfaceAnchorProviderReceipt() {
+    const active = this._activeCavitySurfaceProviderForCurrentGeometry();
+    if (this._cavityProductionAuthorityContract
+        && (!active || active.receipt?.kind !== 'cavity-field')) {
+      throw new Error('production cavity surface authority is unavailable: '
+        + (this._cavitySurfaceAuthorityFailure || 'authenticated Cartesian provider missing'));
+    }
+    // Return only the receipt belonging to the provider authenticated above.
+    // `_cavitySurfaceAnchorProvider` is retained for legacy WallMesh state, but
+    // may contain a prior receipt after a fail-closed production rebuild.
+    return active?.receipt || this._cavitySurfaceAnchorProvider;
+  }
+
+  activeCavitySurfaceAnchorProvider() {
+    return this._activeCavitySurfaceProviderForCurrentGeometry();
+  }
+
+  _requireProductionCavitySurfaceProvider() {
+    const active = this._activeCavitySurfaceProviderForCurrentGeometry();
+    if (this._cavityProductionAuthorityContract
+        && (!active || active.receipt?.kind !== 'cavity-field')) {
+      throw new Error('production cavity surface authority is unavailable: '
+        + (this._cavitySurfaceAuthorityFailure || 'authenticated Cartesian provider missing'));
+    }
+    return active;
+  }
+
+  deactivateCavitySurfaceAnchorProvider() {
+    if (this._cavityProductionAuthorityContract) {
+      throw new RangeError('production cavity authority cannot switch topology after activation');
+    }
+    this._activeCavitySurfaceAnchorProvider = null;
+    this._cavitySurfaceAnchorProvider = Object.freeze({ kind: 'wall-mesh' });
+    return this._cavitySurfaceAnchorProvider;
+  }
+
+  enableProductionCavityAuthority() {
+    const priorLedger = this._cavityEvolutionLedger;
+    if (this._cavityProductionAuthorityContract) {
+      CavityProductionAuthority.assertContract(this, this._cavityProductionAuthorityContract);
+      return Object.freeze({
+        contract: this._cavityProductionAuthorityContract,
+        provider: this.cavitySurfaceAnchorProviderReceipt(),
+        initial_volume_mm3: Number(this._cavityProductionAuthorityContract.baseline_volume_mm3),
+      });
+    }
+    if ((priorLedger && priorLedger.cursor !== 0)
+        || this.rings.some((ring: any[]) => ring.some(
+          (cell: any) => Math.abs(Number(cell.wall_depth) || 0) > 1e-12,
+        ))) {
+      throw new RangeError('production cavity authority must be selected before wall evolution');
+    }
+    const prior = {
+      ledger: priorLedger,
+      ownership: _wallProductionAuthorityOwnership(this),
+      bubbles: this.bubbles,
+      rings: this.rings,
+      field: this._cavityField,
+      surface: this._cavitySurface,
+      failure: this._cavitySurfaceFailure,
+      provider: this._cavitySurfaceAnchorProvider,
+      activeProvider: this._activeCavitySurfaceAnchorProvider,
+    };
+    try {
+      // Production geometry is authored once. Copy into immutable containers
+      // so neither nested bubble coordinates nor chemistry-ring membership can
+      // change behind an otherwise-valid constant-time provider seal. WallCell
+      // chemistry/depth fields remain live and advance the private generation.
+      this.bubbles = Object.freeze((this.bubbles || []).map((bubble: any[]) =>
+        Object.freeze(Array.from(bubble, Number))));
+      this.rings = Object.freeze((this.rings || []).map((ring: any[]) =>
+        Object.freeze(ring.slice())));
+      WALL_PRODUCTION_COMMISSIONING.add(this);
+      const contract = CavityProductionAuthority.createContract(this);
+      this._cavityProductionAuthorityContract = contract;
+      this._cavityEvolutionLedger = CavityEvolutionLedger.forWall(this, {
+        model: CAVITY_PRODUCTION_VOLUME_MODEL,
+      });
+      _bindWallProductionAuthorityOwnership(
+        this, contract, this._cavityEvolutionLedger,
+      );
+      WALL_PRODUCTION_COMMISSIONING.delete(this);
+      this._cavityField = null;
+      this._cavitySurface = null;
+      this._cavitySurfaceFailure = null;
+      const provider = this.activateCavitySurfaceAnchorProvider();
+      return Object.freeze({
+        contract,
+        provider,
+        initial_volume_mm3: Number(contract.baseline_volume_mm3),
+      });
+    } catch (error) {
+      WALL_PRODUCTION_COMMISSIONING.delete(this);
+      this._cavityProductionAuthorityContract = null;
+      this._cavityEvolutionLedger = prior.ledger;
+      this.bubbles = prior.bubbles;
+      this.rings = prior.rings;
+      this._cavityField = prior.field;
+      this._cavitySurface = prior.surface;
+      this._cavitySurfaceFailure = prior.failure;
+      this._cavitySurfaceAnchorProvider = prior.provider;
+      this._activeCavitySurfaceAnchorProvider = prior.activeProvider;
+      if (prior.ownership) {
+        WALL_PRODUCTION_AUTHORITY_OWNERSHIP.set(this, prior.ownership);
+      } else {
+        WALL_PRODUCTION_AUTHORITY_OWNERSHIP.delete(this);
+      }
+      throw error;
+    }
   }
 
   // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1 (v158) — lazy + cached
@@ -1288,12 +2518,13 @@ class WallState {
     const N = Math.max(1, this.cells_per_ring);
     const r = ((ringIdx | 0) + n) % n;
     const c = ((cellIdx | 0) % N + N) % N;
-    return {
-      phi: Math.PI * (r + 0.5) / n,
-      theta: 2 * Math.PI * c / N,
-      ringIdx: r,
-      cellIdx: c,
-    };
+    // `meshFor()` performs the cheap geometry-revision check. Do not bypass it
+    // with an existing reference: cavity evolution may have invalidated the
+    // positions and the chemistry projection must follow that same revision.
+    const mesh = this.meshFor();
+    if (!mesh || !(mesh.numInterior > 0)) return null;
+    this._requireProductionCavitySurfaceProvider();
+    return CavitySurfaceAnchors.fromWallMeshVertex(mesh, r * N + c);
   }
 
   // PHASE-4-CAVITY-MESH (PROPOSAL-CAVITY-MESH §13 Tranche 4b) —
@@ -1310,10 +2541,211 @@ class WallState {
   _resolveAnchor(crystal) {
     if (!crystal) return null;
     const a = crystal.wall_anchor;
-    if (a && a.ringIdx != null && a.cellIdx != null) {
-      return { ringIdx: a.ringIdx, cellIdx: a.cellIdx };
+    if (!a) return null;
+    // Always enter through meshFor(): it checks the monotonic geometry revision
+    // before physical remap and chemistry projection use the mesh.
+    const mesh = this.meshFor();
+    const requiredProductionProvider = this._requireProductionCavitySurfaceProvider();
+    if (a.schema === CavitySurfaceAnchors.SCHEMA && !Object.isFrozen(a)) {
+      // Saved JSON is mutable on load. Seal the accepted birth receipt in
+      // place before object identity is admitted to the derived remap cache.
+      CavitySurfaceAnchors.seal(a, mesh);
     }
-    return null;
+    const cachedRemap = (key: string, compute: () => any) => {
+      if (!this._surfaceAnchorRemapCache) this._surfaceAnchorRemapCache = new WeakMap();
+      const cached = this._surfaceAnchorRemapCache.get(a);
+      if (cached?.key === key) return cached.anchor;
+      const resolved = compute();
+      this._surfaceAnchorRemapCache.set(a, { key, anchor: resolved });
+      return resolved;
+    };
+    if (a.schema === CavitySurfaceAnchors.SCHEMA) {
+      if (a.source?.kind === 'wall-mesh') {
+        const active = requiredProductionProvider
+          || this._activeCavitySurfaceProviderForCurrentGeometry();
+        const field = active?.field;
+        const surface = active?.surface;
+        if (active?.receipt?.kind === 'cavity-field'
+            && field && surface && surface.source_field_signature === field.sig
+            && surface.source_field_snapshot_digest === field.snapshotDigest) {
+          // Once an authenticated Cartesian provider exists, normalize all
+          // physical consumers onto it. This makes mixed historical providers
+          // share one live topology for placement and stratigraphy.
+          return cachedRemap(`field:${surface.sig}|chem:${mesh.geometry_sig}`, () =>
+            CavitySurfaceAnchors.remapToMarchingCubes(a, field, surface, mesh));
+        }
+        if (a.source.signature === mesh.geometry_sig) {
+          CavitySurfaceAnchors.validate(a, mesh, mesh);
+          return a;
+        }
+        return cachedRemap(`wall:${mesh.geometry_sig}`, () =>
+          CavitySurfaceAnchors.remapToWallMesh(a, mesh));
+      }
+      const active = requiredProductionProvider
+        || this._activeCavitySurfaceProviderForCurrentGeometry();
+      const field = active?.field;
+      const surface = active?.surface;
+      if (!active || active.receipt?.kind !== 'cavity-field') {
+        return cachedRemap(`fallback:${mesh.geometry_sig}`, () =>
+          CavitySurfaceAnchors.remapToWallMesh(a, mesh));
+      }
+      if (field && surface && surface.source_field_signature === field.sig
+          && surface.source_field_snapshot_digest === field.snapshotDigest
+          && (a.source?.signature !== surface.sig || a.source?.fieldSignature !== field.sig)) {
+        return cachedRemap(`field:${surface.sig}|chem:${mesh.geometry_sig}`, () =>
+          CavitySurfaceAnchors.remapToMarchingCubes(a, field, surface, mesh));
+      }
+      if (field && surface && a.source?.signature === surface.sig
+          && a.source?.fieldSignature === field.sig) {
+        // Authenticate the physical receipt first. A changed WallMesh makes
+        // the chemistry projection stale, not the physical attachment stale;
+        // reproject that derived address atomically without mutating history.
+        if (a.chemistry?.meshSignature === mesh.geometry_sig) {
+          CavitySurfaceAnchors.validate(a, surface, mesh, field);
+          return a;
+        }
+        CavitySurfaceAnchors.validate(a, surface, mesh, field, { allowStaleChemistry: true });
+        return cachedRemap(`field:${surface.sig}|chem:${mesh.geometry_sig}`, () =>
+          CavitySurfaceAnchors.fromMarchingCubes(
+            field, surface, mesh, a.triangleIndex, a.barycentric,
+          ));
+      }
+      // A missing/rejected/stale scalar extraction fails closed explicitly to
+      // the canonical WallMesh; chemistry is never used as the remap shortcut.
+      return cachedRemap(`fallback:${mesh.geometry_sig}`, () =>
+        CavitySurfaceAnchors.remapToWallMesh(a, mesh));
+    }
+    const upgraded = CavitySurfaceAnchors.upgradeLegacy(a, mesh);
+    if (requiredProductionProvider?.receipt?.kind === 'cavity-field') {
+      return cachedRemap(
+        `field:${requiredProductionProvider.surface.sig}|chem:${mesh.geometry_sig}`,
+        () => CavitySurfaceAnchors.remapToMarchingCubes(
+          upgraded, requiredProductionProvider.field,
+          requiredProductionProvider.surface, mesh,
+        ),
+      );
+    }
+    return upgraded;
+  }
+
+  // The boundary transport lattice is intentionally a projection of the
+  // physical surface anchor. These helpers keep chemistry consumers from
+  // mistaking a ring/cell cache for crystal identity.
+  chemistryAddressForAnchor(anchor) {
+    const resolved = anchor && anchor.wall_anchor !== undefined
+      ? this._resolveAnchor(anchor) : this._resolveAnchor({ wall_anchor: anchor });
+    return CavitySurfaceAnchors.chemistryAddress(resolved);
+  }
+
+  chemistryAddressForCrystal(crystal) {
+    // A crystal wrapper is not itself a legacy/raw anchor. Resolve its
+    // wall_anchor directly so an unanchored object remains the documented
+    // null case instead of being misclassified and upgraded as `{}`.
+    return CavitySurfaceAnchors.chemistryAddress(this._resolveAnchor(crystal));
+  }
+
+  chemistryVertexForCrystal(crystal) {
+    const address = this.chemistryAddressForCrystal(crystal);
+    return address ? address.vertexIndex : -1;
+  }
+
+  surfacePointForCrystal(crystal) {
+    const anchor = this._resolveAnchor(crystal);
+    if (!anchor) return null;
+    return anchor.position.slice();
+  }
+
+  surfaceNormalForCrystal(crystal) {
+    const anchor = this._resolveAnchor(crystal);
+    if (!anchor) return null;
+    return anchor.normal.slice();
+  }
+
+  surfaceAnchorKey(crystal) {
+    return CavitySurfaceAnchors.key(this._resolveAnchor(crystal));
+  }
+
+  surfaceAnchorFromMarchingCubes(triangleIndex, barycentric, opts: any = {}) {
+    this._requireProductionCavitySurfaceProvider();
+    const resolution = opts.resolution == null ? 48 : opts.resolution;
+    const field = this.cavityFieldFor({ resolution, ledgerCursor: opts.ledgerCursor });
+    const surface = this.cavitySurfaceFor({
+      resolution, ledgerCursor: opts.ledgerCursor,
+      isovalue: opts.isovalue == null ? 0 : opts.isovalue,
+      throwOnFailure: true,
+    });
+    const mesh = this._mesh || this.meshFor(opts.sim);
+    return CavitySurfaceAnchors.fromMarchingCubes(
+      field, surface, mesh, triangleIndex, barycentric,
+    );
+  }
+
+  remapSurfaceAnchorToMarchingCubes(anchor, opts: any = {}) {
+    this._requireProductionCavitySurfaceProvider();
+    const resolution = opts.resolution == null ? 48 : opts.resolution;
+    const field = this.cavityFieldFor({ resolution, ledgerCursor: opts.ledgerCursor });
+    const surface = this.cavitySurfaceFor({
+      resolution, ledgerCursor: opts.ledgerCursor,
+      isovalue: opts.isovalue == null ? 0 : opts.isovalue,
+      throwOnFailure: false,
+    });
+    const mesh = this._mesh || this.meshFor(opts.sim);
+    if (!field || !surface) {
+      if (this._cavityProductionAuthorityContract) {
+        throw new Error('production cavity surface remap cannot fall back to WallMesh');
+      }
+      return CavitySurfaceAnchors.remapToWallMesh(anchor, mesh);
+    }
+    return CavitySurfaceAnchors.remapToMarchingCubes(
+      anchor, field, surface, mesh,
+    );
+  }
+
+  remapSurfaceAnchorToWallMesh(anchor, sim?) {
+    if (this._cavityProductionAuthorityContract) {
+      throw new Error('production cavity physical anchors cannot switch to WallMesh');
+    }
+    return CavitySurfaceAnchors.remapToWallMesh(anchor, this.meshFor(sim));
+  }
+
+  surfaceForCrystal(crystal, sim?) {
+    const anchor = this._resolveAnchor(crystal);
+    return this._surfaceForResolvedAnchor(anchor, sim);
+  }
+
+  _surfaceForResolvedAnchor(anchor, sim?) {
+    if (!anchor) return null;
+    const activeSurface = this._activeCavitySurfaceProviderForCurrentGeometry()?.surface;
+    if (anchor.source.kind === 'cavity-field'
+        && activeSurface?.sig === anchor.source.signature) return activeSurface;
+    return this._mesh || this.meshFor(sim);
+  }
+
+  surfaceAreaForCrystal(crystal, sim?) {
+    const surface = this.surfaceForCrystal(crystal, sim);
+    return surface ? CavitySurfaceAnchors.surfaceAreaMm2(surface) : 0;
+  }
+
+  surfacePatchForCrystal(crystal, coverage, sim?) {
+    const anchor = this._resolveAnchor(crystal);
+    const surface = this._surfaceForResolvedAnchor(anchor, sim);
+    return anchor && surface ? CavitySurfaceAnchors.surfacePatch(anchor, surface, coverage) : null;
+  }
+
+  surfacePatchIndexReceiptForCrystal(crystal, coverage, sim?) {
+    const anchor = this._resolveAnchor(crystal);
+    const surface = this._surfaceForResolvedAnchor(anchor, sim);
+    return anchor && surface
+      ? CavitySurfaceAnchors.surfacePatchIndexReceipt(anchor, surface, coverage)
+      : null;
+  }
+
+  sampleSurfacePatchForCrystal(crystal, count, coverage, seed, sim?) {
+    const anchor = this._resolveAnchor(crystal);
+    const surface = this._surfaceForResolvedAnchor(anchor, sim);
+    return anchor && surface
+      ? CavitySurfaceAnchors.sampleSurfacePatch(anchor, surface, count, coverage, seed)
+      : null;
   }
 
   // Phase D: which third of the sphere this ring belongs to.
@@ -1349,9 +2781,25 @@ class WallState {
   // habit code (PROPOSAL-3D-SIMULATION Phase D) reads the same source.
   zoneOf(crystal) {
     if (!crystal) return null;
-    const anchor = this._resolveAnchor(crystal);
-    if (!anchor) return null;
-    return this.ringOrientation(anchor.ringIdx);
+    const normal = this.surfaceNormalForCrystal(crystal);
+    return this.zoneFromSurfaceNormal(normal);
+  }
+
+  zoneFromSurfaceNormal(normal) {
+    if (!normal) return null;
+    if (normal[1] > Math.SQRT1_2) return 'floor';
+    if (normal[1] < -Math.SQRT1_2) return 'ceiling';
+    return 'wall';
+  }
+
+  surfaceZoneAtVertex(ringIdx, cellIdx, sim?) {
+    const R = this.ring_count | 0;
+    const N = this.cells_per_ring | 0;
+    if (!Number.isInteger(ringIdx) || !Number.isInteger(cellIdx)
+        || ringIdx < 0 || ringIdx >= R || cellIdx < 0 || cellIdx >= N) return null;
+    const mesh = this._mesh || this.meshFor(sim);
+    return this.zoneFromSurfaceNormal(mesh
+      ? _wallMeshVoidNormalInternal(mesh, ringIdx * N + cellIdx) : null);
   }
 
   // Phase D: per-ring nucleation weight proportional to the ring's
@@ -1377,51 +2825,6 @@ class WallState {
     if (idx < 0) return 0;
     if (idx >= this.ring_count) return this.ring_count - 1;
     return idx;
-  }
-
-  // Distribute a radial dissolution amount across unblocked cells.
-  // Blocked cells (Set of cell indices) contribute zero — the acid
-  // budget concentrates on exposed slices. Returns the number of
-  // cells eroded.
-  // colWeights (Phase 2b, optional): a length-N array of per-column erosion
-  // multipliers from the fluid-source spots (FluidSpotField.columnWeights). The
-  // FIXED dissolution budget (rateMm·N) is redistributed proportional to the
-  // unblocked cells' weights → preferential deepening at feeder columns (lopsided
-  // cavity growth). Mass-conserving (same total wall_depth added), so the Ca/CO3
-  // release computed upstream in wall.dissolve() is untouched — this is purely
-  // geometric. Absent/null → the legacy UNIFORM distribution (byte-identical).
-  erodeCells(rateMm, blocked, colWeights) {
-    if (!(rateMm > 0)) return 0;
-    const ring0 = this.rings[0];
-    const N = ring0.length;
-    const unblocked = [];
-    for (let i = 0; i < N; i++) if (!blocked.has(i)) unblocked.push(i);
-    if (!unblocked.length) return 0;
-    const total = rateMm * N;
-    if (colWeights) {
-      let wsum = 0;
-      for (const i of unblocked) wsum += (colWeights[i] > 0 ? colWeights[i] : 1);
-      if (wsum > 0) {
-        for (const i of unblocked) {
-          const wi = colWeights[i] > 0 ? colWeights[i] : 1;
-          ring0[i].wall_depth += total * wi / wsum;
-        }
-      } else {
-        const perCell = total / unblocked.length;
-        for (const i of unblocked) ring0[i].wall_depth += perCell;
-      }
-    } else {
-      const perCell = total / unblocked.length;
-      for (const i of unblocked) ring0[i].wall_depth += perCell;
-    }
-    // Bump the monotonic render scale if any cell just passed the
-    // current maximum. Uses per-cell base_radius_mm so Fourier-profile
-    // bulges contribute correctly.
-    for (const c of ring0) {
-      const r = c.base_radius_mm + c.wall_depth;
-      if (r > this.max_seen_radius_mm) this.max_seen_radius_mm = r;
-    }
-    return unblocked.length;
   }
 
   clear() {
@@ -1460,8 +2863,6 @@ class WallState {
     const n = this.ring_count;
     const N = this.cells_per_ring;
     if (n <= 0 || N <= 0) return 0;
-    const R = (this.vug_diameter_mm || 50) / 2;
-    if (!(R > 0)) return 0;
     // Cache ring-weight sum; invalidate if ring_count ever changes.
     if (this._cachedRingWeightSum == null || this._cachedRingWeightSum_n !== n) {
       let s = 0;
@@ -1470,9 +2871,30 @@ class WallState {
       this._cachedRingWeightSum = s > 0 ? s : n;
       this._cachedRingWeightSum_n = n;
     }
-    const cavityVol = (4 / 3) * Math.PI * R * R * R;
+    const cavityVol = Number(this.cavity_capacity_volume_mm3);
+    if (!(cavityVol > 0)) return 0;
     const w = this.ringAreaWeight(ringIdx) / this._cachedRingWeightSum;
     return (cavityVol * w) / N;
+  }
+
+  _cellCavityVolAtVertexMm3(vertexIdx) {
+    const mesh = this._mesh || this.meshFor();
+    if (!mesh || vertexIdx < 0 || vertexIdx >= mesh.numInterior) return 0;
+    const area = _wallMeshCellSurfaceAreaInternal(mesh, vertexIdx);
+    const total = _wallMeshSurfaceAreaInternal(mesh);
+    const cavityVol = Number(this.cavity_capacity_volume_mm3);
+    if (!(area > 0) || !(total > 0) || !(cavityVol > 0)) return 0;
+    return cavityVol * area / total;
+  }
+
+  _footprintVertices(crystal) {
+    const source = this.chemistryVertexForCrystal(crystal);
+    const mesh = this._mesh || this.meshFor();
+    if (!mesh || source < 0 || source >= mesh.numInterior) return [];
+    const radiusMm = Math.max(this.cell_arc_mm, this.footprintArcMm(crystal) / 2);
+    const covered: number[] = mesh.verticesWithinGeodesicRadius(source, radiusMm);
+    if (!covered.includes(source)) covered.unshift(source);
+    return covered;
   }
 
   // Proposal E (2026-05-18) — paint a crystal's _volume_mm3 contribution
@@ -1503,24 +2925,24 @@ class WallState {
   _paintCrystalVolume(crystal) {
     if (!crystal) return;
     if (typeof crystal._volume_mm3 !== 'number' || !(crystal._volume_mm3 > 0)) return;
-    const anchor = this._resolveAnchor(crystal);
-    if (!anchor) return;
-    let ringIdx = anchor.ringIdx;
-    if (ringIdx == null || ringIdx < 0 || ringIdx >= this.ring_count) return;
-    const centerCell = anchor.cellIdx;
-    if (centerCell == null) return;
-    const arcMm = this.footprintArcMm(crystal);
-    const halfCells = Math.max(1, Math.round(arcMm / this.cell_arc_mm / 2));
-    const span = 2 * halfCells + 1;
-    const volPerCell = crystal._volume_mm3 / span;
-    const ring = this.rings[ringIdx];
-    if (!ring) return;
-    const N = this.cells_per_ring;
-    for (let offset = -halfCells; offset <= halfCells; offset++) {
-      const idx = ((centerCell + offset) % N + N) % N;
-      const cell = ring[idx];
+    const mesh = this._mesh || this.meshFor();
+    const covered = this._footprintVertices(crystal);
+    if (!mesh || !covered.length) return;
+    let coveredArea = 0;
+    for (const vertexIdx of covered) {
+      coveredArea += _wallMeshCellSurfaceAreaInternal(mesh, vertexIdx);
+    }
+    if (!(coveredArea > 0)) return;
+    let assigned = 0;
+    for (let i = 0; i < covered.length; i++) {
+      const vertexIdx = covered[i];
+      const cell = mesh.cells[vertexIdx];
       if (!cell) continue;
-      cell._localCrystalVol_mm3 = (cell._localCrystalVol_mm3 || 0) + volPerCell;
+      const share = i === covered.length - 1
+        ? crystal._volume_mm3 - assigned
+        : crystal._volume_mm3 * _wallMeshCellSurfaceAreaInternal(mesh, vertexIdx) / coveredArea;
+      cell._localCrystalVol_mm3 = (cell._localCrystalVol_mm3 || 0) + share;
+      assigned += share;
     }
   }
 
@@ -1547,9 +2969,13 @@ class WallState {
   // Returns 0 for unanchored crystals — the growth loop falls back to
   // global vugFill in that case.
   getCellLocalFillForCrystal(crystal) {
-    const anchor = this._resolveAnchor(crystal);
-    if (!anchor) return 0;
-    return this.getCellLocalFill(anchor.ringIdx, anchor.cellIdx);
+    const vertexIdx = this.chemistryVertexForCrystal(crystal);
+    const mesh = this._mesh || this.meshFor();
+    if (!mesh || vertexIdx < 0 || vertexIdx >= mesh.numInterior) return 0;
+    const cell = mesh.cells[vertexIdx];
+    const volume = Number(cell?._localCrystalVol_mm3) || 0;
+    const capacity = this._cellCavityVolAtVertexMm3(vertexIdx);
+    return volume > 0 && capacity > 0 ? volume / capacity : 0;
   }
 
   // W-F O4b — the footprint law, hoisted so the two painters and the
@@ -1574,12 +3000,17 @@ class WallState {
   // (tools/o4b-adjacency-census.mjs) and the enclosure gate share this
   // metric without re-deriving positions.
   anchorDistanceMm(a, b) {
-    const A = this._anchorFromRingCell(a.ringIdx, a.cellIdx);
-    const B = this._anchorFromRingCell(b.ringIdx, b.cellIdx);
-    const cosD = Math.cos(A.phi) * Math.cos(B.phi)
-      + Math.sin(A.phi) * Math.sin(B.phi) * Math.cos(A.theta - B.theta);
-    const R = (this.cell_arc_mm * this.cells_per_ring) / (2 * Math.PI);
-    return R * Math.acos(Math.max(-1, Math.min(1, cosD)));
+    const A = this.chemistryAddressForAnchor(a);
+    const B = this.chemistryAddressForAnchor(b);
+    const mesh = this._mesh || this.meshFor();
+    if (A && B && mesh && A.vertexIndex >= 0 && B.vertexIndex >= 0) {
+      return _wallMeshGeodesicDistancesInternal(mesh, A.vertexIndex)[B.vertexIndex];
+    }
+    const ap = a?.position, bp = b?.position;
+    if (Array.isArray(ap) && Array.isArray(bp)) {
+      return Math.hypot(ap[0] - bp[0], ap[1] - bp[1], ap[2] - bp[2]);
+    }
+    return Infinity;
   }
 
   // Mark the cells this crystal occupies with its id / mineral / thickness.
@@ -1600,21 +3031,13 @@ class WallState {
     // renderer stops reading wall_ring_index / wall_center_cell
     // directly. Behavior is unchanged when wall_anchor is set in step
     // with the legacy fields (current default at nucleation).
-    const anchor = this._resolveAnchor(crystal);
-    if (!anchor) return;
-    let ringIdx = anchor.ringIdx;
-    if (ringIdx == null || ringIdx < 0 || ringIdx >= this.ring_count) {
-      ringIdx = 0;
-    }
-    const centerCell = anchor.cellIdx;
-    const arcMm = this.footprintArcMm(crystal);
-    const halfCells = Math.max(1, Math.round(arcMm / this.cell_arc_mm / 2));
+    const mesh = this._mesh || this.meshFor();
+    const covered = this._footprintVertices(crystal);
+    if (!mesh || !covered.length) return;
     const thickness = Math.max(crystal.total_growth_um, 1);  // nucleated = visible
-    const ring = this.rings[ringIdx];
-    const N = this.cells_per_ring;
-    for (let offset = -halfCells; offset <= halfCells; offset++) {
-      const idx = ((centerCell + offset) % N + N) % N;
-      const cell = ring[idx];
+    for (const vertexIdx of covered) {
+      const cell = mesh.cells[vertexIdx];
+      if (!cell) continue;
       if (cell.thickness_um < thickness) {
         cell.crystal_id = crystal.crystal_id;
         cell.mineral = crystal.mineral;

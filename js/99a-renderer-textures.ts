@@ -540,6 +540,13 @@ const _MATRIX_SKIN_PAINTERS: Record<string, (ctx: any, rnd: () => number) => voi
     _mskStipple(ctx, rnd, 900, ['#cdb894', '#dbc9a9', '#c5b08a'], 0.5, 1.8, 0.7);
     _mskBands(ctx, rnd, 7, '#c2ab83', 0.4, 3, 8, 2);
   },
+  banded_iron_formation(ctx, rnd) {  // Asbestos Hills: chert/jasper + hematite/magnetite laminae
+    _mskBase(ctx, '#6c635d');
+    _mskBands(ctx, rnd, 11, '#382f30', 0.92, 5, 14, 2.2);    // magnetite/hematite-rich bands
+    _mskBands(ctx, rnd, 8, '#984f3d', 0.72, 3, 10, 2.0);     // jasper/oxidized iron bands
+    _mskBands(ctx, rnd, 7, '#c2b8a2', 0.62, 2, 8, 1.6);      // chert-rich laminae
+    _mskStipple(ctx, rnd, 180, ['#28272a', '#8b4638', '#b9ae99'], 0.5, 1.8, 0.45);
+  },
   phonolite(ctx, rnd) {              // greenish-gray aphanitic + sanidine laths
     _mskBase(ctx, '#a9ac9c');
     _mskStipple(ctx, rnd, 420, ['#9fa292', '#b2b5a5'], 0.5, 1.6, 0.5);

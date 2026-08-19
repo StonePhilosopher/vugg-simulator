@@ -10,44 +10,122 @@
 // --- sabkha_dolomitization (Coorong/Persian Gulf cycling brine, Kim 2023 mechanism) ---
 // flood + evap each fire 12× via the supergene_acidification handler-reuse
 // precedent. Cycle number is preserved via the event `name` field.
+const SABKHA_CARBONATE_ENDMEMBERS = Object.freeze({
+  flood: Object.freeze({
+    dicMolKg: 0.0008331944675887352,             // 50 ppm CO3-equivalent
+    reducedAlkalinityEqKg: 0.0008197637983922784, // pH 8.0 at 25 C
+  }),
+  evap: Object.freeze({
+    dicMolKg: 0.013331111481419763,              // 800 ppm CO3-equivalent
+    reducedAlkalinityEqKg: 0.013401527005837206, // pH 8.4 at 32 C
+  }),
+});
+
+function _sabkhaRechargeCarbonateBoundary(c, endmember, note) {
+  const state = c._carbonateBoundaryState;
+  if (!state) {
+    c._pending_carbonate_boundary_violation = {
+      ok: false,
+      attemptedKind: 'recharge',
+      error: 'sabkha_replacement_requires_conserved_carbonate_boundary',
+      note,
+    };
+    return null;
+  }
+  const tx = rechargeCarbonateBoundaryState(
+    state,
+    c.fluid,
+    c.temperature,
+    1,
+    endmember.dicMolKg,
+    endmember.reducedAlkalinityEqKg,
+    note,
+  );
+  if (tx?.ok) {
+    c._pending_fluid_replace_fields = Array.from(new Set([
+      ...(c._pending_fluid_replace_fields || []),
+      'CO3', 'pH',
+    ]));
+  }
+  return tx;
+}
+
 function event_sabkha_flood(c) {
+  // Absolute tidal-water replacement, not a relative offset to preserve in
+  // each already-depleted voxel.
+  c._pending_fluid_replace_fields = [
+    'Mg', 'Ca', 'CO3', 'Sr', 'Na', 'Cl', 'S_sulfide', 'S_sulfate',
+    'S_elemental', 'salinity', 'concentration', 'pH',
+  ];
   c.fluid.Mg = 800;
   c.fluid.Ca = 250;
-  c.fluid.CO3 = 50;
   c.fluid.Sr = 12;
-  c.fluid.pH = 8.0;
+  c.fluid.Na = 10500;
+  c.fluid.Cl = 19000;
+  c.fluid.S_sulfide = 0;
+  c.fluid.S_sulfate = 2700;
+  c.fluid.S_elemental = 0;
+  c.fluid.salinity = 35;
+  c.fluid.concentration = 1;
+  syncExplicitSulfurTotal(c.fluid);
+  declareSulfurBoundaryReplacement(c, 'sabkha tidal seawater replacement', {
+    sulfide: 0, sulfate: 2700, elemental: 0,
+  });
+  const carbonateTx = _sabkhaRechargeCarbonateBoundary(
+    c,
+    SABKHA_CARBONATE_ENDMEMBERS.flood,
+    'sabkha tidal seawater: 100% authored replacement-water recharge',
+  );
   c.flow_rate = 1.5;
-  return 'Flood pulse: low-alkalinity tidal seawater enters the lagoon. CO₃ crashes from sabkha brine levels back to ~50 ppm. Dolomite supersaturation drops below 1 — the disordered Ca/Mg surface layer detaches preferentially (Kim 2023 etch).';
+  return `Flood pulse: low-alkalinity tidal seawater replaces the pore water. The receipt books outgoing and incoming carbon separately, then the open pCO₂ boundary re-equilibrates DIC + pH${carbonateTx?.ok ? '' : ' (carbonate transaction BLOCKED)'}. The high-salinity activity model remains unavailable and is flagged, not hidden.`;
 }
 
 function event_sabkha_evap(c) {
+  // Absolute evaporative-brine regime replacement.
+  c._pending_fluid_replace_fields = [
+    'Mg', 'Ca', 'CO3', 'Sr', 'Na', 'Cl', 'S_sulfide', 'S_sulfate',
+    'S_elemental', 'salinity', 'concentration', 'pH',
+  ];
   c.fluid.Mg = 2000;
   c.fluid.Ca = 600;
-  c.fluid.CO3 = 800;
   c.fluid.Sr = 30;
-  c.fluid.pH = 8.4;
+  c.fluid.Na = 65000;
+  c.fluid.Cl = 110000;
+  c.fluid.S_sulfide = 0;
+  c.fluid.S_sulfate = 9000;
+  c.fluid.S_elemental = 0;
+  c.fluid.salinity = 250;
+  c.fluid.concentration = 7.1;
+  syncExplicitSulfurTotal(c.fluid);
+  declareSulfurBoundaryReplacement(c, 'sabkha evaporative-brine replacement', {
+    sulfide: 0, sulfate: 9000, elemental: 0,
+  });
   c.flow_rate = 0.1;
-  c.temperature = 28;
-  return 'Evaporation pulse: sun bakes the lagoon. Brine reconcentrates to sabkha state — Mg=2000, Ca=600, CO₃=800. Dolomite saturation climbs back well above 1; growth resumes on the ordered template the previous etch left behind. Cycle complete; ordering ratchets up.';
+  c.temperature = 32;
+  const carbonateTx = _sabkhaRechargeCarbonateBoundary(
+    c,
+    SABKHA_CARBONATE_ENDMEMBERS.evap,
+    'sabkha evaporative brine: 100% authored replacement-water endmember',
+  );
+  return `Evaporation pulse: the authored 250‰ brine endmember replaces the pore water at 32°C. Carbon import/export and reduced alkalinity are explicit${carbonateTx?.ok ? '' : ' (carbonate transaction BLOCKED)'}; salinity_model_missing marks the carbonate solve as qualitative. Gypsum remains the required precursor while the Hardie selector controls anhydrite replacement.`;
 }
 
 function event_sabkha_final_seal(c) {
   c.flow_rate = 0.05;
-  c.temperature = 22;
+  c.temperature = 30;
   return "Sabkha matures, then seals. The crust hardens and groundwater stops cycling. What remains is the result of twelve dissolution-precipitation cycles — ordered dolomite where the cycling did its work, disordered HMC where it didn't. The Coorong recipe for ambient-T ordered dolomite, the natural laboratory that Kim 2023 finally explained at the atomic scale.";
 }
 
 // v29 evaporite-locality scenarios — Naica + Searles Lake events.
-// Mirror of event_naica_* + event_searles_* in vugg.py.
 
 function event_naica_slow_cooling(c) {
   if (c.temperature > 51) c.temperature -= 0.7;
-  c.fluid.Ca = Math.max(c.fluid.Ca, 280);
-  c.fluid.S = Math.max(c.fluid.S, 380);
+  c.fluid.Ca = Math.max(c.fluid.Ca, 600);
+  c.fluid.S = Math.max(c.fluid.S, 500);
   c.fluid.O2 = 1.5;
   c.fluid.pH = 7.2;
   c.flow_rate = 0.3;
-  return `Geothermal pulse: anhydrite at depth dissolves slightly, resupplying Ca + SO₄ to the rising hot brine. T drifts down to ${c.temperature.toFixed(1)}°C — still above the 54°C Naica equilibrium. Selenite cathedral blades grow another notch. Garcia-Ruiz: "hundredths of a degree per year" maintained for half a million years.`;
+  return `Geothermal reaction testimony: anhydrite at depth resupplies the measured Ca-SO₄ brine while T reaches ${c.temperature.toFixed(1)}°C. The authoritative CaSO₄ selector decides whether the near-equilibrium gypsum route remains open; no crystal outcome is asserted by the event.`;
 }
 
 function event_naica_mining_drainage(c) {
@@ -61,7 +139,7 @@ function event_naica_mining_recharge(c) {
   c.fluid_surface_ring = 1.0e6;
   c.flow_rate = 0.5;
   c.temperature = 30;
-  return "2017 — Naica's mining stops. The pumps shut down and the cave refloods over a few months. Decades-old vadose rinds dissolve in the fresh groundwater; selenite resumes slow growth in the cooler 30°C bath. The cave is no longer accessible — sealed away from researchers, safe from tourists, growing again.";
+  return "2017 — Naica's mining stops. The pumps shut down and the cave refloods over a few months. The cooler bath restores an aqueous Ca-SO₄ route; the authoritative saturation and kinetic gates decide whether selenite resumes growth.";
 }
 
 function event_searles_winter_freeze(c) {
@@ -103,10 +181,12 @@ function event_searles_fresh_pulse(c) {
 // holds its order. The repeated fast pulses are what the js/45 step-counter reads.
 function event_gsp_wet(c) {
   // Spring rain / rising groundwater floods the flat — brine drops well below gypsum
-  // saturation (σ_selenite < 1 even with the cool-T ×1.5 + redox bonuses), so growth
-  // pauses without dissolving the blade. The hiatus leaves the step-gap that the js/45
+  // saturation (authoritative SI just below zero), so growth pauses. The hiatus leaves the step-gap that the js/45
   // segment counter reads as one stepped-growth terrace boundary.
-  c.fluid.Ca = 15; c.fluid.S = 15;
+  c.fluid.Ca = 400; c.fluid.S = 400;
+  c.fluid.Mg = 150;
+  c.fluid.Na = 10000; c.fluid.Cl = 15000;
+  c.fluid.salinity = 35;
   c.fluid.Fe = 2;
   c.fluid.pH = 7.6; c.fluid.O2 = 1.5;
   c.temperature = 22;
@@ -119,20 +199,25 @@ function event_gsp_dry(c) {
   // Oklahoma sun bakes the flat — gypsum-saturated groundwater wicks up and evaporates
   // just under the salt crust. σ_selenite ≫ 1 → a fast growth burst that traps clay/
   // sand + iron oxide on the terminal sectors (the hourglass) and stains it brown.
-  c.fluid.Ca = 150; c.fluid.S = 150;
+  c.fluid.Ca = 1800; c.fluid.S = 2600;
+  c.fluid.Mg = 1000;
   c.fluid.Fe = Math.min(16, (c.fluid.Fe || 2) + 6);  // red-bed iron oxide concentrates with evaporation
-  c.fluid.Na = Math.max(c.fluid.Na || 0, 700); c.fluid.Cl = Math.max(c.fluid.Cl || 0, 700);
+  c.fluid.Na = Math.max(c.fluid.Na || 0, 70000); c.fluid.Cl = Math.max(c.fluid.Cl || 0, 110000);
+  c.fluid.salinity = 200;
   c.fluid.SiO2 = Math.max(c.fluid.SiO2 || 0, 30);    // suspended clay / silt
   c.fluid.pH = 7.6; c.fluid.O2 = 1.6;
   c.temperature = 33;                                 // warm but < 45°C (hourglass gate)
   c.flow_rate = 0.1;
   c.fluid_surface_ring = 0.0;
-  return `Summer sun bakes the Salt Plains. T=${c.temperature.toFixed(0)}°C; gypsum-saturated groundwater wicks up under the crust and evaporates fast. Selenite grows in a burst, sweeping clay, sand, and red iron oxide into its terminal sectors — the hourglass. Each dry season steps the blade out another notch.`;
+  return `Dry-season reaction testimony: at ${c.temperature.toFixed(0)}°C the measured Ca-SO₄-NaCl source brine returns beneath the crust and evaporates. Positive gypsum SI opens a fast, sediment-bearing growth route; the authoritative selector and nucleation draw decide the crystal outcome.`;
 }
 
 function event_gsp_crust_seal(c) {
   c.flow_rate = 0.05; c.temperature = 25; c.fluid_surface_ring = 0.5;
-  c.fluid.Ca = 90; c.fluid.S = 90;
+  c.fluid.Ca = 1500; c.fluid.S = 2300;
+  c.fluid.Mg = 1000;
+  c.fluid.Na = 70000; c.fluid.Cl = 110000;
+  c.fluid.salinity = 200;
   return 'The salt crust hardens and the cycling slows. What remains just beneath the crust is the harvest of a dozen wet-and-dry seasons: amber blades with an hourglass of trapped sediment inside, the iron-stained ones flooded to chocolate brown. The only place on Earth selenite grows this way.';
 }
 
@@ -147,9 +232,11 @@ function event_gsp_crust_seal(c) {
 // stepped hourglass and never reaches the flood, so the 250-step story stays amber; the
 // flood fires only when the run CONTINUES (creative-mode Wait / extended viewing).
 function event_gsp_flood(c) {
-  c.fluid.Ca = 250; c.fluid.S = 250;
+  c.fluid.Ca = 1800; c.fluid.S = 2600;
+  c.fluid.Mg = 1000;
   c.fluid.Fe = 120;                                   // red-mud iron flood — buries the hourglass
-  c.fluid.Na = Math.max(c.fluid.Na || 0, 700); c.fluid.Cl = Math.max(c.fluid.Cl || 0, 700);
+  c.fluid.Na = Math.max(c.fluid.Na || 0, 70000); c.fluid.Cl = Math.max(c.fluid.Cl || 0, 110000);
+  c.fluid.salinity = 200;
   c.fluid.SiO2 = Math.max(c.fluid.SiO2 || 0, 60);     // heavy suspended red silt
   c.fluid.pH = 7.6; c.fluid.O2 = 1.6;
   c.temperature = 30;                                 // < 45°C hourglass gate stays open

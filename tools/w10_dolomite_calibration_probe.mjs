@@ -30,7 +30,7 @@ const sim_exports = await loadSimBundle({
   extraExports: [
     'carbonateSaturationIndex', 'carbonateOmega',
     'pwpNetRate', 'pwpRateToSimMicronsPerStep',
-    'dolomiteRate',
+    'dolomiteRate', 'assessProductionNucleationDecision',
   ],
 });
 
@@ -38,15 +38,19 @@ const {
   SCENARIOS, VugSimulator, setSeed,
   carbonateSaturationIndex, carbonateOmega,
   pwpNetRate, pwpRateToSimMicronsPerStep,
-  dolomiteRate,
+  dolomiteRate, assessProductionNucleationDecision,
 } = sim_exports;
 
-const TARGET_SCENARIOS = [
+const DEFAULT_TARGET_SCENARIOS = [
   'sabkha_dolomitization',
   'jeffrey_mine',
   'ultramafic_supergene',
   'zoned_dripstone_cave',
+  'reactive_wall',
 ];
+const TARGET_SCENARIOS = process.argv.length > 2
+  ? process.argv.slice(2)
+  : DEFAULT_TARGET_SCENARIOS;
 
 const EMP_SIGMA_CRIT = 1.0;  // current empirical dolomite nucleation threshold
 
@@ -71,23 +75,38 @@ function probeScenario(scenarioName) {
     } catch {
       sigma_emp = NaN;
     }
-    const omega = carbonateOmega('dolomite', f, T);
-    const SI = carbonateSaturationIndex('dolomite', f, T);
+    const sigma_aragonite = conditions.supersaturation_aragonite();
+    const pressureKbar = conditions.pressure;
+    const omega = carbonateOmega('dolomite', f, T, 0, pressureKbar);
+    const SI = carbonateSaturationIndex('dolomite', f, T, 0, pressureKbar);
     const cycle_count = conditions._dol_cycle_count || 0;
     const f_ord = 1 - Math.exp(-cycle_count / 7);
-    const pwp_mol = dolomiteRate(f, T, f_ord);
+    const pwp_mol = dolomiteRate(f, T, f_ord, pressureKbar);
+    const decision = scenarioName === 'reactive_wall'
+      ? assessProductionNucleationDecision('dolomite', sim, sigma_emp, 10)
+      : null;
     const pwp_um  = pwpRateToSimMicronsPerStep('dolomite', pwp_mol);
     points.push({
       scenario: scenarioName,
       step: sim.step,
       sigma_emp,
+      sigma_aragonite,
       omega,
       SI,
       f_ord,
       cycle_count,
       pwp_mol_per_cm2_s: pwp_mol,
       pwp_um_per_step: pwp_um,
+      decision,
       pH: f.pH, Ca: f.Ca, Mg: f.Mg, CO3: f.CO3, T,
+      bulk: {
+        pH: conditions.fluid.pH,
+        Ca: conditions.fluid.Ca,
+        Mg: conditions.fluid.Mg,
+        CO3: conditions.fluid.CO3,
+        T: conditions.temperature,
+      },
+      minerals: [...new Set((sim.crystals || []).map((crystal) => crystal.mineral))].sort(),
     });
   }
   return points;
@@ -111,6 +130,14 @@ for (const sName of TARGET_SCENARIOS) {
     ' peak_omega=' + (isFinite(peakOmega) ? peakOmega.toExponential(2) : 'NaN').padStart(10) +
     ' steps>=crit=' + String(stepsAboveCrit).padStart(4) +
     ' peak_f_ord=' + peakFOrd.toFixed(3));
+  if (sName === 'reactive_wall') {
+    const peak = pts.reduce((best, point) => point.sigma_emp > best.sigma_emp ? point : best, pts[0]);
+    console.log(`    peak bulk state: step=${peak.step} pH=${peak.bulk.pH.toFixed(3)} Ca=${peak.bulk.Ca.toFixed(3)} Mg=${peak.bulk.Mg.toFixed(3)} CO3=${peak.bulk.CO3.toFixed(3)} T=${peak.bulk.T.toFixed(3)}`);
+    const peakAragonite = pts.reduce((best, point) => point.sigma_aragonite > best.sigma_aragonite ? point : best, pts[0]);
+    console.log(`    peak aragonite: sigma=${peakAragonite.sigma_aragonite.toFixed(3)} step=${peakAragonite.step} Mg/Ca=${(peakAragonite.bulk.Mg / peakAragonite.bulk.Ca).toFixed(3)} pH=${peakAragonite.bulk.pH.toFixed(3)} T=${peakAragonite.bulk.T.toFixed(3)}`);
+    console.log('    final minerals: ' + pts[pts.length - 1].minerals.join(', '));
+    console.log('    peak decision: ' + JSON.stringify(peak.decision));
+  }
 }
 
 function quantile(arr, q) {

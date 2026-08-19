@@ -1,6 +1,103 @@
 # BACKLOG — Vugg Simulator
 
+> **2026-08-08 execution note:** historical “open” labels below are not reliable
+> current state. The authoritative, reconciled execution list is
+> [`OPEN-IMPROVEMENTS-LEDGER-2026-08-08.md`](OPEN-IMPROVEMENTS-LEDGER-2026-08-08.md).
+> Keep this file as provenance; add or close active work in the reconciled ledger.
+
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
+
+> ## 🧬 CODEX SIM 271 INTEGRATION + THE LINE-ENDING FINDING (2026-08-18) — **branch `integrate/codex-sulfur-valence` — `FINDING-EVIDENCE-LINE-ENDINGS-2026-08-18.md`**
+>
+> Merged Codex's `b62d85f` (sulfur valence authority, SIM 267→271) onto canonical `420bf22`.
+> Four conflicts, exactly as the integration verdict predicted — and the stronger measurement:
+> **exactly four files were changed by both sides**, so no hybrid auto-merge hides anywhere in
+> 590 changed files. All **178 js/ files byte-identical to Codex's**, zero deletions against
+> canonical, and all **41 v271 strips re-baked here reproduce Codex's content byte-for-byte**.
+> **The science is portable.** Only the receipts are not, which is the rest of this entry.
+>
+> **THE FINDING (structural, still open).** `evidence-runtime.mjs` hashes raw working-tree bytes.
+> There is no `.gitattributes`, so with `core.autocrlf=true` git stores LF and writes CRLF only to
+> the files a checkout actually materialises — and **materialising new files is what a merge does**.
+> Hence `audit:science` failed here on Codex's own artifacts: `v271/amethyst_geode.json` recorded
+> `50ff534c` (= the git blob, = LF), while this disk held CRLF hashing to `36987563`.
+> **FIXED** — `tools/file-bundle-assets.mjs` normalises CRLF→LF before embedding and hashing
+> (schema v1→v2), because Codex's new file:// bundle puts those bytes INSIDE the committed
+> artifact and `build:check` is the first gate of `ci`. Mutation-tested: 3 tests red without it.
+> **PASS TWO, on boss review** — the right seam was to VERSION the hashing policy, not to change
+> it. `tools/hash-policy.mjs` is now the single authority: text LF-normalised before it is hashed
+> **or counted**, binary passed through untouched (git's NUL heuristic — `release-audit` receipts
+> `.mp3` through the same function as `data/*.json`), every receipt carries `hash_policy`, and a
+> receipt without one is read as **raw** so archived receipts stay legible under the rule that made
+> them. Evidence schemas bumped so a pre-policy digest cannot collide with a post-policy one.
+> The review named two remaining sites; **there were three** — `sha256File` lives in
+> `scenario-evidence-checkpoint.mjs` and is what actually hashes the 126 artifacts.
+> `.gitattributes` added as defence in depth, and says in its own header that it is not the
+> authority. Mutation-tested one mutant per guard: drop the binary exemption → 1 RED; answer an
+> absent policy with today's rule → 1 RED.
+>
+> **PASS THREE — every CONSUMER routed.** "One authority" was true and insufficient: a second
+> census found three more raw hashes on the chain — `review-claim-card.mjs` (`strip_sha256`),
+> `gen-science-provenance-manifest.mjs` (4 identities), `locality-envelope-audit.mjs` (frequency
+> baseline + every strip at verify time). Two are bake OUTPUTS, one is a canonical VERIFIER.
+> Cards → `vugg-claim-card-v3`, manifest → `v6`, audit reads each artifact's DECLARED policy.
+> Full rebake required (not a resume): `scenario-evidence-checkpoint.mjs` is in all three
+> expensive import closures, so every checkpoint key moved. **`science:rebake` PASS**; science
+> unmoved — 41/41 cards differ by `schema`+`hash_policy` ONLY, 0 differ with those set aside.
+> **The source guard was broken and only mutation testing said so** — its 400-char window missed
+> a real reverted raw read (read and hash sit ~1800 chars apart). Replaced by "no bare Buffer
+> read in these 8 files", paren-balanced, with the `hash-policy.mjs` exemption asserted so the
+> rule cannot go vacuous. Still open: `audit:cations`, red on Codex's branch on its own account.
+>
+> **PASS FOUR (blocking repair, on review).** The audit emitted the policy-disagreement error AND
+> both digest-drift errors, so "names it INSTEAD OF misleading drift" was a comment, not a
+> behaviour — and the test only asserted the error's PRESENCE, never the drift errors' absence,
+> so it could not test the half that carried the meaning. Digest comparison is now conditional on
+> compatible policies; the test asserts both directions plus a control that digest checking
+> RESUMES when the rules agree. Mutant (emit unconditionally) → 1 RED, exactly that test.
+> **No rebake:** `locality-envelope-audit.mjs` is in no producer identity closure (measured), and
+> `audit:evidence`/`audit:science`/`audit:localities`/`build:check` all still PASS with receipts
+> untouched.
+>
+> **CARRIED AS KNOWN DEBT, not fixed here:** (a) "binary untouched" means binary *by git's
+> NUL-in-first-8000 heuristic*, not a general classifier; (b) the 8-file source guard is a curated
+> tripwire — aliases, streams, destructured imports and future consumers walk past it; (c) **the
+> receipt is host-bound on a different axis** — `node_runtime_sha256` binds platform/Node/V8/ICU,
+> so these Windows/Node-24 receipts read **47/48** on a clean Linux/Node-22 verify. The repair is
+> to split *is the content current* from *was this the recorded environment*.
+> **A NUMBER WITHDRAWN** — an earlier pass reported a clean "canonical CRLF vs Codex LF" platform
+> split, 126/126 each way. That was an `else if` in my own script: for an LF file the raw and
+> normalised hashes are the same hash, so the normalised column could only read zero.
+> `tools/evidence-lineending-census.mjs` now counts a file as evidence only if it CONTAINS CRLF,
+> and returns UNKNOWN when none does. The defect survived the correction; my story about who was
+> on which side did not.
+
+> ## 🧪 THE INTEGRATION REVIEW (2026-08-15) — **third hostile review, inheritance lens — `PROPOSAL-HOSTILE-REVIEW-SIM267-INTEGRATION-2026-08-15.md`**
+>
+> Reviewed the GTP `aaa-roadmap-completion` branch (SIM 237→267, 42 commits) as it merged onto
+> canonical main. Asked not "is the science right" but "can this be inherited": does it merge, does
+> it build cold, does it prove what it says. Merge was clean — 6 markdown conflicts, ZERO source
+> conflicts; the 1339-commit divergence is an artefact of a re-merged parallel history.
+>
+> **F1 HIGH ✅ FIXED (`fd8b3f0`)** — four gates red at the tip (release/science/localities/evidence);
+> the SIM 267 evidence bake never finished. `ci` chains with `&&` so the last three were never
+> reached, and **`audit:evidence` is invoked by neither `ci` nor `pretest`**. Rebake moved only 4
+> receipt files — all 82 claim cards, 41 strips and 3 baselines came back BYTE-IDENTICAL, so this
+> was bookkeeping, not drift; no SIM bump owed.
+> **F2 HIGH ✅ FIXED (`ebe41bd`)** — a `#!` on line 1 of four tools that tests import made those test
+> files unparseable under vite's SSR transform; the suite aborted at file 20/232, hiding three more
+> (including the runner's own tests).
+> **F3 MEDIUM (documented)** — producer digests hash the producer's import closure, so a rebake must
+> follow source edits, never precede them.
+> **F4 LOW, OPEN** — `tigerEyeOriginModel()` defaults to `surficial_alteration` when a scenario omits
+> the key: an undeclared future BIF scenario silently inherits a hypothesis. One-line fix (`return
+> null`); costs a full ~3.5 h rebake cycle because it touches `js/`, so batch it.
+>
+> Saves conceded: baselines strictly additive (285→347, none deleted/modified), `baseline-diff.mjs`
+> untouched, citations verified real (Heaney & Fisher 2003; Post 1999; Turner & Post 1988; Golden/
+> Chen/Dixon 1986; Johnson OGS OF3-2019), tiger's eye obeys rung 3 with a paired hypothesis test,
+> 8,070 assertions and no hollow tests. Verified green at `fd8b3f0`: CI 12/12 + 232-file
+> UNINTERRUPTED PASS + `science-evidence` 126 artifacts. **NOT PUSHED — awaits boss order.**
 
 > ## 🔬 THE WISE REVIEW (2026-08-05) — **second hostile review, pegmatite/mineralogy lens — `PROPOSAL-HOSTILE-REVIEW-WISE-2026-08-05.md`, fix ladder AWAITS BOSS ORDER**
 >
@@ -15,6 +112,33 @@ Living list of open work items, captured from session conversations so context s
 > Dauphiné-as-{001} + trapiche-as-twin-law data bugs. Saves conceded: cascade discipline,
 > honest flux gates, shigar as the model scenario, the data self-audit culture. Proposed
 > ladder §5 (prose → one-liners → Cruzeiro rescue → T-tranche → species debt → Cs/Ta infra).
+
+> ## SESSION STATE (2026-08-05) — SCIENCE-FIRST AAA / DR. WISE HOSTILE LOOP ACTIVE
+>
+> Current authority: `proposals/HOSTILE-REVIEW-LOOP-DR-WISE-2026-08-05.md` and
+> `proposals/PLAN-AAA-SCIENCE-FIRST.md`. Round 1 was not satisfied. Its pressure,
+> phase-field, model-identity, Ge mass-balance, sabkha replacement, instantaneous-stress,
+> mobile exact-control, gypsum water-activity, mixed Cu-Zn carbonate, and claim-disclosure
+> findings have been implemented. Thermodynamic Tier D is now 0/15 carbonates; rosasite
+> and aurichalcite remain honestly Tier C and observer-only. All authored Creative chemistry
+> controls are live, registry-backed, searchable, and paired with exact numeric entry.
+>
+> **NEXT:** complete full-suite/baseline/claim-card checks and real 320/360/390/430 px browser
+> QA, then return the entire tree to the independent Dr. Wise AI hostile reviewer. The loop
+> ends only on a fresh “satisfied” verdict with no unresolved science, correctness, mobile,
+> gameplay, or provenance findings. This review role is not a claim of personal Smithsonian
+> endorsement.
+
+> ## SESSION STATE (2026-08-06) — SIM 243 PHASE-IDENTITY / SULFUR TRANCHE
+>
+> The post-SIM-242 hostile review returned NOT SATISFIED. Its first two blocking findings
+> are corrected in SIM 243: quartz/opal are selected as separate phases before nucleation,
+> and sulfur now has independently conserved sulfide, sulfate, and elemental reservoirs.
+> Sulphur Bank uses a closed H2S oxidation reaction with no synthetic acid; Sicily uses a
+> separate anoxic microbial/inherited-S° path. Creative setup and live editing expose the
+> three sulfur reservoirs and pathway selection. Surface fluid pressure now reaches
+> 0.001 kbar. **NEXT:** land the authoritative gypsum/anhydrite selector and replacement
+> path, then reconcile Sunnyside and Tsumeb before another independent Dr. Wise AI review.
 
 > ## 🗿 SESSION STATE (2026-07-27) — **S2 SELENITE ✅ SIM 237 · elmwood selenite = KNOWN RESIDUE · NEXT = the Hardie ceiling (own commit)**
 >
@@ -3496,6 +3620,9 @@ Deferred to a future round:
 - **anthraxolite** (solid hydrocarbon) — already partially implemented via Herkimer narrative; could be a real inclusion mineral
 
 ### Class 2 — pressure-gated polymorphs (making `VugConditions.pressure` a real supersaturation driver instead of cosmetic)
+
+> **Science packet landed 2026-08-05**: `research/arcs/research-pressure-science-2026-08-05.md` — the full sourced basis for pressure (ΔV°r Ksp corrections, Manning silica density model, Al₂SiO₅ boundary routing with Pattison anchor + linearized slopes, boiling/decompression event model, the stress_pulse/valve_rupture split replacing `P += 0.5` twinning, staged plan A/B/C). The Al₂SiO₅ trio below plugs into that packet's §4.5 routing function; note the in-game 4.4 kbar ceiling sits 0.1 kbar under the Pattison triple point, so all three polymorphs are selectable in-range. Coesite/stishovite confirmed unreachable (<20 kbar ceiling by a factor of 5).
+
 - **kyanite** (Al₂SiO₅, high-P) — blue-blade gem
 - **andalusite** (Al₂SiO₅, low-P) — chiastolite cross-pattern gem
 - **sillimanite** (Al₂SiO₅, high-T) — completes the classic Al₂SiO₅ phase-diagram triangle

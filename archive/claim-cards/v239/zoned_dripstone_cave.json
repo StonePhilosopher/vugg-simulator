@@ -1,0 +1,276 @@
+{
+  "scenario": "zoned_dripstone_cave",
+  "sim_version": 239,
+  "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:accepted-zone-stoich-ledger-v3|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-supplement-v1|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1",
+  "scenario_spec_hash": "b721565208220bc2d57012dba9eb6da4268a44e5b797d0618ada184b126e3ffe",
+  "strip_steps": 150,
+  "claim": {
+    "anchor": "Mg/Ca-zoned dripstone cave — composite of Frasassi (Italy, Mg-rich ceiling aragonite), Carlsbad Caverns (NM, calcite floor), and Reed Flute Cave (Guilin, twin morphologies). The geochemistry of cave dripstone where the drip-water Mg/Ca ratio differs between ceiling-percolation pathways and floor-puddle re-precipitation, producing aragonite stalactites + calcite stalagmites in the same cavity.",
+    "description": "Tranche 6 of PROPOSAL-CAVITY-MESH §14 demo scenario. Demonstrates per-vertex nucleation: with wall.per_vertex_nucleation=true, calcite and aragonite engines both fire from the global broth, but each crystal's anchor cell is chosen by the per-cell σ for THAT mineral. Result: calcite nucleates at high-Ca floor cells (Mg/Ca << 1.5 keeps calcite σ high, aragonite σ near zero); aragonite nucleates at high-Mg ceiling cells (Mg/Ca > 4 stunts calcite via the Mg poisoning sigmoid and peaks the aragonite Mg/Ca favorability factor). Same chemistry, same engines — only spatial sampling differs.",
+    "expects_species": [
+      "calcite",
+      "aragonite"
+    ],
+    "sources": [
+      "Frisia S., Borsato A., Fairchild I.J., et al. (2002) — Aragonite-calcite relationships in speleothems (Grotte de Clamouse, France, and Italian cave systems). Lithos 65 (1-2): 119-133.",
+      "Sherwin C.M., Baldini J.U.L. (2011) — Cave air and hydrological controls on prior calcite precipitation and stalagmite growth rates. Chem. Geol. 290: 79-87.",
+      "Railsback L.B., Brook G.A., Liang F. et al. (1994) — Speleothem fabric record of aragonite-calcite transitions. Carbonates and Evaporites 9: 217-230.",
+      "Spötl C., Mangini A. (2007) — Speleothems and paleoclimates: aragonite vs calcite as climate archives. Quaternary Science Reviews 26: 1488-1499."
+    ],
+    "initial_temperature_C": 18,
+    "initial_pressure_kbar": 0.01,
+    "wall_architecture": "irregular",
+    "notes": [
+      "Real-world precedent: Frasassi Cave's Sala 200 carries ceiling aragonite frostwork over floor calcite popcorn; Reed Flute Cave (Guilin) shows the same vertical sort. The driver is dripwater Mg/Ca, which on ceiling-percolation pathways gets concentrated by prior dolomite dissolution and selective calcite preprecipitation upstream, while floor-puddle re-precipitation drops Mg as Mg-Mg carbonates / clay along the way and arrives Ca-rich. Frisia et al. 2002 Lithos paper is the canonical Italian cave-aragonite geochem reference; Sherwin & Baldini 2011 reviewed the global pattern.",
+      "Scenario chemistry — global broth (= equator, what the engines see for their gate decisions): Ca=2000, Mg=1500, CO3=2200, pH=8.4. Mg/Ca = 0.75 puts both engines above their nucleation σ thresholds (calcite >1.3, aragonite >1.0) but neither is saturated past its kinetic preferred window. Zone overrides then split the cavity:",
+      "  Floor: Ca=3500, Mg=30. Mg/Ca = 0.009 — calcite σ unstunted (Mg-poisoning sigmoid centered at Mg/Ca=2 gives ~0% inhibition here), aragonite σ ≈ 0 (Mg/Ca << 1.5, aragonite favorability factor near 0). Result: calcite-only cells.",
+      "  Ceiling: Ca=800, Mg=3500. Mg/Ca = 4.4 — calcite σ drops by ~70% (Mg-poisoning sigmoid at high-saturation tail), aragonite σ peaks (favorability factor near 1, plus the Sr/Ba trace boost from the ceiling-percolation history). Result: aragonite-only cells.",
+      "  Wall: stays at the global broth. Calcite σ slightly preferred at the boundary.",
+      "Per-vertex nucleation closes the loop: without this flag, nucleation engines read only the equator chemistry, the gate fires on the global broth, and the crystal lands at a random area-weighted cell — which means a calcite stalagmite might end up where the aragonite-favoring chemistry is, and vice versa. With wall.per_vertex_nucleation=true, each nucleation picks the cell whose local σ for THAT mineral is highest. The spatial result tracks the chemistry.",
+      "inter_ring_diffusion_rate=0 pins the zones across the 150-step run; with the default 0.05 the Laplacian would homogenize the Mg/Ca gradient over ~20 steps and the differentiation would wash out before either engine fires twice.",
+      "air_mode_default=true so PROPOSAL-HABIT-BIAS Slice 1 kicks in: ceiling aragonite crystals point downward (stalactite c-axis world-down), floor calcite crystals point upward (stalagmite c-axis world-up). The combination of per-vertex placement + air-mode habit gives the full Frasassi-style spatial sort visually.",
+      "Sources cited are the genuine references for Italian cave aragonite-on-calcite paragenesis; this scenario is the simulator's first that puts Mg/Ca zoning and habit-bias together in one cavity."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:accepted-zone-stoich-ledger-v3|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-supplement-v1|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1",
+      "fluid_pressure": {
+        "initial_kbar": 0.01,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 3.04181614,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 58.147,
+          "initial_water_activity": {
+            "value": 0.9997,
+            "salinityPpt": 0.5,
+            "naclWeightPercentEquivalent": 0.05,
+            "uncertainty": 0.01,
+            "status": "calibrated-proxy",
+            "note": "NaCl-equivalent interpolation of Chirife & Resnik (1984) consensus values; natural multicomponent-brine composition remains the dominant uncertainty."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 4,
+    "paragenetic_order": [
+      {
+        "mineral": "dolomite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "HMC",
+        "first_step": 0,
+        "events": 4
+      },
+      {
+        "mineral": "calcite",
+        "first_step": 10,
+        "events": 4
+      },
+      {
+        "mineral": "aragonite",
+        "first_step": 14,
+        "events": 4
+      }
+    ],
+    "surprises_not_in_expects": [
+      "dolomite",
+      "HMC"
+    ],
+    "expected_no_shows": [],
+    "environment": {
+      "T": {
+        "first": 23.622,
+        "last": 23.622,
+        "min": 23.622,
+        "max": 23.622,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 8.378,
+        "last": 8.378,
+        "min": 8.378,
+        "max": 8.378,
+        "units": ""
+      },
+      "Eh": {
+        "first": 497.638,
+        "last": 497.638,
+        "min": 497.638,
+        "max": 497.638,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 0.787,
+        "last": 0.787,
+        "min": 0.787,
+        "max": 0.787,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 5,
+        "last": 5,
+        "min": 5,
+        "max": 5,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": 2.709,
+        "last": 2.709,
+        "min": 2.709,
+        "max": 2.709,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": 2.583,
+        "last": 2.583,
+        "min": 2.583,
+        "max": 2.583,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": 5.669,
+        "last": 5.669,
+        "min": 5.669,
+        "max": 5.669,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": 1.764,
+        "last": 1.764,
+        "min": 1.764,
+        "max": 1.764,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 1.701,
+        "last": 1.701,
+        "min": 1.701,
+        "max": 1.701,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -1.575,
+        "last": -1.575,
+        "min": -1.575,
+        "max": -1.575,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -1.827,
+        "last": -1.827,
+        "min": -1.827,
+        "max": -1.827,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": 0.441,
+        "last": 0.441,
+        "min": 0.441,
+        "max": 0.441,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -1.827,
+        "last": -1.827,
+        "min": -1.827,
+        "max": -1.827,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 150,
+      "fluid_pressure_kbar": {
+        "first": 0.01,
+        "last": 0.01,
+        "min": 0.01,
+        "max": 0.01,
+        "samples": 150
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 150
+      },
+      "temperature_C": {
+        "first": 25,
+        "last": 25,
+        "min": 25,
+        "max": 25,
+        "samples": 150
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 150
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 58.147
+        },
+        "last": {
+          "pure_water_boundary_C": 58.147
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

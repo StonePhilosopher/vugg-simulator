@@ -8,12 +8,13 @@
 
 
 
-function event_tutorial_temperature_drop(c) {
-  // Knock T down by 80°C, never below ambient. From 180°C this lands
-  // ~100°C — outside quartz's comfort window for sustained growth, but
-  // not so cold the existing crystal immediately re-dissolves.
-  c.temperature = Math.max(25.0, c.temperature - 80.0);
-  return 'The vug cools quickly. Temperature drops out of quartz\'s growth window — the silica supply that was happily plating onto the crystal a moment ago no longer wants to leave the fluid. Growth slows, then stops. The crystal is still there, still beautiful, but nothing new is forming on its faces. Conditions matter; minerals only grow when the broth wants to give them up.';
+function event_tutorial_temperature_spike(c) {
+  // Quartz solubility rises strongly with temperature. From the tutorial's
+  // 220°C quartz-growth stage, a hot recharge to 420°C moves the unchanged
+  // 600-ppm fluid below quartz equilibrium, so the accepted crystal record
+  // changes from positive growth to real mass-balanced dissolution.
+  c.temperature = 420.0;
+  return 'A much hotter recharge enters the vug. At 420°C water can hold far more dissolved silica, so the fluid is now undersaturated with respect to quartz. Growth stops and the existing crystal begins returning its booked SiO2 to solution. Conditions control both growth and dissolution.';
 }
 
 function event_tutorial_mn_pulse(c) {

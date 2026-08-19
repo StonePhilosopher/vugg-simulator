@@ -158,6 +158,63 @@ function idleAppendLog(logEl, text, className) {
   }
 }
 
+/**
+ * The pie is a volume diagram, but its caption is an inventory statement.
+ * A just-nucleated crystal has zero booked volume until its first accepted
+ * growth zone, so deriving the caption from visible pie slices can falsely
+ * call a populated cavity "empty".  Keep the volume percentage where it is
+ * meaningful and fall back to crystal counts for sub-pixel nuclei.
+ */
+function _idlePieMineralLabel(crystals: any[], slices: any[]): string {
+  const counts = new Map<string, number>();
+  for (const crystal of Array.isArray(crystals) ? crystals : []) {
+    if (!crystal || crystal.dissolved === true) continue;
+    const mineral = String(crystal.mineral || '').trim();
+    if (!mineral) continue;
+    counts.set(mineral, (counts.get(mineral) || 0) + 1);
+  }
+  if (!counts.size) return 'empty vug';
+
+  const pctByMineral = new Map<string, number>();
+  const orderedMinerals: string[] = [];
+  for (const slice of Array.isArray(slices) ? slices : []) {
+    const mineral = String(slice?.label || '');
+    if (mineral === 'open' || !counts.has(mineral) || pctByMineral.has(mineral)) continue;
+    const pct = Number(slice?.pct);
+    pctByMineral.set(mineral, Number.isFinite(pct) ? Math.max(0, pct) : 0);
+    orderedMinerals.push(mineral);
+  }
+  for (const mineral of counts.keys()) {
+    if (!pctByMineral.has(mineral)) {
+      pctByMineral.set(mineral, 0);
+      orderedMinerals.push(mineral);
+    }
+  }
+
+  return orderedMinerals.map((mineral) => {
+    const pct = pctByMineral.get(mineral) || 0;
+    if (pct >= 0.1) return `${mineral} ${pct.toFixed(1)}%`;
+    const count = counts.get(mineral) || 0;
+    return count === 1
+      ? `${mineral} microcrystal`
+      : `${count} ${mineral} microcrystals`;
+  }).join(' · ');
+}
+
+function _idlePieSolidVolumes(crystals: any[]) {
+  const mineralVolumes: Record<string, number> = {};
+  let totalCrystalVolume = 0;
+  for (const crystal of Array.isArray(crystals) ? crystals : []) {
+    if (!crystal || crystal.dissolved === true) continue;
+    const volume = _crystalSolidVolumeMm3(crystal);
+    const mineral = String(crystal.mineral || '').trim();
+    if (!mineral) continue;
+    mineralVolumes[mineral] = (mineralVolumes[mineral] || 0) + volume;
+    totalCrystalVolume += volume;
+  }
+  return { mineralVolumes, totalCrystalVolume };
+}
+
 function idleDrawPie() {
   if (!idleSim) return;
   const canvas = document.getElementById('idle-pie');
@@ -174,17 +231,7 @@ function idleDrawPie() {
   const vugVolume = (4 / 3) * Math.PI * Math.pow(vugRadius, 3);
 
   // Estimate crystal volumes — approximate as ellipsoids
-  const mineralVolumes: Record<string, number> = {};
-  let totalCrystalVolume = 0;
-  for (const crystal of idleSim.crystals) {
-    if (!crystal.active) continue;
-    const a = crystal.c_length_mm / 2; // semi-major
-    const b = crystal.a_width_mm / 2;  // semi-minor
-    const vol = (4 / 3) * Math.PI * a * b * b; // prolate ellipsoid
-    const mineral = crystal.mineral;
-    mineralVolumes[mineral] = (mineralVolumes[mineral] || 0) + vol;
-    totalCrystalVolume += vol;
-  }
+  const { mineralVolumes, totalCrystalVolume } = _idlePieSolidVolumes(idleSim.crystals);
 
   const rawFillPct = (totalCrystalVolume / vugVolume) * 100;
   const fillPct = Math.min(100, rawFillPct);
@@ -245,18 +292,18 @@ function idleDrawPie() {
   // Update label
   const labelEl = document.getElementById('idle-pie-label');
   if (labelEl) {
-    const mineralList = slices
-      .filter(s => s.label !== 'open' && s.pct > 0.001)
-      .map(s => s.pct >= 0.1 ? `${s.label} ${s.pct.toFixed(1)}%` : `${s.label} microcrystals`)
-      .join(' · ');
-    labelEl.textContent = mineralList || 'empty vug';
-    // Agate detection!
-    if (fillPct > 90) {
-      const quartzPct = (mineralVolumes['quartz'] || 0) / vugVolume * 100;
-      if (quartzPct > fillPct * 0.8) {
-        labelEl.textContent = '🪨 AGATE — vug filled with quartz!';
-        labelEl.style.color = '#f0c050';
-      }
+    labelEl.textContent = _idlePieMineralLabel(idleSim.crystals, slices);
+    labelEl.style.color = '';
+    // Agate is a recorded banded-chalcedony fabric, not a fill-percentage
+    // nickname for macrocrystalline quartz.
+    const agate = idleSim && idleSim.crystals
+      ? idleSim.crystals.find(c => c.mineral === 'chalcedony'
+        && c.habit === 'banded_agate' && !c.dissolved)
+      : null;
+    if (agate) {
+      const bands = agate.zones.filter(z => z.thickness_um > 0).length;
+      labelEl.textContent = `🪨 AGATE — ${bands} recorded chalcedony bands`;
+      labelEl.style.color = '#f0c050';
     }
   }
 }
@@ -313,10 +360,11 @@ function idleRefreshCollectAllBtn() {
   }
 }
 
-function idleTogglePlay() {
+async function idleTogglePlay() {
   if (idleRunning && !idlePaused) return;
 
   if (!idleSim) {
+    await waitForNarrativesReady();
     const scenario = document.getElementById('idle-scenario').value;
     idleSim = idleCreateSim(scenario);
     if (!idleSim) return;

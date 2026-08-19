@@ -8,7 +8,7 @@
 //
 // DRIFT: substantial. The empirical 5×(σ-1) formula was T-independent;
 // PWP has Arrhenius T-dependence and pH dependence built in. Hot
-// acidic scenarios grow MORE calcite under PWP (mvt 28×, marble 3.3×,
+// acidic scenarios grow MORE calcite under PWP (mvt 28×,
 // tutorial_travertine 12.6×); cold alkaline cave scenarios grow LESS
 // (stalactite_demo / zoned_dripstone_cave ~95% reduction). Both
 // directions are geologically correct; the cave scenarios are
@@ -58,8 +58,9 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 9 — calcite engine promotion (v144)'
     const f = new FluidChemistry({ Ca: 200, CO3: 150, pH: 8.0 });
     const cond = new VugConditions({ temperature: 25, fluid: f });
     const sigma = cond.supersaturation_calcite();
-    const omega = carbonateOmega('calcite', f, 25);
-    // Note: cond holds its own fluid copy; we read from the same shape.
+    const omega = carbonateOmega('calcite', f, 25, 0, cond.pressure);
+    // Note: cond holds its own fluid copy; we read from the same shape and
+    // the same explicit pressure correction.
     // The dispatcher returns carbonateEngineSigma which calls carbonateOmega.
     // Should be within a small tolerance (Davies activity for identical
     // fluid shape — no fluid mutation between the two calls).
@@ -192,12 +193,18 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 9 — scenario-level firing pins', () 
     expect(max_um).toBeGreaterThan(100);
   });
 
-  it('marble_contact_metamorphism still fires calcite (the marble is calcite)', () => {
+  it('marble_contact_metamorphism keeps host calcite in the wall instead of inventing an aqueous druse', () => {
+    const authored = SCENARIOS.marble_contact_metamorphism();
+    const initialOmega = carbonateOmega(
+      'calcite', authored.conditions.fluid, authored.conditions.temperature,
+      0, authored.conditions.pressure,
+    );
+    expect(initialOmega).toBeLessThan(1);
+
     const sim = runScenario('marble_contact_metamorphism');
     if (!sim) return;
-    const { total, max_um } = calciteCount(sim);
-    expect(total).toBeGreaterThan(0);
-    expect(max_um).toBeGreaterThan(1000);  // marble-scale
+    expect(calciteCount(sim).total).toBe(0);
+    expect(sim.crystals.some((c: any) => c.mineral === 'ruby' && !c.dissolved)).toBe(true);
   });
 
   it('zoned_dripstone_cave still fires calcite (dripstone IS calcite)', () => {

@@ -95,8 +95,13 @@ describe('W-F O5 — the Elmwood barite snowball (SIM 223)', () => {
 
   it('THE VARIETY GUARD — the golden calcite + fluorite + sphalerite base all survive', () => {
     const sim = runElmwood();
-    // The crown jewel: the giant golden scalenohedral calcite, ~19 mm, must hold.
-    expect(maxUm(sim, 'calcite') / 1000, 'golden calcite intact').toBeGreaterThan(17);
+    // The crown jewel remains a centimetre-scale golden scalenohedron. SIM 271
+    // replaces the unbounded positive-affinity continuation of the diagnostic
+    // PWP expression with the disclosed series-resistance production closure;
+    // the old ~19 mm / >17 mm pin therefore no longer represents the corrected
+    // rate model (seed 42 now resolves 14.293 mm). Keep a conservative 12 mm
+    // specimen-scale guard rather than retuning chemistry to recover old growth.
+    expect(maxUm(sim, 'calcite') / 1000, 'golden calcite intact').toBeGreaterThan(12);
     // The other headliners of the "variety of cool stuff": all present + sized.
     expect(maxUm(sim, 'fluorite') / 1000, 'purple fluorite intact').toBeGreaterThan(18);
     // v228 (hostile-review rung 2): the old `aragonite > 40mm` line guarded the
@@ -118,9 +123,18 @@ describe('W-F O5 — the Elmwood barite snowball (SIM 223)', () => {
     // below the SO₄/HS boundary). Elmwood's documented Zn is sphalerite —
     // smithsonite is not in its expects_species; the same guard's own v228
     // note applies: a confabulated crystal is not a headliner to guard.
-    for (const m of ['selenite', 'galena', 'siderite']) {
-      expect(bySpecies(sim, m).length, `${m} still in the assemblage`).toBeGreaterThan(0);
-    }
+    // Elmwood's locality record does not license gypsum/selenite. The old
+    // positive pin was an artefact of the pre-v244 split CaSO4 pathways.
+    expect(bySpecies(sim, 'selenite').length, 'no undocumented Elmwood gypsum').toBe(0);
+    // SIM 268: galena and pyrite remain locality-licensed possibilities, but
+    // the valence-correct three-seed fluid path does not promise them. The
+    // former positive galena pin was sustained by combined-S admission.
+    expect(bySpecies(sim, 'galena').length, 'no sulfate-fed Elmwood galena').toBe(0);
+    expect(bySpecies(sim, 'pyrite').length, 'no sulfate-fed Elmwood pyrite').toBe(0);
+    // SIM 261/268 locality reconciliation: neither siderite nor discrete
+    // strontianite occurs in the audited Elmwood-Gordonsville inventory.
+    expect(bySpecies(sim, 'siderite').length, 'no undocumented Elmwood siderite').toBe(0);
+    expect(bySpecies(sim, 'strontianite').length, 'no undocumented Elmwood strontianite').toBe(0);
   });
 
   it('no runaway new species — witherite (BaCO3) does not take over the beloved assemblage', () => {

@@ -19,12 +19,36 @@ function showZoneHistory(crystal) {
   // Crystal summary
   const summary = document.createElement('div');
   summary.style.cssText = 'margin-bottom:0.8rem;font-size:0.8rem;color:#c0a848;line-height:1.5';
+  const etchHistory = Array.isArray(crystal.etch_history) ? crystal.etch_history : [];
+  const acceptedEtches = etchHistory.filter((receipt) => receipt && receipt.accepted);
+  const exposedEtch = typeof physicalEtchVisualStateAtStep === 'function'
+    ? physicalEtchVisualStateAtStep(crystal) : null;
+  const etchVolumeLoss = acceptedEtches.reduce(
+    (sum, receipt) => sum + (Number(receipt.volumeLossMm3) || 0), 0,
+  );
+  const latestEtch = acceptedEtches.at(-1);
+  const etchDisclosure = latestEtch
+    ? `<div style="margin-top:0.25rem;color:#bfa98c;font-size:0.72rem">`
+      + `Measured change: ${Number(latestEtch.normalRetreatUm).toFixed(3)} µm surface-normal retreat; mass and silhouette use the physical dimensions. `
+      + `Visible pore relief is a ${Number(latestEtch.schematicReliefMagnification).toFixed(0)}× schematic overlay with two assumed pre-existing pores per displayed face—not a measured defect density. `
+      + `Rate status: bounded analogue with unquantified systematic uncertainty. Source bath: NaClO4/HClO4, renewed every 48 h, Ca &lt;10 ppb. `
+      + `Simulation: NaCl ionic-strength analogue, fixed pH, closed dissolved-inventory return; ΔG ${Number(latestEtch.initialDeltaGKcalMol).toFixed(2)}→${Number(latestEtch.finalDeltaGKcalMol).toFixed(2)} kcal/mol. `
+      + `The ≤−7 kcal/mol far-field gate is a mineral-level bounded transfer from Cama et al. (2010)'s {111}, pH 2 experiment—not its rate or a face multiplier.`
+      + `</div>`
+    : '';
+  const etchSummary = acceptedEtches.length
+    ? `<div style="color:#d18b55">Physical etch: ${acceptedEtches.length} event${acceptedEtches.length === 1 ? '' : 's'}, `
+      + `${etchVolumeLoss.toFixed(3)} mm³ removed; outer surface ${exposedEtch
+        ? `${(exposedEtch.healedFraction * 100).toFixed(0)}% healed, pits still exposed`
+        : 'healed/overgrown (phantom boundary retained)'}</div>${etchDisclosure}`
+    : '';
   summary.innerHTML = `
     <div>Nucleated: step ${crystal.nucleation_step} at ${crystal.nucleation_temp.toFixed(0)}°C</div>
     <div>Morphology: ${crystal.describe_morphology()}</div>
     <div>Total growth: ${crystal.total_growth_um.toFixed(0)} µm (${crystal.c_length_mm.toFixed(1)} mm)</div>
     ${crystal.twinned ? `<div style="color:#bb66ee">Twinned: ${crystal.twin_law}</div>` : ''}
     ${crystal.dissolved ? `<div style="color:#cc4444">Partially dissolved</div>` : ''}
+    ${etchSummary}
     <div>Fluorescence: ${crystal.predict_fluorescence()}</div>
     ${MINERAL_ASCII[crystal.mineral] ? `<pre style="margin:0.8rem 0;font-size:0.45rem;line-height:1.1;color:${cColor};overflow-x:auto;text-align:center">${MINERAL_ASCII[crystal.mineral]}</pre>` : (MINERAL_THUMBS[crystal.mineral] ? `<div style="margin:0.8rem 0;text-align:center">${mineralThumbHTML(crystal.mineral, 160, crystal)}</div>` : '')}
     <div style="margin-top:0.5rem"><button onclick="grooveFromModal()" style="background:#2a2510;border:1px solid #5a4a20;color:#d4a843;padding:0.3rem 0.8rem;font-size:0.75rem;border-radius:3px;cursor:pointer">📀 Play Record</button></div>
@@ -236,7 +260,8 @@ function showZoneHistory(crystal) {
       html += `<span style="color:#cc6644">Fe: ${z.trace_Fe.toFixed(1)}</span> · `;
       html += `<span style="color:#ffaa44">Mn: ${z.trace_Mn.toFixed(1)}</span> · `;
       html += `<span style="color:#8888cc">Al: ${z.trace_Al.toFixed(1)}</span> · `;
-      html += `<span style="color:#88cc88">Ti: ${z.trace_Ti.toFixed(3)}</span><br>`;
+      html += `<span style="color:#88cc88">Ti: ${z.trace_Ti.toFixed(3)}</span> · `;
+      html += `<span style="color:#7fc7d9">Ge: ${(z.trace_Ge || 0).toFixed(1)}</span><br>`;
       if (z.fluid_inclusion) html += `💧 ${z.inclusion_type}<br>`;
       if (z.morph_regime) {
         const label = (typeof morphDisplayLabel === 'function')
@@ -280,6 +305,7 @@ function showZoneHistory(crystal) {
       if (z.trace_Mn > 0.3) traces.push(`Mn ${z.trace_Mn.toFixed(1)}`);
       if (z.trace_Ti > 0.01) traces.push(`Ti ${z.trace_Ti.toFixed(3)}`);
       if (z.trace_Al > 0.5) traces.push(`Al ${z.trace_Al.toFixed(1)}`);
+      if ((z.trace_Ge || 0) > 0.1) traces.push(`Ge ${z.trace_Ge.toFixed(1)}`);
       if (traces.length) html += ` · <span style="color:#a89040">${traces.join(', ')} ppm</span>`;
 
       if (z.fluid_inclusion) html += ` · <span class="z-fi">FI: ${z.inclusion_type}</span>`;

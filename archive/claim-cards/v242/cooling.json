@@ -1,0 +1,265 @@
+{
+  "scenario": "cooling",
+  "sim_version": 242,
+  "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "a570f57e12063cf5f9df30c6f8b453afb210efd88adf9a6f75da7925dbc3a7f1",
+  "strip_steps": 100,
+  "claim": {
+    "anchor": "Herkimer 'diamond' pocket — Middleville, NY (Little Falls Formation, Cambrian dolostone)",
+    "description": "Doubly-terminated clear quartz from a Cambrian dolostone vug at peak Alleghenian burial. Slow-grown, low-σ ordered crystallization — the textbook 'cooling' archetype.",
+    "expects_species": [
+      "quartz"
+    ],
+    "sources": [
+      "Selleck 1978 — Mohawk Valley stratigraphy + Little Falls Formation host",
+      "Harris et al. 1978 USGS PP 1197 — Alleghenian thermal maturity",
+      "Friedman & Sanders 1982 Geology 10 — Appalachian burial diagenesis",
+      "Rimstidt 1997 — quartz solubility at 180°C",
+      "Hanor 1994 — Appalachian-basin brine compendium (Mg/Ca, Na/K, salinity)",
+      "Wark & Watson 2006 — TitaniQ thermometer Ti-in-quartz"
+    ],
+    "initial_temperature_C": 180,
+    "initial_pressure_kbar": 1,
+    "wall_architecture": null,
+    "notes": [
+      "Herkimer-type double-terminated quartz crystals occur in isolated vugs of the Little Falls Formation, an Upper Cambrian dolostone in the Mohawk Valley.",
+      "(The audit brief drafted 'Lockport Dolostone' — that is Silurian and hosts different mineralization; Herkimer's host is the Little Falls Formation, confirmed by Selleck 1978 and multiple state geological summaries.)",
+      "The quartz itself crystallized much later, during Alleghenian burial diagenesis in the Carboniferous (~340-300 Ma), when the section reached >3 km depth and ~140-200°C.",
+      "Silica was liberated by pressure solution and hydrocarbon cracking in adjacent shales, then precipitated free-floating crystals in silica-overpressured pockets that were also saturated with petroleum and saline basinal brine — hence the two-phase enhydro + anthraxolite inclusions diagnostic of Herkimer specimens.",
+      "All fluid values cite locality_chemistry.json#localities.herkimer_middleville. The sim uses abstracted sim-scale ppm, not raw brine concentrations.",
+      "Signature: clear, doubly-terminated quartz. Minimal carbonate competition (most Ca/CO3 has sequestered as dolomite cement in the host rock).",
+      "Data gaps: no widely-indexed modern microthermometry study publishes Th and Tm_ice specifically for Herkimer pocket quartz; the 140-200°C window is inferred from regional Alleghenian thermal maturity (Harris et al. 1978; Friedman & Sanders 1982). LA-ICP-MS of Herkimer fluid inclusions has not appeared in open literature; ratios are imported from Hanor 1994 Appalachian-basin averages.",
+      "v184 BURIAL THERMAL STORY (NAICA-SHAPE — the only events:[] scenario in the T-rollout): the movement below holds peak Alleghenian burial (180°C, smoothstep −20 across the run → ends ~158) instead of the old ambient regime, where the drift fell out of the 140-200°C window and 2-3 random pulses happened to balance it back in (band occupancy 65-86% by ACCIDENT — noise as load-bearing thermal budget, the deccan lesson at a different scenario). With the declared plateau: window occupancy 100%, pulses 0 — and crystal count drops 3→1 at every observed seed. One large doubly-terminated crystal IS the Herkimer signature (sustained low σ → no fresh nucleation → the García-Ruiz fewer-nuclei mechanism, same as naica v182): a 3km-deep Cambrian dolostone in burial diagenesis has no magmatic heat source, hence thermal_pulses:false alongside (the flag matters only past endStep; the movement owns every in-run step)."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 1,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.4196065399999998,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 72.7,
+          "initial_water_activity": {
+            "value": 0.9898,
+            "salinityPpt": 18,
+            "naclWeightPercentEquivalent": 1.8,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 1,
+    "paragenetic_order": [
+      {
+        "mineral": "quartz",
+        "first_step": 12,
+        "events": 1
+      }
+    ],
+    "surprises_not_in_expects": [],
+    "expected_no_shows": [],
+    "environment": {
+      "T": {
+        "first": 180.118,
+        "last": 159.449,
+        "min": 159.449,
+        "max": 180.118,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 6.78,
+        "last": 6.78,
+        "min": 6.78,
+        "max": 6.78,
+        "units": ""
+      },
+      "Eh": {
+        "first": -74.016,
+        "last": -74.016,
+        "min": -74.016,
+        "max": -74.016,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 18.11,
+        "last": 18.11,
+        "min": 18.11,
+        "max": 18.11,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 0.118,
+        "last": 0.118,
+        "min": 0.118,
+        "max": 0.118,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -1.512,
+        "last": -1.26,
+        "min": -1.512,
+        "max": -1.26,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -1.638,
+        "last": -1.323,
+        "min": -1.638,
+        "max": -1.323,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -2.457,
+        "last": -2.079,
+        "min": -2.457,
+        "max": -2.079,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -3.15,
+        "last": -2.898,
+        "min": -3.15,
+        "max": -2.898,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 0.126,
+        "last": 0.252,
+        "min": 0.126,
+        "max": 0.252,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 100,
+      "fluid_pressure_kbar": {
+        "first": 1,
+        "last": 1,
+        "min": 1,
+        "max": 1,
+        "samples": 100
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 100
+      },
+      "temperature_C": {
+        "first": 179.99404,
+        "last": 158.26685435471222,
+        "min": 158.26685435471222,
+        "max": 179.99404,
+        "samples": 100
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.4196062595405183,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.4299166463968853,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 100
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 72.7
+        },
+        "last": {
+          "pure_water_boundary_C": 72.7
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

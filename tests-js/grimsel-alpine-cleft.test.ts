@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
+declare const simulatorCarbonLedgerSnapshot: any;
 
 function run(scenarioName: string, seed = 42) {
   setSeed(seed);
@@ -41,7 +42,12 @@ function quartz42(): any[] {
   return sim ? sim.crystals.filter((c: any) => c.mineral === 'quartz') : [];
 }
 
-describe('Grimsel alpine-cleft smoky sceptre quartz (v206)', () => {
+// A current exact seed-42 run is intentionally retained because the compact
+// commissioning baseline records assemblage/frequency, not the internal
+// sceptre, gwindel, colour-centre, and Tessin morphology state asserted here.
+// The topology-independent cavity/thermal calculation measures about 20–30
+// minutes on the supported single-worker desktop path.
+describe('Grimsel alpine-cleft smoky sceptre quartz (v206)', { timeout: 3_600_000 }, () => {
   it('scenario is registered', () => {
     expect(SCENARIOS.grimsel_alpine_cleft).toBeTypeOf('function');
   });
@@ -99,8 +105,14 @@ describe('Grimsel alpine-cleft smoky sceptre quartz (v206)', () => {
   });
 
   it('TESSIN: cleft quartz carries the steep-rhombohedron face development', () => {
-    const tessin = quartz42().filter((c) => (c.dominant_forms || []).some((f: string) => f.includes('steep rhombohedron')));
+    const tessin = quartz42().filter((c) =>
+      (c.dominant_forms || []).some((f: string) => f.includes('{40-41}/{30-31}')),
+    );
     expect(tessin.length).toBeGreaterThan(0);
+    for (const crystal of tessin) {
+      expect(crystal.dominant_forms).toContain('steep {40-41}/{30-31} rhombohedra dominant');
+      expect(crystal.dominant_forms.join(' ')).not.toContain('z{011}');
+    }
   });
 
   it('every expects_species fires at seed 42', () => {
@@ -108,5 +120,23 @@ describe('Grimsel alpine-cleft smoky sceptre quartz (v206)', () => {
     for (const m of ['quartz', 'feldspar', 'titanite', 'hematite', 'fluorite', 'apatite', 'calcite']) {
       expect(c[m] || 0, `${m} should fire`).toBeGreaterThan(0);
     }
+  });
+
+  it('books the late carbonate-bearing recharge and closes the carbon ledger', () => {
+    const sim = sim42();
+    expect(sim._carbonSourceTransactions).toHaveLength(1);
+    expect(sim._carbonSourceTransactions[0]).toMatchObject({
+      step: 165,
+      closed: true,
+      declarations: [expect.objectContaining({
+        kind: 'addition',
+        category: 'external_import',
+        source: 'Grimsel late CO2-bearing cleft-fluid recharge',
+      })],
+    });
+    expect(simulatorCarbonLedgerSnapshot(sim)).toMatchObject({
+      closed: true,
+      propagationViolations: 0,
+    });
   });
 });

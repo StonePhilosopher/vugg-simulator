@@ -252,7 +252,7 @@
           "wall_spread": 0.3,
           "void_reach": 0.9,
           "vector": "projecting",
-          "trigger": "alpine-cleft showpiece — a flattened column progressively twisted about the a-axis under syn-growth tectonic shear (Grimsel/Aar Zerrklüfte type locality). Engine: largest cleft quartz, twist ∝ growth duration (SIM 207)"
+          "trigger": "alpine-cleft showpiece — one flattened quartz crystal with a growth-incorporated screw-dislocation twist about an a-axis, not stacked individuals or tectonic shear deformation (Grimsel/Aar Zerrklüfte type region). Engine proxy: largest cleft quartz, twist ∝ growth duration (SIM 207)"
         },
         {
           "name": "skeletal_fenster",
@@ -269,15 +269,15 @@
           "trigger": "high σ, Fe³⁺ present, space-constrained"
         },
         {
-          "name": "microcrystalline",
-          "wall_spread": 0.95,
-          "void_reach": 0.05,
+          "name": "rock_crystal_druse",
+          "wall_spread": 0.92,
+          "void_reach": 0.08,
           "vector": "coating",
-          "trigger": "high fill or drusy — microcrystalline chalcedony / agate carpet covering existing crystals (boundary-layer diffusion at late-stage low-σ SiO2 produces tiny-grain fabric rather than euhedral prisms)"
+          "trigger": "high fill or drusy — a dense carpet of small euhedral quartz points across available cavity wall, without requiring the Fe/irradiation chromophore of amethyst"
         }
       ],
       "class": "silicate",
-      "description": "The most abundant vug-lining mineral on Earth. Silica dissolved in hot fluid crystallizes on cooling — clear, smoky when irradiated, amethyst when Fe-bearing and irradiated together. The canvas on which most other vug minerals grow.",
+      "description": "The least-soluble generic silica phase in the simulator's Ostwald sequence. Once a fluid has fallen below opal and chalcedony saturation but remains supersaturated with respect to quartz, it grows euhedral trigonal crystals — clear, smoky when Al-bearing and irradiated, or amethyst when Fe-bearing and irradiated. Cryptocrystalline chalcedony and amorphous opal are separate solids with separate growth records.",
       "scenarios": [
         "cooling",
         "pulse",
@@ -286,8 +286,8 @@
         "radioactive_pegmatite"
       ],
       "T_range_C": [
-        50,
-        1713
+        100,
+        700
       ],
       "T_optimum_C": [
         200,
@@ -298,7 +298,7 @@
       "pH_dissolution_above": null,
       "redox_requirement": "any",
       "required_ingredients": {
-        "SiO2": 50
+        "SiO2": 60
       },
       "trace_ingredients": {
         "Ti": "TitaniQ geothermometer",
@@ -381,8 +381,95 @@
       ],
       "audit_status": "ok",
       "late_stage_propensity": 0.2,
-      "_late_stage_note": "Proposal C (2026-05): propensity:0.2. Drusy chalcedony / amethyst-pocket interior is well-documented as a late-stage layer in agate geodes; otherwise mostly bulk.",
+      "_late_stage_note": "Proposal C (2026-05): propensity:0.2. Euhedral drusy quartz commonly follows an earlier chalcedony lining in agate geodes; otherwise it is mostly a bulk vug-lining phase.",
       "class_color": "#1313eb"
+    },
+    "chalcedony": {
+      "optics": {
+        "diaphaneity": "translucent_to_opaque",
+        "clarity": 0.45,
+        "lustre": ["waxy", "dull", "vitreous"],
+        "notes": "cryptocrystalline fibrous silica aggregate; locally vitreous on fresh fracture; agate is its rhythmically banded texture",
+        "source": "USGS Spectral Library + Heaney & Davis 1995"
+      },
+      "formula": "SiO2",
+      "nucleation_sigma": 1.12,
+      "max_nucleation_count": 4,
+      "max_size_cm": 100,
+      "growth_rate_mult": 0.45,
+      "habit_variants": [
+        {
+          "name": "fibrous_chalcedony_lining",
+          "wall_spread": 0.96,
+          "void_reach": 0.04,
+          "vector": "coating",
+          "trigger": "first accepted layers — length-fast microfibres normal to the cavity wall"
+        },
+        {
+          "name": "botryoidal_chalcedony",
+          "wall_spread": 0.88,
+          "void_reach": 0.12,
+          "vector": "coating",
+          "trigger": "three or more accepted layers or moderate supersaturation — radiating fibrous spherulites coalesce into a botryoidal crust"
+        },
+        {
+          "name": "banded_agate",
+          "wall_spread": 0.98,
+          "void_reach": 0.02,
+          "vector": "coating",
+          "trigger": "seven or more accepted layers in a basalt cavity or an oscillatory silica-activity history — alternating microfibrous bands stored shell by shell"
+        }
+      ],
+      "class": "silicate",
+      "description": "Cryptocrystalline, commonly fibrous SiO₂ rather than a tiny euhedral quartz habit. The simulator evaluates its own Fournier chalcedony equilibrium from 0–200°C; it can follow amorphous opal as silica activity falls and can in turn dissolve and reprecipitate as quartz. Repeated accepted microfibrous layers in basalt cavities produce an actual banded-agate fabric. Agate is therefore a recorded texture of chalcedony, not a cosmetic label for a quartz-filled vug.",
+      "scenarios": [
+        "deccan_zeolite",
+        "amethyst_geode"
+      ],
+      "T_range_C": [0, 200],
+      "T_optimum_C": [40, 120],
+      "T_behavior": "prograde_solubility",
+      "pH_dissolution_below": 3.0,
+      "pH_dissolution_above": 10.0,
+      "redox_requirement": "any",
+      "required_ingredients": {
+        "SiO2": 8
+      },
+      "_ingredients_note": "8 ppm is only the absolute low-temperature floor of the modeled Fournier relation. The actual gate is temperature-dependent: C_eq = 10^(4.69 - 1032/T_K), valid 0–250°C in the cited USGS implementation; precipitation requires σch > 1.12 and loses priority to opal while amorphous silica is supersaturated.",
+      "trace_ingredients": {
+        "Fe": "gray-red or carnelian/jasper-like staining; not a required lattice constituent"
+      },
+      "thermal_decomp_C": 200,
+      "thermal_decomp_reaction": "Above the modeled chalcedony field, solution-mediated maturation returns exact booked SiO2 to fluid before quartz reprecipitates; no solid is renamed in place.",
+      "thermal_decomp_products": {
+        "SiO2": 1
+      },
+      "fluorescence": null,
+      "_twin_laws_note": "A microfibrous aggregate has no single euhedral crystal on which a macroscopic twin law can be expressed.",
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 3.0,
+        "requires": { "F": 20 },
+        "reaction": "HF-assisted etching of the microfibrous SiO2 aggregate",
+        "products": { "SiO2": 1 }
+      },
+      "habit": "fibrous_chalcedony_lining",
+      "color_rules": {
+        "blue_gray_white": { "default": true },
+        "iron_stained": { "trigger": "Fe > 20 ppm" },
+        "banded_agate": { "trigger": "habit = banded_agate" }
+      },
+      "narrate_function": "_narrate_chalcedony",
+      "runtimes_present": ["js"],
+      "audit_status": "SIM 246 first-class generic phase: independent equilibrium, production nucleator, growth/aggregation engine, accepted-shell SiO2 ledger, solution-mediated quartz maturation, Creative formation diagnosis, and basalt-agate scenario coverage.",
+      "late_stage_propensity": 0.15,
+      "_late_stage_note": "Usually an early-to-intermediate wall lining before inward-projecting euhedral quartz; banding can continue through repeated pulses.",
+      "class_color": "#1313eb",
+      "test_cases": [
+        { "name": "warm silica-rich chalcedony field", "fluid": { "SiO2": 400, "pH": 7 }, "T_C": 150, "expects": { "sigma": ">1.0" }, "rationale": "Above chalcedony equilibrium and outside opal's kinetic window." },
+        { "name": "depleted fluid routes to quartz", "fluid": { "SiO2": 160, "pH": 7 }, "T_C": 150, "expects": { "sigma": "==0" }, "rationale": "Below chalcedony equilibrium but still above quartz equilibrium; selector gives quartz priority." },
+        { "name": "alkaline silica remains dissolved", "fluid": { "SiO2": 400, "pH": 11 }, "T_C": 80, "expects": { "sigma": "==0" }, "rationale": "Deprotonated aqueous silica raises solubility beyond the modeled neutral-field gate." }
+      ]
     },
     "calcite": {
       "optics": {
@@ -425,6 +512,13 @@
           "void_reach": 0.15,
           "vector": "coating",
           "trigger": "high σ, rapid deposition, Mn-rich"
+        },
+        {
+          "name": "travertine_crust",
+          "wall_spread": 0.99,
+          "void_reach": 0.01,
+          "vector": "coating",
+          "trigger": "shallow limestone-hosted Ca-HCO3 spring water undergoing CO2 degassing — laminated to microcrystalline terrace crust, not cabinet spar"
         },
         {
           "name": "flos-ferri_acicular",
@@ -956,9 +1050,7 @@
       ],
       "class": "carbonate",
       "description": "FeCO₃ — the iron carbonate, a calcite-group mineral (R3̄c) with Fe²⁺ in the Ca site. Tan to deep brown depending on Fe content and trace substitution (manganosiderite ↔ rhodochrosite, ankerite ↔ dolomite). Hard-gated to REDUCING conditions because Fe²⁺ must stay reduced to be soluble; rising O₂ progressively converts siderite to goethite/limonite — the diagenetic 'limonite cube after siderite' pseudomorph mechanism. Forms in MVT veins (accessory), sedimentary ironstone formations, hydrothermal Fe veins, and coal-seam concretions (spherosiderite).",
-      "scenarios": [
-        "mvt"
-      ],
+      "scenarios": [],
       "T_range_C": [
         20,
         300
@@ -1085,9 +1177,7 @@
       ],
       "class": "carbonate",
       "description": "MnCO₃ — the rosy manganese carbonate, the pink mineral of cabinet specimens. Same R3̄c calcite-group structure with Mn²⁺ replacing Ca²⁺. Forms a continuous solid solution toward calcite via the kutnohorite (CaMn carbonate) intermediate, producing the diagnostic agate-like banding when Mn/Ca ratios oscillate. Color is intrinsic (Mn²⁺ chromophore), not a trace activator. Stability requires moderate-to-reducing conditions: aggressive oxidation flips Mn²⁺ to Mn³⁺/Mn⁴⁺ and the surface converts to black manganese oxides (pyrolusite, psilomelane). Forms in epithermal Mn-bearing veins (Capillitas Argentina, Sweet Home Colorado), metamorphosed Mn sediments (N'Chwaning South Africa), and low-T carbonate replacement zones.",
-      "scenarios": [
-        "mvt"
-      ],
+      "scenarios": [],
       "T_range_C": [
         20,
         250
@@ -1243,7 +1333,8 @@
       "trace_ingredients": {
         "Fe": "color darkening to marmatite (>15% Fe)",
         "Cd": "yellow tint",
-        "Mn": "pink tint"
+        "Mn": "pink tint",
+        "Ge": "incorporates on the Zn site through Cu-coupled, vacancy-assisted, and Fe-associated substitutions; the simulator uses a labelled 200°C empirical partitioning proxy and debits the dissolved Ge inventory"
       },
       "thermal_decomp_C": 1020,
       "thermal_decomp_reaction": "ZnS sublimes at 1020C",
@@ -2709,8 +2800,7 @@
       "class": "sulfide",
       "description": "FeAsS, the arsenic gateway mineral and the #1 gold-trapping mineral. Mesothermal primary sulfide (300-500°C, reducing); silver-white metallic prisms with diamond cross-section, deep longitudinal striations. Emits garlic odor when struck (As vapor — diagnostic). Structurally traps Au up to ~1500 ppm as 'invisible gold' (Reich et al. 2005; Cook & Chryssoulis 1990) — released to fluid on supergene oxidation, producing the orogenic Au-enrichment signature (Graeme et al. 2019 for Bisbee). Oxidation pathway: FeAsS + O₂ + H₂O → Fe³⁺ + AsO₄³⁻ + H₂SO₄ → feeds scorodite + acidifies.",
       "scenarios": [
-        "porphyry",
-        "bisbee"
+        "porphyry"
       ],
       "T_range_C": [
         150,
@@ -2819,7 +2909,6 @@
       "scenarios": [
         "mvt",
         "porphyry",
-        "reactive_wall",
         "supergene_oxidation"
       ],
       "T_range_C": [
@@ -2880,7 +2969,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "phase-2: wired in vugg.py and web/index.html. Research source: proposals/MINERALS-RESEARCH-SULFATES.md. The Ba sequestration mineral; activates the dormant fluid.Ba pool. Tri-State Ba=20 currently dormant due to scenario O2=0.0 (gap flagged in audit). Sabkha Ba=0 (correctly absent — sabkha is Sr-dominant). Real activation: porphyry post-oxidation; future MVT chemistry tweak (O2 0→0.2) would unlock Tri-State barite.",
+      "audit_status": "reconciled v248 (2026-08-06). Wired in vugg.py and web/index.html; research source: proposals/MINERALS-RESEARCH-SULFATES.md. The Ba sequestration mineral activates the fluid.Ba pool in supported MVT, porphyry, and supergene settings. Sweetwater/reactive_wall is intentionally not advertised because its authored locality contract excludes barite; the global engine remains available in Creative mode.",
       "late_stage_propensity": 0.2,
       "_late_stage_note": "Proposal C (2026-05): propensity:0.2. Sometimes late MVT gangue (Sweetwater snowball habit); otherwise mostly bulk.",
       "class_color": "#eb137f"
@@ -2931,7 +3020,6 @@
       "class": "sulfate",
       "description": "SrSO₄, the strontium sulfate; isostructural with barite (the two form a partial solid solution; intermediates 'celestobarite' and 'barytocelestine' common in mixed-cation fluids). The diagnostic pale celestial blue is an F-center defect color — radiation-damaged anion vacancies absorb yellow-orange light, leaving the calm sky blue that named the species. Famous occurrences: Madagascar Sakoany geodes (football-sized, 30 cm pale-blue tabular plates — world's largest), Sicilian Caltanissetta sulfur-vug fibrous habit (radiating fibers on yellow native sulfur), Lake Erie / Put-in-Bay (Crystal Cave on South Bass Island — world's largest known geode at 35 ft³). Industrial use: source of Sr for red firework colors; ⁸⁷Sr/⁸⁶Sr-isotope tracer for paleobrine geochronology (Schwartz et al. 2018).",
       "scenarios": [
-        "mvt",
         "supergene_oxidation",
         "sabkha_dolomitization"
       ],
@@ -4562,7 +4650,7 @@
           "quartz",
           "vug wall"
         ],
-        "note": "Nashik bloody apophyllite forms when apophyllite nucleates on/grows around pre-existing hematite needles. Requires alkaline pH (7-10), low-pressure vesicle conditions (<0.5 kbar), K+Ca+Si+F-rich fluid."
+        "note": "Nashik bloody apophyllite forms when apophyllite nucleates on/grows around pre-existing hematite needles. Requires alkaline pH (7-10) and K+Ca+Si+F-rich fluid. Deccan vesicles are shallow, but skarn and alpine occurrences show that 0.5 kbar is not a defensible universal pressure ceiling."
       },
       "narrate_function": "_narrate_apophyllite",
       "runtimes_present": [
@@ -5507,6 +5595,7 @@
         "gem_pegmatite",
         "radioactive_pegmatite"
       ],
+      "_requires_scenario_license": true,
       "T_range_C": [
         300,
         650
@@ -6872,6 +6961,13 @@
           "trigger": "moderate-high σ, low T, thin fracture"
         },
         {
+          "name": "crystalline_crust",
+          "wall_spread": 0.88,
+          "void_reach": 0.12,
+          "vector": "coating",
+          "trigger": "high fill or drusy — fine blue crystals coalescing as coatings and crystalline crusts on supergene fissure and cavity walls (Števko et al. 2011)"
+        },
+        {
           "name": "default_prismatic",
           "wall_spread": 0.25,
           "void_reach": 0.75,
@@ -7799,10 +7895,9 @@
         }
       ],
       "class": "silicate",
-      "description": "Be₃Al₂Si₆O₁₈ with Cr³⁺ (or V³⁺) substituting for Al — the green variety of beryl. The 'emerald paradox': Cr is ultramafic, Be is pegmatitic; these chemistries almost never coexist. Emerald forms where pegmatite fluid meets ultramafic country rock (Colombia Muzo shale-hosted, Zambia Kagem schist-hosted, Cruzeiro pegmatite-only). Top Colombian gem emerald is rarer than diamond as gem material.",
-      "scenarios": [
-        "gem_pegmatite"
-      ],
+      "description": "Be₃Al₂Si₆O₁₈ with Cr³⁺ (or V³⁺) substituting for Al — the green variety of beryl. The 'emerald paradox': Cr is commonly supplied by mafic-ultramafic or Cr-bearing sedimentary rocks while Be is commonly pegmatitic; the required chemistries rarely coexist. Classic deposits include Colombia's black-shale-hosted systems and Zambia's schist-hosted Kagem district. Ordinary green beryl is not automatically emerald without the required chromophore and gemological evidence.",
+      "scenarios": [],
+      "_requires_scenario_license": true,
       "T_range_C": [
         300,
         650
@@ -7896,6 +7991,7 @@
       "scenarios": [
         "gem_pegmatite"
       ],
+      "_requires_scenario_license": true,
       "T_range_C": [
         300,
         650
@@ -7981,6 +8077,7 @@
       "scenarios": [
         "gem_pegmatite"
       ],
+      "_requires_scenario_license": true,
       "T_range_C": [
         300,
         650
@@ -8066,6 +8163,7 @@
       "scenarios": [
         "gem_pegmatite"
       ],
+      "_requires_scenario_license": true,
       "T_range_C": [
         300,
         650
@@ -8172,6 +8270,7 @@
       "scenarios": [
         "marble_contact_metamorphism"
       ],
+      "_requires_scenario_license": true,
       "T_range_C": [
         400,
         1000
@@ -8276,6 +8375,7 @@
       "scenarios": [
         "marble_contact_metamorphism"
       ],
+      "_requires_scenario_license": true,
       "T_range_C": [
         500,
         1000
@@ -8389,6 +8489,7 @@
       "scenarios": [
         "marble_contact_metamorphism"
       ],
+      "_requires_scenario_license": true,
       "T_range_C": [
         500,
         1000
@@ -8511,7 +8612,6 @@
       "description": "Ag₂S — monoclinic silver sulfide and the most important silver ore on Earth at 87% Ag by weight. Lead-gray to iron-black metallic, Mohs 2-2.5, sectile (cuts like lead). The cold-storage form: above 173°C the same composition crystallizes as cubic argentite, and most acanthite in nature is paramorphic after cooled argentite, retaining the cubic external form while the lattice underneath inverts to monoclinic (Petruk et al. 1974, Canadian Mineralogist 12). Forms in low-sulfidation epithermal veins, mesothermal silver veins, and supergene enrichment zones; classic localities include Guanajuato (Mexico, pseudo-cubic crystals), Freiberg (Saxony), and Kongsberg (Norway).",
       "scenarios": [
         "mvt",
-        "reactive_wall",
         "supergene_oxidation",
         "bisbee"
       ],
@@ -8558,7 +8658,7 @@
         "vugg.py",
         "index.html"
       ],
-      "audit_status": "Round 8a-1 (Apr 2026). Engine + supersaturation + nucleation + narrator complete in vugg.py + web/index.html; JSON entry mirrored to docs/. Habit variants: massive_granular (low σ, dominant economic form), prismatic (mid σ), thorn (high σ), pseudo_cubic (paramorph hook — set in 8a-2 when argentite cools through 173°C). Sources: Petruk et al. 1974 (Canadian Mineralogist 12: 365-369), Hayba & Bethke 1985 (Reviews in Economic Geology 2). Activates dormant Ag pool at MVT/Sweetwater/Tsumeb/Bisbee. First Ag mineral in the sim.",
+      "audit_status": "reconciled v248 (2026-08-06). Engine, supersaturation, nucleation, narrator, and argentite paramorph hook are complete. Habit variants: massive_granular (low σ), prismatic (mid σ), thorn (high σ), and pseudo_cubic after cooled argentite. Sources: Petruk et al. 1974 (Canadian Mineralogist 12:365-369) and Hayba & Bethke 1985 (Reviews in Economic Geology 2). Supported authored settings include MVT, Tsumeb supergene, and Bisbee; Sweetwater/reactive_wall is intentionally not advertised because its locality contract excludes acanthite. The global engine remains available in Creative mode.",
       "class_color": "#7feb13"
     },
     "argentite": {
@@ -9119,7 +9219,6 @@
       "class": "sulfide",
       "description": "NiS — trigonal nickel sulfide, brass-yellow to bronze-yellow metallic. Mohs 3-3.5, the rare nickel mineral that grows as hair-thin acicular needles in geode cavities. Forms in lower-T regimes than nickeline (NiAs); when As is depleted and Ni + S remain, NiS takes the field. The capillary habit is so distinctive that 'millerite' is shorthand among collectors for any radiating-needle sulfide. Showcase localities: Halls Gap (Kentucky), Sterling Hill (NJ), Glamorgan (Wales). Sources: research/minerals/research-millerite.md (boss commit f2939da), Bayliss 1969 (Geochim. Cosmochim. Acta 33).",
       "scenarios": [
-        "bisbee",
         "supergene_oxidation"
       ],
       "T_range_C": [
@@ -9810,10 +9909,9 @@
         }
       ],
       "class": "arsenate",
-      "description": "CaHAsO₄·2H₂O — monoclinic hydrated calcium hydrogen arsenate. Forms colorless to white delicate radiating/stellate aggregates resembling starbursts of needles — the diagnostic field marker. Vitreous to pearly luster, soft (Mohs 2-2.5). The classic supergene bloom of the Jáchymov (Joachimsthal, Czech) + Schneeberg + Cobalt-Ontario silver-cobalt-arsenic mining districts, where the weathering of cobaltite/nickeline/arsenopyrite primaries releases As⁵⁺ into Ca-rich groundwater. Trace Fe gives yellowish tint, Mn pinkish, Cu greenish — useful provenance fingerprints. Efflorescent: loses water in dry air, converting to haidingerite (CaHAsO₄·H₂O) at ~80-100°C and to anhydrous Ca arsenate at ~150°C, both effectively irreversible. Most field specimens are already partially dehydrated by the time they reach a collection. Highly soluble in dilute HCl/HNO₃; releases toxic arsenic + calcium on dissolution. Type locality: Riegelsdorf, Hesse, Germany (Stromeyer 1819) — but the Jáchymov + Schneeberg displays are the iconic specimens. Sources: research/research-pharmacolite.md (boss canonical 2026-05); Anthony et al. Handbook of Mineralogy Vol. IV; Stromeyer 1819 (type-locality description).",
+      "description": "CaHAsO₄·2H₂O — monoclinic hydrated calcium hydrogen arsenate. Forms colorless to white delicate radiating/stellate aggregates resembling starbursts of needles — the diagnostic field marker. Vitreous to pearly luster, soft (Mohs 2-2.5). The classic supergene bloom of the Jáchymov (Joachimsthal, Czech) + Schneeberg + Cobalt-Ontario silver-cobalt-arsenic mining districts, where the weathering of cobaltite/nickeline/arsenopyrite primaries releases As⁵⁺ into Ca-rich groundwater. Trace Fe gives yellowish tint, Mn pinkish, Cu greenish — useful provenance fingerprints. Efflorescent: loses water in dry air, converting to haidingerite (CaHAsO₄·H₂O) at ~80-100°C and to anhydrous Ca arsenate at ~150°C, both effectively irreversible. Most field specimens are already partially dehydrated by the time they reach a collection. Highly soluble in dilute HCl/HNO₃; releases toxic arsenic + calcium on dissolution. Type locality: Riegelsdorf, Hesse, Germany (Stromeyer 1819) — but the Jáchymov + Schneeberg displays are the iconic specimens. Sources: research/arcs/research-cation-sinks-orphan-solutes-2026-08-08.md; Anthony et al. Handbook of Mineralogy Vol. IV; Stromeyer 1819 (type-locality description).",
       "scenarios": [
-        "schneeberg",
-        "supergene_oxidation"
+        "schneeberg"
       ],
       "T_range_C": [
         5,
@@ -9831,7 +9929,7 @@
         "Ca": 15,
         "As": 5
       },
-      "_ingredients_note": "v88 (2026-05-19): Ca + As only (the formula is Ca-only, no Cu/Co/Ni/Zn). Cation-share gate Ca/(Ca+Cu+Pb+Zn+Co+Ni) > 0.3 enforces the anti-competitor logic per research §Inhibiting elements — high Cu routes to conichalcite, high Co to erythrite, etc.",
+      "_ingredients_note": "SIM259: Ca + As formula. Ca/(Ca+Cu+Pb+Zn+Co+Ni) is computed after converting each mass-ppm concentration to moles with its atomic weight. The >=0.3 threshold is a calibrated dissolved-cation competition proxy, not equilibrium arsenate allocation, speciation, or crystallographic site occupancy. High Cu routes toward conichalcite, high Co toward erythrite, and analogous competitors suppress pharmacolite.",
       "trace_ingredients": {
         "Fe": "Fe substitutes minorly, yields yellowish tint",
         "Mn": "Mn substitutes minorly, pinkish hue",
@@ -9843,7 +9941,7 @@
         "Pb": "high Pb routes to mimetite (Pb arsenate-chloride preference)"
       },
       "thermal_decomp_C": 80,
-      "thermal_decomp_reaction": "Pharmacolite (CaHAsO₄·2H₂O) → haidingerite (CaHAsO₄·H₂O) at 80-100°C, loses 1 H₂O; further heating → anhydrous Ca arsenate + H₂O at ~150°C. Both irreversible. In the v88 sim, modeled as crystal-destruction (mineral dissolution releasing structural water) since haidingerite isn't yet in the catalog.",
+      "thermal_decomp_reaction": "Pharmacolite (CaHAsO₄·2H₂O) → haidingerite (CaHAsO₄·H₂O) at 80-100°C, loses 1 H₂O; further heating → anhydrous Ca arsenate + H₂O at ~150°C. The current simulator preserves the crystal as a haidingerite paramorph; structural water is diagnostic because no conserved H₂O inventory exists.",
       "thermal_decomp_products": {
         "Ca": 0.0,
         "As": 0.0
@@ -9895,7 +9993,7 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "new v88 (2026-05-19). Per research-pharmacolite.md (boss canonical 2026-05). Ca-only hydrated arsenate; closes the supergene-arsenate Ca-without-Cu slot (paired with conichalcite v87 Ca+Cu and olivenite v8 Cu-only on the same supergene Cu-As fluid). Cation anti-gates suppress (not block) when competitors dominate. Substrate priority: cobaltite > arsenopyrite > native_arsenic > nickeline > erythrite > annabergite > calcite > wall (encodes the five-element-vein paragenetic ordering from research §Paragenetic Position). Slots into schneeberg (primary target — research's Jáchymov/Schneeberg type-display locality; Cu depletes by step 125, Ca rises from carbonate dissolution, As stays elevated from arsenide weathering) + supergene_oxidation (Tsumeb-style Ca-rich oxidation, fires when conichalcite stops scavenging the Cu-bearing window). Thermal dehydration to haidingerite at >80°C modeled as crystal-destruction since haidingerite isn't yet in the catalog. Sources: research-pharmacolite.md; Anthony et al. Handbook of Mineralogy Vol. IV; Stromeyer 1819 (Riegelsdorf type locality).",
+      "audit_status": "reconciled SIM259 (2026-08-09). Ca-only hydrated arsenate with a mass-to-mole converted dissolved-cation competition proxy and the documented five-element-vein substrate order. The selector is calibrated rather than an equilibrium speciation or site-occupancy calculation. The shipped scenario association is Schneeberg/Jáchymov-style mineralization; Tsumeb is explicitly excluded because the locality record and Harvard Tsumeb catalog audit found no occurrence support. Thermal dehydration preserves a haidingerite paramorph through DEHYDRATION_TRANSITIONS. The engine remains globally available in Creative mode. The all-step cation receipt verifies every canonical voxel remains finite and that Schneeberg carries no phantom Zn. Sources: research/arcs/research-cation-sinks-orphan-solutes-2026-08-08.md; Anthony et al. Handbook of Mineralogy Vol. IV; Stromeyer 1819 (Riegelsdorf type locality); SIM248 locality reconciliation memo.",
       "late_stage_propensity": 0.6,
       "_late_stage_note": "Proposal C (2026-05): propensity:0.6. Late-supergene Ca-As arsenate; forms in the closing phase of the oxidation zone after the primary Co/Ni arsenides have weathered and Ca-rich groundwater has flushed through. Between conichalcite (0.5) and chalcanthite (0.7) on the late-stage scale.",
       "class_color": "#e8e8d4"
@@ -9932,8 +10030,7 @@
       "class": "arsenate",
       "description": "CaHAsO₄·H₂O — orthorhombic hydrated calcium arsenate, the half-dehydrated cousin of pharmacolite. Forms EXCLUSIVELY as a transformation product of pharmacolite (CaHAsO₄·2H₂O) — heat above ~80°C OR sustained dry-air exposure drives off 1 of the 2 H₂O molecules, collapsing the lattice from monoclinic pharmacolite to orthorhombic haidingerite. The transformation is irreversible (re-humidifying does not restore the pharmacolite hydrate). External crystal shape is preserved through the in-situ transformation: a haidingerite specimen IS a former pharmacolite crystal, frozen mid-decay. Specific gravity rises from pharmacolite's 2.64-2.73 to haidingerite's 2.85-2.96 — the diagnostic water-loss densification signature. Colorless to white, vitreous luster with pearly cleavage faces on {010}. Mohs 2-2.5 (same as pharmacolite). Sectile tenacity: thin laminae are slightly flexible (unlike pharmacolite which is brittle); a useful field discriminator. Sub-millimeter crystals (Handbook of Mineralogy notes 'to 1 mm'); typically encountered as botryoidal or fibrous coatings on weathered arsenide vein assemblages. Type locality Jáchymov (Joachimsthal), Czech Republic. Named for Wilhelm Karl von Haidinger (1795-1871), Austrian mineralogist. Type pseudomorph occurrence: Getchell mine, Nevada (Handbook of Mineralogy: 'Formed by dehydration of pharmacolite (Getchell mine, Nevada, USA)'). Sources: Palache, Berman, Frondel 1951 (Dana's System of Mineralogy 7th ed v.II 708-709); Ferraris, Jones, Yerkess 1972 (Acta Cryst. 28:209-214, neutron + X-ray structure refinement); Cassien, Herpin, Permingeat 1966 (Bull. Minéral. 89:18-22, crystal structure paper).",
       "scenarios": [
-        "schneeberg",
-        "supergene_oxidation"
+        "schneeberg"
       ],
       "T_range_C": [
         5,
@@ -10002,7 +10099,7 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "new v90 (2026-05-19). Transformation-only paramorph product of pharmacolite via DEHYDRATION_TRANSITIONS (js/75-transitions.ts: pharmacolite → haidingerite, threshold 30 vadose-steps, T_max 80°C heat path). The v88 inline 'thermal destruction at T>80' branch in grow_pharmacolite has been REMOVED — v88 was a stub when haidingerite wasn't in the catalog yet; v90 adds the proper paramorph product so the crystal's external habit + position are preserved through the transformation (radiating stellate pharmacolite → radiating stellate haidingerite-pseudomorph-after-pharmacolite). Research-grade spec from Handbook of Mineralogy (Palache/Berman/Frondel 1951 reissue 2001-2005) + Ferraris/Jones/Yerkess 1972 crystal structure refinement + Cassien/Herpin/Permingeat 1966 structure paper. Type locality Jáchymov; type pseudomorph occurrence Getchell mine Nevada.",
+      "audit_status": "reconciled v248 (2026-08-06). Transformation-only pharmacolite dehydration product via DEHYDRATION_TRANSITIONS (30 vadose steps or the 80°C heat path), preserving external habit and position. The shipped scenario association is Schneeberg/Jáchymov-style mineralization; Tsumeb is explicitly excluded because no pharmacolite parent or haidingerite product is supported by the audited locality catalogs. The global transformation remains live in Creative mode and documented localities. Research-grade spec from Handbook of Mineralogy + Ferraris, Jones & Yerkess 1972 + Cassien, Herpin & Permingeat 1966; type locality Jáchymov and documented pseudomorph occurrence Getchell mine, Nevada.",
       "late_stage_propensity": 1.0,
       "_late_stage_note": "Paramorph after pharmacolite — only ever late by definition (dehydration product); mirrors tincalconite/thenardite/meta-autunite/metatorbernite/metazeunerite/pararealgar pattern. Propensity 1.0.",
       "_transformation_only": true,
@@ -11830,7 +11927,6 @@
       "description": "NaCl, rock salt — the canonical chloride evaporite. Forms by evaporative concentration of Na-Cl-rich brines: closed-basin playas, sabkha, drained vugs in the supergene zone. Hopper-growth (skeletal cube with pyramidal hollows) is the signature high-supersaturation habit; clean cubes form when the brine concentrates slowly. Type localities: Wieliczka Salt Mine (Poland — meter-scale cubes, the cathedral carved in salt); Stassfurt (Germany — brilliant blue irradiated halite); Searles Lake (California — pink hoppered crystals from evaporation ponds with halobacterial carotenoids).",
       "scenarios": [
         "searles_lake",
-        "bisbee",
         "sabkha_dolomitization"
       ],
       "T_range_C": [
@@ -11903,6 +11999,8 @@
         "js"
       ],
       "audit_status": "v27 — evaporite chemistry pass. 2026-05-07 backfill from research-halite.md: added stalactitic_speleothem habit, restructured fluorescence (Mn²⁺ activator, weak white/yellow/orange-red LW), added spinel_law_rare twin (probability 0.005), added bacterial_pink (halobacterial carotenoid) + yellow (Fe impurity) + red_hematite_inclusion color rules, type-locality detail in description (Wieliczka / Stassfurt / Searles).",
+      "late_stage_propensity": 0.8,
+      "_late_stage_note": "SIM 239: high propensity for vadose efflorescence and terminal salt crusts. Halite commonly nucleates on already-dry, crowded surfaces, but remains slightly below the full-bypass potash/playa crust set because clean cubic halite also needs open brine-facing area.",
       "class_color": "#cccccc"
     },
     "borax": {
@@ -12031,7 +12129,7 @@
         }
       ],
       "class": "borate",
-      "description": "Na₂B₄O₇·5H₂O — borax with five water molecules gone. Appears in the simulator only as a paramorph product of borax: the external crystal shape is preserved (the cubic outline, the prismatic terminations, all the field marks) but the lattice has collapsed and the surface has bloomed white-powdery. A tincalconite specimen IS a former borax crystal, frozen mid-decay. Stable in any humidity — once dehydrated, it doesn’t re-hydrate.",
+      "description": "Na₂B₄O₇·5H₂O — borax with five water molecules gone. The simulator currently represents the common pseudomorph route: the external borax shape is preserved while the lattice dehydrates and the surface blooms white-powdery. Natural Searles Lake also contains primary 1–3 mm tincalconite crystals in contact with brine. The borax–tincalconite reaction is reversible at sufficiently high water activity; rehydration is a declared model boundary until the simulator records humidity and reversible phase history.",
       "scenarios": [
         "searles_lake"
       ],
@@ -13786,8 +13884,8 @@
         {"name": "drusy_crust", "wall_spread": 0.65, "void_reach": 0.35, "vector": "coating", "trigger": "low σ — thin drusy crusts in damp seams"}
       ],
       "class": "arsenate",
-      "description": "Zn₃(AsO₄)₂·8H₂O — monoclinic VIVIANITE-GROUP, Zn end-member (series with erythrite Co, annabergite Ni, hörnesite Mg, parasymplesite Fe²⁺). Hardness 2.5-3 (soft — fingernail-scratchable, diagnostic), density 3.33 g/cm³. Color pale rose-pink (cobaltian-zinc-tinge), carmine-red (with erythrite component), peach, pale lilac, or near-colorless when pure Zn; pure Zn end-member is white to very pale pink. Perfect {010} cleavage (vivianite-group signature). Forms strictly supergene at <35°C in damp Zn-rich oxidation pockets — the 8 H₂O is fragile, dehydrating rapidly above 50°C. Discriminator from erythrite/annabergite: Zn dominates over Co + Ni in fluid; if Co > 10 or Ni > 10, those win the vivianite-group slot. Substrate priority: erythrite > annabergite (epitactic — same structure) > smithsonite. Type locality Schneeberg, Saxony (Daubrée 1850) but Tsumeb produces well-formed crystals from deep workings. Field discriminator: pink-to-colorless soft (H 2.5-3) bladed crystals with perfect one-direction cleavage = vivianite-group; SG 3.3 lighter than austinite (4.1) or adamite (4.4). Refs: research dossier 2026-05; Daubrée 1850; Gebhard 1999 Tsumeb p. 190; Hill 1979 (structure); Magalhães et al. 1988; Handbook of Mineralogy v.IV.",
-      "scenarios": ["supergene_oxidation"],
+      "description": "Zn₃(AsO₄)₂·8H₂O — monoclinic VIVIANITE-GROUP, Zn end-member (series with erythrite Co, annabergite Ni, hörnesite Mg, parasymplesite Fe²⁺). Hardness 2.5-3 (soft — fingernail-scratchable, diagnostic), density 3.33 g/cm³. Color pale rose-pink (cobaltian-zinc-tinge), carmine-red (with erythrite component), peach, pale lilac, or near-colorless when pure Zn; pure Zn end-member is white to very pale pink. Perfect {010} cleavage (vivianite-group signature). Forms strictly supergene at <35°C in strongly acidic (pH < 3), damp Zn-rich oxidation pockets — the 8 H₂O is fragile, dehydrating rapidly above 50°C. Discriminator from erythrite/annabergite: the bounded solution-chemistry proxy requires Zn to exceed half of the molar dissolved Zn+Co+Ni cation pool and Ni to remain at or below 5 mol%; it does not claim to predict crystal-site occupancy without fluid–solid partition coefficients. Co substitution is extensive, while significant köttigite–Ni substitution is not supported by Ciesielczuk et al. Substrate priority: erythrite > annabergite (epitactic — same structure) > smithsonite. Type locality Schneeberg, Saxony (Daubrée 1850); at Tsumeb it is reported from the deep third oxidation zone zinc pocket, not the first-stage gossan. Field discriminator: pink-to-colorless soft (H 2.5-3) bladed crystals with perfect one-direction cleavage = vivianite-group; SG 3.3 lighter than austinite (4.1) or adamite (4.4). Refs: Ciesielczuk et al. 2020, doi:10.3390/min10060548; Hill 1979; Bowell 2014; Magalhães et al. 1988; Handbook of Mineralogy v.IV.",
+      "scenarios": [],
       "T_range_C": [5, 35],
       "T_optimum_C": [10, 25],
       "T_behavior": "narrow",
@@ -13795,8 +13893,8 @@
       "pH_dissolution_above": null,
       "redox_requirement": "oxidizing",
       "required_ingredients": {"Zn": 50, "As": 10},
-      "_ingredients_note": "v97 (2026-05-19): Zn ≥ 50, As(V) ≥ 10. CRITICAL: Co < 10 (erythrite wins), Ni < 10 (annabergite wins). pH 6-8, sweet spot 6.5-7.5. Sharp T cap — 35°C max, with smooth penalty above 25°C (the 8 H₂O dehydrates rapidly).",
-      "trace_ingredients": {"Co": "trace gives cobaltoan-koettigite pink tinge (more common in nature than pure Zn end)", "Ni": "trace mixes toward annabergite"},
+      "_ingredients_note": "SIM 259: Zn ≥ 50, As(V) ≥ 10, oxidizing, pH < 3. After ppm-to-mole conversion, the bounded solution proxy requires Zn to exceed 50% of dissolved Zn+Co+Ni cations and Ni to be ≤ 5 mol%; this is not a site-occupancy calculation. Co substitution remains allowed. Sharp T cap — 35°C max, with smooth penalty above 25°C (the 8 H₂O dehydrates rapidly).",
+      "trace_ingredients": {"Co": "trace gives cobaltoan-koettigite pink tinge (more common in nature than pure Zn end)", "Ni": "minor trace only; Ni-rich solution is assigned to annabergite competition and blocks the köttigite proxy"},
       "thermal_decomp_C": 50,
       "thermal_decomp_reaction": "Dehydrates above ~50°C — loses structural H₂O, converts to lower hydrates and ultimately anhydrous Zn₃(AsO₄)₂ phases.",
       "thermal_decomp_products": {},
@@ -13811,12 +13909,12 @@
           "_source": "Anthony Handbook v.IV. Koettigite (monoclinic C2/m, Zn₃(AsO₄)₂·8H₂O) is the Zn endmember of the vivianite-group. Less common in field collections than erythrite/annabergite; documented at Mapimí + Schneeberg. Same {010} contact twin behavior but rarer in observed specimens (data sparser); conservative p=0.02."
         }
       ],
-      "acid_dissolution": "Slowly soluble in dilute acid — Zn + AsO₄ released.",
+      "acid_dissolution": "No separate acid-dissolution threshold is modeled. The formation selector follows the documented pH < 3 stability field; dissolution in still more aggressive acid is not parameterized.",
       "habit": "bladed_lath",
       "color_rules": {"pale_pink": {"default": true, "trigger": "pale rose-pink to near-colorless (Zn end)"}, "carmine_red_cobaltoan": {"trigger": "Co > 0.5 — cobaltoan-koettigite, transitional toward erythrite carmine"}},
       "narrate_function": null,
       "runtimes_present": ["js"],
-      "audit_status": "new v97 (2026-05-19). Vivianite-group Zn end-member — completes the erythrite-annabergite-koettigite trio. Damp-niche cool-temperature mineral.",
+      "audit_status": "corrected SIM 259 (2026-08-08). Ciesielczuk et al. 2020 supplies the pH < 3 stability boundary and erythrite–köttigite solid solution; Hill 1979 independently confirms significant Co/Ni in type material. Tsumeb occurrence is restricted to the third-zone zinc pocket in Bowell 2014.",
       "late_stage_propensity": 0.85,
       "_late_stage_note": "Latest+dampest supergene niche — forms in cool damp pockets after erythrite/annabergite chemistry runs out of Co/Ni."
     },
@@ -16195,6 +16293,192 @@
       "_late_stage_note": "Paramorph after zeunerite — only ever late by definition (dehydration product).",
       "_transformation_only": true
     },
+    "birnessite": {
+      "formula": "(Na,Ca,K)x(Mn4+,Mn3+)O2·nH2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 2,
+      "max_size_cm": 2,
+      "growth_rate_mult": 0.25,
+      "habit_variants": [
+        {
+          "name": "laminated_manganese_wall_lining",
+          "wall_spread": 0.96,
+          "void_reach": 0.04,
+          "vector": "coating",
+          "trigger": "default low-temperature hydrous phase — continuous poorly crystalline layer-Mn-oxide film across the wetted cavity surface"
+        },
+        {
+          "name": "botryoidal_hydrous_crust",
+          "wall_spread": 0.82,
+          "void_reach": 0.18,
+          "vector": "coating",
+          "trigger": "higher supersaturation — coalesced black-brown hydrous Mn-oxide globules over a continuous film"
+        }
+      ],
+      "class": "oxide",
+      "description": "A variable, hydrous, poorly crystalline layer manganese oxide rather than a single fixed-composition MnO2 crystal. Birnessite is the scientifically appropriate first-class phase for many low-temperature stream, cave, subglacial and wet-wall manganese coatings. Potter and Rossman (1979) found stream deposits generally birnessite and cave/subglacial material resembling those stream deposits. The simulator therefore renders its booked mass as a broad nanocrystalline lining or coalesced crust, never as one trophy-sized prism. Exchangeable Na/Ca/K and water are structurally real but compositionally variable; the fixed growth ledger books Mn as the framework-limiting reagent and reports interlayer cations as traces rather than inventing an exact endmember.",
+      "scenarios": [],
+      "_requires_scenario_license": true,
+      "T_range_C": [5, 90],
+      "T_optimum_C": [15, 40],
+      "T_behavior": "low_temperature_hydrous",
+      "pH_dissolution_below": 5.2,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": { "Mn": 0.3 },
+      "_ingredients_note": "Mn plus oxidant are load-bearing. Ba >= 100 ppm diverts the framework to romanechite; Mg >= 25 ppm favors Mg-templated todorokite. Fe > 2×Mn suppresses Mn precipitation because Fe oxyhydroxides capture the earlier oxidation front.",
+      "trace_ingredients": {
+        "Na": "exchangeable interlayer cation in Na-birnessite",
+        "Ca": "exchangeable interlayer cation in natural hydrous birnessite",
+        "K": "exchangeable interlayer cation; high K may instead stabilize a hollandite-group phase"
+      },
+      "thermal_decomp_C": 150,
+      "thermal_decomp_reaction": "Progressive dehydration and layer-to-tunnel/recrystallization reactions; there is no single invariant decomposition temperature for compositionally variable natural birnessite.",
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "_twin_laws_note": "Poorly crystalline/nanocrystalline aggregate; macroscopic twin laws are not a meaningful visual discriminator.",
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 5.2,
+        "reaction": "Layer Mn(III/IV) oxide + H+ + reductant -> dissolved Mn2+ + H2O",
+        "products": { "Mn": 0.6 }
+      },
+      "habit": "laminated_manganese_wall_lining",
+      "color_rules": {
+        "brownish_black": { "default": true, "trigger": "poorly crystalline hydrous coating" },
+        "steel_black": { "trigger": "denser, more strongly oxidized aggregate" }
+      },
+      "narrate_function": null,
+      "runtimes_present": ["js"],
+      "audit_status": "SIM 249 first-class Mn surface phase. Phase identity follows Potter & Rossman 1979 morphology/mineralogy observations and Post 1999 layer/tunnel classification. The variable formula is deliberately not forced into a false pure endmember.",
+      "late_stage_propensity": 0.85,
+      "_late_stage_note": "Oxidative near-surface/wet-wall coating, commonly after primary Mn-bearing phases.",
+      "class_color": "#443d38"
+    },
+    "romanechite": {
+      "formula": "(Ba,H2O)2(Mn4+,Mn3+)5O10",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 2,
+      "max_size_cm": 5,
+      "growth_rate_mult": 0.22,
+      "habit_variants": [
+        {
+          "name": "dendritic_surface_film",
+          "wall_spread": 0.94,
+          "void_reach": 0.06,
+          "vector": "coating",
+          "trigger": "low-to-moderate supersaturation on an exposed wall or passive silicate substrate — branching surface dendrites, correctly identified as Ba-Mn tunnel oxide rather than pyrolusite"
+        },
+        {
+          "name": "botryoidal_reniform",
+          "wall_spread": 0.82,
+          "void_reach": 0.18,
+          "vector": "coating",
+          "trigger": "higher supersaturation — dense steel-black botryoidal/reniform Ba-Mn oxide crust"
+        }
+      ],
+      "class": "oxide",
+      "description": "Hydrated barium manganese oxide with a 2x3 tunnel framework. The tunnel Ba and water are structural: Ba is a required limiting reagent in the simulator, not a decorative trace. Potter and Rossman (1979) identified surface-exposed manganese dendrites as romanechite or a hollandite-group mineral and found no pyrolusite example. Consequently this phase owns the Ba-rich surface-dendrite field and renders as a wall-parallel branching film or botryoidal crust whose displayed area is derived from its booked mass.",
+      "scenarios": [],
+      "_requires_scenario_license": true,
+      "T_range_C": [5, 180],
+      "T_optimum_C": [15, 60],
+      "T_behavior": "low_temperature_tunnel_oxide",
+      "pH_dissolution_below": 5.2,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": { "Mn": 0.5, "Ba": 100 },
+      "_ingredients_note": "Ba >= 100 ppm is the authoritative tunnel-cation selector. Both Ba and Mn are booked by MINERAL_STOICHIOMETRY, so romanechite cannot grow after the Ba budget is exhausted.",
+      "trace_ingredients": {
+        "K": "minor tunnel substitution; a strongly K-dominant fluid belongs to a hollandite-group phase",
+        "Ca": "minor tunnel substitution",
+        "Mg": "minor tunnel substitution"
+      },
+      "thermal_decomp_C": 450,
+      "thermal_decomp_reaction": "Dehydration followed by collapse/recrystallization of the 2x3 tunnel framework at elevated temperature.",
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "_twin_laws_note": "Natural material is typically cryptocrystalline, fibrous or botryoidal; no macroscopic twin treatment is warranted for this rendering scale.",
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 5.2,
+        "reaction": "Ba-Mn tunnel oxide + H+ + reductant -> Ba2+ + Mn2+ + H2O",
+        "products": { "Ba": 0.15, "Mn": 0.6 }
+      },
+      "habit": "dendritic_surface_film",
+      "color_rules": {
+        "steel_black": { "default": true, "trigger": "dense tunnel-oxide aggregate" },
+        "brownish_black": { "trigger": "fine hydrous dendritic film" }
+      },
+      "narrate_function": null,
+      "runtimes_present": ["js"],
+      "audit_status": "SIM 249 first-class Ba-Mn tunnel oxide. Corrects the historical 'dendritic pyrolusite' misidentification and makes Ba a mass-balanced selector.",
+      "late_stage_propensity": 0.85,
+      "_late_stage_note": "Oxidative coating phase on exposed fracture and cavity surfaces.",
+      "class_color": "#272729"
+    },
+    "todorokite": {
+      "formula": "(Mg,Na,Ca)(Mn,Mg)6O12·3-4H2O",
+      "nucleation_sigma": 1.0,
+      "max_nucleation_count": 2,
+      "max_size_cm": 4,
+      "growth_rate_mult": 0.22,
+      "habit_variants": [
+        {
+          "name": "dendritic_mine_coating",
+          "wall_spread": 0.93,
+          "void_reach": 0.07,
+          "vector": "coating",
+          "trigger": "Mg-rich low-temperature wall film, especially on a birnessite-like precursor — the underground mine dendrite field of Potter and Rossman (1979)"
+        },
+        {
+          "name": "radiating_fibrous_mat",
+          "wall_spread": 0.78,
+          "void_reach": 0.22,
+          "vector": "coating",
+          "trigger": "higher supersaturation — radiating/felted bundles of hydrated 3x3 tunnel oxide across the cavity wall"
+        }
+      ],
+      "class": "oxide",
+      "description": "Hydrated manganese oxide with a large 3x3 tunnel framework. Mg-rich interlayers in a birnessite-like precursor template tunnel formation; Golden, Chen and Dixon (1986) produced well-crystallized todorokite by Mg exchange followed by hydrothermal treatment at 155 °C, and Zhao et al. (2015) used reflux treatment to show that interlayer cation identity and Mn oxidation state control conversion. Potter and Rossman (1979) found underground mine dendrites to be todorokite, but did not establish a direct precipitation pathway. The simulator therefore has no bare-wall or room-temperature route: it converts an active, mass-booked birnessite coating in place at 95–200 °C, preserves the precursor Mn inventory, books exchanged Mg at a 1:6 formula ratio, and renders the product as wall-parallel mine dendrites or fibrous mats.",
+      "scenarios": [],
+      "_requires_scenario_license": true,
+      "T_range_C": [95, 200],
+      "T_optimum_C": [100, 160],
+      "T_behavior": "hydrothermal_precursor_transformation",
+      "pH_dissolution_below": 5.2,
+      "pH_dissolution_above": null,
+      "redox_requirement": "oxidizing",
+      "required_ingredients": { "Mn": 0.5, "Mg": 25 },
+      "_ingredients_note": "Mg >= 25 ppm is a conservative simulator-scale fluid gate for the Mg-templated layer-to-tunnel pathway. Existing birnessite framework Mn is preserved rather than spent twice; exchanged structural Mg is booked at 1 Mg per 6 Mn formula mass. Ba-rich fluid diverts initial coating precipitation to romanechite.",
+      "trace_ingredients": {
+        "Na": "interlayer precursor cation; Na pre-exchange can assist later Mg exchange",
+        "Ca": "possible tunnel/interlayer cation",
+        "Ni": "common minor large-tunnel occupant in natural marine/hydrothermal material"
+      },
+      "thermal_decomp_C": 400,
+      "thermal_decomp_reaction": "Dehydration followed by collapse of the hydrated 3x3 tunnel framework and recrystallization to denser Mn oxides.",
+      "thermal_decomp_products": {},
+      "fluorescence": null,
+      "_twin_laws_note": "Fine fibrous/tunnel-oxide aggregate at simulator scale; macroscopic twins are not an appropriate visual discriminator.",
+      "twin_laws": [],
+      "acid_dissolution": {
+        "pH_threshold": 5.2,
+        "reaction": "Hydrated Mg-Mn tunnel oxide + H+ + reductant -> Mg2+ + Mn2+ + H2O",
+        "products": { "Mg": 0.1, "Mn": 0.6 }
+      },
+      "habit": "dendritic_mine_coating",
+      "color_rules": {
+        "brownish_black": { "default": true, "trigger": "hydrated poorly crystalline tunnel oxide" },
+        "steel_black": { "trigger": "denser fibrous aggregate" }
+      },
+      "narrate_function": null,
+      "runtimes_present": ["js"],
+      "audit_status": "SIM 250 first-class Mg-Mn tunnel oxide. Formation is restricted to an in-place, mass-ledger-preserving Mg exchange of active birnessite in a 95–200 °C hydrothermal window; no bare-wall/25 °C route is claimed. Potter & Rossman support underground-mine dendrite identity, not mechanism.",
+      "late_stage_propensity": 0.9,
+      "_late_stage_note": "Commonly a transformation/overgrowth product after a hydrous layer-Mn-oxide precursor.",
+      "class_color": "#38332f"
+    },
     "pyrolusite": {
       "formula": "MnO2",
       "nucleation_sigma": 1.2,
@@ -16246,7 +16530,7 @@
         }
       ],
       "class": "oxide",
-      "description": "MnO₂ — tetragonal Mn(IV) oxide with the rutile structure (P4₂/mnm, a=4.39 Å, c=2.87 Å), the default Mn⁴⁺ supergene endmember. Iron-black to dark steel-gray; black streak (NOT brown — this is the field discriminator from manganite, hardness bimodal at 6 well-crystallized vs 2 massive earthy 'soils-the-fingers' aggregate). Forms by oxidation of Mn²⁺ in two modes: low-T continental weathering / lacustrine / bog (mode A, ~95% of occurrences, T 5-40°C, pH 6.5-9, strongly oxidizing per the Hem 1963 Pourbaix diagram) and low-T hydrothermal vein (mode B, <250°C, replaces manganite in cooling vugs, source of the rare prismatic Ilfeld/Ilmenau crystals). Pyrolusite occupies the HIGH-Eh corner of the Mn⁴⁺ field; the discriminator from its catalog cousins is canonical: romanechite (Ba > 100 ppm tunnel cation), cryptomelane (K > 50 ppm), coronadite (Pb > 30 ppm), hausmannite (T > 250°C, the spinel-distorted Mn²⁺/Mn³⁺ phase), manganite (γ-MnOOH, lower Eh / cooler, dehydrates TO pyrolusite as the polianite pseudomorph). Fe-Mn supergene separation: when Fe > 2*Mn, goethite captures the oxidation budget first and pyrolusite is residual (Hem 1963 Eh sequence — Fe oxidizes ~+0.2 V earlier than Mn). IMPORTANT (Potter & Rossman 1979 Am.Min. 64:1219): the classic 'dendritic pyrolusite' in moss agate and limestone is NOT pyrolusite — it's cryptomelane / romanechite / birnessite microcrystalline aggregates. The engine refuses to ship a dendritic habit; dendrites route to those cousins when their engines land. Type-locality folklore correction: most references cite Horní Blatná (Platten) Czech Republic, but Haidinger 1827 originally used material from Eiserfeld (Siegen, Westphalia), Elgersburg, and Ilmenau (Thuringia, Germany) — Ilmenau is the defensible canonical type. Famous localities: Imini Morocco (high-grade karst-hosted ore, two-stage paragenesis per Dekoninck et al. 2016 Min.Dep. 51:13), Ilfeld Harz (classic radiating-fibrous polianite pseudomorphs), Cuyuna Range Minnesota, Mapimí Ojuela Mexico (botryoidal on calcite). Sources: Anthony et al. Handbook v.III; Dana 7th v.I pp.555-561; Potter & Rossman 1979; Birkner & Navrotsky 2017 PNAS 114:E1046 (Mn-oxide cascade thermodynamics: Mn²⁺ → hausmannite → groutite → bixbyite → pyrolusite is the thermodynamic endpoint); Champness 1971 Min.Mag. 38:245 (polianite mechanism); Hem 1963 USGS WSP 1667-A (Pourbaix + autocatalysis on existing MnO₂ surfaces); Post 1999 PNAS 96:3447 (tunnel-structure classification, pyrolusite as 1×1 tunnel endmember of the rutile-hollandite-romanechite-todorokite series).",
+      "description": "MnO₂ — tetragonal rutile-structure Mn(IV) oxide (P4₂/mnm, a=4.39 Å, c=2.87 Å), retained as the crystalline high-Eh endmember of the simulator's Mn-oxide family. Iron-black to dark steel-gray with a black streak; well-crystallized material is hard and metallic, while earthy aggregates can be soft and sooty. It can form during strongly oxidizing weathering and in low-temperature hydrothermal veins, including prismatic or radiating polianite-style material after manganite. It is not a morphology label for every black coating. Potter and Rossman (1979) found surface dendrites to be romanechite or hollandite-group material, underground mine dendrites to be todorokite, and many stream/cave coatings to be birnessite; they identified no pyrolusite dendrite. SIM 249 therefore routes low-temperature hydrous films, Ba-rich surface dendrites and Mg-templated mine coatings to first-class birnessite, romanechite and todorokite engines. Pyrolusite has no dendritic habit and competes as a later crystalline endpoint. Sources: Anthony et al. Handbook v.III; Potter & Rossman 1979; Champness 1971; Hem 1963; Post 1999; Birkner & Navrotsky 2017.",
       "scenarios": [
         "supergene_oxidation"
       ],
@@ -16265,7 +16549,7 @@
       "required_ingredients": {
         "Mn": 0.2
       },
-      "_ingredients_note": "Mn ≥ 0.2 ppm matches Hem's (1963) lower-bound supergene threshold; autocatalysis on existing MnO₂ surfaces (Hem 1963) means once the field fires it stays lit. Oxidizing required (Eh +0.4 to +1.0 V at pH 7) — pyrolusite is the highest-Eh Mn(IV) field endmember; uses oxideRedoxAvailable gate threshold 0.5 like hematite/magnetite/cuprite. Discriminator fork via soft suppressors (not hard cutoffs to allow weak co-deposition): Fe > 2*Mn → sigma × 0.3 (goethite/lepidocrocite capture the oxidation budget first); Ba > 100 → sigma × 0.5 (would route to romanechite); K > 50 → sigma × 0.4 (cryptomelane); Pb > 30 → sigma × 0.3 (coronadite); SiO₂ > 200 → sigma × 0.7 (todorokite + Mn-silicates compete). Hard cutoff T > 250 (hausmannite field). pH sweet spot 7-9 (Hem 1963 kinetic optimum at pH 8.5).",
+      "_ingredients_note": "Mn ≥ 0.2 ppm matches Hem's (1963) lower-bound supergene threshold; autocatalysis on existing MnO₂ surfaces (Hem 1963) means once the crystalline field fires it can persist. Oxidizing required. SIM 249 phase competition is first-class: T ≤ 90°C hydrous films favor birnessite; Ba ≥ 100 ppm routes mass to romanechite; Mg ≥ 25 ppm favors todorokite; K > 50 and Pb > 30 remain soft suppressors for not-yet-implemented hollandite-group endmembers; Fe > 2×Mn lets Fe oxyhydroxides capture the earlier oxidation front. Hard cutoff T > 250°C reserves the higher-temperature Mn-oxide field.",
       "trace_ingredients": {
         "Ba": "trace tunnel cation; partitions weakly into pyrolusite compared to romanechite",
         "K": "trace tunnel cation; partitions weakly into pyrolusite compared to cryptomelane",
@@ -16316,7 +16600,7 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "new v102 (2026-05-19). Default Mn⁴⁺ supergene endmember; discriminator-fork engine encodes the canonical Mn-oxide family decision tree (Ba → romanechite, K → cryptomelane, Pb → coronadite, T>250 → hausmannite, lower Eh → manganite, Fe-dominated → goethite). Sister Mn-oxide engines (romanechite/cryptomelane/coronadite/hausmannite/manganite) not yet wired — gates encode the suppressor so pyrolusite doesn't claim the full Mn(IV) budget at tunnel-cation localities. Substrate priority: rhodochrosite (epitactic replacement — 'rotted rhomb' supergene texture) > manganite (polianite pseudomorph — reserved for when manganite lands) > siderite (Mn-bearing → Fe-Mn 'wad') > dolomite (Imini karst) > calcite (Mapimí) > goethite (Fe-Mn rind) > wall. Per Potter & Rossman 1979 NO dendritic habit (the textbook dendrites are cryptomelane). First dogfood test of the vugg-add-mineral skill.",
+      "audit_status": "v102 pyrolusite engine, revised SIM 249. Pyrolusite is the crystalline high-Eh endmember, not the name for every black surface aggregate. Birnessite, Ba-bearing romanechite and Mg-templated todorokite are now first-class mass-balanced competitors and own the appropriate hydrous/dendritic coating fields. K-rich cryptomelane/coronadite, hausmannite and manganite remain explicit future species, with suppressors preventing pyrolusite from silently claiming their full budgets. Per Potter & Rossman 1979 pyrolusite still has no dendritic habit.",
       "late_stage_propensity": 0.8,
       "_late_stage_note": "Supergene weathering endmember — by definition late-stage (the terminal Mn(IV) oxidation product). High propensity matches its position as the final phase in the Mn²⁺ → hausmannite → groutite → bixbyite → pyrolusite oxidation cascade (Birkner & Navrotsky 2017).",
       "class_color": "#2b2b2b"
@@ -16329,18 +16613,18 @@
       "growth_rate_mult": 0.25,
       "habit_variants": [
         {
-          "name": "pseudomorph_after_pyromorphite",
+          "name": "encrusting_pyromorphite",
           "wall_spread": 0.55,
           "void_reach": 0.45,
           "vector": "coating",
-          "trigger": "on pyromorphite substrate — the iconic Roughten Gill cabinet aesthetic. Cobalt-blue botryoidal crust preserves the hexagonal-prism outline of underlying pyromorphite; residual green pyromorphite tips often project through the blue crust."
+          "trigger": "on pyromorphite substrate — the iconic Roughton Gill cabinet aesthetic. Cobalt-blue botryoidal plumbogummite encrusts the hexagonal prisms; residual active green pyromorphite tips can project through the blue crust. This renderer relationship is an overgrowth, not a booked replacement."
         },
         {
-          "name": "pseudomorph_after_mimetite",
+          "name": "encrusting_mimetite",
           "wall_spread": 0.55,
           "void_reach": 0.45,
           "vector": "coating",
-          "trigger": "on mimetite substrate — less common but documented at Roughten Gill; same hexagonal-prism preservation mechanism as pyromorphite pseudomorph."
+          "trigger": "on mimetite substrate — a less common documented encrusting relationship; the underlying mimetite remains an active parent unless a separately booked dissolution process removes it."
         },
         {
           "name": "botryoidal_mammillary",
@@ -16358,7 +16642,7 @@
         }
       ],
       "class": "phosphate",
-      "description": "PbAl₃(PO₄)₂(OH)₅·H₂O — trigonal Pb-Al-PO₄ supergene endmember, alunite supergroup (beudantite group). The terminal phase of the Pb-PO₄ supergene paragenesis: forms LATE, after pyromorphite has had time to nucleate, then pseudomorphs it as Al accumulates from continued silicate-wallrock weathering. Type locality Roughten Gill (Caldbeck Fells, Cumbria, England) — Hartley J. (1882) MinMag 5:21 original description; Förtsch E.B. (1967) MinMag 36:530 re-examined the type material by X-ray + IR + optical methods and showed it to be a plumbogummite-hinsdalite-hidalgoite mix-crystal (alunite-supergroup endmember nomenclature; a 7.018 Å, c 16.784 Å trigonal; ω 1.680, ε 1.698). The headline cabinet aesthetic — known to UK mineral collectors as the standard Caldbeck specimen — is cobalt-blue/sky-blue/lavender/turquoise botryoidal crusts pseudomorphing pyromorphite, with residual green pyromorphite hexagonal-prism tips visible through the blue crust. The Cu trace at typical supergene levels (1-15 ppm) drives the diagnostic blue color; pure Pb-Al-PO₄ would be lavender-to-white. Found at many other UK supergene localities (Force Crag, Saddleback Old Mine, Sweet Home Mine analogs) but Roughten Gill remains the type and the most-cited specimen source. References: Hartley J. (1882) MinMag 5:21 type description; Förtsch E.B. (1967) MinMag 36:530 type-material correction; Russell A. (1925) MinMag 20:257 revisit; Bridges et al. (2011) JRS 14:3 modern Roughten Gill review; Cooper M.P. & Stanley C.J. (1990) Minerals of the English Lake District: Caldbeck Fells (canonical monograph).",
+      "description": "PbAl₃(PO₄)₂(OH)₅·H₂O — trigonal Pb-Al-PO₄ supergene endmember, alunite supergroup (beudantite group). At Roughton Gill it forms late in the Pb-PO₄ supergene sequence, after pyromorphite, as cobalt-blue to lavender botryoidal crusts encrusting locally arsenian pyromorphite; surviving green parent tips may remain visible. The simulator therefore models a coexisting encrusting overgrowth and does not claim mass-balanced pseudomorphic replacement. Type locality Roughten Gill (Caldbeck Fells, Cumbria, England) — Hartley J. (1882) MinMag 5:21 original description; Förtsch E.B. (1967) MinMag 36:530 re-examined the type material by X-ray + IR + optical methods and showed it to be a plumbogummite-hinsdalite-hidalgoite mix-crystal (alunite-supergroup endmember nomenclature; a 7.018 Å, c 16.784 Å trigonal; ω 1.680, ε 1.698). The Cu trace at typical supergene levels (1-15 ppm) drives the diagnostic blue color; pure Pb-Al-PO₄ would be lavender-to-white. Found at many other UK supergene localities (Force Crag, Saddleback Old Mine, Sweet Home Mine analogs) but Roughten Gill remains the type and the most-cited specimen source. References: Hartley J. (1882) MinMag 5:21 type description; Förtsch E.B. (1967) MinMag 36:530 type-material correction; Russell A. (1925) MinMag 20:257 revisit; Bridges et al. (2011) JRS 14:3 modern Roughten Gill review; Cooper M.P. & Stanley C.J. (1990) Minerals of the English Lake District: Caldbeck Fells (canonical monograph).",
       "scenarios": [
         "roughten_gill"
       ],
@@ -16379,7 +16663,7 @@
         "Al": 3,
         "P": 2
       },
-      "_ingredients_note": "Pb ≥ 30 (supergene Pb-rich environment) + Al ≥ 3 (KEY discriminator — aluminous silicate wallrock required, distinguishes plumbogummite from other Pb-PO4 phases) + P ≥ 2 (biological / meteoric PO4 source). Cl > 30 mildly suppresses plumbogummite via pyromorphite stability — high Cl keeps Pb-PO4 as pyromorphite rather than replacing to Al-PO4. T 5-50°C oxidizing supergene window per Hartley 1882 + Bridges 2011.",
+      "_ingredients_note": "Pb ≥ 30 (supergene Pb-rich environment) + Al ≥ 3 (KEY discriminator — aluminous silicate wallrock required, distinguishes plumbogummite from other Pb-PO4 phases) + P ≥ 2 (biological / meteoric PO4 source). Cl > 30 mildly suppresses plumbogummite relative to pyromorphite stability; this competition does not itself consume or transform a pre-existing pyromorphite crystal. T 5-50°C oxidizing supergene window per Hartley 1882 + Bridges 2011.",
       "trace_ingredients": {
         "Cu": "1-15 ppm trace gives the characteristic cobalt-blue / sky-blue Roughten Gill color (the diagnostic specimen aesthetic); higher Cu drifts toward deep blue Cu-bearing alunite-supergroup end-members",
         "Fe": "5+ ppm shifts color toward pale yellow-tan (drift toward beudantite, the Fe-PO4 endmember of the alunite supergroup)",
@@ -16399,7 +16683,7 @@
         "quencher": null,
         "status": "Non-fluorescent under standard SW/MW/LW UV. The Pb²⁺ + Al³⁺ + Cu²⁺ trace combination provides no fluorescence activator (Pb²⁺ at high concentrations in mineral lattice is a quencher rather than activator; Cu²⁺ trace amounts are likewise non-fluorescent). Visible cobalt-blue color is absorption + electronic transitions in Cu²⁺-Pb²⁺-O charge transfer, not fluorescence."
       },
-      "_twin_laws_note": "Intentionally empty — plumbogummite (PbAl₃(PO₄)₂(OH)₅·H₂O, trigonal R3̄m) habit code 'pseudomorph_after_pyromorphite' captures its typical occurrence as a supergene pseudomorph replacing earlier pyromorphite. Doesn't nucleate fresh as euhedral individuals at vugg-scale; the pseudomorph inherits external habit from pyromorphite but no twin behavior is documented for either the replacement or the rare primary occurrences. v138 phosphate batch.",
+      "_twin_laws_note": "Intentionally empty — plumbogummite (PbAl₃(PO₄)₂(OH)₅·H₂O, trigonal R3̄m) is represented here as a botryoidal encrustation over an earlier substrate, not as an individual euhedral crystal or a simulated lattice replacement. No twin behavior is documented for the crust or the rare crystallized occurrences. Corrected from the older unbooked pseudomorph label in SIM 257.",
       "twin_laws": [],
       "acid_dissolution": {
         "pH_threshold": 4.0,
@@ -16410,7 +16694,7 @@
           "P": 0.08
         }
       },
-      "habit": "pseudomorph_after_pyromorphite",
+      "habit": "encrusting_pyromorphite",
       "color_rules": {
         "cobalt_blue": {
           "default": true,
@@ -16430,9 +16714,9 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "new v108 (2026-05-20). Pb-Al-PO4 alunite-supergroup supergene endmember; completes the type-locality story for the v107 Roughten Gill scenario. Substrate priority: pyromorphite (the iconic pseudomorph substrate — cobalt-blue crust on hexagonal-prism outline) > mimetite (less common Roughten Gill substrate) > cerussite > anglesite > galena_dissolving > wall. Headline cabinet aesthetic IS the pseudomorph_after_pyromorphite habit. Discriminator from pyromorphite: pyromorphite needs Cl ≥ 5; plumbogummite needs Al ≥ 3 + Cl < 30 (high Cl favors pyromorphite stability). Per Hartley 1882 + Förtsch 1967 + Bridges 2011 + Cooper & Stanley 1990. Co-eligible alunite-supergroup endmembers (hinsdalite + hidalgoite + beudantite + corkite) noted as future add-mineral candidates per the v107 dossier — Förtsch 1967 demonstrated Hartley's type material is actually a mix-crystal of the first three. Plumbogummite ships first as the dominant species.",
+      "audit_status": "Reconciled SIM 257. Pb-Al-PO4 alunite-supergroup supergene endmember. Substrate priority remains pyromorphite > mimetite > cerussite > anglesite > dissolving galena > wall, but the Roughton Gill relationship is explicitly an encrusting botryoidal overgrowth on an older active pyromorphite, not an unbooked pseudomorphic replacement. Alternate substrates remain globally reachable; only Roughton Gill imposes its authored late pyromorphite-first chronology. Discriminator from pyromorphite: pyromorphite needs Cl ≥ 5; plumbogummite needs Al ≥ 3 + Cl < 30 (high Cl favors pyromorphite stability). Per Hartley 1882 + Förtsch 1967 + Bridges 2011 + Cooper & Stanley 1990. Co-eligible alunite-supergroup endmembers (hinsdalite + hidalgoite + beudantite + corkite) remain future candidates; Förtsch 1967 demonstrated Hartley's type material is actually a mix-crystal of the first three.",
       "late_stage_propensity": 0.9,
-      "_late_stage_note": "Terminal Pb-Al-PO4 of the supergene paragenesis — by definition late-stage. High propensity matches its position as the final phase that replaces pyromorphite after sufficient wallrock weathering has accumulated Al in the fluid (geologically requires 10^4-10^6 years of supergene window persistence).",
+      "_late_stage_note": "Late Pb-Al-PO4 of the Roughton Gill supergene paragenesis. High propensity matches its occurrence as an encrusting crust after sufficient wall-rock weathering has accumulated Al in the fluid; the parent substrate can remain present.",
       "class_color": "#4a5fc8"
     },
     "datolite": {
@@ -17816,10 +18100,8 @@
         }
       ],
       "class": "silicate",
-      "description": "NaCa₂Al₅Si₅O₂₀·6H₂O — orthorhombic (Pncn, pseudotetragonal) framework silicate, the EARLIEST and most-aluminous (Si/Al≈1) of the common basalt-amygdule zeolites. H 5-5.5, density 2.23-2.39, vitreous-pearly; white/yellow/pink/green, often concentrically zoned. The famous 'thomsonite eyes' — radiating spherical botryoidal nodules with concentric colour banding — are the Lake Superior (Isle Royale, Grand Marais MN) gem/lapidary material (the green variety is 'lintonite'). First zeolite in the Deccan cavity sequence (smectite → calcite → THOMSONITE → natrolite → analcime → scolecite/mesolite → stilbite → heulandite → apophyllite); later zeolites nucleate ON it. Being Si/Al≈1, it is favored at LOW silica activity — the clean discriminator from the higher-Si natrolite group (Si/Al≈1.5); the engine uses a soft low-silica preference (Na/Ca does NOT cleanly separate thomsonite from mesolite — both are Na-Ca, thomsonite just more-Ca + lower-Si). Type locality Old Kilpatrick, Dunbartonshire, Scotland (named for Dr Thomas Thomson). Field discriminator: the concentric spherical eyes are diagnostic; biaxial (+); orthorhombic (vs monoclinic scolecite/mesolite); much of Lake Superior 'thomsonite' is actually prehnite/mesolite by XRD — distinguish by hardness + optics. Refs: Anthony et al. Handbook of Mineralogy (thomsonite-Ca); Wise & Tschernich 1978 Can.Mineral. 16:487; Coombs et al. 1997; Gatta et al. 2010 Am.Mineral. 95:495.",
-      "scenarios": [
-        "deccan_zeolite"
-      ],
+      "description": "NaCa₂Al₅Si₅O₂₀·6H₂O — orthorhombic (Pncn, pseudotetragonal) framework silicate, a highly aluminous (Si/Al≈1) basalt-amygdule zeolite. H 5-5.5, density 2.23-2.39, vitreous-pearly; white/yellow/pink/green, often concentrically zoned. The famous 'thomsonite eyes' — radiating spherical botryoidal nodules with concentric colour banding — are the Lake Superior (Isle Royale, Grand Marais MN) gem/lapidary material (the green variety is 'lintonite'). Relative order varies between localities and even neighboring cavities; authored scenarios therefore supply locality-specific paragenetic windows instead of a universal sequence. Being Si/Al≈1, it is favored at LOW silica activity — the clean discriminator from the higher-Si natrolite group (Si/Al≈1.5); the engine uses a soft low-silica preference (Na/Ca does NOT cleanly separate thomsonite from mesolite — both are Na-Ca, thomsonite just more-Ca + lower-Si). Type locality Old Kilpatrick, Dunbartonshire, Scotland (named for Dr Thomas Thomson). Field discriminator: the concentric spherical eyes are diagnostic; biaxial (+); orthorhombic (vs monoclinic scolecite/mesolite); much of Lake Superior 'thomsonite' is actually prehnite/mesolite by XRD — distinguish by hardness + optics. Refs: Anthony et al. Handbook of Mineralogy (thomsonite-Ca); Wise & Tschernich 1978 Can.Mineral. 16:487; Coombs et al. 1997; Gatta et al. 2010 Am.Mineral. 95:495.",
+      "scenarios": [],
       "T_range_C": [
         40,
         150
@@ -17887,9 +18169,9 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "new v202 (2026-06-17). Orthorhombic Pncn, the earliest + most-aluminous (Si/Al~1) basalt-amygdule zeolite. Completes the Deccan early-zeolite suite with scolecite/mesolite (v201) + stilbite/heulandite (v200). The clean discriminator from the natrolite group is a soft LOW-silica preference (not Na/Ca — both are Na-Ca). Substrate priority: early calcite > silica veneer > smectite-lined wall; the later natrolite group + sheet zeolites nucleate ON thomsonite (wired into _nuc_scolecite/_nuc_mesolite). Deccan Na=80 (from v201) supplies the essential-minor Na. Per Anthony Handbook + Wise & Tschernich 1978.",
+      "audit_status": "reconciled v248 (2026-08-06). Orthorhombic Pncn, highly aluminous (Si/Al~1) basalt-amygdule zeolite. The clean discriminator from the natrolite group is a soft LOW-silica preference (not Na/Ca — both are Na-Ca). Substrate priority is morphological testimony only; locality-specific chronology belongs to scenario nucleation windows. Thomsonite remains globally available but is excluded from the authored Savda–Nashik archetype because Sukheswala et al. (1974) instead identify scolecite + mesolite as its first zeolites. Per Anthony Handbook + Wise & Tschernich 1978 for species and habit; scenario ordering per its locality source.",
       "late_stage_propensity": 0.4,
-      "_late_stage_note": "EARLIEST zeolite — forms on the fresh cavity surface after the smectite clay lining + early calcite, before natrolite/analcime/scolecite/mesolite and the sheet zeolites. The low late-stage propensity reflects its early paragenetic slot.",
+      "_late_stage_note": "Low late-stage propensity is a global kinetic prior, not a universal paragenetic claim; authored scenarios may gate or exclude thomsonite according to locality evidence.",
       "class_color": "#e0d8cc"
     },
     "chabazite": {
@@ -17936,10 +18218,8 @@
         }
       ],
       "class": "silicate",
-      "description": "Ca₂Al₂Si₄O₁₂·6H₂O (chabazite-Ca, per-Ca CaAl₂Si₄O₁₂·6H₂O) — trigonal (R-3m) framework silicate, the LATE, intermediate-silica (Si/Al≈2) member of the basalt-amygdule zeolite suite. H 4-5, density 2.05-2.16 (conspicuously light), vitreous; colorless/white/flesh-pink. Very hydrous (12 H₂O per cell). The signature habit is the rhombohedral pseudo-cube — a near-90° rhombohedron that mimics a cube — plus the famous phacolite penetration twins (lens-shaped twinned aggregates, twin axis [0001]) and the Na-rich tabular herschelite. A chabazite-group SERIES (chabazite-Ca/-Na/-K/-Sr by dominant extra-framework cation, Coombs et al. 1997); the cation runs Ca > Na > K in frequency and K is NOT required — chabazite-Ca is the basalt-amygdule default. A LATE perching phase: forms after the sheet zeolites + apophyllite (with mordenite, before/with late calcite), nucleating on the earlier zeolite lining. Field discriminator vs CALCITE (the classic trap — the pseudo-cube rhomb looks like a calcite rhomb/cube): chabazite's {101̄1} cleavage is POOR (calcite's is perfect, three directions), it does NOT effervesce in acid, it is harder (4-5 vs 3) and notably lighter (2.1 vs 2.71); optically weakly birefringent + anomalously biaxial/sectored. Type area Sicily (Aci Castello / Cyclopean Isles, historical); famous from Bohemia (Aussig/Ústí), Nova Scotia (Wasson Bluff), the Deccan (Pune), Iceland. Refs: Passaglia & Sheppard 2001 RiMG 45:69 (crystal chemistry, R=0.67, Ca-DEC); Coombs et al. 1997 Can.Mineral. 35:1571; Akizuki & Konno 1987 Mineral.Mag. 51:427 (phacolite twinning); Calligaris et al. 1982 Zeolites (R-3m).",
-      "scenarios": [
-        "deccan_zeolite"
-      ],
+      "description": "Ca₂Al₂Si₄O₁₂·6H₂O (chabazite-Ca, per-Ca CaAl₂Si₄O₁₂·6H₂O) — trigonal (R-3m) framework silicate, an intermediate-silica (Si/Al≈2) member of the basalt-amygdule zeolite suite. H 4-5, density 2.05-2.16 (conspicuously light), vitreous; colorless/white/flesh-pink. Very hydrous (12 H₂O per cell). The signature habit is the rhombohedral pseudo-cube — a near-90° rhombohedron that mimics a cube — plus the famous phacolite penetration twins (lens-shaped twinned aggregates, twin axis [0001]) and the Na-rich tabular herschelite. A chabazite-group SERIES (chabazite-Ca/-Na/-K/-Sr by dominant extra-framework cation, Coombs et al. 1997); the cation runs Ca > Na > K in frequency and K is NOT required — chabazite-Ca is the basalt-amygdule default. Relative paragenetic order is locality-dependent; substrate preferences do not establish chronology. Field discriminator vs CALCITE (the classic trap — the pseudo-cube rhomb looks like a calcite rhomb/cube): chabazite's {101̄1} cleavage is POOR (calcite's is perfect, three directions), it does NOT effervesce in acid, it is harder (4-5 vs 3) and notably lighter (2.1 vs 2.71); optically weakly birefringent + anomalously biaxial/sectored. Type area Sicily (Aci Castello / Cyclopean Isles, historical); famous from Bohemia (Aussig/Ústí), Nova Scotia (Wasson Bluff), the Deccan (Pune), Iceland. Refs: Passaglia & Sheppard 2001 RiMG 45:69 (crystal chemistry, R=0.67, Ca-DEC); Coombs et al. 1997 Can.Mineral. 35:1571; Akizuki & Konno 1987 Mineral.Mag. 51:427 (phacolite twinning); Calligaris et al. 1982 Zeolites (R-3m).",
+      "scenarios": [],
       "T_range_C": [
         40,
         150
@@ -17957,7 +18237,7 @@
         "Al": 4,
         "SiO2": 200
       },
-      "_ingredients_note": "Ca ≥ 60 + Al ≥ 4 + SiO2 ≥ 200 (intermediate-Si floor, Si/Al~2 — above thomsonite's 120 + the natrolite group's 150, below the high-Si demand of the sheet zeolites). T 40-150°C, sweet spot 50-110°C (LATE, cool). pH 7.0-10.5 alkaline. Redox-insensitive. CATION-FLEXIBLE: the supersat uses a joint (Ca+Na+K) extra-framework charge budget — Ca dominant selects chabazite-Ca; K is NOT required (K-dominance is a rare special case); Na-dominance shifts HABIT to herschelite, not species failure. Activity correction applied.",
+      "_ingredients_note": "Ca ≥ 60 + Al ≥ 4 + SiO2 ≥ 200 (intermediate-Si floor, Si/Al~2 — above thomsonite's 120 + the natrolite group's 150, below the high-Si demand of the sheet zeolites). T 40-150°C, sweet spot 50-110°C (cool amygdule conditions; relative order is locality-dependent). pH 7.0-10.5 alkaline. Redox-insensitive. CATION-FLEXIBLE: the supersat uses a joint (Ca+Na+K) extra-framework charge budget — Ca dominant selects chabazite-Ca; K is NOT required (K-dominance is a rare special case); Na-dominance shifts HABIT to herschelite, not species failure. Activity correction applied.",
       "trace_ingredients": {
         "Na": "secondary extra-framework cation; Na > Ca shifts the habit to tabular herschelite (chabazite-Na)",
         "K": "optional extra-framework cation; K-dominance = chabazite-K (rare)",
@@ -18003,9 +18283,9 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "new v203 (2026-06-17). Trigonal R-3m, the late + intermediate-Si (Si/Al~2) basalt-amygdule zeolite. Completes the Deccan zeolite suite (thomsonite/natrolite-group/sheet zeolites already shipped v200-202). Cation-flexible (Ca>Na>K, K not required — chabazite-Ca is the amygdule default, confirmed firing in the Ca-dominant Deccan fluid). LATE perching phase: substrate priority earlier zeolites (sheet > fibrous) > calcite > wall; wired LAST in the silicate nucleation iterator. The rhombohedral pseudo-cube + phacolite twins are the signature; the calcite-lookalike trap is documented in the field-discriminator note. Per Passaglia & Sheppard 2001 + Coombs et al. 1997.",
+      "audit_status": "reconciled v248 (2026-08-06). Trigonal R-3m, intermediate-Si (Si/Al~2) basalt-amygdule zeolite. Cation-flexible (Ca>Na>K, K not required — chabazite-Ca is the amygdule default). Substrate preference for existing zeolites is morphological testimony only, not a universal late-stage order. Chabazite remains globally available but is excluded from the authored Savda–Nashik archetype because the selected locality sequence does not place it. The rhombohedral pseudo-cube + phacolite twins are the signature; the calcite-lookalike trap is documented in the field-discriminator note. Per Passaglia & Sheppard 2001 + Coombs et al. 1997; scenario ordering per its locality source.",
       "late_stage_propensity": 0.8,
-      "_late_stage_note": "LATE zeolite — forms after the sheet zeolites + apophyllite, with mordenite, before/with the late calcite. High late-stage propensity reflects its perching position near the end of the cavity-fill sequence.",
+      "_late_stage_note": "High late-stage propensity is a global kinetic prior, not a universal sequence; authored scenarios may place or exclude chabazite according to locality evidence.",
       "class_color": "#dcd4c8"
     },
     "epidote": {
@@ -18195,7 +18475,7 @@
         "Ti": 0.5,
         "SiO2": 80
       },
-      "_ingredients_note": "Ca ≥ 40 + Ti ≥ 0.5 + SiO2 ≥ 80. Ti is the LIMITING (rare) ingredient — most broths carry no Ti, so the Ti floor is the discriminator; Ca + Si are abundant in cleft fluids. NO redox gate (Ti⁴⁺ is fO2-insensitive — fires oxidizing or reducing). T 150-700°C (covers magmatic-to-hydrothermal), sweet spot 250-450°C (the alpine-cleft / low-T hydrothermal band, late on quartz). pH 6.0-9.5 near-neutral. Mass balance debits Ti 1:1, so a Ti-trace fluid self-limits to a few crystals (the correct minor-accessory footprint). Activity correction applied.",
+      "_ingredients_note": "Ca ≥ 40 + Ti ≥ 0.5 + SiO2 ≥ 80. Ti is the LIMITING (rare) ingredient — most broths carry no Ti, so the Ti floor is the discriminator; Ca + Si are abundant in cleft fluids. NO redox gate (Ti⁴⁺ is fO2-insensitive — fires oxidizing or reducing). T 150-700°C (covers magmatic-to-hydrothermal), sweet spot 250-450°C (the alpine-cleft / low-T hydrothermal band, late on quartz). pH 6.0-9.5 near-neutral. Growth budget debits Ti 1:1, so a Ti-trace fluid self-limits to a few crystals (the correct minor-accessory footprint). Activity correction applied.",
       "trace_ingredients": {
         "Cr": "Cr³⁺ → Ti gives the prized CHROME-GREEN alpine-cleft variety (>0.5 ppm in this model)",
         "Fe": "Fe³⁺ → Ti (charge-balanced by OH/F) gives the common brown-to-black igneous/metamorphic type (>15 ppm)",
@@ -18739,20 +19019,20 @@
       "max_size_cm": 8,
       "growth_rate_mult": 0.22,
       "habit_variants": [
-        { "name": "fibrous_asbestiform", "wall_spread": 0.85, "void_reach": 0.1, "vector": "coating", "trigger": "high σ (excess > 0.4) — parallel-bundle deep blue silky fibers; riebeckite asbestos — \"BLUE ASBESTOS\"; the most carcinogenic asbestos variety per WHO + Frank et al. 2002; Wittenoom Australia + Northern Cape SA type material; PRECURSOR to tiger's eye gemstone via supergene oxidation." },
+        { "name": "fibrous_asbestiform", "wall_spread": 0.85, "void_reach": 0.1, "vector": "coating", "trigger": "high σ (excess > 0.4) — parallel-bundle deep blue silky fibers; riebeckite asbestos — \"BLUE ASBESTOS\"; Wittenoom Australia + Northern Cape SA type material. Crocidolite fabric participates in both published tiger's-eye models." },
         { "name": "massive_blue", "wall_spread": 0.85, "void_reach": 0.1, "vector": "coating", "trigger": "low σ — massive blue-grey crocidolite mass (rare non-asbestiform)." }
       ],
       "class": "amphibole",
-      "description": "Na₂Fe²⁺₃Fe³⁺₂Si₈O₂₂(OH)₂ — Na-Fe sodic amphibole (riebeckite-end variety with asbestiform habit). \"BLUE ASBESTOS\" of commerce. Monoclinic C2/m. H 4, density 3.2-3.4, deep blue to lavender-blue to slate-blue silky fiber bundles — the most distinctive color in the asbestos family. Type-locality association: Wittenoom Western Australia + Mount Brockman + Hamersley + Northern Cape South Africa (Asbestos Hills), all hosted in banded-iron-formation (BIF) — specifically the low-grade-metamorphic horizons where riebeckite recrystallizes asbestiform from primary BIF iron-silicates. Crocidolite is the MOST CARCINOGENIC of the six commercial asbestos minerals (Frank DR, Dodson RF, Williams MG 2002; the Wittenoom lawsuits closed the town in 1966 + dozens of lung-cancer/mesothelioma cases). PRECURSOR FOR TIGER'S EYE: supergene oxidation of crocidolite Fe²⁺ → Fe³⁺ at the surface, with chalcedony (SiO2) pseudomorphically replacing the fiber framework while preserving the chatoyant fiber-bundle morphology, produces the famous gold-brown chatoyant gemstone. Hawk's eye is the partial-oxidation intermediate (still blue-grey-gold). Refs: Hawthorne FC et al. (2012) Am. Min. 97:2031; Frank DR, Dodson RF, Williams MG (2002) Mineralogy and chemistry of South African crocidolite. International Journal of Occupational and Environmental Health 8:38; Hodgson AA (1965); Cairncross B & Beukes NJ (2013) on Northern Cape geology.",
-      "scenarios": ["jeffrey_mine"],
-      "T_range_C": [100, 400],
+      "description": "Na₂Fe²⁺₃Fe³⁺₂Si₈O₂₂(OH)₂ — the asbestiform variety of riebeckite, historically called \"blue asbestos\". Monoclinic C2/m; H about 4; density about 3.2-3.4; deep blue to lavender-blue silky fibre bundles. Important occurrences in Western Australia and the Northern Cape are hosted by metamorphosed banded iron formation. Miyano & Klein (1983) place relevant crocidolite/amosite assemblages in a 150-450°C low-to-medium-temperature family. Its relationship to tiger's-eye is scientifically disputed: Heaney & Fisher (2003) interpret synchronous antitaxial quartz-crocidolite crack-seal growth, whereas Gutzmer, Beukes & Cairncross (2004) argue that older crocidolite seams were later silicified and oxidized near the surface. The simulator exposes both models and does not present pseudomorphic replacement as settled fact.",
+      "scenarios": ["asbestos_hills_crack_seal", "asbestos_hills_surficial_alteration"],
+      "T_range_C": [150, 450],
       "T_optimum_C": [200, 350],
       "T_behavior": "narrow",
       "pH_dissolution_below": 5.5,
       "pH_dissolution_above": null,
       "redox_requirement": "any",
       "required_ingredients": { "Na": 30, "Fe": 100, "SiO2": 200 },
-      "_ingredients_note": "Na ≥ 30 (the diagnostic Na — sodic amphibole vs calcic + Mg-Fe groups) + Fe ≥ 100 + SiO2 ≥ 200. T 100-400°C (low-grade BIF metamorphism). Ca > 50 routes to calcic amphibole. SUPERGENE OXIDATION (O2 > 0.4) dissolves crocidolite — Fe²⁺ → Fe³⁺, Na released to fluid, chalcedony replaces fiber framework producing tiger's eye pseudomorph.",
+      "_ingredients_note": "Na ≥ 30 + Fe ≥ 100 + SiO2 ≥ 200 identify the sodic Fe-amphibole route; Ca > 50 routes to calcic amphibole. T 150-450°C follows Miyano & Klein's metamorphosed-iron-formation family. Oxidation consumes crocidolite only in the selected surficial-alteration model; the crack-seal model preserves the fibres during the later colour overprint.",
       "trace_ingredients": { "Mn": "trace can produce gold-toned crocidolite (hawk's eye precursor)" },
       "thermal_decomp_C": 500,
       "thermal_decomp_reaction": "Above ~500°C: dehydration + oxidation to magnetite + hematite + quartz + albite + H2O. Riebeckite is the most thermally-unstable of the major amphiboles.",
@@ -18760,54 +19040,56 @@
       "fluorescence": { "activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent." },
       "_twin_laws_note": "Intentionally empty — crocidolite (Na2Fe2+3Fe3+2Si8O22(OH)2, asbestiform variety of riebeckite) habit code 'fibrous_asbestiform' — blue asbestos. The fibrous-aligned riebeckite microfibers don't carry visible twinning. Parent riebeckite would; crocidolite as a habit-variant doesn't. v141 final batch.",
       "twin_laws": [],
-      "acid_dissolution": { "pH_threshold": 5.5, "reaction": "Na2Fe5Si8O22(OH)2 + 12H⁺ → 2Na⁺ + 3Fe²⁺ + 2Fe³⁺ + 8H4SiO4. AT OXIDIZING pH > 5.5: in-situ Fe²⁺ → Fe³⁺ + Na release + chalcedony replacement = tiger's eye pseudomorph reaction.", "products": { "Na": 0.06, "Fe": 0.34, "SiO2": 0.55 } },
+      "acid_dissolution": { "pH_threshold": 5.5, "reaction": "Na2Fe5Si8O22(OH)2 + 12H⁺ → 2Na⁺ + 3Fe²⁺ + 2Fe³⁺ + 8H4SiO4. Oxidative loss, when the surficial-alteration model is selected, is recorded separately as an oxidative negative growth zone.", "products": { "Na": 0.06, "Fe": 0.34, "SiO2": 0.55 } },
       "habit": "fibrous_asbestiform",
       "color_rules": { "deep_blue": { "default": true, "trigger": "Na-Fe charge transfer + Fe²⁺/Fe³⁺ mixed-valence" }, "lavender_blue": { "trigger": "slightly higher Fe³⁺/Fe²⁺ ratio" }, "hawks_eye_intermediate": { "trigger": "O2 0.2-0.4 partial oxidation — blue-grey-gold transition toward tiger's eye" } },
       "narrate_function": null,
       "runtimes_present": ["js"],
-      "audit_status": "new v116 (2026-05-20). Fifth and final of the commercial-asbestos amphiboles. \"BLUE ASBESTOS\" + most carcinogenic asbestos variety + PRECURSOR to tiger's eye gemstone via supergene oxidation. Per Hawthorne et al. 2012; Frank et al. 2002.",
+      "audit_status": "SIM 260 literature correction. The BIF host and 150-450°C amphibole-asbestos field are explicit; two Asbestos Hills scenarios execute the competing Heaney-Fisher (2003) crack-seal and Gutzmer-Beukes-Cairncross (2004) surficial-alteration hypotheses.",
       "late_stage_propensity": 0.45,
-      "_late_stage_note": "BIF-hosted low-grade-metamorphic. The supergene-oxidation product (tiger's eye) is the famous gemstone; that's a separate engine in silicate class.",
+      "_late_stage_note": "BIF-hosted low-grade-metamorphic crocidolite precedes the colour overprint; whether quartz is synchronous or a later alteration is selected explicitly.",
       "class_color": "#506098"
     },
     "tigers_eye": {
-      "formula": "SiO2 (chalcedony pseudomorph after crocidolite)",
+      "formula": "SiO2-rich quartz-crocidolite chatoyant aggregate (origin model disputed)",
       "nucleation_sigma": 1.2,
       "max_nucleation_count": 3,
       "max_size_cm": 15,
       "growth_rate_mult": 0.3,
       "habit_variants": [
-        { "name": "chatoyant_pseudomorph", "wall_spread": 0.7, "void_reach": 0.3, "vector": "coating", "trigger": "default — gold-brown chatoyant chalcedony pseudomorph after crocidolite; silky cat's-eye effect from preserved fiber bundles; the CLASSIC gemstone aesthetic (Northern Cape SA + Wittenoom WA + Mt. Brockman type)." },
-        { "name": "hawks_eye", "wall_spread": 0.7, "void_reach": 0.3, "vector": "coating", "trigger": "blue-grey-gold partial-oxidation intermediate — crocidolite + chalcedony coexist; precursor stage to full tiger's eye." },
+        { "name": "antitaxial_crack_seal", "wall_spread": 0.9, "void_reach": 0.1, "vector": "coating", "trigger": "Heaney-Fisher model — synchronous columnar quartz and crocidolite microfibre bands in an antitaxial crack-seal vein." },
+        { "name": "partly_oxidized_crack_seal_hawks_eye", "wall_spread": 0.9, "void_reach": 0.1, "vector": "coating", "trigger": "Heaney-Fisher crack-seal fabric during a partial Fe-state overprint — preserved antitaxial fibres with a blue-grey to gold hawk's-eye transition; zero later SiO2 framework growth." },
+        { "name": "oxidized_crack_seal_chatoyant", "wall_spread": 0.9, "void_reach": 0.1, "vector": "coating", "trigger": "Heaney-Fisher model after later oxidation — gold-brown chatoyancy across preserved crack-seal fibres." },
+        { "name": "alteration_preserved_fabric", "wall_spread": 0.9, "void_reach": 0.1, "vector": "coating", "trigger": "Gutzmer-Beukes-Cairncross model — near-surface silicification and oxidation of an older crocidolite seam; not a pseudomorph sensu stricto." },
         { "name": "tiger_iron", "wall_spread": 0.85, "void_reach": 0.15, "vector": "coating", "trigger": "BIF-context — hematite + jasper + chalcedony banded mass; centimeter-scale interlayered red-black-gold bands; the Northern Cape SA + Hamersley WA \"TIGER IRON\" assemblage rock variety." },
         { "name": "red_tigers_eye", "wall_spread": 0.7, "void_reach": 0.3, "vector": "coating", "trigger": "red-brown to blood-red variant — higher Fe³⁺ chromophore loading; heat-altered tiger's eye (the gemstone trade calls this 'red tiger's eye'; sometimes natural, sometimes heat-treated)." }
       ],
       "class": "silicate",
-      "description": "SiO₂ (microcrystalline chalcedony) PSEUDOMORPH AFTER crocidolite-asbestos. The famous gold-brown chatoyant gemstone. H 7, density 2.65, vitreous to silky luster, conchoidal fracture. NOT a separate mineral species mineralogically — tiger's eye is a VARIETY of chalcedony (microcrystalline SiO2) that has replaced crocidolite-asbestos fiber bundles via supergene oxidation, preserving the fibrous morphology to produce the diagnostic chatoyant cat's-eye optical effect. Type-locality association: Northern Cape South Africa (Asbestos Hills + Doornberg + Mount Brockman) BIF; also Hamersley + Wittenoom Western Australia; secondary occurrences worldwide (USA, India, China). The chatoyant golden-brown color is from Fe³⁺ in the chalcedony fiber framework, with iron oxides also dispersed in the silica matrix. THREE VARIETIES via habit dispatch (all gemstone-trade-recognized): tiger's eye proper (gold-brown chatoyant), hawk's eye (blue-grey-gold partial-oxidation intermediate where some crocidolite remains), tiger iron (BIF-banded assemblage with hematite + jasper layers between tiger's eye bands — Australian + South African occurrence; technically a ROCK not a mineral, but the gemstone trade markets it as a single name). Per Heaney PJ & Fisher DM (2003) Am. Min. 88:1-14 'New interpretation of the origin of tiger's-eye' — the modern mechanism is crocidolite replacement, NOT crocidolite-fiber-inclusions-in-quartz (the older interpretation). Refs: Heaney PJ & Fisher DM (2003) Am. Min. 88:1-14; Cairncross B & Beukes NJ (2013); Cogan SL et al. (2009) Tiger's eye formation in Australia.",
-      "scenarios": ["jeffrey_mine"],
-      "T_range_C": [20, 200],
-      "T_optimum_C": [30, 100],
-      "T_behavior": "narrow",
+      "description": "Tiger's-eye is a chatoyant, SiO₂-rich quartz-crocidolite aggregate rather than an IMA mineral species. Its gold-brown optical effect records aligned fibrous fabric plus iron oxidation, but the origin of that fabric is disputed. Heaney & Fisher (2003, Geology 31:323-326) reject pseudomorphic replacement and infer synchronous antitaxial quartz-crocidolite crack-seal growth. Gutzmer, Beukes & Cairncross (2004, Geology 32:e44) use the shallow tiger's-eye → hawk's-eye → crocidolite field transition to argue for later silicification and oxidation of older crocidolite seams; they state the material is not a pseudomorph sensu stricto. The simulator therefore provides both executable interpretations. Tiger iron is the BIF-banded quartz-hematite/jasper aggregate and is a rock/trade variety, not a mineral species.",
+      "scenarios": ["asbestos_hills_crack_seal", "asbestos_hills_surficial_alteration"],
+      "T_range_C": [5, 450],
+      "T_optimum_C": [30, 350],
+      "T_behavior": "model-dependent",
       "pH_dissolution_below": 4.0,
       "pH_dissolution_above": null,
-      "redox_requirement": "oxidizing",
+      "redox_requirement": "model-dependent: reduced/modest-O2 synchronous growth or oxidizing surface overprint",
       "required_ingredients": { "SiO2": 200, "Fe": 30 },
-      "_ingredients_note": "SiO2 ≥ 200 (chalcedony framework) + Fe ≥ 30 (Fe³⁺ chromophore for chatoyant color). O2 > 0.4 STRICT oxidizing (Fe²⁺ → Fe³⁺ supergene weathering of crocidolite precursor). T 20-200°C surface-supergene. pH 5.5-9.5.",
+      "_ingredients_note": "Both models require SiO2 ≥ 200, Fe ≥ 30, and a real crocidolite substrate. Crack-seal growth uses T 150-450°C, pH 7-11, O2 < 0.6; its later colour overprint uses the disclosed 5-100°C surface proxy and O2 ≥ 0.4. The surficial model uses that surface proxy and additionally requires an accepted oxidative crocidolite loss zone. Neither origin paper supplies the exact pH or O2 cutoffs or a unique oxidation rate: those values and the 0.9 gold-brown extent threshold are explicitly simulator-calibrated process/redox proxies; the published constraints are sequence/texture plus Miyano-Klein's 150-450°C amphibole family.",
       "trace_ingredients": { "Mn": "trace can intensify red-brown variant" },
       "thermal_decomp_C": 870,
       "thermal_decomp_reaction": "Above ~870°C: chalcedony recrystallizes to quartz (loses chatoyancy). Heat-treatment to ~700°C gives red tiger's eye via Fe²⁺ → Fe³⁺ in the chalcedony fabric.",
       "thermal_decomp_products": { "SiO2": 1.0 },
       "fluorescence": { "activator": null, "threshold_ppm": 0, "color": null, "quencher": null, "status": "Non-fluorescent." },
-      "_twin_laws_note": "Intentionally empty — tigers_eye is a chalcedony pseudomorph after crocidolite (asbestiform riebeckite) — it inherits the fibrous parallel-aligned fabric of the parent + the microcrystalline silica replacement texture. No euhedral crystal form, no twinning. The original crocidolite parent could in principle have had amphibole-group {100} twins, but those are obliterated by the chalcedony replacement.",
+      "_twin_laws_note": "Intentionally empty — tiger's-eye is a fibrous quartz-crocidolite aggregate with no euhedral whole-specimen crystal form. Its aligned texture follows the selected crack-seal or surficial-alteration model, not a claimed twin law.",
       "twin_laws": [],
       "acid_dissolution": { "pH_threshold": 4.0, "reaction": "SiO2 stable to acid; framework collapse only at pH < 4 + HF.", "products": { "SiO2": 1.0 } },
-      "habit": "chatoyant_pseudomorph",
+      "habit": "alteration_preserved_fabric",
       "color_rules": { "gold_brown": { "default": true, "trigger": "Fe³⁺ chatoyant chalcedony — the classic gemstone color" }, "hawks_eye_blue_grey": { "trigger": "partial crocidolite + chalcedony coexistence (intermediate oxidation state)" }, "red_brown": { "trigger": "higher Fe³⁺ loading or heat-altered — 'red tiger's eye'" }, "tiger_iron_banded": { "trigger": "BIF context — banded with hematite + jasper layers" } },
       "narrate_function": null,
       "runtimes_present": ["js"],
-      "audit_status": "new v116 (2026-05-20). Chalcedony pseudomorph after crocidolite — the famous gold-brown chatoyant gemstone. Substrate (v229, rung 3): dissolving crocidolite ONLY (p=0.65) — the pseudomorph framework the chalcedony replaces; co-present hematite bands it into TIGER IRON. The bare-wall + bare-hematite/magnetite substrate fallbacks are RETIRED (iron oxide alone — a basalt amygdale, an oxidized ore body — is not a BIF crocidolite context). No crocidolite-host scenario ships yet (jeffrey_mine is chrysotile/rodingite, Na 5 + Fe 50 below crocidolite's Na≥30/Fe≥100 gate), so tiger's eye is EXTINCT at seed 42 pending a Griqualand-West/Hamersley BIF scenario. Three habit variants cover the gemstone family (chatoyant_pseudomorph default, hawks_eye partial-oxidation, tiger_iron BIF-banded). Per Heaney & Fisher 2003 Am.Min. 88:1.",
+      "audit_status": "SIM 260 correction. Two real BIF-hosted Asbestos Hills scenarios execute the competing published origin hypotheses. Crack-seal nucleation requires grown, active crocidolite; surficial nucleation requires an accepted oxidative negative zone. Bare wall and bare Fe oxides remain forbidden. The obsolete Am.Min. 88 citation and settled-pseudomorph claim are retired.",
       "late_stage_propensity": 0.85,
-      "_late_stage_note": "Very late — supergene surface-weathering product. By definition fires AFTER crocidolite forms + is exposed to oxidizing conditions.",
+      "_late_stage_note": "Model-dependent: synchronous during metamorphic crack-seal growth with a later colour overprint, or late during near-surface alteration of an older crocidolite seam.",
       "class_color": "#c8884c"
     }
   }

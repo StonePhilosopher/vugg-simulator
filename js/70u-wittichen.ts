@@ -49,9 +49,10 @@ function event_wittichen_hydrocarbon_influx(c) {
 }
 
 function event_wittichen_meteoric_sulfate(c) {
-  // S +27 (not the +37 first tried): 40 ppm sulfidized ALL the native
-  // silver to acanthite in one stage; 30 leaves the conversion partial,
-  // which is the hand-specimen truth (acanthite-coated native silver).
+  // S +27 (not the +37 first tried): this is an oxidized meteoric sulfate
+  // charge for the documented barite gangue. It must not be treated as a
+  // reduced-sulfur source for acanthite, proustite, or realgar. Those phases
+  // require a separately authored sulfide-generating pathway.
   c.fluid.S = Math.min(30, c.fluid.S + 27);
   // S1 (fluid.S sulfate/sulfide split, 2026-07-23): this S IS oxidized meteoric SO₄²⁻ —
   // flag the fluid so the sulfate class reads it in full. Without this, the split partitions
@@ -65,14 +66,46 @@ function event_wittichen_meteoric_sulfate(c) {
   // can't starve the barite stage.
   c.fluid.Ba = Math.max(c.fluid.Ba, 70);
   c.temperature = Math.min(c.temperature, 170);
-  return `Meteoric water reaches the vein — oxidized sulfate arrives (S ${c.fluid.S.toFixed(0)} ppm, T ${c.temperature.toFixed(0)}°C). The barite stage opens; the arsenide stage is over; the silver begins to tarnish.`;
+  return `Meteoric water reaches the vein — oxidized sulfate arrives (S ${c.fluid.S.toFixed(0)} ppm, T ${c.temperature.toFixed(0)}°C). The barite stage opens; the arsenide stage is over. Native silver remains unsulfidized unless an independent reduced-sulfur source exists.`;
 }
 
 function event_wittichen_carbonate_gangue(c) {
-  c.fluid.CO3 = Math.min(140, c.fluid.CO3 + 95);
-  c.fluid.Ca = Math.min(420, c.fluid.Ca + 160);
+  const targetCO3 = Math.min(140, c.fluid.CO3 + 95);
+  const targetCa = Math.min(420, c.fluid.Ca + 160);
+  const carbonateAdded = Math.max(0, targetCO3 - c.fluid.CO3);
+  const calciumAdded = Math.max(0, targetCa - c.fluid.Ca);
+  declareFluidBoundaryAddition(
+    c,
+    'Wittichen late carbonate-gangue fluid',
+    { CO3: carbonateAdded, Ca: calciumAdded },
+  );
+  declareCarbonLedgerAddition(
+    c,
+    'external_import',
+    'Wittichen late carbonate-gangue fluid',
+    carbonateAdded,
+  );
+  c.fluid.CO3 = targetCO3;
+  c.fluid.Ca = targetCa;
   // Carbonate-buffered late water — without the pH shift calcite never
   // opened at the first observation (pH 6.2 throughout the run).
   c.fluid.pH = Math.min(7.4, c.fluid.pH + 1.1);
   return `Carbonate gangue stage — CO₃ ${c.fluid.CO3.toFixed(0)}, Ca ${c.fluid.Ca.toFixed(0)} ppm, pH ${c.fluid.pH.toFixed(1)}. Calcite seals the dendrites into the vein: the cross-section specimen assembles itself.`;
+}
+
+function event_wittichen_vadose_weathering(c) {
+  // Post-vein exhumation is a new physical regime, not an extra hydrothermal
+  // pulse.  The event owns only the boundary change.  js/44e records the
+  // explicit O2/CO2/light/drainage contract, while ordinary local engines
+  // dissolve exposed Co arsenides and book any secondary products.
+  c.temperature = 25;
+  c.pressure = clampFluidPressureKbar(0.001);
+  c.fluid_surface_height_mm = 2.0;
+  c.flow_rate = 0.08;
+  // The vein-scale fracture-pulse generator belongs to the buried hydrothermal
+  // stage. Once exhumation establishes an atmospheric vadose pocket it cannot
+  // randomly reheat the local field toward the 340 C starting temperature.
+  c.wall.ambient_temperature_C = 25;
+  c.wall.thermal_pulses = false;
+  return 'Exhumation breaches the upper vein. The water table falls to 2 mm, pressure approaches atmospheric, and the exposed wall cools to 25°C. Only vadose cells receive atmospheric O₂; the submerged floor preserves the hypogene assemblage.';
 }

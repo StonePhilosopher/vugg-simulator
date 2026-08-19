@@ -1,0 +1,274 @@
+{
+  "scenario": "chiastolite_hornfels",
+  "sim_version": 246,
+  "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-pressure+booked-transition+chemistry-competition-v4|surface-growth:mass-booked-area+lining+crust+asbestos+druse-representatives-v1|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "4af4c17ea9991b5d736b1706aa1ccdc465296a3e2f8b195dcfd0a41632838f37",
+  "strip_steps": 120,
+  "claim": {
+    "anchor": "Bimbowrie / Mount Howden, Olary district, South Australia — classic chiastolite (the 'cross stone') in contact-metamorphic hornfels; the Zhoukoudian aureole (Beijing) of Mason et al. 2010 is the peer-reviewed analogue.",
+    "description": "Low-pressure CONTACT-METAMORPHIC hornfels — a graphitic aluminous metapelite baked in the aureole of a shallow intrusion. Andalusite (Al₂SiO₅) porphyroblasts grow with quartz; because the metapelite carries reduced organic carbon, the andalusite grows as CHIASTOLITE — carbonaceous matter swept into the corner growth sectors → the dark cross.",
+    "expects_species": [
+      "andalusite",
+      "feldspar"
+    ],
+    "sources": [
+      "Mason, Burton, Yuan & She 2010 (Gondwana Research 18(1):222-229) — Chiastolite: quartz+graphite co-precipitation into andalusite growth sectors, graphite-buffered H₂O–CO₂ fluid (Zhoukoudian aureole)",
+      "Dowty 1976 (American Mineralogist 61:460-469) — Crystal structure and crystal growth II: sector zoning in minerals (the protosite model)",
+      "Holdaway 1971 (American Journal of Science 271:97-131) — Stability of andalusite and the aluminum silicate phase diagram (the Al₂SiO₅ triple point)"
+    ],
+    "initial_temperature_C": 600,
+    "initial_pressure_kbar": 2.5,
+    "wall_architecture": null,
+    "notes": [
+      "Anchor: chiastolite is the variety of andalusite with a sector-zoned carbonaceous cross. South Australian (Bimbowrie/Mt Howden) hornfels is the classic collector locality; Mason, Burton, Yuan & She (2010, Gondwana Research 18(1):222-229) is the peer-reviewed mechanism study (Zhoukoudian aureole, Beijing): quartz + graphite inclusions co-precipitate into the andalusite growth sectors from an internally graphite-buffered H₂O–CO₂ fluid.",
+      "Chemistry signature: PERALUMINOUS and SILICA-SATURATED (the opposite of marble_contact's SiO2-undersaturated corundum field). Al high + SiO2 high → Al₂SiO₅ (andalusite), NOT corundum. Alkalis (Na, K) and B are kept LOW — in a pegmatite Al would be locked into feldspar/tourmaline/mica, so andalusite is diagnostic of an alkali-poor metasediment. That alkali/B gate is also what keeps andalusite out of every other scenario.",
+      "wall.graphitic:true — the host is a carbonaceous metapelite. grow_andalusite + classifySectorZoning read this flag to render the CHIASTOLITE carbon cross (a transverse 4-corner sector mask, js/99i _makeChiastolitePrism). Without it, andalusite renders as a plain square prism.",
+      "Thermal regime: contact-metamorphic peak ~600°C cooling gently through the andalusite stability window (400-700°C, below the Holdaway 1971 Al₂SiO₅ triple point ~500°C/0.4 GPa at low P). thermal_pulses:false — one intrusive episode, no magmatic fracture-valve reheats (PEGMATITE-SHAPE, the marble_contact idiom).",
+      "Wall composition 'pegmatite' is the inert aluminous-silicate proxy (the sim branches dissolution only on limestone/dolomite); a true metapelite host is not modeled, this is the closest aluminous silicate flavor.",
+      "O2 low / pH near-neutral — graphite-buffered reducing fluid (Mason et al. 2010)."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-pressure+booked-transition+chemistry-competition-v4|surface-growth:mass-booked-area+lining+crust+asbestos+druse-representatives-v1|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+pathway-gated-v3|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:formula-stoich-limestone+dolomite-v1|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 2.5,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": 2.5,
+        "role": "rock/confining pressure used by metamorphic phase fields"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 6.67303054,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "andalusite",
+          "nominalPhase": "andalusite",
+          "confiningPressureKbar": 2.5,
+          "uncertaintyKbar": null,
+          "note": "Ky-Sil line; uncertainty propagates Pattison triple-point T and P bounds."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 94.75,
+          "initial_water_activity": {
+            "value": 0.9994,
+            "salinityPpt": 1,
+            "naclWeightPercentEquivalent": 0.1,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 3,
+    "paragenetic_order": [
+      {
+        "mineral": "albite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "andalusite",
+        "first_step": 0,
+        "events": 5
+      },
+      {
+        "mineral": "feldspar",
+        "first_step": 0,
+        "events": 1
+      }
+    ],
+    "surprises_not_in_expects": [
+      "albite"
+    ],
+    "expected_no_shows": [],
+    "environment": {
+      "T": {
+        "first": 599.409,
+        "last": 422.244,
+        "min": 422.244,
+        "max": 599.409,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 6.504,
+        "last": 6.504,
+        "min": 6.504,
+        "max": 6.504,
+        "units": ""
+      },
+      "Eh": {
+        "first": -149.606,
+        "last": -149.606,
+        "min": -149.606,
+        "max": -149.606,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 0.787,
+        "last": 0.787,
+        "min": 0.787,
+        "max": 0.787,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 0.039,
+        "last": 0.039,
+        "min": 0.039,
+        "max": 0.039,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -3.969,
+        "last": -3.969,
+        "min": -3.969,
+        "max": -3.969,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -4.094,
+        "last": -4.094,
+        "min": -4.094,
+        "max": -4.094,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -6.677,
+        "last": -6.677,
+        "min": -6.677,
+        "max": -6.677,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -5.606,
+        "last": -5.606,
+        "min": -5.606,
+        "max": -5.606,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": -1.071,
+        "last": -1.071,
+        "min": -1.071,
+        "max": -1.071,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 120,
+      "fluid_pressure_kbar": {
+        "first": 2.5,
+        "last": 2.5,
+        "min": 2.5,
+        "max": 2.5,
+        "samples": 120
+      },
+      "confining_pressure_kbar": {
+        "first": 2.5,
+        "last": 2.5,
+        "min": 2.5,
+        "max": 2.5,
+        "samples": 120
+      },
+      "temperature_C": {
+        "first": 598.2608943547123,
+        "last": 421.0706241640729,
+        "min": 421.0706241640729,
+        "max": 598.2608943547123,
+        "samples": 120
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 6.637960672127232,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 3.8257461734970803,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "andalusite": 102,
+          "uncertain": 18
+        },
+        "first": {
+          "phase": "andalusite",
+          "nominalPhase": "andalusite",
+          "confiningPressureKbar": 2.5,
+          "uncertaintyKbar": null,
+          "note": "Ky-Sil line; uncertainty propagates Pattison triple-point T and P bounds."
+        },
+        "last": {
+          "phase": "uncertain",
+          "nominalPhase": "andalusite",
+          "confiningPressureKbar": 2.5,
+          "uncertaintyKbar": 0.6736855720586571,
+          "note": "Ky-And line; uncertainty propagates Pattison triple-point T and P bounds."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 94.75
+        },
+        "last": {
+          "pure_water_boundary_C": 94.75
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

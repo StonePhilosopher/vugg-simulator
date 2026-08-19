@@ -36,6 +36,126 @@ function _topoPaintPlaceholder(canvas, text) {
   }
 }
 
+function _topoCavityFieldCrossSectionReceipt(activeProvider: any, appearance: any,
+                                             wall: any, conditions: any,
+                                             sim: any = null): any {
+  const field = activeProvider?.field;
+  const surface = activeProvider?.surface;
+  const provider = activeProvider?.receipt;
+  const currentProvider = wall?.activeCavitySurfaceAnchorProvider?.();
+  if (!currentProvider || currentProvider !== activeProvider
+      || currentProvider.field !== field || currentProvider.surface !== surface
+      || currentProvider.receipt !== provider) {
+    throw new Error('CPU cavity cross-section requires the wall exact current active provider');
+  }
+  if (!field || !surface || provider?.kind !== 'cavity-field'
+      || provider.field_signature !== field.sig
+      || provider.field_snapshot_digest !== field.snapshotDigest
+      || provider.surface_signature !== surface.sig
+      || provider.surface_buffer_digest !== surface.buffer_digest) {
+    throw new Error('CPU cavity cross-section requires one authenticated field/provider pair');
+  }
+  MarchingCubesExtractor.verifyBuffers(surface);
+  const authenticatedAppearance = CavityWaterAppearance.assertReceipt(
+    wall, conditions, appearance,
+    { activeProvider, providerReceipt: provider, surface, sim },
+  ).receipt;
+  const requestedPlane = Math.round((0 - field.origin[2]) / field.spacingMm);
+  const zIndex = Math.max(0, Math.min(field.sizeZ - 1, requestedPlane));
+  const payload: any = {
+    schema: 'cavity-field-cross-section-v1',
+    presentation: 'capability-independent-cpu-sampled-cross-section',
+    field_signature: field.sig,
+    field_snapshot_digest: field.snapshotDigest,
+    surface_signature: surface.sig,
+    surface_buffer_digest: surface.buffer_digest,
+    source_evolution_signature: provider.cavity_evolution_signature ?? null,
+    axis: 'z',
+    grid_index: zIndex,
+    plane_world_mm: field.origin[2] + zIndex * field.spacingMm,
+    dimensions: [field.sizeX, field.sizeY],
+    origin_xy_mm: [field.origin[0], field.origin[1]],
+    spacing_mm: field.spacingMm,
+    isovalue: surface.isovalue,
+    appearance_digest: authenticatedAppearance.appearance_digest,
+    appearance_source_geometry_digest: authenticatedAppearance.source_geometry_digest,
+    appearance_source_provider_kind: authenticatedAppearance.source_provider_kind,
+    appearance_source_evolution_signature:
+      authenticatedAppearance.source_evolution_signature,
+    water_plane_y_mm: authenticatedAppearance.explicit_surface
+      ? authenticatedAppearance.water_plane_y_mm : null,
+    crystal_policy: 'withheld-with-explicit-label-without-authenticated-cpu-field-clipping',
+  };
+  payload.receipt_digest = CavityEvolutionLedger.digest(payload);
+  CavityEvolutionLedger._deepFreeze(payload);
+  return payload;
+}
+
+function _topoRenderCavityFieldCrossSection(ctx: any, cssW: number, cssH: number,
+                                            activeProvider: any, appearance: any,
+                                            wall: any, conditions: any,
+                                            sim: any = null): boolean {
+  if (!ctx || !(cssW > 0) || !(cssH > 0)) return false;
+  let receipt: any;
+  try {
+    receipt = _topoCavityFieldCrossSectionReceipt(
+      activeProvider, appearance, wall, conditions, sim,
+    );
+  } catch (_error) {
+    return false;
+  }
+  const field = activeProvider.field;
+  const margin = 24;
+  const labelHeight = 32;
+  const plotWidth = Math.max(1, cssW - margin * 2);
+  const plotHeight = Math.max(1, cssH - margin * 2 - labelHeight);
+  const scale = Math.min(
+    plotWidth / Math.max(1, field.sizeX - 1),
+    plotHeight / Math.max(1, field.sizeY - 1),
+  );
+  const drawWidth = scale * Math.max(1, field.sizeX - 1);
+  const drawHeight = scale * Math.max(1, field.sizeY - 1);
+  const left = (cssW - drawWidth) / 2;
+  const top = margin + (plotHeight - drawHeight) / 2;
+  ctx.save?.();
+  ctx.fillStyle = '#120f0d';
+  ctx.fillRect(0, 0, cssW, cssH);
+  const waterPlane = receipt.water_plane_y_mm;
+  const isovalue = receipt.isovalue;
+  for (let y = 0; y < field.sizeY; y++) {
+    const worldY = field.origin[1] + y * field.spacingMm;
+    const screenY = top + (field.sizeY - 1 - y) * scale;
+    for (let x = 0; x < field.sizeX; x++) {
+      const value = field.valueAt(x, y, receipt.grid_index);
+      if (value > isovalue) {
+        ctx.fillStyle = waterPlane != null && worldY <= waterPlane
+          ? 'rgba(63, 137, 184, 0.88)' : 'rgba(25, 31, 34, 0.96)';
+      } else {
+        ctx.fillStyle = 'rgba(91, 62, 39, 0.98)';
+      }
+      ctx.fillRect(left + x * scale - scale * 0.52, screenY - scale * 0.52,
+        Math.max(1, scale * 1.04), Math.max(1, scale * 1.04));
+    }
+  }
+  ctx.strokeStyle = 'rgba(230, 197, 139, 0.88)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(left, top, drawWidth, drawHeight);
+  ctx.fillStyle = '#eadfc9';
+  ctx.font = '12px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(
+    `Authenticated Cartesian z=${receipt.plane_world_mm.toFixed(2)} mm cross-section`,
+    cssW / 2, cssH - 21,
+  );
+  ctx.fillStyle = '#b9aa91';
+  ctx.font = '10px system-ui, sans-serif';
+  ctx.fillText('Crystals withheld: this device lacks authenticated 3D field clipping',
+    cssW / 2, cssH - 7);
+  ctx.restore?.();
+  ctx.canvas._cavityFieldCrossSectionReceipt = receipt;
+  return true;
+}
+
 // Phase B (Tier 1.5) — per-vertex 3D projection helper.
 // Maps a world-space point (relative to the scene origin) to a screen-
 // space point via Yaw → Pitch rotation + perspective. Replaces the
@@ -166,6 +286,10 @@ function _topoActiveRingForRender(wall) {
 function topoCycleSlice(dir) {
   const sim = topoActiveSim();
   const wall = sim ? sim.wall_state : null;
+
+  // Historical payload authentication precedes shape aggregation and every
+  // empty-state guard. Otherwise a malformed replay can look like a merely
+  // empty frame—or worse, borrow the live wall.
   const n = wall ? wall.ring_count : 0;
   if (n <= 1) {
     // Single-ring sim — no stepper to cycle. Stay aggregated.
@@ -211,6 +335,36 @@ function topoRender(optOverrideSnap?) {
   const sim = topoActiveSim();
   const wall = sim ? sim.wall_state : null;
 
+  // Authenticate historical payloads before aggregation or empty-state
+  // handling so malformed replay can never borrow today's live wall.
+  const replayDecision = typeof _topoReplayRenderDecision === 'function'
+    ? _topoReplayRenderDecision(wall, optOverrideSnap)
+    : { mode: 'wall-mesh', wall };
+  if (replayDecision.mode === 'corrupt') {
+    if (typeof _topoSyncThreeCanvasVisibility === 'function') {
+      if (_topoThreeState) {
+        _topoThreeState.cavityAuthorityUnrenderable = true;
+        if (_topoThreeState.cavity) _topoThreeState.cavity.visible = false;
+        if (_topoThreeState.crystals) _topoThreeState.crystals.visible = false;
+      }
+      _topoSyncThreeCanvasVisibility();
+    }
+    _topoPaintPlaceholder(canvas, replayDecision.message);
+    return;
+  }
+  let renderSim = sim;
+  if (optOverrideSnap && sim) {
+    const historicalConditions = replayDecision.conditions
+      || CavityWaterAppearance.replayConditions(
+        Array.isArray(optOverrideSnap)
+          ? { fluid_surface_height_mm: null, fluid_surface_ring: null }
+          : optOverrideSnap.conditions,
+        replayDecision.wall,
+      );
+    renderSim = Object.create(sim);
+    renderSim.conditions = historicalConditions;
+  }
+
   // v65: snapshots are { step, rings: [...] }. Detect the shape and
   // pull a single ring for the 2D path (which only renders one slice
   // at a time) plus a `replayStep` so the Three.js path can size each
@@ -239,7 +393,7 @@ function topoRender(optOverrideSnap?) {
   // first impression of Current Game is a cavernous empty box, which
   // looks like a render bug.
   if (!sim && !optOverrideSnap) {
-    _topoPaintPlaceholder(canvas, 'Press Grow to generate a vug — the wall profile will appear here');
+    _topoPaintPlaceholder(canvas, 'Start a Simulation or begin a Creative vug — the wall profile will appear here');
     const btn = document.getElementById('topo-replay-btn');
     if (btn) btn.style.display = 'none';
     const sizeLabel = document.getElementById('topo-vug-size');
@@ -335,9 +489,39 @@ function topoRender(optOverrideSnap?) {
   // optReplayStep are forwarded so the Three.js path can rebuild
   // cavity geometry from the historical rings AND size each crystal
   // from its zones[] history up to that step.
-  if (_topoUseThreeRenderer && wall && wall.rings && wall.rings.length) {
+  // Provider authority follows the frame being rendered. Reconstruct replay
+  // walls before dispatch so today's live provider cannot force an old
+  // WallMesh frame into the exact-field placeholder (or vice versa).
+  const renderAuthorityWall = replayDecision.wall;
+  const exactFieldAuthority = renderAuthorityWall?.activeCavitySurfaceAnchorProvider?.();
+  if ((_topoUseThreeRenderer || exactFieldAuthority?.receipt?.kind === 'cavity-field')
+      && wall && wall.rings && wall.rings.length) {
     if (_topoRenderThree(sim, wall, optOverrideSnap, optReplayStep)) {
       _topoSyncThreeCanvasVisibility();
+      return;
+    }
+    if (exactFieldAuthority?.receipt?.kind === 'cavity-field') {
+      // A CPU sample of the same authenticated scalar field is truthful on
+      // hardware that cannot compile the 3-D clipping shader. It is explicitly
+      // a cross-section and withholds crystals rather than drawing a polar lie.
+      let fallbackAppearance = replayDecision.appearance || null;
+      if (!fallbackAppearance) {
+        try {
+          fallbackAppearance = CavityWaterAppearance.create(
+            replayDecision.wall, renderSim.conditions,
+            { sim: renderSim, activeProvider: exactFieldAuthority },
+          ).receipt;
+        } catch (_error) {
+          fallbackAppearance = null;
+        }
+      }
+      _topoSyncThreeCanvasVisibility();
+      if (_topoRenderCavityFieldCrossSection(
+        ctx, cssW, cssH, exactFieldAuthority, fallbackAppearance,
+        replayDecision.wall, renderSim.conditions, renderSim,
+      )) return;
+      _topoPaintPlaceholder(canvas,
+        'Exact 3D cavity authority is active, but this device cannot render either its authenticated 3D field/clip pair or CPU cross-section. Simulation state is unchanged.');
       return;
     }
   } else if (typeof _topoSyncThreeCanvasVisibility === 'function') {
@@ -351,8 +535,23 @@ function topoRender(optOverrideSnap?) {
   // and short-circuits the rest of the 2D path. 2D mode falls through
   // unchanged. See PROPOSAL-3D-TOPO-VUG.md ("Tier 1.5") for design.
   if (_topoView3D && wall && wall.rings && wall.rings.length) {
-    _topoRenderRings3D(ctx, sim, wall, ring0, cellR, boundaryR, cx, cy,
-                       mmToPx, maxT, arcStep, N, viewW, viewH);
+    let renderAppearance = replayDecision.appearance || null;
+    if (!renderAppearance) {
+      try {
+        renderAppearance = CavityWaterAppearance.create(
+          replayDecision.wall, renderSim.conditions, { sim: renderSim },
+        ).receipt;
+      } catch (error) {
+        _topoPaintPlaceholder(
+          canvas,
+          `Cavity frame withheld: ${error instanceof Error ? error.message : String(error)}.`,
+        );
+        return;
+      }
+    }
+    _topoRenderRings3D(ctx, renderSim, replayDecision.wall, ring0,
+                       cellR, boundaryR, cx, cy, mmToPx, maxT,
+                       arcStep, N, viewW, viewH, renderAppearance);
     return;
   }
 
@@ -493,9 +692,10 @@ function topoRender(optOverrideSnap?) {
       if (!host.enclosed_crystals || !host.enclosed_crystals.length) continue;
       // PHASE-4-CAVITY-MESH Tranche 4b — wall_anchor is the sole
       // positional field; legacy fallback retired.
-      const _hostAnchor = wall._resolveAnchor ? wall._resolveAnchor(host) : null;
-      if (!_hostAnchor) continue;
-      const _hostCenterCell = _hostAnchor.cellIdx;
+      const _hostChemistry = wall.chemistryAddressForCrystal?.(host)
+        || CavitySurfaceAnchors.chemistryAddress(host.wall_anchor);
+      if (!_hostChemistry) continue;
+      const _hostCenterCell = _hostChemistry.cellIdx;
       if (host.dissolved || _hostCenterCell == null) continue;
 
       // Build the host's painted-cell set. Fall back to its center cell

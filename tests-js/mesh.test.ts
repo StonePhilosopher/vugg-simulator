@@ -17,9 +17,11 @@
 import { describe, expect, it } from 'vitest';
 
 declare const VugSimulator: any;
+declare const FluidChemistry: any;
 declare const VugWall: any;
 declare const WallState: any;
 declare const WallMesh: any;
+declare const CavitySurfaceAnchors: any;
 
 describe('cavity-mesh Phase 2 — WallMesh builds + recomputes correctly', () => {
   it('default tessellation has ring_count × cells_per_ring + 2 vertices', () => {
@@ -84,30 +86,46 @@ describe('cavity-mesh Phase 2 — WallMesh builds + recomputes correctly', () =>
     expect(mesh.positions[idx * 3 + 2]).toBeCloseTo(expectZ, 5);
   });
 
-  it('signature changes when wall_depth changes (dissolution path)', () => {
-    const wall = new WallState({ cells_per_ring: 120, ring_count: 16 });
-    const meshA = WallMesh.fromWallState(wall);
+  it('invalidates exact geometry when any wall cell changes, including formerly unsampled cells', () => {
+    const wall = new WallState({ cells_per_ring: 48, ring_count: 12 });
+    const meshA = wall.meshFor();
     const sigA = meshA.sig;
-    // Simulate a dissolution event: bump a sampled cell's wall_depth.
-    // The cheap signature samples every floor(N/8) = 15th cell, so
-    // c=0 is guaranteed to be in the checksum. (Mirrors how
-    // wall.erodeCells distributes wall_depth across many cells in
-    // practice — at least one sampled cell will catch any real event.)
-    wall.rings[3][0].wall_depth += 1.5;
-    meshA.recomputeIfStale(wall);
+    const revisionA = wall._geometry_revision;
+    expect(sigA).toContain(`rev:${revisionA}`);
+    expect(JSON.parse(JSON.stringify(wall.rings[3][1]))).toMatchObject({
+      wall_depth: 0,
+      base_radius_mm: wall.rings[3][1].base_radius_mm,
+    });
+    const anchor = wall.surfaceAnchorDirection({ wall_anchor: wall._anchorFromRingCell(3, 1) });
+    const beforeArea = meshA.surfaceAreaMm2();
+    const beforePatch = meshA.sampleSurfacePatch(anchor, 24, 0.02, 77).samples;
+    const vertexIndex = 3 * 48 + 1;
+    const beforeVertex = Array.from(meshA.positions.slice(vertexIndex * 3, vertexIndex * 3 + 3));
+    // Cell 1 was outside the old eight-cells-per-ring checksum.
+    wall.rings[3][1].wall_depth += 4.0;
+    expect(wall._geometry_revision).toBe(revisionA + 1);
+    expect(wall.meshFor()).toBe(meshA);
     const sigB = meshA.sig;
     expect(sigB).not.toBe(sigA);
+    expect(meshA.surfaceAreaMm2()).not.toBeCloseTo(beforeArea, 8);
+    expect(Array.from(meshA.positions.slice(vertexIndex * 3, vertexIndex * 3 + 3)))
+      .not.toEqual(beforeVertex);
+    expect(meshA.sampleSurfacePatch(anchor, 24, 0.02, 77).samples)
+      .not.toEqual(beforePatch);
     // And the cached signature on the SAME mesh updated in place — no
     // stale identity hanging around for the cache layer to mis-key on.
     expect(meshA.sig).toBe(sigB);
   });
 
-  it('recomputeIfStale is a no-op when the wall is unchanged', () => {
+  it('keeps the authenticated rebuild bridge private and is a no-op when unchanged', () => {
     const wall = new WallState({ cells_per_ring: 120, ring_count: 16 });
-    const mesh = WallMesh.fromWallState(wall);
+    const mesh = wall.meshFor();
     const sig0 = mesh.sig;
     const firstX = mesh.positions[0];
-    expect(mesh.recomputeIfStale(wall)).toBe(false);
+    expect((Object.getPrototypeOf(mesh) as any)._recomputeSurfaceMetrics).toBeUndefined();
+    expect((Object.getPrototypeOf(mesh) as any).recompute).toBeUndefined();
+    expect((Object.getPrototypeOf(mesh) as any).recomputeIfStale).toBeUndefined();
+    expect(wall.meshFor()).toBe(mesh);
     expect(mesh.sig).toBe(sig0);
     expect(mesh.positions[0]).toBe(firstX);
   });
@@ -119,6 +137,163 @@ describe('cavity-mesh Phase 2 — WallMesh builds + recomputes correctly', () =>
     const m1 = wall.meshFor();
     const m2 = wall.meshFor();
     expect(m1).toBe(m2);
+  });
+
+  it('integrates exact tessellated surface area and updates it with wall geometry', () => {
+    const wall = new WallState({
+      cells_per_ring: 48, ring_count: 12, vug_diameter_mm: 70,
+      primary_bubbles: 4, secondary_bubbles: 8, shape_seed: 31415,
+    });
+    const mesh = wall.meshFor();
+    let independentArea = 0;
+    for (let i = 0; i < mesh.indices.length; i += 3) {
+      const ia = mesh.indices[i], ib = mesh.indices[i + 1], ic = mesh.indices[i + 2];
+      const p = mesh.positions;
+      const ab = [p[ib * 3] - p[ia * 3], p[ib * 3 + 1] - p[ia * 3 + 1], p[ib * 3 + 2] - p[ia * 3 + 2]];
+      const ac = [p[ic * 3] - p[ia * 3], p[ic * 3 + 1] - p[ia * 3 + 1], p[ic * 3 + 2] - p[ia * 3 + 2]];
+      const cross = [
+        ab[1] * ac[2] - ab[2] * ac[1],
+        ab[2] * ac[0] - ab[0] * ac[2],
+        ab[0] * ac[1] - ab[1] * ac[0],
+      ];
+      independentArea += 0.5 * Math.hypot(cross[0], cross[1], cross[2]);
+    }
+    expect(mesh.surfaceAreaMm2()).toBeCloseTo(independentArea, 9);
+    expect(wall.surfaceAreaMm2()).toBeCloseTo(independentArea, 9);
+
+    const before = mesh.surfaceAreaMm2();
+    wall.rings[3][1].wall_depth += 4;
+    wall.meshFor();
+    expect(mesh.surfaceAreaMm2()).not.toBeCloseTo(before, 6);
+  });
+
+  it('selects and samples an exact-area deterministic wall patch', () => {
+    const wall = new WallState({
+      cells_per_ring: 48, ring_count: 12, vug_diameter_mm: 70,
+      primary_bubbles: 4, secondary_bubbles: 8, shape_seed: 2718,
+    });
+    const mesh = wall.meshFor();
+    const coverage = 0.37;
+    const a = mesh.sampleSurfacePatch([1, 0, 0], 32, coverage, 99);
+    const b = mesh.sampleSurfacePatch([1, 0, 0], 32, coverage, 99);
+    expect(a.area_mm2).toBeCloseTo(mesh.surfaceAreaMm2() * coverage, 9);
+    expect(a.samples).toEqual(b.samples);
+    expect(a.samples).toHaveLength(32);
+    expect(a.triangle_indices.length).toBeGreaterThan(0);
+    const selected = new Set(a.triangle_indices);
+    const reached = new Set<number>();
+    const queue = [a.triangles[0].triangle_index];
+    while (queue.length) {
+      const index = queue.shift()!;
+      if (reached.has(index)) continue;
+      reached.add(index);
+      const triangle = a.triangles.find((t: any) => t.triangle_index === index);
+      for (const neighbor of triangle?.neighbor_indices || []) {
+        if (selected.has(neighbor) && !reached.has(neighbor)) queue.push(neighbor);
+      }
+    }
+    expect(reached.size).toBe(selected.size);
+    for (const p of a.samples) {
+      expect(Number.isFinite(p.x + p.y + p.z + p.nx + p.ny + p.nz)).toBe(true);
+      expect(Math.hypot(p.nx, p.ny, p.nz)).toBeCloseTo(1, 10);
+      expect(p.x * p.nx + p.y * p.ny + p.z * p.nz).toBeLessThan(0);
+    }
+  });
+
+  it('keeps physical surface caches private from diagnostic-copy poisoning', () => {
+    const wall = new WallState({
+      cells_per_ring: 48, ring_count: 12, vug_diameter_mm: 70,
+      primary_bubbles: 4, secondary_bubbles: 8, shape_seed: 2718,
+    });
+    const mesh = wall.meshFor();
+    const ringIdx = 6, cellIdx = 7, vertex = ringIdx * mesh.cellsPerRing + cellIdx;
+    const baselineZone = wall.surfaceZoneAtVertex(ringIdx, cellIdx);
+    const baselineVolume = wall._cellCavityVolAtVertexMm3(vertex);
+    const baselineArea = wall.surfaceAreaMm2();
+    const baselineAnchor = CavitySurfaceAnchors.fromWallMeshVertex(mesh, vertex);
+    const baselinePatch = mesh.sampleSurfacePatch([1, 0, 0], 24, 0.12, 77);
+    const baselinePatchJson = JSON.stringify(baselinePatch);
+    let bridgeIntercepted = 0;
+    const bridgeNames = [
+      '_wallMeshSurfaceStateInternal', '_wallMeshCellSurfaceAreasInternal',
+      '_wallMeshTopologyInternal',
+      '_wallMeshSurfaceAreaInternal', '_wallMeshCellSurfaceAreaInternal',
+      '_wallMeshVoidNormalInternal', '_wallMeshIncidentTriangleInternal',
+      '_wallMeshThermalGeometryInternal', '_resetWallMeshGeodesicState',
+    ];
+    for (const name of bridgeNames) {
+      (globalThis as any)[name] = () => { bridgeIntercepted++; return null; };
+    }
+
+    mesh.cellSurfaceAreasMm2().fill(0);
+    const normalCopy = mesh.voidNormalAtVertex(vertex);
+    if (normalCopy) normalCopy.fill(99);
+    const incidentCopy = mesh.incidentTriangleForVertex(vertex);
+    if (incidentCopy) incidentCopy.barycentric.fill(99);
+    if (baselinePatch.triangles[0]) {
+      baselinePatch.triangles[0].area_mm2 = 0;
+      baselinePatch.triangles[0].centroid_dir.fill(99);
+      baselinePatch.triangles[0].outward_normal.fill(99);
+      baselinePatch.triangles[0].neighbor_indices.length = 0;
+    }
+
+    // These legacy-looking properties and method names are deliberately
+    // ordinary public data now; physics must never consult them.
+    mesh._surfaceTriangles = [];
+    mesh._voidNormalsByVertex = new Float32Array(mesh.numInterior * 3);
+    mesh._cellSurfaceAreas = new Float64Array(mesh.numInterior);
+    mesh._cellSurfaceAreasSig = mesh.sig;
+    mesh._incidentTriangleByVertex = [];
+    mesh.surface_area_mm2 = 0;
+    mesh.surfaceAreaMm2 = () => 1;
+    mesh.cellSurfaceAreaAtVertexMm2 = () => 0;
+    mesh.cellSurfaceAreasMm2 = () => new Float64Array(mesh.numInterior);
+    mesh.voidNormalAtVertex = () => [0, -1, 0];
+    mesh.incidentTriangleForVertex = () => null;
+    mesh.surfacePatch = () => ({ area_mm2: 0, triangles: [] });
+
+    expect(wall.surfaceZoneAtVertex(ringIdx, cellIdx)).toBe(baselineZone);
+    expect(wall._cellCavityVolAtVertexMm3(vertex)).toBe(baselineVolume);
+    expect(wall.surfaceAreaMm2()).toBe(baselineArea);
+    expect(CavitySurfaceAnchors.fromWallMeshVertex(mesh, vertex)).toEqual(baselineAnchor);
+    expect(JSON.stringify(mesh.sampleSurfacePatch([1, 0, 0], 24, 0.12, 77)))
+      .toBe(baselinePatchJson);
+    expect(bridgeIntercepted).toBe(0);
+    for (const name of bridgeNames) delete (globalThis as any)[name];
+  });
+
+  it('restores canonical triangle topology before a legitimate wall recompute', () => {
+    const make = () => new WallState({
+      cells_per_ring: 48, ring_count: 12, vug_diameter_mm: 70,
+      primary_bubbles: 4, secondary_bubbles: 8, shape_seed: 31415,
+    });
+    const poisonedWall = make(), controlWall = make();
+    const poisonedMesh = poisonedWall.meshFor(), controlMesh = controlWall.meshFor();
+    const canonicalIndices = poisonedMesh.indices.slice();
+    poisonedMesh.indices.fill(0);
+    poisonedWall.rings[3][1].wall_depth += 4;
+    controlWall.rings[3][1].wall_depth += 4;
+    expect(poisonedWall.meshFor()).toBe(poisonedMesh);
+    controlWall.meshFor();
+    expect(poisonedMesh.indices).toEqual(canonicalIndices);
+    expect(poisonedMesh.indices).toEqual(controlMesh.indices);
+    expect(Array.from(poisonedMesh.cellSurfaceAreasMm2()))
+      .toEqual(Array.from(controlMesh.cellSurfaceAreasMm2()));
+    expect(poisonedMesh.sampleSurfacePatch([1, 0, 0], 24, 0.12, 77))
+      .toEqual(controlMesh.sampleSurfacePatch([1, 0, 0], 24, 0.12, 77));
+  });
+
+  it('rejects public dimension poisoning before lazy physical-area assembly', () => {
+    const wall = new WallState({ cells_per_ring: 48, ring_count: 12 });
+    const mesh = wall.meshFor();
+    const canonicalCount = mesh.numInterior;
+    mesh.numInterior = canonicalCount + 2;
+    expect(() => mesh.cellSurfaceAreasMm2()).toThrow(/canonical topology/i);
+    expect(() => wall._cellCavityVolAtVertexMm3(0)).toThrow(/canonical topology/i);
+    mesh.numInterior = 1;
+    expect(() => wall.meshFor()).toThrow(/canonical topology/i);
+    mesh.numInterior = canonicalCount;
+    expect(mesh.cellSurfaceAreasMm2()).toHaveLength(canonicalCount);
   });
 
   it('maxRadiusByRing reflects per-ring max distance', () => {
@@ -149,11 +324,12 @@ describe('cavity-mesh Phase 2 — WallMesh builds + recomputes correctly', () =>
     // dissolution event should change after run_step deposits some
     // wall_depth (cooling has acid pulses that erode the wall).
     const conds: any = {
-      fluid: { Ca: 200, CO3: 200, pH: 7, salinity: 0, Cu: 0, Pb: 0, Zn: 0,
-               Si: 50, Fe: 5, Mn: 1, Al: 1, Mg: 50, K: 1, Na: 1, S: 1, As: 0,
-               Sr: 1, Ba: 1, F: 0, Cl: 0, NO3: 0, PO4: 0, SO4: 50, H2S: 0,
-               concentration: 100, density: 1.0,
-               recompute() { /* no-op for this test */ } },
+      fluid: new FluidChemistry({
+        Ca: 200, CO3: 200, pH: 7, salinity: 0, Cu: 0, Pb: 0, Zn: 0,
+        SiO2: 50, Fe: 5, Mn: 1, Al: 1, Mg: 50, K: 1, Na: 1,
+        S: 50, sulfateInherited: true, As: 0, Sr: 1, Ba: 1, F: 0, Cl: 0,
+        concentration: 100,
+      }),
       wall: new VugWall({ composition: 'limestone' }),
       temperature: 50, pressure_bars: 1, depth_m: 0, oxygen_fugacity: -50,
     };

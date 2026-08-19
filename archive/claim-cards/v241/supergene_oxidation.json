@@ -1,0 +1,466 @@
+{
+  "scenario": "supergene_oxidation",
+  "sim_version": 241,
+  "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:mmol-formula-to-mgkg+proportional-poolcap+trace-ledger-v5|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:physical-timescale+mass-weighted-budget-v2|diagnosis:production-nucleator+causal-supersat+route-capacity-v3|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "764b69de389bf0546ab4198bca8a9bdeba276c4c2b77d22f7537c971510e6fc3",
+  "strip_steps": 200,
+  "claim": {
+    "anchor": "Tsumeb mine, Otavi Mountain Land, Namibia. 1st-stage gossan (uppermost supergene zone). One of the most mineralogically diverse deposits ever discovered (~280 species), type locality for germanium.",
+    "description": "Cold, oxygenated supergene weathering of a Pb-Zn-Cu sulfide pipe. Pb+Mo→wulfenite, Zn+CO3→smithsonite, Zn+As→adamite, Pb+As+Cl→mimetite, Fe→goethite, Ca+SO4→selenite, Cu+CO3→malachite. The 1st-stage gossan brings the high-Pb-As-Cl uppermost zone with mimetite, anglesite, cerussite, willemite, and Ge-bearing oxidation phases.",
+    "expects_species": [
+      "wulfenite",
+      "smithsonite",
+      "adamite",
+      "mimetite",
+      "malachite",
+      "vanadinite",
+      "cerussite",
+      "selenite",
+      "conichalcite",
+      "pharmacolite",
+      "haidingerite"
+    ],
+    "sources": [
+      "Pinch & Wilson 1977 — canonical Tsumeb monograph",
+      "Lombaard et al. 1986 — Tsumeb geology",
+      "Melcher 2003 — Tsumeb Ge geochemistry",
+      "Seo et al. 2012 — Pb+Mo simultaneous weathering for wulfenite formation",
+      "Hemley et al. 1969 — alunite stability + Al solubility under acid-sulfate conditions",
+      "Stoffregen et al. 2000 — alunite-jarosite paragenesis review",
+      "Strunz 1959 — Tsumeb deep oxidation zone scheelite + lead-tungstate suite (raspite + stolzite)",
+      "Bowell 2014, Rev. Mineral. Geochem. 79:589 — Tsumeb hydrogeochemistry + arsenate mineral stability (the acid-front movement)",
+      "Singer & Stumm 1970, Science 167:1121 — Fe(II)→Fe(III) as the rate-determining step of sulfide-oxidation acid generation",
+      "Skarpelis 2009, Resource Geology 59(1) — Lavrion Pb-Ag-Zn supergene oxidation profile (carbonate-hosted analogue)"
+    ],
+    "initial_temperature_C": 35,
+    "initial_pressure_kbar": 0.05,
+    "wall_architecture": "irregular",
+    "notes": [
+      "Anchor: Tsumeb mine (Otavi Mountain Land, Namibia). Pipe-shaped Pb-Zn-Cu sulfide body in Neoproterozoic dolomite, with three distinct supergene oxidation zones developed during Mesozoic-Cenozoic uplift. Argentiferous (native Ag, proustite, pyrargyrite, argentiferous galena). References: Pinch & Wilson 1977 (canonical Tsumeb monograph), Lombaard et al. 1986 (geology), Melcher 2003 (Ge geochemistry).",
+      "Acid-window mechanic (steps 5-16): the supergene_acidification handler fires FOUR times (steps 5/8/12/16) to hold pH near 4 against the limestone wall's carbonate buffering. Without the repeated pulses, the buffer neutralizes pH back to 6+ within ~5 steps. The 15-step acid window is when scorodite + jarosite + alunite nucleate. ev_meteoric_flush at step 20 ends the acid phase.",
+      "Chemistry-audit gap-fill pass (Apr 2026): added Ag (Tsumeb's silver suite), Ge (the type-locality element), Sb (proustite-pyrargyrite + tetrahedrite enabling), Na/K (minor groundwater cation traces), Au=0.3 (sub-threshold trace, no nucleation). v5 gap-fills: Al=25 (alunite enabling per Hemley 1969 + Stoffregen 2000), W=20 (Round 8d-1, Tsumeb deep-zone scheelite + raspite + stolzite per Strunz 1959). Existing 8-event sequence preserved untouched.",
+      "MINDAT VALID-SPECIES REFERENCE (boss-supplied screenshots, 2026-07-25 — Tsumeb Mine (Ongopolo), Oshikoto Region, Namibia; the sweep's GIANT: hundreds of valid species, ~70+ type localities (TL) — too large to transcribe; the record below is the SIM-VERDICT TABLE, i.e. every seed-42 v236 species checked against the captures. CAVEAT: screenshot-limited — a 'not visible' flag means verify on the live page before any kill. Conventions from this page: struck-through = mindat-erroneous (here the Co-bearing + Cu-bearing ADAMITE VARIETIES are struck — adamite the species stays valid); italic-? = questioned (Patrónite?, Richardsite?, Stibnite?, Idaite?, 'Tetrahedrite Subgroup'?) — questioned ≠ license. LICENSED ✓ (28/36 sim species visible on the list): adamite, anglesite, aurichalcite, azurite, brochantite, caledonite, cerussite, chalcocite, conichalcite, covellite, cuprite, duftite (TL), goethite, gypsum→SELENITE (the 151 mm giant is record-licensed — selenite census now reads elmwood NO / picher YES / sweetwater NO / TSUMEB YES), jarosite, köttigite, lepidocrocite, malachite, mimetite, olivenite (+ Zn-bearing var.), plumbogummite (+ Ga-rich var.), powellite, pyromorphite, quartz, scorodite, smithsonite, stolzite, vanadinite, wulfenite (+ var. chillagite). NOT VISIBLE IN CAPTURE — flags, live-page check before acting: the ARSENATE-BLOOM pair erythrite ×7 + annabergite ×4 (heterogenite IS listed, so Co is real here — but the blooms are absent from the visible A/E blocks), the Ca-arsenates haidingerite ×4 + pharmacolite ×2 (BOTH in expects_species!), ferrimolybdite ×6 @17.5 mm (molybdenite listed, its oxidation product not visible), raspite ×1 (stolzite listed; raspite carries the Strunz 1959 deep-zone citation in the note above — literature vs list tension, adjudicate), alunite ×1 (2 µm dust). LICENSED-BUT-UNFIRED candidates the sim already has engines/history for: descloizite + mottramite (both listed — the rung-4b fork pair), willemite (listed! extinct at mvt/tn457 by rung 4a but Tsumeb documents it — a legit future tenant HERE), dioptase, rosasite, hemimorphite, hydrozincite, wurtzite, witherite, greenockite, native copper/silver/gold, azurite-suite depth. The 'Mineral GS1 (of Gebhard)' curiosity noted for the boss."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:mmol-formula-to-mgkg+proportional-poolcap+trace-ledger-v5|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:physical-timescale+mass-weighted-budget-v2|diagnosis:production-nucleator+causal-supersat+route-capacity-v3|save-identity:version+model+scenario-fail-closed-v1",
+      "fluid_pressure": {
+        "initial_kbar": 0.05,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.9173625399999996,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 58.735,
+          "initial_water_activity": {
+            "value": 0.9988,
+            "salinityPpt": 2,
+            "naclWeightPercentEquivalent": 0.2,
+            "uncertainty": 0.01,
+            "status": "calibrated-proxy",
+            "note": "NaCl-equivalent interpolation of Chirife & Resnik (1984) consensus values; natural multicomponent-brine composition remains the dominant uncertainty."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 35,
+    "paragenetic_order": [
+      {
+        "mineral": "adamite",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "anglesite",
+        "first_step": 0,
+        "events": 8
+      },
+      {
+        "mineral": "cerussite",
+        "first_step": 0,
+        "events": 8
+      },
+      {
+        "mineral": "duftite",
+        "first_step": 0,
+        "events": 6
+      },
+      {
+        "mineral": "goethite",
+        "first_step": 0,
+        "events": 3
+      },
+      {
+        "mineral": "malachite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "mimetite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "selenite",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "wulfenite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "conichalcite",
+        "first_step": 1,
+        "events": 4
+      },
+      {
+        "mineral": "pharmacolite",
+        "first_step": 1,
+        "events": 7
+      },
+      {
+        "mineral": "stolzite",
+        "first_step": 1,
+        "events": 7
+      },
+      {
+        "mineral": "brochantite",
+        "first_step": 2,
+        "events": 5
+      },
+      {
+        "mineral": "ferrimolybdite",
+        "first_step": 3,
+        "events": 6
+      },
+      {
+        "mineral": "koettigite",
+        "first_step": 3,
+        "events": 2
+      },
+      {
+        "mineral": "jarosite",
+        "first_step": 4,
+        "events": 1
+      },
+      {
+        "mineral": "caledonite",
+        "first_step": 5,
+        "events": 2
+      },
+      {
+        "mineral": "scorodite",
+        "first_step": 7,
+        "events": 7
+      },
+      {
+        "mineral": "powellite",
+        "first_step": 12,
+        "events": 4
+      },
+      {
+        "mineral": "alunite",
+        "first_step": 15,
+        "events": 1
+      },
+      {
+        "mineral": "lepidocrocite",
+        "first_step": 19,
+        "events": 1
+      },
+      {
+        "mineral": "smithsonite",
+        "first_step": 19,
+        "events": 3
+      },
+      {
+        "mineral": "aurichalcite",
+        "first_step": 23,
+        "events": 4
+      },
+      {
+        "mineral": "chalcocite",
+        "first_step": 54,
+        "events": 4
+      },
+      {
+        "mineral": "covellite",
+        "first_step": 54,
+        "events": 8
+      },
+      {
+        "mineral": "cuprite",
+        "first_step": 54,
+        "events": 1
+      },
+      {
+        "mineral": "quartz",
+        "first_step": 69,
+        "events": 1
+      },
+      {
+        "mineral": "olivenite",
+        "first_step": 74,
+        "events": 1
+      },
+      {
+        "mineral": "annabergite",
+        "first_step": 95,
+        "events": 1
+      },
+      {
+        "mineral": "erythrite",
+        "first_step": 96,
+        "events": 6
+      },
+      {
+        "mineral": "plumbogummite",
+        "first_step": 114,
+        "events": 3
+      },
+      {
+        "mineral": "pyromorphite",
+        "first_step": 117,
+        "events": 6
+      },
+      {
+        "mineral": "vanadinite",
+        "first_step": 132,
+        "events": 6
+      },
+      {
+        "mineral": "azurite",
+        "first_step": 136,
+        "events": 2
+      },
+      {
+        "mineral": "raspite",
+        "first_step": 143,
+        "events": 1
+      }
+    ],
+    "surprises_not_in_expects": [
+      "anglesite",
+      "duftite",
+      "goethite",
+      "stolzite",
+      "brochantite",
+      "ferrimolybdite",
+      "koettigite",
+      "jarosite",
+      "caledonite",
+      "scorodite",
+      "powellite",
+      "alunite",
+      "lepidocrocite",
+      "aurichalcite",
+      "chalcocite",
+      "covellite",
+      "cuprite",
+      "quartz",
+      "olivenite",
+      "annabergite",
+      "erythrite",
+      "plumbogummite",
+      "pyromorphite",
+      "azurite",
+      "raspite"
+    ],
+    "expected_no_shows": [
+      "haidingerite"
+    ],
+    "environment": {
+      "T": {
+        "first": 32.48,
+        "last": 23.622,
+        "min": 23.622,
+        "max": 47.244,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 6.78,
+        "last": 5.126,
+        "min": 4.685,
+        "max": 6.89,
+        "units": ""
+      },
+      "Eh": {
+        "first": 322.835,
+        "last": 171.654,
+        "min": 129.134,
+        "max": 355.906,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 2.362,
+        "last": 2.362,
+        "min": 2.362,
+        "max": 2.362,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 1.811,
+        "last": 0.748,
+        "min": 0.591,
+        "max": 2.205,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 2.992,
+        "min": 0.984,
+        "max": 2.992,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -0.882,
+        "last": -2.52,
+        "min": -4.535,
+        "max": -0.504,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -1.008,
+        "last": -2.709,
+        "min": -4.661,
+        "max": -0.63,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -2.709,
+        "last": -6.866,
+        "min": -8,
+        "max": -2.205,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -2.016,
+        "last": -3.717,
+        "min": -5.669,
+        "max": -1.638,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 0.945,
+        "last": -1.197,
+        "min": -2.772,
+        "max": 1.134,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -1.323,
+        "last": -0.257,
+        "min": -1.323,
+        "max": -0.257,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -1.512,
+        "last": -0.504,
+        "min": -1.512,
+        "max": -0.504,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 200,
+      "fluid_pressure_kbar": {
+        "first": 0.05,
+        "last": 0.05,
+        "min": 0.05,
+        "max": 0.05,
+        "samples": 200
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 200
+      },
+      "temperature_C": {
+        "first": 33.26089435471222,
+        "last": 25,
+        "min": 25,
+        "max": 48.604498732602224,
+        "samples": 200
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.929457217227437,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.9888905400000003,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 200
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 58.735
+        },
+        "last": {
+          "pure_water_boundary_C": 58.735
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

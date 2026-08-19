@@ -1,0 +1,261 @@
+{
+  "scenario": "amethyst_geode",
+  "sim_version": 241,
+  "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:mmol-formula-to-mgkg+proportional-poolcap+trace-ledger-v5|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:physical-timescale+mass-weighted-budget-v2|diagnosis:production-nucleator+causal-supersat+route-capacity-v3|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "c143553e8db3aa07b8f0c98db40aed5178fb6a75afca81b55a56aff03c9f41b0",
+  "strip_steps": 110,
+  "claim": {
+    "anchor": "Ametista do Sul, Rio Grande do Sul, Brazil — amethyst geodes in the Serra Geral Formation high-Ti basalt (Paraná Continental Flood Basalt Province, Lower Cretaceous ~134 Ma)",
+    "description": "A Brazilian amethyst geode. A basalt gas cavity fills inward — celadonite rim → agate → clear quartz → amethyst. Mid-growth a green celadonite film frosts the amethyst prism faces; the tip renews a wider cap THROUGH the film — a MASKING SCEPTRE (the mass-conserving twin of grimsel's corrosion sceptre). Goethite staining at the base.",
+    "expects_species": [
+      "quartz"
+    ],
+    "sources": [
+      "Gilg H.A., Morteani G., Kostitsyn Y., Preinfalk C., Gatter I., Strieder A.J. (2003) — Genesis of amethyst geodes in basaltic rocks of the Serra Geral Formation (Ametista do Sul, Rio Grande do Sul, Brazil): a fluid inclusion, REE, oxygen, carbon, and Sr isotope study on basalt, quartz, and calcite. Mineralium Deposita 38: 1009-1025. Geode structure celadonite→agate→quartz→amethyst; LOW-T (<100°C, prob <50°C) low-salinity sedimentary-brine model.",
+      "Amethyst geodes in the basaltic flow from Triz quarry at Ametista do Sul (Rio Grande do Sul, Brazil): magmatic source of silica for the amethyst crystallizations. Geological Magazine 144(4): 731. Primary amethyst fluid inclusions 152-238°C; magmatic silica source — the high-T camp the scenario's warm nucleation phase reflects.",
+      "Rossman G.R. (1994) — Colored varieties of the silica minerals. Reviews in Mineralogy 29: 433-468. Amethyst = Fe³⁺ colour centre activated by natural γ-irradiation (the same Rossman already cited by the js/59 smoky/morion Al-centre path).",
+      "Proust D. & Fontan F. (2007) — Brazilian amethyst-geode late-stage mineralogy (the same Proust & Fontan cited in minerals.json for the amethyst-pocket late euhedral / lepidocrocite-patina sequence).",
+      "Takahashi K. & Sunagawa I. (2004) — sceptre quartz by epitaxial-like overgrowth (ELO) after a masking film: the masking-sceptre mechanism, distinct from corrosion-then-regeneration."
+    ],
+    "initial_temperature_C": 160,
+    "initial_pressure_kbar": 0.3,
+    "wall_architecture": null,
+    "notes": [
+      "Anchor: Ametista do Sul, Rio Grande do Sul — the classic Brazilian amethyst-geode district, hosted in a ~40-50 m subhorizontal high-Ti basalt flow of the Serra Geral Formation (Paraná flood basalts, Lower Cretaceous ~134 Ma). Geode structure INWARD: celadonite rim → agate/chalcedony → colourless quartz → amethyst (Gilg et al. 2003).",
+      "Formation temperature is genuinely debated in the literature and the scenario bridges the two camps. Monophase liquid inclusions with low ice-melting depressions argue a LOW-T, low-salinity fluid (<100°C, probably <50°C — a sedimentary-brine / paleo-aquifer model; Gilg et al. 2003). Primary inclusions in the amethyst itself yield 152-238°C with a MAGMATIC silica source (Triz-quarry study, Geol. Mag. 144:731). The scenario nucleates amethyst in a warm early phase (~160°C) and finishes the cavity cool (~70°C via the declared cooling trend), with the celadonite film + goethite stain as the late low-T overprint.",
+      "AMETHYST COLOUR is Fe³⁺ substituting for Si⁴⁺, activated by a natural γ-dose (Rossman 1994). The Serra Geral basalt is mafic — low K/U/Th per unit time — but the geode has sat in it for ~134 Ma, so cumulative background dose tips the Fe centres to amethyst (NOT the granite-hosted morion of a Grimsel cleft). The sim expresses this via wall.gamma_host (js/59, added with this scenario): a modest 0.45 accrues radiation_damage into the amethyst band (>0.1) without reaching smoky (>0.3). No pegmatite/phonolite host is claimed — the scenario declares its own low, long background; every existing basalt scenario leaves gamma_host unset and is byte-identical.",
+      "THE MASKING SCEPTRE: the celadonite (green K-Fe mica-clay) that rims these geodes also settles on the growing amethyst as a film. A PRISM-dominant celadonite film (prism 0.45, term 0.08 — frosts the {10-10} prism, spares the tip) arrests the sides; the Silica Renewal Pulse then lifts σ over the dead-zone barrier σ*(φ_prism) and the tip renews a wider {10-11}-capped termination THROUGH the film — a masking-route sceptre (classifyQuartzSceptre js/45; Takahashi & Sunagawa 2004 ELO). grimsel stays the clean CORROSION-sceptre reference; this is the second natural route, the mass-conserving twin.",
+      "The late iron-oxide film is the diagnostic base staining — a termination/uniform film (prism 0.3, term 0.3), NOT a second sceptre; real Brazilian points are commonly goethite/hematite-stained at the matrix contact."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:mmol-formula-to-mgkg+proportional-poolcap+trace-ledger-v5|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:physical-timescale+mass-weighted-budget-v2|diagnosis:production-nucleator+causal-supersat+route-capacity-v3|save-identity:version+model+scenario-fail-closed-v1",
+      "fluid_pressure": {
+        "initial_kbar": 0.3,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.4282625400000004,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 62.41,
+          "initial_water_activity": {
+            "value": 0.9976,
+            "salinityPpt": 4,
+            "naclWeightPercentEquivalent": 0.4,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 2,
+    "paragenetic_order": [
+      {
+        "mineral": "quartz",
+        "first_step": 0,
+        "events": 3
+      },
+      {
+        "mineral": "opal",
+        "first_step": 78,
+        "events": 5
+      }
+    ],
+    "surprises_not_in_expects": [
+      "opal"
+    ],
+    "expected_no_shows": [],
+    "environment": {
+      "T": {
+        "first": 159.449,
+        "last": 67.913,
+        "min": 67.913,
+        "max": 159.449,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 7.22,
+        "last": 6.724,
+        "min": 6.724,
+        "max": 7.22,
+        "units": ""
+      },
+      "Eh": {
+        "first": 77.165,
+        "last": 77.165,
+        "min": 77.165,
+        "max": 77.165,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 3.937,
+        "last": 3.937,
+        "min": 3.937,
+        "max": 3.937,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 0.394,
+        "last": 0.394,
+        "min": 0.394,
+        "max": 0.394,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -1.071,
+        "last": -1.575,
+        "min": -1.575,
+        "max": -0.819,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -1.197,
+        "last": -1.701,
+        "min": -1.701,
+        "max": -0.882,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -2.016,
+        "last": -3.339,
+        "min": -3.339,
+        "max": -1.764,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -2.772,
+        "last": -2.961,
+        "min": -3.15,
+        "max": -2.457,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 1.575,
+        "last": 1.197,
+        "min": 1.197,
+        "max": 1.638,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 110,
+      "fluid_pressure_kbar": {
+        "first": 0.3,
+        "last": 0.3,
+        "min": 0.3,
+        "max": 0.3,
+        "samples": 110
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 110
+      },
+      "temperature_C": {
+        "first": 159.97782118707738,
+        "last": 68.28307316763484,
+        "min": 68.28307316763484,
+        "max": 159.97782118707738,
+        "samples": 110
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.4282827966260294,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.713869622834345,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 110
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 62.41
+        },
+        "last": {
+          "pure_water_boundary_C": 62.41
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

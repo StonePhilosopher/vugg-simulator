@@ -4,8 +4,8 @@
  *   "I don't think I'm seeing dips in the levels in the broth around crystals."
  *
  * Crystal growth DOES debit the per-cell fluid: _runEngineForCrystal points
- * conditions.fluid at cell.fluid (by ref) and applyMassBalance subtracts
- * MASS_BALANCE_SCALE × thickness_um × stoich. So a depletion HALO should
+ * conditions.fluid at cell.fluid (by ref) and applyStoichiometricGrowthBudget subtracts
+ * formula mmol/kg/µm × thickness_um × stoich × molar mass. So a depletion HALO should
  * exist around each crystal — UNLESS it's (a) too small (scale 0.02), and/or
  * (b) smeared flat by the per-step 3D voxel diffusion.
  *
@@ -21,10 +21,11 @@
  */
 import { loadSimBundle } from './_harness.mjs';
 
-const { SCENARIOS, VugSimulator, setSeed, MINERAL_STOICHIOMETRY, MASS_BALANCE_SCALE } =
+const { SCENARIOS, VugSimulator, setSeed, MINERAL_STOICHIOMETRY,
+  STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM } =
   await loadSimBundle({
     toolName: 'depletion-dip-probe',
-    extraExports: ['MINERAL_STOICHIOMETRY', 'MASS_BALANCE_SCALE'],
+    extraExports: ['MINERAL_STOICHIOMETRY', 'STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM'],
   });
 
 const SCENS = process.argv.slice(2).length
@@ -48,7 +49,7 @@ function stats(xs) {
   return { mean, cv: mean > 1e-9 ? Math.sqrt(v) / mean : 0, n: xs.length };
 }
 
-console.log(`\n### DEPLETION-DIP PROBE  (MASS_BALANCE_SCALE=${MASS_BALANCE_SCALE})`);
+console.log(`\n### DEPLETION-DIP PROBE  (formula mmol/kg/µm=${STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM})`);
 
 for (const SCEN of SCENS) {
   if (!SCENARIOS[SCEN]) { console.log(`\n${SCEN}: (no such scenario)`); continue; }

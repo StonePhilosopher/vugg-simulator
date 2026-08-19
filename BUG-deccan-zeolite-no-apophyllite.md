@@ -1,10 +1,11 @@
 # Bug Report: deccan_zeolite scenario doesn't fire apophyllite (its namesake mineral)
 
-**Status:** ✅ RESOLVED 2026-08-15 (audit). Option A landed: Stage III
-SiO₂ pulse is +600 in `js/70h-deccan-zeolite.ts`; `apophyllite` is in
-`expects_species`; seed-42 nucleation verified by tests. Paths updated
-off pre-flatten / Python-only cites. No further geology change in this
-pass.
+**Status:** ✅ RESOLVED and re-verified 2026-08-15 against SIM 266. Stage III
+uses the +600 ppm SiO₂ pulse in `js/70h-deccan-zeolite.ts`; the scenario
+contract expects apophyllite, and authenticated seed-42 evidence records its
+first appearance at step 110.
+Paths in this file were updated off pre-flatten / Python-only cites
+during the 2026-08-15 canonical-main audit.
 
 **Date:** 2026-05-02
 **Surfaced by:** v18 scenario species-expectation work (commit `2d977fa`)
@@ -78,11 +79,24 @@ Bumping to +600 lands SiO2 with headroom above the 800 gate. Apophyllite gets ti
 
 ## Verification after fix
 
+The Python commands below belonged to the retired pre-browser harness and are
+kept only as historical root-cause context. Current verification is Node-only:
+
 ```bash
-npx vitest run tests-js/boss-edits-audit.test.ts tests-js/apophyllite-green.test.ts
+npm test -- --file tests-js/deccan-paragenesis.test.ts
+npm test -- --file tests-js/scenario-expectation-contracts.test.ts
 ```
 
-`apophyllite` is in `expects_species` in `data/scenarios.json5`. Regression covered by `tests-js/boss-edits-audit.test.ts` (Boss edit 2 — Deccan Stage III SiO₂ pulse 300→600).
+Then add `apophyllite` to `expects_species` in `data/scenarios.json5`:
+```json5
+"expects_species": ["hematite", "quartz", "magnetite", "apophyllite"],
+```
+
+The Node scenario-contract test and authenticated seed-42 evidence codify the
+fix and prevent future regression.
+
+`apophyllite` is already present in `expects_species` in
+`data/scenarios.json5`; the snippet above records the shape of the fix.
 
 ## Related: the "bloody apophyllite" phantom inclusion mechanic
 

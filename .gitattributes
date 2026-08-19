@@ -1,0 +1,32 @@
+# Defence in depth. NOT the authority.
+#
+# The authority on what an evidence receipt describes is tools/hash-policy.mjs:
+# text is LF-normalised before it is hashed or counted, binary is passed through
+# untouched, and every receipt declares which rule produced it. That holds no
+# matter what a clone puts on disk, which is the property that actually matters.
+#
+# This file only reduces how often the two diverge in the first place. It cannot
+# replace the policy: it has no effect on a file a TOOL writes with the other
+# ending, and none at all on a tree checked out before it existed. Both of those
+# happened here — the working tree that exposed the defect had 3 of 94 narratives
+# in CRLF and 91 in LF, with freshly merged artifacts CRLF and older ones LF.
+#
+# So: keep both. If they ever disagree, the policy is right.
+
+* text=auto eol=lf
+
+# Binary must never be touched by eol conversion. These are also the files that
+# reach tools/release-audit.mjs through the same receipt path as data/*.json,
+# where a normalising hash would corrupt the identity being pinned.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.mp3  binary
+*.wav  binary
+*.ogg  binary
+*.woff binary
+*.woff2 binary
+*.zip  binary
+*.pdf  binary

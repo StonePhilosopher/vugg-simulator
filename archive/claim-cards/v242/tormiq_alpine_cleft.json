@@ -1,0 +1,311 @@
+{
+  "scenario": "tormiq_alpine_cleft",
+  "sim_version": 242,
+  "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "67ad31564a7715eb085869d7e7f517fd25dbdd7fa35a13d3bd6c7df989ab7cbc",
+  "strip_steps": 200,
+  "claim": {
+    "anchor": "Tormiq Valley, Haramosh Mts., Roundu/Skardu District, Gilgit-Baltistan, Pakistan — the world's premier ALPINE-CLEFT epidote locality (Anthony et al. Handbook of Mineralogy 2001 names Tormiq type-quality, rivaling Knappenwand, Austria). The anchor scenario for epidote (added v196).",
+    "description": "A Himalayan alpine-type cleft: fractures opened by Main Karakoram Thrust activity in AMPHIBOLITE / metabasite, then filled by a LOW-SALINITY, OXIDIZED, meteoric-metamorphic fluid in brittle channelized flow (<450°C, cooling to <200°C). The oxidized character is load-bearing — it keeps iron FERRIC, so the cleft grows lustrous pistachio-green EPIDOTE (the Fe³⁺ phase) rather than Fe-poor clinozoisite, with the doubly-terminated 'Tormiq sword' habit in the open fissure. Paragenesis: quartz lining → Ti-Fe oxides → the epidote main stage → byssolite (fibrous actinolite) sprays → adularia (K-feldspar) → late calcite. NOT a pegmatite (the region's other deposit type) — no tourmaline/beryl/spodumene; this is the metamorphic-fissure Ca-Al-Fe³⁺ assemblage.",
+    "expects_species": [
+      "epidote",
+      "actinolite",
+      "quartz",
+      "feldspar",
+      "albite"
+    ],
+    "sources": [
+      "Anthony, Bideaux, Bladh & Nichols 2001, Handbook of Mineralogy (epidote sheet — names Tormiq, Pakistan as type-quality)",
+      "Deer, Howie & Zussman 1986, Rock-Forming Minerals 2nd ed. v.1B, pp.44-134 (epidote group)",
+      "Liebscher A. & Franz G. eds. 2004, Reviews in Mineralogy & Geochemistry v.56 Epidotes (MSA)",
+      "Mullis J. 1994, Geochim. Cosmochim. Acta 58:2239 — alpine fissure quartz fluid inclusions (low-salinity, oxidized, meteoric)",
+      "Bergemann C. et al. 2017, Swiss J. Geosci. — alpine fissure formation episodes (T/fluid regime)",
+      "Holdaway M.J. 1972, Contrib. Mineral. Petrol. 37:307; Liou J.G. 1973, J. Petrol. 14:381 — epidote stability vs fO2 (why oxidized = Fe³⁺ green epidote)",
+      "mindat locality 5734 — Tormiq Valley geology (Main Karakoram Thrust clefts in amphibolite)"
+    ],
+    "initial_temperature_C": 420,
+    "initial_pressure_kbar": 4,
+    "wall_architecture": "cleft",
+    "notes": [
+      "Anchor: Anthony, Bideaux, Bladh & Nichols 2001, Handbook of Mineralogy (epidote sheet), which names Tormiq, Pakistan as a type-quality locality. Geology per mindat loc-5734: Tormiq lower valley = granite + amphibolite + ultramafic, central/upper = metasedimentary + metavolcanic; the epidote clefts are tied to the amphibolite/metabasite (the Ca-Al-Fe³⁺ source). Tectonic driver = Main Karakoram Thrust fracturing near the Nanga Parbat-Haramosh massif. Sub-localities Alchuri + Hashupa (Shigar) share the model.",
+      "Fluid: alpine-cleft fissures carry a LOW-SALINITY (~1-3 wt% NaCl eq), OXIDIZED, meteoric-metamorphic fluid in brittle channelized flow at <450°C, retrograde to <200°C (Central-Alps analogue; Mullis 1994 GCA 58:2239 fluid inclusions; Bergemann et al. 2017 Swiss J. Geosci. fissure formation episodes). No published Tormiq fluid-inclusion ppm dataset exists — the broth is an order-of-magnitude design target inferred from alpine-cleft fluid character + epidote stoichiometry, to be calibrated against seed-42 per the tune-scenario loop.",
+      "Engine fit: epidote's discriminator is REDOX (engine v196) — it gates on oxideRedoxAvailable O2>=0.5 on top of Ca/Al/Fe/Si + T 200-450. This broth holds O2 ~1.5 (strongly oxidizing → Fe³⁺ → deep pistachio green) across the run, with an Fe³⁺ pulse at the epidote_main stage. The cooling sweep (420→170°C via the event handlers) carries the fluid through epidote's 250-400 sweet spot for most of the run. byssolite = the actinolite engine (Mg+Fe+Ca+Si, no redox gate); adularia = feldspar (K+Al+Si); the cleft lining = quartz; late = calcite. Titanite, clinozoisite, and zoisite (true Tormiq associates) are not yet in the catalog — magnetite stands in for the Ti-Fe oxide stage; feldspar for adularia; actinolite for byssolite.",
+      "Wallrock: 'basalt' composition as the amphibolite proxy (inert silicate — amphibolite is metamorphosed basalt; the Ca-Al-Fe³⁺ arrives in the FLUID, not from wall dissolution). Architecture CLEFT (W-K V0, SIM 215): the planar-lens Zerrkluft shape — opposed footwall/hangingwall druses, thin rim — replacing the round 'pocket' the scenario wore before the vug-genesis arc. Pocket size class, shape_seed 1990 (the decade Tormiq epidote reached the international market). Growth histories measured bit-identical across the re-genre (0/37 baseline drift), so the seed-42 census below still stands.",
+      "Calibration target: the hand specimen is a lustrous dark-pistachio-green doubly-terminated epidote prism (or a divergent spray on byssolite) perched on a quartz-lined cleft wall, sometimes with adularia + calcite. Epidote IS the star. MEASURED at seed 42 (v227: 18 crystals, 6 species): epidote 5 (the most abundant — capped at max_nucleation 5), actinolite/byssolite 3, quartz 3, titanite 3, albite 2, adularia/feldspar 2. This is a textbook alpine-cleft suite — epidote + byssolite + adularia + albite + quartz are all genuine Tormiq/alpine-fissure associates. CALCITE is aspirational (the late_calcite event raises CO3 but calcite did not nucleate in the final ~30 steps at seed 42) — a vugg-tune-scenario follow-up candidate (bump late CO3 / extend the cooling tail), not shipped as a false expects entry.",
+      "Fluorite de-confabulation (v227, hostile review 2026-07-14 — the mvt-silver precedent at a new locality): this scenario's original notes called 'pink fluorite' a genuine Tormiq associate and expects_species promised it. No source supports that: the documented Tormiq suite (mindat loc-5734) is epidote, clinozoisite, quartz, titanite, apatite, calcite, diopside, ilmenite, byssolite — NO fluorite; Pakistan's famous pink fluorite belongs to the GRANITE/PEGMATITE-hosted pockets (Chumar Bakhoor, Nagar) and the regional fluorite to the Stak Nala pegmatites, while an amphibolite host carries no F reservoir to leach (the Knappenwand archetype holds its fluorine only as trace fluorapatite). The seed-42 fluorite rode the leaked FluidChemistry F=10 default (rung-1 census, PROPOSAL-HOSTILE-REVIEW-2026-07-14.md); broth F is now the researched 3 and the expects_species promise is withdrawn — the expectation, not the engine, was the error."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 4,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 3.8133345399999996,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 116.8,
+          "initial_water_activity": {
+            "value": 0.9982,
+            "salinityPpt": 3,
+            "naclWeightPercentEquivalent": 0.3,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": [
+        {
+          "step": 188,
+          "type": "tormiq_late_shear",
+          "decision": {
+            "model": "authored visual deformation overprint",
+            "directive": {
+              "style": "bend",
+              "magnitude": 0.55,
+              "minerals": [
+                "quartz"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "testimony": {
+    "species_count": 6,
+    "paragenetic_order": [
+      {
+        "mineral": "albite",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "epidote",
+        "first_step": 0,
+        "events": 5
+      },
+      {
+        "mineral": "feldspar",
+        "first_step": 0,
+        "events": 2
+      },
+      {
+        "mineral": "titanite",
+        "first_step": 0,
+        "events": 3
+      },
+      {
+        "mineral": "quartz",
+        "first_step": 24,
+        "events": 3
+      },
+      {
+        "mineral": "actinolite",
+        "first_step": 109,
+        "events": 3
+      }
+    ],
+    "surprises_not_in_expects": [
+      "titanite"
+    ],
+    "expected_no_shows": [],
+    "environment": {
+      "T": {
+        "first": 419.291,
+        "last": 369.094,
+        "min": 212.598,
+        "max": 419.291,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 7,
+        "last": 6.614,
+        "min": 6.118,
+        "max": 7,
+        "units": ""
+      },
+      "Eh": {
+        "first": 289.764,
+        "last": 289.764,
+        "min": 289.764,
+        "max": 289.764,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 3.15,
+        "last": 3.15,
+        "min": 3.15,
+        "max": 3.15,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 1.496,
+        "last": 1.496,
+        "min": 1.496,
+        "max": 1.496,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -1.575,
+        "last": -1.89,
+        "min": -3.15,
+        "max": -1.071,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -1.701,
+        "last": -2.016,
+        "min": -3.213,
+        "max": -1.197,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -3.402,
+        "last": -3.78,
+        "min": -6.551,
+        "max": -2.394,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -3.339,
+        "last": -3.591,
+        "min": -4.913,
+        "max": -2.835,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 0.378,
+        "last": 0.504,
+        "min": -0.882,
+        "max": 1.071,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 200,
+      "fluid_pressure_kbar": {
+        "first": 4,
+        "last": 4,
+        "min": 4,
+        "max": 4,
+        "samples": 200
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 200
+      },
+      "temperature_C": {
+        "first": 418.2608943547122,
+        "last": 369.26494499640523,
+        "min": 211.28775661024255,
+        "max": 418.2608943547122,
+        "samples": 200
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 67,
+        "first": {
+          "boundary_kbar": 3.793290544902517,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 3.288249111111645,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "andalusite": 12,
+          "unconstrained": 188
+        },
+        "first": {
+          "phase": "andalusite",
+          "nominalPhase": "andalusite",
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": 0.6736855720586571,
+          "note": "Ky-And line; uncertainty propagates Pattison triple-point T and P bounds."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 116.8
+        },
+        "last": {
+          "pure_water_boundary_C": 116.8
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

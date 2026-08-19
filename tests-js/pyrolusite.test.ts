@@ -3,9 +3,9 @@
 // First dogfood test of the vugg-add-mineral skill. Pyrolusite β-MnO2,
 // tetragonal rutile-type, is the default Mn(IV) supergene endmember
 // when (Ba, K, Pb) low and Fe doesn't dominate. The discriminator-fork
-// gates are the load-bearing assertions — they encode the canonical
-// Mn-oxide family decision tree even though sister engines (romanechite,
-// cryptomelane, coronadite, hausmannite, manganite) aren't wired yet.
+// gates are the load-bearing assertions. SIM 249 adds first-class birnessite,
+// romanechite and todorokite competitors; K/Pb hollandite endmembers and the
+// higher-temperature/lower-Eh sister phases remain explicit future work.
 //
 // References:
 //   * Anthony Handbook v.III pyrolusite
@@ -32,7 +32,7 @@ describe('Pyrolusite β-MnO2 — supergene Mn(IV) endmember (v102)', () => {
       expect(cond.supersaturation_pyrolusite()).toBeGreaterThan(0);
     });
 
-    it('Mode B hydrothermal vein (T 150, Mn 8) gives σ > 0 but lower than Mode A', () => {
+    it('Mode B remains viable while the 25°C hydrous film field routes preferentially to birnessite', () => {
       const fluidA = new FluidChemistry({
         Mn: 8, O2: 1.2, pH: 8.0, Fe: 1, Ba: 5, K: 10, Pb: 1,
       });
@@ -43,8 +43,10 @@ describe('Pyrolusite β-MnO2 — supergene Mn(IV) endmember (v102)', () => {
       });
       const condB = new VugConditions({ temperature: 150, fluid: fluidB });
       const sigmaB = condB.supersaturation_pyrolusite();
+      const birnessiteA = condA.supersaturation_birnessite();
+      expect(sigmaA).toBeGreaterThan(0);
       expect(sigmaB).toBeGreaterThan(0);
-      expect(sigmaA).toBeGreaterThan(sigmaB);
+      expect(birnessiteA).toBeGreaterThan(sigmaA);
     });
 
     it('Mn < 0.2 blocks (below Hem 1963 supergene threshold)', () => {

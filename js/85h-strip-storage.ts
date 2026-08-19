@@ -62,6 +62,11 @@ interface StripStoredRecord {
   chip_data: Uint8Array;
   nucleation_events: StripNucleationEvent[];
   floor_data?: Uint8Array;   // format_version 3 depletion-floor channel (optional)
+  pressure_phase_testimony?: any[];
+  stress_event_testimony?: any[];
+  transformation_event_testimony?: StripTransformationEvent[];
+  carbonate_boundary_testimony?: any[];
+  sulfur_ledger_testimony?: any[];
 }
 
 interface StripListEntry {
@@ -78,6 +83,39 @@ function stripStorageKey(manifest: StripManifest): string {
 // won't have it unless a shim is loaded.
 function stripStorageAvailable(): boolean {
   return typeof (globalThis as any).indexedDB === 'object' && (globalThis as any).indexedDB !== null;
+}
+
+// Keep the IndexedDB boundary testable without substituting a different
+// persistence implementation.  These two lossless codecs are the only path
+// into and out of the object store, so newly-added evidence fields cannot be
+// silently forgotten by one half of the round trip.
+function stripStoredRecordFromDataset(ds: StripDataset): StripStoredRecord {
+  return {
+    key: stripStorageKey(ds.manifest),
+    manifest: ds.manifest,
+    chip_data: ds.chip_data,
+    nucleation_events: ds.nucleation_events,
+    ...(ds.floor_data ? { floor_data: ds.floor_data } : {}),
+    ...(ds.pressure_phase_testimony ? { pressure_phase_testimony: ds.pressure_phase_testimony } : {}),
+    ...(ds.stress_event_testimony ? { stress_event_testimony: ds.stress_event_testimony } : {}),
+    ...(ds.transformation_event_testimony ? { transformation_event_testimony: ds.transformation_event_testimony } : {}),
+    ...(ds.carbonate_boundary_testimony ? { carbonate_boundary_testimony: ds.carbonate_boundary_testimony } : {}),
+    ...(ds.sulfur_ledger_testimony ? { sulfur_ledger_testimony: ds.sulfur_ledger_testimony } : {}),
+  };
+}
+
+function stripDatasetFromStoredRecord(rec: StripStoredRecord): StripDataset {
+  return {
+    manifest: rec.manifest,
+    chip_data: rec.chip_data,
+    nucleation_events: rec.nucleation_events,
+    ...(rec.floor_data ? { floor_data: rec.floor_data } : {}),
+    ...(rec.pressure_phase_testimony ? { pressure_phase_testimony: rec.pressure_phase_testimony } : {}),
+    ...(rec.stress_event_testimony ? { stress_event_testimony: rec.stress_event_testimony } : {}),
+    ...(rec.transformation_event_testimony ? { transformation_event_testimony: rec.transformation_event_testimony } : {}),
+    ...(rec.carbonate_boundary_testimony ? { carbonate_boundary_testimony: rec.carbonate_boundary_testimony } : {}),
+    ...(rec.sulfur_ledger_testimony ? { sulfur_ledger_testimony: rec.sulfur_ledger_testimony } : {}),
+  };
 }
 
 // Open (or create) the DB. Promisified — IDB's onsuccess callback model
@@ -148,13 +186,7 @@ async function stripStorageSave(ds: StripDataset): Promise<string> {
     req.onerror = () => reject(req.error || new Error('strip: eviction list failed'));
   });
 
-  const record: StripStoredRecord = {
-    key,
-    manifest: ds.manifest,
-    chip_data: ds.chip_data,
-    nucleation_events: ds.nucleation_events,
-    ...(ds.floor_data ? { floor_data: ds.floor_data } : {}),
-  };
+  const record = stripStoredRecordFromDataset(ds);
   return new Promise<string>((resolve, reject) => {
     const tx = db.transaction(_STRIP_STORE, 'readwrite');
     const store = tx.objectStore(_STRIP_STORE);
@@ -175,12 +207,7 @@ async function stripStorageLoad(key: string): Promise<StripDataset | null> {
     req.onsuccess = () => {
       const rec = req.result as StripStoredRecord | undefined;
       if (!rec) { resolve(null); return; }
-      resolve({
-        manifest: rec.manifest,
-        chip_data: rec.chip_data,
-        nucleation_events: rec.nucleation_events,
-        ...(rec.floor_data ? { floor_data: rec.floor_data } : {}),
-      });
+      resolve(stripDatasetFromStoredRecord(rec));
     };
     req.onerror = () => reject(req.error || new Error('strip: load failed'));
     tx.oncomplete = () => db.close();

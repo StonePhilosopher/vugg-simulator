@@ -9,25 +9,25 @@
 //
 // Phase B6 of PROPOSAL-MODULAR-REFACTOR.
 
+const CHALCEDONY_NUCLEATION_SIGMA = 1.12;
+
 class VugConditions {
   // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;
   constructor(opts: any = {}) {
     this.temperature = opts.temperature ?? 350.0;
-    this.pressure = opts.pressure ?? 1.5;
+    // Isotropic FLUID pressure in the cavity (kbar), not depth, lithostatic
+    // pressure, or differential stress. See js/24-pressure-science.ts.
+    this.pressure = clampFluidPressureKbar(opts.pressure ?? 1.5);
     this.fluid = opts.fluid || new FluidChemistry();
     this.flow_rate = opts.flow_rate ?? 1.0;
     this.wall = opts.wall || new VugWall();
     // PROPOSAL-CAVITY-MESH Phase 4 Tranche 3 — water-level mechanic
     // migrates to mm-height as the canonical representation.
     //
-    // Old name `fluid_surface_ring` and new name `fluid_surface_height_mm`
-    // are aliased via getters/setters below — they refer to the same
-    // private slot. Numerically identical while `ring_spacing_mm = 1.0`
-    // (the project-wide default across every shipping scenario). When
-    // a future scenario overrides ring spacing, the legacy ring-index
-    // name will need a spacing-aware conversion; flagged in the
-    // proposal's tranche notes.
+    // Old name `fluid_surface_ring` is a compatibility coordinate only. Its
+    // getter/setter maps a ring fraction onto the authenticated current cavity
+    // floor-to-ceiling span; the private scientific state remains millimetres.
     //
     // Why migrate the name: when wall.rings retires (Tranche 4), the
     // "ring index" concept stops being meaningful. Height-in-mm is
@@ -37,9 +37,18 @@ class VugConditions {
     // null = "no water level set" → fully submerged (legacy default,
     // every cell 'submerged'). Below = submerged, surface band =
     // meniscus, above = vadose/'air'.
-    this._fluidSurfaceMm = (opts.fluid_surface_height_mm != null)
-      ? opts.fluid_surface_height_mm
-      : (opts.fluid_surface_ring != null ? opts.fluid_surface_ring : null);
+    this._cavityWaterGeometry = null;
+    this._fluidSurfaceHeightMm = null;
+    this._pendingFluidSurfaceRing = null;
+    if (opts.fluid_surface_height_mm != null) {
+      this.fluid_surface_height_mm = opts.fluid_surface_height_mm;
+    } else if (opts.fluid_surface_ring != null) {
+      const ring = Number(opts.fluid_surface_ring);
+      if (!Number.isFinite(ring) || ring < 0) {
+        throw new RangeError('fluid_surface_ring must be finite and non-negative');
+      }
+      this._pendingFluidSurfaceRing = ring;
+    }
     // v26 host-rock porosity. Sink-only term for water-level drift:
     // each step the surface drops by porosity × WATER_LEVEL_DRAIN_RATE
     // rings. 0.0 = sealed cavity (no drainage; legacy default). 1.0 =
@@ -52,24 +61,63 @@ class VugConditions {
   }
 
   // PROPOSAL-CAVITY-MESH Phase 4 Tranche 3 — water-level accessors.
-  // Both names hit the same private slot (this._fluidSurfaceMm).
-  // Numerically identical while ring_spacing_mm = 1.0 (today's
-  // default everywhere); spacing-aware conversion can land later.
-  get fluid_surface_height_mm() { return this._fluidSurfaceMm; }
-  set fluid_surface_height_mm(v) { this._fluidSurfaceMm = v; }
-  get fluid_surface_ring() { return this._fluidSurfaceMm; }
-  set fluid_surface_ring(v) { this._fluidSurfaceMm = v; }
+  // Both names hit the same physical private slot. Legacy ring values are
+  // converted against the actual current surface span at this boundary.
+  bindCavityWaterGeometry(wallState) {
+    this._cavityWaterGeometry = wallState || null;
+    if (this._pendingFluidSurfaceRing != null && wallState) {
+      const pending = this._pendingFluidSurfaceRing;
+      this._pendingFluidSurfaceRing = null;
+      this.fluid_surface_ring = pending;
+    }
+    return this;
+  }
 
-  // Pure classifier; used by ringWaterState and by transition-detection
-  // logic that needs to compare against an arbitrary previous surface.
-  //
-  // PROPOSAL-CAVITY-MESH Phase 4 Tranche 3 — `surface` is the
-  // fluid surface position. With ring_spacing_mm=1.0 (default), this
-  // is numerically equivalent to a ring index AND to a height in mm
-  // — the arithmetic below uses ring units throughout, so callers
-  // passing either name see consistent results. Spacing-aware
-  // generalization can land when a scenario actually overrides
-  // ring_spacing_mm.
+  get fluid_surface_height_mm() {
+    if (this._fluidSurfaceHeightMm != null) return this._fluidSurfaceHeightMm;
+    return this._pendingFluidSurfaceRing;
+  }
+  set fluid_surface_height_mm(v) {
+    this._pendingFluidSurfaceRing = null;
+    if (v == null) { this._fluidSurfaceHeightMm = null; return; }
+    const height = Number(v);
+    if (!Number.isFinite(height) || height < 0) {
+      throw new RangeError('fluid_surface_height_mm must be finite and non-negative');
+    }
+    this._fluidSurfaceHeightMm = height;
+  }
+  get fluid_surface_ring() {
+    if (this._pendingFluidSurfaceRing != null) return this._pendingFluidSurfaceRing;
+    if (this._fluidSurfaceHeightMm == null) return null;
+    const wall = this._cavityWaterGeometry;
+    if (!wall) return this._fluidSurfaceHeightMm;
+    const span = Math.max(CavityWaterAppearance.verticalSpanForWall(wall), 1e-12);
+    return this._fluidSurfaceHeightMm / span * Math.max(1, Number(wall.ring_count) || 1);
+  }
+  set fluid_surface_ring(v) {
+    if (v == null) {
+      this._pendingFluidSurfaceRing = null;
+      this._fluidSurfaceHeightMm = null;
+      return;
+    }
+    const ring = Number(v);
+    if (!Number.isFinite(ring) || ring < 0) {
+      throw new RangeError('fluid_surface_ring must be finite and non-negative');
+    }
+    const wall = this._cavityWaterGeometry;
+    if (!wall) {
+      this._pendingFluidSurfaceRing = ring;
+      this._fluidSurfaceHeightMm = null;
+      return;
+    }
+    const ringCount = Math.max(1, Number(wall.ring_count) || 1);
+    const span = Math.max(CavityWaterAppearance.verticalSpanForWall(wall), 1e-12);
+    this._pendingFluidSurfaceRing = null;
+    this._fluidSurfaceHeightMm = Math.min(ring, ringCount) / ringCount * span;
+  }
+
+  // Retained only for explicitly legacy, geometry-free callers. Bound
+  // simulation chemistry uses CavityWaterAppearance.ringWaterState instead.
   static _classifyWaterState(surface, ringIdx, ringCount) {
     if (surface === null || surface === undefined) return 'submerged';
     if (ringCount <= 1) return surface >= 1.0 ? 'submerged' : 'vadose';
@@ -78,11 +126,10 @@ class VugConditions {
     return 'meniscus';
   }
 
-  // v24: classify a ring as 'submerged' / 'meniscus' / 'vadose'
-  // from the cavity's current fluid_surface_ring. Mirror of
-  // VugConditions.ring_water_state in vugg.py.
+  // Classify chemistry bands from their actual vertices against the shared
+  // Cartesian plane.
   ringWaterState(ringIdx, ringCount) {
-    return VugConditions._classifyWaterState(this.fluid_surface_ring, ringIdx, ringCount);
+    return CavityWaterAppearance.ringWaterState(this, ringIdx, ringCount);
   }
 
   update_dol_cycles() {
@@ -165,6 +212,12 @@ class VugConditions {
   ];
 
   silica_equilibrium(T) {
+    const pressureAssessment = typeof quartzPressureSolubilityAssessment === 'function'
+      ? quartzPressureSolubilityAssessment(Number(T), Number(this.pressure))
+      : null;
+    if (pressureAssessment?.active && Number.isFinite(pressureAssessment.equilibriumPpm)) {
+      return pressureAssessment.equilibriumPpm;
+    }
     const table = VugConditions._SiO2_SOLUBILITY;
     if (T <= table[0][0]) return table[0][1];
     if (T >= table[table.length-1][0]) return table[table.length-1][1];
@@ -177,11 +230,98 @@ class VugConditions {
     return table[table.length-1][1];
   }
 
-  // Which SiO₂ polymorph precipitates at this temperature?
+  // Chalcedony and amorphous-silica equilibrium concentrations (mg/L ~= ppm
+  // in the simulator's dilute-water convention), inverted from the USGS
+  // Fournier silica geothermometers:
+  //   Tchal = 1032 / (4.69 - log10 SiO2) - 273.15
+  //   Tam   =  731 / (4.52 - log10 SiO2) - 273.15
+  // The chalcedony relation is published for 0-250 C; the amorphous-silica
+  // relation is used only inside opal's 5-100 C kinetic window. Keeping these
+  // separate from quartz equilibrium is what permits real Ostwald stepping:
+  // opal -> chalcedony -> quartz as dissolved silica is consumed.
+  chalcedony_equilibrium(T) {
+    const boundedT = Math.max(0, Math.min(Number(T) || 0, 250));
+    return Math.pow(10, 4.69 - 1032 / (boundedT + 273.15));
+  }
+
+  opal_equilibrium(T) {
+    const boundedT = Math.max(5, Math.min(Number(T) || 0, 100));
+    return Math.pow(10, 4.52 - 731 / (boundedT + 273.15));
+  }
+
+  // Yellowstone's surface hydrothermal deposits separate into silica-bearing
+  // alkaline-chloride waters and Ca-carbonate travertine waters. A dissolved-
+  // silica equilibrium ratio alone cannot reproduce that kinetic/depositional
+  // distinction: Mammoth's documented 54 ppm SiO2 can be supersaturated with
+  // respect to crystalline silica after cooling, yet its limestone-hosted,
+  // Ca-HCO3 water deposits travertine rather than silica sinter. This observer
+  // keeps the equilibrium values intact while identifying that competing water
+  // type. The dimensionless share remains visible as context; the production
+  // discriminator uses the observed shallow/cool/limestone/low-Si combination,
+  // which Creative Mode can cross with SiO2, temperature, pressure, or host.
+  silica_depositional_regime() {
+    const f = this.fluid;
+    const totalSilicaPpm = Math.max(0, Number(f.SiO2) || 0);
+    const reactiveSilicaFraction = Math.max(
+      0,
+      Math.min(1, Number(f.reactiveSilicaFraction) || 0),
+    );
+    const si = typeof f.reactiveSilicaPpm === 'function'
+      ? f.reactiveSilicaPpm()
+      : totalSilicaPpm * reactiveSilicaFraction;
+    const carbonateLoad = Math.sqrt(
+      Math.max(0, Number(f.Ca) || 0) * Math.max(0, Number(f.CO3) || 0),
+    );
+    const silicaShare = si / Math.max(si + carbonateLoad, 1e-9);
+    const shallowSurfaceSpring = Number(this.pressure) <= 0.10 && Number(this.temperature) <= 100;
+    // USGS Bull. 1444 reports 54 mg/L SiO2 for Mammoth versus roughly 420 mg/L
+    // for silica-depositing Norris water. The 75 mg/L boundary deliberately
+    // separates that measured low-Si endmember without suppressing deeper,
+    // long-residence limestone-hosted chalcedony/quartz systems.
+    const carbonateCompetitive = carbonateLoad >= 100 && carbonateLoad >= 2 * si;
+    const carbonateDominant = shallowSurfaceSpring && si < 75 && carbonateCompetitive;
+    return {
+      phase: carbonateDominant ? 'carbonate-travertine water' : 'silica-permissive water',
+      silicaShare,
+      totalSilicaPpm,
+      reactiveSilicaPpm: si,
+      reactiveSilicaFraction,
+      carbonateLoad,
+      carbonateCompetitive,
+      permitsSilicaPrecipitation: !carbonateDominant,
+      note: carbonateDominant
+        ? 'Shallow Ca-DIC water is in the Mammoth travertine regime; the actual carbonate load exceeds both its calibrated floor and twice the reactive-silica load, so carbonate deposition kinetically outcompetes a fresh silica sinter/lining.'
+        : 'The fluid is outside the calibrated Mammoth carbonate-dominant exclusion and may follow the opal/chalcedony/quartz saturation sequence.',
+    };
+  }
+
+  // Select the actual NEW generic SiO2 precipitate before nucleation.
+  // Order is deliberate: the more soluble, less ordered phase wins only while
+  // it clears both equilibrium and its calibrated nucleation barrier. A merely
+  // metastable, subcritical chalcedony solution must not veto lower-solubility
+  // quartz forever (the Herkimer case). Existing chalcedony is handled by its
+  // growth engine and does not pay this fresh-nucleus barrier again.
+  silica_precipitate_phase() {
+    const T = this.temperature;
+    const f = this.fluid;
+    const si = typeof f.reactiveSilicaPpm === 'function'
+      ? f.reactiveSilicaPpm()
+      : Math.max(0, Number(f.SiO2) || 0);
+    const pH = Number(f.pH);
+    if (!this.silica_depositional_regime().permitsSilicaPrecipitation) return null;
+    if (T >= 5 && T <= 100 && pH >= 6.5 && pH <= 10.0
+        && si > this.opal_equilibrium(T)) return 'opal';
+    if (this._stableQuartzExposed && T >= 100 && T <= 700
+        && si > this.silica_equilibrium(T)) return 'quartz';
+    if (T >= 0 && T <= 200 && pH >= 3.0 && pH <= 10.0
+        && si / Math.max(this.chalcedony_equilibrium(T), 1e-9) > CHALCEDONY_NUCLEATION_SIGMA) return 'chalcedony';
+    if (T >= 100 && T <= 700 && si > this.silica_equilibrium(T)) return 'quartz';
+    return null;
+  }
+
+  // Crystalline SiO2 polymorph used only after quartz has been selected.
   silica_polymorph() {
     const T = this.temperature;
-    if (T < 100) return 'opal';           // Amorphous silica
-    if (T < 200) return 'chalcedony';     // Microcrystalline quartz
     if (T < 573) return 'alpha-quartz';   // α-quartz — the classic
     if (T < 870) return 'beta-quartz';    // β-quartz (inverts to α on cooling)
     return 'tridymite';                    // High-T volcanic polymorph

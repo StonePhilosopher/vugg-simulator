@@ -27,18 +27,57 @@ function event_cooling_pulse(conditions) {
 }
 
 function event_tectonic_shock(conditions) {
-  conditions.pressure += 0.5;
+  // Differential stress, not isotropic fluid pressure, drives mechanical
+  // twinning. The simulator consumes this transient immediately after the
+  // event; it is deliberately not a persistent environmental scalar.
+  conditions._pending_stress_pulse = { sigma_diff_mpa: 50 };
   conditions.temperature += 15;
-  return 'Tectonic event. Pressure spike. Crystals may twin.';
+  return 'Tectonic event. A 50 MPa differential-stress pulse crosses the cavity; fluid pressure does not rise.';
+}
+
+// Ametista do Sul's inward agate -> quartz sequence needs a real change in
+// silica activity, not a display rename. These events place the fluid inside
+// the measured metastability window: supersaturated with respect to quartz but
+// below the calibrated fresh-chalcedony nucleation barrier at the CURRENT
+// temperature. The bounds move with the same equations Creative Mode exposes.
+function _setAmethystQuartzWindow(conditions, quartzMultiple = 1.30) {
+  const qEq = conditions.silica_equilibrium(conditions.effectiveTemperature);
+  const chEq = conditions.chalcedony_equilibrium(conditions.effectiveTemperature);
+  // Existing agate no longer buys a rate multiplier. Put the dissolved fluid
+  // near the top of the real metastable window instead: quartz-supersaturated
+  // but still below the fresh-chalcedony nucleation barrier.
+  const target = Math.min(
+    chEq * CHALCEDONY_NUCLEATION_SIGMA * 0.98,
+    qEq * quartzMultiple,
+  );
+  conditions.fluid.SiO2 = Math.max(qEq * 1.22, target);
+  conditions.fluid.reactiveSilicaFraction = 1.0;
+  return { qEq, chEq, target: conditions.fluid.SiO2 };
+}
+
+function event_amethyst_chalcedony_maturation(conditions) {
+  const w = _setAmethystQuartzWindow(conditions, 1.62);
+  conditions.flow_rate = 0.25;
+  return `Silica maturation — early chalcedony/agate has lowered dissolved SiO2 to ${w.target.toFixed(0)} ppm: below the fresh-chalcedony nucleation barrier but above quartz equilibrium (${w.qEq.toFixed(0)}), opening the inward euhedral-quartz stage.`;
+}
+
+function event_amethyst_quartz_renewal(conditions) {
+  const w = _setAmethystQuartzWindow(conditions, 1.68);
+  conditions.fluid.Fe *= 1.35;
+  conditions.flow_rate = 5.0;
+  return `Quartz-window renewal — fresh Fe-bearing fluid restores SiO2 to ${w.target.toFixed(0)} ppm, above quartz equilibrium (${w.qEq.toFixed(0)}) but still below the fresh-chalcedony nucleation barrier, so the celadonite-masked quartz tip can renew without regrowing the outer agate.`;
 }
 
 function event_copper_injection(conditions) {
   conditions.fluid.Cu = 120.0;
   conditions.fluid.Fe += 40.0;
   conditions.fluid.S += 80.0;
-  conditions.fluid.SiO2 += 200.0;
-  // Drift-fix: Python event also bumps Pb +20 (porphyry fluids carry Pb).
-  // Was missing from JS.
+  if (typeof conditions.fluid.addReactiveSilica === 'function') {
+    conditions.fluid.addReactiveSilica(200.0);
+  } else {
+    conditions.fluid.SiO2 += 200.0;
+  }
+  // Porphyry fluids carry Pb; keep the Cu pulse chemically complete.
   conditions.fluid.Pb += 20.0;
   conditions.fluid.O2 = 0.3;
   conditions.temperature += 30;
@@ -48,8 +87,7 @@ function event_copper_injection(conditions) {
 
 // Late-stage Mo pulse — separate from Cu in porphyry systems. Per Seo et
 // al. 2012 (Bingham Canyon), Mo arrives in a distinct later pulse from Cu.
-// This mirror was added to JS in the porphyry chemistry-audit pass — the
-// Python equivalent has existed since carbonate round 3.
+// Added in the porphyry chemistry-audit pass.
 function event_molybdenum_pulse(conditions) {
   conditions.fluid.Mo = 80.0;
   conditions.fluid.S += 40.0;
@@ -69,6 +107,31 @@ function event_oxidation(conditions) {
   return `Oxidizing meteoric water infiltrates. Sulfides becoming unstable — S²⁻ oxidizing to SO₄²⁻. T drops to ${conditions.temperature.toFixed(0)}°C. Sulfate available for gypsum/selenite.`;
 }
 
+// Bingham's upper oxidized cap is separated from the main-stage porphyry by
+// exhumation and a geological time gap. A generic -40 C event left the pocket
+// above 300 C and allowed later fracture pulses to reheat it, which made the
+// seed-42 malachite a high-temperature artifact. This boundary changes the
+// physical regime explicitly: shallow pressure, meteoric temperature, and no
+// resumed magmatic pulse generator after exposure.
+function event_porphyry_supergene_uplift(conditions) {
+  conditions.fluid.O2 = 1.8;
+  const sulfideConsumed = conditions.fluid.S * 0.3;
+  conditions.fluid.S = conditions.fluid.S - sulfideConsumed + (sulfideConsumed * 0.7);
+  conditions.temperature = 35;
+  conditions.pressure = clampFluidPressureKbar(0.001);
+  conditions.flow_rate = 0.8;
+  conditions.wall.ambient_temperature_C = 25;
+  conditions.wall.thermal_pulses = false;
+  return 'Exhumation exposes the Bingham stockwork to oxygenated meteoric water. Pressure falls toward atmospheric, the pocket cools to 35 C, sulfide sulfur begins oxidizing, and the extinct magmatic heat source can no longer re-pulse the supergene cap.';
+}
+
+function event_porphyry_supergene_maturation(conditions) {
+  conditions.temperature = 25;
+  conditions.flow_rate = 0.2;
+  conditions.fluid.O2 = Math.max(conditions.fluid.O2, 1.8);
+  return 'The exposed cap equilibrates to 25 C. Slow oxygenated seepage can now form documented supergene copper minerals without importing a hydrothermal temperature.';
+}
+
 // v26: tectonic uplift breaches the cavity, fluid drains completely.
 function event_tectonic_uplift_drains(conditions) {
   conditions.fluid_surface_ring = 0.0;
@@ -85,12 +148,36 @@ function event_aquifer_recharge_floods(conditions) {
 }
 
 function event_acidify(conditions) {
+  if (conditions._carbonateBoundaryState) {
+    const tx = titrateCarbonateBoundaryToPHState(
+      conditions._carbonateBoundaryState,
+      conditions.fluid,
+      conditions.temperature,
+      Math.max(conditions.fluid.pH - 2, 2),
+      'acidic fluid/strong-acid titration',
+    );
+    return tx?.ok
+      ? `Strong-acid capacity is booked; the conserved carbonate solve gives pH ${conditions.fluid.pH.toFixed(2)}.`
+      : `Acid titration rejected (${tx?.error || 'unknown error'}); fluid state was not mutated.`;
+  }
   conditions.fluid.pH -= 2.0;
   conditions.fluid.pH = Math.max(conditions.fluid.pH, 2.0);
   return `Acidic fluid incursion. pH drops to ${conditions.fluid.pH.toFixed(1)}. Carbonates becoming unstable — calcite may dissolve.`;
 }
 
 function event_alkalinize(conditions) {
+  if (conditions._carbonateBoundaryState) {
+    const tx = titrateCarbonateBoundaryToPHState(
+      conditions._carbonateBoundaryState,
+      conditions.fluid,
+      conditions.temperature,
+      Math.min(conditions.fluid.pH + 2, 10),
+      'alkaline fluid/strong-base titration',
+    );
+    return tx?.ok
+      ? `Strong-base capacity is booked; the conserved carbonate solve gives pH ${conditions.fluid.pH.toFixed(2)}.`
+      : `Base titration rejected (${tx?.error || 'unknown error'}); fluid state was not mutated.`;
+  }
   conditions.fluid.pH += 2.0;
   conditions.fluid.pH = Math.min(conditions.fluid.pH, 10.0);
   return `Alkaline fluid incursion. pH rises to ${conditions.fluid.pH.toFixed(1)}. Carbonate precipitation favored.`;
@@ -176,7 +263,7 @@ window.endTutorial = endTutorial;
 // film's σ*, the crystal stalls, and the film sits until the next pulse: the
 // stall→pulse→break cycle IS the snowball's concentric banding. Ba-only + a flow
 // bump — it touches NO Ca/CO3, so the late golden-scalenohedral calcite showcase
-// (the CO3 pulse train, steps 80+) is untouched. Mass balance debits Ba back as
+// (the CO3 pulse train, steps 80+) is untouched. Growth budget debits Ba back as
 // the barite grows, so the pulse doesn't run away.
 function event_elmwood_barite_stage(conditions) {
   // A Ba FLOOR (set, not add) refreshed each stage as barite consumes it down —
@@ -244,11 +331,12 @@ function event_film_coat(conditions) {
 // Per proposals/TASK-BRIEF-DATA-AS-TRUTH.md item 1, Option A.
 // Maps event-type strings used in data/scenarios.json5 to module-level
 // event handler functions. Adding a new event type requires registering
-// it here AND in vugg.py's EVENT_REGISTRY. tools/sync-spec.js extends
-// to verify both registries cover every type referenced in the JSON5.
+// it here; scenario contract tests verify coverage of every type in JSON5.
 
 const EVENT_REGISTRY = {
   fluid_pulse: event_fluid_pulse,
+  amethyst_chalcedony_maturation: event_amethyst_chalcedony_maturation,
+  amethyst_quartz_renewal: event_amethyst_quartz_renewal,
   elmwood_barite_stage: event_elmwood_barite_stage,
   elmwood_diagenetic_sr: event_elmwood_diagenetic_sr,
   film_coat: event_film_coat,
@@ -256,6 +344,8 @@ const EVENT_REGISTRY = {
   tectonic_shock: event_tectonic_shock,
   copper_injection: event_copper_injection,
   oxidation: event_oxidation,
+  porphyry_supergene_uplift: event_porphyry_supergene_uplift,
+  porphyry_supergene_maturation: event_porphyry_supergene_maturation,
   tectonic_uplift_drains: event_tectonic_uplift_drains,
   aquifer_recharge_floods: event_aquifer_recharge_floods,
   acidify: event_acidify,
@@ -280,8 +370,10 @@ const EVENT_REGISTRY = {
   radioactive_pegmatite_final_cooling: event_radioactive_pegmatite_final_cooling,
   // Phase 2 — deccan_zeolite
   deccan_zeolite_silica_veneer: event_deccan_zeolite_silica_veneer,
+  deccan_quartz_maturation: event_deccan_quartz_maturation,
   deccan_zeolite_hematite_pulse: event_deccan_zeolite_hematite_pulse,
   deccan_zeolite_stage_ii: event_deccan_zeolite_stage_ii,
+  deccan_zeolite_stage_ii_sheets: event_deccan_zeolite_stage_ii_sheets,
   deccan_zeolite_apophyllite_stage_iii: event_deccan_zeolite_apophyllite_stage_iii,
   deccan_zeolite_late_cooling: event_deccan_zeolite_late_cooling,
   // Phase 2 — ouro_preto
@@ -353,7 +445,7 @@ const EVENT_REGISTRY = {
   // Tutorials (May 2026) — see proposals/TUTORIAL-SYSTEM-BUILDER-REVIEW.md.
   // Surfaced in the New Game Menu under "Tutorials"; structurally these
   // are scenarios with simple, pedagogically-paced events.
-  tutorial_temperature_drop: event_tutorial_temperature_drop,
+  tutorial_temperature_spike: event_tutorial_temperature_spike,
   tutorial_mn_pulse: event_tutorial_mn_pulse,
   tutorial_fe_drop: event_tutorial_fe_drop,
   // PROPOSAL-GEOLOGICAL-ACCURACY Phase 3b (May 2026):
@@ -362,6 +454,7 @@ const EVENT_REGISTRY = {
   co2_degas: event_co2_degas,
   co2_degas_with_reheat: event_co2_degas_with_reheat,
   co2_charge: event_co2_charge,
+  carbonate_recharge: event_carbonate_recharge,
   // 2026-05-18 — Sulphur Bank Mine (Lake County, CA). Pleistocene
   // hot-spring sulfur deposit; the canonical native_sulfur locality
   // that matches the engine's acid-sulfate gates. See
@@ -375,6 +468,8 @@ const EVENT_REGISTRY = {
   // alkaline-buffered mode the v80 engine broadening admits). See
   // js/70n-sicily.ts for the four handlers.
   sicily_gypsum_dissolution: event_sicily_gypsum_dissolution,
+  sicily_bsr_reduction: event_sicily_bsr_reduction,
+  sicily_inherited_sulfur_recharge: event_sicily_inherited_sulfur_recharge,
   sicily_meteoric_o2_pulse: event_sicily_meteoric_o2_pulse,
   sicily_carbonate_buffer: event_sicily_carbonate_buffer,
   sicily_late_synproportionation: event_sicily_late_synproportionation,
@@ -388,12 +483,19 @@ const EVENT_REGISTRY = {
   sunnyside_stage_v_mn_carbonate: event_sunnyside_stage_v_mn_carbonate,
   sunnyside_stage_vi_fluoride_pulse: event_sunnyside_stage_vi_fluoride_pulse,
   sunnyside_stage_vi_manganocalcite_cap: event_sunnyside_stage_vi_manganocalcite_cap,
-  // 2026-05-20 — Roughten Gill Mine (Caldbeck Fells, Cumbria, England).
-  // Polymetallic Pb-Cu vein in Borrowdale Volcanic Group; type locality
-  // for plumbogummite. The Pb-Cu sulfate trio (linarite + caledonite +
-  // leadhillite, v100) fires in their type district. See
-  // js/70q-roughten-gill.ts for the five stage-transition handlers.
+  // Roughton Gill Mine (historical scenario id: roughten_gill), Caldbeck
+  // Fells. Quartz-carbonate Pb-Cu-Zn vein in the Eycott Volcanic Group /
+  // Carrock Fell intrusive contact; type locality for plumbogummite. The
+  // mine-specific reconstruction follows carbonate-buffered weathering,
+  // not the former linarite-centered district generalization. See
+  // js/70q-roughten-gill.ts for the six stage-transition handlers.
+  roughten_gill_primary_carbonate_peak: event_roughten_gill_primary_carbonate_peak,
   roughten_gill_primary_lockup: event_roughten_gill_primary_lockup,
+  roughten_gill_deep_weathering: event_roughten_gill_deep_weathering,
+  roughten_gill_carbonate_buffering: event_roughten_gill_carbonate_buffering,
+  roughten_gill_silica_zinc_weathering: event_roughten_gill_silica_zinc_weathering,
+  roughten_gill_plumbogummite_cap: event_roughten_gill_plumbogummite_cap,
+  // Pre-reconciliation save aliases.
   roughten_gill_pyrite_oxidation: event_roughten_gill_pyrite_oxidation,
   roughten_gill_linarite_stage: event_roughten_gill_linarite_stage,
   roughten_gill_caledonite_transition: event_roughten_gill_caledonite_transition,
@@ -417,11 +519,13 @@ const EVENT_REGISTRY = {
   // js/70s-tn457.ts for the per-pulse chemistry.
   tn457_mn_ba_pulse: event_tn457_mn_ba_pulse,
   // 2026-06-08 — reactivated_fluorite_vein: the fluid-spots SEAL → BREACH
-  // (Phase 2d) demonstrator. Two handlers do the chemistry of each transition;
+  // (Phase 2d) demonstrator. Three handlers separate sealing, the acidic
+  // dissolution wash, and the following mineralizing recharge;
   // the feeder open/close itself is the event's `spots: 'seal'|'breach'`
   // directive (handled centrally in apply_events). See js/70t-reactivated-vein.ts.
   reactivated_vein_seal: event_reactivated_vein_seal,
   reactivated_vein_breach: event_reactivated_vein_breach,
+  reactivated_vein_recharge: event_reactivated_vein_recharge,
   // 2026-06-12 — wittichen five-element vein (v189): the reduction-shock
   // dendrite showcase. The redox shock itself is a DECLARED fluid.Eh
   // movement (event-subsumption discipline — handlers carry only the
@@ -430,6 +534,7 @@ const EVENT_REGISTRY = {
   wittichen_hydrocarbon_influx: event_wittichen_hydrocarbon_influx,
   wittichen_meteoric_sulfate: event_wittichen_meteoric_sulfate,
   wittichen_carbonate_gangue: event_wittichen_carbonate_gangue,
+  wittichen_vadose_weathering: event_wittichen_vadose_weathering,
   // 2026-06-15 — Tormiq Valley alpine-cleft epidote (Gilgit-Baltistan,
   // Pakistan), the v197 anchor for epidote. See js/70v-tormiq.ts (6 handlers).
   tormiq_quartz_lining: event_tormiq_quartz_lining,
@@ -460,6 +565,10 @@ const EVENT_REGISTRY = {
   shigar_topaz_window: event_shigar_topaz_window,
   shigar_hf_etch: event_shigar_hf_etch,
   shigar_final_cooling: event_shigar_final_cooling,
+  // Paired Asbestos Hills tiger's-eye hypotheses (js/70x).
+  asbestos_hills_crack_seal_oxidation: event_asbestos_hills_crack_seal_oxidation,
+  asbestos_hills_surficial_silicification: event_asbestos_hills_surficial_silicification,
+  asbestos_hills_surficial_maturation: event_asbestos_hills_surficial_maturation,
 };
 
 // Minimal JSONC parser — strips // line + /* */ block comments and
@@ -490,6 +599,7 @@ const _WALL_GENESIS_BY_SCENARIO: { [id: string]: string } = {
   // vein — hydrothermal open-space fracture fill (comb/palisade)
   tn457_barite_pulses: 'vein', reactivated_fluorite_vein: 'vein', sunnyside_american_tunnel: 'vein',
   ouro_preto: 'vein', wittichen: 'vein', epithermal_telluride: 'vein', jeffrey_mine: 'vein',
+  asbestos_hills_crack_seal: 'vein', asbestos_hills_surficial_alteration: 'vein',
   // pocket — pegmatite miarolitic (blocky euhedral druse)
   gem_pegmatite: 'pocket', shigar_pegmatite: 'pocket', radioactive_pegmatite: 'pocket',
   // supergene — gossan boxwork after leached sulphide
@@ -507,7 +617,15 @@ const _WALL_GENESIS_BY_SCENARIO: { [id: string]: string } = {
 };
 
 function _buildScenarioFromSpec(scenarioId, spec) {
+  const specHash = scenarioSpecHash(spec);
   const initial = spec.initial || {};
+  if (!initial.wall || typeof initial.wall.composition !== 'string'
+      || !initial.wall.composition.trim()) {
+    throw new Error(
+      `scenarios.json5 scenario '${scenarioId}' must declare initial.wall.composition; ` +
+      `shipped scenarios may not inherit VugWall's generic limestone fallback.`,
+    );
+  }
   const temperature = Number(initial.temperature_C ?? 350);
   const pressure = Number(initial.pressure_kbar ?? 1.0);
   const fluidKwargs = { ...(initial.fluid || {}) };
@@ -521,7 +639,7 @@ function _buildScenarioFromSpec(scenarioId, spec) {
   const eventSpecs = (spec.events || []).slice();
   for (const ev of eventSpecs) {
     if (!EVENT_REGISTRY[ev.type]) {
-      throw new Error(`scenarios.json5 scenario '${scenarioId}' references unknown event type '${ev.type}' — register it in EVENT_REGISTRY (index.html) + the Python mirror (vugg.py).`);
+      throw new Error(`scenarios.json5 scenario '${scenarioId}' references unknown event type '${ev.type}' — register it in the TypeScript EVENT_REGISTRY.`);
     }
   }
   const scenarioCallable = function scenarioCallable(overrides: any = {}) {
@@ -550,10 +668,55 @@ function _buildScenarioFromSpec(scenarioId, spec) {
     // atmospheric pCO2 at the resolver site, so spec-side opt-in is
     // the only thing that flips behavior.
     conditions._scenario = {
+      id: scenarioId,
+      scenario_spec_hash: specHash,
       open_to_atmosphere: spec.open_to_atmosphere,
       atmospheric_pCO2_bar: spec.atmospheric_pCO2_bar,
+      // Tiger's-eye has two competing published origin hypotheses. Scenario
+      // and Creative data select one explicitly; engines never infer it from
+      // colour or silently collapse the disagreement.
+      tiger_eye_origin_model: spec.tiger_eye_origin_model,
+      tiger_eye_stage: spec.tiger_eye_stage,
+      // Whole-scenario DIC ledger. Sicily originated the implementation;
+      // any authored scenario that declares carbon sources can now opt in.
+      carbon_ledger: spec.carbon_ledger === true,
+      // Conserved carbonate boundary v1. Absent means the legacy open-pH
+      // behavior (when separately requested) and keeps existing scenarios
+      // byte-identical. The object is copied, not interpreted, at build time so
+      // it remains serializable for saves and the future worker protocol.
+      carbonate_boundary: spec.carbonate_boundary
+        ? { ...spec.carbonate_boundary }
+        : undefined,
       wall_rock_thermal_buffer_C: spec.wall_rock_thermal_buffer_C,
       host_rock_composition: spec.host_rock_composition,
+      // Mine-specific negative evidence. These are explicit locality
+      // constraints, not global mineral bans: the same engine remains live in
+      // documented scenarios and Creative mode.
+      excluded_species: spec.excluded_species,
+      // Positive locality licences are the union of the four authored
+      // positive expectation tiers. Locality-sensitive gem/rare-phase engines
+      // consume this contract instead of the stale display-only `scenarios`
+      // lists in minerals.json. Creative mode has no scenario id and remains
+      // unrestricted.
+      expects_species: spec.expects_species,
+      deterministic_species: spec.deterministic_species,
+      statistical_species: spec.statistical_species,
+      aspirational_species: spec.aspirational_species,
+      // Scenario-authoritative crystallization windows use the same step
+      // numbers as events and player-facing testimony.
+      // They constrain only this scenario; Creative mode retains every engine.
+      nucleation_windows: spec.nucleation_windows,
+      // Some paragenetic gates are causal rather than clock-only. The executed
+      // event history below is populated by apply_events and is saved as part
+      // of the ordinary scenario state.
+      nucleation_prerequisites: spec.nucleation_prerequisites,
+      executed_event_types: [],
+      // Executed low-temperature exposure history.  This is copied as data,
+      // then validated/consumed by js/44e-weathering-epilogue.ts; an authored
+      // final-state label alone never changes chemistry.
+      weathering_epilogue: spec.weathering_epilogue
+        ? { ...spec.weathering_epilogue }
+        : undefined,
       // Geological MOVEMENTS (js/85j) — persistent master-variable drift.
       // Absent in every scenario today (Phase 0 dark scaffold) → the run_step
       // movement hook stays a no-op and seed-42 is byte-identical. Phase 1
@@ -565,6 +728,7 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       // the default small distribution. Phase 2a is dark (spots stored, unread).
       fluid_spots: spec.fluid_spots,
     };
+    conditions._scenario_id = scenarioId;
     // JS events are plain objects (no Event class on the JS side; the
     // global DOM Event would shadow it). Match the {step,name,description,
     // apply_fn} shape used by the legacy in-code scenarios.
@@ -572,7 +736,11 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       step: Math.floor(ev.step),
       name: ev.name || ev.type || '',
       description: ev.description || '',
-      apply_fn: EVENT_REGISTRY[ev.type],
+      // Preserve the authored event payload for handlers that need a physical
+      // boundary value (for example a vent target pCO2). Existing one-argument
+      // handlers ignore the extra argument and retain their behavior.
+      apply_fn: (conditions: any) => EVENT_REGISTRY[ev.type](conditions, ev),
+      type: ev.type,
       // FLUID-SOURCE SPOTS Phase 2d — optional spot-lifecycle directive. A
       // string ('seal' | 'breach') or {action, kind} closes/opens the cavity's
       // feeders when this event fires (apply_events handles it centrally, after
@@ -586,11 +754,11 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       // bends/twins crystals that already grew. Absent → no overprint → byte-
       // identical. Mechanical + post-growth, so it does NOT mutate the fluid.
       deformation: ev.deformation,
-      // POST-GROWTH ETCH (crystal-face-realism arc §2, 2026-06-22) — optional directive
-      // {amount,minerals,style}. apply_events records it onto sim._etchEvents with the
-      // step it fired; classifyEtch (js/45) rounds/frosts crystals that already grew.
-      // Absent → no overprint → byte-identical. Chemical corrosion is post-growth, so it
-      // does NOT mutate the fluid.
+      // PHYSICAL ETCH — optional directive {duration_days|amount, minerals}.
+      // apply_events queues it until the authored fluid boundary reaches each
+      // local cell. The accepted model removes solid volume and returns the
+      // exact booked shell inventory; morphology comes from the face-matched
+      // rate experiment, not from an authored cosmetic style.
       etch: ev.etch,
       // FILM DUSTING (W-F O5 perturbed regrowth) — optional directive
       // {mineral, prism, term, minerals?}. apply_events (js/85d) sets `_film` on
@@ -609,6 +777,8 @@ function _buildScenarioFromSpec(scenarioId, spec) {
   // arbitrary properties; this mirrors how `_json5_spec` is read in
   // startTutorial.
   scenarioCallable._json5_spec = spec;
+  scenarioCallable._scenario_id = scenarioId;
+  scenarioCallable._scenario_spec_hash = specHash;
   return scenarioCallable;
 }
 
@@ -660,9 +830,8 @@ async function _loadScenariosJSON5() {
 // All declarative scenarios live in data/scenarios.json5 and are
 // populated asynchronously by _loadScenariosJSON5() above. `let` so the
 // loader can mutate the object in place. scenario_random is the only
-// procedural scenario; it's wired into the title-screen Random Vugg
-// button below rather than added here (pre-existing intentional drift
-// from the Python side, where vugg.SCENARIOS["random"] = scenario_random).
+// procedural scenario; it is wired into the title-screen Random Vugg
+// button below rather than represented as a declarative scenario.
 let SCENARIOS = {};
 
 // The menu_layout block from data/scenarios.json5 (Door 3 / §10.5 t2-3):

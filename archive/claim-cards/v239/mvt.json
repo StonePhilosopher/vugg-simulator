@@ -1,0 +1,363 @@
+{
+  "scenario": "mvt",
+  "sim_version": 239,
+  "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:accepted-zone-stoich-ledger-v3|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-supplement-v1|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1",
+  "scenario_spec_hash": "d236c0698bb8a1c15f629361bdac41eb766e1c5b809e09c7c6bb5b7a77bc3b33",
+  "strip_steps": 120,
+  "claim": {
+    "anchor": "Tri-State district (Joplin / Picher / Galena MO-KS-OK) — Pb-Zn in Mississippian Boone Formation cherty limestone",
+    "description": "Mississippi Valley-type Pb-Zn deposit. NaCl-CaCl2 basinal brine, sphalerite + galena + barite + fluorite paragenesis.",
+    "expects_species": [
+      "sphalerite",
+      "galena",
+      "fluorite",
+      "barite",
+      "calcite"
+    ],
+    "sources": [
+      "Roedder 1976 — Tri-State fluid-inclusion microthermometry",
+      "Ohle 1959 — Tri-State district geology",
+      "Hagni 1976 — Tri-State paragenesis",
+      "Stoffell et al. 2008 — LA-ICP-MS fluid-inclusion brine analyses",
+      "Anderson & Macqueen 1982 — MVT mineralogy review",
+      "Schwartz 2000 (Econ. Geol. 95) — Cd in MVT sphalerite",
+      "Hanor 1994 — basinal-brine compendium (Sr/Ba tracers)"
+    ],
+    "initial_temperature_C": 180,
+    "initial_pressure_kbar": 0.3,
+    "wall_architecture": "irregular",
+    "notes": [
+      "Anchor: Tri-State Pb-Zn mining district. Brines per Roedder 1976, Ohle 1959, Hagni 1976, and the Stoffell et al. 2008 LA-ICP-MS fluid-inclusion study: NaCl-CaCl2 basinal brine, 18-24 wt% NaCl-eq total salinity, 150-200,000 ppm Cl raw, Mg/Ca ~0.05-0.1 (low-Mg → favors calcite over aragonite). Tri-State is diagnostically silver-POOR: the district produced lead and zinc only, and low-Ag galena is an MVT fingerprint — Ag-in-galena rides Sb/Bi substitution, a high-temperature vein phenomenon absent from a ~150°C basinal brine (Leach et al. 2010 USGS MVT deposit model: Ag 'generally absent in most deposits').",
+      "Chemistry-audit gap-fill pass (Apr 2026): added Na, K, Cl (the NaCl-CaCl2 brine baseline), Ag (argentiferous-galena signature — an UNCITED confabulation, removed v195, see next note), Ba (barite documented locally), Sr (basinal-brine tracer + minor celestine), Cu (trace chalcopyrite). Also drift-fixed Pb=40 from JS-side intent into Python init.",
+      "Silver de-confabulation (v195, boss catch 2026-06-12): the Apr-2026 gap-fill claim 'Tri-State galena is documented argentiferous; Ag was historically a meaningful smelter byproduct' cited no source because none exists — none of this scenario's references (Roedder/Ohle/Hagni/Stoffell) report district Ag, and the district record is Pb+Zn only. The claim was a v139-adamite-family fabrication that survived two rebake reviews because per-pin verdicts inherited it as ground truth. Broth Ag 5 → 0; the baseline's acanthite + native_silver were artifacts riding it (expects_species never promised a silver mineral). Greenockite STAYS — Cd-in-sphalerite is genuinely documented at Tri-State (Schwartz 2000).",
+      "Existing values (SiO2, Ca, CO3, Fe, Mn, F, Mg, pH, salinity) and the event sequence (fluid_mixing step 20, fluid_pulse step 60, tectonic_shock step 80) preserved untouched — gap-fill only.",
+      "MINDAT VALID-SPECIES REFERENCE (boss-supplied screenshots, 2026-07-25 — Picher Field, Tri-State Mining District, mindat locality 12395; boss picked the iconic sub-locality deliberately 'so the data is more consistent'; 44 valid incl. sub-localities): Albite (var. Anorthoclase), Allophane, Anglesite, Aragonite, Arsenopyrite, Aurichalcite, Baryte, 'Calamine', Calcite, Caledonite, Cerussite, Chalcopyrite, Chrysocolla, Copiapite, Covellite, Cuprite, Diadochite, Dolomite, Enargite, Epsomite, Fluorapatite, Galena, Gedrite, Goslarite (var. Cuprogoslarite), Greenockite, GYPSUM (var. SELENITE), Hemimorphite, Hydroniumjarosite, Hydrozincite, Kaolinite, Ktenasite, Linarite, Luzonite, Malachite, Marcasite, Melanterite, Native Sulphur, 'Petroleum' (var. Bitumen), Plumbojarosite, Pyrite, Pyromorphite, Pyrophyllite, Quartz, Smithsonite, Sphalerite, Szomolnokite, Vivianite. WHAT THE LIST VOTES ON (vs seed-42 v236 sim output): (a) GYPSUM var. SELENITE IS VALID HERE — the S2 selenite migration's mvt tenant is record-LICENSED (the exact opposite of elmwood; the per-locality instrument earning its keep); (b) sim species NOT on the list — census flags: FLUORITE (11.9 mm + in expects_species! Picher Field lists none; the anchor spans the whole Tri-State so a Joplin-side sub-locality may still license it — BOSS ADJUDICATION needed before any kill), CELESTINE (39.7 µm, freshly Ba-flipped in S2 — unlisted here), RHODOCHROSITE (5.7 mm, unlisted), SIDERITE (3.7 mm, unlisted — SAME flag as elmwood: the Fe/Mn carbonates may be over-firing in MVT broths), hawleyite (CdS cubic polymorph unlisted; greenockite is), anhydrite (6.3 µm dust; gypsum listed instead); (c) DOUBLE-LICENSED: greenockite (Schwartz 2000 in the v195 note AND the Picher list) — the de-confabulation instrument and the literature agree; (d) the list's big supergene tail (smithsonite/hemimorphite/cerussite/anglesite/malachite/aurichalcite/hydrozincite/native sulphur/the jarosites) is largely post-mining oxidation — the scenario models the hypogene ore stage and ends before the gossan, so their absence from the sim is CORRECT, not a gap; they become relevant only if a Picher supergene-epilogue stage is ever authored."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.01..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|mass:accepted-zone-stoich-ledger-v3|dissolution:LIFO-shell-inventory+5um-floor-v1|engine-fluid:transactional-supplement-v1|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1",
+      "fluid_pressure": {
+        "initial_kbar": 0.3,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.4196065399999998,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 62.41,
+          "initial_water_activity": {
+            "value": 0.991,
+            "salinityPpt": 15,
+            "naclWeightPercentEquivalent": 1.5,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": [
+        {
+          "step": 80,
+          "type": "tectonic_shock",
+          "decision": {
+            "sigma_diff_mpa": 50,
+            "timescale": "instantaneous",
+            "model": "resolved-shear threshold pulse; fluid pressure unchanged; no creep law"
+          }
+        }
+      ]
+    }
+  },
+  "testimony": {
+    "species_count": 14,
+    "paragenetic_order": [
+      {
+        "mineral": "calcite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "rhodochrosite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "siderite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "fluorite",
+        "first_step": 19,
+        "events": 1
+      },
+      {
+        "mineral": "galena",
+        "first_step": 19,
+        "events": 4
+      },
+      {
+        "mineral": "pyrite",
+        "first_step": 19,
+        "events": 1
+      },
+      {
+        "mineral": "sphalerite",
+        "first_step": 19,
+        "events": 1
+      },
+      {
+        "mineral": "barite",
+        "first_step": 20,
+        "events": 6
+      },
+      {
+        "mineral": "anhydrite",
+        "first_step": 21,
+        "events": 1
+      },
+      {
+        "mineral": "greenockite",
+        "first_step": 21,
+        "events": 5
+      },
+      {
+        "mineral": "celestine",
+        "first_step": 22,
+        "events": 2
+      },
+      {
+        "mineral": "quartz",
+        "first_step": 27,
+        "events": 3
+      },
+      {
+        "mineral": "hawleyite",
+        "first_step": 44,
+        "events": 1
+      },
+      {
+        "mineral": "aragonite",
+        "first_step": 45,
+        "events": 1
+      }
+    ],
+    "surprises_not_in_expects": [
+      "rhodochrosite",
+      "siderite",
+      "pyrite",
+      "anhydrite",
+      "greenockite",
+      "celestine",
+      "quartz",
+      "hawleyite",
+      "aragonite"
+    ],
+    "expected_no_shows": [],
+    "environment": {
+      "T": {
+        "first": 177.165,
+        "last": 138.78,
+        "min": 91.535,
+        "max": 177.165,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 7.22,
+        "last": 6.614,
+        "min": 6.173,
+        "max": 7.22,
+        "units": ""
+      },
+      "Eh": {
+        "first": 39.37,
+        "last": -229.921,
+        "min": -244.094,
+        "max": 58.268,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 14.961,
+        "last": 14.961,
+        "min": 14.961,
+        "max": 14.961,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 0.276,
+        "last": 0,
+        "min": 0,
+        "max": 0.354,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": 0.378,
+        "last": 0,
+        "min": -1.197,
+        "max": 1.008,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": 0.315,
+        "last": -0.126,
+        "min": -1.323,
+        "max": 0.945,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": 0.819,
+        "last": -0.378,
+        "min": -2.52,
+        "max": 1.323,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -1.323,
+        "last": -1.701,
+        "min": -2.898,
+        "max": -0.693,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 1.89,
+        "last": 2.331,
+        "min": 1.26,
+        "max": 2.457,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -0.567,
+        "min": -8,
+        "max": -0.567,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -0.444,
+        "min": -8,
+        "max": -0.378,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": 1.701,
+        "min": -8,
+        "max": 2.142,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -0.126,
+        "min": -8,
+        "max": -0.003,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 120,
+      "fluid_pressure_kbar": {
+        "first": 0.3,
+        "last": 0.3,
+        "min": 0.3,
+        "max": 0.3,
+        "samples": 120
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 120
+      },
+      "temperature_C": {
+        "first": 178.2608943547122,
+        "last": 137.43649824522439,
+        "min": 90.49107971857299,
+        "max": 178.2608943547122,
+        "samples": 120
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.4195970419362336,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.4610771830762657,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 120
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 62.41
+        },
+        "last": {
+          "pure_water_boundary_C": 62.41
+        }
+      },
+      "stress_events": [
+        {
+          "event_id": "stress-80-1",
+          "step": 80,
+          "sigma_diff_mpa": 50,
+          "timescale": "instantaneous threshold evaluation",
+          "twinned_crystal_ids": [],
+          "evaluated_crystals": [
+            {
+              "crystal_id": 1,
+              "mineral": "calcite",
+              "schmid_factor": 0.11005525768268853,
+              "resolved_shear_mpa": 5.502762884134427,
+              "crss_mpa": 10,
+              "outcome": "below_crss"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

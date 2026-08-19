@@ -52,7 +52,7 @@ function makeConditions(wallOpts: any = {}, fluidOpts: any = {}) {
   return new VugConditions({
     fluid: new FluidChemistry({
       Ca: 2000, Mg: 1500, CO3: 2200, pH: 8.4,
-      Na: 12, Cl: 10, SO4: 5, Fe: 1, Mn: 0.3, SiO2: 6,
+      Na: 12, Cl: 10, S: 5, sulfateInherited: true, Fe: 1, Mn: 0.3, SiO2: 6,
       Sr: 25, Ba: 3, salinity: 0.5, O2: 5.0,
       concentration: 1.0,
       ...fluidOpts,
@@ -84,6 +84,29 @@ describe('Tranche 6 — per-vertex nucleation plumbing', () => {
     const sim2 = new VugSimulator(makeConditions({ per_vertex_nucleation: false }), []);
     expect(sim2.wall_state.per_vertex_nucleation).toBe(false);
   });
+
+  it('keeps an MC/barycentric host overgrowth at the host physical attachment', () => {
+    const sim = new VugSimulator(makeConditions({ shape_seed: 42 }), []);
+    const wall = sim.wall_state;
+    expect(wall.activeCavitySurfaceAnchorProvider()?.receipt.kind).toBe('cavity-field');
+    const host = sim.nucleate('quartz', 'vug wall', 2);
+    host.wall_anchor = wall.surfaceAnchorFromMarchingCubes(0, [0.2, 0.3, 0.5]);
+    const resolvedHost = wall._resolveAnchor(host);
+    const child = sim.nucleate('calcite', `on quartz #${host.crystal_id}`, 2);
+    const resolvedChild = wall._resolveAnchor(child);
+
+    expect(resolvedChild.source.kind).toBe('cavity-field');
+    expect(resolvedChild.source.signature).toBe(resolvedHost.source.signature);
+    expect(resolvedChild.position).toEqual(resolvedHost.position);
+    expect(resolvedChild.normal).toEqual(resolvedHost.normal);
+    expect(wall.chemistryAddressForCrystal(child))
+      .toEqual(wall.chemistryAddressForCrystal(host));
+    const chemistry = wall.chemistryAddressForCrystal(host);
+    const mesh = wall.meshFor(sim);
+    expect(resolvedHost.position).not.toEqual(Array.from(mesh.positions.slice(
+      chemistry.vertexIndex * 3, chemistry.vertexIndex * 3 + 3,
+    )));
+  });
 });
 
 describe('Tranche 6 — per-vertex σ sampler', () => {
@@ -110,6 +133,20 @@ describe('Tranche 6 — per-vertex σ sampler', () => {
     const sim = new VugSimulator(makeConditions({ per_vertex_nucleation: true }), []);
     sim.run_step();
     expect(sim._perVertexNucleationSample('not_a_real_mineral')).toBeNull();
+  });
+
+  it('composes local saturation weights with the architecture physical-normal filter', () => {
+    const sim = new VugSimulator(makeConditions({
+      architecture: 'basin',
+      per_vertex_nucleation: true,
+    }), []);
+    sim.run_step();
+    setSeed(42);
+    for (let trial = 0; trial < 32; trial++) {
+      const picked = sim._perVertexNucleationSample('calcite');
+      expect(picked).toBeTruthy();
+      expect(sim.wall_state.surfaceZoneAtVertex(picked.ringIdx, picked.cellIdx, sim)).toBe('floor');
+    }
   });
 });
 
@@ -263,23 +300,18 @@ describe('Tranche 6 — zoned_dripstone_cave scenario (end-to-end demo)', () => 
     expect(aragCeil + aragFloor + aragWall).toBe(NTRIALS);
     expect(calcCeil + calcFloor + calcWall).toBe(NTRIALS);
 
-    // v167 area term: weight = ringAreaWeight(r)·(σ−1)². The wall (≈5× the
-    // ceiling's surface area) is now the single largest zone by nuclei count,
-    // so ceiling is no longer the PLURALITY for aragonite. The geology the
-    // feature promises is unchanged and stated more honestly as ENRICHMENT
-    // vs the area baseline + the CROSS-SORT between the two minerals
-    // (measured over 4000 trials, tools/placement-skew-probe.mjs):
-    //   * aragonite ceiling share ~37% ≫ its 14.6% area baseline → real
-    //     Mg-driven ceiling enrichment, and ≫ its own floor share ~14% →
-    //     the Mg/Ca gradient direction.
+    // The equatorial broth is now honestly below the authoritative molar
+    // Mg/Ca selector. Only the ceiling override crosses it, so aragonite has
+    // zero weight on floor and wall even after the area term; this is a hard
+    // spatial selector rather than a weak enrichment against a large wall.
+    // Calcite retains its broader floor/wall distribution:
     //   * calcite ceiling share ~2% ≪ 14.6% baseline → Mg-poisoning exclusion;
     //     calcite floor share ~40% → it prefers the Ca-rich floor.
     //   * the two minerals sort to OPPOSITE poles — aragonite's ceiling share
     //     dwarfs calcite's. Area-independent, and THE promise of Tranche 6.
-    // (NTRIALS=100 here, so allow ±5% noise against those 4000-trial shares.)
-    expect(aragCeil).toBeGreaterThan(25);          // ≫ 14.6% area baseline → ceiling enrichment
-    expect(aragCeil).toBeGreaterThan(aragFloor);   // Mg gradient: ceiling > floor
-    expect(aragFloor).toBeLessThan(aragWall);      // floor is the Mg-poor excluded zone
+    expect(aragCeil).toBe(NTRIALS);
+    expect(aragFloor).toBe(0);
+    expect(aragWall).toBe(0);
     // Calcite: excluded from the Mg-rich ceiling; prefers the Ca-rich floor.
     expect(calcCeil).toBeLessThanOrEqual(10);      // ≪ 14.6% baseline → exclusion
     expect(calcFloor).toBeGreaterThan(calcCeil);   // calcite floor ≫ calcite ceiling
@@ -287,18 +319,10 @@ describe('Tranche 6 — zoned_dripstone_cave scenario (end-to-end demo)', () => 
     expect(aragCeil).toBeGreaterThan(calcCeil * 3);
   });
 
-  it('per_vertex_nucleation: false on the same scenario does NOT show the spatial sort (control)', () => {
-    // Run the same scenario with the flag flipped off. The orientation
-    // distribution should NOT show a strong floor/ceiling sort for
-    // calcite vs aragonite — placements are area-weighted random.
-    //
-    // We don't insist on ZERO sorting (random area-weight + ring
-    // orientation preferences could still bias slightly), only that
-    // the calcite-floor / aragonite-ceiling differential isn't as
-    // strong as in the on-case. Specifically: at least one of the
-    // signed differentials (aragoniteCeiling-aragoniteFloor or
-    // calciteFloor-calciteCeiling) should be SMALLER than the
-    // corresponding on-case differential.
+  it('per_vertex_nucleation: false cannot discover the local ceiling selector', () => {
+    // With local evaluation disabled, the engine sees only the sub-threshold
+    // equatorial Mg/Ca ratio. Calcite remains available, but aragonite cannot
+    // be invented from an unseen ceiling composition.
     const scen = SCENARIOS.zoned_dripstone_cave;
     const spec = (scen as any)._json5_spec;
     // Build a control with per_vertex_nucleation flipped off.
@@ -320,16 +344,8 @@ describe('Tranche 6 — zoned_dripstone_cave scenario (end-to-end demo)', () => 
 
     const aragonites = sim.crystals.filter((c: any) => c.mineral === 'aragonite');
     const calcites = sim.crystals.filter((c: any) => c.mineral === 'calcite');
-    // Both minerals still nucleate (engines still gate on equator broth).
-    expect(aragonites.length).toBeGreaterThan(0);
+    expect(aragonites).toHaveLength(0);
     expect(calcites.length).toBeGreaterThan(0);
-
-    // For the control, we assert WEAKER: the spatial signal is not
-    // guaranteed any particular way. We just verify the run completes
-    // without crashing — that the legacy code path stays healthy with
-    // zone_chemistry alone.
-    const _aragoniteCeiling = aragonites.filter((c: any) => orientationOf(c) === 'ceiling').length;
-    const _calciteFloor = calcites.filter((c: any) => orientationOf(c) === 'floor').length;
-    expect(_aragoniteCeiling + _calciteFloor).toBeGreaterThanOrEqual(0);  // smoke
+    expect(calcites.some((c: any) => orientationOf(c) !== 'unknown')).toBe(true);
   });
 });

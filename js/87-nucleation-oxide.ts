@@ -131,6 +131,84 @@ function _nuc_cassiterite(sim) {
   }
 }
 
+// SIM 249: first-class Mn-oxide surface phases. Early-out happens before any
+// substrate or repeat-nucleation RNG, preserving the cascade in scenarios
+// that do not enter the relevant chemistry field.
+function _nuc_manganese_surface_phase(sim, mineral, gate, sigma, position, label) {
+  if (sigma <= gate.sigma_crit) return;
+  if (sim._atNucleationCap(mineral)) return;
+  const existing = sim.crystals.filter(c => c.mineral === mineral && c.active);
+  const total = sim.crystals.filter(c => c.mineral === mineral).length;
+  if (existing.length >= 2 || total >= 4) return;
+  const discount = sim._sigmaDiscountForPosition(mineral, position);
+  if (sigma <= 1.05 * discount) return;
+  if (existing.length && !(sigma > 1.8 && rng.random() < 0.16)) return;
+  const c = sim.nucleate(mineral, position, sigma);
+  const f = sim.conditions.fluid;
+  sim.log.push(`  ✦ NUCLEATION: ⚫ ${label} #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Mn=${f.Mn.toFixed(1)} ppm, pH=${f.pH.toFixed(1)}, O₂=${f.O2.toFixed(2)})`);
+}
+
+function _nuc_birnessite(sim) {
+  const sigma = sim.conditions.supersaturation_birnessite();
+  _nuc_manganese_surface_phase(
+    sim, 'birnessite', MINERAL_GATES_birnessite, sigma,
+    'vug wall (hydrous low-temperature coating)', 'Birnessite',
+  );
+}
+
+function _nuc_romanechite(sim) {
+  const sigma = sim.conditions.supersaturation_romanechite();
+  if (sigma <= MINERAL_GATES_romanechite.sigma_crit) return;
+  const passiveSilica = sim.crystals.find(c =>
+    (c.mineral === 'quartz' || c.mineral === 'chalcedony') && c.active);
+  const position = passiveSilica
+    ? `on ${passiveSilica.mineral} #${passiveSilica.crystal_id} (passive silicate substrate)`
+    : 'vug wall (Ba-bearing surface dendrite field)';
+  _nuc_manganese_surface_phase(
+    sim, 'romanechite', MINERAL_GATES_romanechite, sigma, position, 'Romanechite',
+  );
+}
+
+function _nuc_todorokite(sim) {
+  const localityActive = !!(
+    sim.wall_state?.per_vertex_nucleation || sim._thermalFieldActivated
+  );
+  let sigma = localityActive ? 0 : sim.conditions.supersaturation_todorokite();
+  if (!localityActive && sigma <= MINERAL_GATES_todorokite.sigma_crit) return;
+  if (sim._atNucleationCap('todorokite')) return;
+  let precursor = sim.crystals.find(c => isTodorokiteBirnessitePrecursor(c));
+  if (!precursor) return; // no scientifically licensed bare-wall fallback
+  let local: any = null;
+  if (localityActive) {
+    const eligible = sim.crystals
+      .filter(c => isTodorokiteBirnessitePrecursor(c))
+      .map(c => ({
+        precursor: c,
+        local: sim._localNucleationEvaluationAtAnchor(
+          'todorokite', sim.wall_state._resolveAnchor(c),
+        ),
+      }))
+      .filter(candidate => candidate.local?.sigma > MINERAL_GATES_todorokite.sigma_crit)
+      .sort((a, b) => b.local.sigma - a.local.sigma
+        || a.precursor.crystal_id - b.precursor.crystal_id);
+    if (!eligible.length) return;
+    precursor = eligible[0].precursor;
+    local = eligible[0].local;
+    sigma = local.sigma;
+  }
+  if (sigma <= 1.05 || rng.random() >= 0.22) return;
+  const transition = applyBirnessiteTodorokiteTransition(
+    precursor, local?.fluid || sim.conditions.fluid,
+    Number.isFinite(local?.temperatureC) ? local.temperatureC : sim.conditions.temperature,
+    sim.step,
+  );
+  if (!transition) return;
+  const f = local?.fluid || sim.conditions.fluid;
+  const temperatureC = Number.isFinite(local?.temperatureC)
+    ? local.temperatureC : sim.conditions.temperature;
+  sim.log.push(`  ✦ TRANSFORMATION: ⚫ Birnessite #${precursor.crystal_id} → Todorokite in place (T=${temperatureC.toFixed(0)}°C, σ=${sigma.toFixed(2)}, preserved Mn=${transition.bookedMnPreservedPpm.toFixed(3)} ppm, booked Mg=${transition.structuralMgBookedPpm.toFixed(3)} ppm, pH=${f.pH.toFixed(1)})`);
+}
+
 // v102 (2026-05-19): pyrolusite β-MnO2 — supergene Mn(IV) oxide.
 // Substrate priority encodes the canonical Mn-weathering paragenesis
 // per the dossier §6:
@@ -152,7 +230,7 @@ function _nuc_cassiterite(sim) {
 // scenarios where Mn is below threshold.
 function _nuc_pyrolusite(sim) {
   const sigma = sim.conditions.supersaturation_pyrolusite();
-  if (sigma < MINERAL_GATES_pyrolusite.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
+  if (sigma <= MINERAL_GATES_pyrolusite.sigma_crit) return;  // RNG-cascade guard — DO NOT MOVE
   if (sim._atNucleationCap('pyrolusite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'pyrolusite' && c.active);
   const total = sim.crystals.filter(c => c.mineral === 'pyrolusite').length;
@@ -196,7 +274,7 @@ function _nuc_pyrolusite(sim) {
 // wall. RNG-cascade-guarded.
 function _nuc_brucite(sim) {
   const sigma = sim.conditions.supersaturation_brucite();
-  if (sigma < MINERAL_GATES_brucite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_brucite.sigma_crit) return;
   if (sim._atNucleationCap('brucite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'brucite' && c.active);
   if (existing.length >= 4) return;
@@ -222,6 +300,9 @@ function _nucleateClass_oxide(sim) {
   _runNuc(sim, _nuc_rutile);
   _runNuc(sim, _nuc_chromite);
   _runNuc(sim, _nuc_cassiterite);
+  _runNuc(sim, _nuc_birnessite);
+  _runNuc(sim, _nuc_romanechite);
+  _runNuc(sim, _nuc_todorokite);
   _runNuc(sim, _nuc_pyrolusite);
   _runNuc(sim, _nuc_brucite);
 }

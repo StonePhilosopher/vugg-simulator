@@ -11,7 +11,7 @@
 //     metastable — needs more supersaturation to precipitate)
 //   - Dolomite IAP uses CO3 squared (sensitivity check vs simple
 //     carbonates)
-//   - HMC SI depends on mg_content via Ksp scaling
+//   - HMC SI depends on composition through nonideal solid activities
 //   - OH-bearing carbonates respond to pH via OH activity
 //   - Engine integration: with all flags off, supersaturation_calcite()
 //     gives the same result as the empirical engine (regression pin)
@@ -29,11 +29,11 @@ declare const SCENARIOS: any;
 declare const setSeed: any;
 
 declare const carbonateSaturationIndex: (
-  mineralId: string, fluid: any, T_C: number, mg_content?: number) => number;
+  mineralId: string, fluid: any, T_C: number, mg_content?: number, fluidPressureKbar?: number) => number;
 declare const carbonateOmega: (
-  mineralId: string, fluid: any, T_C: number, mg_content?: number) => number;
+  mineralId: string, fluid: any, T_C: number, mg_content?: number, fluidPressureKbar?: number) => number;
 declare const carbonateEngineSigma: (
-  mineralId: string, fluid: any, T_C: number, mg_content?: number) => number;
+  mineralId: string, fluid: any, T_C: number, mg_content?: number, fluidPressureKbar?: number) => number;
 declare const carbonatesWithSI: () => string[];
 declare const carbonatePromotionReady: (mineralId: string) => boolean;
 declare const kspSupersatActiveFor: (mineralId: string) => boolean;
@@ -46,8 +46,10 @@ declare const snapshotCarbonateKspFlags: () => { global: boolean; perMineral: Re
 declare const restoreCarbonateKspFlags: (snap: { global: boolean; perMineral: Record<string, boolean> }) => void;
 
 declare const getCarbonateLogKsp: (mineralId: string, T_C: number, mg_content?: number) => number;
+declare const hmcSolidSolutionAssessment: (mg_content: number, T_C: number) => any;
 declare const bjerrumFractions: (pH: number, T_C: number) => { H2CO3: number; HCO3: number; CO3: number };
 declare const carbonateIonPpm: (fluid: any, T_C: number) => number;
+declare const pKwWater: (T_C: number, fluidPressureKbar?: number) => number;
 
 describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — flag mechanism', () => {
   it('CARBONATE_KSP_ACTIVE is true since v144 (Week 9 calcite promotion)', () => {
@@ -90,8 +92,9 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — flag mechanism', () => {
   });
 
   it('rosasite + aurichalcite intentionally absent from per-mineral flag table', () => {
-    // Both are tier-D thermo data; SI returns NaN. No flag entry =
-    // documents the "no thermo data" gap clearly.
+    // Both now have Tier-C representative-composition SI observers, but
+    // no validated solid-solution engine. No flag entry prevents an
+    // observer constant from silently becoming gameplay physics.
     expect(CARBONATE_KSP_ACTIVE_PER_MINERAL.rosasite).toBeUndefined();
     expect(CARBONATE_KSP_ACTIVE_PER_MINERAL.aurichalcite).toBeUndefined();
   });
@@ -146,10 +149,37 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — SI math signs', () => {
     expect(Number.isNaN(SI)).toBe(true);
   });
 
-  it('returns NaN for rosasite (no thermo data)', () => {
+  it('exposes composition-labelled Tier-C observers for rosasite and aurichalcite', () => {
     const f = new FluidChemistry({ Cu: 20, Zn: 15, CO3: 80, pH: 7 });
-    const SI = carbonateSaturationIndex('rosasite', f, 25);
-    expect(Number.isNaN(SI)).toBe(true);
+    const rosasite = carbonateSaturationIndex('rosasite', f, 25);
+    const aurichalcite = carbonateSaturationIndex('aurichalcite', f, 25);
+    expect(Number.isFinite(rosasite)).toBe(true);
+    expect(Number.isFinite(aurichalcite)).toBe(true);
+    expect(mixedCarbonateThermoAssessment('rosasite', f, 25)).toMatchObject({
+      status: 'calibrated-25C-observer',
+      confidence: 'C',
+      representativeComposition: 'Cu1.3Zn0.7(CO3)(OH)2',
+    });
+    expect(mixedCarbonateThermoAssessment('aurichalcite', f, 30)).toMatchObject({
+      status: 'temperature-extrapolation',
+      confidence: 'C',
+      representativeComposition: 'Zn2.9Cu2.1(CO3)2(OH)6',
+    });
+  });
+
+  it('mixed-carbonate SI honors published dissolution stoichiometry', () => {
+    const base = new FluidChemistry({ Cu: 20, Zn: 15, CO3: 80, pH: 7 });
+    const highCu = new FluidChemistry({ Cu: 40, Zn: 15, CO3: 80, pH: 7 });
+    const dRosasite = carbonateSaturationIndex('rosasite', highCu, 25)
+      - carbonateSaturationIndex('rosasite', base, 25);
+    const dAurichalcite = carbonateSaturationIndex('aurichalcite', highCu, 25)
+      - carbonateSaturationIndex('aurichalcite', base, 25);
+    // Davies activity changes slightly with ionic strength, so use a narrow
+    // physical band around nu_Cu * log10(2), not an exact ideal-solution pin.
+    expect(dRosasite).toBeGreaterThan(0.34);
+    expect(dRosasite).toBeLessThan(0.45);
+    expect(dAurichalcite).toBeGreaterThan(0.56);
+    expect(dAurichalcite).toBeLessThan(0.70);
   });
 });
 
@@ -228,13 +258,7 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — polymorph + stoichiometry', () =
 });
 
 describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — HMC mg_content', () => {
-  it('HMC SI varies with mg_content (Ksp scales with x)', () => {
-    // logKsp(x) = -8.48 + 0.10 × x × 100  (per data/thermo-carbonates.json
-    // mg_content_linear fit).
-    //   x=0.00: logKsp = -8.48 (= calcite)
-    //   x=0.10: logKsp = -7.48 (10× more soluble than pure calcite)
-    //   x=0.20: logKsp = -6.48
-    // Higher x → MORE soluble → LOWER SI at the same fluid.
+  it('HMC SI varies nonlinearly with composition-dependent solid activities', () => {
     const f = new FluidChemistry({ Ca: 400, Mg: 400, CO3: 200, pH: 8.0 });
     const SI_pure = carbonateSaturationIndex('HMC', f, 25, 0.0);
     const SI_low = carbonateSaturationIndex('HMC', f, 25, 0.10);
@@ -244,8 +268,15 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — HMC mg_content', () => {
     expect(Number.isFinite(SI_high)).toBe(true);
     expect(SI_pure).toBeGreaterThan(SI_low);
     expect(SI_low).toBeGreaterThan(SI_high);
-    // 0 → 10 mol-% Mg = 1 log-unit drop in SI per the linear fit.
-    expect(Math.abs((SI_pure - SI_low) - 1.0)).toBeLessThan(0.3);
+    const lowStep = SI_pure - SI_low;
+    const highStep = SI_low - SI_high;
+    expect(lowStep).toBeGreaterThan(0);
+    expect(highStep).toBeGreaterThan(0);
+    expect(Math.abs(lowStep - highStep)).toBeGreaterThan(0.02);
+    const assessment = hmcSolidSolutionAssessment(0.10, 25);
+    expect(assessment.model).toBe('calcite_disordered_dolomite_subregular_v1');
+    expect(assessment.activityCoefficients.calcite).not.toBeCloseTo(1, 3);
+    expect(assessment.activityCoefficients.disorderedDolomiteHalfFormula).not.toBeCloseTo(1, 3);
   });
 
   it('HMC SI at x=0 matches calcite SI (HMC is pure calcite when mg_content = 0)', () => {
@@ -288,6 +319,36 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — OH-bearing carbonates respond to
     expect(Number.isFinite(SI_neut)).toBe(true);
     expect(Number.isFinite(SI_alk)).toBe(true);
     expect(SI_alk - SI_neut).toBeGreaterThan(6);
+  });
+
+  it('malachite SI uses temperature-dependent pKw rather than a fixed 25 C value', () => {
+    const f = new FluidChemistry({ Cu: 30, CO3: 100, pH: 7.5, O2: 2 });
+    const coldT = 25;
+    const warmT = 60;
+    const observed = carbonateSaturationIndex('malachite', f, warmT)
+      - carbonateSaturationIndex('malachite', f, coldT);
+    const co3Term = Math.log10(carbonateIonPpm(f, warmT) / carbonateIonPpm(f, coldT));
+    const ohTerm = 2 * (pKwWater(coldT, 0.001) - pKwWater(warmT, 0.001));
+    const kspTerm = -(getCarbonateLogKsp('malachite', warmT)
+      - getCarbonateLogKsp('malachite', coldT));
+    expect(observed).toBeCloseTo(co3Term + ohTerm + kspTerm, 10);
+    expect(ohTerm).toBeGreaterThan(1);
+  });
+
+  it('hydroxycarbonate SI uses Marshall-Franck pKw(T,P) with authenticated water density', () => {
+    expect(pKwWater(25, 0.001)).toBeCloseTo(13.994907007, 8);
+    expect(pKwWater(100, 0.001)).toBeCloseTo(12.264565476, 8);
+    expect(pKwWater(100, 4.4)).toBeCloseTo(11.280754733, 8);
+
+    const fluid = new FluidChemistry({ Zn: 80, CO3: 250, pH: 8.5, O2: 2 });
+    const shallow = carbonateSaturationIndex('hydrozincite', fluid, 100, 0, 0.001);
+    const deep = carbonateSaturationIndex('hydrozincite', fluid, 100, 0, 4.4);
+    expect(deep - shallow).toBeCloseTo(
+      6 * (pKwWater(100, 0.001) - pKwWater(100, 4.4)),
+      9,
+    );
+    expect(deep).toBeGreaterThan(shallow + 5);
+    expect(Number.isNaN(pKwWater(100, 9))).toBe(true); // no pressure extrapolation
   });
 });
 
@@ -364,19 +425,19 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — promotion readiness audit', () =
     expect(carbonatePromotionReady('siderite')).toBe(false);
   });
 
-  it('rosasite + aurichalcite are NOT promotion-ready (tier D thermo, no SI fn)', () => {
+  it('rosasite + aurichalcite have Tier-C SI observers but are not promotion-ready', () => {
     expect(carbonatePromotionReady('rosasite')).toBe(false);
     expect(carbonatePromotionReady('aurichalcite')).toBe(false);
   });
 
-  it('carbonatesWithSI lists exactly the 13 implemented SI engines', () => {
+  it('carbonatesWithSI lists all 15 implemented SI calculations', () => {
     const ids = carbonatesWithSI();
-    expect(ids.length).toBe(13);
+    expect(ids.length).toBe(15);
     expect(ids).toContain('calcite');
     expect(ids).toContain('HMC');
     expect(ids).toContain('hydrozincite');
-    expect(ids).not.toContain('rosasite');
-    expect(ids).not.toContain('aurichalcite');
+    expect(ids).toContain('rosasite');
+    expect(ids).toContain('aurichalcite');
   });
 });
 
@@ -424,7 +485,7 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 2 — dispatcher positive control', ()
     const f = new FluidChemistry({ Ca: 200, CO3: 150, pH: 8.0 });
     const cond = new VugConditions({ temperature: 25, fluid: f });
     const engineSigma = cond.supersaturation_calcite();
-    const expected = carbonateEngineSigma('calcite', f, 25);
+    const expected = carbonateEngineSigma('calcite', f, 25, 0, cond.pressure);
     expect(Number.isFinite(engineSigma)).toBe(true);
     expect(Number.isFinite(expected)).toBe(true);
     expect(engineSigma).toBeCloseTo(expected, 6);

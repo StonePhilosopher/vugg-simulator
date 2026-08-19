@@ -35,24 +35,22 @@ const MINERAL_GATES_celestine: MineralGates = {
 
 const MINERAL_GATES_anhydrite: MineralGates = {
   sigma_crit: 1.0,
-  // v228 (rung 2): T_min 100 — anhydrite does NOT nucleate directly from
+  // T_min 100 — anhydrite does NOT nucleate directly from
   // solution below ~100°C on any timescale the lab has reached ("extremely
   // slow crystallization kinetics of anhydrite at T<100°C", Voigt & Freyer
   // 2023; Ossorio 2014 saw NO primary anhydrite at any condition to 120°C
   // over 2 years — the >80°C anhydrite in those runs was transformation-
   // derived from gypsum/bassanite). The retired saline-low-T branch modeled
-  // sabkha anhydrite as direct nucleation; real sabkha anhydrite is always
-  // REPLACEMENT after a gypsum precursor (T>30°C + chlorinity >4 mol/kg,
-  // Gunatilaka 1990) — a mechanic the sim doesn't have yet (BACKLOG). Until
-  // it exists, cold-brine anhydrite (great_salt_plains ×8 at 23.6°C) was a
-  // confabulation and dies here.
+  // sabkha anhydrite as direct nucleation; real sabkha anhydrite is
+  // replacement after a gypsum precursor. SIM 244 implements that separate
+  // mass-balanced path through evaluateCaSO4System/applyCaSO4PhaseTransition.
   T_min: 100, T_optimal: 150,
   fluid_min: { Ca: 50, S: 20 },
   O2_min: 0.3,
   pH_min: 5, pH_max: 9,
   surface_energy: 'medium',
   _sources: ['anhydrite engine v17+', 'Blount & Dickson 1973', 'Ossorio et al. 2014 Chem. Geol. 386:16 (no primary anhydrite ≤120°C)', 'Voigt & Freyer 2023 Front. Nucl. Eng. 2:1208582 (kinetic floor ~100°C; equilibrium boundary 42°C is NOT a nucleation gate)'],
-  _notes: 'CaSO4 — direct nucleation ≥100°C only (v228). Below that, real anhydrite is gypsum-replacement (unbuilt mechanic). Equilibrium gypsum/anhydrite boundary 42±1°C pure water, lower in brines — stability, not nucleability.',
+  _notes: 'CaSO4 — direct nucleation ≥100°C only. Below that, anhydrite requires gypsum replacement. Hardie water-activity/pressure stability is separate from nucleability.',
 };
 
 const MINERAL_GATES_brochantite: MineralGates = {
@@ -242,43 +240,20 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_anhydrite() {
-  const g = MINERAL_GATES_anhydrite;
-  if (this.fluid.Ca < g.fluid_min!.Ca || this.fluid.S < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
-  const ca_f = Math.min(this.fluid.Ca / 200.0, 2.5);
-  const s_f  = Math.min(this.fluid.S  / 40.0, 2.5);
-  const o2_f = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
-  let sigma = ca_f * s_f * o2_f;
-  const T = this.temperature;
-  // v228 (rung 2): hard kinetic floor from the gates — direct anhydrite
-  // nucleation needs ≥~100°C (Voigt & Freyer 2023; Ossorio 2014). The old
-  // sub-60°C salinity branch (full σ at salinity>100 and ambient T) modeled
-  // sabkha replacement-anhydrite as direct nucleation — retired; salinity
-  // moves the EQUILIBRIUM boundary, not nucleability.
-  if (T < g.T_min!) return 0;
-  let T_factor;
-  if (T < 200) {
-    T_factor = 0.5 + 0.005 * (T - 60);
-  } else if (T <= 700) {
-    T_factor = 1.2;
-  } else {
-    T_factor = Math.max(0.3, 1.2 - 0.002 * (T - 700));
-  }
-  sigma *= T_factor;
-  if (this.fluid.pH < 5) {
-    sigma *= Math.max(0.4, 1.0 - 0.2 * (5 - this.fluid.pH));
-  } else if (this.fluid.pH > 9) {
-    sigma *= Math.max(0.4, 1.0 - 0.2 * (this.fluid.pH - 9));
-  }
-  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'anhydrite');
-  return Math.max(sigma, 0);
+  const evaluation = evaluateCaSO4System(this.fluid, this.temperature, this.pressure);
+  if (!evaluation.anhydritePrimaryAdmissible) return 0;
+  // Ω is already activity- and Ksp-corrected. Cap only to keep the growth
+  // calibration bounded; do not apply the old independent chemistry factors.
+  return Math.min(evaluation.anhydriteOmega, 10);
 },
 
   supersaturation_brochantite() {
   const g = MINERAL_GATES_brochantite;
-  if (this.fluid.Cu < g.fluid_min!.Cu || this.fluid.S < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  const sulfatePpm = sulfateAvailablePpm(this.fluid, this.temperature);
+  if (this.fluid.Cu < g.fluid_min!.Cu || sulfatePpm < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
   const cu_f = Math.min(this.fluid.Cu / 40.0, 2.5);
-  const s_f  = Math.min(this.fluid.S  / 30.0, 2.5);
+  const s_f  = Math.min(sulfatePpm / 30.0, 2.5);
   const o2_f = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
   let sigma = cu_f * s_f * o2_f;
   if (this.temperature > 50) {
@@ -295,10 +270,11 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_antlerite() {
   const g = MINERAL_GATES_antlerite;
-  if (this.fluid.Cu < g.fluid_min!.Cu || this.fluid.S < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  const sulfatePpm = sulfateAvailablePpm(this.fluid, this.temperature);
+  if (this.fluid.Cu < g.fluid_min!.Cu || sulfatePpm < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   if (this.fluid.pH > g.pH_max! || this.fluid.pH < g.pH_min!) return 0;
   const cu_f = Math.min(this.fluid.Cu / 40.0, 2.5);
-  const s_f  = Math.min(this.fluid.S  / 30.0, 2.5);
+  const s_f  = Math.min(sulfatePpm / 30.0, 2.5);
   const o2_f = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
   let sigma = cu_f * s_f * o2_f;
   if (this.temperature > 50) {
@@ -315,12 +291,13 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_jarosite() {
   const g = MINERAL_GATES_jarosite;
-  if (this.fluid.K < g.fluid_min!.K || this.fluid.Fe < g.fluid_min!.Fe || this.fluid.S < g.fluid_min!.S
+  const sulfatePpm = sulfateAvailablePpm(this.fluid, this.temperature);
+  if (this.fluid.K < g.fluid_min!.K || this.fluid.Fe < g.fluid_min!.Fe || sulfatePpm < g.fluid_min!.S
       || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   if (this.fluid.pH > g.pH_max!) return 0;
   const k_f  = Math.min(this.fluid.K  / 15.0, 2.0);
   const fe_f = Math.min(this.fluid.Fe / 30.0, 2.5);
-  const s_f  = Math.min(this.fluid.S  / 50.0, 2.5);
+  const s_f  = Math.min(sulfatePpm / 50.0, 2.5);
   const o2_f = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
   let sigma = k_f * fe_f * s_f * o2_f;
   if (this.temperature > 50) {
@@ -337,12 +314,13 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_alunite() {
   const g = MINERAL_GATES_alunite;
-  if (this.fluid.K < g.fluid_min!.K || this.fluid.Al < g.fluid_min!.Al || this.fluid.S < g.fluid_min!.S
+  const sulfatePpm = sulfateAvailablePpm(this.fluid, this.temperature);
+  if (this.fluid.K < g.fluid_min!.K || this.fluid.Al < g.fluid_min!.Al || sulfatePpm < g.fluid_min!.S
       || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   if (this.fluid.pH > g.pH_max!) return 0;
   const k_f  = Math.min(this.fluid.K  / 15.0, 2.0);
   const al_f = Math.min(this.fluid.Al / 25.0, 2.5);
-  const s_f  = Math.min(this.fluid.S  / 50.0, 2.5);
+  const s_f  = Math.min(sulfatePpm / 50.0, 2.5);
   const o2_f = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
   let sigma = k_f * al_f * s_f * o2_f;
   const T = this.temperature;
@@ -403,12 +381,13 @@ Object.assign(VugConditions.prototype, {
 
   supersaturation_chalcanthite() {
   const g = MINERAL_GATES_chalcanthite;
-  if (this.fluid.Cu < g.fluid_min!.Cu || this.fluid.S < g.fluid_min!.S) return 0;
+  const sulfatePpm = sulfateAvailablePpm(this.fluid, this.temperature);
+  if (this.fluid.Cu < g.fluid_min!.Cu || sulfatePpm < g.fluid_min!.S) return 0;
   if (this.fluid.pH > g.pH_max!) return 0;
   if (!sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   if (this.fluid.salinity < 5.0) return 0;
   const cu_f = Math.min(this.fluid.Cu / 80.0, 3.0);
-  const s_f  = Math.min(this.fluid.S  / 100.0, 3.0);
+  const s_f  = Math.min(sulfatePpm / 100.0, 3.0);
   const ox_f = sulfateRedoxFactor(this.fluid, 1.5, 2.0);
   const sal_f = Math.min(this.fluid.salinity / 30.0, 3.0);
   const ph_f = Math.max(0.5, 1.0 + (3.0 - this.fluid.pH) * 0.2);
@@ -428,11 +407,12 @@ Object.assign(VugConditions.prototype, {
   supersaturation_mirabilite() {
   // v29 cold-side Na-sulfate evaporite. Mirror of vugg.py.
   const g = MINERAL_GATES_mirabilite;
-  if (this.fluid.Na < g.fluid_min!.Na || this.fluid.S < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  const sulfatePpm = sulfateAvailablePpm(this.fluid, this.temperature);
+  if (this.fluid.Na < g.fluid_min!.Na || sulfatePpm < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   if (this.temperature > g.T_max!) return 0;
   const c = this.fluid.concentration ?? 1.0;
   if (c < 1.5) return 0;
-  let sigma = (this.fluid.Na / 300.0) * (this.fluid.S / 200.0) * c * c;
+  let sigma = (this.fluid.Na / 300.0) * (sulfatePpm / 200.0) * c * c;
   if (this.temperature < 10) sigma *= 1.3;
   if (this.fluid.pH < 5.0) sigma *= 0.5;
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'mirabilite');
@@ -442,11 +422,12 @@ Object.assign(VugConditions.prototype, {
   supersaturation_thenardite() {
   // v29 warm-side Na-sulfate evaporite. Mirror of vugg.py.
   const g = MINERAL_GATES_thenardite;
-  if (this.fluid.Na < g.fluid_min!.Na || this.fluid.S < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  const sulfatePpm = sulfateAvailablePpm(this.fluid, this.temperature);
+  if (this.fluid.Na < g.fluid_min!.Na || sulfatePpm < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   if (this.temperature < g.T_min!) return 0;
   const c = this.fluid.concentration ?? 1.0;
   if (c < 1.5) return 0;
-  let sigma = (this.fluid.Na / 300.0) * (this.fluid.S / 200.0) * c * c;
+  let sigma = (this.fluid.Na / 300.0) * (sulfatePpm / 200.0) * c * c;
   if (this.temperature > 50) sigma *= 1.2;
   if (this.fluid.pH < 5.0) sigma *= 0.5;
   if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'thenardite');
@@ -454,50 +435,17 @@ Object.assign(VugConditions.prototype, {
 },
 
   supersaturation_selenite() {
-  // v17 reconciliation (May 2026): Phase boundary is at ~55-60°C
-  // (Naica 54.5°C, Pulpí 20°C, Van Driessche et al. 2016). Pre-v17
-  // JS used a hard 80°C cutoff which was too lenient — gypsum
-  // converts to anhydrite well before 80°C. Now matches Python's
-  // softer decay starting at 60°C, while keeping JS's T<40 bonus
-  // (real per Pulpí Geode formation).
-  const g = MINERAL_GATES_selenite;
-  // S2 selenite migration (2026-07-27) — the THIRD sulfate consumer to migrate off
-  // total `fluid.S` (barite S1 ÷40→÷20, celestine S2 ÷40→÷18, same shape): selenite
-  // consumes SO₄²⁻, so it reads sulfateAvailablePpm. The tranche census
-  // (tools/selenite-tranche-census.mjs) measured ÷35 as the re-anchor that reproduces
-  // today's live windows fleet-wide at the honest sulfate (elmwood 85=85, roughten_gill
-  // 131=131, radioactive_pegmatite 15=15, schneeberg 18=18, reactive_wall 7=7 live
-  // steps; naica — the must-survive positive control — 320/320); the un-anchored ÷50
-  // would have killed radioactive_pegmatite + schneeberg outright (0 live), both
-  // legit gypsum settings. Unlike celestine's capped s_f, selenite's S term is
-  // uncapped — the recompute is a pure ratio. No sulfateInherited carve-out branch
-  // needed: wittichen grows no selenite.
-  const s_avail = sulfateAvailablePpm(this.fluid, this.temperature);
-  if (this.fluid.Ca < g.fluid_min!.Ca || s_avail < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
-  // v228 (rung 2): hard nucleation ceiling from the gates (Ossorio 2014 —
-  // above 80°C gypsum is no longer the sole primary CaSO4 phase and converts
-  // on geological time; the sim's CaSO4 above the ceiling belongs to
-  // anhydrite). Soft decay above 60°C still applies within the window.
-  if (this.temperature > g.T_max!) return 0;
-  let sigma = (this.fluid.Ca / 60.0) * (s_avail / 35.0) * sulfateRedoxFactor(this.fluid, 0.5);
-  if (this.temperature > 60) {
-    sigma *= Math.exp(-0.06 * (this.temperature - 60));
-  }
-  // Cool-T sweet spot — Pulpí 20°C
-  if (this.temperature < 40) sigma *= 1.5;
-  // Neutral to slightly alkaline pH preferred
-  if (this.fluid.pH < 5.0) {
-    sigma -= (5.0 - this.fluid.pH) * 0.2;
-  }
-  if (ACTIVITY_CORRECTED_SUPERSAT) sigma *= activityCorrectionFactor(this.fluid, 'selenite');
-  return Math.max(sigma, 0);
+  const evaluation = evaluateCaSO4System(this.fluid, this.temperature, this.pressure);
+  if (!evaluation.gypsumPrimaryAdmissible) return 0;
+  return Math.min(evaluation.gypsumOmega, 10);
 },
 
   supersaturation_anglesite() {
   const g = MINERAL_GATES_anglesite;
-  if (this.fluid.Pb < g.fluid_min!.Pb || this.fluid.S < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
+  const sulfatePpm = sulfateAvailablePpm(this.fluid, this.temperature);
+  if (this.fluid.Pb < g.fluid_min!.Pb || sulfatePpm < g.fluid_min!.S || !sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
   const pb_f = Math.min(this.fluid.Pb / 40.0, 2.0);
-  const s_f  = Math.min(this.fluid.S / 40.0, 1.5);
+  const s_f  = Math.min(sulfatePpm / 40.0, 1.5);
   const o_f  = sulfateRedoxFactor(this.fluid, 1.0, 1.5);
   let sigma = pb_f * s_f * o_f;
   if (this.temperature > 80) sigma *= Math.exp(-0.04 * (this.temperature - 80));
@@ -527,19 +475,20 @@ Object.assign(VugConditions.prototype, {
     // PbCu(SO4)(OH)2 — monoclinic deep azure-blue. Galena + Cu-sulfide
     // co-oxidation product; lowest CO3 of the trio.
     const g = MINERAL_GATES_linarite;
+    const sulfatePpm = sulfateAvailablePpm(this.fluid, this.temperature);
     if (this.fluid.Pb < g.fluid_min!.Pb || this.fluid.Cu < g.fluid_min!.Cu) return 0;
-    if (this.fluid.S < g.fluid_min!.S) return 0;
+    if (sulfatePpm < g.fluid_min!.S) return 0;
     if (!sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
     if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
     if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     // CO3:SO4 ratio fork — linarite needs LOW carbonate
-    const co3_so4 = this.fluid.CO3 / Math.max(this.fluid.S, 1);
+    const co3_so4 = this.fluid.CO3 / Math.max(sulfatePpm, 1);
     if (co3_so4 > 0.3) return 0;  // > 0.3 → caledonite/leadhillite
     // Chloride suppression (boleite group)
     if (this.fluid.Cl > 100) return 0;
     const pb_f = Math.min(this.fluid.Pb / 50.0, 2.0);
     const cu_f = Math.min(this.fluid.Cu / 30.0, 2.0);
-    const s_f  = Math.min(this.fluid.S / 100.0, 2.0);
+    const s_f  = Math.min(sulfatePpm / 100.0, 2.0);
     let sigma = pb_f * cu_f * s_f;
     const pH = this.fluid.pH;
     if (pH >= 5.0 && pH <= 6.0) sigma *= 1.3;
@@ -554,19 +503,20 @@ Object.assign(VugConditions.prototype, {
     // CO3:SO4. Often epitactic on linarite as the carbonate activity
     // rises during continued reaction with limestone host.
     const g = MINERAL_GATES_caledonite;
+    const sulfatePpm = sulfateAvailablePpm(this.fluid, this.temperature);
     if (this.fluid.Pb < g.fluid_min!.Pb || this.fluid.Cu < g.fluid_min!.Cu) return 0;
-    if (this.fluid.S < g.fluid_min!.S) return 0;
+    if (sulfatePpm < g.fluid_min!.S) return 0;
     if (this.fluid.CO3 < g.fluid_min!.CO3) return 0;
     if (!sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
     if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
     if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     // CO3:SO4 0.3-1 sweet spot
-    const co3_so4 = this.fluid.CO3 / Math.max(this.fluid.S, 1);
+    const co3_so4 = this.fluid.CO3 / Math.max(sulfatePpm, 1);
     if (co3_so4 < 0.1 || co3_so4 > 2.0) return 0;
     if (this.fluid.Cl > 50) return 0;
     const pb_f = Math.min(this.fluid.Pb / 50.0, 2.0);
     const cu_f = Math.min(this.fluid.Cu / 30.0, 1.8);
-    const s_f  = Math.min(this.fluid.S / 100.0, 1.8);
+    const s_f  = Math.min(sulfatePpm / 100.0, 1.8);
     const co3_f = Math.min(this.fluid.CO3 / 30.0, 1.5);
     let sigma = pb_f * cu_f * s_f * co3_f;
     const pH = this.fluid.pH;
@@ -583,19 +533,20 @@ Object.assign(VugConditions.prototype, {
     // mica-like tablets. Carbonate-dominant; Cu-poor; metastable
     // (ages to anglesite + cerussite under humidity cycling).
     const g = MINERAL_GATES_leadhillite;
+    const sulfatePpm = sulfateAvailablePpm(this.fluid, this.temperature);
     if (this.fluid.Pb < g.fluid_min!.Pb) return 0;
-    if (this.fluid.S < g.fluid_min!.S) return 0;
+    if (sulfatePpm < g.fluid_min!.S) return 0;
     if (this.fluid.CO3 < g.fluid_min!.CO3) return 0;
     if (!sulfateRedoxAvailable(this.fluid, g.O2_min!)) return 0;
     if (this.temperature < g.T_min! || this.temperature > g.T_max!) return 0;
     if (this.fluid.pH < g.pH_min! || this.fluid.pH > g.pH_max!) return 0;
     // CO3:SO4 fork — leadhillite needs CARBONATE-dominant
-    const co3_so4 = this.fluid.CO3 / Math.max(this.fluid.S, 1);
+    const co3_so4 = this.fluid.CO3 / Math.max(sulfatePpm, 1);
     if (co3_so4 < 1.5) return 0;
     // Cu suppression — leadhillite is the Cu-poor end
     if (this.fluid.Cu > 50) return 0;
     const pb_f = Math.min(this.fluid.Pb / 80.0, 2.0);
-    const s_f  = Math.min(this.fluid.S / 100.0, 1.5);
+    const s_f  = Math.min(sulfatePpm / 100.0, 1.5);
     const co3_f = Math.min(this.fluid.CO3 / 100.0, 2.0);
     let sigma = pb_f * s_f * co3_f;
     const pH = this.fluid.pH;

@@ -1,80 +1,208 @@
-// tests-js/etch-overprint.test.ts — the POST-GROWTH ETCH overprint (crystal-face-realism
-// arc §2, 2026-06-22). Etching (rounded edges/corners, frosted faces — the dissolved/
-// etched habit) is imposed on a FINISHED crystal by a later UNDERSATURATED fluid, the
-// same post-growth-overprint shape as the deformation/bent mechanic — NOT a passive read
-// of accidental resorption (the etch-pit-probe census proved the engine's dissolution is
-// binary: survive ~intact or fully dissolve + drop from the scene, so there is no
-// substantially-etched-survivor population to read).
-//
-// A scenario event carries an `etch` directive {amount,minerals,style}; apply_events
-// (js/85d) records it on sim._etchEvents WITH the step it fired; classifyEtch (js/45)
-// tags surviving crystals that had ALREADY grown by that step with crystal._etch; js/99i
-// _makeEtchedCube rounds the cube + frosts the material. PURE tagging (no fluid/T change)
-// → byte-identical fleet (the v208 deformation precedent).
-//
-// Pins: reactivated_fluorite_vein's breach (step 118) etches the gen-1 fluorite + galena;
-// the tag is well-formed (amount in range, atStep = 118); crystals that grew AFTER the
-// breach (gen-2) are NOT etched; a scenario with no etch directive tags nothing (no-op).
-
+// Physical dissolution/etch contract (SIM 253).
 import { describe, expect, it } from 'vitest';
 
 declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
+declare const physicalEtchVisualStateAtStep: any;
+declare const _physicalEtchEquivalentAxialLoss: any;
+declare const _topoHistoricalCrystalSize: any;
+declare const applyPhysicalEtchDirective: any;
+declare const fluoriteSaturationAssessment: any;
+declare const FluidChemistry: any;
+declare const _physicalEtchModelFor: any;
+declare const _physicalEtchReliefBucket: any;
 
-function run(scenarioName: string, seed = 42) {
-  setSeed(seed);
-  const scen = SCENARIOS[scenarioName];
-  if (!scen) return null;
-  const { conditions, events, defaultSteps } = scen();
-  const sim = new VugSimulator(conditions, events);
-  const steps = defaultSteps ?? 200;
-  for (let i = 0; i < steps; i++) sim.run_step();
-  return sim;
+function remaining(crystal: any, species: string): number {
+  let total = 0;
+  for (const zone of crystal.zones || []) {
+    if (!(zone && zone.thickness_um > 0)) continue;
+    const remainingUm = Number.isFinite(Number(zone._remaining_solid_um))
+      ? Math.max(0, Number(zone._remaining_solid_um))
+      : Math.max(0, Number(zone.thickness_um) || 0);
+    total += remainingUm * (Number(zone._budget_inventory_per_um?.[species]) || 0);
+  }
+  return total;
 }
 
-const etched = (sim: any) =>
-  sim.crystals.filter((c: any) => c._etch && !c.dissolved);
+function startScenario() {
+  setSeed(42);
+  const { conditions, events, defaultSteps } = SCENARIOS.reactivated_fluorite_vein();
+  return { sim: new VugSimulator(conditions, events), defaultSteps };
+}
 
-const firstGrowthStep = (c: any) => {
-  for (const z of (c.zones || [])) { if ((z.thickness_um || 0) > 0) return z.step; }
-  return null;
-};
+describe('evidence-bounded physical etch', () => {
+  it('turns the North Pennine reopening wash into one accepted, mass-closing negative zone', () => {
+    const { sim } = startScenario();
+    while (sim.step < 117) sim.run_step();
+    const fluorite = sim.crystals.find((c: any) => c.mineral === 'fluorite' && !c.dissolved);
+    expect(fluorite).toBeTruthy();
+    const before = {
+      size: fluorite.total_growth_um,
+      volume: fluorite._volume_mm3,
+      ca: remaining(fluorite, 'Ca'),
+      fluorine: remaining(fluorite, 'F'),
+    };
 
-describe('post-growth etch overprint (reactivated fluorite vein)', () => {
-  it('the breach etches gen-1 fluorite + galena cubes — tagged + well-formed', () => {
-    const sim = run('reactivated_fluorite_vein', 42);
-    expect(sim).toBeTruthy();
-    const hit = etched(sim);
-    expect(hit.length).toBeGreaterThan(0);
-    const minerals = new Set(hit.map((c: any) => c.mineral));
-    expect(minerals.has('fluorite')).toBe(true);   // the iconic etched-vein mineral
-    for (const c of hit) {
-      expect(c._etch.atStep).toBe(118);             // the breach event step
-      expect(c._etch.amount).toBeGreaterThan(0);
-      expect(c._etch.amount).toBeLessThanOrEqual(1);
-    }
-  });
+    const outOfEnvelope = applyPhysicalEtchDirective(sim, {
+      minerals: ['fluorite'], duration_days: 1,
+    }, 117);
+    expect(outOfEnvelope).toMatchObject({ considered: 1, accepted: 0, rejected: 1 });
+    expect(outOfEnvelope.receipts[0].rejection).toBe('outside_rate_model_envelope');
+    expect(fluorite.total_growth_um).toBe(before.size);
+    const unsupported = applyPhysicalEtchDirective(sim, {
+      minerals: ['calcite'], duration_days: 1,
+    }, 117);
+    expect(unsupported.considered).toBeGreaterThan(0);
+    expect(unsupported.accepted).toBe(0);
+    expect(unsupported.receipts.every(
+      (receipt: any) => receipt.rejection === 'no_face_matched_evidence_bounded_rate_model',
+    )).toBe(true);
 
-  it('only crystals that grew BEFORE the breach are etched (gen-2 is spared)', () => {
-    const sim = run('reactivated_fluorite_vein', 42);
-    for (const c of etched(sim)) {
-      const fs = firstGrowthStep(c);
-      expect(fs).not.toBeNull();
-      expect(fs).toBeLessThan(118);                 // existed to be corroded
-    }
-    // any crystal that first grew at/after the breach must NOT be etched
-    const lateGrown = sim.crystals.filter((c: any) => {
-      const fs = firstGrowthStep(c);
-      return fs != null && fs >= 118;
+    sim.run_step();
+    const summary = sim._physicalEtchReceipts.at(-1);
+    expect(summary).toMatchObject({
+      schema: 'physical-dissolution-v3', step: 118, considered: 1, accepted: 1, rejected: 0,
     });
-    for (const c of lateGrown) expect(!!c._etch).toBe(false);
+    const receipt = summary.receipts[0];
+    expect(receipt.modelId).toBe('Godinho2012-fluorite-100-bounded-analogue-v2');
+    expect(receipt.temperatureC).toBeCloseTo(21, 10);
+    expect(receipt).toMatchObject({
+      pH: 3.6,
+      pressureKbar: 0.001,
+      gameplaySigma: 0,
+      face: '{100}',
+      surfaceMorphology: 'cubic-{100}-pits-90deg-sidewalls',
+      endpoint: 'duration_complete',
+      integrationSubsteps: 512,
+      shapeModel: 'render-matched-isometric-habit-equivalent',
+      returnedClosureMaxAbsPpm: 0,
+      evidenceClass: 'bounded_extrapolation_from_face_specific_rate',
+      visualRepresentation: 'schematic_magnified_preexisting_pore_relief_mass_silhouette_physical',
+      schematicReliefMagnification: 250,
+      affinityBoundaryTransfer: 'mineral_level_bounded_extrapolation_only_no_rate_or_face_multiplier',
+    });
+    expect(receipt.initialOmega).toBeGreaterThan(0); // raw Ω survives gameplay's hard gate
+    expect(receipt.initialDeltaGKcalMol).toBeLessThanOrEqual(-7);
+    expect(receipt.finalDeltaGKcalMol).toBeLessThanOrEqual(-7);
+    expect(receipt.finalOmega).toBeGreaterThan(receipt.initialOmega); // returned F feeds back
+    expect(receipt.visualIntensity).toBeGreaterThan(0);
+    expect(receipt.systematicUncertainty).toContain('unquantified');
+    expect(receipt.sourceBathProtocol).toContain('renewed every 48 h');
+    expect(receipt.simulatedBathProtocol).toContain('closed return path');
+    expect(receipt.affinityBoundarySource).toContain('Cama');
+    expect(receipt.affinityBoundarySource).toContain('{111}, pH 2');
+    expect(receipt.axialLossUm).toBeCloseTo(2 * receipt.normalRetreatUm, 9);
+    expect(receipt.renderedDimensionsBeforeMm.c).toBe(
+      receipt.renderedDimensionsBeforeMm.a,
+    );
+    expect(receipt.renderedDimensionsAfterMm.c).toBe(
+      receipt.renderedDimensionsAfterMm.a,
+    );
+    expect(fluorite.total_growth_um).toBeLessThan(before.size);
+    expect(fluorite._volume_mm3).toBeLessThan(before.volume);
+
+    const negativeAtWash = fluorite.zones.filter(
+      (zone: any) => zone.step === 118 && zone.thickness_um < 0,
+    );
+    expect(negativeAtWash).toHaveLength(1); // no event + engine double count
+    expect(negativeAtWash[0].physical_etch.modelId).toBe(receipt.modelId);
+    expect(before.ca - remaining(fluorite, 'Ca')).toBeCloseTo(
+      receipt.returnedInventoryPpm.Ca, 10,
+    );
+    expect(before.fluorine - remaining(fluorite, 'F')).toBeCloseTo(
+      receipt.returnedInventoryPpm.F, 10,
+    );
+    expect(receipt.volumeBeforeMm3 - receipt.volumeAfterMm3).toBeCloseTo(
+      receipt.volumeLossMm3, 10,
+    );
+  }, 300000);
+
+  it('replay shows sharp → face-derived pits → progressive healing while retaining the phantom boundary', () => {
+    const { sim, defaultSteps } = startScenario();
+    while (sim.step < 119) sim.run_step();
+    const fluorite = sim.crystals.find((c: any) => c.mineral === 'fluorite');
+    expect(physicalEtchVisualStateAtStep(fluorite, 117)).toBeNull();
+    const etched = physicalEtchVisualStateAtStep(fluorite, 118);
+    const partlyHealed = physicalEtchVisualStateAtStep(fluorite, 119);
+    expect(etched.amount).toBeGreaterThan(0);
+    expect(etched.morphology).toBe('cubic-{100}-pits-90deg-sidewalls');
+    expect(etched.healedFraction).toBe(0);
+    expect(partlyHealed.healedFraction).toBeGreaterThan(0);
+    expect(partlyHealed.healedFraction).toBeLessThan(1);
+    expect(partlyHealed.amount).toBeLessThan(etched.amount);
+    while (sim.step < (defaultSteps || 160)) sim.run_step();
+    const fullyHealed = physicalEtchVisualStateAtStep(fluorite, 120);
+    const finalEtch = physicalEtchVisualStateAtStep(fluorite, sim.step);
+    // Accepted regrowth exceeds the 0.265 µm removed depth on the second
+    // post-wash step in the commissioned v270 trajectory, so the exposed
+    // pits disappear promptly. The buried phantom boundary remains durable
+    // stratigraphic testimony of the dissolution event.
+    expect(fullyHealed).toBeNull();
+    // The fully overgrown state persists through the final frame.
+    expect(finalEtch).toBeNull();
+    const reliefBuckets = [etched, partlyHealed]
+      .map(state => _physicalEtchReliefBucket(state.amount));
+    expect(new Set(reliefBuckets).size).toBe(2);
+    expect(reliefBuckets[0]).toBeGreaterThan(reliefBuckets[1]);
+    expect(Math.abs(reliefBuckets[0] - etched.amount)).toBeLessThanOrEqual(0.0005);
+    expect(fluorite.phantom_count).toBeGreaterThan(0);
+    expect(fluorite.zones.some((zone: any) => /phantom boundary/.test(zone.note || ''))).toBe(true);
+
+    const beforeWash = _topoHistoricalCrystalSize(fluorite, 117);
+    const afterWash = _topoHistoricalCrystalSize(fluorite, 118);
+    expect(beforeWash.c_length_mm).toBeGreaterThan(afterWash.c_length_mm);
+  }, 300000);
+
+  it('computes isometric equivalent geometry without trusting stale ledger axes', () => {
+    const cube = _physicalEtchEquivalentAxialLoss({
+      mineral: 'fluorite', habit: 'stepped_cube',
+      c_length_mm: 10, a_width_mm: 5, _volume_mm3: 130.8996939,
+    }, 100);
+    expect(cube.shapeModel).toBe('render-matched-isometric-habit-equivalent');
+    expect(cube.renderedDimensionsBeforeMm).toEqual({ c: 10, a: 10 });
+    expect(cube.renderedDimensionsAfterMm.c).toBeCloseTo(9.8, 12);
+    expect(cube.renderedDimensionsAfterMm.a).toBeCloseTo(9.8, 12);
+    expect(cube.axialLossUm).toBeCloseTo(200, 9);
   });
 
-  it('a scenario with no etch directive tags nothing (no-op → byte-identical fleet)', () => {
-    const sim = run('mvt', 42);                     // an mvt-analog vein, no etch directive
-    expect(sim).toBeTruthy();
-    expect(etched(sim).length).toBe(0);
-    expect(sim._etchEvents == null || sim._etchEvents.length === 0).toBe(true);
+  it('rejects stepped and hopper surface states from the flat-{100} rate model', () => {
+    expect(_physicalEtchModelFor({ mineral: 'fluorite', habit: 'cubic' })).toBeTruthy();
+    expect(_physicalEtchModelFor({ mineral: 'fluorite', habit: 'stepped_cube' })).toBeNull();
+    expect(_physicalEtchModelFor({ mineral: 'fluorite', habit: 'hopper_cube' })).toBeNull();
+  });
+
+  it('solves a closed fluoride speciation balance for raw thermodynamic Ω', () => {
+    const fluid = new FluidChemistry({
+      Ca: 8, F: 0.01, Na: 1138, Cl: 1755, pH: 3.6,
+      salinity: 2.9, SiO2: 0, CO3: 0, Fe: 0, Mn: 0, Al: 0, Ti: 0,
+    });
+    const assessment = fluoriteSaturationAssessment(fluid, 21);
+    expect(assessment.status).toBe('accepted');
+    expect(assessment.omega).toBeGreaterThan(0);
+    expect(assessment.deltaGKcalMol).toBeLessThanOrEqual(-7);
+    expect(assessment.reconstructedFluorideMolal).toBeCloseTo(
+      assessment.totalFluorideMolal, 16,
+    );
+    expect(assessment.hfMolal).toBeGreaterThan(0);
+  });
+
+  it('does not invent an etch outside a supported mineral/rate envelope', () => {
+    const synthetic = {
+      zones: [
+        { step: 1, thickness_um: 1000 },
+        { step: 10, thickness_um: -200 },
+        { step: 11, thickness_um: 50 },
+        { step: 12, thickness_um: 200 },
+      ],
+      etch_history: [{
+        accepted: true, step: 10, zoneIndex: 1, axialLossUm: 200,
+        visualIntensity: 0.8, surfaceMorphology: 'test-pits', modelId: 'test',
+      }],
+    };
+    expect(physicalEtchVisualStateAtStep(synthetic, 9)).toBeNull();
+    expect(physicalEtchVisualStateAtStep(synthetic, 10).amount).toBeCloseTo(0.8, 10);
+    expect(physicalEtchVisualStateAtStep(synthetic, 11).healedFraction).toBeCloseTo(0.25, 10);
+    expect(physicalEtchVisualStateAtStep(synthetic, 12)).toBeNull();
   });
 });

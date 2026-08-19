@@ -9,7 +9,7 @@
 // PROPOSAL §4.1 SAID                                  | v129 REALITY
 // ----------------------------------------------------|----------------------------------------------------
 // 1. dioptase fires in schneeberg; pharmacolite stays | dioptase fires in BISBEE (Cu-supergene, not the Cu-Bi-Ni-Co-U mix of schneeberg); pharmacolite was already absent from v128 schneeberg (the v124 firing was earlier-era). dioptase firing somewhere is the win.
-// 2. koettigite fires in supergene_oxidation;        | koettigite fires (2×, max 70µm). alunite was at 1.9µm dissolved in v128 (effectively zero); v129 drops it entirely. Proposal's "alunite remains" was based on the v124 baseline where alunite was at a much larger size. The drop is from-zero, not a catastrophic cascade.
+// 2. Tsumeb first-stage gossan excludes köttigite;   | SIM 259 corrects the old pH 6–8 gate to pH < 3 and enforces a scenario-local exclusion for this first-zone story; Level 44 is a distinct future scenario.
 //    alunite remains at v124 count                    |
 // 3. lepidolite fires in radioactive_pegmatite        | lepidolite fires 3× max 433µm in radioactive_pegmatite AND 3× max 3µm in gem_pegmatite. The radioactive_pegmatite firing is the canonical LCT-pegmatite habit.
 // 4. cassiterite radioactive_pegmatite 2-of-3         | cassiterite fires 4× max 333µm in radioactive_pegmatite — clean. Also fires in gem_pegmatite (7×, 102µm) and schneeberg (4×, 366µm). The 2-of-3 near-miss is now 3-of-3+.
@@ -24,7 +24,14 @@
 import { describe, expect, it } from 'vitest';
 import { runScenario } from './helpers';
 
-function speciesIn(name: string, opts: { seed?: number; steps?: number } = {}): { species: Set<string>; counts: Record<string, number>; maxUm: Record<string, number> } {
+type SpeciesResult = { species: Set<string>; counts: Record<string, number>; maxUm: Record<string, number> };
+
+const speciesCache = new Map<string, SpeciesResult>();
+
+function speciesIn(name: string, opts: { seed?: number; steps?: number } = {}): SpeciesResult {
+  const key = `${name}:${opts.seed ?? 42}:${opts.steps ?? 'default'}`;
+  const cached = speciesCache.get(key);
+  if (cached) return cached;
   const sim = runScenario(name, opts);
   if (!sim) return { species: new Set(), counts: {}, maxUm: {} };
   const species = new Set<string>();
@@ -38,12 +45,14 @@ function speciesIn(name: string, opts: { seed?: number; steps?: number } = {}): 
       maxUm[c.mineral] = c.total_growth_um;
     }
   }
-  return { species, counts, maxUm };
+  const result = { species, counts, maxUm };
+  speciesCache.set(key, result);
+  return result;
 }
 
 describe('v128 calibration assertions (proposal §4.1)', () => {
   describe('Assertion 1 — dioptase under graduated competition', () => {
-    it('dioptase fires across the bisbee seed sweep (was 0 firings under fixed-order v125-v126)', { timeout: 120000 }, () => {
+    it('dioptase fires across the bisbee seed sweep (was 0 firings under fixed-order v125-v126)', { timeout: 1_800_000 }, () => {
       // The qualitative claim — graduated competition lets dioptase fire at
       // ALL (v125 fixed-order produced zero firings, the cascade displaced
       // everything) — is what matters; the proposal predicted schneeberg,
@@ -63,8 +72,22 @@ describe('v128 calibration assertions (proposal §4.1)', () => {
       // competition unblocked dioptase"), not seed 42's lucky realization.
       // Floor ≥2/8 with measured headroom 4/8 — a real cascade re-block
       // (the failure this guards) would zero ALL seeds, as v125 did.
-      const seeds = [42, 1, 7, 13, 99, 2024, 17, 3];
-      const fired = seeds.filter((seed) => speciesIn('bisbee', { seed }).species.has('dioptase'));
+      // Exact SIM 264 surface classification can put each Bisbee witness near
+      // the full ~210 s canonical runtime. Keep a finite 30-minute budget for
+      // the two-witness fast path (and complete eight-seed failure path) so
+      // the timer cannot masquerade as a paragenesis failure; the
+      // distribution assertion below remains unchanged.
+      // This is a statistical reachability pin, not the canonical seed-42
+      // baseline (which is exercised elsewhere). Put two established witness
+      // seeds first so the test can stop as soon as its stated >=2 threshold
+      // is proven; a failure still exhausts the complete eight-seed sample,
+      // including seed 42.
+      const seeds = [13, 99, 42, 1, 7, 2024, 17, 3];
+      const fired: number[] = [];
+      for (const seed of seeds) {
+        if (speciesIn('bisbee', { seed }).species.has('dioptase')) fired.push(seed);
+        if (fired.length >= 2) break;
+      }
       expect(
         fired.length,
         `dioptase should grow in ≥2/8 bisbee seeds under graduated competition (v186 measured 4/8: 13,99,2024,3). Fired in: ${fired.join(', ') || 'none'} — zero would mean the v125 cascade re-blocked it`,
@@ -72,26 +95,26 @@ describe('v128 calibration assertions (proposal §4.1)', () => {
     });
   });
 
-  describe('Assertion 2 — koettigite in supergene_oxidation', () => {
-    it('koettigite fires in supergene_oxidation', () => {
-      const { species, counts, maxUm } = speciesIn('supergene_oxidation');
+  describe('Assertion 2 — Tsumeb first-stage gossan', () => {
+    it('does not misplace third-zone köttigite in the carbonate-buffered first-stage gossan', { timeout: 900_000 }, () => {
+      const { species } = speciesIn('supergene_oxidation');
       expect(
         species.has('koettigite'),
-        `koettigite should fire in supergene_oxidation (v129 baseline: 2× at max 70µm). Crystals seen: ${[...species].sort().join(', ')}`,
-      ).toBe(true);
-      expect(counts.koettigite, 'koettigite should fire ≥ 1 crystal').toBeGreaterThanOrEqual(1);
+        `koettigite requires pH < 3 and is documented at Tsumeb only in the third-zone zinc pocket. Crystals seen: ${[...species].sort().join(', ')}`,
+      ).toBe(false);
     });
 
-    it('koettigite firing did NOT cascade-displace the supergene_oxidation paragenesis (≥ 35 species)', () => {
-      // v128 baseline: 40 species. v129: 38. Two species were lost
-      // (alunite + one other near-zero firing). The threshold of 35
-      // catches catastrophic cascades while tolerating modest
-      // redistribution under per-cation rationing.
+    it('the corrected selector does not cascade-displace the supergene paragenesis (≥ 30 grown species)', { timeout: 900_000 }, () => {
+      // v128 counted 40 nucleated species; v129 counted 38. SIM 239's exact
+      // accepted-shell ledger distinguishes zero-growth/dissolved attempts
+      // from minerals that laid down solid, leaving 33 grown species. A floor
+      // of 30 still catches a catastrophic cascade while no longer treating
+      // failed nuclei as members of the preserved paragenesis.
       const { species } = speciesIn('supergene_oxidation');
       expect(
         species.size,
-        `supergene_oxidation should keep ≥ 35 species under graduated competition + koettigite (v128→v129 drift: 40→38). Got: ${species.size}`,
-      ).toBeGreaterThanOrEqual(35);
+        `supergene_oxidation should keep ≥ 30 grown species after removing the misplaced köttigite outcome. Got: ${species.size}`,
+      ).toBeGreaterThanOrEqual(30);
     });
   });
 

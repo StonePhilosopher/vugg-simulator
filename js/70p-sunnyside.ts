@@ -40,10 +40,11 @@
 //     Sulfide-buffered acidic fluid (pH ~4.5), reducing (O2 < 0.1),
 //     salinity 4-6 wt% NaCl eq.
 //   Stage V    (Mn ores, T 245-200°C, ~20% of vein fill volume) —
-//     pale-pink rhodochrosite-rich. Fluid cools, CO3 rises by CO2
-//     degassing, pH neutralizes (~6.0), Fe drops to <0.5 mol% in
-//     carbonate lattice (the pale-pink signature). Mn²⁺ dominant
-//     cation; rhodochrosite nucleates on vug walls + earlier sulfides.
+//     pale-pink rhodochrosite-rich. Fluid cools; carbonate-bearing
+//     meteoric-hydrothermal recharge raises total DIC while CO2 loss and
+//     neutralization raise carbonate-ion activity. Fe drops to <0.5 mol%
+//     in carbonate lattice (the pale-pink signature). Mn²⁺ dominant cation;
+//     rhodochrosite nucleates on vug walls + earlier sulfides.
 //   Stage VI early (quartz-fluorite, T 230-200°C, ~5% volume) —
 //     fluoride pulse. F-rich magmatic vapor mixes with meteoric
 //     water in dilating ring-fracture system; REE leached from
@@ -66,31 +67,49 @@ function event_sunnyside_cooling_transition(c) {
   // (sulfides locked, H+ no longer buffered). Fe drops sharply (most
   // Fe consumed by primary pyrite + chalcopyrite + Fe-rich sphalerite
   // marmatite). Salinity drops slightly (dilution by meteoric mixing).
-  c.temperature = Math.max(240, c.temperature - 40);
-  c.fluid.S = Math.max(50, c.fluid.S * 0.6);          // sulfide budget consumed
-  c.fluid.Fe = Math.max(1.5, c.fluid.Fe * 0.15);      // Fe sequestered in primary
+  c.temperature = 240;
+  c.fluid.S = Math.max(40, c.fluid.S * 0.2);          // sulfide budget sequestered
+  c.fluid.Fe = Math.max(1.5, c.fluid.Fe * 0.03);      // Fe sequestered in primary
   c.fluid.pH = Math.min(6.0, c.fluid.pH + 1.3);       // pH neutralizes
   c.fluid.salinity = Math.max(3.0, c.fluid.salinity * 0.7);
   c.fluid.O2 = Math.min(0.15, c.fluid.O2 + 0.08);     // still reducing but less so
-  c.fluid.CO3 = Math.min(80, c.fluid.CO3 + 30);       // CO2 degassing
+  const carbonateTarget = Math.min(80, c.fluid.CO3 + 30);
+  const carbonateAdded = Math.max(0, carbonateTarget - c.fluid.CO3);
+  c.fluid.CO3 = carbonateTarget;
+  declareCarbonLedgerAddition(
+    c,
+    'external_import',
+    'Sunnyside Stage V carbonate-bearing cooling-fluid recharge',
+    carbonateAdded,
+  );
   c.flow_rate = 0.3;
-  return `Primary sulfide phase locks in: pyrite + galena + sphalerite + chalcopyrite + Au-Te-quartz solidify (Casadevall Stage I-IV closes). T drops to ${c.temperature.toFixed(0)}°C; S consumed (now ${c.fluid.S.toFixed(0)} ppm); Fe sequestered (now ${c.fluid.Fe.toFixed(1)} ppm); pH neutralizes to ${c.fluid.pH.toFixed(1)}. Stage V Mn-carbonate window opens.`;
+  return `Casadevall Stage I-IV conditions close at T ${c.temperature.toFixed(0)}°C. Sulfur and Fe are sequestered into the primary-ore sink (fluid S ${c.fluid.S.toFixed(0)} ppm; Fe ${c.fluid.Fe.toFixed(1)} ppm), destabilizing Au-bisulfide transport and opening the native-Au + quartz window. Any sulfides already present remain recorded; the inventory, not this event text, reports which species actually formed.`;
 }
 
 function event_sunnyside_stage_v_mn_carbonate(c) {
-  // Stage V: pale-pink rhodochrosite-rich phase. CO3 rises further
-  // (continued CO2 degassing + meteoric mixing). T drops to 215.
+  // Stage V: pale-pink rhodochrosite-rich phase. Carbonate-bearing meteoric-
+  // hydrothermal mixing raises total DIC while cooling/speciation raises
+  // carbonate activity. The imported carbon is booked explicitly. T drops
+  // to 215°C.
   // Mn²⁺ already dominant; existing engine's Ca/(Mn+Ca) fraction
   // dispatch produces "pale pink (Ca-rich, approaching kutnohorite
   // intermediate)" with Ca=200 + Mn=30 (Ca-fraction ~0.87). The
   // small-pale-rhomb specimen aesthetic is the Stage V signature.
-  c.temperature = Math.max(215, c.temperature - 25);
-  c.fluid.CO3 = Math.min(110, c.fluid.CO3 + 35);      // strong CO2 degassing
+  c.temperature = 215;
+  const carbonateTarget = Math.min(110, c.fluid.CO3 + 35);
+  const carbonateAdded = Math.max(0, carbonateTarget - c.fluid.CO3);
+  c.fluid.CO3 = carbonateTarget;
+  declareCarbonLedgerAddition(
+    c,
+    'external_import',
+    'Sunnyside Stage V Mn-carbonate-bearing fluid recharge',
+    carbonateAdded,
+  );
   c.fluid.pH = Math.min(6.5, c.fluid.pH + 0.3);
   c.fluid.O2 = Math.max(0.05, c.fluid.O2 - 0.05);     // re-reducing slightly (organics in cool fluid)
   c.fluid.salinity = Math.max(2.5, c.fluid.salinity * 0.85);
   c.flow_rate = 0.25;
-  return `Stage V Mn-carbonate pulse: T ${c.temperature.toFixed(0)}°C, CO3 ${c.fluid.CO3.toFixed(0)} ppm, pH ${c.fluid.pH.toFixed(1)}. Pale-pink rhodochrosite nucleates on vug walls + earlier sulfides — small (3-10 mm) rhombs, Ca-fraction > 0.5 in lattice (kutnohorite-intermediate compositional end).`;
+  return `Stage V Mn-carbonate conditions arrive: T ${c.temperature.toFixed(0)}°C, CO3 ${c.fluid.CO3.toFixed(0)} ppm, pH ${c.fluid.pH.toFixed(1)}. These conditions favor pale-pink, Ca-bearing rhodochrosite; the inventory reports whether nucleation and growth actually occurred.`;
 }
 
 function event_sunnyside_stage_vi_fluoride_pulse(c) {
@@ -100,17 +119,21 @@ function event_sunnyside_stage_vi_fluoride_pulse(c) {
   // Carpenter Ridge Tuff REE budget per Bachmann et al. 2014; Eu²⁺
   // from feldspar at residence-T, Y³⁺ general. Y enters fluid at
   // 3 ppm, triggering REE-octahedral fluorite habit per Bosze &
-  // Rakovan 2002 GCA 66:997. T drops to 195. Visible color of
+  // Rakovan 2002 GCA 66:997. T drops to 205 C, inside the measured
+  // 230-200 C Stage-VI window and just above the calibrated chalcedony
+  // kinetic field; the co-pulse can therefore form the documented
+  // quartz-fluorite assemblage without relabeling chalcedony as quartz.
+  // Visible color of
   // fresh fluorite: grass-green (yttrofluorite character, Pierce
   // 1990 + Naumov & Naumova 1980 — Y-cluster mechanism); SW UV
   // brilliant blue (Eu²⁺ activator).
-  c.temperature = Math.max(195, c.temperature - 20);
+  c.temperature = 205;
   c.fluid.F = Math.min(35, c.fluid.F + 27);           // magmatic F pulse
   c.fluid.Y = Math.min(3.5, c.fluid.Y + 3.2);         // REE leached from wallrock
   c.fluid.SiO2 = Math.min(450, c.fluid.SiO2 + 50);    // co-pulse silica
   c.fluid.salinity = Math.max(1.5, c.fluid.salinity * 0.85);
   c.flow_rate = 0.2;
-  return `Stage VI fluoride pulse: F surges to ${c.fluid.F.toFixed(0)} ppm; Y leached from Carpenter Ridge Tuff ignimbrite glass to ${c.fluid.Y.toFixed(1)} ppm. T ${c.temperature.toFixed(0)}°C. Octahedral REE-fluorite (grass-green visible color when fresh; bleach-fadable; SW UV brilliant blue from Eu²⁺) nucleates on rhodochrosite + vug walls per Bosze & Rakovan 2002.`;
+  return `Stage VI fluoride pulse: F reaches ${c.fluid.F.toFixed(0)} ppm and Y ${c.fluid.Y.toFixed(1)} ppm at ${c.temperature.toFixed(0)}°C. This opens the octahedral REE-fluorite route; only a crystal recorded in the inventory counts as formation.`;
 }
 
 function event_sunnyside_stage_vi_manganocalcite_cap(c) {
@@ -120,13 +143,22 @@ function event_sunnyside_stage_vi_manganocalcite_cap(c) {
   // fluorescence under SW UV). The specimens show this terminal
   // overgrowth capping rhodochrosite + fluorite — the closing
   // texture of the entire Sunnyside paragenesis.
-  c.temperature = Math.max(175, c.temperature - 20);
+  c.temperature = 175;
   c.fluid.Mn = Math.max(6.0, c.fluid.Mn * 0.35);      // Mn budget mostly spent
-  c.fluid.CO3 = Math.min(150, c.fluid.CO3 + 40);      // CO3 still rising
+  const carbonateTarget = Math.max(600, c.fluid.CO3);
+  const carbonateAdded = Math.max(0, carbonateTarget - c.fluid.CO3);
+  c.fluid.CO3 = carbonateTarget;
+  declareCarbonLedgerAddition(
+    c,
+    'external_import',
+    'Sunnyside Stage VI terminal carbonate-bearing pulse',
+    carbonateAdded,
+  );
   c.fluid.F = Math.max(8, c.fluid.F * 0.4);           // F mostly spent in fluorite stage
   c.fluid.Y = Math.max(0.5, c.fluid.Y * 0.3);         // Y mostly locked in fluorite
-  c.fluid.Ca = Math.min(220, c.fluid.Ca + 30);        // Ca continues dominating
+  c.fluid.Ca = Math.max(240, c.fluid.Ca);             // Ca continues dominating
+  c.fluid.pH = Math.max(7.2, c.fluid.pH);             // CO2 loss raises carbonate-ion activity
   c.fluid.O2 = Math.min(0.2, c.fluid.O2 + 0.05);
   c.flow_rate = 0.1;
-  return `Stage VI manganocalcite cap: T ${c.temperature.toFixed(0)}°C, Mn waning to ${c.fluid.Mn.toFixed(1)} ppm, Fe still ${c.fluid.Fe.toFixed(1)} ppm (Fe-poor — Mn²⁺ fluorescence preserved). Cauliflower botryoidal manganocalcite caps the rhodochrosite + fluorite, brilliant salmon SW UV (Mn²⁺ activator). The Sunnyside-American Tunnel late paragenesis closes.`;
+  return `Stage VI terminal carbonate-bearing pulse imports ${carbonateAdded.toFixed(0)} ppm CO3-equivalent DIC: T ${c.temperature.toFixed(0)}°C, pH ${c.fluid.pH.toFixed(1)}, Ca ${c.fluid.Ca.toFixed(0)} ppm, CO3 ${c.fluid.CO3.toFixed(0)} ppm, Mn ${c.fluid.Mn.toFixed(1)} ppm, Fe ${c.fluid.Fe.toFixed(1)} ppm. Positive calcite SI permits an Mn-substituting manganocalcite cap, but the inventory reports whether it formed.`;
 }

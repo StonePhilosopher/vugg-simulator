@@ -76,6 +76,11 @@ function hideAllMenuAndModePanels() {
 }
 
 function openNewGameMenu() {
+  // Opening the menu is a lifecycle boundary, including when the documented
+  // N shortcut interrupts progressive Simulation computation.  Do this before
+  // hiding panels so no invisible run can keep mutating geology or leave its
+  // controls disabled behind the menu.
+  if (typeof cancelSimulationPlayback === 'function') cancelSimulationPlayback();
   hideAllMenuAndModePanels();
   document.body.classList.add('title-on');
   const panel = document.getElementById('new-game-panel');
@@ -104,9 +109,10 @@ function menuGo(modeName) { switchMode(modeName); }
 // step numbers as the sim advances. Optional seed threads through to the
 // seed-first begin (2026-07-08) — callers like the agent API get fully
 // deterministic runs, wall geometry included.
-function startScenarioInCreative(scenarioName, seedOverride?) {
+async function startScenarioInCreative(scenarioName, seedOverride?) {
   const make = SCENARIOS[scenarioName];
   if (!make) { alert('Unknown scenario: ' + scenarioName); return; }
+  await waitForNarrativesReady();
   switchMode('fortress');
   fortressBeginFromScenario(scenarioName, seedOverride);
 }
@@ -115,9 +121,10 @@ function startScenarioInCreative(scenarioName, seedOverride?) {
 // no-event sim. The starter fluid represents what would naturally leak
 // from the host rock; the player perturbs it via in-game actions
 // (Heat / Cool / Inject / Tectonic). No scripted events fire.
-function startStarterFluidInCreative(presetId) {
+async function startStarterFluidInCreative(presetId) {
   const preset = FLUID_PRESETS[presetId];
   if (!preset) { alert('Unknown starter fluid: ' + presetId); return; }
+  await waitForNarrativesReady();
   switchMode('fortress');
   fortressBeginFromStarterFluid(presetId);
 }
@@ -167,7 +174,7 @@ function fortressBeginFromStarterFluid(presetId, seedOverride?) {
   logEl.innerHTML = '';
   const initLines = [
     `🏰 Creative Mode — Starter Fluid: ${preset.label}`,
-    `   Temperature: 200°C | Pressure: 1.00 kbar | pH: ${conditions.fluid.pH.toFixed(1)}`,
+    `   Temperature: 200°C | Fluid pressure: 1.00 kbar | pH: ${conditions.fluid.pH.toFixed(1)}`,
     `   Fluid: ${conditions.fluid.describe()}`,
     `   ${preset.desc}`,
     `   No scripted events — only your actions + ambient drift will shape this vug.`,
@@ -182,6 +189,7 @@ function fortressBeginFromStarterFluid(presetId, seedOverride?) {
   updateFortressStatus();
   updateFortressInventory();
   if (typeof syncBrothSliders === 'function') syncBrothSliders();
+  if (typeof topoRender === 'function') topoRender();
   // Autosave opens AFTER the slider sync (broth baseline = what the
   // first action will see). See 93a-ui-saves.ts.
   if (typeof _saveNoteBegin === 'function') {
@@ -207,6 +215,23 @@ function fortressBeginFromScenario(scenarioName, seedOverride?) {
   rng = new SeededRandom(seed);
   const { conditions, events, defaultSteps } = make();
 
+  // Creative mode always exposes the mass-balanced carbon controls. Scenarios
+  // that do not need atmospheric exchange stay closed, but never drop into the
+  // retired fixed-DIC/pH-only path when the player opens the CO2 reservoir.
+  conditions._scenario ||= {};
+  if (!conditions._scenario.carbonate_boundary) {
+    conditions._scenario.carbonate_boundary = createConservedCarbonateBoundaryConfig(
+      conditions.fluid,
+      conditions.temperature,
+      {
+        mode: conditions._scenario.open_to_atmosphere ? 'open' : 'closed',
+        target_pCO2_bar: conditions._scenario.atmospheric_pCO2_bar ?? 4.2e-4,
+        headspace_L_per_kg_water: 1,
+        initialization: 'creative_scenario_initial_DIC_plus_pH_to_reduced_alkalinity',
+      },
+    );
+  }
+
   fortressSim = new VugSimulator(conditions, events);
   _attachStripRecorderToSim(fortressSim, `fortress_${scenarioName}`, `Fortress — scenario: ${scenarioName}`);
   fortressActive = true;
@@ -223,7 +248,7 @@ function fortressBeginFromScenario(scenarioName, seedOverride?) {
   logEl.innerHTML = '';
   const initLines = [
     `🏰 Creative Mode — Scenario: ${prettyName}`,
-    `   Temperature: ${conditions.temperature.toFixed(0)}°C | Pressure: ${conditions.pressure.toFixed(2)} kbar | pH: ${conditions.fluid.pH.toFixed(1)}`,
+    `   Temperature: ${conditions.temperature.toFixed(0)}°C | Fluid pressure: ${conditions.pressure.toFixed(2)} kbar | pH: ${conditions.fluid.pH.toFixed(1)}`,
     `   Fluid: ${conditions.fluid.describe()}`,
   ];
   if (events && events.length) {
@@ -243,6 +268,7 @@ function fortressBeginFromScenario(scenarioName, seedOverride?) {
   updateFortressStatus();
   updateFortressInventory();
   if (typeof syncBrothSliders === 'function') syncBrothSliders();
+  if (typeof topoRender === 'function') topoRender();
   // Autosave opens AFTER the slider sync (broth baseline = what the
   // first action will see). See 93a-ui-saves.ts.
   if (typeof _saveNoteBegin === 'function') {
@@ -287,8 +313,7 @@ function titleQuickPlay() {
   const seedEl = document.getElementById('seed') as HTMLInputElement | null;
   if (seedEl) seedEl.value = '';
   if (typeof runSimulation === 'function') {
-    try { runSimulation(); }
-    catch (e) { console.error('Quick Play failed to start simulation:', e); }
+    void runSimulation().catch(e => console.error('Quick Play failed to start simulation:', e));
   }
 }
 function titleLoadGame() {
@@ -419,6 +444,7 @@ let currentGameMode = null;
 const GAME_MODES = ['legends', 'fortress', 'idle', 'random'];
 
 function switchMode(mode) {
+  if (typeof cancelSimulationPlayback === 'function') cancelSimulationPlayback();
   // Music routing (js/08-music.ts): every mode is a BUILDING room
   // (salt-circuit.mp3 looping) EXCEPT Strip View, which is silent —
   // the sonifier owns that room. Moving between building modes does

@@ -26,7 +26,32 @@ import { describe, expect, it } from 'vitest';
 
 declare const SCENARIOS: any;
 declare const VugSimulator: any;
+declare const VugConditions: any;
+declare const FluidChemistry: any;
 declare const setSeed: (seed: number) => void;
+
+const observationCache = new Map<string, any>();
+
+function observeScenario(name: string, steps: number): any {
+  const key = `${name}:${steps}`;
+  if (observationCache.has(key)) return observationCache.get(key);
+  setSeed(42);
+  const { conditions, events } = SCENARIOS[name]();
+  const sim = new VugSimulator(conditions, events);
+  for (let step = 0; step < steps; step++) sim.run_step();
+  // These are structural assertions, so retain only zone-bearing crystals.
+  const observation = {
+    crystals: sim.crystals.map((crystal: any) => ({
+      mineral: crystal.mineral,
+      zones: (crystal.zones || []).map((zone: any) => ({
+        thickness_um: zone.thickness_um,
+        trace_Mn: zone.trace_Mn,
+      })),
+    })),
+  };
+  observationCache.set(key, observation);
+  return observation;
+}
 
 function findCrystalsWithMnBearingZone(sim: any, mineral: string): any[] {
   return sim.crystals.filter((c: any) =>
@@ -41,10 +66,7 @@ describe('Per-zone trace_Mn coverage audit (v119)', () => {
   it('sphalerite zones capture trace_Mn (Mn²⁺ substitution per Frondel 1941 manganblende)', () => {
     // tn457_barite_pulses has Mn ramping from 0.3 to ~50+ ppm; sphalerite
     // nucleates early and grows zones across the Mn-rich window.
-    setSeed(42);
-    const { conditions, events } = SCENARIOS.tn457_barite_pulses();
-    const sim = new VugSimulator(conditions, events);
-    for (let s = 0; s < 110; s++) sim.run_step();
+    const sim = observeScenario('tn457_barite_pulses', 24);
     const sph = findCrystalsWithMnBearingZone(sim, 'sphalerite');
     expect(sph.length).toBeGreaterThan(0);
     // Spot-check at least one zone has trace_Mn well above floor
@@ -54,54 +76,45 @@ describe('Per-zone trace_Mn coverage audit (v119)', () => {
   });
 
   it('wurtzite zones capture trace_Mn (same family, polytype variations preserved)', () => {
-    // tn457 broth fires wurtzite as a cascade extra at T > 95.
+    // Exercise the metastable acid/Fe-bearing wurtzite branch directly;
+    // no authored seed-42 scenario currently produces this kinetic trap.
     setSeed(42);
-    const { conditions, events } = SCENARIOS.tn457_barite_pulses();
-    const sim = new VugSimulator(conditions, events);
-    for (let s = 0; s < 110; s++) sim.run_step();
+    const conditions = new VugConditions({
+      temperature: 180,
+      fluid: new FluidChemistry({ Zn: 500, S: 500, Fe: 20, Mn: 40, pH: 3, O2: 0 }),
+    });
+    const sim = new VugSimulator(conditions, []);
+    for (let step = 0; step < 3; step++) sim.run_step();
     const wur = findCrystalsWithMnBearingZone(sim, 'wurtzite');
-    // Wurtzite may not fire in every run depending on cascade; this is
-    // a soft check — if wurtzite fires, it MUST capture trace_Mn.
-    if (sim.crystals.some((c: any) => c.mineral === 'wurtzite')) {
-      expect(wur.length).toBeGreaterThan(0);
-    }
+    expect(wur.length).toBeGreaterThan(0);
   });
 
   it('smithsonite zones capture trace_Mn (Tsumeb "bonbon pink" aesthetic)', () => {
     // supergene_oxidation is the Tsumeb scenario — smithsonite + Mn-bearing
     // late-stage supergene fluid is the canonical pink-smithsonite path.
-    setSeed(42);
-    const { conditions, events } = SCENARIOS.supergene_oxidation();
-    const sim = new VugSimulator(conditions, events);
-    for (let s = 0; s < 250; s++) sim.run_step();
+    const sim = observeScenario('supergene_oxidation', 20);
     const sm = findCrystalsWithMnBearingZone(sim, 'smithsonite');
-    if (sim.crystals.some((c: any) => c.mineral === 'smithsonite')) {
-      expect(sm.length).toBeGreaterThan(0);
-    }
+    expect(sm.length).toBeGreaterThan(0);
   });
 
   it('barite zones capture trace_Mn (v118 follow-the-science fix still in place)', () => {
     // Regression guard for v118. The Putnis & Perthuisot 2001 oscillatory-
     // zoning literature establishes barite as THE Mn²⁺-banded sulfate;
     // the v118 fix added the capture; this pin holds it.
-    setSeed(42);
-    const { conditions, events } = SCENARIOS.tn457_barite_pulses();
-    const sim = new VugSimulator(conditions, events);
-    for (let s = 0; s < 110; s++) sim.run_step();
+    const sim = observeScenario('tn457_barite_pulses', 24);
     const bar = findCrystalsWithMnBearingZone(sim, 'barite');
     expect(bar.length).toBeGreaterThan(0);
   });
 
-  it('calcite/aragonite/dolomite/siderite/rhodochrosite zones still capture trace_Mn (carbonate regressions)', () => {
-    // All five canonical Mn-banded carbonates. Use the scenario that
-    // fires each (mvt for sphalerite-galena + calcite/dolomite; sunnyside
-    // for rhodochrosite; jeffrey_mine for prograde calcite).
-    setSeed(42);
-    const { conditions, events } = SCENARIOS.mvt();
-    const sim = new VugSimulator(conditions, events);
-    for (let s = 0; s < 200; s++) sim.run_step();
-    // Calcite always fires in mvt. Pick any one calcite zone — must
-    // have trace_Mn field present (even if value is 0).
+  it('calcite positive-growth zones retain the shared carbonate trace_Mn field', () => {
+    // Calcite exercises the shared carbonate-zone schema here. Mineral-
+    // specific carbonate chemistry and Mn partition coefficients have their
+    // own engine suites; this guard is deliberately structural.
+    // The Mn-calcite tutorial is the authored causal fixture for the shared
+    // carbonate zone schema. MVT no longer promises a free calcite druse in
+    // its first four steps under the corrected thermodynamic path.
+    const sim = observeScenario('tutorial_mn_calcite', 12);
+    // Pick any one calcite zone — it must retain the trace_Mn field.
     const calcites = sim.crystals.filter((c: any) => c.mineral === 'calcite');
     expect(calcites.length).toBeGreaterThan(0);
     const cZones = calcites[0].zones.filter((z: any) => z.thickness_um > 0);

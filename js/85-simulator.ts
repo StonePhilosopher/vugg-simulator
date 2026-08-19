@@ -1,8 +1,7 @@
 // ============================================================
 // js/85-simulator.ts — VugSimulator class + small utilities
 // ============================================================
-// The run-loop class. Mirror of vugg.VugSimulator (Phase A8 of the
-// Python refactor would split this further; for now it lives whole).
+// The authoritative TypeScript run-loop class.
 //
 // Reads from VugConditions / FluidChemistry / WallState, dispatches to
 // MINERAL_ENGINES per crystal per step, applies events, runs paramorph
@@ -17,6 +16,10 @@ class VugSimulator {
   // Dynamic dataclass-style fields — runtime untouched.
   [key: string]: any;
   constructor(conditions, events) {
+    // Narrative files are authoritative game data. Synchronous/headless callers
+    // cannot construct a partially narrated simulation while preload is pending
+    // or after it failed; browser entry points await the same readiness promise.
+    assertNarrativesReady();
     this.conditions = conditions;
     this._startTemp = conditions.temperature; // remember initial T for thermal pulse ceiling
     // T-RECONCILIATION (2026-06-10, SIM 181): the ambient drift + thermal-pulse
@@ -100,6 +103,30 @@ class VugSimulator {
       // back to conditions.wall.
       size_class: this.conditions.wall.size_class,
     });
+    // The Cartesian zero-isosurface is the production geometry/mass authority
+    // from the first observable simulator state. Failure is constructor-fatal:
+    // a scientifically unsupported authored shape must never continue under a
+    // silent WallMesh capacity fallback.
+    const _initialCavityAuthority = this.wall_state.enableProductionCavityAuthority();
+    const _initialCavityDiameter = this.conditions.wall.initializeCavityCapacity(
+      _initialCavityAuthority.initial_volume_mm3, CAVITY_PRODUCTION_VOLUME_MODEL,
+    );
+    this.wall_state.updateCapacity(
+      _initialCavityAuthority.initial_volume_mm3, _initialCavityDiameter,
+    );
+    this._cavityProductionStartupReceipt = Object.freeze({
+      schema: 'cavity-production-startup-v1',
+      production_contract_digest: _initialCavityAuthority.contract.contract_digest,
+      shape_identity: _initialCavityAuthority.contract.shape_identity,
+      tessellation_identity: _initialCavityAuthority.contract.tessellation_identity,
+      baseline_volume_mm3: _initialCavityAuthority.initial_volume_mm3,
+      field_snapshot_digest: _initialCavityAuthority.provider.field_snapshot_digest,
+      surface_buffer_digest: _initialCavityAuthority.provider.surface_buffer_digest,
+      provider_kind: _initialCavityAuthority.provider.kind,
+    });
+    // Convert any legacy authored ring coordinate into the one canonical
+    // physical state: millimetres above the nominal cavity floor.
+    this.conditions.bindCavityWaterGeometry?.(this.wall_state);
     // Per-step snapshot of ring[0] for the Replay button. Captured at
     // the end of each step; small (~120 cells × ~4 numbers × 100-200
     // steps), so the memory cost of a whole run is trivial.
@@ -171,18 +198,136 @@ class VugSimulator {
     // 85c-simulator-state.ts:152-168). cells[i] is the same WallCell
     // object as wall.rings[r][c], so legacy ring reads see the binding.
     const _initialMesh = this.wall_state.meshFor(this);
+    const _productionContract = this.wall_state._cavityProductionAuthorityContract;
+    if (_productionContract) {
+      CavityProductionAuthority.assertContract(this.wall_state, _productionContract);
+      const _productionLedger = this.wall_state.cavityEvolutionLedger();
+      if (!_productionLedger || _productionLedger.cursor !== 0
+          || _productionLedger.model !== CAVITY_PRODUCTION_VOLUME_MODEL
+          || this.conditions.wall.cavity_capacity_basis !== CAVITY_PRODUCTION_VOLUME_MODEL
+          || Math.abs(Number(this.conditions.wall.cavity_capacity_volume_mm3)
+            - Number(_productionContract.baseline_volume_mm3))
+            > Math.max(1e-9, Number(_productionContract.baseline_volume_mm3) * 1e-10)) {
+        throw new Error('late chemistry bootstrap cannot alter Cartesian cavity authority');
+      }
+    } else if (_initialMesh && _initialMesh.closedVolumeMm3) {
+      const initialCapacity = _initialMesh.closedVolumeMm3();
+      this.wall_state.initializeCavityEvolutionLedger();
+      const equivalentDiameter = this.conditions.wall.initializeCavityCapacity(
+        initialCapacity, 'canonical_closed_wallmesh',
+      );
+      this.wall_state.updateCapacity(initialCapacity, equivalentDiameter);
+    }
     if (_initialMesh && _initialMesh.bindRingChemistry) {
       _initialMesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
     }
+    // Replay water state is independently authenticated by an append-only
+    // history rather than by the mutable snapshot payload. Keep the ledger on
+    // both owners because snapshots are produced by the simulator while replay
+    // dispatch receives the WallState directly.
+    this._cavityWaterAppearanceLedger = new CavityWaterAppearanceLedger(this.wall_state);
+    this.wall_state._cavityWaterAppearanceLedger = this._cavityWaterAppearanceLedger;
+    this._cavityWallMaterialHistoryLedger = new CavityWallMaterialHistoryLedger(this.wall_state);
+    this.wall_state._cavityWallMaterialHistoryLedger = this._cavityWallMaterialHistoryLedger;
     // PROPOSAL-CAVITY-INTERIOR-VOXELS Phase 1 (v158) — allocate the
     // cavity interior voxel grid now that the mesh is built and
     // chemistry is bound. d=0 voxels alias the mesh.cells[].fluid
     // objects (per [FIRM] B); d=1, d=2, d=3 voxels each get an
     // independent clone of the bulk fluid. Per-voxel temperature is
-    // initialized to bulk T (per [FIRM] E) but not consumed in v158.
+    // initialized to bulk T and is the canonical local engine temperature.
     // The grid is lazy-cached on wall_state; this call forces the
     // build so the grid is ready when _diffuseRingState first fires.
     this.wall_state.voxelGridFor(this);
+    // SIM 256 thermal localization. Sources stay as plain serializable
+    // records so scenarios, Creative actions, immutable commands, and replay
+    // all share one deterministic representation.
+    this._thermalSources = [];
+    this._thermalSourceCounter = 0;
+    this._thermalFieldReceipts = [];
+    const thermalGrid = this.wall_state.voxelGridFor(this);
+    const authoredThermalSources = this.conditions?._scenario?.thermal_sources;
+    if (thermalGrid && Array.isArray(authoredThermalSources)) {
+      for (let i = 0; i < authoredThermalSources.length; i++) {
+        const normalized = normalizeThermalSourceSpec(
+          authoredThermalSources[i], thermalGrid, `authored-thermal-${i + 1}`,
+        );
+        if (normalized) this._thermalSources.push(normalized);
+      }
+    }
+    this._thermalFieldActivated = this._thermalSources.length > 0
+      || this.conditions?._scenario?.thermal_field != null
+      || this.conditions?._scenario?.wall_rock_thermal_buffer_C != null;
+    // Explicit-sulfur conservation baseline. Canonical voxel fluids are the
+    // aqueous inventory; accepted growth zones become the solid inventory.
+    // _propagateGlobalDelta books only authored boundary declarations and
+    // records an unexplained internal residual as a violation.
+    const sulfurGrid = this.wall_state.voxelGridFor(this);
+    this._sulfurLedgerInitialPpm = this.conditions.fluid.sulfurPoolsExplicit
+      ? sulfurGrid.voxels.reduce(
+        (sum, voxel) => sum + sulfurSystemTotalPpm(voxel?.fluid),
+        0,
+      )
+      : 0;
+    this._sulfurBoundaryImportsPpm = 0;
+    this._sulfurBoundaryExportsPpm = 0;
+    this._sulfurBoundaryTransactions = [];
+    this._sulfurPropagationViolations = [];
+    this._sulfurLedgerHistory = [];
+    this._sulfurLedgerActivation = this.conditions.fluid.sulfurPoolsExplicit
+      ? {
+        step: 0,
+        kind: 'constructor_explicit_reservoirs',
+        fluidInitialPpm: this._sulfurLedgerInitialPpm,
+        solidInitialPpm: 0,
+        closed: true,
+      }
+      : null;
+    // Authored scenarios may opt into a strict whole-scenario carbon ledger.
+    // Methane-derived carbon, formula-balanced wall release, fluid DIC, and
+    // booked carbonate solids remain separate terms. Keep Sicily enabled for
+    // save compatibility with specifications predating the generic flag.
+    this._carbonLedgerEnabled = this.conditions?._scenario?.carbon_ledger === true
+      || this.conditions?._scenario?.id === 'sicily_solfifera';
+    this._carbonLedgerInitialPpm = this._carbonLedgerEnabled
+      ? sulfurGrid.voxels.reduce(
+        (sum, voxel) => sum + Math.max(0, Number(voxel?.fluid?.CO3) || 0),
+        0,
+      )
+      : 0;
+    this._carbonMethaneImportsPpm = 0;
+    this._carbonWallReleasePpm = 0;
+    this._carbonExternalImportsPpm = 0;
+    this._carbonExportsPpm = 0;
+    this._carbonSourceTransactions = [];
+    this._carbonPropagationViolations = [];
+    this._carbonLedgerHistory = [];
+    this._fluidBoundaryTransactions = [];
+    this._fluidBoundaryViolations = [];
+    // Conserved carbonate boundary v1 is explicit opt-in. It lives on both the
+    // simulator and conditions because event handlers receive conditions, while
+    // the step controller owns equilibration. The state is plain JSON data so a
+    // later worker/save snapshot can copy it without class revival.
+    const carbonateBoundary = this.conditions?._scenario?.carbonate_boundary;
+    this._carbonateBoundaryState = carbonateBoundary
+      ? createCarbonateBoundaryState(
+        this.conditions.fluid,
+        this.conditions.temperature,
+        {
+          ...carbonateBoundary,
+          fluid_pressure_kbar: this.conditions.pressure,
+        },
+      )
+      : null;
+    if (this._carbonateBoundaryState) {
+      this.conditions._carbonateBoundaryState = this._carbonateBoundaryState;
+    }
+    // An open gas reservoir without DIC + reduced alkalinity is not a usable
+    // scientific state. The retired fallback changed pH at fixed DIC and
+    // silently created/destroyed acid-base capacity.
+    this._carbonateBoundaryConfigurationError = !!(
+      this.conditions?._scenario?.open_to_atmosphere
+      && !this._carbonateBoundaryState
+    ) ? 'open_CO2_reservoir_requires_conserved_carbonate_boundary' : null;
     // FLUID-SOURCE SPOTS (js/85k, PROPOSAL §10) Phase 2a — seed the spot set off
     // the cavity seed now that the mesh (→ cell count) exists. Uses a DEDICATED
     // _mulberry32(shape_seed ^ SPOTS_SALT) stream, independent of the shared rng,
@@ -210,20 +355,204 @@ class VugSimulator {
     // construction means "no surface set yet"; first run_step compares
     // against this and applies the override to whatever rings are
     // currently vadose.
-    this._prevFluidSurfaceRing = null;
+    this._prevFluidSurfaceHeightMm = null;
+    this._prevCavityWaterStates = new Array(nRings).fill('submerged');
+  }
+
+  canReauthorInitialHostGeometry() {
+    const ledger = this.wall_state?.cavityEvolutionLedger?.();
+    return this.step === 0
+      && this.crystals.length === 0
+      && (!ledger || ledger.cursor === 0)
+      && this.conditions.wall.total_dissolved_mm === 0
+      && this.conditions.wall.host_release_ledger.length === 0;
+  }
+
+  enableProductionCavityAuthority() {
+    if (this.wall_state?._cavityProductionAuthorityContract) {
+      const enabled = this.wall_state.enableProductionCavityAuthority();
+      return Object.freeze({
+        contract: enabled.contract,
+        provider: enabled.provider,
+        exact_capacity_volume_mm3: Number(this.conditions.wall.cavity_capacity_volume_mm3),
+        exact_equivalent_diameter_mm: Number(this.conditions.wall.vug_diameter_mm),
+      });
+    }
+    if (!this.canReauthorInitialHostGeometry()) {
+      throw new RangeError('production cavity authority must be selected before time or crystallization');
+    }
+    const enabled = this.wall_state.enableProductionCavityAuthority();
+    const exactDiameter = this.conditions.wall.initializeCavityCapacity(
+      enabled.initial_volume_mm3, CAVITY_PRODUCTION_VOLUME_MODEL,
+    );
+    this.wall_state.updateCapacity(enabled.initial_volume_mm3, exactDiameter);
+    return Object.freeze({
+      contract: enabled.contract,
+      provider: enabled.provider,
+      exact_capacity_volume_mm3: enabled.initial_volume_mm3,
+      exact_equivalent_diameter_mm: exactDiameter,
+    });
+  }
+
+  reauthorInitialCavityEquivalentDiameterMm(value) {
+    if (!this.canReauthorInitialHostGeometry()) return false;
+    const wall = this.conditions.wall;
+    const wallState = this.wall_state;
+    const oldSpan = Math.max(CavityWaterAppearance.verticalSpanForWall(wallState), 1e-12);
+    const oldWaterHeight = this.conditions.fluid_surface_height_mm;
+    const waterFraction = oldWaterHeight == null ? null
+      : Math.min(1, Math.max(0, Number(oldWaterHeight) / oldSpan));
+    const externalSnapshot = {
+      cavity_capacity_volume_mm3: wall.cavity_capacity_volume_mm3,
+      initial_cavity_capacity_volume_mm3: wall.initial_cavity_capacity_volume_mm3,
+      cavity_capacity_basis: wall.cavity_capacity_basis,
+      initial_vug_diameter_mm: wall.initial_vug_diameter_mm,
+      vug_diameter_mm: wall.vug_diameter_mm,
+      authored_vug_diameter_mm: wall.authored_vug_diameter_mm,
+      fluidSurfaceHeightMm: this.conditions._fluidSurfaceHeightMm,
+      pendingFluidSurfaceRing: this.conditions._pendingFluidSurfaceRing,
+      waterLedger: this._cavityWaterAppearanceLedger,
+      materialLedger: this._cavityWallMaterialHistoryLedger,
+      wallWaterLedger: wallState._cavityWaterAppearanceLedger,
+      wallMaterialLedger: wallState._cavityWallMaterialHistoryLedger,
+      wallHistory: this.wall_state_history,
+    };
+    let receipt;
+    try {
+      receipt = wallState.reauthorInitialEquivalentDiameterMm(value, this, {
+        onInstalled: (installedReceipt) => {
+          const exactDiameter = wall.initializeCavityCapacity(
+            installedReceipt.exact_capacity_volume_mm3, CAVITY_PRODUCTION_VOLUME_MODEL,
+          );
+          wall.authored_vug_diameter_mm = Number(value);
+          wallState.updateCapacity(installedReceipt.exact_capacity_volume_mm3, exactDiameter);
+          if (waterFraction != null) {
+            const newSpan = CavityWaterAppearance.verticalSpanForWall(wallState);
+            this.conditions.fluid_surface_height_mm = waterFraction * newSpan;
+          }
+          const mesh = wallState.meshFor(this);
+          if (mesh?.bindRingChemistry) {
+            mesh.bindRingChemistry(this.ring_fluids, this.ring_temperatures);
+          }
+          wallState.voxelGridFor(this);
+          this._cavityWaterAppearanceLedger = new CavityWaterAppearanceLedger(wallState);
+          wallState._cavityWaterAppearanceLedger = this._cavityWaterAppearanceLedger;
+          this._cavityWallMaterialHistoryLedger = new CavityWallMaterialHistoryLedger(wallState);
+          wallState._cavityWallMaterialHistoryLedger = this._cavityWallMaterialHistoryLedger;
+          this.wall_state_history = [];
+        },
+      });
+    } catch (error) {
+      wall.cavity_capacity_volume_mm3 = externalSnapshot.cavity_capacity_volume_mm3;
+      wall.initial_cavity_capacity_volume_mm3 = externalSnapshot.initial_cavity_capacity_volume_mm3;
+      wall.cavity_capacity_basis = externalSnapshot.cavity_capacity_basis;
+      wall.initial_vug_diameter_mm = externalSnapshot.initial_vug_diameter_mm;
+      wall.vug_diameter_mm = externalSnapshot.vug_diameter_mm;
+      wall.authored_vug_diameter_mm = externalSnapshot.authored_vug_diameter_mm;
+      this.conditions._fluidSurfaceHeightMm = externalSnapshot.fluidSurfaceHeightMm;
+      this.conditions._pendingFluidSurfaceRing = externalSnapshot.pendingFluidSurfaceRing;
+      this._cavityWaterAppearanceLedger = externalSnapshot.waterLedger;
+      this._cavityWallMaterialHistoryLedger = externalSnapshot.materialLedger;
+      wallState._cavityWaterAppearanceLedger = externalSnapshot.wallWaterLedger;
+      wallState._cavityWallMaterialHistoryLedger = externalSnapshot.wallMaterialLedger;
+      this.wall_state_history = externalSnapshot.wallHistory;
+      throw error;
+    }
+    this._creativeInitialAuthoringTransactions ||= [];
+    this._creativeInitialAuthoringTransactions.push(receipt);
+    return true;
+  }
+
+  reauthorInitialHostThicknessMm(value) {
+    if (!this.canReauthorInitialHostGeometry()) return false;
+    const receipt = this.conditions.wall.reauthorInitialThicknessMm(value);
+    this._creativeInitialAuthoringTransactions ||= [];
+    this._creativeInitialAuthoringTransactions.push(receipt);
+    return true;
+  }
+
+  reauthorInitialHostComposition(value) {
+    if (!this.canReauthorInitialHostGeometry()) return false;
+    const receipt = this.conditions.wall.reauthorInitialComposition(value);
+    this.wall_state.composition = receipt.composition;
+    this._creativeInitialAuthoringTransactions ||= [];
+    this._creativeInitialAuthoringTransactions.push(receipt);
+    return true;
+  }
+
+  /**
+   * A seal is a geological state transition, not a lifetime latch.  Wall
+   * dissolution can restore aggregate open volume after a cavity has filled;
+   * use hysteresis so numerical jitter around 100% does not spam seal events,
+   * while a materially reopened cavity can later seal and testify again.
+   */
+  _resetVugSealIfReopened(vugFill: number, openSystem = false) {
+    if (!this._vug_sealed) return false;
+    if (!openSystem && (!Number.isFinite(vugFill) || vugFill >= 0.95)) return false;
+    this._vug_sealed = false;
+    return true;
+  }
+
+  /** Recompute physical occupancy and immediately re-arm a reopened seal. */
+  _refreshVugFillAndSeal(openSystem = false) {
+    const fill = openSystem ? 0 : this.get_vug_fill();
+    this._resetVugSealIfReopened(fill, openSystem);
+    return fill;
+  }
+
+  /** Emit one testimony record for each distinct volumetric sealing event. */
+  _sealVugIfFilled(vugFill: number) {
+    if (!(vugFill >= 1.0) || this._vug_sealed) return false;
+    this._vug_sealed = true;
+    const mineralVols: Record<string, number> = {};
+    for (const crystal of this.crystals) {
+      if (!crystal || crystal.dissolved === true) continue;
+      const volume = _crystalSolidVolumeMm3(crystal);
+      mineralVols[crystal.mineral] = (mineralVols[crystal.mineral] || 0) + volume;
+    }
+    const sorted = Object.entries(mineralVols).sort((a, b) => b[1] - a[1]);
+    const dominant = sorted[0] ? sorted[0][0] : 'mineral';
+    let sealMsg = `🪨 VUG SEALED — cavity completely filled after ${this.step} steps`;
+    if (sorted.length) {
+      sealMsg += ` — dominant: ${dominant}${sorted.length > 1 ? `, with ${sorted.slice(1).map(s => s[0]).join(', ')}` : ''}`;
+    }
+    this.log.push(sealMsg);
+    return true;
   }
 
   run_step() {
     this.log = [];
     this.step++;
+    this.conditions._sim_step = this.step;
+    if (this.step === 1 && this._carbonateBoundaryConfigurationError) {
+      this.log.push(
+        '  ⛔ Carbonate boundary BLOCKED — an open CO₂ reservoir requires conserved DIC, reduced alkalinity, and an explicit gas boundary. No atmospheric chemistry was applied.',
+      );
+    }
+    // Equal-volume, fully mixed carbonate v1 audits the canonical wet voxels
+    // before any event sees the bulk handle. This is where explicitly scoped
+    // calcite/aragonite/dolomite/HMC transfer is booked; undeclared DIC changes
+    // block the boundary rather than being relabelled as a simple carbonate.
+    if (this._carbonateBoundaryState) this._prepareCarbonateBoundarySpatialState();
     // Phase C v1: events apply to conditions.fluid (= equator ring
     // fluid via aliasing). Snapshot before and propagate the delta to
     // non-equator rings — otherwise a global event pulse never reaches
     // the rings where crystals are actually growing. Same wrap on
-    // dissolve_wall and ambient_cooling. Mirrors vugg.py.
-    let snap = this._snapshotGlobal();
+    // dissolve_wall and ambient_cooling.
+    // Capture a legacy combined-S spatial baseline at the event boundary. An
+    // authored event may commission explicit valence reservoirs mid-run; that
+    // transition must retain the exact pre-conversion inventory rather than
+    // silently starting its ledger after the event.
+    let snap = this._snapshotGlobal({ captureLegacySulfur: true });
     this.apply_events();
     this._propagateGlobalDelta(snap);
+    // Some authored events replace the pore fluid rather than mixing a delta
+    // into a pre-existing spatial gradient. Apply that exact boundary after
+    // ordinary propagation and before any local reaction model reads it.
+    this.apply_pending_exact_fluid_replacement();
+    // A physical etch must read the event chemistry after it has reached each
+    // crystal's local mesh cell, but before ordinary growth/dissolution runs.
+    this.apply_pending_physical_etch();
     // Geological MOVEMENTS (js/85j) — persistent master-variable drift between
     // discrete events. DARK in Phase 0: no scenario declares `movements`, so
     // this guard is always false and run_step is byte-identical. When a
@@ -240,6 +569,10 @@ class VugSimulator {
       this._movements.applyStep(this.conditions, this.step, this);
       this._propagateGlobalDelta(mvSnap);
     }
+    // An authored weathering epilogue is an executed boundary contract, not a
+    // scenario label. Activate it only after same-step events/movements have
+    // established T/P/water level and before the vadose transition is applied.
+    activateWeatheringEpilogueIfDue(this);
     // v26: continuous drainage from host-rock porosity. Runs before
     // the vadose override so a porosity-driven drift-out gets caught
     // as a transition on the same step it dries.
@@ -261,7 +594,17 @@ class VugSimulator {
     // pH is re-solved so its equilibrium pCO2 matches the local
     // atmospheric value. Runs BEFORE dissolution + nucleation so
     // downstream supersat math sees the equilibrated chemistry.
-    this._applyOpenAtmosphereEquilibration();
+    if (this.conditions?._scenario?.carbonate_boundary) {
+      // Events and persistent movements execute after the start-of-step audit.
+      // Re-audit at the actual solver boundary so a same-step, unreceipted DIC
+      // mutation cannot be adopted as a new closed-system total.
+      this._prepareCarbonateBoundarySpatialState();
+      const carbonateSnap = this._snapshotGlobal();
+      this._applyOpenAtmosphereEquilibration();
+      this._propagateGlobalDelta(carbonateSnap);
+    } else {
+      this._applyOpenAtmosphereEquilibration();
+    }
     // Track dolomite saturation crossings for the Kim 2023 cycle mechanism.
     this.conditions.update_dol_cycles();
     snap = this._snapshotGlobal();
@@ -276,28 +619,13 @@ class VugSimulator {
     // fill-halt / high-fill dampener in the growth loop — growth stays rate-limited by
     // chemistry, not by pocket space. Default false → every other scenario unchanged.
     const openSystem = !!(this.conditions.wall && this.conditions.wall.open_system);
-    const vugFill = openSystem ? 0 : this.get_vug_fill();
+    const vugFill = this._refreshVugFillAndSeal(openSystem);
 
-    if (vugFill >= 1.0 && !this._vug_sealed) {
-      this._vug_sealed = true;
-      // Determine dominant mineral
-      const mineralVols: Record<string, number> = {};
-      for (const c of this.crystals) {
-        if (!c.active) continue;
-        const a = c.c_length_mm / 2, b = c.a_width_mm / 2;
-        const v = (4/3) * Math.PI * a * b * b;
-        mineralVols[c.mineral] = (mineralVols[c.mineral] || 0) + v;
-      }
-      const sorted = Object.entries(mineralVols).sort((a,b) => b[1] - a[1]);
-      const dominant = sorted[0] ? sorted[0][0] : 'mineral';
-      let sealMsg = `🪨 VUG SEALED — cavity completely filled after ${this.step} steps`;
-      if (dominant === 'quartz' && sorted[0][1] / Object.values(mineralVols).reduce((a,b)=>a+b,0) > 0.8) {
-        sealMsg += ` — AGATE (>80% quartz)`;
-      } else if (sorted.length > 1) {
-        sealMsg += ` — dominant: ${dominant}, with ${sorted.slice(1).map(s=>s[0]).join(', ')}`;
-      }
-      this.log.push(sealMsg);
-    }
+    // A dissolution-opened cavity is physically unsealed again.  Re-arm the
+    // transition before the start/end-of-step seal checks so a later refill
+    // produces a second truthful seal event.  The 95% threshold supplies
+    // hysteresis below the hard 100% closure boundary.
+    this._sealVugIfFilled(vugFill);
 
     // Phase 4c.2/4c.3a — sync Eh⇄O2 BEFORE the engines read it. With
     // EH_DYNAMIC_ENABLED on, the redox helpers derive their O2 from
@@ -310,6 +638,15 @@ class VugSimulator {
     // for the strip.
     this._syncRedoxEh(this._movements
       ? this._movements.drivesFieldAt('Eh', this.step) : false);
+    // Transport first, then let saturation/nucleation read the resulting local
+    // wall temperature during this same step.
+    this._advanceThermalField();
+    // History-aware Ostwald routing: an exposed stable quartz surface lets
+    // later silica attach/grow as quartz instead of restarting a metastable
+    // chalcedony generation after cooling or renewed supply.
+    this.conditions._stableQuartzExposed = this.crystals.some(
+      c => c.mineral === 'quartz' && c.active && !c.dissolved && c.enclosed_by == null,
+    );
     this.check_nucleation(vugFill);
 
     // v128 graduated competition: pre-compute per-crystal scaled zones
@@ -361,13 +698,37 @@ class VugSimulator {
       if (currentFill >= 1.0) {
         const engine = MINERAL_ENGINES[crystal.mineral];
         if (!engine) continue;
-        const zone = this._runEngineForCrystal(engine, crystal);
+        // Graduated competition already evaluated this engine exactly once in
+        // pass 1. Preserve its null/negative result at full fill just as the
+        // normal-fill branch does; a second call would consume RNG twice and
+        // bias stochastic dissolution.
+        const zone = this._graduatedZones && this._graduatedZones.has(crystal.crystal_id)
+          ? this._graduatedZones.get(crystal.crystal_id)
+          : this._runEngineForCrystal(engine, crystal);
+        if (zone && zone.thickness_um < 0
+            && crystal._physicalEtchAppliedStep === this.step) continue;
+        if (zone && Number(zone.thickness_um) === 0 && zone.state_overprint) {
+          this._finalizeZoneForApplication(crystal, zone);
+          this._applyZoneGrowthBudget(crystal, zone);
+          crystal.add_zone(zone);
+          this.log.push(`  â—† ${capitalize(crystal.mineral)} #${crystal.crystal_id}: REACTION OVERPRINT ${zone.note}`);
+          continue;
+        }
         // W-F O3b — sealed crystals don't dissolve (shielded by neighbors), same
         // as the main-path guard below. Byte-identical when selection is off.
-        if (zone && zone.thickness_um < 0 && !crystal._buried) {
-          crystal.add_zone(zone);
-          currentFill = openSystem ? 0 : this.get_vug_fill();
-          this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
+        if (zone && zone.thickness_um < 0) {
+          if (!crystal._buried) {
+            this._finalizeZoneForApplication(crystal, zone);
+            this._applyZoneGrowthBudget(crystal, zone);
+            crystal.add_zone(zone);
+            currentFill = this._refreshVugFillAndSeal(openSystem);
+            this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
+          } else if (crystal.total_growth_um > 1e-9) {
+            // Several legacy engines optimistically set dissolved=true while
+            // constructing a negative candidate. A buried crystal never accepts
+            // that candidate, so its physical state must remain unchanged.
+            crystal.dissolved = false;
+          }
         }
         continue;
       }
@@ -379,22 +740,21 @@ class VugSimulator {
       // which would prevent the world-record cap from ever firing on
       // those crystals and let total_growth_um run unbounded.
       const capCm = maxSizeCm(crystal.mineral);
-      const cLengthForCap = crystal.total_growth_um / 1000.0;
-      if (capCm != null && cLengthForCap / 10.0 >= capCm) {
-        crystal.active = false;
-        this.log.push(`  ⛔ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: reached size cap (${capCm} cm = 2× world record) — growth halts`);
-        continue;
+      const sizeCapped = crystalAtAuthoredSizeCap(crystal);
+      if (sizeCapped && !crystal._size_capped) {
+        this.log.push(`  ⛔ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: reached size cap (${capCm} cm = 2× world record) — positive growth halts; dissolution remains possible`);
       }
+      crystal._size_capped = sizeCapped;
       const engine = MINERAL_ENGINES[crystal.mineral];
       if (!engine) continue;
       // v128 graduated competition: consume the pre-computed scaled zone
-      // when present, applying mass balance against the cell fluid that
+      // when present, applying growth budget against the cell fluid that
       // the dry-run originally read. Otherwise fall through to the
       // single-pass engine call (v127 behavior).
       //
       // The graduated path skips the engine in pass 2 BECAUSE the
       // engine would now see a fluid that's been mutated by prior
-      // crystals' rationed mass-balance debits — re-running it would
+      // crystals' rationed growth-budget debits — re-running it would
       // re-introduce the cascade-displacement the algorithm is designed
       // to prevent. Instead, we trust the dry-run zone (computed
       // against a clean snapshot), scaled by the per-crystal allocation.
@@ -407,25 +767,36 @@ class VugSimulator {
         // In all cases, DO NOT re-call the engine — that would
         // double-consume RNG vs v127's once-per-crystal contract.
         zone = this._graduatedZones.get(crystal.crystal_id);
-        if (zone && typeof zone.thickness_um === 'number' && zone.thickness_um !== 0) {
-          this._applyZoneMassBalance(crystal, zone);
-        }
       } else {
-        // Crystal had no engine entry (skipped at the top of the loop)
-        // or wasn't in _graduatedZones (only happens when flag is off,
-        // because pass 1 enumerates every active crystal). The flag-off
-        // branch runs the engine exactly once via _runEngineForCrystal,
-        // matching v127 byte-identically.
+        // Crystal had no engine entry, the flag is off, or pass 1 deliberately
+        // omitted an RNG-free zero-thickness state overprint so it can be
+        // re-evaluated against the actual sequential local reagent reservoir.
+        // Ordinary flag-off growth still runs exactly once, matching v127.
         zone = this._runEngineForCrystal(engine, crystal);
       }
+      // The duration-integrated physical etch already consumed this
+      // crystal's dissolution exposure for the step. Applying the engine's
+      // one-step negative candidate as well would count the pulse twice.
+      if (zone && zone.thickness_um < 0
+          && crystal._physicalEtchAppliedStep === this.step) continue;
+      // A world-record cap constrains new precipitation, not the existence or
+      // reactivity of the solid. Engines still run so later acid/redox changes
+      // can return the capped crystal's booked inventory.
+      if (zone && zone.thickness_um > 0 && sizeCapped) continue;
       if (zone) {
+        // Texture state is committed only after the formula-pool cap confirms
+        // that some positive solid was actually accepted.
+        let markLateInterlocking = false;
         // W-F O3b — a SEALED (geometrically buried) crystal is shielded from the
         // corrosive fluid by its overgrowing neighbors: suppress its dissolution
         // so it persists as a present short stub rather than being etched away
         // (which would also reopen its mineral's nucleation cap on the freed
         // slot). Positive growth is throttled just below. No-op when selection
         // is off (nothing is _buried) → byte-identical.
-        if (crystal._buried && zone.thickness_um < 0) zone.thickness_um = 0;
+        if (crystal._buried && zone.thickness_um < 0) {
+          zone.thickness_um = 0;
+          if (crystal.total_growth_um > 1e-9) crystal.dissolved = false;
+        }
         // Proposal A — apply fill dampener to positive zone thickness
         // (growth). check_nucleation stashed this._fillDampener for the
         // current step; it equals 1.0 below vugFill ~0.7 and tapers
@@ -448,7 +819,7 @@ class VugSimulator {
           // W-F O3b — a geometrically BURIED crystal (overgrown by a more-normal
           // neighbor; _applyGeometricSelection tagged it) grows at a throttled
           // rate, ending a short leaning stub rather than dying. Scales positive
-          // growth exactly like the fill dampener below, so mass-balance
+          // growth exactly like the fill dampener below, so growth-budget
           // semantics match the established path. No-op when selection is off
           // (nothing is ever _buried) → byte-identical.
           if (crystal._buried) zone.thickness_um *= O3_BURY_GROWTH_MULT;
@@ -497,7 +868,10 @@ class VugSimulator {
               // identical for the current fleet (census: tools/sceptre-mask-census.mjs).
               zone.masked_phi_prism = film.phi_prism || 0;
               zone.masked_phi_term = film.phi_term || 0;
-              crystal._film = null;
+              // Commit removal only if a positive zone survives competition,
+              // masking, fill damping, and the cavity clamp. A zero-thickness
+              // candidate cannot physically bury the film.
+              zone._clear_film_on_accept = true;
             }
           }
           // Proposal D (2026-05-18) part 1: per-iteration dampener
@@ -593,7 +967,7 @@ class VugSimulator {
               // Late-interlocking tag: this zone hit the cavity ceiling —
               // additional chemistry that would have happened gets attributed
               // to in-place densification rather than free extension.
-              crystal.late_interlocking = true;
+              if (zone.thickness_um > 0) markLateInterlocking = true;
               if (zone.note) zone.note = `${zone.note} [interlocking — cavity ceiling reached]`;
               else zone.note = 'interlocking growth at cavity ceiling';
             }
@@ -605,8 +979,8 @@ class VugSimulator {
           // texturally in the interlocking domain (Tsumeb late-stage
           // interlocking patinas, Naica selenite cluster surfaces).
           // Renderer reads this flag for granular / massive textures.
-          if (currentFill >= 0.85 && dampener < 1.0) {
-            crystal.late_interlocking = true;
+          if (zone.thickness_um > 0 && currentFill >= 0.85 && dampener < 1.0) {
+            markLateInterlocking = true;
           }
         }
         // W-F O5 SPLITTING (S-b) — accrue the two-route cumulative-misorientation
@@ -619,6 +993,16 @@ class VugSimulator {
         // the deformation-saddle set a separate cause (§9a #4, census-certified).
         // splitAbility 0 (quartz/feldspar) → no _split → untouched everywhere (the
         // structure-specificity invariant).
+        this._finalizeZoneForApplication(crystal, zone);
+        this._applyZoneGrowthBudget(crystal, zone);
+        // A dry formula reservoir accepts no solid. Do not append a zero shell
+        // or accrue texture/history from a candidate that never precipitated.
+        if (zone._stoichiometric_budget_cap && !(zone.thickness_um > 0)) continue;
+        if (zone.thickness_um > 0 && markLateInterlocking) {
+          crystal.late_interlocking = true;
+        }
+        // Accrue split texture from the mass-limited accepted thickness, not the
+        // larger candidate that the fluid could not supply.
         accrueSplitIndex(crystal, this.conditions, zone.thickness_um);
         // W-K VOL-NEUTRAL (measurement): when O5_VOLNEUTRAL_ENABLED, a split
         // crystal's axial extent is compacted by splitGrowthMult(index) at
@@ -629,14 +1013,50 @@ class VugSimulator {
         crystal.add_zone(zone, extentMult);
         // Re-check fill after each crystal grows to prevent >100% overshoot
         if (zone.thickness_um > 0) {
-          currentFill = openSystem ? 0 : this.get_vug_fill();
+          currentFill = this._refreshVugFillAndSeal(openSystem);
         }
         if (zone.thickness_um < 0) {
-          currentFill = openSystem ? 0 : this.get_vug_fill();
+          currentFill = this._refreshVugFillAndSeal(openSystem);
           this.log.push(`  ⬇ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: DISSOLUTION ${zone.note}`);
         } else if (Math.abs(zone.thickness_um) > 0.5) {
           this.log.push(`  ▲ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: ${crystal.describe_latest_zone()}`);
         }
+      }
+    }
+
+    // CaSO4 phase replacement. Use each crystal's local mesh fluid and
+    // temperature; the authoritative evaluator separates SI, equilibrium
+    // phase, primary kinetics, and precursor-consuming replacement.
+    {
+      const nRings = this.wall_state.ring_count;
+      const mesh = this.wall_state.meshFor ? this.wall_state.meshFor(this) : null;
+      for (const crystal of this.crystals) {
+        if (crystal.mineral !== 'selenite' && crystal.mineral !== 'anhydrite') continue;
+        const anchor = this.wall_state._resolveAnchor(crystal);
+        const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+        const ringIdx = chemistry ? chemistry.ringIdx : null;
+        const validRing = ringIdx != null && ringIdx >= 0 && ringIdx < nRings;
+        const cell = validRing && mesh?.cellOf
+          ? mesh.cellOf(crystal, this.wall_state)
+          : null;
+        const localFluid = cell?.fluid || (validRing ? this.ring_fluids[ringIdx] : this.conditions.fluid);
+        const vertexIdx = validRing ? chemistry.vertexIndex : -1;
+        const localT = vertexIdx >= 0
+          ? temperatureAtMeshVertex(this, mesh, vertexIdx) : this.conditions.temperature;
+        const transition = applyCaSO4PhaseTransition(
+          crystal, localFluid, localT, this.conditions.pressure, this.step,
+        );
+        if (!transition) continue;
+        this._caSO4Transitions ||= [];
+        this._caSO4Transitions.push({ crystal_id: crystal.crystal_id, ...transition });
+        const waterVerb = transition.waterTransferMmolKg >= 0 ? 'released' : 'consumed';
+        this.log.push(
+          `  ↻ CaSO4 REPLACEMENT: ${capitalize(transition.from)} #${crystal.crystal_id} → ${transition.to} ` +
+          `(a_w=${transition.waterActivity.toFixed(3)}, T=${localT.toFixed(1)}°C, ` +
+          `boundary=${transition.boundaryC.toFixed(1)}±${transition.uncertaintyC.toFixed(1)}°C, ` +
+          `${Math.abs(transition.waterTransferMmolKg).toFixed(6)} mmol/kg structural water ${waterVerb}; ` +
+          `booked Ca and sulfate unchanged; external replacement envelope preserved)`,
+        );
       }
     }
 
@@ -645,12 +1065,18 @@ class VugSimulator {
     // 173°C). Preserves habit + dominant_forms + zones; only crystal.mineral
     // changes. First non-destructive polymorph mechanic in the sim.
     for (const crystal of this.crystals) {
-      const transition = applyParamorphTransitions(crystal, this.conditions.temperature, this.step);
+      const anchor = this.wall_state._resolveAnchor(crystal);
+      const mesh = this.wall_state.meshFor ? this.wall_state.meshFor(this) : null;
+      const vertexIdx = anchor
+        ? this.wall_state.chemistryVertexForCrystal(crystal) : -1;
+      const localT = vertexIdx >= 0
+        ? temperatureAtMeshVertex(this, mesh, vertexIdx) : this.conditions.temperature;
+      const transition = applyParamorphTransitions(crystal, localT, this.step);
       if (transition) {
         const [oldM, newM] = transition;
         this.log.push(
           `  ↻ PARAMORPH: ${capitalize(oldM)} #${crystal.crystal_id} → ${newM} ` +
-          `(T dropped to ${this.conditions.temperature.toFixed(0)}°C, crossed ${oldM}/${newM} ` +
+          `(local T dropped to ${localT.toFixed(0)}°C, crossed ${oldM}/${newM} ` +
           `phase boundary; cubic external form preserved)`
         );
       }
@@ -672,7 +1098,8 @@ class VugSimulator {
     // for museum-collection specimens.
     const isLit = this.wall_state.is_lit !== false;
     for (const crystal of this.crystals) {
-      const transition = applyLightTransitions(crystal, isLit, this.step);
+      const localIsLit = weatheringLightAtCrystal(this, crystal, isLit);
+      const transition = applyLightTransitions(crystal, localIsLit, this.step);
       if (transition) {
         const [oldM, newM] = transition;
         this.log.push(
@@ -686,7 +1113,7 @@ class VugSimulator {
 
     // v28: dehydration paramorphs — environment-triggered counterpart
     // to PARAMORPH_TRANSITIONS. Borax left in a vadose ring loses
-    // water and pseudomorphs to tincalconite. Mirror of vugg.py.
+    // water and pseudomorphs to tincalconite.
     {
       const nRings = this.wall_state.ring_count;
       // PROPOSAL-CAVITY-MESH Phase 4 Tranche 4a — read the crystal's
@@ -699,11 +1126,18 @@ class VugSimulator {
         ? this.wall_state.meshFor(this)
         : null;
       for (const crystal of this.crystals) {
-        if (!DEHYDRATION_TRANSITIONS[crystal.mineral]) continue;
+        const dehydrationSpec = DEHYDRATION_TRANSITIONS[crystal.mineral];
+        if (!dehydrationSpec) continue;
+        // A scenario-local negative-evidence contract applies to transformation
+        // products as well as direct nucleation. The global dehydration engine
+        // remains live in documented localities and Creative mode.
+        const dehydrationTarget = dehydrationSpec[0];
+        if (this.conditions?._scenario?.excluded_species?.[dehydrationTarget]) continue;
         // PHASE-1-CAVITY-MESH: read ringIdx via _resolveAnchor so this
         // dehydration loop no longer reads wall_ring_index directly.
         const anchor = this.wall_state._resolveAnchor(crystal);
-        const ringIdx = anchor ? anchor.ringIdx : null;
+        const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
+        const ringIdx = chemistry ? chemistry.ringIdx : null;
         if (ringIdx == null || ringIdx < 0 || ringIdx >= nRings) continue;
         // Prefer the crystal's own cell.fluid (per-vertex chemistry).
         // Fall back to the ring-level pool only if the mesh isn't built.
@@ -714,7 +1148,8 @@ class VugSimulator {
           ? cell.fluid
           : this.ring_fluids[ringIdx];
         const ringState = this.conditions.ringWaterState(ringIdx, nRings);
-        const Tlocal = this.ring_temperatures[ringIdx];
+        const vertexIdx = chemistry.vertexIndex;
+        const Tlocal = temperatureAtMeshVertex(this, _mesh, vertexIdx);
         const transition = applyDehydrationTransitions(
           crystal, ringFluid, ringState, Tlocal, this.step);
         if (transition) {
@@ -732,17 +1167,31 @@ class VugSimulator {
     // Water-solubility metastability — Round 8e (Apr 2026). Chalcanthite
     // re-dissolves when fluid.salinity < 4 OR fluid.pH > 5. The geological
     // truth: every chalcanthite is a temporary victory over entropy.
+    let chalcanthiteVolumeChanged = false;
     for (const crystal of this.crystals) {
-      if (crystal.mineral !== 'chalcanthite' || crystal.dissolved || !crystal.active) continue;
+      // Growth eligibility is not a dissolution shield. A genuinely buried
+      // crystal is protected; an exposed size-capped solid is not.
+      if (crystal.mineral !== 'chalcanthite' || crystal.dissolved || crystal._buried) continue;
       if (this.conditions.fluid.salinity < 4.0 || this.conditions.fluid.pH > 5.0) {
         // 40%/step decay, with a 0.5-µm absolute floor below which we
         // collapse to full dissolution (asymptotic decay otherwise).
         let dissolved_um = Math.min(5.0, crystal.total_growth_um * 0.4);
         if (crystal.total_growth_um < 0.5) dissolved_um = crystal.total_growth_um;
-        crystal.total_growth_um -= dissolved_um;
-        crystal.c_length_mm = Math.max(crystal.total_growth_um / 1000.0, 0);
-        this.conditions.fluid.Cu += dissolved_um * 0.5;
-        this.conditions.fluid.S += dissolved_um * 0.5;
+        if (!(dissolved_um > 0)) continue;
+        const decayZone = new GrowthZone({
+          step: this.step,
+          temperature: this.conditions.temperature,
+          thickness_um: -dissolved_um,
+          growth_rate: -dissolved_um,
+          dissolutionMode: 'low_salinity',
+          note: `water-solubility decay (salinity ${this.conditions.fluid.salinity.toFixed(1)}, pH ${this.conditions.fluid.pH.toFixed(1)})`,
+        });
+        // dissolved_um is already the accepted per-step loss; do not apply the
+        // geological time multiplier a second time.
+        decayZone._time_scaled = true;
+        this._applyZoneGrowthBudget(crystal, decayZone);
+        crystal.add_zone(decayZone);
+        chalcanthiteVolumeChanged = true;
         if (crystal.total_growth_um <= 0) {
           crystal.dissolved = true;
           crystal.active = false;
@@ -760,27 +1209,12 @@ class VugSimulator {
         }
       }
     }
+    if (chalcanthiteVolumeChanged) {
+      currentFill = this._refreshVugFillAndSeal(openSystem);
+    }
 
     // Check for vug seal after growth loop (may cross 1.0 during crystal growth)
-    if (currentFill >= 1.0 && !this._vug_sealed) {
-      this._vug_sealed = true;
-      const mineralVols: Record<string, number> = {};
-      for (const c of this.crystals) {
-        if (!c.active) continue;
-        const a = c.c_length_mm / 2, b = c.a_width_mm / 2;
-        const v = (4/3) * Math.PI * a * b * b;
-        mineralVols[c.mineral] = (mineralVols[c.mineral] || 0) + v;
-      }
-      const sorted = Object.entries(mineralVols).sort((a,b) => b[1] - a[1]);
-      const dominant = sorted[0] ? sorted[0][0] : 'mineral';
-      let sealMsg = `🪨 VUG SEALED — cavity completely filled after ${this.step} steps`;
-      if (dominant === 'quartz' && sorted[0][1] / Object.values(mineralVols).reduce((a,b)=>a+b,0) > 0.8) {
-        sealMsg += ` — AGATE (>80% quartz)`;
-      } else if (sorted.length > 1) {
-        sealMsg += ` — dominant: ${dominant}, with ${sorted.slice(1).map(s=>s[0]).join(', ')}`;
-      }
-      this.log.push(sealMsg);
-    }
+    this._sealVugIfFilled(currentFill);
     // ---- Radiation damage processing ----
     const active_uraninite = this.crystals.filter(c => c.mineral === 'uraninite' && c.active);
     if (active_uraninite.length) {
@@ -832,10 +1266,12 @@ class VugSimulator {
     {
       const coolSnap = this._snapshotGlobal();
       this.ambient_cooling();
-      this._propagateGlobalDelta(coolSnap);
+      this._propagateGlobalDelta(coolSnap, {
+        ambientThermalStep: this._lastAmbientThermalStep,
+      });
     }
 
-    // Phase C: inter-ring fluid/temperature diffusion runs at the
+    // Phase C: inter-ring fluid diffusion runs at the
     // very end of the step so chemistry exchanges happen against a
     // stable post-events post-growth state. No-op when all rings
     // carry identical values (Laplacian of a constant is zero) —
@@ -869,10 +1305,9 @@ class VugSimulator {
     // deformation directive (sim._deformationEvents). Pure tagging; no-op unless
     // a scenario declares one → byte-identical fleet. See js/45.
     classifyDeformation(this);
-    // Post-growth ETCH overprint (crystal-face realism arc §2, 2026-06-22) — rounds/
-    // frosts crystals that had ALREADY grown when a scenario event recorded an `etch`
-    // directive (sim._etchEvents). Same post-growth-overprint shape as deformation.
-    // Pure tagging; no-op unless a scenario declares one → byte-identical fleet. See js/45.
+    // Physical ETCH history classifier. Accepted etches already removed solid
+    // and returned booked inventory during the event step; this pass derives
+    // the currently exposed/healed surface state for narration and rendering.
     classifyEtch(this);
     // Sector (hourglass) ZONING (crystal-face realism arc 2026-06-21) — tags
     // sector-zoned minerals (tourmaline) so the renderer tints the termination
@@ -894,6 +1329,16 @@ class VugSimulator {
     // singly-terminated drusy habit). The renderer sinks that fraction below the wall surface.
     // Pure tagging; gated on wall.occlusion (only mvt opts in) → byte-identical fleet. See js/45.
     classifyOcclusion(this);
+    // Area-covering aggregate fabrics (wall linings, botryoidal/earthy crusts,
+    // asbestiform mats and true quartz/calcite druse). Records physical coverage,
+    // booked volume and mean layer thickness for the renderer; representative
+    // instances never create extra mineral inventory. See js/45.
+    classifySurfaceGrowth(this);
+    // Capture the actual environmental and mass-transfer result after every
+    // growth/dissolution and transformation path has had its turn this step.
+    // This produces an auditable history with empty rows when a declared
+    // weathering interval causes no reaction — absence is evidence too.
+    recordWeatheringEpilogueStep(this);
     // Central-distance (Wulff) FORM (central-distance arc Phase 4 rung 4a.1, 2026-06-28) — the
     // arc's destination: tags fluorite with the {100}/{111} central-distance bias so the renderer
     // draws the geometrically-true cube↔cuboctahedron↔octahedron form instead of a fixed primitive.
@@ -912,6 +1357,13 @@ class VugSimulator {
       try { this._stripRecorder.captureStep(this); } catch (_err) { /* swallow — strip view is non-essential */ }
     }
     // === END HELIX-OVERLAY-FORK ADDITION ==============================
+
+    if (this.conditions.fluid.sulfurPoolsExplicit) {
+      this._sulfurLedgerHistory.push(simulatorSulfurLedgerSnapshot(this));
+    }
+    if (this._carbonLedgerEnabled) {
+      this._carbonLedgerHistory.push(simulatorCarbonLedgerSnapshot(this));
+    }
 
     return this.log;
   }
@@ -937,7 +1389,7 @@ class VugSimulator {
     let vug_growth = '';
     if (this.conditions.wall.total_dissolved_mm > 0) {
       const w = this.conditions.wall;
-      vug_growth = ` The cavity itself expanded from ${(w.vug_diameter_mm - w.total_dissolved_mm * 2).toFixed(0)}mm to ${w.vug_diameter_mm.toFixed(0)}mm diameter as acid pulses dissolved ${w.total_dissolved_mm.toFixed(1)}mm of the ${w.composition} host rock.`;
+      vug_growth = ` The cavity's equivalent-volume diameter changed from ${w.initial_vug_diameter_mm.toFixed(2)}mm to ${w.vug_diameter_mm.toFixed(2)}mm as acid pulses removed ${w.host_volume_removed_mm3_per_kg.toFixed(2)}mm³ of ${w.composition} per 1kg solvent reference (standard-state crystalline-volume approximation).`;
     }
 
     const yearsPerStep = timeScale * 10000;
@@ -996,7 +1448,7 @@ class VugSimulator {
             );
           } else if (name.includes('tectonic')) {
             paragraphs.push(
-              `A tectonic event at step ${triggering_event.step} produced a pressure spike.` + this._narrate_tectonic(batch)
+              `A tectonic event at step ${triggering_event.step} produced a differential-stress pulse.` + this._narrate_tectonic(batch)
             );
           } else {
             for (const c of batch) (untriggeredByMineral[c.mineral] ||= []).push(c);

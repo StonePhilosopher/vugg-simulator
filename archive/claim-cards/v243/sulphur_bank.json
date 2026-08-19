@@ -1,0 +1,307 @@
+{
+  "scenario": "sulphur_bank",
+  "sim_version": 243,
+  "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1|sulfur-ledger:sulfide+sulfate+elemental-independent+pathway-gated-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+  "scenario_spec_hash": "983e0f505a5390c6b2711620994eac13438b7430d0834cde117a035823427a41",
+  "strip_steps": 200,
+  "claim": {
+    "anchor": "Sulphur Bank Mine, south shore of Clear Lake, Lake County, California — Pleistocene hot-spring mercury-sulfur deposit. Active hot-spring system since ~150,000 years ago; mined for mercury 1865-1957 (one of California's largest Hg producers). Now EPA Superfund site CAD980893275. The textbook hot-spring quicksilver-sulfur deposit per White & Roberson 1962 (USGS PP 432-A).",
+    "description": "Hot-spring mercury-sulfur deposit at the surface mixing zone where rising H₂S-rich fluid meets atmospheric O₂. Headline minerals: native sulfur (from partial oxidation 2 H₂S + O₂ → 2 S° + 2 H₂O) and cinnabar (HgS, the deposit's mining commodity — Sulphur Bank yielded ~450 tons of mercury 1865-1957). The elemental-sulfur reaction itself produces no acid; the measured pH 2-4 belongs to the source acid-sulfate fluid and to more-complete sulfur oxidation outside this modeled branch. Accessory As-sulfides realgar (orange-red AsS) and orpiment (golden-yellow As₂S₃) deposit in the mixing zone. Supporting silica is modeled as opal when its own low-temperature, pH, and concentration gates are met—not cosmetically relabeled quartz.",
+    "expects_species": [
+      "native_sulfur",
+      "cinnabar",
+      "realgar",
+      "orpiment",
+      "pararealgar",
+      "pyrite",
+      "marcasite"
+    ],
+    "sources": [
+      "White D.E. and Roberson C.E. (1962) — Sulphur Bank, California, a major hot-spring quicksilver deposit. USGS Professional Paper 432-A.",
+      "White D.E. (1981) — Active geothermal systems and hydrothermal ore deposits. Economic Geology 75th Anniversary Volume.",
+      "Donnelly-Nolan J.M., Burns M.G., Goff F.E., Peters E.K., Thompson J.M. (1993) — The Geysers - Clear Lake area, California: thermal waters, mineralization, volcanism, and geothermal potential. Economic Geology 88: 301-316.",
+      "EPA Superfund site CAD980893275 — Sulphur Bank Mercury Mine. Site monitoring records 1990-present document continuous hot-spring activity at the vent zone."
+    ],
+    "initial_temperature_C": 75,
+    "initial_pressure_kbar": 0.001,
+    "wall_architecture": "irregular",
+    "notes": [
+      "Anchor: Sulphur Bank Mine, the canonical hot-spring native-sulfur deposit. White & Roberson 1962 (USGS PP 432-A) is the foundational monograph; White 1981 placed it in the broader active-geothermal-ore-deposit framework. The deposit was the type case for the 'hot-spring mercury-sulfur' class. Active hot springs still vent today (60-90°C; the EPA Superfund record documents continuous monitoring 1990s-present).",
+      "Engine fit (SIM 243): H₂S recharge adds only to S_sulfide. Each open-air mixing event imports and consumes the exact O₂ mass required by H₂S + ½O₂ → S° + H₂O, transfers sulfur into S_elemental with zero sulfur loss, and records zero proton production for that reaction. Native-sulfur growth can debit only S_elemental; coexisting sulfides debit S_sulfide and cannot spend the same sulfur twice.",
+      "Habit dispatcher: the engine's three habits are sublimation_crust (T > 60 + excess > 1.5; fumarole vent zone), prismatic_beta (T ≥ 95; rare high-T monoclinic), and bipyramidal_alpha (the iconic Sicilian {111} dipyramid habit, < 60°C). The scenario starts at 75°C — sublimation_crust at high σ, bipyramidal_alpha after cooling pulses. Both habits real for Sulphur Bank.",
+      "Mercury: the namesake commodity (cinnabar, HgS) isn't in MINERAL_SPEC yet — a follow-up commit can add it for the full Sulphur Bank assemblage. For now the scenario carries trace Fe + As to fire pyrite + marcasite alongside the headline native_sulfur.",
+      "ARSENOPYRITE WITHDRAWN from expects_species (v228, hostile-review rung 2 — the tormiq/mvt de-confabulation precedent): White & Roberson 1962's own ore list is cinnabar, marcasite, pyrite, dolomite, calcite, quartz, zeolite, ± metacinnabar, stibnite — no arsenopyrite; the USGS stable-isotope mineral set for the mine likewise lacks it, and FeAsS is a ≥200°C mineral (Kretschmar & Scott calibration; Carlin fluids 180-240°C) that a 50-77°C spring cannot grow. Pre-v228 it fired here only because the declared T_min 200 was unenforced. The promise was the confabulation; the As stays in the broth and reports through the documented low-T As phases.",
+      "⚠ VERIFY (rung-2 research pass, 2026-07-14): the earlier note claiming White & Roberson list realgar + orpiment as accessory species could NOT be re-verified this pass (the monograph's ore list above omits them; mindat loc-3491 was unreachable). They are geologically consistent with an As-bearing acid-sulfate spring and STAY in expects_species for now — but check the mindat species table when reachable, and if they are absent there too, they owe the same withdrawal arsenopyrite got."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.001..4.4|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:opal5..100C+quartz100..700C-no-cosmetic-relabel-v1|sulfur-ledger:sulfide+sulfate+elemental-independent+pathway-gated-v1|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+formula-ratio+booked-return-v6|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget-v3|diagnosis:production-nucleator+causal-supersat+calibrated-budget-v4|save-identity:version+model+scenario-fail-closed-v1",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 0.001,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.67925054,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 58.0147,
+          "initial_water_activity": {
+            "value": 0.9976,
+            "salinityPpt": 4,
+            "naclWeightPercentEquivalent": 0.4,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 8,
+    "paragenetic_order": [
+      {
+        "mineral": "cinnabar",
+        "first_step": 0,
+        "events": 6
+      },
+      {
+        "mineral": "marcasite",
+        "first_step": 0,
+        "events": 1
+      },
+      {
+        "mineral": "metacinnabar",
+        "first_step": 0,
+        "events": 3
+      },
+      {
+        "mineral": "orpiment",
+        "first_step": 0,
+        "events": 6
+      },
+      {
+        "mineral": "realgar",
+        "first_step": 0,
+        "events": 6
+      },
+      {
+        "mineral": "native_sulfur",
+        "first_step": 27,
+        "events": 4
+      },
+      {
+        "mineral": "pyrite",
+        "first_step": 31,
+        "events": 1
+      },
+      {
+        "mineral": "opal",
+        "first_step": 92,
+        "events": 9
+      }
+    ],
+    "surprises_not_in_expects": [
+      "metacinnabar",
+      "opal"
+    ],
+    "expected_no_shows": [
+      "pararealgar"
+    ],
+    "environment": {
+      "T": {
+        "first": 73.819,
+        "last": 44.291,
+        "min": 23.622,
+        "max": 76.772,
+        "units": "°C"
+      },
+      "pH": {
+        "first": 1.874,
+        "last": 6.504,
+        "min": 1.709,
+        "max": 6.559,
+        "units": ""
+      },
+      "Eh": {
+        "first": 77.165,
+        "last": 77.165,
+        "min": 77.165,
+        "max": 77.165,
+        "units": "mV"
+      },
+      "salinity": {
+        "first": 3.937,
+        "last": 3.937,
+        "min": 3.937,
+        "max": 3.937,
+        "units": "psu"
+      },
+      "O2": {
+        "first": 0.394,
+        "last": 0.394,
+        "min": 0.394,
+        "max": 0.394,
+        "units": "mg/L"
+      },
+      "concentration": {
+        "first": 0.984,
+        "last": 0.984,
+        "min": 0.984,
+        "max": 0.984,
+        "units": "×"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": -8,
+        "last": -2.583,
+        "min": -8,
+        "max": -2.268,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": -8,
+        "last": -2.709,
+        "min": -8,
+        "max": -2.331,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -8,
+        "last": -5.228,
+        "min": -8,
+        "max": -4.661,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": -8,
+        "last": -3.78,
+        "min": -8,
+        "max": -3.654,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": -8,
+        "last": 0,
+        "min": -8,
+        "max": 0.189,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -0.504,
+        "last": -0.378,
+        "min": -0.504,
+        "max": -0.378,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -0.567,
+        "last": -0.504,
+        "min": -0.693,
+        "max": -0.378,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 200,
+      "fluid_pressure_kbar": {
+        "first": 0.001,
+        "last": 0.001,
+        "min": 0.001,
+        "max": 0.001,
+        "samples": 200
+      },
+      "confining_pressure_kbar": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "samples": 200
+      },
+      "temperature_C": {
+        "first": 73.26089435471222,
+        "last": 45.677745719812826,
+        "min": 25,
+        "max": 77.47047671591864,
+        "samples": 200
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.688006134388484,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.846285761475845,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 200
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": 0,
+          "uncertaintyKbar": null,
+          "note": "Outside the 400-700 C validity envelope of this linearized Pattison grid."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 58.0147
+        },
+        "last": {
+          "pure_water_boundary_C": 58.0147
+        }
+      },
+      "stress_events": []
+    }
+  }
+}

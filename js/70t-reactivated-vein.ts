@@ -41,16 +41,61 @@ function event_reactivated_vein_seal(c: any) {
   return `Feeder cementation seals the cavity — T ${c.temperature.toFixed(0)}°C, flow stalls; the vug goes quiet.`;
 }
 
-// BREACH — tectonic reactivation reopens the fracture and a cooler, fresh
-// fluid pulse pours in: replenished F brings a second-generation fluorite, and
-// the CO3 + Ca spike brings late calcite. Paired with `spots: 'breach'`, which
-// reopens the feeders so the second generation clusters at the same vents.
+// BREACH WASH — tectonic reactivation first admits a cool acidic,
+// fluorite-undersaturated ionic-strength analogue of the direct {100}
+// measurements of Godinho et al. (2012). Fresh mineralizing brine follows one
+// step later. The receipt discloses the NaCl/NaClO4 and closed/renewed-bath
+// transfer rather than presenting this natural-fluid reconstruction as a
+// matching laboratory experiment.
 function event_reactivated_vein_breach(c: any) {
-  // v179: same non-heating floor as the seal (plain max heats below 100°C).
-  c.temperature = Math.max(Math.min(c.temperature, 90), c.temperature - 10);  // the second pulse is cooler than the first
-  c.fluid.F = Math.min(30, c.fluid.F + 16);            // fresh fluorine → gen-2 fluorite
-  c.fluid.Ca = Math.min(420, c.fluid.Ca + 90);         // Ca for both fluorite + calcite
-  c.fluid.CO3 = Math.min(320, c.fluid.CO3 + 130);      // carbonate spike → late calcite
-  c.flow_rate = 0.4;                                   // plumbing reopened, flow resumes
-  return `Tectonic reactivation breaches the feeder — a cooler fresh pulse (F +16, CO3 +130) at T ${c.temperature.toFixed(0)}°C; gen-2 fluorite + calcite.`;
+  c.temperature = 21;
+  c.pressure = 0.001;
+  // Replace the reactive solute inventory with the experimental-analogue
+  // wash. The boundary-delta propagator then carries this authored fluid to
+  // every local cell before the physical etch is evaluated.
+  for (const key of Object.keys(c.fluid)) {
+    if (typeof c.fluid[key] === 'number') c.fluid[key] = 0;
+  }
+  c.fluid.Ca = 8;
+  c.fluid.F = 0.01;
+  c.fluid.Na = 1138;
+  c.fluid.Cl = 1755;
+  c.fluid.pH = 3.6;
+  c.fluid.salinity = 2.9;
+  c.fluid.concentration = 1;
+  c.fluid.O2 = 8;
+  c.fluid.Eh = ehFromO2(c.fluid.O2);
+  // Delta propagation preserves pre-existing spatial gradients. This event is
+  // a pore-fluid replacement, so ask the post-propagation etch stage to replace
+  // every local handle with this exact authored wash before rate evaluation.
+  c._pending_exact_fluid_replacement = _cloneFluid(c.fluid);
+  c.flow_rate = 0.8;
+  return 'Tectonic reactivation breaches the feeder — a 21°C, pH 3.6, I≈0.05 molal NaCl ionic-strength analogue retreats eligible flat {100} fluorite. The rate transfer is a fixed-pH closed-return extrapolation from Godinho\'s 48-hour-renewed NaClO4 bath; its ΔG≤−7 far-field gate is a mineral-level transfer from Cama\'s {111}, pH 2 experiment, not that study\'s rate. Systematic uncertainty is unquantified.';
+}
+
+// RECHARGE — the mineralizing F–Ca–carbonate brine arrives after the wash.
+// This sequencing removes the former contradiction where one fluid was
+// described as both fluorine-recharging and fluorite-undersaturated.
+function event_reactivated_vein_recharge(c: any) {
+  c.temperature = 90;
+  for (const key of Object.keys(c.fluid)) {
+    if (typeof c.fluid[key] === 'number') c.fluid[key] = 0;
+  }
+  c.fluid.pH = 6.4;
+  // Slightly above the existing-crystal growth threshold but below the new-
+  // nucleus gate: the old face heals over several steps instead of erasing
+  // the measured sub-micrometre relief in one frame.
+  c.fluid.F = 18.01;
+  c.fluid.Ca = 300;
+  c.fluid.CO3 = 250;
+  c.fluid.Mg = 30;
+  c.fluid.Na = 80;
+  c.fluid.Cl = 200;
+  c.fluid.salinity = 15;
+  c.fluid.concentration = 1;
+  c.fluid.O2 = 0.25;
+  c.fluid.Eh = ehFromO2(c.fluid.O2);
+  c._pending_exact_fluid_replacement = _cloneFluid(c.fluid);
+  c.flow_rate = 0.4;
+  return `Fresh mineralizing brine replaces the wash — F 18.01, Ca 300, CO3 250 ppm at T ${c.temperature.toFixed(0)}°C; second-generation fluorite + calcite can overgrow and heal the pitted surface.`;
 }

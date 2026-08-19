@@ -54,10 +54,9 @@
 //   - CO3^2- activity: carbonateIonPpm(fluid, T) * ppm-to-molality
 //     * raw daviesLogGamma(-2, I)
 //   - Cation activity: ppm/molarMass * raw daviesLogGamma(z, I)
-//   - OH- activity: 10^(pH-14) * raw daviesLogGamma(-1, I)
-//   - Kw assumed = 1e-14 (25 C value). T-dependence is real but small
-//     in the 0-100 C band relevant here; refinement deferred to a
-//     possible Phase 2 activity model upgrade.
+//   - OH- activity: 10^(pH-pKw(T,P)) * raw daviesLogGamma(-1, I)
+//     with Marshall-Franck water ionization and authenticated IAPWS-95/
+//     SUPCRTBL density. Unsupported water states fail closed.
 //
 // PER-MINERAL IAP STOICHIOMETRY (the eight Ca/Mg/Fe/Mn/Zn/Pb/Ba/Sr
 // monocarbonates + dolomite + HMC + three OH-bearing supergene Cu/Zn
@@ -70,21 +69,21 @@
 //   dolomite CaMg(CO3)2: IAP = a(Ca^2+) * a(Mg^2+) * a(CO3^2-)^2
 //
 //   HMC Ca(1-x)Mg(x)CO3: IAP = a(Ca^2+)^(1-x) * a(Mg^2+)^x * a(CO3^2-)
-//     Ksp scales with mg_content via mg_content_linear fit in 20c.
+//     Kss includes the subregular calcite/disordered-dolomite component
+//     activities and composition-dependent endmember mixing in 20c.
 //
 //   malachite Cu2(CO3)(OH)2: IAP = a(Cu^2+)^2 * a(CO3^2-) * a(OH^-)^2
 //   azurite Cu3(CO3)2(OH)2: IAP = a(Cu^2+)^3 * a(CO3^2-)^2 * a(OH^-)^2
 //   hydrozincite Zn5(CO3)2(OH)6:
 //       IAP = a(Zn^2+)^5 * a(CO3^2-)^2 * a(OH^-)^6
 //
-// DEFERRED — rosasite + aurichalcite. Mixed-cation OH-bearing
-// carbonates with NO published thermodynamic data (tier D in
-// data/thermo-carbonates.json). The endmember-mixture approximation
-// the JSON sketches is not enough rigor for engine consumption.
-// Real handling needs either (a) measured Ksp data, (b) explicit
-// solid-solution model (regular vs ideal), or (c) deferral to the
-// empirical engine indefinitely. For now: SI returns NaN; the
-// helicoid trail simply omits these two minerals. When (a) or (b)
+// OBSERVER-ONLY — rosasite + aurichalcite. Published 25°C Ksp values
+// now exist (Alwan et al. 1980; Kaluza et al. 2024), but the latter
+// study demonstrates an approximately 14-log-unit composition/model
+// spread for aurichalcite. The representative-composition SI below is
+// therefore a diagnostic, not an engine promotion. Real engine handling
+// still needs an explicit solid-solution model (regular vs ideal) and a
+// validated aqueous activity/speciation model. When that lands,
 // becomes available, slot them in here.
 //
 // KINETIC MODIFIERS — explicitly NOT in scope.
@@ -128,8 +127,8 @@ let CARBONATE_KSP_ACTIVE = true;
 // only entries here flagged true use the SI engine. Per-mineral
 // promotion is the unit of change — one carbonate per commit per
 // the Week 9-12 plan. Reserved entries (rosasite, aurichalcite, HMC,
-// otavite, etc.) included for documentation; flipping them without
-// Ksp data is a no-op (SI returns NaN, fallback to empirical).
+// otavite, etc.) included for documentation. Representative-composition
+// observer values are not sufficient for engine promotion.
 //
 // v144: calcite flipped to true. Aragonite, dolomite, siderite,
 // rhodochrosite remain false pending their own Week 10/11/12 promotion
@@ -164,8 +163,9 @@ const CARBONATE_KSP_ACTIVE_PER_MINERAL: Record<string, boolean> = {
   azurite:        false,
   hydrozincite:   false,
   HMC:            true,
-  // rosasite + aurichalcite intentionally absent — no thermo data,
-  // would be no-ops if flipped.
+  // rosasite + aurichalcite intentionally absent: their Tier-C values
+  // are representative-composition observers, not an engine-ready
+  // solid-solution model.
 };
 
 function kspSupersatActiveFor(mineralId: string): boolean {
@@ -240,15 +240,14 @@ function _logActivityCO3(fluid: any, T: number, I: number): number {
   return Math.log10(m) + daviesLogGamma(-2, I);
 }
 
-// log10 a(OH-) at the fluid's pH. Uses Kw = 1e-14 (25 C value);
-// T-dependence of Kw is real (pKw drops from 14.0 at 25 C to ~13.0
-// at 100 C per Marshall & Franck 1981) but the effect on SI for OH-
-// bearing carbonates is small at the temperatures these minerals form
-// (typically <60 C in supergene settings). Documented as a known
-// approximation; refinement deferred to Phase 2.
-function _logActivityOH(fluid: any, I: number): number {
+// log10 a(OH-) at the fluid's pH and temperature. pKwWater is the same
+// Marshall-Franck/Kell reduced model used by the conserved carbonate boundary,
+// so hydroxycarbonate SI cannot silently retain a fixed 25 C pKw.
+function _logActivityOH(fluid: any, T: number, I: number, fluidPressureKbar = 0.001): number {
   const pH = typeof fluid.pH === 'number' ? fluid.pH : 7.0;
-  const m_OH = Math.pow(10, pH - 14.0);
+  const pKw = typeof pKwWater === 'function' ? pKwWater(T, fluidPressureKbar) : NaN;
+  if (!Number.isFinite(pKw)) return -Infinity;
+  const m_OH = Math.pow(10, pH - pKw);
   if (m_OH <= 0) return -Infinity;
   return Math.log10(m_OH) + daviesLogGamma(-1, I);
 }
@@ -311,9 +310,9 @@ function saturationIndex_dolomite(fluid: any, T: number): number {
   return logIAP - logKsp;
 }
 
-// HMC Ca(1-x)Mg(x)CO3 — mg_content x is per-crystal state.
+// HMC Ca(1-x)Mg(x)CO3 — mg_content x is the candidate shell composition.
 // IAP = a(Ca^2+)^(1-x) * a(Mg^2+)^x * a(CO3^2-).
-// Ksp varies with x via the mg_content_linear fit in 20c.
+// Kss varies nonideally with x through solid-component activities in 20c.
 function saturationIndex_HMC(fluid: any, T: number, mg_content: number): number {
   const x = Math.max(0, Math.min(0.30, mg_content));
   const I = ionicStrength(fluid);
@@ -335,13 +334,13 @@ function saturationIndex_HMC(fluid: any, T: number, mg_content: number): number 
 
 // Malachite Cu2(CO3)(OH)2.
 // IAP = a(Cu^2+)^2 * a(CO3^2-) * a(OH^-)^2.
-function saturationIndex_malachite(fluid: any, T: number): number {
+function saturationIndex_malachite(fluid: any, T: number, fluidPressureKbar = 0.001): number {
   const I = ionicStrength(fluid);
   const logA_Cu = _logActivityCation(fluid, 'Cu', I);
   if (!isFinite(logA_Cu)) return NaN;
   const logA_CO3 = _logActivityCO3(fluid, T, I);
   if (!isFinite(logA_CO3)) return NaN;
-  const logA_OH = _logActivityOH(fluid, I);
+  const logA_OH = _logActivityOH(fluid, T, I, fluidPressureKbar);
   if (!isFinite(logA_OH)) return NaN;
   const logIAP = 2 * logA_Cu + logA_CO3 + 2 * logA_OH;
   const logKsp = getCarbonateLogKsp('malachite', T);
@@ -351,13 +350,13 @@ function saturationIndex_malachite(fluid: any, T: number): number {
 
 // Azurite Cu3(CO3)2(OH)2.
 // IAP = a(Cu^2+)^3 * a(CO3^2-)^2 * a(OH^-)^2.
-function saturationIndex_azurite(fluid: any, T: number): number {
+function saturationIndex_azurite(fluid: any, T: number, fluidPressureKbar = 0.001): number {
   const I = ionicStrength(fluid);
   const logA_Cu = _logActivityCation(fluid, 'Cu', I);
   if (!isFinite(logA_Cu)) return NaN;
   const logA_CO3 = _logActivityCO3(fluid, T, I);
   if (!isFinite(logA_CO3)) return NaN;
-  const logA_OH = _logActivityOH(fluid, I);
+  const logA_OH = _logActivityOH(fluid, T, I, fluidPressureKbar);
   if (!isFinite(logA_OH)) return NaN;
   const logIAP = 3 * logA_Cu + 2 * logA_CO3 + 2 * logA_OH;
   const logKsp = getCarbonateLogKsp('azurite', T);
@@ -367,18 +366,88 @@ function saturationIndex_azurite(fluid: any, T: number): number {
 
 // Hydrozincite Zn5(CO3)2(OH)6.
 // IAP = a(Zn^2+)^5 * a(CO3^2-)^2 * a(OH^-)^6.
-function saturationIndex_hydrozincite(fluid: any, T: number): number {
+function saturationIndex_hydrozincite(fluid: any, T: number, fluidPressureKbar = 0.001): number {
   const I = ionicStrength(fluid);
   const logA_Zn = _logActivityCation(fluid, 'Zn', I);
   if (!isFinite(logA_Zn)) return NaN;
   const logA_CO3 = _logActivityCO3(fluid, T, I);
   if (!isFinite(logA_CO3)) return NaN;
-  const logA_OH = _logActivityOH(fluid, I);
+  const logA_OH = _logActivityOH(fluid, T, I, fluidPressureKbar);
   if (!isFinite(logA_OH)) return NaN;
   const logIAP = 5 * logA_Zn + 2 * logA_CO3 + 6 * logA_OH;
   const logKsp = getCarbonateLogKsp('hydrozincite', T);
   if (!isFinite(logKsp)) return NaN;
   return logIAP - logKsp;
+}
+
+// Variable-composition Cu-Zn hydroxycarbonates. These use a named
+// representative composition only; they must never be read as a complete
+// solid-solution calculation. Exponents match the dissolution convention
+// used by the cited Ksp measurements:
+//   (Cu,Zn)_n(CO3)_c(OH)_h = n cations + c CO3²⁻ + h OH⁻.
+function _SI_mixedCuZnHydroxyCarbonate(
+  mineralId: 'rosasite' | 'aurichalcite',
+  fluid: any,
+  T: number,
+  nuCu: number,
+  nuZn: number,
+  nuCO3: number,
+  nuOH: number,
+  fluidPressureKbar = 0.001,
+): number {
+  const I = ionicStrength(fluid);
+  const logA_Cu = _logActivityCation(fluid, 'Cu', I);
+  const logA_Zn = _logActivityCation(fluid, 'Zn', I);
+  const logA_CO3 = _logActivityCO3(fluid, T, I);
+  const logA_OH = _logActivityOH(fluid, T, I, fluidPressureKbar);
+  if (![logA_Cu, logA_Zn, logA_CO3, logA_OH].every(Number.isFinite)) return NaN;
+  const logKsp = getCarbonateLogKsp(mineralId, T);
+  if (!isFinite(logKsp)) return NaN;
+  return nuCu * logA_Cu + nuZn * logA_Zn
+    + nuCO3 * logA_CO3 + nuOH * logA_OH - logKsp;
+}
+
+function saturationIndex_rosasite(fluid: any, T: number, fluidPressureKbar = 0.001): number {
+  return _SI_mixedCuZnHydroxyCarbonate('rosasite', fluid, T, 1.3, 0.7, 1, 2, fluidPressureKbar);
+}
+
+function saturationIndex_aurichalcite(fluid: any, T: number, fluidPressureKbar = 0.001): number {
+  return _SI_mixedCuZnHydroxyCarbonate('aurichalcite', fluid, T, 2.1, 2.9, 2, 6, fluidPressureKbar);
+}
+
+interface MixedCarbonateThermoAssessment {
+  mineral: 'rosasite' | 'aurichalcite';
+  saturationIndex: number;
+  temperatureC: number;
+  status: 'calibrated-25C-observer' | 'temperature-extrapolation';
+  confidence: 'C';
+  representativeComposition: string;
+  uncertaintyNote: string;
+}
+
+function mixedCarbonateThermoAssessment(
+  mineralId: 'rosasite' | 'aurichalcite',
+  fluid: any,
+  T_C: number,
+  fluidPressureKbar = 0.001,
+): MixedCarbonateThermoAssessment {
+  const saturationIndex = mineralId === 'rosasite'
+    ? saturationIndex_rosasite(fluid, T_C, fluidPressureKbar)
+    : saturationIndex_aurichalcite(fluid, T_C, fluidPressureKbar);
+  const calibrated = Math.abs(T_C - 25) < 0.5;
+  return {
+    mineral: mineralId,
+    saturationIndex,
+    temperatureC: T_C,
+    status: calibrated ? 'calibrated-25C-observer' : 'temperature-extrapolation',
+    confidence: 'C',
+    representativeComposition: mineralId === 'rosasite'
+      ? 'Cu1.3Zn0.7(CO3)(OH)2'
+      : 'Zn2.9Cu2.1(CO3)2(OH)6',
+    uncertaintyNote: mineralId === 'rosasite'
+      ? '25°C Ksp only; variable composition and no solid-solution activity model.'
+      : 'Observer uses the 2024 synthetic Zn-rich phase. Published 25°C aurichalcite values differ by about 14 log units with composition/speciation model.',
+  };
 }
 
 // =============================================================
@@ -391,33 +460,52 @@ function saturationIndex_hydrozincite(fluid: any, T: number): number {
 // fluid lacks required cation, etc.). Consumers (helicoid trails,
 // engines, narrators) decide how to handle NaN — typically by hiding
 // the trail or skipping the read.
-function carbonateSaturationIndex(mineralId: string, fluid: any, T_C: number, mg_content: number = 0): number {
+function carbonateSaturationIndex(
+  mineralId: string,
+  fluid: any,
+  T_C: number,
+  mg_content: number = 0,
+  fluidPressureKbar: number = 0.001,
+): number {
   if (!fluid) return NaN;
+  let baseSI: number;
   switch (mineralId) {
-    case 'calcite':       return saturationIndex_calcite(fluid, T_C);
-    case 'aragonite':     return saturationIndex_aragonite(fluid, T_C);
-    case 'dolomite':      return saturationIndex_dolomite(fluid, T_C);
-    case 'HMC':           return saturationIndex_HMC(fluid, T_C, mg_content);
-    case 'siderite':      return saturationIndex_siderite(fluid, T_C);
-    case 'rhodochrosite': return saturationIndex_rhodochrosite(fluid, T_C);
-    case 'smithsonite':   return saturationIndex_smithsonite(fluid, T_C);
-    case 'cerussite':     return saturationIndex_cerussite(fluid, T_C);
-    case 'witherite':     return saturationIndex_witherite(fluid, T_C);
-    case 'strontianite':  return saturationIndex_strontianite(fluid, T_C);
-    case 'malachite':     return saturationIndex_malachite(fluid, T_C);
-    case 'azurite':       return saturationIndex_azurite(fluid, T_C);
-    case 'hydrozincite':  return saturationIndex_hydrozincite(fluid, T_C);
-    // rosasite + aurichalcite: no thermo data — return NaN. Helicoid
-    // trail simply omits these.
+    case 'calcite':       baseSI = saturationIndex_calcite(fluid, T_C); break;
+    case 'aragonite':     baseSI = saturationIndex_aragonite(fluid, T_C); break;
+    case 'dolomite':      baseSI = saturationIndex_dolomite(fluid, T_C); break;
+    case 'HMC':           baseSI = saturationIndex_HMC(fluid, T_C, mg_content); break;
+    case 'siderite':      baseSI = saturationIndex_siderite(fluid, T_C); break;
+    case 'rhodochrosite': baseSI = saturationIndex_rhodochrosite(fluid, T_C); break;
+    case 'smithsonite':   baseSI = saturationIndex_smithsonite(fluid, T_C); break;
+    case 'cerussite':     baseSI = saturationIndex_cerussite(fluid, T_C); break;
+    case 'witherite':     baseSI = saturationIndex_witherite(fluid, T_C); break;
+    case 'strontianite':  baseSI = saturationIndex_strontianite(fluid, T_C); break;
+    case 'malachite':     baseSI = saturationIndex_malachite(fluid, T_C, fluidPressureKbar); break;
+    case 'azurite':       baseSI = saturationIndex_azurite(fluid, T_C, fluidPressureKbar); break;
+    case 'hydrozincite':  baseSI = saturationIndex_hydrozincite(fluid, T_C, fluidPressureKbar); break;
+    case 'rosasite':      baseSI = saturationIndex_rosasite(fluid, T_C, fluidPressureKbar); break;
+    case 'aurichalcite':  baseSI = saturationIndex_aurichalcite(fluid, T_C, fluidPressureKbar); break;
     default:              return NaN;
   }
+  if (!Number.isFinite(baseSI)) return baseSI;
+  // SI = log10(IAP) - log10(Ksp).  SUPCRTBL supplies a reaction-specific
+  // delta-logK pressure correction, so a positive Ksp shift lowers SI by
+  // exactly the same amount. Unsupported reactions return a zero correction
+  // with an explicit assessment rather than inheriting a family proxy.
+  return baseSI - thermoPressureLogKCorrection(mineralId, T_C, fluidPressureKbar);
 }
 
 // Saturation ratio omega = IAP/Ksp = 10^SI. Returns 0 (not NaN) for
 // missing data so engine call sites can treat omega=0 as "no
 // information / cannot precipitate" without defensive checks.
-function carbonateOmega(mineralId: string, fluid: any, T_C: number, mg_content: number = 0): number {
-  const SI = carbonateSaturationIndex(mineralId, fluid, T_C, mg_content);
+function carbonateOmega(
+  mineralId: string,
+  fluid: any,
+  T_C: number,
+  mg_content: number = 0,
+  fluidPressureKbar: number = 0.001,
+): number {
+  const SI = carbonateSaturationIndex(mineralId, fluid, T_C, mg_content, fluidPressureKbar);
   if (!isFinite(SI)) return 0;
   return Math.pow(10, SI);
 }
@@ -432,23 +520,31 @@ function carbonateOmega(mineralId: string, fluid: any, T_C: number, mg_content: 
 // textbook omega have different absolute magnitudes (empirical
 // sigma_crit ~ 1.0-1.3 for calcite; new omega-based sigma_crit lives
 // in [1, ~5] depending on the nucleation-barrier margin desired).
-function carbonateEngineSigma(mineralId: string, fluid: any, T_C: number, mg_content: number = 0): number {
-  return carbonateOmega(mineralId, fluid, T_C, mg_content);
+function carbonateEngineSigma(
+  mineralId: string,
+  fluid: any,
+  T_C: number,
+  mg_content: number = 0,
+  fluidPressureKbar: number = 0.001,
+): number {
+  return carbonateOmega(mineralId, fluid, T_C, mg_content, fluidPressureKbar);
 }
 
 // =============================================================
 // Coverage / introspection (for tools + library UI)
 // =============================================================
 
-// Which carbonate minerals have SI implementations in this module?
-// (Distinct from "which have thermo data" — rosasite+aurichalcite have
-// no thermo data and no SI fn; HMC has both but requires mg_content.)
+// Which carbonate minerals have SI implementations in this module? This is an
+// implementation registry, not an engine-promotion registry: Tier-C observer
+// estimates for rosasite/aurichalcite are included, while HMC requires
+// mg_content.
 function carbonatesWithSI(): string[] {
   return [
     'calcite', 'aragonite', 'dolomite', 'HMC',
     'siderite', 'rhodochrosite', 'smithsonite',
     'cerussite', 'witherite', 'strontianite',
     'malachite', 'azurite', 'hydrozincite',
+    'rosasite', 'aurichalcite',
   ];
 }
 

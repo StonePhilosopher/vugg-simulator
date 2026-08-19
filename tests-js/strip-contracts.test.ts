@@ -1,13 +1,13 @@
 // tests-js/strip-contracts.test.ts — "chemistry contract" tests built on the
 // strip-view recorder (helicoid-as-recorder) via tests-js/strip-helpers.ts.
 //
-// WHAT THESE ARE. Each test records a scenario through the strip recorder and
-// asserts on the spatiotemporal chemistry trajectory it captures
-// ([step][angle][height][depth][chip]). They PIN OBSERVED per-cell behavior —
-// they are regression guards on what the simulator actually does, not
-// re-derivations of the underlying science.
+// WHAT THESE ARE. Each test reads the canonical story generated through the
+// strip recorder by `science:rebake` and asserts on its spatiotemporal
+// chemistry trajectory. The aggregate receipt binds those stories to the
+// exact executable, producer contract, runtime, scenario specification, and
+// seed 42. They PIN OBSERVED per-cell behavior rather than re-deriving it.
 //
-// DATA SOURCE. The recorder reads mesh.cells (and, at depth>0, the
+// DATA SOURCE. The archive's recorder reads mesh.cells (and, at depth>0, the
 // CavityVoxelGrid interior slices) — the PER-CELL / per-voxel store, NOT the
 // ring-bulk `ring_fluids[equator]` that the bespoke Week 7/8 probes sample.
 // The two stores legitimately differ (the bulk view isn't debited by mass
@@ -35,13 +35,13 @@
 // minor RNG-cadence shifts don't make them flaky.
 
 import { beforeAll, describe, expect, it } from 'vitest';
-import { recordScenario, chipSeries, series } from './strip-helpers';
+import { loadArchivedScenario, chipSeries, series } from './strip-helpers';
 
 declare const SCENARIOS: any;
 
 describe('strip chemistry contract — sabkha_dolomitization (Kim 2023)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('sabkha_dolomitization'); }, 120000);
+  beforeAll(() => { ds = loadArchivedScenario('sabkha_dolomitization'); });
 
   it('f_ord accumulates toward ordered dolomite (corroborates Week 8 ~0.82)', () => {
     if (!ds) return; // scenario not registered → skip
@@ -65,22 +65,26 @@ describe('strip chemistry contract — sabkha_dolomitization (Kim 2023)', () => 
     expect(series.crossings(si, 2.0)).toBeGreaterThanOrEqual(3);
   });
 
-  it('wall stays cycling while the deep interior depletes (v160 diffusion signature)', () => {
+  it('well-mixed recharge replaces every wet voxel without a fictitious depth gradient', () => {
     if (!ds) return;
-    // Observed late-run: wall SI_dolomite ~+3 (still supersaturated), center
-    // ~−3 (depleted). This wall→center gradient is what v160 per-voxel
-    // diffusion + the strangulation gate produce; nothing else guards it.
+    // Each authored flood is an absolute, well-mixed replacement water. The
+    // conserved carbonate boundary therefore replaces every wet voxel with
+    // the same solved recharge state; inventing a wall-only composition here
+    // would create carbon from a discarded relative-delta implementation.
+    // Spatial gradients remain possible for local reactions between floods,
+    // but the last sample follows a whole-cavity recharge and must agree to
+    // within one uint8 SI quantum (16 / 254 ~= 0.063).
     const wall = chipSeries(ds, 'SI_dolomite', { depth: 'wall' });
     const center = chipSeries(ds, 'SI_dolomite', { depth: 'center' });
     const D = ds.manifest.axes.depth_positions || 1;
     if (D < 2) return; // depth-collapsed recording (no voxel grid) → no gradient to test
-    expect(series.last(wall)! - series.last(center)!).toBeGreaterThan(2);
+    expect(Math.abs(series.last(wall)! - series.last(center)!)).toBeLessThan(0.07);
   });
 });
 
 describe('strip chemistry contract — reactive_wall (PWP acid pulses)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('reactive_wall'); }, 120000);
+  beforeAll(() => { ds = loadArchivedScenario('reactive_wall'); });
 
   it('acid pulses drive pH down and buffering brings it back (per-cell)', () => {
     if (!ds) return;
@@ -104,7 +108,7 @@ describe('strip chemistry contract — reactive_wall (PWP acid pulses)', () => {
 
 describe('strip chemistry contract — tutorial_travertine (CO2 degassing)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('tutorial_travertine'); }, 120000);
+  beforeAll(() => { ds = loadArchivedScenario('tutorial_travertine'); });
 
   it('CO2 degasses, pH rises, calcite supersaturates (the travertine cascade)', () => {
     if (!ds) return;
@@ -127,7 +131,7 @@ describe('strip chemistry contract — tutorial_travertine (CO2 degassing)', () 
 
 describe('strip chemistry contract — cooling (calcite retrograde solubility)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('cooling'); }, 120000);
+  beforeAll(() => { ds = loadArchivedScenario('cooling'); });
 
   it('calcite does NOT supersaturate on cooling (retrograde solubility)', () => {
     if (!ds) return;
@@ -142,26 +146,32 @@ describe('strip chemistry contract — cooling (calcite retrograde solubility)',
   });
 });
 
-describe('strip chemistry contract — mvt (hot carbonate-supersaturated start)', () => {
+describe('strip chemistry contract — mvt (hot, low-Mg carbonate start)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('mvt'); }, 120000);
+  beforeAll(() => { ds = loadArchivedScenario('mvt'); });
 
-  it('starts carbonate-supersaturated (dolomite > calcite), SI declines on cooling', () => {
+  it('starts carbonate-supersaturated but admits calcite, not kinetically blocked dolomite', () => {
     if (!ds) return;
     const cal = chipSeries(ds, 'SI_calcite', { depth: 'wall' });
     const dol = chipSeries(ds, 'SI_dolomite', { depth: 'wall' });
-    // Observed start: SI_calcite +0.99, SI_dolomite +1.75 — dolomite favored at
-    // the hot MVT start (early carbonate gangue + dolomitization). Both decline
-    // as the fluid cools (retrograde solubility); last SI_calcite ~0.19.
-    expect(series.first(cal)!).toBeGreaterThan(0);                  // starts supersaturated
-    expect(series.first(dol)!).toBeGreaterThan(series.first(cal)!); // dolomite favored early
-    expect(series.last(cal)!).toBeLessThan(series.first(cal)!);     // declines on cooling
+    // SIM 271's corrected carbonate/pressure path starts at SI_calcite ~+0.13
+    // and SI_dolomite ~+0.25. Those log(IAP/K) values belong to reactions with
+    // different stoichiometry, so their numerical ordering is not a phase-
+    // preference test. The scientifically meaningful distinction is kinetic:
+    // dolomite remains below its explicit omega=10 admission threshold
+    // (SI=1), while calcite crosses its lower barrier and nucleates at step 5.
+    expect(series.first(cal)!).toBeGreaterThan(0);
+    expect(series.first(dol)!).toBeGreaterThan(0);
+    expect(series.first(dol)!).toBeLessThan(1);
+    expect(ds.nucleation_events.some((event: any) => event.mineral === 'calcite')).toBe(true);
+    expect(ds.nucleation_events.some((event: any) => event.mineral === 'dolomite')).toBe(false);
+    expect(series.last(cal)!).toBeLessThan(series.first(cal)!);
   });
 });
 
 describe('strip chemistry contract — searles_lake (evaporite concentration cycle)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('searles_lake'); }, 120000);
+  beforeAll(() => { ds = loadArchivedScenario('searles_lake'); });
 
   it('evaporative concentration CYCLES — ramps on drying, resets on the flood (v161 ratchet fix)', () => {
     if (!ds) return;
@@ -179,16 +189,17 @@ describe('strip chemistry contract — searles_lake (evaporite concentration cyc
     expect(series.crossings(conc, 2.0)).toBeGreaterThanOrEqual(2); // multiple dry cycles
   });
 
-  it('the cavity interior never evaporatively concentrates (spatial signature)', () => {
+  it('full drainage concentrates the cavity interior and resets it on flooding', () => {
     if (!ds) return;
     const D = ds.manifest.axes.depth_positions || 1;
     if (D < 2) return; // depth-collapsed recording → no wall/interior contrast
     const center = chipSeries(ds, 'concentration', { depth: 'center' });
-    // Observed: center stays flat at ~1.0 the entire run. Only wall rings
-    // transition wet→vadose (the playa surface dries); the interior voxel
-    // store never dries, so the evaporative boost never touches it. The
-    // evaporite action is a wall phenomenon.
-    expect(series.peak(center)).toBeLessThan(1.5);
+    // The authored water table drains the whole cavity, not only its wall
+    // skin. Every depth voxel therefore enters the vadose state, reaches the
+    // same ~3x concentration envelope, and resets when the basin floods.
+    expect(series.peak(center)).toBeGreaterThan(2.5);
+    expect(series.min(center)).toBeLessThan(1.5);
+    expect(series.crossings(center, 2.0)).toBeGreaterThanOrEqual(2);
   });
 
   it('soda-lake brine: alkaline pH, dolomite-favored carbonate supersaturation', () => {
@@ -219,7 +230,10 @@ describe('strip chemistry contract — searles_lake (evaporite concentration cyc
 
 describe('strip chemistry contract — bisbee (supergene copper paragenesis)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('bisbee'); }, 120000);
+  // Full-fleet Windows CI can leave this WebGL-free 150-step strip competing
+  // with several other scenario recorders. Keep the chemistry assertions
+  // strict while allowing the recorder the same headroom as the archive job.
+  beforeAll(() => { ds = loadArchivedScenario('bisbee'); });
 
   // NOTE ON TEMPERATURE. bisbee's T is deliberately NOT pinned here. The
   // scenario's events stop setting T after the oxidation_zone (step 145, T=25)
@@ -288,7 +302,7 @@ describe('strip chemistry contract — bisbee (supergene copper paragenesis)', (
 
 describe('strip chemistry contract — supergene_oxidation (Tsumeb gossan)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('supergene_oxidation'); }, 120000);
+  beforeAll(() => { ds = loadArchivedScenario('supergene_oxidation'); });
 
   it('acid window opens, the flush recovers it, then a sustained meteoric acid front re-acidifies (v170 movement)', () => {
     if (!ds) return;
@@ -359,23 +373,19 @@ describe('strip chemistry contract — supergene_oxidation (Tsumeb gossan)', () 
 
 describe('strip chemistry contract — naica_geothermal (selenite slow-growth chamber)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('naica_geothermal'); }, 120000);
+  beforeAll(() => { ds = loadArchivedScenario('naica_geothermal'); });
 
   it('selenite SI hovers near saturation — the slow-growth window that grows the giant crystals', () => {
     if (!ds) return;
     const si = chipSeries(ds, 'SI_selenite', { depth: 'wall' });
-    // Observed at v165 (wall): SI_selenite -0.490…-0.079 across 320 steps,
-    // ending -0.227. Always slightly undersaturated; never any supersat
-    // surge. This is the documented condition (Van Driessche et al. 2011)
-    // under which the Cave of Crystals grew gypsum crystals to >11 m:
-    // marginal saturation maintained for tens of millennia by isothermal
-    // brine. Surge to SI>0 would mean fast nucleation, not giant single
-    // crystals. v182 (declared thermal movement, the buffered pool now
-    // actually isothermal instead of noise): the contract holds unchanged
-    // — and means MORE now, since the steady T this assertion always
-    // assumed is finally the trajectory the strip records.
-    expect(series.peak(si)).toBeLessThan(0);          // never supersaturated
-    expect(series.peak(si)).toBeGreaterThan(-0.6);    // but ALWAYS close
+    // v244 corrects the old contradiction in this guard: crystals cannot
+    // grow while the authoritative evaluator reports SI < 0. Published
+    // Naica Ca/SO4 concentrations now put the buffered chamber just across
+    // saturation (seed-42 wall peak 0.063), not in a nucleation-driving
+    // surge. That narrow positive excursion supplies existing crystals at
+    // low supersaturation, consistent with slow giant-crystal growth.
+    expect(series.peak(si)).toBeGreaterThan(0);       // growth is permitted
+    expect(series.peak(si)).toBeLessThan(0.2);        // but remains marginal
   });
 
   it('anhydrite is more undersaturated than gypsum (right phase for T < 55°C)', () => {
@@ -411,34 +421,34 @@ describe('strip chemistry contract — naica_geothermal (selenite slow-growth ch
     expect(series.min(T)).toBeLessThan(30);
   });
 
-  it('Ca pinned + S cycling — naica chemistry is sulfate-driven, not Ca-driven', () => {
+  it('Ca and closed-system total S stay pinned through drainage/recharge', () => {
     if (!ds) return;
     const ca = chipSeries(ds, 'Ca', { depth: 'wall' });
     const s  = chipSeries(ds, 'S',  { depth: 'wall' });
-    // Observed: Ca FLAT at 320 (groundwater equilibrium with the limestone
-    // host); S 141…420, cycling with the hot-fluid pulses. So the SI_selenite
-    // oscillation tracks S, not Ca — which is the geologically correct
-    // mechanism for naica (sulfate brought in by ascending fluid).
+    // Ca remains buffered by the limestone host. Total analytical sulfur is
+    // conserved across the vadose boundary; drainage changes water state and
+    // sulfate phase selection, not the closed inventory by deleting 70% S.
     expect(series.peak(ca) - series.min(ca)).toBeLessThan(1);  // Ca pinned
-    expect(series.peak(s)  - series.min(s)).toBeGreaterThan(100);  // S oscillates
+    expect(series.peak(s)  - series.min(s)).toBeLessThan(1);   // total S conserved
   });
 });
 
 describe('strip chemistry contract — sicily_solfifera (celestine + native sulfur)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('sicily_solfifera'); }, 120000);
+  beforeAll(() => { ds = loadArchivedScenario('sicily_solfifera'); });
 
-  it('celestine SI ramps from supersat to strongly supersat (continuous precipitation)', () => {
+  it('celestine starts supersaturated, then SD-AOM draws down its sulfate substrate', () => {
     if (!ds) return;
     const si = chipSeries(ds, 'SI_celestine', { depth: 'wall' });
-    // Observed (wall): SI_celestine 0.459…0.856, MONO↑, ending 0.856. Sr is
-    // ramping (30→45) AND S is ramping (400→940) as bacterial sulfate
-    // reduction concentrates SO4 alongside the Sr-rich brine. The
-    // monotonic SI rise IS the Sicilian solfifera signature — celestine
-    // precipitates throughout, faster as the run progresses.
-    expect(series.first(si)!).toBeGreaterThan(0.3);     // supersat from the start
-    expect(series.peak(si)).toBeGreaterThan(0.7);       // strongly supersat by the end
-    expect(series.last(si)!).toBeGreaterThan(series.first(si)!);  // climbing
+    // SIM 244 replaces the old total-S ramp with explicit sulfate consumption.
+    // Gypsum-derived Sr + sulfate initially opens celestine; two SD-AOM
+    // transactions then transfer most sulfate to reduced S, so the residual
+    // fluid crosses below celestine saturation instead of pretending BSR
+    // creates sulfate. Early celestine remains as reaction testimony.
+    expect(series.first(si)!).toBeGreaterThan(0.3);
+    expect(series.peak(si)).toBeGreaterThan(0.45);
+    expect(series.min(si)).toBeLessThan(0);
+    expect(series.last(si)!).toBeLessThan(series.first(si)!);
   });
 
   it('celestine SI > selenite SI — Sr-sulfate is more saturated than Ca-sulfate despite Ca >> Sr', () => {
@@ -465,17 +475,17 @@ describe('strip chemistry contract — sicily_solfifera (celestine + native sulf
   it('DIC ramps too — sulfur deposits cohabit with carbonates in the Solfifera series', () => {
     if (!ds) return;
     const dic = chipSeries(ds, 'DIC', { depth: 'wall' });
-    // Observed: DIC 80→200, MONO↑. The Solfifera series is sulfur within
-    // a sedimentary carbonate sequence; both systems are active. Pinning
-    // the DIC ramp guards the carbonate-cohabitation signature.
+    // SD-AOM now adds methane-derived DIC at exactly 1 C per sulfate-S;
+    // the rise is large enough to earn positive calcite SI rather than merely
+    // cohabiting in prose.
     expect(series.first(dic)!).toBeLessThan(100);
-    expect(series.peak(dic)).toBeGreaterThan(180);
+    expect(series.peak(dic)).toBeGreaterThan(900);
   });
 });
 
 describe('strip chemistry contract — sulphur_bank (acid sulfur springs, NOT a sulfate-precipitating system)', () => {
   let ds: any;
-  beforeAll(() => { ds = recordScenario('sulphur_bank'); }, 120000);
+  beforeAll(() => { ds = loadArchivedScenario('sulphur_bank'); });
 
   it('pH crashes sharply acidic (sulfuric-acid spring) and sawtooth-recovers', () => {
     if (!ds) return;

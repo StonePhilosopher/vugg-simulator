@@ -1,0 +1,533 @@
+{
+  "schema": "vugg-content-pack-catalog-v2",
+  "hash_policy": "vugg-hash-policy-lf-normalised-v1",
+  "catalog_version": "1.0.0",
+  "packs": [
+    {
+      "id": "core",
+      "content_version": "1.0.0",
+      "compatibility": {
+        "sim_version": 271,
+        "model_digest_sha256": "39f3486231d58abc9cc9a8e54edd44fa7c3e5d234d4b63bc88d513bf916b23fc",
+        "save_format": 3
+      },
+      "counts": {
+        "scenarios": 41,
+        "minerals": 184,
+        "narratives": 94
+      },
+      "browser_bundle_sha256": "8b84aa046855eedcbb64f5531266d9465d8bc4e673f2fac63776dde7df193535",
+      "runtime_execution_sha256": "e7b4b515cf25f8b7304ac2e613bd4336de06ab638b7073586929712876bc8fba",
+      "source_files": [
+        {
+          "path": "data/locality_chemistry.json",
+          "bytes": 95857,
+          "sha256": "218ce865e92b640827de8d74a9826fdde1409bf3c5c3c5fbceaec4f5562ffe67"
+        },
+        {
+          "path": "data/mindat-species-refs.json5",
+          "bytes": 12375,
+          "sha256": "1f0ef828f9c7f325c613fa604e09a6a350aa2e8e0a2b4c0b751af04680a8a8a7"
+        },
+        {
+          "path": "data/minerals.json",
+          "bytes": 946683,
+          "sha256": "7d49c357a641f14da1dd53dc3f737834c234c39b3fc49851e7565fee86bcdcf0"
+        },
+        {
+          "path": "data/scenarios.json5",
+          "bytes": 492891,
+          "sha256": "ae768d5b344836fe04ff0f6c639e8ad80eb79254bdb803265a8c5ddffd195a5a"
+        },
+        {
+          "path": "data/structural.json",
+          "bytes": 43235,
+          "sha256": "cdb7cfe05484c64769bf0a4f7592438567f825986fd41882049e78e5996ecf86"
+        },
+        {
+          "path": "data/thermo-carbonates.json",
+          "bytes": 36919,
+          "sha256": "3da8e8a8deb19285d380fb1a872e50b5aa31c0043d5e18487539f9743f32272d"
+        },
+        {
+          "path": "data/thermo-sulfates.json",
+          "bytes": 8440,
+          "sha256": "7384518fa87184c99c8a30a289bea224d54df1a114eb4e4463ef8a55c53431a0"
+        },
+        {
+          "path": "narratives/acanthite.md",
+          "bytes": 2718,
+          "sha256": "60b99f9876708a0bb30fb5ed0bcda34c3e0ebb75038eca743520bcf994b414ae"
+        },
+        {
+          "path": "narratives/adamite.md",
+          "bytes": 2494,
+          "sha256": "812f66e601db3814c99fa85e7d9587a9dfe3f9db235e7392b57cc84482f09fde"
+        },
+        {
+          "path": "narratives/albite.md",
+          "bytes": 1025,
+          "sha256": "1ac7fab2dbd5a9fa896c6811d08742a4437d6bc6e8800beef7d148b324cf5e26"
+        },
+        {
+          "path": "narratives/alunite.md",
+          "bytes": 2279,
+          "sha256": "49135e8d95ec9187efc0cdc19dbedab673fb60c44fc0bbf6028d328d2ee3cccd"
+        },
+        {
+          "path": "narratives/andalusite.md",
+          "bytes": 1806,
+          "sha256": "7378d1804d2cb9a5dd65a130f5117d42c1d866fdcef251ad440c3e946f652eb7"
+        },
+        {
+          "path": "narratives/anglesite.md",
+          "bytes": 1202,
+          "sha256": "a029e916c310c9b058b76a09bcffe79a04d6cfb681e34400e308501dd33df60c"
+        },
+        {
+          "path": "narratives/anhydrite.md",
+          "bytes": 3210,
+          "sha256": "39c0446938a17b07b11e55cb47512d3aa8d2440ae2b7adcd852a52df361476d3"
+        },
+        {
+          "path": "narratives/annabergite.md",
+          "bytes": 1959,
+          "sha256": "d87638b6e21235396ddf29c4f5e10fe0259cf517cff4f60d3a082b17fa9fea69"
+        },
+        {
+          "path": "narratives/antlerite.md",
+          "bytes": 2422,
+          "sha256": "22c9af4b18194dfbcf54d5371e10a0944bd1addee5d631d1a42416874f418a6a"
+        },
+        {
+          "path": "narratives/apophyllite.md",
+          "bytes": 3563,
+          "sha256": "81d4b02efe7526bcc8d034bd84b679d445444bbfcc2f79634b4613fc1bd95aa3"
+        },
+        {
+          "path": "narratives/aquamarine.md",
+          "bytes": 1697,
+          "sha256": "3f25bd66d6b8ac77b093c169c43e631e1f5c87bba3d90de7e57cfbacd20b648c"
+        },
+        {
+          "path": "narratives/aragonite.md",
+          "bytes": 2578,
+          "sha256": "acbcfe4f13a901f721755a2ab87b32f8c28250c035df5e0a27614e5611956e63"
+        },
+        {
+          "path": "narratives/argentite.md",
+          "bytes": 1428,
+          "sha256": "e4d331176f426a95a5c45fbf16604bc32d317cdf5cd8ccf0f3025ca2f9d025bc"
+        },
+        {
+          "path": "narratives/arsenopyrite.md",
+          "bytes": 2290,
+          "sha256": "6b93de5f5510828f163411ddae4846f40a951fdbb3b02dc996164e7acd9326fd"
+        },
+        {
+          "path": "narratives/aurichalcite.md",
+          "bytes": 1390,
+          "sha256": "5e1edec2935cbf26b6aa17b582b780b924ef0a15ad4a2d5e28ab51e7f3b02f7d"
+        },
+        {
+          "path": "narratives/autunite.md",
+          "bytes": 3180,
+          "sha256": "696adff782ef3d4bc723ebc6a3f68adda214772742ac118bc1680a4f503a95c3"
+        },
+        {
+          "path": "narratives/azurite.md",
+          "bytes": 1731,
+          "sha256": "dfe900d1a7d3ac6d57a09d1bf1a1d4b5ae57eb7b7c23886c8d9dc6b92076d91e"
+        },
+        {
+          "path": "narratives/barite.md",
+          "bytes": 2081,
+          "sha256": "d8c2f2420427dfc518c96d0e513c754e2fea56f202901b538c2c1541f1b0f771"
+        },
+        {
+          "path": "narratives/beryl.md",
+          "bytes": 1791,
+          "sha256": "55c51a7d6c393290f9a60e79d4315897ccd78c78288e1a535f8c74f5172d59e1"
+        },
+        {
+          "path": "narratives/bismuthinite.md",
+          "bytes": 890,
+          "sha256": "c3bd53b1599657226be28c9100970b84c5a6ecedc7710bb1823e2743c4440833"
+        },
+        {
+          "path": "narratives/bornite.md",
+          "bytes": 1414,
+          "sha256": "c74edda9ffc66834999890d7a423f8614253a84f5eb6c6e93150a86fed6f9a38"
+        },
+        {
+          "path": "narratives/brochantite.md",
+          "bytes": 2321,
+          "sha256": "b666e9a61bd2f52791620c18800292a147bdf3780c37d6fad6abb1501e3b06f4"
+        },
+        {
+          "path": "narratives/calcite.md",
+          "bytes": 2462,
+          "sha256": "395a3058c29478325410889cef7c87c02a95270bcb5355061e667813b0812b34"
+        },
+        {
+          "path": "narratives/carnotite.md",
+          "bytes": 1777,
+          "sha256": "978a345cdbd0a65e5cf96e65192340349ed9e223d8a8e127ee8a313b746c209a"
+        },
+        {
+          "path": "narratives/celestine.md",
+          "bytes": 2300,
+          "sha256": "f5a6062c8bee170c905020eba3aafc742398bbfc081fed7cb7abfbf755afc5ba"
+        },
+        {
+          "path": "narratives/cerussite.md",
+          "bytes": 1326,
+          "sha256": "952aba0f6be1c0f3b6f25d504ac1da7fafcba696c951a7f6ba1be912f490f4fe"
+        },
+        {
+          "path": "narratives/chalcanthite.md",
+          "bytes": 2228,
+          "sha256": "a7d42fe9ef140063da5cd8a627818ab5e44ff9109a95bbab197e9946a0c08c68"
+        },
+        {
+          "path": "narratives/chalcocite.md",
+          "bytes": 1469,
+          "sha256": "3d1753055c62879ec8dd9bc8c411dcb0ca7a07af04a491e9456d97982fa34de5"
+        },
+        {
+          "path": "narratives/chalcopyrite.md",
+          "bytes": 641,
+          "sha256": "941087bf6cf630e498bed2f2197fe4a16f63566a553f189708837964f2e44ac2"
+        },
+        {
+          "path": "narratives/chrysocolla.md",
+          "bytes": 2028,
+          "sha256": "6ee223464ce53f46c8048926d44d36c0541dce0871e8658af51a30190e86f97e"
+        },
+        {
+          "path": "narratives/clinobisvanite.md",
+          "bytes": 720,
+          "sha256": "d95bdf382652b69e825482cf5b84e3e69a37a6325b6c3359c74a4f81807a9453"
+        },
+        {
+          "path": "narratives/cobaltite.md",
+          "bytes": 2053,
+          "sha256": "bb89e5b7e3ac44c5b7438c89ac52b5470fb210fb3f343dfd4dae1cc2c182a0de"
+        },
+        {
+          "path": "narratives/corundum.md",
+          "bytes": 1469,
+          "sha256": "57d1dd221d673f8cee196109256f0be2ef641d0d0e8f5c0703b5bd954403c383"
+        },
+        {
+          "path": "narratives/covellite.md",
+          "bytes": 1498,
+          "sha256": "7193667a8073eaf6662108dec13858d69a7faa2c0666cd38a0421c2c95fb3515"
+        },
+        {
+          "path": "narratives/cuprite.md",
+          "bytes": 1591,
+          "sha256": "5602490eacce0b2077ebdfcb534785269d1b17cb2650d9dbf7966fa7f844dc8a"
+        },
+        {
+          "path": "narratives/descloizite.md",
+          "bytes": 1015,
+          "sha256": "3cc6f492bb34238087d2da53c1370c6aeec1e2289c0e4b529ff7ff15078def33"
+        },
+        {
+          "path": "narratives/dolomite.md",
+          "bytes": 2877,
+          "sha256": "92e59a5e953bec267b5b0dc2b21ba770f199f40da2c4cefc49e26477e56d067a"
+        },
+        {
+          "path": "narratives/emerald.md",
+          "bytes": 1693,
+          "sha256": "d65fe20e7a66b4d7cf66690b3861bbf45a8095f4f239f759a422cef09e68bcb0"
+        },
+        {
+          "path": "narratives/erythrite.md",
+          "bytes": 2070,
+          "sha256": "27de25f284c66b2cc172df7510e152acd94e6e1c6b9a555a098cbd4510865b26"
+        },
+        {
+          "path": "narratives/feldspar.md",
+          "bytes": 3591,
+          "sha256": "ac626f5fb404dafa77974a3e26cad3de7cd8d739337189bb7dd8269fff1e4a0e"
+        },
+        {
+          "path": "narratives/ferrimolybdite.md",
+          "bytes": 1581,
+          "sha256": "de5b13a197b35e9a9b45a3a373bad220ed2a6d35ede5615dc816e4da379de8a7"
+        },
+        {
+          "path": "narratives/fluorite.md",
+          "bytes": 1122,
+          "sha256": "2e851baa6a68186ecf53213d6168859c143e648629c6f945eb0e46fdb188ff95"
+        },
+        {
+          "path": "narratives/galena.md",
+          "bytes": 1115,
+          "sha256": "7146772f2fde572246bbb54d8de6c0d761c710d17a7bc24cd71b45746dce1d32"
+        },
+        {
+          "path": "narratives/goethite.md",
+          "bytes": 1459,
+          "sha256": "525dfb4558925ba8115ed74d8d4e011821b1e491c222aad67403d1dbe223fa48"
+        },
+        {
+          "path": "narratives/halite.md",
+          "bytes": 1283,
+          "sha256": "fbb4f8db897ca4573016124b34c82c949aebf62c5fa677d6c55f5f0bb39c1f6f"
+        },
+        {
+          "path": "narratives/heliodor.md",
+          "bytes": 2001,
+          "sha256": "3d98743ab8db9c2a7d144427145beec9d2131b037d93072fedef149ae95190af"
+        },
+        {
+          "path": "narratives/hematite.md",
+          "bytes": 1355,
+          "sha256": "b75c0a111e66799ed2daf2411dadfadab55fa2bfae75a7bb201b534ef1ad7134"
+        },
+        {
+          "path": "narratives/jarosite.md",
+          "bytes": 2043,
+          "sha256": "f46205ad4d21471843d16bcc3095bd3f0e3f6c6e3f14049e7a4b74ffb670d05d"
+        },
+        {
+          "path": "narratives/lepidocrocite.md",
+          "bytes": 1149,
+          "sha256": "db5fc6ca7f46121ee60f8cef8cf8e910043d9c6ae091b5b45b2903dd55abec8a"
+        },
+        {
+          "path": "narratives/magnetite.md",
+          "bytes": 1109,
+          "sha256": "12fbf16b2dfa4ead1624b4c85ada4e07535e3e1a9f4e680313087cd227ab2ca8"
+        },
+        {
+          "path": "narratives/malachite.md",
+          "bytes": 1397,
+          "sha256": "e32b09c562c32e2dc493ab7049f556de8bc91aa5add41c947b9ab544bcfd0f18"
+        },
+        {
+          "path": "narratives/marcasite.md",
+          "bytes": 1542,
+          "sha256": "704600884eda852510ad9e74807a0db06ca73af0f33e9276498fc470c8c54700"
+        },
+        {
+          "path": "narratives/millerite.md",
+          "bytes": 1318,
+          "sha256": "66f6cd0f304ee0e723a225a9e593611947bbafc97fbe2733834ab1ac046fdbf4"
+        },
+        {
+          "path": "narratives/mimetite.md",
+          "bytes": 1780,
+          "sha256": "17eb260ed433417e4e9b5ebf1e41b9782ff53d3109a24222e0bcc4037c6f3db4"
+        },
+        {
+          "path": "narratives/molybdenite.md",
+          "bytes": 777,
+          "sha256": "8046fcf099c3db3538c61773be59fc693ded4503f5cdb8022a873cfb9301ee7c"
+        },
+        {
+          "path": "narratives/morganite.md",
+          "bytes": 1869,
+          "sha256": "13447941ca48e0469791ad86afd848bc978f19f15d254389d843ba0f8fb67a5d"
+        },
+        {
+          "path": "narratives/mottramite.md",
+          "bytes": 887,
+          "sha256": "45f5e5407f8e422ac33d42929134c192caf5b53ea5d11a85fa4c08b433d45d26"
+        },
+        {
+          "path": "narratives/native_arsenic.md",
+          "bytes": 2626,
+          "sha256": "6eae6ec6b349cec6991d6fcd136ac7beb162d99e71abf3da01360d6309915bc6"
+        },
+        {
+          "path": "narratives/native_bismuth.md",
+          "bytes": 1691,
+          "sha256": "fca5b7c98738455f4b9d150bc0d7ebd7326045c549b85111f3aa56dfc308a8cb"
+        },
+        {
+          "path": "narratives/native_copper.md",
+          "bytes": 1849,
+          "sha256": "46faa82eb3ce3f4866ba3afb12ae25e20b9ff27b9265a2460711ad1ada377e66"
+        },
+        {
+          "path": "narratives/native_gold.md",
+          "bytes": 2861,
+          "sha256": "e753eaf8eb77a3dd286fed95f288d88489f3a052d074057445dfe37c2c9e647f"
+        },
+        {
+          "path": "narratives/native_silver.md",
+          "bytes": 3176,
+          "sha256": "3a9ece6c3c47895d2e00b20a8230b34ef2989a2bc19f59aea3018fbcbe992c5e"
+        },
+        {
+          "path": "narratives/native_sulfur.md",
+          "bytes": 2735,
+          "sha256": "91b7b5d2f681ac1e49b6ddddcb1ff73b9a10be156ba404364d56ba7c6abd4ccf"
+        },
+        {
+          "path": "narratives/native_tellurium.md",
+          "bytes": 2326,
+          "sha256": "03e0f27b3649b4e4803e3868301fe3d81b552d221e7e6fbc950e026abb26340b"
+        },
+        {
+          "path": "narratives/nickeline.md",
+          "bytes": 1518,
+          "sha256": "62ac3e89cb41a306f7bc5c9f0468af5a8414631aca54688967f52d06470e0364"
+        },
+        {
+          "path": "narratives/olivenite.md",
+          "bytes": 954,
+          "sha256": "00ed22bc3f9aca7ab24b989b52e3c7b1a1f5d92b070d95d722c3a3279c783695"
+        },
+        {
+          "path": "narratives/pyrite.md",
+          "bytes": 1614,
+          "sha256": "23aa0bd1e7dec72c970adcb66f4baea99bb4a2cf1dd70fdba226aa7dd79db1dd"
+        },
+        {
+          "path": "narratives/pyromorphite.md",
+          "bytes": 1244,
+          "sha256": "6784592158b1f75a1f1173cba8944ed6425578707d3b3e68f9ced574fdfc5d94"
+        },
+        {
+          "path": "narratives/quartz.md",
+          "bytes": 3089,
+          "sha256": "8808fa737af30b74f05f30ef41dc8e606fd777f57552ecf09df4d9e3322acf3e"
+        },
+        {
+          "path": "narratives/raspite.md",
+          "bytes": 709,
+          "sha256": "e8cd594761dc4fb40f64a1431b14e5df872ea3814bfe35efab6759136e72bd5c"
+        },
+        {
+          "path": "narratives/rhodochrosite.md",
+          "bytes": 2225,
+          "sha256": "ea3dfcf64c3cd5cce2f5f2a8e437c1356f113f9f59674d190a08fef7cae92b65"
+        },
+        {
+          "path": "narratives/rosasite.md",
+          "bytes": 1396,
+          "sha256": "11f07c0be1701f38b3b0391b7d26ac01cb6a8f363a3348761e3ee12fe1ec7551"
+        },
+        {
+          "path": "narratives/ruby.md",
+          "bytes": 2047,
+          "sha256": "36b1ee0c7fe747d47e82c4e3e671959949a80f302042fa6ee43e9b4e771bc226"
+        },
+        {
+          "path": "narratives/sapphire.md",
+          "bytes": 2398,
+          "sha256": "86780a130ffd4ec3547d5ea8cc422d9711fe3087309a162f45444c5eaa7c273b"
+        },
+        {
+          "path": "narratives/scorodite.md",
+          "bytes": 1732,
+          "sha256": "3ddb959d1b814926150d3a998591319c6c385e07026fce07b34e67800b116b6a"
+        },
+        {
+          "path": "narratives/selenite.md",
+          "bytes": 3078,
+          "sha256": "a327777db8fb14457343dc891ad9993c225f440578c9ce5c8f890013477ea018"
+        },
+        {
+          "path": "narratives/siderite.md",
+          "bytes": 1948,
+          "sha256": "a2ada1a414a0da6fc85ba01576deb22630f2e887c74a0d732061b662bf1f9072"
+        },
+        {
+          "path": "narratives/smithsonite.md",
+          "bytes": 1843,
+          "sha256": "ce98f5f701aec806016628f8a5511dacde0b0690c858915e6a46989bb762a858"
+        },
+        {
+          "path": "narratives/sphalerite.md",
+          "bytes": 715,
+          "sha256": "fbc68399837bb82caf9bf3aba2cd77472ec05303328c60428322cb9fb84acdce"
+        },
+        {
+          "path": "narratives/spodumene.md",
+          "bytes": 1954,
+          "sha256": "3e1bfaf7ec0052150a70f04b3ccc0339b675af864ac8d3fd8d7e2deb06c3ada6"
+        },
+        {
+          "path": "narratives/stibnite.md",
+          "bytes": 982,
+          "sha256": "8a4090fb41c54ebc67331751d45423f4fdfc7587c303893635941975a2b605bd"
+        },
+        {
+          "path": "narratives/stolzite.md",
+          "bytes": 800,
+          "sha256": "a3c6320c95a246f2773f319154592cca38662245172f427abbcb8e865e4e14f4"
+        },
+        {
+          "path": "narratives/tennantite.md",
+          "bytes": 1736,
+          "sha256": "51384942dcaae336aa88e61a024b9c73ab0065525144096dbea2dc2d3a4b4337"
+        },
+        {
+          "path": "narratives/tetrahedrite.md",
+          "bytes": 1719,
+          "sha256": "7e931b41c9b8abfc0beb503a12378d255e6f4750f032735682f80fb6d9c20adc"
+        },
+        {
+          "path": "narratives/topaz.md",
+          "bytes": 2939,
+          "sha256": "a907e50857bfbffc8f1c3496a1974381762505bb950a47fa14496a453d073211"
+        },
+        {
+          "path": "narratives/torbernite.md",
+          "bytes": 1687,
+          "sha256": "4f5b8e0cae16cde80319ff861d53a2356fe0478260f10b299d9fadfe8616ea2a"
+        },
+        {
+          "path": "narratives/tourmaline.md",
+          "bytes": 3070,
+          "sha256": "797c0aa2bfd2ec92969af7f6441061602d662fa8f24c9f9498816a427cdce088"
+        },
+        {
+          "path": "narratives/tyuyamunite.md",
+          "bytes": 3636,
+          "sha256": "b31879ffec24db48985d70d2ee17d7b6736a64dca4ddc62a0c0fd980e22c7186"
+        },
+        {
+          "path": "narratives/uraninite.md",
+          "bytes": 1053,
+          "sha256": "7ab853a08675d6906561d600ce62e7bdc9433c25b59a906ce4e72d54c4f7fb12"
+        },
+        {
+          "path": "narratives/uranospinite.md",
+          "bytes": 3772,
+          "sha256": "877d84d9146c8efbb003e28d9c84042d8b42e53a5b531de482db069fc711002d"
+        },
+        {
+          "path": "narratives/vanadinite.md",
+          "bytes": 1765,
+          "sha256": "812bd4e78fb77094381a3a4bb5ca095fe8dc7b7a175758d4b63eff5b034f2f68"
+        },
+        {
+          "path": "narratives/wulfenite.md",
+          "bytes": 2094,
+          "sha256": "4560357ceb3aada7267de9c71ea15a54d82765d5f6d3bc96a6510e0c1c654e91"
+        },
+        {
+          "path": "narratives/wurtzite.md",
+          "bytes": 2178,
+          "sha256": "eac2cd346c7857ab5591a4deeda096f1f1d1bef7fd140ec184f06c74c7ad40bc"
+        },
+        {
+          "path": "narratives/zeunerite.md",
+          "bytes": 1360,
+          "sha256": "dd17d48d0be3b219a4d1f6417a4578691fc30ab8787fb15b4ac65af7c2fe1651"
+        }
+      ]
+    }
+  ],
+  "producer_contract_sha256": "718a2caaec70103978d89aed0afd233c0bdcb7fc0f824663b8f12de5982e4bdd",
+  "node_runtime_sha256": "b4bb27f2f1b62692b79844cbcc3df7c4966fa7cdc3106c81ce630a74b9a2e62c",
+  "catalog_sha256": "27bebcf9de5ce6159f3d854d9ecca15e3c2eaa3d073b38c43e8c6d50a05e0783"
+}

@@ -106,6 +106,13 @@ class StripRecorder {
   // Whether the recorder is still accepting steps. Goes false on
   // finalize() OR when capturedSteps reaches axes.steps.
   private active: boolean;
+  private pressurePhaseTestimony: any[];
+  private stressEventTestimony: any[];
+  private lastSeenStressEventCount: number;
+  private transformationEventTestimony: StripTransformationEvent[];
+  private seenTransformationKeys: Set<string>;
+  private carbonateBoundaryTestimony: any[];
+  private sulfurLedgerTestimony: any[];
 
   constructor(sim: any, opts?: {
     angular_indices?: number,
@@ -164,9 +171,11 @@ class StripRecorder {
     }
 
     this.manifest = {
-      format_version: 3,
+      format_version: _STRIP_FORMAT_VERSION,
       sim_version: Number((sim && sim.SIM_VERSION) || (typeof SIM_VERSION !== 'undefined' ? SIM_VERSION : 0)),
+      model_digest: (typeof MODEL_DIGEST !== 'undefined') ? MODEL_DIGEST : undefined,
       scenario_id: String(sim?.conditions?._scenario?.id || sim?.conditions?._scenario_id || 'unknown'),
+      scenario_spec_hash: sim?.conditions?._scenario?.scenario_spec_hash,
       seed: Number(sim?._seed || 42),
       recorded_at: Date.now(),
       duration_steps: steps,
@@ -181,6 +190,13 @@ class StripRecorder {
     this.lastSeenCrystalCount = Array.isArray(sim?.crystals) ? sim.crystals.length : 0;
     this.capturedSteps = 0;
     this.active = true;
+    this.pressurePhaseTestimony = [];
+    this.stressEventTestimony = [];
+    this.lastSeenStressEventCount = 0;
+    this.transformationEventTestimony = [];
+    this.seenTransformationKeys = new Set();
+    this.carbonateBoundaryTestimony = [];
+    this.sulfurLedgerTestimony = [];
   }
 
   // ---- chip classification helpers ----------------------------------
@@ -337,18 +353,112 @@ class StripRecorder {
       for (let i = this.lastSeenCrystalCount; i < total; i++) {
         const c = sim.crystals[i];
         if (!c || c.nucleation_step !== sim.step) continue;
-        const anchor = c.wall_anchor;
-        const ring = anchor && Number.isFinite(anchor.ringIdx) ? anchor.ringIdx : 0;
-        const cell = anchor && Number.isFinite(anchor.cellIdx) ? anchor.cellIdx : 0;
+        const address = sim.wall_state?.chemistryAddressForCrystal?.(c);
+        const ring = address && Number.isFinite(address.ringIdx) ? address.ringIdx : 0;
+        const cell = address && Number.isFinite(address.cellIdx) ? address.cellIdx : 0;
         this.events.push({
-          step,
+          step: Number(c.nucleation_step),
+          sample_index: step,
           ring,
           cell,
           mineral: String(c.mineral),
+          surface_anchor_key: sim.wall_state?.surfaceAnchorKey?.(c),
         });
       }
       this.lastSeenCrystalCount = total;
+
+      // Transformations mutate existing crystal objects, so they never enter
+      // the newly-added tail above. Record the product independently from the
+      // crystal's provenance and deduplicate it across subsequent frames.
+      for (let i = 0; i < total; i++) {
+        const c = sim.crystals[i];
+        if (!c || !Number.isFinite(Number(c.paramorph_step))) continue;
+        if (Number(c.paramorph_step) > Number(sim.step)) continue;
+        const from = String(c.paramorph_origin || '');
+        const to = String(c.mineral || '');
+        if (!from || !to || from === to) continue;
+        const crystalId = c.id ?? c.crystal_id ?? i;
+        const key = `${crystalId}|${c.paramorph_step}|${from}|${to}`;
+        if (this.seenTransformationKeys.has(key)) continue;
+        this.seenTransformationKeys.add(key);
+        this.transformationEventTestimony.push({
+          step: Number(c.paramorph_step),
+          sample_index: step,
+          crystal_id: crystalId,
+          from,
+          to,
+          mechanism: String(c.phase_transition_driver || c.dehydration_driver || 'paramorph'),
+        });
+      }
     }
+
+    // Scientific testimony is captured from EXECUTED state, after the step's
+    // movements/events/growth have run. It is deliberately separate from the
+    // authored scenario claim later read by review-claim-card.
+    const temperatureC = Number(sim?.conditions?.temperature);
+    const fluidPressureKbar = Number(sim?.conditions?.pressure);
+    const confiningRaw = sim?.conditions?.wall?.confining_pressure_kbar;
+    const confiningPressureKbar = confiningRaw != null && Number.isFinite(Number(confiningRaw))
+      ? Number(confiningRaw) : null;
+    const calciteBoundary = Number.isFinite(temperatureC)
+      && typeof calciteAragoniteBoundaryKbar === 'function'
+      ? calciteAragoniteBoundaryKbar(temperatureC) : null;
+    const al2sio5 = Number.isFinite(temperatureC)
+      && typeof al2sio5PhaseAssessment === 'function'
+      ? al2sio5PhaseAssessment(temperatureC, confiningPressureKbar) : null;
+    this.pressurePhaseTestimony.push({
+      step: Number(sim?.step),
+      sample_index: step,
+      temperature_C: Number.isFinite(temperatureC) ? temperatureC : null,
+      fluid_pressure_kbar: Number.isFinite(fluidPressureKbar) ? fluidPressureKbar : null,
+      confining_pressure_kbar: confiningPressureKbar,
+      calcite_aragonite: {
+        boundary_kbar: calciteBoundary,
+        secure_aragonite: Number.isFinite(temperatureC) && Number.isFinite(fluidPressureKbar)
+          && typeof aragoniteIsPressureStable === 'function'
+          ? aragoniteIsPressureStable(temperatureC, fluidPressureKbar) : null,
+      },
+      al2sio5,
+      gypsum_anhydrite: {
+        pure_water_boundary_C: Number.isFinite(fluidPressureKbar)
+          && typeof gypsumAnhydriteBoundaryC === 'function'
+          ? gypsumAnhydriteBoundaryC(fluidPressureKbar) : null,
+      },
+    });
+    const carbon = sim?._carbonateBoundaryState;
+    if (carbon) {
+      const transactions = Array.isArray(carbon.transactions) ? carbon.transactions : [];
+      const last = transactions.length ? transactions[transactions.length - 1] : null;
+      this.carbonateBoundaryTestimony.push({
+        step: Number(sim?.step),
+        sample_index: step,
+        mode: String(carbon.mode || 'closed'),
+        dic_mol_kg: Number(carbon.lastDICMolKg),
+        headspace_co2_mol_kg: Number(carbon.headspaceCO2MolKg),
+        reduced_alkalinity_eq_kg: Number(carbon.reducedAlkalinityEqKg),
+        solid_carbon_mol_kg: Number(carbon.solidCarbonMolKg),
+        boundary_import_mol_kg: Number(carbon.boundaryImportMolKg),
+        boundary_export_mol_kg: Number(carbon.boundaryExportMolKg),
+        target_pco2_bar: Number(carbon.targetPCO2Bar),
+        solved_pco2_bar: Number(carbon.lastSolvedPCO2Bar),
+        blocked: !!carbon.blocked,
+        uncertainties: Array.isArray(carbon.uncertainties) ? [...carbon.uncertainties] : [],
+        transaction_count: transactions.length,
+        last_transaction: last ? JSON.parse(JSON.stringify(last)) : null,
+      });
+    }
+    if (sim?.conditions?.fluid?.sulfurPoolsExplicit) {
+      this.sulfurLedgerTestimony.push(JSON.parse(JSON.stringify({
+        ...simulatorSulfurLedgerSnapshot(sim),
+        sample_index: step,
+      })));
+    }
+    const stressEvents = Array.isArray(sim?._stressEvents) ? sim._stressEvents : [];
+    for (let i = this.lastSeenStressEventCount; i < stressEvents.length; i++) {
+      // Clone so later mutations cannot rewrite archived testimony.
+      this.stressEventTestimony.push(JSON.parse(JSON.stringify(stressEvents[i])));
+    }
+    this.lastSeenStressEventCount = stressEvents.length;
 
     this.capturedSteps++;
     // v3: no longer deactivate on capacity — _growCapacity handles
@@ -385,6 +495,11 @@ class StripRecorder {
       chip_data: this.chipData,
       nucleation_events: this.events,
       floor_data: this.floorData,
+      pressure_phase_testimony: this.pressurePhaseTestimony,
+      stress_event_testimony: this.stressEventTestimony,
+      transformation_event_testimony: this.transformationEventTestimony,
+      carbonate_boundary_testimony: this.carbonateBoundaryTestimony,
+      sulfur_ledger_testimony: this.sulfurLedgerTestimony,
     };
   }
 

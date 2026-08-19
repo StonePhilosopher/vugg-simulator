@@ -17,6 +17,8 @@ import { describe, expect, it } from 'vitest';
 
 declare const maskedHorizonBands: any;
 declare const filmBandRGB: any;
+declare const _o5EmitMaskedBands: any;
+declare const THREE: any;
 
 // A crystal is a plain bag here — the helper reads only .zones, .c_length_mm,
 // and per-zone .thickness_um / .masked_horizon / .film_mineral.
@@ -101,6 +103,45 @@ describe('W-F O5c — maskedHorizonBands (pure radial-depth reconstruction)', ()
     const bands = maskedHorizonBands(c);
     expect(bands.length).toBe(1);
     expect(bands[0].mineral).toBe('film');
+  });
+});
+
+describe('W-F O5c masked-horizon cavity clipping', () => {
+  it('binds every emitted child shell to the parent clip uniforms', () => {
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const host = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial());
+    const state = {
+      clipUniforms: {
+        uVugRadius: { value: 10 }, uVugCenter: { value: new THREE.Vector3() },
+        uVugRingCount: { value: 0 }, uVugRadiiByRing: { value: new Float32Array(32) },
+        uVugCellRadii: { value: null }, uVugCellTexW: { value: 0 }, uVugCellTexH: { value: 0 },
+        uCavityClipMode: { value: 1 }, uCavityField: { value: null },
+        uCavityFieldWorldScale: { value: new THREE.Vector3(1, 1, 1) },
+        uCavityFieldWorldBias: { value: new THREE.Vector3() }, uCavityFieldIsovalue: { value: 0 },
+        uHelixEnabled: { value: 0 }, uHelixSweep: { value: 0 }, uHelixYCenter: { value: 0 },
+        uHelixYSpan: { value: 1 }, uHelixNTurns: { value: 1 }, uHelixFade: { value: 1 },
+      },
+    };
+    const crystal = {
+      crystal_id: 7, c_length_mm: 1,
+      zones: [
+        { thickness_um: 300 },
+        { thickness_um: 200, masked_horizon: true, film_mineral: 'clay' },
+        { thickness_um: 500 },
+      ],
+    };
+    _o5EmitMaskedBands(host, crystal, state);
+    expect(host.children).toHaveLength(1);
+    const shader: any = {
+      uniforms: {},
+      vertexShader: '#include <common>\nvoid main(){\n#include <project_vertex>\n}',
+      fragmentShader: '#include <common>\nvoid main(){\n#include <dithering_fragment>\n}',
+    };
+    host.children[0].material.onBeforeCompile(shader);
+    expect(shader.uniforms.uCavityField).toBe(state.clipUniforms.uCavityField);
+    expect(shader.fragmentShader).toContain('uniform sampler3D uCavityField');
+    expect(host.children[0].material.customProgramCacheKey())
+      .toBe('vugg-cavity-clip:field-r32f-freudenthal-v2|helix');
   });
 });
 

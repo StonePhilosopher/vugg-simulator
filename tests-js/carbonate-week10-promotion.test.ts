@@ -32,7 +32,7 @@ declare const VugConditions: any;
 
 declare const CARBONATE_KSP_ACTIVE_PER_MINERAL: Record<string, boolean>;
 declare const kspSupersatActiveFor: (mineralId: string) => boolean;
-declare const carbonateOmega: (m: string, f: any, T: number) => number;
+declare const carbonateOmega: (m: string, f: any, T: number, mgContent?: number, pressureKbar?: number) => number;
 declare const dolomiteRate: (f: any, T: number, f_ord: number) => number;
 declare const pwpRateToSimMicronsPerStep: (m: string, mol: number) => number;
 
@@ -48,7 +48,7 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 10 — dolomite engine promotion (v145
     const f = new FluidChemistry({ Ca: 400, Mg: 800, CO3: 300, pH: 8.5 });
     const cond = new VugConditions({ temperature: 25, fluid: f });
     const sigma = cond.supersaturation_dolomite();
-    const omega = carbonateOmega('dolomite', f, 25);
+    const omega = carbonateOmega('dolomite', f, 25, 0, cond.pressure);
     expect(Number.isFinite(sigma)).toBe(true);
     expect(Number.isFinite(omega)).toBe(true);
     expect(sigma).toBeCloseTo(omega, 5);
@@ -171,12 +171,25 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 10 — scenario-level firing pins', ()
     expect(total).toBeGreaterThan(0);
   });
 
-  it('jeffrey_mine still fires dolomite (ultramafic skarn)', () => {
-    const sim = runScenario('jeffrey_mine');
-    if (!sim) return;
-    const { total, max_um } = dolomiteCount(sim);
-    expect(total).toBeGreaterThan(0);
-    expect(max_um).toBeGreaterThan(100);
+  it('jeffrey_mine does not invent dolomite below the corrected SI nucleation gate', () => {
+    const scn = SCENARIOS && SCENARIOS.jeffrey_mine;
+    if (!scn) return;
+    setSeed(42);
+    const { conditions, events, defaultSteps } = scn();
+    const sim = new VugSimulator(conditions, events);
+    let peakOmega = 0;
+    for (let i = 0; i < (defaultSteps ?? 100); i++) {
+      sim.run_step();
+      peakOmega = Math.max(peakOmega, conditions.supersaturation_dolomite());
+    }
+    // The PHREEQC/SUPCRTBL temperature-edge correction leaves the authored
+    // fluid mildly supersaturated, but nowhere near the commissioned omega=10
+    // heterogeneous-nucleation gate.  Jeffrey's cited assemblage does not
+    // require dolomite; preserving the former incidental crystal would mean
+    // tuning the model to a discretization artifact.
+    expect(peakOmega).toBeGreaterThan(0.4);
+    expect(peakOmega).toBeLessThan(10);
+    expect(dolomiteCount(sim).total).toBe(0);
   });
 
   it('ultramafic_supergene fires dolomite (multiple small dustings expected)', () => {

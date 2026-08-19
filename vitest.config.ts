@@ -1,7 +1,7 @@
 // Vitest config — JS test harness for vugg-simulator.
 //
-// The shipped product is the JS bundle in index.html (Python in vugg/
-// is dead code). This harness loads the dist/ tsc output (same files
+// The shipped product is the JS bundle in index.html. The retired Python
+// prototype is not a runtime or test dependency. This harness loads the dist/ tsc output (same files
 // build.mjs concatenates into the bundle), evals it inside jsdom so
 // fetch / DOM globals are available, and exposes the simulator's
 // classes for tests to drive scenarios deterministically.
@@ -16,17 +16,32 @@ export default defineConfig({
     // Run bundle setup once per file rather than per test — eval is
     // expensive (~109 module concat + jsdom init).
     isolate: false,
-    // Generous default; the calibration sweep test runs 20 scenarios.
-    // v175 (2026-06-03): doubled both. The strip recorder now also captures
+    // Each worker evaluates the full multi-megabyte simulator bundle. The old
+    // eight-worker cap was still unsafe on the local workstation: a measured
+    // full run spawned eight 0.7-1.3 GB Node workers and consumed most system
+    // RAM. Use one threads-pool worker and disable file parallelism so every
+    // ordinary `vitest run`, `npm test`, and `npm run ci` is memory-safe by
+    // default. This is slower, but it makes the automated release gate usable
+    // and reproducible without relying on an operator to remember CLI flags.
+    pool: 'threads',
+    maxWorkers: 1,
+    fileParallelism: false,
+    // Finite but workstation-realistic default. SIM 264 commissioning measured
+    // the heaviest single authored seed (Tsumeb/supergene_oxidation) at about
+    // 570 s, while three-seed Schneeberg probes take about 353 s. The
+    // memory-bounded workflow also enforces a 2 GB RSS ceiling, so fifteen
+    // minutes remains a hard hang detector without turning valid scenario
+    // replays into flaky failures. Small unit tests may still declare shorter
+    // local ceilings.
+    // v175 (2026-06-03): the strip recorder also captures
     // the depletion-FLOOR channel (per-bin min for ion chips at the wall),
     // ~25% more chip reads when recording. Long recording-heavy scenarios
     // (sabkha_dolomitization, mvt determinism) sit near the old limits under
     // vitest's parallel CPU contention — they pass comfortably in isolation,
-    // but the shared-worker wall-clock tips them over. Doubling the headroom
-    // is proportional to the heavier recorder and removes the load-flake the
-    // floor channel widened, without masking real failures (a genuine hang
-    // still trips 60s/120s).
-    testTimeout: 60000,
-    hookTimeout: 120000,
+    // but the shared-worker wall-clock tips them over. SIM 247 adds executed
+    // transformation testimony to those recorder-heavy runs. Two minutes is
+    // remains finite while accommodating the bounded worker pool.
+    testTimeout: 900000,
+    hookTimeout: 180000,
   },
 });

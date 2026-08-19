@@ -231,7 +231,18 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 4 — Henry\'s-Law pH equilibrator', (
   });
 });
 
-describe('PROPOSAL-CARBONATE-GEOCHEM Week 4b — run_step wiring (positive control)', () => {
+describe('PROPOSAL-CARBONATE-GEOCHEM — conserved run_step wiring', () => {
+  it('runs the sabkha open reservoir through the conserved boundary', () => {
+    const { conditions, events } = SCENARIOS.sabkha_dolomitization();
+    const sim = new VugSimulator(conditions, events);
+    const log = sim.run_step();
+    expect(log.join('\n')).not.toContain('LEGACY HEURISTIC');
+    expect(sim._carbonateBoundaryState).toBeTruthy();
+    expect(sim._carbonateBoundaryState.mode).toBe('open');
+    expect(sim._carbonateBoundaryState.transactions.some((tx: any) => tx.kind === 'open')).toBe(true);
+    expect(sim._carbonateBoundaryState.uncertainties).toContain('salinity_model_missing');
+  });
+
   // Confirms the dispatcher in 85-simulator.ts run_step actually calls
   // _applyOpenAtmosphereEquilibration AND that scenarios.json5's
   // open_to_atmosphere + atmospheric_pCO2_bar fields make it onto
@@ -257,7 +268,7 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 4b — run_step wiring (positive contr
     expect(typeof conditions._scenario).toBe('object');
   });
 
-  it('open_to_atmosphere=true mutates pH to match equilibrator prediction', () => {
+  it('open_to_atmosphere=true without a conserved boundary fails closed', () => {
     setSeed(42);
     const scn = SCENARIOS && SCENARIOS.cooling;
     if (!scn) return;
@@ -268,50 +279,36 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 4b — run_step wiring (positive contr
     };
     conditions.fluid.CO3 = 200;
     conditions.fluid.pH = 7.5;
-    // Compute the expected equilibrated pH from the equilibrator
-    // directly — that's what _applyOpenAtmosphereEquilibration should
-    // produce if the wiring is correct. Direction depends on T (high
-    // T lowers KH which can flip the apparent direction vs naive
-    // expectation), so the empirically-honest check is "matches the
-    // equilibrator's prediction" rather than "moves in a specific
-    // direction."
-    const expectedPH = equilibratePHtoPCO2(
-      { CO3: conditions.fluid.CO3, pH: conditions.fluid.pH },
-      conditions.temperature,
-      0.01,
-    );
     const sim = new VugSimulator(conditions, events);
-    sim.run_step();
-    // Note: events fire BEFORE equilibration in run_step. For the
-    // cooling scenario at step 1 no events fire (events start at
-    // step 5+ in this scenario), so the equilibration sees the
-    // initial fluid state. Tolerance accounts for any small post-
-    // equilibration drift from dissolve_wall / propagation.
-    expect(Math.abs(conditions.fluid.pH - expectedPH)).toBeLessThan(0.2);
-    // Also confirm it actually MOVED — if the equilibration didn't
-    // fire, pH would equal initialPH (7.5).
-    expect(Math.abs(conditions.fluid.pH - 7.5)).toBeGreaterThan(0.01);
+    sim._applyOpenAtmosphereEquilibration();
+    expect(conditions.fluid.pH).toBe(7.5);
+    expect(conditions.fluid.CO3).toBe(200);
+    expect(sim._carbonateBoundaryConfigurationError)
+      .toBe('open_CO2_reservoir_requires_conserved_carbonate_boundary');
+    expect(sim.run_step().join('\n')).toContain('Carbonate boundary BLOCKED');
   });
 
-  it('per-ring fluids equilibrate alongside global fluid', () => {
+  it('the conserved sabkha boundary replaces DIC and pH across canonical fluid cells before local reaction', () => {
     setSeed(42);
-    const scn = SCENARIOS && SCENARIOS.cooling;
+    const scn = SCENARIOS && SCENARIOS.sabkha_dolomitization;
     if (!scn) return;
     const { conditions, events } = scn();
-    conditions._scenario = {
-      open_to_atmosphere: true,
-      atmospheric_pCO2_bar: 1e-5,  // very low pCO2 → pH should rise (alkaline)
-    };
-    conditions.fluid.CO3 = 200;
-    conditions.fluid.pH = 7.0;
     const sim = new VugSimulator(conditions, events);
-    sim.run_step();
-    // Global fluid pH rose (low pCO2 target).
-    expect(conditions.fluid.pH).toBeGreaterThan(7.0);
-    // Per-ring fluids also rose.
-    if (sim.ring_fluids && sim.ring_fluids.length > 0) {
-      const ringPH = sim.ring_fluids[Math.floor(sim.ring_fluids.length / 2)].pH;
-      expect(ringPH).toBeGreaterThan(7.0);
-    }
+    // Exercise the exact run_step boundary seam without subsequently running
+    // mineral growth.  Once the step continues, local calcite/aragonite/
+    // dolomite/selenite growth is expected to debit the individual chemistry
+    // voxels by different amounts; that physical localization is not evidence
+    // that the fully mixed atmospheric solve failed.
+    expect(sim._prepareCarbonateBoundarySpatialState()).toBe(true);
+    const boundarySnap = sim._snapshotGlobal();
+    sim._applyOpenAtmosphereEquilibration();
+    sim._propagateGlobalDelta(boundarySnap);
+    const grid = sim.wall_state.voxelGridFor(sim);
+    expect(grid.voxels.length).toBeGreaterThan(0);
+    const localDIC = grid.voxels.map((voxel: any) => voxel.fluid.CO3);
+    expect(Math.max(...localDIC) - Math.min(...localDIC)).toBeLessThan(1e-9);
+    expect(localDIC.every((dic: number) => Math.abs(dic - conditions.fluid.CO3) < 1e-9)).toBe(true);
+    expect(grid.voxels.every((voxel: any) =>
+      Math.abs(voxel.fluid.pH - conditions.fluid.pH) < 1e-9)).toBe(true);
   });
 });

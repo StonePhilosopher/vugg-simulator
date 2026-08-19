@@ -189,7 +189,7 @@ describe('Proposal E — per-cell local fill (2026-05-18)', () => {
       const wall = new WallState({ vug_diameter_mm: 50, ring_count: 16, cells_per_ring: 120 });
       const c = new Crystal({ mineral: 'adamite', crystal_id: 1 });
       c.wall_anchor = wall._anchorFromRingCell(8, 60);
-      const cellVol = wall._cellCavityVolMm3(8);
+      const cellVol = wall._cellCavityVolAtVertexMm3(8 * 120 + 60);
       wall.rings[8][60]._localCrystalVol_mm3 = cellVol * 0.75;
       expect(wall.getCellLocalFillForCrystal(c)).toBeCloseTo(0.75, 6);
     });
@@ -207,7 +207,7 @@ describe('Proposal E — per-cell local fill (2026-05-18)', () => {
     // off (default), every existing scenario produces output identical
     // to pre-Proposal-E. This is the regression guard — without it, the
     // 263-test baseline would drift on every scenario.
-    it('sabkha_dolomitization seals with flag off (default)', () => {
+    it('sabkha_dolomitization stays open with flag off under corrected chemistry', () => {
       setSeed(42);
       const { conditions, events } = SCENARIOS['sabkha_dolomitization']();
       const sim = new VugSimulator(conditions, events);
@@ -220,11 +220,13 @@ describe('Proposal E — per-cell local fill (2026-05-18)', () => {
           sealAtStep = sim.step;
         }
       }
-      // The baseline pin from interlocking-textures.test.ts is that
-      // sabkha seals at step ≤ 5 with the Proposal D clamp. Holds
-      // with the Proposal E flag off (byte-identical to pre-E).
-      expect(sealAtStep).not.toBeNull();
-      expect(sealAtStep).toBeLessThanOrEqual(5);
+      // The old early seal was produced by independent gypsum + anhydrite
+      // precipitation from the same CaSO4 inventory. The authoritative
+      // selector/replacement ledger correctly leaves the cavity open.
+      expect(sealAtStep).toBeNull();
+      const fill = sim.get_vug_fill();
+      expect(Number.isFinite(fill)).toBe(true);
+      expect(fill).toBeLessThan(0.05);
     });
 
     it('flag-on run completes without throwing', () => {

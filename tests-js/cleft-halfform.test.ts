@@ -25,6 +25,7 @@ declare const SCENARIOS: any;
 declare const setSeed: any;
 declare const WallState: any;
 declare const WallMesh: any;
+declare const CavityScalarField: any;
 declare const wulffFaceSetForMineral: any;
 declare const wulffPolyhedron: any;
 declare const _makeWulffGeom: any;
@@ -84,14 +85,12 @@ describe('W-K V0 — cleft archetype (planar-lens fissure)', () => {
     // basin sigmoid is untouched by the new flatten branch (polar_flatten 0).
     for (const arch of ['pocket', 'irregular', 'tabular', 'spherical']) {
       const wall = new WallState({ architecture: arch, cells_per_ring: 120, ring_count: 16 });
-      wall.polar_amplitudes = [];   // the constructor path zeroes these; enforce for the raw-state test
       for (let k = 0; k <= 16; k++) {
         expect(wall.polarProfileFactor(Math.PI * k / 16), `${arch} must stay 1.0`).toBeCloseTo(1.0, 12);
       }
       expect(wall.polar_flatten).toBe(0);
     }
     const basin = new WallState({ architecture: 'basin', cells_per_ring: 120, ring_count: 16 });
-    basin.polar_amplitudes = [];
     expect(basin.polar_flatten).toBe(0);
     // basin north pole stays the sigmoid pinch (~0.05), NOT the lens
     expect(basin.polarProfileFactor(Math.PI)).toBeLessThan(0.1);
@@ -132,17 +131,18 @@ describe('W-K V0 — cleft archetype (planar-lens fissure)', () => {
     expect(Math.abs(northY)).toBeGreaterThan(ringMean(15) * proj * q * 0.5);   // flush, not collapsed to zero
   });
 
-  it('pole caps of a legacy pocket wall are byte-identical to the pre-fix formula', () => {
+  it('pole caps of a legacy pocket wall lie on the analytic bubble-union zero set', () => {
     const wall = new WallState({ architecture: 'pocket', cells_per_ring: 120, ring_count: 16, vug_diameter_mm: 100, shape_seed: 7 });
     const mesh = WallMesh.fromWallState(wall);
-    const ring0 = wall.rings[0];
-    let meanR = 0;
-    for (const c of ring0) meanR += c.base_radius_mm + c.wall_depth;
-    meanR /= ring0.length;
-    // pre-fix: southR = meanRingRadius(0) × cos(π/(2·ringCount)); the polar
-    // factor for a legacy wall is exactly 1.0, so the number must not move.
-    // (precision 4: mesh.positions is a Float32Array — ~4e-6 abs at 70 mm.)
-    expect(mesh.positions[mesh.southIdx * 3 + 1]).toBeCloseTo(-meanR * Math.cos(Math.PI / 32), 4);
+    const field = CavityScalarField.fromWallState(wall, { resolution: 24 });
+    for (const index of [mesh.southIdx, mesh.northIdx]) {
+      const x = mesh.positions[index * 3];
+      const y = mesh.positions[index * 3 + 1];
+      const z = mesh.positions[index * 3 + 2];
+      expect(Math.abs(field.sampleAnalyticWorld(x, y, z))).toBeLessThan(2e-5);
+      expect(field.sampleAnalyticWorld(x * 0.99, y * 0.99, z * 0.99)).toBeGreaterThan(0);
+      expect(field.sampleAnalyticWorld(x * 1.01, y * 1.01, z * 1.01)).toBeLessThan(0);
+    }
   });
 
   it('grimsel crystals live on the two druse faces (floor_ceiling bias holds at seed 42)', () => {

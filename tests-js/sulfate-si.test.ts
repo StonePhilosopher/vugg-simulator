@@ -27,6 +27,7 @@ declare const getSulfateLogKsp: (mineralId: string, T_C: number) => number;
 declare const getSulfateKsp: (mineralId: string, T_C: number) => number;
 declare const getSulfateThermoTier: (mineralId: string) => string;
 declare const listSulfatesAtTier: (tier: string) => string[];
+declare const sulfateThermoTemperatureAssessment: (mineralId: string, T_C: number) => any;
 
 describe('v164 sulfate Ksp — thermo data tier coverage', () => {
   it('all four canonical simple sulfates are tier-A (PHREEQC wateq4f.dat verified)', () => {
@@ -41,47 +42,69 @@ describe('v164 sulfate Ksp — thermo data tier coverage', () => {
     expect(new Set(tierA)).toEqual(new Set(['selenite', 'anhydrite', 'barite', 'celestine']));
   });
 
-  it('logKsp_25C matches PHREEQC wateq4f.dat exactly', () => {
-    // These four numbers ARE the test — they come from the publicly
-    // distributed wateq4f.dat (USGS) and must not drift without an
-    // accompanying note in the JSON's _sourcing block.
-    expect(getSulfateLogKsp('selenite', 25)).toBeCloseTo(-4.58, 5);
-    expect(getSulfateLogKsp('anhydrite', 25)).toBeCloseTo(-4.36, 5);
-    expect(getSulfateLogKsp('barite', 25)).toBeCloseTo(-9.97, 5);
-    expect(getSulfateLogKsp('celestine', 25)).toBeCloseTo(-6.63, 5);
+  it('reproduces PHREEQC analytical expressions at 25 C, including their unrounded values', () => {
+    // wateq4f.dat prints a rounded `log_k` plus an authoritative five-term
+    // `-analytical` expression. Runtime follows that expression, so the tiny
+    // difference from the printed two-decimal log_k is intentional.
+    expect(getSulfateLogKsp('selenite', 25)).toBeCloseTo(-4.580914889, 8);
+    expect(getSulfateLogKsp('anhydrite', 25)).toBeCloseTo(-4.360806899, 8);
+    expect(getSulfateLogKsp('barite', 25)).toBeCloseTo(-9.970381136, 8);
+    expect(getSulfateLogKsp('celestine', 25)).toBeCloseTo(-6.632051588, 8);
   });
 });
 
-describe('v164 sulfate Ksp — van\'t Hoff T-dependence signs', () => {
-  it('BARITE is endothermic (prograde) — logKsp RISES with T', () => {
-    // This is the critical sign-check. My initial memory had barite ΔH
-    // negative (retrograde like the other three); verifying against
-    // wateq4f.dat caught it as +26.57 kJ/mol. K rises ~5× over 25-100°C,
-    // ~50× over 25-200°C. If a future edit accidentally negates the
-    // sign, this test catches it.
-    const k25 = getSulfateLogKsp('barite', 25);
-    const k100 = getSulfateLogKsp('barite', 100);
-    const k200 = getSulfateLogKsp('barite', 200);
-    expect(k100).toBeGreaterThan(k25);   // rises 25→100
-    expect(k200).toBeGreaterThan(k100);  // rises 100→200
-    // Quantitative pin: ~0.94 log units rise 25→100 per wateq4f van't Hoff
-    expect(k100 - k25).toBeGreaterThan(0.5);
-    expect(k100 - k25).toBeLessThan(1.5);
+describe('v270 sulfate Ksp — exact PHREEQC analytical T dependence', () => {
+  it.each([
+    ['selenite', 0, -4.616615230],
+    ['selenite', 60, -4.653913373],
+    ['anhydrite', 100, -5.321568617],
+    ['anhydrite', 200, -7.612120334],
+    ['anhydrite', 300, -10.230247677],
+    ['barite', 100, -9.528310386],
+    ['barite', 200, -10.189074393],
+    ['barite', 300, -11.403396829],
+    ['celestine', 100, -7.160647466],
+    ['celestine', 200, -11.838615378],
+  ])('%s at %i C equals the cited five-coefficient expression', (mineral, T, expected) => {
+    expect(getSulfateLogKsp(mineral, T)).toBeCloseTo(expected, 7);
   });
 
-  it('gypsum / selenite is essentially T-independent in its stability field', () => {
-    // ΔH = -0.456 kJ/mol → very slight retrograde. logKsp moves <0.02
-    // across 0-60°C, matching the textbook "gypsum solubility is flat
-    // in its stability field" story (anhydrite takes over above).
+  it('captures curvature that the retired constant-deltaH approximation misses', () => {
+    // At 200 C the prior approximation gave -4.824 for anhydrite,
+    // -8.248 for barite, and -6.911 for celestine. Those errors are large
+    // enough to reverse phase admission, so this is an acceptance control.
+    expect(getSulfateLogKsp('anhydrite', 200)).toBeLessThan(-7.5);
+    expect(getSulfateLogKsp('barite', 200)).toBeLessThan(-10.0);
+    expect(getSulfateLogKsp('celestine', 200)).toBeLessThan(-11.5);
+  });
+
+  it('gypsum / selenite remains gently curved in its low-temperature stability field', () => {
     const k10 = getSulfateLogKsp('selenite', 10);
     const k50 = getSulfateLogKsp('selenite', 50);
-    expect(Math.abs(k50 - k10)).toBeLessThan(0.05);
+    expect(Math.abs(k50 - k10)).toBeLessThan(0.08);
   });
 
-  it('anhydrite + celestine are retrograde (mildly negative ΔH)', () => {
-    // ΔH negative → logKsp DROPS as T rises (less soluble at higher T).
+  it('anhydrite and celestine are strongly retrograde across the hydrothermal range', () => {
     expect(getSulfateLogKsp('anhydrite', 100)).toBeLessThan(getSulfateLogKsp('anhydrite', 25));
     expect(getSulfateLogKsp('celestine', 100)).toBeLessThan(getSulfateLogKsp('celestine', 25));
+  });
+
+  it('fails closed and reports the exact phase-specific fit envelope', () => {
+    expect(sulfateThermoTemperatureAssessment('anhydrite', 300)).toMatchObject({
+      supported: true,
+      status: 'inside-fit-envelope',
+      validTemperatureC: [0, 300],
+    });
+    expect(sulfateThermoTemperatureAssessment('anhydrite', 300.000001)).toMatchObject({
+      supported: false,
+      status: 'outside-fit-envelope',
+      validTemperatureC: [0, 300],
+    });
+    expect(Number.isNaN(getSulfateLogKsp('anhydrite', 300.000001))).toBe(true);
+    expect(Number.isNaN(getSulfateLogKsp('selenite', 100))).toBe(true);
+    const fluid = new FluidChemistry({ Ca: 1200, S_sulfate: 1200, S_sulfide: 0 });
+    expect(Number.isNaN(sulfateSaturationIndex('anhydrite', fluid, 350))).toBe(true);
+    expect(sulfateOmega('anhydrite', fluid, 350)).toBe(0);
   });
 });
 

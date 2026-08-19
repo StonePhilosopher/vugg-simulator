@@ -1,0 +1,2883 @@
+{
+  "schema": "vugg-claim-card-v2",
+  "scenario": "tutorial_travertine",
+  "sim_version": 268,
+  "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4|cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v3|water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+phase-resolved-testimony-v4|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4|solid-occupancy:all-nondissolved+positive-only-size-cap+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-local-CuSO4-decay-v2|cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget+single-evaluation-full-fill-negative-v4|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite+valence-correct-reconciliation-v7|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary+oxidized-sulfate-does-not-sulfidize-silver-v3|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation+null-confining-pressure-v3|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2|save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+water-height+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v5",
+  "scenario_spec_hash": "11001f4135b9cab48e673541392a8b1f09c334843c4e1cfe1a50f008d0f06f45",
+  "strip_steps": 60,
+  "strip_sha256": "89154153c7bf879af2af28260ade0ca78ad80c8d8f0a8c554494ea7754bce38a",
+  "claim": {
+    "anchor": "Mammoth Hot Springs (Yellowstone) — travertine is the canonical CO₂-degas calcite",
+    "description": "Tutorial 3: How CO₂ Builds a Calcite Crust. CO₂-rich groundwater rises into a hot-spring pool, loses CO₂ as gas, and every pH step multiplies calcite's supersaturation until crust plates every available surface. The same mechanism that grows speleothems in caves and travertine terraces at hot springs.",
+    "expects_species": [
+      "calcite"
+    ],
+    "expectation_contract": {
+      "deterministic": [
+        {
+          "mineral": "calcite",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "aragonite",
+          "reason": "A scientifically meaningful CaCO3 polymorph competitor in the travertine tutorial's changing temperature and Mg/Ca conditions.",
+          "headline": false
+        }
+      ],
+      "deterministic_headline": [
+        "calcite"
+      ],
+      "deterministic_accessory": [
+        {
+          "mineral": "aragonite",
+          "reason": "A scientifically meaningful CaCO3 polymorph competitor in the travertine tutorial's changing temperature and Mg/Ca conditions."
+        }
+      ],
+      "statistical": [],
+      "aspirational": []
+    },
+    "excluded_species": {},
+    "sources": [
+      "Mammoth Hot Springs, Yellowstone NP — type locality for actively-forming travertine",
+      "Pentecost A. (2005), Travertine — comprehensive review of CO₂-degas calcite",
+      "Stumm & Morgan, Aquatic Chemistry (3rd ed.), Bjerrum partition + Henry's-Law CO₂"
+    ],
+    "initial_temperature_C": 70,
+    "initial_pressure_kbar": 0.00101325,
+    "wall_architecture": null,
+    "notes": [
+      "Tutorial scenario for the conserved carbonate boundary. Three downstream vent stages (steps 10, 25, 40) lower the authored pCO₂ boundary while DIC, reduced carbonate alkalinity, and a 1 L/kg pedagogical headspace remain separate inventories. pH is solved from the carbonate system; no pulse adds Ca and no fixed pH shift is authored.",
+      "Scope: this is a reduced pedagogical analogue of the Mammoth Hot Springs degassing pathway, not a sample-for-sample reconstruction. USGS Bulletin 1444's outlet-water analysis (69 °C, pH 7.2, Ca 323, Mg 67, HCO3 755, SO4 563 mg/L) is compared field by field in research/arcs/mammoth-travertine-benchmark-receipt-2026-08-08.md; the deliberately authored differences and omitted sulfate alkalinity are visible there.",
+      "REWORKED 2026-07-07 (tutorial-parity pass): legacy 8-beat sim-step script rebuilt in the Grand Tour's engine-v2 vocabulary — continue-step framing on the σ forecast, Begin ⏎ handoff, sim-step beats riding the pulses, then the INVERSE EXPERIMENT: the 🧪 acid verbs unlock and the player runs the cascade backwards, watching σ(calcite) fall (the cave-dissolution lesson for free). Broth + events byte-identical. TEXT RE-TRUED against the observed run: the old script's claims ('Ca 200 ppm', 'calcite isn't growing yet', 'crossed the line at step 20') predate the Ca 200→350 recalibration — measured seed run shows σ(calcite) 1.61 at t0 (one crystal creeping from step ~2) and pulse 1 multiplying σ 1.34→5.04, so the lesson is narrated as barely-viable-trickle → multiplication, which is also the truer Mammoth story (vent water arrives near saturation; degassing drives the plating downstream).",
+      "Initial fluid uses CO3 = 500 mg/kg as the simulator's CO3-equivalent DIC surrogate, exactly 8.332 mmol C/kg, at pH 6.5. Ca = 350 mg/kg represents the measured high-Ca Mammoth water family. The source pool is marginally supersaturated; progressive open-boundary loss, not an invented reagent addition, drives downstream coating.",
+      "The three `co2_degas_with_reheat` events vent toward 0.08, 0.02, then 0.004 bar pCO2. Each event reports its computed mmol C/kg export, resulting DIC, and solved pH. Reduced carbonate alkalinity is conserved during gas exchange. The 1 L/kg headspace is an authored pedagogical control volume, not a claim about a measured Mammoth bubble volume.",
+      "Geological reference: Mammoth Hot Springs (Yellowstone, USA), Pamukkale (Turkey), Pancake Hot Springs (CA). All build travertine via this exact cascade. Cave flowstone uses the same chemistry but with cooler fluid and lower flow."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+no-extrapolation-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:absolute-replace-v1|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4|cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v3|water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+phase-resolved-testimony-v4|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4|solid-occupancy:all-nondissolved+positive-only-size-cap+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-local-CuSO4-decay-v2|cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+formula-weighted-budget+single-evaluation-full-fill-negative-v4|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite+valence-correct-reconciliation-v7|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary+oxidized-sulfate-does-not-sulfidize-silver-v3|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+solid-state-transformation+null-confining-pressure-v3|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2|save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+water-height+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v5",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 0.00101325,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.70481454,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 58.014894775,
+          "initial_water_activity": {
+            "value": 0.9988,
+            "salinityPpt": 2,
+            "naclWeightPercentEquivalent": 0.2,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "pressure_ksp_grid": {
+        "rule": "reaction-specific SUPCRTBL delta-logK grid; bilinear only inside density and per-reaction temperature masks; no constant reaction-volume proxy",
+        "assessments": {
+          "calcite": {
+            "mineral": "calcite",
+            "temperatureC": 70,
+            "fluidPressureKbar": 0.00101325,
+            "correctionLog10K": 0.000012869277444444467,
+            "waterDensityGcm3": 0.9774819484155555,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Calcite = Ca+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              90
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.000 relative to 1 bar at the same temperature."
+          },
+          "aragonite": {
+            "mineral": "aragonite",
+            "temperatureC": 70,
+            "fluidPressureKbar": 0.00101325,
+            "correctionLog10K": 0.000012327113944444465,
+            "waterDensityGcm3": 0.9774819484155555,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Aragonite = Ca+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              90
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.000 relative to 1 bar at the same temperature."
+          },
+          "dolomite": {
+            "mineral": "dolomite",
+            "temperatureC": 70,
+            "fluidPressureKbar": 0.00101325,
+            "correctionLog10K": 0.000024750119611111155,
+            "waterDensityGcm3": 0.9774819484155555,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Dolomite,ordered = Ca+2 + Mg+2 + 2 CO3-2",
+            "usableTemperatureC": [
+              10,
+              250
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.000 relative to 1 bar at the same temperature."
+          },
+          "siderite": {
+            "mineral": "siderite",
+            "temperatureC": 70,
+            "fluidPressureKbar": 0.00101325,
+            "correctionLog10K": 0.000012464584166666687,
+            "waterDensityGcm3": 0.9774819484155555,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Siderite = Fe+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.000 relative to 1 bar at the same temperature."
+          },
+          "rhodochrosite": {
+            "mineral": "rhodochrosite",
+            "temperatureC": 70,
+            "fluidPressureKbar": 0.00101325,
+            "correctionLog10K": 0.000011707714722222244,
+            "waterDensityGcm3": 0.9774819484155555,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Rhodochrosite = Mn+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.000 relative to 1 bar at the same temperature."
+          },
+          "anhydrite": {
+            "mineral": "anhydrite",
+            "temperatureC": 70,
+            "fluidPressureKbar": 0.00101325,
+            "correctionLog10K": 0.000010233522666666685,
+            "waterDensityGcm3": 0.9774819484155555,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Anhydrite = Ca+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              300
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.000 relative to 1 bar at the same temperature."
+          },
+          "barite": {
+            "mineral": "barite",
+            "temperatureC": 70,
+            "fluidPressureKbar": 0.00101325,
+            "correctionLog10K": 0.00001006802722222224,
+            "waterDensityGcm3": 0.9774819484155555,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Barite = Ba+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              300
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.000 relative to 1 bar at the same temperature."
+          },
+          "celestine": {
+            "mineral": "celestine",
+            "temperatureC": 70,
+            "fluidPressureKbar": 0.00101325,
+            "correctionLog10K": 0.000010221220777777795,
+            "waterDensityGcm3": 0.9774819484155555,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Celestite = Sr+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.000 relative to 1 bar at the same temperature."
+          },
+          "selenite": {
+            "mineral": "selenite",
+            "temperatureC": 70,
+            "fluidPressureKbar": 0.00101325,
+            "correctionLog10K": 0,
+            "waterDensityGcm3": null,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": false,
+            "active": false,
+            "status": "unsupported-reaction",
+            "reaction": null,
+            "usableTemperatureC": null,
+            "note": "Gypsum is absent from the SUPCRTBL solid-species set; the Hardie water-activity/temperature phase selector remains active, but no Ksp pressure correction is fabricated."
+          }
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 2,
+    "paragenetic_order": [
+      {
+        "mineral": "calcite",
+        "first_step": 1,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "aragonite",
+        "first_step": 10,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      }
+    ],
+    "surprises_not_in_expects": [],
+    "expected_no_shows": [],
+    "statistical_no_shows": [],
+    "aspirational_no_shows": [],
+    "excluded_species_appearances": [],
+    "environment": {
+      "T": {
+        "first": 68.26089435471157,
+        "last": 38.80504261804766,
+        "min": 38.80504261804766,
+        "max": 68.69096292895266,
+        "units": "°C",
+        "source": "raw_simulation_state"
+      },
+      "pH": {
+        "first": 6.5,
+        "last": 8.21682136813941,
+        "min": 6.5,
+        "max": 8.249717547339522,
+        "units": "",
+        "source": "raw_simulation_state"
+      },
+      "Eh": {
+        "first": -200,
+        "last": -200,
+        "min": -200,
+        "max": -200,
+        "units": "mV",
+        "source": "raw_simulation_state"
+      },
+      "salinity": {
+        "first": 2,
+        "last": 2,
+        "min": 2,
+        "max": 2,
+        "units": "psu",
+        "source": "raw_simulation_state"
+      },
+      "O2": {
+        "first": 0,
+        "last": 0,
+        "min": 0,
+        "max": 0,
+        "units": "mg/L",
+        "source": "raw_simulation_state"
+      },
+      "concentration": {
+        "first": 1,
+        "last": 1,
+        "min": 1,
+        "max": 1,
+        "units": "×",
+        "source": "raw_simulation_state"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": 0.189,
+        "last": 1.575,
+        "min": 0.063,
+        "max": 1.953,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": 0.063,
+        "last": 1.386,
+        "min": 0,
+        "max": 1.827,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -0.441,
+        "last": 2.394,
+        "min": -0.567,
+        "max": 3.087,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": 0.063,
+        "last": 1.449,
+        "min": 0,
+        "max": 1.827,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 0.693,
+        "last": 2.016,
+        "min": 0.63,
+        "max": 2.457,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -1.575,
+        "last": -1.512,
+        "min": -1.575,
+        "max": -1.512,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -1.638,
+        "last": -1.701,
+        "min": -1.701,
+        "max": -1.575,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 60,
+      "fluid_pressure_kbar": {
+        "first": 0.00101325,
+        "last": 0.00101325,
+        "min": 0.00101325,
+        "max": 0.00101325,
+        "samples": 60
+      },
+      "confining_pressure_kbar": null,
+      "temperature_C": {
+        "first": 68.26089435471157,
+        "last": 38.80504261804766,
+        "min": 38.80504261804766,
+        "max": 68.69096292895266,
+        "samples": 60
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.7139875197433567,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.8914065217737637,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 60
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 58.014894775
+        },
+        "last": {
+          "pure_water_boundary_C": 58.014894775
+        }
+      },
+      "stress_events": [],
+      "transformations": [],
+      "carbonate_boundary": {
+        "sample_count": 60,
+        "first": {
+          "step": 1,
+          "sample_index": 0,
+          "mode": "closed",
+          "dic_mol_kg": 0.00833194467588735,
+          "headspace_co2_mol_kg": 0.008127117898136726,
+          "reduced_alkalinity_eq_kg": 0.005072005818966855,
+          "solid_carbon_mol_kg": 0,
+          "boundary_import_mol_kg": 0,
+          "boundary_export_mol_kg": 0,
+          "target_pco2_bar": 0.22,
+          "solved_pco2_bar": 0.2318754385164825,
+          "blocked": false,
+          "uncertainties": [
+            "full_alkalinity_systems_omitted"
+          ],
+          "transaction_count": 1,
+          "last_transaction": {
+            "ok": true,
+            "kind": "closed",
+            "note": "step 1: closed aqueous-headspace equilibration",
+            "before": {
+              "dicMolKg": 0.008331944675887352,
+              "headspaceCO2MolKg": 0.008127117898136728,
+              "totalCarbonMolKg": 0.016459062574024082
+            },
+            "after": {
+              "ok": true,
+              "dicMolKg": 0.00833194467588735,
+              "pH": 6.5,
+              "pCO2Bar": 0.2318754385164825,
+              "headspaceCO2MolKg": 0.008127117898136726,
+              "residual": -6.938893903907228e-18,
+              "totalCarbonMolKg": 0.016459062574024075
+            },
+            "carbonErrorMolKg": -6.938893903907228e-18,
+            "alkalinityChangeEqKg": 0
+          }
+        },
+        "last": {
+          "step": 60,
+          "sample_index": 59,
+          "mode": "closed",
+          "dic_mol_kg": 0.0050772630675080515,
+          "headspace_co2_mol_kg": 0.00009877189160536263,
+          "reduced_alkalinity_eq_kg": 0.0050719044424696255,
+          "solid_carbon_mol_kg": 5.068824861708808e-8,
+          "boundary_import_mol_kg": 0,
+          "boundary_export_mol_kg": 0.011282976926660734,
+          "target_pco2_bar": 0.004,
+          "solved_pco2_bar": 0.0025756603650889083,
+          "blocked": false,
+          "uncertainties": [
+            "full_alkalinity_systems_omitted"
+          ],
+          "transaction_count": 169,
+          "last_transaction": {
+            "ok": true,
+            "kind": "closed",
+            "note": "step 60: closed aqueous-headspace equilibration",
+            "before": {
+              "dicMolKg": 0.005075521718875012,
+              "headspaceCO2MolKg": 0.00010051324023840346,
+              "totalCarbonMolKg": 0.005176034959113416
+            },
+            "after": {
+              "ok": true,
+              "dicMolKg": 0.0050772630675080515,
+              "pH": 8.21682136813941,
+              "pCO2Bar": 0.0025756603650889083,
+              "headspaceCO2MolKg": 0.00009877189160536263,
+              "residual": -1.734723475976807e-18,
+              "totalCarbonMolKg": 0.005176034959113414
+            },
+            "carbonErrorMolKg": -1.734723475976807e-18,
+            "alkalinityChangeEqKg": 0
+          }
+        },
+        "samples": [
+          {
+            "step": 1,
+            "sample_index": 0,
+            "mode": "closed",
+            "dic_mol_kg": 0.00833194467588735,
+            "headspace_co2_mol_kg": 0.008127117898136726,
+            "reduced_alkalinity_eq_kg": 0.005072005818966855,
+            "solid_carbon_mol_kg": 0,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0,
+            "target_pco2_bar": 0.22,
+            "solved_pco2_bar": 0.2318754385164825,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 1,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 1: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.008331944675887352,
+                "headspaceCO2MolKg": 0.008127117898136728,
+                "totalCarbonMolKg": 0.016459062574024082
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.00833194467588735,
+                "pH": 6.5,
+                "pCO2Bar": 0.2318754385164825,
+                "headspaceCO2MolKg": 0.008127117898136726,
+                "residual": -6.938893903907228e-18,
+                "totalCarbonMolKg": 0.016459062574024075
+              },
+              "carbonErrorMolKg": -6.938893903907228e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 2,
+            "sample_index": 1,
+            "mode": "closed",
+            "dic_mol_kg": 0.008374372895276316,
+            "headspace_co2_mol_kg": 0.008084688320227918,
+            "reduced_alkalinity_eq_kg": 0.005072003101927169,
+            "solid_carbon_mol_kg": 1.3585198430447694e-9,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0,
+            "target_pco2_bar": 0.22,
+            "solved_pco2_bar": 0.22949585288794647,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 3,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 2: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.008331943317367509,
+                "headspaceCO2MolKg": 0.008127117898136726,
+                "totalCarbonMolKg": 0.016459061215504237
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.008374372895276316,
+                "pH": 6.490365591130603,
+                "pCO2Bar": 0.22949585288794647,
+                "headspaceCO2MolKg": 0.008084688320227918,
+                "residual": 0,
+                "totalCarbonMolKg": 0.016459061215504237
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 3,
+            "sample_index": 2,
+            "mode": "closed",
+            "dic_mol_kg": 0.008417184770320354,
+            "headspace_co2_mol_kg": 0.008041875205205752,
+            "reduced_alkalinity_eq_kg": 0.005072000621972656,
+            "solid_carbon_mol_kg": 2.5984970998394947e-9,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0,
+            "target_pco2_bar": 0.22,
+            "solved_pco2_bar": 0.2271561893297535,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 5,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 3: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.008374371655298187,
+                "headspaceCO2MolKg": 0.008084688320227918,
+                "totalCarbonMolKg": 0.016459059975526106
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.008417184770320354,
+                "pH": 6.4812279219807305,
+                "pCO2Bar": 0.2271561893297535,
+                "headspaceCO2MolKg": 0.008041875205205752,
+                "residual": 0,
+                "totalCarbonMolKg": 0.016459059975526106
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 4,
+            "sample_index": 3,
+            "mode": "closed",
+            "dic_mol_kg": 0.008462146176014245,
+            "headspace_co2_mol_kg": 0.007996913031703873,
+            "reduced_alkalinity_eq_kg": 0.005071999086356983,
+            "solid_carbon_mol_kg": 3.3663049364149413e-9,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0,
+            "target_pco2_bar": 0.22,
+            "solved_pco2_bar": 0.2247600703861481,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 7,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 4: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.008417184002512366,
+                "headspaceCO2MolKg": 0.008041875205205752,
+                "totalCarbonMolKg": 0.01645905920771812
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.008462146176014245,
+                "pH": 6.472209649463204,
+                "pCO2Bar": 0.2247600703861481,
+                "headspaceCO2MolKg": 0.007996913031703873,
+                "residual": 0,
+                "totalCarbonMolKg": 0.01645905920771812
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 5,
+            "sample_index": 4,
+            "mode": "closed",
+            "dic_mol_kg": 0.008508348410043325,
+            "headspace_co2_mol_kg": 0.007950710175090806,
+            "reduced_alkalinity_eq_kg": 0.0050719978411887376,
+            "solid_carbon_mol_kg": 3.9888890592407196e-9,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0,
+            "target_pco2_bar": 0.22,
+            "solved_pco2_bar": 0.22235769942094127,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 9,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 5: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.008462145553430276,
+                "headspaceCO2MolKg": 0.007996913031703873,
+                "totalCarbonMolKg": 0.016459058585134148
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.008508348410043325,
+                "pH": 6.463508438663059,
+                "pCO2Bar": 0.22235769942094127,
+                "headspaceCO2MolKg": 0.007950710175090806,
+                "residual": -1.734723475976807e-17,
+                "totalCarbonMolKg": 0.01645905858513413
+              },
+              "carbonErrorMolKg": -1.734723475976807e-17,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 6,
+            "sample_index": 5,
+            "mode": "closed",
+            "dic_mol_kg": 0.008549419483087257,
+            "headspace_co2_mol_kg": 0.007909638533113389,
+            "reduced_alkalinity_eq_kg": 0.005071996703323252,
+            "solid_carbon_mol_kg": 4.557821802029266e-9,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0,
+            "target_pco2_bar": 0.22,
+            "solved_pco2_bar": 0.22026922879048622,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 11,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 6: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.008508347841109851,
+                "headspaceCO2MolKg": 0.007950710175090806,
+                "totalCarbonMolKg": 0.016459058016200658
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.008549419483087257,
+                "pH": 6.456217705128074,
+                "pCO2Bar": 0.22026922879048622,
+                "headspaceCO2MolKg": 0.007909638533113389,
+                "residual": -1.3877787807814457e-17,
+                "totalCarbonMolKg": 0.016459058016200644
+              },
+              "carbonErrorMolKg": -1.3877787807814457e-17,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 7,
+            "sample_index": 6,
+            "mode": "closed",
+            "dic_mol_kg": 0.008589483034802819,
+            "headspace_co2_mol_kg": 0.007869574675128365,
+            "reduced_alkalinity_eq_kg": 0.005071996090783533,
+            "solid_carbon_mol_kg": 4.8640916613146885e-9,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0,
+            "target_pco2_bar": 0.22,
+            "solved_pco2_bar": 0.21827174308169453,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 13,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 7: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.008549419176817806,
+                "headspaceCO2MolKg": 0.007909638533113389,
+                "totalCarbonMolKg": 0.016459057709931196
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.008589483034802819,
+                "pH": 6.449479903075421,
+                "pCO2Bar": 0.21827174308169453,
+                "headspaceCO2MolKg": 0.007869574675128365,
+                "residual": -1.3877787807814457e-17,
+                "totalCarbonMolKg": 0.016459057709931182
+              },
+              "carbonErrorMolKg": -1.3877787807814457e-17,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 8,
+            "sample_index": 7,
+            "mode": "closed",
+            "dic_mol_kg": 0.00864147928570191,
+            "headspace_co2_mol_kg": 0.007817578196360265,
+            "reduced_alkalinity_eq_kg": 0.005071995635047907,
+            "solid_carbon_mol_kg": 5.091959474685309e-9,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0,
+            "target_pco2_bar": 0.22,
+            "solved_pco2_bar": 0.21573378365962237,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 15,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 8: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.008589482806933817,
+                "headspaceCO2MolKg": 0.007869574675128365,
+                "totalCarbonMolKg": 0.01645905748206218
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.00864147928570191,
+                "pH": 6.44124687382523,
+                "pCO2Bar": 0.21573378365962237,
+                "headspaceCO2MolKg": 0.007817578196360265,
+                "residual": -6.938893903907228e-18,
+                "totalCarbonMolKg": 0.016459057482062174
+              },
+              "carbonErrorMolKg": -6.938893903907228e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 9,
+            "sample_index": 8,
+            "mode": "closed",
+            "dic_mol_kg": 0.008694498142665815,
+            "headspace_co2_mol_kg": 0.007764559312183567,
+            "reduced_alkalinity_eq_kg": 0.005071995580623726,
+            "solid_carbon_mol_kg": 5.119171565026132e-9,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0,
+            "target_pco2_bar": 0.22,
+            "solved_pco2_bar": 0.21320469391146182,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 17,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 9: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.00864147925848912,
+                "headspaceCO2MolKg": 0.007817578196360265,
+                "totalCarbonMolKg": 0.016459057454849386
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.008694498142665815,
+                "pH": 6.433403062739673,
+                "pCO2Bar": 0.21320469391146182,
+                "headspaceCO2MolKg": 0.007764559312183567,
+                "residual": -3.469446951953614e-18,
+                "totalCarbonMolKg": 0.016459057454849383
+              },
+              "carbonErrorMolKg": -3.469446951953614e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 10,
+            "sample_index": 9,
+            "mode": "closed",
+            "dic_mol_kg": 0.006192437093958147,
+            "headspace_co2_mol_kg": 0.0028039599019664577,
+            "reduced_alkalinity_eq_kg": 0.005071995580623726,
+            "solid_carbon_mol_kg": 5.119171565026132e-9,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.08000000000002062,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 19,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 10: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.006192437093958871,
+                "headspaceCO2MolKg": 0.0028039599019657347,
+                "totalCarbonMolKg": 0.008996396995924607
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.006192437093958147,
+                "pH": 6.96168003592277,
+                "pCO2Bar": 0.08000000000002062,
+                "headspaceCO2MolKg": 0.0028039599019664577,
+                "residual": -1.734723475976807e-18,
+                "totalCarbonMolKg": 0.008996396995924605
+              },
+              "carbonErrorMolKg": -1.734723475976807e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 11,
+            "sample_index": 10,
+            "mode": "closed",
+            "dic_mol_kg": 0.006203500446454981,
+            "headspace_co2_mol_kg": 0.0027928931674370294,
+            "reduced_alkalinity_eq_kg": 0.0050719888165574436,
+            "solid_carbon_mol_kg": 8.501204706502196e-9,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.07938027731789322,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 22,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 11: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.006192433711925555,
+                "headspaceCO2MolKg": 0.0028039599019664577,
+                "totalCarbonMolKg": 0.008996393613892012
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.006203500446454981,
+                "pH": 6.954440645016103,
+                "pCO2Bar": 0.07938027731789322,
+                "headspaceCO2MolKg": 0.0027928931674370294,
+                "residual": -1.734723475976807e-18,
+                "totalCarbonMolKg": 0.00899639361389201
+              },
+              "carbonErrorMolKg": -1.734723475976807e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 12,
+            "sample_index": 11,
+            "mode": "closed",
+            "dic_mol_kg": 0.006214786208876196,
+            "headspace_co2_mol_kg": 0.0027816047746551417,
+            "reduced_alkalinity_eq_kg": 0.005071983555836902,
+            "solid_carbon_mol_kg": 1.1131564977205414e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.07876026898702333,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 25,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 12: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.006203497816094309,
+                "headspaceCO2MolKg": 0.0027928931674370294,
+                "totalCarbonMolKg": 0.008996390983531338
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.006214786208876196,
+                "pH": 6.947388841852918,
+                "pCO2Bar": 0.07876026898702333,
+                "headspaceCO2MolKg": 0.0027816047746551417,
+                "residual": 0,
+                "totalCarbonMolKg": 0.008996390983531338
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 13,
+            "sample_index": 12,
+            "mode": "closed",
+            "dic_mol_kg": 0.006228481912629282,
+            "headspace_co2_mol_kg": 0.0027679065983133282,
+            "reduced_alkalinity_eq_kg": 0.005071978610661848,
+            "solid_carbon_mol_kg": 1.3604152504369302e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.07802329621052917,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 28,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 13: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.006214783736287469,
+                "headspaceCO2MolKg": 0.0027816047746551417,
+                "totalCarbonMolKg": 0.00899638851094261
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.006228481912629282,
+                "pH": 6.939252907739174,
+                "pCO2Bar": 0.07802329621052917,
+                "headspaceCO2MolKg": 0.0027679065983133282,
+                "residual": 0,
+                "totalCarbonMolKg": 0.00899638851094261
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 14,
+            "sample_index": 13,
+            "mode": "closed",
+            "dic_mol_kg": 0.006240884582128119,
+            "headspace_co2_mol_kg": 0.0027555013157307246,
+            "reduced_alkalinity_eq_kg": 0.005071973384493997,
+            "solid_carbon_mol_kg": 1.6217236430056737e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.07736949814855879,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 31,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 14: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.0062284792995455085,
+                "headspaceCO2MolKg": 0.0027679065983133282,
+                "totalCarbonMolKg": 0.008996385897858837
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.006240884582128119,
+                "pH": 6.932256635734781,
+                "pCO2Bar": 0.07736949814855879,
+                "headspaceCO2MolKg": 0.0027555013157307246,
+                "residual": 6.938893903907228e-18,
+                "totalCarbonMolKg": 0.008996385897858844
+              },
+              "carbonErrorMolKg": 6.938893903907228e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 15,
+            "sample_index": 14,
+            "mode": "closed",
+            "dic_mol_kg": 0.006256914445362281,
+            "headspace_co2_mol_kg": 0.002739468563564698,
+            "reduced_alkalinity_eq_kg": 0.00507196760663139,
+            "solid_carbon_mol_kg": 1.910616773333801e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.07654239155548874,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 34,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 15: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.006240881693196254,
+                "headspaceCO2MolKg": 0.0027555013157307246,
+                "totalCarbonMolKg": 0.008996383008926979
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.006256914445362281,
+                "pH": 6.923701744964273,
+                "pCO2Bar": 0.07654239155548874,
+                "headspaceCO2MolKg": 0.002739468563564698,
+                "residual": 0,
+                "totalCarbonMolKg": 0.008996383008926979
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 16,
+            "sample_index": 15,
+            "mode": "closed",
+            "dic_mol_kg": 0.006269666347301155,
+            "headspace_co2_mol_kg": 0.0027267145176606412,
+            "reduced_alkalinity_eq_kg": 0.005071963318700296,
+            "solid_carbon_mol_kg": 2.1250133280625702e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.07589788343819222,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 37,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 16: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.006256912301397091,
+                "headspaceCO2MolKg": 0.002739468563564698,
+                "totalCarbonMolKg": 0.00899638086496179
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.006269666347301155,
+                "pH": 6.917262449842401,
+                "pCO2Bar": 0.07589788343819222,
+                "headspaceCO2MolKg": 0.0027267145176606412,
+                "residual": 6.938893903907228e-18,
+                "totalCarbonMolKg": 0.008996380864961797
+              },
+              "carbonErrorMolKg": 6.938893903907228e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 17,
+            "sample_index": 16,
+            "mode": "closed",
+            "dic_mol_kg": 0.006285163374485293,
+            "headspace_co2_mol_kg": 0.0027112147664517805,
+            "reduced_alkalinity_eq_kg": 0.005071957870651198,
+            "solid_carbon_mol_kg": 2.3974157829481125e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.0751295958542924,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 40,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 17: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.006269663623276432,
+                "headspaceCO2MolKg": 0.0027267145176606412,
+                "totalCarbonMolKg": 0.008996378140937074
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.006285163374485293,
+                "pH": 6.9098435186077705,
+                "pCO2Bar": 0.0751295958542924,
+                "headspaceCO2MolKg": 0.0027112147664517805,
+                "residual": 0,
+                "totalCarbonMolKg": 0.008996378140937074
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 18,
+            "sample_index": 17,
+            "mode": "closed",
+            "dic_mol_kg": 0.006298114853119678,
+            "headspace_co2_mol_kg": 0.002698261608538762,
+            "reduced_alkalinity_eq_kg": 0.005071954512093083,
+            "solid_carbon_mol_kg": 2.5653436886802307e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.07449938986328639,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 43,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 18: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.006285161695206649,
+                "headspaceCO2MolKg": 0.0027112147664517805,
+                "totalCarbonMolKg": 0.00899637646165843
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.006298114853119678,
+                "pH": 6.903965121442894,
+                "pCO2Bar": 0.07449938986328639,
+                "headspaceCO2MolKg": 0.002698261608538762,
+                "residual": 8.673617379884035e-18,
+                "totalCarbonMolKg": 0.00899637646165844
+              },
+              "carbonErrorMolKg": 8.673617379884035e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 19,
+            "sample_index": 18,
+            "mode": "closed",
+            "dic_mol_kg": 0.006315218443022031,
+            "headspace_co2_mol_kg": 0.002681156036848576,
+            "reduced_alkalinity_eq_kg": 0.005071950548516213,
+            "solid_carbon_mol_kg": 2.763522532195464e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.07368262998889093,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 46,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 19: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.006298112871331847,
+                "headspaceCO2MolKg": 0.002698261608538762,
+                "totalCarbonMolKg": 0.008996374479870608
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.006315218443022031,
+                "pH": 6.896621405205883,
+                "pCO2Bar": 0.07368262998889093,
+                "headspaceCO2MolKg": 0.002681156036848576,
+                "residual": -1.734723475976807e-18,
+                "totalCarbonMolKg": 0.008996374479870606
+              },
+              "carbonErrorMolKg": -1.734723475976807e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 20,
+            "sample_index": 19,
+            "mode": "closed",
+            "dic_mol_kg": 0.00633119129622416,
+            "headspace_co2_mol_kg": 0.002665181630966387,
+            "reduced_alkalinity_eq_kg": 0.005071947443155445,
+            "solid_carbon_mol_kg": 2.918790570616557e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.07293479635321802,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 49,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 20: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.006315216890341981,
+                "headspaceCO2MolKg": 0.002681156036848576,
+                "totalCarbonMolKg": 0.008996372927190556
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.00633119129622416,
+                "pH": 6.890166879626467,
+                "pCO2Bar": 0.07293479635321802,
+                "headspaceCO2MolKg": 0.002665181630966387,
+                "residual": -8.673617379884035e-18,
+                "totalCarbonMolKg": 0.008996372927190547
+              },
+              "carbonErrorMolKg": -8.673617379884035e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 21,
+            "sample_index": 20,
+            "mode": "closed",
+            "dic_mol_kg": 0.006348149755208726,
+            "headspace_co2_mol_kg": 0.0026482212786799377,
+            "reduced_alkalinity_eq_kg": 0.005071943656550279,
+            "solid_carbon_mol_kg": 3.108120828893884e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.0721555414185535,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 52,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 21: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.00633118940292227,
+                "headspaceCO2MolKg": 0.002665181630966387,
+                "totalCarbonMolKg": 0.008996371033888657
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.006348149755208726,
+                "pH": 6.883712127330478,
+                "pCO2Bar": 0.0721555414185535,
+                "headspaceCO2MolKg": 0.0026482212786799377,
+                "residual": 6.938893903907228e-18,
+                "totalCarbonMolKg": 0.008996371033888664
+              },
+              "carbonErrorMolKg": 6.938893903907228e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 22,
+            "sample_index": 21,
+            "mode": "closed",
+            "dic_mol_kg": 0.006366036648141388,
+            "headspace_co2_mol_kg": 0.0026303329900269823,
+            "reduced_alkalinity_eq_kg": 0.005071940865108461,
+            "solid_carbon_mol_kg": 3.247692919833095e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.07134906394840493,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 55,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 22: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.006348148359488426,
+                "headspaceCO2MolKg": 0.0026482212786799377,
+                "totalCarbonMolKg": 0.008996369638168362
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.006366036648141388,
+                "pH": 6.877320463705734,
+                "pCO2Bar": 0.07134906394840493,
+                "headspaceCO2MolKg": 0.0026303329900269823,
+                "residual": 6.938893903907228e-18,
+                "totalCarbonMolKg": 0.00899636963816837
+              },
+              "carbonErrorMolKg": 6.938893903907228e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 23,
+            "sample_index": 22,
+            "mode": "closed",
+            "dic_mol_kg": 0.0063860594713109255,
+            "headspace_co2_mol_kg": 0.0026103090610978884,
+            "reduced_alkalinity_eq_kg": 0.005071938653591107,
+            "solid_carbon_mol_kg": 3.3582687875329876e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.07046383431278222,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 58,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 23: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.006366035542381832,
+                "headspaceCO2MolKg": 0.0026303329900269823,
+                "totalCarbonMolKg": 0.008996368532408814
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.0063860594713109255,
+                "pH": 6.87063882146885,
+                "pCO2Bar": 0.07046383431278222,
+                "headspaceCO2MolKg": 0.0026103090610978884,
+                "residual": 0,
+                "totalCarbonMolKg": 0.008996368532408814
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 24,
+            "sample_index": 23,
+            "mode": "closed",
+            "dic_mol_kg": 0.00640426522581058,
+            "headspace_co2_mol_kg": 0.0025921028838072815,
+            "reduced_alkalinity_eq_kg": 0.005071937808008129,
+            "solid_carbon_mol_kg": 3.400547936452621e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.00746266045892463,
+            "target_pco2_bar": 0.08,
+            "solved_pco2_bar": 0.06967399903216594,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 60,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 24: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.006386059048519975,
+                "headspaceCO2MolKg": 0.0026103090610978884,
+                "totalCarbonMolKg": 0.008996368109617863
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.00640426522581058,
+                "pH": 6.864969322011387,
+                "pCO2Bar": 0.06967399903216594,
+                "headspaceCO2MolKg": 0.0025921028838072815,
+                "residual": -1.734723475976807e-18,
+                "totalCarbonMolKg": 0.008996368109617861
+              },
+              "carbonErrorMolKg": -1.734723475976807e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 25,
+            "sample_index": 24,
+            "mode": "closed",
+            "dic_mol_kg": 0.005333989408880911,
+            "headspace_co2_mol_kg": 0.0007009899754919122,
+            "reduced_alkalinity_eq_kg": 0.00507193702191662,
+            "solid_carbon_mol_kg": 3.4398525118932915e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.020000000000013653,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 63,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 25: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.00533398940888139,
+                "headspaceCO2MolKg": 0.0007009899754914337,
+                "totalCarbonMolKg": 0.006034979384372823
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005333989408880911,
+                "pH": 7.561609892307139,
+                "pCO2Bar": 0.020000000000013653,
+                "headspaceCO2MolKg": 0.0007009899754919122,
+                "residual": 0,
+                "totalCarbonMolKg": 0.006034979384372823
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 26,
+            "sample_index": 25,
+            "mode": "closed",
+            "dic_mol_kg": 0.005338426541647451,
+            "headspace_co2_mol_kg": 0.0006965518557309203,
+            "reduced_alkalinity_eq_kg": 0.005071935047927157,
+            "solid_carbon_mol_kg": 3.5385519850694934e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.019769239415844676,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 66,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 26: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.00533398842188646,
+                "headspaceCO2MolKg": 0.0007009899754919122,
+                "totalCarbonMolKg": 0.006034978397378372
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005338426541647451,
+                "pH": 7.552157233453116,
+                "pCO2Bar": 0.019769239415844676,
+                "headspaceCO2MolKg": 0.0006965518557309203,
+                "residual": -8.673617379884035e-19,
+                "totalCarbonMolKg": 0.006034978397378371
+              },
+              "carbonErrorMolKg": -8.673617379884035e-19,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 27,
+            "sample_index": 26,
+            "mode": "closed",
+            "dic_mol_kg": 0.0053425773702005935,
+            "headspace_co2_mol_kg": 0.0006923999296015052,
+            "reduced_alkalinity_eq_kg": 0.005071932852773789,
+            "solid_carbon_mol_kg": 3.648309653494829e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.01955713424699524,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 69,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 27: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005338425444071177,
+                "headspaceCO2MolKg": 0.0006965518557309203,
+                "totalCarbonMolKg": 0.006034977299802098
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.0053425773702005935,
+                "pH": 7.543698231794174,
+                "pCO2Bar": 0.01955713424699524,
+                "headspaceCO2MolKg": 0.0006923999296015052,
+                "residual": 8.673617379884035e-19,
+                "totalCarbonMolKg": 0.0060349772998020985
+              },
+              "carbonErrorMolKg": 8.673617379884035e-19,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 28,
+            "sample_index": 27,
+            "mode": "closed",
+            "dic_mol_kg": 0.005346325233094142,
+            "headspace_co2_mol_kg": 0.0006886511581012543,
+            "reduced_alkalinity_eq_kg": 0.005071931035562509,
+            "solid_carbon_mol_kg": 3.7391702174885906e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.01936870207833046,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 72,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 28: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005342576461593889,
+                "headspaceCO2MolKg": 0.0006923999296015052,
+                "totalCarbonMolKg": 0.006034976391195394
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005346325233094142,
+                "pH": 7.536375697349493,
+                "pCO2Bar": 0.01936870207833046,
+                "headspaceCO2MolKg": 0.0006886511581012543,
+                "residual": 2.6020852139652106e-18,
+                "totalCarbonMolKg": 0.0060349763911953964
+              },
+              "carbonErrorMolKg": 2.6020852139652106e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 29,
+            "sample_index": 28,
+            "mode": "closed",
+            "dic_mol_kg": 0.005351061609222458,
+            "headspace_co2_mol_kg": 0.0006839140533476985,
+            "reduced_alkalinity_eq_kg": 0.005071929578312676,
+            "solid_carbon_mol_kg": 3.8120327091323276e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.019134668876798412,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 75,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 29: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005346324504468906,
+                "headspaceCO2MolKg": 0.0006886511581012543,
+                "totalCarbonMolKg": 0.006034975662570161
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005351061609222458,
+                "pH": 7.52754234578892,
+                "pCO2Bar": 0.019134668876798412,
+                "headspaceCO2MolKg": 0.0006839140533476985,
+                "residual": -4.336808689942018e-18,
+                "totalCarbonMolKg": 0.0060349756625701564
+              },
+              "carbonErrorMolKg": -4.336808689942018e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 30,
+            "sample_index": 29,
+            "mode": "closed",
+            "dic_mol_kg": 0.0053546126123499484,
+            "headspace_co2_mol_kg": 0.0006803621488426501,
+            "reduced_alkalinity_eq_kg": 0.005071927775556019,
+            "solid_carbon_mol_kg": 3.902170541957269e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.018962085434285177,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 78,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 30: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005351060707844902,
+                "headspaceCO2MolKg": 0.0006839140533476985,
+                "totalCarbonMolKg": 0.0060349747611926005
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.0053546126123499484,
+                "pH": 7.521218102093044,
+                "pCO2Bar": 0.018962085434285177,
+                "headspaceCO2MolKg": 0.0006803621488426501,
+                "residual": -1.734723475976807e-18,
+                "totalCarbonMolKg": 0.006034974761192599
+              },
+              "carbonErrorMolKg": -1.734723475976807e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 31,
+            "sample_index": 30,
+            "mode": "closed",
+            "dic_mol_kg": 0.005359202266911665,
+            "headspace_co2_mol_kg": 0.0006757714444340502,
+            "reduced_alkalinity_eq_kg": 0.005071925675862663,
+            "solid_carbon_mol_kg": 4.0071552097495126e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.018742594201269436,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 81,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 31: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005354611562503064,
+                "headspaceCO2MolKg": 0.0006803621488426501,
+                "totalCarbonMolKg": 0.006034973711345714
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005359202266911665,
+                "pH": 7.513414145470774,
+                "pCO2Bar": 0.018742594201269436,
+                "headspaceCO2MolKg": 0.0006757714444340502,
+                "residual": 1.734723475976807e-18,
+                "totalCarbonMolKg": 0.006034973711345716
+              },
+              "carbonErrorMolKg": 1.734723475976807e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 32,
+            "sample_index": 31,
+            "mode": "closed",
+            "dic_mol_kg": 0.005363163094153812,
+            "headspace_co2_mol_kg": 0.0006718097370574937,
+            "reduced_alkalinity_eq_kg": 0.005071923915593645,
+            "solid_carbon_mol_kg": 4.095168660671294e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.018556303020999917,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 84,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 32: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005359201386777257,
+                "headspaceCO2MolKg": 0.0006757714444340502,
+                "totalCarbonMolKg": 0.006034972831211308
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005363163094153812,
+                "pH": 7.5070046764868685,
+                "pCO2Bar": 0.018556303020999917,
+                "headspaceCO2MolKg": 0.0006718097370574937,
+                "residual": -1.734723475976807e-18,
+                "totalCarbonMolKg": 0.006034972831211306
+              },
+              "carbonErrorMolKg": -1.734723475976807e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 33,
+            "sample_index": 32,
+            "mode": "closed",
+            "dic_mol_kg": 0.005366739754131954,
+            "headspace_co2_mol_kg": 0.0006682323188431628,
+            "reduced_alkalinity_eq_kg": 0.005071922399121351,
+            "solid_carbon_mol_kg": 4.1709922753645946e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.01839048565695778,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 87,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 33: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005363162335917626,
+                "headspaceCO2MolKg": 0.0006718097370574937,
+                "totalCarbonMolKg": 0.006034972072975119
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005366739754131954,
+                "pH": 7.501467647926852,
+                "pCO2Bar": 0.01839048565695778,
+                "headspaceCO2MolKg": 0.0006682323188431628,
+                "residual": -2.6020852139652106e-18,
+                "totalCarbonMolKg": 0.006034972072975117
+              },
+              "carbonErrorMolKg": -2.6020852139652106e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 34,
+            "sample_index": 33,
+            "mode": "closed",
+            "dic_mol_kg": 0.0053708987696796905,
+            "headspace_co2_mol_kg": 0.0006640726275582835,
+            "reduced_alkalinity_eq_kg": 0.005071921047645928,
+            "solid_carbon_mol_kg": 4.238566046505473e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.01820045053616402,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 90,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 34: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.00536673907839481,
+                "headspaceCO2MolKg": 0.0006682323188431628,
+                "totalCarbonMolKg": 0.0060349713972379735
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.0053708987696796905,
+                "pH": 7.4953192346171384,
+                "pCO2Bar": 0.01820045053616402,
+                "headspaceCO2MolKg": 0.0006640726275582835,
+                "residual": 0,
+                "totalCarbonMolKg": 0.0060349713972379735
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 35,
+            "sample_index": 34,
+            "mode": "closed",
+            "dic_mol_kg": 0.005376107431690086,
+            "headspace_co2_mol_kg": 0.0006588631290738752,
+            "reduced_alkalinity_eq_kg": 0.005071919374696922,
+            "solid_carbon_mol_kg": 4.322213496812067e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.017966490109001396,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 93,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 35: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005370897933205674,
+                "headspaceCO2MolKg": 0.0006640726275582835,
+                "totalCarbonMolKg": 0.006034970560763957
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005376107431690086,
+                "pH": 7.488042075812496,
+                "pCO2Bar": 0.017966490109001396,
+                "headspaceCO2MolKg": 0.0006588631290738752,
+                "residual": 4.336808689942018e-18,
+                "totalCarbonMolKg": 0.006034970560763961
+              },
+              "carbonErrorMolKg": 4.336808689942018e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 36,
+            "sample_index": 35,
+            "mode": "closed",
+            "dic_mol_kg": 0.005380766136703151,
+            "headspace_co2_mol_kg": 0.0006542036119325358,
+            "reduced_alkalinity_eq_kg": 0.0050719177504412495,
+            "solid_carbon_mol_kg": 4.403426280470121e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.01776086645729169,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 96,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 36: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005376106619561814,
+                "headspaceCO2MolKg": 0.0006588631290738752,
+                "totalCarbonMolKg": 0.0060349697486356884
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005380766136703151,
+                "pH": 7.481915364207596,
+                "pCO2Bar": 0.01776086645729169,
+                "headspaceCO2MolKg": 0.0006542036119325358,
+                "residual": -1.734723475976807e-18,
+                "totalCarbonMolKg": 0.006034969748635687
+              },
+              "carbonErrorMolKg": -1.734723475976807e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 37,
+            "sample_index": 36,
+            "mode": "closed",
+            "dic_mol_kg": 0.005385098280815808,
+            "headspace_co2_mol_kg": 0.000649870688152586,
+            "reduced_alkalinity_eq_kg": 0.005071916191105624,
+            "solid_carbon_mol_kg": 4.4813930617648065e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.017572600903153268,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 99,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 37: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005380765357035862,
+                "headspaceCO2MolKg": 0.0006542036119325358,
+                "totalCarbonMolKg": 0.006034968968968398
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005385098280815808,
+                "pH": 7.476528386158357,
+                "pCO2Bar": 0.017572600903153268,
+                "headspaceCO2MolKg": 0.000649870688152586,
+                "residual": -4.336808689942018e-18,
+                "totalCarbonMolKg": 0.006034968968968393
+              },
+              "carbonErrorMolKg": -4.336808689942018e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 38,
+            "sample_index": 37,
+            "mode": "closed",
+            "dic_mol_kg": 0.005390233772001013,
+            "headspace_co2_mol_kg": 0.0006447345544521047,
+            "reduced_alkalinity_eq_kg": 0.005071914906073879,
+            "solid_carbon_mol_kg": 4.54564464899809e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.017352952815664815,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 102,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 38: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005385097638300532,
+                "headspaceCO2MolKg": 0.000649870688152586,
+                "totalCarbonMolKg": 0.006034968326453118
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005390233772001013,
+                "pH": 7.470514271872817,
+                "pCO2Bar": 0.017352952815664815,
+                "headspaceCO2MolKg": 0.0006447345544521047,
+                "residual": 0,
+                "totalCarbonMolKg": 0.006034968326453118
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 39,
+            "sample_index": 38,
+            "mode": "closed",
+            "dic_mol_kg": 0.005396401615732998,
+            "headspace_co2_mol_kg": 0.0006385661041512292,
+            "reduced_alkalinity_eq_kg": 0.005071913692936316,
+            "solid_carbon_mol_kg": 4.60630152718238e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.01042404879112352,
+            "target_pco2_bar": 0.02,
+            "solved_pco2_bar": 0.01709395053668367,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 105,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 39: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005390233165432121,
+                "headspaceCO2MolKg": 0.0006447345544521047,
+                "totalCarbonMolKg": 0.006034967719884226
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005396401615732998,
+                "pH": 7.46379891550245,
+                "pCO2Bar": 0.01709395053668367,
+                "headspaceCO2MolKg": 0.0006385661041512292,
+                "residual": 1.734723475976807e-18,
+                "totalCarbonMolKg": 0.006034967719884227
+              },
+              "carbonErrorMolKg": 1.734723475976807e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 40,
+            "sample_index": 39,
+            "mode": "closed",
+            "dic_mol_kg": 0.005035840989358109,
+            "headspace_co2_mol_kg": 0.00014019799509798093,
+            "reduced_alkalinity_eq_kg": 0.005071912493154786,
+            "solid_carbon_mol_kg": 4.666290603708906e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.003999999999991275,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 109,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 40: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005035840989357804,
+                "headspaceCO2MolKg": 0.00014019799509828673,
+                "totalCarbonMolKg": 0.00517603898445609
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005035840989358109,
+                "pH": 8.249717547339522,
+                "pCO2Bar": 0.003999999999991275,
+                "headspaceCO2MolKg": 0.00014019799509798093,
+                "residual": 0,
+                "totalCarbonMolKg": 0.00517603898445609
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 41,
+            "sample_index": 40,
+            "mode": "closed",
+            "dic_mol_kg": 0.005038781436623781,
+            "headspace_co2_mol_kg": 0.00013725725091441514,
+            "reduced_alkalinity_eq_kg": 0.005071911899317858,
+            "solid_carbon_mol_kg": 4.6959824500838705e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.0038955897779791764,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 112,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 41: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005035840692440215,
+                "headspaceCO2MolKg": 0.00014019799509798093,
+                "totalCarbonMolKg": 0.0051760386875381965
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005038781436623781,
+                "pH": 8.246939063419408,
+                "pCO2Bar": 0.0038955897779791764,
+                "headspaceCO2MolKg": 0.00013725725091441514,
+                "residual": 0,
+                "totalCarbonMolKg": 0.0051760386875381965
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 42,
+            "sample_index": 41,
+            "mode": "closed",
+            "dic_mol_kg": 0.005040890707685897,
+            "headspace_co2_mol_kg": 0.00013514765213147028,
+            "reduced_alkalinity_eq_kg": 0.005071911243877049,
+            "solid_carbon_mol_kg": 4.728754490539178e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.0038208747689266517,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 115,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 42: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.00503878110890295,
+                "headspaceCO2MolKg": 0.00013725725091441514,
+                "totalCarbonMolKg": 0.005176038359817365
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005040890707685897,
+                "pH": 8.244903185592442,
+                "pCO2Bar": 0.0038208747689266517,
+                "headspaceCO2MolKg": 0.00013514765213147028,
+                "residual": 1.734723475976807e-18,
+                "totalCarbonMolKg": 0.005176038359817367
+              },
+              "carbonErrorMolKg": 1.734723475976807e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 43,
+            "sample_index": 42,
+            "mode": "closed",
+            "dic_mol_kg": 0.005043433059595308,
+            "headspace_co2_mol_kg": 0.00013260495842255514,
+            "reduced_alkalinity_eq_kg": 0.005071910560277307,
+            "solid_carbon_mol_kg": 4.762934477613818e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.00373104945308967,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 118,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 43: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.0050408903658863925,
+                "headspaceCO2MolKg": 0.00013514765213147028,
+                "totalCarbonMolKg": 0.005176038018017862
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005043433059595308,
+                "pH": 8.242413429479189,
+                "pCO2Bar": 0.00373104945308967,
+                "headspaceCO2MolKg": 0.00013260495842255514,
+                "residual": 8.673617379884035e-19,
+                "totalCarbonMolKg": 0.005176038018017863
+              },
+              "carbonErrorMolKg": 8.673617379884035e-19,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 44,
+            "sample_index": 43,
+            "mode": "closed",
+            "dic_mol_kg": 0.005045841558945628,
+            "headspace_co2_mol_kg": 0.000130196191626392,
+            "reduced_alkalinity_eq_kg": 0.0050719100253862935,
+            "solid_carbon_mol_kg": 4.789679028301293e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.00364620847978202,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 121,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 44: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.0050434327921494645,
+                "headspaceCO2MolKg": 0.00013260495842255514,
+                "totalCarbonMolKg": 0.00517603775057202
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005045841558945628,
+                "pH": 8.240031191727507,
+                "pCO2Bar": 0.00364620847978202,
+                "headspaceCO2MolKg": 0.000130196191626392,
+                "residual": 0,
+                "totalCarbonMolKg": 0.00517603775057202
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 45,
+            "sample_index": 44,
+            "mode": "closed",
+            "dic_mol_kg": 0.005048022482972087,
+            "headspace_co2_mol_kg": 0.0001280150669478683,
+            "reduced_alkalinity_eq_kg": 0.005071909624082338,
+            "solid_carbon_mol_kg": 4.809744226085216e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.003569619036722116,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 124,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 45: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005045841358293565,
+                "headspaceCO2MolKg": 0.000130196191626392,
+                "totalCarbonMolKg": 0.0051760375499199564
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005048022482972087,
+                "pH": 8.237866743426267,
+                "pCO2Bar": 0.003569619036722116,
+                "headspaceCO2MolKg": 0.0001280150669478683,
+                "residual": -8.673617379884035e-19,
+                "totalCarbonMolKg": 0.005176037549919956
+              },
+              "carbonErrorMolKg": -8.673617379884035e-19,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 46,
+            "sample_index": 45,
+            "mode": "closed",
+            "dic_mol_kg": 0.005050303510772132,
+            "headspace_co2_mol_kg": 0.00012573381583234132,
+            "reduced_alkalinity_eq_kg": 0.00507190917745067,
+            "solid_carbon_mol_kg": 4.832075809509785e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.003489773492705039,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 127,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 46: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.0050480222596566045,
+                "headspaceCO2MolKg": 0.0001280150669478683,
+                "totalCarbonMolKg": 0.005176037326604473
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005050303510772132,
+                "pH": 8.235609482717798,
+                "pCO2Bar": 0.003489773492705039,
+                "headspaceCO2MolKg": 0.00012573381583234132,
+                "residual": 0,
+                "totalCarbonMolKg": 0.005176037326604473
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 47,
+            "sample_index": 46,
+            "mode": "closed",
+            "dic_mol_kg": 0.005052140912981265,
+            "headspace_co2_mol_kg": 0.00012389614062196944,
+            "reduced_alkalinity_eq_kg": 0.005071908631447222,
+            "solid_carbon_mol_kg": 4.8593759818984746e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.0034256627351632487,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 130,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 47: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005050303237770893,
+                "headspaceCO2MolKg": 0.00012573381583234132,
+                "totalCarbonMolKg": 0.005176037053603234
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005052140912981265,
+                "pH": 8.233806690867596,
+                "pCO2Bar": 0.0034256627351632487,
+                "headspaceCO2MolKg": 0.00012389614062196944,
+                "residual": 0,
+                "totalCarbonMolKg": 0.005176037053603234
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 48,
+            "sample_index": 47,
+            "mode": "closed",
+            "dic_mol_kg": 0.005053995290239961,
+            "headspace_co2_mol_kg": 0.00012204155876696936,
+            "reduced_alkalinity_eq_kg": 0.005071908222256089,
+            "solid_carbon_mol_kg": 4.879835538513348e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.00336116685106976,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 133,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 48: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005052140708384961,
+                "headspaceCO2MolKg": 0.00012389614062196944,
+                "totalCarbonMolKg": 0.005176036849006931
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005053995290239961,
+                "pH": 8.2320120581055,
+                "pCO2Bar": 0.00336116685106976,
+                "headspaceCO2MolKg": 0.00012204155876696936,
+                "residual": -8.673617379884035e-19,
+                "totalCarbonMolKg": 0.00517603684900693
+              },
+              "carbonErrorMolKg": -8.673617379884035e-19,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 49,
+            "sample_index": 48,
+            "mode": "closed",
+            "dic_mol_kg": 0.005055882474925652,
+            "headspace_co2_mol_kg": 0.00012015419420700687,
+            "reduced_alkalinity_eq_kg": 0.005071907862507381,
+            "solid_carbon_mol_kg": 4.897822973935557e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.0032957568036725885,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 136,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 49: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005053995110365691,
+                "headspaceCO2MolKg": 0.00012204155876696936,
+                "totalCarbonMolKg": 0.00517603666913266
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005055882474925652,
+                "pH": 8.230222004533168,
+                "pCO2Bar": 0.0032957568036725885,
+                "headspaceCO2MolKg": 0.00012015419420700687,
+                "residual": -8.673617379884035e-19,
+                "totalCarbonMolKg": 0.005176036669132659
+              },
+              "carbonErrorMolKg": -8.673617379884035e-19,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 50,
+            "sample_index": 49,
+            "mode": "closed",
+            "dic_mol_kg": 0.005058016218908848,
+            "headspace_co2_mol_kg": 0.00011802027108866692,
+            "reduced_alkalinity_eq_kg": 0.005071907504238291,
+            "solid_carbon_mol_kg": 4.9157364284545364e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.003222096063538962,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 139,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 50: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005055882295790507,
+                "headspaceCO2MolKg": 0.00012015419420700687,
+                "totalCarbonMolKg": 0.005176036489997514
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005058016218908848,
+                "pH": 8.228257248295176,
+                "pCO2Bar": 0.003222096063538962,
+                "headspaceCO2MolKg": 0.00011802027108866692,
+                "residual": 8.673617379884035e-19,
+                "totalCarbonMolKg": 0.005176036489997515
+              },
+              "carbonErrorMolKg": 8.673617379884035e-19,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 51,
+            "sample_index": 50,
+            "mode": "closed",
+            "dic_mol_kg": 0.00506042496620911,
+            "headspace_co2_mol_kg": 0.00011561131586831329,
+            "reduced_alkalinity_eq_kg": 0.005071907088399409,
+            "solid_carbon_mol_kg": 4.936528372563561e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.0031393450441622923,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 142,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 51: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005058016010988756,
+                "headspaceCO2MolKg": 0.00011802027108866692,
+                "totalCarbonMolKg": 0.005176036282077423
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.00506042496620911,
+                "pH": 8.226137258003828,
+                "pCO2Bar": 0.0031393450441622923,
+                "headspaceCO2MolKg": 0.00011561131586831329,
+                "residual": 0,
+                "totalCarbonMolKg": 0.005176036282077423
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 52,
+            "sample_index": 51,
+            "mode": "closed",
+            "dic_mol_kg": 0.0050621739942982615,
+            "headspace_co2_mol_kg": 0.00011386212348894927,
+            "reduced_alkalinity_eq_kg": 0.00507190675981895,
+            "solid_carbon_mol_kg": 4.9529573954934423e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.003079544789185966,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 145,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 52: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005060424801918896,
+                "headspaceCO2MolKg": 0.00011561131586831329,
+                "totalCarbonMolKg": 0.005176036117787209
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.0050621739942982615,
+                "pH": 8.22467871822602,
+                "pCO2Bar": 0.003079544789185966,
+                "headspaceCO2MolKg": 0.00011386212348894927,
+                "residual": 1.734723475976807e-18,
+                "totalCarbonMolKg": 0.005176036117787211
+              },
+              "carbonErrorMolKg": 1.734723475976807e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 53,
+            "sample_index": 52,
+            "mode": "closed",
+            "dic_mol_kg": 0.005063816526501128,
+            "headspace_co2_mol_kg": 0.00011221941723588933,
+            "reduced_alkalinity_eq_kg": 0.005071906411717787,
+            "solid_carbon_mol_kg": 4.970362453674304e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.003023618217378241,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 148,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 53: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.0050621738202480705,
+                "headspaceCO2MolKg": 0.00011386212348894927,
+                "totalCarbonMolKg": 0.00517603594373702
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005063816526501128,
+                "pH": 8.223382599459118,
+                "pCO2Bar": 0.003023618217378241,
+                "headspaceCO2MolKg": 0.00011221941723588933,
+                "residual": -2.6020852139652106e-18,
+                "totalCarbonMolKg": 0.005176035943737017
+              },
+              "carbonErrorMolKg": -2.6020852139652106e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 54,
+            "sample_index": 53,
+            "mode": "closed",
+            "dic_mol_kg": 0.0050661495905031575,
+            "headspace_co2_mol_kg": 0.00010988621549879399,
+            "reduced_alkalinity_eq_kg": 0.00507190613624697,
+            "solid_carbon_mol_kg": 4.9841359945295745e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.0029445941373681043,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 151,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 54: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005063816388766065,
+                "headspaceCO2MolKg": 0.00011221941723588933,
+                "totalCarbonMolKg": 0.005176035806001954
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.0050661495905031575,
+                "pH": 8.221684802112094,
+                "pCO2Bar": 0.0029445941373681043,
+                "headspaceCO2MolKg": 0.00010988621549879399,
+                "residual": -2.6020852139652106e-18,
+                "totalCarbonMolKg": 0.005176035806001952
+              },
+              "carbonErrorMolKg": -2.6020852139652106e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 55,
+            "sample_index": 54,
+            "mode": "closed",
+            "dic_mol_kg": 0.005068373683106265,
+            "headspace_co2_mol_kg": 0.00010766194301913904,
+            "reduced_alkalinity_eq_kg": 0.005071905776494542,
+            "solid_carbon_mol_kg": 5.0021236158844463e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.002869733312872302,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 154,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 55: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.0050661494106266115,
+                "headspaceCO2MolKg": 0.00010988621549879399,
+                "totalCarbonMolKg": 0.005176035626125406
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005068373683106265,
+                "pH": 8.22024719373874,
+                "pCO2Bar": 0.002869733312872302,
+                "headspaceCO2MolKg": 0.00010766194301913904,
+                "residual": -1.734723475976807e-18,
+                "totalCarbonMolKg": 0.005176035626125404
+              },
+              "carbonErrorMolKg": -1.734723475976807e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 56,
+            "sample_index": 55,
+            "mode": "closed",
+            "dic_mol_kg": 0.00507005242280203,
+            "headspace_co2_mol_kg": 0.00010598304435262904,
+            "reduced_alkalinity_eq_kg": 0.005071905458552528,
+            "solid_carbon_mol_kg": 5.018020716568713e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.0028135504544063343,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 157,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 56: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005068373524135521,
+                "headspaceCO2MolKg": 0.00010766194301913904,
+                "totalCarbonMolKg": 0.005176035467154659
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.00507005242280203,
+                "pH": 8.219295772342964,
+                "pCO2Bar": 0.0028135504544063343,
+                "headspaceCO2MolKg": 0.00010598304435262904,
+                "residual": -8.673617379884035e-19,
+                "totalCarbonMolKg": 0.0051760354671546585
+              },
+              "carbonErrorMolKg": -8.673617379884035e-19,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 57,
+            "sample_index": 56,
+            "mode": "closed",
+            "dic_mol_kg": 0.005072234624391901,
+            "headspace_co2_mol_kg": 0.00010380072986089448,
+            "reduced_alkalinity_eq_kg": 0.005071905232748092,
+            "solid_carbon_mol_kg": 5.029310938378352e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.0027409563237758643,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 160,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 57: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.0050700523099001665,
+                "headspaceCO2MolKg": 0.00010598304435262904,
+                "totalCarbonMolKg": 0.005176035354252795
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.005072234624391901,
+                "pH": 8.218252831784291,
+                "pCO2Bar": 0.0027409563237758643,
+                "headspaceCO2MolKg": 0.00010380072986089448,
+                "residual": 0,
+                "totalCarbonMolKg": 0.005176035354252795
+              },
+              "carbonErrorMolKg": 0,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 58,
+            "sample_index": 57,
+            "mode": "closed",
+            "dic_mol_kg": 0.0050737679291103285,
+            "headspace_co2_mol_kg": 0.00010226729882535463,
+            "reduced_alkalinity_eq_kg": 0.005071904980115455,
+            "solid_carbon_mol_kg": 5.041942570219634e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.0026902523558875024,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 163,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 58: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005072234498074791,
+                "headspaceCO2MolKg": 0.00010380072986089448,
+                "totalCarbonMolKg": 0.005176035227935685
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.0050737679291103285,
+                "pH": 8.217663953835228,
+                "pCO2Bar": 0.0026902523558875024,
+                "headspaceCO2MolKg": 0.00010226729882535463,
+                "residual": -1.734723475976807e-18,
+                "totalCarbonMolKg": 0.005176035227935683
+              },
+              "carbonErrorMolKg": -1.734723475976807e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 59,
+            "sample_index": 58,
+            "mode": "closed",
+            "dic_mol_kg": 0.00507552185765143,
+            "headspace_co2_mol_kg": 0.00010051324023840346,
+            "reduced_alkalinity_eq_kg": 0.005071904720022961,
+            "solid_carbon_mol_kg": 5.0549471949347664e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.002632573368065179,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 166,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 59: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.00507376779906448,
+                "headspaceCO2MolKg": 0.00010226729882535463,
+                "totalCarbonMolKg": 0.005176035097889835
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.00507552185765143,
+                "pH": 8.217149896131456,
+                "pCO2Bar": 0.002632573368065179,
+                "headspaceCO2MolKg": 0.00010051324023840346,
+                "residual": -8.673617379884035e-19,
+                "totalCarbonMolKg": 0.005176035097889834
+              },
+              "carbonErrorMolKg": -8.673617379884035e-19,
+              "alkalinityChangeEqKg": 0
+            }
+          },
+          {
+            "step": 60,
+            "sample_index": 59,
+            "mode": "closed",
+            "dic_mol_kg": 0.0050772630675080515,
+            "headspace_co2_mol_kg": 0.00009877189160536263,
+            "reduced_alkalinity_eq_kg": 0.0050719044424696255,
+            "solid_carbon_mol_kg": 5.068824861708808e-8,
+            "boundary_import_mol_kg": 0,
+            "boundary_export_mol_kg": 0.011282976926660734,
+            "target_pco2_bar": 0.004,
+            "solved_pco2_bar": 0.0025756603650889083,
+            "blocked": false,
+            "uncertainties": [
+              "full_alkalinity_systems_omitted"
+            ],
+            "transaction_count": 169,
+            "last_transaction": {
+              "ok": true,
+              "kind": "closed",
+              "note": "step 60: closed aqueous-headspace equilibration",
+              "before": {
+                "dicMolKg": 0.005075521718875012,
+                "headspaceCO2MolKg": 0.00010051324023840346,
+                "totalCarbonMolKg": 0.005176034959113416
+              },
+              "after": {
+                "ok": true,
+                "dicMolKg": 0.0050772630675080515,
+                "pH": 8.21682136813941,
+                "pCO2Bar": 0.0025756603650889083,
+                "headspaceCO2MolKg": 0.00009877189160536263,
+                "residual": -1.734723475976807e-18,
+                "totalCarbonMolKg": 0.005176034959113414
+              },
+              "carbonErrorMolKg": -1.734723475976807e-18,
+              "alkalinityChangeEqKg": 0
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -83,17 +83,22 @@ describe('fluorite morphology registry (fourth tenant)', () => {
     expect((mass.spiral_smooth || 0) / total).toBeGreaterThanOrEqual(0.2);
   });
 
-  it('reactivated vein fluorite is composite/stepped-dominant', () => {
+  it('reactivated vein fluorite stays smooth cubic so the {100} dissolution model is admissible', () => {
     const sim = runScenario('reactivated_fluorite_vein');
     const { mass, total } = fluoriteMass(sim);
     expect(total).toBeGreaterThan(0);
-    expect((mass.stepped_macro || 0) / total).toBeGreaterThanOrEqual(0.5);
-    // and the terrace walk yields render bands for the cube ziggurat
-    const fl = sim.crystals.find((c: any) => c.mineral === 'fluorite' && !c.dissolved);
-    const terr = halideTerraceBands(fl, null);
-    expect(terr).toBeTruthy();
-    expect(terr.form).toBe('cube');
-    expect(terr.knots.length).toBeGreaterThanOrEqual(1);
+    expect((mass.spiral_smooth || 0) / total).toBeCloseTo(1, 6);
+    const etched = sim.crystals.filter((c: any) =>
+      c.mineral === 'fluorite'
+      && !c.dissolved
+      && Array.isArray(c.etch_history)
+      && c.etch_history.length > 0);
+    expect(etched.length).toBeGreaterThan(0);
+    for (const fl of etched) {
+      expect(fl.habit).toBe('cubic');
+      expect(fl.etch_history.at(-1)?.face).toBe('{100}');
+      expect(fl.etch_history.at(-1)?.schema).toBe('physical-dissolution-v3');
+    }
   });
 
   it('THE REE COMPOSE: sunnyside fluorite keeps its octahedron (form beats roughness)', () => {

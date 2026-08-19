@@ -186,7 +186,7 @@ function _nuc_stibnite(sim) {
       const active_qtz_stb = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
       if (active_qtz_stb.length && rng.random() < 0.4) pos = `on quartz #${active_qtz_stb[0].crystal_id}`;
       const c = sim.nucleate('stibnite', pos, sigma_stb);
-      sim.log.push(`  ✦ NUCLEATION: Stibnite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_stb.toFixed(2)}, Sb=${sim.conditions.fluid.Sb.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+      sim.log.push(`  ✦ NUCLEATION: Stibnite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_stb.toFixed(2)}, Sb=${sim.conditions.fluid.Sb.toFixed(0)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)})`);
     }
   }
 
@@ -198,25 +198,22 @@ function _nuc_stibnite(sim) {
 // both fire). The nucleation threshold σ > 1.0 follows the same
 // canonical lower-tier gate used by pyrite/marcasite/galena.
 //
-// Substrate preference: cinnabar at Sulphur Bank often nucleates on
-// or alongside native_sulfur (both products of the H₂S + O₂ mixing
-// zone). At Almadén the substrate is typically quartz veining. The
-// nucleation handler weights these accordingly.
+// Sulphur Bank is a zoned hot-spring Hg deposit, not evidence for an
+// epitaxial native-sulfur substrate. USGS Bull. 922-L reports cinnabar
+// films on cracks in less-altered basalt, while thoroughly opalized rock
+// contains sulfur but little cinnabar; USGS Bull. 1693 likewise places
+// native sulfur above the palaeo-water table and cinnabar in sinter and
+// fracture coatings. Quartz remains a defensible physical substrate.
 function _nuc_cinnabar(sim) {
   const sigma_cb = sim.conditions.supersaturation_cinnabar();
   const existing_cb = sim.crystals.filter(c => c.mineral === 'cinnabar' && c.active);
   if (sigma_cb > MINERAL_GATES_cinnabar.sigma_crit && !sim._atNucleationCap('cinnabar')) {
     if (!existing_cb.length || (sigma_cb > 1.8 && rng.random() < 0.2)) {
       let pos = 'vug wall';
-      const active_ns = sim.crystals.filter(c => c.mineral === 'native_sulfur' && c.active);
       const active_qtz_cb = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
-      // Substrate preference: native_sulfur > quartz > wall.
-      // At Sulphur Bank, cinnabar and native_sulfur are co-deposited
-      // in the same mixing zone, so substrate association is real.
-      if (active_ns.length && rng.random() < 0.4) pos = `on native_sulfur #${active_ns[0].crystal_id}`;
-      else if (active_qtz_cb.length && rng.random() < 0.3) pos = `on quartz #${active_qtz_cb[0].crystal_id}`;
+      if (active_qtz_cb.length && rng.random() < 0.3) pos = `on quartz #${active_qtz_cb[0].crystal_id}`;
       const c = sim.nucleate('cinnabar', pos, sigma_cb);
-      sim.log.push(`  ✦ NUCLEATION: Cinnabar #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_cb.toFixed(2)}, Hg=${sim.conditions.fluid.Hg.toFixed(1)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+      sim.log.push(`  ✦ NUCLEATION: Cinnabar #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_cb.toFixed(2)}, Hg=${sim.conditions.fluid.Hg.toFixed(1)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)})`);
     }
   }
 }
@@ -239,7 +236,7 @@ function _nuc_realgar(sim) {
       else if (active_apy.length && rng.random() < 0.30) pos = `on arsenopyrite #${active_apy[0].crystal_id}`;
       else if (active_qtz.length && rng.random() < 0.25) pos = `on quartz #${active_qtz[0].crystal_id}`;
       const c = sim.nucleate('realgar', pos, sigma_rlg);
-      sim.log.push(`  ✦ NUCLEATION: Realgar #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_rlg.toFixed(2)}, As=${sim.conditions.fluid.As.toFixed(1)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+      sim.log.push(`  ✦ NUCLEATION: Realgar #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_rlg.toFixed(2)}, As=${sim.conditions.fluid.As.toFixed(1)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)})`);
     }
   }
 }
@@ -263,7 +260,7 @@ function _nuc_orpiment(sim) {
       else if (active_ns.length && rng.random() < 0.30) pos = `on native_sulfur #${active_ns[0].crystal_id}`;
       else if (active_apy.length && rng.random() < 0.25) pos = `on arsenopyrite #${active_apy[0].crystal_id}`;
       const c = sim.nucleate('orpiment', pos, sigma_orp);
-      sim.log.push(`  ✦ NUCLEATION: Orpiment #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_orp.toFixed(2)}, As=${sim.conditions.fluid.As.toFixed(1)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+      sim.log.push(`  ✦ NUCLEATION: Orpiment #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_orp.toFixed(2)}, As=${sim.conditions.fluid.As.toFixed(1)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)})`);
     }
   }
 }
@@ -279,7 +276,7 @@ function _nuc_bismuthinite(sim) {
       if (active_qtz_bmt.length && rng.random() < 0.3) pos = `on quartz #${active_qtz_bmt[0].crystal_id}`;
       else if (active_cp_bmt.length && rng.random() < 0.3) pos = `on chalcopyrite #${active_cp_bmt[0].crystal_id}`;
       const c = sim.nucleate('bismuthinite', pos, sigma_bmt);
-      sim.log.push(`  ✦ NUCLEATION: Bismuthinite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_bmt.toFixed(2)}, Bi=${sim.conditions.fluid.Bi.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+      sim.log.push(`  ✦ NUCLEATION: Bismuthinite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_bmt.toFixed(2)}, Bi=${sim.conditions.fluid.Bi.toFixed(0)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)})`);
     }
   }
 
@@ -293,7 +290,7 @@ function _nuc_argentite(sim) {
       const active_galena_arg = sim.crystals.filter(c => c.mineral === 'galena' && c.active);
       if (active_galena_arg.length && rng.random() < 0.4) pos = `on galena #${active_galena_arg[0].crystal_id}`;
       const c = sim.nucleate('argentite', pos, sigma_arg);
-      sim.log.push(`  ✦ NUCLEATION: Argentite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_arg.toFixed(2)}, Ag=${sim.conditions.fluid.Ag.toFixed(2)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+      sim.log.push(`  ✦ NUCLEATION: Argentite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_arg.toFixed(2)}, Ag=${sim.conditions.fluid.Ag.toFixed(2)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)})`);
     }
   }
 
@@ -321,7 +318,7 @@ function _nuc_millerite(sim) {
       const active_pyr_mil = sim.crystals.filter(c => c.mineral === 'pyrite' && c.active);
       if (active_pyr_mil.length && rng.random() < 0.3) pos = `on pyrite #${active_pyr_mil[0].crystal_id}`;
       const c = sim.nucleate('millerite', pos, sigma_mil);
-      sim.log.push(`  ✦ NUCLEATION: Millerite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_mil.toFixed(2)}, Ni=${sim.conditions.fluid.Ni.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+      sim.log.push(`  ✦ NUCLEATION: Millerite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_mil.toFixed(2)}, Ni=${sim.conditions.fluid.Ni.toFixed(0)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)})`);
     }
   }
 
@@ -335,7 +332,7 @@ function _nuc_cobaltite(sim) {
       const active_apy_cob = sim.crystals.filter(c => c.mineral === 'arsenopyrite' && c.active);
       if (active_apy_cob.length && rng.random() < 0.5) pos = `on arsenopyrite #${active_apy_cob[0].crystal_id}`;
       const c = sim.nucleate('cobaltite', pos, sigma_cob);
-      sim.log.push(`  ✦ NUCLEATION: Cobaltite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_cob.toFixed(2)}, Co=${sim.conditions.fluid.Co.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+      sim.log.push(`  ✦ NUCLEATION: Cobaltite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_cob.toFixed(2)}, Co=${sim.conditions.fluid.Co.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)})`);
     }
   }
 
@@ -351,7 +348,7 @@ function _nuc_acanthite(sim) {
       if (active_galena_aca.length && rng.random() < 0.4) pos = `on galena #${active_galena_aca[0].crystal_id}`;
       else if (dissolving_tet_aca.length && rng.random() < 0.6) pos = `on tetrahedrite #${dissolving_tet_aca[0].crystal_id}`;
       const c = sim.nucleate('acanthite', pos, sigma_aca);
-      sim.log.push(`  ✦ NUCLEATION: Acanthite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_aca.toFixed(2)}, Ag=${sim.conditions.fluid.Ag.toFixed(2)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+      sim.log.push(`  ✦ NUCLEATION: Acanthite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_aca.toFixed(2)}, Ag=${sim.conditions.fluid.Ag.toFixed(2)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)})`);
     }
   }
 
@@ -389,7 +386,7 @@ function _nuc_chalcocite(sim) {
       else if (dissolving_brn.length && rng.random() < 0.6) pos = `on bornite #${dissolving_brn[0].crystal_id}`;
       else if (active_brn.length && rng.random() < 0.4) pos = `on bornite #${active_brn[0].crystal_id}`;
       const c = sim.nucleate('chalcocite', pos, sigma_chc);
-      sim.log.push(`  ✦ NUCLEATION: Chalcocite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_chc.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+      sim.log.push(`  ✦ NUCLEATION: Chalcocite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_chc.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)})`);
     }
   }
 
@@ -406,7 +403,7 @@ function _nuc_covellite(sim) {
       if (active_chc_cov.length && rng.random() < 0.5) pos = `on chalcocite #${active_chc_cov[0].crystal_id}`;
       else if (active_cp_cov.length && rng.random() < 0.3) pos = `on chalcopyrite #${active_cp_cov[0].crystal_id}`;
       const c = sim.nucleate('covellite', pos, sigma_cov);
-      sim.log.push(`  ✦ NUCLEATION: Covellite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_cov.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)})`);
+      sim.log.push(`  ✦ NUCLEATION: Covellite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_cov.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)})`);
     }
   }
 
@@ -426,7 +423,7 @@ function _nuc_covellite(sim) {
 
 function _nuc_skutterudite(sim) {
   const sigma = sim.conditions.supersaturation_skutterudite();
-  if (sigma < MINERAL_GATES_skutterudite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_skutterudite.sigma_crit) return;
   if (sim._atNucleationCap('skutterudite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'skutterudite' && c.active);
   if (existing.length >= 2) return;
@@ -444,7 +441,7 @@ function _nuc_skutterudite(sim) {
 
 function _nuc_safflorite(sim) {
   const sigma = sim.conditions.supersaturation_safflorite();
-  if (sigma < MINERAL_GATES_safflorite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_safflorite.sigma_crit) return;
   if (sim._atNucleationCap('safflorite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'safflorite' && c.active);
   if (existing.length >= 2) return;
@@ -462,7 +459,7 @@ function _nuc_safflorite(sim) {
 
 function _nuc_rammelsbergite(sim) {
   const sigma = sim.conditions.supersaturation_rammelsbergite();
-  if (sigma < MINERAL_GATES_rammelsbergite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_rammelsbergite.sigma_crit) return;
   if (sim._atNucleationCap('rammelsbergite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'rammelsbergite' && c.active);
   if (existing.length >= 2) return;
@@ -478,7 +475,7 @@ function _nuc_rammelsbergite(sim) {
 
 function _nuc_loellingite(sim) {
   const sigma = sim.conditions.supersaturation_loellingite();
-  if (sigma < MINERAL_GATES_loellingite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_loellingite.sigma_crit) return;
   if (sim._atNucleationCap('loellingite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'loellingite' && c.active);
   if (existing.length >= 2) return;
@@ -491,7 +488,7 @@ function _nuc_loellingite(sim) {
   else if (saff.length && rng.random() < 0.35) pos = `rim on safflorite #${saff[0].crystal_id}`;
   else if (arsenopy.length && rng.random() < 0.40) pos = `intergrown with arsenopyrite #${arsenopy[0].crystal_id}`;
   const c = sim.nucleate('loellingite', pos, sigma);
-  sim.log.push(`  ✦ NUCLEATION: 🔘 Loellingite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(2)}) — five-element vein FeAs₂, steel-gray outermost rim`);
+  sim.log.push(`  ✦ NUCLEATION: 🔘 Loellingite #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Fe=${sim.conditions.fluid.Fe.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(2)}) — five-element vein FeAs₂, steel-gray outermost rim`);
 }
 
 // v101 (2026-05-19): Metacinnabar β-HgS — the low-T cubic polymorph.
@@ -500,7 +497,7 @@ function _nuc_loellingite(sim) {
 // fracture surfaces. RNG-cascade guard via sigma < 1.0 early-out.
 function _nuc_metacinnabar(sim) {
   const sigma = sim.conditions.supersaturation_metacinnabar();
-  if (sigma < MINERAL_GATES_metacinnabar.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_metacinnabar.sigma_crit) return;
   if (sim._atNucleationCap('metacinnabar')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'metacinnabar' && c.active);
   if (existing.length >= 3) return;
@@ -512,7 +509,7 @@ function _nuc_metacinnabar(sim) {
   else if (opl.length && rng.random() < 0.45) pos = `sooty coating on opal sinter #${opl[0].crystal_id}`;
   else if (sul.length && rng.random() < 0.30) pos = `on native_sulfur #${sul[0].crystal_id}`;
   const c = sim.nucleate('metacinnabar', pos, sigma);
-  sim.log.push(`  ✦ NUCLEATION: ⬛ Metacinnabar #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Hg=${sim.conditions.fluid.Hg.toFixed(1)}, S=${sim.conditions.fluid.S.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — black cubic β-HgS (kinetically favored vs cinnabar at low T)`);
+  sim.log.push(`  ✦ NUCLEATION: ⬛ Metacinnabar #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Hg=${sim.conditions.fluid.Hg.toFixed(1)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — black cubic β-HgS (kinetically favored vs cinnabar at low T)`);
 }
 
 // v96 (2026-05-19): Ruby silvers nucleation. Late-stage epithermal Ag,
@@ -523,7 +520,7 @@ function _nuc_metacinnabar(sim) {
 
 function _nuc_proustite(sim) {
   const sigma = sim.conditions.supersaturation_proustite();
-  if (sigma < MINERAL_GATES_proustite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_proustite.sigma_crit) return;
   if (sim._atNucleationCap('proustite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'proustite' && c.active);
   if (existing.length >= 2) return;
@@ -543,7 +540,7 @@ function _nuc_proustite(sim) {
 
 function _nuc_pyrargyrite(sim) {
   const sigma = sim.conditions.supersaturation_pyrargyrite();
-  if (sigma < MINERAL_GATES_pyrargyrite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_pyrargyrite.sigma_crit) return;
   if (sim._atNucleationCap('pyrargyrite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'pyrargyrite' && c.active);
   if (existing.length >= 2) return;
@@ -567,7 +564,7 @@ function _nuc_pyrargyrite(sim) {
 // RNG-cascade guard: early-out if sigma < 1.0 BEFORE substrate picks.
 function _nuc_enargite(sim) {
   const sigma = sim.conditions.supersaturation_enargite();
-  if (sigma < MINERAL_GATES_enargite.sigma_crit) return;
+  if (sigma <= MINERAL_GATES_enargite.sigma_crit) return;
   if (sim._atNucleationCap('enargite')) return;
   const existing = sim.crystals.filter(c => c.mineral === 'enargite' && c.active);
   if (existing.length) return;  // primary stage — one nucleation per phase
@@ -578,7 +575,7 @@ function _nuc_enargite(sim) {
   else if (active_cp.length && rng.random() < 0.35) pos = `on chalcopyrite #${active_cp[0].crystal_id}`;
   const c = sim.nucleate('enargite', pos, sigma);
   const polymorph_label = sim.conditions.temperature >= 320 ? 'enargite' : 'luzonite';
-  sim.log.push(`  ✦ NUCLEATION: ⬛ Enargite #${c.crystal_id} (${polymorph_label}) on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}, S=${sim.conditions.fluid.S.toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — high-sulfidation primary Cu-As-S`);
+  sim.log.push(`  ✦ NUCLEATION: ⬛ Enargite #${c.crystal_id} (${polymorph_label}) on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}, Cu=${sim.conditions.fluid.Cu.toFixed(0)}, As=${sim.conditions.fluid.As.toFixed(0)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)}, pH=${sim.conditions.fluid.pH.toFixed(1)}) — high-sulfidation primary Cu-As-S`);
 }
 
 function _nucleateClass_sulfide(sim) {
@@ -692,7 +689,7 @@ function _nuc_greenockite(sim) {
     const sph = sim.crystals.filter(c => c.mineral === 'sphalerite' && (c.dissolved || c.active));
     if (sph.length && rng.random() < 0.65) pos = `${sph[0].dissolved ? 'on dissolved' : 'coating'} sphalerite #${sph[0].crystal_id} (Cd liberation source)`;
     const c = sim.nucleate('greenockite', pos, sigma);
-    sim.log.push(`  ✦ NUCLEATION: 🟡 Greenockite #${c.crystal_id} on ${c.position} (Cd ${sim.conditions.fluid.Cd.toFixed(2)} S ${sim.conditions.fluid.S.toFixed(0)} ppm, T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}) — honey-yellow CdS, hexagonal hemimorphic pyramid`);
+    sim.log.push(`  ✦ NUCLEATION: 🟡 Greenockite #${c.crystal_id} on ${c.position} (Cd ${sim.conditions.fluid.Cd.toFixed(2)} S ${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)} ppm, T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}) — honey-yellow CdS, hexagonal hemimorphic pyramid`);
   }
 }
 
@@ -703,6 +700,6 @@ function _nuc_hawleyite(sim) {
     const sph = sim.crystals.filter(c => c.mineral === 'sphalerite' && (c.dissolved || c.active));
     if (sph.length && rng.random() < 0.55) pos = `coating sphalerite #${sph[0].crystal_id}`;
     const c = sim.nucleate('hawleyite', pos, sigma);
-    sim.log.push(`  ✦ NUCLEATION: 🟡 Hawleyite #${c.crystal_id} on ${c.position} (Cd ${sim.conditions.fluid.Cd.toFixed(2)} S ${sim.conditions.fluid.S.toFixed(0)} ppm, T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}) — cadmium-yellow cubic CdS dust`);
+    sim.log.push(`  ✦ NUCLEATION: 🟡 Hawleyite #${c.crystal_id} on ${c.position} (Cd ${sim.conditions.fluid.Cd.toFixed(2)} S ${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)} ppm, T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma.toFixed(2)}) — cadmium-yellow cubic CdS dust`);
   }
 }

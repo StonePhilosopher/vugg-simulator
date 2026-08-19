@@ -99,7 +99,7 @@ describe('v103 Silverton infra — Y fluid field + REE-octahedral fluorite + man
       expect(zone.note.toLowerCase()).toContain('photobleach');
     });
 
-    it('Y is debited from fluid during growth (mass balance)', () => {
+    it('Y is debited from fluid during growth (growth budget)', () => {
       const fluid = new FluidChemistry({ Ca: 150, F: 30, pH: 6.5, Y: 3.0 });
       const cond = new VugConditions({ temperature: 200, fluid });
       const grow_fluorite = (globalThis as any).MINERAL_ENGINES.fluorite;
@@ -114,7 +114,10 @@ describe('v103 Silverton infra — Y fluid field + REE-octahedral fluorite + man
       const fluid = new FluidChemistry({
         Ca: 200, CO3: 100, pH: 7.0, Mn: 0.5, Fe: 5, ...opts,
       });
-      const cond = new VugConditions({ temperature: T, fluid });
+      // These are shallow laboratory-style habit probes, not a 1.5-kbar
+      // default rock column. Keep the pressure basis explicit now that Ksp
+      // pressure corrections are authoritative.
+      const cond = new VugConditions({ temperature: T, pressure: 0.001, fluid });
       const grow_calcite = (globalThis as any).MINERAL_ENGINES.calcite;
       const crystal: any = { total_growth_um: 5, zones: [], position: 'vug wall' };
       const zone = grow_calcite(crystal, cond, 1);

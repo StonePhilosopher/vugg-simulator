@@ -74,7 +74,7 @@ function setGraduatedWinnerTakesFrac(v: number): void {
 //
 // CrystalDryRun captures what one crystal's engine would have produced
 // under unconstrained fluid. The caller computes these by snapshotting
-// the cell's fluid and running engines without mass balance.
+// the cell's fluid and running engines without growth budget.
 
 interface CrystalDryRun {
   crystal_id: number;
@@ -82,7 +82,7 @@ interface CrystalDryRun {
   sigma: number;
   initiative: number;          // from js/43-initiative.ts computeInitiative
   desired_thickness_um: number;
-  debit_per_species: Record<string, number>;  // already × MASS_BALANCE_SCALE × stoich
+  debit_per_species: Record<string, number>;  // mg/kg demand for the requested physical zone
 }
 
 interface GraduatedAllocation {
@@ -238,6 +238,12 @@ function computeGraduatedAllocations(
   if (runs.length > _gradCompStats.maxGroupSize) _gradCompStats.maxGroupSize = runs.length;
   if (!runs.length) return out;
 
+  const availablePool = (speciesName: string) => (
+    speciesName === 'SiO2' && typeof (fluid as any).reactiveSilicaPpm === 'function'
+      ? (fluid as any).reactiveSilicaPpm()
+      : fluid[speciesName] ?? 0
+  );
+
   // Collect species touched by any crystal.
   const species = new Set<string>();
   for (const r of runs) {
@@ -252,7 +258,7 @@ function computeGraduatedAllocations(
   const speciesRationed: Record<string, boolean> = {};
   for (const sp of species) {
     const wanting = runs.filter(r => (r.debit_per_species[sp] || 0) > 0);
-    const available = fluid[sp] ?? 0;
+    const available = availablePool(sp);
     let demand = 0;
     for (const r of wanting) demand += (r.debit_per_species[sp] || 0);
     speciesRationed[sp] = demand > available;
@@ -275,7 +281,7 @@ function computeGraduatedAllocations(
       if (!speciesRationed[sp]) continue;  // free; doesn't cap
 
       // Rationed: crystal's share of fluid[sp] is the cap on its debit.
-      const available = fluid[sp] ?? 0;
+      const available = availablePool(sp);
       const myShareFrac = speciesShares[sp].get(r.crystal_id) || 0;
       const allowedDebit = myShareFrac * available;
       const scaleForThisSp = debit > 0 ? Math.min(1.0, allowedDebit / debit) : 1.0;
@@ -294,7 +300,7 @@ function computeGraduatedAllocations(
     if (limiting === null) {
       why = 'no rationing — full growth';
     } else {
-      const avail = fluid[limiting] ?? 0;
+      const avail = availablePool(limiting);
       why = `${limiting}-limited (share ${(limitingShare * 100).toFixed(0)}% of ${avail.toFixed(2)}, scaling ${(scaling * 100).toFixed(0)}%)`;
     }
     out.set(r.crystal_id, {
@@ -312,8 +318,7 @@ function computeGraduatedAllocations(
 //
 // Helper for the simulator wiring (v128b). Given a crystal + its
 // computed sigma + zone.thickness_um + initiative score, materializes
-// the CrystalDryRun record by looking up MINERAL_STOICHIOMETRY +
-// MASS_BALANCE_SCALE.
+// the CrystalDryRun record by converting formula mole ratios to mg/kg demand.
 //
 // Returns null if the crystal has no stoichiometry entry — in that
 // case it should bypass graduated competition and grow at full rate
@@ -327,9 +332,10 @@ function buildCrystalDryRun(
   sigma: number,
   initiative: number,
   desired_thickness_um: number,
+  fluid?: any,
 ): CrystalDryRun | null {
   // SCRIPT-mode bundle: MINERAL_STOICHIOMETRY (js/19) and
-  // MASS_BALANCE_SCALE (js/18) are top-level `const` declarations that
+  // stoichiometricBudgetDebitPpmPerUm (js/19) is a top-level declaration that
   // wind up as closure-scoped identifiers after concatenation. Reading
   // them as free identifiers is the canonical pattern across the
   // bundle (engines do the same).
@@ -342,12 +348,15 @@ function buildCrystalDryRun(
   // output. Calibration test failed against its own baseline because
   // they were generated from different code paths. Fixed by reading
   // the constants from their script-scoped declarations.
-  if (typeof MINERAL_STOICHIOMETRY === 'undefined' || typeof MASS_BALANCE_SCALE === 'undefined') return null;
+  if (typeof MINERAL_STOICHIOMETRY === 'undefined'
+      || typeof stoichiometricBudgetDebitPpmPerUm === 'undefined') return null;
   const mineStoich = MINERAL_STOICHIOMETRY[mineral];
   if (!mineStoich) return null;
   const debit_per_species: Record<string, number> = {};
   for (const sp of Object.keys(mineStoich)) {
-    debit_per_species[sp] = MASS_BALANCE_SCALE * desired_thickness_um * mineStoich[sp];
+    const reservoir = stoichiometricReservoirSpecies(mineral, sp, fluid);
+    debit_per_species[reservoir] = (debit_per_species[reservoir] || 0)
+      + desired_thickness_um * stoichiometricBudgetDebitPpmPerUm(sp, mineStoich[sp]);
   }
   return { crystal_id, mineral, sigma, initiative, desired_thickness_um, debit_per_species };
 }

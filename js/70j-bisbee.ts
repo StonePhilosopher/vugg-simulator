@@ -50,7 +50,12 @@ function event_bisbee_enrichment_blanket(c) {
 
 function event_bisbee_reducing_pulse(c) {
   c.fluid.O2 = 0.05;
-  c.fluid.S = 15;
+  // This is explicitly a barren reducing fluid. At S=15 the
+  // activity-corrected peak was sigma=1.54 against native copper's
+  // declared 1.6 barrier: the prose promised a low-S metal window while
+  // the broth still described a weak sulfide-bearing one. Ten ppm keeps
+  // sulfide minerals disfavoured and lets Cu cross the unchanged gate.
+  c.fluid.S = 10;
   c.fluid.Cu += 150;
   c.fluid.pH = 6.0;
   c.temperature = 28;
@@ -120,17 +125,10 @@ function event_bisbee_final_drying(c) {
   c.fluid.O2 = 1.0;
   // v25: complete drain — every ring becomes vadose.
   c.fluid_surface_ring = 0.0;
-  // rung-5 (SIM 234): the drying brine's salinity finally rises with the
-  // drying — it sat frozen at 29.9 psu while concentration tripled (the
-  // hostile review's noted decoupling; its lever: "drive final_drying far
-  // higher AND/OR let salinity climb from its frozen 29.9 psu"). 150 psu ×
-  // c 3 = 12.9× seawater — past halite's 10.6× Usiglio onset, so the
-  // DEFENDED arid-supergene efflorescence (mine-wall halite in chalcanthite
-  // country; Onac 2025) fires via the honest mechanism, while sylvite stays
-  // gated out (12.9 ≪ 70× bittern; the review: "no K-evaporite parent
-  // exists in this system"). 150 also keeps the anhydrite angelite-note
-  // threshold (>150) uncrossed and chalcanthite's sal_f already caps at 3
-  // for any salinity ≥ 90 (js/40) — bounded side-effects, checked.
-  c.fluid.salinity = 150;
+  // SIM 261: do not convert a closed, drying oxidation pocket into an
+  // evaporite brine merely to force halite. Bisbee's documented post-mining
+  // crusts are overwhelmingly hydrated sulfates; the current district-wide
+  // species inventory does not list halite. Concentration can still rise as
+  // water is lost, but dissolved-salt mass and salinity are not invented.
   return "The fractures seal with calcite cement. Groundwater stops. The pocket is a closed system again, this time with the full oxidation assemblage frozen in place: chalcopyrite cores wrapped in chalcocite, those wrapped in cuprite, those overgrown by native copper, those overgrown by azurite, those converted to malachite, those pseudomorphed by chrysocolla. A million years from now, when a mining shaft intersects this pocket, an assayer will photograph the specimen and write 'Bisbee, Cochise County' on the label.";
 }
