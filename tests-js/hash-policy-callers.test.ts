@@ -190,23 +190,65 @@ describe('no raw working-tree hash survives on the receipt chain', () => {
     'tools/file-bundle-assets.mjs',
   ];
 
-  // `createHash(..).update(fs.readFileSync(..))` and `sha256(fs.readFileSync(..))`
-  // in one pattern, plus the two-step form where a bare read is hashed later.
-  const RAW_HASH = /\.update\(\s*fs\.readFileSync\(|sha256\(\s*fs\.readFileSync\(/;
-  const RAW_READ_FOR_HASH = /=\s*fs\.readFileSync\([^)]*\)\s*;[\s\S]{0,400}?sha256\(\s*raw\s*\)/;
+  // THE RULE, and why it is this one rather than a pattern for "read near hash":
+  // the first draft looked for a bare read within 400 characters of a `sha256(raw)`
+  // and MISSED a deliberately reintroduced raw read, because the read and the
+  // hash sit ~1800 characters apart with a block of validation between them. The
+  // 400 was a guess, and a guessed window is a guard that reports clean because
+  // it did not look far enough.
+  //
+  // `fs.readFileSync(p)` with no encoding returns a Buffer; with `'utf8'` it
+  // returns a string for parsing. Across these eight files there is no reason to
+  // hold a Buffer except to hash it — measured, not assumed: every one of them
+  // currently has zero. So the rule is simply "no bare Buffer reads here", which
+  // needs no distance heuristic and cannot be outrun by refactoring.
+  //
+  // Paren-balanced, because `fs.readFileSync(path.join(a, b), 'utf8')` defeats a
+  // naive `\([^)]*\)` — that mistake made an earlier count report four bare reads
+  // that were all perfectly encoded.
+  const readFileSyncArgs = (source: string) => {
+    const out: string[] = [];
+    const tag = 'fs.readFileSync(';
+    let i = source.indexOf(tag);
+    while (i >= 0) {
+      let depth = 1;
+      let p = i + tag.length;
+      while (p < source.length && depth > 0) {
+        const c = source[p];
+        if (c === '(') depth++;
+        else if (c === ')') depth--;
+        p++;
+      }
+      out.push(source.slice(i + tag.length, p - 1));
+      i = source.indexOf(tag, p);
+    }
+    return out;
+  };
+  const bareBufferReads = (source: string) =>
+    readFileSyncArgs(source).filter(args => !/['"]utf8['"]/.test(args));
 
-  it.each(CHAIN)('%s hashes no raw working-tree read', (relative) => {
+  it.each(CHAIN)('%s takes no raw Buffer read', (relative) => {
     const source = fs.readFileSync(path.join(REPO, relative), 'utf8');
-    expect(RAW_HASH.test(source), `${relative}: hashes fs.readFileSync directly`).toBe(false);
-    expect(RAW_READ_FOR_HASH.test(source), `${relative}: hashes a raw read via \`raw\``).toBe(false);
+    expect(bareBufferReads(source), `${relative}: bare Buffer read(s) — hash via hash-policy.mjs`)
+      .toEqual([]);
   });
 
-  it('the patterns can actually fire, so a clean sweep means something', () => {
-    // Without this, a typo in either regex would silently exonerate every file
-    // above and the suite would report a green that had checked nothing.
-    expect(RAW_HASH.test("crypto.createHash('sha256').update(fs.readFileSync(p))")).toBe(true);
-    expect(RAW_HASH.test('sha256(fs.readFileSync(pressureVerifierPath))')).toBe(true);
-    expect(RAW_READ_FOR_HASH.test('raw = fs.readFileSync(receiptPath);\n  const x = sha256(raw);')).toBe(true);
+  it('hash-policy.mjs is the one place that may read raw bytes', () => {
+    // The exemption is asserted, not assumed. If this ever reached zero the rule
+    // above would be vacuous, because nothing would be reading files at all.
+    const source = fs.readFileSync(path.join(REPO, 'tools/hash-policy.mjs'), 'utf8');
+    expect(bareBufferReads(source).length).toBeGreaterThan(0);
+  });
+
+  it('the detector fires on the exact code that slipped past its predecessor', () => {
+    // Regression pin for the miss described above: a bare read whose hash is far
+    // away, and the two inline forms.
+    const farApart = `raw = fs.readFileSync(receiptPath);${'\n// filler'.repeat(120)}\nsha256(raw);`;
+    expect(bareBufferReads(farApart).length).toBe(1);
+    expect(bareBufferReads("createHash('sha256').update(fs.readFileSync(p))").length).toBe(1);
+    expect(bareBufferReads('sha256(fs.readFileSync(pressureVerifierPath))').length).toBe(1);
+    // ...and stays quiet on the encoded forms, including the nested-call shape.
+    expect(bareBufferReads("fs.readFileSync(path.join(a, b), 'utf8')")).toEqual([]);
   });
 });
 
