@@ -2,7 +2,20 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const FILE_BUNDLE_ASSET_SCHEMA = 'vugg-file-bundle-assets-v1';
+// v2 = the embedded bytes and the digest are LF-normalised. v1 hashed the
+// working-tree bytes as read, which made the bundle a function of CHECKOUT
+// HISTORY rather than of the commit: this repository has no `.gitattributes`
+// and `core.autocrlf=true`, so git stores every one of these files with LF and
+// hands out CRLF only to the files a checkout happens to rewrite. On the tree
+// that produced this note, 3 of 94 narratives carried CRLF and 91 did not, and
+// a merged tree rebuilt 96 of 98 assets differently from the committed bundle —
+// all 96 identical after CRLF -> LF. Because `build:check` is the first gate of
+// `npm run ci`, that is not a cosmetic drift: it is a permanent flip-flop where
+// each machine must rewrite index.html to go green, and every rewrite moves
+// `browser_bundle_sha256` in the evidence receipts. Normalising here binds the
+// bundle to the COMMITTED bytes, which is what "evidence binds exact runtime
+// bytes" was always meant to say.
+export const FILE_BUNDLE_ASSET_SCHEMA = 'vugg-file-bundle-assets-v2';
 export const FILE_BUNDLE_START_MARKER = '// === BUILD:file-assets:start ===';
 export const FILE_BUNDLE_END_MARKER = '// === BUILD:file-assets:end ===';
 
@@ -29,11 +42,20 @@ export function fileBundleAssetFiles(root) {
   return relativeFiles;
 }
 
+/**
+ * The one place a runtime asset is turned into bytes. Everything that embeds or
+ * hashes an asset goes through here, so the digest and the embedded copy can
+ * never disagree about what the file says.
+ */
+export function readFileBundleAsset(root, relative) {
+  return fs.readFileSync(path.join(root, relative), 'utf8').replaceAll('\r\n', '\n');
+}
+
 export function fileBundleAssetDigest(root, relativeFiles = fileBundleAssetFiles(root)) {
   const hash = crypto.createHash('sha256');
   hash.update(`${FILE_BUNDLE_ASSET_SCHEMA}\0`);
   for (const relative of relativeFiles) {
-    const bytes = fs.readFileSync(path.join(root, relative));
+    const bytes = Buffer.from(readFileBundleAsset(root, relative), 'utf8');
     hash.update(`${relative.length}:${relative}\0${bytes.length}:`);
     hash.update(bytes);
     hash.update('\0');
@@ -52,7 +74,7 @@ export function buildFileBundlePrelude(root) {
   const relativeFiles = fileBundleAssetFiles(root);
   const assets = {};
   for (const relative of relativeFiles) {
-    assets[relative] = fs.readFileSync(path.join(root, relative), 'utf8');
+    assets[relative] = readFileBundleAsset(root, relative);
   }
   const receipt = Object.freeze({
     schema: FILE_BUNDLE_ASSET_SCHEMA,

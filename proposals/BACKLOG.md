@@ -7,6 +7,32 @@
 
 Living list of open work items, captured from session conversations so context survives compaction. Each item has enough detail that someone picking it up cold can act without re-discovering the rationale.
 
+> ## 🧬 CODEX SIM 271 INTEGRATION + THE LINE-ENDING FINDING (2026-08-18) — **branch `integrate/codex-sulfur-valence` — `FINDING-EVIDENCE-LINE-ENDINGS-2026-08-18.md`**
+>
+> Merged Codex's `b62d85f` (sulfur valence authority, SIM 267→271) onto canonical `420bf22`.
+> Four conflicts, exactly as the integration verdict predicted — and the stronger measurement:
+> **exactly four files were changed by both sides**, so no hybrid auto-merge hides anywhere in
+> 590 changed files. All **178 js/ files byte-identical to Codex's**, zero deletions against
+> canonical, and all **41 v271 strips re-baked here reproduce Codex's content byte-for-byte**.
+> **The science is portable.** Only the receipts are not, which is the rest of this entry.
+>
+> **THE FINDING (structural, still open).** `evidence-runtime.mjs` hashes raw working-tree bytes.
+> There is no `.gitattributes`, so with `core.autocrlf=true` git stores LF and writes CRLF only to
+> the files a checkout actually materialises — and **materialising new files is what a merge does**.
+> Hence `audit:science` failed here on Codex's own artifacts: `v271/amethyst_geode.json` recorded
+> `50ff534c` (= the git blob, = LF), while this disk held CRLF hashing to `36987563`.
+> **FIXED** — `tools/file-bundle-assets.mjs` normalises CRLF→LF before embedding and hashing
+> (schema v1→v2), because Codex's new file:// bundle puts those bytes INSIDE the committed
+> artifact and `build:check` is the first gate of `ci`. Mutation-tested: 3 tests red without it.
+> **NOT FIXED, boss's call** — `evidence-runtime.mjs` still hashes raw bytes, so these receipts
+> describe this checkout's mixture. Changing it changes what every archived receipt means.
+> **A NUMBER WITHDRAWN** — an earlier pass reported a clean "canonical CRLF vs Codex LF" platform
+> split, 126/126 each way. That was an `else if` in my own script: for an LF file the raw and
+> normalised hashes are the same hash, so the normalised column could only read zero.
+> `tools/evidence-lineending-census.mjs` now counts a file as evidence only if it CONTAINS CRLF,
+> and returns UNKNOWN when none does. The defect survived the correction; my story about who was
+> on which side did not.
+
 > ## 🧪 THE INTEGRATION REVIEW (2026-08-15) — **third hostile review, inheritance lens — `PROPOSAL-HOSTILE-REVIEW-SIM267-INTEGRATION-2026-08-15.md`**
 >
 > Reviewed the GTP `aaa-roadmap-completion` branch (SIM 237→267, 42 commits) as it merged onto
