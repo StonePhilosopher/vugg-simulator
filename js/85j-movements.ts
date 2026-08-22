@@ -179,8 +179,6 @@ function _scenarioSpeciesExclusion(sim: any, name: string): string | null {
 function _scenarioPositiveLicenseBlock(sim: any, name: string): string | null {
   const scenarioId = sim?.conditions?._scenario?.id;
   if (!scenarioId) return null; // Creative/custom broth: every engine remains available.
-  const spec = (typeof MINERAL_SPEC !== 'undefined') ? MINERAL_SPEC?.[name] : null;
-  if (!spec?._requires_scenario_license) return null;
   const scenario = sim.conditions._scenario;
   const tierMinerals = (entries: any): string[] => (Array.isArray(entries) ? entries : [])
     .map((entry: any) => (typeof entry === 'string' ? entry : entry?.mineral))
@@ -192,7 +190,7 @@ function _scenarioPositiveLicenseBlock(sim: any, name: string): string | null {
     ...tierMinerals(scenario.aspirational_species),
   ]);
   if (licensed.has(name)) return null;
-  return `no positive four-tier locality license for ${name} in ${scenarioId}; chemistry alone does not prove occurrence (Creative mode remains unrestricted)`;
+  return `no positive four-tier locality license for ${name} in ${scenarioId}; chemistry alone does not prove occurrence (scenario production is fail-closed; Creative mode remains unrestricted)`;
 }
 
 function _scenarioNucleationWindowBlock(sim: any, name: string): string | null {

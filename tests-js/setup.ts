@@ -210,6 +210,11 @@ const EXPORTS = [
   'setSimulationTimeScale',
   'MINERAL_SPEC',
   'maxSizeCm',
+  'crystalSizeAuthority',
+  'crystalAtAuthoredSizeCap',
+  'classifyCelestineHabit',
+  'findPseudomorphRoute',
+  'cdrReplacementEvidence',
   'MINERAL_ENGINES',
   'MINERAL_GATES_REGISTRY',  // v127 — per-mineral nucleation gates (sigma_crit, T/pH/O2/fluid_min, surface_energy)
   'aragoniteCoSelector',
@@ -302,6 +307,10 @@ const EXPORTS = [
   'Crystal',
   'GrowthZone',
   'EVENT_REGISTRY',
+  'eventScenarioOwner',
+  'assertEventScenarioOwnership',
+  '_scenarioPositiveLicenseBlock',
+  '_scenarioSpeciesExclusion',
   'rng',
   'setSeed',
   '_liveRng',  // v181 — live accessor for the inner `let rng` (the snapshot above goes stale after setSeed)

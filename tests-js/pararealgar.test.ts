@@ -39,6 +39,7 @@ function runSulphurBank(seed: number, opts: any = {}) {
   const { conditions, events, defaultSteps } = SCENARIOS['sulphur_bank']();
   if (opts.darkVug) {
     conditions.wall.is_lit = false;
+    conditions.wall.light_exposure = 'dark';
   }
   const sim = new VugSimulator(conditions, events);
   const steps = defaultSteps ?? 200;
@@ -131,10 +132,11 @@ describe('Pararealgar — light-induced realgar isomerization (v84)', () => {
     });
   });
 
-  describe('wall.is_lit field (default true)', () => {
-    it('WallState.is_lit defaults to true', () => {
+  describe('explicit geological light boundary', () => {
+    it('VugWall defaults dark and cannot infer exposure from omission', () => {
       const w = new VugWall({});
-      expect(w.is_lit).toBe(true);
+      expect(w.is_lit).toBe(false);
+      expect(w.light_exposure).toBe('dark');
     });
 
     it('WallState.is_lit honors explicit false', () => {
@@ -142,9 +144,16 @@ describe('Pararealgar — light-induced realgar isomerization (v84)', () => {
       expect(w.is_lit).toBe(false);
     });
 
-    it('Sulphur Bank scenario inherits default is_lit=true', () => {
+    it('Sulphur Bank explicitly authors a surface exposure route', () => {
       const { conditions } = SCENARIOS['sulphur_bank']();
       expect(conditions.wall.is_lit).toBe(true);
+      expect(conditions.wall.light_exposure).toBe('surface');
+    });
+
+    it('records the exact route on altered pararealgar', () => {
+      const sim = runSulphurBank(42);
+      const para = sim.crystals.find((c: any) => c.mineral === 'pararealgar');
+      expect(para?.light_exposure_route).toBe('surface');
     });
   });
 });

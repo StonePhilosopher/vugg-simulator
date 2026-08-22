@@ -13,8 +13,9 @@
 //      wall.thermal_pulses:false suppresses pulses entirely.
 //   4. STAND-DOWN (the T-unlock) — a scenario movement on `temperature`
 //      owns T for its window: ambient drift + pulses yield (zero thermal
-//      draws), the deterministic feedback tail still runs, and ambient
-//      resumes when the window closes.
+//      draws), and ambient resumes when the window closes.
+//   5. BOUNDARY AUTHORITY — heat carries no universal solute recipe, and pH
+//      has no universal 6.5 attractor. Both require authored contracts.
 //
 // Plus a regression pin on the seed SCRAMBLE: bare (state ^ SALT) left
 // nearby run seeds with correlated early streams (probe measured tutorial
@@ -100,12 +101,88 @@ describe('thermal stream (v181 T-reconciliation)', () => {
     expect(pulses(true)).toBeGreaterThan(0);
   });
 
-  it('stand-down: a movement owning temperature suppresses drift + pulses, feedback tail still runs', () => {
+  it('an un-authored thermal pulse carries heat only, not universal solutes, acid, or flow', () => {
+    const sim = mkSim(13);
+    sim.conditions.wall.thermal_pulses = true;
+    sim.conditions.wall.thermal_pulse_fluid = null;
+    const before = {
+      SiO2: sim.conditions.fluid.SiO2,
+      Fe: sim.conditions.fluid.Fe,
+      Mn: sim.conditions.fluid.Mn,
+      pH: sim.conditions.fluid.pH,
+      flow: sim.conditions.flow_rate,
+    };
+    for (let i = 0; i < 300; i++) sim.ambient_cooling();
+    expect(sim.log.some((line: string) => line.includes('Heat-only pulse'))).toBe(true);
+    expect({
+      SiO2: sim.conditions.fluid.SiO2,
+      Fe: sim.conditions.fluid.Fe,
+      Mn: sim.conditions.fluid.Mn,
+      pH: sim.conditions.fluid.pH,
+      flow: sim.conditions.flow_rate,
+    }).toEqual(before);
+  });
+
+  it('applies only the explicitly authored fracture-fluid package', () => {
+    const sim = mkSim(13);
+    sim.conditions.wall.thermal_pulses = true;
+    sim.conditions.wall.thermal_pulse_fluid = {
+      authority: 'synthetic locality boundary test',
+      components_ppm: { Fe: 2, Mn: 0 },
+      pH_delta: -0.25,
+      flow_rate: 1.75,
+    };
+    const beforeFe = sim.conditions.fluid.Fe;
+    const beforeMn = sim.conditions.fluid.Mn;
+    const beforeSi = sim.conditions.fluid.SiO2;
+    const beforePH = sim.conditions.fluid.pH;
+    for (let i = 0; i < 300; i++) {
+      sim.ambient_cooling();
+      if (sim.log.some((line: string) => line.includes('Authored fracture fluid'))) break;
+    }
+    expect(sim.conditions.fluid.Fe).toBeCloseTo(beforeFe + 2, 12);
+    expect(sim.conditions.fluid.Mn).toBe(beforeMn);
+    expect(sim.conditions.fluid.SiO2).toBe(beforeSi);
+    expect(sim.conditions.fluid.pH).toBeCloseTo(beforePH - 0.25, 12);
+    // The ordinary end-of-step hydraulic decay remains independent of the
+    // boundary composition: 1.75 × 0.9 = 1.575.
+    expect(sim.conditions.flow_rate).toBeCloseTo(1.575, 12);
+  });
+
+  it('moves pH only toward an authored boundary, in either direction', () => {
+    const noBoundary = mkSim(17);
+    noBoundary.conditions.wall.thermal_pulses = false;
+    noBoundary.conditions.fluid.pH = 5;
+    noBoundary.ambient_cooling();
+    expect(noBoundary.conditions.fluid.pH).toBe(5);
+
+    const alkaline = mkSim(17);
+    alkaline.conditions.wall.thermal_pulses = false;
+    alkaline.conditions.wall.pH_boundary = {
+      target_pH: 7, rate_per_step: 0.1, authority: 'synthetic buffer test',
+    };
+    alkaline.conditions.fluid.pH = 5;
+    alkaline.conditions.flow_rate = 1;
+    alkaline.ambient_cooling();
+    expect(alkaline.conditions.fluid.pH).toBeCloseTo(5.1, 12);
+
+    const acidic = mkSim(17);
+    acidic.conditions.wall.thermal_pulses = false;
+    acidic.conditions.wall.pH_boundary = {
+      target_pH: 4, rate_per_step: 0.2, authority: 'synthetic acid boundary test',
+    };
+    acidic.conditions.fluid.pH = 6;
+    acidic.conditions.flow_rate = 0.5;
+    acidic.ambient_cooling();
+    expect(acidic.conditions.fluid.pH).toBeCloseTo(5.9, 12);
+  });
+
+  it('stand-down: a movement owning temperature suppresses drift + pulses', () => {
     const sim = mkSim(17);
     // Stub controller: claims temperature for every step (unit-level; the
     // real controller is exercised in the integration test below).
     sim._movements = { drivesFieldAt: (f: string) => f === 'temperature' };
-    sim.conditions.fluid.pH = 5.0;          // below 6.5 → tail must recover it
+    sim.conditions.fluid.pH = 5.0;
     sim.conditions.flow_rate = 1.0;
     const T0 = sim.conditions.temperature;
     const thermalBefore = sim._thermalRng.state;
@@ -114,7 +191,7 @@ describe('thermal stream (v181 T-reconciliation)', () => {
 
     expect(sim.conditions.temperature).toBe(T0);            // no ambient drift
     expect(sim._thermalRng.state).toBe(thermalBefore);      // zero thermal draws in the window
-    expect(sim.conditions.fluid.pH).toBeCloseTo(5.1, 9);    // pH recovery (tail) still ran
+    expect(sim.conditions.fluid.pH).toBe(5.0);              // no unauthored pH drift
   });
 
   it('integration: a declared temperature movement OWNS T for its window, ambient resumes after', () => {

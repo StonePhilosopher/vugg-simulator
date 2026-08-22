@@ -10,20 +10,107 @@
 // EVENT SYSTEM
 // ============================================================
 
-function event_fluid_pulse(conditions) {
-  conditions.fluid.SiO2 *= 1.8;
-  conditions.fluid.Fe *= 3.0;
-  conditions.fluid.Mn *= 2.5;
-  conditions.fluid.pH -= 0.5;
-  conditions.flow_rate = 5.0;
-  return 'Fresh hydrothermal fluid floods the vug. Silica and metals spike.';
+function _planAuthoredEventFluidTransform(conditions, payload, kind) {
+  const transform = payload?.fluid_transform;
+  const authority = String(payload?.material_authority || '').trim();
+  if (!transform || typeof transform !== 'object' || !authority) {
+    throw new Error(`${kind} requires an authored fluid_transform and material_authority`);
+  }
+  const allowedKeys = new Set(['multiply', 'add', 'pH_delta', 'flow_rate']);
+  for (const key of Object.keys(transform)) {
+    if (!allowedKeys.has(key)) throw new Error(`${kind} has unsupported transform '${key}'`);
+  }
+  const changed: string[] = [];
+  const nextFluid = new Map<string, number>();
+  const sulfurFields = new Set(['S', 'S_sulfide', 'S_sulfate', 'S_elemental']);
+  const currentFluidValue = (species: string) => nextFluid.has(species)
+    ? nextFluid.get(species)!
+    : conditions.fluid[species];
+  for (const operation of ['multiply', 'add']) {
+    if (transform[operation] != null
+        && (!transform[operation] || typeof transform[operation] !== 'object'
+          || Array.isArray(transform[operation]))) {
+      throw new Error(`${kind} ${operation} must be an object`);
+    }
+  }
+  for (const [species, amount] of Object.entries(transform.multiply || {})) {
+    if (sulfurFields.has(species)) {
+      throw new Error(`${kind} must use a valence-specific sulfur boundary event for '${species}'`);
+    }
+    if (typeof conditions.fluid[species] !== 'number' || !Number.isFinite(Number(amount))) {
+      throw new Error(`${kind} has unsupported multiplier '${species}'`);
+    }
+    const next = currentFluidValue(species) * Number(amount);
+    if (!Number.isFinite(next) || next < 0) throw new Error(`${kind} multiplier makes '${species}' invalid`);
+    nextFluid.set(species, next);
+    changed.push(`${species}×${Number(amount)}`);
+  }
+  for (const [species, amount] of Object.entries(transform.add || {})) {
+    if (sulfurFields.has(species)) {
+      throw new Error(`${kind} must use a valence-specific sulfur boundary event for '${species}'`);
+    }
+    if (typeof conditions.fluid[species] !== 'number' || !Number.isFinite(Number(amount))) {
+      throw new Error(`${kind} has unsupported addition '${species}'`);
+    }
+    const next = currentFluidValue(species) + Number(amount);
+    if (!Number.isFinite(next) || next < 0) throw new Error(`${kind} addition makes '${species}' invalid`);
+    nextFluid.set(species, next);
+    changed.push(`${species}+${Number(amount)}`);
+  }
+  if (Object.prototype.hasOwnProperty.call(transform, 'pH_delta')) {
+    if (typeof conditions.fluid.pH !== 'number' || !Number.isFinite(Number(transform.pH_delta))) {
+      throw new Error(`${kind} has invalid pH_delta`);
+    }
+    const nextPH = currentFluidValue('pH') + Number(transform.pH_delta);
+    if (nextPH < 0 || nextPH > 14) throw new Error(`${kind} pH_delta leaves the 0..14 domain`);
+    nextFluid.set('pH', nextPH);
+    changed.push(`pH${Number(transform.pH_delta) >= 0 ? '+' : ''}${Number(transform.pH_delta)}`);
+  }
+  let nextFlowRate: number | null = null;
+  if (Object.prototype.hasOwnProperty.call(transform, 'flow_rate')) {
+    if (!Number.isFinite(Number(transform.flow_rate)) || Number(transform.flow_rate) < 0) {
+      throw new Error(`${kind} has invalid flow_rate`);
+    }
+    nextFlowRate = Number(transform.flow_rate);
+    changed.push(`flow=${nextFlowRate}`);
+  }
+  return {
+    changed,
+    authority,
+    apply() {
+      for (const [species, amount] of nextFluid) conditions.fluid[species] = amount;
+      if (nextFlowRate !== null) conditions.flow_rate = nextFlowRate;
+    },
+  };
 }
 
-function event_cooling_pulse(conditions) {
-  conditions.temperature -= 50;
-  conditions.fluid.SiO2 *= 0.6;
-  conditions.flow_rate = 3.0;
-  return `Meteoric water incursion. Temperature drops to ${conditions.temperature.toFixed(0)}°C.`;
+function _applyAuthoredEventFluidTransform(conditions, payload, kind) {
+  const plan = _planAuthoredEventFluidTransform(conditions, payload, kind);
+  plan.apply();
+  return plan;
+}
+
+function event_fluid_pulse(conditions, payload) {
+  const applied = _applyAuthoredEventFluidTransform(conditions, payload, 'fluid_pulse');
+  return `Authored fluid pulse (${applied.changed.join(', ') || 'no material change'}). Authority: ${applied.authority}`;
+}
+
+function event_cooling_pulse(conditions, payload) {
+  const authority = String(payload?.material_authority || '').trim();
+  const delta = Number(payload?.temperature_delta_C);
+  if (!authority || !Number.isFinite(delta)) {
+    throw new Error('cooling_pulse requires temperature_delta_C and material_authority');
+  }
+  const plan = payload?.fluid_transform
+    ? _planAuthoredEventFluidTransform(conditions, payload, 'cooling_pulse')
+    : null;
+  conditions.temperature += delta;
+  let material = 'heat-only';
+  if (plan) {
+    plan.apply();
+    material = plan.changed.join(', ') || 'no material change';
+  }
+  return `Authored cooling pulse: T ${delta >= 0 ? '+' : ''}${delta}°C to ${conditions.temperature.toFixed(0)}°C; ${material}. Authority: ${authority}`;
 }
 
 function event_tectonic_shock(conditions) {
@@ -571,6 +658,81 @@ const EVENT_REGISTRY = {
   asbestos_hills_surficial_maturation: event_asbestos_hills_surficial_maturation,
 };
 
+// Locality-named event handlers are scientific content, not reusable UI
+// conveniences.  Their chemistry is licensed by one authored scenario.  Keep
+// the ownership rule beside the registry so copying an Elmwood Sr pulse into a
+// different MVT story fails before it can mutate the fluid.
+const EVENT_SCENARIO_OWNER_PREFIXES: Record<string, string> = {
+  alkalinize: 'ultramafic_supergene',
+  amethyst: 'amethyst_geode',
+  aquifer_recharge_floods: 'ultramafic_supergene',
+  asbestos_hills_crack_seal: 'asbestos_hills_crack_seal',
+  asbestos_hills_surficial: 'asbestos_hills_surficial_alteration',
+  bisbee: 'bisbee',
+  colorado_plateau: 'colorado_plateau',
+  co2_degas_with_reheat: 'tutorial_travertine',
+  copper_injection: 'porphyry',
+  deccan: 'deccan_zeolite',
+  elmwood: 'elmwood',
+  gem_pegmatite: 'gem_pegmatite',
+  grimsel: 'grimsel_alpine_cleft',
+  gsp: 'great_salt_plains',
+  jeffrey_mine: 'jeffrey_mine',
+  marble: 'marble_contact_metamorphism',
+  molybdenum_pulse: 'porphyry',
+  naica: 'naica_geothermal',
+  ouro_preto: 'ouro_preto',
+  porphyry: 'porphyry',
+  radioactive_pegmatite: 'radioactive_pegmatite',
+  reactivated_vein: 'reactivated_fluorite_vein',
+  reactive_wall: 'reactive_wall',
+  roughten_gill: 'roughten_gill',
+  sabkha: 'sabkha_dolomitization',
+  schneeberg: 'schneeberg',
+  searles: 'searles_lake',
+  shigar: 'shigar_pegmatite',
+  sicily: 'sicily_solfifera',
+  sulphur_bank: 'sulphur_bank',
+  sunnyside: 'sunnyside_american_tunnel',
+  supergene: 'supergene_oxidation',
+  tn457: 'tn457_barite_pulses',
+  tormiq: 'tormiq_alpine_cleft',
+  tectonic_uplift_drains: 'ultramafic_supergene',
+  tutorial_fe_drop: 'tutorial_mn_calcite',
+  tutorial_mn_pulse: 'tutorial_mn_calcite',
+  tutorial_temperature_spike: 'tutorial_first_crystal',
+  wittichen: 'wittichen',
+};
+
+function eventScenarioOwner(eventType: string): string | null {
+  const prefixes = Object.keys(EVENT_SCENARIO_OWNER_PREFIXES)
+    .sort((a, b) => b.length - a.length || a.localeCompare(b));
+  const prefix = prefixes.find((candidate) => eventType === candidate
+    || eventType.startsWith(`${candidate}_`));
+  return prefix ? EVENT_SCENARIO_OWNER_PREFIXES[prefix] : null;
+}
+
+function assertEventScenarioOwnership(eventType: string, scenarioId: string | null | undefined): void {
+  const owner = eventScenarioOwner(eventType);
+  if (!owner) return;
+  if (scenarioId !== owner) {
+    throw new Error(`event '${eventType}' belongs to scenario '${owner}', not '${scenarioId || 'unscoped'}'`);
+  }
+}
+
+// Wrap the registry boundary as well as the scenario builder.  Tests, tools,
+// and future integrations often invoke EVENT_REGISTRY directly; none may
+// bypass the same locality authority production uses.
+for (const eventType of Object.keys(EVENT_REGISTRY)) {
+  const owner = eventScenarioOwner(eventType);
+  if (!owner) continue;
+  const handler = EVENT_REGISTRY[eventType];
+  EVENT_REGISTRY[eventType] = (conditions: any, payload?: any) => {
+    assertEventScenarioOwnership(eventType, conditions?._scenario_id || conditions?._scenario?.id);
+    return handler(conditions, payload);
+  };
+}
+
 // Minimal JSONC parser — strips // line + /* */ block comments and
 // trailing commas, then JSON.parse. Sufficient for our spec files; not
 // a full JSON5 parser (no unquoted keys, no single-quoted strings —
@@ -739,7 +901,10 @@ function _buildScenarioFromSpec(scenarioId, spec) {
       // Preserve the authored event payload for handlers that need a physical
       // boundary value (for example a vent target pCO2). Existing one-argument
       // handlers ignore the extra argument and retain their behavior.
-      apply_fn: (conditions: any) => EVENT_REGISTRY[ev.type](conditions, ev),
+      apply_fn: (conditions: any) => {
+        assertEventScenarioOwnership(ev.type, scenarioId);
+        return EVENT_REGISTRY[ev.type](conditions, ev);
+      },
       type: ev.type,
       // FLUID-SOURCE SPOTS Phase 2d — optional spot-lifecycle directive. A
       // string ('seal' | 'breach') or {action, kind} closes/opens the cavity's

@@ -22,8 +22,10 @@
 //   * Each retune has the expected probe-level behavior — σ > 1 in at
 //     least one (seed, step) pair within the scenario's default-steps,
 //     under the same harness as tools/stale_mineral_probe.mjs.
-//   * Each mineral nucleates at least once across a small seed band in
-//     its scenario — end-to-end smoke for the coverage-tool clear.
+//   * Each mineral advertised as an executed result nucleates at least once
+//     across its commissioned seed band. Ruby is the deliberate exception:
+//     SIM 272 records the documented Mogok target as a 0/3 aspiration rather
+//     than lowering a gate or inventing a fluid route to clear a stale list.
 //
 // What this is NOT testing:
 //   * Crystal count, size, or aesthetic quality of the resulting nucleation.
@@ -97,9 +99,15 @@ describe('post-Backlog-K stale-mineral retunes (2026-05)', () => {
       expect(AUTHORED_SPEC.ruby._retune_note_nucleation_sigma).toMatch(/1\.5.*→.*1\.3|1\.5 → 1\.3/);
       expect(AUTHORED_SPEC.ruby._retune_note_nucleation_sigma).toMatch(/2026-05/);
     });
-    it('nucleates in at least one of 3 seeds within default steps', () => {
+    it('keeps the documented Mogok target as an honest 0/3 aspiration', () => {
       const r = runSeeds('marble_contact_metamorphism', 'ruby', [42, 1, 7]);
-      expect(r.everNucleated, `ruby σ peaked at ${r.maxSigma.toFixed(2)}`).toBe(true);
+      expect(r.everNucleated, `ruby σ peaked at ${r.maxSigma.toFixed(2)}`).toBe(false);
+      expect(r.maxSigma).toBeGreaterThan(1);
+      expect(SCENARIOS.marble_contact_metamorphism._json5_spec.aspirational_species)
+        .toContainEqual({
+          mineral: 'ruby',
+          reason: expect.stringContaining('no discrete crystal in the three SIM 272 commissioned seeds'),
+        });
     });
   });
 
@@ -183,18 +191,17 @@ describe('post-Backlog-K stale-mineral retunes (2026-05)', () => {
     // Results are retrieved from the identical executed probes above. This
     // retains the aggregate zero-stale assertion without duplicating their
     // expensive exact-surface scenario histories.
-    it('zero stale (mineral, scenario) pairs across the canonical 4', { timeout: 300000 }, () => {
-      // End-to-end: pin that none of the four target minerals shows
+    it('zero stale pairs across the three targets still advertised as executable', { timeout: 300000 }, () => {
+      // End-to-end: pin that none of the three executed target minerals shows
       // ever_nucleated=false on the same 3-seed sweep their individual
       // tests above use. Belt-and-suspenders; if a downstream change
       // breaks one of these, this test fails clearly with the list.
       // v101: seed sample widened from [42, 1, 7] to 8 seeds for
       // chrysoprase to absorb v101 opal-cascade variance (see comment
-      // in the chrysoprase-specific test above). The other three
-      // minerals stay at the original 3-seed sample — they aren't
+      // in the chrysoprase-specific test above). Adamite and native
+      // tellurium stay at the original 3-seed sample — they aren't
       // affected by the opal cascade.
       const targetsBy3: [string, string][] = [
-        ['ruby', 'marble_contact_metamorphism'],
         ['adamite', 'supergene_oxidation'],
         ['native_tellurium', 'epithermal_telluride'],
       ];

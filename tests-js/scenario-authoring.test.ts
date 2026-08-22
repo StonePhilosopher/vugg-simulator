@@ -57,6 +57,25 @@ describe('scenario authoring workflow', () => {
     const citationErrors = validateScenarioDocument(uncited, minerals).join('\n');
     expect(citationErrors).toMatch(/sources must be a nonempty/i);
     expect(citationErrors).toMatch(/excluded_species\.calcite requires a nonempty/i);
+
+    const malformedClaimCitations = structuredClone(scenarios);
+    malformedClaimCitations.scenarios.elmwood.claim_citations = [
+      { claim_id: 'Bad Claim', statement: '', sources: [] },
+      { claim_id: 'Bad Claim', statement: 'duplicate', sources: [''] },
+    ];
+    const claimCitationErrors = validateScenarioDocument(malformedClaimCitations, minerals).join('\n');
+    expect(claimCitationErrors).toMatch(/claim_id must use lowercase kebab-case/i);
+    expect(claimCitationErrors).toMatch(/statement must be nonempty/i);
+    expect(claimCitationErrors).toMatch(/sources must be a nonempty array/i);
+
+    const malformedPulse = structuredClone(scenarios);
+    malformedPulse.scenarios.cooling.events[0] = {
+      step: 0, type: 'fluid_pulse', name: 'Bad pulse', description: 'negative control',
+      fluid_transform: { add: { S_sulfate: 10 } }, material_authority: '',
+    };
+    const pulseErrors = validateScenarioDocument(malformedPulse, minerals).join('\n');
+    expect(pulseErrors).toMatch(/nonempty material_authority/i);
+    expect(pulseErrors).toMatch(/valence-specific boundary event/i);
   });
 
   it('emits a timestamp-free exact-identity seed-42 fixture deterministically', async () => {

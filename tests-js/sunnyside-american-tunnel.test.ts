@@ -79,11 +79,14 @@ describe('Sunnyside-American Tunnel scenario (v105)', () => {
       expect(hasZnS).toBe(true);
     });
 
-    it('fires Ag-sulfosalts (tetrahedrite + at least one ruby silver)', () => {
+    it('fires tetrahedrite without overstating aspirational ruby silver', () => {
       ensureSim();
       expect(species.has('tetrahedrite')).toBe(true);
       const hasRubySilver = species.has('proustite') || species.has('pyrargyrite');
-      expect(hasRubySilver).toBe(true);
+      expect(hasRubySilver).toBe(false);
+      const aspirational = (SCENARIOS.sunnyside_american_tunnel as any)
+        ._json5_spec?.aspirational_species || [];
+      expect(aspirational).toContainEqual(expect.objectContaining({ mineral: 'proustite' }));
     });
 
     it('fires rhodochrosite (Stage V Mn-carbonate)', () => {

@@ -12978,7 +12978,21 @@
 // preserving the cited relation throughout its admitted envelope. Because
 // carbonate growth trajectories change relative to the failed v270 candidate,
 // this requires a new simulation and evidence identity.
-const SIM_VERSION = 271;
+// v272 (August 2026): SCI-03/04 removes global locality and transformation
+// shortcuts. Scenario phases now require an explicit positive four-tier
+// locality license, locality-specific events are owner-bound, ambient thermal
+// pulses are heat-only unless a cited material package is authored, and pH
+// changes only through reactions/events or an explicit buffer boundary.
+// Crystal size authority distinguishes individual crystals from aggregate
+// habits and raises celestine to the documented 46 cm record. Replacement
+// outline inheritance requires actual parent loss with the matching route;
+// shared-reagent competition redistributes stranded allocation and consumes
+// each zone's actual solid-solution formula. Realgar photochemistry requires
+// explicit surface/excavation light, transformation-only products have
+// mass-balanced acid retreat, and canonical evidence records layer formulae,
+// hydration transfer, competition allocation, habit, and transformation
+// boundaries. These changes alter admissions, trajectories, and evidence.
+const SIM_VERSION = 272;
 
 // Human-auditable semantic identity for the load-bearing scientific choices.
 // SIM_VERSION says "behavior changed"; this digest says WHICH interpretation
@@ -12998,7 +13012,7 @@ const MODEL_DIGEST = [
   'CaCO3:Hacker05-negative-linear+/-1kbar',
   'Prock:Pattison92-AndSil-16+/-3barC',
   'stress:instant-resolved-shear-stable-grain-v2',
-  'event-fluid:absolute-replace-v1',
+  'event-fluid:locality-authored-material-transform+atomic-heat-only-default-v2',
   'carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3',
   'sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2',
   'gypsum-aw:ChirifeResnik84-NaCl-proxy-v1',
@@ -13006,7 +13020,7 @@ const MODEL_DIGEST = [
   'surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4',
   'surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7',
   'cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4',
-  'cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v3',
+  'cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+subresolution-chemistry-withheld+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v4',
   'water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1',
   'tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2',
   'Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2',
@@ -13019,7 +13033,7 @@ const MODEL_DIGEST = [
   'cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2',
   'sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2',
   'calcite-Mn:manganocalcite-excess<1.2-v1',
-  'HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+booked-return-v3',
+  'HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+dynamic-competition-stoichiometry+booked-return-v4',
   'CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1',
   'growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7',
   'dissolution:LIFO-booked-axial-inventory+5um-floor-v2',
@@ -13030,10 +13044,10 @@ const MODEL_DIGEST = [
   'beryl:K36-postHF-recovery-v1',
   'halite:vadose-propensity0.8-v1',
   'borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1',
-  'competition:accepted-axial-timescale+formula-weighted-budget+single-evaluation-full-fill-negative-v4',
+  'competition:accepted-axial-timescale+actual-zone-formula+residual-round-redistribution+single-evaluation-full-fill-negative-v5',
   'thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3',
   'diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5',
-  'scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+locality-exclusions+first-appearance+all-panel-products-classified+four-tier-family-license+causal-event-prerequisite+valence-correct-reconciliation-v7',
+  'scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+fail-closed-four-tier-locality-license+owner-bound-events+causal-event-prerequisite+valence-correct-reconciliation-v8',
   'bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3',
   'bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3',
   'tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1',
@@ -13042,7 +13056,11 @@ const MODEL_DIGEST = [
   'cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2',
   'koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3',
   'roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3',
-  'run-testimony:actual-step+sample-index+nucleation+solid-state-transformation+null-confining-pressure-v3',
+  'run-testimony:actual-step+sample-index+nucleation+layer-formula+habit-extent+hydration-transfer+competition-allocation+solid-state-transformation+null-confining-pressure-v4',
+  'locality-boundary:authored-pH-buffer+heat-only-ambient-pulse+creative-exact-authority-v1',
+  'crystal-size:individual-record-vs-aggregate-habit+celestine46cm+unresolved-wulfenite-v1',
+  'replacement:actual-parent-loss+matching-route-trigger+outline-inheritance-v1',
+  'transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar-v1',
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
   'transition-locality-exclusion:target-gated-v1',
   'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2',

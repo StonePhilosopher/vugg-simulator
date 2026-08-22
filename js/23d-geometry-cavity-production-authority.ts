@@ -679,6 +679,22 @@ class CavityProductionAuthority {
       oldState.volume_mm3 * 1e-10,
       oldState.surface_area_mm2 * float32UlpMm * 8,
     );
+    // A chemical release smaller than the authenticated Cartesian volume
+    // resolution cannot be represented honestly by this lattice.  Previously
+    // the root solver could accept a numerically closer *negative* volume
+    // perturbation because both signs were inside this tolerance.  Withhold
+    // the complete wall/solution transaction instead: no depth, inventory, or
+    // capacity changes are committed for an unresolvable attack.
+    if (target <= tolerance) {
+      return Object.freeze({
+        accepted: false,
+        rejection: 'below_cartesian_volume_resolution',
+        target_volume_delta_mm3_per_kg: target,
+        minimum_resolvable_volume_delta_mm3_per_kg: tolerance,
+        old_capacity_volume_mm3: oldState.volume_mm3,
+        scientific_scope: 'no host or fluid inventory committed',
+      });
+    }
     let volumeOnlyEvaluations = 0;
     const candidate = (lambda: number): any => {
       const depths = new Float64Array(currentDepths.length);
@@ -807,6 +823,7 @@ class CavityProductionAuthority {
       wall,
     });
     const plan = Object.freeze({
+      accepted: true,
       target_volume_delta_mm3_per_kg: target,
       achieved_volume_delta_mm3_per_kg: achieved,
       volume_residual_mm3_per_kg: residual,

@@ -83,22 +83,31 @@ describe('fluorite morphology registry (fourth tenant)', () => {
     expect((mass.spiral_smooth || 0) / total).toBeGreaterThanOrEqual(0.2);
   });
 
-  it('reactivated vein fluorite stays smooth cubic so the {100} dissolution model is admissible', () => {
+  it('reactivated vein records mixed layers and withholds the flat-{100} rate from its stepped breach face', () => {
     const sim = runScenario('reactivated_fluorite_vein');
     const { mass, total } = fluoriteMass(sim);
     expect(total).toBeGreaterThan(0);
-    expect((mass.spiral_smooth || 0) / total).toBeCloseTo(1, 6);
+    // SIM 272 layer testimony: the first and second fluid generations leave
+    // three physically distinct regimes. A later smooth overgrowth may restore
+    // the final display habit to `cubic`, but it cannot rewrite the stepped
+    // surface that the breach wash actually encountered at step 118.
+    expect((mass.spiral_smooth || 0) / total).toBeCloseTo(0.30110802606082054, 12);
+    expect((mass.hopper_skeletal || 0) / total).toBeCloseTo(0.1618224712189175, 12);
+    expect((mass.stepped_macro || 0) / total).toBeCloseTo(0.5370695027202613, 12);
+    expect(sim._physicalEtchReceipts.at(-1)).toMatchObject({
+      schema: 'physical-dissolution-v3', step: 118,
+      considered: 1, accepted: 0, rejected: 1,
+      receipts: [{
+        mineral: 'fluorite', habit: 'stepped_cube', accepted: false,
+        rejection: 'no_face_matched_evidence_bounded_rate_model',
+      }],
+    });
     const etched = sim.crystals.filter((c: any) =>
       c.mineral === 'fluorite'
       && !c.dissolved
       && Array.isArray(c.etch_history)
       && c.etch_history.length > 0);
-    expect(etched.length).toBeGreaterThan(0);
-    for (const fl of etched) {
-      expect(fl.habit).toBe('cubic');
-      expect(fl.etch_history.at(-1)?.face).toBe('{100}');
-      expect(fl.etch_history.at(-1)?.schema).toBe('physical-dissolution-v3');
-    }
+    expect(etched).toEqual([]);
   });
 
   it('THE REE COMPOSE: sunnyside fluorite keeps its octahedron (form beats roughness)', () => {

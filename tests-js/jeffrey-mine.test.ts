@@ -59,7 +59,7 @@ describe('Jeffrey Mine scenario (v115)', () => {
   });
 
   describe('expects_species declaration matches the rodingite suite', () => {
-    it('separates deterministic headlines, statistical pectolite, and aspirational magnetite', () => {
+    it('separates deterministic pectolite delivery from aspirational accessories', () => {
       const scenSpec = JSON.parse(
         fs.readFileSync(path.join(ROOT, 'data', 'scenarios.json5'), 'utf8')
           .replace(/\/\/[^\n]*/g, '')
@@ -81,12 +81,12 @@ describe('Jeffrey Mine scenario (v115)', () => {
       expect(expects).toContain('prehnite');
       expect(expects).toContain('brucite');
       expect(expects).toContain('awaruite');
-      // Pectolite is documented and licensed, but the v261 three-seed receipt
-      // observes it in only 2/3 seeds. Do not overstate that variable delivery
-      // as a deterministic headline promise.
-      expect(contract.statistical_species).toContainEqual(expect.objectContaining({
+      // The corrected SIM 272 locality receipt observes pectolite in all three
+      // commissioned seeds. It is deterministic but remains outside the short
+      // headline list so the menu copy stays legible.
+      expect(contract.deterministic_species).toContainEqual(expect.objectContaining({
         mineral: 'pectolite',
-        reason: expect.stringMatching(/two of the three evidence seeds/i),
+        reason: expect.stringMatching(/all three SIM 272 commissioned seeds/i),
       }));
       expect(contract.aspirational_species).toContainEqual(expect.objectContaining({
         mineral: 'magnetite',

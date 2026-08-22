@@ -2,7 +2,9 @@
 //
 // Shigar Valley aquamarine pegmatite (Dassu / Nyet-Bruk / Yuno / Alchuri,
 // Skardu District, Gilgit-Baltistan, Pakistan). The beryl-family's anchor
-// scenario — aquamarine's first expects_species coverage — and the stage
+// scenario — aquamarine is the geological anchor, but SIM 272 treats it as
+// an aspirational licensed product until the executed chemistry grows it —
+// and the stage
 // for Tutorial 4 (collecting). Seven events, 70 steps:
 //   1 outer shell 555°C (microcline + smoky quartz)
 //   2 schorl 520°C (B crosses its ≥6 floor)
@@ -64,9 +66,9 @@ describe('Shigar Valley aquamarine pegmatite scenario (v216)', () => {
       }
     }
 
-    it('fires AQUAMARINE — the anchor mineral (first scenario coverage ever)', () => {
+    it('does not overstate the aspirational aquamarine anchor as a seed-42 product', () => {
       ensureSim();
-      expect(species.has('aquamarine')).toBe(true);
+      expect(species.has('aquamarine')).toBe(false);
     });
 
     it('fires quartz (pegmatite silica saturation)', () => {
@@ -90,7 +92,7 @@ describe('Shigar Valley aquamarine pegmatite scenario (v216)', () => {
       expect(species.has('albite')).toBe(true);
     });
 
-    it('variety dispatch is fenced to aquamarine — no other beryl-family species', () => {
+    it('keeps every unlicensed beryl-family substitute absent', () => {
       ensureSim();
       // Cr/V at trace (no emerald), Mn<2 (no morganite), O2 0.15 (no
       // heliodor), Fe≥8 (goshenite/'beryl' returns 0). If any of these
@@ -119,88 +121,32 @@ describe('Shigar Valley aquamarine pegmatite scenario (v216)', () => {
       expect(dosed).toBe(true);
     });
 
-    it('the HF etch reaches the aquamarines (negative-thickness zone or HF note)', () => {
+    it('does not invent an HF etch testimony without an executed aquamarine parent', () => {
       ensureSim();
       const aquas = sim.crystals.filter((c: any) => c.mineral === 'aquamarine');
-      expect(aquas.length).toBeGreaterThan(0);
-      // Stage 6 crashes Be (σ<1) while pH<3 + F>30 — the etch branch in
-      // _beryl_family_dissolution writes a negative zone with an
-      // 'HF-assisted dissolution' note. At least one aqua should carry it
-      // (growth >20 µm is the branch's floor; the σ4+ pocket stage gets
-      // them there comfortably by step 58).
-      const etched = aquas.some((c: any) =>
-        (c.zones || []).some((z: any) =>
-          (z.thickness_um || 0) < 0 || /HF-assisted dissolution/.test(z.note || '')));
-      expect(etched).toBe(true);
-    });
-  });
-
-  describe('mole-correct stature pins — the size DISTRIBUTION is the claim (SIM 241)', () => {
-    // expects_species checks PRESENCE; these check STATURE (the Door 4
-    // move, landed early on the scenario that motivated it). The Shigar
-    // signature is a right-tailed size distribution: a showpiece star on
-    // the cleavelandite shelf AND the small "New Hampshire fry" — you can
-    // find 0.6 mm beryls anywhere; what makes Shigar Shigar is the tail.
-    // Numbers from tools/shigar-ledger-probe.mjs at seed 42, SIM 241
-    // (220 mm cavity + Be wallet ~118). If a chemistry change moves these, re-run
-    // the probe and re-pin deliberately — don't fight to preserve them.
-    let sim: any;
-    let aquas: any[];
-
-    function ensureSim() {
-      if (!sim) {
-        sim = runScenario('shigar_pegmatite');
-        aquas = sim.crystals
-          .filter((c: any) => c.mineral === 'aquamarine')
-          .sort((a: any, b: any) => b.c_length_mm - a.c_length_mm);
-      }
-    }
-
-    it('grows FIVE aquamarines (four pocket-stage + one post-etch runt)', () => {
-      ensureSim();
-      expect(aquas.length).toBe(5);
-    });
-
-    it('the star is a showpiece: ≥ 20 mm on the ~100 mm cleavelandite shelf', () => {
-      ensureSim();
-      expect(aquas[0].c_length_mm).toBeGreaterThanOrEqual(20);
-    });
-
-    it('a small late companion survives beside the showpiece: at least one stays ≤ 2 mm', () => {
-      ensureSim();
-      expect(aquas[aquas.length - 1].c_length_mm).toBeGreaterThan(0.5);
-      expect(aquas[aquas.length - 1].c_length_mm).toBeLessThanOrEqual(2.0);
-    });
-
-    it('the etch is sculpture, not consumption: star loses ≤ 5% of grown length', () => {
-      ensureSim();
-      const star = aquas[0];
-      const grown = star.zones.filter((z: any) => z.thickness_um > 0)
-        .reduce((a: number, z: any) => a + z.thickness_um, 0);
-      const etched = star.zones.filter((z: any) => z.thickness_um < 0)
-        .reduce((a: number, z: any) => a + Math.abs(z.thickness_um), 0);
-      expect(grown).toBeGreaterThan(0);
-      expect(etched / grown).toBeLessThanOrEqual(0.05);
-    });
-
-    it('the late runt is PRISTINE — nucleated after the acid, no etch zones', () => {
-      ensureSim();
-      const runt = aquas[aquas.length - 1];
-      expect(runt.nucleation_step).toBeGreaterThan(58); // hf_etch fires at 58
-      expect(runt.position).toMatch(/fresh vug wall exposed by HF etching/);
-      const etchZones = runt.zones.filter((z: any) => z.thickness_um < 0);
-      expect(etchZones.length).toBe(0);
+      expect(aquas).toEqual([]);
+      expect(sim.log.some((line: string) => /HF-assisted dissolution/.test(line))).toBe(false);
     });
   });
 
   describe('expects_species declaration ↔ JSON5', () => {
-    it('scenarios.json5 declares the six-species assemblage', () => {
+    it('declares the five executed headlines and separately licenses aquamarine as aspirational', () => {
       const raw = fs.readFileSync(path.join(ROOT, 'data', 'scenarios.json5'), 'utf8');
       const m = raw.match(/"shigar_pegmatite":\s*\{[\s\S]*?"expects_species":\s*\[([^\]]*)\]/);
       expect(m).not.toBeNull();
       const declared = [...m![1].matchAll(/"([a-z_0-9]+)"/g)].map(x => x[1]).sort();
       expect(declared).toEqual(
-        ['albite', 'aquamarine', 'feldspar', 'quartz', 'topaz', 'tourmaline']);
+        ['albite', 'feldspar', 'quartz', 'topaz', 'tourmaline']);
+
+      const parsed = JSON.parse(raw
+        .replace(/\/\/[^\n]*/g, '')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/,(\s*[}\]])/g, '$1'));
+      expect(parsed.scenarios.shigar_pegmatite.aspirational_species)
+        .toContainEqual(expect.objectContaining({
+          mineral: 'aquamarine',
+          reason: expect.stringMatching(/no discrete aquamarine.*three SIM 272 commissioned seeds/i),
+        }));
     });
 
     it('duration is tutorial-tempo (70 steps)', () => {

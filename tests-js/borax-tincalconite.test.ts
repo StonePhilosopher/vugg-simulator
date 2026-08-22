@@ -34,6 +34,7 @@ describe('borax–tincalconite saline phase boundary', () => {
     let converted = 0;
     for (let i = 0; i < 50; i++) {
       const crystal = new Crystal({ mineral: 'borax', active: true });
+      crystal.total_growth_um = 250;
       const transition = applyDehydrationTransitions(
         crystal,
         { salinity: 371, concentration: 1 }, // 10.6× seawater
@@ -46,6 +47,20 @@ describe('borax–tincalconite saline phase boundary', () => {
       expect(crystal.mineral).toBe('tincalconite');
       expect(crystal.dehydration_driver).toBe('temperature');
       expect(crystal.dehydration_threshold_C).toBe(39.6);
+      expect(crystal.dehydration_receipt).toMatchObject({
+        schema: 'dehydration-transformation-v1',
+        from: 'borax',
+        to: 'tincalconite',
+        driver: 'temperature',
+        temperature_C: 45,
+        temperature_threshold_C: 39.6,
+        water_state: 'submerged',
+        hydration_water_per_formula: 5,
+        water_accounting: 'structural-transfer-testimony; no conserved bulk H2O inventory',
+      });
+      expect(crystal.dehydration_receipt.formula_amount_mmol_kg).toBeGreaterThan(0);
+      expect(crystal.dehydration_receipt.hydration_water_released_mmol_kg)
+        .toBeCloseTo(crystal.dehydration_receipt.formula_amount_mmol_kg * 5, 12);
     }
     expect(converted).toBeGreaterThan(30);
   });

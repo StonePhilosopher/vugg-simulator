@@ -82,6 +82,21 @@ const MINERAL_GATES_pharmacolite: MineralGates = {
   _notes: 'CaHAsO4·2H2O — Ca-only hydrated arsenate, five-element-vein supergene bloom (Jáchymov/Schneeberg/Cobalt-Ontario). SIM259 uses a calibrated dissolved-cation mole proxy across Ca/Cu/Pb/Zn/Co/Ni after mass-ppm conversion; it is not equilibrium arsenate allocation, speciation, or site occupancy.',
 };
 
+// Haidingerite is not admitted from fluid. It exists only after an
+// authenticated pharmacolite dehydration has actually consumed parent
+// material. Infinity keeps the initiative/Creative diagnosis honest while
+// the dissolution-only engine remains available to etch inherited layers.
+const MINERAL_GATES_haidingerite: MineralGates = {
+  sigma_crit: Infinity,
+  required_substrate: 'pharmacolite',
+  surface_energy: 'low',
+  _sources: [
+    'Palache, Berman & Frondel 1951, Dana\'s System of Mineralogy v.II, 708-709',
+    'Ferraris, Jones & Yerkess 1972, Acta Cryst. B28:209-214',
+  ],
+  _notes: 'Transformation-only CaHAsO4·H2O. It forms by authenticated pharmacolite dehydration (>80 C or sustained dry exposure), never by direct supersaturation/nucleation. Existing inherited layers dissolve below their authored pH 4.5 threshold.',
+};
+
 const MINERAL_GATES_conichalcite: MineralGates = {
   sigma_crit: 1.0,
   T_min: 5, T_max: 100, T_optimal: 27,

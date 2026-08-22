@@ -227,6 +227,8 @@ function buildExecutedScienceTestimony(strip) {
   const transformations = strip.executed_testimony?.transformations || [];
   const carbonateBoundary = strip.executed_testimony?.carbonate_boundary || [];
   const sulfurLedger = strip.executed_testimony?.sulfur_ledger || [];
+  const layerGrowth = strip.executed_testimony?.layer_growth || [];
+  const habitMorphology = strip.executed_testimony?.habit_morphology || [];
   const al2Counts = {};
   let aragoniteSecureSteps = 0;
   for (const sample of pressurePhase) {
@@ -263,6 +265,18 @@ function buildExecutedScienceTestimony(strip) {
       samples: carbonateBoundary,
     },
     sulfur_ledger: buildSulfurLedgerTestimony(sulfurLedger),
+    crystal_layers: {
+      source: 'accepted growth-zone stack from the archived executed run',
+      layer_count: layerGrowth.length,
+      formula_layers: layerGrowth.filter((z) => z?.formula_stoichiometry),
+      solid_solution_layers: layerGrowth.filter((z) => z?.solid_solution),
+      binding_competition_allocations: layerGrowth.filter((z) => z?.competition_allocation),
+      reactive_transformation_layers: layerGrowth.filter((z) => z?.transformation_reactivity),
+    },
+    habit_morphology: {
+      source: 'final physical crystal state from the archived executed run',
+      crystals: habitMorphology,
+    },
   };
 }
 
@@ -346,6 +360,7 @@ export function buildCard(name, spec, strip, science, { stripSha256 = null } = {
       },
       excluded_species: excludedSpecies,
       sources: spec.sources || [],
+      claim_citations: spec.claim_citations || [],
       initial_temperature_C: spec.initial?.temperature_C ?? null,
       initial_pressure_kbar: spec.initial?.pressure_kbar ?? null,
       wall_architecture: spec.initial?.wall?.architecture ?? null,
@@ -397,6 +412,12 @@ export function renderMarkdown(card) {
   L.push(`**Cited sources:**`);
   for (const s of c.sources) L.push(`  - ${s}`);
   if (!c.sources.length) L.push('  - (none)');
+  L.push('');
+  L.push('**Claim-level citations:**');
+  for (const citation of c.claim_citations || []) {
+    L.push(`  - ${citation.claim_id || 'claim'}: ${citation.statement || '(no statement)'} — ${(citation.sources || []).join('; ') || '(no source)'}`);
+  }
+  if (!(c.claim_citations || []).length) L.push('  - (none authored)');
   L.push('');
   L.push(`## Paragenetic order as grown (${t.species_count} species)`);
   L.push('| # | mineral | first step | nucleations | transformations | pathway |');
@@ -463,7 +484,8 @@ export function renderMarkdown(card) {
   }
   if (ex.transformations.length) {
     for (const e of ex.transformations) {
-      L.push(`  - Transformation step ${e.step}: ${e.from} → ${e.to} (${e.mechanism})`);
+      L.push(`  - Transformation step ${e.step}: ${e.from} → ${e.to} (${e.mechanism}); `
+        + `dehydration=${JSON.stringify(e.dehydration || null)}; phase-replacement=${JSON.stringify(e.phase_replacement || null)}`);
     }
   } else {
     L.push('  - Mineral transformations: none executed.');
@@ -501,6 +523,25 @@ export function renderMarkdown(card) {
       : '(no sulfur-bearing solid booked)'}.`);
   } else {
     L.push('  - Sulfur ledger: explicit valence-resolved sulfur pools were not enabled for this scenario.');
+  }
+  L.push('');
+  L.push('## Layer, solid-solution, competition, and habit testimony');
+  const layers = ex.crystal_layers;
+  L.push(`  - Accepted layers: ${layers.layer_count}; formula-bearing=${layers.formula_layers.length}; `
+    + `solid-solution=${layers.solid_solution_layers.length}; binding competition=${layers.binding_competition_allocations.length}; `
+    + `reactive transformation etches=${layers.reactive_transformation_layers.length}.`);
+  for (const row of layers.solid_solution_layers) {
+    L.push(`  - Solid-solution layer crystal ${row.crystal_id}, step ${row.step}: ${row.mineral}; `
+      + `formula=${JSON.stringify(row.formula_stoichiometry)}; model=${JSON.stringify(row.solid_solution)}.`);
+  }
+  for (const row of layers.binding_competition_allocations) {
+    L.push(`  - Competition crystal ${row.crystal_id}, step ${row.step}: ${row.mineral}; `
+      + `${JSON.stringify(row.competition_allocation)}.`);
+  }
+  for (const crystal of ex.habit_morphology.crystals) {
+    L.push(`  - Habit crystal ${crystal.crystal_id}: ${crystal.mineral}; ${crystal.habit}; `
+      + `extent=${crystal.extent_kind}; forms=${JSON.stringify(crystal.dominant_forms)}; `
+      + `size authority=${JSON.stringify(crystal.size_authority)}; CDR=${JSON.stringify(crystal.cdr_replacement_evidence)}.`);
   }
   L.push('');
   L.push(`## Scenario notes (author's own rationale)`);

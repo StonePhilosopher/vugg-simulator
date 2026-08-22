@@ -78,6 +78,35 @@ export function validateScenarioDocument(doc, mineralSpec) {
         || spec.sources.some(source => typeof source !== 'string' || !source.trim())) {
       at('sources must be a nonempty array of nonempty citations');
     }
+    if (spec.claim_citations != null) {
+      if (!Array.isArray(spec.claim_citations) || !spec.claim_citations.length) {
+        at('claim_citations must be a nonempty array when authored');
+      } else {
+        const claimIds = new Set();
+        for (const [index, citation] of spec.claim_citations.entries()) {
+          const claimAt = message => at(`claim_citations[${index}] ${message}`);
+          if (!citation || typeof citation !== 'object' || Array.isArray(citation)) {
+            claimAt('must be an object');
+            continue;
+          }
+          if (typeof citation.claim_id !== 'string'
+              || !/^[a-z0-9][a-z0-9-]*$/.test(citation.claim_id)) {
+            claimAt('claim_id must use lowercase kebab-case');
+          } else if (claimIds.has(citation.claim_id)) {
+            claimAt(`duplicates claim_id ${citation.claim_id}`);
+          } else {
+            claimIds.add(citation.claim_id);
+          }
+          if (typeof citation.statement !== 'string' || !citation.statement.trim()) {
+            claimAt('statement must be nonempty');
+          }
+          if (!Array.isArray(citation.sources) || !citation.sources.length
+              || citation.sources.some(source => typeof source !== 'string' || !source.trim())) {
+            claimAt('sources must be a nonempty array of nonempty citations');
+          }
+        }
+      }
+    }
     const initial = spec.initial;
     if (!initial || typeof initial !== 'object') {
       at('initial is required');
@@ -164,6 +193,52 @@ export function validateScenarioDocument(doc, mineralSpec) {
         priorStep = event.step;
         if (typeof event.type !== 'string' || !event.type) at(`events[${index}].type is required`);
         if (typeof event.name !== 'string' || !event.name) at(`events[${index}].name is required`);
+        if (event.type === 'fluid_pulse' || event.type === 'cooling_pulse') {
+          const eventAt = message => at(`events[${index}] ${message}`);
+          if (typeof event.material_authority !== 'string' || !event.material_authority.trim()) {
+            eventAt('requires a nonempty material_authority');
+          }
+          if (event.type === 'cooling_pulse' && !Number.isFinite(event.temperature_delta_C)) {
+            eventAt('cooling_pulse requires a finite temperature_delta_C');
+          }
+          if (event.type === 'fluid_pulse' && (!event.fluid_transform
+              || typeof event.fluid_transform !== 'object' || Array.isArray(event.fluid_transform))) {
+            eventAt('fluid_pulse requires an authored fluid_transform');
+          }
+          const transform = event.fluid_transform;
+          if (transform && typeof transform === 'object' && !Array.isArray(transform)) {
+            const allowedTransformKeys = new Set(['multiply', 'add', 'pH_delta', 'flow_rate']);
+            const unknownTransformKeys = Object.keys(transform)
+              .filter(key => !allowedTransformKeys.has(key));
+            if (unknownTransformKeys.length) {
+              eventAt(`fluid_transform contains unsupported field(s): ${unknownTransformKeys.join(', ')}`);
+            }
+            for (const operation of ['multiply', 'add']) {
+              const entries = transform[operation];
+              if (entries == null) continue;
+              if (!entries || typeof entries !== 'object' || Array.isArray(entries)) {
+                eventAt(`fluid_transform.${operation} must be an object`);
+                continue;
+              }
+              for (const [field, amount] of Object.entries(entries)) {
+                if (!AUTHORING_FLUID_NUMERIC_FIELDS.includes(field)
+                    || ['S', 'S_sulfide', 'S_sulfate', 'S_elemental'].includes(field)) {
+                  eventAt(`fluid_transform.${operation}.${field} requires a supported non-sulfur reservoir; sulfur uses a valence-specific boundary event`);
+                }
+                if (!Number.isFinite(amount)) {
+                  eventAt(`fluid_transform.${operation}.${field} must be finite`);
+                }
+              }
+            }
+            if (transform.pH_delta != null && !Number.isFinite(transform.pH_delta)) {
+              eventAt('fluid_transform.pH_delta must be finite');
+            }
+            if (transform.flow_rate != null
+                && (!Number.isFinite(transform.flow_rate) || transform.flow_rate < 0)) {
+              eventAt('fluid_transform.flow_rate must be finite and non-negative');
+            }
+          }
+        }
       }
     }
     const positiveTiers = ['expects_species', 'deterministic_species', 'statistical_species', 'aspirational_species'];

@@ -87,6 +87,49 @@ const DEHYDRATION_TRANSITIONS = {
   pharmacolite: ['haidingerite', 30, 1.0, 80.0],
 };
 
+// Structural-water transfer per formula unit. The simulator does not carry a
+// conserved bulk H2O inventory, so this is explicit transformation testimony,
+// not a fictitious fluid credit. Values follow the authored parent/product
+// hydration states used by the transition contract.
+const DEHYDRATION_WATER_LOSS_PER_FORMULA = {
+  borax: 5,
+  mirabilite: 10,
+  autunite: 3,
+  torbernite: 4,
+  zeunerite: 4,
+  pharmacolite: 1,
+};
+
+function recordDehydrationTransition(crystal, ringFluid, ringWaterState, T, step, from, to, driver, thresholdC) {
+  const formulaAmountMmolKg = Math.max(0, Number(crystal.total_growth_um) || 0)
+    * STOICHIOMETRIC_GROWTH_BUDGET_FORMULA_MMOL_PER_KG_PER_UM;
+  const waterPerFormula = Number(DEHYDRATION_WATER_LOSS_PER_FORMULA[from]) || 0;
+  let waterActivityValue = null;
+  if (typeof waterActivityAssessment === 'function') {
+    const assessment = waterActivityAssessment(ringFluid, T);
+    waterActivityValue = Number.isFinite(Number(assessment?.value)) ? Number(assessment.value) : null;
+  }
+  const receipt = Object.freeze({
+    schema: 'dehydration-transformation-v1',
+    step: step == null ? null : Number(step),
+    from,
+    to,
+    driver,
+    temperature_C: Number(T),
+    temperature_threshold_C: Number(thresholdC),
+    water_state: String(ringWaterState || 'unknown'),
+    water_activity: waterActivityValue,
+    concentration: Number(ringFluid?.concentration),
+    formula_amount_mmol_kg: formulaAmountMmolKg,
+    hydration_water_per_formula: waterPerFormula,
+    hydration_water_released_mmol_kg: formulaAmountMmolKg * waterPerFormula,
+    water_accounting: 'structural-transfer-testimony; no conserved bulk H2O inventory',
+  });
+  (crystal.dehydration_history ||= []).push(receipt);
+  crystal.dehydration_receipt = receipt;
+  return receipt;
+}
+
 const BORAX_TINCALCONITE_SALINE_TRANSITION_C = 39.6;
 const BORAX_TINCALCONITE_HALITE_SATURATION_SW_MULT = 10.6;
 
@@ -125,6 +168,10 @@ function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step
       if (step != null) crystal.paramorph_step = step;
       crystal.dehydration_driver = 'temperature';
       crystal.dehydration_threshold_C = heatThreshold;
+      recordDehydrationTransition(
+        crystal, ringFluid, ringWaterState, T, step,
+        old, newMineral, 'temperature', heatThreshold,
+      );
       return [old, newMineral];
     }
     return null;
@@ -137,6 +184,10 @@ function applyDehydrationTransitions(crystal, ringFluid, ringWaterState, T, step
       crystal.paramorph_origin = old;
       if (step != null) crystal.paramorph_step = step;
       crystal.dehydration_driver = 'dry-exposure';
+      recordDehydrationTransition(
+        crystal, ringFluid, ringWaterState, T, step,
+        old, newMineral, 'dry-exposure', heatThreshold,
+      );
       return [old, newMineral];
     }
   }

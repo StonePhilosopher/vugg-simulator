@@ -275,6 +275,32 @@ function paragenesisDiscount(hostMineral: string, nucleatingMineral: string): nu
   return typeof factor === 'number' ? factor : 1.0;
 }
 
+// Outline inheritance is earned by an accepted replacement transaction, not
+// by spatial adjacency or a narrator string. Zones live on the crystal only
+// after the accepted-zone budget path has finalized them, so an exact negative
+// zone with the route's dissolutionMode proves both material loss and trigger.
+function cdrReplacementEvidence(host: any, route: PseudomorphRoute, child: string): any | null {
+  if (!host || !route || route.parent !== host.mineral || route.child !== child) return null;
+  const matches = (Array.isArray(host.zones) ? host.zones : []).filter((zone: any) =>
+    zone && Number(zone.thickness_um) < 0 && zone.dissolutionMode === route.trigger,
+  );
+  const parentLossUm = matches.reduce(
+    (sum: number, zone: any) => sum + Math.abs(Number(zone.thickness_um)), 0,
+  );
+  if (!(parentLossUm > 0)) return null;
+  return Object.freeze({
+    schema: 'cdr-replacement-evidence-v1',
+    parent_crystal_id: host.crystal_id,
+    parent_mineral: host.mineral,
+    child_mineral: child,
+    route_trigger: route.trigger,
+    parent_loss_um: parentLossUm,
+    matching_zone_count: matches.length,
+    matching_zone_steps: Object.freeze(matches.map((zone: any) => zone.step ?? null)),
+    shape_preserved: route.shape_preserved === true,
+  });
+}
+
 // Executable heterogeneous-nucleation routes. This is deliberately narrower
 // than the literature/paragenesis table above: a documented association does
 // not affect gameplay until a nucleation function can actually select that

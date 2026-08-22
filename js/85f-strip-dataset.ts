@@ -130,6 +130,8 @@ interface StripTransformationEvent {
   from: string;
   to: string;
   mechanism: string;
+  dehydration?: any;
+  phase_replacement?: any;
 }
 
 // The manifest — JSON-serializable. Header tells the reader what's in
@@ -174,6 +176,8 @@ interface StripDataset {
   transformation_event_testimony?: StripTransformationEvent[];
   carbonate_boundary_testimony?: any[];
   sulfur_ledger_testimony?: any[];
+  layer_growth_testimony?: any[];
+  habit_morphology_testimony?: any[];
 }
 
 // ============================================================
@@ -294,6 +298,8 @@ async function stripSerialize(
     transformation_event_testimony: ds.transformation_event_testimony || [],
     carbonate_boundary_testimony: ds.carbonate_boundary_testimony || [],
     sulfur_ledger_testimony: ds.sulfur_ledger_testimony || [],
+    layer_growth_testimony: ds.layer_growth_testimony || [],
+    habit_morphology_testimony: ds.habit_morphology_testimony || [],
   })) : null;
   const testimonySection = testimonyBytes ? 4 + testimonyBytes.length : 0;
 
@@ -364,6 +370,8 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
   let transformation_event_testimony: StripTransformationEvent[] | undefined;
   let carbonate_boundary_testimony: any[] | undefined;
   let sulfur_ledger_testimony: any[] | undefined;
+  let layer_growth_testimony: any[] | undefined;
+  let habit_morphology_testimony: any[] | undefined;
   if ((manifest.format_version || 0) >= 4) {
     const testimonyLen = dv.getUint32(offset, true); offset += 4;
     const testimony = JSON.parse(
@@ -380,6 +388,10 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
       ? testimony.carbonate_boundary_testimony : [];
     sulfur_ledger_testimony = Array.isArray(testimony.sulfur_ledger_testimony)
       ? testimony.sulfur_ledger_testimony : [];
+    layer_growth_testimony = Array.isArray(testimony.layer_growth_testimony)
+      ? testimony.layer_growth_testimony : [];
+    habit_morphology_testimony = Array.isArray(testimony.habit_morphology_testimony)
+      ? testimony.habit_morphology_testimony : [];
   }
   const chip_data = buf.slice(offset);
   return {
@@ -390,6 +402,8 @@ async function stripDeserialize(input: Uint8Array): Promise<StripDataset> {
     ...(transformation_event_testimony ? { transformation_event_testimony } : {}),
     ...(carbonate_boundary_testimony ? { carbonate_boundary_testimony } : {}),
     ...(sulfur_ledger_testimony ? { sulfur_ledger_testimony } : {}),
+    ...(layer_growth_testimony ? { layer_growth_testimony } : {}),
+    ...(habit_morphology_testimony ? { habit_morphology_testimony } : {}),
   };
 }
 

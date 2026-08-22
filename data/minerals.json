@@ -12,7 +12,8 @@
     "optics": "RENDER-LAYER optical data (proposals/RESEARCH-optical-realism-2026-07-02.md). diaphaneity: category enum (transparent | transparent_to_translucent | transparent_to_opaque | translucent | translucent_to_opaque | opaque). clarity: [0,1] for a TYPICAL fine display specimen (1.0 = water-clear gem, 0 = opaque) — the Depth-A consumer (js/99i buildCrystalMaterial → opacity). lustre: term array (Depth-B consumer, recorded ahead of use). notes: face-specific lustre fame + specimen nuance. source: how the row was verified ('webmineral+HOM <date>' = two fetched sources; disagreement record in the research doc). OPTIONAL — species without it get class defaults in the builder. Lint: tests-js/mineral-optics.test.ts.",
     "nucleation_sigma": "Minimum supersaturation for nucleation.",
     "max_nucleation_count": "Maximum number of crystals of this species that can ever nucleate in a single run. Counted across the whole simulation (active + dissolved). Keeps common minerals like wulfenite from producing microcrystalline swarms that get immediately swallowed by other phases.",
-    "max_size_cm": "Hard cap on crystal size — 2x world record per research/arcs/mineral-accuracy-audit.md. Growth halts when reached; this is the fix for the 321248% bug.",
+    "max_size_cm": "Compatibility hard cap for an individual crystal. New audited entries use size_authority to distinguish individual crystal length from aggregate/habit extent.",
+    "size_authority": "Optional audited dimensional authority: individual_record_cm/individual_cap_cm; aggregate_record_cm/aggregate_cap_cm; aggregate_habits; status; sources. A null aggregate cap means cavity capacity, not a fabricated crystal record, bounds that aggregate habit.",
     "growth_rate_mult": "Relative growth rate, calcite=1.0 baseline. Multiply the runtime base rate.",
     "T_range_C": "[min, max] temperature window for growth (C). null,null = unbounded.",
     "T_optimum_C": "[min, max] sweet spot within T_range.",
@@ -2111,7 +2112,16 @@
       "formula": "Cu2(CO3)(OH)2",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 3,
-      "max_size_cm": 200,
+      "max_size_cm": 18,
+      "size_authority": {
+        "individual_record_cm": 9,
+        "individual_cap_cm": 18,
+        "aggregate_record_cm": 9,
+        "aggregate_cap_cm": null,
+        "aggregate_habits": ["botryoidal", "banded", "fibrous/acicular", "pseudomorph_after_azurite", "stalactitic"],
+        "status": "Handbook record includes crystals, sprays, and crude composite aggregates to 9 cm; larger botryoidal/stalactitic bodies are aggregate extents and are bounded by cavity capacity, not mislabeled as one crystal.",
+        "sources": ["Handbook of Mineralogy, Malachite (Anthony et al.), https://www.handbookofmineralogy.org/pdfs/malachite.pdf"]
+      },
       "growth_rate_mult": 0.8,
       "habit_variants": [
         {
@@ -2441,7 +2451,16 @@
       "formula": "ZnCO3",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 3,
-      "max_size_cm": 60,
+      "max_size_cm": 20,
+      "size_authority": {
+        "individual_record_cm": 10,
+        "individual_cap_cm": 20,
+        "aggregate_record_cm": null,
+        "aggregate_cap_cm": null,
+        "aggregate_habits": ["botryoidal", "botryoidal/stalactitic", "mammillary", "stalactitic_turquoise"],
+        "status": "Handbook documents uncommon individual crystals to 10 cm but gives no defensible maximum for botryoidal, reniform, stalactitic, or massive bodies; aggregate extent is capacity-bound.",
+        "sources": ["Handbook of Mineralogy, Smithsonite (Anthony et al.), https://handbookofmineralogy.org/wp-content/uploads/2022/07/smithsonite.pdf"]
+      },
       "growth_rate_mult": 0.7,
       "habit_variants": [
         {
@@ -2566,7 +2585,16 @@
       "formula": "PbMoO4",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 5,
-      "max_size_cm": 20,
+      "max_size_cm": 22,
+      "size_authority": {
+        "individual_record_cm": 11,
+        "individual_cap_cm": 22,
+        "aggregate_record_cm": 60,
+        "aggregate_cap_cm": 120,
+        "aggregate_habits": ["reticulated_cluster", "intergrown_thin_plates"],
+        "status": "Resolved authority is ~10-11 cm for a substantiated individual tablet. Reports to 60-61 cm explicitly describe extremely thin, fragile, intergrown material; retained as aggregate testimony, not promoted to an individual-crystal record.",
+        "sources": ["Rickwood 1981, American Mineralogist 66:885-907, https://msaweb.org/AmMin/AM66/AM66_885.pdf"]
+      },
       "growth_rate_mult": 0.2,
       "habit_variants": [
         {
@@ -2985,7 +3013,16 @@
       "formula": "SrSO4",
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 6,
-      "max_size_cm": 30,
+      "max_size_cm": 92,
+      "size_authority": {
+        "individual_record_cm": 46,
+        "individual_cap_cm": 92,
+        "aggregate_record_cm": null,
+        "aggregate_cap_cm": null,
+        "aggregate_habits": ["fibrous_blanket", "fibrous", "nodular"],
+        "status": "Handbook documents elongated crystals to 45 cm; Royal Ontario Museum reference text reports Put-in-Bay geode crystals as wide as 46 cm. The cap is twice the 46 cm individual authority. Fibrous blankets/nodules are aggregate extents and capacity-bound.",
+        "sources": ["Handbook of Mineralogy, Celestine (Anthony et al.), https://www.handbookofmineralogy.org/pdfs/celestine.pdf", "Tait 2011, Gems and Minerals: Earth Treasures from the Royal Ontario Museum"]
+      },
       "growth_rate_mult": 0.3,
       "habit_variants": [
         {
@@ -4948,6 +4985,15 @@
       "nucleation_sigma": 1.0,
       "max_nucleation_count": 10,
       "max_size_cm": 2400,
+      "size_authority": {
+        "individual_record_cm": 1200,
+        "individual_cap_cm": 2400,
+        "aggregate_record_cm": null,
+        "aggregate_cap_cm": null,
+        "aggregate_habits": ["fibrous (satin spar)", "rosette", "desert_rose"],
+        "status": "Naica's 11-12 m selenite beams are individual crystals. Satin-spar fiber packs and desert-rose rosettes are aggregate habits with no universal record extent and are capacity-bound.",
+        "sources": ["García-Ruiz et al. 2007, Geology 35:327-330", "Van Driessche et al. 2011, PNAS 108:15721-15726", "Pérez-Rodríguez et al. 2018, Crystal Growth & Design 18:6231-6243"]
+      },
       "growth_rate_mult": 0.7,
       "habit_variants": [
         {
@@ -10099,7 +10145,7 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "reconciled v248 (2026-08-06). Transformation-only pharmacolite dehydration product via DEHYDRATION_TRANSITIONS (30 vadose steps or the 80°C heat path), preserving external habit and position. The shipped scenario association is Schneeberg/Jáchymov-style mineralization; Tsumeb is explicitly excluded because no pharmacolite parent or haidingerite product is supported by the audited locality catalogs. The global transformation remains live in Creative mode and documented localities. Research-grade spec from Handbook of Mineralogy + Ferraris, Jones & Yerkess 1972 + Cassien, Herpin & Permingeat 1966; type locality Jáchymov and documented pseudomorph occurrence Getchell mine, Nevada.",
+      "audit_status": "reconciled SIM272 (2026-08-21). Transformation-only pharmacolite dehydration product via DEHYDRATION_TRANSITIONS, preserving external habit and position. It cannot nucleate or add positive layers, but its authored pH<4.5 acid reactivity is executable and returns the exact booked parent-layer inventory LIFO. The shipped scenario association is Schneeberg/Jáchymov-style mineralization; Tsumeb remains excluded. Sources: Handbook of Mineralogy; Ferraris, Jones & Yerkess 1972; Cassien, Herpin & Permingeat 1966.",
       "late_stage_propensity": 1.0,
       "_late_stage_note": "Paramorph after pharmacolite — only ever late by definition (dehydration product); mirrors tincalconite/thenardite/meta-autunite/metatorbernite/metazeunerite/pararealgar pattern. Propensity 1.0.",
       "_transformation_only": true,
@@ -16126,7 +16172,7 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "new (2026-05-19). Paramorph product of autunite via DEHYDRATION_TRANSITIONS; not a nucleation. Per research-autunite.md §Variants for Game §1. Mirrors the tincalconite/thenardite pattern. No engine path.",
+      "audit_status": "reconciled SIM272 (2026-08-21). Dehydration product of autunite; never a direct nucleation or positive-growth phase. A dissolution-only engine executes the authored pH<4.5 claim and returns the exact inherited layer inventory LIFO.",
       "class_color": "#d0c050",
       "late_stage_propensity": 1.0,
       "_late_stage_note": "Paramorph after autunite — only ever late by definition (dehydration product). Mirrors tincalconite/thenardite.",
@@ -16208,7 +16254,7 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "new (2026-05-19). Paramorph product of torbernite via DEHYDRATION_TRANSITIONS; not a nucleation. Per research-torbernite.md §Dehydration. Non-fluorescent (inherits Cu²⁺ quenching from parent torbernite). No engine path.",
+      "audit_status": "reconciled SIM272 (2026-08-21). Dehydration product of torbernite; never a direct nucleation or positive-growth phase. A dissolution-only engine executes the authored pH<5 claim and returns the exact inherited layer inventory LIFO. Non-fluorescent through structural Cu²⁺ quenching.",
       "class_color": "#7eb87a",
       "late_stage_propensity": 1.0,
       "_late_stage_note": "Paramorph after torbernite — only ever late by definition (dehydration product).",
@@ -16287,7 +16333,7 @@
       "runtimes_present": [
         "js"
       ],
-      "audit_status": "new (2026-05-19). Paramorph product of zeunerite via DEHYDRATION_TRANSITIONS; not a nucleation. Per research-zeunerite.md §Dehydration. Non-fluorescent (inherits Cu²⁺ quenching from parent zeunerite). No engine path.",
+      "audit_status": "reconciled SIM272 (2026-08-21). Dehydration product of zeunerite; never a direct nucleation or positive-growth phase. A dissolution-only engine executes the authored pH<5 claim and returns the exact inherited layer inventory LIFO. Non-fluorescent through structural Cu²⁺ quenching.",
       "class_color": "#9ec88e",
       "late_stage_propensity": 1.0,
       "_late_stage_note": "Paramorph after zeunerite — only ever late by definition (dehydration product).",

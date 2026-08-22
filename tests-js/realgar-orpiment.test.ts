@@ -4,10 +4,11 @@
 // Two new minerals: realgar (AsS, orange-red) and orpiment (As₂S₃,
 // golden-yellow). The classic As-sulfide pair — co-deposits in
 // hot-spring + epithermal environments. White & Roberson 1962
-// document both as accessory species at Sulphur Bank.
+// place the broader hot-spring Hg deposit class in siliceous sinter; the
+// mine-specific occurrence remains explicitly provisional in scenarios.json5.
 //
 // Test scope: engine gate correctness, σ math sanity, end-to-end
-// nucleation at Sulphur Bank across seeds, substrate preference.
+// nucleation at Sulphur Bank across seeds, locality-bounded surface placement.
 
 import { describe, expect, it } from 'vitest';
 
@@ -176,12 +177,12 @@ describe('Realgar (AsS) + Orpiment (As₂S₃) — v82 mineral additions', () =>
     });
   });
 
-  describe('substrate preference (co-deposition with native_sulfur, realgar)', () => {
-    it('realgar-origin nucleates on native_sulfur or other As-bearing substrate across 3 seeds', () => {
+  describe('locality-bounded placement (co-deposition does not imply substrate)', () => {
+    it('realgar-origin starts on the altered vug wall, never on withdrawn Sulphur Bank phases', () => {
       // v84: include pararealgar crystals (paramorph_origin='realgar')
       // — their position was set at nucleation time before any
       // transformation, so the substrate pin still applies.
-      let onSubstrate = 0;
+      let realgarOrigin = 0;
       for (const seed of [42, 1, 7]) {
         const { sim } = runSulphurBank(seed);
         const rlg = sim.crystals.filter((c: any) =>
@@ -189,13 +190,13 @@ describe('Realgar (AsS) + Orpiment (As₂S₃) — v82 mineral additions', () =>
         );
         for (const c of rlg) {
           const pos = (c.position || '');
-          if (pos.includes('native_sulfur') || pos.includes('arsenopyrite') || pos.includes('quartz')) {
-            onSubstrate++;
-          }
+          realgarOrigin++;
+          expect(pos).toBe('vug wall');
+          expect(pos).not.toContain('arsenopyrite');
+          expect(pos).not.toContain('quartz');
         }
       }
-      expect(onSubstrate,
-        `expected realgar-origin nucleating on a substrate across 3 seeds; got ${onSubstrate}`)
+      expect(realgarOrigin, 'expected realgar-origin crystals across three commissioned seeds')
         .toBeGreaterThan(0);
     });
 

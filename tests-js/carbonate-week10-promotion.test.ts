@@ -199,14 +199,15 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 10 — scenario-level firing pins', ()
     expect(total).toBeGreaterThan(0);
   });
 
-  it('reactive_wall now produces dissolution-cycle dolomite (v145 — acid pulses)', () => {
-    // Cascade gain from W9 calcite arc + W10 dolomite SI engine: acid
-    // pulses now dissolve transient dolomite (real Sweetwater MVT
-    // documents acid-into-dolomite-gangue dissolution as the
-    // characteristic stage I event).
+  it('reactive_wall keeps dolomite as wall/gangue authority without inventing a discrete crystal', () => {
+    // Sweetwater documents acid attack on dolostone wall and gangue. That is
+    // not evidence that the current fluid precipitates a free-grown dolomite
+    // crystal; SIM 272's commissioned runs produce none.
     const sim = runScenario('reactive_wall');
     if (!sim) return;
     const { total } = dolomiteCount(sim);
-    expect(total).toBeGreaterThanOrEqual(1);
+    expect(total).toBe(0);
+    const aspirational = (SCENARIOS.reactive_wall as any)._json5_spec?.aspirational_species || [];
+    expect(aspirational).toContainEqual(expect.objectContaining({ mineral: 'dolomite' }));
   });
 });

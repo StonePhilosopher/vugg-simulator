@@ -113,6 +113,9 @@ class StripRecorder {
   private seenTransformationKeys: Set<string>;
   private carbonateBoundaryTestimony: any[];
   private sulfurLedgerTestimony: any[];
+  private layerGrowthTestimony: any[];
+  private lastSeenZoneCounts: Map<number | string, number>;
+  private latestHabitMorphology: Map<number | string, any>;
 
   constructor(sim: any, opts?: {
     angular_indices?: number,
@@ -197,6 +200,9 @@ class StripRecorder {
     this.seenTransformationKeys = new Set();
     this.carbonateBoundaryTestimony = [];
     this.sulfurLedgerTestimony = [];
+    this.layerGrowthTestimony = [];
+    this.lastSeenZoneCounts = new Map();
+    this.latestHabitMorphology = new Map();
   }
 
   // ---- chip classification helpers ----------------------------------
@@ -388,7 +394,70 @@ class StripRecorder {
           from,
           to,
           mechanism: String(c.phase_transition_driver || c.dehydration_driver || 'paramorph'),
+          dehydration: c.dehydration_receipt
+            ? JSON.parse(JSON.stringify(c.dehydration_receipt)) : null,
+          phase_replacement: Array.isArray(c.phase_transition_history)
+            ? JSON.parse(JSON.stringify(c.phase_transition_history.find((r: any) =>
+              Number(r?.step) === Number(c.paramorph_step)
+              && String(r?.from) === from && String(r?.to) === to,
+            ) || null)) : null,
         });
+      }
+
+      // Crystal growth is layered. Preserve the exact formula/solid-solution
+      // and any binding competition allocation for every newly accepted shell,
+      // plus a compact final habit/morphology state for each physical crystal.
+      for (let i = 0; i < total; i++) {
+        const c = sim.crystals[i];
+        if (!c) continue;
+        const crystalId = c.id ?? c.crystal_id ?? i;
+        const zones = Array.isArray(c.zones) ? c.zones : [];
+        const start = Math.max(0, this.lastSeenZoneCounts.get(crystalId) || 0);
+        for (let zi = start; zi < zones.length; zi++) {
+          const z = zones[zi] || {};
+          const allocation = z.competition_allocation;
+          this.layerGrowthTestimony.push(JSON.parse(JSON.stringify({
+            step: Number(z.step),
+            sample_index: step,
+            crystal_id: crystalId,
+            mineral: String(c.mineral || ''),
+            zone_index: zi,
+            thickness_um: Number(z.thickness_um),
+            remaining_solid_um: Number.isFinite(Number(z._remaining_solid_um))
+              ? Number(z._remaining_solid_um) : null,
+            formula_stoichiometry: z.formula_stoichiometry || null,
+            solid_solution: z.solid_solution || null,
+            competition_allocation: allocation && (
+              Number(allocation.scaling) < 1 - 1e-12
+              || Number(allocation.allocation_rounds) > 1
+            ) ? allocation : null,
+            dissolution_mode: z.dissolutionMode || null,
+            transformation_reactivity: z.transformation_reactivity || null,
+            morphology: {
+              regime: z.morph_regime || null,
+              form: z.morph_form || null,
+              surface_sigma: Number.isFinite(Number(z.morph_surf_sigma))
+                ? Number(z.morph_surf_sigma) : null,
+            },
+          })));
+        }
+        this.lastSeenZoneCounts.set(crystalId, zones.length);
+        const size = typeof crystalSizeAuthority === 'function'
+          ? crystalSizeAuthority(c) : null;
+        this.latestHabitMorphology.set(crystalId, JSON.parse(JSON.stringify({
+          crystal_id: crystalId,
+          mineral: String(c.mineral || ''),
+          habit: String(c.habit || ''),
+          extent_kind: c.extent_kind || size?.extent_kind || 'individual',
+          dominant_forms: Array.isArray(c.dominant_forms) ? [...c.dominant_forms] : [],
+          total_growth_um: Number(c.total_growth_um) || 0,
+          c_length_mm: Number(c.c_length_mm) || 0,
+          a_width_mm: Number(c.a_width_mm) || 0,
+          size_authority: size,
+          cdr_replacement_evidence: c.cdr_replacement_evidence || null,
+          surface_growth: c._surfaceGrowth || null,
+          zone_count: zones.length,
+        })));
       }
     }
 
@@ -500,6 +569,8 @@ class StripRecorder {
       transformation_event_testimony: this.transformationEventTestimony,
       carbonate_boundary_testimony: this.carbonateBoundaryTestimony,
       sulfur_ledger_testimony: this.sulfurLedgerTestimony,
+      layer_growth_testimony: this.layerGrowthTestimony,
+      habit_morphology_testimony: Array.from(this.latestHabitMorphology.values()),
     };
   }
 

@@ -219,22 +219,18 @@ function _nuc_cinnabar(sim) {
 }
 
 // Realgar (AsS) — orange-red As-sulfide. Hot-spring + epithermal
-// deposit. Substrate preference at Sulphur Bank: nucleates alongside
-// native_sulfur (same H₂S + O₂ mixing zone) > on existing arsenopyrite
-// > on quartz > free wall. Allchar's realgar specimens grow on calcite
-// + dolomite — different scenario, different substrate logic.
+// deposit.  "Associated with" is not a license to invent an ordered
+// substrate relationship.  At the authored Sulphur Bank surface, realgar
+// precipitates as a fracture/vug-wall coating before the later elemental-S
+// pulse.  A future locality may provide a documented substrate route, but
+// arsenopyrite and macrocrystalline quartz are explicitly not licensed at
+// Sulphur Bank and therefore must not leak in through a universal rule.
 function _nuc_realgar(sim) {
   const sigma_rlg = sim.conditions.supersaturation_realgar();
   const existing_rlg = sim.crystals.filter(c => c.mineral === 'realgar' && c.active);
   if (sigma_rlg > MINERAL_GATES_realgar.sigma_crit && !sim._atNucleationCap('realgar')) {
     if (!existing_rlg.length || (sigma_rlg > 1.8 && rng.random() < 0.2)) {
       let pos = 'vug wall';
-      const active_ns = sim.crystals.filter(c => c.mineral === 'native_sulfur' && c.active);
-      const active_apy = sim.crystals.filter(c => c.mineral === 'arsenopyrite' && c.active);
-      const active_qtz = sim.crystals.filter(c => c.mineral === 'quartz' && c.active);
-      if (active_ns.length && rng.random() < 0.35) pos = `on native_sulfur #${active_ns[0].crystal_id}`;
-      else if (active_apy.length && rng.random() < 0.30) pos = `on arsenopyrite #${active_apy[0].crystal_id}`;
-      else if (active_qtz.length && rng.random() < 0.25) pos = `on quartz #${active_qtz[0].crystal_id}`;
       const c = sim.nucleate('realgar', pos, sigma_rlg);
       sim.log.push(`  ✦ NUCLEATION: Realgar #${c.crystal_id} on ${c.position} (T=${sim.conditions.temperature.toFixed(0)}°C, σ=${sigma_rlg.toFixed(2)}, As=${sim.conditions.fluid.As.toFixed(1)}, S=${sulfideAvailablePpm(sim.conditions.fluid, sim.conditions.temperature).toFixed(0)})`);
     }

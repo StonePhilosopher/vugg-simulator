@@ -280,16 +280,17 @@ class VugWall {
     // instead of the global vugFill. Defaults false → byte-identical
     // to legacy. Forwarded to WallState in 85-simulator.ts.
     this.per_cell_local_fill = !!opts.per_cell_local_fill;
-    // v84 (2026-05-19): is the cavity exposed to visible light?
-    // Default TRUE — most surface vugs / hot-spring vents / museum
-    // specimens are lit. Drives LIGHT_TRANSITIONS in 75-transitions.ts
-    // (currently only realgar → pararealgar). Scenarios that model
-    // sealed-rock cavities during formation (deep-burial pegmatite
-    // pockets, sealed vein systems) can set is_lit: false to preserve
-    // light-sensitive minerals like realgar through the run. Forwarded
-    // to WallState so the simulator can check sim.wall_state.is_lit
-    // without reaching back to conditions.wall.
-    this.is_lit = (opts.is_lit !== undefined) ? !!opts.is_lit : true;
+    // Visible-light alteration is an EXPLICIT geological boundary. A buried
+    // cavity is dark unless a scenario declares surface exposure/excavation;
+    // merely omitting a field must never turn a molecular transformation on.
+    // `is_lit:true` remains a compatibility spelling for authored/Creative
+    // inputs, but the durable authority is the named route below.
+    const lightExposure = (opts.light_exposure === 'surface'
+      || opts.light_exposure === 'excavated')
+      ? opts.light_exposure
+      : (opts.is_lit === true ? 'surface' : 'dark');
+    this.light_exposure = lightExposure;
+    this.is_lit = lightExposure !== 'dark';
     // v162 (2026-05-28): does episodic hydrothermal "hot fluid injection"
     // (the ambient_cooling thermal-pulse mechanic, 85d) apply to this cavity?
     // Default TRUE — most scenarios are cooling hydrothermal systems where
@@ -301,6 +302,29 @@ class VugWall {
     // exposes this as a setup toggle (f-thermal-pulses). Read directly off
     // conditions.wall in ambient_cooling.
     this.thermal_pulses = (opts.thermal_pulses !== undefined) ? !!opts.thermal_pulses : true;
+    // A heat pulse is not automatically a material pulse. Localities may
+    // author a cited fracture-fluid composition, but an absent contract means
+    // heat only — no universal Si/Fe/Mn/acid package is invented.
+    const pulseFluid = opts.thermal_pulse_fluid;
+    this.thermal_pulse_fluid = (pulseFluid && typeof pulseFluid === 'object'
+      && typeof pulseFluid.authority === 'string' && pulseFluid.authority.trim())
+      ? structuredClone(pulseFluid)
+      : null;
+    // Authored far-field/buffer control for gradual pH relaxation. Reactions
+    // and explicit events remain free to change pH; without this contract no
+    // global 6.5 attractor is applied.
+    const pHBoundary = opts.pH_boundary;
+    this.pH_boundary = (pHBoundary && typeof pHBoundary === 'object'
+      && Number.isFinite(Number(pHBoundary.target_pH))
+      && Number.isFinite(Number(pHBoundary.rate_per_step))
+      && Number(pHBoundary.rate_per_step) >= 0
+      && typeof pHBoundary.authority === 'string' && pHBoundary.authority.trim())
+      ? Object.freeze({
+        target_pH: Math.max(0, Math.min(14, Number(pHBoundary.target_pH))),
+        rate_per_step: Number(pHBoundary.rate_per_step),
+        authority: pHBoundary.authority.trim(),
+      })
+      : null;
     // gamma_host — the host rock's natural γ-background intensity (0-1), read by
     // the silicate engine (js/59) to accrue radiation_damage into quartz. The
     // pegmatite/phonolite cases are hardcoded there; a scenario declares this for
@@ -577,6 +601,9 @@ class VugWall {
       ? wallState.cavityEvolutionLedger() : null;
     if ((geometryPlan && !evolutionLedger) || (!geometryPlan && evolutionLedger)) {
       throw new RangeError('wall dissolution geometry plan/ledger authority mismatch');
+    }
+    if (geometryPlan?.accepted === false) {
+      throw new RangeError('unresolvable Cartesian erosion cannot commit wall chemistry');
     }
     if (this.cavity_capacity_basis === 'canonical_closed_wallmesh' && !geometryPlan) {
       throw new RangeError('canonical cavity capacity cannot change outside its WallMesh ledger');
@@ -1422,12 +1449,13 @@ class WallState {
     // while edges fill" Nature Comm 2022 confinement physics at
     // different layers of the simulator.
     this.per_cell_local_fill = !!opts.per_cell_local_fill;
-    // v84 (2026-05-19) — is the cavity exposed to visible light?
-    // Mirrored from VugWall.is_lit. Drives LIGHT_TRANSITIONS in
-    // 75-transitions.ts (currently only realgar → pararealgar).
-    // Default true preserves the "most vugs are eventually exposed
-    // to light" assumption.
-    this.is_lit = (opts.is_lit !== undefined) ? !!opts.is_lit : true;
+    // Exact light-exposure route mirrored from VugWall. Default dark is the
+    // fail-closed geological state; `is_lit` is the compatibility view.
+    this.light_exposure = (opts.light_exposure === 'surface'
+      || opts.light_exposure === 'excavated')
+      ? opts.light_exposure
+      : (opts.is_lit === true ? 'surface' : 'dark');
+    this.is_lit = this.light_exposure !== 'dark';
     // Size-class cascade (2026-05): vug | pocket | cave, mirrored from
     // VugWall for UI consumers that read sim.wall_state directly.
     this.size_class = (opts.size_class as SizeClass) ?? null;

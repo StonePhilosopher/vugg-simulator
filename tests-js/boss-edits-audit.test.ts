@@ -46,12 +46,14 @@ function makeBareConditions(opts: any = {}) {
   // pressure), matching deccan_zeolite. Higher-pressure apophyllite now uses
   // an explicitly soft, occurrence-based rarity weight above 1.5 kbar rather
   // than the unsupported 0.5-kbar hard wall.
-  return new VugConditions({
+  const conditions = new VugConditions({
     fluid: new FluidChemistry(opts.fluid || {}),
     wall: new VugWall(),
     temperature: opts.temperature ?? 300,
     pressure: opts.pressure ?? 0.05,
   });
+  if (opts.scenarioId) conditions._scenario_id = opts.scenarioId;
+  return conditions;
 }
 
 describe('Boss edit 1 — Mo-flux removal (5ecbb42)', () => {
@@ -220,6 +222,7 @@ describe('Boss edit 2 — Deccan Stage III SiO₂ pulse 300→600 (5740371)', ()
     // the Ottens 2019 Stage III chemistry: K+25, Ca+50, SiO2+600,
     // F+4, pH=8.8, T=150°C.
     const c = makeBareConditions({
+      scenarioId: 'deccan_zeolite',
       temperature: 130,
       fluid: { K: 0, Ca: 0, SiO2: 100, F: 0, pH: 8.5 },
     });
@@ -243,6 +246,7 @@ describe('Boss edit 2 — Deccan Stage III SiO₂ pulse 300→600 (5740371)', ()
     // 250 ppm as the realistic carryover: Stage II adds 200 starting
     // from Stage I's quartz-drawn ~50, so ~250 is plausible.
     const c = makeBareConditions({
+      scenarioId: 'deccan_zeolite',
       temperature: 130,
       fluid: { K: 10, Ca: 80, SiO2: 250, F: 0, pH: 8.5 },
     });

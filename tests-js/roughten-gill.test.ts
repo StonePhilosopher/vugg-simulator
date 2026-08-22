@@ -97,7 +97,7 @@ describe('Roughton Gill mine-specific scenario', () => {
   it('delivers the carbonate-buffered and silica-rich supergene hierarchy at seed 42', { timeout: 300_000 }, () => {
     const { sim, present } = canonicalEvidence();
     for (const mineral of [
-      'malachite', 'cerussite', 'aurichalcite', 'rosasite', 'hemimorphite',
+      'malachite', 'cerussite', 'aurichalcite', 'hemimorphite',
       'pyromorphite', 'plumbogummite',
     ]) {
       expect(crystals(sim, mineral).length, `${mineral} must grow`).toBeGreaterThan(0);
@@ -106,8 +106,6 @@ describe('Roughton Gill mine-specific scenario', () => {
       .toBeGreaterThanOrEqual(100);
     expect(Math.min(...crystals(sim, 'cerussite').map((c: any) => c.nucleation_step)))
       .toBeGreaterThanOrEqual(100);
-    expect(Math.min(...crystals(sim, 'rosasite').map((c: any) => c.nucleation_step)))
-      .toBeGreaterThanOrEqual(140);
     expect(Math.min(...crystals(sim, 'hemimorphite').map((c: any) => c.nucleation_step)))
       .toBeGreaterThanOrEqual(180);
     const firstPyromorphite = Math.min(...crystals(sim, 'pyromorphite')
@@ -127,6 +125,13 @@ describe('Roughton Gill mine-specific scenario', () => {
     for (const rare of ['linarite', 'caledonite', 'leadhillite']) {
       expect(present.has(rare), `${rare} is genuine but not a deterministic headline`).toBe(false);
     }
+    const rosasiteAspiration = SCENARIOS.roughten_gill._json5_spec.aspirational_species
+      .find((entry: any) => entry.mineral === 'rosasite');
+    expect(rosasiteAspiration).toMatchObject({
+      mineral: 'rosasite',
+      reason: expect.stringContaining('absent from all three SIM 272 commissioned seeds'),
+    });
+    expect(present.has('rosasite'), 'documented rosasite remains an honest 0/3 aspiration').toBe(false);
   });
 
   it('transfers sulfur internally at oxidation and closes the boundary ledger', { timeout: 300_000 }, () => {

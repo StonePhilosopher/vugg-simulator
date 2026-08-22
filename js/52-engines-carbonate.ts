@@ -759,12 +759,15 @@ function grow_malachite(crystal, conditions, step) {
   const zone_count = crystal.zones.length;
   if (zone_count >= 20) {
     crystal.habit = 'banded';
+    crystal.extent_kind = 'aggregate';
     crystal.dominant_forms = ['banded botryoidal', 'concentric layers'];
   } else if (rate > 8) {
     crystal.habit = 'fibrous/acicular';
+    crystal.extent_kind = 'aggregate';
     crystal.dominant_forms = ['acicular sprays', 'fibrous radiating'];
   } else {
     crystal.habit = 'botryoidal';
+    crystal.extent_kind = 'aggregate';
     crystal.dominant_forms = ['botryoidal masses', 'mammillary'];
   }
 
@@ -817,12 +820,15 @@ function grow_smithsonite(crystal, conditions, step) {
   const zone_count = crystal.zones.length;
   if (zone_count >= 15) {
     crystal.habit = 'botryoidal/stalactitic';
+    crystal.extent_kind = 'aggregate';
     crystal.dominant_forms = ['botryoidal crusts', 'stalactitic masses'];
   } else if (rate > 6) {
     crystal.habit = 'rhombohedral';
+    crystal.extent_kind = 'individual';
     crystal.dominant_forms = ['{10̄11} rhombohedron', 'curved faces'];
   } else {
     crystal.habit = 'botryoidal';
+    crystal.extent_kind = 'aggregate';
     crystal.dominant_forms = ['grape-like clusters', 'reniform masses'];
   }
 

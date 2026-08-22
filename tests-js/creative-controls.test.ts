@@ -172,6 +172,9 @@ describe('Creative chemistry control contract', () => {
     document.body.appendChild(fixture);
     (globalThis as any).installCreativeSetupExactInputs();
     const setup = document.getElementById('fortress-setup')!;
+    expect(document.getElementById('creative-boundary-authority-controls')).not.toBeNull();
+    expect(document.getElementById('f-ph-boundary-enabled')).not.toBeNull();
+    expect(document.getElementById('f-thermal-pulse-components')).not.toBeNull();
     const sliders = Array.from(setup.querySelectorAll('input[type="range"]')) as HTMLInputElement[];
     expect(sliders.length).toBeGreaterThan(50);
     for (const slider of sliders) {
@@ -388,6 +391,14 @@ describe('Creative chemistry control contract', () => {
     add('f-open-atmosphere', '', 'checkbox').checked = true;
     add('f-is-lit', '', 'checkbox').checked = false;
     add('f-thermal-pulses', '', 'checkbox').checked = false;
+    select('f-ph-boundary-enabled', '1');
+    add('f-ph-boundary-target', '5.8', 'number');
+    add('f-ph-boundary-rate', '0.025', 'number');
+    add('f-ph-boundary-authority', 'Authored carbonate buffer', 'text');
+    add('f-thermal-pulse-authority', 'Authored greisen fracture fluid', 'text');
+    add('f-thermal-pulse-components', '{"SiO2":[20,80],"F":15}', 'text');
+    add('f-thermal-pulse-ph-delta', '-0.4', 'number');
+    add('f-thermal-pulse-flow', '2.5', 'number');
 
     const result = (globalThis as any).readCreativeGeologicalControls({});
     expect(result.wallOpts).toMatchObject({
@@ -399,6 +410,14 @@ describe('Creative chemistry control contract', () => {
       primary_bubbles: 4, secondary_bubbles: 9, shape_seed: 77,
       gamma_host: 0.35, graphitic: true, open_system: true, open_spring: true,
       is_lit: false, thermal_pulses: false,
+      pH_boundary: {
+        target_pH: 5.8, rate_per_step: 0.025, authority: 'Authored carbonate buffer',
+      },
+      thermal_pulse_fluid: {
+        authority: 'Authored greisen fracture fluid',
+        components_ppm: { SiO2: [20, 80], F: 15 },
+        pH_delta: -0.4, flow_rate: 2.5,
+      },
     });
     expect(result.conditionOpts).toEqual({ flow_rate: 2.7, porosity: 0.18 });
     expect(result.initialWaterTablePct).toBe(62.5);
@@ -442,6 +461,14 @@ describe('Creative chemistry control contract', () => {
     set('open_spring', '1');
     set('is_lit', '0');
     set('graphitic', '0');
+    set('ph_boundary_enabled', '1');
+    set('ph_boundary_target', '580');
+    set('ph_boundary_rate', '25');
+    set('thermal_pulse_material', '1');
+    set('thermal_pulse_authority', 'Creative exact fracture fluid');
+    set('thermal_pulse_components', '{"Sr":[10,30],"S_sulfate":5}');
+    set('thermal_pulse_ph_delta', '-40');
+    set('thermal_pulse_flow', '250');
 
     expect(sim.conditions.fluid_surface_height_mm)
       .toBeCloseTo(CavityWaterAppearance.verticalSpanForWall(sim.wall_state) * 0.375, 8);
@@ -475,6 +502,17 @@ describe('Creative chemistry control contract', () => {
     expect(sim.conditions.wall.is_lit).toBe(false);
     expect(sim.wall_state.is_lit).toBe(false);
     expect(sim.conditions.wall.graphitic).toBe(false);
+    expect(sim.conditions.wall.pH_boundary).toEqual({
+      target_pH: 5.8,
+      rate_per_step: 0.025,
+      authority: 'Creative live-authored buffer boundary',
+    });
+    expect(sim.conditions.wall.thermal_pulse_fluid).toEqual({
+      authority: 'Creative exact fracture fluid',
+      components_ppm: { Sr: [10, 30], S_sulfate: 5 },
+      pH_delta: -0.4,
+      flow_rate: 2.5,
+    });
 
     const lockedDiameter = sim.conditions.wall.vug_diameter_mm;
     const lockedThickness = sim.conditions.wall.thickness_mm;

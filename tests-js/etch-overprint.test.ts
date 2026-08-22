@@ -32,7 +32,7 @@ function startScenario() {
 }
 
 describe('evidence-bounded physical etch', () => {
-  it('turns the North Pennine reopening wash into one accepted, mass-closing negative zone', () => {
+  it('withholds the wash from a stepped surface and mass-closes a controlled flat-{100} exposure', () => {
     const { sim } = startScenario();
     while (sim.step < 117) sim.run_step();
     const fluorite = sim.crystals.find((c: any) => c.mineral === 'fluorite' && !c.dissolved);
@@ -44,11 +44,23 @@ describe('evidence-bounded physical etch', () => {
       fluorine: remaining(fluorite, 'F'),
     };
 
+    expect(fluorite.habit).toBe('stepped_cube');
+    const noFaceModel = applyPhysicalEtchDirective(sim, {
+      minerals: ['fluorite'], duration_days: 1,
+    }, 117);
+    expect(noFaceModel).toMatchObject({ considered: 1, accepted: 0, rejected: 1 });
+    expect(noFaceModel.receipts[0].rejection)
+      .toBe('no_face_matched_evidence_bounded_rate_model');
+    // Isolate the independent solution-envelope guard with an explicitly
+    // controlled flat face. The pre-breach fluid is still outside the cited
+    // bath envelope, so no solid may be removed.
+    fluorite.habit = 'cubic';
     const outOfEnvelope = applyPhysicalEtchDirective(sim, {
       minerals: ['fluorite'], duration_days: 1,
     }, 117);
     expect(outOfEnvelope).toMatchObject({ considered: 1, accepted: 0, rejected: 1 });
     expect(outOfEnvelope.receipts[0].rejection).toBe('outside_rate_model_envelope');
+    fluorite.habit = 'stepped_cube';
     expect(fluorite.total_growth_um).toBe(before.size);
     const unsupported = applyPhysicalEtchDirective(sim, {
       minerals: ['calcite'], duration_days: 1,
@@ -59,6 +71,12 @@ describe('evidence-bounded physical etch', () => {
       (receipt: any) => receipt.rejection === 'no_face_matched_evidence_bounded_rate_model',
     )).toBe(true);
 
+    // Controlled face-matched specimen before the event fires. This lets the
+    // step-118 directive evaluate the exact pH 3.6 replacement wash, before the
+    // ordinary end-of-step boundary evolution. It is the non-vacuous positive
+    // integration for rate, shell return, morphology, and mass closure; the
+    // separate regression below preserves the unmodified seed-42 testimony.
+    fluorite.habit = 'cubic';
     sim.run_step();
     const summary = sim._physicalEtchReceipts.at(-1);
     expect(summary).toMatchObject({
@@ -118,12 +136,37 @@ describe('evidence-bounded physical etch', () => {
     );
   }, 300000);
 
+  it('records the unmodified seed-42 stepped surface as a fail-closed wash', () => {
+    const { sim } = startScenario();
+    while (sim.step < 118) sim.run_step();
+    const fluorite = sim.crystals.find((c: any) => c.mineral === 'fluorite');
+    expect(fluorite.habit).toBe('stepped_cube');
+    expect(sim._physicalEtchReceipts.at(-1)).toMatchObject({
+      schema: 'physical-dissolution-v3', step: 118,
+      considered: 1, accepted: 0, rejected: 1,
+      receipts: [{
+        mineral: 'fluorite', habit: 'stepped_cube', accepted: false,
+        rejection: 'no_face_matched_evidence_bounded_rate_model',
+      }],
+    });
+    expect(fluorite.etch_history || []).toHaveLength(0);
+    expect(physicalEtchVisualStateAtStep(fluorite, 118)).toBeNull();
+    expect(fluorite.phantom_count || 0).toBe(0);
+  }, 300000);
+
   it('replay shows sharp → face-derived pits → progressive healing while retaining the phantom boundary', () => {
     const { sim, defaultSteps } = startScenario();
-    while (sim.step < 119) sim.run_step();
+    while (sim.step < 117) sim.run_step();
     const fluorite = sim.crystals.find((c: any) => c.mineral === 'fluorite');
     expect(physicalEtchVisualStateAtStep(fluorite, 117)).toBeNull();
+    expect(fluorite.habit).toBe('stepped_cube');
+    // Install the controlled flat-{100} surface before the breach event so the
+    // rate sees the exact authored replacement fluid at its replay boundary.
+    fluorite.habit = 'cubic';
+    sim.run_step();
+    expect(sim._physicalEtchReceipts.at(-1).accepted).toBe(1);
     const etched = physicalEtchVisualStateAtStep(fluorite, 118);
+    sim.run_step();
     const partlyHealed = physicalEtchVisualStateAtStep(fluorite, 119);
     expect(etched.amount).toBeGreaterThan(0);
     expect(etched.morphology).toBe('cubic-{100}-pits-90deg-sidewalls');

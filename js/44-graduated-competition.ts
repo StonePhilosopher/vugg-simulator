@@ -89,6 +89,9 @@ interface GraduatedAllocation {
   crystal_id: number;
   scaling: number;             // in [0, 1] — multiply desired_thickness_um by this
   limiting_species: string | null;  // which species capped growth (Liebig); null if no rationing
+  requested_per_species: Record<string, number>;
+  allocated_per_species: Record<string, number>;
+  allocation_rounds: number;
   why: string;                 // human-readable trace line
 }
 
@@ -252,44 +255,124 @@ function computeGraduatedAllocations(
     }
   }
 
-  // Per-species: total demand vs available, and per-crystal share of
-  // the total demanded pool.
-  const speciesShares: Record<string, Map<number, number>> = {};
-  const speciesRationed: Record<string, boolean> = {};
+  // Allocate in residual rounds. A one-pass Liebig minimum can strand a
+  // shared reagent: if phase A receives Ca and P but P caps A, its unused Ca
+  // allocation must be offered to phase B. Each round allocates only the
+  // still-unfilled formula amount. Once any required cofactor is exhausted,
+  // that phase leaves all other species contests, allowing the remaining
+  // chemically viable phases to consume the residual pool.
+  const EPS = 1e-12;
+  const remainingPool: Record<string, number> = {};
   for (const sp of species) {
-    const wanting = runs.filter(r => (r.debit_per_species[sp] || 0) > 0);
-    const available = availablePool(sp);
-    let demand = 0;
-    for (const r of wanting) demand += (r.debit_per_species[sp] || 0);
-    speciesRationed[sp] = demand > available;
-    speciesShares[sp] = _computeSpeciesShares(wanting, sp, available);
+    const amount = Number(availablePool(sp));
+    remainingPool[sp] = Number.isFinite(amount) ? Math.max(0, amount) : 0;
+  }
+  const scalingById = new Map<number, number>();
+  const limitingById = new Map<number, string | null>();
+  const roundsById = new Map<number, number>();
+  const sourceById = new Map<number, CrystalDryRun>();
+  for (const r of runs) {
+    sourceById.set(r.crystal_id, r);
+    scalingById.set(r.crystal_id, 0);
+    limitingById.set(r.crystal_id, null);
+    roundsById.set(r.crystal_id, 0);
   }
 
-  // Per-crystal Liebig step: final scaling = min over its species of
-  // (allowed_share / demanded_share). For species that didn't ration
-  // the demanded share is exactly the debit-fraction, so allowed/demanded
-  // = (1.0 demand-fraction) / (debit_i / totalDemand) — but this works
-  // out cleanly because when not rationed, share = debit_i / totalDemand
-  // and the scaling is 1.0 for that species.
-  for (const r of runs) {
-    let scaling = 1.0;
-    let limiting: string | null = null;
-    let limitingShare = 1.0;
-    for (const sp of Object.keys(r.debit_per_species)) {
-      const debit = r.debit_per_species[sp] || 0;
-      if (debit <= 0) continue;
-      if (!speciesRationed[sp]) continue;  // free; doesn't cap
-
-      // Rationed: crystal's share of fluid[sp] is the cap on its debit.
-      const available = availablePool(sp);
-      const myShareFrac = speciesShares[sp].get(r.crystal_id) || 0;
-      const allowedDebit = myShareFrac * available;
-      const scaleForThisSp = debit > 0 ? Math.min(1.0, allowedDebit / debit) : 1.0;
-      if (scaleForThisSp < scaling) {
-        scaling = scaleForThisSp;
-        limiting = sp;
-        limitingShare = myShareFrac;
+  const maxRounds = Math.min(256, Math.max(4, runs.length * Math.max(1, species.size) + 4));
+  for (let round = 1; round <= maxRounds; round++) {
+    const active: CrystalDryRun[] = [];
+    for (const r of runs) {
+      const done = scalingById.get(r.crystal_id) || 0;
+      if (done >= 1 - EPS) continue;
+      // Formula growth is impossible when even one required residual species
+      // is exhausted. Excluding it here is the redistribution step.
+      const blockedSpecies = Object.keys(r.debit_per_species).find(sp =>
+        (r.debit_per_species[sp] || 0) * (1 - done) > EPS
+        && (remainingPool[sp] || 0) <= EPS,
+      );
+      const cofactorBlocked = blockedSpecies !== undefined;
+      if (cofactorBlocked && limitingById.get(r.crystal_id) === null) {
+        limitingById.set(r.crystal_id, blockedSpecies || null);
       }
+      if (!cofactorBlocked) active.push(r);
+    }
+    if (!active.length) break;
+
+    const residualRuns: CrystalDryRun[] = active.map(r => {
+      const remainingFraction = 1 - (scalingById.get(r.crystal_id) || 0);
+      const residualDebit: Record<string, number> = {};
+      const source = sourceById.get(r.crystal_id) || r;
+      for (const [sp, debit] of Object.entries(source.debit_per_species)) {
+        if (debit > 0) residualDebit[sp] = debit * remainingFraction;
+      }
+      return Object.assign({}, r, { debit_per_species: residualDebit });
+    });
+
+    const allowedBySpecies: Record<string, Map<number, number>> = {};
+    for (const sp of species) {
+      const wanting = residualRuns.filter(r => (r.debit_per_species[sp] || 0) > EPS);
+      if (!wanting.length) continue;
+      const available = remainingPool[sp] || 0;
+      const demand = wanting.reduce((sum, r) => sum + (r.debit_per_species[sp] || 0), 0);
+      const allowed = new Map<number, number>();
+      if (available + EPS >= demand) {
+        for (const r of wanting) allowed.set(r.crystal_id, r.debit_per_species[sp] || 0);
+      } else {
+        const shares = _computeSpeciesShares(wanting, sp, available);
+        for (const r of wanting) {
+          allowed.set(r.crystal_id, (shares.get(r.crystal_id) || 0) * available);
+        }
+      }
+      allowedBySpecies[sp] = allowed;
+    }
+
+    let progress = 0;
+    const incrementById = new Map<number, number>();
+    for (const r of residualRuns) {
+      let increment = 1;
+      let limiting: string | null = null;
+      for (const sp of Object.keys(r.debit_per_species)) {
+        const demand = r.debit_per_species[sp] || 0;
+        if (demand <= EPS) continue;
+        const allowed = allowedBySpecies[sp]?.get(r.crystal_id) || 0;
+        const ratio = Math.max(0, Math.min(1, allowed / demand));
+        if (ratio < increment - EPS) {
+          increment = ratio;
+          limiting = sp;
+        }
+      }
+      incrementById.set(r.crystal_id, increment);
+      if (increment < 1 - EPS && limiting !== null) limitingById.set(r.crystal_id, limiting);
+    }
+
+    // Apply the simultaneous round only after every share was calculated.
+    for (const r of residualRuns) {
+      const before = scalingById.get(r.crystal_id) || 0;
+      const residualFraction = 1 - before;
+      const increment = incrementById.get(r.crystal_id) || 0;
+      const formulaIncrement = residualFraction * increment;
+      if (formulaIncrement <= EPS) continue;
+      scalingById.set(r.crystal_id, Math.min(1, before + formulaIncrement));
+      roundsById.set(r.crystal_id, round);
+      progress += formulaIncrement;
+      const source = sourceById.get(r.crystal_id) || r;
+      for (const [sp, debit] of Object.entries(source.debit_per_species)) {
+        if (debit <= 0) continue;
+        remainingPool[sp] = Math.max(0, (remainingPool[sp] || 0) - debit * formulaIncrement);
+      }
+    }
+    if (progress <= EPS) break;
+  }
+
+  for (const r of runs) {
+    const scaling = Math.max(0, Math.min(1, scalingById.get(r.crystal_id) || 0));
+    const limiting = scaling < 1 - EPS ? (limitingById.get(r.crystal_id) || null) : null;
+    const requested: Record<string, number> = {};
+    const allocated: Record<string, number> = {};
+    for (const [sp, debit] of Object.entries(r.debit_per_species)) {
+      if (debit <= 0) continue;
+      requested[sp] = debit;
+      allocated[sp] = debit * scaling;
     }
     _gradCompStats.allocations++;
     if (scaling < 0.999) {
@@ -300,13 +383,15 @@ function computeGraduatedAllocations(
     if (limiting === null) {
       why = 'no rationing — full growth';
     } else {
-      const avail = availablePool(limiting);
-      why = `${limiting}-limited (share ${(limitingShare * 100).toFixed(0)}% of ${avail.toFixed(2)}, scaling ${(scaling * 100).toFixed(0)}%)`;
+      why = `${limiting}-limited after residual redistribution (scaling ${(scaling * 100).toFixed(0)}%)`;
     }
     out.set(r.crystal_id, {
       crystal_id: r.crystal_id,
       scaling,
       limiting_species: limiting,
+      requested_per_species: Object.freeze(requested),
+      allocated_per_species: Object.freeze(allocated),
+      allocation_rounds: roundsById.get(r.crystal_id) || 0,
       why,
     });
   }
@@ -333,6 +418,7 @@ function buildCrystalDryRun(
   initiative: number,
   desired_thickness_um: number,
   fluid?: any,
+  formulaStoichiometry?: Record<string, number> | null,
 ): CrystalDryRun | null {
   // SCRIPT-mode bundle: MINERAL_STOICHIOMETRY (js/19) and
   // stoichiometricBudgetDebitPpmPerUm (js/19) is a top-level declaration that
@@ -350,7 +436,10 @@ function buildCrystalDryRun(
   // the constants from their script-scoped declarations.
   if (typeof MINERAL_STOICHIOMETRY === 'undefined'
       || typeof stoichiometricBudgetDebitPpmPerUm === 'undefined') return null;
-  const mineStoich = MINERAL_STOICHIOMETRY[mineral];
+  // Solid solutions must compete using the composition of the actual layer
+  // being added, not a registry-average endmember. HMC, for example, varies
+  // its Ca/Mg formula continuously with the fluid chemistry.
+  const mineStoich = formulaStoichiometry || MINERAL_STOICHIOMETRY[mineral];
   if (!mineStoich) return null;
   const debit_per_species: Record<string, number> = {};
   for (const sp of Object.keys(mineStoich)) {

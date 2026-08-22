@@ -148,6 +148,34 @@ const MINERAL_GATES_zeunerite: MineralGates = {
   _notes: 'Cu(UO2)2(AsO4)2·12H2O — As-branch / Cu-cation. Anion fork As/(P+As+V) ≥ 0.5.',
 };
 
+// The meta phases are terminal dehydration products, not independent
+// precipitates. Their engine entries exist so acid can remove and return the
+// exact inherited parent-layer inventory; Infinity explicitly forbids a
+// fluid-only supersaturation interpretation in Creative diagnostics.
+const MINERAL_GATES_meta_autunite: MineralGates = {
+  sigma_crit: Infinity,
+  required_substrate: 'autunite',
+  surface_energy: 'medium',
+  _sources: ['research/minerals/research-autunite.md — dehydration transformation'],
+  _notes: 'Transformation-only Ca uranyl phosphate. Requires authenticated autunite loss by dehydration (>80 C or sustained dry exposure); never nucleates directly. Inherited layers dissolve below pH 4.5.',
+};
+
+const MINERAL_GATES_metatorbernite: MineralGates = {
+  sigma_crit: Infinity,
+  required_substrate: 'torbernite',
+  surface_energy: 'medium',
+  _sources: ['research/minerals/research-torbernite.md — dehydration transformation'],
+  _notes: 'Transformation-only Cu uranyl phosphate. Requires authenticated torbernite loss by dehydration (>75 C or sustained dry exposure); never nucleates directly. Inherited layers dissolve below pH 5.0.',
+};
+
+const MINERAL_GATES_metazeunerite: MineralGates = {
+  sigma_crit: Infinity,
+  required_substrate: 'zeunerite',
+  surface_energy: 'medium',
+  _sources: ['research/minerals/research-zeunerite.md — dehydration transformation'],
+  _notes: 'Transformation-only Cu uranyl arsenate. Requires authenticated zeunerite loss by dehydration (>75 C or sustained dry exposure); never nucleates directly. Inherited layers dissolve below pH 5.0.',
+};
+
 const MINERAL_GATES_uranospinite: MineralGates = {
   sigma_crit: 1.0,
   T_min: 5, T_max: 50, T_optimal: 22,

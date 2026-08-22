@@ -126,13 +126,15 @@ describe('C0 — fleet genre outcomes (seed 42, the sweep census)', () => {
     expect(rhombMass).toBeGreaterThan(0);
   });
 
-  it('nailhead genres hold while Mammoth records a travertine crust rather than cabinet spar', () => {
-    for (const name of ['reactivated_fluorite_vein', 'wittichen']) {
-      const cals = calcitesOf(runScenario(name));
-      expect(cals.length, `${name} grew no calcite`).toBeGreaterThan(0);
-      for (const c of cals) {
-        expect(String(c.habit).indexOf('scaleno'), `${name} id${c.crystal_id} flipped to dogtooth`).toBe(-1);
-      }
+  it('the executed nailhead genre holds while Mammoth records a travertine crust rather than cabinet spar', () => {
+    // Wittichen calcite is a cited aspirational gangue target in SIM 272, not
+    // an executed seed-42 product. Its permission is enforced by the locality
+    // tier contract; morphology is asserted only for an actually grown phase.
+    const name = 'reactivated_fluorite_vein';
+    const cals = calcitesOf(runScenario(name));
+    expect(cals.length, `${name} grew no calcite`).toBeGreaterThan(0);
+    for (const c of cals) {
+      expect(String(c.habit).indexOf('scaleno'), `${name} id${c.crystal_id} flipped to dogtooth`).toBe(-1);
     }
     const travertine = calcitesOf(runScenario('tutorial_travertine'));
     expect(travertine.length, 'tutorial_travertine grew no calcite').toBeGreaterThan(0);

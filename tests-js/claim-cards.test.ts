@@ -69,6 +69,8 @@ describe('adversarial claim-card fleet', () => {
         .toEqual(spec.aspirational_species || []);
       expect(card.claim.excluded_species, `${scenario}: locality exclusions`)
         .toEqual(spec.excluded_species || {});
+      expect(card.claim.claim_citations, `${scenario}: claim-level citations`)
+        .toEqual(spec.claim_citations || []);
       expect(card.claim.authored_science_context.model_digest, `${scenario}: authored science digest`).toBe(MODEL_DIGEST);
       expect(card.claim.authored_science_context.growth_budget, `${scenario}: disclosed growth-budget boundary`)
         .toEqual(STOICHIOMETRIC_GROWTH_BUDGET_DISCLOSURE);
@@ -114,6 +116,12 @@ describe('adversarial claim-card fleet', () => {
         .toBe(sulfurSamples.filter((sample: any) => sample.closed && sample.testimonyClosed).length);
       expect(executed.sulfur_ledger.all_closed, `${scenario}: sulfur-ledger closure`)
         .toBe(sulfurSamples.length ? true : null);
+      expect(executed.crystal_layers.formula_layers, `${scenario}: formula-layer testimony`)
+        .toEqual((strip.executed_testimony?.layer_growth || []).filter((z: any) => z.formula_stoichiometry));
+      expect(executed.crystal_layers.binding_competition_allocations, `${scenario}: competition testimony`)
+        .toEqual((strip.executed_testimony?.layer_growth || []).filter((z: any) => z.competition_allocation));
+      expect(executed.habit_morphology.crystals, `${scenario}: habit testimony`)
+        .toEqual(strip.executed_testimony?.habit_morphology || []);
       if (sulfurSamples.length) {
         expect(executed.sulfur_ledger.activation, `${scenario}: sulfur-ledger activation`)
           .toEqual(sulfurSamples[0].activation);
@@ -156,6 +164,11 @@ describe('adversarial claim-card fleet', () => {
         expect(markdown, `${scenario}: executed section`).toContain('Executed pressure/stress/phase testimony');
         expect(markdown, `${scenario}: carbonate testimony`).toContain('Conserved carbonate boundary:');
         expect(markdown, `${scenario}: sulfur testimony`).toContain('Sulfur reservoir identity and conservation');
+        expect(markdown, `${scenario}: layer testimony`).toContain('Layer, solid-solution, competition, and habit testimony');
+        if (scenario === 'elmwood') {
+          expect(card.claim.claim_citations.map((c: any) => c.claim_id)).toContain('elmwood-celestine-license');
+          expect(markdown).toContain('celestine-individual-size');
+        }
         if (sulfurSamples.length) {
           expect(markdown, `${scenario}: sulfur activation rendered`).toContain('Ledger activation: step');
           expect(markdown, `${scenario}: sulfur closure rendered`)

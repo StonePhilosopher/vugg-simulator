@@ -46,14 +46,16 @@ const MODEL_DIGEST_SHA256 = createHash('sha256').update(MODEL_DIGEST).digest('he
 // 0.618402. SIM 266 deliberately moved water, chemistry, and nucleation onto
 // the exact Cartesian surface/volume authority, yielding the value below while
 // preserving the five-crystal assemblage and every zero-Zn mass check. SIM 267
-// corrects solid occupancy, size-cap dissolution, and seal/reopen transitions;
-// this commissioning receipt verifies that those changes preserve the complete
-// analytical-cation trajectory rather than assuming it.
+// corrects solid occupancy, size-cap dissolution, and seal/reopen transitions.
+// SIM 272 adds authored locality/boundary authority and mass-balanced
+// transformation/competition allocation. Its deterministic seed-42 trajectory
+// moves the final proxy slightly while preserving the five-crystal assemblage,
+// every zero-Zn mass check, and the complete analytical-cation trajectory.
 const SCHNEEBERG_SEED42_COMMISSIONING = Object.freeze({
-  sim_version: 267,
-  model_digest_sha256: '7b40ad5945180bc4db46c80addd60f548238106d0431b48c54ae9c76b9d295c2',
+  sim_version: 272,
+  model_digest_sha256: '6f209eb00b0e45167f7699f0b6d3913bd21b9ac37ea19d8af6c7cd420671ac3a',
   pharmacolite_crystals: 5,
-  final_pharmacolite_Ca_molar_fraction_proxy: 0.583286436592987,
+  final_pharmacolite_Ca_molar_fraction_proxy: 0.58294331903161,
   proxy_tolerance: 5e-7,
 });
 

@@ -204,7 +204,10 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 9 — scenario-level firing pins', () 
     const sim = runScenario('marble_contact_metamorphism');
     if (!sim) return;
     expect(calciteCount(sim).total).toBe(0);
-    expect(sim.crystals.some((c: any) => c.mineral === 'ruby' && !c.dissolved)).toBe(true);
+    expect(sim.crystals.some((c: any) => c.mineral === 'ruby' && !c.dissolved)).toBe(false);
+    const aspirational = (SCENARIOS.marble_contact_metamorphism as any)
+      ._json5_spec?.aspirational_species || [];
+    expect(aspirational).toContainEqual(expect.objectContaining({ mineral: 'ruby' }));
   });
 
   it('zoned_dripstone_cave still fires calcite (dripstone IS calcite)', () => {
@@ -241,14 +244,16 @@ describe('PROPOSAL-CARBONATE-GEOCHEM Week 9 — scenario-level firing pins', () 
     expect(max_um).toBeGreaterThan(100);  // visible learning artifact
   });
 
-  it('reactive_wall now produces dissolution-cycle calcite (v144 — acid pulses dissolve early calcite)', () => {
-    // v143 didn't fire calcite at reactive_wall; v144 fires 1 dissolved
-    // calcite (acid pulses dissolve it). This is geologically right
-    // — Sweetwater MVT acid-into-carbonate paragenesis literally
-    // documents calcite dissolution as the first event.
+  it('reactive_wall keeps calcite as documented gangue without inventing a discrete crystal', () => {
+    // Sweetwater MVT acid-into-carbonate paragenesis documents carbonate-wall
+    // dissolution, but SIM 272's commissioned trajectory does not precipitate
+    // a discrete free-grown calcite. Wall buffering and crystal precipitation
+    // are distinct physical claims.
     const sim = runScenario('reactive_wall');
     if (!sim) return;
     const { total } = calciteCount(sim);
-    expect(total).toBeGreaterThanOrEqual(1);
+    expect(total).toBe(0);
+    const aspirational = (SCENARIOS.reactive_wall as any)._json5_spec?.aspirational_species || [];
+    expect(aspirational).toContainEqual(expect.objectContaining({ mineral: 'calcite' }));
   });
 });

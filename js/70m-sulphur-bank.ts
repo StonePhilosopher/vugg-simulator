@@ -28,15 +28,13 @@ function event_sulphur_bank_h2s_recharge(c) {
   // source. H₂S replenishes, T rebounds. The recharge gives the
   // vent a fresh S supply after the previous batch oxidized to S°.
   //
-  // flow_rate kept low (0.2) — Sulphur Bank vents are slow-flowing,
-  // and ambient_cooling's pH-recovery clause scales with flow_rate
-  // (recovery = 0.1 × min(flow/1.0, 2.0) per step). Higher
-  // flow_rates would push pH up faster than the recharge pushes it
-  // down, defeating the synproportionation window.
+  // flow_rate kept low (0.2) — Sulphur Bank vents are slow-flowing.
+  // Acidity is owned by this explicitly authored source-fluid event and by
+  // reactions; ambient cooling no longer invents a universal pH attractor.
   declareSulfurBoundaryAddition(c, 'sulfide', 150, 'Sulphur Bank deep H2S recharge');
   c.fluid.Fe += 5;             // minor Fe co-pulse (pyrite/marcasite contribution)
   c.fluid.As += 2;             // trace As (Sulphur Bank ores carry minor arsenopyrite/realgar)
-  c.fluid.pH = Math.max(1.5, c.fluid.pH - 1.0);  // hard acidification — H₂S overwhelms recovery
+  c.fluid.pH = Math.max(1.5, c.fluid.pH - 1.0);  // authored acid source boundary
   c.temperature = Math.min(85, c.temperature + 8);
   c.flow_rate = 0.2;
   return `Hot H₂S-rich pulse rises from the underlying volcanic source. S replenishes to ${c.fluid.S.toFixed(0)} ppm; pH drops to ${c.fluid.pH.toFixed(1)}; T rebounds to ${c.temperature.toFixed(0)}°C. Synproportionation cycle restarts.`;

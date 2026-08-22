@@ -36,11 +36,11 @@ const MINERAL_SPEC_FALLBACK = {
   marcasite: { formula: "FeS2", nucleation_sigma: 1.0, max_size_cm: 15, growth_rate_mult: 0.3, thermal_decomp_C: 240, fluorescence: null, twin_laws: [{ name: "spearhead", probability: 0.05 }], acid_dissolution: { pH_threshold: 1.5 } },
   chalcopyrite: { formula: "CuFeS2", nucleation_sigma: 1.0, max_size_cm: 30, growth_rate_mult: 0.3, thermal_decomp_C: 880, fluorescence: null, twin_laws: [{ name: "penetration", probability: 0.012 }], acid_dissolution: { pH_threshold: 3.0 } },
   hematite: { formula: "Fe2O3", nucleation_sigma: 1.5, max_size_cm: 60, growth_rate_mult: 0.5, thermal_decomp_C: 1560, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 3.0 } },
-  malachite: { formula: "Cu2(CO3)(OH)2", nucleation_sigma: 1.0, max_size_cm: 200, growth_rate_mult: 0.8, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 4.5 } },
+  malachite: { formula: "Cu2(CO3)(OH)2", nucleation_sigma: 1.0, max_size_cm: 18, size_authority: { individual_record_cm: 9, individual_cap_cm: 18, aggregate_record_cm: 9, aggregate_cap_cm: null, aggregate_habits: ["botryoidal", "banded", "fibrous/acicular", "pseudomorph_after_azurite", "stalactitic"] }, growth_rate_mult: 0.8, thermal_decomp_C: 200, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 4.5 } },
   uraninite: { formula: "UO2", nucleation_sigma: 1.5, max_size_cm: 10, growth_rate_mult: 0.1, thermal_decomp_C: 2800, fluorescence: { activator: null, color: null }, twin_laws: [], acid_dissolution: null },
   galena: { formula: "PbS", nucleation_sigma: 1.0, max_size_cm: 60, growth_rate_mult: 0.5, thermal_decomp_C: 1115, fluorescence: null, twin_laws: [{ name: "spinel_law", probability: 0.008 }], acid_dissolution: { pH_threshold: 2.0 } },
-  smithsonite: { formula: "ZnCO3", nucleation_sigma: 1.0, max_size_cm: 60, growth_rate_mult: 0.7, thermal_decomp_C: 300, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "pink_LW" }, twin_laws: [{ name: "cyclic", probability: 0.01 }], acid_dissolution: { pH_threshold: 4.0 } },
-  wulfenite: { formula: "PbMoO4", nucleation_sigma: 1.0, max_size_cm: 20, growth_rate_mult: 0.2, thermal_decomp_C: 1120, fluorescence: null, twin_laws: [{ name: "penetration", probability: 0.03 }], acid_dissolution: { pH_threshold: 3.5 } },
+  smithsonite: { formula: "ZnCO3", nucleation_sigma: 1.0, max_size_cm: 20, size_authority: { individual_record_cm: 10, individual_cap_cm: 20, aggregate_record_cm: null, aggregate_cap_cm: null, aggregate_habits: ["botryoidal", "botryoidal/stalactitic", "mammillary", "stalactitic_turquoise"] }, growth_rate_mult: 0.7, thermal_decomp_C: 300, fluorescence: { activator: "Mn", threshold_ppm: 2, color: "pink_LW" }, twin_laws: [{ name: "cyclic", probability: 0.01 }], acid_dissolution: { pH_threshold: 4.0 } },
+  wulfenite: { formula: "PbMoO4", nucleation_sigma: 1.0, max_size_cm: 22, size_authority: { individual_record_cm: 11, individual_cap_cm: 22, aggregate_record_cm: 60, aggregate_cap_cm: 120, aggregate_habits: ["reticulated_cluster", "intergrown_thin_plates"] }, growth_rate_mult: 0.2, thermal_decomp_C: 1120, fluorescence: null, twin_laws: [{ name: "penetration", probability: 0.03 }], acid_dissolution: { pH_threshold: 3.5 } },
   ferrimolybdite: { formula: "Fe2(MoO4)3·nH2O", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.5, thermal_decomp_C: 150, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 2.0 } },
   arsenopyrite: { formula: "FeAsS", nucleation_sigma: 1.2, max_size_cm: 15, growth_rate_mult: 0.3, thermal_decomp_C: 720, fluorescence: null, twin_laws: [{ name: "trillings_120", miller_indices: "{120}", trigger: "growth (uncommon)", probability: 0.01 }], acid_dissolution: null },
   scorodite: { formula: "FeAsO4·2H2O", nucleation_sigma: 1.0, max_size_cm: 8, growth_rate_mult: 0.25, thermal_decomp_C: 160, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 5.5 } },
@@ -54,9 +54,9 @@ const MINERAL_SPEC_FALLBACK = {
   apophyllite: { formula: "KCa4Si8O20(F,OH)·8H2O", nucleation_sigma: 1.0, max_size_cm: 18, growth_rate_mult: 0.5, thermal_decomp_C: 350, fluorescence: null, twin_laws: [], acid_dissolution: { pH_threshold: 5.0 } },
   feldspar: { formula: "KAlSi3O8", nucleation_sigma: 1.0, max_size_cm: 1400, growth_rate_mult: 0.4, thermal_decomp_C: 1170, fluorescence: { activator: "Pb_amazonite", threshold_ppm: 5, color: "weak_yellow_green" }, twin_laws: [{ name: "Carlsbad", probability: 0.12 }, { name: "Baveno", probability: 0.04 }, { name: "Manebach", probability: 0.02 }], acid_dissolution: { pH_threshold: 4.0 } },
   albite: { formula: "NaAlSi3O8", nucleation_sigma: 1.0, max_size_cm: 40, growth_rate_mult: 0.4, thermal_decomp_C: 1118, fluorescence: { activator: "intrinsic", color: "weak_white_LW" }, twin_laws: [{ name: "albite", probability: 0.20 }, { name: "pericline", probability: 0.05 }], acid_dissolution: { pH_threshold: 3.0 } },
-  selenite: { formula: "CaSO4·2H2O", nucleation_sigma: 1.0, max_size_cm: 2400, growth_rate_mult: 0.7, thermal_decomp_C: 150, fluorescence: null, twin_laws: [{ name: "swallowtail", probability: 0.08 }], acid_dissolution: { pH_threshold: 5.0 } },
+  selenite: { formula: "CaSO4·2H2O", nucleation_sigma: 1.0, max_size_cm: 2400, size_authority: { individual_record_cm: 1200, individual_cap_cm: 2400, aggregate_record_cm: null, aggregate_cap_cm: null, aggregate_habits: ["fibrous (satin spar)", "rosette", "desert_rose"] }, growth_rate_mult: 0.7, thermal_decomp_C: 150, fluorescence: null, twin_laws: [{ name: "swallowtail", probability: 0.08 }], acid_dissolution: { pH_threshold: 5.0 } },
   barite: { formula: "BaSO4", nucleation_sigma: 1.0, max_size_cm: 60, growth_rate_mult: 0.3, thermal_decomp_C: 1149, fluorescence: { activator: "intrinsic", color: "creamy_white_SW_Sterling" }, twin_laws: [{ name: "cyclic_cockscomb", probability: 0.05 }], acid_dissolution: null },
-  celestine: { formula: "SrSO4", nucleation_sigma: 1.0, max_size_cm: 30, growth_rate_mult: 0.3, thermal_decomp_C: 1100, fluorescence: null, twin_laws: [], acid_dissolution: null },
+  celestine: { formula: "SrSO4", nucleation_sigma: 1.0, max_size_cm: 92, size_authority: { individual_record_cm: 46, individual_cap_cm: 92, aggregate_record_cm: null, aggregate_cap_cm: null, aggregate_habits: ["fibrous_blanket", "fibrous", "nodular"] }, growth_rate_mult: 0.3, thermal_decomp_C: 1100, fluorescence: null, twin_laws: [], acid_dissolution: null },
   jarosite: { formula: "KFe3(SO4)2(OH)6", nucleation_sigma: 1.0, max_size_cm: 3, growth_rate_mult: 0.4, thermal_decomp_C: 250, fluorescence: null, twin_laws: [], acid_dissolution: null },
   alunite: { formula: "KAl3(SO4)2(OH)6", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.35, thermal_decomp_C: 450, fluorescence: null, twin_laws: [], acid_dissolution: null },
   brochantite: { formula: "Cu4(SO4)(OH)6", nucleation_sigma: 1.0, max_size_cm: 5, growth_rate_mult: 0.35, thermal_decomp_C: 250, fluorescence: null, twin_laws: [], acid_dissolution: null },
@@ -173,9 +173,34 @@ function maxSizeCm(mineral) {
   return entry ? entry.max_size_cm : null;
 }
 
+function crystalSizeAuthority(crystal) {
+  const entry = crystal ? MINERAL_SPEC[crystal.mineral] : null;
+  if (!entry) return Object.freeze({ extent_kind: 'individual', cap_cm: null, record_cm: null });
+  const authority = entry.size_authority;
+  if (!authority) return Object.freeze({
+    extent_kind: 'individual', cap_cm: entry.max_size_cm ?? null,
+    record_cm: entry.max_size_cm == null ? null : entry.max_size_cm / 2,
+  });
+  const aggregateHabits = Array.isArray(authority.aggregate_habits)
+    ? authority.aggregate_habits : [];
+  const extentKind = crystal.extent_kind === 'aggregate'
+    || aggregateHabits.includes(crystal.habit)
+    ? 'aggregate' : 'individual';
+  return Object.freeze({
+    extent_kind: extentKind,
+    cap_cm: extentKind === 'aggregate'
+      ? (authority.aggregate_cap_cm ?? null)
+      : (authority.individual_cap_cm ?? entry.max_size_cm ?? null),
+    record_cm: extentKind === 'aggregate'
+      ? (authority.aggregate_record_cm ?? null)
+      : (authority.individual_record_cm ?? null),
+    status: authority.status ?? null,
+  });
+}
+
 function crystalAtAuthoredSizeCap(crystal) {
   if (!crystal) return false;
-  const capCm = maxSizeCm(crystal.mineral);
+  const capCm = crystalSizeAuthority(crystal).cap_cm;
   const totalGrowthUm = Number(crystal.total_growth_um);
   return capCm != null && Number.isFinite(totalGrowthUm)
     && totalGrowthUm / 10000 >= capCm;

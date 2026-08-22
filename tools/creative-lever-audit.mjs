@@ -30,6 +30,7 @@ const TOP_LEVEL_CLASSIFICATION = {
   initial: 'state',
   notes: 'metadata',
   sources: 'metadata',
+  claim_citations: 'metadata',
   tutorial: 'presentation',
   open_to_atmosphere: 'direct',
   atmospheric_pCO2_bar: 'direct',
@@ -61,6 +62,7 @@ const WALL_CLASSIFICATION = {
   graphitic: 'direct',
   inter_ring_diffusion_rate: 'direct',
   is_lit: 'direct',
+  light_exposure: 'direct',
   matrix: 'presentation',
   occlusion: 'presentation',
   occlusion_fraction: 'presentation',
@@ -437,10 +439,16 @@ const requiredLiveEnvironmentalPaths = [
   'wall.is_lit',
   'wall.graphitic',
   'wall.thermal_pulses',
+  'wall.thermal_pulse_fluid',
+  'wall.pH_boundary',
 ];
 const missingLiveEnvironmentalPaths = requiredLiveEnvironmentalPaths
   .filter((fieldPath) => !livePaths.includes(fieldPath));
-const setupHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+// Most setup markup is authored in index.html. New authority controls are
+// installed from the executable UI module so generated index.html remains a
+// build product; audit both sources as one authored control surface.
+const setupHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')
+  + '\n' + fs.readFileSync(path.join(ROOT, 'js', '97-ui-fortress.ts'), 'utf8');
 const requiredSetupEnvironmentalIds = [
   'f-pressure',
   'f-host-composition', 'f-architecture', 'f-vug-diameter',
@@ -449,6 +457,9 @@ const requiredSetupEnvironmentalIds = [
   'f-primary-bubbles', 'f-secondary-bubbles', 'f-shape-seed',
   'f-gamma-host', 'f-graphitic', 'f-open-system', 'f-open-spring', 'f-thermal-pulses',
   'f-is-lit',
+  'f-ph-boundary-enabled', 'f-ph-boundary-target', 'f-ph-boundary-rate',
+  'f-ph-boundary-authority', 'f-thermal-pulse-authority',
+  'f-thermal-pulse-components', 'f-thermal-pulse-ph-delta', 'f-thermal-pulse-flow',
   'f-flow-rate', 'f-porosity', 'f-water-table',
   'f-open-atmosphere', 'f-pco2',
 ];

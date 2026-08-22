@@ -8,7 +8,6 @@ declare const VugWall: any;
 declare const setSeed: any;
 declare const aragoniteCoSelector: any;
 declare const aragoniteCoPartitioning: any;
-declare const remainingBookedInventory: any;
 declare const validateWeatheringEpilogueConfig: any;
 declare const activateWeatheringEpilogueIfDue: any;
 declare const weatheringEpilogueActive: any;
@@ -257,7 +256,7 @@ describe('executed weathering/vadose epilogues', () => {
     expect(upper.effectiveBookedDistributionCoefficient).toBeCloseTo(0.1, 12);
   });
 
-  it('Wittichen earns both secondary products from same-site booked dissolution', () => {
+  it('Wittichen earns erythrite from same-site loss and withholds unobserved aragonite', () => {
     const sim = wittichen();
     const state = sim._weatheringEpilogueState;
     expect(state.valid).toBe(true);
@@ -281,7 +280,7 @@ describe('executed weathering/vadose epilogues', () => {
       && row.localTemperatureRangeC.min >= 20
       && row.localTemperatureRangeC.max <= 30)).toBe(true);
 
-    for (const mineral of ['erythrite', 'aragonite']) {
+    for (const mineral of ['erythrite']) {
       const product = sim.crystals.find((c: any) => c.mineral === mineral
         && c.weathering_precursor_receipt && c.total_growth_um > 0 && !c.dissolved);
       expect(product, mineral).toBeTruthy();
@@ -302,10 +301,11 @@ describe('executed weathering/vadose epilogues', () => {
 
     const cobaltAragonite = sim.crystals.find((c: any) => c.mineral === 'aragonite'
       && c.weathering_precursor_receipt && !c.dissolved);
-    expect(cobaltAragonite.zones.some((z: any) =>
-      z.co_partition?.distributionCoefficient === 0.1
-      && Number(z._budget_inventory_per_um?.Co) > 0)).toBe(true);
-    expect(remainingBookedInventory(cobaltAragonite, 'Co')).toBeGreaterThan(0);
+    expect(cobaltAragonite).toBeUndefined();
+    expect(SCENARIOS.wittichen._json5_spec.aspirational_species).toContainEqual({
+      mineral: 'aragonite',
+      reason: expect.stringContaining('no discrete aragonite appears in the three SIM 272 commissioned seeds'),
+    });
     expect(sim._carbonLedgerHistory.at(-1).closed).toBe(true);
   });
 

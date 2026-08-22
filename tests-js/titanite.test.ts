@@ -124,10 +124,18 @@ describe('Titanite — CaTiSiO₅ engine (v205)', () => {
     });
   });
 
-  describe('porphyry integration — the igneous-accessory titanite', () => {
-    it.each([42, 1, 7])('seed %d: at least 1 titanite forms', (seed) => {
+  describe('porphyry integration — documented but not yet executed', () => {
+    it.each([42, 1, 7])('seed %d: does not overstate aspirational titanite', (seed) => {
       const { titanites: tt } = runScenario('porphyry', seed);
-      expect(tt.length, `seed ${seed}: zero titanite in porphyry`).toBeGreaterThan(0);
+      expect(tt, `seed ${seed}: unexpected titanite in porphyry`).toEqual([]);
+    });
+
+    it('keeps titanite locality-licensed in the aspirational tier', () => {
+      const aspirational = (SCENARIOS.porphyry as any)._json5_spec?.aspirational_species || [];
+      expect(aspirational).toContainEqual(expect.objectContaining({
+        mineral: 'titanite',
+        reason: expect.stringMatching(/absent from all three SIM 272 commissioned seeds/i),
+      }));
     });
   });
 

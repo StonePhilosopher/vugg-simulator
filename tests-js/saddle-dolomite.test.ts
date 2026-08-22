@@ -21,6 +21,9 @@ import { describe, expect, it } from 'vitest';
 declare const VugSimulator: any;
 declare const SCENARIOS: any;
 declare const setSeed: any;
+declare const Crystal: any;
+declare const MINERAL_GATES_dolomite: any;
+declare function grow_dolomite(crystal: any, conditions: any, step: number): any;
 
 const CRT = 50; // Gregg & Sibley roughening floor
 
@@ -42,29 +45,30 @@ function dolomites(sim: any): any[] {
 }
 
 describe('dolomite habit premise (temperature plus supersaturation, not temperature alone)', () => {
-  it('Sweetwater reactive-wall dolomite is the documented saddle/baroque habit', () => {
+  it('keeps Sweetwater dolomite documented without claiming an unobserved commissioned crystal', () => {
     const sim = run('reactive_wall', 42);
-    const dols = dolomites(sim);
-    expect(dols.length).toBeGreaterThan(0);
-    for (const c of dols) expect(c.habit).toBe('saddle_rhomb');
+    expect(dolomites(sim)).toEqual([]);
+    expect(SCENARIOS.reactive_wall._json5_spec.aspirational_species).toContainEqual({
+      mineral: 'dolomite',
+      reason: expect.stringContaining('no discrete dolomite crystal appears in the three SIM 272 commissioned seeds'),
+    });
   });
 
-  it('the Sweetwater saddle dolomite formed above the roughening floor', () => {
-    const sim = run('reactive_wall', 42);
-    const tByStep = (sim as any)._tByStep;
-    const warmSaddles = dolomites(sim).filter((c) => c.habit === 'saddle_rhomb');
-    expect(warmSaddles.length).toBeGreaterThan(0);
-    for (const c of warmSaddles) {
-      // representative growth T = mean temperature over its positive zones
-      let tSum = 0, tN = 0;
-      for (const z of c.zones || []) {
-        if (!(z.thickness_um > 0)) continue;
-        const T = isFinite(tByStep[z.step]) ? tByStep[z.step] : z.temperature;
-        if (isFinite(T)) { tSum += T; tN++; }
-      }
-      expect(tN).toBeGreaterThan(0);
-      expect(tSum / tN).toBeGreaterThan(CRT);
-    }
+  it('assigns the saddle habit only inside the controlled warm, near-threshold growth regime', () => {
+    const { conditions } = SCENARIOS.reactive_wall();
+    conditions.temperature = 110;
+    conditions._dol_cycle_count = 3;
+    conditions.supersaturation_dolomite = () => MINERAL_GATES_dolomite.sigma_crit * 1.5;
+    const crystal = new Crystal({ mineral: 'dolomite', crystal_id: 1 });
+    const zone = grow_dolomite(crystal, conditions, 1);
+    expect(zone).toBeTruthy();
+    expect(zone.temperature).toBeGreaterThan(CRT);
+    expect(crystal.habit).toBe('saddle_rhomb');
+
+    conditions.temperature = 40;
+    const coldCrystal = new Crystal({ mineral: 'dolomite', crystal_id: 2 });
+    expect(grow_dolomite(coldCrystal, conditions, 2)).toBeTruthy();
+    expect(coldCrystal.habit).toBe('coarse_rhomb');
   });
 
   it('ambient dolomite scenarios stay planar — never saddle below the roughening T', () => {

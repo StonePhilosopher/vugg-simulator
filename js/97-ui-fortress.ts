@@ -643,6 +643,7 @@ function _syncCreativeSetupExactInput(slider: HTMLInputElement) {
 }
 
 function installCreativeSetupExactInputs() {
+  installCreativeBoundaryAuthorityControls();
   const chemistryById = new Map(
     Object.values(CREATIVE_CHEMISTRY_CONTROLS).map(control => [control.id, control]),
   );
@@ -703,6 +704,71 @@ function installCreativeSetupExactInputs() {
     });
     _syncCreativeSetupExactInput(slider);
   }
+}
+
+function installCreativeBoundaryAuthorityControls() {
+  if (document.getElementById('creative-boundary-authority-controls')) return;
+  const thermalToggle = document.getElementById('f-thermal-pulses');
+  const anchor = thermalToggle?.closest('.setup-row');
+  if (!anchor) return;
+  const panel = document.createElement('div');
+  panel.id = 'creative-boundary-authority-controls';
+  panel.style.cssText = 'margin:.55rem 0;padding:.65rem;background:#12120c;border:1px solid #2a2518;border-radius:4px;';
+  panel.innerHTML = `
+    <div style="color:#a89040;font-size:.8rem;margin-bottom:.45rem">Advanced boundary authority</div>
+    <div class="setup-row" title="A locality-authored buffer or far-field reservoir may relax pH toward a target. Disabled means reactions and explicit events alone control pH; there is no universal neutral attractor.">
+      <label for="f-ph-boundary-enabled">pH boundary</label>
+      <select id="f-ph-boundary-enabled"><option value="0" selected>none / reaction-controlled</option><option value="1">authored buffer or reservoir</option></select>
+    </div>
+    <div class="setup-row"><label for="f-ph-boundary-target">Target pH</label><input type="number" id="f-ph-boundary-target" min="0" max="14" step="0.01" value="6.5"></div>
+    <div class="setup-row"><label for="f-ph-boundary-rate">Exchange rate</label><input type="number" id="f-ph-boundary-rate" min="0" max="14" step="0.001" value="0.05"><span class="range-val">pH/step at unit flow</span></div>
+    <div class="setup-row"><label for="f-ph-boundary-authority">Buffer authority</label><input type="text" id="f-ph-boundary-authority" value="Creative-authored buffer boundary" aria-label="pH buffer scientific authority"></div>
+    <div class="setup-row" title="Optional material carried by the stochastic thermal pulse. Leave authority blank for heat-only pulses. Components accepts every numeric FluidChemistry reservoir as JSON; a value may be a number or a [minimum, maximum] draw.">
+      <label for="f-thermal-pulse-authority">Pulse-fluid authority</label><input type="text" id="f-thermal-pulse-authority" placeholder="blank = heat only">
+    </div>
+    <div class="setup-row"><label for="f-thermal-pulse-components">Pulse components</label><input type="text" id="f-thermal-pulse-components" value="{}" placeholder='{"SiO2":[20,80],"Fe":[0,5]}' spellcheck="false"></div>
+    <div class="setup-row"><label for="f-thermal-pulse-ph-delta">Pulse pH delta</label><input type="number" id="f-thermal-pulse-ph-delta" step="0.01" placeholder="unchanged"></div>
+    <div class="setup-row"><label for="f-thermal-pulse-flow">Pulse flow</label><input type="number" id="f-thermal-pulse-flow" min="0" step="0.01" placeholder="unchanged"></div>`;
+  anchor.insertAdjacentElement('afterend', panel);
+}
+
+function _creativeBoundaryText(id: string) {
+  return String((document.getElementById(id) as HTMLInputElement | null)?.value || '').trim();
+}
+
+function _creativeBoundaryOptionalNumber(id: string) {
+  const text = _creativeBoundaryText(id);
+  if (!text) return null;
+  const value = Number(text);
+  if (!Number.isFinite(value)) throw new Error(`Creative boundary control ${id} must be finite`);
+  return value;
+}
+
+function _creativeParseThermalPulseComponents(text: string) {
+  let parsed: any;
+  try { parsed = JSON.parse(text || '{}'); }
+  catch (error) { throw new Error(`Thermal-pulse components must be valid JSON: ${error.message}`); }
+  if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+    throw new Error('Thermal-pulse components must be a JSON object');
+  }
+  const out: Record<string, number | [number, number]> = {};
+  for (const [species, raw] of Object.entries(parsed)) {
+    if (!FLUID_CHEMISTRY_INPUT_FIELDS.has(species)
+        || ['sulfurPoolsExplicit', 'nativeSulfurPathway', 'sulfateInherited'].includes(species)) {
+      throw new Error(`Thermal-pulse component '${species}' is not a numeric fluid reservoir`);
+    }
+    if (Array.isArray(raw)) {
+      if (raw.length !== 2 || !raw.every(value => Number.isFinite(Number(value)) && Number(value) >= 0)) {
+        throw new Error(`Thermal-pulse range '${species}' must contain two non-negative finite values`);
+      }
+      out[species] = [Number(raw[0]), Number(raw[1])];
+    } else if (Number.isFinite(Number(raw)) && Number(raw) >= 0) {
+      out[species] = Number(raw);
+    } else {
+      throw new Error(`Thermal-pulse component '${species}' must be non-negative and finite`);
+    }
+  }
+  return out;
 }
 
 function filterCreativeSetupChemistry(query: string) {
@@ -802,7 +868,28 @@ function readCreativeGeologicalControls(baseWall: Record<string, any> = {}) {
   wallOpts.open_system = !!(document.getElementById('f-open-system') as HTMLInputElement | null)?.checked;
   wallOpts.open_spring = !!(document.getElementById('f-open-spring') as HTMLInputElement | null)?.checked;
   wallOpts.is_lit = !!(document.getElementById('f-is-lit') as HTMLInputElement | null)?.checked;
+  wallOpts.light_exposure = wallOpts.is_lit ? 'excavated' : 'dark';
   wallOpts.thermal_pulses = !!(document.getElementById('f-thermal-pulses') as HTMLInputElement | null)?.checked;
+  const pHBoundaryEnabled = (document.getElementById('f-ph-boundary-enabled') as HTMLSelectElement | null)?.value === '1';
+  wallOpts.pH_boundary = pHBoundaryEnabled ? {
+    target_pH: Math.max(0, Math.min(14, _creativeBoundaryOptionalNumber('f-ph-boundary-target') ?? 6.5)),
+    rate_per_step: Math.max(0, _creativeBoundaryOptionalNumber('f-ph-boundary-rate') ?? 0.05),
+    authority: _creativeBoundaryText('f-ph-boundary-authority') || 'Creative-authored buffer boundary',
+  } : null;
+  const pulseAuthority = _creativeBoundaryText('f-thermal-pulse-authority');
+  if (pulseAuthority) {
+    const pHDelta = _creativeBoundaryOptionalNumber('f-thermal-pulse-ph-delta');
+    const flowRate = _creativeBoundaryOptionalNumber('f-thermal-pulse-flow');
+    if (flowRate != null && flowRate < 0) throw new Error('Thermal-pulse flow must be non-negative');
+    wallOpts.thermal_pulse_fluid = {
+      authority: pulseAuthority,
+      components_ppm: _creativeParseThermalPulseComponents(_creativeBoundaryText('f-thermal-pulse-components') || '{}'),
+      ...(pHDelta == null ? {} : { pH_delta: pHDelta }),
+      ...(flowRate == null ? {} : { flow_rate: flowRate }),
+    };
+  } else {
+    wallOpts.thermal_pulse_fluid = null;
+  }
   // Alpine-cleft behavior is a consequence of cleft architecture rather
   // than a second unexplained switch for the same geological setting.
   wallOpts.alpine_cleft = architecture === 'cleft';

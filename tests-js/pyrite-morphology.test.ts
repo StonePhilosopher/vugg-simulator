@@ -60,35 +60,33 @@ describe('pyrite morphology registry (fifth tenant)', () => {
     expect(morphRegime(th, 3.84)).toBe('hopper_skeletal'); // fleet max — skeletal sliver
   });
 
-  it('sulphur_bank records an unstable rind; Sunnyside remains a lower-instability stepped end-member', () => {
+  it('authored Sulphur Bank stays smooth while Sunnyside records a stepped sulfide pulse', () => {
     const sb = pyriteMass(runScenario('sulphur_bank'));
     expect(sb.total).toBeGreaterThan(0);
     const sbNonSmooth = 1 - (sb.mass.spiral_smooth || 0) / sb.total;
-    expect(sbNonSmooth).toBeGreaterThanOrEqual(0.9);
-    expect(((sb.mass.hopper_skeletal || 0) + (sb.mass.dendritic || 0)) / sb.total)
-      .toBeGreaterThanOrEqual(0.5);
+    expect(sbNonSmooth).toBeCloseTo(0, 12);
     const sun = pyriteMass(runScenario('sunnyside_american_tunnel'));
     expect(sun.total).toBeGreaterThan(0);
     const sunStepped = (sun.mass.stepped_mild || 0) + (sun.mass.stepped_macro || 0);
     const sunSevere = ((sun.mass.hopper_skeletal || 0) + (sun.mass.dendritic || 0)) / sun.total;
-    const sbSevere = ((sb.mass.hopper_skeletal || 0) + (sb.mass.dendritic || 0)) / sb.total;
     expect(sunStepped).toBeGreaterThan(0);
     expect(sunSevere).toBe(0);
-    expect(sunSevere).toBeLessThan(sbSevere);
+    expect(sunStepped / sun.total).toBeGreaterThan(sbNonSmooth);
   });
 
   it('mvt pyrite is ZONED (the continuous-σ signature — mixed smooth↔striated)', () => {
     const { mass, total } = pyriteMass(runScenario('mvt'));
     expect(total).toBeGreaterThan(0);
-    // The exact ledger leaves a small low-sigma core, a striated transition,
-    // and a dominant diffusion-limited rind. Presence of all three regimes,
-    // rather than arbitrary equal shares, is the zoning claim.
+    // The exact ledger leaves a small low-sigma core followed by two distinct
+    // stepped shells. Presence of each layer, not an obsolete severe-rind
+    // ratio, is the zoning claim.
     expect(mass.spiral_smooth || 0).toBeGreaterThan(0);
-    expect((mass.stepped_mild || 0) + (mass.stepped_macro || 0)).toBeGreaterThan(0);
-    expect((mass.hopper_skeletal || 0) + (mass.dendritic || 0)).toBeGreaterThan(total * 0.8);
+    expect(mass.stepped_mild || 0).toBeGreaterThan(0);
+    expect(mass.stepped_macro || 0).toBeGreaterThan(0);
+    expect((mass.hopper_skeletal || 0) + (mass.dendritic || 0)).toBe(0);
   });
 
-  it('the overlay composes: striated_ habits keep parent forms; framboids untouched; sunnyside pyritohedra unrenamed', () => {
+  it('the overlay composes: striated habits keep parent forms and smooth Sulphur Bank remains cubic', () => {
     const sim = runScenario('sunnyside_american_tunnel');
     for (const c of sim.crystals) {
       if (c.mineral !== 'pyrite' || c.dissolved || !(c.total_growth_um > 0)) continue;
@@ -98,12 +96,12 @@ describe('pyrite morphology registry (fifth tenant)', () => {
     }
     const sb = runScenario('sulphur_bank');
     const habits = new Set(sb.crystals.filter((c: any) => c.mineral === 'pyrite' && !c.dissolved && c.total_growth_um > 0).map((c: any) => c.habit));
-    // Sulphur Bank is below 100°C, where the T-form is a framboidal
-    // aggregate. The supersaturation ladder still belongs in its zone log,
-    // but must not rename that aggregate as a euhedral striated crystal.
-    expect(habits.has('framboidal')).toBe(true);
+    // With the former uncited universal acid/material pulses removed, the
+    // commissioned crystal nucleates in the smooth cubic regime. The zone
+    // ledger and exposed habit must tell the same story.
+    expect(habits.has('cubic')).toBe(true);
     const sbMass = pyriteMass(sb);
-    expect((sbMass.mass.hopper_skeletal || 0) + (sbMass.mass.dendritic || 0)).toBeGreaterThan(0);
+    expect((sbMass.mass.hopper_skeletal || 0) + (sbMass.mass.dendritic || 0)).toBe(0);
   });
 
   it('aspect firewall: striated forms carry the parent default 0.5', () => {

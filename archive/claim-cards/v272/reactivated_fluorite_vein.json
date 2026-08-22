@@ -1,0 +1,2129 @@
+{
+  "schema": "vugg-claim-card-v2",
+  "scenario": "reactivated_fluorite_vein",
+  "sim_version": 272,
+  "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+continuous-temperature-edge-hold+no-pressure-extrapolation-v2|sulfate-Ksp:USGS-PHREEQC-wateq4f-analytic5+explicit-temperature-envelope-v1|carbonate-rate:PWP-omega2over3-raw+production-positive-affinity-series-resistance-Aover1plusA+molarMgCa+pKwTP-hydroxycarbonates-v2|chemistry-evidence:ppm-mgkg-solvent+carbonate-equivalent-mass-labels-v1|SCI02-locality:PHREEQC-SUPCRTBL-anhydrite-classification+ledgered-carbonate-pulses-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:locality-authored-material-transform+atomic-heat-only-default-v2|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4|cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+subresolution-chemistry-withheld+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v4|water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+authenticated-midrun-activation+phase-resolved-testimony-v5|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4|solid-occupancy:all-nondissolved+positive-only-size-cap+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-local-CuSO4-decay-v2|cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+dynamic-competition-stoichiometry+booked-return-v4|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+actual-zone-formula+residual-round-redistribution+single-evaluation-full-fill-negative-v5|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+fail-closed-four-tier-locality-license+owner-bound-events+causal-event-prerequisite+valence-correct-reconciliation-v8|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary+oxidized-sulfate-does-not-sulfidize-silver-v3|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+layer-formula+habit-extent+hydration-transfer+competition-allocation+solid-state-transformation+null-confining-pressure-v4|locality-boundary:authored-pH-buffer+heat-only-ambient-pulse+creative-exact-authority-v1|crystal-size:individual-record-vs-aggregate-habit+celestine46cm+unresolved-wulfenite-v1|replacement:actual-parent-loss+matching-route-trigger+outline-inheritance-v1|transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar-v1|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2|save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+water-height+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v5",
+  "scenario_spec_hash": "262e7f2243bf4450bc4d5b93c993b140d6363eb3f2bf66a7efcd520a6e010297",
+  "strip_steps": 160,
+  "strip_sha256": "5c74e7411a2b5f7eb8afbe349c93f0c6c092227c166e7c2ab15b0d3fa9de0714",
+  "claim": {
+    "anchor": "North Pennine Orefield style (Weardale district, England) — a fluorite-galena-barite vein on a reactivated fault (Dunham 1990, BGS Economic Memoir).",
+    "description": "A crack-seal reactivated vug. An ascending brine grows a first generation (fluorite + galena + barite, with sphalerite + calcite gangue) while its feeder fractures are OPEN; a late cement then seals the conduit shut and the cavity goes quiet; a later tectonic pulse breaches the fracture open again, and a cooler fresh fluid grows a second-generation fluorite + calcite. The demonstrator for the fluid-spots SEAL → BREACH lifecycle: the deposition-clustering halo follows the open feeders, so each generation concentrates at the vents and the sealed interval shows no clustering.",
+    "expects_species": [
+      "fluorite",
+      "galena",
+      "barite",
+      "calcite",
+      "sphalerite"
+    ],
+    "expectation_contract": {
+      "deterministic": [
+        {
+          "mineral": "fluorite",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "galena",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "barite",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "calcite",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "sphalerite",
+          "reason": "Authored headline release promise.",
+          "headline": true
+        },
+        {
+          "mineral": "rhodochrosite",
+          "reason": "A plausible Mn-bearing carbonate accessory in a reactivated North Pennine-style vein, subordinate to calcite.",
+          "headline": false
+        },
+        {
+          "mineral": "siderite",
+          "reason": "A documented-style Fe-carbonate gangue accessory in northern English fluorite-base-metal veins.",
+          "headline": false
+        },
+        {
+          "mineral": "acanthite",
+          "reason": "A minor low-temperature Ag2S accessory permitted by the modeled Ag-bearing reactivation fluid.",
+          "headline": false
+        },
+        {
+          "mineral": "pyrite",
+          "reason": "A common accessory sulfide in the modeled fault-vein paragenesis.",
+          "headline": false
+        },
+        {
+          "mineral": "greenockite",
+          "reason": "A minor CdS sink associated with sphalerite-bearing basinal brines; reproducibly delivered across all three evidence seeds but not a defining vein signature.",
+          "headline": false
+        },
+        {
+          "mineral": "celestine",
+          "reason": "A subordinate Sr-sulfate response to the sulfate-bearing brine, competing with barite.",
+          "headline": false
+        },
+        {
+          "mineral": "anhydrite",
+          "reason": "The corrected PHREEQC analytical K(T) path reproducibly resolves a minor Ca-sulfate phase in the hot sulfate-bearing first generation across all three evidence seeds; it is an accessory model result, not a headline North Pennine occurrence claim.",
+          "headline": false
+        }
+      ],
+      "deterministic_headline": [
+        "fluorite",
+        "galena",
+        "barite",
+        "calcite",
+        "sphalerite"
+      ],
+      "deterministic_accessory": [
+        {
+          "mineral": "rhodochrosite",
+          "reason": "A plausible Mn-bearing carbonate accessory in a reactivated North Pennine-style vein, subordinate to calcite."
+        },
+        {
+          "mineral": "siderite",
+          "reason": "A documented-style Fe-carbonate gangue accessory in northern English fluorite-base-metal veins."
+        },
+        {
+          "mineral": "acanthite",
+          "reason": "A minor low-temperature Ag2S accessory permitted by the modeled Ag-bearing reactivation fluid."
+        },
+        {
+          "mineral": "pyrite",
+          "reason": "A common accessory sulfide in the modeled fault-vein paragenesis."
+        },
+        {
+          "mineral": "greenockite",
+          "reason": "A minor CdS sink associated with sphalerite-bearing basinal brines; reproducibly delivered across all three evidence seeds but not a defining vein signature."
+        },
+        {
+          "mineral": "celestine",
+          "reason": "A subordinate Sr-sulfate response to the sulfate-bearing brine, competing with barite."
+        },
+        {
+          "mineral": "anhydrite",
+          "reason": "The corrected PHREEQC analytical K(T) path reproducibly resolves a minor Ca-sulfate phase in the hot sulfate-bearing first generation across all three evidence seeds; it is an accessory model result, not a headline North Pennine occurrence claim."
+        }
+      ],
+      "statistical": [
+        {
+          "mineral": "native_silver",
+          "reason": "Rare free silver occurs in the broader Northern Pennine Orefield, but it is not a defining Weardale fluorite-vein phase; the modeled Ag-bearing reactivation fluid produces it in only part of the seed panel."
+        }
+      ],
+      "aspirational": [
+        {
+          "mineral": "chalcedony",
+          "reason": "Late microcrystalline silica remains plausible after cool-fluid reactivation, but no discrete chalcedony appears in the three SIM 272 commissioned seeds."
+        }
+      ]
+    },
+    "excluded_species": {},
+    "sources": [
+      "Dunham, K.C. (1990) — Geology of the Northern Pennine Orefield, Vol. 1 (2nd ed.), British Geological Survey Economic Memoir.",
+      "Ramsay, J.G. (1980) — The crack-seal mechanism of rock deformation, Nature 284.",
+      "Bons, Elburg & Gomez-Rivas (2012) — A review of the formation of tectonic veins and their microstructures, Journal of Structural Geology.",
+      "Godinho, Piazolo & Evins (2012) — Effect of surface orientation on dissolution rates and topography of CaF2, Geochimica et Cosmochimica Acta 86, 392-403, doi:10.1016/j.gca.2012.02.032.",
+      "Cama, Ayora & Lasaga (2010) — The deviation-from-equilibrium effect on dissolution rate and on apparent variations in activation energy, Geochimica et Cosmochimica Acta 74, 4298-4311, doi:10.1016/j.gca.2010.04.067.",
+      "Dell'Angelo et al. (2025) — Unravelling the cleavage-rate relationship from both the experimental and theoretical standpoint: The instance of fluorite dissolution, Journal of Colloid and Interface Science 684, 844-855, doi:10.1016/j.jcis.2024.12.242."
+    ],
+    "claim_citations": [],
+    "initial_temperature_C": 180,
+    "initial_pressure_kbar": 0.3,
+    "wall_architecture": "tabular",
+    "notes": [
+      "DEMONSTRATOR, honestly framed: this scenario exercises the crack-seal SEAL→BREACH mechanic on a North-Pennine-style fluorite-galena-barite vein. The chemistry is DESIGNED (reverse-from-engines) on an mvt-analog NaCl-CaCl2 basinal brine, not lifted from a specific mine's fluid-inclusion dataset — so the broth is a faithful archetype, not a measured locality record. North Pennine veins are textbook reactivated-fault systems with repeated fluid pulses (Dunham 1990); the crack-seal reopening mechanism is Ramsay 1980 (Nature).",
+      "Two generations plus a bounded dissolution analogue: STAGE 1 (feeders open, steps 0-78) — the ascending brine fires fluorite + galena + barite (+ sphalerite, calcite) at the open vents. SEAL (step 78) — carbonate/silica cement chokes the feeder, flow stalls, and the clustering halo switches off. ACIDIC BREACH WASH (step 118) — reopening admits a 21°C, pH 3.6, I≈0.05 molal NaCl ionic-strength analogue of Godinho et al. (2012)'s {100} fluorite experiment. The rate is applied only when a surviving crystal exposes the matching flat cubic face; stepped/hopper surfaces fail closed. The game uses a fixed-pH closed return path, unlike the source experiment's NaClO4 bath renewed every 48 h, so the transferred rate carries unquantified systematic uncertainty. MINERALIZING RECHARGE (step 119) — a distinct F-Ca-carbonate brine grows gen-2 fluorite + calcite and can overgrow any accepted dissolution relief.",
+      "Why limestone wall: North Pennine fluorite veins cut Carboniferous limestone (the Great Limestone and equivalents); the reactive carbonate wall supplies background Ca + CO3, consistent with the calcite gangue in both stages. Architecture 'tabular' = fracture-controlled / vein-bounded, the right cavity archetype for a vein (vs the karst 'irregular' of mvt).",
+      "SIM 272 calibration testimony: stage-1 F=4 ppm plus the step-20 mixing pulse opens the fluorite gate, but the seed-42 survivor develops a stepped_cube surface. The step-118 dissolution receipt therefore records no_face_matched_evidence_bounded_rate_model and removes no solid. This is intentional fail-closed evidence: a common {100} normal on a stepped/hopper cube does not reproduce Godinho's cleaned nominal-(001) step-site state. Other trajectories may execute the bounded analogue only if their actual surviving face is flat cubic. Deposition clustering shifts spatial competition, so exact counts differ from generic MVT."
+    ],
+    "authored_science_context": {
+      "model_digest": "Pfluid:kbar-0.001..4.4|Ksp-pressure:SUPCRTBL-delta-logK-reaction-grid+density-mask+continuous-temperature-edge-hold+no-pressure-extrapolation-v2|sulfate-Ksp:USGS-PHREEQC-wateq4f-analytic5+explicit-temperature-envelope-v1|carbonate-rate:PWP-omega2over3-raw+production-positive-affinity-series-resistance-Aover1plusA+molarMgCa+pKwTP-hydroxycarbonates-v2|chemistry-evidence:ppm-mgkg-solvent+carbonate-equivalent-mass-labels-v1|SCI02-locality:PHREEQC-SUPCRTBL-anhydrite-classification+ledgered-carbonate-pulses-v1|aragonite-selector:hard-molarMgCa>=1.1-OR-explicit-open-spring+shallowP<=0.10kbar+40..100C-OR-Co5e-4..<1e-2molal+CoCa<0.6+20..30C-OR-highPstable-v5|aragonite-Sr:Wassenburg16-DSr1.38+/-0.53+accepted-zone-booked-return-v1|aragonite-Co:Barber75+GonzalezLopez18+equilibrium-and-effective-booked-DCo0.1+accepted-zone-booked-return-v2|CaCO3:Hacker05-negative-linear+/-1kbar|Prock:Pattison92-AndSil-16+/-3barC|stress:instant-resolved-shear-stable-grain-v2|event-fluid:locality-authored-material-transform+atomic-heat-only-default-v2|carbonate-boundary:PB82-dilute+DIC+reducedAlk+ideal-headspace+open-ledger+atomic-recharge+titration+accepted-zone-receipts+bulk-guard+equal-volume-mixed+solved-pCO2-uncertainty-v3|sphalerite-Ge:Belissont-Kd1708-cap22000-mass+dissolution-v2|gypsum-aw:ChirifeResnik84-NaCl-proxy-v1|silica-phase:Fournier-amorphous+chalcedony+quartz-Ostwald+reactive-pool+Manning94-grid-bounded-pressure+booked-transition+chemistry-competition-v5|surface-growth:all-cell-invalidated-exact-triangle-area+connected-patch+mass-booked-thickness+exact-shared-triangle-stratigraphy+executed-raycast+LOD-invariant-relief-v4|surface-anchor:position+void-normal+authenticated-triangle-barycentric+immutable-source-snapshot+constructor-fixed-production-provider+field-position-neighborhood-remap+separate-nearest-WallMesh-chemistry-projection+physical-host-anchor-inheritance+derived-live-remap-cache+exact-origin-edge-geodesic-occupancy+physical-normal-architecture-placement+source-qualified-fabrics+provider-timeline-replay+historical-helper-cursor+renderer-authority-lock+replay-shape-tessellation-fail-closed-v7|cavity-shape:seeded-exact-bubble-union+immutable-authored-radial-masks+pole-regular-sin2phi-cos2theta+analytic-pole-caps+digest-ledger-star-shaped-cartesian-production-v4|cavity-authority:default-before-water-chemistry-nucleation+fixed48-world-frame+zero-isovalue+Freudenthal-closed-manifold+signed-spacingOver4096-near-zero-scalar-floor+critical-contact-rejection+exact-volume-transaction+subresolution-chemistry-withheld+atomic-preflight+64-convergence+field-agreement+exact-contract-cache+semantic-startup-receipt+authenticated-replay-v4|water-boundary:mm-above-authenticated-current-floor+legacy-ring-to-authenticated-span-conversion+actual-vertex-chemistry-bands+topology-independent-wall-tint+field-clipped-interface+append-only-historical-appearance-ledger-v1|tiger-eye:HeaneyFisher03-antitaxial-crack-seal+GutzmerBeukesCairncross04-e44-surficial-alteration+BIF-physics-host+booked-NaFeSi-substrate+zeroSiO2-cumulative-O2closed-overprint+HF-only+local-tiger-iron+enum-fail-closed-v2|Mn-oxide-phase:birnessite-layer+Ba-romanechite-2x3+booked-birnessite-to-Mg-todorokite-3x3-at95-200C+pyrolusite-endmember-v2|CaSO4-phase:Hardie67-aw+P14.7Ckbar+single-evaluator+mass-balanced-replacement-v1|sulfur-ledger:sulfide+sulfate+elemental+declaration-driven-spatial+valence-specific-supersaturation+authenticated-midrun-activation+phase-resolved-testimony-v5|native-S-oxidation:production-open+O2limited-closed+diagnostic-H-v1|sulphur-bank-HgS:zoned-association-not-S0-substrate-v1|wall-dissolution:atomic-preattack-local-pH+fractional-full-surface-shielding+geodesic-feeder+USGS1248-26C-molar-volume+reported-uncertainty-per1kg+exact-Cartesian-Freudenthal-volume-ledger+validated-depth-closure+capacity-derived-equivalent-diameter+atomic-prerun-creative-reauthoring-v4|solid-occupancy:all-nondissolved+positive-only-size-cap+dissolution-remains-local-mass-balanced+zone-integrated-volume+chalcanthite-local-CuSO4-decay-v2|cavity-seal:repeatable-transition+accepted-dissolution-immediate-below95pct-rearm+same-or-later-refill-testimony-v2|sicily-SDAOM:methane-1C1S+whole-scenario-carbon-ledger-v2|calcite-Mn:manganocalcite-excess<1.2-v1|HMC-solid-solution:Mucci87-seawater-DMgT+MucciMorse83-MgCa7.5..20-seawater25C+unknown-outside+BP89-metastable-miscibility+25C-activity-calibration+bounded-RT-extrapolation+zone-formula+dynamic-competition-stoichiometry+booked-return-v4|CuZn-carbonates:Alwan80+Kaluza24-observer-only-v1|growth-budget:calibrated-axial-mmolkg+zone-formula-ratio+booked-return-v7|dissolution:LIFO-booked-axial-inventory+5um-floor-v2|dissolution-overprint:flat-face-rate+coupled-return-dGgate+render-geometry+enforced-booked-return+replay-healing-v3|fluorite-etch:Godinho12-{100}-21C-pH3.6-I0.05-468h+Cama-dG<=-7+NaCl-closed-analogue+250x-schematic-pores-v3|carbonate-boundary:conserved-only+explicit-initial-DIC-alk+fail-closed-open-reservoir+sabkha-recharge+zero-charge+truthful-reverse-flow-v3|engine-fluid:transactional-staged-crystal+actual-supplement+Au-ledger-v3|beryl:K36-postHF-recovery-v1|halite:vadose-propensity0.8-v1|borax-tincalconite:pure60.8C+halite-sat39.6C-oneway-v1|competition:accepted-axial-timescale+actual-zone-formula+residual-round-redistribution+single-evaluation-full-fill-negative-v5|thermal-field:LTE-voxel+geometry-weighted-finite-volume-k<=1/6+order-independent-sources+rock-boundary+per-voxel-one-way-authored-ambient+pause-retain+local-nucleation-growth-morphology+replay-v3|diagnosis:production-nucleator+local-max-context+causal-supersat+calibrated-budget-v5|scenario-contracts:headline-deterministic+accessory-deterministic-with-rationale+3seed-statistical+aspirational+fail-closed-four-tier-locality-license+owner-bound-events+causal-event-prerequisite+valence-correct-reconciliation-v8|bingham:RedmondEinaudi10-pulsed-hypogene+copper-history-before-gold+gold-aspirational-without-bornite+step85-exhumation+P0.001kbar+35to25C+no-reheat+supergene-malachite-v3|bisbee:Graeme-district+post-mining-inventories+alunite-statistical+jarosite-deterministic+siderite-aspirational+zero-CoNi+8-locality-exclusions+no-forced-halite-brine-v3|tsumeb:TSNB159-confirmed-gypsum-recharge+TSNB301-questionable-rhodochrosite-excluded-v1|wittichen:authored-cooling-through-step170+ambient-thermal-pulses-disabled+step170-vadose-boundary+oxidized-sulfate-does-not-sulfidize-silver-v3|weathering-epilogue:strict-normalized-schema+inclusive-bounded-window+invalid-product-block+authored-drainage+3D-vadose+S-conserved+O2-receipt+CO2-light+same-site-precursor-history-v2|cation-sinks:accepted-shell-return-only+schneeberg-zero-Zn-all-step-finite-voxel-receipt+pharmacolite-dissolved-molar-cation-proxy+48-field-consumer-audit-v2|koettigite:Ciesielczuk20-pH<3+dissolved-molar-Zn-majority-proxy+Co-solid-solution+Hill79-Ni<=5molpct+Bowell14-Tsumeb-third-zone-only-v3|roughton-gill:Bridges11-quartz-carbonate-primary+carbonate-buffered-malachite-cerussite+silica-hemimorphite+step215-pyromorphite-encrusting-plumbogummite+signed-boundary-receipts-v3|run-testimony:actual-step+sample-index+nucleation+layer-formula+habit-extent+hydration-transfer+competition-allocation+solid-state-transformation+null-confining-pressure-v4|locality-boundary:authored-pH-buffer+heat-only-ambient-pulse+creative-exact-authority-v1|crystal-size:individual-record-vs-aggregate-habit+celestine46cm+unresolved-wulfenite-v1|replacement:actual-parent-loss+matching-route-trigger+outline-inheritance-v1|transformation-reactivity:product-only-acid-retreat+LIFO-booked-return+explicit-light-realgar-v1|deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2|transition-locality-exclusion:target-gated-v1|evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+aggregate-artifact-sha256-v2|save-identity:version+model+scenario+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+water-height+full-zone-ledgers+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v5",
+      "growth_budget": {
+        "kind": "calibrated stoichiometric axial-growth budget proxy",
+        "basis": "0.00008 mmol formula/kg solvent per accepted axial micrometre",
+        "preserves": "formula mole ratios and exact closure of booked inventory on dissolution",
+        "limitation": "not physical solid mass or volume; demand is independent of crystal size, habit, density, and rendered shell volume",
+        "is_physical_mass_conservation": false
+      },
+      "fluid_pressure": {
+        "initial_kbar": 0.3,
+        "role": "cavity-fluid pressure; never silently substituted for rock pressure or differential stress"
+      },
+      "confining_pressure": {
+        "initial_kbar": null,
+        "role": "unspecified; metamorphic phase field is reported unconstrained"
+      },
+      "phase_fields": {
+        "calcite_aragonite": {
+          "boundary_kbar": 2.4196065399999998,
+          "secure_aragonite_field": false,
+          "model": "Hacker et al. (2005) polynomial; secure field requires +1 kbar uncertainty clearance"
+        },
+        "al2sio5": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "gypsum_anhydrite": {
+          "pure_water_boundary_C": 62.41,
+          "initial_water_activity": {
+            "value": 0.991,
+            "salinityPpt": 15,
+            "naclWeightPercentEquivalent": 1.5,
+            "uncertainty": 0.02,
+            "status": "temperature-extrapolation",
+            "note": "NaCl-equivalent composition proxy outside the 15-50 C tabulation; no unsupported temperature correction is applied."
+          },
+          "model": "Hardie pure-water phase line plus explicit 2log10(a_w) gypsum saturation term; a_w is a disclosed NaCl-equivalent proxy, not Pitzer-grade multicomponent brine output"
+        }
+      },
+      "pressure_ksp_grid": {
+        "rule": "reaction-specific SUPCRTBL delta-logK grid; bilinear only inside density and per-reaction temperature masks; no constant reaction-volume proxy",
+        "assessments": {
+          "calcite": {
+            "mineral": "calcite",
+            "temperatureC": 180,
+            "evaluatedTemperatureC": 90,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.271155145,
+            "waterDensityGcm3": 0.978267995,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Calcite = Ca+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              90
+            ],
+            "note": "Requested 180 C is outside this reaction's 10-90 C fitted envelope; the nearest 90 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "aragonite": {
+            "mineral": "aragonite",
+            "temperatureC": 180,
+            "evaluatedTemperatureC": 90,
+            "temperatureClamped": true,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.2597098,
+            "waterDensityGcm3": 0.978267995,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "temperature-clamped-to-envelope",
+            "reaction": "Aragonite = Ca+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              90
+            ],
+            "note": "Requested 180 C is outside this reaction's 10-90 C fitted envelope; the nearest 90 C SUPCRTBL pressure correction is held constant for a continuous, non-extrapolated boundary."
+          },
+          "dolomite": {
+            "mineral": "dolomite",
+            "temperatureC": 180,
+            "evaluatedTemperatureC": 180,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.6131692409999999,
+            "waterDensityGcm3": 0.9033758639999999,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Dolomite,ordered = Ca+2 + Mg+2 + 2 CO3-2",
+            "usableTemperatureC": [
+              10,
+              250
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.613 relative to 1 bar at the same temperature."
+          },
+          "siderite": {
+            "mineral": "siderite",
+            "temperatureC": 180,
+            "evaluatedTemperatureC": 180,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.310786303,
+            "waterDensityGcm3": 0.9033758639999999,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Siderite = Fe+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.311 relative to 1 bar at the same temperature."
+          },
+          "rhodochrosite": {
+            "mineral": "rhodochrosite",
+            "temperatureC": 180,
+            "evaluatedTemperatureC": 180,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.296897945,
+            "waterDensityGcm3": 0.9033758639999999,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Rhodochrosite = Mn+2 + CO3-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.297 relative to 1 bar at the same temperature."
+          },
+          "anhydrite": {
+            "mineral": "anhydrite",
+            "temperatureC": 180,
+            "evaluatedTemperatureC": 180,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.254547565,
+            "waterDensityGcm3": 0.9033758639999999,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Anhydrite = Ca+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              300
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.255 relative to 1 bar at the same temperature."
+          },
+          "barite": {
+            "mineral": "barite",
+            "temperatureC": 180,
+            "evaluatedTemperatureC": 180,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.241655511,
+            "waterDensityGcm3": 0.9033758639999999,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Barite = Ba+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              300
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.242 relative to 1 bar at the same temperature."
+          },
+          "celestine": {
+            "mineral": "celestine",
+            "temperatureC": 180,
+            "evaluatedTemperatureC": 180,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0.251729373,
+            "waterDensityGcm3": 0.9033758639999999,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": true,
+            "active": true,
+            "status": "active",
+            "reaction": "Celestite = Sr+2 + SO4-2",
+            "usableTemperatureC": [
+              10,
+              200
+            ],
+            "note": "SUPCRTBL reaction grid with bilinear interpolation; log10(Ksp) shifts by +0.252 relative to 1 bar at the same temperature."
+          },
+          "selenite": {
+            "mineral": "selenite",
+            "temperatureC": 180,
+            "evaluatedTemperatureC": 180,
+            "temperatureClamped": false,
+            "fluidPressureKbar": 0.3,
+            "correctionLog10K": 0,
+            "waterDensityGcm3": null,
+            "sourceModel": "SUPCRTBL-delta-logK-pressure-grid-v1",
+            "supported": false,
+            "active": false,
+            "status": "unsupported-reaction",
+            "reaction": null,
+            "usableTemperatureC": null,
+            "note": "Gypsum is absent from the SUPCRTBL solid-species set; the Hardie water-activity/temperature phase selector remains active, but no Ksp pressure correction is fabricated."
+          }
+        }
+      },
+      "differential_stress_events": []
+    }
+  },
+  "testimony": {
+    "species_count": 12,
+    "paragenetic_order": [
+      {
+        "mineral": "rhodochrosite",
+        "first_step": 1,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "siderite",
+        "first_step": 1,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "calcite",
+        "first_step": 13,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "acanthite",
+        "first_step": 20,
+        "events": 4,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "fluorite",
+        "first_step": 20,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "galena",
+        "first_step": 20,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "pyrite",
+        "first_step": 20,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "sphalerite",
+        "first_step": 20,
+        "events": 1,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "barite",
+        "first_step": 21,
+        "events": 23,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "anhydrite",
+        "first_step": 22,
+        "events": 7,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "greenockite",
+        "first_step": 22,
+        "events": 5,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      },
+      {
+        "mineral": "celestine",
+        "first_step": 23,
+        "events": 6,
+        "transformations": 0,
+        "pathways": [
+          "nucleation"
+        ]
+      }
+    ],
+    "surprises_not_in_expects": [],
+    "expected_no_shows": [],
+    "statistical_no_shows": [
+      "native_silver"
+    ],
+    "aspirational_no_shows": [
+      "chalcedony"
+    ],
+    "excluded_species_appearances": [],
+    "environment": {
+      "T": {
+        "first": 179.5362384945922,
+        "last": 72.76878843065275,
+        "min": 21,
+        "max": 179.5362384945922,
+        "units": "°C",
+        "source": "raw_simulation_state"
+      },
+      "pH": {
+        "first": 7.2,
+        "last": 6.4,
+        "min": 4.338761646680121,
+        "max": 7.2,
+        "units": "",
+        "source": "raw_simulation_state"
+      },
+      "Eh": {
+        "first": 24.4850021680094,
+        "last": 24.4850021680094,
+        "min": 24.4850021680094,
+        "max": 703.0899869919435,
+        "units": "mV",
+        "source": "raw_simulation_state"
+      },
+      "salinity": {
+        "first": 15,
+        "last": 15,
+        "min": 2.9,
+        "max": 15,
+        "units": "psu",
+        "source": "raw_simulation_state"
+      },
+      "O2": {
+        "first": 0.25,
+        "last": 0.25,
+        "min": 0.25,
+        "max": 8,
+        "units": "ppm (mg/kg solvent)",
+        "source": "raw_simulation_state"
+      },
+      "concentration": {
+        "first": 1,
+        "last": 1,
+        "min": 1,
+        "max": 1,
+        "units": "×",
+        "source": "raw_simulation_state"
+      }
+    },
+    "saturation_indices": {
+      "SI_calcite": {
+        "first": 0.126,
+        "last": -0.189,
+        "min": -6.992,
+        "max": 0.756,
+        "units": "log Ω"
+      },
+      "SI_aragonite": {
+        "first": 0,
+        "last": -0.252,
+        "min": -7.181,
+        "max": 0.63,
+        "units": "log Ω"
+      },
+      "SI_dolomite": {
+        "first": -0.063,
+        "last": -1.134,
+        "min": -8,
+        "max": 0.504,
+        "units": "log Ω"
+      },
+      "SI_HMC": {
+        "first": 0.378,
+        "last": -0.252,
+        "min": -8,
+        "max": 0.945,
+        "units": "log Ω"
+      },
+      "SI_siderite": {
+        "first": 1.575,
+        "last": -8,
+        "min": -8,
+        "max": 2.205,
+        "units": "log Ω"
+      },
+      "SI_selenite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": -8,
+        "units": "log Ω"
+      },
+      "SI_anhydrite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": 0.693,
+        "units": "log Ω"
+      },
+      "SI_barite": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": 2.268,
+        "units": "log Ω"
+      },
+      "SI_celestine": {
+        "first": -8,
+        "last": -8,
+        "min": -8,
+        "max": 1.134,
+        "units": "log Ω"
+      }
+    },
+    "executed_science": {
+      "source": "archived executed run state; not reconstructed from scenario definition",
+      "pressure_phase_sample_count": 160,
+      "fluid_pressure_kbar": {
+        "first": 0.3,
+        "last": 0.001,
+        "min": 0.001,
+        "max": 0.3,
+        "samples": 160
+      },
+      "confining_pressure_kbar": null,
+      "temperature_C": {
+        "first": 179.5362384945922,
+        "last": 72.76878843065275,
+        "min": 21,
+        "max": 179.5362384945922,
+        "samples": 160
+      },
+      "calcite_aragonite": {
+        "secure_aragonite_steps": 0,
+        "first": {
+          "boundary_kbar": 2.419589812250558,
+          "secure_aragonite": false
+        },
+        "last": {
+          "boundary_kbar": 2.690510012445049,
+          "secure_aragonite": false
+        }
+      },
+      "al2sio5": {
+        "phase_counts": {
+          "unconstrained": 160
+        },
+        "first": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        },
+        "last": {
+          "phase": "unconstrained",
+          "nominalPhase": null,
+          "confiningPressureKbar": null,
+          "uncertaintyKbar": null,
+          "note": "Rock/confining pressure is not specified; fluid pressure cannot substitute for it."
+        }
+      },
+      "gypsum_anhydrite": {
+        "first": {
+          "pure_water_boundary_C": 62.41
+        },
+        "last": {
+          "pure_water_boundary_C": 58.0147
+        }
+      },
+      "stress_events": [],
+      "transformations": [],
+      "carbonate_boundary": {
+        "sample_count": 0,
+        "first": null,
+        "last": null,
+        "samples": []
+      },
+      "sulfur_ledger": {
+        "source": "archived phase-resolved sulfur ledger; exact samples are authenticated by the strip SHA-256",
+        "sample_count": 0,
+        "closed_sample_count": 0,
+        "all_closed": null,
+        "max_abs_balance_error_ppm": 0,
+        "max_abs_testimony_error_ppm": 0,
+        "first_fluid_reservoir_ppm": null,
+        "last_fluid_reservoir_ppm": null,
+        "first_solid_reservoir_ppm": null,
+        "last_solid_reservoir_ppm": null,
+        "activation": null,
+        "phase_identities": [],
+        "samples": []
+      },
+      "crystal_layers": {
+        "source": "accepted growth-zone stack from the archived executed run",
+        "layer_count": 2663,
+        "formula_layers": [],
+        "solid_solution_layers": [],
+        "binding_competition_allocations": [],
+        "reactive_transformation_layers": []
+      },
+      "habit_morphology": {
+        "source": "final physical crystal state from the archived executed run",
+        "crystals": [
+          {
+            "crystal_id": 1,
+            "mineral": "siderite",
+            "habit": "scalenohedral",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "v{211} scalenohedral",
+              "sharp brown crystals"
+            ],
+            "total_growth_um": 2224.6454973322625,
+            "c_length_mm": 1.4556707884925948,
+            "a_width_mm": 1.3754946260665377,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 20,
+              "record_cm": 10
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 118
+          },
+          {
+            "crystal_id": 2,
+            "mineral": "rhodochrosite",
+            "habit": "rhombohedral",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "e{104} curved 'button' rhombohedron",
+              "rose-pink to raspberry"
+            ],
+            "total_growth_um": 3763.6492692366483,
+            "c_length_mm": 3.375313601507569,
+            "a_width_mm": 3.1698855174370824,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 25,
+              "record_cm": 12.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 118
+          },
+          {
+            "crystal_id": 3,
+            "mineral": "calcite",
+            "habit": "rhombohedral",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "e{104}",
+              "possibly nail-head"
+            ],
+            "total_growth_um": 38520.20748288596,
+            "c_length_mm": 33.19570850734211,
+            "a_width_mm": 33.19570850734211,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 2000,
+              "record_cm": 1000
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.98,
+              "cavity_area_mm2": 11577.543206556462,
+              "covered_area_mm2": 11345.992342425332,
+              "mean_thickness_um": 1688.1147451874253,
+              "booked_volume_mm3": 19153.33697203182,
+              "wall_spread": 0.99,
+              "void_reach": 0.01,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 160,
+              "stratigraphic_index": 0,
+              "nucleation_step": 13,
+              "underlying_surface_crystal_ids": [],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "zone_count": 111
+          },
+          {
+            "crystal_id": 4,
+            "mineral": "fluorite",
+            "habit": "cubic",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{100} cube"
+            ],
+            "total_growth_um": 17901.054758957005,
+            "c_length_mm": 17.901054758957006,
+            "a_width_mm": 8.950527379478501,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 400,
+              "record_cm": 200
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 140
+          },
+          {
+            "crystal_id": 5,
+            "mineral": "sphalerite",
+            "habit": "tetrahedral",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{111} tetrahedron"
+            ],
+            "total_growth_um": 103.12982240990219,
+            "c_length_mm": 0.10312982240990219,
+            "a_width_mm": 0.051564911204951075,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 80,
+              "record_cm": 40
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 99
+          },
+          {
+            "crystal_id": 6,
+            "mineral": "pyrite",
+            "habit": "cubo-pyritohedral",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{100} + {210}"
+            ],
+            "total_growth_um": 2.0559270080377297,
+            "c_length_mm": 0.0020559270080377297,
+            "a_width_mm": 0.0010279635040188646,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 40,
+              "record_cm": 20
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 11
+          },
+          {
+            "crystal_id": 7,
+            "mineral": "galena",
+            "habit": "cubic",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{100} cube",
+              "{111} octahedron"
+            ],
+            "total_growth_um": 963.6535645831935,
+            "c_length_mm": 0.9636535645831935,
+            "a_width_mm": 0.48182678229159676,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 98
+          },
+          {
+            "crystal_id": 8,
+            "mineral": "acanthite",
+            "habit": "thorn",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "spiky prismatic projections",
+              "thorn-like aggregates"
+            ],
+            "total_growth_um": 2025.4798506152392,
+            "c_length_mm": 2.0254798506152394,
+            "a_width_mm": 1.0127399253076197,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 5,
+              "record_cm": 2.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 99
+          },
+          {
+            "crystal_id": 9,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 1.6035827017437951,
+            "c_length_mm": 0.0016035827017437951,
+            "a_width_mm": 0.0016035827017437951,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 10,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 1.5532781126656423,
+            "c_length_mm": 0.0015532781126656424,
+            "a_width_mm": 0.0015532781126656424,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 11,
+            "mineral": "anhydrite",
+            "habit": "tabular",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "tabular crystals",
+              "three perpendicular cleavages"
+            ],
+            "total_growth_um": 2049.371984988669,
+            "c_length_mm": 2.0493719849886687,
+            "a_width_mm": 1.043400771292496,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 200,
+              "record_cm": 100
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 65
+          },
+          {
+            "crystal_id": 12,
+            "mineral": "greenockite",
+            "habit": "colloform_crust",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "encrusting colloform aggregate"
+            ],
+            "total_growth_um": 1825.0902636283931,
+            "c_length_mm": 1.8250902636283932,
+            "a_width_mm": 0.9125451318141965,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 3,
+              "record_cm": 1.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.8495867195133073,
+              "cavity_area_mm2": 11577.543206556462,
+              "covered_area_mm2": 9836.126952881881,
+              "mean_thickness_um": 0.08090354472632161,
+              "booked_volume_mm3": 0.7957775368662567,
+              "wall_spread": 0.85,
+              "void_reach": 0.15,
+              "substrate": "coating sphalerite #5 (Cd liberation source)",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 160,
+              "stratigraphic_index": 1,
+              "nucleation_step": 22,
+              "underlying_surface_crystal_ids": [
+                3
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "zone_count": 97
+          },
+          {
+            "crystal_id": 13,
+            "mineral": "barite",
+            "habit": "tabular",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "{001} tabular plates"
+            ],
+            "total_growth_um": 1.9490600016066355,
+            "c_length_mm": 0.0019490600016066355,
+            "a_width_mm": 0.002923590002409953,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 14,
+            "mineral": "celestine",
+            "habit": "fibrous_blanket",
+            "extent_kind": "aggregate",
+            "dominant_forms": [
+              "plumose white barian celestine aggregate",
+              "fibrous blanket on sulfide-carbonate gangue"
+            ],
+            "total_growth_um": 474.85191473894446,
+            "c_length_mm": 0.47485191473894445,
+            "a_width_mm": 0.7122778721084166,
+            "size_authority": {
+              "extent_kind": "aggregate",
+              "cap_cm": null,
+              "record_cm": null,
+              "status": "Handbook documents elongated crystals to 45 cm; Royal Ontario Museum reference text reports Put-in-Bay geode crystals as wide as 46 cm. The cap is twice the 46 cm individual authority. Fibrous blankets/nodules are aggregate extents and capacity-bound."
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.2676740359225459,
+              "cavity_area_mm2": 11577.543206556462,
+              "covered_area_mm2": 3099.007716166622,
+              "mean_thickness_um": 0.0407036226518441,
+              "booked_volume_mm3": 0.12614084067399936,
+              "wall_spread": 0.3,
+              "void_reach": 0.7,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 160,
+              "stratigraphic_index": 2,
+              "nucleation_step": 23,
+              "underlying_surface_crystal_ids": [
+                3,
+                12
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "zone_count": 95
+          },
+          {
+            "crystal_id": 15,
+            "mineral": "acanthite",
+            "habit": "thorn",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "spiky prismatic projections",
+              "thorn-like aggregates"
+            ],
+            "total_growth_um": 338.9081359906966,
+            "c_length_mm": 0.33890813599069664,
+            "a_width_mm": 0.16945406799534835,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 5,
+              "record_cm": 2.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 96
+          },
+          {
+            "crystal_id": 16,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 13.59482217548759,
+            "c_length_mm": 0.01359482217548759,
+            "a_width_mm": 0.013594822175487591,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 17
+          },
+          {
+            "crystal_id": 17,
+            "mineral": "acanthite",
+            "habit": "thorn",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "spiky prismatic projections",
+              "thorn-like aggregates"
+            ],
+            "total_growth_um": 2244.6446699506046,
+            "c_length_mm": 2.2446446699506044,
+            "a_width_mm": 1.122322334975302,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 5,
+              "record_cm": 2.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 95
+          },
+          {
+            "crystal_id": 18,
+            "mineral": "greenockite",
+            "habit": "colloform_crust",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "encrusting colloform aggregate"
+            ],
+            "total_growth_um": 1966.513850156272,
+            "c_length_mm": 1.966513850156272,
+            "a_width_mm": 0.9832569250781359,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 3,
+              "record_cm": 1.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.8497652708817783,
+              "cavity_area_mm2": 11577.543206556462,
+              "covered_area_mm2": 9838.194139064944,
+              "mean_thickness_um": 0.1011845655057906,
+              "booked_volume_mm3": 0.9954733993229019,
+              "wall_spread": 0.85,
+              "void_reach": 0.15,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 160,
+              "stratigraphic_index": 3,
+              "nucleation_step": 24,
+              "underlying_surface_crystal_ids": [
+                3,
+                12,
+                14
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "zone_count": 95
+          },
+          {
+            "crystal_id": 19,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 1.7000949974477286,
+            "c_length_mm": 0.0017000949974477287,
+            "a_width_mm": 0.0017000949974477287,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 20,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 1.746171139285417,
+            "c_length_mm": 0.0017461711392854169,
+            "a_width_mm": 0.0017461711392854167,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 21,
+            "mineral": "acanthite",
+            "habit": "thorn",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "spiky prismatic projections",
+              "thorn-like aggregates"
+            ],
+            "total_growth_um": 306.6796415542778,
+            "c_length_mm": 0.3066796415542778,
+            "a_width_mm": 0.1533398207771389,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 5,
+              "record_cm": 2.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 92
+          },
+          {
+            "crystal_id": 22,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 1.7311384881796152,
+            "c_length_mm": 0.0017311384881796153,
+            "a_width_mm": 0.0017311384881796153,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 23,
+            "mineral": "anhydrite",
+            "habit": "tabular",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "tabular crystals",
+              "three perpendicular cleavages"
+            ],
+            "total_growth_um": 1710.3421491870365,
+            "c_length_mm": 1.7103421491870365,
+            "a_width_mm": 0.8792489869727186,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 200,
+              "record_cm": 100
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 59
+          },
+          {
+            "crystal_id": 24,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 1.5965269141223497,
+            "c_length_mm": 0.0015965269141223497,
+            "a_width_mm": 0.0015965269141223497,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 25,
+            "mineral": "greenockite",
+            "habit": "colloform_crust",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "encrusting colloform aggregate"
+            ],
+            "total_growth_um": 257.9749335529487,
+            "c_length_mm": 0.2579749335529487,
+            "a_width_mm": 0.12898746677647435,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 3,
+              "record_cm": 1.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.18586071051246872,
+              "cavity_area_mm2": 11577.543206556462,
+              "covered_area_mm2": 2151.8104063593896,
+              "mean_thickness_um": 0.0010444007025684078,
+              "booked_volume_mm3": 0.0022473523001957573,
+              "wall_spread": 0.25,
+              "void_reach": 0.75,
+              "substrate": "coating sphalerite #5 (Cd liberation source)",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 160,
+              "stratigraphic_index": 4,
+              "nucleation_step": 30,
+              "underlying_surface_crystal_ids": [
+                3,
+                12,
+                14,
+                18
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "zone_count": 89
+          },
+          {
+            "crystal_id": 26,
+            "mineral": "celestine",
+            "habit": "fibrous_blanket",
+            "extent_kind": "aggregate",
+            "dominant_forms": [
+              "plumose white barian celestine aggregate",
+              "fibrous blanket on sulfide-carbonate gangue"
+            ],
+            "total_growth_um": 439.32434469160694,
+            "c_length_mm": 0.4393243446916069,
+            "a_width_mm": 0.6589865170374104,
+            "size_authority": {
+              "extent_kind": "aggregate",
+              "cap_cm": null,
+              "record_cm": null,
+              "status": "Handbook documents elongated crystals to 45 cm; Royal Ontario Museum reference text reports Put-in-Bay geode crystals as wide as 46 cm. The cap is twice the 46 cm individual authority. Fibrous blankets/nodules are aggregate extents and capacity-bound."
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.4378962326672102,
+              "cavity_area_mm2": 11577.543206556462,
+              "covered_area_mm2": 5069.762553692927,
+              "mean_thickness_um": 0.019703770065566617,
+              "booked_volume_mm3": 0.09989343564498528,
+              "wall_spread": 0.5,
+              "void_reach": 0.3,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 160,
+              "stratigraphic_index": 5,
+              "nucleation_step": 31,
+              "underlying_surface_crystal_ids": [
+                3,
+                12,
+                14,
+                18,
+                25
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "zone_count": 87
+          },
+          {
+            "crystal_id": 27,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 2.103001947652033,
+            "c_length_mm": 0.002103001947652033,
+            "a_width_mm": 0.002103001947652033,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 28,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 2.2474946422256874,
+            "c_length_mm": 0.0022474946422256876,
+            "a_width_mm": 0.0022474946422256876,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 29,
+            "mineral": "celestine",
+            "habit": "fibrous_blanket",
+            "extent_kind": "aggregate",
+            "dominant_forms": [
+              "plumose white barian celestine aggregate",
+              "fibrous blanket on sulfide-carbonate gangue"
+            ],
+            "total_growth_um": 405.6426465173535,
+            "c_length_mm": 0.4056426465173535,
+            "a_width_mm": 0.6084639697760302,
+            "size_authority": {
+              "extent_kind": "aggregate",
+              "cap_cm": null,
+              "record_cm": null,
+              "status": "Handbook documents elongated crystals to 45 cm; Royal Ontario Museum reference text reports Put-in-Bay geode crystals as wide as 46 cm. The cap is twice the 46 cm individual authority. Fibrous blankets/nodules are aggregate extents and capacity-bound."
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.2573636224655933,
+              "cavity_area_mm2": 11577.543206556462,
+              "covered_area_mm2": 2979.6384588912915,
+              "mean_thickness_um": 0.02639054698566975,
+              "booked_volume_mm3": 0.07863428874967923,
+              "wall_spread": 0.3,
+              "void_reach": 0.6,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 160,
+              "stratigraphic_index": 6,
+              "nucleation_step": 35,
+              "underlying_surface_crystal_ids": [
+                3,
+                12,
+                14,
+                18,
+                25,
+                26
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "zone_count": 83
+          },
+          {
+            "crystal_id": 30,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 2.237814961379803,
+            "c_length_mm": 0.002237814961379803,
+            "a_width_mm": 0.002237814961379803,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 31,
+            "mineral": "anhydrite",
+            "habit": "tabular",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "tabular crystals",
+              "three perpendicular cleavages"
+            ],
+            "total_growth_um": 1175.4192565511146,
+            "c_length_mm": 1.1754192565511146,
+            "a_width_mm": 0.6220245990882839,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 200,
+              "record_cm": 100
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.943789254783404,
+              "cavity_area_mm2": 11577.543206556462,
+              "covered_area_mm2": 10926.760875138585,
+              "mean_thickness_um": 0.02179290394821233,
+              "booked_volume_mm3": 0.23812585021697968,
+              "wall_spread": 0.95,
+              "void_reach": 0.05,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 160,
+              "stratigraphic_index": 7,
+              "nucleation_step": 38,
+              "underlying_surface_crystal_ids": [
+                3,
+                12,
+                14,
+                18,
+                25,
+                26,
+                29
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "zone_count": 49
+          },
+          {
+            "crystal_id": 32,
+            "mineral": "celestine",
+            "habit": "fibrous_blanket",
+            "extent_kind": "aggregate",
+            "dominant_forms": [
+              "plumose white barian celestine aggregate",
+              "fibrous blanket on sulfide-carbonate gangue"
+            ],
+            "total_growth_um": 392.65298417252984,
+            "c_length_mm": 0.39265298417252986,
+            "a_width_mm": 0.5889794762587948,
+            "size_authority": {
+              "extent_kind": "aggregate",
+              "cap_cm": null,
+              "record_cm": null,
+              "status": "Handbook documents elongated crystals to 45 cm; Royal Ontario Museum reference text reports Put-in-Bay geode crystals as wide as 46 cm. The cap is twice the 46 cm individual authority. Fibrous blankets/nodules are aggregate extents and capacity-bound."
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.4251495521041642,
+              "cavity_area_mm2": 11577.543206556462,
+              "covered_area_mm2": 4922.187308734089,
+              "mean_thickness_um": 0.014489376965265364,
+              "booked_volume_mm3": 0.07131942740989322,
+              "wall_spread": 0.5,
+              "void_reach": 0.3,
+              "substrate": "on barite #16 (celestobarite-barytocelestine pair)",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 160,
+              "stratigraphic_index": 8,
+              "nucleation_step": 39,
+              "underlying_surface_crystal_ids": [
+                3,
+                12,
+                14,
+                18,
+                25,
+                26,
+                29,
+                31
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "zone_count": 79
+          },
+          {
+            "crystal_id": 33,
+            "mineral": "greenockite",
+            "habit": "colloform_crust",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "encrusting colloform aggregate"
+            ],
+            "total_growth_um": 1649.2132939622343,
+            "c_length_mm": 1.6492132939622344,
+            "a_width_mm": 0.8246066469811172,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 3,
+              "record_cm": 1.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.849164830761088,
+              "cavity_area_mm2": 11577.543206556462,
+              "covered_area_mm2": 9831.242517624702,
+              "mean_thickness_um": 0.05972562487894757,
+              "booked_volume_mm3": 0.587177102701613,
+              "wall_spread": 0.85,
+              "void_reach": 0.15,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 160,
+              "stratigraphic_index": 9,
+              "nucleation_step": 39,
+              "underlying_surface_crystal_ids": [
+                3,
+                12,
+                14,
+                18,
+                25,
+                26,
+                29,
+                31,
+                32
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "zone_count": 80
+          },
+          {
+            "crystal_id": 34,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 2.6983741656408142,
+            "c_length_mm": 0.0026983741656408143,
+            "a_width_mm": 0.002698374165640814,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 35,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 2.884129971611165,
+            "c_length_mm": 0.002884129971611165,
+            "a_width_mm": 0.002884129971611165,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 36,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 8.253477742711677,
+            "c_length_mm": 0.008253477742711677,
+            "a_width_mm": 0.008253477742711677,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 8
+          },
+          {
+            "crystal_id": 37,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 2.3412347181189936,
+            "c_length_mm": 0.0023412347181189937,
+            "a_width_mm": 0.0023412347181189937,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 38,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 459.4978896420224,
+            "c_length_mm": 0.45949788964202243,
+            "a_width_mm": 0.45949788964202243,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 73
+          },
+          {
+            "crystal_id": 39,
+            "mineral": "celestine",
+            "habit": "fibrous_blanket",
+            "extent_kind": "aggregate",
+            "dominant_forms": [
+              "plumose white barian celestine aggregate",
+              "fibrous blanket on sulfide-carbonate gangue"
+            ],
+            "total_growth_um": 353.04302688523404,
+            "c_length_mm": 0.35304302688523403,
+            "a_width_mm": 0.529564540327851,
+            "size_authority": {
+              "extent_kind": "aggregate",
+              "cap_cm": null,
+              "record_cm": null,
+              "status": "Handbook documents elongated crystals to 45 cm; Royal Ontario Museum reference text reports Put-in-Bay geode crystals as wide as 46 cm. The cap is twice the 46 cm individual authority. Fibrous blankets/nodules are aggregate extents and capacity-bound."
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.24737947250653053,
+              "cavity_area_mm2": 11577.543206556462,
+              "covered_area_mm2": 2864.0465313595037,
+              "mean_thickness_um": 0.0181002254685479,
+              "booked_volume_mm3": 0.05183988797001955,
+              "wall_spread": 0.3,
+              "void_reach": 0.7,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 160,
+              "stratigraphic_index": 10,
+              "nucleation_step": 46,
+              "underlying_surface_crystal_ids": [
+                3,
+                12,
+                18,
+                25,
+                26,
+                29,
+                31,
+                33
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "zone_count": 72
+          },
+          {
+            "crystal_id": 40,
+            "mineral": "anhydrite",
+            "habit": "tabular",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "tabular crystals",
+              "three perpendicular cleavages"
+            ],
+            "total_growth_um": 838.9000419711593,
+            "c_length_mm": 0.8389000419711593,
+            "a_width_mm": 0.465494097161246,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 200,
+              "record_cm": 100
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.9261363173288224,
+              "cavity_area_mm2": 11577.543206556462,
+              "covered_area_mm2": 10722.383229035528,
+              "mean_thickness_um": 0.00887658404567574,
+              "booked_volume_mm3": 0.0951781359024779,
+              "wall_spread": 0.95,
+              "void_reach": 0.05,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 160,
+              "stratigraphic_index": 11,
+              "nucleation_step": 46,
+              "underlying_surface_crystal_ids": [
+                3,
+                12,
+                14,
+                18,
+                25,
+                26,
+                29,
+                31,
+                32,
+                33,
+                39
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "zone_count": 41
+          },
+          {
+            "crystal_id": 41,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 2.7173141514728094,
+            "c_length_mm": 0.0027173141514728093,
+            "a_width_mm": 0.0027173141514728093,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 42,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 446.1201372969574,
+            "c_length_mm": 0.44612013729695743,
+            "a_width_mm": 0.44612013729695743,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 64
+          },
+          {
+            "crystal_id": 43,
+            "mineral": "greenockite",
+            "habit": "colloform_crust",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "encrusting colloform aggregate"
+            ],
+            "total_growth_um": 1338.811870903174,
+            "c_length_mm": 1.338811870903174,
+            "a_width_mm": 0.669405935451587,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 3,
+              "record_cm": 1.5
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.847109340147001,
+              "cavity_area_mm2": 11577.543206556462,
+              "covered_area_mm2": 9807.444986229439,
+              "mean_thickness_um": 0.03202885502968172,
+              "booked_volume_mm3": 0.3141212336755215,
+              "wall_spread": 0.85,
+              "void_reach": 0.15,
+              "substrate": "vug wall",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 160,
+              "stratigraphic_index": 12,
+              "nucleation_step": 55,
+              "underlying_surface_crystal_ids": [
+                3,
+                12,
+                14,
+                18,
+                25,
+                26,
+                29,
+                31,
+                32,
+                33,
+                39,
+                40
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "zone_count": 64
+          },
+          {
+            "crystal_id": 44,
+            "mineral": "barite",
+            "habit": "bladed",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "divergent blades",
+              "Cumberland-style fans"
+            ],
+            "total_growth_um": 514.220904729929,
+            "c_length_mm": 0.514220904729929,
+            "a_width_mm": 0.25711142031306944,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 62
+          },
+          {
+            "crystal_id": 45,
+            "mineral": "celestine",
+            "habit": "fibrous_blanket",
+            "extent_kind": "aggregate",
+            "dominant_forms": [
+              "plumose white barian celestine aggregate",
+              "fibrous blanket on sulfide-carbonate gangue"
+            ],
+            "total_growth_um": 308.09553777790853,
+            "c_length_mm": 0.30809553777790855,
+            "a_width_mm": 0.4621433066668629,
+            "size_authority": {
+              "extent_kind": "aggregate",
+              "cap_cm": null,
+              "record_cm": null,
+              "status": "Handbook documents elongated crystals to 45 cm; Royal Ontario Museum reference text reports Put-in-Bay geode crystals as wide as 46 cm. The cap is twice the 46 cm individual authority. Fibrous blankets/nodules are aggregate extents and capacity-bound."
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": {
+              "regime": "botryoidal_crust",
+              "coverage_fraction": 0.6715425617876393,
+              "cavity_area_mm2": 11577.543206556462,
+              "covered_area_mm2": 7774.813024138006,
+              "mean_thickness_um": 0.0044314659025802335,
+              "booked_volume_mm3": 0.03445381881540428,
+              "wall_spread": 0.85,
+              "void_reach": 0.2,
+              "substrate": "on barite #38 (celestobarite-barytocelestine pair)",
+              "area_basis": "exact cavity-field triangle area",
+              "mass_basis": "accepted Crystal._volume_mm3; renderer instances are representative only",
+              "at_step": 160,
+              "stratigraphic_index": 13,
+              "nucleation_step": 56,
+              "underlying_surface_crystal_ids": [
+                3,
+                12,
+                14,
+                18,
+                25,
+                26,
+                29,
+                31,
+                32,
+                33,
+                39,
+                40,
+                43
+              ],
+              "stratigraphy_basis": "exact shared authenticated-surface triangles"
+            },
+            "zone_count": 62
+          },
+          {
+            "crystal_id": 46,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 2.979316803043341,
+            "c_length_mm": 0.002979316803043341,
+            "a_width_mm": 0.0029793168030433407,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 3
+          },
+          {
+            "crystal_id": 47,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 456.8188794336944,
+            "c_length_mm": 0.4568188794336944,
+            "a_width_mm": 0.4568188794336944,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 60
+          },
+          {
+            "crystal_id": 48,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 442.7172175465273,
+            "c_length_mm": 0.4427172175465273,
+            "a_width_mm": 0.4427172175465273,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 59
+          },
+          {
+            "crystal_id": 49,
+            "mineral": "barite",
+            "habit": "snowball",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "radiating bladed sphere",
+              "on sulfide seed core"
+            ],
+            "total_growth_um": 443.52356592222577,
+            "c_length_mm": 0.44352356592222575,
+            "a_width_mm": 0.4435235659222257,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 60,
+              "record_cm": 30
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 58
+          },
+          {
+            "crystal_id": 50,
+            "mineral": "anhydrite",
+            "habit": "tabular",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "tabular crystals",
+              "three perpendicular cleavages"
+            ],
+            "total_growth_um": 62.15749776200708,
+            "c_length_mm": 0.06215749776200708,
+            "a_width_mm": 0.0759500355376148,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 200,
+              "record_cm": 100
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 12
+          },
+          {
+            "crystal_id": 51,
+            "mineral": "anhydrite",
+            "habit": "tabular",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "tabular crystals",
+              "three perpendicular cleavages"
+            ],
+            "total_growth_um": 33.964294054075424,
+            "c_length_mm": 0.033964294054075424,
+            "a_width_mm": 0.047847004531173014,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 200,
+              "record_cm": 100
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 10
+          },
+          {
+            "crystal_id": 52,
+            "mineral": "anhydrite",
+            "habit": "tabular",
+            "extent_kind": "individual",
+            "dominant_forms": [
+              "tabular crystals",
+              "three perpendicular cleavages"
+            ],
+            "total_growth_um": 0.6539361416165366,
+            "c_length_mm": 0.0006539361416165366,
+            "a_width_mm": 0.0009809042124248049,
+            "size_authority": {
+              "extent_kind": "individual",
+              "cap_cm": 200,
+              "record_cm": 100
+            },
+            "cdr_replacement_evidence": null,
+            "surface_growth": null,
+            "zone_count": 1
+          }
+        ]
+      }
+    }
+  }
+}

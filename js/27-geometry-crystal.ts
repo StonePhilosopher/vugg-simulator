@@ -179,6 +179,9 @@ class GrowthZone {
     // single-mode (legacy) entries don't need it; the wrapper falls
     // through to the first declared mode when missing.
     if (opts.dissolutionMode) this.dissolutionMode = opts.dissolutionMode;
+    if (opts.transformation_reactivity) {
+      this.transformation_reactivity = { ...opts.transformation_reactivity };
+    }
     // Calcite-morphology arc Phase 1 (2026-06-11): per-zone growth-regime
     // tags — the SHAPE history recorded alongside the chemistry history.
     //   morph_regime:     'spiral_smooth' | 'stepped_mild' | 'stepped_macro'
@@ -365,6 +368,7 @@ class Crystal {
     // v28 dehydration tracking — counts steps in a dry environment
     // for crystals listed in DEHYDRATION_TRANSITIONS.
     this.dry_exposure_steps = opts.dry_exposure_steps ?? 0;
+    this.dehydration_history = opts.dehydration_history ?? [];
     // Q2a paragenesis tracking — set by sim.nucleate when this
     // crystal is born via a CDR (coupled dissolution-precipitation)
     // route per Putnis 2002/2009. cdr_replaces_crystal_id points to

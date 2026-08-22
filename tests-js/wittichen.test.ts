@@ -78,8 +78,11 @@ describe('wittichen five-element vein (v189)', () => {
     expect(sulfideAvailablePpm(sim().conditions.fluid, sim().conditions.temperature)).toBe(0);
   });
 
-  it('carbonate gangue seals the vein (the cross-section specimen)', () => {
-    expect(alive('calcite').length + alive('aragonite').length).toBeGreaterThanOrEqual(1);
+  it('keeps documented carbonate gangue aspirational until a discrete phase executes', () => {
+    expect(alive('calcite').length + alive('aragonite').length).toBe(0);
+    const aspirational = ((SCENARIOS.wittichen as any)._json5_spec?.aspirational_species || []);
+    expect(aspirational).toContainEqual(expect.objectContaining({ mineral: 'calcite' }));
+    expect(aspirational).toContainEqual(expect.objectContaining({ mineral: 'aragonite' }));
   });
 
   it('the Bi zone stack reads feathery → dendrite → quieter (the shock is an EPISODE, not the whole life)', () => {
@@ -99,7 +102,7 @@ describe('wittichen five-element vein (v189)', () => {
     expect(alive('halite').length).toBe(0);
   });
 
-  it('barite survives and the executed weathering tail earns erythrite + cobalt aragonite', () => {
+  it('barite survives and the executed weathering tail earns erythrite without inventing cobalt aragonite', () => {
     // _json5_spec is attached to the scenario CALLABLE, not its return
     // value (js/70-events.ts scenario loader convention).
     //
@@ -113,12 +116,9 @@ describe('wittichen five-element vein (v189)', () => {
     const expects = spec.expects_species || [];
     expect(expects).toContain('barite');
     expect(expects).toContain('erythrite');
-    expect(expects).toContain('aragonite');
+    expect(expects).not.toContain('aragonite');
     expect(alive('barite').length).toBeGreaterThanOrEqual(1);
     expect(alive('erythrite').length).toBeGreaterThanOrEqual(1);
-    const cobaltAragonite = alive('aragonite').find((c: any) =>
-      c.weathering_precursor_receipt && c.zones.some((z: any) => z.co_partition));
-    expect(cobaltAragonite).toBeTruthy();
-    expect(cobaltAragonite.position).toMatch(/on weathering (skutterudite|safflorite|cobaltite) #/);
+    expect(alive('aragonite')).toEqual([]);
   });
 });

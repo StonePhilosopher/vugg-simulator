@@ -31,6 +31,7 @@ function grow_wulfenite(crystal, conditions, step) {
   if (rate < 0.1) return null;
 
   crystal.habit = 'tabular';
+  crystal.extent_kind = 'individual';
   crystal.dominant_forms = ['{001} tabular plates', 'square outline'];
 
   // Aspect ratio: very flat plates

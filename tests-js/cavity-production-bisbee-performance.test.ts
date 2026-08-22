@@ -3,7 +3,12 @@ import { execFileSync } from 'node:child_process';
 
 describe('Bisbee production-cavity full-operation budget', () => {
   it('runs seed 42 through the acidic step-65 interval with bounded authority work and memory', () => {
-    const output = execFileSync(process.execPath, ['tools/bisbee-production-budget.mjs'], {
+    // Pin the intended workstation/mobile-conscious heap envelope. Without a
+    // cap V8 may defer collection and report scheduler-dependent transient
+    // peaks even though the forced-GC plateau is stable.
+    const output = execFileSync(process.execPath, [
+      '--max-old-space-size=384', 'tools/bisbee-production-budget.mjs',
+    ], {
       cwd: process.cwd(), encoding: 'utf8', timeout: 45_000,
       maxBuffer: 1024 * 1024,
     });
@@ -14,8 +19,8 @@ describe('Bisbee production-cavity full-operation budget', () => {
     expect(receipt).toMatchObject({
       schema: 'bisbee-production-budget-v1',
       scenario: 'bisbee', simulation_seed: 42, shape_seed: 13,
-      steps: 70, accepted_erosions: 3,
-      full_surface_resolutions: [48, 64, 48, 64, 48, 64],
+      steps: 70, accepted_erosions: 6,
+      full_surface_resolutions: [48, 64, 48, 64, 48, 64, 48, 64, 48, 64, 48, 64],
       provider_full_authentications: 0,
     });
     expect(receipt.peak_rss_mb).toBeLessThan(640);

@@ -128,6 +128,29 @@ describe('computeGraduatedAllocations — Liebig (most-constrained-species cap)'
     expect(out.get(2).limiting_species).toBe('CO3');
   });
 
+  it('redistributes a stranded shared reagent after another cofactor caps one phase', () => {
+    const fn = (globalThis as any).computeGraduatedAllocations;
+    const runs = [
+      { crystal_id: 1, mineral: 'apatite', sigma: 1, initiative: 10,
+        desired_thickness_um: 10, debit_per_species: { Ca: 10, P: 10 } },
+      { crystal_id: 2, mineral: 'calcite', sigma: 1, initiative: 10,
+        desired_thickness_um: 10, debit_per_species: { Ca: 10 } },
+    ];
+    const out = fn(runs, { Ca: 10, P: 1 });
+
+    // Round one gives each phase half the Ca, but apatite can use only 10%
+    // of its formula demand because P is exhausted. The residual 4 Ca must
+    // then go to calcite instead of remaining stranded in the fluid.
+    expect(out.get(1).scaling).toBeCloseTo(0.1, 12);
+    expect(out.get(2).scaling).toBeCloseTo(0.9, 12);
+    expect(out.get(1).limiting_species).toBe('P');
+    expect(out.get(1).allocated_per_species).toEqual({ Ca: 1, P: 1 });
+    expect(out.get(2).allocated_per_species.Ca).toBeCloseTo(9, 12);
+    expect(out.get(1).allocated_per_species.Ca + out.get(2).allocated_per_species.Ca)
+      .toBeCloseTo(10, 12);
+    expect(out.get(2).allocation_rounds).toBeGreaterThan(1);
+  });
+
   it('mineral with multi-species debit caps on most-constrained', () => {
     const fn = (globalThis as any).computeGraduatedAllocations;
     const runs = [
@@ -214,6 +237,17 @@ describe('buildCrystalDryRun', () => {
     const fn = (globalThis as any).buildCrystalDryRun;
     const r = fn(42, 'unobtanium', 1.0, 5, 1.0);
     expect(r).toBeNull();
+  });
+
+  it('uses the actual solid-solution layer formula for HMC Ca/Mg demand', () => {
+    const fn = (globalThis as any).buildCrystalDryRun;
+    const caRich = fn(1, 'high-magnesium calcite', 1, 10, 5, {},
+      { Ca: 0.95, Mg: 0.05, CO3: 1 });
+    const mgRich = fn(2, 'high-magnesium calcite', 1, 10, 5, {},
+      { Ca: 0.80, Mg: 0.20, CO3: 1 });
+    expect(mgRich.debit_per_species.Mg / caRich.debit_per_species.Mg).toBeCloseTo(4, 12);
+    expect(mgRich.debit_per_species.Ca / caRich.debit_per_species.Ca).toBeCloseTo(0.8 / 0.95, 12);
+    expect(mgRich.debit_per_species.CO3).toBeCloseTo(caRich.debit_per_species.CO3, 12);
   });
 });
 

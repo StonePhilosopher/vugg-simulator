@@ -13,6 +13,41 @@ function toggleBrothPanel() {
   body.classList.toggle('open');
 }
 
+function _creativeSetPHBoundary(patch: Record<string, any> | null) {
+  const wall = fortressSim.conditions.wall;
+  if (patch === null) {
+    wall.pH_boundary = null;
+    return;
+  }
+  const current = wall.pH_boundary || {
+    target_pH: fortressSim.conditions.fluid.pH,
+    rate_per_step: 0.05,
+    authority: 'Creative live-authored buffer boundary',
+  };
+  wall.pH_boundary = Object.freeze({
+    target_pH: Math.max(0, Math.min(14, Number(patch.target_pH ?? current.target_pH))),
+    rate_per_step: Math.max(0, Number(patch.rate_per_step ?? current.rate_per_step)),
+    authority: String(patch.authority ?? current.authority).trim() || 'Creative live-authored buffer boundary',
+  });
+}
+
+function _creativeThermalPulseContract() {
+  const current = fortressSim.conditions.wall.thermal_pulse_fluid;
+  return current ? structuredClone(current) : {
+    authority: 'Creative live-authored fracture fluid',
+    components_ppm: {},
+  };
+}
+
+function _creativeSetThermalPulseContract(next: Record<string, any> | null) {
+  fortressSim.conditions.wall.thermal_pulse_fluid = next ? structuredClone(next) : null;
+}
+
+function _creativeValidThermalComponents(value: any) {
+  try { _creativeParseThermalPulseComponents(String(value)); return true; }
+  catch (_) { return false; }
+}
+
 // Map slider ids to canonical sim state. Fluid entries are generated from the
 // same registry as setup, so setup/live/save coverage cannot drift apart.
 const BROTH_MAP: Record<string, any> = {
@@ -281,11 +316,16 @@ const BROTH_MAP: Record<string, any> = {
   },
   is_lit: {
     path: 'wall.is_lit',
-    get: () => fortressSim.wall_state?.is_lit !== false,
+    get: () => fortressSim.wall_state?.light_exposure === 'surface'
+      || fortressSim.wall_state?.light_exposure === 'excavated',
     set: v => {
       const exposed = !!v;
       fortressSim.conditions.wall.is_lit = exposed;
-      if (fortressSim.wall_state) fortressSim.wall_state.is_lit = exposed;
+      fortressSim.conditions.wall.light_exposure = exposed ? 'excavated' : 'dark';
+      if (fortressSim.wall_state) {
+        fortressSim.wall_state.is_lit = exposed;
+        fortressSim.wall_state.light_exposure = exposed ? 'excavated' : 'dark';
+      }
     },
     fmt: v => v ? 'light-exposed' : 'dark cavity',
     parse: v => String(v) === '1',
@@ -309,6 +349,87 @@ const BROTH_MAP: Record<string, any> = {
     parse: v => String(v) === '1',
     toSlider: v => v ? '1' : '0',
     valid: v => typeof v === 'boolean',
+  },
+  ph_boundary_enabled: {
+    path: 'wall.pH_boundary',
+    get: () => !!fortressSim.conditions.wall.pH_boundary,
+    set: v => { if (v) _creativeSetPHBoundary({}); else _creativeSetPHBoundary(null); },
+    fmt: v => v ? 'authored buffer active' : 'reaction-controlled',
+    parse: v => String(v) === '1',
+    toSlider: v => v ? '1' : '0',
+    valid: v => typeof v === 'boolean',
+  },
+  ph_boundary_target: {
+    path: 'wall.pH_boundary.target_pH',
+    get: () => fortressSim.conditions.wall.pH_boundary?.target_pH ?? fortressSim.conditions.fluid.pH,
+    set: v => { _creativeSetPHBoundary({ target_pH: v }); },
+    fmt: v => Number(v).toFixed(2) + ' pH',
+    parse: v => Number(v) / 100,
+    toSlider: v => Number(v) * 100,
+  },
+  ph_boundary_rate: {
+    path: 'wall.pH_boundary.rate_per_step',
+    get: () => fortressSim.conditions.wall.pH_boundary?.rate_per_step ?? 0.05,
+    set: v => { _creativeSetPHBoundary({ rate_per_step: v }); },
+    fmt: v => Number(v).toFixed(3) + ' pH/step',
+    parse: v => Number(v) / 1000,
+    toSlider: v => Number(v) * 1000,
+  },
+  thermal_pulse_material: {
+    path: 'wall.thermal_pulse_fluid',
+    get: () => !!fortressSim.conditions.wall.thermal_pulse_fluid,
+    set: v => { _creativeSetThermalPulseContract(v ? _creativeThermalPulseContract() : null); },
+    fmt: v => v ? 'authored fracture fluid' : 'heat only',
+    parse: v => String(v) === '1',
+    toSlider: v => v ? '1' : '0',
+    valid: v => typeof v === 'boolean',
+  },
+  thermal_pulse_authority: {
+    path: 'wall.thermal_pulse_fluid.authority',
+    get: () => fortressSim.conditions.wall.thermal_pulse_fluid?.authority || 'Creative live-authored fracture fluid',
+    set: v => {
+      const contract = _creativeThermalPulseContract();
+      contract.authority = String(v).trim() || 'Creative live-authored fracture fluid';
+      _creativeSetThermalPulseContract(contract);
+    },
+    fmt: v => String(v), parse: v => String(v), toSlider: v => String(v),
+    valid: v => typeof v === 'string',
+  },
+  thermal_pulse_components: {
+    path: 'wall.thermal_pulse_fluid.components_ppm',
+    get: () => JSON.stringify(fortressSim.conditions.wall.thermal_pulse_fluid?.components_ppm || {}),
+    set: v => {
+      const contract = _creativeThermalPulseContract();
+      contract.components_ppm = _creativeParseThermalPulseComponents(String(v));
+      _creativeSetThermalPulseContract(contract);
+    },
+    fmt: v => String(v), parse: v => String(v), toSlider: v => String(v),
+    valid: v => _creativeValidThermalComponents(v),
+  },
+  thermal_pulse_ph_delta: {
+    path: 'wall.thermal_pulse_fluid.pH_delta',
+    get: () => fortressSim.conditions.wall.thermal_pulse_fluid?.pH_delta ?? 0,
+    set: v => {
+      const contract = _creativeThermalPulseContract();
+      contract.pH_delta = Number(v);
+      _creativeSetThermalPulseContract(contract);
+    },
+    fmt: v => `${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(2)} pH`,
+    parse: v => Number(v) / 100,
+    toSlider: v => Number(v) * 100,
+  },
+  thermal_pulse_flow: {
+    path: 'wall.thermal_pulse_fluid.flow_rate',
+    get: () => fortressSim.conditions.wall.thermal_pulse_fluid?.flow_rate ?? -1,
+    set: v => {
+      const contract = _creativeThermalPulseContract();
+      if (Number(v) < 0) delete contract.flow_rate;
+      else contract.flow_rate = Number(v);
+      _creativeSetThermalPulseContract(contract);
+    },
+    fmt: v => Number(v) < 0 ? 'unchanged' : Number(v).toFixed(2),
+    parse: v => Number(v) / 100,
+    toSlider: v => Number(v) * 100,
   },
   sulfur_explicit: {
     path: 'fluid.sulfurPoolsExplicit',
@@ -433,6 +554,7 @@ function _brothExactString(value: any, step: number | 'any') {
 }
 
 function installBrothExactInputs() {
+  installBrothBoundaryAuthorityControls();
   for (const [key, mEntry] of Object.entries(BROTH_MAP)) {
     const m = mEntry as any;
     const id = 'broth-' + key;
@@ -480,6 +602,25 @@ function installBrothExactInputs() {
       }
     }
   }
+}
+
+function installBrothBoundaryAuthorityControls() {
+  if (document.getElementById('broth-ph_boundary_enabled')) return;
+  const group = document.getElementById('broth-geological-boundaries');
+  const readout = document.getElementById('carbonate-boundary-readout');
+  if (!group || !readout) return;
+  const holder = document.createElement('div');
+  holder.style.display = 'contents';
+  holder.innerHTML = `
+    <div class="broth-slider-row" title="Explicit far-field pH buffer/reservoir. Off means pH is controlled only by reactions and authored events."><label>pH boundary</label><select id="broth-ph_boundary_enabled" oninput="setBrothValue('ph_boundary_enabled',this.value)"><option value="0">reaction-controlled</option><option value="1">authored buffer</option></select><span class="broth-val" id="broth-ph_boundary_enabled-val">reaction-controlled</span></div>
+    <div class="broth-slider-row"><label>Buffer target</label><input type="range" id="broth-ph_boundary_target" min="0" max="1400" value="650" step="1" oninput="setBrothValue('ph_boundary_target',this.value)"><span class="broth-val" id="broth-ph_boundary_target-val">6.50 pH</span></div>
+    <div class="broth-slider-row"><label>Buffer rate</label><input type="range" id="broth-ph_boundary_rate" min="0" max="14000" value="50" step="1" oninput="setBrothValue('ph_boundary_rate',this.value)"><span class="broth-val" id="broth-ph_boundary_rate-val">0.050 pH/step</span></div>
+    <div class="broth-slider-row"><label>Pulse material</label><select id="broth-thermal_pulse_material" oninput="setBrothValue('thermal_pulse_material',this.value)"><option value="0">heat only</option><option value="1">authored fracture fluid</option></select><span class="broth-val" id="broth-thermal_pulse_material-val">heat only</span></div>
+    <div class="broth-slider-row"><label>Pulse authority</label><input type="text" id="broth-thermal_pulse_authority" onchange="setBrothValue('thermal_pulse_authority',this.value)"><span class="broth-val" id="broth-thermal_pulse_authority-val"></span></div>
+    <div class="broth-slider-row" title="JSON object of any numeric fluid reservoir; values may be exact or [minimum, maximum]."><label>Pulse components</label><input type="text" id="broth-thermal_pulse_components" value="{}" onchange="setBrothValue('thermal_pulse_components',this.value)" spellcheck="false"><span class="broth-val" id="broth-thermal_pulse_components-val">{}</span></div>
+    <div class="broth-slider-row"><label>Pulse pH Δ</label><input type="range" id="broth-thermal_pulse_ph_delta" min="-300" max="300" value="0" step="1" oninput="setBrothValue('thermal_pulse_ph_delta',this.value)"><span class="broth-val" id="broth-thermal_pulse_ph_delta-val">+0.00 pH</span></div>
+    <div class="broth-slider-row"><label>Pulse flow</label><input type="range" id="broth-thermal_pulse_flow" min="-100" max="2000" value="-100" step="1" oninput="setBrothValue('thermal_pulse_flow',this.value)"><span class="broth-val" id="broth-thermal_pulse_flow-val">unchanged</span></div>`;
+  while (holder.firstChild) group.insertBefore(holder.firstChild, readout);
 }
 
 function setBrothExactValue(key: string, exactText: string) {

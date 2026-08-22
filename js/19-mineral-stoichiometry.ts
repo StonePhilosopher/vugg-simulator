@@ -269,6 +269,7 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   // iterator-order changes, both out of scope for a single tune commit.
   // Pharmacolite fires only in schneeberg, doesn't affect roughten_gill.
   pharmacolite:   { Ca: 1, As: 1 },                  // CaHAsO4·2H2O — Schneeberg supergene Ca-arsenate
+  haidingerite:    { Ca: 1, As: 1 },                  // CaHAsO4·H2O — pharmacolite dehydration product
   scorodite:      { Fe: 1, As: 1 },                  // FeAsO4·2H2O
   descloizite:    { Pb: 1, Zn: 1, V: 1 },            // PbZn(VO4)(OH)
   mottramite:     { Pb: 1, Cu: 1, V: 1 },            // PbCu(VO4)(OH)
@@ -276,6 +277,9 @@ const MINERAL_STOICHIOMETRY: Record<string, Record<string, number>> = {
   zeunerite:      { Cu: 1, U: 2, As: 2 },            // Cu(UO2)2(AsO4)2·12H2O
   carnotite:      { K: 2, U: 2, V: 2 },              // K2(UO2)2(VO4)2·3H2O
   autunite:       { Ca: 1, U: 2, P: 2 },             // Ca(UO2)2(PO4)2·11H2O
+  'meta-autunite': { Ca: 1, U: 2, P: 2 },            // dehydration product; structural water is diagnostic
+  metatorbernite: { Cu: 1, U: 2, P: 2 },             // torbernite dehydration product
+  metazeunerite:  { Cu: 1, U: 2, As: 2 },            // zeunerite dehydration product
   uranospinite:   { Ca: 1, U: 2, As: 2 },            // Ca(UO2)2(AsO4)2·10H2O
   tyuyamunite:    { Ca: 1, U: 2, V: 2 },             // Ca(UO2)2(VO4)2·5H2O
 
@@ -511,6 +515,10 @@ const MINERAL_DISSOLUTION_RATES: Record<string, DissolutionEntry> = {
   zeunerite:     { Cu: 0.2, U: 0.4, As: 0.3 },
   carnotite:     { K: 0.2,  U: 0.4, V: 0.3 },
   autunite:      { Ca: 0.2, U: 0.4, P: 0.3 },
+  haidingerite:  { Ca: 0.2, As: 0.3 },
+  'meta-autunite': { Ca: 0.2, U: 0.4, P: 0.3 },
+  metatorbernite: { Cu: 0.2, U: 0.4, P: 0.3 },
+  metazeunerite: { Cu: 0.2, U: 0.4, As: 0.3 },
   uranospinite:  { Ca: 0.2, U: 0.4, As: 0.3 },
   tyuyamunite:   { Ca: 0.2, U: 0.4, V: 0.3 },
   clinobisvanite: { Bi: 0.4, V: 0.3 },

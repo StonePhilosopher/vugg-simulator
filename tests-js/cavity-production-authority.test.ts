@@ -549,6 +549,33 @@ describe('Cartesian cavity production authority', () => {
     }
   });
 
+  it('withholds sub-resolution erosion without changing geometry or chemistry', () => {
+    const f = fixture();
+    const beforeProvider = f.wallState.activeCavitySurfaceAnchorProvider();
+    const beforeLedger = f.wallState.cavityEvolutionLedger().toJSON();
+    const beforeFluid = { ...f.fluid };
+    const beforeThickness = f.wall.thickness_mm;
+    const { chemical, plan } = preview(f, 1e-7);
+
+    expect(plan).toMatchObject({
+      accepted: false,
+      rejection: 'below_cartesian_volume_resolution',
+      target_volume_delta_mm3_per_kg: 1e-7,
+      scientific_scope: 'no host or fluid inventory committed',
+    });
+    expect(plan.minimum_resolvable_volume_delta_mm3_per_kg).toBeGreaterThan(1e-7);
+    expect(() => f.wall.commitDissolvePreview(chemical, f.fluid, {
+      wall_state: f.wallState,
+      geometry_plan: plan,
+      exposure_receipt: exposure(f),
+      step: 1,
+    })).toThrow(/unresolvable Cartesian erosion cannot commit/i);
+    expect(f.wallState.activeCavitySurfaceAnchorProvider()).toBe(beforeProvider);
+    expect(f.wallState.cavityEvolutionLedger().toJSON()).toEqual(beforeLedger);
+    expect({ ...f.fluid }).toEqual(beforeFluid);
+    expect(f.wall.thickness_mm).toBe(beforeThickness);
+  });
+
   it('keeps the run-wide lattice fixed and leaves samples outside local erosion support unchanged', () => {
     const f = fixture();
     const contract = f.enabled.contract;

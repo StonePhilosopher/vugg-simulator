@@ -10,9 +10,9 @@
 //      σ-dispatch (placer/fissure-fill TEXTURES, not growth
 //      morphology) — bisbee gold reads spongy/dendritic, the σ-top
 //      copper band is the arborescent tree
-//   3. THE CAST STORY: bisbee's copper grows on the pulse, records
-//      dendritic mass, and dissolves into the azurite era — the
-//      Cornish tree survives as a tagged cast
+//   3. THE COPPER STORY: bisbee's copper grows on the pulse, records
+//      stepped mass, and preserves a smooth terminal shell; any later cast
+//      claim must be earned by an actual dissolution/enclosure receipt
 //   4. chips under the native group
 
 import { describe, expect, it } from 'vitest';
@@ -55,14 +55,15 @@ describe('native copper + gold morphology (the conflation sweep)', () => {
     expect(morphRegime(MORPH_TH.native_gold, 1.35)).toBe('spiral_smooth');
   });
 
-  it('THE CAST STORY: the Bisbee pulse grows stepped copper, wanes to a smooth termination, then is oxidised and buried', () => {
+  it('the Bisbee pulse grows stepped copper and wanes to a smooth, still-exposed termination', () => {
     const cu = bisbee().crystals.filter((c: any) => c.mineral === 'native_copper' && c.total_growth_um > 0);
     expect(cu.length).toBeGreaterThanOrEqual(1);
-    // The oxidation front etches a rim; exact shell accounting retains the
-    // positive Cu core, which is subsequently enclosed by a supergene host.
+    // SIM 272 preserves the positive Cu core but records neither a negative
+    // dissolution shell nor an enclosing child at seed 42. Do not narrate a
+    // cast until those physical receipts actually exist.
     expect(cu.every((c: any) => !c.dissolved)).toBe(true);
-    expect(cu.every((c: any) => c.enclosed_by != null)).toBe(true);
-    expect(cu.every((c: any) => c.zones.some((z: any) => z.thickness_um < 0))).toBe(true);
+    expect(cu.every((c: any) => c.enclosed_by == null)).toBe(true);
+    expect(cu.every((c: any) => c.zones.every((z: any) => z.thickness_um >= 0))).toBe(true);
     let stepped = 0, tot = 0;
     for (const c of cu) for (const z of c.zones || []) {
       if (z.thickness_um > 0 && z.morph_regime) {

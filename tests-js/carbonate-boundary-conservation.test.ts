@@ -178,6 +178,7 @@ describe('conserved carbonate boundary numerical kernel', () => {
   it('records and refuses every CO2 event when conserved boundary state is absent', () => {
     for (const type of ['co2_degas', 'co2_degas_with_reheat', 'co2_charge']) {
       const conditions: any = {
+        _scenario_id: 'tutorial_travertine',
         temperature: 55,
         fluid: new FluidChemistry({ CO3: 500, pH: 7.2, salinity: 0 }),
       };

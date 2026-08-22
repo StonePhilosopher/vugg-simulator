@@ -31,7 +31,7 @@ and the exact-execution evidence receipt.
 
 ### Scientific identity
 
-- The tranche is commissioned as **SIM 271**. SIM 268 separated sulfate,
+- The tranche is commissioned as **SIM 272**. SIM 268 separated sulfate,
   sulfide, and elemental-sulfur admission; SIM 269 authenticated that repair
   through the full evidence path and corrected mid-run reservoir activation.
   SIM 270 replaces the former constant-enthalpy sulfate approximations with
@@ -45,6 +45,19 @@ and the exact-execution evidence receipt.
   adds the explicit production transport/applicability ceiling needed when a
   single simulator step samples extreme supersaturation without PHREEQC-style
   reaction integration. `MODEL_DIGEST` names these changes explicitly.
+- SIM 272 removes universal locality shortcuts: phases require an explicit
+  positive locality license, locality events are owner-bound, ambient heat
+  pulses carry no solutes without an authored material contract, and pH has
+  no hidden neutral attractor. Creative exposes the same exact buffer and
+  fracture-fluid authorities. Carbonate wall attacks smaller than the
+  authenticated Cartesian lattice's volume resolution are now withheld as a
+  complete transaction, so numerical noise cannot produce negative cavity
+  growth or unpaired solution chemistry.
+- Locality expectation tiers were reconciled to the complete SIM 272
+  three-seed census: 3/3 products are deterministic, 1–2/3 products are
+  statistical, and 0/3 documented possibilities remain positively licensed
+  but aspirational. No fluid or engine was tuned merely to preserve an old
+  promise.
 - Idle mode now reports fresh zero-volume nuclei and inactive capped/buried
   solids without treating dissolved crystals as booked pie-chart volume.
 - The exact-browser/execution science receipt must be freshly rebaked after
@@ -83,6 +96,17 @@ and the exact-execution evidence receipt.
   by parsing the authored HTML shell rather than twelve redundant copies of
   the generated executable, and by releasing each completed Creative run.
   All 34 control, physics, responsive, and accessibility assertions remain.
+- Distinguished individual-crystal record dimensions from aggregate habit
+  extents, including the documented 45–46 cm celestine authority; unified the
+  celestine census and production habit precedence.
+- Required actual parent dissolution plus a matching route before replacement
+  products inherit an outline; added mass-balanced reactivity for four
+  transformation-only products and explicit excavation/light control for the
+  realgar-to-pararealgar route.
+- Redistributed unused shared-reagent allocations deterministically and made
+  HMC competition consume its actual layer formula instead of a fixed 90/10
+  proxy. Strip archives and claim cards now retain layer formula, hydration,
+  habit, transformation-boundary, and competition-allocation testimony.
 
 ## SIM 271 — bounded production use of the raw PWP affinity
 

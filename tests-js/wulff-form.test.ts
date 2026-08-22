@@ -379,14 +379,20 @@ describe('Wulff form tag — barite tenant (rung 4a.4)', () => {
     }
   });
 
-  it('wittichen tenant scoping — only barite is Wulff-tagged, though calcite (a registered tenant) also grows there', () => {
+  it('wittichen tenant scoping — only barite is tagged and unobserved calcite stays aspirational', () => {
     const sim = run('wittichen');
-    // the five-element vein grows a rich assemblage (skutterudite, nickeline, native bismuth/silver,
-    // proustite, CALCITE, aragonite, …); calcite is itself a Wulff-registered mineral, so under the
-    // barite-only flag it must STAY untagged — a strong, non-vacuous scope check.
+    // The five-element vein grows a rich assemblage, but the v272 commissioned
+    // panel does not fabricate free-grown calcite merely to provide a second
+    // Wulff tenant. Calcite's kernel remains independently registered; the
+    // executed scenario truthfully tags only its observed barite plates.
     const species = new Set(sim.crystals.filter((c: any) => !c.dissolved).map((c: any) => c.mineral));
     expect(species.size).toBeGreaterThan(3);
-    expect(sim.crystals.some((c: any) => c.mineral === 'calcite')).toBe(true);   // the foil is present
+    expect(_makeWulffGeom(wulffFaceSetForMineral('calcite', 0.5, 0, 1.5))).toBeTruthy();
+    expect(sim.crystals.some((c: any) => c.mineral === 'calcite')).toBe(false);
+    expect(SCENARIOS.wittichen._json5_spec.aspirational_species).toContainEqual({
+      mineral: 'calcite',
+      reason: expect.stringContaining('no discrete free-grown calcite appears in the three SIM 272 commissioned seeds'),
+    });
     for (const c of wulffed(sim)) expect(c.mineral).toBe('barite');
   });
 

@@ -466,23 +466,19 @@ Object.assign(VugSimulator.prototype, {
   // data/minerals.json, matching declared probability semantics.
   this._rollSpontaneousTwin(crystal);
 
-  // Q2a — paragenesis CDR tagging. If the position string identifies
-  // a host crystal AND (host.mineral, this.mineral) matches a
-  // documented PSEUDOMORPH_ROUTES entry, tag this crystal as a CDR
-  // pseudomorph: cdr_replaces_crystal_id points to the host;
-  // perimorph_eligible flags shape_preserved=true routes for Q4. The
-  // host doesn't need to be dissolved at this moment — the position
-  // string already encoded the engine's intent ("on dissolved X",
-  // "pseudomorph after X", "on weathering X", or even "on X" when
-  // the route is documented). Q3 renderer reads cdr_replaces_crystal_id
-  // to inherit parent outline; Q4 renderer reads perimorph_eligible.
+  // Q2a — coupled dissolution/reprecipitation tagging. A documented pair and
+  // a host position are necessary but not sufficient: the parent must already
+  // contain an accepted negative zone whose dissolutionMode exactly matches
+  // the route trigger. Only that material receipt grants outline inheritance.
   {
     const parsed = parsePositionHost(position, this.crystals);
     if (parsed && parsed.host) {
       const route = findPseudomorphRoute(parsed.host.mineral, mineral);
-      if (route) {
+      const evidence = route ? cdrReplacementEvidence(parsed.host, route, mineral) : null;
+      if (evidence) {
         crystal.cdr_replaces_crystal_id = parsed.host.crystal_id;
         crystal.perimorph_eligible = route.shape_preserved;
+        crystal.cdr_replacement_evidence = evidence;
       }
     }
   }
@@ -1805,6 +1801,7 @@ _computeGraduatedZones() {
         it.initiative,
         physicalCandidateThickness,
         group.fluid,
+        it.zone.formula_stoichiometry || null,
       );
       if (r) runs.push(r);
       else noStoich.push(it);
@@ -1826,7 +1823,17 @@ _computeGraduatedZones() {
       if (noStoich.includes(it)) continue;
       const a = allocs.get(it.crystal.crystal_id);
       const scaling = a ? a.scaling : 1.0;
+      const allocationReceipt = a ? Object.freeze({
+        schema: 'graduated-competition-residual-v1',
+        crystal_id: a.crystal_id,
+        scaling: a.scaling,
+        limiting_species: a.limiting_species,
+        requested_per_species: { ...a.requested_per_species },
+        allocated_per_species: { ...a.allocated_per_species },
+        allocation_rounds: a.allocation_rounds,
+      }) : null;
       if (scaling >= 1.0) {
+        if (allocationReceipt) it.zone.competition_allocation = allocationReceipt;
         out.set(it.crystal.crystal_id, it.zone);
       } else if (scaling <= 0) {
         // Edge-of-gate skip — the crystal was rationed to zero. Log it
@@ -1844,6 +1851,7 @@ _computeGraduatedZones() {
       } else {
         // Scale the dry-run zone. Clone to avoid sharing state.
         const scaled = Object.assign({}, it.zone);
+        if (allocationReceipt) scaled.competition_allocation = allocationReceipt;
         scaled.thickness_um = it.zone.thickness_um * scaling;
         if (typeof it.zone.growth_rate === 'number') {
           scaled.growth_rate = it.zone.growth_rate * scaling;

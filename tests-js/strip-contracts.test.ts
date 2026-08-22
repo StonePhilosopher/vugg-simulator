@@ -165,7 +165,13 @@ describe('strip chemistry contract — mvt (hot, low-Mg carbonate start)', () =>
     expect(series.first(dol)!).toBeLessThan(1);
     expect(ds.nucleation_events.some((event: any) => event.mineral === 'calcite')).toBe(true);
     expect(ds.nucleation_events.some((event: any) => event.mineral === 'dolomite')).toBe(false);
-    expect(series.last(cal)!).toBeLessThan(series.first(cal)!);
+    // Heat-only ambient pulses move the saturation state without importing a
+    // universal material package. The trajectory genuinely spans both sides
+    // of equilibrium and returns to its initial state; net depletion is not a
+    // scientific requirement for admitting calcite over dolomite.
+    expect(series.peak(cal)).toBeGreaterThan(series.first(cal)!);
+    expect(series.min(cal)).toBeLessThan(0);
+    expect(series.last(cal)!).toBeCloseTo(series.first(cal)!, 10);
   });
 });
 
@@ -256,16 +262,20 @@ describe('strip chemistry contract — bisbee (supergene copper paragenesis)', (
     expect(series.peak(o2)).toBeGreaterThan(1.0);  // oxidizing supergene
   });
 
-  it('pH crashes acid on pyrite weathering, limestone buffers it back toward neutral', () => {
+  it('pH follows the authored weathering and carbonate-boundary sequence', () => {
     if (!ds) return;
     const pH = chipSeries(ds, 'pH', { depth: 'wall' });
-    // Observed (wall): sawtooth ~4.6 ↔ 7.0. Sulfuric acid from pyrite
-    // oxidation drives pH down; the limestone wall buffers it back up, peaking
-    // at the azurite_peak monsoon (pH 7.0). Multiple crossings = the cyclic
-    // acid-pulse / buffer-recovery supergene rhythm.
+    // SIM 272 removed the uncited universal pH→6.5 attractor. The event-owned
+    // sequence now records pyrite-weathering acid, the reducing blanket,
+    // carbonate-wall recovery, the azurite monsoon, then the CO2/silica tail.
     expect(series.min(pH)).toBeLessThan(5);
-    expect(series.peak(pH)).toBeGreaterThan(6.8);
-    expect(series.crossings(pH, 6)).toBeGreaterThanOrEqual(2);
+    expect(series.peak(pH)).toBeGreaterThan(7.2);
+    expect(series.crossings(pH, 6)).toBe(1);
+    expect(pH[64]).toBeCloseTo(4.0, 1);
+    expect(pH[94]).toBeCloseTo(4.5, 1);
+    expect(pH[119]).toBeCloseTo(6.0, 1);
+    expect(pH[179]).toBeCloseTo(7.4, 1);
+    expect(pH[264]).toBeCloseTo(6.5, 1);
   });
 
   it('DIC spikes at the azurite-peak monsoon (the Bisbee-blue window)', () => {
@@ -487,16 +497,18 @@ describe('strip chemistry contract — sulphur_bank (acid sulfur springs, NOT a 
   let ds: any;
   beforeAll(() => { ds = loadArchivedScenario('sulphur_bank'); });
 
-  it('pH crashes sharply acidic (sulfuric-acid spring) and sawtooth-recovers', () => {
+  it('retains the explicitly authored acid-source boundary without hidden neutralization', () => {
     if (!ds) return;
     const pH = chipSeries(ds, 'pH', { depth: 'wall' });
-    // Observed (wall): pH 1.53…6.53 (HUGE range). Acid pulses from H2SO4
-    // crash pH to <2 (the diagnostic sulfur-spring acid window); carbonate
-    // host + ongoing buffering carry pH back up. The pH min < 2 IS the
-    // sulphur_bank signature.
+    // The measured pH 2-4 is source-fluid acidity, separate from the
+    // H2S→S0 branch (which produces no H+). Recharge lowers the first wall
+    // sample to the 1.5 authored floor and no universal 6.5 drift fabricates
+    // a recovery that the Sulphur Bank boundary does not supply.
     expect(series.min(pH)).toBeLessThan(2.5);
-    expect(series.peak(pH)).toBeGreaterThan(6);
-    expect(series.crossings(pH, 4)).toBeGreaterThanOrEqual(2);
+    expect(series.peak(pH)).toBeLessThan(2.5);
+    expect(series.crossings(pH, 4)).toBe(0);
+    expect(pH[9]).toBeCloseTo(1.5, 1);
+    expect(series.last(pH)!).toBeCloseTo(1.5, 1);
   });
 
   it('T is warm-spring (peaks > 70°C) but never magmatic-hydrothermal', () => {

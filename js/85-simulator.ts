@@ -92,10 +92,9 @@ class VugSimulator {
       // crystal's anchor-cell local fill for the dampener + clamp.
       // Default false preserves legacy global-vugFill behavior.
       per_cell_local_fill: this.conditions.wall.per_cell_local_fill,
-      // v84 (2026-05-19): is the cavity exposed to visible light?
-      // Drives LIGHT_TRANSITIONS (realgar → pararealgar) in the
-      // run_step hook. Default true; sealed/dark-cavity scenarios
-      // can set false to preserve light-sensitive minerals.
+      // Explicit geological light boundary. Omission is dark; surface or
+      // excavation exposure must be authored by the scenario/player.
+      light_exposure: this.conditions.wall.light_exposure,
       is_lit: this.conditions.wall.is_lit,
       // Size-class cascade (2026-05): vug < pocket < cave. Informational
       // tag mirrored from VugWall so the UI (Library Mode panels, the
@@ -732,17 +731,20 @@ class VugSimulator {
         }
         continue;
       }
-      // Universal max-size cap — 2× world record per MINERAL_SPEC.
+      // Audited dimensional cap. Individual crystals and aggregate/coating
+      // habits have separate authorities; a null aggregate cap delegates to
+      // the exact cavity-capacity ledger instead of inventing a record.
       // Closes the 321,248% runaway growth bug. Uses total_growth_um
       // (the chemistry-truthful uncapped size) rather than c_length_mm,
       // because v59's per-crystal cavity cap (BUG-CRYSTALS-CLIP-VUG-WALL.md)
       // pins c_length_mm at vug_radius for crystals at the cavity wall,
       // which would prevent the world-record cap from ever firing on
       // those crystals and let total_growth_um run unbounded.
-      const capCm = maxSizeCm(crystal.mineral);
+      const sizeAuthority = crystalSizeAuthority(crystal);
+      const capCm = sizeAuthority.cap_cm;
       const sizeCapped = crystalAtAuthoredSizeCap(crystal);
       if (sizeCapped && !crystal._size_capped) {
-        this.log.push(`  ⛔ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: reached size cap (${capCm} cm = 2× world record) — positive growth halts; dissolution remains possible`);
+        this.log.push(`  ⛔ ${capitalize(crystal.mineral)} #${crystal.crystal_id}: reached ${sizeAuthority.extent_kind} extent cap (${capCm} cm${sizeAuthority.record_cm == null ? '' : ` = 2× ${sizeAuthority.record_cm} cm authority`}) — positive growth halts; dissolution remains possible`);
       }
       crystal._size_capped = sizeCapped;
       const engine = MINERAL_ENGINES[crystal.mineral];
@@ -1032,6 +1034,9 @@ class VugSimulator {
       const mesh = this.wall_state.meshFor ? this.wall_state.meshFor(this) : null;
       for (const crystal of this.crystals) {
         if (crystal.mineral !== 'selenite' && crystal.mineral !== 'anhydrite') continue;
+        const caSO4Target = crystal.mineral === 'selenite' ? 'anhydrite' : 'selenite';
+        if (_scenarioSpeciesExclusion(this, caSO4Target)
+            || _scenarioPositiveLicenseBlock(this, caSO4Target)) continue;
         const anchor = this.wall_state._resolveAnchor(crystal);
         const chemistry = this.wall_state.chemistryAddressForCrystal(crystal);
         const ringIdx = chemistry ? chemistry.ringIdx : null;
@@ -1065,6 +1070,9 @@ class VugSimulator {
     // 173°C). Preserves habit + dominant_forms + zones; only crystal.mineral
     // changes. First non-destructive polymorph mechanic in the sim.
     for (const crystal of this.crystals) {
+      const paramorphTarget = PARAMORPH_TRANSITIONS[crystal.mineral]?.[0];
+      if (paramorphTarget && (_scenarioSpeciesExclusion(this, paramorphTarget)
+          || _scenarioPositiveLicenseBlock(this, paramorphTarget))) continue;
       const anchor = this.wall_state._resolveAnchor(crystal);
       const mesh = this.wall_state.meshFor ? this.wall_state.meshFor(this) : null;
       const vertexIdx = anchor
@@ -1089,22 +1097,26 @@ class VugSimulator {
     // research-meta-minerals-pararealgar.md (Bonazzi et al. 1996
     // Mineralogical Magazine; Roberts et al. 1980).
     //
-    // Per-step counter on crystal.light_exposure_steps increments
-    // when wall.is_lit (default true; sealed-rock-cavity scenarios
-    // can opt out via is_lit: false). Threshold = 60 steps for
+    // Per-step counter on crystal.light_exposure_steps increments only under
+    // an explicit surface/excavation boundary. Threshold = 60 steps for
     // realgar — gives realgar that nucleates by step 140 just
     // enough time to convert by run-end (200 steps), producing the
     // mixed realgar + pararealgar assemblage geologically authentic
     // for museum-collection specimens.
-    const isLit = this.wall_state.is_lit !== false;
+    const lightExposure = this.wall_state.light_exposure;
+    const isLit = lightExposure === 'surface' || lightExposure === 'excavated';
     for (const crystal of this.crystals) {
+      const lightTarget = LIGHT_TRANSITIONS[crystal.mineral]?.[0];
+      if (lightTarget && (_scenarioSpeciesExclusion(this, lightTarget)
+          || _scenarioPositiveLicenseBlock(this, lightTarget))) continue;
       const localIsLit = weatheringLightAtCrystal(this, crystal, isLit);
       const transition = applyLightTransitions(crystal, localIsLit, this.step);
       if (transition) {
         const [oldM, newM] = transition;
+        crystal.light_exposure_route = lightExposure;
         this.log.push(
           `  ☼ LIGHT-INDUCED: ${capitalize(oldM)} #${crystal.crystal_id} → ${newM} ` +
-          `(${crystal.light_exposure_steps} steps of light exposure; ` +
+          `(${crystal.light_exposure_steps} steps of ${lightExposure} light exposure; ` +
           `As₄S₄ molecule isomerized D₂d → Cs symmetry; ` +
           `orange-red shifted to yellow, crystal now friable)`
         );
@@ -1132,7 +1144,8 @@ class VugSimulator {
         // products as well as direct nucleation. The global dehydration engine
         // remains live in documented localities and Creative mode.
         const dehydrationTarget = dehydrationSpec[0];
-        if (this.conditions?._scenario?.excluded_species?.[dehydrationTarget]) continue;
+        if (_scenarioSpeciesExclusion(this, dehydrationTarget)
+            || _scenarioPositiveLicenseBlock(this, dehydrationTarget)) continue;
         // PHASE-1-CAVITY-MESH: read ringIdx via _resolveAnchor so this
         // dehydration loop no longer reads wall_ring_index directly.
         const anchor = this.wall_state._resolveAnchor(crystal);

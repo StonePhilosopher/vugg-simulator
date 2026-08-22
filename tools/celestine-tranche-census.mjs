@@ -28,8 +28,8 @@ import { fileURLToPath } from 'node:url';
 
 const REPO = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const h = await import(pathToFileURL(path.join(REPO, 'tools', '_harness.mjs')).href);
-const { SCENARIOS, VugSimulator, setSeed, sulfateAvailablePpm } =
-  await h.loadSimBundle({ toolName: 'celestine-census', extraExports: ['sulfateAvailablePpm'] });
+const { SCENARIOS, VugSimulator, setSeed, sulfateAvailablePpm, classifyCelestineHabit } =
+  await h.loadSimBundle({ toolName: 'celestine-census', extraExports: ['sulfateAvailablePpm', 'classifyCelestineHabit'] });
 if (typeof sulfateAvailablePpm !== 'function') {
   console.error('[celestine-census] sulfateAvailablePpm not exported from the bundle — aborting (a raw-S fallback would silently report sulfate fraction 1.00 and fake the whole table).');
   process.exit(0); // passive instrument — never a red gate, but never a lying table either
@@ -38,14 +38,6 @@ if (typeof sulfateAvailablePpm !== 'function') {
 const DIVISORS = [40, 25, 20, 18, 15];
 const TENANTS = ['elmwood', 'great_salt_plains', 'mvt', 'naica_geothermal',
   'reactivated_fluorite_vein', 'reactive_wall', 'searles_lake', 'sicily_solfifera'];
-
-function habitBranch(excess, S, baRatio) {
-  if (excess > 1.5) return 'nodular';
-  if (S > 200 && excess > 0.5) return 'fibrous(Sicily)';
-  if (baRatio > 0.25) return 'Ba-fibrous(NEW)';
-  if (excess > 0.3) return 'bladed';
-  return 'tabular';
-}
 
 for (const name of TENANTS) {
   if (!SCENARIOS[name]) { console.log(`${name}: scenario missing, skipped`); continue; }
@@ -76,7 +68,7 @@ for (const name of TENANTS) {
     peakRaw = Math.max(peakRaw, sigRaw);
     if (sigRaw >= 1.0) {
       liveRaw++;
-      const br = habitBranch(sigRaw - 1.0, f.S, baRatio);
+      const br = classifyCelestineHabit(c, sigRaw).habit;
       branches[br] = (branches[br] || 0) + 1;
     }
     for (const d of DIVISORS) {

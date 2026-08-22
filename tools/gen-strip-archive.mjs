@@ -217,6 +217,8 @@ function archiveScenario(name, seed = 42) {
       // would leave conservation green in memory while making reservoir
       // identity and wrong-valence controls invisible in published evidence.
       sulfur_ledger: ds.sulfur_ledger_testimony || [],
+      layer_growth: ds.layer_growth_testimony || [],
+      habit_morphology: ds.habit_morphology_testimony || [],
     },
   };
   return assertStripIdentity(story, {

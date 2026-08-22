@@ -231,6 +231,14 @@ Object.assign(VugSimulator.prototype, {
     target_volume_delta_mm3_per_kg: preview.target_volume_delta_mm3_per_kg,
     vertex_weights: attack.vertexWeights,
   });
+  if (geometryPlan?.accepted === false) {
+    this.log.push('  WALL DISSOLUTION WITHHELD: requested cavity-volume change '
+      + preview.target_volume_delta_mm3_per_kg.toExponential(3)
+      + ' mm3/kg is below the authenticated Cartesian resolution '
+      + Number(geometryPlan.minimum_resolvable_volume_delta_mm3_per_kg).toExponential(3)
+      + '; wall and solution inventories are unchanged');
+    return;
+  }
   const result = wall.commitDissolvePreview(preview, this.conditions.fluid, {
     wall_state: this.wall_state,
     geometry_plan: geometryPlan,
@@ -362,32 +370,66 @@ Object.assign(VugSimulator.prototype, {
     if (actualSpike > 15) {
       this.conditions.temperature = newTemp;
       this._lastAmbientThermalStep.pulseDeltaC = actualSpike;
-      // Fresh fluid pulse brings chemistry
-      const silicaPulse = this._thermalRng.uniform(50, 300);
-      if (typeof this.conditions.fluid.addReactiveSilica === 'function') {
-        this.conditions.fluid.addReactiveSilica(silicaPulse);
-      } else {
-        this.conditions.fluid.SiO2 += silicaPulse;
-      }
-      this.conditions.fluid.Fe += this._thermalRng.uniform(2, 15);
-      this.conditions.fluid.Mn += this._thermalRng.uniform(1, 5);
-      this.conditions.flow_rate = this._thermalRng.uniform(1.5, 3.0);
-      // pH shift from new fluid (slightly acidic hydrothermal)
-      this.conditions.fluid.pH = Math.max(4.0, this.conditions.fluid.pH - this._thermalRng.uniform(0.3, 1.0));
       this.log.push(`  🌡️ THERMAL PULSE: +${actualSpike.toFixed(0)}°C — hot fluid injection through fracture! T=${newTemp.toFixed(0)}°C`);
-      this.log.push(`     Fresh fluid: SiO₂↑, Fe↑, Mn↑, pH↓ — new growth expected`);
+      const pulseFluid = this.conditions.wall?.thermal_pulse_fluid;
+      if (pulseFluid) {
+        const draw = (spec, fallback = 0) => {
+          if (Number.isFinite(Number(spec))) return Number(spec);
+          if (Array.isArray(spec) && spec.length === 2
+              && Number.isFinite(Number(spec[0])) && Number.isFinite(Number(spec[1]))) {
+            const lo = Math.min(Number(spec[0]), Number(spec[1]));
+            const hi = Math.max(Number(spec[0]), Number(spec[1]));
+            return this._thermalRng.uniform(lo, hi);
+          }
+          return fallback;
+        };
+        const chemistry = pulseFluid.components_ppm || {};
+        const added = [];
+        for (const [species, spec] of Object.entries(chemistry)) {
+          const amount = Math.max(0, draw(spec));
+          if (!(amount > 0)) continue;
+          if (species === 'SiO2' && typeof this.conditions.fluid.addReactiveSilica === 'function') {
+            this.conditions.fluid.addReactiveSilica(amount);
+          } else if (species === 'S_sulfide' || species === 'S_sulfate' || species === 'S_elemental') {
+            ensureExplicitSulfurPools(this.conditions.fluid, this.conditions.temperature);
+            this.conditions.fluid[species] += amount;
+            syncExplicitSulfurTotal(this.conditions.fluid);
+          } else if (Number.isFinite(Number(this.conditions.fluid[species]))) {
+            this.conditions.fluid[species] += amount;
+          } else {
+            throw new Error(`Thermal pulse authority names unsupported fluid component ${species}`);
+          }
+          added.push(`${species}+${amount.toFixed(2)} ppm`);
+        }
+        const pHDelta = draw(pulseFluid.pH_delta, 0);
+        if (pHDelta !== 0) {
+          this.conditions.fluid.pH = Math.max(0, Math.min(14, this.conditions.fluid.pH + pHDelta));
+          added.push(`pH${pHDelta >= 0 ? '+' : ''}${pHDelta.toFixed(2)}`);
+        }
+        const authoredFlow = draw(pulseFluid.flow_rate, NaN);
+        if (Number.isFinite(authoredFlow)) {
+          this.conditions.flow_rate = Math.max(0, authoredFlow);
+          added.push(`flow=${this.conditions.flow_rate.toFixed(2)}`);
+        }
+        this.log.push(`     Authored fracture fluid (${pulseFluid.authority}): ${added.join(', ') || 'heat only'}`);
+      } else {
+        this.log.push('     Heat-only pulse: no material boundary was authored');
+      }
     }
   }
   } // end !_mvOwnsT (ambient drift + pulses)
 
-  // pH recovery toward equilibrium — scaled by flow rate.
-  // Fresh fluid flushing through the vug dilutes acid and restores
-  // pH; a sealed pocket can't exchange fluid, so acidity persists
-  // until mineral reactions buffer it. Recovery 0.1/step at
-  // flow_rate=1.0, near-zero at flow_rate~0.1 (sealed pocket).
-  if (this.conditions.fluid.pH < 6.5) {
-    const recovery = 0.1 * Math.min(this.conditions.flow_rate / 1.0, 2.0);
-    this.conditions.fluid.pH += recovery;
+  // Gradual pH exchange is locality/boundary authority, never a universal
+  // neutralization rule. Move in either direction toward the authored target.
+  const pHBoundary = this.conditions.wall?.pH_boundary;
+  if (pHBoundary) {
+    const target = pHBoundary.target_pH;
+    const delta = target - this.conditions.fluid.pH;
+    const change = Math.sign(delta) * Math.min(
+      Math.abs(delta),
+      pHBoundary.rate_per_step * Math.min(Math.max(this.conditions.flow_rate, 0), 2),
+    );
+    this.conditions.fluid.pH = Math.max(0, Math.min(14, this.conditions.fluid.pH + change));
   }
 
   if (this.conditions.flow_rate > 1.0) this.conditions.flow_rate *= 0.9;

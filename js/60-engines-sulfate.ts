@@ -73,6 +73,44 @@ function grow_barite(crystal, conditions, step) {
   });
 }
 
+// One precedence function is shared by production, the census tool, and
+// testimony. Ba/carbonate-host Elmwood recognition comes before the sigma
+// ladder; otherwise Elmwood is incorrectly counted as a Madagascar nodule.
+function classifyCelestineHabit(conditions, sigma) {
+  const excess = sigma - 1.0;
+  const sulfurContext = conditions.fluid.S > 200;
+  const baRatio = conditions.fluid.Ba / Math.max(conditions.fluid.Sr, 0.1);
+  const wallComp = (conditions.wall && conditions.wall.composition) || '';
+  const carbonateHost = wallComp === 'limestone' || wallComp === 'dolomite';
+  let result;
+  if (baRatio > 0.25 && carbonateHost) {
+    result = {
+      habit: 'fibrous_blanket', extent_kind: 'aggregate',
+      dominant_forms: ['plumose white barian celestine aggregate', 'fibrous blanket on sulfide-carbonate gangue'],
+      note: 'fibrous Ba-bearing celestine — Elmwood-type plumose blanket (barytocelestine; the white glue of the carbonate-hosted druse)',
+    };
+  } else if (excess > 1.5) {
+    result = { habit: 'nodular', extent_kind: 'aggregate', dominant_forms: ['geodal lining', 'concentric blue crust'], note: 'nodular celestine — Madagascar geode lining' };
+  } else if (sulfurContext && excess > 0.5) {
+    result = { habit: 'fibrous', extent_kind: 'aggregate', dominant_forms: ['radiating acicular fibers'], note: 'fibrous celestine — Sicilian sulfur-vug habit, radiating from substrate' };
+  } else if (excess > 0.3) {
+    result = { habit: 'bladed', extent_kind: 'individual', dominant_forms: ['divergent blue blades'], note: 'bladed celestine — Lake Erie / Put-in-Bay habit' };
+  } else {
+    result = { habit: 'tabular', extent_kind: 'individual', dominant_forms: ['{001} tabular plates', 'pale celestial blue'], note: 'tabular pale-blue celestine plates' };
+  }
+  let note = result.note;
+  if (conditions.fluid.Mn > 5) note += '; reddish tint (Mn²⁺ trace — rare habit)';
+  if (conditions.fluid.Ba > 0 && conditions.fluid.Sr > 0 && baRatio > 0.25) {
+    note += '; Ba-substituted (barytocelestine intermediate)';
+  }
+  return Object.freeze({
+    habit: result.habit,
+    extent_kind: result.extent_kind,
+    dominant_forms: Object.freeze(result.dominant_forms.slice()),
+    note,
+  });
+}
+
 function grow_celestine(crystal, conditions, step) {
   const sigma = conditions.supersaturation_celestine();
   if (sigma < 1.0) return null;
@@ -81,75 +119,16 @@ function grow_celestine(crystal, conditions, step) {
   const rate = 3.0 * excess * rng.uniform(0.8, 1.2);
   if (rate < 0.1) return null;
 
-  const sulfur_context = conditions.fluid.S > 200;
-  // S2 celestine tranche (SIM 236) + boss-review correction (2026-07-25, issue
-  // StonePhilosopher/vugg-simulator#1): the Ba-bearing MVT habit fork, checked FIRST,
-  // GUARDED by carbonate-host context.
-  //
-  // THE EVIDENCE is the LOCALITY RECORD, not a composition→habit law: mindat's Elmwood
-  // celestine is "(Sr,Ba)SO₄, habit: Fibrous, white" (plumose aggregates, originally
-  // called strontianite); Jensen 1996 Min. Record; boss specimen #103941 ("holds the
-  // specimen together like a glue"). ba_ratio is the RECOGNIZER for that tenant — the
-  // barytocelestine composition fingerprints the late carbonate-hosted Ba-Sr brine that
-  // deposits the plumose material. It is NOT the mechanism: Sánchez-Pastor, Pina &
-  // Fernández-Díaz 2006 (Chem. Geol. 225:266, verified first-hand 2026-07-25) show
-  // composition DOES steer (Ba,Sr)SO₄ habit but in their 25 °C system Ba-rich runs
-  // TABULAR {001} and Sr-rich runs ELONGATED {011} — no fibrous mode, no Ba-branching.
-  // Why Elmwood's is plumose is not settled by any source we hold; the earlier
-  // "Ba²⁺ splits the growth front" comment over-reached (Sunagawa/Gránásy impurity
-  // branching is general spherulite literature, not system-specific) and is withdrawn.
-  //
-  // THE GUARD (boss ruling: "guarded by MVT/carbonate/paragenetic context rather than
-  // a universal Ba > threshold rule"): carbonate host rock (limestone/dolomite — the
-  // fleet's carbonate family) + the Ba/Sr fingerprint. At seed 42 this keeps exactly
-  // the four census flips (elmwood/mvt/reactivated/reactive_wall — all limestone) and
-  // structurally excludes any future Ba-rich sandstone/igneous-hosted tenant. An
-  // impurity-recognized habit precedes the σ-ladder below — without the precedence,
-  // elmwood's post-Sr-event σ (~3) would fall into the Madagascar 'nodular' branch
-  // (the tranche census caught this before code). σ-ladder tenants unaffected: every
-  // nodular/Sicilian-fibrous tenant at seed 42 has ba_ratio ≈ 0 (census table).
-  const ba_ratio_habit = conditions.fluid.Ba / Math.max(conditions.fluid.Sr, 0.1);
-  const wallComp = (conditions.wall && conditions.wall.composition) || '';
-  const carbonateHost = wallComp === 'limestone' || wallComp === 'dolomite';
-  let habit_note;
-  if (ba_ratio_habit > 0.25 && carbonateHost) {
-    crystal.habit = 'fibrous_blanket';
-    crystal.dominant_forms = ['plumose white barian celestine aggregate', 'fibrous blanket on sulfide-carbonate gangue'];
-    habit_note = 'fibrous Ba-bearing celestine — Elmwood-type plumose blanket (barytocelestine; the white glue of the carbonate-hosted druse)';
-  } else if (excess > 1.5) {
-    crystal.habit = 'nodular';
-    crystal.dominant_forms = ['geodal lining', 'concentric blue crust'];
-    habit_note = 'nodular celestine — Madagascar geode lining';
-  } else if (sulfur_context && excess > 0.5) {
-    crystal.habit = 'fibrous';
-    crystal.dominant_forms = ['radiating acicular fibers'];
-    habit_note = 'fibrous celestine — Sicilian sulfur-vug habit, radiating from substrate';
-  } else if (excess > 0.3) {
-    crystal.habit = 'bladed';
-    crystal.dominant_forms = ['divergent blue blades'];
-    habit_note = 'bladed celestine — Lake Erie / Put-in-Bay habit';
-  } else {
-    crystal.habit = 'tabular';
-    crystal.dominant_forms = ['{001} tabular plates', 'pale celestial blue'];
-    habit_note = 'tabular pale-blue celestine plates';
-  }
-
-  if (conditions.fluid.Mn > 5) {
-    habit_note += '; reddish tint (Mn²⁺ trace — rare habit)';
-  }
-  if (conditions.fluid.Ba > 0 && conditions.fluid.Sr > 0) {
-    const ba_ratio = conditions.fluid.Ba / Math.max(conditions.fluid.Sr, 0.1);
-    if (ba_ratio > 0.25) {
-      habit_note += '; Ba-substituted (barytocelestine intermediate)';
-    }
-  }
-
+  const classified = classifyCelestineHabit(conditions, sigma);
+  crystal.habit = classified.habit;
+  crystal.extent_kind = classified.extent_kind;
+  crystal.dominant_forms = Array.from(classified.dominant_forms);
 
   return new GrowthZone({
     step, temperature: conditions.temperature,
     thickness_um: rate, growth_rate: rate,
     trace_Fe: conditions.fluid.Fe * 0.001,
-    note: habit_note
+    note: classified.note
   });
 }
 
@@ -527,15 +506,18 @@ function grow_selenite(crystal, conditions, step) {
   if (conditions.temperature < 30 && rate < 3) {
     // Slow, cool growth → large transparent blades ("cathedral" selenite)
     crystal.habit = 'tabular blades';
+    crystal.extent_kind = 'individual';
     crystal.dominant_forms = ['{010} blades', 'transparent'];
   } else if (rate > 8) {
     // Rapid growth → desert rose (sand inclusions) or satin spar
     crystal.habit = rng.random() < 0.5 ? 'fibrous (satin spar)' : 'rosette';
+    crystal.extent_kind = 'aggregate';
     crystal.dominant_forms = crystal.habit === 'rosette' ? 
       ['desert rose', 'lenticular plates'] : ['fibrous aggregates', 'silky luster'];
   } else {
     // Standard prismatic selenite
     crystal.habit = 'prismatic';
+    crystal.extent_kind = 'individual';
     crystal.dominant_forms = ['{010} tabular', '{110} prism', '{111} dome'];
   }
 

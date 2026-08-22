@@ -52,8 +52,12 @@ try {
 const elapsedMs = performance.now() - started;
 const ledger = sim.wall_state.cavityEvolutionLedger();
 const acceptedErosions = ledger.cursor - initialCursor;
-requireBudget(acceptedErosions === 3,
-  `expected 3 accepted erosions, received ${acceptedErosions}`);
+// SIM 272 removes the uncited fleet-wide ambient chemistry package and lets
+// Bisbee's authored wall/boundary conditions govern the early acid interval.
+// Six positive, above-resolution attacks now close through the exact geometry
+// authority before the sub-resolution withholding fence takes over.
+requireBudget(acceptedErosions === 6,
+  `expected 6 accepted erosions, received ${acceptedErosions}`);
 requireBudget(fullSurfaceResolutions.length === acceptedErosions * 2,
   `expected ${acceptedErosions * 2} full surfaces, received ${fullSurfaceResolutions.length}`);
 for (let index = 0; index < fullSurfaceResolutions.length; index += 2) {
