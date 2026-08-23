@@ -1799,8 +1799,6 @@
         { "mineral": "azurite", "reason": "A standard Cu-carbonate competitor with malachite under higher carbonate activity." },
         { "mineral": "lepidocrocite", "reason": "A plausible minor Fe-oxyhydroxide competitor in the vadose gossan." },
         { "mineral": "aurichalcite", "reason": "A plausible mixed Zn-Cu carbonate-hydroxide in the carbonate-buffered supergene zone." },
-        { "mineral": "chalcocite", "reason": "A standard secondary Cu sulfide of the enrichment blanket." },
-        { "mineral": "covellite", "reason": "A standard secondary Cu sulfide competing with chalcocite in the enrichment blanket." },
         { "mineral": "cuprite", "reason": "A characteristic Cu oxide in oxidized native-copper/chalcocite zones." },
         { "mineral": "caledonite", "reason": "A plausible mixed Pb-Cu carbonate-sulfate in polymetallic oxidation." },
         { "mineral": "olivenite", "reason": "A plausible Cu arsenate competitor in the oxidized As-bearing broth." },
@@ -1810,6 +1808,10 @@
         { "mineral": "plumbogummite", "reason": "A plausible late Pb-Al-phosphate crust in acidic oxidized drainage." },
         { "mineral": "pyromorphite", "reason": "A common Pb-phosphate-chloride product of lead-ore weathering." },
         { "mineral": "descloizite", "reason": "A plausible Zn-dominant Pb vanadate competitor with vanadinite." }
+      ],
+      "aspirational_species": [
+        { "mineral": "chalcocite", "reason": "Confirmed and very common at Tsumeb (TSNB76), but USGS supergene models form it by Cu-bearing solutions replacing primary pyrite/chalcopyrite. This first-stage gossan model has no authenticated parent-solid replacement route, so it remains positively licensed without a deterministic fluid-only promise." },
+        { "mineral": "covellite", "reason": "Documented as a Tsumeb supergene replacement product, but the simulator does not yet execute the required parent-sulfide replacement interface. It remains positively licensed rather than being forced by a chemically incompatible dissolved-sulfide pulse." }
       ],
       "excluded_species": {
         "rhodochrosite": "Harvard Tsumeb Mine Notebook record TSNB301 labels rhodochrosite at Tsumeb Questionable pending reliable confirmation; chemical plausibility alone is not enough to assert it in this first-stage gossan scenario.",
@@ -1910,14 +1912,14 @@
       "events": [
         // Acid phase fires the same handler 4x (steps 5/8/12/16) to maintain
         // the acid window against the limestone wall's pH-buffering.
-        { "step": 5,   "type": "supergene_acidification",   "name": "Acid Phase",        "description": "Early sulfide oxidation drops pH" },
-        { "step": 8,   "type": "supergene_acidification",   "name": "Acid Continues",    "description": "Sulfide-oxidation acid persists" },
-        { "step": 12,  "type": "supergene_acidification",   "name": "Acid Continues",    "description": "Carbonate buffer overrun" },
-        { "step": 16,  "type": "supergene_acidification",   "name": "Acid Final Pulse",  "description": "Last sulfide-oxidation pulse" },
+        { "step": 5,   "type": "supergene_acidification",   "name": "Acid Phase",        "description": "Early sulfide oxidation drops pH", "boundary_schema": "tsumeb-acid-sulfate-boundary-v1", "redox_boundary": { "pH": 4.0, "O2": 1.5 }, "sulfur_boundary": { "kind": "addition", "pools": { "sulfate": 20 }, "source": "Tsumeb upgradient sulfide-oxidation acid front" }, "material_authority": "Singer & Stumm 1970, Science 167:1121, and Bowell 2014, RiMG 79:589-627 support sulfide-oxidation acidity and sulfate in the Tsumeb oxidation profile; 20 ppm sulfate-S is a disclosed SIM-scale boundary, not a measured inclusion concentration" },
+        { "step": 8,   "type": "supergene_acidification",   "name": "Acid Continues",    "description": "Sulfide-oxidation acid persists", "boundary_schema": "tsumeb-acid-sulfate-boundary-v1", "redox_boundary": { "pH": 4.0, "O2": 1.5 }, "sulfur_boundary": { "kind": "addition", "pools": { "sulfate": 20 }, "source": "Tsumeb upgradient sulfide-oxidation acid front" }, "material_authority": "Singer & Stumm 1970, Science 167:1121, and Bowell 2014, RiMG 79:589-627 support sulfide-oxidation acidity and sulfate in the Tsumeb oxidation profile; 20 ppm sulfate-S is a disclosed SIM-scale boundary, not a measured inclusion concentration" },
+        { "step": 12,  "type": "supergene_acidification",   "name": "Acid Continues",    "description": "Carbonate buffer overrun", "boundary_schema": "tsumeb-acid-sulfate-boundary-v1", "redox_boundary": { "pH": 4.0, "O2": 1.5 }, "sulfur_boundary": { "kind": "addition", "pools": { "sulfate": 20 }, "source": "Tsumeb upgradient sulfide-oxidation acid front" }, "material_authority": "Singer & Stumm 1970, Science 167:1121, and Bowell 2014, RiMG 79:589-627 support sulfide-oxidation acidity and sulfate in the Tsumeb oxidation profile; 20 ppm sulfate-S is a disclosed SIM-scale boundary, not a measured inclusion concentration" },
+        { "step": 16,  "type": "supergene_acidification",   "name": "Acid Final Pulse",  "description": "Last sulfide-oxidation pulse", "boundary_schema": "tsumeb-acid-sulfate-boundary-v1", "redox_boundary": { "pH": 4.0, "O2": 1.5 }, "sulfur_boundary": { "kind": "addition", "pools": { "sulfate": 20 }, "source": "Tsumeb upgradient sulfide-oxidation acid front" }, "material_authority": "Singer & Stumm 1970, Science 167:1121, and Bowell 2014, RiMG 79:589-627 support sulfide-oxidation acidity and sulfate in the Tsumeb oxidation profile; 20 ppm sulfate-S is a disclosed SIM-scale boundary, not a measured inclusion concentration" },
         { "step": 20,  "type": "supergene_meteoric_flush",  "name": "Meteoric Flush",    "description": "Oxygenated rainwater recharges" },
         { "step": 40,  "type": "supergene_pb_mo_pulse",     "name": "Pb+Mo Pulse",       "description": "Galena+molybdenite weathering" },
-        { "step": 55,  "type": "supergene_cu_enrichment",   "name": "Cu Enrichment",     "description": "Primary chalcopyrite upslope weathers" },
-        { "step": 70,  "type": "supergene_dry_spell",       "name": "Dry Spell",         "description": "Evaporation concentrates sulfate" },
+        { "step": 55,  "type": "supergene_cu_enrichment",   "name": "Cu Enrichment Boundary", "description": "Cu-bearing oxidized leachate descends toward a primary-sulfide replacement front; the simulator does not yet execute that solid replacement", "boundary_schema": "tsumeb-cu-leachate-boundary-v1", "fluid_transform": { "add": { "Cu": 50, "Fe": 10 } }, "fluid_boundary_source": "Tsumeb Cu-bearing oxidized leachate boundary", "oxygen_target_ppm": 0.6, "model_scope": "Parent-solid replacement is not executed; this boundary imports Cu and Fe only, never dissolved sulfide", "material_authority": "USGS SIR 2010-5070-B and OFR 2009-1235 describe supergene Cu enrichment as Cu-bearing solutions replacing primary pyrite/chalcopyrite below the water table; Harvard Tsumeb Notebook TSNB76 and TSNB79 document chalcocite/chalcopyrite and supergene replacement at Tsumeb; 50 ppm Cu, 10 ppm Fe, and O2 0.6 are disclosed SIM-scale boundary values" },
+        { "step": 70,  "type": "supergene_dry_spell",       "name": "Dry-Season Ca-Sulfate Recharge", "description": "Evaporation and dolomite-sulfate recharge open the documented Tsumeb gypsum window", "boundary_schema": "tsumeb-dry-season-recharge-v1", "fluid_transform": { "add": { "Ca": 350 }, "flow_rate": 0.3 }, "fluid_boundary_source": "Tsumeb dry-season Ca recharge", "sulfur_boundary": { "kind": "addition", "pools": { "sulfate": 350 }, "source": "Tsumeb dry-season sulfate recharge" }, "temperature_target_C": 50, "oxygen_target_ppm": 1.5, "fluid_surface_ring_target": 8.0, "material_authority": "Harvard Tsumeb Mine Notebook TSNB159 documents centimetre-scale gypsum from all three oxidation zones; Bowell 2014 supports the oxidation-zone hydrogeochemistry; 350 ppm Ca and sulfate-S are disclosed SIM-scale recharge values, not measured fluid-inclusion concentrations" },
         { "step": 95,  "type": "supergene_as_rich_seep",    "name": "Arsenic Seep",      "description": "Zn/Pb arsenate saturation" },
         { "step": 115, "type": "supergene_phosphate_seep",  "name": "Phosphate Seep",    "description": "Soil-zone PO4 enables pyromorphite" },
         { "step": 130, "type": "supergene_v_bearing_seep",  "name": "V-bearing Seep",    "description": "Red-bed V leaches in, vanadinite fires" },
@@ -1976,6 +1978,9 @@
         "Strunz 1959 — Tsumeb deep oxidation zone scheelite + lead-tungstate suite (raspite + stolzite)",
         "Bowell 2014, Rev. Mineral. Geochem. 79:589 — Tsumeb hydrogeochemistry + arsenate mineral stability (the acid-front movement)",
         "Singer & Stumm 1970, Science 167:1121 — Fe(II)→Fe(III) as the rate-determining step of sulfide-oxidation acid generation",
+        "USGS SIR 2010-5070-B, Porphyry Copper Deposit Model — supergene Cu enrichment by selective replacement of primary pyrite/chalcopyrite with chalcocite/covellite below the water table",
+        "USGS OFR 2009-1235 — supergene enrichment-zone replacement rims and pseudomorphs of chalcocite/covellite on primary sulfides",
+        "Harvard Tsumeb Mine Notebook TSNB76 and TSNB79 — confirmed chalcocite/chalcopyrite and documented supergene replacement relations at Tsumeb",
         "Skarpelis 2009, Resource Geology 59(1) — Lavrion Pb-Ag-Zn supergene oxidation profile (carbonate-hosted analogue)",
         "Harvard Mineralogical & Geological Museum, Tsumeb Mine Notebook TSNB159 — gypsum is a confirmed, somewhat rare Tsumeb mineral from all three oxidation zones; well-formed crystals reach centimetre scale",
         "Harvard Mineralogical & Geological Museum, Tsumeb Mine Notebook TSNB301 — rhodochrosite occurrence status Questionable pending reliable confirmation",

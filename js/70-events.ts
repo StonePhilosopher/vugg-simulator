@@ -90,6 +90,49 @@ function _applyAuthoredEventFluidTransform(conditions, payload, kind) {
   return plan;
 }
 
+// Locality event payloads are executable scientific inputs. Ownership alone
+// says which scenario may call a handler; it does not prove that a caller
+// supplied an event row authenticated by that scenario's spec hash. Snapshot
+// the rows while `_buildScenarioFromSpec` still owns the parsed source; never
+// re-authorize from the public diagnostic `_json5_spec` object. The lexical
+// Map and const bridges also cannot be replaced through `window` interception.
+// Narrow handlers (for example Tsumeb in 70i-supergene.ts) then validate their
+// chemistry schema before mutation.
+const {
+  _registerAuthoredScenarioEventPayloads,
+  _assertAuthoredScenarioEventPayload,
+} = (() => {
+  const authorityByScenario = new Map();
+  return {
+    _registerAuthoredScenarioEventPayloads(scenarioId, spec, specHash) {
+      const authority = Object.freeze({
+        specHash,
+        rows: new Set((spec?.events || []).map(event => JSON.stringify(event))),
+      });
+      const existing = authorityByScenario.get(scenarioId);
+      if (existing && (existing.specHash !== specHash
+          || existing.rows.size !== authority.rows.size
+          || [...existing.rows].some(row => !authority.rows.has(row)))) {
+        throw new Error(`scenario '${scenarioId}' attempted to replace its authored event authority`);
+      }
+      authorityByScenario.set(scenarioId, existing || authority);
+    },
+    _assertAuthoredScenarioEventPayload(conditions, payload, eventType) {
+      const scenarioId = conditions?._scenario_id || conditions?._scenario?.id;
+      const authority = authorityByScenario.get(scenarioId);
+      if (!scenarioId || !authority
+          || conditions?._scenario?.scenario_spec_hash !== authority.specHash) {
+        throw new Error(`${eventType} requires a current authenticated scenario spec`);
+      }
+      const serialized = JSON.stringify(payload ?? null);
+      if (!authority.rows.has(serialized) || payload?.type !== eventType) {
+        throw new Error(`${eventType} requires its exact authored scenario event payload`);
+      }
+      return payload;
+    },
+  };
+})();
+
 function event_fluid_pulse(conditions, payload) {
   const applied = _applyAuthoredEventFluidTransform(conditions, payload, 'fluid_pulse');
   return `Authored fluid pulse (${applied.changed.join(', ') || 'no material change'}). Authority: ${applied.authority}`;
@@ -866,6 +909,7 @@ const _WALL_GENESIS_BY_SCENARIO: { [id: string]: string } = {
 
 function _buildScenarioFromSpec(scenarioId, spec) {
   const specHash = scenarioSpecHash(spec);
+  _registerAuthoredScenarioEventPayloads(scenarioId, spec, specHash);
   const initial = spec.initial || {};
   if (!initial.wall || typeof initial.wall.composition !== 'string'
       || !initial.wall.composition.trim()) {

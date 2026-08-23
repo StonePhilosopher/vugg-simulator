@@ -71,6 +71,23 @@ and the exact-execution evidence receipt.
   the replacement before later growth reads a WallCell. Legacy one-pool sulfur
   is commissioned at construction too, so switching to explicit valence pools
   cannot rebase or erase earlier open-boundary history.
+- Tsumeb's four early acid-stage sulfur inputs are now authored, cited sulfate
+  boundaries from upgradient sulfide oxidation. The former copper-enrichment
+  event no longer invents dissolved sulfide: USGS models place chalcocite and
+  covellite in replacement fronts on primary pyrite/chalcopyrite, a solid route
+  this scenario does not yet execute. Those documented Tsumeb phases remain
+  positively licensed but aspirational. The old combined-S edits had added 110
+  ppm per pore-fluid control volume without an open-system receipt; the revised
+  whole-scenario ledger exposes and closes the remaining material inputs. The
+  step-55 Cu/Fe leachate and step-70 Ca recharge now also emit generic fluid-
+  boundary receipts, and the dry-season Ca/sulfate/hydrology row is exact-
+  payload authenticated like the four acid events. Generic fluid-boundary
+  receipts now close every declared field over the canonical voxel population,
+  retain raw-finite/count testimony, and are independently recomputed against
+  their one-to-one declarations by the claim-card producer. Tsumeb's declared
+  scales/sources are additionally checked against the authored scenario rows;
+  a bulk-only, coerced, missing/skipped-voxel, or coordinated rehash cannot
+  publish as closed.
 - Locality expectation tiers were reconciled to the complete SIM 272
   three-seed census: 3/3 products are deterministic, 1–2/3 products are
   statistical, and 0/3 documented possibilities remain positively licensed

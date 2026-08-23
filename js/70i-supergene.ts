@@ -10,11 +10,42 @@
 // --- supergene_oxidation (Tsumeb 1st-stage gossan) ---
 // Note: event_supergene_acidification is referenced 4× in the JSON5 spec
 // (steps 5/8/12/16) to hold pH near 4 against the limestone wall's
-// carbonate buffering. One handler, four event entries.
-function event_supergene_acidification(c) {
-  c.fluid.pH = 4.0;
-  c.fluid.O2 = 1.5;
-  c.fluid.S += 20;
+// carbonate buffering. One handler, four independently authored event rows.
+function event_supergene_acidification(c, payload) {
+  const eventType = 'supergene_acidification';
+  _assertAuthoredScenarioEventPayload(c, payload, eventType);
+  const boundary = payload?.sulfur_boundary;
+  const redox = payload?.redox_boundary;
+  const authority = typeof payload?.material_authority === 'string'
+    ? payload.material_authority.trim() : '';
+  const source = typeof boundary?.source === 'string' ? boundary.source.trim() : '';
+  const poolKeys = boundary?.pools && typeof boundary.pools === 'object'
+    && !Array.isArray(boundary.pools) ? Object.keys(boundary.pools) : [];
+  const sulfatePpm = boundary?.pools?.sulfate;
+  if (payload?.boundary_schema !== 'tsumeb-acid-sulfate-boundary-v1'
+      || !authority || !source
+      || boundary?.kind !== 'addition'
+      || poolKeys.length !== 1 || poolKeys[0] !== 'sulfate'
+      || typeof sulfatePpm !== 'number' || !Number.isFinite(sulfatePpm) || sulfatePpm <= 0
+      || typeof redox?.pH !== 'number' || !Number.isFinite(redox.pH)
+      || redox.pH < 0.5 || redox.pH > 14
+      || typeof redox?.O2 !== 'number' || !Number.isFinite(redox.O2) || redox.O2 < 0) {
+    throw new Error(`${eventType} requires an authored sulfate-only material/redox boundary`);
+  }
+  c.fluid.pH = redox.pH;
+  c.fluid.O2 = redox.O2;
+  // This is new sulfate produced by oxidation of an upgradient sulfide
+  // source, not an internal relabelling of the vug's starting sulfur. Book it
+  // at the event boundary so the whole-pore-fluid ledger and the sulfate
+  // supersaturation engines see the same authored valence. See the spatial
+  // declaration consumer in 85c and the Supergene closure regression in
+  // silica-sulfur-reservoirs.test.ts.
+  declareSulfurBoundaryAddition(
+    c,
+    'sulfate',
+    sulfatePpm,
+    source,
+  );
   return 'Early acidic supergene phase. Primary sulfides oxidize and release H₂SO₄ — pH drops to 4.0, opening the acid window for the arsenate + sulfate suite (scorodite, jarosite, alunite). Carbonate buffering will reverse this at the meteoric flush; the acid-stable phases form during this short ~15-step window.';
 }
 
@@ -34,34 +65,81 @@ function event_supergene_pb_mo_pulse(c) {
   return 'A weathering rind breaches: Pb²⁺ and MoO₄²⁻ released simultaneously from an oxidizing galena+molybdenite lens. The Seo et al. (2012) condition for wulfenite formation — both parents dying at once — is met.';
 }
 
-function event_supergene_cu_enrichment(c) {
-  c.fluid.Cu += 50.0;
-  c.fluid.S += 30.0;
-  c.fluid.Fe += 10.0;
-  c.fluid.O2 = 0.6;
-  return 'A primary chalcopyrite lens upslope finishes oxidizing. Cu²⁺ descends with the water table and hits the reducing layer below — the supergene enrichment blanket, where mineable copper ore gets made. Bornite precipitates on the upgradient edge, chalcocite in the core, covellite where S activity is highest. Real orebodies are often 5–10× richer here than in the primary sulfide below.';
+function event_supergene_cu_enrichment(c, payload) {
+  const eventType = 'supergene_cu_enrichment';
+  _assertAuthoredScenarioEventPayload(c, payload, eventType);
+  const oxygenTarget = payload?.oxygen_target_ppm;
+  const scope = typeof payload?.model_scope === 'string' ? payload.model_scope.trim() : '';
+  const fluidSource = typeof payload?.fluid_boundary_source === 'string'
+    ? payload.fluid_boundary_source.trim() : '';
+  const additions = payload?.fluid_transform?.add;
+  const additionKeys = additions && typeof additions === 'object' && !Array.isArray(additions)
+    ? Object.keys(additions).sort() : [];
+  if (payload?.boundary_schema !== 'tsumeb-cu-leachate-boundary-v1'
+      || payload?.sulfur_boundary != null
+      || additionKeys.join(',') !== 'Cu,Fe'
+      || typeof additions.Cu !== 'number' || !Number.isFinite(additions.Cu) || additions.Cu <= 0
+      || typeof additions.Fe !== 'number' || !Number.isFinite(additions.Fe) || additions.Fe < 0
+      || typeof oxygenTarget !== 'number' || !Number.isFinite(oxygenTarget) || oxygenTarget < 0
+      || !fluidSource || !scope || !/parent-solid replacement is not executed/i.test(scope)) {
+    throw new Error(`${eventType} requires an authored Cu/Fe boundary with no dissolved-sulfur import and an explicit replacement limitation`);
+  }
+  const plan = _planAuthoredEventFluidTransform(c, payload, eventType);
+  plan.apply();
+  declareFluidBoundaryAddition(c, fluidSource, additions);
+  c.fluid.O2 = oxygenTarget;
+  return `Cu-bearing oxidized leachate descends toward the water table (${plan.changed.join(', ')}; O₂ ${oxygenTarget}). USGS supergene models form chalcocite/covellite by replacing primary pyrite or chalcopyrite, not by inventing dissolved sulfide. This simulator boundary does not yet execute that parent-solid replacement, so those documented Tsumeb phases remain aspirational rather than forced. Authority: ${plan.authority}`;
 }
 
-function event_supergene_dry_spell(c) {
+function event_supergene_dry_spell(c, payload) {
+  const eventType = 'supergene_dry_spell';
+  _assertAuthoredScenarioEventPayload(c, payload, eventType);
+  const boundary = payload?.sulfur_boundary;
+  const additions = payload?.fluid_transform?.add;
+  const additionKeys = additions && typeof additions === 'object' && !Array.isArray(additions)
+    ? Object.keys(additions) : [];
+  const poolKeys = boundary?.pools && typeof boundary.pools === 'object'
+    && !Array.isArray(boundary.pools) ? Object.keys(boundary.pools) : [];
+  const sulfatePpm = boundary?.pools?.sulfate;
+  const sulfurSource = typeof boundary?.source === 'string' ? boundary.source.trim() : '';
+  const fluidSource = typeof payload?.fluid_boundary_source === 'string'
+    ? payload.fluid_boundary_source.trim() : '';
+  const temperatureTarget = payload?.temperature_target_C;
+  const oxygenTarget = payload?.oxygen_target_ppm;
+  const surfaceRingTarget = payload?.fluid_surface_ring_target;
+  if (payload?.boundary_schema !== 'tsumeb-dry-season-recharge-v1'
+      || additionKeys.length !== 1 || additionKeys[0] !== 'Ca'
+      || typeof additions.Ca !== 'number' || !Number.isFinite(additions.Ca) || additions.Ca <= 0
+      || boundary?.kind !== 'addition'
+      || poolKeys.length !== 1 || poolKeys[0] !== 'sulfate'
+      || typeof sulfatePpm !== 'number' || !Number.isFinite(sulfatePpm) || sulfatePpm <= 0
+      || !sulfurSource || !fluidSource
+      || typeof temperatureTarget !== 'number' || !Number.isFinite(temperatureTarget)
+      || typeof oxygenTarget !== 'number' || !Number.isFinite(oxygenTarget) || oxygenTarget < 0
+      || typeof surfaceRingTarget !== 'number' || !Number.isFinite(surfaceRingTarget)
+      || surfaceRingTarget < 0) {
+    throw new Error(`${eventType} requires an exact authored Ca/sulfate recharge and hydrologic boundary`);
+  }
+  const plan = _planAuthoredEventFluidTransform(c, payload, eventType);
+  plan.apply();
+  declareFluidBoundaryAddition(c, fluidSource, additions);
   // Tsumeb Mine Notebook TSNB159 documents centimetre-scale gypsum from all
   // three oxidation zones. This pulse represents dissolution/reconcentration
   // of Ca-bearing dolomite plus sulfate liberated by sulfide oxidation; the
   // larger inventory crosses the gypsum SI gate rather than only approaching it.
-  // A 350 mmol/kg recharge clears the same live CaSO4 activity evaluator used
-  // by nucleation with a modest margin after exact wall-release accounting.
-  // This is an authored 1 kg-solvent-reference recharge, not cavity volume.
-  c.fluid.Ca += 350;
+  // The 350 ppm Ca + sulfate-S SIM-scale recharge clears the same live CaSO4
+  // activity evaluator used by nucleation with a modest margin after exact
+  // wall-release accounting. It is not a measured fluid-inclusion value.
   declareSulfurBoundaryAddition(
     c,
     'sulfate',
-    350,
-    'Tsumeb dry-season dolomite-sulfate recharge',
+    sulfatePpm,
+    sulfurSource,
   );
-  c.fluid.O2 = 1.5;
-  c.temperature = 50;
-  c.flow_rate = 0.3;
+  c.fluid.O2 = oxygenTarget;
+  c.temperature = temperatureTarget;
   // v25: water table drops to mid-cavity → upper rings go vadose.
-  c.fluid_surface_ring = 8.0;
+  c.fluid_surface_ring = surfaceRingTarget;
   return "Dry season. Flow slows and an evaporative dolomite-sulfate recharge concentrates the brine. Water table drops to mid-cavity. Ca²⁺ and SO₄²⁻ cross the documented Tsumeb selenite window. Above the meniscus, air-exposed walls start to oxidize and hydrated arsenates may dehydrate.";
 }
 
