@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildReleaseManifests,
+  canonicalSourceReceipt,
 } from '../tools/release-audit.mjs';
 import { buildLocalDiagnosticReceipt } from '../tools/local-diagnostics.mjs';
 
@@ -11,6 +12,17 @@ declare const RELEASE_RUNTIME_CONTRACT: any;
 declare const SIM_VERSION: number;
 
 describe('local release systems', () => {
+  it('gives LF, CRLF, and mixed authored text one portable content identity', () => {
+    const relative = 'narratives/portable.md';
+    const lf = canonicalSourceReceipt(relative, Buffer.from('alpha\nbeta\ngamma\n'));
+    const crlf = canonicalSourceReceipt(relative, Buffer.from('alpha\r\nbeta\r\ngamma\r\n'));
+    const mixed = canonicalSourceReceipt(relative, Buffer.from('alpha\rbeta\r\ngamma\n'));
+
+    expect(crlf).toEqual(lf);
+    expect(mixed).toEqual(lf);
+    expect(lf).toMatchObject({ path: relative, bytes: 17 });
+  });
+
   it('reproduces exact versioned content and asset manifests', async () => {
     const root = process.cwd();
     const { content, assets, runtimeContract } = await buildReleaseManifests();

@@ -10,6 +10,7 @@ import {
   producerContractDigest,
   runtimeExecutionDigest,
 } from './evidence-runtime.mjs';
+import { canonicalTextBytes } from './file-bundle-assets.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CONTENT_MANIFEST = path.join(ROOT, 'release', 'content-pack-manifest.json');
@@ -24,6 +25,17 @@ const fileReceipt = relative => {
   const bytes = fs.readFileSync(path.join(ROOT, relative));
   return { path: relative.replaceAll('\\', '/'), bytes: bytes.length, sha256: sha256(bytes) };
 };
+
+// Content-pack sources are authored text, so their release identity follows
+// the same checkout-independent LF projection as the single-file browser
+// bundle (file-bundle-assets.mjs) and the scientific execution receipt
+// (evidence-runtime.mjs). Asset receipts below intentionally stay byte-exact:
+// canonicalizing an MP3, JPEG, PNG, SVG, or third-party library would describe
+// a different shipped file.
+export function canonicalSourceReceipt(relative, value) {
+  const bytes = canonicalTextBytes(value);
+  return { path: relative.replaceAll('\\', '/'), bytes: bytes.length, sha256: sha256(bytes) };
+}
 
 const CONTENT_FILES = Object.freeze([
   'data/locality_chemistry.json',
@@ -87,7 +99,10 @@ export async function buildContentPackManifest(bundle = null) {
     .sort(compareCodePoint);
   const sourceFiles = [...CONTENT_FILES, ...narrativeFiles]
     .sort(compareCodePoint)
-    .map(fileReceipt);
+    .map(relative => canonicalSourceReceipt(
+      relative,
+      fs.readFileSync(path.join(ROOT, relative)),
+    ));
   const manifest = {
     schema: CONTENT_PACK_SCHEMA,
     catalog_version: '1.0.0',
