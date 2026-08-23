@@ -61,9 +61,13 @@ const MODEL_DIGEST_SHA256 = createHash('sha256').update(MODEL_DIGEST).digest('he
 // exact SIM 275 proxy, five pharmacolite crystals, 7,680 finite zero-Zn
 // control volumes, and zero booked Zn. Commission the new semantic identity
 // explicitly rather than allowing a matching number to bypass the guard.
+// SIM 279 changes only the run-owned Creative Replenish recipe and save-origin
+// reconstruction. The independent fresh Schneeberg receipt is again exact:
+// 161 rows, the same proxy/five-crystal assemblage, 7,680 finite zero-Zn
+// volumes, and no bulk, spatial, or booked Zn.
 const SCHNEEBERG_SEED42_COMMISSIONING = Object.freeze({
-  sim_version: 278,
-  model_digest_sha256: 'e91502c496ff6a7a2e0e2dc4ef5befffb2ce120140cfcb5ead831d45943cf278',
+  sim_version: 279,
+  model_digest_sha256: '2e554c22d1142dcc5c1478cb1459245f76482ec0beed7d70f3cd9e758d337109',
   pharmacolite_crystals: 5,
   final_pharmacolite_Ca_molar_fraction_proxy: 0.581977988422356,
   proxy_tolerance: 5e-7,
