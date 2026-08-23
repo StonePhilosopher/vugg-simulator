@@ -101,6 +101,209 @@ describe('material-bearing generic events require authored locality payloads', (
     expect(invalid.flow_rate).toBe(snapshot.flow_rate);
   });
 
+  it('binds Tsumeb sulfate and Cu boundaries to exact authored event rows', () => {
+    const scenario = (globalThis as any).SCENARIOS.supergene_oxidation;
+    const acid = scenario._json5_spec.events
+      .find((event: any) => event.type === 'supergene_acidification');
+    const enrichment = scenario._json5_spec.events
+      .find((event: any) => event.type === 'supergene_cu_enrichment');
+    const drySeason = scenario._json5_spec.events
+      .find((event: any) => event.type === 'supergene_dry_spell');
+    const conditions = scenario().conditions;
+    Object.assign(conditions.fluid, {
+      S_sulfide: 7,
+      S_sulfate: 43,
+      S_elemental: 0,
+      S: 50,
+      sulfurPoolsExplicit: true,
+      sulfateInherited: false,
+      nativeSulfurPathway: null,
+    });
+
+    EVENT_REGISTRY.supergene_acidification(conditions, acid);
+    expect(conditions.fluid.S_sulfide).toBe(7);
+    expect(conditions.fluid.S_sulfate).toBe(63);
+    expect(conditions._pending_sulfur_boundary_declarations.at(-1)).toMatchObject({
+      kind: 'addition',
+      pool: 'sulfate',
+      amountPpmPerFluid: 20,
+      source: 'Tsumeb upgradient sulfide-oxidation acid front',
+    });
+    const sulfateAfterAcid = conditions.fluid.S_sulfate;
+    const sulfideAfterAcid = conditions.fluid.S_sulfide;
+    const sulfurDeclarationCount = conditions._pending_sulfur_boundary_declarations.length;
+    const cuBefore = conditions.fluid.Cu;
+    const feBefore = conditions.fluid.Fe;
+
+    const narration = EVENT_REGISTRY.supergene_cu_enrichment(conditions, enrichment);
+    expect(conditions.fluid.S_sulfate).toBe(sulfateAfterAcid);
+    expect(conditions.fluid.S_sulfide).toBe(sulfideAfterAcid);
+    expect(conditions.fluid.Cu).toBe(cuBefore + 50);
+    expect(conditions.fluid.Fe).toBe(feBefore + 10);
+    expect(conditions.fluid.O2).toBe(0.6);
+    expect(conditions._pending_sulfur_boundary_declarations).toHaveLength(sulfurDeclarationCount);
+    expect(conditions._pending_fluid_boundary_declarations.at(-1)).toEqual({
+      kind: 'addition',
+      source: 'Tsumeb Cu-bearing oxidized leachate boundary',
+      fields: { Cu: 50, Fe: 10 },
+    });
+    expect(narration).toMatch(/does not yet execute.*parent-solid replacement/i);
+    expect(narration).toMatch(/aspirational/i);
+
+    const caBefore = conditions.fluid.Ca;
+    EVENT_REGISTRY.supergene_dry_spell(conditions, drySeason);
+    expect(conditions.fluid.S_sulfide).toBe(sulfideAfterAcid);
+    expect(conditions.fluid.S_sulfate).toBe(sulfateAfterAcid + 350);
+    expect(conditions.fluid.Ca).toBe(caBefore + 350);
+    expect(conditions.temperature).toBe(50);
+    expect(conditions.fluid.O2).toBe(1.5);
+    expect(conditions.flow_rate).toBe(0.3);
+    expect(conditions.fluid_surface_ring).toBe(8);
+    expect(conditions._pending_sulfur_boundary_declarations.at(-1)).toEqual({
+      kind: 'addition',
+      pool: 'sulfate',
+      amountPpmPerFluid: 350,
+      source: 'Tsumeb dry-season sulfate recharge',
+    });
+    expect(conditions._pending_fluid_boundary_declarations.at(-1)).toEqual({
+      kind: 'addition',
+      source: 'Tsumeb dry-season Ca recharge',
+      fields: { Ca: 350 },
+    });
+
+    const expectAtomicRejection = (eventType: string, payload: any) => {
+      const invalid = scenario().conditions;
+      const before = structuredClone({
+        temperature: invalid.temperature,
+        flow_rate: invalid.flow_rate,
+        fluid: invalid.fluid,
+        sulfur: invalid._pending_sulfur_boundary_declarations || null,
+        generic: invalid._pending_fluid_boundary_declarations || null,
+      });
+      expect(() => EVENT_REGISTRY[eventType](invalid, payload)).toThrow();
+      expect(structuredClone({
+        temperature: invalid.temperature,
+        flow_rate: invalid.flow_rate,
+        fluid: invalid.fluid,
+        sulfur: invalid._pending_sulfur_boundary_declarations || null,
+        generic: invalid._pending_fluid_boundary_declarations || null,
+      })).toEqual(before);
+    };
+
+    expectAtomicRejection('supergene_acidification', undefined);
+    expectAtomicRejection('supergene_acidification', {
+      ...structuredClone(acid),
+      sulfur_boundary: {
+        ...structuredClone(acid.sulfur_boundary),
+        pools: { sulfide: 20 },
+      },
+    });
+    expectAtomicRejection('supergene_acidification', {
+      ...structuredClone(acid),
+      sulfur_boundary: {
+        ...structuredClone(acid.sulfur_boundary),
+        pools: { sulfate: 30 },
+      },
+    });
+    const publicSpecPoison = {
+      ...structuredClone(acid),
+      sulfur_boundary: {
+        ...structuredClone(acid.sulfur_boundary),
+        pools: { sulfate: 30 },
+      },
+    };
+    scenario._json5_spec.events.push(publicSpecPoison);
+    try {
+      expectAtomicRejection('supergene_acidification', publicSpecPoison);
+    } finally {
+      scenario._json5_spec.events.pop();
+    }
+    expectAtomicRejection('supergene_acidification', {
+      ...structuredClone(acid), material_authority: '',
+    });
+    expectAtomicRejection('supergene_cu_enrichment', {
+      ...structuredClone(enrichment),
+      sulfur_boundary: { kind: 'addition', pools: { sulfide: 30 }, source: 'forged' },
+    });
+    expectAtomicRejection('supergene_cu_enrichment', {
+      ...structuredClone(enrichment), fluid_transform: { add: { Cu: 0, Fe: 10 } },
+    });
+    expectAtomicRejection('supergene_cu_enrichment', {
+      ...structuredClone(enrichment), model_scope: '',
+    });
+    expectAtomicRejection('supergene_dry_spell', undefined);
+    expectAtomicRejection('supergene_dry_spell', {
+      ...structuredClone(drySeason),
+      sulfur_boundary: {
+        ...structuredClone(drySeason.sulfur_boundary),
+        pools: { sulfide: 350 },
+      },
+    });
+    expectAtomicRejection('supergene_dry_spell', {
+      ...structuredClone(drySeason),
+      fluid_transform: { ...structuredClone(drySeason.fluid_transform), add: { Ca: 351 } },
+    });
+  });
+
+  it('fails a generic boundary receipt when one canonical voxel misses the event delta', () => {
+    const scenario = (globalThis as any).SCENARIOS.supergene_oxidation;
+    const enrichment = scenario._json5_spec.events
+      .find((event: any) => event.type === 'supergene_cu_enrichment');
+    const { conditions } = scenario();
+    const sim = new (globalThis as any).VugSimulator(conditions, []);
+    const grid = sim.wall_state.voxelGridFor(sim);
+    const original = grid.propagateEventDelta.bind(grid);
+    grid.propagateEventDelta = (...args: any[]) => {
+      original(...args);
+      grid.voxels[0].fluid.Cu -= 50;
+    };
+    const snap = sim._snapshotGlobal({ captureLegacySulfur: true });
+    EVENT_REGISTRY.supergene_cu_enrichment(sim.conditions, enrichment);
+    sim._propagateGlobalDelta(snap);
+    const transaction = sim._fluidBoundaryTransactions.at(-1);
+    const copper = transaction.testimony.find((row: any) => row.field === 'Cu');
+    expect(copper.spatial).toMatchObject({
+      count: grid.voxels.length,
+      afterCount: grid.voxels.length,
+      beforeFiniteCount: grid.voxels.length,
+      afterFiniteCount: grid.voxels.length,
+      closed: false,
+    });
+    expect(copper.spatial.error).toBeCloseTo(-50, 10);
+    expect(copper.closed).toBe(false);
+    expect(transaction.closed).toBe(false);
+    expect(sim._fluidBoundaryViolations.at(-1)).toBe(transaction);
+  });
+
+  it('rejects coerced pre-boundary values and a missing canonical voxel fluid', () => {
+    const scenario = (globalThis as any).SCENARIOS.supergene_oxidation;
+    const enrichment = scenario._json5_spec.events
+      .find((event: any) => event.type === 'supergene_cu_enrichment');
+    for (const forged of [null, true, '1']) {
+      const { conditions } = scenario();
+      const sim = new (globalThis as any).VugSimulator(conditions, []);
+      const grid = sim.wall_state.voxelGridFor(sim);
+      grid.voxels[0].fluid.Cu = forged;
+      const snap = sim._snapshotGlobal({ captureLegacySulfur: true });
+      EVENT_REGISTRY.supergene_cu_enrichment(sim.conditions, enrichment);
+      sim._propagateGlobalDelta(snap);
+      const transaction = sim._fluidBoundaryTransactions.at(-1);
+      const copper = transaction.testimony.find((row: any) => row.field === 'Cu');
+      expect(copper.spatial.beforeFiniteCount).toBe(grid.voxels.length - 1);
+      expect(copper.spatial.closed).toBe(false);
+      expect(transaction.closed).toBe(false);
+    }
+
+    const { conditions } = scenario();
+    const sim = new (globalThis as any).VugSimulator(conditions, []);
+    const grid = sim.wall_state.voxelGridFor(sim);
+    const snap = sim._snapshotGlobal({ captureLegacySulfur: true });
+    EVENT_REGISTRY.supergene_cu_enrichment(sim.conditions, enrichment);
+    grid.voxels[0].fluid = null;
+    expect(() => sim._propagateGlobalDelta(snap)).toThrow(/canonical voxel 0 has no fluid authority/);
+    expect(sim._fluidBoundaryTransactions).toEqual([]);
+  });
+
   it('books the Elmwood barite pulse into sulfate only and fails closed without its authority', () => {
     const scenario = (globalThis as any).SCENARIOS.elmwood;
     const mixing = scenario._json5_spec.events

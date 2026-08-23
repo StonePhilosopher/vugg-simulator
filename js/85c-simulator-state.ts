@@ -26,9 +26,19 @@ function _replayStride(step: number): number {
 
 function _canonicalSpatialFluids(sim: any): any[] {
   const grid = sim?.wall_state?.voxelGridFor?.(sim);
-  if (grid?.voxels) return grid.voxels.map((voxel: any) => voxel?.fluid).filter(Boolean);
+  if (grid?.voxels) return grid.voxels.map((voxel: any, index: number) => {
+    if (!voxel || !voxel.fluid) {
+      throw new Error(`canonical voxel ${index} has no fluid authority`);
+    }
+    return voxel.fluid;
+  });
   const mesh = sim?.wall_state?.meshFor?.(sim);
-  return (mesh?.cells || []).map((cell: any) => cell?.fluid).filter(Boolean);
+  return (mesh?.cells || []).map((cell: any, index: number) => {
+    if (!cell || !cell.fluid) {
+      throw new Error(`canonical wall cell ${index} has no fluid authority`);
+    }
+    return cell.fluid;
+  });
 }
 
 function _spatialSulfurState(sim: any): any {
@@ -104,11 +114,14 @@ const _fluidBoundaryReplacementPlan = (
     const targetValue = Number(target?.[field]);
     if (!Number.isFinite(targetValue)) continue;
     let beforePpm = 0;
+    let beforeFiniteCount = 0;
     let declaredImportsPpm = 0;
     let declaredExportsPpm = 0;
     for (const fluid of fluids) {
-      const prior = Number(fluid?.[field]);
-      const before = Number.isFinite(prior) ? prior : 0;
+      const rawPrior = fluid?.[field];
+      const finite = typeof rawPrior === 'number' && Number.isFinite(rawPrior);
+      if (finite) beforeFiniteCount++;
+      const before = finite ? rawPrior : 0;
       const delta = targetValue - before;
       beforePpm += before;
       if (delta >= 0) declaredImportsPpm += delta;
@@ -116,6 +129,7 @@ const _fluidBoundaryReplacementPlan = (
     }
     testimony[field] = {
       count: fluids.length,
+      beforeFiniteCount,
       unit: _fluidBoundaryUnit(field),
       targetValuePerFluid: targetValue,
       beforeValueTotal: beforePpm,
@@ -127,13 +141,65 @@ const _fluidBoundaryReplacementPlan = (
   return testimony;
 };
 
+// Ordinary scenario events mutate the bulk handle first, then broadcast that
+// delta into the canonical voxel fluids. Build the spatial expectation from
+// those still-unmodified voxel values and the exact declaration sequence. The
+// fully-mixed replacement API supplies its own equivalent plan because it also
+// authenticates sulfur authority fields; both paths close in the same helper
+// below and are exported by 85g → strip → claim card.
+const _fluidBoundaryDeclarationPlan = (sim: any, declarations: any[]): any => {
+  const fluids = _canonicalSpatialFluids(sim);
+  const fields = Array.from(new Set((declarations || []).flatMap(
+    declaration => Object.keys(declaration?.fields || {}),
+  ))).sort();
+  const testimony: Record<string, any> = {};
+  for (const field of fields) {
+    const rawBefore = fluids.map(fluid => fluid?.[field]);
+    const isRawFinite = (value: any) => typeof value === 'number' && Number.isFinite(value);
+    const beforeFiniteCount = rawBefore.filter(isRawFinite).length;
+    const expected = rawBefore.map(value => isRawFinite(value) ? value : 0);
+    let declaredIncreaseTotal = 0;
+    let declaredDecreaseTotal = 0;
+    for (const declaration of declarations || []) {
+      if (!Object.prototype.hasOwnProperty.call(declaration?.fields || {}, field)) continue;
+      const value = _fluidBoundaryCanonicalValue(field, declaration.fields[field]);
+      if (declaration.kind === 'addition') {
+        for (let i = 0; i < expected.length; i++) expected[i] += value;
+        declaredIncreaseTotal += value * expected.length;
+      } else if (declaration.kind === 'replacement') {
+        for (let i = 0; i < expected.length; i++) {
+          const delta = value - expected[i];
+          if (delta >= 0) declaredIncreaseTotal += delta;
+          else declaredDecreaseTotal -= delta;
+          expected[i] = value;
+        }
+      }
+    }
+    testimony[field] = {
+      count: fluids.length,
+      beforeFiniteCount,
+      unit: _fluidBoundaryUnit(field),
+      beforeValueTotal: rawBefore.reduce(
+        (sum, value) => sum + (isRawFinite(value) ? value : 0), 0,
+      ),
+      declaredIncreaseTotal,
+      declaredDecreaseTotal,
+      expectedAfterValueTotal: expected.reduce((sum, value) => sum + value, 0),
+    };
+  }
+  return testimony;
+};
+
 const _closedFluidBoundarySpatialTestimony = (sim: any, plan: any): any => {
   const fluids = _canonicalSpatialFluids(sim);
   const closed: Record<string, any> = {};
   for (const [field, row] of Object.entries(plan || {}) as Array<[string, any]>) {
+    let afterFiniteCount = 0;
     const afterValueTotal = fluids.reduce((sum, fluid) => {
-      const value = Number(fluid?.[field]);
-      return sum + (Number.isFinite(value) ? value : 0);
+      const value = fluid?.[field];
+      const finite = typeof value === 'number' && Number.isFinite(value);
+      if (finite) afterFiniteCount++;
+      return sum + (finite ? value : 0);
     }, 0);
     const actualNet = afterValueTotal - row.beforeValueTotal;
     const expectedNet = row.declaredIncreaseTotal - row.declaredDecreaseTotal;
@@ -141,14 +207,32 @@ const _closedFluidBoundarySpatialTestimony = (sim: any, plan: any): any => {
     const tolerance = _ledgerTolerance(
       Math.max(Math.abs(row.beforeValueTotal), Math.abs(afterValueTotal)),
     );
+    // The runtime uses the per-voxel plan to close the transaction, but the
+    // compact archive cannot independently reconstruct gross replacement
+    // imports/exports from aggregate totals. Publish only the signed net that
+    // the claim producer can recompute exactly. 85g carries this projection
+    // into strips; review-claim-card rejects any attempted gross-flux fields.
+    const {
+      declaredIncreaseTotal: _runtimeGrossIncrease,
+      declaredDecreaseTotal: _runtimeGrossDecrease,
+      ...authenticatedPlan
+    } = row;
     closed[field] = {
-      ...row,
+      ...authenticatedPlan,
+      scope: 'canonical-wet-voxel-volume',
+      fluxBasis: 'authenticated-net-only; gross-per-voxel-replacement-exchange-not-published',
+      afterCount: fluids.length,
+      afterFiniteCount,
       afterValueTotal,
       expectedNet,
       actualNet,
       error,
       tolerance,
-      closed: Math.abs(error) <= tolerance
+      closed: row.count > 0
+        && row.beforeFiniteCount === row.count
+        && fluids.length === row.count
+        && afterFiniteCount === row.count
+        && Math.abs(error) <= tolerance
         && Math.abs(afterValueTotal - row.expectedAfterValueTotal) <= tolerance,
     };
   }
@@ -158,11 +242,13 @@ const _closedFluidBoundarySpatialTestimony = (sim: any, plan: any): any => {
 const _assertFullyMixedFluidTarget = (target: any): void => {
   for (const field of FLUID_CHEMISTRY_INPUT_FIELDS) {
     const value = target[field];
-    if (typeof value === 'number') {
-      if (!Number.isFinite(value)) throw new RangeError(`Replacement ${field} must be finite`);
-      if (field !== 'pH' && field !== 'Eh' && value < 0) {
-        throw new RangeError(`Replacement ${field} must be non-negative`);
-      }
+    if (field === 'sulfurPoolsExplicit' || field === 'sulfateInherited'
+        || field === 'nativeSulfurPathway') continue;
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      throw new TypeError(`Replacement ${field} must be a raw finite number`);
+    }
+    if (field !== 'pH' && field !== 'Eh' && value < 0) {
+      throw new RangeError(`Replacement ${field} must be non-negative`);
     }
   }
   if (!(target.reactiveSilicaFraction >= 0 && target.reactiveSilicaFraction <= 1)) {
@@ -184,6 +270,34 @@ const _assertFullyMixedFluidTarget = (target: any): void => {
   if (!pathways.has(target.nativeSulfurPathway)) {
     throw new RangeError('Replacement nativeSulfurPathway is unsupported');
   }
+  if (target.sulfurPoolsExplicit) {
+    const expectedTotal = target.S_sulfide + target.S_sulfate;
+    if (Math.abs(target.S - expectedTotal) > _ledgerTolerance(expectedTotal)) {
+      throw new RangeError('Replacement explicit S must equal S_sulfide + S_sulfate');
+    }
+  }
+};
+
+const _fullyMixedFluidRawTarget = (
+  targetFluid: any,
+  preserveCarbonate: boolean,
+  currentFluid: any,
+): any => {
+  if (!targetFluid || typeof targetFluid !== 'object' || Array.isArray(targetFluid)) {
+    throw new TypeError('Fully mixed fluid replacement requires a complete raw target');
+  }
+  const rawTarget = { ...targetFluid };
+  if (preserveCarbonate) {
+    rawTarget.CO3 = currentFluid.CO3;
+    rawTarget.pH = currentFluid.pH;
+  }
+  for (const field of FLUID_CHEMISTRY_INPUT_FIELDS) {
+    if (!Object.prototype.hasOwnProperty.call(rawTarget, field)) {
+      throw new TypeError(`Replacement raw target is missing ${field}`);
+    }
+  }
+  _assertFullyMixedFluidTarget(rawTarget);
+  return rawTarget;
 };
 
 function _ledgerTolerance(value: number): number {
@@ -214,16 +328,14 @@ Object.assign(VugSimulator.prototype, {
   // wall cell. 20c owns the boundary declarations, 85g exports their receipts,
   // and 93a replays the Creative verb from its constructor-owned recipe.
   replaceFullyMixedFluidBoundary(targetFluid: any, source: string, options: any = {}) {
-    if (!targetFluid || !source) {
+    if (!targetFluid || typeof source !== 'string' || !source.trim()) {
       throw new TypeError('Fully mixed fluid replacement requires a target and source');
     }
-    const target = new FluidChemistry(targetFluid);
-    _assertFullyMixedFluidTarget(target);
     const preserveCarbonate = options?.preserveCarbonate === true;
-    if (preserveCarbonate) {
-      target.CO3 = this.conditions.fluid.CO3;
-      target.pH = this.conditions.fluid.pH;
-    }
+    const rawTarget = _fullyMixedFluidRawTarget(
+      targetFluid, preserveCarbonate, this.conditions.fluid,
+    );
+    const target = new FluidChemistry(rawTarget);
 
     const sulfurFields = new Set(['S', 'S_sulfide', 'S_sulfate', 'S_elemental']);
     const numericFields = Array.from(FLUID_CHEMISTRY_INPUT_FIELDS)
@@ -503,6 +615,9 @@ _propagateGlobalDelta(snap, options: any = {}) {
   );
   const activatingExplicitSulfur = !preFluid.sulfurPoolsExplicit
     && !!this.conditions.fluid.sulfurPoolsExplicit;
+  const inferredFluidBoundarySpatialPlan = fluidBoundaryDeclarations.length
+    ? _fluidBoundaryDeclarationPlan(this, fluidBoundaryDeclarations)
+    : null;
   // During first activation, the post-event pools already contain the
   // valence split of the pre-existing legacy `S`.  Project the PRE snapshot
   // through that same split before calculating numeric deltas; otherwise the
@@ -724,7 +839,8 @@ _propagateGlobalDelta(snap, options: any = {}) {
       }
     }
     const fields = Array.from(declaredFields).sort();
-    const spatialPlan = options?.fluidBoundarySpatialPlan || null;
+    const spatialPlan = options?.fluidBoundarySpatialPlan
+      || inferredFluidBoundarySpatialPlan;
     const spatialTestimony = spatialPlan
       ? _closedFluidBoundarySpatialTestimony(this, spatialPlan) : null;
     const testimony = fields.map(field => {
@@ -767,6 +883,7 @@ _propagateGlobalDelta(snap, options: any = {}) {
     const transaction = {
       schema: exactBoundary ? 'fully-mixed-fluid-replacement-v1' : 'fluid-boundary-v1',
       step: Number(this.step) || 0,
+      spatial_scope: 'canonical-wet-voxel-volume',
       declarations: fluidBoundaryDeclarations,
       testimony,
       ...(exactBoundary ? {

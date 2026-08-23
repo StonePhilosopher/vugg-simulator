@@ -15,6 +15,7 @@ declare const GrowthZone: any;
 declare const Crystal: any;
 declare const grow_native_sulfur: any;
 declare const _buildMineralFormationExplanation: any;
+declare const StripRecorder: any;
 
 describe('SIM 246 silica phase identity and Ostwald stepping', () => {
   it('Mammoth travertine does not form silica from 54 ppm at seed 42', () => {
@@ -306,6 +307,94 @@ describe('SIM 243 explicit sulfur reservoirs', () => {
       activation: { kind: 'legacy_combined_to_explicit_reservoirs' },
     });
     expect(sim._sulfurBoundaryTransactions).toHaveLength(1);
+  });
+
+  it('closes Tsumeb sulfur from its first acid input through dry-season sulfate recharge', () => {
+    setSeed(42);
+    const { conditions, events } = SCENARIOS.supergene_oxidation();
+    const sim = new VugSimulator(conditions, events);
+    const count = sim.wall_state.voxelGridFor(sim).voxels.length;
+    const recorder = new StripRecorder(sim, { duration_steps: 70, angular_indices: 1 });
+    sim._stripRecorder = recorder;
+
+    for (let i = 0; i < 70; i++) {
+      sim.run_step();
+      const ledger = simulatorSulfurLedgerSnapshot(sim);
+      expect(
+        ledger.closed,
+        `step ${ledger.step}: sulfur error ${ledger.errorPpm} exceeds ${ledger.tolerancePpm}`,
+      ).toBe(true);
+    }
+    const recorded = recorder.finalize().fluid_boundary_testimony;
+    expect(recorded.map((row: any) => ({
+      schema: row.schema, step: row.step, sample_index: row.sample_index,
+    }))).toEqual([
+      { schema: 'fluid-boundary-v1', step: 55, sample_index: 54 },
+      { schema: 'fluid-boundary-v1', step: 70, sample_index: 69 },
+    ]);
+
+    const additions = sim._sulfurBoundaryTransactions
+      .flatMap((transaction: any) => (transaction.declarations || [])
+        .filter((declaration: any) => declaration.kind === 'addition')
+        .map((declaration: any) => ({ step: transaction.step, ...declaration })));
+    expect(additions.map(({ step, pool, amountPpmPerFluid, source }: any) => ({
+      step, pool, amountPpmPerFluid, source,
+    }))).toEqual([
+      { step: 5, pool: 'sulfate', amountPpmPerFluid: 20, source: 'Tsumeb upgradient sulfide-oxidation acid front' },
+      { step: 8, pool: 'sulfate', amountPpmPerFluid: 20, source: 'Tsumeb upgradient sulfide-oxidation acid front' },
+      { step: 12, pool: 'sulfate', amountPpmPerFluid: 20, source: 'Tsumeb upgradient sulfide-oxidation acid front' },
+      { step: 16, pool: 'sulfate', amountPpmPerFluid: 20, source: 'Tsumeb upgradient sulfide-oxidation acid front' },
+      { step: 70, pool: 'sulfate', amountPpmPerFluid: 350, source: 'Tsumeb dry-season sulfate recharge' },
+    ]);
+    expect(sim._fluidBoundaryTransactions.map((row: any) => row.step)).toEqual([55, 70]);
+    expect(sim._fluidBoundaryTransactions.every((row: any) => row.closed)).toBe(true);
+    expect(sim._fluidBoundaryTransactions[0]).toMatchObject({
+      step: 55,
+      declarations: [{
+        kind: 'addition',
+        source: 'Tsumeb Cu-bearing oxidized leachate boundary',
+        fields: { Cu: 50, Fe: 10 },
+      }],
+      testimony: expect.arrayContaining([
+        expect.objectContaining({ field: 'Cu', declaredAddition: 50, closed: true }),
+        expect.objectContaining({ field: 'Fe', declaredAddition: 10, closed: true }),
+      ]),
+    });
+    expect(sim._fluidBoundaryTransactions[1]).toMatchObject({
+      step: 70,
+      declarations: [{
+        kind: 'addition',
+        source: 'Tsumeb dry-season Ca recharge',
+        fields: { Ca: 350 },
+      }],
+      testimony: [expect.objectContaining({ field: 'Ca', declaredAddition: 350, closed: true })],
+    });
+    const spatialAddition = (transaction: any, field: string, amount: number) => {
+      const row = transaction.testimony.find((sample: any) => sample.field === field);
+      expect(row.spatial).toMatchObject({
+        scope: 'canonical-wet-voxel-volume',
+        count,
+        beforeFiniteCount: count,
+        afterCount: count,
+        afterFiniteCount: count,
+        closed: true,
+      });
+      expect(Math.abs(row.spatial.expectedNet - amount * count))
+        .toBeLessThanOrEqual(row.spatial.tolerance);
+      expect(Math.abs(row.spatial.actualNet - amount * count))
+        .toBeLessThanOrEqual(row.spatial.tolerance);
+    };
+    spatialAddition(sim._fluidBoundaryTransactions[0], 'Cu', 50);
+    spatialAddition(sim._fluidBoundaryTransactions[0], 'Fe', 10);
+    spatialAddition(sim._fluidBoundaryTransactions[1], 'Ca', 350);
+    const ledger = simulatorSulfurLedgerSnapshot(sim);
+    expect(ledger).toMatchObject({
+      initialPpm: 50 * count,
+      importsPpm: (4 * 20 + 350) * count,
+      propagationViolations: 0,
+      closed: true,
+      activation: { step: 5, kind: 'legacy_combined_to_explicit_reservoirs' },
+    });
   });
 
   it('books H2S recharge from its declaration and oxidation as zero-boundary transfer', () => {

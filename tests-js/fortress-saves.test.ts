@@ -339,6 +339,42 @@ describe('fortress save system (93a) — event-sourced replay', () => {
       { ...explicitSim.conditions.fluid, Fe: -5 },
       'hostile negative-concentration target',
     )).toThrow(/Fe must be non-negative/);
+    expect(() => explicitSim.replaceFullyMixedFluidBoundary(
+      { ...explicitSim.conditions.fluid, Fe: '5' },
+      'hostile string-coordinate target',
+    )).toThrow(/Fe must be a raw finite number/);
+    expect(() => explicitSim.replaceFullyMixedFluidBoundary(
+      { ...explicitSim.conditions.fluid, Cu: true },
+      'hostile boolean-coordinate target',
+    )).toThrow(/Cu must be a raw finite number/);
+    expect(() => explicitSim.replaceFullyMixedFluidBoundary(
+      { ...explicitSim.conditions.fluid, Fe: null },
+      'hostile null-coordinate target',
+    )).toThrow(/Fe must be a raw finite number/);
+    const missingCoordinate: any = { ...explicitSim.conditions.fluid };
+    delete missingCoordinate.Fe;
+    expect(() => explicitSim.replaceFullyMixedFluidBoundary(
+      missingCoordinate,
+      'hostile incomplete-coordinate target',
+    )).toThrow(/raw target is missing Fe/);
+    const missingAuthority: any = { ...explicitSim.conditions.fluid };
+    delete missingAuthority.sulfurPoolsExplicit;
+    expect(() => explicitSim.replaceFullyMixedFluidBoundary(
+      missingAuthority,
+      'hostile missing-authority target',
+    )).toThrow(/raw target is missing sulfurPoolsExplicit/);
+    expect(() => explicitSim.replaceFullyMixedFluidBoundary(
+      { ...explicitSim.conditions.fluid, sulfateInherited: null },
+      'hostile null-authority target',
+    )).toThrow(/authority flags must be boolean/);
+    expect(() => explicitSim.replaceFullyMixedFluidBoundary(
+      { ...explicitSim.conditions.fluid, S: explicitSim.conditions.fluid.S + 1 },
+      'hostile inconsistent explicit-sulfur target',
+    )).toThrow(/explicit S must equal S_sulfide \+ S_sulfate/);
+    expect(() => explicitSim.replaceFullyMixedFluidBoundary(
+      { ...explicitSim.conditions.fluid },
+      '   ',
+    )).toThrow(/requires a target and source/);
     expect(simulationStateFingerprint(explicitSim)).toBe(beforeInvalidTarget);
     explicitSim.conditions.fluid.S_sulfide = 20;
     explicitSim.conditions.fluid.S = 90;
