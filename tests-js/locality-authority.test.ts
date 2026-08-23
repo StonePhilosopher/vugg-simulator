@@ -13,6 +13,8 @@ declare const VugConditions: any;
 declare const VugSimulator: any;
 declare const _nucleateClass_carbonate: (sim: any) => void;
 declare const setSeed: (seed: number) => void;
+declare const _liveRng: () => { state: number };
+declare const _setNucDerivedSeeds: (on: boolean) => boolean;
 
 function hmcEligibleLocality(licensedMinerals: string[]): any {
   const conditions = new VugConditions({
@@ -65,6 +67,32 @@ describe('locality authority fails closed', () => {
     expect(_scenarioPositiveLicenseBlock(licensed, 'HMC')).toBeNull();
     _nucleateClass_carbonate(licensed);
     expect(licensed.crystals.some((crystal: any) => crystal.mineral === 'HMC')).toBe(true);
+  });
+
+  it('keeps licensed HMC on its isolated per-mineral RNG stream', () => {
+    const previous = _setNucDerivedSeeds(true);
+    try {
+      setSeed(42);
+      const licensed = hmcEligibleLocality(['HMC']);
+      const sharedStateBefore = _liveRng().state;
+      _nucleateClass_carbonate(licensed);
+      expect(licensed.crystals.some((crystal: any) => crystal.mineral === 'HMC')).toBe(true);
+      expect(_liveRng().state).toBe(sharedStateBefore);
+
+      // Teeth: the legacy shared-stream mode advances the global RNG for the
+      // exact same licensed HMC birth. This proves the first assertion detects
+      // a return to the former direct-call exception rather than passing on an
+      // engine that happened not to draw.
+      _setNucDerivedSeeds(false);
+      setSeed(42);
+      const legacy = hmcEligibleLocality(['HMC']);
+      const legacyStateBefore = _liveRng().state;
+      _nucleateClass_carbonate(legacy);
+      expect(legacy.crystals.some((crystal: any) => crystal.mineral === 'HMC')).toBe(true);
+      expect(_liveRng().state).not.toBe(legacyStateBefore);
+    } finally {
+      _setNucDerivedSeeds(previous);
+    }
   });
 });
 
