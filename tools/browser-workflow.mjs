@@ -9,7 +9,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
-import { fileBundleAssetDigest, fileBundleAssetFiles } from './file-bundle-assets.mjs';
+import {
+  FILE_BUNDLE_ASSET_SCHEMA,
+  fileBundleAssetDigest,
+  fileBundleAssetFiles,
+} from './file-bundle-assets.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const versionMatch = /const SIM_VERSION = (\d+);/.exec(
@@ -871,7 +875,9 @@ async function runWorkflow(driver, diagnostics) {
     assert.equal(identity.scenario_options, 38);
     assert.equal(identity.scenario_panel_buttons, 45);
     assert.deepEqual(identity.file_bundle, {
-      schema: 'vugg-file-bundle-assets-v1',
+      // file-bundle-assets.mjs is the producer; keep this browser consumer on
+      // its exported contract instead of duplicating a version literal.
+      schema: FILE_BUNDLE_ASSET_SCHEMA,
       asset_count: FILE_BUNDLE_ASSET_COUNT,
       sha256: FILE_BUNDLE_ASSET_SHA256,
     });
