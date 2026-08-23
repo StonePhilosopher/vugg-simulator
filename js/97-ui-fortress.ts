@@ -1475,42 +1475,47 @@ function fortressStep(action, payload) {
       } else actionDesc = '⚗️ ' + event_alkalinize(c);
       break;
 
-    // ── 5. REPLENISH — host rock leaches the starting recipe back in ──
+    // ── 5. REPLENISH — replace the wet volume with the starting fluid ──
     // Replaces the proposal's per-element inject picker (redundant with
     // the Broth Control panel sliders just below the action grid). The
-    // boss reframed it: this represents fresh fluid from the host rock,
-    // so it resets the entire fluid composition (every species + pH) to
-    // whatever the player set at fortressBegin time. Temperature,
-    // pressure, and water level are NOT reset — those are separate axes
-    // controlled by their own buttons.
+    // boss reframed it: this represents a fresh source-fluid boundary, so it
+    // resets the entire canonical wet voxel volume (every species + sulfur
+    // authority + pH) to what fortressBegin constructed. Temperature,
+    // pressure, and water level are NOT reset — those are separate axes.
+    // The spatial/ledger implementation lives in 85c; 93a records only this
+    // verb and reconstructs the recipe from the saved run origin.
     case 'replenish': {
       const initialFluidRecipe = _fortressInitialFluidRecipeFor(fortressSim);
       if (!initialFluidRecipe) {
         actionDesc = '🥣 Replenish — no starting recipe is bound to this Creative run';
         break;
       }
-      let touched = 0;
-      for (const [k, v] of Object.entries(initialFluidRecipe)) {
-        if (typeof v === 'number' && typeof c.fluid[k] === 'number') {
-          if (fortressSim._carbonateBoundaryState && (k === 'CO3' || k === 'pH')) continue;
-          c.fluid[k] = v;
-          touched++;
-        }
-      }
+      let carbonateTx: any = null;
       if (fortressSim._carbonateBoundaryState) {
         const incomingDIC = Number(initialFluidRecipe.CO3);
         const incomingPH = Number(initialFluidRecipe.pH);
-        const tx = _fortressCarbonateRecharge(
+        carbonateTx = _fortressCarbonateRecharge(
           1,
           Number.isFinite(incomingDIC) ? incomingDIC : c.fluid.CO3,
           Number.isFinite(incomingPH) ? incomingPH : c.fluid.pH,
           'Creative host-rock replenish recharge',
         );
-        _carbonateBoundaryControlNotice = tx?.ok
+        _carbonateBoundaryControlNotice = carbonateTx?.ok
           ? 'Replenish executed as full replacement-water recharge with explicit incoming DIC and reduced alkalinity.'
-          : `Replenish carbonate recharge rejected: ${tx?.error || 'unknown error'}.`;
+          : `Replenish carbonate recharge rejected: ${carbonateTx?.error || 'unknown error'}.`;
       }
-      actionDesc = `🥣 Replenish — host rock leaches ${touched} species back to starting values; pH → ${c.fluid.pH.toFixed(1)}`;
+      if (fortressSim._carbonateBoundaryState && !carbonateTx?.ok) {
+        actionDesc = '🥣 Replenish rejected — carbonate boundary could not authenticate the incoming fluid';
+        break;
+      }
+      const boundary = fortressSim.replaceFullyMixedFluidBoundary(
+        initialFluidRecipe,
+        'Creative starting-fluid replenish',
+        { preserveCarbonate: !!fortressSim._carbonateBoundaryState },
+      );
+      actionDesc = boundary.ok
+        ? `🥣 Replenish — ${boundary.handlesReplaced} wet-fluid handles replaced from this run's starting recipe; pH → ${c.fluid.pH.toFixed(1)}`
+        : '🥣 Replenish failed its fluid-boundary closure audit';
       break;
     }
 

@@ -686,6 +686,7 @@ function declareSulfurBoundaryReplacement(
   conditions: any,
   source: string,
   targets: { sulfide?: number; sulfate?: number; elemental?: number },
+  targetAuthority: any = null,
 ): void {
   if (!conditions) return;
   (conditions._pending_sulfur_boundary_declarations ||= []).push({
@@ -696,6 +697,12 @@ function declareSulfurBoundaryReplacement(
       S_sulfate: Math.max(0, Number(targets?.sulfate) || 0),
       S_elemental: Math.max(0, Number(targets?.elemental) || 0),
     },
+    ...(targetAuthority ? { target_authority: {
+      sulfurPoolsExplicit: targetAuthority.sulfurPoolsExplicit === true,
+      sulfateInherited: targetAuthority.sulfateInherited === true,
+      nativeSulfurPathway: targetAuthority.nativeSulfurPathway == null
+        ? null : String(targetAuthority.nativeSulfurPathway),
+    } } : {}),
   });
 }
 
@@ -751,6 +758,14 @@ function declareFluidBoundaryAddition(
   return additions;
 }
 
+const _fluidBoundaryCanonicalValue = (field: string, raw: any): number => {
+  const value = Number(raw);
+  if (!Number.isFinite(value)) return 0;
+  // Acidic pH and reducing Eh are signed physical coordinates, not negative
+  // concentrations. This mirrors voxel propagation's established exception.
+  return field === 'pH' || field === 'Eh' ? value : Math.max(0, value);
+};
+
 function declareFluidBoundaryReplacement(
   conditions: any,
   source: string,
@@ -760,7 +775,7 @@ function declareFluidBoundaryReplacement(
   const targets: Record<string, number> = {};
   for (const [field, raw] of Object.entries(fields || {})) {
     const target = Number(raw);
-    if (Number.isFinite(target)) targets[field] = Math.max(0, target);
+    if (Number.isFinite(target)) targets[field] = _fluidBoundaryCanonicalValue(field, target);
   }
   if (!Object.keys(targets).length) return targets;
   (conditions._pending_fluid_boundary_declarations ||= []).push({

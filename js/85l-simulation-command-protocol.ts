@@ -274,6 +274,22 @@ function simulationStateProjection(runtimeOrSim: any, rngStateOverride?: number)
     enclosureLifecycle: _simulationCanonicalProjection(sim?._enclosureReceipts || []),
     carbonateBoundary: sim?._carbonateBoundaryState
       ? _simulationJsonClone(sim._carbonateBoundaryState) : null,
+    // Open-system chemistry receipts are future evidence state. A replay that
+    // reaches the same terminal concentrations through a different unbooked
+    // import/export history is not the same authenticated simulation.
+    fluidBoundary: {
+      transactions: _simulationCanonicalProjection(sim?._fluidBoundaryTransactions || []),
+      violations: _simulationCanonicalProjection(sim?._fluidBoundaryViolations || []),
+    },
+    sulfurBoundary: {
+      initialPpm: Number(sim?._sulfurLedgerInitialPpm) || 0,
+      importsPpm: Number(sim?._sulfurBoundaryImportsPpm) || 0,
+      exportsPpm: Number(sim?._sulfurBoundaryExportsPpm) || 0,
+      transactions: _simulationCanonicalProjection(sim?._sulfurBoundaryTransactions || []),
+      violations: _simulationCanonicalProjection(sim?._sulfurPropagationViolations || []),
+      activation: _simulationCanonicalProjection(sim?._sulfurLedgerActivation || null),
+      history: _simulationCanonicalProjection(sim?._sulfurLedgerHistory || []),
+    },
   };
 }
 

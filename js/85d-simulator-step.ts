@@ -68,6 +68,13 @@ Object.assign(VugSimulator.prototype, {
     for (const voxel of (grid?.voxels || [])) {
       if (voxel?.fluid) handles.add(voxel.fluid);
     }
+    // The voxel d=0 slab normally aliases WallCells. Retain the mesh walk as
+    // the exact headless/no-grid fallback; a boundary replacement must never
+    // update only the presentation bulk handle while growth reads stale cells.
+    const mesh = this.wall_state?.meshFor?.(this);
+    for (const cell of (mesh?.cells || [])) {
+      if (cell?.fluid) handles.add(cell.fluid);
+    }
     for (const fluid of handles) {
       for (const key of Object.keys(replacement)) fluid[key] = replacement[key];
     }

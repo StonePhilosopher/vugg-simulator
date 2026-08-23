@@ -1257,9 +1257,15 @@ function simulatorSulfurLedgerSnapshot(sim: any): any {
     0,
   );
   const fluidReservoirPpm = fluids.reduce((totals: any, fluid: any) => {
-    totals.sulfide += Math.max(0, Number(fluid?.S_sulfide) || 0);
-    totals.sulfate += Math.max(0, Number(fluid?.S_sulfate) || 0);
-    totals.elemental += Math.max(0, Number(fluid?.S_elemental) || 0);
+    const temperatureC = Number(sim?.conditions?.temperature) || 25;
+    totals.sulfide += fluid?.sulfurPoolsExplicit
+      ? Math.max(0, Number(fluid?.S_sulfide) || 0)
+      : sulfideAvailablePpm(fluid, temperatureC);
+    totals.sulfate += fluid?.sulfurPoolsExplicit
+      ? Math.max(0, Number(fluid?.S_sulfate) || 0)
+      : sulfateAvailablePpm(fluid, temperatureC);
+    totals.elemental += fluid?.sulfurPoolsExplicit
+      ? Math.max(0, Number(fluid?.S_elemental) || 0) : 0;
     return totals;
   }, { sulfide: 0, sulfate: 0, elemental: 0 });
   const solidTestimony = bookedSolidSulfurTestimony(sim?.crystals || []);

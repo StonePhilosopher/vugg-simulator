@@ -13143,6 +13143,7 @@ const MODEL_DIGEST = [
   'deccan:Savda-Nashik-silica+scolecite-mesolite+heulandite-stilbite+apophyllite-v2',
   'transition-locality-exclusion:target-gated-v1',
   'evidence-binding:exact-browser-dist-runtime-data+producer-contracts+timestamp-free-strips+mechanism-witness-artifact+aggregate-artifact-sha256-v3',
-  'save-identity:version+model+scenario+origin-bound-replenishment+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v9',
+  'creative-replenishment:run-owned-recipe+exact-canonical-wet-voxel-replacement+fail-closed-target-domains+signed-pH-Eh+explicit-legacy-sulfur-authority+whole-sulfur-constructor-baseline+spatial-fluid-pool-and-authority-receipts-v2',
+  'save-identity:version+model+scenario+origin-bound-replenishment+fluid-and-sulfur-boundary-receipts+voxel-fluids+dedicated-rng+nucleation-shared-seed+movement-state+growth-shadow-state+live-morphology+water-height+full-zone-ledgers+enclosure-lifecycle+transformation-histories-and-exposure-counters+cavity-evolution-chain+wall-depths+replay-cursor-fail-closed-v10',
 ].join('|');
 

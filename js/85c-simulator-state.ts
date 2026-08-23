@@ -43,6 +43,149 @@ function _spatialCarbonState(sim: any): any {
   return { count: totals.length, totals, totalPpm: totals.reduce((a: number, b: number) => a + b, 0) };
 }
 
+const _fluidAuthorityProjection = (fluid: any): any => {
+  return {
+    sulfurPoolsExplicit: fluid?.sulfurPoolsExplicit === true,
+    sulfateInherited: fluid?.sulfateInherited === true,
+    nativeSulfurPathway: fluid?.nativeSulfurPathway == null
+      ? null : String(fluid.nativeSulfurPathway),
+  };
+};
+
+const _fluidAuthoritySpatialState = (sim: any): any => {
+  const fluids = _canonicalSpatialFluids(sim);
+  const nativeSulfurPathways: Record<string, number> = {};
+  let sulfurPoolsExplicitCount = 0;
+  let sulfateInheritedCount = 0;
+  for (const fluid of fluids) {
+    const authority = _fluidAuthorityProjection(fluid);
+    if (authority.sulfurPoolsExplicit) sulfurPoolsExplicitCount++;
+    if (authority.sulfateInherited) sulfateInheritedCount++;
+    const pathway = authority.nativeSulfurPathway == null
+      ? 'null' : authority.nativeSulfurPathway;
+    nativeSulfurPathways[pathway] = (nativeSulfurPathways[pathway] || 0) + 1;
+  }
+  return {
+    count: fluids.length,
+    sulfurPoolsExplicitCount,
+    sulfateInheritedCount,
+    nativeSulfurPathways: Object.fromEntries(
+      Object.entries(nativeSulfurPathways).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0),
+    ),
+  };
+};
+
+const _fluidAuthoritySpatialClosed = (state: any, target: any): boolean => {
+  const count = Number(state?.count) || 0;
+  const pathway = target.nativeSulfurPathway == null ? 'null' : target.nativeSulfurPathway;
+  return count > 0
+    && state.sulfurPoolsExplicitCount === (target.sulfurPoolsExplicit ? count : 0)
+    && state.sulfateInheritedCount === (target.sulfateInherited ? count : 0)
+    && Object.keys(state.nativeSulfurPathways || {}).length === 1
+    && state.nativeSulfurPathways[pathway] === count;
+};
+
+const _fluidBoundaryUnit = (field: string): string => {
+  if (field === 'pH') return 'pH';
+  if (field === 'Eh') return 'mV';
+  if (field === 'reactiveSilicaFraction') return 'fraction';
+  if (field === 'concentration') return 'multiplier';
+  return 'mg_per_kg_solvent';
+};
+
+const _fluidBoundaryReplacementPlan = (
+  sim: any,
+  target: any,
+  fields: string[],
+): any => {
+  const fluids = _canonicalSpatialFluids(sim);
+  const testimony: Record<string, any> = {};
+  for (const field of fields) {
+    const targetValue = Number(target?.[field]);
+    if (!Number.isFinite(targetValue)) continue;
+    let beforePpm = 0;
+    let declaredImportsPpm = 0;
+    let declaredExportsPpm = 0;
+    for (const fluid of fluids) {
+      const prior = Number(fluid?.[field]);
+      const before = Number.isFinite(prior) ? prior : 0;
+      const delta = targetValue - before;
+      beforePpm += before;
+      if (delta >= 0) declaredImportsPpm += delta;
+      else declaredExportsPpm -= delta;
+    }
+    testimony[field] = {
+      count: fluids.length,
+      unit: _fluidBoundaryUnit(field),
+      targetValuePerFluid: targetValue,
+      beforeValueTotal: beforePpm,
+      declaredIncreaseTotal: declaredImportsPpm,
+      declaredDecreaseTotal: declaredExportsPpm,
+      expectedAfterValueTotal: targetValue * fluids.length,
+    };
+  }
+  return testimony;
+};
+
+const _closedFluidBoundarySpatialTestimony = (sim: any, plan: any): any => {
+  const fluids = _canonicalSpatialFluids(sim);
+  const closed: Record<string, any> = {};
+  for (const [field, row] of Object.entries(plan || {}) as Array<[string, any]>) {
+    const afterValueTotal = fluids.reduce((sum, fluid) => {
+      const value = Number(fluid?.[field]);
+      return sum + (Number.isFinite(value) ? value : 0);
+    }, 0);
+    const actualNet = afterValueTotal - row.beforeValueTotal;
+    const expectedNet = row.declaredIncreaseTotal - row.declaredDecreaseTotal;
+    const error = actualNet - expectedNet;
+    const tolerance = _ledgerTolerance(
+      Math.max(Math.abs(row.beforeValueTotal), Math.abs(afterValueTotal)),
+    );
+    closed[field] = {
+      ...row,
+      afterValueTotal,
+      expectedNet,
+      actualNet,
+      error,
+      tolerance,
+      closed: Math.abs(error) <= tolerance
+        && Math.abs(afterValueTotal - row.expectedAfterValueTotal) <= tolerance,
+    };
+  }
+  return closed;
+};
+
+const _assertFullyMixedFluidTarget = (target: any): void => {
+  for (const field of FLUID_CHEMISTRY_INPUT_FIELDS) {
+    const value = target[field];
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value)) throw new RangeError(`Replacement ${field} must be finite`);
+      if (field !== 'pH' && field !== 'Eh' && value < 0) {
+        throw new RangeError(`Replacement ${field} must be non-negative`);
+      }
+    }
+  }
+  if (!(target.reactiveSilicaFraction >= 0 && target.reactiveSilicaFraction <= 1)) {
+    throw new RangeError('Replacement reactiveSilicaFraction must be within 0..1');
+  }
+  if (!(target.concentration > 0)) {
+    throw new RangeError('Replacement concentration must be positive');
+  }
+  if (typeof target.sulfurPoolsExplicit !== 'boolean'
+      || typeof target.sulfateInherited !== 'boolean') {
+    throw new TypeError('Replacement sulfur authority flags must be boolean');
+  }
+  const pathways = new Set([
+    null,
+    'oxidative_interface',
+    'oxidative_closed_fluid',
+    'anaerobic_microbial_inherited',
+  ]);
+  if (!pathways.has(target.nativeSulfurPathway)) {
+    throw new RangeError('Replacement nativeSulfurPathway is unsupported');
+  }
+};
+
 function _ledgerTolerance(value: number): number {
   return Math.max(1e-7, Math.abs(value) * 1e-9);
 }
@@ -65,6 +208,85 @@ function _physicalCrystalInventory(crystal: any, throughStep = Infinity): any {
 }
 
 Object.assign(VugSimulator.prototype, {
+  // Exact fully mixed fluid replacement used by Creative Replenish. Authored
+  // scenario replacements enter through 70t -> pending exact replacement;
+  // both paths converge in _propagateGlobalDelta before chemistry can read a
+  // wall cell. 20c owns the boundary declarations, 85g exports their receipts,
+  // and 93a replays the Creative verb from its constructor-owned recipe.
+  replaceFullyMixedFluidBoundary(targetFluid: any, source: string, options: any = {}) {
+    if (!targetFluid || !source) {
+      throw new TypeError('Fully mixed fluid replacement requires a target and source');
+    }
+    const target = new FluidChemistry(targetFluid);
+    _assertFullyMixedFluidTarget(target);
+    const preserveCarbonate = options?.preserveCarbonate === true;
+    if (preserveCarbonate) {
+      target.CO3 = this.conditions.fluid.CO3;
+      target.pH = this.conditions.fluid.pH;
+    }
+
+    const sulfurFields = new Set(['S', 'S_sulfide', 'S_sulfate', 'S_elemental']);
+    const numericFields = Array.from(FLUID_CHEMISTRY_INPUT_FIELDS)
+      .filter(field => typeof target[field] === 'number')
+      .filter(field => !(preserveCarbonate && (field === 'CO3' || field === 'pH')));
+    const fluidFields = numericFields.filter(field =>
+      !sulfurFields.has(field)
+    );
+    const spatialPlan = _fluidBoundaryReplacementPlan(this, target, fluidFields);
+    const sulfurSpatialPlan = _fluidBoundaryReplacementPlan(
+      this, target, Array.from(sulfurFields),
+    );
+    const snap = this._snapshotGlobal({ captureLegacySulfur: true });
+    const authorityBefore = _fluidAuthorityProjection(this.conditions.fluid);
+    const authorityBeforeSpatial = _fluidAuthoritySpatialState(this);
+
+    const sulfide = target.sulfurPoolsExplicit
+      ? Math.max(0, Number(target.S_sulfide) || 0)
+      : sulfideAvailablePpm(target, Number(this.conditions.temperature) || 25);
+    const sulfate = target.sulfurPoolsExplicit
+      ? Math.max(0, Number(target.S_sulfate) || 0)
+      : sulfateAvailablePpm(target, Number(this.conditions.temperature) || 25);
+    const elemental = target.sulfurPoolsExplicit
+      ? Math.max(0, Number(target.S_elemental) || 0) : 0;
+    declareSulfurBoundaryReplacement(this.conditions, source, {
+      sulfide, sulfate, elemental,
+    }, _fluidAuthorityProjection(target));
+
+    const declaredFluidTargets: Record<string, number> = {};
+    for (const field of fluidFields) declaredFluidTargets[field] = target[field];
+    declareFluidBoundaryReplacement(this.conditions, source, declaredFluidTargets);
+
+    for (const field of FLUID_CHEMISTRY_INPUT_FIELDS) {
+      this.conditions.fluid[field] = target[field];
+    }
+    this.conditions._pending_fluid_replace_fields = numericFields.slice();
+    this.conditions._pending_exact_fluid_replacement = _cloneFluid(target);
+    this._propagateGlobalDelta(snap, {
+      fluidBoundarySpatialPlan: spatialPlan,
+      exactFluidBoundary: {
+        source,
+        authorityBefore,
+        authorityBeforeSpatial,
+        authorityTarget: _fluidAuthorityProjection(target),
+        sulfurSpatialPlan,
+      },
+    });
+
+    const fluidTransaction = this._fluidBoundaryTransactions[
+      this._fluidBoundaryTransactions.length - 1
+    ] || null;
+    const sulfurTransaction = this._sulfurBoundaryTransactions[
+      this._sulfurBoundaryTransactions.length - 1
+    ] || null;
+    return {
+      ok: !!fluidTransaction?.closed && (!sulfurTransaction || sulfurTransaction.closed === true),
+      source,
+      fluidTransaction,
+      sulfurTransaction,
+      handlesReplaced: Number(this._lastExactFluidReplacementHandleCount) || 0,
+    };
+  },
+
   _replaceFullyMixedCarbonateFluid() {
     if (!this._carbonateBoundaryState) return false;
     const source = this.conditions?.fluid;
@@ -275,8 +497,9 @@ _propagateGlobalDelta(snap, options: any = {}) {
   // isn't available (headless test harnesses without CavityVoxelGrid).
   const grid = this.wall_state.voxelGridFor(this);
   const mesh = this.wall_state.meshFor(this);
-  const explicitSulfurActive = !!(
+  const sulfurAuditActive = !!(
     preFluid.sulfurPoolsExplicit || this.conditions.fluid.sulfurPoolsExplicit
+    || sulfurDeclarations.length
   );
   const activatingExplicitSulfur = !preFluid.sulfurPoolsExplicit
     && !!this.conditions.fluid.sulfurPoolsExplicit;
@@ -321,11 +544,17 @@ _propagateGlobalDelta(snap, options: any = {}) {
     const meshSulfur = this.wall_state.meshFor(this);
     if (meshSulfur && meshSulfur.cells) for (let i = 0; i < meshSulfur.cells.length; i++) copySulfurFlags(meshSulfur.cells[i] && meshSulfur.cells[i].fluid);
   }
+  // Exact replacement must land before the ledger snapshots below. The old
+  // post-audit call in run_step remains as an idempotent compatibility guard,
+  // but normally finds no pending work. This is also what lets an explicit-S
+  // fluid be honestly replaced by a legacy one: the final authority flags are
+  // measured, not the temporary explicit propagation bridge above.
+  this._lastExactFluidReplacementHandleCount = this.apply_pending_exact_fluid_replacement();
   // Declaration-driven sulfur audit. Internal pool transfers have an expected
   // net boundary flux of exactly zero. Additions and brine replacements are
   // computed from their authored transaction records and the PRE-event spatial
   // state; an unexplained residual is never re-labelled as a boundary source.
-  if (explicitSulfurActive) {
+  if (sulfurAuditActive) {
     const before = preSulfurState || _spatialSulfurState(this);
     const after = _spatialSulfurState(this);
     let declaredImportsPpm = 0;
@@ -363,13 +592,11 @@ _propagateGlobalDelta(snap, options: any = {}) {
     const closed = hasAuthenticatedActivationBaseline
       && Math.abs(errorPpm) <= tolerancePpm
       && Math.abs(bulkDeclarationErrorPpm) <= _ledgerTolerance(before.count ? before.totalPpm / before.count : 0);
-    if (activatingExplicitSulfur) {
+    if (activatingExplicitSulfur && !this._sulfurLedgerActivation) {
       const solidInitialPpm = bookedSolidSulfurPpm(this.crystals || []);
-      this._sulfurLedgerInitialPpm = before.totalPpm + solidInitialPpm;
-      this._sulfurBoundaryImportsPpm = 0;
-      this._sulfurBoundaryExportsPpm = 0;
-      this._sulfurBoundaryTransactions = [];
-      this._sulfurPropagationViolations = [];
+      // The constructor commissions legacy sulfur too. Explicit-pool
+      // activation changes representation, not the start of geological time:
+      // earlier receipts and cumulative imports/exports stay append-only.
       this._sulfurLedgerActivation = {
         step: Number(this.step) || 0,
         kind: 'legacy_combined_to_explicit_reservoirs',
@@ -482,10 +709,10 @@ _propagateGlobalDelta(snap, options: any = {}) {
     const expectedAfterByField: Record<string, number> = {};
     for (const declaration of fluidBoundaryDeclarations) {
       for (const [field, raw] of Object.entries(declaration.fields || {})) {
-        const value = Math.max(0, Number(raw) || 0);
+        const value = _fluidBoundaryCanonicalValue(field, raw);
         declaredFields.add(field);
         if (!(field in expectedAfterByField)) {
-          expectedAfterByField[field] = Math.max(0, Number(preFluid[field]) || 0);
+          expectedAfterByField[field] = _fluidBoundaryCanonicalValue(field, preFluid[field]);
         }
         if (declaration.kind === 'addition') {
           declaredAdditions[field] = (declaredAdditions[field] || 0) + value;
@@ -497,9 +724,12 @@ _propagateGlobalDelta(snap, options: any = {}) {
       }
     }
     const fields = Array.from(declaredFields).sort();
+    const spatialPlan = options?.fluidBoundarySpatialPlan || null;
+    const spatialTestimony = spatialPlan
+      ? _closedFluidBoundarySpatialTestimony(this, spatialPlan) : null;
     const testimony = fields.map(field => {
-      const before = Math.max(0, Number(preFluid[field]) || 0);
-      const after = Math.max(0, Number(this.conditions.fluid[field]) || 0);
+      const before = _fluidBoundaryCanonicalValue(field, preFluid[field]);
+      const after = _fluidBoundaryCanonicalValue(field, this.conditions.fluid[field]);
       const declaredAddition = declaredAdditions[field] || 0;
       const declaredReplacementTarget = field in declaredReplacementTargets
         ? declaredReplacementTargets[field] : null;
@@ -509,15 +739,49 @@ _propagateGlobalDelta(snap, options: any = {}) {
       const actualDelta = after - before;
       const error = actualDelta - declaredDelta;
       const tolerance = _ledgerTolerance(Math.max(before, after));
+      const spatial = spatialTestimony?.[field] || null;
       return { field, before, after, declaredAddition, declaredReplacementTarget,
         declaredDelta, declaredImports, declaredExports, actualDelta, error, tolerance,
-        closed: Math.abs(error) <= tolerance };
+        unit: _fluidBoundaryUnit(field),
+        spatial,
+        closed: Math.abs(error) <= tolerance && (!spatial || spatial.closed) };
     });
+    const exactBoundary = options?.exactFluidBoundary || null;
+    const authorityAfter = exactBoundary
+      ? _fluidAuthorityProjection(this.conditions.fluid) : null;
+    const bulkAuthorityClosed = !exactBoundary
+      || (
+        authorityAfter.sulfurPoolsExplicit === exactBoundary.authorityTarget.sulfurPoolsExplicit
+        && authorityAfter.sulfateInherited === exactBoundary.authorityTarget.sulfateInherited
+        && authorityAfter.nativeSulfurPathway === exactBoundary.authorityTarget.nativeSulfurPathway
+      );
+    const authorityAfterSpatial = exactBoundary
+      ? _fluidAuthoritySpatialState(this) : null;
+    const spatialAuthorityClosed = !exactBoundary
+      || _fluidAuthoritySpatialClosed(authorityAfterSpatial, exactBoundary.authorityTarget);
+    const authorityClosed = bulkAuthorityClosed && spatialAuthorityClosed;
+    const sulfurSpatialTestimony = exactBoundary?.sulfurSpatialPlan
+      ? _closedFluidBoundarySpatialTestimony(this, exactBoundary.sulfurSpatialPlan) : null;
+    const sulfurSpatialClosed = !sulfurSpatialTestimony
+      || Object.values(sulfurSpatialTestimony).every((row: any) => row.closed === true);
     const transaction = {
+      schema: exactBoundary ? 'fully-mixed-fluid-replacement-v1' : 'fluid-boundary-v1',
       step: Number(this.step) || 0,
       declarations: fluidBoundaryDeclarations,
       testimony,
-      closed: testimony.every(row => row.closed),
+      ...(exactBoundary ? {
+        source: exactBoundary.source,
+        spatial_scope: 'canonical-wet-voxel-volume',
+        authority_before: exactBoundary.authorityBefore,
+        authority_before_spatial: exactBoundary.authorityBeforeSpatial,
+        authority_after: authorityAfter,
+        authority_after_spatial: authorityAfterSpatial,
+        authority_target: exactBoundary.authorityTarget,
+        authority_closed: authorityClosed,
+        sulfur_spatial_testimony: sulfurSpatialTestimony,
+        sulfur_spatial_closed: sulfurSpatialClosed,
+      } : {}),
+      closed: testimony.every(row => row.closed) && authorityClosed && sulfurSpatialClosed,
     };
     this._fluidBoundaryTransactions.push(transaction);
     if (!transaction.closed) this._fluidBoundaryViolations.push(transaction);

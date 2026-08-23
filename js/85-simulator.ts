@@ -256,17 +256,17 @@ class VugSimulator {
     this._thermalFieldActivated = this._thermalSources.length > 0
       || this.conditions?._scenario?.thermal_field != null
       || this.conditions?._scenario?.wall_rock_thermal_buffer_C != null;
-    // Explicit-sulfur conservation baseline. Canonical voxel fluids are the
-    // aqueous inventory; accepted growth zones become the solid inventory.
+    // Whole-sulfur conservation baseline. Canonical voxel fluids are the
+    // aqueous inventory even while a legacy one-pool recipe is active;
+    // accepted growth zones become the solid inventory. A later explicit-pool
+    // activation changes representation without rebasing geological history.
     // _propagateGlobalDelta books only authored boundary declarations and
     // records an unexplained internal residual as a violation.
     const sulfurGrid = this.wall_state.voxelGridFor(this);
-    this._sulfurLedgerInitialPpm = this.conditions.fluid.sulfurPoolsExplicit
-      ? sulfurGrid.voxels.reduce(
-        (sum, voxel) => sum + sulfurSystemTotalPpm(voxel?.fluid),
-        0,
-      )
-      : 0;
+    this._sulfurLedgerInitialPpm = sulfurGrid.voxels.reduce(
+      (sum, voxel) => sum + sulfurSystemTotalPpm(voxel?.fluid),
+      0,
+    );
     this._sulfurBoundaryImportsPpm = 0;
     this._sulfurBoundaryExportsPpm = 0;
     this._sulfurBoundaryTransactions = [];

@@ -63,7 +63,14 @@ and the exact-execution evidence receipt.
   the current simulator instance. Moving from Custom through Home/New Game to
   an authored Scenario or Starter Fluid can no longer carry an invisible
   prior-run recipe into geology, and save replay reconstructs the same recipe
-  from its recorded origin before applying any action.
+  from its recorded origin before applying any action. Replenish is an exact
+  open-system replacement of every canonical wet voxel, not a bulk-display
+  reset: numeric chemistry, signed pH/Eh, explicit-versus-legacy sulfur mode,
+  sulfate inheritance, and native-sulfur pathway all return to the run-owned
+  starting authority. Spatial fluid and sulfur import/export receipts close
+  the replacement before later growth reads a WallCell. Legacy one-pool sulfur
+  is commissioned at construction too, so switching to explicit valence pools
+  cannot rebase or erase earlier open-boundary history.
 - Locality expectation tiers were reconciled to the complete SIM 272
   three-seed census: 3/3 products are deterministic, 1–2/3 products are
   statistical, and 0/3 documented possibilities remain positively licensed
