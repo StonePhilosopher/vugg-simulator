@@ -67,10 +67,16 @@ const MODEL_DIGEST_SHA256 = createHash('sha256').update(MODEL_DIGEST).digest('he
 // rows, the same proxy/five-crystal assemblage, 7,680 finite zero-Zn volumes,
 // and no bulk, spatial, or booked Zn. This second SIM 279 identity binds the
 // completed spatial/valence authority closure rather than silently inheriting
-// the earlier bulk-only Replenish model digest.
+// the earlier bulk-only Replenish model digest. The final SIM 279 candidate
+// also declares Tsumeb's acid-stage sulfur as authored sulfate boundaries and
+// removes the chemically unsupported Cu-event sulfide import; secondary Cu
+// sulfides stay aspirational until parent-solid replacement exists. Generic
+// fluid-boundary receipts now authenticate canonical voxel totals as well as
+// bulk deltas. Those evidence/source corrections cannot affect this
+// Schneeberg replay; the independently observed trajectory remains exact.
 const SCHNEEBERG_SEED42_COMMISSIONING = Object.freeze({
   sim_version: 279,
-  model_digest_sha256: '16014f35aa6ca52eabd52ac887ba626e06736480894a81436f8d0e4285f3eae0',
+  model_digest_sha256: '0e11c032b1dd52b67012105c96073d6dfcb4b013843e8190964ac3fb3b4227f7',
   pharmacolite_crystals: 5,
   final_pharmacolite_Ca_molar_fraction_proxy: 0.581977988422356,
   proxy_tolerance: 5e-7,
