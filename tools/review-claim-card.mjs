@@ -223,11 +223,422 @@ function buildSulfurLedgerTestimony(samples) {
   };
 }
 
-function buildFluidBoundaryTestimony(samples) {
+// Evidence-side mirror of js/20-chemistry-fluid.ts. The browser constructor
+// owns the runtime schema; this explicit non-sulfur projection is the claim
+// producer's fail-closed vocabulary. tests-js/claim-cards.test.ts attacks
+// unknown fields and full-replacement omissions so the two modules cannot
+// silently acquire different scientific meanings.
+export const EVIDENCE_FLUID_BOUNDARY_FIELDS = Object.freeze([
+  'SiO2', 'reactiveSilicaFraction', 'Ca', 'CO3', 'F', 'Zn', 'Fe', 'Mn', 'Al', 'Ti', 'Pb', 'U',
+  'Cu', 'Mo', 'K', 'Na', 'Mg', 'Ba', 'Sr', 'Cr', 'P', 'As', 'Cl', 'V', 'W',
+  'Ag', 'Bi', 'Sb', 'Ni', 'Co', 'B', 'Li', 'Be', 'Te', 'Se', 'Ge', 'Au',
+  'Cd', 'Hg', 'Sn', 'Y', 'O2', 'Eh', 'pH', 'salinity', 'concentration',
+]);
+const EVIDENCE_FLUID_BOUNDARY_FIELD_SET = new Set(EVIDENCE_FLUID_BOUNDARY_FIELDS);
+const EVIDENCE_SULFUR_REPLACEMENT_FIELDS = Object.freeze([
+  'S', 'S_sulfide', 'S_sulfate', 'S_elemental',
+]);
+const EVIDENCE_SULFUR_PATHWAYS = new Set([
+  null,
+  'oxidative_interface',
+  'oxidative_closed_fluid',
+  'anaerobic_microbial_inherited',
+]);
+
+const evidenceFluidBoundaryUnit = (field) => {
+  if (field === 'pH') return 'pH';
+  if (field === 'Eh') return 'mV';
+  if (field === 'reactiveSilicaFraction') return 'fraction';
+  if (field === 'concentration') return 'multiplier';
+  return 'mg_per_kg_solvent';
+};
+
+const evidenceLedgerTolerance = (before, after) => (
+  Math.max(1e-7, Math.abs(Math.max(before, after)) * 1e-9)
+);
+
+const hasExactKeys = (value, expected) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const actual = Object.keys(value).sort();
+  const wanted = [...expected].sort();
+  return actual.length === wanted.length && actual.every((key, index) => key === wanted[index]);
+};
+
+const assertFluidAuthorityProjection = (value, label) => {
+  if (!hasExactKeys(value, [
+    'sulfurPoolsExplicit', 'sulfateInherited', 'nativeSulfurPathway',
+  ])
+      || typeof value.sulfurPoolsExplicit !== 'boolean'
+      || typeof value.sulfateInherited !== 'boolean'
+      || !EVIDENCE_SULFUR_PATHWAYS.has(value.nativeSulfurPathway)) {
+    throw new Error(`[card] ${label} has noncanonical sulfur authority`);
+  }
+  return value;
+};
+
+const assertFluidAuthoritySpatialState = (value, label) => {
+  if (!hasExactKeys(value, [
+    'count', 'sulfurPoolsExplicitCount', 'sulfateInheritedCount', 'nativeSulfurPathways',
+  ])
+      || !Number.isSafeInteger(value.count) || value.count <= 0
+      || !Number.isSafeInteger(value.sulfurPoolsExplicitCount)
+      || value.sulfurPoolsExplicitCount < 0 || value.sulfurPoolsExplicitCount > value.count
+      || !Number.isSafeInteger(value.sulfateInheritedCount)
+      || value.sulfateInheritedCount < 0 || value.sulfateInheritedCount > value.count
+      || !value.nativeSulfurPathways || typeof value.nativeSulfurPathways !== 'object'
+      || Array.isArray(value.nativeSulfurPathways)) {
+    throw new Error(`[card] ${label} has noncanonical spatial sulfur authority`);
+  }
+  let pathwayCount = 0;
+  for (const [pathway, count] of Object.entries(value.nativeSulfurPathways)) {
+    const canonicalPathway = pathway === 'null' ? null : pathway;
+    if (!EVIDENCE_SULFUR_PATHWAYS.has(canonicalPathway)
+        || !Number.isSafeInteger(count) || count <= 0) {
+      throw new Error(`[card] ${label} has noncanonical spatial sulfur authority`);
+    }
+    pathwayCount += count;
+  }
+  if (pathwayCount !== value.count) {
+    throw new Error(`[card] ${label} has incomplete spatial sulfur authority`);
+  }
+  return value;
+};
+
+const assertSulfurReplacementSpatialRow = (row, field, count, transactionIndex) => {
+  const numericKeys = [
+    'targetValuePerFluid', 'beforeValueTotal',
+    'expectedAfterValueTotal', 'afterValueTotal',
+    'expectedNet', 'actualNet', 'error', 'tolerance',
+  ];
+  if (!hasExactKeys(row, [
+    'count', 'beforeFiniteCount', 'unit', 'targetValuePerFluid',
+    'beforeValueTotal', 'expectedAfterValueTotal', 'scope', 'fluxBasis',
+    'afterCount', 'afterFiniteCount',
+    'afterValueTotal', 'expectedNet', 'actualNet', 'error', 'tolerance', 'closed',
+  ])
+      || row.count !== count || row.beforeFiniteCount !== count
+      || row.afterCount !== count || row.afterFiniteCount !== count
+      || row.unit !== 'mg_per_kg_solvent'
+      || row.scope !== 'canonical-wet-voxel-volume'
+      || row.fluxBasis !== 'authenticated-net-only; gross-per-voxel-replacement-exchange-not-published'
+      || row.closed !== true
+      || numericKeys.some((key) => typeof row[key] !== 'number' || !Number.isFinite(row[key]))
+      || row.targetValuePerFluid < 0) {
+    throw new Error(`[card] fully-mixed fluid-boundary transaction ${transactionIndex} has noncanonical ${field} spatial testimony`);
+  }
+  const expectedAfter = row.targetValuePerFluid * count;
+  const expectedNet = expectedAfter - row.beforeValueTotal;
+  const actualNet = row.afterValueTotal - row.beforeValueTotal;
+  const error = actualNet - expectedNet;
+  const tolerance = Math.max(
+    1e-7,
+    Math.max(Math.abs(row.beforeValueTotal), Math.abs(row.afterValueTotal)) * 1e-9,
+  );
+  if (row.tolerance !== tolerance
+      || Math.abs(row.expectedAfterValueTotal - expectedAfter) > tolerance
+      || Math.abs(row.afterValueTotal - expectedAfter) > tolerance
+      || Math.abs(row.expectedNet - expectedNet) > tolerance
+      || Math.abs(row.actualNet - actualNet) > tolerance
+      || Math.abs(row.error - error) > tolerance
+      || Math.abs(error) > tolerance) {
+    throw new Error(`[card] fully-mixed fluid-boundary transaction ${transactionIndex} has unauthenticated ${field} spatial closure`);
+  }
+  return row.targetValuePerFluid;
+};
+
+const assertFullyMixedFluidBoundaryAuthority = (transaction, declarations, transactionIndex) => {
+  if (typeof transaction.source !== 'string' || !transaction.source.trim()
+      || declarations.length !== 1
+      || declarations[0].kind !== 'replacement'
+      || declarations[0].source !== transaction.source
+      || transaction.authority_closed !== true
+      || transaction.sulfur_spatial_closed !== true) {
+    throw new Error(`[card] fully-mixed fluid-boundary transaction ${transactionIndex} lacks exact replacement authority`);
+  }
+  const fields = Object.keys(declarations[0].fields).sort();
+  const fullFields = [...EVIDENCE_FLUID_BOUNDARY_FIELDS].sort();
+  const carbonatePreservedFields = fullFields.filter((field) => field !== 'CO3' && field !== 'pH');
+  const exactFieldSet = (expected) => fields.length === expected.length
+    && fields.every((field, index) => field === expected[index]);
+  if (!exactFieldSet(fullFields) && !exactFieldSet(carbonatePreservedFields)) {
+    throw new Error(`[card] fully-mixed fluid-boundary transaction ${transactionIndex} has an incomplete replacement field set`);
+  }
+  const before = assertFluidAuthorityProjection(
+    transaction.authority_before,
+    `fully-mixed fluid-boundary transaction ${transactionIndex} before`,
+  );
+  const target = assertFluidAuthorityProjection(
+    transaction.authority_target,
+    `fully-mixed fluid-boundary transaction ${transactionIndex} target`,
+  );
+  const after = assertFluidAuthorityProjection(
+    transaction.authority_after,
+    `fully-mixed fluid-boundary transaction ${transactionIndex} after`,
+  );
+  const beforeSpatial = assertFluidAuthoritySpatialState(
+    transaction.authority_before_spatial,
+    `fully-mixed fluid-boundary transaction ${transactionIndex} before`,
+  );
+  const afterSpatial = assertFluidAuthoritySpatialState(
+    transaction.authority_after_spatial,
+    `fully-mixed fluid-boundary transaction ${transactionIndex} after`,
+  );
+  const targetPathway = target.nativeSulfurPathway == null ? 'null' : target.nativeSulfurPathway;
+  if (JSON.stringify(after) !== JSON.stringify(target)
+      || beforeSpatial.count !== afterSpatial.count
+      || afterSpatial.sulfurPoolsExplicitCount !== (target.sulfurPoolsExplicit ? afterSpatial.count : 0)
+      || afterSpatial.sulfateInheritedCount !== (target.sulfateInherited ? afterSpatial.count : 0)
+      || !hasExactKeys(afterSpatial.nativeSulfurPathways, [targetPathway])
+      || afterSpatial.nativeSulfurPathways[targetPathway] !== afterSpatial.count) {
+    throw new Error(`[card] fully-mixed fluid-boundary transaction ${transactionIndex} did not reach its sulfur authority target`);
+  }
+  if (!hasExactKeys(transaction.sulfur_spatial_testimony, EVIDENCE_SULFUR_REPLACEMENT_FIELDS)) {
+    throw new Error(`[card] fully-mixed fluid-boundary transaction ${transactionIndex} lacks complete sulfur spatial testimony`);
+  }
+  const sulfurTargets = Object.fromEntries(EVIDENCE_SULFUR_REPLACEMENT_FIELDS.map((field) => [
+    field,
+    assertSulfurReplacementSpatialRow(
+      transaction.sulfur_spatial_testimony[field], field, afterSpatial.count, transactionIndex,
+    ),
+  ]));
+  const sulfurTolerance = Math.max(1e-7, Math.abs(sulfurTargets.S) * 1e-9);
+  if (target.sulfurPoolsExplicit
+      && Math.abs(sulfurTargets.S - sulfurTargets.S_sulfide - sulfurTargets.S_sulfate) > sulfurTolerance) {
+    throw new Error(`[card] fully-mixed fluid-boundary transaction ${transactionIndex} has inconsistent explicit sulfur targets`);
+  }
+  // `before` is retained as event-time testimony even when the local field was
+  // heterogeneous. Target/after are the actual physical closure authority.
+  return before;
+};
+
+const canonicalBoundaryDeclaration = (declaration) => ({
+  kind: declaration.kind,
+  source: declaration.source,
+  fields: Object.fromEntries(Object.entries(declaration.fields).sort(([a], [b]) => a.localeCompare(b))),
+});
+
+export function buildFluidBoundaryTestimony(samples, scenarioSpec = null) {
   const transactions = Array.isArray(samples) ? samples : [];
+  const carriesRecorderIndex = transactions.some((row) => (
+    Object.prototype.hasOwnProperty.call(row || {}, 'sample_index')
+  ));
+  let previousStep = -1;
+  let previousSampleIndex = -1;
+  for (const [transactionIndex, transaction] of transactions.entries()) {
+    if (!transaction || !['fluid-boundary-v1', 'fully-mixed-fluid-replacement-v1'].includes(transaction.schema)
+        || typeof transaction.step !== 'number' || !Number.isSafeInteger(transaction.step)
+        || transaction.step < 0
+        || transaction.closed !== true
+        || transaction.spatial_scope !== 'canonical-wet-voxel-volume'
+        || !Array.isArray(transaction.declarations) || !transaction.declarations.length
+        || !Array.isArray(transaction.testimony) || !transaction.testimony.length) {
+      throw new Error(`[card] fluid-boundary transaction ${transactionIndex} lacks closed canonical spatial testimony`);
+    }
+    const transactionKeys = transaction.schema === 'fluid-boundary-v1'
+      ? ['schema', 'step', 'spatial_scope', 'declarations', 'testimony', 'closed']
+      : [
+        'schema', 'step', 'spatial_scope', 'declarations', 'testimony', 'source',
+        'authority_before', 'authority_before_spatial', 'authority_after',
+        'authority_after_spatial', 'authority_target', 'authority_closed',
+        'sulfur_spatial_testimony', 'sulfur_spatial_closed', 'closed',
+      ];
+    const allowedTransactionKeys = Object.prototype.hasOwnProperty.call(transaction, 'sample_index')
+      ? [...transactionKeys, 'sample_index'] : transactionKeys;
+    const hasSampleIndex = Object.prototype.hasOwnProperty.call(transaction, 'sample_index');
+    if (!hasExactKeys(transaction, allowedTransactionKeys)
+        || hasSampleIndex !== carriesRecorderIndex
+        || (hasSampleIndex
+          && (!Number.isSafeInteger(transaction.sample_index)
+            || transaction.sample_index < 0
+            || transaction.sample_index < previousSampleIndex))
+        || transaction.step < previousStep) {
+      throw new Error(`[card] fluid-boundary transaction ${transactionIndex} has schema-external fields`);
+    }
+    previousStep = transaction.step;
+    if (hasSampleIndex) previousSampleIndex = transaction.sample_index;
+    const declarations = [];
+    const declaredFields = new Set();
+    for (const declaration of transaction.declarations) {
+      if (!hasExactKeys(declaration, ['kind', 'source', 'fields'])
+          || !['addition', 'replacement'].includes(declaration.kind)
+          || typeof declaration.source !== 'string' || !declaration.source.trim()
+          || !declaration.fields || typeof declaration.fields !== 'object'
+          || Array.isArray(declaration.fields) || !Object.keys(declaration.fields).length) {
+        throw new Error(`[card] fluid-boundary transaction ${transactionIndex} has a noncanonical declaration`);
+      }
+      for (const [field, value] of Object.entries(declaration.fields)) {
+        if (!EVIDENCE_FLUID_BOUNDARY_FIELD_SET.has(field)
+            || typeof value !== 'number' || !Number.isFinite(value)
+            || (declaration.kind === 'addition' && value <= 0)
+            || (declaration.kind === 'replacement' && field !== 'pH' && field !== 'Eh' && value < 0)) {
+          throw new Error(`[card] fluid-boundary transaction ${transactionIndex} has a noncanonical declaration`);
+        }
+        declaredFields.add(field);
+      }
+      declarations.push(canonicalBoundaryDeclaration(declaration));
+    }
+    if (transaction.schema === 'fully-mixed-fluid-replacement-v1') {
+      assertFullyMixedFluidBoundaryAuthority(transaction, declarations, transactionIndex);
+    }
+    const testimonyByField = new Map();
+    for (const row of transaction.testimony) {
+      if (!hasExactKeys(row, [
+        'field', 'before', 'after', 'declaredAddition', 'declaredReplacementTarget',
+        'declaredDelta', 'declaredImports', 'declaredExports', 'actualDelta',
+        'error', 'tolerance', 'unit', 'spatial', 'closed',
+      ])
+          || typeof row.field !== 'string' || !row.field
+          || testimonyByField.has(row.field)) {
+        throw new Error(`[card] fluid-boundary transaction ${transactionIndex} has duplicate or noncanonical field testimony`);
+      }
+      testimonyByField.set(row.field, row);
+    }
+    if (testimonyByField.size !== declaredFields.size
+        || [...declaredFields].some((field) => !testimonyByField.has(field))) {
+      throw new Error(`[card] fluid-boundary transaction ${transactionIndex} declaration/testimony fields disagree`);
+    }
+    for (const field of [...declaredFields].sort()) {
+      const row = testimonyByField.get(field);
+      const spatial = row?.spatial;
+      if (!spatial || typeof spatial !== 'object' || Array.isArray(spatial)) {
+        throw new Error(`[card] fluid-boundary transaction ${transactionIndex} field '${field}' lacks closed canonical spatial testimony`);
+      }
+      const bulkNumericKeys = [
+        'before', 'after', 'declaredAddition', 'declaredDelta', 'declaredImports',
+        'declaredExports', 'actualDelta', 'error', 'tolerance',
+      ];
+      if (bulkNumericKeys.some((key) => typeof row?.[key] !== 'number'
+          || !Number.isFinite(row[key]))
+          || row.unit !== evidenceFluidBoundaryUnit(field)) {
+        throw new Error(`[card] fluid-boundary transaction ${transactionIndex} field '${field}' has noncanonical bulk testimony`);
+      }
+      let expectedBulkAfter = row.before;
+      let declaredAddition = 0;
+      let replacementTarget = null;
+      for (const declaration of declarations) {
+        if (!Object.prototype.hasOwnProperty.call(declaration.fields, field)) continue;
+        const value = declaration.fields[field];
+        if (declaration.kind === 'addition') {
+          expectedBulkAfter += value;
+          declaredAddition += value;
+        } else {
+          expectedBulkAfter = value;
+          replacementTarget = value;
+        }
+      }
+      const declaredDelta = expectedBulkAfter - row.before;
+      const actualDelta = row.after - row.before;
+      const bulkError = actualDelta - declaredDelta;
+      const bulkTolerance = evidenceLedgerTolerance(row.before, row.after);
+      const replacementMatches = replacementTarget === null
+        ? row.declaredReplacementTarget === null
+        : typeof row.declaredReplacementTarget === 'number'
+          && Number.isFinite(row.declaredReplacementTarget)
+          && Math.abs(row.declaredReplacementTarget - replacementTarget) <= bulkTolerance;
+      if (row.closed !== true || !replacementMatches
+          || Math.abs(row.declaredAddition - declaredAddition) > bulkTolerance
+          || Math.abs(row.declaredDelta - declaredDelta) > bulkTolerance
+          || Math.abs(row.declaredImports - Math.max(0, declaredDelta)) > bulkTolerance
+          || Math.abs(row.declaredExports - Math.max(0, -declaredDelta)) > bulkTolerance
+          || Math.abs(row.actualDelta - actualDelta) > bulkTolerance
+          || Math.abs(row.error - bulkError) > bulkTolerance
+          || row.tolerance !== bulkTolerance
+          || Math.abs(bulkError) > bulkTolerance) {
+        throw new Error(`[card] fluid-boundary transaction ${transactionIndex} field '${field}' has unauthenticated bulk closure`);
+      }
+      const numericKeys = [
+        'beforeValueTotal', 'expectedAfterValueTotal', 'afterValueTotal', 'expectedNet',
+        'actualNet', 'error', 'tolerance',
+      ];
+      const numeric = Object.fromEntries(numericKeys.map((key) => [key, spatial?.[key]]));
+      const tolerance = numeric.tolerance;
+      const spatialKeys = [
+        'count', 'beforeFiniteCount', 'unit', 'beforeValueTotal',
+        'expectedAfterValueTotal', 'scope', 'fluxBasis', 'afterCount',
+        'afterFiniteCount', 'afterValueTotal', 'expectedNet', 'actualNet',
+        'error', 'tolerance', 'closed',
+        ...(transaction.schema === 'fully-mixed-fluid-replacement-v1'
+          ? ['targetValuePerFluid'] : []),
+      ];
+      let expectedSpatialAfter = numeric.beforeValueTotal;
+      for (const declaration of declarations) {
+        if (!Object.prototype.hasOwnProperty.call(declaration.fields, field)) continue;
+        const value = declaration.fields[field];
+        if (declaration.kind === 'addition') {
+          expectedSpatialAfter += value * spatial.count;
+        } else {
+          expectedSpatialAfter = value * spatial.count;
+        }
+      }
+      const recomputedExpectedNet = expectedSpatialAfter - numeric.beforeValueTotal;
+      const recomputedActualNet = numeric.afterValueTotal - numeric.beforeValueTotal;
+      const recomputedError = recomputedActualNet - recomputedExpectedNet;
+      const spatialTolerance = Math.max(
+        1e-7,
+        Math.max(Math.abs(numeric.beforeValueTotal), Math.abs(numeric.afterValueTotal)) * 1e-9,
+      );
+      if (!hasExactKeys(spatial, spatialKeys) || spatial.closed !== true
+          || row.closed !== true
+          || spatial.scope !== 'canonical-wet-voxel-volume'
+          || spatial.fluxBasis !== 'authenticated-net-only; gross-per-voxel-replacement-exchange-not-published'
+          || spatial.unit !== row.unit
+          || Object.prototype.hasOwnProperty.call(spatial, 'declaredIncreaseTotal')
+          || Object.prototype.hasOwnProperty.call(spatial, 'declaredDecreaseTotal')
+          || (transaction.schema === 'fully-mixed-fluid-replacement-v1'
+            && (typeof spatial.targetValuePerFluid !== 'number'
+              || !Number.isFinite(spatial.targetValuePerFluid)
+              || replacementTarget === null
+              || Math.abs(spatial.targetValuePerFluid - replacementTarget) > spatialTolerance))
+          || !Number.isSafeInteger(spatial.count) || spatial.count <= 0
+          || spatial.beforeFiniteCount !== spatial.count
+          || spatial.afterCount !== spatial.count
+          || spatial.afterFiniteCount !== spatial.count
+          || numericKeys.some((key) => typeof numeric[key] !== 'number'
+            || !Number.isFinite(numeric[key]))
+          || tolerance !== spatialTolerance
+          || Math.abs(numeric.expectedNet - recomputedExpectedNet) > spatialTolerance
+          || Math.abs(numeric.actualNet - recomputedActualNet) > spatialTolerance
+          || Math.abs(numeric.error - recomputedError) > spatialTolerance
+          || Math.abs(numeric.expectedAfterValueTotal - expectedSpatialAfter) > spatialTolerance
+          || Math.abs(numeric.afterValueTotal - numeric.expectedAfterValueTotal) > spatialTolerance
+          || Math.abs(recomputedError) > spatialTolerance) {
+        throw new Error(`[card] fluid-boundary transaction ${transactionIndex} field '${row?.field || '?'}' lacks closed canonical spatial testimony`);
+      }
+    }
+  }
+  const expectedAuthored = (scenarioSpec?.events || [])
+    .filter((event) => typeof event?.fluid_boundary_source === 'string'
+      && event.fluid_boundary_source.trim())
+    .map((event) => {
+      if (typeof event.step !== 'number' || !Number.isSafeInteger(event.step)
+          || !event.fluid_transform?.add
+          || typeof event.fluid_transform.add !== 'object'
+          || Array.isArray(event.fluid_transform.add)) {
+        throw new Error('[card] authored fluid-boundary event has no canonical addition schema');
+      }
+      return {
+        step: event.step,
+        declaration: canonicalBoundaryDeclaration({
+          kind: 'addition',
+          source: event.fluid_boundary_source,
+          fields: event.fluid_transform.add,
+        }),
+      };
+    });
+  if (expectedAuthored.length && transactions.length !== expectedAuthored.length) {
+    throw new Error('[card] authored fluid-boundary transaction set contains missing or extra rows');
+  }
+  for (const expected of expectedAuthored) {
+    const atStep = transactions.filter((transaction) => transaction.step === expected.step);
+    if (atStep.length !== 1 || atStep[0].schema !== 'fluid-boundary-v1'
+        || JSON.stringify(atStep[0].declarations.map(canonicalBoundaryDeclaration))
+          !== JSON.stringify([expected.declaration])) {
+      throw new Error(`[card] authored fluid-boundary step ${expected.step} disagrees with its scenario event`);
+    }
+  }
   const closedTransactionCount = transactions.filter((row) => row?.closed === true).length;
   return {
-    source: 'archived declared non-sulfur fluid-boundary transactions; exact rows are authenticated by the strip SHA-256',
+    source: 'archived declared non-sulfur fluid-boundary transactions; exact net spatial closure is authenticated by the strip SHA-256; gross per-voxel replacement exchange is intentionally not claimed',
     transaction_count: transactions.length,
     closed_transaction_count: closedTransactionCount,
     all_closed: transactions.length ? closedTransactionCount === transactions.length : null,
@@ -422,7 +833,7 @@ export function buildMorphologyLayerTestimony(layerGrowth, morphRegistry) {
   };
 }
 
-function buildExecutedScienceTestimony(strip, science) {
+function buildExecutedScienceTestimony(strip, science, spec) {
   const pressurePhase = strip.executed_testimony?.pressure_phase || [];
   const stressEvents = strip.executed_testimony?.stress_events || [];
   const transformations = strip.executed_testimony?.transformations || [];
@@ -469,7 +880,7 @@ function buildExecutedScienceTestimony(strip, science) {
       samples: carbonateBoundary,
     },
     sulfur_ledger: buildSulfurLedgerTestimony(sulfurLedger),
-    fluid_boundary: buildFluidBoundaryTestimony(fluidBoundary),
+    fluid_boundary: buildFluidBoundaryTestimony(fluidBoundary, spec),
     enclosures: {
       source: 'accepted host-over-guest and later liberation events from the archived executed run',
       event_count: enclosures.length,
@@ -627,7 +1038,7 @@ export function buildCard(name, spec, strip, science, {
       environment: env,
       saturation_indices: si,
       executed_science: {
-        ...buildExecutedScienceTestimony(strip, science),
+        ...buildExecutedScienceTestimony(strip, science, spec),
         transformation_reactivity_commissioning:
           transformationReactivityCommissioning(name, strip, mechanismWitnessArtifact),
       },

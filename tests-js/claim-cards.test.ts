@@ -22,6 +22,214 @@ const MORPHOLOGY_REGIMES = new Set([
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 describe('adversarial claim-card fleet', () => {
+  it('rejects bulk-only or open generic fluid-boundary testimony', () => {
+    const moduleUrl = pathToFileURL(path.join(ROOT, 'tools', 'review-claim-card.mjs')).href;
+    const script = `
+      import {
+        buildFluidBoundaryTestimony,
+        EVIDENCE_FLUID_BOUNDARY_FIELDS
+      } from ${JSON.stringify(moduleUrl)};
+      const spatial = {
+        unit: 'mg_per_kg_solvent',
+        scope: 'canonical-wet-voxel-volume', count: 2,
+        beforeFiniteCount: 2, afterCount: 2, afterFiniteCount: 2,
+        beforeValueTotal: 10,
+        expectedAfterValueTotal: 30, afterValueTotal: 30,
+        expectedNet: 20, actualNet: 20, error: 0, tolerance: 1e-7, closed: true,
+        fluxBasis: 'authenticated-net-only; gross-per-voxel-replacement-exchange-not-published'
+      };
+      const valid = {
+        schema: 'fluid-boundary-v1', step: 1, sample_index: 0,
+        spatial_scope: 'canonical-wet-voxel-volume', closed: true,
+        declarations: [{ kind: 'addition', source: 'test Cu boundary', fields: { Cu: 10 } }],
+        testimony: [{
+          field: 'Cu', before: 5, after: 15, declaredAddition: 10,
+          declaredReplacementTarget: null, declaredDelta: 10,
+          declaredImports: 10, declaredExports: 0, actualDelta: 10,
+          error: 0, tolerance: 1e-7, unit: 'mg_per_kg_solvent', closed: true, spatial
+        }]
+      };
+      const spec = { events: [{
+        step: 1, type: 'test_boundary', fluid_boundary_source: 'test Cu boundary',
+        fluid_transform: { add: { Cu: 10 } }
+      }] };
+      const targetValue = (field) => field === 'pH' ? 7
+        : field === 'reactiveSilicaFraction' || field === 'concentration' ? 1 : 0;
+      const replacementFields = Object.fromEntries(
+        EVIDENCE_FLUID_BOUNDARY_FIELDS.map((field) => [field, targetValue(field)])
+      );
+      const replacementSpatial = (field) => {
+        const target = targetValue(field);
+        return {
+          count: 2, beforeFiniteCount: 2,
+          unit: field === 'pH' ? 'pH'
+            : field === 'Eh' ? 'mV'
+              : field === 'reactiveSilicaFraction' ? 'fraction'
+                : field === 'concentration' ? 'multiplier' : 'mg_per_kg_solvent',
+          targetValuePerFluid: target,
+          beforeValueTotal: target * 2,
+          expectedAfterValueTotal: target * 2,
+          scope: 'canonical-wet-voxel-volume', afterCount: 2, afterFiniteCount: 2,
+          afterValueTotal: target * 2, expectedNet: 0, actualNet: 0,
+          error: 0, tolerance: 1e-7, closed: true,
+          fluxBasis: 'authenticated-net-only; gross-per-voxel-replacement-exchange-not-published'
+        };
+      };
+      const replacement = {
+        schema: 'fully-mixed-fluid-replacement-v1', step: 2,
+        source: 'test exact replacement', spatial_scope: 'canonical-wet-voxel-volume',
+        declarations: [{
+          kind: 'replacement', source: 'test exact replacement', fields: replacementFields
+        }],
+        testimony: EVIDENCE_FLUID_BOUNDARY_FIELDS.map((field) => {
+          const target = targetValue(field);
+          return {
+            field, before: target, after: target, declaredAddition: 0,
+            declaredReplacementTarget: target, declaredDelta: 0,
+            declaredImports: 0, declaredExports: 0, actualDelta: 0,
+            error: 0, tolerance: 1e-7,
+            unit: replacementSpatial(field).unit,
+            closed: true, spatial: replacementSpatial(field)
+          };
+        }),
+        authority_before: {
+          sulfurPoolsExplicit: false, sulfateInherited: false, nativeSulfurPathway: null
+        },
+        authority_before_spatial: {
+          count: 2, sulfurPoolsExplicitCount: 0, sulfateInheritedCount: 0,
+          nativeSulfurPathways: { null: 2 }
+        },
+        authority_target: {
+          sulfurPoolsExplicit: false, sulfateInherited: false, nativeSulfurPathway: null
+        },
+        authority_after: {
+          sulfurPoolsExplicit: false, sulfateInherited: false, nativeSulfurPathway: null
+        },
+        authority_after_spatial: {
+          count: 2, sulfurPoolsExplicitCount: 0, sulfateInheritedCount: 0,
+          nativeSulfurPathways: { null: 2 }
+        },
+        authority_closed: true,
+        sulfur_spatial_testimony: Object.fromEntries(
+          ['S', 'S_sulfide', 'S_sulfate', 'S_elemental'].map((field) => [
+            field,
+            {
+              count: 2, beforeFiniteCount: 2, unit: 'mg_per_kg_solvent',
+              targetValuePerFluid: 0, beforeValueTotal: 0,
+              expectedAfterValueTotal: 0, scope: 'canonical-wet-voxel-volume',
+              fluxBasis: 'authenticated-net-only; gross-per-voxel-replacement-exchange-not-published',
+              afterCount: 2, afterFiniteCount: 2, afterValueTotal: 0,
+              expectedNet: 0, actualNet: 0, error: 0, tolerance: 1e-7, closed: true
+            }
+          ])
+        ),
+        sulfur_spatial_closed: true,
+        closed: true
+      };
+      const summary = buildFluidBoundaryTestimony([valid], spec);
+      if (summary.transaction_count !== 1 || summary.closed_transaction_count !== 1
+          || summary.all_closed !== true) process.exit(2);
+      const replacementSummary = buildFluidBoundaryTestimony([replacement]);
+      if (replacementSummary.transaction_count !== 1
+          || replacementSummary.all_closed !== true) process.exit(5);
+      const forgedRows = [
+        { ...valid, spatial_scope: undefined },
+        { ...valid, closed: false },
+        { ...valid, testimony: [{ ...valid.testimony[0], spatial: null }] },
+        { ...valid, testimony: [{ ...valid.testimony[0], spatial: { ...spatial, closed: false } }] },
+        { ...valid, testimony: [{ ...valid.testimony[0], spatial: { ...spatial, afterCount: 1 } }] },
+        { ...valid, testimony: [{ ...valid.testimony[0], spatial: { ...spatial, actualNet: 19 } }] },
+        { ...valid, testimony: [{ ...valid.testimony[0], spatial: { ...spatial, afterValueTotal: 29 } }] },
+        { ...valid, testimony: [{ ...valid.testimony[0], spatial: { ...spatial, error: null } }] },
+        { ...valid, testimony: [{ ...valid.testimony[0], spatial: { ...spatial, actualNet: '20' } }] },
+        { ...valid, sample_index: -1 },
+        { ...valid, testimony: [{ ...valid.testimony[0], spatial: {
+          ...spatial, declaredIncreaseTotal: 120, declaredDecreaseTotal: 100
+        } }] },
+        { ...valid, testimony: [{ ...valid.testimony[0], tolerance: 1e9,
+          spatial: { ...spatial, tolerance: 1e9 } }] },
+        { ...valid, declarations: [] },
+        { ...valid, testimony: [valid.testimony[0], structuredClone(valid.testimony[0])] },
+        { ...valid, declarations: [{ ...valid.declarations[0], source: 'forged source' }] },
+        { ...valid, authority_closed: true, sulfur_spatial_testimony: { banana: true } },
+        { ...valid, declarations: [{ ...valid.declarations[0], authority: 'smuggled' }] },
+        { ...valid, testimony: [{ ...valid.testimony[0], authority: 'smuggled' }] },
+        { ...valid,
+          declarations: [{ ...valid.declarations[0], fields: { Cu: 10, Fe: 5 } }]
+        },
+        (() => {
+          const forged = structuredClone(valid);
+          forged.declarations[0].fields.Cu = 20;
+          Object.assign(forged.testimony[0], {
+            after: 25, declaredAddition: 20, declaredDelta: 20,
+            declaredImports: 20, actualDelta: 20
+          });
+          Object.assign(forged.testimony[0].spatial, {
+            declaredIncreaseTotal: 40, expectedAfterValueTotal: 50,
+            afterValueTotal: 50, expectedNet: 40, actualNet: 40
+          });
+          return forged;
+        })(),
+        { ...valid, schema: 'fully-mixed-fluid-replacement-v1',
+          source: 'test Cu boundary' },
+        (() => {
+          const forged = structuredClone(replacement);
+          delete forged.authority_target;
+          return forged;
+        })(),
+        (() => {
+          const forged = structuredClone(replacement);
+          forged.sulfur_spatial_testimony.S.declaredIncreaseTotal = 100;
+          forged.sulfur_spatial_testimony.S.declaredDecreaseTotal = 100;
+          return forged;
+        })(),
+        (() => {
+          const forged = structuredClone(replacement);
+          forged.schema = 'fluid-boundary-v1';
+          for (const field of [
+            'source', 'authority_before', 'authority_before_spatial', 'authority_after',
+            'authority_after_spatial', 'authority_target', 'authority_closed',
+            'sulfur_spatial_testimony', 'sulfur_spatial_closed'
+          ]) delete forged[field];
+          return forged;
+        })(),
+        (() => {
+          const forged = structuredClone(valid);
+          forged.declarations[0].fields = { banana: 10 };
+          forged.testimony[0].field = 'banana';
+          return forged;
+        })()
+      ];
+      for (const forged of forgedRows) {
+        try {
+          buildFluidBoundaryTestimony([forged], spec);
+          process.exit(3);
+        } catch (error) {
+          if (!/fluid-boundary/.test(String(error?.message || error))) {
+            console.error(error);
+            process.exit(4);
+          }
+        }
+      }
+      const extra = structuredClone(valid);
+      extra.step = 99;
+      try {
+        buildFluidBoundaryTestimony([valid, extra], spec);
+        process.exit(6);
+      } catch (error) {
+        if (!/fluid-boundary/.test(String(error?.message || error))) {
+          console.error(error);
+          process.exit(7);
+        }
+      }
+    `;
+    const result = spawnSync(process.execPath, ['--input-type=module', '--eval', script], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    });
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+  });
+
   it('rejects a self-consistent-looking morphology row whose regime contradicts its surface sigma', () => {
     const moduleUrl = pathToFileURL(path.join(ROOT, 'tools', 'review-claim-card.mjs')).href;
     const script = `
